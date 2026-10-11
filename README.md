@@ -1,2 +1,341 @@
 # RoofingApp
-Roofing Weather and Maps Contact app
+
+Roofing weather and maps app — storm tracking, inspection targeting and crew weather planning
+for a Montana roofing company.
+
+The current build is the **Big Sky Hail Watch** desktop app (placeholder name): live NWS radar
+and official alerts, SPC storm reports, inspection candidates with plain-language reasons, and a
+crew weather outlook per job. It **updates itself from this repository** — a version bump on
+`main` reaches every installed copy. No zip, no reinstall.
+
+**AI agents (Claude Code, ChatGPT/Codex):** read [`AGENTS.md`](AGENTS.md) first. Requirements live
+in [`docs/handoff/`](docs/handoff/), decisions in [`docs/DECISIONS.md`](docs/DECISIONS.md), status and
+next steps in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+---
+
+## Contents
+1. [Bottom line](#bottom-line)
+2. [Run it today](#run-it-today)
+3. [Set up updates (once)](#set-up-updates-once)
+4. [Get the installers (once)](#get-the-installers-once)
+5. [Ship an update (every time)](#ship-an-update-every-time)
+6. [What updates itself vs. what needs a new installer](#what-updates-itself-vs-what-needs-a-new-installer)
+7. [How updates stay safe](#how-updates-stay-safe)
+8. [Data feeds: live, demo, needs a subscription](#data-feeds-live-demo-needs-a-subscription)
+9. [The screens](#the-screens)
+10. [Your data and backups](#your-data-and-backups)
+11. [Handoff and review status](#handoff-and-review-status)
+12. [Tests](#tests)
+13. [Troubleshooting](#troubleshooting)
+14. [Security notes](#security-notes)
+15. [Known limits](#known-limits)
+16. [Renaming](#renaming)
+17. [Project layout](#project-layout)
+
+---
+
+## Bottom line
+
+| You want to… | Do this |
+|---|---|
+| Try it now on your computer | `pip install -r requirements.txt` then `python desktop/launcher.py` |
+| Turn on automatic updates | Already on — installed copies follow this repo's `main` branch |
+| Give crews an installer | GitHub → **Actions → Build desktop installers → Run workflow**, download the Windows/macOS zip |
+| Ship a change | `python ship.py "what changed"` — tests it, bumps the version, pushes. Apps update within the hour or on **Check for updates** |
+
+**Two fixes to the earlier web version you should know about:** its radar layer
+requested NOAA's WMS layer `3`, which is the *boundary* layer and draws nothing —
+the radar is layer `1`. And its map script was inserted without `<script>` tags, so
+the map never actually ran in a browser. Both are fixed here and checked in a real
+browser and a real desktop window. Its base map (CARTO) also now requires an API
+key; this version uses USGS's public-domain maps.
+
+---
+
+## Run it today
+
+Needs Python 3.10+.
+
+```bash
+pip install -r requirements.txt
+python desktop/launcher.py            # opens the app in its own window
+python desktop/launcher.py --browser  # or in your web browser
+```
+
+Windows needs the Microsoft Edge **WebView2** runtime (built into Windows 11 and
+installed on most Windows 10 PCs). If the window can't open, the app falls back
+to your browser automatically.
+
+---
+
+## Set up updates (once)
+
+Already done: installed copies follow **`carson14dy/RoofingApp`, branch `main`**
+(`desktop/update_config.json`; installers built by GitHub Actions bake it in too).
+
+- This repo is **public**, so apps need no token — and anyone can read the code and docs. To make it
+  private: Settings → General → Change visibility, then create a fine-grained token with
+  *Contents: read-only* on this repo and add it as the repository secret `UPDATE_TOKEN` (installers
+  carry it; it can only read code the installer already contains) or paste it under
+  **App & updates → Update source**.
+- The app checks GitHub when it opens and every hour after (unauthenticated GitHub allows 60 checks
+  per hour per network; unchanged checks are answered from cache).
+
+---
+
+## Get the installers (once)
+
+PyInstaller can't cross-compile, so GitHub builds them for you:
+
+- **Actions → Build desktop installers → Run workflow** → download
+  `BigSkyHailWatch-Windows.zip` / `BigSkyHailWatch-macOS.zip` from the run, **or**
+- push a tag `desktop-v1.0.0` to also publish a GitHub Release with both attached.
+
+Both builds run the app's self-test *inside the built app* before packaging.
+
+**First launch warnings (the apps aren't code-signed):**
+- *Windows:* SmartScreen → **More info → Run anyway**. Unzip anywhere and run `BigSkyHailWatch.exe`.
+- *macOS:* right-click the app → **Open**, or System Settings → Privacy & Security → **Open Anyway**.
+  The default runner builds for Apple Silicon Macs.
+
+Linux: run from source, or `python build.py` on a Linux machine.
+
+---
+
+## Ship an update (every time)
+
+```bash
+python ship.py "Fixed the alert list order"          # 1.0.0 -> 1.0.1
+python ship.py "Added territory reports" --minor     # -> 1.1.0
+```
+
+`ship.py` stops at the first problem: it runs the same self-test installed apps
+run, runs the full test suite, bumps `payload/manifest.json`, commits and pushes.
+Pushing without changing the version ships nothing — that's deliberate, so
+work-in-progress commits never reach crews.
+
+Claude Code or ChatGPT can make the change: `AGENTS.md` tells them how to test and ship.
+Work happens on a branch with a pull request; merging a version bump to `main` ships it.
+
+---
+
+## What updates itself vs. what needs a new installer
+
+| Change | Ships by itself? |
+|---|---|
+| Anything in `payload/` — screens, wording, rules, feeds, maps, database additions | **Yes** — bump the version and push |
+| New Python package (e.g. `shapely`) | **No** — rebuild installers; raise `min_shell` in the manifest and `SHELL_API` in `desktop/launcher.py` |
+| Anything in `desktop/` (window, updater, notifications) | **No** — rebuild installers |
+
+If you push a version that needs a newer installer, apps show **“A new desktop
+installer is needed”** with a download link instead of breaking.
+
+---
+
+## How updates stay safe
+
+1. **Checked:** the app reads `payload/manifest.json` at the newest commit; it only
+   considers a strictly higher version.
+2. **Tested before install:** it downloads that exact commit, then runs the new
+   version against a *copy* of your real database and opens every page listed in
+   the manifest. Any error (syntax, missing package, template, migration) → rejected
+   and skipped, with the reason under **App & updates**.
+3. **Installed with a backup:** the database is backed up before every install
+   (and daily; newest 14 kept). Each version lives in its own folder and is never
+   edited in place.
+4. **Swapped live:** **Update now** switches versions instantly — no restart. Or it
+   installs the next time the app opens.
+5. **Rolled back automatically** if a version fails to start; **manually** from
+   **App & updates** or the window menu. A rolled-back version is skipped until a
+   newer number ships.
+6. **Recovery screen:** if a page crashes, you get a one-click roll back instead of
+   an error page.
+
+Database rule for app code: only *add* migrations at the end of
+`payload/store.py → MIGRATIONS`; never edit shipped ones.
+
+---
+
+## Data feeds: live, demo, needs a subscription
+
+Verified working 2026-10-11. The **Data sources** screen shows each feed's
+status, data time and last check, plus the full feed contracts (units, timing,
+cadence, missing-value rules).
+
+| Feed | Status | Notes |
+|---|---|---|
+| NWS official alerts (Montana) | **Live** | Every 60 s in the background. Matched by warning polygon, otherwise by the place's NWS forecast zone / county / fire zone. Updates and cancellations reconciled; kept on screen through outages; backfilled after a gap. |
+| NWS forecasts per job (hourly, gridpoint gusts/rain/WBGT, 7-day) | **Live** | Fetched when Crew Outlook opens; NWS caching honored. |
+| NOAA NEXRAD radar mosaic | **Live** | WMS layer `1`; frame valid time shown separately from retrieval time. Precipitation echoes, not hail size. |
+| SPC preliminary hail & wind reports | **Live** | 12:00–11:59 UTC reporting days; `175` = 1.75″; `UNK` wind stays unknown. |
+| Address / city / ZIP search | **Live** | U.S. Census geocoder (addresses), OpenStreetMap (cities, ZIPs). |
+| Base map | **Live** | USGS The National Map (public domain). |
+| Estimated hail footprint | **Demo** (off by default) | Fictional shapes, shown only under “Demo event” and labelled Demo everywhere. A GeoJSON slot is ready for a real source. |
+| MRMS MESH estimated hail | Not connected | Free, but published as GRIB2 grids — needs a processing job, then point the GeoJSON setting at it. |
+| SPC outlooks (Conditional Intensity), ProbSevere v3, LightningCast | Trial candidates | Listed, not built — per the review, evaluate first. |
+| Xweather, The Weather Company HailZone, Verisk, Cotality | Needs subscription | Trial shortlist, not a ranking. No accounts or purchases made. |
+| NOAA NCEI Storm Events | Not connected | Historical context, later. |
+
+---
+
+## The screens
+
+- **Live Storms (home)** — in the review's order: active alerts (who each applies to,
+  and how it was matched), today's jobs needing review, tomorrow's scheduling
+  conflicts, inspection candidates, storm matches. Map layers and data freshness
+  sit behind a details panel. Search an address or ZIP and save it as a job or
+  property. Draw a territory or a crew-observed hail area. Log crew inspection
+  findings (kept separate from weather data).
+- **Storm History** — pick an SPC reporting day; see reports on a map and table;
+  every property gets a tier and the reasons in words; add selected ones as
+  inspection candidates. No reports ≠ no hail, and it says so.
+- **Inspections** — candidates with status (not contacted → scheduled → inspected →
+  completed), assigned rep, notes, the evidence captured at the time, a printable
+  exposure summary, and CSV export. Never “confirmed damage.”
+- **Crew Outlook** — per job: phase, roof system and exact product, work hours and
+  time to dry-in, required site checks, and job-specific limits on top of company
+  rules. Hourly status (“Forecast meets configured conditions” / “Weather review
+  needed” / “Data unavailable”) with the reasons, whether a long-enough window
+  exists, forecast WBGT and heat index, rain amounts, 7-day view, supervisor review
+  and crew acknowledgement.
+- **Places** — jobs, properties, territories, and each place's NWS zones.
+- **Data sources** — feed status, trial candidates, settings, feed contracts.
+- **App & updates** — version, update status, update source, roll back, data folder.
+
+The only hand-written JavaScript is a ~20-line bridge (in `live.html`) that passes
+map clicks and drawn shapes to Python and refreshes radar tiles. Everything else
+is Python (Flask, Folium, SQLite).
+
+---
+
+## Your data and backups
+
+| OS | Data folder |
+|---|---|
+| Windows | `%LOCALAPPDATA%\BigSkyHailWatch` |
+| macOS | `~/Library/Application Support/BigSkyHailWatch` |
+| Linux | `~/.local/share/BigSkyHailWatch` |
+
+Inside: `hailwatch.db` (your data), `backups/`, `versions/`, `logs/hailwatch.log`,
+`settings.json`. **App & updates → Open data folder** opens it.
+
+**Bringing data from the earlier web version:** quit the app, copy that version's
+`hailwatch.db` into the data folder, start the app. It upgrades the file in place
+(old reports become crew inspection findings; old outlines become crew-observed areas).
+
+---
+
+## Handoff and review status
+
+**Independent review P0s (before any production claim):**
+- Alert geography — polygon, else county / forecast zone / fire zone; missing
+  polygon is never “no alert”; can't-tell is shown as can't-tell. Tested.
+- Lifecycle — updates, cancellations, out-of-order delivery, duplicates, outages,
+  history backfill after a gap. 240 generated scenarios + a busy-day replay with a
+  30-minute outage. Tested.
+- “Better forecasting” claim — **not made.** Evaluation (company practice + NWS vs.
+  deterministic job rules vs. extra feeds) is the next step; the app already keeps
+  decision-time records to support it (candidate evidence snapshots, outlook
+  change log, supervisor reviews with the outlook at the time).
+
+**Handoff acceptance checks** (all automated in `tests/`): 175 → 1.75 in; unknown
+wind stays unknown; UTC/local midnight and daylight-saving dates; warning
+update/cancel reconciliation; feed failures show stale/unavailable; estimates and
+reports stay distinct; no report is not an all-clear; repeated ingestion makes no
+duplicate candidates or notifications; no “confirmed damage” wording; exports keep
+sources, legend and timestamps; demo data never shown as live.
+
+**Not done yet:** advanced guidance feeds and vendor trials (shadow mode first),
+the evaluation harness with held-out storm days, phone notifications, the MRMS
+processing job, NCEI history, release-gate load tests at regional scale.
+
+---
+
+## Tests
+
+```bash
+python desktop/launcher.py --selftest payload   # what installed apps run before accepting an update
+python -m unittest discover -s tests -v          # 44 tests, offline, ~5 s
+```
+
+- `tests/test_weather.py` — handoff acceptance checks, alert geography, outlook rules, targeting, exports, wording.
+- `tests/test_alert_scenarios.py` — 240 geography × lifecycle × message-order scenarios; outage replay with backfill.
+- `tests/test_updates.py` — the whole update channel against a fake GitHub: apply without restart, broken
+  update rejected, needs-new-installer, startup failure rolled back, manual rollback and skip, rate limit,
+  private repo token, unchanged-check caching, zip path traversal, the local server's key/host checks and recovery page.
+
+GitHub runs both on every push (**Actions → Check the app**).
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause / fix |
+|---|---|
+| Radar is empty | Clear skies — no echoes to draw. **Data sources** shows the radar frame time; if it says stale/unavailable, NOAA's service is down. |
+| “Update check failed” | Read the message under **App & updates**: offline, GitHub's hourly limit (add a token), wrong repo name, or a private repo without a token. |
+| An update was “skipped” | It failed its self-test on your data; the reason is in the update history. Fix, bump the version, ship again. |
+| Window doesn't open (Windows) | Install Microsoft Edge WebView2 Runtime; meanwhile the app opens in your browser. |
+| “This page only opens inside the app” | You opened the local address in a browser tab. Use the app window. |
+| Anything else | `logs/hailwatch.log` in the data folder. |
+
+---
+
+## Security notes
+
+- The app runs a private local server bound to `127.0.0.1`. Each launch creates a
+  one-time key that only the app's window receives; other programs and websites
+  get “403”. Requests with a wrong host name are refused.
+- Updates are trusted from your GitHub repo — protect that account with two-factor
+  sign-in. Downloads are checked for path tricks and size before anything is installed.
+- A token entered under **Update source** is stored in `settings.json` in your data folder.
+- Desktop notifications pass text through environment variables, never through a shell command line.
+
+---
+
+## Known limits
+
+- Windows and macOS builds are produced by GitHub Actions and haven't been run on
+  a real Windows PC or Mac yet; desktop notifications on those systems are untested.
+  The Linux build, the native window (Qt), and a full update cycle inside the frozen app were tested.
+- Unsigned installers trigger the first-launch warnings above.
+- Real hail-size footprints need MRMS processing or a licensed provider.
+- Alerts reach you through the desktop app while it's open; there's no phone delivery yet.
+- Address precision is not weather precision: reports are points, grids are ~1–2.5 km, and nothing here measures a specific roof.
+
+---
+
+## Renaming
+
+Change the name in `payload/templates/base.html` (header) and `APP_NAME` in
+`desktop/launcher.py`, then ship. Changing `APP_ID` moves the data folder, so
+leave it unless you're starting fresh.
+
+---
+
+## Project layout
+
+```
+AGENTS.md                rules for AI agents (ChatGPT/Codex read it; CLAUDE.md imports it for Claude Code)
+docs/handoff/            the weather module spec and the independent review
+docs/DECISIONS.md        why things are built this way, bugs already fixed
+docs/ROADMAP.md          status, next steps, open questions
+payload/                 ← the app; updates itself from GitHub
+  manifest.json          version, min_shell, release notes, self-test pages
+  app.py                 screens and routes (Flask)
+  weather.py             feed adapters, evidence model, alert matching, rules, targeting, feed contracts
+  store.py               SQLite schema (append-only migrations)
+  maps.py                Folium maps and the printable exposure map
+  templates/             pages
+  fixtures/              the fictional demo hail footprint
+desktop/                 ← the desktop app shell; changes only with a new installer
+  launcher.py            window, local server, menu, notifications, recovery screen
+  updater.py             GitHub checks, self-test, install, backups, rollback
+  update_config.json     default update source (filled in by the GitHub build)
+tests/                   acceptance, alert scenarios, update channel
+assets/                  app icons
+build.py                 builds the installer folder (PyInstaller)
+ship.py                  test → bump version → commit → push
+.github/workflows/       Check the app (every push) · Build desktop installers
+```

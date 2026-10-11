@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Save this shape — Big Sky Hail Watch{% endblock %}
+{% block style %}
+<style>
+  .choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+  .choice label{display:block;cursor:pointer}
+  .vh{position:absolute;opacity:0;pointer-events:none}
+  .choice .box{display:block;border:1px solid var(--hairline);border-radius:10px;padding:12px;background:var(--storm-900);height:100%}
+  .choice .box b{display:block;margin-bottom:4px}
+  .choice .box span{font-size:12px;color:var(--muted);line-height:1.45}
+  #k-terr:checked ~ .choice label[for=k-terr] .box, #k-area:checked ~ .choice label[for=k-area] .box{border-color:var(--wheat);background:var(--storm-700)}
+  #k-terr:focus-visible ~ .choice label[for=k-terr] .box, #k-area:focus-visible ~ .choice label[for=k-area] .box{outline:2px solid var(--wheat)}
+  .only-area{display:none}
+  #k-area:checked ~ .only-area{display:block}
+</style>
+{% endblock %}
+{% block content %}
+<main class="doc" style="max-width:620px">
+  <a class="back" href="{{ url_for('live') }}">← Back to the map without saving</a>
+  <h2>Save this shape</h2>
+  <p class="sub">{{ points }} points traced · about {{ '%.2f'|format(area) }} square miles</p>
+  {% if error %}<div class="note error">{{ error }}</div>{% endif %}
+  <form class="card" method="post" action="{{ url_for('save_shape') }}">
+    <input type="hidden" name="geojson" value="{{ geojson }}">
+    <span class="f">What is it?</span>
+    <input type="radio" name="kind" value="territory" id="k-terr" class="vh" {{ 'checked' if kind != 'area' }}>
+    <input type="radio" name="kind" value="area" id="k-area" class="vh" {{ 'checked' if kind == 'area' }}>
+    <div class="choice">
+      <label for="k-terr"><span class="box"><b>Service territory</b><span>An area you cover. Alerts and hail reports that touch it show up as storm matches.</span></span></label>
+      <label for="k-area"><span class="box"><b>Crew-observed hail area</b><span>Blocks your crew confirmed were hit. Saved as inspection evidence, separate from weather data.</span></span></label>
+    </div>
+    <label class="f" for="name">Name</label>
+    <input id="name" name="name" type="text" value="{{ name or '' }}" placeholder="Billings West branch · or · Linda Vista golf-ball area" autofocus>
+    <div class="only-area">
+      <span class="f">Hail size your crew observed</span>
+      <div class="sizes" role="radiogroup" aria-label="Hail size">
+        {% for s in sizes %}<label class="size-opt"><input type="radio" name="size_class" value="{{ s.key }}" {% if s.key == 'penny' %}checked{% endif %}><span class="tile"><span class="sw" style="background:{{ s.color }}"></span><span class="in">{{ s.ref }}</span><span class="nm">{{ s.label }}</span></span></label>{% endfor %}
+      </div>
+      <label class="f" for="size_exact">Or measured diameter, inches</label>
+      <input id="size_exact" name="size_exact" type="number" step="0.05" min="0.1" max="8" placeholder="e.g. 1.75">
+    </div>
+    <div class="row2" style="margin-top:4px">
+      <button class="btn primary" type="submit" name="action" value="save">Save</button>
+      <button class="btn" type="submit" name="action" value="discard" formnovalidate>Discard</button>
+    </div>
+  </form>
+</main>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Inspections — Big Sky Hail Watch{% endblock %}
+{% block style %}
+<style>
+  main.doc{max-width:1240px}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+  .filters a{font-size:12px;padding:7px 11px;border:1px solid var(--hairline);border-radius:20px;color:var(--bigsky);text-decoration:none;background:var(--storm-700)}
+  .filters a.on{border-color:var(--wheat);color:var(--wheat)}
+  .cand{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,1fr);gap:16px;background:var(--granite);border:1px solid var(--hairline);border-radius:12px;padding:14px;margin-bottom:12px}
+  .cand h3{margin:0 0 4px;font-size:17px;text-transform:none;letter-spacing:.2px}
+  .cand .m{color:var(--muted);font-size:12px;margin-bottom:8px}
+  .reasons{margin:0 0 8px;padding-left:18px;line-height:1.5;font-size:12.5px}
+  .ev{font-size:11.5px;color:var(--muted);border-top:1px solid var(--hairline);padding-top:8px;line-height:1.55}
+  .ev b{color:var(--bigsky);font-weight:600}
+  .tier{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid var(--hairline);margin-left:6px}
+  .tier-1{color:#20160a;background:var(--wheat);border-color:var(--wheat)} .tier-2{color:var(--wheat);border-color:var(--wheat-dim)}
+  @media (max-width:860px){.cand{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+<main class="doc">
+  <h2>Inspection candidates</h2>
+  <p class="sub">Properties near weather evidence from a storm. A candidate is a reason to look, not confirmed damage —
+    inspection results stay separate from the weather evidence that put a property here.</p>
+  {% if note %}<div class="note {{ note.tone }}" role="status">{{ note.text }}</div>{% endif %}
+
+  <div class="filters">
+    <a href="{{ url_for('candidates') }}" class="{{ 'on' if not status }}">All ({{ counts.values()|sum }})</a>
+    {% for key, label in statuses %}<a href="{{ url_for('candidates', status=key) }}" class="{{ 'on' if status == key }}">{{ label }} ({{ counts[key] }})</a>{% endfor %}
+    <form class="inline" method="post" action="{{ url_for('export_candidates') }}" style="margin-left:auto"><button class="btn inline" type="submit">Export CSV</button></form>
+  </div>
+
+  {% for c in rows %}
+  <div class="cand">
+    <div>
+      <h3>{{ c.place_name }}{% if c.tier %}<span class="tier tier-{{ c.tier }}">Tier {{ c.tier }}</span>{% endif %}
+        {% if c.demo %}<span class="state state-demo">Demo</span>{% endif %}</h3>
+      <div class="m">{{ 'Job' if c.place_kind == 'job' else 'Property' }} · {{ c.place_address or ('%.5f, %.5f'|format(c.place_lat, c.place_lng)) }} · {{ c.event_label }}</div>
+      <ul class="reasons">{% for r in c.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+      <div class="ev">
+        {% for e in c.evidence.evidence %}
+        <div><b>{{ 'DEMO · ' if e.demo }}{{ {'radar_estimate': 'Estimated (radar)', 'point_report': 'Reported', 'official_alert': 'Official alert', 'inspection': 'Inspection-confirmed'}.get(e.kind, e.kind) }}</b>
+          · {{ e.provider }} · {% if e.magnitude is not none %}{{ e.magnitude }} {{ e.unit or '' }}{% else %}size unknown{% endif %}
+          {% if e.valid_from %}· {{ e.valid_from|local(c.place_tz) }}{% endif %}{% if e.label %} · {{ e.label }}{% endif %}</div>
+        {% else %}<div>No weather evidence within your search radius at the time this was added.</div>{% endfor %}
+        <div style="margin-top:4px">Evidence captured {{ c.evidence.assessed_at|local(c.place_tz) }}. <a href="{{ url_for('candidate_summary', cid=c.id) }}">Exposure summary</a></div>
+      </div>
+    </div>
+    <form method="post" action="{{ url_for('update_candidate', cid=c.id, status=status) }}">
+      <div class="row2">
+        <div><label class="f" for="st{{ c.id }}">Status</label>
+          <select id="st{{ c.id }}" name="status">{% for key, label in statuses %}<option value="{{ key }}" {{ 'selected' if c.status == key }}>{{ label }}</option>{% endfor %}</select></div>
+        <div><label class="f" for="rep{{ c.id }}">Assigned rep</label><input id="rep{{ c.id }}" name="rep" type="text" value="{{ c.rep or '' }}"></div>
+      </div>
+      <label class="f" for="nt{{ c.id }}">Inspection notes</label>
+      <textarea id="nt{{ c.id }}" name="notes" placeholder="Contact attempts, appointment, what was found on site…">{{ c.notes or '' }}</textarea>
+      <div class="btnrow">
+        <button class="btn primary" type="submit">Save</button>
+        <a class="btn" href="{{ url_for('candidate_summary', cid=c.id) }}">Exposure summary</a>
+      </div>
+    </form>
+    <form method="post" action="{{ url_for('delete_candidate', cid=c.id) }}" style="grid-column:1/-1;margin:0"><button class="del" type="submit">Remove from list</button></form>
+  </div>
+  {% else %}
+  <div class="card empty"><h3>No inspection candidates{{ ' with this status' if status }}</h3>
+    <p>Open <a href="{{ url_for('history') }}">Storm History</a>, pick a storm day, and add the properties that warrant a look.</p></div>
+  {% endfor %}
+</main>
+{% endblock %}
