@@ -1,8 +1,9 @@
 # Roadmap
 
 Status on 2026-10-11: payload 1.0.0, desktop shell 1.0.0. Branches: `claude/desktop-app` (the app,
-pull request #1); `codex/kansas-city-weather-pilot` (ChatGPT's pilot — reviewed in D23, not merged;
-its usable parts are items 5 and 7 below). Agents: check this file before starting,
+merged as pull request #1); `codex/kansas-city-weather-pilot` and `codex/montana-weather-pilot`
+(ChatGPT's pilots — reviewed in D23 and D25, not merged; their findings are in items 2, 5, 6 and 7
+below). Agents: check this file before starting,
 move items to Done when merged, and keep “Next” in priority order.
 
 ## Bottom line
@@ -61,6 +62,9 @@ move items to Done when merged, and keep “Next” in priority order.
    Then decide on code signing (Windows certificate; Apple Developer ID + notarization).
 2. **Pilot.** One service territory, one roof-system family, the company's real rules for that
    product, real jobs. Record what crews change or ignore.
+   Site plan (D25): pick pilot jobs across western valleys, central towns, the south-central
+   gap-wind corridor, the northern and eastern plains, rural basins and the Front, and one pass or
+   border point, so the baseline (3) sees every Montana terrain type.
 3. **Evaluation baseline (review P0).** Predeclare metrics — weather misses/false alarms/lead time,
    review time, interruptions per 100 job-days, findings per crew-hour. Arms: A) company practice +
    NWS, B) + job rules, C) + extra feeds. Event/date held-out splits; decision-time data only (the app
@@ -71,13 +75,18 @@ move items to Done when merged, and keep “Next” in priority order.
    server — publishing GeoJSON for the app's footprint setting, which keeps GRIB libraries out of the
    desktop app. Option B: a commercial trial in shadow mode. Check against a known event, e.g. SPC
    2025-06-15 (Benchland, 1.75″).
-5. **Nearby station observations.** A feed for the `station_observation` evidence kind: the nearest
-   NWS stations with distance, observation time, age and the native QC flag beside each value
-   (`X` withheld; `V`, `S`, `C`, `Z` shown with their flag). From ChatGPT's Kansas City prototype,
-   see D23. After the baseline (3), like any new feed.
+5. **Nearby station observations.** A feed for the `station_observation` evidence kind (D23, D25):
+   the nearest NWS stations, never filtered by state, with distance, station elevation, observation
+   time and age. "Current" means about 75 minutes old or less (stations report hourly); older values
+   show as stale, never hidden. Each value carries its native QC flag — `X` withheld, `V`, `S`, `C`,
+   `Z` shown. A null gust shows "no gust reported", not "unavailable". Display in °F and mph, native
+   units kept (D15). Grid elevation shown beside the forecast; job elevation unknown unless recorded.
+   ChatGPT's 16-point Montana sweep is the first fixture. After the baseline (3), like any new feed.
 6. **Advanced guidance trials in shadow mode.** SPC outlooks with Conditional Intensity Groups,
    ProbSevere v3, LightningCast (a prediction) kept separate from observed lightning. A low score
    never suppresses an official warning.
+   Also the Billings office's gap-wind probability charts for the Livingston–Big Timber–Harlowton
+   corridor (a PDF, not a feed; D25).
 7. **Vendor comparison.** Xweather (live; `/hail/archive` from 2024-01-01; published pay-as-you-go
    pricing with a 12× hail multiplier), The Weather Company HailZone, Verisk, Cotality — use the
    review's procurement questions and model cost with territory sharing and caching.

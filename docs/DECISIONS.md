@@ -231,6 +231,57 @@ with places and territories is small, matches how alerts are matched anyway, and
 market the moment a place is saved there. *When:* its own small PR after PR #1 merges and the
 installers are on real machines; before the pilot adds border places.
 
+**D25 · ChatGPT's Montana pilot branch — findings that change the plan (2026-10-11).** Branch
+`codex/montana-weather-pilot` extends the Kansas City prototype to Montana (territory selector, 13
+town pins, station and grid elevation shown, time-zone fallback) and merges `main`, so it was written
+with the app and these docs in view. It merges cleanly and touches nothing outside `research/` and
+`skills/`; it would take the repo from 0.75 MB to 2.9 MB. Its 21 backend tests and 35 checker tests
+pass here. Its 16-point live sweep (13 towns plus rural, divide and border points) resolved all four
+Montana offices (BYZ, MSO, TFX, GGW) and America/Denver everywhere. D23's verdict stands: the
+prototype stays a research branch; the evidence below changes the plan.
+
+What the sweep showed, and what it changes:
+- **Station observations are hourly, so a 30-minute freshness limit fails most of Montana.** At
+  1:32 pm MDT, 35 of 48 station records were older than 30 minutes; four towns (Lewistown, Glasgow,
+  West Yellowstone, the rural eastern point) had no station inside the limit. The fresh ones were
+  airport ASOS stations reporting at about :55 each hour; the stale ones were RAWS and road-weather
+  sites reporting hourly or less, and even the Glasgow airport was past the limit. Roadmap item 5
+  uses a "current" limit of about 75 minutes (one hourly cycle plus the documented ingest delay),
+  always shows the age, and shows stale values as stale — never hidden.
+- **A missing gust usually means no gust to report, not a broken sensor.** Airport stations report
+  a gust only when the peak exceeds the sustained wind by a reporting threshold; nine of the ten
+  airports in the sweep returned a null gust beside a valid wind. Item 5 shows "no gust reported"
+  beside the sustained wind, and "unavailable" only when the whole observation is missing.
+- **Hiding non-V values hides real wind.** Arrow Creek Hill on I-90 reported a 30.6 km/h gust
+  flagged S (screened); the prototype withheld it as "QC review needed". Item 5 shows the value
+  with its flag (confirms D23).
+- **Elevation belongs beside each station.** Billings airport sits at 1,088 m and Arrow Creek Hill
+  at 1,196 m; in Montana a valley airport can misrepresent a bench or a pass. Item 5 shows station
+  elevation and the forecast-grid elevation, and marks the job's own elevation unknown unless the
+  job records it.
+- **The nearest stations cross state lines.** West Yellowstone's three nearest stations are all in
+  Wyoming (Old Faithful 30 km, Yellowstone Lake 48 km). Station lists are never filtered by state;
+  D24's alert areas come from zone codes, not station lists.
+- **Units.** The prototype shows °C and km/h; the app keeps D15 — °F and mph for display, native
+  units in the record.
+- **Validation strata for the pilot (roadmap 2–3).** ChatGPT's matrix is a sound site plan:
+  western valleys (Missoula, Kalispell); central (Great Falls, Helena, Bozeman); the south-central
+  gap-wind corridor (Billings, Livingston, Big Timber); northern and eastern plains (Glasgow, Havre,
+  Glendive, Miles City); rural basins and the Front (Libby, Seeley Lake, Browning); passes and
+  borders (Rogers, Lookout, Beartooth; state-line points).
+- **Billings-office gap-wind guidance.** The BYZ office publishes gap-wind probability charts for
+  the Livingston–Big Timber–Harlowton corridor (a PDF issued every few days, not a feed). A
+  candidate for roadmap item 6, not an integration.
+
+Not carried over, for D23's reasons: the prototype itself, its 1.6 MB of captures, screenshots and
+vendored Leaflet, and the skill. Its time-zone fallback to UTC for custom points is worse than the
+app's company-zone fallback (D16). Stale sandbox path: `/tmp/roofing-montana-sources`.
+
+*Why not merge the branch even though it merges cleanly:* every installed app downloads the repo
+zipball on each update (D6), the prototype duplicates the app, and one app in the repo is the
+point of D1. *Handoff:* ChatGPT's next job is roadmap item 5 in `payload/weather.py`, built to the
+rules above, with its sweep as the first test fixture.
+
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.
 - Folium camelizes keyword arguments (`_t` → `T`).
