@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Places — Big Sky Hail Watch{% endblock %}
+{% block content %}
+<main class="doc">
+  <h2>Places</h2>
+  <p class="sub">Jobs (where crews work — used in Crew Outlook) and properties (inspection targets — used in Storm History) are saved
+    separately. Territories are drawn on the Live Storms map with the polygon tool.</p>
+  {% if note %}<div class="note {{ note.tone }}" role="status">{{ note.text }}</div>{% endif %}
+
+  <div class="cards" style="margin-bottom:14px">
+    <section class="card">
+      <h3>Find an address</h3>
+      <form method="get" action="{{ url_for('places') }}" style="display:flex;gap:8px">
+        <input type="search" name="q" value="{{ q }}" placeholder="2400 Grand Ave, Billings, MT · or a ZIP" style="margin:0">
+        <button class="btn inline" type="submit">Search</button>
+      </form>
+      {% if q %}
+        {% if search_error %}<div class="note error" style="margin-top:10px">Search didn't work: {{ search_error }}.</div>
+        {% elif not results %}<div class="note warn" style="margin-top:10px">No match. Include the city and state, or try the ZIP.</div>{% endif %}
+        {% for r in results %}
+        <form method="post" action="{{ url_for('add_place') }}" style="border-top:1px solid var(--hairline);padding-top:10px;margin-top:10px">
+          <div style="font-weight:600">{{ r.label }}</div>
+          <div class="hint" style="margin:2px 0 8px">{{ r.source }} · precision: {{ r.precision }}{% if r.precision != 'address' %} — an area center, not an address point{% endif %}</div>
+          <input type="hidden" name="lat" value="{{ r.lat }}"><input type="hidden" name="lng" value="{{ r.lon }}">
+          <input type="hidden" name="address" value="{{ r.label }}"><input type="hidden" name="precision" value="{{ r.precision }}">
+          <input type="hidden" name="located_by" value="{{ r.source }}">
+          <label class="f" for="n{{ loop.index }}">Name</label>
+          <input id="n{{ loop.index }}" name="name" type="text" value="{{ r.label.split(',')[0] }}" required>
+          <div class="btnrow"><button class="btn primary" name="kind" value="job" type="submit">Save as job</button>
+            <button class="btn" name="kind" value="property" type="submit">Save as property</button></div>
+        </form>
+        {% endfor %}
+      {% endif %}
+    </section>
+    <section class="card">
+      <h3>Add by coordinates</h3>
+      <form method="post" action="{{ url_for('add_place') }}">
+        <label class="f" for="cname">Name</label><input id="cname" name="name" type="text" required>
+        <div class="row2">
+          <div><label class="f" for="clat">Latitude</label><input class="mono" id="clat" name="lat" type="number" step="0.00001" required></div>
+          <div><label class="f" for="clng">Longitude</label><input class="mono" id="clng" name="lng" type="number" step="0.00001" required></div>
+        </div>
+        <label class="f" for="caddr">Address (optional)</label><input id="caddr" name="address" type="text">
+        <input type="hidden" name="precision" value="typed"><input type="hidden" name="located_by" value="typed coordinates">
+        <div class="btnrow"><button class="btn primary" name="kind" value="job" type="submit">Save as job</button>
+          <button class="btn" name="kind" value="property" type="submit">Save as property</button></div>
+      </form>
+    </section>
+  </div>
+
+  {% for title, rows, kind in [('Jobs', jobs, 'job'), ('Properties', props, 'property')] %}
+  <section class="card" style="margin-bottom:14px">
+    <h3>{{ title }} ({{ rows|length }})</h3>
+    {% if rows %}
+    <div class="scrollx"><table class="tbl">
+      <tr><th>Name</th><th>Address / location</th><th>Located by</th><th>NWS zones (for alerts)</th><th>Time zone</th><th></th></tr>
+      {% for p in rows %}
+      <tr>
+        <td><b>{% if kind == 'job' %}<a href="{{ url_for('outlook_job', pid=p.id) }}">{{ p.name }}</a>{% else %}{{ p.name }}{% endif %}</b></td>
+        <td>{{ p.address or '' }}<div class="mono muted" style="font-size:11px">{{ '%.5f, %.5f'|format(p.lat, p.lng) }}</div></td>
+        <td class="muted" style="font-size:12px">{{ p.located_by }} · {{ p.precision }}</td>
+        <td class="mono" style="font-size:11.5px">{% if p.nws_zone or p.nws_county %}{{ p.nws_zone or '—' }} · {{ p.nws_county or '—' }}{% if p.nws_fire_zone %} · fire {{ p.nws_fire_zone }}{% endif %}{% else %}<span style="color:var(--wheat)">looking up…</span>{% endif %}</td>
+        <td class="muted" style="font-size:12px">{{ p.tz or '—' }}</td>
+        <td><form class="inline" method="post" action="{{ url_for('delete_place', pid=p.id) }}"><button class="del" type="submit">Delete</button></form></td>
+      </tr>
+      {% endfor %}
+    </table></div>
+    {% else %}<p class="hint" style="margin:0">None yet.</p>{% endif %}
+  </section>
+  {% endfor %}
+
+  <section class="card">
+    <h3>Service territories ({{ territories|length }})</h3>
+    {% for t in territories %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--hairline)">
+        <span>{{ t.name }}</span><form class="inline" method="post" action="{{ url_for('delete_territory', tid=t.id) }}"><button class="del" type="submit">Delete</button></form></div>
+    {% else %}<p class="hint" style="margin:0">Draw one on the <a href="{{ url_for('live') }}">Live Storms</a> map with the polygon or rectangle tool.</p>{% endfor %}
+  </section>
+</main>
+{% endblock %}
