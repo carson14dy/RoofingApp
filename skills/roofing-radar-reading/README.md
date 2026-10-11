@@ -1,8 +1,10 @@
-# Roofing radar and point-weather skill — 0.3.0
+# Roofing radar and point-weather skill — 0.4.0
 
 Start with [SKILL.md](SKILL.md). This package is a local companion for the Roofing App work with Claude; the installed cloud skill has not been replaced or automatically updated.
 
-This revision adds hazard-specific research, exact-coordinate query rules for current/forecast/historical modes, independent challenges, and a small reference checker for evidence metadata. It does not implement a running weather app or retrieve live readings for arbitrary map clicks.
+The Montana extension adds [terrain, elevation and statewide sampling rules](references/montana.md), with a [working regional map pilot](../../research/live-map/MONTANA.md).
+
+The underlying procedure includes hazard-specific research, exact-coordinate query rules for current/forecast/historical modes, independent challenges, and a small reference checker for evidence metadata. It does not implement a running weather app or retrieve live readings for arbitrary map clicks.
 
 An exact latitude/longitude can identify the question. The source still determines spatial resolution, sampling height, age, uncertainty and whether the reading is measured, reported, estimated or forecast. Nearby observations and grid values must retain their actual scope.
 

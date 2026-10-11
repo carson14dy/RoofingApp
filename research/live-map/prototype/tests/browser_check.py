@@ -2,9 +2,10 @@
 import argparse
 import asyncio
 import copy
+from datetime import datetime
 import json
 from pathlib import Path
-from urllib.parse import urlsplit, parse_qs
+from urllib.parse import urlsplit, urlunsplit, parse_qs, urlencode
 from playwright.async_api import async_playwright
 
 PILOT = Path(__file__).resolve().parents[2]
@@ -14,6 +15,10 @@ async def main(args):
     out = args.output_dir.resolve()
     out.mkdir(parents=True, exist_ok=True)
     source = json.loads(args.fixture.read_text())
+    base = urlsplit(args.base_url)
+    query = parse_qs(base.query)
+    query['region'] = ['kansas-city']
+    kansas_city_url = urlunsplit(base._replace(query=urlencode(query, doseq=True)))
     checks = []
     async with async_playwright() as p:
         launch_options = {'headless': True}
@@ -23,7 +28,7 @@ async def main(args):
         page = await browser.new_page(viewport={'width': 1440, 'height': 1100})
         errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))
-        await page.goto(args.base_url, wait_until='networkidle')
+        await page.goto(kansas_city_url, wait_until='networkidle')
         await page.wait_for_function("document.querySelectorAll('#current .card').length===3", timeout=60000)
         assert await page.locator('#forecast tr').count() > 1
         assert await page.locator('#map path').count() > 0
@@ -37,6 +42,7 @@ async def main(args):
 
         config = {'alert_failure': False, 'point_failure': False, 'race': False}
         page = await browser.new_page()
+        await page.clock.install(time=datetime.fromisoformat(source['generated_at'].replace('Z', '+00:00')))
         page.on('pageerror', lambda e: errors.append(str(e)))
         async def route_api(route):
             u = urlsplit(route.request.url)
@@ -67,7 +73,7 @@ async def main(args):
                     payload['current']['stations'][0]['name'] = name
             await route.fulfill(status=200, content_type='application/json', body=json.dumps(payload))
         await page.route('**/api/**', route_api)
-        await page.goto(args.base_url, wait_until='networkidle')
+        await page.goto(kansas_city_url, wait_until='networkidle')
         await page.wait_for_function("document.querySelector('#alerts').textContent.includes('Synthetic test warning')")
         assert 'QC review needed' in await page.locator('#current .card').first.inner_text()
         assert '24.0 °C' in await page.locator('#forecast').inner_text()

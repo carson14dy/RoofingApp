@@ -1,0 +1,34 @@
+{
+  "checks": [
+    {
+      "name": "real_kansas_city_map_observations_forecast",
+      "passed": true
+    },
+    {
+      "name": "mobile_no_horizontal_overflow",
+      "passed": true
+    },
+    {
+      "name": "station_qc_withheld_without_blocking_forecast_quantity",
+      "passed": true
+    },
+    {
+      "name": "browser_outage_retains_unverified_same_point_warning",
+      "passed": true
+    },
+    {
+      "name": "different_point_never_inherits_previous_warning",
+      "passed": true
+    },
+    {
+      "name": "reverse_order_click_responses_stay_on_latest_point",
+      "passed": true
+    },
+    {
+      "name": "history_uses_point_collection_start",
+      "passed": true
+    }
+  ],
+  "javascript_errors": [],
+  "scope": "One real integration display, layout, and synthetic failure/race checks; no meteorological accuracy benchmark."
+}

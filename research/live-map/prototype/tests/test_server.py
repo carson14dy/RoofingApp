@@ -8,6 +8,7 @@ import threading
 import unittest
 from urllib.error import URLError
 from urllib.request import urlopen
+from urllib.parse import parse_qs, urlsplit
 
 SPEC = importlib.util.spec_from_file_location("live_point_server", Path(__file__).resolve().parents[1] / "server.py")
 server = importlib.util.module_from_spec(SPEC)
@@ -48,6 +49,36 @@ class Fixtures:
 
     def service(self, archive=None):
         return server.WeatherService(server.SourceClient(self.fetch, self.clock), archive)
+
+
+class MontanaFixtures(Fixtures):
+    """Synthetic Montana responses, not a forecast-office boundary catalog."""
+    def __init__(self, point, office="TFX", grid_x=41, grid_y=57):
+        super().__init__()
+        self.point = point
+        self.office = office
+        self.grid_x, self.grid_y = grid_x, grid_y
+        self.timezone = "America/Denver"
+        self.alert_point = None
+        self.station_elevation = {"value": 2800, "unitCode": "wmoUnit:m"}
+        self.forecast_elevation = {"value": 1900, "unitCode": "wmoUnit:m"}
+
+    def fetch(self, url, timeout):
+        result = super().fetch(url, timeout)
+        if "/points/" in url:
+            grid = f"{self.office}/{self.grid_x},{self.grid_y}"
+            result["properties"].update(timeZone=self.timezone, gridId=self.office, gridX=self.grid_x, gridY=self.grid_y, forecastHourly=f"https://api.weather.gov/gridpoints/{grid}/forecast/hourly", observationStations=f"https://api.weather.gov/gridpoints/{grid}/stations")
+        elif "/alerts/active?" in url:
+            requested = parse_qs(urlsplit(url).query)["point"][0]
+            result["features"] = ([{"id": "synthetic-montana-alert", "geometry": None, "properties": {"event": "High Wind Warning", "affectedZones": ["https://api.weather.gov/zones/forecast/MTZ301"]}}] if requested == self.alert_point else [])
+        elif url.endswith("/forecast/hourly"):
+            result["properties"]["elevation"] = self.forecast_elevation
+            result["properties"]["periods"][0].update(startTime="2026-10-11T11:00:00-06:00", endTime="2026-10-11T12:00:00-06:00")
+        elif url.endswith("/stations"):
+            result["features"] = [{"id": "https://api.weather.gov/stations/SYNTHETIC_MT", "geometry": {"type": "Point", "coordinates": [self.point["longitude_deg"], self.point["latitude_deg"]]}, "properties": {"stationIdentifier": "SYNTHETIC_MT", "name": "Synthetic high elevation station"}}]
+        elif "/observations/latest" in url:
+            result["properties"]["elevation"] = self.station_elevation
+        return result
 
 
 class ServiceTests(unittest.TestCase):
@@ -192,15 +223,73 @@ class ServiceTests(unittest.TestCase):
         self.assertIsNone(health["last_point_query"])
         self.assertFalse(health["commercial_plugins_configured"])
 
+    def test_zero_distance_high_elevation_station_is_not_a_roof_measurement(self):
+        point = server.coordinates(45.7983, -110.9315)
+        fixture = MontanaFixtures(point)
+        result = fixture.service().point(point)
+        observation = result["current"]["stations"][0]
+        self.assertEqual(observation["distance_km"], 0)
+        self.assertEqual(observation["elevation"], fixture.station_elevation)
+        self.assertEqual(result["forecast"]["elevation"], fixture.forecast_elevation)
+        self.assertEqual(observation["evidence_kind"], "nearby_station_observation")
+        self.assertEqual(observation["representativeness"], "not_assessed")
+        self.assertEqual(observation["site_comparison"]["terrain"], "unknown")
+        self.assertEqual(observation["site_comparison"]["roof_exposure"], "unknown")
+        self.assertIsNone(observation["site_comparison"]["elevation_difference_m"])
+        self.assertEqual(observation["site_comparison"]["corrections_applied"], [])
+        self.assertIsNone(result["selected_point_elevation"]["value"])
+        self.assertEqual(result["selected_point_elevation"]["status"], "unknown")
+        self.assertEqual(observation["fields"]["temperature"]["value"], 0)
+
+    def test_montana_timezone_and_office_grid_follow_source_metadata(self):
+        point = server.coordinates(46.5958, -112.0270)
+        # Different source responses for one coordinate prove no hardcoded
+        # state-level office assignment is silently overriding the provider.
+        for office, grid_x, grid_y in [("TFX", 41, 57), ("MSO", 75, 18), ("BYZ", 23, 44), ("GGW", 83, 65)]:
+            with self.subTest(office=office):
+                fixture = MontanaFixtures(point, office, grid_x, grid_y)
+                result = fixture.service().point(point)
+                self.assertEqual(result["timezone"], "America/Denver")
+                self.assertEqual(result["grid"], {"office": office, "x": grid_x, "y": grid_y})
+                self.assertEqual(result["forecast"]["grid"]["office"], office)
+                self.assertIn(f"/gridpoints/{office}/{grid_x},{grid_y}/forecast/hourly", result["forecast"]["source_url"])
+                self.assertEqual(result["forecast"]["periods"][0]["startTime"], "2026-10-11T11:00:00-06:00")
+        fixture = MontanaFixtures(point)
+        fixture.timezone = None
+        self.assertIsNone(fixture.service().point(point)["timezone"])
+
+    def test_nearby_montana_pins_share_weather_grid_but_not_alerts_or_history(self):
+        first = server.coordinates(45.7983123, -110.9315123)
+        second = server.coordinates(45.7983124, -110.9315124)
+        fixture = MontanaFixtures(first)
+        fixture.alert_point = f'{first["latitude_deg"]},{first["longitude_deg"]}'
+        with tempfile.TemporaryDirectory() as directory:
+            archive = server.Archive(directory)
+            service = fixture.service(archive)
+            first_result = service.point(first)
+            second_result = service.point(second)
+            self.assertEqual(first_result["submitted_point"], second_result["submitted_point"])
+            self.assertEqual(len([url for url in fixture.calls if "/points/" in url]), 1)
+            self.assertEqual(len([url for url in fixture.calls if "/alerts/active?" in url]), 2)
+            self.assertEqual(first_result["alerts"]["features"][0]["id"], "synthetic-montana-alert")
+            self.assertEqual(second_result["alerts"]["features"], [])
+            first_history, second_history = archive.history(first), archive.history(second)
+            self.assertEqual(len(first_history["snapshots"]), 1)
+            self.assertEqual(len(second_history["snapshots"]), 1)
+            self.assertEqual(first_history["snapshots"][0]["selected_point"], first)
+            self.assertEqual(second_history["snapshots"][0]["selected_point"], second)
+            self.assertNotEqual(first_history["snapshots"][0]["snapshot_id"], second_history["snapshots"][0]["snapshot_id"])
+
     def test_static_vendor_is_served_and_repository_files_are_not(self):
         httpd = server.ThreadingHTTPServer(("127.0.0.1", 0), server.make_handler(self.service))
         thread = threading.Thread(target=httpd.serve_forever, daemon=True)
         thread.start()
         base = f"http://127.0.0.1:{httpd.server_address[1]}"
         try:
-            with urlopen(base + "/vendor/leaflet.js") as response:
-                self.assertEqual(response.status, 200)
-                self.assertIn("javascript", response.headers["Content-Type"])
+            for path in ("/vendor/leaflet.js", "/regions.js"):
+                with self.subTest(path=path), urlopen(base + path) as response:
+                    self.assertEqual(response.status, 200)
+                    self.assertIn("javascript", response.headers["Content-Type"])
             for path in ("/server.py", "/vendor/../server.py", "/vendor/%2e%2e/server.py"):
                 with self.subTest(path=path), self.assertRaises(server.HTTPError) as error:
                     urlopen(base + path)

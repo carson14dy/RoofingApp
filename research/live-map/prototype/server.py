@@ -261,6 +261,9 @@ class WeatherService:
                     fields[name]["raw_source_value"] = number if finite_number(number) else None
             record = {key: value for key, value in result.items() if key != "data"}
             record.update(station_id=station_props.get("stationIdentifier"), name=station_props.get("name"), location=source_point, distance_km=round(distance_km(point, source_point), 3), evidence_kind="nearby_station_observation", observed_at=props.get("timestamp"), text_description=props.get("textDescription"), elevation=props.get("elevation"), fields=fields, **self.freshness(props.get("timestamp"), self.policy["observation_max_age_seconds"]))
+            # Even coordinate equality does not establish station siting, height,
+            # terrain exposure, or representativeness for the selected roof.
+            record.update(representativeness="not_assessed", site_comparison={"terrain": "unknown", "roof_exposure": "unknown", "elevation_difference_m": None, "corrections_applied": []})
             if not props or not any(field["value_status"] == "available" for field in fields.values()):
                 record["status"] = "unavailable"
                 record.setdefault("error", "No usable numeric station observations returned")
@@ -273,7 +276,7 @@ class WeatherService:
         submitted = coordinates(round(point["latitude_deg"], 4), round(point["longitude_deg"], 4))
         point_url = f'https://api.weather.gov/points/{submitted["latitude_deg"]:.4f},{submitted["longitude_deg"]:.4f}'
         metadata = self.client.get(point_url, 86400)
-        base = {"submitted_point": submitted, "quantization_distance_m": round(distance_km(point, submitted) * 1000, 3), "source_url": point_url}
+        base = {"submitted_point": submitted, "quantization_distance_m": round(distance_km(point, submitted) * 1000, 3), "source_url": point_url, "selected_point_elevation": {"value": None, "unit": None, "status": "unknown", "source": None}}
         if metadata["status"] != "available":
             return {**base, "timezone": None, "current": {"status": "unavailable", "stations": [], "error": "Point metadata unavailable"}, "forecast": {"status": "unavailable", "periods": [], "error": metadata.get("error")}}
         props = mapping(metadata["data"].get("properties"))
@@ -389,7 +392,7 @@ def make_handler(service):
                     if not service.archive:
                         return self.send_json({"status": "archive_disabled", "selected_point": point, "snapshots": []})
                     return self.send_json(service.archive.history(point))
-                files = {"/": ("index.html", "text/html"), "/index.html": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/style.css": ("style.css", "text/css")}
+                files = {"/": ("index.html", "text/html"), "/index.html": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/regions.js": ("regions.js", "text/javascript"), "/style.css": ("style.css", "text/css")}
                 for filename, content_type in {"leaflet.js": "text/javascript", "leaflet.css": "text/css", "topojson-client.min.js": "text/javascript", "states-10m.json": "application/json", "leaflet-LICENSE": "text/plain", "topojson-LICENSE": "text/plain", "us-atlas-LICENSE": "text/plain", "us-atlas-README.md": "text/plain"}.items():
                     files["/vendor/" + filename] = ("vendor/" + filename, content_type)
                 if parsed.path not in files:

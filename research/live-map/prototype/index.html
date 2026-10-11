@@ -1,19 +1,22 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Roofing Weather · Kansas City pilot</title><link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Roofing Weather · Montana pilot</title><link rel="stylesheet" href="vendor/leaflet.css"><link rel="stylesheet" href="style.css"></head>
 <body>
-<header><div><span class="eyebrow">ROOFING WEATHER / FIELD RESEARCH</span><h1>Kansas City weather pilot</h1></div><span class="pill">NWS service prototype</span></header>
+<header><div><span class="eyebrow">ROOFING WEATHER / FIELD RESEARCH</span><h1 id="page-title">Montana weather pilot</h1></div><span class="pill">NWS service prototype</span></header>
 <main>
 <section class="map-column" aria-label="Select a weather location">
-<form id="coordinates"><label>Latitude<input id="latitude" type="number" step="any" min="-90" max="90" value="39.0997" required></label><label>Longitude<input id="longitude" type="number" step="any" min="-180" max="180" value="-94.5786" required></label><button type="submit">Inspect point</button></form>
+<div class="location-controls"><label for="territory">Territory<select id="territory"><option value="montana">Montana</option><option value="kansas-city">Kansas City</option></select></label><label for="sample-site">Town sample<select id="sample-site"><option value="billings">Billings</option></select></label><button id="view-territory" class="secondary" type="button">View territory</button></div>
+<form id="coordinates"><label>Latitude<input id="latitude" type="number" step="any" min="-90" max="90" value="45.7833" required></label><label>Longitude<input id="longitude" type="number" step="any" min="-180" max="180" value="-108.5007" required></label><button type="submit">Inspect point</button></form>
 <div id="map" aria-label="Interactive point selection map"></div>
 <div class="map-caption"><label><input id="street-map" type="checkbox"> Street basemap (OpenStreetMap)</label><span id="map-status">State outlines loaded locally; no street detail.</span></div>
-<p class="small">Starting pin: downtown Kansas City sample, not a property measurement. Click the map or enter coordinates. Weather source footprints can be much larger than the pin.</p>
-<div class="legend"><span class="dot selected"></span> Selected point <span class="dot station"></span> Reporting station <span class="dot grid"></span> Forecast grid</div>
+<p id="location-note" class="small">Town samples are public map reference points, not roof measurements. Choose a town, click anywhere on the map, or enter coordinates.</p>
+<div class="legend"><span class="dot selected"></span> Selected point <span class="dot sample"></span> Town sample <span class="dot station"></span> Reporting station <span class="dot grid"></span> Forecast grid</div>
+<p id="coverage-note" class="small">The statewide map is for navigation. Weather readings and alerts apply to the selected point only.</p>
+<p id="terrain-note" class="small">Terrain, elevation and station exposure can affect how nearby observations represent a Montana site.</p>
 <section class="provider-note"><h2>Connected evidence</h2><p>National Weather Service observations, hourly forecasts and official point alerts. Radar imagery, hail estimates, earlier weather archives and the four commercial providers are not connected.</p></section>
 </section>
 <section class="reading-column" aria-live="polite">
-<div class="reading-heading"><div><span class="eyebrow">SELECTED COORDINATE</span><h2 id="point-label">39.099700, −94.578600</h2></div><button id="refresh" class="secondary">Refresh</button></div>
+<div class="reading-heading"><div><span class="eyebrow">SELECTED COORDINATE</span><h2 id="point-label">45.783300, −108.500700</h2><p id="selected-name" class="small">Billings town sample</p></div><button id="refresh" class="secondary">Refresh</button></div>
 <p id="request-status" class="status">Connecting to NWS…</p>
 <section id="alerts" class="alert-box"><h3>Official alerts</h3><p>Checking separately from weather readings…</p></section>
 <nav class="tabs" aria-label="Weather time mode"><button data-tab="current" aria-selected="true">Current evidence</button><button data-tab="forecast" aria-selected="false">Forecast</button><button data-tab="history" aria-selected="false">Saved history</button></nav>
@@ -24,5 +27,5 @@
 </section>
 </main>
 <footer>Precise query location · Source-specific evidence · Uncertainty preserved<br><span>Research prototype. No roof-damage inference or work-clearance decision.</span></footer>
-<script src="vendor/leaflet.js"></script><script src="vendor/topojson-client.min.js"></script><script src="app.js"></script>
+<script src="vendor/leaflet.js"></script><script src="vendor/topojson-client.min.js"></script><script src="regions.js"></script><script src="app.js"></script>
 </body></html>

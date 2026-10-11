@@ -5,7 +5,7 @@ description: Interpret U.S. radar and point-weather evidence for roofing decisio
 
 # Roofing radar and point-weather reading
 
-Version 0.3.0 — 2026-10-11. Local companion to the installed roofing-weather-intelligence skill. This file improves the interpretation procedure; it does not retrain a model, install a weather feed, or establish forecast skill. The original handoff remains unchanged. Scope now includes methods for several weather hazards and exact-coordinate queries; nationwide meteorological accuracy remains unvalidated. Point precision does not imply weather precision.
+Version 0.4.0 — 2026-10-11. Local companion to the installed roofing-weather-intelligence skill. This file improves the interpretation procedure; it does not retrain a model, install a weather feed, or establish forecast skill. The original handoff remains unchanged. Scope now includes methods for several weather hazards and exact-coordinate queries; nationwide meteorological accuracy remains unvalidated. Point precision does not imply weather precision.
 
 Read [the radar procedure](references/radar-procedure.md) before analysis and [practice cases](references/practice-cases.md) when evaluating changes. Source-verification and evaluation status are recorded in [validation](references/validation.md).
 
@@ -17,6 +17,7 @@ Use the [evaluation protocol](references/evaluation-protocol.md) before claiming
 
 | Request | Required procedure |
 |---|---|
+| Montana, mountainous terrain and sparse-station queries | [Montana procedure](references/montana.md), source-specific elevation/exposure limits and the point-weather contract |
 | Any map click, current/forecast/history | [Point-weather contract](references/point-weather.md), plus [reading contract](references/reading-contract.md) |
 | Hail, rain intensity/amount, rain probability, flood relevance | [Hail and rain](references/hail-rain.md), with the radar procedure when radar is involved |
 | Wind, outflow, downburst, rotation, tornado | [Wind and tornado](references/wind-tornado.md), plus independent official warnings |

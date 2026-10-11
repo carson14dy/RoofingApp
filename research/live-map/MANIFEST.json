@@ -1,13 +1,21 @@
 {
-  "version": "Kansas City live-map prototype 0.1.0",
+  "version": "Montana and Kansas City live-map prototype 0.2.0",
   "files": [
     {
+      "path": "MONTANA.md",
+      "sha256": "64c28dec80c02d735e5f61fdb1930f97f9d9b2fcae9c3ffc4ea6c1b2dfd89110"
+    },
+    {
       "path": "README.md",
-      "sha256": "b6b1660451a79f66c29e0308d29b89e503774d7eeaf5148cad582099cfd8c962"
+      "sha256": "0a7131f6ffed7b4a1d3be740e5a99d6f6d80598131b9b80df97a3132813c2d2e"
     },
     {
       "path": "VALIDATION.md",
       "sha256": "44bb3becd2142396df916d7b4a1dd68443fd1397b4fda1329cc1a69c095452d1"
+    },
+    {
+      "path": "montana-research.md",
+      "sha256": "82866b140a2cf28b0e9c43e734b742ab61f47ee2e9394ca369fda5ad57ecf98b"
     },
     {
       "path": "prototype/THIRD_PARTY.md",
@@ -15,27 +23,39 @@
     },
     {
       "path": "prototype/app.js",
-      "sha256": "206a7818410fdf7fe20065e8626707695747b4ad5240e9b7de91b1a4346db6d6"
+      "sha256": "965b2fee7f8403c176136a99d75ded3d1a63a2157f599bc0b17534c8f1bcf88d"
     },
     {
       "path": "prototype/index.html",
-      "sha256": "8f0169cb670cefa25d559973d9f722c4469774735c131dfaa37d8dae3b230a15"
+      "sha256": "0ceda72ec86ee59915a010ce4cd22752abf30018cbd627b8c6cca1cb4ff0f670"
+    },
+    {
+      "path": "prototype/regions.js",
+      "sha256": "6f98a726e1bfdc8cd5100c088ae9418a81ae525d02e5c8c2914f7d4495f74d9f"
     },
     {
       "path": "prototype/server.py",
-      "sha256": "d3866150898475c7fc1549d17270da824f75940050a9d132e43ee3a7ff3557b0"
+      "sha256": "059f1c632fc6c959de4d1e41607d23d2f5f7714d0857c6c641e7ee0308100aab"
     },
     {
       "path": "prototype/style.css",
-      "sha256": "a8e4e02fd7bc5a3fa8f87e3f4a01cfe9af1bea16c4c2482dffaea3438c9d5abd"
+      "sha256": "1e79cbae59741696bb20168076e6dae18e93c511b196c4e4ed3e586a8e251e53"
     },
     {
       "path": "prototype/tests/browser_check.py",
-      "sha256": "288858f639a7f112623fb55494f2a72921404148f7454d55020694e41a3c5556"
+      "sha256": "a20ee591abe36bde2bd594b0c25785d5807020c6d48b9b8ceca24397f87a3571"
+    },
+    {
+      "path": "prototype/tests/browser_montana.py",
+      "sha256": "69830eb9a66047eaa2702a22df6a74d817cadc0518a4d0e81f3a18b72ab64f92"
+    },
+    {
+      "path": "prototype/tests/check_points.py",
+      "sha256": "f6c638d8963e29ef7d6998992e5fa34e297f4454cd6dd8feaa4e1034c1dbcdcf"
     },
     {
       "path": "prototype/tests/test_server.py",
-      "sha256": "f6aa8cd7a2be72c83934aba94f23dc823adc6745d4dc4fb0a726467bec955a0a"
+      "sha256": "00af443f178f5555de23d12aade64b2e3edbea0d8b29394c96c5a0f9d172c8ee"
     },
     {
       "path": "prototype/vendor/leaflet-LICENSE",
@@ -104,6 +124,30 @@
     {
       "path": "validation-evidence/kc_point_final.json",
       "sha256": "a6baa15adaab97a562e141238e9b33f32bbbb023e9a27dee440472d5190a8b00"
+    },
+    {
+      "path": "validation-evidence/montana/billings-point.json",
+      "sha256": "b640f22aa3b10620705e443b1abbbe37b623363fa931bdf5d2ee04b7ce8271bf"
+    },
+    {
+      "path": "validation-evidence/montana/browser-kansas-city-regression.json",
+      "sha256": "8f4672bf6ead1ea2b8ea96a2a7a9cecefb2df790029025de4f433e8331122269"
+    },
+    {
+      "path": "validation-evidence/montana/browser-montana.json",
+      "sha256": "6d055c92646beb5b62e43d502216583791a62cb070228e549b8a267c379b1ca0"
+    },
+    {
+      "path": "validation-evidence/montana/live-sweep.json",
+      "sha256": "4cc2ce5360b2fc7590744965d89dd2f8d925c63795df0eef8f673be46b548ee5"
+    },
+    {
+      "path": "validation-evidence/montana/montana-pilot.png",
+      "sha256": "cb6b32a9df67402ba97535ce6a022960127c7d7c71ac34bd3922d617810595f1"
+    },
+    {
+      "path": "validation-evidence/montana/sample-points.json",
+      "sha256": "c7a9d03e9326f764ae74418e7bc04a1cf2dec57323505fbf245c76936ab7907a"
     },
     {
       "path": "windborne-zoomradar.md",

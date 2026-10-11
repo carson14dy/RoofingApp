@@ -1,5 +1,7 @@
 # Validation and source status
 
+Version 0.4.0 adds the [Montana procedure](montana.md). The 35 synthetic contract tests passed again without changing the checker. Separate [Montana pilot validation](../../../research/live-map/MONTANA.md) records 21 backend tests, 17 browser checks and 16 sampled live point queries. These verify integration/evidence handling; no real-weather accuracy benchmark has run. The v0.3.0 record below is retained as the earlier research history.
+
 Version 0.3.0 — 2026-10-11. This is a researched, challenged working procedure and a synthetic metadata checker. It is not a running nationwide weather service, an empirical accuracy result, or broadcast certification.
 
 Subsequent integration work on the same date produced the separate [Kansas City NWS pilot](../../../research/live-map/README.md), with real endpoint access and browser checks. The blocked-access and unimplemented-service statements below describe this skill's earlier research phase; see the [pilot validation](../../../research/live-map/VALIDATION.md) for later results. This skill remains a reference procedure and checker.
