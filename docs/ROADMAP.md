@@ -1,6 +1,8 @@
 # Roadmap
 
-Status on 2026-10-11: payload 1.0.0, desktop shell 1.0.0. Agents: check this file before starting,
+Status on 2026-10-11: payload 1.0.0, desktop shell 1.0.0. Branches: `claude/desktop-app` (the app,
+pull request #1); `codex/kansas-city-weather-pilot` (ChatGPT's pilot — reviewed in D23, not merged;
+its usable parts are items 5 and 7 below). Agents: check this file before starting,
 move items to Done when merged, and keep “Next” in priority order.
 
 ## Bottom line
@@ -68,21 +70,31 @@ move items to Done when merged, and keep “Next” in priority order.
    server — publishing GeoJSON for the app's footprint setting, which keeps GRIB libraries out of the
    desktop app. Option B: a commercial trial in shadow mode. Check against a known event, e.g. SPC
    2025-06-15 (Benchland, 1.75″).
-5. **Advanced guidance trials in shadow mode.** SPC outlooks with Conditional Intensity Groups,
+5. **Nearby station observations.** A feed for the `station_observation` evidence kind: the nearest
+   NWS stations with distance, observation time, age and the native QC flag beside each value
+   (`X` withheld; `V`, `S`, `C`, `Z` shown with their flag). From ChatGPT's Kansas City prototype,
+   see D23. After the baseline (3), like any new feed.
+6. **Advanced guidance trials in shadow mode.** SPC outlooks with Conditional Intensity Groups,
    ProbSevere v3, LightningCast (a prediction) kept separate from observed lightning. A low score
    never suppresses an official warning.
-6. **Vendor comparison.** Xweather (live; `/hail/archive` from 2024-01-01; published pay-as-you-go
+7. **Vendor comparison.** Xweather (live; `/hail/archive` from 2024-01-01; published pay-as-you-go
    pricing with a 12× hail multiplier), The Weather Company HailZone, Verisk, Cotality — use the
    review's procurement questions and model cost with territory sharing and caching.
-7. **Alerts when the app is closed.** Phone/SMS/email delivery needs a small always-on service;
+   ChatGPT's plugins (AccuWeather, Weather by WindBorne, Zoom Radar Weather, Tomorrow.io) are
+   candidates only: chat-plugin access is not app API access, and ChatGPT's research retrieved no
+   documentation for any of them (D23).
+8. **Alerts when the app is closed.** Phone/SMS/email delivery needs a small always-on service;
    measure the p95 gate.
-8. **History.** Date ranges and multi-day events in Storm History; NCEI Storm Events for older context.
-9. **Beyond Montana.** Alerts poll `area=MT`; expanding means an area list and an updated coverage
+9. **History.** Date ranges and multi-day events in Storm History; NCEI Storm Events for older context.
+10. **Beyond Montana.** Alerts poll `area=MT`; expanding means an area list and an updated coverage
    matrix (`weather.COVERAGE`).
-10. **Shared data.** Each computer has its own database. Office and crews sharing jobs and candidates
+11. **Shared data.** Each computer has its own database. Office and crews sharing jobs and candidates
     needs a server or sync — decide before building.
 
 ## Open questions for Carson
+- **Kansas City or Montana?** ChatGPT's pilot branch targets downtown Kansas City; the app, its
+  alert poll (`area=MT`) and the coverage matrix target Montana. Second territory, test site or
+  mix-up? (See D23 and item 10, Beyond Montana.)
 - **Product name.** “Big Sky Hail Watch” is a placeholder. The claude.ai project is called “Hail Trace
   2.0”, and HailTrace is an existing hail-mapping service sold to roofers — check trademarks before
   using a similar name.

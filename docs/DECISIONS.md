@@ -149,6 +149,55 @@ holds the shared agent rules (read directly by ChatGPT/Codex); `CLAUDE.md` impor
 `@AGENTS.md` for Claude Code. Work happens on branches with pull requests; CI (“Check the app”)
 runs the self-test and tests on every pull request and every push to `main`.
 
+**D23 · ChatGPT's Kansas City pilot branch — what carries over (2026-10-11).** Branch
+`codex/kansas-city-weather-pilot` (one commit, 53 files, 1.5 MB) was written from the initial commit
+without the app, `AGENTS.md` or these docs. It holds a standard-library NWS point prototype for
+downtown Kansas City (Python server, 37 lines of minified JavaScript, vendored Leaflet, light theme,
+no session key); research notes on four ChatGPT weather plugins (AccuWeather, Weather by WindBorne,
+Zoom Radar Weather, Tomorrow.io) in which every documentation request was blocked and nothing was
+verified; and `skills/roofing-radar-reading`, a procedure for a language model to interpret radar,
+with a synthetic metadata checker. Its 18 prototype tests and 35 checker tests pass. Its evidence
+rules agree with D10–D12 and D16–D17.
+
+Carried over (roadmap items, not merged code):
+- **Nearby station observations.** The `station_observation` evidence kind (D12) has no feed; the
+  prototype shows the value: the nearest NWS stations with distance, observation time and age. When
+  built: `/stations/{id}/observations/latest`, the native MADIS `qualityControl` flag shown beside
+  each value; `X` (rejected) withheld and kept raw; `V` (verified), `S` (screened), `C` (coarse pass)
+  and `Z` (no QC yet) shown with their flag, not hidden. The prototype hides everything but `V`,
+  which left wind “Unavailable” at the downtown airport in its own screenshot.
+- **NWS facts** from documentation ChatGPT retrieved (API, alerts and geolocation guide): `/points`
+  accepts four decimals (≤ 7 m quantization — disclose it); forecast grids are ~2.5 km; observations
+  can lag ~20 min behind MADIS QC; poll alerts no more often than every 30 s; `/alerts` history is
+  ~7 days; `/radar` routes return status, not imagery; PoP is the chance of ≥ 0.01 in of liquid in
+  the period. The app's 60 s alert poll and D7 radar source comply.
+- **Chat-plugin access is not app access.** A ChatGPT plugin subscription grants no server API,
+  bulk queries, storage or redistribution rights. The four providers join D21's candidate list as
+  unverified.
+- **Test cases** to port with station observations: adjacent roofs sharing a grid cell; nearest
+  station across terrain; a 20-minute-old observation beside a forecast valid now; a stale local
+  tile under a fresh mosaic header.
+
+Not carried over, and why:
+- The TypeScript/Next.js/MapLibre/PostGIS service design — D1. The branch's own stdlib server shows
+  the Python path works.
+- The prototype as a second app. It duplicates the point lookup, hourly forecast and point-alert
+  code in `weather.py` (`outlook()` already calls `/alerts/active?point=`), uses undocumented
+  minified JavaScript (rule 4), has no session key or Host check (D2), and shows alert times in UTC
+  beside local times. Its “Saved history” tab is query snapshots, not storm history.
+- 1.3 MB of response captures, a screenshot and vendored Leaflet in git. Folium bundles Leaflet;
+  every installed app downloads the repo zipball on each update (D6), so research artifacts cost
+  every crew machine bandwidth without reaching the payload.
+- The radar-reading skill inside the app — rule 6 and the release gate (≥ 500 adversarial AI
+  summaries before any AI text). It stays an agent-side reference; its content mostly restates
+  D10–D17 at five times the length.
+- Replacing the repo README with a Kansas City section (`.gitignore` can be unioned). Statements in
+  the skill docs that `api.weather.gov` was blocked, and ChatGPT sandbox paths
+  (`/workspace/live-map-evidence`, `/tmp/roofing-wind-sources`), are stale.
+
+*Open:* the pilot targets Kansas City; the app and its alert poll target Montana. Second territory,
+test site or mix-up is Carson's call (ROADMAP open questions).
+
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.
 - Folium camelizes keyword arguments (`_t` → `T`).
