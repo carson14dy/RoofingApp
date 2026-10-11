@@ -16,7 +16,7 @@ move items to Done when merged, and keep “Next” in priority order.
 | Storm History | SPC reporting day on a map and table, tiers with reasons in words, add inspection candidates | One reporting day at a time |
 | Inspections | Statuses, assigned rep, notes, evidence snapshot, printable exposure summary, CSV export | — |
 | Crew Outlook | Roof system/product, phase, duration, dry-in, site checks, job rule overrides, windows, WBGT + heat index, 7-day, supervisor review, crew acknowledgement | Rules are placeholders until the company sets them |
-| Desktop app | Native window, self-updates from `main`, self-test before install, backups, rollback, recovery page, desktop notifications | Tested on Linux only; installers unsigned |
+| Desktop app | Native window, self-updates from `main`, self-test before install, backups, rollback, recovery page, desktop notifications; update channel verified against real GitHub | App window tested on Linux only; installers unsigned |
 | Tests | 44 tests incl. 240 alert scenarios and a 30-minute outage replay; CI on every PR | — |
 
 ## Handoff build sequence

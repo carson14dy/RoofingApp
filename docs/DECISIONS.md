@@ -46,7 +46,9 @@ relative imports). The old app's background thread stops through `app.extensions
 `Accept: application/vnd.github.sha` and an ETag (unchanged → 304); the manifest from the contents
 API at that SHA (`application/vnd.github.raw+json`); the zipball of that SHA. Checks at launch and
 hourly. Public repo: no token. Private repo: a read-only token (`UPDATE_TOKEN` secret baked into
-installers, or pasted into the app).
+installers, or pasted into the app). Verified 2026-10-11 against this repo on github.com (branch
+`claude/desktop-app`, local copy pinned to 0.9.9): found 1.0.0 → downloaded → self-tested →
+applied live → next check “up to date”.
 
 ## Data and maps
 
