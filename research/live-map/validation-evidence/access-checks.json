@@ -1,0 +1,44 @@
+[
+  {
+    "name": "nws_point",
+    "url": "https://api.weather.gov/points/39.7456,-97.0892",
+    "checked_at": "2026-10-11T16:57:39.499164+00:00",
+    "status": 200,
+    "final_url": "https://api.weather.gov/points/39.7456,-97.0892",
+    "bytes": 3928,
+    "sha256": "830c9ddc7e489c5bf647a565d25d1c36708f5c001a3cae8ef81b7dd86406ab19"
+  },
+  {
+    "name": "nws_alerts",
+    "url": "https://api.weather.gov/alerts/active?point=39.7456,-97.0892",
+    "checked_at": "2026-10-11T16:57:39.499747+00:00",
+    "status": 200,
+    "final_url": "https://api.weather.gov/alerts/active?point=39.7456,-97.0892",
+    "bytes": 233,
+    "sha256": "5eef35f545265a7ceeff80721cf264a521439effc5bc9e96e7d988485aaec1ef"
+  },
+  {
+    "name": "tomorrow_docs",
+    "url": "https://docs.tomorrow.io/reference/welcome",
+    "checked_at": "2026-10-11T16:57:39.500230+00:00",
+    "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+  },
+  {
+    "name": "accuweather_docs",
+    "url": "https://developer.accuweather.com/",
+    "checked_at": "2026-10-11T16:57:39.500655+00:00",
+    "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+  },
+  {
+    "name": "windborne_home",
+    "url": "https://windbornesystems.com/",
+    "checked_at": "2026-10-11T16:57:39.501038+00:00",
+    "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+  },
+  {
+    "name": "zoomradar_home",
+    "url": "https://www.zoomradar.com/",
+    "checked_at": "2026-10-11T16:57:39.501414+00:00",
+    "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+  }
+]

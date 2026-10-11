@@ -1,0 +1,40 @@
+test_alert_is_not_observation (test_reading_contract.ContractTests.test_alert_is_not_observation) ... ok
+test_current_stale (test_reading_contract.ContractTests.test_current_stale) ... ok
+test_cutoff_leakage (test_reading_contract.ContractTests.test_cutoff_leakage) ... ok
+test_forecast_cannot_issue_warning (test_reading_contract.ContractTests.test_forecast_cannot_issue_warning) ... ok
+test_forecast_future_valid (test_reading_contract.ContractTests.test_forecast_future_valid) ... ok
+test_forecast_lead_limit (test_reading_contract.ContractTests.test_forecast_lead_limit) ... ok
+test_future_observation (test_reading_contract.ContractTests.test_future_observation) ... ok
+test_grid_positive (test_reading_contract.ContractTests.test_grid_positive) ... ok
+test_historical_forecast_replay (test_reading_contract.ContractTests.test_historical_forecast_replay) ... ok
+test_historical_not_stale (test_reading_contract.ContractTests.test_historical_not_stale) ... ok
+test_historical_observation_after_cutoff (test_reading_contract.ContractTests.test_historical_observation_after_cutoff) ... ok
+test_invalid_coordinate (test_reading_contract.ContractTests.test_invalid_coordinate) ... ok
+test_malformed (test_reading_contract.ContractTests.test_malformed) ... ok
+test_mesh_not_damage (test_reading_contract.ContractTests.test_mesh_not_damage) ... ok
+test_missing_claim_value (test_reading_contract.ContractTests.test_missing_claim_value) ... ok
+test_missing_lineage (test_reading_contract.ContractTests.test_missing_lineage) ... ok
+test_missing_nonfinite_bool (test_reading_contract.ContractTests.test_missing_nonfinite_bool) ... ok
+test_missing_policy (test_reading_contract.ContractTests.test_missing_policy) ... ok
+test_nearby_positive (test_reading_contract.ContractTests.test_nearby_positive) ... ok
+test_observation_after_publication (test_reading_contract.ContractTests.test_observation_after_publication) ... ok
+test_official_alert_validity_and_category_value (test_reading_contract.ContractTests.test_official_alert_validity_and_category_value) ... ok
+test_point_grid_mismatch (test_reading_contract.ContractTests.test_point_grid_mismatch) ... ok
+test_point_nearby_mismatch (test_reading_contract.ContractTests.test_point_nearby_mismatch) ... ok
+test_radial_not_gust (test_reading_contract.ContractTests.test_radial_not_gust) ... ok
+test_rain_rate_not_total (test_reading_contract.ContractTests.test_rain_rate_not_total) ... ok
+test_recent_current_observation (test_reading_contract.ContractTests.test_recent_current_observation) ... ok
+test_registry_binding (test_reading_contract.ContractTests.test_registry_binding) ... ok
+test_scope_cannot_be_self_verified (test_reading_contract.ContractTests.test_scope_cannot_be_self_verified) ... ok
+test_separate_registry (test_reading_contract.ContractTests.test_separate_registry) ... ok
+test_severity_never_downgraded (test_reading_contract.ContractTests.test_severity_never_downgraded) ... ok
+test_transformation_requires_review (test_reading_contract.ContractTests.test_transformation_requires_review) ... ok
+test_unusable_quality (test_reading_contract.ContractTests.test_unusable_quality) ... ok
+test_valid_negative_radial_velocity (test_reading_contract.ContractTests.test_valid_negative_radial_velocity) ... ok
+test_valid_point_station_temperature (test_reading_contract.ContractTests.test_valid_point_station_temperature) ... ok
+test_wrong_point (test_reading_contract.ContractTests.test_wrong_point) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.001s
+
+OK

@@ -1,0 +1,113 @@
+{
+  "version": "Kansas City live-map prototype 0.1.0",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "b6b1660451a79f66c29e0308d29b89e503774d7eeaf5148cad582099cfd8c962"
+    },
+    {
+      "path": "VALIDATION.md",
+      "sha256": "44bb3becd2142396df916d7b4a1dd68443fd1397b4fda1329cc1a69c095452d1"
+    },
+    {
+      "path": "prototype/THIRD_PARTY.md",
+      "sha256": "2427d656f82b846e46cab7564f186e458e333d848367f5776f66edef6f181fa4"
+    },
+    {
+      "path": "prototype/app.js",
+      "sha256": "206a7818410fdf7fe20065e8626707695747b4ad5240e9b7de91b1a4346db6d6"
+    },
+    {
+      "path": "prototype/index.html",
+      "sha256": "8f0169cb670cefa25d559973d9f722c4469774735c131dfaa37d8dae3b230a15"
+    },
+    {
+      "path": "prototype/server.py",
+      "sha256": "d3866150898475c7fc1549d17270da824f75940050a9d132e43ee3a7ff3557b0"
+    },
+    {
+      "path": "prototype/style.css",
+      "sha256": "a8e4e02fd7bc5a3fa8f87e3f4a01cfe9af1bea16c4c2482dffaea3438c9d5abd"
+    },
+    {
+      "path": "prototype/tests/browser_check.py",
+      "sha256": "288858f639a7f112623fb55494f2a72921404148f7454d55020694e41a3c5556"
+    },
+    {
+      "path": "prototype/tests/test_server.py",
+      "sha256": "f6aa8cd7a2be72c83934aba94f23dc823adc6745d4dc4fb0a726467bec955a0a"
+    },
+    {
+      "path": "prototype/vendor/leaflet-LICENSE",
+      "sha256": "53e8dc25862014e4324741ca18fbe3611e11d42ef69f59f86ea8c5389647d4cb"
+    },
+    {
+      "path": "prototype/vendor/leaflet.css",
+      "sha256": "a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6"
+    },
+    {
+      "path": "prototype/vendor/leaflet.js",
+      "sha256": "db49d009c841f5ca34a888c96511ae936fd9f5533e90d8b2c4d57596f4e5641a"
+    },
+    {
+      "path": "prototype/vendor/states-10m.json",
+      "sha256": "d76b391ccfa8bff601d51e3e3da5d43a89fa46cd5caca72ce731b383be5596d0"
+    },
+    {
+      "path": "prototype/vendor/topojson-LICENSE",
+      "sha256": "4c4d15b635e04e691825a76db7d33f7f2033b55669a7430011694f31e6c65999"
+    },
+    {
+      "path": "prototype/vendor/topojson-client.min.js",
+      "sha256": "25cd02ae486cc5063e0215a4e4cfb15de83700c87ac48bac4d57dc6aaf3ebb89"
+    },
+    {
+      "path": "prototype/vendor/us-atlas-LICENSE",
+      "sha256": "8048290dfdb6e83fbed17e8985c8cfc4ce9da9b842642f3d3e497280790cfa31"
+    },
+    {
+      "path": "prototype/vendor/us-atlas-README.md",
+      "sha256": "f62c3a76c76e27df606e06442a1d10b46e5e09f972f396c259937135e66977da"
+    },
+    {
+      "path": "service-design.md",
+      "sha256": "36d5e74c09d079ef30fab4aaabbf3074161a5908b4608bf5a6c6f1b80db71c17"
+    },
+    {
+      "path": "tomorrow-accuweather.md",
+      "sha256": "e84d149d8bee760180cc9760f3fa37250dcb6cf30b195c7101bd34fde956693e"
+    },
+    {
+      "path": "validation-evidence/access-checks.json",
+      "sha256": "a3240d618287db0f5512d02a9678e4fe7a29b2f7701c76872bdd428f55fc97aa"
+    },
+    {
+      "path": "validation-evidence/backend-test-results.txt",
+      "sha256": "b0cfbb102553789610e5aac9f32297cf9abf4851b86957c0e25dec309e5869cb"
+    },
+    {
+      "path": "validation-evidence/browser-validation.json",
+      "sha256": "8f4672bf6ead1ea2b8ea96a2a7a9cecefb2df790029025de4f433e8331122269"
+    },
+    {
+      "path": "validation-evidence/health_final.json",
+      "sha256": "7168d6e295be8f08b2b8991ec08c4104320f4ae197e14fe541925bc836c581e4"
+    },
+    {
+      "path": "validation-evidence/kansas-city-pilot.png",
+      "sha256": "e822ed33f66e4265146c3c50c2282ba74450ad32d98297f878941816c260460d"
+    },
+    {
+      "path": "validation-evidence/kc_history_final.json",
+      "sha256": "998cb5fa579d64fbbab3cee16f3ca8498ed177f18066e4163aeeb846f6009940"
+    },
+    {
+      "path": "validation-evidence/kc_point_final.json",
+      "sha256": "a6baa15adaab97a562e141238e9b33f32bbbb023e9a27dee440472d5190a8b00"
+    },
+    {
+      "path": "windborne-zoomradar.md",
+      "sha256": "0b376e09cb885943b02370620af0ec5363a9f37a30b0ee836c2f477452e868c1"
+    }
+  ]
+}

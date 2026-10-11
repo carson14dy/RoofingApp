@@ -1,0 +1,28 @@
+{
+  "synthetic": true,
+  "checks": [
+    {
+      "claim_scope": "grid",
+      "exit_code": 0,
+      "result": {
+        "status": "eligible_for_scoped_wording",
+        "reasons": [],
+        "scope": "grid",
+        "limitation": "Metadata eligibility only; no geometry verification or accuracy claim."
+      }
+    },
+    {
+      "claim_scope": "point",
+      "exit_code": 1,
+      "result": {
+        "status": "blocked",
+        "reasons": [
+          "LOCALITY_SCOPE_MISMATCH",
+          "POINT_MEASUREMENT_NOT_ESTABLISHED"
+        ],
+        "scope": "point",
+        "limitation": "Metadata eligibility only; no geometry verification or accuracy claim."
+      }
+    }
+  ]
+}

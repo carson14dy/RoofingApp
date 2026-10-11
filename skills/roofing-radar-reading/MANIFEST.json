@@ -1,0 +1,93 @@
+{
+  "version": "0.3.0",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "4476c0f6d3078b6b97de18c851585609f454e477968c54b3ae3b140274661e9d"
+    },
+    {
+      "path": "SKILL.md",
+      "sha256": "8dfa2c757d9706b08173c4d69fab8794c1f3d40713203ed1d37f7c2fbf6d5575"
+    },
+    {
+      "path": "examples/cli-results.json",
+      "sha256": "89c5313a8895cfe72e13d6b7fb4214ae3103e6a4e5fe4a14515606cb79c3c891"
+    },
+    {
+      "path": "examples/synthetic-grid-reading.json",
+      "sha256": "1bdcfb49eda2e358904ef2c4651c827bfdac038b10dfa41993bf562ae5202519"
+    },
+    {
+      "path": "references/contract-test-results.txt",
+      "sha256": "ddc06a4aa0e9a59739452d6089aecc3ab40e17ab9cade6fb9853e18acf877870"
+    },
+    {
+      "path": "references/evaluation-protocol.md",
+      "sha256": "8bd06d186de20622ac1059b7b71260c310e39650eb1ae8175d0be54b9d68f38e"
+    },
+    {
+      "path": "references/five-question-review.md",
+      "sha256": "f69d5fb703b837c32f68483611e3a87fb6fac762d503612eed08ff09983b2ba5"
+    },
+    {
+      "path": "references/hail-rain.md",
+      "sha256": "c5e2bfa683d4e3819e3508d834f3bc387e61bc0f94f9d4c7d84754e4367443bc"
+    },
+    {
+      "path": "references/numerical-checks.json",
+      "sha256": "67e0184002b089024cbaee8e19d2b590cab4e2026bbbe8e332471f2ee3567283"
+    },
+    {
+      "path": "references/other-hazards.md",
+      "sha256": "23de23557e0e6716e6876fd08ab15f240a4ffb2838c460b0a85838b0feff3c08"
+    },
+    {
+      "path": "references/point-weather.md",
+      "sha256": "cb885da5f320ab5b2cd1829846d956ec5dfdfe258bacca71bfdf2a7704bc0116"
+    },
+    {
+      "path": "references/practice-cases.md",
+      "sha256": "ccf527adb94558b63b0b51f898e415b95322646c0e25b4424d61d106b773fa11"
+    },
+    {
+      "path": "references/provider-verification.md",
+      "sha256": "738e95440575a33c846f605a3e7a5d168b5daa201b9e2a6edb1863eb82018ccf"
+    },
+    {
+      "path": "references/publication-checks.md",
+      "sha256": "1c7e82ddc0e067a0857b0c0f7dea6d93d36e32dc7caf0711dde835df7e2b3474"
+    },
+    {
+      "path": "references/radar-procedure.md",
+      "sha256": "9ae5b4183d9a7da6380e10c8949c38c79089379d52444b38521b31058694511f"
+    },
+    {
+      "path": "references/reading-contract.md",
+      "sha256": "784f4f0de003623095d6291140b416243379183a6097639d7038406f4044a1f5"
+    },
+    {
+      "path": "references/review-record.md",
+      "sha256": "0813219f1de6f34ae540a16123b0447ed7fbae10c836512bf294852dd2c351e4"
+    },
+    {
+      "path": "references/source-evidence.json",
+      "sha256": "5ce8a1a81640accab23e2c884a2ec75d1c7975e7e44e5d1d6d962d43c633a0e0"
+    },
+    {
+      "path": "references/validation.md",
+      "sha256": "da9af0d42d432c9e93250de3657dff9f88c8a7490d36083af9e3824c8d0163ba"
+    },
+    {
+      "path": "references/wind-tornado.md",
+      "sha256": "f13e0845d4336d907c9d1f2db50841942b52c3c5c6b42d79875c563c9736d142"
+    },
+    {
+      "path": "scripts/check_reading.py",
+      "sha256": "bf543f8a492f7d4731f8a115da0e200644dcc1ed94fb377c08eacd6cec2e80a5"
+    },
+    {
+      "path": "tests/test_reading_contract.py",
+      "sha256": "22ef36ff93ef96fb15ef9dd5dd803e23f5135e74164c8fb6a232be4142e29f50"
+    }
+  ]
+}
