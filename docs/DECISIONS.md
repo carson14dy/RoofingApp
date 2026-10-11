@@ -195,8 +195,41 @@ Not carried over, and why:
   the skill docs that `api.weather.gov` was blocked, and ChatGPT sandbox paths
   (`/workspace/live-map-evidence`, `/tmp/roofing-wind-sources`), are stale.
 
-*Open:* the pilot targets Kansas City; the app and its alert poll target Montana. Second territory,
-test site or mix-up is Carson's call (ROADMAP open questions).
+*Resolved by D24:* Kansas City was a first draft; the targets are all of Montana, then the
+contiguous US.
+
+**D24 · Scope: all of Montana now, the contiguous US next (2026-10-11).** Carson: Kansas City was a
+first draft; the targets are the entire state of Montana, then the entire contiguous US.
+
+*Montana.* Already the app's scope: alerts poll `area=MT`, SPC reports filter to Montana plus a
+0.75° border margin, the map opens on Montana, and forecasts, radar, geocoding and time zones are
+per place. Nothing to build; what remains is roadmap 1–3 (installers on real machines, the pilot,
+the baseline). Two limits to watch in the pilot: far from the four Montana radar sites (Billings,
+Glasgow, Great Falls, Missoula) the beam overshoots low levels, so no echo must keep showing as no
+data, never as clear; and a place just across the border carries Idaho, Wyoming or Dakota zone
+codes, which a Montana-only poll can never match — the change below fixes that too.
+
+*Contiguous US.* Poll alerts for the states where there is work, not the national feed:
+- Alert areas = the state prefixes of saved places' NWS zone/county codes (`MTZ056` → `MT`), plus
+  every state whose bounding box (with margin) touches a territory, plus the company state. One
+  request, `area=MT,WY,…`; the same list for the outage backfill. Over-including a neighbour is
+  harmless; a missing state is the failure. Before building (rule 7): confirm live that `area`
+  takes a comma list and measure the national `/alerts/active` response, so a list past a measured
+  size can fall back to the national feed at a longer interval (NWS asks for ≥ 30 s between polls).
+- SPC filter: a "near my places" box (places and territories plus margin) replaces the Montana box;
+  "all" stays.
+- The map opens on the places' bounding box, else the company location, else the contiguous US.
+- The "outside Montana" finding warning becomes "far from any saved place"; "No active NWS alerts
+  for Montana" and "Montana + border" lose the state name; the tagline follows the product-name
+  decision. `weather.CONTRACTS` and `COVERAGE` text updated with the code.
+- Tests: a multi-state poll, a border place with out-of-state codes, a national-size replay (the
+  3× load gate). The 240 Montana scenarios stay as they are.
+- Out of scope: Alaska, Hawaii and the territories. The radar mosaic and SPC files are built for
+  the contiguous US.
+*Why:* every crew machine polling every state every 60 s is the national feed; polling the states
+with places and territories is small, matches how alerts are matched anyway, and reaches a new
+market the moment a place is saved there. *When:* its own small PR after PR #1 merges and the
+installers are on real machines; before the pilot adds border places.
 
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.

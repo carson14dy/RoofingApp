@@ -10,6 +10,7 @@ move items to Done when merged, and keep “Next” in priority order.
 2. Pilot one service territory and one roof-system family with real company rules.
 3. Set the evaluation baseline (review P0) before adding any new feed.
 4. Then a real hail-footprint source: MRMS processing or a commercial trial in shadow mode.
+5. Then the contiguous US: poll alerts for the states where there are places and territories (D24).
 
 ## Done in 1.0.0
 | Area | What works | Limits |
@@ -86,15 +87,17 @@ move items to Done when merged, and keep “Next” in priority order.
 8. **Alerts when the app is closed.** Phone/SMS/email delivery needs a small always-on service;
    measure the p95 gate.
 9. **History.** Date ranges and multi-day events in Storm History; NCEI Storm Events for older context.
-10. **Beyond Montana.** Alerts poll `area=MT`; expanding means an area list and an updated coverage
-   matrix (`weather.COVERAGE`).
+10. **Contiguous US (D24).** Owner decision 2026-10-11: all of Montana now — already the app's
+    scope — then the contiguous US. One change, its own PR after the installers: alert areas derived
+    from saved places' zone codes, territories and the company state (`area=MT,WY,…`, same list for
+    backfill; confirm the comma list and measure the national feed live first); SPC "near my
+    places" box; map opens on the places; the "outside Montana" warning and Montana labels
+    generalised; `weather.COVERAGE` and `CONTRACTS` updated; tests for a multi-state poll, a border
+    place with out-of-state codes and a national-size replay. Alaska and Hawaii out of scope.
 11. **Shared data.** Each computer has its own database. Office and crews sharing jobs and candidates
     needs a server or sync — decide before building.
 
 ## Open questions for Carson
-- **Kansas City or Montana?** ChatGPT's pilot branch targets downtown Kansas City; the app, its
-  alert poll (`area=MT`) and the coverage matrix target Montana. Second territory, test site or
-  mix-up? (See D23 and item 10, Beyond Montana.)
 - **Product name.** “Big Sky Hail Watch” is a placeholder. The claude.ai project is called “Hail Trace
   2.0”, and HailTrace is an existing hail-mapping service sold to roofers — check trademarks before
   using a similar name.
