@@ -1,0 +1,26 @@
+name: Check the app
+
+# Runs on every push to main: the same self-test installed apps run before
+# accepting an update, plus the acceptance and update-channel tests.
+# A red X here means: don't bump the version until it's fixed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install flask folium requests waitress tzdata
+      - name: Self-test the app (same check installed apps run)
+        run: python desktop/launcher.py --selftest payload
+      - name: Acceptance, alert-scenario and update tests
+        run: python -m unittest discover -s tests -v

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} — Crew Outlook{% endblock %}
+{% block style %}
+<style>
+  main.doc{max-width:1240px}
+  .top2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,1fr);gap:14px;margin-bottom:14px}
+  .big{font-size:15px}
+  .reasons{margin:8px 0 0 18px;padding:0;line-height:1.5;font-size:13px}
+  .win{display:grid;grid-template-columns:200px 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--hairline);font-size:12.5px}
+  .win:first-child{border-top:none}
+  .win ul{margin:0;padding-left:16px}
+  table.hours td,table.hours th{padding:6px 8px;font-size:12px;white-space:nowrap}
+  table.hours td.why{white-space:normal;min-width:220px;color:var(--muted)}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
+  .dot-meets{background:#35557a} .dot-review{background:var(--wheat)} .dot-unavailable{background:var(--error)}
+  .night{color:var(--muted)}
+  .log{font-size:12px;color:var(--muted);margin:0;padding-left:16px}
+  .rulegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 12px}
+  @media (max-width:900px){.top2{grid-template-columns:1fr}.win{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+<main class="doc">
+  <a class="back" href="{{ url_for('outlook') }}">← All jobs</a>
+  <h2>{{ p.name }}</h2>
+  <p class="sub">{{ p.address or ('%.5f, %.5f'|format(p.lat, p.lng)) }} · NWS grid {{ o.grid or '—' }}{% if o.near %} near {{ o.near }}{% endif %}
+    · times in {{ o.tzname }} · forecast updated {{ o.updated|local(o.tzname) if o.updated else '—' }}
+    <span class="state state-{{ o.feed.view().state }}">{{ o.feed.view().label }}</span></p>
+  {% if note %}<div class="note {{ note.tone }}" role="status">{{ note.text }}</div>{% endif %}
+  {% for e in o.errors %}<div class="note error">{{ e }}. Missing data is never treated as an all-clear.</div>{% endfor %}
+
+  <form class="card" method="get" action="{{ url_for('outlook_job', pid=p.id) }}" style="display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap">
+    <div><label class="f" for="date">Work day</label><input id="date" name="date" type="date" value="{{ work_date }}" style="margin:0"></div>
+    <button class="btn inline" type="submit">Show this day</button>
+    <span class="hint" style="margin:0">The hourly check covers the next 48 hours; later days use the 7-day planning periods below.</span>
+  </form>
+
+  <div class="top2">
+    <section class="card" aria-live="polite">
+      <h3>{{ o.work_date.strftime('%A, %B %d') }}</h3>
+      <span class="ost ost-{{ o.work_status }} big">{{ outlook_label[o.work_status] }}</span>
+      {% if o.changed_from %}<p class="hint" style="margin:8px 0 0">Changed from “{{ outlook_label[o.changed_from.status] }}” (seen {{ o.changed_from.observed_at|local(o.tzname) }}).</p>{% endif %}
+      {% if o.work_reasons %}<ul class="reasons">{% for r in o.work_reasons if r != o.fit.reason %}<li>{{ r }}</li>{% endfor %}</ul>
+      {% elif o.work_status == 'meets' %}<p class="hint" style="margin-top:8px">Every daylight hour checked meets your configured conditions. Review the site before starting.</p>{% endif %}
+      {% if o.fit %}<p style="margin:10px 0 0;font-size:13px"><b>Window length:</b> {{ o.fit.reason }}
+        {% if o.fit.fits is sameas true %}<span class="muted">— long enough on the forecast.</span>{% elif o.fit.fits is sameas false %}<span style="color:var(--wheat)">— not long enough.</span>{% endif %}</p>{% endif %}
+      {% if o.history|length > 1 %}<p class="f" style="margin-top:12px">Status changes for this day</p>
+        <ul class="log">{% for h in o.history %}<li>{{ h.observed_at|local(o.tzname) }} — {{ outlook_label[h.status] }}: {{ h.summary }}</li>{% endfor %}</ul>{% endif %}
+    </section>
+    <section class="card">
+      <h3>Review on site</h3>
+      <dl class="kv">
+        <dt>Phase</dt><dd>{{ phase_names[p.phase] if p.phase else 'Not set' }}</dd>
+        <dt>Roof system</dt><dd>{{ p.roof_system or '—' }}</dd>
+        <dt>Product</dt><dd>{{ p.product or '—' }}</dd>
+        <dt>Needs</dt><dd>{% if p.duration_h or p.dryin_h %}{{ p.duration_h or 0 }} h work + {{ p.dryin_h or 0 }} h to dry-in{% else %}Hours not set{% endif %}</dd>
+        <dt>Site checks</dt><dd>{{ p.site_checks or 'None listed' }}</dd>
+      </dl>
+      <p class="hint" style="margin-top:10px">A forecast doesn't establish a dry deck, ready adhesive or material temperature — follow the
+        manufacturer's instructions for this exact product and check on site.</p>
+    </section>
+  </div>
+
+  <section class="card" style="margin-bottom:14px">
+    <h3>Official alerts at this location</h3>
+    {% if o.alerts_ok is sameas false %}<div class="note error">Alerts for this location couldn't be checked. This is not an all-clear.</div>{% endif %}
+    {% for a in o.alerts %}
+      <div style="padding:6px 0;border-top:1px solid var(--hairline)"><b>{{ a.event }}</b> <span class="muted">· until {{ (a.ends or a.expires)|local(o.tzname) }} · official, NWS (matched by NWS for this point: zone and county)</span>
+        {% if a.headline %}<div class="muted" style="font-size:12px">{{ a.headline }}</div>{% endif %}</div>
+    {% else %}{% if o.alerts_ok %}<p class="hint" style="margin:0">No active NWS alerts for this point (checked by forecast zone and county).</p>{% endif %}{% endfor %}
+  </section>
+
+  <section class="card" style="margin-bottom:14px">
+    <h3>Next 48 hours, grouped</h3>
+    {% for w in o.windows %}
+    <div class="win"><div><span class="dot dot-{{ w.status }}"></span>{{ w.when }}<br><span class="muted">{{ w.hours }} h · {{ w.label }}</span></div>
+      <div>{% if w.triggers %}<ul>{% for t in w.triggers %}<li>{{ t }}</li>{% endfor %}</ul>{% endif %}
+        {% if w.missing %}<span style="color:var(--error)">Missing: {{ w.missing|join(', ') }}</span>{% endif %}
+        {% if not w.triggers and not w.missing %}<span class="muted">All configured checks met.</span>{% endif %}</div></div>
+    {% else %}<p class="hint">No hourly forecast available.</p>{% endfor %}
+  </section>
+
+  {% if o.hours %}
+  <section class="card scrollx" style="margin-bottom:14px">
+    <h3>Hourly detail (NWS forecast)</h3>
+    <table class="tbl hours">
+      <tr><th>Hour</th><th>Status</th><th>Forecast</th><th>Temp</th><th>Wind</th><th>Gust</th><th>Precip</th><th>Humidity</th><th>WBGT*</th><th>Heat index</th><th>Why</th></tr>
+      {% for h in o.hours %}
+      <tr class="{{ 'night' if h.daytime is sameas false }}">
+        <td>{{ h.start|local(o.tzname) }}</td>
+        <td><span class="dot dot-{{ h.eval.status }}"></span>{{ {'meets': 'Meets', 'review': 'Review', 'unavailable': 'Unavailable'}[h.eval.status] }}</td>
+        <td>{{ h.short }}</td><td>{{ h.temp_f if h.temp_f is not none else '—' }}°</td>
+        <td>{{ h.wind_text or '—' }} {{ h.wind_dir or '' }}</td><td>{{ (h.gust_mph ~ ' mph') if h.gust_mph is not none else '—' }}</td>
+        <td>{{ (h.precip_pct ~ '%') if h.precip_pct is not none else '—' }}</td><td>{{ (h.humidity ~ '%') if h.humidity is not none else '—' }}</td>
+        <td>{{ (h.wbgt_f ~ '°') if h.wbgt_f is not none else '—' }}</td><td>{{ (h.heat_index_f ~ '°') if h.heat_index_f is not none else '—' }}</td>
+        <td class="why">{{ (h.eval.triggers + (['Missing: ' ~ h.eval.missing|join(', ')] if h.eval.missing else []))|join('; ') }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="hint" style="margin-top:8px">*WBGT and heat index are NWS forecasts, not measurements. WBGT accounts for sun, wind and humidity;
+      heat index is shade-based. Use your company heat procedure — the app doesn't set work/rest schedules.</p>
+  </section>
+  {% endif %}
+
+  <div class="top2">
+    {% if o.qpf %}
+    <section class="card"><h3>Rain amount forecast (NWS)</h3>
+      <table class="tbl">{% for q in o.qpf %}<tr><td>{{ q.start|local(o.tzname) }} + {{ q.hours }} h</td><td>{{ '%.2f'|format(q.inches) }} in over the interval</td></tr>{% endfor %}</table>
+    </section>
+    {% endif %}
+    {% if o.days %}
+    <section class="card"><h3>7-day planning view (NWS periods)</h3>
+      <table class="tbl">{% for d in o.days[:14] %}<tr class="{{ 'night' if not d.daytime }}"><td>{{ d.name }}</td><td>{{ d.temp_f }}°</td>
+        <td>{{ (d.precip_pct ~ '%') if d.precip_pct is not none else '' }}</td><td>{{ d.wind_text }}</td><td>{{ d.short }}</td></tr>{% endfor %}</table>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="top2">
+    <section class="card">
+      <h3>Supervisor review — {{ o.work_date.strftime('%b %d') }}</h3>
+      <form method="post" action="{{ url_for('outlook_review', pid=p.id) }}">
+        <input type="hidden" name="work_date" value="{{ work_date }}"><input type="hidden" name="outlook" value="{{ outlook_label[o.work_status] }}: {{ (o.work_reasons or ['—'])|join(' | ') }}">
+        <div class="row2">
+          <div><label class="f" for="reviewer">Reviewer</label><input id="reviewer" name="reviewer" type="text" required></div>
+          <div><label class="f" for="decision">Decision</label><select id="decision" name="decision">
+            <option>Proceed as planned</option><option>Proceed with changes</option><option>Hold or reschedule</option></select></div>
+        </div>
+        <label class="f" for="rnote">Note</label><textarea id="rnote" name="note" placeholder="What was checked, what changes were made…"></textarea>
+        <button class="btn primary inline" type="submit">Record review</button>
+      </form>
+      {% for r in reviews %}<p class="hint" style="margin:10px 0 0"><b>{{ r.reviewer }}</b> — {{ r.decision }} · {{ r.created|local(o.tzname) }}<br>Outlook at the time: {{ r.outlook }}{% if r.note %}<br>{{ r.note }}{% endif %}</p>{% endfor %}
+    </section>
+    <section class="card">
+      <h3>Crew acknowledgement</h3>
+      <form method="post" action="{{ url_for('outlook_ack', pid=p.id) }}">
+        <input type="hidden" name="work_date" value="{{ work_date }}">
+        <label class="f" for="crew">Crew member</label><input id="crew" name="crew_member" type="text" required>
+        <button class="btn inline" type="submit">I've read today's outlook</button>
+      </form>
+      {% for a in acks %}<p class="hint" style="margin:8px 0 0"><b>{{ a.crew_member }}</b> · {{ a.created|local(o.tzname) }}</p>{% endfor %}
+    </section>
+  </div>
+
+  <form class="card" method="post" action="{{ url_for('save_job', pid=p.id) }}" style="margin-top:14px">
+    <h3>Job details</h3>
+    <div class="row3">
+      <div><label class="f" for="phase">Phase</label><select id="phase" name="phase"><option value="">Not set</option>
+        {% for key, label in phases %}<option value="{{ key }}" {{ 'selected' if p.phase == key }}>{{ label }}</option>{% endfor %}</select></div>
+      <div><label class="f" for="wd">Work day</label><input id="wd" name="work_date" type="date" value="{{ p.work_date or '' }}"></div>
+      <div><label class="f" for="roof">Roof system</label><input id="roof" name="roof_system" type="text" value="{{ p.roof_system or '' }}" placeholder="Asphalt shingle, TPO, metal…"></div>
+    </div>
+    <div class="row3">
+      <div><label class="f" for="product">Exact product</label><input id="product" name="product" type="text" value="{{ p.product or '' }}"></div>
+      <div><label class="f" for="dur">Work hours needed</label><input id="dur" name="duration_h" type="number" step="0.5" min="0" value="{{ p.duration_h if p.duration_h is not none else '' }}"></div>
+      <div><label class="f" for="dry">Hours to make weather-tight</label><input id="dry" name="dryin_h" type="number" step="0.5" min="0" value="{{ p.dryin_h if p.dryin_h is not none else '' }}"></div>
+    </div>
+    <label class="f" for="checks">Required site checks</label>
+    <textarea id="checks" name="site_checks" placeholder="Deck dry, material temperature per manufacturer, condensation check before adhesive…">{{ p.site_checks or '' }}</textarea>
+    <span class="f">This job's own limits (blank = company rule)</span>
+    <div class="rulegrid">
+      {% for fld in rule_fields %}
+      <div><label class="f" for="j-{{ fld.key }}" style="text-transform:none;letter-spacing:0">{{ fld.label }} ({{ fld.unit }})</label>
+        <input id="j-{{ fld.key }}" name="rule_{{ fld.key }}" type="number" step="1" value="{{ overrides[fld.key] if overrides[fld.key] is defined else '' }}"
+               placeholder="company: {{ company[fld.key] if company[fld.key] is not none else 'off' }}"></div>
+      {% endfor %}
+    </div>
+    <button class="btn primary inline" type="submit">Save job details</button>
+  </form>
+</main>
+{% endblock %}

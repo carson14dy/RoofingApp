@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Big Sky Hail Watch{% endblock %}</title>
+{% block head %}{% endblock %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --storm-900:#0c1622; --storm-800:#101f30; --storm-700:#16273a; --storm-600:#16364f;
+    --granite:#1c2c3f; --hairline:#2a3e54; --bigsky:#e9f0f7; --muted:#8ea6bf;
+    --wheat:#e0a93c; --wheat-hi:#efb84e; --wheat-dim:#b9872c;
+    --ok:#7bd88f; --error:#ff8b8b; --demo:#c77dff; --shadow:0 10px 30px rgba(0,0,0,.45);
+    --display:'Barlow Condensed','Arial Narrow',sans-serif;
+    --body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:var(--body);background:var(--storm-900);color:var(--bigsky);font-size:14px}
+  a{color:var(--wheat)}
+  .mono{font-family:var(--mono)}
+  :focus-visible{outline:2px solid var(--wheat);outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  /* ---------- header + navigation ---------- */
+  header.top{display:flex;align-items:center;gap:16px;padding:8px 16px;
+    background:linear-gradient(180deg,var(--storm-800),var(--storm-900));border-bottom:1px solid var(--hairline);
+    position:relative;z-index:1200}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;flex:none}
+  .brand svg{width:34px;height:34px;display:block}
+  .brand h1{font-family:var(--display);font-weight:700;font-size:22px;line-height:.95;letter-spacing:.5px;margin:0;text-transform:uppercase}
+  .brand h1 span{color:var(--wheat)}
+  .brand p{margin:2px 0 0;font-size:10px;color:var(--muted);letter-spacing:2.2px;text-transform:uppercase}
+  nav.main{display:flex;gap:2px;flex-wrap:wrap}
+  nav.main a{color:var(--muted);text-decoration:none;font-size:12px;font-weight:600;letter-spacing:.9px;text-transform:uppercase;
+    padding:9px 11px;border-radius:8px;display:flex;align-items:center;gap:6px}
+  nav.main a:hover{color:var(--bigsky);background:var(--storm-700)}
+  nav.main a.on{color:var(--bigsky);background:var(--storm-700);box-shadow:inset 0 -2px 0 var(--wheat)}
+  .count{display:inline-block;min-width:17px;padding:0 5px;border-radius:9px;background:var(--wheat);color:#20160a;font-size:10px;text-align:center}
+  .appchip{margin-left:auto;display:flex;align-items:center;padding:8px 12px;border-radius:9px;border:1px solid var(--hairline);
+    background:var(--storm-700);color:var(--muted);text-decoration:none;font-size:11.5px;font-weight:600;white-space:nowrap}
+  .appchip:hover{border-color:var(--wheat-dim);color:var(--bigsky)}
+  .appchip.hot{background:var(--wheat);border-color:var(--wheat);color:#20160a}
+  .appchip.warn{color:var(--error)}
+
+  /* ---------- controls ---------- */
+  .f{display:block;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:0 0 5px;font-weight:600}
+  input[type=text],input[type=number],input[type=date],input[type=password],input[type=search],textarea,select{
+    width:100%;background:var(--storm-900);border:1px solid var(--hairline);color:var(--bigsky);
+    border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;margin:0 0 11px}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--wheat);border-color:var(--wheat)}
+  textarea{resize:vertical;min-height:54px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .btn{display:block;width:100%;text-align:center;text-decoration:none;cursor:pointer;border:1px solid var(--hairline);
+    border-radius:9px;padding:9px 12px;font:600 13px var(--body);background:var(--storm-700);color:var(--bigsky)}
+  .btn:hover{background:var(--storm-600)}
+  .btn.primary{background:var(--wheat);border-color:var(--wheat);color:#20160a}
+  .btn.primary:hover{background:var(--wheat-hi)}
+  .btn.danger{background:transparent;color:var(--error)}
+  .btn.danger:hover{border-color:var(--error)}
+  .btn.inline,.btnrow .btn{display:inline-block;width:auto}
+  .btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  form.inline{display:inline;margin:0}
+  .linkbtn{background:none;border:none;color:var(--wheat);font:inherit;cursor:pointer;padding:0;text-decoration:underline}
+  .del{background:none;border:1px solid var(--hairline);color:var(--error);border-radius:6px;padding:3px 8px;font-size:10.5px;cursor:pointer}
+  .del:hover{border-color:var(--error)}
+
+  .note{border-radius:9px;padding:9px 12px;margin:0 0 12px;font-size:12.5px;line-height:1.45;border:1px solid var(--hairline);background:var(--storm-700)}
+  .note.ok{border-color:#2e6b3c;color:var(--ok)}
+  .note.warn{border-color:var(--wheat-dim);color:var(--wheat)}
+  .note.error{border-color:#7a3a3a;color:var(--error)}
+  .note.demo{border-color:#6a3d8f;color:var(--demo)}
+  .hint{font-size:11.5px;color:var(--muted);margin:0 0 11px;line-height:1.5}
+  .hint b{color:var(--wheat)}
+  .muted{color:var(--muted)}
+
+  /* feed states — text first, color second */
+  .state{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:2px 7px;border-radius:20px;border:1px solid}
+  .state-live{color:var(--ok);border-color:#2e6b3c}
+  .state-stale{color:var(--wheat);border-color:var(--wheat-dim)}
+  .state-unavailable{color:var(--error);border-color:#7a3a3a}
+  .state-demo{color:var(--demo);border-color:#6a3d8f}
+  .state-not_connected,.state-off,.state-subscription,.state-on_demand{color:var(--muted);border-color:var(--hairline)}
+
+  /* evidence kind tags */
+  .ek{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;letter-spacing:.3px;color:var(--muted);white-space:nowrap}
+  .ek svg{width:13px;height:13px;flex:none}
+
+  /* crew outlook statuses — never a green "safe" badge */
+  .ost{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid}
+  .ost-meets{color:#a9c7e8;border-color:#35557a;background:rgba(53,85,122,.18)}
+  .ost-review{color:var(--wheat);border-color:var(--wheat-dim);background:rgba(224,169,60,.10)}
+  .ost-unavailable{color:var(--error);border-color:#7a3a3a;background:rgba(255,139,139,.08)}
+
+  /* hail size tiles (radio buttons, no script) */
+  .sizes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 10px}
+  .size-opt{position:relative;cursor:pointer}
+  .size-opt input{position:absolute;opacity:0;pointer-events:none}
+  .size-opt .tile{display:block;border:1px solid var(--hairline);border-radius:8px;padding:7px 6px;background:var(--storm-900);text-align:center}
+  .size-opt .sw{display:block;height:5px;border-radius:4px;margin-bottom:5px}
+  .size-opt .in{display:block;font:600 12px var(--mono)}
+  .size-opt .nm{display:block;font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.1}
+  .size-opt input:checked + .tile{border-color:var(--bigsky);background:var(--storm-700)}
+  .size-opt input:focus-visible + .tile{outline:2px solid var(--wheat);outline-offset:1px}
+
+  /* map markers built in Python (DivIcons) */
+  .mk{display:flex;align-items:center;gap:4px;white-space:nowrap;pointer-events:auto}
+  .mk span{font:600 11px var(--body);color:#fff;text-shadow:0 0 3px #000,0 0 3px #000}
+  .mk-place span{font-weight:500;color:#e9f0f7}
+  .mk-pin{width:18px;height:18px;border-radius:50%;border:3px solid var(--wheat);background:rgba(224,169,60,.25)}
+
+  /* ---------- document pages ---------- */
+  body.doc{overflow-y:auto}
+  main.doc{max-width:1120px;margin:0 auto;padding:22px 18px 60px}
+  main.doc h2{font-family:var(--display);text-transform:uppercase;letter-spacing:.6px;font-size:28px;margin:4px 0 4px}
+  main.doc .sub{color:var(--muted);margin:0 0 18px;line-height:1.5}
+  .back{display:inline-block;color:var(--muted);text-decoration:none;font-size:12.5px;margin-bottom:6px}
+  .back:hover{color:var(--bigsky)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .card{background:var(--granite);border:1px solid var(--hairline);border-radius:12px;padding:16px}
+  .card h3{font-family:var(--display);text-transform:uppercase;letter-spacing:1px;font-size:15px;margin:0 0 12px}
+  .wide{grid-column:1/-1}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:12.5px;margin:0}
+  .kv dt{color:var(--muted)} .kv dd{margin:0;word-break:break-word}
+  table.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  .tbl th{text-align:left;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:600;
+    padding:8px 10px;border-bottom:1px solid var(--hairline);white-space:nowrap}
+  .tbl td{padding:8px 10px;border-bottom:1px solid var(--hairline);vertical-align:top}
+  .tbl tr:last-child td{border-bottom:none}
+  .scrollx{overflow-x:auto}
+  .empty{text-align:center;color:var(--muted);padding:24px 10px}
+  .empty h3{font-family:var(--display);text-transform:uppercase;letter-spacing:1px;color:var(--bigsky);font-weight:600;margin:0 0 6px;font-size:15px}
+  .empty p{font-size:12.5px;line-height:1.5;margin:0 auto 6px;max-width:520px}
+
+  @media (max-width:1100px){
+    header.top{flex-wrap:wrap}
+    .appchip{margin-left:0}
+  }
+</style>
+{% block style %}{% endblock %}
+</head>
+<body class="{% block body_class %}doc{% endblock %}">
+<header class="top">
+  <a class="brand" href="{{ url_for('live') }}" aria-label="Big Sky Hail Watch — Live Storms">
+    <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <path d="M2 33 L13 13 L20 24 L27 9 L38 33 Z" fill="#16273a" stroke="#2a3e54" stroke-width="1.2"/>
+      <path d="M2 33 L13 13 L18 22 L11 33 Z" fill="#22364c"/>
+      <circle cx="29" cy="14" r="4.4" fill="#e0a93c" stroke="#0c1622" stroke-width="1"/>
+    </svg>
+    <div><h1>Big Sky <span>Hail Watch</span></h1><p>Montana storm-to-roof</p></div>
+  </a>
+  <nav class="main" aria-label="Sections">
+    <a href="{{ url_for('live') }}" class="{{ 'on' if page == 'live' }}">Live Storms{% if unread %}<span class="count" title="New storm matches">{{ unread }}</span>{% endif %}</a>
+    <a href="{{ url_for('history') }}" class="{{ 'on' if page == 'history' }}">Storm History</a>
+    <a href="{{ url_for('candidates') }}" class="{{ 'on' if page == 'candidates' }}">Inspections</a>
+    <a href="{{ url_for('outlook') }}" class="{{ 'on' if page == 'outlook' }}">Crew Outlook</a>
+    <a href="{{ url_for('places') }}" class="{{ 'on' if page == 'places' }}">Places</a>
+    <a href="{{ url_for('sources') }}" class="{{ 'on' if page == 'sources' }}">Data sources</a>
+  </nav>
+  {% set u = update or {} %}
+  <a class="appchip {% if u.phase == 'ready' %}hot{% elif u.phase == 'error' %}warn{% endif %}" href="{{ url_for('app_page') }}">
+    {%- if not desktop -%}v{{ app_version }} · browser mode
+    {%- elif u.phase == 'ready' and u.ready -%}Update {{ u.ready.version }} ready
+    {%- elif u.phase in ['checking', 'downloading', 'validating'] -%}Checking for updates…
+    {%- elif u.phase == 'error' -%}v{{ app_version }} · update check failed
+    {%- elif u.phase == 'needs_shell' -%}v{{ app_version }} · new installer available
+    {%- else -%}v{{ app_version }}{%- endif -%}
+  </a>
+</header>
+{% block content %}{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>
