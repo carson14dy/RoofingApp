@@ -1,5 +1,5 @@
 """
-Update engine for Big Sky Hail Watch
+Update engine for Montana Hail Watch
 ====================================
 Checks GitHub for a newer ``payload/manifest.json``, downloads that exact
 commit, self-tests it against a *copy* of the user's real database, and only
@@ -191,7 +191,7 @@ class GitHubSource:
     MAX_DOWNLOAD = 50 * 1024 * 1024
 
     def __init__(self, repo, branch="main", token="", api="https://api.github.com",
-                 payload_path="payload", user_agent="BigSkyHailWatch", timeout=20):
+                 payload_path="payload", user_agent="MontanaHailWatch", timeout=20):
         self.repo, self.branch, self.token = repo, branch or "main", (token or "").strip()
         self.api, self.payload_path, self.timeout = api.rstrip("/"), payload_path.strip("/"), timeout
         self.http = requests.Session()
@@ -330,7 +330,7 @@ class Updater:
     BUSY = ("checking", "downloading", "validating")
 
     def __init__(self, data_dir, bundled_dir, shell_api: int, defaults: dict | None = None,
-                 user_agent="BigSkyHailWatch"):
+                 user_agent="MontanaHailWatch"):
         self.data = Path(data_dir)
         self.bundled = Path(bundled_dir)
         self.shell_api = shell_api
@@ -403,7 +403,7 @@ class Updater:
         repo = re.sub(r"\.git$", "", repo)
         branch = (branch or "").strip() or "main"
         if repo and not re.fullmatch(r"[A-Za-z0-9-]+/[A-Za-z0-9._-]+", repo):
-            return {"ok": False, "message": "Use the form owner/repository — for example carson14dy/bigsky-hailwatch."}
+            return {"ok": False, "message": "Use the form owner/repository — for example carson14dy/RoofingApp."}
         if not re.fullmatch(r"[A-Za-z0-9._/-]+", branch):
             return {"ok": False, "message": "That branch name has characters GitHub doesn't allow."}
         with self._lock:

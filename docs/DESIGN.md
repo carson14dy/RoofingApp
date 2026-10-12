@@ -1,11 +1,11 @@
-# Design — the Montana desktop app
+# Design — Montana Hail Watch
 
-Design spec for the Montana version of Big Sky Hail Watch, the app crews open from a desktop icon.
+Design spec for Montana Hail Watch, the app crews open from a desktop icon.
 Written 2026-10-11 with the design-playbook method (frame → explore → make → validate → ship).
 This is the spec engineering builds from; the mockups are on the design canvas (link in the PR).
 Decisions that bind the app live in `DECISIONS.md`; this file says what the screens are and why.
 
-What "the Montana app" means here: the real app (`payload/`) with Montana as its territory,
+Scope: the real app (`payload/`) with Montana as its territory,
 absorbing what ChatGPT's Montana pilot branch showed (nearby station readings with their age and
 elevation, a statewide view, terrain wording). It is not a window around the pilot prototype
 (D23, D25). The desktop icon already exists: GitHub Actions builds the Windows and macOS apps

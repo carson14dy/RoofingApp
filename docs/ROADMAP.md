@@ -1,10 +1,10 @@
 # Roadmap
 
-Status on 2026-10-11: payload 1.0.0, desktop shell 1.0.0. Branches: `claude/desktop-app` (the app,
-merged as pull request #1); `codex/kansas-city-weather-pilot` and `codex/montana-weather-pilot`
-(ChatGPT's pilots — reviewed in D23 and D25, not merged; their findings are in items 2, 5, 6 and 7
-below). Agents: check this file before starting,
-move items to Done when merged, and keep “Next” in priority order.
+Status on 2026-10-12: payload 1.0.0, desktop shell 1.1.0. Product name: Montana Hail Watch (D26).
+Branches: `claude/desktop-app` (the app, merged as pull request #1); `codex/kansas-city-weather-pilot`
+and `codex/montana-weather-pilot` (ChatGPT's pilots — reviewed in D23 and D25, not merged; their
+findings are in items 2, 5, 6 and 7 below). Agents: check this file before starting, move items to
+Done when merged, and keep “Next” in priority order.
 
 ## Bottom line
 1. Build the installers and test them on a real Windows PC and Mac — not done yet.
@@ -107,9 +107,6 @@ move items to Done when merged, and keep “Next” in priority order.
     needs a server or sync — decide before building.
 
 ## Open questions for Carson
-- **Product name.** “Big Sky Hail Watch” is a placeholder. The claude.ai project is called “Hail Trace
-  2.0”, and HailTrace is an existing hail-mapping service sold to roofers — check trademarks before
-  using a similar name.
 - Work rules for each roof system and product (from manufacturer instructions and company procedure).
 - Pilot territory and roof-system family.
 - Keep the repo public? Private needs an `UPDATE_TOKEN` (see README).

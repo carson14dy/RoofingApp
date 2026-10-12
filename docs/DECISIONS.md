@@ -231,6 +231,8 @@ with places and territories is small, matches how alerts are matched anyway, and
 market the moment a place is saved there. *When:* its own small PR after PR #1 merges and the
 installers are on real machines; before the pilot adds border places.
 
+*Resolved by D26:* the tagline is “Storm-to-roof” now; the contiguous-US PR leaves it alone.
+
 **D25 · ChatGPT's Montana pilot branch — findings that change the plan (2026-10-11).** Branch
 `codex/montana-weather-pilot` extends the Kansas City prototype to Montana (territory selector, 13
 town pins, station and grid elevation shown, time-zone fallback) and merges `main`, so it was written
@@ -281,6 +283,25 @@ app's company-zone fallback (D16). Stale sandbox path: `/tmp/roofing-montana-sou
 zipball on each update (D6), the prototype duplicates the app, and one app in the repo is the
 point of D1. *Handoff:* ChatGPT's next job is roadmap item 5 in `payload/weather.py`, built to the
 rules above, with its sweep as the first test fixture.
+
+**D26 · Product name: Montana Hail Watch (2026-10-12).** Carson's decision; “Big Sky Hail Watch” was
+the placeholder. The name shows in the header (plain “Montana”, accent “Hail Watch”, tagline
+“Storm-to-roof” — the state is in the name now), page titles, the manifest `name`, the printable
+summary footer, the shell window and dialogs. Because the shell changed and a new installer is built,
+`SHELL_VERSION` is 1.1.0; `SHELL_API` stays 1 and the payload stays 1.0.0 (nothing was shipped).
+`APP_ID` is `MontanaHailWatch` in `desktop/launcher.py` and `build.py`, so the installer, the
+executable, the data folder, the webview storage, the waitress ident and the user agents are all
+new names; no copies were installed under the old `APP_ID`, so nothing is orphaned. The macOS bundle
+identifier is `com.montana.hailwatch`. Internal identifiers did not change: `hailwatch.stop`,
+`hw_session`, the `hailwatch` and `hailwatch.updater` loggers, `hailwatch.db` and the backup
+pattern, `store.MIGRATIONS`, and the manifest `version` and `min_shell`. The `--bigsky` colour
+token stays — it names the sky, not the product.
+
+*Why:* a rename is not a reason to touch the shell–payload contract (D3) or the identifiers D2 and
+D5 define, or the data on disk; changing `APP_ID` is only free because there are no installs yet.
+*Trademark caution:* check “Montana Hail Watch” against existing products and trademarks before it
+goes on an installer, a release page or anything printed; HailTrace is an existing hail-mapping
+service sold to roofers, so stay clear of that name too.
 
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.

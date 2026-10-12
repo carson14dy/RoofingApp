@@ -1,7 +1,7 @@
 name: Build desktop installers
 
 # Builds the Windows and macOS apps. Run it from the Actions tab
-# ("Run workflow"), or push a tag like desktop-v1.0.0 to also publish a
+# ("Run workflow"), or push a tag like desktop-v1.1.0 to also publish a
 # GitHub Release with both downloads attached.
 #
 # Only needed for a first install or when the desktop shell changes.
@@ -25,9 +25,9 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            asset: BigSkyHailWatch-Windows.zip
+            asset: MontanaHailWatch-Windows.zip
           - os: macos-latest
-            asset: BigSkyHailWatch-macOS.zip
+            asset: MontanaHailWatch-macOS.zip
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -47,19 +47,19 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath "dist/BigSkyHailWatch/BigSkyHailWatch.exe" -ArgumentList "--selftest" -Wait -PassThru
+          $p = Start-Process -FilePath "dist/MontanaHailWatch/MontanaHailWatch.exe" -ArgumentList "--selftest" -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "The built app failed its self-test" }
       - name: Self-test inside the built app (macOS)
         if: runner.os == 'macOS'
-        run: dist/BigSkyHailWatch.app/Contents/MacOS/BigSkyHailWatch --selftest
+        run: dist/MontanaHailWatch.app/Contents/MacOS/MontanaHailWatch --selftest
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path dist/BigSkyHailWatch -DestinationPath ${{ matrix.asset }}
+        run: Compress-Archive -Path dist/MontanaHailWatch -DestinationPath ${{ matrix.asset }}
       - name: Package (macOS)
         if: runner.os == 'macOS'
-        run: ditto -c -k --sequesterRsrc --keepParent dist/BigSkyHailWatch.app ${{ matrix.asset }}
+        run: ditto -c -k --sequesterRsrc --keepParent dist/MontanaHailWatch.app ${{ matrix.asset }}
 
       - uses: actions/upload-artifact@v4
         with:

@@ -3,7 +3,7 @@
 Roofing weather and maps app — storm tracking, inspection targeting and crew weather planning
 for a Montana roofing company.
 
-The current build is the **Big Sky Hail Watch** desktop app (placeholder name): live NWS radar
+The current build is the **Montana Hail Watch** desktop app: live NWS radar
 and official alerts, SPC storm reports, inspection candidates with plain-language reasons, and a
 crew weather outlook per job. It **updates itself from this repository** — a version bump on
 `main` reaches every installed copy. No zip, no reinstall.
@@ -89,13 +89,13 @@ Already done: installed copies follow **`carson14dy/RoofingApp`, branch `main`**
 PyInstaller can't cross-compile, so GitHub builds them for you:
 
 - **Actions → Build desktop installers → Run workflow** → download
-  `BigSkyHailWatch-Windows.zip` / `BigSkyHailWatch-macOS.zip` from the run, **or**
-- push a tag `desktop-v1.0.0` to also publish a GitHub Release with both attached.
+  `MontanaHailWatch-Windows.zip` / `MontanaHailWatch-macOS.zip` from the run, **or**
+- push a tag `desktop-v1.1.0` to also publish a GitHub Release with both attached.
 
 Both builds run the app's self-test *inside the built app* before packaging.
 
 **First launch warnings (the apps aren't code-signed):**
-- *Windows:* SmartScreen → **More info → Run anyway**. Unzip anywhere and run `BigSkyHailWatch.exe`.
+- *Windows:* SmartScreen → **More info → Run anyway**. Unzip anywhere and run `MontanaHailWatch.exe`.
 - *macOS:* right-click the app → **Open**, or System Settings → Privacy & Security → **Open Anyway**.
   The default runner builds for Apple Silicon Macs.
 
@@ -213,9 +213,9 @@ is Python (Flask, Folium, SQLite).
 
 | OS | Data folder |
 |---|---|
-| Windows | `%LOCALAPPDATA%\BigSkyHailWatch` |
-| macOS | `~/Library/Application Support/BigSkyHailWatch` |
-| Linux | `~/.local/share/BigSkyHailWatch` |
+| Windows | `%LOCALAPPDATA%\MontanaHailWatch` |
+| macOS | `~/Library/Application Support/MontanaHailWatch` |
+| Linux | `~/.local/share/MontanaHailWatch` |
 
 Inside: `hailwatch.db` (your data), `backups/`, `versions/`, `logs/hailwatch.log`,
 `settings.json`. **App & updates → Open data folder** opens it.
@@ -308,9 +308,13 @@ GitHub runs both on every push (**Actions → Check the app**).
 
 ## Renaming
 
-Change the name in `payload/templates/base.html` (header) and `APP_NAME` in
-`desktop/launcher.py`, then ship. Changing `APP_ID` moves the data folder, so
-leave it unless you're starting fresh.
+To rename: grep for `Hail Watch` and `HailWatch` and change every hit — templates (header, titles,
+summary footer, App & updates line), `payload/manifest.json` `name`, `payload/app.py`,
+`desktop/launcher.py`, `desktop/updater.py`, `build.py`, the build workflow and this file. Payload
+changes ship; shell and build changes need a new installer. Changing `APP_ID` (in
+`desktop/launcher.py`, `build.py` and the workflow paths) moves the data folder and renames the
+installer, so leave it unless you're starting fresh; the 2026-10-12 rename to Montana Hail Watch
+did change it before any copies were installed (D26).
 
 ---
 

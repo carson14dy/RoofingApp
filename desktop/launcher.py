@@ -1,5 +1,5 @@
 """
-Big Sky Hail Watch — desktop app
+Montana Hail Watch — desktop app
 ================================
 Opens the app in its own window and keeps it current from GitHub, so a change
 you push reaches every install without a new download. This shell changes
@@ -36,10 +36,10 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 import updater as upd  # noqa: E402
 
-SHELL_VERSION = "1.0.0"
+SHELL_VERSION = "1.1.0"
 SHELL_API = 1          # raise when the payload needs something only a newer shell provides
-APP_NAME = "Big Sky Hail Watch"
-APP_ID = "BigSkyHailWatch"
+APP_NAME = "Montana Hail Watch"
+APP_ID = "MontanaHailWatch"
 COOKIE = "hw_session"
 log = logging.getLogger("hailwatch")
 
@@ -167,7 +167,7 @@ class Gate:
                 return self._redirect(start_response, "/",
                                       f"{COOKIE}={self.d.token}; Path=/; HttpOnly; SameSite=Strict")
             return self._deny(start_response, "403 Forbidden", "Link expired",
-                              "<p>Open Big Sky Hail Watch again to get a fresh window.</p>")
+                              "<p>Open Montana Hail Watch again to get a fresh window.</p>")
         cookie = SimpleCookie()
         try:
             cookie.load(environ.get("HTTP_COOKIE", ""))
@@ -176,7 +176,7 @@ class Gate:
         sent = cookie.get(COOKIE).value if cookie.get(COOKIE) else ""
         if not hmac.compare_digest(sent, self.d.token):
             return self._deny(start_response, "403 Forbidden", "Open the app window",
-                              "<p>This page only opens inside the Big Sky Hail Watch app.</p>")
+                              "<p>This page only opens inside the Montana Hail Watch app.</p>")
 
         method = environ.get("REQUEST_METHOD", "GET")
         if path == "/__shell/rollback" and method == "POST":

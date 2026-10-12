@@ -7,8 +7,8 @@ directly; Claude Code reads it through `CLAUDE.md`. Humans: start with `README.m
 A desktop app for a Montana roofing company (owner: Carson, `carson14dy`): live NWS radar and
 official alerts, SPC storm reports, inspection candidates with plain-language reasons, and a
 per-job crew weather outlook. Installed copies **update themselves from this repo**: increasing
-`version` in `payload/manifest.json` on `main` ships to every user. “Big Sky Hail Watch” is a
-placeholder product name.
+`version` in `payload/manifest.json` on `main` ships to every user. The product name is Montana
+Hail Watch (owner decision 2026-10-12, D26).
 
 ## Read before you change things
 - `docs/handoff/Roofing_Weather_Claude_Handoff.md` — the weather module spec (Live Storms, Storm
