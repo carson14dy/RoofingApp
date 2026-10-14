@@ -24,6 +24,8 @@ RADAR_LAYER = "1"   # layer "1" is the radar image; "3" is "Boundary" and draws 
 RADAR_TIME = ("https://mapservices.weather.noaa.gov/eventdriven/rest/services/"
               "radar/radar_base_reflectivity/MapServer/2/query")
 USER_AGENT = "MontanaHailWatch website (https://github.com/carson14dy/RoofingApp)"
+USGS_TOPO = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"
+BASEMAP_PROBE = (6, 22, 12)   # z, y, x of a base-map tile over central Montana, checked at each build
 
 MT_BOX = (44.35, 49.01, -116.06, -104.03)   # lat_min, lat_max, lon_min, lon_max
 MARGIN = 0.75                               # degrees around Montana for storm reports and radar
@@ -80,6 +82,14 @@ CONTRACTS = {
                  "a reporting day runs 12:00 to 11:59 UTC (6 am to 5:59 am MDT).",
         "timing": "Preliminary; today's files appear once there are reports. Three days are shown.",
         "missing": "\"UNK\" wind stays unknown. A file that fails is listed as a problem; no report is not \"no hail\".",
+    },
+    "basemap": {
+        "name": "USGS base map",
+        "request": "basemap.nationalmap.gov USGSTopo map tiles; one tile is checked at each build",
+        "units": "Map pictures drawn in the viewer's browser, shown in grey (inverted in dark mode).",
+        "timing": "The map itself rarely changes; the service is checked at every build.",
+        "missing": "If tiles don't load, the map still shows towns, warning outlines and radar on a plain "
+                   "background, and the line under the header names the problem.",
     },
     "radar": {
         "name": "NOAA radar",
@@ -461,6 +471,14 @@ class Fetcher:
     def text(self, url):
         r, err = self._get(url)
         return (None, err) if err else (r.text, None)
+
+    def image(self, url):
+        r, err = self._get(url)
+        if err:
+            return None, err
+        if not r.headers.get("Content-Type", "").startswith("image/") or len(r.content) < 500:
+            return None, "the map service did not return a map picture"
+        return r.content, None
 
     def png(self, url, params):
         r, err = self._get(url, params)

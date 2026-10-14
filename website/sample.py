@@ -70,6 +70,9 @@ class SampleFetcher:
     def png(self, url, params):
         return None, "no sample radar"
 
+    def image(self, url):
+        return None, "no sample base map"
+
     # -- generated content -----------------------------------------------------------
     def _slug(self, lat, lon):
         from .build import TOWNS

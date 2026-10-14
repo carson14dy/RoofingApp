@@ -32,7 +32,6 @@ MT = ZoneInfo("America/Denver")
 TOWNS = json.loads((HERE / "towns.json").read_text(encoding="utf-8"))
 OFFICES = [("Billings", "https://www.weather.gov/byz/"), ("Glasgow", "https://www.weather.gov/ggw/"),
            ("Great Falls", "https://www.weather.gov/tfx/"), ("Missoula", "https://www.weather.gov/mso/")]
-USGS_TOPO = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"
 KIND_STYLE = {"warning": "#c0262d", "watch": "#c26100", "advisory": "#a07800", "statement": "#4b5d72"}
 
 # Styles for the map pages. Leaflet's stylesheet loads after this block, so each selector here is
@@ -162,6 +161,12 @@ class Collector:
         return {"items": out, "problems": problems, "days": [(today - timedelta(days=b)).isoformat()
                                                              for b in range(days)]}
 
+    def basemap(self):
+        """The base map loads in each viewer's browser; check once per build that it answers."""
+        z, y, x = src.BASEMAP_PROBE
+        img, err = self.f.image(src.USGS_TOPO.format(z=z, y=y, x=x))
+        self.note("basemap", "USGS base map", err is None, err or f"map tiles answering ({len(img) // 1024} KB tile)")
+
     def radar(self, out_dir: Path):
         doc, err = self.f.json(src.RADAR_TIME, {"where": "1=1", "outFields": "idp_validtime",
                                                  "returnGeometry": "false", "orderByFields": "idp_validtime DESC",
@@ -224,7 +229,7 @@ def new_map(height_note: str = "") -> folium.Map:
     # Serve Leaflet from this site, not a CDN, and drop the CSS/JS Folium adds by default.
     m.default_js = [("leaflet", "static/leaflet/leaflet.js")]
     m.default_css = [("leaflet_css", "static/leaflet/leaflet.css")]
-    folium.TileLayer(USGS_TOPO, attr="USGS The National Map", name="Base map (USGS topo)",
+    folium.TileLayer(src.USGS_TOPO, attr="USGS The National Map", name="Base map (USGS topo)",
                      max_native_zoom=16, max_zoom=18, class_name="base-tiles").add_to(m)
     m.get_root().header.add_child(folium.Element(
         f'<link rel="stylesheet" href="static/fonts/fonts.css"><style>{MAP_CSS}</style>'))
@@ -343,6 +348,9 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     radar = None if sample else c.radar(out)
     if sample:
         c.note("radar", "NOAA radar", False, "not loaded in sample builds")
+        c.note("basemap", "USGS base map", False, "not checked in sample builds")
+    else:
+        c.basemap()
 
     m = new_map()
     add_radar(m, radar, now)

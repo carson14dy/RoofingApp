@@ -250,6 +250,18 @@ class Fetching(unittest.TestCase):
                          (None, "not published (HTTP 404)"))
         self.assertEqual(session.calls, 1)
 
+    def test_base_map_must_answer_with_a_picture(self):
+        page_html = FakeResponse(200, b"<html>maintenance</html>" * 40, "text/html")
+        self.assertEqual(src.Fetcher(FakeSession([page_html]), pause=0).image("https://x/tile/6/22/12")[1],
+                         "the map service did not return a map picture")
+        jpeg = FakeResponse(200, b"\xff\xd8" + b"\0" * 4000, "image/jpeg")
+        self.assertIsNone(src.Fetcher(FakeSession([jpeg]), pause=0).image("https://x/tile/6/22/12")[1])
+        self.assertEqual(src.BASEMAP_PROBE, (6, 22, 12))
+        z, y, x = src.BASEMAP_PROBE                             # the probe tile covers central Montana
+        lon = x / 2 ** z * 360 - 180
+        lat = math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * y / 2 ** z))))
+        self.assertTrue(-112.5 <= lon <= -106 and 45 <= lat <= 49, (lat, lon))
+
     def test_radar_must_be_a_png(self):
         html = FakeResponse(200, b"<html>error</html>", "text/html")
         self.assertEqual(src.Fetcher(FakeSession([html]), pause=0).png(src.RADAR_WMS, {})[1],
@@ -260,7 +272,8 @@ class Fetching(unittest.TestCase):
 
 class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
-        self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "reports", "radar"})
+        self.assertEqual(set(src.CONTRACTS),
+                         {"alerts", "points", "hourly", "gusts", "daily", "reports", "radar", "basemap"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
@@ -286,6 +299,9 @@ class FailingFetcher:
         return None, "ConnectionError"
 
     def png(self, url, params):
+        return None, "ConnectionError"
+
+    def image(self, url):
         return None, "ConnectionError"
 
 
@@ -442,7 +458,8 @@ class FailureHonesty(unittest.TestCase):
         self.assertEqual(code, 1)
         state = json.loads(page(out, "data/state.json"))
         self.assertEqual({k: v["ok"] for k, v in state["status"].items()},
-                         {"alerts": False, "forecasts": False, "reports": False, "radar": False})
+                         {"alerts": False, "forecasts": False, "reports": False, "radar": False,
+                          "basemap": False})
         html = page(out, "index.html")
         self.assertIn("Couldn't load NWS alerts", html)
         self.assertIn("Forecast unavailable.", html)

@@ -77,7 +77,8 @@ chance of rain or snow, under 40 °F or over 95 °F (`website/sources.py`, `LIMI
 
 `.github/workflows/website.yml` runs on GitHub every 10 minutes:
 1. It runs the website tests.
-2. It fetches NWS alerts and forecasts, SPC reports and one NOAA radar picture.
+2. It fetches NWS alerts and forecasts, SPC reports and one NOAA radar picture, and checks that
+   the USGS base map answers.
 3. It builds the pages and publishes them.
 
 GitHub sometimes starts scheduled runs late, so a page can be 10–20 minutes behind NWS. Each page

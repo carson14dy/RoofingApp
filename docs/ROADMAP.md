@@ -25,7 +25,7 @@ order.
 | Honesty | Per-source status line, last verified alerts kept after a failed refresh, "Alerts not checked" per town, page-age warning, sample data labelled on every page | — |
 | Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity |
 | Design | Light "field sheet" look with dark mode, self-hosted fonts and Leaflet, contrast ≥ 5.86:1, collision-free map labels, 288–1440 px without sideways scroll (`docs/DESIGN.md`) | Phone Now page is long (P2) |
-| Tests | 40 website tests (parsers, failures, maps, label layout) alongside the app's 44 | — |
+| Tests | 41 website tests (parsers, failures, maps, label layout) alongside the app's 44 | — |
 
 ## Next, in priority order
 1. **Go live.** Settings → Pages → Build and deployment → Source: **GitHub Actions**; merge the
