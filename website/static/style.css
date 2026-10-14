@@ -127,7 +127,7 @@ main { padding-block: var(--space-5) var(--space-7); }
 .sub + .town-grid, .sub + .table-box { margin-top: var(--space-4); }
 
 /* ---------------------------------------------------------------- panels */
-section + section { margin-top: var(--space-7); }
+section + section, .now-grid + section { margin-top: var(--space-7); }
 .section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2);
   margin-bottom: var(--space-4); }
 .count { display: inline-block; min-width: 1.75em; padding: 0 0.45em; margin-left: var(--space-1); border-radius: 999px;

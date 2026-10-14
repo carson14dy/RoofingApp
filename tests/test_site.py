@@ -6,6 +6,8 @@ or small fake fetchers that fail on purpose. The live sources are checked separa
 website workflow (`python -m website.build --require-live` on branch pushes).
 """
 
+import contextlib
+import io
 import json
 import math
 import struct
@@ -453,7 +455,8 @@ class FailureHonesty(unittest.TestCase):
 
     def test_everything_down_still_builds_and_says_so(self):
         out = Path(tempfile.mkdtemp(prefix="hailwatch-down-"))
-        with mock.patch.object(site.src, "Fetcher", lambda *a, **k: FailingFetcher()):
+        with mock.patch.object(site.src, "Fetcher", lambda *a, **k: FailingFetcher()), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             code = site.main(["--out", str(out), "--require-live", "--now", "2026-10-14T15:00:00Z"])
         self.assertEqual(code, 1)
         state = json.loads(page(out, "data/state.json"))
