@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Storm reports · Montana Hail Watch{% endblock %}
+{% block content %}
+<div class="lead">
+  <h1>Storm reports</h1>
+  <p class="sub">Preliminary hail and wind reports in and near Montana from the Storm Prediction Center, for the last three
+    reporting days. Each report is a point where someone saw or measured something. No report is not evidence that no hail fell.</p>
+</div>
+
+{% if reports.problems %}
+<div class="notice notice-error" role="alert">
+  <p><strong>Some report files didn't load at {{ built|t }}.</strong> Days listed below as empty may be missing data.</p>
+  <ul>{% for p in reports.problems %}<li>{{ p }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<section aria-labelledby="map-h">
+  <div class="section-head"><h2 id="map-h">Map</h2></div>
+  <iframe class="map" src="map-reports.html?v={{ built.strftime('%Y%m%d%H%M') }}" title="Map of storm reports in and near Montana"></iframe>
+  <ul class="legend" aria-label="Map key">
+    <li><span class="swatch swatch-hail"></span>Hail report (bigger circle, bigger hail)</li>
+    <li><span class="swatch swatch-wind"></span>Wind report</li>
+  </ul>
+</section>
+
+<section aria-labelledby="list-h">
+  <div class="section-head"><h2 id="list-h">All reports, newest first</h2></div>
+  {% for day in reports.days %}
+  {% set rows = reports['items'] | selectattr('day', 'equalto', day) | list %}
+  <div class="report-day">
+    <h3>Reporting day starting {{ (day ~ 'T12:00:00Z')|day }} at 6 am MDT ({{ rows|length }} report{{ 's' if rows|length != 1 }})</h3>
+    {% if rows %}
+    <div class="table-box">
+      <table>
+        <thead><tr><th scope="col">Time</th><th scope="col">Type</th><th scope="col" class="n">Size / speed</th>
+          <th scope="col">Place</th><th scope="col">Notes</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td class="time">{{ r.time|t('%a %-I:%M %p') }}</td>
+            <td><span class="kind kind-{{ r.kind }}">{{ r.kind|title }}</span></td>
+            <td class="n">{% if r.kind == 'hail' %}{{ '%.2f in'|format(r.size_in) if r.size_in else 'not given' }}{% else %}{{ (r.mph ~ ' mph') if r.mph else 'unknown' }}{% endif %}</td>
+            <td>{{ r.place }}, {{ r.county }} County, {{ r.state }}</td>
+            <td>{{ r.comments }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">No hail or wind reports in or near Montana for this day.</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

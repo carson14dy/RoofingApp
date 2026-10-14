@@ -1,39 +1,118 @@
 # RoofingApp
 
-Roofing weather and maps app — storm tracking, inspection targeting and crew weather planning
-for a Montana roofing company.
+Weather for a Montana roofing company: **Montana Hail Watch**.
 
-The current build is the **Montana Hail Watch** desktop app: live NWS radar
-and official alerts, SPC storm reports, inspection candidates with plain-language reasons, and a
-crew weather outlook per job. It **updates itself from this repository** — a version bump on
-`main` reaches every installed copy. No zip, no reinstall.
+**The product is a website** (decision D27, 2026-10-14). It shows official NWS warnings, a radar
+and warning map, the next 12 hours for 14 Montana towns, a 24-hour and 7-day page per town, and
+three days of SPC hail and wind reports. GitHub rebuilds it every 10 minutes from public data and
+publishes it with GitHub Pages at **https://carson14dy.github.io/RoofingApp/** once Pages is
+turned on. Nothing to install: open it on any phone or computer.
 
-**AI agents (Claude Code, ChatGPT/Codex):** read [`AGENTS.md`](AGENTS.md) first. Requirements live
-in [`docs/handoff/`](docs/handoff/), decisions in [`docs/DECISIONS.md`](docs/DECISIONS.md), status and
-next steps in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+The earlier desktop app is **parked**, not deleted. It is described in the second half of this
+file.
+
+**AI agents (Claude Code, ChatGPT/Codex):** read [`AGENTS.md`](AGENTS.md) first. Decisions live in
+[`docs/DECISIONS.md`](docs/DECISIONS.md), the website design in [`docs/DESIGN.md`](docs/DESIGN.md),
+status and next steps in [`docs/ROADMAP.md`](docs/ROADMAP.md), requirements in
+[`docs/handoff/`](docs/handoff/).
 
 ---
 
 ## Contents
-1. [Bottom line](#bottom-line)
-2. [Run it today](#run-it-today)
-3. [Set up updates (once)](#set-up-updates-once)
-4. [Get the installers (once)](#get-the-installers-once)
-5. [Ship an update (every time)](#ship-an-update-every-time)
-6. [What updates itself vs. what needs a new installer](#what-updates-itself-vs-what-needs-a-new-installer)
-7. [How updates stay safe](#how-updates-stay-safe)
-8. [Data feeds: live, demo, needs a subscription](#data-feeds-live-demo-needs-a-subscription)
-9. [The screens](#the-screens)
-10. [Your data and backups](#your-data-and-backups)
-11. [Handoff and review status](#handoff-and-review-status)
-12. [Tests](#tests)
-13. [Troubleshooting](#troubleshooting)
-14. [Security notes](#security-notes)
-15. [Known limits](#known-limits)
-16. [Renaming](#renaming)
-17. [Project layout](#project-layout)
+The website
+1. [Turn the website on (once)](#turn-the-website-on-once)
+2. [What is on it](#what-is-on-it)
+3. [How it stays honest](#how-it-stays-honest)
+4. [How it updates](#how-it-updates)
+5. [Build it on your computer](#build-it-on-your-computer)
+6. [Website files](#website-files)
+
+The parked desktop app
+
+7. [Bottom line](#bottom-line) and the app's sections after it.
 
 ---
+
+## Turn the website on (once)
+
+1. On GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+2. Merge the branch with the website into `main`.
+3. Open **Actions → Website**. The run after the merge publishes the site; its summary lists each
+   source and what it returned. After that it runs every 10 minutes on its own.
+4. Open https://carson14dy.github.io/RoofingApp/ on your phone. Add it to the home screen if you
+   like: it gets the Montana Hail Watch icon.
+
+The repository is public, so GitHub Actions and Pages cost nothing. GitHub pauses scheduled runs
+after 60 days with no activity in the repository; if the site stops updating, open **Actions →
+Website** and re-enable it. Every page says how old it is, so a stalled site is visible.
+
+## What is on it
+
+| Page | Shows | Source |
+|---|---|---|
+| Now | Active warnings, watches and advisories for Montana, most urgent first; the radar picture with its time and the warning outlines; a card per town with temperature, highest gust, chance of rain or snow, and which hours pass a limit | NWS, NOAA |
+| Town (14) | Alerts at that town, the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
+| Storm reports | Hail and wind reports in and near Montana for the last three reporting days, on a map and in tables | SPC |
+| About | What each part is, the flag limits, what happens when something fails, the data sources in detail | — |
+
+Towns: Billings, Bozeman, Butte, Glasgow, Glendive, Great Falls, Havre, Helena, Kalispell,
+Lewistown, Livingston, Miles City, Missoula, West Yellowstone. To change the list, edit
+`website/towns.json` (see AGENTS.md for the map-label check).
+
+Flag limits are placeholders until the company sets its own: gusts 25 mph, wind 20 mph, a 30%
+chance of rain or snow, under 40 °F or over 95 °F (`website/sources.py`, `LIMITS`).
+
+## How it stays honest
+
+- **A failed check is never "no alerts".** If NWS doesn't answer, the page says so. The last
+  verified list stays up with its time, and the page links the four NWS offices.
+- **Missing is a dash, not a zero.** A missing value never raises a flag and never passes one.
+  If gusts didn't load, the town card says gusts weren't checked.
+- **Every page says its age.** It shows when it was built and which sources loaded, and warns in
+  words when it is more than 25 minutes old.
+- **No report is not "no hail".** The site never claims damage or that it is safe to work.
+- **No AI-written text.** Alert text is the NWS's own words.
+
+## How it updates
+
+`.github/workflows/website.yml` runs on GitHub every 10 minutes:
+1. It runs the website tests.
+2. It fetches NWS alerts and forecasts, SPC reports and one NOAA radar picture.
+3. It builds the pages and publishes them.
+
+GitHub sometimes starts scheduled runs late, so a page can be 10–20 minutes behind NWS. Each page
+links weather.gov for the latest. Pushes to `claude/**` and `codex/**` branches run the same build
+against live data as a check. That run fails if any source failed, and its pages can be
+downloaded from the run.
+
+## Build it on your computer
+
+Needs Python 3.10+.
+```bash
+pip install requests jinja2 folium tzdata
+python -m website.build --out _site --sample   # invented sample data, labelled on every page
+python -m website.build --out _site            # live data
+python -m http.server -d _site 8000            # open http://localhost:8000
+python -m unittest tests.test_site             # website tests, offline, a few seconds
+```
+
+## Website files
+```
+website/sources.py     NWS, SPC and NOAA requests, parsers, flag limits, feed contracts
+website/build.py       collect every source → maps (Folium/Leaflet) → pages (Jinja) → _site/
+website/sample.py      invented, labelled sample data for design checks and tests
+website/towns.json     the 14 towns, with each map label's side
+website/templates/     base, Now, town, Storm reports, About
+website/static/        style.css (tokens and look), Leaflet 1.9.4, Atkinson Hyperlegible fonts, icons
+tests/test_site.py     parsers, failure handling, pages, map label layout
+```
+
+---
+
+# Parked: the desktop app
+
+Everything below describes the desktop app, parked on 2026-10-14 (D27). It still works and its
+tests still run. No new version is shipped and no installer is built unless Carson asks.
 
 ## Bottom line
 

@@ -303,6 +303,47 @@ D5 define, or the data on disk; changing `APP_ID` is only free because there are
 goes on an installer, a release page or anything printed; HailTrace is an existing hail-mapping
 service sold to roofers, so stay clear of that name too.
 
+**D27 · A website first; the desktop app is parked (2026-10-14).** Carson: "Let's completely
+rework this. It's too complicated and the design is ugly. Instead of an app let make a website
+first." The product is now a static website in `website/`, built by Python and published with
+GitHub Pages: a Now page (official alerts, a radar and warning-area map, one card per town for the
+next 12 hours), a page per town (alerts at that point, 24 hours, 7 days), a Storm reports page
+(three SPC reporting days) and an About page. GitHub Actions rebuilds it every 10 minutes from
+`main` (`.github/workflows/website.yml`); branch pushes run the same build against live data with
+`--require-live` and keep the result as an artifact. Design: `docs/DESIGN.md`.
+- *Parked, not deleted:* `payload/` and `desktop/` are unchanged, their tests still run, no
+  version is bumped and no installer is built. Deleting them is Carson's call. Not on the site
+  yet: jobs and addresses, territories, inspections, per-roof-system rules, notifications, the
+  hail-footprint demo.
+- *Own code, same rules:* `website/sources.py` is a new ~400-line module rather than an import of
+  `payload/weather.py`, which carries jobs, storage and rules the site doesn't need. What carries
+  over is the rules, each with a test: radar layer `1` with its frame time (D7); alerts sorted
+  most urgent first, test messages and replaced updates dropped, null geometry listed with a note;
+  SPC reporting days 12:00–11:59 UTC, hail in hundredths of an inch, `UNK` wind unknown; gusts
+  from the gridpoint series with their units checked; placeholder limits (D16).
+- *Alerts on a static site:* each build saves what it verified in `data/state.json`. If the alert
+  request fails, the next build keeps the last verified list from the live site with its time and
+  says so; it never empties the list and never says "no alerts". A town whose alert check failed
+  shows "Alerts not checked". No AI text.
+- *Snapshot, not live tiles:* the radar is saved as one picture per build with NOAA's frame time,
+  so the page and the map describe the same frame; it is marked stale past 15 minutes. Every page
+  shows its build time, which sources loaded, and (a short documented script, rule 4) its age,
+  with a warning past 25 minutes. A meta refresh reloads every 10 minutes.
+- *Nothing from third-party servers but data:* Leaflet 1.9.4 and the Atkinson Hyperlegible fonts
+  (SIL OFL) are served by the site; map tiles come from USGS, alerts and forecasts from NWS.
+- *Map labels:* each town's label side and whether it is "minor" (hidden, dot and label, on maps
+  narrower than 546 px, which open one zoom out) live in `towns.json`; a test checks that no label
+  covers another label or a dot at either zoom.
+- *Look:* the dark "storm" look (D19) is replaced by a light "field sheet" with automatic dark
+  mode, chosen for sunlight; tokens in `website/static/style.css`.
+- *Livingston* joins ChatGPT's 13 pilot towns for the gap-wind corridor (D25).
+
+*Why a static site:* no server to keep running, nothing to install, free on a public repository,
+works on any phone, and everyone sees the same checked snapshot. *Limits:* a page can be about
+10–20 minutes behind NWS (GitHub may delay scheduled runs); no alerts reach a phone unless the page
+is open; GitHub pauses scheduled workflows after 60 days without repository activity. Pages must be
+turned on once: Settings → Pages → Source: GitHub Actions.
+
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.
 - Folium camelizes keyword arguments (`_t` → `T`).
@@ -312,3 +353,8 @@ service sold to roofers, so stay clear of that name too.
 - In development the installed copy of the built-in payload goes stale; the updater reinstalls it
   when its content hash changes.
 - `ship.py` and the update tests assume the bundled manifest version; the tests pin a copy to 1.0.0.
+- Folium's `Popup` always calls jQuery (`$(…)`); on a page without jQuery use a direct
+  `bindPopup` (the website's `LinkPopup`).
+- Folium adds Leaflet's stylesheet after anything added to the map's header, so header styles
+  need selectors more specific than Leaflet's (`.leaflet-tooltip.town-label`).
+- `actions/upload-artifact@v4` skips dotfiles such as `.nojekyll` unless `include-hidden-files: true`.

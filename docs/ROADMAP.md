@@ -1,122 +1,95 @@
 # Roadmap
 
-Status on 2026-10-12: payload 1.0.0, desktop shell 1.1.0. Product name: Montana Hail Watch (D26).
-Branches: `claude/desktop-app` (the app, merged as pull request #1); `codex/kansas-city-weather-pilot`
-and `codex/montana-weather-pilot` (ChatGPT's pilots — reviewed in D23 and D25, not merged; their
-findings are in items 2, 5, 6 and 7 below). Agents: check this file before starting, move items to
-Done when merged, and keep “Next” in priority order.
+Status on 2026-10-14: the product is the **Montana Hail Watch website** (D27), built and tested on
+branch `claude/desktop-app`. It goes live when that branch is merged to `main` and GitHub Pages is
+turned on. The desktop app (payload 1.0.0, shell 1.1.0) is **parked**: unchanged, still tested,
+not shipped. Branches: `claude/desktop-app` (the app, then the website); `codex/kansas-city-weather-pilot`
+and `codex/montana-weather-pilot` (ChatGPT's pilots, reviewed in D23 and D25, not merged).
+Agents: check this file before starting, move items to Done when merged, keep "Next" in priority
+order.
 
 ## Bottom line
-1. Build the installers and test them on a real Windows PC and Mac — not done yet.
-2. Pilot one service territory and one roof-system family with real company rules.
-3. Set the evaluation baseline (review P0) before adding any new feed.
-4. Then a real hail-footprint source: MRMS processing or a commercial trial in shadow mode.
-5. Then the contiguous US: poll alerts for the states where there are places and territories (D24).
+1. Turn on GitHub Pages and merge: the site is live within about 10 minutes.
+2. Carson and a crew lead use it for a week on phones and desktops; fix what they trip on.
+3. Replace the placeholder flag limits with the company's own.
+4. Then: decision-time records for an evaluation, nearby station readings, a hail-size map, alerts
+   to phones.
+5. Decide whether to delete the parked desktop app.
 
-## Done in 1.0.0
+## Done: the website (D27)
 | Area | What works | Limits |
 |---|---|---|
-| Live Storms | Radar with frame time, NWS alerts matched by polygon or zone/county/fire zone, feed freshness, address/city/ZIP search, territories, crew findings, review's home-screen order | Alerts poll Montana only |
-| Storm History | SPC reporting day on a map and table, tiers with reasons in words, add inspection candidates | One reporting day at a time |
-| Inspections | Statuses, assigned rep, notes, evidence snapshot, printable exposure summary, CSV export | — |
-| Crew Outlook | Roof system/product, phase, duration, dry-in, site checks, job rule overrides, windows, WBGT + heat index, 7-day, supervisor review, crew acknowledgement | Rules are placeholders until the company sets them |
-| Desktop app | Native window, self-updates from `main`, self-test before install, backups, rollback, recovery page, desktop notifications; update channel verified against real GitHub | App window tested on Linux only; installers unsigned |
-| Tests | 44 tests incl. 240 alert scenarios and a 30-minute outage replay; CI on every PR | — |
+| Now | Montana's active NWS alerts, most urgent first (alerts without an outline listed with a note); radar picture with NOAA's frame time; warning outlines; a card per town for the next 12 hours with flags in words | Radar is a still frame (links to the live loop); Montana only |
+| Town pages (14) | Alerts at that point, 24-hour table (gusts first), 7-day with high and low per day | Grid forecasts for a 2.5 km square, not a roof; placeholder limits |
+| Storm reports | Three SPC reporting days on a map and in tables; hail in inches, unknown wind kept unknown | Preliminary reports only |
+| Honesty | Per-source status line, last verified alerts kept after a failed refresh, "Alerts not checked" per town, page-age warning, sample data labelled on every page | — |
+| Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity |
+| Design | Light "field sheet" look with dark mode, self-hosted fonts and Leaflet, contrast ≥ 5.86:1, collision-free map labels, 288–1440 px without sideways scroll (`docs/DESIGN.md`) | Phone Now page is long (P2) |
+| Tests | 40 website tests (parsers, failures, maps, label layout) alongside the app's 44 | — |
 
-## Handoff build sequence
-| # | Step | Status |
-|---|---|---|
-| 1 | Source-labelled NWS forecasts/alerts, job locations, stale-feed states | Done |
-| 2 | Preliminary storm reports and event history browsing | Done (single reporting day; no date ranges yet) |
-| 3 | One validated estimated hail-footprint source + property intersections | Partial — adapter, intersections and demo done; no validated real source |
-| 4 | Assignments, territories, notifications, exposure exports | Done (desktop notifications only) |
-| 5 | Licensed lightning/nowcast, advanced history, measured targeting analytics | Not started |
+## Next, in priority order
+1. **Go live.** Settings → Pages → Build and deployment → Source: **GitHub Actions**; merge the
+   branch; open Actions → **Website** → the first run's summary (every source loaded, counts
+   plausible); open the site on a phone. Done when two scheduled runs in a row publish.
+2. **Feedback week.** Carson and a crew lead use it daily. Record what they look for and can't
+   find; run the first-click and timing checks in `docs/DESIGN.md` section 1.
+3. **Company limits.** Replace the placeholder flags (D16: gusts 25 mph, wind 20 mph, rain or snow
+   30%, under 40 °F, over 95 °F) with the company's limits, per roof system if they differ.
+4. **Decision-time records (review P0 baseline).** Keep each build's `data/state.json` (alerts,
+   what each town card said) somewhere durable, for example an hourly commit to a `data` branch, and
+   predeclare the metrics (misses, false alarms, lead time) before any new feed is added.
+5. **Phone density (design P2).** A compact one-line-per-town list on phones with the same flags.
+6. **Nearby station observations** on town pages (D23, D25 rules): the nearest NWS stations, never
+   filtered by state, with distance, elevation, observation time and age; about 75 minutes is
+   "current"; QC flags shown; a null gust is "no gust reported". ChatGPT's 16-point Montana sweep is
+   the first fixture.
+7. **Real hail footprint.** MRMS MESH processed by a scheduled GitHub Actions job into outlines
+   (GRIB2 → polygons per swath, nodata handled, 1 km resolution recorded), drawn on the Storm
+   reports map as an estimate, apart from reports. Check against SPC 2025-06-15 (Benchland, 1.75″).
+   Or a commercial trial in shadow mode (Xweather, The Weather Company HailZone, Verisk, Cotality;
+   use the review's procurement questions). No "best" claims (D21).
+8. **Alerts to phones.** A static site can't push. Needs a small service (push, SMS or email) and the
+   p95 delivery gate below.
+9. **History.** Date ranges and multi-day events; NCEI Storm Events for older context.
+10. **More towns, then the contiguous US (D24).** Towns are one line each in `website/towns.json`
+    (each needs a label side checked by the label test). Contiguous US: a state list for alerts,
+    the SPC filter box and map extent per region.
+11. **The parked app.** Keep or delete `payload/` and `desktop/` (Carson's call). If it comes back,
+    its plan (installers on real machines, pilot, evaluation, guidance trials, vendor comparison)
+    is in this file's history at commit 33cda31.
 
-## Independent review priorities
+## Independent review priorities, for the website
 | Priority | Item | Status |
 |---|---|---|
-| P0 | Alert geography (polygon, county, zone, null geometry) | Done, tested |
-| P0 | Lifecycle: revisions, out-of-order, duplicates, outages, replay | Done, tested |
-| P0 | Baseline and predeclared evaluation metrics | **Not started — next after the pilot starts** |
-| P1 | Roofing job context | Done |
+| P0 | Alert geography (polygon, county, zone, null geometry) | Statewide list from NWS; per-town check by point (NWS matches polygons and zones); null geometry listed; tested |
+| P0 | Lifecycle: revisions, duplicates, outages | Replaced updates and test messages dropped; failed refresh keeps the last verified list; tested. No notifications yet, so no duplicate-notification risk |
+| P0 | Baseline and predeclared evaluation metrics | **Not started** (Next 4) |
+| P1 | Roofing job context | Parked with the app |
 | P1 | Advanced guidance trials (SPC CIG, ProbSevere v3, LightningCast) | Listed only |
-| P1 | Broader vendor comparison | Listed only |
-| P1 | Pinned feed contracts | Done for connected feeds (`weather.CONTRACTS`) |
+| P1 | Broader vendor comparison | Listed only (Next 7) |
+| P1 | Pinned feed contracts | Done: `website/sources.py` `CONTRACTS`, shown on the About page |
 | P2 | Raw national model ingestion | Deferred |
 
 ## Release gates (review's proposed targets)
-| Gate | Status |
+| Gate | Status for the website |
 |---|---|
-| ≥100 alert lifecycle/geography scenarios; no missed applicable severe/tornado alert; no duplicate notifications | 240 generated scenarios pass. To do: add curated real Montana events (boundary sites, null-geometry warnings) |
-| Every injected outage shows stale/unavailable; no missing-data all-clear | Covered by tests |
-| ≥500 adversarial AI summaries | Not applicable — the app generates no AI text. Required before adding any |
-| Every displayed number/time/location traces to evidence | Partial — candidate evidence snapshots and outlook reasons; no full audit |
-| p95 < 60 s from alert retrieval to notification accepted | Not measured (60 s polling, desktop only) |
-| Replay a peak regional day at 3× input; recover from a 30-minute interruption without lost records | Recovery tested; 3× load not tested |
-| Confidence intervals and limits for comparative results | Waits for the evaluation |
-
-## Next, in priority order
-1. **Installers on real machines.** Merge to `main` → Actions → **Build desktop installers** → install
-   on a Windows PC and a Mac. Done when: the window opens, map and radar draw, a notification appears,
-   and a test release (1.0.1) arrives through **Check for updates** and applies with **Update now**.
-   Then decide on code signing (Windows certificate; Apple Developer ID + notarization).
-2. **Pilot.** One service territory, one roof-system family, the company's real rules for that
-   product, real jobs. Record what crews change or ignore.
-   Site plan (D25): pick pilot jobs across western valleys, central towns, the south-central
-   gap-wind corridor, the northern and eastern plains, rural basins and the Front, and one pass or
-   border point, so the baseline (3) sees every Montana terrain type.
-3. **Evaluation baseline (review P0).** Predeclare metrics — weather misses/false alarms/lead time,
-   review time, interruptions per 100 job-days, findings per crew-hour. Arms: A) company practice +
-   NWS, B) + job rules, C) + extra feeds. Event/date held-out splits; decision-time data only (the app
-   already logs outlook changes, reviews with the outlook at the time, and candidate evidence
-   snapshots). Build an export and a replay harness.
-4. **Real hail footprint.** Option A: an MRMS MESH processing job (GRIB2 → polygons per swath
-   interval, nodata handled, 1 km resolution recorded) on a schedule — e.g. GitHub Actions or a small
-   server — publishing GeoJSON for the app's footprint setting, which keeps GRIB libraries out of the
-   desktop app. Option B: a commercial trial in shadow mode. Check against a known event, e.g. SPC
-   2025-06-15 (Benchland, 1.75″).
-5. **Nearby station observations.** A feed for the `station_observation` evidence kind (D23, D25):
-   the nearest NWS stations, never filtered by state, with distance, station elevation, observation
-   time and age. "Current" means about 75 minutes old or less (stations report hourly); older values
-   show as stale, never hidden. Each value carries its native QC flag — `X` withheld, `V`, `S`, `C`,
-   `Z` shown. A null gust shows "no gust reported", not "unavailable". Display in °F and mph, native
-   units kept (D15). Grid elevation shown beside the forecast; job elevation unknown unless recorded.
-   ChatGPT's 16-point Montana sweep is the first fixture. After the baseline (3), like any new feed.
-6. **Advanced guidance trials in shadow mode.** SPC outlooks with Conditional Intensity Groups,
-   ProbSevere v3, LightningCast (a prediction) kept separate from observed lightning. A low score
-   never suppresses an official warning.
-   Also the Billings office's gap-wind probability charts for the Livingston–Big Timber–Harlowton
-   corridor (a PDF, not a feed; D25).
-7. **Vendor comparison.** Xweather (live; `/hail/archive` from 2024-01-01; published pay-as-you-go
-   pricing with a 12× hail multiplier), The Weather Company HailZone, Verisk, Cotality — use the
-   review's procurement questions and model cost with territory sharing and caching.
-   ChatGPT's plugins (AccuWeather, Weather by WindBorne, Zoom Radar Weather, Tomorrow.io) are
-   candidates only: chat-plugin access is not app API access, and ChatGPT's research retrieved no
-   documentation for any of them (D23).
-8. **Alerts when the app is closed.** Phone/SMS/email delivery needs a small always-on service;
-   measure the p95 gate.
-9. **History.** Date ranges and multi-day events in Storm History; NCEI Storm Events for older context.
-10. **Contiguous US (D24).** Owner decision 2026-10-11: all of Montana now — already the app's
-    scope — then the contiguous US. One change, its own PR after the installers: alert areas derived
-    from saved places' zone codes, territories and the company state (`area=MT,WY,…`, same list for
-    backfill; confirm the comma list and measure the national feed live first); SPC "near my
-    places" box; map opens on the places; the "outside Montana" warning and Montana labels
-    generalised; `weather.COVERAGE` and `CONTRACTS` updated; tests for a multi-state poll, a border
-    place with out-of-state codes and a national-size replay. Alaska and Hawaii out of scope.
-11. **Shared data.** Each computer has its own database. Office and crews sharing jobs and candidates
-    needs a server or sync — decide before building.
+| No missed applicable severe/tornado alert | NWS does the matching; the statewide list shows every active Montana alert. Real-event checks: add curated Montana cases |
+| Every injected outage shows stale/unavailable; no missing-data all-clear | Covered by tests (alerts, gusts, every source down) |
+| AI summaries | Not applicable: the site generates no AI text |
+| Every displayed number/time/location traces to evidence | Each section names its source and time; feed contracts on the About page |
+| p95 < 60 s from alert retrieval to notification | Not applicable until alerts reach phones (Next 8) |
+| Recover from a 30-minute interruption without lost records | Next build after an outage is complete; last verified alerts carried across |
 
 ## Open questions for Carson
-- Work rules for each roof system and product (from manufacturer instructions and company procedure).
-- Pilot territory and roof-system family.
-- Keep the repo public? Private needs an `UPDATE_TOKEN` (see README).
-- Crew computers: Windows, Apple Silicon Macs, Intel Macs? (The Mac build targets Apple Silicon.)
-- Should office and crews share one set of jobs and candidates?
-- Budget for commercial hail data?
-- The repo description says “Roofing Weather and Maps Contact app” — what should “Contact” cover
-  (customer contacts, homeowner outreach, a CRM)?
+- Are these the right 14 towns? Which should be added or dropped?
+- The company's weather limits for each roof system (Next 3).
+- Delete the parked desktop app, or keep it in the repo?
+- Should the site have its own web address (a custom domain) instead of the GitHub one?
+- Check "Montana Hail Watch" against existing products and trademarks before printing it anywhere
+  (D26).
+- The repo description says "Roofing Weather and Maps Contact app". What should "Contact" cover?
 
 ## Missing inputs
 - The handoff's two images (dashboard concept, hero photo) were not provided.
-- The review cites `Roofing_Weather_Engine_Blueprint.md`, which isn't in this repo — add it to
+- The review cites `Roofing_Weather_Engine_Blueprint.md`, which isn't in this repo. Add it to
   `docs/handoff/` if it exists.

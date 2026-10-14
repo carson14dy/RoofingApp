@@ -1,0 +1,135 @@
+name: Website
+
+# Builds the Montana Hail Watch website from live NWS, SPC and NOAA data.
+#
+# main + GitHub Pages turned on: rebuilds every 10 minutes and publishes the site.
+#   Turn Pages on once: Settings > Pages > Build and deployment > Source: "GitHub Actions".
+# Branch pushes (claude/**, codex/**): a live preview check. The build fails if any source
+#   failed or was stale (--require-live), and the built site is kept as a downloadable artifact.
+#
+# GitHub pauses scheduled workflows after 60 days without repository activity; re-enable it in
+# the Actions tab if the site stops updating. Every page says how old it is.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main, "claude/**", "codex/**"]
+    paths:
+      - "website/**"
+      - "tests/test_site.py"
+      - ".github/workflows/website.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      publish: ${{ steps.plan.outputs.publish }}
+    steps:
+      - name: Plan (publish only from main with Pages on)
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pages_url=""
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            pages_url=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .html_url 2>/dev/null || true)
+          fi
+          if [ -n "$pages_url" ]; then publish=true; else publish=false; fi
+          # A schedule tick with nothing to publish has nothing to do.
+          if [ "$publish" = false ] && [ "$GITHUB_EVENT_NAME" = schedule ]; then run=false; else run=true; fi
+          {
+            echo "publish=$publish"
+            echo "run=$run"
+            echo "pages_url=$pages_url"
+          } >> "$GITHUB_OUTPUT"
+          echo "publish=$publish run=$run pages_url=${pages_url:-none}"
+
+      - uses: actions/checkout@v4
+        if: steps.plan.outputs.run == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.plan.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        if: steps.plan.outputs.run == 'true'
+        run: python -m pip install requests jinja2 folium pillow
+
+      - name: Website tests (offline)
+        if: steps.plan.outputs.run == 'true'
+        run: python -m unittest tests.test_site
+
+      - name: Build from live data
+        if: steps.plan.outputs.run == 'true'
+        env:
+          PAGES_URL: ${{ steps.plan.outputs.pages_url }}
+        run: |
+          args=(--out _site)
+          if [ -n "$PAGES_URL" ]; then args+=(--previous "$PAGES_URL"); fi
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then args+=(--require-live); fi
+          python -m website.build "${args[@]}" | tee build-result.json
+
+      - name: Summary of what each source returned
+        if: always() && steps.plan.outputs.run == 'true'
+        run: |
+          python - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import json, pathlib
+          p = pathlib.Path("build-result.json")
+          if not p.exists() or not p.read_text().strip():
+              print("The build did not finish; see the log."); raise SystemExit
+          r = json.loads(p.read_text())
+          print("| Source | Loaded | Detail |\n|---|---|---|")
+          for s in r["status"].values():
+              print(f"| {s['label']} | {'yes' if s['ok'] else '**no**'} | {s['detail']} |")
+          radar = r.get("radar") or {}
+          print(f"\nAlerts: {r['alerts']} ({r['alerts_null_geometry']} without an outline). "
+                f"Towns with a forecast: {r['towns_with_forecast']}, with gusts: {r['towns_with_gusts']}. "
+                f"Storm reports: {r['reports']}. Radar frame: {radar.get('frame', 'none')}, "
+                f"share of map with echoes: {radar.get('colored', 'n/a')}.")
+          EOF
+
+      - name: Keep the built site (preview)
+        if: always() && steps.plan.outputs.run == 'true' && steps.plan.outputs.publish != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-preview
+          path: _site
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Package for GitHub Pages
+        if: steps.plan.outputs.publish == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v4

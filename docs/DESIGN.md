@@ -1,253 +1,244 @@
-# Design — Montana Hail Watch
+# Design — Montana Hail Watch website
 
-Design spec for Montana Hail Watch, the app crews open from a desktop icon.
-Written 2026-10-11 with the design-playbook method (frame → explore → make → validate → ship).
-This is the spec engineering builds from; the mockups are on the design canvas (link in the PR).
-Decisions that bind the app live in `DECISIONS.md`; this file says what the screens are and why.
+Design spec for the Montana Hail Watch website (D27), written 2026-10-14 with the design-playbook
+method (frame → explore → make → validate → ship). It replaces the desktop app's design of
+2026-10-11, which is parked with the app (`payload/`, `desktop/`). Decisions that bind the site
+live in `DECISIONS.md`; this file says what the pages are and why. The code is `website/`; the
+look is the tokens at the top of `website/static/style.css`.
 
-Scope: the real app (`payload/`) with Montana as its territory,
-absorbing what ChatGPT's Montana pilot branch showed (nearby station readings with their age and
-elevation, a statewide view, terrain wording). It is not a window around the pilot prototype
-(D23, D25). The desktop icon already exists: GitHub Actions builds the Windows and macOS apps
-from `main` (README, "Get the installers").
+## 1. Frame
 
-## 1. Frame (`/ux-strategy:frame-problem`)
+**Problem.** Carson, 2026-10-14: "It's too complicated and the design is ugly. Instead of an app
+let's make a website first." The app asked crews to install software, set up jobs and territories,
+and read six equal-weight sections on a dark screen before answering anything. The site answers
+three questions with nothing to install or set up:
+1. Is there an official warning in Montana right now, and where?
+2. What will wind, gusts, rain or snow and temperature do in the next 12–24 hours in the towns we
+   work?
+3. Where was hail or damaging wind reported in the last three days?
 
-**Problem (design-brief).** Every morning and during every storm the office has to answer three
-questions for work spread across a state 550 miles wide: which jobs can work today under the
-company's rules, is any official warning touching a job or territory, and where did yesterday's
-storm leave roofs worth inspecting. Today's home screen puts the map first and six equal-weight
-sections in a side column; the decisions are there but nothing ranks them, nearby conditions are
-missing, and when a feed or the map library fails the map area goes blank. In Montana the nearest
-station can be 20–30 miles away and 1,000 ft lower, stations report hourly, and radar overshoots
-much of the state at low levels (D25), so the screen must show distance, age and elevation beside
-every number.
+**Users.**
+- The owner or dispatcher on a desktop, 6:30–8:00 am and whenever a warning is issued.
+- A crew lead on a phone in a truck or on a roof: sunlight, one hand, weak signal.
+- A sales rep after a storm, looking for where hail was reported.
 
-**Users (persona, from the handoff and the owner).**
-- Primary: the dispatcher/owner on a desktop, 6:30–8:00 am and whenever a warning fires. Needs a
-  decision list, not a map to hunt across.
-- Secondary: a crew lead on a laptop or phone at the job, acknowledging the day's outlook.
-- Tertiary: a sales rep working inspection candidates after a storm.
+**Constraints.** Python builds every page (Jinja + Folium); no server, no framework, no accounts;
+hand-written JavaScript only for what the browser alone can do (rule 4). Evidence honesty (rules 5
+and 6): never a green "safe", missing data is a dash and a sentence, a failed check is never "no
+alerts". No AI text. Montana now, contiguous US later (D24). Works from 320 px phones to 1440 px
+desktops, in sunlight, and over a slow connection.
 
-**Constraints.** Python, Flask, Jinja and Folium only (D1); the dark storm look (`base.html`
-tokens); evidence honesty (rules 5 and 6: never a green "safe", missing data is "Data
-unavailable"); no AI text; Montana now, contiguous US next (D24); desktop first, works at 1024 px
-and stacks on a phone; must stay readable over a bad connection in a truck.
-
-**Success criteria (metrics-definition).**
+**Success criteria.**
 | Metric | Method | Target |
 |---|---|---|
-| First-click success on "which job needs a review today?" | 5–8 crew/office users, first-click test on the mockup | ≥ 80% |
-| Time to first decision from launch | same sessions, stopwatch | ≤ 10 s |
-| All-clear misreads of the three status pills | comprehension question per pill | 0 of 5 |
-| Outlook acknowledgements per job-day | app log (already recorded) | rises during the pilot |
-| Missed applicable alerts | the 240 scenarios | 0 (unchanged) |
+| First-click success on "is there a warning near Bozeman?" | 5 crew/office users on a phone | ≥ 80% |
+| Time to find the next-hours gusts for a named town on a phone | same sessions, stopwatch | ≤ 10 s |
+| All-clear misreads (failed alert check, missing gusts, empty report day) | one comprehension question each | 0 of 5 |
+| Text contrast, light and dark | computed for every token pair | ≥ 4.5:1 (lowest measured 5.86:1) |
+| Horizontal scrolling | Chromium at 288–1440 px | none (measured) |
+| Map labels covering each other or a town | `tests/test_site.py` + browser measurement | none |
 
-**Principles (design-principles), ranked for conflicts.**
-1. **Evidence over reassurance.** Never a green "safe". Missing means unavailable, with the time
-   of the last try. Counter-example: a quiet map with no feed status.
-2. **Decisions before the map.** The home screen answers "what do I do" before "what is out
-   there". The map stays, but it answers the second question.
-3. **Distance, age and height beside every reading.** A number without "2.9 mi · 17 min old ·
-   station 3,570 ft" is not a Montana number.
-4. **Plain words, one screen deep.** Sentence case, no jargon, the reason in words next to every
-   status; nothing important behind a second click.
-5. **Last known beats blank.** Offline or stale, the screen keeps the last known state, labels
-   its age, and never clears a warning.
+**Principles, ranked for conflicts.**
+1. **Evidence over reassurance.** No state of any page reads as an all-clear. A failed source says
+   so, with the time and what to do.
+2. **Three questions, three places.** Warnings, the next hours by town, storm reports. Nothing else
+   competes for the first screen.
+3. **Readable in a truck.** Light paper and dark ink for sunlight, large numbers, words beside every
+   colour. Dark mode follows the phone's setting for night use.
+4. **Say how old it is.** Every page shows when it was built and whether each source loaded; an old
+   page says so in words.
+5. **Nothing to set up.** No logins, settings or saved places. The URL is the product.
 
-## 2. Information architecture (`information-architecture`, `navigation-patterns`)
+## 2. Information architecture
 
-Global navigation stays a top bar with six destinations (under the seven-item limit): Today,
-Storm History, Inspections, Crew Outlook, Places, Data sources. "Live Storms" is renamed
-**Today** because that is what it answers; the map lives inside it. Utility: the version/update
-chip, right-aligned. Local navigation: tabs only inside Storm History (day) and Crew Outlook
-(job). Depth: nothing deeper than Today → job outlook → review. Labels are the words crews use
-(jobs, warnings, inspections), validated with the first-click test above.
+Three top-level pages and 14 town pages, two levels deep:
+```
+Now (index.html) ── town/<slug>.html × 14
+Storm reports (reports.html)
+About (about.html)
+```
+Navigation is a top bar with three items. Town pages are reached from the town cards, from the
+map's town popups and from the "Other towns" row on every town page. Labels are the words crews
+use: warnings, gusts, rain or snow, storm reports. Towns: ChatGPT's 13 pilot towns plus
+Livingston, for the gap-wind corridor (D25).
 
-## 3. Explore (`/prototyping-testing:explore-options`)
+## 3. Explore
 
-**The decision this settles.** What the home screen's unit of interaction is: a job, a place on
-the map, or a weather event. Criteria fixed before the concepts were drawn
-(`concept-selection`):
+**The decision this settles.** What the first screen is and what it looks like.
 
 | # | Criterion | Kind |
 |---|---|---|
-| T1 | No state of the screen can read as an all-clear | threshold |
-| T2 | "Which jobs need review today" answered in 0 clicks from launch | threshold |
-| T3 | Buildable in Flask/Jinja/Folium without new JavaScript | threshold |
-| T4 | Degrades to last-known + age when a feed or the map fails | threshold |
-| X1 | Fewest decisions before the first action (Hick) | trade-off |
-| X2 | Keeps the storm picture useful during an active warning | trade-off |
-| X3 | Holds at 50 jobs across Montana | trade-off |
+| T1 | No state can read as an all-clear | threshold |
+| T2 | Official warnings visible with no click, on a phone too | threshold |
+| T3 | Static pages built by Python; JavaScript only for browser-only needs | threshold |
+| T4 | Works at 320 px wide without sideways scrolling | threshold |
+| X1 | Fewest elements before the first answer | trade-off |
+| X2 | Storm picture stays useful during an active warning | trade-off |
+| X3 | Legible in direct sunlight | trade-off |
 
-**The spread (`parallel-concepts`), different in what the user does, same fidelity, same look:**
-- **A · Dispatch board.** Entry: a ranked list of today's jobs with status, reason and next
-  check. The system ranks; the user confirms per row. Map on the right, pins mirror the rows.
-- **B · Map first (the incumbent).** Entry: a statewide map; the user hunts pins and reads a
-  card per pin. The user ranks.
-- **C · Storm desk.** Entry: a timeline of weather events (warnings issued, reports, forecast
-  changes) newest first; each event lists the jobs it touches. The user triages events.
+**The spread.**
+- **A · Field sheet.** Light paper look. Warnings list and map side by side on desktop, warnings
+  first on a phone, then one card per town with the next 12 hours. Town pages hold the detail.
+- **B · Storm desk.** The app's dark storm look carried over, a full-width radar map first, alerts
+  and towns below it.
+- **C · Town picker.** A list of towns first; pick one to see its warnings and forecast.
 
-**Pressure test (heuristic-evaluation, on each concept's own terms).** A: risk that the map
-becomes decorative during a storm; the list must grow its warnings block when warnings exist.
-B: at 50 jobs the Billings cluster is unreadable at statewide zoom; status needs a click per pin.
-C: many events, few decisions; the dispatcher re-derives job status from events every morning.
+**Pressure test.** B: on a phone the full-width map pushes warnings below the fold (fails T2), and
+dark grey on navy washes out in sunlight (loses X3); it is also the look Carson called ugly.
+C: warnings are one tap away and the statewide picture disappears (fails T2, loses X2).
+A: risk that the map is small on desktop during a storm; the map can be zoomed and links to the
+live loop at weather.gov.
 
-**Decision.** A wins. It meets every threshold; B fails T2 and X3 at Montana scale; C loses X1.
-What A costs: the map drops from 70% to about 42% of the width, and the storm picture is less
-prominent on quiet days. Mitigation: the warnings block expands and the map pane widens when
-any convective warning touches work (state-driven, no script).
-Rejected, and what brings each back: **B** was testing whether the map alone could carry the
-decision; it lost on T2 and X3; it comes back for a field-only tablet user with a handful of
-jobs. **C** was testing event-first triage; it lost on X1; it comes back when the unit of work is
-a territory with many crews (contiguous-US scale), where events outnumber jobs.
+**Decision.** A. It meets every threshold. Rejected, and what brings each back: **B** returns as
+a night or wall-display mode if crews ask for one; the dark mode of A already covers night use.
+**C** returns when the site has saved jobs: a crew's own list beats a town list once it exists.
 
-## 4. Make: the Today screen (`/ui-design:design-screen`)
+## 4. Make: the pages
 
-**Structure (layout-grid).** 12 columns, 24 px gutters, 24 px margins at 1440; the decisions pane
-takes columns 1–7, the map pane 8–12. At 1024 the same split with the map at 360 px minimum.
-Below 900 the panes stack: decisions first, map at 50vh, header navigation wraps under the
-brand with the version chip in the same row (fixes the 1024 wrap seen today).
+**Layout.** Content width 72 rem with 16–24 px side margins. Now page: lead, then a 5 / 7 column
+split at 960 px and wider (warnings left, map right), stacked below; then the town cards in an
+auto-fill grid with a 17 rem minimum. Town page: a single column of alerts, the 24-hour table and
+the 7-day list. Reports page: map and legend, then one table per reporting day.
 
-**Hierarchy (visual-hierarchy), in reading order.**
-1. The date line: "Saturday, Oct 11 · 7:40 am MDT" with the feed status line beneath it, one
-   chip per feed with a word and an age: Alerts live 14 s · Radar 4 min · Forecast 6:01 am ·
-   Reports 10 min. This is the trust line; it never collapses.
-2. **Warnings touching your work.** Only alerts matched to a job, property or territory; the
-   full Montana list stays one click away. Each card: event, area, until-time, "Official · NWS",
-   and the job it touches. Empty state: "No official warnings touch your work. Checked 7:40 am."
-   Unavailable state: "Warnings could not be refreshed since 7:21 am. Last known warnings stay
-   listed." The two states are never shown together (state machine below).
-3. **Today's jobs.** One row per job: name and town, status pill, the reason in words, the
-   nearby station line, next check time, a ghost "Open" button. One filled primary button for
-   the whole block: "Review N jobs" (N = jobs needing review). That is the screen's single
-   primary action.
-4. **Tomorrow.** Same row style, conflicts only.
-5. **Inspection candidates.** One line with counts and "Open list". No four-tile scoreboard.
-6. **Storm matches, last 24 h.** Newest first, collapsed to three with "more".
-Map pane: the Folium map with job pins coloured by status (plus shape and label, never colour
-alone), warning polygons hatched, layer chips with each layer's time. Map empty states below.
+**Hierarchy, in reading order.**
+1. Header: mark, "Montana Hail Watch", Now · Storm reports · About.
+2. Freshness line: "Updated Wed 9:02 am MDT · rebuilt every 10 minutes · 3 min ago", then which
+   sources loaded and any problem in red words.
+3. Now: warnings and advisories with a count (the six most urgent shown, the rest one tap away), the
+   radar and warning-area map with its frame time, then "Next 12 hours by town".
+4. Town card: name and the most urgent alert chip, temperature range, highest gust, highest chance
+   of rain or snow, then either "6 of 12 hours flagged. First at 12:00 pm: Gusts 31 mph." or the
+   honest alternative ("No hour reaches the limits above", or "Gust forecast unavailable, so gusts
+   weren't checked").
+5. Town page: official alerts at that point, the 24-hour table (time, gusts, wind, rain or snow,
+   temperature, sky, reasons), the 7-day list with high and low on one row.
 
-**The nearby station line (D25).** `KBIL · 1.8 mi · 11 mph NW · no gust reported · 17 min old ·
-station 3,570 ft`. Age past 75 min renders the whole line in the stale style with "stale" in
-words. Job elevation shows "job elevation unknown" until the job records one. A `Z` or `S` flag
-shows beside the value, never hides it; `X` is withheld and says so.
+**Typography.** Atkinson Hyperlegible Next for text and Atkinson Hyperlegible Mono for numbers and
+times, designed by the Braille Institute for low-vision legibility and served by the site
+itself (no font service). Sizes 13 / 14 / 17 / 20 / 25 / 31 px; body 17 px; weights 400, 600
+and 700. The mono zero has a slash by design, so 0 and O never mix in a time or speed.
 
-**Typography (typography-scale).** Display: Barlow Condensed 700 at 28 / 22 / 16 px, uppercase,
-0.05 em tracking, line-height 1.2. Body: Inter 400/600 at 15 px (up from 14), small 13, caption
-12 (up from 11.5 and 10.5), line-height 1.5. Mono: IBM Plex Mono 500 at 13 for coordinates and
-station codes. Two weights on screen at once. Measure in the decisions pane ≤ 70 characters.
+**Colour.** Three tiers in `style.css`: raw scale (paper, ink, red, orange, amber, slate, night,
+mist), semantic roles (`--color-warning`, `--color-flag`, …), component tokens (cards, chips).
+Hazard colours follow the NWS order and every chip carries its word: warning red, watch orange,
+advisory amber, statement slate. Flags (values over a limit) use orange text plus bold, never
+colour alone. Contrast, computed:
 
-**Colour (color-system, dark-mode-design).** The app is dark only; crews use it in trucks at
-dawn. Three tiers, each referencing the one below; the hexes are today's values so nothing
-visually resets:
-```
-raw      --storm-900 #0c1622  --storm-800 #101f30  --storm-700 #16273a  --storm-600 #16364f
-         --granite-700 #1c2c3f  --line-600 #2a3e54  --sky-100 #e9f0f7  --sky-400 #8ea6bf
-         --wheat-500 #e0a93c  --wheat-400 #efb84e  --wheat-600 #b9872c
-         --green-300 #7bd88f  --red-300 #ff8b8b  --violet-300 #c77dff  --blue-300 #a9c7e8
-semantic --color-bg: var(--storm-900)   --color-surface-1: var(--storm-800)
-         --color-surface-2: var(--storm-700)   --color-surface-3: var(--granite-700)
-         --color-border: var(--line-600)   --color-text: var(--sky-100)
-         --color-text-muted: var(--sky-400)   --color-primary: var(--wheat-500)
-         --color-review: var(--wheat-500)   --color-unavailable: var(--red-300)
-         --color-meets: var(--blue-300)   --color-demo: var(--violet-300)
-         --color-official: var(--red-300)   --color-live: var(--green-300)
-component --pill-review-fg: var(--color-review)   --btn-primary-bg: var(--color-primary)
-         --card-bg: var(--color-surface-3)   --feed-chip-live: var(--color-live) …
-```
-Contrast, measured: text #e9f0f7 on #1c2c3f 13.9:1; muted #8ea6bf on #1c2c3f 5.6:1; wheat
-#e0a93c on #0c1622 8.4:1; red #ff8b8b on #1c2c3f 7.1:1; "meets" blue #a9c7e8 on #1c2c3f 8.9:1.
-All pass AA; muted text is the floor and stays at 12 px or larger. Status is never colour alone:
-every pill carries its words, every pin a shape.
+| Pair | Light | Dark |
+|---|---|---|
+| Text on page / card | 15.9 / 17.2 | 14.9 / 13.2 |
+| Muted text on card | 6.8 | 7.9 |
+| Muted text on a warning card | 5.9 | 7.8 |
+| Link on page | 6.5 | 9.6 |
+| Flag text on card | 6.3 | 9.2 |
+| Warning / watch / advisory / statement chip | 6.6 / 6.3 / 6.9 / 7.5 | 9.1 / 10.4 / 11.9 / 8.9 |
 
-**Spacing (spacing-system).** 8 px base: 4, 8, 16, 24, 32, 48. Inside a row 8, between rows 8,
-between blocks 24, pane padding 24. Compact density (field laptops) shifts one step down.
+**Spacing.** 8 px base: 4, 8, 12, 16, 24, 32, 48, 64. Cards 16 px padding; sections 48 px apart.
 
-**Motion.** Fades of 200 ms only; the app already disables all motion under
-`prefers-reduced-motion`. No loading spinners: server-rendered pages arrive whole; the feed
-chips carry the age instead.
+**Map.** Leaflet 1.9.4 served by the site. USGS topo base in greyscale (inverted in dark mode) so
+radar and warning colours stand out. Radar is NOAA's composite saved as one picture per build with
+its frame time, at 72% opacity, so everyone sees the same frame the page describes. Warning
+polygons use the chip colours. Towns are white dots with labels; each label's side is set in
+`towns.json` so no label covers another or a dot. Maps narrower than 546 px open one zoom out, so
+the four "minor" towns (Butte, Glendive, Lewistown, Livingston) hide there, dot and label; every
+town keeps its card. Reports: hail in violet, sized by hail size; wind in teal.
 
-**States (state-machine).** Three machines, each with every state drawn:
-- Feed (per feed): live → stale (past its limit: radar 15 min, alerts 10 min, SPC 60 min,
-  forecast 12 h) → unavailable (request failed; last data kept with its time) · off (self-test)
-  · demo (only under the demo event). Impossible: "no warnings" together with "unavailable".
-- Job day: meets · review · unavailable (D16). No fourth "safe" state exists.
-- Map: ready · tiles missing (outline and pins drawn, note "Base map tiles unavailable") ·
-  library missing (Leaflet failed to load: show the pins list and "Map could not load; readings
-  above are unaffected") · loading (first paint only). Today the library-missing state is a blank
-  black pane; bundling Leaflet with the payload removes it for offline launches.
+**States.**
+- Source: loaded · problem (with the reason) · stale (radar frame older than 15 minutes).
+- Statewide alerts: verified list · verified-and-empty ("No active … That is not an all-clear") ·
+  refresh failed with the last verified list and its time · couldn't check and nothing verified
+  ("This is not an all-clear"). A failed refresh never empties the list.
+- Town alerts: list · none at this point · "Alerts not checked" chip on the card.
+- Forecast values: number · dash with "not available" for screen readers. A missing value never
+  raises a flag and never passes one.
+- Radar: shown with its frame time · not shown, with the reason.
+- Page age: fresh · over 25 minutes old (the freshness line turns into a warning).
 
-**Copy (ux-writing).** Status: "Forecast meets configured conditions", "Weather review needed",
-"Data unavailable". Reasons start with the fact: "High Wind Warning until 6 pm; forecast gusts
-48 mph exceed your 25 mph limit." Errors say what happened and what to do: "Hourly forecast
-didn't load (last try 7:38 am). This is not an all-clear; try again or check NWS." Empty warnings:
-"No official warnings touch your work. Checked 7:40 am." Buttons start with a verb: "Review 2
-jobs", "Open", "Retry feeds".
+**Copy.** Plain words, sentence case, the fact first. Errors: "Couldn't load NWS alerts at
+9:02 am. Below is the last list we verified, from 8:50 am. Alerts may have been issued or ended
+since. Check NWS Billings, …". Empty: "No hail or wind reports in or near Montana for this day."
+Footer: "Weather information only. It does not confirm roof damage and it is not a decision to
+work or to stop work: check the sky and the site."
 
-**Accessibility.** Focus ring 2 px wheat (exists); the warnings block is an `aria-live="polite"`
-region; pills are text; pointer targets ≥ 32 px, touch ≥ 44 px when stacked; headings are real
-`h2`s in reading order; the map pane has an accessible name and a text equivalent (the rows).
+**Accessibility.** Skip link; one `h1` per page and headings in order; table captions and column
+headers; "(over limit)" read out after each flagged value; chips are text; 44 px touch targets;
+visible focus ring; maps have titles and the same facts are in the lists beside them; reduced
+motion honoured; print hides the maps.
 
-## 5. Validate: self-critique of the design (`/visual-critique:critique-screen`)
+## 5. Validate: self-critique
 
-Run on the hi-fi mockup, seven dimensions.
+Run on the sample build in Chromium at 1440 px (light and dark) and 390 px, after the fixes listed
+under Ship.
+
 | Dimension | Rating | Observation → problem → fix |
 |---|---|---|
-| Hierarchy | pass | Entry point is the warnings block, then the jobs list; one filled button. Fix none. |
-| Brand | minor issue | Mood and tokens match the existing look; voice is plain. Problem: the app's tokens are single-tier raw names, so the mockup's semantic names do not yet exist in `base.html`. Fix: add the semantic tier (section 4) before the templates change. |
-| Composition | minor issue | 7/5 split balances a dense left pane with a quiet map. Problem: on quiet days the right 42% is mostly empty state. Fix: the map pane's layer chips and station pins give it content; the storm-mode widening covers busy days. |
-| Typography | pass | Four sizes, two weights, 15 px body, measure under 70. |
-| Colour | pass | All pairs ≥ 5.6:1; status carries words; red reserved for official and unavailable. |
-| Affordance | minor issue | Rows use a ghost "Open"; the filled "Review N jobs" is singular. Problem: ghost buttons on `--color-surface-3` have a 1 px border at 3.2:1, near the floor. Fix: border uses `--sky-400` at full opacity (5.6:1). |
-| Information density | minor issue | Six blocks on one screen. Problem: at 50 jobs the list is long. Fix: rows collapse to name, pill and reason past 12 jobs, with "show all"; tomorrow and matches collapse first. |
+| Hierarchy | pass | Warnings, then map, then towns, on both widths; one idea per card. |
+| Brand | pass | Light field-sheet look, a simple mountain-and-hailstone mark, plain voice. The tab icon is the header mark; the phone home-screen icon is the app's icon at 180 px. |
+| Composition | minor issue | On quiet desktop days the warnings column is short beside a tall map. Fix (P3): when there are no warnings, let the town cards start beside the map. |
+| Typography | pass | Six sizes, three weights, 17 px body, tabular numbers in tables. |
+| Colour | pass | Every pair at least 5.86:1; colour always paired with words or weight. |
+| Affordance | minor issue | Town cards are whole-card links; on touch there is no hover cue. Fix (P3): add a "Forecast ›" line to each card. |
+| Information density | minor issue | The phone Now page is long (14 cards). Fix (P2): a compact one-line-per-town list on phones, with the same flags. |
 
-Fix list: **P1** none. **P2** semantic token tier in `base.html`; ghost-button border colour;
-bundle Leaflet so the map never goes blank offline. **P3** row collapsing past 12 jobs; compact
-density setting. Strongest dimension: hierarchy. Weakest: density at scale, which the
-contiguous-US step (D24) will press on.
+Fix list: **P1** none. **P2** compact town list on phones. **P3** quiet-day layout, card
+affordance. Strongest dimension: colour and contrast. Weakest: density on phones.
 
-## 6. Ship: handoff (`/design-ops:handoff`)
+## 6. Ship
 
-Implementation notes, in build order, all Python/Jinja:
-1. `base.html`: add the semantic and component token tiers under the raw ones (section 4); type
-   sizes 15/13/12; header wraps navigation under the brand below 1100 px with the chip inline.
-2. `live.html` → the Today screen: decisions pane left (the current `aside` content, reordered
-   and restyled as rows), map right; rename the nav item to "Today"; warnings block shows matched
-   alerts only with the statewide list behind "All Montana alerts (N)"; feed status line at the
-   top; one filled "Review N jobs" button; candidates as one line; matches collapsed to three.
-3. Rows get the station line once roadmap item 5 ships (`station_observation` evidence, D25
-   rules); until then the row shows "Nearby station: not connected" in the muted style.
-4. Map states: Folium map with a Jinja fallback block rendered when the map could not be built;
-   bundle Leaflet, its CSS and marker images in `payload/static/` and point Folium at them.
-5. Tests: template renders for each feed and job state; the 1024 header; browser screenshots of
-   the live, offline and storm-mode states (rule 8).
-Assets: none new; the app icon stays `assets/icon.*`. Version: design v1, 2026-10-11, this
-file; mockups on the canvas.
+Built in `website/` (sources, build, sample data, templates, static files) and published by
+`.github/workflows/website.yml` (D27). Fixes made during the browser checks before this spec was
+final:
+- Folium's popups needed jQuery, which the site doesn't load. They were replaced with a two-line
+  Leaflet popup.
+- The map style lost to Leaflet's own stylesheet. The selectors were made more specific.
+- Leaflet's layer-control icon was missing. Its images are now served by the site.
+- Labels covered each other and Livingston's dot. Label sides are now set per town, with the
+  phone rule for minor towns.
+- On phones the hourly table hid gusts off-screen. Gusts now come first, and the sky and reasons
+  columns drop below 560 px.
+- Missing values showed as "—%". They now show a dash with a sentence.
+- The 7-day forecast was one row per 12-hour period. It is now one row per day with the high and
+  low together.
+- Numbers and their units no longer split across lines.
 
-**QA checklist (design-qa-checklist).** Tokens not hexes in templates; 15/13/12 px sizes; 8 px
-spacing steps; every feed state visible in a screenshot; no state shows "no warnings" with a
-failed feed; status pills readable in greyscale; focus visible on rows and chips; 1440, 1024 and
-390 px layouts; keyboard order top to bottom; reduced motion honoured; real Montana data in the
-browser check, not fixtures only.
+**QA checklist.**
+- Tokens only, no hex values in components.
+- Every state above visible in a test or screenshot.
+- No page shows "no alerts" after a failed check.
+- Chips readable in greyscale.
+- Focus visible.
+- No sideways scrolling at 288–1440 px.
+- Labels collision-free at every width the maps open at.
+- Live data checked in the branch build before merge (rule 7).
 
-## 7. Rationale (`design-rationale`)
+## 7. Rationale
 
-**Decision.** Rebuild the home screen as a dispatch board (jobs ranked, map second), add the
-nearby-station line with distance, age and elevation, and formalise the feed, job and map
-states. Keep the dark storm look and the Python stack.
-**Context.** Montana statewide scope (D24); terrain and sparse stations (D25); crews in trucks
-at dawn; the owner's rules against reassurance and AI text.
-**Options.** A dispatch board, B map first (today's screen), C storm desk (section 3).
-**Evidence.** The real screens in their offline state (blank map, equal-weight sections, 1024
-header wrap); ChatGPT's 16-point sweep (35 of 48 station records older than 30 min; null gusts
-at nine of ten airports; stations across state lines); the handoff's home-screen order; the
-playbook's density and hierarchy rules.
-**Reasoning.** The morning question is a list question; a map answers "where", not "what do I
-do". Montana's size makes pin-hunting fail at scale. Station readings are the one thing crews
-asked the pilot for that the app lacks, and they are only honest with distance, age and height.
-**Trade-offs.** Less map on quiet days; a longer first screen at many jobs; one more feed to keep
-honest. The map-first concept is retrievable for a field tablet.
-**Validation.** The first-click and comprehension tests in section 1 on the mockup before the
-templates change; the browser screenshots of all states before merge; acknowledgement rate
-during the pilot.
+**Decision.** Replace the desktop app, for now, with a static website: three pages and a page per
+town, a light "field sheet" look with automatic dark mode, rebuilt from public NWS, SPC and NOAA
+data every 10 minutes.
+
+**Context.** Carson found the app too complicated and ugly. Crews need answers on phones without
+installing anything. The data are public. The rules against reassurance and AI text still hold.
+
+**Options.** A field sheet, B storm desk, C town picker (section 3).
+
+**Evidence.** The app's own screens (dense, dark, six sections). The phone screenshots of each
+concept's first screen. Dark text on a light ground reads better in bright light. The measured contrast
+and layout checks above.
+
+**Reasoning.** The three questions are list questions, and a list in high contrast is readable in
+a truck. The map answers "where", so it sits beside the warnings, not above them. A static site
+has no server to keep running, costs nothing on a public repository, and shows everyone the same
+checked snapshot.
+
+**Trade-offs.**
+- No per-job rules or alerts to phones yet.
+- A page can be up to about 10–20 minutes behind NWS. Every page links to weather.gov and says how
+  old it is.
+- Radar is a still frame, with a link to the live loop.
+- GitHub may delay scheduled builds. It pauses them after 60 days without activity.
+
+**Validation.**
+- Run the comprehension and timing tests in section 1 with crews after launch.
+- Check the first live builds' content in the workflow summary.
+- Carson reviews the site on a phone and a desktop.
