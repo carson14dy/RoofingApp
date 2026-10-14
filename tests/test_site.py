@@ -351,6 +351,12 @@ class SampleBuild(unittest.TestCase):
     def test_counts(self):
         r = self.result
         self.assertEqual((r["alerts"], r["alerts_null_geometry"], r["reports"]), (2, 1, 5))
+        c = r["content"]
+        self.assertEqual(len(c["towns"]), len(site.TOWNS))
+        self.assertEqual(c["towns"]["Livingston"]["alerts"], 1)
+        self.assertTrue(c["alert_events"][0].startswith("High Wind Warning until"))
+        self.assertEqual(sum(c["reports_by_day"].values()), 5)
+        json.dumps(r, default=str)                              # the build log prints it
         self.assertEqual(r["towns_with_forecast"], len(site.TOWNS))
         self.assertEqual(r["towns_with_gusts"], len(site.TOWNS))
 

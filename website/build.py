@@ -379,7 +379,22 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
             "alerts_null_geometry": sum(1 for a in alerts["items"] if not a["geometry"]),
             "towns_with_forecast": sum(1 for t in towns if t["hours"]),
             "towns_with_gusts": sum(1 for t in towns if t["summary"]["gusts_known"]),
-            "reports": len(reports["items"]), "radar": radar}
+            "reports": len(reports["items"]), "radar": radar,
+            "content": content_sample(alerts, towns, reports)}
+
+
+def content_sample(alerts, towns, reports) -> dict:
+    """What the pages say, in brief, for the build log: rule 7 asks for a look at the content,
+    not just a 200. The workflow prints the town table in the run summary."""
+    return {
+        "alert_events": [f"{a['event']} until {fmt_time(a['until'])}" for a in alerts["items"][:10]],
+        "towns": {t["name"]: {"lo": t["summary"]["lo"], "hi": t["summary"]["hi"], "gust": t["summary"]["gust"],
+                              "wind": t["summary"]["wind"], "precip": t["summary"]["precip"],
+                              "flagged": t["summary"]["flagged"], "issued": fmt_time(t["updated"]),
+                              "office": t["office"], "alerts": None if t["alerts"] is None else len(t["alerts"])}
+                  for t in towns},
+        "reports_by_day": {d: sum(1 for r in reports["items"] if r["day"] == d) for d in reports["days"]},
+    }
 
 
 def load_previous(url: str | None) -> dict | None:

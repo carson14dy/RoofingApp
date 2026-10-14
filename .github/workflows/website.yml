@@ -100,6 +100,17 @@ jobs:
                 f"Towns with a forecast: {r['towns_with_forecast']}, with gusts: {r['towns_with_gusts']}. "
                 f"Storm reports: {r['reports']}. Radar frame: {radar.get('frame', 'none')}, "
                 f"share of map with echoes: {radar.get('colored', 'n/a')}.")
+          c = r.get("content") or {}
+          if c.get("alert_events"):
+              print("\nAlerts: " + "; ".join(c["alert_events"]))
+          print("\nReports per SPC day: " + ", ".join(f"{d}: {n}" for d, n in (c.get("reports_by_day") or {}).items()))
+          print("\n| Town | Low–high °F | Gust mph | Wind mph | Rain/snow % | Flagged of 12 h | Forecast issued | Office | Alerts |")
+          print("|---|---|---|---|---|---|---|---|---|")
+          dash = lambda v: "—" if v is None else round(v) if isinstance(v, float) else v
+          for name, t in (c.get("towns") or {}).items():
+              print(f"| {name} | {dash(t['lo'])}–{dash(t['hi'])} | {dash(t['gust'])} | {dash(t['wind'])} | "
+                    f"{dash(t['precip'])} | {t['flagged']} | {t['issued']} | {t['office'] or '—'} | "
+                    f"{'not checked' if t['alerts'] is None else t['alerts']} |")
           EOF
 
       - name: Keep the built site (preview)
