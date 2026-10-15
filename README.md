@@ -50,7 +50,8 @@ Website** and re-enable it. Every page says how old it is, so a stalled site is 
 
 | Page | Shows | Source |
 |---|---|---|
-| Now | Active warnings, watches and advisories for Montana, most urgent first; the radar picture with its time and the warning outlines; a card per town with temperature, highest gust, chance of rain or snow, and which hours pass a limit | NWS, NOAA |
+| Now | Active warnings, watches and advisories for Montana, most urgent first; a map card with the latest radar and the warning outlines; a card per town with temperature, highest gust, chance of rain or snow, and which hours pass a limit | NWS, NOAA |
+| Map | A full-screen map of Montana in the style of Apple Weather's: press play to run the past hour of radar into the next 12 hours of forecast, switch to temperature or wind gusts, see warning outlines and storm reports, tap a town for its NWS forecast, or find your own location | NOAA MRMS radar estimate, NOAA HRRR model, NWS, SPC |
 | Town (14) | Alerts at that town, the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
 | Storm reports | Hail and wind reports in and near Montana for the last three reporting days, on a map and in tables | SPC |
 | About | What each part is, the flag limits, what happens when something fails, the data sources in detail | — |
@@ -77,8 +78,8 @@ chance of rain or snow, under 40 °F or over 95 °F (`website/sources.py`, `LIMI
 
 `.github/workflows/website.yml` runs on GitHub every 10 minutes:
 1. It runs the website tests.
-2. It fetches NWS alerts and forecasts, SPC reports and one NOAA radar picture, and checks that
-   the USGS base map answers.
+2. It fetches NWS alerts and forecasts and SPC reports. For the map it downloads the past hour of
+   NOAA radar (MRMS) and the newest HRRR model run, and draws them as picture frames.
 3. It builds the pages and publishes them.
 
 GitHub sometimes starts scheduled runs late, so a page can be 10–20 minutes behind NWS. Each page
@@ -90,7 +91,7 @@ downloaded from the run.
 
 Needs Python 3.10+.
 ```bash
-pip install requests jinja2 folium tzdata
+pip install requests jinja2 pillow numpy pygrib tzdata
 python -m website.build --out _site --sample   # invented sample data, labelled on every page
 python -m website.build --out _site            # live data
 python -m http.server -d _site 8000            # open http://localhost:8000
@@ -99,13 +100,17 @@ python -m unittest tests.test_site             # website tests, offline, a few s
 
 ## Website files
 ```
-website/sources.py     NWS, SPC and NOAA requests, parsers, flag limits, feed contracts
-website/build.py       collect every source → maps (Folium/Leaflet) → pages (Jinja) → _site/
+website/sources.py     NWS and SPC requests, parsers, flag limits, feed contracts
+website/gridded.py     NOAA radar (MRMS) and HRRR model grids → map picture frames
+website/build.py       collect every source → map frames and data/map.json → pages (Jinja) → _site/
 website/sample.py      invented, labelled sample data for design checks and tests
 website/towns.json     the 14 towns, with each map label's side
 website/templates/     base, Now, town, Storm reports, About
 website/static/        style.css (tokens and look), Leaflet 1.9.4, Atkinson Hyperlegible fonts, icons
-tests/test_site.py     parsers, failure handling, pages, map label layout
+website/static/map/    map.js and map.css (the interactive map), basemap.json (outlines and names)
+tools/build_basemap.py rebuilds basemap.json from Natural Earth and Census data (run by hand)
+tests/                 test_site.py (pages, failures), test_gridded.py (radar and model frames),
+                       test_basemap.py (the outline file)
 ```
 
 ---

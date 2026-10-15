@@ -4,7 +4,8 @@ Design spec for the Montana Hail Watch website (D27), written 2026-10-14 with th
 method (frame → explore → make → validate → ship). It replaces the desktop app's design of
 2026-10-11, which is parked with the app (`payload/`, `desktop/`). Decisions that bind the site
 live in `DECISIONS.md`; this file says what the pages are and why. The code is `website/`; the
-look is the tokens at the top of `website/static/style.css`.
+look is the tokens at the top of `website/static/style.css` (the map page's own glass look is in
+`website/static/map/map.css`, section 8).
 
 ## 1. Frame
 
@@ -51,14 +52,16 @@ desktops, in sunlight, and over a slow connection.
 
 ## 2. Information architecture
 
-Three top-level pages and 14 town pages, two levels deep:
+Four top-level pages and 14 town pages, two levels deep:
 ```
 Now (index.html) ── town/<slug>.html × 14
+Map (map.html, full screen; also a card on Now and Storm reports)
 Storm reports (reports.html)
 About (about.html)
 ```
-Navigation is a top bar with three items. Town pages are reached from the town cards, from the
-map's town popups and from the "Other towns" row on every town page. Labels are the words crews
+Navigation is a top bar with four items; the map page has its own close button back to Now. Town
+pages are reached from the town cards, from the town bubbles on the map and from the "Other towns"
+row on every town page; each town page links back to its place on the map. Labels are the words crews
 use: warnings, gusts, rain or snow, storm reports. Towns: ChatGPT's 13 pilot towns plus
 Livingston, for the gap-wind corridor (D25).
 
@@ -242,3 +245,77 @@ checked snapshot.
 - Run the comprehension and timing tests in section 1 with crews after launch.
 - Check the first live builds' content in the workflow summary.
 - Carson reviews the site on a phone and a desktop.
+
+## 8. The interactive map (2026-10-15)
+
+**Frame.** Carson sent a screen recording of Apple Weather's full-screen precipitation map: "Lets turn
+this into a working interactable map of montana that looks like this." The recording shows a white,
+minimal map; a soft blue-violet-pink-yellow precipitation overlay; a glass legend (Extreme, Heavy,
+Moderate, Light); round glass buttons for layers, location and a list; temperature bubbles on the
+towns; and a bottom glass timeline with play/pause, "1h | 12h" and a scrubber that runs from the
+past into the forecast. The job is the same experience for Montana, built from public data and the
+site's honesty rules.
+
+**Users and moments.** A crew lead checking whether the line of showers west of Bozeman reaches the
+job before noon (Precipitation, 12h, play); the owner deciding whether afternoon gusts stop roof work
+in the Livingston corridor (Wind gusts layer, the 25 mph ring on the bubbles); anyone after a storm
+(Storm reports overlay).
+
+**Principles specific to the map.**
+1. *Radar is not forecast.* Before "Now" every frame is NOAA's radar estimate; after "Now" it is the
+   HRRR computer model. The timeline title switches between "Radar" and "Forecast", the subtitle
+   names the source, and the legend says so. The numbers on the towns are the NWS forecast, labelled
+   as such in the town sheet.
+2. *Missing is not dry.* Areas without radar coverage are hatched and named in the legend. A failed
+   download puts a sentence on the map, never an empty-looking clear sky.
+3. *It must work with a thumb.* 44 px targets, the timeline is a real range input (drag or arrow
+   keys), sheets close with Escape or a button, no hover-only information.
+4. *Python builds the data; the browser only plays it.* Frames, legends and every number are made
+   by the build. `map.js` handles what only a browser can: the playback timer, scrubbing, menus,
+   sheets and geolocation.
+
+**Layout.** Full screen (100dvh, safe areas respected).
+| Region | Contents |
+|---|---|
+| Top left | Close (back to Now); the legend for the active layer with its note and a "Map data" link |
+| Top right | Layers (Precipitation, Temperature, Wind gusts; Warnings and Storm reports toggles), My location, List (every alert, including those without an outline, then every town) |
+| Map | White vector basemap; the active layer's frame; warning outlines; storm reports; town bubbles |
+| Bottom | Timeline: play/pause, "Radar"/"Forecast" with time and source, "1h | 12h", scrubber with a Now tick |
+| Sheets | Town (NWS forecast for the selected hour, flags in words, alerts, link to the town page), alert (official text), report |
+
+**Layers and timelines.**
+| Layer | Before now | After now | Bubble value |
+|---|---|---|---|
+| Precipitation | MRMS radar estimate, every 10 min for the past hour | HRRR: 15-min steps for the next hour (1h) or hourly to 12 h (12h) | NWS temperature |
+| Temperature | — | HRRR 2 m temperature, hourly to 12 h | NWS temperature |
+| Wind gusts | — | HRRR surface gusts, hourly to 12 h | NWS gusts; ring at the 25 mph limit |
+
+**Colour.** Precipitation by rate as liquid water, using the American Meteorological Society's
+rainfall-rate classes: light under 0.1 in/h, moderate 0.1–0.3 in/h, heavy 0.3–2 in/h, extreme over
+2 in/h; light blue through violet and magenta to yellow, like the reference. Temperature from purple
+(−20 °F) through blue, cyan, green, yellow and orange to dark red (105 °F). Gusts from clear (calm)
+through blue, yellow at the 25 mph limit, orange, red and purple. No-coverage hatch in grey.
+
+**Basemap.** White land, Montana slightly brighter than its neighbours, thin grey state and province
+lines, faint county lines and interstates from zoom 7, pale-blue lakes and rivers, grey uppercase
+region names, dark town names with a white halo. Dark mode inverts to charcoal. Built once from
+Natural Earth and Census lines; no tile service.
+
+**States.**
+- Frame: loading (the previous frame stays until the next has loaded) · shown · missing (a gap in the
+  timeline, never a blank map).
+- Source: radar ok / stale (newest frame older than 30 minutes) / failed; forecast ok / failed. Each
+  failure is a banner in words with "This is not an all-clear."
+- Page: fresh · older than 25 minutes (banner asks to reload) · sample (banner on every view).
+- Location: off · locating · shown with accuracy ring and nearest town · unavailable (toast).
+- Card mode (Now and Storm reports pages): latest frame, outlines and bubbles, no controls except
+  "Open map"; dragging off so the page scrolls on a phone.
+
+**Data contract.** The build writes `data/map.json` (version 1): `built`, `sample`, `tz`,
+`image_bounds` (all frames share one Web-Mercator image box, 43–50.5° N, 118.5–101° W), `view`,
+`now` (the newest radar frame), `layers` (per layer: `title`, `unit`, `legend` stops, `legend_note`,
+chronological `frames` with `time`, `kind` radar|forecast, `src`, `source`, `run` and `lead_min` for
+model frames, `nodata`; `modes` with frame indices and `now_index`), `status` (radar, forecast,
+alerts, forecasts, reports), `towns` (hourly NWS values for the timeline window, `alert_ids` or null
+when the check failed), `alerts` (with geometry or null), `reports`. Frames are PNG files in
+`map/frames/`, named by layer and valid time.

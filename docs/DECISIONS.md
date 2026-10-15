@@ -344,6 +344,40 @@ works on any phone, and everyone sees the same checked snapshot. *Limits:* a pag
 is open; GitHub pauses scheduled workflows after 60 days without repository activity. Pages must be
 turned on once: Settings → Pages → Source: GitHub Actions.
 
+**D28 · An interactive Montana map in the style of Apple Weather (2026-10-15).** Carson sent a
+screen recording of Apple Weather's full-screen precipitation map: "Lets turn this into a working
+interactable map of montana that looks like this." The site gets a full-screen `map.html` and the
+same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` section 8.
+- *What it shows:* Precipitation (the past hour of NOAA's MRMS radar estimate every 10 minutes, then
+  the NOAA HRRR model every 15 minutes for the next hour or hourly to 12 hours), Temperature and
+  Wind gusts (HRRR, hourly to 12 hours), NWS warning outlines and SPC storm reports. Town bubbles
+  carry the NWS hourly forecast for the hour on the timeline; tapping one opens its forecast.
+- *Sources, checked live from this container on 2026-10-15 (content, not just HTTP 200):* MRMS
+  `PrecipRate_00.00` on AWS Open Data (`noaa-mrms-pds`), a new 0.01° grid every 2 minutes in mm/h,
+  negative values for no coverage; HRRR on AWS Open Data (`noaa-hrrr-bdp-pds`), single fields by
+  byte range from each file's `.idx` (PRATE about 60 KB, TMP and GUST about 1.1 MB per hour),
+  3 km Lambert grid; our projection matches the GRIB latitudes and longitudes to within
+  a ten-billionth of a grid cell at all 1.9 million points. Values looked right: frame pixels at the towns decode back to the HRRR value within 1.1 °F and 0.8 mph; at 5 pm the towns read 49–57 °F with cold ranges and a warm Snake River Plain, gusts 25–35 mph on the eastern plains; rain on the North Dakota edge sat in the same place in radar and model; MRMS read −3 only outside radar coverage (the Pacific, Mexico, far Canada), none inside the map area.
+- *Why not the NOAA radar picture (D7):* one frame, NOAA's colours and no forecast. Raw MRMS rates
+  and HRRR precipitation rates share one honest legend (rate as liquid water, AMS classes) for past
+  and future.
+- *Honesty:* every frame says whether it is radar or model; the timeline title switches at "Now";
+  areas without radar coverage are hatched; a failed download puts a sentence on the map; the
+  bubbles are the NWS forecast, the coloured fields are the model.
+- *Basemap:* our own vector map (Natural Earth, public domain; Census county lines from us-atlas
+  3.0.1), built by `tools/build_basemap.py` into `static/map/basemap.json` (377 KB, identical bytes on a rerun). The USGS
+  tiles and the Folium maps are retired from the website; Folium stays in the parked app.
+- *JavaScript (rule 4):* playback, scrubbing, menus, sheets and geolocation can only happen in the
+  browser. `static/map/map.js` is vanilla, documented, with no framework and no build step; Python
+  still builds every number and frame. `tools/smoke_map.py` opens the built map in Chromium on every
+  branch push.
+- *Build cost:* about 40 MB downloaded and 48 frames (about 2 MB, most of it the temperature and gust fields) per build; numpy and
+  pygrib on the runner.
+- *Limits:* HRRR is a computer model, not the NWS forecast; MRMS rates run low far from a radar and
+  in snow; frames are still pictures made at each build, so the newest radar is up to about 10
+  minutes old plus GitHub's delay; no lightning or air-quality layer; snow and rain share one
+  palette.
+
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.
 - Folium camelizes keyword arguments (`_t` → `T`).
