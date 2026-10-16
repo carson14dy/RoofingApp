@@ -386,7 +386,8 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   match), not the spec's mist #eef1f4, and the hatch outside the pictures' box is a hairline (1 px
   every 6 px). With the mist and the old 2.5 px stripes the hatch was the loudest thing on a phone
   (three tones, about 40% of the screen); the reference's "not available" hatch is a faint hairline
-  on white.
+  on white. The band's words say it is outside the map's area, not "no radar coverage": NOAA's
+  files have valid data there (checked against MRMS), the map just doesn't draw it.
 - *Cache addresses (2026-10-16):* scripts, stylesheets and the basemap carry `?v=` = their content
   hash, so the 10-minute rebuilds no longer make every visit download about 150 KB of unchanged
   files; `data/map.json` and the map card keep the build minute.

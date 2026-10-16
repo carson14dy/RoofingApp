@@ -26,7 +26,14 @@
   var FALLBACK_VIEW = { bounds: [[44.35, -116.06], [49.01, -104.03]], min_zoom: 5, max_zoom: 11 };
   var KIND_WORD = { warning: "Warning", watch: "Watch", advisory: "Advisory", statement: "Statement" };
   var LAYER_WORD = { precip: "Precipitation", temp: "Temperature", wind: "Wind gusts" };
-  var HATCH_NOTE = { radar: "Hatched areas have no radar coverage.", model: "Hatched areas have no model data." };
+  // the note line's words for hatching in view (one line each, so noteRoom's one-line room holds):
+  // a gap inside a picture, the band outside the pictures' box, or both ("on this map" is true of both)
+  var HATCH_NOTE = {
+    radar: "Hatched areas have no radar coverage.", model: "Hatched areas have no model data.",
+    radarOut: "Hatched areas have no radar data on this map.", modelOut: "Hatched areas have no model data on this map.",
+    outside: "Hatched areas are outside this map's area."
+  };
+  var OUTSIDE_WORDS = "Outside the map's area";
 
   var app = document.getElementById("app");
   var params = new URLSearchParams(location.search);
@@ -481,7 +488,7 @@
     var big = null;
     noteWarningSet().forEach(function (t) { var s = noteSize(t, true); if (!big || s.height > big.height) big = s; });
     if (!big) {
-      [HATCH_NOTE.radar, HATCH_NOTE.model].forEach(function (t) { var s = noteSize(t, false); if (!big || s.width > big.width) big = s; });
+      Object.keys(HATCH_NOTE).forEach(function (k) { var s = noteSize(HATCH_NOTE[k], false); if (!big || s.width > big.width) big = s; });
     }
     var b = el.bottom.getBoundingClientRect(), left = b.left + (b.width - big.width) / 2;
     return { left: left, right: left + big.width, top: tlTop - 8 - big.height, bottom: tlTop - 8 };
@@ -1184,7 +1191,7 @@
     var f = state.frames[state.pos];
     // same rule as the legend key (whenever hatching is in view); a warning takes the line alone,
     // so it stays short, and the key still names the hatching
-    if (f && !warn && hatchWords()) info = f.kind === "radar" ? HATCH_NOTE.radar : HATCH_NOTE.model;
+    if (f && !warn) info = hatchNote();
     var html = warn ? '<span class="note-warn">' + esc(warn) + "</span>" : info ? '<span class="note-info">' + esc(info) + "</span>" : "";
     var changed = el.note._html !== html;
     if (changed) { el.note.innerHTML = html; el.note._html = html; }
@@ -1270,14 +1277,16 @@
   /** Keys under the legend: alerts that have no outline (when there are any), what the town numbers
       are (the NWS forecast, not the coloured model field under them; always shown, phones too),
       then only what is on the map now:
-      hatching, the limit ring, warning outline colours and storm-report circles. Every colour
+      hatching (gaps in a picture: for the whole timeline when any frame has them; the band outside
+      the pictures), the limit ring, warning outline colours and storm-report circles. Every colour
       carries its word. */
   function renderKeys() {
     if (!data) return;
     var keys = [];
     keys.push(["key-bubble", state.layer === "wind" ? "Town numbers: NWS gust forecast, mph" : "Town numbers: NWS forecast, \u00b0F"]);
-    var hatch = hatchWords();
-    if (hatch) keys.push(["key-hatch", hatch]);
+    var hatch = hatchInView();
+    if (hatch.key) keys.push(["key-hatch", hatch.key]);
+    if (hatch.outside) keys.push(["key-hatch-out", OUTSIDE_WORDS]);
     if (data.towns.some(function (t) { return t._over && townVisible(t); })) keys.push(["key-ring", ringWords()]);
     if (state.warnings) (state.alertKinds || []).forEach(function (k) { keys.push(["key-hz key-" + k, KIND_WORD[k] + " area (NWS)"]); });
     if (state.reports && data.reports.length) {
@@ -1294,7 +1303,11 @@
       html = '<li><button type="button" class="key-btn" data-open-list><span class="key key-list" aria-hidden="true"></span>' +
         esc(n + (n > 1 ? " NWS alerts have" : " NWS alert has") + " no outline (county or zone): see List") + "</button></li>" + html;
     }
-    if (el.legendKeys._html !== html) { el.legendKeys.innerHTML = html; el.legendKeys._html = html; }
+    if (el.legendKeys._html !== html) {
+      el.legendKeys.innerHTML = html;
+      el.legendKeys._html = html;
+      tidyLabels();                            // the "Map data" link under the legend may have moved
+    }
   }
 
   /** How many active alerts have no outline (issued by county or zone). */
@@ -1302,17 +1315,29 @@
     return ((data && data.alerts && data.alerts.items) || []).filter(function (a) { return !a.geometry; }).length;
   }
 
-  /** What the hatching on screen means, or "" when none is in view. Hatching marks where this map has
-      no data: the band outside the pictures' box (every layer and frame, see drawOutsideMask) and,
-      inside a radar picture, areas without radar coverage. Worded for the frame shown, so a model
-      frame never says "radar" and a radar frame never says "model". */
-  function hatchWords() {
-    if (!map || !map._imageBounds) return "";
+  /** The hatching in view, of two kinds. `inside`: areas a picture has no data for (no radar coverage,
+      or masked model cells; a heavier hatch drawn in the picture), worded for the frame shown so a
+      model frame never says "radar". `outside`: the band outside the pictures' box, which this map
+      doesn't draw (every layer and frame, a hairline, see drawOutsideMask). NOAA has data there, so
+      it is never called a coverage gap; it is hatched so it never looks dry. */
+  function hatchInView() {
+    var h = { inside: "", outside: false, key: "" };
+    if (!map || !map._imageBounds) return h;
     var f = state.frames[state.pos];
-    var inPicture = !!(f && f.nodata && !f._failed);
-    if (!inPicture && map._imageBounds.contains(map.getBounds())) return "";
-    if (!f) return state.layer === "precip" ? "No radar or model data" : "No model data";
-    return f.kind === "radar" ? "No radar coverage" : "No model data";
+    var words = f && f.kind === "radar" ? "No radar coverage" : "No model data";
+    if (f && f.nodata && !f._failed) h.inside = words;
+    // the legend's key for gaps stays for the whole timeline when any of its frames has one, so the
+    // legend keeps its height (and the fit its room) during playback; worded for the frame shown
+    if (f && state.frames.some(function (x) { return x.nodata; })) h.key = words;
+    h.outside = !map._imageBounds.contains(map.getBounds());
+    return h;
+  }
+
+  /** The note line's words for the hatching in view, or "" when none is in view. */
+  function hatchNote() {
+    var h = hatchInView(), f = state.frames[state.pos];
+    if (h.inside) return f.kind === "radar" ? (h.outside ? HATCH_NOTE.radarOut : HATCH_NOTE.radar) : (h.outside ? HATCH_NOTE.modelOut : HATCH_NOTE.model);
+    return h.outside ? HATCH_NOTE.outside : "";
   }
 
   /** Whether a town's bubble is on screen (minor towns appear from zoom 7). */
@@ -2064,12 +2089,15 @@
     if (!f) main = "No " + LAYER_WORD[state.layer].toLowerCase() + " picture in this update. Not an all-clear.";
     else if (f._failed) main = "The " + clock(state.times[state.pos]) + " picture didn\u2019t load. Not an all-clear.";
     else {
+      // a sample card also shows the "Sample data ... not weather" banner, so a short name fits one line
       var sample = /^SAMPLE/.test(f.source || "");
-      main = (f.kind === "radar" ? (sample ? "Sample radar, not real" : "NOAA radar estimate") :
-        (sample ? "Sample forecast, not real" : "HRRR model forecast")) + " \u00b7 " + clock(state.times[state.pos]);
+      main = (f.kind === "radar" ? (sample ? "Sample radar" : "NOAA radar estimate") :
+        (sample ? "Sample forecast" : "HRRR model forecast")) + " \u00b7 " + clock(state.times[state.pos]);
     }
-    var hatch = f && !f._failed ? hatchWords() : "";
-    var html = '<span class="card-main">' + esc(main) + "</span>" + (hatch ? '<span class="card-hatch"><span class="key key-hatch" aria-hidden="true"></span>' +
+    var h = f && !f._failed ? hatchInView() : { inside: "", outside: false };
+    var hatch = h.inside || (h.outside ? OUTSIDE_WORDS : "");
+    var html = '<span class="card-main">' + esc(main) + "</span>" + (hatch ? '<span class="card-hatch"><span class="key ' +
+      (h.inside ? "key-hatch" : "key-hatch-out") + '" aria-hidden="true"></span>' +
       '<span class="visually-hidden">. Hatched areas: </span>' + esc(hatch) + "</span>" : "");
     // the Storm reports card: alerts without an outline aren't on it (the Now page card sits beside
     // the full alert list, so it needn't say)

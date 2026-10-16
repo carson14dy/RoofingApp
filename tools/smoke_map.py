@@ -213,6 +213,25 @@ def check_no_outline_key(browser, base, data) -> list[str]:
         if page.locator("#sheet-title").inner_text() != "List":
             problems.append("legend: the no-outline key did not open the List")
     ctx.close()
+    # on tall phones the row sits right under the scale: its text must clear the bottom stop label,
+    # which hangs half a line below the scale (a 3-line row once pulled itself up into it)
+    for w, h in ((390, 844), (430, 932)):
+        ctx = browser.new_context(viewport={"width": w, "height": h}, reduced_motion="reduce")
+        page = ctx.new_page()
+        page.goto(base + "map.html", wait_until="load")
+        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_timeout(300)
+        gap = page.evaluate("""() => {
+          const key = document.querySelector('#legend-keys [data-open-list]');
+          const stops = [...document.querySelectorAll('#legend-stops li')].filter(li => li.offsetParent);
+          if (!key || !key.offsetParent || !stops.length) return null;
+          const range = document.createRange(); range.selectNodeContents(key);
+          const text = range.getBoundingClientRect();
+          return text.top - Math.max(...stops.map(li => li.getBoundingClientRect().bottom));
+        }""")
+        if gap is not None and gap < 0:
+            problems.append(f"legend {w}x{h}: the no-outline row's text runs {-gap:.1f} px into the bottom scale label")
+        ctx.close()
     return problems
 
 
@@ -255,8 +274,8 @@ def check_empty_layer_switch(browser, base, data) -> list[str]:
 
 CARD_WORDS = {"NOAA radar estimate": "The latest NOAA radar estimate",
               "HRRR model forecast": "The HRRR model forecast for {at}",
-              "Sample radar, not real": "The latest sample radar picture",
-              "Sample forecast, not real": "The sample model forecast for {at}"}
+              "Sample radar": "The latest sample radar picture",
+              "Sample forecast": "The sample model forecast for {at}"}
 
 
 def check_card_words(browser, base, root) -> list[str]:

@@ -302,7 +302,12 @@ region names, dark town names with a white halo. Dark mode inverts to charcoal. 
 Natural Earth and Census lines; no tile service.
 Past the basemap's padded box the page is the neighbours' land colour (#fafafa, dark #1b1e22), not
 a third grey: the hatch outside the pictures' box (43–50.5° N) is a hairline, 1 px every 6 px
-(`--hatch-out`), like the reference's faint "not available" hatch on white. A country or region
+(`--hatch-out`; about the same weight in dark mode), like the reference's faint "not available"
+hatch on white. Its words are "Outside the map's area" and "Hatched areas are outside this map's
+area.": NOAA has data there, the map just doesn't draw it, so it is never called a coverage gap. Gaps
+inside a picture keep the heavier hatch and their own key, "No radar coverage" or "No model data",
+shown for the whole timeline when any frame has one (the legend keeps its height during playback);
+with both in view the note says "Hatched areas have no radar (model) data on this map." A country or region
 name under the "Map data" link or the note line is hidden until the map moves; names may run off the
 screen's edge, as in the reference.
 

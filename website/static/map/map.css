@@ -116,7 +116,7 @@
     --place-dot: #c9ccd1;
     --halo: #121417;
     --hatch: rgba(142, 142, 147, 0.16);
-    --hatch-out: rgba(174, 174, 178, 0.22);
+    --hatch-out: rgba(174, 174, 178, 0.10);   /* about the light mode's weight (1.16:1 on the land) */
 
     --glass: rgba(28, 28, 30, 0.72);
     --glass-solid: rgba(28, 28, 30, 0.95);
@@ -289,6 +289,7 @@ a { color: inherit; }
 .key { flex: none; width: 14px; height: 14px; border-radius: 4px; }
 .key-bubble { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 1px var(--bubble-ring); }
 .key-hatch { background: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 5px); border: 1px solid var(--hairline); }
+.key-hatch-out { background: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 4px); border: 1px solid var(--hairline); }
 .key-ring { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--over); width: 12px; height: 12px; margin: 1px; }
 .key-here { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--loc); width: 12px; height: 12px; margin: 1px; }
 /* alerts with no outline: the row is a button to the List, marked with the List button's lines */
@@ -299,6 +300,9 @@ a { color: inherit; }
   background: transparent; text-align: left; font-size: inherit; line-height: inherit; color: var(--ink);
   text-decoration: underline; text-underline-offset: 2px; }
 .key-btn:focus-visible { outline-offset: 1px; border-radius: 4px; }
+/* first under the one-column scale: no pull-up, or its text runs into the bottom stop label, which
+   hangs half a line below the scale */
+.app:not(.legend-2col) .legend-keys > li:first-child > .key-btn { margin-top: 0; }
 .key-hz { border: 2px solid; background: transparent; }
 .key-warning { border-color: var(--hz-warning); background: color-mix(in srgb, var(--hz-warning) 14%, transparent); }
 .key-watch { border-color: var(--hz-watch); background: color-mix(in srgb, var(--hz-watch) 14%, transparent); }
@@ -743,7 +747,7 @@ a { color: inherit; }
    their own colours (forced-color-adjust: none), and the timeline, the chosen 1h/12h, the switches
    and the limit ring are drawn in system colours. The ring is a border: the focus ring is an outline. */
 @media (forced-colors: active) {
-  .legend-bar, .swatch, .key-hatch, .key-hz, .key-hail, .key-wind, .key-list { forced-color-adjust: none; }
+  .legend-bar, .swatch, .key-hatch, .key-hatch-out, .key-hz, .key-hail, .key-wind, .key-list { forced-color-adjust: none; }
   .track { outline: 1px solid CanvasText; }
   .fill-bar, .knob { forced-color-adjust: none; background: Highlight; }
   .seg button[aria-checked="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; }
