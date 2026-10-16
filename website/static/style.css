@@ -108,11 +108,20 @@ header.site { background: var(--color-surface); border-bottom: 1px solid var(--c
 .brand { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text); text-decoration: none;
   font-weight: 700; font-size: var(--text-lg); letter-spacing: -0.01em; min-height: 44px; }
 .brand svg { width: 32px; height: 32px; flex: none; }
-nav.main { display: flex; gap: var(--space-1); }
-nav.main a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-3);
+nav.main { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+nav.main a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-3); white-space: nowrap;
   color: var(--color-text-muted); text-decoration: none; font-weight: 600; border-bottom: 3px solid transparent; }
 nav.main a:hover { color: var(--color-text); }
 nav.main a[aria-current="page"] { color: var(--color-text); border-bottom-color: var(--color-text); }
+/* Phones up to 380 px: the four links need 331 px of a row that has 256-348 px. "Reports" for
+   "Storm reports" and tighter padding fit them on one row (each tap target stays 50 px or wider);
+   wrapping is the fallback for larger text settings. */
+.nav-short { display: none; }
+@media (max-width: 380px) {
+  nav.main a { padding: 0 var(--space-2); }
+  nav.main .nav-long { display: none; }
+  nav.main .nav-short { display: inline; }
+}
 
 .freshness { padding-block: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
 .freshness.stale { background: var(--color-advisory-bg); color: var(--color-text); border: 1px solid var(--color-advisory-line);
@@ -193,9 +202,13 @@ section + section, .now-grid + section { margin-top: var(--space-7); }
   color: var(--color-text); text-decoration: none; }
 .town-card:hover { border-color: var(--color-line-strong); box-shadow: 0 1px 0 var(--color-line-strong); }
 .town-card:hover h3 { text-decoration: underline; text-underline-offset: 0.15em; }
-.tc-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.tc-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+/* A long event name ("Winter Weather Advisory") drops under the town name, and wraps if it must. */
+.tc-head .chip { max-width: 100%; white-space: normal; }
 .tc-head h3 { font-size: var(--text-lg); }
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin: 0; }
+/* Three columns, or two when a card is too narrow for "Temperature" (cards under about 244 px, on
+   288 px phones). */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.75rem, 1fr)); gap: var(--space-2); margin: 0; }
 .stats div { display: flex; flex-direction: column-reverse; gap: 2px; }
 .stats dt { font-size: var(--text-xs); color: var(--color-text-muted); }
 .stats dd { margin: 0; font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -225,7 +238,10 @@ section + section, .now-grid + section { margin-top: var(--space-7); }
 /* ---------------------------------------------------------------- town page */
 .crumbs { font-size: var(--text-sm); margin-bottom: var(--space-3); }
 .crumbs a { display: inline-flex; min-height: 32px; align-items: center; }
-.table-box { overflow-x: auto; border: 1px solid var(--card-line); border-radius: var(--radius); background: var(--card-bg); }
+/* position: relative keeps the cells' visually hidden "(over limit)" words inside the scroll box: an
+   absolutely positioned element escapes a scroll box that isn't its containing block, and widened
+   every town page with a flagged cell by up to 24 px on a 288 px phone. */
+.table-box { position: relative; overflow-x: auto; border: 1px solid var(--card-line); border-radius: var(--radius); background: var(--card-bg); }
 table { border-collapse: collapse; width: 100%; font-size: var(--text-sm); }
 th, td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-line); vertical-align: top; }
 thead th { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);

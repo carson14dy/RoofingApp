@@ -97,6 +97,7 @@ python -m website.build --out _site            # live data
 python -m http.server -d _site 8000            # open http://localhost:8000
 python -m unittest tests.test_site tests.test_gridded tests.test_basemap   # website tests, offline, seconds
 python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
+python tools/smoke_pages.py _site              # no page wider than the screen, 288–1440 px
 ```
 
 ## Website files

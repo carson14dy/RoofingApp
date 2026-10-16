@@ -36,7 +36,7 @@ desktops, in sunlight, and over a slow connection.
 | Time to find the next-hours gusts for a named town on a phone | same sessions, stopwatch | ≤ 10 s |
 | All-clear misreads (failed alert check, missing gusts, empty report day) | one comprehension question each | 0 of 5 |
 | Text contrast, light and dark | computed for every token pair | ≥ 4.5:1 (lowest measured 5.86:1) |
-| Horizontal scrolling | Chromium at 288–1440 px | none (measured) |
+| Horizontal scrolling | Chromium at 288, 320, 375, 768 and 1440 px, light and dark, every page | none; `tools/smoke_pages.py` checks it on every branch push (it found 6–24 px at 288 px on 2026-10-16, now fixed) |
 | Map labels covering each other or a town | `tests/test_site.py` + browser measurement | none |
 
 **Principles, ranked for conflicts.**
@@ -214,7 +214,9 @@ final:
 - No page shows "no alerts" after a failed check.
 - Chips readable in greyscale.
 - Focus visible.
-- No sideways scrolling at 288–1440 px.
+- No sideways scrolling at 288–1440 px (`tools/smoke_pages.py`). Up to 380 px the menu says "Reports"
+  for "Storm reports" with tighter padding, so it stays on one row; an alert chip drops under the
+  town name when it doesn't fit beside it; a card's three numbers become two columns under 244 px.
 - Labels collision-free at every width the maps open at.
 - Live data checked in the branch build before merge (rule 7).
 
