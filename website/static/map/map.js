@@ -610,8 +610,9 @@
     var steps = span > 4 * HOUR ? [HOUR, 2 * HOUR, 3 * HOUR, 4 * HOUR, 6 * HOUR] : [15 * MIN, 30 * MIN, HOUR, 2 * HOUR];
     var nowEl = makeLabel("Now", null, true);
     var nowBox = place(nowEl, frac(nowT) * w);
-    var GAP = 10, EDGE = 6;
+    var GAP = 8, EDGE = 6, SPACING = 46;   // px between labels; px between steps so the scale stays calm
     for (var s = 0; s < steps.length; s++) {
+      if (steps[s] / span * w < SPACING && s < steps.length - 1) continue;
       var marks = [], okAll = true;
       for (var t = Math.ceil(t0 / (15 * MIN)) * 15 * MIN; t <= t1; t += 15 * MIN) {
         if (!onStep(t, steps[s])) continue;
@@ -681,6 +682,7 @@
       app.classList.remove("is-loading");
       showPicture(ok ? f.src : null);
       renderNote();
+      if (CARD) renderCardChip();
       if (opts && opts.done) opts.done(ok);
     });
     if (cache[f.src] && cache[f.src].ok === null) {
@@ -1420,14 +1422,21 @@
     renderCardChip();
   }
 
-  /** The card's caption: which picture this is and when. */
+  /** The card's caption: which picture this is and when, or why there is none (the card has no
+      note line, so a missing picture is said here). */
   function renderCardChip() {
     var f = state.frames[state.pos];
     var L_ = layer();
-    if (!f) { el.cardChip.textContent = "No " + LAYER_WORD[state.layer].toLowerCase() + " picture in this update"; return; }
+    el.cardChip.classList.remove("warn");
+    if (!f || f._failed) {
+      el.cardChip.textContent = (f ? "The " + clock(state.times[state.pos]) + " picture didn't load" :
+        "No " + LAYER_WORD[state.layer].toLowerCase() + " picture in this update") + ". Not an all-clear.";
+      el.cardChip.classList.add("warn");
+      return;
+    }
     var what = f.kind === "radar" ? (/^SAMPLE/.test(f.source) ? "Sample radar, not real" : "NOAA radar estimate") : (/^SAMPLE/.test(f.source) ? "Sample forecast, not real" : "HRRR model forecast");
     el.cardChip.innerHTML = '<span class="card-bar" style="background:' + esc((L_.gradient || "").replace("to top", "to right")) + '" aria-hidden="true"></span>' +
-      "<span>" + esc(what) + " \u00b7 " + esc(clock(state.times[state.pos])) + "</span>";
+      "<span>" + esc(what) + " \u00b7 " + esc(clock(state.times[state.pos])) + (f.nodata ? " \u00b7 hatched: no radar" : "") + "</span>";
   }
 
   boot();

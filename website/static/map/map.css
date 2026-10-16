@@ -598,6 +598,7 @@ a { color: inherit; }
   font-size: 12.5px; font-weight: 600; line-height: 1.25;
 }
 .card-chip:empty { display: none; }
+.card-chip.warn { color: var(--warn-text); font-weight: 700; }
 .card-chip .card-bar { flex: none; width: 34px; height: 6px; border-radius: 3px; }
 .card-open {
   position: absolute; z-index: 20; right: calc(var(--edge) + var(--safe-r)); bottom: calc(var(--edge) + var(--safe-b));
