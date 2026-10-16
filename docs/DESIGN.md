@@ -318,8 +318,8 @@ view the note says "Hatched areas have no radar (model) data on this map." and t
 (model) data on this map". A basemap name (country, region, water or place, with its dot) under the
 "Map data" link, the note line, the toast or the nearest-town chip is hidden until they or the map
 move; the hatching note itself steps aside while a town's bubble or name is under it (after a zoom,
-a pan or My location), and the legend's keys still name the hatching. Names may run off the
-screen's edge, as in the reference.
+a pan or My location, or on a screen too short for Montana), and the legend's keys still name the
+hatching. Names may run off the screen's edge, as in the reference.
 
 **States.**
 - Frame: loading (the previous frame stays until the next has loaded) · shown · missing (a gap in the
@@ -353,7 +353,8 @@ screen's edge, as in the reference.
 - Fit: Montana sits below the legend on a phone, right of it on a wide or short landscape screen,
   above the note and the timeline. A portrait phone's fit never settles below zoom 5.25, the first
   zoom where every town name clears the other bubbles, unless Montana is wider than the screen there
-  (320 px); a phone too short for it there puts Montana where the panels hide the fewest bubbles.
+  (a 320 px phone); a phone too short for it there puts Montana where the panels hide the fewest
+  bubbles.
 
 **Data contract.** The build writes `data/map.json` (version 1): `built`, `sample`, `tz`,
 `image_bounds` (all frames share one Web-Mercator image box, 43–50.5° N, 118.5–101° W), `view`,

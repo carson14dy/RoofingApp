@@ -11,7 +11,8 @@ used on the Now page loads. Also: every row of the layer menu can be tapped on a
 sideways (nothing paints over it); alerts without an outline are named in the legend with a way to
 the List; a picture still loading when the viewer switches to a layer with no pictures never appears
 under the new layer's legend; the Now page's caption names the picture the card shows (radar or
-model). Exits 1 with the reasons if anything fails. The Website workflow runs it
+model); a portrait phone gets the short two-column legend, which keeps one height through the whole
+timeline, and the Precipitation layer rings no town. Exits 1 with the reasons if anything fails. The Website workflow runs it
 on branch pushes; locally set PW_CHROMIUM to a Chromium executable if Playwright's own isn't
 installed.
 """
@@ -121,6 +122,7 @@ def check(root: Path) -> list[str]:
                 ctx.close()
 
             for extra in (lambda: check_menu_rows(browser, base), lambda: check_no_outline_key(browser, base, data),
+                          lambda: check_phone_legend(browser, base, data),
                           lambda: check_empty_layer_switch(browser, base, data),
                           lambda: check_card_words(browser, base, root)):
                 try:
@@ -235,6 +237,38 @@ def check_no_outline_key(browser, base, data) -> list[str]:
         if gap is not None and gap < 0:
             problems.append(f"legend {w}x{h}: the no-outline row's text runs {-gap:.1f} px into the bottom scale label")
         ctx.close()
+    return problems
+
+
+def check_phone_legend(browser, base, data) -> list[str]:
+    """A portrait phone gets the two-column legend (about 135-170 px tall), no key comes or goes while
+    the timeline plays (the legend keeps one height, so Montana keeps its room), and the Precipitation
+    layer rings no town (rings mark the Temperature and Wind gusts layers' own limits)."""
+    if not data["layers"].get("precip", {}).get("frames"):
+        return []
+    problems = []
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+    page = ctx.new_page()
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_timeout(300)
+    form = page.evaluate("() => [document.getElementById('app').classList.contains('legend-2col'),"
+                         " Math.round(document.getElementById('legend').getBoundingClientRect().height)]")
+    if not form[0] or form[1] > 180:
+        problems.append(f"phone legend: two-column={form[0]}, {form[1]} px tall (want the two-column form, at most 180 px)")
+    page.focus("#range")
+    page.keyboard.press("Home")
+    heights, rings = set(), 0
+    for _ in range(len(data["layers"]["precip"]["frames"])):
+        page.wait_for_timeout(120)
+        heights.add(page.evaluate("() => Math.round(document.getElementById('legend').getBoundingClientRect().height)"))
+        rings += page.locator(".bubble.over").count()
+        page.keyboard.press("ArrowRight")
+    if len(heights) > 1:
+        problems.append(f"phone legend: its height changes during the timeline ({sorted(heights)} px)")
+    if rings:
+        problems.append("phone legend: a town has a limit ring on the Precipitation layer")
+    ctx.close()
     return problems
 
 

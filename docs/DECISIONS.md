@@ -374,7 +374,7 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
 - *JavaScript (rule 4):* playback, scrubbing, menus, sheets and geolocation can only happen in the
   browser. `static/map/map.js` is vanilla, documented, with no framework and no build step; Python
   still builds every number and frame. `tools/smoke_map.py` opens the built map in Chromium on every
-  branch push. It ended at about 2,100 lines, most of it layout that keeps Montana and every town
+  branch push. It ended at about 2,150 lines, most of it layout that keeps Montana and every town
   clear of the panels on crowded screens, failure states and accessibility; moving about 330 lines
   to the build is an open owner's call (ROADMAP).
 - *Build cost:* about 40 MB downloaded and 48 frames (about 2 MB, most of it the temperature and gust fields) per build; numpy and

@@ -27,9 +27,9 @@
   var KIND_WORD = { warning: "Warning", watch: "Watch", advisory: "Advisory", statement: "Statement" };
   var LAYER_WORD = { precip: "Precipitation", temp: "Temperature", wind: "Wind gusts" };
   var LABEL_ZOOM = 5.25;             // from this zoom every town name clears the other bubbles (tools/build_basemap.py)
-  // words for the hatching in view (hatchKind): [legend key and card, note line]. A gap in the frame
-  // shown, the band outside the pictures' box, or both ("on this map" is true of both). One line each:
-  // a key fits a 140 px legend column, a note noteRoom's one-line room.
+  // words for the hatching in view (hatchKind): [legend key or card caption, note line]. A gap in the
+  // frame shown, the band outside the pictures' box, or both ("on this map" is true of both; only the
+  // card and the note say both). A legend key fits one line of a 140 px column, a note noteRoom's line.
   var HATCH = {
     radar: ["No radar coverage", "Hatched areas have no radar coverage."],
     model: ["No model data", "Hatched areas have no model data."],
@@ -175,8 +175,12 @@
       try { start(d); } catch (e) { showNoData("the map couldn\u2019t start with this update\u2019s data"); return; }
       gotBase.then(function (bm) {
         try {
-          if (bm && !bm._error) { drawBasemap(bm); tidyLabels(); }
-          else banner("warn", "<strong>The map outlines didn't load</strong> (" + esc((bm && bm._error) || "it didn't load") + "). The weather and towns still show.");
+          if (bm && !bm._error) {
+            drawBasemap(bm);
+            tidyLabels();
+            // a jump at the same zoom (a view reset) places the markers after moveend: check again then
+            map.on("viewreset", function () { tidyLabels(); if (state.ready) renderNote(); });
+          } else banner("warn", "<strong>The map outlines didn't load</strong> (" + esc((bm && bm._error) || "it didn't load") + "). The weather and towns still show.");
         } catch (e) { banner("warn", "<strong>The map outlines couldn't be drawn.</strong> The weather and towns still show."); }
       });
     });
@@ -1260,7 +1264,8 @@
     if (w) el.legendScale.style.setProperty("--scale-w", Math.ceil(16 + w + 2) + "px");
     el.legendNote.textContent = L_.legend_note || "";
     renderKeys();
-    tidyLabels();                    // another scale can move the "Map data" link
+    tidyLabels();                    // another scale can move the "Map data" link, or resize the legend
+    if (el.legendWrap.offsetHeight !== noteFit.legendH) refitForBanner();
   }
 
   /** Which stop labels fit on a bar `barH` px tall without touching (labels are 12.5 px): the top,
@@ -1282,8 +1287,7 @@
       then only what is on the map now: hatching (a gap in the frame shown; the band outside the
       pictures), the limit ring (for the whole timeline when any of its hours rings a town in sight),
       warning outline colours and storm-report circles. Every colour carries its word. Nothing comes
-      or goes during playback, so the legend keeps its height (and the fit its room); a legend that
-      grew or shrank otherwise (another layer, a switch) gets a new fit. */
+      or goes during playback, so the legend keeps its height (and the fit its room). */
   function renderKeys() {
     if (!data) return;
     var keys = [];
@@ -1314,8 +1318,8 @@
       el.legendKeys.innerHTML = html;
       el.legendKeys._html = html;
       tidyLabels();                            // the "Map data" link under the legend may have moved
+      if (el.legendWrap.offsetHeight !== noteFit.legendH) refitForBanner();   // a taller or shorter legend
     }
-    if (el.legendWrap.offsetHeight !== noteFit.legendH) refitForBanner();
   }
 
   /** How many active alerts have no outline (issued by county or zone). */
@@ -1759,8 +1763,10 @@
         // once there, the town the dot sits on (bubble and name), or else the dot, is moved clear of
         // the legend and the panels
         map.once("moveend", function () {
-          var t = locState && locState.here;
-          if (t) reveal(L.latLng(t.lat, t.lon), townExtent(t)); else reveal(ll);
+          setTimeout(function () {   // after a jump, Leaflet places the bubbles just after moveend
+            var t = locState && locState.here;
+            if (t) reveal(L.latLng(t.lat, t.lon), townExtent(t)); else reveal(ll);
+          });
         });
         map.setView(ll, Math.max(map.getZoom(), 7), { animate: !reducedMotion() });
       }
