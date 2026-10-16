@@ -4,19 +4,24 @@ Base map checks (website/static/map/basemap.json, built by tools/build_basemap.p
 Everything runs offline against the committed file: size budget, bounds, the Montana outline
 (closed, the right area, straight 49th parallel, the Yellowstone notch, every site town inside it),
 all 56 Montana counties in the county lines, the site towns marked in places, coordinates inside the
-padded bounds, valid labels with no NaN, and labels that stay clear of the town bubbles. A few
-tests also run the tool's geometry helpers (TopoJSON decoding, clipping, simplifying) on tiny inputs.
+padded bounds, valid labels with no NaN, labels that stay clear of the town bubbles, and Canadian
+labels inside what the map's first view shows. A few tests also run the tool's geometry helpers
+(TopoJSON decoding, clipping, simplifying) on tiny inputs, and its handling of the download folder.
 
 If towns.json changes (a town added, moved or given another label side), these tests fail until
 the base map is rebuilt: python tools/build_basemap.py
 """
 
 import ast
+import contextlib
 import importlib.util
+import io
 import json
 import math
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 BASEMAP = ROOT / "website" / "static" / "map" / "basemap.json"
@@ -85,6 +90,11 @@ def project(lat, lon, zoom):
     size = 256 * 2 ** zoom
     y = (1 - math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) / math.pi) / 2 * size
     return (lon + 180) / 360 * size, y
+
+
+def shown(labels, text, zoom):
+    """The labels with this text that a map honouring min_zoom and max_zoom shows at this zoom."""
+    return [lab for lab in labels if lab["text"] == text and lab["min_zoom"] <= zoom <= lab.get("max_zoom", 11)]
 
 
 class File(unittest.TestCase):
@@ -354,24 +364,50 @@ class Labels(unittest.TestCase):
             self.assertIn(lab["min_zoom"], range(5, 12), lab)
             if "max_zoom" in lab:
                 self.assertGreaterEqual(lab["max_zoom"], lab["min_zoom"], lab)
-        texts = {lab["text"]: lab for lab in self.labels}
         for text, kind in (("CANADA", "country"), ("UNITED STATES", "country"), ("MONTANA", "region-main"),
                            ("Flathead Lake", "water"), ("Fort Peck Lake", "water")):
-            self.assertEqual(texts[text]["kind"], kind, text)
-        self.assertLessEqual(texts["MONTANA"]["min_zoom"], 6)
-        self.assertEqual(texts["CANADA"]["min_zoom"], 5)
+            labs = [lab for lab in self.labels if lab["text"] == text]
+            self.assertTrue(labs, text)
+            self.assertTrue(all(lab["kind"] == kind for lab in labs), text)
+        self.assertTrue(shown(self.labels, "MONTANA", 6))
+        for z in range(5, 12):
+            self.assertTrue(shown(self.labels, "CANADA", z), f"no CANADA at zoom {z}")
+
+    def test_each_label_shows_once_at_a_time(self):
+        """A text may come twice (each Canadian label has one copy for zoom 5 and one from zoom 6), but
+        a map that hides labels above their max_zoom never shows it twice at once."""
+        for text in {lab["text"] for lab in self.labels}:
+            for z in range(5, 12):
+                self.assertLessEqual(len(shown(self.labels, text, z)), 1, f"{text} twice at zoom {z}")
+
+    def test_canadian_labels_in_the_first_view(self):
+        """The map opens on Montana fitted between its controls (map.js fitView). On a wide screen (zoom
+        6 and up) that shows only a thin strip of Canada: with no banner the top edge is at 49.25° N at
+        1440x789 and 49.27° N at 1920x1080 (measured in Chromium), so a 12 px label must sit by about
+        49.2° N. A phone (zoom 5) shows far into Canada, but a 412 px one only from 116.45° W to
+        103.65° W. So at every zoom CANADA, AB, SK and BC sit in that view, between 116.0° W and 104.1° W."""
+        for text in ("CANADA", "AB", "SK", "BC"):
+            for z in range(5, 12):
+                labs = shown(self.labels, text, z)
+                self.assertEqual(len(labs), 1, f"{text} at zoom {z}")
+                lat, lon = labs[0]["lat"], labs[0]["lon"]
+                self.assertTrue(-116.0 <= lon <= -104.1, f"{text} at zoom {z}: {lon} is off a phone's first view")
+                self.assertGreater(lat, 49.0, text)
+                if z >= 6:
+                    self.assertLessEqual(lat, 49.2, f"{text} at zoom {z}: {lat} is off a wide screen's first view")
 
     def test_region_labels_inside_their_region(self):
-        texts = {lab["text"]: lab for lab in self.labels}
-        for abbrev in ("ID", "WY", "ND", "SD", "BC", "AB", "SK", "MT"):
-            text = "MONTANA" if abbrev == "MT" else abbrev
-            lab = texts[text]
-            rings = [r for poly in polygons(self.land[abbrev]["geometry"]) for r in poly]
-            self.assertTrue(point_in((lab["lon"], lab["lat"]), rings), text)
-            (s, w), (n, e) = IMAGE_BOUNDS
-            self.assertTrue(s <= lab["lat"] <= n and w <= lab["lon"] <= e, text)
+        (s, w), (n, e) = IMAGE_BOUNDS
         canada = [r for a in ("BC", "AB", "SK") for poly in polygons(self.land[a]["geometry"]) for r in poly]
-        self.assertTrue(point_in((texts["CANADA"]["lon"], texts["CANADA"]["lat"]), canada))
+        for abbrev in ("ID", "WY", "ND", "SD", "BC", "AB", "SK", "MT", "CANADA"):
+            text = {"MT": "MONTANA"}.get(abbrev, abbrev)
+            rings = canada if abbrev == "CANADA" else [r for poly in polygons(self.land[abbrev]["geometry"])
+                                                       for r in poly]
+            labs = [lab for lab in self.labels if lab["text"] == text]
+            self.assertTrue(labs, text)
+            for lab in labs:
+                self.assertTrue(point_in((lab["lon"], lab["lat"]), rings), text)
+                self.assertTrue(s <= lab["lat"] <= n and w <= lab["lon"] <= e, text)
 
     def test_water_labels_near_their_lake(self):
         lakes = {}
@@ -450,6 +486,34 @@ class Tool(unittest.TestCase):
         self.assertEqual(self.t.snap49((-110.0, 48.9925)), (-110.0, 49.0))
         self.assertEqual(self.t.snap49((-110.0, 48.95)), (-110.0, 48.95))
         self.assertEqual(self.t.snap49((-90.0, 48.995)), (-90.0, 48.995))     # east of the 49th-parallel border
+
+    def test_default_download_folder_is_deleted(self):
+        """Without --src the downloads (about 115 MB) go to a temp folder that is deleted afterwards,
+        also when the build fails; a folder given with --src is kept as a cache."""
+        seen = []
+
+        def fake_build(src):
+            seen.append(src)
+            self.assertTrue(src.is_dir())
+            return '{"version":1}\n', {}, []
+
+        def failing_build(src):
+            seen.append(src)
+            raise SystemExit("not the pinned file")
+
+        with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stdout(io.StringIO()):
+            out = Path(tmp) / "basemap.json"
+            with mock.patch.object(self.t, "build", fake_build):
+                self.assertEqual(self.t.main(["--out", str(out)]), 0)
+                self.assertFalse(seen[-1].exists(), "the temp download folder was left behind")
+                keep = Path(tmp) / "cache"
+                keep.mkdir()
+                self.assertEqual(self.t.main(["--src", str(keep), "--out", str(out)]), 0)
+                self.assertEqual(seen[-1], keep)
+                self.assertTrue(keep.is_dir())
+            with mock.patch.object(self.t, "build", failing_build), self.assertRaises(SystemExit):
+                self.t.main(["--out", str(out)])
+            self.assertFalse(seen[-1].exists(), "the temp download folder was left behind after a failure")
 
 
 if __name__ == "__main__":

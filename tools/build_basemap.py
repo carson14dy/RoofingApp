@@ -33,7 +33,9 @@ Steps
 4. Simplify each arc once (Douglas–Peucker), so neighbours keep identical borders; then clip to
    the map image bounds padded by 0.5° and round to 4 decimals (about 11 m).
 5. Place labels and give every label and place a min_zoom from a collision check at zooms 5–11
-   against the site-town bubbles, so labels never cover each other or a bubble.
+   against the site-town bubbles, so labels never cover each other or a bubble. The map's first view
+   shows only a thin strip of Canada on a wide screen, so CANADA, AB, SK and BC each come twice: from
+   zoom 6 just north of the border, and at zoom 5 (phones) higher up (see BORDER_STRIP).
 
 Output (one JSON object, one feature per line so diffs stay readable):
   version, bounds (the clip box), image_bounds, sources (attribution),
@@ -44,7 +46,8 @@ Output (one JSON object, one feature per line so diffs stay readable):
   roads     lines: ref ("I-90", "US-2"), type ("interstate" | "us"), min_zoom
   labels    {text, lat, lon, kind, min_zoom[, max_zoom]}: the text is centred on lat/lon;
             kinds country, region, region-main, water; max_zoom is a hint (it was checked to
-            stay clear up to zoom 11 anyway)
+            stay clear up to zoom 11 anyway). CANADA, AB, SK and BC appear twice, one with
+            max_zoom 5: hide a label above its max_zoom, or both copies show (still clear of all)
   places    {name, lat, lon, rank 1-4, min_zoom 5-9, state[, site, slug]}: a dot with the name to
             its right; site towns (website/towns.json) are rank 1 with site: true and are drawn
             by the map as bubbles, not by the base map
@@ -63,6 +66,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import hashlib
 import io
 import json
@@ -128,27 +132,37 @@ TOWN_LABEL_W = {"Billings": 51.8, "Bozeman": 61.5, "Butte": 38.7, "Glasgow": 57.
 GAP = 3.0                                           # px kept clear between boxes
 LABEL_GAP = 28.0                                    # px between two text labels, so "CANADA" and "SK" read apart
 
-# The map opens on Montana, fitted between the legend, the buttons and the timeline (map.js fitView),
-# so the first view shows only a strip of Canada along the border: on a wide screen it reaches just
-# 49.2-49.3° N (measured in Chromium at 1440x789, 1920x937 and 1920x1080 with no banner), and a phone
-# starts at about 116.5° W and ends at about 103.4° W. The Canadian labels are placed in this strip,
-# as far south as they fit, or the first view cuts them off at the top or the sides.
+# The map opens on Montana, fitted between the legend, the buttons and the timeline (map.js fitView).
+# On a wide screen (zoom 6 and up) that first view shows only a thin strip of Canada along the border:
+# it reaches just 49.2-49.3° N at 1440x789, 1920x937 and 1920x1080 with no banner (measured in Chromium).
+# A phone (zoom 5) shows Canada far to the north, but at 412 px only from 116.45° W to 103.65° W. So each
+# Canadian label comes twice: from zoom 6 in BORDER_STRIP, as far south as it fits, and at zoom 5
+# (max_zoom 5) anywhere in PHONE_STRIP. At zoom 5 the low strip has no room for all four: Havre's
+# bubble reaches the border there. Like every label, both are kept clear of everything up to zoom 11.
 BORDER_STRIP = (IMG[0], -116.0, 49.45, -104.1)    # (s, w, n, e)
+PHONE_STRIP = (IMG[0], -116.0, IMG[2], -104.1)
+CANADA = ("BC", "AB", "SK", "MB")
 
 # Region and country labels: text, kind, the land abbrevs the label must sit inside, min_zoom, max_zoom
-# hint, and where: "centre" (near the area's centroid with room around it) or "border" (in BORDER_STRIP,
-# as far south as it fits; anywhere in the area if it does not fit there).
+# (a hint, see the module docstring), and where: "centre" (near the area's centroid, with room around
+# it), "border" (in BORDER_STRIP, as far south as it fits) or "phone" (in PHONE_STRIP, near its
+# centroid). A label that does not fit in its strip goes anywhere in its area, with a note. The
+# Canadian labels go west to east: at zoom 5 the four only just fit side by side in PHONE_STRIP.
 AREA_LABELS = [
     ("MONTANA", "region-main", ("MT",), 5, 7, "centre"),
-    ("CANADA", "country", ("BC", "AB", "SK", "MB"), 5, None, "border"),
     ("UNITED STATES", "country", ("ID", "WY"), 5, 6, "centre"),
     ("ID", "region", ("ID",), 5, None, "centre"),
     ("WY", "region", ("WY",), 5, None, "centre"),
     ("ND", "region", ("ND",), 5, None, "centre"),
     ("SD", "region", ("SD",), 5, None, "centre"),
-    ("AB", "region", ("AB",), 5, None, "border"),
-    ("SK", "region", ("SK",), 5, None, "border"),
-    ("BC", "region", ("BC",), 5, None, "border"),
+    ("BC", "region", ("BC",), 6, None, "border"),
+    ("AB", "region", ("AB",), 6, None, "border"),
+    ("CANADA", "country", CANADA, 6, None, "border"),
+    ("SK", "region", ("SK",), 6, None, "border"),
+    ("BC", "region", ("BC",), 5, 5, "phone"),
+    ("AB", "region", ("AB",), 5, 5, "phone"),
+    ("CANADA", "country", CANADA, 5, 5, "phone"),
+    ("SK", "region", ("SK",), 5, 5, "phone"),
     ("WA", "region", ("WA",), 6, None, "centre"),
     ("OR", "region", ("OR",), 6, None, "centre"),
 ]
@@ -874,13 +888,20 @@ def _centroid(rings, z):
     return cx / (3 * a), cy / (3 * a)
 
 
-def place_text(np, text, kind, rings, min_zoom, obstacles, *, inside_box: bool, prefer: str, cap=26.0):
+# Where a label box is tested against an area: its corners and the middles of its sides (fractions of w, h).
+BOX_POINTS = ((-.5, -.5), (0, -.5), (.5, -.5), (-.5, 0), (.5, 0), (-.5, .5), (0, .5), (.5, .5))
+
+
+def place_text(np, text, kind, rings, min_zoom, obstacles, *, inside_box: bool, prefer: str, cap=26.0,
+               max_zoom=None, one_ring=False):
     """Best centre for a label inside `rings`, from a grid of candidates: on the base map and clear of
     every obstacle at every zoom from min_zoom to 11 (a max_zoom hint is not relied on), the whole
-    box inside the area (when inside_box) at zoom max(min_zoom, 6); then the most room (capped at
-    `cap` px), then nearest the area centroid ("centroid"); or farthest from the shore ("pole"); or
-    farthest south, then nearest the centroid's longitude ("south", for a label kept next to the
-    border on its north side)."""
+    box inside the area (when inside_box) at zoom max(min_zoom, 6), or at max_zoom if that is lower;
+    then the most room (capped at `cap` px), then nearest the area centroid ("centroid"); or farthest
+    from the shore ("pole"); or farthest south, then nearest the centroid's longitude ("south", for a
+    label kept next to the border on its north side). With one_ring (and inside_box), a box inside a
+    single ring comes first after that row (south) or before the room (centroid): a label over several
+    provinces then sits in one of them, with no province line through it."""
     s, w, n, e = bbox([p for r in rings for p in r])
     s, w, n, e = max(s, IMG[0]), max(w, IMG[1]), min(n, IMG[2]), min(e, IMG[3])
     steps = 90
@@ -894,16 +915,27 @@ def place_text(np, text, kind, rings, min_zoom, obstacles, *, inside_box: bool, 
     if not len(LON):
         return None, "no candidate inside the area"
     lw, lh = label_size(kind, text)
-    zc = max(min_zoom, 6)
+    zc = max(min_zoom, 6) if max_zoom is None else min(max(min_zoom, 6), max_zoom)
+    corners = []                                    # the BOX_POINTS of each candidate, as (lons, lats)
     if inside_box:
         good = np.ones(LON.shape, bool)
         XY = [px(la, lo, zc) for la, lo in zip(LAT, LON)]
-        for fx, fy in ((-.5, -.5), (0, -.5), (.5, -.5), (-.5, 0), (.5, 0), (-.5, .5), (0, .5), (.5, .5)):
+        for fx, fy in BOX_POINTS:
             pts = [unpx(x + fx * lw, y + fy * lh, zc) for x, y in XY]
-            good &= _pip(np, np.array([p[1] for p in pts]), np.array([p[0] for p in pts]), rings)
+            corners.append((np.array([p[1] for p in pts]), np.array([p[0] for p in pts])))
+            good &= _pip(np, corners[-1][0], corners[-1][1], rings)
         LON, LAT = LON[good], LAT[good]
+        corners = [(clon[good], clat[good]) for clon, clat in corners]
         if not len(LON):
             return None, "the label does not fit inside the area"
+    single = np.ones(LON.shape, bool)               # the box lies inside one ring (one_ring only)
+    if one_ring and corners:
+        single[:] = False
+        for ring in rings:
+            inside = np.ones(LON.shape, bool)
+            for clon, clat in corners:
+                inside &= _pip(np, clon, clat, [ring])
+            single |= inside
     feasible = np.ones(LON.shape, bool)
     clear = np.full(LON.shape, cap)
     for z in range(min_zoom, ZOOMS[-1] + 1):
@@ -929,22 +961,23 @@ def place_text(np, text, kind, rings, min_zoom, obstacles, *, inside_box: bool, 
         key = np.lexsort((LON, LAT, -edge, ~feasible))
     elif prefer == "south":
         c = _centroid(rings, zc) or (XY[:, 0].mean(), XY[:, 1].mean())
-        key = np.lexsort((LON, np.abs(XY[:, 0] - c[0]), LAT, ~feasible))
+        key = np.lexsort((LON, np.abs(XY[:, 0] - c[0]), ~single, LAT, ~feasible))
     else:
         c = _centroid(rings, zc) or (XY[:, 0].mean(), XY[:, 1].mean())
         dist = np.hypot(XY[:, 0] - c[0], XY[:, 1] - c[1])
-        key = np.lexsort((LON, LAT, dist, -np.round(np.minimum(clear, cap)), ~feasible))
+        key = np.lexsort((LON, LAT, dist, -np.round(np.minimum(clear, cap)), ~single, ~feasible))
     i = key[0]
     return (round(float(LAT[i]), DECIMALS), round(float(LON[i]), DECIMALS)), None
 
 
-def _place_area_label(np, text, kind, area, first_zoom, obstacles, prefer):
-    """A region or country label in `area` at the first zoom from first_zoom to 7 where it fits:
-    ((lat, lon), zoom, None), or (None, None, why not)."""
+def _place_area_label(np, text, kind, area, first_zoom, max_zoom, obstacles, prefer, one_ring=False):
+    """A region or country label in `area` at the first zoom from first_zoom to 7 (and to max_zoom)
+    where it fits: ((lat, lon), zoom, None), or (None, None, why not)."""
     why = "no zoom tried"
-    for z in range(first_zoom, 8):
+    for z in range(first_zoom, min(7, max_zoom or 7) + 1):
         spot, why = place_text(np, text, kind, area, z, obstacles, inside_box=True, prefer=prefer,
-                               cap=10.0 if kind == "region-main" else 26.0)
+                               cap=10.0 if kind == "region-main" else 26.0, max_zoom=max_zoom,
+                               one_ring=one_ring)
         if spot:
             return spot, z, None
     return None, None, why
@@ -985,14 +1018,15 @@ def make_labels_and_places(land, lakes, towns, sites, others, log):
             log.append(f"label {text}: region not in the map")
             continue
         spot = None
-        if where == "border":
-            strip = [r for r in (clip_ring(ring, BORDER_STRIP) for ring in rings) if r]
-            spot, z, why = (_place_area_label(np, text, kind, strip, mz, obstacles, "south") if strip
-                            else (None, None, "no part of the area is in it"))
+        if where in ("border", "phone"):
+            box, prefer = (BORDER_STRIP, "south") if where == "border" else (PHONE_STRIP, "centroid")
+            strip = [r for r in (clip_ring(ring, box) for ring in rings) if r]
+            spot, z, why = (_place_area_label(np, text, kind, strip, mz, maxz, obstacles, prefer, True)
+                            if strip else (None, None, "no part of the area is in it"))
             if not spot:
-                log.append(f"label {text}: no room in the border strip ({why}), placed in the whole area")
+                log.append(f"label {text}: no room in the {where} strip ({why}), placed in the whole area")
         if not spot:
-            spot, z, why = _place_area_label(np, text, kind, rings, mz, obstacles, "centroid")
+            spot, z, why = _place_area_label(np, text, kind, rings, mz, maxz, obstacles, "centroid")
         if not spot:
             log.append(f"label {text}: not placed ({why})")
             continue
@@ -1154,15 +1188,17 @@ def layer_sizes(text: str) -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[1].strip())
-    ap.add_argument("--src", type=Path, help="download/cache folder (default: a new temp folder)")
+    ap.add_argument("--src", type=Path, help="download/cache folder to keep (default: a temp folder, "
+                                             "about 115 MB, deleted when done)")
     ap.add_argument("--out", type=Path, default=OUT, help=f"output file (default: {OUT.relative_to(ROOT)})")
     ap.add_argument("--preview", type=Path, help="also draw a PNG of the result (needs Pillow)")
     ap.add_argument("--check", action="store_true", help="exit 1 if --out differs from a fresh build")
     args = ap.parse_args(argv)
 
-    src = args.src or Path(tempfile.mkdtemp(prefix="basemap-src-"))
-    print(f"sources in {src}")
-    text, stats, log = build(src)
+    with contextlib.ExitStack() as stack:          # removes a temp download folder, even after an error
+        src = args.src or Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="basemap-src-")))
+        print(f"sources in {src}" + ("" if args.src else " (deleted when done; --src DIR keeps them)"))
+        text, stats, log = build(src)
     size = len(text.encode())
     print(f"{size:,} bytes (budget {BUDGET:,})")
     for k, v in stats.items():
