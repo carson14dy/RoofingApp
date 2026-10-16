@@ -299,7 +299,11 @@
     });
     map.on("dragstart", function () { state.userMoved = true; });
     el.canvas.addEventListener("wheel", function () { state.userMoved = true; }, { passive: true });
-    el.canvas.addEventListener("keydown", function (e) { if (/^Arrow|^[-+=_]$/.test(e.key)) state.userMoved = true; });
+    // Leaflet's pan and zoom keys, which it ignores with Alt, Ctrl or Cmd (Ctrl+= zooms the page); it
+    // zooms out on keyCode 54 too (minus on French keyboards, 6 on others)
+    el.canvas.addEventListener("keydown", function (e) {
+      if (!e.altKey && !e.ctrlKey && !e.metaKey && /^Arrow|^[-+=_6]$/.test(e.key)) state.userMoved = true;
+    });
     el.canvas.addEventListener("touchstart", function (e) { if (e.touches.length > 1) state.userMoved = true; }, { passive: true });
     if (interactive) map.on("dblclick boxzoomstart", function () { state.userMoved = true; });   // double-tap and Shift+drag zooms
     map.on("resize", function () {
@@ -371,8 +375,8 @@
       the "Map data" text, the toast or the nearest-town chip, or on the note's line, is hidden until
       they or the map move: half a name at a panel's edge reads as a broken word, and a name on the
       note's line reads as part of the note. Names may run off the screen's edge, as in the reference.
-      Runs after every move and resize, and whenever the note, the legend, the toast or the chip
-      changes. */
+      Runs after every move and resize, and whenever a banner comes or goes or the note, the legend,
+      the toast or the chip changes. */
   function tidyLabels() {
     if (!map) return;
     var boxes = [], link = el.legendWrap.querySelector(".mapdata");
@@ -797,7 +801,7 @@
       the card: the Storm reports page says both above and below it). */
   function renderReportNote() {
     var old = byId("reports-banner");
-    if (old) old.remove();
+    if (old) { old.remove(); tidyLabels(); }       // the panels below it move up, maybe onto names
     if (!state.reports || !data || CARD) return;   // the Storm reports page says it above and below the card
     var st = data.status && data.status.reports;
     if (st && !st.ok) {
@@ -1648,6 +1652,7 @@
     p.innerHTML = html;
     el.banners.appendChild(p);
     if (sheetState) placeSheet();
+    tidyLabels();                    // it and the panels it pushes down cover names (a moved map isn't refitted)
     return p;
   }
 

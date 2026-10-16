@@ -175,6 +175,10 @@ section + section, .now-grid + section { margin-top: var(--space-7); }
 .map { display: block; width: 100%; height: min(70vh, 34rem); min-height: 20rem; border: 1px solid var(--card-line);
   border-radius: var(--radius); background: var(--color-surface-muted); }
 @media (max-width: 639px) { .map { height: 20rem; min-height: 0; } }
+/* The Storm reports card's caption has one more line ("1 alert has no outline"): 1.5rem more on a
+   phone or a short screen lets it open at the Now card's zoom with a banner too, instead of zooming
+   out until town names pile up. After the phone rule, so it wins there. */
+.map-card-tall { min-height: 21.5rem; }
 .caption { margin-top: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
 .section-link { font-weight: 600; min-height: 44px; display: inline-flex; align-items: center; }
 .map-card { background: var(--color-surface-muted); }

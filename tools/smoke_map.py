@@ -13,10 +13,15 @@ the List; a picture still loading when the viewer switches to a layer with no pi
 under the new layer's legend; the Now page's caption names the picture the card shows (radar or
 model); a portrait phone gets the short two-column legend, which keeps one height through the whole
 timeline, and the Precipitation layer rings no town; a zoom by double-click or the = key holds through
-a layer switch, and on a map nobody moved a layer switch fits Montana as a fresh load does. Exits 1
-with the reasons if anything fails. The Website workflow runs it
-on branch pushes; locally set PW_CHROMIUM to a Chromium executable if Playwright's own isn't
-installed.
+a layer switch, and on a map nobody moved a layer switch fits Montana as a fresh load does; no
+basemap name sticks out from under a panel or the card's caption, or sits on the note's line, also
+once a banner comes on a map the viewer moved; a picture that fails says so in the note and the
+slider's words, and keeps no coverage-gap key; My location outside the map's area says so in the
+toast and offers no chip; the Storm reports card shows no reports banner, and on a phone, with a
+banner and its caption's line counting alerts without an outline, opens at the Now card's zoom with
+no town under either card's caption; a town stays clear of its sheet when the phone turns. Exits 1
+with the reasons if anything fails. The Website workflow runs it on branch pushes; locally set
+PW_CHROMIUM to a Chromium executable if Playwright's own isn't installed.
 """
 from __future__ import annotations
 
@@ -125,7 +130,10 @@ def check(root: Path) -> list[str]:
 
             for extra in (lambda: check_menu_rows(browser, base), lambda: check_no_outline_key(browser, base, data),
                           lambda: check_phone_legend(browser, base, data), lambda: check_zoom_holds(browser, base),
-                          lambda: check_switch_fit(browser, base),
+                          lambda: check_switch_fit(browser, base), lambda: check_names_clear(browser, base),
+                          lambda: check_names_after_banner(browser, base, data),
+                          lambda: check_failed_picture(browser, base, data), lambda: check_location(browser, base),
+                          lambda: check_reports_card(browser, base, data), lambda: check_sheet_turn(browser, base),
                           lambda: check_empty_layer_switch(browser, base, data),
                           lambda: check_card_words(browser, base, root)):
                 try:
@@ -275,18 +283,21 @@ def check_phone_legend(browser, base, data) -> list[str]:
     return problems
 
 
+# how far apart two town bubbles are, in px: it doubles with each zoom level
+APART = ("() => { const b = [...document.querySelectorAll('.leaflet-marker-icon.town:not(.minor)')].slice(0, 2)"
+         ".map(e => e.getBoundingClientRect()); return Math.hypot(b[0].x - b[1].x, b[0].y - b[1].y); }")
+
+
 def check_zoom_holds(browser, base) -> list[str]:
     """A zoom by the viewer stays where they put it: a double-click and the = key zoom in, and a layer
     switch afterwards doesn't fit Montana again (a refit once undid every desktop zoom but the
-    wheel's). The zoom is read as the distance between two town bubbles, which doubles per level."""
+    wheel's). The zoom is read as the distance between two town bubbles (APART)."""
     problems = []
     ctx = browser.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
     page = ctx.new_page()
     page.goto(base + "map.html", wait_until="load")
     page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
     page.wait_for_timeout(500)
-    apart = ("() => { const b = [...document.querySelectorAll('.leaflet-marker-icon.town:not(.minor)')].slice(0, 2)"
-             ".map(e => e.getBoundingClientRect()); return Math.hypot(b[0].x - b[1].x, b[0].y - b[1].y); }")
     spot = page.evaluate("""() => {          // a spot of bare map: no bubble, outline, report or panel on it
       const m = document.getElementById('map').getBoundingClientRect();
       for (let y = m.top + m.height * 0.3; y < m.bottom - m.height * 0.3; y += 10)
@@ -298,18 +309,18 @@ def check_zoom_holds(browser, base) -> list[str]:
     if not spot:
         ctx.close()
         return ["zoom: no bare spot of the map to double-click"]
-    before = page.evaluate(apart)
+    before = page.evaluate(APART)
     page.mouse.dblclick(spot[0], spot[1])                  # +0.5 (zoomDelta)
     page.wait_for_timeout(600)
     page.focus("#map")
     page.keyboard.press("Equal")                            # +0.5
     page.wait_for_timeout(600)
-    zoomed = page.evaluate(apart)
+    zoomed = page.evaluate(APART)
     page.click("#btn-layers")
     page.get_by_role("radio", name="Temperature").check()
     page.keyboard.press("Escape")
     page.wait_for_timeout(600)
-    after = page.evaluate(apart)
+    after = page.evaluate(APART)
     if zoomed < before * 1.8:
         problems.append(f"zoom: a double-click and the = key didn't hold (towns {before:.0f} -> {zoomed:.0f} px apart, want about twice)")
     elif abs(after - zoomed) > zoomed * 0.02:
@@ -341,6 +352,241 @@ def check_switch_fit(browser, base) -> list[str]:
     if max(abs(fresh[0] - switched[0]), abs(fresh[1] - switched[1])) > 1.5:
         return [f"layer switch: Montana sits {switched[1] - fresh[1]:+.0f} px from where a fresh Wind gusts map puts it"]
     return []
+
+
+# basemap names on screen that meet a glass panel, the card's caption or Open map, or the note's line
+NAMES_CUT = """() => {
+  const text = (e) => { const r = document.createRange(); r.selectNodeContents(e); return r.getBoundingClientRect(); };
+  const shown = (e) => e && !e.hidden && e.offsetParent !== null;
+  const boxes = ['legend', 'buttons', 'timeline', 'near-chip', 'card-chip', 'card-open'].map(id => document.getElementById(id))
+    .concat([document.querySelector('#top .close')], [...document.getElementById('banners').children]).filter(shown)
+    .map(e => e.getBoundingClientRect()).filter(r => r.width > 2 && r.height > 2);
+  const note = document.getElementById('frame-note');
+  if (shown(note)) { const r = text(note); boxes.push({left: r.left - 24, right: r.right + 24, top: r.top, bottom: r.bottom}); }
+  return [...document.querySelectorAll('#map .bm-label:not(.bm-hide)')].filter(e => getComputedStyle(e).display !== 'none')
+    .filter(e => { const r = text(e.querySelector('span')), left = e.querySelector('i') ? r.left - 10 : r.left;
+      return r.width && boxes.some(b => left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top); })
+    .map(e => e.textContent); }"""
+
+
+def check_names_clear(browser, base) -> list[str]:
+    """No basemap name sticks out from under a glass panel, the card's caption or Open map, or sits on
+    the note's line (map.js tidyLabels hides them): as the map opens on a phone and on a laptop, on
+    the phone with the legend's (i) note open, and in the card. On a phone the covered half of such
+    a name blurs under the glass and the rest reads as a broken word."""
+    problems = []
+    for w, h, query, info in ((390, 844, "", False), (390, 844, "", True), (1440, 900, "", False),
+                              (358, 320, "?card=1", False)):
+        ctx = browser.new_context(viewport={"width": w, "height": h}, reduced_motion="reduce")
+        page = ctx.new_page()
+        page.goto(base + "map.html" + query, wait_until="load")
+        page.wait_for_selector("#map .bm-label", state="attached", timeout=15000)
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+        page.wait_for_timeout(500)
+        if info:
+            page.click("#legend-info")
+            page.wait_for_timeout(300)
+        cut = page.evaluate(NAMES_CUT)
+        if cut:
+            problems.append(f"names at {w}x{h}{query}{' with the (i) note open' if info else ''}: "
+                            f"{', '.join(cut[:4])} cut by a panel or on the note's line")
+        ctx.close()
+    return problems
+
+
+def check_failed_picture(browser, base, data) -> list[str]:
+    """A picture that doesn't load never reads as a clear sky (AGENTS.md rule 5): the note and the
+    slider's words for screen readers say it didn't load, and no "no coverage" key stays for a gap
+    that isn't drawn."""
+    precip = data["layers"].get("precip", {})
+    order = precip.get("modes", {}).get("12h", [])
+    if len(order) < 3:
+        return []
+    name = precip["frames"][order[1]]["src"].split("/")[-1].split("?")[0]
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+    page = ctx.new_page()
+    page.route("**/map/frames/" + name + "*", lambda r: r.abort())
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.focus("#range")
+    page.keyboard.press("Home")
+    page.wait_for_timeout(600)
+    page.keyboard.press("ArrowRight")                      # the timeline's second frame: its picture fails
+    page.wait_for_timeout(1000)
+    st = page.evaluate("""() => ({value: document.getElementById('range').getAttribute('aria-valuetext') || '',
+      note: document.getElementById('frame-note').textContent,
+      gapKey: [...document.querySelectorAll('#legend-keys li')].some(li => getComputedStyle(li).visibility !== 'hidden'
+        && /^(No radar coverage|No model data)$/.test(li.textContent.trim()))})""")
+    ctx.close()
+    problems = []
+    if "didn't load" not in st["note"] or "didn't load" not in st["value"] or "not an all-clear" not in st["value"]:
+        problems.append(f"failed picture: the note or the slider's words don't say it didn't load "
+                        f"(note {st['note']!r}; slider {st['value']!r})")
+    if st["gapKey"]:
+        problems.append("failed picture: the legend still names a coverage gap that isn't drawn")
+    return problems
+
+
+def check_location(browser, base) -> list[str]:
+    """My location: inside the map the chip names the nearest town and the toast is only read out (it
+    says the same); outside the map's area the toast says so, with the nearest town and its
+    distance, and no chip offers a town hundreds of miles away."""
+    problems = []
+    for where, lat, lon, inside in (("Bozeman", 45.68, -111.04, True), ("Denver", 39.74, -104.99, False)):
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce", permissions=["geolocation"],
+                                  geolocation={"latitude": lat, "longitude": lon, "accuracy": 500})
+        page = ctx.new_page()
+        page.goto(base + "map.html", wait_until="load")
+        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.get_by_role("button", name="Show my location").click()
+        page.wait_for_function("() => document.getElementById('toast').textContent.includes('Nearest town')", timeout=10000)
+        st = page.evaluate("""() => { const t = document.getElementById('toast');
+          return {toast: t.textContent, shown: t.classList.contains('show') && !t.classList.contains('quiet'),
+                  chip: !document.getElementById('near-chip').hidden}; }""")
+        ctx.close()
+        if inside and (not st["chip"] or st["shown"]):
+            problems.append(f"location in {where}: want the nearest-town chip and the toast only read out ({st})")
+        if not inside and (st["chip"] or not st["shown"] or "outside" not in st["toast"]):
+            problems.append(f"location in {where}: want the toast to say it is outside the map, and no chip ({st})")
+    return problems
+
+
+def failed_reports(data) -> str:
+    """map.json as if the SPC report files had failed (for page.route)."""
+    import json as _json
+    failed = _json.loads(_json.dumps(data))
+    failed["reports"] = []
+    failed.setdefault("status", {})["reports"] = {"label": "SPC storm reports", "ok": False, "detail": "a test failure"}
+    return _json.dumps(failed)
+
+
+def check_names_after_banner(browser, base, data) -> list[str]:
+    """A banner that comes after the viewer moved the map refits nothing (here Storm reports, turned on
+    when the report files failed): the names it and the panels it pushes down cover are hidden then
+    too (map.js banner)."""
+    body = failed_reports(data)
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+    page = ctx.new_page()
+    page.route("**/data/map.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=body))
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_selector("#map .bm-label", state="attached", timeout=15000)
+    page.evaluate("() => document.fonts.ready.then(() => true)")
+    page.wait_for_timeout(500)
+    page.focus("#map")
+    page.keyboard.press("ArrowDown")                       # the viewer moves the map
+    page.wait_for_timeout(400)
+    page.click("#btn-layers")
+    page.check("#tg-reports")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(400)
+    cut = page.evaluate(NAMES_CUT)
+    banner = page.locator("#reports-banner").count()
+    ctx.close()
+    if not banner:
+        return ["names after a banner: turning on Storm reports with failed report files showed no banner"]
+    return [f"names after a banner: {', '.join(cut[:4])} cut by a panel once the reports banner came"] if cut else []
+
+
+# towns (bubble or name) under the card's caption or Open map
+CARD_UNDER = """() => { const p = ['card-chip', 'card-open'].map(id => document.getElementById(id).getBoundingClientRect());
+  return [...document.querySelectorAll('.leaflet-marker-icon.town')].filter(t => getComputedStyle(t).display !== 'none')
+    .filter(t => [...t.querySelectorAll('.bubble, .tname')].map(e => e.getBoundingClientRect()).some(r => r.width
+      && p.some(b => Math.min(r.right, b.right) - Math.max(r.left, b.left) > 1 && Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top) > 1)))
+    .map(t => t.querySelector('.tname').textContent); }"""
+
+
+def check_reports_card(browser, base, data) -> list[str]:
+    """The Storm reports card has no reports banner when the report files failed (the page says so
+    above and below the card). On a phone, with a banner (the build's own, or a one-line test banner
+    when it shows none) and its caption's extra line ("1 alert has no outline"), it opens at the Now
+    card's zoom (APART; style.css .map-card-tall gives it the room) and no town is under either card's
+    caption or Open map. The banner, then that line, once zoomed it out until the town names piled up."""
+    import json as _json
+    import re
+    from datetime import datetime
+    problems = []
+    failed = failed_reports(data)
+    ctx = browser.new_context(viewport={"width": 358, "height": 320}, reduced_motion="reduce")
+    page = ctx.new_page()
+    page.route("**/data/map.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=failed))
+    page.goto(base + "map.html?card=1&overlay=reports", wait_until="load")
+    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_timeout(300)
+    if page.locator("#reports-banner").count():
+        problems.append("Storm reports card: shows the reports banner, which the page around it already says")
+    ctx.close()
+
+    body = _json.loads(_json.dumps(data))
+    items = body["alerts"]["items"]
+    if all(a.get("geometry") for a in items):               # the caption's extra line needs one
+        items.append({"id": "smoke-no-outline", "event": "Winter Weather Advisory", "kind": "advisory", "headline": "",
+                      "area": "Hill; Blaine", "severity": "Moderate", "sender": "", "sent": data["built"],
+                      "onset": None, "until": None, "description": "", "instruction": "", "geometry": None})
+    body = _json.dumps(body)
+    built = int(datetime.fromisoformat(data["built"].replace("Z", "+00:00")).timestamp() * 1000)
+
+    def a_banner(route):                                     # a one-line banner when the build shows none
+        r = route.fetch()
+        html = re.sub(r'id="banners">\s*</div>', 'id="banners"><p class="banner banner-info">A test banner.</p></div>',
+                      r.text(), count=1)
+        route.fulfill(response=r, body=html)
+
+    seen = {}
+    for name in ("index.html", "reports.html"):
+        ctx = browser.new_context(viewport={"width": 360, "height": 740}, reduced_motion="reduce")
+        ctx.add_init_script("Date.now = () => Math.round(%d + performance.now());" % built)   # no page-age banner
+        page = ctx.new_page()
+        page.route("**/data/map.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=body))
+        page.route(re.compile(r"/map\.html\?card=1"), a_banner)
+        page.goto(base + name, wait_until="load")
+        page.locator("iframe.map-card").scroll_into_view_if_needed()       # it loads lazily
+        frame = None
+        for _ in range(75):
+            frame = next((f for f in page.frames if "card=1" in f.url), None)
+            if frame and frame.locator(".leaflet-marker-icon.town").count():
+                break
+            page.wait_for_timeout(200)
+        frame.evaluate("() => document.fonts.ready.then(() => true)")
+        page.wait_for_timeout(600)
+        seen[name] = {"apart": frame.evaluate(APART), "under": frame.evaluate(CARD_UNDER),
+                      "banners": frame.locator("#banners > *").count(), "line": frame.locator("#card-chip .card-alerts").count()}
+        ctx.close()
+    now, rep = seen["index.html"], seen["reports.html"]
+    if not (now["banners"] == rep["banners"] == 1):
+        problems.append(f"Storm reports card: want one banner in each card, found {now['banners']} and {rep['banners']}")
+    if not rep["line"]:
+        problems.append("Storm reports card: the caption doesn't count the alert without an outline")
+    if rep["apart"] < now["apart"] * 0.98:
+        problems.append(f"Storm reports card: opens zoomed out from the Now card on a 360 px phone with a banner "
+                        f"(towns {now['apart']:.0f} -> {rep['apart']:.0f} px apart)")
+    for name, st in seen.items():
+        if st["under"]:
+            problems.append(f"{name} card: {', '.join(st['under'][:3])} under the caption or Open map on a 360 px phone")
+    return problems
+
+
+def check_sheet_turn(browser, base) -> list[str]:
+    """A town's sheet open while the phone turns: the town (bubble and name) stays clear of the side
+    sheet the turn brings (a turn once left the name under it)."""
+    problems = []
+    for town in ("Havre", "Glasgow"):
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+        page = ctx.new_page()
+        page.goto(base + "map.html", wait_until="load")
+        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_timeout(500)
+        page.locator(".leaflet-marker-icon.town", has_text=town).first.click()
+        page.wait_for_timeout(400)
+        page.set_viewport_size({"width": 844, "height": 390})
+        page.wait_for_timeout(800)
+        under = page.evaluate("""(town) => { const s = document.getElementById('sheet').getBoundingClientRect();
+          const t = [...document.querySelectorAll('.leaflet-marker-icon.town')].find(e => e.textContent.includes(town));
+          return [t.querySelector('.bubble'), t.querySelector('.tname')].some(e => { const r = e.getBoundingClientRect();
+            return r.left < s.right && r.right > s.left && r.top < s.bottom && r.bottom > s.top; }); }""", town)
+        ctx.close()
+        if under:
+            problems.append(f"town sheet: after the phone turns, {town}'s bubble or name is under the sheet")
+    return problems
 
 
 def check_empty_layer_switch(browser, base, data) -> list[str]:

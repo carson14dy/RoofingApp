@@ -9,7 +9,7 @@
 
 {% if reports.problems %}
 <div class="notice notice-error" role="alert">
-  <p><strong>Some report files didn't load at {{ built|t }}.</strong> Days listed below as empty may be missing data.</p>
+  <p><strong>Some report files didn't load at {{ built|t }}.</strong> The days they cover are marked “data incomplete” below.</p>
   <ul>{% for p in reports.problems %}<li>{{ p }}</li>{% endfor %}</ul>
 </div>
 {% endif %}
@@ -17,7 +17,7 @@
 <section aria-labelledby="map-h">
   <div class="section-head"><h2 id="map-h">Map</h2>
     <a class="section-link" href="map.html?overlay=reports">Open the map</a></div>
-  <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
+  <iframe class="map map-card map-card-tall" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
     title="Map of storm reports in and near Montana" loading="lazy"></iframe>
   {# the card also draws the town bubbles and warning outlines, and hides its own legend: key them here #}
   <ul class="legend" aria-label="Map key">
@@ -35,7 +35,8 @@
   {% for day in reports.days %}
   {% set rows = reports['items'] | selectattr('day', 'equalto', day) | list %}
   <div class="report-day">
-    <h3>Reporting day starting {{ (day ~ 'T12:00:00Z')|t('%a %b %-d at %-I %p %Z') }} ({{ rows|length }} report{{ 's' if rows|length != 1 }})</h3>
+    {# a day with a file that didn't load gets no count: a partial count would read as the day's total (rule 5) #}
+    <h3>Reporting day starting {{ (day ~ 'T12:00:00Z')|t('%a %b %-d at %-I %p %Z') }} ({% if day in reports.failed_days %}data incomplete: a report file didn't load{% else %}{{ rows|length }} report{{ 's' if rows|length != 1 }}{% endif %})</h3>
     {% if rows %}
     <div class="table-box">
       <table>
@@ -54,6 +55,8 @@
         </tbody>
       </table>
     </div>
+    {% elif day in reports.failed_days %}
+    <p class="empty">Data unavailable for this day: its report files didn't all load. No report is not “no hail”.</p>
     {% else %}
     <p class="empty">No hail or wind reports in or near Montana for this day.</p>
     {% endif %}

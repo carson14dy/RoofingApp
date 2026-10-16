@@ -353,10 +353,12 @@ screen's edge, as in the reference.
   what the update is missing. The card has no legend, so the Storm reports page's key names the town
   numbers (NWS forecast temperature; the card shows precipitation, which rings no town) and the
   outlines too, and says alerts without an outline are listed on the Now page; the card's caption
-  counts them on one line ("1 alert has no outline"). The Storm reports card shows no reports banner:
-  the page says above it when report files didn't load, and below it when a day had no reports. The
-  card zooms in steps of 0.05 (the full map in quarters), so a 328 px card shows Montana at 5.2, town
-  names clear, instead of 5.
+  counts them on one line ("1 alert has no outline"). Where the Now card is 320 px tall (a phone or a
+  short screen) that card is 344 (`style.css` `.map-card-tall`), so the line and a banner leave it at
+  the Now card's zoom. The Storm reports card shows no reports banner: the page says above it when
+  report files didn't load, and below it which days are incomplete ("Data unavailable for this day",
+  no count) and which had no reports. The card zooms in steps of 0.05 (the full map in quarters), so
+  a 328 px card shows Montana at 5.2, town names clear, instead of 5.
 - Fit: Montana sits below the legend on a phone, right of it on a wide or short landscape screen,
   above the note and the timeline. A portrait phone's fit never settles below zoom 5.25, the first
   zoom where every town name clears the other bubbles, unless Montana is wider than the screen there

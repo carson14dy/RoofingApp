@@ -446,10 +446,15 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   the 1h/12h timeline or an overlay changes the room, and stops once the viewer moves it in any way.
   A refit on every change of the legend's height undid every desktop zoom but the wheel's
   (double-click, the = key and Shift+drag didn't count as a move) and moved the map during playback
-  once the (i) note was open. A basemap name touching a glass panel or the card's caption is hidden:
-  half a name reads as a broken word. The Storm reports card shows no reports banner (the page says
-  it above and below the card); the banner zoomed the card out until the towns piled up. Outside the
-  map's area the toast alone names the nearest town, instead of a chip offering one 450 miles away.
+  once the (i) note was open. A basemap name touching a glass panel or the card's caption is hidden,
+  also when a banner comes after the viewer moved the map (nothing refits then): half a name reads as
+  a broken word. The Storm reports card shows no reports banner (the page says it above and below
+  the card); the banner zoomed the card out until the towns piled up. On a phone or a short screen
+  that card is also 1.5rem taller than the Now page's: its caption's line counting alerts without an
+  outline, with any banner, zoomed it out the same way. A day whose report files didn't load shows
+  no count and says "Data unavailable for this day", not "No hail or wind reports" (0 reports).
+  Outside the map's area the toast alone names the nearest town, instead of a chip offering one 450
+  miles away.
 
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.

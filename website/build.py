@@ -141,8 +141,10 @@ class Collector:
                       + (f" ({len(added)} found only by the town checks)" if added else ""))
 
     def reports(self, days=3):
+        """SPC reports for the last `days` reporting days. `failed_days` are the days with a report
+        file that didn't load or read: their lists are incomplete, never "no reports" (rule 5)."""
         today = src.spc_day_for(self.now)
-        out, problems = [], []
+        out, problems, failed = [], [], set()
         for back in range(days):
             day = today - timedelta(days=back)
             for kind in ("hail", "wind"):
@@ -150,16 +152,18 @@ class Collector:
                 if err:
                     if not (back == 0 and err.startswith("not published")):
                         problems.append(f"{kind} {strftime(day, '%b %-d')}: {err}")
+                        failed.add(day.isoformat())
                     continue
                 try:
                     out.extend(src.parse_spc(text, day, kind))
                 except ValueError as e:
                     problems.append(f"{kind} {strftime(day, '%b %-d')}: {e}")
+                    failed.add(day.isoformat())
         out.sort(key=lambda r: r["time"], reverse=True)
         self.note("reports", "SPC storm reports", not problems,
                   "; ".join(problems) if problems else f"{len(out)} reports in 3 days")
-        return {"items": out, "problems": problems, "days": [(today - timedelta(days=b)).isoformat()
-                                                             for b in range(days)]}
+        return {"items": out, "problems": problems, "failed_days": sorted(failed),
+                "days": [(today - timedelta(days=b)).isoformat() for b in range(days)]}
 
     def gridded(self, out_dir: Path, sample: bool) -> dict:
         """Radar frames (NOAA MRMS) and model forecast frames (NOAA HRRR) for the map page."""

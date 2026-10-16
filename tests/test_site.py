@@ -276,11 +276,17 @@ class FailingFetcher:
 
 
 class SampleWith(SampleFetcher):
-    """Sample NWS data with chosen requests failing. Its binary() fails, so no radar or forecast."""
+    """Sample NWS data with chosen requests failing: alerts-state, alerts-point, gusts, or an SPC file
+    by name (261013_rpts_filtered_hail.csv). Its binary() fails, so no radar or forecast."""
 
     def __init__(self, now, fail=()):
         super().__init__(now)
         self.fail = fail
+
+    def text(self, url):
+        if url.rsplit("/", 1)[1] in self.fail:
+            return None, "server error (HTTP 503)"
+        return super().text(url)
 
     def json(self, url, params=None):
         if "alerts-state" in self.fail and url.endswith("/alerts/active") and params and "area" in params:
@@ -522,6 +528,34 @@ class FailureHonesty(unittest.TestCase):
         self.assertIn("Forecast unavailable.", html)
         self.assertNotIn("No hour reaches", html)
         self.assertIn("Some report files didn't load", page(out, "reports.html"))
+
+    def test_failed_report_files_are_data_unavailable_not_no_reports(self):
+        """A day with an SPC file that didn't load shows no count (a partial count would read as the
+        day's total) and, when empty, says its data is unavailable, never "No hail or wind reports"
+        (rule 5). Here today's two files fail, and the hail file of the day with the sample reports."""
+        out, result = build_with(SampleWith(NOW, fail={"261014_rpts_filtered_hail.csv", "261014_rpts_filtered_wind.csv",
+                                                       "261013_rpts_filtered_hail.csv"}))
+        self.assertFalse(result["status"]["reports"]["ok"])
+        html = " ".join(page(out, "reports.html").split())
+        self.assertIn("The days they cover are marked “data incomplete” below.", html)
+        incomplete = "(data incomplete: a report file didn't load)</h3>"
+        self.assertIn(f"Reporting day starting Wed Oct 14 at 6 am MDT {incomplete} <p class=\"empty\">Data unavailable "
+                      "for this day: its report files didn't all load. No report is not “no hail”.</p>", html)
+        self.assertIn(f"Reporting day starting Tue Oct 13 at 6 am MDT {incomplete}", html)
+        self.assertIn("61 mph", html)                                   # the wind file of that day loaded
+        self.assertNotIn("1.75 in", html)
+        self.assertIn("Reporting day starting Mon Oct 12 at 6 am MDT (0 reports)</h3> <p class=\"empty\">No hail or "
+                      "wind reports in or near Montana for this day.</p>", html)
+        self.assertEqual(html.count("No hail or wind reports"), 1)
+        # today's files not there yet is not a failure: they appear once there are reports (src.CONTRACTS)
+        class NotYet(SampleWith):
+            def text(self, url):
+                return (None, "not published (HTTP 404)") if "/261014_" in url else super().text(url)
+        out, result = build_with(NotYet(NOW))
+        self.assertTrue(result["status"]["reports"]["ok"])
+        html = " ".join(page(out, "reports.html").split())
+        self.assertIn("Reporting day starting Wed Oct 14 at 6 am MDT (0 reports)", html)
+        self.assertNotIn("data incomplete", html)
 
     def test_sample_state_is_never_used_as_last_known(self):
         class Prev:
