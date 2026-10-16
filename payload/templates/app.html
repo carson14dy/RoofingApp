@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}App &amp; updates — Big Sky Hail Watch{% endblock %}
+{% block title %}App &amp; updates — Montana Hail Watch{% endblock %}
 {% block head %}{% set u = update or {} %}
   {%- if u.phase in ['checking', 'downloading', 'validating'] %}<meta http-equiv="refresh" content="2">{% endif -%}
 {% endblock %}
@@ -29,7 +29,7 @@
 <main class="doc" style="max-width:1040px">
   <a class="back" href="{{ url_for('live') }}">← Back to map</a>
   <h2>App &amp; updates</h2>
-  <p class="sub">Big Sky Hail Watch {{ app_version }}{% if info.shell_version %} · desktop app {{ info.shell_version }}{% endif %}</p>
+  <p class="sub">Montana Hail Watch {{ app_version }}{% if info.shell_version %} · desktop app {{ info.shell_version }}{% endif %}</p>
   {% if note %}<div class="note {{ note.tone }}" role="status">{{ note.text }}</div>{% endif %}
 
   {% if not desktop %}
@@ -94,7 +94,7 @@
       <h3>Update source</h3>
       <form method="post" action="{{ url_for('app_source') }}">
         <label class="f" for="repo">GitHub repository</label>
-        <input id="repo" name="repo" type="text" class="mono" value="{{ u.repo or '' }}" placeholder="your-name/bigsky-hailwatch">
+        <input id="repo" name="repo" type="text" class="mono" value="{{ u.repo or '' }}" placeholder="your-name/RoofingApp">
         <label class="f" for="branch">Branch</label>
         <input id="branch" name="branch" type="text" class="mono" value="{{ u.branch or 'main' }}">
         <label class="f" for="token">Access token (private repos only)</label>

@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install
-        run: python -m pip install flask folium requests waitress tzdata
+        run: python -m pip install flask folium requests waitress tzdata pillow numpy
       - name: Self-test the app (same check installed apps run)
         run: python desktop/launcher.py --selftest payload
       - name: Acceptance, alert-scenario and update tests

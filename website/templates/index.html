@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "_alerts.html" import alert_item, office_links %}
+{% block title %}Montana right now · Montana Hail Watch{% endblock %}
+{% block content %}
+<div class="lead">
+  <h1>Montana right now</h1>
+  <p class="sub">Official warnings, radar and the next 12 hours for {{ towns|length }} towns.</p>
+</div>
+
+<div class="now-grid">
+  <section aria-labelledby="alerts-h">
+    <div class="section-head">
+      <h2 id="alerts-h">Warnings and advisories<span class="count">{{ alerts['items']|length }}</span></h2>
+    </div>
+    {% if not alerts.ok %}
+    <div class="notice notice-error" role="alert">
+      <p><strong>Couldn't load NWS alerts at {{ alerts.checked|t }}.</strong>
+      {% set n = alerts.from_towns or 0 %}
+      {% if alerts.last_known %}Below is the last list we verified, from {{ alerts.last_known|when }}{% if n %}, with {{ n }} alert{{ 's' if n > 1 }} the town checks found in this update{% endif %}. Alerts may have been issued or ended since.
+      {% else %}{% if n %}Below {{ 'are the alerts' if n > 1 else 'is the alert' }} the town checks found in this update. {% endif %}This is not an all-clear.{% endif %}
+      Check {{ office_links(offices) }}.</p>
+    </div>
+    {% endif %}
+    {% if alerts['items'] %}
+    <ul class="alert-list">
+      {% for a in alerts['items'][:6] %}{{ alert_item(a) }}{% endfor %}
+    </ul>
+    {% if alerts['items']|length > 6 %}
+    <details class="more-alerts">
+      <summary>Show {{ alerts['items']|length - 6 }} more alerts</summary>
+      <ul class="alert-list">{% for a in alerts['items'][6:] %}{{ alert_item(a) }}{% endfor %}</ul>
+    </details>
+    {% endif %}
+    {% elif alerts.ok %}
+    <p class="empty">No active NWS warnings, watches or advisories for Montana at {{ alerts.checked|t }}.
+      That is not an all-clear: storms can form between updates.</p>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="map-h">
+    <div class="section-head"><h2 id="map-h">Radar, forecast and warning areas</h2>
+      <a class="section-link" href="map.html">Open the map</a></div>
+    <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
+      title="{{ card.title }}" loading="lazy"></iframe>
+    {# build.map_card words what the card shows in this update: radar or model picture, outlines, town numbers #}
+    <p class="caption">
+      {{ card.shown }} {{ card.missing }}
+      <a href="map.html">Open the map</a> {{ card.then }}.
+    </p>
+  </section>
+</div>
+
+<section aria-labelledby="towns-h">
+  <div class="section-head"><h2 id="towns-h">Next 12 hours by town</h2></div>
+  <p class="sub">An hour is flagged for gusts of {{ limits.gust_mph }}&nbsp;mph or more, wind of {{ limits.wind_mph }}&nbsp;mph or more,
+    a {{ limits.pop_pct }}% or higher chance of rain or snow, or temperatures under {{ limits.cold_f }}&nbsp;°F or over {{ limits.hot_f }}&nbsp;°F.
+    These are placeholder limits until the company sets its own.</p>
+  <ul class="town-grid">
+  {% for t in towns %}
+    {% set s = t.summary %}
+    <li>
+      <a class="town-card" href="town/{{ t.slug }}.html">
+        <div class="tc-head">
+          <h3>{{ t.name }}</h3>
+          {% if t.alerts is none %}<span class="chip chip-unknown">Alerts not checked</span>
+          {% elif t.alerts %}<span class="chip chip-{{ t.alerts[0].kind }}">{{ t.alerts[0].event }}{% if t.alerts|length > 1 %} +{{ t.alerts|length - 1 }}<span class="visually-hidden"> more</span>{% endif %}</span>{% endif %}
+        </div>
+        {% if t.hours %}
+        <dl class="stats">
+          <div><dt>Temperature</dt><dd>{% if s.lo is not none %}{{ s.lo|num }}–{{ s.hi|num }}<small> °F</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>
+          <div><dt>Gusts up to</dt><dd{% if s.gust is not none and s.gust >= limits.gust_mph %} class="over"{% endif %}>{% if s.gusts_known %}{{ s.gust|num }}<small> mph</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>
+          <div><dt>Rain or snow</dt><dd{% if s.precip is not none and s.precip >= limits.pop_pct %} class="over"{% endif %}>{% if s.precip is not none %}{{ s.precip|num }}<small>%</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>
+        </dl>
+        {% if s.first_flag %}
+        <p class="tc-note"><strong>{{ s.flagged }} of {{ s.hours }} hours flagged.</strong> First at {{ s.first_flag.start|t }}: {{ s.first_flag.flags|join(', ') }}.</p>
+        {% elif not s.gusts_known %}
+        <p class="tc-note">Gust forecast unavailable, so gusts weren't checked. No hour reaches the other limits.</p>
+        {% else %}
+        <p class="tc-note">No hour reaches the limits above in this forecast.</p>
+        {% endif %}
+        {% else %}
+        <p class="tc-error">Forecast unavailable. {{ t.errors[0] if t.errors }}</p>
+        {% endif %}
+      </a>
+    </li>
+  {% endfor %}
+  </ul>
+</section>
+{% endblock %}

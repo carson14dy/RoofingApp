@@ -8,7 +8,7 @@ GitHub Actions workflow runs this on Windows and macOS for you. Locally:
     python build.py                          # uses desktop/update_config.json as-is
     python build.py --repo owner/name        # bake in where updates come from
 
-Output: dist/BigSkyHailWatch/ (Windows, Linux) or dist/BigSkyHailWatch.app (macOS)
+Output: dist/MontanaHailWatch/ (Windows, Linux) or dist/MontanaHailWatch.app (macOS)
 
 The installer carries the current payload as its built-in version; after that,
 the app updates itself from GitHub.
@@ -22,11 +22,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-APP_ID = "BigSkyHailWatch"
+APP_ID = "MontanaHailWatch"
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Build the Big Sky Hail Watch desktop app")
+    ap = argparse.ArgumentParser(description="Build the Montana Hail Watch desktop app")
     ap.add_argument("--repo", help="GitHub owner/name the app updates from")
     ap.add_argument("--branch", help="branch to update from (default: main)")
     ap.add_argument("--token-env", help="name of an environment variable holding a read-only token (private repos)")
@@ -61,7 +61,7 @@ def main():
         *[x for m in ("pandas", "scipy", "matplotlib", "IPython", "notebook", "tkinter", "pytest", "PIL")
           for x in ("--exclude-module", m)],
         "--icon", str(icon),
-        "--osx-bundle-identifier", "com.bigsky.hailwatch",
+        "--osx-bundle-identifier", "com.montana.hailwatch",
         "--distpath", str(ROOT / "dist"), "--workpath", str(ROOT / "build" / "work"),
         "--specpath", str(ROOT / "build"),
     ])

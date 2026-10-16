@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "_alerts.html" import alert_item, office_links %}
+{% block title %}{{ town.name }} forecast · Montana Hail Watch{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="../index.html">All towns</a> · <a href="../map.html?town={{ town.slug }}">See {{ town.name }} on the map</a></p>
+<div class="lead">
+  <h1>{{ town.name }}</h1>
+  <p class="sub">
+    NWS forecast for the 2.5 km grid square around {{ '%.3f'|format(town.lat) }}, {{ '%.3f'|format(town.lon) }}
+    {%- if town.office %} (NWS {{ town.office }} office){% endif %}.
+    {% if town.updated %}Forecast issued {{ town.updated|when }}.{% endif %}
+    A grid forecast is for the area, not a measurement at any one roof.
+  </p>
+</div>
+
+{% if town.errors %}
+<div class="notice notice-error" role="alert">
+  <p><strong>Part of this town's forecast didn't load at {{ built|t }}.</strong> Missing values show as a dash, never as zero.</p>
+  <ul>{% for e in town.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<section aria-labelledby="alerts-h">
+  <div class="section-head"><h2 id="alerts-h">Official alerts here</h2></div>
+  {% if town.alerts is none %}
+  <p class="empty">Couldn't check NWS alerts for {{ town.name }} at {{ built|t }}. This is not an all-clear: see the
+    <a href="../index.html">statewide list</a> or {{ office_links(offices) }}.</p>
+  {% elif town.alerts %}
+  <ul class="alert-list">{% for a in town.alerts %}{{ alert_item(a) }}{% endfor %}</ul>
+  {% else %}
+  <p class="empty">No active NWS alerts for this location at {{ built|t }}. That is not an all-clear.</p>
+  {% endif %}
+</section>
+
+<section aria-labelledby="hours-h">
+  <div class="section-head"><h2 id="hours-h">Next 24 hours</h2></div>
+  {% set upcoming = town.hours | selectattr('start', 'ge', now - delta_hour) | list %}
+  {% if upcoming %}
+  <p class="sub">Values over a limit are in bold. Limits: gusts {{ limits.gust_mph }}&nbsp;mph,
+    wind {{ limits.wind_mph }}&nbsp;mph, rain or snow {{ limits.pop_pct }}%, under {{ limits.cold_f }}&nbsp;°F, over {{ limits.hot_f }}&nbsp;°F (placeholders).</p>
+  {% macro cell(over, text) %}<td class="n{{ ' over' if over }}">{{ text }}{% if over %}<span class="visually-hidden"> (over limit)</span>{% endif %}</td>{% endmacro %}
+  <div class="table-box">
+    <table class="hours">
+      <caption class="visually-hidden">Hourly forecast for {{ town.name }}, Mountain Time</caption>
+      <thead><tr><th scope="col">Time</th><th scope="col" class="n">Gusts mph</th><th scope="col" class="n">Wind mph</th>
+        <th scope="col" class="n">Rain/<wbr>snow</th><th scope="col" class="n">Temp °F</th>
+        <th scope="col" class="wide-only">Sky</th><th scope="col" class="wide-only">Needs a look</th></tr></thead>
+      <tbody>
+      {% set ns = namespace(day='') %}
+      {% for h in upcoming[:24] %}
+        {% set d = h.start|day %}
+        {% if d != ns.day %}{% set ns.day = d %}<tr><th scope="rowgroup" colspan="7" class="day-row">{{ d }}</th></tr>{% endif %}
+        <tr>
+          <td class="time">{{ h.start|t('%-I %p') }}</td>
+          {{ cell(h.gust_mph is not none and h.gust_mph >= limits.gust_mph, h.gust_mph|num) }}
+          {{ cell(h.wind_mph is not none and h.wind_mph >= limits.wind_mph, (h.wind_mph|num) ~ ' ' ~ h.wind_dir) }}
+          {{ cell(h.precip is not none and h.precip >= limits.pop_pct, ((h.precip|num) ~ '%') if h.precip is not none else '—') }}
+          {{ cell(h.temp_f is not none and (h.temp_f < limits.cold_f or h.temp_f > limits.hot_f), h.temp_f|num) }}
+          <td class="sky wide-only">{{ h.sky }}</td>
+          <td class="flags wide-only">{{ h.flags|join(', ') }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">The hourly forecast is unavailable in this update. This is not an all-clear.</p>
+  {% endif %}
+</section>
+
+<section aria-labelledby="days-h">
+  <div class="section-head"><h2 id="days-h">Next 7 days</h2></div>
+  {% if town.days %}
+  <ul class="days">
+  {% for p in town.days %}
+    <li>
+      <span class="name">{{ p.name }}</span>
+      <span class="temp"><span class="visually-hidden">High </span>{{ p.hi|num }}°<span class="lo"> / <span class="visually-hidden">low </span>{{ p.lo|num }}°</span></span>
+      <span class="summary">{{ p.sky }}{% if p.precip is not none %} · {{ p.precip|num }}% rain or snow{% endif %} · wind {{ p.wind }} {{ p.wind_dir }}{% if p.night_sky %} · night: {{ p.night_sky|lower }}{% endif %}</span>
+      {% if p.detail %}<span class="detail">{{ p.detail }}</span>{% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">The 7-day forecast is unavailable in this update.</p>
+  {% endif %}
+</section>
+
+<section aria-labelledby="other-h">
+  <div class="section-head"><h2 id="other-h">Other towns</h2></div>
+  <ul class="town-links">
+  {% for slug, name in towns_nav %}
+    <li><a href="{{ slug }}.html"{% if slug == town.slug %} aria-current="page"{% endif %}>{{ name }}</a></li>
+  {% endfor %}
+  </ul>
+</section>
+{% endblock %}
