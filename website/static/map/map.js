@@ -26,14 +26,17 @@
   var FALLBACK_VIEW = { bounds: [[44.35, -116.06], [49.01, -104.03]], min_zoom: 5, max_zoom: 11 };
   var KIND_WORD = { warning: "Warning", watch: "Watch", advisory: "Advisory", statement: "Statement" };
   var LAYER_WORD = { precip: "Precipitation", temp: "Temperature", wind: "Wind gusts" };
-  // the note line's words for hatching in view (one line each, so noteRoom's one-line room holds):
-  // a gap inside a picture, the band outside the pictures' box, or both ("on this map" is true of both)
-  var HATCH_NOTE = {
-    radar: "Hatched areas have no radar coverage.", model: "Hatched areas have no model data.",
-    radarOut: "Hatched areas have no radar data on this map.", modelOut: "Hatched areas have no model data on this map.",
-    outside: "Hatched areas are outside this map's area."
+  var LABEL_ZOOM = 5.25;             // from this zoom every town name clears the other bubbles (tools/build_basemap.py)
+  // words for the hatching in view (hatchKind): [legend key and card, note line]. A gap in the frame
+  // shown, the band outside the pictures' box, or both ("on this map" is true of both). One line each:
+  // a key fits a 140 px legend column, a note noteRoom's one-line room.
+  var HATCH = {
+    radar: ["No radar coverage", "Hatched areas have no radar coverage."],
+    model: ["No model data", "Hatched areas have no model data."],
+    radarOut: ["No radar data on this map", "Hatched areas have no radar data on this map."],
+    modelOut: ["No model data on this map", "Hatched areas have no model data on this map."],
+    outside: ["Outside map area", "Hatched areas are outside this map's area."]
   };
-  var OUTSIDE_WORDS = "Outside the map's area";
 
   var app = document.getElementById("app");
   var params = new URLSearchParams(location.search);
@@ -42,7 +45,7 @@
   // keep these in step with the media queries of the same layouts in map.css
   // (not under 301 px tall or 521 px wide: those fold the legend instead, map.css "very short or narrow")
   var sideQuery = window.matchMedia ? window.matchMedia("(min-height: 301px) and (max-height: 500px) and (min-width: 521px) and (orientation: landscape)") : null;
-  var compactQuery = window.matchMedia ? window.matchMedia("(max-width: 520px) and (max-height: 760px), (max-height: 500px)") : null;
+  var compactQuery = window.matchMedia ? window.matchMedia("(max-height: 500px)") : null;
   var phoneQuery = window.matchMedia ? window.matchMedia("(max-width: 520px) and (orientation: portrait)") : null;
   var builtMs = Number(document.body.getAttribute("data-built")) || 0;
   var limits = readJSON(app.getAttribute("data-limits")) || {};
@@ -86,8 +89,7 @@
   var toastTimer = null;
   var cardFitting = false;                       // fitCard is running (the caption must not re-fit)
   var legendForm = null;                         // the legend's form when last drawn (legendFormNow)
-  var legendCrowded = false;                     // fitView found no room for Montana under the one-column legend
-  var noteFit = { sig: null, room: 0 };          // the note warnings and room the last fit allowed for
+  var noteFit = { sig: null, room: 0, legendH: 0 };   // the note warnings, note room and legend height the last fit allowed for
   var noteSizes = { width: -1, px: {} };         // measured note sizes by text, at one note width
 
   // ------------------------------------------------------------------ small helpers
@@ -244,7 +246,9 @@
   function createMap(view, imageBounds) {
     var interactive = !CARD;
     map = L.map(el.canvas, {
-      zoomControl: false, attributionControl: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 110,
+      // the card can't be zoomed, so finer steps let it fill its width: a 328 px card shows Montana at
+      // 5.2 (town names clear) instead of 5 (fitCard)
+      zoomControl: false, attributionControl: false, zoomSnap: CARD ? 0.05 : 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 110,
       minZoom: view.min_zoom || 5, maxZoom: view.max_zoom || 11, keyboard: interactive, dragging: interactive,
       touchZoom: interactive, scrollWheelZoom: interactive, doubleClickZoom: interactive, boxZoom: interactive,
       tap: false, maxBoundsViscosity: 0.9, fadeAnimation: !reducedMotion(), zoomAnimation: !reducedMotion(),
@@ -319,12 +323,13 @@
   /** Fit Montana into the space the controls leave free: below the legend on a phone, right of it
       on a wide screen or a short landscape one (where the timeline also starts right of it), and
       always above the timeline and the note (noteRoom). Measured from the page, so banners count.
-      Below the legend wins on a phone whenever Montana fits there at the minimum zoom or more (every
-      town visible beats a bigger Montana). When it can't, even with the two-column legend (or, on a
-      short landscape screen, below the banners), Montana stays at the minimum zoom, bigger would
-      only hide more, and goes where it hides the least of the town bubbles (placeCrowded). */
+      A portrait phone never fits below LABEL_ZOOM unless Montana is wider than the screen there:
+      lower, town names run into the other bubbles. Where Montana doesn't fit between the controls
+      (at that zoom on a phone, at the minimum zoom on a short landscape screen) it goes where it
+      hides the least of the town bubbles (placeCrowded). */
   function fitView() {
     if (!map || !map._viewBounds) return;
+    noteFit.legendH = el.legendWrap.offsetHeight;
     if (CARD) { fitCard(); return; }
     var base = (data && data.view && data.view.min_zoom) || 5;
     if (map.getMinZoom() > base) map.setMinZoom(base);   // fitMinZoom may have raised it for a bigger box
@@ -343,44 +348,36 @@
       var zs = boundsZoom(vb, sum(tl[1]));
       if (boundsSize(vb, zs).y > vh - tl[1] - br[1]) placeCrowded(vb, zs, tl, br, vw, vh, tlTop);
     } else {
-      // a taller phone keeps the one-column legend unless banners and the note leave Montana no room
-      // under it even at the minimum zoom; then it takes the short phones' two-column legend
-      if (data && state.ready && phoneQuery && phoneQuery.matches && !(compactQuery && compactQuery.matches)) {
-        setCrowded(false);
-        if (!fitsBelow(vb, el.legendWrap.getBoundingClientRect().bottom + 4, bottomPad, vh)) setCrowded(true);
-        legend = el.legendWrap.getBoundingClientRect();
-      }
       tl = [6, legend.bottom + 4];
       br = [6, bottomPad];
-      var zBelow = boundsZoom(vb, sum(tl[1]));
-      if (boundsSize(vb, zBelow).y > vh - tl[1] - br[1] + 1) placeCrowded(vb, zBelow, tl, br, vw, vh, tlTop);
+      var z = boundsZoom(vb, sum(tl[1]));
+      if (z < LABEL_ZOOM && phoneQuery && phoneQuery.matches && boundsSize(vb, LABEL_ZOOM).x <= vw - 12) z = LABEL_ZOOM;
+      if (boundsSize(vb, z).y > vh - tl[1] - br[1] + 1) placeCrowded(vb, z, tl, br, vw, vh, tlTop);
     }
     map.fitBounds(vb, { paddingTopLeft: tl, paddingBottomRight: br, animate: false });
     fitMinZoom();
   }
 
-  /** A country or region name (a basemap label) under one of the two controls that are plain text on
-      the map, the "Map data" link and the note line, is hidden until the map moves: two texts on top
-      of each other read as neither. The glass panels hide what is under them anyway, and names may
-      run off the edge as in the reference. Runs after every move, resize and note change. */
+  /** A basemap name (a country, region, water or place name, with its dot) under the "Map data" link,
+      the note line, the toast or the nearest-town chip is hidden until they or the map move: two texts
+      on top of each other read as neither. The legend and the other glass panels hide what is under
+      them anyway, and names may run off the edge as in the reference. Runs after every move and
+      resize, and whenever the note, the legend, the toast or the chip changes. */
   function tidyLabels() {
     if (!map || CARD) return;
     var boxes = [], link = el.legendWrap.querySelector(".mapdata");
-    if (link && link.offsetParent !== null) {          // the link's text, not its 44 px tap area
-      var rg = document.createRange();
-      rg.selectNodeContents(link);
-      boxes.push(rg.getBoundingClientRect());
-    }
-    if (!el.note.hidden) boxes.push(el.note.getBoundingClientRect());
-    boxes = boxes.filter(function (b) { return b.width && b.height; });
-    var spans = el.canvas.querySelectorAll(".lbl-country span, .lbl-region span");
+    if (link && link.offsetParent !== null) boxes.push(textBox(link));   // its text, not its 44 px tap area
+    [el.note, el.toast, el.near].forEach(function (x) { if (!x.hidden) boxes.push(x.getBoundingClientRect()); });
+    boxes = boxes.filter(function (b) { return b.width > 2 && b.height > 2; });   // not the toast's empty live region
+    var spans = el.canvas.querySelectorAll(".bm-label span");
     for (var i = 0; i < spans.length; i++) {
-      var r = spans[i].getBoundingClientRect(), hide = false;
+      var r = textBox(spans[i]), hide = false;                               // the glyphs, taller than the line
+      var left = spans[i].previousElementSibling ? r.left - 10 : r.left;      // a place's dot, left of its name
       for (var k = 0; r.width && !hide && k < boxes.length; k++) {
         var b = boxes[k];
-        hide = r.left < b.right + 2 && r.right > b.left - 2 && r.top < b.bottom + 2 && r.bottom > b.top - 2;
+        hide = left < b.right + 2 && r.right > b.left - 2 && r.top < b.bottom + 2 && r.bottom > b.top - 2;
       }
-      spans[i].classList.toggle("bm-hide", hide);
+      spans[i].parentNode.classList.toggle("bm-hide", hide);
     }
   }
 
@@ -432,20 +429,6 @@
     return map.getBoundsZoom(vb, false, pad);
   }
 
-  /** Whether box vb fits, at the minimum zoom or more, between `top` and `bottomPad` px from the
-      bottom (phone width, 6 px each side). */
-  function fitsBelow(vb, top, bottomPad, vh) {
-    var z = boundsZoom(vb, L.point(12, top + bottomPad));
-    return boundsSize(vb, z).y <= vh - top - bottomPad + 1;
-  }
-
-  /** Crowded or not (see fitView); the legend is drawn again in its new form. */
-  function setCrowded(on) {
-    if (legendCrowded === on) return;
-    legendCrowded = on;
-    renderLegend();
-  }
-
   /** Room to keep free above the timeline for the note line: the tallest warning this timeline can
       show at any of its frames (a layer with no pictures, a picture that failed, the end of the
       forecast; each on its solid backing, often 2 or 3 lines on a phone), measured at the note's
@@ -488,7 +471,7 @@
     var big = null;
     noteWarningSet().forEach(function (t) { var s = noteSize(t, true); if (!big || s.height > big.height) big = s; });
     if (!big) {
-      Object.keys(HATCH_NOTE).forEach(function (k) { var s = noteSize(HATCH_NOTE[k], false); if (!big || s.width > big.width) big = s; });
+      Object.keys(HATCH).forEach(function (k) { var s = noteSize(HATCH[k][1], false); if (!big || s.width > big.width) big = s; });
     }
     var b = el.bottom.getBoundingClientRect(), left = b.left + (b.width - big.width) / 2;
     return { left: left, right: left + big.width, top: tlTop - 8 - big.height, bottom: tlTop - 8 };
@@ -534,13 +517,9 @@
       timeline starts right of it (map.css, same media query). */
   function sideLegend() { return !CARD && !!(sideQuery && sideQuery.matches); }
 
-  /** The two-column legend (map.css .legend-2col: the keys beside a shorter scale) of portrait
-      phones: always on a short one, and on a taller one when fitView finds that banners and the
-      note leave Montana no room under the one-column legend (they take height as a shorter screen
-      would). */
-  function twoColLegend() {
-    return !CARD && !!(phoneQuery && phoneQuery.matches) && (!!(compactQuery && compactQuery.matches) || legendCrowded);
-  }
+  /** The two-column legend (map.css .legend-2col: the keys beside a shorter scale) of every portrait
+      phone: about 160 px tall instead of about 270, so Montana sits higher and bigger below it. */
+  function twoColLegend() { return !CARD && !!(phoneQuery && phoneQuery.matches); }
 
   /** Short screens and the two-column legend get a shorter legend bar with fewer stop labels
       (map.css has no say: the bar height is set here, with the labels). */
@@ -656,6 +635,7 @@
       t._marker = m;
       t._el = m.getElement();
       t._bubble = t._el.querySelector(".bubble");
+      t._name = t._el.querySelector(".tname");
       t._el.setAttribute("role", CARD ? "link" : "button");
       m.on("click", function () { activateTown(t); });
       t._el.addEventListener("keydown", function (e) {
@@ -672,7 +652,7 @@
   function townExtent(t) {
     var c = map.latLngToContainerPoint([t.lat, t.lon]), mapR = el.canvas.getBoundingClientRect();
     var e = { l: 21, t: 21, r: 21, b: 21 };          // the bubble and its focus ring
-    var n = t._el.querySelector(".tname"), r = n && n.getBoundingClientRect();
+    var r = t._name.getBoundingClientRect();
     if (r && r.width) {
       e.l = Math.max(e.l, c.x - (r.left - mapR.left) + 3);
       e.r = Math.max(e.r, r.right - mapR.left - c.x + 3);
@@ -705,7 +685,9 @@
     return null;
   }
 
-  /** What a bubble says for an hour: temperature (precip/temp layers) or gusts (wind layer). */
+  /** What a bubble says for an hour: temperature (precip/temp layers) or gusts (wind layer). The ring
+      (`over`) marks the layer's own limit: gusts at the gust limit, temperatures outside the cold and
+      hot limits; the Precipitation layer has none (its picture is the rain, not the temperature). */
   function bubbleValue(h) {
     if (!h) return { text: "\u2014", over: false, words: "no NWS forecast for this hour" };
     if (state.layer === "wind") {
@@ -715,7 +697,7 @@
     }
     if (h.temp_f == null) return { text: "\u2014", over: false, words: "temperature not in the NWS forecast" };
     var v = h.temp_f;
-    var over = (limits.cold_f != null && v < limits.cold_f) || (limits.hot_f != null && v > limits.hot_f);
+    var over = state.layer === "temp" && ((limits.cold_f != null && v < limits.cold_f) || (limits.hot_f != null && v > limits.hot_f));
     return { text: String(v), over: over, words: v + " degrees" };
   }
 
@@ -732,7 +714,6 @@
       if (t._text !== v.text) { t._bubble.textContent = v.text; t._text = v.text; }
       t._bubble.classList.toggle("over", v.over);
       t._bubble.classList.toggle("unknown", v.text === "\u2014");
-      t._over = v.over;
       var label = t.name + ", " + v.words + (h ? " at " + clock(Date.parse(h.time)) + ", NWS forecast" : "") + (v.over ? ", over limit" : "") +
         (t._here ? ", your location" : "");
       // a screen reader reads a focused control's new name out: while playing, the focused town's
@@ -1185,19 +1166,40 @@
 
   /** The line above the timeline: a failed picture, the end of the forecast, a layer with no pictures
       at all (warnings, on a solid backing), and what hatching in view means (like the reference's
-      "Forecast is not available in some areas"). Plain words; a failure never looks like clear sky. */
+      "Forecast is not available in some areas"). Plain words; a failure never looks like clear sky.
+      The hatching note never prints over a town's bubble or name (after a zoom, a pan or My location,
+      or on a screen too short for Montana): it steps aside, and the legend's keys still name the
+      hatching. */
   function renderNote() {
     var warn = noteWarnings(state.pos).join(" "), info = "";
-    var f = state.frames[state.pos];
-    // same rule as the legend key (whenever hatching is in view); a warning takes the line alone,
-    // so it stays short, and the key still names the hatching
-    if (f && !warn) info = hatchNote();
+    var f = state.frames[state.pos], k = f && !warn ? hatchKind() : "";
+    // same rule as the legend keys (whenever hatching is in view); a warning takes the line alone,
+    // so it stays short, and the keys still name the hatching
+    if (k) info = HATCH[k][1];
     var html = warn ? '<span class="note-warn">' + esc(warn) + "</span>" : info ? '<span class="note-info">' + esc(info) + "</span>" : "";
-    var changed = el.note._html !== html;
-    if (changed) { el.note.innerHTML = html; el.note._html = html; }
+    var before = el.note._html + el.note.hidden;
+    if (el.note._html !== html) { el.note.innerHTML = html; el.note._html = html; }
     el.note.hidden = !html || CARD;
     el.note.classList.toggle("warn", !!warn);
-    if (changed) tidyLabels();
+    if (info && !el.note.hidden && overTown(textBox(el.note))) el.note.hidden = true;
+    if (before !== html + el.note.hidden) tidyLabels();
+  }
+
+  /** The box of an element's text on screen (without its padding or tap area). */
+  function textBox(e) {
+    var rg = document.createRange();
+    rg.selectNodeContents(e);
+    return rg.getBoundingClientRect();
+  }
+
+  /** Whether a box on screen covers part of a town's bubble or name. */
+  function overTown(b) {
+    return data.towns.some(function (t) {
+      return [t._bubble, t._name].some(function (e) {
+        var r = e.getBoundingClientRect();
+        return r.width > 0 && r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top;
+      });
+    });
   }
 
   /** The note's warnings at timeline position `pos` (any position when the layer has no pictures):
@@ -1258,6 +1260,7 @@
     if (w) el.legendScale.style.setProperty("--scale-w", Math.ceil(16 + w + 2) + "px");
     el.legendNote.textContent = L_.legend_note || "";
     renderKeys();
+    tidyLabels();                    // another scale can move the "Map data" link
   }
 
   /** Which stop labels fit on a bar `barH` px tall without touching (labels are 12.5 px): the top,
@@ -1276,18 +1279,19 @@
 
   /** Keys under the legend: alerts that have no outline (when there are any), what the town numbers
       are (the NWS forecast, not the coloured model field under them; always shown, phones too),
-      then only what is on the map now:
-      hatching (gaps in a picture: for the whole timeline when any frame has them; the band outside
-      the pictures), the limit ring, warning outline colours and storm-report circles. Every colour
-      carries its word. */
+      then only what is on the map now: hatching (a gap in the frame shown; the band outside the
+      pictures), the limit ring (for the whole timeline when any of its hours rings a town in sight),
+      warning outline colours and storm-report circles. Every colour carries its word. Nothing comes
+      or goes during playback, so the legend keeps its height (and the fit its room); a legend that
+      grew or shrank otherwise (another layer, a switch) gets a new fit. */
   function renderKeys() {
     if (!data) return;
     var keys = [];
     keys.push(["key-bubble", state.layer === "wind" ? "Town numbers: NWS gust forecast, mph" : "Town numbers: NWS forecast, \u00b0F"]);
     var hatch = hatchInView();
-    if (hatch.key) keys.push(["key-hatch", hatch.key]);
-    if (hatch.outside) keys.push(["key-hatch-out", OUTSIDE_WORDS]);
-    if (data.towns.some(function (t) { return t._over && townVisible(t); })) keys.push(["key-ring", ringWords()]);
+    if (hatch.gap) keys.push(["key-hatch", HATCH[hatch.gap][0]]);
+    if (hatch.outside) keys.push(["key-hatch-out", HATCH.outside[0]]);
+    if (ringsOnTimeline()) keys.push(["key-ring", ringWords()]);
     if (state.warnings) (state.alertKinds || []).forEach(function (k) { keys.push(["key-hz key-" + k, KIND_WORD[k] + " area (NWS)"]); });
     if (state.reports && data.reports.length) {
       if (data.reports.some(function (r) { return r.kind === "hail"; })) keys.push(["key-hail", "Hail report (size)"]);
@@ -1295,6 +1299,9 @@
     }
     if (locState && locState.here && townVisible(locState.here)) keys.push(["key-here", "Your location"]);
     var html = keys.map(function (k) { return '<li><span class="key ' + k[0] + '" aria-hidden="true"></span>' + esc(k[1]) + "</li>"; }).join("");
+    // a frame without the gaps other frames of this timeline have keeps the gap row's room: hidden
+    // and last, so it reads as padding
+    if (hatch.spare) html += '<li class="key-spare"><span class="key key-hatch"></span>' + esc(HATCH[hatch.spare][0]) + "</li>";
     // alerts issued by county or zone have no outline to draw (AGENTS.md rule 6: null geometry never
     // means "no alert"): one row says how many, whatever the Warnings switch says, and opens the List.
     // First, so a legend that scrolls (a phone on its side) shows it without scrolling.
@@ -1308,6 +1315,7 @@
       el.legendKeys._html = html;
       tidyLabels();                            // the "Map data" link under the legend may have moved
     }
+    if (el.legendWrap.offsetHeight !== noteFit.legendH) refitForBanner();
   }
 
   /** How many active alerts have no outline (issued by county or zone). */
@@ -1315,35 +1323,42 @@
     return ((data && data.alerts && data.alerts.items) || []).filter(function (a) { return !a.geometry; }).length;
   }
 
-  /** The hatching in view, of two kinds. `inside`: areas a picture has no data for (no radar coverage,
-      or masked model cells; a heavier hatch drawn in the picture), worded for the frame shown so a
-      model frame never says "radar". `outside`: the band outside the pictures' box, which this map
-      doesn't draw (every layer and frame, a hairline, see drawOutsideMask). NOAA has data there, so
-      it is never called a coverage gap; it is hatched so it never looks dry. */
+  /** The hatching in view, of two kinds. `gap`: "radar" or "model" when the frame shown has areas with
+      no data (no radar coverage, or masked model cells; a heavier hatch drawn in the picture), named
+      for the frame shown so a model frame never says "radar"; when it has none, `spare` names a gap
+      elsewhere on this timeline (renderKeys keeps that row's room). `outside`: the band outside the
+      pictures' box, which this map doesn't draw (every layer and frame, a hairline, see
+      drawOutsideMask). NOAA has data there, so it is never called a coverage gap; it is hatched so
+      it never looks dry. */
   function hatchInView() {
-    var h = { inside: "", outside: false, key: "" };
+    var h = { gap: "", spare: "", outside: false };
     if (!map || !map._imageBounds) return h;
-    var f = state.frames[state.pos];
-    var words = f && f.kind === "radar" ? "No radar coverage" : "No model data";
-    if (f && f.nodata && !f._failed) h.inside = words;
-    // the legend's key for gaps stays for the whole timeline when any of its frames has one, so the
-    // legend keeps its height (and the fit its room) during playback; worded for the frame shown
-    if (f && state.frames.some(function (x) { return x.nodata; })) h.key = words;
+    var f = state.frames[state.pos], kind = function (x) { return x.kind === "radar" ? "radar" : "model"; };
+    if (f && f.nodata && !f._failed) h.gap = kind(f);
+    else state.frames.some(function (x) { if (x.nodata) h.spare = kind(x); return x.nodata; });
     h.outside = !map._imageBounds.contains(map.getBounds());
     return h;
   }
 
-  /** The note line's words for the hatching in view, or "" when none is in view. */
-  function hatchNote() {
-    var h = hatchInView(), f = state.frames[state.pos];
-    if (h.inside) return f.kind === "radar" ? (h.outside ? HATCH_NOTE.radarOut : HATCH_NOTE.radar) : (h.outside ? HATCH_NOTE.modelOut : HATCH_NOTE.model);
-    return h.outside ? HATCH_NOTE.outside : "";
+  /** HATCH's key for the hatching in view: a gap ("radar", "model"), "radarOut" or "modelOut" when the
+      band outside the pictures is in view too, "outside" for the band alone, "" for none. */
+  function hatchKind() {
+    var h = hatchInView();
+    return h.gap ? h.gap + (h.outside ? "Out" : "") : h.outside ? "outside" : "";
   }
 
   /** Whether a town's bubble is on screen (minor towns appear from zoom 7). */
   function townVisible(t) {
     if (t.minor && map.getZoom() < 7) return false;
     return map.getBounds().contains([t.lat, t.lon]);
+  }
+
+  /** Whether any town in sight has the limit ring at any hour of this timeline. */
+  function ringsOnTimeline() {
+    var times = state.times.length ? state.times : [valueTime()];
+    return data.towns.some(function (t) {
+      return townVisible(t) && times.some(function (ms) { return bubbleValue(townHour(t, ms)).over; });
+    });
   }
 
   /** What the orange ring means for the layer on screen. */
@@ -1682,12 +1697,22 @@
     return hours < 36 ? "about " + hours + " hours" : "about " + Math.round(hours / 24) + " days";
   }
 
-  /** A short message above the timeline that fades after a few seconds. */
-  function toast(text) {
+  /** A short message above the timeline that fades after a few seconds. `quiet`: only the polite live
+      region reads it out (map.css hides it), as the screen already shows the same. */
+  function toast(text, quiet) {
     el.toast.textContent = text;
     el.toast.classList.add("show");
+    el.toast.classList.toggle("quiet", !!quiet);
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.toast.classList.remove("show"); el.toast.textContent = ""; }, 4500);
+    toastTimer = setTimeout(function () { el.toast.classList.remove("show"); el.toast.textContent = ""; bottomMoved(); }, 4500);
+    bottomMoved();
+  }
+
+  /** The toast or the chip came or went, so the note line above them moved: check it, and the
+      basemap names under all three, again. */
+  function bottomMoved() {
+    if (data && state.ready) renderNote();
+    tidyLabels();
   }
 
   // ------------------------------------------------------------------ location
@@ -1715,18 +1740,30 @@
         if (km < bestKm) { bestKm = km; best = t; }
       });
       var inside = map._imageBounds && map._imageBounds.contains(ll);
-      if (inside) { state.userMoved = true; map.setView(ll, Math.max(map.getZoom(), 7), { animate: !reducedMotion() }); }
       var words = inside ? "Showing your location." : "You're outside the area this map covers.";
       if (best) {
-        var mi = Math.round(bestKm * 0.621371);
-        el.near.textContent = "Nearest town: " + best.name + " \u00b7 " + mi + " mi";
+        var miles = bestKm * 0.621371, mi = Math.round(miles);
+        var far = miles < 1 ? "under a mile" : mi + (mi === 1 ? " mile" : " miles");
+        el.near.textContent = "Nearest town: " + best.name + " \u00b7 " + (miles < 1 ? "under 1 mi" : mi + " mi");
         el.near.setAttribute("data-town", best.slug);
-        el.near.setAttribute("aria-label", "Nearest town: " + best.name + ", " + mi + " miles. Open its forecast.");
+        el.near.setAttribute("aria-label", "Nearest town: " + best.name + ", " + far + ". Open its forecast.");
         el.near.hidden = false;
-        words += " Nearest town: " + best.name + ", " + (mi < 1 ? "under a mile." : mi + (mi === 1 ? " mile." : " miles."));
+        words += " Nearest town: " + best.name + ", " + far + ".";
       }
-      toast(words);                  // the polite live region: a screen reader hears that it worked
+      // the polite live region: a screen reader hears that it worked; inside the map the chip says
+      // the same on screen, so there the sentence is only read out, not shown twice
+      toast(words, inside && !el.near.hidden);
       placeLocDot();
+      if (inside) {
+        state.userMoved = true;
+        // once there, the town the dot sits on (bubble and name), or else the dot, is moved clear of
+        // the legend and the panels
+        map.once("moveend", function () {
+          var t = locState && locState.here;
+          if (t) reveal(L.latLng(t.lat, t.lon), townExtent(t)); else reveal(ll);
+        });
+        map.setView(ll, Math.max(map.getZoom(), 7), { animate: !reducedMotion() });
+      }
     }, function () {
       el.locateBtn.classList.remove("is-busy");
       toast("Location isn't available.");
@@ -2094,15 +2131,15 @@
       main = (f.kind === "radar" ? (sample ? "Sample radar" : "NOAA radar estimate") :
         (sample ? "Sample forecast" : "HRRR model forecast")) + " \u00b7 " + clock(state.times[state.pos]);
     }
-    var h = f && !f._failed ? hatchInView() : { inside: "", outside: false };
-    var hatch = h.inside || (h.outside ? OUTSIDE_WORDS : "");
-    var html = '<span class="card-main">' + esc(main) + "</span>" + (hatch ? '<span class="card-hatch"><span class="key ' +
-      (h.inside ? "key-hatch" : "key-hatch-out") + '" aria-hidden="true"></span>' +
-      '<span class="visually-hidden">. Hatched areas: </span>' + esc(hatch) + "</span>" : "");
+    // words true of all the hatching in view: a gap in the frame, the band outside the pictures, or both
+    var k = f && !f._failed ? hatchKind() : "";
+    var html = '<span class="card-main">' + esc(main) + "</span>" + (k ? '<span class="card-hatch"><span class="key ' +
+      (k === "outside" ? "key-hatch-out" : "key-hatch") + '" aria-hidden="true"></span>' +
+      '<span class="visually-hidden">. Hatched areas: </span>' + esc(HATCH[k][0]) + "</span>" : "");
     // the Storm reports card: alerts without an outline aren't on it (the Now page card sits beside
-    // the full alert list, so it needn't say)
+    // the full alert list, so it needn't say). One line on a phone; the page's key says where they are
     var n = state.reports ? noOutlineCount() : 0;
-    if (n) html += '<span class="card-alerts"><span class="visually-hidden">. </span>' + esc(n + (n > 1 ? " NWS alerts have" : " NWS alert has") + " no outline: see the Now page") + "</span>";
+    if (n) html += '<span class="card-alerts"><span class="visually-hidden">. </span>' + esc(n + (n > 1 ? " alerts have" : " alert has") + " no outline") + "</span>";
     if (el.cardChip._html !== html) { el.cardChip.innerHTML = html; el.cardChip._html = html; }
     el.cardChip.classList.toggle("warn", warn);
     if (state.ready && !cardFitting && map && el.cardChip.offsetHeight !== h0) fitView();

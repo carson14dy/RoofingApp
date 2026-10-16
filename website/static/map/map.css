@@ -217,7 +217,7 @@ a { color: inherit; }
 .corner-left, .corner-right { display: flex; flex-direction: column; gap: var(--gap); pointer-events: none; }
 .corner-left { align-items: flex-start; min-width: 0; }
 .corner-right { align-items: center; position: relative; }
-.close { color: var(--ink); text-decoration: none; }
+.close { flex: none; color: var(--ink); text-decoration: none; }   /* 44 px even in the landscape column */
 
 .banners { display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
 .banners:empty { display: none; }
@@ -303,6 +303,8 @@ a { color: inherit; }
 /* first under the one-column scale: no pull-up, or its text runs into the bottom stop label, which
    hangs half a line below the scale */
 .app:not(.legend-2col) .legend-keys > li:first-child > .key-btn { margin-top: 0; }
+/* the gap row's room on a frame without the gaps other frames have (map.js renderKeys) */
+.legend-keys .key-spare { visibility: hidden; }
 .key-hz { border: 2px solid; background: transparent; }
 .key-warning { border-color: var(--hz-warning); background: color-mix(in srgb, var(--hz-warning) 14%, transparent); }
 .key-watch { border-color: var(--hz-watch); background: color-mix(in srgb, var(--hz-watch) 14%, transparent); }
@@ -398,8 +400,10 @@ a { color: inherit; }
 }
 .toast.show { opacity: 1; padding: 10px 16px; }
 /* empty, it stays in the accessibility tree (a live region that appears with its message is often not
-   read out) but takes no room: out of the column, 1 px, clipped */
-.toast:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); padding: 0; box-shadow: none; }
+   read out) but takes no room: out of the column, 1 px, clipped. Quiet (map.js toast): its message is
+   read out but not shown, as the nearest-town chip already shows it */
+.toast:empty, .toast.quiet { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); padding: 0;
+  box-shadow: none; white-space: nowrap; }
 .chip.near {
   display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px;
   font-size: 14px; font-weight: 600;
@@ -484,11 +488,9 @@ a { color: inherit; }
   .tl-src::before { content: none; }
 }
 
-/* short phones (most phones in a browser, with its bars showing), and taller ones whose banners and
-   note leave Montana no room under the one-column legend: the keys sit beside the scale, so the
-   legend is wider but much shorter and Montana fits below it. map.js sets .legend-2col on portrait
-   phones up to 520 px wide (twoColLegend), shortens the bar and sets --scale-w to the longest stop
-   label. */
+/* portrait phones: the keys sit beside the scale, so the legend is wider but much shorter and
+   Montana sits higher and bigger below it. map.js sets .legend-2col on portrait screens up to 520 px
+   wide (twoColLegend), shortens the bar and sets --scale-w to the longest stop label. */
 .legend-2col .legend { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px;
   max-width: calc(100vw - var(--safe-l) - var(--safe-r) - 2 * var(--edge) - var(--btn) - 2 * var(--gap)); }
 .legend-2col .legend { padding-top: 8px; padding-bottom: 8px; }
@@ -571,7 +573,7 @@ a { color: inherit; }
 
 /* basemap labels (divIcons, centred on their point) */
 .bm-label { pointer-events: none !important; }
-.bm-label span.bm-hide { visibility: hidden; }   /* map.js tidyLabels: under "Map data" or the note */
+.bm-label.bm-hide { visibility: hidden; }   /* map.js tidyLabels: under "Map data", the note, the toast or the chip */
 .bm-label span {
   position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); white-space: nowrap; line-height: 1;
   text-shadow: 0 0 2px var(--halo), 0 0 2px var(--halo), 0 0 3px var(--halo);

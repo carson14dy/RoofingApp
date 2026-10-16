@@ -11,9 +11,9 @@ serves it and never runs this tool.
 
 Sources (both public domain), pinned by hash so a rerun writes the same bytes:
 - Natural Earth 10 m GeoJSON, tag v5.1.2 (raw.githubusercontent.com/nvkelso/natural-earth-vector):
-  admin-1 states/provinces (used for Canada and for state/province abbreviations), lakes plus the
-  North America lakes supplement, rivers and lake centrelines plus the North America rivers
-  supplement, roads, populated places.
+  admin-1 states/provinces (used for Canada, for state/province abbreviations and for the context
+  layer outside the box), lakes plus the North America lakes supplement, rivers and lake centrelines
+  plus the North America rivers supplement, roads, populated places.
 - us-atlas 3.0.1 (registry.npmjs.org; the tarball `npm pack us-atlas@3.0.1` fetches, checked
   against its npm integrity hash): counties-10m.json, the U.S. Census Bureau cartographic boundary
   files (2017) as TopoJSON. The package itself is ISC-licensed; the data is public domain.
@@ -36,11 +36,17 @@ Steps
    against the site-town bubbles, so labels never cover each other or a bubble. The map's first view
    shows only a thin strip of Canada on a wide screen, so CANADA, AB, SK and BC each come twice: from
    zoom 6 just north of the border, and at zoom 5 (phones) higher up (see BORDER_STRIP).
+6. The context layer around the box (see CONTEXT), so a phone's map runs edge to edge: Natural
+   Earth state and province lines from the same arc split (shared arcs only, so no coastline),
+   simplified to 0.01° and cut out of the box; state abbreviations and cities from zoom 6, placed
+   after everything else so the layout inside the box stays as it was.
 
 Output (one JSON object, one feature per line so diffs stay readable):
-  version, bounds (the clip box), image_bounds, sources (attribution),
+  version, bounds (the clip box), context_bounds, image_bounds, sources (attribution),
   land      polygons: name, abbrev, admin, montana (bool)
-  borders   lines without the clip-box edges: kind "country" | "state", montana (bool)
+  borders   lines without the clip-box edges: kind "country" | "state" | "context", montana (bool);
+            "context" is the coarse layer outside the box, and "country" runs on along the 49th
+            parallel through it, from 122° W to 95.2° W
   counties  Montana county lines, each shared arc once, interior only: between [county, county]
   lakes     polygons: name, min_zoom          rivers  lines: name, rank 1-3, min_zoom
   roads     lines: ref ("I-90", "US-2"), type ("interstate" | "us"), min_zoom
@@ -51,6 +57,7 @@ Output (one JSON object, one feature per line so diffs stay readable):
   places    {name, lat, lon, rank 1-4, min_zoom 5-9, state[, site, slug]}: a dot with the name to
             its right; site towns (website/towns.json) are rank 1 with site: true and are drawn
             by the map as bubbles, not by the base map
+  Labels and places outside the image bounds are the context layer's (CONTEXT_REGIONS, CONTEXT_PLACES).
 Stroke land outlines from `borders`, not from the land polygons: the polygons are cut at the clip
 box, and their edges there are not borders. Draw lakes above rivers.
 
@@ -111,8 +118,23 @@ SOURCES = [
 
 # Douglas-Peucker tolerances in degrees of latitude (longitude scaled by cos 47°): 0.001 is ~110 m,
 # under one screen pixel up to zoom 10 at Montana's latitude.
-TOL = {"us": 0.0006, "canada": 0.0012, "lakes": 0.0012, "rivers": 0.0018, "roads": 0.0020}
+TOL = {"us": 0.0006, "canada": 0.0012, "lakes": 0.0012, "rivers": 0.0018, "roads": 0.0020, "context": 0.01}
 KX = math.cos(math.radians(47.0))
+
+# A phone's first view reaches far past BOX (39-59.7° N at 390x844, measured in Chromium), and the
+# reference runs a map edge to edge. So a coarse context layer fills CONTEXT outside BOX: Natural Earth
+# state and province lines (0.01°, under a pixel at zoom 6) and some state and city names, but no land,
+# water or roads. West of 122° W would reach the Pacific coast, which lines alone would only imply;
+# 95.2° W stops short of the Lake of the Woods, 60.5° N takes in the 60th-parallel line (at 60.00006 in
+# Natural Earth) and 37.5° N clears the Four Corners parallel, so no edge runs along a border.
+# The names start at zoom 6, like the detailed layer's outer names (WA, OR, Spokane, Rapid City): at a
+# phone's first view (zoom 5.25-5.5, 360-430 px wide) the legend, the buttons, the note line and the
+# timeline cover nearly all of the context, and names at zoom 5 sat under them or ran into the note.
+CONTEXT = (37.5, -122.0, 60.5, -95.2)            # (s, w, n, e)
+CONTEXT_ZOOM = 6
+CONTEXT_REGIONS = ("NV", "UT", "CO", "NE", "KS", "MN", "MB")
+CONTEXT_PLACES = ("Calgary", "Edmonton", "Saskatoon", "Winnipeg", "Salt Lake City", "Casper", "Cheyenne",
+                  "Denver", "Bismarck", "Pierre")
 
 BORDER_LAT = 49.0
 BORDER_SNAP = 0.012              # degrees; the Census line is within 0.003, Natural Earth's within 0.008
@@ -366,6 +388,27 @@ def _clip_segment(a, b, box):
     return pa, pb
 
 
+def clip_line_outside(points, box) -> list[list]:
+    """The parts of a line outside the box (what clip_line leaves out)."""
+    parts, cur = [], []
+    for a, b in zip(points, points[1:]):
+        seg = _clip_segment(a, b, box)
+        if seg is None:
+            cur = cur or [a]
+            cur.append(b)
+            continue
+        p, q = seg
+        if p != a:
+            cur = cur or [a]
+            cur.append(p)
+        if cur:
+            parts.append(cur)
+        cur = [q, b] if q != b else []
+    if cur:
+        parts.append(cur)
+    return [d for d in (dedupe(p) for p in parts) if len(d) >= 2]
+
+
 def clip_line(points, box) -> list[list]:
     """The parts of a line inside the box."""
     parts, cur = [], []
@@ -563,17 +606,18 @@ def us_layers(topo: dict, postal: dict):
     return land, county_lines, border_parts, sorted({g["properties"]["name"] for g in mt_counties})
 
 
-def canada_layers(admin1: dict):
-    feats = sorted((f for f in admin1["features"] if f["properties"]["adm0_a3"] == "CAN"),
-                   key=lambda f: f["properties"]["name"])
-    rings, owner = [], []          # owner[k] = (feature index, polygon index, ring index)
-    meta = []
+def admin1_arcs(admin1: dict, countries, box):
+    """Natural Earth's admin-1 polygons of these countries that reach into box, split into shared arcs
+    after snapping the US–Canada border to 49°. Returns (features sorted by country and name, owner,
+    arcs, refs, users): owner[k] = (feature, polygon, ring) index of ring k, refs[k] its arcs, users[i]
+    the features using arc i (two for a border, one for a coast)."""
+    feats = sorted((f for f in admin1["features"] if f["properties"]["adm0_a3"] in countries),
+                   key=lambda f: (f["properties"]["adm0_a3"], f["properties"]["name"]))
+    rings, owner = [], []
     for fi, f in enumerate(feats):
         g = f["geometry"]
-        polys = g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]
-        meta.append(f["properties"])
-        for pi, poly in enumerate(polys):
-            if not intersects(bbox(poly[0])):
+        for pi, poly in enumerate(g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]):
+            if not intersects(bbox(poly[0]), box):
                 continue
             for ri, ring in enumerate(poly):
                 r = dedupe([snap49((p[0], p[1])) for p in ring])
@@ -583,6 +627,15 @@ def canada_layers(admin1: dict):
                     rings.append(r)
                     owner.append((fi, pi, ri))
     arcs, refs = build_topology(rings)
+    users: dict[int, set] = {}
+    for (fi, _, _), ref in zip(owner, refs):
+        for i, _ in ref:
+            users.setdefault(i, set()).add(fi)
+    return feats, owner, arcs, refs, users
+
+
+def canada_layers(admin1: dict):
+    feats, owner, arcs, refs, users = admin1_arcs(admin1, ("CAN",), BOX)
     sarcs = [simplify(a, TOL["canada"]) for a in arcs]
     polys_out: dict[int, dict[int, list]] = {}
     for (fi, pi, ri), ref in zip(owner, refs):
@@ -596,23 +649,37 @@ def canada_layers(admin1: dict):
     for fi in sorted(polys_out):
         coords = [rs for _, rs in sorted(polys_out[fi].items()) if rs]
         if coords:
-            p = meta[fi]
+            p = feats[fi]["properties"]
             land.append(feature({"name": p["name"], "abbrev": p["postal"], "admin": "Canada", "montana": False},
                                 "MultiPolygon", coords))
     # province lines: arcs used by two provinces (the 49th parallel is drawn from the US side)
-    use_count: dict[int, set] = {}
-    for (fi, _, _), ref in zip(owner, refs):
-        for i, _ in ref:
-            use_count.setdefault(i, set()).add(fi)
     border_parts = {}
-    for i in sorted(use_count):
-        if len(use_count[i]) != 2:
+    for i in sorted(users):
+        if len(users[i]) != 2:
             continue
         for part in clip_line(sarcs[i], BOX):
             part = rnd(part)
             if len(part) >= 2:
                 border_parts.setdefault(("state", False), []).append(part)
     return land, border_parts, len(arcs)
+
+
+def context_lines(admin1: dict) -> dict:
+    """The context layer's lines: Natural Earth state and province borders in CONTEXT outside BOX (the
+    detailed layers draw inside it). Only arcs two polygons share, so no coastline; each simplified once.
+    Returns {"country": the US–Canada border, "context": the rest}."""
+    feats, _, arcs, _, users = admin1_arcs(admin1, ("USA", "CAN"), CONTEXT)
+    out = {"country": [], "context": []}
+    for i in sorted(users):
+        if len(users[i]) != 2:
+            continue
+        kind = "country" if len({feats[fi]["properties"]["adm0_a3"] for fi in users[i]}) == 2 else "context"
+        for part in clip_line(simplify(arcs[i], TOL["context"]), CONTEXT):
+            for piece in clip_line_outside(part, BOX):
+                piece = rnd(piece)
+                if len(piece) >= 2:
+                    out[kind].append(piece)
+    return out
 
 
 def lakes_layer(base: dict, supplement: dict):
@@ -738,29 +805,42 @@ def roads_layer(roads: dict):
                     "MultiLineString", groups[(kind, ref)]) for kind, ref in sorted(groups, key=order)]
 
 
+def inside(lat, lon, box) -> bool:
+    return box[0] <= lat <= box[2] and box[1] <= lon <= box[3]
+
+
 def places_list(pp: dict, towns: list, postal: dict):
-    s, w, n, e = IMG
+    """The site towns; the other places in the image bounds; CONTEXT_PLACES outside them. Biggest first."""
     site = {t["name"].lower(): t for t in towns}
-    rows = []
+    rows, context = [], []
     for f in pp["features"]:
         p = f["properties"]
         lon, lat = f["geometry"]["coordinates"][:2]
-        if p.get("adm0_a3") not in ("USA", "CAN") or not (s <= lat <= n and w <= lon <= e):
+        if p.get("adm0_a3") not in ("USA", "CAN"):
             continue
         state = postal.get((p["adm0_a3"], p.get("adm1name")))
         name = p["name"]
-        if state == "MT" and name.lower() in site:
-            continue                                  # the site town stands for it (towns.json position)
+        if inside(lat, lon, IMG):
+            if state == "MT" and name.lower() in site:
+                continue                              # the site town stands for it (towns.json position)
+            into = rows
+        elif name in CONTEXT_PLACES and inside(lat, lon, CONTEXT):
+            into = context
+        else:
+            continue
         pop = p.get("pop_max") or 0
         sr = p.get("scalerank") or 10
         rank = 2 if (sr <= 4 or pop >= 150_000) else 3 if (sr <= 6 or pop >= 30_000) else 4
-        rows.append({"name": name, "lat": round(lat, DECIMALS), "lon": round(lon, DECIMALS), "rank": rank,
+        into.append({"name": name, "lat": round(lat, DECIMALS), "lon": round(lon, DECIMALS), "rank": rank,
                      "state": state, "_pop": pop})
-    rows.sort(key=lambda r: (r["rank"], -r["_pop"], r["name"]))
+    if sorted(r["name"] for r in context) != sorted(CONTEXT_PLACES):
+        raise SystemExit(f"CONTEXT_PLACES: found {sorted(r['name'] for r in context)} outside the image bounds")
+    for r in (rows, context):
+        r.sort(key=lambda r: (r["rank"], -r["_pop"], r["name"]))
     sites = [{"name": t["name"], "lat": t["lat"], "lon": t["lon"], "rank": 1,
               "min_zoom": 7 if t.get("minor") else 5, "state": "MT", "site": True, "slug": t["slug"]}
              for t in towns]
-    return sites, rows
+    return sites, rows, context
 
 
 # ---------------------------------------------------------------- labels and places
@@ -853,29 +933,30 @@ class Obstacles:
         return [what for b, what, gap in self.by_zoom[z] if overlaps(box, b, gap)]
 
 
-def box_px(z):
-    """The clip box (s, w, n, e) in px at zoom z: (x west, y north, x east, y south)."""
-    xw, yn = px(BOX[2], BOX[1], z)
-    xe, ys = px(BOX[0], BOX[3], z)
+def box_px(z, box=BOX):
+    """A box (s, w, n, e), by default the clip box, in px at zoom z: (x west, y north, x east, y south)."""
+    xw, yn = px(box[2], box[1], z)
+    xe, ys = px(box[0], box[3], z)
     return xw, yn, xe, ys
 
 
-def within_box(b, z) -> bool:
-    xw, yn, xe, ys = box_px(z)
+def within_box(b, z, box=BOX) -> bool:
+    xw, yn, xe, ys = box_px(z, box)
     return b[0] >= xw and b[2] <= xe and b[1] >= yn and b[3] <= ys
 
 
-def _rings_of(features: list, abbrevs) -> list:
-    """Outer and hole rings of the land features with these abbrevs, clipped to the image bounds."""
+def _rings_of(features: list, abbrevs, box=IMG, key="abbrev") -> list:
+    """Outer and hole rings of the features whose `key` property is one of abbrevs, clipped to box (by
+    default the land features and the image bounds)."""
     out = []
     for f in features:
-        if f["properties"]["abbrev"] not in abbrevs:
+        if f["properties"][key] not in abbrevs:
             continue
         g = f["geometry"]
         polys = g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]
         for poly in polys:
             for ring in poly:
-                r = clip_ring([tuple(p) for p in ring], IMG)
+                r = clip_ring([tuple(p[:2]) for p in ring], box)
                 if r:
                     out.append(r)
     return out
@@ -931,17 +1012,19 @@ BOX_POINTS = ((-.5, -.5), (0, -.5), (.5, -.5), (-.5, 0), (.5, 0), (-.5, .5), (0,
 
 
 def place_text(np, text, kind, rings, min_zoom, obstacles, *, inside_box: bool, prefer: str, cap=26.0,
-               max_zoom=None, one_ring=False):
-    """Best centre for a label inside `rings`, from a grid of candidates: on the base map and clear of
-    every obstacle at every zoom from min_zoom to 11 (a max_zoom hint is not relied on), the whole
-    box inside the area (when inside_box) at zoom max(min_zoom, 6), or at max_zoom if that is lower;
-    then the most room (capped at `cap` px), then nearest the area centroid ("centroid"); or farthest
-    from the shore ("pole"); or farthest south, then nearest the centroid's longitude ("south", for a
-    label kept next to the border on its north side). With one_ring (and inside_box), a box inside a
-    single ring comes first after that row (south) or before the room (centroid): a label over several
-    provinces then sits in one of them, with no province line through it."""
+               max_zoom=None, one_ring=False, box=None):
+    """Best centre for a label inside `rings` and the image bounds, from a grid of candidates: on the
+    base map and clear of every obstacle at every zoom from min_zoom to 11 (a max_zoom hint is not
+    relied on), the whole box inside the area (when inside_box) at zoom max(min_zoom, 6), or at max_zoom
+    if that is lower; then the most room (capped at `cap` px), then nearest the area centroid
+    ("centroid"); or farthest from the shore ("pole"); or farthest south, then nearest the centroid's
+    longitude ("south", for a label kept next to the border on its north side). With one_ring (and
+    inside_box), a box inside a single ring comes first after that row (south) or before the room
+    (centroid): a label over several provinces then sits in one of them, with no province line through
+    it. box (CONTEXT for the context layer) takes the place of both the image bounds and the base map."""
+    bounds, clip = (box, box) if box else (IMG, BOX)
     s, w, n, e = bbox([p for r in rings for p in r])
-    s, w, n, e = max(s, IMG[0]), max(w, IMG[1]), min(n, IMG[2]), min(e, IMG[3])
+    s, w, n, e = max(s, bounds[0]), max(w, bounds[1]), min(n, bounds[2]), min(e, bounds[3])
     steps = 90
     dlat, dlon = max((n - s) / steps, 0.01), max((e - w) / steps, 0.014)
     lats = np.arange(s + dlat / 2, n, dlat)
@@ -980,7 +1063,7 @@ def place_text(np, text, kind, rings, min_zoom, obstacles, *, inside_box: bool, 
         XY = np.array([px(la, lo, z) for la, lo in zip(LAT, LON)])
         x0, y0 = XY[:, 0] - lw / 2, XY[:, 1] - lh / 2
         x1, y1 = XY[:, 0] + lw / 2, XY[:, 1] + lh / 2
-        xw, yn, xe, ys = box_px(z)
+        xw, yn, xe, ys = box_px(z, clip)
         feasible &= (x0 >= xw) & (x1 <= xe) & (y0 >= yn) & (y1 <= ys)      # stays on the base map
         for box, _, g in obstacles.by_zoom[z]:
             hit = (x0 < box[2] + g) & (box[0] < x1 + g) & (y0 < box[3] + g) & (box[1] < y1 + g)
@@ -1008,20 +1091,21 @@ def place_text(np, text, kind, rings, min_zoom, obstacles, *, inside_box: bool, 
     return (round(float(LAT[i]), DECIMALS), round(float(LON[i]), DECIMALS)), None
 
 
-def _place_area_label(np, text, kind, area, first_zoom, max_zoom, obstacles, prefer, one_ring=False):
+def _place_area_label(np, text, kind, area, first_zoom, max_zoom, obstacles, prefer, one_ring=False,
+                      box=None):
     """A region or country label in `area` at the first zoom from first_zoom to 7 (and to max_zoom)
-    where it fits: ((lat, lon), zoom, None), or (None, None, why not)."""
+    where it fits: ((lat, lon), zoom, None), or (None, None, why not). box: see place_text."""
     why = "no zoom tried"
     for z in range(first_zoom, min(7, max_zoom or 7) + 1):
         spot, why = place_text(np, text, kind, area, z, obstacles, inside_box=True, prefer=prefer,
                                cap=10.0 if kind == "region-main" else 26.0, max_zoom=max_zoom,
-                               one_ring=one_ring)
+                               one_ring=one_ring, box=box)
         if spot:
             return spot, z, None
     return None, None, why
 
 
-def make_labels_and_places(land, lakes, towns, sites, others, log):
+def make_labels_and_places(land, lakes, towns, sites, others, context_areas, context_places, log):
     import numpy as np
 
     def with_towns():
@@ -1102,23 +1186,41 @@ def make_labels_and_places(land, lakes, towns, sites, others, log):
         commit({"text": name, "lat": spot[0], "lon": spot[1], "kind": "water", "min_zoom": mz})
 
     # Places, biggest first: the first zoom (5-9) from which the dot and name stay clear of every
-    # bubble, label and earlier place at that zoom and all higher ones.
+    # bubble, label and earlier place at that zoom and all higher ones, and inside the box.
     placed = []
-    for p in others:
-        start = {2: 5, 3: 6, 4: 7}[p["rank"]]
-        for z0 in range(start, PLACE_ZOOMS[-1] + 1):
-            if within_box(place_box(p, z0), z0) and not any(
-                    place_obstacles.hits(z, place_box(p, z)) for z in range(z0, ZOOMS[-1] + 1)):
-                break
-        else:
-            log.append(f"place {p['name']}: left out, no room up to zoom {PLACE_ZOOMS[-1]}")
-            continue
-        q = {k: v for k, v in p.items() if not k.startswith("_")}
-        q["min_zoom"] = z0
-        placed.append(q)
+
+    def place_all(rows, first_zoom, box):
+        for p in rows:
+            for z0 in range(first_zoom(p), PLACE_ZOOMS[-1] + 1):
+                if within_box(place_box(p, z0), z0, box) and not any(
+                        place_obstacles.hits(z, place_box(p, z)) for z in range(z0, ZOOMS[-1] + 1)):
+                    break
+            else:
+                log.append(f"place {p['name']}: left out, no room up to zoom {PLACE_ZOOMS[-1]}")
+                continue
+            q = {k: v for k, v in p.items() if not k.startswith("_")}
+            q["min_zoom"] = z0
+            placed.append(q)
+            for z in ZOOMS:
+                if z >= z0:
+                    place_obstacles.add(z, place_box(p, z), p["name"])
+
+    place_all(others, lambda p: {2: 5, 3: 6, 4: 7}[p["rank"]], BOX)
+
+    # The context layer last, so the layout above stays as it was: the state and province names near
+    # their middle, leaving room for the cities, then the cities, from CONTEXT_ZOOM.
+    for p in context_places:
         for z in ZOOMS:
-            if z >= z0:
-                place_obstacles.add(z, place_box(p, z), p["name"])
+            if z >= CONTEXT_ZOOM:
+                obstacles.add(z, place_box(p, z), p["name"])
+    for abbrev, rings in context_areas.items():
+        spot, z, why = _place_area_label(np, abbrev, "region", rings, CONTEXT_ZOOM, None, obstacles,
+                                         "centroid", box=CONTEXT)
+        if not spot:
+            log.append(f"label {abbrev}: not placed ({why})")
+            continue
+        commit({"text": abbrev, "lat": spot[0], "lon": spot[1], "kind": "region", "min_zoom": z})
+    place_all(context_places, lambda p: CONTEXT_ZOOM, CONTEXT)
     return labels, sites + placed
 
 
@@ -1181,21 +1283,28 @@ def build(src: Path) -> tuple[str, dict, list]:
 
     us_land, county_lines, us_borders, county_names = us_layers(data["counties-10m"], postal)
     ca_land, ca_borders, ca_arcs = canada_layers(admin1)
+    context = context_lines(admin1)
     land = us_land + ca_land
     borders = []
-    for key in sorted(set(us_borders) | set(ca_borders), key=lambda k: (k[0] != "country", not k[1])):
-        parts = us_borders.get(key, []) + ca_borders.get(key, [])
+    extra = {("country", False): context["country"], ("context", False): context["context"]}
+    for key in sorted(set(us_borders) | set(ca_borders) | set(extra),
+                      key=lambda k: (k[0] == "context", k[0] != "country", not k[1])):
+        parts = us_borders.get(key, []) + ca_borders.get(key, []) + extra.get(key, [])
         borders.append(feature({"kind": key[0], "montana": key[1]}, "MultiLineString", parts))
     lakes = lakes_layer(data["ne_10m_lakes"], data["ne_10m_lakes_north_america"])
     rivers = rivers_layer(data["ne_10m_rivers_lake_centerlines"], data["ne_10m_rivers_north_america"],
                           [f for f, _, _ in lakes])
     roads = roads_layer(data["ne_10m_roads"])
-    sites, others = places_list(data["ne_10m_populated_places_simple"], towns, postal)
-    labels, places = make_labels_and_places(land, lakes, towns, sites, others, log)
+    sites, others, context_places = places_list(data["ne_10m_populated_places_simple"], towns, postal)
+    ne = [f for f in admin1["features"] if f["properties"]["adm0_a3"] in ("USA", "CAN")]
+    context_areas = {a: _rings_of(ne, (a,), CONTEXT, "postal") for a in CONTEXT_REGIONS}
+    labels, places = make_labels_and_places(land, lakes, towns, sites, others, context_areas, context_places,
+                                            log)
 
     doc = {
         "version": 1,
         "bounds": [[BOX[0], BOX[1]], [BOX[2], BOX[3]]],
+        "context_bounds": [[CONTEXT[0], CONTEXT[1]], [CONTEXT[2], CONTEXT[3]]],
         "image_bounds": [list(IMAGE_BOUNDS[0]), list(IMAGE_BOUNDS[1])],
         "sources": SOURCES,
         "land": fc(land),
@@ -1215,6 +1324,9 @@ def build(src: Path) -> tuple[str, dict, list]:
         "county_names_source": len(county_names), "canada_arcs": ca_arcs,
         "lakes": len(lakes), "rivers": len(rivers), "roads": len(roads), "labels": len(labels),
         "places": len(places), "site_places": sum(1 for p in places if p.get("site")),
+        "context_lines": len(context["context"]), "context_points": sum(map(len, context["context"])),
+        "context_labels": sum(1 for lab in labels if not inside(lab["lat"], lab["lon"], IMG)),
+        "context_places": sum(1 for p in places if not inside(p["lat"], p["lon"], IMG)),
     }
     log += check_layout(towns, labels, places)
     return text, stats, log

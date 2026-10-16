@@ -213,9 +213,11 @@ def check_no_outline_key(browser, base, data) -> list[str]:
         if page.locator("#sheet-title").inner_text() != "List":
             problems.append("legend: the no-outline key did not open the List")
     ctx.close()
-    # on tall phones the row sits right under the scale: its text must clear the bottom stop label,
-    # which hangs half a line below the scale (a 3-line row once pulled itself up into it)
-    for w, h in ((390, 844), (430, 932)):
+    # in the one-column legend (wide screens, a phone on its side) the row sits right under the scale:
+    # its text must clear the bottom stop label, which hangs half a line below the scale (a 3-line row
+    # once pulled itself up into it). Only labels that overlap the text across count, so the two-column
+    # legend of a portrait phone, its keys beside the scale, passes.
+    for w, h in ((1280, 800), (844, 390), (390, 844)):
         ctx = browser.new_context(viewport={"width": w, "height": h}, reduced_motion="reduce")
         page = ctx.new_page()
         page.goto(base + "map.html", wait_until="load")
@@ -223,11 +225,12 @@ def check_no_outline_key(browser, base, data) -> list[str]:
         page.wait_for_timeout(300)
         gap = page.evaluate("""() => {
           const key = document.querySelector('#legend-keys [data-open-list]');
-          const stops = [...document.querySelectorAll('#legend-stops li')].filter(li => li.offsetParent);
-          if (!key || !key.offsetParent || !stops.length) return null;
+          if (!key || !key.offsetParent) return null;
           const range = document.createRange(); range.selectNodeContents(key);
           const text = range.getBoundingClientRect();
-          return text.top - Math.max(...stops.map(li => li.getBoundingClientRect().bottom));
+          const above = [...document.querySelectorAll('#legend-stops li')].filter(li => li.offsetParent)
+            .map(li => li.getBoundingClientRect()).filter(r => r.left < text.right && r.right > text.left);
+          return above.length ? text.top - Math.max(...above.map(r => r.bottom)) : null;
         }""")
         if gap is not None and gap < 0:
             problems.append(f"legend {w}x{h}: the no-outline row's text runs {-gap:.1f} px into the bottom scale label")

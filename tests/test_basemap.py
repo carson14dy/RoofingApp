@@ -5,14 +5,17 @@ Everything runs offline against the committed file: size budget, bounds, the Mon
 (closed, the right area, straight 49th parallel, the Yellowstone notch, every site town inside it),
 all 56 Montana counties in the county lines, the site towns marked in places, coordinates inside the
 padded bounds, valid labels with no NaN, labels that stay clear of the town bubbles, and Canadian
-labels inside what the map's first view shows. A few tests also run the tool's geometry helpers
-(TopoJSON decoding, clipping, simplifying) on tiny inputs, and its handling of the download folder.
+labels inside what the map's first view shows. The coarse context layer outside the padded bounds
+(state and province lines, a few state and city names from zoom 6) stays out of the box, meets its
+lines at the edge and has no loose ends. A few tests also run the tool's geometry helpers (TopoJSON
+decoding, clipping, simplifying) on tiny inputs, and its handling of the download folder.
 
 If towns.json changes (a town added, moved or given another label side), these tests fail until
 the base map is rebuilt: python tools/build_basemap.py
 """
 
 import ast
+import collections
 import contextlib
 import importlib.util
 import io
@@ -30,9 +33,19 @@ TOWNS = json.loads((ROOT / "website" / "towns.json").read_text())
 IMAGE_BOUNDS = [[43.0, -118.5], [50.5, -101.0]]     # the radar/model frames' grid (map spec)
 PAD = 0.5
 BOUNDS = [[42.5, -119.0], [51.0, -100.5]]
+CONTEXT_BOUNDS = [[37.5, -122.0], [60.5, -95.2]]    # the context layer, east of the Pacific coast
 BUDGET = 450_000
 MONTANA_KM2 = 380_831                               # total area, U.S. Census Bureau
 LABEL_KINDS = {"country", "region", "region-main", "water"}
+# The context layer's names (outside the image bounds), with roughly each state's or province's box
+# (s, w, n, e) or the city's state.
+CONTEXT_REGIONS = {"NV": (35.0, -120.01, 42.0, -114.03), "UT": (37.0, -114.06, 42.0, -109.04),
+                   "CO": (37.0, -109.06, 41.0, -102.04), "NE": (40.0, -104.06, 43.0, -95.3),
+                   "KS": (37.0, -102.06, 40.0, -94.58), "MN": (43.49, -97.24, 49.39, -89.48),
+                   "MB": (49.0, -102.04, 60.0, -88.9)}
+CONTEXT_PLACES = {"Calgary": "AB", "Edmonton": "AB", "Saskatoon": "SK", "Winnipeg": "MB",
+                  "Salt Lake City": "UT", "Casper": "WY", "Cheyenne": "WY", "Denver": "CO",
+                  "Bismarck": "ND", "Pierre": "SD"}
 
 
 def load_tool():
@@ -97,6 +110,31 @@ def shown(labels, text, zoom):
     return [lab for lab in labels if lab["text"] == text and lab["min_zoom"] <= zoom <= lab.get("max_zoom", 11)]
 
 
+def inside(lat, lon, bounds):
+    (s, w), (n, e) = bounds
+    return s <= lat <= n and w <= lon <= e
+
+
+def km(a, b):
+    """Distance in km between two (lon, lat) points (flat-earth, fine over a few km)."""
+    kx = 111.32 * math.cos(math.radians((a[1] + b[1]) / 2))
+    return math.hypot((a[0] - b[0]) * kx, (a[1] - b[1]) * 110.57)
+
+
+def km_to_lines(pt, parts):
+    """Distance in km from a (lon, lat) point to the nearest of these lines."""
+    kx = 111.32 * math.cos(math.radians(pt[1]))
+    best = float("inf")
+    for part in parts:
+        for (x1, y1), (x2, y2) in zip(part, part[1:]):
+            ax, ay = (x1 - pt[0]) * kx, (y1 - pt[1]) * 110.57
+            bx, by = (x2 - pt[0]) * kx, (y2 - pt[1]) * 110.57
+            dx, dy = bx - ax, by - ay
+            u = max(0.0, min(1.0, -(ax * dx + ay * dy) / ((dx * dx + dy * dy) or 1e-12)))
+            best = min(best, math.hypot(ax + u * dx, ay + u * dy))
+    return best
+
+
 class File(unittest.TestCase):
     def test_under_budget(self):
         self.assertLessEqual(BASEMAP.stat().st_size, BUDGET)
@@ -117,6 +155,7 @@ class File(unittest.TestCase):
         doc = load_doc()
         self.assertEqual(doc["version"], 1)
         self.assertEqual(doc["bounds"], BOUNDS)
+        self.assertEqual(doc["context_bounds"], CONTEXT_BOUNDS)
         self.assertEqual(doc["image_bounds"], IMAGE_BOUNDS)
         self.assertTrue(doc["sources"] and all(isinstance(s, str) and s for s in doc["sources"]))
         self.assertTrue(any("Natural Earth" in s for s in doc["sources"]))
@@ -141,24 +180,26 @@ class File(unittest.TestCase):
         self.skipTest("no literal IMAGE_BOUNDS in website/gridded.py")
 
     def test_every_coordinate_inside_the_padded_bounds_with_4_decimals(self):
+        """The context layer (its lines, the 49th parallel running on through it, its names) inside
+        context_bounds; everything else inside the padded bounds."""
         doc = load_doc()
-        (s, w), (n, e) = BOUNDS
 
-        def check(lon, lat, where):
-            self.assertTrue(s <= lat <= n and w <= lon <= e, f"{where}: {lat}, {lon} outside the bounds")
+        def check(lon, lat, where, bounds=BOUNDS):
+            self.assertTrue(inside(lat, lon, bounds), f"{where}: {lat}, {lon} outside the bounds")
             self.assertEqual(round(lon, 4), lon, where)
             self.assertEqual(round(lat, 4), lat, where)
 
         for key in ("land", "borders", "counties", "lakes", "rivers", "roads"):
             for f in doc[key]["features"]:
                 g = f["geometry"]
+                outer = f["properties"].get("kind") in ("context", "country")
                 parts = (lines(g) if "Line" in g["type"] else [r for poly in polygons(g) for r in poly])
                 for part in parts:
                     self.assertGreaterEqual(len(part), 2, key)
                     for lon, lat in part:
-                        check(lon, lat, key)
+                        check(lon, lat, key, CONTEXT_BOUNDS if outer else BOUNDS)
         for item in doc["labels"] + doc["places"]:
-            check(item["lon"], item["lat"], item.get("text") or item.get("name"))
+            check(item["lon"], item["lat"], item.get("text") or item.get("name"), CONTEXT_BOUNDS)
 
 
 class Land(unittest.TestCase):
@@ -232,7 +273,8 @@ class Land(unittest.TestCase):
 
     def test_borders(self):
         kinds = {(f["properties"]["kind"], f["properties"]["montana"]) for f in self.doc["borders"]["features"]}
-        self.assertEqual(kinds, {("country", True), ("country", False), ("state", True), ("state", False)})
+        self.assertEqual(kinds, {("country", True), ("country", False), ("state", True), ("state", False),
+                                 ("context", False)})
         for f in self.doc["borders"]["features"]:
             if f["properties"]["kind"] == "country":
                 self.assertTrue(all(p[1] == 49.0 for part in lines(f["geometry"]) for p in part))
@@ -293,23 +335,11 @@ class Water(unittest.TestCase):
         doc = load_doc()
         roads = {f["properties"]["ref"]: lines(f["geometry"]) for f in doc["roads"]["features"]}
         towns = {t["name"]: t for t in TOWNS}
-
-        def km(t, parts):
-            kx = 111.32 * math.cos(math.radians(t["lat"]))
-            best = float("inf")
-            for part in parts:
-                for (x1, y1), (x2, y2) in zip(part, part[1:]):
-                    ax, ay = (x1 - t["lon"]) * kx, (y1 - t["lat"]) * 110.57
-                    bx, by = (x2 - t["lon"]) * kx, (y2 - t["lat"]) * 110.57
-                    dx, dy = bx - ax, by - ay
-                    u = max(0.0, min(1.0, -(ax * dx + ay * dy) / ((dx * dx + dy * dy) or 1e-12)))
-                    best = min(best, math.hypot(ax + u * dx, ay + u * dy))
-            return best
-
         for ref, names in (("I-90", ["Missoula", "Butte", "Bozeman", "Livingston", "Billings"]),
                            ("I-94", ["Miles City", "Glendive"]), ("I-15", ["Butte", "Helena", "Great Falls"])):
             for name in names:
-                self.assertLess(km(towns[name], roads[ref]), 8, f"{ref} near {name}")
+                t = towns[name]
+                self.assertLess(km_to_lines((t["lon"], t["lat"]), roads[ref]), 8, f"{ref} near {name}")
 
 
 class Places(unittest.TestCase):
@@ -331,13 +361,12 @@ class Places(unittest.TestCase):
         self.assertFalse(others & {t["name"] for t in TOWNS}, "a site town is also a plain place")
 
     def test_place_fields(self):
-        (s, w), (n, e) = IMAGE_BOUNDS
         for p in self.doc["places"]:
             self.assertTrue(p["name"])
             self.assertIn(p["rank"], (1, 2, 3, 4), p)
             self.assertIn(p["min_zoom"], range(5, 10), p)
             self.assertRegex(p["state"], r"^[A-Z]{2}$")
-            self.assertTrue(s <= p["lat"] <= n and w <= p["lon"] <= e, p["name"])
+            self.assertEqual(inside(p["lat"], p["lon"], IMAGE_BOUNDS), p["name"] not in CONTEXT_PLACES, p["name"])
             if not p.get("site"):
                 self.assertGreaterEqual(p["rank"], 2, p)
         names = {p["name"] for p in self.doc["places"]}
@@ -462,6 +491,91 @@ class Labels(unittest.TestCase):
         self.assertEqual(set(tool.TOWN_LABEL_W), {t["name"] for t in TOWNS})
 
 
+class Context(unittest.TestCase):
+    """The coarse layer outside the padded bounds: a phone's first view reaches far past them (about
+    39-59.7° N at 390x844), and the reference runs a map edge to edge."""
+
+    def setUp(self):
+        self.doc = load_doc()
+        self.outer, self.inner = [], []         # context lines (with the 49th parallel's), the box's lines
+        for f in self.doc["borders"]["features"]:
+            for part in lines(f["geometry"]):
+                boxed = f["properties"]["kind"] != "context" and all(inside(y, x, BOUNDS) for x, y in part)
+                (self.inner if boxed else self.outer).append([tuple(p) for p in part])
+
+    @staticmethod
+    def on_edge(p, bounds=BOUNDS):
+        (s, w), (n, e) = bounds
+        return inside(p[1], p[0], bounds) and (p[0] in (w, e) or p[1] in (s, n))
+
+    def test_lines_stay_out_of_the_box(self):
+        """No context line inside the padded bounds, where the box's own lines are drawn: no double lines."""
+        (s, w), (n, e) = BOUNDS
+        self.assertGreater(len(self.outer), 20)
+        for part in self.outer:
+            for (x1, y1), (x2, y2) in zip(part, part[1:]):
+                for x, y in ((x1, y1), ((x1 + x2) / 2, (y1 + y2) / 2)):
+                    self.assertFalse(s < y < n and w < x < e, f"a context line inside the box at {y}, {x}")
+
+    def test_lines_meet_the_box_lines(self):
+        """Every border leaving the box goes on in the context layer, and every context line reaching
+        the box goes on inside it, within 1.5 km (Natural Earth outside, the Census lines inside)."""
+        inner = [p for part in self.inner for p in (part[0], part[-1]) if self.on_edge(p)]
+        outer = [p for part in self.outer for p in (part[0], part[-1]) if self.on_edge(p)]
+        self.assertGreaterEqual(len(inner), 11)
+        for a, b, what in ((inner, outer, "box line"), (outer, inner, "context line")):
+            for p in a:
+                self.assertLess(min(km(p, q) for q in b), 1.5, f"the {what} ending at {p} goes on nowhere")
+
+    def test_no_loose_ends(self):
+        """A context line ends on the layer's edge, on the box's edge or where other lines end: so no
+        coastline (the layer stops east of the Pacific) and no gap."""
+        ends = [p for part in self.outer for p in (part[0], part[-1])]
+        meets = collections.Counter(ends)
+        for p in ends:
+            self.assertTrue(self.on_edge(p, CONTEXT_BOUNDS) or self.on_edge(p) or meets[p] > 1,
+                            f"a context line ends at {p}")
+
+    def test_known_borders_drawn(self):
+        for name, pt in (("AB-SK", (-110.0, 55.0)), ("BC-AB", (-120.0, 57.0)), ("SK-MB", (-102.0, 58.0)),
+                         ("60th parallel", (-105.0, 60.0)), ("WY-CO", (-106.0, 41.0)), ("UT-NV", (-114.04, 39.5)),
+                         ("CA-NV", (-120.0, 40.5)), ("ND-SD", (-98.0, 45.94)), ("NE-KS", (-99.0, 40.0)),
+                         ("ID-UT", (-112.5, 42.0)), ("49th parallel, west", (-121.0, 49.0)),
+                         ("49th parallel, east", (-96.0, 49.0))):
+            self.assertLess(km_to_lines(pt, self.outer), 2.0, name)
+
+    def test_country_border_runs_on_along_49(self):
+        country = [p for f in self.doc["borders"]["features"] if f["properties"]["kind"] == "country"
+                   for p in lines(f["geometry"])]
+        lons = sorted(x for part in country for x, _ in part)
+        self.assertEqual((lons[0], lons[-1]), (-122.0, -95.2))
+        covered = sorted((min(x for x, _ in part), max(x for x, _ in part)) for part in country)
+        reach = covered[0][1]
+        for lo, hi in covered[1:]:
+            self.assertLessEqual(lo, reach, f"a gap in the 49th parallel at {reach}")
+            reach = max(reach, hi)
+
+    def test_names(self):
+        """The context's state abbreviations and cities: inside their state or province, none twice,
+        and from zoom 6 on. At a phone's first view (zoom 5.25-5.5) the legend, the buttons, the note
+        line and the timeline cover nearly all of the context, and names there sat under them."""
+        labels = [lab for lab in self.doc["labels"] if not inside(lab["lat"], lab["lon"], IMAGE_BOUNDS)]
+        self.assertEqual(sorted(lab["text"] for lab in labels), sorted(CONTEXT_REGIONS))
+        for lab in labels:
+            s, w, n, e = CONTEXT_REGIONS[lab["text"]]
+            self.assertTrue(s <= lab["lat"] <= n and w <= lab["lon"] <= e, lab)
+            self.assertEqual(lab["kind"], "region", lab)
+            self.assertGreaterEqual(lab["min_zoom"], 6, lab)
+            self.assertNotIn("max_zoom", lab)
+        places = [p for p in self.doc["places"] if not inside(p["lat"], p["lon"], IMAGE_BOUNDS)]
+        self.assertEqual({p["name"]: p["state"] for p in places}, CONTEXT_PLACES)
+        for p in places:
+            self.assertGreaterEqual(p["min_zoom"], 6, p)
+            self.assertLessEqual(p["rank"], 3, p)
+        names = [p["name"] for p in self.doc["places"]]
+        self.assertEqual(len(names), len(set(names)), "a place comes twice")
+
+
 class Tool(unittest.TestCase):
     """The generator's geometry helpers on tiny inputs (no network, no numpy)."""
 
@@ -491,6 +605,12 @@ class Tool(unittest.TestCase):
         line = [(0.0, 0.5), (2.0, 0.5), (2.0, 3.0), (0.5, 3.0), (0.5, 0.8)]
         parts = self.t.clip_line(line, (0.0, 0.0, 1.0, 1.0))
         self.assertEqual(parts, [[(0.0, 0.5), (1.0, 0.5)], [(0.5, 1.0), (0.5, 0.8)]])
+        # clip_line_outside keeps the rest (the context layer: everything outside the box)
+        self.assertEqual(self.t.clip_line_outside(line, (0.0, 0.0, 1.0, 1.0)),
+                         [[(1.0, 0.5), (2.0, 0.5), (2.0, 3.0), (0.5, 3.0), (0.5, 1.0)]])
+        self.assertEqual(self.t.clip_line_outside([(-1.0, 0.5), (2.0, 0.5)], (0.0, 0.0, 1.0, 1.0)),
+                         [[(-1.0, 0.5), (0.0, 0.5)], [(1.0, 0.5), (2.0, 0.5)]])
+        self.assertEqual(self.t.clip_line_outside([(0.2, 0.2), (0.8, 0.8)], (0.0, 0.0, 1.0, 1.0)), [])
 
     def test_simplify_keeps_ends_and_corners(self):
         line = [(0.0, 0.0), (1.0, 0.00001), (2.0, 0.0), (2.0, 1.0)]
