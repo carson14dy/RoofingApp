@@ -40,10 +40,15 @@ class SampleFetcher:
             slug = self._slug(lat, lon)
             base = f"{src.NWS}/gridpoints/SMP/{slug}"
             return {"properties": {"forecast": base + "/forecast", "forecastHourly": base + "/forecast/hourly",
-                                   "forecastGridData": base, "gridId": "SMP", "gridX": 1, "gridY": 1,
+                                   "forecastGridData": base, "observationStations": base + "/stations",
+                                   "gridId": "SMP", "gridX": 1, "gridY": 1,
                                    "timeZone": "America/Denver",
                                    "relativeLocation": {"properties": {"city": slug.replace("-", " ").title(),
                                                                        "state": "MT"}}}}, None
+        if "/gridpoints/" in url and url.endswith("/stations"):
+            return self._stations(url.split("/")[-2]), None
+        if "/stations/" in url and url.endswith("/observations/latest"):
+            return self._reading(url.split("/")[-3])
         if url.endswith("/forecast/hourly"):
             return self._hourly(url.split("/")[-3]), None
         if url.endswith("/forecast"):
@@ -97,6 +102,50 @@ class SampleFetcher:
                                 "Sunny" if 6 <= local_h < 19 else "Clear")})
         return {"properties": {"updateTime": _iso(self.hour0 - timedelta(hours=2)), "periods": periods}}
 
+    # Three invented stations per town (an airport, a hill and a pass), listed farthest first: the
+    # parser sorts by distance. West Yellowstone's are across the line in Wyoming, as the real ones
+    # are (D25). Lewistown's airport reading is stale, so its card quotes the next station; one of
+    # Glasgow's stations has no report; Livingston's hill gust failed quality control.
+    STATIONS = ((0.03, -0.02, "airport", 1050), (0.12, 0.10, "hill", 1300), (-0.2, 0.25, "pass", 1650))
+
+    def _stations(self, slug):
+        from .build import TOWNS
+        i = next(n for n, t in enumerate(TOWNS) if t["slug"] == slug)
+        t, state = TOWNS[i], "WY" if slug == "west-yellowstone" else "MT"
+        feats = [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [t["lon"] + dlon, t["lat"] + dlat]},
+                  "properties": {"stationIdentifier": f"SMP{i:02d}{k}", "name": f"SAMPLE {t['name']} {kind}",
+                                 "elevation": {"unitCode": "wmoUnit:m", "value": elev},
+                                 "county": f"{src.NWS}/zones/county/{state}C001"}}
+                 for k, (dlat, dlon, kind, elev) in enumerate(self.STATIONS)]
+        return {"type": "FeatureCollection", "features": feats[::-1]}
+
+    def _reading(self, sid):
+        from .build import TOWNS
+        i, k = int(sid[3:5]), int(sid[5])
+        slug = TOWNS[i]["slug"]
+        if slug == "glasgow" and k == 2:
+            return None, "not published (HTTP 404)"
+        age = (150 if slug == "lewistown" else 12, 41, 150)[k]
+        when = self.now - timedelta(minutes=age)
+        temp_f = self._temp(slug, when) - 3 * k
+        wind_mph = 6 + 0.8 * WINDY.get(slug, 0) + 2 * k
+        gust = {"unitCode": "wmoUnit:km_h-1", "value": None, "qualityControl": "Z"}
+        if slug in WINDY and k == 0:
+            gust = {"unitCode": "wmoUnit:km_h-1", "value": round((wind_mph + 14) / src.KMH_TO_MPH, 1),
+                    "qualityControl": "V"}
+        if slug == "livingston" and k == 1:
+            gust = {"unitCode": "wmoUnit:km_h-1", "value": 190.0, "qualityControl": "X"}
+        return {"properties": {
+            "timestamp": _iso(when), "textDescription": "SAMPLE Clear" if k == 0 else "",
+            "elevation": {"unitCode": "wmoUnit:m", "value": self.STATIONS[k][3]},
+            "temperature": {"unitCode": "wmoUnit:degC", "value": round((temp_f - 32) * 5 / 9, 1),
+                            "qualityControl": "C" if k == 2 else "V"},
+            "windSpeed": {"unitCode": "wmoUnit:km_h-1", "value": round(wind_mph / src.KMH_TO_MPH, 2),
+                          "qualityControl": "S" if k == 1 else "V"},
+            "windDirection": {"unitCode": "wmoUnit:degree_(angle)", "value": 260 if slug in WINDY else 200,
+                              "qualityControl": "V"},
+            "windGust": gust}}, None
+
     def _grid(self, slug):
         values = []
         for i in range(0, 48, 3):
@@ -104,7 +153,8 @@ class SampleFetcher:
             local_h = (t - timedelta(hours=6)).hour
             gust_mph = 12 + 1.6 * WINDY.get(slug, 0) * max(0.0, math.sin((local_h - 6) / 14 * math.pi))
             values.append({"validTime": f"{_iso(t)}/PT3H", "value": round(gust_mph / src.KMH_TO_MPH, 1)})
-        return {"properties": {"windGust": {"uom": "wmoUnit:km_h-1", "values": values}}}
+        return {"properties": {"elevation": {"unitCode": "wmoUnit:m", "value": 1100},
+                               "windGust": {"uom": "wmoUnit:km_h-1", "values": values}}}
 
     def _daily(self, slug):
         periods, start = [], (self.hour0 - timedelta(hours=self.hour0.hour)) + timedelta(hours=12)

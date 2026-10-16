@@ -50,9 +50,9 @@ Website** and re-enable it. Every page says how old it is, so a stalled site is 
 
 | Page | Shows | Source |
 |---|---|---|
-| Now | Active warnings, watches and advisories for Montana, most urgent first; a map card with the latest radar and the warning outlines; a card per town with temperature, highest gust, chance of rain or snow, and which hours pass a limit | NWS, NOAA |
+| Now | Active warnings, watches and advisories for Montana, most urgent first; a map card with the latest radar and the warning outlines; a card per town with the latest station reading, then temperature, highest gust, chance of rain or snow, and which hours pass a limit | NWS, NOAA |
 | Map | A full-screen map of Montana in the style of Apple Weather's: press play to run the past hour of radar into the next 12 hours of forecast, switch to temperature or wind gusts, see warning outlines and storm reports, tap a town for its NWS forecast, or find your own location | NOAA MRMS radar estimate, NOAA HRRR model, NWS, SPC |
-| Town (14) | Alerts at that town, the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
+| Town (14) | Alerts at that town, what the three nearest weather stations measured (with each reading's age), the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
 | Storm reports | Hail and wind reports in and near Montana for the last three reporting days, on a map and in tables | SPC |
 | About | What each part is, the flag limits, what happens when something fails, the data sources in detail | — |
 

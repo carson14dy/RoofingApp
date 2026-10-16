@@ -32,6 +32,49 @@
   {% endif %}
 </section>
 
+<section aria-labelledby="obs-h">
+  <div class="section-head"><h2 id="obs-h">Observed now</h2></div>
+  {% set o = town.obs %}
+  {% if o.stations %}
+  {# D29: the latest reading at each of the nearest stations, stale ones marked, flags in words #}
+  {% macro reading(m, unit) %}{% if m.withheld %}<span class="obs-word">withheld</span>{% elif m.value is none %}—<span class="visually-hidden"> not reported</span>{% else %}{{ m.value|num }}<small> {{ unit }}</small>{% endif %}{% endmacro %}
+  {% macro qc(m) %}{% if m.qc in qc_rejected %}{{ qc_rejected[m.qc] }}, so withheld{% elif m.qc %}{{ qc_words.get(m.qc, 'flag ' ~ m.qc) }}{% else %}no flag{% endif %}{% endmacro %}
+  <p class="sub">The latest reading at the {{ o.stations|length }} nearest NWS weather stations, measured at each
+    station, not at any roof. A reading over {{ fresh_min }} minutes old is marked stale.
+    {%- if town.grid_elev_ft is not none %} This town's forecast grid square is at {{ town.grid_elev_ft|feet }}&nbsp;ft.{% endif %}</p>
+  <ul class="obs-list">
+  {% for s in o.stations %}
+    {% set r = s.obs %}
+    {% set elev = r.elev_ft if r and r.elev_ft is not none else s.elev_ft %}
+    <li class="obs">
+      <div>
+        <h3>{{ s.name }}{% if s.state and s.state != 'MT' %}, {{ s.state }}{% endif %}</h3>
+        <p class="obs-where">{{ s.id }} · {{ s.miles|num }}&nbsp;mi from {{ town.name }}{% if elev is not none %} · {{ elev|feet }}&nbsp;ft{% endif %}</p>
+      </div>
+      {% if r %}
+      <dl class="stats">
+        <div><dt>Temperature</dt><dd{% if r.temp.value is not none and (r.temp.value < limits.cold_f or r.temp.value > limits.hot_f) %} class="over"{% endif %}>{{ reading(r.temp, '°F') }}</dd></div>
+        <div><dt>Wind</dt><dd{% if r.wind.value is not none and r.wind.value >= limits.wind_mph %} class="over"{% endif %}>{% if r.wind.value is not none and r.wind.value|round == 0 %}<span class="obs-word">calm</span>{% else %}{{ reading(r.wind, 'mph') }}{% if r.dir and r.wind.value is not none %}<small> {{ r.dir }}</small>{% endif %}{% endif %}</dd></div>
+        <div><dt>Gusts</dt><dd{% if r.gust.value is not none and r.gust.value >= limits.gust_mph %} class="over"{% endif %}>{% if r.no_gust %}<span class="obs-word">no gust reported</span>{% else %}{{ reading(r.gust, 'mph') }}{% endif %}</dd></div>
+      </dl>
+      <p class="obs-time">Read at {{ r.time|t }}, {{ r.age_min|ago }}{% if not r.current %} · <strong>stale</strong>{% endif %}{% if r.sky %} · {{ r.sky }}{% endif %}</p>
+      {# flags only for the values this station sent: a missing value's flag says nothing #}
+      {% set ns = namespace(parts=[]) %}
+      {% for label, m in [('temperature', r.temp), ('wind', r.wind), ('gusts', r.gust)] %}
+        {% if m.value is not none or m.withheld %}{% set ns.parts = ns.parts + [label ~ ' ' ~ qc(m)] %}{% endif %}
+      {% endfor %}
+      {% if ns.parts %}<p class="obs-qc">Quality checks: {{ ns.parts|join(', ') }}.</p>{% endif %}
+      {% else %}
+      <p class="tc-error">No reading from this station in this update ({{ s.error }}).</p>
+      {% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">Station readings are unavailable in this update. {{ o.error }} This is not an all-clear.</p>
+  {% endif %}
+</section>
+
 <section aria-labelledby="hours-h">
   <div class="section-head"><h2 id="hours-h">Next 24 hours</h2></div>
   {% set upcoming = town.hours | selectattr('start', 'ge', now - delta_hour) | list %}
