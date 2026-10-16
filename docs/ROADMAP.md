@@ -1,16 +1,17 @@
 # Roadmap
 
 Status on 2026-10-16: the product is the **Montana Hail Watch website** (D27) with an interactive
-radar, forecast and warning map in the style of Apple Weather (D28), built, independently reviewed
-and tested on branch `claude/desktop-app`. It goes live when that branch is merged to `main` and GitHub Pages is
-turned on. The desktop app (payload 1.0.0, shell 1.1.0) is **parked**: unchanged, still tested,
-not shipped. Branches: `claude/desktop-app` (the app, then the website); `codex/kansas-city-weather-pilot`
+radar, forecast and warning map in the style of Apple Weather (D28) and live station readings
+(D29). The website was merged to `main` on 2026-10-16 (pull request #3) and Carson turned on GitHub
+Pages the same day, so `main` publishes to https://carson14dy.github.io/RoofingApp/ every 10
+minutes. The desktop app (payload 1.0.0, shell 1.1.0) is **parked**: unchanged, still tested, not
+shipped. Branches: `claude/desktop-app` (the app, then the website); `codex/kansas-city-weather-pilot`
 and `codex/montana-weather-pilot` (ChatGPT's pilots, reviewed in D23 and D25, not merged).
 Agents: check this file before starting, move items to Done when merged, keep "Next" in priority
 order.
 
 ## Bottom line
-1. Turn on GitHub Pages and merge: the site is live within about 10 minutes.
+1. Live since 2026-10-16: check that the scheduled runs keep publishing (Actions → Website).
 2. Carson and a crew lead use it for a week on phones and desktops; fix what they trip on.
 3. Replace the placeholder flag limits with the company's own.
 4. Then: decision-time records for an evaluation, nearby station readings, a hail-size map, alerts
@@ -23,18 +24,18 @@ order.
 | Now | Montana's active NWS alerts, most urgent first (alerts without an outline listed with a note); a map card with the latest radar and warning outlines; a card per town for the next 12 hours with flags in words | Montana only |
 | Map (D28) | Full screen, Apple-Weather style: the past hour of NOAA MRMS radar into the HRRR model forecast (15-minute steps for an hour, hourly to 12 hours) with play, scrub and 1h/12h; temperature and wind-gust layers; warning outlines and storm reports; town bubbles with the NWS forecast for the hour; town sheets; my location; a list of every alert and town | HRRR is a model, not the NWS forecast; frames are pictures made each build; no lightning or air quality; rain and snow share one palette; checked in Chromium only, not yet on a real iPhone or Android phone; `map.js` is about 2,100 lines |
 | Town pages (14) | Alerts at that point, 24-hour table (gusts first), 7-day with high and low per day | Grid forecasts for a 2.5 km square, not a roof; placeholder limits |
+| Observed now (D29) | The latest reading at each town's three nearest NWS stations (any state): temperature, wind, gusts, time and age, quality flags in words, station and grid elevation; one line per town card on the Now page | Stations report hourly or less, so readings run up to 75 minutes old before they show as stale; a station is not a roof; not on the map |
 | Storm reports | Three SPC reporting days on the map card and in tables; hail in inches, unknown wind kept unknown | Preliminary reports only |
 | Honesty | Per-source status line, last verified alerts kept after a failed refresh, "Alerts not checked" per town, page-age warning, sample data labelled on every page | — |
 | Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity |
 | Design | Light "field sheet" look with dark mode, self-hosted fonts and Leaflet, contrast ≥ 5.86:1, collision-free map labels, 288–1440 px without sideways scroll (`docs/DESIGN.md`) | Phone Now page is long (P2) |
-| Tests | 157 website tests (53 pages and map data, 69 radar and model frames, 35 base map and label layout) alongside the app's tests; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption) | — |
+| Tests | 179 website tests (64 pages, map data and station readings, 69 radar and model frames, 41 base map and label layout, 5 Pages publication planning) alongside the app's tests; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption) | — |
 
 ## Next, in priority order
-1. **Go live.** PR #3 is merged; its first deployment (run 38933159167) failed with Pages disabled.
-   The publication repair rejects failed/invalid Pages lookups instead of attempting deployment.
-   Settings → Pages → Build and deployment → Source: **GitHub Actions** still needs an owner:
-   the repair environment's Pages API request returned Forbidden. Then run Actions → **Website**
-   → **Run workflow** on `main`; open the run's summary (every source loaded, counts
+1. **Go live.** Done in part, 2026-10-16: PR #3 merged; its first deployment (run 38933159167)
+   failed with Pages disabled; the publication repair (PR #4) now rejects failed or invalid Pages
+   lookups; Carson turned on Pages (Source: GitHub Actions) and run 38934427870 published the
+   site. Left: open the runs' summaries in Actions → **Website** (every source loaded, counts
    plausible); open the site on a phone. Done when two scheduled runs in a row publish.
 2. **Feedback week.** Carson and a crew lead use it daily. Record what they look for and can't
    find; run the first-click and timing checks in `docs/DESIGN.md` section 1. Open the map on an
@@ -62,10 +63,9 @@ order.
    CSS. Its skeptic rejected them as defects: AGENTS.md rule 4 gives sheets and layout to `map.js`,
    and each move adds map.json keys that tie the build to the page's wording. Worth doing only
    together, with the Playwright suites as the guard.
-10. **Nearby station observations** on town pages (D23, D25 rules): the nearest NWS stations, never
-   filtered by state, with distance, elevation, observation time and age; about 75 minutes is
-   "current"; QC flags shown; a null gust is "no gust reported". ChatGPT's 16-point Montana sweep is
-   the first fixture.
+10. **Nearby station observations: done (D29, 2026-10-16).** Next for them: the readings on the map's
+   town sheets (a D28 contract change), and a check on real phones that the card line stays one
+   line.
 11. **Real hail footprint.** MRMS MESH (same bucket and decoder as the map's radar, D28) drawn as a
    map layer and as outlines per swath (nodata handled, 1 km resolution recorded), labelled as a
    radar estimate, apart from reports. Check against SPC 2025-06-15 (Benchland, 1.75″).

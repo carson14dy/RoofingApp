@@ -109,12 +109,16 @@ the 7-day list. Reports page: map and legend, then one table per reporting day.
    sources loaded and any problem in red words.
 3. Now: warnings and advisories with a count (the six most urgent shown, the rest one tap away), the
    radar and warning-area map with its frame time, then "Next 12 hours by town".
-4. Town card: name and the most urgent alert chip, temperature range, highest gust, highest chance
-   of rain or snow, then either "6 of 12 hours flagged. First at 12:00 pm: Gusts 31 mph." or the
-   honest alternative ("No hour reaches the limits above", or "Gust forecast unavailable, so gusts
-   weren't checked").
-5. Town page: official alerts at that point, the 24-hour table (time, gusts, wind, rain or snow,
-   temperature, sky, reasons), the 7-day list with high and low on one row.
+4. Town card: name and the most urgent alert chip; the latest station reading on one grey line
+   ("Now 43 °F · wind 10 mph SSW · no gust reported", then "22 min ago · station KBIL, 3 mi away,
+   3,570 ft": the age first so a narrow card never cuts it off, "stale" past 75 minutes, D29);
+   temperature range, highest gust, highest chance of rain or snow,
+   then either "6 of 12 hours flagged. First at 12:00 pm: Gusts 31 mph." or the honest alternative
+   ("No hour reaches the limits above", or "Gust forecast unavailable, so gusts weren't checked").
+5. Town page: official alerts at that point; "Observed now", a card per nearest station
+   (temperature, wind, gusts, time and age, quality flags in words, station elevation beside the
+   grid square's); the 24-hour table (time, gusts, wind, rain or snow, temperature, sky, reasons);
+   the 7-day list with high and low on one row.
 
 **Typography.** Atkinson Hyperlegible Next for text and Atkinson Hyperlegible Mono for numbers and
 times, designed by the Braille Institute for low-vision legibility and served by the site

@@ -450,6 +450,38 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   the legend's keys still name the hatching. The card zooms in 0.05 steps, which lets a 328 px card
   show Montana at 5.2 instead of 5.
 
+**D29 · Live station readings on the Now page and the town pages (2026-10-16).** Carson: "find a way
+to get live weather and add it. It says it's blocked." Everything the site showed was a forecast, a
+radar estimate or a model; nothing said what a station measured. The "blocked" note was ChatGPT's
+sandbox (D23 already called it stale): `api.weather.gov` answers this repo's builds and every branch
+build of the Website workflow. Roadmap item 10, built to the rules of D23 and D25.
+
+- *Source.* The point lookup's `observationStations` link (the stations NWS lists for the town's
+  grid square), sorted here by distance, then `/stations/{id}/observations/latest` for the nearest
+  three. Four more requests per town, about 55 more NWS requests per build; the live build went from
+  31–38 s to 44 s. The station list is kept in `data/state.json` and reused when its lookup fails,
+  like the point.
+- *Rules.* Never filtered by state. A reading older than 75 minutes is kept and marked stale with its
+  age, never hidden. A missing gust beside a measured wind is "no gust reported". Every value shows
+  its MADIS flag in words (verified, screened, basic check only, not checked yet, questioned); X
+  (failed quality control) and B (marked bad on review) are withheld from the page and kept raw in
+  `data/state.json`, with every reading, as the record of what each town showed. °F and whole mph on
+  the page, native units in the record; any unit other than °C, km/h, m/s, knots or mph is an error,
+  never a guess. Station elevation and the forecast grid square's elevation are shown: a valley
+  airport is not a bench or a pass.
+- *Where.* Town page: "Observed now" above the 24-hour table, a card per station. Now page: one line
+  on each town card with the nearest current reading that has a temperature or a wind (a road sensor
+  that sends only a gust is listed on the town page, not quoted on the card), naming the station,
+  distance, elevation and age. Values over the placeholder limits get the forecast flags' orange
+  bold. Not on the map: D28's `map.json` contract is unchanged.
+- *Status.* "NWS station readings" joins the per-source line on every page; it is ok when every town
+  has a reading, so a branch build with `--require-live` fails when a town has none.
+- *Live check, 10:50 am MDT:* every town had a reading under 75 minutes old. Billings: KBIL 3 mi,
+  43 °F, 10 mph SSW, no gust reported. Lewistown's nearest station (MTLEW, MT-200 on the Lewistown
+  Divide, 8 mi) sent only a gust, so its card quotes Judith Peak (JPKM8, 14 mi, 6,428 ft), and the
+  elevation says why its numbers can differ from town. West Yellowstone's nearest answering station
+  is Yellowstone Lake, WY (35 mi); Old Faithful answered 404 and says so on the town page.
+
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.
 - Folium camelizes keyword arguments (`_t` → `T`).

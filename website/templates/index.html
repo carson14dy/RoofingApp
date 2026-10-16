@@ -65,6 +65,20 @@
           {% if t.alerts is none %}<span class="chip chip-unknown">Alerts not checked</span>
           {% elif t.alerts %}<span class="chip chip-{{ t.alerts[0].kind }}">{{ t.alerts[0].event }}{% if t.alerts|length > 1 %} +{{ t.alerts|length - 1 }}<span class="visually-hidden"> more</span>{% endif %}</span>{% endif %}
         </div>
+        {# D29: the nearest station with a current reading, or the nearest reading marked stale #}
+        {% set n = t.obs.now %}
+        {% if n %}
+        {% set r = n.obs %}
+        <p class="tc-now"><span class="tc-now-vals">Now
+          {% if r.temp.value is not none %}<b{% if r.temp.value < limits.cold_f or r.temp.value > limits.hot_f %} class="over"{% endif %}>{{ r.temp.value|num }}</b>&nbsp;°F{% endif %}
+          {%- if r.wind.value is not none %} · wind {% if r.wind.value|round == 0 %}calm{% else %}<b{% if r.wind.value >= limits.wind_mph %} class="over"{% endif %}>{{ r.wind.value|num }}</b>&nbsp;mph{% if r.dir %} {{ r.dir }}{% endif %}{% endif %}{% endif %}
+          {%- if r.gust.value is not none %} · gusts <b{% if r.gust.value >= limits.gust_mph %} class="over"{% endif %}>{{ r.gust.value|num }}</b>&nbsp;mph{% elif r.no_gust %} · no gust reported{% endif %}</span>
+          {% set elev = r.elev_ft if r.elev_ft is not none else n.elev_ft %}
+          {# age first, so a narrow card never cuts it off; the station's name is on the town page #}
+          <span class="tc-now-src">{{ r.age_min|ago }}{% if not r.current %}, <strong>stale</strong>{% endif %} · station {{ n.id }}, {{ n.miles|num }}&nbsp;mi away{% if elev is not none %}, {{ elev|feet }}&nbsp;ft{% endif %}</span></p>
+        {% else %}
+        <p class="tc-now tc-now-missing">Station readings unavailable in this update.</p>
+        {% endif %}
         {% if t.hours %}
         <dl class="stats">
           <div><dt>Temperature</dt><dd>{% if s.lo is not none %}{{ s.lo|num }}–{{ s.hi|num }}<small> °F</small>{% else %}—<span class="visually-hidden"> not available</span>{% endif %}</dd></div>

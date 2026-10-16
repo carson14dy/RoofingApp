@@ -63,7 +63,7 @@ class Collector:
 
     def town(self, t):
         out = {**t, "errors": [], "hours": [], "days": [], "alerts": None, "updated": None,
-               "tz": "America/Denver", "office": None, "near": ""}
+               "tz": "America/Denver", "office": None, "near": "", "grid_elev_ft": None}
         point = None
         doc, err = self.f.json(f"{src.NWS}/points/{t['lat']:.4f},{t['lon']:.4f}")
         try:
@@ -87,6 +87,7 @@ class Collector:
             try:
                 if err:
                     raise ValueError(err)
+                out["grid_elev_ft"] = src.grid_elevation_ft(doc)
                 gusts = src.parse_gusts(doc)
                 for h in out["hours"]:
                     h["gust_mph"] = gusts.get(h["start"])
@@ -110,12 +111,49 @@ class Collector:
         for h in out["hours"]:
             h["flags"] = src.flags_for(h)
         out["summary"] = src.summarize(out["hours"], self.now)
+        out["obs"] = self.observations(t, point)
         return out
+
+    def observations(self, t, point) -> dict:
+        """The latest reading at the town's nearest NWS stations (D29). The station list comes from
+        the point lookup and the last good list is reused if it fails, as the point is; each station
+        that doesn't answer says so on the town page. Nothing is invented for a missing reading."""
+        res = {"stations": [], "error": None, "now": None}
+        stations, url = None, (point or {}).get("stations")
+        if url:
+            doc, err = self.f.json(url)
+            try:
+                if err:
+                    raise ValueError(err)
+                stations = src.parse_stations(doc, t["lat"], t["lon"])
+            except ValueError as e:
+                stations = (self.prev.get("stations") or {}).get(t["slug"])
+                if not stations:
+                    res["error"] = f"Couldn't look up the nearest weather stations ({e})."
+        else:
+            stations = (self.prev.get("stations") or {}).get(t["slug"])
+            if not stations:
+                res["error"] = ("Couldn't look up the nearest weather stations (the NWS grid lookup "
+                                + ("had no station list)." if point else "didn't load)."))
+        for s in stations or []:
+            doc, err = self.f.json(f"{src.NWS}/stations/{s['id']}/observations/latest")
+            try:
+                if err:
+                    raise ValueError(err)
+                res["stations"].append({**s, "obs": src.parse_observation(doc, self.now), "error": None})
+            except ValueError as e:
+                res["stations"].append({**s, "obs": None, "error": str(e)})
+        res["now"] = src.reading_now(res["stations"])
+        return res
 
     def towns(self):
         towns = [self.town(t) for t in TOWNS]
         good = sum(1 for t in towns if t["hours"])
         self.note("forecasts", "NWS forecasts", good == len(towns), f"{good} of {len(towns)} towns")
+        read = sum(1 for t in towns if t["obs"]["now"])
+        fresh = sum(1 for t in towns if t["obs"]["now"] and t["obs"]["now"]["obs"]["current"])
+        self.note("observations", "NWS station readings", read == len(towns),
+                  f"{read} of {len(towns)} towns, {fresh} with a reading under {src.FRESH_MINUTES} minutes old")
         return towns
 
     def add_town_alerts(self, alerts: dict, towns: list) -> None:
@@ -313,6 +351,8 @@ def env() -> Environment:
     e.filters["when"] = lambda v: fmt_time(v)
     e.filters["day"] = lambda v: fmt_time(v, "%a %b %-d")
     e.filters["num"] = lambda v: "—" if v is None else f"{round(v)}"
+    e.filters["ago"] = src.age_words
+    e.filters["feet"] = lambda v: "—" if v is None else f"{round(v):,}"
     return e
 
 
@@ -351,7 +391,8 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     base = {"built": now, "built_ms": int(now.timestamp() * 1000), "asset_v": asset_versions(out / "static"),
             "status": c.status, "sample": sample,
             "limits": src.LIMITS, "offices": OFFICES, "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
-            "contracts": src.CONTRACTS}
+            "contracts": src.CONTRACTS, "fresh_min": src.FRESH_MINUTES, "qc_words": src.QC_WORDS,
+            "qc_rejected": src.QC_REJECTED}
     e = env()
     pages = {
         "index.html": ("index.html", {"page": "now", "root": "", "alerts": alerts, "towns": towns,
@@ -372,13 +413,20 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
         encoding="utf-8")
     state = {"built": src._iso(now), "sample": sample, "status": c.status,
              "alerts": {k: v for k, v in alerts.items() if k not in ("error", "from_towns")},
-             "points": {t["slug"]: t["point"] for t in towns if t.get("point")}}
+             "points": {t["slug"]: t["point"] for t in towns if t.get("point")},
+             # the station lists, for reuse when a lookup fails; the readings themselves, with their
+             # raw values and flags, as a record of what each town showed (D29)
+             "stations": {t["slug"]: [{k: v for k, v in s.items() if k not in ("obs", "error")}
+                                      for s in t["obs"]["stations"]] for t in towns if t["obs"]["stations"]},
+             "readings": {t["slug"]: [{"id": s["id"], "obs": s["obs"], "error": s["error"]}
+                                      for s in t["obs"]["stations"]] for t in towns if t["obs"]["stations"]}}
     (out / "data" / "state.json").write_text(json.dumps(state, indent=1), encoding="utf-8")
     (out / ".nojekyll").write_text("", encoding="utf-8")
     return {"status": c.status, "alerts": len(alerts["items"]),
             "alerts_null_geometry": sum(1 for a in alerts["items"] if not a["geometry"]),
             "towns_with_forecast": sum(1 for t in towns if t["hours"]),
             "towns_with_gusts": sum(1 for t in towns if t["summary"]["gusts_known"]),
+            "towns_with_readings": sum(1 for t in towns if t["obs"]["now"]),
             "reports": len(reports["items"]), "map": map_summary(layers),
             "content": content_sample(alerts, towns, reports)}
 
@@ -404,10 +452,21 @@ def content_sample(alerts, towns, reports) -> dict:
         "towns": {t["name"]: {"lo": t["summary"]["lo"], "hi": t["summary"]["hi"], "gust": t["summary"]["gust"],
                               "wind": t["summary"]["wind"], "precip": t["summary"]["precip"],
                               "flagged": t["summary"]["flagged"], "issued": fmt_time(t["updated"]),
-                              "office": t["office"], "alerts": None if t["alerts"] is None else len(t["alerts"])}
+                              "office": t["office"], "alerts": None if t["alerts"] is None else len(t["alerts"]),
+                              "now": reading_sample(t["obs"]["now"])}
                   for t in towns},
         "reports_by_day": {d: sum(1 for r in reports["items"] if r["day"] == d) for d in reports["days"]},
     }
+
+
+def reading_sample(s: dict | None) -> dict | None:
+    """A town card's station reading in brief, for the build log and the run summary."""
+    if not s:
+        return None
+    o = s["obs"]
+    return {"station": s["id"], "miles": round(s["miles"]), "temp_f": _round(o["temp"]["value"]),
+            "wind_mph": _round(o["wind"]["value"]), "dir": o["dir"], "gust_mph": _round(o["gust"]["value"]),
+            "no_gust": o["no_gust"], "age_min": o["age_min"], "current": o["current"]}
 
 
 def load_previous(url: str | None) -> dict | None:

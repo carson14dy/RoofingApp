@@ -123,13 +123,19 @@ jobs:
           if c.get("alert_events"):
               print("\nAlerts: " + "; ".join(c["alert_events"]))
           print("\nReports per SPC day: " + ", ".join(f"{d}: {n}" for d, n in (c.get("reports_by_day") or {}).items()))
-          print("\n| Town | Low–high °F | Gust mph | Wind mph | Rain/snow % | Flagged of 12 h | Forecast issued | Office | Alerts |")
-          print("|---|---|---|---|---|---|---|---|---|")
+          print("\n| Town | Low–high °F | Gust mph | Wind mph | Rain/snow % | Flagged of 12 h | Forecast issued | Office | Alerts | Observed now |")
+          print("|---|---|---|---|---|---|---|---|---|---|")
           dash = lambda v: "—" if v is None else round(v) if isinstance(v, float) else v
+          def now(n):
+              if not n:
+                  return "no reading"
+              gust = "no gust reported" if n["no_gust"] else f"gusts {dash(n['gust_mph'])}"
+              return (f"{dash(n['temp_f'])} °F, {dash(n['wind_mph'])} mph {n['dir']}, {gust} "
+                      f"({n['station']}, {n['miles']} mi, {n['age_min']} min{'' if n['current'] else ', stale'})")
           for name, t in (c.get("towns") or {}).items():
               print(f"| {name} | {dash(t['lo'])}–{dash(t['hi'])} | {dash(t['gust'])} | {dash(t['wind'])} | "
                     f"{dash(t['precip'])} | {t['flagged']} | {t['issued']} | {t['office'] or '—'} | "
-                    f"{'not checked' if t['alerts'] is None else t['alerts']} |")
+                    f"{'not checked' if t['alerts'] is None else t['alerts']} | {now(t.get('now'))} |")
           EOF
 
       - name: Keep the built site (preview)

@@ -161,6 +161,112 @@ class Forecasts(unittest.TestCase):
                          [("Tonight", None, 30, None), ("Thursday", 60, 35, 40), ("Friday", 58, None, None)])
 
 
+def reading(minutes_old=10, temp=5.0, wind=16.668, gust=None, gust_qc="Z", wind_unit="wmoUnit:km_h-1",
+            direction=190, qc="V", timestamp=True):
+    """An NWS /observations/latest document, as KBIL sent one on 2026-10-16 (5 °C, 16.7 km/h from 190°,
+    no gust)."""
+    p = {"textDescription": "Clear", "elevation": {"unitCode": "wmoUnit:m", "value": 1088},
+         "temperature": {"unitCode": "wmoUnit:degC", "value": temp, "qualityControl": qc},
+         "windSpeed": {"unitCode": wind_unit, "value": wind, "qualityControl": qc},
+         "windGust": {"unitCode": wind_unit, "value": gust, "qualityControl": gust_qc},
+         "windDirection": {"unitCode": "wmoUnit:degree_(angle)", "value": direction, "qualityControl": "V"}}
+    if timestamp:
+        p["timestamp"] = (NOW - timedelta(minutes=minutes_old)).isoformat()
+    return {"properties": p}
+
+
+def station(sid, lon, lat, state="MT", elev=1100):
+    return {"type": "Feature", "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": {"stationIdentifier": sid, "name": f"Station {sid}",
+                           "elevation": {"unitCode": "wmoUnit:m", "value": elev},
+                           "county": f"https://api.weather.gov/zones/county/{state}C029"}}
+
+
+class StationReadings(unittest.TestCase):
+    def test_units_are_converted_and_a_missing_gust_is_no_gust_reported(self):
+        r = src.parse_observation(reading(), NOW)
+        self.assertAlmostEqual(r["temp"]["value"], 41.0)
+        self.assertAlmostEqual(r["wind"]["value"], 10.357, places=2)
+        self.assertEqual(r["dir"], "S")
+        self.assertIsNone(r["gust"]["value"])
+        self.assertTrue(r["no_gust"])                       # beside a measured wind: not a broken sensor
+        self.assertEqual((r["temp"]["qc"], r["gust"]["qc"]), ("V", "Z"))
+        self.assertEqual(round(r["elev_ft"]), 3570)
+        self.assertEqual(r["sky"], "Clear")
+        r = src.parse_observation(reading(wind=10, gust=15, wind_unit="wmoUnit:m_s-1"), NOW)
+        self.assertAlmostEqual(r["wind"]["value"], 22.37, places=1)
+        self.assertAlmostEqual(r["gust"]["value"], 33.55, places=1)
+        self.assertFalse(r["no_gust"])
+
+    def test_calm_wind_has_no_direction(self):
+        self.assertEqual(src.parse_observation(reading(wind=0, direction=0), NOW)["dir"], "calm")
+        self.assertEqual(src.parse_observation(reading(wind=None, gust=None), NOW)["dir"], "")
+
+    def test_readings_older_than_75_minutes_are_stale_not_hidden(self):
+        fresh, stale = src.parse_observation(reading(75), NOW), src.parse_observation(reading(76), NOW)
+        self.assertTrue(fresh["current"])
+        self.assertFalse(stale["current"])
+        self.assertEqual(stale["age_min"], 76)
+        self.assertAlmostEqual(stale["temp"]["value"], 41.0)    # the value is still there
+        self.assertEqual(src.age_words(76), "1 h 16 min ago")
+        self.assertEqual(src.age_words(120), "2 h ago")
+        self.assertEqual(src.age_words(12), "12 min ago")
+
+    def test_values_that_failed_quality_control_are_withheld_and_kept_raw(self):
+        r = src.parse_observation(reading(gust=190.0, gust_qc="X"), NOW)
+        self.assertIsNone(r["gust"]["value"])
+        self.assertTrue(r["gust"]["withheld"])
+        self.assertEqual(r["gust"]["raw"], 190.0)
+        self.assertFalse(r["no_gust"])                     # withheld is not "no gust reported"
+        r = src.parse_observation(reading(qc="S"), NOW)    # screened values are shown with their flag
+        self.assertAlmostEqual(r["temp"]["value"], 41.0)
+        self.assertEqual(r["temp"]["qc"], "S")
+        self.assertEqual(src.QC_WORDS["S"], "screened")
+
+    def test_an_unknown_unit_is_an_error_not_a_guess(self):
+        with self.assertRaises(ValueError):
+            src.parse_observation(reading(wind_unit="wmoUnit:furlong_fortnight-1"), NOW)
+
+    def test_no_time_or_no_values_is_no_reading(self):
+        with self.assertRaises(ValueError):
+            src.parse_observation(reading(timestamp=False), NOW)
+        with self.assertRaises(ValueError):
+            src.parse_observation(reading(temp=None, wind=None, gust=None), NOW)
+        with self.assertRaises(ValueError):
+            src.parse_observation({"type": "Feature"}, NOW)
+
+    def test_nearest_stations_first_and_never_filtered_by_state(self):
+        # West Yellowstone (44.66, -111.10): its nearest stations are across the line in Wyoming (D25)
+        doc = {"features": [station("FAR", -110.4, 44.56, "WY"), station("OFAW4", -110.83, 44.46, "WY"),
+                            station("MTX", -111.6, 45.0, "MT"), station("NEAR", -111.0, 44.6, "WY"),
+                            {"properties": {"stationIdentifier": "NOGEOM"}}]}
+        got = src.parse_stations(doc, 44.66, -111.10)
+        self.assertEqual([s["id"] for s in got], ["NEAR", "OFAW4", "MTX"])
+        self.assertEqual([s["state"] for s in got], ["WY", "WY", "MT"])
+        self.assertTrue(all(a["miles"] <= b["miles"] for a, b in zip(got, got[1:])))
+        self.assertEqual(round(got[0]["elev_ft"]), 3609)
+        with self.assertRaises(ValueError):
+            src.parse_stations({"type": "FeatureCollection"}, 44.66, -111.10)
+
+    def test_a_card_quotes_the_nearest_current_reading_with_a_temperature_or_wind(self):
+        def s(sid, current, temp=40.0, wind=10.0):
+            return {"id": sid, "obs": {"current": current, "temp": {"value": temp}, "wind": {"value": wind}}}
+        gust_only = s("ROAD", True, temp=None, wind=None)
+        self.assertEqual(src.reading_now([s("A", False), gust_only, s("B", True)])["id"], "B")
+        self.assertEqual(src.reading_now([s("A", False), gust_only])["id"], "ROAD")
+        self.assertEqual(src.reading_now([{"id": "X", "obs": None}, s("A", False)])["id"], "A")
+        self.assertIsNone(src.reading_now([{"id": "X", "obs": None}]))
+
+    def test_the_point_lookup_keeps_the_station_link(self):
+        p = {"properties": {"forecast": f"{src.NWS}/gridpoints/BYZ/1,1/forecast",
+                            "forecastHourly": f"{src.NWS}/gridpoints/BYZ/1,1/forecast/hourly",
+                            "forecastGridData": f"{src.NWS}/gridpoints/BYZ/1,1",
+                            "observationStations": f"{src.NWS}/gridpoints/BYZ/1,1/stations"}}
+        self.assertEqual(src.parse_point(p)["stations"], f"{src.NWS}/gridpoints/BYZ/1,1/stations")
+        p["properties"]["observationStations"] = "https://elsewhere.example/stations"
+        self.assertIsNone(src.parse_point(p)["stations"])
+
+
 class StormReports(unittest.TestCase):
     CSV = ("Time,Size,Location,County,State,Lat,Lon,Comments\n"
            "2215,175,2 SE Wibaux,Wibaux,MT,46.96,-104.16,QUARTER TO GOLF BALL (BYZ)\n"
@@ -242,8 +348,8 @@ class Fetching(unittest.TestCase):
 
 class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
-        self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "reports", "radar",
-                                              "forecast_model", "basemap"})
+        self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "stations",
+                                              "observations", "reports", "radar", "forecast_model", "basemap"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
@@ -252,6 +358,10 @@ class Contracts(unittest.TestCase):
         self.assertIn("hatched", src.CONTRACTS["radar"]["missing"])
         self.assertIn("byte range", src.CONTRACTS["forecast_model"]["request"])
         self.assertIn("model forecast", src.CONTRACTS["forecast_model"]["missing"])
+        self.assertIn("75 minutes", src.CONTRACTS["observations"]["timing"])
+        self.assertIn("no gust reported", src.CONTRACTS["observations"]["missing"])
+        self.assertIn("withheld", src.CONTRACTS["observations"]["missing"])
+        self.assertIn("Never filtered by state", src.CONTRACTS["stations"]["missing"])
 
 
 class Formatting(unittest.TestCase):
@@ -288,8 +398,12 @@ class SampleWith(SampleFetcher):
         if "alerts-point" in self.fail and url.endswith("/alerts/active") and params and "point" in params:
             return None, "server error (HTTP 503)"
         if "gusts" in self.fail and "/gridpoints/" in url and not url.endswith("forecast") \
-                and not url.endswith("hourly"):
+                and not url.endswith("hourly") and not url.endswith("stations"):
             return None, "server error (HTTP 500)"
+        if "stations" in self.fail and "/gridpoints/" in url and url.endswith("/stations"):
+            return None, "server error (HTTP 500)"
+        if "readings" in self.fail and url.endswith("/observations/latest"):
+            return None, "not published (HTTP 404)"
         return super().json(url, params)
 
 
@@ -457,7 +571,62 @@ class SampleBuild(unittest.TestCase):
                       "of sample radar and the sample model forecast, or switch to temperature and wind gusts.", html)
 
 
+    def test_observed_now_on_the_town_pages_and_cards(self):
+        def text(name):
+            return " ".join(page(self.out, name).replace("&nbsp;", " ").split())
+        town = text("town/livingston.html")
+        self.assertIn("Observed now", town)
+        self.assertIn("The latest reading at the 3 nearest NWS weather stations", town)
+        self.assertIn("SAMPLE Livingston airport", town)
+        self.assertIn("Read at 8:48 am, 12 min ago", town)                      # NOW - 12 min, Montana time
+        self.assertIn("2 h 30 min ago · <strong>stale</strong>", town)          # the pass: kept, marked stale
+        self.assertIn("gusts failed quality control, so withheld", town)        # the hill's X-flagged gust
+        self.assertIn('<span class="obs-word">withheld</span>', town)
+        self.assertIn("no gust reported", town)
+        self.assertIn("wind screened", town)
+        self.assertIn("This town's forecast grid square is at 3,609 ft.", town)
+        self.assertLess(town.index("Observed now"), town.index("Next 24 hours"))
+        wy = text("town/west-yellowstone.html")
+        self.assertIn("SAMPLE West Yellowstone airport, WY", wy)                 # across the line, labelled
+        glasgow = text("town/glasgow.html")
+        self.assertIn("No reading from this station in this update (not published (HTTP 404)).", glasgow)
+        now = text("index.html")
+        self.assertEqual(now.count('class="tc-now"'), len(site.TOWNS))
+        self.assertIn("12 min ago · station SMP100, 2 mi away, 3,445 ft", now)
+        self.assertIn("41 min ago · station SMP091, 10 mi away", now)   # its airport reading is stale: the next one
+        self.assertIn('gusts <b class="over">41</b> mph', now)     # over the 25 mph placeholder limit
+        state = json.loads(page(self.out, "data/state.json"))
+        self.assertEqual([s["id"] for s in state["stations"]["livingston"]], ["SMP100", "SMP101", "SMP102"])
+        hill = state["readings"]["livingston"][1]["obs"]["gust"]
+        self.assertEqual((hill["value"], hill["withheld"], hill["raw"], hill["qc"]), (None, True, 190.0, "X"))
+        self.assertTrue(self.result["status"]["observations"]["ok"])
+        self.assertEqual(self.result["towns_with_readings"], len(site.TOWNS))
+
+
 class FailureHonesty(unittest.TestCase):
+    def test_station_failures_are_never_shown_as_calm(self):
+        out, result = build_with(SampleWith(NOW, fail={"stations"}))
+        self.assertFalse(result["status"]["observations"]["ok"])
+        self.assertEqual(result["status"]["observations"]["detail"],
+                         "0 of 14 towns, 0 with a reading under 75 minutes old")
+        town = " ".join(page(out, "town/billings.html").split())
+        self.assertIn("Station readings are unavailable in this update. Couldn&#39;t look up the nearest weather "
+                      "stations (server error (HTTP 500)). This is not an all-clear.", town)
+        self.assertIn("Station readings unavailable in this update.", page(out, "index.html"))
+        # with a station list from the last build, the readings still load
+        _, good = build_with(SampleFetcher(NOW))
+        previous = {"stations": {"billings": [{"id": "SMP000", "name": "SAMPLE Billings airport", "lat": 45.8,
+                                               "lon": -108.5, "elev_ft": 3445.0, "miles": 2.4, "state": "MT"}]}}
+        out, result = build_with(SampleWith(NOW, fail={"stations"}), previous)
+        self.assertIn("station SMP000, 2 mi away", page(out, "index.html").replace("&nbsp;", " "))
+        self.assertEqual(result["towns_with_readings"], 1)
+        # every station answering 404: each one says so, and the card has no numbers
+        out, result = build_with(SampleWith(NOW, fail={"readings"}))
+        town = page(out, "town/billings.html")
+        self.assertEqual(town.count("No reading from this station in this update (not published (HTTP 404))."), 3)
+        self.assertNotIn('class="tc-now"', page(out, "index.html"))
+        self.assertFalse(result["status"]["observations"]["ok"])
+
     def test_failed_alert_request_is_never_shown_as_no_alerts(self):
         out, result = build_with(SampleWith(NOW, fail={"alerts-state", "alerts-point"}))
         html = page(out, "index.html")
@@ -510,8 +679,8 @@ class FailureHonesty(unittest.TestCase):
         self.assertEqual(code, 1)
         state = json.loads(page(out, "data/state.json"))
         self.assertEqual({k: v["ok"] for k, v in state["status"].items()},
-                         {"alerts": False, "forecasts": False, "reports": False, "radar": False,
-                          "forecast": False})
+                         {"alerts": False, "forecasts": False, "observations": False, "reports": False,
+                          "radar": False, "forecast": False})
         m = json.loads(page(out, "data/map.json"))
         self.assertTrue(all(layer["frames"] == [] for layer in m["layers"].values()))
         self.assertTrue(m["status"]["radar"]["detail"] and m["status"]["forecast"]["detail"])

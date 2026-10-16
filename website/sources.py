@@ -1,4 +1,5 @@
-"""Public weather sources for the website: NWS alerts and forecasts, SPC storm reports, NOAA radar.
+"""Public weather sources for the website: NWS alerts, forecasts and station readings, SPC storm
+reports, NOAA radar.
 
 Parsing functions take already-downloaded JSON or text, so tests run offline. `Fetcher` does the
 network calls and records what happened to each request; nothing here invents a value when a
@@ -25,6 +26,16 @@ MARGIN = 0.75                               # degrees around Montana for storm r
 
 KMH_TO_MPH = 0.621371
 MS_TO_MPH = 2.236936
+KT_TO_MPH = 1.150779
+M_TO_FT = 3.280840
+
+# Station readings (DECISIONS D29, built to the rules of D23 and D25).
+OBS_STATIONS = 3        # nearest stations read for each town
+FRESH_MINUTES = 75      # one hourly report cycle plus the ingest delay; older readings show as stale
+# MADIS quality-control flags (codes.nws.noaa.gov/MADIS/QualityControlDescriptors), in plain words.
+QC_WORDS = {"V": "verified", "S": "screened", "C": "basic check only", "Z": "not checked yet",
+            "Q": "questioned", "G": "checked by hand", "T": "partly checked"}
+QC_REJECTED = {"X": "failed quality control", "B": "marked bad on review"}
 
 # Flag thresholds. These are placeholders until the company sets its own limits (DECISIONS D16).
 LIMITS = {"wind_mph": 20, "gust_mph": 25, "pop_pct": 30, "cold_f": 40, "hot_f": 95}
@@ -67,6 +78,26 @@ CONTRACTS = {
         "units": "12-hour periods paired into days: high, low, sky, wind and the higher chance of rain or snow.",
         "timing": "NWS updates it several times a day.",
         "missing": "A missing high or low shows as a dash.",
+    },
+    "stations": {
+        "name": "NWS observation stations",
+        "request": "the point's observationStations link: the stations NWS lists for the town's 2.5 km grid square",
+        "units": "Station id, name, position and elevation in metres (shown in feet). The distance from the "
+                 "town is worked out here, in miles; the nearest three are read.",
+        "timing": "Every build; the last good list is reused if it fails.",
+        "missing": "Never filtered by state: the nearest stations can be in Wyoming, Idaho or the Dakotas. "
+                   "No list means no readings for that town, and the town page says so.",
+    },
+    "observations": {
+        "name": "NWS station readings",
+        "request": "api.weather.gov/stations/{id}/observations/latest, for the nearest three stations of each town",
+        "units": "Temperature in °C, wind and gusts in km/h (m/s and knots converted), direction in degrees; "
+                 "shown in °F, whole mph and compass points. Each value carries its MADIS quality flag.",
+        "timing": f"Airport stations report about once an hour, near :55; road and mountain stations hourly or "
+                  f"less. A reading older than {FRESH_MINUTES} minutes is shown as stale, with its age, never hidden.",
+        "missing": "A missing gust beside a measured wind is \"no gust reported\", not a broken sensor. A value "
+                   "flagged X (failed quality control) or B (marked bad) is withheld and kept in the record; other "
+                   "flags are shown beside the value. Any other unit is an error, never a guess.",
     },
     "reports": {
         "name": "SPC storm reports",
@@ -224,7 +255,9 @@ def parse_point(doc) -> dict:
     if not all(isinstance(p.get(k), str) and p[k].startswith(NWS + "/") for k in needed):
         raise ValueError("the NWS point lookup had no forecast links")
     rel = ((p.get("relativeLocation") or {}).get("properties") or {})
+    stations = p.get("observationStations")
     return {"forecast": p["forecast"], "hourly": p["forecastHourly"], "grid": p["forecastGridData"],
+            "stations": stations if isinstance(stations, str) and stations.startswith(NWS + "/") else None,
             "office": p.get("gridId"), "grid_x": p.get("gridX"), "grid_y": p.get("gridY"),
             "tz": p.get("timeZone") or "America/Denver",
             "near": ", ".join(x for x in (rel.get("city"), rel.get("state")) if x)}
@@ -353,6 +386,168 @@ def summarize(hours: list[dict], now: datetime, span=12) -> dict:
             "lo": min(temps) if temps else None, "hi": max(temps) if temps else None,
             "flagged": len(flagged), "first_flag": flagged[0] if flagged else None,
             "gusts_known": any(h.get("gust_mph") is not None for h in upcoming)}
+
+
+# ---------------------------------------------------------------- station readings (D29)
+
+def _number(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def miles_between(lat1, lon1, lat2, lon2) -> float:
+    """Great-circle distance in miles."""
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    a = (math.sin((p2 - p1) / 2) ** 2
+         + math.cos(p1) * math.cos(p2) * math.sin(math.radians(lon2 - lon1) / 2) ** 2)
+    return 2 * 3958.8 * math.asin(math.sqrt(min(1.0, a)))
+
+
+def length_ft(q) -> float | None:
+    """{"unitCode": "wmoUnit:m", "value": 1088} -> feet. Missing stays None; any other unit is an
+    error, never a guess."""
+    if not isinstance(q, dict) or not _number(q.get("value")):
+        return None
+    unit = str(q.get("unitCode") or "").split(":")[-1]
+    if unit == "m":
+        return q["value"] * M_TO_FT
+    if unit == "ft":
+        return float(q["value"])
+    raise ValueError(f"unexpected elevation unit {q.get('unitCode')!r}")
+
+
+def grid_elevation_ft(doc) -> float | None:
+    """The elevation of a forecast grid square (the gridpoint document's "elevation"), in feet."""
+    try:
+        return length_ft(((doc or {}).get("properties") or {}).get("elevation"))
+    except ValueError:
+        return None
+
+
+def parse_stations(doc, lat, lon, limit=OBS_STATIONS) -> list[dict]:
+    """NWS observationStations list -> the `limit` stations nearest (lat, lon), nearest first.
+
+    Never filtered by state (D25: West Yellowstone's nearest stations are in Wyoming). The state
+    comes from the station's county zone ("…/zones/county/WYC029" -> "WY"), for the label only."""
+    feats = doc.get("features") if isinstance(doc, dict) else None
+    if not isinstance(feats, list):
+        raise ValueError("the NWS station list had no stations")
+    out = []
+    for f in feats:
+        f = f if isinstance(f, dict) else {}
+        p = f.get("properties") if isinstance(f.get("properties"), dict) else {}
+        coords = (f.get("geometry") or {}).get("coordinates") if isinstance(f.get("geometry"), dict) else None
+        sid = p.get("stationIdentifier")
+        if not isinstance(sid, str) or not sid or not isinstance(coords, list) or len(coords) < 2 \
+                or not (_number(coords[0]) and _number(coords[1])):
+            continue
+        try:
+            elev = length_ft(p.get("elevation"))
+        except ValueError:
+            elev = None
+        zone = str(p.get("county") or p.get("forecast") or "").rstrip("/").rsplit("/", 1)[-1]
+        name = str(p.get("name") or sid).strip()
+        out.append({"id": sid, "name": name.title() if name.isupper() else name,
+                    "lat": coords[1], "lon": coords[0], "elev_ft": elev,
+                    "miles": miles_between(lat, lon, coords[1], coords[0]),
+                    "state": zone[:2] if len(zone) >= 2 and zone[:2].isalpha() else ""})
+    if not out:
+        raise ValueError("the NWS station list had no usable stations")
+    out.sort(key=lambda s: s["miles"])
+    return out[:limit]
+
+
+_CONVERT = {
+    "temp": {"degC": lambda v: v * 9 / 5 + 32, "degF": float},
+    "speed": {"km_h-1": lambda v: v * KMH_TO_MPH, "m_s-1": lambda v: v * MS_TO_MPH, "kt": lambda v: v * KT_TO_MPH,
+              "mi_h-1": float},
+    "angle": {"degree_(angle)": float},
+}
+
+
+def measured(q, kind: str) -> dict:
+    """One value of an observation, e.g. {"unitCode": "wmoUnit:degC", "value": 5, "qualityControl": "V"}
+    -> {"value": 41.0 (°F, mph or degrees), "qc": "V", "withheld": False, "raw": 5, "unit": ...}.
+
+    Missing stays None. A value flagged X or B is withheld (value None) and kept raw. Any other
+    unit is an error, never a guess."""
+    if not isinstance(q, dict):
+        return {"value": None, "qc": None, "withheld": False, "raw": None, "unit": None}
+    raw, unit, qc = q.get("value"), str(q.get("unitCode") or ""), q.get("qualityControl")
+    qc = qc if isinstance(qc, str) and qc else None
+    value = None
+    if _number(raw):
+        conv = _CONVERT[kind].get(unit.split(":")[-1])
+        if conv is None:
+            raise ValueError(f"unexpected {kind} unit {unit!r}")
+        value = conv(raw)
+    withheld = value is not None and qc in QC_REJECTED
+    return {"value": None if withheld else value, "qc": qc, "withheld": withheld, "raw": raw, "unit": unit or None}
+
+
+_POINTS = ("N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW")
+
+
+def compass(degrees) -> str:
+    """190 -> 'S'. Unknown stays ''."""
+    return _POINTS[int((degrees % 360) / 22.5 + 0.5) % 16] if _number(degrees) else ""
+
+
+def parse_observation(doc, now: datetime) -> dict:
+    """NWS /stations/{id}/observations/latest -> one reading in °F and mph, with its age.
+
+    A reading older than FRESH_MINUTES is kept and marked stale, never hidden (D25). A missing gust
+    beside a measured wind is "no gust reported": airport stations report a gust only when the
+    peak beats the sustained wind by a margin. No time, or no readable values, is no reading."""
+    p = doc.get("properties") if isinstance(doc, dict) else None
+    if not isinstance(p, dict):
+        raise ValueError("the station reading was unreadable")
+    when = parse_iso(p.get("timestamp"))
+    if when is None:
+        raise ValueError("the station reading had no time")
+    temp, wind = measured(p.get("temperature"), "temp"), measured(p.get("windSpeed"), "speed")
+    gust, direction = measured(p.get("windGust"), "speed"), measured(p.get("windDirection"), "angle")
+    if all(m["value"] is None and not m["withheld"] for m in (temp, wind, gust)):
+        raise ValueError("the latest report had no temperature or wind")
+    age = max(0.0, (now - when).total_seconds() / 60)
+    try:
+        elev = length_ft(p.get("elevation"))
+    except ValueError:
+        elev = None
+    sky = p.get("textDescription")
+    return {"time": _iso(when), "age_min": int(age + 0.5), "current": age <= FRESH_MINUTES,
+            "temp": temp, "wind": wind, "gust": gust,
+            "dir": compass(direction["value"]) if wind["value"] else ("calm" if wind["value"] == 0 else ""),
+            "no_gust": gust["value"] is None and not gust["withheld"] and wind["value"] is not None,
+            "sky": sky.strip() if isinstance(sky, str) else "", "elev_ft": elev}
+
+
+def reading_now(stations: list[dict]) -> dict | None:
+    """The station a town card quotes: the nearest current reading with a temperature or a wind,
+    else the nearest current reading (a road sensor may send only a gust), else the nearest reading
+    of any age (shown as stale), else None. Stations come nearest first."""
+    read = [s for s in stations if s.get("obs")]
+    def core(s):
+        return s["obs"]["temp"]["value"] is not None or s["obs"]["wind"]["value"] is not None
+    for test in (lambda s: s["obs"]["current"] and core(s), lambda s: s["obs"]["current"], lambda s: True):
+        hit = next((s for s in read if test(s)), None)
+        if hit:
+            return hit
+    return None
+
+
+def age_words(minutes: int | None) -> str:
+    """12 -> '12 min ago', 80 -> '1 h 20 min ago', 1500 -> '1 day ago'."""
+    if minutes is None:
+        return ""
+    if minutes < 1:
+        return "just now"
+    if minutes < 60:
+        return f"{minutes} min ago"
+    if minutes < 24 * 60:
+        h, m = divmod(minutes, 60)
+        return f"{h} h {m} min ago" if m else f"{h} h ago"
+    d = minutes // (24 * 60)
+    return f"{d} day{'s' if d > 1 else ''} ago"
 
 
 # ---------------------------------------------------------------- SPC storm reports
