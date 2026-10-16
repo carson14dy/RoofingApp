@@ -273,6 +273,7 @@
   /** Land, counties, rivers, lakes, roads, borders, then labels: the order the basemap expects. */
   function drawBasemap(bm) {
     var r = renderers.base;
+    /** One line layer (counties, rivers, roads, borders), classed by kind and minimum zoom. */
     function lines(fc, base) {
       if (!fc || !fc.features) return;
       L.geoJSON(fc, {
@@ -928,9 +929,11 @@
     });
 
     var r = el.range;
-    r.addEventListener("pointerdown", function () { state.dragging = true; setPlaying(false); });
-    window.addEventListener("pointerup", function () { state.dragging = false; });
-    window.addEventListener("pointercancel", function () { state.dragging = false; });
+    r.addEventListener("pointerdown", onScrubStart);
+    r.addEventListener("pointermove", function (e) { if (state.dragging) scrubTo(e.clientX); });
+    r.addEventListener("pointerup", onScrubEnd);
+    r.addEventListener("pointercancel", onScrubEnd);
+    r.addEventListener("lostpointercapture", onScrubEnd);
     r.addEventListener("input", onRangeInput);
     r.addEventListener("keydown", onRangeKey);
 
@@ -972,6 +975,31 @@
     }
     if (window.ResizeObserver) new ResizeObserver(function () { renderTicks(); layoutLabels(); }).observe(el.scrub);
     else window.addEventListener("resize", function () { renderTicks(); layoutLabels(); });
+  }
+
+  /** A finger or mouse on the timeline: jump to that spot and follow the drag anywhere along the
+      track (a native slider on iPhone only moves from its thumb, and this one has no visible thumb). */
+  function onScrubStart(e) {
+    if (el.range.disabled || (e.pointerType === "mouse" && e.button !== 0)) return;
+    e.preventDefault();
+    try { el.range.focus({ preventScroll: true }); } catch (err) { el.range.focus(); }
+    state.dragging = true;
+    setPlaying(false);
+    try { el.range.setPointerCapture(e.pointerId); } catch (err) { /* capture is a nicety */ }
+    scrubTo(e.clientX);
+  }
+
+  /** End of a drag on the timeline. */
+  function onScrubEnd() { state.dragging = false; }
+
+  /** Show the frame nearest to a screen x on the track. */
+  function scrubTo(x) {
+    var n = state.times.length;
+    if (n < 2) return;
+    var r = el.fill.parentNode.getBoundingClientRect();
+    var t = state.times[0] + clamp((x - r.left) / r.width, 0, 1) * (state.times[n - 1] - state.times[0]);
+    var k = nearest(t);
+    if (k !== state.pos) go(k);
   }
 
   /** Dragging snaps to the nearest frame. A keyboard or screen-reader nudge (no finger down) that

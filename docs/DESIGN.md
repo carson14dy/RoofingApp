@@ -318,4 +318,6 @@ chronological `frames` with `time`, `kind` radar|forecast, `src`, `source`, `run
 model frames, `nodata`; `modes` with frame indices and `now_index`), `status` (radar, forecast,
 alerts, forecasts, reports), `towns` (hourly NWS values for the timeline window, `alert_ids` or null
 when the check failed), `alerts` (with geometry or null), `reports`. Frames are PNG files in
-`map/frames/`, named by layer and valid time.
+`map/frames/`, named by layer and valid time (UTC); model frames add the run hour
+(`temp-202610160000-r2026101522.png`). GitHub Pages lets browsers reuse a file for 10 minutes and
+each hourly HRRR run redraws the same valid times, so a name must never stand for two pictures.
