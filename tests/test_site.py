@@ -433,12 +433,14 @@ class SampleBuild(unittest.TestCase):
         """The Storm reports card draws town bubbles and warning outlines beside the reports and hides
         its own legend, so the page's key says what they are (rule 5: forecast is not a report). The
         card shows precipitation, which rings no town, so the key has no ring; the card counts alerts
-        without an outline, and the key says where they are listed (rule 6)."""
+        without an outline, and the key says where they are listed (rule 6), in one span: a text node
+        and a link side by side in the inline-flex item wrapped as two columns on a phone."""
         html = page(self.out, "reports.html")
         self.assertIn("<li>Town number: NWS forecast temperature, °F</li>", html)
         self.assertNotIn("orange ring", html)
         self.assertIn("Outline: NWS alert area (red warning, orange watch, gold advisory, grey statement)", html)
-        self.assertIn('Alerts without an outline (issued by county or zone) are listed on the <a href="index.html">Now page</a>', html)
+        self.assertIn('<li><span>Alerts without an outline (issued by county or zone) are listed on the '
+                      '<a href="index.html">Now page</a></span></li>', html)
 
     def test_reporting_days_start_at_noon_utc_in_montana_time(self):
         self.assertIn("Reporting day starting Wed Oct 14 at 6 am MDT", page(self.out, "reports.html"))

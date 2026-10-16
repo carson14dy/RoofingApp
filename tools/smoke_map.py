@@ -12,7 +12,9 @@ sideways (nothing paints over it); alerts without an outline are named in the le
 the List; a picture still loading when the viewer switches to a layer with no pictures never appears
 under the new layer's legend; the Now page's caption names the picture the card shows (radar or
 model); a portrait phone gets the short two-column legend, which keeps one height through the whole
-timeline, and the Precipitation layer rings no town. Exits 1 with the reasons if anything fails. The Website workflow runs it
+timeline, and the Precipitation layer rings no town; a zoom by double-click or the = key holds through
+a layer switch, and on a map nobody moved a layer switch fits Montana as a fresh load does. Exits 1
+with the reasons if anything fails. The Website workflow runs it
 on branch pushes; locally set PW_CHROMIUM to a Chromium executable if Playwright's own isn't
 installed.
 """
@@ -122,7 +124,8 @@ def check(root: Path) -> list[str]:
                 ctx.close()
 
             for extra in (lambda: check_menu_rows(browser, base), lambda: check_no_outline_key(browser, base, data),
-                          lambda: check_phone_legend(browser, base, data),
+                          lambda: check_phone_legend(browser, base, data), lambda: check_zoom_holds(browser, base),
+                          lambda: check_switch_fit(browser, base),
                           lambda: check_empty_layer_switch(browser, base, data),
                           lambda: check_card_words(browser, base, root)):
                 try:
@@ -270,6 +273,74 @@ def check_phone_legend(browser, base, data) -> list[str]:
         problems.append("phone legend: a town has a limit ring on the Precipitation layer")
     ctx.close()
     return problems
+
+
+def check_zoom_holds(browser, base) -> list[str]:
+    """A zoom by the viewer stays where they put it: a double-click and the = key zoom in, and a layer
+    switch afterwards doesn't fit Montana again (a refit once undid every desktop zoom but the
+    wheel's). The zoom is read as the distance between two town bubbles, which doubles per level."""
+    problems = []
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
+    page = ctx.new_page()
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_timeout(500)
+    apart = ("() => { const b = [...document.querySelectorAll('.leaflet-marker-icon.town:not(.minor)')].slice(0, 2)"
+             ".map(e => e.getBoundingClientRect()); return Math.hypot(b[0].x - b[1].x, b[0].y - b[1].y); }")
+    spot = page.evaluate("""() => {          // a spot of bare map: no bubble, outline, report or panel on it
+      const m = document.getElementById('map').getBoundingClientRect();
+      for (let y = m.top + m.height * 0.3; y < m.bottom - m.height * 0.3; y += 10)
+        for (let x = m.left + m.width * 0.3; x < m.right - m.width * 0.3; x += 10) {
+          const e = document.elementFromPoint(x, y);
+          if (e && e.closest('#map') && !e.closest('.leaflet-marker-icon') && !e.classList.contains('leaflet-interactive')) return [x, y];
+        }
+      return null; }""")
+    if not spot:
+        ctx.close()
+        return ["zoom: no bare spot of the map to double-click"]
+    before = page.evaluate(apart)
+    page.mouse.dblclick(spot[0], spot[1])                  # +0.5 (zoomDelta)
+    page.wait_for_timeout(600)
+    page.focus("#map")
+    page.keyboard.press("Equal")                            # +0.5
+    page.wait_for_timeout(600)
+    zoomed = page.evaluate(apart)
+    page.click("#btn-layers")
+    page.get_by_role("radio", name="Temperature").check()
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(600)
+    after = page.evaluate(apart)
+    if zoomed < before * 1.8:
+        problems.append(f"zoom: a double-click and the = key didn't hold (towns {before:.0f} -> {zoomed:.0f} px apart, want about twice)")
+    elif abs(after - zoomed) > zoomed * 0.02:
+        problems.append(f"zoom: a layer switch undid the viewer's zoom (towns {zoomed:.0f} -> {after:.0f} px apart)")
+    ctx.close()
+    return problems
+
+
+def check_switch_fit(browser, base) -> list[str]:
+    """On a phone map the viewer hasn't moved, a layer switch fits Montana where a fresh load of that
+    layer does: the new scale and keys change the height of the legend above Montana (a fit made
+    before the new keys were drawn once left it off by half a key row)."""
+    def first_bubble(query, switch_to=None):
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+        page = ctx.new_page()
+        page.goto(base + "map.html" + query, wait_until="load")
+        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_timeout(600)
+        if switch_to:
+            page.click("#btn-layers")
+            page.get_by_role("radio", name=switch_to).check()
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(600)
+        at = page.evaluate("() => { const r = document.querySelector('.leaflet-marker-icon.town .bubble')"
+                           ".getBoundingClientRect(); return [r.x, r.y]; }")
+        ctx.close()
+        return at
+    fresh, switched = first_bubble("?layer=wind"), first_bubble("?layer=precip", "Wind gusts")
+    if max(abs(fresh[0] - switched[0]), abs(fresh[1] - switched[1])) > 1.5:
+        return [f"layer switch: Montana sits {switched[1] - fresh[1]:+.0f} px from where a fresh Wind gusts map puts it"]
+    return []
 
 
 def check_empty_layer_switch(browser, base, data) -> list[str]:

@@ -439,8 +439,17 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   gap and keeps its room, hidden, on the others. The card's hatch words are true of everything hatched
   in view ("No radar data on this map" when a gap and the outside band show together). The hatching
   note steps aside while a town is under it, rather than taking a backing that would hide the town;
-  the legend's keys still name the hatching. The card zooms in 0.05 steps, which lets a 328 px card
+  the legend's keys still name the hatching (on the folded layout of very short or narrow screens,
+  behind the (i) button, like the source). The card zooms in 0.05 steps, which lets a 328 px card
   show Montana at 5.2 instead of 5.
+- *Review fixes (2026-10-16):* the map fits Montana again only when the screen, a banner, the layer,
+  the 1h/12h timeline or an overlay changes the room, and stops once the viewer moves it in any way.
+  A refit on every change of the legend's height undid every desktop zoom but the wheel's
+  (double-click, the = key and Shift+drag didn't count as a move) and moved the map during playback
+  once the (i) note was open. A basemap name touching a glass panel or the card's caption is hidden:
+  half a name reads as a broken word. The Storm reports card shows no reports banner (the page says
+  it above and below the card); the banner zoomed the card out until the towns piled up. Outside the
+  map's area the toast alone names the nearest town, instead of a chip offering one 450 miles away.
 
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.

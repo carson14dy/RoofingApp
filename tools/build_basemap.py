@@ -38,7 +38,7 @@ Steps
    zoom 6 just north of the border, and at zoom 5 (phones) higher up (see BORDER_STRIP).
 6. The context layer around the box (see CONTEXT), so a phone's map runs edge to edge: Natural
    Earth state and province lines from the same arc split (shared arcs only, so no coastline),
-   simplified to 0.01° and cut out of the box; state abbreviations and cities from zoom 6, placed
+   simplified to 0.01° and cut out of the box; state abbreviations and cities from zoom 5, placed
    after everything else so the layout inside the box stays as it was.
 
 Output (one JSON object, one feature per line so diffs stay readable):
@@ -127,11 +127,12 @@ KX = math.cos(math.radians(47.0))
 # water or roads. West of 122° W would reach the Pacific coast, which lines alone would only imply;
 # 95.2° W stops short of the Lake of the Woods, 60.5° N takes in the 60th-parallel line (at 60.00006 in
 # Natural Earth) and 37.5° N clears the Four Corners parallel, so no edge runs along a border.
-# The names start at zoom 6, like the detailed layer's outer names (WA, OR, Spokane, Rapid City): at a
-# phone's first view (zoom 5.25-5.5, 360-430 px wide) the legend, the buttons, the note line and the
-# timeline cover nearly all of the context, and names at zoom 5 sat under them or ran into the note.
+# The names start at zoom 5, so a phone's first view (zoom 5.25-5.5, 360-430 px wide) has names in the
+# bands above and below Montana, as the reference does. The legend, the buttons, the note line and the
+# timeline cover much of the context there: map.js tidyLabels hides any name that a panel, the card's
+# caption or the note's line would cut.
 CONTEXT = (37.5, -122.0, 60.5, -95.2)            # (s, w, n, e)
-CONTEXT_ZOOM = 6
+CONTEXT_ZOOM = 5
 CONTEXT_REGIONS = ("NV", "UT", "CO", "NE", "KS", "MN", "MB")
 CONTEXT_PLACES = ("Calgary", "Edmonton", "Saskatoon", "Winnipeg", "Salt Lake City", "Casper", "Cheyenne",
                   "Denver", "Bismarck", "Pierre")

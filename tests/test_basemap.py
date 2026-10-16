@@ -6,7 +6,7 @@ Everything runs offline against the committed file: size budget, bounds, the Mon
 all 56 Montana counties in the county lines, the site towns marked in places, coordinates inside the
 padded bounds, valid labels with no NaN, labels that stay clear of the town bubbles, and Canadian
 labels inside what the map's first view shows. The coarse context layer outside the padded bounds
-(state and province lines, a few state and city names from zoom 6) stays out of the box, meets its
+(state and province lines, a few state and city names from zoom 5) stays out of the box, meets its
 lines at the edge and has no loose ends. A few tests also run the tool's geometry helpers (TopoJSON
 decoding, clipping, simplifying) on tiny inputs, and its handling of the download folder.
 
@@ -377,7 +377,8 @@ class Places(unittest.TestCase):
         early = [p for p in self.doc["places"] if not p.get("site") and p["min_zoom"] <= 6]
         self.assertTrue(early)
         self.assertTrue(all(p["rank"] <= 3 for p in early), early)
-        self.assertLessEqual(len([p for p in early if p["min_zoom"] == 5]), 6)
+        in_box = [p for p in early if inside(p["lat"], p["lon"], IMAGE_BOUNDS)]   # context cities: test_names
+        self.assertLessEqual(len([p for p in in_box if p["min_zoom"] == 5]), 6)
 
 
 class Labels(unittest.TestCase):
@@ -557,20 +558,21 @@ class Context(unittest.TestCase):
 
     def test_names(self):
         """The context's state abbreviations and cities: inside their state or province, none twice,
-        and from zoom 6 on. At a phone's first view (zoom 5.25-5.5) the legend, the buttons, the note
-        line and the timeline cover nearly all of the context, and names there sat under them."""
+        and on a phone's first view (zoom 5.25-5.5): the state and province names from zoom 5, the
+        cities by zoom 6 (Winnipeg's name would run past the layer's edge at 5). map.js hides any name
+        that a panel or the note's line would cut."""
         labels = [lab for lab in self.doc["labels"] if not inside(lab["lat"], lab["lon"], IMAGE_BOUNDS)]
         self.assertEqual(sorted(lab["text"] for lab in labels), sorted(CONTEXT_REGIONS))
         for lab in labels:
             s, w, n, e = CONTEXT_REGIONS[lab["text"]]
             self.assertTrue(s <= lab["lat"] <= n and w <= lab["lon"] <= e, lab)
             self.assertEqual(lab["kind"], "region", lab)
-            self.assertGreaterEqual(lab["min_zoom"], 6, lab)
+            self.assertEqual(lab["min_zoom"], 5, lab)
             self.assertNotIn("max_zoom", lab)
         places = [p for p in self.doc["places"] if not inside(p["lat"], p["lon"], IMAGE_BOUNDS)]
         self.assertEqual({p["name"]: p["state"] for p in places}, CONTEXT_PLACES)
         for p in places:
-            self.assertGreaterEqual(p["min_zoom"], 6, p)
+            self.assertLessEqual(p["min_zoom"], 6, p)
             self.assertLessEqual(p["rank"], 3, p)
         names = [p["name"] for p in self.doc["places"]]
         self.assertEqual(len(names), len(set(names)), "a place comes twice")

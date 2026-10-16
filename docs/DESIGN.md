@@ -315,11 +315,15 @@ called a coverage gap. Gaps inside a picture keep the heavier hatch and their ow
 coverage" or "No model data", shown on the frames that have them; on the timeline's other frames the
 row keeps its room, hidden and last, so the legend keeps its height during playback. With both in
 view the note says "Hatched areas have no radar (model) data on this map." and the card "No radar
-(model) data on this map". A basemap name (country, region, water or place, with its dot) under the
-"Map data" link, the note line, the toast or the nearest-town chip is hidden until they or the map
-move; the hatching note itself steps aside while a town's bubble or name is under it (after a zoom,
-a pan or My location, or on a screen too short for Montana), and the legend's keys still name the
-hatching. Names may run off the screen's edge, as in the reference.
+(model) data on this map". A basemap name (country, region, water or place, with its dot) under or
+touching the legend, Close, the right-hand buttons, the timeline, a banner, the card's caption or
+Open map, the "Map data" text, the note line (or beside it on its line), the toast or the
+nearest-town chip is hidden until they or the map move: half a name at a glass panel's edge reads as
+a broken word, and a name on the note's line reads as part of the note; the hatching note itself
+steps aside while a town's bubble or name is under it (after a zoom, a pan or My location, or on a
+screen too short for Montana), and the legend's keys still name the hatching (on the folded layout
+of very short or narrow screens, behind the (i) button, like the source). Names may run off the
+screen's edge, as in the reference.
 
 **States.**
 - Frame: loading (the previous frame stays until the next has loaded) · shown · missing (a gap in the
@@ -331,7 +335,8 @@ hatching. Names may run off the screen's edge, as in the reference.
   unavailable (toast). On a town's bubble the dot gives way to a blue ring on that bubble, so the
   town's number stays readable. That town (bubble and name), or else the dot, is moved clear of the
   legend and the panels. The chip says the distance ("under 1 mi" below a mile); inside the map the
-  same sentence is only read out (polite live region), not shown twice.
+  same sentence is only read out (polite live region), not shown twice. Outside the map's area the
+  toast says so, with the nearest town and its distance; no chip shows.
 - Alerts without an outline (county or zone): one legend row, whatever the Warnings switch says,
   "2 NWS alerts have no outline (county or zone): see List", which opens the List.
 - Sheets: a town sheet pans the map just enough that the town (bubble and name) is clear of the
@@ -348,13 +353,19 @@ hatching. Names may run off the screen's edge, as in the reference.
   what the update is missing. The card has no legend, so the Storm reports page's key names the town
   numbers (NWS forecast temperature; the card shows precipitation, which rings no town) and the
   outlines too, and says alerts without an outline are listed on the Now page; the card's caption
-  counts them on one line ("1 alert has no outline"). The card zooms in steps of 0.05 (the full map
-  in quarters), so a 328 px card shows Montana at 5.2, town names clear, instead of 5.
+  counts them on one line ("1 alert has no outline"). The Storm reports card shows no reports banner:
+  the page says above it when report files didn't load, and below it when a day had no reports. The
+  card zooms in steps of 0.05 (the full map in quarters), so a 328 px card shows Montana at 5.2, town
+  names clear, instead of 5.
 - Fit: Montana sits below the legend on a phone, right of it on a wide or short landscape screen,
   above the note and the timeline. A portrait phone's fit never settles below zoom 5.25, the first
   zoom where every town name clears the other bubbles, unless Montana is wider than the screen there
   (a 320 px phone); a phone too short for it there puts Montana where the panels hide the fewest
-  bubbles.
+  bubbles. The fit is redone when the screen turns or resizes, a banner comes or goes, or another
+  layer, 1h/12h timeline or overlay changes the legend's height (and once more when the fitted view
+  itself brings a key into the legend), until the viewer moves the map in any way (drag, pinch,
+  wheel, double-click or double-tap, Shift+drag, keys); from then on the map stays where they put it.
+  Opening the (i) note doesn't move the map.
 
 **Data contract.** The build writes `data/map.json` (version 1): `built`, `sample`, `tz`,
 `image_bounds` (all frames share one Web-Mercator image box, 43–50.5° N, 118.5–101° W), `view`,

@@ -81,7 +81,7 @@
   var preloaded = {};                            // layer key -> true once its frames are queued
   var renderers = {};
   var alertLayer = null, reportLayer = null, locLayer = null;
-  var sheetState = null;                         // {opener, kind, ll, view, watcher, listScroll, listFocus}
+  var sheetState = null;                         // {opener, kind, ll, town, view, watcher, listScroll, listFocus}
   var sheetOpenedAt = 0;                         // when the sheet last opened from closed (scrim double-click guard)
   var panLimits = null;                          // the map's max bounds, lifted while a sheet is open
   var locState = null;                           // {ll, dot}: the viewer's location once found
@@ -299,8 +299,9 @@
     });
     map.on("dragstart", function () { state.userMoved = true; });
     el.canvas.addEventListener("wheel", function () { state.userMoved = true; }, { passive: true });
-    el.canvas.addEventListener("keydown", function (e) { if (/^Arrow|^[+-]$/.test(e.key)) state.userMoved = true; });
+    el.canvas.addEventListener("keydown", function (e) { if (/^Arrow|^[-+=_]$/.test(e.key)) state.userMoved = true; });
     el.canvas.addEventListener("touchstart", function (e) { if (e.touches.length > 1) state.userMoved = true; }, { passive: true });
+    if (interactive) map.on("dblclick boxzoomstart", function () { state.userMoved = true; });   // double-tap and Shift+drag zooms
     map.on("resize", function () {
       if (data && state.ready && legendFormNow() !== legendForm) renderLegend();   // turned or resized past a breakpoint
       if (!state.userMoved) fitView();
@@ -309,7 +310,7 @@
       if (sheetState) {
         sheetState.resized = true;
         placeSheet();
-        if (sheetState.ll) reveal(sheetState.ll);    // a turn can put the town under the side panel
+        if (sheetState.ll) reveal(sheetState.ll, townExtent(sheetState.town));    // a turn can put the town under the side panel
       }
       tidyLabels();
     });
@@ -330,8 +331,10 @@
       A portrait phone never fits below LABEL_ZOOM unless Montana is wider than the screen there:
       lower, town names run into the other bubbles. Where Montana doesn't fit between the controls
       (at that zoom on a phone, at the minimum zoom on a short landscape screen) it goes where it
-      hides the least of the town bubbles (placeCrowded). */
-  function fitView() {
+      hides the least of the town bubbles (placeCrowded). The new view can bring the hatched band or a
+      ringed town into sight, and its key with it (drawn at moveend, before fitBounds returns): then
+      it fits once more, `again`, for the legend's new height. */
+  function fitView(again) {
     if (!map || !map._viewBounds) return;
     noteFit.legendH = el.legendWrap.offsetHeight;
     if (CARD) { fitCard(); return; }
@@ -356,23 +359,33 @@
       br = [6, bottomPad];
       var z = boundsZoom(vb, sum(tl[1]));
       if (z < LABEL_ZOOM && phoneQuery && phoneQuery.matches && boundsSize(vb, LABEL_ZOOM).x <= vw - 12) z = LABEL_ZOOM;
-      if (boundsSize(vb, z).y > vh - tl[1] - br[1] + 1) placeCrowded(vb, z, tl, br, vw, vh, tlTop);
+      if (boundsSize(vb, z).y > vh - tl[1] - br[1]) placeCrowded(vb, z, tl, br, vw, vh, tlTop);
     }
     map.fitBounds(vb, { paddingTopLeft: tl, paddingBottomRight: br, animate: false });
+    if (!again && el.legendWrap.offsetHeight !== noteFit.legendH) { fitView(true); return; }
     fitMinZoom();
   }
 
-  /** A basemap name (a country, region, water or place name, with its dot) under the "Map data" link,
-      the note line, the toast or the nearest-town chip is hidden until they or the map move: two texts
-      on top of each other read as neither. The legend and the other glass panels hide what is under
-      them anyway, and names may run off the edge as in the reference. Runs after every move and
-      resize, and whenever the note, the legend, the toast or the chip changes. */
+  /** A basemap name (a country, region, water or place name, with its dot) under or touching the
+      legend, Close, the right-hand buttons, the timeline, a banner, the card's caption or Open map,
+      the "Map data" text, the toast or the nearest-town chip, or on the note's line, is hidden until
+      they or the map move: half a name at a panel's edge reads as a broken word, and a name on the
+      note's line reads as part of the note. Names may run off the screen's edge, as in the reference.
+      Runs after every move and resize, and whenever the note, the legend, the toast or the chip
+      changes. */
   function tidyLabels() {
-    if (!map || CARD) return;
+    if (!map) return;
     var boxes = [], link = el.legendWrap.querySelector(".mapdata");
     if (link && link.offsetParent !== null) boxes.push(textBox(link));   // its text, not its 44 px tap area
-    [el.note, el.toast, el.near].forEach(function (x) { if (!x.hidden) boxes.push(x.getBoundingClientRect()); });
-    boxes = boxes.filter(function (b) { return b.width > 2 && b.height > 2; });   // not the toast's empty live region
+    [el.note, el.toast, el.near, el.legend, el.top.querySelector(".close"), el.buttons, el.timeline, el.cardChip, el.cardOpen]
+      .concat([].slice.call(el.banners.children)).forEach(function (x) {
+        if (!x || x.hidden) return;
+        var r = x.getBoundingClientRect(), m = x === el.note ? 24 : 0;   // a name on the note's line reads as part of it
+        boxes.push({ left: r.left - m, right: r.right + m, top: r.top, bottom: r.bottom, width: r.width, height: r.height });
+      });
+    // not the toast's empty live region, nor a panel this view doesn't show (the full map's panels in
+    // the card, the card's caption and Open map on the full map)
+    boxes = boxes.filter(function (b) { return b.width > 2 && b.height > 2; });
     var spans = el.canvas.querySelectorAll(".bm-label span");
     for (var i = 0; i < spans.length; i++) {
       var r = textBox(spans[i]), hide = false;                               // the glyphs, taller than the line
@@ -766,6 +779,7 @@
     state.warnings = on;
     if (alertLayer) { if (on) alertLayer.addTo(map); else alertLayer.remove(); }
     renderKeys();
+    refitForLegend();                // its outline keys come or go
     saveUrl();
   }
 
@@ -779,11 +793,12 @@
     if (!quiet) saveUrl();
   }
 
-  /** When the reports overlay is on: say how many, or that the report files failed. */
+  /** When the reports overlay is on: say that there are none, or that the report files failed (not in
+      the card: the Storm reports page says both above and below it). */
   function renderReportNote() {
     var old = byId("reports-banner");
     if (old) old.remove();
-    if (!state.reports || !data) return;
+    if (!state.reports || !data || CARD) return;   // the Storm reports page says it above and below the card
     var st = data.status && data.status.reports;
     if (st && !st.ok) {
       banner("warn", "<strong>Storm reports didn't all load</strong> (" + esc(st.detail) + "). No report is not \u201cno hail\u201d.", "reports-banner");
@@ -810,8 +825,8 @@
     var pick = full.length ? full : all;              // a mode with frames first; an empty layer keeps its keys
     if (pick.indexOf(state.mode) < 0) state.mode = pick.indexOf("12h") >= 0 ? "12h" : (pick[0] || "12h");
     renderLegend();
-    buildTimeline(keep, opts.first);
-    if (!opts.first) saveUrl();
+    buildTimeline(keep, opts.first);       // draws the keys for the new frames, after the new scale
+    if (!opts.first) { refitForLegend(); saveUrl(); }   // the first time, start() fits
   }
 
   /** Switch 1h / 12h for layers that have both; keep the time when possible. */
@@ -820,6 +835,7 @@
     var keep = state.frames.length ? state.times[state.pos] : null;
     state.mode = mode;
     buildTimeline(keep, false);
+    refitForLegend();                      // the other timeline can bring or drop a key
     saveUrl();
   }
 
@@ -1016,9 +1032,8 @@
       f._failed = !ok;
       app.classList.remove("is-loading");
       showPicture(ok ? f.src : null, { layer: state.layer, kind: f.kind });
-      renderNote();
+      renderAll();                   // the note, keys, slider value and card caption, now it is known whether it loaded
       refitForNote();                // a new layer or mode, or a picture found to have failed
-      if (CARD) renderCardChip();
       if (opts && opts.done) opts.done(ok);
       if (!CARD) preload();          // the rest of this layer, once one of its pictures shows
       continuePlayback();
@@ -1141,7 +1156,7 @@
     if (!(state.playing && document.activeElement === el.range)) {
       el.range.value = String(ms);
       el.range.setAttribute("aria-valuetext", (f.kind === "radar" ? "Radar, " : "Forecast, ") + dayClock(ms) + ", " +
-        sourceWords(f) + nowWords(ms, f));
+        sourceWords(f) + nowWords(ms, f) + (knownFailed(f) ? ". The picture didn't load. This is not an all-clear." : ""));
     }
     var pct = (frac(ms) * 100).toFixed(3) + "%";
     el.fill.style.width = pct;
@@ -1173,7 +1188,8 @@
       "Forecast is not available in some areas"). Plain words; a failure never looks like clear sky.
       The hatching note never prints over a town's bubble or name (after a zoom, a pan or My location,
       or on a screen too short for Montana): it steps aside, and the legend's keys still name the
-      hatching. */
+      hatching (on the folded layout of very short or narrow screens, behind the (i) button, like the
+      source). */
   function renderNote() {
     var warn = noteWarnings(state.pos).join(" "), info = "";
     var f = state.frames[state.pos], k = f && !warn ? hatchKind() : "";
@@ -1265,7 +1281,6 @@
     el.legendNote.textContent = L_.legend_note || "";
     renderKeys();
     tidyLabels();                    // another scale can move the "Map data" link, or resize the legend
-    if (el.legendWrap.offsetHeight !== noteFit.legendH) refitForBanner();
   }
 
   /** Which stop labels fit on a bar `barH` px tall without touching (labels are 12.5 px): the top,
@@ -1318,7 +1333,6 @@
       el.legendKeys.innerHTML = html;
       el.legendKeys._html = html;
       tidyLabels();                            // the "Map data" link under the legend may have moved
-      if (el.legendWrap.offsetHeight !== noteFit.legendH) refitForBanner();   // a taller or shorter legend
     }
   }
 
@@ -1468,6 +1482,7 @@
       var open = !el.legend.classList.contains("show-note");
       el.legend.classList.toggle("show-note", open);
       el.legendInfo.setAttribute("aria-expanded", open ? "true" : "false");
+      tidyLabels();                  // the legend grew or shrank over the names
     });
     el.locateBtn.addEventListener("click", locate);
     el.listBtn.addEventListener("click", function () { openList(el.listBtn); });
@@ -1636,10 +1651,17 @@
     return p;
   }
 
-  /** A banner that came or went (or keys that grew the legend) can cover towns: fit again, unless the
-      viewer has moved the map or a sheet is open. */
+  /** A banner that came or went, or a legend made taller or shorter by another layer, scale or overlay,
+      can cover towns: fit again, unless the viewer has moved the map or a sheet is open. */
   function refitForBanner() {
     if (state.ready && !state.userMoved && !sheetState) fitView();
+  }
+
+  /** Fit again (refitForBanner) when the legend is taller or shorter than at the last fit: another
+      layer, 1h/12h timeline or the Warnings switch can bring or drop keys and scale rows. Not on every
+      change of the keys: they follow the view too, and the map must stay where the viewer put it. */
+  function refitForLegend() {
+    if (el.legendWrap.offsetHeight !== noteFit.legendH) refitForBanner();
   }
 
   /** A warning banner with a Reload button (not in the card, whose page has its own). */
@@ -1751,11 +1773,12 @@
         el.near.textContent = "Nearest town: " + best.name + " \u00b7 " + (miles < 1 ? "under 1 mi" : mi + " mi");
         el.near.setAttribute("data-town", best.slug);
         el.near.setAttribute("aria-label", "Nearest town: " + best.name + ", " + far + ". Open its forecast.");
-        el.near.hidden = false;
+        el.near.hidden = !inside;
         words += " Nearest town: " + best.name + ", " + far + ".";
       }
       // the polite live region: a screen reader hears that it worked; inside the map the chip says
-      // the same on screen, so there the sentence is only read out, not shown twice
+      // the same on screen, so there the sentence is only read out, not shown twice; outside the map
+      // there is no chip, so the toast shows the sentence
       toast(words, inside && !el.near.hidden);
       placeLocDot();
       if (inside) {
@@ -1967,6 +1990,7 @@
     html += '<p><a class="go" href="' + esc(t.url) + '">Full forecast for ' + esc(t.name) + "</a></p>";
     openSheet("town", t.name, html, opener, { back: back });
     sheetState.ll = L.latLng(t.lat, t.lon);
+    sheetState.town = t;
     reveal(sheetState.ll, townExtent(t));
   }
 

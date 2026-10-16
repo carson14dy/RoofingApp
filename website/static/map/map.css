@@ -41,7 +41,7 @@
   --glass-strong: rgba(255, 255, 255, 0.88);
   --ink: var(--m-ink);
   --ink-2: var(--m-grey-2);
-  --ink-sub: #616166;              /* the timeline's time and source line: 4.5:1 over a coloured picture too */
+  --ink-sub: #616166;              /* the timeline's time, source line and hour labels: 4.5:1 over a coloured picture too */
   --ink-3: var(--m-grey-3);
   --hairline: rgba(60, 60, 67, 0.14);
   --fill-ctl: rgba(120, 120, 128, 0.16);
@@ -288,8 +288,8 @@ a { color: inherit; }
 .legend-keys li { display: flex; align-items: center; gap: 6px; }
 .key { flex: none; width: 14px; height: 14px; border-radius: 4px; }
 .key-bubble { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 1px var(--bubble-ring); }
-.key-hatch { background: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 5px); border: 1px solid var(--hairline); }
-.key-hatch-out { background: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 4px); border: 1px solid var(--hairline); }
+.key-hatch { background: repeating-linear-gradient(-45deg, var(--hatch) 0 2px, transparent 2px 5px); border: 1px solid var(--hairline); }
+.key-hatch-out { background: repeating-linear-gradient(-45deg, var(--hatch) 0 1px, transparent 1px 4px); border: 1px solid var(--hairline); }
 .key-ring { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--over); width: 12px; height: 12px; margin: 1px; }
 .key-here { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--loc); width: 12px; height: 12px; margin: 1px; }
 /* alerts with no outline: the row is a button to the List, marked with the List button's lines */
@@ -469,7 +469,7 @@ a { color: inherit; }
 .labels { position: absolute; left: 0; right: 0; top: 24px; height: 18px; }
 .labels span {
   position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap;
-  font-size: 12px; line-height: 18px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums;
+  font-size: 12px; line-height: 18px; font-weight: 600; color: var(--ink-sub); font-variant-numeric: tabular-nums;
 }
 .labels span small { font-size: 0.82em; font-weight: 600; margin-left: 1px; }
 .labels span.now { color: var(--ink); font-weight: 700; }

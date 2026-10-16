@@ -429,13 +429,13 @@
 {"text":"St. Mary Reservoir","lat":49.327,"lon":-113.2072,"kind":"water","min_zoom":9},
 {"text":"Tiber Reservoir","lat":48.3185,"lon":-111.1404,"kind":"water","min_zoom":9},
 {"text":"Warm Springs Reservoir","lat":43.6055,"lon":-118.2294,"kind":"water","min_zoom":9},
-{"text":"NV","lat":39.875,"lon":-116.855,"kind":"region","min_zoom":6},
-{"text":"UT","lat":39.625,"lon":-111.6832,"kind":"region","min_zoom":6},
-{"text":"CO","lat":39.1916,"lon":-105.7386,"kind":"region","min_zoom":6},
-{"text":"NE","lat":41.5502,"lon":-99.8311,"kind":"region","min_zoom":6},
-{"text":"KS","lat":38.7639,"lon":-98.5876,"kind":"region","min_zoom":6},
-{"text":"MN","lat":47.7416,"lon":-96.0455,"kind":"region","min_zoom":6},
-{"text":"MB","lat":54.9244,"lon":-98.4874,"kind":"region","min_zoom":6}
+{"text":"NV","lat":39.875,"lon":-116.855,"kind":"region","min_zoom":5},
+{"text":"UT","lat":39.625,"lon":-111.6832,"kind":"region","min_zoom":5},
+{"text":"CO","lat":39.1138,"lon":-105.6608,"kind":"region","min_zoom":5},
+{"text":"NE","lat":41.5502,"lon":-99.8311,"kind":"region","min_zoom":5},
+{"text":"KS","lat":38.7639,"lon":-98.5876,"kind":"region","min_zoom":5},
+{"text":"MN","lat":47.7416,"lon":-96.0455,"kind":"region","min_zoom":5},
+{"text":"MB","lat":54.9244,"lon":-98.4874,"kind":"region","min_zoom":5}
 ],
 "places":[
 {"name":"Billings","lat":45.7833,"lon":-108.5007,"rank":1,"min_zoom":5,"state":"MT","site":true,"slug":"billings"},
@@ -485,15 +485,15 @@
 {"name":"Thermopolis","lat":43.646,"lon":-108.2147,"rank":4,"state":"WY","min_zoom":7},
 {"name":"Lead","lat":44.3508,"lon":-103.7658,"rank":4,"state":"SD","min_zoom":7},
 {"name":"Wallace","lat":47.4742,"lon":-115.9269,"rank":4,"state":"ID","min_zoom":7},
-{"name":"Denver","lat":39.7411,"lon":-104.986,"rank":2,"state":"CO","min_zoom":6},
-{"name":"Calgary","lat":51.0849,"lon":-114.0819,"rank":2,"state":"AB","min_zoom":6},
-{"name":"Edmonton","lat":53.552,"lon":-113.5019,"rank":2,"state":"AB","min_zoom":6},
-{"name":"Salt Lake City","lat":40.777,"lon":-111.932,"rank":2,"state":"UT","min_zoom":6},
+{"name":"Denver","lat":39.7411,"lon":-104.986,"rank":2,"state":"CO","min_zoom":5},
+{"name":"Calgary","lat":51.0849,"lon":-114.0819,"rank":2,"state":"AB","min_zoom":5},
+{"name":"Edmonton","lat":53.552,"lon":-113.5019,"rank":2,"state":"AB","min_zoom":5},
+{"name":"Salt Lake City","lat":40.777,"lon":-111.932,"rank":2,"state":"UT","min_zoom":5},
 {"name":"Winnipeg","lat":49.883,"lon":-97.166,"rank":2,"state":"MB","min_zoom":6},
-{"name":"Saskatoon","lat":52.17,"lon":-106.67,"rank":2,"state":"SK","min_zoom":6},
-{"name":"Cheyenne","lat":41.14,"lon":-104.8197,"rank":2,"state":"WY","min_zoom":6},
-{"name":"Bismarck","lat":46.8083,"lon":-100.7833,"rank":2,"state":"ND","min_zoom":6},
-{"name":"Casper","lat":42.8469,"lon":-106.3232,"rank":2,"state":"WY","min_zoom":6},
-{"name":"Pierre","lat":44.3683,"lon":-100.3506,"rank":2,"state":"SD","min_zoom":6}
+{"name":"Saskatoon","lat":52.17,"lon":-106.67,"rank":2,"state":"SK","min_zoom":5},
+{"name":"Cheyenne","lat":41.14,"lon":-104.8197,"rank":2,"state":"WY","min_zoom":5},
+{"name":"Bismarck","lat":46.8083,"lon":-100.7833,"rank":2,"state":"ND","min_zoom":5},
+{"name":"Casper","lat":42.8469,"lon":-106.3232,"rank":2,"state":"WY","min_zoom":5},
+{"name":"Pierre","lat":44.3683,"lon":-100.3506,"rank":2,"state":"SD","min_zoom":5}
 ]
 }
