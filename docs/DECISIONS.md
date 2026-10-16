@@ -369,7 +369,7 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   areas without radar coverage are hatched; a failed download puts a sentence on the map; the
   bubbles are the NWS forecast, the coloured fields are the model.
 - *Basemap:* our own vector map (Natural Earth, public domain; Census county lines from us-atlas
-  3.0.1), built by `tools/build_basemap.py` into `static/map/basemap.json` (377 KB, identical bytes on a rerun). The USGS
+  3.0.1), built by `tools/build_basemap.py` into `static/map/basemap.json` (385 KB, identical bytes on a rerun). The USGS
   tiles and the Folium maps are retired from the website; Folium stays in the parked app.
 - *JavaScript (rule 4):* playback, scrubbing, menus, sheets and geolocation can only happen in the
   browser. `static/map/map.js` is vanilla, documented, with no framework and no build step; Python
@@ -399,8 +399,9 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   match), not the spec's mist #eef1f4, and the hatch outside the pictures' box is a hairline (1 px
   every 6 px). With the mist and the old 2.5 px stripes the hatch was the loudest thing on a phone
   (three tones, about 40% of the screen); the reference's "not available" hatch is a faint hairline
-  on white. The band's words say it is outside the map's area, not "no radar coverage": NOAA's
-  files have valid data there (checked against MRMS), the map just doesn't draw it.
+  on white. The band's words say it is outside the map's area ("Outside map area", short enough for
+  one line in a 140 px legend column), not "no radar coverage": NOAA's files have valid data there
+  (checked against MRMS), the map just doesn't draw it.
 - *Cache addresses (2026-10-16):* scripts, stylesheets and the basemap carry `?v=` = their content
   hash, so the 10-minute rebuilds no longer make every visit download about 150 KB of unchanged
   files; `data/map.json` and the map card keep the build minute.
@@ -420,7 +421,26 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   missing (radar, warning outlines, town temperatures) with "This is not an all-clear". The fixed
   caption called a model forecast "the latest NOAA radar estimate" and promised outlines and town
   temperatures that hadn't loaded. The card hides its legend, so the Storm reports page's key also
-  names the town numbers (NWS forecast temperature, ring outside the limits) and the outlines.
+  names the town numbers (NWS forecast temperature) and the outlines, and says where alerts without
+  an outline are listed (the Now page).
+- *Context layer (2026-10-16):* a phone's first view reaches about 39–59.7° N, far past the basemap's
+  padded box (42.5–51° N), so Montana floated on blank paper; the basemap now also carries Natural
+  Earth's state and province lines (0.01°, about 300 points) out to 37.5–60.5° N and 122–95.2° W, east
+  of the Pacific coast so no coastline is implied, with 7 state and province abbreviations and 10
+  cities. The names start at zoom 6: at a phone's first view (zoom 5.25–5.5) the legend, buttons, note
+  line and timeline cover nearly all of that area, and names at zoom 5 sat under them or in the note.
+- *Phone pass (2026-10-16):* every portrait phone gets the two-column legend (keys beside a shorter
+  scale, about 135–170 px tall instead of 270–340), so Montana sits higher and the fit never has to
+  choose between forms; a phone's fit never settles below zoom 5.25 (town names clear) unless Montana
+  is wider than the screen there. The limit ring marks the layer's own limit: temperatures outside
+  40–95 °F on Temperature, gusts of 25 mph on Wind gusts, none on Precipitation (its picture is the
+  rain, not the temperature; DESIGN's layer table gave the ring to Wind gusts). No key comes or goes
+  during playback: the ring key stays for the whole timeline, and the gap key shows on frames with a
+  gap and keeps its room, hidden, on the others. The card's hatch words are true of everything hatched
+  in view ("No radar data on this map" when a gap and the outside band show together). The hatching
+  note steps aside while a town is under it, rather than taking a backing that would hide the town;
+  the legend's keys still name the hatching. The card zooms in 0.05 steps, which lets a 328 px card
+  show Montana at 5.2 instead of 5.
 
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.

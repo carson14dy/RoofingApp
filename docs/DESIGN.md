@@ -277,7 +277,7 @@ in the Livingston corridor (Wind gusts layer, the 25 mph ring on the bubbles); a
 **Layout.** Full screen (100dvh, safe areas respected).
 | Region | Contents |
 |---|---|
-| Top left | Close (back to Now); the legend for the active layer with its note and a "Map data" link |
+| Top left | Close (back to Now); the legend for the active layer with its note and a "Map data" link (on a portrait phone the keys sit beside a shorter scale, "Map data" in the title row: about 135–170 px tall instead of about 270–340) |
 | Top right | Layers (Precipitation, Temperature, Wind gusts; Warnings and Storm reports toggles), My location, List (every alert, including those without an outline, then every town) |
 | Map | White vector basemap; the active layer's frame; warning outlines; storm reports; town bubbles |
 | Bottom | Timeline: play/pause, "Radar"/"Forecast" with time and source, "1h | 12h", scrubber with a Now tick |
@@ -286,9 +286,12 @@ in the Livingston corridor (Wind gusts layer, the 25 mph ring on the bubbles); a
 **Layers and timelines.**
 | Layer | Before now | After now | Bubble value |
 |---|---|---|---|
-| Precipitation | MRMS radar estimate, every 10 min for the past hour | HRRR: 15-min steps for the next hour (1h) or hourly to 12 h (12h) | NWS temperature |
-| Temperature | — | HRRR 2 m temperature, hourly to 12 h | NWS temperature |
+| Precipitation | MRMS radar estimate, every 10 min for the past hour | HRRR: 15-min steps for the next hour (1h) or hourly to 12 h (12h) | NWS temperature; no ring |
+| Temperature | — | HRRR 2 m temperature, hourly to 12 h | NWS temperature; ring below 40 °F or above 95 °F |
 | Wind gusts | — | HRRR surface gusts, hourly to 12 h | NWS gusts; ring at the 25 mph limit |
+
+A ring's key stays for the whole timeline when any of its hours rings a town in sight, so the legend
+never changes height during playback.
 
 **Colour.** Precipitation by rate as liquid water, using the American Meteorological Society's
 rainfall-rate classes: light under 0.1 in/h, moderate 0.1–0.3 in/h, heavy 0.3–2 in/h, extreme over
@@ -299,16 +302,23 @@ through blue, yellow at the 25 mph limit, orange, red and purple. No-coverage ha
 **Basemap.** White land, Montana slightly brighter than its neighbours, thin grey state and province
 lines, faint county lines and interstates from zoom 7, pale-blue lakes and rivers, grey uppercase
 region names, dark town names with a white halo. Dark mode inverts to charcoal. Built once from
-Natural Earth and Census lines; no tile service.
+Natural Earth and Census lines; no tile service. Past the padded box a coarse context layer runs the
+state and province lines out to 37.5–60.5° N and 122–95.2° W (east of the Pacific coast), with state
+and province abbreviations and ten cities from zoom 6, so a phone's map runs edge to edge like the reference; it
+draws no land, water or roads, and the hatch still marks it outside the map's area.
 Past the basemap's padded box the page is the neighbours' land colour (#fafafa, dark #1b1e22), not
 a third grey: the hatch outside the pictures' box (43–50.5° N) is a hairline, 1 px every 6 px
 (`--hatch-out`; about the same weight in dark mode), like the reference's faint "not available"
-hatch on white. Its words are "Outside the map's area" and "Hatched areas are outside this map's
-area.": NOAA has data there, the map just doesn't draw it, so it is never called a coverage gap. Gaps
-inside a picture keep the heavier hatch and their own key, "No radar coverage" or "No model data",
-shown for the whole timeline when any frame has one (the legend keeps its height during playback);
-with both in view the note says "Hatched areas have no radar (model) data on this map." A country or region
-name under the "Map data" link or the note line is hidden until the map moves; names may run off the
+hatch on white. Its words are "Outside map area" (legend key and card) and "Hatched areas are
+outside this map's area." (note): NOAA has data there, the map just doesn't draw it, so it is never
+called a coverage gap. Gaps inside a picture keep the heavier hatch and their own key, "No radar
+coverage" or "No model data", shown on the frames that have them; on the timeline's other frames the
+row keeps its room, hidden and last, so the legend keeps its height during playback. With both in
+view the note says "Hatched areas have no radar (model) data on this map." and the card "No radar
+(model) data on this map". A basemap name (country, region, water or place, with its dot) under the
+"Map data" link, the note line, the toast or the nearest-town chip is hidden until they or the map
+move; the hatching note itself steps aside while a town's bubble or name is under it (after a zoom,
+a pan or My location), and the legend's keys still name the hatching. Names may run off the
 screen's edge, as in the reference.
 
 **States.**
@@ -319,7 +329,9 @@ screen's edge, as in the reference.
 - Page: fresh · older than 25 minutes (banner asks to reload) · sample (banner on every view).
 - Location: off · locating · shown with accuracy ring and nearest town (announced politely) ·
   unavailable (toast). On a town's bubble the dot gives way to a blue ring on that bubble, so the
-  town's number stays readable.
+  town's number stays readable. That town (bubble and name), or else the dot, is moved clear of the
+  legend and the panels. The chip says the distance ("under 1 mi" below a mile); inside the map the
+  same sentence is only read out (polite live region), not shown twice.
 - Alerts without an outline (county or zone): one legend row, whatever the Warnings switch says,
   "2 NWS alerts have no outline (county or zone): see List", which opens the List.
 - Sheets: a town sheet pans the map just enough that the town (bubble and name) is clear of the
@@ -334,7 +346,14 @@ screen's edge, as in the reference.
   same data (`build.py` `map_card`): the Now page's caption and frame title name the picture the
   card opens on (the radar estimate, or the model forecast and its time when there is no radar) and
   what the update is missing. The card has no legend, so the Storm reports page's key names the town
-  numbers (NWS forecast temperature, ring outside the limits) and the outlines too.
+  numbers (NWS forecast temperature; the card shows precipitation, which rings no town) and the
+  outlines too, and says alerts without an outline are listed on the Now page; the card's caption
+  counts them on one line ("1 alert has no outline"). The card zooms in steps of 0.05 (the full map
+  in quarters), so a 328 px card shows Montana at 5.2, town names clear, instead of 5.
+- Fit: Montana sits below the legend on a phone, right of it on a wide or short landscape screen,
+  above the note and the timeline. A portrait phone's fit never settles below zoom 5.25, the first
+  zoom where every town name clears the other bubbles, unless Montana is wider than the screen there
+  (320 px); a phone too short for it there puts Montana where the panels hide the fewest bubbles.
 
 **Data contract.** The build writes `data/map.json` (version 1): `built`, `sample`, `tz`,
 `image_bounds` (all frames share one Web-Mercator image box, 43–50.5° N, 118.5–101° W), `view`,
