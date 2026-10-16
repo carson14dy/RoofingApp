@@ -30,8 +30,11 @@ order.
 | Tests | 157 website tests (53 pages and map data, 69 radar and model frames, 35 base map and label layout) alongside the app's tests; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption) | — |
 
 ## Next, in priority order
-1. **Go live.** Settings → Pages → Build and deployment → Source: **GitHub Actions**; merge the
-   branch; open Actions → **Website** → the first run's summary (every source loaded, counts
+1. **Go live.** PR #3 is merged; its first deployment (run 38933159167) failed with Pages disabled.
+   The publication repair rejects failed/invalid Pages lookups instead of attempting deployment.
+   Settings → Pages → Build and deployment → Source: **GitHub Actions** still needs an owner:
+   the repair environment's Pages API request returned Forbidden. Then run Actions → **Website**
+   → **Run workflow** on `main`; open the run's summary (every source loaded, counts
    plausible); open the site on a phone. Done when two scheduled runs in a row publish.
 2. **Feedback week.** Carson and a crew lead use it daily. Record what they look for and can't
    find; run the first-click and timing checks in `docs/DESIGN.md` section 1. Open the map on an

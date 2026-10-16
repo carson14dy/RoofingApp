@@ -21,6 +21,7 @@ on:
       - "tests/test_site.py"
       - "tests/test_gridded.py"
       - "tests/test_basemap.py"
+      - "tests/test_website_workflow.py"
       - "tools/**"
       - ".github/workflows/website.yml"
 
@@ -47,10 +48,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           pages_url=""
+          publish=false
           if [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            pages_url=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .html_url 2>/dev/null || true)
+            if candidate=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .html_url) &&
+               [[ "$candidate" =~ ^https://[[:alnum:]][[:alnum:].-]*(/[^[:space:]]*)?$ ]]; then
+              pages_url="$candidate"
+              publish=true
+            else
+              echo '::warning::Pages lookup failed or returned no valid HTTPS URL. Check Settings > Pages > Build and deployment > Source: GitHub Actions. No deployment will be attempted.'
+            fi
           fi
-          if [ -n "$pages_url" ]; then publish=true; else publish=false; fi
           # A schedule tick with nothing to publish has nothing to do.
           if [ "$publish" = false ] && [ "$GITHUB_EVENT_NAME" = schedule ]; then run=false; else run=true; fi
           {
@@ -74,7 +81,7 @@ jobs:
 
       - name: Website tests (offline)
         if: steps.plan.outputs.run == 'true'
-        run: python -m unittest tests.test_site tests.test_gridded tests.test_basemap
+        run: python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_website_workflow
 
       - name: Build from live data
         if: steps.plan.outputs.run == 'true'
