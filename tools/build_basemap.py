@@ -128,20 +128,29 @@ TOWN_LABEL_W = {"Billings": 51.8, "Bozeman": 61.5, "Butte": 38.7, "Glasgow": 57.
 GAP = 3.0                                           # px kept clear between boxes
 LABEL_GAP = 28.0                                    # px between two text labels, so "CANADA" and "SK" read apart
 
-# Region and country labels: text, kind, the land abbrevs the label must sit inside, min_zoom, max_zoom hint.
+# The map opens on Montana, fitted between the legend, the buttons and the timeline (map.js fitView),
+# so the first view shows only a strip of Canada along the border: on a wide screen it reaches just
+# 49.2-49.3° N (measured in Chromium at 1440x789, 1920x937 and 1920x1080 with no banner), and a phone
+# starts at about 116.5° W and ends at about 103.4° W. The Canadian labels are placed in this strip,
+# as far south as they fit, or the first view cuts them off at the top or the sides.
+BORDER_STRIP = (IMG[0], -116.0, 49.45, -104.1)    # (s, w, n, e)
+
+# Region and country labels: text, kind, the land abbrevs the label must sit inside, min_zoom, max_zoom
+# hint, and where: "centre" (near the area's centroid with room around it) or "border" (in BORDER_STRIP,
+# as far south as it fits; anywhere in the area if it does not fit there).
 AREA_LABELS = [
-    ("MONTANA", "region-main", ("MT",), 5, 7),
-    ("CANADA", "country", ("BC", "AB", "SK", "MB"), 5, None),
-    ("UNITED STATES", "country", ("ID", "WY"), 5, 6),
-    ("ID", "region", ("ID",), 5, None),
-    ("WY", "region", ("WY",), 5, None),
-    ("ND", "region", ("ND",), 5, None),
-    ("SD", "region", ("SD",), 5, None),
-    ("AB", "region", ("AB",), 5, None),
-    ("SK", "region", ("SK",), 5, None),
-    ("BC", "region", ("BC",), 5, None),
-    ("WA", "region", ("WA",), 6, None),
-    ("OR", "region", ("OR",), 6, None),
+    ("MONTANA", "region-main", ("MT",), 5, 7, "centre"),
+    ("CANADA", "country", ("BC", "AB", "SK", "MB"), 5, None, "border"),
+    ("UNITED STATES", "country", ("ID", "WY"), 5, 6, "centre"),
+    ("ID", "region", ("ID",), 5, None, "centre"),
+    ("WY", "region", ("WY",), 5, None, "centre"),
+    ("ND", "region", ("ND",), 5, None, "centre"),
+    ("SD", "region", ("SD",), 5, None, "centre"),
+    ("AB", "region", ("AB",), 5, None, "border"),
+    ("SK", "region", ("SK",), 5, None, "border"),
+    ("BC", "region", ("BC",), 5, None, "border"),
+    ("WA", "region", ("WA",), 6, None, "centre"),
+    ("OR", "region", ("OR",), 6, None, "centre"),
 ]
 NAME_FIXES = {"Coeur D'Alene Lake": "Coeur d'Alene Lake", "Pend Orielle": "Pend Oreille"}
 
@@ -869,7 +878,9 @@ def place_text(np, text, kind, rings, min_zoom, obstacles, *, inside_box: bool, 
     """Best centre for a label inside `rings`, from a grid of candidates: on the base map and clear of
     every obstacle at every zoom from min_zoom to 11 (a max_zoom hint is not relied on), the whole
     box inside the area (when inside_box) at zoom max(min_zoom, 6); then the most room (capped at
-    `cap` px), then nearest the area centroid ("centroid") or farthest from the shore ("pole")."""
+    `cap` px), then nearest the area centroid ("centroid"); or farthest from the shore ("pole"); or
+    farthest south, then nearest the centroid's longitude ("south", for a label kept next to the
+    border on its north side)."""
     s, w, n, e = bbox([p for r in rings for p in r])
     s, w, n, e = max(s, IMG[0]), max(w, IMG[1]), min(n, IMG[2]), min(e, IMG[3])
     steps = 90
@@ -916,12 +927,27 @@ def place_text(np, text, kind, rings, min_zoom, obstacles, *, inside_box: bool, 
         clear = np.minimum(clear, np.maximum(0, edge - lw / 2))
     if prefer == "pole":
         key = np.lexsort((LON, LAT, -edge, ~feasible))
+    elif prefer == "south":
+        c = _centroid(rings, zc) or (XY[:, 0].mean(), XY[:, 1].mean())
+        key = np.lexsort((LON, np.abs(XY[:, 0] - c[0]), LAT, ~feasible))
     else:
         c = _centroid(rings, zc) or (XY[:, 0].mean(), XY[:, 1].mean())
         dist = np.hypot(XY[:, 0] - c[0], XY[:, 1] - c[1])
         key = np.lexsort((LON, LAT, dist, -np.round(np.minimum(clear, cap)), ~feasible))
     i = key[0]
     return (round(float(LAT[i]), DECIMALS), round(float(LON[i]), DECIMALS)), None
+
+
+def _place_area_label(np, text, kind, area, first_zoom, obstacles, prefer):
+    """A region or country label in `area` at the first zoom from first_zoom to 7 where it fits:
+    ((lat, lon), zoom, None), or (None, None, why not)."""
+    why = "no zoom tried"
+    for z in range(first_zoom, 8):
+        spot, why = place_text(np, text, kind, area, z, obstacles, inside_box=True, prefer=prefer,
+                               cap=10.0 if kind == "region-main" else 26.0)
+        if spot:
+            return spot, z, None
+    return None, None, why
 
 
 def make_labels_and_places(land, lakes, towns, sites, others, log):
@@ -953,22 +979,24 @@ def make_labels_and_places(land, lakes, towns, sites, others, log):
                 obstacles.add(z, text_box(lab, z), lab["text"], LABEL_GAP)
                 place_obstacles.add(z, text_box(lab, z), lab["text"])
 
-    for text, kind, abbrevs, mz, maxz in AREA_LABELS:
+    for text, kind, abbrevs, mz, maxz, where in AREA_LABELS:
         rings = _rings_of(land, abbrevs)
         if not rings:
             log.append(f"label {text}: region not in the map")
             continue
-        spot, why = None, None
-        for z in range(mz, 8):
-            spot, why = place_text(np, text, kind, rings, z, obstacles, inside_box=True, prefer="centroid",
-                                   cap=10.0 if kind == "region-main" else 26.0)
-            if spot:
-                mz = z
-                break
+        spot = None
+        if where == "border":
+            strip = [r for r in (clip_ring(ring, BORDER_STRIP) for ring in rings) if r]
+            spot, z, why = (_place_area_label(np, text, kind, strip, mz, obstacles, "south") if strip
+                            else (None, None, "no part of the area is in it"))
+            if not spot:
+                log.append(f"label {text}: no room in the border strip ({why}), placed in the whole area")
+        if not spot:
+            spot, z, why = _place_area_label(np, text, kind, rings, mz, obstacles, "centroid")
         if not spot:
             log.append(f"label {text}: not placed ({why})")
             continue
-        lab = {"text": text, "lat": spot[0], "lon": spot[1], "kind": kind, "min_zoom": mz}
+        lab = {"text": text, "lat": spot[0], "lon": spot[1], "kind": kind, "min_zoom": z}
         if maxz is not None:
             lab["max_zoom"] = maxz
         commit(lab)
