@@ -51,7 +51,9 @@ RADAR_FRAMES = 7                          # newest file and every 10 minutes bac
 RADAR_STEP = timedelta(minutes=10)
 RADAR_TOLERANCE = timedelta(minutes=4)    # a target without a file this close is skipped
 RADAR_STALE = timedelta(minutes=30)       # newest file older than this: status not ok
-LIST_BACK = timedelta(hours=3)            # how far back the radar file list looks
+LIST_BACK = timedelta(hours=3)            # newest file older than this: no radar frames at all
+# The file list reaches back to the oldest frame of a newest file LIST_BACK old, within the tolerance.
+LIST_SPAN = LIST_BACK + (RADAR_FRAMES - 1) * RADAR_STEP + RADAR_TOLERANCE
 HRRR_RUNS_TRIED = 4                       # newest run hours tried, newest first
 FORECAST_HOURS = 12
 QUARTER_HOURS = 4
@@ -115,8 +117,16 @@ def floor_time(dt: datetime, minutes: int) -> datetime:
     return dt - timedelta(minutes=(dt.hour * 60 + dt.minute) % minutes)
 
 
-def frame_src(layer: str, valid: datetime) -> str:
-    return f"{FRAME_DIR}/{layer}-{valid.astimezone(UTC):%Y%m%d%H%M}.png"
+def frame_src(layer: str, valid: datetime, run: datetime | None = None) -> str:
+    """Frame file, relative to the site root: layer and valid time (UTC), and for model frames the
+    run hour too ("temp-202610160000-r2026101521.png"). A name must never stand for two different
+    pictures: GitHub Pages lets browsers reuse a file for 10 minutes, and each hourly HRRR run
+    redraws the same valid times, so without the run a reload could pair cached pictures from the
+    old run with the new run's label. A radar frame's MRMS file never changes, so its time is enough."""
+    name = f"{layer}-{valid.astimezone(UTC):%Y%m%d%H%M}"
+    if run is not None:
+        name += f"-r{run.astimezone(UTC):%Y%m%d%H}"
+    return f"{FRAME_DIR}/{name}.png"
 
 
 def _hex(colour: str) -> tuple[int, int, int]:
@@ -465,8 +475,9 @@ def decode_hrrr(data: bytes, layer: str, valid: datetime) -> tuple[np.ndarray, d
 # ---------------------------------------------------------------- MRMS file list and frame choice
 
 def mrms_list_urls(now: datetime) -> list[str]:
-    """S3 listings for the last LIST_BACK hours: today's folder, and yesterday's near 00 UTC."""
-    start = now.astimezone(UTC) - LIST_BACK
+    """S3 listings covering LIST_SPAN: today's folder, and yesterday's when the span reaches back
+    past 00 UTC. One extra minute because start-after skips a file named exactly at the start."""
+    start = now.astimezone(UTC) - LIST_SPAN - timedelta(minutes=1)
     urls = []
     for day in sorted({start.date(), now.astimezone(UTC).date()}):
         prefix = f"{MRMS_PREFIX}{day:%Y%m%d}/"
@@ -651,7 +662,7 @@ def live_radar(get, now: datetime, grids: _Grids) -> tuple[list[dict], dict, dat
         files = list_radar(get, now)
     except Exception as e:  # noqa: BLE001 - never raise to the build
         return [], {"label": label, "ok": False, "detail": _problem(e)}, None
-    if not files:
+    if not files or now - files[-1][0] > LIST_BACK:     # older files are listed only for the frames
         return [], {"label": label, "ok": False,
                     "detail": f"no radar files in the last {int(LIST_BACK.total_seconds() // 3600)} hours"}, None
     picked, skipped = pick_radar(files)
@@ -675,7 +686,7 @@ def live_radar(get, now: datetime, grids: _Grids) -> tuple[list[dict], dict, dat
         frames.append({"time": src._iso(t), "kind": "radar", "src": frame_src("precip", t),
                        "source": RADAR_SOURCE, "nodata": nodata, "_png": png})
     t0 = picked[-1][0]
-    detail = f"{len(frames)} frames, latest {_hm(t0)}"
+    detail = f"{len(frames)} frame{'' if len(frames) == 1 else 's'}, latest {_hm(t0)}"
     if skipped:
         detail += f" (no file near {', '.join(_hm(s) for s in skipped)})"
     age = now - t0
@@ -734,7 +745,7 @@ def live_forecast(get, now: datetime, anchor: datetime, grids: _Grids) -> tuple[
         except Exception as e:  # noqa: BLE001
             errors[layer] = f"the model field for {_hm(valid)} couldn't be read ({_problem(e)})"
             continue
-        frames[layer].append({"time": src._iso(valid), "kind": "forecast", "src": frame_src(layer, valid),
+        frames[layer].append({"time": src._iso(valid), "kind": "forecast", "src": frame_src(layer, valid, run),
                               "source": MODEL_SOURCE, "run": src._iso(run),
                               "lead_min": int((valid - run) / timedelta(minutes=1)), "nodata": nodata, "_png": png})
     for layer in errors:
@@ -926,7 +937,7 @@ def sample_layers(now: datetime, grids: _Grids) -> tuple[list[dict], dict, dict,
             if field.shape[1] != WIDTHS[layer]:
                 field = _resample(field, WIDTHS[layer])
             png, nodata = render(field, layer)
-            forecast[layer].append({"time": src._iso(v), "kind": "forecast", "src": frame_src(layer, v),
+            forecast[layer].append({"time": src._iso(v), "kind": "forecast", "src": frame_src(layer, v, run),
                                     "source": SAMPLE_MODEL_SOURCE, "run": src._iso(run),
                                     "lead_min": int((v - run) / timedelta(minutes=1)), "nodata": nodata,
                                     "_png": png})

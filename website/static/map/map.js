@@ -146,6 +146,7 @@
       whenEl.textContent = "Map data unavailable";
       srcEl.textContent = "";
       el.title.textContent = "No data";
+      app.classList.add("no-data");      // CSS hides the legend scale and the controls that need data
       return;
     }
     noteLastKnownAlerts();
@@ -571,9 +572,11 @@
     return clamp((ms - state.times[0]) / (state.times[n - 1] - state.times[0]), 0, 1);
   }
 
-  /** The "Now" time on the track: the newest radar frame (the build's "now"), kept inside the track. */
+  /** The "Now" time on the track: the newest radar frame (the build's "now"), or the build time when
+      the radar is stale (its newest frame is then not "now"); kept inside the track. */
   function nowMs() {
-    var t = Date.parse(data.now);
+    var radar = data.status && data.status.radar;
+    var t = Date.parse(radar && radar.ok === false ? data.built : data.now);
     if (!state.times.length) return t;
     return clamp(t, state.times[0], state.times[state.times.length - 1]);
   }
@@ -853,8 +856,8 @@
 
   /** What the orange ring means for the layer on screen. */
   function ringWords() {
-    if (state.layer === "wind") return "Gusts " + limits.gust_mph + " mph or more";
-    return "Under " + limits.cold_f + " \u00b0F or over " + limits.hot_f + " \u00b0F";
+    if (state.layer === "wind") return "Gusts " + limits.gust_mph + "\u00a0mph or more";
+    return "Below " + limits.cold_f + "\u00a0\u00b0F or above " + limits.hot_f + "\u00a0\u00b0F";
   }
 
   /** The layer menu's swatches use each layer's own legend colours (built by Python). */
@@ -932,6 +935,10 @@
     r.addEventListener("keydown", onRangeKey);
 
     el.layersBtn.addEventListener("click", function () { toggleLayers(el.layers.hidden); });
+    el.layers.addEventListener("focusout", function (e) {      // Tab out of the menu closes it
+      var to = e.relatedTarget;
+      if (to && !el.layers.contains(to) && to !== el.layersBtn) toggleLayers(false);
+    });
     el.layers.addEventListener("change", function (e) {
       if (e.target.name === "layer") setLayer(e.target.value);
       else if (e.target === el.warnings) setWarnings(el.warnings.checked);
@@ -998,6 +1005,7 @@
 
   /** Page keys: Escape closes the menu or sheet; Space plays; arrows step (outside text fields). */
   function onKey(e) {
+    if (CARD) return;
     if (e.key === "Escape") {
       if (!el.layers.hidden) { e.preventDefault(); toggleLayers(false, true); return; }
       if (sheetState) { e.preventDefault(); closeSheet(); return; }
@@ -1148,7 +1156,7 @@
     el.sheet.className = "glass sheet sheet-" + kind;
     el.sheetBack.hidden = !opts.back;
     el.sheetTitle.textContent = title;
-    el.sheetBody.innerHTML = html;
+    el.sheetBody.innerHTML = (data && data.sample ? '<p class="sample-tag">Sample data: invented to review the layout. It is not weather.</p>' : "") + html;
     el.sheetBody.scrollTop = 0;
     el.sheet.hidden = false;
     el.scrim.hidden = false;

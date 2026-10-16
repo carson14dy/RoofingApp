@@ -4,9 +4,11 @@ Lambert projection, the image grid, colours and legends, the sample build and fa
 
 Offline: no network and no pygrib. The projection is checked against reference points captured
 from a real HRRR grid with pygrib's latlons() (run 2026-10-15 21z); where a test needs downloaded
-fields, GRIB decoding is swapped for fakes that return small grids.
+fields, GRIB decoding is swapped for fakes that return small grids. The decoders themselves run
+against a stand-in pygrib that hands back the keys of real MRMS and HRRR messages.
 """
 
+import gzip
 import io
 import json
 import math
@@ -15,6 +17,7 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 from urllib.parse import parse_qs, urlsplit
 
@@ -42,6 +45,19 @@ MRMS_GRID = {"ni": 7000, "nj": 3500, "lat1": 54.995, "lon1": 230.005, "di": 0.01
              "j_pos": False, "i_neg": False}
 MRMS_REF = [(0, 0, 54.995, -129.995), (3499, 6999, 20.005, -60.005), (600, 1500, 48.995, -114.995),
             (1000, 2600, 44.995, -103.995)]
+# The keys gridded.py reads, as real messages carry them: an MRMS PrecipRate file for 2026-10-15
+# 22:56 UTC and HRRR PRATE from run 21z valid 22z (pygrib gives the scan flags as 0/1 and
+# validityTime as HHMM).
+MRMS_KEYS = {"discipline": 209, "parameterCategory": 6, "parameterNumber": 1, "gridType": "regular_ll",
+             "validityDate": 20261015, "validityTime": 2256, "Ni": 7000, "Nj": 3500,
+             "latitudeOfFirstGridPointInDegrees": 54.995, "longitudeOfFirstGridPointInDegrees": 230.005,
+             "iDirectionIncrementInDegrees": 0.01, "jDirectionIncrementInDegrees": 0.01,
+             "jScansPositively": 0, "iScansNegatively": 0}
+HRRR_KEYS = {"discipline": 0, "parameterCategory": 1, "parameterNumber": 7, "gridType": "lambert",
+             "validityDate": 20261015, "validityTime": 2200, "shapeOfTheEarth": 6, "Nx": 1799, "Ny": 1059,
+             "latitudeOfFirstGridPointInDegrees": 21.138123, "longitudeOfFirstGridPointInDegrees": 237.280472,
+             "LoVInDegrees": 262.5, "Latin1InDegrees": 38.5, "Latin2InDegrees": 38.5, "DxInMetres": 3000.0,
+             "DyInMetres": 3000.0, "jScansPositively": 1, "iScansNegatively": 0}
 
 # Lines from a real wrfsfcf14 .idx (run 2026-10-15 21z), including its last record.
 IDX = """1:0:d=2026101521:REFC:entire atmosphere:14 hour fcst:
@@ -83,6 +99,21 @@ def every_2_min(first: datetime, last: datetime, skip=()):
             out.append((t, mrms_key(t)))
         t += timedelta(minutes=2)
     return out
+
+
+def grib_blob(body: bytes = b"\x00" * 20) -> bytes:
+    """A minimal well-formed GRIB2 message: 'GRIB', edition 2, total length, body, '7777'."""
+    return b"GRIB\x00\x00\x00\x02" + (16 + len(body) + 4).to_bytes(8, "big") + body + b"7777"
+
+
+class FakeMsg:
+    """Just enough of a pygrib message: keys by name, and .values."""
+
+    def __init__(self, keys, values=None):
+        self.keys, self.values = dict(keys), values
+
+    def __getitem__(self, key):
+        return self.keys[key]
 
 
 def png_arrays(data: bytes):
@@ -128,21 +159,25 @@ class RadarFiles(unittest.TestCase):
         self.assertEqual(g.list_radar(get, NOW), a + b)
         self.assertIn("continuation-token=1x%2FY%2Bz", seen[1])
 
-    def test_list_requests_look_back_three_hours(self):
+    def test_list_requests_reach_the_frames_of_a_three_hour_old_file(self):
+        # The newest file may be 3 hours old and its oldest frame is an hour before that, give or
+        # take 4 minutes: 4 h 04 min, and a minute more because start-after skips the file it names.
         (url,) = g.mrms_list_urls(NOW)
         q = parse_qs(urlsplit(url).query)
         self.assertTrue(url.startswith(g.MRMS + "?list-type=2"))
         self.assertEqual(q["prefix"], ["CONUS/PrecipRate_00.00/20261014/"])
-        self.assertEqual(q["start-after"], [mrms_key(datetime(2026, 10, 14, 12, 0, tzinfo=UTC))])
+        self.assertEqual(q["start-after"], [mrms_key(datetime(2026, 10, 14, 10, 55, tzinfo=UTC))])
 
     def test_near_midnight_yesterday_is_listed_too(self):
         urls = g.mrms_list_urls(datetime(2026, 10, 15, 0, 30, tzinfo=UTC))
         self.assertEqual(len(urls), 2)
         first, second = (parse_qs(urlsplit(u).query) for u in urls)
         self.assertEqual(first["prefix"], ["CONUS/PrecipRate_00.00/20261014/"])
-        self.assertEqual(first["start-after"], [mrms_key(datetime(2026, 10, 14, 21, 30, tzinfo=UTC))])
+        self.assertEqual(first["start-after"], [mrms_key(datetime(2026, 10, 14, 20, 25, tzinfo=UTC))])
         self.assertEqual(second["prefix"], ["CONUS/PrecipRate_00.00/20261015/"])
         self.assertNotIn("start-after", second)        # would skip the 00:00:00 file
+        self.assertEqual(len(g.mrms_list_urls(datetime(2026, 10, 15, 4, 4, tzinfo=UTC))), 2)
+        self.assertEqual(len(g.mrms_list_urls(datetime(2026, 10, 15, 4, 5, tzinfo=UTC))), 1)
 
     def test_seven_frames_ten_minutes_apart_ending_at_the_newest_file(self):
         t0 = datetime(2026, 10, 14, 14, 56, tzinfo=UTC)
@@ -252,8 +287,7 @@ class ModelFiles(unittest.TestCase):
         self.assertAlmostEqual(float(g.CONVERT["wind"](np.float32(10.0))), 22.37, places=2)
 
     def test_cut_short_or_foreign_downloads_are_refused_before_decoding(self):
-        body = b"\x00" * 20
-        msg = b"GRIB\x00\x00\x00\x02" + (16 + len(body) + 4).to_bytes(8, "big") + body + b"7777"
+        msg = grib_blob()
         self.assertEqual(g.grib_message(msg + b"GRIB-next"), msg)
         with self.assertRaisesRegex(ValueError, "cut short"):
             g.grib_message(msg[:-10])
@@ -261,6 +295,111 @@ class ModelFiles(unittest.TestCase):
             g.grib_message(b"<Error>AccessDenied</Error>")
         with self.assertRaisesRegex(ValueError, "GRIB2"):
             g.grib_message(b"GRIB\x00\x00\x00\x01" + msg[8:])
+
+
+# ---------------------------------------------------------------- GRIB decoding, with a stand-in pygrib
+
+class GribDecoding(unittest.TestCase):
+    """decode_mrms and decode_hrrr with pygrib swapped for a stand-in that returns one FakeMsg, so the
+    field, grid and time checks, the masked-to-NaN fill and the unit conversions run offline."""
+
+    def setUp(self):
+        self.got, self.msg = [], None            # bytes handed to fromstring(); the message it returns
+
+        def fromstring(data):
+            self.got.append(bytes(data))
+            return self.msg
+
+        p = mock.patch.dict(sys.modules, {"pygrib": SimpleNamespace(fromstring=fromstring)})
+        p.start()
+        self.addCleanup(p.stop)
+
+    def message(self, keys, values=None, **changes):
+        self.msg = FakeMsg({**keys, **changes}, np.zeros((2, 3)) if values is None else values)
+
+    def test_hrrr_fields_are_converted_and_masked_cells_are_missing(self):
+        valid = datetime(2026, 10, 15, 22, tzinfo=UTC)
+        cases = {"precip": ((0, 1, 7), 1 / 3600, 1.0),      # kg m-2 s-1 -> mm/h
+                 "temp": ((0, 0, 0), 273.15, 32.0),         # K -> °F
+                 "wind": ((0, 2, 22), 10.0, 22.369)}        # m/s -> mph
+        for layer, ((d, c, n), raw, shown) in cases.items():
+            values = np.ma.masked_array(np.full((2, 3), raw), mask=[[False, False, True], [False] * 3])
+            self.message(HRRR_KEYS, values, discipline=d, parameterCategory=c, parameterNumber=n)
+            out, grid = g.decode_hrrr(grib_blob() + b"GRIB the next message", layer, valid)
+            self.assertEqual(out.dtype, np.float32)
+            self.assertTrue(np.isnan(out[0, 2]), layer)                    # masked: missing, never 0
+            np.testing.assert_allclose(out[np.isfinite(out)], shown, rtol=1e-4, err_msg=layer)
+            self.assertEqual(int(np.isfinite(out).sum()), 5)
+            self.assertEqual(grid, HRRR_GRID)                              # read from the message
+        self.assertEqual(self.got, [grib_blob()] * 3)                      # only the one message
+
+    def test_hrrr_wrong_field_grid_or_time_is_refused(self):
+        valid = datetime(2026, 10, 15, 22, tzinfo=UTC)
+        self.message(HRRR_KEYS, parameterCategory=0, parameterNumber=0)    # temperature, not rain rate
+        with self.assertRaisesRegex(ValueError, "different field than its index listed"):
+            g.decode_hrrr(grib_blob(), "precip", valid)
+        self.message(HRRR_KEYS, gridType="regular_ll")
+        with self.assertRaisesRegex(ValueError, "unexpected grid"):
+            g.decode_hrrr(grib_blob(), "precip", valid)
+        self.message(HRRR_KEYS)
+        with self.assertRaisesRegex(ValueError, "different time than its index listed"):
+            g.decode_hrrr(grib_blob(), "precip", valid + timedelta(hours=1))
+
+    def test_validity_time_is_hours_and_minutes(self):
+        # A 15-minute field valid at 00:15 UTC carries validityDate 20261016 and validityTime 15.
+        self.message(HRRR_KEYS, validityDate=20261016, validityTime=15)
+        out, _grid = g.decode_hrrr(grib_blob(), "precip", datetime(2026, 10, 16, 0, 15, tzinfo=UTC))
+        self.assertEqual(out.shape, (2, 3))
+        with self.assertRaisesRegex(ValueError, "different time"):
+            g.decode_hrrr(grib_blob(), "precip", datetime(2026, 10, 16, 0, 30, tzinfo=UTC))
+        self.assertEqual(g._valid_time(FakeMsg({"validityDate": 20261015, "validityTime": 2315})),
+                         datetime(2026, 10, 15, 23, 15, tzinfo=UTC))
+
+    def test_mrms_file_is_unzipped_checked_and_its_grid_read(self):
+        t = datetime(2026, 10, 15, 22, 56, tzinfo=UTC)
+        values = np.array([[0.0, 2.5, -3.0]])
+        self.message(MRMS_KEYS, values)
+        for data in (gzip.compress(grib_blob() + b"\x00" * 7), grib_blob()):    # as published, and plain
+            out, grid = g.decode_mrms(data, t)
+            self.assertIs(out, values)          # passed on as is: sample_mrms reads only the map window
+            self.assertEqual(grid, MRMS_GRID)
+        self.assertEqual(self.got, [grib_blob()] * 2)
+        g.decode_mrms(grib_blob(), t + timedelta(minutes=2))                     # within 2 minutes
+        with self.assertRaisesRegex(ValueError, "own time didn't match its name"):
+            g.decode_mrms(grib_blob(), t + timedelta(minutes=3))
+        with self.assertRaisesRegex(ValueError, "own time didn't match its name"):
+            g.decode_mrms(grib_blob(), t - timedelta(minutes=3))
+
+    def test_mrms_wrong_product_grid_or_a_cut_short_file_is_refused(self):
+        self.message(MRMS_KEYS, discipline=0, parameterCategory=1, parameterNumber=7)
+        with self.assertRaisesRegex(ValueError, "not a precipitation-rate grid"):
+            g.decode_mrms(grib_blob())
+        self.message(MRMS_KEYS, gridType="lambert")
+        with self.assertRaisesRegex(ValueError, "unexpected grid"):
+            g.decode_mrms(grib_blob())
+        self.got.clear()
+        with self.assertRaisesRegex(ValueError, "cut short"):
+            g.decode_mrms(gzip.compress(grib_blob()[:-10]))
+        self.assertEqual(self.got, [])                                           # never decoded
+
+    def test_masked_radar_cells_are_no_coverage(self):
+        grid = {"ni": 3, "nj": 1, "lat1": 47.0, "lon1": 250.0, "di": 1.0, "dj": 1.0, "j_pos": False,
+                "i_neg": False}
+        values = np.ma.masked_array([[1.0, 2.0, 3.0]], mask=[[False, True, False]])
+        out = g.sample_mrms(values, grid, np.array([47.0]), np.array([-110.0, -109.0, -108.0]))
+        self.assertEqual((out[0, 0], out[0, 2]), (1.0, 3.0))
+        self.assertTrue(np.isnan(out[0, 1]))
+
+    def test_earth_shapes(self):
+        def radius(**changes):
+            return g.lcc_grid(FakeMsg({**HRRR_KEYS, **changes}))["radius"]
+
+        self.assertEqual(radius(), 6371229.0)                                    # HRRR: shape 6
+        self.assertEqual(radius(shapeOfTheEarth=0), 6367470.0)
+        self.assertEqual(radius(shapeOfTheEarth=1, scaledValueOfRadiusOfSphericalEarth=63712290,
+                                scaleFactorOfRadiusOfSphericalEarth=1), 6371229.0)
+        with self.assertRaisesRegex(ValueError, "earth shape"):
+            radius(shapeOfTheEarth=5)                                            # an ellipsoid
 
 
 # ---------------------------------------------------------------- projections and the image grid
@@ -315,6 +454,8 @@ class Projection(unittest.TestCase):
     def test_frame_sizes(self):
         self.assertEqual(g.image_size(1400), (1400, 878))      # 877.7 and 438.9 rounded
         self.assertEqual(g.image_size(700), (700, 439))
+        self.assertEqual({k: g.image_size(w) for k, w in g.WIDTHS.items()},
+                         {"precip": (1400, 878), "temp": (700, 439), "wind": (700, 439)})
 
     def test_columns_linear_in_longitude_rows_linear_in_mercator_north_first(self):
         (s, w), (n, e) = g.IMAGE_BOUNDS
@@ -360,10 +501,15 @@ class Colours(unittest.TestCase):
         self.assertTrue(stripes.any() and (~stripes).any())
 
     def test_exact_threshold_without_smoothing(self):
-        idx, nodata = g.to_index(np.array([[0.0999, 0.1, 2.5, 100.0, 500.0, np.nan]], dtype=np.float32), "precip")
-        self.assertEqual(list(idx[0, :5]), [0, 2, idx[0, 2], 49, 49])
+        row = np.array([[0.0999, 0.1, 2.5, 100.0, np.nan, 500.0]], dtype=np.float32)
+        self.assertEqual(g.hatch_mask(row.shape, row.shape[1])[0].tolist(), [True, False, False, False, True, False])
+        idx, nodata = g.to_index(row, "precip")
+        # 0.0999 transparent; 0.1 the first level; 2.5 level 22 (2.54 mm/h); 100 and above the top
+        # level; the NaN sits on a stripe, so it is hatched (index 1), not transparent like dry.
+        self.assertEqual(idx[0].tolist(), [0, 2, 24, 49, 1, 49])
         self.assertTrue(nodata)
-        self.assertIn(idx[0, 5], (0, 1))
+        self.assertEqual([g.precip_class(g.level_value("precip", int(k) - 2)) for k in idx[0, 1:4]],
+                         ["Light", "Moderate", "Extreme"])
 
     def test_precip_classes(self):
         cases = {0.09: None, 0.1: "Light", 2.49: "Light", 2.5: "Moderate", 7.59: "Moderate", 7.6: "Heavy",
@@ -433,8 +579,9 @@ class Colours(unittest.TestCase):
         self.assertEqual(g._hm(datetime(2026, 10, 15, 22, 56, tzinfo=UTC)), "4:56 pm")
         self.assertEqual(g._hm(datetime(2026, 10, 16, 6, 5, tzinfo=UTC)), "12:05 am")
         self.assertEqual(g._hm(datetime(2026, 12, 15, 19, 0, tzinfo=UTC)), "12:00 pm")    # MST in winter
-        self.assertEqual(g.frame_src("temp", datetime(2026, 10, 15, 23, 0, tzinfo=UTC)),
-                         "map/frames/temp-202610152300.png")
+        valid, run = datetime(2026, 10, 15, 23, 0, tzinfo=UTC), datetime(2026, 10, 15, 21, 0, tzinfo=UTC)
+        self.assertEqual(g.frame_src("precip", valid), "map/frames/precip-202610152300.png")       # radar
+        self.assertEqual(g.frame_src("temp", valid, run), "map/frames/temp-202610152300-r2026101521.png")
 
 
 # ---------------------------------------------------------------- the sample build
@@ -442,18 +589,21 @@ class Colours(unittest.TestCase):
 class SampleBuild(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tmp = tempfile.TemporaryDirectory()
-        cls.out = Path(cls.tmp.name)
+        tmp = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(tmp.cleanup)
+        cls.out = Path(tmp.name)
+        # Half-size frames: the same code paths (the rain is still drawn at half the precipitation
+        # width and stretched) in about a quarter of the 5 s a full-size sample build takes. The
+        # patch stays on for the whole class so the size checks below compare like with like.
+        widths = mock.patch.dict(g.WIDTHS, {"precip": 700, "temp": 350, "wind": 350})
+        widths.start()
+        cls.addClassCleanup(widths.stop)
 
         def no_network(url, headers=None):
             raise AssertionError("a sample build must not fetch anything")
 
         with mock.patch.dict(sys.modules, {"pygrib": None}):     # and must not need pygrib
             cls.layers, cls.status = g.build_gridded(cls.out, no_network, NOW, sample=True)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.tmp.cleanup()
 
     def pixel(self, layer, frame, lat, lon):
         """The value a frame's pixel stands for at a place."""
@@ -493,13 +643,15 @@ class SampleBuild(unittest.TestCase):
             self.assertEqual(len(set(times)), len(times))
             for f in layer["frames"]:
                 self.assertTrue(f["time"].endswith("Z"))
-                self.assertTrue(f["src"].startswith("map/frames/" + name + "-"))
+                valid = datetime.fromisoformat(f["time"].replace("Z", "+00:00"))
                 with Image.open(self.out / f["src"]) as im:
                     self.assertEqual((im.mode, im.size), ("P", g.image_size(g.WIDTHS[name])))
                 if f["kind"] == "forecast":
                     run = datetime.fromisoformat(f["run"].replace("Z", "+00:00"))
-                    valid = datetime.fromisoformat(f["time"].replace("Z", "+00:00"))
                     self.assertEqual(f["lead_min"], (valid - run) / timedelta(minutes=1))
+                    self.assertEqual(f["src"], g.frame_src(name, valid, run))     # the run is in the name
+                else:
+                    self.assertEqual(f["src"], g.frame_src(name, valid))
 
     def test_modes_and_now(self):
         precip = self.layers["precip"]
@@ -551,8 +703,9 @@ FIELD = {"precip": 2.0, "temp": 50.0, "wind": 30.0}
 class FakeNoaa:
     """Answers like the MRMS and HRRR buckets: listings, files, .idx inventories and byte ranges."""
 
-    def __init__(self, newest, ready=(), fail=None, short=None, empty=False):
+    def __init__(self, newest, ready=(), fail=None, short=None, empty=False, keep=None):
         self.newest, self.ready, self.fail, self.short, self.empty = newest, set(ready), fail or {}, short, empty
+        self.keep = keep or (lambda t: True)       # which radar file times exist (every 2 min by default)
         self.calls = []
 
     def __call__(self, url, headers=None):
@@ -563,9 +716,11 @@ class FakeNoaa:
                 return None, err
         if url.startswith(g.MRMS + "?"):
             q = parse_qs(urlsplit(url).query)
-            day = datetime.strptime(q["prefix"][0].split("/")[-2], "%Y%m%d").replace(tzinfo=UTC)
+            prefix = q["prefix"][0]
+            day = datetime.strptime(prefix.split("/")[-2], "%Y%m%d").replace(tzinfo=UTC)
             after = q.get("start-after", [""])[0]
-            keys = [] if self.empty else [k for _t, k in every_2_min(day, self.newest) if k > after]
+            keys = [] if self.empty else [k for t, k in every_2_min(day, self.newest)
+                                          if k.startswith(prefix) and k > after and self.keep(t)]
             return listing(keys), None
         if url.startswith(g.MRMS):
             return b"\x1f\x8b fake radar file", None
@@ -611,8 +766,10 @@ class LivePath(unittest.TestCase):
             self.addCleanup(p.stop)
         self.addCleanup(self.tmp.cleanup)
         self.fail_layer = None
+        self.radar_expected = []        # the file time each radar decode was asked to check
 
     def fake_mrms(self, data, expected=None):
+        self.radar_expected.append(expected)
         return np.full((350, 700), 1.0, dtype=np.float32), COARSE_MRMS
 
     def fake_hrrr(self, data, layer, valid):
@@ -636,6 +793,10 @@ class LivePath(unittest.TestCase):
         self.assertEqual(precip["now_index"], {"1h": 6, "12h": 6})
         self.assertEqual(precip["frames"][6]["time"], "2026-10-14T14:56:00Z")
         self.assertEqual(precip["frames"][6]["source"], "NOAA MRMS radar estimate")
+        self.assertEqual([t.strftime("%Y-%m-%dT%H:%M:%SZ") for t in self.radar_expected],
+                         [f["time"] for f in precip["frames"][:7]])     # each file checked against its name
+        self.assertEqual(precip["frames"][6]["src"], "map/frames/precip-202610141456.png")
+        self.assertEqual(precip["frames"][7]["src"], "map/frames/precip-202610141500-r2026101413.png")
         first_forecast = precip["frames"][7]
         self.assertEqual((first_forecast["time"], first_forecast["run"], first_forecast["lead_min"], first_forecast["source"]),
                          ("2026-10-14T15:00:00Z", "2026-10-14T13:00:00Z", 120, "NOAA HRRR model"))
@@ -691,6 +852,58 @@ class LivePath(unittest.TestCase):
         self.assertEqual(len(radar), 7)
         forecast = [f for f in layers["precip"]["frames"] if f["kind"] == "forecast"]
         self.assertEqual(forecast[0]["time"], "2026-10-14T15:15:00Z")               # from the build time
+
+    def test_a_long_radar_outage_still_finds_every_frame(self):
+        # Newest file 170 min old: its frames reach back 230 min, past the 3 hours the newest file
+        # must lie in. They are all in the bucket, so none may be reported missing.
+        noaa = FakeNoaa(newest=NOW - timedelta(minutes=170), ready={NOW - timedelta(hours=2)})
+        layers, status = self.build(noaa)
+        self.assertEqual(status["radar"], {"label": "NOAA radar (MRMS)", "ok": False,
+                                           "detail": "radar is 170 min old; 7 frames, latest 6:10 am"})
+        self.assertEqual(len([f for f in layers["precip"]["frames"] if f["kind"] == "radar"]), 7)
+
+    def test_radar_older_than_three_hours_is_left_out(self):
+        noaa = FakeNoaa(newest=NOW - timedelta(minutes=190), ready={NOW - timedelta(hours=2)})
+        layers, status = self.build(noaa)
+        self.assertEqual(status["radar"], {"label": "NOAA radar (MRMS)", "ok": False,
+                                           "detail": "no radar files in the last 3 hours"})
+        self.assertEqual({f["kind"] for f in layers["precip"]["frames"]}, {"forecast"})
+        self.assertEqual(layers["precip"]["frames"][0]["time"], "2026-10-14T15:15:00Z")  # from the build time
+
+    def test_one_radar_frame_is_one_frame(self):
+        newest = NOW - timedelta(minutes=4)
+        noaa = FakeNoaa(newest=newest, ready={NOW - timedelta(hours=2)}, keep=lambda t: t == newest)
+        layers, status = self.build(noaa)
+        self.assertEqual(status["radar"], {"label": "NOAA radar (MRMS)", "ok": True, "detail":
+                                           "1 frame, latest 8:56 am (no file near 7:56 am, 8:06 am, 8:16 am, "
+                                           "8:26 am, 8:36 am, 8:46 am)"})
+        self.assertEqual(layers["precip"]["now_index"], {"1h": 0, "12h": 0})
+
+    def test_radar_frames_across_midnight_utc_come_from_both_folders(self):
+        now = datetime(2026, 10, 15, 0, 30, tzinfo=UTC)                           # 6:30 pm MDT
+        noaa = FakeNoaa(newest=now - timedelta(minutes=4), ready={datetime(2026, 10, 14, 22, tzinfo=UTC)})
+        layers, status = self.build(noaa, now)
+        self.assertEqual(status["radar"]["detail"], "7 frames, latest 6:26 pm")
+        self.assertEqual(status["forecast"]["detail"], "run 4:00 pm, 12 hours")    # 22z, yesterday's folder
+        radar = [f["time"] for f in layers["precip"]["frames"] if f["kind"] == "radar"]
+        self.assertEqual((radar[0], radar[-1]), ("2026-10-14T23:26:00Z", "2026-10-15T00:26:00Z"))
+
+    def test_a_new_model_run_gets_new_frame_names(self):
+        # Browsers may reuse a file for 10 minutes, so a name must never stand for two pictures: the
+        # next run redraws the same valid times under new names; radar frames keep theirs.
+        names = []
+        for run in (NOW - timedelta(hours=2), NOW - timedelta(hours=1)):
+            layers, _status = self.build(FakeNoaa(newest=NOW - timedelta(minutes=4), ready={run}))
+            names.append({(name, f["kind"], f["time"]): f["src"] for name, layer in layers.items()
+                          for f in layer["frames"]})
+        old, new = names
+        self.assertEqual(old.keys(), new.keys())
+        for key in old:
+            (self.assertEqual if key[1] == "radar" else self.assertNotEqual)(old[key], new[key], key)
+        self.assertEqual(old[("temp", "forecast", "2026-10-14T16:00:00Z")],
+                         "map/frames/temp-202610141600-r2026101413.png")
+        self.assertEqual(new[("temp", "forecast", "2026-10-14T16:00:00Z")],
+                         "map/frames/temp-202610141600-r2026101414.png")
 
     def test_no_model_run(self):
         layers, status = self.build(FakeNoaa(newest=NOW - timedelta(minutes=4), ready=()))
