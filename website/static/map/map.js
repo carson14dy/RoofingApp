@@ -552,7 +552,6 @@
     }
     go(pos, {
       done: function () {
-        preload();
         if (first && !CARD && !reducedMotion() && !sheetState && n > 1) { setPlaying(true); schedule(HOLD_MS); }
       }
     });
@@ -668,7 +667,9 @@
   // ------------------------------------------------------------------ showing a frame
 
   /** Show frame `pos` of the timeline. The picture changes only once it has loaded; until then the
-      previous one stays, dimmed, and the subtitle says "loading". */
+      subtitle says "loading" (see holdPicture for what stays on screen meanwhile). While playing,
+      the next step is scheduled from here, whatever started this frame (playback, a layer or
+      1h/12h switch), so playback can't stall with the button still saying it plays. */
   function go(pos, opts) {
     var n = state.frames.length;
     if (!n) return;
@@ -680,15 +681,30 @@
       if (token !== state.goToken) return;
       f._failed = !ok;
       app.classList.remove("is-loading");
-      showPicture(ok ? f.src : null);
+      showPicture(ok ? f.src : null, { layer: state.layer, kind: f.kind });
       renderNote();
       if (CARD) renderCardChip();
       if (opts && opts.done) opts.done(ok);
+      if (!CARD) preload();          // the rest of this layer, once one of its pictures shows
+      continuePlayback();
     });
     if (cache[f.src] && cache[f.src].ok === null) {
       app.classList.add("is-loading");
-      if (overlays[front]) overlays[front].setOpacity(0.45);
+      holdPicture(f);
     }
+  }
+
+  /** While frame f loads, the picture on screen stays only if it is the same layer and the same kind
+      (radar or model), dimmed; otherwise it goes, so a radar picture never sits under a forecast
+      title or a precipitation picture under the temperature legend (evidence is never blended).
+      A swap still in flight is cancelled: it would put up a picture the title no longer describes. */
+  function holdPicture(f) {
+    if (!overlays.length) return;
+    swapToken++;
+    var cur = overlays[front], nxt = overlays[1 - front];
+    nxt.setOpacity(0);
+    var same = cur._meta && cur._meta.layer === state.layer && cur._meta.kind === f.kind;
+    cur.setOpacity(same ? 0.45 : 0);
   }
 
   /** Everything that follows the frame on the timeline. */
@@ -732,12 +748,13 @@
     });
   }
 
-  /** Crossfade the two overlays to a loaded picture (no fade with reduced motion); null hides both. */
-  function showPicture(src) {
+  /** Crossfade the two overlays to a loaded picture (no fade with reduced motion); null hides both.
+      `meta` ({layer, kind}) records what the picture is, for holdPicture. */
+  function showPicture(src, meta) {
     if (!overlays.length) return;
     var tok = ++swapToken, cur = overlays[front], nxt = overlays[1 - front];
-    if (!src) { cur.setOpacity(0); nxt.setOpacity(0); return; }
-    if (cur._url === src) { cur.setOpacity(1); nxt.setOpacity(0); return; }
+    if (!src) { cur.setOpacity(0); nxt.setOpacity(0); cur._meta = nxt._meta = null; return; }
+    if (cur._url === src) { cur._meta = meta || null; cur.setOpacity(1); nxt.setOpacity(0); return; }
     var img = nxt.getElement();
     if (img) {                      // stop any fade on the back picture before changing it
       img.classList.add("instant");
@@ -747,6 +764,7 @@
     }
     var done = function () {
       if (tok !== swapToken) return;
+      nxt._meta = meta || null;
       nxt.setOpacity(1);
       cur.setOpacity(0);
       front = 1 - front;
@@ -774,10 +792,21 @@
     srcEl.textContent = sourceWords(f);
     el.range.value = String(ms);
     el.range.setAttribute("aria-valuetext", (f.kind === "radar" ? "Radar, " : "Forecast, ") + dayClock(ms) + ", " +
-      sourceWords(f) + (state.pos === state.nowPos ? ", now" : ""));
+      sourceWords(f) + nowWords(ms, f));
     var pct = (frac(ms) * 100).toFixed(3) + "%";
     el.fill.style.width = pct;
     el.knob.style.left = pct;
+  }
+
+  /** What a screen reader hears about "Now" for a frame, matching the visible Now tick: ", now" only
+      for a frame within 10 minutes of it. When the radar is late its newest frame is the "latest radar
+      picture", not now; the first model hour of the temperature and gust layers is "this hour". */
+  function nowWords(ms, f) {
+    var now = nowMs();
+    if (Math.abs(ms - now) <= 10 * MIN) return ", now";
+    if (state.pos !== state.nowPos) return "";
+    if (f.kind === "radar") return ", latest radar picture";
+    return Math.floor(now / HOUR) * HOUR === ms ? ", this hour" : "";
   }
 
   /** The source in plain words: radar estimate or model forecast, never blended. */
@@ -808,6 +837,8 @@
         parts_.push("No model forecast after now in this update" + (st.forecast && !st.forecast.ok ? " (" + st.forecast.detail + ")" : "") + ".");
         warn = true;
       }
+      // Hatching inside the picture itself (radar without coverage) gets a sentence too. The hatched
+      // band outside the pictures' box is part of every view, so the legend key alone names it.
       if (f.nodata && !f._failed) parts_.push("Hatched areas have no radar coverage.");
       text = parts_.join(" ");
     }
@@ -834,13 +865,15 @@
     renderKeys();
   }
 
-  /** Keys under the legend, only for what is on the map now: hatching, the limit ring, warning
+  /** Keys under the legend: first what the town numbers are (the NWS forecast, not the coloured
+      model field under them), then only what is on the map now: hatching, the limit ring, warning
       outline colours and storm-report circles. Every colour carries its word. */
   function renderKeys() {
     if (!data) return;
     var keys = [];
-    var f = state.frames[state.pos];
-    if (f && f.nodata) keys.push(["key-hatch", "No radar coverage"]);
+    keys.push(["key-bubble", state.layer === "wind" ? "Town numbers: NWS gust forecast, mph" : "Town numbers: NWS forecast, °F"]);
+    var hatch = hatchWords();
+    if (hatch) keys.push(["key-hatch", hatch]);
     if (data.towns.some(function (t) { return t._over && townVisible(t); })) keys.push(["key-ring", ringWords()]);
     if (state.warnings) (state.alertKinds || []).forEach(function (k) { keys.push(["key-hz key-" + k, KIND_WORD[k] + " area (NWS)"]); });
     if (state.reports && data.reports.length) {
@@ -849,6 +882,18 @@
     }
     var html = keys.map(function (k) { return '<li><span class="key ' + k[0] + '" aria-hidden="true"></span>' + esc(k[1]) + "</li>"; }).join("");
     if (el.legendKeys.innerHTML !== html) el.legendKeys.innerHTML = html;
+  }
+
+  /** What the hatching on screen means, or "" when none is in view. Hatching marks where this map has
+      no data: the band outside the pictures' box (every layer and frame) and, inside a radar picture,
+      areas without radar coverage. Worded for the frame shown: radar or model. */
+  function hatchWords() {
+    if (!map || !map._imageBounds) return "";
+    var f = state.frames[state.pos];
+    var outside = !map._imageBounds.contains(map.getBounds());
+    if (!outside && !(f && f.nodata && !f._failed)) return "";
+    if (!f) return state.layer === "precip" ? "No radar or model data" : "No model data";
+    return f.kind === "radar" ? "No radar data" : "No model data";
   }
 
   /** Whether a town's bubble is on screen (minor towns appear from zoom 7). */
@@ -889,18 +934,22 @@
     state.timer = setTimeout(step, ms);
   }
 
-  /** One playback step: the next frame once its picture is ready; hold on Now and on the end; loop. */
+  /** While playing and no step is waiting: the next step after the frame now on screen (called by
+      go once its picture is ready). Holds on Now and on the last frame. */
+  function continuePlayback() {
+    if (!state.playing || state.timer) return;
+    var n = state.frames.length;
+    schedule(state.pos === state.nowPos || state.pos === n - 1 ? HOLD_MS : STEP_MS);
+  }
+
+  /** One playback step: the next frame (skipping pictures that failed); go() schedules the one after
+      once this picture is ready; loops. */
   function step() {
     state.timer = null;
     if (!state.playing) return;
     var n = state.frames.length, next = (state.pos + 1) % n, guard = 0;
     while (state.frames[next]._failed && guard++ < n) next = (next + 1) % n;
-    go(next, {
-      done: function () {
-        if (!state.playing) return;
-        schedule(next === state.nowPos || next === n - 1 ? HOLD_MS : STEP_MS);
-      }
-    });
+    go(next);
   }
 
   /** Step one frame back or forward (keyboard, buttons); stepping pauses playback. */
@@ -1084,15 +1133,18 @@
 
   // ------------------------------------------------------------------ banners, toast, page age
 
-  /** A small banner at the top. kind: warn | info. Replaces an earlier one with the same id. */
-  function banner(kind, html, id) {
+  /** A small banner at the top. kind: warn | info. Replaces an earlier one with the same id. A warning
+      is announced at once (role "alert") unless `role` says otherwise. */
+  function banner(kind, html, id, role) {
     if (id && byId(id)) byId(id).remove();
     var p = document.createElement("p");
     p.className = "banner banner-" + kind;
     if (id) p.id = id;
-    if (kind === "warn") p.setAttribute("role", "alert");
+    role = role || (kind === "warn" ? "alert" : "");
+    if (role) p.setAttribute("role", role);
     p.innerHTML = html;
     el.banners.appendChild(p);
+    if (sheetState) placeSheet();
     return p;
   }
 
@@ -1374,7 +1426,7 @@
     var a = data.alerts || {}, items = a.items || [], html = "";
     var hourMs = Math.floor(Math.max(valueTime(), Date.parse(data.built)) / HOUR) * HOUR;   // Montana is a whole-hour offset
     html += '<p class="sub">Town values are the NWS forecast for ' + esc(dayClock(hourMs)) + ", the hour on the timeline.</p>";
-    html += "<h3>Official alerts (" + items.length + ")</h3>";
+    html += "<h3>Official alerts" + (a.ok ? " (" + items.length + ")" : "") + "</h3>";     // a failed check has no count to give
     if (!a.ok) html += '<p class="warn">The NWS alert check failed in this update' + (a.last_known ? "; showing the list verified at " + esc(dateClock(Date.parse(a.last_known))) : "") + ". This is not an all-clear.</p>";
     if (items.length) html += '<div class="rows">' + items.map(alertRow).join("") + "</div>";
     else if (a.ok) html += "<p>No active NWS warnings, watches or advisories for Montana at " + esc(clock(Date.parse(a.checked))) + ".</p>";
@@ -1395,14 +1447,19 @@
     });
     html += "</div>";
     if (state.reports) {
-      html += "<h3>Storm reports, last 3 days (" + data.reports.length + ")</h3>";
+      var rst = data.status && data.status.reports, repFailed = !!(rst && !rst.ok);
+      html += "<h3>Storm reports, last 3 days" + (repFailed ? "" : " (" + data.reports.length + ")") + "</h3>";
+      if (repFailed) {          // missing input is "data unavailable", never a count of zero (AGENTS.md rule 5)
+        html += '<p class="warn">Storm reports didn’t all load (' + esc(rst.detail) + "). Data unavailable for those days; " +
+          "no report is not “no hail”.</p>";
+      }
       if (data.reports.length) {
         html += '<div class="rows">' + data.reports.map(function (r, i) {
           var what = r.kind === "hail" ? (r.size_in != null ? r.size_in.toFixed(2) + " in hail" : "Hail") : (r.mph != null ? "Wind " + r.mph + " mph" : "Wind, speed unknown");
           return '<button type="button" class="row" data-report="' + i + '" data-key="r-' + i + '"><span class="row-main"><span class="row-title">' + esc(what) + "</span>" +
             '<span class="row-meta">' + esc(r.place) + ", " + esc(r.state) + " \u00b7 " + esc(dateClock(Date.parse(r.time))) + "</span></span></button>";
         }).join("") + "</div>";
-      } else html += "<p>No reports. No report is not \u201cno hail\u201d.</p>";
+      } else if (!repFailed) html += "<p>No reports. No report is not \u201cno hail\u201d.</p>";
     }
     var st = data.status || {};
     var bad = ["radar", "forecast", "alerts", "forecasts", "reports"].filter(function (k) { return st[k] && !st[k].ok; });
