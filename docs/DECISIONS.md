@@ -483,6 +483,11 @@ build of the Website workflow. Roadmap item 10, built to the rules of D23 and D2
   is Yellowstone Lake, WY (35 mi); Old Faithful answered 404 and says so on the town page.
 
 ## Gotchas found the hard way
+- An absolutely positioned element escapes a scroll box that isn't its containing block: the
+  visually hidden "(over limit)" words in the hourly table widened every town page with a flagged
+  cell by up to 24 px on a 288 px phone. `.table-box` is `position: relative` for that.
+- A flex row of links shrinks its items (and wraps the text inside them) before it overflows; with
+  `flex-wrap` it wraps whole items instead. Measure both on the narrowest phone.
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.
 - Folium camelizes keyword arguments (`_t` → `T`).
 - `{% set %}` at the top level of a child template is ignored — set inside blocks.
