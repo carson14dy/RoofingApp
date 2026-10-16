@@ -1,5 +1,5 @@
 """
-Website checks (website/): parsers, failure handling, the built pages and the map label layout.
+Website checks (website/): parsers, failure handling, the built pages and the town label sides.
 
 Everything runs offline. Parsers get NWS/SPC-shaped documents; builds use the labelled sample data
 or small fake fetchers that fail on purpose. The live sources are checked separately by the
@@ -7,9 +7,9 @@ website workflow (`python -m website.build --require-live` on branch pushes).
 """
 
 import contextlib
+import hashlib
 import io
 import json
-import math
 import sys
 import tempfile
 import unittest
@@ -20,6 +20,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from website import build as site  # noqa: E402
+from website import gridded as g  # noqa: E402
 from website import sources as src  # noqa: E402
 from website.sample import SampleFetcher  # noqa: E402
 
@@ -355,6 +356,27 @@ class SampleBuild(unittest.TestCase):
         for name in ("index.html", "about.html", "map.html"):
             self.assertNotIn("googleapis", page(self.out, name))
 
+    def test_static_files_keep_their_address_until_they_change(self):
+        """?v= on the scripts, stylesheets and basemap is each file's content hash, so the 10-minute
+        rebuilds don't make browsers download unchanged code and outlines again; data/map.json and
+        the map card, new at every build, keep the build minute."""
+        def digest(name):
+            return hashlib.sha256((self.out / "static" / name).read_bytes()).hexdigest()[:12]
+        html = page(self.out, "map.html")
+        for name in ("map/map.js", "map/map.css", "map/basemap.json"):
+            self.assertIn(f"static/{name}?v={digest(name)}", html)
+        self.assertIn(f"static/style.css?v={digest('style.css')}", page(self.out, "index.html"))
+        self.assertEqual(site.asset_versions(site.HERE / "static"), site.asset_versions(self.out / "static"))
+        minute = NOW.strftime("%Y%m%d%H%M")
+        self.assertIn(f"data/map.json?v={minute}", html)
+        self.assertIn(f"map.html?card=1&amp;layer=precip&amp;v={minute}", page(self.out, "index.html"))
+
+    def test_map_page_landmark_and_text_version(self):
+        html = page(self.out, "map.html")
+        self.assertIn('<main id="app" class="app"', html)               # banners and notes are in a landmark
+        self.assertIn("The radar and model pictures have no text version yet.", " ".join(html.split()))
+        self.assertIn('content="#fafafa" media="(prefers-color-scheme: light)"', html)   # = the map's background
+
     def test_map_data_follows_the_contract(self):
         m = json.loads(page(self.out, "data/map.json"))
         self.assertEqual((m["version"], m["sample"], m["tz"]), (1, True, "America/Denver"))
@@ -407,6 +429,30 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("unknown", html)
         self.assertIn("No report is not evidence that no hail fell.", html)
 
+    def test_reports_map_key_names_the_forecast_numbers_and_outlines(self):
+        """The Storm reports card draws town bubbles and warning outlines beside the reports and hides
+        its own legend, so the page's key says what they are (rule 5: forecast is not a report)."""
+        html = page(self.out, "reports.html")
+        self.assertIn("Town number: NWS forecast temperature, °F (orange ring: below 40&nbsp;°F or above "
+                      "95&nbsp;°F)", html)
+        self.assertIn("Outline: NWS alert area (red warning, orange watch, gold advisory, grey statement)", html)
+
+    def test_reporting_days_start_at_noon_utc_in_montana_time(self):
+        self.assertIn("Reporting day starting Wed Oct 14 at 6 am MDT", page(self.out, "reports.html"))
+        winter = datetime(2026, 12, 10, 18, 0, tzinfo=UTC)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-winter-"))
+        site.build(out, SampleWith(winter), winter)
+        html = page(out, "reports.html")
+        self.assertIn("Reporting day starting Thu Dec 10 at 5 am MST", html)      # 12:00 UTC in winter
+        self.assertNotIn("MDT", html)
+
+    def test_now_page_card_words_match_the_sample_picture(self):
+        html = " ".join(page(self.out, "index.html").split())
+        self.assertIn('title="Montana map: sample radar, warning outlines and town temperatures"', html)
+        self.assertIn("The latest sample radar picture (invented, not NOAA radar), NWS warning outlines and the NWS "
+                      'forecast temperature for each town. <a href="map.html">Open the map</a> to play the past hour '
+                      "of sample radar and the sample model forecast, or switch to temperature and wind gusts.", html)
+
 
 class FailureHonesty(unittest.TestCase):
     def test_failed_alert_request_is_never_shown_as_no_alerts(self):
@@ -430,17 +476,21 @@ class FailureHonesty(unittest.TestCase):
                                           "geometry": SQUARE}],
                                "ok": True, "checked": "2026-10-14T14:50:00Z", "last_known": None}}
         out, result = build_with(SampleWith(NOW, fail={"alerts-state"}), previous)
-        html = page(out, "index.html")
+        html = " ".join(page(out, "index.html").split())
         self.assertIn("Severe Thunderstorm Warning", html)
-        self.assertIn("Below is the last list we verified, from Wed 8:50 am MDT", html)
+        # the town checks still worked: what they found joins the last verified list, and says so
+        self.assertIn("Below is the last list we verified, from Wed 8:50 am MDT, with 2 alerts the town checks "
+                      "found in this update.", html)
         state = json.loads(page(out, "data/state.json"))
         self.assertEqual(state["alerts"]["last_known"], "2026-10-14T14:50:00Z")
-        self.assertEqual(len(state["alerts"]["items"]), 1)
+        self.assertEqual([a["id"] for a in state["alerts"]["items"]], ["w1", "sample-high-wind", "sample-winter"])
+        self.assertNotIn("from_towns", state["alerts"])
         # a second failure in a row keeps pointing at the last verified list, not the failed attempt
         out2, _ = build_with(SampleWith(NOW + timedelta(minutes=10), fail={"alerts-state"}), state)
         state2 = json.loads(page(out2, "data/state.json"))
         self.assertEqual(state2["alerts"]["last_known"], "2026-10-14T14:50:00Z")
-        self.assertEqual(len(state2["alerts"]["items"]), 1)
+        self.assertEqual(len(state2["alerts"]["items"]), 3)
+        self.assertNotIn("town checks found", page(out2, "index.html"))   # nothing new this time
 
     def test_missing_gusts_are_a_dash_and_not_a_pass(self):
         out, result = build_with(SampleWith(NOW, fail={"gusts"}))
@@ -476,6 +526,80 @@ class FailureHonesty(unittest.TestCase):
             self.assertIsNone(site.load_previous("https://example.invalid/site/"))
 
 
+class LateAlerts(SampleFetcher):
+    """Sample data, plus extra alert features: `state` in the statewide answer, `points[lat]` in the
+    answer for the town at that latitude (point checks run after the statewide request)."""
+
+    def __init__(self, now, state=(), points=None):
+        super().__init__(now)
+        self.state, self.points = list(state), points or {}
+
+    def json(self, url, params=None):
+        doc, err = super().json(url, params)
+        if url.endswith("/alerts/active") and params:
+            if "area" in params:
+                doc["features"] += self.state
+            else:
+                doc["features"] += self.points.get(params["point"].split(",")[0], [])
+        return doc, err
+
+
+class TownAlertsInTheList(unittest.TestCase):
+    """Every alert a town points to is in the statewide list, so the map's town sheet, outlines and
+    List, the Now page and state.json all show it (a town sheet once said only "An alert that is
+    listed on the Now page", for an alert the list didn't have)."""
+
+    def build(self, fetch):
+        out, result = build_with(fetch)
+        return out, result, json.loads(page(out, "data/map.json")), json.loads(page(out, "data/state.json"))
+
+    def test_a_warning_issued_while_the_towns_are_checked(self):
+        late = feature("late-svr", "Severe Thunderstorm Warning", ends="2026-10-14T16:00:00Z", geometry=SQUARE)
+        out, result, m, state = self.build(LateAlerts(NOW, points={"45.7833": [late]}))     # Billings only
+        ids = [a["id"] for a in m["alerts"]["items"]]
+        self.assertEqual(ids, ["late-svr", "sample-high-wind", "sample-winter"])            # most urgent first
+        listed = set(ids)
+        for t in m["towns"]:
+            self.assertTrue(set(t["alert_ids"]) <= listed, t["name"])
+        self.assertEqual(next(t for t in m["towns"] if t["slug"] == "billings")["alert_ids"], ["late-svr"])
+        self.assertEqual(m["alerts"]["items"][0]["geometry"], SQUARE)                       # its outline draws
+        self.assertEqual([a["id"] for a in state["alerts"]["items"]], ids)                  # next build's last list
+        self.assertIn("Severe Thunderstorm Warning", page(out, "index.html"))
+        self.assertEqual(result["alerts"], 3)
+        self.assertEqual(result["status"]["alerts"]["detail"], "3 active (1 found only by the town checks)")
+        self.assertNotIn("town checks found", page(out, "index.html"))   # the statewide list loaded: no note
+
+    def test_a_listed_warning_a_town_check_shows_was_replaced(self):
+        old = feature("old-svr", "Severe Thunderstorm Warning", ends="2026-10-14T15:30:00Z", geometry=SQUARE)
+        new = feature("new-svr", "Severe Thunderstorm Warning", ends="2026-10-14T16:00:00Z", geometry=SQUARE,
+                      refs=["old-svr"])
+        _, _, m, _ = self.build(LateAlerts(NOW, state=[old], points={"45.7833": [new]}))
+        ids = [a["id"] for a in m["alerts"]["items"]]
+        self.assertIn("new-svr", ids)
+        self.assertNotIn("old-svr", ids)                   # the update replaced it, as within one answer
+        # a town whose own check still returned the old message keeps it listed: its sheet must resolve
+        _, _, m, _ = self.build(LateAlerts(NOW, state=[old], points={"45.7833": [new], "45.6624": [old]}))
+        ids = [a["id"] for a in m["alerts"]["items"]]
+        self.assertTrue({"new-svr", "old-svr"} <= set(ids))
+        for t in m["towns"]:
+            self.assertTrue(set(t["alert_ids"]) <= set(ids), t["name"])
+
+    def test_statewide_list_failed_with_nothing_verified_before(self):
+        out, result, m, state = self.build(SampleWith(NOW, fail={"alerts-state"}))
+        html = " ".join(page(out, "index.html").split())
+        self.assertIn("Couldn't load NWS alerts", html)
+        self.assertIn("Below are the alerts the town checks found in this update. This is not an all-clear.", html)
+        self.assertEqual([a["id"] for a in m["alerts"]["items"]], ["sample-high-wind", "sample-winter"])
+        self.assertFalse(m["alerts"]["ok"])
+        self.assertIsNone(m["alerts"]["last_known"])
+        self.assertFalse(result["status"]["alerts"]["ok"])                    # still reported as failed
+
+    def test_the_map_sheet_backstop_names_the_town_page(self):
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertNotIn("An alert that is listed on the Now page", js)
+        self.assertIn("this map update has no details for it. The full forecast page below lists it.", js)
+
+
 class MapFailures(unittest.TestCase):
     def test_radar_and_forecast_failures_are_reported_not_drawn_as_dry(self):
         out, result = build_with(SampleWith(NOW))          # NWS sample data, but no gridded downloads
@@ -486,66 +610,142 @@ class MapFailures(unittest.TestCase):
         self.assertFalse(m["status"]["radar"]["ok"])
         self.assertEqual(m["now"], "2026-10-14T15:00:00Z")    # no radar frame: "now" is the build time
         self.assertEqual(len(m["towns"]), len(site.TOWNS))    # the towns and alerts still draw
+        html = " ".join(page(out, "index.html").split())    # the Now page's card names what is missing
+        self.assertIn('title="Montana map: warning outlines and town temperatures"', html)
+        self.assertIn("NWS warning outlines and the NWS forecast temperature for each town. Missing from this "
+                      "update: the radar and model pictures. This is not an all-clear. "
+                      '<a href="map.html">Open the map</a> for the List of alerts and towns.', html)
+        self.assertNotIn("radar estimate", html)
+
+
+def frames(kind, layer, times, run=None, source=None):
+    """Frame entries as build_gridded makes them, without the pictures (the words don't need them)."""
+    out = []
+    for v in times:
+        f = {"time": src._iso(v), "kind": kind, "src": g.frame_src(layer, v, run if kind == "forecast" else None),
+             "source": source or (g.RADAR_SOURCE if kind == "radar" else g.MODEL_SOURCE), "nodata": False}
+        if kind == "forecast":
+            f.update(run=src._iso(run), lead_min=int((v - run) / timedelta(minutes=1)))
+        out.append(f)
+    return out
+
+
+def map_layers(radar=True, model=True, now=NOW, radar_age=4, sample=False):
+    """data/map.json layers through gridded.assemble: seven radar frames ending radar_age minutes
+    before now, then an HRRR run's frames from the radar time (from now without radar or when the
+    radar is stale, as build_gridded anchors them)."""
+    t0 = now - timedelta(minutes=radar_age)
+    anchor = t0 if radar and timedelta(minutes=radar_age) <= g.RADAR_STALE else now
+    times = g.forecast_times(anchor)
+    run = anchor.replace(minute=0, second=0) - timedelta(hours=2)
+    radar_src = g.SAMPLE_RADAR_SOURCE if sample else None
+    model_src = g.SAMPLE_MODEL_SOURCE if sample else None
+    past = frames("radar", "precip", [t0 - k * g.RADAR_STEP for k in reversed(range(g.RADAR_FRAMES))],
+                  source=radar_src) if radar else []
+    precip = sorted(set(times["hourly"]) | {v for v in times["quarters"] if v.minute})
+    forecast = {"precip": frames("forecast", "precip", precip, run, model_src),
+                "temp": frames("forecast", "temp", times["hours13"], run, model_src),
+                "wind": frames("forecast", "wind", times["hours13"], run, model_src)} if model else {}
+    return g.assemble(past, forecast, anchor if (radar or model) else None, sample)
+
+
+class MapCard(unittest.TestCase):
+    """The words with the Now page's map card (build.map_card) follow what the card shows: the frame
+    map.js opens it on (precipitation, 12h, now_index), the outlines and the town numbers."""
+
+    OK = {"radar": {"ok": True}, "forecast": {"ok": True}}
+    ALERTS = {"ok": True, "items": [{"id": "w1"}]}
+    TOWNS = [{"hours": [{}]}, {"hours": [{}]}]
+
+    def card(self, layers, alerts=None, towns=None, status=None, now=NOW):
+        return site.map_card(layers, alerts or self.ALERTS, self.TOWNS if towns is None else towns,
+                             status or self.OK, now)
+
+    def test_everything_loaded(self):
+        c = self.card(map_layers())
+        self.assertEqual(c["title"], "Montana map: latest radar, warning outlines and town temperatures")
+        self.assertEqual(c["shown"], "The latest NOAA radar estimate, NWS warning outlines and the NWS forecast "
+                                     "temperature for each town.")
+        self.assertEqual(c["missing"], "")
+        self.assertEqual(c["then"], "to play the past hour of radar and the HRRR model forecast, or switch to "
+                                    "temperature and wind gusts")
+
+    def test_radar_failed_the_model_forecast_is_never_called_radar(self):
+        layers = map_layers(radar=False)
+        idx = layers["precip"]["modes"]["12h"]
+        self.assertEqual(layers["precip"]["frames"][idx[0]]["time"], "2026-10-14T16:00:00Z")   # what the card shows
+        c = self.card(layers, status={"radar": {"ok": False}, "forecast": {"ok": True}})
+        self.assertEqual(c["title"], "Montana map: HRRR model forecast for 10 am, warning outlines and town "
+                                     "temperatures")
+        self.assertEqual(c["shown"], "The HRRR model forecast for 10 am, NWS warning outlines and the NWS forecast "
+                                     "temperature for each town.")
+        self.assertEqual(c["missing"], "Missing from this update: NOAA radar. This is not an all-clear.")
+        self.assertEqual(c["then"], "to play the HRRR model forecast, or switch to temperature and wind gusts")
+        self.assertNotIn("radar estimate", " ".join(c.values()))
+
+    def test_stale_radar_is_still_radar_and_says_how_old(self):
+        c = self.card(map_layers(radar_age=46), status={"radar": {"ok": False}, "forecast": {"ok": True}})
+        self.assertTrue(c["shown"].startswith("The latest NOAA radar estimate (from 8:14 am, older than usual), "))
+        self.assertEqual(c["missing"], "")
+
+    def test_no_pictures_and_failed_alerts_and_forecasts(self):
+        c = self.card(map_layers(radar=False, model=False), alerts={"ok": False, "items": []},
+                      towns=[{"hours": []}], status={"radar": {"ok": False}, "forecast": {"ok": False}})
+        self.assertEqual(c["title"], "Montana map: nothing loaded in this update")
+        self.assertEqual(c["shown"], "")
+        self.assertEqual(c["missing"], "Missing from this update: the radar and model pictures, NWS warning outlines "
+                                       "and town temperatures. This is not an all-clear.")
+        self.assertEqual(c["then"], "for the List of alerts and towns")
+
+    def test_last_verified_alerts_and_some_town_forecasts(self):
+        c = self.card(map_layers(model=False), alerts={"ok": False, "items": [{"id": "w1"}]},
+                      towns=[{"hours": [{}]}, {"hours": []}])
+        self.assertEqual(c["shown"], "The latest NOAA radar estimate, the outlines of the NWS alerts listed on this "
+                                     "page and the NWS forecast temperature for each town whose forecast loaded.")
+        self.assertEqual(c["missing"], "")
+        self.assertEqual(c["then"], "to play the past hour of radar")
+
+    def test_sample_pictures_say_they_are_invented(self):
+        self.assertTrue(self.card(map_layers(sample=True))["shown"].startswith(
+            "The latest sample radar picture (invented, not NOAA radar), "))
+        c = self.card(map_layers(radar=False, sample=True))
+        self.assertTrue(c["shown"].startswith("The sample model forecast for 10 am (invented, not the HRRR model), "))
+        self.assertTrue(c["title"].startswith("Montana map: sample model forecast for 10 am, "))
+
+    def test_the_zone_is_named_when_it_differs_from_the_build_time(self):
+        now = datetime(2026, 11, 1, 7, 10, tzinfo=UTC)          # 1:10 am MDT; at 8:00 UTC it is 1 am MST
+        c = self.card(map_layers(radar=False, now=now), status={"radar": {"ok": False}, "forecast": {"ok": True}},
+                      now=now)
+        self.assertTrue(c["shown"].startswith("The HRRR model forecast for 1 am MST, "), c["shown"])
+
+    def test_forecast_only_build(self):
+        """The forecast-only state of a real build: the radar bucket fails, the HRRR answers, NWS and
+        SPC fail. The Now page's caption and frame title name the model forecast, never radar."""
+        def forecast_only(out_dir, get, now, sample=False):
+            return map_layers(radar=False, now=now), {
+                "radar": {"label": g.LABELS["radar"], "ok": False,
+                          "detail": "the radar file list didn't load (server error (HTTP 503))"},
+                "forecast": {"label": g.LABELS["forecast"], "ok": True, "detail": "run 7:00 am, 12 hours"}}
+        with mock.patch.object(g, "build_gridded", forecast_only):
+            out, _ = build_with(FailingFetcher())
+        html = " ".join(page(out, "index.html").split())
+        self.assertIn('title="Montana map: HRRR model forecast for 10 am"', html)
+        self.assertIn('<p class="caption"> The HRRR model forecast for 10 am. Missing from this update: NOAA radar, '
+                      "NWS warning outlines and town temperatures. This is not an all-clear. "
+                      '<a href="map.html">Open the map</a> to play the HRRR model forecast, or switch to temperature '
+                      "and wind gusts. </p>", html)
+        self.assertNotIn("radar estimate", html)
+        m = json.loads(page(out, "data/map.json"))
+        precip = m["layers"]["precip"]
+        self.assertEqual(precip["frames"][precip["modes"]["12h"][precip["now_index"]["12h"]]]["time"],
+                         "2026-10-14T16:00:00Z")                     # 10 am MDT: the frame the card opens on
 
 
 class MapLabels(unittest.TestCase):
-    """Town labels must not cover each other or another town's dot, at the zoom a map opens at.
-
-    Maps 546 px and wider open at zoom 6 with every town; narrower maps (phones) open at zoom 5 and
-    hide the towns marked "minor" in towns.json. Widths are the labels as drawn (13 px bold Atkinson
-    Hyperlegible Next plus 6 px padding), measured in Chromium; an unknown name is estimated wide.
+    """Town label sides in towns.json. Whether a name covers another town's bubble or name, a basemap
+    label or a place is tested where the map's geometry is modelled: tools/build_basemap.py
+    check_layout, run by tests/test_basemap.py (test_labels_and_places_never_cover_a_bubble_or_each_other).
     """
-    WIDTH = {"Billings": 51.8, "Bozeman": 61.5, "Butte": 38.7, "Glasgow": 57.9, "Glendive": 59.7,
-             "Great Falls": 72.5, "Havre": 41.0, "Helena": 48.3, "Kalispell": 59.4, "Lewistown": 69.6,
-             "Livingston": 69.2, "Miles City": 67.1, "Missoula": 60.6, "West Yellowstone": 112.6}
-    HEIGHT = 18.2
-
-    @staticmethod
-    def project(lat, lon, zoom):
-        size = 256 * 2 ** zoom
-        y = (1 - math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) / math.pi) / 2 * size
-        return (lon + 180) / 360 * size, y
-
-    def place(self, zoom, towns):
-        s, n, w, e = src.MT_BOX
-        (x0, y0), (x1, y1) = self.project(n, w, zoom), self.project(s, e, zoom)
-        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2               # fitBounds centres the box
-        out = []
-        for t in towns:
-            x, y = self.project(t["lat"], t["lon"], zoom)
-            x, y = x - cx, y - cy
-            lw, h = self.WIDTH.get(t["name"], 6 + 8.5 * len(t["name"])), self.HEIGHT
-            side = t.get("label", "right")
-            box = {"right": (x + 6, y - h / 2, x + 6 + lw, y + h / 2),
-                   "left": (x - 6 - lw, y - h / 2, x - 6, y + h / 2),
-                   "top": (x - lw / 2, y - 6 - h, x + lw / 2, y - 6),
-                   "bottom": (x - lw / 2, y + 6, x + lw / 2, y + 6 + h)}[side]
-            out.append((t["name"], (x - 6, y - 6, x + 6, y + 6), box))
-        return out
-
-    @staticmethod
-    def overlap(a, b):
-        return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
-
-    def check(self, zoom, half_width, towns):
-        placed, problems = self.place(zoom, towns), []
-        for i, (name, _, box) in enumerate(placed):
-            if box[0] < -half_width or box[2] > half_width:
-                problems.append(f"{name} label runs off the map")
-            for j, (other, dot, obox) in enumerate(placed):
-                if i != j and self.overlap(box, dot):
-                    problems.append(f"{name} label covers the {other} dot")
-                if j > i and self.overlap(box, obox):
-                    problems.append(f"{name} and {other} labels overlap")
-        return problems
-
-    def test_desktop_map_every_town(self):
-        self.assertEqual(self.check(6, 546 / 2, site.TOWNS), [])
-
-    def test_phone_map_main_towns(self):
-        main = [t for t in site.TOWNS if not t.get("minor")]
-        self.assertGreaterEqual(len(main), 8)
-        self.assertEqual(self.check(5, 288 / 2, main), [])
 
     def test_label_sides_are_valid(self):
         for t in site.TOWNS:

@@ -19,9 +19,12 @@
     <a class="section-link" href="map.html?overlay=reports">Open the map</a></div>
   <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
     title="Map of storm reports in and near Montana" loading="lazy"></iframe>
+  {# the card also draws the town bubbles and warning outlines, and hides its own legend: key them here #}
   <ul class="legend" aria-label="Map key">
     <li><span class="swatch swatch-hail"></span>Hail report (bigger circle, bigger hail)</li>
     <li><span class="swatch swatch-wind"></span>Wind report</li>
+    <li>Town number: NWS forecast temperature, °F (orange ring: below {{ limits.cold_f }}&nbsp;°F or above {{ limits.hot_f }}&nbsp;°F)</li>
+    <li>Outline: NWS alert area (red warning, orange watch, gold advisory, grey statement)</li>
   </ul>
 </section>
 
@@ -30,7 +33,7 @@
   {% for day in reports.days %}
   {% set rows = reports['items'] | selectattr('day', 'equalto', day) | list %}
   <div class="report-day">
-    <h3>Reporting day starting {{ (day ~ 'T12:00:00Z')|day }} at 6 am MDT ({{ rows|length }} report{{ 's' if rows|length != 1 }})</h3>
+    <h3>Reporting day starting {{ (day ~ 'T12:00:00Z')|t('%a %b %-d at %-I %p %Z') }} ({{ rows|length }} report{{ 's' if rows|length != 1 }})</h3>
     {% if rows %}
     <div class="table-box">
       <table>

@@ -300,6 +300,11 @@ through blue, yellow at the 25 mph limit, orange, red and purple. No-coverage ha
 lines, faint county lines and interstates from zoom 7, pale-blue lakes and rivers, grey uppercase
 region names, dark town names with a white halo. Dark mode inverts to charcoal. Built once from
 Natural Earth and Census lines; no tile service.
+Past the basemap's padded box the page is the neighbours' land colour (#fafafa, dark #1b1e22), not
+a third grey: the hatch outside the pictures' box (43–50.5° N) is a hairline, 1 px every 6 px
+(`--hatch-out`), like the reference's faint "not available" hatch on white. A country or region
+name under the "Map data" link or the note line is hidden until the map moves; names may run off the
+screen's edge, as in the reference.
 
 **States.**
 - Frame: loading (the previous frame stays until the next has loaded) · shown · missing (a gap in the
@@ -307,17 +312,36 @@ Natural Earth and Census lines; no tile service.
 - Source: radar ok / stale (newest frame older than 30 minutes) / failed; forecast ok / failed. Each
   failure is a banner in words with "This is not an all-clear."
 - Page: fresh · older than 25 minutes (banner asks to reload) · sample (banner on every view).
-- Location: off · locating · shown with accuracy ring and nearest town · unavailable (toast).
+- Location: off · locating · shown with accuracy ring and nearest town (announced politely) ·
+  unavailable (toast). On a town's bubble the dot gives way to a blue ring on that bubble, so the
+  town's number stays readable.
+- Alerts without an outline (county or zone): one legend row, whatever the Warnings switch says,
+  "2 NWS alerts have no outline (county or zone): see List", which opens the List.
+- Sheets: a town sheet pans the map just enough that the town (bubble and name) is clear of the
+  sheet and of every panel; closing it puts the map back. Android's back gesture closes a sheet
+  (CloseWatcher). The layer menu sits over the timeline and scrolls inside on a short screen.
+- Very short screens (under 301 px tall, e.g. 400% zoom): the legend folds to its title row beside
+  the close button and the timeline stops short of the right-hand buttons.
+- Site updated while open: the first picture that fails to load makes the page ask for map.json
+  once; if it is newer, a banner says "This map was updated after you opened it" with Reload.
 - Card mode (Now and Storm reports pages): latest frame, outlines and bubbles, no controls except
-  "Open map"; dragging off so the page scrolls on a phone.
+  "Open map"; dragging off so the page scrolls on a phone. The words beside it are built from the
+  same data (`build.py` `map_card`): the Now page's caption and frame title name the picture the
+  card opens on (the radar estimate, or the model forecast and its time when there is no radar) and
+  what the update is missing. The card has no legend, so the Storm reports page's key names the town
+  numbers (NWS forecast temperature, ring outside the limits) and the outlines too.
 
 **Data contract.** The build writes `data/map.json` (version 1): `built`, `sample`, `tz`,
 `image_bounds` (all frames share one Web-Mercator image box, 43–50.5° N, 118.5–101° W), `view`,
-`now` (the newest radar frame), `layers` (per layer: `title`, `unit`, `legend` stops, `legend_note`,
+`now` (the newest radar frame), `layers` (per layer: `title`, `unit`, `legend` stops, `legend_note`
+(in a sample build it says the pictures are invented, not NOAA radar or the HRRR model),
 chronological `frames` with `time`, `kind` radar|forecast, `src`, `source`, `run` and `lead_min` for
 model frames, `nodata`; `modes` with frame indices and `now_index`), `status` (radar, forecast,
 alerts, forecasts, reports), `towns` (hourly NWS values for the timeline window, `alert_ids` or null
-when the check failed), `alerts` (with geometry or null), `reports`. Frames are PNG files in
+when the check failed), `alerts` (with geometry or null; it holds every alert in a town's
+`alert_ids`, since the build adds what the town checks found to the statewide list), `reports`. Frames are PNG files in
 `map/frames/`, named by layer and valid time (UTC); model frames add the run hour
 (`temp-202610160000-r2026101522.png`). GitHub Pages lets browsers reuse a file for 10 minutes and
-each hourly HRRR run redraws the same valid times, so a name must never stand for two pictures.
+each hourly HRRR run redraws the same valid times, so a name must never stand for two pictures. The
+pages load the scripts, stylesheets and basemap with `?v=` = the file's content hash (unchanged files
+keep their address across rebuilds) and `data/map.json` with `?v=` = the build minute.

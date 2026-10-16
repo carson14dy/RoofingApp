@@ -19,6 +19,7 @@
   var STEP_MS = 700;                 // per frame while playing
   var HOLD_MS = 1500;                // pause on "Now" and on the last frame
   var STALE_MIN = 25;                // the site rebuilds every 10 minutes; older than this, say so
+  var RETRY_MS = 10000;              // a picture that failed is asked for again after this, on the viewer's own step
   var TZ = "America/Denver";         // every time on the map is Montana time
   var MIN = 60000, HOUR = 3600000;
   var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -32,7 +33,8 @@
   var CARD = params.get("card") === "1";
   var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   // keep these in step with the media queries of the same layouts in map.css
-  var sideQuery = window.matchMedia ? window.matchMedia("(max-height: 500px) and (orientation: landscape)") : null;
+  // (not under 301 px tall or 521 px wide: those fold the legend instead, map.css "very short or narrow")
+  var sideQuery = window.matchMedia ? window.matchMedia("(min-height: 301px) and (max-height: 500px) and (min-width: 521px) and (orientation: landscape)") : null;
   var compactQuery = window.matchMedia ? window.matchMedia("(max-width: 520px) and (max-height: 760px), (max-height: 500px)") : null;
   var phoneQuery = window.matchMedia ? window.matchMedia("(max-width: 520px) and (orientation: portrait)") : null;
   var builtMs = Number(document.body.getAttribute("data-built")) || 0;
@@ -61,14 +63,19 @@
     layer: "precip", mode: "12h", frames: [], times: [], pos: 0, nowPos: 0,
     playing: false, timer: null, resumeOnShow: false, dragging: false,
     warnings: true, reports: params.get("overlay") === "reports", goToken: 0, userMoved: false,
-    ready: false                     // true once the first timeline is built
+    ready: false,                    // true once the first timeline is built
+    autoplay: true                   // play once the first picture shows, unless the viewer chose first (setPlaying)
   };
   var overlays = [], front = 0, swapToken = 0;   // two image overlays, crossfaded
   var cache = {};                                // picture src -> {ok: null|true|false, cbs: []}
   var preloaded = {};                            // layer key -> true once its frames are queued
   var renderers = {};
   var alertLayer = null, reportLayer = null, locLayer = null;
-  var sheetState = null;                         // {opener, kind, listScroll, listFocus}
+  var sheetState = null;                         // {opener, kind, ll, view, watcher, listScroll, listFocus}
+  var sheetOpenedAt = 0;                         // when the sheet last opened from closed (scrim double-click guard)
+  var panLimits = null;                          // the map's max bounds, lifted while a sheet is open
+  var locState = null;                           // {ll, dot}: the viewer's location once found
+  var updateChecked = 0;                         // when checkForUpdate last asked for map.json
   var toastTimer = null;
   var cardFitting = false;                       // fitCard is running (the caption must not re-fit)
   var legendForm = null;                         // the legend's form when last drawn (legendFormNow)
@@ -97,30 +104,41 @@
   /** True when the viewer asked the system for less motion (checked live: it can change). */
   function reducedMotion() { return !!(motionQuery && motionQuery.matches); }
 
-  /** fetch() a JSON file from this site; rejects with a plain reason. */
-  function fetchJSON(url) {
-    return fetch(url, { credentials: "same-origin" }).then(function (r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    });
+  /** fetch() a JSON file from this site; rejects with a reason in plain words (never a parser's
+      message such as "Unexpected token '<'"). */
+  function fetchJSON(url, opts) {
+    return fetch(url, opts || { credentials: "same-origin" }).then(function (r) {
+      if (!r.ok) throw new Error("the server answered HTTP " + r.status);
+      return r.json().then(null, function () { throw new Error("the file was incomplete or damaged"); });
+    }, function () { throw new Error("no connection to the site"); });
   }
 
   // ------------------------------------------------------------------ Montana time, in the site's words
 
-  var dtf = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "long", hour: "numeric", minute: "2-digit", hour12: true });
+  var dtf = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "long", hour: "numeric", minute: "2-digit", hour12: true, timeZoneName: "short" });
   var dtfDay = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric" });
 
-  /** {weekday, hour, minute, dayPeriod} of an instant in Montana time. */
+  /** {weekday, hour, minute, dayPeriod, timeZoneName} of an instant in Montana time. */
   function parts(ms) {
     var o = {};
     dtf.formatToParts(new Date(ms)).forEach(function (p) { o[p.type] = p.value; });
     return o;
   }
 
-  /** "4:56 pm", or "7 pm" on the hour (lowercase am/pm, like the rest of the site). */
+  var baseZone = null;
+  /** " MST" when an instant's zone (MST or MDT) differs from the build time's, else "": on the night
+      the clocks fall back, 1 am happens twice and only the zone tells the two apart. The rest of
+      the year the times stay as short as Apple's. */
+  function zoneMark(p) {
+    if (baseZone === null) baseZone = parts(builtMs || Date.now()).timeZoneName || "";
+    return p.timeZoneName && p.timeZoneName !== baseZone ? "\u00a0" + p.timeZoneName : "";
+  }
+
+  /** "4:56 pm", or "7 pm" on the hour (lowercase am/pm, like the rest of the site); "1 am MST" when
+      the zone differs from the build time's (zoneMark). */
   function clock(ms) {
     var p = parts(ms), ap = (p.dayPeriod || "").toLowerCase();
-    return (p.minute === "00" ? p.hour : p.hour + ":" + p.minute) + "\u00a0" + ap;
+    return (p.minute === "00" ? p.hour : p.hour + ":" + p.minute) + "\u00a0" + ap + zoneMark(p);
   }
 
   /** "Thursday 4:56 pm". */
@@ -131,7 +149,10 @@
 
   // ------------------------------------------------------------------ start-up
 
-  /** Load the two data files, then build the map. The age banner does not wait for them. */
+  /** Load the two data files and build the map from map.json as soon as it answers: towns, warning
+      outlines and the first picture don't wait for the basemap (the largest file, outlines only),
+      which is drawn underneath when it arrives (its panes sit below). The age banner waits for
+      neither. An error while starting is shown in words (showNoData), never left on "Loading". */
   function boot() {
     if (CARD) document.documentElement.classList.add("is-card");
     checkAge();
@@ -139,25 +160,42 @@
     whenEl.textContent = "Loading the map";
     el.play.disabled = true;
     el.range.disabled = true;
-    var gotData = fetchJSON(app.getAttribute("data-map")).then(null, function (e) { return { _error: e.message || "it didn't load" }; });
-    var gotBase = fetchJSON(app.getAttribute("data-basemap")).then(null, function (e) { return { _error: e.message || "it didn't load" }; });
-    Promise.all([gotData, gotBase]).then(function (res) { start(res[0], res[1]); });
+    var gotData = fetchJSON(app.getAttribute("data-map")).then(null, function (e) { return { _error: e.message }; });
+    var gotBase = fetchJSON(app.getAttribute("data-basemap")).then(null, function (e) { return { _error: e.message }; });
+    gotData.then(function (d) {
+      try { start(d); } catch (e) { showNoData("the map couldn\u2019t start with this update\u2019s data"); return; }
+      gotBase.then(function (bm) {
+        try {
+          if (bm && !bm._error) { drawBasemap(bm); tidyLabels(); }
+          else banner("warn", "<strong>The map outlines didn't load</strong> (" + esc((bm && bm._error) || "it didn't load") + "). The weather and towns still show.");
+        } catch (e) { banner("warn", "<strong>The map outlines couldn't be drawn.</strong> The weather and towns still show."); }
+      });
+    });
   }
 
-  /** Build everything once the data files have answered (either may have failed). */
-  function start(mapData, basemap) {
+  /** No map data (it didn't load, or the map couldn't start with it): say so in words and hide the
+      controls that need data. No Leaflet call here: a Leaflet failure is one way to get here. */
+  function showNoData(why) {
+    data = null;
+    setPlaying(false);
+    banner("warn", "<strong>The map data didn't load</strong> (" + esc(why || "it didn't load") + "). No radar, forecast or warnings are shown. " +
+      "This is not an all-clear. <a href=\"index.html\" target=\"_top\">See the Now page</a> or reload.");
+    whenEl.textContent = "Map data unavailable";
+    srcEl.textContent = "";
+    el.title.textContent = "No data";
+    el.play.disabled = true;
+    el.range.disabled = true;
+    app.classList.remove("is-loading");
+    app.classList.add("no-data");      // CSS hides the legend scale and the controls that need data
+  }
+
+  /** Build everything once map.json has answered (it may have failed); the basemap comes later. */
+  function start(mapData) {
     var ok = mapData && !mapData._error && mapData.layers;
     data = ok ? mapData : null;
     createMap(ok && mapData.view ? mapData.view : FALLBACK_VIEW, ok ? mapData.image_bounds : null);
-    if (basemap && !basemap._error) drawBasemap(basemap);
-    else banner("warn", "<strong>The map outlines didn't load</strong> (" + esc(basemap && basemap._error) + "). The weather and towns still show.");
     if (!ok) {
-      banner("warn", "<strong>The map data didn't load</strong> (" + esc(mapData && mapData._error) + "). No radar, forecast or warnings are shown. " +
-        "This is not an all-clear. <a href=\"index.html\" target=\"_top\">See the Now page</a> or reload.");
-      whenEl.textContent = "Map data unavailable";
-      srcEl.textContent = "";
-      el.title.textContent = "No data";
-      app.classList.add("no-data");      // CSS hides the legend scale and the controls that need data
+      showNoData((mapData && mapData._error) || "the file has no map in it");
       return;
     }
     noteLastKnownAlerts();
@@ -203,8 +241,14 @@
       minZoom: view.min_zoom || 5, maxZoom: view.max_zoom || 11, keyboard: interactive, dragging: interactive,
       touchZoom: interactive, scrollWheelZoom: interactive, doubleClickZoom: interactive, boxZoom: interactive,
       tap: false, maxBoundsViscosity: 0.9, fadeAnimation: !reducedMotion(), zoomAnimation: !reducedMotion(),
-      markerZoomAnimation: !reducedMotion()
+      markerZoomAnimation: !reducedMotion(), inertia: !reducedMotion()
     });
+    // With reduced motion every pan jumps instead of gliding: Leaflet's arrow-key pan, bounds pans
+    // and our own (reveal) all go through panBy. Checked at each pan, since the setting can change.
+    var panBy = map.panBy;
+    map.panBy = function (offset, opts) {
+      return panBy.call(this, offset, reducedMotion() ? L.extend({}, opts, { animate: false }) : opts);
+    };
     pane("frames", 410, false);
     pane("mask", 415, false);
     pane("alerts", 430, true);
@@ -230,7 +274,9 @@
       fitMinZoom();
     }
     map.on("zoomend", zoomClasses);
+    map.on("zoomend", placeLocDot);
     map.on("moveend", function () {          // hatching and ringed bubbles come into or out of view
+      tidyLabels();
       if (!state.ready) return;
       renderKeys();
       renderNote();
@@ -244,7 +290,13 @@
       if (data && state.ready && legendFormNow() !== legendForm) renderLegend();   // turned or resized past a breakpoint
       if (!state.userMoved) fitView();
       fitMinZoom();
-      if (sheetState) placeSheet();
+      if (!el.layers.hidden) fitLayersMenu();
+      if (sheetState) {
+        sheetState.resized = true;
+        placeSheet();
+        if (sheetState.ll) reveal(sheetState.ll);    // a turn can put the town under the side panel
+      }
+      tidyLabels();
     });
     zoomClasses();
   }
@@ -281,7 +333,7 @@
       tl = [legend.right + 12, Math.max(16, el.banners.getBoundingClientRect().bottom + 8)];
       br = [vw - right + 12, bottomPad];
       // a short landscape screen can be too short for Montana even at the minimum zoom
-      var zs = map.getBoundsZoom(vb, false, sum(tl[1]));
+      var zs = boundsZoom(vb, sum(tl[1]));
       if (boundsSize(vb, zs).y > vh - tl[1] - br[1]) placeCrowded(vb, zs, tl, br, vw, vh, tlTop);
     } else {
       // a taller phone keeps the one-column legend unless banners and the note leave Montana no room
@@ -293,11 +345,36 @@
       }
       tl = [6, legend.bottom + 4];
       br = [6, bottomPad];
-      var zBelow = map.getBoundsZoom(vb, false, sum(tl[1]));
+      var zBelow = boundsZoom(vb, sum(tl[1]));
       if (boundsSize(vb, zBelow).y > vh - tl[1] - br[1] + 1) placeCrowded(vb, zBelow, tl, br, vw, vh, tlTop);
     }
     map.fitBounds(vb, { paddingTopLeft: tl, paddingBottomRight: br, animate: false });
     fitMinZoom();
+  }
+
+  /** A country or region name (a basemap label) under one of the two controls that are plain text on
+      the map, the "Map data" link and the note line, is hidden until the map moves: two texts on top
+      of each other read as neither. The glass panels hide what is under them anyway, and names may
+      run off the edge as in the reference. Runs after every move, resize and note change. */
+  function tidyLabels() {
+    if (!map || CARD) return;
+    var boxes = [], link = el.legendWrap.querySelector(".mapdata");
+    if (link && link.offsetParent !== null) {          // the link's text, not its 44 px tap area
+      var rg = document.createRange();
+      rg.selectNodeContents(link);
+      boxes.push(rg.getBoundingClientRect());
+    }
+    if (!el.note.hidden) boxes.push(el.note.getBoundingClientRect());
+    boxes = boxes.filter(function (b) { return b.width && b.height; });
+    var spans = el.canvas.querySelectorAll(".lbl-country span, .lbl-region span");
+    for (var i = 0; i < spans.length; i++) {
+      var r = spans[i].getBoundingClientRect(), hide = false;
+      for (var k = 0; r.width && !hide && k < boxes.length; k++) {
+        var b = boxes[k];
+        hide = r.left < b.right + 2 && r.right > b.left - 2 && r.top < b.bottom + 2 && r.bottom > b.top - 2;
+      }
+      spans[i].classList.toggle("bm-hide", hide);
+    }
   }
 
   /** Montana (box vb at zoom z, centred across) has no room between the controls at the top and the
@@ -340,10 +417,18 @@
     br[1] = vh - best - size.y - 1;
   }
 
+  /** The zoom that fits box vb in the map less `pad` px; the minimum zoom when the controls leave no
+      room at all (a very short screen), where Leaflet would answer with its maximum zoom. */
+  function boundsZoom(vb, pad) {
+    var size = map.getSize();
+    if (size.x - pad.x < 1 || size.y - pad.y < 1) return map.getMinZoom();
+    return map.getBoundsZoom(vb, false, pad);
+  }
+
   /** Whether box vb fits, at the minimum zoom or more, between `top` and `bottomPad` px from the
       bottom (phone width, 6 px each side). */
   function fitsBelow(vb, top, bottomPad, vh) {
-    var z = map.getBoundsZoom(vb, false, L.point(12, top + bottomPad));
+    var z = boundsZoom(vb, L.point(12, top + bottomPad));
     return boundsSize(vb, z).y <= vh - top - bottomPad + 1;
   }
 
@@ -558,7 +643,9 @@
         html: '<span class="bubble" aria-hidden="true">\u2014</span><span class="tname" aria-hidden="true">' + esc(t.name) + "</span>",
         iconSize: [30, 30], iconAnchor: [15, 15]
       });
-      var m = L.marker([t.lat, t.lon], { icon: icon, keyboard: !CARD, riseOnHover: true, interactive: true }).addTo(map);
+      // autoPanOnFocus off: Leaflet's own keeps a focused bubble inside the map but not clear of the
+      // legend or the timeline; reveal() does (keyboard focus only, so a click doesn't pan twice)
+      var m = L.marker([t.lat, t.lon], { icon: icon, keyboard: !CARD, riseOnHover: true, interactive: true, autoPanOnFocus: false }).addTo(map);
       t._marker = m;
       t._el = m.getElement();
       t._bubble = t._el.querySelector(".bubble");
@@ -567,7 +654,25 @@
       t._el.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activateTown(t); }
       });
+      t._el.addEventListener("focus", function () {
+        if (!CARD && !sheetState && t._el.matches(":focus-visible")) reveal(L.latLng(t.lat, t.lon), townExtent(t));
+      });
+      t._el.addEventListener("blur", function () { if (state.ready) renderBubbles(); });   // its name was held while playing
     });
+  }
+
+  /** How far a town's bubble and name reach from its point, in px ({l, t, r, b}), for reveal(). */
+  function townExtent(t) {
+    var c = map.latLngToContainerPoint([t.lat, t.lon]), mapR = el.canvas.getBoundingClientRect();
+    var e = { l: 21, t: 21, r: 21, b: 21 };          // the bubble and its focus ring
+    var n = t._el.querySelector(".tname"), r = n && n.getBoundingClientRect();
+    if (r && r.width) {
+      e.l = Math.max(e.l, c.x - (r.left - mapR.left) + 3);
+      e.r = Math.max(e.r, r.right - mapR.left - c.x + 3);
+      e.t = Math.max(e.t, c.y - (r.top - mapR.top) + 3);
+      e.b = Math.max(e.b, r.bottom - mapR.top - c.y + 3);
+    }
+    return e;
   }
 
   /** A bubble was chosen: open its sheet (in the card, open the full map on that town). */
@@ -621,7 +726,11 @@
       t._bubble.classList.toggle("over", v.over);
       t._bubble.classList.toggle("unknown", v.text === "\u2014");
       t._over = v.over;
-      var label = t.name + ", " + v.words + (h ? " at " + clock(Date.parse(h.time)) + ", NWS forecast" : "") + (v.over ? ", over limit" : "");
+      var label = t.name + ", " + v.words + (h ? " at " + clock(Date.parse(h.time)) + ", NWS forecast" : "") + (v.over ? ", over limit" : "") +
+        (t._here ? ", your location" : "");
+      // a screen reader reads a focused control's new name out: while playing, the focused town's
+      // name waits until playback stops (setPlaying) or focus moves on (its blur)
+      if (state.playing && document.activeElement === t._el) return;
       t._el.setAttribute("aria-label", CARD ? label + ". Opens the full map." : label);
     });
   }
@@ -674,6 +783,7 @@
     if (reportLayer) { if (on) reportLayer.addTo(map); else reportLayer.remove(); }
     renderKeys();
     renderReportNote();
+    refitForBanner();
     if (!quiet) saveUrl();
   }
 
@@ -751,6 +861,8 @@
     var pos = state.nowPos;
     if (keepTime != null && n) pos = nearest(keepTime);
     if (!n) {
+      state.goToken++;               // a picture of the previous layer still loading must not appear now
+      app.classList.remove("is-loading");
       showPicture(null);
       renderAll();
       refitForNote();                // its "no pictures" warning can take 2 or 3 lines on a phone
@@ -760,7 +872,11 @@
       done: function () {
         if (!first) return;
         if (!state.userMoved && !sheetState) fitView();     // the timeline is a line shorter once "loading" goes
-        if (!CARD && !reducedMotion() && !sheetState && n > 1) { setPlaying(true); schedule(HOLD_MS); }
+        // play once, unless the viewer already chose (any play, pause, step or scrub clears autoplay)
+        if (state.autoplay && !CARD && !reducedMotion() && !sheetState && n > 1) {
+          if (document.hidden) state.resumeOnShow = true;   // opened in a background tab: play once it is shown
+          else { setPlaying(true); schedule(HOLD_MS); }
+        }
       }
     });
   }
@@ -782,40 +898,54 @@
     return clamp((ms - state.times[0]) / (state.times[n - 1] - state.times[0]), 0, 1);
   }
 
-  /** The "Now" time on the track: the newest radar frame (the build's "now"), or the build time when
-      the radar is stale (its newest frame is then not "now"); kept inside the track. */
-  function nowMs() {
+  /** The real "now" of this update: the newest radar frame (the build's "now"), or the build time when
+      the radar is stale or failed (its newest frame is then not "now"). */
+  function nowRaw() {
     var radar = data.status && data.status.radar;
-    var t = Date.parse(radar && radar.ok === false ? data.built : data.now);
+    return Date.parse(radar && radar.ok === false ? data.built : data.now);
+  }
+
+  /** "Now" kept inside the track: only for placing the Now tick and label (see nowOnTrack). */
+  function nowMs() {
+    var t = nowRaw();
     if (!state.times.length) return t;
     return clamp(t, state.times[0], state.times[state.times.length - 1]);
+  }
+
+  /** Whether the real now is on this track (within 10 minutes of it). Only then does the track show a
+      Now tick and label: a forecast-only track that starts at the next whole hour has none, and its
+      first frame gets its own time label instead (a frame 15 minutes after now isn't now). */
+  function nowOnTrack() {
+    return !!state.times.length && Math.abs(nowRaw() - nowMs()) <= 10 * MIN;
   }
 
   /** Small ticks under the track, one per frame where there is room, and a taller one at Now. */
   function renderTicks() {
     el.ticks.innerHTML = "";
-    var w = el.ticks.clientWidth || 300, last = -99, html = "";
+    var w = el.ticks.clientWidth || 300, last = -99, html = "", nowOn = nowOnTrack();
     for (var i = 0; i < state.times.length; i++) {
       var x = frac(state.times[i]) * w;
-      if (x - last < 6 || i === state.nowPos) continue;
+      if (x - last < 6 || (nowOn && i === state.nowPos)) continue;
       last = x;
       html += '<i style="left:' + (frac(state.times[i]) * 100).toFixed(3) + '%"></i>';
     }
-    if (state.times.length) html += '<i class="now" style="left:' + (frac(nowMs()) * 100).toFixed(3) + '%"></i>';
+    if (nowOn) html += '<i class="now" style="left:' + (frac(nowMs()) * 100).toFixed(3) + '%"></i>';
     el.ticks.innerHTML = html;
   }
 
-  /** Time labels under the track: "Now" first, then whole hours (or half hours) that fit
-      without touching each other at the current width. */
+  /** Time labels under the track: "Now" first (or, when now isn't on the track, the first frame's
+      own time), then whole hours (or quarter or half hours on a short track) that fit without
+      touching each other at the current width. A long track counts in steps of 2 hours or more,
+      like the reference ("8 AM Now 12 PM 2 PM"), so the labels stay calm on a wide screen too. */
   function layoutLabels() {
     var box = el.labels, w = box.clientWidth;
     box.innerHTML = "";
     var n = state.times.length;
     if (!n || n < 2 || !w) return;
     var t0 = state.times[0], t1 = state.times[n - 1], span = t1 - t0;
-    var nowT = nowMs();
-    var steps = span > 4 * HOUR ? [HOUR, 2 * HOUR, 3 * HOUR, 4 * HOUR, 6 * HOUR] : [15 * MIN, 30 * MIN, HOUR, 2 * HOUR];
-    var nowEl = makeLabel("Now", null, true);
+    var nowOn = nowOnTrack(), nowT = nowOn ? nowMs() : t0;      // the first label: Now, or the first frame
+    var steps = span > 4 * HOUR ? [2 * HOUR, 3 * HOUR, 4 * HOUR, 6 * HOUR] : [15 * MIN, 30 * MIN, HOUR, 2 * HOUR];
+    var nowEl = nowOn ? makeLabel("Now", null, true) : makeLabel(null, t0, false);
     var nowBox = place(nowEl, frac(nowT) * w);
     var GAP = 8, EDGE = 6, SPACING = 46;   // px between labels; px between steps so the scale stays calm
     for (var s = 0; s < steps.length; s++) {
@@ -826,7 +956,7 @@
         if (Math.abs(t - nowT) < 1) continue;
         marks.push(t);
       }
-      var placed = [nowBox], els = [];
+      var placed = [], els = [];
       for (var k = 0; k < marks.length; k++) {
         var lab = makeLabel(null, marks[k], false);
         var b = place(lab, frac(marks[k]) * w);
@@ -834,7 +964,7 @@
         if (b.left < -EDGE || b.right > w + EDGE) { lab.remove(); els.pop(); continue; }
         if (b.left < nowBox.right + GAP && b.right > nowBox.left - GAP) { lab.remove(); els.pop(); continue; }   // too close to "Now": left out
         var hit = false;
-        for (var q = 1; q < placed.length; q++) if (b.left < placed[q].right + GAP && b.right > placed[q].left - GAP) { hit = true; break; }
+        for (var q = 0; q < placed.length; q++) if (b.left < placed[q].right + GAP && b.right > placed[q].left - GAP) { hit = true; break; }
         if (hit) { okAll = false; break; }      // hour labels touching: try a wider step
         placed.push(b);
       }
@@ -858,8 +988,8 @@
     if (text) s.textContent = text;
     else {
       var p = parts(ms);
-      if (p.minute === "00") s.innerHTML = esc(p.hour) + "<small>\u00a0" + esc((p.dayPeriod || "").toLowerCase()) + "</small>";
-      else s.textContent = p.hour + ":" + p.minute;
+      if (p.minute === "00") s.innerHTML = esc(p.hour) + "<small>\u00a0" + esc((p.dayPeriod || "").toLowerCase() + zoneMark(p)) + "</small>";
+      else s.textContent = p.hour + ":" + p.minute + zoneMark(p);
     }
     el.labels.appendChild(s);
     return s;
@@ -883,7 +1013,11 @@
     if (!n) return;
     pos = clamp(pos, 0, n - 1);
     state.pos = pos;
-    var f = state.frames[pos], token = ++state.goToken;
+    var f = state.frames[pos], token = ++state.goToken, c = cache[f.src];
+    // a picture that failed a while ago is asked for again (one dropped request on a phone network
+    // must not blank it for good); playback skips failed pictures, so only the viewer's own step
+    // or scrub retries, at most once per RETRY_MS
+    if (c && c.ok === false && Date.now() - c.failedAt >= RETRY_MS) { delete cache[f.src]; f._failed = false; }
     renderAll();
     load(f.src, function (ok) {
       if (token !== state.goToken) return;
@@ -946,7 +1080,7 @@
       var img = new Image();
       img.decoding = "async";
       img.onload = function () { c.ok = true; flush(c); };
-      img.onerror = function () { c.ok = false; flush(c); };
+      img.onerror = function () { c.ok = false; c.failedAt = Date.now(); flush(c); checkForUpdate(); };
       img.src = src;
       c.img = img;
     }
@@ -1010,9 +1144,13 @@
     el.title.textContent = f.kind === "radar" ? "Radar" : "Forecast";
     whenEl.textContent = dayClock(ms);
     srcEl.textContent = sourceWords(f);
-    el.range.value = String(ms);
-    el.range.setAttribute("aria-valuetext", (f.kind === "radar" ? "Radar, " : "Forecast, ") + dayClock(ms) + ", " +
-      sourceWords(f) + nowWords(ms, f));
+    // a screen reader reads every value change of a focused slider: while playing, its value waits
+    // until playback stops (setPlaying); the knob and the title above still move
+    if (!(state.playing && document.activeElement === el.range)) {
+      el.range.value = String(ms);
+      el.range.setAttribute("aria-valuetext", (f.kind === "radar" ? "Radar, " : "Forecast, ") + dayClock(ms) + ", " +
+        sourceWords(f) + nowWords(ms, f));
+    }
     var pct = (frac(ms) * 100).toFixed(3) + "%";
     el.fill.style.width = pct;
     el.knob.style.left = pct;
@@ -1024,7 +1162,7 @@
       gust layers is "this hour". Other frames say nothing (a frame 10 minutes after now isn't now). */
   function nowWords(ms, f) {
     if (state.pos !== state.nowPos) return "";
-    var now = nowMs();
+    var now = nowRaw();              // the real now: the clamped one (nowMs) is only for placing the tick
     if (Math.abs(ms - now) <= 10 * MIN) return ", now";
     if (f.kind === "radar") return ", latest radar picture";
     return Math.floor(now / HOUR) * HOUR === ms ? ", this hour" : "";
@@ -1048,9 +1186,11 @@
     // so it stays short, and the key still names the hatching
     if (f && !warn && hatchWords()) info = f.kind === "radar" ? HATCH_NOTE.radar : HATCH_NOTE.model;
     var html = warn ? '<span class="note-warn">' + esc(warn) + "</span>" : info ? '<span class="note-info">' + esc(info) + "</span>" : "";
-    if (el.note._html !== html) { el.note.innerHTML = html; el.note._html = html; }
+    var changed = el.note._html !== html;
+    if (changed) { el.note.innerHTML = html; el.note._html = html; }
     el.note.hidden = !html || CARD;
     el.note.classList.toggle("warn", !!warn);
+    if (changed) tidyLabels();
   }
 
   /** The note's warnings at timeline position `pos` (any position when the layer has no pictures):
@@ -1127,8 +1267,9 @@
     return keep;
   }
 
-  /** Keys under the legend: first what the town numbers are (the NWS forecast, not the coloured
-      model field under them; always shown, phones too), then only what is on the map now:
+  /** Keys under the legend: alerts that have no outline (when there are any), what the town numbers
+      are (the NWS forecast, not the coloured model field under them; always shown, phones too),
+      then only what is on the map now:
       hatching, the limit ring, warning outline colours and storm-report circles. Every colour
       carries its word. */
   function renderKeys() {
@@ -1143,8 +1284,22 @@
       if (data.reports.some(function (r) { return r.kind === "hail"; })) keys.push(["key-hail", "Hail report (size)"]);
       if (data.reports.some(function (r) { return r.kind === "wind"; })) keys.push(["key-wind", "Wind report"]);
     }
+    if (locState && locState.here && townVisible(locState.here)) keys.push(["key-here", "Your location"]);
     var html = keys.map(function (k) { return '<li><span class="key ' + k[0] + '" aria-hidden="true"></span>' + esc(k[1]) + "</li>"; }).join("");
-    if (el.legendKeys.innerHTML !== html) el.legendKeys.innerHTML = html;
+    // alerts issued by county or zone have no outline to draw (AGENTS.md rule 6: null geometry never
+    // means "no alert"): one row says how many, whatever the Warnings switch says, and opens the List.
+    // First, so a legend that scrolls (a phone on its side) shows it without scrolling.
+    var n = noOutlineCount();
+    if (n) {
+      html = '<li><button type="button" class="key-btn" data-open-list><span class="key key-list" aria-hidden="true"></span>' +
+        esc(n + (n > 1 ? " NWS alerts have" : " NWS alert has") + " no outline (county or zone): see List") + "</button></li>" + html;
+    }
+    if (el.legendKeys._html !== html) { el.legendKeys.innerHTML = html; el.legendKeys._html = html; }
+  }
+
+  /** How many active alerts have no outline (issued by county or zone). */
+  function noOutlineCount() {
+    return ((data && data.alerts && data.alerts.items) || []).filter(function (a) { return !a.geometry; }).length;
   }
 
   /** What the hatching on screen means, or "" when none is in view. Hatching marks where this map has
@@ -1185,11 +1340,14 @@
 
   /** Start or stop playing (the button's aria-pressed says which). */
   function setPlaying(on) {
+    state.autoplay = false;          // the viewer (or a sheet) chose: the first picture won't start playback
+    var was = state.playing;
     state.playing = !!on && state.frames.length > 1;
     el.play.setAttribute("aria-pressed", state.playing ? "true" : "false");
     clearTimeout(state.timer);
     state.timer = null;
     if (state.playing) schedule(STEP_MS);
+    else if (was && data && state.ready) { renderTimeline(); renderBubbles(); }   // the held slider value and town name
   }
 
   /** Next playback step after `ms`. */
@@ -1212,7 +1370,7 @@
     state.timer = null;
     if (!state.playing) return;
     var n = state.frames.length, next = (state.pos + 1) % n, guard = 0;
-    while (state.frames[next]._failed && guard++ < n) next = (next + 1) % n;
+    while (knownFailed(state.frames[next]) && guard++ < n) next = (next + 1) % n;   // failed, shown or preloaded
     go(next);
   }
 
@@ -1271,8 +1429,18 @@
     el.listBtn.addEventListener("click", function () { openList(el.listBtn); });
     el.near.addEventListener("click", function () { var t = findTown(el.near.getAttribute("data-town")); if (t) openTown(t, el.near); });
 
+    el.legendKeys.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-open-list]");
+      if (b) openList(b);
+    });
     el.sheetClose.addEventListener("click", closeSheet);
-    el.scrim.addEventListener("click", closeSheet);
+    el.scrim.addEventListener("click", function () {
+      // the second click of a double-click on a bubble or an outline lands on the scrim the first one
+      // put under the pointer: it must not close the sheet that click just opened (a time guard, as
+      // iPhone Safari counts every tap as a single click)
+      if (Date.now() - sheetOpenedAt < 400) return;
+      closeSheet();
+    });
     el.sheetBack.addEventListener("click", backToList);
     el.sheetBody.addEventListener("click", onSheetClick);
     el.sheet.addEventListener("keydown", trapFocus);
@@ -1357,21 +1525,34 @@
     if (sheetState || !el.layers.hidden || e.altKey || e.ctrlKey || e.metaKey) return;
     var t = e.target, tag = (t && t.tagName) || "";
     var onPage = t === document.body || t === el.play || t === el.timeline || t === document.documentElement;
-    if (e.key === " " && (t === document.body || t === document.documentElement)) { e.preventDefault(); setPlaying(!state.playing); return; }
+    // the map itself too: a click or drag on it focuses it (Leaflet's keys don't use Space)
+    if (e.key === " " && (t === document.body || t === document.documentElement || t === el.canvas)) { e.preventDefault(); setPlaying(!state.playing); return; }
     if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && onPage && tag !== "INPUT") {
       e.preventDefault();
       stepBy(e.key === "ArrowLeft" ? -1 : 1);
     }
   }
 
-  /** Open or close the layer menu (focus goes in on open and back to the button on close). */
+  /** Open or close the layer menu (focus goes in on open and back to the button on close). While it
+      is open the top controls are lifted over the timeline (.top.menu-open): both are stacking
+      contexts of their own, so the menu's own z-index can't do it. */
   function toggleLayers(open, refocus) {
     el.layers.hidden = !open;
+    el.top.classList.toggle("menu-open", !!open);
     el.layersBtn.setAttribute("aria-expanded", open ? "true" : "false");
     if (open) {
+      fitLayersMenu();
       var checked = el.layers.querySelector("input[name=layer]:checked") || el.layers.querySelector("input");
       if (checked) checked.focus();
     } else if (refocus) el.layersBtn.focus();
+  }
+
+  /** The layer menu ends above the bottom of the screen and scrolls inside when it is taller (a phone
+      on its side). Measured, since its top moves with the banners. */
+  function fitLayersMenu() {
+    el.layers.style.maxHeight = "";
+    var room = app.getBoundingClientRect().bottom - el.layers.getBoundingClientRect().top - 12;
+    el.layers.style.maxHeight = Math.max(120, Math.floor(room)) + "px";
   }
 
   /** Keep the chosen layer, mode and overlay in the address so a reload keeps them. */
@@ -1411,6 +1592,35 @@
     return p;
   }
 
+  /** A banner that came or went (or keys that grew the legend) can cover towns: fit again, unless the
+      viewer has moved the map or a sheet is open. */
+  function refitForBanner() {
+    if (state.ready && !state.userMoved && !sheetState) fitView();
+  }
+
+  /** A warning banner with a Reload button (not in the card, whose page has its own). */
+  function reloadBanner(id, words) {
+    var b = banner("warn", "<strong>" + esc(words) + "</strong> Reload for the latest." +
+      (CARD ? "" : ' <button type="button" class="banner-btn" data-reload>Reload</button>'), id);
+    var btn = b.querySelector("[data-reload]");
+    if (btn) btn.addEventListener("click", function () { location.reload(); });
+    refitForBanner();
+    return b;
+  }
+
+  /** The first picture that fails may be gone because the site was rebuilt since this page opened
+      (each model run gives the model pictures new names, and each deploy replaces the whole site).
+      Ask for map.json past every cache; when it is newer than ours, say so with a Reload button.
+      At most once a minute, and not again once an update is found. */
+  function checkForUpdate() {
+    if (CARD || !data || byId("update-banner") || Date.now() - updateChecked < MIN) return;
+    updateChecked = Date.now();
+    var url = app.getAttribute("data-map").split("?")[0] + "?check=" + Date.now();
+    fetchJSON(url, { credentials: "same-origin", cache: "no-store" }).then(function (d) {
+      if (d && d.built && data && d.built !== data.built) reloadBanner("update-banner", "This map was updated after you opened it.");
+    }, function () { /* offline too: the note already says the picture didn't load */ });
+  }
+
   /** When the alert check failed but an earlier verified list is shown, say from when. */
   function noteLastKnownAlerts() {
     var a = data.alerts || {};
@@ -1437,10 +1647,7 @@
       if (strong.textContent !== words) strong.textContent = words;
       return;
     }
-    b = banner("warn", "<strong>" + esc(words) + "</strong> Reload for the latest." +
-      (CARD ? "" : ' <button type="button" class="banner-btn" data-reload>Reload</button>'), "age-banner");
-    var btn = b.querySelector("[data-reload]");
-    if (btn) btn.addEventListener("click", function () { location.reload(); });
+    reloadBanner("age-banner", words);
   }
 
   /** "40 minutes", "about 3 hours", "about 3 days". */
@@ -1468,16 +1675,15 @@
     toast("Finding your location\u2026");
     navigator.geolocation.getCurrentPosition(function (pos) {
       el.locateBtn.classList.remove("is-busy");
-      el.toast.classList.remove("show");
-      el.toast.textContent = "";
       el.locateBtn.classList.add("is-on");
       var ll = L.latLng(pos.coords.latitude, pos.coords.longitude), acc = pos.coords.accuracy || 0;
       if (locLayer) locLayer.remove();
+      var dot = L.marker(ll, { pane: "loc", interactive: false, keyboard: false,
+        icon: L.divIcon({ className: "loc-dot", html: "<i></i>", iconSize: [16, 16], iconAnchor: [8, 8] }) });
       locLayer = L.layerGroup([
-        L.circle(ll, { radius: acc, renderer: renderers.loc, className: "loc-acc", interactive: false }),
-        L.marker(ll, { pane: "loc", interactive: false, keyboard: false,
-          icon: L.divIcon({ className: "loc-dot", html: "<i></i>", iconSize: [16, 16], iconAnchor: [8, 8] }) })
+        L.circle(ll, { radius: acc, renderer: renderers.loc, className: "loc-acc", interactive: false }), dot
       ]).addTo(map);
+      locState = { ll: ll, dot: dot, here: null };
       var best = null, bestKm = Infinity;
       data.towns.forEach(function (t) {
         var km = ll.distanceTo([t.lat, t.lon]) / 1000;
@@ -1485,30 +1691,65 @@
       });
       var inside = map._imageBounds && map._imageBounds.contains(ll);
       if (inside) { state.userMoved = true; map.setView(ll, Math.max(map.getZoom(), 7), { animate: !reducedMotion() }); }
-      else toast("You're outside the area this map covers.");
+      var words = inside ? "Showing your location." : "You're outside the area this map covers.";
       if (best) {
         var mi = Math.round(bestKm * 0.621371);
         el.near.textContent = "Nearest town: " + best.name + " \u00b7 " + mi + " mi";
         el.near.setAttribute("data-town", best.slug);
         el.near.setAttribute("aria-label", "Nearest town: " + best.name + ", " + mi + " miles. Open its forecast.");
         el.near.hidden = false;
+        words += " Nearest town: " + best.name + ", " + (mi < 1 ? "under a mile." : mi + (mi === 1 ? " mile." : " miles."));
       }
+      toast(words);                  // the polite live region: a screen reader hears that it worked
+      placeLocDot();
     }, function () {
       el.locateBtn.classList.remove("is-busy");
       toast("Location isn't available.");
     }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
   }
 
+  /** The location dot, or a blue ring on the bubble it would sit on: drawn over a bubble, the dot
+      would hide that town's number (the town the "Nearest town" chip names). Checked again at every
+      zoom, as their distance on screen changes. */
+  function placeLocDot() {
+    if (!locState || !data) return;
+    var p = map.latLngToLayerPoint(locState.ll), here = null, best = 15 + 8 + 2;   // bubble and dot radii, a little air
+    data.towns.forEach(function (t) {
+      if (t.minor && map.getZoom() < 7) return;
+      var d = map.latLngToLayerPoint([t.lat, t.lon]).distanceTo(p);
+      if (d < best) { best = d; here = t; }
+    });
+    locState.here = here;
+    data.towns.forEach(function (t) { t._here = t === here; t._el.classList.toggle("is-here", t._here); });
+    var dotEl = locState.dot.getElement();
+    if (dotEl) dotEl.classList.toggle("is-hidden", !!here);
+    if (state.ready) { renderBubbles(); renderKeys(); }
+  }
+
   // ------------------------------------------------------------------ sheets (town, alert, report, list)
 
-  /** Open the bottom sheet (a modal dialog). The opener gets focus back when it closes. */
+  /** Open the bottom sheet (a modal dialog). The opener gets focus back when it closes. Android's
+      back button or gesture closes it (a CloseWatcher, where the browser has one), as Escape and the
+      Close button do; the page's history is left alone. */
   function openSheet(kind, title, html, opener, opts) {
     opts = opts || {};
     if (!sheetState) {
-      sheetState = { opener: opener || document.activeElement };
+      sheetState = { opener: opener || document.activeElement,
+        view: { center: map.getCenter(), zoom: map.getZoom(), userMoved: state.userMoved } };   // closeSheet puts it back
+      sheetOpenedAt = Date.now();
       setPlaying(false);
+      // the map can't be moved while a sheet is open, so its pan limits are lifted until it closes:
+      // they would undo the pan that keeps a town in sight above a tall sheet (reveal)
+      if (map.options.maxBounds) { panLimits = map.options.maxBounds; map.setMaxBounds(null); }
+      if (window.CloseWatcher) {
+        try {
+          sheetState.watcher = new CloseWatcher();
+          sheetState.watcher.onclose = function () { closeSheet(); };
+        } catch (e) { /* not allowed here: Escape and Close still work */ }
+      }
     }
     sheetState.kind = kind;
+    sheetState.ll = null;            // openTown sets it: the town to keep in sight on a resize
     sheetState.back = !!opts.back;
     toggleLayers(false);
     el.sheet.className = "glass sheet sheet-" + kind;
@@ -1534,14 +1775,29 @@
     else el.sheet.style.removeProperty("--sheet-top");
   }
 
-  /** Close the sheet and put focus back where it came from. */
+  /** Close the sheet and put focus back where it came from. If the sheet panned the map to keep a
+      town in sight, the map goes back to where it was (the viewer can't move it while a sheet is
+      open). A ?town= link has done its job: the address drops it, so a reload doesn't reopen it. */
   function closeSheet() {
     if (!sheetState) return;
-    var opener = sheetState.opener;
+    var opener = sheetState.opener, v = sheetState.view, panned = sheetState.revealed, resized = sheetState.resized;
+    if (sheetState.watcher) { sheetState.watcher.onclose = null; sheetState.watcher.destroy(); }
     sheetState = null;
     el.sheet.hidden = true;
     el.scrim.hidden = true;
     setInert(false);
+    // the pan limits come back once the map is back where it was (Leaflet fires moveend even for a
+    // pan of zero, and at once without animation)
+    var limit = function () { if (panLimits && !sheetState) map.setMaxBounds(panLimits); };
+    if (panned && v && Math.abs(map.getZoom() - v.zoom) < 1e-6) {
+      state.userMoved = v.userMoved;
+      if (resized && !v.userMoved) { fitView(); limit(); }      // turned while open: fit the new screen
+      else { map.once("moveend", limit); map.panTo(v.center, { animate: !reducedMotion() }); }
+    } else limit();
+    if (new URLSearchParams(location.search).has("town")) saveUrl();
+    if (opener && !document.contains(opener) && opener.hasAttribute && opener.hasAttribute("data-open-list")) {
+      opener = el.legendKeys.querySelector("[data-open-list]");      // the legend keys were drawn again
+    }
     if (opener && document.contains(opener) && opener.focus && opener.offsetParent !== null) opener.focus();
     else el.canvas.focus();
   }
@@ -1554,7 +1810,8 @@
     });
   }
 
-  /** Fallback focus trap for browsers without `inert`: Tab cycles inside the sheet. */
+  /** Tab and Shift+Tab wrap around inside the modal sheet: `inert` keeps focus off the page behind
+      it, but alone it lets Tab leave the page for the browser's own controls. */
   function trapFocus(e) {
     if (e.key !== "Tab") return;
     var f = [].slice.call(el.sheet.querySelectorAll("button:not([hidden]), a[href], [tabindex='0']")).filter(function (x) { return x.offsetParent !== null; });
@@ -1634,29 +1891,58 @@
     } else {
       html += '<div class="rows">' + t.alert_ids.map(function (id) {
         var a = (data.alerts.items || []).filter(function (x) { return x.id === id; })[0];
-        if (!a) return '<p class="muted">An alert that is listed on the Now page.</p>';
+        // the build lists every alert a town check found (build.py add_town_alerts); this is a backstop
+        if (!a) return '<p class="warn">An NWS alert is active here, but this map update has no details for it. The full forecast page below lists it.</p>';
         return alertRow(a);
       }).join("") + "</div>";
     }
     html += '<p><a class="go" href="' + esc(t.url) + '">Full forecast for ' + esc(t.name) + "</a></p>";
     openSheet("town", t.name, html, opener, { back: back });
-    reveal(L.latLng(t.lat, t.lon));
+    sheetState.ll = L.latLng(t.lat, t.lon);
+    reveal(sheetState.ll, townExtent(t));
   }
 
-  /** Pan just enough that a point stays in sight beside or above the open sheet and below the
-      top controls (like a maps app does when a place card opens). */
-  function reveal(ll) {
-    var size = map.getSize(), p = map.latLngToContainerPoint(ll);
-    var mapR = el.canvas.getBoundingClientRect(), sh = el.sheet.getBoundingClientRect();
-    var free = { left: 0, top: el.buttons.getBoundingClientRect().top - mapR.top + 52, right: size.x, bottom: size.y };
-    if (sh.left - mapR.left > size.x / 3) free.right = sh.left - mapR.left;      // side panel (wide screens)
-    else free.bottom = sh.top - mapR.top;                                       // bottom sheet (phones)
-    var m = 36;
-    if (free.bottom - free.top < 2 * m || free.right - free.left < 2 * m) return;
-    var x = clamp(p.x, free.left + m, free.right - m), y = clamp(p.y, free.top + m, free.bottom - m);
-    if (Math.abs(x - p.x) > 1 || Math.abs(y - p.y) > 1) {
-      state.userMoved = true;
-      map.panBy([p.x - x, p.y - y], { animate: !reducedMotion() });
+  /** Pan just enough that a town is in sight, clear of everything drawn over the map: the open sheet,
+      the legend, the "Map data" link, the close button, the right-hand buttons, the banners, the
+      timeline, the note and the location chip (like a maps app does when a place card opens).
+      `ext` is how far the town reaches from its point ({l, t, r, b} px: the bubble and its name).
+      Of the clear spots the nearest to where the town is now wins; with no clear spot for the name
+      too, one for the bubble alone; with none at all (a sheet as tall as the screen), the map stays. */
+  function reveal(ll, ext) {
+    var size = map.getSize(), p = map.latLngToContainerPoint(ll), mapR = el.canvas.getBoundingClientRect();
+    var boxes = [];
+    [el.sheet, el.legend, el.legendWrap.querySelector(".mapdata"), el.top.querySelector(".close"), el.buttons,
+      el.timeline, el.note, el.near].concat([].slice.call(el.banners.children)).forEach(function (x) {
+      if (!x || x.hidden || x.offsetParent === null) return;
+      var r = x.getBoundingClientRect();
+      if (r.width && r.height) boxes.push({ l: r.left - mapR.left, t: r.top - mapR.top, r: r.right - mapR.left, b: r.bottom - mapR.top });
+    });
+    /** Whether the town, its point at x, y, would be clear of every box and inside the map. */
+    function clear(e, x, y) {
+      if (x - e.l < 0 || y - e.t < 0 || x + e.r > size.x || y + e.b > size.y) return false;
+      for (var k = 0; k < boxes.length; k++) {
+        var b = boxes[k];
+        if (x + e.r > b.l && x - e.l < b.r && y + e.b > b.t && y - e.t < b.b) return false;
+      }
+      return true;
+    }
+    var exts = [ext || { l: 24, t: 24, r: 24, b: 24 }, { l: 24, t: 24, r: 24, b: 24 }];
+    for (var i = 0; i < exts.length; i++) {
+      var e = exts[i];
+      if (clear(e, p.x, p.y)) return;
+      var best = null, bestD = Infinity, STEP = 6;
+      for (var y = e.t; y <= size.y - e.b; y += STEP) {
+        for (var x = e.l; x <= size.x - e.r; x += STEP) {
+          var d = (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y);
+          if (d < bestD && clear(e, x, y)) { bestD = d; best = [x, y]; }
+        }
+      }
+      if (best) {
+        state.userMoved = true;
+        if (sheetState) sheetState.revealed = true;
+        map.panBy([p.x - best[0], p.y - best[1]], { animate: !reducedMotion() });
+        return;
+      }
     }
   }
 
@@ -1759,9 +2045,12 @@
 
   // ------------------------------------------------------------------ card mode (inside other pages)
 
-  /** The card: latest frame, outlines and bubbles; no controls except "Open map". */
+  /** The card: latest frame, outlines and bubbles; no controls except "Open map". The Now page's
+      caption names the same picture: build.py map_card() picks the frame the way setLayer and
+      buildTimeline open the card (precipitation, 12h timeline, now_index). Change both together. */
   function setupCard() {
     el.cardOpen.href = "map.html" + layerQuery("?");
+    el.canvas.removeAttribute("aria-describedby");   // its keys and List button aren't in the card
     renderCardChip();
   }
 
@@ -1782,6 +2071,10 @@
     var hatch = f && !f._failed ? hatchWords() : "";
     var html = '<span class="card-main">' + esc(main) + "</span>" + (hatch ? '<span class="card-hatch"><span class="key key-hatch" aria-hidden="true"></span>' +
       '<span class="visually-hidden">. Hatched areas: </span>' + esc(hatch) + "</span>" : "");
+    // the Storm reports card: alerts without an outline aren't on it (the Now page card sits beside
+    // the full alert list, so it needn't say)
+    var n = state.reports ? noOutlineCount() : 0;
+    if (n) html += '<span class="card-alerts"><span class="visually-hidden">. </span>' + esc(n + (n > 1 ? " NWS alerts have" : " NWS alert has") + " no outline: see the Now page") + "</span>";
     if (el.cardChip._html !== html) { el.cardChip.innerHTML = html; el.cardChip._html = html; }
     el.cardChip.classList.toggle("warn", warn);
     if (state.ready && !cardFitting && map && el.cardChip.offsetHeight !== h0) fitView();

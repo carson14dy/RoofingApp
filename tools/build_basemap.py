@@ -124,11 +124,19 @@ PLACE_ZOOMS = range(5, 10)       # a place shows from its min_zoom, at the lates
 LABEL_METRICS = {"country": (10.0, 16.0), "region": (9.5, 15.0), "region-main": (21.0, 26.0),
                  "water": (6.3, 14.0)}
 PLACE_CHAR, PLACE_H, PLACE_DOT = 6.8, 15.0, 3.0      # 12 px place names, right of a 6 px dot
-BUBBLE_R, TOWN_H = 15.0, 18.2                       # 30 px town bubbles; 13 px bold names
-TOWN_LABEL_W = {"Billings": 51.8, "Bozeman": 61.5, "Butte": 38.7, "Glasgow": 57.9, "Glendive": 59.7,
-                "Great Falls": 72.5, "Havre": 41.0, "Helena": 48.3, "Kalispell": 59.4,
-                "Lewistown": 69.6, "Livingston": 69.2, "Miles City": 67.1, "Missoula": 60.6,
-                "West Yellowstone": 112.6}         # measured in Chromium (tests/test_site.py)
+# Town bubbles and names as map.js drawTowns and map.css .town draw them (tests/test_basemap.py checks
+# the CSS still says so): a 30 px bubble on the point; the name 13 px bold with line-height 1, its near
+# edge 35 px from the 30 px icon's far edge, i.e. 20 px from the point, on the side towns.json gives.
+BUBBLE_R, TOWN_NAME_OFF, TOWN_H = 15.0, 20.0, 13.0
+TOWN_LABEL_W = {"Billings": 45.8, "Bozeman": 55.6, "Butte": 32.7, "Glasgow": 51.9, "Glendive": 53.7,
+                "Great Falls": 66.5, "Havre": 35.0, "Helena": 42.4, "Kalispell": 53.4,
+                "Lewistown": 63.6, "Livingston": 63.2, "Miles City": 61.1, "Missoula": 54.6,
+                "West Yellowstone": 106.6}         # .tname widths measured in Chromium; others estimated wide
+# At zoom 5 a town name may reach this far (px) into another town's bubble: Missoula's runs 3.5 px into
+# Kalispell's, Billings' 1.0 px into Miles City's. No choice of label sides clears zoom 5 (Missoula or
+# Billings below their bubble hits Bozeman's or West Yellowstone's name, and the ID label), and the map
+# opens there only when it is narrower than about 340 px or very short; from zoom 5.25 all are clear.
+TOUCH_Z5 = 4.0
 GAP = 3.0                                           # px kept clear between boxes
 LABEL_GAP = 28.0                                    # px between two text labels, so "CANADA" and "SK" read apart
 
@@ -775,15 +783,45 @@ def label_size(kind: str, text: str):
 
 
 def town_boxes(t: dict, z: int) -> list:
+    """[the bubble's box with its 1.5 px ring, the name's box] in px at zoom z (see BUBBLE_R)."""
     x, y = px(t["lat"], t["lon"], z)
-    w = TOWN_LABEL_W.get(t["name"], 6 + 8.5 * len(t["name"]))
-    r, h = BUBBLE_R, TOWN_H
+    w = TOWN_LABEL_W.get(t["name"], 8.5 * len(t["name"]))
+    r, d, h = BUBBLE_R, TOWN_NAME_OFF, TOWN_H
     side = t.get("label", "right")
-    label = {"right": (x + r + 4, y - h / 2, x + r + 4 + w, y + h / 2),
-             "left": (x - r - 4 - w, y - h / 2, x - r - 4, y + h / 2),
-             "top": (x - w / 2, y - r - 2 - h, x + w / 2, y - r - 2),
-             "bottom": (x - w / 2, y + r + 2, x + w / 2, y + r + 2 + h)}[side]
-    return [(x - r - 1, y - r - 1, x + r + 1, y + r + 1), label]
+    label = {"right": (x + d, y - h / 2, x + d + w, y + h / 2),
+             "left": (x - d - w, y - h / 2, x - d, y + h / 2),
+             "top": (x - w / 2, y - d - h, x + w / 2, y - d),
+             "bottom": (x - w / 2, y + d, x + w / 2, y + d + h)}[side]
+    return [(x - r - 1.5, y - r - 1.5, x + r + 1.5, y + r + 1.5), label]
+
+
+def into_bubble(centre, box) -> float:
+    """How far (px) a box reaches into the bubble on `centre` (negative: how far it stays clear)."""
+    nx, ny = min(max(centre[0], box[0]), box[2]), min(max(centre[1], box[1]), box[3])
+    return BUBBLE_R - math.hypot(nx - centre[0], ny - centre[1])
+
+
+def town_contacts(towns) -> list:
+    """Town against town at zooms 5-11, minor towns from zoom 7: a name over another town's bubble (a
+    30 px circle) or name, or two bubbles touching. At zoom 5 a name may reach TOUCH_Z5 px into a bubble."""
+    problems = []
+    for z in ZOOMS:
+        shown = [t for t in towns if z >= 7 or not t.get("minor")]
+        for a in shown:
+            name, ca = town_boxes(a, z)[1], px(a["lat"], a["lon"], z)
+            for b in shown:
+                if b is a:
+                    continue
+                cb = px(b["lat"], b["lon"], z)
+                into = into_bubble(cb, name)
+                if into > (TOUCH_Z5 if z == ZOOMS[0] else 0):
+                    problems.append(f"z{z}: town {a['name']} name / town {b['name']} bubble ({into:.1f} px in)")
+                if a["name"] < b["name"]:
+                    if overlaps(name, town_boxes(b, z)[1], gap=0):
+                        problems.append(f"z{z}: town {a['name']} name / town {b['name']} name")
+                    if math.dist(ca, cb) < 2 * BUBBLE_R:
+                        problems.append(f"z{z}: town {a['name']} bubble / town {b['name']} bubble")
+    return problems
 
 
 def place_box(p: dict, z: int):
@@ -1085,7 +1123,8 @@ def make_labels_and_places(land, lakes, towns, sites, others, log):
 
 
 def check_layout(towns, labels, places):
-    """Every pair of label/place/bubble boxes visible at the same zoom, 5-11, that overlap."""
+    """Every pair of label/place/bubble boxes visible at the same zoom, 5-11, that overlap, and every
+    town that covers another (town_contacts)."""
     problems = []
     for z in ZOOMS:
         items = []
@@ -1099,10 +1138,10 @@ def check_layout(towns, labels, places):
             for j in range(i + 1, len(items)):
                 a, b = items[i], items[j]
                 if a[1] == b[1] or (a[1].startswith("town") and b[1].startswith("town")):
-                    continue                        # a bubble and its own name; town vs town is the map's
+                    continue                        # a bubble and its own name; town vs town: below
                 if overlaps(a[0], b[0], gap=0):
                     problems.append(f"z{z}: {a[1]} / {b[1]}")
-    return problems
+    return problems + town_contacts(towns)
 
 
 # ---------------------------------------------------------------- output
@@ -1355,8 +1394,9 @@ def preview(doc: dict, path: Path, zoom: int = 7, crop=None, contrast=False) -> 
         wd = d.textlength(t["name"], font=tf)
         asc, desc = tf.getmetrics()
         hh = asc + desc
-        pos = {"right": (x + r + 4 * scale, y - hh / 2), "left": (x - r - 4 * scale - wd, y - hh / 2),
-               "top": (x - wd / 2, y - r - 2 * scale - hh), "bottom": (x - wd / 2, y + r + 2 * scale)}[side]
+        off = TOWN_NAME_OFF * scale
+        pos = {"right": (x + off, y - hh / 2), "left": (x - off - wd, y - hh / 2),
+               "top": (x - wd / 2, y - off - hh), "bottom": (x - wd / 2, y + off)}[side]
         d.text(pos, t["name"], font=tf, fill="#1c1c1e", stroke_width=max(1, scale), stroke_fill="#ffffff")
     img.save(path)
     return path

@@ -97,6 +97,12 @@ LAYER_TEXT = {
     "wind": {"title": "Wind gusts", "unit": "mph",
              "legend_note": f"HRRR model. Roofing limit {src.LIMITS['gust_mph']} mph."},
 }
+# Sample builds draw invented pictures, so their legend must not name the radar or the model as the source.
+SAMPLE_NOTES = {
+    "precip": "Rate as liquid water. Sample: invented pictures, not NOAA radar or the HRRR model.",
+    "temp": "Sample: invented pictures, not the HRRR model.",
+    "wind": f"Sample: invented pictures, not the HRRR model. Roofing limit {src.LIMITS['gust_mph']} mph.",
+}
 RADAR_SOURCE = "NOAA MRMS radar estimate"
 MODEL_SOURCE = "NOAA HRRR model"
 SAMPLE_RADAR_SOURCE = "SAMPLE — invented radar picture, not NOAA data"
@@ -950,8 +956,9 @@ def sample_layers(now: datetime, grids: _Grids) -> tuple[list[dict], dict, dict,
 
 # ---------------------------------------------------------------- the layers for map.json
 
-def assemble(radar: list[dict], forecast: dict, anchor: datetime | None) -> dict:
-    """Layer dicts exactly as data/map.json carries them (without the PNG bytes)."""
+def assemble(radar: list[dict], forecast: dict, anchor: datetime | None, sample: bool = False) -> dict:
+    """Layer dicts exactly as data/map.json carries them (without the PNG bytes). A sample build's
+    legend notes say the pictures are invented (SAMPLE_NOTES)."""
     times = forecast_times(anchor) if anchor else {"hourly": [], "quarters": [], "hours13": []}
     layers = {}
     for layer in ("precip", "temp", "wind"):
@@ -967,7 +974,8 @@ def assemble(radar: list[dict], forecast: dict, anchor: datetime | None) -> dict
         else:
             modes = {"12h": list(range(len(frames)))}
             now_index = {"12h": 0}
-        layers[layer] = {**LAYER_TEXT[layer], "legend": entries, "gradient": gradient,
+        text = {**LAYER_TEXT[layer], "legend_note": SAMPLE_NOTES[layer]} if sample else LAYER_TEXT[layer]
+        layers[layer] = {**text, "legend": entries, "gradient": gradient,
                          "frames": [{k: v for k, v in f.items() if k != "_png"} for f in frames],
                          "modes": modes, "now_index": now_index}
     return layers
@@ -996,8 +1004,8 @@ def build_gridded(out_dir: Path, get, now: datetime, sample: bool = False) -> tu
             status = {"radar": radar_status, "forecast": forecast_status}
     except Exception as e:  # noqa: BLE001 - last resort: never raise to the build
         reason = f"the map pictures couldn't be drawn ({_problem(e)})"
-        return assemble([], {}, None), {"radar": {"label": LABELS["radar"], "ok": False, "detail": reason},
-                                        "forecast": {"label": LABELS["forecast"], "ok": False, "detail": reason}}
+        return assemble([], {}, None, sample), {key: {"label": LABELS[key], "ok": False, "detail": reason}
+                                                for key in ("radar", "forecast")}
     try:
         _write(out_dir, radar)
     except Exception as e:  # noqa: BLE001
@@ -1011,4 +1019,4 @@ def build_gridded(out_dir: Path, get, now: datetime, sample: bool = False) -> tu
             forecast[layer] = []
             status["forecast"] = {"label": LABELS["forecast"], "ok": False,
                                   "detail": f"the forecast pictures couldn't be saved ({_problem(e)})"}
-    return assemble(radar, forecast, anchor), status
+    return assemble(radar, forecast, anchor, sample), status

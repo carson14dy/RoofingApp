@@ -46,6 +46,11 @@ order.
    HRRR run and radar time (an Actions cache or the live site's previous frames).
 7. **Rain and snow on the map.** Colour snow apart from rain (MRMS PrecipFlag, HRRR CSNOW), with the
    legend saying which.
+   **Text version of the map pictures (accessibility).** The List gives every NWS alert and each
+   town's NWS forecast as text, but nothing says what the radar and model pictures show at a town.
+   Sample the radar estimate and the HRRR values at each town in `website/gridded.py`, add them to
+   `data/map.json` (a D28 contract change) and list them, worded as a "radar estimate" or "model",
+   never "dry" or "no hail". Until then the map's description says the pictures have no text version.
 8. **Nearby station observations** on town pages (D23, D25 rules): the nearest NWS stations, never
    filtered by state, with distance, elevation, observation time and age; about 75 minutes is
    "current"; QC flags shown; a null gust is "no gust reported". ChatGPT's 16-point Montana sweep is

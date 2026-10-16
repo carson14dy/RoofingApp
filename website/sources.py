@@ -160,16 +160,13 @@ def parse_alerts(doc) -> list[dict]:
     feats = doc.get("features") if isinstance(doc, dict) else None
     if not isinstance(feats, list):
         raise ValueError("the NWS alert response had no list of alerts")
-    alerts, replaced = [], set()
+    alerts = []
     for f in feats:
         if not isinstance(f, dict) or not isinstance(f.get("properties"), dict):
             raise ValueError("the NWS alert response had an unreadable alert")
         p = f["properties"]
         if p.get("status") != "Actual" or p.get("messageType") == "Cancel":
             continue
-        for ref in p.get("references") or []:
-            if isinstance(ref, dict) and ref.get("identifier"):
-                replaced.add(ref["identifier"])
         geom = f.get("geometry")
         has_shape = isinstance(geom, dict) and geom.get("type") in ("Polygon", "MultiPolygon")
         event = p.get("event") or "Alert"
@@ -189,10 +186,30 @@ def parse_alerts(doc) -> list[dict]:
             "instruction": (p.get("instruction") or "").strip(),
             "geometry": geom if has_shape else None,
         })
+    replaced = alert_references(doc)
     alerts = [a for a in alerts if a["id"] not in replaced]
-    alerts.sort(key=lambda a: (_KIND_RANK[a["kind"]], 0 if a["event"] in CONVECTIVE else 1,
-                               a["until"] or "9999"))
+    alerts.sort(key=alert_order)
     return alerts
+
+
+def alert_references(doc) -> set[str]:
+    """The ids of the messages that the active messages of an NWS alert response (as parse_alerts
+    reads it) replace: an update names the message it replaces in "references"."""
+    out = set()
+    for f in doc.get("features") or []:
+        p = f.get("properties") or {}
+        if p.get("status") != "Actual" or p.get("messageType") == "Cancel":
+            continue
+        for ref in p.get("references") or []:
+            if isinstance(ref, dict) and ref.get("identifier"):
+                out.add(ref["identifier"])
+    return out
+
+
+def alert_order(a: dict) -> tuple:
+    """Sort key, most urgent first: warnings (convective events first, then by end time), watches,
+    advisories, statements."""
+    return _KIND_RANK[a["kind"]], 0 if a["event"] in CONVECTIVE else 1, a["until"] or "9999"
 
 
 def _iso(dt: datetime | None) -> str | None:

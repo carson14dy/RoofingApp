@@ -12,7 +12,7 @@
   --m-violet: #6b3fa0; --m-teal: #0b6e6e;
 
   /* basemap */
-  --map-bg: var(--m-mist);
+  --map-bg: var(--m-paper);        /* = --land: past the basemap's edge, no third grey under the hatch */
   --land-mt: var(--m-white);
   --land: var(--m-paper);
   --line-state: var(--m-grey-5);
@@ -31,6 +31,7 @@
   --place-dot: var(--m-grey-1);
   --halo: var(--m-white);
   --hatch: rgba(142, 142, 147, 0.20);
+  --hatch-out: rgba(142, 142, 147, 0.18);   /* outside the pictures' box: faint hairlines (map.html #hatch), like the reference */
 
   /* glass and ink */
   --glass: rgba(255, 255, 255, 0.72);
@@ -40,6 +41,7 @@
   --glass-strong: rgba(255, 255, 255, 0.88);
   --ink: var(--m-ink);
   --ink-2: var(--m-grey-2);
+  --ink-sub: #616166;              /* the timeline's time and source line: 4.5:1 over a coloured picture too */
   --ink-3: var(--m-grey-3);
   --hairline: rgba(60, 60, 67, 0.14);
   --fill-ctl: rgba(120, 120, 128, 0.16);
@@ -57,7 +59,7 @@
   --bubble: rgba(74, 74, 79, 0.9);
   --bubble-text: var(--m-white);
   --bubble-ring: rgba(255, 255, 255, 0.95);
-  --bubble-unknown: rgba(112, 112, 118, 0.92);
+  --bubble-unknown: rgba(100, 100, 106, 0.92);   /* white dash at 4.5:1 or more over the white map */
   --over: var(--m-orange);
   --over-text: #9e4600;
   --loc: var(--m-blue);
@@ -95,7 +97,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --map-bg: #121417;
+    --map-bg: #1b1e22;
     --land-mt: #1f2226;
     --land: #1b1e22;
     --line-state: #3a4049;
@@ -114,6 +116,7 @@
     --place-dot: #c9ccd1;
     --halo: #121417;
     --hatch: rgba(142, 142, 147, 0.16);
+    --hatch-out: rgba(174, 174, 178, 0.22);
 
     --glass: rgba(28, 28, 30, 0.72);
     --glass-solid: rgba(28, 28, 30, 0.95);
@@ -122,6 +125,7 @@
     --glass-strong: rgba(36, 36, 38, 0.90);
     --ink: #f2f2f7;
     --ink-2: #aeaeb2;
+    --ink-sub: #aeaeb2;
     --ink-3: #8e8e93;
     --hairline: rgba(235, 235, 245, 0.14);
     --fill-ctl: rgba(120, 120, 128, 0.32);
@@ -172,8 +176,7 @@ a { color: inherit; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
-.hatch-stripe { fill: var(--hatch); }
-.num, time { font-variant-numeric: tabular-nums; }
+.hatch-stripe { fill: var(--hatch-out); }
 [hidden] { display: none !important; }
 
 .app { position: fixed; inset: 0; height: 100vh; height: 100dvh; overflow: hidden; }
@@ -226,7 +229,7 @@ a { color: inherit; }
 }
 .banner strong { font-weight: 700; }
 .banner-sample { background: var(--banner-sample); color: var(--on-banner-sample); border-color: transparent; }
-.banner-problem strong, .banner-problem .not-all-clear, .banner-warn strong { color: var(--warn-text); }
+.banner-problem strong, .banner-warn strong { color: var(--warn-text); }
 .banner-problem ul { display: grid; gap: 4px; margin-top: 6px; }
 .banner-problem details > summary { cursor: pointer; list-style: none; }
 /* the summary line is the Details toggle: 44 px to tap, reaching into the banner's own padding */
@@ -235,7 +238,6 @@ a { color: inherit; }
 .banner-problem summary .more { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; margin-left: 2px;
   border-radius: 999px; background: var(--fill-ctl); font-weight: 700; font-size: 12.5px; color: var(--ink); }
 .banner-problem details[open] summary .more { display: none; }
-.banner-problem .not-all-clear { font-weight: 700; margin-top: 2px; }
 /* a 44 px button that looks 32 px tall: the pill is drawn by ::before, and the negative margins keep
    the banner as short as before */
 .banner .banner-btn {
@@ -288,6 +290,15 @@ a { color: inherit; }
 .key-bubble { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 1px var(--bubble-ring); }
 .key-hatch { background: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 5px); border: 1px solid var(--hairline); }
 .key-ring { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--over); width: 12px; height: 12px; margin: 1px; }
+.key-here { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--loc); width: 12px; height: 12px; margin: 1px; }
+/* alerts with no outline: the row is a button to the List, marked with the List button's lines */
+.key-list { border-radius: 2px; background: repeating-linear-gradient(to bottom, var(--ink-2) 0 2px, transparent 2px 5px);
+  width: 12px; height: 12px; margin: 1px; }
+/* 44 px to tap, reaching into the gaps around it (the negative margins keep the legend as short) */
+.key-btn { display: flex; align-items: center; gap: 6px; min-height: 44px; margin: -6px 0; padding: 2px 0; border: 0;
+  background: transparent; text-align: left; font-size: inherit; line-height: inherit; color: var(--ink);
+  text-decoration: underline; text-underline-offset: 2px; }
+.key-btn:focus-visible { outline-offset: 1px; border-radius: 4px; }
 .key-hz { border: 2px solid; background: transparent; }
 .key-warning { border-color: var(--hz-warning); background: color-mix(in srgb, var(--hz-warning) 14%, transparent); }
 .key-watch { border-color: var(--hz-watch); background: color-mix(in srgb, var(--hz-watch) 14%, transparent); }
@@ -296,9 +307,10 @@ a { color: inherit; }
 .key-hail, .key-wind { border-radius: 50%; border: 2px solid; }
 .key-hail { border-color: var(--rep-hail); background: color-mix(in srgb, var(--rep-hail) 35%, transparent); }
 .key-wind { border-color: var(--rep-wind); background: color-mix(in srgb, var(--rep-wind) 35%, transparent); }
+/* plain text on the map, like the reference's "Map Data": --ink, so it stays readable over a picture */
 .mapdata {
   display: inline-flex; align-items: center; min-height: 44px; margin: -6px 0 0 4px; padding: 0 4px;
-  font-size: 11.5px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px;
+  font-size: 11.5px; color: var(--ink); text-decoration: underline; text-underline-offset: 2px;
   text-shadow: 0 0 2px var(--halo), 0 0 2px var(--halo), 0 0 4px var(--halo);
 }
 
@@ -312,11 +324,15 @@ a { color: inherit; }
 #btn-locate.is-on svg { color: var(--loc); fill: var(--loc); stroke: var(--loc); }
 #btn-locate.is-busy svg { opacity: 0.45; }
 
+/* map.js sets its max-height when it opens (fitLayersMenu), so on a short screen it scrolls inside
+   instead of running off the bottom; .top.menu-open lifts it over the timeline (.bottom) */
 .popover {
   position: absolute; z-index: 30; top: 0; right: calc(var(--btn) + 8px);
   width: min(272px, calc(100vw - var(--btn) - 2 * var(--edge) - 8px));
   border-radius: var(--r-panel); padding: 12px 8px 8px; background: var(--glass-strong);
+  overflow-y: auto; overscroll-behavior: contain;
 }
+.top.menu-open { z-index: 25; }
 .pop-title { font-size: 13px; font-weight: 700; color: var(--ink-2); padding: 0 10px 6px; }
 .choices { display: grid; gap: 2px; }
 .choice, .toggle {
@@ -358,8 +374,10 @@ a { color: inherit; }
   display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
 .bottom > * { pointer-events: auto; }
+/* plain text on the map like the reference's "Forecast is not available in some areas", in --ink so
+   it stays readable over a picture (the halo alone isn't enough) */
 .frame-note {
-  pointer-events: none; max-width: 32rem; text-align: center; font-size: 13px; line-height: 1.3; color: var(--ink-2);
+  pointer-events: none; max-width: 32rem; text-align: center; font-size: 13px; line-height: 1.3; color: var(--ink);
   text-shadow: 0 0 2px var(--halo), 0 0 3px var(--halo), 0 0 6px var(--halo);
 }
 /* a warning gets a solid backing: it has to stay readable over labels and the weather picture */
@@ -375,7 +393,9 @@ a { color: inherit; }
   transition: opacity 0.25s;
 }
 .toast.show { opacity: 1; padding: 10px 16px; }
-.toast:empty { display: none; }
+/* empty, it stays in the accessibility tree (a live region that appears with its message is often not
+   read out) but takes no room: out of the column, 1 px, clipped */
+.toast:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); padding: 0; box-shadow: none; }
 .chip.near {
   display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px;
   font-size: 14px; font-weight: 600;
@@ -396,7 +416,7 @@ a { color: inherit; }
 .play:disabled { opacity: 0.4; cursor: default; }
 .tl-text { flex: 1; min-width: 0; padding-left: 2px; }
 .tl-title { font-size: 16px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
-.tl-sub { font-size: 13px; line-height: 1.25; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.tl-sub { font-size: 13px; line-height: 1.25; color: var(--ink-sub); font-variant-numeric: tabular-nums; }
 .tl-src::before { content: " \00b7  "; }
 .tl-src:empty::before { content: none; }
 .is-loading .tl-when::after { content: " \00b7  loading"; }
@@ -483,8 +503,10 @@ a { color: inherit; }
 }
 
 /* short landscape screens: the legend is a column on the left (it scrolls if all its keys can't
-   fit) and the timeline starts right of it instead of covering it. Same query as map.js sideQuery,
-   which then fits Montana right of the legend. */
+   fit) and the timeline starts right of it instead of covering it, and stops short of the
+   right-hand buttons (on a 320 px tall phone with a banner they reach down to it). map.js sideQuery
+   matches the screens this layout keeps (not the very short or narrow ones below), and then fits
+   Montana right of the legend. */
 @media (max-height: 500px) and (orientation: landscape) {
   html:not(.is-card) .top { bottom: calc(var(--safe-b) + var(--edge)); }
   html:not(.is-card) .corners { flex: 1 1 auto; min-height: 0; }
@@ -493,7 +515,27 @@ a { color: inherit; }
   html:not(.is-card) .legend { flex: 0 1 auto; width: var(--legend-w); min-width: 0; max-width: none; min-height: 0;
     overflow-y: auto; overscroll-behavior: contain; }
   html:not(.is-card) .mapdata { flex: none; }
-  html:not(.is-card) .bottom { left: calc(var(--safe-l) + var(--edge) + var(--legend-w) + var(--gap)); }
+  html:not(.is-card) .bottom { left: calc(var(--safe-l) + var(--edge) + var(--legend-w) + var(--gap));
+    right: calc(var(--safe-r) + var(--edge) + var(--btn) + var(--gap)); }
+}
+
+/* very short or narrow landscape screens (a laptop at 400% zoom is 320 x 256 CSS px; 480 x 320 leaves
+   the timeline no room right of the legend column): the legend folds to its title row beside the
+   close button (its (i) button opens the scale and keys, over the timeline), and the timeline runs
+   from the left edge and stops short of the right-hand buttons, so every control stays on screen
+   and none covers another. map.js fits Montana as on a phone here (sideQuery leaves these out). */
+@media (max-height: 300px), (max-width: 520px) and (max-height: 500px) and (orientation: landscape) {
+  html:not(.is-card) .corner-left { flex-direction: row; align-items: flex-start; }
+  html:not(.is-card) .legend:not(.show-note) .legend-scale,
+  html:not(.is-card) .legend:not(.show-note) .legend-keys { display: none !important; }
+  html:not(.is-card) .legend:not(.show-note) .legend-head { padding-bottom: 0; border-bottom: 0; }
+  html:not(.is-card) .legend:not(.show-note) + .mapdata { display: none; }
+  html:not(.is-card) .top:has(.legend.show-note) { z-index: 25; }
+  html:not(.is-card) .bottom { left: calc(var(--safe-l) + var(--edge)); right: calc(var(--safe-r) + var(--edge) + var(--btn) + var(--gap)); }
+  /* a short timeline: the title still says Radar or Forecast; the source is in the slider's value
+     and the legend's (i) note */
+  html:not(.is-card) .tl-src { display: none; }
+  html:not(.is-card) .seg button { min-width: 40px; padding: 0 8px; }
 }
 
 /* ---------------------------------------------------------------- map layers (Leaflet) */
@@ -516,11 +558,16 @@ a { color: inherit; }
 .z-ge-6 .xz5, .z-ge-7 .xz6, .z-ge-8 .xz7, .z-ge-9 .xz8, .z-ge-10 .xz9 { display: none !important; }
 
 .leaflet-image-layer.frame { transition: opacity 350ms ease; image-rendering: auto; }
+/* the crossfade adds the two pictures (plus-lighter inside the isolated pane) instead of laying one
+   half-transparent picture over another, which looks paler than either: no pulse at every step */
+.leaflet-frames-pane { isolation: isolate; }
+.leaflet-image-layer.frame { mix-blend-mode: plus-lighter; }
 .leaflet-zoom-anim .leaflet-image-layer.frame { transition: opacity 350ms ease, transform 0.25s cubic-bezier(0, 0, 0.25, 1); }
 .leaflet-image-layer.frame.instant { transition: none !important; }
 
 /* basemap labels (divIcons, centred on their point) */
 .bm-label { pointer-events: none !important; }
+.bm-label span.bm-hide { visibility: hidden; }   /* map.js tidyLabels: under "Map data" or the note */
 .bm-label span {
   position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); white-space: nowrap; line-height: 1;
   text-shadow: 0 0 2px var(--halo), 0 0 2px var(--halo), 0 0 3px var(--halo);
@@ -542,6 +589,10 @@ a { color: inherit; }
 }
 .town .bubble.unknown { background: var(--bubble-unknown); }
 .town .bubble.over { box-shadow: 0 0 0 1.5px var(--bubble-ring), 0 0 0 4.5px var(--over), 0 1px 5px rgba(0, 0, 0, 0.28); }
+/* the viewer's location is on this town (map.js placeLocDot): a blue ring instead of a dot over its number */
+.town.is-here .bubble { box-shadow: 0 0 0 1.5px var(--bubble-ring), 0 0 0 4.5px var(--loc), 0 1px 5px rgba(0, 0, 0, 0.28); }
+.town.is-here .bubble.over { box-shadow: 0 0 0 1.5px var(--bubble-ring), 0 0 0 4.5px var(--over), 0 0 0 6px var(--bubble-ring),
+  0 0 0 9px var(--loc), 0 1px 5px rgba(0, 0, 0, 0.28); }
 .town .tname {
   position: absolute; white-space: nowrap; font-size: 13px; font-weight: 700; line-height: 1; color: var(--label-place);
   text-shadow: 0 0 2px var(--halo), 0 0 2px var(--halo), 0 0 3px var(--halo), 0 0 4px var(--halo);
@@ -560,6 +611,7 @@ a { color: inherit; }
 
 /* location */
 .loc-dot { pointer-events: none !important; }
+.loc-dot.is-hidden { visibility: hidden; }
 .loc-dot i { position: absolute; inset: 0; border-radius: 50%; background: var(--loc); box-shadow: 0 0 0 3px var(--loc-ring), 0 1px 6px rgba(0, 0, 0, 0.35); }
 .leaflet-container .leaflet-pane svg path.loc-acc { fill: var(--loc); fill-opacity: 0.12; stroke: var(--loc); stroke-opacity: 0.35; stroke-width: 1px; }
 
@@ -633,9 +685,6 @@ a { color: inherit; }
 .row .row-title { font-weight: 700; }
 .row .row-meta { font-size: 13px; color: var(--ink-2); }
 .row .row-meta.warn { color: var(--warn-text); font-weight: 600; }
-.row .row-val { flex: none; font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
-.row .row-val.over { color: var(--over-text); }
-.row .row-val.unknown { color: var(--ink-3); }
 .row::after { content: ""; flex: none; width: 8px; height: 8px; border: solid var(--ink-3); border-width: 2px 2px 0 0; transform: rotate(45deg); margin-right: 4px; }
 .mini-bubble { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
   background: var(--bubble); color: var(--bubble-text); font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -672,6 +721,7 @@ a { color: inherit; }
 .card-chip:empty { display: none; }
 .card-chip.warn .card-main { color: var(--warn-text); font-weight: 700; }
 .card-hatch { display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.card-alerts { color: var(--ink); }
 .card-hatch .key { width: 12px; height: 12px; }
 .card-open {
   position: absolute; z-index: 20; right: calc(var(--edge) + var(--safe-r)); bottom: calc(var(--edge) + var(--safe-b));
@@ -687,6 +737,20 @@ a { color: inherit; }
 .noscript h2 { font-size: 18px; }
 .noscript p, .noscript ul { margin-top: 8px; }
 .noscript li { padding: 4px 0; }
+
+/* ---------------------------------------------------------------- forced colours */
+/* Windows High Contrast and other forced colours drop backgrounds and shadows: the colour keys keep
+   their own colours (forced-color-adjust: none), and the timeline, the chosen 1h/12h, the switches
+   and the limit ring are drawn in system colours. The ring is a border: the focus ring is an outline. */
+@media (forced-colors: active) {
+  .legend-bar, .swatch, .key-hatch, .key-hz, .key-hail, .key-wind, .key-list { forced-color-adjust: none; }
+  .track { outline: 1px solid CanvasText; }
+  .fill-bar, .knob { forced-color-adjust: none; background: Highlight; }
+  .seg button[aria-checked="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; }
+  .toggle input[type="checkbox"] { appearance: auto; -webkit-appearance: auto; width: 22px; height: 22px; }
+  .toggle input[type="checkbox"]::after { content: none; }
+  .town .bubble.over, .mini-bubble.over, .key-ring { border: 3px solid Highlight; }
+}
 
 /* ---------------------------------------------------------------- motion */
 @media (prefers-reduced-motion: reduce) {

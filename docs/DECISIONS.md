@@ -324,7 +324,11 @@ next 12 hours), a page per town (alerts at that point, 24 hours, 7 days), a Stor
 - *Alerts on a static site:* each build saves what it verified in `data/state.json`. If the alert
   request fails, the next build keeps the last verified list from the live site with its time and
   says so; it never empties the list and never says "no alerts". A town whose alert check failed
-  shows "Alerts not checked". No AI text.
+  shows "Alerts not checked". No AI text. Every alert a town's point check finds joins the list
+  (2026-10-16): the statewide request runs first, so a warning issued while the 14 towns are
+  checked was only in their answers, and the map's town sheet could name no event or end time,
+  draw no outline and leave it out of the List. A listed alert that a town's answer shows was
+  replaced is dropped, as within one answer, unless a town's check still returned it.
 - *Snapshot, not live tiles:* the radar is saved as one picture per build with NOAA's frame time,
   so the page and the map describe the same frame; it is marked stale past 15 minutes. Every page
   shows its build time, which sources loaded, and (a short documented script, rule 4) its age,
@@ -333,7 +337,7 @@ next 12 hours), a page per town (alerts at that point, 24 hours, 7 days), a Stor
   (SIL OFL) are served by the site; map tiles come from USGS, alerts and forecasts from NWS.
 - *Map labels:* each town's label side and whether it is "minor" (hidden, dot and label, on maps
   narrower than 546 px, which open one zoom out) live in `towns.json`; a test checks that no label
-  covers another label or a dot at either zoom.
+  covers another label or a dot at either zoom. (D28's map replaced that test: "Town label test".)
 - *Look:* the dark "storm" look (D19) is replaced by a light "field sheet" with automatic dark
   mode, chosen for sunlight; tokens in `website/static/style.css`.
 - *Livingston* joins ChatGPT's 13 pilot towns for the gap-wind corridor (D25).
@@ -377,6 +381,32 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   in snow; frames are still pictures made at each build, so the newest radar is up to about 10
   minutes old plus GitHub's delay; no lightning or air-quality layer; snow and rain share one
   palette.
+- *Background and hatch (2026-10-16, after review):* past the basemap's padded box the page is the
+  neighbours' land colour (`--map-bg` = `--land`, #fafafa; dark #1b1e22; the theme-color metas
+  match), not the spec's mist #eef1f4, and the hatch outside the pictures' box is a hairline (1 px
+  every 6 px). With the mist and the old 2.5 px stripes the hatch was the loudest thing on a phone
+  (three tones, about 40% of the screen); the reference's "not available" hatch is a faint hairline
+  on white.
+- *Cache addresses (2026-10-16):* scripts, stylesheets and the basemap carry `?v=` = their content
+  hash, so the 10-minute rebuilds no longer make every visit download about 150 KB of unchanged
+  files; `data/map.json` and the map card keep the build minute.
+- *Town label test (2026-10-16):* the label test models this map, not the old Folium one: 30 px
+  bubbles, names 20 px from the point (`map.css` `.town`), minor towns from zoom 7.
+  `tools/build_basemap.py` `check_layout` (run by `tests/test_basemap.py`) checks every town name
+  against the other towns' bubbles and names as well as the basemap labels and places. One
+  allowance: at zoom 5, where only maps narrower than about 340 px or very short open, a name may
+  reach 4 px into another bubble (Missoula's 3.5 px into Kalispell's, Billings' 1 px into Miles
+  City's); no choice of label sides clears zoom 5.
+- *Sample legend (2026-10-16):* a sample build's legend notes say the pictures are invented ("not
+  NOAA radar or the HRRR model") instead of naming the radar or the model as their source.
+- *Words beside the card (2026-10-16):* the Now page's caption and the card's frame title come from
+  the build's data (`build.py` `map_card`), not fixed text. They name the picture the card opens on,
+  picked as `map.js` picks it: the NOAA radar estimate (stale radar is still radar, with its time),
+  or the HRRR model forecast and its time when there is no radar. They list what this update is
+  missing (radar, warning outlines, town temperatures) with "This is not an all-clear". The fixed
+  caption called a model forecast "the latest NOAA radar estimate" and promised outlines and town
+  temperatures that hadn't loaded. The card hides its legend, so the Storm reports page's key also
+  names the town numbers (NWS forecast temperature, ring outside the limits) and the outlines.
 
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.
@@ -392,3 +422,5 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
 - Folium adds Leaflet's stylesheet after anything added to the map's header, so header styles
   need selectors more specific than Leaflet's (`.leaflet-tooltip.town-label`).
 - `actions/upload-artifact@v4` skips dotfiles such as `.nojekyll` unless `include-hidden-files: true`.
+- A zone written into a template is wrong half the year: the Storm reports page said reporting days
+  start "at 6 am MDT" in winter too (12:00 UTC is 5 am MST). Format the instant with `%Z`.

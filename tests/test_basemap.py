@@ -430,9 +430,36 @@ class Labels(unittest.TestCase):
                 self.assertGreater(math.hypot(lx - tx, ly - ty), 30, f"zoom {z}: MONTANA on {t['name']}")
 
     def test_labels_and_places_never_cover_a_bubble_or_each_other(self):
-        """The tool's own layout check (label sizes as map.css draws them), zooms 5-11."""
+        """The tool's own layout check (label sizes as map.css draws them), zooms 5-11: labels, places,
+        bubbles and town names, town against town too (one 4 px allowance at zoom 5, TOUCH_Z5).
+        This is the label test AGENTS.md means: it must pass when a town is added or moved."""
         tool = load_tool()
         self.assertEqual(tool.check_layout(TOWNS, self.labels, self.doc["places"]), [])
+
+    def test_a_town_over_another_town_fails_the_check(self):
+        tool = load_tool()
+        near = {"name": "Testville", "slug": "testville", "lat": 45.9, "lon": -108.9, "label": "right"}
+        problems = tool.check_layout(TOWNS + [near], self.labels, self.doc["places"])
+        self.assertIn("z5: town Testville name / town Billings bubble", " | ".join(problems))
+        self.assertIn("z5: town Billings bubble / town Testville bubble", " | ".join(problems))
+        # the allowance is for zoom 5 only, and only as deep as TOUCH_Z5
+        towns = [dict(t, label="top") if t["name"] == "Billings" else t for t in TOWNS]
+        self.assertTrue(any(p.startswith("z5: town Billings name") for p in tool.town_contacts(towns)))
+        with mock.patch.object(tool, "TOUCH_Z5", 0.0):
+            self.assertEqual(len(tool.town_contacts(TOWNS)), 2)            # Missoula/Kalispell, Billings/Miles City
+        self.assertEqual([p for p in tool.town_contacts(TOWNS)], [])
+
+    def test_town_geometry_is_what_the_map_draws(self):
+        """town_boxes models map.js drawTowns and map.css .town: change them together."""
+        tool = load_tool()
+        css = (ROOT / "website" / "static" / "map" / "map.css").read_text()
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text()
+        self.assertIn("iconSize: [30, 30], iconAnchor: [15, 15]", js)
+        for side, edge in (("right", "left"), ("left", "right"), ("top", "bottom"), ("bottom", "top")):
+            self.assertRegex(css, rf"\.town\.side-{side} \.tname \{{ {edge}: 35px;")
+        self.assertRegex(css, r"\.town \.tname \{[^}]*font-size: 13px;[^}]*line-height: 1;")
+        self.assertEqual((tool.BUBBLE_R, tool.TOWN_NAME_OFF, tool.TOWN_H), (15.0, 35 - 30 / 2, 13.0))
+        self.assertEqual(set(tool.TOWN_LABEL_W), {t["name"] for t in TOWNS})
 
 
 class Tool(unittest.TestCase):

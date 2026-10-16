@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1e22" media="(prefers-color-scheme: dark)">
 <title>Map · Montana Hail Watch</title>
 <meta name="description" content="Montana weather map: the past hour of NOAA radar, the HRRR model forecast, temperature and wind gusts, NWS warning outlines, storm reports and the NWS forecast for each town.">
 <link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{{ root }}static/icon-180.png">
 <link rel="stylesheet" href="{{ root }}static/fonts/fonts.css">
 <link rel="stylesheet" href="{{ root }}static/leaflet/leaflet.css">
-<link rel="stylesheet" href="{{ root }}static/map/map.css?v={{ built.strftime('%Y%m%d%H%M') }}">
+<link rel="stylesheet" href="{{ root }}static/map/map.css?v={{ asset_v['map/map.css'] }}">
 <script>
 /* Card mode (?card=1, the map inside the Now and Storm reports pages) is known only from the
    page address, which only the browser sees (AGENTS.md rule 4). Setting the class before the
@@ -25,20 +25,20 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
 <body class="mapapp" data-built="{{ built_ms }}">
 <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
   <defs>
-    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <rect class="hatch-stripe" width="2.5" height="8"></rect>
+    <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect class="hatch-stripe" width="1" height="6"></rect>
     </pattern>
   </defs>
 </svg>
-<div id="app" class="app"
+<main id="app" class="app"
      data-map="{{ root }}data/map.json?v={{ v }}"
-     data-basemap="{{ root }}static/map/basemap.json?v={{ v }}"
-     data-limits='{{ limits|tojson }}'
-     data-sample="{{ 'true' if sample else 'false' }}">
+     data-basemap="{{ root }}static/map/basemap.json?v={{ asset_v['map/basemap.json'] }}"
+     data-limits='{{ limits|tojson }}'>
   <h1 class="visually-hidden">Montana weather map</h1>
   <p id="map-help" class="visually-hidden">The map shows NOAA's radar estimate for the past hour and the HRRR
     model forecast after now, NWS warning outlines and the NWS forecast for each town. Arrow keys pan the map,
-    plus and minus zoom. The List button gives the same information as text.</p>
+    plus and minus zoom. The List button lists every NWS alert and each town's NWS forecast as text. The radar
+    and model pictures have no text version yet.</p>
 
   <div class="top" id="top">
     <div class="banners" id="banners">
@@ -187,8 +187,8 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
       </ul>
     </div>
   </noscript>
-</div>
+</main>
 <script src="{{ root }}static/leaflet/leaflet.js"></script>
-<script src="{{ root }}static/map/map.js?v={{ v }}"></script>
+<script src="{{ root }}static/map/map.js?v={{ asset_v['map/map.js'] }}"></script>
 </body>
 </html>

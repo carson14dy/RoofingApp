@@ -636,6 +636,20 @@ class SampleBuild(unittest.TestCase):
             self.assertTrue({"title", "unit", "legend", "legend_note", "frames", "modes", "now_index"} <= set(layer))
         json.dumps(self.layers)                                    # map.json can carry it as is
 
+    def test_legend_notes_say_the_pictures_are_invented(self):
+        """The legend sits beside the pictures: in a sample build it must not name the radar or the
+        HRRR model as their source (the live notes do, tested in LivePath)."""
+        notes = {k: v["legend_note"] for k, v in self.layers.items()}
+        self.assertEqual(notes, g.SAMPLE_NOTES)
+        for key, note in notes.items():
+            self.assertTrue(note.startswith("Rate as liquid water. Sample:" if key == "precip" else "Sample:"), note)
+            self.assertNotEqual(note, g.LAYER_TEXT[key]["legend_note"])
+            self.assertNotRegex(note, r"(^|\. )HRRR model")         # the live notes start a sentence with it
+            self.assertNotIn("Radar estimate", note)
+        self.assertIn("not NOAA radar or the HRRR model", notes["precip"])
+        self.assertIn("not the HRRR model", notes["temp"])
+        self.assertTrue(notes["wind"].endswith("Roofing limit 25 mph."))
+
     def test_frames_are_chronological_and_their_files_exist(self):
         for name, layer in self.layers.items():
             times = [f["time"] for f in layer["frames"]]
@@ -793,6 +807,8 @@ class LivePath(unittest.TestCase):
         self.assertEqual(precip["now_index"], {"1h": 6, "12h": 6})
         self.assertEqual(precip["frames"][6]["time"], "2026-10-14T14:56:00Z")
         self.assertEqual(precip["frames"][6]["source"], "NOAA MRMS radar estimate")
+        self.assertEqual({k: v["legend_note"] for k, v in layers.items()},
+                         {k: v["legend_note"] for k, v in g.LAYER_TEXT.items()})     # real data: names its sources
         self.assertEqual([t.strftime("%Y-%m-%dT%H:%M:%SZ") for t in self.radar_expected],
                          [f["time"] for f in precip["frames"][:7]])     # each file checked against its name
         self.assertEqual(precip["frames"][6]["src"], "map/frames/precip-202610141456.png")

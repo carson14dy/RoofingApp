@@ -15,8 +15,9 @@
     {% if not alerts.ok %}
     <div class="notice notice-error" role="alert">
       <p><strong>Couldn't load NWS alerts at {{ alerts.checked|t }}.</strong>
-      {% if alerts.last_known %}Below is the last list we verified, from {{ alerts.last_known|when }}. Alerts may have been issued or ended since.
-      {% else %}This is not an all-clear.{% endif %}
+      {% set n = alerts.from_towns or 0 %}
+      {% if alerts.last_known %}Below is the last list we verified, from {{ alerts.last_known|when }}{% if n %}, with {{ n }} alert{{ 's' if n > 1 }} the town checks found in this update{% endif %}. Alerts may have been issued or ended since.
+      {% else %}{% if n %}Below {{ 'are the alerts' if n > 1 else 'is the alert' }} the town checks found in this update. {% endif %}This is not an all-clear.{% endif %}
       Check {{ office_links(offices) }}.</p>
     </div>
     {% endif %}
@@ -40,11 +41,11 @@
     <div class="section-head"><h2 id="map-h">Radar, forecast and warning areas</h2>
       <a class="section-link" href="map.html">Open the map</a></div>
     <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
-      title="Montana map: latest radar, warning outlines and town temperatures" loading="lazy"></iframe>
+      title="{{ card.title }}" loading="lazy"></iframe>
+    {# build.map_card words what the card shows in this update: radar or model picture, outlines, town numbers #}
     <p class="caption">
-      The latest NOAA radar estimate, NWS warning outlines and the NWS forecast temperature for each town.
-      <a href="map.html">Open the map</a> to play the past hour of radar and the HRRR model forecast, or switch to
-      temperature and wind gusts.
+      {{ card.shown }} {{ card.missing }}
+      <a href="map.html">Open the map</a> {{ card.then }}.
     </p>
   </section>
 </div>
