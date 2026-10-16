@@ -1,5 +1,13 @@
 # Decisions
 
+**Publication repair (2026-10-16).** PR #3 merged, but its first deployment failed because
+Pages was not enabled. The plan step had suppressed the GitHub CLI failure and mistaken its
+404 JSON body for a site URL. Publishing now requires both a successful lookup and an HTTPS
+URL; failed/invalid lookups warn with the Pages setup step, keep push builds as previews, and
+skip scheduled builds. Regression tests execute the actual planning shell against fake CLI
+responses. Enabling Pages still requires Settings → Pages → Source: GitHub Actions; the
+repair environment's Pages API request returned Forbidden, so no settings were changed.
+
 Why RoofingApp is built the way it is. Add new entries at the bottom; to reverse a decision, add
 an entry that names the one it replaces. Web-version decisions date from September 2026; the
 desktop app and weather module from 2026-10-11 (version 1.0.0).
