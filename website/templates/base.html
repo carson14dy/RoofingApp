@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="600">
 <title>{% block title %}Montana Hail Watch{% endblock %}</title>
-<meta name="description" content="Official NWS warnings, radar, roofing forecasts and storm reports for Montana, updated every 10 minutes.">
+<meta name="description" content="Official NWS warnings, a live radar and forecast map, roofing forecasts and storm reports for Montana, updated every 10 minutes.">
 <link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{{ root }}static/icon-180.png">
 <link rel="stylesheet" href="{{ root }}static/fonts/fonts.css">
@@ -24,6 +24,7 @@
     </a>
     <nav class="main" aria-label="Main">
       <a href="{{ root }}index.html"{% if page == 'now' %} aria-current="page"{% endif %}>Now</a>
+      <a href="{{ root }}map.html">Map</a>
       <a href="{{ root }}reports.html"{% if page == 'reports' %} aria-current="page"{% endif %}>Storm reports</a>
       <a href="{{ root }}about.html"{% if page == 'about' %} aria-current="page"{% endif %}>About</a>
     </nav>
@@ -40,7 +41,7 @@
 {% block content %}{% endblock %}
 </main>
 <footer class="wrap site-foot">
-  <p>Warnings and forecasts: National Weather Service. Radar: NOAA. Storm reports: NOAA Storm Prediction Center. Base map: USGS The National Map.</p>
+  <p>Warnings and forecasts: National Weather Service. Radar estimate and model forecast: NOAA (MRMS, HRRR). Storm reports: NOAA Storm Prediction Center. Map outlines: Natural Earth and the US Census Bureau.</p>
   <p>Weather information only. It does not confirm roof damage and it is not a decision to work or to stop work: check the sky and the site.</p>
 </footer>
 <script>

@@ -20,9 +20,13 @@ import threading
 from pathlib import Path
 
 
+class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *args):          # one line per file would bury the result
+        pass
+
+
 def serve(root: Path) -> tuple[http.server.ThreadingHTTPServer, str]:
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(root))
-    handler.log_message = lambda *a, **k: None
+    handler = functools.partial(QuietHandler, directory=str(root))
     httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd, f"http://127.0.0.1:{httpd.server_address[1]}/"

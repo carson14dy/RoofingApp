@@ -37,13 +37,14 @@
   </section>
 
   <section aria-labelledby="map-h">
-    <div class="section-head"><h2 id="map-h">Radar and warning areas</h2></div>
-    <iframe class="map" src="map-now.html?v={{ built.strftime('%Y%m%d%H%M') }}" title="Map of Montana with radar, warning areas and towns"></iframe>
+    <div class="section-head"><h2 id="map-h">Radar, forecast and warning areas</h2>
+      <a class="section-link" href="map.html">Open the map</a></div>
+    <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
+      title="Montana map: latest radar, warning outlines and town temperatures" loading="lazy"></iframe>
     <p class="caption">
-      {% if radar %}Radar: NOAA composite, frame {{ radar.frame|when }}.
-      {% else %}Radar is not shown in this update{% if sample %} (sample builds have no radar){% else %} because NOAA's radar service didn't answer{% endif %}.{% endif %}
-      Outlined areas are NWS warning polygons. Tap a town for its forecast.
-      <a href="https://radar.weather.gov/">Live radar loop at weather.gov</a>
+      The latest NOAA radar estimate, NWS warning outlines and the NWS forecast temperature for each town.
+      <a href="map.html">Open the map</a> to play the past hour of radar and the HRRR model forecast, or switch to
+      temperature and wind gusts.
     </p>
   </section>
 </div>

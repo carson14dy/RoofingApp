@@ -13,8 +13,11 @@
   <ul>
     <li><strong>Warnings and advisories</strong> are the National Weather Service's official alerts for Montana, shown word for word.
       Alerts issued by county or zone have no outline on the map but are still listed.</li>
-    <li><strong>Radar</strong> is NOAA's composite of the NEXRAD radars, saved as a picture at each update with its frame time.
-      Far from a radar site the beam passes over low clouds, so a blank area is not proof of dry weather.</li>
+    <li><strong>The map</strong> plays the past hour of NOAA's radar estimate (MRMS, every 10 minutes) and then the
+      HRRR computer model's forecast: every 15 minutes for the next hour, then hourly to 12 hours. Before "Now" it is
+      radar; after "Now" it is a model forecast, and the map always says which. Far from a radar site the beam passes
+      over low clouds, so a blank area is not proof of dry weather; areas with no radar coverage are hatched.
+      The temperature and wind-gust layers are the same model. The numbers on the towns are the NWS forecast.</li>
     <li><strong>Town forecasts</strong> are NWS forecasts for the 2.5 km grid square around each town. They are predictions for an area,
       not measurements at a roof.</li>
     <li><strong>Storm reports</strong> are preliminary hail and wind reports gathered by the Storm Prediction Center. Hail sizes are as
@@ -35,7 +38,7 @@
   <h2>Local NWS offices</h2>
   <p>{{ office_links(offices) }}.</p>
 
-  <h2>Data sources in detail</h2>
+  <h2 id="sources">Data sources in detail</h2>
   <p>What each source sends and how this site treats it.</p>
 </div>
 <div class="table-box contracts">

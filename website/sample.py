@@ -1,8 +1,8 @@
 """Labelled sample data for building the website without a network (design review and tests).
 
 Every value is invented and shaped like the real NWS/SPC responses, so the same parsers run.
-Pages built from it carry a "Sample data" banner on every screen. There is no sample radar:
-a made-up radar picture could be mistaken for a real one.
+Pages built from it carry a "Sample data" banner on every screen, the map included, and every
+sample radar or forecast frame names itself "SAMPLE" in its source line.
 """
 from __future__ import annotations
 
@@ -67,11 +67,10 @@ class SampleFetcher:
                 "2230,UNK,Glendive,Dawson,MT,47.11,-104.71,SAMPLE: TREE BRANCHES DOWN (XXX)\n"
                 "2305,61,3 E Terry,Prairie,MT,46.79,-105.25,SAMPLE MEASURED GUST (XXX)\n"), None
 
-    def png(self, url, params):
-        return None, "no sample radar"
-
-    def image(self, url):
-        return None, "no sample base map"
+    def binary(self, url, headers=None):
+        # Sample builds draw their own labelled radar and forecast fields (website/gridded.py,
+        # sample=True); a non-sample build that uses this fetcher gets no gridded data at all.
+        return None, "not part of the sample data"
 
     # -- generated content -----------------------------------------------------------
     def _slug(self, lat, lon):

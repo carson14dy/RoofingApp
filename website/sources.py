@@ -18,14 +18,7 @@ import requests
 UTC = timezone.utc
 NWS = "https://api.weather.gov"
 SPC = "https://www.spc.noaa.gov/climo/reports/"
-RADAR_WMS = ("https://mapservices.weather.noaa.gov/eventdriven/services/"
-             "radar/radar_base_reflectivity/MapServer/WMSServer")
-RADAR_LAYER = "1"   # layer "1" is the radar image; "3" is "Boundary" and draws nothing (DECISIONS D7)
-RADAR_TIME = ("https://mapservices.weather.noaa.gov/eventdriven/rest/services/"
-              "radar/radar_base_reflectivity/MapServer/2/query")
 USER_AGENT = "MontanaHailWatch website (https://github.com/carson14dy/RoofingApp)"
-USGS_TOPO = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"
-BASEMAP_PROBE = (6, 22, 12)   # z, y, x of a base-map tile over central Montana, checked at each build
 
 MT_BOX = (44.35, 49.01, -116.06, -104.03)   # lat_min, lat_max, lon_min, lon_max
 MARGIN = 0.75                               # degrees around Montana for storm reports and radar
@@ -83,22 +76,36 @@ CONTRACTS = {
         "timing": "Preliminary; today's files appear once there are reports. Three days are shown.",
         "missing": "\"UNK\" wind stays unknown. A file that fails is listed as a problem; no report is not \"no hail\".",
     },
-    "basemap": {
-        "name": "USGS base map",
-        "request": "basemap.nationalmap.gov USGSTopo map tiles; one tile is checked at each build",
-        "units": "Map pictures drawn in the viewer's browser, shown in grey (inverted in dark mode).",
-        "timing": "The map itself rarely changes; the service is checked at every build.",
-        "missing": "If tiles don't load, the map still shows towns, warning outlines and radar on a plain "
-                   "background, and the line under the header names the problem.",
-    },
     "radar": {
-        "name": "NOAA radar",
-        "request": "mapservices.weather.noaa.gov radar_base_reflectivity WMS, layer 1; frame time from layer 2",
-        "units": "One PNG picture of the composite, Web Mercator, 1400 px wide, with NOAA's frame time.",
-        "timing": "NOAA updates every few minutes; a frame older than 15 minutes is reported as stale.",
-        "missing": "Anything that is not a PNG of the requested size is not shown, and the page says why.",
+        "name": "NOAA radar estimate (MRMS)",
+        "request": "noaa-mrms-pds.s3.amazonaws.com, CONUS/PrecipRate_00.00, one GRIB2 file every 2 minutes",
+        "units": "Precipitation rate in mm/h as liquid water, shown in in/h. A 0.01° latitude-longitude grid; "
+                 "the map uses one frame every 10 minutes for the past hour.",
+        "timing": "NOAA publishes a new grid every 2 minutes; a newest frame older than 30 minutes is reported as stale.",
+        "missing": "Negative values mean no radar coverage: those areas are hatched, never drawn as dry. "
+                   "If the files don't load, the map says so and shows no radar.",
+    },
+    "forecast_model": {
+        "name": "NOAA HRRR model forecast",
+        "request": "noaa-hrrr-bdp-pds.s3.amazonaws.com, wrfsfcf and wrfsubhf GRIB2 files; single fields fetched "
+                   "by byte range from each file's .idx",
+        "units": "Precipitation rate (kg m-2 s-1, shown in in/h), 2 m temperature (K, shown in °F) and surface "
+                 "gusts (m/s, shown in mph) on a 3 km Lambert grid.",
+        "timing": "A new run every hour; the map uses the newest run whose files are complete: 15-minute steps "
+                  "for the next hour and hourly steps to 12 hours.",
+        "missing": "A model forecast, labelled as one. If the run can't be read, the timeline stops at now and "
+                   "the map says why.",
+    },
+    "basemap": {
+        "name": "Map outlines and names",
+        "request": "Natural Earth 10m (public domain) and US Census county lines (us-atlas 3.0.1), built into "
+                   "static/map/basemap.json by tools/build_basemap.py",
+        "units": "Longitude and latitude, rounded to 4 decimals and simplified for statewide viewing.",
+        "timing": "Built by hand when the map changes; served by this site.",
+        "missing": "Without the outlines the map still shows the weather layers and towns.",
     },
 }
+
 
 CONVECTIVE = ("Tornado Warning", "Severe Thunderstorm Warning", "Flash Flood Warning", "Extreme Wind Warning")
 
@@ -389,43 +396,6 @@ def parse_spc(text: str, day: date, kind: str) -> list[dict]:
     return unique
 
 
-# ---------------------------------------------------------------- radar
-
-def mercator(lat, lon) -> tuple[float, float]:
-    x = lon * 20037508.34 / 180
-    y = math.log(math.tan((90 + lat) * math.pi / 360)) * 20037508.34 / math.pi
-    return x, y
-
-
-def radar_bounds() -> tuple[tuple[float, float], tuple[float, float]]:
-    return ((MT_BOX[0] - MARGIN, MT_BOX[2] - MARGIN), (MT_BOX[1] + MARGIN, MT_BOX[3] + MARGIN))
-
-
-def radar_request(width=1400) -> tuple[dict, int, int]:
-    (s, w), (n, e) = radar_bounds()
-    x0, y0 = mercator(s, w)
-    x1, y1 = mercator(n, e)
-    height = round(width * (y1 - y0) / (x1 - x0))
-    params = {"service": "WMS", "request": "GetMap", "version": "1.1.1", "layers": RADAR_LAYER,
-              "styles": "", "format": "image/png", "transparent": "true", "srs": "EPSG:3857",
-              "bbox": f"{x0:.1f},{y0:.1f},{x1:.1f},{y1:.1f}", "width": width, "height": height}
-    return params, width, height
-
-
-def png_size(data: bytes) -> tuple[int, int] | None:
-    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
-        return None
-    return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
-
-
-def parse_radar_time(doc) -> datetime:
-    feats = (doc or {}).get("features") or []
-    ms = max(((f.get("attributes") or {}).get("idp_validtime") or 0) for f in feats) if feats else 0
-    if not ms:
-        raise ValueError("the radar service gave no frame time")
-    return datetime.fromtimestamp(ms / 1000, UTC)
-
-
 # ---------------------------------------------------------------- network
 
 class Fetcher:
@@ -472,18 +442,22 @@ class Fetcher:
         r, err = self._get(url)
         return (None, err) if err else (r.text, None)
 
-    def image(self, url):
-        r, err = self._get(url)
-        if err:
-            return None, err
-        if not r.headers.get("Content-Type", "").startswith("image/") or len(r.content) < 500:
-            return None, "the map service did not return a map picture"
-        return r.content, None
-
-    def png(self, url, params):
-        r, err = self._get(url, params)
-        if err:
-            return None, err
-        if not r.headers.get("Content-Type", "").startswith("image/png") or png_size(r.content) is None:
-            return None, "the radar service did not return a PNG image"
-        return r.content, None
+    def binary(self, url, headers=None):
+        """Raw bytes, for GRIB files and S3 listings. `headers` may carry a Range for one field."""
+        last = None
+        for attempt in range(self.attempts):
+            if attempt:
+                time.sleep(self.pause * attempt)
+            try:
+                r = self.s.get(url, headers=headers or {}, timeout=self.timeout)
+                if r.status_code == 404:
+                    return None, "not published (HTTP 404)"
+                if r.status_code >= 500:
+                    last = f"server error (HTTP {r.status_code})"
+                    continue
+                if r.status_code not in (200, 206):
+                    return None, f"HTTP {r.status_code}"
+                return r.content, None
+            except requests.RequestException as e:
+                last = type(e).__name__
+        return None, last

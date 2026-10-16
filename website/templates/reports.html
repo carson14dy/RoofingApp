@@ -15,8 +15,10 @@
 {% endif %}
 
 <section aria-labelledby="map-h">
-  <div class="section-head"><h2 id="map-h">Map</h2></div>
-  <iframe class="map" src="map-reports.html?v={{ built.strftime('%Y%m%d%H%M') }}" title="Map of storm reports in and near Montana"></iframe>
+  <div class="section-head"><h2 id="map-h">Map</h2>
+    <a class="section-link" href="map.html?overlay=reports">Open the map</a></div>
+  <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
+    title="Map of storm reports in and near Montana" loading="lazy"></iframe>
   <ul class="legend" aria-label="Map key">
     <li><span class="swatch swatch-hail"></span>Hail report (bigger circle, bigger hail)</li>
     <li><span class="swatch swatch-wind"></span>Wind report</li>

@@ -10,11 +10,9 @@ import contextlib
 import io
 import json
 import math
-import struct
 import sys
 import tempfile
 import unittest
-import zlib
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
@@ -191,32 +189,6 @@ class StormReports(unittest.TestCase):
             src.parse_spc("<html>Not found</html>", date(2026, 7, 1), "hail")
 
 
-def tiny_png(width, height):
-    """A real, fully transparent PNG of the given size."""
-    def chunk(kind, data):
-        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
-    raw = b"".join(b"\x00" + b"\x00" * (width * 4) for _ in range(height))
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
-            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
-
-
-class Radar(unittest.TestCase):
-    def test_request_is_a_mercator_box_around_montana(self):
-        params, w, h = src.radar_request()
-        x0, y0, x1, y1 = (float(v) for v in params["bbox"].split(","))
-        self.assertEqual((params["layers"], params["srs"], w), ("1", "EPSG:3857", 1400))
-        self.assertTrue(x0 < x1 and y0 < y1)
-        self.assertAlmostEqual(w / h, (x1 - x0) / (y1 - y0), places=2)
-
-    def test_png_size_and_frame_time(self):
-        self.assertEqual(src.png_size(tiny_png(3, 2)), (3, 2))
-        self.assertIsNone(src.png_size(b"<html>"))
-        with self.assertRaises(ValueError):
-            src.parse_radar_time({"features": []})
-        ms = int(NOW.timestamp() * 1000)
-        self.assertEqual(src.parse_radar_time({"features": [{"attributes": {"idp_validtime": ms}}]}), NOW)
-
-
 class FakeResponse:
     def __init__(self, status, body=b"{}", ctype="application/json"):
         self.status_code, self.content, self.headers = status, body, {"Content-Type": ctype}
@@ -252,35 +224,33 @@ class Fetching(unittest.TestCase):
                          (None, "not published (HTTP 404)"))
         self.assertEqual(session.calls, 1)
 
-    def test_base_map_must_answer_with_a_picture(self):
-        page_html = FakeResponse(200, b"<html>maintenance</html>" * 40, "text/html")
-        self.assertEqual(src.Fetcher(FakeSession([page_html]), pause=0).image("https://x/tile/6/22/12")[1],
-                         "the map service did not return a map picture")
-        jpeg = FakeResponse(200, b"\xff\xd8" + b"\0" * 4000, "image/jpeg")
-        self.assertIsNone(src.Fetcher(FakeSession([jpeg]), pause=0).image("https://x/tile/6/22/12")[1])
-        self.assertEqual(src.BASEMAP_PROBE, (6, 22, 12))
-        z, y, x = src.BASEMAP_PROBE                             # the probe tile covers central Montana
-        lon = x / 2 ** z * 360 - 180
-        lat = math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * y / 2 ** z))))
-        self.assertTrue(-112.5 <= lon <= -106 and 45 <= lat <= 49, (lat, lon))
-
-    def test_radar_must_be_a_png(self):
-        html = FakeResponse(200, b"<html>error</html>", "text/html")
-        self.assertEqual(src.Fetcher(FakeSession([html]), pause=0).png(src.RADAR_WMS, {})[1],
-                         "the radar service did not return a PNG image")
-        png = FakeResponse(200, tiny_png(2, 2), "image/png")
-        self.assertEqual(src.png_size(src.Fetcher(FakeSession([png]), pause=0).png(src.RADAR_WMS, {})[0]), (2, 2))
+    def test_binary_downloads_send_a_range_and_accept_partial_content(self):
+        class Recorder(FakeSession):
+            def get(self, url, **kw):
+                self.seen = kw.get("headers")
+                return super().get(url, **kw)
+        session = Recorder([FakeResponse(206, b"GRIB...7777", "binary/octet-stream")])
+        data, err = src.Fetcher(session, pause=0).binary("https://noaa-hrrr-bdp-pds.s3.amazonaws.com/x.grib2",
+                                                         {"Range": "bytes=10-20"})
+        self.assertEqual((data, err), (b"GRIB...7777", None))
+        self.assertEqual(session.seen, {"Range": "bytes=10-20"})
+        session = FakeSession([FakeResponse(404)])
+        self.assertEqual(src.Fetcher(session, pause=0).binary("https://x/y.grib2"), (None, "not published (HTTP 404)"))
+        self.assertEqual(session.calls, 1)
 
 
 class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
-        self.assertEqual(set(src.CONTRACTS),
-                         {"alerts", "points", "hourly", "gusts", "daily", "reports", "radar", "basemap"})
+        self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "reports", "radar",
+                                              "forecast_model", "basemap"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
         self.assertIn("hundredths of an inch", src.CONTRACTS["reports"]["units"])
-        self.assertIn("layer 1", src.CONTRACTS["radar"]["request"])
+        self.assertIn("PrecipRate", src.CONTRACTS["radar"]["request"])
+        self.assertIn("hatched", src.CONTRACTS["radar"]["missing"])
+        self.assertIn("byte range", src.CONTRACTS["forecast_model"]["request"])
+        self.assertIn("model forecast", src.CONTRACTS["forecast_model"]["missing"])
 
 
 class Formatting(unittest.TestCase):
@@ -300,24 +270,18 @@ class FailingFetcher:
     def text(self, url):
         return None, "ConnectionError"
 
-    def png(self, url, params):
-        return None, "ConnectionError"
-
-    def image(self, url):
+    def binary(self, url, headers=None):
         return None, "ConnectionError"
 
 
 class SampleWith(SampleFetcher):
-    """Sample data with chosen requests failing, plus an optional working radar."""
+    """Sample NWS data with chosen requests failing. Its binary() fails, so no radar or forecast."""
 
-    def __init__(self, now, fail=(), radar_age_min=None):
+    def __init__(self, now, fail=()):
         super().__init__(now)
-        self.fail, self.radar_age_min = fail, radar_age_min
+        self.fail = fail
 
     def json(self, url, params=None):
-        if url == src.RADAR_TIME and self.radar_age_min is not None:
-            ms = int((self.now - timedelta(minutes=self.radar_age_min)).timestamp() * 1000)
-            return {"features": [{"attributes": {"idp_validtime": ms}}]}, None
         if "alerts-state" in self.fail and url.endswith("/alerts/active") and params and "area" in params:
             return None, "server error (HTTP 503)"
         if "alerts-point" in self.fail and url.endswith("/alerts/active") and params and "point" in params:
@@ -326,12 +290,6 @@ class SampleWith(SampleFetcher):
                 and not url.endswith("hourly"):
             return None, "server error (HTTP 500)"
         return super().json(url, params)
-
-    def png(self, url, params):
-        if self.radar_age_min is None:
-            return super().png(url, params)
-        _, w, h = src.radar_request()
-        return tiny_png(w, h), None
 
 
 def build_with(fetch, previous=None):
@@ -351,7 +309,8 @@ class SampleBuild(unittest.TestCase):
         cls.result = site.build(cls.out, None, NOW, sample=True)
 
     def test_every_file_is_there(self):
-        expected = ["index.html", "reports.html", "about.html", "map-now.html", "map-reports.html",
+        expected = ["index.html", "reports.html", "about.html", "map.html", "data/map.json",
+                    "static/map/map.js", "static/map/map.css", "static/map/basemap.json",
                     "data/state.json", ".nojekyll", "static/style.css", "static/favicon.svg", "static/icon-180.png",
                     "static/leaflet/leaflet.js", "static/leaflet/leaflet.css", "static/leaflet/images/layers.png",
                     "static/fonts/fonts.css", "static/fonts/atkinson-hyperlegible-next-latin-700-normal.woff2"]
@@ -377,17 +336,54 @@ class SampleBuild(unittest.TestCase):
         json.dumps(r, default=str)                              # the build log prints it
         self.assertEqual(r["towns_with_forecast"], len(site.TOWNS))
         self.assertEqual(r["towns_with_gusts"], len(site.TOWNS))
+        self.assertEqual(r["map"]["precip"]["radar"], 7)
+        self.assertGreaterEqual(r["map"]["precip"]["forecast"], 12)
+        self.assertEqual(r["map"]["temp"]["frames"], 13)
+        self.assertEqual(r["map"]["wind"]["frames"], 13)
 
-    def test_maps_load_only_files_from_this_site(self):
-        for name in ("map-now.html", "map-reports.html"):
-            html = page(self.out, name)
-            self.assertIn('"static/leaflet/leaflet.js"', html)
-            self.assertNotIn("cdn.", html)
-            self.assertNotIn("jquery", html.lower())
-            self.assertNotIn("$(", html)                        # Folium's popups need jQuery; ours don't
-            self.assertIn("town/billings.html", html)
-        for name in ("index.html", "about.html"):
+    def test_map_page_loads_only_files_from_this_site(self):
+        html = page(self.out, "map.html")
+        for needed in ("static/leaflet/leaflet.js", "static/leaflet/leaflet.css", "static/map/map.js",
+                       "static/map/map.css", "data/map.json", "static/map/basemap.json"):
+            self.assertIn(needed, html)
+        self.assertNotRegex(html, r'<(script|link|img)[^>]+(src|href)="(https?:)?//')
+        self.assertIn("Sample data", html)
+        self.assertIn('src="map.html?card=1&amp;layer=precip', page(self.out, "index.html"))
+        self.assertIn("overlay=reports", page(self.out, "reports.html"))
+        self.assertIn('href="map.html"', page(self.out, "about.html"))           # main navigation
+        self.assertIn("map.html?town=livingston", page(self.out, "town/livingston.html"))
+        for name in ("index.html", "about.html", "map.html"):
             self.assertNotIn("googleapis", page(self.out, name))
+
+    def test_map_data_follows_the_contract(self):
+        m = json.loads(page(self.out, "data/map.json"))
+        self.assertEqual((m["version"], m["sample"], m["tz"]), (1, True, "America/Denver"))
+        self.assertEqual(set(m["layers"]), {"precip", "temp", "wind"})
+        for key, layer in m["layers"].items():
+            times = [f["time"] for f in layer["frames"]]
+            self.assertEqual(times, sorted(times), key)
+            for f in layer["frames"]:
+                self.assertTrue((self.out / f["src"]).is_file(), f["src"])
+                self.assertIn(f["kind"], ("radar", "forecast"))
+                self.assertTrue(f["source"].startswith("SAMPLE"), f["source"])
+                if f["kind"] == "forecast":
+                    self.assertIn("HRRR", f["source"])
+            for mode, idx in layer["modes"].items():
+                self.assertTrue(idx and all(0 <= i < len(layer["frames"]) for i in idx), (key, mode))
+                self.assertTrue(0 <= layer["now_index"][mode] < len(idx), (key, mode))
+        precip = m["layers"]["precip"]
+        radar = [f for f in precip["frames"] if f["kind"] == "radar"]
+        forecast = [f for f in precip["frames"] if f["kind"] == "forecast"]
+        self.assertEqual(m["now"], radar[-1]["time"])
+        self.assertLess(radar[-1]["time"], forecast[0]["time"])          # radar before now, model after
+        self.assertEqual(len(m["towns"]), len(site.TOWNS))
+        liv = next(t for t in m["towns"] if t["slug"] == "livingston")
+        self.assertEqual(liv["alert_ids"], ["sample-high-wind"])
+        self.assertTrue(liv["hours"] and all(h["time"].endswith("Z") for h in liv["hours"]))
+        self.assertEqual(len(m["alerts"]["items"]), 2)
+        self.assertEqual(sum(1 for a in m["alerts"]["items"] if a["geometry"] is None), 1)
+        self.assertEqual(len(m["reports"]), 5)
+        self.assertTrue({"radar", "forecast", "alerts", "forecasts", "reports"} <= set(m["status"]))
 
     def test_null_geometry_alert_is_listed_with_a_note(self):
         html = page(self.out, "index.html")
@@ -462,7 +458,10 @@ class FailureHonesty(unittest.TestCase):
         state = json.loads(page(out, "data/state.json"))
         self.assertEqual({k: v["ok"] for k, v in state["status"].items()},
                          {"alerts": False, "forecasts": False, "reports": False, "radar": False,
-                          "basemap": False})
+                          "forecast": False})
+        m = json.loads(page(out, "data/map.json"))
+        self.assertTrue(all(layer["frames"] == [] for layer in m["layers"].values()))
+        self.assertTrue(m["status"]["radar"]["detail"] and m["status"]["forecast"]["detail"])
         html = page(out, "index.html")
         self.assertIn("Couldn't load NWS alerts", html)
         self.assertIn("Forecast unavailable.", html)
@@ -477,19 +476,16 @@ class FailureHonesty(unittest.TestCase):
             self.assertIsNone(site.load_previous("https://example.invalid/site/"))
 
 
-class RadarOnTheMap(unittest.TestCase):
-    def test_fresh_radar_is_drawn_from_the_saved_picture(self):
-        out, result = build_with(SampleWith(NOW, radar_age_min=6))
-        self.assertTrue((out / "radar.png").is_file())
-        self.assertTrue(result["status"]["radar"]["ok"])
-        self.assertIn("radar.png?v=202610141500", page(out, "map-now.html"))
-        self.assertIn("Radar: NOAA composite, frame Wed 8:54 am MDT", page(out, "index.html"))
-
-    def test_old_radar_is_shown_with_its_time_but_reported_as_stale(self):
-        out, result = build_with(SampleWith(NOW, radar_age_min=40))
+class MapFailures(unittest.TestCase):
+    def test_radar_and_forecast_failures_are_reported_not_drawn_as_dry(self):
+        out, result = build_with(SampleWith(NOW))          # NWS sample data, but no gridded downloads
         self.assertFalse(result["status"]["radar"]["ok"])
-        self.assertEqual(result["status"]["radar"]["detail"], "frame 40 min old")
-        self.assertIn("frame Wed 8:20 am MDT", page(out, "index.html"))
+        self.assertFalse(result["status"]["forecast"]["ok"])
+        m = json.loads(page(out, "data/map.json"))
+        self.assertEqual(m["layers"]["precip"]["frames"], [])
+        self.assertFalse(m["status"]["radar"]["ok"])
+        self.assertEqual(m["now"], "2026-10-14T15:00:00Z")    # no radar frame: "now" is the build time
+        self.assertEqual(len(m["towns"]), len(site.TOWNS))    # the towns and alerts still draw
 
 
 class MapLabels(unittest.TestCase):

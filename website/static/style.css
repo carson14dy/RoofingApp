@@ -176,6 +176,8 @@ section + section, .now-grid + section { margin-top: var(--space-7); }
   border-radius: var(--radius); background: var(--color-surface-muted); }
 @media (max-width: 639px) { .map { height: 20rem; min-height: 0; } }
 .caption { margin-top: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
+.section-link { font-weight: 600; min-height: 44px; display: inline-flex; align-items: center; }
+.map-card { background: var(--color-surface-muted); }
 .legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); list-style: none; padding: 0;
   margin: var(--space-2) 0 0; font-size: var(--text-sm); }
 .legend li { display: inline-flex; align-items: center; gap: var(--space-2); }

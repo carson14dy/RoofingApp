@@ -19,6 +19,9 @@ on:
     paths:
       - "website/**"
       - "tests/test_site.py"
+      - "tests/test_gridded.py"
+      - "tests/test_basemap.py"
+      - "tools/**"
       - ".github/workflows/website.yml"
 
 permissions:
@@ -67,11 +70,11 @@ jobs:
 
       - name: Install
         if: steps.plan.outputs.run == 'true'
-        run: python -m pip install requests jinja2 folium pillow
+        run: python -m pip install requests jinja2 pillow numpy pygrib
 
       - name: Website tests (offline)
         if: steps.plan.outputs.run == 'true'
-        run: python -m unittest tests.test_site
+        run: python -m unittest tests.test_site tests.test_gridded tests.test_basemap
 
       - name: Build from live data
         if: steps.plan.outputs.run == 'true'
@@ -82,6 +85,13 @@ jobs:
           if [ -n "$PAGES_URL" ]; then args+=(--previous "$PAGES_URL"); fi
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then args+=(--require-live); fi
           python -m website.build "${args[@]}" | tee build-result.json
+
+      - name: Map smoke test in a real browser (branch pushes)
+        if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+          python tools/smoke_map.py _site
 
       - name: Summary of what each source returned
         if: always() && steps.plan.outputs.run == 'true'
@@ -95,11 +105,13 @@ jobs:
           print("| Source | Loaded | Detail |\n|---|---|---|")
           for s in r["status"].values():
               print(f"| {s['label']} | {'yes' if s['ok'] else '**no**'} | {s['detail']} |")
-          radar = r.get("radar") or {}
           print(f"\nAlerts: {r['alerts']} ({r['alerts_null_geometry']} without an outline). "
                 f"Towns with a forecast: {r['towns_with_forecast']}, with gusts: {r['towns_with_gusts']}. "
-                f"Storm reports: {r['reports']}. Radar frame: {radar.get('frame', 'none')}, "
-                f"share of map with echoes: {radar.get('colored', 'n/a')}.")
+                f"Storm reports: {r['reports']}.")
+          print("\n| Map layer | Frames | Radar | Forecast | First | Last | HRRR run |\n|---|---|---|---|---|---|---|")
+          for key, m in (r.get("map") or {}).items():
+              print(f"| {key} | {m['frames']} | {m['radar']} | {m['forecast']} | {m['first'] or '—'} | "
+                    f"{m['last'] or '—'} | {m['run'] or '—'} |")
           c = r.get("content") or {}
           if c.get("alert_events"):
               print("\nAlerts: " + "; ".join(c["alert_events"]))

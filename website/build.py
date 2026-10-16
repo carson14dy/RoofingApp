@@ -18,10 +18,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import folium
-from branca.element import MacroElement
-from folium.raster_layers import ImageOverlay
-from folium.template import Template
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import sources as src
@@ -32,28 +28,6 @@ MT = ZoneInfo("America/Denver")
 TOWNS = json.loads((HERE / "towns.json").read_text(encoding="utf-8"))
 OFFICES = [("Billings", "https://www.weather.gov/byz/"), ("Glasgow", "https://www.weather.gov/ggw/"),
            ("Great Falls", "https://www.weather.gov/tfx/"), ("Missoula", "https://www.weather.gov/mso/")]
-KIND_STYLE = {"warning": "#c0262d", "watch": "#c26100", "advisory": "#a07800", "statement": "#4b5d72"}
-
-# Styles for the map pages. Leaflet's stylesheet loads after this block, so each selector here is
-# one step more specific than Leaflet's own (html .leaflet-container, .leaflet-tooltip.town-label).
-# Maps narrower than 546 px open at zoom 5 (phones). There, the "minor" towns in towns.json are
-# hidden, dot and label, so the main towns' labels have room; every town still has its card.
-# Below 273 px the map opens at zoom 4 and no labels fit.
-MAP_CSS = """
-html, body, html .leaflet-container { background: #eef1f4; }
-html .leaflet-container { font: 14px/1.4 'Atkinson Hyperlegible Next', system-ui, sans-serif; }
-.base-tiles { filter: grayscale(1) contrast(.85) brightness(1.06); }
-.leaflet-tooltip.town-label { background: none; border: 0; box-shadow: none; padding: 0 3px;
-  font-size: 13px; font-weight: 700; color: #0e1a27; text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff; }
-.leaflet-tooltip.town-label::before { display: none; }
-@media (max-width: 545px) { .leaflet-tooltip.town-label.minor, .town-dot.minor { display: none; } }
-@media (max-width: 272px) { .leaflet-tooltip.town-label { display: none; } }
-@media (prefers-color-scheme: dark) {
-  html, body, html .leaflet-container { background: #0f151c; }
-  .base-tiles { filter: grayscale(1) invert(1) brightness(.78) contrast(.9); }
-  .leaflet-tooltip.town-label { color: #e8edf2; text-shadow: 0 0 2px #000, 0 0 3px #000, 0 0 4px #000; }
-}
-"""
 
 
 # ---------------------------------------------------------------- gathering
@@ -161,143 +135,55 @@ class Collector:
         return {"items": out, "problems": problems, "days": [(today - timedelta(days=b)).isoformat()
                                                              for b in range(days)]}
 
-    def basemap(self):
-        """The base map loads in each viewer's browser; check once per build that it answers."""
-        z, y, x = src.BASEMAP_PROBE
-        img, err = self.f.image(src.USGS_TOPO.format(z=z, y=y, x=x))
-        self.note("basemap", "USGS base map", err is None, err or f"map tiles answering ({len(img) // 1024} KB tile)")
-
-    def radar(self, out_dir: Path):
-        doc, err = self.f.json(src.RADAR_TIME, {"where": "1=1", "outFields": "idp_validtime",
-                                                 "returnGeometry": "false", "orderByFields": "idp_validtime DESC",
-                                                 "resultRecordCount": 1, "f": "json"})
-        try:
-            if err:
-                raise ValueError(err)
-            frame = src.parse_radar_time(doc)
-        except ValueError as e:
-            self.note("radar", "NOAA radar", False, str(e))
-            return None
-        params, w, h = src.radar_request()
-        png, err = self.f.png(src.RADAR_WMS, params)
-        if err:
-            self.note("radar", "NOAA radar", False, err)
-            return None
-        (out_dir / "radar.png").write_bytes(png)
-        size = src.png_size(png)
-        if size != (w, h):
-            self.note("radar", "NOAA radar", False, f"image was {size}, expected {(w, h)}")
-            return None
-        age = (self.now - frame).total_seconds() / 60
-        self.note("radar", "NOAA radar", age <= 15, f"frame {round(age)} min old", when=frame)
-        return {"frame": src._iso(frame), "bytes": len(png), "colored": colored_fraction(png)}
+    def gridded(self, out_dir: Path, sample: bool) -> dict:
+        """Radar frames (NOAA MRMS) and model forecast frames (NOAA HRRR) for the map page."""
+        from . import gridded
+        fetch = getattr(self.f, "binary", None)
+        get = fetch if fetch else (lambda url, headers=None: (None, "no downloader"))
+        layers, status = gridded.build_gridded(out_dir, get, self.now, sample=sample)
+        for key, label in (("radar", "NOAA radar"), ("forecast", "HRRR forecast")):
+            st = status.get(key) or {}
+            self.note(key, st.get("label") or label, bool(st.get("ok")), st.get("detail") or "not built")
+        return layers
 
 
-def colored_fraction(png: bytes) -> float | None:
-    """Share of non-transparent pixels, for the build log only (needs Pillow; optional)."""
-    try:
-        from PIL import Image
-    except ImportError:
-        return None
-    import io
-    try:
-        hist = Image.open(io.BytesIO(png)).convert("RGBA").getchannel("A").histogram()
-    except Exception:   # logging only: never fail a build over it
-        return None
-    return round(1 - hist[0] / sum(hist), 4)
+# ---------------------------------------------------------------- map page data
+
+MAP_VIEW = {"bounds": [[44.35, -116.06], [49.01, -104.03]], "min_zoom": 5, "max_zoom": 11}
 
 
-# ---------------------------------------------------------------- maps
-
-class LinkPopup(MacroElement):
-    """A Leaflet popup with fixed HTML. Folium's own Popup needs jQuery, which this site doesn't load."""
-    _template = Template("{% macro script(this, kwargs) %}"
-                         "{{ this._parent.get_name() }}.bindPopup({{ this.html|tojson }});"
-                         "{% endmacro %}")
-
-    def __init__(self, html: str):
-        super().__init__()
-        self._name = "LinkPopup"
-        self.html = html
-
-
-def new_map(height_note: str = "") -> folium.Map:
-    (s, w), (n, e) = src.radar_bounds()
-    m = folium.Map(location=[46.9, -109.6], zoom_start=6, tiles=None, control_scale=True,
-                   min_zoom=4, max_bounds=True,
-                   min_lat=s - 3, max_lat=n + 3, min_lon=w - 6, max_lon=e + 6)
-    # Serve Leaflet from this site, not a CDN, and drop the CSS/JS Folium adds by default.
-    m.default_js = [("leaflet", "static/leaflet/leaflet.js")]
-    m.default_css = [("leaflet_css", "static/leaflet/leaflet.css")]
-    folium.TileLayer(src.USGS_TOPO, attr="USGS The National Map", name="Base map (USGS topo)",
-                     max_native_zoom=16, max_zoom=18, class_name="base-tiles").add_to(m)
-    m.get_root().header.add_child(folium.Element(
-        f'<link rel="stylesheet" href="static/fonts/fonts.css"><style>{MAP_CSS}</style>'))
-    m.fit_bounds([[src.MT_BOX[0], src.MT_BOX[2]], [src.MT_BOX[1], src.MT_BOX[3]]])
-    return m
-
-
-def add_radar(m, radar, built):
-    if not radar:
-        return
-    overlay = ImageOverlay(image="data:image/png;base64,", bounds=[list(b) for b in src.radar_bounds()],
-                           opacity=0.72, name=f"Radar, frame {fmt_time(radar['frame'])}", interactive=False)
-    overlay.url = f"radar.png?v={built:%Y%m%d%H%M}"   # served beside the map, not embedded
-    overlay.add_to(m)
-
-
-def add_alerts(m, alerts):
-    shapes = [a for a in alerts if a.get("geometry")]
-    if not shapes:
-        return
-    fc = {"type": "FeatureCollection", "features": [
-        {"type": "Feature", "geometry": a["geometry"],
-         "properties": {"event": a["event"], "until": "until " + fmt_time(a["until"]) if a["until"] else "",
-                        "color": KIND_STYLE[a["kind"]]}} for a in shapes]}
-    folium.GeoJson(fc, name="Warning areas (NWS)",
-                   style_function=lambda f: {"color": f["properties"]["color"], "weight": 2.5,
-                                             "fillColor": f["properties"]["color"], "fillOpacity": 0.14},
-                   tooltip=folium.GeoJsonTooltip(fields=["event", "until"], labels=False)).add_to(m)
-
-
-def add_towns(m, towns, prefix=""):
-    group = folium.FeatureGroup(name="Towns")
+def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dict, reports: dict,
+             status: dict) -> dict:
+    """Everything the map page draws, as one JSON document (data/map.json). The contract is in
+    docs/DESIGN.md ("Interactive map"); website/static/map/map.js reads it."""
+    from . import gridded
+    radar_times = [f["time"] for f in (layers.get("precip") or {}).get("frames", []) if f.get("kind") == "radar"]
+    first, last = now - timedelta(hours=1, minutes=10), now + timedelta(hours=14)
+    out_towns = []
     for t in towns:
-        link = f'<a href="{prefix}town/{t["slug"]}.html" target="_top">{t["name"]} forecast</a>'
-        # Label side and "minor" (no dot or label on narrow maps) are set per town in towns.json
-        # so labels never cover each other or another town's dot (tests/test_site.py checks it).
-        minor = " minor" if t.get("minor") else ""
-        marker = folium.CircleMarker([t["lat"], t["lon"]], radius=5, color="#0e1a27", weight=2, fill=True,
-                                     fill_color="#ffffff", fill_opacity=1, class_name="town-dot" + minor,
-                                     tooltip=folium.Tooltip(t["name"], permanent=True,
-                                                            direction=t.get("label", "right"),
-                                                            class_name="town-label" + minor))
-        LinkPopup(link).add_to(marker)
-        marker.add_to(group)
-    group.add_to(m)
+        hours = [{"time": src._iso(h["start"]), "temp_f": _round(h.get("temp_f")),
+                  "wind_mph": _round(h.get("wind_mph")), "wind_dir": h.get("wind_dir") or "",
+                  "gust_mph": _round(h.get("gust_mph")), "precip": _round(h.get("precip")),
+                  "sky": h.get("sky") or "", "flags": h.get("flags") or []}
+                 for h in t["hours"] if first <= h["start"] <= last]
+        out_towns.append({"slug": t["slug"], "name": t["name"], "lat": t["lat"], "lon": t["lon"],
+                          "label": t.get("label", "right"), "minor": bool(t.get("minor")),
+                          "url": f"town/{t['slug']}.html", "office": t.get("office"), "hours": hours,
+                          "alert_ids": None if t["alerts"] is None else [a["id"] for a in t["alerts"]]})
+    (s_, w_), (n_, e_) = gridded.IMAGE_BOUNDS
+    return {
+        "version": 1, "built": src._iso(now), "sample": sample, "tz": "America/Denver",
+        "image_bounds": [[s_, w_], [n_, e_]], "view": MAP_VIEW,
+        "now": radar_times[-1] if radar_times else src._iso(now),
+        "layers": layers, "status": status, "towns": out_towns,
+        "alerts": {"ok": alerts["ok"], "checked": alerts["checked"], "last_known": alerts.get("last_known"),
+                   "items": alerts["items"]},
+        "reports": reports["items"],
+    }
 
 
-def add_reports(m, reports):
-    group = folium.FeatureGroup(name="Storm reports (SPC)")
-    for r in reports:
-        if r["kind"] == "hail":
-            size = r["size_in"]
-            radius = 4 + 4 * (size or 0.5)
-            label = f"Hail {size:.2f} in" if size else "Hail, size not given"
-            color = "#6b3fa0"
-        else:
-            radius = 6
-            label = f"Wind {r['mph']} mph" if r["mph"] else "Wind damage, speed unknown"
-            color = "#0b6e6e"
-        tip = f"{label} · {fmt_time(r['time'], '%a %-I:%M %p')} · {r['place']}, {r['county']} Co. {r['state']}"
-        folium.CircleMarker([r["lat"], r["lon"]], radius=radius, color=color, weight=2, fill=True,
-                            fill_color=color, fill_opacity=0.35, tooltip=tip).add_to(group)
-    group.add_to(m)
-
-
-def save_map(m, path: Path):
-    folium.LayerControl(collapsed=True).add_to(m)
-    m.save(str(path))
+def _round(v):
+    return None if v is None else round(v)
 
 
 # ---------------------------------------------------------------- rendering helpers
@@ -345,29 +231,15 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     alerts = c.alerts()
     towns = c.towns()
     reports = c.reports()
-    radar = None if sample else c.radar(out)
-    if sample:
-        c.note("radar", "NOAA radar", False, "not loaded in sample builds")
-        c.note("basemap", "USGS base map", False, "not checked in sample builds")
-    else:
-        c.basemap()
-
-    m = new_map()
-    add_radar(m, radar, now)
-    add_alerts(m, alerts["items"])
-    add_towns(m, towns)
-    save_map(m, out / "map-now.html")
-    m = new_map()
-    add_reports(m, reports["items"])
-    add_towns(m, towns)
-    save_map(m, out / "map-reports.html")
+    layers = c.gridded(out, sample)
 
     base = {"built": now, "built_ms": int(now.timestamp() * 1000), "status": c.status, "sample": sample,
             "limits": src.LIMITS, "offices": OFFICES, "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
             "contracts": src.CONTRACTS}
     e = env()
     pages = {
-        "index.html": ("index.html", {"page": "now", "root": "", "alerts": alerts, "towns": towns, "radar": radar}),
+        "index.html": ("index.html", {"page": "now", "root": "", "alerts": alerts, "towns": towns}),
+        "map.html": ("map.html", {"page": "map", "root": ""}),
         "reports.html": ("reports.html", {"page": "reports", "root": "", "reports": reports}),
         "about.html": ("about.html", {"page": "about", "root": ""}),
     }
@@ -378,6 +250,9 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
                                                  delta_hour=timedelta(hours=1))
         (out / "town" / f"{t['slug']}.html").write_text(html, encoding="utf-8")
 
+    (out / "data" / "map.json").write_text(
+        json.dumps(map_data(now, sample, layers, towns, alerts, reports, c.status), separators=(",", ":")),
+        encoding="utf-8")
     state = {"built": src._iso(now), "sample": sample, "status": c.status,
              "alerts": {k: v for k, v in alerts.items() if k != "error"},
              "points": {t["slug"]: t["point"] for t in towns if t.get("point")}}
@@ -387,8 +262,21 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
             "alerts_null_geometry": sum(1 for a in alerts["items"] if not a["geometry"]),
             "towns_with_forecast": sum(1 for t in towns if t["hours"]),
             "towns_with_gusts": sum(1 for t in towns if t["summary"]["gusts_known"]),
-            "reports": len(reports["items"]), "radar": radar,
+            "reports": len(reports["items"]), "map": map_summary(layers),
             "content": content_sample(alerts, towns, reports)}
+
+
+def map_summary(layers: dict) -> dict:
+    """Frame counts and sources per map layer, for the build log and the run summary."""
+    out = {}
+    for key, layer in layers.items():
+        frames = layer.get("frames", [])
+        radar = [f for f in frames if f.get("kind") == "radar"]
+        fcst = [f for f in frames if f.get("kind") == "forecast"]
+        out[key] = {"frames": len(frames), "radar": len(radar), "forecast": len(fcst),
+                    "first": frames[0]["time"] if frames else None, "last": frames[-1]["time"] if frames else None,
+                    "run": next((f.get("run") for f in fcst if f.get("run")), None)}
+    return out
 
 
 def content_sample(alerts, towns, reports) -> dict:
