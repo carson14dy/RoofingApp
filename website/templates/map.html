@@ -19,6 +19,7 @@
    page paints stops the full-screen controls flashing inside the card. map.js does the rest. */
 if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.add("is-card");
 </script>
+<noscript><style>.top .corners, .bottom, .card-ui { display: none !important; }</style></noscript>
 </head>
 {% set v = built.strftime('%Y%m%d%H%M') %}
 <body class="mapapp" data-built="{{ built_ms }}">
@@ -36,8 +37,8 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
      data-sample="{{ 'true' if sample else 'false' }}">
   <h1 class="visually-hidden">Montana weather map</h1>
   <p id="map-help" class="visually-hidden">The map shows NOAA's radar estimate for the past hour and the HRRR
-    model forecast after now, NWS warning outlines and the NWS forecast for each town. The List button
-    gives the same information as text.</p>
+    model forecast after now, NWS warning outlines and the NWS forecast for each town. Arrow keys pan the map,
+    plus and minus zoom. The List button gives the same information as text.</p>
 
   <div class="top" id="top">
     <div class="banners" id="banners">
@@ -135,8 +136,8 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
           <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="6.5" y="5" width="3.8" height="14" rx="1.2"/><rect class="fill" x="13.7" y="5" width="3.8" height="14" rx="1.2"/></svg>
         </button>
         <div class="tl-text">
-          <h2 class="tl-title" id="tl-title" aria-live="off">Radar</h2>
-          <p class="tl-sub" id="tl-sub"><span class="tl-when"></span><span class="tl-src"></span></p>
+          <h2 class="tl-title" id="tl-title" aria-live="off">Map</h2>
+          <p class="tl-sub" id="tl-sub"><span class="tl-when">Loading the map</span><span class="tl-src"></span></p>
         </div>
         <div class="seg" id="seg" role="radiogroup" aria-label="Timeline length">
           <button type="button" role="radio" aria-checked="false" data-mode="1h">1h</button>
@@ -151,7 +152,7 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
     </section>
   </div>
 
-  <div id="map" class="canvas" aria-label="Map of Montana. Arrow keys pan, plus and minus zoom." aria-describedby="map-help"></div>
+  <div id="map" class="canvas" role="region" aria-label="Map of Montana" aria-describedby="map-help"></div>
 
   <div class="card-ui" id="card-ui">
     <p class="glass card-chip" id="card-chip"></p>

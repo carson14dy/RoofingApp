@@ -249,7 +249,7 @@
     } else {
       tl = [6, legend.bottom + 4];
       br = [6, bottomPad];
-      if (vh - tl[1] - br[1] < 170) tl[1] = el.legendWrap.offsetTop ? legend.top : 60;   // short screens: let the legend overlap
+      if (vh - tl[1] - br[1] < 170) tl[1] = legend.top;      // short screens: let the legend overlap Montana
     }
     map.fitBounds(map._viewBounds, { paddingTopLeft: tl, paddingBottomRight: br, animate: false });
   }
@@ -499,8 +499,10 @@
     var radios = el.layers.querySelectorAll("input[name=layer]");
     for (var i = 0; i < radios.length; i++) radios[i].checked = radios[i].value === key;
     var L_ = layer();
-    var modes = Object.keys(L_.modes || {});
-    if (modes.indexOf(state.mode) < 0) state.mode = modes.indexOf("12h") >= 0 ? "12h" : (modes[0] || "12h");
+    var all = Object.keys(L_.modes || {});
+    var full = all.filter(function (m) { return (L_.modes[m] || []).length; });
+    var pick = full.length ? full : all;              // a mode with frames first; an empty layer keeps its keys
+    if (pick.indexOf(state.mode) < 0) state.mode = pick.indexOf("12h") >= 0 ? "12h" : (pick[0] || "12h");
     renderLegend();
     buildTimeline(keep, opts.first);
     if (!opts.first) saveUrl();
@@ -533,6 +535,7 @@
     var n = state.frames.length;
     el.range.disabled = n < 2;
     el.play.disabled = n < 2;
+    if (n < 2 && state.playing) setPlaying(false);
     if (n) {
       el.range.min = String(state.times[0]);
       el.range.max = String(n > 1 ? state.times[n - 1] : state.times[0] + MIN);
@@ -543,7 +546,6 @@
     var pos = state.nowPos;
     if (keepTime != null && n) pos = nearest(keepTime);
     if (!n) {
-      if (state.playing) setPlaying(false);
       showPicture(null);
       renderAll();
       return;
@@ -622,12 +624,10 @@
         var b = place(lab, frac(marks[k]) * w);
         els.push(lab);
         if (b.left < -EDGE || b.right > w + EDGE) { lab.remove(); els.pop(); continue; }
+        if (b.left < nowBox.right + GAP && b.right > nowBox.left - GAP) { lab.remove(); els.pop(); continue; }   // too close to "Now": left out
         var hit = false;
-        for (var q = 0; q < placed.length; q++) if (b.left < placed[q].right + GAP && b.right > placed[q].left - GAP) { hit = true; break; }
-        if (hit) {
-          if (marks.length > 1 && placed.length > 1) { okAll = false; break; }
-          lab.remove(); els.pop(); continue;     // one label too close to "Now" is simply left out
-        }
+        for (var q = 1; q < placed.length; q++) if (b.left < placed[q].right + GAP && b.right > placed[q].left - GAP) { hit = true; break; }
+        if (hit) { okAll = false; break; }      // hour labels touching: try a wider step
         placed.push(b);
       }
       if (okAll && els.length) { els.forEach(function (x) { x.classList.remove("measure"); }); break; }
@@ -825,7 +825,7 @@
     el.legendBar.style.background = L_.gradient || "";
     el.legendScale.style.setProperty("--bar-h", Math.max(96, (stops.length - 1) * 16) + "px");
     el.legendStops.innerHTML = stops.map(function (s) {
-      var pos = s.pos != null ? s.pos : 0;
+      var pos = Number(s.pos) || 0;
       return '<li style="--pos:' + pos + '"' + (s.limit ? ' class="limit"' : "") + ">" + esc(s.label) + (s.limit ? " limit" : "") + "</li>";
     }).join("");
     el.legendNote.textContent = L_.legend_note || "";
@@ -1180,6 +1180,7 @@
       setPlaying(false);
     }
     sheetState.kind = kind;
+    sheetState.back = !!opts.back;
     toggleLayers(false);
     el.sheet.className = "glass sheet sheet-" + kind;
     el.sheetBack.hidden = !opts.back;
