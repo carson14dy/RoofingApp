@@ -25,11 +25,16 @@
   var FALLBACK_VIEW = { bounds: [[44.35, -116.06], [49.01, -104.03]], min_zoom: 5, max_zoom: 11 };
   var KIND_WORD = { warning: "Warning", watch: "Watch", advisory: "Advisory", statement: "Statement" };
   var LAYER_WORD = { precip: "Precipitation", temp: "Temperature", wind: "Wind gusts" };
+  var HATCH_NOTE = { radar: "Hatched areas have no radar coverage.", model: "Hatched areas have no model data." };
 
   var app = document.getElementById("app");
   var params = new URLSearchParams(location.search);
   var CARD = params.get("card") === "1";
   var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  // keep these in step with the media queries of the same layouts in map.css
+  var sideQuery = window.matchMedia ? window.matchMedia("(max-height: 500px) and (orientation: landscape)") : null;
+  var compactQuery = window.matchMedia ? window.matchMedia("(max-width: 520px) and (max-height: 760px), (max-height: 500px)") : null;
+  var phoneQuery = window.matchMedia ? window.matchMedia("(max-width: 520px) and (orientation: portrait)") : null;
   var builtMs = Number(document.body.getAttribute("data-built")) || 0;
   var limits = readJSON(app.getAttribute("data-limits")) || {};
 
@@ -55,7 +60,8 @@
   var state = {
     layer: "precip", mode: "12h", frames: [], times: [], pos: 0, nowPos: 0,
     playing: false, timer: null, resumeOnShow: false, dragging: false,
-    warnings: true, reports: params.get("overlay") === "reports", goToken: 0, userMoved: false
+    warnings: true, reports: params.get("overlay") === "reports", goToken: 0, userMoved: false,
+    ready: false                     // true once the first timeline is built
   };
   var overlays = [], front = 0, swapToken = 0;   // two image overlays, crossfaded
   var cache = {};                                // picture src -> {ok: null|true|false, cbs: []}
@@ -64,6 +70,11 @@
   var alertLayer = null, reportLayer = null, locLayer = null;
   var sheetState = null;                         // {opener, kind, listScroll, listFocus}
   var toastTimer = null;
+  var cardFitting = false;                       // fitCard is running (the caption must not re-fit)
+  var legendForm = null;                         // the legend's form when last drawn (legendFormNow)
+  var legendCrowded = false;                     // fitView found no room for Montana under the one-column legend
+  var noteFit = { sig: null, room: 0 };          // the note warnings and room the last fit allowed for
+  var noteSizes = { width: -1, px: {} };         // measured note sizes by text, at one note width
 
   // ------------------------------------------------------------------ small helpers
 
@@ -163,9 +174,16 @@
     el.reports.checked = state.reports;
     setReports(state.reports, true);
     setLayer(want && data.layers[want] ? want : "precip", { atNow: true, first: true });
+    if (CARD) setupCard();        // before the fit: the card's fit keeps Montana above the caption
     fitView();
-    fitMinZoom();
-    if (CARD) setupCard();
+    if (document.fonts && document.fonts.ready) {   // text first measured in a fallback font: measure again
+      document.fonts.ready.then(function () {
+        noteSizes.width = -1;                       // the note's measured sizes too
+        renderTicks();
+        layoutLabels();
+        if (!state.userMoved) fitView();
+      });
+    }
     var town = params.get("town");
     if (town && !CARD) {
       var t = findTown(town);
@@ -212,12 +230,22 @@
       fitMinZoom();
     }
     map.on("zoomend", zoomClasses);
-    map.on("moveend", function () { renderKeys(); });
+    map.on("moveend", function () {          // hatching and ringed bubbles come into or out of view
+      if (!state.ready) return;
+      renderKeys();
+      renderNote();
+      if (CARD) renderCardChip();
+    });
     map.on("dragstart", function () { state.userMoved = true; });
     el.canvas.addEventListener("wheel", function () { state.userMoved = true; }, { passive: true });
     el.canvas.addEventListener("keydown", function (e) { if (/^Arrow|^[+-]$/.test(e.key)) state.userMoved = true; });
     el.canvas.addEventListener("touchstart", function (e) { if (e.touches.length > 1) state.userMoved = true; }, { passive: true });
-    map.on("resize", function () { if (!state.userMoved) fitView(); fitMinZoom(); });
+    map.on("resize", function () {
+      if (data && state.ready && legendFormNow() !== legendForm) renderLegend();   // turned or resized past a breakpoint
+      if (!state.userMoved) fitView();
+      fitMinZoom();
+      if (sheetState) placeSheet();
+    });
     zoomClasses();
   }
 
@@ -230,33 +258,209 @@
   }
 
   /** Fit Montana into the space the controls leave free: below the legend on a phone, right of it
-      on a wide screen, and always above the timeline. Measured from the page, so banners count. */
+      on a wide screen or a short landscape one (where the timeline also starts right of it), and
+      always above the timeline and the note (noteRoom). Measured from the page, so banners count.
+      Below the legend wins on a phone whenever Montana fits there at the minimum zoom or more (every
+      town visible beats a bigger Montana). When it can't, even with the two-column legend (or, on a
+      short landscape screen, below the banners), Montana stays at the minimum zoom, bigger would
+      only hide more, and goes where it hides the least of the town bubbles (placeCrowded). */
   function fitView() {
     if (!map || !map._viewBounds) return;
+    if (CARD) { fitCard(); return; }
+    var base = (data && data.view && data.view.min_zoom) || 5;
+    if (map.getMinZoom() > base) map.setMinZoom(base);   // fitMinZoom may have raised it for a bigger box
     var vw = el.canvas.clientWidth, vh = el.canvas.clientHeight, tl, br;
-    if (CARD) {
-      var top = el.banners.getBoundingClientRect().bottom, chip = el.cardOpen.getBoundingClientRect().top;
-      map.fitBounds(map._viewBounds, { paddingTopLeft: [6, Math.max(6, top + 4)], paddingBottomRight: [6, Math.max(6, vh - chip + 2)], animate: false });
-      return;
-    }
     var legend = el.legendWrap.getBoundingClientRect();
     var tlTop = el.timeline.getBoundingClientRect().top;
     var right = el.buttons.getBoundingClientRect().left;
-    var bottomPad = Math.max(8, vh - tlTop + 8);
-    if (vw >= 760) {
+    noteFit.sig = data && state.ready ? noteWarningSet().join("\n") : null;
+    noteFit.room = noteRoom();
+    var bottomPad = Math.max(8, vh - tlTop + 8 + noteFit.room);
+    var vb = map._viewBounds, sum = function (top) { return L.point(tl[0] + br[0], top + br[1]); };
+    if (vw >= 760 || sideLegend()) {
       tl = [legend.right + 12, Math.max(16, el.banners.getBoundingClientRect().bottom + 8)];
       br = [vw - right + 12, bottomPad];
+      // a short landscape screen can be too short for Montana even at the minimum zoom
+      var zs = map.getBoundsZoom(vb, false, sum(tl[1]));
+      if (boundsSize(vb, zs).y > vh - tl[1] - br[1]) placeCrowded(vb, zs, tl, br, vw, vh, tlTop);
     } else {
+      // a taller phone keeps the one-column legend unless banners and the note leave Montana no room
+      // under it even at the minimum zoom; then it takes the short phones' two-column legend
+      if (data && state.ready && phoneQuery && phoneQuery.matches && !(compactQuery && compactQuery.matches)) {
+        setCrowded(false);
+        if (!fitsBelow(vb, el.legendWrap.getBoundingClientRect().bottom + 4, bottomPad, vh)) setCrowded(true);
+        legend = el.legendWrap.getBoundingClientRect();
+      }
       tl = [6, legend.bottom + 4];
       br = [6, bottomPad];
-      if (vh - tl[1] - br[1] < 170) tl[1] = legend.top;      // short screens: let the legend overlap Montana
+      var zBelow = map.getBoundsZoom(vb, false, sum(tl[1]));
+      if (boundsSize(vb, zBelow).y > vh - tl[1] - br[1] + 1) placeCrowded(vb, zBelow, tl, br, vw, vh, tlTop);
     }
-    map.fitBounds(map._viewBounds, { paddingTopLeft: tl, paddingBottomRight: br, animate: false });
+    map.fitBounds(vb, { paddingTopLeft: tl, paddingBottomRight: br, animate: false });
+    fitMinZoom();
   }
 
-  /** Don't let the viewer zoom out past the area the pictures cover (on big screens it is small). */
+  /** Montana (box vb at zoom z, centred across) has no room between the controls at the top and the
+      note: something will be hidden whatever we do. Try each spot from Montana touching the note
+      down to it touching the timeline, measure how much of every town bubble the legend, the
+      banners, the buttons, the note (noteBox) and the timeline would cover there, and keep the spot
+      that hides the least (on a tie, the highest: the note stays clear). Each edge of Montana has
+      towns close to it, so where the overflow goes decides how many are lost. Sets the paddings in
+      tl and br for fitBounds. */
+  function placeCrowded(vb, z, tl, br, vw, vh, tlTop) {
+    var size = boundsSize(vb, z), R = 15, AREA = 4 * R * R;     // bubbles are 30 px
+    var y0 = Math.max(0, Math.round(vh - br[1] - size.y - 2));  // touching the note
+    var y1 = Math.max(y0, Math.floor(tlTop - size.y - 2));      // touching the timeline
+    var left = tl[0] + (vw - tl[0] - br[0] - size.x) / 2;
+    var nw = map.project(vb.getNorthWest(), z), pts = [];
+    (data ? data.towns : []).forEach(function (t) { if (!t.minor) pts.push(map.project([t.lat, t.lon], z).subtract(nw)); });
+    var boxes = [];
+    [el.legend, el.legendWrap.querySelector(".mapdata"), el.top.querySelector(".close"), el.buttons, el.timeline]
+      .concat([].slice.call(el.banners.children)).forEach(function (e) {
+        var r = e && e.getBoundingClientRect();
+        if (r && r.width && r.height) boxes.push(r);
+      });
+    var nb = noteBox(tlTop);
+    if (nb) boxes.push(nb);
+    var best = y0, bestScore = Infinity;
+    for (var y = y0; y <= y1; y += 2) {
+      var score = 0;
+      for (var i = 0; i < pts.length; i++) {
+        var x0 = left + pts[i].x - R, x1 = x0 + 2 * R, t0 = y + pts[i].y - R, t1 = t0 + 2 * R;
+        var hid = AREA - Math.max(0, Math.min(x1, vw) - Math.max(x0, 0)) * Math.max(0, Math.min(t1, vh) - Math.max(t0, 0));
+        for (var k = 0; k < boxes.length; k++) {
+          var r = boxes[k];
+          hid += Math.max(0, Math.min(x1, r.right) - Math.max(x0, r.left)) * Math.max(0, Math.min(t1, r.bottom) - Math.max(t0, r.top));
+        }
+        score += Math.min(1, hid / AREA);
+      }
+      if (score < bestScore - 0.02) { bestScore = score; best = y; }
+    }
+    tl[1] = best - 1;
+    br[1] = vh - best - size.y - 1;
+  }
+
+  /** Whether box vb fits, at the minimum zoom or more, between `top` and `bottomPad` px from the
+      bottom (phone width, 6 px each side). */
+  function fitsBelow(vb, top, bottomPad, vh) {
+    var z = map.getBoundsZoom(vb, false, L.point(12, top + bottomPad));
+    return boundsSize(vb, z).y <= vh - top - bottomPad + 1;
+  }
+
+  /** Crowded or not (see fitView); the legend is drawn again in its new form. */
+  function setCrowded(on) {
+    if (legendCrowded === on) return;
+    legendCrowded = on;
+    renderLegend();
+  }
+
+  /** Room to keep free above the timeline for the note line: the tallest warning this timeline can
+      show at any of its frames (a layer with no pictures, a picture that failed, the end of the
+      forecast; each on its solid backing, often 2 or 3 lines on a phone), measured at the note's
+      real width; at least one line, for the hatching note. Reserved for the whole timeline, so the
+      warning that comes and goes with one frame never covers a town and playback never moves the map. */
+  function noteRoom() {
+    var LINE = 26;                   // one line of note text, the 8 px gap under it and a pixel to spare
+    if (!data || !state.ready) return LINE;
+    var room = LINE;
+    noteWarningSet().forEach(function (t) { room = Math.max(room, noteSize(t, true).height + 8); });
+    return Math.ceil(room);
+  }
+
+  /** Size of the note when it shows text `t`, as a warning (on its backing) or as the hatching
+      note. Measured on the note itself (its width depends on the layout) and put back at once,
+      before anything is painted; kept per text until the note's width changes (or the fonts
+      arrive). */
+  function noteSize(t, warn) {
+    var w = el.bottom.clientWidth, key = (warn ? "w:" : "i:") + t;
+    if (noteSizes.width !== w) noteSizes = { width: w, px: {} };
+    if (!noteSizes.px[key]) {
+      var n = el.note, html = n.innerHTML, hid = n.hidden, was = n.classList.contains("warn");
+      n.innerHTML = '<span class="' + (warn ? "note-warn" : "note-info") + '">' + esc(t) + "</span>";
+      n.hidden = false;
+      n.classList.toggle("warn", !!warn);
+      var r = n.getBoundingClientRect();
+      noteSizes.px[key] = { width: r.width, height: r.height };
+      n.innerHTML = html;
+      n.hidden = hid;
+      n.classList.toggle("warn", was);
+    }
+    return noteSizes.px[key];
+  }
+
+  /** Where the note sits above the timeline at its biggest on this timeline: the tallest warning,
+      or else the one-line hatching note (shown whenever hatching is in view, as it nearly always
+      is on a phone). placeCrowded counts the towns it would cover. */
+  function noteBox(tlTop) {
+    if (!data || !state.ready) return null;
+    var big = null;
+    noteWarningSet().forEach(function (t) { var s = noteSize(t, true); if (!big || s.height > big.height) big = s; });
+    if (!big) {
+      [HATCH_NOTE.radar, HATCH_NOTE.model].forEach(function (t) { var s = noteSize(t, false); if (!big || s.width > big.width) big = s; });
+    }
+    var b = el.bottom.getBoundingClientRect(), left = b.left + (b.width - big.width) / 2;
+    return { left: left, right: left + big.width, top: tlTop - 8 - big.height, bottom: tlTop - 8 };
+  }
+
+  /** Fit again when the warnings this timeline can show have changed (another layer or 1h/12h, or a
+      picture found to have failed) and they need a different room, unless the viewer has moved the
+      map or a sheet is open. */
+  function refitForNote() {
+    if (CARD || !state.ready || state.userMoved || sheetState) return;
+    var sig = noteWarningSet().join("\n");
+    if (sig === noteFit.sig) return;
+    if (Math.abs(noteRoom() - noteFit.room) > 1) fitView();
+    else noteFit.sig = sig;
+  }
+
+  /** The card: Montana between the banners and the caption and "Open map" at the bottom. The caption
+      can change height once the fit brings hatching into view, so fit again (at most twice) until
+      it stops changing. The card can't be panned or zoomed, so a short card may zoom out further
+      than the full map allows, to keep every town in sight. */
+  function fitCard() {
+    var vh = el.canvas.clientHeight;
+    map.setMinZoom(4);
+    cardFitting = true;
+    try {
+      for (var i = 0; i < 3; i++) {
+        var h0 = el.cardChip.offsetHeight;
+        var bottom = el.cardOpen.getBoundingClientRect().top;
+        if (h0) bottom = Math.min(bottom, el.cardChip.getBoundingClientRect().top);
+        var top = el.banners.getBoundingClientRect().bottom;
+        map.fitBounds(map._viewBounds, { paddingTopLeft: [6, Math.max(6, top + 4)], paddingBottomRight: [6, Math.max(6, vh - bottom + 4)], animate: false });
+        if (el.cardChip.offsetHeight === h0) break;      // moveend re-wrote the caption: same height, done
+      }
+    } finally { cardFitting = false; }
+  }
+
+  /** Pixel size of a lat/lon box at a zoom. */
+  function boundsSize(b, z) {
+    return map.project(b.getSouthEast(), z).subtract(map.project(b.getNorthWest(), z));
+  }
+
+  /** Short landscape screens (phones on their side): the legend is a column on the left and the
+      timeline starts right of it (map.css, same media query). */
+  function sideLegend() { return !CARD && !!(sideQuery && sideQuery.matches); }
+
+  /** The two-column legend (map.css .legend-2col: the keys beside a shorter scale) of portrait
+      phones: always on a short one, and on a taller one when fitView finds that banners and the
+      note leave Montana no room under the one-column legend (they take height as a shorter screen
+      would). */
+  function twoColLegend() {
+    return !CARD && !!(phoneQuery && phoneQuery.matches) && (!!(compactQuery && compactQuery.matches) || legendCrowded);
+  }
+
+  /** Short screens and the two-column legend get a shorter legend bar with fewer stop labels
+      (map.css has no say: the bar height is set here, with the labels). */
+  function compactLegend() { return !CARD && (!!(compactQuery && compactQuery.matches) || twoColLegend()); }
+
+  /** The legend's form now, to notice when a turn or a resize changes it. */
+  function legendFormNow() { return (twoColLegend() ? "2" : "1") + (compactLegend() ? "c" : ""); }
+
+  /** Don't let the viewer zoom out past the area the pictures cover (on big screens it is small).
+      Not in the card, which can't be zoomed (fitCard sets its own). */
   function fitMinZoom() {
-    if (!map || !map._imageBounds) return;
+    if (!map || !map._imageBounds || CARD) return;
     var z = Math.floor(map.getBoundsZoom(map._imageBounds, false) * 4) / 4;
     var base = (data && data.view && data.view.min_zoom) || 5;
     map.setMinZoom(Math.max(base, Math.min(z, map.getZoom())));
@@ -519,6 +723,7 @@
 
   /** Rebuild the timeline for the active layer and mode, then show a frame. */
   function buildTimeline(keepTime, first) {
+    state.ready = true;
     var L_ = layer();
     var idx = (L_.modes && L_.modes[state.mode]) || [];
     state.frames = idx.map(function (i) { return L_.frames[i]; }).filter(Boolean);
@@ -548,11 +753,14 @@
     if (!n) {
       showPicture(null);
       renderAll();
+      refitForNote();                // its "no pictures" warning can take 2 or 3 lines on a phone
       return;
     }
     go(pos, {
       done: function () {
-        if (first && !CARD && !reducedMotion() && !sheetState && n > 1) { setPlaying(true); schedule(HOLD_MS); }
+        if (!first) return;
+        if (!state.userMoved && !sheetState) fitView();     // the timeline is a line shorter once "loading" goes
+        if (!CARD && !reducedMotion() && !sheetState && n > 1) { setPlaying(true); schedule(HOLD_MS); }
       }
     });
   }
@@ -683,6 +891,7 @@
       app.classList.remove("is-loading");
       showPicture(ok ? f.src : null, { layer: state.layer, kind: f.kind });
       renderNote();
+      refitForNote();                // a new layer or mode, or a picture found to have failed
       if (CARD) renderCardChip();
       if (opts && opts.done) opts.done(ok);
       if (!CARD) preload();          // the rest of this layer, once one of its pictures shows
@@ -702,9 +911,22 @@
     if (!overlays.length) return;
     swapToken++;
     var cur = overlays[front], nxt = overlays[1 - front];
-    nxt.setOpacity(0);
-    var same = cur._meta && cur._meta.layer === state.layer && cur._meta.kind === f.kind;
-    cur.setOpacity(same ? 0.45 : 0);
+    instantly(nxt, 0);
+    if (sameKind(cur._meta, { layer: state.layer, kind: f.kind })) cur.setOpacity(0.45);
+    else instantly(cur, 0);
+  }
+
+  /** Whether two pictures are the same layer and the same kind of evidence (radar or model). */
+  function sameKind(a, b) { return !!(a && b && a.layer === b.layer && a.kind === b.kind); }
+
+  /** Set an overlay's opacity at once, without the crossfade. */
+  function instantly(ov, v) {
+    var img = ov.getElement();
+    if (!img) { ov.setOpacity(v); return; }
+    img.classList.add("instant");
+    ov.setOpacity(v);
+    void img.offsetWidth;            // apply the change before the fade comes back
+    img.classList.remove("instant");
   }
 
   /** Everything that follows the frame on the timeline. */
@@ -749,24 +971,22 @@
   }
 
   /** Crossfade the two overlays to a loaded picture (no fade with reduced motion); null hides both.
-      `meta` ({layer, kind}) records what the picture is, for holdPicture. */
+      `meta` ({layer, kind}) records what the picture is, for holdPicture. A picture of another layer
+      or kind (radar after model, or the reverse) replaces the old one at once instead of fading
+      through it, so the two are never seen blended. */
   function showPicture(src, meta) {
     if (!overlays.length) return;
     var tok = ++swapToken, cur = overlays[front], nxt = overlays[1 - front];
-    if (!src) { cur.setOpacity(0); nxt.setOpacity(0); cur._meta = nxt._meta = null; return; }
-    if (cur._url === src) { cur._meta = meta || null; cur.setOpacity(1); nxt.setOpacity(0); return; }
+    if (!src) { instantly(cur, 0); instantly(nxt, 0); cur._meta = nxt._meta = null; return; }
+    if (cur._url === src) { cur._meta = meta || null; cur.setOpacity(1); instantly(nxt, 0); return; }
     var img = nxt.getElement();
-    if (img) {                      // stop any fade on the back picture before changing it
-      img.classList.add("instant");
-      nxt.setOpacity(0);
-      void img.offsetWidth;
-      img.classList.remove("instant");
-    }
+    instantly(nxt, 0);               // stop any fade on the back picture before changing it
+    var cut = !sameKind(cur._meta, meta);
     var done = function () {
       if (tok !== swapToken) return;
       nxt._meta = meta || null;
-      nxt.setOpacity(1);
-      cur.setOpacity(0);
+      if (cut) { instantly(nxt, 1); instantly(cur, 0); }
+      else { nxt.setOpacity(1); cur.setOpacity(0); }
       front = 1 - front;
     };
     if (nxt._url === src && img && img.complete && img.naturalWidth) { done(); return; }
@@ -798,13 +1018,14 @@
     el.knob.style.left = pct;
   }
 
-  /** What a screen reader hears about "Now" for a frame, matching the visible Now tick: ", now" only
-      for a frame within 10 minutes of it. When the radar is late its newest frame is the "latest radar
-      picture", not now; the first model hour of the temperature and gust layers is "this hour". */
+  /** What a screen reader hears about "Now" for the "Now" frame, matching the visible Now tick:
+      ", now" only when that frame is within 10 minutes of it. When the radar is late its newest
+      frame is the "latest radar picture", not now; the first model hour of the temperature and
+      gust layers is "this hour". Other frames say nothing (a frame 10 minutes after now isn't now). */
   function nowWords(ms, f) {
+    if (state.pos !== state.nowPos) return "";
     var now = nowMs();
     if (Math.abs(ms - now) <= 10 * MIN) return ", now";
-    if (state.pos !== state.nowPos) return "";
     if (f.kind === "radar") return ", latest radar picture";
     return Math.floor(now / HOUR) * HOUR === ms ? ", this hour" : "";
   }
@@ -817,35 +1038,54 @@
     return sample ? "sample, not the HRRR model" : "HRRR model" + run;
   }
 
-  /** The line above the timeline: a failed picture, hatched areas, the end of the forecast, or a
-      layer with no pictures at all. Plain words; a failure is never left looking like clear sky. */
+  /** The line above the timeline: a failed picture, the end of the forecast, a layer with no pictures
+      at all (warnings, on a solid backing), and what hatching in view means (like the reference's
+      "Forecast is not available in some areas"). Plain words; a failure never looks like clear sky. */
   function renderNote() {
-    var text = "", warn = false;
-    var n = state.frames.length;
-    var st = data.status || {};
+    var warn = noteWarnings(state.pos).join(" "), info = "";
+    var f = state.frames[state.pos];
+    // same rule as the legend key (whenever hatching is in view); a warning takes the line alone,
+    // so it stays short, and the key still names the hatching
+    if (f && !warn && hatchWords()) info = f.kind === "radar" ? HATCH_NOTE.radar : HATCH_NOTE.model;
+    var html = warn ? '<span class="note-warn">' + esc(warn) + "</span>" : info ? '<span class="note-info">' + esc(info) + "</span>" : "";
+    if (el.note._html !== html) { el.note.innerHTML = html; el.note._html = html; }
+    el.note.hidden = !html || CARD;
+    el.note.classList.toggle("warn", !!warn);
+  }
+
+  /** The note's warnings at timeline position `pos` (any position when the layer has no pictures):
+      no pictures at all and why, a picture that failed, no model forecast after the last radar
+      picture. Shared by renderNote and noteRoom, so the room fitted is the room the note takes. */
+  function noteWarnings(pos) {
+    var n = state.frames.length, st = data.status || {}, warns = [];
     if (!n) {
       var why = [];
       if (state.layer === "precip" && st.radar && !st.radar.ok) why.push("radar: " + st.radar.detail);
       if (st.forecast && !st.forecast.ok) why.push("model forecast: " + st.forecast.detail);
-      text = "No " + LAYER_WORD[state.layer].toLowerCase() + " pictures in this update" + (why.length ? " (" + why.join("; ") + ")" : "") +
-        ". This is not an all-clear.";
-      warn = true;
-    } else {
-      var f = state.frames[state.pos], parts_ = [];
-      if (f._failed) { parts_.push("The " + clock(state.times[state.pos]) + " picture didn't load. This is not an all-clear."); warn = true; }
-      if (state.pos === n - 1 && f.kind === "radar") {
-        parts_.push("No model forecast after now in this update" + (st.forecast && !st.forecast.ok ? " (" + st.forecast.detail + ")" : "") + ".");
-        warn = true;
-      }
-      // Hatching inside the picture itself (radar without coverage) gets a sentence too. The hatched
-      // band outside the pictures' box is part of every view, so the legend key alone names it.
-      if (f.nodata && !f._failed) parts_.push("Hatched areas have no radar coverage.");
-      text = parts_.join(" ");
+      warns.push("No " + LAYER_WORD[state.layer].toLowerCase() + " pictures in this update" + (why.length ? " (" + why.join("; ") + ")" : "") +
+        ". This is not an all-clear.");
+      return warns;
     }
-    el.note.textContent = text;
-    el.note.hidden = !text || CARD;
-    el.note.classList.toggle("warn", warn);
+    var f = state.frames[pos];
+    if (knownFailed(f)) warns.push("The " + clock(state.times[pos]) + " picture didn't load. This is not an all-clear.");
+    if (pos === n - 1 && f.kind === "radar") {
+      warns.push("No model forecast after now in this update" + (st.forecast && !st.forecast.ok ? " (" + st.forecast.detail + ")" : "") + ".");
+    }
+    return warns;
   }
+
+  /** Every different warning the note can show on this timeline (what noteRoom makes room for). */
+  function noteWarningSet() {
+    var out = [], seen = {};
+    for (var i = 0; i < Math.max(1, state.frames.length); i++) {
+      var t = noteWarnings(i).join(" ");
+      if (t && !seen[t]) { seen[t] = true; out.push(t); }
+    }
+    return out;
+  }
+
+  /** A picture known to have failed: shown and failed, or failed while it was preloaded. */
+  function knownFailed(f) { return !!(f._failed || (cache[f.src] && cache[f.src].ok === false)); }
 
   // ------------------------------------------------------------------ legend
 
@@ -856,22 +1096,45 @@
     var stops = L_.legend || [];
     el.legendScale.hidden = !stops.length;
     el.legendBar.style.background = L_.gradient || "";
-    el.legendScale.style.setProperty("--bar-h", Math.max(96, (stops.length - 1) * 16) + "px");
-    el.legendStops.innerHTML = stops.map(function (s) {
+    legendForm = legendFormNow();
+    app.classList.toggle("legend-2col", twoColLegend());
+    var barH = compactLegend() ? 64 : Math.max(96, (stops.length - 1) * 16);
+    var shown = thinStops(stops, barH);
+    el.legendScale.style.setProperty("--bar-h", barH + "px");
+    el.legendStops.innerHTML = stops.map(function (s, i) {
+      if (!shown[i]) return "";
       var pos = Number(s.pos) || 0;
       return '<li style="--pos:' + pos + '"' + (s.limit ? ' class="limit"' : "") + ">" + esc(s.label) + (s.limit ? " limit" : "") + "</li>";
     }).join("");
+    var w = 0;                       // the scale's width for the two-column legend of short phones
+    [].forEach.call(el.legendStops.children, function (li) { w = Math.max(w, li.offsetWidth); });
+    if (w) el.legendScale.style.setProperty("--scale-w", Math.ceil(16 + w + 2) + "px");
     el.legendNote.textContent = L_.legend_note || "";
     renderKeys();
   }
 
+  /** Which stop labels fit on a bar `barH` px tall without touching (labels are 12.5 px): the top,
+      the bottom and a roofing limit always; the others where there is room. The bar keeps every
+      colour either way. */
+  function thinStops(stops, barH) {
+    var gap = 14 / barH;
+    var keep = stops.map(function (s, i) { return i === 0 || i === stops.length - 1 || !!s.limit; });
+    stops.forEach(function (s, i) {
+      if (keep[i]) return;
+      var p = Number(s.pos) || 0;
+      keep[i] = stops.every(function (o, j) { return !keep[j] || Math.abs((Number(o.pos) || 0) - p) >= gap; });
+    });
+    return keep;
+  }
+
   /** Keys under the legend: first what the town numbers are (the NWS forecast, not the coloured
-      model field under them), then only what is on the map now: hatching, the limit ring, warning
-      outline colours and storm-report circles. Every colour carries its word. */
+      model field under them; always shown, phones too), then only what is on the map now:
+      hatching, the limit ring, warning outline colours and storm-report circles. Every colour
+      carries its word. */
   function renderKeys() {
     if (!data) return;
     var keys = [];
-    keys.push(["key-bubble", state.layer === "wind" ? "Town numbers: NWS gust forecast, mph" : "Town numbers: NWS forecast, °F"]);
+    keys.push(["key-bubble", state.layer === "wind" ? "Town numbers: NWS gust forecast, mph" : "Town numbers: NWS forecast, \u00b0F"]);
     var hatch = hatchWords();
     if (hatch) keys.push(["key-hatch", hatch]);
     if (data.towns.some(function (t) { return t._over && townVisible(t); })) keys.push(["key-ring", ringWords()]);
@@ -885,15 +1148,16 @@
   }
 
   /** What the hatching on screen means, or "" when none is in view. Hatching marks where this map has
-      no data: the band outside the pictures' box (every layer and frame) and, inside a radar picture,
-      areas without radar coverage. Worded for the frame shown: radar or model. */
+      no data: the band outside the pictures' box (every layer and frame, see drawOutsideMask) and,
+      inside a radar picture, areas without radar coverage. Worded for the frame shown, so a model
+      frame never says "radar" and a radar frame never says "model". */
   function hatchWords() {
     if (!map || !map._imageBounds) return "";
     var f = state.frames[state.pos];
-    var outside = !map._imageBounds.contains(map.getBounds());
-    if (!outside && !(f && f.nodata && !f._failed)) return "";
+    var inPicture = !!(f && f.nodata && !f._failed);
+    if (!inPicture && map._imageBounds.contains(map.getBounds())) return "";
     if (!f) return state.layer === "precip" ? "No radar or model data" : "No model data";
-    return f.kind === "radar" ? "No radar data" : "No model data";
+    return f.kind === "radar" ? "No radar coverage" : "No model data";
   }
 
   /** Whether a town's bubble is on screen (minor towns appear from zoom 7). */
@@ -1133,15 +1397,14 @@
 
   // ------------------------------------------------------------------ banners, toast, page age
 
-  /** A small banner at the top. kind: warn | info. Replaces an earlier one with the same id. A warning
-      is announced at once (role "alert") unless `role` says otherwise. */
-  function banner(kind, html, id, role) {
+  /** A small banner at the top. kind: warn (announced at once, role "alert") | info. Replaces an
+      earlier one with the same id. An open sheet moves to stay clear of it. */
+  function banner(kind, html, id) {
     if (id && byId(id)) byId(id).remove();
     var p = document.createElement("p");
     p.className = "banner banner-" + kind;
     if (id) p.id = id;
-    role = role || (kind === "warn" ? "alert" : "");
-    if (role) p.setAttribute("role", role);
+    if (kind === "warn") p.setAttribute("role", "alert");
     p.innerHTML = html;
     el.banners.appendChild(p);
     if (sheetState) placeSheet();
@@ -1159,20 +1422,32 @@
     }
   }
 
-  /** "This map is 40 minutes old" once the page is older than the rebuild cycle allows. */
+  /** "This map is 40 minutes old" once the page is older than the rebuild cycle allows (in hours or
+      days for older pages). It is announced once, when it appears (role "alert"); the age then keeps
+      counting on screen without being read out again every minute. */
   function checkAge() {
     if (!builtMs) return;
     var minutes = Math.round((Date.now() - builtMs) / MIN);
     if (minutes <= STALE_MIN) return;
-    var html = "<strong>This map is " + minutes + " minutes old.</strong> Reload for the latest." +
-      (CARD ? "" : ' <button type="button" class="banner-btn" data-reload>Reload</button>');
+    var words = "This map is " + ageWords(minutes) + " old.";
     var b = byId("age-banner");
-    if (b) b.querySelector("strong").textContent = "This map is " + minutes + " minutes old.";
-    else {
-      b = banner("warn", html, "age-banner");
-      var btn = b.querySelector("[data-reload]");
-      if (btn) btn.addEventListener("click", function () { location.reload(); });
+    if (b) {
+      b.removeAttribute("role");
+      var strong = b.querySelector("strong");
+      if (strong.textContent !== words) strong.textContent = words;
+      return;
     }
+    b = banner("warn", "<strong>" + esc(words) + "</strong> Reload for the latest." +
+      (CARD ? "" : ' <button type="button" class="banner-btn" data-reload>Reload</button>'), "age-banner");
+    var btn = b.querySelector("[data-reload]");
+    if (btn) btn.addEventListener("click", function () { location.reload(); });
+  }
+
+  /** "40 minutes", "about 3 hours", "about 3 days". */
+  function ageWords(minutes) {
+    if (minutes < 90) return minutes + " minutes";
+    var hours = Math.round(minutes / 60);
+    return hours < 36 ? "about " + hours + " hours" : "about " + Math.round(hours / 24) + " days";
   }
 
   /** A short message above the timeline that fades after a few seconds. */
@@ -1243,9 +1518,20 @@
     el.sheetBody.scrollTop = 0;
     el.sheet.hidden = false;
     el.scrim.hidden = false;
+    placeSheet();
     setInert(true);
     var f = opts.focus ? el.sheetBody.querySelector(opts.focus) : null;
     (f || el.sheetTitle).focus();
+  }
+
+  /** Keep an open sheet clear of the banners at the top, so a source warning ("This is not an
+      all-clear") is never hidden behind it: a side panel (wide screens) starts below the banners it
+      would cover, and a bottom sheet (phones) stops short of them. map.css reads --sheet-top. */
+  function placeSheet() {
+    var b = el.banners.getBoundingClientRect(), s = el.sheet.getBoundingClientRect();
+    var clash = b.height > 0 && b.right > s.left && b.left < s.right;
+    if (clash) el.sheet.style.setProperty("--sheet-top", Math.ceil(b.bottom + 8) + "px");
+    else el.sheet.style.removeProperty("--sheet-top");
   }
 
   /** Close the sheet and put focus back where it came from. */
@@ -1450,8 +1736,8 @@
       var rst = data.status && data.status.reports, repFailed = !!(rst && !rst.ok);
       html += "<h3>Storm reports, last 3 days" + (repFailed ? "" : " (" + data.reports.length + ")") + "</h3>";
       if (repFailed) {          // missing input is "data unavailable", never a count of zero (AGENTS.md rule 5)
-        html += '<p class="warn">Storm reports didn’t all load (' + esc(rst.detail) + "). Data unavailable for those days; " +
-          "no report is not “no hail”.</p>";
+        html += '<p class="warn">Storm reports didn\u2019t all load (' + esc(rst.detail) + "). Data unavailable for those days; " +
+          "no report is not \u201cno hail\u201d.</p>";
       }
       if (data.reports.length) {
         html += '<div class="rows">' + data.reports.map(function (r, i) {
@@ -1480,20 +1766,25 @@
   }
 
   /** The card's caption: which picture this is and when, or why there is none (the card has no
-      note line, so a missing picture is said here). */
+      note line, so a missing picture is said here), then what hatching in view means, with the
+      legend's hatch swatch. Short lines, so it stays small on a phone; when its height changes the
+      card is fitted again so it never covers a town. */
   function renderCardChip() {
-    var f = state.frames[state.pos];
-    var L_ = layer();
-    el.cardChip.classList.remove("warn");
-    if (!f || f._failed) {
-      el.cardChip.textContent = (f ? "The " + clock(state.times[state.pos]) + " picture didn't load" :
-        "No " + LAYER_WORD[state.layer].toLowerCase() + " picture in this update") + ". Not an all-clear.";
-      el.cardChip.classList.add("warn");
-      return;
+    var f = state.frames[state.pos], h0 = el.cardChip.offsetHeight;
+    var warn = !f || !!f._failed, main;
+    if (!f) main = "No " + LAYER_WORD[state.layer].toLowerCase() + " picture in this update. Not an all-clear.";
+    else if (f._failed) main = "The " + clock(state.times[state.pos]) + " picture didn\u2019t load. Not an all-clear.";
+    else {
+      var sample = /^SAMPLE/.test(f.source || "");
+      main = (f.kind === "radar" ? (sample ? "Sample radar, not real" : "NOAA radar estimate") :
+        (sample ? "Sample forecast, not real" : "HRRR model forecast")) + " \u00b7 " + clock(state.times[state.pos]);
     }
-    var what = f.kind === "radar" ? (/^SAMPLE/.test(f.source) ? "Sample radar, not real" : "NOAA radar estimate") : (/^SAMPLE/.test(f.source) ? "Sample forecast, not real" : "HRRR model forecast");
-    el.cardChip.innerHTML = '<span class="card-bar" style="background:' + esc((L_.gradient || "").replace("to top", "to right")) + '" aria-hidden="true"></span>' +
-      "<span>" + esc(what) + " \u00b7 " + esc(clock(state.times[state.pos])) + (f.nodata ? " \u00b7 hatched: no radar" : "") + "</span>";
+    var hatch = f && !f._failed ? hatchWords() : "";
+    var html = '<span class="card-main">' + esc(main) + "</span>" + (hatch ? '<span class="card-hatch"><span class="key key-hatch" aria-hidden="true"></span>' +
+      '<span class="visually-hidden">. Hatched areas: </span>' + esc(hatch) + "</span>" : "");
+    if (el.cardChip._html !== html) { el.cardChip.innerHTML = html; el.cardChip._html = html; }
+    el.cardChip.classList.toggle("warn", warn);
+    if (state.ready && !cardFitting && map && el.cardChip.offsetHeight !== h0) fitView();
   }
 
   boot();
