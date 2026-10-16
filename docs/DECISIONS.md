@@ -374,13 +374,26 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
 - *JavaScript (rule 4):* playback, scrubbing, menus, sheets and geolocation can only happen in the
   browser. `static/map/map.js` is vanilla, documented, with no framework and no build step; Python
   still builds every number and frame. `tools/smoke_map.py` opens the built map in Chromium on every
-  branch push.
+  branch push. It ended at about 2,100 lines, most of it layout that keeps Montana and every town
+  clear of the panels on crowded screens, failure states and accessibility; moving about 330 lines
+  to the build is an open owner's call (ROADMAP).
 - *Build cost:* about 40 MB downloaded and 48 frames (about 2 MB, most of it the temperature and gust fields) per build; numpy and
   pygrib on the runner.
 - *Limits:* HRRR is a computer model, not the NWS forecast; MRMS rates run low far from a radar and
   in snow; frames are still pictures made at each build, so the newest radar is up to about 10
   minutes old plus GitHub's delay; no lightning or air-quality layer; snow and rain share one
   palette.
+- *Verification (2026-10-16):* each piece had an independent review before it was merged into the
+  branch (radar and model frames: 5 findings; base map: 2; map page: 15, each fixed and re-checked
+  against the old code). Then seven independent lenses (look against the reference, interaction,
+  honesty, accessibility, robustness, minimal JavaScript, the data path) reported findings, a
+  skeptic reproduced each one before any fix (48 confirmed), fixers ran one group at a time, and a
+  final checker re-ran everything: 201 unit tests, the smoke test, the map builder's 70 functional
+  and 32 edge-state Playwright checks at phone and desktop sizes in both schemes. It also checked
+  the map against the raw NOAA files: live radar and HRRR rain matched the near-dry grids, frame
+  colours at the 14 towns matched HRRR temperature (median 0.3 °F) and gusts. Not yet seen: real
+  phones (iOS Safari), and real NWS alerts, town forecasts and SPC reports on the map, which this
+  container can't reach (the branch's Website build loads them live).
 - *Background and hatch (2026-10-16, after review):* past the basemap's padded box the page is the
   neighbours' land colour (`--map-bg` = `--land`, #fafafa; dark #1b1e22; the theme-color metas
   match), not the spec's mist #eef1f4, and the hatch outside the pictures' box is a hairline (1 px

@@ -95,7 +95,8 @@ pip install requests jinja2 pillow numpy pygrib tzdata
 python -m website.build --out _site --sample   # invented sample data, labelled on every page
 python -m website.build --out _site            # live data
 python -m http.server -d _site 8000            # open http://localhost:8000
-python -m unittest tests.test_site             # website tests, offline, a few seconds
+python -m unittest tests.test_site tests.test_gridded tests.test_basemap   # website tests, offline, seconds
+python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
 ```
 
 ## Website files
