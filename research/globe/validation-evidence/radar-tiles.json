@@ -1,0 +1,507 @@
+{
+"workstream": "W4",
+"slug": "w4-nexrad-radar",
+"checked_at_utc": "2026-10-17T02:20:00Z",
+"checked_window_utc": "2026-10-17 01:48 to 02:20 live; chunk listings cover 2026-10-14 to 10-17 01:49",
+"raw_dir": "$SCRATCH/globe-dl/w4-nexrad-radar (SCRATCH = session scratchpad; absolute path in the final return)",
+"urls_checked": [
+{
+"url": "noaa-nexrad-level2: listing 2026/10/17 KBLX, KGGW, KTFX, KMSX; object GET; index.html",
+"method": "GET",
+"status": 403,
+"bytes": 263,
+"content_type": "application/xml",
+"cors_allow_origin": null,
+"content_check": "S3 AccessDenied for listing, object and index (243 B for three sites). Legacy bucket unreadable here.",
+"verified": true
+},
+{
+"url": "unidata-nexrad-level2: listing ?prefix=2026/10/17/{SITE}/ (4 sites); index.html",
+"method": "GET",
+"status": 200,
+"bytes": 6723,
+"content_type": "application/xml",
+"cors_allow_origin": null,
+"content_check": "KBLX 18, KGGW 19, KTFX 15, KMSX 14 files on 2026-10-17 (KBLX page 6723 B; KGGW 7045; KTFX 5757; KMSX 5435). index.html 37713 B.",
+"verified": true
+},
+{
+"url": "unidata-nexrad-level2: 2026/10/17/KBLX/KBLX20261017_013826_V06",
+"method": "GET (Range 0-1023 + Origin for CORS)",
+"status": 200,
+"bytes": 3212930,
+"content_type": "binary/octet-stream",
+"cors_allow_origin": "* (Range GET with Origin)",
+"content_check": "AR2V0006.151, KBLX, 01:38:26.251 UTC. MD5 ff168b0e53314b1a9e5864feb892df35 = 55 chunks concatenated in order (byte-identical). Last-Modified 01:45:21 GMT.",
+"verified": true
+},
+{
+"url": "unidata-nexrad-level2: 2026/10/17/KBLX/KBLX20261017_005602_V06_MDM",
+"method": "GET",
+"status": 200,
+"bytes": 676440,
+"content_type": "binary/octet-stream",
+"cors_allow_origin": null,
+"content_check": "Big-endian length 676436 (+4 = size); bzip2 BZh9 stream -> 673952 B; no AR2V header. Purpose unverified.",
+"verified": true
+},
+{
+"url": "unidata-nexrad-level2-chunks: listing ?prefix=KBLX/ (also KGGW/, KTFX/, KMSX/; 24 pages)",
+"method": "GET",
+"status": 200,
+"bytes": 15872,
+"content_type": "application/xml",
+"cors_allow_origin": null,
+"content_check": "Keys KBLX/<vol>/<YYYYMMDD-HHMMSS>-<seq3>-<S|I|E>. KBLX 23235 keys, 423 volumes; KGGW 23570/430; KTFX 23461/352; KMSX 22505/337.",
+"verified": true
+},
+{
+"url": "unidata-nexrad-level2-chunks: KBLX/152/20261017-014530-001-S (Origin header)",
+"method": "GET",
+"status": 200,
+"bytes": 3727,
+"content_type": "binary/octet-stream",
+"cors_allow_origin": "*",
+"content_check": "AR2V0006.152, julian 20744, ms 6330024 (01:45:30.024 UTC), KBLX; LDM size 3699 then BZh9. x-amz-expiration 'Mon, 19 Oct 2026 00:00:00 GMT' (rule Delete old data).",
+"verified": true
+},
+{
+"url": "unidata-nexrad-level2-chunks: KBLX/151/* (55 GETs); KBLX/151/20261017-013826-055-E (HEAD)",
+"method": "GET, HEAD",
+"status": 200,
+"bytes": 3212930,
+"content_type": "binary/octet-stream",
+"cors_allow_origin": "not recorded",
+"content_check": "Chunk sizes 3762-136619 B. Ordered concatenation = row 3. E chunk 33689 B, Last-Modified 01:45:21 GMT (same as archive object).",
+"verified": true
+},
+{
+"url": "NWS MapServer ?f=pjson (services/radar/radar_base_reflectivity)",
+"method": "GET",
+"status": 200,
+"bytes": 6949,
+"content_type": "text/plain;charset=UTF-8",
+"cors_allow_origin": "not recorded",
+"content_check": "Layers 0 RIDGE mosaic, 1 Boundary, 2 Footprint, 3 Image; currentVersion 11.3; NOAA/NWS copyrightText; 'Update Frequency: Every 5 minutes'.",
+"verified": true
+},
+{
+"url": "NWS MapServer/2/query (app's parameters; also without limit); 30 s polls for 16 min",
+"method": "GET",
+"status": 200,
+"bytes": 236,
+"content_type": "application/json",
+"cors_allow_origin": "not recorded",
+"content_check": "App query: HAWAII_L2_BREF_QCD_20261017_014256 (1792201376000 ms = 01:42:56). 01:52 all records: HAWAII 01:42:56, ALASKA/CARIB/GUAM 01:42:54, CONUS 01:41:56; 02:19 CONUS 02:18:12.",
+"verified": true
+},
+{
+"url": "NWS MapServer/export, Montana bbox, 1024x512 png transparent, layers=show:1 (brief) and show:3",
+"method": "GET",
+"status": 200,
+"bytes": 651,
+"content_type": "image/png",
+"cors_allow_origin": "not recorded",
+"content_check": "0 of 524288 px opaque (blank). show:1 = REST layer 'Boundary' (draws nothing). show:3 also blank for Montana.",
+"verified": true
+},
+{
+"url": "NWS MapServer/export, CONUS and Texas, layers=show:0/1/2/3",
+"method": "GET",
+"status": 200,
+"bytes": 27491,
+"content_type": "image/png",
+"cors_allow_origin": "not recorded",
+"content_check": "CONUS show:0 3.78% opaque (255 colours), show:3 3.70%, show:1 0%, show:2 0.09%. Texas show:0 0.56%, show:3 0.52%, show:1 0%, show:2 0.04%. Bare layers=N falls back to default.",
+"verified": true
+},
+{
+"url": "NWS MapServer/export, Montana, Origin https://example-globe-test.invalid",
+"method": "GET",
+"status": 200,
+"bytes": 651,
+"content_type": "image/png",
+"cors_allow_origin": "https://example-globe-test.invalid (echoes Origin)",
+"content_check": "Blank, as row 10.",
+"verified": true
+},
+{
+"url": "NWS WMSServer GetMap 1.3.0 layers=1 (app's request), EPSG:3857, 1024x512, png, transparent",
+"method": "GET",
+"status": 200,
+"bytes": 3289,
+"content_type": "image/png",
+"cors_allow_origin": "not recorded",
+"content_check": "Montana 0 px. CONUS about 4.0% opaque, 8450 colours (90157 B). Montana crop of the CONUS frame: 0 of 21840 px; west 0.36%, east 0.30%.",
+"verified": true
+},
+{
+"url": "NWS WMSServer layers=2 and layers=3 (CONUS); GetCapabilities; layer-2 point queries",
+"method": "GET",
+"status": 200,
+"bytes": 3308,
+"content_type": "image/png",
+"cors_allow_origin": "not recorded",
+"content_check": "layers=2 0.08% (1 colour); layers=3 (Boundary) 0%. Capabilities: 1 Image, 2 Footprint, 3 Boundary. Billings, Montana centre, Glasgow, Missoula points each return only CONUS_L2_BREF_QCD_20261017_021010.",
+"verified": true
+},
+{
+"url": "opengeo.ncep.noaa.gov GetCapabilities conus_bref_qcd (and conus workspace caps)",
+"method": "GET",
+"status": 200,
+"bytes": 7953,
+"content_type": "text/xml",
+"cors_allow_origin": "*",
+"content_check": "Time dimension 60 values 2026-10-16T23:57:56Z to 2026-10-17T01:56:06Z (default 01:56:06Z). Workspace conus (18093 B): conus_bref_qcd, conus_cref_qcd, conus_neet_v18, conus_pcpn_typ.",
+"verified": true
+},
+{
+"url": "NCEP GetMap conus_bref_qcd, EPSG:3857, 1024x512, png, transparent (Montana and CONUS; default, oldest, all 60 times)",
+"method": "GET",
+"status": 200,
+"bytes": 10296,
+"content_type": "image/png",
+"cors_allow_origin": "*",
+"content_check": "Montana blank (10296 B) at 01:56 and 23:57. CONUS 4.06% (90100 B), 5.06% (103022 B). 60-time scan: CONUS echo 60/60 (4.06-5.07%); Montana px 3/60 (max about 5 px, first 01:26:13Z).",
+"verified": true
+},
+{
+"url": "IEM nexrad-n0q-900913 /5/6/11.png (Origin), /5/5/11.png, /5/7/11.png",
+"method": "GET",
+"status": 200,
+"bytes": 2130,
+"content_type": "image/png",
+"cors_allow_origin": "*",
+"content_check": "256x256 RGBA; max-age 300. 5/6/11 0.68% opaque (87 colours), incl 42 Montana px at alpha 255 (lon -112.48..-107.16, lat 44.39..47.71). 5/5/11 0.25%; 5/7/11 18.6%.",
+"verified": true
+},
+{
+"url": "IEM nexrad-n0q-900913-m05m and -m30m /5/6/11.png",
+"method": "GET",
+"status": 200,
+"bytes": 1654,
+"content_type": "image/png",
+"cors_allow_origin": "not recorded",
+"content_check": "0.43% and 0.42% opaque; minutes-ago layers to m55m.",
+"verified": true
+},
+{
+"url": "IEM goes-east-ir-4km, goes-east-vis-1km, conus-goes-ir-4km (-900913) /5/6/11.png",
+"method": "GET",
+"status": 200,
+"bytes": 45888,
+"content_type": "image/png",
+"cors_allow_origin": "not recorded",
+"content_check": "All 100% opaque: IR 45888 B (109 colours), visible 30978 B (12), conus IR 45731 B (108).",
+"verified": true
+},
+{
+"url": "IEM mrms-900913 /5/6/11.png",
+"method": "GET",
+"status": 404,
+"bytes": 129,
+"content_type": "text/plain",
+"cors_allow_origin": "not recorded",
+"content_check": "'Layer mrms can not be called directly, it is virtual and needs to be called with name o...'",
+"verified": true
+},
+{
+"url": "IEM nexrad-n0q-900913 /9/101/182.png and /10/203/365.png (Billings)",
+"method": "GET",
+"status": 200,
+"bytes": 334,
+"content_type": "image/png",
+"cors_allow_origin": "*",
+"content_check": "Empty 334-byte PNG, 0% opaque at both zooms.",
+"verified": true
+},
+{
+"url": "IEM /cache/tile.py/1.0.0/ (TileMapService) and .../nexrad-n0q-900913/ (TMS)",
+"method": "GET",
+"status": 200,
+"bytes": 19903,
+"content_type": "text/xml",
+"cors_allow_origin": "not recorded",
+"content_check": "84 TileMap layers (goes_east/west, ridge, mrms virtual, nexrad-n0q m05m..m55m, nexrad-n0r, nexrad-eet, q2-hsr, GOES IR/VIS). TMS (4650 B): orders 0-23, EPSG:3857, 256 px PNG.",
+"verified": true
+},
+{
+"url": "IEM /ogc/ and /GIS/ridge.phtml",
+"method": "GET",
+"status": 200,
+"bytes": 38845,
+"content_type": "text/html",
+"cors_allow_origin": "not recorded",
+"content_check": "ogc: layer names (goes-ir-4km, goes-vis-1km, goes-wv-4km, conus-goes-ir-4km, nexrad-n0q-mXXm). ridge: change log 29 Mar 2022 on N0Q NOAAPort stop; N0B source not named.",
+"verified": true
+},
+{
+"url": "IEM /disclaimer.php",
+"method": "GET + WebFetch",
+"status": 200,
+"bytes": 31469,
+"content_type": "text/html",
+"cors_allow_origin": "not recorded",
+"content_check": "Quoted in terms.",
+"verified": true
+},
+{
+"url": "registry.opendata.aws/noaa-nexrad; weather.gov/disclaimer",
+"method": "WebFetch",
+"status": 200,
+"bytes": null,
+"content_type": "text/html",
+"cors_allow_origin": null,
+"content_check": "NODD and NWS terms quoted.",
+"verified": true
+},
+{
+"url": "unidata blog 2025-08-07 and mailing list 2025/msg00005 (11 Aug 2025)",
+"method": "WebFetch",
+"status": 200,
+"bytes": null,
+"content_type": "text/html",
+"cors_allow_origin": null,
+"content_check": "Move to unidata-nexrad-level2; legacy updates to stop 1 Sep 2025; chunks bucket unaffected.",
+"verified": true
+},
+{
+"url": "registry.opendata.aws/unidata-nexrad-level2-chunks/; docs.opendata.aws noaa-nexrad readme; awslabs open-data-docs readme (GitHub raw)",
+"method": "WebFetch",
+"status": 404,
+"bytes": null,
+"content_type": null,
+"cors_allow_origin": null,
+"content_check": "All 404. S/I/E and _MDM definitions NOT verified.",
+"verified": true
+},
+{
+"url": "pypi.org: pip download --no-deps metpy; pip download --no-deps arm_pyart",
+"method": "GET",
+"status": 200,
+"bytes": 424395,
+"content_type": "application/octet-stream",
+"cors_allow_origin": null,
+"content_check": "metpy-1.7.1 424395 B; arm_pyart-2.3.0 cp313 wheel 14783097 B (not installed).",
+"verified": true
+}
+],
+"facts": [
+{
+"claim": "Legacy bucket noaa-nexrad-level2 readable here",
+"value": "No: 403 AccessDenied (listing, object, index)",
+"evidence": "row 1",
+"verified": true
+},
+{
+"claim": "Current archive bucket",
+"value": "unidata-nexrad-level2 listable (200); legacy updates stop 1 Sep 2025 per Unidata; chunks bucket unaffected",
+"evidence": "rows 2, 26",
+"verified": true
+},
+{
+"claim": "Archive file equals real-time chunks",
+"value": "KBLX 151: 3212930 B, MD5 ff168b0e..., byte-identical to 55 chunks in sequence order",
+"evidence": "rows 3, 7",
+"verified": true
+},
+{
+"claim": "Latest archive file per site (2026-10-17, listed 02:16 UTC)",
+"value": "KBLX 02:06:40 3313413 B; KGGW 02:06:27 2507163 B; KTFX 02:06:48 5108882 B; KMSX 02:00:18 4519945 B",
+"evidence": "row 2; archive_listing_summary.json",
+"verified": true
+},
+{
+"claim": "Archive cadence (median gap between starts, 10-17)",
+"value": "KBLX 7.07 min (7.05-7.08, n=17); KGGW 7.00 (6.73-7.07, n=18); KTFX 8.75 (8.73-9.93, n=14); KMSX 8.87 (8.72-8.90, n=13)",
+"evidence": "archive_listing_summary.json",
+"verified": true
+},
+{
+"claim": "Archive lag (Last-Modified minus volume start)",
+"value": "median 416 s KBLX, 411 s KGGW, 518 s KTFX, 524 s KMSX",
+"evidence": "archive_listing_summary.json",
+"verified": true
+},
+{
+"claim": "Chunk structure",
+"value": "KBLX/<vol>/<YYYYMMDD-HHMMSS>-<seq>-<S|I|E>; volumes 147-151: 1 S (seq 001), 53 I, 1 E = 55 chunks; S/E meanings observed, not documented",
+"evidence": "rows 5, 6",
+"verified": true
+},
+{
+"claim": "Chunk latency, count and size",
+"value": "first chunk median 3.0 s after start (KBLX, KGGW, KTFX), 2.0 s (KMSX); median 55 chunks (KBLX, KGGW) or 67 (KTFX, KMSX); 3.4-5.2 MB per volume",
+"evidence": "chunks_KBLX/KGGW/KTFX/KMSX.json",
+"verified": true
+},
+{
+"claim": "Chunk cadence (about 2 days of volumes)",
+"value": "KBLX 7.07 min median (6.73-8.32, n=422); KGGW 7.05 (4.45-8.33); KTFX 8.77 (5.38-9.98); KMSX 8.87 (4.05-10.10)",
+"evidence": "chunks_*.json",
+"verified": true
+},
+{
+"claim": "Chunk retention",
+"value": "x-amz-expiration 'Mon, 19 Oct 2026 00:00:00 GMT' on an object written 17 Oct 01:45 UTC (about 2 days)",
+"evidence": "row 6",
+"verified": true
+},
+{
+"claim": "KBLX volume content (MetPy 1.7.1 Level2File, 01:38:26.251 UTC)",
+"value": "VCP 35; 12 cuts 0.478-6.284 deg; cuts 0-5 720 radials (0.5 deg), cuts 6-11 360 (1.0 deg); 6480 radials; cuts 0,2,4 REF/ZDR/PHI/RHO/CFP; cuts 1,3,5 REF/VEL/SW; cuts 6-11 all seven; super-res on; RDA op status 'Maintenance Action Required'",
+"evidence": "metpy_sweeps_KBLX_151.json",
+"verified": true
+},
+{
+"claim": "Radar position in volume header",
+"value": "45.85378 N, -108.6068 W, 1109 m AMSL",
+"evidence": "metpy_sweeps_KBLX_151.json",
+"verified": true
+},
+{
+"claim": "Container check, KBLX 151",
+"value": "header time minus key stamp +0.3 s; 54 bzip2 LDM records (49554784 B) plus final 33685 B negative-length record (= E chunk); MetPy warns 'Unknown message: 32'",
+"evidence": "container_check.json",
+"verified": true
+},
+{
+"claim": "Decoder wheel sizes",
+"value": "metpy 1.7.1 424395 B (9 runtime deps); arm_pyart 2.3.0 cp313 14783097 B (14 deps; not installed)",
+"evidence": "row 28",
+"verified": true
+},
+{
+"claim": "NWS layer numbering (REST vs WMS)",
+"value": "REST: 0 RIDGE mosaic, 1 Boundary, 2 Footprint, 3 Image. WMS: 1 Image, 2 Footprint, 3 Boundary. Brief's REST show:1 is Boundary (blank). App's WMS layer 1 = Image (D7 consistent)",
+"evidence": "rows 8, 10, 14",
+"verified": true
+},
+{
+"claim": "NWS radar content, app's WMS layer 1",
+"value": "CONUS about 4.0% opaque, 8450 colours (01:53 UTC); Montana crop 0 of 21840 px",
+"evidence": "row 13",
+"verified": true
+},
+{
+"claim": "NWS frame time rule and offset",
+"value": "App takes max over 5 regional footprints. 01:52: HAWAII 01:42:56 vs CONUS 01:41:56 (+60 s). 10 of 12 polls newest non-CONUS (+48 to +60 s seen)",
+"evidence": "row 9; nws_frame_poll.json",
+"verified": true
+},
+{
+"claim": "Montana points in CONUS footprint",
+"value": "Billings, Montana centre, Glasgow, Missoula: only CONUS_L2_BREF_QCD_20261017_021010",
+"evidence": "row 14",
+"verified": true
+},
+{
+"claim": "NWS CONUS record gaps (observed)",
+"value": "01:41:56, 01:50:09, 01:56:06, 02:04:05, 02:10:10, 02:18:12: gaps 5.95-8.22 min (median 7.98, n=5); service says 'Every 5 minutes'",
+"evidence": "rows 8, 9, 14",
+"verified": true
+},
+{
+"claim": "NCEP time coverage",
+"value": "60 frames 23:57:56Z to 01:56:06Z (118.2 min); median step 2.02 min (1.48-2.38); older frames served",
+"evidence": "rows 15, 16",
+"verified": true
+},
+{
+"claim": "Echo over Montana in NCEP frames, last 2 h",
+"value": "CONUS echo 60/60 frames (4.06-5.07%); Montana px 3/60 (max about 5 px), first 01:26:13Z; Montana 0 at 01:52-01:56",
+"evidence": "row 16",
+"verified": true
+},
+{
+"claim": "IEM vs NWS/NCEP over Montana (about 02:01 UTC)",
+"value": "IEM 5/6/11: 42 Montana px at alpha 255; NWS and NCEP 0 at that time. Cause not established",
+"evidence": "row 17",
+"verified": true
+},
+{
+"claim": "IEM layer catalogue and freshness",
+"value": "84 TileMap layers; nexrad-n0q m05m..m55m; tiles max-age 300 s; zoom 0-23; 256 px PNG",
+"evidence": "row 22",
+"verified": true
+},
+{
+"claim": "IEM GOES tiles",
+"value": "goes-east-ir-4km 100% opaque (45888 B); goes-east-vis-1km 100% (30978 B); conus-goes-ir-4km 100% (45731 B)",
+"evidence": "row 19",
+"verified": true
+},
+{
+"claim": "IEM mrms layer",
+"value": "virtual; 404 'can not be called directly' (needs sub-layer name; untested)",
+"evidence": "row 20",
+"verified": true
+},
+{
+"claim": "IEM N0Q source change",
+"value": "NWS to stop NOAAPort dissemination of N0Q (change log 29 Mar 2022). N0B source not named",
+"evidence": "row 23",
+"verified": true
+},
+{
+"claim": "CORS, one Origin GET per service",
+"value": "NEXRAD chunks *, archive Range GET *, NCEP GetMap *, IEM tile *; NWS REST export echoes Origin; NWS WMS GetMap not tested",
+"evidence": "rows 3, 6, 11, 12, 15, 16, 17",
+"verified": true
+},
+{
+"claim": "_MDM companion objects",
+"value": "KBLX 005602 _MDM 676440 B: length-prefixed bzip2 like volume records; no AR2V header; purpose unverified",
+"evidence": "row 4",
+"verified": true
+}
+],
+"terms": {
+"license": "NOAA NODD: data 'open to the public and can be used as desired'. NWS web pages: public domain unless noted. IEM: public domain. NCEP GeoServer: no NCEP-specific terms found (NOAA-wide statements are the nearest).",
+"attribution_required": true,
+"quote": "\"NOAA data disseminated through NODD are open to the public and can be used as desired.\" \"NOAA requests attribution for the use or dissemination of unaltered NOAA data.\"",
+"url": "https://registry.opendata.aws/noaa-nexrad/",
+"terms_by_source": [
+{
+"source": "NWS web pages",
+"url": "https://www.weather.gov/disclaimer",
+"attribution_required": false,
+"quote": "\"The information on National Weather Service (NWS) Web pages are in the public domain, unless specifically noted otherwise\"; \"and may be used without charge for any lawful purpose so long as you do not:\"; \"The user assumes the entire risk related to its use of information on NWS Web pages.\""
+},
+{
+"source": "IEM tiles",
+"url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+"attribution_required": "requested, not required",
+"quote": "\"We therefore provide this information without any warranty of accuracy.\" \"The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose.\" \"Attributing the Iowa Environmental Mesonet of Iowa State University would be appreciated.\""
+},
+{
+"source": "Unidata bucket notice 2025",
+"url": "https://www.unidata.ucar.edu/blogs/news/entry/important-changes-to-noaa-nexrad",
+"attribution_required": null,
+"quote": "\"We plan to discontinue updates to the legacy bucket noaa-nexrad-level2 on September 1, 2025.\" Chunks bucket: \"and their associated SNS topics are unaffected.\""
+}
+]
+},
+"limits": [
+"Legacy bucket noaa-nexrad-level2 (named in the brief) returns 403 for every request here. W4 used unidata-nexrad-level2, which Unidata says carries the current archive. Not proven that the 403 comes from the 2025 retirement.",
+"S/I/E meanings, _MDM purpose and chunk directory numbering are unverified (documentation returned 404). S = seq 001 and E = last chunk are observed in every completed volume checked (147-151).",
+"Montana radar was blank at every sampled time (NWS 01:52-01:53 UTC; 60 NCEP frames over 118 min). That is no echo in the sample, not no hail (rule 5). No storm day is covered.",
+"IEM N0Q (42 Montana px at about 02:01 UTC) and NWS/NCEP composites disagree at trace level. Not reconciled.",
+"Cadence medians use about 2 days of chunk volumes and 10-17 archive files. NWS CONUS record gaps rest on n=5.",
+"MetPy 1.7.1 is the decoder check; it skipped 'Unknown message: 32'. VCP and sweep structure are MetPy's reading, not checked against the NWS ICD.",
+"Latency uses Last-Modified minus start stamp (1-second HTTP resolution). CORS: one Origin GET per service; NWS WMS GetMap not tested. Empty PNGs (651 B NWS, 334 B IEM) mark 'no pixels' only."
+],
+"installed_packages": [
+"metpy==1.7.1 via pip install --target $SCRATCH/globe-scripts/w4-nexrad-radar/site-metpy (isolated; deps numpy 2.5.4, pandas 3.0.6, matplotlib 3.11.2, pint 0.26.1, pooch 1.9.0, pyproj 3.8.0, scipy, xarray, traitlets)",
+"downloaded only, not installed: arm_pyart==2.3.0 wheel (pip download --no-deps)",
+"used from system site, not installed by W4: requests, Pillow 12.3.0, numpy 2.5.3"
+],
+"open_questions": [
+"Should the app's frame time use the CONUS footprint record covering Montana, not the newest of all five? Observed offset 48-60 s.",
+"Official meanings of chunk suffixes S/I/E and of _MDM objects (Unidata or NOAA docs; not retrieved).",
+"Source of IEM N0B/N0Q after 2022, and whether the 42 Montana px at 02:01 UTC are real echo.",
+"NWS documents 5-minute CONUS updates; observed 5.95-8.22 min. Confirm on a longer poll.",
+"Whether the legacy bucket reopens. Plan should target unidata-nexrad-level2 and unidata-nexrad-level2-chunks.",
+"Archive coverage for the Phase 3 test day (SPC 2025-06-15 Benchland) not checked. Chunks keep about 2 days; NCEP about 2 h."
+]
+}
