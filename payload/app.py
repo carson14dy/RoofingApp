@@ -1,5 +1,5 @@
 """
-Big Sky Hail Watch — the app (auto-updating payload)
+Montana Hail Watch — the app (auto-updating payload)
 ====================================================
 Live Storms, Storm History, inspection candidates, Crew Outlook, places and
 data sources. This folder is the part that updates itself: bump the version in
@@ -50,7 +50,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(HERE, "manifest.json"), encoding="utf-8") as _f:
     MANIFEST = json.load(_f)
 VERSION = MANIFEST["version"]
-USER_AGENT = f"BigSkyHailWatch/{VERSION} (roofing field tool)"
+USER_AGENT = f"MontanaHailWatch/{VERSION} (roofing field tool)"
 DEMO_FIXTURE = os.path.join(HERE, "fixtures", "demo_hail_footprint.geojson")
 
 SIZES = maps.SIZES
@@ -969,7 +969,7 @@ def create_app(config: dict | None = None) -> Flask:
     @app.post("/app/quit")
     def app_quit():
         shell_call("quit")
-        return "<p style='font-family:system-ui'>Big Sky Hail Watch has closed. You can close this tab.</p>"
+        return "<p style='font-family:system-ui'>Montana Hail Watch has closed. You can close this tab.</p>"
 
     @app.get("/healthz")
     def healthz():

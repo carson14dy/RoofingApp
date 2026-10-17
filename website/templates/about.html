@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_alerts.html" import office_links %}
+{% block title %}About · Montana Hail Watch{% endblock %}
+{% block content %}
+<div class="lead prose">
+  <h1>About this site</h1>
+  <p class="sub">A plain weather page for roofing work in Montana. It gathers public data from the National Weather Service
+    and NOAA every 10 minutes and shows it with its time and source.</p>
+</div>
+
+<div class="prose">
+  <h2>What each part is</h2>
+  <ul>
+    <li><strong>Warnings and advisories</strong> are the National Weather Service's official alerts for Montana, shown word for word.
+      Alerts issued by county or zone have no outline on the map but are still listed.</li>
+    <li><strong>The map</strong> plays the past hour of NOAA's radar estimate (MRMS, every 10 minutes) and then the
+      HRRR computer model's forecast: every 15 minutes for the next hour, then hourly to 12 hours. Before "Now" it is
+      radar; after "Now" it is a model forecast, and the map always says which. Far from a radar site the beam passes
+      over low clouds, so a blank area is not proof of dry weather; areas with no radar coverage are hatched.
+      The temperature and wind-gust layers are the same model. The numbers on the towns are the NWS forecast.</li>
+    <li><strong>Town forecasts</strong> are NWS forecasts for the 2.5 km grid square around each town. They are predictions for an area,
+      not measurements at a roof.</li>
+    <li><strong>Storm reports</strong> are preliminary hail and wind reports gathered by the Storm Prediction Center. Hail sizes are as
+      reported; a report is a point, not the edge of a storm.</li>
+  </ul>
+
+  <h2>Flags</h2>
+  <p>An hour is flagged for gusts of {{ limits.gust_mph }}&nbsp;mph or more, sustained wind of {{ limits.wind_mph }}&nbsp;mph or more, a
+    {{ limits.pop_pct }}% or higher chance of rain or snow, or a temperature under {{ limits.cold_f }}&nbsp;°F or over {{ limits.hot_f }}&nbsp;°F.
+    These are placeholders until the company sets limits for its roof systems. A missing value never raises a flag and never clears one.
+    An hour without a flag is not a promise that work is safe.</p>
+
+  <h2>When something fails</h2>
+  <p>If a source doesn't answer, the page says so and shows a dash instead of a number. If the alert list can't be refreshed, the
+    last list that was checked stays on the page with its time. The line under the header lists each source and whether it loaded.
+    If a page is more than 25 minutes old, it says so.</p>
+
+  <h2>Local NWS offices</h2>
+  <p>{{ office_links(offices) }}.</p>
+
+  <h2 id="sources">Data sources in detail</h2>
+  <p>What each source sends and how this site treats it.</p>
+</div>
+<div class="table-box contracts">
+  <table>
+    <caption class="visually-hidden">Data sources, their units, timing and missing values</caption>
+    <thead><tr><th scope="col">Source</th><th scope="col">Units</th><th scope="col">Timing</th><th scope="col">When values are missing</th></tr></thead>
+    <tbody>
+    {% for c in contracts.values() %}
+      <tr><th scope="row">{{ c.name }}<span class="request">{{ c.request }}</span></th><td>{{ c.units }}</td><td>{{ c.timing }}</td><td>{{ c.missing }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="prose">
+  <h2>What isn't here yet</h2>
+  <ul>
+    <li>Your own jobs and addresses, and alerts sent to phones.</li>
+    <li>Estimated hail size across an area (radar hail estimates or a commercial hail map).</li>
+    <li>Lightning and nearby station readings.</li>
+  </ul>
+</div>
+{% endblock %}

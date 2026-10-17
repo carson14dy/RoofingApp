@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}Big Sky Hail Watch{% endblock %}</title>
+<title>{% block title %}Montana Hail Watch{% endblock %}</title>
 {% block head %}{% endblock %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -146,13 +146,13 @@
 </head>
 <body class="{% block body_class %}doc{% endblock %}">
 <header class="top">
-  <a class="brand" href="{{ url_for('live') }}" aria-label="Big Sky Hail Watch — Live Storms">
+  <a class="brand" href="{{ url_for('live') }}" aria-label="Montana Hail Watch — Live Storms">
     <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
       <path d="M2 33 L13 13 L20 24 L27 9 L38 33 Z" fill="#16273a" stroke="#2a3e54" stroke-width="1.2"/>
       <path d="M2 33 L13 13 L18 22 L11 33 Z" fill="#22364c"/>
       <circle cx="29" cy="14" r="4.4" fill="#e0a93c" stroke="#0c1622" stroke-width="1"/>
     </svg>
-    <div><h1>Big Sky <span>Hail Watch</span></h1><p>Montana storm-to-roof</p></div>
+    <div><h1>Montana <span>Hail Watch</span></h1><p>Storm-to-roof</p></div>
   </a>
   <nav class="main" aria-label="Sections">
     <a href="{{ url_for('live') }}" class="{{ 'on' if page == 'live' }}">Live Storms{% if unread %}<span class="count" title="New storm matches">{{ unread }}</span>{% endif %}</a>

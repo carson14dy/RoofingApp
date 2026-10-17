@@ -1,0 +1,23 @@
+{% macro alert_item(a) %}
+<li class="alert alert-{{ a.kind }}">
+  <div class="alert-top">
+    <span class="chip chip-{{ a.kind }}">{{ a.kind }}</span>
+    <h3>{{ a.event }}</h3>
+  </div>
+  <p class="alert-area">{{ a.area }}</p>
+  <p class="alert-time">
+    {% if a.until %}Until {{ a.until|when }}{% else %}No end time given{% endif %}
+    {% if not a.geometry %} · issued by county or zone, so it has no outline on the map{% endif %}
+  </p>
+  <details>
+    <summary>Official NWS text</summary>
+    {% if a.description %}<p class="official">{{ a.description }}</p>{% endif %}
+    {% if a.instruction %}<p class="official"><strong>What to do:</strong> {{ a.instruction }}</p>{% endif %}
+    <p class="from">{{ a.sender or 'National Weather Service' }} · sent {{ a.sent|when }}</p>
+  </details>
+</li>
+{% endmacro %}
+
+{% macro office_links(offices) %}
+{% for name, url in offices %}<a href="{{ url }}">NWS {{ name }}</a>{{ ', ' if not loop.last }}{% endfor %}
+{% endmacro %}

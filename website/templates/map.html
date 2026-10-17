@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1e22" media="(prefers-color-scheme: dark)">
+<title>Map · Montana Hail Watch</title>
+<meta name="description" content="Montana weather map: the past hour of NOAA radar, the HRRR model forecast, temperature and wind gusts, NWS warning outlines, storm reports and the NWS forecast for each town.">
+<link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{{ root }}static/icon-180.png">
+<link rel="stylesheet" href="{{ root }}static/fonts/fonts.css">
+<link rel="stylesheet" href="{{ root }}static/leaflet/leaflet.css">
+<link rel="stylesheet" href="{{ root }}static/map/map.css?v={{ asset_v['map/map.css'] }}">
+<script>
+/* Card mode (?card=1, the map inside the Now and Storm reports pages) is known only from the
+   page address, which only the browser sees (AGENTS.md rule 4). Setting the class before the
+   page paints stops the full-screen controls flashing inside the card. map.js does the rest. */
+if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.add("is-card");
+</script>
+<noscript><style>.top .corners, .bottom, .card-ui { display: none !important; }</style></noscript>
+</head>
+{% set v = built.strftime('%Y%m%d%H%M') %}
+<body class="mapapp" data-built="{{ built_ms }}">
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect class="hatch-stripe" width="1" height="6"></rect>
+    </pattern>
+  </defs>
+</svg>
+<main id="app" class="app"
+     data-map="{{ root }}data/map.json?v={{ v }}"
+     data-basemap="{{ root }}static/map/basemap.json?v={{ asset_v['map/basemap.json'] }}"
+     data-limits='{{ limits|tojson }}'>
+  <h1 class="visually-hidden">Montana weather map</h1>
+  <p id="map-help" class="visually-hidden">The map shows NOAA's radar estimate for the past hour and the HRRR
+    model forecast after now, NWS warning outlines and the NWS forecast for each town. Arrow keys pan the map,
+    plus and minus zoom. The List button lists every NWS alert and each town's NWS forecast as text. The radar
+    and model pictures have no text version yet.</p>
+
+  <div class="top" id="top">
+    <div class="banners" id="banners">
+      {% if sample %}
+      <p class="banner banner-sample" role="note"><strong>Sample data.</strong> Everything here is invented to review the layout. It is not weather.</p>
+      {% endif %}
+      {% set problems = [] %}
+      {% for key in ['alerts', 'radar', 'forecast', 'forecasts'] %}{% if status[key] and not status[key].ok %}{% set _ = problems.append(key) %}{% endif %}{% endfor %}
+      {% set names = {'alerts': 'NWS alerts', 'radar': 'radar', 'forecast': 'model forecast', 'forecasts': 'NWS town forecasts'} %}
+      {% macro problem_line(key) %}{% set s = status[key] %}
+        {%- if key == 'alerts' %}<strong>NWS alerts didn't load</strong> at {{ s.when|t }} ({{ s.detail }}). Warnings may be missing.<span class="last-known"></span>
+        {%- elif key == 'radar' %}<strong>Radar problem</strong> at {{ s.when|t }}: {{ s.detail }}.
+        {%- elif key == 'forecast' %}<strong>Model forecast problem</strong> at {{ s.when|t }}: {{ s.detail }}.
+        {%- else %}<strong>NWS town forecasts</strong> loaded for {{ s.detail }}. A town without one shows a dash.{% endif %}
+      {%- endmacro %}
+      {% if problems|length == 1 %}
+      <div class="banner banner-problem" role="alert" id="problems">
+        <p data-source="{{ problems[0] }}">{{ problem_line(problems[0]) }} <strong>This is not an all-clear.</strong></p>
+      </div>
+      {% elif problems %}
+      <div class="banner banner-problem" role="alert" id="problems">
+        <details>
+          <summary><strong>Problem loading {% for key in problems %}{{ names[key] }}{{ ', ' if not loop.last }}{% endfor %}.</strong> This is not an all-clear. <span class="more">Details</span></summary>
+          <ul>
+            {% for key in problems %}
+            <li data-source="{{ key }}">{{ problem_line(key) }}</li>
+            {% endfor %}
+          </ul>
+        </details>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="corners">
+      <div class="corner-left">
+        <a class="glass round close" href="{{ root }}index.html" aria-label="Close map">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </a>
+        <section class="legend-wrap" aria-labelledby="legend-title">
+          <div class="glass legend" id="legend">
+            <div class="legend-head">
+              <h2 class="legend-title" id="legend-title">Precipitation</h2>
+              <button type="button" class="legend-info" id="legend-info" aria-expanded="false" aria-controls="legend-note" aria-label="About this layer">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle class="fill" cx="12" cy="7.6" r="1.2"/></svg>
+              </button>
+            </div>
+            <div class="legend-scale" id="legend-scale" hidden>
+              <span class="legend-bar" id="legend-bar"></span>
+              <ol class="legend-stops" id="legend-stops"></ol>
+            </div>
+            <p class="legend-note" id="legend-note"></p>
+            <ul class="legend-keys" id="legend-keys"></ul>
+          </div>
+          <a class="mapdata" href="{{ root }}about.html#sources">Map data</a>
+        </section>
+      </div>
+
+      <div class="corner-right" id="buttons">
+        <div class="glass stack">
+          <button type="button" class="icon-btn" id="btn-layers" aria-label="Layers" aria-haspopup="dialog" aria-expanded="false" aria-controls="layers">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M12 3.2 21.4 8.4 12 13.6 2.6 8.4Z"/><path class="fill" d="M4.6 11.6 12 15.7l7.4-4.1 2 1.1-9.4 5.2-9.4-5.2Z"/></svg>
+          </button>
+          <button type="button" class="icon-btn" id="btn-locate" aria-label="Show my location">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 3.8 3.9 10.6l7.2 2.3 2.3 7.2Z"/></svg>
+          </button>
+        </div>
+        <section class="glass popover" id="layers" role="dialog" aria-labelledby="layers-title" hidden>
+          <h2 class="pop-title" id="layers-title">Map layers</h2>
+          <fieldset class="choices">
+            <legend class="visually-hidden">Weather layer</legend>
+            <label class="choice"><input type="radio" name="layer" value="precip"><span class="swatch sw-precip" aria-hidden="true"></span><span class="choice-text">Precipitation</span></label>
+            <label class="choice"><input type="radio" name="layer" value="temp"><span class="swatch sw-temp" aria-hidden="true"></span><span class="choice-text">Temperature</span></label>
+            <label class="choice"><input type="radio" name="layer" value="wind"><span class="swatch sw-wind" aria-hidden="true"></span><span class="choice-text">Wind gusts</span></label>
+          </fieldset>
+          <div class="toggles">
+            <label class="toggle"><span class="toggle-text">Warnings<small>NWS outlines</small></span><input type="checkbox" role="switch" id="tg-warnings" checked></label>
+            <label class="toggle"><span class="toggle-text">Storm reports<small>SPC, last 3 days</small></span><input type="checkbox" role="switch" id="tg-reports"></label>
+          </div>
+        </section>
+        <button type="button" class="glass round icon-btn" id="btn-list" aria-label="List of alerts and towns" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle class="fill" cx="4.6" cy="6.5" r="1.3"/><circle class="fill" cx="4.6" cy="12" r="1.3"/><circle class="fill" cx="4.6" cy="17.5" r="1.3"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom" id="bottom">
+    <p class="frame-note" id="frame-note" hidden></p>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <button type="button" class="glass chip near" id="near-chip" hidden></button>
+    <section class="glass timeline" id="timeline" aria-label="Timeline">
+      <div class="tl-row">
+        <button type="button" class="play" id="play" aria-pressed="false" aria-label="Play">
+          <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M8 5.6v12.8c0 .8.9 1.3 1.6.9l10-6.4c.6-.4.6-1.3 0-1.7l-10-6.4C8.9 4.3 8 4.8 8 5.6Z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="6.5" y="5" width="3.8" height="14" rx="1.2"/><rect class="fill" x="13.7" y="5" width="3.8" height="14" rx="1.2"/></svg>
+        </button>
+        <div class="tl-text">
+          <h2 class="tl-title" id="tl-title" aria-live="off">Map</h2>
+          <p class="tl-sub" id="tl-sub"><span class="tl-when">Loading the map</span><span class="tl-src"></span></p>
+        </div>
+        <div class="seg" id="seg" role="radiogroup" aria-label="Timeline length">
+          <button type="button" role="radio" aria-checked="false" data-mode="1h">1h</button>
+          <button type="button" role="radio" aria-checked="true" data-mode="12h">12h</button>
+        </div>
+      </div>
+      <div class="scrub" id="scrub">
+        <div class="track" aria-hidden="true"><span class="ticks" id="ticks"></span><span class="fill-bar" id="fill-bar"></span><span class="knob" id="knob"></span></div>
+        <input type="range" id="range" min="0" max="1" step="1" value="0" aria-label="Time on the map" aria-valuetext="Loading">
+        <div class="labels" id="labels" aria-hidden="true"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="map" class="canvas" role="region" aria-label="Map of Montana" aria-describedby="map-help"></div>
+
+  <div class="card-ui" id="card-ui">
+    <p class="glass card-chip" id="card-chip"></p>
+    <a class="glass card-open" href="{{ root }}map.html" target="_top" id="card-open">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>
+      <span>Open map</span>
+    </a>
+  </div>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <section class="glass sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden>
+    <header class="sheet-head">
+      <button type="button" class="icon-btn sheet-back" id="sheet-back" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>List</span>
+      </button>
+      <h2 class="sheet-title" id="sheet-title" tabindex="-1"></h2>
+      <button type="button" class="icon-btn sheet-close" id="sheet-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>
+      </button>
+    </header>
+    <div class="sheet-body" id="sheet-body"></div>
+  </section>
+
+  <noscript>
+    <div class="noscript">
+      <h2>This map needs JavaScript</h2>
+      <p>It plays the radar and forecast pictures in your browser. The same warnings and forecasts are on these pages:</p>
+      <ul>
+        <li><a href="{{ root }}index.html">Now: warnings and the 12-hour outlook for every town</a></li>
+        <li><a href="{{ root }}reports.html">Storm reports</a></li>
+        {% for slug, name in towns_nav %}<li><a href="{{ root }}town/{{ slug }}.html">{{ name }}</a></li>{% endfor %}
+      </ul>
+    </div>
+  </noscript>
+</main>
+<script src="{{ root }}static/leaflet/leaflet.js"></script>
+<script src="{{ root }}static/map/map.js?v={{ asset_v['map/map.js'] }}"></script>
+</body>
+</html>

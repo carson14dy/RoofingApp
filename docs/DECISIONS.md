@@ -1,5 +1,13 @@
 # Decisions
 
+**Publication repair (2026-10-16).** PR #3 merged, but its first deployment failed because
+Pages was not enabled. The plan step had suppressed the GitHub CLI failure and mistaken its
+404 JSON body for a site URL. Publishing now requires both a successful lookup and an HTTPS
+URL; failed/invalid lookups warn with the Pages setup step, keep push builds as previews, and
+skip scheduled builds. Regression tests execute the actual planning shell against fake CLI
+responses. Enabling Pages still requires Settings → Pages → Source: GitHub Actions; the
+repair environment's Pages API request returned Forbidden, so no settings were changed.
+
 Why RoofingApp is built the way it is. Add new entries at the bottom; to reverse a decision, add
 an entry that names the one it replaces. Web-version decisions date from September 2026; the
 desktop app and weather module from 2026-10-11 (version 1.0.0).
@@ -231,7 +239,255 @@ with places and territories is small, matches how alerts are matched anyway, and
 market the moment a place is saved there. *When:* its own small PR after PR #1 merges and the
 installers are on real machines; before the pilot adds border places.
 
+*Resolved by D26:* the tagline is “Storm-to-roof” now; the contiguous-US PR leaves it alone.
+
+**D25 · ChatGPT's Montana pilot branch — findings that change the plan (2026-10-11).** Branch
+`codex/montana-weather-pilot` extends the Kansas City prototype to Montana (territory selector, 13
+town pins, station and grid elevation shown, time-zone fallback) and merges `main`, so it was written
+with the app and these docs in view. It merges cleanly and touches nothing outside `research/` and
+`skills/`; it would take the repo from 0.75 MB to 2.9 MB. Its 21 backend tests and 35 checker tests
+pass here. Its 16-point live sweep (13 towns plus rural, divide and border points) resolved all four
+Montana offices (BYZ, MSO, TFX, GGW) and America/Denver everywhere. D23's verdict stands: the
+prototype stays a research branch; the evidence below changes the plan.
+
+What the sweep showed, and what it changes:
+- **Station observations are hourly, so a 30-minute freshness limit fails most of Montana.** At
+  1:32 pm MDT, 35 of 48 station records were older than 30 minutes; four towns (Lewistown, Glasgow,
+  West Yellowstone, the rural eastern point) had no station inside the limit. The fresh ones were
+  airport ASOS stations reporting at about :55 each hour; the stale ones were RAWS and road-weather
+  sites reporting hourly or less, and even the Glasgow airport was past the limit. Roadmap item 5
+  uses a "current" limit of about 75 minutes (one hourly cycle plus the documented ingest delay),
+  always shows the age, and shows stale values as stale — never hidden.
+- **A missing gust usually means no gust to report, not a broken sensor.** Airport stations report
+  a gust only when the peak exceeds the sustained wind by a reporting threshold; nine of the ten
+  airports in the sweep returned a null gust beside a valid wind. Item 5 shows "no gust reported"
+  beside the sustained wind, and "unavailable" only when the whole observation is missing.
+- **Hiding non-V values hides real wind.** Arrow Creek Hill on I-90 reported a 30.6 km/h gust
+  flagged S (screened); the prototype withheld it as "QC review needed". Item 5 shows the value
+  with its flag (confirms D23).
+- **Elevation belongs beside each station.** Billings airport sits at 1,088 m and Arrow Creek Hill
+  at 1,196 m; in Montana a valley airport can misrepresent a bench or a pass. Item 5 shows station
+  elevation and the forecast-grid elevation, and marks the job's own elevation unknown unless the
+  job records it.
+- **The nearest stations cross state lines.** West Yellowstone's three nearest stations are all in
+  Wyoming (Old Faithful 30 km, Yellowstone Lake 48 km). Station lists are never filtered by state;
+  D24's alert areas come from zone codes, not station lists.
+- **Units.** The prototype shows °C and km/h; the app keeps D15 — °F and mph for display, native
+  units in the record.
+- **Validation strata for the pilot (roadmap 2–3).** ChatGPT's matrix is a sound site plan:
+  western valleys (Missoula, Kalispell); central (Great Falls, Helena, Bozeman); the south-central
+  gap-wind corridor (Billings, Livingston, Big Timber); northern and eastern plains (Glasgow, Havre,
+  Glendive, Miles City); rural basins and the Front (Libby, Seeley Lake, Browning); passes and
+  borders (Rogers, Lookout, Beartooth; state-line points).
+- **Billings-office gap-wind guidance.** The BYZ office publishes gap-wind probability charts for
+  the Livingston–Big Timber–Harlowton corridor (a PDF issued every few days, not a feed). A
+  candidate for roadmap item 6, not an integration.
+
+Not carried over, for D23's reasons: the prototype itself, its 1.6 MB of captures, screenshots and
+vendored Leaflet, and the skill. Its time-zone fallback to UTC for custom points is worse than the
+app's company-zone fallback (D16). Stale sandbox path: `/tmp/roofing-montana-sources`.
+
+*Why not merge the branch even though it merges cleanly:* every installed app downloads the repo
+zipball on each update (D6), the prototype duplicates the app, and one app in the repo is the
+point of D1. *Handoff:* ChatGPT's next job is roadmap item 5 in `payload/weather.py`, built to the
+rules above, with its sweep as the first test fixture.
+
+**D26 · Product name: Montana Hail Watch (2026-10-12).** Carson's decision; “Big Sky Hail Watch” was
+the placeholder. The name shows in the header (plain “Montana”, accent “Hail Watch”, tagline
+“Storm-to-roof” — the state is in the name now), page titles, the manifest `name`, the printable
+summary footer, the shell window and dialogs. Because the shell changed and a new installer is built,
+`SHELL_VERSION` is 1.1.0; `SHELL_API` stays 1 and the payload stays 1.0.0 (nothing was shipped).
+`APP_ID` is `MontanaHailWatch` in `desktop/launcher.py` and `build.py`, so the installer, the
+executable, the data folder, the webview storage, the waitress ident and the user agents are all
+new names; no copies were installed under the old `APP_ID`, so nothing is orphaned. The macOS bundle
+identifier is `com.montana.hailwatch`. Internal identifiers did not change: `hailwatch.stop`,
+`hw_session`, the `hailwatch` and `hailwatch.updater` loggers, `hailwatch.db` and the backup
+pattern, `store.MIGRATIONS`, and the manifest `version` and `min_shell`. The `--bigsky` colour
+token stays — it names the sky, not the product.
+
+*Why:* a rename is not a reason to touch the shell–payload contract (D3) or the identifiers D2 and
+D5 define, or the data on disk; changing `APP_ID` is only free because there are no installs yet.
+*Trademark caution:* check “Montana Hail Watch” against existing products and trademarks before it
+goes on an installer, a release page or anything printed; HailTrace is an existing hail-mapping
+service sold to roofers, so stay clear of that name too.
+
+**D27 · A website first; the desktop app is parked (2026-10-14).** Carson: "Let's completely
+rework this. It's too complicated and the design is ugly. Instead of an app let make a website
+first." The product is now a static website in `website/`, built by Python and published with
+GitHub Pages: a Now page (official alerts, a radar and warning-area map, one card per town for the
+next 12 hours), a page per town (alerts at that point, 24 hours, 7 days), a Storm reports page
+(three SPC reporting days) and an About page. GitHub Actions rebuilds it every 10 minutes from
+`main` (`.github/workflows/website.yml`); branch pushes run the same build against live data with
+`--require-live` and keep the result as an artifact. Design: `docs/DESIGN.md`.
+- *Parked, not deleted:* `payload/` and `desktop/` are unchanged, their tests still run, no
+  version is bumped and no installer is built. Deleting them is Carson's call. Not on the site
+  yet: jobs and addresses, territories, inspections, per-roof-system rules, notifications, the
+  hail-footprint demo.
+- *Own code, same rules:* `website/sources.py` is a new ~400-line module rather than an import of
+  `payload/weather.py`, which carries jobs, storage and rules the site doesn't need. What carries
+  over is the rules, each with a test: radar layer `1` with its frame time (D7); alerts sorted
+  most urgent first, test messages and replaced updates dropped, null geometry listed with a note;
+  SPC reporting days 12:00–11:59 UTC, hail in hundredths of an inch, `UNK` wind unknown; gusts
+  from the gridpoint series with their units checked; placeholder limits (D16).
+- *Alerts on a static site:* each build saves what it verified in `data/state.json`. If the alert
+  request fails, the next build keeps the last verified list from the live site with its time and
+  says so; it never empties the list and never says "no alerts". A town whose alert check failed
+  shows "Alerts not checked". No AI text. Every alert a town's point check finds joins the list
+  (2026-10-16): the statewide request runs first, so a warning issued while the 14 towns are
+  checked was only in their answers, and the map's town sheet could name no event or end time,
+  draw no outline and leave it out of the List. A listed alert that a town's answer shows was
+  replaced is dropped, as within one answer, unless a town's check still returned it.
+- *Snapshot, not live tiles:* the radar is saved as one picture per build with NOAA's frame time,
+  so the page and the map describe the same frame; it is marked stale past 15 minutes. Every page
+  shows its build time, which sources loaded, and (a short documented script, rule 4) its age,
+  with a warning past 25 minutes. A meta refresh reloads every 10 minutes.
+- *Nothing from third-party servers but data:* Leaflet 1.9.4 and the Atkinson Hyperlegible fonts
+  (SIL OFL) are served by the site; map tiles come from USGS, alerts and forecasts from NWS.
+- *Map labels:* each town's label side and whether it is "minor" (hidden, dot and label, on maps
+  narrower than 546 px, which open one zoom out) live in `towns.json`; a test checks that no label
+  covers another label or a dot at either zoom. (D28's map replaced that test: "Town label test".)
+- *Look:* the dark "storm" look (D19) is replaced by a light "field sheet" with automatic dark
+  mode, chosen for sunlight; tokens in `website/static/style.css`.
+- *Livingston* joins ChatGPT's 13 pilot towns for the gap-wind corridor (D25).
+
+*Why a static site:* no server to keep running, nothing to install, free on a public repository,
+works on any phone, and everyone sees the same checked snapshot. *Limits:* a page can be about
+10–20 minutes behind NWS (GitHub may delay scheduled runs); no alerts reach a phone unless the page
+is open; GitHub pauses scheduled workflows after 60 days without repository activity. Pages must be
+turned on once: Settings → Pages → Source: GitHub Actions.
+
+**D28 · An interactive Montana map in the style of Apple Weather (2026-10-15).** Carson sent a
+screen recording of Apple Weather's full-screen precipitation map: "Lets turn this into a working
+interactable map of montana that looks like this." The site gets a full-screen `map.html` and the
+same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` section 8.
+- *What it shows:* Precipitation (the past hour of NOAA's MRMS radar estimate every 10 minutes, then
+  the NOAA HRRR model every 15 minutes for the next hour or hourly to 12 hours), Temperature and
+  Wind gusts (HRRR, hourly to 12 hours), NWS warning outlines and SPC storm reports. Town bubbles
+  carry the NWS hourly forecast for the hour on the timeline; tapping one opens its forecast.
+- *Sources, checked live from this container on 2026-10-15 (content, not just HTTP 200):* MRMS
+  `PrecipRate_00.00` on AWS Open Data (`noaa-mrms-pds`), a new 0.01° grid every 2 minutes in mm/h,
+  negative values for no coverage; HRRR on AWS Open Data (`noaa-hrrr-bdp-pds`), single fields by
+  byte range from each file's `.idx` (PRATE about 60 KB, TMP and GUST about 1.1 MB per hour),
+  3 km Lambert grid; our projection matches the GRIB latitudes and longitudes to within
+  a ten-billionth of a grid cell at all 1.9 million points. Values looked right: frame pixels at the towns decode back to the HRRR value within 1.1 °F and 0.8 mph; at 5 pm the towns read 49–57 °F with cold ranges and a warm Snake River Plain, gusts 25–35 mph on the eastern plains; rain on the North Dakota edge sat in the same place in radar and model; MRMS read −3 only outside radar coverage (the Pacific, Mexico, far Canada), none inside the map area.
+- *Why not the NOAA radar picture (D7):* one frame, NOAA's colours and no forecast. Raw MRMS rates
+  and HRRR precipitation rates share one honest legend (rate as liquid water, AMS classes) for past
+  and future.
+- *Honesty:* every frame says whether it is radar or model; the timeline title switches at "Now";
+  areas without radar coverage are hatched; a failed download puts a sentence on the map; the
+  bubbles are the NWS forecast, the coloured fields are the model.
+- *Basemap:* our own vector map (Natural Earth, public domain; Census county lines from us-atlas
+  3.0.1), built by `tools/build_basemap.py` into `static/map/basemap.json` (385 KB, identical bytes on a rerun). The USGS
+  tiles and the Folium maps are retired from the website; Folium stays in the parked app.
+- *JavaScript (rule 4):* playback, scrubbing, menus, sheets and geolocation can only happen in the
+  browser. `static/map/map.js` is vanilla, documented, with no framework and no build step; Python
+  still builds every number and frame. `tools/smoke_map.py` opens the built map in Chromium on every
+  branch push. It ended at about 2,150 lines, most of it layout that keeps Montana and every town
+  clear of the panels on crowded screens, failure states and accessibility; moving about 330 lines
+  to the build is an open owner's call (ROADMAP).
+- *Build cost:* about 40 MB downloaded and 48 frames (about 2 MB, most of it the temperature and gust fields) per build; numpy and
+  pygrib on the runner.
+- *Limits:* HRRR is a computer model, not the NWS forecast; MRMS rates run low far from a radar and
+  in snow; frames are still pictures made at each build, so the newest radar is up to about 10
+  minutes old plus GitHub's delay; no lightning or air-quality layer; snow and rain share one
+  palette.
+- *Verification (2026-10-16):* each piece had an independent review before it was merged into the
+  branch (radar and model frames: 5 findings; base map: 2; map page: 15, each fixed and re-checked
+  against the old code). Then seven independent lenses (look against the reference, interaction,
+  honesty, accessibility, robustness, minimal JavaScript, the data path) reported findings, a
+  skeptic reproduced each one before any fix (48 confirmed), fixers ran one group at a time, and a
+  final checker re-ran everything: 201 unit tests, the smoke test, the map builder's 70 functional
+  and 32 edge-state Playwright checks at phone and desktop sizes in both schemes. It also checked
+  the map against the raw NOAA files: live radar and HRRR rain matched the near-dry grids, frame
+  colours at the 14 towns matched HRRR temperature (median 0.3 °F) and gusts. Not yet seen: real
+  phones (iOS Safari), and real NWS alerts, town forecasts and SPC reports on the map, which this
+  container can't reach (the branch's Website build loads them live).
+- *Background and hatch (2026-10-16, after review):* past the basemap's padded box the page is the
+  neighbours' land colour (`--map-bg` = `--land`, #fafafa; dark #1b1e22; the theme-color metas
+  match), not the spec's mist #eef1f4, and the hatch outside the pictures' box is a hairline (1 px
+  every 6 px). With the mist and the old 2.5 px stripes the hatch was the loudest thing on a phone
+  (three tones, about 40% of the screen); the reference's "not available" hatch is a faint hairline
+  on white. The band's words say it is outside the map's area ("Outside map area", short enough for
+  one line in a 140 px legend column), not "no radar coverage": NOAA's files have valid data there
+  (checked against MRMS), the map just doesn't draw it.
+- *Cache addresses (2026-10-16):* scripts, stylesheets and the basemap carry `?v=` = their content
+  hash, so the 10-minute rebuilds no longer make every visit download about 150 KB of unchanged
+  files; `data/map.json` and the map card keep the build minute.
+- *Town label test (2026-10-16):* the label test models this map, not the old Folium one: 30 px
+  bubbles, names 20 px from the point (`map.css` `.town`), minor towns from zoom 7.
+  `tools/build_basemap.py` `check_layout` (run by `tests/test_basemap.py`) checks every town name
+  against the other towns' bubbles and names as well as the basemap labels and places. One
+  allowance: at zoom 5, where only maps narrower than about 340 px or very short open, a name may
+  reach 4 px into another bubble (Missoula's 3.5 px into Kalispell's, Billings' 1 px into Miles
+  City's); no choice of label sides clears zoom 5.
+- *Sample legend (2026-10-16):* a sample build's legend notes say the pictures are invented ("not
+  NOAA radar or the HRRR model") instead of naming the radar or the model as their source.
+- *Words beside the card (2026-10-16):* the Now page's caption and the card's frame title come from
+  the build's data (`build.py` `map_card`), not fixed text. They name the picture the card opens on,
+  picked as `map.js` picks it: the NOAA radar estimate (stale radar is still radar, with its time),
+  or the HRRR model forecast and its time when there is no radar. They list what this update is
+  missing (radar, warning outlines, town temperatures) with "This is not an all-clear". The fixed
+  caption called a model forecast "the latest NOAA radar estimate" and promised outlines and town
+  temperatures that hadn't loaded. The card hides its legend, so the Storm reports page's key also
+  names the town numbers (NWS forecast temperature) and the outlines, and says where alerts without
+  an outline are listed (the Now page).
+- *Context layer (2026-10-16):* a phone's first view reaches about 39–59.7° N, far past the basemap's
+  padded box (42.5–51° N), so Montana floated on blank paper; the basemap now also carries Natural
+  Earth's state and province lines (0.01°, about 300 points) out to 37.5–60.5° N and 122–95.2° W, east
+  of the Pacific coast so no coastline is implied, with 7 state and province abbreviations and 10
+  cities. The names start at zoom 6: at a phone's first view (zoom 5.25–5.5) the legend, buttons, note
+  line and timeline cover nearly all of that area, and names at zoom 5 sat under them or in the note.
+- *Phone pass (2026-10-16):* every portrait phone gets the two-column legend (keys beside a shorter
+  scale, about 135–170 px tall instead of 270–340), so Montana sits higher and the fit never has to
+  choose between forms; a phone's fit never settles below zoom 5.25 (town names clear) unless Montana
+  is wider than the screen there. The limit ring marks the layer's own limit: temperatures outside
+  40–95 °F on Temperature, gusts of 25 mph on Wind gusts, none on Precipitation (its picture is the
+  rain, not the temperature; DESIGN's layer table gave the ring to Wind gusts). No key comes or goes
+  during playback: the ring key stays for the whole timeline, and the gap key shows on frames with a
+  gap and keeps its room, hidden, on the others. The card's hatch words are true of everything hatched
+  in view ("No radar data on this map" when a gap and the outside band show together). The hatching
+  note steps aside while a town is under it, rather than taking a backing that would hide the town;
+  the legend's keys still name the hatching. The card zooms in 0.05 steps, which lets a 328 px card
+  show Montana at 5.2 instead of 5.
+
+**D29 · Live station readings on the Now page and the town pages (2026-10-16).** Carson: "find a way
+to get live weather and add it. It says it's blocked." Everything the site showed was a forecast, a
+radar estimate or a model; nothing said what a station measured. The "blocked" note was ChatGPT's
+sandbox (D23 already called it stale): `api.weather.gov` answers this repo's builds and every branch
+build of the Website workflow. Roadmap item 10, built to the rules of D23 and D25.
+
+- *Source.* The point lookup's `observationStations` link (the stations NWS lists for the town's
+  grid square), sorted here by distance, then `/stations/{id}/observations/latest` for the nearest
+  three. Four more requests per town, about 55 more NWS requests per build; the live build went from
+  31–38 s to 44 s. The station list is kept in `data/state.json` and reused when its lookup fails,
+  like the point.
+- *Rules.* Never filtered by state. A reading older than 75 minutes is kept and marked stale with its
+  age, never hidden. A missing gust beside a measured wind is "no gust reported". Every value shows
+  its MADIS flag in words (verified, screened, basic check only, not checked yet, questioned); X
+  (failed quality control) and B (marked bad on review) are withheld from the page and kept raw in
+  `data/state.json`, with every reading, as the record of what each town showed. °F and whole mph on
+  the page, native units in the record; any unit other than °C, km/h, m/s, knots or mph is an error,
+  never a guess. Station elevation and the forecast grid square's elevation are shown: a valley
+  airport is not a bench or a pass.
+- *Where.* Town page: "Observed now" above the 24-hour table, a card per station. Now page: one line
+  on each town card with the nearest current reading that has a temperature or a wind (a road sensor
+  that sends only a gust is listed on the town page, not quoted on the card), naming the station,
+  distance, elevation and age. Values over the placeholder limits get the forecast flags' orange
+  bold. Not on the map: D28's `map.json` contract is unchanged.
+- *Status.* "NWS station readings" joins the per-source line on every page; it is ok when every town
+  has a reading, so a branch build with `--require-live` fails when a town has none.
+- *Live check, 10:50 am MDT:* every town had a reading under 75 minutes old. Billings: KBIL 3 mi,
+  43 °F, 10 mph SSW, no gust reported. Lewistown's nearest station (MTLEW, MT-200 on the Lewistown
+  Divide, 8 mi) sent only a gust, so its card quotes Judith Peak (JPKM8, 14 mi, 6,428 ft), and the
+  elevation says why its numbers can differ from town. West Yellowstone's nearest answering station
+  is Yellowstone Lake, WY (35 mi); Old Faithful answered 404 and says so on the town page.
+
 ## Gotchas found the hard way
+- An absolutely positioned element escapes a scroll box that isn't its containing block: the
+  visually hidden "(over limit)" words in the hourly table widened every town page with a flagged
+  cell by up to 24 px on a 288 px phone. `.table-box` is `position: relative` for that.
+- A flex row of links shrinks its items (and wraps the text inside them) before it overflows; with
+  `flex-wrap` it wraps whole items instead. Measure both on the narrowest phone.
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.
 - Folium camelizes keyword arguments (`_t` → `T`).
 - `{% set %}` at the top level of a child template is ignored — set inside blocks.
@@ -240,3 +496,10 @@ installers are on real machines; before the pilot adds border places.
 - In development the installed copy of the built-in payload goes stale; the updater reinstalls it
   when its content hash changes.
 - `ship.py` and the update tests assume the bundled manifest version; the tests pin a copy to 1.0.0.
+- Folium's `Popup` always calls jQuery (`$(…)`); on a page without jQuery use a direct
+  `bindPopup` (the website's `LinkPopup`).
+- Folium adds Leaflet's stylesheet after anything added to the map's header, so header styles
+  need selectors more specific than Leaflet's (`.leaflet-tooltip.town-label`).
+- `actions/upload-artifact@v4` skips dotfiles such as `.nojekyll` unless `include-hidden-files: true`.
+- A zone written into a template is wrong half the year: the Storm reports page said reporting days
+  start "at 6 am MDT" in winter too (12:00 UTC is 5 am MST). Format the instant with `%Z`.
