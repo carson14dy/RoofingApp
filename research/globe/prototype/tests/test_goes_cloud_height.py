@@ -16,7 +16,10 @@ GOES-East origin is -75.0, the value in the file's goes_imager_projection (the n
 subpoint in the same files is -75.2; it is not the grid origin). GOES-West is -137.0.
 """
 
+import contextlib
 import datetime as dt
+import importlib.util
+import io
 import json
 import math
 import os
@@ -572,15 +575,175 @@ class CmipTests(unittest.TestCase):
         self.assertIn("note", res["stats"])
 
 
+ACHA2KMC_KEY_G19 = ("ABI-L2-ACHA2KMC/2026/290/03/OR_ABI-L2-ACHA2KMC-M6_G19_s20262900316174_e20262900318547_"
+                    "c20262900320430.nc")
+UTC = dt.timezone.utc
+
+
+class Acha2kmcSwitchTests(unittest.TestCase):
+    """--product ACHA2KMC: its own bucket prefix, grid and DQF rule, kept apart from ACHAC and band 13."""
+
+    def test_product_settings_match_the_2km_file(self):
+        cfg = gch.PRODUCTS["ACHA2KMC"]
+        self.assertEqual(cfg["bucket_prefix"], "ABI-L2-ACHA2KMC")
+        self.assertIsNone(cfg["band"])
+        self.assertEqual(cfg["variable"], "HT")
+        self.assertEqual((cfg["quantity"], cfg["units"]), ("cloud_top_height", "m"))
+        self.assertEqual(cfg["grid"], {"ny": 1500, "nx": 2500, "step_rad": 0.000056})
+        self.assertEqual(gch.PRODUCTS["CMIPC13"]["grid"], cfg["grid"])  # both 2 km, like band 13
+        self.assertEqual(gch.PRODUCTS["ACHAC"]["grid"], {"ny": 300, "nx": 500, "step_rad": 0.00028})
+
+    def test_cli_switch_is_parsed_and_unknown_products_are_refused(self):
+        self.assertEqual(gch.build_parser().parse_args(["--product", "ACHA2KMC"]).product, "ACHA2KMC")
+        self.assertEqual(gch.build_parser().parse_args([]).product, "ACHAC")
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            gch.build_parser().parse_args(["--product", "ACHA3KM"])
+
+    def test_listing_and_prefix_keep_the_two_height_products_apart(self):
+        when = dt.datetime(2026, 10, 17, 3, tzinfo=UTC)
+        self.assertEqual(gch.hour_prefix(gch.PRODUCTS["ACHA2KMC"], when), "ABI-L2-ACHA2KMC/2026/290/03/")
+        cfg2, cfg10 = gch.PRODUCTS["ACHA2KMC"], gch.PRODUCTS["ACHAC"]
+        self.assertIsNotNone(gch.match_product(ACHA2KMC_KEY_G19, cfg2))
+        self.assertIsNone(gch.match_product(ACHA2KMC_KEY_G19, cfg10))
+        self.assertIsNone(gch.match_product(ACHAC_KEY_G19, cfg2))
+        entries = [gch.Entry(ACHAC_KEY_G19, dt.datetime(2026, 10, 17, 3, 40, tzinfo=UTC), 1),
+                   gch.Entry(ACHA2KMC_KEY_G19, dt.datetime(2026, 10, 17, 3, 21, tzinfo=UTC), 2)]
+        pick = gch.newest_pick(entries, cfg2)
+        self.assertEqual(pick.key, ACHA2KMC_KEY_G19)
+        self.assertEqual(pick.product_token, "ABI-L2-ACHA2KMC")
+        self.assertIsNone(gch.newest_pick([entries[0]], cfg2))
+        self.assertEqual(gch.newest_pick(entries, cfg10).key, ACHAC_KEY_G19)
+
+    def test_synthetic_field_takes_its_grid_and_height_encoding_from_the_product(self):
+        d = gch.synthetic_dataset("ACHA2KMC", "east", nx=400, ny=240)
+        self.assertEqual(d["raw"].shape, (240, 400))
+        self.assertAlmostEqual(float(d["x"][1] - d["x"][0]), 0.000056, places=12)
+        self.assertEqual(d["data_attrs"]["units"], "m")
+        self.assertEqual(d["scale"], 0.3052037)
+        self.assertEqual(d["fill"], 65535)
+        self.assertEqual(gch.synthetic_dataset("ACHAC", "east")["raw"].shape, (300, 500))
+
+
+class DqfPerProductTests(unittest.TestCase):
+    def test_every_product_names_dqf_zero_as_its_good_set(self):
+        for key, cfg in gch.PRODUCTS.items():
+            self.assertEqual(cfg["dqf_policy"]["good"], [0], key)
+
+    def test_the_good_set_is_a_parameter_not_a_hard_coded_zero(self):
+        raw = np.array([[1000, 1000, 1000, 1000]], dtype=np.uint16)
+        dqf = np.array([[0, 1, 2, 255]], dtype=np.uint8)
+        widened = gch.classify(raw, 65535, 0, 65530, dqf, 255, 0, 3, good_dqf=(0, 1))
+        self.assertEqual(widened.tolist(), [[gch.CODE_GOOD, gch.CODE_GOOD, gch.CODE_FLAGGED, gch.CODE_DQF_INVALID]])
+        default = gch.classify(raw, 65535, 0, 65530, dqf, 255, 0, 3)
+        self.assertEqual(default.tolist(), [[gch.CODE_GOOD, gch.CODE_FLAGGED, gch.CODE_FLAGGED,
+                                             gch.CODE_DQF_INVALID]])
+
+    def test_acha2kmc_heights_at_flagged_dqf_are_reported_beside_good(self):
+        data = gch.synthetic_dataset("ACHA2KMC", "east", nx=400, ny=240)
+        png, res = gch.process_dataset(data, gch.DEFAULT_BBOX, product_key="ACHA2KMC")
+        by_full = res["dqf"]["by_dqf_value_full_grid"]
+        self.assertGreater(by_full["1"]["with_value"], 0)   # DQF 1 carries heights
+        self.assertGreater(by_full["2"]["with_value"], 0)   # DQF 2 carries heights (synthetic patch)
+        nb = res["native_pixels_in_bbox"]
+        self.assertGreater(nb["good"], 0)
+        self.assertGreater(nb["flagged_with_value"], 0)
+        tcode = res["_target_codes"]
+        self.assertTrue(np.all(png[tcode == gch.CODE_FLAGGED] == 0))   # flagged is not drawn by default
+        self.assertTrue(np.all(png[tcode == gch.CODE_GOOD] > 0))
+        png_all, res_all = gch.process_dataset(data, gch.DEFAULT_BBOX, product_key="ACHA2KMC",
+                                               include_flagged=True)
+        self.assertTrue(np.all(png_all[res_all["_target_codes"] == gch.CODE_FLAGGED] > 0))
+
+    def test_dqf_value_table_adds_up_to_the_class_counts(self):
+        data = gch.synthetic_dataset("ACHA2KMC", "east", nx=400, ny=240)
+        _, res = gch.process_dataset(data, gch.DEFAULT_BBOX, product_key="ACHA2KMC")
+        full = res["dqf"]["by_dqf_value_full_grid"]
+        counts = res["native_pixels_full_grid"]
+        self.assertEqual(sum(v["cells"] for v in full.values()), counts["total"])
+        self.assertEqual(sum(v["with_value"] for v in full.values()),
+                         counts["good"] + counts["flagged_with_value"] + counts["dqf_invalid_with_value"])
+        flagged_dqf = sum(v["with_value"] for k, v in full.items() if k in ("1", "2", "3"))
+        self.assertEqual(flagged_dqf, counts["flagged_with_value"])
+        for v in full.values():
+            self.assertEqual(v["cells"], v["with_value"] + v["without_value"])
+
+    def test_policy_check_compares_the_observed_pattern_with_each_rule(self):
+        acha, achac, cmi = gch.PRODUCTS["ACHA2KMC"], gch.PRODUCTS["ACHAC"], gch.PRODUCTS["CMIPC13"]
+        self.assertTrue(gch.dqf_policy_check(acha, 170069, False)["matches"])
+        self.assertFalse(gch.dqf_policy_check(acha, 0, False)["matches"])   # the product changed
+        self.assertTrue(gch.dqf_policy_check(achac, 0, False)["matches"])
+        self.assertFalse(gch.dqf_policy_check(achac, 12, False)["matches"])
+        self.assertIsNone(gch.dqf_policy_check(cmi, 12, False)["matches"])  # no rule recorded
+        for cfg in (acha, achac):
+            check = gch.dqf_policy_check(cfg, 12, True)
+            self.assertIsNone(check["matches"])                             # synthetic: no verdict
+            self.assertIn("synthetic", check["note"])
+
+
+class Acha2kmcRunTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="gch-acha2kmc-")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_synthetic_acha2kmc_run_writes_both_counts_and_no_verdict(self):
+        out_png = os.path.join(self.tmp, "acha2kmc-synth.png")
+        out = gch.run(_args(product="ACHA2KMC", synthetic=True, out=out_png), bbox=gch.DEFAULT_BBOX, time_req=None)
+        with open(os.path.splitext(out_png)[0] + ".json", "r", encoding="utf-8") as fh:
+            doc = json.load(fh)
+        for key in REQUIRED:
+            self.assertIn(key, doc, msg=f"missing {key}")
+        self.assertEqual(doc["product"], "ABI-L2-ACHA2KMC")
+        self.assertEqual(doc["product_option"], "ACHA2KMC")
+        self.assertEqual(doc["note"], gch.NOTE_ACHA)
+        self.assertEqual(doc["dqf_policy_check"]["matches"], None)
+        self.assertGreater(doc["native_pixels_in_bbox"]["good"], 0)
+        self.assertGreater(doc["native_pixels_in_bbox"]["flagged_with_value"], 0)
+        self.assertEqual(doc["dqf"]["good_set"], [0])
+        self.assertEqual(out["native_grid"]["nx"], 2500)
+        self.assertEqual(out["native_grid"]["ny"], 1500)
+
+    def test_fake_bucket_acha2kmc_run_uses_its_own_prefix_and_download(self):
+        now = dt.datetime(2026, 10, 17, 3, 27, 14, tzinfo=UTC)
+        size = 4500000
+        listings = {"ABI-L2-ACHA2KMC/2026/290/03/": _listing_xml(
+            [(ACHA2KMC_KEY_G19, "2026-10-17T03:20:50.000Z", str(size))])}
+        log = []
+        dataset = gch.synthetic_dataset("ACHA2KMC", "east", nx=400, ny=240)
+        dataset["global_attrs"] = {"time_coverage_start": "2026-10-17T03:16:17.4Z",
+                                   "time_coverage_end": "2026-10-17T03:18:54.7Z",
+                                   "platform_ID": "G19", "orbital_slot": "GOES-East",
+                                   "license": "Unclassified data.  Access is restricted to approved users only."}
+        downloads = []
+
+        def fake_download(url, dest, expected):
+            downloads.append((url, dest, expected))
+            with open(dest, "wb") as fh:
+                fh.write(b"\0" * expected)
+            return expected
+
+        out_png = os.path.join(self.tmp, "acha2kmc-live-like.png")
+        with mock.patch.object(gch, "download", side_effect=fake_download), \
+                mock.patch.object(gch, "read_netcdf", return_value=dataset) as reader:
+            out = gch.run(_args(product="ACHA2KMC", out=out_png, download_dir=self.tmp), bbox=gch.DEFAULT_BBOX,
+                          time_req=None, fetch=_fake_fetch(listings, log), now=now)
+        self.assertEqual(reader.call_args[0][1], "ACHA2KMC")
+        self.assertEqual(log[0][0], "ABI-L2-ACHA2KMC/2026/290/03/")
+        self.assertEqual(out["object_key"], ACHA2KMC_KEY_G19)
+        self.assertEqual(downloads[0][0], "https://noaa-goes19.s3.amazonaws.com/" + ACHA2KMC_KEY_G19)
+        self.assertEqual(out["bytes_downloaded"]["object"], size)
+        self.assertEqual(out["dqf_policy_check"]["matches"], True)  # observed heights at flagged DQF
+        self.assertFalse(os.path.exists(downloads[0][1]))
+
+
 class LiveTests(unittest.TestCase):
     def setUp(self):
         if os.environ.get("GOES_LIVE") != "1":
             self.skipTest("set GOES_LIVE=1 for the live bucket check")
 
     def test_latest_achac_east_listing_and_centre_match_the_file(self):
-        try:
-            import netCDF4  # noqa: F401
-        except ImportError:
+        if importlib.util.find_spec("netCDF4") is None:
             self.skipTest("netCDF4 not installed (needed to open the downloaded file)")
         tmp = tempfile.mkdtemp(prefix="gch-live-")
         try:
@@ -604,6 +767,31 @@ class LiveTests(unittest.TestCase):
             self.assertAlmostEqual(float(la), float(gl["geospatial_lat_center"]), delta=1e-3)
             self.assertAlmostEqual(float(lo), float(gl["geospatial_lon_center"]), delta=1e-3)
             self.assertEqual(data["proj"].sweep, "x")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_latest_acha2kmc_east_is_2km_with_heights_at_flagged_dqf(self):
+        if importlib.util.find_spec("netCDF4") is None:
+            self.skipTest("netCDF4 not installed (needed to open the downloaded file)")
+        tmp = tempfile.mkdtemp(prefix="gch-live-2km-")
+        try:
+            try:
+                pick, _bytes, _checked = gch.find_latest("noaa-goes19", gch.PRODUCTS["ACHA2KMC"],
+                                                         gch.utcnow(), gch.http_get)
+            except (RuntimeError, OSError) as exc:
+                self.skipTest(f"no network or bucket unreachable: {exc}")
+            self.assertTrue(pick.key.startswith("ABI-L2-ACHA2KMC/"))
+            dest = os.path.join(tmp, os.path.basename(pick.key))
+            try:
+                gch.download("https://noaa-goes19.s3.amazonaws.com/" + pick.key, dest, pick.size)
+            except (RuntimeError, OSError) as exc:
+                self.skipTest(f"download failed: {exc}")
+            data = gch.read_netcdf(dest, "ACHA2KMC")
+            self.assertEqual(data["raw"].shape, (1500, 2500))
+            self.assertIsNotNone(data["dqf"])
+            _, res = gch.process_dataset(data, gch.DEFAULT_BBOX, product_key="ACHA2KMC")
+            self.assertEqual(res["dqf"]["valid_range"], [0, 3])
+            self.assertGreater(res["dqf"]["by_dqf_value_full_grid"]["1"]["with_value"], 0)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 

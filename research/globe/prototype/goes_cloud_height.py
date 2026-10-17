@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Crop a GOES ABI cloud-top height (ABI-L2-ACHAC, variable HT) or band 13 brightness temperature
-(ABI-L2-CMIPC C13, variable CMI) to a regular 0.02 degree lat/lon grid for a globe drape.
+"""Crop a GOES ABI cloud-top height (ABI-L2-ACHAC at 10 km or ABI-L2-ACHA2KMC at 2 km, variable HT) or
+band 13 brightness temperature (ABI-L2-CMIPC C13, variable CMI) to a regular 0.02 degree lat/lon grid
+for a globe drape.
 
 Research prototype under research/globe/prototype. Not part of the app and not a payload module.
 
@@ -41,10 +42,15 @@ than the native pixel along the tilt, and the drape shows native pixels as block
 globe drape, not for measurement.
 
 Validity policy. A value is "good" when it is not the file's fill, lies in the file's valid_range
-and its DQF is 0. A value with DQF 1 to 3 is "flagged". Flagged values are reported separately and
-are drawn in the PNG only with --include-flagged. Fill is "no retrieval". Anything else is out of
-range or has an invalid DQF. Missing data is never written as a height, so 0 in the PNG always
-means no data.
+and its DQF is in the product's good set (DQF 0 for every product here; PRODUCTS[...]["dqf_policy"]).
+A value whose DQF is in the file's valid_range but is not good is "flagged". Flagged values are
+reported separately and are drawn in the PNG only with --include-flagged. Fill is "no retrieval".
+Anything else is out of range or has an invalid DQF. Missing data is never written as a height, so
+0 in the PNG always means no data.
+DQF is per product. ACHAC carries a height only at DQF 0 (every 2026 scene checked), so its flagged
+count should be 0. ACHA2KMC also carries heights at DQF 1 and at some DQF 2 cells, so every run reports
+its "good" and "flagged with value" counts side by side, and dqf_policy_check says whether the observed
+pattern matches the product's documented rule. The check reports only; it does not change a class.
 
 Heights are satellite retrieval estimates of cloud top. They are not cloud base, not damage, not
 hail and not a probability.
@@ -76,11 +82,29 @@ SCHEMA = "goes-cloud-height/1"
 USER_AGENT = "roofingapp-globe-research/1 (goes_cloud_height.py)"
 BUCKETS = {"east": "noaa-goes19", "west": "noaa-goes18"}
 EXPECTED_PLATFORM = {"east": "G19", "west": "G18"}
+# Per-product settings. "grid" is the native grid (rows, columns, step in radians of scan angle).
+# "dqf_policy": "good" lists the DQF values that make a value good; "flagged_carry_value" is what the
+# product's files were observed to do (True: values exist at flagged DQF, False: they do not, None: no
+# rule recorded). The basis strings name the evidence. Every product here uses DQF 0 as good.
 PRODUCTS = {
     "ACHAC": {"bucket_prefix": "ABI-L2-ACHAC", "band": None, "variable": "HT",
-              "quantity": "cloud_top_height", "units": "m"},
+              "quantity": "cloud_top_height", "units": "m",
+              "grid": {"ny": 300, "nx": 500, "step_rad": 0.00028},
+              "dqf_policy": {"good": [0], "flagged_carry_value": False,
+                             "basis": "10 km: a height only at DQF 0 in every 2026 scene checked "
+                                      "(goes-aws.json, prototype-goes.json)"}},
+    "ACHA2KMC": {"bucket_prefix": "ABI-L2-ACHA2KMC", "band": None, "variable": "HT",
+                 "quantity": "cloud_top_height", "units": "m",
+                 "grid": {"ny": 1500, "nx": 2500, "step_rad": 0.000056},
+                 "dqf_policy": {"good": [0], "flagged_carry_value": True,
+                                "basis": "2 km: heights at DQF 1 (170,069 cells) and at 18,037 of 28,529 "
+                                         "DQF 2 cells, none at DQF 3 or 255; 01:41 UTC scene (goes-aws.json)"}},
     "CMIPC13": {"bucket_prefix": "ABI-L2-CMIPC", "band": "C13", "variable": "CMI",
-                "quantity": "brightness_temperature", "units": "K"},
+                "quantity": "brightness_temperature", "units": "K",
+                "grid": {"ny": 1500, "nx": 2500, "step_rad": 0.000056},
+                "dqf_policy": {"good": [0], "flagged_carry_value": None,
+                               "basis": "DQF 1 to 4 did not occur in the 2026 scenes checked "
+                                        "(prototype-goes.json); no rule recorded"}},
 }
 DEFAULT_BBOX = (-116.8, 43.6, -103.3, 49.75)     # lon_min, lat_min, lon_max, lat_max
 GRID_DEG = 0.02
@@ -106,6 +130,7 @@ REQUIRED_JSON_KEYS = [
     "stats", "height_reference", "height_reference_statements", "bytes_downloaded", "runtime_s",
     "timings_s", "latency_s", "note", "output", "limits", "include_flagged_in_png",
     "centre_check", "dqf_file_percent_attributes", "dqf_good_check", "nominal_satellite_subpoint_lon_deg",
+    "dqf_policy", "dqf_policy_check",
 ]
 
 
@@ -283,8 +308,11 @@ def resample_nearest(lat, lon, g: Geos, x, y):
 # Classification and processing
 # ----------------------------------------------------------------------------------------------
 
-def classify(raw, fill: int, vlo: int, vhi: int, dqf, dqf_fill: int, dqf_lo: int, dqf_hi: int):
-    """Per-pixel class code (uint8). The DQF argument may be None when the file has no DQF."""
+def classify(raw, fill: int, vlo: int, vhi: int, dqf, dqf_fill: int, dqf_lo: int, dqf_hi: int,
+             good_dqf=(0,)):
+    """Per-pixel class code (uint8). The DQF argument may be None when the file has no DQF. good_dqf is
+    the product's good set (PRODUCTS[...]["dqf_policy"]["good"]); a valid value with another DQF in the
+    file's valid_range is flagged."""
     raw = np.asarray(raw)
     is_fill = raw == fill
     in_range = (raw >= vlo) & (raw <= vhi)
@@ -295,7 +323,7 @@ def classify(raw, fill: int, vlo: int, vhi: int, dqf, dqf_fill: int, dqf_lo: int
         code[value_ok] = CODE_GOOD
         return code
     dqf = np.asarray(dqf)
-    dqf_good = dqf == 0
+    dqf_good = np.isin(dqf, np.asarray(good_dqf, dtype=dqf.dtype))
     dqf_in_range = (dqf >= dqf_lo) & (dqf <= dqf_hi) & (dqf != dqf_fill)
     code[value_ok] = CODE_DQF_INVALID
     code[value_ok & dqf_in_range & ~dqf_good] = CODE_FLAGGED
@@ -357,8 +385,9 @@ def process_dataset(data: dict, bbox, *, product_key: str, include_flagged: bool
     dqf = data.get("dqf")
     dqf_fill = int(data.get("dqf_fill", 255))
     dqf_lo, dqf_hi = (int(v) for v in data.get("dqf_valid_range", (0, 255)))
+    good_dqf = tuple(int(v) for v in cfg["dqf_policy"]["good"])
 
-    code = classify(raw, fill, vlo, vhi, dqf, dqf_fill, dqf_lo, dqf_hi)
+    code = classify(raw, fill, vlo, vhi, dqf, dqf_fill, dqf_lo, dqf_hi, good_dqf=good_dqf)
 
     # Native pixels in the bbox window. Lat/lon are computed here for every pixel in the window.
     i0, i1, j0, j1 = window_indices(bbox, x, y, g, pad=pad)
@@ -378,15 +407,19 @@ def process_dataset(data: dict, bbox, *, product_key: str, include_flagged: bool
     dqf_block = {"present": dqf is not None, "variable": "DQF" if dqf is not None else None}
     if dqf is not None:
         dq = np.asarray(dqf)
+        has_value = (raw >= vlo) & (raw <= vhi) & (raw != fill)
         in_rng_full = (dq >= dqf_lo) & (dq <= dqf_hi) & (dq != dqf_fill)
         values, counts = np.unique(dq, return_counts=True)
         dqf_block["fill"] = dqf_fill
         dqf_block["valid_range"] = [dqf_lo, dqf_hi]
+        dqf_block["good_set"] = list(good_dqf)
         dqf_block["value_counts_full_grid"] = {str(int(v)): int(c) for v, c in zip(values, counts)}
-        dqf_block["full_grid"] = _dqf_share(dq, in_rng_full, dqf_fill)
+        dqf_block["full_grid"] = _dqf_share(dq, in_rng_full, dqf_fill, good_dqf)
+        dqf_block["by_dqf_value_full_grid"] = _by_dqf_value(dq, has_value)
         dq_w = dq[j0:j1, i0:i1]
         in_rng_w = (dq_w >= dqf_lo) & (dq_w <= dqf_hi) & (dq_w != dqf_fill)
-        dqf_block["bbox_native"] = _dqf_share(dq_w[inside_w], in_rng_w[inside_w], dqf_fill)
+        dqf_block["bbox_native"] = _dqf_share(dq_w[inside_w], in_rng_w[inside_w], dqf_fill, good_dqf)
+        dqf_block["by_dqf_value_bbox_native"] = _by_dqf_value(dq_w[inside_w], has_value[j0:j1, i0:i1][inside_w])
 
     # Footprint at the bbox centre.
     lat_c = 0.5 * (lat_min + lat_max)
@@ -446,15 +479,46 @@ def process_dataset(data: dict, bbox, *, product_key: str, include_flagged: bool
     return png, result
 
 
-def _dqf_share(dq, in_range, dqf_fill: int) -> dict:
+def _dqf_share(dq, in_range, dqf_fill: int, good_dqf=(0,)) -> dict:
+    """DQF shares. "good_dqf0" counts the product's good set (DQF 0 for every product here)."""
     non_fill = int(np.count_nonzero(dq != dqf_fill))
-    good = int(np.count_nonzero(dq == 0))
-    flagged = int(np.count_nonzero(in_range & (dq != 0)))
+    good_mask = np.isin(dq, np.asarray(good_dqf, dtype=dq.dtype))
+    good = int(np.count_nonzero(good_mask))
+    flagged = int(np.count_nonzero(in_range & ~good_mask))
     invalid = int(dq.size) - non_fill
     return {"total": int(dq.size), "non_fill": non_fill, "good_dqf0": good, "flagged": flagged,
             "invalid_or_fill": invalid + int(np.count_nonzero((dq != dqf_fill) & ~in_range)),
             "good_pct_of_non_fill": _pct(good, non_fill),
             "flagged_pct_of_non_fill": _pct(flagged, non_fill)}
+
+
+def _by_dqf_value(dq, has_value) -> dict:
+    """For each DQF value present: how many cells, how many carry a valid value, how many do not.
+    This is the table that shows where a product's heights sit (for example ACHA2KMC at DQF 1 and 2)."""
+    out = {}
+    values, counts = np.unique(dq, return_counts=True)
+    for v, c in zip(values, counts):
+        with_value = int(np.count_nonzero(has_value & (dq == v)))
+        out[str(int(v))] = {"cells": int(c), "with_value": with_value, "without_value": int(c) - with_value}
+    return out
+
+
+def dqf_policy_check(cfg: dict, observed_flagged_with_value: int, synthetic: bool) -> dict:
+    """Compare the observed count of flagged values that carry a height (full grid) with the product's
+    documented rule. Reports only: the classes are not changed. A synthetic field gets no verdict,
+    because it is built to exercise the code, not to follow a NOAA rule."""
+    expected = cfg["dqf_policy"]["flagged_carry_value"]
+    check = {"expected_height_at_flagged_dqf": expected,
+             "observed_flagged_with_value_full_grid": int(observed_flagged_with_value), "matches": None}
+    if synthetic:
+        check["note"] = "synthetic field: no verdict against the NOAA rule"
+    elif expected is None:
+        check["note"] = "no DQF rule is recorded for this product"
+    else:
+        check["matches"] = bool((observed_flagged_with_value > 0) == expected)
+        check["note"] = ("heights at flagged DQF are the documented pattern for this product"
+                         if expected else "heights only at DQF 0 are the documented pattern for this product")
+    return check
 
 
 # ----------------------------------------------------------------------------------------------
@@ -909,12 +973,10 @@ def synthetic_dataset(product_key: str, satellite: str, bbox=DEFAULT_BBOX,
     Includes good, flagged (DQF 1), invalid-DQF (255), out-of-range and no-retrieval pixels so the
     classification and reporting paths are all exercised.
     """
+    cfg = PRODUCTS[product_key]
     lon0 = -75.0 if satellite == "east" else -137.0   # grid origins read from the real files
     g = Geos(lon0_deg=lon0, height_m=35786023.0, req_m=6378137.0, rpol_m=6356752.31414, sweep="x")
-    if product_key == "ACHAC":
-        nx, ny, step = nx or 500, ny or 300, 0.00028
-    else:
-        nx, ny, step = nx or 2500, ny or 1500, 0.000056
+    nx, ny, step = nx or cfg["grid"]["nx"], ny or cfg["grid"]["ny"], cfg["grid"]["step_rad"]
     lat_c = 0.5 * (bbox[1] + bbox[3])
     lon_c = 0.5 * (bbox[0] + bbox[2])
     xc, yc, _ = latlon_to_scan(lat_c, lon_c, g)
@@ -932,7 +994,9 @@ def synthetic_dataset(product_key: str, satellite: str, bbox=DEFAULT_BBOX,
     band = np.abs(lon + 112.0) < 0.12
     dqf[band] = 1
     dqf[(lat < 44.0) & (lon < -110.0)] = 255
-    if product_key == "ACHAC":
+    if cfg["dqf_policy"]["flagged_carry_value"]:
+        dqf[(lat > 47.0) & (lon > -109.5) & (lon < -108.0)] = 2   # DQF 2 with heights, as in ACHA2KMC
+    if cfg["quantity"] == "cloud_top_height":
         scale, offset, fill, vrange = 0.3052037, 0.0, 65535, (0, 65530)
         raw = np.clip(np.rint(height / scale), 0, 65530).astype(np.uint16)
         raw[no_ret] = 65535
@@ -1053,9 +1117,10 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
                    "age_at_check_s": round((checked_at - scan_end).total_seconds(), 1),
                    "upload_minus_scan_end_s": round((pick.last_modified - scan_end).total_seconds(), 1)}
 
-    reference = height_reference_statements(data["data_attrs"]) if args.product == "ACHAC" else []
+    is_height = cfg["quantity"] == "cloud_top_height"   # ACHAC and ACHA2KMC; not band 13
+    reference = height_reference_statements(data["data_attrs"]) if is_height else []
     std_name = data["data_attrs"].get("standard_name")
-    if args.product != "ACHAC":
+    if not is_height:
         href = "not applicable (brightness temperature)"
     elif std_name in CF_HEIGHT_REFERENCE:
         href = f"{std_name}: {CF_HEIGHT_REFERENCE[std_name]}; the file text does not restate the datum"
@@ -1161,7 +1226,10 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
         "runtime_s": None,
         "timings_s": timings,
         "latency_s": latency,
-        "note": NOTE_ACHA if args.product == "ACHAC" else NOTE_BT,
+        "note": NOTE_ACHA if is_height else NOTE_BT,
+        "dqf_policy": cfg["dqf_policy"],
+        "dqf_policy_check": dqf_policy_check(cfg, res["native_pixels_full_grid"]["flagged_with_value"],
+                                             bool(args.synthetic)),
         "output": {"png": os.path.basename(out_png), "json": os.path.basename(out_json),
                    "png_bytes": len(png_bytes),
                    "png_cells_with_value": res["png_cells_with_value"],
@@ -1194,12 +1262,14 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        description="Crop GOES ABI cloud-top height (ACHAC) or band 13 brightness temperature (CMIPC13) "
-                    "to a 0.02 degree grid as a 16-bit PNG with a JSON sidecar. Run with python -I.")
+        description="Crop GOES ABI cloud-top height (ACHAC at 10 km, ACHA2KMC at 2 km) or band 13 brightness "
+                    "temperature (CMIPC13) to a 0.02 degree grid as a 16-bit PNG with a JSON sidecar. "
+                    "Run with python -I.")
     p.add_argument("--satellite", choices=sorted(BUCKETS), default="east",
                    help="east = GOES-19 (noaa-goes19), west = GOES-18 (noaa-goes18)")
     p.add_argument("--product", choices=sorted(PRODUCTS), default="ACHAC",
-                   help="ACHAC = cloud-top height (HT, m); CMIPC13 = band 13 brightness temperature (CMI, K)")
+                   help="ACHAC = 10 km cloud-top height (HT, m); ACHA2KMC = 2 km cloud-top height (HT, m), "
+                        "heights also at flagged DQF; CMIPC13 = band 13 brightness temperature (CMI, K)")
     p.add_argument("--time", default="latest",
                    help="'latest', or YYYY-DDD-HH (UTC year, day of year, hour)")
     p.add_argument("--key", default=None, help="exact object key; overrides --time")

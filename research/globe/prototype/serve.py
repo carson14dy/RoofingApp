@@ -2,8 +2,8 @@
 """3D storm view prototype: local server (research only; not part of the app).
 
 Standard library only. The browser draws what this server returns. Every fetch, time check,
-freshness state, PNG check and alert geometry decision is made here, and the page's JavaScript
-(globe.js) only draws what it is given.
+freshness state, PNG check, alert geometry decision and each voxel's dBZ colour step is made here, and the
+page's JavaScript (globe.js) only draws what it is given.
 
     python serve.py [--port 0] [--offline] [--volume PATH]
 
@@ -60,9 +60,23 @@ LOCAL_ZONE = "America/Denver"  # Montana
 
 MONTANA = {"west": -116.8, "south": 43.6, "east": -103.3, "north": 49.75}
 
-# Freshness limits. PROPOSALS for this prototype, not D12 (D12: radar 15 min, alerts 10 min; D12 lists
-# no MRMS limit). The MRMS 10 min is the figure README section 3 gives; it is a proposal here too.
-LIMIT_MIN = {"goes": 15, "radar": 15, "alerts": 10, "mrms": 10}
+# Freshness limits. PROPOSALS for this prototype, not D12. D12 (docs/DECISIONS.md) gives radar 15 min and
+# alerts 10 min, and no GOES or MRMS limit. Each limit names the latency it is derived from, and the layer
+# list and the panel say so. GOES: stale at 60 min is the top of the 28 to 50 min measured behind real time
+# (validation-evidence/prototype-globe.json) plus 10 min; the 180 min "unavailable" line is a proposal with no
+# measured basis of its own. gibs.json also saw some frames 76 to 96 min after their label. Until such a frame
+# arrives the probe shows an older frame with its own age, so the panel never shows the late one as current.
+FRESHNESS = {
+    "goes": {"stale_min": 60, "unavailable_min": 180,
+             "basis": "28 to 50 min behind real time, GIBS (validation-evidence/prototype-globe.json)"},
+    "radar": {"stale_min": 15, "unavailable_min": None,
+              "basis": "8.2 min from valid time to retrieval at the check (prototype-globe.json); D7 sets 15 min"},
+    "alerts": {"stale_min": 10, "unavailable_min": None,
+               "basis": "none in the evidence (no alert-feed latency study); D12 sets 10 min"},
+    "mrms": {"stale_min": 10, "unavailable_min": None,
+             "basis": "29 to 120 s from file time to publication, 2026-10-16 (validation-evidence/mrms.json)"},
+}
+LIMIT_MIN = {key: spec["stale_min"] for key, spec in FRESHNESS.items()}
 
 # GIBS serves GOES frames every 10 minutes, about 30-40 minutes behind real time
 # (validation-evidence/gibs.json). The probe walks back from now until the Montana tile is imagery.
@@ -210,20 +224,42 @@ ALERTS_LEGEND = ("Official NWS alerts. An outline is the alert's own polygon, or
                  "warnings, not damage reports.")
 PLACES_LEGEND = ("Prototype places from the research brief (five points). They are not the app's job or "
                  "property list.")
-LIMITS_NOTE = ("Freshness limits (GOES 15 min, radar 15 min, alerts 10 min, 3D storms 10 min) are proposals "
-               "for this prototype, not D12: D12 lists radar 15 min and alerts 10 min, and no MRMS limit. "
-               "Imagery daily is also a proposal; no layer uses it, because a base map carries no valid time.")
+LIMITS_NOTE = ("Freshness limits are proposals for this prototype, not D12. Each comes from the latency measured "
+               "in validation-evidence: GOES stale after 60 min and unavailable after 180 min (GIBS ran 28 to 50 min "
+               "behind); NWS radar 15 min (D7); alerts 10 min (D12, no alert-feed latency study); 3D storms 10 min "
+               "when live (MRMS 29 to 120 s). The earlier 15-min GOES figure, which README section 3 attributes to "
+               "D12, is replaced. Imagery daily is also a proposal; no layer uses it, because a base map carries no "
+               "valid time.")
 
 
 # ----------------------------------------------------------------------------
 # Time and state logic (pure: no network, the clock only through `now`)
 # ----------------------------------------------------------------------------
-def layer_state(valid_time, now, limit_min, *, offline=False, error=None, had_good=False):
+def limit_text(key):
+    """The layer list's words for one feed's limit. It always says the limit is a proposal from measured
+    latency, and gives the latency it was derived from (the figure comes from FRESHNESS, not from the page)."""
+    spec = FRESHNESS[key]
+    if spec["unavailable_min"] is not None:
+        head = f"stale after {spec['stale_min']} min, unavailable after {spec['unavailable_min']} min"
+    else:
+        head = f"stale after {spec['stale_min']} min"
+    return f"{head}: limit (proposal, from measured latency). Measured latency used: {spec['basis']}."
+
+
+def _latency_tail(basis, latency_min):
+    """' Measured latency used: <basis>; <n> min at this refresh.' (empty when there is nothing to say)."""
+    parts = [p for p in (basis, None if latency_min is None else f"{latency_min:.1f} min at this refresh") if p]
+    return (" Measured latency used: " + "; ".join(parts) + ".") if parts else ""
+
+
+def layer_state(valid_time, now, limit_min, *, offline=False, error=None, had_good=False,
+                unavailable_min=None, basis="", latency_min=None):
     """Return (state, age_min, text). States: live | stale | unavailable | off.
 
-    off: serve.py is offline. unavailable: no valid time, or a failed refresh with nothing good to show.
-    stale: the newest data is older than the limit, or a refresh failed and the last good data is shown.
-    live: the newest data is within the limit. A failed refresh never shows as live.
+    off: serve.py is offline. unavailable: no valid time, a failed refresh with nothing good to show, or data
+    older than unavailable_min (GOES: 180 min). stale: older than limit_min, or a refresh failed and the last
+    good data is shown. live: within limit_min. A failed refresh never shows as live. Every timed text says
+    the limit is a proposal from measured latency, and gives the basis and this refresh's latency.
     """
     if offline:
         return "off", None, OFFLINE_TEXT
@@ -232,14 +268,22 @@ def layer_state(valid_time, now, limit_min, *, offline=False, error=None, had_go
     age_min = (now - valid_time).total_seconds() / 60.0
     if age_min < -2.0:
         return "unavailable", age_min, "Data unavailable: the source's valid time is in the future"
+    tail = _latency_tail(basis, None if error else latency_min)
+    if unavailable_min is not None and age_min > unavailable_min:
+        failed = f" Last refresh failed: {error}." if error else ""
+        return ("unavailable", age_min,
+                f"Data unavailable: the newest data is {age_min:.0f} min old, over the {unavailable_min}-min "
+                f"limit (proposal, from measured latency).{tail}{failed}")
     if error:
         if had_good:
             return ("stale", age_min,
                     f"Last refresh failed ({error}); showing the last good data, {age_min:.0f} min old")
         return "unavailable", age_min, f"Data unavailable: {error}"
     if age_min <= limit_min:
-        return "live", age_min, f"{age_min:.0f} min old, within the {limit_min}-min limit (proposal)"
-    return "stale", age_min, f"{age_min:.0f} min old, over the {limit_min}-min limit (proposal)"
+        return ("live", age_min,
+                f"{age_min:.0f} min old, within the {limit_min}-min limit (proposal, from measured latency).{tail}")
+    return ("stale", age_min,
+            f"{age_min:.0f} min old, over the {limit_min}-min limit (proposal, from measured latency).{tail}")
 
 
 # ----------------------------------------------------------------------------
@@ -733,6 +777,40 @@ VOLUME_LEGEND = ("Radar echo strength (dBZ). Not hail size. -99/-999 cells are n
 VOLUME_DEFAULT = os.path.join(HERE, "fixtures", "volume-synthetic.json")
 VOLUME_EXAGGERATIONS = [1, 3, 5]
 VOLUME_MAX_BYTES = 64 * 1024 * 1024
+# dBZ colour steps, classified here (the page only maps a step index to its colour and label). The colours are
+# the NWS reflectivity colours as MetPy 1.7.1 encodes them (colortable_files/NWSReflectivity.tbl, checked
+# 2026-10-17): a third-party encoding, not an NWS-published file. dBZ is radar echo strength, not hail size.
+# Steps are 5 dBZ wide from 5 dBZ. The last step (70-75 dBZ) also holds every value above 75 dBZ. The table's
+# 15th entry (black) is not used. A value below 5 dBZ has step -1 and is not drawn.
+DBZ_STEP_LOW = 5
+DBZ_STEP_WIDTH = 5
+DBZ_STEP_COLOURS = ["#00ECEC", "#01A0F6", "#0000F6", "#00FF00", "#00C800", "#009000", "#FFFF00",
+                    "#E7C000", "#FF9000", "#FF0000", "#D60000", "#C00000", "#FF00FF", "#9955C9"]
+
+
+def _dbz_steps():
+    steps = []
+    last = len(DBZ_STEP_COLOURS) - 1
+    for k, colour in enumerate(DBZ_STEP_COLOURS):
+        lo = DBZ_STEP_LOW + k * DBZ_STEP_WIDTH
+        hi = lo + DBZ_STEP_WIDTH
+        steps.append({"index": k, "lo_dbz": lo, "hi_dbz": hi, "colour": colour, "open_top": k == last,
+                      "label": f"{lo}–{hi}{'+' if k == last else ''} dBZ"})
+    return steps
+
+
+DBZ_STEPS = _dbz_steps()
+DBZ_STEPS_NOTE = ("steps[k] covers lo_dbz up to hi_dbz; the last step also holds every value above 75 dBZ. "
+                  "A voxel's step is the index here, or -1 below 5 dBZ (not drawn).")
+
+
+def dbz_step_index(dbz):
+    """The colour step for one dBZ value: floor of the offset from 5 dBZ in 5 dBZ steps, capped at the last
+    step; -1 below 5 dBZ. This is the arithmetic the page used before it moved here."""
+    if dbz < DBZ_STEP_LOW:
+        return -1
+    return min(math.floor((dbz - DBZ_STEP_LOW) / DBZ_STEP_WIDTH), len(DBZ_STEPS) - 1)
+
 SYNTHETIC_LABEL = "synthetic: not weather"
 ARCHIVED_LABEL = "Archived event: recorded MRMS volume, not live"
 RECORDED_LABEL = "Recorded MRMS volume: a file, not a live feed"
@@ -834,7 +912,8 @@ def check_volume(doc):
         "synthetic": doc.get("label") == SYNTHETIC_LABEL or doc.get("source") == "synthetic",
         "valid": newest, "spread_s": spread_s, "retrieved": parse_time(doc.get("retrieved_time_utc")),
         "complete": doc.get("complete") is not False and not missing, "missing_levels_km": missing,
-        "levels_km": levels, "threshold_dbz": threshold, "voxels": voxels, "voxel_count": len(voxels),
+        "levels_km": levels, "threshold_dbz": threshold, "voxel_count": len(voxels),
+        "voxels": [[i, j, k, dbz, dbz_step_index(dbz)] for i, j, k, dbz in voxels],
         "lons": lons, "lats": lats,
         "heights_m": {str(f): [round(km * 1000.0 * f, 1) for km in levels] for f in VOLUME_EXAGGERATIONS},
         "view": view_for(lons, lats),
@@ -885,10 +964,10 @@ def volume_state(volume, now):
         return ("unavailable", None,
                 "Data unavailable as a radar observation: this is a synthetic test field, not weather. "
                 "Its valid time is a placeholder.", SYNTHETIC_LABEL)
-    state, age, text = layer_state(info["valid"], now, LIMIT_MIN["mrms"])
+    state, age, text = layer_state(info["valid"], now, LIMIT_MIN["mrms"], basis=FRESHNESS["mrms"]["basis"])
     if state == "stale":
-        text = (f"Recorded volume, {age_text(age)} old: over the {LIMIT_MIN['mrms']}-min limit (proposal). "
-                "Not live.")
+        text = (f"Recorded volume, {age_text(age)} old: over the {LIMIT_MIN['mrms']}-min limit (proposal, from "
+                "measured latency). Not live.")
         return state, age, text, ARCHIVED_LABEL
     return state, age, text, RECORDED_LABEL
 
@@ -908,10 +987,12 @@ def volume_layer(svc, now):
         "id": VOLUME_ID, "name": VOLUME_NAME, "kind": "radar estimate", "default_on": False,
         "label": label, "state": state, "state_text": text, "legend": VOLUME_LEGEND,
         "file": volume["file"], "source": None,
-        "freshness_limit_min": LIMIT_MIN["mrms"], "age_min": round(age, 1) if age is not None else None,
+        "freshness_limit_min": LIMIT_MIN["mrms"], "limit_text": limit_text("mrms"),
+        "age_min": round(age, 1) if age is not None else None,
         "valid_time_utc": None, "valid_text": None, "retrieved_time_utc": None, "retrieved_text": None,
         "threshold_dbz": None, "voxel_count": 0, "voxel_text": None, "levels_km": [],
         "exaggerations": VOLUME_EXAGGERATIONS, "view": None, "draw_url": None,
+        "steps": DBZ_STEPS, "steps_note": DBZ_STEPS_NOTE,
         "detail_url": "/api/volume.json", "content_text": None,
     }
     if not volume["ok"]:
@@ -960,7 +1041,9 @@ def volume_doc(svc):
         "retrieved_time_utc": layer["retrieved_time_utc"], "threshold_dbz": layer["threshold_dbz"],
         "voxel_count": layer["voxel_count"], "voxel_text": layer["voxel_text"], "levels_km": layer["levels_km"],
         "exaggerations": VOLUME_EXAGGERATIONS, "view": layer["view"], "content_text": layer["content_text"],
-        "voxel_format": ("voxels: [i, j, k, dbz]. lons[i] and lats[j] are cell-centre coordinates; "
+        "steps": DBZ_STEPS, "steps_note": DBZ_STEPS_NOTE,
+        "voxel_format": ("voxels: [i, j, k, dbz, step]. lons[i] and lats[j] are cell-centre coordinates; "
+                         "step indexes steps (the colour and label, -1 below 5 dBZ); "
                          "heights_m[exaggeration][k] is the level height in metres (the file's heightAboveSea, "
                          "used as height above the ellipsoid; a geoid difference of tens of metres is not shown)."),
         "lons": info["lons"] if info else [], "lats": info["lats"] if info else [],
@@ -1013,7 +1096,8 @@ def goes_layer(spec, res, now, offline):
         "id": spec["id"], "name": spec["name"], "kind": "observation", "default_on": spec["default_on"],
         "source": {"name": f"NASA GIBS: {spec['layer']}", "url": GIBS_CAPS},
         "legend": GOES_LEGEND[spec["id"]], "max_zoom": spec["max_zoom"],
-        "freshness_limit_min": LIMIT_MIN["goes"], "age_min": None, "valid_time_utc": None,
+        "freshness_limit_min": LIMIT_MIN["goes"], "unavailable_after_min": FRESHNESS["goes"]["unavailable_min"],
+        "limit_text": limit_text("goes"), "age_min": None, "valid_time_utc": None,
         "valid_text": None, "retrieved_time_utc": None, "retrieved_text": None, "tile_template": None,
     }
     if offline or res is None:
@@ -1021,9 +1105,11 @@ def goes_layer(spec, res, now, offline):
         return layer
     value, error, ok_at, steps = res
     t = value["t"] if value else None
-    state, age, text = layer_state(t, now, LIMIT_MIN["goes"], error=error, had_good=value is not None)
     # Latency: how far behind real time the newest frame was when the probe found it (GIBS says ~40 min).
     latency = round((ok_at - t).total_seconds() / 60.0, 1) if (t and ok_at) else None
+    state, age, text = layer_state(t, now, LIMIT_MIN["goes"], error=error, had_good=value is not None,
+                                   unavailable_min=FRESHNESS["goes"]["unavailable_min"],
+                                   basis=FRESHNESS["goes"]["basis"], latency_min=latency)
     layer.update(
         state=state, state_text=text, age_min=round(age, 1) if age is not None else None,
         valid_time_utc=iso_z(t) if t else None, valid_text=clock_text(t) if t else None,
@@ -1041,6 +1127,7 @@ def radar_layer(res, now, offline):
         "id": "nws_radar", "name": "NWS base reflectivity (radar)", "kind": "radar estimate",
         "default_on": True, "source": {"name": "NOAA / NWS radar base reflectivity (MapServer)", "url": RADAR_BASE},
         "legend": RADAR_LEGEND, "freshness_limit_min": LIMIT_MIN["radar"], "detail_url": "/api/radar.json",
+        "limit_text": limit_text("radar"), "unavailable_after_min": None,
         "image_url": None, "bounds": bounds_list(), "age_min": None, "valid_time_utc": None,
         "valid_text": None, "retrieved_time_utc": None, "retrieved_text": None, "content": None,
         "content_text": None, "app_newest_valid_time_utc": None,
@@ -1050,7 +1137,9 @@ def radar_layer(res, now, offline):
         return layer
     value, error, ok_at, _ = res
     valid = value["valid"] if value else None
-    state, age, text = layer_state(valid, now, LIMIT_MIN["radar"], error=error, had_good=value is not None)
+    lag = round((ok_at - valid).total_seconds() / 60.0, 1) if (value and valid and ok_at) else None
+    state, age, text = layer_state(valid, now, LIMIT_MIN["radar"], error=error, had_good=value is not None,
+                                   basis=FRESHNESS["radar"]["basis"], latency_min=lag)
     content = value["content"] if value else None
     echo = content["echo_share"] if content else None
     layer.update(
@@ -1072,6 +1161,7 @@ def alerts_layer(res, now, offline):
         "id": "nws_alerts", "name": "NWS official alerts, Montana", "kind": "official alert",
         "default_on": True, "source": {"name": "National Weather Service, active alerts (area=MT)", "url": NWS_ALERTS},
         "legend": ALERTS_LEGEND, "freshness_limit_min": LIMIT_MIN["alerts"], "features_url": "/api/alerts.json",
+        "limit_text": limit_text("alerts"), "unavailable_after_min": None,
         "age_min": None, "valid_time_utc": None, "valid_text": None, "retrieved_time_utc": None,
         "retrieved_text": None, "counts": {"polygon": 0, "zone": 0, "none": 0}, "items": [],
     }
@@ -1080,7 +1170,10 @@ def alerts_layer(res, now, offline):
         return layer
     value, error, ok_at, _ = res
     valid = (value.get("updated") or ok_at) if value else None
-    state, age, text = layer_state(valid, now, LIMIT_MIN["alerts"], error=error, had_good=value is not None)
+    lag = (round((ok_at - value["updated"]).total_seconds() / 60.0, 1)
+           if (value and value.get("updated") and ok_at) else None)
+    state, age, text = layer_state(valid, now, LIMIT_MIN["alerts"], error=error, had_good=value is not None,
+                                   basis=FRESHNESS["alerts"]["basis"], latency_min=lag)
     features = value["features"] if value else []
     layer.update(
         state=state, state_text=text, age_min=round(age, 1) if age is not None else None,
@@ -1102,7 +1195,7 @@ def places_layer(svc):
         "source": {"name": "fixtures/places.json (coordinates from the research brief)", "url": None},
         "legend": PLACES_LEGEND, "state": "live",
         "state_text": "Prototype fixture: five points from the research brief. Not the app's places.",
-        "freshness_limit_min": None, "age_min": None, "valid_time_utc": None,
+        "freshness_limit_min": None, "limit_text": None, "age_min": None, "valid_time_utc": None,
         "valid_text": "No valid time (fixture)", "retrieved_time_utc": iso_z(svc.started),
         "retrieved_text": clock_text(svc.started), "features_url": "/api/places.json",
         "items": [{"name": p["name"], "lat": p["lat"], "lon": p["lon"]} for p in svc.places],
@@ -1114,7 +1207,7 @@ def base_layer(spec):
         "id": spec["id"], "name": spec["name"], "kind": "base map", "default_on": spec["default_on"],
         "state": "live", "state_text": "Base map: not timed. The browser loads these tiles directly from the provider.",
         "source": spec["source"], "legend": spec["legend"], "tile_template": spec["tile_template"],
-        "max_zoom": spec["max_zoom"], "freshness_limit_min": None, "age_min": None,
+        "max_zoom": spec["max_zoom"], "freshness_limit_min": None, "limit_text": None, "age_min": None,
         "valid_time_utc": None, "valid_text": "No valid time (base map)",
         "retrieved_time_utc": None, "retrieved_text": None,
     }

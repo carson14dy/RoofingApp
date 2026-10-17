@@ -280,6 +280,16 @@ class GlobeBrowserTests(unittest.TestCase):
             states = page.evaluate("() => Array.from(document.querySelectorAll('#layer-list .layer')).map("
                                    "l => [l.dataset.layer, l.querySelector('.state').textContent])")
             self.results["panel_states"] = states
+            # The Limit row shows Python's words: timed layers say so, untimed layers say they are not timed.
+            limits = page.evaluate("() => Array.from(document.querySelectorAll('#layer-list .layer')).map((l) => {"
+                                   " const dt = Array.from(l.querySelectorAll('dt')).find((d) => d.textContent === 'Limit');"
+                                   " return [l.dataset.layer, dt ? dt.nextElementSibling.textContent : null]; })")
+            self.results["panel_limit_rows"] = limits
+            for layer_id, text in limits:
+                if layer_id in UNTIMED_LAYERS:
+                    self.assertEqual(text, "none: not timed", layer_id)
+                else:
+                    self.assertIn(LIMIT_PHRASE, text, f"the {layer_id} Limit row does not say it is a proposal")
 
             hover = page.evaluate("""() => {
               const v = window.globeViewer;
@@ -460,9 +470,13 @@ SYNTH_LABEL = "synthetic: not weather"
 ARCHIVED_LABEL = "Archived event: recorded MRMS volume, not live"
 VOLUME_LEGEND = ("Radar echo strength (dBZ). Not hail size. -99/-999 cells are no radar data; "
                  "no echo is not clear.")
-# The 14 NWS reflectivity colours, 5-10 dBZ up to 70-75 dBZ (globe.js section 8; MetPy 1.7.1 table).
+# The 14 NWS reflectivity colours, 5-10 dBZ up to 70-75 dBZ (serve.py DBZ_STEPS; MetPy 1.7.1 table). Kept here
+# as an independent copy, so the swatches are checked against the table, not against themselves.
 NWS_STEP_HEX = ["#00ECEC", "#01A0F6", "#0000F6", "#00FF00", "#00C800", "#009000", "#FFFF00",
                 "#E7C000", "#FF9000", "#FF0000", "#D60000", "#C00000", "#FF00FF", "#9955C9"]
+NWS_STEP_LABELS = [f"{lo}–{lo + 5}{'+' if lo == 70 else ''} dBZ" for lo in range(5, 71, 5)]
+UNTIMED_LAYERS = {"places", "usgs_imagery", "bluemarble"}
+LIMIT_PHRASE = "limit (proposal, from measured latency)"
 # Turning the storms on must change at least this share of canvas pixels (luma difference of 17 or more).
 VOLUME_MIN_CHANGED = 0.002
 VOLUME_ROW_JS = """() => {
@@ -476,6 +490,8 @@ VOLUME_ROW_JS = """() => {
 }"""
 SWATCH_JS = ("() => Array.from(document.querySelectorAll('[data-layer=mrms_volume] .swatch'))"
              ".map((s) => getComputedStyle(s).backgroundColor)")
+SWATCH_LABEL_JS = ("() => Array.from(document.querySelectorAll('[data-layer=mrms_volume] .dbz-step'))"
+                   ".map((s) => s.textContent.trim())")
 
 
 def load_fixture(name):
@@ -687,6 +703,9 @@ class SyntheticVolumeBrowserTests(GlobeVolumeBrowserBase):
             swatches = page.evaluate(SWATCH_JS)
             self.assertEqual(swatches, [rgb_css(h) for h in NWS_STEP_HEX], "the dBZ swatches are not the NWS steps")
             self.results["swatches_match_nws_steps"] = True
+            labels = page.evaluate(SWATCH_LABEL_JS)
+            self.assertEqual(labels, NWS_STEP_LABELS, "the dBZ swatch labels are not the Python step labels")
+            self.results["swatch_labels_match_python_steps"] = True
             self.assertEqual([e for e in errors if "pageerror" in e], [], "the page raised an error")
             browser.close()
         print("GLOBE_VOLUME_SYNTH_RESULT=" + json.dumps(self.results, sort_keys=True))

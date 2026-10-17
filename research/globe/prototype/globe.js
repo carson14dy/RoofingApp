@@ -14,7 +14,8 @@
  *   6. Failure handling: the 3D view can fail while the panel keeps working
  *   7. Status for tests: window.globeStatus, window.globeViewer and window.globeData
  *   8. 3D storms: MRMS voxels as Cesium points, with exaggeration, zoom and a dBZ legend. Browser-only:
- *      WebGL points, camera distance (point size) and the buttons. Python gives the positions and the state.
+ *      WebGL points, camera distance (point size) and the buttons. Python gives the positions, the state, and
+ *      each voxel's colour step with its label and colour.
  */
 (function () {
   "use strict";
@@ -110,7 +111,7 @@
       ["Source", sourceNode],
       ["Valid", layer.valid_text || "No valid time"],
       ["Retrieved", layer.retrieved_text || "not applicable"],
-      ["Limit", layer.freshness_limit_min ? layer.freshness_limit_min + " min (proposal)" : "none: not timed"]
+      ["Limit", layer.limit_text || "none: not timed"]
     ]));
     if (layer.content_text) li.append(el("p", "note-line", layer.content_text));
     if (layer.tile_template) {
@@ -135,7 +136,7 @@
     }
     if (layer.draw_url) li.append(volumeControls(layer));  // 3D storms only: section 8
     li.append(el("p", "legend", layer.legend));
-    if (layer.draw_url) li.append(dbzSwatches());
+    if (layer.draw_url) li.append(dbzSwatches(layer.steps || []));
     return li;
   }
 
@@ -289,25 +290,11 @@
   // ---- 8. 3D storms (MRMS reflectivity voxels) ----------------------------------------------
   // Why in the browser: each voxel is one WebGL point (a Cesium PointPrimitive). The point size that follows
   // the camera distance, the exaggeration buttons, the zoom button and the toggle are browser events and
-  // draw calls. Python (serve.py) decides which voxels exist, their dBZ values, each column's longitude,
-  // each row's latitude and the heights for each exaggeration. This section only looks those up. It computes
-  // no geometry of its own, and it never adds a point to the places layer.
-  //
-  // dBZ colour steps: the NWS reflectivity colours as MetPy 1.7.1 encodes them (colortable_files/
-  // NWSReflectivity.tbl, checked 2026-10-17). That is a third-party encoding, not an NWS-published file.
-  // dBZ is radar echo strength, not hail size.
-  //   5-10 #00ECEC   10-15 #01A0F6   15-20 #0000F6   20-25 #00FF00   25-30 #00C800   30-35 #009000
-  //   35-40 #FFFF00  40-45 #E7C000   45-50 #FF9000   50-55 #FF0000   55-60 #D60000   60-65 #C00000
-  //   65-70 #FF00FF  70-75 #9955C9
-  //   75 dBZ and above uses the 70-75 colour. The table's 15th entry (black) is not used.
-  //   Below 5 dBZ nothing is drawn.
-  const DBZ_STEPS = [
-    { lo: 5, hex: "#00ECEC" }, { lo: 10, hex: "#01A0F6" }, { lo: 15, hex: "#0000F6" },
-    { lo: 20, hex: "#00FF00" }, { lo: 25, hex: "#00C800" }, { lo: 30, hex: "#009000" },
-    { lo: 35, hex: "#FFFF00" }, { lo: 40, hex: "#E7C000" }, { lo: 45, hex: "#FF9000" },
-    { lo: 50, hex: "#FF0000" }, { lo: 55, hex: "#D60000" }, { lo: 60, hex: "#C00000" },
-    { lo: 65, hex: "#FF00FF" }, { lo: 70, hex: "#9955C9" }
-  ];
+  // draw calls. Python (serve.py) decides which voxels exist, their dBZ values, each voxel's colour step
+  // (dbz_step_index over the NWS colour table DBZ_STEPS), each column's longitude, each row's latitude and the
+  // heights for each exaggeration. This section only looks those up and maps a step index to a Cesium colour.
+  // It computes no geometry or step of its own, and it never adds a point to the places layer. The colour
+  // object is a Cesium Color, which exists only in the page; the colours and labels themselves are Python's.
   const VOLUME_ID = "mrms_volume";
   // Point size: 6 px at the view's own distance. Cesium's NearFarScalar scales it with the camera distance:
   // 1.5 times when the camera is within half the view radius, 0.6 times beyond 20 view radii. The radius is
@@ -319,13 +306,6 @@
     doc: null, collection: null, factor: 1, visible: false, drawn: 0, skippedBelowFive: 0,
     buildMs: null, firstFrameMs: null, builds: 0, zoomClicks: 0, error: null
   };
-
-  // The index into DBZ_STEPS for a dBZ value, or -1 below the lowest step. Arithmetic on Python's value.
-  function dbzStepIndex(dbz) {
-    if (dbz < DBZ_STEPS[0].lo) return -1;
-    const width = DBZ_STEPS[1].lo - DBZ_STEPS[0].lo;
-    return Math.min(Math.floor((dbz - DBZ_STEPS[0].lo) / width), DBZ_STEPS.length - 1);
-  }
 
   // 3931 -> "3,931". Written out so the text is the same in every browser locale.
   function countText(n) {
@@ -394,12 +374,11 @@
     const heights = doc.heights_m[String(volumeState.factor)];
     const radius = doc.view.radius_m;
     const scale = new Cesium.NearFarScalar(radius * 0.5, NEAR_SCALE, radius * 20, FAR_SCALE);
-    const colours = DBZ_STEPS.map((step) => Cesium.Color.fromCssColorString(step.hex).withAlpha(0.9));
+    const colours = doc.steps.map((step) => Cesium.Color.fromCssColorString(step.colour).withAlpha(0.9));
     const points = new Cesium.PointPrimitiveCollection();
     let drawn = 0;
     let skipped = 0;
-    for (const [i, j, k, dbz] of doc.voxels) {
-      const step = dbzStepIndex(dbz);
+    for (const [i, j, k, , step] of doc.voxels) {  // step: Python's index into doc.steps; -1 below 5 dBZ
       if (step < 0) {
         skipped += 1;
         continue;
@@ -478,18 +457,17 @@
     return wrap;
   }
 
-  // The dBZ colour steps as swatches. DOM only; the layer's own legend text is a separate element.
-  function dbzSwatches() {
+  // The dBZ colour steps as swatches: each colour and label is Python's (the layer row's steps). DOM only;
+  // the layer's own legend text is a separate element.
+  function dbzSwatches(steps) {
     const wrap = el("div", "dbz-steps");
-    DBZ_STEPS.forEach((step, k) => {
-      const last = k === DBZ_STEPS.length - 1;
-      const top = last ? step.lo + 5 : DBZ_STEPS[k + 1].lo;
+    for (const step of steps) {
       const item = el("span", "dbz-step");
       const swatch = el("span", "swatch");
-      swatch.style.background = step.hex;
-      item.append(swatch, el("span", null, step.lo + "–" + top + (last ? "+" : "") + " dBZ"));
+      swatch.style.background = step.colour;
+      item.append(swatch, el("span", null, step.label));
       wrap.append(item);
-    });
+    }
     return wrap;
   }
 

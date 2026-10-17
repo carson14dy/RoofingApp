@@ -138,6 +138,107 @@ class LayerStateTests(unittest.TestCase):
         state, _, _ = serve.layer_state(NOW + timedelta(minutes=10), NOW, 15)
         self.assertEqual(state, "unavailable")
 
+    def test_timed_text_says_the_limit_is_a_proposal_from_measured_latency(self):
+        for valid, want in ((NOW - timedelta(minutes=5), "live"), (NOW - timedelta(minutes=42), "stale")):
+            state, _, text = serve.layer_state(valid, NOW, 15, basis="8.2 min (prototype-globe.json)")
+            self.assertEqual(state, want)
+            self.assertIn("limit (proposal, from measured latency)", text)
+            self.assertIn("Measured latency used: 8.2 min (prototype-globe.json).", text)
+
+    def test_goes_is_live_inside_60_stale_past_it_and_unavailable_past_180(self):
+        kw = {"unavailable_min": 180, "basis": "28 to 50 min behind real time"}
+        state, age, text = serve.layer_state(NOW - timedelta(minutes=42), NOW, 60, **kw)
+        self.assertEqual((state, round(age)), ("live", 42))
+        self.assertIn("within the 60-min limit (proposal, from measured latency)", text)
+        state, _, text = serve.layer_state(NOW - timedelta(minutes=60), NOW, 60, **kw)
+        self.assertEqual(state, "live")                      # exactly at the limit
+        state, _, text = serve.layer_state(NOW - timedelta(minutes=75), NOW, 60, **kw)
+        self.assertEqual(state, "stale")
+        self.assertIn("over the 60-min limit", text)
+        state, _, _ = serve.layer_state(NOW - timedelta(minutes=180), NOW, 60, **kw)
+        self.assertEqual(state, "stale")                     # exactly at the unavailable line: still stale
+        state, _, text = serve.layer_state(NOW - timedelta(minutes=181), NOW, 60, **kw)
+        self.assertEqual(state, "unavailable")
+        self.assertIn("over the 180-min limit (proposal, from measured latency)", text)
+
+    def test_a_failed_refresh_past_the_unavailable_line_is_unavailable_and_says_why(self):
+        state, _, text = serve.layer_state(NOW - timedelta(minutes=200), NOW, 60, error="HTTP 500 from GIBS",
+                                           had_good=True, unavailable_min=180)
+        self.assertEqual(state, "unavailable")
+        self.assertIn("HTTP 500 from GIBS", text)
+
+    def test_this_refreshes_latency_is_shown_and_not_shown_after_a_failure(self):
+        _, _, text = serve.layer_state(NOW - timedelta(minutes=42), NOW, 60, basis="x", latency_min=42.3)
+        self.assertIn("Measured latency used: x; 42.3 min at this refresh.", text)
+        _, _, text = serve.layer_state(NOW - timedelta(minutes=42), NOW, 60, basis="x", latency_min=42.3,
+                                       error="timeout", had_good=True)
+        self.assertNotIn("at this refresh", text)
+
+
+class FreshnessLimitTests(unittest.TestCase):
+    """The proposed limits, their wording and their place in the layer list (offline; no network)."""
+
+    def test_the_proposed_limits_are_the_ones_derived_from_measured_latency(self):
+        self.assertEqual(serve.LIMIT_MIN, {"goes": 60, "radar": 15, "alerts": 10, "mrms": 10})
+        self.assertEqual(serve.FRESHNESS["goes"]["unavailable_min"], 180)
+        for key in ("radar", "alerts", "mrms"):
+            self.assertIsNone(serve.FRESHNESS[key]["unavailable_min"], key)
+
+    def test_limit_text_names_the_proposal_and_the_measured_basis(self):
+        for key in ("goes", "radar", "alerts", "mrms"):
+            text = serve.limit_text(key)
+            self.assertIn("limit (proposal, from measured latency)", text, key)
+            self.assertIn("Measured latency used:", text, key)
+        self.assertIn("stale after 60 min, unavailable after 180 min", serve.limit_text("goes"))
+        self.assertIn("28 to 50 min", serve.limit_text("goes"))
+        self.assertIn("8.2 min", serve.limit_text("radar"))
+        self.assertIn("D12", serve.limit_text("alerts"))
+        self.assertIn("29 to 120 s", serve.limit_text("mrms"))
+
+    def test_every_timed_layer_in_the_list_carries_the_limit_text(self):
+        doc = serve.layers_doc(serve.Service(offline=True))
+        by_id = {layer["id"]: layer for layer in doc["layers"]}
+        for key in ("goes_east_geocolor", "goes_east_band13", "nws_radar", "nws_alerts", "mrms_volume"):
+            self.assertIn("limit (proposal, from measured latency)", by_id[key]["limit_text"], key)
+        for key in ("places", "usgs_imagery", "bluemarble"):
+            self.assertIsNone(by_id[key]["limit_text"], key)
+        self.assertEqual(by_id["goes_east_geocolor"]["freshness_limit_min"], 60)
+        self.assertEqual(by_id["goes_east_geocolor"]["unavailable_after_min"], 180)
+        self.assertIsNone(by_id["nws_radar"]["unavailable_after_min"])
+        self.assertEqual(by_id["nws_alerts"]["freshness_limit_min"], 10)
+        self.assertEqual(by_id["nws_radar"]["freshness_limit_min"], 15)
+
+    def test_goes_frame_of_42_minutes_is_live_with_its_measured_latency(self):
+        spec = serve.GOES_LAYERS[0]
+        t = NOW - timedelta(minutes=42)
+        ok_at = NOW
+        layer = serve.goes_layer(spec, ({"t": t}, None, ok_at, []), NOW, offline=False)
+        self.assertEqual(layer["state"], "live")
+        self.assertEqual(layer["latency_min_at_probe"], 42.0)
+        self.assertIn("within the 60-min limit (proposal, from measured latency)", layer["state_text"])
+        self.assertIn("42.0 min at this refresh", layer["state_text"])
+        self.assertIsNotNone(layer["tile_template"])
+
+    def test_goes_frame_older_than_180_minutes_is_unavailable_and_draws_nothing(self):
+        spec = serve.GOES_LAYERS[1]
+        layer = serve.goes_layer(spec, ({"t": NOW - timedelta(minutes=200)}, None, NOW, []), NOW, offline=False)
+        self.assertEqual(layer["state"], "unavailable")
+        self.assertIsNone(layer["tile_template"])
+        self.assertIn("over the 180-min limit", layer["state_text"])
+
+    def test_radar_and_alerts_keep_their_own_limits_and_say_the_latency_they_used(self):
+        radar = serve.radar_layer(({"valid": NOW - timedelta(minutes=8), "content": None, "image_url": "u",
+                                    "app_newest": None, "conus_name": "CONUS"}, None, NOW, None), NOW, False)
+        self.assertEqual(radar["state"], "live")
+        self.assertIn("within the 15-min limit (proposal, from measured latency)", radar["state_text"])
+        self.assertIn("8.0 min at this refresh", radar["state_text"])
+        alerts = serve.alerts_layer(({"updated": NOW - timedelta(minutes=3), "features": [], "counts":
+                                      {"polygon": 0, "zone": 0, "none": 0}, "input_count": 0}, None, NOW, None),
+                                    NOW, False)
+        self.assertEqual(alerts["state"], "live")
+        self.assertIn("within the 10-min limit (proposal, from measured latency)", alerts["state_text"])
+        self.assertIn("3.0 min at this refresh", alerts["state_text"])
+
 
 class PngStatsTests(unittest.TestCase):
     def test_rgba_opaque_fraction_and_colours_with_every_filter(self):
@@ -512,6 +613,9 @@ class OfflineDocumentTests(unittest.TestCase):
         doc = serve.layers_doc(serve.Service(offline=True))
         self.assertIn("proposals", doc["limits_note"])
         self.assertIn("D12", doc["limits_note"])
+        self.assertIn("60 min", doc["limits_note"])
+        self.assertIn("180 min", doc["limits_note"])
+        self.assertIn("measured", doc["limits_note"])
 
 
 class OfflineServerTests(unittest.TestCase):
@@ -656,7 +760,8 @@ class VolumeTests(unittest.TestCase):
             row = layer_row(self.service(SAMPLE_VOLUME))
         self.assertEqual(row["label"], "Archived event: recorded MRMS volume, not live")
         self.assertEqual(row["state"], "stale")
-        self.assertIn("over the 10-min limit", row["state_text"])
+        self.assertIn("over the 10-min limit (proposal, from measured latency)", row["state_text"])
+        self.assertIn("limit (proposal, from measured latency)", row["limit_text"])
         self.assertTrue(row["valid_text"].startswith("2025-06-15 23:12:41 UTC"))
         self.assertEqual(row["valid_time_utc"], "2025-06-15T23:12:41Z")
         self.assertEqual(row["voxel_count"], 3931)
@@ -671,7 +776,8 @@ class VolumeTests(unittest.TestCase):
             row = layer_row(self.service(write_json(doc)))
         self.assertEqual(row["state"], "live")
         self.assertEqual(row["label"], "Recorded MRMS volume: a file, not a live feed")
-        self.assertIn("within the 10-min limit", row["state_text"])
+        self.assertIn("within the 10-min limit (proposal, from measured latency)", row["state_text"])
+        self.assertIn("29 to 120 s", row["state_text"])
 
     def test_offline_does_not_switch_the_volume_off(self):
         self.assertNotEqual(layer_row(self.service(SAMPLE_VOLUME))["state"], "off")
@@ -693,9 +799,9 @@ class VolumeTests(unittest.TestCase):
         self.assertAlmostEqual(doc["lats"][0], grid["origin"]["lat"])
         self.assertAlmostEqual(doc["lons"][10] - doc["lons"][0], 10 * grid["dx"], places=5)
         self.assertAlmostEqual(doc["lats"][0] - doc["lats"][10], 10 * grid["dy"], places=5)
-        # the first voxel of the sample: column 81, row 54, level 2 km
-        i, j, k, dbz = doc["voxels"][0]
-        self.assertEqual((i, j, k, dbz), (81, 54, 2, 36))
+        # the first voxel of the sample: column 81, row 54, level 2 km, 36 dBZ (step 6: 35-40 dBZ)
+        i, j, k, dbz, step = doc["voxels"][0]
+        self.assertEqual((i, j, k, dbz, step), (81, 54, 2, 36, 6))
         self.assertAlmostEqual(doc["lons"][i], -104.965, places=5)
         self.assertAlmostEqual(doc["lats"][j], 49.465, places=5)
 
@@ -748,6 +854,55 @@ class VolumeTests(unittest.TestCase):
         self.assertEqual(serve.resolve_volume_path(SAMPLE_VOLUME), SAMPLE_VOLUME)
 
 
+# The 14 NWS reflectivity colours as MetPy 1.7.1 encodes them (an independent copy of the table, so a typo
+# in serve.py cannot pass by matching itself). 5-10 dBZ up to 70-75 dBZ.
+NWS_STEP_HEX = ["#00ECEC", "#01A0F6", "#0000F6", "#00FF00", "#00C800", "#009000", "#FFFF00",
+                "#E7C000", "#FF9000", "#FF0000", "#D60000", "#C00000", "#FF00FF", "#9955C9"]
+
+
+class DbzStepTests(unittest.TestCase):
+    """The dBZ colour steps are classified in Python (serve.py); the page only maps the index to a colour."""
+
+    def service(self, path):
+        return serve.Service(offline=True, volume_path=path)
+
+    def test_the_steps_are_the_nws_colours_with_their_bands_and_labels(self):
+        self.assertEqual([s["colour"] for s in serve.DBZ_STEPS], NWS_STEP_HEX)
+        self.assertEqual([s["index"] for s in serve.DBZ_STEPS], list(range(14)))
+        self.assertEqual([s["lo_dbz"] for s in serve.DBZ_STEPS], list(range(5, 71, 5)))
+        self.assertEqual(serve.DBZ_STEPS[0]["label"], "5–10 dBZ")
+        self.assertEqual(serve.DBZ_STEPS[6]["label"], "35–40 dBZ")
+        self.assertEqual(serve.DBZ_STEPS[-1]["label"], "70–75+ dBZ")
+        self.assertTrue(serve.DBZ_STEPS[-1]["open_top"])
+        self.assertFalse(serve.DBZ_STEPS[0]["open_top"])
+
+    def test_the_step_index_is_the_band_a_value_falls_in(self):
+        cases = [(-20.0, -1), (4.99, -1), (5.0, 0), (9.99, 0), (10.0, 1), (34.9, 5), (35.0, 6), (40.0, 7),
+                 (69.99, 12), (70.0, 13), (74.99, 13), (75.0, 13), (80.0, 13), (99.5, 13)]
+        for dbz, want in cases:
+            self.assertEqual(serve.dbz_step_index(dbz), want, dbz)
+
+    def test_every_voxel_of_the_volume_carries_its_step_and_the_document_has_the_table(self):
+        doc = serve.volume_doc(self.service(SAMPLE_VOLUME))
+        self.assertEqual(doc["steps"], serve.DBZ_STEPS)
+        self.assertIn("step", doc["voxel_format"])
+        self.assertTrue(all(len(v) == 5 for v in doc["voxels"]))
+        for _i, _j, _k, dbz, step in doc["voxels"]:
+            self.assertEqual(step, serve.dbz_step_index(dbz))
+        self.assertGreater(min(v[4] for v in doc["voxels"]), -1)   # the sample's voxels are all >= 35 dBZ
+
+    def test_a_value_below_five_dbz_is_step_minus_one(self):
+        doc = load_json(SYNTH_VOLUME)
+        doc["voxels"][0][3] = 4.0
+        volume = serve.read_volume_file(write_json(doc))
+        self.assertEqual(volume["voxels"][0][4], -1)
+
+    def test_the_layer_row_carries_the_steps_for_the_panel_swatches(self):
+        row = layer_row(self.service(SYNTH_VOLUME))
+        self.assertEqual(row["steps"], serve.DBZ_STEPS)
+        self.assertIn("-1", row["steps_note"])
+
+
 class VolumeServerTests(unittest.TestCase):
     """serve.py --offline --volume (the sample): the endpoints a browser reads. No network is used."""
 
@@ -792,6 +947,8 @@ class VolumeServerTests(unittest.TestCase):
         doc = json.loads(body)
         self.assertEqual(doc["voxel_count"], 3931)
         self.assertEqual(len(doc["voxels"]), 3931)
+        self.assertEqual(len(doc["voxels"][0]), 5)            # [i, j, k, dbz, step]
+        self.assertEqual(len(doc["steps"]), 14)
         self.assertEqual(doc["file"], "fixtures/volume-2025-06-15-sample.json")
         self.assertEqual(doc["provenance"]["bucket"], "noaa-mrms-pds")
         self.assertNotIn(b"\n ", body, "the voxel JSON should be compact")
