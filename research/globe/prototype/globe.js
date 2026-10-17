@@ -418,7 +418,8 @@
     volumeState.firstFrameMs = null;
     const stopTiming = viewer.scene.postRender.addEventListener(() => {
       volumeState.firstFrameMs = Math.round((performance.now() - started) * 10) / 10;
-      stopTiming();
+      stopTiming();  // time the first frame after the build only
+      publishVolumeStatus();
     });
     status.drawn[VOLUME_ID] = "points";
     updateFactorChip();

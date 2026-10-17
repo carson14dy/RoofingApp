@@ -3,92 +3,442 @@
 "slug":"google-terms",
 "checked_at_utc":"2026-10-17T03:15:41Z",
 "checks":[
-{"what":"Geo Guidelines quotes in raw page","how":"WebFetch and curl https://about.google/brand-resource-center/products-and-services/geo-guidelines/","result":"9/9 quotes found; no last-updated date","verified":true},
-{"what":"Google Earth End User Additional Terms","how":"curl https://maps.google.com/help/terms_maps-earth/","result":"Quotes found; 'Last Modified: June 4, 2025'; no 'commercial', 'embed' or caching wording","verified":true},
-{"what":"Maps Platform Terms s.3.2.3 and definitions","how":"curl https://cloud.google.com/maps-platform/terms","result":"All quotes found; version list reads 'Last modified August 26, 2026'","verified":true},
-{"what":"Core Services list and Service Specific Terms","how":"curl https://cloud.google.com/maps-platform/terms/maps-services/ and https://cloud.google.com/maps-platform/terms/maps-service-terms; raw 'tile' search","result":"Map Tiles API listed as a GA Core Service; 3D Tiles not named; Service Specific Terms has 0 'tile' hits","verified":true},
-{"what":"Map Tiles API Policies","how":"curl https://developers.google.com/maps/documentation/tile/policies","result":"Caching, non-visualization, Cache-Control and attribution quotes found","verified":true},
-{"what":"Photorealistic 3D Tiles overview","how":"curl https://developers.google.com/maps/documentation/tile/3d-tiles","result":"Quotes found; no caching or price sentence","verified":true},
-{"what":"3D Tiles price row and billable event","how":"curl https://developers.google.com/maps/billing-and-pricing/pricing and https://developers.google.com/maps/billing-and-pricing/sku-details; grep 'root'","result":"Price row found; billable event 'Request that returns a 3D tile'; 'root' 0 hits on both","verified":true},
-{"what":"Earth Engine terms and FAQ","how":"curl https://earthengine.google.com/terms/ and https://earthengine.google.com/faq/","result":"Quotes found; terms 'Last modified: September 29, 2022'","verified":true},
-{"what":"Zoom Earth and nullschool sources","how":"curl https://zoom.earth/ (WebFetch /about/ gave the main page); curl https://earth.nullschool.net/about.html","result":"Zoom Earth sources and GIBS cadence found, no live interval; nullschool GFS found, GOES 0 hits","verified":true},
-{"what":"NASA Worldview description and imagery source","how":"curl https://gpm.nasa.gov/data/sources/worldview; curl 2019 4-pager; pdftotext","result":"Both found; GIBS named; FAQ not retrievable (403; redirect to a forum)","verified":true},
-{"what":"Windy source statements","how":"curl windy.com main page; curl https://community.windy.com/topic/8820/windy-launches-satellite-layer/200?lang=en-US; WebSearch for FAQ","result":"No source text on main page; no official FAQ found; undated staff posts list satellites","verified":true},
-{"what":"noaa-atlas and LiveStormChasers READMEs","how":"curl raw.githubusercontent.com README files","result":"noaa-atlas: 3D MapLibre globe, MIT code, GOES IR and radar; LiveStormChasers: all rights reserved","verified":true},
-{"what":"GitHub API and github.com HTML access","how":"gh search repos x4; gh api repos/NASA/WorldWind; curl -L on 9 github.com URLs; proxy README","result":"API 403 ('sessions are bound to their configured repositories'); add_repo not called. HTML: all 9 refused by egress policy; not retried","verified":true},
-{"what":"GitHub candidate stars, licence, last commit, PR dates","how":"WebFetch of github.com pages (summaries)","result":"As shown in summaries; not byte-verified; most last-commit dates not displayed","verified":false},
-{"what":"Local quote verification","how":"python -I verify_quotes2.py (pairs.json, pairs3.json)","result":"79 pairs: 69 exact, 6 after punctuation spacing, 4 after apostrophe normalisation, 0 missing","verified":true}
+{
+"what":"Geo Guidelines quotes (raw page)",
+"how":"WebFetch + curl: about.google geo-guidelines",
+"result":"Quotes 1-6 verbatim; no update date",
+"verified":true
+},
+{
+"what":"Google Earth end-user terms",
+"how":"curl: maps.google.com/help/terms_maps-earth/",
+"result":"Last Modified June 4, 2025; no commercial/embed/cache text",
+"verified":true
+},
+{
+"what":"Maps Platform Terms s.3.2.3, definitions",
+"how":"curl: cloud.google.com/maps-platform/terms",
+"result":"Verbatim; Last modified August 26, 2026",
+"verified":true
+},
+{
+"what":"Core Services list; Service Specific Terms",
+"how":"curl: maps-services and maps-service-terms; raw 'tile' search",
+"result":"Map Tiles API is a GA Core Service; SST 0 'tile' hits",
+"verified":true
+},
+{
+"what":"Map Tiles API Policies",
+"how":"curl: developers.google.com tile/policies",
+"result":"Caching, non-visualization, Cache-Control, attribution found",
+"verified":true
+},
+{
+"what":"Photorealistic 3D Tiles overview",
+"how":"curl: tile/3d-tiles",
+"result":"No caching, storage or price sentence",
+"verified":true
+},
+{
+"what":"3D Tiles price row and billable event",
+"how":"curl: billing-and-pricing pricing and sku-details; grep 'root'",
+"result":"Row found; 'root' 0 hits on both",
+"verified":true
+},
+{
+"what":"Earth Engine terms and FAQ",
+"how":"curl: earthengine.google.com terms and faq",
+"result":"Verbatim; terms modified September 29, 2022",
+"verified":true
+},
+{
+"what":"Zoom Earth and nullschool sources",
+"how":"curl: zoom.earth; nullschool about",
+"result":"Sources found; no live interval; nullschool GOES 0",
+"verified":true
+},
+{
+"what":"NASA Worldview description and source",
+"how":"curl: gpm.nasa.gov worldview; 2019 4-pager via pdftotext",
+"result":"Both found; FAQ not retrievable (403)",
+"verified":true
+},
+{
+"what":"Windy source statements",
+"how":"curl: windy.com; community topic 8820; WebSearch for FAQ",
+"result":"No source text on main page; posts dated 2019 in HTML",
+"verified":true,
+"corrected_by_review":true
+},
+{
+"what":"noaa-atlas and LiveStormChasers READMEs",
+"how":"curl: raw.githubusercontent.com README files",
+"result":"noaa-atlas MIT, GOES IR, radar; LSC all rights reserved",
+"verified":true
+},
+{
+"what":"GitHub API and github.com HTML access",
+"how":"gh API calls (x5); curl on 9 github.com URLs; proxy README",
+"result":"403 policy; add_repo not called; not retried",
+"verified":true
+},
+{
+"what":"GitHub candidate metadata",
+"how":"WebFetch of github.com pages (summaries)",
+"result":"Summaries only; not byte-verified",
+"verified":false
+},
+{
+"what":"Local quote verification",
+"how":"python -I verify_quotes2.py (pairs.json, pairs3.json)",
+"result":"79 pairs: 69 exact, 6 punctuation, 4 apostrophe, 0 missing",
+"verified":true
+}
 ],
 "facts":[
-{"claim":"Google Earth content: no commercial or promotional use; no embedding online or in apps","value":"Quotes 1-2","evidence":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/","verified":true},
-{"claim":"Google Earth or Earth Studio: research, education, film and nonprofit use needs no permission; attribution required","value":"Quotes 3, 5","evidence":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/","verified":true},
-{"claim":"Google Earth end-user licence: display with attribution; no new product based on Google Earth; no bulk download","value":"Quotes 7-9","evidence":"https://maps.google.com/help/terms_maps-earth/","verified":true},
-{"claim":"Maps ToS: no caching except as Service Specific Terms permit; no scraping, pre-fetch or storage outside Services","value":"s.3.2.3(a),(b); Quote 10","evidence":"https://cloud.google.com/maps-platform/terms","verified":true},
-{"claim":"Maps ToS: no content created from Maps Content; no use to train ML or AI models","value":"s.3.2.3(c)(i),(vii); Quote 14","evidence":"https://cloud.google.com/maps-platform/terms","verified":true},
-{"claim":"Maps ToS: no product re-creating another Google product; no use with or near a non-Google Map","value":"s.3.2.3(d) Quote 12; s.3.2.3(e) Quote 11","evidence":"https://cloud.google.com/maps-platform/terms","verified":true},
-{"claim":"Google Maps Content includes map, terrain data and imagery; Map Tiles API is a GA Core Service","value":"Quotes 13, 15","evidence":"https://cloud.google.com/maps-platform/terms/maps-services/","verified":true},
-{"claim":"Service Specific Terms have no Map Tiles text or caching exception","value":"0 'tile' hits in captured HTML","evidence":"https://cloud.google.com/maps-platform/terms/maps-service-terms","verified":true},
-{"claim":"Map Tiles policy: no pre-fetch, index, store or cache except under limited conditions","value":"Quote 16","evidence":"https://developers.google.com/maps/documentation/tile/policies","verified":true},
-{"claim":"Map Tiles policy: no image analysis, machine interpretation, object detection, geodata extraction or resale, offline use","value":"Quote 17","evidence":"https://developers.google.com/maps/documentation/tile/policies","verified":true},
-{"claim":"Attribution: logo visible and not obscured; tile attributions in one line; renderer shows copyright credits","value":"Quotes 19, 20, 23","evidence":"https://developers.google.com/maps/documentation/tile/policies","verified":true},
-{"claim":"Photorealistic 3D Tiles price, SKU C6E1-98B2-DBD0 (Global): 1,000 free monthly events, then $6.00 per 1,000 to 100,000; $5.10 to 500,000; $4.20 to 1,000,000; $3.30 to 5,000,000; $2.40 above","value":"As displayed 2026-10-17; India SKU not checked","evidence":"https://developers.google.com/maps/billing-and-pricing/pricing","verified":true},
-{"claim":"Billable event for 3D Tiles: request that returns a 3D tile, under Map Tiles API","value":"Quote 24","evidence":"https://developers.google.com/maps/billing-and-pricing/sku-details","verified":true},
-{"claim":"Price per 1,000 root tileset requests","value":"NOT STATED on pricing or SKU pages; one root request covers at least three hours of tile requests (Quote 22)","evidence":"https://developers.google.com/maps/billing-and-pricing/pricing","verified":false},
-{"claim":"Maps ToS 3.2.3(e) reaches Photorealistic 3D Tiles shown with other layers","value":"Inference from Core Services list and SKU API field; no page says so","evidence":"https://cloud.google.com/maps-platform/terms/maps-services/","verified":false},
-{"claim":"Earth Engine free for noncommercial use; commercial use needs a fee under GCP commercial terms","value":"Quotes 26-28; terms dated 2022-09-29","evidence":"https://earthengine.google.com/terms/","verified":true},
-{"claim":"Zoom Earth live sources: NOAA GOES, EUMETSAT Meteosat, JMA Himawari; HD images via GIBS twice a day","value":"Quotes 29-30; live interval not stated","evidence":"https://zoom.earth/","verified":true},
-{"claim":"nullschool About: GFS updated every three hours; no satellite imagery source named","value":"Quote 31","evidence":"https://earth.nullschool.net/about.html","verified":true},
-{"claim":"NASA Worldview: over 900 satellite imagery layers (current page); imagery from GIBS; 2019 document: nine geostationary layers (GOES-East, GOES-West, Himawari-8)","value":"Quotes 32-34; 2019 document may be stale","evidence":"https://gpm.nasa.gov/data/sources/worldview","verified":true},
-{"claim":"Windy: no official source found; undated community staff posts name Meteosat-8/10/11, GOES-16/17, Himawari-8","value":"Quote 35; not official","evidence":"https://community.windy.com/topic/8820/windy-launches-satellite-layer/200?lang=en-US","verified":true},
-{"claim":"tayclark/noaa-atlas: 3D MapLibre globe; GOES IR (nowCOAST, 85%) and radar (70%) drawn on it; MIT code; data keeps own terms","value":"Quotes 37-39 (raw README)","evidence":"https://raw.githubusercontent.com/tayclark/noaa-atlas/main/README.md","verified":true},
-{"claim":"tayclark/noaa-atlas: 0 stars; PR #339 merged 2026-10-09","value":"WebFetch summary only","evidence":"https://github.com/tayclark/noaa-atlas","verified":false},
-{"claim":"Other candidates (WebFetch summaries): danielway/nexrad-volumetric-renderer (MIT, 3D NEXRAD, not a globe); RyanLBuchanan/ryangineer (no licence; 3D globe with GOES clouds; untested); openglobus, globe.gl, WebWorldWind (open-source globes; no GOES or radar in READMEs)","value":"Star counts as displayed; globe.gl clouds example is a static image","evidence":"https://github.com/danielway/nexrad-volumetric-renderer ; https://github.com/RyanLBuchanan/ryangineer ; https://github.com/openglobus/openglobus ; https://github.com/vasturiano/globe.gl","verified":false},
-{"claim":"LiveStormChasers/nexrad-radar: not open source; all rights reserved; written permission needed","value":"Quotes 40-41","evidence":"https://raw.githubusercontent.com/LiveStormChasers/nexrad-radar/main/README.md","verified":true}
+{
+"claim":"Google Earth content: no commercial or promotional use; no embedding online or in apps",
+"value":"Quotes 1-2",
+"evidence":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/",
+"verified":true
+},
+{
+"claim":"Google Earth or Earth Studio: research, education, film and nonprofit use needs no permission; attribution required",
+"value":"Quotes 3, 5. Not for promotional films, ads or commercials",
+"evidence":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/",
+"verified":true,
+"corrected_by_review":true
+},
+{
+"claim":"Google Earth end-user licence: display with attribution; no new product based on Google Earth; no bulk download",
+"value":"Quotes 7-9",
+"evidence":"https://maps.google.com/help/terms_maps-earth/",
+"verified":true
+},
+{
+"claim":"Maps ToS: no caching except as Service Specific Terms permit; no scraping, pre-fetch or storage outside Services",
+"value":"s.3.2.3(a),(b); Quote 10",
+"evidence":"https://cloud.google.com/maps-platform/terms",
+"verified":true
+},
+{
+"claim":"Maps ToS: no content created from Maps Content; no use to train ML or AI models",
+"value":"s.3.2.3(c)(i),(vii); Quote 14",
+"evidence":"https://cloud.google.com/maps-platform/terms",
+"verified":true
+},
+{
+"claim":"Maps ToS: no product re-creating another Google product; no use with or near a non-Google Map",
+"value":"s.3.2.3(d) Quote 12; s.3.2.3(e) Quote 11",
+"evidence":"https://cloud.google.com/maps-platform/terms",
+"verified":true
+},
+{
+"claim":"Google Maps Content includes map, terrain data and imagery; Map Tiles API is a GA Core Service",
+"value":"Quotes 13, 15",
+"evidence":"https://cloud.google.com/maps-platform/terms/maps-services/",
+"verified":true
+},
+{
+"claim":"Service Specific Terms have no Map Tiles text or caching exception",
+"value":"0 'tile' hits in captured HTML",
+"evidence":"https://cloud.google.com/maps-platform/terms/maps-service-terms",
+"verified":true
+},
+{
+"claim":"Map Tiles policy: no pre-fetch, index, store or cache except under limited conditions",
+"value":"Quote 16",
+"evidence":"https://developers.google.com/maps/documentation/tile/policies",
+"verified":true
+},
+{
+"claim":"Map Tiles policy: no image analysis, machine interpretation, object detection, geodata extraction or resale, offline use",
+"value":"Quote 17",
+"evidence":"https://developers.google.com/maps/documentation/tile/policies",
+"verified":true
+},
+{
+"claim":"Attribution: logo visible and not obscured; tile attributions in one line; renderer shows copyright credits",
+"value":"Quotes 19, 20, 23",
+"evidence":"https://developers.google.com/maps/documentation/tile/policies",
+"verified":true
+},
+{
+"claim":"Photorealistic 3D Tiles price, SKU C6E1-98B2-DBD0 (Global): 1,000 free monthly events, then $6.00 per 1,000 to 100,000; $5.10 to 500,000; $4.20 to 1,000,000; $3.30 to 5,000,000; $2.40 above",
+"value":"As displayed 2026-10-17; India SKU 592E-920B-C911 on SKU page only (price unverified)",
+"evidence":"https://developers.google.com/maps/billing-and-pricing/pricing",
+"verified":true,
+"corrected_by_review":true
+},
+{
+"claim":"Billable event for 3D Tiles: request that returns a 3D tile, under Map Tiles API",
+"value":"Quote 24",
+"evidence":"https://developers.google.com/maps/billing-and-pricing/sku-details",
+"verified":true
+},
+{
+"claim":"Price per 1,000 root tileset requests",
+"value":"NOT STATED: no 'root' or 'tileset' text on pricing or SKU pages",
+"evidence":"https://developers.google.com/maps/billing-and-pricing/pricing",
+"verified":true,
+"corrected_by_review":true
+},
+{
+"claim":"Maps ToS 3.2.3(e) reaches Photorealistic 3D Tiles shown with other layers",
+"value":"Inference from Core Services list and SKU API field; no page says so",
+"evidence":"https://cloud.google.com/maps-platform/terms/maps-services/",
+"verified":false
+},
+{
+"claim":"Earth Engine free for noncommercial or government research use; other use pays GCP fees",
+"value":"Quotes 26-28; terms dated 2022-09-29",
+"evidence":"https://earthengine.google.com/terms/",
+"verified":true,
+"corrected_by_review":true
+},
+{
+"claim":"Zoom Earth live sources: NOAA GOES, EUMETSAT Meteosat, JMA Himawari; HD images via GIBS twice a day",
+"value":"Quotes 29-30; live interval not stated",
+"evidence":"https://zoom.earth/",
+"verified":true
+},
+{
+"claim":"nullschool About: GFS updated every three hours; no satellite imagery source named",
+"value":"Quote 31",
+"evidence":"https://earth.nullschool.net/about.html",
+"verified":true
+},
+{
+"claim":"NASA Worldview: over 900 satellite imagery layers (current page); imagery from GIBS; 2019 document: nine geostationary layers (GOES-East, GOES-West, Himawari-8)",
+"value":"Quotes 32-34; 2019 document may be stale",
+"evidence":"https://gpm.nasa.gov/data/sources/worldview",
+"verified":true
+},
+{
+"claim":"Windy: no official source; Windy Staff thread names Meteosat-8/10/11, GOES-16/17 and Himawari-8",
+"value":"Quote 35. Dated 2019-08 in HTML title attributes; no visible date",
+"evidence":"https://community.windy.com/topic/8820/windy-launches-satellite-layer/200?lang=en-US",
+"verified":true,
+"corrected_by_review":true
+},
+{
+"claim":"tayclark/noaa-atlas: 3D MapLibre globe; GOES IR (nowCOAST, 85%) and radar (70%) drawn on it; MIT code; data keeps own terms",
+"value":"Quotes 37-39 (raw README)",
+"evidence":"https://raw.githubusercontent.com/tayclark/noaa-atlas/main/README.md",
+"verified":true
+},
+{
+"claim":"tayclark/noaa-atlas: 0 stars; MIT; PR merged 2026-10-09 (page title says #338)",
+"value":"WebFetch only; PR number unresolved",
+"evidence":"https://github.com/tayclark/noaa-atlas",
+"verified":false,
+"corrected_by_review":true
+},
+{
+"claim":"Other candidates: danielway (MIT, 3D NEXRAD); ryangineer (no licence, no globe text); openglobus, globe.gl (no GOES or radar); WebWorldWind (README not found)",
+"value":"Stars not re-checked; danielway MIT on master; globe.gl clouds is a static PNG",
+"evidence":"https://github.com/danielway/nexrad-volumetric-renderer ; https://github.com/RyanLBuchanan/ryangineer ; https://github.com/openglobus/openglobus ; https://github.com/vasturiano/globe.gl",
+"verified":false,
+"corrected_by_review":true
+},
+{
+"claim":"LiveStormChasers/nexrad-radar: not open source; all rights reserved; written permission needed",
+"value":"Quotes 40-41",
+"evidence":"https://raw.githubusercontent.com/LiveStormChasers/nexrad-radar/main/README.md",
+"verified":true
+}
 ],
 "quotes":[
-{"text":"Google Earth content may not be used for any commercial or promotional purposes.","url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"},
-{"text":"Google Earth may not be embedded online or in apps.","url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"},
-{"text":"Google Earth or Earth Studio can be used for purposes such as research, education, film and nonprofit use without needing permission.","url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"},
-{"text":"Only standard Google Maps imagery may be used for this purpose, since Satellite View imagery falls under the same commercial restrictions as Google Earth.","url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"},
-{"text":"All content created from Google Earth or Earth Studio must always be properly attributed.","url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"},
-{"text":"Your use of our content may be acceptable under principles of fair use (or other similar concepts in other countries).","url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"},
-{"text":"redistribute or sell any part of Google Earth or create a new product or service based on Google Earth","url":"https://maps.google.com/help/terms_maps-earth/"},
-{"text":"mass download or create bulk feeds of the content (or let anyone else do so)","url":"https://maps.google.com/help/terms_maps-earth/"},
-{"text":"publicly display content with proper attribution online, in video, and in print.","url":"https://maps.google.com/help/terms_maps-earth/"},
-{"text":"Customer will not cache Google Maps Content except as expressly permitted under the Maps Service Specific Terms.","url":"https://cloud.google.com/maps-platform/terms"},
-{"text":"Customer will not use the Google Maps Core Services with or near a non-Google Map in a Customer Application.","url":"https://cloud.google.com/maps-platform/terms"},
-{"text":"Customer will not use the Services to create a product or service with features that are substantially similar to or that re-create the features of another Google product or service.","url":"https://cloud.google.com/maps-platform/terms"},
-{"text":"means any content provided through the Services (whether created by Google or its third-party licensors), including map and terrain data, imagery, traffic data, and places data (including business listings).","url":"https://cloud.google.com/maps-platform/terms"},
-{"text":"use Google Maps Content to improve machine learning and artificial intelligence models, including to train, test, validate or fine-tune the models.","url":"https://cloud.google.com/maps-platform/terms"},
-{"text":"The complete list of services that form the Generally Available Google Maps Platform Core Services is shown below.","url":"https://cloud.google.com/maps-platform/terms/maps-services/"},
-{"text":"Subject to the terms of your Agreement, you must not pre-fetch, index, store, or cache any Content except under the limited conditions stated in the terms.","url":"https://developers.google.com/maps/documentation/tile/policies"},
-{"text":"You may not use Map Tiles API for any non-visualization use cases, such as: Image analysis / Machine interpretation / Object detection or identification / Geodata extraction or resale / Offline uses, including for any of the above","url":"https://developers.google.com/maps/documentation/tile/policies"},
-{"text":"Map Tiles API responses may include Cache-Control headers which should be implemented according to the HTTP protocol documentation.","url":"https://developers.google.com/maps/documentation/tile/policies"},
-{"text":"you must not overlap or obscure the Google logo with any other logo, such as the renderer's logo.","url":"https://developers.google.com/maps/documentation/tile/policies"},
-{"text":"You must aggregate, sort, and display in a line, all attributions for displayed tiles","url":"https://developers.google.com/maps/documentation/tile/policies"},
-{"text":"the 3D objects aren't extracted, traced, or otherwise derived by hand or machine from Photorealistic 3D Tiles.","url":"https://developers.google.com/maps/documentation/tile/policies"},
-{"text":"A single root tileset request allows for at least three hours of tile requests before requiring a new request.","url":"https://developers.google.com/maps/documentation/tile/3d-tiles"},
-{"text":"you must use a 3D Tiles renderer that supports the display of copyright attribution.","url":"https://developers.google.com/maps/documentation/tile/3d-tiles"},
-{"text":"Request that returns a 3D tile","url":"https://developers.google.com/maps/billing-and-pricing/sku-details"},
-{"text":"Costs listed per 1000 events. All prices in USD. Ranges are for number of monthly events.","url":"https://developers.google.com/maps/billing-and-pricing/pricing"},
-{"text":"Google Earth Engine Services are available for commercial use.","url":"https://earthengine.google.com/terms/"},
-{"text":"If it doesn't, then you must pay a fee to use the Services and you will be subject to GCP commercial terms.","url":"https://earthengine.google.com/terms/"},
-{"text":"Earth Engine is free for noncommercial use","url":"https://earthengine.google.com/faq/"},
-{"text":"Live satellite imagery is provided by NOAA GOES, EUMETSAT Meteosat, and JMA Himawari geostationary satellites.","url":"https://zoom.earth/"},
-{"text":"HD satellite images are updated twice a day from NASA polar-orbiting satellites Aqua and Terra, using services from GIBS, part of EOSDIS.","url":"https://zoom.earth/"},
-{"text":"a visualization of global weather conditions forecast by supercomputers updated every three hours","url":"https://earth.nullschool.net/about.html"},
-{"text":"This app from NASA's EOSDIS provides the capability to interactively browse over 900 global, full-resolution satellite imagery layers and then download the underlying data.","url":"https://gpm.nasa.gov/data/sources/worldview"},
-{"text":"Imagery in Worldview is provided by NASA's Global Imagery Browse Services (GIBS).","url":"https://www.earthdata.nasa.gov/s3fs-public/imported/2019_Worldview_4Pager_RevNov2019.pdf"},
-{"text":"Worldview now includes nine geostationary imagery layers from GOES-East, GOES-West and Himawari-8 available at ten minute increments for the last 30 days.","url":"https://www.earthdata.nasa.gov/s3fs-public/imported/2019_Worldview_4Pager_RevNov2019.pdf"},
-{"text":"We are combining images from six satellites (Meteosat-8,10,11, Goes-16,17 and Himawari-8).","url":"https://community.windy.com/topic/8820/windy-launches-satellite-layer/200?lang=en-US"},
-{"text":"Logo of Eumetsat is according to our contract with our NMI / Eumetsat.","url":"https://community.windy.com/topic/8820/windy-launches-satellite-layer/200?lang=en-US"},
-{"text":"Under the tracks the globe draws GOES East and West infrared satellite imagery (nowCOAST's `goes_longwave_imagery` WMS, at 85% opacity)","url":"https://raw.githubusercontent.com/tayclark/noaa-atlas/main/README.md"},
-{"text":"A 3D globe (MapLibre GL, OpenFreeMap dark basemap) that opens on the continental US.","url":"https://raw.githubusercontent.com/tayclark/noaa-atlas/main/README.md"},
-{"text":"MIT, see `LICENSE`. That covers this code only: NOAA data and the third-party map data keep their own terms","url":"https://raw.githubusercontent.com/tayclark/noaa-atlas/main/README.md"},
-{"text":"Copyright (c) 2026 Live Storm Chasers Network LLC. All rights reserved.","url":"https://raw.githubusercontent.com/LiveStormChasers/nexrad-radar/main/README.md"},
-{"text":"Source-visible, not open source — see LICENSE.","url":"https://raw.githubusercontent.com/LiveStormChasers/nexrad-radar/main/README.md"}
+{
+"text":"Google Earth content may not be used for any commercial or promotional purposes.",
+"url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"
+},
+{
+"text":"Google Earth may not be embedded online or in apps.",
+"url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"
+},
+{
+"text":"Google Earth or Earth Studio can be used for purposes such as research, education, film and nonprofit use without needing permission.",
+"url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"
+},
+{
+"text":"since Satellite View imagery falls under the same commercial restrictions as Google Earth.",
+"url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"
+},
+{
+"text":"All content created from Google Earth or Earth Studio must always be properly attributed.",
+"url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"
+},
+{
+"text":"Your use of our content may be acceptable under principles of fair use",
+"url":"https://about.google/brand-resource-center/products-and-services/geo-guidelines/"
+},
+{
+"text":"redistribute or sell any part of Google Earth or create a new product or service based on Google Earth",
+"url":"https://maps.google.com/help/terms_maps-earth/"
+},
+{
+"text":"mass download or create bulk feeds of the content (or let anyone else do so)",
+"url":"https://maps.google.com/help/terms_maps-earth/"
+},
+{
+"text":"publicly display content with proper attribution online, in video, and in print.",
+"url":"https://maps.google.com/help/terms_maps-earth/"
+},
+{
+"text":"Customer will not cache Google Maps Content except as expressly permitted under the Maps Service Specific Terms.",
+"url":"https://cloud.google.com/maps-platform/terms"
+},
+{
+"text":"Customer will not use the Google Maps Core Services with or near a non-Google Map in a Customer Application.",
+"url":"https://cloud.google.com/maps-platform/terms"
+},
+{
+"text":"Customer will not use the Services to create a product or service with features that are substantially similar to or that re-create the features of another Google product or service.",
+"url":"https://cloud.google.com/maps-platform/terms"
+},
+{
+"text":"means any content provided through the Services (whether created by Google or its third-party licensors), including map and terrain data, imagery",
+"url":"https://cloud.google.com/maps-platform/terms"
+},
+{
+"text":"use Google Maps Content to improve machine learning and artificial intelligence models, including to train, test, validate or fine-tune the models.",
+"url":"https://cloud.google.com/maps-platform/terms"
+},
+{
+"text":"The complete list of services that form the Generally Available Google Maps Platform Core Services is shown below.",
+"url":"https://cloud.google.com/maps-platform/terms/maps-services/"
+},
+{
+"text":"Subject to the terms of your Agreement, you must not pre-fetch, index, store, or cache any Content except under the limited conditions stated in the terms.",
+"url":"https://developers.google.com/maps/documentation/tile/policies"
+},
+{
+"text":"You may not use Map Tiles API for any non-visualization use cases, such as:",
+"url":"https://developers.google.com/maps/documentation/tile/policies",
+"corrected_by_review":true
+},
+{
+"text":"Map Tiles API responses may include Cache-Control headers which should be implemented according to the HTTP protocol documentation.",
+"url":"https://developers.google.com/maps/documentation/tile/policies"
+},
+{
+"text":"you must not overlap or obscure the Google logo with any other logo, such as the renderer's logo.",
+"url":"https://developers.google.com/maps/documentation/tile/policies"
+},
+{
+"text":"You must aggregate, sort, and display in a line, all attributions for displayed tiles",
+"url":"https://developers.google.com/maps/documentation/tile/policies"
+},
+{
+"text":"the 3D objects aren't extracted, traced, or otherwise derived",
+"url":"https://developers.google.com/maps/documentation/tile/policies"
+},
+{
+"text":"A single root tileset request allows for at least three hours of tile requests before requiring a new request.",
+"url":"https://developers.google.com/maps/documentation/tile/3d-tiles"
+},
+{
+"text":"you must use a 3D Tiles renderer that supports the display of copyright attribution.",
+"url":"https://developers.google.com/maps/documentation/tile/3d-tiles"
+},
+{
+"text":"Request that returns a 3D tile",
+"url":"https://developers.google.com/maps/billing-and-pricing/sku-details"
+},
+{
+"text":"Costs listed per 1000 events.",
+"url":"https://developers.google.com/maps/billing-and-pricing/pricing"
+},
+{
+"text":"Google Earth Engine Services are available for commercial use.",
+"url":"https://earthengine.google.com/terms/"
+},
+{
+"text":"If it doesn't, then you must pay a fee to use the Services and you will be subject to GCP commercial terms.",
+"url":"https://earthengine.google.com/terms/"
+},
+{
+"text":"Earth Engine is free for noncommercial use",
+"url":"https://earthengine.google.com/faq/"
+},
+{
+"text":"Live satellite imagery is provided by NOAA GOES, EUMETSAT Meteosat, and JMA Himawari geostationary satellites.",
+"url":"https://zoom.earth/"
+},
+{
+"text":"HD satellite images are updated twice a day from NASA polar-orbiting satellites Aqua and Terra, using services from GIBS",
+"url":"https://zoom.earth/"
+},
+{
+"text":"a visualization of global weather conditions forecast by supercomputers updated every three hours",
+"url":"https://earth.nullschool.net/about.html"
+},
+{
+"text":"This app from NASA's EOSDIS provides the capability to interactively browse over 900 global, full-resolution satellite imagery layers and then download the underlying data.",
+"url":"https://gpm.nasa.gov/data/sources/worldview"
+},
+{
+"text":"Imagery in Worldview is provided by NASA's Global Imagery Browse Services (GIBS).",
+"url":"https://www.earthdata.nasa.gov/s3fs-public/imported/2019_Worldview_4Pager_RevNov2019.pdf"
+},
+{
+"text":"nine geostationary imagery layers from GOES-East, GOES-West and Himawari-8",
+"url":"https://www.earthdata.nasa.gov/s3fs-public/imported/2019_Worldview_4Pager_RevNov2019.pdf"
+},
+{
+"text":"We are combining images from six satellites (Meteosat-8,10,11, Goes-16,17 and Himawari-8).",
+"url":"https://community.windy.com/topic/8820/windy-launches-satellite-layer/200?lang=en-US"
+},
+{
+"text":"Logo of Eumetsat is according to our contract",
+"url":"https://community.windy.com/topic/8820/windy-launches-satellite-layer/200?lang=en-US"
+},
+{
+"text":"Under the tracks the globe draws GOES East and West infrared satellite imagery (nowCOAST's `goes_longwave_imagery` WMS, at 85% opacity)",
+"url":"https://raw.githubusercontent.com/tayclark/noaa-atlas/main/README.md"
+},
+{
+"text":"A 3D globe (MapLibre GL, OpenFreeMap dark basemap) that opens on the continental US.",
+"url":"https://raw.githubusercontent.com/tayclark/noaa-atlas/main/README.md"
+},
+{
+"text":"MIT, see `LICENSE`. That covers this code only: NOAA data and the third-party map data keep their own terms",
+"url":"https://raw.githubusercontent.com/tayclark/noaa-atlas/main/README.md"
+},
+{
+"text":"Copyright (c) 2026 Live Storm Chasers Network LLC. All rights reserved.",
+"url":"https://raw.githubusercontent.com/LiveStormChasers/nexrad-radar/main/README.md"
+},
+{
+"text":"Source-visible, not open source — see LICENSE.",
+"url":"https://raw.githubusercontent.com/LiveStormChasers/nexrad-radar/main/README.md"
+}
 ],
-"limits":["The phrase 'use outside Google products' is not stated in those words; the nearest clauses are the Google Earth licence (no new product based on Google Earth; no redistribution or sale) and Maps ToS 3.2.3(a) and (d).", "Interpretation for the supervisor, not legal advice; the 'new product based on Google Earth', 'non-Google Map' and 'commercial' readings for a roofing company need counsel.", "Pages captured 2026-10-17 UTC; prices and terms change; no price history checked. Maps ToS dates come from version lists, not confirmed as current.", "Quotes match raw HTML after normalising curly apostrophes and the space HTML markup adds before punctuation. Policy list items are shown separated by slashes.", "Service Specific Terms: no Map Tiles text in the captured HTML; a caching exception elsewhere was not found.", "Not found: Zoom Earth live cadence, Windy official FAQ, NASA Worldview FAQ (GIBS reuse terms belong to W1).", "GitHub figures are WebFetch summaries. Licences cover code only; data licences (NOAA, map providers) are separate and not reviewed. Earth Engine terms dated 2022-09-29 may be superseded.", "Raw copies of every page and the verification scripts: /tmp/claude-0/-home-user-RoofingApp/7638440a-a008-5ef8-a289-86be0a23e7a7/scratchpad/globe-dl/google-terms/ and /tmp/claude-0/-home-user-RoofingApp/7638440a-a008-5ef8-a289-86be0a23e7a7/scratchpad/globe-scripts/google-terms/."],
-"installed_packages":[],
-"open_questions":["Does Maps ToS 3.2.3(e) stop Photorealistic 3D Tiles sharing a globe with NOAA GOES and radar layers? Counsel.", "Are root tileset requests billed, and at what price? Check billing pages or ask Google.", "Does a roofing company's app count as 'commercial or promotional' under the Google Earth guidelines? Counsel.", "Can 3D tiles stay in memory for a session under Cache-Control max-age without breaching the no-caching clause?", "Is Windy's satellite list current? Official Windy source documentation is needed.", "API-verified repo metadata needs repository access; attaching repos mints credentials, so Carson should decide."]
+"limits":["'Use outside Google products' is not stated verbatim; nearest: Earth licence and Maps ToS 3.2.3(a),(d).","Interpretation, not legal advice: counsel to decide the commercial and 'new product' readings.","Captured 2026-10-17 UTC; prices and terms change.","Quotes match raw HTML after apostrophe/markup-space normalisation; presence only; contexts checked for Quotes 3, 4, 26.","Service Specific Terms: no Map Tiles text; no Map Tiles caching exception found.","Not found: Zoom Earth live cadence; Windy official FAQ; NASA Worldview FAQ (GIBS terms: W1).","GitHub figures are WebFetch summaries; licences cover code only; data licences not reviewed.","Raw copies and scripts: <session scratchpad>/globe-dl/google-terms/ and <session scratchpad>/globe-scripts/google-terms/"],
+"installed_packages":["playwright==1.64.0"],
+"open_questions":["Does ToS 3.2.3(e) bar sharing a globe with NOAA GOES and radar layers? Counsel.","Are root tileset requests billed, and at what price?","Does a roofing company's app count as 'commercial or promotional' under Google Earth guidelines? Counsel.","Can 3D tiles stay in memory under Cache-Control max-age without breaching the no-caching clause?","Is Windy's satellite list current? Thread dated 2019; no official source.","Repo metadata needs repo access (attaching mints credentials); Carson to decide."],
+"review":{
+"refuted_claims":["F18/summary 'nullschool GFS only': GFS is the weather layer only.","F20 'undated' Windy posts: HTML title attributes date them 2019-08.","F23 ryangineer '3D globe, GOES': no such text.","F16/summary 'Earth Engine free only if noncommercial': government research is free too.","F2 'film needs no permission': not for promotional films or ads.","Summary 'no caching holds': policy bars unauthorized caching; Cache-Control rules apply."],
+"corrections":["F3-F6 omit ToS cl. 2.4, s.3.2.3(a)(ii), (c)(i) building outlines, (d) independent value.","F8: SST caches other services only. F12: India SKU on SKU page only. F19: GIBS imagery is on the 2019 4-pager only.","F22: PR title #338 vs URL #339. Quote 4: promotional video only. showCreditsOnScreen: sample code only; options.url deprecated in 1.104.","Quote 17 was not verbatim (now the lead-in). Quotes 4, 6, 13, 21, 25, 30, 34, 36 shortened; checks, limits, open condensed."],
+"confirmed":["40 of 41 quotes verbatim; price row, SKU, ToS 3.2.3, dates, zoom.earth, nullschool, Worldview, noaa-atlas, LSC; 79-pair verifier; CesiumJS 1.91 named."],
+"unverified":["noaa-atlas stars and PR merge (WebFetch only); WebWorldWind README not found; root billing; India SKU price; ToS 3.2.3(e) reach; WebSearch Himawari/GOES remarks unsourced.","Map Tiles caching permission ('limited conditions') not found; tiles not rendered (placeholder key); GitHub API/HTML, NASA FAQ not re-run."],
+"reviewer_checks":[
+{
+"what":"41 quotes (python -I); 16 WebFetch reads; verify_quotes2.py rerun",
+"result":"40 verbatim; 79 pairs, 0 missing",
+"verified":true
+},
+{
+"what":"CesiumJS sample run unchanged (headless Chromium 141, Playwright 1.64.0)",
+"result":"viewer, tileset created; showCreditsOnScreen true; root 400; one uncaught error",
+"verified":true
+},
+{
+"what":"Windy dates, noaa-atlas PR page, self-test",
+"result":"2019 stamps verified; PR merged Oct 9, 2026 (WebFetch); self-test not run",
+"verified":false
+}
+]
+}
 }

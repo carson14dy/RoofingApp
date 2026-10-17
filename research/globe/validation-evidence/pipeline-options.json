@@ -4,7 +4,7 @@
  "checked_utc": "2026-10-17",
  "status": "research only; nothing ships; no other repo file changed",
  "headline": [
-  "D (one statewide >=20 dBZ product per 2-min step; desktop derives 35/50 dBZ and crops to places) is the lowest-blocker server option: 0.732 MB per active frame, 2.28 GB per month per machine at 8.5 storm days, 4.0 MB/month ingest cost not counted; host floor $6.49/mo (unpriced RAM).",
+  "D (one statewide >=20 dBZ product per 2-min step; desktop derives 35/50 dBZ and crops to places) has the fewest open blockers of the server options: 0.732 MB per active frame; 0.07 to 2.28 GB per machine-month at 8.5 storm days (quiet to all frames active); server 24/7 ingest of about 498 GB per month is not priced; host floor $6.49/mo with RAM unverified.",
   "A (each crew machine downloads NOAA GRIB2 and decodes) needs 70.5 GB per machine per month at 33 levels and has no Windows eccodes wheel on pip.",
   "B (GitHub Actions, 5-min floor) cannot publish every 2-min step and its Actions terms clause for data delivery is an open owner/legal reading.",
   "Frame budget (README sec 10, proposed here): 1.0 MB per 2-min MRMS frame; 60 MB per 2-h loop at >=20 dBZ; 0.05 MB per GOES 5-min frame."
@@ -20,7 +20,7 @@
   "units": "B = bytes (1 MB = 1e6 B). gz = gzipped NOAA object. zlib9 = Python stdlib zlib level 9. est = estimate from a named ratio. Month = 30 days. Storm day = 12 h. 2-min MRMS step = 30/h; 5-min GOES step = 12/h."
  },
  "corrections_to_evidence": [
-  "mrms.json installed_packages omits eckitlib: eccodeslib 2.50.0.33 requires eckitlib==2.5.0.33 (35.98 MB wheel). The eccodes Linux closure is 62.16 MB of wheels, not about 10 MB.",
+  "mrms.json lists eccodes and eccodeslib (9 MB) but omits eckitlib, which eccodeslib 2.50.0.33 requires (eckitlib==2.5.0.33, 35.98 MB wheel). The eccodes Linux closure is 62.16 MB of wheels.",
   "eccodes has no Windows path on pip: eccodes metadata has 'Requires-Dist: eccodeslib; platform_system != \"Windows\"', and pip finds no eccodeslib wheel for win_amd64 at cp311, cp312 or cp313.",
   "eccodeslib 2.50.0.33 has no macOS arm64 wheel for cp312 (newest 2.48.0.26). netCDF4 1.7.5 has no macOS arm64 wheel for cp312 (newest 1.7.4). Version skew across platforms.",
   "cffi resolves to 2.0.0b1 (a beta) in the Linux closure; mrms.json lists cffi 2.1.1. Needs a deliberate pin.",
@@ -69,7 +69,7 @@
    "gz_total_B": 18435716,
    "voxels_ge20": 0,
    "mask_keyframe_zlib9_B": 104214,
-   "decode_cpu_s_total": 16.99
+   "decode_cpu_s_total": 17.791
   },
   "quiet_2026-10-17T03:06:38Z_33_levels": {
    "voxels_ge20": 0,
@@ -182,7 +182,7 @@
     "crew_data_plan": "unpriced",
     "NOAA_reads": "bucket owner pays by default (aws-rp-1, evidence)"
    },
-   "latency_s": "lag 29-120 s + gz/link_rate + decode 18 s; at 10 Mbit/s 64-155 s; at 2 Mbit/s 132-223 s",
+   "latency_s": "lag 29-120 s + gz/link_rate + decode 18 s; at 10 Mbit/s 64-155 s; at 2 Mbit/s 133-224 s",
    "sustained_link_Mbit_s": 1.54,
    "installer": "new wheels; Linux cp312 eccodes stack 62.16 MB (eccodes 0.09, eccodeslib 9.02, eckitlib 35.98, numpy 16.73, cffi 0.22, attrs 0.07, pycparser 0.05, findlibs 0.01 MB); netCDF4 stack +12.49 MB for GOES; Windows: no eccodes wheel (blocked); macOS arm64: eccodes stack 23.77 MB without cffi/pycparser (unmeasured)",
    "failure_surfacing": "per machine; NOAA stall gives no notice to owner; decode error on a machine shows Data unavailable for that layer; memory 364 MB peak",
@@ -235,10 +235,10 @@
    "usd_mo": {
     "Hetzner_CX23": "6.49 floor (verified 2026 price; excludes VAT and IPv4; DE/FI locations only; RAM and traffic not verified)",
     "DigitalOcean_Basic": "4.00 (verified; 512 MiB RAM and 500 GiB transfer)",
-    "Lightsail": "3.50 IPv6-only or 5.00 IPv4 (verified; 512 MB or 0.5 GB RAM; 1 TB)",
+    "Lightsail": "3.50 IPv6-only or 5.00 IPv4 (prices and 1 TB verified today; 512 MB and 0.5 GB RAM per evidence ls-1, not re-checked)",
     "note": "decode peak 364 MB plus OS does not fit 512 MB; a 1 GB+ plan is unpriced in the evidence"
    },
-   "latency_s": "lag 29-120 s + decode 18 s + encode up to 4 s + download (0.5-0.9 s at 10 Mbit/s); about 50-145 s",
+   "latency_s": "lag 29-120 s + decode 18 s + encode up to 4 s + download (0.5-0.9 s at 10 Mbit/s); about 49-143 s",
    "failure_surfacing": "host down means every machine shows Unavailable (safe default); needs an external heartbeat (not built)",
    "privacy": "server receives no place lists; access logs hold crew IP addresses",
    "installer": "none in the desktop; server holds the Linux wheel stack (74.66 MB closure with netCDF4)",
@@ -321,7 +321,7 @@
    "dense_1byte_grid_zlib9": 1798719,
    "bytes_per_voxel_zlib9": 0.965
   },
-  "rejected": "dense grid: 3.0x larger; 2-bit packed mask: larger than byte mask (252,681 vs 238,142); 0.5 dB storage: smaller by 14% but threshold counts drift",
+  "rejected": "dense grid: 3.0x larger; 2-bit packed mask: larger than byte mask (252,681 vs 238,142); 0.5 dB storage: 12.5% smaller (523,217 vs 597,737 B) but threshold counts drift",
   "sidecar": "JSON, estimated 3-5 kB (not measured; the prototype's 33-level metadata block is 9.6 kB because it repeats per-level codes): schema_version, grid (origin 49.745 N, -116.795 E, 0.01 deg, 1350 x 615, row 0 north), levels_km, valid_time_utc per level, retrieved_utc, last_run_utc, next_expected_utc, objects with gz bytes and sha256, codes meaning (-999 and -99 = no radar data, meanings unverified), counts per level, keyframe flag, stored thresholds, freshness max_age_min (proposal), demo false",
   "naming": "product times in UTC; file name carries the joined step time; sidecar carries source object stamps"
  },
@@ -363,7 +363,7 @@
   "GitHub Actions terms for B (owner or legal reading of 'content delivery')",
   "Windows GRIB2 source for A (or decline A on Windows)",
   "product spec: 0.1 dB storage, keyframe every 10 frames, 1.0 MB frame and 60 MB loop budgets at >=20 dBZ",
-  "33 levels (0.5-19 km, the plan) or 11 levels (prototype default): about 2.5x bytes difference",
+  "33 levels (0.5-19 km, the plan) or 11 levels (prototype default): about 2.8x at peak keyframes (11-level 0.1 dB estimated)",
   "DECISIONS entry for MRMS and GOES freshness keys (D12 lacks them)",
   "owner's storm-day count and crew link speeds and RAM (sets A latency, monthly bytes and the host plan)",
   "NOAA attribution wording and the GOES banner 'Access is restricted to approved users only' (goes-aws open question) for counsel"
@@ -386,7 +386,7 @@
   {
    "text": "The shortest interval you can run scheduled workflows is once every 5 minutes.",
    "url": "https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows",
-   "fetched": "2026-10-17 WebFetch, summarised, not byte-checked"
+   "fetched": "2026-10-17 WebFetch; summarised by the fetch tool, not byte-checked"
   },
   {
    "text": "If the load is sufficiently high enough, some queued jobs may be dropped.",
@@ -409,9 +409,9 @@
    "fetched": "2026-10-17"
   },
   {
-   "text": "$0.015 / GB-month; 10 GB-month / month free",
+   "text": "$0.015 / GB-month",
    "url": "https://developers.cloudflare.com/r2/pricing/",
-   "fetched": "2026-10-17"
+   "fetched": "2026-10-17 (standard storage); free allowance quoted as 10 GB-month / month"
   },
   {
    "text": "S3 GET requests from the S3 Standard storage class cost $0.0004 per 1,000 requests.",
@@ -419,19 +419,24 @@
    "fetched": "2026-10-17"
   },
   {
-   "text": "$4.00; 512 MiB; 1 vCPU; 10 GiB; included 500 GiB",
+   "text": "Data transferred out to the internet for the first 100GB per month,",
+   "url": "https://aws.amazon.com/s3/pricing/",
+   "fetched": "2026-10-17 (continues: aggregated across all AWS Services and Regions)"
+  },
+  {
+   "text": "Monthly price (USD): $4.00",
    "url": "https://www.digitalocean.com/pricing/droplets",
-   "fetched": "2026-10-17"
+   "fetched": "2026-10-17 (fetch summary; memory 512 MiB and included 500 GiB quoted in the same answer)"
   },
   {
-   "text": "$5 USD/mo (IPv4 bundle, 1 TB Transfer); $3.50 USD/mo (IPv6-only bundle, 1 TB Transfer)",
+   "text": "$5 USD/mo",
    "url": "https://aws.amazon.com/lightsail/pricing/",
-   "fetched": "2026-10-17"
+   "fetched": "2026-10-17 (IPv4 bundle, with 1 TB Transfer); IPv6-only bundle $3.50 USD/mo, 1 TB Transfer"
   },
   {
-   "text": "CX23 ... 0.0104 / 6.49 (new USD, excl. VAT and IPv4; effective 15 June 2026)",
+   "text": "CX23 0.0064 / 3.99 0.0088 / 5.49 0.0080 / 4.99 0.0104 / 6.49",
    "url": "https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/",
-   "fetched": "2026-10-17"
+   "fetched": "2026-10-17; also 'All prices are excluding VAT.' and effective 15 June 2026"
   },
   {
    "text": "Published GitHub Pages sites may be no larger than 1 GB.",
@@ -441,10 +446,10 @@
   {
    "text": "NOAA data disseminated through NODD are open to the public and can be used as desired.",
    "url": "https://registry.opendata.aws/noaa-mrms-pds/",
-   "fetched": "mrms.json (reviewed)"
+   "fetched": "mrms.json (reviewed 2026-10-17)"
   },
   {
-   "text": "eccodes metadata: Requires-Dist: eccodeslib; platform_system != \"Windows\"",
+   "text": "Requires-Dist: eccodeslib; platform_system != \"Windows\"",
    "url": "local wheel METADATA (pip download, eccodes-2.50.0-py3-none-any.whl)",
    "fetched": "2026-10-17"
   }

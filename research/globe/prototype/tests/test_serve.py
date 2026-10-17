@@ -4,10 +4,12 @@ parallax wording and an offline server. No network and no browser are used.
 Run from the prototype folder:  python -m unittest discover -s tests -v
 """
 import json
+import math
 import os
 import struct
 import subprocess
 import sys
+import tempfile
 import threading
 import unittest
 import urllib.error
@@ -582,6 +584,220 @@ class OfflineServerTests(unittest.TestCase):
         self.assertEqual(self.get("/nope")[0], 404)
         self.assertEqual(self.get("/../serve.py")[0], 404)
         self.assertEqual(self.get("/serve.py")[0], 404)
+
+
+VOLUME_LEGEND = ("Radar echo strength (dBZ). Not hail size. -99/-999 cells are no radar data; "
+                 "no echo is not clear.")
+SYNTH_VOLUME = os.path.join(FIXTURES, "volume-synthetic.json")
+SAMPLE_VOLUME = os.path.join(FIXTURES, "volume-2025-06-15-sample.json")
+
+
+def load_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def layer_row(svc, layer_id="mrms_volume"):
+    """One row of layers.json, built offline (no network is used)."""
+    return [layer for layer in serve.layers_doc(svc)["layers"] if layer["id"] == layer_id][0]
+
+
+def write_json(doc):
+    folder = tempfile.mkdtemp(prefix="volume-test-")
+    path = os.path.join(folder, "volume.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(doc, f)
+    return path
+
+
+class VolumeTests(unittest.TestCase):
+    """The 3D storms layer: legend, labels, states, the file checks and the geometry lookups. Offline; the
+    fixtures are local files, and the clock is pinned where a state depends on it."""
+
+    def service(self, path):
+        return serve.Service(offline=True, volume_path=path)
+
+    def test_legend_name_and_kind_are_as_specified(self):
+        row = layer_row(self.service(SYNTH_VOLUME))
+        self.assertEqual(row["legend"], VOLUME_LEGEND)
+        self.assertEqual(row["name"], "3D storms (MRMS reflectivity)")
+        self.assertEqual(row["kind"], "radar estimate")
+        self.assertFalse(row["default_on"], "the storms start hidden")
+
+    def test_the_layer_sits_between_radar_and_alerts(self):
+        ids = [layer["id"] for layer in serve.layers_doc(self.service(SYNTH_VOLUME))["layers"]]
+        self.assertEqual(ids.index("mrms_volume"), ids.index("nws_radar") + 1)
+        self.assertEqual(ids.index("nws_alerts"), ids.index("mrms_volume") + 1)
+
+    def test_the_synthetic_field_is_labelled_and_never_shown_as_live(self):
+        row = layer_row(self.service(SYNTH_VOLUME))
+        self.assertEqual(row["label"], "synthetic: not weather")
+        self.assertEqual(row["state"], "unavailable")
+        self.assertIn("synthetic test field, not weather", row["state_text"])
+        self.assertIn("placeholder", row["valid_text"])
+        self.assertEqual(row["voxel_count"], 1265)
+        self.assertEqual(row["threshold_dbz"], 40.0)
+        self.assertEqual(row["draw_url"], "/api/volume.json")
+        self.assertEqual(row["source"]["url"], None)
+
+    def test_the_archived_sample_is_labelled_stale_and_shows_its_valid_time(self):
+        with mock.patch.object(serve, "utcnow", return_value=NOW):
+            row = layer_row(self.service(SAMPLE_VOLUME))
+        self.assertEqual(row["label"], "Archived event: recorded MRMS volume, not live")
+        self.assertEqual(row["state"], "stale")
+        self.assertIn("over the 10-min limit", row["state_text"])
+        self.assertTrue(row["valid_text"].startswith("2025-06-15 23:12:41 UTC"))
+        self.assertEqual(row["valid_time_utc"], "2025-06-15T23:12:41Z")
+        self.assertEqual(row["voxel_count"], 3931)
+        self.assertEqual(row["threshold_dbz"], 35.0)
+        self.assertEqual(row["levels_km"][0], 0.5)
+
+    def test_a_recent_real_volume_is_live_and_not_called_archived(self):
+        doc = load_json(SAMPLE_VOLUME)
+        recent = (NOW - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        doc["valid_time_utc"] = {key: recent for key in doc["valid_time_utc"]}
+        with mock.patch.object(serve, "utcnow", return_value=NOW):
+            row = layer_row(self.service(write_json(doc)))
+        self.assertEqual(row["state"], "live")
+        self.assertEqual(row["label"], "Recorded MRMS volume: a file, not a live feed")
+        self.assertIn("within the 10-min limit", row["state_text"])
+
+    def test_offline_does_not_switch_the_volume_off(self):
+        self.assertNotEqual(layer_row(self.service(SAMPLE_VOLUME))["state"], "off")
+
+    def test_heights_scale_with_the_exaggeration(self):
+        doc = serve.volume_doc(self.service(SAMPLE_VOLUME))
+        self.assertEqual(doc["exaggerations"], [1, 3, 5])
+        for k, km in enumerate(doc["levels_km"]):
+            base = km * 1000.0
+            self.assertAlmostEqual(doc["heights_m"]["1"][k], base)
+            self.assertAlmostEqual(doc["heights_m"]["3"][k], 3 * base)
+            self.assertAlmostEqual(doc["heights_m"]["5"][k], 5 * base)
+
+    def test_cell_centres_follow_the_grid_facts(self):
+        grid = load_json(SAMPLE_VOLUME)["grid"]
+        doc = serve.volume_doc(self.service(SAMPLE_VOLUME))
+        self.assertEqual((len(doc["lons"]), len(doc["lats"])), (grid["nx"], grid["ny"]))
+        self.assertAlmostEqual(doc["lons"][0], grid["origin"]["lon"])
+        self.assertAlmostEqual(doc["lats"][0], grid["origin"]["lat"])
+        self.assertAlmostEqual(doc["lons"][10] - doc["lons"][0], 10 * grid["dx"], places=5)
+        self.assertAlmostEqual(doc["lats"][0] - doc["lats"][10], 10 * grid["dy"], places=5)
+        # the first voxel of the sample: column 81, row 54, level 2 km
+        i, j, k, dbz = doc["voxels"][0]
+        self.assertEqual((i, j, k, dbz), (81, 54, 2, 36))
+        self.assertAlmostEqual(doc["lons"][i], -104.965, places=5)
+        self.assertAlmostEqual(doc["lats"][j], 49.465, places=5)
+
+    def test_the_view_holds_the_whole_volume(self):
+        view = serve.volume_doc(self.service(SAMPLE_VOLUME))["view"]
+        west, south, east, north = view["bounds"]
+        lon, lat = view["centre"]
+        self.assertTrue(west <= lon <= east and south <= lat <= north)
+        half_diag = math.hypot((north - south) / 2 * 111320, (east - west) / 2 * 111320 * math.cos(math.radians(lat)))
+        self.assertGreaterEqual(view["radius_m"], half_diag)
+
+    def test_a_sentinel_as_a_dbz_value_is_refused(self):
+        doc = load_json(SYNTH_VOLUME)
+        doc["voxels"][0][3] = -999
+        row = layer_row(self.service(write_json(doc)))
+        self.assertEqual(row["state"], "unavailable")
+        self.assertIn("voxel 0 has no usable dBZ value", row["state_text"])
+        self.assertEqual((row["voxel_count"], row["draw_url"]), (0, None))
+
+    def test_a_voxel_outside_the_grid_is_refused(self):
+        doc = load_json(SYNTH_VOLUME)
+        doc["voxels"][1] = [9999, 0, 0, 50]
+        row = layer_row(self.service(write_json(doc)))
+        self.assertEqual(row["state"], "unavailable")
+        self.assertIn("voxel 1 is outside the grid", row["state_text"])
+
+    def test_a_missing_file_is_unavailable_with_a_reason(self):
+        row = layer_row(self.service(os.path.join(FIXTURES, "no-such-volume.json")))
+        self.assertEqual(row["state"], "unavailable")
+        self.assertIn("could not be read", row["state_text"])
+        self.assertEqual(row["draw_url"], None)
+        self.assertEqual(row["voxel_count"], 0)
+
+    def test_a_file_that_is_not_json_is_unavailable(self):
+        folder = tempfile.mkdtemp(prefix="volume-test-")
+        path = os.path.join(folder, "bad.json")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("<html>not a volume</html>")
+        row = layer_row(self.service(path))
+        self.assertEqual(row["state"], "unavailable")
+        self.assertIn("is not JSON", row["state_text"])
+
+    def test_an_incomplete_volume_says_which_levels_are_missing(self):
+        doc = load_json(SAMPLE_VOLUME)
+        doc["missing_levels_km"] = [16.0, 17.0]
+        doc["complete"] = False
+        row = layer_row(self.service(write_json(doc)))
+        self.assertIn("Incomplete: levels 16, 17 km are missing", row["content_text"])
+
+    def test_the_default_volume_is_the_synthetic_field(self):
+        self.assertEqual(serve.resolve_volume_path(None), serve.VOLUME_DEFAULT)
+        self.assertEqual(serve.resolve_volume_path("fixtures/volume-synthetic.json"),
+                         os.path.join(PROTO, "fixtures", "volume-synthetic.json"))
+        self.assertEqual(serve.resolve_volume_path(SAMPLE_VOLUME), SAMPLE_VOLUME)
+
+
+class VolumeServerTests(unittest.TestCase):
+    """serve.py --offline --volume (the sample): the endpoints a browser reads. No network is used."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.proc = subprocess.Popen([sys.executable, "-B", os.path.join(PROTO, "serve.py"), "--port", "0",
+                                     "--offline", "--volume", os.path.join("fixtures", "volume-2025-06-15-sample.json")],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        line = {}
+
+        def read_first_line():
+            line["text"] = cls.proc.stdout.readline()
+
+        reader = threading.Thread(target=read_first_line, daemon=True)
+        reader.start()
+        reader.join(30)
+        text = line.get("text", "").strip()
+        if not text.startswith("PORT="):
+            cls.proc.kill()
+            raise RuntimeError(f"serve.py did not print its port: {text!r}")
+        cls.base = f"http://127.0.0.1:{int(text.split('=')[1])}"
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.proc.terminate()
+        cls.proc.wait(timeout=10)
+        for pipe in (cls.proc.stdout, cls.proc.stderr):
+            if pipe is not None:
+                pipe.close()
+
+    def get(self, path):
+        try:
+            with urllib.request.urlopen(self.base + path, timeout=20) as r:
+                return r.status, r.headers.get("Content-Type", ""), r.read()
+        except urllib.error.HTTPError as e:
+            return e.code, e.headers.get("Content-Type", ""), e.read()
+
+    def test_volume_json_serves_the_sample_with_its_provenance(self):
+        status, ctype, body = self.get("/api/volume.json")
+        self.assertEqual(status, 200)
+        self.assertIn("application/json", ctype)
+        doc = json.loads(body)
+        self.assertEqual(doc["voxel_count"], 3931)
+        self.assertEqual(len(doc["voxels"]), 3931)
+        self.assertEqual(doc["file"], "fixtures/volume-2025-06-15-sample.json")
+        self.assertEqual(doc["provenance"]["bucket"], "noaa-mrms-pds")
+        self.assertNotIn(b"\n ", body, "the voxel JSON should be compact")
+
+    def test_layers_json_carries_the_volume_row(self):
+        doc = json.loads(self.get("/api/layers.json")[2])
+        row = [layer for layer in doc["layers"] if layer["id"] == "mrms_volume"][0]
+        self.assertEqual(row["voxel_count"], 3931)
+        self.assertEqual(row["legend"], VOLUME_LEGEND)
+        self.assertEqual(row["state"], "stale")
+
+    def test_the_volume_file_itself_is_not_served_by_path(self):
+        self.assertEqual(self.get("/fixtures/volume-2025-06-15-sample.json")[0], 404)
 
 
 if __name__ == "__main__":
