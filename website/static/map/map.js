@@ -398,7 +398,10 @@
     var y1 = Math.max(y0, Math.floor(tlTop - size.y - 2));      // touching the timeline
     var left = tl[0] + (vw - tl[0] - br[0] - size.x) / 2;
     var nw = map.project(vb.getNorthWest(), z), pts = [];
-    (data ? data.towns : []).forEach(function (t) { if (!t.minor) pts.push(map.project([t.lat, t.lon], z).subtract(nw)); });
+    // the towns that show at the first view (min_zoom below 7; townMinZoom): the others appear when zoomed in
+    (data ? data.towns : []).forEach(function (t) {
+      if (townMinZoom(t) < 7) pts.push(map.project([t.lat, t.lon], z).subtract(nw));
+    });
     var boxes = [];
     [el.legend, el.legendWrap.querySelector(".mapdata"), el.top.querySelector(".close"), el.buttons, el.timeline]
       .concat([].slice.call(el.banners.children)).forEach(function (e) {
@@ -595,7 +598,7 @@
       }).addTo(map);
     });
     (bm.places || []).forEach(function (p) {
-      if (p.site) return;          // the 14 site towns are drawn as bubbles instead
+      if (p.site) return;          // the site towns are drawn as bubbles instead
       L.marker([p.lat, p.lon], {
         pane: "labels", interactive: false, keyboard: false,
         icon: L.divIcon({ className: "bm-label place" + zoomCls(p.min_zoom, p.max_zoom),
@@ -611,6 +614,12 @@
     if (minZ && minZ > 5) c += " mz" + minZ;
     if (maxZ) c += " xz" + maxZ;
     return c;
+  }
+
+  /** The zoom a town shows from: min_zoom in data/map.json (towns.json; build.py writes it), else 7 for
+      the older "minor" towns and 5 for the rest. */
+  function townMinZoom(t) {
+    return t.min_zoom != null ? t.min_zoom : t.minor ? 7 : 5;
   }
 
   /** Hatch everything outside the pictures' box: no radar or model there, so it must not look dry. */
@@ -629,7 +638,8 @@
     data.towns.forEach(function (t) {
       var side = /^(right|left|top|bottom)$/.test(t.label || "") ? t.label : "right";
       var icon = L.divIcon({
-        className: "town side-" + side + (t.minor ? " minor" : ""),
+        // hidden below its min_zoom: zoomCls adds mzN, which map.css shows from zoom N, as for the basemap's names
+        className: "town side-" + side + zoomCls(townMinZoom(t)),
         html: '<span class="bubble" aria-hidden="true">\u2014</span><span class="tname" aria-hidden="true">' + esc(t.name) + "</span>",
         iconSize: [30, 30], iconAnchor: [15, 15]
       });
@@ -1351,9 +1361,9 @@
     return h.gap ? h.gap + (h.outside ? "Out" : "") : h.outside ? "outside" : "";
   }
 
-  /** Whether a town's bubble is on screen (minor towns appear from zoom 7). */
+  /** Whether a town's bubble is on screen (a town appears from its min_zoom: 7 for the minor towns). */
   function townVisible(t) {
-    if (t.minor && map.getZoom() < 7) return false;
+    if (map.getZoom() < townMinZoom(t)) return false;      // not shown yet at this zoom (drawTowns)
     return map.getBounds().contains([t.lat, t.lon]);
   }
 
@@ -1783,7 +1793,7 @@
     if (!locState || !data) return;
     var p = map.latLngToLayerPoint(locState.ll), here = null, best = 15 + 8 + 2;   // bubble and dot radii, a little air
     data.towns.forEach(function (t) {
-      if (t.minor && map.getZoom() < 7) return;
+      if (map.getZoom() < townMinZoom(t)) return;          // not on the map yet at this zoom (townMinZoom)
       var d = map.latLngToLayerPoint([t.lat, t.lon]).distanceTo(p);
       if (d < best) { best = d; here = t; }
     });
