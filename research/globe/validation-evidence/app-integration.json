@@ -1,0 +1,136 @@
+{
+  "workstream": "W9",
+  "slug": "app-integration",
+  "checked_at_utc": "2026-10-17T02:07:56Z",
+  "reviewed_at_utc": "2026-10-17T03:06:23Z",
+  "checks": [
+    {"what": "Line counts of the nine files", "result": "978, 1316, 302, 286, 178, 326, 17, 714, 579 match", "verified": true},
+    {"what": "Self-test and unit tests", "result": "PASS payload 1.0.0; 44 tests OK (reproduced)", "verified": true},
+    {"what": "Zipball of main 349df2a", "result": "914,145 B; 103 entries; 17 payload files; PASS", "verified": true},
+    {"what": "python -I self-test", "result": "CORRECTED: system python FAILs on markupsafe; a venv with the requirements PASSes", "verified": true},
+    {"what": "Headers and gate, headless", "result": "403, 403, 303 + Set-Cookie, 200, Host 400; no CSP, frame, CORS, Referrer, HSTS, nosniff", "verified": true},
+    {"what": "External resources, Live Storms", "result": "5 script src, 4 CDN stylesheets, Google Fonts (reproduced)", "verified": true},
+    {"what": "Scratch /globe, unreachable CDN tag", "result": "PASS; 200; CORRECTED size 11,461 B (W9: 11,452)", "verified": true},
+    {"what": "Self-test controls (a)-(d)", "result": "template syntax FAIL; NameError FAIL; HTTP 500 FAIL; unlisted broken route PASS", "verified": true},
+    {"what": "URL map, stop hook, static route", "result": "35 rules; no static; no /globe; hook callable; no alerts thread", "verified": true},
+    {"what": "Payload diff, main vs this branch", "result": "12 files differ; CORRECTED: also a repository placeholder in app.html", "verified": true},
+    {"what": "Branch and remote state", "result": "origin/main 349df2a confirmed; CORRECTED: HEAD now 73102c5 (payload unchanged since 94e44ca)", "verified": true},
+    {"what": "Archive sizes", "result": "94e44ca zip 1,281,532 confirmed; CORRECTED: research zip 743,511 (1,086,085 not reproduced)", "verified": true},
+    {"what": "CONTRACTS, COVERAGE, tests", "result": "8 and 5 entries; no test references them", "verified": true},
+    {"what": "Importable libraries", "result": "numpy, netCDF, eccodes, pyproj, xarray absent outside research/; PIL excluded", "verified": true},
+    {"what": "Sibling evidence W1 to W3", "result": "GIBS tile and GOES object return ACAO * (one sample each); mrms.json now present", "verified": true}
+  ],
+  "facts": [
+    {"claim": "Self-test checks only the HTTP status of manifest.selftest paths", "value": "create_app(NETWORK False, TESTING True); status >= 400 or exception fails; no JS or sub-resources; unlisted broken pages pass. Gate is bypassed. /globe needs: GET < 400, no escaping exception, FeedError caught, listed; a dead CDN tag passes", "evidence": "updater.py:71, 122-158; manifest.json:6-16; launcher.py:433-434; weather.py:846-847", "verified": true},
+    {"claim": "Gate, headers and outbound loads", "value": "Only Host (127.0.0.1 or localhost, else 400) and cookie hw_session (else 403; HttpOnly, SameSite=Strict) gate requests. No CSP, X-Frame-Options, CORS, Referrer-Policy, HSTS or nosniff (reproduced). Nothing blocks cdnjs, GIBS or NOAA. Cross-origin WebGL upload needs CORS (GIBS, GOES: ACAO * on one sample each)", "evidence": "launcher.py:159-207; DECISIONS.md:15-21; headless probe; live Origin requests", "verified": true},
+    {"claim": "Live Storms already depends on CDN libraries; one hand-written JavaScript bridge", "value": "5 external scripts, 4 CDN stylesheets, Google Fonts (reproduced); maps.py:53-55 keeps Leaflet and jQuery defaults. Bridge at live.html:299 (early return at 305-306); history.html:148-150 wraps Folium output only", "evidence": "rendered /; base.html:8-10; live.html:294-325; maps.py:53-55, 298-302", "verified": true},
+    {"claim": "Reusable closures inside create_app", "value": "alert_targets 285-299; run_matches 301-344; event_context 594-630; footprint_source 226-232; reports_for 244-248; setting 220-221; tz 223-224. Alerts, radar, forecasts and tz used by a scratch route (reproduced)", "evidence": "payload/app.py as cited", "verified": true},
+    {"claim": "Reusable module functions and alert geometry", "value": "AlertService.active 578-581; refresh 516-530; ZoneService.geoms (attribute, 632), ensure 635-653; applies_to_place 593-607; applies_to_area 610-623; point_in 291-295; intersects 325-336; assess_place 1220-1262. Null geometry is never 'no alert'", "evidence": "payload/weather.py as cited; app.py:474-475", "verified": true},
+    {"claim": "Places, territories and radar feed state", "value": "Store.places(kind=None): kind CHECK job|property, nws_zone, nws_county, nws_fire_zone, tz (store.py:143-149); territories() 192-193. RadarService.refresh sets source_time, fetched_at, error (673-688); STATE_LABEL 207-209; view 238-246", "evidence": "store.py:27, 143-149, 192-193; weather.py:207-246, 666-688", "verified": true},
+    {"claim": "Freshness gap: no GOES or MRMS keys; README cites D12 for limits D12 lacks", "value": "FRESH_SECONDS: radar 900, alerts 600, spc 3600, forecast 43200, geocode 1e9, footprint 21600; unknown keys fall back to 3600 s (232). README says D12 limits are GOES 15 min, MRMS 10 min; D12 lists radar, alerts, SPC, forecast, footprint only", "evidence": "weather.py:205-206, 232; README.md:58-59; DECISIONS.md:89-90", "verified": true},
+    {"claim": "Demo guard", "value": "/history?event=demo shows fictional footprints only if footprint.source == 'demo', else an error (reproduced both ways). Live Storms draws footprints only for 'geojson'. DemoFootprint returns [] for other keys", "evidence": "app.py:598-605, 465-466; weather.py:1163-1165", "verified": true},
+    {"claim": "Settings storage and save route", "value": "DEFAULTS: rules, targeting, notify, footprint, spc, display_tz. POST /settings/<name> accepts rules, targeting, notify, footprint, spc, tz; other names give 404", "evidence": "app.py:64-71, 885-923; store.py:107-119", "verified": true},
+    {"claim": "Background poller and create_app shape", "value": "poll_forever: 3 s, then 60 s per tick; starts if net and BACKGROUND and not TESTING (363-364); hailwatch.stop set at 365. Six services, 6-thread pool, match_lock (199-218); 35 url_map rules; static_folder=None (204)", "evidence": "payload/app.py:199-218, 346-365, 428-436; launcher.py:356-367", "verified": true},
+    {"claim": "CONTRACTS display", "value": "8 entries with keys feed, endpoint, units, time, cadence, missing, rendered by sources.html:104; COVERAGE has 5 tuples; no automated test checks either", "evidence": "weather.py:1269-1316; sources.html:104, 110", "verified": true},
+    {"claim": "GOES CONTRACTS values (from W2, not re-checked by W9)", "value": "Proposed: band 13 CMI in K (scale 0.06145332, offset 89.62, fill -1); ACHAC HT in m (scale 0.3052037, fill 65535); 5-minute CONUS cadence", "evidence": "validation-evidence/goes-aws.json (W2)", "verified": false},
+    {"claim": "MRMS CONTRACTS entry: pending", "value": "No MRMS entry. CORRECTED: mrms.json now exists (19,254 B, W3); its values were not checked here", "evidence": "README.md:21 (section 1, item 3: '33 heights, 0.5-19 km, 1 km cells, every 2 min'); validation-evidence/mrms.json", "verified": false, "corrected_by_review": true},
+    {"claim": "Libraries and installer needs", "value": "Not in requirements.txt or _bundle_imports; PIL excluded (build.py:61); updater.py:646-647 hint. Only new pip packages need an installer (AGENTS rule 2); min_shell stays 1 (manifest.json:4); shipping needs a version increase (updater.py:620-621). Inferred; no installer built", "evidence": "launcher.py:47-54; build.py:60-61; manifest.json:4; AGENTS.md", "verified": true},
+    {"claim": "Sizes against the 50 MB cap", "value": "Cap 52,428,800 B (updater.py:191). Main zipball, the whole repo, 914,145 B (1.74%), reproduced. Payload 17 files, 79,184 B as the sum of entry sizes; 2,000-file limit (updater.py:272, 298). CORRECTED: HEAD 73102c5 zip 1,705,335 B (3.25%); 1,281,532 B (2.44%) was 94e44ca; research/ 743,511 B at 94e44ca (not 1,086,085); skills/ 90,325 B", "evidence": "updater.py:191, 272, 298; git archive; gh zipball", "verified": true, "corrected_by_review": true},
+    {"claim": "Update channel vs this branch", "value": "Update branch is main. origin/main 349df2a ships 'Montana Hail Watch'; this branch ships 'Big Sky Hail Watch'. The 12 differing files differ by names, one tagline (base.html:155) and a repository placeholder (app.html:97). CORRECTED", "evidence": "git ls-remote; desktop/update_config.json; normalised payload diff", "verified": true, "corrected_by_review": true},
+    {"claim": "Theme tokens for a globe page", "value": "base.html :root defines 18 tokens (--storm-900 to --mono). Dark only: no color-scheme query", "evidence": "payload/templates/base.html:12-23", "verified": true},
+    {"claim": "Tests a /globe change must keep green", "value": "Every manifest selftest path (test_weather.py:341-343); feed states 189-200; demo never for a real date 263-269; wording patterns 346-358", "evidence": "tests/test_weather.py", "verified": true},
+    {"claim": "Scratch-tested sketch of a minimal /globe (not committed)", "value": "Route refreshes alerts and radar; renders globe.html with alerts, places, territories, feed views; one unreachable CDN tag; script returns early without the library. Reviewer re-run: PASS, 200, 11,461 B. Version bump only via ship.py", "evidence": "globe-scripts/app-integration/proto/make_proto.py (re-run in globe-scripts/app-integration-review)", "verified": true}
+  ],
+  "quotes": [
+    {"text": "The only hand-written JavaScript in the app.", "url": "payload/templates/live.html#L299"},
+    {"text": "The script part of Folium's render has no tags; the web version inserted it bare, so the map never ran. HTML string tests missed it; a real browser caught it.", "url": "docs/DECISIONS.md#D8 (lines 63-64)"},
+    {"text": "resp = client.get(path) / if resp.status_code >= 400:", "url": "desktop/updater.py#L141-L142"},
+    {"text": "MAX_DOWNLOAD = 50 * 1024 * 1024", "url": "desktop/updater.py#L191"},
+    {"text": "Requests without it get 403; a wrong `Host` header is refused.", "url": "docs/DECISIONS.md#D2 (lines 18-19)"},
+    {"text": "A future payload can only use packages listed (or imported) here.", "url": "desktop/launcher.py#L47-L49"},
+    {"text": "if net and cfg[\"BACKGROUND\"] and not cfg[\"TESTING\"]:", "url": "payload/app.py#L363"},
+    {"text": "Freshness limits: radar 15 min, alerts 10 min, SPC 60 min, forecast 12 h, footprint 6 h.", "url": "docs/DECISIONS.md#D12 (lines 89-90)"},
+    {"text": "(D12 limits: GOES 15 min, MRMS 10 min, alerts 10 min, imagery daily).", "url": "research/globe/README.md#L58-L59"},
+    {"text": "access-control-allow-origin: *", "url": "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_GeoColor/default/2026-10-17T01:00:00Z/GoogleMapsCompatible_Level7/5/11/6.png (reviewer GET with Origin, 200)"},
+    {"text": "Access-Control-Allow-Origin: *", "url": "https://noaa-goes19.s3.amazonaws.com/ABI-L2-ACHAC/2026/290/01/OR_ABI-L2-ACHAC-M6_G19_s20262900141174_e20262900143547_c20262900145322.nc (reviewer GET with Origin, 200)"}
+  ],
+  "limits": [
+    "HEAD measured at 73102c5 and 94e44ca; main zipball at 349df2a, which is the whole repository.",
+    "No browser run (no Playwright or Chromium). CDN-blocked behaviour inferred from live.html:305-306 and rendered HTML.",
+    "The self-test cannot see JavaScript, CDN loads, CSP or CORS.",
+    "pywebview 6.2.1 is installed but not importable (proxy_tools missing); the native window was not run.",
+    "Headers probed headless with --offline; sibling CORS checked for one live sample each. No repo file changed except this evidence file; scratch files are under globe-scripts/ and globe-dl/app-integration-review."
+  ],
+  "installed_packages": [
+    "Reviewer venv globe-scripts/app-integration-review/venv (PyPI via proxy): Flask 3.1.3, folium 0.20.0, requests 2.34.2, waitress 3.0.2, tzdata 2026.5, Jinja2 3.1.6, MarkupSafe 3.0.4, Werkzeug 3.1.9, branca 0.8.2. requirements.txt not edited."
+  ],
+  "open_questions": [
+    "Update channel main ships 'Montana Hail Watch'; this branch says 'Big Sky Hail Watch'. Which branch and name base the globe PR?",
+    "README section 3 cites D12 for GOES, MRMS and imagery limits D12 lacks. Fix the README or add a decision before FRESH_SECONDS gets keys.",
+    "Should /globe reuse alert_targets() and the pool pattern so matches equal Live Storms (README section 6, phase 1)?",
+    "Does /globe accept event=demo? If yes it needs event_context() and DEMO labels; if no it must refuse it.",
+    "Browser checks of CDN-blocked live and globe pages are owed to W8/W14.",
+    "CI runs Python 3.12 (check-app.yml:20); this review used 3.13.",
+    "research/ and skills/ are not on main. Separate zips sum to 0.83 MB (94e44ca) or 1.26 MB (HEAD), so a merged update zip would be about 1.75 MB or 2.17 MB (estimate; 3.3-4.1% of the cap)."
+  ],
+  "review": {
+    "refuted_claims": [
+      "'python -I fails because flask, jinja2 and markupsafe sit in /root/.local': only jinja2 and markupsafe do; flask is in /usr/local/lib/python3.13/dist-packages. In a venv with the requirements, -I PASSes.",
+      "'pywebview is not installed (import webview fails)': pywebview 6.2.1 is installed; the import fails on the missing proxy_tools dependency.",
+      "'HEAD zip 1,281,532 B (2.44%)': that is the 94e44ca figure. HEAD 73102c5 zips to 1,705,335 B (3.25%).",
+      "'research/ zip 1,086,085 B': not reproduced (git archive: 743,511 B at 94e44ca, 1,167,314 B at HEAD).",
+      "'would add about 1.18 MB if merged': rests on that figure; separate-zip sums are 0.83 MB (94e44ca) or 1.26 MB (HEAD).",
+      "'product-name or tagline strings only': templates/app.html also differs by a repository placeholder (your-name/RoofingApp vs your-name/bigsky-hailwatch)."
+    ],
+    "corrections": [
+      "Local HEAD is 73102c5, not 94e44ca. payload, desktop, tests and docs have no diff between them, so the cited lines hold.",
+      "The 2,000-file limit cites desktop/updater.py:272 (max_files=2000) and the count check at :298.",
+      "/globe scratch page renders at 11,461 B on re-run (W9: 11,452 B); 9-byte gap not investigated. Status 200, 'Data unavailable' and 'Off' confirmed.",
+      "mrms.json now exists (19,254 B); W9's 'absent' note is stale. Values not checked here.",
+      "GIBS and GOES CORS: one live sample each returns access-control-allow-origin *; not all tiles or objects.",
+      "79,184 B is the sum of the 17 payload entries' compressed sizes; a payload-only zip at deflate level 9 is 80,894 B.",
+      "Blockers should read: jinja2 and markupsafe in /root/.local; flask in /usr/local; pywebview 6.2.1 installed but not importable.",
+      "Condensed to fit 20 KB; only items marked corrected_by_review or CORRECTED changed value or citation."
+    ],
+    "confirmed": [
+      "Self-test checks only HTTP status; exceptions and 4xx/5xx fail; unlisted broken routes pass; unreachable CDN tag passes (C0-C4).",
+      "manifest selftest has 9 paths (manifest.json:6-16); min_shell 1 (line 4); default selftest /healthz and / (updater.py:71).",
+      "url_map: 35 rules; no static endpoint; no /globe; hailwatch.stop callable; no alerts thread when BACKGROUND is False.",
+      "Gate: Host check 160-161; cookie 168; status codes as stated; no CSP, X-Frame-Options, CORS, Referrer-Policy, HSTS or nosniff.",
+      "Live Storms: 5 script src, 4 CDN stylesheets, Google Fonts. Demo guard and DemoFootprint as stated.",
+      "ForecastService.point raises FeedError when disabled (weather.py:846-847).",
+      "Cited closure and module-function lines were re-read and match.",
+      "FRESH_SECONDS lacks GOES and MRMS keys; D12 lacks them; README:58-59 cites D12.",
+      "CONTRACTS has 8 entries; COVERAGE has 5; no test references either. numpy, netCDF, eccodes, pyproj, xarray absent outside research/.",
+      "Main zipball 914,145 B (1.74%), 103 entries, 17 payload files, no research/ or skills/; origin/main is 349df2a.",
+      "base.html :root has 18 tokens; dark only. One hand-written JavaScript bridge (live.html:299-325). CI runs Python 3.12."
+    ],
+    "unverified": [
+      "Browser rule: cross-origin WebGL texture upload needs CORS and throws SecurityError. No verbatim source: MDN texImage2D lacks it (WebFetch), the Khronos spec URL returned 403, and a search summary of spec section 4.2 could not be fetched.",
+      "Whether a CDN-blocked live or globe page shows panels without a map. No WebGL recipe exists in W9's file (make_proto.py has no WebGL code) and no browser ran.",
+      "CORS for every GIBS tile and GOES object (one sample each).",
+      "W2 GOES CONTRACTS values and W3 MRMS values (not re-checked).",
+      "research/ zip 1,086,085 B: method unknown; not reproduced.",
+      "Whether PyInstaller packs transitive dependencies (e.g. markupsafe) into the installer (no installer built).",
+      "Native window path (pywebview import blocked by proxy_tools; not run).",
+      "Why /globe renders 9 bytes larger here; CI on Python 3.12 not run (3.13 used)."
+    ],
+    "reviewer_checks": [
+      {"what": "Self-test: documented, venv -I, system -I", "result": "PASS payload 1.0.0; venv -I PASS; system -I FAIL markupsafe", "verified": true},
+      {"what": "venv python -B -m unittest discover -s tests", "result": "Ran 44 tests in 4.323 s, OK", "verified": true},
+      {"what": "gh api zipball 349df2a; updater.extract_payload; self-test under HEAD shell", "result": "914,145 B; 103 entries; no research/ or skills/; manifest Montana Hail Watch 1.0.0; PASS", "verified": true},
+      {"what": "Main vs HEAD payload, product name normalised", "result": "Only base.html:155 (tagline) and app.html:97 (placeholder) differ", "verified": true},
+      {"what": "git archive --format=zip at 94e44ca and 73102c5, per path", "result": "94e44ca: all 1,281,532; research 743,511; skills 90,325; payload 82,150. 73102c5: all 1,705,335; research 1,167,314", "verified": true},
+      {"what": "create_app(NETWORK False, TESTING True, BACKGROUND False); test client", "result": "35 rules; nine manifest paths 200; '/' has 5 script src, 4 CDN stylesheets, Google Fonts", "verified": true},
+      {"what": "/history?event=demo with footprint none, then demo", "result": "none: 'demo footprint is off'; demo: no error, 12 'DEMO' strings", "verified": true},
+      {"what": "ForecastService(enabled=False).point; AlertService.active() offline", "result": "FeedError 'live feeds are off during a self-test'; active() returns []", "verified": true},
+      {"what": "Scratch routes C0-C6 through updater.selftest", "result": "C0 PASS; C1 template error FAIL; C2 NameError FAIL; C3 HTTP 500 FAIL; C4 PASS; C5 uncaught FeedError FAIL; C6 caught PASS", "verified": true},
+      {"what": "Re-ran make_proto.py on a scratch copy", "result": "Self-test PASS; GET /globe 200, 11,461 B; 'Data unavailable', 'Off' and CDN tag present", "verified": true},
+      {"what": "Headless launcher probe (-I -B, --offline)", "result": "403 no cookie; 403 wrong key; 303 + Set-Cookie hw_session (HttpOnly; SameSite=Strict); 200; Host evil.example 400; localhost 200; no security headers", "verified": true},
+      {"what": "Live GET with Origin: GIBS tile, GOES-19 object", "result": "Both HTTP 200 with access-control-allow-origin: *", "verified": true},
+      {"what": "import playwright; which chromium; import webview; pip show pywebview", "result": "playwright missing; no chromium; webview import fails on proxy_tools; pywebview 6.2.1 installed", "verified": true},
+      {"what": "WebFetch of MDN texImage2D and the Khronos WebGL 1.0 spec; WebSearch", "result": "MDN page has no cross-origin sentence; Khronos URL returns 403; no verbatim quote obtained", "verified": false},
+      {"what": "grep for numpy|netCDF|eccodes|pyproj|xarray; CSP/CORS/frame code; CONTRACTS tests; templates for hand-written JS", "result": "None found; no hand-written JS beyond live.html; no inline event handlers", "verified": true}
+    ]
+  }
+}

@@ -10,6 +10,8 @@ import contextlib
 import hashlib
 import io
 import json
+import re
+import shutil
 import sys
 import tempfile
 import unittest
@@ -349,7 +351,8 @@ class Fetching(unittest.TestCase):
 class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
         self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "stations",
-                                              "observations", "reports", "radar", "forecast_model", "basemap"})
+                                              "observations", "reports", "radar", "forecast_model", "storm_levels",
+                                              "basemap"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
@@ -534,8 +537,10 @@ class SampleBuild(unittest.TestCase):
 
     def test_about_page_lists_every_source(self):
         html = page(self.out, "about.html")
-        for c in src.CONTRACTS.values():
-            self.assertIn(c["name"], html)
+        for key, c in src.CONTRACTS.items():
+            if key != "storm_levels":            # listed only in a --storm-layers build (StormLayers)
+                self.assertIn(c["name"], html)
+        self.assertNotIn(src.CONTRACTS["storm_levels"]["name"], html)
 
     def test_reports_page_shows_sizes_in_inches_and_unknown_wind(self):
         html = page(self.out, "reports.html")
@@ -584,7 +589,7 @@ class SampleBuild(unittest.TestCase):
         self.assertIn('<span class="obs-word">withheld</span>', town)
         self.assertIn("no gust reported", town)
         self.assertIn("wind screened", town)
-        self.assertIn("This town's forecast grid square is at 3,609 ft.", town)
+        self.assertIn("This town's forecast grid square is at 4,593 ft.", town)    # sample: 1,400 m (SAMPLE_GROUND_M)
         self.assertLess(town.index("Observed now"), town.index("Next 24 hours"))
         wy = text("town/west-yellowstone.html")
         self.assertIn("SAMPLE West Yellowstone airport, WY", wy)                 # across the line, labelled
@@ -911,6 +916,147 @@ class MapCard(unittest.TestCase):
         precip = m["layers"]["precip"]
         self.assertEqual(precip["frames"][precip["modes"]["12h"][precip["now_index"]["12h"]]]["time"],
                          "2026-10-14T16:00:00Z")                     # 10 am MDT: the frame the card opens on
+
+
+class StormLayers(unittest.TestCase):
+    """Radar echo tops (website/storm.py) behind --storm-layers. Off by default: the default build has no
+    storm words, keys or files, and its noscript panel is unchanged. On: every town has a value or a named
+    reason, in the Map's List, in the same words in the noscript panel (a browser with JavaScript off) and on
+    its town page, and each value names its source and time. Sample data only, so nothing here is live."""
+
+    FORBIDDEN = re.compile(r"\bdry\b|\bno hail\b|(?<!-)\bclear\b|no radar coverage", re.IGNORECASE)
+    STORM_WORDS = ("echo top", "radar echo", "mrms reflectivity levels", "storm-list", "storm.js", "data-storm")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.off = Path(tempfile.mkdtemp(prefix="hailwatch-off-"))
+        cls.addClassCleanup(shutil.rmtree, cls.off, True)
+        cls.off_result = site.build(cls.off, None, NOW, sample=True)
+        cls.on = Path(tempfile.mkdtemp(prefix="hailwatch-on-"))
+        cls.addClassCleanup(shutil.rmtree, cls.on, True)
+        cls.on_result = site.build(cls.on, None, NOW, sample=True, storm_layers=True)
+        cls.env = site.env()                  # the same Jinja escaping the pages get, for the text checks
+
+    def text_copy(self, html):
+        """The map page's <noscript> panel: the words a browser with JavaScript off reads. The head has a
+        second, style-only noscript, so the panel is the one with the class."""
+        panels = [block for block in re.findall(r"<noscript>.*?</noscript>", html, re.S)
+                  if 'class="noscript"' in block]
+        self.assertEqual(len(panels), 1)
+        return panels[0]
+
+    def test_the_default_build_has_no_storm_words_keys_or_files(self):
+        for path in self.off.rglob("*"):
+            if path.is_file() and path.suffix in (".html", ".json", ".js", ".css"):
+                text = path.read_text(encoding="utf-8", errors="replace").lower()
+                for word in self.STORM_WORDS:
+                    self.assertNotIn(word, text, f"{word!r} in {path.relative_to(self.off)}")
+        m = json.loads(page(self.off, "data/map.json"))
+        self.assertNotIn("storm", m["status"])
+        self.assertTrue(all("storm" not in t for t in m["towns"]))
+        self.assertNotIn("storm", json.loads(page(self.off, "data/state.json"))["status"])
+        self.assertFalse((self.off / "static" / "map" / "storm.js").exists())
+        self.assertNotIn("storm", self.off_result["status"])
+        off_panel = self.text_copy(page(self.off, "map.html"))
+        on_panel = self.text_copy(page(self.on, "map.html"))
+        start = on_panel.index("      <h3>Radar echo tops</h3>")
+        end = on_panel.index("    </div>\n  </noscript>")
+        self.assertEqual(off_panel, on_panel[:start] + on_panel[end:])    # the flag adds only the storm section
+
+    def test_the_default_build_asks_for_no_storm_files(self):
+        urls = []
+        fetch = SampleFetcher(NOW)
+        binary = fetch.binary
+
+        def recording(url, headers=None):
+            urls.append(url)
+            return binary(url, headers)
+        fetch.binary = recording
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-off-live-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, fetch, NOW)
+        self.assertTrue(urls)                                       # the radar and model are still asked for
+        self.assertEqual([u for u in urls if "MergedReflectivityQC" in u], [])
+
+    def test_every_town_has_a_value_or_a_named_reason_in_the_list_and_on_its_page(self):
+        m = json.loads(page(self.on, "data/map.json"))
+        self.assertEqual(len(m["towns"]), len(site.TOWNS))
+        map_html = page(self.on, "map.html")
+        self.assertEqual(map_html.count('data-storm="town"'), len(site.TOWNS))
+        template = re.search(r'<template id="storm-list">.*?</template>', map_html, re.S).group(0)
+        panel = self.text_copy(map_html)                  # the same words for a browser with JavaScript off
+        sub = re.search(r'<p class="sub">(.*?)</p>', template, re.S).group(1)
+        self.assertIn("<h3>Radar echo tops</h3>", panel)
+        self.assertIn(f"<p>{sub}</p>", panel)
+        self.assertTrue(self.on_result["status"]["storm"]["ok"], self.on_result["status"]["storm"])
+        named = ("Echo top (radar estimate)", "No echo at or above 35 dBZ (radar estimate)",
+                 "No radar value (radar estimate;")
+        for t in m["towns"]:
+            storm = t["storm"]
+            text = storm["text"]
+            self.assertTrue(text.startswith("SAMPLE, invented values."), text)
+            self.assertIn("This is not an all-clear.", text)
+            self.assertFalse(self.FORBIDDEN.search(text), text)
+            self.assertTrue(any(n in text for n in named), text)
+            escaped = self.env.from_string("{{ t }}").render(t=text)
+            self.assertIn(escaped, map_html, t["name"])             # the List's copy
+            name = self.env.from_string("{{ t }}").render(t=t["name"])
+            line = f"<li><strong>{name}.</strong> {escaped}</li>"
+            self.assertIn(line, template, t["name"])                # the List's line in the template
+            self.assertIn(line, panel, t["name"])                   # the same line in the noscript panel
+            self.assertIn(escaped, " ".join(page(self.on, t["url"]).split()), t["name"])   # the town page
+            if storm["echo_top_m"] is not None or storm["valid_time_utc"]:
+                self.assertIn("radar estimate", text)
+                self.assertRegex(text, r"valid \d{1,2}:\d{2} (am|pm) M[DS]T")
+            if storm["echo_top_m"] is not None:
+                self.assertIn("above sea level", text)
+                self.assertIn(f"{storm['echo_top_m']:,} m above sea level", text)
+            self.assertIn("MRMS", storm["source"])
+
+    def test_sample_echo_tops_and_the_named_reasons_are_all_present(self):
+        m = json.loads(page(self.on, "data/map.json"))
+        tops = {t["slug"]: t["storm"]["echo_top_m"] for t in m["towns"]}
+        self.assertEqual(tops["billings"], 8000)
+        self.assertEqual(sum(1 for v in tops.values() if v is not None), 5)
+        nodata = [t["slug"] for t in m["towns"] if t["storm"]["no_data_levels"] == 11]
+        self.assertEqual(sorted(nodata), ["kalispell", "west-yellowstone"])
+        for t in m["towns"]:
+            self.assertEqual(t["storm"]["valid_levels"] + t["storm"]["no_data_levels"], 11, t["name"])
+
+    def test_the_sample_ground_heights_differ_by_town(self):
+        m = json.loads(page(self.on, "data/map.json"))
+        below = {t["storm"]["below_ground_levels"] for t in m["towns"]}
+        self.assertGreater(len(below), 2)                    # 1, 2 and 3 heights below ground in the sample
+
+    def test_the_storm_script_and_the_about_rows_ship_only_with_the_flag(self):
+        self.assertIn("static/map/storm.js?v=", page(self.on, "map.html"))
+        self.assertTrue((self.on / "static" / "map" / "storm.js").is_file())
+        about = page(self.on, "about.html")
+        self.assertIn(src.CONTRACTS["storm_levels"]["name"], about)
+        self.assertIn("Radar echo tops</strong> are NOAA", about)
+        self.assertEqual(self.on_result["status"]["storm"]["label"], "MRMS reflectivity levels")
+        self.assertIn("MRMS reflectivity levels", page(self.on, "index.html"))   # the freshness line
+
+    def test_a_town_page_shows_the_radar_text_under_observations(self):
+        html = " ".join(page(self.on, "town/billings.html").split())
+        self.assertIn('<h2 id="storm-h">Radar echo top</h2>', html)
+        self.assertLess(html.index('id="obs-h"'), html.index('id="storm-h"'))
+        self.assertLess(html.index('id="storm-h"'), html.index('id="hours-h"'))
+
+    def test_a_failed_storm_feed_is_named_on_every_page_and_never_an_all_clear(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-storm-down-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, SampleFetcher(NOW), NOW, storm_layers=True)     # no downloads: the feed fails
+        self.assertFalse(result["status"]["storm"]["ok"])
+        self.assertIn("MRMS reflectivity levels problem:", page(out, "index.html"))
+        self.assertIn("Radar echo tops problem", page(out, "map.html"))
+        m = json.loads(page(out, "data/map.json"))
+        for t in m["towns"]:
+            self.assertEqual(t["storm"]["status"], "problem", t["name"])
+            self.assertTrue(t["storm"]["text"].startswith("Echo top not available: "), t["storm"]["text"])
+            self.assertIn("This is not an all-clear.", t["storm"]["text"])
+            self.assertIsNone(t["storm"]["echo_top_m"])
+        self.assertIn("Echo top not available", " ".join(page(out, "town/billings.html").split()))
 
 
 class MapLabels(unittest.TestCase):

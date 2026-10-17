@@ -22,6 +22,8 @@
       not measurements at a roof.</li>
     <li><strong>Storm reports</strong> are preliminary hail and wind reports gathered by the Storm Prediction Center. Hail sizes are as
       reported; a report is a point, not the edge of a storm.</li>
+    {% if storm_layers %}<li><strong>Radar echo tops</strong> are NOAA's radar estimate (MRMS) for each town: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data, in metres above sea level ("at least" when heights above it had no radar value). The 11 heights run from 500 to 15,000 m above sea level. They are not observed hail or damage, and no echo is not an all-clear.</li>
+    {% endif %}
   </ul>
 
   <h2>Flags</h2>

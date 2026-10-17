@@ -1,0 +1,170 @@
+{
+"read_at_utc": "2026-10-17T04:12:06Z",
+"main_head": "349df2aec17c389f0f620ef7b42506edb597985c",
+"decisions": [
+{"id": "D25", "title": "Montana pilot branch findings that change the plan (2026-10-11)", "quote": "docs/DECISIONS.md:254-255: 'Station observations are hourly, so a 30-minute freshness limit fails most of Montana.'", "what_it_means_for_a_globe": "Freshness limits come from each source's measured cadence and show beside each value. One shared limit would hide staleness across satellite, radar and hourly stations."},
+{"id": "D26", "title": "Product name: Montana Hail Watch (2026-10-12)", "quote": "docs/DECISIONS.md:310-312: check Montana Hail Watch against existing products and trademarks before it goes on an installer, a release page or anything printed; HailTrace is an existing hail-mapping service sold to roofers, so stay clear of that name too.", "what_it_means_for_a_globe": "Any globe name (scaffold D-G6) needs the same trademark check. The site header already reads Montana Hail Watch (base.html:23)."},
+{"id": "D27", "title": "A website first; the desktop app is parked (2026-10-14)", "quote": "docs/DECISIONS.md:315-316: 'The product is now a static website in website/, built by Python and published with GitHub Pages'. docs/DECISIONS.md:340-341: 'Snapshot, not live tiles: the radar is saved as one picture per build'.", "what_it_means_for_a_globe": "A globe is another static page built by website/build.py: no app window, route or installer. Each build is one snapshot; a time loop needs persistence the site lacks (website_pipeline.rebuild_model)."},
+{"id": "D28", "title": "An interactive Montana map in the style of Apple Weather (2026-10-15)", "quote": "docs/DECISIONS.md:382-384: 'playback, scrubbing, menus, sheets and geolocation can only happen in the browser ... Python still builds every number and frame.' docs/DECISIONS.md:380-381: 'The USGS tiles and the Folium maps are retired from the website'.", "what_it_means_for_a_globe": "WebGL drawing is browser-only work under the same rule: hand-written, documented, framework-free, with Python building every frame. No tile base map exists to reuse."},
+{"id": "D29", "title": "Live station readings on the Now page and town pages (2026-10-16)", "quote": "docs/DECISIONS.md:464-465: 'A reading older than 75 minutes is kept and marked stale with its age, never hidden.'", "what_it_means_for_a_globe": "Old globe values are kept, marked with their age and never hidden. D29's extra requests and build time (44 s) show that globe data must fit the 15-minute job (website.yml:38)."}
+],
+"website_pipeline": {
+"command": "python -m website.build --out _site [--sample | --require-live] [--previous URL] (build.py:1-5, 481-498; website.yml:86-94)",
+"stages": "statewide NWS alerts (build.py:47-62); 14 towns: points, hourly, gusts, 7-day, town alerts, station readings (64-147); town alerts merged (159-179); SPC reports, 3 days (181-200); frames via gridded (202-211, 389); pages (391-409); data/map.json (411-413); data/state.json (414-423); .nojekyll (424).",
+"layout": "index, map, reports, about (.html); town/<slug>.html x14; static/ copied from website/static (379); data/map.json; data/state.json; map/frames/<layer>-<UTC valid time>[-r<run hour>].png (gridded.py:40, 126-135).",
+"rebuild_model": "_site is removed and rebuilt each run (build.py:375-379); gridded writes only this run's frames (gridded.py:984-988); the Pages artifact is packaged from this run's _site (website.yml:155-159). Earlier frames are not served.",
+"asset_versions": "style.css, map.js, map.css, basemap.json: ?v=<content hash> (build.py:361-370; base.html:12; map.html:15, 35, 192). map.json and the card iframe: ?v=<build minute> (map.html:24, 34; index.html:43).",
+"previous_state": "--previous loads the live state.json (build.py:472-478; website.yml:92) and reuses the last verified alerts, points and stations when a request fails (build.py:55-62, 74, 130)."
+},
+"gridded": {
+"mrms": "CONUS/PrecipRate_00.00 only, noaa-mrms-pds (gridded.py:44-46). Whole gzipped CONUS GRIB2 file per frame, no byte range (456, 679); full grid 24.5 million points (453-454). Decoded with pygrib (455, 464); checks: 209/6/1 (47, 458-459), regular lat-lon (460-461), time within 2 min of name (462-463). Seven frames at 10-minute steps; a target with no file within 4 min is skipped; one failed frame drops all radar frames (50-52, 533-549, 683).",
+"hrrr": "noaa-hrrr-bdp-pds, hrrr.YYYYMMDD/conus/hrrr.tHHz.wrf{sfc|subh}fNN.grib2 (gridded.py:48, 554-556). PRATE (0,1,7) to mm/h; TMP 2 m (0,0,0) to F; GUST (0,2,22) to mph (63-68). One whole-grid field per byte-range request from the .idx (574-585, 738-740). Precipitation: 12 hourly plus quarter-hour steps; temperature and gusts: run hour plus 12 (594-601, 712-725). Grid, field and time checked (467-478); own Lambert projection checked against pygrib (222-225; test_gridded.py:408). Run: newest with a published .idx, up to 4 tries (57, 604-625).",
+"crop": "IMAGE_BOUNDS ((43.0,-118.5),(50.5,-101.0)) shared by all frames (gridded.py:38; build.py:237). No crop at download; the crop is sampling after decode: MRMS nearest neighbour, HRRR bilinear (156-163, 177-198, 222-258). Widths 1400 px precipitation, 700 px temperature and gusts (39, 149-153).",
+"format": "Palette PNG; index 0 transparent, 1 hatch, then levels (319-327, 363-372). Levels: precipitation 48, temperature 126, gusts 76 (91). Sigma 1 px smoothing, NaN kept (92, 261-279). Legend built in Python (398-429).",
+"nodata": "MRMS negative values (no coverage) become NaN (191-198); NaN and negative precipitation are hatched, never drawn as dry (338-360); radar frames carry a nodata flag (692-693).",
+"cadence": "Every build; cron */10 (website.yml:15). Radar not ok when the newest file is over 30 min old (gridded.py:53, 699-701). Forecast anchored to the newest radar time if within 30 min, else the current hour (1002).",
+"counts_and_bytes": "48 frames = 22 precipitation (7 radar, 15 forecast) + 13 temperature + 13 wind (594-601; live result). Live build, clear sky: frames 2,696,906 bytes (temperature mean 92,886; wind mean 111,991; precipitation 33,497; largest 116,694). One live build downloaded 45,673,824 bytes in 198 requests: HRRR 34,727,683; NWS 7,300,426; MRMS 3,639,199 (scratchpad count/stderr.txt; DECISIONS.md:388 says about 40 MB).",
+"failures": "A layer keeps forecast frames only if all of them loaded (gridded.py:757-758); build_gridded never raises (991-994, 1005-1008); sample frames are labelled SAMPLE (108-110)."
+},
+"sources_contracts": {
+"keys": "alerts, points, hourly, gusts, daily, stations, observations, reports, radar, forecast_model, basemap (sources.py:45-138).",
+"entries": "alerts: NWS area=MT plus a point check per town, each build; no-outline alerts listed with a note (46-53). hourly: degF; a wind range takes the higher number (61-67). gusts: km/h or m/s to mph; other units are an error (68-74). stations: nearest three, never filtered by state (82-90; OBS_STATIONS 33). observations: degC, km/h, kt converted; MADIS flags; X and B withheld (91-101). reports: SPC hail in hundredths of an inch; UNK wind unknown; reporting day 12:00-11:59 UTC (102-109). radar: MRMS 0.01 deg grid, one file every 2 min; over 30 min is stale (110-118). forecast_model: HRRR PRATE, TMP, GUST on a 3 km Lambert grid; labelled as a model (119-129). basemap: Natural Earth and Census, built by hand (130-137).",
+"evidence_kinds": "No kind field in CONTRACTS. Frames carry kind radar or forecast (gridded.py:692, 754; test_site.py:503). Each source has a status (build.py:44-45).",
+"fetch": "Fetcher: 20 s timeout; 3 attempts; pauses 1.5 s and 3.0 s; 5xx and network errors retried; 404 = not published, not retried (sources.py:619, 624-642).",
+"boxes": "MT_BOX 44.35-49.01 N, 116.06-104.03 W; SPC margin 0.75 deg (sources.py:24-25, 572-574). Map view equals MT_BOX (build.py:216).",
+"limits": "Gust 25 mph; wind 20 mph; rain or snow 30%; under 40 F; over 95 F. Placeholders (sources.py:41; ROADMAP.md:44-45)."
+},
+"freshness_rules": [
+"Radar not ok when the newest MRMS file is over 30 min (1800 s) old (gridded.py:53, 699-701; sources.py:115).",
+"No radar frames at all when the newest file is over 3 h (10800 s) old (gridded.py:54, 671-673). A frame takes a file within 4 min (240 s), else is skipped (gridded.py:52, 533-549).",
+"Radar tick and ', now' words: within 10 min (600 s) of the newest frame (map.js:911, 1158).",
+"Station reading current at 75 min (4500 s) or less; older readings kept and marked stale with their age (sources.py:34, 517; town.html:60).",
+"Base pages warn when over 25 min (1500 s) old, comparing build time with the viewer's clock (base.html:47-62; about.html:36).",
+"Base pages meta-refresh every 600 s (base.html:6). map.html has no refresh and does not extend base.html (map.html:1-23).",
+"Map page age checked every 60 s; banner when over 25 min (map.js:21, 24, 167-168, 1682-1702).",
+"Map update check at most once a minute (map.js:1659-1666). A failed picture is retried after 10 s, on the viewer's own step (map.js:22, 1012).",
+"Alerts fetched each build, about every 10 min; a failed request keeps the last verified list (sources.py:50; build.py:55-62).",
+"SPC: 3 reporting days, 12:00-11:59 UTC (build.py:181-183; sources.py:555-557).",
+"HRRR: newest run with a published .idx, up to 4 hourly tries (gridded.py:57, 604-625).",
+"Cron every 10 min; concurrency per ref, no cancel (website.yml:15, 31-33). Geolocation: 12 s timeout, 5 min cache (map.js:1776).",
+"Picture names must be unique per picture; Pages may let a browser reuse a file for 10 min (gridded.py:128-131; DESIGN.md:375-377)."
+],
+"design": {
+"pages": "Now (index.html), Map (map.html), Storm reports (reports.html), About (about.html), town/<slug>.html x14 (DESIGN.md:55-61; build.py:397-409). The map card is an iframe of map.html?card=1 on Now and Storm reports (index.html:43-44; reports.html:20-21).",
+"states": "Source: loaded, problem, stale (DESIGN.md:153-162, 330-349). Alerts: verified list; verified and empty; refresh failed with last list and time; could not check (155-157). Town alerts: list, none, 'Alerts not checked' (158). Missing values: a dash with 'not available' for screen readers (159-160).",
+"words": "'Data unavailable' appears only in map.js:2093; other pages say unavailable or didn't load (town.html:74; index.html:80; map.js:196). Hatch words: No radar coverage, No model data, Outside map area (map.js:33-39). 'This is not an all-clear.' on failure states (map.html:52-59).",
+"tokens": "style.css :root 4-54: raw scale 5-17; semantic roles 19-35 (color-bg, color-surface, color-text, color-warning, color-watch, color-advisory, color-statement, color-link, color-focus); type 37-41; space and radius 43-46; components 48-53. map.css :root 5-96: raw --m-* 7-12; basemap 14-34; glass and ink 36-56; towns and hazards 58-81; shape and type 83-95 (--btn 44px, --edge, --r-panel).",
+"dark_mode": "System setting only: prefers-color-scheme dark (style.css:56-75; map.css:98); color-scheme light dark (style.css:53; map.css:95). No toggle; no data-theme attribute anywhere in website/.",
+"phone_sizes": "Test widths 288, 320, 375, 768, 1440 px, light and dark (tools/smoke_pages.py:23; DESIGN.md:39). Map test viewports 390x844 and 1280x800 (tools/smoke_map.py:53). CSS breakpoints: 380 px (style.css:120), 560 (257), 640 (100), 960 (147). Map: 520 px portrait (map.js:49; map.css:479), 301 px short (map.js:46-47), 760 px wide (map.css:705).",
+"access": "44 px targets (DESIGN.md:171; map.css:89); reduced motion (style.css:295; map.css:762; map.js:114); print hides the maps (style.css:296); skip link (base.html:15)."
+},
+"javascript_inventory": {
+"map_js_lines": 2155,
+"duties": [
+"Start-up, panes, error screens (map.js:165-317); map.json and basemap fetched in parallel from site files (172-173).",
+"Playback: play and pause, 700 ms step, 1500 ms hold on Now and the last frame, skips failed pictures, autoplay once, pauses when hidden, reduced motion (19-20, 1386-1426, 868-871, 1497-1501).",
+"Timeline: range input, pointer drag, keys (Home, End, Space), ticks, labels in Montana time (915-967, 1431-1559).",
+"Pictures: two overlays cross-faded; a change of kind cuts instead of fading (1003-1121).",
+"Layers, 1h/12h switch, legend, thinned stops, two-column portrait legend (798-824, 1246-1283).",
+"Keys and words for hatching, limit ring, outlines, reports, location (1291-1372); note line (1177-1238).",
+"Town bubbles: value for the frame's hour, labels, focus (628-728).",
+"Warning outlines, storm report circles, toggles (733-780).",
+"Basemap drawn from basemap.json: land, counties, rivers, lakes, roads, borders, labels (553-623).",
+"Layout: fitView, placeCrowded, noteRoom, fitCard, zoom limits (334-548).",
+"Sheets and List: town, alert, report, list; focus trap; page made inert (1802-2112).",
+"Layer menu, Escape, outside tap (1562-1600); address state for layer, mode, overlay, town (221-246, 1603-1621).",
+"Banners: problem, sample, last-known alerts, page age, update check, reload, toast (1627-1720; map.html:43-73).",
+"Geolocation; the location never leaves the browser (1726-1795; map.js:13).",
+"Card mode inside iframes: caption, open-map link (670-673, 2119-2152; map.html:16-21).",
+"Intl formatting in Montana time (127-157). ROADMAP.md:60-65 proposes moving about 330 lines to the build."
+],
+"third_party_served_by_site": [
+"Leaflet 1.9.4: static/leaflet/leaflet.js (147,552 bytes), leaflet.css, images/, LICENSE (map.html:14, 191; map.js:7).",
+"Atkinson Hyperlegible Next and Mono: six woff2 files, fonts.css, LICENSE-fonts.txt (static/fonts/; base.html:11; DECISIONS.md:344-345).",
+"basemap.json (384,594 bytes): built from Natural Earth and Census by tools/build_basemap.py. Site data; budget 450,000 bytes (tests/test_basemap.py:37, 139-140)."
+]
+},
+"tests_and_ci": {
+"command": "website.yml:84 runs unittest on tests.test_site (64), tests.test_gridded (69), tests.test_basemap (41), tests.test_website_workflow (5): 179 tests (ROADMAP.md:32).",
+"measured_here": "Ran the same command with bytecode writing off: 179 tests, OK, in 11.2 s.",
+"site_tests_check": "Map page loads only site files, no external hosts (test_site.py:459-471; regex at 464); content-hash addresses (473-486); map text-version statement (488-492); map.json contract (494-522); failure honesty (606-700); map failures and card words (775-914); label checks (916-922); workflow plan run under bash with a fake gh (test_website_workflow.py).",
+"browser_checks": "Not in tests/: tools/smoke_map.py and tools/smoke_pages.py use the Playwright sync API with p.chromium.launch, executable taken from PW_CHROMIUM if set (smoke_map.py:43-54; smoke_pages.py:71-80). Branch pushes only (website.yml:96-105). Playwright is installed unpinned (website.yml:99-100).",
+"browser_run_here": "Not run: no Chromium binary and no Playwright browser cache on this machine.",
+"ci": "CI uses Python 3.12 (website.yml:76) and unpinned requests, jinja2, pillow, numpy, pygrib (website.yml:80). AGENTS.md:44 lists tzdata, which CI does not install. Local Python here is 3.13.16.",
+"gap": "No test caps total or frame bytes; the only byte budget in code is the basemap's (test_basemap.py:37)."
+},
+"pages_and_limits": {
+"publish": "Only main publishes, and only after the Pages lookup succeeds (website.yml:45-60). Pages source must be GitHub Actions (website.yml:6; README.md:38). _site is packaged with upload-pages-artifact@v3 (155-159); the deploy job has a 10-minute timeout (161-175).",
+"timeouts": "Cron */10 (website.yml:15); build job 15 min (38); deploy job 10 min (165); concurrency per ref, no cancel (31-33). Scheduled runs may start late (README.md:85-86).",
+"branch_builds": "Non-main builds run --require-live (website.yml:93); the artifact website-preview is kept 7 days with include-hidden-files (145-153; DECISIONS.md:503).",
+"inactivity": "Scheduled workflows pause after 60 days without repository activity (README.md:45-47; website.yml:10-11).",
+"external": "GitHub Pages limits, read by WebFetch of docs.github.com in this session (not in the repo): site at most 1 GB; soft limit 100 GB per month; soft limit 10 builds per hour, not applied to custom Actions workflows; no per-file limit stated; deployments time out after 10 minutes.",
+"measured": "Live build: 91 files, 3,926,457 bytes (frames 2,696,906; static 824,997; basemap 384,594; map.js 114,696; map.json 47,940; state.json 45,181). Downloads 45.7 MB in 198 requests. Wall time 32-51 s (DECISIONS.md:461-462 says 44 s). Sample build: 91 files, 2,250,976 bytes. Outputs are in the session scratchpad (live-build/, count/, sample-build/)."
+},
+"roadmap_now": {
+"next_items": ["1 Go live: check that scheduled runs keep publishing (ROADMAP.md:35-39)", "2 Feedback week; iPhone and Android checks (40-43)", "3 Company limits (44-45)", "4 Decision-time records: durable state.json (46-48)", "5 Compact phone town list (49)", "6 Cache map frames between builds (50-52)", "7 Snow shown apart from rain (53-54)", "8 Text version of the map pictures (55-59)", "9 Move about 330 JS lines to the build; Carson's call (60-65)", "10 Station readings: done (D29); map sheets next (66-68)", "11 Real hail footprint: MRMS MESH layer or a trial (69-73)", "12 Alerts to phones (74-75)", "13 History (76)", "14 More towns, then the contiguous US (77-79)", "15 Parked desktop app: keep or delete (80-82)"],
+"open_questions": ["Are these the right 14 towns? (ROADMAP.md:107)", "Company limits per roof system (108)", "Delete the parked desktop app? (109)", "Custom web address? (110)", "Trademark check of the name before printing (111-112)", "What the repo description's 'Contact' covers (113)"],
+"globe_mentioned": false,
+"globe_mentioned_evidence": "Case-insensitive search of ROADMAP, DESIGN, DECISIONS, AGENTS and README for globe, 3D, WebGL, Cesium, three.js, cloud, satellite and GOES: no globe item; three unrelated hits (DECISIONS.md:311, 445, 496)."
+},
+"constraints_that_replace_the_desktop_ones": [
+{"old": "50 MB zipball cap per update (D4)", "new": "No zipball. Pages serves the _site folder (3.9 MB per live build). Pages site limit 1 GB (external).", "evidence": "docs/DECISIONS.md:45-46; desktop/updater.py:191 (50 MiB); .github/workflows/website.yml:155-159"},
+{"old": "Network-off self-test before each update (D4; AGENTS.md:50)", "new": "179 offline unit tests (website.yml:82-84); a branch-push live build fails on source problems (website.yml:93; build.py:494-497); Chromium checks on branch pushes (website.yml:96-105).", "evidence": "docs/DECISIONS.md:39-41; AGENTS.md:50"},
+{"old": "Pinned CDN library (scaffold D-G4; section 7 risk 4)", "new": "Third-party code and fonts served by the site; a test rejects external hosts.", "evidence": "AGENTS.md:71-72; tests/test_site.py:459-471"},
+{"old": "Desktop window: pywebview, WebView2, WKWebView, GTK (D2; scaffold section 7 risk 3)", "new": "A browser page for phones and desktops, 288-1440 px, light and dark.", "evidence": "docs/DESIGN.md:29-30, 39; tools/smoke_pages.py:23"},
+{"old": "A new pip package needs a new installer (AGENTS.md rule 2)", "new": "Packages installed on the Actions runner for each build, unpinned; no installer.", "evidence": "AGENTS.md:60-64; .github/workflows/website.yml:76, 80"},
+{"old": "SQLite per computer; jobs, territories, inspections, places (D20)", "new": "No database, saved places or logins; the build writes data/map.json and data/state.json.", "evidence": "docs/DECISIONS.md:144, 322-325; docs/DESIGN.md:51; website/build.py:411-423"},
+{"old": "USGS tiles and imagery (D9; scaffold section 3)", "new": "Own vector basemap from Natural Earth and Census; 450,000-byte budget.", "evidence": "docs/DECISIONS.md:379-381; tools/build_basemap.py:96"},
+{"old": "NOAA NEXRAD WMS layer 1 (D7; scaffold section 3 flat radar)", "new": "MRMS PrecipRate decoded in Python into palette PNG frames.", "evidence": "docs/DECISIONS.md:373-375; website/gridded.py:44-47, 363-372"},
+{"old": "D12 freshness: radar 15 min, alerts 10 min, SPC 60 min; scaffold GOES 15 min, MRMS 10 min", "new": "Radar 30 min; station 75 min; page 25 min; alerts each build; frame kinds radar and forecast.", "evidence": "docs/DECISIONS.md:97-98; website/gridded.py:53, 692; website/sources.py:34, 50; website/templates/base.html:57"},
+{"old": "Alerts polled every 60 s in the background (D10)", "new": "Alerts fetched each build, about every 10 min; the last verified list is kept on failure.", "evidence": "docs/DECISIONS.md:79-80; website/sources.py:50; website/build.py:55-62"},
+{"old": "Live Storms, Storm History, Inspections, Crew Outlook, Places, App and updates (README.md:269-291)", "new": "Now, Map, Storm reports, About; 14 town pages.", "evidence": "website/build.py:397-409; docs/DESIGN.md:55-61"},
+{"old": "Demo event and demo footprint (D12; AGENTS.md rule 5)", "new": "Sample builds labelled SAMPLE on every page.", "evidence": "website/templates/base.html:16-18; website/gridded.py:108-110"},
+{"old": "Montana scope and SPC filter (D24)", "new": "Frame box 43.0-50.5 N, 118.5-101.0 W; map view equals MT_BOX; SPC within 0.75 deg; contiguous US later.", "evidence": "website/gridded.py:38; website/build.py:216; website/sources.py:24-25; docs/ROADMAP.md:77-79"}
+],
+"what_the_globe_plan_must_change": [
+"1 Re-base sections 1 and 5-7 from the desktop app to the website: static pages built by website/build.py and published by website.yml; no window, payload, /globe route, selftest, installer or Live Storms tab (DECISIONS.md:314-321; build.py:397-409; website.yml:155-175).",
+"2 Replace the 50 MB cap, network-off self-test and 'tens of MB every 2 minutes' (section 1 points 5-6) with measured limits: one live build downloads 45.7 MB (HRRR 34.7, NWS 7.3, MRMS 3.6) and writes 3.9 MB; the 15-minute build job (website.yml:38) and 10-minute cron (website.yml:15) bind.",
+"3 Replace D-G4's pinned CDN library with vendoring under website/static/, pinned exactly as Leaflet 1.9.4 is (AGENTS.md:71-72; map.html:14, 191; test_site.py:459-471).",
+"4 Decide where heavy processing runs. Pages publishes only the _site of the run that built it (website.yml:155-159), and build.py rebuilds _site from empty each run (build.py:375-376). A second job must produce the whole site, or the globe's files are built in the same run.",
+"5 Add persistence before any time loop. No past frame survives a build (build.py:375-376; gridded.py:984-988). Section 3's 2-hour loop needs the --previous state (build.py:472-478) or a frame cache (ROADMAP.md:50-52; not built).",
+"6 Replace D12's freshness limits (GOES 15, MRMS 10, alerts 10) with the site's: radar 30 min (gridded.py:53), station 75 min (sources.py:34), page 25 min (base.html:57), alerts each build (sources.py:50). Settle the 15-vs-30 conflict first (doc_drift 1).",
+"7 Use the site's gap words: No radar coverage, No model data, Outside map area (map.js:33-39); 'This is not an all-clear.' (map.html:52-59); 'Data unavailable' only where the site uses it (map.js:2093). 'No echo is not clear' must match DESIGN.md:275-276.",
+"8 Replace USGS imagery (D9; scaffold W6) with a licensed, hostable source: USGS tiles were retired (DECISIONS.md:379-381); the site's base map is Natural Earth and Census under 450,000 bytes (tools/build_basemap.py:96). Each source goes in the About table (about.html:41-54).",
+"9 Replace the flat fallback 'NWS WMS base reflectivity (D7)' with the site's own MRMS PrecipRate frames (gridded.py:44-47, 126-135; DECISIONS.md:373-375).",
+"10 Remove places, territories, jobs and candidates (DESIGN.md:26, 51; DECISIONS.md:322-325). Use the 14 towns (towns.json) inside the site's boxes: frame 43.0-50.5 N, 118.5-101.0 W (gridded.py:38); view 44.35-49.01 N, 116.06-104.03 W (build.py:216).",
+"11 Replace D-G7 and section 7 risk 3 with the site's audience: phones from 288 px to 1440 px desktops, in sunlight, over slow connections (DESIGN.md:23, 29-30). Real-phone checks are not done (ROADMAP.md:41-43); Chromium checks run only on branch pushes (website.yml:96-105).",
+"12 Redo D-G5 placement. The site has four top-level pages (base.html:25-30; build.py:397-403) and a map-card iframe on Now and Storm reports (index.html:43-44). A globe is a fifth page, a card or a replacement; DESIGN.md:89-97 rejected the full-width map first on phones. Test against T1-T4 and X1-X3 (DESIGN.md:72-80).",
+"13 Redo D-G6 naming: the product is Montana Hail Watch (D26; base.html:23). Run the trademark check D26 requires and avoid HailTrace (DECISIONS.md:310-312).",
+"14 Replace section 3's 'Kind (D12)' column with the site's separation: radar and model kinds per frame and per source (gridded.py:692-693, 754-756; map.js:1136-1169). AGENTS.md:73-76 keeps forecast, radar estimate, observation and official alert apart.",
+"15 Carry the disclaimer into the globe legend or footer: 'Weather information only. It does not confirm roof damage' (base.html:45; DESIGN.md:167-168).",
+"16 Re-point section 6's tests: CONTRACTS in website/sources.py (AGENTS.md:80-84; test_site.py:350). The 240 alert scenarios do not run in the website workflow (website.yml:84). Add a page-uses-only-site-files test (test_site.py:459-471) and a Chromium check like tools/smoke_map.py (website.yml:96-101).",
+"17 Update the path filter and test command for any new module or test. Changes under research/ do not trigger the site build (website.yml:19-26); new tests run only if added to the command (website.yml:84).",
+"18 Price the JavaScript: a WebGL loader is hand-written, documented, framework-free code with a stated budget (AGENTS.md:66-72). map.js is already 2,155 lines; moving about 330 lines to the build is an open decision (ROADMAP.md:60-65; DECISIONS.md:385-387).",
+"19 Generate the globe page with Jinja and build.py data, as map.html and map.json are (build.py:397-413; map.html:33-36). The browser may fetch only site files (map.js:9; test_site.py:459-471), so D-G2's tile production must write into the site folder.",
+"20 Keep the text-version promise. The map has a text List and says its pictures have no text version (map.js:2065-2112; map.html:38-41; ROADMAP.md:55-59). A 3D view must list its values as text too, or repeat that statement.",
+"21 Replace Live, Stale and Unavailable with the site's states: loaded, problem, stale, the not-all-clear wording and the page-age banner (DESIGN.md:153-162, 330-349; base.html:57-59).",
+"22 Restate latency. 5-minute satellite and 2-minute radar cannot appear faster than a 10-minute build; the site already says its pages can be 10-20 minutes behind NWS (DECISIONS.md:354-355).",
+"23 Restate Phases 1 and 5 as a static page, not an app route. 'Data unavailable' becomes the build's failure text (build.py:494-497; map.js:191-203). The 30 fps and 1 GB targets need phone measurements (DESIGN.md:29-30).",
+"24 Set a page-weight budget. HTML pages are 10-18 KB and map.js is 115 KB (measured). Measure the globe on a real build and check it in the 288-1440 px width test (tools/smoke_pages.py:23)."
+],
+"unverified": [
+"Browser checks (tools/smoke_map.py, tools/smoke_pages.py) were not run; no Chromium binary is installed here.",
+"Real phones (iOS Safari, Android) were not tested (ROADMAP.md:41-43; DECISIONS.md:402-404).",
+"Radar staleness intent: 15 min in DESIGN.md:154 and DECISIONS.md:341; 30 min in code (gridded.py:53) and DESIGN.md:333. Owner decision.",
+"HRRR per-field sizes (DECISIONS.md:369-370) were not checked one by one; only the per-build total (34.7 MB) was measured.",
+"Frame sizes were measured once, in mostly clear weather; rainy frames will be larger.",
+"Wall time 51 s and 32 s measured here; DECISIONS.md:461-462 says 44 s; CI runner speed not measured.",
+"MRMS grid (24.5 million points) and HRRR grid size not decoded here; only byte totals were measured.",
+"GitHub Pages limits come from a WebFetch summary, not the raw page. That Pages replaces the whole site per deployment is inferred from website.yml:155-175.",
+"origin/main was read from the local ref without fetching. research/globe/prototype and other agents' files were not read; they changed during this run.",
+"Playwright check counts (DECISIONS.md:399-400) and the claim about 330 movable lines (ROADMAP.md:60-65) were not counted or checked. Desktop tests were not run."
+],
+"doc_drift": [
+"1 Radar stale: DESIGN.md:154 and DECISIONS.md:341 say 15 min; code says 30 (gridded.py:53; sources.py:115); DESIGN.md:333 says 30.",
+"2 DESIGN.md:145-151 (Map) still describes a USGS base, 72% radar opacity and Folium-era label rules, superseded by D28 (DECISIONS.md:379-381; 346-348). The card is now a map.html iframe (index.html:43-44).",
+"3 about.html:60 lists 'Lightning and nearby station readings' as not yet here, but D29 shipped station readings (DECISIONS.md:453-458; ROADMAP.md:27, 66).",
+"4 ROADMAP.md:25 says map.js is about 2,100 lines; it is 2,155 (map.js:2155). AGENTS.md:44 installs tzdata; website.yml:80 does not.",
+"5 build.py:364 says the basemap is 377 KB; it is 384,594 bytes (budget 450,000). DECISIONS.md:388 says about 40 MB per build; one measured build downloaded 45.7 MB."
+]
+}

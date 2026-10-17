@@ -1,0 +1,179 @@
+{
+  "slug": "judge-product",
+  "lens": "Product value and pilot fit on the current website (D27-D29): value to office and crews, phone reach, pilot and roadmap order, crews' screen unchanged, honesty, demo with labelled data, and what the owner asked for",
+  "checked_at_utc": "2026-10-17",
+  "status": "Judgement only; the only file written. design-a/b/c.json and plan-critique-product.json carry no review key, so their facts are unreviewed; the facts relied on were re-checked live or in the repo (facts_rechecked).",
+  "rubric": "Sub-scores 0-10, weights: V value to office and crews on the current product [3]; P pilot fit and roadmap order, crews' screen unchanged [2]; F phone and field reach [2]; H honesty traps avoided [2]; D demo with labelled data [1]; O owner's ask versus delivered [1]. Score = sum(weight x sub-score) / 11.",
+  "bottom_line": "design-c ranks first. It is the only one of the three a crew could open on a phone (public site, live HTTP 200, viewport tag), it needs no installer, parked app or new library, and its build flag keeps the crews' screen unchanged. design-a and design-b score low: crews cannot reach them, and both need the owner to reverse D27 (DECISIONS.md:314-323). None of the three answers the site's three questions (DESIGN.md:16-19) better than the Now, town and reports pages. The biggest crew gaps (alerts to phones, ROADMAP Next 12; a MESH hail footprint, Next 11; job context, DECISIONS.md:324-325) are in none of the designs.",
+  "frame": [
+    "Current product: the website (AGENTS.md:7-12; DECISIONS.md:314-321). The desktop app is parked (AGENTS.md:13-14; ROADMAP Next 15, lines 80-82). design-a and design-b were written for the parked app and its self-test, 50 MiB and installer constraints; this judgement asks what each would mean for the product as it stands.",
+    "Crew reach: DESIGN.md:22-23 names 'a crew lead on a phone in a truck or on a roof'. DESIGN.md:12-14 records that the app asked crews to install software. ROADMAP Next 2 (lines 40-43) makes the pilot a feedback week with checks on an iPhone and an Android phone."
+  ],
+  "brief_corrections": [
+    "The brief's ROADMAP items 1-3 (installers, pilot, baseline) do not exist under those numbers. ROADMAP.md (2026-10-16): Next 1 go live; Next 2 feedback week on phones; Next 3 company limits; Next 4 predeclared metrics 'before any new feed is added' (lines 46-48); Next 15 the parked app, where installers now sit. The review table says the baseline is 'Not started (Next 4)' (line 89).",
+    "plan-critique-product.json cites ROADMAP lines 11, 58-68, 105 and 107, and its 'flat map' column cites payload/templates (the parked app). The crews' screen is now Now, town pages, the map and Storm reports (DESIGN.md:55-61).",
+    "design-a.json proposes 'D26 (proposed)' and 'D27 (proposed)' for new kinds and freshness limits. D26 is the product name (DECISIONS.md:295) and D27 the website (DECISIONS.md:314). Renumber before any entry.",
+    "AGENTS rule 5 says 'Demo data only under the demo event, labelled DEMO everywhere' (AGENTS.md:75-76). The site has no DEMO label; its sample build says 'Sample data' on every page (website/templates/base.html:17; map.html:46). The owner must say whether that meets rule 5.",
+    "design-a.json reads rule 5 as banning all demo data on the globe. Rule 5 permits demo data under the demo event with a DEMO label; the exclusion is a design choice. design-c.json's '--experimental-3d' flag (build.py:481-487) does not exist yet; build.py's flags are at lines 483-487."
+  ],
+  "decisions": [
+    {"decision": "Is there a warning near my town now?", "who": "crew, office", "today_on_site": "Now page: alerts first, town chips (DESIGN.md:110-111, 158)", "A": "no change", "B": "no change", "C": "no change"},
+    {"decision": "Is the echo near a town, and how old is it?", "who": "crew", "today_on_site": "Past-hour MRMS loop every 10 min, then HRRR (DESIGN.md:295; DECISIONS.md:363-364)", "A": "3D copy of the loop (phase 4); no phones", "B": "same in a separate window; no phones", "C": "echo-top classes on the existing timeline; phone-usable; small gain"},
+    {"decision": "Why 'no echo' far from radar is not 'no storm'", "who": "office", "today_on_site": "'Outside map area' and 'No radar coverage' hatch (DESIGN.md:318-321; map.js:34-38)", "A": "below-ground filter, legend; no coverage model", "B": "hatched legend; no coverage model", "C": "keeps the hatch; no new explanation"},
+    {"decision": "Which storm reports fell where, how big?", "who": "office, sales", "today_on_site": "Storm reports, three SPC days (DECISIONS.md:317-318)", "A": "none", "B": "none", "C": "none; MESH (Next 11) is the candidate"},
+    {"decision": "Walk crew leads or the owner through the product", "who": "owner", "today_on_site": "labelled sample build only", "A": "excluded", "B": "refused (?event=demo, 400)", "C": "not designed; sample build could carry it"},
+    {"decision": "Go or hold a roof job; which candidate first", "who": "crew, office", "today_on_site": "not on the site (DECISIONS.md:324-325)", "A": "parked app only; no job context on the globe", "B": "none", "C": "none"},
+    {"decision": "Is the storm data good enough to pay for?", "who": "owner", "today_on_site": "predeclared metrics not started (Next 4)", "A": "none; adds feeds first", "B": "none; adds feeds first", "C": "none; adds feeds first"}
+  ],
+  "scores": [
+    {
+      "design": "design-c",
+      "name": "Design C: Python-first 2.5D on the flat map (C2 first; C1 globe gated to Phase 5)",
+      "score_0_to_10": 6.3,
+      "sub_scores": {"V": 5, "P": 7, "F": 9, "H": 7, "D": 5, "O": 3},
+      "reasons": [
+        "F 9: the public site is phone-viewport ready (live check, 2026-10-17); DECISIONS.md:353 gives 'works on any phone' as the reason for the website. C2 adds no installer, library or server (website.yml:80 already installs numpy and pygrib). Not tested on a phone (DECISIONS.md:402-403).",
+        "P 7: the default build writes no echo, cloud or transect files (design-c.json default_off_setting), so the crews' screen is unchanged unless it is turned on. Held back because its feeds (MRMS levels, GOES ACHA, Band 13) come before ROADMAP Next 4.",
+        "V 5, low to medium: echo-top classes and three transects add to the radar loop the site already shows (DESIGN.md:295). The critique rates the near-echo job 'low' and the coverage job 'medium'; C serves part of the second. Cloud-top height has no decision link: the weather handoff's Live Storms layers (line 29) have no clouds.",
+        "H 7: reuses the no-coverage rule. Negative MRMS rates are no coverage, hatched, never dry (gridded.py:192-197, 340-345; DESIGN.md:275-276). Legends say 'not hail, not damage' and 'not an all-clear' (design-c.json legend_echo). Stop rules hide the echo layer (P2) or keep only the echo raster (P3). Docked for uncorrected cloud tops (parallax.json, 3-33 km off).",
+        "D 5: silent on demo, but the labelled sample build (base.html:17) could carry the new layers with little extra work.",
+        "O 3: no globe and no 3D volumes in the first build (design-c.json sub_options). The latest recorded map instruction is a flat, Apple-Weather-style Montana map (DECISIONS.md:359-362, D28), which C extends.",
+        "Gate mismatch: passes need n of at least 20 and are report-only below (evaluation-predeclared.json lines 19-20); DESIGN.md:35 uses 5 users; the pilot has two named users (Next 2). Under C's own gates the echo layer stays report-only through the pilot.",
+        "Dependency: the one-hour echo window needs frames kept between builds (ROADMAP Next 6, not built). load_previous (build.py:472) serves last-known alerts (help text, line 485), so frame reuse is new code."
+      ],
+      "fatal_flaws": [
+        "Owner decision, ROADMAP Next 4: new feeds before predeclared metrics exist ('before any new feed is added', ROADMAP.md:46-48; review P0 'Not started', line 89). Carson must order it behind Next 4, or the flagged build stays on a branch.",
+        "Owner or counsel decision, site-wide: GitHub's Additional Product Terms say 'don't use Actions as a content delivery network' and 'You may only access and use GitHub Actions to develop and test your application(s)' (WebFetch, 2026-10-17). The site already publishes this way (D27); C adds about 0.66 MB per build to it (design-c.json size_impact). Gate new product files on this decision.",
+        "Owner decision: P1 showing uncorrected cloud tops (design-c.json owner_decisions). The displacement (3-33 km) is the largest honesty risk in the set; hold the cloud layer until Phase 2.",
+        "Owner decision, scope: no 3D in the first build (design-c.json sub_options). README.md section 2 D-G1 was written for the app and needs rewording for the website."
+      ]
+    },
+    {
+      "design": "design-a",
+      "name": "Design A: CesiumJS page inside the parked Flask app (/globe)",
+      "score_0_to_10": 3.3,
+      "sub_scores": {"V": 3, "P": 2, "F": 0, "H": 6, "D": 3, "O": 8},
+      "reasons": [
+        "O 8: the closest match to the literal ask: a CesiumJS globe, cloud tops lifted by ACHA height after parallax correction (phase 2), voxel storms (phase 3, at least 35 dBZ by default, below-ground cells dropped) (design-a.json phases, storms_3d_rules). Imagery is USGS and GIBS, not photorealistic.",
+        "F 0: the app's server binds 127.0.0.1 (desktop/launcher.py:433) and every route needs the window cookie (DECISIONS.md:23-29, D2). design-a.json never mentions phones, so the pilot's phone checks (Next 2) cannot run on it.",
+        "P 2: serving /globe from the parked app means reviving it (DECISIONS.md:322-323; Next 15), and phases 1-3 add new feeds before Next 4. Crews would have to install the desktop app again; D27 replaced that with a site that needs nothing installed (DESIGN.md:12-14, 51).",
+        "V 3: the 3D view adds perspective to the radar the site already loops; its time loop (phase 4) repeats the past-hour timeline (DESIGN.md:295). Job context lives in the parked app (DECISIONS.md:324-325).",
+        "H 6: strong labels and a parity test against alert_targets on at least 20 fixtures (design-a.json alert_null_geometry). Docked for 3x and 5x exaggeration (the 'stretched' label is the only guard) and the bundled ion token and D26/D27 numbering.",
+        "D 3: excludes demo data in every phase (design-a.json storms_3d_rules). Rule 5 would allow DEMO-labelled data, so the owner walkthrough the critique rates medium is lost.",
+        "Weight: Cesium.js alone is 6,080,574 B raw and 1,778,166 B over the wire with gzip (live). Voxel frames are 9.44 MB at 20 dBZ and 1.52 MB at 35 dBZ (computed: 619,321 x 15.25 B; 99,854 x 15.25 B). Whether the per-factor height arrays (JS-8) are in the 15.25 B is not stated."
+      ],
+      "fatal_flaws": [
+        "Owner decision D27 (DECISIONS.md:314-323): the design runs in the parked app. Reviving it reverses 'no installer is built' (DECISIONS.md:322-323); ROADMAP Next 15 leaves keep-or-delete to Carson.",
+        "Owner decision, AGENTS rule 4: 'Third-party code (Leaflet) and fonts are served by the site, not a CDN' (AGENTS.md:71-72). A loads CesiumJS from cdnjs with SRI (design-a.json library_pin_and_integrity_policy). Amend the rule, or vendor the library, which puts about 6 MB raw into every update (DECISIONS.md:53-59, D6).",
+        "Owner decision on reach: the app is localhost-only (desktop/launcher.py:433), so A cannot meet Next 2's phone checks. The decided product direction is the website (DECISIONS.md:353); moving the view there is a new decision against D2.",
+        "Owner decision on the no-paid-token constraint: Cesium.js 1.146.0 has 12 'defaultAccessToken' references (live grep). Cesium's docs say 'A default access token is provided for evaluation purposes only' (cesium.com Ion reference, WebFetch 2026-10-17). A ships that token in a production page, and its ion-off claim is untraced (design-a.json unverified).",
+        "Owner decision, ROADMAP Next 4: phases 1-3 add GIBS, GOES ACHA, MRMS 3D, NWS radar image and terrain feeds before the predeclared metrics exist (ROADMAP.md:46-48)."
+      ]
+    },
+    {
+      "design": "design-b",
+      "name": "Design B: separate globe window served by the desktop shell, outside the payload",
+      "score_0_to_10": 2.5,
+      "sub_scores": {"V": 2, "P": 1, "F": 0, "H": 6, "D": 1, "O": 7},
+      "reasons": [
+        "O 7: the same globe and storm content as A, in a separate window, with a bundled library and a decode child process (design-b.json components C1-C8). The most literal reading of 'globe', with the most machinery.",
+        "P 1: each globe change needs a new installer per OS, distributed by hand from a GitHub Release (design-b.json installer_churn_and_updates). The owner called the app 'too complicated' and wanted it replaced by a website (DECISIONS.md:315). B moves back toward installs. O5: library and decoder bytes ship in every installer even when the view is off.",
+        "F 0: a local window on 127.0.0.1 with a random port (design-b.json C1). No phone path; the design never mentions phones.",
+        "V 2: a second server, a decode child process and a snapshot table to show the same radar and alerts. The snapshot parity with Live Storms is a real plus (design-b.json data_endpoints C6). Jobs remain parked (DECISIONS.md:324-325).",
+        "H 6: 'could not refresh' on a failed request, never an all-clear (G-JS5), and the banner split are good; the not_in_javascript list is a useful rule 4 check. Docked for the same unresolved items as A.",
+        "D 1: refuses demo outright ('/globe?event=demo is refused with 400', design-b.json default_off_setting).",
+        "Rule 4 (not scored): B is the only design that bundles the library, which satisfies AGENTS.md:71-72 without a rule change. That does not offset P or F."
+      ],
+      "fatal_flaws": [
+        "Owner decision D27 and O1 (DECISIONS.md:314-323; design-b.json owner_decisions): the desktop app is parked and no installer is built. B cannot start until a DECISIONS entry names D27 and reverses it.",
+        "Owner decision O4 with AGENTS rule 2 and D3: new pip packages (netCDF4, numpy) need a new installer per OS (AGENTS.md:60-64; DECISIONS.md:31-37). Each globe change means installer churn; the owner must accept it or choose a lower-churn variant (design-b.json B2).",
+        "Owner decision on reach: no phone path, so it fails Next 2's phone checks unless the view moves to the website.",
+        "Owner decision, ROADMAP Next 4: new feeds before predeclared metrics (ROADMAP.md:46-48). And the bundled ion token question shared with A."
+      ]
+    }
+  ],
+  "ranking": ["design-c", "design-a", "design-b"],
+  "honesty_traps": [
+    "Magnitude reading: A's 3x and 5x exaggeration and B's camera-sized voxels can read as storm height or intensity. C has no 3D.",
+    "Uncorrected cloud tops: C's P1 and A's and B's phase 1 draw cloud tops 3-33 km off (parallax.json, via design-c.json). Hold until correction.",
+    "Blank read as clear: all three say blank or grey is not clear; the site already says 'Never dry' (gridded.py:192-197; map.js:34-38).",
+    "Freshness drift: DESIGN.md:154 says radar is stale past 15 min; DESIGN.md:333 says 30 min; DECISIONS.md:341 says 15 min for the snapshot; website/sources.py:115 uses 30 min for MRMS frames. Pick one per product by DECISIONS entry.",
+    "Demo as evidence: A and B exclude demo; C is silent. The label must match rule 5 (base.html:17)."
+  ],
+  "field_reach": "A: none (desktop window on 127.0.0.1). B: none (local window). C: the public site returned HTTP 200 for the Now, map and reports pages with a viewport tag (live). No phone has tested the map (DECISIONS.md:402-403; Next 2). DESIGN.md:22-23 assumes a crew lead on a phone; the crew device mix is unmeasured.",
+  "demo": "Rule 5 allows demo data only under the demo event, labelled DEMO (AGENTS.md:75-76). The site has no demo event; its sample build says 'Sample data' (base.html:17). Two routes give the owner a walkthrough without invented storms: C's layers in the labelled sample build, or archived real replays (evaluation-predeclared.json cases) labelled as archived. The owner decides whether either meets rule 5.",
+  "owner_ask_vs_delivered": {
+    "ask": "A Google Earth-like globe with 'holographic' imagery of clouds and storms (README.md section 1, item 1)",
+    "latest_recorded_map_instruction": "A working, interactable Montana map in Apple Weather's style (DECISIONS.md:359-362, D28, 2026-10-15)",
+    "A": "CesiumJS globe in the parked app; lifted cloud tops after parallax correction; voxel storms; not photorealistic; no phones.",
+    "B": "The same content in a separate local window, with installers; no phones.",
+    "C": "No globe and no 3D volumes. 2.5D echo-top and cloud-top height classes, transects and the time loop on the flat map. Globe only as gated C1 (Phase 5, D-G1)."
+  },
+  "grafts": [
+    "From design-a: alert parity on at least 20 fixtures (zone-only, out-of-state codes, cancel during an outage, partial zones) between the map's alert entries and the Now list (design-a.json alert_null_geometry). design-c has three.",
+    "From design-a: a freshness table where every layer key must exist, with a unit test that fails on a missing key. Do not copy the parked app's silent default (payload/weather.py:232 FRESH_SECONDS.get(self.key, 3600)); sources.py CONTRACTS should fail loudly.",
+    "From design-a: count what is not drawn. Masked or below-ground echo cells go in the legend note as a number (design-a.json storms_3d_rules).",
+    "From design-a: a Chromium check that a layer switch changes more than 2% of the picture's pixels and that the picture is not blank (design-a.json phases). Add it to tools/smoke_map.py for the new switch (N1).",
+    "From design-a: volumes never on property cards and pins never coloured by echo (design-a.json storms_3d_rules). Write it into acceptance now, because job pins return (DECISIONS.md:324-325).",
+    "From design-a: the held-out replay days (hail 2025-06-13, 06-20, 07-28; quiet 06-03, 08-02; night 07-21; radar gap 06-20) as archived real data labelled 'Archived, not live'. The owner must confirm this sits outside rule 5.",
+    "From design-a: derive each new freshness limit from measured latency and cite it (design-a.json evidence_kinds_and_freshness_proposals). Put design-c's MRMS and GOES limits through a DECISIONS entry with the same basis.",
+    "From design-b: the not_in_javascript list (design-b.json js_duties) as the rule 4 check for the six new map.js duties: freshness words, frame times, time zones, thresholds, geometry, parallax wording, alert matching and legend text stay in Python. It serves ROADMAP Next 9 (map.js is 2,155 lines).",
+    "From design-b: a schema gate. map.js refuses an unknown map.json version with 'needs a newer build' text (design-b.json installer_churn_and_updates.schema_gate). map.json is version 1 (DESIGN.md:365-366); state the gate for the new keys.",
+    "From design-b: alerts on the map come from the same build data as the Now page, so they cannot disagree (design-b.json data_endpoints). Make that the acceptance rule.",
+    "From design-b: an owner ruling for any JavaScript duty beyond the listed set (design-b.json phases, phase 1 stop). map.js already pauses playback when hidden (map.js:1496-1497, G-JS12 pattern); any new echo timer follows it.",
+    "From the critique and ROADMAP Next 8: a text version before any new picture. Sample echo-top height at the 14 towns into map.json as 'radar estimate' text, never 'dry' or 'no hail' (ROADMAP.md:55-59).",
+    "From the critique and ROADMAP Next 11: sequence the MESH hail footprint (ROADMAP.md:69-73) before the volume and echo-top products. It shares the MRMS decoder already in website/gridded.py.",
+    "From ROADMAP Next 4: write each build's echo-top index into the durable decision-time record (ROADMAP.md:46-48), so the baseline can show what a town's view said.",
+    "From evaluation-predeclared.json: report n under 20 as report-only (lines 19-20) and use the 5-user first-click test (DESIGN.md:35) as the pilot measure. Do not present n under 20 as a pass.",
+    "New idea, unverified: the lowest level with valid data above ground per cell, from the MRMS level set and the terrain grid, as plain words ('lowest level with data: N km above ground'). It may answer the office's 'no echo' question (plan-critique-product.json job 10). It is a data-availability reading, not a beam model; check 2025-06-15 first.",
+    "Keep the new layers off the first phone screen (DESIGN.md:78, X1; DESIGN.md:188 already flags the long phone Now page), and keep four top-level pages and four nav items (DESIGN.md:55-62)."
+  ],
+  "owner_decisions_named": [
+    "D27 reversal, for design-a and design-b (DECISIONS.md:314-323; ROADMAP Next 15).",
+    "AGENTS rule 4 CDN wording, for design-a (AGENTS.md:71-72).",
+    "Installer policy, for design-b (AGENTS.md:60-64, rule 2; DECISIONS.md:31-37; design-b O4).",
+    "Reach: local app or website, for design-a and design-b (DECISIONS.md:23-29, D2; 353, D27).",
+    "Next 4 ordering for every new feed, for all three (ROADMAP.md:46-48, line 89).",
+    "GitHub Actions and Pages terms for product files, site-wide, for design-c and design-a's publish job.",
+    "Evaluation-token policy for the bundled Cesium token, for design-a and design-b (the brief's no-paid-token constraint).",
+    "DEMO versus SAMPLE labels for demos (AGENTS.md:75-76); cloud layer before parallax correction (design-c owner_decisions; parallax.json).",
+    "Approval of six new map.js duties (ROADMAP.md:60-65, Next 9, Carson's call); DECISIONS entries for new kinds, freshness limits and the map.json contract change (D12; DESIGN.md:365-366; Next 8)."
+  ],
+  "facts_rechecked": [
+    "design-a.json pin (live, 2026-10-17): cdnjs Cesium.js 1.146.0 is 6,080,574 B raw and 1,778,166 B over the wire with gzip. Its sha384 equals the pin in design-a.json. Confirmed.",
+    "design-c.json 'no VolumeLayer' (live, jsDelivr deck.gl@9.4.0 dist.min.js): 2,073,497 B; VolumeLayer 0 matches; setTexture3DData 1; GlobeView 5. Confirmed for VolumeLayer; GlobeView present (experimental status not re-checked).",
+    "Bundled ion token (live grep 2026-10-17; WebFetch of cesium.com/learn/cesiumjs/ref-doc/Ion.html): Cesium.js 1.146.0 has 12 'defaultAccessToken' references; the docs say 'A default access token is provided for evaluation purposes only.' Partly confirmed: the token ships in browser code; the ion-off trace is untested.",
+    "MRMS -99 and -999 meanings (every design marks them unverified): not settled. WebSearch found no statement; the EOL README fetch returned only a title; the NSSL tables page returned HTTP 503 on 2026-10-17. Unverified.",
+    "GitHub Actions terms (WebFetch of docs.github.com Additional Product Terms, Actions section, 2026-10-17): 'don't use Actions as a content delivery network or as part of a serverless application'; 'You may only access and use GitHub Actions to develop and test your application(s).' As returned by the fetch tool; not checked against page source.",
+    "Phone premise (live, 2026-10-17): the site's Now page (18,197 B), map.html (10,416 B) and reports.html (4,756 B) return HTTP 200; the Now page has viewport width=device-width. Reachable; no phone tested.",
+    "Parked-app bind (repo): desktop/launcher.py:433 creates the server on host 127.0.0.1; base_url at :437. A and B are localhost-only.",
+    "No-coverage precedent (repo): website/gridded.py:192-197 and 340-345 treat negative MRMS rates as no coverage (NaN), hatched, never dry. DECISIONS.md:372 reports negatives only outside radar coverage on 2026-10-15. The far-from-radar premise for the 3D product is unchecked.",
+    "Sample-size rule (repo): evaluation-predeclared.json lines 19-20 require n of at least 20; DESIGN.md:35 uses 5 users. Conflict confirmed.",
+    "Roadmap numbering (repo): ROADMAP.md Next 2 (lines 40-43), Next 4 (46-48), Next 15 (80-82), review line 89. The brief's ROADMAP 1-3 are stale.",
+    "Silent freshness default (repo): payload/weather.py:232 FRESH_SECONDS.get(self.key, 3600). Confirmed (parked app).",
+    "Parked-app labels and sizes (repo): payload/weather.py:48 'Inspection-confirmed'; payload/maps.py:28 penny repr 0.88 is the default size (payload/app.py:516, :574). Confirmed (parked app).",
+    "Radar stale-limit drift (repo): DESIGN.md:154 says 15 min; DESIGN.md:333 says 30 min; DECISIONS.md:341 says 15 min; website/sources.py:115 says 30 min for MRMS frames. Confirmed.",
+    "Map size and playback pause (repo): website/static/map/map.js is 2,155 lines (wc -l); lines 1496-1497 pause playback on visibilitychange. Confirmed.",
+    "Frame reuse and build cost (repo): build.py:472 load_previous serves last-known alerts (help text line 485); website.yml:15 cron */10; :38 timeout 15 min; :80 pip installs. Confirmed.",
+    "Zipball (repo, git archive of origin/main, 2026-10-17): 907,871 B; updater cap 50 MiB (desktop/updater.py:191). Confirmed; design-a's 914,145 B used another archive method (unreviewed).",
+    "Handoff (repo, weather handoff spec lines 29, 30, 33, 39, 88, 114): Live Storms layers have no clouds (29); no ground wind from storm motion (33); radar colours do not measure wind at a roof (39); no false street-level precision (88); job weather readable on mobile (114). Confirmed.",
+    "Site demo label (repo): no 'demo' string in website/; 'Sample data' banners at base.html:17 and map.html:46. Confirmed.",
+    "Parked-app wording (repo): payload/templates/live.html:181 'That is not a safety clearance'. Confirmed (parked app; cited by the critique)."
+  ],
+  "unverified": [
+    "The -99 and -999 meanings in MergedReflectivityQC.",
+    "Whether an ion-off Cesium makes zero ion requests (design-a.json, design-b.json).",
+    "CesiumJS and WebGL2 on iOS Safari and Android (no device test).",
+    "The crew device mix, phones or laptops (DESIGN.md:22-23 assumes phones; Next 2 will measure).",
+    "Voxel sizes (9.44 MB, 1.52 MB) are arithmetic on prototype counts; not re-decoded here. Per-factor height arrays (design-a JS-8) are unsized.",
+    "design-b's installer and wheel sizes (35.0 MB) and per-machine figures; parallax magnitudes (parallax.json) were cited, not re-derived.",
+    "Whether the 'No radar coverage' hatch appears inside Montana for the 3D product (the 2D product showed none inside the map area on 2026-10-15)."
+  ],
+  "if_lens_changes": "If the owner reverses D27, amends AGENTS rule 4 and accepts installers, A becomes the nearest match to the literal ask and B the most self-contained. Those are owner decisions outside this lens; the scores do not assume them.",
+  "next_steps_for_supervisor": [
+    "Keep C2 as the first build on a branch behind the build flag. No new layer on the Now or map page until ROADMAP Next 2 closes.",
+    "Hold the MRMS and GOES feeds behind ROADMAP Next 4, with evaluation-predeclared.json as the predeclared file once the owner approves it.",
+    "Put three questions to Carson: DEMO versus SAMPLE; whether GitHub Actions and Pages may carry the NOAA-derived products; whether the cloud layer waits for parallax correction.",
+    "Do not reopen D27 for a globe unless Carson asks. If he does, review A first, after its rule 4 and token questions are decided."
+  ]
+}
