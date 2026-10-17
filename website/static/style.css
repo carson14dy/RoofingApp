@@ -279,6 +279,23 @@ td.sky { color: var(--color-text-muted); min-width: 9rem; }
 .kind-hail { color: var(--violet-700); }
 .kind-wind { color: var(--teal-700); }
 @media (prefers-color-scheme: dark) { .kind-hail { color: #c6a6f2; } .kind-wind { color: #6fd3d3; } }
+[hidden] { display: none !important; }    /* the reports page hides the days outside the chosen range */
+.range-form { margin-top: var(--space-4); padding: var(--space-4); border: 1px solid var(--card-line);
+  border-radius: var(--radius); background: var(--card-bg); }
+.range-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); }
+.range-field { display: grid; gap: var(--space-1); font-weight: 600; flex: 1 1 11rem; }
+.range-field input { min-height: 44px; padding: 0 var(--space-3); font: inherit; color: var(--color-text);
+  background: var(--color-bg); border: 1px solid var(--color-line-strong); border-radius: var(--radius-sm); }
+.range-go { min-height: 44px; padding: 0 var(--space-4); font: inherit; font-weight: 700; cursor: pointer;
+  color: var(--color-bg); background: var(--color-text); border: 1px solid var(--color-text); border-radius: var(--radius-sm); }
+.range-form .caption { margin-top: var(--space-3); }
+.range-presets { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4); margin-top: var(--space-2); }
+.range-presets a { display: inline-flex; align-items: center; min-height: 44px; }
+.range-message:not(:empty) { margin-top: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line-strong); background: var(--color-surface); }
+.day-status { margin-top: var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm); }
+.day-status-unavailable { color: var(--color-warning); font-weight: 600; }
+.day-status-not_published { color: var(--color-advisory); font-weight: 600; }
 .prose { max-width: 65ch; }
 .contracts { margin-top: var(--space-4); }
 .contracts th[scope="row"] { min-width: 10rem; font-weight: 700; }

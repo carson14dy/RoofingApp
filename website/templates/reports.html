@@ -3,13 +3,12 @@
 {% block content %}
 <div class="lead">
   <h1>Storm reports</h1>
-  <p class="sub">Preliminary hail and wind reports in and near Montana from the Storm Prediction Center, for the last three
-    reporting days. Each report is a point where someone saw or measured something. No report is not evidence that no hail fell.</p>
+  <p class="sub">Preliminary hail and wind reports in and near Montana from the Storm Prediction Center. Each report is a point where someone saw or measured something. No report is not evidence that no hail fell.</p>
 </div>
 
 {% if reports.problems %}
-<div class="notice notice-error" role="alert">
-  <p><strong>Some report files didn't load at {{ built|t }}.</strong> Days listed below as empty may be missing data.</p>
+<div class="notice notice-error">
+  <p><strong>Some report files didn't load at {{ built|t }}.</strong> Days marked Data unavailable below may be missing reports.</p>
   <ul>{% for p in reports.problems %}<li>{{ p }}</li>{% endfor %}</ul>
 </div>
 {% endif %}
@@ -27,21 +26,43 @@
     <li>Outline: NWS alert area (red warning, orange watch, gold advisory, grey statement)</li>
     <li>Alerts without an outline (issued by county or zone) are listed on the <a href="index.html">Now page</a></li>
   </ul>
+  <p class="caption">The map shows the last three reporting days, whatever days are chosen below.</p>
+</section>
+
+<section aria-labelledby="days-h" class="choose">
+  <div class="section-head"><h2 id="days-h">Reporting days</h2></div>
+  <p class="sub" id="range-summary">{{ view.summary }}</p>
+  <form id="range-form" class="range-form" action="reports.html" method="get" hidden>
+    <div class="range-fields">
+      <label class="range-field">From
+        <input type="date" name="start" id="range-start" min="{{ view.config.oldest }}" max="{{ view.config.newest }}"></label>
+      <label class="range-field">To
+        <input type="date" name="end" id="range-end" min="{{ view.config.oldest }}" max="{{ view.config.newest }}"></label>
+      <button type="submit" class="range-go">Show these days</button>
+    </div>
+    <p class="caption">Up to {{ view.config.max }} reporting days, from {{ view.oldest_label }} to {{ view.newest_label }}. A reporting day runs from 12:00 to 11:59 UTC, which is 5 or 6 am Mountain time.</p>
+    <nav class="range-presets" aria-label="Quick ranges"><span>Quick ranges:</span>
+      {% for p in view.presets %}<a href="{{ p.href }}">{{ p.label }}</a>{% endfor %}
+    </nav>
+  </form>
+  <p class="range-message" id="range-message" role="status"></p>
+  <noscript><p class="caption">Choosing other days needs JavaScript. Without it, this page shows the last {{ view.config.default }} reporting days.</p></noscript>
 </section>
 
 <section aria-labelledby="list-h">
-  <div class="section-head"><h2 id="list-h">All reports, newest first</h2></div>
-  {% for day in reports.days %}
-  {% set rows = reports['items'] | selectattr('day', 'equalto', day) | list %}
-  <div class="report-day">
-    <h3>Reporting day starting {{ (day ~ 'T12:00:00Z')|t('%a %b %-d at %-I %p %Z') }} ({{ rows|length }} report{{ 's' if rows|length != 1 }})</h3>
-    {% if rows %}
+  <div class="section-head"><h2 id="list-h">Reports by reporting day, newest first</h2></div>
+  {% for d in view.days %}
+  <div class="report-day" id="day-{{ d.day }}" data-day="{{ d.day }}"{% if loop.index > view.config.default %} hidden{% endif %}>
+    <h3>{{ d.heading }}</h3>
+    <p class="day-status day-status-{{ d.status }}">{{ d.status_text }}</p>
+    {% if d['items'] %}
     <div class="table-box">
       <table>
+        <caption class="visually-hidden">Storm reports for the reporting day starting {{ d.label }}</caption>
         <thead><tr><th scope="col">Time</th><th scope="col">Type</th><th scope="col" class="n">Size / speed</th>
           <th scope="col">Place</th><th scope="col">Notes</th></tr></thead>
         <tbody>
-        {% for r in rows %}
+        {% for r in d['items'] %}
           <tr>
             <td class="time">{{ r.time|t('%a %-I:%M %p') }}</td>
             <td><span class="kind kind-{{ r.kind }}">{{ r.kind|title }}</span></td>
@@ -53,10 +74,88 @@
         </tbody>
       </table>
     </div>
-    {% else %}
+    {% elif d.status == 'loaded' %}
     <p class="empty">No hail or wind reports in or near Montana for this day.</p>
     {% endif %}
   </div>
   {% endfor %}
 </section>
+
+{# The range script (D30). Browser-only: it reads ?start= and ?end=, checks them with the rules and words in
+   website/build.py (REPORT_WORDS, mirrored by sources.parse_report_range), and shows those days and their
+   summary. The days, statuses and sentences all come from the build. Without JavaScript the form stays
+   hidden and the page shows the default days. #}
+<script id="report-config" type="application/json">{{ view.config|tojson }}</script>
+<script>
+(function () {
+  var form = document.getElementById("range-form"), box = document.getElementById("report-config");
+  if (!form || !box) return;
+  var cfg = JSON.parse(box.textContent), W = cfg.words, DAYS = cfg.days;   /* DAYS: newest first */
+  var ISO = /^\d{4}-\d{2}-\d{2}$/, DAY_MS = 864e5;
+  function utc(s) { var p = s.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]); }
+  function valid(s) { return ISO.test(s) && new Date(utc(s)).toISOString().slice(0, 10) === s; }
+  function fill(text, v) { return text.replace(/\{(\w+)\}/g, function (m, k) { return v[k]; }); }
+  function plural(n, one, many) { return n === 1 ? one : many; }
+  /* Same order of checks as sources.parse_report_range: missing, format, order, long, window. */
+  function check(a, b) {
+    if (!a || !b) return W.missing;
+    if (!valid(a) || !valid(b)) return fill(W.format, { example: cfg.newest });
+    if (b < a) return W.order;
+    var n = (utc(b) - utc(a)) / DAY_MS + 1;
+    if (n > cfg.max) return fill(W.long, { days: n, max: cfg.max });
+    if (a < cfg.oldest || b > cfg.newest) {
+      return fill(W.window, { max: cfg.max, first: DAYS[DAYS.length - 1].label, last: DAYS[0].label });
+    }
+    return null;
+  }
+  /* The same sentences build.report_summary writes for the default days. */
+  function summary(list) {
+    var n = list.length, u = 0, p = 0, found = 0, loaded = 0, out = [];
+    list.forEach(function (d) {
+      found += d.count;
+      if (d.status === "unavailable") u++;
+      else if (d.status === "not_published") p++;
+      else loaded++;
+    });
+    var oldestFirst = list.slice().reverse(), first = oldestFirst[0].label, last = oldestFirst[n - 1].label;
+    var span = n + " " + plural(n, W.day_one, W.day_many);
+    out.push(fill(W.showing, { range: first === last ? first : first + " to " + last, days: span }));
+    if (u === n) out.push(W.all_unavailable);
+    else if (p === n) out.push(W.all_unpublished);
+    else {
+      if (found) out.push(fill(W.found, { count: found, noun: plural(found, W.report_one, W.report_many) }));
+      else if (loaded) out.push(fill(W.empty, { days: loaded + " " + plural(loaded, W.day_one, W.day_many) }));
+      if (u) out.push(fill(W.some_unavailable, { unavailable: u, days: span }));
+      if (p) out.push(fill(W.some_unpublished, { unpublished: p, days: span }));
+    }
+    return out.join(" ");
+  }
+  function show(a, b) {
+    document.querySelectorAll(".report-day[data-day]").forEach(function (el) {
+      var day = el.getAttribute("data-day");
+      el.hidden = !(day >= a && day <= b);
+    });
+    document.getElementById("range-summary").textContent = summary(DAYS.filter(function (d) {
+      return d.day >= a && d.day <= b;
+    }));
+  }
+  var q = new URLSearchParams(window.location.search), a = q.get("start") || "", b = q.get("end") || "";
+  var msg = document.getElementById("range-message");
+  var def = [DAYS[cfg.default - 1].day, DAYS[0].day];
+  var problem = (a || b) ? check(a, b) : null;
+  if (problem) {
+    msg.textContent = problem + " " + fill(W.fallback, { "default": cfg.default });
+    a = def[0]; b = def[1];
+    show(a, b);
+  } else if (!a && !b) {
+    a = def[0]; b = def[1];
+  } else {
+    msg.textContent = "";
+    show(a, b);
+  }
+  document.getElementById("range-start").value = a;
+  document.getElementById("range-end").value = b;
+  form.hidden = false;
+})();
+</script>
 {% endblock %}

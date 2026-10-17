@@ -104,7 +104,8 @@ CONTRACTS = {
         "request": "spc.noaa.gov/climo/reports/YYMMDD_rpts_filtered_hail.csv and _wind.csv",
         "units": "Hail size in hundredths of an inch (175 = 1.75 in). Wind in mph. Times HHMM UTC; "
                  "a reporting day runs 12:00 to 11:59 UTC (6 am to 5:59 am MDT).",
-        "timing": "Preliminary; today's files appear once there are reports. Three days are shown.",
+        "timing": "Preliminary. The newest three reporting days are fetched every build; an older day keeps the "
+                  "copy loaded in the last published build. The Storm reports page keeps 31 reporting days.",
         "missing": "\"UNK\" wind stays unknown. A file that fails is listed as a problem; no report is not \"no hail\".",
     },
     "radar": {
@@ -559,6 +560,45 @@ def spc_day_for(dt: datetime) -> date:
 
 def spc_url(day: date, kind: str) -> str:
     return f"{SPC}{day:%y%m%d}_rpts_filtered_{kind}.csv"
+
+
+# The Storm reports page (D30). Words and page are in build.py; the browser applies the same rules.
+REPORT_DAYS = 31       # the most reporting days in one range, and the days the page keeps (inclusive)
+REPORT_REFRESH = 3     # the newest days fetched in every build; an older day keeps its loaded copy
+REPORT_DEFAULT = 3     # the days shown when no range is chosen
+
+
+class RangeError(ValueError):
+    """A range the reports page can't show. `key` names the plain message (build.REPORT_WORDS)."""
+
+    def __init__(self, key: str, **detail):
+        super().__init__(key)
+        self.key, self.detail = key, detail
+
+
+_ISO_DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def parse_report_range(start, end, newest: date) -> tuple[date, date]:
+    """Two reporting days written YYYY-MM-DD, inclusive, inside the days the page keeps (the last
+    REPORT_DAYS up to `newest`). Raises RangeError: 'missing', 'format', 'order' (end before start),
+    'long' (more than REPORT_DAYS days) or 'window' (outside the kept days)."""
+    if not start or not end:
+        raise RangeError("missing")
+    if not (_ISO_DAY.fullmatch(str(start)) and _ISO_DAY.fullmatch(str(end))):
+        raise RangeError("format")
+    try:
+        a, b = date.fromisoformat(start), date.fromisoformat(end)
+    except ValueError:
+        raise RangeError("format") from None
+    if b < a:
+        raise RangeError("order")
+    days = (b - a).days + 1
+    if days > REPORT_DAYS:
+        raise RangeError("long", days=days)
+    if a < newest - timedelta(days=REPORT_DAYS - 1) or b > newest:
+        raise RangeError("window")
+    return a, b
 
 
 def spc_time_to_utc(day: date, hhmm: str) -> datetime:

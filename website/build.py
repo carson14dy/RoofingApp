@@ -15,7 +15,7 @@ import hashlib
 import json
 import shutil
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -178,26 +178,61 @@ class Collector:
             self.note("alerts", "NWS alerts", True, f"{len(items)} active"
                       + (f" ({len(added)} found only by the town checks)" if added else ""))
 
-    def reports(self, days=3):
+    def reports(self):
+        """SPC storm reports (D13) for the last REPORT_DAYS reporting days, one day at a time: each day's
+        hail and wind files are fetched on their own. The newest REPORT_REFRESH days are fetched in every
+        build. An older day keeps the copy that loaded in the last published build (the same last-good
+        rule as the alert and station lists), so a build fetches only the days with no good copy yet.
+        A day whose file is missing or fails is "unavailable" for that day: it stays on the page and is
+        never read as no reports (AGENTS.md rule 5)."""
         today = src.spc_day_for(self.now)
-        out, problems = [], []
-        for back in range(days):
+        kept = (self.prev.get("reports") or {}).get("days") or {}
+        days = []
+        for back in range(src.REPORT_DAYS):
             day = today - timedelta(days=back)
-            for kind in ("hail", "wind"):
-                text, err = self.f.text(src.spc_url(day, kind))
-                if err:
-                    if not (back == 0 and err.startswith("not published")):
-                        problems.append(f"{kind} {strftime(day, '%b %-d')}: {err}")
-                    continue
-                try:
-                    out.extend(src.parse_spc(text, day, kind))
-                except ValueError as e:
-                    problems.append(f"{kind} {strftime(day, '%b %-d')}: {e}")
-        out.sort(key=lambda r: r["time"], reverse=True)
-        self.note("reports", "SPC storm reports", not problems,
-                  "; ".join(problems) if problems else f"{len(out)} reports in 3 days")
-        return {"items": out, "problems": problems, "days": [(today - timedelta(days=b)).isoformat()
-                                                             for b in range(days)]}
+            copy = kept.get(day.isoformat())
+            if back >= src.REPORT_REFRESH and isinstance(copy, dict) and isinstance(copy.get("items"), list):
+                days.append({"day": day.isoformat(), "status": "loaded", "items": copy["items"], "problems": [],
+                             "note": "", "loaded": copy.get("loaded"), "from_copy": True})
+            else:
+                days.append(self._report_day(day, back))
+        recent = days[:src.REPORT_REFRESH]
+        recent_problems = [f"{_label(d['day'])} {p}" for d in recent for p in d["problems"]]
+        older = sum(1 for d in days[src.REPORT_REFRESH:] if d["status"] == "unavailable")
+        items = sorted((r for d in recent for r in d["items"]), key=lambda r: r["time"], reverse=True)
+        detail = "; ".join(recent_problems) if recent_problems else (
+            f"{len(items)} reports in {src.REPORT_REFRESH} days"
+            + (f"; {older} older day{'' if older == 1 else 's'} unavailable" if older else ""))
+        self.note("reports", "SPC storm reports", not recent_problems, detail)
+        return {"items": items,       # the newest three days only: the map and the build log read these
+                "problems": [f"{_label(d['day'])} {p}" for d in days for p in d["problems"]],
+                "days": days,         # every kept day, newest first
+                "window": {"newest": today, "oldest": today - timedelta(days=src.REPORT_DAYS - 1)}}
+
+    def _report_day(self, day: date, back: int) -> dict:
+        items, problems, missing = [], [], []
+        for kind in ("hail", "wind"):
+            text, err = self.f.text(src.spc_url(day, kind))
+            if err:
+                if back == 0 and err.startswith("not published"):
+                    missing.append(kind)                      # today's file is not posted yet
+                else:
+                    problems.append(f"{kind} file: {err}")
+                continue
+            try:
+                items.extend(src.parse_spc(text, day, kind))
+            except ValueError as e:
+                problems.append(f"{kind} file: {e}")
+        items.sort(key=lambda r: r["time"], reverse=True)
+        if problems:
+            status = "unavailable"
+        elif len(missing) == 2:
+            status = "not_published"
+        else:
+            status = "loaded"
+        note = " ".join(f"The {k} file isn't posted yet." for k in missing) if status == "loaded" else ""
+        return {"day": day.isoformat(), "status": status, "items": items, "problems": problems, "note": note,
+                "loaded": src._iso(self.now) if status == "loaded" else None, "from_copy": False}
 
     def gridded(self, out_dir: Path, sample: bool) -> dict:
         """Radar frames (NOAA MRMS) and model forecast frames (NOAA HRRR) for the map page."""
@@ -356,6 +391,116 @@ def env() -> Environment:
     return e
 
 
+# ---------------------------------------------------------------- the Storm reports page (D30)
+
+# The plain words of the Storm reports page. reports.html's script fills the same placeholders in the
+# browser (it reads them from its report-config), so every sentence about a range is written here once.
+# A day that is unavailable or not yet published is never counted as having no reports (AGENTS.md rule 5).
+REPORT_WORDS = {
+    "missing": "Choose a start day and an end day.",
+    "format": "Use a date like {example}.",
+    "order": "The end day is before the start day. Choose an end day on or after the start day.",
+    "long": "That range is {days} reporting days. The page shows up to {max} at a time. Choose a shorter range.",
+    "window": "Only the last {max} reporting days are on this page, {first} to {last}. Choose days within them.",
+    "fallback": "Showing the last {default} reporting days instead.",
+    "showing": "Showing {range} ({days}).",
+    "found": "{count} hail or wind {noun} in or near Montana.",
+    "empty": "No hail or wind reports in or near Montana for {days}. No report is not evidence that no hail fell.",
+    "all_unavailable": "Data unavailable for every day in this range. This is not an all-clear.",
+    "some_unavailable": "Data unavailable for {unavailable} of {days}. Missing reports are not an all-clear.",
+    "all_unpublished": "Not yet published. This reporting day is still open.",
+    "some_unpublished": "Not yet published for {unpublished} of {days}: that reporting day is still open.",
+    "day_one": "reporting day", "day_many": "reporting days",
+    "report_one": "report", "report_many": "reports",
+}
+
+
+def _label(day: str) -> str:
+    """'2026-10-14' -> 'Oct 14', as the page writes a reporting day."""
+    d = date.fromisoformat(day)
+    return f"{d:%b} {d.day}"
+
+
+def report_summary(days: list[dict], words: dict = REPORT_WORDS) -> str:
+    """The sentences above a range of reporting days: the range, what it found, and what is unavailable or
+    not yet published. reports.html's script writes the same sentences for a range a reader picks."""
+    n = len(days)
+    if not n:
+        return ""
+    ordered = sorted(days, key=lambda d: d["day"])
+    first, last = ordered[0]["label"], ordered[-1]["label"]
+    span = f"{n} {words['day_one'] if n == 1 else words['day_many']}"
+    lines = [words["showing"].format(range=first if first == last else f"{first} to {last}", days=span)]
+    unavailable = sum(d["status"] == "unavailable" for d in days)
+    unpublished = sum(d["status"] == "not_published" for d in days)
+    loaded = n - unavailable - unpublished
+    found = sum(d["count"] for d in days)          # every report listed, including a partly loaded day's
+    if unavailable == n:
+        lines.append(words["all_unavailable"])
+    elif unpublished == n:
+        lines.append(words["all_unpublished"])
+    else:
+        if found:
+            lines.append(words["found"].format(count=found, noun=words["report_one"] if found == 1 else words["report_many"]))
+        elif loaded:
+            lines.append(words["empty"].format(days=f"{loaded} {words['day_one'] if loaded == 1 else words['day_many']}"))
+        if unavailable:
+            lines.append(words["some_unavailable"].format(unavailable=unavailable, days=span))
+        if unpublished:
+            lines.append(words["some_unpublished"].format(unpublished=unpublished, days=span))
+    return " ".join(lines)
+
+
+def day_status_text(d: dict) -> str:
+    """The status line under a reporting day's heading: loaded (and whose copy), not yet published, or
+    unavailable with the file that failed."""
+    if d["status"] == "loaded":
+        text = f"Loaded {fmt_time(d['loaded'])}."
+        if d["from_copy"]:
+            text += " Kept from the last published build."
+        return f"{text} {d['note']}".strip()
+    if d["status"] == "not_published":
+        return REPORT_WORDS["all_unpublished"]
+    text = "Data unavailable. " + " ".join(p[:1].upper() + p[1:] + "." for p in d["problems"])
+    text += " Missing reports are not an all-clear."
+    return text + (" The reports listed are the ones that loaded." if d["items"] else "")
+
+
+def preset_href(newest: date, n: int) -> str:
+    """The address of the last n reporting days; the default is the page's own address."""
+    if n == src.REPORT_DEFAULT:
+        return "reports.html"
+    start = newest - timedelta(days=n - 1)
+    a, b = src.parse_report_range(start.isoformat(), newest.isoformat(), newest)   # the page must accept it
+    return f"reports.html?start={a.isoformat()}&end={b.isoformat()}"
+
+
+def range_page(reports: dict) -> dict:
+    """What the Storm reports page shows: every kept reporting day (newest first) with its heading, status
+    line and table rows, the default summary, the quick ranges, and the config its script reads."""
+    newest, oldest = reports["window"]["newest"], reports["window"]["oldest"]
+    days = []
+    for d in reports["days"]:
+        n = len(d["items"])
+        suffix = {"loaded": f" ({n} report{'' if n == 1 else 's'})", "not_published": " (not yet published)",
+                  "unavailable": " (Data unavailable)"}[d["status"]]
+        start = fmt_time(f"{d['day']}T12:00:00Z", "%a %b %-d at %-I %p %Z")
+        days.append({"day": d["day"], "label": _label(d["day"]), "status": d["status"], "count": n,
+                     "items": d["items"], "heading": f"Reporting day starting {start}{suffix}",
+                     "status_text": day_status_text(d)})
+    # the script's copy of the days: no rows, just what a range needs to say about each day
+    light = [{k: v[k] for k in ("day", "label", "status", "count")} for v in days]
+    return {
+        "days": days,
+        "summary": report_summary(light[:src.REPORT_DEFAULT]),
+        "presets": [{"label": label, "href": preset_href(newest, n)} for n, label in
+                    ((src.REPORT_DEFAULT, "Last 3 days"), (7, "Last 7 days"), (src.REPORT_DAYS, "Last 31 days"))],
+        "newest_label": _label(newest.isoformat()), "oldest_label": _label(oldest.isoformat()),
+        "config": {"max": src.REPORT_DAYS, "default": src.REPORT_DEFAULT, "newest": newest.isoformat(),
+                   "oldest": oldest.isoformat(), "days": light, "words": REPORT_WORDS},
+    }
+
+
 # ---------------------------------------------------------------- build
 
 # Files the pages load with ?v=<content hash>: a file keeps its address until its bytes change, so
@@ -398,7 +543,8 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
         "index.html": ("index.html", {"page": "now", "root": "", "alerts": alerts, "towns": towns,
                                       "card": map_card(layers, alerts, towns, c.status, now)}),
         "map.html": ("map.html", {"page": "map", "root": ""}),
-        "reports.html": ("reports.html", {"page": "reports", "root": "", "reports": reports}),
+        "reports.html": ("reports.html", {"page": "reports", "root": "", "reports": reports,
+                                          "view": range_page(reports)}),
         "about.html": ("about.html", {"page": "about", "root": ""}),
     }
     for name, (tpl, ctx) in pages.items():
@@ -419,7 +565,10 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
              "stations": {t["slug"]: [{k: v for k, v in s.items() if k not in ("obs", "error")}
                                       for s in t["obs"]["stations"]] for t in towns if t["obs"]["stations"]},
              "readings": {t["slug"]: [{"id": s["id"], "obs": s["obs"], "error": s["error"]}
-                                      for s in t["obs"]["stations"]] for t in towns if t["obs"]["stations"]}}
+                                      for s in t["obs"]["stations"]] for t in towns if t["obs"]["stations"]},
+             # the storm reports that loaded, day by day: the next build keeps an older day's copy (D30)
+             "reports": {"days": {d["day"]: {"loaded": d["loaded"], "items": d["items"]}
+                                  for d in reports["days"] if d["status"] == "loaded" and d["loaded"]}}}
     (out / "data" / "state.json").write_text(json.dumps(state, indent=1), encoding="utf-8")
     (out / ".nojekyll").write_text("", encoding="utf-8")
     return {"status": c.status, "alerts": len(alerts["items"]),
@@ -455,7 +604,7 @@ def content_sample(alerts, towns, reports) -> dict:
                               "office": t["office"], "alerts": None if t["alerts"] is None else len(t["alerts"]),
                               "now": reading_sample(t["obs"]["now"])}
                   for t in towns},
-        "reports_by_day": {d: sum(1 for r in reports["items"] if r["day"] == d) for d in reports["days"]},
+        "reports_by_day": {d["day"]: len(d["items"]) for d in reports["days"][:src.REPORT_REFRESH]},
     }
 
 

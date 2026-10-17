@@ -10,6 +10,7 @@ import contextlib
 import hashlib
 import io
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -922,6 +923,210 @@ class MapLabels(unittest.TestCase):
     def test_label_sides_are_valid(self):
         for t in site.TOWNS:
             self.assertIn(t.get("label", "right"), ("right", "left", "top", "bottom"), t["name"])
+
+
+HEADERS = {"hail": "Time,Size,Location,County,State,Lat,Lon,Comments\n",
+           "wind": "Time,Speed,Location,County,State,Lat,Lon,Comments\n"}
+
+
+class ReportFiles(SampleFetcher):
+    """NWS data from the sample; SPC files from `files`, keyed by (reporting day, kind): CSV text, or a
+    (\"error\", text) pair for a file that fails. A day not in `files` has an empty file. Every SPC
+    request is recorded in `calls`, so the cache rule can be counted."""
+
+    def __init__(self, now, files=None):
+        super().__init__(now)
+        self.files, self.calls = files or {}, []
+
+    def text(self, url):
+        name = url.rsplit("/", 1)[1]                              # 261013_rpts_filtered_hail.csv
+        day = datetime.strptime(name[:6], "%y%m%d").date().isoformat()
+        kind = name.split("_")[-1].split(".")[0]
+        self.calls.append(name)
+        hit = self.files.get((day, kind))
+        if isinstance(hit, tuple):
+            return None, hit[1]
+        return hit if hit is not None else HEADERS[kind], None
+
+
+def hail_row(hhmm="1500", size="150", place="4 N Billings"):
+    return HEADERS["hail"] + f"{hhmm},{size},{place},Yellowstone,MT,45.85,-108.50,TEST\n"
+
+
+def day_section(html, day):
+    """One reporting day's block on the reports page: from its heading to the next day's block."""
+    start = html.index(f'id="day-{day}"')
+    nxt = html.find('class="report-day"', start + 1)
+    return html[start:nxt if nxt != -1 else len(html)]
+
+
+def page_config(out):
+    html = page(out, "reports.html")
+    return json.loads(re.search(r'<script id="report-config" type="application/json">(.*?)</script>', html, re.S).group(1))
+
+
+class ReportRanges(unittest.TestCase):
+    """The Storm reports page (D30): ranges and the 31-day limit, a status for every reporting day, the
+    cache rule for older days, and wording that never reads an unavailable day as no reports."""
+
+    NEWEST = date(2026, 10, 14)                  # the reporting day of NOW
+    OLDEST = date(2026, 9, 14)                   # 31 reporting days inclusive
+
+    def test_a_range_of_up_to_31_days_is_accepted_inclusive(self):
+        self.assertEqual(src.REPORT_DAYS, 31)
+        self.assertEqual(src.parse_report_range("2026-09-14", "2026-10-14", self.NEWEST), (self.OLDEST, self.NEWEST))
+        self.assertEqual(src.parse_report_range("2026-10-12", "2026-10-14", self.NEWEST),
+                         (date(2026, 10, 12), self.NEWEST))
+        self.assertEqual(src.parse_report_range("2026-10-14", "2026-10-14", self.NEWEST), (self.NEWEST, self.NEWEST))
+
+    def test_each_range_problem_has_its_own_plain_key(self):
+        cases = [
+            (("", "2026-10-14"), "missing"),
+            ((None, "2026-10-14"), "missing"),
+            (("2026-10-14", ""), "missing"),
+            (("10/14/2026", "2026-10-14"), "format"),
+            (("2026-10-1", "2026-10-14"), "format"),
+            (("2026-02-30", "2026-10-14"), "format"),        # no such day
+            (("2026-10-14", "2026-10-12"), "order"),          # ends before it starts
+            (("2026-09-13", "2026-10-14"), "long"),           # 32 days
+            (("2026-09-13", "2026-10-13"), "window"),         # 31 days, but starts before the kept days
+            (("2026-10-13", "2026-10-15"), "window"),         # ends after the newest reporting day
+        ]
+        for args, key in cases:
+            with self.assertRaises(src.RangeError, msg=str(args)) as cm:
+                src.parse_report_range(*args, self.NEWEST)
+            self.assertEqual(cm.exception.key, key, args)
+        with self.assertRaises(src.RangeError) as cm:
+            src.parse_report_range("2026-09-13", "2026-10-14", self.NEWEST)
+        self.assertEqual(cm.exception.detail, {"days": 32})
+
+    def test_the_too_long_message_names_the_count_and_the_limit(self):
+        words = site.REPORT_WORDS
+        self.assertEqual(words["long"].format(days=32, max=31),
+                         "That range is 32 reporting days. The page shows up to 31 at a time. Choose a shorter range.")
+        self.assertEqual(words["order"], "The end day is before the start day. Choose an end day on or after the start day.")
+
+    def test_summary_of_an_empty_range_never_says_no_hail_fell(self):
+        days = [{"day": f"2026-10-{d:02d}", "label": f"Oct {d}", "status": "loaded", "count": 0} for d in (12, 13, 14)]
+        self.assertEqual(site.report_summary(days),
+                         "Showing Oct 12 to Oct 14 (3 reporting days). No hail or wind reports in or near Montana for "
+                         "3 reporting days. No report is not evidence that no hail fell.")
+
+    def test_summary_of_unavailable_days_is_never_an_all_clear(self):
+        gone = [{"day": "2026-10-13", "label": "Oct 13", "status": "unavailable", "count": 0}]
+        self.assertEqual(site.report_summary(gone), "Showing Oct 13 (1 reporting day). Data unavailable for every day "
+                                                     "in this range. This is not an all-clear.")
+        mixed = gone + [{"day": "2026-10-12", "label": "Oct 12", "status": "loaded", "count": 0}]
+        text = site.report_summary(mixed)
+        self.assertIn("Data unavailable for 1 of 2 reporting days. Missing reports are not an all-clear.", text)
+        self.assertIn("No hail or wind reports in or near Montana for 1 reporting day.", text)   # only what loaded
+        pending = [{"day": "2026-10-14", "label": "Oct 14", "status": "not_published", "count": 0}]
+        self.assertEqual(site.report_summary(pending), "Showing Oct 14 (1 reporting day). Not yet published. "
+                                                       "This reporting day is still open.")
+
+    def test_each_day_has_a_status_and_a_failed_day_is_kept_on_the_page(self):
+        files = {("2026-10-14", "hail"): ("error", "not published (HTTP 404)"),
+                 ("2026-10-14", "wind"): ("error", "not published (HTTP 404)"),
+                 ("2026-10-13", "hail"): hail_row(),
+                 ("2026-10-13", "wind"): ("error", "server error (HTTP 500)"),
+                 ("2026-10-01", "hail"): ("error", "not published (HTTP 404)"),
+                 ("2026-10-01", "wind"): ("error", "not published (HTTP 404)")}
+        out, result = build_with(ReportFiles(NOW, files))
+        html = page(out, "reports.html")
+        self.assertEqual(len(re.findall(r'class="report-day"', html)), 31)           # no day is dropped
+        pending = day_section(html, "2026-10-14")
+        self.assertIn("(not yet published)", pending)
+        self.assertIn("Not yet published. This reporting day is still open.", pending)
+        self.assertNotIn("<table", pending)
+        partly = day_section(html, "2026-10-13")
+        self.assertIn("(Data unavailable)", partly)
+        self.assertIn("Data unavailable. Wind file: server error (HTTP 500). Missing reports are not an all-clear. "
+                      "The reports listed are the ones that loaded.", partly)
+        self.assertIn("4 N Billings", partly)                                         # what did load is listed
+        empty = day_section(html, "2026-10-12")
+        self.assertIn("(0 reports)", empty)
+        self.assertIn("No hail or wind reports in or near Montana for this day.", empty)
+        old = day_section(html, "2026-10-01")
+        self.assertIn("Data unavailable. Hail file: not published (HTTP 404). Wind file: not published (HTTP 404). "
+                      "Missing reports are not an all-clear.", old)
+        self.assertNotIn("No hail or wind reports", old)
+        self.assertIn("Some report files didn't load", html)
+        state = json.loads(page(out, "data/state.json"))
+        self.assertIn("2026-10-12", state["reports"]["days"])                          # loaded: a copy to keep
+        self.assertNotIn("2026-10-13", state["reports"]["days"])                       # not loaded in full
+        self.assertNotIn("2026-10-14", state["reports"]["days"])
+
+    def test_default_view_is_the_three_newest_days_and_its_summary(self):
+        files = {("2026-10-14", "hail"): ("error", "not published (HTTP 404)"),
+                 ("2026-10-14", "wind"): ("error", "not published (HTTP 404)"),
+                 ("2026-10-13", "hail"): hail_row(), ("2026-10-13", "wind"): ("error", "server error (HTTP 500)")}
+        out, _ = build_with(ReportFiles(NOW, files))
+        html = page(out, "reports.html")
+        every = re.findall(r'<div class="report-day" id="day-([\d-]+)" data-day="[\d-]+"( hidden)?>', html)
+        self.assertEqual(len(every), 31)
+        shown = [day for day, hidden in every if not hidden]
+        self.assertEqual(shown, ["2026-10-14", "2026-10-13", "2026-10-12"])        # newest three, newest first
+        self.assertEqual(len(every) - len(shown), 28)
+        self.assertIn('<p class="sub" id="range-summary">Showing Oct 12 to Oct 14 (3 reporting days). 1 hail or wind '
+                      "report in or near Montana. Data unavailable for 1 of 3 reporting days. Missing reports are not an "
+                      "all-clear. Not yet published for 1 of 3 reporting days: that reporting day is still open.</p>", html)
+
+    def test_the_page_script_reads_the_same_rules_and_days(self):
+        out, _ = build_with(ReportFiles(NOW))
+        cfg = page_config(out)
+        self.assertEqual((cfg["max"], cfg["default"], cfg["newest"], cfg["oldest"]), (31, 3, "2026-10-14", "2026-09-14"))
+        self.assertEqual(len(cfg["days"]), 31)
+        self.assertEqual({d["status"] for d in cfg["days"]}, {"loaded"})
+        self.assertEqual(cfg["words"]["long"], site.REPORT_WORDS["long"])
+        self.assertEqual(cfg["words"]["missing"], "Choose a start day and an end day.")
+        html = page(out, "reports.html")
+        self.assertIn('<form id="range-form" class="range-form" action="reports.html" method="get" hidden>', html)
+        self.assertIn('min="2026-09-14" max="2026-10-14"', html)
+        self.assertIn("Choosing other days needs JavaScript. Without it, this page shows the last 3 reporting days.", html)
+        self.assertIn('href="reports.html?start=2026-10-08&amp;end=2026-10-14"', html)      # last 7 days
+        self.assertIn('href="reports.html?start=2026-09-14&amp;end=2026-10-14"', html)      # last 31 days
+        self.assertIn('<p class="range-message" id="range-message" role="status"></p>', html)
+
+    def test_a_day_with_a_good_copy_is_kept_and_only_the_newest_three_are_fetched(self):
+        files = {("2026-10-11", "hail"): hail_row(), ("2026-10-05", "wind"): HEADERS["wind"] +
+                 "2300,61,Terry,Prairie,MT,46.79,-105.25,TEST\n",
+                 ("2026-10-01", "hail"): ("error", "not published (HTTP 404)"),
+                 ("2026-10-01", "wind"): ("error", "not published (HTTP 404)")}
+        first = ReportFiles(NOW, files)
+        out1, _ = build_with(first)
+        self.assertEqual(len(first.calls), 62)                                       # every day, both files
+        state = json.loads(page(out1, "data/state.json"))
+        later = ReportFiles(NOW + timedelta(minutes=10), files)
+        out2, _ = build_with(later, state)
+        self.assertEqual(sorted(set(later.calls)), sorted({f"{d:%y%m%d}_rpts_filtered_{k}.csv" for d in
+                                                       (date(2026, 10, 12), date(2026, 10, 13), date(2026, 10, 14))
+                                                       for k in ("hail", "wind")}
+                                                      | {"261001_rpts_filtered_hail.csv", "261001_rpts_filtered_wind.csv"}))
+        self.assertEqual(len(later.calls), 8)          # three newest days, plus the one older day with no good copy
+        html = page(out2, "reports.html")
+        self.assertIn("Kept from the last published build.", day_section(html, "2026-10-11"))
+        self.assertIn("4 N Billings", day_section(html, "2026-10-11"))                  # the copy's reports
+        self.assertIn("Loaded Wed 9:00 am MDT. Kept from the last published build.", day_section(html, "2026-10-05"))
+        self.assertIn("Terry", day_section(html, "2026-10-05"))                          # its wind report, kept
+
+    def test_the_map_still_shows_only_the_newest_three_days(self):
+        files = {("2026-10-05", "wind"): HEADERS["wind"] + "2300,61,Terry,Prairie,MT,46.79,-105.25,TEST\n",
+                 ("2026-10-13", "hail"): hail_row()}
+        out, _ = build_with(ReportFiles(NOW, files))
+        m = json.loads(page(out, "data/map.json"))
+        self.assertEqual([r["place"] for r in m["reports"]], ["4 N Billings"])     # Oct 13 is in the map's three days
+        self.assertNotIn("Terry", json.dumps(m))                                    # Oct 5 is kept on the page only
+        self.assertIn("Terry", page(out, "reports.html"))
+
+    def test_the_page_adds_no_files(self):
+        out, _ = build_with(ReportFiles(NOW))
+        self.assertEqual(sorted(p.name for p in out.glob("*.html")), ["about.html", "index.html", "map.html", "reports.html"])
+        self.assertEqual(len(list((out / "town").glob("*.html"))), len(site.TOWNS))
+
+    def test_the_hidden_attribute_is_styled(self):
+        style = (ROOT / "website" / "static" / "style.css").read_text(encoding="utf-8")
+        self.assertIn("[hidden] { display: none !important; }", style)
+        self.assertIn(".range-form", style)
 
 
 if __name__ == "__main__":
