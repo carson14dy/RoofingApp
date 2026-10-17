@@ -13,6 +13,8 @@
  *   5. Places: points whose names show while the pointer is over them (a browser-only mouse event)
  *   6. Failure handling: the 3D view can fail while the panel keeps working
  *   7. Status for tests: window.globeStatus, window.globeViewer and window.globeData
+ *   8. 3D storms: MRMS voxels as Cesium points, with exaggeration, zoom and a dBZ legend. Browser-only:
+ *      WebGL points, camera distance (point size) and the buttons. Python gives the positions and the state.
  */
 (function () {
   "use strict";
@@ -22,7 +24,7 @@
   // tile errors seen by the browser). The tests read it; nothing on the server depends on it.
   const status = (window.globeStatus = {
     cesium: "pending", viewer: false, tilesLoaded: false, error: null,
-    drawn: {}, tileErrors: {}, alerts: {}, places: 0, layers: []
+    drawn: {}, tileErrors: {}, alerts: {}, places: 0, layers: [], volume: null
   });
   window.globeViewer = null;
   window.globeData = null;
@@ -61,6 +63,7 @@
   // A row's toggle is enabled only when Python gave something to draw.
   function hasDrawableData(layer) {
     if (layer.tile_template || layer.image_url) return true;
+    if (layer.draw_url && layer.voxel_count > 0) return true;
     return Array.isArray(layer.items) && layer.items.length > 0;
   }
 
@@ -99,6 +102,7 @@
     label.append(box, el("span", "layer-name", layer.name));
     head.append(label, el("span", "state state-" + layer.state, STATE_TEXT[layer.state] || layer.state));
     li.append(head, el("p", "kind", layer.kind));
+    if (layer.label) li.append(el("p", "label-chip", layer.label));
     li.append(el("p", "state-text", layer.state_text || ""));
 
     const sourceNode = layer.source && layer.source.url ? linkTo(layer.source) : (layer.source ? layer.source.name : "");
@@ -129,7 +133,9 @@
       }
       li.append(list);
     }
+    if (layer.draw_url) li.append(volumeControls(layer));  // 3D storms only: section 8
     li.append(el("p", "legend", layer.legend));
+    if (layer.draw_url) li.append(dbzSwatches());
     return li;
   }
 
@@ -146,6 +152,7 @@
     chosenVisibility[id] = visible;
     if (imageryLayers[id]) imageryLayers[id].show = visible;
     if (dataSources[id]) dataSources[id].show = visible;
+    if (id === VOLUME_ID) setVolumeVisible(visible);
   }
 
   // ---- 3. Imagery ---------------------------------------------------------------------------
@@ -279,6 +286,207 @@
     $("globe-status").textContent = "3D view not running. The layer panel still works.";
   }
 
+  // ---- 8. 3D storms (MRMS reflectivity voxels) ----------------------------------------------
+  // Why in the browser: each voxel is one WebGL point (a Cesium PointPrimitive). The point size that follows
+  // the camera distance, the exaggeration buttons, the zoom button and the toggle are browser events and
+  // draw calls. Python (serve.py) decides which voxels exist, their dBZ values, each column's longitude,
+  // each row's latitude and the heights for each exaggeration. This section only looks those up. It computes
+  // no geometry of its own, and it never adds a point to the places layer.
+  //
+  // dBZ colour steps: the NWS reflectivity colours as MetPy 1.7.1 encodes them (colortable_files/
+  // NWSReflectivity.tbl, checked 2026-10-17). That is a third-party encoding, not an NWS-published file.
+  // dBZ is radar echo strength, not hail size.
+  //   5-10 #00ECEC   10-15 #01A0F6   15-20 #0000F6   20-25 #00FF00   25-30 #00C800   30-35 #009000
+  //   35-40 #FFFF00  40-45 #E7C000   45-50 #FF9000   50-55 #FF0000   55-60 #D60000   60-65 #C00000
+  //   65-70 #FF00FF  70-75 #9955C9
+  //   75 dBZ and above uses the 70-75 colour. The table's 15th entry (black) is not used.
+  //   Below 5 dBZ nothing is drawn.
+  const DBZ_STEPS = [
+    { lo: 5, hex: "#00ECEC" }, { lo: 10, hex: "#01A0F6" }, { lo: 15, hex: "#0000F6" },
+    { lo: 20, hex: "#00FF00" }, { lo: 25, hex: "#00C800" }, { lo: 30, hex: "#009000" },
+    { lo: 35, hex: "#FFFF00" }, { lo: 40, hex: "#E7C000" }, { lo: 45, hex: "#FF9000" },
+    { lo: 50, hex: "#FF0000" }, { lo: 55, hex: "#D60000" }, { lo: 60, hex: "#C00000" },
+    { lo: 65, hex: "#FF00FF" }, { lo: 70, hex: "#9955C9" }
+  ];
+  const VOLUME_ID = "mrms_volume";
+  // Point size: 6 px at the view's own distance. Cesium's NearFarScalar scales it with the camera distance:
+  // 1.5 times when the camera is within half the view radius, 0.6 times beyond 20 view radii. The radius is
+  // Python's (doc.view.radius_m).
+  const POINT_PX = 6;
+  const NEAR_SCALE = 1.5;
+  const FAR_SCALE = 0.6;
+  const volumeState = {
+    doc: null, collection: null, factor: 1, visible: false, drawn: 0, skippedBelowFive: 0,
+    buildMs: null, firstFrameMs: null, builds: 0, zoomClicks: 0
+  };
+
+  // The index into DBZ_STEPS for a dBZ value, or -1 below the lowest step. Arithmetic on Python's value.
+  function dbzStepIndex(dbz) {
+    if (dbz < DBZ_STEPS[0].lo) return -1;
+    const width = DBZ_STEPS[1].lo - DBZ_STEPS[0].lo;
+    return Math.min(Math.floor((dbz - DBZ_STEPS[0].lo) / width), DBZ_STEPS.length - 1);
+  }
+
+  // 3931 -> "3,931". Written out so the text is the same in every browser locale.
+  function countText(n) {
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  // The status the tests read. Small on purpose: the voxel arrays and Cesium objects are not copied into it.
+  function publishVolumeStatus() {
+    status.volume = {
+      layer: VOLUME_ID, drawn: volumeState.drawn, skippedBelowFive: volumeState.skippedBelowFive,
+      drawnInFile: volumeState.doc && volumeState.doc.voxels ? volumeState.doc.voxels.length : 0,
+      buildMs: volumeState.buildMs, firstFrameMs: volumeState.firstFrameMs, builds: volumeState.builds,
+      factor: volumeState.factor, visible: volumeState.visible, zoomClicks: volumeState.zoomClicks
+    };
+    showDrawnCount();
+  }
+
+  // The panel's count: the points actually added to the 3D view (not the file's count).
+  function showDrawnCount() {
+    const node = $("volume-drawn");
+    if (!node) return;
+    node.textContent = volumeState.collection
+      ? "Drawn in this view: " + countText(volumeState.drawn) + " voxels"
+      : "Drawn in this view: none (the 3D view is not running)";
+  }
+
+  // The on-screen label: shows the exaggeration factor whenever the storms are on.
+  function updateFactorChip() {
+    const chip = $("volume-factor");
+    if (!chip) return;
+    chip.textContent = "Vertical exaggeration ×" + volumeState.factor +
+      (volumeState.factor === 1 ? ": heights as measured" : ": heights stretched, not to scale");
+    chip.hidden = !(volumeState.visible && volumeState.collection);
+  }
+
+  function setVolumeVisible(visible) {
+    volumeState.visible = visible;
+    if (volumeState.collection) volumeState.collection.show = visible;
+    updateFactorChip();
+    publishVolumeStatus();
+  }
+
+  function setVolumeFactor(factor) {
+    volumeState.factor = factor;
+    const viewer = window.globeViewer;
+    if (viewer && volumeState.doc) buildVolume(viewer);  // the points move to the new heights
+    updateFactorChip();
+    publishVolumeStatus();
+  }
+
+  // Draws the voxels as points. Called once the 3D view exists, and again when the exaggeration changes.
+  // Why in the browser: WebGL points, and the camera distance that sizes them, exist only in the page.
+  function buildVolume(viewer) {
+    const doc = volumeState.doc;
+    if (!doc || !Array.isArray(doc.voxels) || doc.voxels.length === 0) {
+      publishVolumeStatus();
+      return;
+    }
+    const started = performance.now();
+    if (volumeState.collection) viewer.scene.primitives.remove(volumeState.collection);  // also destroys it
+    const heights = doc.heights_m[String(volumeState.factor)];
+    const radius = doc.view.radius_m;
+    const scale = new Cesium.NearFarScalar(radius * 0.5, NEAR_SCALE, radius * 20, FAR_SCALE);
+    const colours = DBZ_STEPS.map((step) => Cesium.Color.fromCssColorString(step.hex).withAlpha(0.9));
+    const points = new Cesium.PointPrimitiveCollection();
+    let drawn = 0;
+    let skipped = 0;
+    for (const [i, j, k, dbz] of doc.voxels) {
+      const step = dbzStepIndex(dbz);
+      if (step < 0) {
+        skipped += 1;
+        continue;
+      }
+      points.add({
+        position: Cesium.Cartesian3.fromDegrees(doc.lons[i], doc.lats[j], heights[k]),
+        pixelSize: POINT_PX,
+        color: colours[step],
+        scaleByDistance: scale,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY
+      });
+      drawn += 1;
+    }
+    points.show = volumeState.visible;
+    viewer.scene.primitives.add(points);
+    volumeState.collection = points;
+    volumeState.drawn = drawn;
+    volumeState.skippedBelowFive = skipped;
+    volumeState.builds += 1;
+    volumeState.buildMs = Math.round((performance.now() - started) * 10) / 10;
+    volumeState.firstFrameMs = null;
+    const stopTiming = viewer.scene.postRender.addEventListener(() => {
+      volumeState.firstFrameMs = Math.round((performance.now() - started) * 10) / 10;
+      stopTiming();
+    });
+    status.drawn[VOLUME_ID] = "points";
+    updateFactorChip();
+    publishVolumeStatus();
+  }
+
+  // Browser event (the zoom button). Python gives the centre and radius; the camera looks 45 degrees down
+  // so the heights, and the exaggeration, can be seen.
+  function zoomToVolume() {
+    volumeState.zoomClicks += 1;
+    const viewer = window.globeViewer;
+    const view = volumeState.doc && volumeState.doc.view;
+    if (viewer && view) {
+      const [lon, lat] = view.centre;
+      const sphere = new Cesium.BoundingSphere(Cesium.Cartesian3.fromDegrees(lon, lat, 0), view.radius_m);
+      viewer.camera.flyToBoundingSphere(sphere, {
+        offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-45), view.radius_m * 3)
+      });
+    }
+    publishVolumeStatus();
+  }
+
+  // The 3D storms row's controls: the drawn count, the exaggeration buttons and the zoom button.
+  // Why in the browser: they are form controls and click events.
+  function volumeControls(layer) {
+    const wrap = el("div", "vol-controls");
+    const drawn = el("p", "volume-drawn");
+    drawn.id = "volume-drawn";
+    wrap.append(drawn);
+    const group = el("fieldset", "vexag");
+    group.append(el("legend", "vexag-title", "Vertical exaggeration"));
+    for (const factor of layer.exaggerations) {
+      const option = el("label", "vexag-option");
+      const input = el("input");
+      input.type = "radio";
+      input.name = "vexag";
+      input.value = String(factor);
+      input.checked = factor === volumeState.factor;
+      input.addEventListener("change", () => {
+        if (input.checked) setVolumeFactor(factor);
+      });
+      option.append(input, el("span", null, factor + "×"));
+      group.append(option);
+    }
+    wrap.append(group);
+    const zoom = el("button", "vol-zoom", "Zoom to the storm volume");
+    zoom.type = "button";
+    zoom.id = "zoom-volume";
+    zoom.addEventListener("click", zoomToVolume);
+    wrap.append(zoom);
+    return wrap;
+  }
+
+  // The dBZ colour steps as swatches. DOM only; the layer's own legend text is a separate element.
+  function dbzSwatches() {
+    const wrap = el("div", "dbz-steps");
+    DBZ_STEPS.forEach((step, k) => {
+      const last = k === DBZ_STEPS.length - 1;
+      const top = last ? step.lo + 5 : DBZ_STEPS[k + 1].lo;
+      const item = el("span", "dbz-step");
+      const swatch = el("span", "swatch");
+      swatch.style.background = step.hex;
+      item.append(swatch, el("span", null, step.lo + "–" + top + (last ? "+" : "") + " dBZ"));
+      wrap.append(item);
+    });
+    return wrap;
+  }
+
   // ---- Start-up: panel first (it needs only the server), then the 3D view --------------------
   function startViewer(layers, alerts, places) {
     let viewer;
@@ -328,6 +536,9 @@
     status.places = drawPlaces(viewer, placeSource, places);
     if (status.places > 0) status.drawn.places = "places";
 
+    // The 3D storms points: their own collection, never the places layer.
+    buildVolume(viewer);
+
     // Apply the panel's choices made before the viewer existed.
     for (const id of Object.keys(chosenVisibility)) setLayerVisible(id, chosenVisibility[id]);
 
@@ -360,6 +571,13 @@
     }
     window.globeData = { layers: layers, alerts: alerts, places: places };
     renderPanel(layers);
+    // The voxels come from their own endpoint; if it fails, the panel and the other layers still work.
+    try {
+      volumeState.doc = await getJson("/api/volume.json");
+      publishVolumeStatus();
+    } catch (error) {
+      status.volume = { error: "3D storms data could not load: " + error.message, drawn: 0 };
+    }
     if (typeof Cesium === "undefined") {
       status.cesium = "failed";
       showGlobeFailure(window.cesiumLoadFailed

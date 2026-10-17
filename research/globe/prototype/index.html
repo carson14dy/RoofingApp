@@ -30,6 +30,7 @@
     <a href="/api/layers.json">layers.json</a>
     <a href="/api/alerts.json">alerts.json</a>
     <a href="/api/radar.json">radar.json</a>
+    <a href="/api/volume.json">volume.json</a>
   </nav>
 </header>
 <noscript><p class="note error">This page needs JavaScript. The layer panel and the 3D view both run in the browser.</p></noscript>
@@ -46,6 +47,7 @@
     <p id="globe-status" class="status-line" aria-live="polite">Loading the layer list…</p>
     <div id="globe-stage">
       <div id="cesiumContainer"></div>
+      <div id="volume-factor" class="stage-chip" hidden></div>
       <div id="globe-error" role="alert" hidden>
         <strong>3D view could not load.</strong> <span id="globe-error-detail"></span>
         <span class="muted">The layer panel still works.</span>

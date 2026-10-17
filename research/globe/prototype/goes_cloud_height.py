@@ -909,7 +909,7 @@ def synthetic_dataset(product_key: str, satellite: str, bbox=DEFAULT_BBOX,
     Includes good, flagged (DQF 1), invalid-DQF (255), out-of-range and no-retrieval pixels so the
     classification and reporting paths are all exercised.
     """
-    lon0 = -75.2 if satellite == "east" else -137.0
+    lon0 = -75.0 if satellite == "east" else -137.0   # grid origins read from the real files
     g = Geos(lon0_deg=lon0, height_m=35786023.0, req_m=6378137.0, rpol_m=6356752.31414, sweep="x")
     if product_key == "ACHAC":
         nx, ny, step = nx or 500, ny or 300, 0.00028
@@ -1015,6 +1015,7 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
         if pick.platform != EXPECTED_PLATFORM[args.satellite]:
             raise RuntimeError(f"file platform {pick.platform} does not match --satellite {args.satellite}")
         object_url = f"https://{bucket}.s3.amazonaws.com/{pick.key}"
+        made_tmp = download_dir is None
         ddir = download_dir or tempfile.mkdtemp(prefix="goes-cloud-height-")
         os.makedirs(ddir, exist_ok=True)
         dest = os.path.join(ddir, os.path.basename(pick.key))
@@ -1026,6 +1027,11 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
         timings["read_netcdf"] = round(time.monotonic() - t0, 3)
         if not args.keep_download:
             os.remove(dest)
+            if made_tmp:
+                try:
+                    os.rmdir(ddir)  # removes only an empty directory this run created
+                except OSError:
+                    pass
 
     t0 = time.monotonic()
     png, res = process_dataset(data, bbox, product_key=args.product,
@@ -1156,7 +1162,8 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
         "timings_s": timings,
         "latency_s": latency,
         "note": NOTE_ACHA if args.product == "ACHAC" else NOTE_BT,
-        "output": {"png": out_png, "json": out_json, "png_bytes": len(png_bytes),
+        "output": {"png": os.path.basename(out_png), "json": os.path.basename(out_json),
+                   "png_bytes": len(png_bytes),
                    "png_cells_with_value": res["png_cells_with_value"],
                    "png_value_encoding": ("height in metres, rounded, minimum 1; 0 = no data"
                                           if cfg["units"] == "m" else
@@ -1197,7 +1204,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="'latest', or YYYY-DDD-HH (UTC year, day of year, hour)")
     p.add_argument("--key", default=None, help="exact object key; overrides --time")
     p.add_argument("--bbox", default=",".join(str(v) for v in DEFAULT_BBOX),
-                   help="lon_min,lat_min,lon_max,lat_max in degrees (default: Montana and border)")
+                   help="lon_min,lat_min,lon_max,lat_max in degrees (default: Montana and border). "
+                        "Write it as --bbox=-116.8,43.6,-103.3,49.75 when lon_min is negative")
     p.add_argument("--out", default="height.png", help="PNG path; the JSON sidecar gets the same stem")
     p.add_argument("--download-dir", default=None,
                    help="directory for the downloaded object (default: a new temporary directory)")
@@ -1226,8 +1234,9 @@ def main(argv=None) -> int:
     print(f"{out['product']} {out['satellite_name']} {out['time_coverage_end'] or 'synthetic'}: "
           f"good {out['percent_native_bbox']['good']}% of native pixels in bbox, "
           f"flagged {native['flagged_with_value']} pixels, runtime {out['runtime_s']} s")
-    print(f"PNG  {out['output']['png']}")
-    print(f"JSON {out['output']['json']}")
+    out_png = os.path.abspath(args.out)
+    print(f"PNG  {out_png}")
+    print(f"JSON {os.path.splitext(out_png)[0] + '.json'}")
     return 0
 
 

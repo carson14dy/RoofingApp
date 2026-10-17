@@ -12,9 +12,16 @@ is missing. Otherwise it:
   7. hovers over Billings: its name must show while the pointer is over it
   8. blocks cdnjs and reloads: "3D view could not load" shows and the layer panel still renders
 
+The 3D storms (volume) cases start serve.py with a volume file and check the layer on the page:
+  9. synthetic volume (serve.py's default): the legend text is in the DOM, turning the layer on changes
+     the canvas, the drawn count and the dBZ swatches are right, and exaggeration 3x is labelled on screen
+ 10. sample volume (--volume fixtures/volume-2025-06-15-sample.json): the count in the panel equals the
+     fixture's voxel count; the screenshot of this run goes to validation-evidence/globe-volume.png
+
 Run from the prototype folder with a Python that has Playwright and Pillow:
     <venv>/bin/python -I -m unittest discover -s tests -p "test_globe_browser.py" -v
-Set GLOBE_CHROMIUM to point at another Chromium binary.
+Set GLOBE_CHROMIUM to point at another Chromium binary. Set GLOBE_P1_SCREENSHOT_DIR to a scratch folder to
+keep the first test from rewriting validation-evidence/globe-prototype.png.
 """
 import glob
 import io
@@ -32,7 +39,8 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROTO = os.path.dirname(HERE)
 EVIDENCE = os.path.normpath(os.path.join(PROTO, "..", "validation-evidence"))
-EVIDENCE_PNG = os.path.join(EVIDENCE, "globe-prototype.png")
+EVIDENCE_PNG = os.path.join(os.environ.get("GLOBE_P1_SCREENSHOT_DIR", EVIDENCE), "globe-prototype.png")
+VOLUME_PNG = os.path.join(EVIDENCE, "globe-volume.png")
 PARALLAX_JSON = os.path.join(EVIDENCE, "parallax.json")
 UA = "RoofingApp-globe-prototype (research)"
 TILES_WAIT_S = 45

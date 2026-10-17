@@ -5,14 +5,16 @@ Standard library only. The browser draws what this server returns. Every fetch, 
 freshness state, PNG check and alert geometry decision is made here, and the page's JavaScript
 (globe.js) only draws what it is given.
 
-    python serve.py [--port 0] [--offline]
+    python serve.py [--port 0] [--offline] [--volume PATH]
 
 Prints PORT=<n> on stdout once listening (port 0 picks a free port). --offline makes no network
 calls at all: every live layer reports state "off" with the text "Live feeds are off", the same
-text the app's self-test uses.
+text the app's self-test uses. --volume picks the MRMS volume file for the 3D storms layer (a
+relative path is read from this folder; the default is the synthetic test field). The volume file is
+local, so it still loads with --offline.
 
 Endpoints: / (index.html), /globe.js, /globe.css, /api/layers.json, /api/alerts.json,
-/api/places.json, /api/radar.json.
+/api/places.json, /api/radar.json, /api/volume.json.
 """
 import argparse
 import itertools
@@ -58,8 +60,9 @@ LOCAL_ZONE = "America/Denver"  # Montana
 
 MONTANA = {"west": -116.8, "south": 43.6, "east": -103.3, "north": 49.75}
 
-# Freshness limits. PROPOSALS for this prototype, not D12 (D12: radar 15 min, alerts 10 min).
-LIMIT_MIN = {"goes": 15, "radar": 15, "alerts": 10}
+# Freshness limits. PROPOSALS for this prototype, not D12 (D12: radar 15 min, alerts 10 min; D12 lists
+# no MRMS limit). The MRMS 10 min is the figure README section 3 gives; it is a proposal here too.
+LIMIT_MIN = {"goes": 15, "radar": 15, "alerts": 10, "mrms": 10}
 
 # GIBS serves GOES frames every 10 minutes, about 30-40 minutes behind real time
 # (validation-evidence/gibs.json). The probe walks back from now until the Montana tile is imagery.
@@ -207,9 +210,9 @@ ALERTS_LEGEND = ("Official NWS alerts. An outline is the alert's own polygon, or
                  "warnings, not damage reports.")
 PLACES_LEGEND = ("Prototype places from the research brief (five points). They are not the app's job or "
                  "property list.")
-LIMITS_NOTE = ("Freshness limits (GOES 15 min, radar 15 min, alerts 10 min) are proposals for this prototype, "
-               "not D12. Imagery daily is also a proposal; no layer uses it, because a base map carries no "
-               "valid time.")
+LIMITS_NOTE = ("Freshness limits (GOES 15 min, radar 15 min, alerts 10 min, 3D storms 10 min) are proposals "
+               "for this prototype, not D12: D12 lists radar 15 min and alerts 10 min, and no MRMS limit. "
+               "Imagery daily is also a proposal; no layer uses it, because a base map carries no valid time.")
 
 
 # ----------------------------------------------------------------------------
@@ -719,10 +722,259 @@ def safe_alert_feature(raw, zones, budget):
 
 
 # ----------------------------------------------------------------------------
+# 3D storms: one MRMS reflectivity volume file (written by mrms_volume.py, or the synthetic test field).
+# The file is read and checked here, each voxel's place is looked up here, and the freshness state is
+# decided here. The browser draws what /api/volume.json gives it. Standard library only (no numpy).
+# ----------------------------------------------------------------------------
+VOLUME_ID = "mrms_volume"
+VOLUME_NAME = "3D storms (MRMS reflectivity)"
+VOLUME_LEGEND = ("Radar echo strength (dBZ). Not hail size. -99/-999 cells are no radar data; "
+                 "no echo is not clear.")
+VOLUME_DEFAULT = os.path.join(HERE, "fixtures", "volume-synthetic.json")
+VOLUME_EXAGGERATIONS = [1, 3, 5]
+VOLUME_MAX_BYTES = 64 * 1024 * 1024
+SYNTHETIC_LABEL = "synthetic: not weather"
+ARCHIVED_LABEL = "Archived event: recorded MRMS volume, not live"
+RECORDED_LABEL = "Recorded MRMS volume: a file, not a live feed"
+MRMS_BUCKET_URL = "https://noaa-mrms-pds.s3.amazonaws.com/"
+DEG_LAT_M = 111320.0  # metres per degree of latitude, approximate; used only for the view radius
+
+
+def resolve_volume_path(text):
+    """--volume PATH. A relative path is read from this folder, so the command works from any directory."""
+    if not text:
+        return VOLUME_DEFAULT
+    return os.path.normpath(text if os.path.isabs(text) else os.path.join(HERE, text))
+
+
+def display_path(path):
+    try:
+        rel = os.path.relpath(path, HERE)
+    except ValueError:  # a different drive (Windows): show the file name only
+        return os.path.basename(path)
+    return os.path.basename(path) if rel.startswith("..") else rel.replace(os.sep, "/")
+
+
+def full_clock_text(dt):
+    """'2025-06-15 23:12:41 UTC (17:12 MDT)'. A volume's date matters (archives), so the date is shown."""
+    text = dt.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    if ZoneInfo is not None:
+        try:
+            text += " (" + dt.astimezone(ZoneInfo(LOCAL_ZONE)).strftime("%H:%M %Z") + ")"
+        except Exception:  # missing tz data: keep the UTC text
+            pass
+    return text
+
+
+def age_text(age_min):
+    """'42 min', '7 h' or '490 days': how old a volume is, in words a crew member reads at a glance."""
+    if age_min < 120:
+        return f"{age_min:.0f} min"
+    if age_min < 2880:
+        return f"{age_min / 60:.0f} h"
+    return f"{age_min / 1440:.0f} days"
+
+
+def _finite(value, what):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise FeedError(f"the volume file has no usable {what}")
+    return float(value)
+
+
+def view_for(lons, lats):
+    """Cell-centre bounds, centre and a radius that holds the whole volume (used by the zoom button)."""
+    west, east, south, north = min(lons), max(lons), min(lats), max(lats)
+    clat, clon = (north + south) / 2.0, (east + west) / 2.0
+    half_h = (north - south) / 2.0 * DEG_LAT_M
+    half_w = (east - west) / 2.0 * DEG_LAT_M * math.cos(math.radians(clat))
+    radius = math.hypot(half_h, half_w) + 5000.0  # 5 km margin
+    return {"centre": [round(clon, 5), round(clat, 5)], "radius_m": round(radius),
+            "bounds": [west, south, east, north]}
+
+
+def check_volume(doc):
+    """Check a parsed volume document and return what the server needs. Raises FeedError, with a plain
+    reason, for anything it cannot use: a missing grid, a voxel outside the grid, a sentinel as a dBZ value."""
+    grid = doc.get("grid")
+    if not isinstance(grid, dict):
+        raise FeedError("the volume file has no grid")
+    origin = grid.get("origin") or {}
+    lat0 = _finite(origin.get("lat"), "grid origin latitude")
+    lon0 = _finite(origin.get("lon"), "grid origin longitude")
+    dx = _finite(grid.get("dx"), "grid spacing")
+    dy = _finite(grid.get("dy"), "grid spacing")
+    nx_f, ny_f = _finite(grid.get("nx"), "grid width"), _finite(grid.get("ny"), "grid height")
+    if nx_f < 1 or ny_f < 1 or nx_f != int(nx_f) or ny_f != int(ny_f):
+        raise FeedError("the volume file's grid size is not a whole number of cells")
+    nx, ny = int(nx_f), int(ny_f)
+    levels = [_finite(v, "level height") for v in grid.get("levels_km") or []]
+    if not levels:
+        raise FeedError("the volume file has no levels")
+    threshold = _finite(doc.get("threshold_dbz"), "threshold")
+    voxels = doc.get("voxels")
+    if not isinstance(voxels, list):
+        raise FeedError("the volume file has no voxel list")
+    for n, v in enumerate(voxels):
+        if not isinstance(v, list) or len(v) != 4:
+            raise FeedError(f"voxel {n} is not [i, j, k, dbz]")
+        i, j, k, dbz = v
+        if not all(isinstance(x, int) and not isinstance(x, bool) for x in (i, j, k)):
+            raise FeedError(f"voxel {n} has an index that is not a whole number")
+        if not (0 <= i < nx and 0 <= j < ny and 0 <= k < len(levels)):
+            raise FeedError(f"voxel {n} is outside the grid")
+        if isinstance(dbz, bool) or not isinstance(dbz, (int, float)) or not (-90.0 < dbz < 100.0):
+            raise FeedError(f"voxel {n} has no usable dBZ value (no-data codes are never voxels)")
+    times = [parse_time(v) for v in (doc.get("valid_time_utc") or {}).values() if v]
+    newest = max(times) if times else None
+    spread_s = (newest - min(times)).total_seconds() if times else 0.0
+    missing = [float(m) for m in doc.get("missing_levels_km") or []]
+    lons = [round(lon0 + i * dx, 6) for i in range(nx)]   # cell-centre longitude per column
+    lats = [round(lat0 - j * dy, 6) for j in range(ny)]   # cell-centre latitude per row (row 0 is north)
+    return {
+        "synthetic": doc.get("label") == SYNTHETIC_LABEL or doc.get("source") == "synthetic",
+        "valid": newest, "spread_s": spread_s, "retrieved": parse_time(doc.get("retrieved_time_utc")),
+        "complete": doc.get("complete") is not False and not missing, "missing_levels_km": missing,
+        "levels_km": levels, "threshold_dbz": threshold, "voxels": voxels, "voxel_count": len(voxels),
+        "lons": lons, "lats": lats,
+        "heights_m": {str(f): [round(km * 1000.0 * f, 1) for km in levels] for f in VOLUME_EXAGGERATIONS},
+        "view": view_for(lons, lats),
+        "provenance": doc.get("provenance") if isinstance(doc.get("provenance"), dict) else {},
+        "notes": doc.get("notes"),
+    }
+
+
+def read_volume_file(path):
+    """Read and check one volume file. It is parsed as JSON and never executed. Raises FeedError."""
+    try:
+        if os.path.getsize(path) > VOLUME_MAX_BYTES:
+            raise FeedError("the volume file is larger than 64 MB")
+        with open(path, "rb") as f:
+            raw = f.read()
+    except OSError as e:
+        raise FeedError(f"the volume file could not be read ({e.strerror or type(e).__name__})") from None
+    try:
+        doc = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        raise FeedError("the volume file is not JSON") from None
+    if not isinstance(doc, dict):
+        raise FeedError("the volume file is not a JSON object")
+    try:
+        return check_volume(doc)
+    except FeedError:
+        raise
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError):
+        raise FeedError("the volume file could not be checked") from None
+
+
+def load_volume(path):
+    """The volume the server serves: its checked parts, or the plain reason it cannot be used."""
+    shown = display_path(path)
+    try:
+        return {"ok": True, "error": None, "file": shown, "info": read_volume_file(path)}
+    except FeedError as e:
+        return {"ok": False, "error": str(e), "file": shown, "info": None}
+
+
+def volume_state(volume, now):
+    """(state, age_min, state_text, label) for the 3D storms layer. The file is local, so --offline does
+    not switch it off. A synthetic field is never shown as an observation."""
+    if not volume["ok"]:
+        return "unavailable", None, "Data unavailable: " + volume["error"], None
+    info = volume["info"]
+    if info["synthetic"]:
+        return ("unavailable", None,
+                "Data unavailable as a radar observation: this is a synthetic test field, not weather. "
+                "Its valid time is a placeholder.", SYNTHETIC_LABEL)
+    state, age, text = layer_state(info["valid"], now, LIMIT_MIN["mrms"])
+    if state == "stale":
+        text = (f"Recorded volume, {age_text(age)} old: over the {LIMIT_MIN['mrms']}-min limit (proposal). "
+                "Not live.")
+        return state, age, text, ARCHIVED_LABEL
+    return state, age, text, RECORDED_LABEL
+
+
+def volume_source(info, shown):
+    if info["synthetic"]:
+        return {"name": "Synthetic test field made by mrms_volume.py --synthetic (no network): " + shown,
+                "url": None}
+    return {"name": "NOAA MRMS MergedReflectivityQC, 3D (bucket noaa-mrms-pds), cut by mrms_volume.py: " + shown,
+            "url": MRMS_BUCKET_URL}
+
+
+def volume_layer(svc, now):
+    volume = svc.volume
+    state, age, text, label = volume_state(volume, now)
+    layer = {
+        "id": VOLUME_ID, "name": VOLUME_NAME, "kind": "radar estimate", "default_on": False,
+        "label": label, "state": state, "state_text": text, "legend": VOLUME_LEGEND,
+        "file": volume["file"], "source": None,
+        "freshness_limit_min": LIMIT_MIN["mrms"], "age_min": round(age, 1) if age is not None else None,
+        "valid_time_utc": None, "valid_text": None, "retrieved_time_utc": None, "retrieved_text": None,
+        "threshold_dbz": None, "voxel_count": 0, "voxel_text": None, "levels_km": [],
+        "exaggerations": VOLUME_EXAGGERATIONS, "view": None, "draw_url": None,
+        "detail_url": "/api/volume.json", "content_text": None,
+    }
+    if not volume["ok"]:
+        layer["source"] = {"name": "No volume loaded from " + volume["file"], "url": None}
+        return layer
+    info = volume["info"]
+    valid = info["valid"]
+    layer["source"] = volume_source(info, volume["file"])
+    valid_text = full_clock_text(valid) if valid else None
+    if valid and info["synthetic"]:
+        valid_text += " (placeholder time, not an observation)"
+    elif valid and info["spread_s"] > 0:
+        valid_text += f" (newest level; levels span {info['spread_s']:.0f} s)"
+    thr = info["threshold_dbz"]
+    levels = info["levels_km"]
+    notes = [f"{len(levels)} levels, {min(levels):g} to {max(levels):g} km above sea level."]
+    if not info["complete"]:
+        missing = ", ".join(f"{m:g}" for m in info["missing_levels_km"])
+        notes.append("Incomplete: " + (f"levels {missing} km are missing" if missing else
+                                       "the file says it is incomplete") + ", so the volume is not all shown.")
+    notes.append(f"Only cells at or above {thr:g} dBZ are drawn. A blank area is not clear: it can be no radar "
+                 "data, or no echo at that height.")
+    count = info["voxel_count"]
+    layer.update(
+        source=layer["source"], valid_time_utc=iso_z(valid) if valid else None, valid_text=valid_text,
+        retrieved_time_utc=iso_z(info["retrieved"]) if info["retrieved"] else None,
+        retrieved_text=full_clock_text(info["retrieved"]) if info["retrieved"] else None,
+        threshold_dbz=thr, voxel_count=count,
+        voxel_text=f"{count:,} voxels at or above {thr:g} dBZ are in this file.",
+        levels_km=levels, view=info["view"], draw_url="/api/volume.json" if count else None,
+        content_text=" ".join(notes),
+    )
+    return layer
+
+
+def volume_doc(svc):
+    """/api/volume.json: what the browser draws (voxels and cell-centre coordinates) with the layer's state."""
+    now = utcnow()
+    layer = volume_layer(svc, now)
+    info = svc.volume["info"] if svc.volume["ok"] else None
+    return {
+        "layer_id": VOLUME_ID, "name": VOLUME_NAME, "kind": "radar estimate",
+        "state": layer["state"], "state_text": layer["state_text"], "label": layer["label"],
+        "legend": VOLUME_LEGEND, "source": layer["source"], "file": layer["file"],
+        "valid_time_utc": layer["valid_time_utc"], "valid_text": layer["valid_text"],
+        "retrieved_time_utc": layer["retrieved_time_utc"], "threshold_dbz": layer["threshold_dbz"],
+        "voxel_count": layer["voxel_count"], "voxel_text": layer["voxel_text"], "levels_km": layer["levels_km"],
+        "exaggerations": VOLUME_EXAGGERATIONS, "view": layer["view"], "content_text": layer["content_text"],
+        "voxel_format": ("voxels: [i, j, k, dbz]. lons[i] and lats[j] are cell-centre coordinates; "
+                         "heights_m[exaggeration][k] is the level height in metres (the file's heightAboveSea, "
+                         "used as height above the ellipsoid; a geoid difference of tens of metres is not shown)."),
+        "lons": info["lons"] if info else [], "lats": info["lats"] if info else [],
+        "heights_m": info["heights_m"] if info else {}, "voxels": info["voxels"] if info else [],
+        "provenance": info["provenance"] if info else {}, "notes": info["notes"] if info else None,
+        "generated_utc": iso_z(now),
+    }
+
+
+# ----------------------------------------------------------------------------
 # Services and documents
 # ----------------------------------------------------------------------------
 class Service:
-    def __init__(self, offline=False, probe=None, fetch_zone=None):
+    def __init__(self, offline=False, probe=None, fetch_zone=None, volume_path=None):
         self.offline = offline
         self.started = utcnow()
         self.places, self.places_provenance = load_places()
@@ -730,6 +982,7 @@ class Service:
         self.goes = {spec["id"]: GoesFeed(spec, probe) for spec in GOES_LAYERS}
         self.radar = RadarFeed()
         self.alerts = AlertsFeed(self.zones)
+        self.volume = load_volume(volume_path or VOLUME_DEFAULT)
 
 
 def safe_get(feed):
@@ -873,6 +1126,7 @@ def layers_doc(svc):
     res = gather(svc)
     layers = [goes_layer(spec, res.get(spec["id"]), now, svc.offline) for spec in GOES_LAYERS]
     layers.append(radar_layer(res.get("nws_radar"), now, svc.offline))
+    layers.append(volume_layer(svc, now))
     layers.append(alerts_layer(res.get("nws_alerts"), now, svc.offline))
     layers.append(places_layer(svc))
     layers.extend(base_layer(spec) for spec in BASE_LAYERS)
@@ -928,7 +1182,9 @@ def make_handler(svc):
         "/api/alerts.json": lambda: alerts_doc(svc),
         "/api/places.json": lambda: places_doc(svc),
         "/api/radar.json": lambda: radar_doc(svc),
+        "/api/volume.json": lambda: volume_doc(svc),
     }
+    compact_paths = {"/api/volume.json"}  # voxel arrays are large: no indentation
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "GlobePrototype/0.1"
@@ -944,11 +1200,14 @@ def make_handler(svc):
                     doc = routes[path]()
                 except Exception as e:
                     return self._json(500, {"error": f"unexpected error ({type(e).__name__})"})
-                return self._json(200, doc)
+                return self._json(200, doc, compact=path in compact_paths)
             return self._json(404, {"error": "not found"})
 
-        def _json(self, code, doc):
-            body = json.dumps(doc, ensure_ascii=False, indent=1).encode("utf-8")
+        def _json(self, code, doc, compact=False):
+            if compact:
+                body = json.dumps(doc, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+            else:
+                body = json.dumps(doc, ensure_ascii=False, indent=1).encode("utf-8")
             self._send(code, body, "application/json; charset=utf-8")
 
         def _send(self, code, body, ctype):
@@ -970,8 +1229,11 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="3D storm view prototype server (research only).")
     ap.add_argument("--port", type=int, default=0, help="port on 127.0.0.1; 0 picks a free port")
     ap.add_argument("--offline", action="store_true", help="make no network calls; live layers show Off")
+    ap.add_argument("--volume", default=None, metavar="PATH",
+                    help="MRMS volume JSON for the 3D storms layer; a relative path is read from this folder "
+                         "(default fixtures/volume-synthetic.json, the synthetic test field)")
     args = ap.parse_args(argv)
-    svc = Service(offline=args.offline)
+    svc = Service(offline=args.offline, volume_path=resolve_volume_path(args.volume))
     httpd = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(svc))
     httpd.daemon_threads = True
     print(f"PORT={httpd.server_address[1]}", flush=True)
