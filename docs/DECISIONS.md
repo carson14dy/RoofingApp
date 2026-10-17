@@ -450,7 +450,7 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   dropped one (lakes cut at the detailed box's edge: drawing them past it breaks the rule that the
   context layer draws no water); front-end and base-map fixers worked in parallel; a recheck re-ran
   the unit tests, the smoke test, the builder's suites and every spot check, and found four more items
-  (three fixed; names beside an open sheet are still open, DESIGN section 8). The names from zoom 5
+  (all four fixed; an open sheet now hides the names at its edge too). The names from zoom 5
   and the review's fixes are under *Context layer* and *Review fixes*.
 - *Review fixes (2026-10-16):* the map fits Montana again only when the screen, a banner, the layer,
   the 1h/12h timeline or an overlay changes the room, and stops once the viewer moves it in any way.

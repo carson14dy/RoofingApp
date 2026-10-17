@@ -19,9 +19,10 @@ once a banner comes on a map the viewer moved; a picture that fails says so in t
 slider's words, and keeps no coverage-gap key; My location outside the map's area says so in the
 toast and offers no chip; the Storm reports card shows no reports banner, and on a phone, with a
 banner and its caption's line counting alerts without an outline, opens at the Now card's zoom with
-no town under either card's caption; a town stays clear of its sheet when the phone turns. Exits 1
-with the reasons if anything fails. The Website workflow runs it on branch pushes; locally set
-PW_CHROMIUM to a Chromium executable if Playwright's own isn't installed.
+no town under either card's caption; a town stays clear of its sheet when the phone turns; with a
+town's sheet open on a phone, no basemap name sticks out from under its edge. Exits 1 with the
+reasons if anything fails. The Website workflow runs it on branch pushes; locally set PW_CHROMIUM to
+a Chromium executable if Playwright's own isn't installed.
 """
 from __future__ import annotations
 
@@ -134,6 +135,7 @@ def check(root: Path) -> list[str]:
                           lambda: check_names_after_banner(browser, base, data),
                           lambda: check_failed_picture(browser, base, data), lambda: check_location(browser, base),
                           lambda: check_reports_card(browser, base, data), lambda: check_sheet_turn(browser, base),
+                          lambda: check_sheet_names(browser, base, data),
                           lambda: check_empty_layer_switch(browser, base, data),
                           lambda: check_card_words(browser, base, root)):
                 try:
@@ -587,6 +589,56 @@ def check_sheet_turn(browser, base) -> list[str]:
         if under:
             problems.append(f"town sheet: after the phone turns, {town}'s bubble or name is under the sheet")
     return problems
+
+
+# where a viewer taps a town's bubble: its centre, if the bubble is shown and nothing covers it there
+TAP_POINT = """(name) => { const t = [...document.querySelectorAll('.leaflet-marker-icon.town')]
+    .find(e => (e.querySelector('.tname') || {}).textContent === name);
+  if (!t || getComputedStyle(t).display === 'none') return null;
+  const r = t.querySelector('.bubble').getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+  const hit = document.elementFromPoint(x, y);
+  return hit && t.contains(hit) ? [x, y] : null; }"""
+
+# basemap names on screen partly under the open sheet: they stick out from under its edge
+SHEET_CUT = """() => { const s = document.getElementById('sheet').getBoundingClientRect();
+  const text = (e) => { const r = document.createRange(); r.selectNodeContents(e); return r.getBoundingClientRect(); };
+  return [...document.querySelectorAll('#map .bm-label:not(.bm-hide)')].filter(e => getComputedStyle(e).display !== 'none')
+    .filter(e => { const r = text(e.querySelector('span'));
+      if (!r.width || r.right < 0 || r.left > innerWidth || r.bottom < 0 || r.top > innerHeight) return false;
+      const meets = r.left < s.right && r.right > s.left && r.top < s.bottom && r.bottom > s.top;
+      return meets && !(r.left >= s.left && r.right <= s.right && r.top >= s.top && r.bottom <= s.bottom); })
+    .map(e => e.textContent); }"""
+
+
+def check_sheet_names(browser, base, data) -> list[str]:
+    """A town's sheet open on a phone: no basemap name is partly under it, sticking out from under its
+    edge as a broken word (map.js tidyLabels counts the open sheet as a panel). Every town whose
+    bubble takes a tap is opened in turn, as a viewer would, and closed with Escape."""
+    problems, opened = [], 0
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+    page = ctx.new_page()
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.evaluate("() => document.fonts.ready.then(() => true)")
+    page.wait_for_timeout(500)
+    for t in data["towns"]:
+        xy = page.evaluate(TAP_POINT, t["name"])
+        if not xy:
+            continue                                   # hidden at this zoom, or under a panel
+        page.mouse.click(*xy)
+        page.wait_for_timeout(250)
+        if page.locator("#sheet").is_hidden() or page.locator("#sheet-title").inner_text() != t["name"]:
+            problems.append(f"town sheet: a tap on {t['name']}'s bubble did not open its sheet")
+        else:
+            opened += 1
+            cut = page.evaluate(SHEET_CUT)
+            if cut:
+                problems.append(f"town sheet 390x844: {', '.join(cut[:4])} {'sticks' if len(cut) == 1 else 'stick'} out "
+                                f"from under the {t['name']} sheet")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(150)
+    ctx.close()
+    return problems + ([] if opened else ["town sheet: no town's bubble took a tap at 390x844"])
 
 
 def check_empty_layer_switch(browser, base, data) -> list[str]:

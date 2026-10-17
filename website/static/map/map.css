@@ -573,7 +573,7 @@ a { color: inherit; }
 
 /* basemap labels (divIcons, centred on their point) */
 .bm-label { pointer-events: none !important; }
-.bm-label.bm-hide { visibility: hidden; }   /* map.js tidyLabels: under "Map data", the note, the toast or the chip */
+.bm-label.bm-hide { visibility: hidden; }   /* map.js tidyLabels: under a panel, an open sheet, "Map data", the note, the toast or the chip */
 .bm-label span {
   position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); white-space: nowrap; line-height: 1;
   text-shadow: 0 0 2px var(--halo), 0 0 2px var(--halo), 0 0 3px var(--halo);

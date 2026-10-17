@@ -372,16 +372,17 @@
 
   /** A basemap name (a country, region, water or place name, with its dot) under or touching the
       legend, Close, the right-hand buttons, the timeline, a banner, the card's caption or Open map,
-      the "Map data" text, the toast or the nearest-town chip, or on the note's line, is hidden until
-      they or the map move: half a name at a panel's edge reads as a broken word, and a name on the
-      note's line reads as part of the note. Names may run off the screen's edge, as in the reference.
-      Runs after every move and resize, and whenever a banner comes or goes or the note, the legend,
-      the toast or the chip changes. */
+      an open sheet, the "Map data" text, the toast or the nearest-town chip, or on the note's line, is
+      hidden until they or the map move: half a name at a panel's edge reads as a broken word, and a
+      name on the note's line reads as part of the note. Names may run off the screen's edge, as in
+      the reference. Runs after every move and resize, and whenever a banner comes or goes, the note,
+      the legend, the toast or the chip changes, or a sheet opens, changes size or closes (openSheet,
+      the sheet's observers in wireControls, closeSheet). */
   function tidyLabels() {
     if (!map) return;
     var boxes = [], link = el.legendWrap.querySelector(".mapdata");
     if (link && link.offsetParent !== null) boxes.push(textBox(link));   // its text, not its 44 px tap area
-    [el.note, el.toast, el.near, el.legend, el.top.querySelector(".close"), el.buttons, el.timeline, el.cardChip, el.cardOpen]
+    [el.note, el.toast, el.near, el.legend, el.top.querySelector(".close"), el.buttons, el.timeline, el.cardChip, el.cardOpen, el.sheet]
       .concat([].slice.call(el.banners.children)).forEach(function (x) {
         if (!x || x.hidden) return;
         var r = x.getBoundingClientRect(), m = x === el.note ? 24 : 0;   // a name on the note's line reads as part of it
@@ -1507,6 +1508,10 @@
     el.sheetBack.addEventListener("click", backToList);
     el.sheetBody.addEventListener("click", onSheetClick);
     el.sheet.addEventListener("keydown", trapFocus);
+    // the open sheet hides the basemap names along its edge (tidyLabels): measure again when its size
+    // changes (opening and closing count), and once it has slid in (sheet-in draws it 16 px low)
+    if (window.ResizeObserver) new ResizeObserver(function () { tidyLabels(); }).observe(el.sheet);
+    el.sheet.addEventListener("animationend", tidyLabels);
 
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", function (e) {     // a tap outside closes the layer menu
@@ -1856,6 +1861,7 @@
     el.sheet.hidden = false;
     el.scrim.hidden = false;
     placeSheet();
+    tidyLabels();                    // the names along its edge hide (a banner or a resize moving it tidies too)
     setInert(true);
     var f = opts.focus ? el.sheetBody.querySelector(opts.focus) : null;
     (f || el.sheetTitle).focus();
@@ -1882,6 +1888,7 @@
     el.sheet.hidden = true;
     el.scrim.hidden = true;
     setInert(false);
+    tidyLabels();                    // the names it hid come back
     // the pan limits come back once the map is back where it was (Leaflet fires moveend even for a
     // pan of zero, and at once without animation)
     var limit = function () { if (panLimits && !sheetState) map.setMaxBounds(panLimits); };
