@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D storm view (prototype)</title>
+<link rel="icon" href="data:,">
+<!-- CesiumJS 1.146.0 from cdnjs. The version comes from https://api.cdnjs.com/libraries/cesium?fields=version
+     (checked 2026-10-17). integrity = sha384 of the exact file at each URL, computed 2026-10-17:
+     Cesium.js 6,080,574 bytes and Widgets/widgets.css 30,710 bytes.
+     cdnjs publishes Cesium flat: /ajax/libs/cesium/1.146.0/Cesium.js. The Build/Cesium/ path the brief
+     named returns 404 there (checked 2026-10-17), so the flat path is used.
+     No Cesium ion token is used. Terrain is a later phase (EllipsoidTerrainProvider). -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Widgets/widgets.css"
+      integrity="sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp" crossorigin="anonymous">
+<link rel="stylesheet" href="globe.css">
+<script>window.CESIUM_BASE_URL = "https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/";</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js"
+        integrity="sha384-1lWK5deN/B+lLaUw4lk6xKp/L19ii/98SZLk6K8YthDskgvc+GbdixLzbCnSS2Wn"
+        crossorigin="anonymous" onerror="window.cesiumLoadFailed = true"></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>3D storm <span>view</span></h1>
+    <p>Research prototype, outside the app</p>
+  </div>
+  <span class="proto-chip" title="Phase 0 of the globe plan (research/globe/README.md section 6)">Phase 0</span>
+  <nav class="links" aria-label="Data endpoints">
+    <a href="/api/layers.json">layers.json</a>
+    <a href="/api/alerts.json">alerts.json</a>
+    <a href="/api/radar.json">radar.json</a>
+  </nav>
+</header>
+<noscript><p class="note error">This page needs JavaScript. The layer panel and the 3D view both run in the browser.</p></noscript>
+<main class="globe-page">
+  <aside id="panel" aria-label="Layers">
+    <h2>Layers</h2>
+    <p class="hint">Times show UTC, with Mountain time in brackets. Freshness limits are proposals, not D12.
+      The globe is a flat ellipsoid in this phase; terrain comes later.</p>
+    <p id="panel-stamp" class="hint"></p>
+    <p id="panel-error" class="note error" hidden></p>
+    <ul id="layer-list" class="layers"></ul>
+  </aside>
+  <section id="globe-wrap" aria-label="3D view">
+    <p id="globe-status" class="status-line" aria-live="polite">Loading the layer list…</p>
+    <div id="globe-stage">
+      <div id="cesiumContainer"></div>
+      <div id="globe-error" role="alert" hidden>
+        <strong>3D view could not load.</strong> <span id="globe-error-detail"></span>
+        <span class="muted">The layer panel still works.</span>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="globe.js"></script>
+</body>
+</html>
