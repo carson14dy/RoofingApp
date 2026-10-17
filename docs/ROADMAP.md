@@ -82,10 +82,10 @@ order.
     its plan (installers on real machines, pilot, evaluation, guidance trials, vendor comparison)
     is in this file's history at commit 33cda31.
 16. **3D storm view (globe).** Research done 2026-10-17 in `research/globe/` (read sections 1, 2 and 6).
-    It waits on the owner decisions in README section 2 (D-G1 to D-G26). Two routes, not yet chosen:
-    (a) storm layers on the Map page first, then a link-only globe once gates P1 to P4 pass; (b) a globe
-    page now, which needs the library and JavaScript caps approved and the schedule gate met. No code in
-    `website/` until the P0 gates pass.
+    It waits on the owner decisions in README section 2 (D-G1 to D-G26). Chosen 2026-10-17: route (a),
+    storm layers on the Map page behind a default-off flag, P1 (text values) first. P0 gates before it:
+    schedule cadence, counsel on publishing terms before P2, the -99/-999 check, the below-ground share.
+    No code in `website/` until they pass. A link-only globe only after P1 to P4 and a library approval.
 
 ## Independent review priorities, for the website
 | Priority | Item | Status |

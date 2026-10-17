@@ -492,7 +492,14 @@ The globe waits on the owner decisions in `research/globe/README.md` section 2 (
 chief ones are the site-files-only browser rule, which rules out streamed worldwide imagery; a
 vendored WebGL library and JavaScript caps; placement; and how the publishing terms read for
 products built from NOAA data. Two routes are recorded without a choice: storm layers on the Map
-page first, or a globe page now. The proposed decision entries that follow are listed in README
+page first, or a globe page now.
+
+Decision, 2026-10-17: Carson chose the staged route — storm layers on the Map page first (P1 text
+values, P2 the Band 13 picture, P3 MESH only with verified units, P4 the echo-top raster, P5
+cloud-top classes, P6 a two-hour loop), behind a build flag that is off by default; a link-only
+globe only after the P4 gate and a separate approval of a vendored library and JavaScript caps.
+
+The proposed decision entries that follow are listed in README
 section 9b as D31 onward and wait for Carson.
 
 Corrections of record:
