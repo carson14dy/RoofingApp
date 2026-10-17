@@ -3,6 +3,7 @@
     python -m website.build --out _site                 # live data (needs internet)
     python -m website.build --out _site --sample        # labelled sample data, no network
     python -m website.build --out _site --require-live  # fail if any source failed (preview checks)
+    python -m website.build --out _site --storm-layers  # also NOAA radar echo tops for the towns (text only)
 
 GitHub Actions runs the live build every 10 minutes and publishes the folder with GitHub Pages
 (.github/workflows/website.yml). Every page says when its data was fetched; nothing on a page is
@@ -210,6 +211,19 @@ class Collector:
             self.note(key, st.get("label") or label, bool(st.get("ok")), st.get("detail") or "not built")
         return layers
 
+    def storm(self, towns: list, sample: bool) -> dict:
+        """NOAA radar echo tops for each town (website/storm.py; --storm-layers only). One status line, like
+        the others. The ground height is the NWS grid square's elevation (grid_elev_ft), in metres."""
+        from . import storm as storm_mod
+        fetch = getattr(self.f, "binary", None)
+        get = fetch if fetch else (lambda url, headers=None: (None, "no downloader"))
+        inputs = [{"slug": t["slug"], "name": t["name"], "lat": t["lat"], "lon": t["lon"],
+                   "ground_m": None if t["grid_elev_ft"] is None else t["grid_elev_ft"] / src.M_TO_FT}
+                  for t in towns]
+        results, st = storm_mod.collect(get, self.now, inputs, sample=sample)
+        self.note("storm", storm_mod.LABEL, st["ok"], st["detail"])
+        return results
+
 
 # ---------------------------------------------------------------- map page data
 
@@ -233,7 +247,8 @@ def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dic
         out_towns.append({"slug": t["slug"], "name": t["name"], "lat": t["lat"], "lon": t["lon"],
                           "label": t.get("label", "right"), "minor": bool(t.get("minor")),
                           "url": f"town/{t['slug']}.html", "office": t.get("office"), "hours": hours,
-                          "alert_ids": None if t["alerts"] is None else [a["id"] for a in t["alerts"]]})
+                          "alert_ids": None if t["alerts"] is None else [a["id"] for a in t["alerts"]],
+                          **({"storm": t["storm"]} if "storm" in t else {})})
     (s_, w_), (n_, e_) = gridded.IMAGE_BOUNDS
     return {
         "version": 1, "built": src._iso(now), "sample": sample, "tz": "America/Denver",
@@ -365,18 +380,31 @@ def env() -> Environment:
 VERSIONED = ("style.css", "map/map.js", "map/map.css", "map/basemap.json")
 
 
-def asset_versions(static: Path) -> dict:
-    """Short content hash per versioned static file (VERSIONED), for the pages' ?v= query."""
-    return {name: hashlib.sha256((static / name).read_bytes()).hexdigest()[:12] for name in VERSIONED}
+STORM_JS = "map/storm.js"   # places the storm text in the Map's List and town sheets; --storm-layers only
+
+
+def asset_versions(static: Path, names=VERSIONED) -> dict:
+    """Short content hash per versioned static file, for the pages' ?v= query."""
+    return {name: hashlib.sha256((static / name).read_bytes()).hexdigest()[:12] for name in names}
+
+
+def _unbuilt_static(storm_layers: bool):
+    """shutil.copytree's ignore: the storm script is copied only in a --storm-layers build, so the default
+    build's static files are the same as before the storm text existed."""
+    def ignore(directory, names):
+        if not storm_layers and Path(directory) == HERE / "static" / "map":
+            return [n for n in names if n == "storm.js"]
+        return []
+    return ignore
 
 
 def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | None = None,
-          sample: bool = False) -> dict:
+          sample: bool = False, storm_layers: bool = False) -> dict:
     if out.exists():
         shutil.rmtree(out)
     (out / "town").mkdir(parents=True)
     (out / "data").mkdir()
-    shutil.copytree(HERE / "static", out / "static")
+    shutil.copytree(HERE / "static", out / "static", ignore=_unbuilt_static(storm_layers))
 
     if sample:
         from . import sample as sample_data
@@ -387,17 +415,23 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     c.add_town_alerts(alerts, towns)
     reports = c.reports()
     layers = c.gridded(out, sample)
+    if storm_layers:
+        storms = c.storm(towns, sample)
+        for t in towns:
+            t["storm"] = storms[t["slug"]]
 
-    base = {"built": now, "built_ms": int(now.timestamp() * 1000), "asset_v": asset_versions(out / "static"),
-            "status": c.status, "sample": sample,
+    base = {"built": now, "built_ms": int(now.timestamp() * 1000),
+            "asset_v": asset_versions(out / "static", VERSIONED + ((STORM_JS,) if storm_layers else ())),
+            "status": c.status, "sample": sample, "storm_layers": storm_layers,
             "limits": src.LIMITS, "offices": OFFICES, "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
-            "contracts": src.CONTRACTS, "fresh_min": src.FRESH_MINUTES, "qc_words": src.QC_WORDS,
+            "contracts": {k: v for k, v in src.CONTRACTS.items() if storm_layers or k != "storm_levels"},
+            "fresh_min": src.FRESH_MINUTES, "qc_words": src.QC_WORDS,
             "qc_rejected": src.QC_REJECTED}
     e = env()
     pages = {
         "index.html": ("index.html", {"page": "now", "root": "", "alerts": alerts, "towns": towns,
                                       "card": map_card(layers, alerts, towns, c.status, now)}),
-        "map.html": ("map.html", {"page": "map", "root": ""}),
+        "map.html": ("map.html", {"page": "map", "root": "", "towns": towns}),
         "reports.html": ("reports.html", {"page": "reports", "root": "", "reports": reports}),
         "about.html": ("about.html", {"page": "about", "root": ""}),
     }
@@ -453,7 +487,8 @@ def content_sample(alerts, towns, reports) -> dict:
                               "wind": t["summary"]["wind"], "precip": t["summary"]["precip"],
                               "flagged": t["summary"]["flagged"], "issued": fmt_time(t["updated"]),
                               "office": t["office"], "alerts": None if t["alerts"] is None else len(t["alerts"]),
-                              "now": reading_sample(t["obs"]["now"])}
+                              "now": reading_sample(t["obs"]["now"]),
+                              **({"storm": t["storm"]["text"]} if "storm" in t else {})}
                   for t in towns},
         "reports_by_day": {d: sum(1 for r in reports["items"] if r["day"] == d) for d in reports["days"]},
     }
@@ -484,12 +519,15 @@ def main(argv=None) -> int:
     ap.add_argument("--sample", action="store_true", help="use labelled sample data; no network")
     ap.add_argument("--previous", help="URL of the live site, for last-known alerts if NWS fails")
     ap.add_argument("--require-live", action="store_true", help="exit 1 if any source failed")
+    ap.add_argument("--storm-layers", action="store_true",
+                    help="also read NOAA radar echo tops for each town (text only; off by default)")
     ap.add_argument("--now", help="build time (ISO, UTC); default: now")
     a = ap.parse_args(argv)
     now = src.parse_iso(a.now) if a.now else datetime.now(UTC).replace(microsecond=0)
     out = Path(a.out)
     result = build(out, None if a.sample else src.Fetcher(), now,
-                   None if a.sample else load_previous(a.previous), sample=a.sample)
+                   None if a.sample else load_previous(a.previous), sample=a.sample,
+                   storm_layers=a.storm_layers)
     print(json.dumps(result, indent=1, default=str))
     failed = [k for k, v in result["status"].items() if not v["ok"]]
     if a.require_live and failed:

@@ -1,0 +1,70 @@
+{
+  "now_utc": "2026-10-11T14:00:00Z",
+  "cutoff_utc": "2026-10-11T14:00:00Z",
+  "claim": {
+    "claim_type": "field_description",
+    "hazard": "hail",
+    "variable": "MESH",
+    "value": 25.4,
+    "value_kind": "instantaneous",
+    "units": "mm",
+    "time_mode": "current",
+    "scope": "grid",
+    "valid_start": "2026-10-11T14:00:00Z",
+    "valid_end": "2026-10-11T14:00:00Z",
+    "evidence_ids": [
+      "a"
+    ],
+    "target_point": [
+      35.0,
+      -97.0
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "a",
+      "evidence_kind": "estimate",
+      "hazard": "hail",
+      "variable": "MESH",
+      "value_kind": "instantaneous",
+      "units": "mm",
+      "value": 25.4,
+      "observed_at": "2026-10-11T14:00:00Z",
+      "valid_start": "2026-10-11T14:00:00Z",
+      "valid_end": "2026-10-11T14:00:00Z",
+      "published_at": "2026-10-11T14:00:00Z",
+      "received_at": "2026-10-11T14:00:00Z",
+      "quality": "usable",
+      "coverage": "available",
+      "domain": "inside",
+      "relation": "grid",
+      "relation_authority": "trusted_adapter",
+      "relation_target_point": [
+        35.0,
+        -97.0
+      ],
+      "upstream_id": "synthetic-radar",
+      "source_id": "synthetic-source",
+      "product_id": "synthetic-product",
+      "product_version": "1",
+      "policy_id": "p"
+    }
+  ],
+  "policies": {
+    "p": {
+      "variable": "MESH",
+      "value_kind": "instantaneous",
+      "units": "mm",
+      "kinds": [
+        "estimate"
+      ],
+      "max_age_seconds": 300,
+      "missing_sentinels": [
+        -999
+      ],
+      "source_id": "synthetic-source",
+      "product_id": "synthetic-product",
+      "product_version": "1"
+    }
+  }
+}

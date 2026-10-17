@@ -1,0 +1,123 @@
+{
+  "workstream": "W3",
+  "slug": "mrms",
+  "checked_at_utc": "2026-10-17T02:29:17Z",
+  "reviewed_at_utc": "2026-10-17T03:20:43Z",
+  "urls_checked": [
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/?list-type=2&prefix=CONUS/&delimiter=/","method":"GET","status":200,"bytes":19853,"content_type":"application/xml","cors_allow_origin":null,"content_check":"243 prefixes; 33 MergedReflectivityQC levels; 7 MESH names","verified":true},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/?list-type=2&prefix=CONUS/{product}/20261017/ (33 levels, 15 other products) and prefix=CONUS/MergedReflectivityQC_03.00/ and .../20250615/","method":"GET","status":200,"bytes":null,"content_type":"application/xml","cors_allow_origin":null,"content_check":"per-level 63 keys; 2,195 day folders; 720 keys on 20250615","verified":true},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MergedReflectivityQC_00.50/20261017/MRMS_MergedReflectivityQC_00.50_20261017-020439.grib2.gz","method":"GET","status":200,"bytes":306943,"content_type":"application/octet-stream","cors_allow_origin":null,"content_check":"gunzip 341,919 B; 1 GRIB2 message 7000x3500; Montana -999 100%","verified":true},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MergedReflectivityQC_03.00/20261017/MRMS_MergedReflectivityQC_03.00_20261017-020439.grib2.gz","method":"GET","status":200,"bytes":1098337,"content_type":"application/octet-stream","cors_allow_origin":null,"content_check":"gunzip 1,136,469 B; Montana -999 37.14%, -99 62.86%","verified":true},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MergedReflectivityQC_06.00/20261017/MRMS_MergedReflectivityQC_06.00_20261017-020439.grib2.gz","method":"GET","status":200,"bytes":861824,"content_type":"application/octet-stream","cors_allow_origin":null,"content_check":"gunzip 913,713 B; Montana -999 1.23%, -99 98.77%","verified":true},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MergedReflectivityQC_10.00/20261017/MRMS_MergedReflectivityQC_10.00_20261017-020439.grib2.gz","method":"GET","status":200,"bytes":247853,"content_type":"application/octet-stream","cors_allow_origin":null,"content_check":"gunzip 288,362 B; Montana -99 100%","verified":true},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MESH_00.50/20261017/MRMS_MESH_00.50_20261017-020439.grib2.gz","method":"GET","status":200,"bytes":35226,"content_type":"application/octet-stream","cors_allow_origin":null,"content_check":"gunzip 53,176 B; Montana all -1.0; CONUS max 13.5","verified":true},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/RadarQualityIndex_00.00/20261017/MRMS_RadarQualityIndex_00.00_20261017-020400.grib2.gz","method":"GET","status":200,"bytes":736986,"content_type":"application/octet-stream","cors_allow_origin":null,"content_check":"gunzip 742,674 B; 8-bit; Montana 0.0-1.0; whole-grid -3 33.4%","verified":true},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MESH_00.50/20261017/MRMS_MESH_00.50_20261017-020439.grib2.gz (Origin: http://127.0.0.1:5000)","method":"GET","status":200,"bytes":35226,"content_type":"application/octet-stream","cors_allow_origin":"*","content_check":"same Content-Length; Allow-Methods HEAD, GET; Max-Age 3000","verified":true},
+    {"url":"https://noaa-mrms-pds.s3.amazonaws.com/CONUS/MergedReflectivityQC_{00.50,03.00,06.00,10.00}/20250615/ and MESH_00.50 (event; 120 + 5 GETs)","method":"GET","status":200,"bytes":null,"content_type":"application/octet-stream","cors_allow_origin":null,"content_check":"every 6th 03.00 step decoded; listing sizes","verified":true},
+    {"url":"https://registry.opendata.aws/noaa-mrms-pds/","method":"GET (WebFetch; re-read)","status":200,"bytes":null,"content_type":"text/html","cors_allow_origin":null,"content_check":"reviewer re-read 2026-10-17: quotes verified; retention absent","verified":true},
+    {"url":"https://www.nssl.noaa.gov/projects/mrms/operational/tables.php","method":"GET (WebFetch; curl with /root/.ccr/ca-bundle.crt)","status":503,"bytes":null,"content_type":null,"cors_allow_origin":null,"content_check":"HTTP 503 on WebFetch; curl TLS failed; codes not read","verified":false},
+    {"url":"https://nssl.noaa.gov/projects/mrms/operational/tables.php","method":"GET (WebFetch)","status":503,"bytes":null,"content_type":null,"cors_allow_origin":null,"content_check":"HTTP 503","verified":false},
+    {"url":"https://github.com/Unidata/thredds/issues/1050","method":"GET (WebFetch)","status":200,"bytes":null,"content_type":"text/html","cors_allow_origin":null,"content_check":"2018 GRIB2 MergedBaseReflectivityQC: missing -99, no coverage -999 (secondary)","verified":true},
+    {"url":"https://api.github.com/search/repositories?q=mrms-support","method":"GET","status":403,"bytes":null,"content_type":"application/json","cors_allow_origin":null,"content_check":"403 policy; repo not located","verified":false}
+  ],
+  "facts": [
+    {"claim":"gz bytes per step, 2-hour window (was labelled day average)","value":"62 common steps, 00:00:39-02:04:39 UTC 2026-10-17 (2 h): mean 21,347,857 B (min 20,013,085; max 22,170,942). Whole days: 2026-10-16 mean 24,875,152 B; 2025-06-15 mean 19,788,073 B.","evidence":"day listings (reviewer recomputed)","verified":true,"corrected_by_review":true},
+    {"claim":"Data rate (computed)","value":"About 594-746 MB/h gz (30 x 19.8-24.9 MB daily means); the earlier 640 MB/h used the window.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Packing and resolution","value":"grid_png, bitmapPresent 0. Reflectivity 16 bits. MESH and RQI 8 bits in 2026 files; the 2025-06-15 MESH file is 16 bits. Values on a 0.1 grid. GRIB units 'unknown' (dBZ inferred).","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Publication lag, latest common step","value":"02:04:39 only (exact): 33 levels 35-99 s (00.50 37; 19.00 99). Whole day 2026-10-16: 29-120 s. The 2025 archive is not real time (medians 870-1,295 s).","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Cadence, 00.50 today","value":"2026-10-17 00:00-02:04 (62 intervals): mean 120.00 s, sd 2.98, range 113-130 s. Whole day 2026-10-16: sd 2.5, range 109-128 s; RQI exactly 120 s.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"GRIB2 reference time","value":"dataDate 20261016, dataTime 1256 (HHMM). eccodes 'Truncating time' warning only where the file name has non-zero seconds.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"CONUS shares 2026-10-17 02:04:39","value":"Whole 7000x3500 file grid (ocean, Canada, Mexico included): -999 92.562/52.747/39.97/35.392 %; -99 6.825/43.639/57.073/63.965 %; >=20 dBZ 0.236/0.661/0.344/0.075 %; >=35 0.017/0.047/0.012/0.001 %.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"MESH_00.50 2026-10-17 02:04:39","value":"Montana -1.0 at 100%. Whole grid -1 16,325,361; -3 8,174,021 (33.4%); 618 positive; max 13.5. -3 not fixed (8,292,658 at 2025-06-15).","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"RadarQualityIndex_00.00 at 02:04:00","value":"Montana min 0.0, max 1.0, 65.80% >= 0.5, no -3. Whole grid -3 8,179,507 (33.39%; 8,169,936 at 2026-10-16); 43.31% >= 0.5. Only _00.00 exists.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Archive presence and retention","value":"2,195 day folders 20201014-20261017, none missing. Registry states no retention period; no NOAA retention statement found.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Archived event day 2025-06-15","value":"720 objects. Every 6th step (120): >=20 dBZ in 120 of 120; sampled >=35 peak 6,412 at 23:12:41, max 72.5 dBZ at 22:24:41 (reproduced). Sample maxima only.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Event day code counts, Montana box, 03.00","value":"0-offset sample reproduced (-999 204,006-209,126; -99 297,937-340,854). 3-offset sample: -999 204,028-209,115; -99 297,847-340,680; >=35 max 6,546 at 23:06:42; max 73.5 dBZ at 22:30:42.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Event peak 2025-06-15 23:12:41 UTC, Montana box, 03.00","value":"-999 36.68%, -99 54.87%, valid 8.45%, >=20 4.02%, >=35 1.15% (6,412), >=50 0.18% (977), max 63.5 dBZ (reproduced). Sample peak only.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"MESH_00.50 event peak, Montana box","value":"-1.0 at 554,621 (99.5%); positive 2,643 (0.47%); max 38.3; grid max 43.0 (exact; 16-bit). Units unverified.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Other products, latest file","value":"Composite 02:04:39 1346410B; AtLowestAltitude 8574762B; RQI 02:04:00 736986B; MESH 02:04:39 35226B; MESH_Max_120min 02:00:00 80711B; MESH_Max_1440min 01:30:00 338785B (02:00:00 object, 341,624 B, published 02:08:16).","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"MRMS version (NOAA registry)","value":"Registry: 'MRMS was upgraded from version 11 to 12 on October 14, 2020'; the upgrade 'introduced new products, discontinued others'. File version not in the GRIB2 header.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"CORS on an object GET","value":"ACAO * on GET with Origin; preflight 200 with ACAO *, Allow-Methods HEAD, GET, Max-Age 3000; Allow-Headers range when requested (exact).","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Meaning of -99 and -999 (MergedReflectivityQC GRIB2, v12)","value":"UNVERIFIED. NSSL table HTTP 503 again. Secondary: Unidata issue 1050 (2018, other product): -99 'missing', -999 'no coverage'. Data fit: Montana -999 100/37/1.2/0% at 0.5/3/6/10 km at both 2026 times.","evidence":"reviewer recompute","verified":false,"corrected_by_review":true},
+    {"claim":"MESH units and codes -1 and -3","value":"UNVERIFIED. GRIB units 'unknown'. A secondary search excerpt puts -1/-3 beside -99/-999 (no header seen). A 43.0 max is implausible in inches, so mm is likely; not confirmed.","evidence":"reviewer recompute","verified":false,"corrected_by_review":true},
+    {"claim":"03.00 Montana code -999 share, 4x4 sub-boxes","value":"Within 0.3 points of the previous values (split not stated). Reviewer array_split: [[70.9,3.5,1.1,3.7],[11.1,2.9,3.8,12.9],[68.5,67.9,2.4,69.6],[98.6,87.2,27.8,62.0]].","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Montana 02:04:39 levels (merged from four facts)","value":"00.50 -999 100%; 03.00 -999 37.14%, -99 62.86%; 06.00 -999 1.23%, -99 98.77%; 10.00 -99 100%. Zero valid dBZ; all 33 levels zero valid at 2026-10-16 12:56:36.","evidence":"reviewer recompute","verified":true,"corrected_by_review":true},
+    {"claim":"Latest common step","value":"2026-10-17 02:04:39 UTC; 62 of 63 stamps are common to all 33 levels today.","evidence":"day listings CONUS/MergedReflectivityQC_LL.LL/20261017/","verified":true},
+    {"claim":"gz bytes per 2-min step, all 33 levels, latest step","value":"20,013,085 B (20.0 MB). Per level B: 00.50=306943 00.75=476669 01.00=656240 01.25=799973 01.50=920005 01.75=997055 02.00=1047116 02.25=1071382 02.50=1088264 02.75=1095654 03.00=1098337 03.50=1093756 04.00=1059080 04.50=1014972 05.00=970814 05.50=920705 06.00=861824 06.50=795358 07.00=708608 07.50=612111 08.00=518397 08.50=429936 09.00=350864 10.00=247853 11.00=192504 12.00=150376 13.00=122268 14.00=99602 15.00=80265 16.00=62267 17.00=51612 18.00=54348 19.00=57927","evidence":"day listings","verified":true},
+    {"claim":"Grid (eccodes keys)","value":"Ni 7000, Nj 3500, dx = dy = 0.01 deg; first point 54.995 N, 230.005 E (129.995 W); last 20.005 N, 299.995 E (60.005 W); jScansPositively 0 (north to south); iScansNegatively 0; index = row x 7000 + col.","evidence":"header decode of four levels and MESH","verified":true},
+    {"claim":"Billings nearest point, latest step","value":"00.50 -999; 03.00 -999; 06.00 -999; 10.00 -99; MESH_00.50 -1.0; RadarQualityIndex_00.00 1.0 (02:04:00).","evidence":"codes_grib_find_nearest on each file","verified":true},
+    {"claim":"Event peaks 2025-06-15 23:12:41, Montana box, 00.50 / 06.00 / 10.00 (reproduced)","value":"00.50: -999 100%, valid 0. 06.00: -999 0.80%, -99 80.84%, valid 18.36%, >=20 5.70%, >=35 0.82% (4,587), >=50 0.08%, max 64.0. 10.00: -99 86.23%, valid 13.77%, >=20 2.06%, >=35 0.22% (1,218), max 53.5.","evidence":"reviewer decode of 2025-06-15 23:12:41 files","verified":true,"corrected_by_review":true}
+  ],
+  "terms": {"license":"Registry page: 'NOAA data disseminated through NODD are open to the public and can be used as desired.' No licence identifier there. NOAA NODD page (WebFetch): no reuse, attribution or endorsement wording.","attribution_required":true,"quote":"'NOAA requests attribution for the use or dissemination of unaltered NOAA data.' 'However, it is not permissible to state or imply endorsement by or affiliation with NOAA.' 'If you modify NOAA data, you may not state or imply that it is original, unaltered NOAA data.'","url":"https://registry.opendata.aws/noaa-mrms-pds/","reviewer_reread":"2026-10-17 WebFetch: attribution, endorsement, modification and NODD sentences verified."},
+  "limits": [
+    "Zero valid dBZ in Montana at 2026-10-16 12:56:36 (33 levels) and 2026-10-17 02:04:39 (4 levels); zero shares describe those steps only.",
+    "Event samples (120 steps each, two offsets) do not establish a day peak; a full 720-step scan of 03.00 is needed.",
+    "-99 and -999 unverified: show both as 'no radar data'; do not label either 'no radar coverage' yet.",
+    "MESH units and codes -1 and -3 unknown; values are file values; magnitude suggests mm.",
+    "No echo is not clear (rule 5). Radar and MESH are estimates, not observed hail or damage.",
+    "Shares are grid-point counts; cell area varies 8.96% across the Montana box. 2025 archive LastModified is an upload time, not latency."
+  ],
+  "installed_packages": [
+    "eccodes 2.50.0 (pip install eccodes numpy, system Python 3.13)",
+    "eccodeslib 2.50.0.33",
+    "findlibs 0.1.3",
+    "attrs 26.1.0",
+    "cffi 2.1.1",
+    "pycparser 3.0",
+    "numpy 2.5.3"
+  ],
+  "open_questions": [
+    "Read the NSSL GRIB2 flag table to name -99, -999 and the MESH codes (NSSL page HTTP 503 on every attempt).",
+    "Is -999 a radar-geometry mask? Test against the four Montana radar sites (W4) and beam heights; the grid-wide -999 set changes between 2025 and 2026.",
+    "The true 2025-06-15 day peak at 03.00 needs a full 720-step scan; does 0.5 km MSL lie below ground across Montana (needs W5 terrain)?"
+  ],
+  "review": {
+    "refuted_claims": [
+      "Day mean 21.3 MB per step and about 640 MB/h: a 2-hour window; whole days are 19.8-24.9 MB per step (about 594-746 MB/h).",
+      "Latency 35-99 s as a general range: true only at 02:04:39 on 2026-10-17; whole day 2026-10-16 is 29-120 s.",
+      "8 bits for MESH: false for the 2025-06-15 file (16 bits, 345 distinct values).",
+      "'CONUS' labels on whole-grid shares: these are the 7000x3500 file grid; the contiguous-US box gives 14.4% for MESH and RQI -3.",
+      "Event peak 23:12:41 and 72.5 dBZ at 22:24:41 as day peaks: sample maxima only; the offset sample gives 6,546 at 23:06:42 and 73.5 dBZ at 22:30:42.",
+      "'NOAA states no retention period' and NOAA-attributed reuse wording: retention is absent on the registry page; the NOAA NODD page lacks the reuse wording.",
+      "README sec. 4 'MRMS carries its own no-coverage mask': no mask product exists; -999 in each 3D file is the only coverage signal (meaning unverified)."
+    ],
+    "corrections": [
+      "Cadence '62 intervals today' is the 00:00-02:04 window; whole day 2026-10-16 sd 2.5 s, range 109-128 s; RQI exactly 120 s.",
+      "2025 archive LastModified is an upload time (medians 870-1,295 s), not latency.",
+      "GRIB units read 'unknown' for every product: 'dBZ' and 'mm' are inferred.",
+      "Montana >=50 dBZ at 03.00 (2025-06-15): 977 pts = 0.175%, shown as 0.18% (not 0.17%).",
+      "4x4 sub-box shares reproduce within 0.3 points; the previous split was not stated.",
+      "-999 and -3 sets approximately static: Montana -999 equal at 2026 times; grid-wide -999 differs by 24,623 px (3 km, 2026) and 175,928 px (2025).",
+      "CORS preflight now tested (was 'not tested'): ACAO *; Allow-Headers range when requested.",
+      "Folded into review.confirmed or unverified to fit 20 KB: 3D levels, name checks, Montana box, cell size, live freshness, update cycle, grid cross-check, gzip expansion, 00:18 jitter, heightAboveSea, sentinel leads; four Montana and three event facts merged."
+    ],
+    "confirmed": [
+      "243 prefixes; 33 levels 00.50-19.00 km (0.25, 0.5 and 1 km steps); no Coverage or Mask names; RadarQualityIndex only _00.00; MESH_Max 30-1440 min.",
+      "720 objects per level (2026-10-16, 2025-06-15), no gaps; 2,195 day folders 2020-10-14 to 2026-10-17.",
+      "Grid 7000x3500, 0.01 deg, index = row x 7000 + col (five points); Billings 0.383 km; Montana box 557,264 pts; cells 1.112 km N-S, 0.758 km E-W at 47 N.",
+      "grid_png; 16-bit reflectivity; 0.1 dBZ steps; heightAboveSea 500-19000 m; 02:04:39 33-level total 20,013,085 B (matches listing); gunzip adds 11.4% for 00.50 (341,919 B).",
+      "Montana shares at 02:04:39; zero valid dBZ at 2026-10-16 12:56:36; 2025-06-15 23:12:41 Montana counts (four levels); MESH event counts.",
+      "02:04:39 MESH, RQI and latency values; 00:18 stamp jitter (00.50 at 00:18:38, others 00:18:40); live stamps 02:28:41 and 02:26:40 existed.",
+      "Registry quotes (2-minute cycle; NODD sentence; attribution); CORS on GET, preflight and Range."
+    ],
+    "unverified": [
+      "Meanings of -99 and -999 in the 2025 and 2026 v12 files (NSSL table unreadable).",
+      "MESH units (mm likely, not confirmed) and codes -1 and -3.",
+      "Whether -999 follows radar geometry; whether 0.5 km MSL is below ground (needs terrain).",
+      "True 2025-06-15 day peak (needs a 720-step scan); meaning of productionStatusOfProcessedData = 2.",
+      "NOAA's own reuse terms (footer unread); UCAR PDFs, SPC paper, pysteps and a converter not read."
+    ],
+    "reviewer_checks": [
+      {"url":"S3 list prefix=CONUS/ delimiter=/","content_check":"243 prefixes; 33 levels; no Coverage/Mask names","verified":true},
+      {"url":"S3 list CONUS/<product>/20261016/ and /20261017/","content_check":"720 per level; 02:04:39 total 20,013,085 B","verified":true},
+      {"url":"S3 list CONUS/<product>/20250615/ and MergedReflectivityQC_03.00/ folders","content_check":"720 per level; LastModified medians 870-1,295 s; 2,195 folders","verified":true},
+      {"url":"S3 GET 33 levels 20261016-125636 (+MESH, RQI)","content_check":"gzip 1f8b; 27,812,876 B = listing; decoded; Montana valid 0","verified":true},
+      {"url":"S3 GET 4 levels 20261017-020439 and 20250615-231241; 240 steps 03.00","content_check":"-999 XOR counts; event counts; offset samples","verified":true},
+      {"url":"S3 GET and OPTIONS 03.00 20261017-020439 (Origin; Range)","content_check":"ACAO *; Allow-Methods HEAD, GET; Allow-Headers range","verified":true},
+      {"url":"WebFetch registry.opendata.aws/noaa-mrms-pds/; noaa.gov NODD page","content_check":"quotes verified; NODD lacks reuse wording; retention absent","verified":true},
+      {"url":"WebFetch NSSL tables; Unidata 1050; UCAR PDFs; SPC paper; WebSearch","content_check":"NSSL 503; Unidata secondary quotes; UCAR no text; SPC 502","verified":false}
+    ],
+    "installed_by_reviewer": [
+    ]
+  }
+}

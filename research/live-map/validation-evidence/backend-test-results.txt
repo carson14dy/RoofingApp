@@ -1,0 +1,23 @@
+test_alert_requests_respect_minimum_cache_and_recompute_age (test_server.ServiceTests.test_alert_requests_respect_minimum_cache_and_recompute_age) ... ok
+test_distance_handles_antimeridian_and_distinguishes_degrees (test_server.ServiceTests.test_distance_handles_antimeridian_and_distinguishes_degrees) ... ok
+test_empty_alert_success_and_alert_failure_are_distinct (test_server.ServiceTests.test_empty_alert_success_and_alert_failure_are_distinct) ... ok
+test_expired_forecast_periods_remain_evidence_but_are_not_current (test_server.ServiceTests.test_expired_forecast_periods_remain_evidence_but_are_not_current) ... ok
+test_failed_metadata_can_retry_after_short_backoff (test_server.ServiceTests.test_failed_metadata_can_retry_after_short_backoff) ... ok
+test_forecast_valid_periods_issue_and_update_are_preserved (test_server.ServiceTests.test_forecast_valid_periods_issue_and_update_are_preserved) ... ok
+test_future_forecast_generation_cannot_hide_behind_old_update (test_server.ServiceTests.test_future_forecast_generation_cannot_hide_behind_old_update) ... ok
+test_health_is_not_live_or_accuracy_certificate (test_server.ServiceTests.test_health_is_not_live_or_accuracy_certificate) ... ok
+test_history_is_local_exact_point_and_has_no_earlier_claim (test_server.ServiceTests.test_history_is_local_exact_point_and_has_no_earlier_claim) ... ok
+test_malformed_alert_collection_is_unknown_not_all_clear (test_server.ServiceTests.test_malformed_alert_collection_is_unknown_not_all_clear) ... ok
+test_missing_is_distinct_from_zero_and_units_are_native (test_server.ServiceTests.test_missing_is_distinct_from_zero_and_units_are_native) ... ok
+test_offhost_and_credentialed_urls_are_rejected (test_server.ServiceTests.test_offhost_and_credentialed_urls_are_rejected) ... ok
+test_points_failure_does_not_suppress_official_alerts (test_server.ServiceTests.test_points_failure_does_not_suppress_official_alerts) ... ok
+test_preserve_point_disclose_quantization_and_sort_stations (test_server.ServiceTests.test_preserve_point_disclose_quantization_and_sort_stations) ... ok
+test_reject_invalid_coordinates_and_booleans (test_server.ServiceTests.test_reject_invalid_coordinates_and_booleans) ... ok
+test_source_rejected_qc_is_retained_but_not_shown_as_usable_number (test_server.ServiceTests.test_source_rejected_qc_is_retained_but_not_shown_as_usable_number) ... ok
+test_stale_observation_and_future_timestamp_are_not_fresh (test_server.ServiceTests.test_stale_observation_and_future_timestamp_are_not_fresh) ... ok
+test_static_vendor_is_served_and_repository_files_are_not (test_server.ServiceTests.test_static_vendor_is_served_and_repository_files_are_not) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.526s
+
+OK

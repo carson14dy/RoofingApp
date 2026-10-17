@@ -1,0 +1,76 @@
+{
+  "service": "running",
+  "mode": "local_research_prototype",
+  "production_ready": false,
+  "generated_at": "2026-10-11T17:06:37.314808Z",
+  "sources_configured": [
+    "NWS public API"
+  ],
+  "commercial_plugins_configured": false,
+  "archive_enabled": true,
+  "freshness_policy": {
+    "id": "local-prototype-proposed-v1",
+    "validated_operational_policy": false,
+    "observation_max_age_seconds": 1800,
+    "forecast_max_issue_age_seconds": 43200,
+    "alerts_max_fetch_age_seconds": 120,
+    "future_clock_tolerance_seconds": 60,
+    "alerts_cache_seconds": 30,
+    "note": "Illustrative freshness limits, not validated hazard-response thresholds. A fresh nearby station is not a measurement at the selected roof."
+  },
+  "last_point_query": {
+    "generated_at": "2026-10-11T17:06:37.277441Z",
+    "status": "available",
+    "selected_point": {
+      "latitude_deg": 39.0997,
+      "longitude_deg": -94.5786,
+      "crs": "EPSG:4326"
+    },
+    "source_times": {
+      "alerts_fetched_at": "2026-10-11T17:06:34.725590Z",
+      "forecast_updated_at": "2026-10-11T11:01:40+00:00",
+      "observations": [
+        {
+          "station_id": "KMKC",
+          "observed_at": "2026-10-11T16:45:00+00:00"
+        },
+        {
+          "station_id": "KLXT",
+          "observed_at": "2026-10-11T16:45:00+00:00"
+        },
+        {
+          "station_id": "KMCI",
+          "observed_at": "2026-10-11T16:45:00+00:00"
+        }
+      ]
+    }
+  },
+  "last_point_source_ages": {
+    "alerts": {
+      "age_seconds": 2.6,
+      "freshness": "fresh"
+    },
+    "forecast": {
+      "age_seconds": 21897.3,
+      "freshness": "fresh"
+    },
+    "stations": [
+      {
+        "station_id": "KMKC",
+        "age_seconds": 1297.3,
+        "freshness": "fresh"
+      },
+      {
+        "station_id": "KLXT",
+        "age_seconds": 1297.3,
+        "freshness": "fresh"
+      },
+      {
+        "station_id": "KMCI",
+        "age_seconds": 1297.3,
+        "freshness": "fresh"
+      }
+    ]
+  },
+  "monitoring": "On-demand queries only; no unattended background collection."
+}

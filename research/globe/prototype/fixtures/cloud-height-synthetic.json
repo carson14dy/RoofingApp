@@ -1,0 +1,227 @@
+{
+  "schema": "goes-cloud-height/1",
+  "script": "goes_cloud_height.py",
+  "synthetic": true,
+  "product": "ABI-L2-ACHAC",
+  "product_option": "ACHAC",
+  "variable": "HT",
+  "satellite": "east",
+  "satellite_name": "synthetic GOES-19",
+  "bucket": null,
+  "object_key": null,
+  "object_url": null,
+  "time_request": "synthetic",
+  "file_scan_start_from_name": null,
+  "satellite_longitude_deg": -75.0,
+  "satellite_longitude_source": "goes_imager_projection longitude_of_projection_origin (the grid used for geolocation)",
+  "nominal_satellite_subpoint_lon_deg": null,
+  "perspective_point_height_m": 35786023.0,
+  "semi_major_axis_m": 6378137.0,
+  "semi_minor_axis_m": 6356752.31414,
+  "sweep_angle_axis": "x",
+  "orbital_slot": "GOES-East (synthetic)",
+  "time_coverage_start": "2026-10-17T00:00:00.0Z",
+  "time_coverage_end": "2026-10-17T00:00:00.0Z",
+  "bbox": {
+    "lon_min": -116.8,
+    "lat_min": 43.6,
+    "lon_max": -103.3,
+    "lat_max": 49.75
+  },
+  "grid": {
+    "dx_deg": 0.02,
+    "dy_deg": 0.02,
+    "nx": 675,
+    "ny": 308,
+    "extent_lon": [
+      -116.8,
+      -103.3
+    ],
+    "extent_lat": [
+      43.59,
+      49.75
+    ],
+    "row_order": "north_to_south",
+    "col_order": "west_to_east",
+    "resampling": "nearest neighbour in scan-angle space; cell centres",
+    "note": "0.02 degree cells are finer than the native pixel along the view tilt"
+  },
+  "native_grid": {
+    "nx": 500,
+    "ny": 300,
+    "x_step_rad": 0.00028000000000000247,
+    "y_step_rad": -0.00028000000000000247,
+    "x_first_rad": -0.13457476510335348,
+    "y_first_rad": 0.16098303136481756,
+    "nadir_dx_km": 10.020086440000089,
+    "nadir_dy_km": 10.020086440000089,
+    "window_col_row": [
+      188,
+      312,
+      118,
+      184
+    ],
+    "footprint_at_bbox_centre": {
+      "pixel_long_km": 24.508280390865284,
+      "pixel_short_km": 10.89826456063546,
+      "index_col_row": [
+        249,
+        149
+      ]
+    }
+  },
+  "units": "m",
+  "quantity": "cloud_top_height",
+  "scale": 0.3052037,
+  "offset": 0.0,
+  "fill_raw": 65535,
+  "valid_range_raw": [
+    0,
+    65530
+  ],
+  "dqf": {
+    "present": true,
+    "variable": "DQF",
+    "fill": 255,
+    "valid_range": [
+      0,
+      3
+    ],
+    "value_counts_full_grid": {
+      "0": 132436,
+      "1": 113,
+      "255": 17451
+    },
+    "full_grid": {
+      "total": 150000,
+      "non_fill": 132549,
+      "good_dqf0": 132436,
+      "flagged": 113,
+      "invalid_or_fill": 17451,
+      "good_pct_of_non_fill": 99.9147,
+      "flagged_pct_of_non_fill": 0.0853
+    },
+    "bbox_native": {
+      "total": 2640,
+      "non_fill": 2551,
+      "good_dqf0": 2509,
+      "flagged": 42,
+      "invalid_or_fill": 89,
+      "good_pct_of_non_fill": 98.3536,
+      "flagged_pct_of_non_fill": 1.6464
+    }
+  },
+  "native_pixels_in_bbox": {
+    "total": 2640,
+    "good": 2175,
+    "flagged_with_value": 39,
+    "dqf_invalid_with_value": 78,
+    "out_of_range": 23,
+    "no_retrieval": 325
+  },
+  "native_pixels_full_grid": {
+    "total": 150000,
+    "good": 107362,
+    "flagged_with_value": 39,
+    "dqf_invalid_with_value": 4526,
+    "out_of_range": 23,
+    "no_retrieval": 38050
+  },
+  "percent_native_bbox": {
+    "good": 82.3864,
+    "flagged_with_value": 1.4773,
+    "dqf_invalid_with_value": 2.9545,
+    "out_of_range": 0.8712,
+    "no_retrieval": 12.3106
+  },
+  "target_grid_counts": {
+    "cells": 207900,
+    "outside_native_grid": 0,
+    "good": 167883,
+    "flagged_with_value": 3152,
+    "dqf_invalid_with_value": 5913,
+    "out_of_range": 1483,
+    "no_retrieval": 29469
+  },
+  "percent_target_grid": {
+    "good": 80.7518,
+    "flagged_with_value": 1.5161,
+    "drawn_in_png": 80.7518
+  },
+  "stats": {
+    "unit": "m",
+    "good": {
+      "n": 2175,
+      "p10": 1500.3813892,
+      "p50": 1662.7497576,
+      "p90": 5848.008095700003,
+      "min": 1500.0761855,
+      "max": 12493.513459500002,
+      "unit": "m"
+    },
+    "flagged_with_value": {
+      "n": 39,
+      "p10": 1544.14759978,
+      "p50": 3140.2408693,
+      "p90": 6212.726517200001,
+      "min": 1504.6542410000002,
+      "max": 7284.601911600001,
+      "unit": "m"
+    }
+  },
+  "height_reference": "unverified (no reference statement in the file's HT attributes)",
+  "height_reference_statements": [],
+  "license_attribute": "SYNTHETIC test field; not NOAA data",
+  "centre_check": null,
+  "dqf_file_percent_attributes": {},
+  "dqf_good_check": null,
+  "bytes_downloaded": {
+    "listing": 0,
+    "object": 0,
+    "total": 0
+  },
+  "runtime_s": 0.168,
+  "timings_s": {
+    "synthetic_build": 0.039,
+    "classify_resample": 0.053
+  },
+  "latency_s": null,
+  "note": "satellite estimate (retrieval), cloud top only, not cloud base",
+  "output": {
+    "png": "cloud-height-synthetic.png",
+    "json": "cloud-height-synthetic.json",
+    "png_bytes": 19963,
+    "png_cells_with_value": 167883,
+    "png_value_encoding": "height in metres, rounded, minimum 1; 0 = no data"
+  },
+  "include_flagged_in_png": false,
+  "png_shows": "good only",
+  "projection_attrs_checked": {
+    "sweep_angle_axis": "x",
+    "grid_mapping_name": null
+  },
+  "data_attrs": {
+    "units": "m",
+    "long_name": "synthetic test field"
+  },
+  "dqf_attrs": {
+    "valid_range": [
+      0,
+      3
+    ],
+    "flag_values": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "flag_meanings": "synthetic"
+  },
+  "limits": [
+    "Satellite retrieval (cloud top height) or radiance-derived brightness temperature; not cloud base.",
+    "Single scan; no time merge across scans; latency is measured for this file only.",
+    "Nearest-neighbour resampling from a coarser native grid; blocks are native pixels.",
+    "DQF-flagged values are reported separately and are not drawn unless --include-flagged.",
+    "Not damage, not hail, not a probability, not an insurance or eligibility statement."
+  ]
+}

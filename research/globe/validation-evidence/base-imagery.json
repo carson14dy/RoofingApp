@@ -1,0 +1,100 @@
+{
+ "workstream": "W6",
+ "slug": "base-imagery",
+ "checked_at_utc": "2026-10-17T02:54:44Z",
+ "review_checked_at_utc": "2026-10-17T04:12Z",
+ "urls_checked": [
+  {"url":"https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer?f=json","method":"GET","status":200,"bytes":9263,"content_type":"application/json","cors_allow_origin":"*","content_check":"maxScale = LOD16 scale","verified":true},
+  {"url":"https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/12/1460/813","method":"GET","status":200,"bytes":28363,"content_type":"image/jpeg","cors_allow_origin":"*","content_check":"Billings aerial, 16,638 colours","verified":true},
+  {"url":"https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/17/46743/26032","method":"GET","status":404,"bytes":572,"content_type":"text/html","cors_allow_origin":"*","content_check":"'Error: Not Found'; z17-z23 404","verified":true},
+  {"url":"https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/6/29/5","method":"GET","status":200,"bytes":3086,"content_type":"image/jpeg","cors_allow_origin":"not sent","content_check":"15N 150W not re-fetched","verified":false},
+  {"url":"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml","method":"GET","status":200,"bytes":5842707,"content_type":"text/xml","cors_allow_origin":"*","content_check":"1330 layers; now 5,842,713 B","verified":true},
+  {"url":"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/2026-10-16/GoogleMapsCompatible_Level9/4/5/3.jpeg","method":"GET","status":200,"bytes":15027,"content_type":"image/jpeg","cors_allow_origin":"*","content_check":"Montana identical; snow and cloud","verified":true},
+  {"url":"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/2026-10-16/GoogleMapsCompatible_Level9/4/7/1.jpeg","method":"GET","status":200,"bytes":13197,"content_type":"image/jpeg","cors_allow_origin":"*","content_check":"saved 45.7% black; now 25.1%","verified":true},
+  {"url":"https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/2026-10-17/GoogleMapsCompatible_Level9/4/5/3.jpeg","method":"GET","status":200,"bytes":1665,"content_type":"image/jpeg","cors_allow_origin":"*","content_check":"uniform black; empty at 6 of 6 points","verified":true},
+  {"url":"https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer?f=json","method":"GET","status":200,"bytes":11142,"content_type":"application/json","cors_allow_origin":"*","content_check":"exportTilesAllowed false","verified":true},
+  {"url":"https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/12/1460/813","method":"GET","status":200,"bytes":20413,"content_type":"image/jpeg","cors_allow_origin":"*","content_check":"13,540 colours; z20 placeholder elsewhere","verified":true},
+  {"url":"https://basemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/12/1460/813","method":"GET","status":200,"bytes":63,"content_type":"text/plain","cors_allow_origin":"*","content_check":"body error 499 Token Required","verified":true},
+  {"url":"https://www.esri.com/content/dam/esrisites/en-us/media/legal/ma-full/ma-full.pdf","method":"GET","status":200,"bytes":347313,"content_type":"application/pdf","cors_allow_origin":null,"content_check":"E204 Rev. 1 Aug 2025; 3.2(b), (c)","verified":true},
+  {"url":"https://www.esri.com/content/dam/esrisites/en-us/media/legal/product-specific-terms-of-use/e300.pdf","method":"GET","status":200,"bytes":152101,"content_type":"application/pdf","cors_allow_origin":null,"content_check":"E300 fn 10, 69, 72, 74, 75","verified":true},
+  {"url":"https://cloudless.eox.at/license-non-commercial","method":"GET","status":200,"bytes":39492,"content_type":"text/html","cors_allow_origin":null,"content_check":"2016 CC BY 4.0; 2018-2025 NC","verified":true},
+  {"url":"https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice","method":"GET","status":200,"bytes":115881,"content_type":"application/pdf","cors_allow_origin":null,"content_check":"free access 'in so far as it is lawful'","verified":true},
+  {"url":"https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map","method":"GET","status":200,"bytes":241971,"content_type":"text/html","cors_allow_origin":null,"content_check":"'free and in the public domain'","verified":true}
+ ],
+ "facts": [
+  {"claim":"USGS tiling","value":"EPSG:3857, 256 px, origin (-20037508, 20037508), 24 LODs 0-23, MIXED (all JPEG). Billings /12/1460/813 is Billings imagery. ACAO * with or without Origin.","evidence":"usgs_service_review.json","verified":true,"corrected_by_review":true},
+  {"claim":"USGS max served zoom","value":"Billings z12-z16 real; z17-z23 HTTP 404. Service maxScale 9,027.98 = LOD16 scale, so the service stops at LOD16 (tileInfo lists LOD23). z17 and z18 also 404 at six other US points. z16 about 1.67 m/px (computed).","evidence":"usgs_bil_z*.bin","verified":true,"corrected_by_review":true},
+  {"claim":"USGS outside the US and ocean","value":"Tokyo, Sydney, Sahara, Amazon, Prague, Paris: z6-z8 JPEG, 4,510-14,832 colours; z9 404 at all six. Service description: 'orthoimagery in The National Map'. Tokyo z6 viewed: shaded relief with bathymetry (visual). Ocean tiles not one flat class: Atlantic z6 2,192 colours, stddev up to 19. Source undocumented.","evidence":"usgs_<place>_z<n>.bin","verified":true,"corrected_by_review":true},
+  {"claim":"GIBS capabilities","value":"WMTS 1.0.0; 1330 layers; 7 TileMatrixSets; ACAO *; max-age=1800. Size 5,842,713 B at 03:5x UTC (first agent 5,842,707 at 02:54).","evidence":"gibs_caps_review.xml","verified":true,"corrected_by_review":true},
+  {"claim":"GIBS Blue Marble layer","value":"BlueMarble_ShadedRelief_Bathymetry: no Time; GoogleMapsCompatible_Level8 (0-8, 256 px); JPEG; max-age=259200. Served to z8; z9 HTTP 400. Montana z4 identical bytes.","evidence":"gibs_caps_review.xml","verified":true,"corrected_by_review":true},
+  {"claim":"GIBS VIIRS layer","value":"VIIRS_SNPP_CorrectedReflectance_TrueColor: daily Time; GoogleMapsCompatible_Level9 (0-9, 256 px); z9 served, z10 HTTP 400. Default and range end: 2026-10-16 at 02:54 UTC; 2026-10-17 at 03:5x UTC.","evidence":"gibs_caps_review.xml","verified":true,"corrected_by_review":true},
+  {"claim":"VIIRS latest date and black","value":"Advertised 2026-10-17 is empty (uniform black at 6 of 6 global z4 points); 2026-10-18 = HTTP 404. Latest with content 2026-10-16 (6 of 6 points; partly black at two, Pacific 25.1% and Australia 33.6%). Partly black is not shown to be night: mid-Pacific black fell 45.7% to 25.1% in about an hour.","evidence":"gibs_global_day; gibs_compare (review)","verified":true,"corrected_by_review":true},
+  {"claim":"VIIRS at z4 (2026-10-16)","value":"Montana z4 identical bytes (15,027); viewed snow and cloud. Mid-Pacific: the saved 13,197 B file gives 45.7% black (reproduced), but the URL now serves 18,197 B, 25.1% black, angular edges. The tile changed between checks.","evidence":"gibs_viirs_midpacific_z4_20261016.jpeg","verified":true,"corrected_by_review":true},
+  {"claim":"Esri anonymous and billed hosts","value":"services.arcgisonline.com without token: Billings z12 200 JPEG, 20,413 B, 13,540 colours, ACAO *; real z12-z19 at Billings; z20 Billings = grey 'Map data not yet available' with HTTP 200 (viewed); z20 Bozeman and NYC real. basemaps-api and ibasemaps-api return HTTP 200 with error 499 'Token Required.' and no token.","evidence":"esri_bil_z*.bin; ibasemaps_probe","verified":true,"corrected_by_review":true},
+  {"claim":"Esri tile allowance","value":"Pricing: '2M free then $0.15 per 1,000 tiles'; '1K free then $4 per 1,000 sessions'. Billed hosts named: basemaps-api, ibasemaps-api, static-map-tiles-api; services.arcgisonline.com not named. Free tiers refresh each billing cycle.","evidence":"esri_pricing.html; esri_billing.html","verified":true,"corrected_by_review":true},
+  {"claim":"Esri use rules (E204)","value":"E204 'Revised August 1, 2025'. 3.2(b): attribution statement required. 3.2(c): offline only via Esri Content Packages; 'Customer may not otherwise scrape, download, or store Data.' Data (2.1) includes raster data Esri 'delivers independently'.","evidence":"esri_e204.txt (raw PDF)","verified":true,"corrected_by_review":true},
+  {"claim":"Esri E300 footnotes","value":"fn 10: 'Programmatic use of session tokens (e.g., exporting volumes of basemap tiles) is not permitted.' Concerns session tokens; reach to anonymous requests not established. Public Plan fn 74 personal use only; fn 75 bars internal business use except education (teaching), NGO/NPO, media. fn 69 and fn 72 (internal business) for Commercial Retail, EA, Government; fn 72 was missing.","evidence":"esri_e300.txt (raw PDF)","verified":true,"corrected_by_review":true},
+  {"claim":"EOX licence","value":"2016 layer CC BY 4.0; 2018-2025 layers CC BY-NC-SA 4.0. Commercial 2018-2025 needs 'an EOX Commercial Attribution-RestrictedUse 1.2 License from EOX'; no price on pricing page. 'The Direct Redistribution of Licensed Material is prohibited - both for sale and for free.'","evidence":"eox_license_noncomm.html; eox_license_legal.html","verified":true,"corrected_by_review":true},
+  {"claim":"Copernicus Sentinel data (upstream)","value":"Legal Notice: 'EU law grants free access ... in so far as it is lawful' to reproduce, distribute, communicate and adapt. Credit 'Copernicus Sentinel data [Year]'. EOX non-commercial terms apply to EOX's derived layers.","evidence":"copernicus_legal_notice.pdf (raw)","verified":true,"corrected_by_review":true},
+  {"claim":"NASA GIBS and media terms","value":"GIBS: a request ('We ask that users ... add the following acknowledgment: We acknowledge the use of imagery provided by services from NASA's Global Imagery Browse Services (GIBS)...'); no licence, fee, key, token or rate-limit text. Guidelines: 'generally are not subject to copyright in the United States' (scope ambiguous); Brand Center: imagery 'not in the public domain'. Neither licenses GIBS imagery.","evidence":"gibs_eosdis.html; nasa_guidelines.html","verified":true,"corrected_by_review":true}
+ ],
+ "terms": {"license":"USGS-produced map services and data: 'Map services and data downloaded from The National Map are free and in the public domain.' Scope: not all USGS site content is public domain; imagery credit reads 'USDA, USGS'; non-US tiles undocumented.","attribution_required":false,"attribution_note":"requested, not a condition","quote":"There are no restrictions; however, we request that the following acknowledgment statement of the originating agency be included in products and data derived from our map services when citing, copying, or reprinting:","url":"https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map","corrected_by_review":true},
+ "terms_by_source": {"NASA GIBS":{"license":"No licence text on GIBS pages; guideline scope ambiguous","attribution_required":false,"attribution_note":"requested","commercial":"No fee, account, key, token or rate limit","url":"earthdata.nasa.gov GIBS page (301)"},"Esri World_Imagery":{"license":"E204 (Rev. 1 Aug 2025); E300 (13 Nov 2025)","attribution_required":true,"attribution_note":"E204 3.2(b); credit 'Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community'","commercial":"Business use via fn 69/72 subscriptions; Public Plan personal only; offline only via Content Packages; Art. B.1 item l bars revenue via Value-Added Application; anonymous metering not stated","url":"E204 and E300 PDFs; location.arcgis.com/pricing/"},"EOX EOxCloudless":{"license":"2016 CC BY 4.0; 2018-2025 CC BY-NC-SA 4.0","attribution_required":true,"attribution_note":"'EOxCloudless https://cloudless.eox.at by EOX IT Services GmbH (Contains modified Copernicus Sentinel data [year])'","commercial":"2018-2025 needs EOX commercial licence (no price published); 2016 CC BY allows commercial use with attribution","url":"cloudless.eox.at/license-non-commercial; /license-legal/"},"USGS USGSImageryOnly":{"license":"FAQ: free and in the public domain; credit 'USDA, USGS'; non-US source undocumented","attribution_required":false,"attribution_note":"requested","commercial":"No restriction on FAQ page; scope limits above","url":"usgs.gov FAQ (urls_checked)"},"Copernicus Sentinel (upstream)":{"license":"Legal Notice: free access in so far as lawful","attribution_required":true,"attribution_note":"'Copernicus Sentinel data [Year]'","commercial":"Notice text does not restrict commercial use; not confirmed by a second source","url":"sentinels.copernicus.eu Legal Notice"}},
+ "limits": ["Non-US and ocean checks: six points plus three ocean points; 'imagery' and 'shaded relief' are visual judgements.","About 155 requests (USGS ~70, GIBS ~45, Esri ~16, terms and pages ~25), anonymous only; no tokens, accounts or bulk export. urls_checked lists 16 fetches; the rest are in facts and reviewer_checks.","Results from 2026-10-17 03:46 UTC (review_checked_at_utc). VIIRS tiles and GIBS capabilities changed during review; first-agent values are dated 02:54 UTC.","WebFetch returned 403 for nasa-gibs.github.io (the first agent also saw 403 on earthdata pages); raw requests returned 200 and raw text was used. WebSearch results are not quotes.","Quotations, not legal advice. Elevation is not a W6 claim and was not checked."],
+ "installed_packages": [],
+ "open_questions": ["Does services.arcgisonline.com World_Imagery work anonymously as policy? It answers without a token today; billed hosts need one (499); no Esri page read says so.","Does E300 fn 10 (session tokens) reach anonymous tile requests?","Which source and licence supply the USGS non-US z6-z8 tiles?","NASA: scope of 'generally are not subject to copyright' vs 'not in the public domain'; legal reading needed.","EOX 2018-2025 commercial price needs an EOX quote; choose layer year (2016 CC BY vs 2018-2025 NC) per use.","VIIRS daily tiles keep filling for hours after the UTC day; the plan needs a content-based freshness rule."],
+ "raw_outputs_dir": "reviewer downloads: globe-dl/base-imagery-review; first agent: globe-dl/base-imagery",
+ "review": {
+  "refuted_claims": [
+   "VIIRS capabilities default and last range date 2026-10-16 (GIBS VIIRS layer): at 03:5x UTC both read 2026-10-17, which is empty.",
+   "Mid-Pacific 2026-10-16 tile is 45.7% black behind a smooth day/night line: the served tile is now 25.1% black, angular edges.",
+   "Partly black VIIRS tiles are night (report's inference): for the mid-Pacific tile part of the black was missing data.",
+   "USGS service declares LOD23 as usable: tileInfo lists it, but the service maxScale is the LOD16 scale.",
+   "USGS CORS 'not sent' for z16 and z17: ACAO * with or without Origin.",
+   "Ocean tiles are a flat navy fill (75-215 colours, stddev about 1) as a general class: the Atlantic z6 tile has 2,192 colours and bathymetric shading.",
+   "EOX cloudless is CC BY-NC-SA 4.0 for non-commercial use only: the 2016 layer is CC BY 4.0.",
+   "NASA 'generally are not subject to copyright' licenses GIBS imagery: scope ambiguous; GIBS states no licence."
+  ],
+  "corrections": [
+   "USGS: add service maxScale = LOD16; z17-z23 404 at Billings; z17/z18 404 at six US places.",
+   "GIBS: capabilities 5,842,713 B at 03:5x UTC; VIIRS default and range end 2026-10-17.",
+   "VIIRS: 2026-10-17 empty at 6 of 6 points; 2026-10-18 HTTP 404; mid-Pacific 10-16 tile changed (13,197 to 18,197 B).",
+   "USGS non-US z6-z8: shaded relief with bathymetry (viewed), source undocumented; colours 4,510-14,832.",
+   "Esri: z19 real at Billings; z20 Billings placeholder with HTTP 200; z20 real at Bozeman and NYC; exportTilesAllowed false.",
+   "Esri billed hosts (basemaps-api, ibasemaps-api) give HTTP 200 with 499 Token Required; pricing names three hosts.",
+   "EOX: 2016 layer CC BY 4.0; 2018-2025 CC BY-NC-SA; no price amounts; legal page attribution year 2025.",
+   "Esri E300: fn 72 added; fn 75 exceptions quoted; E204 clause is Art. B.1 item l. NASA and GIBS URLs 301; sharing wording differs.",
+   "USGS terms: public-domain statement covers USGS-produced data; copyright page says not all site content is public domain."
+  ],
+  "confirmed": [
+   "VIIRS latest date with content is 2026-10-16 at 6 of 6 points; 2026-10-17 is empty at 6 of 6 points.",
+   "USGS tileInfo (256 px, origin, MIXED, wkid 102100, 24 LODs); Billings /12/1460/813 is Billings imagery; z12-z16 real.",
+   "USGS z17-z23 404 at Billings; z17/z18 404 at six US places; z9 404 outside the US; Prague and Paris colour counts match.",
+   "GIBS: 1330 layers, 7 TileMatrixSets, WMTS 1.0.0, ACAO *; Blue Marble no Time, matrices 0-8; VIIRS matrices 0-9.",
+   "Blue Marble z4 bytes identical; max-age=259200; VIIRS no-store; VIIRS 2026-10-16 Montana identical, snow and cloud (viewed).",
+   "Esri z12 Billings 20,413 B, 13,540 colours, ACAO *, max-age=86400; copyright string.",
+   "E204 3.2(b), 3.2(c) and date; E300 fn 10, 69, 74 verbatim; pricing numbers and 'access token supplied' verbatim.",
+   "EOX commercial sentence, Direct Redistribution prohibition, 'solely for Your own business purposes'; USGS FAQ quotes verbatim.",
+   "Service currentVersion 11.3 (USGS and Esri MapServer); document byte counts match the first agent (E204 347,313; E300 152,101; pricing 168,919; USGS service 9,263)."
+  ],
+  "unverified": [
+   "Whether services.arcgisonline.com World_Imagery is metered or permitted for commercial use: no page states it.",
+   "Whether E300 fn 10 applies to anonymous requests.",
+   "Source and licence of USGS non-US z6-z8 tiles; public-domain status of the USDA portion.",
+   "NASA GIBS imagery licence (ambiguous text; no licence page found).",
+   "EOX 2018-2025 commercial price (no amounts found).",
+   "Copernicus Legal Notice reach to EOX derived layers (not confirmed by a second source).",
+   "Earthdata data-and-information-policy page (first agent only; not re-checked)."
+  ],
+  "reviewer_checks": [
+   {"url":"basemap.nationalmap.gov USGSImageryOnly MapServer (json; tile z12-z23 Billings; z16-z18 six US places)","content_check":"maxScale = LOD16; z12-z16 real (z16 viewed); z17-z23 404; ACAO * with/without Origin","verified":true},
+   {"url":"USGSImageryOnly tile/{6,8,9}/{y}/{x} (Tokyo, Sydney, Sahara, Amazon, Prague, Paris, Pacific, Atlantic)","content_check":"z6-z8 JPEG 4,510-14,832 colours; z9 404; Tokyo z6 and Atlantic z6 viewed","verified":true},
+   {"url":"gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml","content_check":"parsed: 1330 layers; VIIRS default 2026-10-17; Blue Marble no Time; matrices 0-8, 0-9","verified":true},
+   {"url":"GIBS VIIRS_SNPP_CorrectedReflectance_TrueColor default/{2026-10-16,2026-10-17}/GoogleMapsCompatible_Level9/4/{row}/{col}.jpeg","content_check":"10-17 uniform black at 6 of 6 points; 10-16 Montana identical; Pacific changed","verified":true},
+   {"url":"GIBS BlueMarble_ShadedRelief_Bathymetry GoogleMapsCompatible_Level8 tiles z4, z8, z9","content_check":"z4 identical bytes; z8 real; z9 HTTP 400","verified":true},
+   {"url":"services.arcgisonline.com World_Imagery MapServer (json; tile z12, z19, z20 at three places)","content_check":"z19 real; z20 Billings placeholder (viewed); z20 Bozeman/NYC real","verified":true},
+   {"url":"basemaps-api and ibasemaps-api World_Imagery tile/12/1460/813 with no token","content_check":"HTTP 200 body error code 499 'Token Required.'","verified":true},
+   {"url":"esri.com PDFs; location.arcgis.com; cloudless.eox.at; gibs and nasa pages; Copernicus Legal Notice","content_check":"raw greps and PDFs: clauses, footnotes, prices, licence years, 301s, acknowledgment, 'free access'","verified":true}
+  ]
+ }
+}

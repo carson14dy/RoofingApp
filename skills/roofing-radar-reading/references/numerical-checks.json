@@ -1,0 +1,47 @@
+{
+  "scope": "Deterministic arithmetic checks only; no meteorological performance test",
+  "checks": [
+    {
+      "check": "off_track",
+      "closest_approach_offset_minutes": 20.0,
+      "cross_track_km": 15.0,
+      "status": "passed"
+    },
+    {
+      "check": "past_track",
+      "closest_approach_offset_minutes": -5.0,
+      "cross_track_km": 0.0,
+      "status": "passed"
+    },
+    {
+      "check": "observation_time_anchor",
+      "retrieval_delay_minutes": 12,
+      "remaining_minutes": 8.0,
+      "closest_approach_utc": "2026-10-11T14:20:00+00:00",
+      "status": "passed"
+    },
+    {
+      "check": "observation_time_anchor",
+      "retrieval_delay_minutes": 25,
+      "remaining_minutes": -5.0,
+      "closest_approach_utc": "2026-10-11T14:20:00+00:00",
+      "status": "passed"
+    }
+  ],
+  "beam_height_illustrations": [
+    {
+      "slant_range_km": 50,
+      "beam_center_km_above_radar": 0.583457891121725
+    },
+    {
+      "slant_range_km": 100,
+      "beam_center_km_above_radar": 1.4611325028163265
+    },
+    {
+      "slant_range_km": 200,
+      "beam_center_km_above_radar": 4.098736723592083
+    }
+  ],
+  "real_event_cases_executed": 0,
+  "automated_claim_grounding_cases_executed": 0
+}

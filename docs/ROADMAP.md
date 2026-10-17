@@ -6,7 +6,8 @@ radar, forecast and warning map in the style of Apple Weather (D28) and live sta
 Pages the same day, so `main` publishes to https://carson14dy.github.io/RoofingApp/ every 10
 minutes. The desktop app (payload 1.0.0, shell 1.1.0) is **parked**: unchanged, still tested, not
 shipped. Branches: `claude/desktop-app` (the app, then the website); `codex/kansas-city-weather-pilot`
-and `codex/montana-weather-pilot` (ChatGPT's pilots, reviewed in D23 and D25, not merged).
+and `codex/montana-weather-pilot` (ChatGPT's pilots, reviewed in D23 and D25, not merged). It also
+carries the 3D storm view research in `research/globe/`, with `main` merged in; pull request #2 is open.
 Agents: check this file before starting, move items to Done when merged, keep "Next" in priority
 order.
 
@@ -27,7 +28,7 @@ order.
 | Observed now (D29) | The latest reading at each town's three nearest NWS stations (any state): temperature, wind, gusts, time and age, quality flags in words, station and grid elevation; one line per town card on the Now page | Stations report hourly or less, so readings run up to 75 minutes old before they show as stale; a station is not a roof; not on the map |
 | Storm reports | Three SPC reporting days on the map card and in tables; hail in inches, unknown wind kept unknown | Preliminary reports only |
 | Honesty | Per-source status line, last verified alerts kept after a failed refresh, "Alerts not checked" per town, page-age warning, sample data labelled on every page | — |
-| Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity |
+| Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity. Measured 2026-10-17 from the Actions API: the four scheduled runs on `main` started 2026-10-16 at 19:42 and 22:14 UTC and 2026-10-17 at 00:35 and 05:00 UTC, with gaps of 151.5, 141.6 and 264.5 minutes, not every 10, so the live site updated hours apart while the page-age banner carried the real age. GitHub's docs say scheduled runs can be delayed at high load and queued jobs may be dropped (`research/globe/validation-evidence/hosting-options.json`). |
 | Design | Light "field sheet" look with dark mode, self-hosted fonts and Leaflet, contrast ≥ 5.86:1, collision-free map labels, 288–1440 px without sideways scroll, checked on every branch push (`docs/DESIGN.md`) | Phone Now page is long (P2) |
 | Tests | 179 website tests (64 pages, map data and station readings, 69 radar and model frames, 41 base map and label layout, 5 Pages publication planning); a Chromium page-width check of every page at 288–1440 px on every branch push alongside the app's tests; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption) | — |
 
@@ -80,6 +81,13 @@ order.
 15. **The parked app.** Keep or delete `payload/` and `desktop/` (Carson's call). If it comes back,
     its plan (installers on real machines, pilot, evaluation, guidance trials, vendor comparison)
     is in this file's history at commit 33cda31.
+16. **3D storm view (globe).** Research done 2026-10-17 in `research/globe/` (read sections 1, 2 and 6).
+    It waits on the owner decisions in README section 2 (D-G1 to D-G26). Chosen 2026-10-17: route (a),
+    storm layers on the Map page behind a default-off flag, P1 (text values) first. P0 gates before it:
+    schedule cadence, counsel on publishing terms before P2, the -99/-999 check, the below-ground share.
+    Nothing reaches `main` until they pass. A link-only globe only after P1 to P4 and a library approval.
+    P1 is built on the research branch behind the flag (website/storm.py, tests/test_storm.py) and waits
+    for review and a small pull request; the clear-night reading of -99/-999 needs Carson's ruling first.
 
 ## Independent review priorities, for the website
 | Priority | Item | Status |
@@ -111,6 +119,10 @@ order.
 - Check "Montana Hail Watch" against existing products and trademarks before printing it anywhere
   (D26).
 - The repo description says "Roofing Weather and Maps Contact app". What should "Contact" cover?
+- Globe questions (3D storm view): see `research/globe/README.md` section 14. Answer these first: keep or
+  relax the site-files-only browser rule; rule on the one new browser script for the storm text (P1) and,
+  later at the P4 gate, a vendored WebGL library; may storm or height views ever reach homeowners, adjusters
+  or insurers?
 
 ## Missing inputs
 - The handoff's two images (dashboard concept, hero photo) were not provided.

@@ -1,0 +1,90 @@
+'use strict';
+const $ = id => document.getElementById(id);
+const node = (tag, text, cls) => { const n=document.createElement(tag); if(text!==undefined)n.textContent=text; if(cls)n.className=cls; return n; };
+const requestedRegion=new URLSearchParams(window.location.search).get('region');
+let region=Object.prototype.hasOwnProperty.call(WEATHER_REGIONS,requestedRegion)?WEATHER_REGIONS[requestedRegion]:WEATHER_REGIONS.montana;
+let selected={lat:region.sampleSites[0].lat,lon:region.sampleSites[0].lon}, generation=0, pointData=null, zone=region.timeZone;
+let outlineLayer=null, pendingRegionFit=region.id;
+const lastAlerts=new Map();
+const selectedKey=()=>`${selected.lat},${selected.lon}`;
+const coordinateText=value=>Number(value.toFixed(6))===value?value.toFixed(6):String(value);
+const matchingSample=()=>region.sampleSites.find(site=>site.lat===selected.lat&&site.lon===selected.lon);
+function fallbackZone(){return matchingSample()?region.timeZone:'UTC';}
+function sourceZone(value){try{if(typeof value==='string'&&value){new Intl.DateTimeFormat('en-US',{timeZone:value});return value;}}catch{}return fallbackZone();}
+function alertFailure(message,key=selectedKey()){const old=lastAlerts.get(key);return {...(old||{}),status:'unavailable',error:message,retained_previous:!!old,last_success_at:old?.fetched_at};}
+const map=L.map('map',{worldCopyJump:true}).setView(region.center,region.zoom);
+map.attributionControl.addAttribution('Outline: U.S. Census / us-atlas');
+map.createPane('selectedPointPane');
+map.getPane('selectedPointPane').style.zIndex='620';
+const pin=L.circleMarker([selected.lat,selected.lon],{pane:'selectedPointPane',radius:8,color:'#ffffff',weight:3,fillColor:'#c86b20',fillOpacity:1}).addTo(map);
+const stationsLayer=L.layerGroup().addTo(map), gridLayer=L.layerGroup().addTo(map), alertsLayer=L.layerGroup().addTo(map), sampleSitesLayer=L.layerGroup().addTo(map);
+function outlineStyle(feature){const active=region.stateFips!==null&&String(feature.id).padStart(2,'0')===region.stateFips;return {color:active?'#176f65':'#94adb8',weight:active?2.5:1,fillColor:active?'#d3e9df':'#eef3ed',fillOpacity:active?0.9:0.8};}
+function fitRegionView(){
+  let boundary=null;
+  if(outlineLayer&&region.stateFips)outlineLayer.eachLayer(layer=>{if(String(layer.feature.id).padStart(2,'0')===region.stateFips)boundary=layer.getBounds();});
+  pendingRegionFit=!outlineLayer&&region.stateFips?region.id:null;
+  if(boundary||region.bounds)map.fitBounds(boundary||region.bounds,{padding:[18,18]});else map.setView(region.center,region.zoom);
+}
+fetch('vendor/states-10m.json').then(r=>{if(!r.ok)throw new Error('Outline unavailable');return r.json();}).then(data=>{outlineLayer=L.geoJSON(topojson.feature(data,data.objects.states),{style:outlineStyle,interactive:false}).addTo(map);outlineLayer.bringToBack();if(pendingRegionFit===region.id)fitRegionView();}).catch(()=>{pendingRegionFit=null;$('map-status').textContent='Outline unavailable; coordinate query still works.';});
+function updateRegionControls(){
+  $('territory').value=region.id;
+  $('sample-site').replaceChildren();
+  for(const site of region.sampleSites){const option=node('option',site.label);option.value=site.id;$('sample-site').append(option);}
+  const custom=node('option','Custom coordinate');custom.value='';custom.disabled=true;$('sample-site').append(custom);
+  document.title=`Roofing Weather · ${region.label} pilot`;
+  $('page-title').textContent=`${region.label} weather pilot`;
+  $('location-note').textContent=region.locationNote;
+  $('terrain-note').textContent=region.terrainNote;
+  $('coverage-note').textContent=`The ${region.stateFips?'statewide':'territory'} map is for navigation. Weather readings and alerts apply to the selected point only.`;
+  sampleSitesLayer.clearLayers();
+  for(const site of region.sampleSites){const marker=L.circleMarker([site.lat,site.lon],{radius:4,color:'#4d8074',weight:1.5,fillColor:'#ffffff',fillOpacity:1,bubblingMouseEvents:false}).addTo(sampleSitesLayer);marker.bindTooltip(node('span',`${site.label} · town sample`));marker.on('click',()=>selectPoint(site.lat,site.lon));}
+  if(outlineLayer)outlineLayer.setStyle(outlineStyle);
+  const url=new URL(window.location.href);url.searchParams.set('region',region.id);window.history.replaceState(null,'',url);
+  pin.bringToFront();
+}
+const street=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'});
+street.on('tileerror',()=>{$('map-status').textContent='Street tiles unavailable. Local outlines and coordinates remain usable.';});
+street.on('load',()=>{if(map.hasLayer(street))$('map-status').textContent='Street basemap: OpenStreetMap. Weather precision is source-specific.';});
+$('street-map').addEventListener('change',e=>{if(e.target.checked)street.addTo(map);else{street.remove();$('map-status').textContent='State outlines loaded locally; no street detail.';}});
+function time(value){if(!value)return 'time unavailable';const d=new Date(value);if(!Number.isFinite(+d))return 'invalid source time';try{return new Intl.DateTimeFormat('en-US',{timeZone:zone,month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(d);}catch{return d.toISOString();}}
+function age(seconds){return Number.isFinite(seconds)?`${Math.round(seconds/60)} min old`:'age unknown';}
+const num=(v,d=1)=>typeof v==='number'&&Number.isFinite(v)?v.toFixed(d):'Unavailable';
+function unit(q,stationQC=false){if(stationQC&&q?.quality_control==='X')return 'Withheld (QC X)';if(!q||q.value===null||q.value===undefined)return 'Unavailable';if(stationQC&&q.quality_control!=='V')return 'QC review needed';const u=q.unit||q.unitCode||'';const suffix={'wmoUnit:degC':'°C','wmoUnit:degF':'°F','wmoUnit:km_h-1':'km/h','wmoUnit:m_s-1':'m/s','wmoUnit:percent':'%','wmoUnit:mm':'mm','wmoUnit:m':'m','wmoUnit:degree_(angle)':'°'}[u]||u;return `${num(q.value)} ${suffix}`;}
+function badge(value){const label=value==='fresh'?'within prototype age limit':value||'unknown';return node('span',label,`badge ${value||'unknown'}`);}
+function card(title){const c=node('article',undefined,'card');c.append(node('h3',title));return c;}
+function link(url,label){const a=node('a',label);try{const u=new URL(url);if(u.protocol==='https:'){a.href=u.href;a.target='_blank';a.rel='noopener noreferrer';}}catch{}return a;}
+async function api(path){const r=await fetch(path,{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error||`Request failed (${r.status})`);return d;}
+function query(path){return `${path}?lat=${encodeURIComponent(selected.lat)}&lon=${encodeURIComponent(selected.lon)}`;}
+function renderCurrent(data){const panel=$('current');panel.replaceChildren();stationsLayer.clearLayers();const current=data.current||{};if(!(current.stations||[]).length){panel.append(node('p',`Current observations unavailable. ${current.error||'No usable station response was returned.'}`,'empty'));return;}panel.append(node('p','These are nearby station readings. Roof conditions at the selected pin remain unmeasured.','small'));for(const s of current.stations){const c=card(`${s.name||s.station_id||'Station'}`);c.querySelector('h3').append(badge(s.freshness));if(s.status!=='available'||s.retained_previous)c.append(node('p',`Station request unavailable: ${s.error||'refresh failed'}. ${s.retained_previous?'Showing retained earlier evidence with its original time.':'No fresh observation confirmed.'}`,'status'));c.append(node('p',`${num(s.distance_km)} km from pin · ${age(s.age_seconds)} · ${time(s.observed_at)}`));const metrics=node('div',undefined,'metrics');const fields=s.fields||{};for(const [label,key] of [['Air temperature','temperature'],['Reported wind','windSpeed'],['Reported gust','windGust'],['Humidity','relativeHumidity'],['Past-hour precipitation','precipitationLastHour']]){const m=node('div',undefined,'metric');m.append(node('b',unit(fields[key],true)),node('span',label),node('span',` · QC ${fields[key]?.quality_control||'not supplied'}`));metrics.append(m);}c.append(metrics,node('p',`Station elevation: ${unit(s.elevation)}. Selected site/roof elevation is unknown; no elevation adjustment is applied.`),node('p','Only V-coded station values are shown numerically under this conservative prototype policy. Other source flags need review. Station representativeness has not been assessed; terrain, exposure and averaging definitions still limit use at a roof.'));if(s.source_url)c.append(link(s.source_url,'NWS station record'));panel.append(c);const loc=s.location||{};const lat=loc.latitude_deg??loc.latitude,lon=loc.longitude_deg??loc.longitude;if(Number.isFinite(lat)&&Number.isFinite(lon)){const marker=L.circleMarker([lat,lon],{radius:5,color:'#2c739f',fillOpacity:.8}).addTo(stationsLayer);marker.bindTooltip(node('span',s.name||s.station_id));}}}
+function renderForecast(data){const panel=$('forecast');panel.replaceChildren();gridLayer.clearLayers();const f=data.forecast||{};const intro=card('NWS grid forecast');intro.querySelector('h3').append(badge(f.freshness));if(f.status!=='available'||f.retained_previous)intro.append(node('p',`Forecast request unavailable: ${f.error||'refresh failed'}. ${f.retained_previous?'Retained earlier forecast; current update unverified.':''}`,'status'));intro.append(node('p',`Source updated ${time(f.updated_at||f.issued_at)}. Grid values are predictions for an area, not measurements at the pin.`),node('p',`Grid elevation: ${unit(f.elevation)}. Selected site/roof elevation is unknown; no elevation adjustment is applied.`));if(f.source_url)intro.append(link(f.source_url,'Forecast evidence'));panel.append(intro);const periods=(f.periods||[]).filter(p=>new Date(p.endTime)>new Date()).slice(0,24);if(!periods.length){panel.append(node('p',`No currently applicable hourly periods returned. ${f.error||''}`,'empty'));return;}const table=node('table');const head=node('tr');for(const h of ['Period starts','Air temp','Wind','Precip. chance'])head.append(node('th',h));table.append(head);for(const p of periods){const tr=node('tr');const temp=typeof p.temperature==='object'?unit(p.temperature):`${p.temperature??'—'} °${p.temperatureUnit||''}`;const pop=p.probabilityOfPrecipitation?.value;for(const v of [time(p.startTime),temp,`${p.windSpeed??'—'} ${p.windDirection||''}`,pop===null||pop===undefined?'Unknown':`${pop}%`])tr.append(node('td',v));table.append(tr);}const wrap=node('div',undefined,'table-wrap');wrap.append(table);panel.append(wrap,node('p','Precipitation chance applies to the forecast interval and includes rain or the liquid equivalent of snow or other precipitation. It is not precipitation duration or a hail probability.','small'));const geo=f.grid?.geometry;if(geo&&['Polygon','MultiPolygon'].includes(geo.type))L.geoJSON({type:'Feature',geometry:geo,properties:{}},{style:{color:'#3b9995',weight:2,fillOpacity:.1},interactive:false}).addTo(gridLayer);}
+function renderAlerts(data){const priorZone=zone;zone='UTC';try{renderAlertsUTC(data);}finally{zone=priorZone;}}
+function renderAlertsUTC(data){const box=$('alerts');box.replaceChildren(node('h3','Official NWS alerts'));alertsLayer.clearLayers();const a=data.alerts||data;const features=a.features||[];box.classList.toggle('active',features.length>0);if(a.status!=='available'){box.append(node('p',`Current alert status could not be verified. ${a.error||'Source unavailable.'}`));if(!features.length)return;box.append(node('p',`Last-known messages from ${time(a.last_success_at||a.fetched_at)} follow; they are not confirmed currently active.`));}if(!features.length)box.append(node('p',`No active alerts returned for this point when checked ${time(a.fetched_at)}. This is not a work-clearance statement.`));for(const item of features){const p=item.properties||{};box.append(node('h3',p.event||'Official alert'),node('p',p.headline||p.areaDesc||''),node('p',`Effective ${time(p.effective)} · Expires ${time(p.expires)}`));if(p.instruction)box.append(node('p',p.instruction));if(item.geometry)L.geoJSON(item,{style:{color:'#c27623',weight:2,fillOpacity:.12},interactive:false}).addTo(alertsLayer);else box.append(node('p','County/zone-based alert: no polygon supplied.'));}box.append(node('p','Official point response; location uncertainty near a boundary still matters.'));}
+async function loadAlerts(token=generation){const key=selectedKey();try{const d=await api(query('/api/alerts'));if(token!==generation)return;const a=d.alerts||d;if(a.status==='available'){lastAlerts.set(key,a);if(lastAlerts.size>100)lastAlerts.delete(lastAlerts.keys().next().value);}renderAlerts(a.status!=='available'&&!(a.features||[]).length?alertFailure(a.error||'Refresh failed',key):a);}catch(e){if(token===generation)renderAlerts(alertFailure(e.message,key));}}
+async function loadHistory(token=generation){try{const data=await api(query('/api/history'));if(token!==generation)return;const panel=$('history');panel.replaceChildren(node('p','Saved query snapshots only. Earlier storms and commercial weather archives have not been connected.','small'));panel.append(node('p',`Collection at this point began: ${data.point_archive_start?time(data.point_archive_start):'not yet collected'}.`,'small'));const snapshots=data.snapshots||[];if(!snapshots.length)panel.append(node('p','No locally saved queries for this exact point.','empty'));for(const s of snapshots.slice(0,12)){const c=card(`Snapshot ${time(s.generated_at||s.recorded_at)}`);c.append(node('p',`Source status: ${s.status||'recorded'}. This preserves what was returned then; it does not establish conditions at every roof.`));panel.append(c);}}catch(e){if(token===generation)$('history').replaceChildren(node('p',`Local archive unavailable: ${e.message}`,'empty'));}}
+async function loadPoint(){const token=++generation;pointData=null;zone=fallbackZone();$('request-status').textContent='Requesting source evidence for this coordinate…';$('current').replaceChildren(node('p','Loading nearby observations…'));$('forecast').replaceChildren(node('p','Loading grid forecast…'));$('history').replaceChildren(node('p','Loading local archive…'));stationsLayer.clearLayers();gridLayer.clearLayers();renderAlerts(alertFailure('Checking this selected point…'));loadAlerts(token);try{const data=await api(query('/api/point'));if(token!==generation)return;pointData=data;zone=sourceZone(data.timezone);$('request-status').textContent=`${data.status||'Response received'} · fetched ${time(data.generated_at)} · each reading retains its source time`;renderCurrent(data);renderForecast(data);if(data.archive_status&&data.archive_status!=='saved')$('request-status').textContent+=' · archive may be unavailable';loadHistory(token);}catch(e){if(token!==generation)return;$('request-status').textContent=`Request unavailable: ${e.message}`;$('current').replaceChildren(node('p','No current readings are being substituted. Select another point or retry.','empty'));$('forecast').replaceChildren(node('p','Forecast unavailable for this request.','empty'));loadHistory(token);}}
+function selectPoint(lat,lon,{pan=true}={}){
+  if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){$('request-status').textContent='Enter valid latitude and longitude.';return;}
+  selected={lat,lon};
+  $('latitude').value=lat;$('longitude').value=lon;
+  $('point-label').textContent=`${coordinateText(lat)}, ${coordinateText(lon)}`;
+  const sample=matchingSample();
+  $('sample-site').value=sample?.id||'';
+  $('selected-name').textContent=sample?`${sample.label} town sample`:'Custom coordinate';
+  pin.setLatLng([lat,lon]);pin.bringToFront();
+  if(pan){pendingRegionFit=null;map.panTo([lat,lon]);}
+  loadPoint();
+}
+function selectRegion(id){
+  if(!Object.prototype.hasOwnProperty.call(WEATHER_REGIONS,id))return;
+  region=WEATHER_REGIONS[id];updateRegionControls();
+  const first=region.sampleSites[0];selectPoint(first.lat,first.lon,{pan:false});fitRegionView();
+}
+map.on('click',e=>selectPoint(e.latlng.lat,((e.latlng.lng+180)%360+360)%360-180));
+map.on('dragstart',()=>{pendingRegionFit=null;});
+$('territory').addEventListener('change',e=>selectRegion(e.target.value));
+$('sample-site').addEventListener('change',e=>{const site=region.sampleSites.find(item=>item.id===e.target.value);if(site)selectPoint(site.lat,site.lon);});
+$('view-territory').addEventListener('click',fitRegionView);
+$('coordinates').addEventListener('submit',e=>{e.preventDefault();selectPoint(Number($('latitude').value),Number($('longitude').value));});$('refresh').addEventListener('click',loadPoint);
+document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b===button)));document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!==button.dataset.tab);if(button.dataset.tab==='history')loadHistory();}));
+setInterval(()=>{if(!document.hidden)loadAlerts();},60000);setInterval(()=>{if(!document.hidden)loadPoint();},300000);
+updateRegionControls();selectPoint(selected.lat,selected.lon,{pan:false});fitRegionView();

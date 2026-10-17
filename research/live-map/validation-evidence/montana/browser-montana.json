@@ -1,0 +1,46 @@
+{
+  "checks": [
+    {
+      "name": "real_billings_default_and_entire_montana_navigation",
+      "passed": true
+    },
+    {
+      "name": "elevation_terrain_and_point_alert_scope_are_visible",
+      "passed": true
+    },
+    {
+      "name": "real_missoula_sample_selection_and_mountain_time",
+      "passed": true
+    },
+    {
+      "name": "montana_mobile_layout",
+      "passed": true
+    },
+    {
+      "name": "stale_station_and_missing_gust_are_not_hidden",
+      "passed": true
+    },
+    {
+      "name": "delayed_montana_warning_cannot_replace_failed_kansas_city_alerts",
+      "passed": true
+    },
+    {
+      "name": "official_point_warning_survives_weather_source_outage",
+      "passed": true
+    },
+    {
+      "name": "custom_coordinate_precision_and_unknown_timezone_fallback",
+      "passed": true
+    },
+    {
+      "name": "territory_view_preserves_selected_coordinate",
+      "passed": true
+    },
+    {
+      "name": "map_click_uses_clicked_coordinate",
+      "passed": true
+    }
+  ],
+  "javascript_errors": [],
+  "scope": "Live Billings/Missoula integration and explicitly synthetic failures; no meteorological accuracy benchmark."
+}

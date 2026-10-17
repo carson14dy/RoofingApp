@@ -1,0 +1,2677 @@
+{
+  "started_at": "2026-10-11T19:32:18.898871+00:00",
+  "finished_at": "2026-10-11T19:32:39.562652+00:00",
+  "scope": "Sampled integration checks, not statewide coverage, severe-event validation or meteorological accuracy.",
+  "results": [
+    {
+      "sample": {
+        "id": "billings",
+        "name": "Billings",
+        "latitude_deg": 45.7833,
+        "longitude_deg": -108.5007,
+        "purpose": "town sample",
+        "ordinal": 1
+      },
+      "generated_at": "2026-10-11T19:32:23.466634Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 45.7833,
+        "longitude_deg": -108.5007,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 45.7833,
+        "longitude_deg": -108.5007,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/45.7833,-108.5007",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "BYZ",
+        "x": 103,
+        "y": 92
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KBIL",
+          "distance_km": 2.934,
+          "location": {
+            "latitude_deg": 45.8,
+            "longitude_deg": -108.53,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1088
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:22.829573Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1043.5,
+          "source_url": "https://api.weather.gov/stations/KBIL/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "MTARC",
+          "distance_km": 26.423,
+          "location": {
+            "latitude_deg": 45.78,
+            "longitude_deg": -108.16,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1196
+          },
+          "observed_at": "2026-10-11T19:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:22.870320Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 1943.5,
+          "source_url": "https://api.weather.gov/stations/MTARC/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "MTM50",
+          "distance_km": 45.532,
+          "location": {
+            "latitude_deg": 45.46,
+            "longitude_deg": -108.86,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1065
+          },
+          "observed_at": "2026-10-11T18:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:23.465858Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 4643.5,
+          "source_url": "https://api.weather.gov/stations/MTM50/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "windChill"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/BYZ/103,92/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:30:52+00:00",
+        "fetched_at": "2026-10-11T19:32:22.255100Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 1058.8752
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=45.7833%2C-108.5007",
+        "fetched_at": "2026-10-11T19:32:20.417508Z",
+        "count": 0,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "missoula",
+        "name": "Missoula",
+        "latitude_deg": 46.8721,
+        "longitude_deg": -113.994,
+        "purpose": "western valley town sample",
+        "ordinal": 2
+      },
+      "generated_at": "2026-10-11T19:32:23.282792Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 46.8721,
+        "longitude_deg": -113.994,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 46.8721,
+        "longitude_deg": -113.994,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/46.8721,-113.9940",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "MSO",
+        "x": 105,
+        "y": 131
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KMSO",
+          "distance_km": 8.43,
+          "location": {
+            "latitude_deg": 46.92,
+            "longitude_deg": -114.08,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 972
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:23.281110Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1043.3,
+          "source_url": "https://api.weather.gov/stations/KMSO/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "STVM8",
+          "distance_km": 35.184,
+          "location": {
+            "latitude_deg": 46.56,
+            "longitude_deg": -114.07,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 976.9
+          },
+          "observed_at": "2026-10-11T18:14:00+00:00",
+          "fetched_at": "2026-10-11T19:32:23.282149Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 4703.3,
+          "source_url": "https://api.weather.gov/stations/STVM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "NINM8",
+          "distance_km": 37.858,
+          "location": {
+            "latitude_deg": 47.07,
+            "longitude_deg": -114.4,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1010.1
+          },
+          "observed_at": "2026-10-11T18:59:00+00:00",
+          "fetched_at": "2026-10-11T19:32:23.274579Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 2003.3,
+          "source_url": "https://api.weather.gov/stations/NINM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/MSO/105,131/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:22:06+00:00",
+        "fetched_at": "2026-10-11T19:32:22.709460Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 975.9696
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=46.8721%2C-113.994",
+        "fetched_at": "2026-10-11T19:32:20.454793Z",
+        "count": 0,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "kalispell",
+        "name": "Kalispell",
+        "latitude_deg": 48.19199,
+        "longitude_deg": -114.31681,
+        "purpose": "northwestern valley town sample",
+        "ordinal": 3
+      },
+      "generated_at": "2026-10-11T19:32:26.254512Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 48.19199,
+        "longitude_deg": -114.31681,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 48.192,
+        "longitude_deg": -114.3168,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/48.1920,-114.3168",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "MSO",
+        "x": 104,
+        "y": 195
+      },
+      "quantization_distance_m": 1.336,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KGPI",
+          "distance_km": 12.726,
+          "location": {
+            "latitude_deg": 48.3,
+            "longitude_deg": -114.26,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 906
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:26.253759Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1046.3,
+          "source_url": "https://api.weather.gov/stations/KGPI/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windDirection",
+            "windSpeed",
+            "windGust",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "barometricPressure"
+          ]
+        },
+        {
+          "station_id": "HNYM8",
+          "distance_km": 28.251,
+          "location": {
+            "latitude_deg": 48.38,
+            "longitude_deg": -114.06,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 951.9
+          },
+          "observed_at": "2026-10-11T19:11:00+00:00",
+          "fetched_at": "2026-10-11T19:32:26.225948Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1286.3,
+          "source_url": "https://api.weather.gov/stations/HNYM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed"
+          ]
+        },
+        {
+          "station_id": "BOOM8",
+          "distance_km": 30.456,
+          "location": {
+            "latitude_deg": 48.14,
+            "longitude_deg": -114.72,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1207.9
+          },
+          "observed_at": "2026-10-11T18:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:26.247609Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 4646.3,
+          "source_url": "https://api.weather.gov/stations/BOOM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/MSO/104,195/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:22:06+00:00",
+        "fetched_at": "2026-10-11T19:32:24.691761Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 910.1328
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=48.19199%2C-114.31681",
+        "fetched_at": "2026-10-11T19:32:24.592661Z",
+        "count": 1,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "great-falls",
+        "name": "Great Falls",
+        "latitude_deg": 47.5053,
+        "longitude_deg": -111.3008,
+        "purpose": "central town sample",
+        "ordinal": 4
+      },
+      "generated_at": "2026-10-11T19:32:25.967046Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 47.5053,
+        "longitude_deg": -111.3008,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 47.5053,
+        "longitude_deg": -111.3008,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/47.5053,-111.3008",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "TFX",
+        "x": 98,
+        "y": 145
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KGTF",
+          "distance_km": 5.912,
+          "location": {
+            "latitude_deg": 47.48,
+            "longitude_deg": -111.37,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1115
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:25.965640Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1046.0,
+          "source_url": "https://api.weather.gov/stations/KGTF/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "KGFA",
+          "distance_km": 9.093,
+          "location": {
+            "latitude_deg": 47.5,
+            "longitude_deg": -111.18,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1075
+          },
+          "observed_at": "2026-10-11T17:55:00+00:00",
+          "fetched_at": "2026-10-11T19:32:25.957273Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 5846.0,
+          "source_url": "https://api.weather.gov/stations/KGFA/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "GFMT",
+          "distance_km": 41.887,
+          "location": {
+            "latitude_deg": 47.66,
+            "longitude_deg": -111.81,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1164.3
+          },
+          "observed_at": "2026-10-11T18:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:25.966311Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 5546.0,
+          "source_url": "https://api.weather.gov/stations/GFMT/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "windDirection",
+            "windSpeed"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/TFX/98,145/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:31:56+00:00",
+        "fetched_at": "2026-10-11T19:32:25.374515Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 1036.0152
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=47.5053%2C-111.3008",
+        "fetched_at": "2026-10-11T19:32:24.098562Z",
+        "count": 1,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "helena",
+        "name": "Helena",
+        "latitude_deg": 46.5891,
+        "longitude_deg": -112.0391,
+        "purpose": "intermountain town sample",
+        "ordinal": 5
+      },
+      "generated_at": "2026-10-11T19:32:28.367733Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 46.5891,
+        "longitude_deg": -112.0391,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 46.5891,
+        "longitude_deg": -112.0391,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/46.5891,-112.0391",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "TFX",
+        "x": 69,
+        "y": 104
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KHLN",
+          "distance_km": 3.224,
+          "location": {
+            "latitude_deg": 46.6,
+            "longitude_deg": -112.0,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1188
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:28.319512Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1048.4,
+          "source_url": "https://api.weather.gov/stations/KHLN/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "HVMT",
+          "distance_km": 11.069,
+          "location": {
+            "latitude_deg": 46.68,
+            "longitude_deg": -111.98,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1119.5
+          },
+          "observed_at": "2026-10-11T18:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:28.330727Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 5548.4,
+          "source_url": "https://api.weather.gov/stations/HVMT/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "HRWM8",
+          "distance_km": 15.735,
+          "location": {
+            "latitude_deg": 46.73,
+            "longitude_deg": -112.02,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1158.2
+          },
+          "observed_at": "2026-10-11T18:53:00+00:00",
+          "fetched_at": "2026-10-11T19:32:28.367073Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 2368.4,
+          "source_url": "https://api.weather.gov/stations/HRWM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/TFX/69,104/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:31:56+00:00",
+        "fetched_at": "2026-10-11T19:32:27.318187Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 1345.0824
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=46.5891%2C-112.0391",
+        "fetched_at": "2026-10-11T19:32:26.573301Z",
+        "count": 1,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "bozeman",
+        "name": "Bozeman",
+        "latitude_deg": 45.677,
+        "longitude_deg": -111.0429,
+        "purpose": "southwestern town sample",
+        "ordinal": 6
+      },
+      "generated_at": "2026-10-11T19:32:28.645772Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 45.677,
+        "longitude_deg": -111.0429,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 45.677,
+        "longitude_deg": -111.0429,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/45.6770,-111.0429",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "TFX",
+        "x": 96,
+        "y": 58
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KBZN",
+          "distance_km": 14.152,
+          "location": {
+            "latitude_deg": 45.78,
+            "longitude_deg": -111.15,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1364
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:28.643489Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1048.6,
+          "source_url": "https://api.weather.gov/stations/KBZN/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure"
+          ]
+        },
+        {
+          "station_id": "MTBZH",
+          "distance_km": 18.889,
+          "location": {
+            "latitude_deg": 45.67,
+            "longitude_deg": -110.8,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1752
+          },
+          "observed_at": "2026-10-11T19:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:28.519518Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 1948.6,
+          "source_url": "https://api.weather.gov/stations/MTBZH/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity"
+          ]
+        },
+        {
+          "station_id": "LCKM8",
+          "distance_km": 20.483,
+          "location": {
+            "latitude_deg": 45.5,
+            "longitude_deg": -110.97,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 2090.9
+          },
+          "observed_at": "2026-10-11T18:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:28.482168Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 5548.6,
+          "source_url": "https://api.weather.gov/stations/LCKM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windDirection",
+            "windSpeed",
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/TFX/96,58/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:31:56+00:00",
+        "fetched_at": "2026-10-11T19:32:27.780165Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 1455.1152
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=45.677%2C-111.0429",
+        "fetched_at": "2026-10-11T19:32:26.927394Z",
+        "count": 1,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "butte",
+        "name": "Butte",
+        "latitude_deg": 46.0038,
+        "longitude_deg": -112.5348,
+        "purpose": "southwestern town sample",
+        "ordinal": 7
+      },
+      "generated_at": "2026-10-11T19:32:30.389619Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 46.0038,
+        "longitude_deg": -112.5348,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 46.0038,
+        "longitude_deg": -112.5348,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/46.0038,-112.5348",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "MSO",
+        "x": 147,
+        "y": 84
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KBTM",
+          "distance_km": 6.559,
+          "location": {
+            "latitude_deg": 45.95,
+            "longitude_deg": -112.5,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1690
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:30.337689Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1050.4,
+          "source_url": "https://api.weather.gov/stations/KBTM/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "DRLM",
+          "distance_km": 41.54,
+          "location": {
+            "latitude_deg": 46.34,
+            "longitude_deg": -112.77,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1426.5
+          },
+          "observed_at": "2026-10-11T18:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:30.375245Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 5550.4,
+          "source_url": "https://api.weather.gov/stations/DRLM/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "MTGAR",
+          "distance_km": 61.174,
+          "location": {
+            "latitude_deg": 46.52,
+            "longitude_deg": -112.81,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1318.9
+          },
+          "observed_at": "2026-10-11T19:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:30.388929Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 1950.4,
+          "source_url": "https://api.weather.gov/stations/MTGAR/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/MSO/147,84/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:22:06+00:00",
+        "fetched_at": "2026-10-11T19:32:29.779121Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 1683.1056
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=46.0038%2C-112.5348",
+        "fetched_at": "2026-10-11T19:32:29.007317Z",
+        "count": 2,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "havre",
+        "name": "Havre",
+        "latitude_deg": 48.55,
+        "longitude_deg": -109.6841,
+        "purpose": "northern plains town sample",
+        "ordinal": 8
+      },
+      "generated_at": "2026-10-11T19:32:31.155366Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 48.55,
+        "longitude_deg": -109.6841,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 48.55,
+        "longitude_deg": -109.6841,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/48.5500,-109.6841",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "TFX",
+        "x": 155,
+        "y": 188
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KHVR",
+          "distance_km": 6.323,
+          "location": {
+            "latitude_deg": 48.55,
+            "longitude_deg": -109.77,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 792
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:30.964379Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1051.2,
+          "source_url": "https://api.weather.gov/stations/KHVR/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "FASM8",
+          "distance_km": 11.553,
+          "location": {
+            "latitude_deg": 48.48,
+            "longitude_deg": -109.8,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 826
+          },
+          "observed_at": "2026-10-08T17:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:31.154609Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 268351.2,
+          "source_url": "https://api.weather.gov/stations/FASM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "dewpoint",
+            "relativeHumidity",
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "windDirection",
+            "windSpeed"
+          ]
+        },
+        {
+          "station_id": "RCBM8",
+          "distance_km": 33.181,
+          "location": {
+            "latitude_deg": 48.26,
+            "longitude_deg": -109.79,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1154.9
+          },
+          "observed_at": "2026-10-11T18:18:00+00:00",
+          "fetched_at": "2026-10-11T19:32:30.974186Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 4471.2,
+          "source_url": "https://api.weather.gov/stations/RCBM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/TFX/155,188/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:31:56+00:00",
+        "fetched_at": "2026-10-11T19:32:30.407301Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 793.0896
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=48.55%2C-109.6841",
+        "fetched_at": "2026-10-11T19:32:29.342485Z",
+        "count": 0,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "lewistown",
+        "name": "Lewistown",
+        "latitude_deg": 47.0625,
+        "longitude_deg": -109.4282,
+        "purpose": "central town sample",
+        "ordinal": 9
+      },
+      "generated_at": "2026-10-11T19:32:32.656019Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 47.0625,
+        "longitude_deg": -109.4282,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 47.0625,
+        "longitude_deg": -109.4282,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/47.0625,-109.4282",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "TFX",
+        "x": 156,
+        "y": 117
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "MTLEW",
+          "distance_km": 12.886,
+          "location": {
+            "latitude_deg": 47.08,
+            "longitude_deg": -109.26,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1439.6
+          },
+          "observed_at": "2026-10-11T19:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:32.622203Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 1952.7,
+          "source_url": "https://api.weather.gov/stations/MTLEW/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed"
+          ]
+        },
+        {
+          "station_id": "JPKM8",
+          "distance_km": 23.552,
+          "location": {
+            "latitude_deg": 47.22,
+            "longitude_deg": -109.22,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1959.3
+          },
+          "observed_at": "2026-10-11T18:52:00+00:00",
+          "fetched_at": "2026-10-11T19:32:32.638003Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 2432.7,
+          "source_url": "https://api.weather.gov/stations/JPKM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "CRYM8",
+          "distance_km": 30.931,
+          "location": {
+            "latitude_deg": 46.79,
+            "longitude_deg": -109.51,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1844
+          },
+          "observed_at": "2026-10-11T18:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:32.655427Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 5552.7,
+          "source_url": "https://api.weather.gov/stations/CRYM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/TFX/156,117/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:31:56+00:00",
+        "fetched_at": "2026-10-11T19:32:31.780120Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 1188.1104
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=47.0625%2C-109.4282",
+        "fetched_at": "2026-10-11T19:32:31.031035Z",
+        "count": 1,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "glasgow",
+        "name": "Glasgow",
+        "latitude_deg": 48.19696,
+        "longitude_deg": -106.6367,
+        "purpose": "northeastern town sample",
+        "ordinal": 10
+      },
+      "generated_at": "2026-10-11T19:32:33.167126Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 48.19696,
+        "longitude_deg": -106.6367,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 48.197,
+        "longitude_deg": -106.6367,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/48.1970,-106.6367",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "GGW",
+        "x": 110,
+        "y": 111
+      },
+      "quantization_distance_m": 4.448,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KGGW",
+          "distance_km": 2.845,
+          "location": {
+            "latitude_deg": 48.22,
+            "longitude_deg": -106.62,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 700
+          },
+          "observed_at": "2026-10-11T18:53:00+00:00",
+          "fetched_at": "2026-10-11T19:32:33.166505Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 2373.2,
+          "source_url": "https://api.weather.gov/stations/KGGW/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "seaLevelPressure",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "GGWFP",
+          "distance_km": 27.223,
+          "location": {
+            "latitude_deg": 48.01,
+            "longitude_deg": -106.4,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 694.9
+          },
+          "observed_at": "2026-10-11T17:50:00+00:00",
+          "fetched_at": "2026-10-11T19:32:33.160848Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 6153.2,
+          "source_url": "https://api.weather.gov/stations/GGWFP/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "KIGM8",
+          "distance_km": 52.552,
+          "location": {
+            "latitude_deg": 47.8,
+            "longitude_deg": -107.02,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 841.2
+          },
+          "observed_at": "2026-10-11T18:44:00+00:00",
+          "fetched_at": "2026-10-11T19:32:33.151849Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 2913.2,
+          "source_url": "https://api.weather.gov/stations/KIGM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/GGW/110,111/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:41:12+00:00",
+        "fetched_at": "2026-10-11T19:32:32.593174Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 669.9504
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=48.19696%2C-106.6367",
+        "fetched_at": "2026-10-11T19:32:32.047104Z",
+        "count": 0,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "miles-city",
+        "name": "Miles City",
+        "latitude_deg": 46.4083,
+        "longitude_deg": -105.8406,
+        "purpose": "eastern town sample",
+        "ordinal": 11
+      },
+      "generated_at": "2026-10-11T19:32:34.758075Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 46.4083,
+        "longitude_deg": -105.8406,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 46.4083,
+        "longitude_deg": -105.8406,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/46.4083,-105.8406",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "BYZ",
+        "x": 192,
+        "y": 113
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KMLS",
+          "distance_km": 3.302,
+          "location": {
+            "latitude_deg": 46.43,
+            "longitude_deg": -105.87,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 801
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:34.757307Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1054.8,
+          "source_url": "https://api.weather.gov/stations/KMLS/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "MTGOV",
+          "distance_km": 16.174,
+          "location": {
+            "latitude_deg": 46.4,
+            "longitude_deg": -105.63,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 954
+          },
+          "observed_at": "2026-10-11T19:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:34.689975Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 1954.8,
+          "source_url": "https://api.weather.gov/stations/MTGOV/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "MTSWC",
+          "distance_km": 39.179,
+          "location": {
+            "latitude_deg": 46.27,
+            "longitude_deg": -106.31,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 791.9
+          },
+          "observed_at": "2026-10-11T19:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:34.745319Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 1954.8,
+          "source_url": "https://api.weather.gov/stations/MTSWC/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/BYZ/192,113/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:30:52+00:00",
+        "fetched_at": "2026-10-11T19:32:34.138975Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 791.8704
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=46.4083%2C-105.8406",
+        "fetched_at": "2026-10-11T19:32:33.339351Z",
+        "count": 0,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "glendive",
+        "name": "Glendive",
+        "latitude_deg": 47.1053,
+        "longitude_deg": -104.7125,
+        "purpose": "eastern town sample",
+        "ordinal": 12
+      },
+      "generated_at": "2026-10-11T19:32:35.129191Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 47.1053,
+        "longitude_deg": -104.7125,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 47.1053,
+        "longitude_deg": -104.7125,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/47.1053,-104.7125",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "GGW",
+        "x": 167,
+        "y": 54
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KGDV",
+          "distance_km": 7.168,
+          "location": {
+            "latitude_deg": 47.13,
+            "longitude_deg": -104.8,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 749
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:35.104558Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1055.1,
+          "source_url": "https://api.weather.gov/stations/KGDV/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "BRGM",
+          "distance_km": 14.433,
+          "location": {
+            "latitude_deg": 46.99,
+            "longitude_deg": -104.8,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 652.3
+          },
+          "observed_at": "2026-10-11T18:30:00+00:00",
+          "fetched_at": "2026-10-11T19:32:35.128400Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 3755.1,
+          "source_url": "https://api.weather.gov/stations/BRGM/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windSpeed",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection"
+          ]
+        },
+        {
+          "station_id": "LDSM8",
+          "distance_km": 37.935,
+          "location": {
+            "latitude_deg": 47.21,
+            "longitude_deg": -105.19,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 816.9
+          },
+          "observed_at": "2026-10-08T17:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:35.094583Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 268355.1,
+          "source_url": "https://api.weather.gov/stations/LDSM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "dewpoint",
+            "relativeHumidity",
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "windDirection",
+            "windSpeed"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/GGW/167,54/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:41:12+00:00",
+        "fetched_at": "2026-10-11T19:32:34.528516Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 634.8984
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=47.1053%2C-104.7125",
+        "fetched_at": "2026-10-11T19:32:33.968264Z",
+        "count": 0,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "west-yellowstone",
+        "name": "West Yellowstone",
+        "latitude_deg": 44.6621,
+        "longitude_deg": -111.1041,
+        "purpose": "southwestern high-valley town sample",
+        "ordinal": 13
+      },
+      "generated_at": "2026-10-11T19:32:36.983784Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 44.6621,
+        "longitude_deg": -111.1041,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 44.6621,
+        "longitude_deg": -111.1041,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/44.6621,-111.1041",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "TFX",
+        "x": 89,
+        "y": 11
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "OFAW4",
+          "distance_km": 30.171,
+          "location": {
+            "latitude_deg": 44.46,
+            "longitude_deg": -110.85,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 2234.8
+          },
+          "observed_at": "2026-10-08T23:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:36.897007Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 245857.0,
+          "source_url": "https://api.weather.gov/stations/OFAW4/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed"
+          ]
+        },
+        {
+          "station_id": "YLAW4",
+          "distance_km": 47.596,
+          "location": {
+            "latitude_deg": 44.98,
+            "longitude_deg": -110.7,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1870.9
+          },
+          "observed_at": "2026-10-11T18:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:36.983171Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 4657.0,
+          "source_url": "https://api.weather.gov/stations/YLAW4/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "KP60",
+          "distance_km": 55.573,
+          "location": {
+            "latitude_deg": 44.55,
+            "longitude_deg": -110.42,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 2389
+          },
+          "observed_at": "2026-10-11T18:56:00+00:00",
+          "fetched_at": "2026-10-11T19:32:36.822245Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 2197.0,
+          "source_url": "https://api.weather.gov/stations/KP60/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "visibility",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "seaLevelPressure"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/TFX/89,11/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:31:56+00:00",
+        "fetched_at": "2026-10-11T19:32:36.147787Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 2037.8928
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=44.6621%2C-111.1041",
+        "fetched_at": "2026-10-11T19:32:35.397856Z",
+        "count": 1,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "divide-area",
+        "name": "Divide-area sample",
+        "latitude_deg": 46.58,
+        "longitude_deg": -112.3,
+        "purpose": "approximate Divide-area test coordinate; terrain not surveyed",
+        "ordinal": 14
+      },
+      "generated_at": "2026-10-11T19:32:36.899617Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 46.58,
+        "longitude_deg": -112.3,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 46.58,
+        "longitude_deg": -112.3,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/46.5800,-112.3000",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "TFX",
+        "x": 61,
+        "y": 105
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KHLN",
+          "distance_km": 23.032,
+          "location": {
+            "latitude_deg": 46.6,
+            "longitude_deg": -112.0,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1188
+          },
+          "observed_at": "2026-10-11T19:15:00+00:00",
+          "fetched_at": "2026-10-11T19:32:28.319512Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1056.9,
+          "source_url": "https://api.weather.gov/stations/KHLN/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "HVMT",
+          "distance_km": 26.846,
+          "location": {
+            "latitude_deg": 46.68,
+            "longitude_deg": -111.98,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1119.5
+          },
+          "observed_at": "2026-10-11T18:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:28.330727Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 5556.9,
+          "source_url": "https://api.weather.gov/stations/HVMT/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "HRWM8",
+          "distance_km": 27.109,
+          "location": {
+            "latitude_deg": 46.73,
+            "longitude_deg": -112.02,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1158.2
+          },
+          "observed_at": "2026-10-11T18:53:00+00:00",
+          "fetched_at": "2026-10-11T19:32:28.367073Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 2376.9,
+          "source_url": "https://api.weather.gov/stations/HRWM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/TFX/61,105/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:31:56+00:00",
+        "fetched_at": "2026-10-11T19:32:36.896478Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 1841.9064
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=46.58%2C-112.3",
+        "fetched_at": "2026-10-11T19:32:35.922941Z",
+        "count": 1,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "rural-east",
+        "name": "Rural eastern sample",
+        "latitude_deg": 47.25,
+        "longitude_deg": -106.5,
+        "purpose": "rural eastern test coordinate; exposure not surveyed",
+        "ordinal": 15
+      },
+      "generated_at": "2026-10-11T19:32:39.551938Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 47.25,
+        "longitude_deg": -106.5,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 47.25,
+        "longitude_deg": -106.5,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/47.2500,-106.5000",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "GGW",
+        "x": 110,
+        "y": 66
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "KJDN",
+          "distance_km": 33.629,
+          "location": {
+            "latitude_deg": 47.33,
+            "longitude_deg": -106.93,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 811
+          },
+          "observed_at": "2026-10-11T18:48:00+00:00",
+          "fetched_at": "2026-10-11T19:32:39.535856Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 2679.6,
+          "source_url": "https://api.weather.gov/stations/KJDN/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "visibility",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "seaLevelPressure",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "LCFM8",
+          "distance_km": 58.323,
+          "location": {
+            "latitude_deg": 47.03,
+            "longitude_deg": -105.8,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 966.8
+          },
+          "observed_at": "2026-10-11T18:08:00+00:00",
+          "fetched_at": "2026-10-11T19:32:39.551171Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 5079.6,
+          "source_url": "https://api.weather.gov/stations/LCFM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windGust",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        },
+        {
+          "station_id": "KIGM8",
+          "distance_km": 72.558,
+          "location": {
+            "latitude_deg": 47.8,
+            "longitude_deg": -107.02,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 841.2
+          },
+          "observed_at": "2026-10-11T18:44:00+00:00",
+          "fetched_at": "2026-10-11T19:32:33.151849Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 2919.6,
+          "source_url": "https://api.weather.gov/stations/KIGM8/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/GGW/110,66/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:41:12+00:00",
+        "fetched_at": "2026-10-11T19:32:39.002241Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 853.1352
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=47.25%2C-106.5",
+        "fetched_at": "2026-10-11T19:32:37.496082Z",
+        "count": 0,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    },
+    {
+      "sample": {
+        "id": "northern-border",
+        "name": "Northern border sample",
+        "latitude_deg": 48.99,
+        "longitude_deg": -111.96,
+        "purpose": "near-border test coordinate; no cross-border coverage claim",
+        "ordinal": 16
+      },
+      "generated_at": "2026-10-11T19:32:39.186285Z",
+      "status": "available",
+      "selected_point": {
+        "latitude_deg": 48.99,
+        "longitude_deg": -111.96,
+        "crs": "EPSG:4326"
+      },
+      "submitted_point": {
+        "latitude_deg": 48.99,
+        "longitude_deg": -111.96,
+        "crs": "EPSG:4326"
+      },
+      "point_source_url": "https://api.weather.gov/points/48.9900,-111.9600",
+      "timezone": "America/Denver",
+      "grid": {
+        "office": "TFX",
+        "x": 86,
+        "y": 218
+      },
+      "quantization_distance_m": 0.0,
+      "current_status": "available",
+      "stations": [
+        {
+          "station_id": "MTSWT",
+          "distance_km": 3.641,
+          "location": {
+            "latitude_deg": 48.96,
+            "longitude_deg": -111.94,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1058
+          },
+          "observed_at": "2026-10-11T19:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:39.133267Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 1959.2,
+          "source_url": "https://api.weather.gov/stations/MTSWT/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "windDirection",
+            "windSpeed",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity"
+          ]
+        },
+        {
+          "station_id": "MTSUN",
+          "distance_km": 12.993,
+          "location": {
+            "latitude_deg": 48.88,
+            "longitude_deg": -111.9,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1008
+          },
+          "observed_at": "2026-10-11T19:00:00+00:00",
+          "fetched_at": "2026-10-11T19:32:39.185417Z",
+          "status": "available",
+          "freshness": "stale",
+          "age_seconds": 1959.2,
+          "source_url": "https://api.weather.gov/stations/MTSUN/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "temperature",
+            "dewpoint",
+            "relativeHumidity",
+            "windDirection",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "windChill",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "windSpeed"
+          ]
+        },
+        {
+          "station_id": "D0975",
+          "distance_km": 27.808,
+          "location": {
+            "latitude_deg": 48.74,
+            "longitude_deg": -111.97,
+            "crs": "EPSG:4326"
+          },
+          "elevation": {
+            "unitCode": "wmoUnit:m",
+            "value": 1016.19
+          },
+          "observed_at": "2026-10-11T19:05:00+00:00",
+          "fetched_at": "2026-10-11T19:32:39.159929Z",
+          "status": "available",
+          "freshness": "fresh",
+          "age_seconds": 1659.2,
+          "source_url": "https://api.weather.gov/stations/D0975/observations/latest",
+          "representativeness": "not_assessed",
+          "missing_fields": [
+            "dewpoint",
+            "relativeHumidity",
+            "barometricPressure",
+            "seaLevelPressure",
+            "visibility",
+            "precipitationLastHour",
+            "precipitationLast3Hours",
+            "precipitationLast6Hours",
+            "heatIndex"
+          ],
+          "numeric_v_fields": [
+            "temperature",
+            "windDirection",
+            "windSpeed",
+            "windChill"
+          ]
+        }
+      ],
+      "forecast": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/gridpoints/TFX/86,218/forecast/hourly",
+        "period_count": 156,
+        "updated_at": "2026-10-11T18:31:56+00:00",
+        "fetched_at": "2026-10-11T19:32:38.586220Z",
+        "freshness": "fresh",
+        "elevation": {
+          "unitCode": "wmoUnit:m",
+          "value": 1090.8792
+        },
+        "has_current_or_future_periods": true
+      },
+      "alerts": {
+        "status": "available",
+        "source_url": "https://api.weather.gov/alerts/active?point=48.99%2C-111.96",
+        "fetched_at": "2026-10-11T19:32:37.661253Z",
+        "count": 1,
+        "independent_request_status": "available"
+      },
+      "archive_status": "saved",
+      "exact_point_snapshot_returned": true
+    }
+  ]
+}
