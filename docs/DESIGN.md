@@ -284,7 +284,7 @@ in the Livingston corridor (Wind gusts layer, the 25 mph ring on the bubbles); a
 | Region | Contents |
 |---|---|
 | Top left | Close (back to Now); the legend for the active layer with its note and a "Map data" link (on a portrait phone the keys sit beside a shorter scale, "Map data" in the title row: about 135–170 px tall instead of about 270–340) |
-| Top right | Layers (Precipitation, Temperature, Wind gusts; Warnings and Storm reports toggles), My location, List (every alert, including those without an outline, then every town) |
+| Top right | Layers (Precipitation, Temperature, Wind gusts; Warnings and Storm reports toggles), My location, List (every alert, including those without an outline; then every town's NWS value and its radar estimate and model values, each with its time) |
 | Map | White vector basemap; the active layer's frame; warning outlines; storm reports; town bubbles |
 | Bottom | Timeline: play/pause, "Radar"/"Forecast" with time and source, "1h | 12h", scrubber with a Now tick |
 | Sheets | Town (NWS forecast for the selected hour, flags in words, alerts, link to the town page), alert (official text), report |
@@ -368,7 +368,7 @@ hatching. Names may run off the screen's edge, as in the reference.
 (in a sample build it says the pictures are invented, not NOAA radar or the HRRR model),
 chronological `frames` with `time`, `kind` radar|forecast, `src`, `source`, `run` and `lead_min` for
 model frames, `nodata`; `modes` with frame indices and `now_index`), `status` (radar, forecast,
-alerts, forecasts, reports), `towns` (hourly NWS values for the timeline window, `alert_ids` or null
+alerts, forecasts, reports), `towns` (hourly NWS values for the timeline window, `picture` (per layer, one entry per frame: the picture's value at the town, `value` null where the picture has none, and the List's words, with the time; read from the frames as they are drawn, not by decoding the PNG), `alert_ids` or null
 when the check failed), `alerts` (with geometry or null; it holds every alert in a town's
 `alert_ids`, since the build adds what the town checks found to the statewide list), `reports`. Frames are PNG files in
 `map/frames/`, named by layer and valid time (UTC); model frames add the run hour

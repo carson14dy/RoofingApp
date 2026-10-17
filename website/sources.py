@@ -113,8 +113,9 @@ CONTRACTS = {
         "units": "Precipitation rate in mm/h as liquid water, shown in in/h. A 0.01° latitude-longitude grid; "
                  "the map uses one frame every 10 minutes for the past hour.",
         "timing": "NOAA publishes a new grid every 2 minutes; a newest frame older than 30 minutes is reported as stale.",
-        "missing": "Negative values mean no radar coverage: those areas are hatched, never drawn as dry. "
-                   "If the files don't load, the map says so and shows no radar.",
+        "missing": "Negative values mean no radar coverage: those areas are hatched, never drawn as dry, and the "
+                   "List says \"No radar coverage\" for a town there. If the files don't load, the map says so and "
+                   "shows no radar.",
     },
     "forecast_model": {
         "name": "NOAA HRRR model forecast",
@@ -125,7 +126,20 @@ CONTRACTS = {
         "timing": "A new run every hour; the map uses the newest run whose files are complete: 15-minute steps "
                   "for the next hour and hourly steps to 12 hours.",
         "missing": "A model forecast, labelled as one. If the run can't be read, the timeline stops at now and "
-                   "the map says why.",
+                   "the map says why. A town with no model value at a time says \"Not in model data\" in the List.",
+    },
+    "map_values": {
+        "name": "Radar and model values at each town (the List)",
+        "request": "No download: each frame of the radar and model pictures, read at the pixel that holds each "
+                   "town, from the same smoothed field the picture is coloured from (map.json towns[].picture)",
+        "units": "The pictures' own units: precipitation rate in in/h as liquid water (the radar estimate and the "
+                 "model), 2 m temperature in whole °F, gusts in whole mph. Each value carries its frame time, Montana time.",
+        "timing": "Every build, for each frame the pictures were drawn for. The List shows the frame on the timeline, "
+                  "or the latest frame of each picture before it.",
+        "missing": "A missing value is never a zero. \"No radar coverage\" where the radar has no data; \"Not in model "
+                   "data\" where the model has no value or no frame yet; \"Radar estimate: not loaded in this update\" or "
+                   "\"Model (HRRR): not loaded in this update\" when a picture didn't load. A rate under 0.1 mm/h is a measured value and "
+                   "reads \"under 0.004 in/h, below what the map draws\".",
     },
     "basemap": {
         "name": "Map outlines and names",

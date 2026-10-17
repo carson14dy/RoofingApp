@@ -124,7 +124,8 @@ def check(root: Path) -> list[str]:
             for extra in (lambda: check_menu_rows(browser, base), lambda: check_no_outline_key(browser, base, data),
                           lambda: check_phone_legend(browser, base, data),
                           lambda: check_empty_layer_switch(browser, base, data),
-                          lambda: check_card_words(browser, base, root)):
+                          lambda: check_card_words(browser, base, root),
+                          lambda: check_list_pictures(browser, base, data)):
                 try:
                     problems += extra()
                 except Exception as e:                                      # noqa: BLE001 - report, don't crash
@@ -190,6 +191,33 @@ def check_menu_rows(browser, base) -> list[str]:
             if not row["inside"]:
                 problems.append(f"layer menu {w}x{h}: a tap on '{row['row']}' lands on {row['hit']}")
         page.keyboard.press("Escape")
+    ctx.close()
+    return problems
+
+
+def check_list_pictures(browser, base, data) -> list[str]:
+    """The List gives each town's radar estimate and model values as text (D28): every town has its
+    picture lines, and each line carries its time, or says in words that the picture didn't load."""
+    import re
+    problems = []
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+    page = ctx.new_page()
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.click("#btn-list")
+    page.wait_for_selector("#sheet:not([hidden])")
+    rows = page.locator("#sheet-body [data-town]")
+    if rows.count() != len(data.get("towns", [])):
+        problems.append(f"list: {rows.count()} town rows, {len(data.get('towns', []))} towns")
+    timed = re.compile(r"\d{1,2}(:\d{2})?\s?(am|pm)")
+    picture = re.compile(r"^(Sample )?(Radar estimate|Model \(HRRR\)|Sample model|No radar frame)")
+    for i in range(rows.count()):
+        lines = [x for x in rows.nth(i).locator(".row-meta").all_inner_texts() if picture.match(x)]
+        if len(lines) < 2:
+            problems.append(f"list: row {i + 1} has {len(lines)} picture lines")
+        for line in lines:
+            if not timed.search(line) and "not loaded in this update" not in line:
+                problems.append(f"list: a picture line has no time: {line!r}")
     ctx.close()
     return problems
 

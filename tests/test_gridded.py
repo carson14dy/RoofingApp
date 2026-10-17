@@ -586,6 +586,74 @@ class Colours(unittest.TestCase):
 
 # ---------------------------------------------------------------- the sample build
 
+class ListWords(unittest.TestCase):
+    """The List's text version of the pictures (gridded.picture_entry and frame_towns): each town's
+    value in the picture's own units, read from the field the picture is coloured from, with the
+    frame's time; a value the picture doesn't have is said in words, never a zero."""
+    VALID = datetime(2026, 10, 14, 15, 40, tzinfo=UTC)          # 9:40 am MDT
+
+    def setUp(self):
+        self.w = 1400
+        self.pixels = {t["slug"]: g.town_pixel(t["lat"], t["lon"], self.w) for t in g.TOWNS}
+        self.shape = g.image_size(self.w)[::-1]                  # (rows, columns) of a radar frame
+
+    def towns_of(self, field, layer="precip", kind="radar"):
+        return g.frame_towns(g.prepare(field, layer), layer, kind, self.pixels, self.VALID, NOW)
+
+    def test_a_town_sits_on_the_pixel_whose_centre_is_nearest(self):
+        lats, lons = g.pixel_centers(self.w)
+        for t in g.TOWNS:
+            r, c = g.town_pixel(t["lat"], t["lon"], self.w)
+            self.assertEqual(int(np.argmin(np.abs(lats - t["lat"]))), r, t["slug"])
+            self.assertEqual(int(np.argmin(np.abs(lons - t["lon"]))), c, t["slug"])
+
+    def test_a_point_outside_the_picture_has_no_pixel(self):
+        self.assertIsNone(g.town_pixel(52.0, -108.0, self.w))     # north of 50.5 N
+        self.assertIsNone(g.town_pixel(45.0, -100.0, self.w))     # east of 101 W
+
+    def test_inside_radar_coverage_the_value_is_the_pictures(self):
+        entries = self.towns_of(np.full(self.shape, 5.08, dtype=np.float32))
+        self.assertEqual(entries["billings"],
+                         {"value": 0.2, "text": "Radar estimate, 9:40 am: precipitation 0.2 in/h (Moderate)"})
+
+    def test_outside_radar_coverage_says_so_and_is_never_a_zero(self):
+        field = np.full(self.shape, 5.08, dtype=np.float32)
+        r, c = self.pixels["livingston"]
+        field[r - 3:r + 4, c - 3:c + 4] = -3.0                    # MRMS marks no coverage with negative rates
+        entries = self.towns_of(field)
+        self.assertEqual(entries["livingston"], {"value": None, "text": "Radar estimate, 9:40 am: No radar coverage"})
+        self.assertEqual(entries["billings"]["value"], 0.2)       # the town with coverage keeps its value
+
+    def test_a_rate_under_the_drawing_threshold_is_said_not_drawn(self):
+        entries = self.towns_of(np.full(self.shape, 0.05, dtype=np.float32))
+        self.assertEqual(entries["bozeman"], {"value": 0.002, "text":
+                         "Radar estimate, 9:40 am: precipitation under 0.004 in/h, below what the map draws"})
+
+    def test_model_gaps_are_not_in_model_data_and_never_a_zero(self):
+        nan = np.full(self.shape, np.nan, dtype=np.float32)
+        for layer in ("precip", "temp", "wind"):
+            entry = g.frame_towns(g.prepare(nan, layer), layer, "forecast", self.pixels, self.VALID, NOW)["billings"]
+            self.assertEqual(entry, {"value": None, "text": "Model (HRRR), 9:40 am: Not in model data"}, layer)
+
+    def test_temperature_and_gusts_are_whole_units_as_the_picture_shows_them(self):
+        self.assertEqual(g.picture_entry("temp", "forecast", 58.4, self.VALID, NOW),
+                         {"value": 58, "text": "Model (HRRR), 9:40 am: temperature 58 °F"})
+        self.assertEqual(g.picture_entry("wind", "forecast", 22.6, self.VALID, NOW),
+                         {"value": 23, "text": "Model (HRRR), 9:40 am: gusts 23 mph"})
+        self.assertEqual(g.picture_entry("precip", "forecast", 5.08, self.VALID, NOW),
+                         {"value": 0.2, "text": "Model (HRRR), 9:40 am: precipitation 0.2 in/h (Moderate)"})
+
+    def test_the_time_is_written_as_the_timeline_writes_it(self):
+        self.assertEqual(g._when(datetime(2026, 10, 14, 21, 0, tzinfo=UTC), NOW), "3 pm")
+        self.assertEqual(g._when(datetime(2026, 10, 14, 15, 10, tzinfo=UTC), NOW), "9:10 am")
+        self.assertEqual(g._when(datetime(2026, 10, 14, 6, 0, tzinfo=UTC), NOW), "12 am")
+
+    def test_the_zone_is_named_on_the_night_the_clocks_change(self):
+        after = datetime(2026, 11, 1, 8, 30, tzinfo=UTC)          # 1:30 am MST, after the change
+        self.assertEqual(g._when(after, after), "1:30 am")
+        self.assertEqual(g._when(datetime(2026, 11, 1, 7, 30, tzinfo=UTC), after), "1:30 am MDT")
+
+
 class SampleBuild(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -615,6 +683,32 @@ class SampleBuild(unittest.TestCase):
         y = int(float(g.merc_y(n) - g.merc_y(lat)) / float(g.merc_y(n) - g.merc_y(s)) * h)
         k = int(idx[y, x])
         return None if k < 2 else g.level_value(layer, k - 2)
+
+    def test_town_values_line_up_with_their_frames_and_say_they_are_invented(self):
+        for name, layer in self.layers.items():
+            self.assertEqual(len(layer["at_towns"]), len(layer["frames"]), name)
+            for frame, towns in zip(layer["frames"], layer["at_towns"]):
+                label = "Sample radar estimate, " if frame["kind"] == "radar" else "Sample model, "
+                self.assertEqual(set(towns), {t["slug"] for t in g.TOWNS}, frame["src"])
+                for entry in towns.values():
+                    self.assertTrue(entry["text"].startswith(label), entry["text"])
+                    when = datetime.fromisoformat(frame["time"].replace("Z", "+00:00"))
+                    self.assertIn(g._when(when, NOW), entry["text"])
+
+    def test_a_town_value_is_the_colour_its_frame_shows_there(self):
+        """The List reads the field the picture is coloured from, so the colour at the town's pixel
+        decodes to the same value (within one colour level)."""
+        bill = next(t for t in g.TOWNS if t["slug"] == "billings")
+        for name in ("temp", "wind"):
+            for frame, towns in zip(self.layers[name]["frames"], self.layers[name]["at_towns"]):
+                decoded = self.pixel(name, frame, bill["lat"], bill["lon"])
+                self.assertIsNotNone(decoded, frame["src"])
+                self.assertLessEqual(abs(decoded - towns["billings"]["value"]), 1.0, frame["src"])
+        for frame, towns in zip(self.layers["precip"]["frames"], self.layers["precip"]["at_towns"]):
+            value = towns["billings"]["value"]
+            decoded = self.pixel("precip", frame, bill["lat"], bill["lon"])
+            if value is not None and value >= g.PRECIP_MIN / g.MM_PER_INCH and decoded is not None:
+                self.assertLess(abs(math.log(decoded / (value * g.MM_PER_INCH))), math.log(1.1), frame["src"])
 
     def test_status_and_sources_say_sample(self):
         self.assertEqual(set(self.status), {"radar", "forecast"})
@@ -833,6 +927,38 @@ class LivePath(unittest.TestCase):
         self.assertEqual(len(idx_requests), len(set(idx_requests)))                 # each index fetched once
         self.assertEqual(sorted(v for layer, v in self.decoded if layer == "temp"),
                          [datetime(2026, 10, 14, 14, tzinfo=UTC) + timedelta(hours=k) for k in range(13)])
+
+    def test_every_frame_has_each_towns_value_and_its_own_time(self):
+        noaa = FakeNoaa(newest=NOW - timedelta(minutes=4), ready={NOW - timedelta(hours=2), NOW - timedelta(hours=3)})
+        layers, _status = self.build(noaa)
+        # The fake fields are uniform: 1.0 mm/h radar, 2.0 mm/h model, 50 °F, 30 mph.
+        want = {("precip", "radar"): "precipitation 0.039 in/h (Light)",
+                ("precip", "forecast"): "precipitation 0.079 in/h (Light)",
+                ("temp", "forecast"): "temperature 50 °F", ("wind", "forecast"): "gusts 30 mph"}
+        for name, layer in layers.items():
+            self.assertEqual(len(layer["at_towns"]), len(layer["frames"]), name)
+            for frame, towns in zip(layer["frames"], layer["at_towns"]):
+                self.assertFalse([k for k in frame if k.startswith("_")], frame["src"])     # no private keys
+                self.assertEqual(set(towns), {t["slug"] for t in g.TOWNS}, frame["src"])
+                when = g._when(datetime.fromisoformat(frame["time"].replace("Z", "+00:00")), NOW)
+                for slug, entry in towns.items():
+                    self.assertIn(when, entry["text"], slug)
+                    self.assertTrue(entry["text"].endswith(want[(name, frame["kind"])]), entry["text"])
+                    self.assertIsNotNone(entry["value"], entry["text"])
+        self.assertEqual(layers["precip"]["frames"][6]["time"], "2026-10-14T14:56:00Z")     # the newest radar frame
+        radar = layers["precip"]["at_towns"][6]["billings"]
+        self.assertEqual(radar["text"], "Radar estimate, 8:56 am: precipitation 0.039 in/h (Light)")
+        self.assertEqual(radar["value"], 0.0394)
+
+    def test_no_picture_means_no_values_for_it(self):
+        layers, _status = self.build(FakeNoaa(newest=NOW, ready=(), empty=True))     # no radar, no model
+        for name in ("precip", "temp", "wind"):
+            self.assertEqual(layers[name]["frames"], [], name)
+            self.assertEqual(layers[name]["at_towns"], [], name)
+        self.fail_layer = "wind"
+        layers, _status = self.build(FakeNoaa(newest=NOW - timedelta(minutes=4), ready={NOW - timedelta(hours=2)}))
+        self.assertEqual(layers["wind"]["at_towns"], [])
+        self.assertEqual(len(layers["temp"]["at_towns"]), 13)
 
     def test_radar_list_failure_keeps_the_forecast(self):
         noaa = FakeNoaa(newest=NOW - timedelta(minutes=4), ready={NOW - timedelta(hours=2)},

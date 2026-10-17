@@ -349,7 +349,8 @@ class Fetching(unittest.TestCase):
 class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
         self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "stations",
-                                              "observations", "reports", "radar", "forecast_model", "basemap"})
+                                              "observations", "reports", "radar", "forecast_model", "map_values",
+                                              "basemap"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
@@ -362,6 +363,16 @@ class Contracts(unittest.TestCase):
         self.assertIn("no gust reported", src.CONTRACTS["observations"]["missing"])
         self.assertIn("withheld", src.CONTRACTS["observations"]["missing"])
         self.assertIn("Never filtered by state", src.CONTRACTS["stations"]["missing"])
+        values = src.CONTRACTS["map_values"]
+        self.assertIn("No download", values["request"])                 # read from the frames already drawn
+        self.assertIn("in/h", values["units"])
+        self.assertIn("whole °F", values["units"])
+        self.assertIn("never a zero", values["missing"])
+        self.assertIn("No radar coverage", values["missing"])
+        self.assertIn("Not in model data", values["missing"])
+        self.assertIn("under 0.004 in/h, below what the map draws", values["missing"])
+        self.assertIn("No radar coverage", src.CONTRACTS["radar"]["missing"])      # the same words, where the feed is
+        self.assertIn("Not in model data", src.CONTRACTS["forecast_model"]["missing"])
 
 
 class Formatting(unittest.TestCase):
@@ -488,7 +499,9 @@ class SampleBuild(unittest.TestCase):
     def test_map_page_landmark_and_text_version(self):
         html = page(self.out, "map.html")
         self.assertIn('<main id="app" class="app"', html)               # banners and notes are in a landmark
-        self.assertIn("The radar and model pictures have no text version yet.", " ".join(html.split()))
+        self.assertIn("The List button lists every NWS alert, each town's NWS forecast, and each town's radar estimate "
+                      "and model values as text.", " ".join(html.split()))
+        self.assertNotIn("no text version", html)
         self.assertIn('content="#fafafa" media="(prefers-color-scheme: light)"', html)   # = the map's background
 
     def test_map_data_follows_the_contract(self):
@@ -520,6 +533,31 @@ class SampleBuild(unittest.TestCase):
         self.assertEqual(sum(1 for a in m["alerts"]["items"] if a["geometry"] is None), 1)
         self.assertEqual(len(m["reports"]), 5)
         self.assertTrue({"radar", "forecast", "alerts", "forecasts", "reports"} <= set(m["status"]))
+
+    def test_each_town_carries_its_pictures_values_with_their_times(self):
+        m = json.loads(page(self.out, "data/map.json"))
+        self.assertTrue(all("at_towns" not in layer for layer in m["layers"].values()))   # written per town instead
+        for t in m["towns"]:
+            self.assertEqual(set(t["picture"]), set(m["layers"]), t["slug"])
+            for key, layer in m["layers"].items():
+                values = t["picture"][key]
+                self.assertEqual(len(values), len(layer["frames"]), (t["slug"], key))     # one per frame, in order
+                for frame, v in zip(layer["frames"], values):
+                    when = g._when(datetime.fromisoformat(frame["time"].replace("Z", "+00:00")), NOW)
+                    self.assertIn(when, v["text"], (t["slug"], key))
+                    if v["value"] is None:      # a missing value is said in words, never as a number
+                        self.assertTrue(v["text"].endswith(("No radar coverage", "Not in model data")), v["text"])
+        liv = next(t for t in m["towns"] if t["slug"] == "livingston")
+        self.assertTrue(liv["picture"]["precip"][0]["text"].startswith("Sample radar estimate, "))
+
+    def test_the_list_writes_each_picture_in_words(self):
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        for words in ('var radar = data.sample ? "Sample radar estimate" : "Radar estimate";',
+                      'var model = data.sample ? "Sample model" : "Model (HRRR)";',
+                      '{ key: "precip", kind: "forecast", label: model, none: "Not in model data" },',
+                      'p.label + ": not loaded in this update. This is not an all-clear."',
+                      "No radar frame by this time", "pictureLines(t, ms)", "with its own time."):
+            self.assertIn(words, js)
 
     def test_null_geometry_alert_is_listed_with_a_note(self):
         html = page(self.out, "index.html")
@@ -788,6 +826,14 @@ class MapFailures(unittest.TestCase):
                       "update: the radar and model pictures. This is not an all-clear. "
                       '<a href="map.html">Open the map</a> for the List of alerts and towns.', html)
         self.assertNotIn("radar estimate", html)
+
+
+class MapValuesWithoutPictures(unittest.TestCase):
+    def test_no_radar_and_no_model_gives_no_town_values(self):
+        out, _result = build_with(SampleWith(NOW))          # NWS sample data, but no gridded downloads
+        m = json.loads(page(out, "data/map.json"))
+        for t in m["towns"]:
+            self.assertEqual(t["picture"], {"precip": [], "temp": [], "wind": []}, t["slug"])   # never zeros
 
 
 def frames(kind, layer, times, run=None, source=None):

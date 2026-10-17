@@ -204,7 +204,7 @@ class Collector:
         from . import gridded
         fetch = getattr(self.f, "binary", None)
         get = fetch if fetch else (lambda url, headers=None: (None, "no downloader"))
-        layers, status = gridded.build_gridded(out_dir, get, self.now, sample=sample)
+        layers, status = gridded.build_gridded(out_dir, get, self.now, sample=sample)   # towns: towns.json
         for key, label in (("radar", "NOAA radar"), ("forecast", "HRRR forecast")):
             st = status.get(key) or {}
             self.note(key, st.get("label") or label, bool(st.get("ok")), st.get("detail") or "not built")
@@ -230,16 +230,21 @@ def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dic
                   "gust_mph": _round(h.get("gust_mph")), "precip": _round(h.get("precip")),
                   "sky": h.get("sky") or "", "flags": h.get("flags") or []}
                  for h in t["hours"] if first <= h["start"] <= last]
+        # the pictures' values at this town, one entry per frame of each layer (the List's text, D28)
+        picture = {key: [(frame or {}).get(t["slug"]) or {"value": None, "text": None}
+                         for frame in layer.get("at_towns", [])] for key, layer in layers.items()}
         out_towns.append({"slug": t["slug"], "name": t["name"], "lat": t["lat"], "lon": t["lon"],
                           "label": t.get("label", "right"), "minor": bool(t.get("minor")),
                           "url": f"town/{t['slug']}.html", "office": t.get("office"), "hours": hours,
-                          "alert_ids": None if t["alerts"] is None else [a["id"] for a in t["alerts"]]})
+                          "alert_ids": None if t["alerts"] is None else [a["id"] for a in t["alerts"]],
+                          "picture": picture})
     (s_, w_), (n_, e_) = gridded.IMAGE_BOUNDS
+    layers_out = {key: {k: v for k, v in layer.items() if k != "at_towns"} for key, layer in layers.items()}
     return {
         "version": 1, "built": src._iso(now), "sample": sample, "tz": "America/Denver",
         "image_bounds": [[s_, w_], [n_, e_]], "view": MAP_VIEW,
         "now": radar_times[-1] if radar_times else src._iso(now),
-        "layers": layers, "status": status, "towns": out_towns,
+        "layers": layers_out, "status": status, "towns": out_towns,
         "alerts": {"ok": alerts["ok"], "checked": alerts["checked"], "last_known": alerts.get("last_known"),
                    "items": alerts["items"]},
         "reports": reports["items"],

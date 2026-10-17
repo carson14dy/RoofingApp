@@ -13,12 +13,17 @@ so the browser only places finished pictures with L.imageOverlay and flips betwe
 Fetcher; tests pass fakes). Nothing here raises to the caller, and error texts are plain words
 because the map shows them. pygrib is imported only where a GRIB file is decoded, so the tests
 and sample builds run without it. Feed details: sources.CONTRACTS "radar" and "forecast_model".
+
+The List's text version (towns.json, "at_towns" per layer): each frame's value at each town, taken
+from the same smoothed field the picture is coloured from, as the frame is drawn. Not from the PNG:
+a pixel with no radar coverage and one with less than 0.1 mm/h both come out as palette index 0.
 """
 from __future__ import annotations
 
 import gzip
 import html
 import io
+import json
 import math
 import re
 from datetime import datetime, timedelta, timezone
@@ -108,6 +113,15 @@ MODEL_SOURCE = "NOAA HRRR model"
 SAMPLE_RADAR_SOURCE = "SAMPLE — invented radar picture, not NOAA data"
 SAMPLE_MODEL_SOURCE = "SAMPLE — invented forecast picture, not the HRRR model"
 LABELS = {"radar": "NOAA radar (MRMS)", "forecast": "HRRR forecast"}
+
+# The List's words for each town (map.json towns[].picture). A value the picture doesn't have is
+# never a zero: it says why, in these words. Sample builds say they are invented.
+TOWNS_FILE = Path(__file__).with_name("towns.json")
+TOWNS = json.loads(TOWNS_FILE.read_text(encoding="utf-8"))
+PICTURE_LABELS = {"radar": "Radar estimate", "model": "Model (HRRR)"}
+SAMPLE_PICTURE_LABELS = {"radar": "Sample radar estimate", "model": "Sample model"}
+MISSING_WORDS = {"radar": "No radar coverage", "model": "Not in model data"}
+BELOW_WORDS = f"under {PRECIP_MIN / MM_PER_INCH:.3f} in/h, below what the map draws"   # 0.1 mm/h
 
 
 # ---------------------------------------------------------------- small helpers
@@ -372,13 +386,24 @@ def png_bytes(index: np.ndarray, layer: str) -> bytes:
     return buf.getvalue()
 
 
-def render(field: np.ndarray, layer: str) -> tuple[bytes, bool]:
-    """Field in display units on the image grid -> (PNG bytes, has no-data areas)."""
+def prepare(field: np.ndarray, layer: str) -> np.ndarray:
+    """The field as its picture is coloured, in display units: negative precipitation rates (no
+    coverage) become no data before the light blur, so they are not blurred into a rate. NaN = no data."""
     field = np.asarray(field, dtype=np.float32)
     if layer == "precip":   # no coverage must not be blurred into its neighbours as a rate
         field = np.where(field < 0, np.float32(np.nan), field)
-    idx, nodata = to_index(smooth(field, SMOOTH_PX), layer)
+    return smooth(field, SMOOTH_PX)
+
+
+def draw(prepared: np.ndarray, layer: str) -> tuple[bytes, bool]:
+    """A prepared field -> (PNG bytes, has no-data areas)."""
+    idx, nodata = to_index(prepared, layer)
     return png_bytes(idx, layer), nodata
+
+
+def render(field: np.ndarray, layer: str) -> tuple[bytes, bool]:
+    """Field in display units on the image grid -> (PNG bytes, has no-data areas)."""
+    return draw(prepare(field, layer), layer)
 
 
 def precip_class(mm_h: float) -> str | None:
@@ -427,6 +452,68 @@ def legend(layer: str) -> tuple[list[dict], str]:
         r, g, b, a = colour_at(v, stops, log)
         css.append(f"rgba({r},{g},{b},{a:g}) {pos * 100:.1f}%")
     return entries, "linear-gradient(to top, " + ", ".join(css) + ")"
+
+
+# ---------------------------------------------------------------- the List: each town's values as text
+
+def town_pixel(lat: float, lon: float, width: int, bounds=IMAGE_BOUNDS) -> tuple[int, int] | None:
+    """(row, column) of the picture pixel that holds a point, the pixel its town bubble sits on; None
+    outside the picture. Rows are linear in Mercator y and columns in longitude, as pixel_centers."""
+    (s, w), (n, e) = bounds
+    if not (s <= lat <= n and w <= lon <= e):
+        return None
+    wpx, hpx = image_size(width, bounds)
+    col = int((lon - w) / (e - w) * wpx)
+    row = int(float(merc_y(n) - merc_y(lat)) / float(merc_y(n) - merc_y(s)) * hpx)
+    return min(row, hpx - 1), min(col, wpx - 1)
+
+
+def _when(t: datetime, now: datetime) -> str:
+    """A frame's time as the List writes it: '10:40 am', or '3 pm' on the hour (Montana time, as the
+    browser writes the timeline), with the zone when it differs from the build's (the night the clocks
+    fall back has two 1 ams)."""
+    local = t.astimezone(MT)
+    clock = f"{local.hour % 12 or 12}" + (f":{local.minute:02d}" if local.minute else "")
+    text = f"{clock} {'am' if local.hour < 12 else 'pm'}"
+    return text if local.tzname() == now.astimezone(MT).tzname() else f"{text} {local.tzname()}"
+
+
+def _rate(inch: float) -> str:
+    """A rate in in/h to two significant figures: 0.031, 0.12, 1.2, 12."""
+    return f"{inch:.0f}" if inch >= 10 else f"{inch:.2g}"
+
+
+def picture_entry(layer: str, kind: str, value: float, valid: datetime, now: datetime, sample: bool = False) -> dict:
+    """What one picture says at one town for one frame, in the picture's own units (in/h, °F, mph) and
+    in the words the List shows. NaN is no data: "No radar coverage" for a radar frame and "Not in
+    model data" for a model frame, never a zero. A negative precipitation rate is no coverage, as in
+    the picture. A rate under 0.1 mm/h is a real value that the picture leaves undrawn: it says so."""
+    who = "radar" if kind == "radar" else "model"
+    label = (SAMPLE_PICTURE_LABELS if sample else PICTURE_LABELS)[who]
+    when = _when(valid, now)
+    v = float(value)
+    if not math.isfinite(v) or (layer == "precip" and v < 0):
+        return {"value": None, "text": f"{label}, {when}: {MISSING_WORDS[who]}"}
+    if layer == "precip":
+        if v < PRECIP_MIN:
+            return {"value": round(v / MM_PER_INCH, 4), "text": f"{label}, {when}: precipitation {BELOW_WORDS}"}
+        inch = v / MM_PER_INCH
+        return {"value": round(inch, 4),
+                "text": f"{label}, {when}: precipitation {_rate(inch)} in/h ({precip_class(v)})"}
+    if layer == "temp":
+        return {"value": round(v), "text": f"{label}, {when}: temperature {round(v)} °F"}
+    return {"value": round(v), "text": f"{label}, {when}: gusts {round(v)} mph"}
+
+
+def frame_towns(prepared: np.ndarray, layer: str, kind: str, pixels: dict, valid: datetime, now: datetime,
+                sample: bool = False) -> dict:
+    """{town slug: picture_entry} for one frame: the prepared field's value at each town's pixel.
+    `pixels` maps slug to (row, column), or None for a town outside the picture."""
+    out = {}
+    for slug, rc in pixels.items():
+        value = float(prepared[rc[0], rc[1]]) if rc else math.nan
+        out[slug] = picture_entry(layer, kind, value, valid, now, sample)
+    return out
 
 
 # ---------------------------------------------------------------- GRIB bytes
@@ -628,10 +715,12 @@ def find_run(get, anchor: datetime, tries: int = HRRR_RUNS_TRIED) -> tuple[datet
 # ---------------------------------------------------------------- live layers
 
 class _Grids:
-    """Image-grid coordinates per width, and HRRR grid indices per (grid, width), computed once."""
+    """Image-grid coordinates per width, HRRR grid indices per (grid, width) and each town's pixel
+    per width, computed once."""
 
-    def __init__(self):
-        self.centers, self.ij = {}, {}
+    def __init__(self, towns=None):
+        self.centers, self.ij, self.px = {}, {}, {}
+        self.towns = TOWNS if towns is None else towns
 
     def latlon(self, width):
         if width not in self.centers:
@@ -644,6 +733,12 @@ class _Grids:
             lats, lons = self.latlon(width)
             self.ij[key] = lcc_ij(grid, lats[:, None], lons[None, :])     # broadcasts to (rows, cols)
         return self.ij[key]
+
+    def town_px(self, width):
+        """{town slug: (row, column)} on the picture grid of `width`; None for a town outside it."""
+        if width not in self.px:
+            self.px[width] = {t["slug"]: town_pixel(t["lat"], t["lon"], width) for t in self.towns}
+        return self.px[width]
 
 
 class _Missing(ValueError):
@@ -685,12 +780,14 @@ def live_radar(get, now: datetime, grids: _Grids) -> tuple[list[dict], dict, dat
             values, grid = decode_mrms(data, t)
             field = sample_mrms(values, grid, lats, lons)
             del values
-            png, nodata = render(field, "precip")
+            prepared = prepare(field, "precip")
+            png, nodata = draw(prepared, "precip")
+            towns_at = frame_towns(prepared, "precip", "radar", grids.town_px(WIDTHS["precip"]), t, now)
         except Exception as e:  # noqa: BLE001
             return [], {"label": label, "ok": False,
                         "detail": f"the radar file for {_hm(t)} couldn't be read ({_problem(e)})"}, None
         frames.append({"time": src._iso(t), "kind": "radar", "src": frame_src("precip", t),
-                       "source": RADAR_SOURCE, "nodata": nodata, "_png": png})
+                       "source": RADAR_SOURCE, "nodata": nodata, "_png": png, "_towns": towns_at})
     t0 = picked[-1][0]
     detail = f"{len(frames)} frame{'' if len(frames) == 1 else 's'}, latest {_hm(t0)}"
     if skipped:
@@ -744,7 +841,9 @@ def live_forecast(get, now: datetime, anchor: datetime, grids: _Grids) -> tuple[
                 raise _Missing(f"the model field for {_hm(valid)} was cut short")
             values, grid = decode_hrrr(data, layer, valid)
             i, j = grids.lcc(grid, WIDTHS[layer])
-            png, nodata = render(bilinear(values, i, j), layer)
+            prepared = prepare(bilinear(values, i, j), layer)
+            png, nodata = draw(prepared, layer)
+            towns_at = frame_towns(prepared, layer, "forecast", grids.town_px(WIDTHS[layer]), valid, now)
         except _Missing as e:
             errors[layer] = str(e)
             continue
@@ -753,7 +852,8 @@ def live_forecast(get, now: datetime, anchor: datetime, grids: _Grids) -> tuple[
             continue
         frames[layer].append({"time": src._iso(valid), "kind": "forecast", "src": frame_src(layer, valid, run),
                               "source": MODEL_SOURCE, "run": src._iso(run),
-                              "lead_min": int((valid - run) / timedelta(minutes=1)), "nodata": nodata, "_png": png})
+                              "lead_min": int((valid - run) / timedelta(minutes=1)), "nodata": nodata, "_png": png,
+                              "_towns": towns_at})
     for layer in errors:
         frames[layer] = []
     names = {"precip": "precipitation", "temp": "temperature", "wind": "wind gusts"}
@@ -927,12 +1027,15 @@ def sample_layers(now: datetime, grids: _Grids) -> tuple[list[dict], dict, dict,
         field = sample_precip(lats, lons, t, t0, radar)
         return field if field.shape[1] == WIDTHS["precip"] else _resample(field, WIDTHS["precip"])
 
+    pixels = {w: grids.town_px(WIDTHS[w]) for w in ("precip", "temp", "wind")}
     radar = []
     for k in reversed(range(RADAR_FRAMES)):
         t = t0 - k * RADAR_STEP
-        png, nodata = render(rain(t, True), "precip")
+        prepared = prepare(rain(t, True), "precip")
+        png, nodata = draw(prepared, "precip")
         radar.append({"time": src._iso(t), "kind": "radar", "src": frame_src("precip", t),
-                      "source": SAMPLE_RADAR_SOURCE, "nodata": nodata, "_png": png})
+                      "source": SAMPLE_RADAR_SOURCE, "nodata": nodata, "_png": png,
+                      "_towns": frame_towns(prepared, "precip", "radar", pixels["precip"], t, now, sample=True)})
     times = forecast_times(t0)
     precip_times = sorted(set(times["hourly"]) | {v for v in times["quarters"] if v.minute})
     forecast = {"precip": [], "temp": [], "wind": []}
@@ -942,11 +1045,14 @@ def sample_layers(now: datetime, grids: _Grids) -> tuple[list[dict], dict, dict,
                      if layer == "temp" else sample_wind(lats, lons, v, t0, elev))
             if field.shape[1] != WIDTHS[layer]:
                 field = _resample(field, WIDTHS[layer])
-            png, nodata = render(field, layer)
+            prepared = prepare(field, layer)
+            png, nodata = draw(prepared, layer)
             forecast[layer].append({"time": src._iso(v), "kind": "forecast", "src": frame_src(layer, v, run),
                                     "source": SAMPLE_MODEL_SOURCE, "run": src._iso(run),
                                     "lead_min": int((v - run) / timedelta(minutes=1)), "nodata": nodata,
-                                    "_png": png})
+                                    "_png": png,
+                                    "_towns": frame_towns(prepared, layer, "forecast", pixels[layer], v, now,
+                                                          sample=True)})
     status = {"radar": {"label": LABELS["radar"], "ok": True,
                         "detail": f"SAMPLE — {len(radar)} invented frames, latest {_hm(t0)}"},
               "forecast": {"label": LABELS["forecast"], "ok": True,
@@ -957,8 +1063,10 @@ def sample_layers(now: datetime, grids: _Grids) -> tuple[list[dict], dict, dict,
 # ---------------------------------------------------------------- the layers for map.json
 
 def assemble(radar: list[dict], forecast: dict, anchor: datetime | None, sample: bool = False) -> dict:
-    """Layer dicts exactly as data/map.json carries them (without the PNG bytes). A sample build's
-    legend notes say the pictures are invented (SAMPLE_NOTES)."""
+    """Layer dicts as data/map.json carries them: frames without the PNG bytes or other private keys
+    (names starting with "_"). at_towns holds one {town slug: picture_entry} per frame, in frame order;
+    build.map_data writes it out per town. A sample build's legend notes say the pictures are invented
+    (SAMPLE_NOTES)."""
     times = forecast_times(anchor) if anchor else {"hourly": [], "quarters": [], "hours13": []}
     layers = {}
     for layer in ("precip", "temp", "wind"):
@@ -976,8 +1084,9 @@ def assemble(radar: list[dict], forecast: dict, anchor: datetime | None, sample:
             now_index = {"12h": 0}
         text = {**LAYER_TEXT[layer], "legend_note": SAMPLE_NOTES[layer]} if sample else LAYER_TEXT[layer]
         layers[layer] = {**text, "legend": entries, "gradient": gradient,
-                         "frames": [{k: v for k, v in f.items() if k != "_png"} for f in frames],
-                         "modes": modes, "now_index": now_index}
+                         "frames": [{k: v for k, v in f.items() if not k.startswith("_")} for f in frames],
+                         "modes": modes, "now_index": now_index,
+                         "at_towns": [f.get("_towns") or {} for f in frames]}
     return layers
 
 
@@ -988,12 +1097,13 @@ def _write(out_dir: Path, frames: list[dict]) -> None:
         path.write_bytes(f["_png"])
 
 
-def build_gridded(out_dir: Path, get, now: datetime, sample: bool = False) -> tuple[dict, dict]:
+def build_gridded(out_dir: Path, get, now: datetime, sample: bool = False, towns: list | None = None) -> tuple[dict, dict]:
     """Draw the map frames into out_dir/map/frames/ (out_dir is the site root) and return
     (layers for data/map.json, status {"radar": ..., "forecast": ...}). Never raises: a source that
-    fails leaves its frames out and says why in its status."""
+    fails leaves its frames out and says why in its status. `towns` (towns.json by default) are the
+    places whose values the List shows (layer "at_towns")."""
     now = (now if now.tzinfo else now.replace(tzinfo=UTC)).astimezone(UTC)
-    grids = _Grids()
+    grids = _Grids(towns)
     try:
         if sample:
             radar, forecast, status, anchor = sample_layers(now, grids)

@@ -2060,12 +2060,49 @@
     openSheet("report", what, html, opener, { back: back });
   }
 
+  /** The picture's value at a town for the List: the latest frame of a layer at or before a time (kind
+      picks radar or model frames of the precipitation layer). Built by build.py (towns[].picture, one
+      entry per frame in layers[key].frames); null when no frame is that early or the entry has no text. */
+  function pictureAt(t, key, ms, kind) {
+    var frames = (data.layers[key] || {}).frames || [], vals = (t.picture || {})[key] || [], at = -1;
+    for (var i = 0; i < frames.length; i++) {
+      if ((!kind || frames[i].kind === kind) && Date.parse(frames[i].time) <= ms) at = i;
+    }
+    return at >= 0 && vals[at] && vals[at].text ? vals[at] : null;
+  }
+
+  /** The text version of the pictures at one town, a line each: the radar estimate, then the HRRR
+      temperature, gusts and precipitation, each with its own frame time. Missing words come from the
+      build; a picture that didn't load or has no frame by this time says so here, never a zero. */
+  function pictureLines(t, ms) {
+    var radar = data.sample ? "Sample radar estimate" : "Radar estimate";
+    var model = data.sample ? "Sample model" : "Model (HRRR)";
+    var lines = [
+      { key: "precip", kind: "radar", label: radar, none: "No radar frame by this time" },
+      { key: "precip", kind: "forecast", label: model, none: "Not in model data" },
+      { key: "temp", kind: null, label: model, none: "Not in model data" },
+      { key: "wind", kind: null, label: model, none: "Not in model data" }
+    ];
+    var texts = lines.map(function (p) {
+      var v = pictureAt(t, p.key, ms, p.kind), frames = (data.layers[p.key] || {}).frames || [];
+      var loaded = frames.some(function (f) { return !p.kind || f.kind === p.kind; });
+      return v ? v.text : loaded ? p.label + ", " + clock(ms).replace("\u00a0", " ") + ": " + p.none
+        : p.label + ": not loaded in this update. This is not an all-clear.";
+    });
+    // three model pictures that all failed say it once, not three times
+    return texts.filter(function (x, i) { return texts.indexOf(x) === i; }).map(function (x) {
+      return '<span class="row-meta">' + esc(x) + "</span>";
+    }).join("");
+  }
+
   /** List sheet: the map as text. Every active alert (with or without an outline), every town's
-      value for the hour on the timeline, and the storm reports when that overlay is on. */
+      value for the hour on the timeline and the pictures' values at the frame on it, and the storm
+      reports when that overlay is on. */
   function openList(opener) {
     var a = data.alerts || {}, items = a.items || [], html = "";
     var hourMs = Math.floor(Math.max(valueTime(), Date.parse(data.built)) / HOUR) * HOUR;   // Montana is a whole-hour offset
-    html += '<p class="sub">Town values are the NWS forecast for ' + esc(dayClock(hourMs)) + ", the hour on the timeline.</p>";
+    html += '<p class="sub">Town values are the NWS forecast for ' + esc(dayClock(hourMs)) + ", the hour on the timeline. " +
+      "Each town's radar and model lines are the frame on the timeline, or the latest one before it, with its own time.</p>";
     html += "<h3>Official alerts" + (a.ok ? " (" + items.length + ")" : "") + "</h3>";     // a failed check has no count to give
     if (!a.ok) html += '<p class="warn">The NWS alert check failed in this update' + (a.last_known ? "; showing the list verified at " + esc(dateClock(Date.parse(a.last_known))) : "") + ". This is not an all-clear.</p>";
     if (items.length) html += '<div class="rows">' + items.map(alertRow).join("") + "</div>";
@@ -2083,7 +2120,7 @@
       html += '<button type="button" class="row" data-town="' + esc(t.slug) + '" data-key="t-' + esc(t.slug) + '">' +
         '<span class="mini-bubble' + (v.over ? " over" : "") + (v.text === "\u2014" ? " unknown" : "") + '" aria-hidden="true">' + esc(v.text) + "</span>" +
         '<span class="row-main"><span class="row-title">' + esc(t.name) + '<span class="visually-hidden">, ' + esc(v.text === "\u2014" ? "no value" : v.text + unit) + (v.over ? ", over limit" : "") + "</span></span>" +
-        '<span class="row-meta' + (h ? "" : " warn") + '">' + esc(meta) + "</span></span></button>";
+        '<span class="row-meta' + (h ? "" : " warn") + '">' + esc(meta) + "</span>" + pictureLines(t, ms) + "</span></button>";
     });
     html += "</div>";
     if (state.reports) {
