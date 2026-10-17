@@ -1,0 +1,453 @@
+{
+ "slug": "pipeline",
+ "workstream": "W12 data pipeline and cost",
+ "checked_utc": "2026-10-17",
+ "status": "research only; nothing ships; no other repo file changed",
+ "headline": [
+  "D (one statewide >=20 dBZ product per 2-min step; desktop derives 35/50 dBZ and crops to places) is the lowest-blocker server option: 0.732 MB per active frame, 2.28 GB per month per machine at 8.5 storm days, 4.0 MB/month ingest cost not counted; host floor $6.49/mo (unpriced RAM).",
+  "A (each crew machine downloads NOAA GRIB2 and decodes) needs 70.5 GB per machine per month at 33 levels and has no Windows eccodes wheel on pip.",
+  "B (GitHub Actions, 5-min floor) cannot publish every 2-min step and its Actions terms clause for data delivery is an open owner/legal reading.",
+  "Frame budget (README sec 10, proposed here): 1.0 MB per 2-min MRMS frame; 60 MB per 2-h loop at >=20 dBZ; 0.05 MB per GOES 5-min frame."
+ ],
+ "inputs": {
+  "read": [
+   "mrms.json (reviewed), goes-aws.json (reviewed), app-integration.json (reviewed), webgl-runtime.json (reviewed), prototype-mrms.json (reviewed)",
+   "hosting-options.json (no review key): live re-check by WebFetch of GitHub schedule and Actions terms, R2, S3 pricing page, DigitalOcean, Lightsail, Hetzner, GitHub Pages; not re-checked: B2, S3 storage and PUT, DO and Lightsail overage",
+   "README sec 1-7; supervisor-log.md ACCEPT list; DECISIONS D1 D2 D4 D7-D9 D12 D19 D23 D24; ROADMAP items 4, 8, 11; AGENTS rules 2, 4, 5, 7, 9",
+   "parallax.json (legend wording, cited only for the GOES legend; no number here depends on it)"
+  ],
+  "missing": "prototype-goes.json is not present; prototype/goes_cloud_height.py exists but its output was not written. GOES numbers come from goes-aws.json listings and a crop of the cached 03:21:17 UTC scan (scratch).",
+  "units": "B = bytes (1 MB = 1e6 B). gz = gzipped NOAA object. zlib9 = Python stdlib zlib level 9. est = estimate from a named ratio. Month = 30 days. Storm day = 12 h. 2-min MRMS step = 30/h; 5-min GOES step = 12/h."
+ },
+ "corrections_to_evidence": [
+  "mrms.json installed_packages omits eckitlib: eccodeslib 2.50.0.33 requires eckitlib==2.5.0.33 (35.98 MB wheel). The eccodes Linux closure is 62.16 MB of wheels, not about 10 MB.",
+  "eccodes has no Windows path on pip: eccodes metadata has 'Requires-Dist: eccodeslib; platform_system != \"Windows\"', and pip finds no eccodeslib wheel for win_amd64 at cp311, cp312 or cp313.",
+  "eccodeslib 2.50.0.33 has no macOS arm64 wheel for cp312 (newest 2.48.0.26). netCDF4 1.7.5 has no macOS arm64 wheel for cp312 (newest 1.7.4). Version skew across platforms.",
+  "cffi resolves to 2.0.0b1 (a beta) in the Linux closure; mrms.json lists cffi 2.1.1. Needs a deliberate pin.",
+  "Storing dBZ at 0.5 dB moves threshold counts in the 33-level event frame: >=35 gives 99,867 not 99,854; >=50 gives 13,484 not 13,482. Raw MRMS values are on a 0.1 dBZ grid (mrms.json fact 26), so the product stores 0.1 dBZ.",
+  "D12 has no MRMS or GOES keys (app-integration fact 6; README sec 3 cites D12 for them). The MRMS 10 min and GOES 15 min limits used here are proposals needing a DECISIONS entry.",
+  "hosting-options.json: S3 Standard storage ($0.023/GB-mo) and PUT ($0.005 per 1k) were not on the AWS pricing page read today. The GET price and the 100 GB free transfer were confirmed.",
+  "Storm-day rate: the supervisor log reports 26 of 92 summer-2025 days with Montana hail rows (W20). Not re-derived here; used only as an assumption."
+ ],
+ "measured": {
+  "env": "scratch venv (Python 3.13.16, eccodes, numpy, netCDF4); 4 vCPU Intel Xeon 2.80 GHz sandbox, not crew hardware; CPU = process time. CI builds use Python 3.12 (build-desktop.yml:36).",
+  "crop": "default prototype box 1350 x 615 cells at 0.01 deg (830,250 cells per level), threshold on raw value, counts match prototype JSON exactly",
+  "event_2025-06-15T23:12:41Z_33_levels": {
+   "gz_total_B": 29444582,
+   "voxels_ge20": 619321,
+   "voxels_ge35": 99854,
+   "voxels_ge50": 13482,
+   "mask_keyframe_zlib9_B": 238142,
+   "rowdelta_0.5dB_zlib9_ge20_B": 523217,
+   "rowdelta_0.1dB_zlib9_ge20_B": 597737,
+   "rowdelta_0.1dB_raw_ge20_B": 2524056,
+   "prototype_json_raw_ge20_B": 10327224,
+   "prototype_json_zlib9_ge20_B": 2060602,
+   "dense_codes_zlib9_B": 1798719,
+   "mask_2bit_packed_zlib9_B": 252681,
+   "decode_cpu_s_total": 18.271,
+   "decode_cpu_s_per_level": 0.554,
+   "crop_threshold_encode_cpu_s": 0.851,
+   "zlib9_all_variants_cpu_s": 3.777,
+   "peak_rss_MB": 363.6
+  },
+  "event_next_2026_step_2025-06-15T23:14:39Z_33_levels": {
+   "gz_total_B": 29430152,
+   "voxels_ge20": 627792,
+   "mask_keyframe_zlib9_B": 236489
+  },
+  "event_11_levels_2025-06-15T23:12:41Z": {
+   "gz_total_B": 10509537,
+   "voxels_ge20": 225153,
+   "voxels_ge35": 35978,
+   "voxels_ge50": 4728,
+   "rowdelta_0.5dB_zlib9_ge20_B": 192124,
+   "mask_keyframe_zlib9_B": 83691,
+   "decode_cpu_s_per_level": 0.64
+  },
+  "quiet_2026-10-17T03:04:41Z_33_levels": {
+   "gz_total_B": 18435716,
+   "voxels_ge20": 0,
+   "mask_keyframe_zlib9_B": 104214,
+   "decode_cpu_s_total": 16.99
+  },
+  "quiet_2026-10-17T03:06:38Z_33_levels": {
+   "voxels_ge20": 0,
+   "mask_keyframe_zlib9_B": 104214,
+   "note": "identical class mask to 03:04:41"
+  },
+  "mask_change_between_consecutive_steps": {
+   "event_23:12:41_to_23:14:39": {
+    "changed_cells": 264659,
+    "share_pct": 0.966,
+    "changed_list_zlib9_B": 133853,
+    "delta_mod3_zlib9_B": 155606,
+    "row_RLE_zlib9_B": 184483
+   },
+   "quiet_03:04:41_to_03:06:38": {
+    "changed_cells": 0,
+    "changed_list_zlib9_B": 8
+   }
+  },
+  "stdlib_decode_test": {
+   "what": "pure-stdlib (zlib, array, itertools) decode of the 0.5 dB row-delta layout from the prototype JSON; exact round trip of all 619,321 voxels",
+   "decode_s": 0.178,
+   "encode_python_s": 1.324,
+   "note": "0.1 dB layout differs only in u16 value width; not re-timed"
+  },
+  "goes_crops_2026-10-17T03:21:17Z": {
+   "cmi13_G19_2km_box": {
+    "rect_cells": 75690,
+    "in_box_cells": 44239,
+    "bt_K_in_box": [
+     213.26,
+     284.8
+    ],
+    "zlib9_uint8_B": 29901
+   },
+   "achac_G19_10km_box": {
+    "rect_cells": 3045,
+    "valid_in_box": 902,
+    "ht_m_range": [
+     683.0,
+     15648.7
+    ],
+    "zlib9_uint16_B": 1984
+   },
+   "achac_G18_10km_box_zlib9_B": 2362
+  },
+  "listing_bytes_per_step": {
+   "G19_ACHAC_01:41": 316623,
+   "G19_CMIPC_C13_01:41": 3909220,
+   "G18_ACHAC": 311769,
+   "G18_C13_range": [
+    3686559,
+    3707073
+   ],
+   "src": "goes-aws.json"
+  }
+ },
+ "per_step_bytes": {
+  "mrms_2min": {
+   "in_formula": "sum over L of gz_L(t), L = 33 levels (or 11 or 4); bytes read by whoever decodes",
+   "in_B": {
+    "quiet_03:04:41_33lv": 18435716,
+    "mean_2h_33lv": 21347857,
+    "event_33lv": 29444582,
+    "quiet_11lv": 6424019,
+    "event_11lv": 10509537,
+    "4lv_0.5_3_6_10km": 2514957
+   },
+   "out_formula_server_products": "zlib9(row-delta records >=20 dBZ at 0.1 dB) + mask (keyframe or changed-cell list)",
+   "out_D_B": {
+    "active_delta": 731590,
+    "peak_keyframe": 835879,
+    "quiet_keyframe": 104214,
+    "quiet_avg_keyframe_every_10": 10421
+   },
+   "out_C_B_three_files": {
+    "active_delta": 1139399,
+    "peak_keyframe": 1452266,
+    "quiet_avg": 31264,
+    "note": "35 and 50 dBZ rows estimated x1.142 from the 20 dBZ ratio"
+   },
+   "mesh_00.50_gz_B": 35226
+  },
+  "goes_5min": {
+   "in_formula": "gz(ACHAC) + gz(CMIPC band 13) per step; G19 4.23 MB, G18 about 4.0 MB",
+   "out_formula": "zlib9(band-13 Montana-box 8-bit crop) + zlib9(ACHA 10 km crop)",
+   "out_B": 31885
+  }
+ },
+ "options": {
+  "A_desktop_decode": {
+   "architecture": "each crew machine downloads NOAA GRIB2 and GOES netCDF, decodes and crops locally",
+   "in_per_step": "MRMS 18.4-29.4 MB per 2-min step at 33 levels (mean 21.3); 6.4-10.5 MB at 11 levels; GOES 4.0-4.2 MB per 5-min step",
+   "out_per_step": "HTTP request headers only, about 0.5 kB per object (unmeasured)",
+   "cpu_per_frame": "decode 18.3 s CPU per 33-level frame (15% of one core at 2-min cadence); stdlib-only row-delta decode of D is 0.18 s",
+   "monthly_GB_per_machine": {
+    "central_33lv_incl_GOES": 70.5,
+    "range_33lv": [
+     61.59,
+     95.27
+    ],
+    "11lv_range_incl_GOES": [
+     24.83,
+     37.33
+    ],
+    "src": "computed: 3060 MRMS frames x gz + 1224 GOES frames x 4.23 MB"
+   },
+   "usd_mo": {
+    "server": 0,
+    "crew_data_plan": "unpriced",
+    "NOAA_reads": "bucket owner pays by default (aws-rp-1, evidence)"
+   },
+   "latency_s": "lag 29-120 s + gz/link_rate + decode 18 s; at 10 Mbit/s 64-155 s; at 2 Mbit/s 132-223 s",
+   "sustained_link_Mbit_s": 1.54,
+   "installer": "new wheels; Linux cp312 eccodes stack 62.16 MB (eccodes 0.09, eccodeslib 9.02, eckitlib 35.98, numpy 16.73, cffi 0.22, attrs 0.07, pycparser 0.05, findlibs 0.01 MB); netCDF4 stack +12.49 MB for GOES; Windows: no eccodes wheel (blocked); macOS arm64: eccodes stack 23.77 MB without cffi/pycparser (unmeasured)",
+   "failure_surfacing": "per machine; NOAA stall gives no notice to owner; decode error on a machine shows Data unavailable for that layer; memory 364 MB peak",
+   "staleness": "GRIB reference time and object stamp per level; no manifest",
+   "privacy": "fixed statewide objects only; no place lists leave the machine; NOAA sees client IP addresses",
+   "self_test": "bundle a small GRIB2 fixture; decode offline with network off; check voxel counts; non-200 on mismatch; import check of eccodes"
+  },
+  "B_actions_job_object_store": {
+   "architecture": "scheduled GitHub Actions run decodes the same products and uploads to object storage (R2 or S3 or B2); crews download and crop",
+   "cadence": "5-min floor, delays and drops under load (verified live: events-that-trigger-workflows); default branch only; public repo auto-disables after 60 days idle",
+   "in_per_run": "MRMS 18.4-29.4 MB at 33 levels (one step per run); GOES 4.0-4.2 MB per run",
+   "out_per_run_stateless": {
+    "quiet_3_files": 312642,
+    "peak_3_files_keyframes": 1452266,
+    "note": "stateless keyframes; chained deltas would need a state object (not measured)"
+   },
+   "monthly_GB_per_machine": {
+    "quiet": 0.42,
+    "peak": 1.82,
+    "src": "computed: 1224 runs x products + 1224 GOES products"
+   },
+   "usd_mo": {
+    "R2": "0.00 within free storage (10 GB), free egress, free operations at this volume (verified live); 30-day archive of peak runs 12.5 GB would cost about $0.04",
+    "GitHub_Actions_public_repo": "0.00 (evidence gh-bill-1, not re-verified)",
+    "GitHub_Actions_if_private": "33.84-39.84 (evidence; not re-verified)",
+    "S3_alternative": "0.13-0.25 (secondary AWS source; storage and PUT not re-verified)"
+   },
+   "latency_s": "wait 0-300 s (mean 150) + queue delay (unmeasured, can be minutes) + lag 29-120 s + job about 25 s; typical 3-5 min; tail unbounded",
+   "failure_surfacing": "failure e-mail to the workflow creator (gh-notify-1, evidence); dropped queued runs can be silent (gh-sched-4; notice unverified); crew-side staleness from next_expected_utc is required",
+   "privacy": "fixed statewide products only; the job never receives place lists",
+   "terms": "verified live: 'You may only access and use GitHub Actions to develop and test your application(s).' and, under Actions: 'don't use Actions as a content delivery network or as part of a serverless application'. Publishing data to crews is doubtful under these clauses; owner or legal reading needed.",
+   "installer": "none in the desktop if the product is read with stdlib; the job runs on Linux runners, outside the installer",
+   "self_test": "none for the job; desktop self-test uses a bundled product fixture with network off"
+  },
+  "C_always_on_server_three_files": {
+   "architecture": "a small always-on host runs the same decode at 2-min cadence and serves one file per shown threshold (20, 35, 50 dBZ), each with its own mask",
+   "in_per_step": "same as A: 18.4-29.4 MB per 2-min step (24/7 ingest 497.6 GB per 30-day month at 33 levels; 11 levels 175-264 GB)",
+   "out_per_step": {
+    "active_delta_B": 1139399,
+    "peak_keyframe_B": 1452266,
+    "quiet_avg_B": 31264
+   },
+   "monthly_GB_per_machine": {
+    "quiet": 0.13,
+    "active": 3.53,
+    "peak_keyframes": 4.48
+   },
+   "fleet_outbound_GB_mo_active": 35.3,
+   "server_month_GB_active": 532.9,
+   "usd_mo": {
+    "Hetzner_CX23": "6.49 floor (verified 2026 price; excludes VAT and IPv4; DE/FI locations only; RAM and traffic not verified)",
+    "DigitalOcean_Basic": "4.00 (verified; 512 MiB RAM and 500 GiB transfer)",
+    "Lightsail": "3.50 IPv6-only or 5.00 IPv4 (verified; 512 MB or 0.5 GB RAM; 1 TB)",
+    "note": "decode peak 364 MB plus OS does not fit 512 MB; a 1 GB+ plan is unpriced in the evidence"
+   },
+   "latency_s": "lag 29-120 s + decode 18 s + encode up to 4 s + download (0.5-0.9 s at 10 Mbit/s); about 50-145 s",
+   "failure_surfacing": "host down means every machine shows Unavailable (safe default); needs an external heartbeat (not built)",
+   "privacy": "server receives no place lists; access logs hold crew IP addresses",
+   "installer": "none in the desktop; server holds the Linux wheel stack (74.66 MB closure with netCDF4)",
+   "self_test": "desktop reads a bundled product fixture with network off; server tests separate"
+  },
+  "D_hybrid_server_one_file_desktop_crops": {
+   "architecture": "server decodes once and publishes one threshold-free statewide file (>=20 dBZ at 0.1 dB plus mask); desktop derives 35/50 dBZ and crops to saved places locally",
+   "in_per_step": "same as C",
+   "out_per_step": {
+    "active_delta_B": 731590,
+    "peak_keyframe_B": 835879,
+    "quiet_avg_B": 10421
+   },
+   "monthly_GB_per_machine": {
+    "quiet": 0.07,
+    "active": 2.28,
+    "peak_keyframes": 2.6
+   },
+   "fleet_outbound_GB_mo_active": 22.8,
+   "server_month_GB_active": 520.4,
+   "usd_mo": "same host as C; 520 GB per month against DigitalOcean's 500 GiB (536.9 GB) allowance if inbound counts (inbound price unverified)",
+   "cpu_per_frame_desktop": "0.18 s stdlib decode (0.15% of one core at 2-min cadence)",
+   "latency_s": "same as C; desktop parse adds a fraction of a second (unmeasured for the 0.1 dB layout)",
+   "failure_surfacing": "as C, plus unknown format version shows Data unavailable (never an all-clear)",
+   "privacy": "as C",
+   "installer": "no new packages if the parser stays on zlib, array and struct (about 150 lines of Python, estimate)",
+   "self_test": "bundled encoded fixture; decode, threshold and crop with network off; check exact counts; unknown version fails the update"
+  },
+  "MESH_footprint_roadmap_item_4_same_job": {
+   "architecture": "same run and manifest as the volume product on B, C or D; on A it would need the same decode stack",
+   "in": "MESH_00.50 35226 B gz per 2-min step (raw 53,176 B), 0.17% of the 33-level volume input",
+   "other_products_listing": {
+    "MESH_Max_120min_gz_B": 80711,
+    "MESH_Max_1440min_gz_B": 338785,
+    "cadence": "unverified"
+   },
+   "out": "GeoJSON per run: not measured (threshold and units unverified; GRIB units read 'unknown', mm likely)",
+   "A_monthly_extra_GB_per_machine": 0.11,
+   "usd_mo": "host only"
+  }
+ },
+ "budgets_proposed_for_README_sec10": {
+  "note": "README sec 10 does not exist yet. These numbers are proposed here; the Phase 3 gate cites them.",
+  "frame_MRMS_B": {
+   "budget": 1000000,
+   "peak_measured": 835879,
+   "headroom": 1.2,
+   "derivation": "0.965 B per >=20 dBZ voxel (measured: 597737 / 619321) x N + keyframe mask 238142 B"
+  },
+  "max_voxels_ge20_in_frame": 789368,
+  "loop_2h_MRMS_B": {
+   "budget": 60000000,
+   "worst_measured_rate": 44521134,
+   "derivation": "54 delta frames x 731590 + 6 keyframes x 835879 (event change rate held for 2 h); budget = 1.35 x worst"
+  },
+  "loop_2h_MRMS_35dBZ_only_est_B": {
+   "budget": 20000000,
+   "est": 15836214,
+   "derivation": "estimate from the same ratios"
+  },
+  "frame_GOES_B": {
+   "budget": 50000,
+   "measured": 31885
+  },
+  "loop_2h_GOES_B": {
+   "budget": 1200000,
+   "measured": 765240
+  },
+  "quiet_frame_avg_B": 10421,
+  "caution": "one event frame pair and one quiet pair were measured; storm-day distribution is unknown"
+ },
+ "format_proposal": {
+  "choice": "binary payload + JSON sidecar (not compact JSON)",
+  "payload": "zlib9; little-endian; header MRV1, n_groups u32, n_voxels u32; per row group: key u16 (level*615+row), count u16, column deltas u16 (absolute at row start), tenth-dBZ u16 (>=200 for 20 dBZ); mask section: keyframe uint8 class per cell (0 = -999, 1 = -99, 2 = valid) or changed-cell list (u32 index delta + u8 class)",
+  "sizes_33lv_event_B": {
+   "binary_0.1dB_zlib9_ge20": 597737,
+   "binary_raw_ge20": 2524056,
+   "prototype_json_raw": 10327224,
+   "prototype_json_zlib9": 2060602,
+   "dense_1byte_grid_zlib9": 1798719,
+   "bytes_per_voxel_zlib9": 0.965
+  },
+  "rejected": "dense grid: 3.0x larger; 2-bit packed mask: larger than byte mask (252,681 vs 238,142); 0.5 dB storage: smaller by 14% but threshold counts drift",
+  "sidecar": "JSON, estimated 3-5 kB (not measured; the prototype's 33-level metadata block is 9.6 kB because it repeats per-level codes): schema_version, grid (origin 49.745 N, -116.795 E, 0.01 deg, 1350 x 615, row 0 north), levels_km, valid_time_utc per level, retrieved_utc, last_run_utc, next_expected_utc, objects with gz bytes and sha256, codes meaning (-999 and -99 = no radar data, meanings unverified), counts per level, keyframe flag, stored thresholds, freshness max_age_min (proposal), demo false",
+  "naming": "product times in UTC; file name carries the joined step time; sidecar carries source object stamps"
+ },
+ "installer_impact": {
+  "linux_cp312_wheels_MB": {
+   "eccodes_stack": 62.16,
+   "netCDF4_stack_for_GOES": 12.49,
+   "total_closure_measured": 74.66,
+   "uncompressed_closure_MB": 276.31
+  },
+  "windows_cp312_wheels_MB": {
+   "netCDF4_1.7.5": 22.44,
+   "numpy_2.5.4": 12.57,
+   "eccodes": "no wheel (blocked)",
+   "note": "cftime, certifi, packaging not measured for win"
+  },
+  "macos_arm64_cp312_wheels_MB": {
+   "eccodeslib_2.48.0.26": 9.1,
+   "eckitlib_2.1.1.26": 2.49,
+   "numpy_2.5.4": 12.02,
+   "netCDF4_1.7.4": 22.85,
+   "note": "cffi, cftime, pycparser not measured"
+  },
+  "licences_from_metadata": "eccodes Apache-2.0; findlibs Apache-2.0; netCDF4 MIT; numpy BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0; cftime MIT; certifi MPL-2.0; attrs MIT; cffi MIT; pycparser BSD-3-Clause; packaging Apache-2.0 OR BSD-2-Clause. eccodeslib and eckitlib: no licence field in metadata; LICENSE files present, not read.",
+  "pyinstaller": "installer grows by roughly the wheel bytes (estimate; not built)",
+  "zipball_cap": "the 50 MiB cap (updater.py:191) applies to the repo zipball; wheels ride in the installer under rule 2 and do not count; product files stay out of git",
+  "rule_2": "a new pip package needs a new installer, a raised SHELL_API and min_shell (applies to A; B, C and D need none in the desktop)"
+ },
+ "ranking_by_open_blockers_today": {
+  "note": "fewest open blockers first; a ranking of blockers, not of merit; all four stay open until D-G2 is decided",
+  "1_D": "blockers: host decision (needed by ROADMAP 8 and 11 anyway); RAM plan unpriced; product spec and stdlib parser to build. Reasons: 0.732 MB per active frame, 2.28 GB per machine-month at 8.5 storm days, desktop decode 0.18 s per frame, no GRIB or netCDF in the installer.",
+  "2_C": "same host and cadence as D; 1.56 times D's active bytes because three files repeat the same mask; same blockers.",
+  "3_B": "blockers: GitHub Actions terms clause for data delivery (owner or legal reading); 5-min floor against 2-min steps; D12 10-min limit at risk from queue delay; silent drops need an external staleness check; private-repo minutes 33.84-39.84/mo if the repo goes private. Reasons: no server; $0 at these volumes if the terms reading allows it.",
+  "4_A": "blockers: no Windows eccodes wheel (native-library sourcing decision); +62.16 MB Linux wheels; 15% of one core per 2-min frame; 70.5 GB per machine-month at 33 levels; needs 1.54 Mbit/s sustained. Reasons: no server; NOAA reads are open data with attribution required (registry quote, evidence).",
+  "what_would_change_it": "A: a Windows native GRIB2 source plus a crew link of at least 2 Mbit/s; B: an owner or legal reading that permits data delivery plus acceptance of 5-min products; C and D: a host choice with 1 GB RAM"
+ },
+ "decisions_needed": [
+  "D-G2 host (ROADMAP 8 and 11): needed for C and D; RAM of at least 1 GB; who owns alerts when the job fails",
+  "GitHub Actions terms for B (owner or legal reading of 'content delivery')",
+  "Windows GRIB2 source for A (or decline A on Windows)",
+  "product spec: 0.1 dB storage, keyframe every 10 frames, 1.0 MB frame and 60 MB loop budgets at >=20 dBZ",
+  "33 levels (0.5-19 km, the plan) or 11 levels (prototype default): about 2.5x bytes difference",
+  "DECISIONS entry for MRMS and GOES freshness keys (D12 lacks them)",
+  "owner's storm-day count and crew link speeds and RAM (sets A latency, monthly bytes and the host plan)",
+  "NOAA attribution wording and the GOES banner 'Access is restricted to approved users only' (goes-aws open question) for counsel"
+ ],
+ "unverified": [
+  "crew link speeds, crew CPU and RAM (sandbox numbers used)",
+  "storm-day count (26 of 92 days, supervisor log, not re-derived) and the fleet of 10 machines (assumption)",
+  "mask stability beyond one event pair and one quiet pair; the storm-day distribution of frame sizes",
+  "35 and 50 dBZ 0.1 dB sizes (estimated from the 20 dBZ ratio); sidecar size estimate",
+  "ACHA 2 km (ACHA2KMC, about 4.5 MB per step) crop size: not measured",
+  "MESH GeoJSON size, MESH units and cadence of MESH_Max products",
+  "Windows and macOS cffi, cftime and pycparser sizes; eckitlib licence text; eccodes on Windows by any route",
+  "S3 Standard storage and PUT prices (secondary source only); B2 $6.95/TB (staging banner); DigitalOcean and Lightsail overage rates; Hetzner CX23 RAM, traffic and US availability",
+  "GitHub Actions free minutes for public repos and runner queue delay (not re-verified today)",
+  "meaning of -99 and -999 (NSSL table unreachable; carried as unverified)",
+  "PyInstaller installer growth (estimate; no installer built)",
+  "option A and B latency tails (network and queue unmeasured)"
+ ],
+ "quotes": [
+  {
+   "text": "The shortest interval you can run scheduled workflows is once every 5 minutes.",
+   "url": "https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows",
+   "fetched": "2026-10-17 WebFetch, summarised, not byte-checked"
+  },
+  {
+   "text": "If the load is sufficiently high enough, some queued jobs may be dropped.",
+   "url": "https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "You may only access and use GitHub Actions to develop and test your application(s).",
+   "url": "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "don't use Actions as a content delivery network or as part of a serverless application",
+   "url": "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "There are no charges for egress bandwidth for any storage class.",
+   "url": "https://developers.cloudflare.com/r2/pricing/",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "$0.015 / GB-month; 10 GB-month / month free",
+   "url": "https://developers.cloudflare.com/r2/pricing/",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "S3 GET requests from the S3 Standard storage class cost $0.0004 per 1,000 requests.",
+   "url": "https://aws.amazon.com/s3/pricing/",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "$4.00; 512 MiB; 1 vCPU; 10 GiB; included 500 GiB",
+   "url": "https://www.digitalocean.com/pricing/droplets",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "$5 USD/mo (IPv4 bundle, 1 TB Transfer); $3.50 USD/mo (IPv6-only bundle, 1 TB Transfer)",
+   "url": "https://aws.amazon.com/lightsail/pricing/",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "CX23 ... 0.0104 / 6.49 (new USD, excl. VAT and IPv4; effective 15 June 2026)",
+   "url": "https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "Published GitHub Pages sites may be no larger than 1 GB.",
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits",
+   "fetched": "2026-10-17"
+  },
+  {
+   "text": "NOAA data disseminated through NODD are open to the public and can be used as desired.",
+   "url": "https://registry.opendata.aws/noaa-mrms-pds/",
+   "fetched": "mrms.json (reviewed)"
+  },
+  {
+   "text": "eccodes metadata: Requires-Dist: eccodeslib; platform_system != \"Windows\"",
+   "url": "local wheel METADATA (pip download, eccodes-2.50.0-py3-none-any.whl)",
+   "fetched": "2026-10-17"
+  }
+ ],
+ "scratch_scripts": "session scratchpad folder w12-measure (not committed): measure_formats.py, goes_crop_measure.py, fetch_step.py, stdlib_rowdelta_test.py, tenth_db_test.py, build_output.py"
+}

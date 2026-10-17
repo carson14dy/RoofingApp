@@ -27,6 +27,7 @@ import glob
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -448,6 +449,276 @@ class GlobeOfflineBrowserTests(unittest.TestCase):
                 results["error_text"] = text.strip()[:160]
             browser.close()
         print("GLOBE_OFFLINE_RESULT=" + json.dumps(results, sort_keys=True))
+
+
+# ----------------------------------------------------------------------------
+# 3D storms (MRMS reflectivity volume): the layer as the page shows it
+# ----------------------------------------------------------------------------
+SYNTH_FIXTURE = "volume-synthetic.json"
+SAMPLE_FIXTURE = "volume-2025-06-15-sample.json"
+SYNTH_LABEL = "synthetic: not weather"
+ARCHIVED_LABEL = "Archived event: recorded MRMS volume, not live"
+VOLUME_LEGEND = ("Radar echo strength (dBZ). Not hail size. -99/-999 cells are no radar data; "
+                 "no echo is not clear.")
+# The 14 NWS reflectivity colours, 5-10 dBZ up to 70-75 dBZ (globe.js section 8; MetPy 1.7.1 table).
+NWS_STEP_HEX = ["#00ECEC", "#01A0F6", "#0000F6", "#00FF00", "#00C800", "#009000", "#FFFF00",
+                "#E7C000", "#FF9000", "#FF0000", "#D60000", "#C00000", "#FF00FF", "#9955C9"]
+# Turning the storms on must change at least this share of canvas pixels (luma difference of 17 or more).
+VOLUME_MIN_CHANGED = 0.002
+VOLUME_ROW_JS = """() => {
+  const row = document.querySelector('[data-layer=mrms_volume]');
+  if (!row) return null;
+  const box = row.querySelector('input[type=checkbox]');
+  const chip = row.querySelector('.label-chip');
+  const legend = row.querySelector('.legend');
+  return {legend: legend ? legend.textContent : null, label: chip ? chip.textContent : null,
+          state: row.querySelector('.state').textContent, toggleDisabled: box.disabled, checked: box.checked};
+}"""
+SWATCH_JS = ("() => Array.from(document.querySelectorAll('[data-layer=mrms_volume] .swatch'))"
+             ".map((s) => getComputedStyle(s).backgroundColor)")
+
+
+def load_fixture(name):
+    with open(os.path.join(PROTO, "fixtures", name), encoding="utf-8") as f:
+        return json.load(f)
+
+
+def rgb_css(hex_colour):
+    h = hex_colour.lstrip("#")
+    return "rgb(%d, %d, %d)" % (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+
+def track_requests(page):
+    """Imagery requests still pending, and HTTP errors and page errors seen, for one page."""
+    pending, errors = set(), []
+
+    def host_of(url):
+        return url.split("/")[2] if "://" in url else ""
+
+    def on_request(r):
+        if host_of(r.url) in TILE_HOSTS:
+            pending.add(r.url)
+
+    def on_done(r):
+        pending.discard(r.url)
+
+    def on_response(r):
+        if r.status >= 400:
+            errors.append({"status": r.status, "url": r.url[:120]})
+        pending.discard(r.url)
+
+    page.on("request", on_request)
+    page.on("requestfinished", on_done)
+    page.on("requestfailed", on_done)
+    page.on("response", on_response)
+    page.on("pageerror", lambda e: errors.append({"pageerror": str(e)[:200]}))
+    return pending, errors
+
+
+def settle_tiles(page, pending, timeout_s, results, key):
+    """Waits until the 3D view reports tilesLoaded and no imagery request has been pending for 2 s."""
+    t0 = time.time()
+    quiet_since = None
+    loaded = False
+    while time.time() - t0 < timeout_s:
+        loaded = page.evaluate("() => !!(window.globeViewer && window.globeViewer.scene.globe.tilesLoaded)")
+        if loaded and not pending:
+            quiet_since = quiet_since or time.time()
+            if time.time() - quiet_since >= 2.0:
+                break
+        else:
+            quiet_since = None
+        page.wait_for_timeout(250)
+    results[key] = {"waited_s": round(time.time() - t0, 1), "tiles_loaded": loaded, "pending": len(pending)}
+
+
+def canvas_rgb(page):
+    from PIL import Image
+
+    return Image.open(io.BytesIO(page.locator("#cesiumContainer canvas").first.screenshot())).convert("RGB")
+
+
+class GlobeVolumeBrowserBase(unittest.TestCase):
+    """serve.py started with the volume arguments of a subclass. Skips like the other browser checks."""
+
+    volume_args = []
+    server = None
+    base = None
+    results = {}
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            from playwright.sync_api import sync_playwright  # noqa: F401
+        except ImportError:
+            raise unittest.SkipTest("Playwright is not installed in this Python")
+        try:
+            from PIL import Image  # noqa: F401
+        except ImportError:
+            raise unittest.SkipTest("Pillow is not installed in this Python")
+        if not browser_path():
+            raise unittest.SkipTest("Chromium binary not found (set GLOBE_CHROMIUM)")
+        if not network_reachable():
+            raise unittest.SkipTest("the network the page needs (cdnjs, NWS) is not reachable")
+        cls.server = subprocess.Popen([sys.executable, "-B", os.path.join(PROTO, "serve.py"), "--port", "0"]
+                                      + cls.volume_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        line = {}
+
+        def read_port():
+            line["text"] = cls.server.stdout.readline()
+
+        reader = threading.Thread(target=read_port, daemon=True)
+        reader.start()
+        reader.join(30)
+        text = line.get("text", "").strip()
+        if not text.startswith("PORT="):
+            cls.server.kill()
+            raise AssertionError(f"serve.py {' '.join(cls.volume_args)} did not print PORT=<n>: {text!r}")
+        cls.base = f"http://127.0.0.1:{int(text.split('=')[1])}"
+        cls.results = {"volume_args": cls.volume_args}
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.server is not None:
+            cls.server.terminate()
+            try:
+                cls.server.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                cls.server.kill()
+            for pipe in (cls.server.stdout, cls.server.stderr):
+                if pipe is not None:
+                    pipe.close()
+
+
+class SyntheticVolumeBrowserTests(GlobeVolumeBrowserBase):
+    """serve.py's default volume: the synthetic test field, labelled 'synthetic: not weather'."""
+
+    volume_args = []
+
+    def test_legend_toggle_canvas_count_exaggeration_and_swatches(self):
+        from playwright.sync_api import sync_playwright
+
+        expected = len(load_fixture(SYNTH_FIXTURE)["voxels"])
+        self.results["fixture_voxels"] = expected
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=browser_path(), headless=True)
+            page = browser.new_page(viewport={"width": 1280, "height": 800})
+            pending, errors = track_requests(page)
+            page.goto(self.base + "/", wait_until="load", timeout=120000)
+            page.wait_for_selector("#layer-list .layer", timeout=60000)
+            settle_tiles(page, pending, TILES_WAIT_S + 15, self.results, "initial_tiles")
+
+            row = page.evaluate(VOLUME_ROW_JS)
+            self.results["volume_row_before"] = row
+            self.assertEqual(row["legend"], VOLUME_LEGEND, "the volume legend text is not in the DOM")
+            self.assertEqual(row["label"], SYNTH_LABEL)
+            self.assertEqual(row["state"], "Unavailable", "a synthetic field must not show as live")
+            self.assertFalse(row["toggleDisabled"])
+            self.assertFalse(row["checked"], "the storms should start hidden")
+            before = page.evaluate("() => window.globeStatus.volume")
+            self.results["volume_status_before"] = before
+            self.assertEqual(before["drawn"], expected, "the points were not all created")
+            self.assertFalse(before["visible"])
+
+            page.click("#zoom-volume")
+            settle_tiles(page, pending, 150, self.results, "after_zoom_tiles")
+            page.wait_for_timeout(1000)
+            hidden = canvas_rgb(page)
+
+            page.check("#toggle-mrms_volume")
+            page.wait_for_timeout(2000)
+            settle_tiles(page, pending, 60, self.results, "after_toggle_tiles")
+            shown = canvas_rgb(page)
+            changed = fraction_changed(hidden, shown)
+            self.results["volume_pixel_diff"] = {"changed_fraction": round(changed, 4),
+                                                 "min_required": VOLUME_MIN_CHANGED}
+            self.assertGreater(changed, VOLUME_MIN_CHANGED, "turning the storms on did not change the canvas")
+            drawn_text = page.text_content("#volume-drawn")
+            self.results["panel_count_text"] = drawn_text
+            self.assertEqual(int(re.search(r"([\d,]+) voxels", drawn_text).group(1).replace(",", "")), expected)
+            self.assertTrue(page.is_visible("#volume-factor"), "the on-screen exaggeration label is hidden")
+            self.assertIn("Vertical exaggeration ×1", page.text_content("#volume-factor"))
+
+            page.uncheck("#toggle-mrms_volume")
+            page.wait_for_timeout(2000)
+            back = fraction_changed(hidden, canvas_rgb(page))
+            self.results["volume_pixel_diff_after_off"] = round(back, 4)
+            self.assertLess(back, 0.001, "turning the storms off did not restore the canvas")
+
+            page.check("#toggle-mrms_volume")
+            page.check('input[name="vexag"][value="3"]')
+            page.wait_for_timeout(1500)
+            self.assertIn("×3", page.text_content("#volume-factor"))
+            after3 = page.evaluate("() => window.globeStatus.volume")
+            self.results["volume_status_3x"] = after3
+            self.assertEqual(after3["factor"], 3)
+            self.assertEqual(after3["drawn"], expected)
+            self.assertGreaterEqual(after3["builds"], 2, "the points were not rebuilt at 3x")
+
+            swatches = page.evaluate(SWATCH_JS)
+            self.assertEqual(swatches, [rgb_css(h) for h in NWS_STEP_HEX], "the dBZ swatches are not the NWS steps")
+            self.results["swatches_match_nws_steps"] = True
+            self.assertEqual([e for e in errors if "pageerror" in e], [], "the page raised an error")
+            browser.close()
+        print("GLOBE_VOLUME_SYNTH_RESULT=" + json.dumps(self.results, sort_keys=True))
+
+
+class SampleVolumeBrowserTests(GlobeVolumeBrowserBase):
+    """--volume fixtures/volume-2025-06-15-sample.json (a relative path, read from the prototype folder)."""
+
+    volume_args = ["--volume", os.path.join("fixtures", SAMPLE_FIXTURE)]
+
+    def test_panel_count_equals_the_fixture_and_the_screenshot_is_saved(self):
+        from playwright.sync_api import sync_playwright
+
+        expected = len(load_fixture(SAMPLE_FIXTURE)["voxels"])
+        self.results["fixture_voxels"] = expected
+        tmp = tempfile.mkdtemp(prefix="globe-volume-")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=browser_path(), headless=True)
+            page = browser.new_page(viewport={"width": 1280, "height": 800})
+            pending, errors = track_requests(page)
+            page.goto(self.base + "/", wait_until="load", timeout=120000)
+            page.wait_for_selector("#layer-list .layer", timeout=60000)
+            settle_tiles(page, pending, TILES_WAIT_S + 15, self.results, "initial_tiles")
+
+            row = page.evaluate(VOLUME_ROW_JS)
+            self.results["volume_row_before"] = row
+            self.assertEqual(row["legend"], VOLUME_LEGEND)
+            self.assertEqual(row["label"], ARCHIVED_LABEL)
+            self.assertEqual(row["state"], "Stale", "a 2025 volume must not show as live")
+
+            count_text = page.text_content("#volume-drawn")
+            self.results["panel_count_text"] = count_text
+            panel_count = int(re.search(r"([\d,]+) voxels", count_text).group(1).replace(",", ""))
+            self.assertEqual(panel_count, expected, "the voxel count in the panel is not the fixture's count")
+
+            page.click("#zoom-volume")
+            settle_tiles(page, pending, 150, self.results, "after_zoom_tiles")
+            page.wait_for_timeout(1000)
+            hidden = canvas_rgb(page)
+            page.check("#toggle-mrms_volume")
+            page.wait_for_timeout(2000)
+            settle_tiles(page, pending, 60, self.results, "after_toggle_tiles")
+            changed = fraction_changed(hidden, canvas_rgb(page))
+            self.results["volume_pixel_diff"] = {"changed_fraction": round(changed, 4),
+                                                 "min_required": VOLUME_MIN_CHANGED}
+            self.assertGreater(changed, VOLUME_MIN_CHANGED, "turning the storms on did not change the canvas")
+
+            full = os.path.join(tmp, "full.png")
+            page.screenshot(path=full)
+            shot = write_screenshot_copy(full, VOLUME_PNG)
+            self.results["screenshot"] = shot
+            self.assertLessEqual(shot["bytes"], SCREENSHOT_LIMIT)
+
+            status = page.evaluate("() => window.globeStatus.volume")
+            self.results["volume_status"] = status
+            self.assertEqual(status["drawn"], expected)
+            self.assertEqual(status["drawnInFile"], expected)
+            self.assertEqual(page.evaluate(SWATCH_JS), [rgb_css(h) for h in NWS_STEP_HEX])
+            self.assertEqual([e for e in errors if "pageerror" in e], [], "the page raised an error")
+            browser.close()
+        print("GLOBE_VOLUME_SAMPLE_RESULT=" + json.dumps(self.results, sort_keys=True))
 
 
 if __name__ == "__main__":
