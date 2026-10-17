@@ -1,0 +1,436 @@
+{
+ "task": "P1 globe page (slug globe-page): Phase 0 prototype outside the app",
+ "status": "research only. Nothing ships: payload/, desktop/, tests/, docs/, README.md, requirements.txt untouched.",
+ "generated_utc": "2026-10-17T03:22:17Z",
+ "environment": {
+  "python": "3.13.16",
+  "pillow": "13.0.0",
+  "playwright": "1.64.0",
+  "chromium": "141.0.7390.37 (pre-installed chromium-1194, headless, no extra flags)",
+  "webgl": "WebGL 2 through SwiftShader on the CPU; GPU timing not measured",
+  "venv": "scratchpad/globe-venv/w8-webgl (existing; Playwright and Pillow present)"
+ },
+ "files_written": [
+  {
+   "path": "research/globe/prototype/serve.py",
+   "bytes": 43022
+  },
+  {
+   "path": "research/globe/prototype/index.html",
+   "bytes": 2903
+  },
+  {
+   "path": "research/globe/prototype/globe.js",
+   "bytes": 15991
+  },
+  {
+   "path": "research/globe/prototype/globe.css",
+   "bytes": 5207
+  },
+  {
+   "path": "research/globe/prototype/fixtures/places.json",
+   "bytes": 707
+  },
+  {
+   "path": "research/globe/prototype/fixtures/nws_alerts_mt_2026-10-17T0255Z.json",
+   "bytes": 9359
+  },
+  {
+   "path": "research/globe/prototype/fixtures/alerts_classes_synthetic.json",
+   "bytes": 1927
+  },
+  {
+   "path": "research/globe/prototype/tests/test_serve.py",
+   "bytes": 27336
+  },
+  {
+   "path": "research/globe/prototype/tests/test_globe_browser.py",
+   "bytes": 21421
+  },
+  {
+   "path": "research/globe/validation-evidence/globe-prototype.png",
+   "bytes": 290331
+  }
+ ],
+ "cesium": {
+  "version": "1.146.0",
+  "version_source": "https://api.cdnjs.com/libraries/cesium?fields=version (checked 2026-10-17)",
+  "script_url": "https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js",
+  "script_bytes": 6080574,
+  "script_integrity": "sha384-1lWK5deN/B+lLaUw4lk6xKp/L19ii/98SZLk6K8YthDskgvc+GbdixLzbCnSS2Wn",
+  "script_integrity_recomputed_matches": true,
+  "css_url": "https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Widgets/widgets.css",
+  "css_bytes": 30710,
+  "css_integrity": "sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp",
+  "css_integrity_recomputed_matches": true,
+  "base_url": "https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/",
+  "browser_sri_passed": true,
+  "path_deviation": "The brief names Build/Cesium/Cesium.js. cdnjs returns 404 for that path (checked 2026-10-17), so the flat cdnjs path is used; the hashes were computed from the flat file.",
+  "pin_mode": "pinned at build time and written into index.html; serve.py does not re-check the version",
+  "ion_token": "none",
+  "terrain": "EllipsoidTerrainProvider (flat; terrain is a later phase)"
+ },
+ "rule7_live_checks": [
+  "GIBS GOES-East GeoColor and Band 13, z3 tile (x1,y2) over Montana, 10-min steps back from now: 200 for the first imagery frame, 404 for newer times. Decoded frame: 256x256, 100% opaque, 11,337 (GeoColor) and 11,985 (Band 13) distinct colours, mean luma 129.5 and 148.7 (PIL and the stdlib reader agree).",
+  "NWS radar export, Montana box (EPSG:4326, show:3, 1280x583 = 746,240 px): 0 px with echo at check time (see radar.content). Same export for the CONUS box (show:0): 3.84% of pixels with echo. So the blank is local to the box at check time.",
+  "NWS radar valid time: app query (newest footprint) HAWAII_L2_BREF_QCD_*; the CONUS footprint covering Montana is 43 to 56 s older across the checks made in this session. The page uses the CONUS time and reports the app value beside it.",
+  "NWS alerts area=MT: 3 features, all with null geometry; 7 distinct forecast zones; zone record https://api.weather.gov/zones/forecast/MTZ003 returns a Polygon (checked).",
+  "Browser: all tile requests returned 200 (no HTTP 4xx or 5xx from any host in the main run); cdnjs served Cesium with the pinned SRI (the viewer started, so the hash matched)."
+ ],
+ "layers_drawn_main_run": {
+  "created_in_viewer": {
+   "bluemarble": "imagery",
+   "goes_east_band13": "imagery",
+   "goes_east_geocolor": "imagery",
+   "nws_alerts": "alerts",
+   "nws_radar": "imagery",
+   "places": "places",
+   "usgs_imagery": "imagery"
+  },
+  "visible_by_default": [
+   "bluemarble",
+   "usgs_imagery",
+   "goes_east_geocolor",
+   "nws_radar",
+   "nws_alerts",
+   "places"
+  ],
+  "hidden_by_default": [
+   "goes_east_band13 (created, show=false, 0 tile requests)"
+  ],
+  "ok_tile_responses_below_400_by_layer": {
+   "bluemarble": 63,
+   "goes_east_geocolor": 117,
+   "nws_radar": 1,
+   "usgs_imagery": 63
+  },
+  "alerts_drawn": {
+   "features": 3,
+   "markers": 3,
+   "noGeometry": 0,
+   "outlines": 7
+  },
+  "places_drawn": 5,
+  "tile_errors": {},
+  "panel_rows": 7,
+  "panel_states": [
+   [
+    "goes_east_geocolor",
+    "Stale"
+   ],
+   [
+    "goes_east_band13",
+    "Stale"
+   ],
+   [
+    "nws_radar",
+    "Live"
+   ],
+   [
+    "nws_alerts",
+    "Live"
+   ],
+   [
+    "places",
+    "Live"
+   ],
+   [
+    "usgs_imagery",
+    "Live"
+   ],
+   [
+    "bluemarble",
+    "Live"
+   ]
+  ]
+ },
+ "goes_frames": {
+  "snapshot_utc": "2026-10-17T03:22:14Z",
+  "geocolor": {
+   "state": "stale",
+   "state_text": "42 min old, over the 15-min limit (proposal)",
+   "valid_time_utc": "2026-10-17T02:40:00Z",
+   "retrieved_time_utc": "2026-10-17T03:22:17Z",
+   "age_min": 42.2,
+   "freshness_limit_min": 15,
+   "latency_min_at_probe": 42.3
+  },
+  "band13": {
+   "state": "stale",
+   "state_text": "32 min old, over the 15-min limit (proposal)",
+   "valid_time_utc": "2026-10-17T02:50:00Z",
+   "retrieved_time_utc": "2026-10-17T03:22:16Z",
+   "age_min": 32.2,
+   "freshness_limit_min": 15,
+   "latency_min_at_probe": 32.3
+  },
+  "geocolor_probe_steps": [
+   {
+    "t": "2026-10-17T03:20:00Z",
+    "status": 404,
+    "ok": false
+   },
+   {
+    "t": "2026-10-17T03:10:00Z",
+    "status": 404,
+    "ok": false
+   },
+   {
+    "t": "2026-10-17T03:00:00Z",
+    "status": 404,
+    "ok": false
+   },
+   {
+    "t": "2026-10-17T02:50:00Z",
+    "status": 404,
+    "ok": false
+   },
+   {
+    "t": "2026-10-17T02:40:00Z",
+    "status": 200,
+    "ok": true,
+    "verdict": "imagery"
+   }
+  ],
+  "band13_probe_steps": [
+   {
+    "t": "2026-10-17T03:20:00Z",
+    "status": 404,
+    "ok": false
+   },
+   {
+    "t": "2026-10-17T03:10:00Z",
+    "status": 404,
+    "ok": false
+   },
+   {
+    "t": "2026-10-17T03:00:00Z",
+    "status": 404,
+    "ok": false
+   },
+   {
+    "t": "2026-10-17T02:50:00Z",
+    "status": 200,
+    "ok": true,
+    "verdict": "imagery"
+   }
+  ],
+  "earlier_probe_session": {
+   "geocolor": "02:10Z frame, 41.4 min behind at 02:51:24Z",
+   "band13": "02:20Z frame, 31.4 min behind at 02:51:24Z"
+  },
+  "note": "Under the 15-min proposal both GOES layers are stale at every check (28 to 50 min behind). GIBS says about 40 min for GeoColor. The limit is a proposal; a decision is needed."
+ },
+ "radar": {
+  "snapshot": {
+   "state": "live",
+   "state_text": "8 min old, within the 15-min limit (proposal)",
+   "valid_time_utc": "2026-10-17T03:14:02Z",
+   "retrieved_time_utc": "2026-10-17T03:22:15Z",
+   "age_min": 8.2,
+   "freshness_limit_min": 15
+  },
+  "content": {
+   "width": 1280,
+   "height": 583,
+   "bytes": 866,
+   "echo_share": 0.0,
+   "distinct_colours": 1
+  },
+  "content_text": "Echo pixels in this image: 0.0% of the Montana box. A blank box is not an all-clear.",
+  "app_newest_valid_time_utc": "2026-10-17T03:14:58Z",
+  "image": "MapServer REST export, layers=show:3, bboxSR=4326, imageSR=4326, 1280x583 PNG. The app uses WMSServer GetMap layer 1 in EPSG:3857; both were blank over the box at check time."
+ },
+ "alerts": {
+  "snapshot_utc": "2026-10-17T03:21:44Z",
+  "state": "live",
+  "state_text": "1 min old, within the 10-min limit (proposal)",
+  "counts_by_geometry_source_snapshot": {
+   "polygon": 0,
+   "zone": 3,
+   "none": 0
+  },
+  "input_count": 3,
+  "zone_fetches": 7,
+  "zone_errors": [],
+  "features": [
+   {
+    "event": "High Wind Warning",
+    "severity": "Severe",
+    "geometry_source": "zone",
+    "zones_matched": 1,
+    "zones_outlined": 1
+   },
+   {
+    "event": "High Wind Warning",
+    "severity": "Severe",
+    "geometry_source": "zone",
+    "zones_matched": 5,
+    "zones_outlined": 5
+   },
+   {
+    "event": "Lake Wind Advisory",
+    "severity": "Moderate",
+    "geometry_source": "zone",
+    "zones_matched": 1,
+    "zones_outlined": 1
+   }
+  ],
+  "counts_by_geometry_source_browser_run": {
+   "polygon": 0,
+   "zone": 3,
+   "none": 0
+  },
+  "browser_outlines_markers_nogeometry": [
+   7,
+   3,
+   0
+  ],
+  "earlier_run_note": "One earlier browser run (before zone_errors was added) placed 2 markers and left one alert with no geometry (6 outlines). The zone fetch failed transiently; the cause was not captured. The server now lists failing zones in alerts.json."
+ },
+ "canvas_pixels": {
+  "canvas_css_px": [
+   900,
+   720
+  ],
+  "nonblack_fraction_main_run": 0.9943,
+  "changed_fraction_after_goes_geocolor_off": 0.8846,
+  "nonblack_fraction_offline_base_only": 0.9982,
+  "thresholds": {
+   "nonblack": "> 0.2 (asserted)",
+   "changed": "> 0.02 (asserted)"
+  },
+  "method": "Playwright element screenshot of the Cesium canvas, PIL histogram (luma > 16 counts as non-black)"
+ },
+ "screenshot": {
+  "path": "research/globe/validation-evidence/globe-prototype.png",
+  "bytes": 290331,
+  "colours": "palette-256",
+  "height": 560,
+  "width": 896,
+  "source": "full page at 1280x800 CSS px, downscaled with Lanczos; palette fallback used to meet 300 KB"
+ },
+ "timings": {
+  "layers_doc_first_build_s_snapshot": 2.42,
+  "alerts_doc_cached_s": 0.0,
+  "radar_refresh_incl_png_decode_s": 1.11,
+  "goes_probe_geocolor_s": 1.5,
+  "goes_probe_band13_s": 1.02,
+  "browser_page_load_s": 1.0,
+  "browser_tiles_loaded_s_final_run": 30.0,
+  "browser_tiles_loaded_s_six_runs": "26.6 to 40.6 (SwiftShader, 1280x800)",
+  "browser_test_file_s": 127.1,
+  "unit_tests_s": 0.46
+ },
+ "phone_width_390px": {
+  "bodyScrollWidth": 390,
+  "innerWidth": 390,
+  "rows": 7,
+  "scrollWidth": 390,
+  "stageHeight": 580,
+  "stageWidth": 390
+ },
+ "offline_run": {
+  "rows": [
+   {
+    "id": "goes_east_geocolor",
+    "state": "Off",
+    "toggleDisabled": true
+   },
+   {
+    "id": "goes_east_band13",
+    "state": "Off",
+    "toggleDisabled": true
+   },
+   {
+    "id": "nws_radar",
+    "state": "Off",
+    "toggleDisabled": true
+   },
+   {
+    "id": "nws_alerts",
+    "state": "Off",
+    "toggleDisabled": true
+   },
+   {
+    "id": "places",
+    "state": "Live",
+    "toggleDisabled": false
+   },
+   {
+    "id": "usgs_imagery",
+    "state": "Live",
+    "toggleDisabled": false
+   },
+   {
+    "id": "bluemarble",
+    "state": "Live",
+    "toggleDisabled": false
+   }
+  ],
+  "cesium": "loaded",
+  "drawn": {
+   "bluemarble": "imagery",
+   "places": "places",
+   "usgs_imagery": "imagery"
+  },
+  "feed_toggles_disabled": true
+ },
+ "cdn_blocked_run": {
+  "cesium_state": "failed",
+  "error_text": "3D view could not load. The CesiumJS library did not load from its CDN (blocked, offline, or it failed its integrity check). The layer panel still works.",
+  "panel_rows": 7
+ },
+ "tests": [
+  {
+   "command": "python3 -B -m unittest discover -s tests -p test_serve.py -v (system python 3.13.16)",
+   "result": "Ran 50 tests in 0.461s: OK"
+  },
+  {
+   "command": "<scratch venv>/bin/python -B -m unittest discover -s tests -p test_globe_browser.py -v",
+   "result": "Ran 4 tests in 127.075s: OK (cdn-blocked failure, draw + toggle + legend + hover, phone width 390 px, offline)"
+  },
+  {
+   "command": "python3 -B -m unittest discover -s tests -p test_globe_browser.py -v (no Playwright)",
+   "result": "OK (skipped=2): both browser classes skip with a reason"
+  },
+  {
+   "command": "cd prototype && python3 -B -m unittest discover -s tests (documented command, system python)",
+   "result": "Ran 117 tests: OK (skipped=2). Includes test_parallax.py and test_mrms_volume.py, which are other agents' modules."
+  }
+ ],
+ "limits": [
+  "WebGL is SwiftShader on the CPU in headless Chromium 141. Load time and frame rate are not GPU numbers, and WebView2, WKWebView, WebKitGTK and QtWebEngine were not run (see the W8 report).",
+  "Freshness limits (GOES 15, radar 15, alerts 10) are proposals, not D12. Under them GOES is always stale here.",
+  "The radar box was blank at every check. Blank is not an all-clear; the legend says so.",
+  "The page's Montana radar image uses the CONUS footprint time (43-56 s older than the app's newest-footprint time).",
+  "Only the zone-based alert path was seen live. The polygon path is covered by synthetic fixture tests only.",
+  "Cesium version is pinned at build time (2026-10-17). A later pin needs a new index.html and new hashes.",
+  "Base maps carry no valid time; their panel state is 'Live' from configuration. Tile-level failures are counted in the browser (Tile errors line) and do not change the Python state.",
+  "USGS imagery covers the lower 48 only; Blue Marble is shown at low zoom. Terrain is flat (ellipsoid).",
+  "Places are the five brief coordinates, not the app's database. Labels show on hover only.",
+  "The probe checks one z3 tile over Montana per frame, not every tile the view needs.",
+  "No Cesium ion token, no CSP or CORS change in the app, no installer, no app integration (rule 2 untouched).",
+  "The browser test waits for tilesLoaded (cap 45 s), then up to 15 s more for the tile queue to empty (2 s quiet).",
+  "CORS in the browser: no tile error was recorded for the radar image or the GIBS and USGS tiles at origin 127.0.0.1. The Access-Control-Allow-Origin header itself is not readable from page JavaScript."
+ ],
+ "what_failed_then_fixed": [
+  "Cesium path: the brief's Build/Cesium/Cesium.js returns 404 on cdnjs. Fixed: flat path (documented above).",
+  "A first browser pass read tilesLoaded as true at 3 s with a black canvas. The test now waits for tilesLoaded and for the tile queue to empty.",
+  "The browser logged a 404 for /favicon.ico. Fixed with an inline data: icon link.",
+  "One browser run left an alert without geometry after a transient zone fetch failure; now reported in zone_errors."
+ ],
+ "not_touched_by_this_task": [
+  "payload/, desktop/, tests/ (repo), docs/, README.md, requirements.txt",
+  "research/globe/prototype/parallax.py and tests/test_parallax.py (only the wording in validation-evidence/parallax.json is read)",
+  "other agents' files in prototype/ (mrms_volume.py, tests/test_mrms_volume.py, fixtures/volume-*.json) and validation-evidence/ (mrms.json, prototype-mrms.json, and others)"
+ ],
+ "pins_verified": {
+  "index_html_pins": [
+   "sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp",
+   "sha384-1lWK5deN/B+lLaUw4lk6xKp/L19ii/98SZLk6K8YthDskgvc+GbdixLzbCnSS2Wn"
+  ],
+  "cesium_js": "sha384-1lWK5deN/B+lLaUw4lk6xKp/L19ii/98SZLk6K8YthDskgvc+GbdixLzbCnSS2Wn",
+  "widgets_css": "sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp"
+ }
+}
