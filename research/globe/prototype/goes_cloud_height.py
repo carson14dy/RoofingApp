@@ -105,6 +105,7 @@ REQUIRED_JSON_KEYS = [
     "native_pixels_full_grid", "percent_native_bbox", "target_grid_counts", "percent_target_grid",
     "stats", "height_reference", "height_reference_statements", "bytes_downloaded", "runtime_s",
     "timings_s", "latency_s", "note", "output", "limits", "include_flagged_in_png",
+    "centre_check", "dqf_file_percent_attributes", "dqf_good_check", "nominal_satellite_subpoint_lon_deg",
 ]
 
 
@@ -805,8 +806,15 @@ GLOBAL_ATTRS_KEEP = ("time_coverage_start", "time_coverage_end", "platform_ID", 
                      "instrument_type", "scene_id", "spatial_resolution", "percent_good_quality_qf",
                      "license", "title", "production_site", "geospatial_lat_center",
                      "geospatial_lon_center", "dataset_name", "project")
-HEIGHT_REF_KEYWORDS = ("ellipsoid", "sea level", "mean sea", "geoid", "ground", "terrain", "surface",
-                       "datum", "reference", "above")
+HEIGHT_REF_KEYWORDS = ("ellipsoid", "sea level", "mean sea", "geoid", "geopotential", "ground", "terrain",
+                       "surface", "datum", "reference", "above")
+# What the CF standard-name table says the name means (cfconventions.org current table, read on
+# 2026-10-17: geopotential is relative to the geoid, and geopotential height is not relative to the
+# surface). Used only to label the file's own standard_name; the file text does not restate it.
+CF_HEIGHT_REFERENCE = {
+    "geopotential_height_at_cloud_top": "relative to the geoid (sea level), not to the surface, by the "
+                                        "CF meaning of the standard_name",
+}
 HEIGHT_REF_SKIP = {"grid_mapping", "coordinates", "ancillary_variables", "_FillValue", "valid_range",
                    "flag_meanings", "flag_values", "cell_methods"}
 
@@ -867,9 +875,18 @@ def read_netcdf(path: str, product_key: str) -> dict:
             dqf_attrs = {k: _plain(qv.getncattr(k)) for k in qv.ncattrs()}
             dqf_fill = int(dqf_attrs.get("_FillValue", 255))
             dqf_range = tuple(int(v) for v in dqf_attrs.get("valid_range", [0, 255]))
+        geo_ref = {"geospatial_lat_lon_extent": {}, "nominal_satellite_subpoint_lon_deg": None}
+        if "geospatial_lat_lon_extent" in ds.variables:
+            gv = ds.variables["geospatial_lat_lon_extent"]
+            geo_ref["geospatial_lat_lon_extent"] = {k: _plain(gv.getncattr(k)) for k in gv.ncattrs()}
+        if "nominal_satellite_subpoint_lon" in ds.variables:
+            nv = ds.variables["nominal_satellite_subpoint_lon"]
+            nv.set_auto_maskandscale(False)
+            geo_ref["nominal_satellite_subpoint_lon_deg"] = float(np.asarray(nv[:]).reshape(-1)[0])
     finally:
         ds.close()
     return {
+        "geo_ref": geo_ref,
         "proj": geos, "x": x, "y": y, "raw": raw, "scale": scale, "offset": offset,
         "fill": int(dattrs["_FillValue"]),
         "valid_range": tuple(int(v) for v in dattrs["valid_range"]),
@@ -919,7 +936,7 @@ def synthetic_dataset(product_key: str, satellite: str, bbox=DEFAULT_BBOX,
         scale, offset, fill, vrange = 0.3052037, 0.0, 65535, (0, 65530)
         raw = np.clip(np.rint(height / scale), 0, 65530).astype(np.uint16)
         raw[no_ret] = 65535
-        raw[(lon > -104.5) & (lat < 44.2)] = 65531
+        raw[(lon > -106.0) & (lon < -105.0) & (lat > 44.0) & (lat < 44.6)] = 65531
         units, dqf_fill_v = "m", 255
     else:
         scale, offset, fill, vrange = 0.06145332, 89.62, -1, (0, 4095)
@@ -970,7 +987,8 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
     bytes_listing = 0
     bytes_object = 0
     pick: Optional[Pick] = None
-    checked_at = now or utcnow()
+    start_now = now or utcnow()
+    checked_at = start_now
     bucket = None
     object_url = None
     time_request = "synthetic"
@@ -986,13 +1004,13 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
             pick, bytes_listing = find_key(bucket, cfg, args.key, fetch)
             time_request = f"key:{args.key}"
         elif time_req is None:
-            pick, bytes_listing, _checked = find_latest(bucket, cfg, checked_at, fetch)
+            pick, bytes_listing, _checked = find_latest(bucket, cfg, start_now, fetch)
             time_request = "latest"
         else:
             year, doy, hour = time_req
             pick, bytes_listing = find_hour(bucket, cfg, year, doy, hour, fetch)
             time_request = f"{year}-{doy:03d}-{hour:02d}"
-        checked_at = utcnow()
+        checked_at = now or utcnow()
         timings["list"] = round(time.monotonic() - t0, 3)
         if pick.platform != EXPECTED_PLATFORM[args.satellite]:
             raise RuntimeError(f"file platform {pick.platform} does not match --satellite {args.satellite}")
@@ -1030,10 +1048,43 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
                    "upload_minus_scan_end_s": round((pick.last_modified - scan_end).total_seconds(), 1)}
 
     reference = height_reference_statements(data["data_attrs"]) if args.product == "ACHAC" else []
-    if args.product == "ACHAC":
-        href = reference[0] if reference else "unverified (no reference statement in the file's HT attributes)"
-    else:
+    std_name = data["data_attrs"].get("standard_name")
+    if args.product != "ACHAC":
         href = "not applicable (brightness temperature)"
+    elif std_name in CF_HEIGHT_REFERENCE:
+        href = f"{std_name}: {CF_HEIGHT_REFERENCE[std_name]}; the file text does not restate the datum"
+    elif reference:
+        href = "; ".join(reference)
+    else:
+        href = "unverified (no reference statement in the file's HT attributes)"
+
+    geo_ref = data.get("geo_ref") or {}
+    gl = geo_ref.get("geospatial_lat_lon_extent") or {}
+    centre_check = None
+    if gl:
+        xm = 0.5 * (data["x"][0] + data["x"][-1])
+        ym = 0.5 * (data["y"][0] + data["y"][-1])
+        la_c, lo_c = scan_to_latlon(xm, ym, g)
+        centre_check = {
+            "file_lat_center": gl.get("geospatial_lat_center"),
+            "file_lon_center": gl.get("geospatial_lon_center"),
+            "file_lon_nadir": gl.get("geospatial_lon_nadir"),
+            "computed_lat_center": round(float(la_c), 6),
+            "computed_lon_center": round(float(lo_c), 6),
+            "computed_with_lon0_deg": g.lon0_deg,
+            "note": "centre of the grid from the middle of the first and last pixel centres",
+        }
+    dqf_file_percent = {k: v for k, v in data["dqf_attrs"].items() if str(k).startswith("percent_")}
+    dqf_good_check = None
+    fg = res["dqf"].get("full_grid") if res["dqf"].get("present") else None
+    if dqf_file_percent and fg and fg["non_fill"]:
+        key = "percent_good_quality_qf" if "percent_good_quality_qf" in dqf_file_percent else "percent_good_pixel_qf"
+        if key in dqf_file_percent:
+            computed = fg["good_dqf0"] / fg["non_fill"]
+            dqf_good_check = {"file_attribute": key, "file_fraction": dqf_file_percent[key],
+                              "computed_fraction_of_non_fill": round(computed, 9),
+                              "difference": round(float(dqf_file_percent[key]) - computed, 9),
+                              "note": "file values are float32 fractions, not percent"}
 
     out_png = os.path.abspath(args.out)
     out_json = os.path.splitext(out_png)[0] + ".json"
@@ -1062,6 +1113,9 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
         "time_request": time_request,
         "file_scan_start_from_name": iso_utc(pick.scan_start) if pick else None,
         "satellite_longitude_deg": float(g.lon0_deg),
+        "satellite_longitude_source": "goes_imager_projection longitude_of_projection_origin (the grid used "
+                                      "for geolocation)",
+        "nominal_satellite_subpoint_lon_deg": geo_ref.get("nominal_satellite_subpoint_lon_deg"),
         "perspective_point_height_m": float(g.height_m),
         "semi_major_axis_m": float(g.req_m),
         "semi_minor_axis_m": float(g.rpol_m),
@@ -1093,7 +1147,9 @@ def run(args, *, bbox, time_req, fetch: Optional[Callable[[str], bytes]] = None,
         "height_reference": href,
         "height_reference_statements": reference,
         "license_attribute": ga.get("license"),
-        "file_percent_good_quality_qf": ga.get("percent_good_quality_qf"),
+        "centre_check": centre_check,
+        "dqf_file_percent_attributes": dqf_file_percent,
+        "dqf_good_check": dqf_good_check,
         "bytes_downloaded": {"listing": bytes_listing, "object": bytes_object,
                              "total": bytes_listing + bytes_object},
         "runtime_s": None,
