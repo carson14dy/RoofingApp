@@ -75,6 +75,13 @@
   {% endif %}
 </section>
 
+{% if town.storm %}
+<section aria-labelledby="storm-h">
+  <div class="section-head"><h2 id="storm-h">Radar echo top</h2></div>
+  <p class="sub">NOAA radar estimate (MRMS), 11 heights from 500 to 15,000 m above sea level. Each echo top is in metres above sea level: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data. "At least" means some heights above it had no radar value. Not observed hail or damage.</p>
+  <p class="storm-text">{{ town.storm.text }}</p>
+</section>
+{% endif %}
 <section aria-labelledby="hours-h">
   <div class="section-head"><h2 id="hours-h">Next 24 hours</h2></div>
   {% set upcoming = town.hours | selectattr('start', 'ge', now - delta_hour) | list %}

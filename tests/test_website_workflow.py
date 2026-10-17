@@ -57,3 +57,23 @@ class WebsitePlan(unittest.TestCase):
     def test_branch_build_is_preview_only(self):
         output, _ = self.plan("https://example.org/", ref="refs/heads/codex/fix-pages-publication")
         self.assertEqual(output, {"publish": "false", "run": "true", "pages_url": ""})
+
+
+class StormFlag(unittest.TestCase):
+    """--storm-layers (radar echo tops) is passed on branch builds only, and the storm tests run in CI."""
+
+    def setUp(self):
+        self.text = (ROOT / ".github/workflows/website.yml").read_text()
+
+    def test_only_the_branch_build_line_passes_the_flag(self):
+        build_args = [line for line in self.text.splitlines() if "args+=(" in line and "--storm-layers" in line]
+        self.assertEqual(len(build_args), 1)
+        self.assertIn('if [ "$GITHUB_REF" != "refs/heads/main" ]', build_args[0])
+        self.assertIn("--require-live --storm-layers", build_args[0])
+        self.assertFalse(any("website.build" in line and "--storm-layers" in line for line in self.text.splitlines()))
+
+    def test_the_storm_tests_run_in_the_unittest_line_and_the_path_filter(self):
+        unit = [line for line in self.text.splitlines() if "python -m unittest" in line]
+        self.assertEqual(len(unit), 1)
+        self.assertIn("tests.test_storm", unit[0])
+        self.assertIn('"tests/test_storm.py"', self.text)

@@ -26,7 +26,7 @@ Status 2026-10-17 · branch `codex/montana-weather-pilot`, with `main` merged in
 | Browser JavaScript | `layers.js` at most 300 lines and 16,000 B; `map.js` (2,155 lines, 114,696 B) does not grow ([main-architecture.json](validation-evidence/main-architecture.json)) | `globe.js` at most 600 lines and 40,000 B (design D) or 400 and 24,000 B (synthesis); `volume.js` 250 lines, loaded on demand |
 | Library | none; Leaflet 1.9.4 is already vendored at 147,552 B | three.js 0.186.1, MIT: 2,120,885 B raw, 417,073 B gzip (computed, Python gzip -9: [design-synthesis-website.json](validation-evidence/design-synthesis-website.json)) |
 | What it delivers of the ask | Flat pictures with words: a satellite picture, an echo-top raster and a two-hour loop; no globe, tilt, true-height clouds or 3D volumes | A 3D view of the Montana box with terrain, a Band 13 drape, lifted cloud tops, volumes and a loop; no streamed street detail |
-| What must be relaxed | No browser rule changes for P1–P6. New kinds and freshness limits by DECISIONS entry (D33, D34); counsel on NOAA publishing and the GOES banner (OW-10, OW-11) before P2 | Library approval (OW-1); JavaScript duties and caps (ROADMAP Next 9); Earth texture licence (OW-15); a loop store (OW-22); the schedule gate (OW-18) |
+| What must be relaxed | No browser rule changes for P1–P6 (P1 adds one documented browser-only script, row S1 in §9b, for the owner's ruling). New kinds and freshness limits by DECISIONS entry (D33, D34); counsel on NOAA publishing and the GOES banner (OW-10, OW-11) before P2 | Library approval (OW-1); JavaScript duties and caps (ROADMAP Next 9); Earth texture licence (OW-15); a loop store (OW-22); the schedule gate (OW-18) |
 
 ### Terms used
 
@@ -478,6 +478,7 @@ Browser code draws, takes input and handles browser-only events. Never in JavaSc
 | E6 | Same-origin fetch of site files with plain failure text (map.js:116–119) | Only the browser fetches; site-files rule | on main |
 | E7 | Page-age check past 25 min (base.html:47–62; map.js:21, 168) | Viewer clock; rule 4 names this check | on main |
 | E8 | "now" label within 10 min of the viewer's clock (map.js:907–909, 1152–1154) | Not on rule 4's list; OW-17 rules on it | on main |
+| S1 | Insert Python-rendered storm text into the Map's List and town sheets when they open (storm.js: measured 37 lines and 1,741 B; proposed cap 40 lines / 2,000 B) | The List and town sheets are built by map.js in the browser, so the copy is placed there; the words stay Python's | P1, behind --storm-layers (not on main) |
 | N1–N2 | Layer switch and opacity from Python's class table; frame index from timeline input, never interpolated | Browser input; the table stays in Python | C2 |
 | N3–N4 | "could not load" text on a picture error; failed refresh keeps Python's words plus "could not refresh" (design-b G-JS5) | Image and fetch error events | C2 |
 | N5–N6 | aria-pressed and accessible names; map.json version gate ("needs a newer build") | DOM state; compares version numbers, not times (OW-1) | C2 |
@@ -490,6 +491,8 @@ Browser code draws, takes input and handles browser-only events. Never in JavaSc
 | G9–G12 | Page-age check as E7; hash state for layer and view (map.js:221–246 precedent); no automatic rotation under reduced motion; stop rendering while hidden | Shared clock; URL; matchMedia; visibility and battery | PG |
 | V1 | Upload Python's 3D texture and run the volume shader (only with volumes on) | GPU work; volume.js loads on demand | PG3 |
 | dropped | Design D duty 10: stale and problem classes from valid times against the viewer's clock | Python writes the words instead (judge2-rules OD-2) | removed |
+
+This is the first new duty since the staged route (a) began on 2026-10-17, and it needs Carson's ruling (ROADMAP Next 9).
 
 Caps, for the owner to pick (OW-1; P-12):
 

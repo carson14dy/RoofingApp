@@ -85,7 +85,9 @@ order.
     It waits on the owner decisions in README section 2 (D-G1 to D-G26). Chosen 2026-10-17: route (a),
     storm layers on the Map page behind a default-off flag, P1 (text values) first. P0 gates before it:
     schedule cadence, counsel on publishing terms before P2, the -99/-999 check, the below-ground share.
-    No code in `website/` until they pass. A link-only globe only after P1 to P4 and a library approval.
+    Nothing reaches `main` until they pass. A link-only globe only after P1 to P4 and a library approval.
+    P1 is built on the research branch behind the flag (website/storm.py, tests/test_storm.py) and waits
+    for review and a small pull request; the clear-night reading of -99/-999 needs Carson's ruling first.
 
 ## Independent review priorities, for the website
 | Priority | Item | Status |
@@ -118,8 +120,9 @@ order.
   (D26).
 - The repo description says "Roofing Weather and Maps Contact app". What should "Contact" cover?
 - Globe questions (3D storm view): see `research/globe/README.md` section 14. Answer these first: keep or
-  relax the site-files-only browser rule; approve a vendored WebGL library and JavaScript caps; may storm
-  or height views ever reach homeowners, adjusters or insurers?
+  relax the site-files-only browser rule; rule on the one new browser script for the storm text (P1) and,
+  later at the P4 gate, a vendored WebGL library; may storm or height views ever reach homeowners, adjusters
+  or insurers?
 
 ## Missing inputs
 - The handoff's two images (dashboard concept, hero photo) were not provided.
