@@ -20,6 +20,7 @@ on:
       - "website/**"
       - "tests/test_site.py"
       - "tests/test_gridded.py"
+      - "tests/test_mesh.py"
       - "tests/test_basemap.py"
       - "tests/test_website_workflow.py"
       - "tools/**"
@@ -81,7 +82,7 @@ jobs:
 
       - name: Website tests (offline)
         if: steps.plan.outputs.run == 'true'
-        run: python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_website_workflow
+        run: python -m unittest tests.test_site tests.test_gridded tests.test_mesh tests.test_basemap tests.test_website_workflow
 
       - name: Build from live data
         if: steps.plan.outputs.run == 'true'
