@@ -1,0 +1,418 @@
+{
+ "workstream": "W2",
+ "slug": "goes-aws",
+ "checked_at_utc": "2026-10-17T02:04:00Z",
+ "urls_checked": [
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-ACHAC/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 3687,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "9 files, 300 s steps, latest scan 01:41:17.4-01:43:54.7 UTC, 316,361-316,934 bytes each. Hour 00: 12 files, 315,478-316,953 bytes.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-CMIPC/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 55548,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "144 keys = 9 scans x 16 bands. C13 3,905,239-3,909,220 bytes.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-CODC/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 3677,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "9 files, 300 s steps, 3,246,263-3,258,956 bytes.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-MCMIPC/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 3724,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "9 files, all bands in one file, 38,811,618-40,173,116 bytes.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-ACHAF/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 1791,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "4 files, 600 s steps (full disk), 1,588,379-1,589,763 bytes.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-ACTPC/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 3687,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "9 files, 300 s steps, 673,137-678,807 bytes.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-ACHAC/2026/&delimiter=/",
+   "method": "GET",
+   "status": 200,
+   "bytes": null,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "290 day folders, 2026/001 to 2026/290.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes18.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-ACHAC/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 3687,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "9 files, 300 s steps, latest start 01:41:17.7 UTC, 308,277-311,769 bytes.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes18.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-CMIPC/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 55589,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "144 keys; C13 3,686,559-3,707,073 bytes.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes18.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-CODC/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 3677,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "9 files, 4,626,804-4,699,468 bytes.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes16.s3.amazonaws.com/?list-type=2&prefix=ABI-L2-ACHAC/2026/290/01/",
+   "method": "GET",
+   "status": 200,
+   "bytes": 267,
+   "content_type": "application/xml",
+   "cors_allow_origin": null,
+   "content_check": "KeyCount 0; same for CMIPC and CODC. 2026/ folders: 0 for ACHAC. All 102 top-level prefixes: 0 objects dated 2026. Newest ACHAC object: 2025/097/18, LastModified 2025-04-07T18:37:36Z.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/ABI-L2-ACHAC/2026/290/01/OR_ABI-L2-ACHAC-M6_G19_s20262900141174_e20262900143547_c20262900145322.nc",
+   "method": "GET",
+   "status": 200,
+   "bytes": 316623,
+   "content_type": "binary/octet-stream",
+   "cors_allow_origin": "*",
+   "content_check": "NETCDF4 file, grid y300 x500, HT, DQF, goes_imager_projection; 102,968 valid HT cells = cloud_pixels attribute = DQF 0 count; opened with netCDF4 1.7.5.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/ABI-L2-CMIPC/2026/290/01/OR_ABI-L2-CMIPC-M6C13_G19_s20262900141174_e20262900143558_c20262900144039.nc",
+   "method": "GET",
+   "status": 200,
+   "bytes": 3909220,
+   "content_type": "binary/octet-stream",
+   "cors_allow_origin": "*",
+   "content_check": "CMI int16 1500 x 2500 at 2 km, K, scale 0.06145332, offset 89.62, fill -1; DQF 0 on 3,702,837 on-disk cells; band 10.33 um.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/ABI-L2-CODC/2026/290/01/OR_ABI-L2-CODC-M6_G19_s20262900141174_e20262900143547_c20262900146031.nc",
+   "method": "GET",
+   "status": 200,
+   "bytes": 3258956,
+   "content_type": "binary/octet-stream",
+   "cors_allow_origin": "*",
+   "content_check": "COD uint16 1500 x 2500 at 2 km, dimensionless, scale 0.00244163, fill 65535, valid 0-160; file night stats match recomputed values.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes18.s3.amazonaws.com/ABI-L2-ACHAC/2026/290/01/OR_ABI-L2-ACHAC-M6_G18_s20262900141177_e20262900143551_c20262900145209.nc",
+   "method": "GET",
+   "status": 200,
+   "bytes": 311769,
+   "content_type": "binary/octet-stream",
+   "cors_allow_origin": "*",
+   "content_check": "NETCDF4, grid 300 x 500 at 10 km, subpoint -137.0; image centre matches file attribute; 116,965 valid HT cells.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/ABI-L2-ACHAC/2026/290/01/OR_ABI-L2-ACHAC-M6_G19_s20262900141174_e20262900143547_c20262900145322.nc",
+   "method": "OPTIONS",
+   "status": 200,
+   "bytes": 0,
+   "content_type": null,
+   "cors_allow_origin": "*",
+   "content_check": "Preflight with Origin http://localhost:5000: Access-Control-Allow-Methods GET, Max-Age 3000.",
+   "verified": true
+  },
+  {
+   "url": "https://noaa-goes19.s3.amazonaws.com/ABI-L2-ACHAC/2026/290/01/OR_ABI-L2-ACHAC-M6_G19_s20262900141174_e20262900143547_c20262900145322.nc",
+   "method": "GET",
+   "status": 206,
+   "bytes": 1,
+   "content_type": "binary/octet-stream",
+   "cors_allow_origin": null,
+   "content_check": "Range 0-0 without Origin header: no Access-Control-Allow-Origin header returned.",
+   "verified": true
+  },
+  {
+   "url": "https://registry.opendata.aws/noaa-goes/",
+   "method": "GET (WebFetch)",
+   "status": 200,
+   "bytes": null,
+   "content_type": "text/html",
+   "cors_allow_origin": null,
+   "content_check": "Licence sentences returned by a summarising WebFetch, not checked against raw HTML.",
+   "verified": false
+  },
+  {
+   "url": "https://www.star.nesdis.noaa.gov/goesr/documents/ATBDs/Baseline/ATBD_GOES-R_Cloud_Height_v3.0_Jul2012.pdf",
+   "method": "GET (WebFetch)",
+   "status": 200,
+   "bytes": null,
+   "content_type": "application/pdf",
+   "cors_allow_origin": null,
+   "content_check": "WebFetch gave no text; PDF read locally at printed page 12, section 1.6.",
+   "verified": true
+  }
+ ],
+ "facts": [
+  {
+   "claim": "GOES-19 holds ABI L2 data for every 2026 day so far; GOES-18 likewise",
+   "value": "290 day folders each (2026/001-290); GOES-19 files show orbital_slot GOES-East, platform G19, subpoint -75.2 deg",
+   "evidence": "urls_checked: GOES-19 day folders; ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "GOES-16 still receives new ABI data?",
+   "value": "No. 0 objects dated 2026 in 102 of 102 top-level prefixes. Newest ACHAC object 2025-04-07T18:37:36Z (2025/097); newest CMIPC object 2025-04-07T05:19:17Z",
+   "evidence": "GOES-16 prefix listings",
+   "verified": true
+  },
+  {
+   "claim": "ACHAC grid size",
+   "value": "300 x 500 cells at 10.0 km nadir (0.00028 rad); the brief expected 1500 x 2500. CMIPC and CODC are 1500 x 2500 at 2 km (0.000056 rad)",
+   "evidence": "ACHAC and CMIPC C13 downloads",
+   "verified": true
+  },
+  {
+   "claim": "Band 13 (CMI) variable and units",
+   "value": "CMI int16 in K; scale 0.06145332, offset 89.62 K, fill -1, valid raw 0-4095 = 89.62-341.27 K; central wavelength 10.33 um",
+   "evidence": "CMIPC C13 download",
+   "verified": true
+  },
+  {
+   "claim": "ACHAC and CODC variables",
+   "value": "HT uint16 in m, scale 0.3052037, fill 65535, valid 0-65530; DQF uint8 0-4, fill 255. COD uint16 dimensionless, scale 0.00244163, fill 65535, valid 0-160; DQF uint16 bitmask",
+   "evidence": "ACHAC and CODC downloads",
+   "verified": true
+  },
+  {
+   "claim": "Scan time",
+   "value": "ACHAC and CODC 2026-10-17 01:41:17.4-01:43:54.7 UTC; CMIPC C13 ends 01:43:55.8; time_bounds agree with file names",
+   "evidence": "ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "Own fixed-grid geolocation agrees with PROJ geos",
+   "value": "pyproj 3.8.0 / PROJ 9.8.1: max abs diff 9.7e-11 deg lat, 7.1e-10 deg lon (ACHAC); 3.4e-10 and 2.6e-9 deg (CMIPC). Image centre 30.083 N, -87.097 W equals file attributes. Off-Earth cells: ACHAC 1,887 of 150,000; CMIPC 47,162 of 3,750,000",
+   "evidence": "scratch scripts pyproj_check.py and geo.py",
+   "verified": true
+  },
+  {
+   "claim": "Montana box coverage, ACHAC 10 km (44.36-49.00 N, -116.05 to -104.04 W)",
+   "value": "1,777 cells; 733 (41.25%) have valid cloud-top height",
+   "evidence": "ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "Share of CONUS valid height cells inside the Montana box",
+   "value": "733 of 102,968 = 0.71%",
+   "evidence": "ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "Cloud-top height, Montana valid cells",
+   "value": "p10 4,096 m; p50 11,174 m; p90 13,079 m; min 683 m; max 15,580 m (n=733). See limits on warm band 13 BT at these cells",
+   "evidence": "ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "Cloud-top height, CONUS valid cells",
+   "value": "p10 329 m; p50 5,601 m; p90 12,042 m; max 16,868 m (102,968 cells)",
+   "evidence": "ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "DQF and height validity",
+   "value": "Valid height exactly where DQF=0 (102,968 cells); DQF 1, 2, 3 and 255 cells all have raw fill. Montana box DQF counts: 0=733, 1=104, 3=940, so 0.0% of valid Montana height cells are flagged",
+   "evidence": "ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "DQF file attribute percent_good_quality_qf",
+   "value": "0.694969 = 102,968 / (150,000 - 1,838 fill). Values are fractions, not percent",
+   "evidence": "ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "Height vs band 13 BT agreement, CONUS",
+   "value": "Pearson r -0.66 (n=102,968, nearest 2 km cell). Median BT 292.7 K (0-2 km), 276.4 K (2-6 km), 260.0 K (6-10 km), 259.2 K (10-20 km)",
+   "evidence": "ACHAC and CMIPC C13 downloads (scratch analyze_cmi13.py)",
+   "verified": true
+  },
+  {
+   "claim": "Montana valid-height cells vs band 13 BT",
+   "value": "n=733, r -0.62; BT p10/p50/p90 250.2/269.6/277.4 K while median height is 11.2 km. Warm for tops this high; not explained here",
+   "evidence": "ACHAC and CMIPC C13 downloads",
+   "verified": true
+  },
+  {
+   "claim": "Band 13 BT over the Montana box, 2 km",
+   "value": "44,363 cells, all valid, DQF 0. Min 216.2 K, p1 227.7, p10 261.3, p50 275.6, p90 279.3, p99 281.8, max 284.5 K (-56.9 to +11.3 C)",
+   "evidence": "CMIPC C13 download",
+   "verified": true
+  },
+  {
+   "claim": "Band 13 range check against file",
+   "value": "File min/max 185.352 / 298.928 K; recomputed 185.364 / 298.930 K (quantum 0.0615 K)",
+   "evidence": "CMIPC C13 download",
+   "verified": true
+  },
+  {
+   "claim": "Billings nearest cells",
+   "value": "ACHAC cell 1.5 km away; CMIPC 2 km cell 1.49 km away, BT 278.3 K",
+   "evidence": "ACHAC and CMIPC C13 downloads",
+   "verified": true
+  },
+  {
+   "claim": "COD over the Montana box (night scene)",
+   "value": "7,237 valid cells (16.3% of 44,363). p10 0.12, p50 0.32, p90 0.88, max 16.0. 7,078 cells (97.8%) carry DQF 133 (degraded, cloud-phase-ice bit); 159 (2.2%) DQF 1",
+   "evidence": "CODC download",
+   "verified": true
+  },
+  {
+   "claim": "COD day/night and degraded share, CONUS",
+   "value": "All 1,961,560 valid cells use the night algorithm; 55.7% (1,092,030) degraded. File night min/max/mean 0.0/16.0/4.8758 match recomputed",
+   "evidence": "CODC download",
+   "verified": true
+  },
+  {
+   "claim": "Latency: S3 LastModified minus scan end",
+   "value": "ACHAC 104-125 s (median 115, n=21); CMIPC C13 27-39 s (median 29); CODC 137-172 s (median 145); MCMIPC 21-35 s; ACHAF 146-161 s; ACTPC 45-64 s",
+   "evidence": "GOES-19 listings",
+   "verified": true
+  },
+  {
+   "claim": "Age of newest visible CONUS file at listing (now minus time_coverage_end)",
+   "value": "ACHAC 293.9 s; CMIPC C13 292.8 s; CODC 293.9 s (listing at 01:48:48.6 UTC)",
+   "evidence": "GOES-19 listings",
+   "verified": true
+  },
+  {
+   "claim": "Bytes per 5-minute step, three CONUS products, GOES-19",
+   "value": "Mean 7,476,627 bytes = ACHAC 316,473 + CMIPC C13 3,906,858 + CODC 3,253,295 (about 89.7 MB per hour). GOES-18 medians: 8,682,798 bytes per step",
+   "evidence": "GOES-19 and GOES-18 listings",
+   "verified": true
+  },
+  {
+   "claim": "Other product sizes",
+   "value": "All 16 CMIPC bands for one scan: 62,415,370 bytes. ACHA-listed inputs (C07, C09, C11, C13, C14, C15, C16): 26,145,976 bytes. One MCMIPC file: 38.8-40.2 MB. Full-disk ACHAF: 1.59 MB per 10 min",
+   "evidence": "GOES-19 listings",
+   "verified": true
+  },
+  {
+   "claim": "CORS on GOES S3 objects",
+   "value": "GET with Origin returns Access-Control-Allow-Origin: * (also for an unrelated origin). Preflight returns ACAO *, Allow-Methods GET, Max-Age 3000. GET without Origin returns no ACAO header. Same on GOES-18 and CMIPC/CODC objects",
+   "evidence": "CORS checks above",
+   "verified": true
+  },
+  {
+   "claim": "GOES-18 grid crosses the antimeridian",
+   "value": "ACHAC longitudes about -184.1 to -89.9 (175.9 E to -89.9). Origin -137.0; centre matches file attribute",
+   "evidence": "GOES-18 ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "GOES-18 Montana box (comparison)",
+   "value": "2,041 cells; 859 (42.1%) valid height; p50 9,195 m; DQF 0 on all valid cells",
+   "evidence": "GOES-18 ACHAC download",
+   "verified": true
+  },
+  {
+   "claim": "Local zenith angle to Billings and to the Montana box",
+   "value": "Billings: GOES-19 62.0 deg, GOES-18 59.7 deg. Box corners: GOES-19 58.6-68.3 deg, GOES-18 55.2-64.4 deg. Flat-Earth h x tan(zenith) for a 10 km top: 18.8 km (GOES-19), 17.1 km (GOES-18), approximate only",
+   "evidence": "scratch final_stats.py (ellipsoid geometry, not from the file)",
+   "verified": true
+  },
+  {
+   "claim": "ACHA is an estimate (retrieval), not a direct measurement",
+   "value": "File summary: 'The product is derived using a physical retrieval composed of a radiative transfer model that calculates clear sky radiances, which is then used to compute the air temperature at cloud top.' ATBD v3.0 (July 2012) p.12, s.1.6: 'The ACHA is responsible for estimation of vertical extent for all cloudy ABI pixels.'",
+   "evidence": "ACHAC download; ATBD PDF",
+   "verified": true
+  },
+  {
+   "claim": "Algorithm inputs for ACHA",
+   "value": "File lists CMIPC C07, C09, C11, C13, C14, C15, C16 (same scan) and NWP ancillary files as inputs, not band 13 alone",
+   "evidence": "ACHAC download, algorithm_dynamic_input_data_container",
+   "verified": true
+  },
+  {
+   "claim": "License attribute inside the files",
+   "value": "Global attribute license = 'Unclassified data.  Access is restricted to approved users only.' in ACHAC, CMIPC and CODC files. Conflicts with the registry's open-access wording",
+   "evidence": "ACHAC, CMIPC C13 and CODC downloads",
+   "verified": true
+  }
+ ],
+ "terms": {
+  "license": "NOAA Open Data Dissemination (NODD) registry page: NOAA data 'disseminated through NODD are open to the public and can be used as desired' (summarising WebFetch, not checked verbatim). The GOES files themselves carry the global attribute quoted in facts; the two conflict. Not legal advice.",
+  "attribution_required": true,
+  "quote": "NOAA requests attribution for the use or dissemination of unaltered NOAA data.",
+  "url": "https://registry.opendata.aws/noaa-goes/"
+ },
+ "limits": [
+  "One scene only: GOES-19 scan 01:41:17.4 UTC and GOES-18 scan 01:41:17.7 UTC on 2026-10-17. Montana numbers describe that scene.",
+  "ACHAC is 10 km at nadir in this file. A search snippet claimed a 2 km ACHA grid since 2023-03-24; not verified.",
+  "No ground truth. Height was checked only for internal consistency (DQF, cloud_pixels attribute) and direction against band 13 BT.",
+  "BT was sampled at the nearest 2 km cell for each 10 km height cell. Thin or broken cloud makes BT warmer than cloud-top temperature.",
+  "Latency is S3 LastModified and filename time, measured here at listing time. It is not an NOAA service level.",
+  "One transient proxy SSL EOF on a day-folder listing (GOES-18 2025) and one on a GOES-16 listing; both retried and succeeded. curl header dumps include proxy 'Connection Established' lines.",
+  "The own geolocation formula was corrected once during the check (z term carries cos(x)). Final numbers use the corrected version; earlier draft numbers are superseded.",
+  "GOES-18 content check covers the ACHAC file only. GOES-18 CMIPC and CODC were listed, not opened.",
+  "Registry wording came from a summarising WebFetch. ACHA wording is from the 2012 ATBD v3.0, which may be superseded. The 2023 PUG was not read.",
+  "DQF percent attributes are fractions of non-fill pixels. CODC percent_good_quality_qf 0.645 does not reproduce from the DQF bits (0.443 of valid cells).",
+  "Geospatial_lat_lon_extent attributes do not match the grid bounds (GOES-19 west edge -152.11 in file vs -150.62 from image bounds).",
+  "Downloads total 7.8 MB in four files in the scratch download directory. Nothing is in the repo except this JSON."
+ ],
+ "installed_packages": [
+  "netCDF4==1.7.5 (libnetcdf 4.10.1, HDF5 2.2.0 wheel)",
+  "h5netcdf==1.8.1",
+  "cftime==1.6.6.1",
+  "pyproj==3.8.0 (PROJ 9.8.1)"
+ ],
+ "open_questions": [
+  "Is the 2026 ACHAC grid 10 km (as the file says) or 2 km (as one search snippet says)? Needs the PUG L2+ volume.",
+  "Does the file licence text ('Unclassified data. Access is restricted to approved users only.') limit redistribution? Needs Carson or counsel.",
+  "Why do Montana valid-height cells have warm band 13 BT (median 269.6 K) at median height 11.2 km? Thin cirrus, retrieval bias or 2 km sampling? Needs a recorded high-top case (roadmap phase 2 check).",
+  "Why do file geospatial extent attributes differ from grid bounds by up to 1.5 deg in longitude?",
+  "Will noaa-goes16 resume ABI output? No data since 2025-04-07."
+ ]
+}
