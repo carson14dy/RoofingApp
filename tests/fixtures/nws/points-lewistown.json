@@ -1,0 +1,112 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/47.0625,-109.4282",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -109.4282,
+            47.0625
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/47.0625,-109.4282",
+        "@type": "wx:Point",
+        "cwa": "TFX",
+        "type": "land",
+        "forecastOffice": "https://api.weather.gov/offices/TFX",
+        "gridId": "TFX",
+        "gridX": 156,
+        "gridY": 117,
+        "forecast": "https://api.weather.gov/gridpoints/TFX/156,117/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/TFX/156,117/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/TFX/156,117",
+        "observationStations": "https://api.weather.gov/gridpoints/TFX/156,117/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -109.452399,
+                    47.0513795
+                ]
+            },
+            "properties": {
+                "city": "Lewistown",
+                "state": "MT",
+                "distance": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 0
+                },
+                "bearing": {
+                    "unitCode": "wmoUnit:degree_(angle)",
+                    "value": 0
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/MTZ314",
+        "county": "https://api.weather.gov/zones/county/MTC027",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/MTZ115",
+        "timeZone": "America/Denver",
+        "radarStation": "KBLX",
+        "astronomicalData": {
+            "sunrise": "2026-10-16T07:37:44-06:00",
+            "sunset": "2026-10-16T18:28:39-06:00",
+            "transit": "2026-10-16T13:03:12-06:00",
+            "civilTwilightBegin": "2026-10-16T07:07:03-06:00",
+            "civilTwilightEnd": "2026-10-16T18:59:20-06:00",
+            "nauticalTwilightBegin": "2026-10-16T06:31:44-06:00",
+            "nauticalTwilightEnd": "2026-10-16T19:34:40-06:00",
+            "astronomicalTwilightBegin": "2026-10-16T05:56:26-06:00",
+            "astronomicalTwilightEnd": "2026-10-16T20:09:57-06:00"
+        },
+        "nwr": {
+            "transmitter": "KZZ54",
+            "sameCode": "030027",
+            "areaBroadcast": "https://api.weather.gov/radio/KZZ54/broadcast",
+            "pointBroadcast": "https://api.weather.gov/points/47.0625,-109.4282/radio"
+        }
+    }
+}

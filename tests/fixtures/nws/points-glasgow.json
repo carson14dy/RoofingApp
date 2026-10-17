@@ -1,0 +1,112 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/48.197,-106.6367",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -106.6367,
+            48.197
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/48.197,-106.6367",
+        "@type": "wx:Point",
+        "cwa": "GGW",
+        "type": "land",
+        "forecastOffice": "https://api.weather.gov/offices/GGW",
+        "gridId": "GGW",
+        "gridX": 110,
+        "gridY": 111,
+        "forecast": "https://api.weather.gov/gridpoints/GGW/110,111/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/GGW/110,111/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/GGW/110,111",
+        "observationStations": "https://api.weather.gov/gridpoints/GGW/110,111/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -106.6320771,
+                    48.199027
+                ]
+            },
+            "properties": {
+                "city": "Glasgow",
+                "state": "MT",
+                "distance": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 0
+                },
+                "bearing": {
+                    "unitCode": "wmoUnit:degree_(angle)",
+                    "value": 0
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/MTZ017",
+        "county": "https://api.weather.gov/zones/county/MTC105",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/MTZ134",
+        "timeZone": "America/Denver",
+        "radarStation": "KGGW",
+        "astronomicalData": {
+            "sunrise": "2026-10-16T07:28:04-06:00",
+            "sunset": "2026-10-16T18:15:59-06:00",
+            "transit": "2026-10-16T12:52:02-06:00",
+            "civilTwilightBegin": "2026-10-16T06:56:42-06:00",
+            "civilTwilightEnd": "2026-10-16T18:47:22-06:00",
+            "nauticalTwilightBegin": "2026-10-16T06:20:36-06:00",
+            "nauticalTwilightEnd": "2026-10-16T19:23:28-06:00",
+            "astronomicalTwilightBegin": "2026-10-16T05:44:31-06:00",
+            "astronomicalTwilightEnd": "2026-10-16T19:59:33-06:00"
+        },
+        "nwr": {
+            "transmitter": "WXL32",
+            "sameCode": "030105",
+            "areaBroadcast": "https://api.weather.gov/radio/WXL32/broadcast",
+            "pointBroadcast": "https://api.weather.gov/points/48.197,-106.6367/radio"
+        }
+    }
+}

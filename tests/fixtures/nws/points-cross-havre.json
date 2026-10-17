@@ -1,0 +1,112 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/48.5662,-109.4843",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -109.4843,
+            48.5662
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/48.5662,-109.4843",
+        "@type": "wx:Point",
+        "cwa": "TFX",
+        "type": "land",
+        "forecastOffice": "https://api.weather.gov/offices/TFX",
+        "gridId": "TFX",
+        "gridX": 162,
+        "gridY": 188,
+        "forecast": "https://api.weather.gov/gridpoints/TFX/162,188/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/TFX/162,188/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/TFX/162,188",
+        "observationStations": "https://api.weather.gov/gridpoints/TFX/162,188/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -109.6712487,
+                    48.5632376
+                ]
+            },
+            "properties": {
+                "city": "Havre North",
+                "state": "MT",
+                "distance": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 9241.8033815747
+                },
+                "bearing": {
+                    "unitCode": "wmoUnit:degree_(angle)",
+                    "value": 88
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/MTZ306",
+        "county": "https://api.weather.gov/zones/county/MTC005",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/MTZ113",
+        "timeZone": "America/Denver",
+        "radarStation": "KTFX",
+        "astronomicalData": {
+            "sunrise": "2026-10-17T07:41:29-06:00",
+            "sunset": "2026-10-17T18:24:56-06:00",
+            "transit": "2026-10-17T13:03:13-06:00",
+            "civilTwilightBegin": "2026-10-17T07:09:50-06:00",
+            "civilTwilightEnd": "2026-10-17T18:56:36-06:00",
+            "nauticalTwilightBegin": "2026-10-17T06:33:27-06:00",
+            "nauticalTwilightEnd": "2026-10-17T19:32:59-06:00",
+            "astronomicalTwilightBegin": "2026-10-17T05:57:07-06:00",
+            "astronomicalTwilightEnd": "2026-10-17T20:09:19-06:00"
+        },
+        "nwr": {
+            "transmitter": "WXL53",
+            "sameCode": "030005",
+            "areaBroadcast": "https://api.weather.gov/radio/WXL53/broadcast",
+            "pointBroadcast": "https://api.weather.gov/points/48.5662,-109.4843/radio"
+        }
+    }
+}

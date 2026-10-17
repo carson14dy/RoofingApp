@@ -1,0 +1,112 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/46.0481,-112.4575",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -112.4575,
+            46.0481
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/46.0481,-112.4575",
+        "@type": "wx:Point",
+        "cwa": "TFX",
+        "type": "land",
+        "forecastOffice": "https://api.weather.gov/offices/TFX",
+        "gridId": "TFX",
+        "gridX": 52,
+        "gridY": 81,
+        "forecast": "https://api.weather.gov/gridpoints/TFX/52,81/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/TFX/52,81/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/TFX/52,81",
+        "observationStations": "https://api.weather.gov/gridpoints/TFX/52,81/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -112.6600714,
+                    45.8962319
+                ]
+            },
+            "properties": {
+                "city": "Butte-Silver Bow (balance)",
+                "state": "MT",
+                "distance": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 1032.1530098982
+                },
+                "bearing": {
+                    "unitCode": "wmoUnit:degree_(angle)",
+                    "value": 42
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/MTZ322",
+        "county": "https://api.weather.gov/zones/county/MTC043",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/MTZ110",
+        "timeZone": "America/Denver",
+        "radarStation": "KMSX",
+        "astronomicalData": {
+            "sunrise": "2026-10-17T07:49:56-06:00",
+            "sunset": "2026-10-17T18:40:17-06:00",
+            "transit": "2026-10-17T13:15:06-06:00",
+            "civilTwilightBegin": "2026-10-17T07:19:47-06:00",
+            "civilTwilightEnd": "2026-10-17T19:10:26-06:00",
+            "nauticalTwilightBegin": "2026-10-17T06:45:05-06:00",
+            "nauticalTwilightEnd": "2026-10-17T19:45:08-06:00",
+            "astronomicalTwilightBegin": "2026-10-17T06:10:28-06:00",
+            "astronomicalTwilightEnd": "2026-10-17T20:19:45-06:00"
+        },
+        "nwr": {
+            "transmitter": "WXL79",
+            "sameCode": "030043",
+            "areaBroadcast": "https://api.weather.gov/radio/WXL79/broadcast",
+            "pointBroadcast": "https://api.weather.gov/points/46.0481,-112.4575/radio"
+        }
+    }
+}

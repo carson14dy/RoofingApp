@@ -1,0 +1,112 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/47.5053,-111.3008",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -111.3008,
+            47.5053
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/47.5053,-111.3008",
+        "@type": "wx:Point",
+        "cwa": "TFX",
+        "type": "land",
+        "forecastOffice": "https://api.weather.gov/offices/TFX",
+        "gridId": "TFX",
+        "gridX": 98,
+        "gridY": 145,
+        "forecast": "https://api.weather.gov/gridpoints/TFX/98,145/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/TFX/98,145/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/TFX/98,145",
+        "observationStations": "https://api.weather.gov/gridpoints/TFX/98,145/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -111.2999696,
+                    47.502518
+                ]
+            },
+            "properties": {
+                "city": "Great Falls",
+                "state": "MT",
+                "distance": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 0
+                },
+                "bearing": {
+                    "unitCode": "wmoUnit:degree_(angle)",
+                    "value": 0
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/MTZ312",
+        "county": "https://api.weather.gov/zones/county/MTC013",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/MTZ117",
+        "timeZone": "America/Denver",
+        "radarStation": "KTFX",
+        "astronomicalData": {
+            "sunrise": "2026-10-16T07:45:49-06:00",
+            "sunset": "2026-10-16T18:35:33-06:00",
+            "transit": "2026-10-16T13:10:41-06:00",
+            "civilTwilightBegin": "2026-10-16T07:14:52-06:00",
+            "civilTwilightEnd": "2026-10-16T19:06:30-06:00",
+            "nauticalTwilightBegin": "2026-10-16T06:39:15-06:00",
+            "nauticalTwilightEnd": "2026-10-16T19:42:07-06:00",
+            "astronomicalTwilightBegin": "2026-10-16T06:03:39-06:00",
+            "astronomicalTwilightEnd": "2026-10-16T20:17:43-06:00"
+        },
+        "nwr": {
+            "transmitter": "WXJ43",
+            "sameCode": "030013",
+            "areaBroadcast": "https://api.weather.gov/radio/WXJ43/broadcast",
+            "pointBroadcast": "https://api.weather.gov/points/47.5053,-111.3008/radio"
+        }
+    }
+}

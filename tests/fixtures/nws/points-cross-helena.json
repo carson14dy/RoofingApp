@@ -1,0 +1,112 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/46.5573,-112.0099",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -112.0099,
+            46.5573
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/46.5573,-112.0099",
+        "@type": "wx:Point",
+        "cwa": "TFX",
+        "type": "land",
+        "forecastOffice": "https://api.weather.gov/offices/TFX",
+        "gridId": "TFX",
+        "gridX": 70,
+        "gridY": 103,
+        "forecast": "https://api.weather.gov/gridpoints/TFX/70,103/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/TFX/70,103/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/TFX/70,103",
+        "observationStations": "https://api.weather.gov/gridpoints/TFX/70,103/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -111.997543,
+                    46.5564085
+                ]
+            },
+            "properties": {
+                "city": "South Hills",
+                "state": "MT",
+                "distance": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 0
+                },
+                "bearing": {
+                    "unitCode": "wmoUnit:degree_(angle)",
+                    "value": 0
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/MTZ322",
+        "county": "https://api.weather.gov/zones/county/MTC043",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/MTZ118",
+        "timeZone": "America/Denver",
+        "radarStation": "KTFX",
+        "astronomicalData": {
+            "sunrise": "2026-10-17T07:48:49-06:00",
+            "sunset": "2026-10-17T18:37:49-06:00",
+            "transit": "2026-10-17T13:13:19-06:00",
+            "civilTwilightBegin": "2026-10-17T07:18:22-06:00",
+            "civilTwilightEnd": "2026-10-17T19:08:15-06:00",
+            "nauticalTwilightBegin": "2026-10-17T06:43:21-06:00",
+            "nauticalTwilightEnd": "2026-10-17T19:43:17-06:00",
+            "astronomicalTwilightBegin": "2026-10-17T06:08:25-06:00",
+            "astronomicalTwilightEnd": "2026-10-17T20:18:13-06:00"
+        },
+        "nwr": {
+            "transmitter": "WXK66",
+            "sameCode": "030043",
+            "areaBroadcast": "https://api.weather.gov/radio/WXK66/broadcast",
+            "pointBroadcast": "https://api.weather.gov/points/46.5573,-112.0099/radio"
+        }
+    }
+}

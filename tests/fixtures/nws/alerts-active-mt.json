@@ -1,0 +1,271 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "@vocab": "https://api.weather.gov/ontology#"
+        }
+    ],
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.92494b819cd9c4201b2cbc2128013ba78d3f6874.002.1",
+            "type": "Feature",
+            "geometry": null,
+            "properties": {
+                "@id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.92494b819cd9c4201b2cbc2128013ba78d3f6874.002.1",
+                "@type": "wx:Alert",
+                "id": "urn:oid:2.49.0.1.840.0.92494b819cd9c4201b2cbc2128013ba78d3f6874.002.1",
+                "areaDesc": "East Glacier Park Region; Northern High Plains; Eastern Glacier, Western Toole, and Central Pondera; Southern Rocky Mountain Front; Southern High Plains",
+                "geocode": {
+                    "SAME": [
+                        "030035",
+                        "030073",
+                        "030101",
+                        "030049",
+                        "030099"
+                    ],
+                    "UGC": [
+                        "MTZ301",
+                        "MTZ302",
+                        "MTZ303",
+                        "MTZ307",
+                        "MTZ308"
+                    ]
+                },
+                "affectedZones": [
+                    "https://api.weather.gov/zones/forecast/MTZ301",
+                    "https://api.weather.gov/zones/forecast/MTZ302",
+                    "https://api.weather.gov/zones/forecast/MTZ303",
+                    "https://api.weather.gov/zones/forecast/MTZ307",
+                    "https://api.weather.gov/zones/forecast/MTZ308"
+                ],
+                "references": [
+                    {
+                        "@id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.eec6c1694402c02cd2196b727fbb3afa625e9a14.001.2",
+                        "identifier": "urn:oid:2.49.0.1.840.0.eec6c1694402c02cd2196b727fbb3afa625e9a14.001.2",
+                        "sender": "w-nws.webmaster@noaa.gov",
+                        "sent": "2026-10-16T12:23:00-06:00"
+                    }
+                ],
+                "sent": "2026-10-16T18:06:00-06:00",
+                "effective": "2026-10-16T18:06:00-06:00",
+                "onset": "2026-10-17T09:00:00-06:00",
+                "expires": "2026-10-17T06:00:00-06:00",
+                "ends": "2026-10-18T00:00:00-06:00",
+                "status": "Actual",
+                "messageType": "Update",
+                "category": "Met",
+                "severity": "Severe",
+                "certainty": "Likely",
+                "urgency": "Expected",
+                "event": "High Wind Warning",
+                "sender": "w-nws.webmaster@noaa.gov",
+                "senderName": "NWS Great Falls MT",
+                "headline": "High Wind Warning issued October 16 at 6:06PM MDT until October 18 at 12:00AM MDT by NWS Great Falls MT",
+                "description": "* WHAT...Westerly winds 30 to 50 mph with gusts up to 85 mph\npossible.\n\n* WHERE...East Glacier Park Region Zone, and Eastern Glacier, Western\nToole, and Central Pondera, Northern High Plains, Southern High\nPlains, and Southern Rocky Mountain Front.\n\n* WHEN...From 9 AM Saturday to midnight MDT Saturday Night.\n\n* IMPACTS...Travel will be difficult, especially for high profile\nvehicles. Isolated instances of tree damage and or power outages\nare possible.\n\n\n* ADDITIONAL DETAILS...The strong winds will also bring difficult\nconditions for outdoor recreation in portions of Glacier National\nPark, particularly over and near higher terrain on the eastern side\nof the Park.",
+                "instruction": "People are urged to secure loose objects that could be blown around\nor damaged by the wind.",
+                "response": "Prepare",
+                "note": null,
+                "parameters": {
+                    "AWIPSidentifier": [
+                        "NPWTFX"
+                    ],
+                    "WMOidentifier": [
+                        "WWUS75 KTFX 170006"
+                    ],
+                    "NWSheadline": [
+                        "HIGH WIND WARNING REMAINS IN EFFECT FROM 9 AM SATURDAY TO MIDNIGHT MDT SATURDAY NIGHT"
+                    ],
+                    "BLOCKCHANNEL": [
+                        "EAS",
+                        "NWEM",
+                        "CMAS"
+                    ],
+                    "EAS-ORG": [
+                        "WXR"
+                    ],
+                    "VTEC": [
+                        "/O.CON.KTFX.HW.W.0034.261017T1500Z-261018T0600Z/"
+                    ],
+                    "eventEndingTime": [
+                        "2026-10-18T00:00:00-06:00"
+                    ]
+                },
+                "scope": "Public",
+                "code": "IPAWSv1.0",
+                "language": "en-US",
+                "web": "http://www.weather.gov",
+                "eventCode": {
+                    "SAME": [
+                        "HWW"
+                    ],
+                    "NationalWeatherService": [
+                        "HWW"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.92494b819cd9c4201b2cbc2128013ba78d3f6874.001.1",
+            "type": "Feature",
+            "geometry": null,
+            "properties": {
+                "@id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.92494b819cd9c4201b2cbc2128013ba78d3f6874.001.1",
+                "@type": "wx:Alert",
+                "id": "urn:oid:2.49.0.1.840.0.92494b819cd9c4201b2cbc2128013ba78d3f6874.001.1",
+                "areaDesc": "Eastern Toole and Liberty",
+                "geocode": {
+                    "SAME": [
+                        "030101",
+                        "030051"
+                    ],
+                    "UGC": [
+                        "MTZ304"
+                    ]
+                },
+                "affectedZones": [
+                    "https://api.weather.gov/zones/forecast/MTZ304"
+                ],
+                "references": [],
+                "sent": "2026-10-16T18:06:00-06:00",
+                "effective": "2026-10-16T18:06:00-06:00",
+                "onset": "2026-10-17T09:00:00-06:00",
+                "expires": "2026-10-17T06:00:00-06:00",
+                "ends": "2026-10-18T00:00:00-06:00",
+                "status": "Actual",
+                "messageType": "Alert",
+                "category": "Met",
+                "severity": "Severe",
+                "certainty": "Likely",
+                "urgency": "Expected",
+                "event": "High Wind Warning",
+                "sender": "w-nws.webmaster@noaa.gov",
+                "senderName": "NWS Great Falls MT",
+                "headline": "High Wind Warning issued October 16 at 6:06PM MDT until October 18 at 12:00AM MDT by NWS Great Falls MT",
+                "description": "* WHAT...West winds 35 to 45 mph with gusts up to 60 mph expected.\n\n* WHERE...Eastern Toole and Liberty.\n\n* WHEN...From 9 AM Saturday to midnight MDT Saturday Night.\n\n* IMPACTS...Damaging winds will blow down trees and power lines.\nIsolated power outages are expected. Travel will be difficult,\nespecially for high profile vehicles.",
+                "instruction": "People are urged to secure loose objects that could be blown around\nor damaged by the wind.",
+                "response": "Prepare",
+                "note": null,
+                "parameters": {
+                    "AWIPSidentifier": [
+                        "NPWTFX"
+                    ],
+                    "WMOidentifier": [
+                        "WWUS75 KTFX 170006"
+                    ],
+                    "NWSheadline": [
+                        "HIGH WIND WARNING IN EFFECT FROM 9 AM SATURDAY TO MIDNIGHT MDT SATURDAY NIGHT"
+                    ],
+                    "BLOCKCHANNEL": [
+                        "EAS",
+                        "NWEM",
+                        "CMAS"
+                    ],
+                    "EAS-ORG": [
+                        "WXR"
+                    ],
+                    "VTEC": [
+                        "/O.EXA.KTFX.HW.W.0034.261017T1500Z-261018T0600Z/"
+                    ],
+                    "eventEndingTime": [
+                        "2026-10-18T00:00:00-06:00"
+                    ]
+                },
+                "scope": "Public",
+                "code": "IPAWSv1.0",
+                "language": "en-US",
+                "web": "http://www.weather.gov",
+                "eventCode": {
+                    "SAME": [
+                        "HWW"
+                    ],
+                    "NationalWeatherService": [
+                        "HWW"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.e4cca87fb95611bad99bd654cc3dba1cc2d97d1b.001.1",
+            "type": "Feature",
+            "geometry": null,
+            "properties": {
+                "@id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.e4cca87fb95611bad99bd654cc3dba1cc2d97d1b.001.1",
+                "@type": "wx:Alert",
+                "id": "urn:oid:2.49.0.1.840.0.e4cca87fb95611bad99bd654cc3dba1cc2d97d1b.001.1",
+                "areaDesc": "Flathead/Mission Valleys",
+                "geocode": {
+                    "SAME": [
+                        "030029",
+                        "030047",
+                        "030089"
+                    ],
+                    "UGC": [
+                        "MTZ003"
+                    ]
+                },
+                "affectedZones": [
+                    "https://api.weather.gov/zones/forecast/MTZ003"
+                ],
+                "references": [],
+                "sent": "2026-10-16T10:37:00-06:00",
+                "effective": "2026-10-16T10:37:00-06:00",
+                "onset": "2026-10-17T14:00:00-06:00",
+                "expires": "2026-10-17T19:00:00-06:00",
+                "ends": "2026-10-17T19:00:00-06:00",
+                "status": "Actual",
+                "messageType": "Alert",
+                "category": "Met",
+                "severity": "Moderate",
+                "certainty": "Likely",
+                "urgency": "Expected",
+                "event": "Lake Wind Advisory",
+                "sender": "w-nws.webmaster@noaa.gov",
+                "senderName": "NWS Missoula MT",
+                "headline": "Lake Wind Advisory issued October 16 at 10:37AM MDT until October 17 at 7:00PM MDT by NWS Missoula MT",
+                "description": "* WHAT...Southwest winds 15 to 25 mph with gusts up to 35 mph\nexpected.\n\n* WHERE...Flathead/Mission Valleys.\n\n* WHEN...From 2 PM to 7 PM MDT Saturday.\n\n* IMPACTS...Strong winds and rough waves on area lakes will create\nhazardous conditions for small craft.",
+                "instruction": "Boaters on area lakes should use extra caution since strong winds and\nrough waves can overturn small craft.",
+                "response": "Execute",
+                "note": null,
+                "parameters": {
+                    "AWIPSidentifier": [
+                        "NPWMSO"
+                    ],
+                    "WMOidentifier": [
+                        "WWUS75 KMSO 161637"
+                    ],
+                    "NWSheadline": [
+                        "LAKE WIND ADVISORY IN EFFECT FROM 2 PM TO 7 PM MDT SATURDAY"
+                    ],
+                    "BLOCKCHANNEL": [
+                        "EAS",
+                        "NWEM",
+                        "CMAS"
+                    ],
+                    "VTEC": [
+                        "/O.NEW.KMSO.LW.Y.0005.261017T2000Z-261018T0100Z/"
+                    ],
+                    "eventEndingTime": [
+                        "2026-10-17T19:00:00-06:00"
+                    ]
+                },
+                "scope": "Public",
+                "code": "IPAWSv1.0",
+                "language": "en-US",
+                "web": "http://www.weather.gov",
+                "eventCode": {
+                    "SAME": [
+                        "NWS"
+                    ],
+                    "NationalWeatherService": [
+                        "LWY"
+                    ]
+                }
+            }
+        }
+    ],
+    "title": "Current watches, warnings, and advisories for Montana",
+    "updated": "2026-10-17T01:25:37+00:00"
+}

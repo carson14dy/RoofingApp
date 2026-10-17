@@ -1,0 +1,93 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "@vocab": "https://api.weather.gov/ontology#"
+        }
+    ],
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.e4cca87fb95611bad99bd654cc3dba1cc2d97d1b.001.1",
+            "type": "Feature",
+            "geometry": null,
+            "properties": {
+                "@id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.e4cca87fb95611bad99bd654cc3dba1cc2d97d1b.001.1",
+                "@type": "wx:Alert",
+                "id": "urn:oid:2.49.0.1.840.0.e4cca87fb95611bad99bd654cc3dba1cc2d97d1b.001.1",
+                "areaDesc": "Flathead/Mission Valleys",
+                "geocode": {
+                    "SAME": [
+                        "030029",
+                        "030047",
+                        "030089"
+                    ],
+                    "UGC": [
+                        "MTZ003"
+                    ]
+                },
+                "affectedZones": [
+                    "https://api.weather.gov/zones/forecast/MTZ003"
+                ],
+                "references": [],
+                "sent": "2026-10-16T10:37:00-06:00",
+                "effective": "2026-10-16T10:37:00-06:00",
+                "onset": "2026-10-17T14:00:00-06:00",
+                "expires": "2026-10-17T19:00:00-06:00",
+                "ends": "2026-10-17T19:00:00-06:00",
+                "status": "Actual",
+                "messageType": "Alert",
+                "category": "Met",
+                "severity": "Moderate",
+                "certainty": "Likely",
+                "urgency": "Expected",
+                "event": "Lake Wind Advisory",
+                "sender": "w-nws.webmaster@noaa.gov",
+                "senderName": "NWS Missoula MT",
+                "headline": "Lake Wind Advisory issued October 16 at 10:37AM MDT until October 17 at 7:00PM MDT by NWS Missoula MT",
+                "description": "* WHAT...Southwest winds 15 to 25 mph with gusts up to 35 mph\nexpected.\n\n* WHERE...Flathead/Mission Valleys.\n\n* WHEN...From 2 PM to 7 PM MDT Saturday.\n\n* IMPACTS...Strong winds and rough waves on area lakes will create\nhazardous conditions for small craft.",
+                "instruction": "Boaters on area lakes should use extra caution since strong winds and\nrough waves can overturn small craft.",
+                "response": "Execute",
+                "note": null,
+                "parameters": {
+                    "AWIPSidentifier": [
+                        "NPWMSO"
+                    ],
+                    "WMOidentifier": [
+                        "WWUS75 KMSO 161637"
+                    ],
+                    "NWSheadline": [
+                        "LAKE WIND ADVISORY IN EFFECT FROM 2 PM TO 7 PM MDT SATURDAY"
+                    ],
+                    "BLOCKCHANNEL": [
+                        "EAS",
+                        "NWEM",
+                        "CMAS"
+                    ],
+                    "VTEC": [
+                        "/O.NEW.KMSO.LW.Y.0005.261017T2000Z-261018T0100Z/"
+                    ],
+                    "eventEndingTime": [
+                        "2026-10-17T19:00:00-06:00"
+                    ]
+                },
+                "scope": "Public",
+                "code": "IPAWSv1.0",
+                "language": "en-US",
+                "web": "http://www.weather.gov",
+                "eventCode": {
+                    "SAME": [
+                        "NWS"
+                    ],
+                    "NationalWeatherService": [
+                        "LWY"
+                    ]
+                }
+            }
+        }
+    ],
+    "title": "Current watches, warnings, and advisories for 48.192 N, 114.3168 W",
+    "updated": "2026-10-17T01:25:37+00:00"
+}
