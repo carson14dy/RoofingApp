@@ -21,7 +21,7 @@ The 3D storms (volume) cases start serve.py with a volume file and check the lay
 Run from the prototype folder with a Python that has Playwright and Pillow:
     <venv>/bin/python -I -m unittest discover -s tests -p "test_globe_browser.py" -v
 Set GLOBE_CHROMIUM to point at another Chromium binary. Set GLOBE_P1_SCREENSHOT_DIR to a scratch folder to
-keep the first test from rewriting validation-evidence/globe-prototype.png.
+keep the screenshot tests from rewriting validation-evidence/globe-prototype.png and globe-volume.png.
 """
 import glob
 import io
@@ -41,7 +41,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PROTO = os.path.dirname(HERE)
 EVIDENCE = os.path.normpath(os.path.join(PROTO, "..", "validation-evidence"))
 EVIDENCE_PNG = os.path.join(os.environ.get("GLOBE_P1_SCREENSHOT_DIR", EVIDENCE), "globe-prototype.png")
-VOLUME_PNG = os.path.join(EVIDENCE, "globe-volume.png")
+VOLUME_PNG = os.path.join(os.environ.get("GLOBE_P1_SCREENSHOT_DIR", EVIDENCE), "globe-volume.png")
 PARALLAX_JSON = os.path.join(EVIDENCE, "parallax.json")
 UA = "RoofingApp-globe-prototype (research)"
 TILES_WAIT_S = 45
@@ -749,6 +749,34 @@ class SampleVolumeBrowserTests(GlobeVolumeBrowserBase):
             self.assertEqual([e for e in errors if "pageerror" in e], [], "the page raised an error")
             browser.close()
         print("GLOBE_VOLUME_SAMPLE_RESULT=" + json.dumps(self.results, sort_keys=True))
+
+
+class VolumeDataBlockedBrowserTests(GlobeVolumeBrowserBase):
+    """The volume endpoint is blocked in the browser: the row says why, and the rest of the page still works."""
+
+    volume_args = []
+
+    def test_volume_data_blocked_says_why_and_the_panel_still_renders(self):
+        from playwright.sync_api import sync_playwright
+
+        with urllib.request.urlopen(self.base + "/api/layers.json", timeout=60) as r:
+            expected_rows = len(json.loads(r.read())["layers"])
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=browser_path(), headless=True)
+            page = browser.new_page(viewport={"width": 1280, "height": 800})
+            page.route("**/api/volume.json", lambda route: route.abort())
+            page.goto(self.base + "/", wait_until="load", timeout=120000)
+            page.wait_for_selector("#layer-list .layer", timeout=60000)
+            page.wait_for_function("() => !!(window.globeStatus && window.globeStatus.volume"
+                                   " && window.globeStatus.volume.error)", timeout=60000)
+            drawn = page.text_content("#volume-drawn")
+            self.results["blocked_drawn_text"] = drawn
+            self.assertIn("could not load", drawn, "the row does not say why nothing is drawn")
+            self.assertEqual(page.locator("#layer-list .layer").count(), expected_rows)
+            self.assertEqual(page.locator("[data-layer=mrms_volume] .legend").count(), 1)
+            self.assertEqual(page.evaluate(SWATCH_JS), [rgb_css(h) for h in NWS_STEP_HEX])
+            browser.close()
+        print("GLOBE_VOLUME_BLOCKED_RESULT=" + json.dumps(self.results, sort_keys=True))
 
 
 if __name__ == "__main__":

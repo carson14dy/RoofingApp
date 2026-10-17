@@ -3,6 +3,7 @@ parallax wording and an offline server. No network and no browser are used.
 
 Run from the prototype folder:  python -m unittest discover -s tests -v
 """
+import atexit
 import json
 import math
 import os
@@ -602,12 +603,22 @@ def layer_row(svc, layer_id="mrms_volume"):
     return [layer for layer in serve.layers_doc(svc)["layers"] if layer["id"] == layer_id][0]
 
 
-def write_json(doc):
-    folder = tempfile.mkdtemp(prefix="volume-test-")
-    path = os.path.join(folder, "volume.json")
+_VOLUME_TMP = tempfile.TemporaryDirectory(prefix="volume-test-")
+atexit.register(_VOLUME_TMP.cleanup)  # removed explicitly when the test process exits
+_volume_files = [0]
+
+
+def write_text(text):
+    """Write a test file into the shared temporary folder and return its path."""
+    _volume_files[0] += 1
+    path = os.path.join(_VOLUME_TMP.name, f"volume-{_volume_files[0]}.json")
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(doc, f)
+        f.write(text)
     return path
+
+
+def write_json(doc):
+    return write_text(json.dumps(doc))
 
 
 class VolumeTests(unittest.TestCase):
@@ -719,11 +730,7 @@ class VolumeTests(unittest.TestCase):
         self.assertEqual(row["voxel_count"], 0)
 
     def test_a_file_that_is_not_json_is_unavailable(self):
-        folder = tempfile.mkdtemp(prefix="volume-test-")
-        path = os.path.join(folder, "bad.json")
-        with open(path, "w", encoding="utf-8") as f:
-            f.write("<html>not a volume</html>")
-        row = layer_row(self.service(path))
+        row = layer_row(self.service(write_text("<html>not a volume</html>")))
         self.assertEqual(row["state"], "unavailable")
         self.assertIn("is not JSON", row["state_text"])
 

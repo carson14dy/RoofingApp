@@ -432,5 +432,233 @@
   ],
   "cesium_js": "sha384-1lWK5deN/B+lLaUw4lk6xKp/L19ii/98SZLk6K8YthDskgvc+GbdixLzbCnSS2Wn",
   "widgets_css": "sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp"
+ },
+ "volume": {
+  "task": "P4 3D storms layer on the globe page (slug volume-layer): MRMS voxels as Cesium points",
+  "status": "research only; nothing committed by this task; no app code changed",
+  "environment": "Chromium 141 headless (pre-installed chromium-1194), Playwright 1.64.0, Cesium 1.146.0 from cdnjs, SwiftShader CPU WebGL: times are not GPU numbers",
+  "files_written": [
+   "prototype/serve.py: --volume, /api/volume.json, 3D storms layer row",
+   "prototype/globe.js: section 8 (voxel points, exaggeration, zoom, dBZ legend, error text)",
+   "prototype/globe.css, prototype/index.html: volume styles, stage label, volume.json link",
+   "prototype/tests/test_serve.py: +18 offline tests (VolumeTests, VolumeServerTests)",
+   "prototype/tests/test_globe_browser.py: +3 browser cases (synthetic, sample, blocked); GLOBE_P1_SCREENSHOT_DIR",
+   "validation-evidence/globe-volume.png (1024 x 640, 189,230 B); this key"
+  ],
+  "not_changed": "fixtures/volume-*.json, mrms_volume.py, parallax.py and its test, goes_cloud_height.py, payload/, desktop/, tests/, docs/, README.md, requirements.txt",
+  "layer": {
+   "id": "mrms_volume",
+   "name": "3D storms (MRMS reflectivity)",
+   "kind": "radar estimate",
+   "default_on": false,
+   "freshness_limit": "10 min (proposal; D12 lists no MRMS limit)",
+   "legend": "Radar echo strength (dBZ). Not hail size. -99/-999 cells are no radar data; no echo is not clear.",
+   "synthetic_file": {
+    "label": "synthetic: not weather",
+    "state": "Unavailable",
+    "valid_text": "2000-01-01 00:00:00 UTC (placeholder time, not an observation)"
+   },
+   "sample_file": {
+    "label": "Archived event: recorded MRMS volume, not live",
+    "state": "Stale",
+    "valid_text": "2025-06-15 23:12:41 UTC (17:12 MDT)",
+    "label_source": "derived by serve.py: the sample file has no label field"
+   }
+  },
+  "voxel_count": {
+   "synthetic": {
+    "file_at_40_dbz": 1265,
+    "drawn_in_panel": 1265,
+    "panel_equals_fixture": true
+   },
+   "sample": {
+    "file_at_35_dbz": 3931,
+    "drawn_in_panel": 3931,
+    "panel_equals_fixture": true
+   }
+  },
+  "draw": {
+   "method": "one PointPrimitive per voxel in one PointPrimitiveCollection; 6 px, NearFarScalar x1.5 within half the view radius and x0.6 beyond 20 radii; positions from Python's lons, lats and heights",
+   "build_ms": "points created in the page (performance.now)",
+   "first_frame_ms": "build start to the first frame after the build (postRender)",
+   "final_run": {
+    "synthetic_1x": {
+     "build_ms": 4.0,
+     "first_frame_ms": 98.4
+    },
+    "synthetic_3x_rebuild": {
+     "build_ms": 6.0,
+     "first_frame_ms": 20.3
+    },
+    "sample_1x": {
+     "build_ms": 9.5,
+     "first_frame_ms": 95.3
+    }
+   },
+   "ranges_all_runs": {
+    "synthetic_1x_build_ms": [
+     4.0,
+     7.6
+    ],
+    "synthetic_1x_first_frame_ms": [
+     98.4,
+     106.7
+    ],
+    "synthetic_3x_build_ms": [
+     4.5,
+     7.6
+    ],
+    "synthetic_3x_first_frame_ms": [
+     13.7,
+     20.3
+    ],
+    "sample_1x_build_ms": [
+     9.0,
+     12.3
+    ],
+    "sample_1x_first_frame_ms": [
+     95.3,
+     122.1
+    ]
+   },
+   "file_to_api_s": {
+    "synthetic": 0.002,
+    "sample": 0.005
+   }
+  },
+  "pixel_diff": {
+   "measure": "share of canvas pixels with luma change of 17 or more when the layer is switched on, after a zoom",
+   "min_required": 0.002,
+   "final_run": {
+    "synthetic_on_vs_hidden": 0.0138,
+    "synthetic_back_off_vs_hidden": 0.0,
+    "sample_on_vs_hidden": 0.022
+   },
+   "ranges_all_runs": {
+    "synthetic_on_vs_hidden": [
+     0.0131,
+     0.0178
+    ],
+    "sample_on_vs_hidden": [
+     0.02,
+     0.0221
+    ]
+   }
+  },
+  "runs": [
+   {
+    "run": "synth-1 (before first-frame fix)",
+    "synthetic_on": 0.0178,
+    "build_ms": 4.4,
+    "3x_build_ms": 7.6
+   },
+   {
+    "run": "sample-1",
+    "sample_on": 0.02,
+    "build_ms": 11.2,
+    "first_frame_ms": 100.8
+   },
+   {
+    "run": "browser-full-1 (6 browser cases)",
+    "synthetic_on": 0.0132,
+    "build_ms": 5.7,
+    "first_frame_ms": 106.7,
+    "3x_build_ms": 4.5,
+    "3x_first_frame_ms": 16.0,
+    "sample_on": 0.0221,
+    "sample_build_ms": 12.3,
+    "sample_first_frame_ms": 122.1
+   },
+   {
+    "run": "discover-1 (185 tests, before the error-path fix)",
+    "synthetic_on": 0.0131,
+    "build_ms": 7.6,
+    "first_frame_ms": 102.1,
+    "3x_build_ms": 5.3,
+    "3x_first_frame_ms": 13.7,
+    "sample_on": 0.0221,
+    "sample_build_ms": 9.0,
+    "sample_first_frame_ms": 102.1
+   },
+   {
+    "run": "final-discover (186 tests, final code)",
+    "synthetic_on": 0.0138,
+    "build_ms": 4.0,
+    "first_frame_ms": 98.4,
+    "3x_build_ms": 6.0,
+    "3x_first_frame_ms": 20.3,
+    "sample_on": 0.022,
+    "sample_build_ms": 9.5,
+    "sample_first_frame_ms": 95.3
+   }
+  ],
+  "screenshot": {
+   "path": "validation-evidence/globe-volume.png",
+   "width": 1024,
+   "height": 640,
+   "bytes": 189230,
+   "colours": "palette-256; the 14 NWS swatch colours kept exact (14 of 14)",
+   "source": "sample run in final-discover, full page at 1280 x 800, downscaled"
+  },
+  "tests": [
+   {
+    "command": "python3 -B -m unittest discover -s tests -p test_serve.py -v",
+    "result": "Ran 68 tests: OK (50 before, 18 new); also OK with -W error::ResourceWarning"
+   },
+   {
+    "command": "same, test_mrms_volume.py / test_parallax.py",
+    "result": "55 OK / 12 OK (unchanged)"
+   },
+   {
+    "command": "same, test_goes_cloud_height.py",
+    "result": "44 tests: OK, skipped 1 (GOES_LIVE=1 check; another task's file)"
+   },
+   {
+    "command": "GLOBE_P1_SCREENSHOT_DIR=<scratch> python3 -B -m unittest discover -s tests -v (system Python 3.13.16, whole suite)",
+    "result": "Ran 186 tests in 323.7 s: OK, skipped 1 (GOES live). Includes the 7 browser cases"
+   },
+   {
+    "command": "browser cases alone, in the scratch venv with -I (blocked and synthetic, after the error-path fix)",
+    "result": "Ran 2 tests in 120.7 s: OK"
+   },
+   {
+    "command": "node --check globe.js",
+    "result": "OK"
+   },
+   {
+    "command": "baseline before this task (scratch copy)",
+    "result": "test_serve 50 OK; browser 4 tests in 117.4 s OK"
+   }
+  ],
+  "what_works": [
+   "serve.py: --volume (relative paths from the prototype folder), /api/volume.json with cell-centre lons, lats and per-exaggeration heights plus provenance, and the layer row between radar and alerts; works with --offline (local file).",
+   "Synthetic field: 'synthetic: not weather', Unavailable. Archived sample: its label, valid time, Stale.",
+   "globe.js: one point per voxel; toggle; 1x/3x/5x with the on-screen label; zoom button; 14 dBZ swatches; places untouched.",
+   "Bad voxels or an unreadable file give Unavailable with the reason; a blocked /api/volume.json says why nothing is drawn; the rest of the page still works.",
+   "P1 checks still pass with 8 rows: GOES toggle changes canvas (0.868), hover shows only Billings, phone width has no sideways scroll, CDN-blocked keeps the panel, offline keeps four feeds Off."
+  ],
+  "what_failed_and_fixed": [
+   "Median-cut 256-colour PNG kept 0 of 14 NWS swatch colours. Fixed: 242 median-cut colours plus the 14 NWS colours, no dithering (14 of 14).",
+   "firstFrameMs stayed null: status was published before the first frame. Fixed.",
+   "On-screen factor label covered Cesium's logo and attribution. Moved to top-left.",
+   "Blocked /api/volume.json: the row said 'none (the 3D view is not running)' because the publish path dropped the error. Fixed; the browser case now checks it.",
+   "An unscoped browser run rewrote validation-evidence/globe-prototype.png. Restored from commit da75bbc (md5 3ff5e7e8..., 290,331 B, the P1 size). Set GLOBE_P1_SCREENSHOT_DIR for any run of the browser file."
+  ],
+  "limits": [
+   "SwiftShader CPU WebGL: times are not GPU numbers; the D-G7 laptop floor is untested.",
+   "Only 1,265 and 3,931 points were drawn. The 33-level 20 dBZ volume (619,321 voxels, about 10.3 MB JSON) was not drawn.",
+   "The archived label is derived in serve.py. The sample file (59,938 B, limit 60 KB) was not edited.",
+   "MRMS 10 min is the README section 3 figure; D12 in docs/DECISIONS.md lists no MRMS limit. A proposal.",
+   "dBZ colours: NWS scale as encoded by MetPy 1.7.1 colortable_files/NWSReflectivity.tbl, not NWS-published. 75+ dBZ uses the 70-75 colour.",
+   "Heights are MSL treated as ellipsoid height (geoid difference not applied); terrain is still flat, so no draping.",
+   "At 1x the heights are hard to see from the top-down default; the zoom button tilts the camera 45 degrees.",
+   "No per-cell no-data mask (prototype-mrms.json limitation); blank areas are described as not clear, not drawn as no coverage.",
+   "Point size anchored to the view radius and not tuned against a real camera session."
+  ],
+  "notes_for_supervisor": [
+   "Checkpoint commits by another process captured this task's working tree: 19965e8 (04:15:20 UTC) recorded the overwritten globe-prototype.png; 991a17b (04:17:36 UTC) recorded serve.py, globe.js, the tests and globe-volume.png; e7f8cbc (04:21:23 UTC) recorded the restored P1 screenshot. This task did not commit. This JSON key is uncommitted.",
+   "README section 3 says D12 gives MRMS 10 min; docs/DECISIONS.md D12 does not. Decide which is right.",
+   "The browser test file rewrites validation-evidence/globe-prototype.png unless GLOBE_P1_SCREENSHOT_DIR is set."
+  ]
  }
 }

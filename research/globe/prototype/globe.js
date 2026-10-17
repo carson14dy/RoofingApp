@@ -317,7 +317,7 @@
   const FAR_SCALE = 0.6;
   const volumeState = {
     doc: null, collection: null, factor: 1, visible: false, drawn: 0, skippedBelowFive: 0,
-    buildMs: null, firstFrameMs: null, builds: 0, zoomClicks: 0
+    buildMs: null, firstFrameMs: null, builds: 0, zoomClicks: 0, error: null
   };
 
   // The index into DBZ_STEPS for a dBZ value, or -1 below the lowest step. Arithmetic on Python's value.
@@ -338,7 +338,8 @@
       layer: VOLUME_ID, drawn: volumeState.drawn, skippedBelowFive: volumeState.skippedBelowFive,
       drawnInFile: volumeState.doc && volumeState.doc.voxels ? volumeState.doc.voxels.length : 0,
       buildMs: volumeState.buildMs, firstFrameMs: volumeState.firstFrameMs, builds: volumeState.builds,
-      factor: volumeState.factor, visible: volumeState.visible, zoomClicks: volumeState.zoomClicks
+      factor: volumeState.factor, visible: volumeState.visible, zoomClicks: volumeState.zoomClicks,
+      error: volumeState.error
     };
     showDrawnCount();
   }
@@ -347,9 +348,13 @@
   function showDrawnCount() {
     const node = $("volume-drawn");
     if (!node) return;
-    node.textContent = volumeState.collection
-      ? "Drawn in this view: " + countText(volumeState.drawn) + " voxels"
-      : "Drawn in this view: none (the 3D view is not running)";
+    if (volumeState.collection) {
+      node.textContent = "Drawn in this view: " + countText(volumeState.drawn) + " voxels";
+    } else if (volumeState.error) {
+      node.textContent = "Drawn in this view: none (" + volumeState.error + ")";
+    } else {
+      node.textContent = "Drawn in this view: none (the 3D view is not running)";
+    }
   }
 
   // The on-screen label: shows the exaggeration factor whenever the storms are on.
@@ -489,6 +494,8 @@
   }
 
   // ---- Start-up: panel first (it needs only the server), then the 3D view --------------------
+  // Why in the browser: the 3D view needs WebGL and a canvas on this page, so the Cesium Viewer can only be
+  // created here. The panel does not depend on it: a failure below only leaves the 3D view unavailable.
   function startViewer(layers, alerts, places) {
     let viewer;
     try {
@@ -577,7 +584,8 @@
       volumeState.doc = await getJson("/api/volume.json");
       publishVolumeStatus();
     } catch (error) {
-      status.volume = { error: "3D storms data could not load: " + error.message, drawn: 0 };
+      volumeState.error = "3D storms data could not load: " + error.message;
+      publishVolumeStatus();
     }
     if (typeof Cesium === "undefined") {
       status.cesium = "failed";

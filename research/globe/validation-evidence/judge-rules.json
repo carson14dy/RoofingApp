@@ -1,0 +1,170 @@
+{
+  "slug": "judge-rules",
+  "judge": "W13 judge, rules and evidence-honesty lens. Research only; nothing ships.",
+  "checked_at_utc": "2026-10-17",
+  "branch_head": "e7f8cbc on the montana-weather-pilot branch",
+  "lens": "AGENTS.md hard rules 1-9 as on disk; DECISIONS D1-D4, D7-D9, D12, D19, D23-D29 as they bear on the designs; JS discipline (rule 4); evidence kinds and freshness; null-geometry alerts (rule 6, D10); no-data and sub-terrain handling (rule 5); legends; demo policy; paid tokens in browser code; place-list privacy; default-off setting; route security.",
+  "scope_note": "The product is the Montana Hail Watch website (AGENTS.md lines 7-14; DECISIONS D27 at line 314). The desktop app (payload/, desktop/) is parked, and AGENTS.md says its rules 1-3 apply only if it resumes. The task's 50 MiB whole-repo cap and the network-off self-test describe the parked app, so they bind only designs that target it (A and B). The three designs predate the re-base onto the website (task 9). Design C maps itself onto the website; A and B do not.",
+  "method": "Read the three designs in full, the decision log, the roadmap, AGENTS.md on disk and parallax.json. No design has a review key, so their facts are unreviewed; each fact a conclusion rests on was re-checked (facts_rechecked). Repo references were checked with grep and sed on this branch. Live checks: cdnjs file bytes and sha384; token-shaped strings in the bundled Cesium file (counted, not reproduced); the GitHub terms page; the NSSL MRMS tables page; RFC 6265 section 8.5; the MDN frame-ancestors page. 'Present' means found in the file or page.",
+  "ranking": ["design-c", "design-b", "design-a"],
+  "ranking_note": "Scores cover this lens only: rule fit and evidence handling. They do not measure how much of the owner's 3D request each design meets. No provider or library is called best.",
+  "scores": [
+    {
+      "design": "design-c",
+      "name": "Design C: Python-first 2.5D on the flat map (C2 first; C1 gated)",
+      "score_0_to_10": 7,
+      "criteria": {
+        "hard_rules": "Rule 4: Python builds every frame; Leaflet 1.9.4 is vendored; no URL outside the site in built files (AGENTS.md lines 71-72). Rule 1: a default-off build flag and an Experimental label keep unfinished layers off the live site. Rule 7: sources.CONTRACTS plus a loud-failure test. Rule 8: smoke_map.py in Chromium at 288, 390 and 1440 px. Rule 9: no best claims.",
+        "decisions": "D28 respected: Python builds numbers and frames; map.js holds playback, scrubbing, menus and sheets. D27 respected: no saved places; one snapshot per build; the page-age check is named in rule 4. D12 not yet amended: satellite kinds and new limits need a DECISIONS entry, which the design says. D19: no token source named; AGENTS conventions point at website/static/style.css.",
+        "js_discipline": "Existing duties E1-E7 point at real code (checked). New duties N1-N6 are DOM or browser-only, except N5: a per-minute age clock, which is new time arithmetic in JS. Rule 4 names only the page-age check as an accepted browser-only need, so N5 needs a ruling. map.js is 2,155 lines and ROADMAP Next 9 already lists about 330 movable lines, so new JS lands in the flagged file.",
+        "evidence_kinds_freshness": "Echo raster reuses radar_estimate with the label 'modified; not NOAA's unaltered product'. Satellite kinds wait for a DECISIONS entry. MRMS Live at 30 min matches sources.py:115 (checked), but D12 sets radar at 15 min and no entry records the 30-minute value. Unavailable limits are new (D12 has one limit per feed). The loud-failure rule is right: weather.py:232 gives unlisted keys 3600 s silently.",
+        "null_geometry": "Matching unchanged (polygon, then codes; D10). Polygon outline with event and end time, no severity fill. Zone match without geometry: dashed zone outline worded 'the alert names this zone; the warning area is not given', or a marker at the town. Failed town check: 'Alerts not checked' with age (D27). Gaps: no unknown-codes case ('Can't tell yet', D10), no partial-zone case, 3 parity fixtures.",
+        "no_data_subterrain": "-99 and -999 both read 'No radar data' (grey), never 0 dBZ; meanings stay unverified (NSSL table returned HTTP 503 again). Below-ground mask at ground plus 50 m, in Python; no terrain grid means Unavailable. Defects: (1) 'Blank = no echo at 35 dBZ or more' is false for a column whose only 35 dBZ level lies below ground, since the mask removes it before the top is taken; (2) the states row says a missing grid gives 'echo tops not drawn; Terrain unavailable: heights shown above sea level only', which contradicts the Unavailable rule; (3) the top is the highest of 11 sampled levels, which the legend does not say.",
+        "legends": "Parallax legend is verbatim from parallax.json ui_legend_uncorrected_phase1 (first three sentences checked). Radar legend says 'not hail, not hail size, not damage'. Blank-cell wording as above. Sample legends must say they are invented.",
+        "demo_policy": "Not addressed. The design lists 'Sample pictures are invented' as a risk but has no DEMO rule: zero demo mentions, where designs A and B each have one. AGENTS rule 5 requires demo data to carry DEMO everywhere. Invented layers must never reach a live build.",
+        "paid_tokens": "C2 has no library, key or token. The C1 path uses MapLibre and deck.gl without an ion token and avoids pydeck's HTML page, which loads third-party scripts.",
+        "place_privacy": "Fixed Montana-box products only; no saved-place list reaches the build or any host (D24; D27 keeps jobs and addresses off the site).",
+        "default_off": "Build flag defaults off; the default build writes no echo, cloud, satellite or transect files and no 3D strings (proposed test). The flag does not exist yet: build.py has 502 lines and no 'experimental' string, so the cited lines 481-487 are a proposal, not a reference.",
+        "route_security": "Public static site, so the D2 session gate does not apply (D27: everyone sees the same snapshot). Tests: no URL outside the site, no inline handler, no eval, same-origin fetch only. Honest about limits: a meta CSP cannot set frame-ancestors (MDN: 'This directive is not supported in the <meta> element.')."
+      },
+      "reasons": [
+        "Fits the current hard rules without an owner decision for the echo raster: a static site built by Python, vendored Leaflet, no CDN, a default-off build flag, no place lists and one snapshot per build (AGENTS.md rules 1, 4, 5; D27, D28).",
+        "The owner must still rule on new evidence kinds and limits (D12) before the cloud and Band 13 layers can ship, and on the publishing terms for NOAA-derived pictures.",
+        "Its defects sit in its own text and are fixable: below-ground echo wording, a contradictory terrain-missing row, no DEMO rule for invented samples, a proposed flag cited as existing, wrong roadmap and template line references, and one new time-arithmetic duty (N5)."
+      ],
+      "fatal_flaws": [
+        "Cloud-height and Band 13 layers cannot ship until the owner approves DECISIONS entries for satellite_image and satellite_estimate and their limits (D12 owns evidence kinds and freshness). Decision-blocked, not a violation by C2's echo raster.",
+        "Publishing ACHA and MRMS-derived pictures from GitHub Actions to Pages needs a terms decision. The Actions terms say 'You may only access and use GitHub Actions to develop and test your application(s).' and warn against use 'as a content delivery network' (checked live). The live site already does this for MRMS and HRRR (D28), so this is shared exposure, not a new kind.",
+        "C1 (MapLibre or deck.gl globe) needs owner approval of D-G1 and of duties G1-G8 under rule 4. G6 is hand-written shader code, the largest single JS item in the plan."
+      ],
+      "defects_to_fix": [
+        "Echo legend: count below-ground-only columns separately; do not write 'no echo' for them.",
+        "States row: replace 'heights shown above sea level only' with 'Unavailable; heights are never drawn over an assumed ground'.",
+        "Add a DEMO rule for invented sample layers.",
+        "Mark the build flag as proposed; cite base.html lines 49-57 for the page-age check (base.html has 64 lines).",
+        "Replace 'ROADMAP Next 8 host decision' (Next 8 is the text-version item; the roadmap has no host item).",
+        "Replace N5 with Python-written as-of text plus the existing page-age check (graft 1)."
+      ]
+    },
+    {
+      "design": "design-b",
+      "name": "Design B: separate globe window served by the desktop shell (parked app)",
+      "score_0_to_10": 5,
+      "criteria": {
+        "hard_rules": "Rule 4 met as written: Cesium bundled from a pinned, sha384-checked set; no CDN at runtime; 13 documented duties. Rule 2 and D3: netCDF4 and numpy need a new installer per OS (acknowledged). Rule 3: snapshot through an append-only migration (acknowledged). Blocked by D27 (see fatal_flaws).",
+        "decisions": "D2 pattern applied with its own cookie. D7 kept (layer 1). Base map is an owner choice between USGS (D9) and the site's vector map (D28), and the design names both. D27 acknowledged as the blocker; the reversal is named as O1.",
+        "js_discipline": "Strongest of the three. 13 duties, each with a reason; an explicit not-in-JavaScript list (freshness, time zones, thresholds, parallax, legend text, tile templates, sort order). G-JS4: the page does no time arithmetic. G-JS5: a failed refresh shows the last text with 'could not refresh', never an all-clear. G-JS11 (camera-distance sizing) and G-JS13 (timer playback) need owner rulings, which the design states.",
+        "evidence_kinds_freshness": "New kinds proposed as P-B1: needs a DECISIONS entry; no number collision. Limits live in the payload's FRESH_SECONDS and travel in the snapshot, with a unit test for a missing key (good). MRMS volume stale at 10 min differs from D12's radar 15 min and from the site's 30 min (sources.py:115); no entry records it.",
+        "null_geometry": "Three cases: polygon outline with no fill; zone match drawn as a zone outline or a marker with 'Zone alert; NWS gave no outline'; unknown codes shown as 'Can't tell yet'. A failed refresh keeps the last verified list (D11, rule 6). Parity tested on 3 fixtures (design A plans 20). No partial-zone case.",
+        "no_data_subterrain": "-99 and -999 are hatched 'No radar data': never 0 dBZ, never clear (good). Below-ground cells read 'Below ground: not drawn; not clear' (good). Gaps: no rule for a missing ground grid (no Unavailable state), and no rule that negative valid dBZ are real data below threshold.",
+        "legends": "Legend text is Python text ('Grey or hatched: no radar data, not clear'); opacity encodes echo class only. Good.",
+        "demo_policy": "Best of the three: /globe?event=demo is refused with 400; no DEMO footprints in v1 (rule 5; D12). Good.",
+        "paid_tokens": "Same Cesium library as design A, with 'no ion token' stated. Token-shaped strings are present in the file (counted live). Zero ion requests is shown only headless (globe-libs review); the design says a trace is owed.",
+        "place_privacy": "Snapshot and places stay in the local database. Statewide frames are the only third-party-job path, and that choice is owner decision O3. Good.",
+        "default_off": "DEFAULTS globe off; /globe returns 404 when off; payload link hidden. Library and decoder bytes stay in every installer while off (O5), which the design states as a cost.",
+        "route_security": "Strongest of the three. Separate cookie hw_globe, because cookies do not isolate by port (RFC 6265 section 8.5, checked live). 127.0.0.1 bind and Host check (launcher.py:160-161 pattern). 256-bit per-launch key. Read-only database with a write test. CSP default-src 'none'. Traversal and method tests. Playwright request interception."
+      },
+      "reasons": [
+        "Rule content is the strongest of the three, but the design targets the parked app. Until the owner reverses D27 by a DECISIONS entry naming it (O1), nothing can ship.",
+        "Three rule gaps to fix: no missing-ground-grid state; no DQF rule for the ACHA layers (the goes-aws review refutes a general DQF=0 rule); no negative-dBZ rule.",
+        "Volumes need a published statewide product (O3): per-machine decoding would move 64.6 GB (GOES) and 432.3 GB (MRMS) per machine-month (computed in the design), so the hosting question applies here too."
+      ],
+      "fatal_flaws": [
+        "Product direction: the desktop app is parked by D27 (DECISIONS.md:314-323; AGENTS.md:7-14). The owner must reverse it by a DECISIONS entry naming D27 (O1).",
+        "Volume path: needs a published statewide product (O3), because per-machine decoding is infeasible at the stated rates (computed). The publish host and the Actions terms are owner or counsel decisions."
+      ],
+      "defects_to_fix": [
+        "Add a missing-ground-grid rule: Unavailable, and no MSL height drawn over an assumed ground.",
+        "Add a DQF rule for ACHA cells, with a test.",
+        "Add a negative-dBZ rule (as in design A).",
+        "Parity test: 20 fixtures, including a partial-zone case (as in design A)."
+      ]
+    },
+    {
+      "design": "design-a",
+      "name": "Design A: Jinja-generated CesiumJS page inside the Flask app (/globe, parked app)",
+      "score_0_to_10": 3,
+      "criteria": {
+        "hard_rules": "Rule 4 conflict as written: Cesium 1.146.0 loads from cdnjs with sha384 integrity, and the CSP allows cdnjs. AGENTS.md lines 71-72 say third-party code is served by the site, not a CDN. The stated precedent is the parked app's Folium CDN (maps.py:54-55 keeps Folium's leaflet and jquery scripts, checked), which the site no longer follows (D28; vendored Leaflet). Rules 1-3 apply only if the app resumes; the design does not say so.",
+        "decisions": "Proposes D25, D26 and D27 for new entries. All three exist (DECISIONS.md:244, 295, 314), and so do D28 and D29 (359, 453). Next free number is D30. The supervisor plan also names D25 for the globe entry. D19: colours come from base.html :root, but D27 replaced the dark look with the field-sheet tokens in website/static/style.css, which the design never names. D27 is not acknowledged.",
+        "js_discipline": "15 documented duties and a moved-out list (thresholds, the marker branch and layer rows move to Python). Concerns: JS-13 compares data to decide which layers to redraw (logic); JS-15 transforms packed binary into typed arrays (conditional); no duty handles a failed browser refresh, so a 'Live' state can stay on screen after the local server stops answering. Rule 5 requires missing inputs to show 'Data unavailable'.",
+        "evidence_kinds_freshness": "Existing kinds reused (radar_estimate for MRMS, official_alert for alerts). New kinds proposed, with labels that avoid 'measured'. Freshness: two radar_estimate limits (15 min for the WMS picture, 10 min for MRMS volumes) without a decision, against sources.py:115's 30 min for MRMS frames.",
+        "null_geometry": "Best detail of the three: six cases (A-F), partial zones ('zone outline, partial: 1 of 3 zones'), unknown codes shown as can't-tell and never omitted, and parity on at least 20 fixtures against alert_targets (payload/app.py:285, cited correctly).",
+        "no_data_subterrain": "Best detail: -99 and -999 are 'no radar data', and 'no radar coverage' is avoided until verified; negative valid dBZ are real values below threshold, not no-data; below-ground cells are not drawn and are counted in the legend; no terrain grid means Unavailable, and MSL heights are never drawn over assumed ground; no interpolation across levels, frames or cells.",
+        "legends": "Python text with honest wording: 'Blank is not clear: it can be no radar data, or no echo at that height.'",
+        "demo_policy": "'No demo data on the globe in any phase (AGENTS rule 5)'. Good.",
+        "paid_tokens": "Ion off with overrides, but the bundled default token is in the file: token-shaped strings are present (5 occurrences, counted live). The phrase that globe-libs.json attributes to the token is absent from the file (0 matches). Zero non-local requests were shown headless only. The design's 'trace owed' status is the right one.",
+        "place_privacy": "No place data in any URL; the publish job uses fixed statewide products. Good.",
+        "default_off": "DEFAULTS globe off; /globe returns 200 with an 'off' page; the API returns {enabled: false}; zero socket connects test. Good.",
+        "route_security": "Reuses the D2 gate: no cookie gives 403, wrong key 403, wrong Host 400 (launcher.py:160-161 pattern), whitelist, guarded POST, no-leak and escaping tests. Weaknesses: the CSP allows cdnjs, and 'unsafe-eval' is unverified."
+      },
+      "reasons": [
+        "Its alert and sub-terrain text is the most complete of the three (cases A-F, below-ground counts, negative dBZ, DQF test, parity on 20 fixtures). Its architecture conflicts with current hard rules: third-party code from a CDN (rule 4 as written), a parked target it does not acknowledge (D27), and decision numbers that collide with four existing entries.",
+        "Freshness proposals conflict with D12 and with the site's MRMS limit. With no failed-refresh duty, a silent browser failure can keep a 'Live' state on screen.",
+        "Stale references: 'roadmap items 1-3 first (ROADMAP.md lines 58-75)' cites lines that now hold roadmap items 8-12."
+      ],
+      "fatal_flaws": [
+        "Product direction: targets the parked desktop app. D27 parks it; reviving it needs an owner decision naming D27 (O1).",
+        "Third-party code from a CDN conflicts with AGENTS.md rule 4 as written. The owner must amend rule 4, or the design must vendor Cesium as the site does.",
+        "Browser-side live tiles (GIBS, USGS, NWS WMS) conflict with D27's snapshot rule if the feature moves to the site. D7 allows them for the parked app; the owner decides which applies."
+      ],
+      "defects_to_fix": [
+        "Renumber the proposed decisions to D30 onwards.",
+        "Give radar_estimate one freshness rule, or a decision that splits it.",
+        "Add a failed-refresh duty: keep the last state text with 'could not refresh'.",
+        "Replace the stale roadmap line references; restate the D19 token source for the site."
+      ]
+    }
+  ],
+  "decisions_the_owner_must_make": [
+    "O1 (D27): reverse or keep the parked app. Needed before any app-path design (A, B) ships. Requires a DECISIONS entry that names D27.",
+    "Evidence kinds and limits (D12): satellite_image, satellite_estimate, Unavailable limits, and the MRMS limit (15 min in D12 for the radar picture; 30 min in sources.py:115; 10 min in designs A and B). One entry, next free number D30.",
+    "Publishing terms and host for NOAA-derived products (GitHub Actions terms, checked live): counsel or owner. Applies to C2's cloud and Band 13 layers, to design B's statewide frames, and to the existing D28 build.",
+    "Rule 4 and the globe library (D-G1): whether a vendored WebGL library is allowed on the site (C1) or the app (A, B), and whether rule 4's no-CDN sentence binds the app.",
+    "Time arithmetic in JS (design C duty N5): allow it or replace it. Rule 4 names only the page-age check as an accepted browser-only need.",
+    "DEMO labelling of invented sample layers: rule 5 requires DEMO everywhere; the site currently says 'sample'."
+  ],
+  "grafts": [
+    "From design B (G-JS4, G-JS5): when a page refresh fails, keep the last Python-written state text and show 'could not refresh' beside it; never an all-clear. Python writes the as-of time and state words, and the page does no time arithmetic. This replaces design C's per-minute age clock (N5).",
+    "From design B (freshness): ship each layer's stale and unavailable limits inside the built data, so the page holds no thresholds. Keep C's loud-failure test and add one that fails when a layer key has no limit.",
+    "From design B (not_in_javascript): add an explicit list to docs/DESIGN.md of what map.js may never do: freshness and state words, thresholds, dBZ encoding, legend text, tile or URL templates, sort order, time zones. Check it at review.",
+    "From design A (null geometry): adopt cases A-F, including 'zone outline, partial: 1 of 3 zones' and 'Can't tell yet' with the reason for unknown codes (D10). Replace C's 3-fixture parity with at least 20 fixtures against the site's own match function: zone-only, out-of-state codes, cancel during an outage, partial zones.",
+    "From design A (sub-terrain): count the below-ground columns and say so in the legend. Use A's rule ('no terrain grid means Unavailable; MSL heights are never drawn over an assumed ground') to fix C's states row.",
+    "From design A (no-data): adopt 'negative valid dBZ are real values below threshold, not no-data and not zero', with a test.",
+    "From design A (DQF): a test that no ACHAC cell with DQF other than 0 is drawn. For ACHA2KMC, state its DQF rule once evidenced, because the goes-aws review refutes the general DQF=0 rule.",
+    "From design A (states): a frozen-clock browser test that walks Live, then Stale, then Unavailable at the stated limits. Design C has no state-change test.",
+    "From design A (malformed products): refuse a product with a value outside the grid, a sentinel used as a dBZ value, or no validity mask. Keep the last verified frame with its age, as D27 does for alerts. Apply in gridded.py and volume.py.",
+    "From design B (demo): a rule that invented sample layers are labelled DEMO, have no path into the live publish, and fail the build if they reach it. B's refusal of demo on the globe (400) is the model.",
+    "From design B (browser checks): assert zero CSP violations and no inline handlers in tools/smoke_map.py, as B's route test 16 does. Design C already asserts zero requests to other hosts (P1).",
+    "From designs A and B (exports): no image export without the legend, valid times and disclaimer baked in. Design C has no export rule."
+  ],
+  "facts_rechecked": [
+    "Live, 2026-10-17, cdnjs: Cesium.js 1.146.0 is 6,080,574 B with sha384-1lWK5deN/B+lLaUw4lk6xKp/L19ii/98SZLk6K8YthDskgvc+GbdixLzbCnSS2Wn, and widgets.css is 30,710 B with sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp. Both equal design A's pins (openssl sha384 of the fetched bytes).",
+    "Live, same Cesium.js: 5 token-shaped JWT-prefixed strings (5 distinct; values not reproduced); 'defaultAccessToken' 3 times; 'api.cesium.com' once; the phrase 'for evaluation purposes only' that globe-libs.json attributes to the token is absent (0 matches). globe-libs.json confirmed[8] and unverified[0]: zero non-local requests, headless only.",
+    "Live WebFetch of docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features: 'You may only access and use GitHub Actions to develop and test your application(s).' and 'don't use Actions as a content delivery network' (matches hosting-options.json gh-terms-1 and gh-terms-3).",
+    "Live WebFetch of nssl.noaa.gov/projects/mrms/operational/tables.php: HTTP 503 (the designers recorded 503 too). The -99 and -999 meanings remain unverified (mrms.json).",
+    "Live RFC 6265 section 8.5: 'Cookies do not provide isolation by port.' Supports design B's separate cookie name (route test 5).",
+    "Live MDN frame-ancestors page: 'This directive is not supported in the <meta> element.' Supports design C's note that a meta CSP cannot set frame-ancestors.",
+    "Repo: desktop/updater.py:191 MAX_DOWNLOAD = 50*1024*1024, refusal at :266-267; the self-test at :140-143 fails only on HTTP status >= 400. As the designs say (parked app).",
+    "Repo: payload/weather.py:205-206 FRESH_SECONDS keys (radar 15 min, alerts 10 min); :232 gives an unlisted key 3600 s; :518 'Live feeds are off during a self-test.' (designs A and C cite 517-518, correct).",
+    "Repo: website/sources.py:115: a newest MRMS frame older than 30 minutes is reported as stale; :34 FRESH_MINUTES = 75 for stations. DECISIONS.md:97-98 gives radar 15 min. No DECISIONS entry records the 30-minute MRMS value.",
+    "Repo: website/static/leaflet/leaflet.js sha256 db49d009c841f5ca34a888c96511ae936fd9f5533e90d8b2c4d57596f4e5641a (matches design C; npm and jsDelivr equality not re-run). map.js has 2,155 lines; cited lines 116-119, 1400, 1449-1452, 1493, 1682 and 1727-1730 hold the behaviour design C describes.",
+    "Repo: website/templates/base.html has 64 lines; the page-age script is at lines 49-57 (design C cites 167-168). website/build.py has 502 lines and no 'experimental' string, so design C's flag does not exist yet.",
+    "Repo: DECISIONS.md D25 (line 244), D26 (295), D27 (314), D28 (359), D29 (453) exist; design A's proposed D25-D27 collide; next free number is D30. ROADMAP.md has no host item; Next 8 (lines 55-59) is the text-version item.",
+    "Repo: AGENTS.md lines 71-72 ('Third-party code (Leaflet) and fonts are served by the site, not a CDN.') and lines 7-14 (the website is the product), read on disk.",
+    "Repo: payload/app.py:285 alert_targets (design A's parity reference, cited correctly); payload/maps.py:54-55 keeps only Folium's leaflet and jquery default scripts; folium.py:27 loads leaflet@1.9.3 from cdn.jsdelivr.net. DECISIONS D23's 'Folium bundles Leaflet' is therefore wrong (confirmed).",
+    "Parallax: parallax.json ui_legend_uncorrected_phase1 equals design C's quoted legend (first three sentences). Table totals: 2 km 3.25-4.43 km; 12-15 km 19.55-33.46 km, matching '3 to 4 km' and '20 to 33 km' within rounding."
+  ],
+  "citation_errors_in_designs": [
+    "design-a: proposes DECISIONS D25, D26 and D27 (all taken); cites ROADMAP.md lines 58-75 as 'roadmap items 1-3' (those lines now hold items 8-12); cites D19 base.html :root tokens (superseded for the site by D27 and style.css); does not mention D27.",
+    "design-c: cites base.html:167-168 (the file has 64 lines; the check is at 49-57); cites build.py:481-487 for the --experimental-3d flag (no such flag); cites 'ROADMAP Next 8 host decision' (Next 8 is the text-version item; there is no host item).",
+    "design-b: references checked and correct (DECISIONS.md:314-323; ROADMAP.md:6-7 and :80-82; launcher.py:161 Host check). Its gaps are rules, not citations."
+  ],
+  "unverified": [
+    "Whether the bundled Cesium token or an ion endpoint is requested during interaction on a GPU (globe-libs.json unverified[0]; headless only).",
+    "Meanings of -99 and -999, and the MESH codes (NSSL table returned 503 in this check).",
+    "Whether any DECISIONS entry records the 30-minute MRMS limit in sources.py:115 (none found).",
+    "Vendored Leaflet equality with npm and jsDelivr (only the on-disk hash was checked).",
+    "Route tests, parity fixtures and browser checks in the designs: planned, not run."
+  ]
+}
