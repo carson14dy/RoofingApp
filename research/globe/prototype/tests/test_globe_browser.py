@@ -532,6 +532,35 @@ def settle_tiles(page, pending, timeout_s, results, key):
     results[key] = {"waited_s": round(time.time() - t0, 1), "tiles_loaded": loaded, "pending": len(pending)}
 
 
+def write_palette_copy(src, dst, widths=(1024, 960, 896, 800), limit=SCREENSHOT_LIMIT):
+    """A downscaled 256-colour PNG whose palette always holds the 14 NWS swatch colours exactly. A plain
+    median-cut palette drops the small saturated swatches, so the picture would show the wrong colours.
+    Returns the size, the colour mode and how many of the 14 colours the picture keeps exactly."""
+    from PIL import Image
+
+    img = Image.open(src).convert("RGB")
+    lanczos = resample_filter(Image)
+    nws_rgb = [tuple(int(h[k:k + 2], 16) for k in (1, 3, 5)) for h in NWS_STEP_HEX]
+    for width in widths:
+        scaled = img.resize((width, round(img.height * width / img.width)), lanczos)
+        coarse = scaled.quantize(colors=256 - len(nws_rgb), method=Image.Quantize.MEDIANCUT)
+        palette = bytearray(coarse.getpalette()[:(256 - len(nws_rgb)) * 3])
+        for rgb in nws_rgb:
+            palette += bytes(rgb)
+        palette += bytes(3 * (256 - len(palette) // 3))
+        palette_img = Image.new("P", (1, 1))
+        palette_img.putpalette(bytes(palette))
+        out = scaled.quantize(palette=palette_img, dither=Image.Dither.NONE)
+        out.save(dst, format="PNG", optimize=True)
+        size = os.path.getsize(dst)
+        if size <= limit:
+            kept = {rgb for _count, rgb in out.convert("RGB").getcolors(maxcolors=1 << 24)}
+            return {"width": out.width, "height": out.height, "bytes": size,
+                    "colours": "palette-256, NWS swatch colours kept exact",
+                    "nws_colours_exact": sum(1 for rgb in nws_rgb if rgb in kept)}
+    raise AssertionError(f"no palette copy of the screenshot fits in {limit} bytes")
+
+
 def canvas_rgb(page):
     from PIL import Image
 
@@ -707,9 +736,10 @@ class SampleVolumeBrowserTests(GlobeVolumeBrowserBase):
 
             full = os.path.join(tmp, "full.png")
             page.screenshot(path=full)
-            shot = write_screenshot_copy(full, VOLUME_PNG)
+            shot = write_palette_copy(full, VOLUME_PNG)
             self.results["screenshot"] = shot
             self.assertLessEqual(shot["bytes"], SCREENSHOT_LIMIT)
+            self.assertEqual(shot["nws_colours_exact"], len(NWS_STEP_HEX), "the picture lost a swatch colour")
 
             status = page.evaluate("() => window.globeStatus.volume")
             self.results["volume_status"] = status

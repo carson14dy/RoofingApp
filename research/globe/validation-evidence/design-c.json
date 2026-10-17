@@ -1,0 +1,245 @@
+{
+  "slug": "design-c",
+  "workstream": "W13",
+  "name": "Design C: Python-first 2.5D on the flat map (no globe library); pydeck/MapLibre globe as a gated later phase",
+  "date_utc": "2026-10-17",
+  "status": "Research design. Nothing ships. This is the only file written; other agents' uncommitted prototype edits were left untouched.",
+  "host": {
+    "task_constraints_describe": "The task constraints (payload/, desktop/, self-test, 50 MiB whole-repo zipball, rule 2 installers) describe the parked desktop app.",
+    "current_host": "Since D27 (2026-10-14) the product is a static website built by Python every 10 minutes (.github/workflows/website.yml cron */10, line 15) and served by GitHub Pages (DECISIONS D27; AGENTS.md 'What this is'). The design below targets the app as the task states; website_mapping says what carries over.",
+    "website_mapping": [
+      "Self-test, zipball cap and installers do not apply to the website; a merge to main is live in about 10 minutes (AGENTS.md).",
+      "Vendored-library bytes and phone performance decide the library, not the zipball cap (supervisor log, ARCHITECTURE SHIFT).",
+      "Producers are website/gridded.py and website/build.py. Hand-written browser code today: website/static/map/map.js and the page-age check in website/templates/base.html:167-168 (AGENTS rule 4).",
+      "Pages limits: 1 GB per site, 100 GB/month soft bandwidth (hosting-options.json gh-pages-1, gh-pages-2). Actions terms (gh-terms-1, gh-terms-3) and the 5-minute schedule floor with possible drops (gh-sched-1, gh-sched-4) are open owner or legal items."
+    ]
+  },
+  "summary": "Recommended first build: C2, no globe library. Python builds fixed-region PNG layers and fixed-transect SVG profiles: MRMS echo-top height classes from 11 of the 33 MSL levels (levels below ground masked with a Python-built terrain grid), GOES ACHA cloud-top height classes (satellite estimate, uncorrected for parallax), and a GOES Band 13 picture. The browser shows them as Leaflet image overlays on the vendored Leaflet 1.9.4 map (sha256 matches the npm file) and runs 6 new small duties. C1 (pydeck to a MapLibre globe, deck.gl) is a gated Phase 5 owner decision: pydeck 0.9.3 has no GlobeView class (only map_projection='globe' on MapLibre); deck.gl 9.4.0 has no VolumeLayer; deck.gl marks GlobeView experimental; pydeck's HTML template loads third-party scripts and stylesheets even with offline=True; the app would need numpy (new installer, rule 2).",
+  "recommendation": "C2 for the first build. C1 only if the owner approves D-G1 and the JS duties in js_duties (G1-G8). Neither option makes the storms true 3D volumes; C2 uses 2.5D encodings, and the owner's 3D wish is met only partly in both.",
+  "sub_options": {
+    "C2_flat_map_2_5d": {
+      "what_it_is": "Leaflet 1.9.4 (already vendored) with Python-built image overlays and SVG profiles. No globe, no WebGL, no new library.",
+      "cannot_do_that_owner_asked": [
+        "Rotate, tilt or orbit the view, or show storm columns or volumes in 3D.",
+        "Place cloud tops at their true height over terrain: cloud tops are drawn as height classes, and the uncorrected position is disclosed (parallax.json wording).",
+        "Look like a globe (it is a Mercator map, as today).",
+        "Click any point for a live profile: a static site can only show fixed, pre-built transects.",
+        "Animate between frames: frames are 10-minute pictures; no temporal or level interpolation (AGENTS rule 5)."
+      ],
+      "protects": "Rule 4 and D1 (Python builds all data; no framework; no new library). The no-CDN rule (AGENTS rule 4). Deterministic offline states (every file comes from the site). Phone bytes (about 0.66 MB added per build). Honest labels: estimates are drawn as estimates. Reuse of website/gridded.py."
+    },
+    "C1_globe_pydeck_maplibre": {
+      "what_it_is": "pydeck 0.9.3 (Python spec builder) driving a MapLibre globe projection with deck.gl 9.4.0 layers, in a custom page template.",
+      "cannot_do_that_owner_asked": [
+        "Show storm volumes without custom WebGL/GLSL: deck.gl 9.4.0 dist.min.js has 0 matches for VolumeLayer (live re-check 2026-10-17); 3D texture upload exists (setTexture3DData, 1 match), so the volume shader would be hand-written.",
+        "Use a 'GlobeView' from pydeck: pydeck 0.9.3 has no GlobeView class. deck.py lines 93-95: 'Map projection to use with map_provider=maplibre. Values can be globe or mercator.' deck.gl's GlobeView page: 'This class is experimental, which means it does not provide the compatibility and stability that one would typically expect from other View classes.' MapLibre release note: 'Globe View or Globe Projection was released as part of MapLibre GL JS 5.0.0'.",
+        "Run offline with pydeck's own page: index.j2 loads a Mapbox GL or Google Maps script (lines 6-10), Bootstrap and Font Awesome from maxcdn (lines 11-12) and MapLibre CSS from unpkg (line 13), and the widget stylesheet from jsDelivr (html.py:37, index.j2:15) even when offline=True (which inlines the 4,269,385 B widget bundle, html.py:49-53).",
+        "Be offline-safe with pydeck's default style: map_styles.py uses basemaps.cartocdn.com URLs, which D9 records as needing a key.",
+        "Guarantee WebGL2 on crew laptops: WebView2's WebGL2 support is not stated in the pages read; the MSHTML fallback has no WebGL2 (webgl-runtime.json)."
+      ],
+      "protects": "A real globe and 3D columns on desktops and tablets, and volumes the owner asked for, once parallax is corrected (Phase 2 of the plan)."
+    }
+  },
+  "components": [
+    {"name": "website/gridded.py (extended)", "language": "Python 3 (numpy, pygrib, PIL)", "where": "GitHub Actions runner, every 10 min (website.yml)", "owns": "MRMS level decode (reuse mrms_grid, sample_mrms, png_bytes, palette; LAYERS table at gridded.py:88-104); echo-top class raster; PNG frames at IMAGE_BOUNDS 43.0-50.5 N, 118.5-101.0 W, width 1400 px (gridded.py:38-39)."},
+    {"name": "website/volume.py (new, proposal)", "language": "Python 3 + numpy; stdlib for SVG text", "where": "runner", "owns": "Column top from 11 levels with dBZ at or above 35; below-ground mask from a terrain grid; class bands; transect sampling (nearest cell, no interpolation); SVG profiles. No contouring in phase 2."},
+    {"name": "website/sources.py (extended)", "language": "Python 3", "where": "runner", "owns": "CONTRACTS entries for MRMS levels, GOES ACHA height, GOES Band 13 (fetch, units, timing, missing rules; sources.py:45-); FRESH constants (sources.py:34 pattern); NWS zone outlines for null-geometry alerts (proposal)."},
+    {"name": "website/build.py (extended)", "language": "Python 3 + Jinja2", "where": "runner", "owns": "build() (build.py:373); map_data() (build.py:219) gets new keys; rolling window of frames read from the live site through load_previous() (build.py:472); asset_versions() (build.py:368) for ?v= hashes; the --experimental-3d flag (argparse at build.py:481-487)."},
+    {"name": "website/templates (extended)", "language": "Jinja2", "where": "runner", "owns": "Legend and parallax wording rendered at build time (roadmap Next 9 wants legends moved out of JS)."},
+    {"name": "website/static/map/map.js + map.css (extended)", "language": "vanilla JavaScript + CSS", "where": "viewer's browser", "owns": "Only the duties in js_duties. Each is documented inline (AGENTS rule 4). map.js is 2,155 lines and 114,696 B today."},
+    {"name": "website/static/leaflet (existing)", "language": "JavaScript (Leaflet 1.9.4, BSD-2-Clause)", "where": "viewer's browser, same origin", "owns": "L.imageOverlay for frames (map.js:287 already uses it); map and layer control."},
+    {"name": "tools/smoke_map.py (extended)", "language": "Python + Playwright", "where": "runner, branch pushes only", "owns": "Chromium checks of new layers, legends and states at phone and desktop widths (AGENTS rule 8)."},
+    {"name": "C1 only: payload/ or website build", "language": "Python 3 (pydeck 0.9.3 spec builder); vendored MapLibre 6.14.0 and deck.gl 9.4.0 (JavaScript)", "where": "runner builds specs; browser runs deck.gl", "owns": "Layer JSON only. pydeck's own HTML page is not used (index.j2 external resources)."},
+    {"name": "App path (parked; only if the owner resumes it)", "language": "Python 3 (Flask, Jinja)", "where": "crew laptop", "owns": "payload/globe.py mirroring volume.py (a shared module would need an owner decision); new routes listed in endpoints.app_path; static route, because app.py:204 sets static_folder=None."}
+  ],
+  "js_duties": [
+    "E1 [existing; map.js:1400] Frame playback timer. Reason: the frame advance is a timer in the viewer's browser.",
+    "E2 [existing; map.js:1449-1452] Scrub by pointer events. Reason: pointer position exists only in the browser.",
+    "E3 [existing; map.js:1493] Layer menu open and close, tap-outside dismissal. Reason: DOM events only.",
+    "E4 [existing] Town sheet and List show and hide on tap. Reason: DOM show and hide.",
+    "E5 [existing; map.js:1727-1730] Geolocation request and marker. Reason: navigator.geolocation exists only in the browser.",
+    "E6 [existing; map.js:116-119] Same-origin fetch of data/*.json with plain-words failure reasons. Reason: the browser makes the request.",
+    "E7 [existing; base.html:167-168, map.js:1682] Page-age check, warning past 25 minutes. Reason: the viewer's clock, not the build's.",
+    "N1 [C2 new] Layer switch and opacity for echo-top and cloud-top overlays. Reason: DOM control state; Python supplies the legend text and frame list.",
+    "N2 [C2 new] Rolling echo-top window on the existing timeline (reuses E1-E2). Reason: the same browser timer; no new geometry.",
+    "N3 [C2 new] Show one pre-built transect SVG chosen from three fixed transects. Reason: choosing a file is a DOM event; no geometry runs in the browser.",
+    "N4 [C2 new] Per-layer 'could not load' text when an image or SVG fails (error event). Reason: only the browser sees a failed request; wording comes from Python.",
+    "N5 [C2 new] Per-layer age clock, valid time against the viewer's now, updated each minute. Reason: the viewer's clock; Python cannot know it.",
+    "N6 [C2 new] Accessible names and aria-pressed state on new controls. Reason: attributes are set in the DOM.",
+    "G1 [C1 only] Load vendored globe modules; show '3D view could not load' on failure. Reason: modules execute in the browser.",
+    "G2 [C1 only] WebGL2 probe before the globe is created. Reason: only the browser knows its GPU context.",
+    "G3 [C1 only] webglcontextlost and restored handling. Reason: GPU events exist only in the browser.",
+    "G4 [C1 only] Turn Python layer JSON into deck.gl layer props. Reason: hand-written glue between Python data and the library.",
+    "G5 [C1 only] Fetch per-frame data and set layer data on time change. Reason: browser network and timing.",
+    "G6 [C1 only] Upload per-frame 3D textures for volume layers. Reason: GPU upload is browser-only, and with no VolumeLayer the shader is hand-written.",
+    "G7 [C1 only] Vertical exaggeration control, labelled on screen. Reason: a UI event feeding a shader uniform.",
+    "G8 [C1 only] Reset-view button and keyboard camera keys. Reason: UI events; the library handles drag internally.",
+    "Count: C2 needs 13 (E1-E7, N1-N6); the existing 7 are approved in D28. C1 adds G1-G8 (21 in all). Each duty is documented inline (AGENTS rule 4)."
+  ],
+  "pip_packages_added": [
+    "C2 website: none. The build already installs requests, jinja2, pillow, numpy, pygrib (website.yml:80). No installer change.",
+    "C2 app path: none if products come from the website build; the app downloads PNG and JSON. If the app decodes MRMS itself, numpy and eccodes are needed: numpy is not in requirements.txt or launcher.py _bundle_imports (launcher.py:47-54), and the eccodes stack is 62.16 MB of Linux wheels with no Windows wheel (pipeline-options.json installer_impact). That is a new installer (rule 2).",
+    "C1: pydeck==0.9.3 (Apache-2.0, live PyPI 2026-10-17). Base requirements: jinja2 (already present) and numpy>=1.16.4 (new to the app; Windows cp312 wheel 12.57 MB, pipeline-options.json). Wheel 11,428,091 B, 47,425,693 B uncompressed, including two 19,408,921 B .js.map files and two 4,269,385 B widget bundles. Installer consequence: requirements.txt, _bundle_imports, SHELL_API bump, manifest min_shell, rebuilt installers (rule 2), and a decision on the .map files. On the website, pydeck is optional: the spec is plain JSON."
+  ],
+  "library_pins": [
+    {"lib": "Leaflet 1.9.4", "licence": "BSD-2-Clause (live npm)", "bytes": "leaflet.js 147,552 B; leaflet.css 14,806 B; images 6,503 B", "pin": "Vendored now at website/static/leaflet. sha256 of leaflet.js db49d009c841f5ca34a888c96511ae936fd9f5533e90d8b2c4d57596f4e5641a equals the npm/jsDelivr file (live re-check 2026-10-17)."},
+    {"lib": "MapLibre GL JS 6.14.0 (C1 only)", "licence": "BSD-3-Clause (live npm)", "bytes": "mjs 1,078,892 B (live jsDelivr content-length); worker 508,314 B; css 83,263 B (live); gzip-9 mjs 285,648 B (globe-libs.json)", "pin": "Exact version; sha256 recorded at vendoring time. Not the 5.14.0 build bundled inside pydeck (index.j2:13)."},
+    {"lib": "deck.gl 9.4.0 (C1 only)", "licence": "MIT (live npm)", "bytes": "dist.min.js 2,073,497 B (live jsDelivr); gzip-9 574,961 B (globe-libs.json)", "pin": "Exact version; GlobeView experimental; no VolumeLayer."},
+    {"lib": "pydeck 0.9.3 (C1 only, optional)", "licence": "Apache-2.0 (live PyPI)", "bytes": "wheel 11,428,091 B", "pin": "requirements.txt exact pin with hashes if adopted."},
+    {"lib": "Rejected: CesiumJS 1.146.0", "licence": "Apache-2.0", "bytes": "Cesium.js 6,080,574 B; Workers 1,034,391 B; Assets 4,379,545 B (globe-libs.json)", "pin": "Not used. Viewer defaults call ion; ion token and default Google tileset path (globe-libs.json facts 30-37)."},
+    {"lib": "Rejected: three.js 0.186.1 and globe.gl 2.46.2", "licence": "MIT (live npm)", "bytes": "three module 662,772 B; core 1,458,113 B; globe.gl min 1,885,160 B (globe-libs.json)", "pin": "Not used. three.js is WebGL2-only since r163; no terrain or time API in either."}
+  ],
+  "integrity_policy": "Exact versions only. Each vendored file's sha256 is written to a manifest that the build checks, and a test fails on any mismatch. Files come from the site, never a CDN; a test finds no URL outside the site in built HTML, JS, CSS or JSON. SRI is not needed for same-origin files. New versions need 14 days of age before adoption (the artifact instructions' rule, applied here as a proposal). No paid token or key appears in browser code (globe-libs.json: Cesium ion token, Google key). The app's Folium Leaflet 1.9.3 comes from jsDelivr with no integrity attribute (folium.py:27, read live); D23's 'Folium bundles Leaflet' is wrong and needs a correction entry.",
+  "offline_and_selftest": {
+    "self_test": "updater.selftest runs with NETWORK False and checks only HTTP status >= 400 (updater.py:141-142; default timeout 90 s, updater.py:122-158). /globe returns 200 whether or not the setting is on; only data routes and the 3D controls depend on it. Expected states in the self-test: live feeds 'Off' (weather.py:517-518), 3D view 'Off (setting)'. No state is an all-clear. The self-test cannot see JavaScript or images, so UI checks run in a dev-only browser job (not in requirements.txt). check-app.yml has no browser step (lines 22-26).",
+    "states": {
+      "echo_top_MRMS": "Live when the newest valid frame is at most 30 min old (sources.py:115 radar rule). Stale from 30 to 180 min, with age shown and the last frame kept. Unavailable beyond 180 min or with no valid frame: 'Data unavailable'. Grey cells read 'No radar data'.",
+      "cloud_top_GOES_ACHA": "Live at most 20 min old; Stale to 180 min; Unavailable beyond.",
+      "satellite_picture_band13": "Same limits as cloud_top_GOES_ACHA.",
+      "transects": "Follow the MRMS state. Unavailable when the MRMS frame is unavailable.",
+      "terrain_grid": "Static, version-stamped. If missing, echo tops are not drawn and the view says 'Terrain unavailable: heights shown above sea level only'.",
+      "alerts": "Per alert_null_geometry. 'Alerts not checked' when a town's check failed (D27).",
+      "3d_view_could_not_load": "Separate banner from C1 G1-G3 (or the image-error text N4 in C2). Data states are unaffected."
+    },
+    "website_offline": "No server. If the site is unreachable nothing new loads and the last page keeps its age clock. A failed build keeps the last verified frames, labelled with their age (D27)."
+  },
+  "endpoints": {
+    "app_path": [
+      "GET /globe (Jinja). Owners: setting() at app.py:220-221; alert_targets() app.py:285-299 and run_matches() app.py:301-344 so matches equal Live Storms; AlertService.active() weather.py:578-581; ZoneService.geoms and ensure weather.py:632-653; applies_to_place weather.py:593-607; Store.places(kind) store.py:143-149; Store.territories store.py:192-193.",
+      "GET /globe/data/<layer>.json and GET /globe/frames/<layer>/<id>.png. Owner: new payload/globe.py (echo_top_frame, below_ground_mask, transect_profile, cloud_top_frame). Freshness via FRESH_SECONDS (weather.py:205-206) with new keys; Feed.judge (weather.py:232) must fail loudly on unknown keys.",
+      "GET /static/globe/<file>. New route, because app.py:204 sets static_folder=None.",
+      "POST /settings/view_3d. Adds one name to the allow-list at app.py:885-923 (today: rules, targeting, notify, footprint, spc, tz) and DEFAULTS at app.py:64-71."
+    ],
+    "website": [
+      "data/map.json (build.map_data, build.py:219): new keys echo, cloud, satellite, transects, zone_alerts. Owner: build.py and volume.py.",
+      "data/echo/<UTC>.png and data/echo/index.json: rolling window of up to 7 frames (1 h). Each build reads the previous index from the live site (load_previous, build.py:472) and drops frames older than 1 h. After a deploy the window starts empty and fills over 1 h (a gap shows as a gap).",
+      "data/cloud/<UTC>.png (ACHA, one frame per build); data/satellite/<UTC>.png (Band 13 picture); data/transects/<id>.svg (3 fixed).",
+      "data/state.json (build.py:423): verified-at times for MRMS and ACHA; last verified frame list. Owner: build.py."
+    ]
+  },
+  "evidence_kinds_and_freshness": {
+    "kinds_proposed_by_DECISIONS_entry_only": [
+      "radar_estimate (existing, D12): echo-top raster and transects. Label: 'Derived from NOAA MRMS radar data (modified; not NOAA's unaltered product)' (mrms.json terms quote: 'you may not state or imply that it is original, unaltered NOAA data').",
+      "satellite_image (new; observation): Band 13 picture. Label: 'Satellite picture (GOES Band 13, observation)'.",
+      "satellite_estimate (new; retrieval): ACHA cloud-top height. Label: 'Estimated cloud-top height'; never 'measured'. The ATBD calls ACHA 'a physical retrieval' (goes-aws.json).",
+      "forecast (existing) for HRRR, unchanged. Base maps and the terrain grid are not evidence."
+    ],
+    "freshness_seconds_proposed": {
+      "mrms_levels": {"FRESH": 1800, "UNAVAILABLE": 10800, "basis": "sources.py:115 existing 30-minute rule; MRMS 2-min cycle (mrms.json)"},
+      "goes_acha_height": {"FRESH": 1200, "UNAVAILABLE": 10800, "basis": "5-min cadence; ACHAC latency median 114.8 s (GOES-19), 98.0 s (GOES-18) (goes-aws.json)"},
+      "goes_band13_picture": {"FRESH": 1200, "UNAVAILABLE": 10800, "basis": "CMIPC C13 latency median 30.2 s (GOES-19) (goes-aws.json)"},
+      "gibs_goes_if_used": {"FRESH": 3600, "UNAVAILABLE": 10800, "basis": "GIBS latency 19-45 min; late frames 76-96 min (gibs.json)"},
+      "terrain": "No freshness; version and sha256 in the manifest."
+    },
+    "loud_failure": "Every product key must exist in sources.CONTRACTS and FRESH_SECONDS. A unit test fails on a missing key. The silent 3600 s default at weather.py:232 is not allowed."
+  },
+  "alert_null_geometry": [
+    "Matching is unchanged: polygon contains the place; else UGC zone, county or fire-zone codes (AGENTS rule 6; D10; sources.parse_alerts and alert_references).",
+    "Alert with geometry: draw the warning polygon as an outline with event name and end time. No fill colour by severity.",
+    "Null geometry matched by zone code: draw the NWS forecast-zone outline, dashed, labelled 'Zone outline: the alert names this zone; the warning area is not given'. Add a marker and text at the town. Listed on the Now page with the existing note (D27).",
+    "Zone code matched but outline not cached or fetch failed: marker and text 'Alert names this zone; outline not available'. Never omitted.",
+    "Town point check failed: 'Alerts not checked' with age (D27). Never 'no alerts'.",
+    "Parity test on three fixtures (zone-only, out-of-state code, cancel during an outage): the map list and the Now page list are identical, 3 of 3, and no town with a matching code reads 'no alert'.",
+    "No height or extrusion encoding of alerts, candidates or hazards (supervisor product critic). Height encodings apply only to radar and satellite estimates."
+  ],
+  "storms_handling": {
+    "levels": "MRMS heights are heightAboveSea in metres, 500-19,000 m (mrms.json). Labels say 'above sea level'. Billings ground is 952 m (terrain.json): the 0.5 km level is 452 m below ground there, and 1.0 km is 48 m above ground, inside the margin. The task states the 0.5 km level is below ground over most of Montana.",
+    "below_ground_mask": "A level is below ground when its height is under ground + 50 m. The margin is about twice the DEM-to-NWS difference at KBIL (20-27 m, terrain.json). Below-ground levels never make an echo top and are not drawn. With no terrain grid, the echo layer is Unavailable rather than drawn unmasked.",
+    "no_data_codes": "MRMS -99 and -999 both mean 'No radar data' (grey hatch). Their meanings are unverified (mrms.json; NSSL table returned HTTP 503 each time). Never 0 dBZ, and blank is never 'clear'. Unit tests: missing is never converted to 0 dBZ; threshold_count_parity difference is 0 (evaluation-predeclared.json).",
+    "echo_top_definition": "Highest valid level at or above 35 dBZ among the 11 levels, above ground. Height is the level's own height, not interpolated. Height classes (km above sea level, e.g. 3-6, 6-9, 9-12, above 12) use one sequential single-hue palette, never a red-to-green severity ramp (rendering-options.json legend_rules). Columns with valid data and no level at or above 35 dBZ read 'No echo at 35 dBZ or more; not an all-clear'.",
+    "parallax": "Does not apply to MRMS, which is a ground-grid product (mrms.json grid facts). It applies to satellite cloud tops only.",
+    "legend_echo": "Radar echo top (estimate): the highest level at or above 35 dBZ, height above sea level, from NOAA MRMS data. Radar estimate only: not hail, not hail size, not damage. Grey = no radar data. Blank = no echo at 35 dBZ or more, which is not an all-clear. Heights are level heights, rounded up to the next MRMS level.",
+    "legend_cloud": "Not corrected for cloud-top height. The cloud top is drawn where the satellite's ground grid puts it, away from the satellite (north-west or north-east of Montana): about 3 to 4 km off for a 2 km top, about 20 to 33 km off for a 12 to 15 km top. Estimated cloud-top height, satellite estimate. Cloud base is not observed. (parallax.json ui_legend_uncorrected_phase1, verbatim.)",
+    "no_interpolation": "No interpolation across time (missing slot shown as a gap, metric missing_slot_shown_as_gap = 1.000), across levels, or in space. Transects sample the nearest cell.",
+    "vertical_scale": "Profiles state the vertical stretch on screen, for example 'Vertical scale x2'. Without a stated stretch, profiles read as flat (rendering-options.json).",
+    "dropped": "Extruded walls, storm-motion arrows, arrival times, probability shells, hatch as severity (supervisor product critic)."
+  },
+  "default_off_setting": {
+    "app": "DEFAULTS['view_3d'] = False (pattern of app.py:64-71; read via setting() app.py:220-221). /globe returns 200 with 'The 3D view is off. Turn it on in Settings.' /globe/data/* and /static/globe/* return 404 while off. The toggle posts to /settings/view_3d.",
+    "website": "Build flag --experimental-3d, default off (argparse at build.py:481-487). The default build writes no data/echo, data/cloud, data/satellite or data/transects files, no 3D strings and no links; test: _site has none of these. The flagged build labels every layer 'Experimental' and 'Not an all-clear'.",
+    "exposure": "Not linked from the Now page until P2 passes. Homeowner, adjuster and insurer use is out of scope until the owner decides (owner_decisions)."
+  },
+  "route_security_tests": [
+    "App: GET /globe without the hw_session cookie returns 403 (launcher.py Gate, lines 157-170).",
+    "App: Host header evil.example returns 400 (launcher.py:160-161).",
+    "App: POST to /globe and /globe/data/* returns 405.",
+    "App: /globe/data/unknown.json returns 404; /globe/data/../../app.py, %2e%2e variants and /static/globe/../app.py return 404.",
+    "App: symlinks inside static/globe are refused.",
+    "App: with view_3d off, /globe/data/* and /static/globe/* return 404.",
+    "App: /globe responses carry Content-Security-Policy (default-src 'self'; script-src 'self'; img-src 'self' data:; frame-ancestors 'none') and X-Content-Type-Options: nosniff. The app sends neither today (app-integration.json).",
+    "App: no response contains a key, token or secret-looking query string (grep test).",
+    "App: frames carry ETag and Cache-Control max-age of 600 s (matches D28's 10-minute cache).",
+    "App: a frame over 300 KB or an SVG over 30 KB fails the budget test.",
+    "Website: built HTML, JS, CSS and JSON reference no host outside the site (allow-list empty); no inline event attributes; no eval or new Function; fetch only to same-origin data/*.json.",
+    "Website: GitHub Pages cannot set response headers, so any CSP is a meta tag. Standard behaviour: frame-ancestors is ignored in meta (not checked live here)."
+  ],
+  "phases": [
+    {"id": "P0", "scope": "Owner decisions and measurements; no product code.",
+     "done_when": ["Decisions recorded as DECISIONS entries: D-G1, JS duties, cloud product, terrain in, legal reading, transects, class thresholds.", "Terrain grid vs NWS station elevations within plus or minus 50 m at all 14 towns (terrain.json: DEM 20-27 m low at KBIL).", "Share of Montana points below ground at 0.5 km and 1.0 km, from at least 1,000 random points (computed).", "Three consecutive real (non-sample) builds with the new layers finish in 12 min or less (website.yml timeout is 15 min, line 38)."],
+     "stop": "If the legal reading forbids publishing these NOAA-derived products on Actions and Pages, stop here. The design stays a research document until the host is decided (ROADMAP Next 8)."},
+    {"id": "P1", "scope": "C2 cloud-top class layer and Band 13 picture, uncorrected for parallax.",
+     "done_when": ["acha_height_error PASS: within display rounding on all valid pixels; invalid-pixel count 0.", "acha_geolocation_error PASS: p95 at or below 0.5 source pixel. acha_time_and_satellite PASS: time error at or below 1 s, 0 mismatches.", "Cloud PNG at or below 150 KB per frame (budget; the prototype's Band 13 PNG was 128.8 KB per frame, unreviewed).", "Chromium at 288, 390 and 1440 px: no horizontal scroll; legend contains 'Not corrected for cloud-top height'; zero requests to other hosts."],
+     "stop": "If any zero-tolerance check fails in two consecutive builds, remove the layer from the build and keep the flag off."},
+    {"id": "P2", "scope": "C2 echo-top raster with the 1 h rolling window, and null-geometry alert outlines.",
+     "done_when": ["voxel_dbz_mismatch = 0 on 1,000 random cells per build; threshold_count_parity difference 0.", "no_data_rendered_as_echo_or_clear = 0 cells; every -99 and -999 cell drawn grey.", "missing_slot_shown_as_gap = 1.000.", "Alert parity 3 of 3 fixtures; zero 'no alert' readings for a town with a matching code.", "Echo frame at or below 60 KB; 7 frames at or below 0.42 MB per visit; build time added at or below 60 s on the runner."],
+     "stop": "If any zero-tolerance metric fails in two consecutive builds, hide the echo layer until fixed. P1 can ship alone."},
+    {"id": "P3", "scope": "C2 transect SVG profiles and class bands; comprehension gate before release.",
+     "done_when": ["Three fixed transects, each SVG at or below 30 KB, each with the vertical-scale label.", "Held-out hail days (evaluation-predeclared.json held_out_cases; 2025-06-13, 2025-06-20, 2025-07-28), quiet days (2025-06-03, 2025-08-02), night case (2025-07-21) and the radar-gap case (2025-06-20, 8 NNE Belltower): voxel_dbz_mismatch 0.", "Comprehension test: estimate_label_recognition at or above 0.90 with n of at least 20; false_all_clear = 0 among participants."],
+     "stop": "If estimate_label_recognition is under 0.90 with n of at least 20, or any false_all_clear occurs, ship the echo raster only."},
+    {"id": "P4", "scope": "C2 time loop of 2 h and checks on terrain-masked display.",
+     "done_when": ["12 frames at or below 0.9 MB.", "decision_time_leaks = 0; frame_time_error = 0 s on every frame.", "freshness_reading_accuracy at or above 0.90 with n of at least 20."],
+     "stop": "If loop bytes exceed 1.5 MB or any leak occurs, cap the loop at 1 h."},
+    {"id": "P5", "scope": "C1 globe, only if D-G1 is yes.",
+     "done_when": ["deck.gl 9.4.0 plus MapLibre 6.14.0 gzip total at or below 0.9 MB (574,961 + 285,648 = 860,609 B from globe-libs.json, before worker and CSS), first load at or below 2.0 MB gzip.", "With the network blocked and WebGL2 disabled in Chromium, the page shows '3D view could not load' and the 2D map still works, with zero uncaught errors.", "Frame time p95 at or below 33 ms on the reference device named in P0. No GPU timings exist: webgl-runtime.json measured SwiftShader only.", "Loop at or below 15 MB per 2 h at the chosen threshold (rendering-options.json phase_4: 14 MB at 50 dBZ, 100 MB at 35 dBZ)."],
+     "stop": "If the reference device misses 30 fps, or the loop exceeds 15 MB, stop at 2D."},
+    {"id": "P6", "scope": "App path, only if the owner resumes the parked app.",
+     "done_when": ["All 11 route tests in route_security_tests pass.", "Self-test PASS with /globe at 200 and no outbound call.", "Added zipball at or below 2 MB (current 907,871 B).", "Installer tested on a crew-class Windows machine showing WebGL2 in WebView2 (webgl-runtime.json: MSHTML has no WebGL2)."],
+     "stop": "No installer until that machine shows WebGL2. C2 on the website is the fallback."}
+  ],
+  "size_impact": {
+    "zipball_now": "git archive --format=zip origin/main = 907,871 B (computed), 1.73% of the 52,428,800 B cap (updater.py:191). The whole HEAD archive including research/ is 2,949,740 B (5.6%). research/ must stay off main.",
+    "C2_website": "No new library. Products are built on the runner and served by Pages, not in the zipball. Per build: echo 7 x 60 KB = 0.42 MB; cloud 0.15 MB; transects 3 x 30 KB = 0.09 MB; total 0.66 MB. Sample site today: 2,236,675 B in 91 files (measured by this design's sample build). Pages cap is 1 GB (gh-pages-1).",
+    "C2_app_path": "Vendored Leaflet 168,861 B raw (147,552 + 14,806 + 6,503), about 0.1 MB zipped (estimate).",
+    "C1": "deck.gl 2,073,497 B + MapLibre 1,670,469 B raw (mjs + worker + css), about 0.9 MB zipped (estimate from gzip-9 sizes; worker not measured). Installer: pydeck wheel 11,428,091 B; numpy 12.57 MB Windows wheel (installer only, not zipball).",
+    "pages_bandwidth": "Visits per month x bytes per visit must stay under 100 GB soft (gh-pages-2). C2 at 0.66 MB: about 150,000 visits. C1 at 14 MB per 2 h loop: about 7,000 visits (computed).",
+    "build_time": "Live build was 44 s after D29. Decoding 11 levels: 18.3 s CPU per 33-level frame was measured in the sandbox (pipeline-options.json), so about 6 s for 11 levels by linear scaling (computed). Download per 2-min step: 6.4 MB quiet, 10.5 MB event for 11 levels (pipeline-options.json per_step_bytes)."
+  },
+  "risks_ranked": [
+    "1. JavaScript scope creep against rule 4 and roadmap Next 9: C1 adds 8 hand-written duties, one of them GLSL; map.js is already 2,155 lines. Mitigation: C2 first; each C1 duty needs owner sign-off.",
+    "2. Parallax over-reading: uncorrected cloud tops sit 3-4 km off for a 2 km top and 20-33 km off for a 12-15 km top (parallax.json). A 3D look invites 'holographic' expectations. Mitigation: verbatim legend; no fly-to; correction only with cloud-top heights (Phase 2 of the plan).",
+    "3. Cloud-top validity: no ground truth; Montana valid cells correlate r = -0.62 with Band 13 brightness temperature, and warm brightness temperature at valid high tops is unexplained (goes-aws.json). Mitigation: 'estimated' label; acha metrics; no damage language.",
+    "4. Below-ground levels: 0.5 km is 452 m below ground at Billings; 1.0 km sits inside the 50 m margin. A wrong mask mislabels heights. Mitigation: terrain mask with margin; unmasked echo is never drawn.",
+    "5. -99 and -999 meanings unverified (mrms.json). A wrong guess could show dry areas as radar gaps or hide gaps. Mitigation: both 'No radar data'; NSSL table check in P0.",
+    "6. Licence and terms: GOES files carry 'Access is restricted to approved users only' while NODD says open (goes-aws.json). Actions terms say develop and test, and do not use Actions as a content delivery network (gh-terms-1, gh-terms-3). Mitigation: owner or counsel reading before P1; host alternative (ROADMAP Next 8).",
+    "7. Schedule reliability: 5-minute floor, delays, possible drops, 60-day disable (gh-sched-1, -2, -4, -6). A missed build becomes Stale; the rolling echo window gaps. Mitigation: product timestamps (next_expected_utc), page-age warning at 25 min.",
+    "8. Phone and cellular cost unmeasured: C1 loops 14-100 MB per 2 h (rendering-options.json phase_4). No device tests exist (SwiftShader only).",
+    "9. App path installer and WebView: numpy and eccodes (62.16 MB Linux wheels, no Windows eccodes wheel); WebView2 WebGL2 unverified; MSHTML fallback has no WebGL2 (webgl-runtime.json). C2 avoids all three.",
+    "10. pydeck template loads third-party resources and bundles its own MapLibre 5.14.0 and deck.gl ~9.3 (index.j2:6-15; frontend_semver.py '~9.3.*'). Mitigation: no pydeck HTML page; custom template if C1.",
+    "11. Self-test blind spot: HTTP status only (updater.py:141-142); JavaScript and images are untested by it; check-app.yml has no browser step. Mitigation: dev-only browser job; smoke_map.py extended.",
+    "12. Silent freshness default: unknown feed keys get 3600 s (weather.py:232). Mitigation: loud-failure test on every product key.",
+    "13. Sample is not live: the 2.24 MB sample uses invented pictures; real frame sizes come from P0 measurement."
+  ],
+  "owner_decisions": [
+    "D-G1: allow a globe library at all? C2 first; C1 only as a later gated phase.",
+    "JS scope: approve the 13 C2 duties (E1-E7, N1-N6) and whether C1 duties G1-G8 are ever allowed, given roadmap Next 9.",
+    "Cloud product: ACHAC 10 km (0.32 MB per 5-min step, 1,777 Montana cells, 41% valid) or ACHA2KMC 2 km (4.4-4.5 MB per step, 44,363 cells) (goes-aws.json).",
+    "Legal: may GOES ACHA and MRMS-derived products be published on Pages from Actions (ACHA banner; Actions terms; Pages commercial sentence gh-pages-6)? Not legal advice; counsel needed.",
+    "Terrain: build the terrain grid (needed for the mask) and choose its source (AWS Terrain Tiles / USGS 3DEP, public domain per terrain.json; attribution required for many tile providers).",
+    "Storm thresholds: 35 dBZ top first (proposed), or 50 dBZ first and 20 dBZ later (20 dBZ is 10.3 MB per peak frame, rendering-options.json).",
+    "Three fixed transects, named before any data are viewed (predeclaration).",
+    "Phase 1: show the uncorrected cloud layer with the disclosure, or wait for parallax correction.",
+    "Default: keep all 3D and height layers out of the default build until P3 passes (proposal).",
+    "Audience: may 3D or height views ever reach homeowners, adjusters or insurers? This design assumes not.",
+    "Host: the website (D27) or the resumed app? This design assumes the website."
+  ],
+  "limits": [
+    "No GPU timing exists (SwiftShader only, webgl-runtime.json). No phone was tested. No Windows or macOS run.",
+    "pydeck's HTML was read from the wheel, not rendered in a browser. The offline bundle size is measured; its behaviour is not run.",
+    "PNG and SVG sizes for echo, cloud and transect layers are budgets derived from D28's average frame (about 42 KB) and prototype-goes.json (unreviewed), not measurements.",
+    "Terrain tile count and fetch size unmeasured. Contouring (marching squares in numpy) not written; the design uses class bands.",
+    "GIBS and GOES CORS were checked on one sample each (gibs.json, goes-aws.json).",
+    "WebView2 WebGL2 is unverified; MSHTML's lack of WebGL2 comes from caniuse (webgl-runtime.json).",
+    "Re-checked live 2026-10-17: pydeck 0.9.3 latest and its wheel (requires, globe string, CDN lines, offline branch); npm versions and licences for maplibre-gl, deck.gl, three, globe.gl, leaflet; jsDelivr content-length for maplibre-gl, deck.gl and leaflet; MapLibre and deck.gl globe pages; deck.gl bundle counts; folium.py:27; Leaflet sha256 match; sample website build.",
+    "Taken from evidence without a live re-check: GOES and MRMS values, parallax table, W11 and W12 measurements, D9, D27-D29 text, terrain values, hosting terms."
+  ]
+}
