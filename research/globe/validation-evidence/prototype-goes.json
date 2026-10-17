@@ -609,5 +609,22 @@
   "json": "research/globe/prototype/fixtures/cloud-height-synthetic.json",
   "synthetic": true,
   "bytes_total": 25766
+ },
+ "acha2kmc": {
+  "checked_utc": "2026-10-17T05:25:58Z to 05:26:00Z",
+  "command": "python -I goes_cloud_height.py --satellite east|west --product ACHA2KMC --time latest --download-dir <scratch>/globe-dl/fixups --keep-download",
+  "scan_utc": {"east": "05:21:17.4 to 05:23:54.7 (GOES-19)", "west": "05:21:17.7 to 05:23:55.1 (GOES-18)"},
+  "grid": "2500 x 1500, step 0.000056 rad, nadir 2.004 km",
+  "bytes": {"east": {"listing": 2205, "object": 4530845, "total": 4533050}, "west": {"listing": 2205, "object": 4657169, "total": 4659374}},
+  "runtime_s": {"east": 1.408, "west": 1.138},
+  "latency_s": {"east": {"age_at_check": 124.2, "upload_minus_scan_end": 105.3}, "west": {"age_at_check": 125.2, "upload_minus_scan_end": 104.9}},
+  "montana_border_box_native_cells": {"east": 66108, "west": 76056},
+  "montana_border_box_percent": {"good": {"east": 30.0886, "west": 29.0812}, "flagged_with_value": {"east": 20.3258, "west": 24.2098}, "valid_good_plus_flagged": {"east": 50.41, "west": 53.29}, "no_retrieval": {"east": 49.5855, "west": 46.709}},
+  "dqf_share_percent_of_native_cells": {"east": {"0": 30.09, "1": 20.32, "2": 0.06, "3": 49.54}, "west": {"0": 29.08, "1": 24.18, "2": 0.1, "3": 46.64}},
+  "with_value_over_cells_by_dqf": {"east": {"0": "19891/19891", "1": "13432/13432", "2": "5/37", "3": "0/32748"}, "west": {"0": "22118/22118", "1": "18391/18391", "2": "22/78", "3": "0/35469"}},
+  "dqf_full_grid_percent_of_non_fill": {"east": {"good": 51.81, "flagged": 48.19}, "west": {"good": 60.42, "flagged": 39.58}},
+  "height_m_p10_p50_p90": {"east": {"good": [8301, 12165, 13473], "flagged_with_value": [10278, 11914, 13482]}, "west": {"good": [7330, 11468, 13201], "flagged_with_value": [8905, 11174, 13071]}},
+  "dqf_policy_check_matches": {"east": true, "west": true},
+  "note": "Heights are geopotential cloud-top estimates, not cloud base. The limits list above predates this key."
  }
 }
