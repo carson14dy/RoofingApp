@@ -384,7 +384,7 @@
 },
 {
 "claim": "NWS frame time rule and offset",
-"value": "App takes max over 5 regional footprints; 01:52: HAWAII 01:42:56 vs CONUS 01:41:56 (+60 s); 10 of 12 polls newest non-CONUS (+48-60 s)",
+"value": "App takes max over 5 regional footprints; 01:52: HAWAII 01:42:56 vs CONUS 01:41:56 (+60 s); 10 of 12 polls newest non-CONUS (offsets seen: 48 s, 60 s)",
 "evidence": "row 9; nws_frame_poll.json",
 "verified": true
 },
@@ -496,7 +496,7 @@
 "used from system site, not installed by W4: requests, Pillow 12.3.0, numpy 2.5.3"
 ],
 "open_questions": [
-"Should the app's frame time use the CONUS footprint record covering Montana, not the newest of all five? Observed offset 48-60 s.",
+"Should the app's frame time use the CONUS footprint record covering Montana, not the newest of all five? Offsets seen: 48 s and 60 s.",
 "Official meanings of chunk suffixes S/I/E and of _MDM objects (Unidata or NOAA docs; not retrieved).",
 "Source of IEM N0B/N0Q after 2022, and whether the 42 Montana px at 02:01 UTC are real echo.",
 "NWS documents 5-minute CONUS updates; observed 5.95-8.22 min. Confirm on a longer poll.",
