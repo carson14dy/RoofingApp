@@ -153,7 +153,7 @@ class SampleFetcher:
             local_h = (t - timedelta(hours=6)).hour
             gust_mph = 12 + 1.6 * WINDY.get(slug, 0) * max(0.0, math.sin((local_h - 6) / 14 * math.pi))
             values.append({"validTime": f"{_iso(t)}/PT3H", "value": round(gust_mph / src.KMH_TO_MPH, 1)})
-        return {"properties": {"elevation": {"unitCode": "wmoUnit:m", "value": 1100},
+        return {"properties": {"elevation": {"unitCode": "wmoUnit:m", "value": SAMPLE_GROUND_M.get(slug, 1100)},
                                "windGust": {"uom": "wmoUnit:km_h-1", "values": values}}}
 
     def _daily(self, slug):
@@ -206,3 +206,41 @@ class SampleFetcher:
             feats = [f for f, near in ((wind, 45.35 <= lat <= 46.0 and -111.1 <= lon <= -109.9),
                                        (winter, lat > 48.3 and -110.5 < lon < -107.5)) if near]
         return {"type": "FeatureCollection", "features": feats}
+
+
+# ---------------------------------------------------------------- storm sample (labelled SAMPLE)
+# Invented radar values at the 11 MRMS heights for the storm text (website/storm.py): a storm core
+# over the south-central towns, no radar value at all in two towns and above 6 km in one, and weak
+# echo (12 dBZ) elsewhere. The same summary code reads these as it reads the live files.
+
+STORM_TOPS = {"billings": 8000, "bozeman": 6000, "livingston": 7000, "great-falls": 3000, "lewistown": 4000}
+STORM_NO_DATA = ("west-yellowstone", "kalispell")          # no radar value at any height
+STORM_NO_DATA_FROM = {"havre": 6000}                         # no radar value at 6 km and above
+
+
+# Invented ground heights (metres above sea level) for the storm text's below-ground count. They differ by town,
+# so the sample exercises the count; the live build uses each town's NWS grid point elevation instead.
+SAMPLE_GROUND_M = {"billings": 1100, "bozeman": 1500, "butte": 1700, "glasgow": 700, "glendive": 650,
+                   "great-falls": 1000, "havre": 800, "helena": 1300, "kalispell": 900, "lewistown": 1200,
+                   "livingston": 1400, "miles-city": 750, "missoula": 1000, "west-yellowstone": 2100}
+
+
+def storm_levels(now: datetime, towns: list[dict]) -> tuple[datetime, dict[str, list[float]]]:
+    """SAMPLE: (valid time, {town slug: dBZ at each of the 11 heights, NaN = no radar value}). The valid
+    time is the radar frames' own (gridded.sample_layers: the newest 2-minute step, 4 minutes back)."""
+    from . import gridded, storm
+    when = gridded.floor_time(now, 2) - timedelta(minutes=4)
+    values = {}
+    for t in towns:
+        slug, row = t["slug"], []
+        for h in storm.HEIGHTS_M:
+            if slug in STORM_NO_DATA or h >= STORM_NO_DATA_FROM.get(slug, float("inf")):
+                row.append(float("nan"))
+                continue
+            top = STORM_TOPS.get(slug)
+            if top is None:
+                row.append(12.0)
+            else:
+                row.append(42.0 if h <= top else (30.0 if h <= top + 2000 else 18.0))
+        values[slug] = row
+    return when, values

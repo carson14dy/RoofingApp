@@ -46,12 +46,13 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
       <p class="banner banner-sample" role="note"><strong>Sample data.</strong> Everything here is invented to review the layout. It is not weather.</p>
       {% endif %}
       {% set problems = [] %}
-      {% for key in ['alerts', 'radar', 'forecast', 'forecasts'] %}{% if status[key] and not status[key].ok %}{% set _ = problems.append(key) %}{% endif %}{% endfor %}
-      {% set names = {'alerts': 'NWS alerts', 'radar': 'radar', 'forecast': 'model forecast', 'forecasts': 'NWS town forecasts'} %}
+      {% for key in ['alerts', 'radar', 'forecast', 'forecasts', 'storm'] %}{% if status[key] and not status[key].ok %}{% set _ = problems.append(key) %}{% endif %}{% endfor %}
+      {% set names = {'alerts': 'NWS alerts', 'radar': 'radar', 'forecast': 'model forecast', 'forecasts': 'NWS town forecasts', 'storm': 'radar echo tops'} %}
       {% macro problem_line(key) %}{% set s = status[key] %}
         {%- if key == 'alerts' %}<strong>NWS alerts didn't load</strong> at {{ s.when|t }} ({{ s.detail }}). Warnings may be missing.<span class="last-known"></span>
         {%- elif key == 'radar' %}<strong>Radar problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'forecast' %}<strong>Model forecast problem</strong> at {{ s.when|t }}: {{ s.detail }}.
+        {%- elif key == 'storm' %}<strong>Radar echo tops problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- else %}<strong>NWS town forecasts</strong> loaded for {{ s.detail }}. A town without one shows a dash.{% endif %}
       {%- endmacro %}
       {% if problems|length == 1 %}
@@ -185,10 +186,31 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
         <li><a href="{{ root }}reports.html">Storm reports</a></li>
         {% for slug, name in towns_nav %}<li><a href="{{ root }}town/{{ slug }}.html">{{ name }}</a></li>{% endfor %}
       </ul>
+{% if storm_layers %}
+      <h3>Radar echo tops</h3>
+      <p>NOAA radar estimate (MRMS), 11 heights from 500 to 15,000 m above sea level. Each echo top is in metres above sea level: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data. "At least" means some heights above it had no radar value. Not observed hail or damage.</p>
+      <ul>
+        {% for t in towns %}<li><strong>{{ t.name }}.</strong> {{ t.storm.text }}</li>
+        {% endfor %}</ul>
+{% endif %}
     </div>
   </noscript>
+{% if storm_layers %}
+  <template id="storm-list">
+    <section class="storm-sec" data-storm="list" aria-labelledby="storm-list-h">
+      <h3 id="storm-list-h">Radar echo tops</h3>
+      <p class="sub">NOAA radar estimate (MRMS), 11 heights from 500 to 15,000 m above sea level. Each echo top is in metres above sea level: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data. "At least" means some heights above it had no radar value. Not observed hail or damage.</p>
+      <ul class="storm-list">
+      {% for t in towns %}<li><strong>{{ t.name }}.</strong> {{ t.storm.text }}</li>
+      {% endfor %}</ul>
+    </section>
+  </template>
+  {% for t in towns %}<template data-storm-town="{{ t.slug }}"><section class="storm-sec" data-storm="town"><h3>Radar echo top</h3><p>{{ t.storm.text }}</p></section></template>
+  {% endfor %}
+{% endif %}
 </main>
 <script src="{{ root }}static/leaflet/leaflet.js"></script>
 <script src="{{ root }}static/map/map.js?v={{ asset_v['map/map.js'] }}"></script>
-</body>
+{% if storm_layers %}<script src="{{ root }}static/map/storm.js?v={{ asset_v['map/storm.js'] }}"></script>
+{% endif %}</body>
 </html>

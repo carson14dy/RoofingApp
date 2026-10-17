@@ -127,6 +127,23 @@ CONTRACTS = {
         "missing": "A model forecast, labelled as one. If the run can't be read, the timeline stops at now and "
                    "the map says why.",
     },
+    "storm_levels": {
+        "name": "NOAA radar echo tops (MRMS, 11 heights)",
+        "request": "noaa-mrms-pds.s3.amazonaws.com, CONUS/MergedReflectivityQC at 0.50, 1.00, 2.00, 3.00, 4.00, "
+                   "5.00, 6.00, 8.00, 10.00, 12.00 and 15.00 km: one GRIB2 file per height every 2 minutes, listed for "
+                   "the last hour; the newest time with all 11 heights within 10 seconds is used, and each town's grid "
+                   "cell is read",
+        "units": "Reflectivity in dBZ, at heights above mean sea level from 500 to 15,000 m. The echo top is the "
+                 "highest sampled height above ground with 35 dBZ or more, among heights that had radar data, in "
+                 "metres above sea level; 'at least' when heights above it had no radar value. Ground height is the "
+                 "NWS forecast grid point's elevation in metres, not a surveyed terrain height.",
+        "timing": "A new set every 2 minutes. A set older than 30 minutes is reported as stale, the same limit as "
+                  "the radar frames.",
+        "missing": "-99 and -999 mean no radar value; their meaning is not verified, and they are never a value or 0. "
+                   "Heights below the town's ground height are counted and not used. A town whose NWS grid height "
+                   "didn't load gets 'Echo top not available', never a value. No echo at 35 dBZ is not an all-clear. "
+                   "A radar estimate, not observed hail or damage.",
+    },
     "basemap": {
         "name": "Map outlines and names",
         "request": "Natural Earth 10m (public domain) and US Census county lines (us-atlas 3.0.1), built into "
