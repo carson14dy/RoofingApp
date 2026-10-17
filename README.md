@@ -106,7 +106,7 @@ website/gridded.py     NOAA radar (MRMS) and HRRR model grids → map picture fr
 website/build.py       collect every source → map frames and data/map.json → pages (Jinja) → _site/
 website/sample.py      invented, labelled sample data for design checks and tests
 website/towns.json     the 14 towns, with each map label's side
-website/templates/     base, Now, town, Storm reports, About
+website/templates/     base, Now, Map, town, Storm reports, About
 website/static/        style.css (tokens and look), Leaflet 1.9.4, Atkinson Hyperlegible fonts, icons
 website/static/map/    map.js and map.css (the interactive map), basemap.json (outlines and names)
 tools/build_basemap.py rebuilds basemap.json from Natural Earth and Census data (run by hand)
@@ -342,7 +342,7 @@ processing job, NCEI history, release-gate load tests at regional scale.
 
 ```bash
 python desktop/launcher.py --selftest payload   # what installed apps run before accepting an update
-python -m unittest discover -s tests -v          # 44 tests, offline, ~5 s
+python -m unittest discover -s tests -v          # all tests (the app's 44 and the website's), offline, ~15 s
 ```
 
 - `tests/test_weather.py` — handoff acceptance checks, alert geography, outlook rules, targeting, exports, wording.

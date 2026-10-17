@@ -324,7 +324,7 @@ def env() -> Environment:
 
 # Files the pages load with ?v=<content hash>: a file keeps its address until its bytes change, so
 # browsers and GitHub Pages reuse the unchanged ones across the 10-minute rebuilds (map.js, map.css,
-# the 377 KB basemap and style.css change only with the code). data/map.json and the map card's
+# the 385 KB basemap and style.css change only with the code). data/map.json and the map card's
 # address change every build, so they keep the build minute.
 VERSIONED = ("style.css", "map/map.js", "map/map.css", "map/basemap.json")
 

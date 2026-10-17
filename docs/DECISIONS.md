@@ -374,10 +374,10 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
 - *JavaScript (rule 4):* playback, scrubbing, menus, sheets and geolocation can only happen in the
   browser. `static/map/map.js` is vanilla, documented, with no framework and no build step; Python
   still builds every number and frame. `tools/smoke_map.py` opens the built map in Chromium on every
-  branch push. It ended at about 2,150 lines, most of it layout that keeps Montana and every town
+  branch push. It is 2,184 lines (2026-10-16), most of it layout that keeps Montana and every town
   clear of the panels on crowded screens, failure states and accessibility; moving about 330 lines
   to the build is an open owner's call (ROADMAP).
-- *Build cost:* about 40 MB downloaded and 48 frames (about 2 MB, most of it the temperature and gust fields) per build; numpy and
+- *Build cost:* about 40 MB downloaded and 48 frames (about 2.5 MB, most of it the temperature and gust fields) per build; numpy and
   pygrib on the runner.
 - *Limits:* HRRR is a computer model, not the NWS forecast; MRMS rates run low far from a radar and
   in snow; frames are still pictures made at each build, so the newest radar is up to about 10
@@ -423,17 +423,20 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   temperatures that hadn't loaded. The card hides its legend, so the Storm reports page's key also
   names the town numbers (NWS forecast temperature) and the outlines, and says where alerts without
   an outline are listed (the Now page).
-- *Context layer (2026-10-16):* a phone's first view reaches about 39–59.7° N, far past the basemap's
-  padded box (42.5–51° N), so Montana floated on blank paper; the basemap now also carries Natural
-  Earth's state and province lines (0.01°, about 300 points) out to 37.5–60.5° N and 122–95.2° W, east
-  of the Pacific coast so no coastline is implied, with 7 state and province abbreviations and 10
-  cities. The names start at zoom 6: at a phone's first view (zoom 5.25–5.5) the legend, buttons, note
-  line and timeline cover nearly all of that area, and names at zoom 5 sat under them or in the note.
+- *Context layer (2026-10-16):* a phone's first view reaches about 36–57° N (390 × 844), far past the
+  basemap's padded box (42.5–51° N), so Montana floated on blank paper; the basemap now also carries
+  Natural Earth's state and province lines (0.01°, about 300 points) out to 37.5–60.5° N and
+  122–95.2° W, east of the Pacific coast so no coastline is implied, with 7 state and province
+  abbreviations and 10 cities. The names start at zoom 5 (Winnipeg at 6), and map.js hides any name
+  that a panel or the note's line would cut, so tall phones show names in the bands above and below
+  Montana (390 × 844, Precipitation: NV, Calgary, Salt Lake City, Saskatoon, Cheyenne, Casper) and
+  shorter phones few or none, because the panels cover their bands. They started at zoom 6 until
+  map.js hid names at the panels' edges: at zoom 5 they sat under the panels or on the note's line.
 - *Phone pass (2026-10-16):* every portrait phone gets the two-column legend (keys beside a shorter
-  scale, about 135–170 px tall instead of 270–340), so Montana sits higher and the fit never has to
+  scale, about 135–165 px tall instead of 210–340), so Montana sits higher and the fit never has to
   choose between forms; a phone's fit never settles below zoom 5.25 (town names clear) unless Montana
   is wider than the screen there. The limit ring marks the layer's own limit: temperatures outside
-  40–95 °F on Temperature, gusts of 25 mph on Wind gusts, none on Precipitation (its picture is the
+  40–95 °F on Temperature, gusts of 25 mph or more on Wind gusts, none on Precipitation (its picture is the
   rain, not the temperature; DESIGN's layer table gave the ring to Wind gusts). No key comes or goes
   during playback: the ring key stays for the whole timeline, and the gap key shows on frames with a
   gap and keeps its room, hidden, on the others. The card's hatch words are true of everything hatched
@@ -441,7 +444,14 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   note steps aside while a town is under it, rather than taking a backing that would hide the town;
   the legend's keys still name the hatching (on the folded layout of very short or narrow screens,
   behind the (i) button, like the source). The card zooms in 0.05 steps, which lets a 328 px card
-  show Montana at 5.2 instead of 5.
+  show Montana at 5.2 instead of 5. How it was checked: four independent checkers (the look against
+  the reference, regressions against the code before the pass, honesty, the base map) built fresh
+  sites and filed 18 findings; a synthesizer reproduced them, merged them into 12 work items and
+  dropped one (lakes cut at the detailed box's edge: drawing them past it breaks the rule that the
+  context layer draws no water); front-end and base-map fixers worked in parallel; a recheck re-ran
+  the unit tests, the smoke test, the builder's suites and every spot check, and found four more items
+  (three fixed; names beside an open sheet are still open, DESIGN section 8). The names from zoom 5
+  and the review's fixes are under *Context layer* and *Review fixes*.
 - *Review fixes (2026-10-16):* the map fits Montana again only when the screen, a banner, the layer,
   the 1h/12h timeline or an overlay changes the room, and stops once the viewer moves it in any way.
   A refit on every change of the legend's height undid every desktop zoom but the wheel's

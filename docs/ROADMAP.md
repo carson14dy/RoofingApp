@@ -21,13 +21,13 @@ order.
 | Area | What works | Limits |
 |---|---|---|
 | Now | Montana's active NWS alerts, most urgent first (alerts without an outline listed with a note); a map card with the latest radar and warning outlines; a card per town for the next 12 hours with flags in words | Montana only |
-| Map (D28) | Full screen, Apple-Weather style: the past hour of NOAA MRMS radar into the HRRR model forecast (15-minute steps for an hour, hourly to 12 hours) with play, scrub and 1h/12h; temperature and wind-gust layers; warning outlines and storm reports; town bubbles with the NWS forecast for the hour; town sheets; my location; a list of every alert and town | HRRR is a model, not the NWS forecast; frames are pictures made each build; no lightning or air quality; rain and snow share one palette; checked in Chromium only, not yet on a real iPhone or Android phone; `map.js` is about 2,100 lines |
+| Map (D28) | Full screen, Apple-Weather style: the past hour of NOAA MRMS radar into the HRRR model forecast (15-minute steps for an hour, hourly to 12 hours) with play, scrub and 1h/12h; temperature and wind-gust layers; warning outlines and storm reports; town bubbles with the NWS forecast for the hour; town sheets; my location; a list of every alert and town | HRRR is a model, not the NWS forecast; frames are pictures made each build; no lightning or air quality; rain and snow share one palette; on a portrait phone the pictures (43–50.5° N) are a band across the middle and the legend is busier than Apple's; checked in Chromium only, not yet on a real iPhone or Android phone, and not yet with live NWS alerts, forecasts and reports on the map; `map.js` is 2,184 lines |
 | Town pages (14) | Alerts at that point, 24-hour table (gusts first), 7-day with high and low per day | Grid forecasts for a 2.5 km square, not a roof; placeholder limits |
 | Storm reports | Three SPC reporting days on the map card and in tables; hail in inches, unknown wind kept unknown | Preliminary reports only |
 | Honesty | Per-source status line, last verified alerts kept after a failed refresh, "Alerts not checked" per town, page-age warning, sample data labelled on every page | — |
 | Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity |
 | Design | Light "field sheet" look with dark mode, self-hosted fonts and Leaflet, contrast ≥ 5.86:1, collision-free map labels, 288–1440 px without sideways scroll (`docs/DESIGN.md`) | Phone Now page is long (P2) |
-| Tests | 157 website tests (53 pages and map data, 69 radar and model frames, 35 base map and label layout) alongside the app's tests; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption) | — |
+| Tests | 164 website tests (54 pages and map data, 69 radar and model frames, 41 base map and label layout) alongside the app's 44; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption, the phone legend and rings, zooms that hold, no name cut by a panel, a failed picture, the location message, the Storm reports card, a turned phone's sheet) | — |
 
 ## Next, in priority order
 1. **Go live.** Settings → Pages → Build and deployment → Source: **GitHub Actions**; merge the
@@ -53,7 +53,7 @@ order.
    Sample the radar estimate and the HRRR values at each town in `website/gridded.py`, add them to
    `data/map.json` (a D28 contract change) and list them, worded as a "radar estimate" or "model",
    never "dry" or "no hail". Until then the map's description says the pictures have no text version.
-9. **Less JavaScript in the map (Carson's call).** `map.js` is about 2,100 lines. The verification's
+9. **Less JavaScript in the map (Carson's call).** `map.js` is 2,184 lines. The verification's
    JavaScript review found about 330 that could move to the build: Montana-time labels written into
    `data/map.json` (removes the Intl code), the legend rendered by Jinja, the note's room reserved in
    CSS. Its skeptic rejected them as defects: AGENTS.md rule 4 gives sheets and layout to `map.js`,
@@ -86,7 +86,7 @@ order.
 | P0 | Baseline and predeclared evaluation metrics | **Not started** (Next 4) |
 | P1 | Roofing job context | Parked with the app |
 | P1 | Advanced guidance trials (SPC CIG, ProbSevere v3, LightningCast) | Listed only |
-| P1 | Broader vendor comparison | Listed only (Next 9) |
+| P1 | Broader vendor comparison | Listed only (Next 11) |
 | P1 | Pinned feed contracts | Done: `website/sources.py` `CONTRACTS`, shown on the About page |
 | P2 | Raw national model ingestion | HRRR precipitation rate, temperature and gusts for Montana only (D28); nothing national |
 
@@ -97,7 +97,7 @@ order.
 | Every injected outage shows stale/unavailable; no missing-data all-clear | Covered by tests (alerts, gusts, every source down) |
 | AI summaries | Not applicable: the site generates no AI text |
 | Every displayed number/time/location traces to evidence | Each section names its source and time; feed contracts on the About page |
-| p95 < 60 s from alert retrieval to notification | Not applicable until alerts reach phones (Next 8) |
+| p95 < 60 s from alert retrieval to notification | Not applicable until alerts reach phones (Next 12) |
 | Recover from a 30-minute interruption without lost records | Next build after an outage is complete; last verified alerts carried across |
 
 ## Open questions for Carson
