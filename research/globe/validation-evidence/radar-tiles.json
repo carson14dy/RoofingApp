@@ -2,8 +2,7 @@
 "workstream": "W4",
 "slug": "w4-nexrad-radar",
 "checked_at_utc": "2026-10-17T02:20:00Z",
-"checked_window_utc": "2026-10-17 01:48 to 02:20 live; chunk listings cover 2026-10-14 to 10-17 01:49",
-"raw_dir": "$SCRATCH/globe-dl/w4-nexrad-radar (SCRATCH = session scratchpad; absolute path in the final return)",
+"raw_dir": "$SCRATCH/globe-dl/w4-nexrad-radar (SCRATCH = session scratchpad)",
 "urls_checked": [
 {
 "url": "noaa-nexrad-level2: listing 2026/10/17 KBLX, KGGW, KTFX, KMSX; object GET; index.html",
@@ -22,7 +21,7 @@
 "bytes": 6723,
 "content_type": "application/xml",
 "cors_allow_origin": null,
-"content_check": "KBLX 18, KGGW 19, KTFX 15, KMSX 14 files on 2026-10-17 (KBLX page 6723 B; KGGW 7045; KTFX 5757; KMSX 5435). index.html 37713 B.",
+"content_check": "KBLX 18, KGGW 19, KTFX 15, KMSX 14 files on 2026-10-17. index.html 37713 B.",
 "verified": true
 },
 {
@@ -162,7 +161,7 @@
 "bytes": 10296,
 "content_type": "image/png",
 "cors_allow_origin": "*",
-"content_check": "Montana blank (10296 B) at 01:56 and 23:57. CONUS 4.06% (90100 B), 5.06% (103022 B). 60-time scan: CONUS echo 60/60 (4.06-5.07%); Montana px 3/60 (max about 5 px, first 01:26:13Z).",
+"content_check": "Montana blank (10296 B) at 01:56 and 23:57. CONUS 4.06% and 5.06%. 60-time scan: CONUS echo 60/60; Montana px 3/60 (max about 5 px, first 01:26:13Z).",
 "verified": true
 },
 {
@@ -222,7 +221,7 @@
 "bytes": 19903,
 "content_type": "text/xml",
 "cors_allow_origin": "not recorded",
-"content_check": "84 TileMap layers (goes_east/west, ridge, mrms virtual, nexrad-n0q m05m..m55m, nexrad-n0r, nexrad-eet, q2-hsr, GOES IR/VIS). TMS (4650 B): orders 0-23, EPSG:3857, 256 px PNG.",
+"content_check": "84 TileMap layers (goes_east/west, ridge, mrms virtual, nexrad-n0q m05m..m55m, nexrad-n0r, nexrad-eet, q2-hsr, GOES IR/VIS). TMS: orders 0-23, EPSG:3857, 256 px.",
 "verified": true
 },
 {
@@ -332,7 +331,7 @@
 {
 "claim": "Chunk latency, count and size",
 "value": "first chunk median 3.0 s after start (KBLX, KGGW, KTFX), 2.0 s (KMSX); median 55 chunks (KBLX, KGGW) or 67 (KTFX, KMSX); 3.4-5.2 MB per volume",
-"evidence": "chunks_KBLX/KGGW/KTFX/KMSX.json",
+"evidence": "chunks_*.json",
 "verified": true
 },
 {
@@ -349,7 +348,7 @@
 },
 {
 "claim": "KBLX volume content (MetPy 1.7.1 Level2File, 01:38:26.251 UTC)",
-"value": "VCP 35; 12 cuts 0.478-6.284 deg; cuts 0-5 720 radials (0.5 deg), cuts 6-11 360 (1.0 deg); 6480 radials; cuts 0,2,4 REF/ZDR/PHI/RHO/CFP; cuts 1,3,5 REF/VEL/SW; cuts 6-11 all seven; super-res on; RDA op status 'Maintenance Action Required'",
+"value": "VCP 35; 12 cuts 0.478-6.284 deg; cuts 0-5 720 radials (0.5 deg), 6-11 360 (1.0 deg); 6480 radials; REF/ZDR/PHI/RHO/CFP on even cuts 0-4, REF/VEL/SW on odd cuts 1-5, all seven on 6-11; super-res on; RDA op status 'Maintenance Action Required'",
 "evidence": "metpy_sweeps_KBLX_151.json",
 "verified": true
 },
@@ -385,7 +384,7 @@
 },
 {
 "claim": "NWS frame time rule and offset",
-"value": "App takes max over 5 regional footprints. 01:52: HAWAII 01:42:56 vs CONUS 01:41:56 (+60 s). 10 of 12 polls newest non-CONUS (+48 to +60 s seen)",
+"value": "App takes max over 5 regional footprints; 01:52: HAWAII 01:42:56 vs CONUS 01:41:56 (+60 s); 10 of 12 polls newest non-CONUS (+48-60 s)",
 "evidence": "row 9; nws_frame_poll.json",
 "verified": true
 },
@@ -457,7 +456,7 @@
 }
 ],
 "terms": {
-"license": "NOAA NODD: data 'open to the public and can be used as desired'. NWS web pages: public domain unless noted. IEM: public domain. NCEP GeoServer: no NCEP-specific terms found (NOAA-wide statements are the nearest).",
+"license": "NOAA NODD: open to the public, usable as desired. NWS web pages and IEM: public domain (IEM asks for attribution). NCEP: no NCEP-specific terms found.",
 "attribution_required": true,
 "quote": "\"NOAA data disseminated through NODD are open to the public and can be used as desired.\" \"NOAA requests attribution for the use or dissemination of unaltered NOAA data.\"",
 "url": "https://registry.opendata.aws/noaa-nexrad/",
@@ -466,7 +465,7 @@
 "source": "NWS web pages",
 "url": "https://www.weather.gov/disclaimer",
 "attribution_required": false,
-"quote": "\"The information on National Weather Service (NWS) Web pages are in the public domain, unless specifically noted otherwise\"; \"and may be used without charge for any lawful purpose so long as you do not:\"; \"The user assumes the entire risk related to its use of information on NWS Web pages.\""
+"quote": "\"The information on National Weather Service (NWS) Web pages are in the public domain, unless specifically noted otherwise\"; \"and may be used without charge for any lawful purpose so long as you do not:\""
 },
 {
 "source": "IEM tiles",
@@ -483,16 +482,16 @@
 ]
 },
 "limits": [
-"Legacy bucket noaa-nexrad-level2 (named in the brief) returns 403 for every request here. W4 used unidata-nexrad-level2, which Unidata says carries the current archive. Not proven that the 403 comes from the 2025 retirement.",
-"S/I/E meanings, _MDM purpose and chunk directory numbering are unverified (documentation returned 404). S = seq 001 and E = last chunk are observed in every completed volume checked (147-151).",
-"Montana radar was blank at every sampled time (NWS 01:52-01:53 UTC; 60 NCEP frames over 118 min). That is no echo in the sample, not no hail (rule 5). No storm day is covered.",
+"Legacy bucket noaa-nexrad-level2 (named in the brief): 403 for every request here. Used unidata-nexrad-level2 instead. Cause of the 403 not established.",
+"S/I/E meanings, _MDM purpose and chunk directory numbering unverified (documentation 404). S = seq 001 and E = last chunk, observed in every completed volume checked (147-151).",
+"Montana radar blank at every sampled time (NWS 01:52-01:53 UTC; 60 NCEP frames, 118 min): no echo in the sample, not no hail (rule 5).",
 "IEM N0Q (42 Montana px at about 02:01 UTC) and NWS/NCEP composites disagree at trace level. Not reconciled.",
 "Cadence medians use about 2 days of chunk volumes and 10-17 archive files. NWS CONUS record gaps rest on n=5.",
-"MetPy 1.7.1 is the decoder check; it skipped 'Unknown message: 32'. VCP and sweep structure are MetPy's reading, not checked against the NWS ICD.",
-"Latency uses Last-Modified minus start stamp (1-second HTTP resolution). CORS: one Origin GET per service; NWS WMS GetMap not tested. Empty PNGs (651 B NWS, 334 B IEM) mark 'no pixels' only."
+"MetPy 1.7.1 decoded it (skips 'Unknown message: 32'); VCP and sweep structure not checked against the NWS ICD.",
+"Latency: Last-Modified minus start (1-second HTTP resolution). CORS: one Origin GET per service; NWS WMS GetMap untested. Empty PNGs (651 B NWS, 334 B IEM) mark 'no pixels' only."
 ],
 "installed_packages": [
-"metpy==1.7.1 via pip install --target $SCRATCH/globe-scripts/w4-nexrad-radar/site-metpy (isolated; deps numpy 2.5.4, pandas 3.0.6, matplotlib 3.11.2, pint 0.26.1, pooch 1.9.0, pyproj 3.8.0, scipy, xarray, traitlets)",
+"metpy==1.7.1 via pip install --target $SCRATCH/globe-scripts/w4-nexrad-radar/site-metpy (isolated; deps incl. numpy 2.5.4, pandas 3.0.6, matplotlib 3.11.2, pint 0.26.1, pooch 1.9.0, pyproj 3.8.0)",
 "downloaded only, not installed: arm_pyart==2.3.0 wheel (pip download --no-deps)",
 "used from system site, not installed by W4: requests, Pillow 12.3.0, numpy 2.5.3"
 ],
@@ -502,6 +501,6 @@
 "Source of IEM N0B/N0Q after 2022, and whether the 42 Montana px at 02:01 UTC are real echo.",
 "NWS documents 5-minute CONUS updates; observed 5.95-8.22 min. Confirm on a longer poll.",
 "Whether the legacy bucket reopens. Plan should target unidata-nexrad-level2 and unidata-nexrad-level2-chunks.",
-"Archive coverage for the Phase 3 test day (SPC 2025-06-15 Benchland) not checked. Chunks keep about 2 days; NCEP about 2 h."
+"Phase 3 test day (SPC 2025-06-15) archive coverage not checked; chunks keep about 2 days, NCEP about 2 h."
 ]
 }
