@@ -235,6 +235,40 @@ section + section, .now-grid + section { margin-top: var(--space-7); }
 .obs-qc { font-size: var(--text-xs); color: var(--color-text-muted); }
 .obs-word { font-size: var(--text-sm); font-weight: 400; color: var(--color-text-muted); }
 
+/* Phones (600 px and under): one entry per town (DESIGN P2). The line shows the town, its most urgent flag
+   and the latest reading; tapping it opens the full card. Two rows at 390 px: the name and the flag, then
+   the reading and its age. Wide screens keep the cards. The line and the card are built by one template
+   (website/templates/index.html: town_body, line_flag, line_now), so they hold the same flags. */
+.tc-compact { display: none; }
+@media (max-width: 600px) {
+  .town-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
+  .tc-wide { display: none; }
+  .tc-compact { display: block; background: var(--card-bg); border: 1px solid var(--card-line); border-radius: var(--radius); }
+  .tc-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); position: relative;
+    min-height: 44px; padding: var(--space-2) 2.75rem var(--space-2) var(--space-3); list-style: none; cursor: pointer;
+    color: var(--color-text); }
+  .tc-line::-webkit-details-marker { display: none; }
+  .tc-line::after { content: ""; position: absolute; right: var(--space-4); top: 50%; width: 0.5em; height: 0.5em;
+    border: solid currentColor; border-width: 0 2px 2px 0; color: var(--color-text-muted);
+    transform: translateY(-50%) rotate(45deg); }
+  .tc-compact[open] > .tc-line::after { transform: translateY(-25%) rotate(-135deg); }
+  .tc-line-name { font-size: var(--text-base); }
+  .tc-line .chip { max-width: 100%; white-space: normal; }
+  .tc-flag { color: var(--color-flag); font-weight: 700; font-size: var(--text-sm); }
+  .tc-flag-quiet { color: var(--color-text-muted); font-size: var(--text-sm); }
+  .tc-line-read { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); }
+  .tc-line-now { font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+  .tc-line-now b { font-family: var(--font-mono); font-weight: 700; }
+  .tc-line-now .over { color: var(--color-flag); }
+  .tc-line-missing { color: var(--color-text-muted); }
+  .tc-line-age { font-size: var(--text-sm); color: var(--color-text-muted); }
+  .tc-expanded { border: 0; border-top: 1px solid var(--card-line); border-radius: 0; }
+  /* A flagged value says so in words, never by colour alone (DESIGN section 4). Shown here only: the wide
+     card's markup is the same as before. */
+  .over-word { color: var(--color-flag); font-weight: 700; }
+  .stats .over-word { display: block; font-size: var(--text-sm); font-weight: 400; }
+}
+
 /* ---------------------------------------------------------------- town page */
 .crumbs { font-size: var(--text-sm); margin-bottom: var(--space-3); }
 .crumbs a { display: inline-flex; min-height: 32px; align-items: center; }

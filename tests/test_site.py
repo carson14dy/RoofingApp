@@ -10,10 +10,12 @@ import contextlib
 import hashlib
 import io
 import json
+import re
 import sys
 import tempfile
 import unittest
 from datetime import date, datetime, timedelta, timezone
+from html import unescape
 from pathlib import Path
 from unittest import mock
 
@@ -591,7 +593,8 @@ class SampleBuild(unittest.TestCase):
         glasgow = text("town/glasgow.html")
         self.assertIn("No reading from this station in this update (not published (HTTP 404)).", glasgow)
         now = text("index.html")
-        self.assertEqual(now.count('class="tc-now"'), len(site.TOWNS))
+        # once in each town's wide card and once in its phone card (PhoneTownLines); CSS shows one of them
+        self.assertEqual(now.count('class="tc-now"'), 2 * len(site.TOWNS))
         self.assertIn("12 min ago · station SMP100, 2 mi away, 3,445 ft", now)
         self.assertIn("41 min ago · station SMP091, 10 mi away", now)   # its airport reading is stale: the next one
         self.assertIn('gusts <b class="over">41</b> mph', now)     # over the 25 mph placeholder limit
@@ -601,6 +604,155 @@ class SampleBuild(unittest.TestCase):
         self.assertEqual((hill["value"], hill["withheld"], hill["raw"], hill["qc"]), (None, True, 190.0, "X"))
         self.assertTrue(self.result["status"]["observations"]["ok"])
         self.assertEqual(self.result["towns_with_readings"], len(site.TOWNS))
+
+
+def town_lines(html_text):
+    """Each town on the Now page, by slug: its wide card, its phone line (the summary of a native
+    details element), and the card that opens from the line."""
+    grid = html_text[html_text.index('<ul class="town-grid">'):]
+    out = {}
+    for block in re.findall(r"<li>(.*?)</li>", grid, re.S):
+        slug = re.search(r'href="town/([^"]+)\.html"', block)[1]
+        details = re.search(r'<details class="tc-compact">(.*?)</details>', block, re.S)[1]
+        out[slug] = {"wide": re.search(r'<a class="town-card tc-wide".*?</a>', block, re.S)[0],
+                     "details": details,
+                     "summary": re.search(r'<summary class="tc-line">(.*?)</summary>', details, re.S)[1],
+                     "expanded": re.search(r'<a class="town-card tc-expanded".*?</a>', details, re.S)[0]}
+    return out
+
+
+def words(fragment):
+    """What a reader sees or hears: tags out, entities decoded, spaces collapsed."""
+    return " ".join(unescape(re.sub(r"<[^>]+>", " ", fragment)).replace(" ", " ").split())
+
+
+class CalmSample(SampleFetcher):
+    """Sample data with no hour over a limit: 70 °F, 5 mph wind, 5% rain and 5 mph gusts. With gusts=False
+    the gust forecast has no values, so the gusts were never checked."""
+
+    def __init__(self, now, gusts=True):
+        super().__init__(now)
+        self.gusts = gusts
+
+    def json(self, url, params=None):
+        doc, err = super().json(url, params)
+        if doc and url.endswith("/forecast/hourly"):
+            for p in doc["properties"]["periods"]:
+                p.update(temperature=70, windSpeed="5 mph", probabilityOfPrecipitation={"value": 5})
+        if doc and "values" in doc.get("properties", {}).get("windGust", {}):   # the gust forecast, not a reading
+            values = doc["properties"]["windGust"]["values"]
+            doc["properties"]["windGust"]["values"] = [{"validTime": v["validTime"], "value": 8.0} for v in values] \
+                if self.gusts else []
+        return doc, err
+
+
+class NoHourlyForecast(SampleFetcher):
+    def json(self, url, params=None):
+        if url.endswith("/forecast/hourly"):
+            return None, "server error (HTTP 500)"
+        return super().json(url, params)
+
+
+class PhoneTownLines(unittest.TestCase):
+    """DESIGN P2: on phones (600 px and under) each town is one line that opens to its card. Both come
+    from one template, so the line can't disagree with the card. The CSS and the tap are checked in a
+    browser (see the branch report); these checks read the HTML."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-phone-"))
+        site.build(cls.out, None, NOW, sample=True)
+        cls.html = page(cls.out, "index.html")
+        cls.lines = town_lines(cls.html)
+        cls.css = (site.HERE / "static" / "style.css").read_text(encoding="utf-8")
+
+    def test_phones_show_one_line_per_town_and_wide_screens_keep_the_cards(self):
+        self.assertEqual(self.html.count('<details class="tc-compact">'), len(site.TOWNS))
+        self.assertEqual(self.html.count('class="town-card tc-wide"'), len(site.TOWNS))
+        self.assertIn(".tc-compact { display: none; }", self.css)           # hidden unless the phone rule shows it
+        phone = re.search(r"@media \(max-width: 600px\) \{(.*?)\n\}\n", self.css, re.S)
+        self.assertIsNotNone(phone, "the phone rule (600 px and under) is in style.css")
+        self.assertIn(".tc-compact { display: block;", phone[1])
+        self.assertIn(".tc-wide { display: none; }", phone[1])
+        self.assertIn("grid-template-columns: minmax(0, 1fr)", phone[1])     # one town per row on a phone
+        self.assertLess(self.css.index(".tc-compact { display: none; }"), self.css.index("@media (max-width: 600px)"))
+
+    def test_each_line_is_a_native_expand_control_that_names_its_town(self):
+        for t in site.TOWNS:
+            line = self.lines[t["slug"]]
+            self.assertTrue(line["details"].lstrip().startswith('<summary class="tc-line">'), t["name"])
+            self.assertIn(f'<h3 class="tc-line-name">{t["name"]}</h3>', line["summary"])
+            self.assertTrue(words(line["summary"]).startswith(t["name"]), t["name"])
+            self.assertNotIn("tabindex", line["summary"])                    # reachable by Tab, like any control
+            self.assertNotIn("aria-hidden", line["details"])
+            self.assertIn(f'href="town/{t["slug"]}.html"', line["expanded"])
+
+    def test_the_full_card_is_in_the_markup_so_it_shows_without_javascript(self):
+        self.assertEqual(self.html.count("<script"), 1, "the page-age check is the only script on the page")
+        for t in site.TOWNS:
+            line = self.lines[t["slug"]]
+            body = re.sub(r'<div class="tc-head">.*?</div>', "", line["wide"], flags=re.S)
+            expanded = re.sub(r'<span class="visually-hidden">.*?</span>', "", line["expanded"], flags=re.S)
+            # the same content on a phone, plus "(over limit)" beside each flagged value (phone only)
+            self.assertEqual(words(expanded).replace(" (over limit)", ""), words(body), t["name"])
+            self.assertIn('<dl class="stats">', line["expanded"], t["name"])
+
+    def test_each_line_shows_the_flag_its_card_shows_in_the_same_words(self):
+        for t in site.TOWNS:
+            line = self.lines[t["slug"]]
+            summary, card = words(line["summary"]), words(line["wide"])
+            chip = re.search(r'<span class="chip[^"]*">.*?</span>', line["wide"], re.S)
+            hours = re.search(r"\d+ of \d+ hours flagged", card)
+            if chip:
+                self.assertIn(chip[0], line["summary"], t["name"])          # the same chip, the same words
+            elif hours:
+                self.assertIn(hours[0], summary, t["name"])
+            elif "weren't checked" in card:
+                self.assertIn("Gusts not checked", summary, t["name"])
+            else:
+                self.assertIn("No hour flagged", summary, t["name"])
+            temp = re.search(r"Now (\d+) °F", card)
+            self.assertIsNotNone(temp, t["name"])
+            self.assertIn(f"{temp[1]} °F", summary, t["name"])
+            gust = re.search(r"gusts (\d+) mph", card)
+            self.assertIn(f"gusts {gust[1]} mph" if gust else "no gust reported", summary, t["name"])
+            self.assertEqual(summary.count("(over limit)"), len(re.findall(r'<b class="over">', line["wide"])), t["name"])
+
+    def test_a_flagged_value_keeps_its_words_on_the_phone(self):
+        for t in site.TOWNS:
+            exp = self.lines[t["slug"]]["expanded"]
+            self.assertEqual(words(exp).count("(over limit)"), len(re.findall(r'class="over"', exp)), t["name"])
+        summary = words(self.lines["livingston"]["summary"])
+        self.assertIn("High Wind Warning", summary)
+        self.assertIn("wind 27 mph W (over limit)", summary)
+        self.assertIn("gusts 41 mph (over limit)", summary)
+
+    def test_a_failed_alert_check_is_never_a_clear_line(self):
+        out, _ = build_with(SampleWith(NOW, fail={"alerts-state", "alerts-point"}))
+        for slug, line in town_lines(page(out, "index.html")).items():
+            summary = words(line["summary"])
+            self.assertIn("Alerts not checked", summary, slug)
+            self.assertNotIn("No hour flagged", summary, slug)
+
+    def test_the_line_says_what_the_forecast_shows_when_no_alert_applies(self):
+        out, _ = build_with(CalmSample(NOW))
+        lines = town_lines(page(out, "index.html"))
+        self.assertIn("No hour flagged", words(lines["helena"]["summary"]))
+        self.assertIn("High Wind Warning", words(lines["livingston"]["summary"]))  # an alert outranks the hours
+        self.assertNotIn("No hour flagged", words(lines["livingston"]["summary"]))
+        out, _ = build_with(CalmSample(NOW, gusts=False))
+        lines = town_lines(page(out, "index.html"))
+        self.assertIn("Gusts not checked", words(lines["helena"]["summary"]))
+        self.assertNotIn("No hour flagged", words(lines["helena"]["summary"]))
+        out, _ = build_with(NoHourlyForecast(NOW))
+        lines = town_lines(page(out, "index.html"))
+        self.assertIn("Forecast unavailable", words(lines["helena"]["summary"]))
+        self.assertIn("Forecast unavailable.", words(lines["helena"]["expanded"]))
+
+    def test_a_missing_station_reading_is_said_on_the_line(self):
+        out, _ = build_with(SampleWith(NOW, fail={"readings"}))
+        for slug, line in town_lines(page(out, "index.html")).items():
+            self.assertIn("No station reading", words(line["summary"]), slug)
 
 
 class FailureHonesty(unittest.TestCase):

@@ -18,6 +18,9 @@
 </li>
 {% endmacro %}
 
+{# The most urgent alert of a town, or the state of its check. Shared by the town card and the phone line. #}
+{% macro alert_chip(t) %}{% if t.alerts is none %}<span class="chip chip-unknown">Alerts not checked</span>{% elif t.alerts %}<span class="chip chip-{{ t.alerts[0].kind }}">{{ t.alerts[0].event }}{% if t.alerts|length > 1 %} +{{ t.alerts|length - 1 }}<span class="visually-hidden"> more</span>{% endif %}</span>{% endif %}{% endmacro %}
+
 {% macro office_links(offices) %}
 {% for name, url in offices %}<a href="{{ url }}">NWS {{ name }}</a>{{ ', ' if not loop.last }}{% endfor %}
 {% endmacro %}
