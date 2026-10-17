@@ -753,6 +753,10 @@ class SampleVolumeBrowserTests(GlobeVolumeBrowserBase):
                                                  "min_required": VOLUME_MIN_CHANGED}
             self.assertGreater(changed, VOLUME_MIN_CHANGED, "turning the storms on did not change the canvas")
 
+            # The longer Limit text pushes the dBZ swatches below the fold. Scroll them into the picture, so the
+            # check below sees the legend's own swatch colours and not only the points.
+            page.locator("[data-layer=mrms_volume] .dbz-steps").scroll_into_view_if_needed()
+            page.wait_for_timeout(500)
             full = os.path.join(tmp, "full.png")
             page.screenshot(path=full)
             shot = write_palette_copy(full, VOLUME_PNG)
