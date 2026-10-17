@@ -76,7 +76,7 @@ def check(root: Path) -> list[str]:
                     problems.append(f"{label}: only {bubbles} town bubbles drawn")
                 shown = page.evaluate("() => [...document.querySelectorAll('.leaflet-marker-icon.town')]"
                                       ".filter(e => getComputedStyle(e).display !== 'none').length")
-                main = sum(1 for t in data["towns"] if not t.get("minor"))
+                main = sum(1 for t in data["towns"] if t["min_zoom"] < 7)    # shown at the first view (zoom 5-6)
                 if shown < main:
                     problems.append(f"{label}: {shown} town bubbles showing, {main} expected below zoom 7")
 
@@ -173,6 +173,8 @@ ROWS_HIT = """() => [...document.querySelectorAll('#layers label')].map(l => {
 })"""
 
 
+# These waits are for the town bubbles to be drawn (attached). The first one in towns.json (Anaconda)
+# is hidden at the first view (min_zoom 7), so waiting for a visible one would wait for the wrong town.
 def check_menu_rows(browser, base) -> list[str]:
     """Phones held sideways and short windows: the layer menu sits over the timeline and every row
     (scrolled into the menu's view if need be) takes a tap at its centre."""
@@ -180,7 +182,7 @@ def check_menu_rows(browser, base) -> list[str]:
     ctx = browser.new_context(viewport={"width": 844, "height": 390}, reduced_motion="reduce")
     page = ctx.new_page()
     page.goto(base + "map.html", wait_until="load")
-    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
     for w, h in ((844, 390), (667, 375), (568, 320)):
         page.set_viewport_size({"width": w, "height": h})
         page.wait_for_timeout(200)
@@ -204,7 +206,7 @@ def check_no_outline_key(browser, base, data) -> list[str]:
     ctx = browser.new_context(viewport={"width": 1280, "height": 800}, reduced_motion="reduce")
     page = ctx.new_page()
     page.goto(base + "map.html", wait_until="load")
-    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
     page.wait_for_timeout(300)
     key = page.locator("#legend-keys [data-open-list]")
     if not key.count() or "no outline" not in key.inner_text() or not key.inner_text().startswith(str(n)):
@@ -223,7 +225,7 @@ def check_no_outline_key(browser, base, data) -> list[str]:
         ctx = browser.new_context(viewport={"width": w, "height": h}, reduced_motion="reduce")
         page = ctx.new_page()
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         page.wait_for_timeout(300)
         gap = page.evaluate("""() => {
           const key = document.querySelector('#legend-keys [data-open-list]');
@@ -250,7 +252,7 @@ def check_phone_legend(browser, base, data) -> list[str]:
     ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
     page = ctx.new_page()
     page.goto(base + "map.html", wait_until="load")
-    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
     page.wait_for_timeout(300)
     form = page.evaluate("() => [document.getElementById('app').classList.contains('legend-2col'),"
                          " Math.round(document.getElementById('legend').getBoundingClientRect().height)]")

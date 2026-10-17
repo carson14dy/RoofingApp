@@ -558,7 +558,8 @@ a { color: inherit; }
 .leaflet-container .leaflet-pane svg path.bm-border.bm-mt { stroke: var(--line-mt); stroke-width: 1.4px; }
 .leaflet-container .leaflet-pane svg path.bm-outside { fill: url(#hatch); stroke: none; }
 
-/* Zoom-dependent detail: map.js sets z-ge-N on the map for every whole zoom N reached. */
+/* Zoom-dependent detail: map.js sets z-ge-N on the map for every whole zoom N reached. An mzN item (basemap
+   names and places, and towns with a min_zoom of N) is hidden until that zoom. */
 .mz6, .mz7, .mz8, .mz9, .mz10, .mz11 { display: none; }
 .z-ge-6 .mz6, .z-ge-7 .mz7, .z-ge-8 .mz8, .z-ge-9 .mz9, .z-ge-10 .mz10, .z-ge-11 .mz11 { display: inline; }
 .z-ge-6 .xz5, .z-ge-7 .xz6, .z-ge-8 .xz7, .z-ge-9 .xz8, .z-ge-10 .xz9 { display: none !important; }
@@ -609,8 +610,6 @@ a { color: inherit; }
 .town.side-bottom .tname { top: 35px; left: 50%; transform: translateX(-50%); }
 /* the tap target is the bubble plus its name, at least 44 px tall */
 .town::before { content: ""; position: absolute; inset: -7px; border-radius: 22px; }
-.town.minor { display: none; }
-.z-ge-7 .town.minor { display: block; }
 .town:focus { outline: none; }
 .town:focus-visible .bubble { outline: 3px solid var(--focus); outline-offset: 3px; }
 .leaflet-marker-icon.town { cursor: pointer; }

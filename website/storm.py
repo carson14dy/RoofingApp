@@ -1,4 +1,4 @@
-"""Radar echo tops for the 14 towns: the text first (P1 of the storm layers; research/globe §6).
+"""Radar echo tops for the site towns: the text first (P1 of the storm layers; research/globe §6).
 
 NOAA MRMS MergedReflectivityQC is a radar estimate of reflectivity (dBZ) at 11 heights above mean
 sea level, 0.5 to 15 km. Each height is one GRIB2 file every 2 minutes on the public bucket. For
