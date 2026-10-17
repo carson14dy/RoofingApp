@@ -4,8 +4,8 @@ Base map checks (website/static/map/basemap.json, built by tools/build_basemap.p
 Everything runs offline against the committed file: size budget, bounds, the Montana outline
 (closed, the right area, straight 49th parallel, the Yellowstone notch, every site town inside it),
 all 56 Montana counties in the county lines, the site towns marked in places, coordinates inside the
-padded bounds, valid labels with no NaN, labels that stay clear of the town bubbles, and Canadian
-labels inside what the map's first view shows. The coarse context layer outside the padded bounds
+padded bounds, valid labels with no NaN, labels that stay clear of the town bubbles (and of the dots
+minor towns show below zoom 7), and Canadian labels inside what the map's first view shows. The coarse context layer outside the padded bounds
 (state and province lines, a few state and city names from zoom 5) stays out of the box, meets its
 lines at the edge and has no loose ends. A few tests also run the tool's geometry helpers (TopoJSON
 decoding, clipping, simplifying) on tiny inputs, and its handling of the download folder.
@@ -21,6 +21,7 @@ import importlib.util
 import io
 import json
 import math
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -450,11 +451,12 @@ class Labels(unittest.TestCase):
                 self.assertTrue(point_in((lab["lon"], lab["lat"]), lakes[lab["text"]]), lab["text"])
 
     def test_montana_label_clear_of_site_towns(self):
+        tool = load_tool()
         lab = [x for x in self.labels if x["kind"] == "region-main"][0]
         for z in range(lab["min_zoom"], lab.get("max_zoom", 11) + 1):
             lx, ly = project(lab["lat"], lab["lon"], z)
             for t in TOWNS:
-                if z < 7 and t.get("minor"):
+                if not tool.town_form(t, z):        # a minor town below its dot_zoom isn't drawn
                     continue
                 tx, ty = project(t["lat"], t["lon"], z)
                 self.assertGreater(math.hypot(lx - tx, ly - ty), 30, f"zoom {z}: MONTANA on {t['name']}")
@@ -476,8 +478,50 @@ class Labels(unittest.TestCase):
         towns = [dict(t, label="top") if t["name"] == "Billings" else t for t in TOWNS]
         self.assertTrue(any(p.startswith("z5: town Billings name") for p in tool.town_contacts(towns)))
         with mock.patch.object(tool, "TOUCH_Z5", 0.0):
-            self.assertEqual(len(tool.town_contacts(TOWNS)), 2)            # Missoula/Kalispell, Billings/Miles City
+            # Missoula/Kalispell (a name into a bubble, and two names just under 5 px apart one above the
+            # other), Billings/Miles City both ways, Helena's name against Miles City's
+            self.assertEqual(len(tool.town_contacts(TOWNS)), 5)
         self.assertEqual([p for p in tool.town_contacts(TOWNS)], [])
+
+    def test_minor_towns_are_dots_on_a_phone(self):
+        """Below zoom 7 a minor town is a dot and a 12 px name from its dot_zoom (map.js townForm), so
+        the map a phone opens (zoom 5.25-5.5) shows the towns its List names. Each dot_zoom is the
+        lowest quarter zoom from LABEL_ZOOM (map.js: town names clear from there) at which the dot and
+        name clear every other town: Livingston's dot touches Bozeman's bubble below 6.25."""
+        tool = load_tool()
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text()
+        label_zoom = float(re.search(r"var LABEL_ZOOM = ([\d.]+);", js).group(1))
+        self.assertIn(f"var BUBBLE_ZOOM = {tool.BUBBLE_ZOOM};", js)
+        minor = [t for t in TOWNS if t.get("minor")]
+        self.assertEqual({t["name"] for t in minor}, {"Butte", "Glendive", "Lewistown", "Livingston"})
+        for t in minor:
+            dz = t["dot_zoom"]
+            self.assertTrue(label_zoom <= dz < tool.BUBBLE_ZOOM and dz * 4 == int(dz * 4), t)
+            if dz > label_zoom:                     # set no higher than it must be
+                lower = [dict(x, dot_zoom=dz - 0.25) if x is t else x for x in TOWNS]
+                self.assertTrue(any(t["name"] in p for p in tool.town_contacts(lower)), t["name"])
+        for z in (5.25, 5.5):                        # a phone's first view
+            self.assertEqual({t["name"] for t in minor if tool.town_form(t, z) == "dot"},
+                             {"Butte", "Glendive", "Lewistown"}, z)
+        self.assertEqual({tool.town_form(t, 7) for t in TOWNS}, {"bubble"})
+
+    def test_the_layout_check_covers_the_dot_form(self):
+        """Between whole zooms too: a dot on a bubble, two names that read as one, a dot or its name on
+        a basemap label (the MONTANA label sat on Lewistown's name at zoom 6 before the base map was
+        rebuilt with the dots in it)."""
+        tool = load_tool()
+        early = [dict(t, dot_zoom=5.25) if t["name"] == "Livingston" else t for t in TOWNS]
+        self.assertIn("z5.25: town Bozeman bubble / town Livingston dot", tool.town_contacts(early))
+        left = [dict(t, dot_label="left") if t["name"] == "Glendive" else t for t in TOWNS]
+        self.assertIn("z5.25: town Glendive name / town Lewistown name (3.6 px apart on one line)",
+                      tool.town_contacts(left))
+        butte = [dict(t, dot_label="left") if t["name"] == "Butte" else t for t in TOWNS]
+        self.assertIn("z5.25: town Bozeman name / town Butte name (0.2 px apart, one above the other)",
+                      tool.town_contacts(butte))
+        old = [dict(lab, lat=46.8081, lon=-108.6451) if lab["text"] == "MONTANA" else lab for lab in self.labels]
+        problems = tool.check_layout(TOWNS, old, self.doc["places"])
+        self.assertIn("z6: town Lewistown / label MONTANA", problems)
+        self.assertIn("z6.1: town Lewistown / label MONTANA", problems)
 
     def test_town_geometry_is_what_the_map_draws(self):
         """town_boxes models map.js drawTowns and map.css .town: change them together."""
@@ -487,9 +531,19 @@ class Labels(unittest.TestCase):
         self.assertIn("iconSize: [30, 30], iconAnchor: [15, 15]", js)
         for side, edge in (("right", "left"), ("left", "right"), ("top", "bottom"), ("bottom", "top")):
             self.assertRegex(css, rf"\.town\.side-{side} \.tname \{{ {edge}: 35px;")
+            self.assertRegex(css, rf"\.town\.is-dot\.dot-{side} \.tname \{{ {edge}: 24px;")
+        self.assertRegex(css, r"\.town\.is-dot\.dot-top-left \.tname \{ right: 21px; bottom: 19px;")
+        self.assertEqual(tool.DOT_TOP_LEFT, (21 - 30 / 2, 19 - 30 / 2))
         self.assertRegex(css, r"\.town \.tname \{[^}]*font-size: 13px;[^}]*line-height: 1;")
         self.assertEqual((tool.BUBBLE_R, tool.TOWN_NAME_OFF, tool.TOWN_H), (15.0, 35 - 30 / 2, 13.0))
         self.assertEqual(set(tool.TOWN_LABEL_W), {t["name"] for t in TOWNS})
+        # the dot form: an 8 px dot (inset 11 px in the 30 px icon) with a 1.5 px ring, a 12 px name
+        # whose near edge is 24 - 15 = 9 px from the point
+        self.assertRegex(css, r"\.town\.is-dot \.bubble \{ inset: 11px;")
+        self.assertRegex(css, r"\.town\.is-dot \.tname \{ font-size: 12px;")
+        self.assertRegex(css, r"\.town \.bubble \{[^}]*box-shadow: 0 0 0 1\.5px var\(--bubble-ring\)")
+        self.assertEqual((tool.DOT_R, tool.DOT_NAME_OFF, tool.DOT_H), ((30 - 2 * 11) / 2 + 1.5, 24 - 30 / 2, 12.0))
+        self.assertEqual(set(tool.DOT_LABEL_W), {t["name"] for t in TOWNS if t.get("minor")})
 
 
 class Context(unittest.TestCase):

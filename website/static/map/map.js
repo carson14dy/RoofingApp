@@ -27,6 +27,7 @@
   var KIND_WORD = { warning: "Warning", watch: "Watch", advisory: "Advisory", statement: "Statement" };
   var LAYER_WORD = { precip: "Precipitation", temp: "Temperature", wind: "Wind gusts" };
   var LABEL_ZOOM = 5.25;             // from this zoom every town name clears the other bubbles (tools/build_basemap.py)
+  var BUBBLE_ZOOM = 7;               // minor towns are bubbles from here, dots below (townForm; build_basemap.py BUBBLE_ZOOM)
   // words for the hatching in view (hatchKind): [legend key or card caption, note line]. A gap in the
   // frame shown, the band outside the pictures' box, or both ("on this map" is true of both; only the
   // card and the note say both). A legend key fits one line of a 140 px column, a note noteRoom's line.
@@ -289,9 +290,11 @@
       fitMinZoom();
     }
     map.on("zoomend", zoomClasses);
+    map.on("zoomend", applyTownForms);
     map.on("zoomend", placeLocDot);
     map.on("moveend", function () {          // hatching and ringed bubbles come into or out of view
       tidyLabels();
+      placeNamesOffReports();
       if (!state.ready) return;
       renderKeys();
       renderNote();
@@ -314,7 +317,7 @@
       if (sheetState) {
         sheetState.resized = true;
         placeSheet();
-        if (sheetState.ll) reveal(sheetState.ll, townExtent(sheetState.town));    // a turn can put the town under the side panel
+        if (sheetState.ll) reveal(sheetState.ll, townExtent(sheetState.town), sheetState.town);    // a turn can put the town under the side panel
       }
       tidyLabels();
     });
@@ -386,8 +389,20 @@
       .concat([].slice.call(el.banners.children)).forEach(function (x) {
         if (!x || x.hidden) return;
         var r = x.getBoundingClientRect(), m = x === el.note ? 24 : 0;   // a name on the note's line reads as part of it
-        boxes.push({ left: r.left - m, right: r.right + m, top: r.top, bottom: r.bottom, width: r.width, height: r.height });
+        boxes.push({ left: r.left - m, right: r.right + m, top: r.top, bottom: r.bottom, width: r.width, height: r.height, note: x === el.note });
       });
+    // While a sheet is open, a town (bubble or dot, or name) under a panel or the sheet's edge is
+    // hidden too, until the sheet closes: through the glass it shows as a blurred disc or half a name
+    // (reveal keeps the sheet's own town clear and as many others as it can). Not for the note, which
+    // hides itself over a town (renderNote). The legend keys don't change: the town is still on the map.
+    (data ? data.towns : []).forEach(function (t) {
+      var hide = !!sheetState && t !== sheetState.town && !!t._form && townBoxes(t).some(function (r) {
+        return r.width > 0 && boxes.some(function (b) {
+          return !b.note && b.width > 2 && b.height > 2 && r.left < b.right + 2 && r.right > b.left - 2 && r.top < b.bottom + 2 && r.bottom > b.top - 2;
+        });
+      });
+      if (t._el && t._el.classList.contains("under-panel") !== hide) t._el.classList.toggle("under-panel", hide);
+    });
     // not the toast's empty live region, nor a panel this view doesn't show (the full map's panels in
     // the card, the card's caption and Open map on the full map)
     boxes = boxes.filter(function (b) { return b.width > 2 && b.height > 2; });
@@ -405,18 +420,21 @@
 
   /** Montana (box vb at zoom z, centred across) has no room between the controls at the top and the
       note: something will be hidden whatever we do. Try each spot from Montana touching the note
-      down to it touching the timeline, measure how much of every town bubble the legend, the
+      down to it touching the timeline, measure how much of every town bubble (or dot) the legend, the
       banners, the buttons, the note (noteBox) and the timeline would cover there, and keep the spot
       that hides the least (on a tie, the highest: the note stays clear). Each edge of Montana has
       towns close to it, so where the overflow goes decides how many are lost. Sets the paddings in
       tl and br for fitBounds. */
   function placeCrowded(vb, z, tl, br, vw, vh, tlTop) {
-    var size = boundsSize(vb, z), R = 15, AREA = 4 * R * R;     // bubbles are 30 px
+    var size = boundsSize(vb, z);
     var y0 = Math.max(0, Math.round(vh - br[1] - size.y - 2));  // touching the note
     var y1 = Math.max(y0, Math.floor(tlTop - size.y - 2));      // touching the timeline
     var left = tl[0] + (vw - tl[0] - br[0] - size.x) / 2;
     var nw = map.project(vb.getNorthWest(), z), pts = [];
-    (data ? data.towns : []).forEach(function (t) { if (!t.minor) pts.push(map.project([t.lat, t.lon], z).subtract(nw)); });
+    (data ? data.towns : []).forEach(function (t) {                // bubbles are 30 px, dots 11 (townForm)
+      var f = townForm(t, z), at = map.project([t.lat, t.lon], z).subtract(nw);
+      if (f) pts.push({ x: at.x, y: at.y, r: f === "dot" ? 5.5 : 15 });
+    });
     var boxes = [];
     [el.legend, el.legendWrap.querySelector(".mapdata"), el.top.querySelector(".close"), el.buttons, el.timeline]
       .concat([].slice.call(el.banners.children)).forEach(function (e) {
@@ -429,6 +447,7 @@
     for (var y = y0; y <= y1; y += 2) {
       var score = 0;
       for (var i = 0; i < pts.length; i++) {
+        var R = pts[i].r, AREA = 4 * R * R;
         var x0 = left + pts[i].x - R, x1 = x0 + 2 * R, t0 = y + pts[i].y - R, t1 = t0 + 2 * R;
         var hid = AREA - Math.max(0, Math.min(x1, vw) - Math.max(x0, 0)) * Math.max(0, Math.min(t1, vh) - Math.max(t0, 0));
         for (var k = 0; k < boxes.length; k++) {
@@ -646,8 +665,10 @@
   function drawTowns() {
     data.towns.forEach(function (t) {
       var side = /^(right|left|top|bottom)$/.test(t.label || "") ? t.label : "right";
+      // the dot form (townForm) may put the name on another side, top-left included (towns.json dot_label)
+      var dotSide = /^(right|left|top|bottom|top-left)$/.test(t.dot_label || "") ? t.dot_label : side;
       var icon = L.divIcon({
-        className: "town side-" + side + (t.minor ? " minor" : ""),
+        className: "town side-" + side + " dot-" + dotSide + (t.minor ? " minor" : ""),
         html: '<span class="bubble" aria-hidden="true">\u2014</span><span class="tname" aria-hidden="true">' + esc(t.name) + "</span>",
         iconSize: [30, 30], iconAnchor: [15, 15]
       });
@@ -655,6 +676,8 @@
       // legend or the timeline; reveal() does (keyboard focus only, so a click doesn't pan twice)
       var m = L.marker([t.lat, t.lon], { icon: icon, keyboard: !CARD, riseOnHover: true, interactive: true, autoPanOnFocus: false }).addTo(map);
       t._marker = m;
+      t._home = t._side = side;          // towns.json's side; placeNamesOffReports may move the name
+      t._dotHome = t._dotSide = dotSide; // the same for the dot form (dot-* classes)
       t._el = m.getElement();
       t._bubble = t._el.querySelector(".bubble");
       t._name = t._el.querySelector(".tname");
@@ -664,16 +687,47 @@
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activateTown(t); }
       });
       t._el.addEventListener("focus", function () {
-        if (!CARD && !sheetState && t._el.matches(":focus-visible")) reveal(L.latLng(t.lat, t.lon), townExtent(t));
+        if (!CARD && !sheetState && t._el.matches(":focus-visible")) reveal(L.latLng(t.lat, t.lon), townExtent(t), t);
       });
       t._el.addEventListener("blur", function () { if (state.ready) renderBubbles(); });   // its name was held while playing
     });
+    applyTownForms();
   }
 
-  /** How far a town's bubble and name reach from its point, in px ({l, t, r, b}), for reveal(). */
+  /** How a town is drawn at zoom z (default: the map's): "bubble"; "dot" for a minor town below
+      BUBBLE_ZOOM, from its dot_zoom (towns.json), drawn as Apple's map draws a city, a small dot and
+      a 12 px name with no number (map.css .town.is-dot); "" where it is hidden, below its dot_zoom
+      (Livingston's dot touches Bozeman's bubble below zoom 6.25). tools/build_basemap.py
+      town_form decides the same way, and its layout check keeps every dot and name off the other towns. */
+  function townForm(t, z) {
+    if (z == null) z = map.getZoom();
+    if (!t.minor || z >= BUBBLE_ZOOM - 1e-6) return "bubble";
+    return t.dot_zoom != null && z >= t.dot_zoom - 1e-6 ? "dot" : "";
+  }
+
+  /** Draw each town in its form for the zoom reached (townForm): classes for map.css, and a dot sits
+      under the bubbles, so where a dot's tap area meets a bubble's the bubble takes the tap. */
+  function applyTownForms() {
+    if (!data) return;
+    data.towns.forEach(function (t) {
+      var f = townForm(t);
+      if (!t._el || t._form === f) return;
+      t._form = f;
+      t._el.classList.toggle("is-dot", f === "dot");
+      t._el.classList.toggle("is-off", !f);
+      t._marker.setZIndexOffset(f === "dot" ? -10000 : 0);
+    });
+  }
+
+  /** A town's bubble (or dot) and its name's glyphs (taller than the 1-line box), as boxes on screen. */
+  function townBoxes(t) { return [t._bubble.getBoundingClientRect(), textBox(t._name)]; }
+
+  /** How far a town's bubble (or dot) and name reach from its point, in px ({l, t, r, b}), for
+      reveal(); `mark` is the bubble or dot alone, with its focus ring. */
   function townExtent(t) {
     var c = map.latLngToContainerPoint([t.lat, t.lon]), mapR = el.canvas.getBoundingClientRect();
-    var e = { l: 21, t: 21, r: 21, b: 21 };          // the bubble and its focus ring
+    var m = townForm(t) === "dot" ? 12 : 21;
+    var e = { l: m, t: m, r: m, b: m, mark: { l: m, t: m, r: m, b: m } };
     var r = t._name.getBoundingClientRect();
     if (r && r.width) {
       e.l = Math.max(e.l, c.x - (r.left - mapR.left) + 3);
@@ -779,6 +833,105 @@
     });
   }
 
+  /** With storm reports on, a town name lying on a report circle moves where it touches none: first
+      along its own side of the bubble (a "top" name slides left or right while the bubble stays
+      under it), then to the other sides, opposite first. The spot must also clear the other towns
+      (by 6 px, so a name never reads as theirs), the basemap names and the panels, and be on the
+      screen. So the name stays readable and the report stays whole and tappable; with no such spot
+      it stays put (names are drawn above the reports, with a halo). A minor town drawn as a dot
+      (townForm) moves its dot name the same way, measured from the dot (dot-* classes); a report
+      circle is wider than the 8 px dot and may sit right on it, so a dot name may also go 4 px
+      further out. Names go back to their towns.json sides (tools/build_basemap.py checks those) when
+      the overlay goes off. Runs when the overlay changes and at every moveend (zoom changes the
+      offsets and the town forms; panels and names move). */
+  function placeNamesOffReports() {
+    if (!data || !data.towns.length || !data.towns[0]._el) return;
+    var on = state.reports && data.reports.length;
+    data.towns.forEach(function (t) { if (!on) homeName(t); });
+    if (!on) return;
+    var box = function (r) { return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+    var fixed = [], reps = [], cr = el.canvas.getBoundingClientRect();
+    [].forEach.call(el.canvas.querySelectorAll("path.rep"), function (p) {
+      var r = p.getBoundingClientRect();
+      if (r.width) reps.push(box(r));
+    });
+    [].forEach.call(el.canvas.querySelectorAll(".bm-label:not(.bm-hide) span"), function (s) {
+      var r = textBox(s);
+      if (r.width) fixed.push(box(r));
+    });
+    [el.note, el.toast, el.near, el.legend, el.top.querySelector(".close"), el.buttons, el.timeline, el.cardChip, el.cardOpen]
+      .concat([].slice.call(el.banners.children)).forEach(function (x) {
+        var r = x && !x.hidden && x.getBoundingClientRect();
+        if (r && r.width > 2 && r.height > 2) fixed.push(box(r));
+      });
+    var hits = function (a, list, pad) {
+      return list.some(function (b) { return a.l < b.r + pad && a.r > b.l - pad && a.t < b.b + pad && a.b > b.t - pad; });
+    };
+    var OTHER = { right: ["left", "top", "bottom"], left: ["right", "top", "bottom"], top: ["bottom", "right", "left"], bottom: ["top", "right", "left"],
+      "top-left": ["top", "left", "right", "bottom"] };          // a dot name only (Butte)
+    data.towns.forEach(function (t) {
+      var nr = t._name.getBoundingClientRect(), br = t._bubble.getBoundingClientRect();
+      if (!nr.width || !br.width) { homeName(t); return; }  // hidden at this zoom
+      var dot = t._form === "dot", home = dot ? t._dotHome : t._home;
+      var cx = (br.left + br.right) / 2, cy = (br.top + br.bottom) / 2, w = nr.width, h = nr.height;
+      var off = dot ? 9 : 20;
+      /** Where the name would be on `side`, slid `d` px along it and `g` px further out (map.css
+          .town.side-*: 35 px from the 30 px icon's far edge, 20 px from the point; a dot's
+          .town.is-dot.dot-*: 24 px, 9 px from the point, and top-left with its corner 6 px left of
+          and 4 px above it). */
+      var at = function (side, d, g) {
+        if (side === "top-left") return { l: cx - 6 - w, t: cy - 4 - h, r: cx - 6, b: cy - 4 };
+        var o = off + (g || 0);
+        var l = side === "right" ? cx + o : side === "left" ? cx - o - w : cx - w / 2 + d;
+        var tp = side === "bottom" ? cy + o : side === "top" ? cy - o - h : cy - h / 2 + d;
+        return { l: l, t: tp, r: l + w, b: tp + h };
+      };
+      if (!hits(at(home, 0), reps, 2)) { setNameSide(t, home, 0, dot); return; }
+      var towns = [];
+      data.towns.forEach(function (o) {
+        if (o === t) return;
+        [o._bubble, o._name].forEach(function (e) { var r = e.getBoundingClientRect(); if (r.width) towns.push(box(r)); });
+      });
+      var pick = null;
+      (dot ? [0, 4] : [0]).some(function (g) {
+        return [home].concat(OTHER[home]).some(function (s) {
+          // slides that keep the bubble beside the name: its centre within a top or bottom name, a
+          // left or right name within the bubble's (or the 8 px dot's) height; top-left doesn't move
+          if (s === "top-left" && g) return false;
+          var max = s === "top-left" ? 0 : s === "top" || s === "bottom" ? w / 2 - 8 : dot ? 4 : 8, ds = [0];
+          for (var d = 4; d <= max; d += 4) ds.push(-d, d);
+          return ds.some(function (d) {
+            var a = at(s, d, g);
+            var ok = a.l >= cr.left + 2 && a.r <= cr.right - 2 && a.t >= cr.top + 2 && a.b <= cr.bottom - 2 &&   // on the screen
+              !hits(a, reps, 2) && !hits(a, towns, 6) && !hits(a, fixed, 2);
+            if (ok) pick = [s, d, g];
+            return ok;
+          });
+        });
+      });
+      if (pick) setNameSide(t, pick[0], pick[1], dot, pick[2]);
+      else setNameSide(t, home, 0, dot);
+    });
+  }
+
+  /** Put a town's name on one side of its bubble (or, with `dot`, of its dot: the dot-* classes),
+      slid `d` px along that side and `g` px further out (margins, so the side's own transform stays). */
+  function setNameSide(t, side, d, dot, g) {
+    var key = dot ? "_dotSide" : "_side", pre = dot ? "dot-" : "side-";
+    if (t[key] !== side) {
+      t._el.classList.remove(pre + t[key]);
+      t._el.classList.add(pre + side);
+      t[key] = side;
+    }
+    var s = t._name.style, out = { right: "marginLeft", left: "marginRight", top: "marginBottom", bottom: "marginTop" }[side];
+    s.marginLeft = s.marginTop = s.marginRight = s.marginBottom = "";
+    if (d) s[side === "top" || side === "bottom" ? "marginLeft" : "marginTop"] = d + "px";
+    if (g && out) s[out] = g + "px";
+  }
+
+  /** A town's name back on its towns.json sides, bubble and dot. */
+  function homeName(t) { setNameSide(t, t._dotHome, 0, true); setNameSide(t, t._home, 0, false); }
+
   /** Warnings overlay on or off. */
   function setWarnings(on) {
     state.warnings = on;
@@ -795,6 +948,7 @@
     renderKeys();
     renderReportNote();
     refitForBanner();
+    placeNamesOffReports();
     if (!quiet) saveUrl();
   }
 
@@ -1217,9 +1371,11 @@
     return rg.getBoundingClientRect();
   }
 
-  /** Whether a box on screen covers part of a town's bubble or name. */
+  /** Whether a box on screen covers part of a town's bubble (or dot) or name; not a town hidden under
+      a panel while a sheet is open (tidyLabels). */
   function overTown(b) {
     return data.towns.some(function (t) {
+      if (t._el.classList.contains("under-panel")) return false;
       return [t._bubble, t._name].some(function (e) {
         var r = e.getBoundingClientRect();
         return r.width > 0 && r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top;
@@ -1370,10 +1526,10 @@
     return h.gap ? h.gap + (h.outside ? "Out" : "") : h.outside ? "outside" : "";
   }
 
-  /** Whether a town's bubble is on screen (minor towns appear from zoom 7). */
+  /** Whether a town is on screen, as a bubble or a dot (townForm: a minor town's dot and its limit
+      ring show from its dot_zoom). */
   function townVisible(t) {
-    if (t.minor && map.getZoom() < 7) return false;
-    return map.getBounds().contains([t.lat, t.lon]);
+    return !!townForm(t) && map.getBounds().contains([t.lat, t.lon]);
   }
 
   /** Whether any town in sight has the limit ring at any hour of this timeline. */
@@ -1509,9 +1665,8 @@
     el.sheetBody.addEventListener("click", onSheetClick);
     el.sheet.addEventListener("keydown", trapFocus);
     // the open sheet hides the basemap names along its edge (tidyLabels): measure again when its size
-    // changes (opening and closing count), and once it has slid in (sheet-in draws it 16 px low)
+    // changes (opening and closing count); it fades in without moving, so it is measured where it ends up
     if (window.ResizeObserver) new ResizeObserver(function () { tidyLabels(); }).observe(el.sheet);
-    el.sheet.addEventListener("animationend", tidyLabels);
 
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", function (e) {     // a tap outside closes the layer menu
@@ -1798,7 +1953,7 @@
         map.once("moveend", function () {
           setTimeout(function () {   // after a jump, Leaflet places the bubbles just after moveend
             var t = locState && locState.here;
-            if (t) reveal(L.latLng(t.lat, t.lon), townExtent(t)); else reveal(ll);
+            if (t) reveal(L.latLng(t.lat, t.lon), townExtent(t), t); else reveal(ll);
           });
         });
         map.setView(ll, Math.max(map.getZoom(), 7), { animate: !reducedMotion() });
@@ -1814,11 +1969,13 @@
       zoom, as their distance on screen changes. */
   function placeLocDot() {
     if (!locState || !data) return;
-    var p = map.latLngToLayerPoint(locState.ll), here = null, best = 15 + 8 + 2;   // bubble and dot radii, a little air
+    var p = map.latLngToLayerPoint(locState.ll), here = null, best = Infinity;
     data.towns.forEach(function (t) {
-      if (t.minor && map.getZoom() < 7) return;
-      var d = map.latLngToLayerPoint([t.lat, t.lon]).distanceTo(p);
-      if (d < best) { best = d; here = t; }
+      var f = townForm(t);
+      if (!f) return;
+      // the town's bubble (or town dot) and the location dot's radii, a little air
+      var d = map.latLngToLayerPoint([t.lat, t.lon]).distanceTo(p), reach = (f === "dot" ? 6 : 15) + 8 + 2;
+      if (d < reach && d < best) { best = d; here = t; }
     });
     locState.here = here;
     data.towns.forEach(function (t) { t._here = t === here; t._el.classList.toggle("is-here", t._here); });
@@ -1850,7 +2007,8 @@
       }
     }
     sheetState.kind = kind;
-    sheetState.ll = null;            // openTown sets it: the town to keep in sight on a resize
+    sheetState.ll = null;            // openTown sets these: the town to keep in sight on a resize
+    sheetState.town = null;
     sheetState.back = !!opts.back;
     toggleLayers(false);
     el.sheet.className = "glass sheet sheet-" + kind;
@@ -1953,12 +2111,16 @@
     if (b) b.focus();
   }
 
-  /** Town sheet: the NWS forecast for the hour on the timeline, flags in words, alerts, a link. */
+  /** Town sheet: the NWS forecast for the hour on the timeline, flags in words, alerts, a link. An
+      active alert, or an alert check that failed, comes first: below the forecast's numbers it read
+      like an all-clear before the warning. */
   function openTown(t, opener, back) {
     var ms = valueTime(), h = townHour(t, ms), html = "";
+    var alertsFirst = t.alert_ids === null || t.alert_ids.length > 0;
+    if (alertsFirst) html += townAlerts(t) + "<h3>NWS forecast</h3>";
     if (h) {
       var hs = Date.parse(h.time), cur = hs <= Date.parse(data.built) && Date.parse(data.built) < hs + HOUR;
-      html += '<p class="sub">NWS forecast for ' + esc(dayClock(hs)) + (cur ? " (this hour)" : "") + "</p>";
+      html += '<p class="sub">' + (alertsFirst ? "For " : "NWS forecast for ") + esc(dayClock(hs)) + (cur ? " (this hour)" : "") + "</p>";
       var tOver = h.temp_f != null && ((limits.cold_f != null && h.temp_f < limits.cold_f) || (limits.hot_f != null && h.temp_f > limits.hot_f));
       var gOver = h.gust_mph != null && limits.gust_mph != null && h.gust_mph >= limits.gust_mph;
       var wOver = h.wind_mph != null && limits.wind_mph != null && h.wind_mph >= limits.wind_mph;
@@ -1973,19 +2135,31 @@
         html += '<p class="sub">Needs a look at ' + esc(clock(hs)) + ":</p><ul class=\"flags\">" +
           h.flags.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
       } else {
-        var missing = [];
-        if (h.gust_mph == null) missing.push("gusts");
-        if (h.wind_mph == null) missing.push("wind");
-        if (h.precip == null) missing.push("chance of rain or snow");
-        if (h.temp_f == null) missing.push("temperature");
-        html += "<p>No value for " + esc(clock(hs)) + " reaches a limit" + (missing.length ? "; " + esc(missing.join(", ")) + " not in the forecast, so not checked" : "") + ".</p>";
+        var lc = limitCheck(h);
+        if (!lc.checked.length) {
+          html += '<p class="warn">The NWS forecast has no numbers for ' + esc(clock(hs)) + " to check against your limits. This is not an all-clear.</p>";
+        } else {
+          html += "<p>NWS numbers for " + esc(clock(hs)) + " are under your limits (" + esc(lc.checked.join(", ")) + ")" +
+            (lc.missing.length ? "; " + esc(lc.missing.join(", ")) + " not in the forecast, so not checked" : "") + ".</p>";
+        }
       }
     } else if (!t.hours.length) {
       html += '<p class="warn">The NWS forecast for ' + esc(t.name) + " didn't load in this update. This is not an all-clear.</p>";
     } else {
       html += '<p class="warn">The NWS forecast has no value for this hour. This is not an all-clear.</p>';
     }
-    html += "<h3>Official alerts</h3>";
+    if (!alertsFirst) html += townAlerts(t);
+    html += '<p><a class="go" href="' + esc(t.url) + '">Full forecast for ' + esc(t.name) + "</a></p>";
+    openSheet("town", t.name, html, opener, { back: back });
+    sheetState.ll = L.latLng(t.lat, t.lon);
+    sheetState.town = t;
+    reveal(sheetState.ll, townExtent(t), t);
+    tidyLabels();                    // the sheet's town is never hidden under a panel; the others may be
+  }
+
+  /** The town sheet's "Official alerts" block: the town's alerts, or that its check failed, or none. */
+  function townAlerts(t) {
+    var html = "<h3>Official alerts</h3>";
     var checked = Date.parse(data.alerts.checked || data.built);
     if (t.alert_ids === null) {
       html += '<p class="warn">Couldn\u2019t check NWS alerts for ' + esc(t.name) + " in this update. This is not an all-clear.</p>";
@@ -1999,27 +2173,57 @@
         return alertRow(a);
       }).join("") + "</div>";
     }
-    html += '<p><a class="go" href="' + esc(t.url) + '">Full forecast for ' + esc(t.name) + "</a></p>";
-    openSheet("town", t.name, html, opener, { back: back });
-    sheetState.ll = L.latLng(t.lat, t.lon);
-    sheetState.town = t;
-    reveal(sheetState.ll, townExtent(t));
+    return html;
+  }
+
+  /** The limits an unflagged NWS hour was checked against, in words (`checked`: "gusts 25 mph", ...,
+      from the page's data-limits, the same numbers as sources.py flags_for), and the values the
+      forecast left out (`missing`), which were not checked: a missing value never passes one. */
+  function limitCheck(h) {
+    var checked = [], missing = [];
+    function one(v, lim, words, name) { if (v == null) missing.push(name); else if (lim != null) checked.push(words); }
+    one(h.gust_mph, limits.gust_mph, "gusts " + limits.gust_mph + "\u00a0mph", "gusts");
+    one(h.wind_mph, limits.wind_mph, "wind " + limits.wind_mph + "\u00a0mph", "wind");
+    one(h.precip, limits.pop_pct, "rain or snow " + limits.pop_pct + "%", "chance of rain or snow");
+    if (h.temp_f == null) missing.push("temperature");
+    else if (limits.cold_f != null && limits.hot_f != null) checked.push("temperature " + limits.cold_f + " to " + limits.hot_f + "\u00a0\u00b0F");
+    return { checked: checked, missing: missing };
   }
 
   /** Pan just enough that a town is in sight, clear of everything drawn over the map: the open sheet,
       the legend, the "Map data" link, the close button, the right-hand buttons, the banners, the
       timeline, the note and the location chip (like a maps app does when a place card opens).
-      `ext` is how far the town reaches from its point ({l, t, r, b} px: the bubble and its name).
-      Of the clear spots the nearest to where the town is now wins; with no clear spot for the name
-      too, one for the bubble alone; with none at all (a sheet as tall as the screen), the map stays. */
-  function reveal(ll, ext) {
+      `ext` is how far the town reaches from its point ({l, t, r, b} px: the bubble and its name;
+      ext.mark the bubble or dot alone); `town` is that town (none for the location dot). If the town
+      is clear where it is, the map stays. Otherwise, of the clear spots, the one that leaves the fewest
+      other towns partly under a panel wins (on a phone the panels and the sheet leave little room, so
+      a town that can't be clear goes off the screen's edge or behind the sheet if it can), then the
+      nearest; with no clear spot for the name too, one for the bubble alone; with none at all (a
+      sheet as tall as the screen), the map stays. While a sheet is open, a town still under a panel
+      is hidden (tidyLabels). Without a sheet (My location, a town focused from the keyboard) nothing
+      is hidden, so the nearest clear spot wins: a spot chosen for fewer towns under panels there put
+      West Yellowstone's name half under the location chip at 740 x 360. */
+  function reveal(ll, ext, town) {
     var size = map.getSize(), p = map.latLngToContainerPoint(ll), mapR = el.canvas.getBoundingClientRect();
-    var boxes = [];
+    var rel = function (r) { return { l: r.left - mapR.left, t: r.top - mapR.top, r: r.right - mapR.left, b: r.bottom - mapR.top }; };
+    var boxes = [], glass = [], sheetBox = null;
     [el.sheet, el.legend, el.legendWrap.querySelector(".mapdata"), el.top.querySelector(".close"), el.buttons,
       el.timeline, el.note, el.near].concat([].slice.call(el.banners.children)).forEach(function (x) {
       if (!x || x.hidden || x.offsetParent === null) return;
       var r = x.getBoundingClientRect();
-      if (r.width && r.height) boxes.push({ l: r.left - mapR.left, t: r.top - mapR.top, r: r.right - mapR.left, b: r.bottom - mapR.top });
+      if (!r.width || !r.height) return;
+      boxes.push(rel(r));
+      if (x === el.sheet) sheetBox = rel(r); else glass.push(rel(r));
+    });
+    // a panel wholly behind the sheet (the timeline under a phone's sheet) covers nothing
+    if (sheetBox) glass = glass.filter(function (b) { return b.l < sheetBox.l || b.r > sheetBox.r || b.t < sheetBox.t || b.b > sheetBox.b; });
+    var others = [];                 // the other towns drawn now: their bubble (or dot) and name boxes
+    (data ? data.towns : []).forEach(function (t) {
+      if (t === town || !townForm(t)) return;
+      others.push(townBoxes(t).filter(function (r) { return r.width > 0; }).map(function (r) {
+        var b = rel(r);              // with the 2 px tidyLabels keeps round a panel
+        return { l: b.l - 2, t: b.t - 2, r: b.r + 2, b: b.b + 2 };
+      }));
     });
     /** Whether the town, its point at x, y, would be clear of every box and inside the map. */
     function clear(e, x, y) {
@@ -2030,23 +2234,46 @@
       }
       return true;
     }
-    var exts = [ext || { l: 24, t: 24, r: 24, b: 24 }, { l: 24, t: 24, r: 24, b: 24 }];
+    /** How many other towns a move of the map by dx, dy would leave partly under a panel (off the
+        screen or behind the sheet counts as out of sight, not under a panel). */
+    function underPanels(dx, dy) {
+      var n = 0;
+      for (var i = 0; i < others.length; i++) {
+        var hit = false;
+        for (var j = 0; !hit && j < others[i].length; j++) {
+          var b = others[i][j], l = b.l + dx, r = b.r + dx, t = b.t + dy, bot = b.b + dy;
+          if (r <= 0 || l >= size.x || bot <= 0 || t >= size.y) continue;
+          for (var k = 0; !hit && k < glass.length; k++) {
+            var g = glass[k];
+            hit = r > g.l && l < g.r && bot > g.t && t < g.b;
+          }
+        }
+        if (hit) n++;
+      }
+      return n;
+    }
+    var bubbleOnly = { l: 24, t: 24, r: 24, b: 24 };
+    var exts = [ext || bubbleOnly, (ext && ext.mark) || bubbleOnly];
     for (var i = 0; i < exts.length; i++) {
       var e = exts[i];
       if (clear(e, p.x, p.y)) return;
-      var best = null, bestD = Infinity, STEP = 6;
+      var spots = [], STEP = 6;
       for (var y = e.t; y <= size.y - e.b; y += STEP) {
         for (var x = e.l; x <= size.x - e.r; x += STEP) {
-          var d = (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y);
-          if (d < bestD && clear(e, x, y)) { bestD = d; best = [x, y]; }
+          if (clear(e, x, y)) spots.push([x, y, (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y)]);
         }
       }
-      if (best) {
-        state.userMoved = true;
-        if (sheetState) sheetState.revealed = true;
-        map.panBy([p.x - best[0], p.y - best[1]], { animate: !reducedMotion() });
-        return;
+      if (!spots.length) continue;
+      spots.sort(function (a, b) { return a[2] - b[2]; });
+      var best = null, bestN = Infinity;
+      for (var s = 0; s < spots.length && bestN > 0; s++) {
+        var n = sheetState ? underPanels(spots[s][0] - p.x, spots[s][1] - p.y) : 0;
+        if (n < bestN) { bestN = n; best = spots[s]; }
       }
+      state.userMoved = true;
+      if (sheetState) sheetState.revealed = true;
+      map.panBy([p.x - best[0], p.y - best[1]], { animate: !reducedMotion() });
+      return;
     }
   }
 
@@ -2110,16 +2337,20 @@
     html += "<h3>Towns \u00b7 " + esc(what) + "</h3><div class=\"rows\">";
     var ms = valueTime();
     data.towns.forEach(function (t) {
-      var h = townHour(t, ms), v = bubbleValue(h);
-      var meta = h ? (h.flags && h.flags.length ? "Needs a look: " + h.flags.join(", ") : "No value reaches a limit at " + clock(Date.parse(h.time)))
-        : (t.hours.length ? "No NWS value for this hour" : "NWS forecast didn't load");
-      if (t.alert_ids === null) meta += " \u00b7 alerts not checked";
-      else if (t.alert_ids.length) meta += " \u00b7 " + t.alert_ids.length + (t.alert_ids.length > 1 ? " alerts" : " alert");
+      var h = townHour(t, ms), v = bubbleValue(h), lc = h && !(h.flags && h.flags.length) ? limitCheck(h) : null;
+      var meta = h ? (lc ? (lc.checked.length ? "under limits at " + clock(Date.parse(h.time)) +
+          (lc.missing.length ? " (" + lc.missing.join(", ") + " not checked)" : "") : "no NWS numbers to check at " + clock(Date.parse(h.time)))
+        : "needs a look: " + h.flags.join(", "))
+        : (t.hours.length ? "no NWS value for this hour" : "NWS forecast didn't load");
+      // the town's alert leads its row (after the forecast it read like an all-clear first)
+      var lead = t.alert_ids === null ? "Alerts not checked"
+        : t.alert_ids.length ? t.alert_ids.length + (t.alert_ids.length > 1 ? " alerts" : " alert") : "";
+      var metaHtml = lead ? "<strong>" + esc(lead) + "</strong> \u00b7 " + esc(meta) : esc(meta.charAt(0).toUpperCase() + meta.slice(1));
       var unit = state.layer === "wind" ? " mph gusts" : " \u00b0F";
       html += '<button type="button" class="row" data-town="' + esc(t.slug) + '" data-key="t-' + esc(t.slug) + '">' +
         '<span class="mini-bubble' + (v.over ? " over" : "") + (v.text === "\u2014" ? " unknown" : "") + '" aria-hidden="true">' + esc(v.text) + "</span>" +
         '<span class="row-main"><span class="row-title">' + esc(t.name) + '<span class="visually-hidden">, ' + esc(v.text === "\u2014" ? "no value" : v.text + unit) + (v.over ? ", over limit" : "") + "</span></span>" +
-        '<span class="row-meta' + (h ? "" : " warn") + '">' + esc(meta) + "</span></span></button>";
+        '<span class="row-meta' + (h && (!lc || lc.checked.length) ? "" : " warn") + '">' + metaHtml + "</span></span></button>";
     });
     html += "</div>";
     if (state.reports) {
@@ -2174,7 +2405,7 @@
         (sample ? "Sample forecast" : "HRRR model forecast")) + " \u00b7 " + clock(state.times[state.pos]);
     }
     // words true of all the hatching in view: a gap in the frame, the band outside the pictures, or both
-    var k = f && !f._failed ? hatchKind() : "";
+    var k = f && !f._failed ? hatchKind() : (hatchInView().outside ? "outside" : "");
     var html = '<span class="card-main">' + esc(main) + "</span>" + (k ? '<span class="card-hatch"><span class="key ' +
       (k === "outside" ? "key-hatch-out" : "key-hatch") + '" aria-hidden="true"></span>' +
       '<span class="visually-hidden">. Hatched areas: </span>' + esc(HATCH[k][0]) + "</span>" : "");

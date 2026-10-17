@@ -374,7 +374,7 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
 - *JavaScript (rule 4):* playback, scrubbing, menus, sheets and geolocation can only happen in the
   browser. `static/map/map.js` is vanilla, documented, with no framework and no build step; Python
   still builds every number and frame. `tools/smoke_map.py` opens the built map in Chromium on every
-  branch push. It is 2,184 lines (2026-10-16), most of it layout that keeps Montana and every town
+  branch push. It is 2,422 lines (2026-10-17), most of it layout that keeps Montana and every town
   clear of the panels on crowded screens, failure states and accessibility; moving about 330 lines
   to the build is an open owner's call (ROADMAP).
 - *Build cost:* about 40 MB downloaded and 48 frames (about 2.5 MB, most of it the temperature and gust fields) per build; numpy and
@@ -406,12 +406,13 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   hash, so the 10-minute rebuilds no longer make every visit download about 150 KB of unchanged
   files; `data/map.json` and the map card keep the build minute.
 - *Town label test (2026-10-16):* the label test models this map, not the old Folium one: 30 px
-  bubbles, names 20 px from the point (`map.css` `.town`), minor towns from zoom 7.
-  `tools/build_basemap.py` `check_layout` (run by `tests/test_basemap.py`) checks every town name
-  against the other towns' bubbles and names as well as the basemap labels and places. One
-  allowance: at zoom 5, where only maps narrower than about 340 px or very short open, a name may
-  reach 4 px into another bubble (Missoula's 3.5 px into Kalispell's, Billings' 1 px into Miles
-  City's); no choice of label sides clears zoom 5.
+  bubbles, names 20 px from the point (`map.css` `.town`), minor towns as bubbles from zoom 7 (and as
+  dots below it: *Minor towns and open sheets*). `tools/build_basemap.py` `check_layout` (run by
+  `tests/test_basemap.py`) checks every town name against the other towns' bubbles and names as well
+  as the basemap labels and places. One allowance: at zoom 5, where only maps narrower than about
+  340 px or very short open, a name may reach 4 px into another bubble or name (Missoula's 3.5 px
+  into Kalispell's bubble, Billings' and Miles City's 1 px into each other's, Miles City's 2.5 px into
+  the end of Helena's name); no choice of label sides clears zoom 5.
 - *Sample legend (2026-10-16):* a sample build's legend notes say the pictures are invented ("not
   NOAA radar or the HRRR model") instead of naming the radar or the model as their source.
 - *Words beside the card (2026-10-16):* the Now page's caption and the card's frame title come from
@@ -465,6 +466,24 @@ same map as a card on the Now and Storm reports pages. Design: `docs/DESIGN.md` 
   no count and says "Data unavailable for this day", not "No hail or wind reports" (0 reports).
   Outside the map's area the toast alone names the nearest town, instead of a chip offering one 450
   miles away.
+- *Town sheet and report circles (2026-10-17, fresh owner's-eye review):* a town with an active
+  alert, or whose alert check failed, opens its sheet on "Official alerts" and leads its List row with
+  it ("1 alert · under limits at 6 pm"): below "Sunny." and "No value for 6 pm reaches a limit." the
+  warning read like an afterthought to an all-clear, and the limit line now names the page's limits.
+  With storm reports on, a town name lying on a report circle moves beside its bubble to a clear spot
+  (map.js `placeNamesOffReports`, about 80 lines) instead of the circles sitting on the word; the
+  report keeps its true place, and the name its `towns.json` side when the overlay is off. A minor
+  town's dot name moves the same way, measured from its dot (the two fixes, combined).
+- *Minor towns and open sheets (2026-10-17):* below zoom 7 a minor town is a small dot and a 12 px
+  name, as Apple's map draws a city, from its `towns.json` `dot_zoom`, and a tap on either opens its
+  sheet: a phone (zoom 5.25–5.5) now shows Butte, Glendive and Lewistown, which its List named but
+  its map hid; Livingston waits for 6.25, because at 5.25 its point is 13 px from Bozeman's, under
+  that 30 px bubble. Miles City's name moved left of its bubble (above, it covered Glendive's dot),
+  Glendive's and Butte's dot names go above and above-left (`dot_label`), the rebuilt base map moved
+  MONTANA, and the label test checks the dots every 0.05 zoom and two names that would read as one or
+  touch. A town's sheet now pans to the clear spot that leaves the fewest other towns under a panel,
+  and while it is open a town still under a panel or the sheet's edge is hidden, like the basemap
+  names; no pan can clear the phone legend's area, so one to five towns show above a phone's sheet.
 
 ## Gotchas found the hard way
 - Jinja resolves `h.pop` to the dict method `pop`, not the key — the key is `precip_pct`.

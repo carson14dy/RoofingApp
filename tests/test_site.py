@@ -407,6 +407,10 @@ class SampleBuild(unittest.TestCase):
         self.assertEqual(len(m["towns"]), len(site.TOWNS))
         liv = next(t for t in m["towns"] if t["slug"] == "livingston")
         self.assertEqual(liv["alert_ids"], ["sample-high-wind"])
+        # a minor town's dot shows from its towns.json dot_zoom (map.js townForm)
+        self.assertEqual({t["slug"]: t["dot_zoom"] for t in m["towns"] if t["minor"]},
+                         {t["slug"]: t["dot_zoom"] for t in site.TOWNS if t.get("minor")})
+        self.assertTrue(all(t["dot_zoom"] is None for t in m["towns"] if not t["minor"]))
         self.assertTrue(liv["hours"] and all(h["time"].endswith("Z") for h in liv["hours"]))
         self.assertEqual(len(m["alerts"]["items"]), 2)
         self.assertEqual(sum(1 for a in m["alerts"]["items"] if a["geometry"] is None), 1)
@@ -638,6 +642,17 @@ class TownAlertsInTheList(unittest.TestCase):
         self.assertNotIn("An alert that is listed on the Now page", js)
         self.assertIn("this map update has no details for it. The full forecast page below lists it.", js)
 
+    def test_the_map_town_words_lead_with_alerts_and_name_the_limits(self):
+        """The town sheet opens on an active alert or a failed check, and its limit line is plain words
+        with the page's own limits (tools/smoke_map.py check_town_alerts_first opens them in a browser)."""
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertNotIn("reaches a limit", js)
+        self.assertIn("var alertsFirst = t.alert_ids === null || t.alert_ids.length > 0;", js)
+        self.assertIn('" are under your limits ("', js)
+        for key in ("gust_mph", "wind_mph", "pop_pct", "cold_f", "hot_f"):    # every limit flags_for uses
+            self.assertIn(f"limits.{key} +", js)
+            self.assertIn(key, src.LIMITS)
+
 
 class MapFailures(unittest.TestCase):
     def test_radar_and_forecast_failures_are_reported_not_drawn_as_dry(self):
@@ -789,6 +804,9 @@ class MapLabels(unittest.TestCase):
     def test_label_sides_are_valid(self):
         for t in site.TOWNS:
             self.assertIn(t.get("label", "right"), ("right", "left", "top", "bottom"), t["name"])
+            # a minor town's dot form (below zoom 7) may put its name elsewhere, top-left included
+            self.assertIn(t.get("dot_label", "right"), ("right", "left", "top", "bottom", "top-left"), t["name"])
+            self.assertTrue(t.get("minor") or not ({"dot_label", "dot_zoom"} & set(t)), t["name"])
 
 
 if __name__ == "__main__":

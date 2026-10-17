@@ -198,6 +198,8 @@ def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dic
                  for h in t["hours"] if first <= h["start"] <= last]
         out_towns.append({"slug": t["slug"], "name": t["name"], "lat": t["lat"], "lon": t["lon"],
                           "label": t.get("label", "right"), "minor": bool(t.get("minor")),
+                          "dot_zoom": t.get("dot_zoom") if t.get("minor") else None,
+                          "dot_label": t.get("dot_label") if t.get("minor") else None,
                           "url": f"town/{t['slug']}.html", "office": t.get("office"), "hours": hours,
                           "alert_ids": None if t["alerts"] is None else [a["id"] for a in t["alerts"]]})
     (s_, w_), (n_, e_) = gridded.IMAGE_BOUNDS

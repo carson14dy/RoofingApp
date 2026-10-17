@@ -20,7 +20,11 @@ slider's words, and keeps no coverage-gap key; My location outside the map's are
 toast and offers no chip; the Storm reports card shows no reports banner, and on a phone, with a
 banner and its caption's line counting alerts without an outline, opens at the Now card's zoom with
 no town under either card's caption; a town stays clear of its sheet when the phone turns; with a
-town's sheet open on a phone, no basemap name sticks out from under its edge. Exits 1 with the
+town's sheet open on a phone, no basemap name sticks out from under its edge and no town shows under
+a panel or that edge; a phone's first view draws the minor towns as dots whose dot and name open
+their sheet, and a minor town hidden there shows once zoomed in to its dot_zoom; a town with an alert
+(or a failed alert check) opens its sheet and leads its List row with the alert; with storm reports
+on, a town name (or a minor town's dot name) moves off a report circle lying on it. Exits 1 with the
 reasons if anything fails. The Website workflow runs it on branch pushes; locally set PW_CHROMIUM to
 a Chromium executable if Playwright's own isn't installed.
 """
@@ -32,6 +36,7 @@ import json
 import os
 import sys
 import threading
+import urllib.request
 from pathlib import Path
 
 
@@ -136,6 +141,10 @@ def check(root: Path) -> list[str]:
                           lambda: check_failed_picture(browser, base, data), lambda: check_location(browser, base),
                           lambda: check_reports_card(browser, base, data), lambda: check_sheet_turn(browser, base),
                           lambda: check_sheet_names(browser, base, data),
+                          lambda: check_town_alerts_first(browser, base, data),
+                          lambda: check_names_off_reports(browser, base, data),
+                          lambda: check_names_off_reports(browser, base, data, "Lewistown", (1024, 768)),
+                          lambda: check_minor_dots(browser, base, data),
                           lambda: check_empty_layer_switch(browser, base, data),
                           lambda: check_card_words(browser, base, root)):
                 try:
@@ -288,6 +297,93 @@ def check_phone_legend(browser, base, data) -> list[str]:
 # how far apart two town bubbles are, in px: it doubles with each zoom level
 APART = ("() => { const b = [...document.querySelectorAll('.leaflet-marker-icon.town:not(.minor)')].slice(0, 2)"
          ".map(e => e.getBoundingClientRect()); return Math.hypot(b[0].x - b[1].x, b[0].y - b[1].y); }")
+
+
+# each town as drawn: "bubble", "dot" (map.css .town.is-dot: a small dot, no number) or "" (hidden),
+# and its bubble's (or dot's) centre
+FORMS = """() => Object.fromEntries([...document.querySelectorAll('.leaflet-marker-icon.town')].map(t => {
+  const b = t.querySelector('.bubble').getBoundingClientRect(), shown = getComputedStyle(t).display !== 'none';
+  const form = !shown ? '' : b.width < 16 && getComputedStyle(t.querySelector('.bubble')).fontSize === '0px' ? 'dot' : 'bubble';
+  return [t.querySelector('.tname').textContent, [form, b.left + b.width / 2, b.top + b.height / 2]]; }))"""
+
+# the centre of a town's dot (or bubble) or name, if a tap there reaches the town and not something over it
+TAP_AT = """([name, part]) => { const t = [...document.querySelectorAll('.leaflet-marker-icon.town')]
+    .find(e => e.querySelector('.tname').textContent === name);
+  const r = t.querySelector(part).getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+  const hit = document.elementFromPoint(x, y);
+  return hit && t.contains(hit) ? [x, y] : null; }"""
+
+
+def page_zoom(page, data, forms) -> float:
+    """The map's zoom, from how far apart two bubble towns are drawn (Web Mercator, 256 px tiles)."""
+    import math
+
+    def world(t):                                         # px at zoom 0
+        return ((t["lon"] + 180) / 360 * 256,
+                (1 - math.log(math.tan(math.pi / 4 + math.radians(t["lat"]) / 2)) / math.pi) / 2 * 256)
+    a, b = [t for t in data["towns"] if not t.get("minor")][:2]
+    (ax, ay), (bx, by) = world(a), world(b)
+    fa, fb = forms[a["name"]], forms[b["name"]]
+    return math.log2(math.hypot(fa[1] - fb[1], fa[2] - fb[2]) / math.hypot(ax - bx, ay - by))
+
+
+def check_minor_dots(browser, base, data) -> list[str]:
+    """The map a phone opens (zoom 5.25-5.5) draws the towns its List names: each minor town as a dot
+    and a name from its towns.json dot_zoom (map.js townForm), a bubble from zoom 7, and a tap on the
+    dot or the name opens its sheet. A minor town below its dot_zoom (Livingston, whose dot touches
+    Bozeman's bubble below zoom 6.25) shows once the map is zoomed in to it, clear to tap."""
+    minor = [t for t in data["towns"] if t.get("minor")]
+    if not minor:
+        return []
+    problems = []
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce", has_touch=True, is_mobile=True)
+    page = ctx.new_page()
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.evaluate("() => document.fonts.ready.then(() => true)")
+    page.wait_for_timeout(500)
+
+    def want(t, z):
+        if not t.get("minor") or z >= 7 - 1e-6:
+            return "bubble"
+        return "dot" if t.get("dot_zoom") is not None and z >= t["dot_zoom"] - 1e-6 else ""
+
+    forms = page.evaluate(FORMS)
+    z = page_zoom(page, data, forms)
+    for t in data["towns"]:
+        if forms[t["name"]][0] != want(t, z):
+            problems.append(f"phone at zoom {z:.2f}: {t['name']} is drawn as {forms[t['name']][0] or 'nothing'}, "
+                            f"want {want(t, z) or 'nothing'}")
+    for t in minor:
+        if forms[t["name"]][0] != "dot":
+            continue
+        for part, what in ((".bubble", "dot"), (".tname", "name")):
+            xy = page.evaluate(TAP_AT, [t["name"], part])
+            if not xy:
+                problems.append(f"phone: {t['name']}'s {what} can't take a tap (something covers it)")
+                continue
+            page.touchscreen.tap(*xy)
+            page.wait_for_timeout(250)
+            title = page.locator("#sheet-title").inner_text() if page.locator("#sheet").is_visible() else None
+            if title != t["name"]:
+                problems.append(f"phone: a tap on {t['name']}'s {what} opened {title or 'nothing'}")
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(200)
+    late = [t for t in minor if t.get("dot_zoom") is not None and t["dot_zoom"] > z + 1e-6]
+    if late:
+        page.focus("#map")
+        while z < max(t["dot_zoom"] for t in late) - 1e-6:
+            page.keyboard.press("Equal")                       # +0.5 (zoomDelta)
+            page.wait_for_timeout(500)
+            z = page_zoom(page, data, page.evaluate(FORMS))
+        forms = page.evaluate(FORMS)
+        for t in late:
+            if forms[t["name"]][0] != "dot":
+                problems.append(f"phone at zoom {z:.2f}: {t['name']} is still not drawn (dot_zoom {t['dot_zoom']})")
+            elif not page.evaluate(TAP_AT, [t["name"], ".bubble"]):
+                problems.append(f"phone at zoom {z:.2f}: {t['name']}'s dot is covered (by another town's bubble?)")
+    ctx.close()
+    return problems
 
 
 def check_zoom_holds(browser, base) -> list[str]:
@@ -525,7 +621,9 @@ def check_reports_card(browser, base, data) -> list[str]:
                       "area": "Hill; Blaine", "severity": "Moderate", "sender": "", "sent": data["built"],
                       "onset": None, "until": None, "description": "", "instruction": "", "geometry": None})
     body = _json.dumps(body)
-    built = int(datetime.fromisoformat(data["built"].replace("Z", "+00:00")).timestamp() * 1000)
+    # the page-age check reads <body data-built>, which can differ from map.json's "built" (an old fixture)
+    stamp = re.search(r'data-built="(\d+)"', urllib.request.urlopen(base + "index.html").read().decode("utf-8"))
+    built = int(stamp.group(1)) if stamp else int(datetime.fromisoformat(data["built"].replace("Z", "+00:00")).timestamp() * 1000)
 
     def a_banner(route):                                     # a one-line banner when the build shows none
         r = route.fetch()
@@ -610,10 +708,30 @@ SHEET_CUT = """() => { const s = document.getElementById('sheet').getBoundingCli
     .map(e => e.textContent); }"""
 
 
+# towns drawn on screen (bubble or dot, or name) partly under a panel or the open sheet's edge
+SHEET_TOWNS = """() => { const R = (r) => ({l: r.left, t: r.top, r: r.right, b: r.bottom});
+  const text = (e) => { const g = document.createRange(); g.selectNodeContents(e); return R(g.getBoundingClientRect()); };
+  const md = document.querySelector('.mapdata');
+  const panels = [document.getElementById('legend'), document.querySelector('.close'), document.getElementById('buttons'),
+    ...document.getElementById('banners').children].filter(e => e && e.offsetParent !== null).map(e => R(e.getBoundingClientRect()))
+    .concat(md && md.offsetParent !== null ? [text(md)] : []).filter(b => b.r - b.l > 2 && b.b - b.t > 2);
+  const s = R(document.getElementById('sheet').getBoundingClientRect());
+  const meet = (a, b) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
+  const inside = (a, b) => a.l >= b.l && a.r <= b.r && a.t >= b.t && a.b <= b.b;
+  return [...document.querySelectorAll('#map .leaflet-marker-icon.town')].filter(t => {
+    const cs = getComputedStyle(t);
+    if (cs.display === 'none' || cs.visibility !== 'visible') return false;
+    return [R(t.querySelector('.bubble').getBoundingClientRect()), text(t.querySelector('.tname'))].some(b =>
+      b.r > 0 && b.l < innerWidth && b.b > 0 && b.t < innerHeight && (panels.some(p => meet(b, p)) || (meet(b, s) && !inside(b, s))));
+  }).map(t => t.querySelector('.tname').textContent); }"""
+
+
 def check_sheet_names(browser, base, data) -> list[str]:
     """A town's sheet open on a phone: no basemap name is partly under it, sticking out from under its
-    edge as a broken word (map.js tidyLabels counts the open sheet as a panel). Every town whose
-    bubble takes a tap is opened in turn, as a viewer would, and closed with Escape."""
+    edge as a broken word (map.js tidyLabels counts the open sheet as a panel), and no town shows under
+    a panel or the sheet's edge (reveal pans so the fewest are, tidyLabels hides the rest until the
+    sheet closes). Every town whose bubble takes a tap is opened in turn, as a viewer would, and closed
+    with Escape."""
     problems, opened = [], 0
     ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
     page = ctx.new_page()
@@ -635,10 +753,174 @@ def check_sheet_names(browser, base, data) -> list[str]:
             if cut:
                 problems.append(f"town sheet 390x844: {', '.join(cut[:4])} {'sticks' if len(cut) == 1 else 'stick'} out "
                                 f"from under the {t['name']} sheet")
+            under = page.evaluate(SHEET_TOWNS)
+            if under:
+                problems.append(f"town sheet 390x844: with the {t['name']} sheet open, {', '.join(under[:4])} "
+                                f"{'shows' if len(under) == 1 else 'show'} under a panel or the sheet's edge")
         page.keyboard.press("Escape")
         page.wait_for_timeout(150)
     ctx.close()
     return problems + ([] if opened else ["town sheet: no town's bubble took a tap at 390x844"])
+
+
+SHEET_BLOCKS = """() => [...document.getElementById('sheet-body').children]
+  .filter(e => !e.classList.contains('sample-tag'))
+  .map(e => e.tagName + ':' + e.textContent.replace(/\\s+/g, ' ').trim())"""
+LIST_ROWS = """() => Object.fromEntries([...document.querySelectorAll('#sheet-body [data-town]')]
+  .map(r => [r.getAttribute('data-town'), r.querySelector('.row-meta').textContent.replace(/\\s+/g, ' ').trim()]))"""
+
+
+def check_town_alerts_first(browser, base, data) -> list[str]:
+    """A town with an active alert, or whose alert check failed, opens its sheet on "Official alerts",
+    above the forecast's numbers (below them, "Sunny" and the limit line read like an all-clear before
+    the warning); a town with no alert keeps the forecast first. The limit line names the page's
+    limits, and the List leads each such town's row with its alert ("1 alert · ...", "Alerts not
+    checked · ..."). The alerts are put in map.json here (Billings, Glasgow, Havre), so any build
+    tests it."""
+    import json as _json
+    problems = []
+    body = _json.loads(_json.dumps(data))
+    towns = {t["slug"]: t for t in body["towns"]}
+    if not all(s in towns for s in ("billings", "glasgow", "havre")):
+        return ["town alerts: Billings, Glasgow or Havre is missing from map.json"]
+    body["alerts"]["items"].append({"id": "smoke-alert", "event": "Severe Thunderstorm Warning", "kind": "warning",
+                                    "headline": "", "area": "Yellowstone", "severity": "Severe", "sender": "",
+                                    "sent": data["built"], "onset": None, "until": None, "description": "",
+                                    "instruction": "", "geometry": None})
+    towns["billings"]["alert_ids"] = ["smoke-alert"]
+    towns["glasgow"]["alert_ids"] = None
+    towns["havre"]["alert_ids"] = []
+    body = _json.dumps(body)
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+    page = ctx.new_page()
+    page.route("**/data/map.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=body))
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_timeout(500)
+    limits = page.evaluate("() => JSON.parse(document.getElementById('app').getAttribute('data-limits'))")
+    for name, first in (("Billings", True), ("Glasgow", True), ("Havre", False)):
+        xy = page.evaluate(TAP_POINT, name)
+        if not xy:
+            problems.append(f"town alerts: {name}'s bubble takes no tap at 390x844")
+            continue
+        page.mouse.click(*xy)
+        page.wait_for_timeout(250)
+        blocks = page.evaluate(SHEET_BLOCKS)
+        text = " ".join(blocks).replace("\u00a0", " ")
+        leads = bool(blocks) and blocks[0].lower() == "h3:official alerts"
+        if leads != first:
+            problems.append(f"town sheet {name}: " + ("the official alerts don't come first" if first else
+                            "opens on the alerts though it has none") + f" ({' | '.join(blocks[:3])[:160]})")
+        if first and name == "Glasgow" and "Couldn\u2019t check NWS alerts" not in text:
+            problems.append("town sheet Glasgow: a failed alert check isn't said")
+        if "reaches a limit" in text:
+            problems.append(f"town sheet {name}: still says 'reaches a limit'")
+        if "under your limits" in text and f"gusts {limits['gust_mph']} mph" not in text:
+            problems.append(f"town sheet {name}: the limit line doesn't name the gust limit ({limits['gust_mph']} mph)")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(150)
+    page.locator("#btn-list").click()
+    page.wait_for_timeout(250)
+    rows = page.evaluate(LIST_ROWS)
+    if not rows.get("billings", "").startswith("1 alert \u00b7 "):
+        problems.append(f"List: Billings's row doesn't lead with its alert ({rows.get('billings')!r})")
+    if not rows.get("glasgow", "").startswith("Alerts not checked \u00b7 "):
+        problems.append(f"List: Glasgow's row doesn't lead with 'Alerts not checked' ({rows.get('glasgow')!r})")
+    if any("reaches a limit" in v for v in rows.values()):
+        problems.append("List: a row still says 'reaches a limit'")
+    ctx.close()
+    return problems
+
+
+# a town's name and its bubble centre, and every shown town's bubble centre (px)
+TOWN_SPOTS = """(name) => { const out = {};
+  document.querySelectorAll('.leaflet-marker-icon.town').forEach(e => { const b = e.querySelector('.bubble').getBoundingClientRect();
+    if (b.width) out[e.querySelector('.tname').textContent] = [b.left + b.width / 2, b.top + b.height / 2]; });
+  const t = [...document.querySelectorAll('.leaflet-marker-icon.town')].find(e => e.querySelector('.tname').textContent === name);
+  const n = t.querySelector('.tname').getBoundingClientRect();
+  return {bubbles: out, name: [n.left + n.width / 2, n.top + n.height / 2], cls: t.className, margin: t.querySelector('.tname').style.cssText}; }"""
+# the report circle's box, the town name's box, and what a tap at the circle's centre reaches
+REPORT_VS_NAME = """(name) => { const d = [...document.querySelectorAll('path.rep')].map(p => p.getBoundingClientRect())
+    .find(r => r.width && r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight);
+  const t = [...document.querySelectorAll('.leaflet-marker-icon.town')].find(e => e.querySelector('.tname').textContent === name);
+  const n = t.querySelector('.tname').getBoundingClientRect();
+  if (!d) return null;
+  const hit = document.elementFromPoint(d.left + d.width / 2, d.top + d.height / 2);
+  return {over: n.left < d.right && n.right > d.left && n.top < d.bottom && n.bottom > d.top,
+          hit: hit ? String(hit.getAttribute('class') || '') : '', name: [n.left + n.width / 2, n.top + n.height / 2],
+          cls: t.className, margin: t.querySelector('.tname').style.cssText}; }"""
+
+
+def check_names_off_reports(browser, base, data, name="Glasgow", size=(390, 844)) -> list[str]:
+    """Storm reports on, on a phone: a report circle right on a town's name (Glasgow's, put in map.json
+    here) moves the name to a clear spot beside its bubble (map.js placeNamesOffReports), so the name
+    reads and the circle stays whole: a tap at its centre opens the report, a tap on the name the town.
+    With the overlay off the name is back on its towns.json side. Also run for a minor town's dot name
+    (Lewistown at 1024 x 768, zoom 6.25+). Not Billings on a phone: with Miles City's name on its left,
+    Billings's has no clear spot at 390 x 844, so it stays (with its halo), as designed."""
+    import json as _json
+    problems = []
+    towns = {t["name"]: t for t in data["towns"]}
+    w, h = size
+    if name not in towns:
+        return [f"names off reports: {name} is missing from map.json"]
+    far = {"kind": "hail", "time": data["built"], "day": data["built"][:10], "lat": 30.0, "lon": -125.0, "place": "far away",
+           "county": "", "state": "", "comments": "", "size_in": 1.0, "mph": None}
+
+    def with_reports(reps):
+        body = _json.loads(_json.dumps(data))
+        body["reports"] = reps                          # the far one keeps the legend's report key in both loads
+        body.setdefault("status", {})["reports"] = {"label": "SPC storm reports", "ok": True, "detail": "test"}
+        return _json.dumps(body)
+
+    def open_page(body):
+        ctx = browser.new_context(viewport={"width": w, "height": h}, reduced_motion="reduce")
+        page = ctx.new_page()
+        page.route("**/data/map.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=body))
+        page.goto(base + "map.html?overlay=reports", wait_until="load")
+        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+        page.wait_for_timeout(500)
+        return ctx, page
+
+    ctx, page = open_page(with_reports([far]))
+    spots = page.evaluate(TOWN_SPOTS, name)
+    ctx.close()
+    pre = "dot-" if "is-dot" in spots["cls"].split() else "side-"      # the dot form's name has its own side
+    home = next((c for c in spots["cls"].split() if c.startswith(pre)), "")
+    t, (tx, ty) = towns[name], spots["bubbles"].get(name, (None, None))
+    others = [(n, xy) for n, xy in spots["bubbles"].items() if n != name and n in towns]
+    if tx is None or not others:
+        return [f"names off reports: {name} or another town isn't shown at {w}x{h}"]
+    u_name, (ux, uy) = max(others, key=lambda o: min(abs(o[1][0] - tx), abs(o[1][1] - ty)))
+    u = towns[u_name]
+    nx, ny = spots["name"]
+    lat = t["lat"] + (ny - ty) * (u["lat"] - t["lat"]) / (uy - ty)
+    lon = t["lon"] + (nx - tx) * (u["lon"] - t["lon"]) / (ux - tx)
+    ctx, page = open_page(with_reports([far, dict(far, lat=lat, lon=lon, place="on the name")]))
+    got = page.evaluate(REPORT_VS_NAME, name)
+    if not got:
+        problems.append(f"names off reports: the report put on {name}'s name isn't on the screen")
+    else:
+        if got["over"]:
+            problems.append(f"names off reports: {name}'s name stays on a storm report circle at {w}x{h}")
+        if "rep-hit" not in got["hit"]:
+            problems.append(f"names off reports: a tap on the report's centre by {name} doesn't reach it ({got['hit']!r})")
+        page.mouse.click(*got["name"])
+        page.wait_for_timeout(250)
+        if page.locator("#sheet").is_hidden() or page.locator("#sheet-title").inner_text() != name:
+            problems.append(f"names off reports: a tap on {name}'s moved name doesn't open {name}")
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(150)
+        page.locator("#btn-layers").click()
+        page.get_by_role("switch", name="Storm reports").uncheck()
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
+        back = page.evaluate(TOWN_SPOTS, name)
+        if home not in back["cls"].split() or back["margin"]:
+            problems.append(f"names off reports: with the overlay off {name}'s name isn't back on its side ({back['cls']}; {back['margin']})")
+    ctx.close()
+    return problems
 
 
 def check_empty_layer_switch(browser, base, data) -> list[str]:

@@ -599,9 +599,15 @@ a { color: inherit; }
 .town.is-here .bubble { box-shadow: 0 0 0 1.5px var(--bubble-ring), 0 0 0 4.5px var(--loc), 0 1px 5px rgba(0, 0, 0, 0.28); }
 .town.is-here .bubble.over { box-shadow: 0 0 0 1.5px var(--bubble-ring), 0 0 0 4.5px var(--over), 0 0 0 6px var(--bubble-ring),
   0 0 0 9px var(--loc), 0 1px 5px rgba(0, 0, 0, 0.28); }
+/* a solid 1.5 px halo (eight offset copies) under a soft one: the name stays readable over a storm
+   report circle or the rain, both drawn below it (reports pane 440, markers 600), and the circle still
+   shows around the letters. Shadows, not -webkit-text-stroke: without paint-order on HTML text a
+   stroke paints over the letters and thins them. */
 .town .tname {
   position: absolute; white-space: nowrap; font-size: 13px; font-weight: 700; line-height: 1; color: var(--label-place);
-  text-shadow: 0 0 2px var(--halo), 0 0 2px var(--halo), 0 0 3px var(--halo), 0 0 4px var(--halo);
+  text-shadow: -1.5px 0 0 var(--halo), 1.5px 0 0 var(--halo), 0 -1.5px 0 var(--halo), 0 1.5px 0 var(--halo),
+    -1px -1px 0 var(--halo), 1px -1px 0 var(--halo), -1px 1px 0 var(--halo), 1px 1px 0 var(--halo),
+    0 0 3px var(--halo), 0 0 4px var(--halo);
 }
 .town.side-right .tname { left: 35px; top: 50%; transform: translateY(-50%); }
 .town.side-left .tname { right: 35px; top: 50%; transform: translateY(-50%); }
@@ -609,8 +615,26 @@ a { color: inherit; }
 .town.side-bottom .tname { top: 35px; left: 50%; transform: translateX(-50%); }
 /* the tap target is the bubble plus its name, at least 44 px tall */
 .town::before { content: ""; position: absolute; inset: -7px; border-radius: 22px; }
-.town.minor { display: none; }
-.z-ge-7 .town.minor { display: block; }
+/* A minor town below zoom 7 (map.js townForm, from its towns.json dot_zoom): Apple's city style, a small
+   dot in the bubble's colour and a 12 px name, no number (its label for screen readers, the List and
+   its sheet give the value); the limit ring still shows on the dot. Hidden below its dot_zoom.
+   tools/build_basemap.py DOT_R, DOT_NAME_OFF, DOT_H and DOT_LABEL_W model this: change them together. */
+.town.is-off { display: none; }
+.town.is-dot .bubble { inset: 11px; font-size: 0; color: transparent; }
+.town.is-dot .tname { font-size: 12px; font-weight: 600; inset: auto; transform: none; }
+/* the name's side: towns.json dot_label, else label (map.js drawTowns: dot-*); top-left puts the dot at
+   the name's lower right */
+.town.is-dot.dot-right .tname { left: 24px; top: 50%; transform: translateY(-50%); }
+.town.is-dot.dot-left .tname { right: 24px; top: 50%; transform: translateY(-50%); }
+.town.is-dot.dot-top .tname { bottom: 24px; left: 50%; transform: translateX(-50%); }
+.town.is-dot.dot-bottom .tname { top: 24px; left: 50%; transform: translateX(-50%); }
+.town.is-dot.dot-top-left .tname { right: 21px; bottom: 19px; }
+/* its tap target: a 24 px square on the dot and the name's line, 24 px tall (a dot can be 26 px from
+   another town, too close for 44 px; where they meet the bubble takes the tap, map.js applyTownForms) */
+.leaflet-marker-icon.town.is-dot::before { inset: 3px; border-radius: 50%; }
+.town.is-dot .tname::before { content: ""; position: absolute; inset: -6px -4px; }
+/* while a sheet is open, a town under a panel or the sheet's edge is hidden (map.js tidyLabels) */
+.town.under-panel { visibility: hidden; }
 .town:focus { outline: none; }
 .town:focus-visible .bubble { outline: 3px solid var(--focus); outline-offset: 3px; }
 .leaflet-marker-icon.town { cursor: pointer; }
@@ -642,7 +666,8 @@ a { color: inherit; }
   animation: sheet-in 0.22s ease-out;
   background: var(--glass-strong);
 }
-@keyframes sheet-in { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* a fade, not a slide: map.js measures the sheet the moment it opens (reveal, tidyLabels) */
+@keyframes sheet-in { from { opacity: 0; } to { opacity: 1; } }
 .sheet-head { display: flex; align-items: center; gap: 4px; padding: 8px 8px 2px 16px; }
 .sheet-back { width: auto; padding: 0 12px 0 4px; margin-left: -10px; border-radius: 999px; font-weight: 700; font-size: 15px;
   display: inline-flex; align-items: center; gap: 2px; }
@@ -756,6 +781,7 @@ a { color: inherit; }
   .toggle input[type="checkbox"] { appearance: auto; -webkit-appearance: auto; width: 22px; height: 22px; }
   .toggle input[type="checkbox"]::after { content: none; }
   .town .bubble.over, .mini-bubble.over, .key-ring { border: 3px solid Highlight; }
+  .town.is-dot .bubble { forced-color-adjust: none; background: CanvasText; }   /* a dot has no number to show */
 }
 
 /* ---------------------------------------------------------------- motion */

@@ -155,11 +155,31 @@ TOWN_LABEL_W = {"Billings": 45.8, "Bozeman": 55.6, "Butte": 32.7, "Glasgow": 51.
                 "Great Falls": 66.5, "Havre": 35.0, "Helena": 42.4, "Kalispell": 53.4,
                 "Lewistown": 63.6, "Livingston": 63.2, "Miles City": 61.1, "Missoula": 54.6,
                 "West Yellowstone": 106.6}         # .tname widths measured in Chromium; others estimated wide
-# At zoom 5 a town name may reach this far (px) into another town's bubble: Missoula's runs 3.5 px into
-# Kalispell's, Billings' 1.0 px into Miles City's. No choice of label sides clears zoom 5 (Missoula or
-# Billings below their bubble hits Bozeman's or West Yellowstone's name, and the ID label), and the map
-# opens there only when it is narrower than about 340 px or very short; from zoom 5.25 all are clear.
+# Minor towns (towns.json "minor") are bubbles from BUBBLE_ZOOM. Below it, from their "dot_zoom" (map.js
+# townForm), they show as Apple's map shows a city: an 8 px dot with a 1.5 px ring (DOT_R is the
+# ring's radius) and a 12 px name on the towns.json side, its near edge 9 px from the point (map.css
+# .town.is-dot). Below dot_zoom they are hidden: at 5.25 Livingston's point is under Bozeman's bubble,
+# and its dot clears that bubble's ring from 6.25. The dot form is checked every DOT_STEP of zoom: the
+# full map stops at quarter zooms, the card (map.js fitCard) at any twentieth.
+# A dot's name may take its own side ("dot_label"), including "top-left": its right edge 6 px left of
+# the point and its bottom 4 px above it, the dot at its lower right (Butte: left of its dot, its
+# name sat on Bozeman's).
+BUBBLE_ZOOM = 7
+DOT_R, DOT_NAME_OFF, DOT_H = 5.5, 9.0, 12.0
+DOT_TOP_LEFT = (6.0, 4.0)
+DOT_LABEL_W = {"Butte": 29.5, "Glendive": 48.5, "Lewistown": 57.5, "Livingston": 57.0}   # 12 px 600, Chromium
+DOT_STEP = 0.05
+# At zoom 5 a town name may reach this far (px) into another town's bubble or name: Missoula's runs
+# 3.5 px into Kalispell's bubble, Billings' 1.0 px into Miles City's, Miles City's 1.0 px into Billings'
+# and 2.5 px into the end of Helena's name; and two names may be closer than NAME_GAP or NAME_VGAP
+# (Kalispell's is just under 5 px above Missoula's). No choice of label sides clears zoom 5 (Missoula or
+# Billings below their bubble hits Bozeman's or West Yellowstone's name, and the ID label; Miles City's
+# name above its bubble would cover Glendive's dot at 5.25), and the map opens there only when it is
+# narrower than about 340 px or very short; from zoom 5.25 all are clear.
 TOUCH_Z5 = 4.0
+NAME_GAP = 6.0           # px between two town names on one line, or they read as one ("Lewistown Glendive")
+NAME_VGAP = 5.0          # px between two names one above the other: the glyphs reach about 2.5 px past
+                         # the 1-line box, so closer they touch (Butte's name left of its dot, on Bozeman's)
 GAP = 3.0                                           # px kept clear between boxes
 LABEL_GAP = 28.0                                    # px between two text labels, so "CANADA" and "SK" read apart
 
@@ -863,45 +883,97 @@ def label_size(kind: str, text: str):
     return len(text) * cw + 6, h
 
 
-def town_boxes(t: dict, z: int) -> list:
-    """[the bubble's box with its 1.5 px ring, the name's box] in px at zoom z (see BUBBLE_R)."""
+def town_form(t: dict, z: float):
+    """How the map draws a town at zoom z: "bubble", "dot" (a minor town below BUBBLE_ZOOM, from its
+    dot_zoom) or None (hidden). map.js townForm decides the same way."""
+    if not t.get("minor") or z >= BUBBLE_ZOOM - 1e-9:
+        return "bubble"
+    return "dot" if z >= t.get("dot_zoom", BUBBLE_ZOOM) - 1e-9 else None
+
+
+def town_shape(t: dict, z: float, form=None):
+    """(point, mark radius, name box) in px at zoom z, drawn as `form` (default: town_form)."""
+    form = form or town_form(t, z)
     x, y = px(t["lat"], t["lon"], z)
-    w = TOWN_LABEL_W.get(t["name"], 8.5 * len(t["name"]))
-    r, d, h = BUBBLE_R, TOWN_NAME_OFF, TOWN_H
     side = t.get("label", "right")
+    if form == "dot":
+        r, d, h, w = DOT_R, DOT_NAME_OFF, DOT_H, DOT_LABEL_W.get(t["name"], 7.8 * len(t["name"]))
+        side = t.get("dot_label", side)
+    else:
+        r, d, h, w = BUBBLE_R, TOWN_NAME_OFF, TOWN_H, TOWN_LABEL_W.get(t["name"], 8.5 * len(t["name"]))
+    if side == "top-left":                  # the dot form only: above and left, the dot at its corner
+        dx, dy = DOT_TOP_LEFT
+        return (x, y), r, (x - dx - w, y - dy - h, x - dx, y - dy)
     label = {"right": (x + d, y - h / 2, x + d + w, y + h / 2),
              "left": (x - d - w, y - h / 2, x - d, y + h / 2),
              "top": (x - w / 2, y - d - h, x + w / 2, y - d),
              "bottom": (x - w / 2, y + d, x + w / 2, y + d + h)}[side]
-    return [(x - r - 1.5, y - r - 1.5, x + r + 1.5, y + r + 1.5), label]
+    return (x, y), r, label
 
 
-def into_bubble(centre, box) -> float:
-    """How far (px) a box reaches into the bubble on `centre` (negative: how far it stays clear)."""
+def town_boxes(t: dict, z: float, form=None) -> list:
+    """[the bubble's box with its 1.5 px ring (or the dot's, ring included), the name's box] in px at
+    zoom z (see BUBBLE_R, DOT_R); [] where the town is hidden. `form` overrides town_form."""
+    form = form or town_form(t, z)
+    if not form:
+        return []
+    (x, y), r, label = town_shape(t, z, form)
+    ring = 1.5 if form == "bubble" else 0.0
+    return [(x - r - ring, y - r - ring, x + r + ring, y + r + ring), label]
+
+
+def into_bubble(centre, box, r=BUBBLE_R) -> float:
+    """How far (px) a box reaches into the bubble (or dot, radius r) on `centre` (negative: how far it
+    stays clear)."""
     nx, ny = min(max(centre[0], box[0]), box[2]), min(max(centre[1], box[1]), box[3])
-    return BUBBLE_R - math.hypot(nx - centre[0], ny - centre[1])
+    return r - math.hypot(nx - centre[0], ny - centre[1])
+
+
+def overlap_depth(a, b) -> float:
+    """How far (px) two boxes overlap, the lesser of the two directions (0 or less: apart)."""
+    return min(min(a[2], b[2]) - max(a[0], b[0]), min(a[3], b[3]) - max(a[1], b[1]))
+
+
+def dot_zooms():
+    """The zooms between 5 and BUBBLE_ZOOM, every DOT_STEP, where only the dot form is checked."""
+    per, n = round(1 / DOT_STEP), round((BUBBLE_ZOOM - ZOOMS[0]) / DOT_STEP)
+    return [round(ZOOMS[0] + i * DOT_STEP, 2) for i in range(1, n) if i % per]
 
 
 def town_contacts(towns) -> list:
-    """Town against town at zooms 5-11, minor towns from zoom 7: a name over another town's bubble (a
-    30 px circle) or name, or two bubbles touching. At zoom 5 a name may reach TOUCH_Z5 px into a bubble."""
+    """Town against town at zooms 5-11 and, for the dot form of minor towns, every DOT_STEP below
+    BUBBLE_ZOOM: a name over another town's bubble (a 30 px circle), dot or name, two names on one line
+    less than NAME_GAP apart or one above the other less than NAME_VGAP apart, or two marks (bubble or
+    dot) touching. At zoom 5 a name may reach TOUCH_Z5 px into a bubble or a name."""
     problems = []
-    for z in ZOOMS:
-        shown = [t for t in towns if z >= 7 or not t.get("minor")]
-        for a in shown:
-            name, ca = town_boxes(a, z)[1], px(a["lat"], a["lon"], z)
-            for b in shown:
-                if b is a:
+    for z in list(ZOOMS) + dot_zooms():
+        whole = z == int(z)
+        shown = [(t, town_form(t, z)) for t in towns if town_form(t, z)]
+        for a, fa in shown:
+            ca, ra, name = town_shape(a, z)
+            for b, fb in shown:
+                if b is a or (not whole and "dot" not in (fa, fb)):
                     continue
-                cb = px(b["lat"], b["lon"], z)
-                into = into_bubble(cb, name)
-                if into > (TOUCH_Z5 if z == ZOOMS[0] else 0):
-                    problems.append(f"z{z}: town {a['name']} name / town {b['name']} bubble ({into:.1f} px in)")
+                cb, rb, other = town_shape(b, z)
+                allow = TOUCH_Z5 if z == ZOOMS[0] else 0
+                into = into_bubble(cb, name, rb)
+                if into > allow:
+                    problems.append(f"z{z:g}: town {a['name']} name / town {b['name']} {fb} ({into:.1f} px in)")
                 if a["name"] < b["name"]:
-                    if overlaps(name, town_boxes(b, z)[1], gap=0):
-                        problems.append(f"z{z}: town {a['name']} name / town {b['name']} name")
-                    if math.dist(ca, cb) < 2 * BUBBLE_R:
-                        problems.append(f"z{z}: town {a['name']} bubble / town {b['name']} bubble")
+                    depth = overlap_depth(name, other)
+                    apart_x = max(other[0] - name[2], name[0] - other[2])     # < 0: one above the other
+                    apart_y = max(other[1] - name[3], name[1] - other[3])     # < 0: on one line
+                    if depth > allow:
+                        problems.append(f"z{z:g}: town {a['name']} name / town {b['name']} name")
+                    elif not allow and apart_y < 0 and apart_x < NAME_GAP - 1e-6:
+                        problems.append(f"z{z:g}: town {a['name']} name / town {b['name']} name "
+                                        f"({apart_x:.1f} px apart on one line)")
+                    elif not allow and apart_x < 0 and apart_y < NAME_VGAP - 1e-6:
+                        problems.append(f"z{z:g}: town {a['name']} name / town {b['name']} name "
+                                        f"({apart_y:.1f} px apart, one above the other)")
+                    ring = 1.5 if {fa, fb} == {"bubble", "dot"} else 0     # a dot clear of the bubble's ring
+                    if math.dist(ca, cb) < ra + rb + ring:
+                        problems.append(f"z{z:g}: town {a['name']} {fa} / town {b['name']} {fb}")
     return problems
 
 
@@ -1110,12 +1182,14 @@ def make_labels_and_places(land, lakes, towns, sites, others, context_areas, con
     import numpy as np
 
     def with_towns():
+        """Every town as drawn at each whole zoom; a minor town's dot also at the whole zoom below its
+        dot_zoom (labels are placed at whole zooms; check_layout checks the dot form in between)."""
         obs = Obstacles()
         for t in towns:
             for z in ZOOMS:
-                if z >= 7 or not t.get("minor"):
-                    for b in town_boxes(t, z):
-                        obs.add(z, b, t["name"])
+                form = town_form(t, z) or ("dot" if town_form(t, z + 1 - 1e-6) == "dot" else None)
+                for b in town_boxes(t, z, form) if form else []:
+                    obs.add(z, b, t["name"])
         return obs
 
     # Labels go first but leave room for the bigger places: rank 2 from zoom 5, rank 3 from zoom 6.
@@ -1226,24 +1300,30 @@ def make_labels_and_places(land, lakes, towns, sites, others, context_areas, con
 
 
 def check_layout(towns, labels, places):
-    """Every pair of label/place/bubble boxes visible at the same zoom, 5-11, that overlap, and every
-    town that covers another (town_contacts)."""
+    """Every pair of label/place/bubble boxes visible at the same zoom, 5-11, that overlap; the dot form
+    of minor towns against the labels and places every DOT_STEP below BUBBLE_ZOOM (the map shows a
+    label or place by whole zoom, map.css .mzN); and every town that covers another (town_contacts)."""
     problems = []
-    for z in ZOOMS:
+    for z in list(ZOOMS) + dot_zooms():
+        whole, zi = z == int(z), math.floor(z + 1e-9)
         items = []
         for t in towns:
-            if z >= 7 or not t.get("minor"):
+            if whole or town_form(t, z) == "dot":
                 items += [(b, f"town {t['name']}") for b in town_boxes(t, z)]
-        items += [(text_box(lab, z), f"label {lab['text']}") for lab in labels if z >= lab["min_zoom"]]
+        if not whole and not items:
+            continue
+        items += [(text_box(lab, z), f"label {lab['text']}") for lab in labels if zi >= lab["min_zoom"]]
         items += [(place_box(p, z), f"place {p['name']}") for p in places
-                  if not p.get("site") and z >= p["min_zoom"]]
+                  if not p.get("site") and zi >= p["min_zoom"]]
         for i in range(len(items)):
             for j in range(i + 1, len(items)):
                 a, b = items[i], items[j]
                 if a[1] == b[1] or (a[1].startswith("town") and b[1].startswith("town")):
                     continue                        # a bubble and its own name; town vs town: below
+                if not whole and not (a[1].startswith("town") or b[1].startswith("town")):
+                    continue                        # between whole zooms only the dot form is new
                 if overlaps(a[0], b[0], gap=0):
-                    problems.append(f"z{z}: {a[1]} / {b[1]}")
+                    problems.append(f"z{z:g}: {a[1]} / {b[1]}")
     return problems + town_contacts(towns)
 
 
@@ -1496,21 +1576,28 @@ def preview(doc: dict, path: Path, zoom: int = 7, crop=None, contrast=False) -> 
     tf = font(13, True)
     bf = font(12, True)
     towns = json.loads(TOWNS.read_text())
+    df = font(12, True)
     for t in towns:
-        if zoom < 7 and t.get("minor"):
+        form = town_form(t, zoom)
+        if not form:
             continue
         x, y = P(t["lon"], t["lat"])
-        r = BUBBLE_R * scale
-        d.ellipse([x - r, y - r, x + r, y + r], fill="#4a4a4f")
-        text_centered((x, y), "48", bf, "#ffffff")
-        side = t.get("label", "right")
-        wd = d.textlength(t["name"], font=tf)
-        asc, desc = tf.getmetrics()
+        if form == "dot":                   # a minor town below BUBBLE_ZOOM: a dot and a 12 px name
+            r, nf, off = 4 * scale, df, DOT_NAME_OFF * scale
+            d.ellipse([x - r, y - r, x + r, y + r], fill="#4a4a4f", outline="#ffffff")
+        else:
+            r, nf, off = BUBBLE_R * scale, tf, TOWN_NAME_OFF * scale
+            d.ellipse([x - r, y - r, x + r, y + r], fill="#4a4a4f")
+            text_centered((x, y), "48", bf, "#ffffff")
+        side = t.get("dot_label", t.get("label", "right")) if form == "dot" else t.get("label", "right")
+        wd = d.textlength(t["name"], font=nf)
+        asc, desc = nf.getmetrics()
         hh = asc + desc
-        off = TOWN_NAME_OFF * scale
+        if side == "top-left":              # DOT_TOP_LEFT: drawn as "left" from a point moved up and right
+            x, y, side = x - DOT_TOP_LEFT[0] * scale + off, y - DOT_TOP_LEFT[1] * scale - hh / 2, "left"
         pos = {"right": (x + off, y - hh / 2), "left": (x - off - wd, y - hh / 2),
                "top": (x - wd / 2, y - off - hh), "bottom": (x - wd / 2, y + off)}[side]
-        d.text(pos, t["name"], font=tf, fill="#1c1c1e", stroke_width=max(1, scale), stroke_fill="#ffffff")
+        d.text(pos, t["name"], font=nf, fill="#1c1c1e", stroke_width=max(1, scale), stroke_fill="#ffffff")
     img.save(path)
     return path
 
