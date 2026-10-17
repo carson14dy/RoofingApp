@@ -1,0 +1,630 @@
+{
+ "workstream": "P3",
+ "slug": "goes-cloud-height",
+ "checked_at_utc": "2026-10-17T03:37:03Z",
+ "status": "research prototype outside the app; nothing ships; payload/ and requirements.txt unchanged",
+ "files_written": [
+  "research/globe/prototype/goes_cloud_height.py",
+  "research/globe/prototype/tests/test_goes_cloud_height.py",
+  "research/globe/prototype/fixtures/cloud-height-synthetic.png (19,963 bytes, synthetic)",
+  "research/globe/prototype/fixtures/cloud-height-synthetic.json (5,803 bytes, synthetic)",
+  "research/globe/validation-evidence/prototype-goes.json"
+ ],
+ "scratch_not_committed": "scratchpad/globe-dl/goes-cloud-height/* (kept .nc downloads); scratchpad/globe-out/goes-cloud-height/* (real PNG and JSON); scratchpad/venv-goes (netCDF4 1.7.5 only)",
+ "environment": {
+  "python": "3.13.16 system; numpy 2.5.3; pyproj 3.8.0 (reference values only); Pillow 12.3.0 (optional test)",
+  "netCDF4": "1.7.5 with libnetcdf 4.10.1 and HDF5 2.2.0, installed with pip into a scratch venv (--system-site-packages); the system Python has no netCDF4; not added to requirements.txt",
+  "network": "S3 REST and objects over HTTPS through the sandbox proxy; urllib and curl both worked; CORS checked with curl"
+ },
+ "cli": [
+  "python -I goes_cloud_height.py --satellite east --product ACHAC --time latest --out <png> --download-dir <dir> --keep-download",
+  "... --satellite west --product ACHAC --time latest ...",
+  "... --satellite east --product CMIPC13 --time latest ...",
+  "... --key <object key> --bbox=-116.05,44.36,-104.04,49.00 ... (reproduction of the goes-aws.json scene)",
+  "... --synthetic --product ACHAC --satellite east --out cloud-height-synthetic.png"
+ ],
+ "tests": [
+  {
+   "command": "cd research/globe/prototype && python -m unittest discover -s tests -p test_goes_cloud_height.py -v",
+   "result": "44 run, OK, 1 skipped (live test; GOES_LIVE not set)"
+  },
+  {
+   "command": "GOES_LIVE=1 <venv with netCDF4> python -m unittest discover -s tests -p test_goes_cloud_height.py",
+   "result": "44 run, OK (live: latest ACHAC east listed, downloaded, centre matched the file within 0.001 deg)"
+  },
+  {
+   "command": "python -m unittest discover -s tests (whole folder, includes other agents' files)",
+   "result": "161 run, OK, 3 skipped: 2 Playwright checks in another agent's test file (no Playwright in this Python), 1 live check of this file (GOES_LIVE unset)"
+  }
+ ],
+ "unit_test_coverage": [
+  "fixed-grid transform vs PROJ geos (8 pairs per satellite) and round trips over the bbox",
+  "horizon at 81.30 deg on the equator; off-Earth rays are NaN",
+  "fill never becomes a height; zero metres stored as 1 m",
+  "DQF flagged values excluded from good stats and from the PNG unless --include-flagged",
+  "resampling conserves counts per native pixel and class",
+  "PNG 16-bit round trip (all three filters) and Pillow reads the file",
+  "listing: newest by scan start, band filter, pagination, walk back one hour, day-of-year, time and bbox parsing",
+  "end-to-end run with a fake bucket: latency, bytes, JSON keys, platform check, download removed"
+ ],
+ "equations": {
+  "source": "GOES-R Series Product Definition and Users' Guide, ABI fixed-grid navigation (fixed grid to lat/lon and inverse); same geometry as PROJ +proj=geos +sweep=x. The PUG PDF was not opened in this task; the check is against PROJ.",
+  "proj_check": {
+   "projected_coordinate_equals_h_times_scan_angle": "yes: PROJ X and h times my scan angle agree to 0.001 m at Missoula (printed to mm)",
+   "forward_max_abs_diff_deg": "2.0e-12 lat, 5.1e-13 lon (both satellites, 2,501 points)",
+   "inverse_max_abs_diff_rad": "9.5e-15 (east), 9.6e-15 (west)",
+   "visibility_agreement": "4000 of 4000 random points per satellite"
+  }
+ },
+ "satellite_longitudes": {
+  "east_grid_origin_read_from_file_deg": -75.0,
+  "east_nominal_subpoint_read_from_file_deg": -75.19999694824219,
+  "east_parallax_json_assumed_deg": -75.2,
+  "east_matches_parallax_assumption": false,
+  "east_where_read": "goes_imager_projection.longitude_of_projection_origin (the grid the pixels are geolocated with); geospatial_lat_lon_extent.geospatial_lon_nadir = -75.0; nominal_satellite_subpoint_lon variable = -75.2 (platform nominal)",
+  "east_centre_check": "file geospatial_lat_center 30.0830021 and geospatial_lon_center -87.0969543 are reproduced with -75.0 (computed 30.082999, -87.096956); with -75.2 the centre would be -87.297",
+  "west_grid_origin_read_from_file_deg": -137.0,
+  "west_nominal_subpoint_read_from_file_deg": -137.0,
+  "west_parallax_json_assumed_deg": -137.0,
+  "west_matches_parallax_assumption": true,
+  "perspective_point_height_m": 35786023.0,
+  "parallax_json_height": "35786023 m (matches)",
+  "semi_major_axis_m": 6378137.0,
+  "semi_minor_axis_m": 6356752.31414,
+  "sweep_angle_axis": "x",
+  "parallax_effect_of_origin_minus_75p2": "parallax.displacement, Montana sites at 2, 5, 8, 12, 15 km: largest change 0.171 km (Missoula, 15 km: 33.628 km vs 33.456 km); 5 of 20 rows change by more than 0.1 km. Scaled, not re-tabled."
+ },
+ "acha_height": {
+  "variable": "HT",
+  "stored": "uint16",
+  "units_attribute": "m",
+  "long_name": "ABI L2+ Cloud Top Height",
+  "scale_factor_m_per_count": 0.30520370602607727,
+  "add_offset": 0.0,
+  "_FillValue": 65535,
+  "valid_range_raw": [
+   0,
+   65530
+  ],
+  "standard_name": "geopotential_height_at_cloud_top",
+  "datum_statement_in_text": "none: no attribute of HT states a reference datum in words",
+  "cf_meaning": "CF standard-name table (cfconventions.org current, fetched with curl on 2026-10-17): 'Cloud_top refers to the top of the highest cloud. Geopotential is the sum of the specific gravitational potential energy relative to the geoid and the specific centripetal potential energy. Geopotential height is the geopotential divided by the standard acceleration due to gravity. It is numerically similar to the altitude (or geometric height) and not to the quantity with standard name height, which is relative to the surface.'",
+  "conclusion": "The height is a geopotential height, so it is referenced to the geoid (about sea level) and not to the ground surface. The script does not apply a geoid-to-ellipsoid offset and does not quantify it here. The review's 'unverified' stands for the text, but the standard name answers the open question: not ground.",
+  "platform_height_for_contrast": "nominal_satellite_height 35786.0234375 km, standard_name height_above_reference_ellipsoid (the platform, not the cloud top)"
+ },
+ "dqf": {
+  "ACHAC": {
+   "variable": "DQF",
+   "stored": "uint8",
+   "fill": 255,
+   "valid_range": [
+    0,
+    3
+   ],
+   "flag_values": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "flag_meanings": "0 good_quality_qf; 1 marginal_quality_qf; 2 retrieval_attempted_qf; 3 bad_quality_qf; 4 opaque_retrieval_qf (outside valid_range)",
+   "values_01_41_scene": {
+    "0": 102968,
+    "1": 1784,
+    "2": 842,
+    "3": 42568,
+    "255": 1838
+   },
+   "values_03_28_scene": {
+    "0": 103673,
+    "1": 1839,
+    "2": 860,
+    "3": 41790,
+    "255": 1838
+   },
+   "valid_height_only_where_dqf0": "in every ACHAC scene checked here (flagged_with_value 0 and fill heights for DQF 1 to 3)",
+   "file_attributes": "percent_* attributes are float32 fractions on the DQF variable; percent_good_quality_qf matches good / non-fill to 2e-8"
+  },
+  "CMIPC13": {
+   "variable": "DQF",
+   "stored": "int8 with _Unsigned=true",
+   "fill_raw": -1,
+   "valid_range": [
+    0,
+    4
+   ],
+   "flag_meanings": "good_pixel_qf; conditionally_usable_pixel_qf; out_of_range_pixel_qf; no_value_pixel_qf; focal_plane_temperature_threshold_exceeded_qf",
+   "values_both_scenes": {
+    "0": 3702837,
+    "-1": 47163
+   },
+   "fill_pixels": "47,163 cells with CMI fill: 47,162 off-Earth (review: 47,162) and 1 on-Earth cell",
+   "percent_good_pixel_qf": "0.9999997 (float32) vs computed 1.0 on non-fill cells"
+  }
+ },
+ "cmi": {
+  "variable": "CMI",
+  "stored": "int16 with _Unsigned=true",
+  "scale": 0.06145332008600235,
+  "offset": 89.62000274658203,
+  "_FillValue_raw": -1,
+  "valid_range_raw": [
+   0,
+   4095
+  ],
+  "range_K": [
+   89.62,
+   341.27
+  ],
+  "band_id": 13,
+  "band_wavelength_um": 10.33,
+  "file_min_max": "min_brightness_temperature 185.35223 K, max 298.92813 K (01:41 scene) reproduced"
+ },
+ "geometry": {
+  "nadir_pixel_km": {
+   "ACHAC": 10.0201,
+   "CMIPC13": 2.004
+  },
+  "pixel_footprint_at_bbox_centre_km_long_by_short": {
+   "ACHAC_east_03_28": "24.41 x 10.90",
+   "ACHAC_west_03_28": "21.29 x 10.82",
+   "CMIPC13_east_03_28": "4.89 x 2.18"
+  },
+  "resampling": "nearest neighbour in scan-angle space onto 0.02 deg cell centres; 0.02 deg is finer than the native pixel along the tilt, so the drape is blocky"
+ },
+ "latest_runs_03_28_scene": {
+  "ACHAC_east": {
+   "object": "OR_ABI-L2-ACHAC-M6_G19_s20262900326174_e20262900328547_c20262900330329.nc",
+   "scan_start": "2026-10-17T03:26:17.4Z",
+   "scan_end": "2026-10-17T03:28:54.7Z",
+   "satellite_longitude_grid_deg": -75.0,
+   "nominal_subpoint_lon_deg": -75.2,
+   "perspective_point_height_m": 35786023.0,
+   "bytes": {
+    "listing": 2547,
+    "object": 318516,
+    "total": 321063
+   },
+   "runtime_s": 0.801,
+   "timings_s": {
+    "list": 0.435,
+    "download": 0.212,
+    "read_netcdf": 0.045,
+    "classify_resample": 0.043
+   },
+   "latency_s": {
+    "age_at_check_s": 183.3,
+    "upload_minus_scan_end_s": 105.3
+   },
+   "native_in_bbox": {
+    "total": 2647,
+    "good": 1270,
+    "flagged_with_value": 0,
+    "dqf_invalid_with_value": 0,
+    "out_of_range": 0,
+    "no_retrieval": 1377
+   },
+   "percent_native_bbox_good": 47.9788,
+   "percent_native_bbox_flagged_with_value": 0.0,
+   "percent_target_grid_good": 51.1039,
+   "dqf_full_grid": {
+    "good_dqf0": 103673,
+    "non_fill": 148162,
+    "good_pct_of_non_fill": 69.97,
+    "flagged_dqf1to3": 44489,
+    "flagged_pct_of_non_fill": 30.03,
+    "fill_255_or_-1": 1838
+   },
+   "dqf_bbox_native": {
+    "good_dqf0": 1270,
+    "flagged": 1377
+   },
+   "good_stats": {
+    "n": 1270,
+    "p10": 4118.11,
+    "p50": 10437.97,
+    "p90": 12938.62,
+    "min": 683.05,
+    "max": 15681.98
+   },
+   "footprint_at_bbox_centre_km": {
+    "long": 24.41,
+    "short": 10.9
+   },
+   "grid": {
+    "nx": 675,
+    "ny": 308,
+    "extent_lon": [
+     -116.8,
+     -103.3
+    ],
+    "extent_lat": [
+     43.59,
+     49.75
+    ]
+   },
+   "png_bytes": 17219,
+   "png_cells_with_value": 106245
+  },
+  "ACHAC_west": {
+   "object": "OR_ABI-L2-ACHAC-M6_G18_s20262900326177_e20262900328551_c20262900330324.nc",
+   "scan_start": "2026-10-17T03:26:17.7Z",
+   "scan_end": "2026-10-17T03:28:55.1Z",
+   "satellite_longitude_grid_deg": -137.0,
+   "nominal_subpoint_lon_deg": -137.0,
+   "perspective_point_height_m": 35786023.0,
+   "bytes": {
+    "listing": 2547,
+    "object": 316079,
+    "total": 318626
+   },
+   "runtime_s": 0.909,
+   "timings_s": {
+    "list": 0.217,
+    "download": 0.503,
+    "read_netcdf": 0.068,
+    "classify_resample": 0.063
+   },
+   "latency_s": {
+    "age_at_check_s": 183.7,
+    "upload_minus_scan_end_s": 104.9
+   },
+   "native_in_bbox": {
+    "total": 3042,
+    "good": 1535,
+    "flagged_with_value": 0,
+    "dqf_invalid_with_value": 0,
+    "out_of_range": 0,
+    "no_retrieval": 1507
+   },
+   "percent_native_bbox_good": 50.4602,
+   "percent_native_bbox_flagged_with_value": 0.0,
+   "percent_target_grid_good": 50.089,
+   "dqf_full_grid": {
+    "good_dqf0": 119743,
+    "non_fill": 150000,
+    "good_pct_of_non_fill": 79.83,
+    "flagged_dqf1to3": 30257,
+    "flagged_pct_of_non_fill": 20.17,
+    "fill_255_or_-1": 0
+   },
+   "dqf_bbox_native": {
+    "good_dqf0": 1535,
+    "flagged": 1507
+   },
+   "good_stats": {
+    "n": 1535,
+    "p10": 3774.7,
+    "p50": 8908.9,
+    "p90": 12230.18,
+    "min": 683.05,
+    "max": 15418.89
+   },
+   "footprint_at_bbox_centre_km": {
+    "long": 21.29,
+    "short": 10.82
+   },
+   "grid": {
+    "nx": 675,
+    "ny": 308,
+    "extent_lon": [
+     -116.8,
+     -103.3
+    ],
+    "extent_lat": [
+     43.59,
+     49.75
+    ]
+   },
+   "png_bytes": 20085,
+   "png_cells_with_value": 104135
+  },
+  "CMIPC13_east": {
+   "object": "OR_ABI-L2-CMIPC-M6C13_G19_s20262900326174_e20262900328558_c20262900329031.nc",
+   "scan_start": "2026-10-17T03:26:17.4Z",
+   "scan_end": "2026-10-17T03:28:55.8Z",
+   "satellite_longitude_grid_deg": -75.0,
+   "nominal_subpoint_lon_deg": -75.2,
+   "perspective_point_height_m": 35786023.0,
+   "bytes": {
+    "listing": 37114,
+    "object": 3923768,
+    "total": 3960882
+   },
+   "runtime_s": 1.344,
+   "timings_s": {
+    "list": 0.261,
+    "download": 0.301,
+    "read_netcdf": 0.114,
+    "classify_resample": 0.293
+   },
+   "latency_s": {
+    "age_at_check_s": 184.2,
+    "upload_minus_scan_end_s": 29.2
+   },
+   "native_in_bbox": {
+    "total": 66108,
+    "good": 66108,
+    "flagged_with_value": 0,
+    "dqf_invalid_with_value": 0,
+    "out_of_range": 0,
+    "no_retrieval": 0
+   },
+   "percent_native_bbox_good": 100.0,
+   "percent_native_bbox_flagged_with_value": 0.0,
+   "percent_target_grid_good": 100.0,
+   "dqf_full_grid": {
+    "good_dqf0": 3702837,
+    "non_fill": 3702837,
+    "good_pct_of_non_fill": 100.0,
+    "flagged_dqf1to3": 0,
+    "flagged_pct_of_non_fill": 0.0,
+    "fill_255_or_-1": 47163
+   },
+   "dqf_bbox_native": {
+    "good_dqf0": 66108,
+    "flagged": 0
+   },
+   "good_stats": {
+    "n": 66108,
+    "p10": 257.88,
+    "p50": 273.73,
+    "p90": 277.91,
+    "min": 213.26,
+    "max": 284.43
+   },
+   "footprint_at_bbox_centre_km": {
+    "long": 4.89,
+    "short": 2.18
+   },
+   "grid": {
+    "nx": 675,
+    "ny": 308,
+    "extent_lon": [
+     -116.8,
+     -103.3
+    ],
+    "extent_lat": [
+     43.59,
+     49.75
+    ]
+   },
+   "png_bytes": 128815,
+   "png_cells_with_value": 207900
+  }
+ },
+ "reproduction_0141_scene_review_box": {
+  "ACHAC_east": {
+   "object": "OR_ABI-L2-ACHAC-M6_G19_s20262900141174_e20262900143547_c20262900145322.nc",
+   "bbox": "-116.05,44.36,-104.04,49.00 (review box)",
+   "native_in_bbox": {
+    "total": 1777,
+    "good": 733,
+    "flagged_with_value": 0,
+    "dqf_invalid_with_value": 0,
+    "out_of_range": 0,
+    "no_retrieval": 1044
+   },
+   "percent_native_bbox_good": 41.2493,
+   "good_stats": {
+    "n": 733,
+    "p10": 4096.14,
+    "p50": 11173.51,
+    "p90": 13078.47,
+    "min": 683.05,
+    "max": 15580.04
+   },
+   "dqf_full_good_dqf0": 102968,
+   "upload_minus_scan_end_s": 106.3,
+   "object_bytes": 316623,
+   "file_percent_attribute": {
+    "name": "percent_good_quality_qf",
+    "file_fraction": 0.694969,
+    "computed_fraction": 0.69496902
+   }
+  },
+  "ACHAC_west": {
+   "object": "OR_ABI-L2-ACHAC-M6_G18_s20262900141177_e20262900143551_c20262900145209.nc",
+   "bbox": "-116.05,44.36,-104.04,49.00 (review box)",
+   "native_in_bbox": {
+    "total": 2041,
+    "good": 859,
+    "flagged_with_value": 0,
+    "dqf_invalid_with_value": 0,
+    "out_of_range": 0,
+    "no_retrieval": 1182
+   },
+   "percent_native_bbox_good": 42.0872,
+   "good_stats": {
+    "n": 859,
+    "p10": 3721.04,
+    "p50": 9195.18,
+    "p90": 11964.72,
+    "min": 1240.35,
+    "max": 15493.67
+   },
+   "dqf_full_good_dqf0": 116965,
+   "upload_minus_scan_end_s": 91.9,
+   "object_bytes": 311769,
+   "file_percent_attribute": {
+    "name": "percent_good_quality_qf",
+    "file_fraction": 0.7797667,
+    "computed_fraction": 0.779766667
+   }
+  },
+  "CMIPC13_east": {
+   "object": "OR_ABI-L2-CMIPC-M6C13_G19_s20262900141174_e20262900143558_c20262900144039.nc",
+   "bbox": "-116.05,44.36,-104.04,49.00 (review box)",
+   "native_in_bbox": {
+    "total": 44363,
+    "good": 44363,
+    "flagged_with_value": 0,
+    "dqf_invalid_with_value": 0,
+    "out_of_range": 0,
+    "no_retrieval": 0
+   },
+   "percent_native_bbox_good": 100.0,
+   "good_stats": {
+    "n": 44363,
+    "p10": 261.26,
+    "p50": 275.64,
+    "p90": 279.33,
+    "min": 216.21,
+    "max": 284.49
+   },
+   "dqf_full_good_dqf0": 3702837,
+   "upload_minus_scan_end_s": 30.2,
+   "object_bytes": 3909220,
+   "file_percent_attribute": {
+    "name": "percent_good_pixel_qf",
+    "file_fraction": 0.9999997,
+    "computed_fraction": 1.0
+   }
+  }
+ },
+ "goes_aws_review_checks": [
+  {
+   "claim": "GOES-19 subpoint -75.2 deg from file attributes (facts; parallax input)",
+   "result": "WRONG as the grid origin",
+   "evidence": "longitude_of_projection_origin -75.0 and geospatial_lon_nadir -75.0 in every GOES-19 file; -75.2 is the nominal_satellite_subpoint_lon variable (platform)"
+  },
+  {
+   "claim": "Image centre 30.083 N, -87.097 W equals file attributes",
+   "result": "reproduced",
+   "evidence": "file 30.0830021, -87.0969543; computed with -75.0: 30.082999, -87.096956"
+  },
+  {
+   "claim": "GOES-18 pixel-centre extent 175.91 E to -89.91; file 175.62358 E and -89.62357",
+   "result": "reproduced",
+   "evidence": "pixel centres 175.91 to 270.09 E; geospatial_westbound_longitude 175.6236, eastbound -89.6236"
+  },
+  {
+   "claim": "ACHAC 300 x 500 at 10.02 km (0.00028 rad); CMIPC 1500 x 2500 at 2.004 km",
+   "result": "reproduced (CODC not opened)",
+   "evidence": "nadir 10.0201 km and 2.0040 km; steps 0.00028 and 0.000056 rad"
+  },
+  {
+   "claim": "HT uint16 m, scale 0.3052037, fill 65535, valid 0-65530",
+   "result": "reproduced",
+   "evidence": "scale 0.30520370602607727, add_offset 0"
+  },
+  {
+   "claim": "CMI scale 0.06145332, offset 89.62, fill -1, valid 0-4095; band 13 10.33 um",
+   "result": "reproduced",
+   "evidence": "as cmi block"
+  },
+  {
+   "claim": "DQF flag_values 0-4, valid_range [0,3]; 2026 files show 0-3 and 255 only",
+   "result": "reproduced",
+   "evidence": "values 0,1,2,3,255 present in the ACHAC scenes; 4 absent"
+  },
+  {
+   "claim": "Valid height iff DQF=0 (ACHAC 10 km)",
+   "result": "reproduced for the scenes checked (01:41 and 03:28 GOES-19; 01:41 GOES-18)",
+   "evidence": "flagged_with_value 0 in every ACHAC run; DQF 1 to 3 pixels carry fill heights"
+  },
+  {
+   "claim": "percent_good_quality_qf 0.694969 = 102,968 / (150,000 - 1,838); fractions",
+   "result": "reproduced",
+   "evidence": "computed 0.69496902; attribute sits on the DQF variable, not globally"
+  },
+  {
+   "claim": "Montana box 44.36-49.00 N, -116.05 to -104.04 W: 1,777 cells, 733 valid (41.25%), p10/p50/p90 4,096/11,174/13,078.5 m, min 683, max 15,580",
+   "result": "reproduced exactly for that box; this is NOT the plan's box",
+   "evidence": "same numbers from the script; the plan's box (43.6-49.75 N, -116.8 to -103.3) needs its own run (03:28 scene: 47.98% good of 2,647 pixels)"
+  },
+  {
+   "claim": "CONUS valid heights p10 329, p50 5,601, p90 12,042, max 16,868 m (102,968 cells)",
+   "result": "reproduced",
+   "evidence": "after one scale factor; a first scratch check applied the scale twice and was wrong"
+  },
+  {
+   "claim": "Band 13 box: 44,363 cells, all DQF 0; min 216.2, p1 227.7, p10 261.3, p50 275.6, p90 279.3, p99 281.8, max 284.5 K",
+   "result": "reproduced",
+   "evidence": "script min 216.21, p10 261.26, p50 275.64, p90 279.33, max 284.49; p1 227.71 and p99 281.81 from a scratch check"
+  },
+  {
+   "claim": "File min/max BT 185.35223 / 298.92813 K; recomputed 185.3643 / 298.9300 K",
+   "result": "reproduced",
+   "evidence": "variables and quantised range match; cause of the 0.012 K gap not explained here"
+  },
+  {
+   "claim": "Billings: nearest ACHAC cell 1.5 km, no valid height; band 13 cell 1.49 km, 278.28 K",
+   "result": "reproduced",
+   "evidence": "ACHAC 1.5 km away, DQF 3, fill; band 13 1.49 km, 278.28 K"
+  },
+  {
+   "claim": "Scan 01:41:17.4-01:43:54.7; band 13 ends 01:43:55.8",
+   "result": "reproduced",
+   "evidence": "time_coverage_end 01:43:54.7, 01:43:55.8, G18 01:43:55.1; file-name stamps agree with time_coverage_start"
+  },
+  {
+   "claim": "Object sizes 316,623 (ACHAC G19), 3,909,220 (C13 G19), 311,769 (ACHAC G18)",
+   "result": "reproduced exactly",
+   "evidence": "bytes downloaded equal the listing sizes"
+  },
+  {
+   "claim": "Upload latency ACHAC G19 104.2-125.3 s; C13 26.1-46.1 (median 30.2); ACHAC G18 88.9-117.0 s",
+   "result": "consistent (one scene each; 24-scan statistics not re-listed)",
+   "evidence": "01:41 scene 106.3, 30.2, 91.9 s; 03:28 scene 105.3, 29.2, 104.9 s"
+  },
+  {
+   "claim": "CORS: Access-Control-Allow-Origin * on GOES objects",
+   "result": "reproduced for one object",
+   "evidence": "GET with Origin http://localhost:5000 to the GOES-19 ACHAC object: ACAO *; other origins and no-Origin case not re-run"
+  },
+  {
+   "claim": "License 'Unclassified data.  Access is restricted to approved users only.' conflicts with registry wording",
+   "result": "attribute reproduced verbatim; conflict not resolved here",
+   "evidence": "license global attribute in ACHAC G19, ACHAC G18 and CMIPC C13 files; a legal reading is for the owner or counsel"
+  },
+  {
+   "claim": "ACHA height reference unverified (sea level or ground?)",
+   "result": "partly answered",
+   "evidence": "standard_name geopotential_height_at_cloud_top; CF: geoid-referenced, not surface-referenced (acha_height block)"
+  },
+  {
+   "claim": "Not re-checked here: GOES-16 2026 objects; ACHA2KMC; CODC/COD; MCMIPC and ACHAF sizes; GOES-18 per-step sizes; ATBD 5x5 averaging vs 'area: point'; GOES-16 turn-off",
+   "result": "not checked",
+   "evidence": "outside P3 scope"
+  }
+ ],
+ "parallax_json_corrections": [
+  "GOES-East longitude: use -75.0 (grid origin read from the file), not -75.2; -75.2 is the nominal platform subpoint. Effect at most 0.17 km on the Montana table.",
+  "GOES-West -137.0 and perspective height 35786023 m: confirmed from file attributes.",
+  "Open question 'sea level or ground': HT is geopotential height (geoid), not ground height, so the ground-elevation sensitivity does not apply; the geoid-to-ellipsoid offset is not applied here."
+ ],
+ "limits": [
+  "One scan per product and satellite; no time merge; latency is for those files only.",
+  "Heights are satellite retrieval estimates of cloud top, not cloud base, damage, hail or a probability. The file's own summary wording was not re-read.",
+  "Nearest-neighbour blocks: 0.02 deg cells are finer than the native pixel along the view tilt (4.9 km band 13, 21 to 24 km ACHAC).",
+  "CMIPC13 is a brightness temperature (K), not a height; no cloud-base or height claim is made from it.",
+  "Only the 10 km ACHAC product is handled; ACHA2KMC is not.",
+  "The fixture is synthetic (labelled in its JSON), not NOAA data.",
+  "No observed cloud was matched to its true position; this checks the transform and the file, not a drape."
+ ],
+ "fixture": {
+  "png": "research/globe/prototype/fixtures/cloud-height-synthetic.png",
+  "json": "research/globe/prototype/fixtures/cloud-height-synthetic.json",
+  "synthetic": true,
+  "bytes_total": 25766
+ },
+ "acha2kmc": {
+  "checked_utc": "2026-10-17T05:25:58Z to 05:26:00Z",
+  "command": "python -I goes_cloud_height.py --satellite east|west --product ACHA2KMC --time latest --download-dir <scratch>/globe-dl/fixups --keep-download",
+  "scan_utc": {"east": "05:21:17.4 to 05:23:54.7 (GOES-19)", "west": "05:21:17.7 to 05:23:55.1 (GOES-18)"},
+  "grid": "2500 x 1500, step 0.000056 rad, nadir 2.004 km",
+  "bytes": {"east": {"listing": 2205, "object": 4530845, "total": 4533050}, "west": {"listing": 2205, "object": 4657169, "total": 4659374}},
+  "runtime_s": {"east": 1.408, "west": 1.138},
+  "latency_s": {"east": {"age_at_check": 124.2, "upload_minus_scan_end": 105.3}, "west": {"age_at_check": 125.2, "upload_minus_scan_end": 104.9}},
+  "montana_border_box_native_cells": {"east": 66108, "west": 76056},
+  "montana_border_box_percent": {"good": {"east": 30.0886, "west": 29.0812}, "flagged_with_value": {"east": 20.3258, "west": 24.2098}, "valid_good_plus_flagged": {"east": 50.41, "west": 53.29}, "no_retrieval": {"east": 49.5855, "west": 46.709}},
+  "dqf_share_percent_of_native_cells": {"east": {"0": 30.09, "1": 20.32, "2": 0.06, "3": 49.54}, "west": {"0": 29.08, "1": 24.18, "2": 0.1, "3": 46.64}},
+  "with_value_over_cells_by_dqf": {"east": {"0": "19891/19891", "1": "13432/13432", "2": "5/37", "3": "0/32748"}, "west": {"0": "22118/22118", "1": "18391/18391", "2": "22/78", "3": "0/35469"}},
+  "dqf_full_grid_percent_of_non_fill": {"east": {"good": 51.81, "flagged": 48.19}, "west": {"good": 60.42, "flagged": 39.58}},
+  "height_m_p10_p50_p90": {"east": {"good": [8301, 12165, 13473], "flagged_with_value": [10278, 11914, 13482]}, "west": {"good": [7330, 11468, 13201], "flagged_with_value": [8905, 11174, 13071]}},
+  "dqf_policy_check_matches": {"east": true, "west": true},
+  "note": "Heights are geopotential cloud-top estimates, not cloud base. The limits list above predates this key."
+ }
+}

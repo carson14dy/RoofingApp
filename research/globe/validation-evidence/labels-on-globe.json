@@ -1,0 +1,107 @@
+{"workstream":"W17","slug":"labels-on-globe","checked_at_utc":"2026-10-17T03:07:08Z","review_checked_at_utc":"2026-10-17T03:40:45Z","urls_checked":[
+{"url":"basemap.nationalmap.gov USGSImageryTopo MapServer ?f=json and tile/{z}/{y}/{x} (Topo and ImageryOnly)","method":"GET","status":200,"bytes":"7039; 23-38 KB","content_type":"application/json; image/jpeg","cors_allow_origin":"*","content_check":"256 px, LOD 0-23, wkid 102100. Luma diff >16/>48 %: Billings z14 25.1/10.4; Helena z12 20.4/8.4; Missoula z13 18.1/6.8; first-pass z15 18.3/6.9 (mean 10.46); z12 35.5/18.4. Billings z14 Topo viewed: street names; ImageryOnly none.","verified":true},
+{"url":"gibs.earthdata.nasa.gov wmts/epsg3857/best WMTS GetCapabilities","method":"GET","status":200,"bytes":5842713,"content_type":"text/xml","cors_allow_origin":"*","content_check":"1,330 layers, 7 matrix sets; Level13 set 0-13 (15m layers), Level9 set 0-9; no limits. All six target titles carry (OSM).","verified":true,"corrected_by_review":true},
+{"url":"gibs wmts ... Reference_Labels_15m, Reference_Features_15m, Coastlines_15m, GoogleMapsCompatible_Level13 {z}/{y}/{x}.png","method":"GET","status":"200 x18; 500 x3","bytes":"921, 206, 288, 3261, 527","content_type":"image/png; text/html","cors_allow_origin":"*","content_check":"21 tiles z8-z13: 13 = 921 B palette PNG (md5 91fb2242, no tRNS, opaque black; blends to black over imagery); 206 B and 288 B transparent; Oregon coast z10 0.58%; 500 = 527 B HTML; no populated 15m label tile.","verified":true,"corrected_by_review":true},
+{"url":"gibs wmts ... Reference_Labels, Reference_Features, Coastlines, GoogleMapsCompatible_Level9 {z}/{y}/{x}.png","method":"GET","status":200,"bytes":"334 empty; 1841-5292","content_type":"image/png","cors_allow_origin":"*","content_check":"Labels 0.85-2.42% (z5 x5 y11 1.52%, 4,438 B exact). Features z5 x5 y11 4.7% (13,301 B exact); Montana z6 and Helena z7 empty. 0 of 11 failed. Viewed: z5 'Wash.' 'Ore.' 'Idaho'; z6 'Montana' 'Bozeman' 'Billings'; z5 features state-border lines.","verified":true,"corrected_by_review":true},
+{"url":"basemap.cartocdn.com/light_only_labels/5/6/11.png","method":"GET","status":"not obtained","bytes":0,"content_type":null,"cors_allow_origin":null,"content_check":"Not retried. Proxy status (read-only): connect_rejected, 502 to CONNECT, 2026-10-17T02:23:33Z. Live status, body, CORS unverified.","verified":false},
+{"url":"docs.carto.com/faqs/carto-basemaps ; carto.com/legal/basemap-terms/","method":"WebFetch","status":"ok","bytes":null,"content_type":"html","cors_allow_origin":null,"content_check":"'Since 25 September 2026, raster tiles are no longer served without a key.' Terms s12.c 5,000,000 and s12.d 1,000,000 tile requests each calendar month; s13.a attribution.","verified":true,"corrected_by_review":true},
+{"url":"tiles.openfreemap.org/planet; /styles/liberty; /planet/{build}/{z}/{x}/{y}.pbf (z8 x46 y90, z8 x50 y91, z5 x6 y11)","method":"GET","status":200,"bytes":"19254; 43079; 73972; 42660; 325183","content_type":"application/json; vector tile (gzip)","cors_allow_origin":"*","content_check":"TileJSON maxzoom 14; build 20261011_080001_pt still current; style 111 layers. Earlier-build bytes identical. MVT decode: Missoula z8 63 place, 75 peak, 5 of 8 road names; 'Missoula' at (-113.9952, 46.8700); z5 154 place points, 139 outside tile.","verified":true,"corrected_by_review":true},
+{"url":"openfreemap.org ; openfreemap.org/tos/","method":"WebFetch","status":"ok","bytes":null,"content_type":"html","cors_allow_origin":null,"content_check":"Homepage: 'no API keys'; 'Attribution is required.'; 'Map data is from OpenStreetMap.'; 'no limits on the number of map views or requests'. TOS: offline 'at most 3,000 tiles or 50 MB'; prohibited 'Collect data from the service in automated ways, except for offline downloads'. No attribution sentence in TOS.","verified":true,"corrected_by_review":true},
+{"url":"build.protomaps.com/20261016.pmtiles","method":"HEAD; GET Range","status":"200 / 206","bytes":"138922827597","content_type":"application/octet-stream","cors_allow_origin":null,"content_check":"Content-Length exact. PMTiles v3: MVT (type 1), gzip tiles, zoom 0-15, 178,260,776 entries. No CORS header, including with an Origin header.","verified":true},
+{"url":"docs.protomaps.com/basemaps/downloads ; protomaps.com/legal ; operations.osmfoundation.org tile policy ; openstreetmap.org/copyright ; opendatacommons.org ODbL 1-0","method":"WebFetch","status":"ok","bytes":null,"content_type":"html","cors_allow_origin":null,"content_check":"Protomaps: 'Open Database License Produced Work (OpenStreetMap attribution required)'; hotlinking discouraged. OSMF: 'offer prefetch features' prohibited. OSM: 'as long as you credit OpenStreetMap and its contributors'. ODbL s4.3 notice; s4.4 share-alike not for Produced Works (extraction).","verified":true,"corrected_by_review":true},
+{"url":"registry.npmjs.org cesium/latest ; @cesium/engine/latest","method":"GET","status":200,"bytes":"23325866; 9694664","content_type":"application/octet-stream","cors_allow_origin":null,"content_check":"cesium 1.146.0, Apache-2.0; tarball sha256 9e4166f2d61e1088c94c1161ab92493750959160e5a37893a8b8c50c494048d5; @cesium/engine ^26.4.0 resolves to 26.4.0 (Apache-2.0). Grep only, nothing executed.","verified":true},
+{"url":"cesium.com/learn/cesiumjs/ref-doc/{MVTDataProvider,LabelCollection,ImageryLayer}.html ; @cesium/engine 26.4.0 source","method":"WebFetch + grep","status":"ok","bytes":null,"content_type":"html; js","cors_allow_origin":null,"content_check":"'Labels are viewport-aligned text positioned in the 3D scene.' Source: MVTDataProvider @experimental, maxZoom=14, no name or label handling; alpha ?? 1.0; hasAlphaChannel ?? true. BillboardCollectionVS.glsl L276-288: depth check off when camera distance < value; 0 keeps it on.","verified":true,"corrected_by_review":true},
+{"url":"developer.apple.com/maps/web ; /videos/play/wwdc2025/204 ; Maps identifier help page","method":"WebFetch + WebSearch","status":"ok","bytes":null,"content_type":"html","cors_allow_origin":null,"content_check":"'MapKit JS provides a free daily limit of 250,000 map views and 25,000 service calls per Apple Developer Program membership.' No 3D, globe or satellite sentence; 'Register a Maps identifier...' not found; help page has no membership sentence. WWDC25 204: Look Around only.","verified":true,"corrected_by_review":true}
+],
+"facts":[
+{"claim":"USGS ImageryTopo draws roads and names over imagery","value":"Seen by eye (Billings z14); pixel share 18-25% (>16 luma) at three new tiles; first-pass z15 reproduced within 0.2 pt","evidence":"urls_checked[1]","verified":true},
+{"claim":"USGS terms: public domain","value":"Map services and data are 'free and in the public domain'. Topo FAQ: public domain 'except for' three US Topo cases: 2010-2016 road data; Alaska and Hawaii orthoimages. Current ImageryTopo road licence not stated.","evidence":"USGS FAQs (terms)","verified":true,"corrected_by_review":true},
+{"claim":"GIBS reference layers declared max zoom","value":"15m layers 13 (set Level13, 0-13); Level9 layers 9 (set 0-9). No per-layer limits.","evidence":"WMTS capabilities","verified":true},
+{"claim":"GIBS reference layers derive from OpenStreetMap","value":"All six target layers are titled (OSM); NASA docs do not mention OSM.","evidence":"WMTS capabilities; gibs-api-docs","verified":true,"corrected_by_review":true},
+{"claim":"GIBS 15m empty tile: 921-byte opaque black PNG, MD5 91fb2242","value":"13 of 18 successful 15m responses (first pass 12 of 17); zooms 8, 10, 12, 13 in Montana and Paris; opaque palette PNG without tRNS; blends to RGB 0,0,0 over imagery.","evidence":"urls_checked[3]","verified":true,"corrected_by_review":true},
+{"claim":"GIBS 15m transparent empties 155-206 bytes","value":"REFUTED: 206 B (md5 dc1bd046) and 288 B (md5 a1ff1bbe, RGB with tRNS).","evidence":"urls_checked[3]","verified":true,"corrected_by_review":true},
+{"claim":"GIBS HTTP reliability","value":"15m: 3 of 21 HTTP 500 in review (first pass 6 of 25), HTML 527 B. Level9: 0 of 11 failed (first pass 0 of 28).","evidence":"urls_checked[3-4]","verified":true},
+{"claim":"GIBS Level9 empties and label pixels over Montana","value":"Empties are 334-byte transparent PNGs. Labels 0.85-2.42% (z5 x5 y11 1.52%, exact bytes; z6 2.42%; z7 1.56%; z9 0.95%).","evidence":"urls_checked[4]","verified":true},
+{"claim":"GIBS Level9 names: 'Wash.', 'Ore.', 'Idaho' at z5","value":"Confirmed by eye. City names also present: z6 'Bozeman', 'Billings'; z9 'Billings'. Z9 Missoula not re-checked.","evidence":"urls_checked[4]","verified":true,"corrected_by_review":true},
+{"claim":"GIBS Level9 features: boundaries at z5, roads at z9","value":"z5 state-border-style lines seen (4.7%, exact bytes). Montana z6 and Helena z7 features EMPTY (334 B). Billings z9 (1.21%): line network; 'road' identity unchecked (no legend).","evidence":"urls_checked[4]","verified":true,"corrected_by_review":true},
+{"claim":"CARTO raster needs a key since 25 Sep 2026; free tier","value":"Vendor FAQ confirms; vector styles load without a key. Free tier 5,000,000 (non-commercial) and 1,000,000 (commercial) tile requests per calendar month (s12.c, s12.d). Live check unverified.","evidence":"urls_checked[5-6]","verified":true,"corrected_by_review":true},
+{"claim":"OpenFreeMap: no API keys; attribution","value":"Homepage: no API keys; 'Attribution is required.' Not in the TOS, which the first pass cited.","evidence":"urls_checked[7]","verified":true,"corrected_by_review":true},
+{"claim":"OpenFreeMap Missoula z8 counts and bytes","value":"73,972 B (exact). 63 place, 75 mountain_peak, 5 named road segments. 'Missoula' at (-113.9952, 46.8700).","evidence":"urls_checked[7]","verified":true},
+{"claim":"Vector tiles carry features outside nominal bounds; LA 5.7 degrees west of z5 tile","value":"Confirmed, understated. Missoula z8: 55 of 63 place points outside; Butte 1.37 deg east and 0.06 deg south. z5 x6 y11: 139 of 154 place points outside. LA is 5.74 deg west AND 6.93 deg south of the tile. Named roads sparse (5 of 8 Missoula z8; 0 of 7 Billings z8).","evidence":"urls_checked[7]","verified":true,"corrected_by_review":true},
+{"claim":"Protomaps planet 20261016: size, MVT, max zoom 15, no CORS","value":"Confirmed: 138,922,827,597 B; MVT; gzip; zoom 0-15; no CORS header. Docs discourage hotlinking and say 'roughly 120 gigabytes'.","evidence":"urls_checked[9-10]","verified":true,"corrected_by_review":true},
+{"claim":"Cesium labels: viewport-aligned; depth-tested unless disableDepthTestDistance is set","value":"Viewport-aligned: confirmed. Depth test WRONG as worded: default 0 keeps it on; a finite value turns it off for labels closer than that distance; Infinity turns it off everywhere (shader; Label.js JSDoc disagrees; check in browser).","evidence":"urls_checked[12]","verified":true,"corrected_by_review":true},
+{"claim":"Cesium MVTDataProvider experimental, maxZoom 14; ImageryLayer alpha 1.0; hasAlphaChannel true","value":"Confirmed from source. MVTDataProvider: geometry only, no name or label handling. maximumLevel undefined = no limit.","evidence":"urls_checked[12]","verified":true,"corrected_by_review":true},
+{"claim":"MapKit JS free allowance; membership; 3D or globe (candidate)","value":"Allowance quote confirmed ('per Apple Developer Program membership'); membership as requirement not stated; Register-identifier sentence not on that page. No globe or satellite mode found; only Look Around.","evidence":"urls_checked[13]","verified":true,"corrected_by_review":true}
+],
+"terms":[
+{"source":"USGS National Map services","license":"public domain; credit requested, not required","attribution_required":false,"quote":"Map services and data downloaded from The National Map are free and in the public domain.","url":"https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map"},
+{"source":"USGS costs FAQ (US Topo exceptions)","license":"public domain except three listed US Topo cases","attribution_required":false,"quote":"...are in the public domain and are not copyrighted except for the following three cases that apply only to US Topo maps (produced 2009-present): Most maps in the period 2010-2016 contain commercially licensed road data.","url":"https://www.usgs.gov/faqs/are-there-any-costs-or-restrictions-usage-data-downloaded-national-map","corrected_by_review":true},
+{"source":"NASA GIBS docs","license":"no licence named; acknowledgment requested","attribution_required":false,"quote":"We ask that users ... add the following acknowledgment: We acknowledge the use of imagery provided by services from NASA's Global Imagery Browse Services (GIBS), part of NASA's Earth Science Data and Information System (ESDIS).","url":"https://nasa-gibs.github.io/gibs-api-docs/","corrected_by_review":true},
+{"source":"OpenStreetMap data (GIBS OSM-titled layers; OpenFreeMap; Protomaps)","license":"ODbL 1.0","attribution_required":true,"quote":"'You are free to copy, distribute, transmit and adapt our data, as long as you credit OpenStreetMap and its contributors.' ODbL s4.3 notice when publicly used; s4.4 share-alike not for Produced Works (s4.5(b)).","url":"https://www.openstreetmap.org/copyright ; https://opendatacommons.org/licenses/odbl/1-0/","corrected_by_review":true},
+{"source":"OSMF tile usage policy","license":"tile usage rules, not a data licence","attribution_required":true,"quote":"Show OpenStreetMap licence attribution clearly on the map. Bulk download ('scrape') tiles or offer prefetch features. Offline use is not permitted on tile.openstreetmap.org.","url":"https://operations.osmfoundation.org/policies/tiles/","corrected_by_review":true},
+{"source":"OpenFreeMap homepage and TOS","license":"free service; map data from OpenStreetMap; no map-data licence in TOS","attribution_required":true,"quote":"Homepage: 'Attribution is required.' 'Map data is from OpenStreetMap.' TOS: prohibited 'Collect data from the service in automated ways, except for offline downloads as described below'.","url":"https://openfreemap.org ; https://openfreemap.org/tos/","corrected_by_review":true},
+{"source":"Protomaps downloads","license":"ODbL Produced Work","attribution_required":true,"quote":"'distributed as an Open Database License Produced Work (OpenStreetMap attribution required)'; 'hotlinking to these downloads are discouraged'.","url":"https://docs.protomaps.com/basemaps/downloads","corrected_by_review":true},
+{"source":"CARTO FAQ and basemap terms","license":"CARTO terms; free Basemap Services fair use","attribution_required":true,"quote":"FAQ: 'Since 25 September 2026, raster tiles are no longer served without a key.' Terms s12.c: 'five million (5,000,000) tile requests each calendar month' (non-commercial); s12.d: 'one million (1,000,000)' (commercial); s13.a: attribution to OpenStreetMap and CARTO.","url":"https://docs.carto.com/faqs/carto-basemaps ; https://carto.com/legal/basemap-terms/","corrected_by_review":true},
+{"source":"CesiumJS and @cesium/engine","license":"Apache-2.0","attribution_required":false,"quote":"LICENSE.md: 'Apache License Version 2.0, January 2004'. MVTDataProvider: '@experimental This feature is not final and is subject to change without Cesium's standard deprecation policy.'","url":"https://registry.npmjs.org/cesium/1.146.0"},
+{"source":"Apple MapKit JS (candidate)","license":"free daily allowance per Apple Developer Program membership; membership requirement not stated","attribution_required":false,"quote":"'MapKit JS provides a free daily limit of 250,000 map views and 25,000 service calls per Apple Developer Program membership. For additional capacity needs, contact us.'","url":"https://developer.apple.com/maps/web/","corrected_by_review":true}
+],
+"limits":[
+"WebFetch returns model-extracted text; quotes are not byte-compared.",
+"CARTO raster tiles not requested again (proxy 502; not retried).",
+"Protomaps: headers and metadata only; no planet tile fetched or decoded.",
+"OpenFreeMap decode: stdlib MVT reader from this review; 'outside' = a vertex outside 0-4096.",
+"Overlay luma uses float arithmetic (first pass likely integer-rounded). Visual reads by eye, not OCR; GIBS features have no legend.",
+"Cesium read by grep in @cesium/engine 26.4.0; shader semantics not run in a browser. Screenshot check is outside W17 scope."
+],
+"installed_packages":[],
+"open_questions":[
+"Label depth direction: engine shader and Label.js JSDoc disagree; test in a real browser.",
+"Current ImageryTopo road-data licence: USGS FAQ silent for 2026 data.",
+"Public hosting of a regional PMTiles extract may trigger ODbL s4.4(c). Not analysed.",
+"OpenFreeMap: homepage 'no limits' vs TOS automated-collection ban; which governs app prefetching?",
+"MapKit JS 3D or globe, membership requirement and non-browser use unverified.",
+"CARTO light_only_labels live status, body and CORS unverified."
+],
+"review":{
+"refuted_claims":[
+"LA '5.7 degrees west of the z5 tile': also 6.9 degrees south.",
+"GIBS 15m transparent empties '155-206 bytes': measured 206 and 288.",
+"GIBS terms 'attribution not required': layers titled (OSM), so OSM credit applies; acknowledgment quote merged two sentences.",
+"OpenFreeMap TOS cited for attribution and no API keys: both are on the homepage.",
+"Cesium 'depth-tested unless disableDepthTestDistance is set': wrong (see facts).",
+"MapKit JS 'Register a Maps identifier' sentence: not on the cited page.",
+"USGS 'public domain' unqualified for ImageryTopo roads: FAQ names US Topo exceptions."
+],
+"corrections":[
+"USGS costs FAQ: add lead-in and the three exceptions.",
+"GIBS 15m placeholder 13 of 18 (first 12 of 17), zooms 8, 10, 12, 13; 15m empties 206 B and 288 B.",
+"GIBS Level9: city names at z6 and z9; features empty at Montana z6 and Helena z7.",
+"GIBS terms: OSM credit required; NASA acknowledgment requested.",
+"CARTO units 'tile requests each calendar month'; sections 12.c, 12.d, 13.a.",
+"OpenFreeMap attribution and no-keys from homepage; TOS automated-collection clause added.",
+"Outside-bounds counts 139/154 (z5) and 55/63 (Missoula z8); LA offset both axes; named roads sparse at z8.",
+"Protomaps hotlinking discouraged; planet 138.9 GB vs docs 'roughly 120 gigabytes'.",
+"Cesium: MVTDataProvider has no name or label handling; OSMF prefetch ban added; MapKit JS: no globe, membership not stated as requirement."
+],
+"confirmed":[
+"USGS 256 px, LOD 0-23, wkid 102100; ImageryTopo names over imagery (viewed); pixel shares reproduced.",
+"GIBS zoom limits 13 and 9; 921-byte opaque black PNG blends to black; Level9 empties 334 B.",
+"GIBS zoom-5 exact bytes; names 'Wash.', 'Ore.', 'Idaho' seen; CORS * on 32 of 32.",
+"Protomaps size, MVT, zoom 15, no CORS; MVTDataProvider experimental, maxZoom 14; alpha 1.0; Apache-2.0."
+],
+"unverified":[
+"CARTO live status, body and CORS (proxy 502; not retried).",
+"CARTO 'only the raster basemaps require a key today' and own-key sentence (not re-captured).",
+"MapKit JS 3D or globe support, membership requirement, non-browser use.",
+"Current ImageryTopo road-data licence.",
+"Protomaps 'Real Time Navigation' full wording.",
+"OpenFreeMap map-data licence beyond ODbL credit; Billings z9 feature line identity."
+],
+"reviewer_checks":[
+{"what":"USGS JSON and tiles, new and first-pass","result":"Reproduced within 0.5 pt; labels seen","verified":true},
+{"what":"GIBS capabilities; 21 15m and 11 Level9 tiles","result":"Counts; 13 of 18 placeholders; composite (0,0,0)","verified":true},
+{"what":"GIBS zoom-5 tiles and composites","result":"Bytes exact; names and boundary lines seen","verified":true},
+{"what":"OpenFreeMap tiles and stdlib decode, both builds","result":"Bytes identical; Missoula z8 counts exact","verified":true},
+{"what":"Protomaps reads; Cesium npm and engine source","result":"Size exact; no CORS; defaults as recorded","verified":true},
+{"what":"CARTO; proxy status (read-only); terms and docs","result":"Confirmed; 502 logged, not retried; first-pass quotes corrected","verified":true}
+]}}

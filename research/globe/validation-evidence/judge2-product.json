@@ -1,0 +1,210 @@
+{
+  "slug": "judge2-product",
+  "lens": "Product value and fit with the Montana Hail Watch website (D26-D29): value to office and crews, phone reach, honesty as the public meets it, placement among the four pages and the map card, the owner's literal ask, ROADMAP fit, naming (D26).",
+  "checked_utc": "2026-10-17",
+  "status": "Research judgement only; the only file written. No repo, site, roadmap or decision file changed. A and B were written for the parked app and are scored only on what would transfer.",
+  "architecture_basis": "main-architecture.json (main 349df2a; branch includes main at 195d68c). Static pages built by build.py, rebuilt from empty every 10 minutes (build.py:375-379), published by GitHub Pages (website.yml:15, 38, 165). Desktop app parked (AGENTS.md:13-14; DECISIONS.md:314-323).",
+  "method": "Read main-architecture.json, the four designs, the supervisor log, README 1-7, plan-critique-product.json, judge-product.json and judge2-rules.json (not copied), AGENTS, ROADMAP, DESIGN, DECISIONS D25-D29, website.yml, and build.py, gridded.py, map.js, base.html, map.html, test_site.py. Live re-checks are in facts_rechecked. O-n and D-G1 are design-d.json's owner decisions; P-n are this judge's. Scores rounded to one decimal.",
+  "rubric": "Sub-scores 0-10: V value to office and crews [weight 3]; S site fit (rules, bytes, JavaScript, reuse) [2]; H honesty traps avoided as the public meets them [2]; P placement among pages and card [1]; O literal ask delivered [1]; R ROADMAP and naming [1]. score = sum(weight x sub-score) / 10.",
+  "bottom_line": "Design C (C2 first: flat Leaflet overlays on the existing map, no new library, 0.66 MB per build) ranks first. It adds two readings to the timeline crews already use, costs little, and leaves the Now page and card unchanged until the owner rules. Design D is the only design that gives the literal 3D ask a website form, but its 3D view adds perspective, not a decision: about 2.8 MB on a first visit (about four times the map's non-frame load), up to 850 new hand-written JS lines against ROADMAP Next 9, and clouds and storm volumes that look more certain than the data on a public, shareable page. First the owner should answer: is the globe still wanted after D28, the last recorded map instruction, which is flat (DECISIONS.md:359-362)? No globe, 3D, WebGL, Cesium, three.js or volume item exists in AGENTS, ROADMAP, DESIGN, DECISIONS or README on this branch (grep, 2026-10-17).",
+  "rules_judge_difference": "judge2-rules.json ranks D first on site-rule fit (7) over C (6). This judge weighs value, phone reach, public honesty, placement and roadmap fit, where C leads. Both agree A and B cannot be the website product. If the owner wants 3D, D is the build path, as a link-only page after rulings P-1 to P-8.",
+  "frame": [
+    "Audience (DESIGN.md:21-24): the office at a desktop 6:30-8:00 am; a crew lead on a phone in a truck or on a roof (sunlight, weak signal); a sales rep after a storm. The Pages site is public (ROADMAP.md:5-6): any visitor can open and screenshot a view.",
+    "The three questions (DESIGN.md:16-19): is there an official warning and where; what the next 12-24 hours bring by town; where hail or damaging wind was reported in three days. None is a 3D question; principle 2 keeps the first screen to them (DESIGN.md:45-46).",
+    "Direction: D27 says the app was too complicated (DECISIONS.md:314-316); D28 asks for 'a working interactable map of montana that looks like this' (DECISIONS.md:359-362). The globe appears only in README section 1 (README.md:13), not in any roadmap, decision or design record here.",
+    "Four pages and a four-item top bar (DESIGN.md:55-62). The full-screen Map is a standalone document (map.html:1-3). The disclaimer exists only at base.html:45; there is no copy in map.html or map.js (grep), so the full-screen map has no disclaimer today.",
+    "Phone density is the weakest dimension (DESIGN.md:190-191); the layer menu scrolls on short screens (DESIGN.md:345)."
+  ],
+  "owner_ask_vs_delivered": {
+    "ask": "A Google Earth-like globe with 'holographic' imagery of clouds and storms (README.md:13); README.md:14-15 already says the holographic look cannot be delivered.",
+    "design_c": "No globe, tilt, volumes or clicked-line profile (design-c.json sub_options.C2.cannot_do_that_owner_asked). Flat classes, a satellite picture, three fixed transects. The owner accepts 2D. Gated C1 (MapLibre globe plus deck.gl, about 0.9 MB gzip) needs D-G1 and still has no volume layer (deck.gl VolumeLayer: 0 matches).",
+    "design_d": "A 3D globe on the site: Earth texture, basemap, terrain, Band 13 drape, lifted cloud tops (phase 2), 11-level volumes (phase 3), a loop (phase 4). Relaxations named: D-G1 (streamed imagery; privacy), O-6 (Earth texture licence), O-7 (Actions terms), O-10 (loop store), O-11 (thresholds). Says Google Earth-like detail is not reachable under current rules.",
+    "design_a": "The same ask in the parked app with Cesium from a CDN; on the website it breaches AGENTS.md:71-72 as written.",
+    "design_b": "The same content in a local window with installers; needs D27 reversed (DECISIONS.md:314-323)."
+  },
+  "decisions_by_person": [
+    {"decision": "Warning near my town or site now?", "who": "office, crew", "design_c": "No change; Now and town cards answer it (DESIGN.md:110-111).", "design_d": "No change; a 3D scene risks reading as safe."},
+    {"decision": "Is echo or cloud approaching, and how old?", "who": "crew", "design_c": "Small gain on the existing timeline (map.js playback; DESIGN.md:295).", "design_d": "Same data with perspective and a loop that needs frame persistence (Next 6)."},
+    {"decision": "Why no echo far from radar is not no storm", "who": "office", "design_c": "Text and the existing hatch (map.js:34-36) plus the below-ground mask.", "design_d": "Terrain in 3D shows ground hiding low levels; a 2D hillshade gives the same geography at far less weight."},
+    {"decision": "Which roofs did hail reach?", "who": "sales, office", "design_c": "Not answered; MESH (Next 11) is the feature.", "design_d": "Not answered; volumes are not hail size (MESH units unverified)."},
+    {"decision": "What the record shows, for a customer or adjuster", "who": "owner", "design_c": "Flat classes with words: the safer form.", "design_d": "Riskier: a picture carries less of its caveat than a sentence (P-8)."}
+  ],
+  "placement": {
+    "design_c": "Overlays and one menu group on the existing full-screen Map (design-c.json N1); Now and Storm reports cards unchanged; 'not linked from the Now page until P2 passes'. Four pages kept (DESIGN.md:62). Costs: the Map changes during feedback week (ROADMAP.md:40-43) and the phone Layers menu grows where density is weakest.",
+    "design_d": "A fifth page, globe.html, linked from Map and About in phase 1; no nav item until O-3. The Map changes by one link, which suits feedback week. Costs: a second full-screen map with duplicate playback; globe.html does not inherit base.html's meta refresh, page-age check or footer (base.html:6, 45, 57); a page reached by one link is hard to find on a phone.",
+    "map_card": "No globe on the Now or Storm reports card for either design: the page is long (DESIGN.md:89-97) and the card has no controls except Open map (DESIGN.md:350-351)."
+  },
+  "honesty_traps": [
+    "Lifted clouds (D phase 2) turn a 3-33 km parallax error (parallax.json) into visible 3D displacement that reads as position. C's flat cloud layer misplaces clouds if uncorrected (P1). Both wait for the correction (P-5).",
+    "Volumes and echo-height classes read as severity or hail size; the legends already say 'not hail size' (design-c.json legend_echo; design-d.json s5). 3D boxes look more like storm columns than flat classes.",
+    "A public picture travels as a screenshot without its source, valid time or disclaimer. Draw source, time and 'radar estimate' or 'satellite estimate' into any saved picture (plan-critique-product.json honesty traps, exports).",
+    "The full-screen map has no disclaimer line today (base.html:45 only). Fix it before any new picture ships, on either design (G10).",
+    "Missing radar: every negative MRMS value is hatched 'No radar coverage' (gridded.py:191-197; map.js:34-36), verified on -3 values (DECISIONS.md:372). The 3D designs call -99 and -999 'no radar data' (unverified; mrms.json). One rule is needed before MRMS levels appear (G9).",
+    "Sample data (base.html:17; test_site.py:465) where AGENTS.md:75-76 says DEMO. A sample layer must never reach the live page; the Pages build runs on live data.",
+    "Blank is not clear: 'No echo at 35 dBZ or more; not an all-clear' (design-c.json legend_echo; DESIGN.md:43-44). Keep both designs' wording.",
+    "A globe name and a fly-to camera imply precision and a pin on a roof (plan-critique-product.json honesty traps). No fly-to onto clouds."
+  ],
+  "roadmap_fit": [
+    "Next 1 (ROADMAP.md:35-39): no new build step or source until two scheduled runs publish. D publishes about 7.9 MB per build against 3.9 MB live (design-d computed; main-architecture measured).",
+    "Next 2 (ROADMAP.md:40-43): freeze Map and Now until feedback week closes. C changes the Map; D changes it by one link (P-3).",
+    "Next 4 (ROADMAP.md:46-48; review baseline 'Not started', line 89): Band 13, ACHA and MRMS levels are new feeds for both designs (P-4).",
+    "Next 5 and 6 (ROADMAP.md:49-52): phone density and frame cache. C's one-hour window and D's loop both need the previous build (build.py:472).",
+    "Next 8 (ROADMAP.md:55-59): D's list is the model; C must add text before its pictures ship (G1).",
+    "Next 9 (ROADMAP.md:60-65, Carson's call): D adds up to 850 JS lines plus a 2.1 MB library; C adds six small duties. C fits Next 9; D runs against it.",
+    "Next 11 (ROADMAP.md:69-73): MESH answers 'which roofs had hail' with the same decoder and should come before echo classes and volumes (G11).",
+    "Next 15 (ROADMAP.md:80-82): A and B need the parked app revived, a separate owner decision."
+  ],
+  "naming": [
+    "D26: run the trademark check before any print (DECISIONS.md:310-312) and avoid HailTrace (same lines). 'Montana Hail Watch' stays the header name (base.html:23 per main-architecture.json).",
+    "'3D view' is generic but promises a street-level view the site cannot give. 'Globe' or 'storm globe' suggests storm tracking or a hail measure. Use: 'Echo top, radar estimate'; 'Cloud top, satellite estimate'; 'Satellite picture, observation'.",
+    "Keep 'Google Earth' out of UI copy; it is a Google product name."
+  ],
+  "scores": [
+    {
+      "design": "design-c",
+      "name": "Design C: flat Leaflet overlays on the existing map (C2 first; C1 gated)",
+      "score_0_to_10": 5.4,
+      "sub_scores": {"V": 3.5, "S": 7.5, "H": 6.5, "P": 6, "O": 3, "R": 6},
+      "reasons": [
+        "V 3.5: two readings join the timeline crews already use (DESIGN.md:295). The three questions are not 3D questions (DESIGN.md:16-19). Small gain; the coverage job is served by the below-ground mask and the 'not an all-clear' wording.",
+        "S 7.5: no new library or CDN; Leaflet 1.9.4 is vendored (leaflet.js 147,552 B on disk; map.html:14) and L.imageOverlay is already used. About 0.66 MB per build and 0.42 MB per visit for seven echo frames (design-c.json budgets, unmeasured). Six small duties; N5's age clock needs the page-age pattern (base.html:47-62).",
+        "H 6.5: flat pictures with words; stop rules hide failed layers (design-c.json P2, P3). Docked for uncorrected cloud tops in P1 (parallax.json: 3-4 km off for 2 km tops, 20-33 km for 12-15 km tops).",
+        "P 6: four pages and nav kept (DESIGN.md:62); card unchanged. Costs: changes the Map during feedback week and grows the phone Layers menu.",
+        "O 3: says it cannot give a globe, tilt, volumes or a profile. It extends the flat map the owner asked for last (DECISIONS.md:359-362).",
+        "R 6: Next 4 gate for GOES and MRMS feeds (ROADMAP.md:46-48); Next 9 respected; Next 11 should come first; no naming issue beyond D26."
+      ],
+      "fatal_flaws": [
+        "P-4 (ROADMAP.md:46-48): new feeds (Band 13, ACHA, MRMS levels) wait for predeclared metrics; review P0 is 'Not started' (ROADMAP.md:89).",
+        "P-3 (ROADMAP.md:40-43): the Map changes during feedback week unless frozen.",
+        "P-5: the uncorrected cloud layer misplaces clouds by 3-33 km (parallax.json); hold it or rule on disclosure.",
+        "P-6: Actions terms for NOAA-derived pictures ('You may only access and use GitHub Actions to develop and test your application(s)'; 'don't use Actions as a content delivery network'), re-checked 2026-10-17. Site-wide.",
+        "P-1: the literal 3D ask is not delivered; the owner accepts 2D or asks for D."
+      ]
+    },
+    {
+      "design": "design-d",
+      "name": "Design D: the globe as a fifth page of the website (three.js, site files only)",
+      "score_0_to_10": 4.5,
+      "sub_scores": {"V": 3.5, "S": 4, "H": 5, "P": 6, "O": 7, "R": 3},
+      "reasons": [
+        "V 3.5: the only 3D view on the site, but perspective adds no decision (DESIGN.md:16-19). Real additions C lacks: terrain for the blind-spot job and a text list (adopted as G1). Satellite and echo heights duplicate C's 2D layers.",
+        "S 4: three.js 2,120,885 B raw (re-checked); Earth 0.40 MB and terrain 0.15 MB budgets unmeasured. First visit about 2.8 MB (computed; 14 s at an assumed 1.6 Mbit/s), about four times the map's non-frame load of 0.71 MB (computed). Up to 850 JS lines at the caps (design-d loader_budget) against Next 9 and AGENTS.md:99-100. About 7.9 MB per build against 3.9 MB live. globe.html does not extend base.html.",
+        "H 5: a text list, states, 'No radar data', below-ground levels not drawn, no hail size (design-d.json s5). Docked: lifted clouds and volumes make cloud decks and storm columns look like positions and severities; a public 3D picture carries less of its caveat.",
+        "P 6: link from Map and About; no fifth nav item until O-3 (design-d.json s1). A second full-screen map duplicates playback.",
+        "O 7: the closest website delivery of the literal ask, with each relaxation named (D-G1, O-6, O-7, O-10).",
+        "R 3: no roadmap item for a globe (grep). Next 4 gate, Next 9 conflict, Next 6 for the loop; Next 8 served well; Next 11 competes with its volumes."
+      ],
+      "fatal_flaws": [
+        "O-6: NASA's guidelines page says NASA content 'generally [is] not subject to copyright in the United States' and 'The NASA Insignia, Logotype, identifiers, and imagery are not in the public domain' (re-checked 2026-10-17). Blue Marble is not mentioned. Needs a ruling; otherwise the basemap only.",
+        "O-3: a fifth nav item breaks the four-item bar (DESIGN.md:62); a page reached only from Map needs a discoverability ruling.",
+        "P-12 (ROADMAP.md:60-65, Carson's call): about 850 hand-written JS lines and a 2.1 MB library need approval.",
+        "O-7: per-build bytes roughly double under 'don't use Actions as a content delivery network', with 'a low benefit Action could be ok if it's also low burden' (WebFetch excerpt, 2026-10-17).",
+        "D-G1 for Google Earth-like detail: streamed imagery breaks the site-files-only rule (test_site.py:459-471; map.js:9) and sends viewers' IPs to a host. Phases 1-3 do not need it.",
+        "O-10: a 12-frame, 10-minute loop is about 43 GB per month of Pages reads; the 60-frame, 2-minute loop about 217 GB (computed) against the 100 GB soft limit (re-checked 2026-10-17)."
+      ]
+    },
+    {
+      "design": "design-a",
+      "name": "Design A: CesiumJS page in the parked Flask app, scored for transfer",
+      "score_0_to_10": 2.8,
+      "sub_scores": {"V": 2, "S": 1, "H": 5, "P": 2, "O": 7, "R": 1},
+      "reasons": [
+        "V 2: bound to 127.0.0.1 (desktop/launcher.py:433 per judge-product.json); phone crews cannot reach it. Transferable: parity tests, null-geometry cases, freshness by key.",
+        "S 1: Cesium 1.146.0 from cdnjs with SRI (design-a.json), which AGENTS.md:71-72 forbids for the site. Cesium.js carries 12 default access-token references, 'for evaluation purposes only' (judge-product.json).",
+        "H 5: strong labels and a parity test (design-a.json alert_null_geometry). Docked: 3x and 5x exaggeration and voxels read as storm columns.",
+        "P 2: parked app (AGENTS.md:13-14); reviving it reverses D27 (DECISIONS.md:314-323).",
+        "O 7: the literal ask most fully, inside the app.",
+        "R 1: Next 15 decides whether the app returns (ROADMAP.md:80-82)."
+      ],
+      "fatal_flaws": [
+        "Rule 4 (AGENTS.md:71-72): a third-party CDN script on the site.",
+        "Owner ruling on the bundled Cesium default token (no-paid-token constraint).",
+        "D27 reversal and the Next 15 decision; no phone path (desktop/launcher.py:433)."
+      ]
+    },
+    {
+      "design": "design-b",
+      "name": "Design B: separate globe window served by the desktop shell (parked app, installers)",
+      "score_0_to_10": 2.2,
+      "sub_scores": {"V": 1, "S": 0, "H": 6, "P": 1, "O": 6, "R": 0},
+      "reasons": [
+        "V 1: a second local server, a decode child and a snapshot table to show what the site already shows; no phone path.",
+        "S 0: an installer per OS per globe change (AGENTS.md:60-64; design-b.json), about 35 MB of Windows wheels; nothing transfers as designed.",
+        "H 6: 'could not refresh' words that never clear a warning; parity by construction; a not-in-JavaScript list. The best honesty design of the four; its grafts carry over.",
+        "P 1: a separate window and hand-installed installers move the product back toward installs, which the owner rejected (DECISIONS.md:314-316).",
+        "O 6: the same content as A in a separate window.",
+        "R 0: O1 (reversing D27) comes first (DECISIONS.md:314-323)."
+      ],
+      "fatal_flaws": [
+        "O1: a DECISIONS entry must reverse D27 before any desktop work (DECISIONS.md:314-323).",
+        "O4: one installer per OS per globe change cannot meet publish-on-merge (AGENTS.md:56-57).",
+        "No phone path; Next 2 requires phone checks (ROADMAP.md:40-43)."
+      ]
+    }
+  ],
+  "ranking": ["design-c", "design-d", "design-a", "design-b"],
+  "grafts": [
+    "G1 Text before pictures (from D; DESIGN.md:172, 287; Next 8): every echo-top and cloud-top value at the 14 towns goes into data/map.json and a list beside the map, worded 'radar estimate' or 'satellite estimate' with unit and time. Pass when the list equals the sampled value at 14 of 14 towns.",
+    "G2 Cloud tops wait for parallax correction (C's P2). P1 ships the Band 13 picture as an observation with no height claim. If P-5 accepts the uncorrected layer, use parallax.json's wording verbatim and keep it off the default view.",
+    "G3 Flag and freeze: new layers sit behind the default-off flag; Now and Storm reports cards stay unchanged; the Map gains one control group only after Next 2 closes (ROADMAP.md:40-43) and P-4 is ruled.",
+    "G4 One group in the Layers menu; test at 288 px (tools/smoke_pages.py:23); keep the menu inside its scroll (DESIGN.md:345).",
+    "G5 Drop the three transects unless a named decision needs a vertical slice; none of the three questions does.",
+    "G6 Per-product freshness from measured latency (gibs.json; goes-aws.json; design-c.json): a CONTRACTS entry in website/sources.py and a unit test that fails on a missing key. Do not copy the parked app's silent 3600 s default (payload/weather.py:232).",
+    "G7 Checks: extend tools/smoke_map.py with a layer-switch pixel check (over 2% of picture pixels changes; picture not blank) and a request log showing only site hosts (D's smoke_globe pattern). Extend tests/test_site.py to scan built JS and CSS for absolute http(s) addresses against a short allow-list; today it checks HTML only (test_site.py:464).",
+    "G8 Rule-4 table (from B): list duties N1-N6 and what each does not do. Replace N5's per-minute age clock with the documented page-age pattern (base.html:47-62).",
+    "G9 One MRMS no-data rule: today every negative value becomes 'No radar coverage' (gridded.py:191-197; map.js:34-36). Until NSSL's table is read, say 'No radar data' for codes not verified as coverage. Changing the live words needs P-11.",
+    "G10 Disclaimer on the full-screen map: add the base.html:45 sentence to map.html before any new picture ships. Draw the valid time and 'radar estimate' or 'satellite estimate' into any saved picture or export.",
+    "G11 Sequence: MESH (Next 11, same MRMS decoder in gridded.py) before echo classes; check it against SPC 2025-06-15 Benchland, 1.75 in (ROADMAP.md:69-73).",
+    "G12 Gates as the predeclared file writes them: comprehension results under n=20 are report-only (evaluation-predeclared.json), so a two-user pilot reports rather than passes.",
+    "G13 Names by what is measured (see naming); D26 check for any product-level name.",
+    "G14 Keep the 3D option cheap: if P-1 keeps 3D, build D's phase 1 as a link-only experiment after Next 2, within its 2.8 MB budget and with its list, with no nav item."
+  ],
+  "owner_decisions": [
+    "P-1 Is the 3D globe still wanted after D28? Options: C2 only (default); D as a link-only experiment after Next 2; drop 3D.",
+    "P-2 Placement: layers on the Map page (C) or a separate page (D). A fifth nav item is not recommended (DESIGN.md:62).",
+    "P-3 Freeze: may Map and Now change before Next 2 closes (ROADMAP.md:40-43)? Default: no.",
+    "P-4 Next 4: are Band 13, ACHA and MRMS levels new feeds that wait for predeclared metrics (ROADMAP.md:46-48)? Default: yes.",
+    "P-5 Cloud tops: hold until parallax correction, or ship uncorrected with parallax.json's wording? Default: hold.",
+    "P-6 Publishing terms for NOAA-derived pictures and heavier Pages builds: owner or counsel reading, once for the site (design-c.json owner_decisions, Legal; design-d O-7).",
+    "P-7 Earth texture: clear Blue Marble (design-d O-6) or basemap only. Default: basemap only.",
+    "P-8 Public exposure: may 3D views, height layers or screenshots reach homeowners, adjusters or insurers? Default: no.",
+    "P-9 DEMO versus SAMPLE: AGENTS.md:75-76 says DEMO; the site says 'Sample data' (base.html:17). Which label, and no sample layer on the live page.",
+    "P-10 Name for any page or layer ('3D view' or other); D26 check before print (DECISIONS.md:310-312).",
+    "P-11 MRMS no-data words for the map and new layers, including the live map's 'No radar coverage' (G9).",
+    "P-12 JavaScript budget (ROADMAP.md:60-65, Carson's call). Default: only N1-N6, documented, with the rule-4 table."
+  ],
+  "facts_rechecked": [
+    "three.js 0.186.1, fetched 2026-10-17 from cdn.jsdelivr.net/npm: build/three.module.js 662,772 B and build/three.core.js 1,458,113 B; equal to design-d.json vendored_bytes (HTTP 200). LICENSE: 'The MIT License', 'Copyright 2010-2026 three.js authors'.",
+    "MapLibre GL JS 5.0.0 csp: dist/maplibre-gl-csp.js 835,852 B (fetched 2026-10-17), equal to design-d.json s2.",
+    "Existing map static load: map.html 11,877 B, map.js 114,696 B, leaflet.js 147,552 B, basemap.json 384,594 B, map.json 47,940 B (live build). Sum 706,659 B (computed) before fonts and frames. map.js:1018-1026 and 1084-1096 queue a layer's pictures once one shows.",
+    "NASA licence sentences, WebFetch of https://www.nasa.gov/multimedia/guidelines/index.html, 2026-10-17: 'NASA content - images, audio, video, and media files ... - generally are not subject to copyright in the United States.'; 'The NASA Insignia, Logotype, identifiers, and imagery are not in the public domain.'; third-party material: 'must contact the copyright holder directly'. Blue Marble not mentioned.",
+    "GitHub terms, WebFetch of https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features, 2026-10-17: 'You may only access and use GitHub Actions to develop and test your application(s).'; restricted use 'don't use Actions as a content delivery network or as part of a serverless application', with 'a low benefit Action could be ok if it's also low burden' (WebFetch excerpt). The older address returns HTTP 404 today.",
+    "GitHub Pages limits, WebFetch of https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits, 2026-10-17: 'Published GitHub Pages sites may be no larger than 1 GB.'; 'soft bandwidth limit of 100 GB per month'; 'deployments will timeout if they take longer than 10 minutes'; the 10-builds-per-hour soft limit 'does not apply' to a custom Actions workflow.",
+    "Repo: website.yml:15 cron */10; :38 build timeout 15 min; :165 deploy timeout 10 min; smoke_map (:101) and smoke_pages (:105) run on branch pushes only.",
+    "Repo test gap: test_site.py:459-471 checks external hosts only in page HTML (regex :464); no test scans built JS or CSS for absolute http(s) addresses (grep).",
+    "Repo: map.js:9 says 'no request to anything but this site's files' (header comment, read 2026-10-17).",
+    "Disclaimer: the sentence appears only at base.html:45; map.html (standalone, lines 1-3) has neither it nor 'Weather information' (grep of website/).",
+    "Missing radar: map.js:34 'No radar coverage', map.js:36 'No radar data on this map'; gridded.py:191-197 turns every negative MRMS value to NaN (DECISIONS.md:372 records -3).",
+    "Staleness: gridded.py:53 RADAR_STALE 30 min; base.html:6 refresh 600 s; base.html:57 page age over 25 min; build.py:375-379 rebuilds from empty; build.py:472 load_previous.",
+    "Globe absence: grep for globe, 3D, WebGL, Cesium, three.js and volume in AGENTS.md, ROADMAP, DESIGN, DECISIONS and README on this branch: no hits.",
+    "Pilot size: ROADMAP Next 2 names two users; DESIGN.md:35 uses five; evaluation-predeclared.json: 'report-only below 20'.",
+    "Public address: ROADMAP.md:5-6 gives https://carson14dy.github.io/RoofingApp/.",
+    "judge2-rules.json ranking (read 2026-10-17): design-d 7, design-c 6, design-b 3, design-a 2."
+  ],
+  "carried_not_rechecked": [
+    "Unmeasured budgets: D's Earth (400,000 B), terrain (150,000 B), globe.js (40 KB), volume.js (15 KB); C's cloud PNG (150 KB) and echo frame (60 KB).",
+    "Parallax magnitudes (parallax.json); GOES and MRMS byte counts (goes-aws.json; mrms.json).",
+    "The 14 s first-visit time assumes 1.6 Mbit/s (design-d.json).",
+    "payload/weather.py:232 and desktop/launcher.py:433 are carried from design-a.json and judge-product.json, not re-read.",
+    "Google Photorealistic terms (google-terms.json); the GOES licence banner (goes-aws.json)."
+  ],
+  "unverified": [
+    "MRMS -99 and -999 meanings (mrms.json).",
+    "The existing map's first-visit bytes on a phone (not measured).",
+    "WebGL2 on iOS Safari and Android (no device test; ROADMAP.md:41-43).",
+    "Whether a 3D view or screenshot reaches homeowners, adjusters or insurers (P-8).",
+    "Whether echo or cloud layers change any decision: no predeclared metric, judging by the names, measures that (inference).",
+    "The Actions-terms reading for NOAA-derived products (legal; P-6).",
+    "NASA's terms for Blue Marble beyond the guidelines page (not checked)."
+  ]
+}

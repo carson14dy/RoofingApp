@@ -1,0 +1,176 @@
+{
+  "id": "parallax",
+  "status": "computed geometry, research only; nothing ships; no observed cloud was tested",
+  "claim_tested": "README section 4: high cloud tops over Montana appear displaced tens of km poleward because of parallax, unless corrected with cloud-top height.",
+  "conclusion": "Settled as geometry, with the satellite longitudes still assumed. An uncorrected cloud top is drawn away from the satellite, so from Montana it moves north-west for GOES-East (bearing 312 to 321 degrees) and north-east for GOES-West (30 to 40 degrees), by about 3 to 4 km for a 2 km top, 8 to 11 km for 5 km, 13 to 18 km for 8 km, and 20 to 33 km for 12 to 15 km. So 'tens of km' is right only for tops about 12 km and higher, and it overstates the shift for lower cloud. 'Poleward' describes only part of the shift: the north part is 0.67 to 0.86 of the total and the east or west part is 0.6 to 1.1 times the north part, so the plan should say north-west or north-east, away from the satellite, and give the heights. At the nearer satellite a 2 km pixel covers about 4.1 to 4.7 km along the tilt and 2.1 to 2.2 km across it. The answer does not depend on the ellipsoid or sphere choice (under 0.03 km), and it moves by at most 0.34 km for a 0.5 degree satellite longitude error, but Miles City's nearer satellite changes if GOES-West is at 136.4 W or further east, so W2 must confirm the longitudes. What this does not settle: whether any feed the app would use is already height-corrected (GIBS is marked unverified in gibs.json), and whether the cloud-top height is referenced to sea level or ground (each 1 km of ground elevation adds 1.6 to 2.2 km of shift).",
+  "wording": {
+    "plan_section_4": "Parallax. GOES views Montana at a steep angle (view zenith 58 to 66 degrees). A cloud top that is not corrected for its height is drawn away from the satellite: north-west of Montana for GOES-East and north-east for GOES-West. The shift is about 3 to 4 km for a 2 km top, 8 to 11 km for 5 km, 13 to 18 km for 8 km, and 20 to 33 km for 12 to 15 km. Say 'tens of km' only for tops about 12 km and higher, and never 'poleward' alone. Any layer that is not corrected for cloud-top height says so.",
+    "ui_legend_uncorrected_phase1": "Not corrected for cloud-top height. The cloud top is drawn where the satellite's ground grid puts it, away from the satellite (north-west or north-east of Montana): about 3 to 4 km off for a 2 km top, about 20 to 33 km off for a 12 to 15 km top.",
+    "ui_legend_corrected_phase2": "Corrected for cloud-top height. The height is a satellite estimate; an error of 1 km in it moves the cloud by about 2 km.",
+    "avoid": ["'tens of km poleward' as a blanket statement", "'poleward' alone", "one shift value for all cloud tops"]
+  },
+  "method": "Geometry only, no network. For each site and height: P is the geodetic point above the ground point G (lat, lon, h). The apparent position Q is where the ray from the satellite S through P first meets the WGS84 ellipsoid at height 0, which is how surface geolocation places a cloud top. Displacement = Q - G, resolved on the local north and east axes at G; total = hypot(north, east). View zenith angle (VZA) is the angle at G between the ellipsoid normal and the line to S. The 2 km ABI pixel is a 56 microradian square in the satellite fixed-grid angles; its corners are intersected with the ellipsoid, and its long and short axes are the singular values of the pixel's ground side vectors. Self-test checks, all passing: zero at the sub-satellite point; strictly increasing with height and with latitude; flat-Earth limit (total divided by h tan VZA = 1.0002 at h = 1 km, VZA 50.6 degrees); apparent point on the ellipsoid and on the ray (residual 3e-15); pixel stretch agrees with foreshortening (R/R0)/cos(VZA) and R/R0 to 0.72 percent; shift bearing agrees with the reverse satellite bearing to 0.01 degree. A sign-flipped copy of displacement() fails 42 unit-test subtests, so the direction tests catch the error they guard against. GRS 80 flattening changes the 15 km shifts by 0.000 mm.",
+  "reproduce": ["cd research/globe/prototype", "PYTHONDONTWRITEBYTECODE=1 python3 parallax.py --selftest", "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v", "PYTHONDONTWRITEBYTECODE=1 python3 parallax.py            (table)", "PYTHONDONTWRITEBYTECODE=1 python3 parallax.py --model sphere"],
+  "environment": {
+    "python": "3.13.16",
+    "numpy": "2.5.3",
+    "network": "none"
+  },
+  "files": {
+    "script": "research/globe/prototype/parallax.py",
+    "tests": "research/globe/prototype/tests/test_parallax.py"
+  },
+  "constants": [
+    {
+      "name": "WGS84 semi-major axis a",
+      "value": "6378.137 km",
+      "source": "NIMA TR8350.2, WGS 84 (6378137 m)",
+      "used_in": "wgs84 mode (default)"
+    },
+    {
+      "name": "WGS84 inverse flattening",
+      "value": "298.257223563",
+      "source": "NIMA TR8350.2, WGS 84",
+      "used_in": "wgs84 mode; GRS 80 value 298.257222101 changes the 15 km shift by 0.000 mm"
+    },
+    {
+      "name": "Geostationary height above the equator H",
+      "value": "35786.023 km (satellite radius 42164.160 km)",
+      "source": "ABI L1b perspective_point_height = 35786023 m, GOES-R Series Product Definition and Users' Guide",
+      "used_in": "wgs84 mode",
+      "status": "to be confirmed from the live file attribute by W2; this run reads no files"
+    },
+    {
+      "name": "ABI 2 km sampling",
+      "value": "56 microradian (2.004 km at nadir)",
+      "source": "GOES-R Series Product Definition and Users' Guide, ABI 2 km bands",
+      "status": "to be confirmed by W2 from the x/y scale_factor in a live file"
+    },
+    {
+      "name": "Task sphere radius R",
+      "value": "6371 km",
+      "source": "research brief. The IUGG mean radius is 6371.0088 km; 6371 km is not the WGS84 equatorial radius.",
+      "used_in": "sphere mode only (sensitivity)"
+    },
+    {
+      "name": "Task geostationary height (sphere mode)",
+      "value": "35786 km",
+      "source": "research brief. With R = 6371 km the satellite radius is 42157 km, 7 km short of the geostationary radius, so sphere mode is a sensitivity check, not a second answer.",
+      "used_in": "sphere mode only"
+    },
+    {
+      "name": "GOES-East longitude",
+      "value": "-75.2 deg (nominal, ASSUMED)",
+      "status": "to be confirmed from the live file attributes by W2. goes-aws.json records a GOES-19 subpoint of -75.2 deg from file attributes; cross-reference only."
+    },
+    {
+      "name": "GOES-West longitude",
+      "value": "-137.0 deg (nominal, ASSUMED)",
+      "status": "to be confirmed from the live file attributes by W2. goes-aws.json records origin -137.0 from a file attribute; cross-reference only."
+    }
+  ],
+  "sites": [
+    {
+      "name": "Missoula",
+      "lat": 46.872,
+      "lon": -113.994
+    },
+    {
+      "name": "Billings",
+      "lat": 45.7833,
+      "lon": -108.5007
+    },
+    {
+      "name": "Glasgow",
+      "lat": 48.19,
+      "lon": -106.63
+    },
+    {
+      "name": "Miles City",
+      "lat": 46.4,
+      "lon": -105.8
+    }
+  ],
+  "heights_km": [2.0, 5.0, 8.0, 12.0, 15.0],
+  "assumptions": ["Surface geolocation: the imager places each pixel on the ellipsoid at height 0. This is the case under test; a feed that already corrects for height would show no shift.", "Heights are above the ellipsoid at the site. If the cloud-top height is above ground, add the site's ground elevation: each added 1 km adds the slope listed under sensitivity.", "One cloud top directly above the ground point; no wind, no layering, no refraction.", "Satellites sit over the equator at the longitudes above.", "Displacement is measured from the true sub-point of the cloud top (the ground point beneath it) to the apparent surface point. Total = hypot(north, east), a horizontal length."],
+  "limits": ["Geometry only. No observed cloud was matched to its true position, so this shows what the geometry does, not what any product displays.", "Open: whether any feed the app would use is already height-corrected. gibs.json marks GIBS parallax as unverified.", "Open: whether the ACHA cloud-top height is referenced to sea level or ground (W2 or W5).", "Montana sites only. The method is general; the numbers are not."],
+  "table": {
+    "units": "km; north and east positive; apparent lat/lon in degrees (WGS84), 'model wgs84'",
+    "columns": ["site", "satellite", "h_km", "north_km", "east_km", "total_km", "apparent_lat", "apparent_lon"],
+    "rows": [
+      ["Missoula", "GOES-East", 2.0, 2.98, -3.28, 4.43, 46.8988, -114.0371],
+      ["Missoula", "GOES-East", 5.0, 7.46, -8.22, 11.1, 46.939, -114.102],
+      ["Missoula", "GOES-East", 8.0, 11.95, -13.17, 17.79, 46.9794, -114.1671],
+      ["Missoula", "GOES-East", 12.0, 17.96, -19.8, 26.73, 47.0332, -114.2545],
+      ["Missoula", "GOES-East", 15.0, 22.48, -24.78, 33.46, 47.0737, -114.3203],
+      ["Missoula", "GOES-West", 2.0, 2.81, 1.64, 3.25, 46.8973, -113.9725],
+      ["Missoula", "GOES-West", 5.0, 7.03, 4.09, 8.13, 46.9352, -113.9403],
+      ["Missoula", "GOES-West", 8.0, 11.25, 6.55, 13.02, 46.9732, -113.9079],
+      ["Missoula", "GOES-West", 12.0, 16.9, 9.84, 19.55, 47.0239, -113.8646],
+      ["Missoula", "GOES-West", 15.0, 21.14, 12.31, 24.46, 47.062, -113.832],
+      ["Billings", "GOES-East", 2.0, 2.77, -2.54, 3.76, 45.8083, -108.5334],
+      ["Billings", "GOES-East", 5.0, 6.94, -6.37, 9.42, 45.8457, -108.5827],
+      ["Billings", "GOES-East", 8.0, 11.12, -10.2, 15.09, 45.8832, -108.6321],
+      ["Billings", "GOES-East", 12.0, 16.7, -15.32, 22.66, 45.9334, -108.6982],
+      ["Billings", "GOES-East", 15.0, 20.89, -19.17, 28.35, 45.971, -108.748],
+      ["Billings", "GOES-West", 2.0, 2.73, 2.07, 3.42, 45.8078, -108.4741],
+      ["Billings", "GOES-West", 5.0, 6.82, 5.17, 8.56, 45.8447, -108.4341],
+      ["Billings", "GOES-West", 8.0, 10.93, 8.28, 13.71, 45.8815, -108.394],
+      ["Billings", "GOES-West", 12.0, 16.41, 12.44, 20.59, 45.9308, -108.3403],
+      ["Billings", "GOES-West", 15.0, 20.53, 15.56, 25.76, 45.9678, -108.2999],
+      ["Glasgow", "GOES-East", 2.0, 3.04, -2.5, 3.94, 48.2174, -106.6636],
+      ["Glasgow", "GOES-East", 5.0, 7.62, -6.25, 9.85, 48.2585, -106.7142],
+      ["Glasgow", "GOES-East", 8.0, 12.2, -10.01, 15.78, 48.2997, -106.765],
+      ["Glasgow", "GOES-East", 12.0, 18.33, -15.04, 23.71, 48.3547, -106.8329],
+      ["Glasgow", "GOES-East", 15.0, 22.94, -18.82, 29.67, 48.396, -106.8842],
+      ["Glasgow", "GOES-West", 2.0, 3.03, 2.39, 3.86, 48.2173, -106.5979],
+      ["Glasgow", "GOES-West", 5.0, 7.59, 5.97, 9.65, 48.2582, -106.5496],
+      ["Glasgow", "GOES-West", 8.0, 12.15, 9.56, 15.46, 48.2992, -106.5011],
+      ["Glasgow", "GOES-West", 12.0, 18.25, 14.36, 23.23, 48.354, -106.4362],
+      ["Glasgow", "GOES-West", 15.0, 22.84, 17.97, 29.06, 48.3952, -106.3873],
+      ["Miles City", "GOES-East", 2.0, 2.82, -2.3, 3.64, 46.4253, -105.8299],
+      ["Miles City", "GOES-East", 5.0, 7.05, -5.76, 9.1, 46.4634, -105.875],
+      ["Miles City", "GOES-East", 8.0, 11.29, -9.22, 14.58, 46.5015, -105.9202],
+      ["Miles City", "GOES-East", 12.0, 16.95, -13.85, 21.89, 46.5523, -105.9807],
+      ["Miles City", "GOES-East", 15.0, 21.21, -17.33, 27.39, 46.5906, -106.0262],
+      ["Miles City", "GOES-West", 2.0, 2.82, 2.36, 3.68, 46.4254, -105.7693],
+      ["Miles City", "GOES-West", 5.0, 7.06, 5.91, 9.21, 46.4635, -105.723],
+      ["Miles City", "GOES-West", 8.0, 11.31, 9.47, 14.75, 46.5017, -105.6767],
+      ["Miles City", "GOES-West", 12.0, 16.99, 14.22, 22.15, 46.5527, -105.6146],
+      ["Miles City", "GOES-West", 15.0, 21.26, 17.79, 27.72, 46.591, -105.5678]
+    ]
+  },
+  "geometry": {
+    "columns": ["site", "satellite", "vza_deg", "satellite_bearing_deg", "shift_bearing_deg_12km", "pixel_long_km", "pixel_short_km", "pixel_area_ratio", "long_stretch", "short_stretch"],
+    "rows": [
+      ["Missoula", "GOES-East", 65.71, 132.2, 312.2, 5.29, 2.19, 2.88, 2.639, 1.091],
+      ["Missoula", "GOES-West", 58.38, 210.2, 30.2, 4.09, 2.14, 2.19, 2.043, 1.07],
+      ["Billings", "GOES-East", 62.0, 137.5, 317.5, 4.6, 2.17, 2.48, 2.294, 1.081],
+      ["Billings", "GOES-West", 59.68, 217.2, 37.2, 4.26, 2.15, 2.28, 2.125, 1.074],
+      ["Glasgow", "GOES-East", 63.06, 140.6, 320.6, 4.78, 2.17, 2.58, 2.385, 1.082],
+      ["Glasgow", "GOES-West", 62.58, 218.2, 38.2, 4.7, 2.17, 2.53, 2.345, 1.081],
+      ["Miles City", "GOES-East", 61.18, 140.7, 320.7, 4.47, 2.16, 2.41, 2.232, 1.078],
+      ["Miles City", "GOES-West", 61.46, 219.9, 39.9, 4.52, 2.16, 2.43, 2.253, 1.079]
+    ],
+    "units": "VZA and bearings in degrees (bearing clockwise from north); pixel axes in km; stretch relative to the nadir pixel of the same satellite"
+  },
+  "nearer_satellite": {
+    "columns": ["site", "nearer_satellite_by_vza", "vza_margin_deg", "other_satellite", "other_would_tie_at_lon_deg"],
+    "rows": [
+      ["Missoula", "GOES-West", 7.33, "GOES-East", -90.99],
+      ["Billings", "GOES-West", 2.32, "GOES-East", -80.0],
+      ["Glasgow", "GOES-West", 0.48, "GOES-East", -76.26],
+      ["Miles City", "GOES-East", 0.28, "GOES-West", -136.4]
+    ]
+  },
+  "sensitivity": {
+    "satellite_longitude_plus_minus_0p5_deg_max_change_12km_km": 0.344,
+    "per_km_height_slope_at_12km_km_per_km": {
+      "min": 1.634,
+      "max": 2.239
+    },
+    "sphere_minus_wgs84_max_total_km_all_rows": 0.025
+  },
+  "self_test_output": ["PASS  sub-satellite point gives zero displacement (both satellites, h 0-15 km): max offset 2.9e-12 km", "PASS  displacement grows with cloud-top height (0-15 km, 1 km steps, all sites): strictly increasing", "PASS  displacement grows with latitude 0-60 N at fixed 30 deg longitude offset, h = 10 km: strictly increasing", "PASS  flat-Earth limit: total ~ h*tan(VZA) at h = 1 km, VZA < 60 deg (GOES-East, 40 N 95 W): VZA 50.57 deg, total/(h tan VZA) = 1.0002", "PASS  apparent point lies on the ellipsoid and on the satellite ray (Missoula, 15 km, GOES-West): surface residual -2.7e-15, ray sine 2.3e-17", "PASS  nadir 2 km ABI pixel is 2.00 km across (both axes within 0.5%): long 2.0040 km, short 2.0040 km", "PASS  pixel stretch matches foreshortening: (R/R0)/cos(VZA) along the tilt, R/R0 across it: worst relative difference 0.00721", "PASS  displacement points away from the satellite (bearing within 5 deg of satellite bearing + 180): worst deviation 0.00 deg", "PASS  Montana displacement is north (poleward); east-west sign is away from the satellite: north>0 True, GOES-East shifts west and GOES-West east: True", "9/9 checks passed (model wgs84)"],
+  "unit_test_output": ["test_displacement_bearing_is_away_from_satellite (test_parallax.Direction.test_displacement_bearing_is_away_from_satellite) ... ok", "test_montana_east_west_sign_points_away_from_satellite (test_parallax.Direction.test_montana_east_west_sign_points_away_from_satellite) ... ok", "test_north_component_is_poleward_in_northern_hemisphere (test_parallax.Direction.test_north_component_is_poleward_in_northern_hemisphere) ... ok", "test_apparent_point_lies_on_ellipsoid_and_on_satellite_ray (test_parallax.Geometry.test_apparent_point_lies_on_ellipsoid_and_on_satellite_ray) ... ok", "test_flat_earth_limit_for_small_height (test_parallax.Geometry.test_flat_earth_limit_for_small_height) ... ok", "test_pixel_stretch_matches_foreshortening_formula (test_parallax.Geometry.test_pixel_stretch_matches_foreshortening_formula) ... ok", "test_total_displacement_increases_with_height (test_parallax.GrowsWithHeight.test_total_displacement_increases_with_height) ... ok", "test_displacement_grows_with_latitude_at_fixed_longitude_offset (test_parallax.GrowsWithLatitude.test_displacement_grows_with_latitude_at_fixed_longitude_offset) ... ok", "test_sphere_with_task_constants_is_close_to_wgs84 (test_parallax.ModelChoice.test_sphere_with_task_constants_is_close_to_wgs84) ... ok", "test_displacement_is_zero_at_sub_satellite_point (test_parallax.SubSatellitePoint.test_displacement_is_zero_at_sub_satellite_point) ... ok", "test_displacement_is_zero_at_zero_height_anywhere (test_parallax.SubSatellitePoint.test_displacement_is_zero_at_zero_height_anywhere) ... ok", "test_nadir_pixel_is_two_kilometres (test_parallax.SubSatellitePoint.test_nadir_pixel_is_two_kilometres) ... ok", "----------------------------------------------------------------------", "Ran 12 tests in 0.009s", "OK"]
+}

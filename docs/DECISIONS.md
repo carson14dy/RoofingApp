@@ -482,6 +482,42 @@ build of the Website workflow. Roadmap item 10, built to the rules of D23 and D2
   elevation says why its numbers can differ from town. West Yellowstone's nearest answering station
   is Yellowstone Lake, WY (35 mi); Old Faithful answered 404 and says so on the town page.
 
+**D30 · 3D storm view (globe) research recorded; the globe waits on owner decisions (2026-10-17).**
+Carson asked for "a version of Google Earth with holographic imagery for clouds and storms". The
+research is in `research/globe/` (plan and evidence sections, `validation-evidence/` with live
+checks, and a prototype outside the site, checked in headless Chromium only). Nothing ships, and
+nothing touches `website/`.
+
+The globe waits on the owner decisions in `research/globe/README.md` section 2 (D-G1 to D-G26). The
+chief ones are the site-files-only browser rule, which rules out streamed worldwide imagery; a
+vendored WebGL library and JavaScript caps; placement; and how the publishing terms read for
+products built from NOAA data. Two routes are recorded without a choice: storm layers on the Map
+page first, or a globe page now.
+
+Decision, 2026-10-17: Carson chose the staged route — storm layers on the Map page first (P1 text
+values, P2 the Band 13 picture, P3 MESH only with verified units, P4 the echo-top raster, P5
+cloud-top classes, P6 a two-hour loop), behind a build flag that is off by default; a link-only
+globe only after the P4 gate and a separate approval of a vendored library and JavaScript caps.
+
+The proposed decision entries that follow are listed in README
+section 9b as D31 onward and wait for Carson.
+
+Corrections of record:
+- D23's "Folium bundles Leaflet" is wrong: the parked app loads Leaflet 1.9.3 from cdn.jsdelivr
+  (folium 0.20.0, `folium.py:27`); the website vendors Leaflet 1.9.4, and rule 4 (third-party code
+  served by the site, not a CDN) is the precedent.
+- GOES-R has two cloud-top-height products, ACHAC (10 km) and ACHA2KMC (2 km); a height layer must
+  say which one it uses.
+- MRMS 3D levels are heights above mean sea level, so the 0.5 and 0.75 km levels lie below ground at
+  Billings (952 m); MRMS has no coverage-mask product, so -999 is only a candidate coverage signal,
+  and the meanings of -99 and -999 are unverified.
+- GOES parallax over Montana moves an uncorrected cloud top away from the satellite by about 3 to 4
+  km for a 2 km top and 20 to 33 km for a 12 to 15 km top (north-west for GOES-East, north-east for
+  GOES-West).
+
+*Why:* so the next agent does not repeat this work, and so the owner's choices are explicit before
+any globe code is considered.
+
 ## Gotchas found the hard way
 - An absolutely positioned element escapes a scroll box that isn't its containing block: the
   visually hidden "(over limit)" words in the hourly table widened every town page with a flagged
