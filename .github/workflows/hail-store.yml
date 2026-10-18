@@ -9,6 +9,16 @@ on:
   schedule:
     - cron: "43 12 * * *"
   workflow_dispatch:
+  # A branch push that changes the job or the store code runs it once, as the check that the job works on a
+  # runner (GitHub dispatches a workflow by hand only once it is on the default branch). The run publishes the
+  # same asset the schedule would; a change to the store format must rename the asset so an older build never
+  # reads a newer format.
+  push:
+    branches: [main, "claude/**", "codex/**"]
+    paths:
+      - ".github/workflows/hail-store.yml"
+      - "website/hail.py"
+      - "website/hail_fixture_data.py"
 
 permissions:
   contents: write
