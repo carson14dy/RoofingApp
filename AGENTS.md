@@ -97,7 +97,7 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
 - Plain wording from the user's side; sentence case; an error says what happened and what to do.
 - Website look: the light “field sheet” with automatic dark mode (`docs/DESIGN.md`); tokens in
   `website/static/style.css` `:root`, never hex values in components. Every hazard colour carries
-  its word. Map labels: set a new town's label side in `towns.json`; the label test must pass.
+  its word. Map labels: set a new town's label side (and, if its bubble would cover a neighbour's, its `min_zoom`) in `towns.json`; the label test must pass.
 - Store UTC. Show a job's NWS time zone (or the company zone). SPC dates follow 12:00–11:59 UTC
   reporting days. Hail sizes in SPC CSVs are hundredths of an inch; `UNK` wind stays unknown.
 - Hail history sizes (D34): to the hundredth of an inch, rounded down, with the millimetres exact beside them; the classes use the exact tenths.

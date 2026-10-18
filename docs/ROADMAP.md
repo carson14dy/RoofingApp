@@ -24,11 +24,11 @@ order.
 |---|---|---|
 | Now | Montana's active NWS alerts, most urgent first (alerts without an outline listed with a note); a map card with the latest radar and warning outlines; a card per town for the next 12 hours with flags in words | Montana only |
 | Map (D28) | Full screen, Apple-Weather style: the past hour of NOAA MRMS radar into the HRRR model forecast (15-minute steps for an hour, hourly to 12 hours) with play, scrub and 1h/12h; temperature and wind-gust layers; warning outlines and storm reports; town bubbles with the NWS forecast for the hour; town sheets; my location; a list of every alert and town | HRRR is a model, not the NWS forecast; frames are pictures made each build; no lightning or air quality; rain and snow share one palette; checked in Chromium only, not yet on a real iPhone or Android phone; `map.js` is about 2,100 lines |
-| Town pages (14) | Alerts at that point, 24-hour table (gusts first), 7-day with high and low per day | Grid forecasts for a 2.5 km square, not a roof; placeholder limits |
+| Town pages (17) | Alerts at that point, 24-hour table (gusts first), 7-day with high and low per day | Grid forecasts for a 2.5 km square, not a roof; placeholder limits |
 | Observed now (D29) | The latest reading at each town's three nearest NWS stations (any state): temperature, wind, gusts, time and age, quality flags in words, station and grid elevation; one line per town card on the Now page | Stations report hourly or less, so readings run up to 75 minutes old before they show as stale; a station is not a roof; not on the map |
 | Storm reports | Three SPC reporting days on the map card and in tables; hail in inches, unknown wind kept unknown | Preliminary reports only |
 | Honesty | Per-source status line, last verified alerts kept after a failed refresh, "Alerts not checked" per town, page-age warning, sample data labelled on every page | — |
-| Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity. Measured 2026-10-17 from the Actions API: the four scheduled runs on `main` started 2026-10-16 at 19:42 and 22:14 UTC and 2026-10-17 at 00:35 and 05:00 UTC, with gaps of 151.5, 141.6 and 264.5 minutes, not every 10, so the live site updated hours apart while the page-age banner carried the real age. GitHub's docs say scheduled runs can be delayed at high load and queued jobs may be dropped (`research/globe/validation-evidence/hosting-options.json`). |
+| Publishing | GitHub Actions every 10 minutes from `main`; branch builds check live data (`--require-live`) and keep a preview artifact; feed contracts on the About page | GitHub may delay schedules and pauses them after 60 days without activity. Measured 2026-10-17 from the Actions API: the four scheduled runs on `main` started 2026-10-16 at 19:42 and 22:14 UTC and 2026-10-17 at 00:35 and 05:00 UTC, with gaps of 151.5, 141.6 and 264.5 minutes, not every 10, so the live site updated hours apart while the page-age banner carried the real age. GitHub's docs say scheduled runs can be delayed at high load and queued jobs may be dropped (`research/globe/validation-evidence/hosting-options.json`). The offset cron (`7,17,27,37,47,57 * * * *`) was adopted on 2026-10-18 as an experiment; the count of scheduled starts on `main` in the 24 hours after merging is the measurement, to compare with the four runs in about 13 hours before. |
 | Design | Light "field sheet" look with dark mode, self-hosted fonts and Leaflet, contrast ≥ 5.86:1, collision-free map labels, 288–1440 px without sideways scroll, checked on every branch push (`docs/DESIGN.md`) | Phone Now page is long (P2) |
 | Tests | 179 website tests (64 pages, map data and station readings, 69 radar and model frames, 41 base map and label layout, 5 Pages publication planning); a Chromium page-width check of every page at 288–1440 px on every branch push alongside the app's tests; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption) | — |
 
@@ -137,7 +137,10 @@ Measured for the daily job (`hail-store.yml`), in the re-check: run time, bytes 
 | Recover from a 30-minute interruption without lost records | Next build after an outage is complete; last verified alerts carried across |
 
 ## Open questions for Carson
-- Are these the right 14 towns? Which should be added or dropped?
+- Answered 2026-10-17 (D31): every Montana city over 8,000 in the 2020 census, plus Sidney at Carson's
+  request. Anaconda, Belgrade and Sidney were added (17 towns); none was dropped. Glasgow, Glendive,
+  Lewistown and West Yellowstone stay (under 8,000). Whitefish (7,751) and Laurel (7,222) are under
+  8,000, and Lockwood and Evergreen are census-designated places, not towns, so none of those was added.
 - The company's weather limits for each roof system (Next 3).
 - Delete the parked desktop app, or keep it in the repo?
 - Should the site have its own web address (a custom domain) instead of the GitHub one?

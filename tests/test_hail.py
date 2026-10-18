@@ -1068,9 +1068,13 @@ class MeshTests(unittest.TestCase):
         row, col = h.cell_for(*BENCHLAND)
         self.assertEqual(int(np.count_nonzero((self.mesh.rows == row) & (self.mesh.cols == col))), 1)
 
-    def test_basemap_is_the_prototype_basemap(self):
-        self.assertEqual(hashlib.sha256(h.BASEMAP.read_bytes()).hexdigest(),
-                         "866fad50baa14e162d540ef366992cd1c32b6ccb1f68f27e0c4da187f951db88")
+    def test_montana_outline_is_the_prototype_outline(self):
+        # The mask comes from the Montana ring in basemap.json, not from the whole file: the base map is rebuilt
+        # when towns or labels change (D31), and the store must not change with it. The ring is the prototype's
+        # (212 vertices; its hash is the same in the base map before and after the towns rebuild).
+        ring = h._montana_ring(h.BASEMAP)
+        self.assertEqual(len(ring), 212)
+        self.assertEqual(hashlib.sha256(json.dumps(ring).encode()).hexdigest(), "2211a6037c1fc52eb973249070a9d48191d6d9a5e76a850253468a66ff7d83f4")
 
 
 class GribCheckTests(unittest.TestCase):

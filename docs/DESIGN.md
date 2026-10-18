@@ -52,9 +52,9 @@ desktops, in sunlight, and over a slow connection.
 
 ## 2. Information architecture
 
-Four top-level pages and 14 town pages, two levels deep:
+Four top-level pages and 17 town pages, two levels deep:
 ```
-Now (index.html) ── town/<slug>.html × 14
+Now (index.html) ── town/<slug>.html × 17
 Map (map.html, full screen; also a card on Now and Storm reports)
 Storm reports (reports.html)
 About (about.html)
@@ -146,9 +146,12 @@ colour alone. Contrast, computed:
 USGS imagery is in section 8) so radar and warning colours stand out. Radar is NOAA's composite saved as one picture per build with
 its frame time, at 72% opacity, so everyone sees the same frame the page describes. Warning
 polygons use the chip colours. Towns are white dots with labels; each label's side is set in
-`towns.json` so no label covers another or a dot. Maps narrower than 546 px open one zoom out, so
-the four "minor" towns (Butte, Glendive, Lewistown, Livingston) hide there, dot and label; every
-town keeps its card. Reports: hail in violet, sized by hail size; wind in teal.
+`towns.json` so no label covers another or a dot. A town shows from its `min_zoom` in `towns.json`
+(5 when it has none; `"minor": true` means 7): Butte, Glendive, Lewistown and Livingston from zoom 7,
+Anaconda from zoom 8 (label on the left, away from Butte) and Belgrade from zoom 9 (at zoom 8 its
+bubble would sit 3 px from Bozeman's). Maps narrower than 546 px open one zoom out, so the six towns
+that show from zoom 7 or later hide there, dot and label; every town keeps its card. Reports: hail in
+violet, sized by hail size; wind in teal.
 
 **States.**
 - Source: loaded · problem (with the reason) · stale (radar frame older than 15 minutes).

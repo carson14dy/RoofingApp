@@ -130,7 +130,7 @@ def check(root: Path, shots: Path | None = None) -> list[str]:
                     problems.append(f"{label}: only {bubbles} town bubbles drawn")
                 shown = page.evaluate("() => [...document.querySelectorAll('.leaflet-marker-icon.town')]"
                                       ".filter(e => getComputedStyle(e).display !== 'none').length")
-                main = sum(1 for t in data["towns"] if not t.get("minor"))
+                main = sum(1 for t in data["towns"] if t["min_zoom"] < 7)    # shown at the first view (zoom 5-6)
                 if shown < main:
                     problems.append(f"{label}: {shown} town bubbles showing, {main} expected below zoom 7")
 
@@ -240,6 +240,8 @@ ROWS_HIT = """() => [...document.querySelectorAll('#layers label')].map(l => {
 })"""
 
 
+# These waits are for the town bubbles to be drawn (attached). The first one in towns.json (Anaconda)
+# is hidden at the first view (min_zoom 7), so waiting for a visible one would wait for the wrong town.
 def check_menu_rows(browser, base) -> list[str]:
     """Phones held sideways and short windows: the layer menu sits over the timeline and every row
     (scrolled into the menu's view if need be) takes a tap at its centre."""
@@ -247,7 +249,7 @@ def check_menu_rows(browser, base) -> list[str]:
     ctx = browser.new_context(viewport={"width": 844, "height": 390}, reduced_motion="reduce")
     page = ctx.new_page()
     page.goto(base + "map.html", wait_until="load")
-    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
     for w, h in ((844, 390), (667, 375), (568, 320)):
         page.set_viewport_size({"width": w, "height": h})
         page.wait_for_timeout(200)
@@ -271,7 +273,7 @@ def check_no_outline_key(browser, base, data) -> list[str]:
     ctx = browser.new_context(viewport={"width": 1280, "height": 800}, reduced_motion="reduce")
     page = ctx.new_page()
     page.goto(base + "map.html", wait_until="load")
-    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
     page.wait_for_timeout(300)
     key = page.locator("#legend-keys [data-open-list]")
     if not key.count() or "no outline" not in key.inner_text() or not key.inner_text().startswith(str(n)):
@@ -290,7 +292,7 @@ def check_no_outline_key(browser, base, data) -> list[str]:
         ctx = browser.new_context(viewport={"width": w, "height": h}, reduced_motion="reduce")
         page = ctx.new_page()
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         page.wait_for_timeout(300)
         gap = page.evaluate("""() => {
           const key = document.querySelector('#legend-keys [data-open-list]');
@@ -317,7 +319,7 @@ def check_phone_legend(browser, base, data) -> list[str]:
     ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
     page = ctx.new_page()
     page.goto(base + "map.html", wait_until="load")
-    page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+    page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
     page.wait_for_timeout(300)
     form = page.evaluate("() => [document.getElementById('app').classList.contains('legend-2col'),"
                          " Math.round(document.getElementById('legend').getBoundingClientRect().height)]")
@@ -468,7 +470,7 @@ def check_satellite(browser, base, data) -> list[str]:
         ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, reduced_motion="reduce")
         page = ctx.new_page()
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         pick_layer(page, "Precipitation")
         if not picture_on_screen(page, "precip"):
             problems.append(f"{label}: no precipitation picture on screen to compare the satellite picture with")
@@ -502,7 +504,7 @@ def check_satellite_while_playing(browser, base, want: str) -> list[str]:
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e).splitlines()[0] if str(e) else "error"))
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         pick_layer(page, "Precipitation")
         play = page.locator("#play")
         if play.get_attribute("aria-pressed") != "true":          # aria-pressed says the timeline is playing
@@ -685,7 +687,7 @@ def check_imagery_switch(browser, base, data, shots) -> list[str]:
     watch = Watch(page, allow)
     try:
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         page.wait_for_selector(".leaflet-overlay-pane svg path", timeout=15000)
         if page.evaluate(IMAGERY_ON):
             problems.append("imagery: the page opens on Imagery without a switch")
@@ -732,7 +734,7 @@ def check_imagery_switch(browser, base, data, shots) -> list[str]:
         if wrong is None and tile is not None and not credit_row_shows(page, imagery["credit_line"], seconds=5):
             problems.append("imagery: the credit row does not show the credit with its privacy words on Imagery "
                             f"(rows: {page.evaluate(CREDIT_ROWS)})")
-        main_towns = sum(1 for t in data["towns"] if not t.get("minor"))
+        main_towns = sum(1 for t in data["towns"] if t["min_zoom"] < 7)    # shown at the first view (zoom 5-6)
         bubbles = page.evaluate(BUBBLES)
         if bubbles < main_towns:
             problems.append(f"imagery: {bubbles} town bubbles showing on Imagery, {main_towns} expected below zoom 7")
@@ -800,7 +802,7 @@ def check_imagery_direct(browser, base, data) -> list[str]:
     watch = Watch(page, allow)
     try:
         page.goto(base + "map.html?base=imagery", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         tile = watch.tile()
         wrong = tile_problem(tile, "direct open") if tile is not None else None
         if tile is None:
@@ -860,7 +862,7 @@ def check_imagery_refused(browser, base, data) -> list[str]:
     watch = Watch(page, allow)
     try:
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         page.wait_for_selector(".leaflet-overlay-pane svg path", timeout=15000)
         base_choice(page, "imagery")
         deadline = time.monotonic() + TILE_WAIT
@@ -887,7 +889,7 @@ def check_imagery_refused(browser, base, data) -> list[str]:
         if not page.evaluate(PAINTED, BORDERS):
             problems.append("imagery refused: the Montana outline and the state and country borders are not drawn "
                             "with no tiles")
-        main_towns = sum(1 for t in data["towns"] if not t.get("minor"))
+        main_towns = sum(1 for t in data["towns"] if t["min_zoom"] < 7)    # shown at the first view (zoom 5-6)
         bubbles = page.evaluate(BUBBLES)
         if bubbles < main_towns:
             problems.append(f"imagery refused: {bubbles} town bubbles show with no tiles, {main_towns} expected below zoom 7")
@@ -929,7 +931,7 @@ def check_imagery_phone(browser, base, data, shots) -> list[str]:
     watch = Watch(page, allow)
     try:
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         page.wait_for_selector(".leaflet-overlay-pane svg path", timeout=15000)
         snap(page, shots, "phone-map.png")
         base_choice(page, "imagery")
@@ -939,7 +941,7 @@ def check_imagery_phone(browser, base, data, shots) -> list[str]:
             problems.append("phone imagery: switching to Imagery did not set is-imagery on #app")
         if base_query(page) != "imagery":
             problems.append(f"phone imagery: the address does not carry base=imagery ({page.url})")
-        main_towns = sum(1 for t in data["towns"] if not t.get("minor"))
+        main_towns = sum(1 for t in data["towns"] if t["min_zoom"] < 7)    # shown at the first view (zoom 5-6)
         if page.evaluate(BUBBLES) < main_towns:
             problems.append("phone imagery: not every main town bubble shows on Imagery")
         snap(page, shots, "phone-imagery.png")
@@ -1064,7 +1066,7 @@ def map_pixel(page, data: dict, lat: float, lon: float) -> tuple[float, float]:
 def hail_open(page, root_url: str, at: str | None = None) -> None:
     """Open the map (on a spot, when the address names one) and wait until it is drawn."""
     page.goto(root_url + "map.html" + (f"?at={at}" if at else ""), wait_until="load")
-    page.wait_for_selector(".leaflet-marker-icon.town", timeout=20000)
+    page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=20000)
     page.wait_for_selector("img.leaflet-image-layer.frame", timeout=20000)
     page.wait_for_timeout(700)
 
