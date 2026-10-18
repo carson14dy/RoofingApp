@@ -12,9 +12,11 @@ sideways (nothing paints over it); alerts without an outline are named in the le
 the List; a picture still loading when the viewer switches to a layer with no pictures never appears
 under the new layer's legend; the Now page's caption names the picture the card shows (radar or
 model); a portrait phone gets the short two-column legend, which keeps one height through the whole
-timeline, and the Precipitation layer rings no town. Exits 1 with the reasons if anything fails. The Website workflow runs it
-on branch pushes; locally set PW_CHROMIUM to a Chromium executable if Playwright's own isn't
-installed.
+timeline, and the Precipitation layer rings no town. On a --storm-layers build the Satellite layer is checked
+too (check_satellite), including a switch to it made while the timeline plays. Every browser context counts
+the requests that leave this server, and that count must be
+zero. Exits 1 with the reasons if anything fails. The Website workflow runs it on branch pushes; locally set
+PW_CHROMIUM to a Chromium executable if Playwright's own isn't installed.
 """
 from __future__ import annotations
 
@@ -39,6 +41,27 @@ def serve(root: Path) -> tuple[http.server.ThreadingHTTPServer, str]:
     return httpd, f"http://127.0.0.1:{httpd.server_address[1]}/"
 
 
+class Counted:
+    """The browser, with every context it opens counting the requests that leave this server. Leaflet and the
+    fonts are served by the site (AGENTS.md rule 4), so the count must be zero in every context."""
+
+    def __init__(self, browser, base: str):
+        self._browser, self.base, self.offsite = browser, base, []
+
+    def new_context(self, **options):
+        ctx = self._browser.new_context(**options)
+        ctx.on("request", self._note)
+        return ctx
+
+    def _note(self, request) -> None:
+        url = request.url
+        if not url.startswith((self.base, "data:", "blob:")):       # a data: picture makes no request at all
+            self.offsite.append(url)
+
+    def __getattr__(self, name):                                     # launch and close belong to the browser
+        return getattr(self._browser, name)
+
+
 def check(root: Path) -> list[str]:
     from playwright.sync_api import sync_playwright
 
@@ -49,7 +72,7 @@ def check(root: Path) -> list[str]:
     launch = {"executable_path": os.environ["PW_CHROMIUM"]} if os.environ.get("PW_CHROMIUM") else {}
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(**launch)
+            browser = Counted(p.chromium.launch(**launch), base)
             for label, size in (("desktop", (1280, 800)), ("phone", (390, 844))):
                 ctx = browser.new_context(viewport={"width": size[0], "height": size[1]})
                 page = ctx.new_page()
@@ -124,7 +147,8 @@ def check(root: Path) -> list[str]:
             for extra in (lambda: check_menu_rows(browser, base), lambda: check_no_outline_key(browser, base, data),
                           lambda: check_phone_legend(browser, base, data),
                           lambda: check_empty_layer_switch(browser, base, data),
-                          lambda: check_card_words(browser, base, root)):
+                          lambda: check_card_words(browser, base, root),
+                          lambda: check_satellite(browser, base, data)):
                 try:
                     problems += extra()
                 except Exception as e:                                      # noqa: BLE001 - report, don't crash
@@ -140,6 +164,9 @@ def check(root: Path) -> list[str]:
                 problems.append("card: no 'Open map' link")
             problems += [f"card: {e}" for e in errors]
             ctx.close()
+            outside = sorted(set(browser.offsite))
+            if outside:
+                problems.append(f"{len(browser.offsite)} request(s) went to other sites: " + ", ".join(outside[:5]))
             browser.close()
     finally:
         httpd.shutdown()
@@ -338,6 +365,121 @@ def check_card_words(browser, base, root) -> list[str]:
     return []
 
 
+def pick_layer(page, name: str) -> None:
+    """Open the layer menu, tick one layer in it and close the menu again."""
+    page.click("#btn-layers")
+    page.get_by_role("radio", name=name).check()
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+
+
+ON_SCREEN = ("layer => [...document.querySelectorAll('img.leaflet-image-layer')].some(i =>"
+             " i.src.includes('/map/frames/' + layer + '-') && parseFloat(getComputedStyle(i).opacity) > 0.99)")
+
+
+def picture_on_screen(page, layer: str, timeout: int = 15000) -> bool:
+    """Whether a picture of this layer from map/frames/ is on screen and fully opaque (not still fading in)."""
+    try:
+        page.wait_for_function(ON_SCREEN, arg=layer, timeout=timeout)
+        return True
+    except Exception:                                                       # noqa: BLE001 - timed out
+        return False
+
+
+def map_canvas(page) -> bytes:
+    """A PNG of the map canvas alone. The controls, banners and sheets are hidden for the shot, so the legend
+    and the timeline cannot account for a change."""
+    box = page.locator("#map").bounding_box()
+    if not box:
+        raise ValueError("the map canvas has no size on screen")
+    style = page.add_style_tag(content=".top, .bottom, .card-ui, .scrim, .sheet { visibility: hidden !important; }")
+    page.wait_for_timeout(150)
+    shot = page.screenshot(clip=box)
+    style.evaluate("node => node.remove()")
+    return shot
+
+
+def changed_share(before: bytes, after: bytes) -> float:
+    """The share of pixels that differ between two PNG screenshots of the same size: a pixel differs when any
+    colour channel moved by more than 16 of 255."""
+    import io
+
+    import numpy as np
+    from PIL import Image
+
+    a = np.asarray(Image.open(io.BytesIO(before)).convert("RGB"), dtype=np.int16)
+    b = np.asarray(Image.open(io.BytesIO(after)).convert("RGB"), dtype=np.int16)
+    if a.shape != b.shape:
+        raise ValueError(f"the two screenshots differ in size ({a.shape} and {b.shape})")
+    return float(np.mean(np.max(np.abs(a - b), axis=2) > 16))
+
+
+def check_satellite(browser, base, data) -> list[str]:
+    """The Satellite layer (--storm-layers builds only). The layer menu picks it, the legend says Satellite, one
+    of its pictures is on screen and its swatch is painted from its legend. The picture also changes the map: the
+    map canvas differs from the Precipitation layer's in more than 2% of its pixels, on a desktop and a phone."""
+    if not data["layers"].get("satellite", {}).get("frames"):
+        return []
+    want = data["layers"]["satellite"].get("title") or "Satellite"
+    problems = []
+    for label, size in (("desktop", (1280, 800)), ("phone", (390, 844))):
+        ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, reduced_motion="reduce")
+        page = ctx.new_page()
+        page.goto(base + "map.html", wait_until="load")
+        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        pick_layer(page, "Precipitation")
+        if not picture_on_screen(page, "precip"):
+            problems.append(f"{label}: no precipitation picture on screen to compare the satellite picture with")
+        before = map_canvas(page)
+        pick_layer(page, "Satellite")
+        title = page.locator("#legend-title").inner_text().strip()
+        if title != want:
+            problems.append(f"{label}: switching to Satellite left the legend at {title!r}")
+        if not picture_on_screen(page, "satellite"):
+            problems.append(f"{label}: the satellite picture was not drawn")
+        painted = page.evaluate("() => { const s = document.querySelector('#layers .sw-satellite');"
+                                " return s ? getComputedStyle(s).backgroundImage : ''; }")
+        if "gradient" not in painted:
+            problems.append(f"{label}: the Satellite swatch in the layer menu is not painted from its legend")
+        share = changed_share(before, map_canvas(page))
+        if share <= 0.02:
+            problems.append(f"{label}: switching to Satellite changed {share:.1%} of the map canvas "
+                            "(more than 2% expected)")
+        ctx.close()
+    return problems + check_satellite_while_playing(browser, base, want)
+
+
+def check_satellite_while_playing(browser, base, want: str) -> list[str]:
+    """The timeline plays on Precipitation and the viewer picks Satellite while it plays. The Satellite layer has one
+    frame, so the timeline's position must be brought inside it (buildTimeline clamps state.pos); without that the
+    page throws. No script error may follow, on a desktop and a phone."""
+    problems = []
+    for label, size in (("desktop", (1280, 800)), ("phone", (390, 844))):
+        ctx = browser.new_context(viewport={"width": size[0], "height": size[1]})
+        page = ctx.new_page()
+        errors = []
+        page.on("pageerror", lambda e: errors.append(str(e).splitlines()[0] if str(e) else "error"))
+        page.goto(base + "map.html", wait_until="load")
+        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        pick_layer(page, "Precipitation")
+        play = page.locator("#play")
+        if play.get_attribute("aria-pressed") != "true":          # aria-pressed says the timeline is playing
+            play.click()
+        start = page.locator("#range").input_value()
+        try:
+            page.wait_for_function("v => document.getElementById('range').value !== v", arg=start, timeout=10000)
+        except Exception:                                          # noqa: BLE001 - timed out
+            problems.append(f"{label}: the timeline did not move while it played ({start})")
+        pick_layer(page, "Satellite")
+        page.wait_for_timeout(1000)
+        title = page.locator("#legend-title").inner_text().strip()
+        if title != want:
+            problems.append(f"{label}: switching to Satellite while playing left the legend at {title!r}")
+        problems += [f"{label}: page error after picking Satellite while playing: {e}" for e in errors]
+        ctx.close()
+    return problems
+
+
 def main(argv=None) -> int:
     args = argv if argv is not None else sys.argv[1:]
     root = Path(args[0] if args else "_site")
@@ -345,7 +487,8 @@ def main(argv=None) -> int:
     if problems:
         print("Map smoke test failed:\n- " + "\n- ".join(problems))
         return 1
-    print("Map smoke test passed: page, frames, basemap, bubbles, play, layers and card all work.")
+    print("Map smoke test passed: page, frames, basemap, bubbles, play, layers and card all work, "
+          "and no request went to another site.")
     return 0
 
 
