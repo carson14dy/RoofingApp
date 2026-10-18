@@ -460,7 +460,7 @@ def check_satellite(browser, base, data) -> list[str]:
         ctx = browser.new_context(viewport={"width": size[0], "height": size[1]}, reduced_motion="reduce")
         page = ctx.new_page()
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         pick_layer(page, "Precipitation")
         if not picture_on_screen(page, "precip"):
             problems.append(f"{label}: no precipitation picture on screen to compare the satellite picture with")
@@ -494,7 +494,7 @@ def check_satellite_while_playing(browser, base, want: str) -> list[str]:
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e).splitlines()[0] if str(e) else "error"))
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         pick_layer(page, "Precipitation")
         play = page.locator("#play")
         if play.get_attribute("aria-pressed") != "true":          # aria-pressed says the timeline is playing
@@ -677,7 +677,7 @@ def check_imagery_switch(browser, base, data, shots) -> list[str]:
     watch = Watch(page, allow)
     try:
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         page.wait_for_selector(".leaflet-overlay-pane svg path", timeout=15000)
         if page.evaluate(IMAGERY_ON):
             problems.append("imagery: the page opens on Imagery without a switch")
@@ -724,7 +724,7 @@ def check_imagery_switch(browser, base, data, shots) -> list[str]:
         if wrong is None and tile is not None and not credit_row_shows(page, imagery["credit_line"], seconds=5):
             problems.append("imagery: the credit row does not show the credit with its privacy words on Imagery "
                             f"(rows: {page.evaluate(CREDIT_ROWS)})")
-        main_towns = sum(1 for t in data["towns"] if not t.get("minor"))
+        main_towns = sum(1 for t in data["towns"] if t["min_zoom"] < 7)    # shown at the first view (zoom 5-6)
         bubbles = page.evaluate(BUBBLES)
         if bubbles < main_towns:
             problems.append(f"imagery: {bubbles} town bubbles showing on Imagery, {main_towns} expected below zoom 7")
@@ -792,7 +792,7 @@ def check_imagery_direct(browser, base, data) -> list[str]:
     watch = Watch(page, allow)
     try:
         page.goto(base + "map.html?base=imagery", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         tile = watch.tile()
         wrong = tile_problem(tile, "direct open") if tile is not None else None
         if tile is None:
@@ -852,7 +852,7 @@ def check_imagery_refused(browser, base, data) -> list[str]:
     watch = Watch(page, allow)
     try:
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         page.wait_for_selector(".leaflet-overlay-pane svg path", timeout=15000)
         base_choice(page, "imagery")
         deadline = time.monotonic() + TILE_WAIT
@@ -879,7 +879,7 @@ def check_imagery_refused(browser, base, data) -> list[str]:
         if not page.evaluate(PAINTED, BORDERS):
             problems.append("imagery refused: the Montana outline and the state and country borders are not drawn "
                             "with no tiles")
-        main_towns = sum(1 for t in data["towns"] if not t.get("minor"))
+        main_towns = sum(1 for t in data["towns"] if t["min_zoom"] < 7)    # shown at the first view (zoom 5-6)
         bubbles = page.evaluate(BUBBLES)
         if bubbles < main_towns:
             problems.append(f"imagery refused: {bubbles} town bubbles show with no tiles, {main_towns} expected below zoom 7")
@@ -921,7 +921,7 @@ def check_imagery_phone(browser, base, data, shots) -> list[str]:
     watch = Watch(page, allow)
     try:
         page.goto(base + "map.html", wait_until="load")
-        page.wait_for_selector(".leaflet-marker-icon.town", timeout=15000)
+        page.wait_for_selector(".leaflet-marker-icon.town", state="attached", timeout=15000)
         page.wait_for_selector(".leaflet-overlay-pane svg path", timeout=15000)
         snap(page, shots, "phone-map.png")
         base_choice(page, "imagery")
@@ -931,7 +931,7 @@ def check_imagery_phone(browser, base, data, shots) -> list[str]:
             problems.append("phone imagery: switching to Imagery did not set is-imagery on #app")
         if base_query(page) != "imagery":
             problems.append(f"phone imagery: the address does not carry base=imagery ({page.url})")
-        main_towns = sum(1 for t in data["towns"] if not t.get("minor"))
+        main_towns = sum(1 for t in data["towns"] if t["min_zoom"] < 7)    # shown at the first view (zoom 5-6)
         if page.evaluate(BUBBLES) < main_towns:
             problems.append("phone imagery: not every main town bubble shows on Imagery")
         snap(page, shots, "phone-imagery.png")
