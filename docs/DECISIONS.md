@@ -613,6 +613,113 @@ road and name licence is not settled, and that stays open for Carson. Carson kep
 built, it loads the same first view, and with the switch off the page makes no request to another site. Writing
 the exception down keeps the next change from streaming tiles from another host without a decision.
 
+**D34 · Hail history for every address: the owner's decisions and the B1 build (2026-10-18).** Carson wrote on
+2026-10-18, opening with "Decisions that are mine.", and then seven decisions. They are quoted word for word:
+
+1. "Trailing 5 years to today."
+2. "A public lookup by typed address or clicked location. Each address in montana should have a dot to click on the map with a popup on each history of weather."
+3. "Pages only for now."
+4. "Make the weather updates consistent and recent as possible"
+5. "Try to find and read hail units and codes then process it and make the user understand it easier. Where they can find the exact date that the hail happened at that location."
+6. "Don't include owners names. But I do want all addresses included and all types of weather at that address for the past 5 years in a popup after you click the house on the map."
+7. "Follow the laws"
+
+What they settle:
+
+- *Window (1).* The store holds the 1,826 SPC days that end on the newest published day. On 2026-10-18 that is
+  2021-10-17 to 2026-10-16, the last from the file stamped 2026-10-17 at 12:00 UTC. Day indexes count from
+  2020-01-01 and never move, so the window can slide without renumbering. A day runs from 12:00 UTC to 12:00 UTC
+  the next day: 6 am to 6 am Mountain daylight time, 5 am to 5 am in winter (the SPC reporting day).
+- *Lookup, addresses and names (2, 6).* B1 is a public lookup by clicked location on the Map page. B3 adds typed
+  addresses and a dot for each address in the Montana State Library (MSL) Structures and Addresses Framework
+  (674,715 points). Owner fields are never read and parcel IDs are dropped, so no owner name is read, stored or
+  shown. B2 adds the other kinds of weather (reports, warnings, station gusts) to each address's popup.
+- *Pages only (3).* No server, database, account or second host. The store is site files under `_site/hail/`,
+  copied in by the Pages build. The daily job publishes the store as one release asset on this repository
+  (`hail-store`), which the 10-minute build downloads. The release is the transport, not a second site.
+- *Recent and consistent (4).* The daily job, `.github/workflows/hail-store.yml`, runs at 12:43 UTC. It is a full
+  rebuild: it rebuilds the whole window from NOAA's archive, verifies it and publishes it. The daily append that the
+  first design carried forward is withdrawn.
+  The committed seed and the Actions cache restore from the first specification are withdrawn with it: the 10-minute build downloads the release asset and nothing else, and the daily job may keep an optional download cache of the raw files.
+  The gate is that a cold-cache and a warm-cache build give byte-identical
+  shards (B1-6), so the cache only saves downloads. The 12:00 UTC file is published about 12:08 UTC (measured in
+  `hosting-and-architecture.json` on the hail-history research branch). The newest day is added by a job that starts
+  at 12:43 UTC and shows here on the next rebuild, usually within the hour. The schedule offset is the consistency fix
+  for the builds, which leave the top of the hour as the job does (D33 is on the schedule-offset branch).
+- *Units and codes (5).* NOAA's MRMS GRIB2 user table settles them (its evidence is
+  `research/hail-history/validation-evidence/mrms-grib2-tables/` on the `claude/hail-history` research branch).
+  MESH and the MESH maxima are in millimetres. -1 is missing and -3 is no coverage. In the reflectivity product, -99 is
+  missing and -999 is no coverage. Table versions 12.0 to 12.2 agree; the archive files do not state their version. So
+  a size shows to the hundredth of an inch, rounded down, with the millimetre value exact beside it, with its NWS size
+  word and the exact SPC day. Missing and no-coverage values are never stored, and a day with no value is "no
+  estimate", never "no hail".
+- *Size display (10).* Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact:
+  513 tenths is 2.01 in (51.3 mm), 185 is 0.72 in (18.5 mm), 253 is 0.99 in (25.3 mm), 190 is 0.74 in (19.0 mm) and
+  1015 is 3.99 in (101.5 mm). Rounding down never crosses a class edge, because every class edge is a whole hundredth
+  of an inch, so one rule covers every size and no caps table is needed. The classes, the severe tag (254 tenths and
+  up) and the 4.00 in note (1016 tenths and up) use the exact tenths. The browser applies the same rule: it rounds the
+  tenths down to the hundredth and writes two decimals.
+- *Floor, 0.25 in.* Values under 0.25 in (6.35 mm) are not stored. Pea size, 0.25 in, is the smallest size the
+  NWS reports, so a smaller radar value has no report to compare with. The first stored value is 64 tenths of a
+  millimetre (6.4 mm, which reads 0.25 in). The floor also keeps the store small: in the prototype, 0.25 in and up
+  is 2,913,472 cell-days in 4,595 shards (13,415,025 bytes), against 11,054,458 positive cell-days at 0.1 mm and
+  up (`h1-mesh-store.json`, research branch).
+- *Review at 4.00 in.* 4.00 in (101.6 mm, 1,016 tenths) is the largest official Montana hail size in the research
+  evidence (`warnings-archive.json`, fact 39, research branch) and the candidate review cap in research OW-H5,
+  which proposed holding values above a cap out for review. The B1 contract shows them instead, with a note at
+  4.00 in and up: "unusually large for a radar estimate; treat with care". The value stays visible, and its
+  limits are stated beside it.
+- *Kinds kept apart (rule 5).* The sheet and the town tables show one kind: a radar estimate (NOAA MRMS MESH) of the
+  largest hail over this cell, about 0.7 miles north to south and 0.5 miles east to west, during the day. Reports,
+  official warnings, radar detections and station readings join in B2, each row with its own kind word. No word calls
+  a value damage, a roof finding or an insurance matter. Every loaded sheet and loaded town table says that an estimate is not a
+  measurement at the ground and not an inspection, and that no estimate is not "no hail".
+  Days not listed have no radar estimate of 0.25 in or more; that is not the same as no hail.
+- *Outside Montana (11).* The store decides, not the grid box. Every tile that holds a Montana cell has a shard, even
+  one with no events. Each shard lists the in-tile keys of its Montana cells in `state`, and `hail/index.json` and
+  `data/map.json` list every shard's name in `tiles`.
+  `data/map.json` carries the 4,597 tile names (about 64 KB on disk, about 11 KB over the wire because Pages compresses JSON in transit), so no bitset is used.
+  In the browser, a tile not in `tiles` gets the outside words with no fetch; a key not in the shard's `state` gets the outside words; a key in `state` with no entry in `cells` gets the no-estimate words; any other key gets its rows.
+  The browser also picks the largest day, counts the classes and chooses between the lead templates; every sentence it fills is Python's (website/hail.py WORDS).
+  `tools/smoke_map.py` checks Wyoming (43.5, -108.0), Idaho (44.6,
+  -115.0) and Canada (49.5, -110.0) for the outside words and zero shard requests, and an in-state cell with no events
+  for the no-estimate words after one fetch.
+- *Copy check and partial days (12).* For each SPC day the build compares the file's size in NOAA's bucket with Iowa
+  State's archive (IEM). If both answer and the sizes differ, the day is re-derived as the maximum of its two-minute
+  frames and listed in `copy_check.rederived`.
+  If IEM has no copy or does not answer, the bucket copy is used and the index says so. A re-derived day with fewer than 720 two-minute slots filled is listed in `copy_check.partial` as
+  `{"day": "2025-06-25", "frames": 717, "expected": 720}`, and is still stored as the maximum of
+  the frames that exist. For 2025-06-25 the bucket's 1440-minute copy disagrees with its own frames, so the frames are
+  the value kept. `compare` passes when every overlapping day that was not re-derived has 0 mismatches against the
+  prototype and every re-derived day equals the frame maximum the builder recorded; it prints the partial list.
+  `verify` does not fail on partial days. The index's `copy_check` keeps `coverage`, `partial`, `frames`, `rederived`,
+  `days_differed`, `days_checked` and `skipped`. The partial list and the compare counts are measured in the re-check.
+- *Off on main (7).* `--hail-history` is off by default. Branch previews pass it, as they pass `--storm-layers`;
+  `main` does not. It stays off until Carson says the About text is right and counsel confirms the items that
+  decision 7 covers: the MSL clause "for no other purpose", MCA 2-6-1017, and the GitHub Actions and Pages terms.
+- *Known limits, recorded.* (a) The research record measured the 12:00 UTC file's upload 496 to 3,623 seconds after
+  its stamp (`evaluation-and-wording.json`, fact 61, research branch). On some days the 12:43 UTC job reads before the
+  file is up. In that run the window ends one day earlier, and the next daily run includes the day. The research had
+  proposed a start after 13:15 UTC (OW-H4). B1 keeps 12:43 UTC, and the first runs measure it. (b) Where the NOAA and
+  IEM copies of a file differ in size, the day is re-derived from its two-minute frames (see copy check and partial
+  days above). The prototype found four such files, stamped 2025-06-26, 2025-06-27, 2026-05-26 and 2026-09-11. Those
+  are the SPC days 2025-06-25, 2025-06-26, 2026-05-25 and 2026-09-10 (`h1-mesh-store.json`). (c) Montana membership is decided by the centre of the 0.01-degree cell, not by the point. So a point inside Montana within about one cell of the state line reads outside when its cell's centre lies outside Montana, and a point outside Montana within that distance reads inside when its cell's centre lies inside Montana.
+- *Labels.* The globe research's proposed decision labels (`research/globe/README.md` section 9b, from D31) are
+  proposals, not entries in this log. The D34 that D30 cites for the satellite freshness limits is one of those
+  proposals. This entry is the D34 in the log.
+- *Built on `claude/hail-b1`, not merged.* `website/hail.py` (the grid, size classes and words, store readers, the
+  SAMPLE fixture, the full daily build and verify); `website/build.py`, the templates and `website/sources.py`
+  (`--hail-history`, `--hail-store`, the town tables, the About paragraph, the contract row);
+  `website/static/map/map.js` (the click, the outside rule, one shard fetch and the sheet, documented in its header);
+  `.github/workflows/hail-store.yml` (installs unpinned, as the site build does); the tests and the docs. The words
+  are in `docs/DESIGN.md` section 9. The gates and their results are in
+  `research/hail-history/validation-evidence/b1-verification.json`, pending the re-check.
+
+*Why:* the owner's seven decisions change what the site is for: a public history at any spot, five years, no owner
+names, and the laws. The next agent needs them word for word before B2 and B3 are built. The radar estimate ships
+first because its units are now verified and its source is one NOAA file a day. The flag keeps the history off
+the public site until the owner has read the About text and counsel has read the terms.
+
 ## Gotchas found the hard way
 - An absolutely positioned element escapes a scroll box that isn't its containing block: the
   visually hidden "(over limit)" words in the hourly table widened every town page with a flagged

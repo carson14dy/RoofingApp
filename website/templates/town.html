@@ -136,6 +136,45 @@
   {% endif %}
 </section>
 
+{% if hail_history and town.hail %}{% set h = town.hail %}
+<section aria-labelledby="hail-h">
+  <div class="section-head"><h2 id="hail-h">Hail history, five years</h2></div>
+  {% if h.sample %}<p class="sub"><span class="chip chip-unknown">{{ h.sample }}</span></p>{% endif %}
+  {% if h.unavailable %}
+  <p class="empty">{{ h.unavailable }}</p>
+  {% elif h.state == "outside" %}
+  <p class="sub">{{ h.outside }}</p>
+  {% else %}
+  <p class="sub">{{ h.lead }}</p>
+  {% if h.rows %}
+  <div class="table-box">
+    <table>
+      <caption class="visually-hidden">Days with a radar-estimated hail size of 0.25 in or more at {{ town.name }}, newest first</caption>
+      <thead><tr><th scope="col">Date</th><th scope="col" class="n">Size in</th><th scope="col" class="n">Size mm</th><th scope="col">Size class</th></tr></thead>
+      <tbody>
+      {% for r in h.rows %}
+        <tr>
+          <th scope="row">{{ r.date }}</th>
+          <td class="n">{{ r.in }}</td>
+          <td class="n">{{ r.mm }}</td>
+          <td>{{ r.class }}{% if r.severe %} <strong>{{ hail_words.severe_tag }}</strong>{% endif %}{% if r.note %}<br><small>{{ r.note }}</small>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% if h.class_lines %}
+  <h3>{{ h.class_title }}</h3>
+  <ul>{% for line in h.class_lines %}<li>{{ line }}</li>{% endfor %}</ul>
+  {% endif %}
+  <p class="sub">{{ h.what_this_is }}</p>
+  {% if h.missing %}<p class="sub">{{ h.missing }}</p>{% endif %}
+  {% if h.stale %}<p class="sub"><strong>{{ h.stale }}</strong></p>{% endif %}
+  <p class="sub">{{ h.source }}</p>
+  {% endif %}
+</section>
+{% endif %}
 <section aria-labelledby="other-h">
   <div class="section-head"><h2 id="other-h">Other towns</h2></div>
   <ul class="town-links">

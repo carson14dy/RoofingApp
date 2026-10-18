@@ -417,3 +417,66 @@ Frames are PNG files in
 each hourly HRRR run redraws the same valid times, so a name must never stand for two pictures. The
 pages load the scripts, stylesheets and basemap with `?v=` = the file's content hash (unchanged files
 keep their address across rebuilds) and `data/map.json` with `?v=` = the build minute.
+
+## 9. Hail history (2026-10-18, behind `--hail-history`)
+
+**Frame.** Carson's decision 5 (`DECISIONS.md` D34): "Where they can find the exact date that the hail happened at that location." The sheet answers one question for one spot: on which days in the last five years did NOAA's radar estimate hail of pea size or more here, and how big was it. On a loaded sheet or loaded town table, beside every number it says what the number is (a radar estimate of the largest hail over this cell, about 0.7 miles north to south and 0.5 miles east to west, during the day) and what it is not (a measurement at the ground, an inspection, or a sign of no hail).
+
+**Users and moments.** The owner or a crew lead on a phone at a job's spot, asking on which days radar estimated hail there and reading the sentence that says what an estimate is. A reader of a town page scanning the table for the date of a storm.
+
+**Principles specific to the history.**
+1. *An estimate is not a measurement.* The sheet and each town table say so beside the rows, not in a footnote.
+2. *No estimate is not "no hail".* A day with no stored value is "no estimate" in the words. A zero is never written.
+3. *The date is the SPC day.* A day runs from 12:00 UTC to 12:00 UTC the next day: 6 am to 6 am Mountain daylight time, 5 am to 5 am in winter (the SPC reporting day). Its date is read in UTC, so the viewer's time zone never moves it, and it reads "Jun 15, 2025".
+4. *Python writes the words.* The build renders the town tables. The browser fills the same templates from `data/map.json` and holds no hail sentence, size unit or threshold of its own. The browser also picks the largest day, counts the classes and chooses between the lead templates; every sentence it fills is Python's (website/hail.py WORDS).
+5. *One reading of size.* Inches to the hundredth, rounded down, with the millimetres exact beside them, and a class word from the size table. The class comes from the stored tenths of a millimetre, so the rounded-down inches never disagree with it.
+
+**Where the words appear.**
+| Where | What shows | Shown when |
+|---|---|---|
+| Map sheet: tap or click the map, or open `?at=lat,lon` | Title "Hail history at this spot"; the lead; one row per day, newest first; days per size class; what this is; missing days; the stale line when it applies; the source line; a close button (Escape closes) | `--hail-history` build |
+| Map legend | "Tap or click the map for the five-year hail history at that spot" | `--hail-history` build |
+| Map status line | "Hail history didn't load at {time}: {detail}. This is not an all-clear." | The store cannot be read |
+| Town page, "Hail history, five years" | The lead; a table of date, size in inches and mm, class word and severe tag; what this is; missing days; the source line; the SAMPLE label in sample builds | `--hail-history` build |
+| About page, "Hail history" | A short paragraph: what the store is, the radar-estimate kind, the floor, the day rule, the daily job, the source and the units, and that an estimate is not an inspection | `--hail-history` build |
+
+**States.** The sheet and the town tables use the same words. The sheet's own loading and outside states exist only there, because a town page is built, not fetched.
+| State | When | Words |
+|---|---|---|
+| Loading (sheet) | After a tap, while the tile's shard is fetched; the words are replaced when it arrives | "Loading the hail history for this spot" |
+| Loaded | At least one day at 0.25 in or more in the window | Lead: "{n} days with a radar-estimated hail size of 0.25 in or more between {start} and {end}. Largest: {largest_in} in ({largest_mm} mm) on {largest_date}." For one day: "1 day with ...". Then the rows |
+| No estimate (no events) | The spot is in Montana and its key is in the shard's `state` with no entry in `cells`: no day at 0.25 in or more in the window, including a cell with no stored value | "No day between {start} and {end} has a radar-estimated hail size of 0.25 in or more at this spot. That is not the same as no hail: radar estimates miss some hail, and {missing} days have no data." With one missing day: "and 1 day has no data." With none: "That is not the same as no hail: radar estimates miss some hail." |
+| Outside (sheet) | The tile is not in `tiles` (no fetch is made), or the key is not in the shard's `state`: the point is outside Montana | "Outside Montana. The history covers Montana only." |
+| Outside (sample build) | A `--sample` build, where the tile is not listed or the key is not in the shard's `state`; off the grid, the plain words of the row above show | "Not in the SAMPLE data: this sample holds only a few places, so this spot has no history here." |
+| Unavailable | The store or the tile cannot be read, or the build has no store | "Hail history is unavailable: {problem}. This is not the same as no hail." The problem is in plain words, for example "the history for this spot didn't load in this update" |
+| Stale | The newest day is more than 3 days older than today (UTC) | "The newest day in this history is {as_of}; newer days have not been added yet." Shown with the rows |
+| Sample | A `--sample` build | "SAMPLE data" sits in the sheet body in every state (loaded, no estimate, outside, loading, unavailable), not on the title, and every town table carries it too. The SAMPLE store holds real decoded values for a few tiles and days only |
+| Missing days | Any day in the window with no file | "Days with no data, not counted: {list}." |
+| What this is | On a loaded sheet and in each loaded town table | "A radar estimate (NOAA MRMS MESH) of the largest hail over this cell, about 0.7 miles north to south and 0.5 miles east to west, during the day. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact. An estimate is not a measurement at the ground and not an inspection. A day runs from 12:00 UTC to 12:00 UTC the next day: 6 am to 6 am Mountain daylight time, 5 am to 5 am in winter (the SPC reporting day). Days not listed have no radar estimate of 0.25 in or more; that is not the same as no hail." |
+| Source | On a loaded sheet and in each loaded town table | "Source: NOAA MRMS MESH 24-hour maximum, 12:00 UTC files, NOAA Open Data on AWS. History as of {as_of}. The newest day is added by a job that starts at 12:43 UTC and shows here on the next rebuild, usually within the hour." |
+
+**Size words.** The stored value is tenths of a millimetre. The size shows to the hundredth of an inch, rounded down, with the millimetre value beside it, exact to the tenth of a millimetre.
+| Stored (tenths of a mm) | Size shown (in, to the hundredth, rounded down) | Class word | Severe tag |
+|---|---|---|---|
+| 64 to 190 | 0.25 to 0.74 | pea to mothball | no |
+| 191 to 253 | 0.75 to 0.99 | penny to nickel | no |
+| 254 to 380 | 1.00 to 1.49 | quarter to half dollar | yes |
+| 381 to 507 | 1.50 to 1.99 | ping-pong ball to golf ball | yes |
+| 508 to 698 | 2.00 to 2.74 | hen egg to tennis ball | yes |
+| 699 and up | 2.75 and up | baseball or larger | yes |
+
+- At 4.00 in (1,016 tenths) and up, a row also carries "unusually large for a radar estimate; treat with care".
+- The severe tag is 254 tenths (1.00 in, 25.4 mm) and up, the NWS severe size.
+- The class follows the stored tenths of a millimetre, and the shown size is rounded down from the same value, so the two never disagree about a class. 190 tenths is 19.0 mm (0.748 in): pea to mothball, shown as 0.74 in (19.0 mm). 191 tenths is 19.1 mm (0.752 in): penny to nickel, shown as 0.75 in (19.1 mm). 253 tenths is 25.3 mm (0.996 in): penny to nickel, shown as 0.99 in (25.3 mm), not severe. The first stored value, 64 tenths (6.4 mm), shows 0.25 in (6.4 mm). One rule covers every size, so there is no caps table.
+- Sizes follow the NWS hail size chart; the words name the coin or ball size the chart uses.
+
+**Legend line.** "Tap or click the map for the five-year hail history at that spot", in the legend's note line, only in a `--hail-history` build. It is not a size key.
+
+**Data contract.** Nothing here is in the default build. With `--hail-history`:
+- `data/map.json["hail"]`: `state` (`loaded`, `sample` or `unavailable`), `as_of` (the newest SPC day), `window` (first and last SPC day), `d0` ("2020-01-01"), `missing_days`, `source`, `problem` (null, or the plain words); `grid` (`cell_deg` 0.01, `tile_cells` 10, `row0_lat` 54.995, `col0_lon` -129.995, `rows` 3500, `cols` 7000); `shard` (the template `hail/t/r{r}_c{c}.json`, with `{r}` and `{c}` the tile row and column in four digits); `tiles` (the sorted names of every shard, the same list as in `hail/index.json`); `floor_tenths` 64, `floor_in` 0.25, `tenths_per_inch` 254 (the divisor the browser uses; it rounds down to the hundredth), `large_note_tenths` 1016, `stale_days` 3, `at_zoom` 9, `tenths_per_mm` 10; `classes` (`min_tenths`, `max_tenths`, `min_in`, `max_in`, `word`, `severe`, in the table's order); `words` (every sentence template, with its placeholders in braces).
+- Cell arithmetic, in exact decimal: `row = floor((54.995 - lat) * 100 + 0.5)` and `col = floor((lon + 129.995) * 100 + 0.5)`, which rounds a cell edge to the cell to the south or the east. The tile is `row // 10` and `col // 10`, and the key inside the shard is `(row % 10) * 10 + (col % 10)`. Benchland (47.08 N, 110.02 W) is row 792, column 1998, in `hail/t/r0079_c0199.json` with key 28.
+- The shard, `hail/t/r{row // 10:04d}_c{col // 10:04d}.json` (format `hail-cells-v1`): `{"f": "hail-cells-v1", "r": tile row, "c": tile column, "d0": "2020-01-01", "u": "tenths of a mm", "state": [key, ...], "cells": {"<key>": [[day index, tenths], ...]}}`. `state` lists every in-tile key (0 to 99) of a Montana cell, sorted. `cells` holds only the keys with at least one stored value, each list sorted by day; every value is an integer. Every tile with at least one Montana cell has a shard, even one with no events. The day index counts days from 2020-01-01. Benchland's cell (row 792, column 1998) holds 185 tenths (18.5 mm) on 2025-06-15 (day index 1992), so key 28 of `hail/t/r0079_c0199.json` lists `[1992, 185]` under `cells`.
+- The browser rule, in order (`map.js`): a tile name not in `tiles` gets the outside words and no fetch; a key not in the shard's `state` gets the outside words; a key in `state` with no entry in `cells` gets the no-estimate words; any other key gets its rows. A shard that cannot be read gets the unavailable words. The browser also picks the largest day, counts the classes and chooses between the lead templates; every sentence it fills is Python's (website/hail.py WORDS).
+- The index, `hail/index.json` (format `hail-store-v1`): `built_at`, `as_of`, `window`, `d0`, `grid`, `state` ("Montana"), `cells_in_state` (450,765), `floor_tenths`, `floor_in`, `days_expected` (1,826), `days_present`, `missing_days`, `events`, `shards`, `bytes`, `tiles` (the sorted names of every shard, such as `r0079_c0199`), `source` (the product `MESH_Max_1440min_00.50`, the bucket, the 12:00 UTC file time, the SPC day rule and the units table), `copy_check` (`coverage` and `frames` for each re-derived day, `partial`, `rederived`, `days_differed`, `days_checked`, `skipped`), and `"sample": true` only in the SAMPLE store. Each `coverage` entry has `listed`, `near_duplicate_pairs`, `distinct_slots` (the two-minute slots filled; 720 for a full day) and `largest_gap_s`.
+- The manifest, `hail/manifest.json` (format `hail-manifest-v1`): the `bytes` and `sha256` of every other file under `hail/`, and the index's counts. The build checks every hash after unpacking and refuses the store on any mismatch.
+- Budget: all of `hail/` at most 60 MB on disk; the `tiles` list is about 4,600 names (its bytes are measured in the re-check). The SAMPLE store, `website/data/hail-fixture/`, is under 50 KB and labelled sample in its index.

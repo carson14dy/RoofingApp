@@ -180,6 +180,28 @@ CONTRACTS = {
                    "base map's roads, lakes, rivers, counties and names stay hidden while Imagery is on. Outside the "
                    "United States, tiles above zoom 8 are blank or missing in the places checked.",
     },
+    # --hail-history builds only (build.py HAIL_CONTRACTS); the store's format and words are in website/hail.py
+    "hail_history": {
+        "name": "NOAA MRMS MESH, five-year hail history (radar estimates)",
+        "request": "NOAA Open Data on AWS (noaa-mrms-pds), MESH_Max_1440min_00.50, the 12:00 UTC file of each SPC day "
+                   "(the file stamped the day after). A daily job turns the trailing 1,826 SPC days into one store on "
+                   "GitHub Releases, and each build copies that store to this site. Where the NOAA copy and Iowa "
+                   "State's archive copy of a file differ in size, the day is rebuilt as the maximum of its two-minute "
+                   "frames. Where Iowa State's copy does not answer, the NOAA copy is used alone and the store's index "
+                   "counts those days as skipped.",
+        "units": "Millimetres (NOAA's GRIB2 user table, UserTable_MRMS_v12.2), stored in tenths of a millimetre. "
+                 "Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact "
+                 "(513 tenths: 2.01 in, 51.3 mm). Values under 0.25 in (6.35 mm) are not stored; values of 4.00 in and "
+                 "up carry a note. A radar estimate of the largest hail over this cell, about 0.7 miles north to south "
+                 "and 0.5 miles east to west, during the day.",
+        "timing": "A day runs from 12:00 UTC to 12:00 UTC the next day: 6 am to 6 am Mountain daylight time, 5 am to "
+                  "5 am in winter (the SPC reporting day). The day is held by the file stamped the day after at "
+                  "12:00 UTC, posted about 12:08 UTC. The newest day is added by a job that starts at 12:43 UTC and "
+                  "shows here on the next rebuild, usually within the hour. Each page shows the store's as-of date.",
+        "missing": "-1 (missing) and -3 (no coverage) are never stored. A cell with no stored value on a day is no radar "
+                   "estimate, never 'no hail'. A day with no file is listed on the page and not counted, and a day that "
+                   "fails stays missing. An estimate is not a measurement at the ground and not an inspection.",
+    },
 }
 
 

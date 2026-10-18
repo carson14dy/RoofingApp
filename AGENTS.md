@@ -29,13 +29,16 @@ website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · g
            band 13 picture, both behind --storm-layers) · build.py (collect → frames + data/map.json →
            pages) · sample.py (labelled sample data) · towns.json · templates/ · static/ (style, Leaflet,
            fonts, map/ = map.js, map.css, basemap.json)
+           hail.py (hail history: grid, size words, store readers, daily build; --hail-history) · hail_fixture_data.py (the
+           SAMPLE store's events) · data/hail-fixture/ (the SAMPLE store)
 tools/     build_basemap.py (rebuilds static/map/basemap.json from Natural Earth + Census; by hand)
 .github/workflows/website.yml   build every 10 min from main → GitHub Pages; branch pushes = live check
+.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, verify it, publish the release asset (D34)
 payload/   the parked app — updates itself. app.py (routes) · weather.py (feeds, evidence, alert matching,
            rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
 desktop/   the shell — changes only with a new installer. launcher.py (window, local server,
            notifications, recovery page) · updater.py (GitHub updates, self-test, rollback)
-tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
+tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
            update channel vs fake GitHub
 build.py   PyInstaller build      ship.py   test → bump version → commit → push
 ```
@@ -44,12 +47,13 @@ build.py   PyInstaller build      ship.py   test → bump version → commit →
 ```bash
 pip install requests jinja2 pillow numpy pygrib h5py tzdata     # enough for the website
 python -m website.build --out _site --sample             # labelled sample data, no network
+python -m website.build --out _site --hail-history       # the five-year hail history; off by default (D34)
 python -m website.build --out _site --require-live       # live data; exit 1 if any source failed
 python -m http.server -d _site 8000                      # then open http://localhost:8000
 pip install -r requirements.txt                          # the parked desktop app
 python desktop/launcher.py                      # native window (--browser, or --headless --offline for tests)
 python desktop/launcher.py --selftest payload   # the check installed apps run before accepting an update
-python -m unittest discover -s tests -v         # offline, ~5 s; must pass before any merge
+python -m unittest discover -s tests -v         # offline; must pass before any merge
 python ship.py "one-line note" [--minor]        # ships to users — only when the owner asks
 ```
 
@@ -96,6 +100,7 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
   its word. Map labels: set a new town's label side in `towns.json`; the label test must pass.
 - Store UTC. Show a job's NWS time zone (or the company zone). SPC dates follow 12:00–11:59 UTC
   reporting days. Hail sizes in SPC CSVs are hundredths of an inch; `UNK` wind stays unknown.
+- Hail history sizes (D34): to the hundredth of an inch, rounded down, with the millimetres exact beside them; the classes use the exact tenths.
 - Add or update tests with every behavior change.
 
 ## Owner's working preferences

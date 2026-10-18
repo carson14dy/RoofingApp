@@ -4,7 +4,7 @@ Weather for a Montana roofing company: **Montana Hail Watch**.
 
 **The product is a website** (decision D27, 2026-10-14). It shows official NWS warnings, a radar
 and warning map, the next 12 hours for 14 Montana towns, a 24-hour and 7-day page per town, and
-three days of SPC hail and wind reports. GitHub rebuilds it every 10 minutes from public data and
+three days of SPC hail and wind reports. With a build flag that stays off on `main` until the owner approves it, it also shows a five-year history of radar-estimated hail for any spot in Montana (D34). GitHub rebuilds it every 10 minutes from public data and
 publishes it with GitHub Pages at **https://carson14dy.github.io/RoofingApp/** once Pages is
 turned on. Nothing to install: open it on any phone or computer.
 
@@ -54,6 +54,7 @@ Website** and re-enable it. Every page says how old it is, so a stalled site is 
 | Map | A full-screen map of Montana in the style of Apple Weather's: press play to run the past hour of radar into the next 12 hours of forecast, switch to temperature or wind gusts, see warning outlines and storm reports, tap a town for its NWS forecast, or find your own location | NOAA MRMS radar estimate, NOAA HRRR model, NWS, SPC |
 | Town (14) | Alerts at that town, what the three nearest weather stations measured (with each reading's age), the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
 | Storm reports | Hail and wind reports in and near Montana for the last three reporting days, on a map and in tables | SPC |
+| Hail history (build flag `--hail-history`, off on `main`) | On the Map, tap or click a spot for its five-year history of NOAA radar-estimated hail: each day at 0.25 in or more, in inches and millimetres, with its SPC day. Each town page has the same table. An estimate is not a measurement or an inspection | NOAA MRMS radar estimate (MESH) |
 | About | What each part is, the flag limits, what happens when something fails, the data sources in detail | — |
 
 Towns: Billings, Bozeman, Butte, Glasgow, Glendive, Great Falls, Havre, Helena, Kalispell,
@@ -72,6 +73,7 @@ chance of rain or snow, under 40 °F or over 95 °F (`website/sources.py`, `LIMI
 - **Every page says its age.** It shows when it was built and which sources loaded, and warns in
   words when it is more than 25 minutes old.
 - **No report is not "no hail".** The site never claims damage or that it is safe to work.
+- **A radar estimate is not a measurement.** The hail history says so beside its numbers, and a day with no estimate is not "no hail".
 - **No AI-written text.** Alert text is the NWS's own words.
 
 ## How it updates
@@ -87,6 +89,8 @@ links weather.gov for the latest. Pushes to `claude/**` and `codex/**` branches 
 against live data as a check. That run fails if any source failed, and its pages can be
 downloaded from the run.
 
+With `--hail-history` (off on `main`), a daily job, `.github/workflows/hail-store.yml`, runs at 12:43 UTC. It rebuilds the whole trailing five years of NOAA's radar archive each day (a full rebuild, not an append), verifies the result and publishes it as one release asset, which the 10-minute build downloads.
+
 ## Build it on your computer
 
 Needs Python 3.10+.
@@ -94,8 +98,12 @@ Needs Python 3.10+.
 pip install requests jinja2 pillow numpy pygrib h5py tzdata
 python -m website.build --out _site --sample   # invented sample data, labelled on every page
 python -m website.build --out _site            # live data
+python -m website.build --out _site --sample --hail-history   # the hail history with labelled sample data (off by default)
+python -m website.hail build --out store --cache hail-cache  # the daily store from NOAA's archive; a cold cache works
+python -m website.hail verify store                          # check a built store
+python -m website.build --out _site --hail-history --hail-store hail-store.tar.gz   # a local store instead of the download
 python -m http.server -d _site 8000            # open http://localhost:8000
-python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_website_workflow   # website tests, offline, seconds
+python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_website_workflow   # website tests, offline, seconds
 python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
 python tools/smoke_pages.py _site              # no page wider than the screen, 288–1440 px
 ```
@@ -106,6 +114,8 @@ website/sources.py     NWS and SPC requests, parsers, flag limits, feed contract
 website/gridded.py     NOAA radar (MRMS) and HRRR model grids → map picture frames
 website/storm.py       NOAA radar echo tops for each town (behind --storm-layers, text only)
 website/satellite.py   NOAA GOES band 13 satellite picture → one map frame (behind --storm-layers)
+website/hail.py        the hail history (behind --hail-history): grid, size classes and words, store readers, daily build
+website/data/hail-fixture/ a labelled SAMPLE store for --sample builds and tests
 website/build.py       collect every source → map frames and data/map.json → pages (Jinja) → _site/
 website/sample.py      invented, labelled sample data for design checks and tests
 website/towns.json     the 14 towns, with each map label's side
@@ -113,9 +123,11 @@ website/templates/     base, Now, town, Storm reports, About
 website/static/        style.css (tokens and look), Leaflet 1.9.4, Atkinson Hyperlegible fonts, icons
 website/static/map/    map.js and map.css (the interactive map), basemap.json (outlines and names)
 tools/build_basemap.py rebuilds basemap.json from Natural Earth and Census data (run by hand)
+.github/workflows/hail-store.yml  the daily hail store job (12:43 UTC): build, verify, publish the release asset
 tests/                 test_site.py (pages, failures), test_gridded.py (radar and model frames),
                        test_basemap.py (the outline file), test_storm.py (radar echo tops),
-                       test_satellite.py (the GOES satellite picture), test_website_workflow.py
+                       test_satellite.py (the GOES satellite picture), test_hail.py (the hail history store),
+                       test_website_workflow.py
                        (the workflow file)
 ```
 

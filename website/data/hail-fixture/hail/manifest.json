@@ -1,0 +1,30 @@
+{
+ "format": "hail-manifest-v1",
+ "as_of": "2026-10-15",
+ "sample": true,
+ "counts": {
+  "days_expected": 1826,
+  "days_present": 1825,
+  "events": 1575,
+  "shards": 3,
+  "bytes": 19912
+ },
+ "files": {
+  "hail/index.json": {
+   "bytes": 1112,
+   "sha256": "5c6490d9c5f036855687efc0ecddd76697801d591207c6ac95b0595e5c9ceda0"
+  },
+  "hail/t/r0079_c0198.json": {
+   "bytes": 7727,
+   "sha256": "5bb7235af9aafea96698b66fea6c867a39c5e70e40b5cc17b524989de8d3b0a3"
+  },
+  "hail/t/r0079_c0199.json": {
+   "bytes": 9505,
+   "sha256": "763db331c03c940d6b9e9ce213282d9a14fc3a721bf8fd30587fcebc09df3099"
+  },
+  "hail/t/r0092_c0214.json": {
+   "bytes": 2680,
+   "sha256": "513ce3599ea9901dd3ae8357f43f6265c5f22ca33c47e20b9138a3ef3c25d2f9"
+  }
+ }
+}

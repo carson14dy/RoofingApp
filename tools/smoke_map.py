@@ -28,6 +28,11 @@ hidden while the outline, borders, bubbles and weather picture still show, and t
 once a tile loads (a note when no tile can come). --shots DIR saves the pictures for the record: desktop and
 phone, both base maps, at 1280x800 and 390x844.
 
+On a --hail-history build the hail history at a spot is checked too (check_hail; check_no_hail when the flag is off):
+?at= and a click open the sheet with the store's own words; the gate cell (797, 1986) shows 2.01 in (51.3 mm) on Jun 15,
+2025 and Benchland's own cell 0.72 in (18.5 mm); a point outside Montana gets the outside words and asks for no shard (a
+sample build gets its own outside words, with SAMPLE data); a Montana cell with no value gets the no-estimate words after
+one shard request; a shard that fails or is missing gets the unavailable words.
 Every browser context counts the requests that leave this server, and that count must be zero, except for
 the imagery host in the contexts that have switched to Imagery. Exits 1 with the reasons if anything fails.
 The Website workflow runs it on branch pushes; locally set PW_CHROMIUM to a Chromium executable if
@@ -44,8 +49,11 @@ import os
 import sys
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
+
+ROOT = Path(__file__).resolve().parents[1]     # the repository (the store's reader, website/hail.py, is imported from it)
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -177,7 +185,9 @@ def check(root: Path, shots: Path | None = None) -> list[str]:
                       ("check_imagery_direct", lambda: check_imagery_direct(browser, base, data)),
                       ("check_imagery_phone", lambda: check_imagery_phone(browser, base, data, shots)),
                       ("check_card_ignores_imagery", lambda: check_card_ignores_imagery(browser, base)),
-                      ("check_imagery_refused", lambda: check_imagery_refused(browser, base, data)))
+                      ("check_imagery_refused", lambda: check_imagery_refused(browser, base, data)),
+                      ("check_hail", lambda: check_hail(browser, base, root, data, shots))
+                      if "hail" in data else ("check_no_hail", lambda: check_no_hail(browser, base, data)))
             for name, extra in extras:
                 try:
                     problems += extra()
@@ -958,6 +968,394 @@ def check_card_ignores_imagery(browser, base) -> list[str]:
     return problems
 
 
+# ------------------------------------------------------- the hail history at a spot (--hail-history builds)
+
+HAIL_BENCHLAND = (47.08, -110.02)      # a grid corner: the rule that sends an edge south or east gives cell (792, 1998)
+HAIL_CELL_CENTRE = (47.075, -110.015)  # the centre of that cell, Benchland's own: 0.72 in (18.5 mm) on Jun 15, 2025
+HAIL_GATE = (47.025, -110.135)         # the centre of cell (797, 1986): the cell nearest Benchland with 513 tenths that day
+HAIL_OUTSIDE = {"Colorado": (40.0, -105.0), "Wyoming": (43.5, -108.0), "Idaho": (44.6, -115.0),
+                "Canada": (49.5, -110.0)}      # outside Montana: no Montana cell in these tiles, so the store lists none
+HAIL_SAMPLE_GAPS = {"Helena": (46.589, -112.039), "Missoula": (46.8721, -113.994)}   # in Montana, in tiles a sample lacks
+HAIL_OFF_GRID = (95.0, -110.0)         # north of the grid: not even a tile name
+HAIL_BENCHLAND_TILE = "r0079_c0199"    # the tile of Benchland's cell: read first when looking for a spot with no value
+HAIL_SIZES = (("desktop", (1280, 800)), ("phone", (390, 844)))
+
+
+def hail_store():
+    """The store's reader, website/hail.py, imported from this repository."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from website import hail as hs
+    return hs
+
+
+def hail_at(point: tuple[float, float]) -> str:
+    """A spot as the address carries it, ?at=lat,lon. %g keeps every cell centre exact to the millionth of a degree."""
+    return "%g,%g" % point
+
+
+def hail_shard_asks(page) -> list[str]:
+    """The shard requests the page makes from now on. Attach it before the page opens, so a request at load counts."""
+    asked: list[str] = []
+    page.on("request", lambda r: asked.append(r.url) if "/hail/t/" in r.url else None)
+    return asked
+
+
+def hail_shard(root: Path, name: str) -> dict:
+    """One shard of the built site: the copy of the store's hail/t/ file."""
+    return json.loads((root / "hail" / "t" / f"{name}.json").read_text(encoding="utf-8"))
+
+
+def key_centre(shard: dict, key: int) -> tuple[float, float]:
+    """The centre of the cell with this key in the shard's tile: key = (row % 10) * 10 + col % 10."""
+    return hail_store().cell_centre(shard["r"] * 10 + key // 10, shard["c"] * 10 + key % 10)
+
+
+def no_estimate_spot(root: Path, data: dict):
+    """A Montana cell with no stored value on any day: a key in its tile's state list with no entry in cells, read from
+    the store's shards (Benchland's tile first). None when no listed tile has one."""
+    listed = set(data["hail"]["tiles"])
+    for name in [HAIL_BENCHLAND_TILE] + sorted(listed):
+        if name not in listed:
+            continue
+        shard = hail_shard(root, name)
+        have = {int(k) for k in shard["cells"]}
+        for key in shard["state"]:
+            if key not in have:
+                return key_centre(shard, key)
+    return None
+
+
+def outside_spot(root: Path, data: dict):
+    """A cell inside a listed tile whose key is not in the tile's state list: outside Montana, in a tile the browser
+    does fetch (the border tiles). None when the store has no such cell."""
+    for name in sorted(data["hail"]["tiles"]):
+        shard = hail_shard(root, name)
+        inside = set(shard["state"])
+        for key in range(100):
+            if key not in inside:
+                return key_centre(shard, key)
+    return None
+
+
+def hail_expected(root: Path, data: dict, lat: float, lon: float) -> dict:
+    """What the store says for a point, from the store's own reader and describe() (website/hail.py). The sheet must
+    show the same sentences, so the check follows the store rather than one fixed value."""
+    sys.path.insert(0, str(ROOT))
+    from website import hail as hs
+    built = datetime.fromisoformat(data["built"].replace("Z", "+00:00"))
+    index = hs.load_index(root)
+    return hs.describe(index, hs.cell_events(root, lat, lon), built, sample=data["hail"]["state"] == "sample")
+
+
+def map_pixel(page, data: dict, lat: float, lon: float) -> tuple[float, float]:
+    """Where a point is on the screen. The frame picture's box is the image bounds, projected as Leaflet projects
+    them (Web Mercator), so a point's place in that box is its place on the screen."""
+    box = page.locator("img.leaflet-image-layer.frame").first.bounding_box()
+    (south, west), (north, east) = data["image_bounds"]
+
+    def merc(deg: float) -> float:
+        return math.log(math.tan(math.pi / 4 + math.radians(deg) / 2))
+    x = box["x"] + (lon - west) / (east - west) * box["width"]
+    y = box["y"] + (merc(north) - merc(lat)) / (merc(north) - merc(south)) * box["height"]
+    return x, y
+
+
+def hail_open(page, root_url: str, at: str | None = None) -> None:
+    """Open the map (on a spot, when the address names one) and wait until it is drawn."""
+    page.goto(root_url + "map.html" + (f"?at={at}" if at else ""), wait_until="load")
+    page.wait_for_selector(".leaflet-marker-icon.town", timeout=20000)
+    page.wait_for_selector("img.leaflet-image-layer.frame", timeout=20000)
+    page.wait_for_timeout(700)
+
+
+def sheet_settled(page, loading: str, seconds: float = 15) -> str:
+    """The hail sheet's text once it has left the loading line; '' when it does not open in time."""
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        text = page.evaluate("() => { const s = document.getElementById('sheet');"
+                             " return s && !s.hidden ? document.getElementById('sheet-body').innerText : null; }")
+        if text is not None and text.strip() and loading not in text:
+            return text
+        page.wait_for_timeout(150)
+    return ""
+
+
+def zoom_at_centre(page) -> None:
+    """Zoom in with the wheel over the middle of the map, where a spot is after ?at= (the wheel keeps the point under
+    the pointer). It stops at the map's maximum, so a pixel is a small part of a cell."""
+    box = page.locator("#map").bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    for _ in range(14):
+        page.mouse.wheel(0, -500)
+        page.wait_for_timeout(120)
+    page.wait_for_timeout(500)
+
+
+def pane_transform(page) -> str:
+    """The map pane's CSS transform. Leaflet writes it when the map pans or zooms, so a change means the map moved."""
+    return page.evaluate("() => document.querySelector('.leaflet-map-pane').style.transform")
+
+
+def check_sheet_words(label: str, text: str, want: dict, sample: bool) -> list[str]:
+    """Every sentence describe() makes for the cell is on the sheet, unchanged; no template brace is left over."""
+    problems = []
+    if want["lead"] not in text:
+        problems.append(f"{label}: the sheet's lead is not the store's lead ({want['lead'][:90]!r})")
+    for row in want["rows"]:
+        if row["text"] not in text:
+            problems.append(f"{label}: the sheet lacks the day {row['text']!r}")
+    for key in ("what_this_is", "missing", "stale", "source"):
+        if want[key] and want[key] not in text:
+            problems.append(f"{label}: the sheet lacks the {key.replace('_', ' ')} line")
+    for line in want["class_lines"]:
+        if line not in text:
+            problems.append(f"{label}: the sheet lacks the class count {line!r}")
+    if "{" in text or "}" in text:
+        problems.append(f"{label}: a template brace was left in the sheet")
+    if sample and "SAMPLE data" not in text:
+        problems.append(f"{label}: the sample sheet does not say SAMPLE data")
+    if not sample and "SAMPLE" in text:
+        problems.append(f"{label}: a store file's sheet says SAMPLE")
+    return problems
+
+
+def check_hail(browser, base: str, root: Path, data: dict, shots: Path | None) -> list[str]:
+    """The hail history at a spot (--hail-history), in Chromium at 1280 and 390 px.
+    - ?at=47.08,-110.02 opens the sheet on arrival with one shard request; the grid's edge rule gives cell (792, 1998),
+      whose sheet shows 0.72 in (18.5 mm) on Jun 15, 2025;
+    - a click on the centre of that cell opens its words and writes at= into the address; Escape and the Close button
+      close the sheet and drop at=;
+    - the gate (decision 15): the centre of cell (797, 1986) shows 2.01 in (51.3 mm) on Jun 15, 2025;
+    - a point outside Montana (Colorado, Wyoming, Idaho, Canada) gets the outside words and asks for no shard, and a spot
+      off the grid gets them too and leaves the map where it was; in a sample build the outside points get the sample's
+      own outside words with SAMPLE data, and so does a Montana spot in a tile the sample does not hold (Helena, Missoula);
+    - a Montana cell with no entry in its shard gets the no-estimate words after one shard request;
+    - a cell inside a listed tile but outside Montana gets the outside words after one shard request, when the store
+      has such a cell;
+    - a shard that cannot be reached, or answers 404 for a tile the store lists, gets the unavailable words;
+    - every sentence the sheet shows is the one describe() makes for the same store.
+    The gate and Benchland values are checked on the sample store and on a real store alike."""
+    problems: list[str] = []
+    h = data["hail"]
+    words = h["words"]
+    if h["state"] == "unavailable":
+        return [f"{NOTE}the history did not load in this build ({h['problem']}), so only the words were checked"]
+    if "tiles" not in h:
+        return ["the map data has no tile list (hail.tiles), so the browser cannot tell outside from no estimate"]
+    sample = h["state"] == "sample"
+    want = hail_expected(root, data, *HAIL_BENCHLAND)
+    centre = hail_expected(root, data, *HAIL_CELL_CENTRE)
+    gate = hail_expected(root, data, *HAIL_GATE)
+    for label, size in HAIL_SIZES:
+        ctx = browser.new_context(viewport={"width": size[0], "height": size[1]})
+        page = ctx.new_page()
+        errors: list[str] = []
+        page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+        page.on("console", lambda m: errors.append(f"console: {m.text}") if m.type == "error"
+                and "/hail/t/" not in (m.location or {}).get("url", "") else None)
+        try:
+            asked = hail_shard_asks(page)
+            hail_open(page, base, hail_at(HAIL_BENCHLAND))
+            text = sheet_settled(page, words["loading"])
+            if not text:
+                problems.append(f"{label}: ?at={hail_at(HAIL_BENCHLAND)} did not open the hail sheet")
+            else:
+                if page.inner_text("#sheet-title").strip() != words["title"]:
+                    problems.append(f"{label}: the hail sheet's title is not {words['title']!r}")
+                problems += check_sheet_words(label, text, want, sample)
+                problems += [f"{label}: the sheet lacks {part!r} (Benchland's cell, 792, 1998)"
+                             for part in ("0.72 in (18.5 mm)", "Jun 15, 2025") if part not in text]
+                at = parse_qs(urlsplit(page.url).query).get("at", [""])[0]
+                if at != hail_at(HAIL_BENCHLAND):
+                    problems.append(f"{label}: the address says at={at!r}, not at={hail_at(HAIL_BENCHLAND)}")
+                snap(page, shots, f"hail-sheet-arrival-{size[0]}.png")
+            if len(asked) != 1:
+                problems.append(f"{label}: ?at= for Benchland asked for {len(asked)} shard(s), not one")
+            page.keyboard.press("Escape")
+            if not page.locator("#sheet").is_hidden():
+                problems.append(f"{label}: Escape did not close the hail sheet")
+            if "at" in parse_qs(urlsplit(page.url).query):
+                problems.append(f"{label}: the address still holds at= after Escape closed the hail sheet")
+
+            hail_open(page, base, hail_at(HAIL_CELL_CENTRE))
+            sheet_settled(page, words["loading"])
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(800)              # closing the sheet puts the map back: let that pan finish
+            zoom_at_centre(page)
+            x, y = map_pixel(page, data, *HAIL_CELL_CENTRE)
+            page.mouse.click(x, y)
+            text = sheet_settled(page, words["loading"])
+            if not text:
+                problems.append(f"{label}: a click on the cell's centre did not open the hail sheet")
+            else:
+                problems += check_sheet_words(label, text, centre, sample)
+                problems += [f"{label}: the click's sheet lacks {part!r} (Benchland's cell)"
+                             for part in ("0.72 in (18.5 mm)", "Jun 15, 2025") if part not in text]
+                snap(page, shots, f"hail-sheet-click-{size[0]}.png")
+                at = parse_qs(urlsplit(page.url).query).get("at", [""])[0]
+                if not at:
+                    problems.append(f"{label}: the click did not write at=lat,lon into the address")
+                else:
+                    lat, lon = (float(v) for v in at.split(","))
+                    if abs(lat - HAIL_CELL_CENTRE[0]) > 0.005 or abs(lon - HAIL_CELL_CENTRE[1]) > 0.005:
+                        problems.append(f"{label}: the click wrote at={at}, not near the cell's centre")
+            if not page.locator("#sheet").is_hidden():
+                page.locator("#sheet-close").click()
+                if not page.locator("#sheet").is_hidden():
+                    problems.append(f"{label}: the Close button did not close the hail sheet")
+            if "at" in parse_qs(urlsplit(page.url).query):
+                problems.append(f"{label}: the address still holds at= after the Close button closed the hail sheet")
+
+            hail_open(page, base, hail_at(HAIL_GATE))
+            text = sheet_settled(page, words["loading"])
+            if not text:
+                problems.append(f"{label}: the gate cell (797, 1986) did not open the hail sheet")
+            else:
+                problems += check_sheet_words(f"{label}, gate", text, gate, sample)
+                problems += [f"{label}: the gate cell's sheet lacks {part!r}"
+                             for part in ("2.01 in (51.3 mm)", "Jun 15, 2025") if part not in text]
+                snap(page, shots, f"hail-sheet-gate-{size[0]}.png")
+            problems += [f"{label}: {e}" for e in errors]
+        finally:
+            ctx.close()
+
+    outside_words = words["sample_outside"] if sample else words["outside"]   # a sample build's own words, as describe() has them
+    for name, point in HAIL_OUTSIDE.items():
+        ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+        page = ctx.new_page()
+        try:
+            asked = hail_shard_asks(page)
+            hail_open(page, base, hail_at(point))
+            text = sheet_settled(page, words["loading"])
+            if outside_words not in text:
+                problems.append(f"outside: ?at={hail_at(point)} ({name}) does not show the outside words ({text[:120]!r})")
+            if sample and words["sample"] not in text:
+                problems.append(f"outside: ?at={hail_at(point)} ({name}) does not say {words['sample']!r} in a sample build")
+            if asked:
+                problems.append(f"outside: ?at={hail_at(point)} ({name}) asked for a shard ({asked[0]}), though it is outside Montana")
+        finally:
+            ctx.close()
+
+    if sample:      # a Montana spot in a tile the sample store does not hold: the sample's words, and no shard request
+        for name, point in HAIL_SAMPLE_GAPS.items():
+            ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+            page = ctx.new_page()
+            try:
+                asked = hail_shard_asks(page)
+                hail_open(page, base, hail_at(point))
+                text = sheet_settled(page, words["loading"])
+                if words["sample_outside"] not in text:
+                    problems.append(f"sample gap: ?at={hail_at(point)} ({name}) does not show the sample's words ({text[:120]!r})")
+                if words["sample"] not in text:
+                    problems.append(f"sample gap: ?at={hail_at(point)} ({name}) does not say {words['sample']!r}")
+                if asked:
+                    problems.append(f"sample gap: ?at={hail_at(point)} ({name}) asked for a shard ({asked[0]}), not in the sample")
+            finally:
+                ctx.close()
+
+    for label, size in HAIL_SIZES:
+        ctx = browser.new_context(viewport={"width": size[0], "height": size[1]})
+        page = ctx.new_page()
+        try:
+            asked = hail_shard_asks(page)
+            hail_open(page, base)
+            before = pane_transform(page)
+            hail_open(page, base, hail_at(HAIL_OFF_GRID))
+            text = sheet_settled(page, words["loading"])
+            if words["outside"] not in text:
+                problems.append(f"{label}: ?at={hail_at(HAIL_OFF_GRID)} (off the grid) does not show the outside words ({text[:120]!r})")
+            if asked:
+                problems.append(f"{label}: ?at={hail_at(HAIL_OFF_GRID)} (off the grid) asked for a tile: {asked[0]}")
+            if pane_transform(page) != before:
+                problems.append(f"{label}: ?at={hail_at(HAIL_OFF_GRID)} (off the grid) moved the map")
+        finally:
+            ctx.close()
+
+    spot = no_estimate_spot(root, data)
+    if spot is None:
+        problems.append(f"{NOTE}no listed tile has a Montana cell without a value, so the no-estimate check did not run")
+    else:
+        want_none = hail_expected(root, data, *spot)
+        for label, size in HAIL_SIZES:
+            ctx = browser.new_context(viewport={"width": size[0], "height": size[1]})
+            page = ctx.new_page()
+            try:
+                asked = hail_shard_asks(page)
+                hail_open(page, base, hail_at(spot))
+                text = sheet_settled(page, words["loading"])
+                if want_none["lead"] not in text:
+                    problems.append(f"{label}: the Montana cell at {hail_at(spot)} with no value lacks the no-estimate "
+                                    f"sentence ({text[:120]!r})")
+                if words["outside"] in text:
+                    problems.append(f"{label}: the Montana cell at {hail_at(spot)} with no value says outside")
+                if len(asked) != 1:
+                    problems.append(f"{label}: the Montana cell at {hail_at(spot)} asked for {len(asked)} shard(s), not one")
+            finally:
+                ctx.close()
+
+    spot = outside_spot(root, data)
+    if spot is None:
+        problems.append(f"{NOTE}no listed tile has a cell outside Montana, so the outside-after-fetch check did not run")
+    else:
+        ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+        page = ctx.new_page()
+        try:
+            asked = hail_shard_asks(page)
+            hail_open(page, base, hail_at(spot))
+            text = sheet_settled(page, words["loading"])
+            if outside_words not in text:
+                problems.append(f"outside after one fetch: ?at={hail_at(spot)} does not show the outside words ({text[:120]!r})")
+            if sample and words["sample"] not in text:
+                problems.append(f"outside after one fetch: ?at={hail_at(spot)} does not say {words['sample']!r} in a sample build")
+            if len(asked) != 1:
+                problems.append(f"outside after one fetch: ?at={hail_at(spot)} asked for {len(asked)} shard(s), not one")
+        finally:
+            ctx.close()
+
+    for how, answer in (("cannot be reached", lambda route: route.abort()),
+                        ("answers 404 for a tile the store lists", lambda route: route.fulfill(status=404, body="not found"))):
+        ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+        page = ctx.new_page()
+        try:
+            asked = hail_shard_asks(page)
+            page.route("**/hail/t/**", answer)
+            hail_open(page, base, hail_at(HAIL_CELL_CENTRE))
+            text = sheet_settled(page, words["loading"])
+            expected = words["unavailable"].replace("{problem}", words["fetch_failed"])
+            if expected not in text:
+                problems.append(f"failed tile ({how}): the sheet does not say the history is unavailable ({text[:120]!r})")
+            if sample and words["sample"] not in text:
+                problems.append(f"failed tile ({how}): the sample sheet does not say {words['sample']!r}")
+            if not asked:
+                problems.append(f"failed tile ({how}): the sheet made no request for the tile it needed")
+        finally:
+            ctx.close()
+    return problems
+
+
+def check_no_hail(browser, base: str, data: dict) -> list[str]:
+    """A build without the hail key (the default) has no hail sheet and no legend line, and a click on the map opens
+    no sheet."""
+    if "hail" in data:
+        return ["the build has a hail key, so it is not checked as a build without one"]
+    problems = []
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = ctx.new_page()
+    try:
+        hail_open(page, base)
+        if page.locator(".legend-tap, #hail-sheet, #hail-list").count():
+            problems.append("no hail: the map page has a hail line or sheet template")
+        x, y = map_pixel(page, data, *HAIL_CELL_CENTRE)
+        page.mouse.click(x, y)
+        page.wait_for_timeout(600)
+        if not page.locator("#sheet").is_hidden():
+            problems.append("no hail: a click on the map opened a sheet")
+    finally:
+        ctx.close()
+    return problems
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Check the built Montana map in Chromium (AGENTS.md rule 8)")
     ap.add_argument("root", nargs="?", default="_site", type=Path, help="the built site (default: _site)")
@@ -973,7 +1371,8 @@ def main(argv=None) -> int:
         print("Map smoke test failed:\n- " + "\n- ".join(failures))
         return 1
     print("Map smoke test passed: page, frames, basemap, bubbles, play, layers, card and the Imagery base map all work, "
-          "and no request went to another site (the imagery tiles aside, after a switch to Imagery).")
+          "and on a --hail-history build the hail sheet does too (or, without the flag, no sheet is offered); "
+          "no request went to another site (the imagery tiles aside, after a switch to Imagery).")
     return 0
 
 

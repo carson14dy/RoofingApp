@@ -1,0 +1,52 @@
+{
+ "format": "hail-store-v1",
+ "built_at": "2026-10-18T00:00:00Z",
+ "as_of": "2026-10-15",
+ "window": [
+  "2021-10-16",
+  "2026-10-15"
+ ],
+ "d0": "2020-01-01",
+ "grid": {
+  "cell_deg": 0.01,
+  "tile_cells": 10,
+  "row0_lat": 54.995,
+  "col0_lon": -129.995,
+  "rows": 3500,
+  "cols": 7000
+ },
+ "state": "Montana",
+ "cells_in_state": 450765,
+ "floor_tenths": 64,
+ "floor_in": 0.25,
+ "days_expected": 1826,
+ "days_present": 1825,
+ "missing_days": [
+  "2022-06-08"
+ ],
+ "events": 1575,
+ "shards": 3,
+ "bytes": 19912,
+ "tiles": [
+  "r0079_c0198",
+  "r0079_c0199",
+  "r0092_c0214"
+ ],
+ "source": {
+  "product": "MESH_Max_1440min_00.50",
+  "bucket": "https://noaa-mrms-pds.s3.amazonaws.com",
+  "file_time": "12:00 UTC",
+  "spc_day_rule": "the file stamped D+1 at 12:00 UTC holds SPC report day D (12:00 UTC D to 11:59 UTC D+1)",
+  "units_table": "UserTable_MRMS_v12.2 (MESH mm; -1 missing; -3 no coverage)"
+ },
+ "copy_check": {
+  "days_checked": 0,
+  "days_differed": [],
+  "rederived": [],
+  "skipped": "sample store: the copy rule was not run",
+  "frames": {},
+  "coverage": {},
+  "partial": []
+ },
+ "sample": true
+}

@@ -14,6 +14,18 @@
      data is said in words and never drawn as a clear sky.
    - The satellite picture (--storm-layers builds only) is an infrared observation of cloud tops:
      never a height and never a hail signal.
+   - The hail history (--hail-history builds only; see "hail history at a spot" below): a click or tap on the map
+     that no bubble, alert or report takes opens the five-year radar-estimated hail history for the 0.01-degree
+     cell under it. The browser finds the cell from data/map.json (hail.grid). Outside Montana is decided by the
+     store, not by this file: in a store file, a tile that hail.tiles does not list has no Montana cell, so the
+     build's outside words show with no fetch; a cell whose key is not in its shard's state list gets them after one
+     fetch. A --sample build holds only a few tiles, so there a tile it does not hold, or a key outside the state list,
+     gets the sample's own outside words (hail.words.sample_outside) instead.
+     Otherwise the browser fetches that one tile's shard (hail.shard) once and fills in the words the build wrote
+     (hail.words): a Montana cell with no entry in its shard gets the no-estimate words, and a cell with entries
+     gets its days. ?at=lat,lon opens a spot on arrival. Closing the sheet drops ?at= from the address, so a
+     reload does not reopen it. Off the grid, or when the history didn't load, it shows the build's words with no
+     fetch. No threshold, unit or sentence is written in this file: data/map.json and website/hail.py hold them.
    - The viewer's location never leaves the browser: it draws the dot and finds the nearest town.
 */
 (function () {
@@ -254,6 +266,13 @@
         map.setView([t.lat, t.lon], Math.max(map.getZoom(), 7.5), { animate: false });
         openTown(t, t._el);
       }
+    }
+    var at = hailParam();                              // ?at=lat,lon: the hail history at that spot
+    if (at && hailData()) {
+      state.userMoved = true;
+      if (hailCell(hailData().grid, at))          // a spot off the grid leaves the map where it is
+        map.setView([at.lat, at.lon], Math.max(map.getZoom(), hailData().at_zoom), { animate: false });
+      openHail(at.lat, at.lon, null);
     }
   }
 
@@ -1555,6 +1574,7 @@
     el.sheetBack.addEventListener("click", backToList);
     el.sheetBody.addEventListener("click", onSheetClick);
     el.sheet.addEventListener("keydown", trapFocus);
+    if (hailData()) map.on("click", onHailClick);      // --hail-history builds: the history at a spot
 
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", function (e) {     // a tap outside closes the layer menu
@@ -1676,6 +1696,7 @@
     if (modes.length > 1 && state.mode !== "12h") q.set("mode", state.mode); else q.delete("mode");
     if (state.reports) q.set("overlay", "reports"); else q.delete("overlay");
     if (state.base === "imagery") q.set("base", "imagery"); else q.delete("base");
+    if (hailAt) q.set("at", hailAt); else q.delete("at");
     var s = q.toString();
     history.replaceState(null, "", location.pathname + (s ? "?" + s : "") + location.hash);
   }
@@ -1891,7 +1912,7 @@
     el.sheet.className = "glass sheet sheet-" + kind;
     el.sheetBack.hidden = !opts.back;
     el.sheetTitle.textContent = title;
-    el.sheetBody.innerHTML = (data && data.sample ? '<p class="sample-tag">Sample data: invented to review the layout. It is not weather.</p>' : "") + html;
+    el.sheetBody.innerHTML = (data && data.sample && !opts.noSampleTag ? '<p class="sample-tag">Sample data: invented to review the layout. It is not weather.</p>' : "") + html;
     el.sheetBody.scrollTop = 0;
     el.sheet.hidden = false;
     el.scrim.hidden = false;
@@ -1913,12 +1934,14 @@
 
   /** Close the sheet and put focus back where it came from. If the sheet panned the map to keep a
       town in sight, the map goes back to where it was (the viewer can't move it while a sheet is
-      open). A ?town= link has done its job: the address drops it, so a reload doesn't reopen it. */
+      open). A ?town= link or an ?at= spot has done its job: the address drops it, so a reload doesn't reopen it. */
   function closeSheet() {
     if (!sheetState) return;
+    var wasHail = sheetState.kind === "hail";
     var opener = sheetState.opener, v = sheetState.view, panned = sheetState.revealed, resized = sheetState.resized;
     if (sheetState.watcher) { sheetState.watcher.onclose = null; sheetState.watcher.destroy(); }
     sheetState = null;
+    if (wasHail) { hailAt = null; saveUrl(); }      // an ?at= spot is dropped with its sheet
     el.sheet.hidden = true;
     el.scrim.hidden = true;
     setInert(false);
@@ -2169,14 +2192,263 @@
         }).join("") + "</div>";
       } else if (!repFailed) html += "<p>No reports. No report is not \u201cno hail\u201d.</p>";
     }
+    if (hailData() && byId("hail-list")) html += byId("hail-list").innerHTML;   // the hail note (map.html template)
     var st = data.status || {};
-    var bad = ["radar", "forecast", "alerts", "forecasts", "reports", "satellite"].filter(function (k) { return st[k] && !st[k].ok; });
+    var bad = ["radar", "forecast", "alerts", "forecasts", "reports", "satellite", "hail_history"].filter(
+      function (k) { return st[k] && !st[k].ok; });
     if (bad.length) {
       html += "<h3>Sources with problems</h3><ul>" + bad.map(function (k) {
         return "<li>" + esc(st[k].label) + ": " + esc(st[k].detail) + ".</li>";
       }).join("") + "</ul>";
     }
     openSheet("list", "List", html, opener, {});
+  }
+
+  // ------------------------------------------------------------------ hail history at a spot (--hail-history builds)
+
+  /** The hail history at a point. data/map.json "hail" holds the grid, the list of tiles the store holds (tiles), the
+      size classes, the stale setting (stale_days) and every sentence (hail.words, the templates website/hail.py fills
+      for the town pages). The browser does these steps and no others: the click or tap and the point it names; the
+      grid, tile and key arithmetic (the cell, the tile's file name and the key inside the tile); one fetch of that
+      tile's shard; the outside and no-estimate rules (a tile the list does not hold, a key the shard's state list does
+      not hold, and a Montana cell with no entry in its shard, which is not the same as no hail); the day arithmetic
+      (the day index counts from d0, in UTC); the choice of the cell's words; the stale line; and the fill of the
+      templates. The choice mirrors website/hail.py describe(): the days inside the window at or above the floor, the
+      largest value on each day (a tie goes to the later day), newest first; the lead form; the day rows with their
+      severe and note tags; the class counts; the missing-day list. The stale line is the one difference: it tests the
+      as_of day against the viewer's UTC day, where describe() uses the build's (map.json "built"). No unit test runs
+      the browser's selection; the unit tests read this file for literals and run the size rule. tools/smoke_map.py
+      check_sheet_words checks the sheet against describe() at the Benchland arrival, at Benchland's centre and at the
+      gate cell, in Chromium. No threshold, size unit or sentence is written here: they come from data/map.json, which
+      website/hail.py writes. */
+  var HAIL_MICRO = 1e6;                       // points are read to whole millionths of a degree, as the grid is
+  var HAIL_DAY_MS = 24 * 60 * 60 * 1000;      // one day, in milliseconds (the store counts whole days)
+  var HAIL_EXT = { l: 12, t: 12, r: 12, b: 12 };   // the clear space the sheet's point needs around it (reveal)
+  var hailAt = null;                          // "lat,lon" of the spot the sheet shows; the address carries it as at=
+  var hailTiles = {};                         // shard URL -> promise of its JSON (a failed load is asked again)
+  var hailTileSet = null;                     // the tiles the store holds (hail.tiles), as a set; made on first use
+  var hailSeq = 0;                            // the newest click or arrival: an answer to an older one is dropped
+  var dtfUtcDay = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" });
+
+  /** The hail block of data/map.json, or null when this build has none (the default) or the page is a card. */
+  function hailData() { return CARD || !data || !data.hail ? null : data.hail; }
+
+  /** A point as the grid reads it: whole millionths of a degree. The address and the cell use the same values. */
+  function hailPoint(lat, lon) {
+    return { lat: Math.round(lat * HAIL_MICRO) / HAIL_MICRO, lon: Math.round(lon * HAIL_MICRO) / HAIL_MICRO };
+  }
+
+  /** The cell (row, col) that holds a point, or null outside the grid. Row 0 is the north edge and column 0 the
+      west edge. A point on an edge goes to the cell south or east of it (round half up), as website/hail.py does;
+      the sums are whole millionths, so float rounding never decides the cell. */
+  function hailCell(g, p) {
+    var per = Math.round(1 / g.cell_deg);     // cells per degree
+    var row = Math.floor((Math.round(g.row0_lat * HAIL_MICRO) - Math.round(p.lat * HAIL_MICRO)) * per / HAIL_MICRO + 0.5);
+    var col = Math.floor((Math.round(p.lon * HAIL_MICRO) - Math.round(g.col0_lon * HAIL_MICRO)) * per / HAIL_MICRO + 0.5);
+    return row >= 0 && row < g.rows && col >= 0 && col < g.cols ? { row: row, col: col } : null;
+  }
+
+  /** The tile's file for a cell: {r} and {c} in the template are the tile's row and column, four digits each. */
+  function hailShardUrl(h, cell) {
+    var t = h.grid.tile_cells;
+    return h.shard.replace("{r}", pad4(Math.floor(cell.row / t))).replace("{c}", pad4(Math.floor(cell.col / t)));
+  }
+
+  function pad4(n) { return ("0000" + n).slice(-4); }
+
+  /** The cell's key inside its tile's file: its row and column within the tile. */
+  function hailKey(h, cell) { var t = h.grid.tile_cells; return (cell.row % t) * t + (cell.col % t); }
+
+  /** The tile's name as the build lists it (hail.tiles): "r0079_c0199" for the tile that holds the cell. */
+  function hailTileName(h, cell) {
+    var t = h.grid.tile_cells;
+    return "r" + pad4(Math.floor(cell.row / t)) + "_c" + pad4(Math.floor(cell.col / t));
+  }
+
+  /** Whether the store holds the tile at all: the build lists every tile with a Montana cell, and no other. */
+  function hailListed(h, name) {
+    if (!hailTileSet) hailTileSet = new Set(h.tiles);
+    return hailTileSet.has(name);
+  }
+
+  /** Whether a cell's key is in its shard's state list: the Montana cells of the tile, in key order. */
+  function hailInState(doc, key) { return doc.state.indexOf(key) >= 0; }
+
+  /** One fetch per tile for the life of the page: the tile's JSON. Any failure rejects, a missing file included: the
+      build lists only the tiles it wrote, so a 404 means a broken store, which is not the same as no hail. The next
+      click asks again. */
+  function hailTile(url) {
+    if (!hailTiles[url]) {
+      hailTiles[url] = fetch(url, { credentials: "same-origin" }).then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      });
+      hailTiles[url].then(null, function () { delete hailTiles[url]; });
+    }
+    return hailTiles[url];
+  }
+
+  /** The ISO date (UTC) of a day index: the store counts whole days from its d0. */
+  function hailIso(h, d) { return new Date(Date.parse(h.d0) + d * HAIL_DAY_MS).toISOString().slice(0, 10); }
+
+  /** "Jun 15, 2025" for an ISO date, read in UTC so the SPC day's date never moves with the viewer's time zone. */
+  function hailDate(iso) { return dtfUtcDay.format(new Date(Date.parse(iso))); }
+
+  /** The size in inches, shown to the hundredth and rounded down (see D34 in docs/DECISIONS.md): the exact tenths times
+      100, over the build's tenths per inch, floored, with two decimal places. Rounding down never crosses a class
+      edge, because every edge in tenths lies at or above its inch value, so a shown size keeps its class. */
+  function hailInches(h, t) { return (Math.floor(t * 100 / h.tenths_per_inch) / 100).toFixed(2); }
+  /** Millimetres to one decimal place, from tenths of a millimetre (the divisor comes from the data): 513 gives 51.3. */
+  function hailMm(h, t) { return Math.floor(t / h.tenths_per_mm) + "." + (t % h.tenths_per_mm); }
+
+  /** The size class of a stored value: the class whose range holds it (the top class has no maximum). */
+  function hailClass(h, t) {
+    for (var i = 0; i < h.classes.length; i++) {
+      var c = h.classes[i];
+      if (t >= c.min_tenths && (c.max_tenths === null || t <= c.max_tenths)) return c;
+    }
+    return null;
+  }
+
+  /** A template with its {names} replaced from vals. A name without a value stays as it is. */
+  function fill(tpl, vals) {
+    return String(tpl).replace(/\{(\w+)\}/g, function (m, k) {
+      return Object.prototype.hasOwnProperty.call(vals, k) ? String(vals[k]) : m;
+    });
+  }
+
+  /** The cell's days, newest first: the largest stored value on each day of the window (website/hail.py describe). */
+  function hailDays(h, doc, key) {
+    var list = (doc && doc.cells && doc.cells[String(key)]) || [], best = {};
+    list.forEach(function (pair) {
+      var iso = hailIso(h, pair[0]), t = pair[1];
+      if (iso < h.window[0] || iso > h.window[1] || t < h.floor_tenths) return;
+      if (best[iso] === undefined || t > best[iso]) best[iso] = t;
+    });
+    return Object.keys(best).sort().reverse().map(function (iso) { return { iso: iso, t: best[iso] }; });
+  }
+
+  /** Every sentence of the sheet for a cell, filled from the build's templates. The choice of words follows describe()
+      in website/hail.py, except the stale line: that tests as_of against the viewer's UTC day, where describe() tests it
+      against the build's UTC day (map.json "built"), so a page held past a build can differ. */
+  function hailText(h, cell, doc) {
+    var w = h.words, days = hailDays(h, doc, hailKey(h, cell)), n = days.length;
+    var common = { start: hailDate(h.window[0]), end: hailDate(h.window[1]) };
+    var missing = h.missing_days.filter(function (d) { return d >= h.window[0] && d <= h.window[1]; });
+    var out = { sample: h.state === "sample" ? w.sample : "", lead: "", rows: [], counts: [], countsTitle: "",
+      what: w.what_this_is, missing: "", stale: "", source: "" };
+    days.forEach(function (day) {
+      var c = hailClass(h, day.t), tags = [];
+      if (c.severe) tags.push(w.severe_tag);
+      if (day.t >= h.large_note_tenths) tags.push(w.large_note);
+      var text = fill(w.row, { date: hailDate(day.iso), "in": hailInches(h, day.t), mm: hailMm(h, day.t), "class": c.word });
+      out.rows.push(tags.length ? text + ", " + tags.join(", ") : text);
+    });
+    if (n) {
+      var big = days[0];                       // the largest value; on a tie, the later day (as describe() picks it)
+      days.forEach(function (day) { if (day.t > big.t || (day.t === big.t && day.iso > big.iso)) big = day; });
+      out.lead = fill(n === 1 ? w.lead_one : w.lead_many, Object.assign({}, common, {
+        n: n, largest_in: hailInches(h, big.t), largest_mm: hailMm(h, big.t), largest_date: hailDate(big.iso) }));
+    } else if (!missing.length) out.lead = fill(w.lead_none_plain, common);
+    else if (missing.length === 1) out.lead = fill(w.lead_none_one, common);
+    else out.lead = fill(w.lead_none, Object.assign({}, common, { missing: missing.length }));
+    h.classes.forEach(function (c) {
+      var count = days.filter(function (d) { return hailClass(h, d.t).word === c.word; }).length;
+      if (count) out.counts.push(fill(count === 1 ? w.class_count_one : w.class_count_many, { days: count, word: c.word }));
+    });
+    if (out.counts.length) out.countsTitle = w.class_counts_title;
+    if (missing.length) out.missing = fill(w.missing, { list: missing.map(hailDate).join(", ") });
+    var today = new Date().toISOString().slice(0, 10);    // the viewer's clock, in UTC (describe() uses the build's day)
+    if ((Date.parse(today) - Date.parse(h.as_of)) / HAIL_DAY_MS > h.stale_days) out.stale = fill(w.stale, { as_of: hailDate(h.as_of) });
+    out.source = fill(w.source, { as_of: hailDate(h.as_of) });
+    return out;
+  }
+
+  /** The sheet's body: a loaded cell from the template in map.html (<template id="hail-sheet">), or one line of
+      words for the other states (loading, outside, unavailable). The sheet's own title is set by openSheet. */
+  function hailShow(h, kind, payload) {
+    var frag;
+    if (kind === "loaded") {
+      frag = document.getElementById("hail-sheet").content.cloneNode(true);
+      var slot = function (name) { return frag.querySelector('[data-hail="' + name + '"]'); };
+      var show = function (node, text) { node.hidden = !text; node.textContent = text || ""; };
+      var list = function (node, items) {
+        node.hidden = !items.length;
+        items.forEach(function (text) { var li = document.createElement("li"); li.textContent = text; node.appendChild(li); });
+      };
+      show(slot("sample"), payload.sample);
+      show(slot("lead"), payload.lead);
+      show(slot("counts-title"), payload.countsTitle);
+      list(slot("counts"), payload.counts);
+      list(slot("days"), payload.rows);
+      show(slot("what"), payload.what);
+      show(slot("stale"), payload.stale);
+      show(slot("missing"), payload.missing);
+      show(slot("source"), payload.source);
+    } else {
+      frag = document.createDocumentFragment();
+      if (h.state === "sample") {          // a sample build labels every state of the sheet, as the town tables do
+        var tag = document.createElement("p");
+        tag.className = "sample-tag";
+        tag.textContent = h.words.sample;
+        frag.appendChild(tag);
+      }
+      var p = document.createElement("p");
+      p.className = kind === "unavailable" ? "warn" : "sub";
+      p.textContent = payload;
+      frag.appendChild(p);
+    }
+    el.sheetBody.innerHTML = "";
+    el.sheetBody.appendChild(frag);
+    if (sheetState && sheetState.ll) reveal(sheetState.ll, HAIL_EXT);   // a longer sheet may cover the spot now
+  }
+
+  /** The hail history at a point. The sheet opens at once with the loading line, and the cell's words replace it when
+      its tile answers; a click that a newer one has overtaken is dropped. A point off the grid gets the outside words
+      with no fetch. In a store file, a point in a tile the store does not list gets them with no fetch, and a point
+      whose key the shard's state list lacks gets them after the one fetch; a --sample build gives those two cases the
+      sample's own outside words, as describe() does. A build whose history didn't load gets its words with no fetch.
+      The address carries the spot as at=lat,lon. */
+  function openHail(lat, lon, opener) {
+    var h = hailData();
+    if (!h) return;
+    var p = hailPoint(lat, lon), cell = hailCell(h.grid, p), seq = ++hailSeq;
+    var outside = h.state === "sample" ? h.words.sample_outside : h.words.outside;   // a sample build's own words
+    hailAt = p.lat + "," + p.lon;
+    saveUrl();
+    openSheet("hail", h.words.title, "", opener, { noSampleTag: true });   // the sample label comes from the words
+    sheetState.ll = cell ? L.latLng(p.lat, p.lon) : null;      // off the grid there is no spot to keep in sight
+    if (cell) reveal(sheetState.ll, HAIL_EXT);
+    if (!cell) return hailShow(h, "outside", h.words.outside);          // off the grid: outside Montana for certain
+    if (h.state === "unavailable") return hailShow(h, "unavailable", fill(h.words.unavailable, { problem: h.problem }));
+    if (!hailListed(h, hailTileName(h, cell))) return hailShow(h, "outside", outside);   // no fetch
+    hailShow(h, "loading", h.words.loading);
+    var current = function () { return seq === hailSeq && sheetState && sheetState.kind === "hail"; };
+    var failed = function () { hailShow(h, "unavailable", fill(h.words.unavailable, { problem: h.words.fetch_failed })); };
+    hailTile(hailShardUrl(h, cell)).then(function (doc) {
+      if (!current()) return;
+      if (!doc || !Array.isArray(doc.state)) return failed();          // a listed tile that is not in the format
+      if (!hailInState(doc, hailKey(h, cell))) return hailShow(h, "outside", outside);   // in the tile, not in Montana
+      var text;
+      try { text = hailText(h, cell, doc); } catch (e) { return failed(); }
+      hailShow(h, "loaded", text);
+    }, function () { if (current()) failed(); });
+  }
+
+  /** A click or tap on the map that no bubble, alert or report took. Leaflet also passes a click on a layer's element
+      to the map (a bubble's handler doesn't stop it), so the element the click landed on decides. */
+  function onHailClick(e) {
+    var target = e.originalEvent && e.originalEvent.target;
+    if (target && target.closest && target.closest(".leaflet-interactive, .leaflet-marker-icon")) return;
+    openHail(e.latlng.lat, e.latlng.lng, el.canvas);
+  }
+
+  /** The spot in the address (?at=lat,lon), as a point, or null. */
+  function hailParam() {
+    var m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(params.get("at") || "");
+    if (!m) return null;
+    var p = hailPoint(Number(m[1]), Number(m[2]));
+    return isFinite(p.lat) && isFinite(p.lon) ? p : null;
   }
 
   // ------------------------------------------------------------------ card mode (inside other pages)
