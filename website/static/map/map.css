@@ -357,6 +357,9 @@ a { color: inherit; }
 .swatch { flex: none; width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--hairline); }
 /* the swatch colours come from each layer's own legend gradient (map.js) */
 .swatch { background: var(--fill-ctl); }
+.base-choices { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--hairline); }
+.base-choices > legend { padding: 0 10px 6px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.choice-text small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; line-height: 1.3; color: var(--ink-2); }
 .toggles { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--hairline); display: grid; gap: 2px; }
 .toggle { justify-content: space-between; }
 .toggle-text { display: flex; flex-direction: column; line-height: 1.2; }
@@ -557,6 +560,11 @@ a { color: inherit; }
 .leaflet-container .leaflet-pane svg path.bm-border.bm-country { stroke: var(--line-country); stroke-width: 1.2px; }
 .leaflet-container .leaflet-pane svg path.bm-border.bm-mt { stroke: var(--line-mt); stroke-width: 1.4px; }
 .leaflet-container .leaflet-pane svg path.bm-outside { fill: url(#hatch); stroke: none; }
+/* Imagery base map (D32, map.js setBase): the USGS tiles show the land, water, roads, counties and names
+   themselves, so the vector versions go; the Montana outline and the state and country borders stay. The
+   id makes these beat the zoom rules below (.z-ge-N .mzN shows a zoom-gated feature again at its zoom). */
+#app.is-imagery .bm-land, #app.is-imagery .bm-lake, #app.is-imagery .bm-river, #app.is-imagery .bm-road,
+#app.is-imagery .bm-county, #app.is-imagery .bm-label { display: none; }
 
 /* Zoom-dependent detail: map.js sets z-ge-N on the map for every whole zoom N reached. */
 .mz6, .mz7, .mz8, .mz9, .mz10, .mz11 { display: none; }

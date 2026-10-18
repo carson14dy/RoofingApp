@@ -70,7 +70,9 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
    `website/static/map/map.js` — playback, scrubbing, menus, sheets, geolocation, D28; app: the
    ~20-line bridge in `templates/live.html`). Owner
    preference — don't add a JS framework. Third-party code (Leaflet) and fonts are served by the
-   site, not a CDN.
+   site, not a CDN. The browser fetches only site files, except the USGS imagery tiles, which it
+   fetches only while Imagery is on (switched on by the viewer, or by a link that starts on it; D32),
+   from the one host named in `website/build.py`.
 5. **Evidence honesty.** Keep forecast, radar estimate, point report, official alert and
    inspection separate. Never state confirmed damage, insurance eligibility or a damage
    probability. No report is not “no hail.” Missing inputs show “Data unavailable,” never an

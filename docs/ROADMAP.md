@@ -91,6 +91,18 @@ order.
     band 13 picture as a Map layer: website/satellite.py, tests/test_satellite.py) and waits for review
     and a small pull request. The clear-night reading of -99/-999 needs Carson's ruling first, and no
     GOES layer reaches users until counsel has read D-G10 and D-G11.
+17. **Imagery base map (D32, opt-in).** Built on its own branch, not merged: a Base map switch in the Layers
+   menu, from white (the default) to USGS ImageryTopo aerial imagery with roads and names. Its tiles are requested
+   only while Imagery is on (after the switch, or on a link that starts on it); the one exception to the site-files
+   rule. Checked on 2026-10-18: the unit tests, the sample builds, the browser check (`tools/smoke_map.py`, real
+   tiles, with checks for a leftover tile layer, the failure words and the return to the credit) and the evidence
+   records (`research/globe/validation-evidence/imagery-switch-verification.json` and `imagery-switch-review.json`).
+   Left for Carson: the licence for the road and name data (USGS states none; `rights-matrix.json`); whether the
+   privacy line should also name the request headers; whether a town bubble's name may sit beside USGS's own name;
+   the phone legend's height with imagery; and a small pull request. Decided 2026-10-18 (owner-delegated): the credit
+   row carries the privacy words; a failed tile says so in the credit row; a link that opens on Imagery loads the
+   tiles as the page opens; the About page quotes USGS's requested acknowledgment; the landscape menu scroll is
+   accepted.
 
 ## Independent review priorities, for the website
 | Priority | Item | Status |
