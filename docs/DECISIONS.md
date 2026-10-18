@@ -536,6 +536,29 @@ Corrections of record:
 *Why:* so the next agent does not repeat this work, and so the owner's choices are explicit before
 any globe code is considered.
 
+**D31 · Towns: every Montana city over 8,000 plus Sidney (2026-10-17).** Carson asked for every
+Montana city over 8,000 in the 2020 census, and for Sidney. Wikipedia's list of municipalities has twelve
+over 8,000, and all twelve are now on the site. Three were missing and are added: Belgrade (10,460),
+Anaconda (9,421, consolidated with Deer Lodge County) and Sidney (6,346). Glasgow, Glendive, Lewistown and
+West Yellowstone stay. Whitefish (7,751) and Laurel (7,222) are under 8,000, and Lockwood and Evergreen are
+census-designated places, not towns, so none of them is added. *Live check (2026-10-17):* the NWS point
+lookup answered for all three, with the offices the build will show (Belgrade TFX, Great Falls; Anaconda
+MSO, Missoula; Sidney GGW, Glasgow). Anaconda's first request got a 500; the next requests got 200.
+
+A town now shows from its `min_zoom` in `towns.json`: 5 when it has none, 7 for a `"minor"` town (D28), or
+the zoom the layout needs. Anaconda shows from 8 with its label on the left, Belgrade from 9, and Sidney
+from 5 with its label on top. The label test and a Chromium check at zooms 5 to 11 settle each value: a
+town appears at the first zoom where its bubble is clear of the others by a usable margin. In Chromium
+(rings included) Belgrade's bubble is 3 px from Bozeman's at zoom 8 and 40 px at zoom 9, and Anaconda's is
+7 px from Butte's at zoom 7 and 48 px at zoom 8. Glasgow's label moved to the top: on the right its name
+ran into Sidney's bubble at zoom 5 (5.1 px, beyond the 4 px allowance), and on the left into Havre's. The
+base map was rebuilt (384,594 to 384,935 bytes): three site places were added and the phone-only "SK"
+label moved about 0.03°; nothing else moved.
+
+*Why:* a population cut-off anyone can check (the 2020 census) is easier to defend than a hand-picked list,
+and each town gets its own card, page and forecast. A per-town `min_zoom` replaces the single "minor" flag,
+so a town appears at the first zoom where it is clear of its neighbours, not at a fixed zoom 7.
+
 **D32 · Imagery base map, opt-in (2026-10-17).** Carson asked for a satellite-style base map with roads and
 names, after two screen recordings of Google Maps' satellite view. Decision: the white vector map stays the
 default, and the Layers menu gets a Base map switch to imagery. The chosen source is USGS The National Map's

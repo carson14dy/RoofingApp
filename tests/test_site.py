@@ -456,6 +456,17 @@ class SampleBuild(unittest.TestCase):
         state = json.loads(page(self.out, "data/state.json"))
         self.assertTrue(state["sample"])
 
+    def test_map_json_gives_each_town_its_min_zoom(self):
+        """towns.json min_zoom (else 7 for a "minor" town, 5 for the rest) goes to data/map.json, next to
+        "minor": the map hides a town below it (map.js townMinZoom)."""
+        m = json.loads(page(self.out, "data/map.json"))
+        by_slug = {t["slug"]: t for t in m["towns"]}
+        for t in site.TOWNS:
+            self.assertEqual(by_slug[t["slug"]]["min_zoom"], t.get("min_zoom", 7 if t.get("minor") else 5), t["name"])
+            self.assertEqual(by_slug[t["slug"]]["minor"], bool(t.get("minor")), t["name"])
+        self.assertEqual({s: by_slug[s]["min_zoom"] for s in ("anaconda", "belgrade", "sidney")},
+                         {"anaconda": 8, "belgrade": 9, "sidney": 5})
+
     def test_counts(self):
         r = self.result
         self.assertEqual((r["alerts"], r["alerts_null_geometry"], r["reports"]), (2, 1, 5))
@@ -614,11 +625,14 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("No reading from this station in this update (not published (HTTP 404)).", glasgow)
         now = text("index.html")
         self.assertEqual(now.count('class="tc-now"'), len(site.TOWNS))
-        self.assertIn("12 min ago · station SMP100, 2 mi away, 3,445 ft", now)
-        self.assertIn("41 min ago · station SMP091, 10 mi away", now)   # its airport reading is stale: the next one
+        # the sample's station ids carry the town's place in towns.json (SMP + index + station number)
+        liv, lew = (next(n for n, t in enumerate(site.TOWNS) if t["slug"] == s) for s in ("livingston", "lewistown"))
+        self.assertIn(f"12 min ago · station SMP{liv:02d}0, 2 mi away, 3,445 ft", now)
+        # its airport reading is stale, so the card quotes the next station (the hill)
+        self.assertIn(f"41 min ago · station SMP{lew:02d}1, 10 mi away", now)
         self.assertIn('gusts <b class="over">41</b> mph', now)     # over the 25 mph placeholder limit
         state = json.loads(page(self.out, "data/state.json"))
-        self.assertEqual([s["id"] for s in state["stations"]["livingston"]], ["SMP100", "SMP101", "SMP102"])
+        self.assertEqual([s["id"] for s in state["stations"]["livingston"]], [f"SMP{liv:02d}{k}" for k in range(3)])
         hill = state["readings"]["livingston"][1]["obs"]["gust"]
         self.assertEqual((hill["value"], hill["withheld"], hill["raw"], hill["qc"]), (None, True, 190.0, "X"))
         self.assertTrue(self.result["status"]["observations"]["ok"])
@@ -630,7 +644,7 @@ class FailureHonesty(unittest.TestCase):
         out, result = build_with(SampleWith(NOW, fail={"stations"}))
         self.assertFalse(result["status"]["observations"]["ok"])
         self.assertEqual(result["status"]["observations"]["detail"],
-                         "0 of 14 towns, 0 with a reading under 75 minutes old")
+                         f"0 of {len(site.TOWNS)} towns, 0 with a reading under 75 minutes old")
         town = " ".join(page(out, "town/billings.html").split())
         self.assertIn("Station readings are unavailable in this update. Couldn&#39;t look up the nearest weather "
                       "stations (server error (HTTP 500)). This is not an all-clear.", town)
@@ -1382,6 +1396,21 @@ class MapLabels(unittest.TestCase):
     def test_label_sides_are_valid(self):
         for t in site.TOWNS:
             self.assertIn(t.get("label", "right"), ("right", "left", "top", "bottom"), t["name"])
+
+    def test_min_zoom_is_a_whole_zoom_from_5_to_9(self):
+        for t in site.TOWNS:
+            self.assertIn(t.get("min_zoom", 5), range(5, 10), t["name"])
+            self.assertIs(type(t.get("min_zoom", 5)), int, t["name"])
+
+    def test_map_js_hides_each_town_below_its_min_zoom(self):
+        """map.js reads townMinZoom(t) at the four places that used to test "minor" (the first view,
+        the markers, the bubble on screen, the location dot), and the marker gets its zoom class from
+        zoomCls, the class map.css already uses for the basemap's names."""
+        js = (Path(site.HERE) / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertEqual(js.count("t.minor"), 1, "only the townMinZoom fallback reads minor")
+        self.assertIn("function townMinZoom(t)", js)
+        self.assertIn("zoomCls(townMinZoom(t))", js)
+        self.assertGreaterEqual(js.count("townMinZoom(t)"), 5)     # the definition's use, and the four places
 
 
 if __name__ == "__main__":

@@ -56,7 +56,7 @@ Output (one JSON object, one feature per line so diffs stay readable):
             max_zoom 5: hide a label above its max_zoom, or both copies show (still clear of all)
   places    {name, lat, lon, rank 1-4, min_zoom 5-9, state[, site, slug]}: a dot with the name to
             its right; site towns (website/towns.json) are rank 1 with site: true and are drawn
-            by the map as bubbles, not by the base map
+            by the map as bubbles from their min_zoom (town_min_zoom), not by the base map
   Labels and places outside the image bounds are the context layer's (CONTEXT_REGIONS, CONTEXT_PLACES).
 Stroke land outlines from `borders`, not from the land polygons: the polygons are cut at the clip
 box, and their edges there are not borders. Draw lakes above rivers.
@@ -153,7 +153,8 @@ BUBBLE_R, TOWN_NAME_OFF, TOWN_H = 15.0, 20.0, 13.0
 TOWN_LABEL_W = {"Billings": 45.8, "Bozeman": 55.6, "Butte": 32.7, "Glasgow": 51.9, "Glendive": 53.7,
                 "Great Falls": 66.5, "Havre": 35.0, "Helena": 42.4, "Kalispell": 53.4,
                 "Lewistown": 63.6, "Livingston": 63.2, "Miles City": 61.1, "Missoula": 54.6,
-                "West Yellowstone": 106.6}         # .tname widths measured in Chromium; others estimated wide
+                "West Yellowstone": 106.6, "Anaconda": 59.0, "Belgrade": 54.0, "Sidney": 41.0}
+# .tname widths in Chromium at 13 px bold: the first 14 measured earlier, the last three on 2026-10-17
 # At zoom 5 a town name may reach this far (px) into another town's bubble: Missoula's runs 3.5 px into
 # Kalispell's, Billings' 1.0 px into Miles City's. No choice of label sides clears zoom 5 (Missoula or
 # Billings below their bubble hits Bozeman's or West Yellowstone's name, and the ID label), and the map
@@ -809,6 +810,12 @@ def inside(lat, lon, box) -> bool:
     return box[0] <= lat <= box[2] and box[1] <= lon <= box[3]
 
 
+def town_min_zoom(t: dict) -> int:
+    """The zoom from which a town's bubble and name show: towns.json "min_zoom" if given, else 7 for a
+    "minor" town and 5 for the rest. website/build.py writes the same rule into data/map.json."""
+    return t.get("min_zoom", 7 if t.get("minor") else 5)
+
+
 def places_list(pp: dict, towns: list, postal: dict):
     """The site towns; the other places in the image bounds; CONTEXT_PLACES outside them. Biggest first."""
     site = {t["name"].lower(): t for t in towns}
@@ -838,7 +845,7 @@ def places_list(pp: dict, towns: list, postal: dict):
     for r in (rows, context):
         r.sort(key=lambda r: (r["rank"], -r["_pop"], r["name"]))
     sites = [{"name": t["name"], "lat": t["lat"], "lon": t["lon"], "rank": 1,
-              "min_zoom": 7 if t.get("minor") else 5, "state": "MT", "site": True, "slug": t["slug"]}
+              "min_zoom": town_min_zoom(t), "state": "MT", "site": True, "slug": t["slug"]}
              for t in towns]
     return sites, rows, context
 
@@ -882,11 +889,11 @@ def into_bubble(centre, box) -> float:
 
 
 def town_contacts(towns) -> list:
-    """Town against town at zooms 5-11, minor towns from zoom 7: a name over another town's bubble (a
+    """Town against town at zooms 5-11, each town from its min_zoom: a name over another town's bubble (a
     30 px circle) or name, or two bubbles touching. At zoom 5 a name may reach TOUCH_Z5 px into a bubble."""
     problems = []
     for z in ZOOMS:
-        shown = [t for t in towns if z >= 7 or not t.get("minor")]
+        shown = [t for t in towns if z >= town_min_zoom(t)]
         for a in shown:
             name, ca = town_boxes(a, z)[1], px(a["lat"], a["lon"], z)
             for b in shown:
@@ -1112,7 +1119,7 @@ def make_labels_and_places(land, lakes, towns, sites, others, context_areas, con
         obs = Obstacles()
         for t in towns:
             for z in ZOOMS:
-                if z >= 7 or not t.get("minor"):
+                if z >= town_min_zoom(t):
                     for b in town_boxes(t, z):
                         obs.add(z, b, t["name"])
         return obs
@@ -1231,7 +1238,7 @@ def check_layout(towns, labels, places):
     for z in ZOOMS:
         items = []
         for t in towns:
-            if z >= 7 or not t.get("minor"):
+            if z >= town_min_zoom(t):
                 items += [(b, f"town {t['name']}") for b in town_boxes(t, z)]
         items += [(text_box(lab, z), f"label {lab['text']}") for lab in labels if z >= lab["min_zoom"]]
         items += [(place_box(p, z), f"place {p['name']}") for p in places
@@ -1496,7 +1503,7 @@ def preview(doc: dict, path: Path, zoom: int = 7, crop=None, contrast=False) -> 
     bf = font(12, True)
     towns = json.loads(TOWNS.read_text())
     for t in towns:
-        if zoom < 7 and t.get("minor"):
+        if zoom < town_min_zoom(t):
             continue
         x, y = P(t["lon"], t["lat"])
         r = BUBBLE_R * scale

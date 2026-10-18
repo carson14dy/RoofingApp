@@ -3,7 +3,7 @@
 Weather for a Montana roofing company: **Montana Hail Watch**.
 
 **The product is a website** (decision D27, 2026-10-14). It shows official NWS warnings, a radar
-and warning map, the next 12 hours for 14 Montana towns, a 24-hour and 7-day page per town, and
+and warning map, the next 12 hours for 17 Montana towns, a 24-hour and 7-day page per town, and
 three days of SPC hail and wind reports. GitHub rebuilds it every 10 minutes from public data and
 publishes it with GitHub Pages at **https://carson14dy.github.io/RoofingApp/** once Pages is
 turned on. Nothing to install: open it on any phone or computer.
@@ -52,13 +52,15 @@ Website** and re-enable it. Every page says how old it is, so a stalled site is 
 |---|---|---|
 | Now | Active warnings, watches and advisories for Montana, most urgent first; a map card with the latest radar and the warning outlines; a card per town with the latest station reading, then temperature, highest gust, chance of rain or snow, and which hours pass a limit | NWS, NOAA |
 | Map | A full-screen map of Montana in the style of Apple Weather's: press play to run the past hour of radar into the next 12 hours of forecast, switch to temperature or wind gusts, see warning outlines and storm reports, tap a town for its NWS forecast, or find your own location | NOAA MRMS radar estimate, NOAA HRRR model, NWS, SPC |
-| Town (14) | Alerts at that town, what the three nearest weather stations measured (with each reading's age), the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
+| Town (17) | Alerts at that town, what the three nearest weather stations measured (with each reading's age), the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
 | Storm reports | Hail and wind reports in and near Montana for the last three reporting days, on a map and in tables | SPC |
 | About | What each part is, the flag limits, what happens when something fails, the data sources in detail | — |
 
-Towns: Billings, Bozeman, Butte, Glasgow, Glendive, Great Falls, Havre, Helena, Kalispell,
-Lewistown, Livingston, Miles City, Missoula, West Yellowstone. To change the list, edit
-`website/towns.json` (see AGENTS.md for the map-label check).
+Towns: every Montana city over 8,000 in the 2020 census, plus Sidney and four smaller towns
+(Glasgow, Glendive, Lewistown, West Yellowstone): Anaconda, Belgrade, Billings, Bozeman, Butte,
+Glasgow, Glendive, Great Falls, Havre, Helena, Kalispell, Lewistown, Livingston, Miles City,
+Missoula, Sidney, West Yellowstone (D31). To change the list, edit `website/towns.json` (see
+AGENTS.md for the map-label check).
 
 Flag limits are placeholders until the company sets its own: gusts 25 mph, wind 20 mph, a 30%
 chance of rain or snow, under 40 °F or over 95 °F (`website/sources.py`, `LIMITS`).
@@ -108,7 +110,7 @@ website/storm.py       NOAA radar echo tops for each town (behind --storm-layers
 website/satellite.py   NOAA GOES band 13 satellite picture → one map frame (behind --storm-layers)
 website/build.py       collect every source → map frames and data/map.json → pages (Jinja) → _site/
 website/sample.py      invented, labelled sample data for design checks and tests
-website/towns.json     the 14 towns, with each map label's side
+website/towns.json     the 17 towns, with each map label's side and each town's min_zoom
 website/templates/     base, Now, town, Storm reports, About
 website/static/        style.css (tokens and look), Leaflet 1.9.4, Atkinson Hyperlegible fonts, icons
 website/static/map/    map.js and map.css (the interactive map), basemap.json (outlines and names)

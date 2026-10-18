@@ -387,7 +387,7 @@
 {"text":"BC","lat":49.7917,"lon":-115.3349,"kind":"region","min_zoom":5,"max_zoom":5},
 {"text":"AB","lat":49.9583,"lon":-112.2784,"kind":"region","min_zoom":5,"max_zoom":5},
 {"text":"CANADA","lat":49.7583,"lon":-108.5294,"kind":"country","min_zoom":5,"max_zoom":5},
-{"text":"SK","lat":49.6917,"lon":-105.2471,"kind":"region","min_zoom":5,"max_zoom":5},
+{"text":"SK","lat":49.725,"lon":-105.2471,"kind":"region","min_zoom":5,"max_zoom":5},
 {"text":"WA","lat":47.114,"lon":-117.7697,"kind":"region","min_zoom":6},
 {"text":"OR","lat":45.184,"lon":-117.6516,"kind":"region","min_zoom":6},
 {"text":"Flathead Lake","lat":47.8657,"lon":-114.1139,"kind":"water","min_zoom":7},
@@ -438,6 +438,8 @@
 {"text":"MB","lat":54.9244,"lon":-98.4874,"kind":"region","min_zoom":6}
 ],
 "places":[
+{"name":"Anaconda","lat":46.133,"lon":-112.933,"rank":1,"min_zoom":8,"state":"MT","site":true,"slug":"anaconda"},
+{"name":"Belgrade","lat":45.7803,"lon":-111.1752,"rank":1,"min_zoom":9,"state":"MT","site":true,"slug":"belgrade"},
 {"name":"Billings","lat":45.7833,"lon":-108.5007,"rank":1,"min_zoom":5,"state":"MT","site":true,"slug":"billings"},
 {"name":"Bozeman","lat":45.677,"lon":-111.0429,"rank":1,"min_zoom":5,"state":"MT","site":true,"slug":"bozeman"},
 {"name":"Butte","lat":46.0038,"lon":-112.5348,"rank":1,"min_zoom":7,"state":"MT","site":true,"slug":"butte"},
@@ -451,6 +453,7 @@
 {"name":"Livingston","lat":45.6624,"lon":-110.5605,"rank":1,"min_zoom":7,"state":"MT","site":true,"slug":"livingston"},
 {"name":"Miles City","lat":46.4083,"lon":-105.8406,"rank":1,"min_zoom":5,"state":"MT","site":true,"slug":"miles-city"},
 {"name":"Missoula","lat":46.8721,"lon":-113.994,"rank":1,"min_zoom":5,"state":"MT","site":true,"slug":"missoula"},
+{"name":"Sidney","lat":47.7155,"lon":-104.1672,"rank":1,"min_zoom":5,"state":"MT","site":true,"slug":"sidney"},
 {"name":"West Yellowstone","lat":44.6621,"lon":-111.1041,"rank":1,"min_zoom":5,"state":"MT","site":true,"slug":"west-yellowstone"},
 {"name":"Spokane","lat":47.67,"lon":-117.4199,"rank":2,"state":"WA","min_zoom":6},
 {"name":"Boise","lat":43.6086,"lon":-116.2275,"rank":2,"state":"ID","min_zoom":5},

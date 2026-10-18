@@ -24,7 +24,7 @@ order.
 |---|---|---|
 | Now | Montana's active NWS alerts, most urgent first (alerts without an outline listed with a note); a map card with the latest radar and warning outlines; a card per town for the next 12 hours with flags in words | Montana only |
 | Map (D28) | Full screen, Apple-Weather style: the past hour of NOAA MRMS radar into the HRRR model forecast (15-minute steps for an hour, hourly to 12 hours) with play, scrub and 1h/12h; temperature and wind-gust layers; warning outlines and storm reports; town bubbles with the NWS forecast for the hour; town sheets; my location; a list of every alert and town | HRRR is a model, not the NWS forecast; frames are pictures made each build; no lightning or air quality; rain and snow share one palette; checked in Chromium only, not yet on a real iPhone or Android phone; `map.js` is about 2,100 lines |
-| Town pages (14) | Alerts at that point, 24-hour table (gusts first), 7-day with high and low per day | Grid forecasts for a 2.5 km square, not a roof; placeholder limits |
+| Town pages (17) | Alerts at that point, 24-hour table (gusts first), 7-day with high and low per day | Grid forecasts for a 2.5 km square, not a roof; placeholder limits |
 | Observed now (D29) | The latest reading at each town's three nearest NWS stations (any state): temperature, wind, gusts, time and age, quality flags in words, station and grid elevation; one line per town card on the Now page | Stations report hourly or less, so readings run up to 75 minutes old before they show as stale; a station is not a roof; not on the map |
 | Storm reports | Three SPC reporting days on the map card and in tables; hail in inches, unknown wind kept unknown | Preliminary reports only |
 | Honesty | Per-source status line, last verified alerts kept after a failed refresh, "Alerts not checked" per town, page-age warning, sample data labelled on every page | — |
@@ -127,7 +127,10 @@ order.
 | Recover from a 30-minute interruption without lost records | Next build after an outage is complete; last verified alerts carried across |
 
 ## Open questions for Carson
-- Are these the right 14 towns? Which should be added or dropped?
+- Answered 2026-10-17 (D31): every Montana city over 8,000 in the 2020 census, plus Sidney at Carson's
+  request. Anaconda, Belgrade and Sidney were added (17 towns); none was dropped. Glasgow, Glendive,
+  Lewistown and West Yellowstone stay (under 8,000). Whitefish (7,751) and Laurel (7,222) are under
+  8,000, and Lockwood and Evergreen are census-designated places, not towns, so none of those was added.
 - The company's weather limits for each roof system (Next 3).
 - Delete the parked desktop app, or keep it in the repo?
 - Should the site have its own web address (a custom domain) instead of the GitHub one?

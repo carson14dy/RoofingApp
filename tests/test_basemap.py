@@ -356,9 +356,21 @@ class Places(unittest.TestCase):
             self.assertEqual(p["rank"], 1)
             self.assertIs(p["site"], True)
             self.assertEqual(p["state"], "MT")
-            self.assertEqual(p["min_zoom"], 7 if t.get("minor") else 5)
+            self.assertEqual(p["min_zoom"], load_tool().town_min_zoom(t), t["name"])
         others = {p["name"] for p in self.doc["places"] if not p.get("site")}
         self.assertFalse(others & {t["name"] for t in TOWNS}, "a site town is also a plain place")
+
+    def test_town_min_zoom_rule(self):
+        """towns.json "min_zoom" wins (5-9); without it a "minor" town shows from zoom 7, the rest from 5."""
+        tool = load_tool()
+        self.assertEqual(tool.town_min_zoom({"name": "Town"}), 5)
+        self.assertEqual(tool.town_min_zoom({"name": "Town", "minor": True}), 7)
+        self.assertEqual(tool.town_min_zoom({"name": "Town", "min_zoom": 9}), 9)
+        self.assertEqual(tool.town_min_zoom({"name": "Town", "minor": True, "min_zoom": 8}), 8)
+        zooms = {t["name"]: tool.town_min_zoom(t) for t in TOWNS}
+        self.assertEqual({n: z for n, z in zooms.items() if z != 5},
+                         {"Anaconda": 8, "Belgrade": 9, "Butte": 7, "Glendive": 7, "Lewistown": 7, "Livingston": 7})
+        self.assertTrue(all(z in range(5, 10) for z in zooms.values()), zooms)
 
     def test_place_fields(self):
         for p in self.doc["places"]:
@@ -449,11 +461,12 @@ class Labels(unittest.TestCase):
                 self.assertTrue(point_in((lab["lon"], lab["lat"]), lakes[lab["text"]]), lab["text"])
 
     def test_montana_label_clear_of_site_towns(self):
+        tool = load_tool()
         lab = [x for x in self.labels if x["kind"] == "region-main"][0]
         for z in range(lab["min_zoom"], lab.get("max_zoom", 11) + 1):
             lx, ly = project(lab["lat"], lab["lon"], z)
             for t in TOWNS:
-                if z < 7 and t.get("minor"):
+                if z < tool.town_min_zoom(t):
                     continue
                 tx, ty = project(t["lat"], t["lon"], z)
                 self.assertGreater(math.hypot(lx - tx, ly - ty), 30, f"zoom {z}: MONTANA on {t['name']}")
@@ -475,7 +488,8 @@ class Labels(unittest.TestCase):
         towns = [dict(t, label="top") if t["name"] == "Billings" else t for t in TOWNS]
         self.assertTrue(any(p.startswith("z5: town Billings name") for p in tool.town_contacts(towns)))
         with mock.patch.object(tool, "TOUCH_Z5", 0.0):
-            self.assertEqual(len(tool.town_contacts(TOWNS)), 2)            # Missoula/Kalispell, Billings/Miles City
+            self.assertEqual(len(tool.town_contacts(TOWNS)), 3)            # Missoula/Kalispell, Billings/Miles City,
+                                                                             # Miles City's name into Sidney's bubble
         self.assertEqual([p for p in tool.town_contacts(TOWNS)], [])
 
     def test_town_geometry_is_what_the_map_draws(self):
