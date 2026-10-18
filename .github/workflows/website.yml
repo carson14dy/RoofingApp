@@ -96,6 +96,7 @@ jobs:
         env:
           PAGES_URL: ${{ steps.plan.outputs.pages_url }}
         run: |
+          set -o pipefail   # the build's exit code must reach the step: without this, tee's 0 hid a --require-live failure
           args=(--out _site)
           if [ -n "$PAGES_URL" ]; then args+=(--previous "$PAGES_URL"); fi
           # Branch pushes also read NOAA radar echo tops (text only) and the GOES satellite picture; off on main until reviewed.
