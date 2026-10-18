@@ -295,15 +295,21 @@ in the Livingston corridor (Wind gusts layer, the 25 mph ring on the bubbles); a
 | Precipitation | MRMS radar estimate, every 10 min for the past hour | HRRR: 15-min steps for the next hour (1h) or hourly to 12 h (12h) | NWS temperature; no ring |
 | Temperature | — | HRRR 2 m temperature, hourly to 12 h | NWS temperature; ring below 40 °F or above 95 °F |
 | Wind gusts | — | HRRR surface gusts, hourly to 12 h | NWS gusts; ring at the 25 mph limit |
+| Satellite (with `--storm-layers`) | GOES-East band 13 picture of the newest 5-minute scan: one observation, not radar and not a model | — | NWS temperature; no ring |
 
 A ring's key stays for the whole timeline when any of its hours rings a town in sight, so the legend
-never changes height during playback.
+never changes height during playback. The satellite picture (with `--storm-layers`, branch previews only
+until counsel reads the publishing terms) is one observation of cloud-top brightness temperature: no time
+series and no ring. It is never a height and never a hail signal, and its words and legend note say so.
 
 **Colour.** Precipitation by rate as liquid water, using the American Meteorological Society's
 rainfall-rate classes: light under 0.1 in/h, moderate 0.1–0.3 in/h, heavy 0.3–2 in/h, extreme over
 2 in/h; light blue through violet and magenta to yellow, like the reference. Temperature from purple
 (−20 °F) through blue, cyan, green, yellow and orange to dark red (105 °F). Gusts from clear (calm)
 through blue, yellow at the 25 mph limit, orange, red and purple. No-coverage hatch in grey.
+Satellite (with `--storm-layers`): infrared brightness temperature in kelvin, the coldest tops in
+orange-red, then magenta, violet and blue, through greys; warm surfaces fade from 275 K, are faint at 290 K
+and are transparent from 300 K, so the basemap shows through. Its legend labels carry the kelvin values.
 
 **Basemap.** White land, Montana slightly brighter than its neighbours, thin grey state and province
 lines, faint county lines and interstates from zoom 7, pale-blue lakes and rivers, grey uppercase
@@ -345,6 +351,9 @@ hatching. Names may run off the screen's edge, as in the reference.
   (CloseWatcher). The layer menu sits over the timeline and scrolls inside on a short screen.
 - Very short screens (under 301 px tall, e.g. 400% zoom): the legend folds to its title row beside
   the close button and the timeline stops short of the right-hand buttons.
+- Satellite (with `--storm-layers`): one picture of the newest scan. Older than 20 minutes, the picture
+  stays and the banner gives its age; no scan in the last 60 minutes, there is no picture and the
+  timeline says so. Both are in words with "This is not an all-clear."
 - Site updated while open: the first picture that fails to load makes the page ask for map.json
   once; if it is newer, a banner says "This map was updated after you opened it" with Reload.
 - Card mode (Now and Storm reports pages): latest frame, outlines and bubbles, no controls except
@@ -366,10 +375,13 @@ hatching. Names may run off the screen's edge, as in the reference.
 `image_bounds` (all frames share one Web-Mercator image box, 43–50.5° N, 118.5–101° W), `view`,
 `now` (the newest radar frame), `layers` (per layer: `title`, `unit`, `legend` stops, `legend_note`
 (in a sample build it says the pictures are invented, not NOAA radar or the HRRR model),
-chronological `frames` with `time`, `kind` radar|forecast, `src`, `source`, `run` and `lead_min` for
-model frames, `nodata`; `modes` with frame indices and `now_index`), `status` (radar, forecast,
-alerts, forecasts, reports), `towns` (hourly NWS values for the timeline window, `alert_ids` or null
-when the check failed), `alerts` (with geometry or null; it holds every alert in a town's
+chronological `frames` with `time`, `kind` radar|forecast|satellite, `src`, `source`, `run` and
+`lead_min` for model frames, `nodata`; a satellite frame also has `satellite` (G19 or G18; SAMPLE in a
+sample build), `scan_start` and `scan_end` (ISO times in UTC), and `coldest_k` and `warmest_k` (whole
+kelvin over the drawn pixels, for the words); `modes` with frame indices and
+`now_index`), `status` (radar, forecast, alerts, forecasts, reports, and satellite with
+`--storm-layers`), `towns` (hourly NWS values for the timeline window, `alert_ids` or null when the
+check failed), `alerts` (with geometry or null; it holds every alert in a town's
 `alert_ids`, since the build adds what the town checks found to the statewide list), `reports`. Frames are PNG files in
 `map/frames/`, named by layer and valid time (UTC); model frames add the run hour
 (`temp-202610160000-r2026101522.png`). GitHub Pages lets browsers reuse a file for 10 minutes and

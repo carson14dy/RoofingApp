@@ -352,7 +352,7 @@ class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
         self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "stations",
                                               "observations", "reports", "radar", "forecast_model", "storm_levels",
-                                              "basemap"})
+                                              "satellite", "basemap"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
@@ -365,6 +365,18 @@ class Contracts(unittest.TestCase):
         self.assertIn("no gust reported", src.CONTRACTS["observations"]["missing"])
         self.assertIn("withheld", src.CONTRACTS["observations"]["missing"])
         self.assertIn("Never filtered by state", src.CONTRACTS["stations"]["missing"])
+
+    def test_the_satellite_feed_is_an_observation_with_its_limits(self):
+        c = src.CONTRACTS["satellite"]
+        self.assertIn("observation", c["name"])
+        self.assertIn("noaa-goes19.s3.amazonaws.com", c["request"])
+        self.assertIn("noaa-goes18", c["request"])
+        self.assertIn("not a height, not a hail signal", c["units"])
+        self.assertIn("20 to 33 km", c["units"])
+        self.assertIn("20 minutes", c["timing"])
+        self.assertIn("60 minutes", c["timing"])
+        self.assertIn("never drawn as clear sky", c["missing"])
+        self.assertIn("Not an all-clear", c["missing"])
 
 
 class Formatting(unittest.TestCase):
@@ -538,9 +550,10 @@ class SampleBuild(unittest.TestCase):
     def test_about_page_lists_every_source(self):
         html = page(self.out, "about.html")
         for key, c in src.CONTRACTS.items():
-            if key != "storm_levels":            # listed only in a --storm-layers build (StormLayers)
+            if key not in site.STORM_CONTRACTS:     # listed only in a --storm-layers build (StormLayers)
                 self.assertIn(c["name"], html)
-        self.assertNotIn(src.CONTRACTS["storm_levels"]["name"], html)
+        for key in site.STORM_CONTRACTS:
+            self.assertNotIn(src.CONTRACTS[key]["name"], html)
 
     def test_reports_page_shows_sizes_in_inches_and_unknown_wind(self):
         html = page(self.out, "reports.html")
@@ -959,9 +972,9 @@ class StormLayers(unittest.TestCase):
         self.assertNotIn("storm", self.off_result["status"])
         off_panel = self.text_copy(page(self.off, "map.html"))
         on_panel = self.text_copy(page(self.on, "map.html"))
-        start = on_panel.index("      <h3>Radar echo tops</h3>")
+        start = on_panel.index("      <h3>Satellite picture</h3>")     # the flag's sections: satellite, then echo tops
         end = on_panel.index("    </div>\n  </noscript>")
-        self.assertEqual(off_panel, on_panel[:start] + on_panel[end:])    # the flag adds only the storm section
+        self.assertEqual(off_panel, on_panel[:start] + on_panel[end:])    # the flag adds only its two sections
 
     def test_the_default_build_asks_for_no_storm_files(self):
         urls = []
@@ -1057,6 +1070,126 @@ class StormLayers(unittest.TestCase):
             self.assertIn("This is not an all-clear.", t["storm"]["text"])
             self.assertIsNone(t["storm"]["echo_top_m"])
         self.assertIn("Echo top not available", " ".join(page(out, "town/billings.html").split()))
+
+    def test_flag_off_has_no_satellite_layer_status_state_key_frames_or_radio(self):
+        m = json.loads(page(self.off, "data/map.json"))
+        self.assertNotIn("satellite", m["layers"])
+        self.assertNotIn("satellite", m["status"])
+        self.assertNotIn("satellite", json.loads(page(self.off, "data/state.json"))["status"])
+        self.assertNotIn("satellite", self.off_result["status"])
+        self.assertNotIn("satellite", self.off_result["map"])
+        self.assertNotIn("satellite", self.off_result["content"])
+        self.assertEqual(list((self.off / "map" / "frames").glob("satellite-*")), [])
+        html = page(self.off, "map.html")
+        self.assertNotIn('value="satellite"', html)
+        self.assertNotIn("sw-satellite", html)
+
+    def test_flag_off_has_no_satellite_or_band_13_words_in_any_page_or_data_file(self):
+        for path in self.off.rglob("*"):
+            if not path.is_file() or path.suffix not in (".html", ".json", ".js", ".css", ".svg"):
+                continue
+            name = path.relative_to(self.off).as_posix()
+            text = path.read_text(encoding="utf-8", errors="replace").lower()
+            self.assertNotIn("band 13", text, name)
+            if path.suffix in (".html", ".json"):      # map.js ships in both builds; its code may name the layer
+                self.assertNotIn("satellite", text, name)
+
+    def test_flag_off_ships_no_satellite_asset_and_copies_the_others_unchanged(self):
+        def files(root: Path) -> dict:
+            return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+        built = files(self.off / "static")
+        self.assertEqual([n for n in built if "satellite" in n or "goes" in n.lower()], [])
+        self.assertNotIn("map/storm.js", built)     # copied only with the flag (build._unbuilt_static)
+        expected = files(site.HERE / "static")
+        expected.pop("map/storm.js", None)
+        self.assertEqual(built, expected)           # every other file is copied byte for byte
+
+    def test_flag_off_asks_for_no_satellite_files(self):
+        urls = []
+        fetch = SampleFetcher(NOW)
+        binary = fetch.binary
+
+        def recording(url, headers=None):
+            urls.append(url)
+            return binary(url, headers)
+        fetch.binary = recording
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-off-goes-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, fetch, NOW)
+        self.assertTrue(urls)                                       # the radar and model are still asked for
+        self.assertEqual([u for u in urls if "noaa-goes" in u or "ABI-L2" in u], [])
+
+    def test_flag_on_draws_one_satellite_picture_under_150_kb(self):
+        from PIL import Image
+        from website import satellite as sat
+        layer = json.loads(page(self.on, "data/map.json"))["layers"].get("satellite")
+        self.assertIsNotNone(layer, "data/map.json has no satellite layer")
+        self.assertEqual(len(layer["frames"]), 1, "one picture: the newest scan")
+        f = layer["frames"][0]
+        self.assertEqual(f["kind"], "satellite")
+        self.assertTrue(f["src"].startswith("map/frames/satellite-"), f["src"])
+        picture = self.on / f["src"]
+        self.assertTrue(picture.is_file(), f["src"])
+        self.assertLess(picture.stat().st_size, 150_000)
+        self.assertEqual(len(list((self.on / "map" / "frames").glob("satellite-*"))), 1)   # no other picture
+        with Image.open(picture) as image:
+            self.assertEqual(image.size, g.image_size(sat.WIDTH))
+        self.assertTrue(f["source"].startswith("SAMPLE"), f["source"])        # a sample build says so
+        self.assertEqual((layer["title"], layer["unit"]), ("Satellite", "K"))
+        self.assertEqual(layer["modes"], {"12h": [0]})
+        self.assertEqual(layer["now_index"], {"12h": 0})
+        labels = [e["label"] for e in layer["legend"]]
+        self.assertIn("195 K", labels)
+        self.assertIn("290 K", labels)
+        self.assertIn("invented", layer["legend_note"])
+        status = self.on_result["status"].get("satellite")
+        self.assertIsNotNone(status, "no satellite status line in the build result")
+        self.assertTrue(status["ok"], status)
+        self.assertIn("satellite", json.loads(page(self.on, "data/state.json"))["status"])
+
+    def test_flag_on_map_page_has_the_satellite_radio_and_the_same_words_in_the_panel_and_the_list(self):
+        html = page(self.on, "map.html")
+        self.assertEqual(html.count('<input type="radio" name="layer" value="satellite">'), 1)
+        self.assertIn('<span class="choice-text">Satellite</span>', html)
+        description = (self.on_result.get("content") or {}).get("satellite")
+        self.assertTrue(description, "the build result has no satellite paragraph")
+        words = self.env.from_string("{{ t }}").render(t=description)
+        panel = self.text_copy(html)
+        self.assertIn("<h3>Satellite picture</h3>", panel)
+        self.assertIn(f"<p>{words}</p>", panel)
+        self.assertLess(panel.index("<h3>Satellite picture</h3>"), panel.index("<h3>Radar echo tops</h3>"))
+        template = re.search(r'<template id="storm-list">.*?</template>', html, re.S)
+        self.assertIsNotNone(template, "no storm-list template")
+        self.assertRegex(template.group(0), r"<h3[^>]*>Satellite picture</h3>")
+        self.assertIn(f"<p>{words}</p>", template.group(0))
+
+    def test_flag_on_about_lists_the_satellite_contract_and_the_flag_off_does_not(self):
+        about = page(self.on, "about.html")
+        c = src.CONTRACTS["satellite"]
+        for key in ("name", "request", "units", "timing", "missing"):
+            self.assertIn(self.env.from_string("{{ t }}").render(t=c[key]), about, key)
+        self.assertIn("not a height and not a hail signal", about)
+        self.assertIn("north-west for GOES-East", about)            # the parallax words, on the About page
+        self.assertNotIn(c["name"], page(self.off, "about.html"))
+
+    def test_require_live_counts_the_satellite_picture_like_every_other_source(self):
+        from website import satellite as sat
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-live-check-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        argv = ["--out", str(out / "site"), "--sample", "--storm-layers", "--require-live",
+                "--now", "2026-10-14T15:00:00Z"]
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(site.main(argv), 0)                    # every source is ok in the sample build
+        real = sat.build_satellite
+
+        def stale(out_dir, get, now, sample=False):
+            layer, status = real(out_dir, get, now, sample)
+            return layer, {**status, "ok": False, "detail": "satellite picture is 25 min old; scan ended 8:58 am"}
+        err = io.StringIO()
+        with mock.patch.object(sat, "build_satellite", stale), contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(err):
+            self.assertEqual(site.main(argv), 1)
+        self.assertIn("Sources that failed or were stale: satellite", err.getvalue())
 
 
 class MapLabels(unittest.TestCase):

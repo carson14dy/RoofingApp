@@ -10,6 +10,8 @@
    - Evidence honesty: before "Now" a frame is NOAA's radar estimate, after it the HRRR model; the
      timeline title and subtitle always say which. Town numbers are the NWS hourly forecast. Missing
      data is said in words and never drawn as a clear sky.
+   - The satellite picture (--storm-layers builds only) is an infrared observation of cloud tops:
+     never a height and never a hail signal.
    - The viewer's location never leaves the browser: it draws the dot and finds the nearest town.
 */
 (function () {
@@ -25,7 +27,7 @@
   var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
   var FALLBACK_VIEW = { bounds: [[44.35, -116.06], [49.01, -104.03]], min_zoom: 5, max_zoom: 11 };
   var KIND_WORD = { warning: "Warning", watch: "Watch", advisory: "Advisory", statement: "Statement" };
-  var LAYER_WORD = { precip: "Precipitation", temp: "Temperature", wind: "Wind gusts" };
+  var LAYER_WORD = { precip: "Precipitation", temp: "Temperature", wind: "Wind gusts", satellite: "Satellite" };   // satellite: --storm-layers builds only
   var LABEL_ZOOM = 5.25;             // from this zoom every town name clears the other bubbles (tools/build_basemap.py)
   // words for the hatching in view (hatchKind): [legend key or card caption, note line]. A gap in the
   // frame shown, the band outside the pictures' box, or both ("on this map" is true of both; only the
@@ -35,6 +37,9 @@
     model: ["No model data", "Hatched areas have no model data."],
     radarOut: ["No radar data on this map", "Hatched areas have no radar data on this map."],
     modelOut: ["No model data on this map", "Hatched areas have no model data on this map."],
+    // satellite: no value for a cell (fill, out of range, or a quality flag other than 0); never clear sky
+    satellite: ["No satellite data", "Hatched areas have no satellite data."],
+    satelliteOut: ["No satellite data on this map", "Hatched areas have no satellite data on this map."],
     outside: ["Outside map area", "Hatched areas are outside this map's area."]
   };
 
@@ -475,7 +480,9 @@
     var big = null;
     noteWarningSet().forEach(function (t) { var s = noteSize(t, true); if (!big || s.height > big.height) big = s; });
     if (!big) {
-      Object.keys(HATCH).forEach(function (k) { var s = noteSize(HATCH[k][1], false); if (!big || s.width > big.width) big = s; });
+      // the satellite's hatch words count only in a build with the layer, so a default build's box stays as it was
+      Object.keys(HATCH).filter(function (k) { return k.indexOf("satellite") !== 0 || !!(data.layers && data.layers.satellite); })
+        .forEach(function (k) { var s = noteSize(HATCH[k][1], false); if (!big || s.width > big.width) big = s; });
     }
     var b = el.bottom.getBoundingClientRect(), left = b.left + (b.width - big.width) / 2;
     return { left: left, right: left + big.width, top: tlTop - 8 - big.height, bottom: tlTop - 8 };
@@ -831,6 +838,9 @@
     state.frames = idx.map(function (i) { return L_.frames[i]; }).filter(Boolean);
     state.times = state.frames.map(function (f) { return Date.parse(f.time); });
     state.nowPos = clamp((L_.now_index && L_.now_index[state.mode]) || 0, 0, Math.max(0, state.frames.length - 1));
+    // the old layer's position must sit inside the new frames before anything draws them: a one-frame layer
+    // (the satellite picture) switched to while playing stops playback below, and that draws frame state.pos
+    state.pos = clamp(state.pos, 0, Math.max(0, state.frames.length - 1));
     var modes = Object.keys(L_.modes || {}).filter(function (m) { return (L_.modes[m] || []).length; });
     el.seg.hidden = modes.length < 2;
     var segBtns = el.seg.querySelectorAll("button");
@@ -1124,7 +1134,8 @@
   function renderTimeline() {
     var n = state.frames.length;
     if (!n) {
-      el.title.textContent = state.layer === "precip" ? "No radar or forecast" : "No forecast";
+      el.title.textContent = state.layer === "precip" ? "No radar or forecast" :
+        state.layer === "satellite" ? "No satellite picture" : "No forecast";
       whenEl.textContent = "Nothing to show for " + LAYER_WORD[state.layer].toLowerCase();
       srcEl.textContent = "";
       el.range.setAttribute("aria-valuetext", "No pictures in this update");
@@ -1133,14 +1144,14 @@
       return;
     }
     var f = state.frames[state.pos], ms = state.times[state.pos];
-    el.title.textContent = f.kind === "radar" ? "Radar" : "Forecast";
+    el.title.textContent = f.kind === "radar" ? "Radar" : f.kind === "satellite" ? "Satellite" : "Forecast";
     whenEl.textContent = dayClock(ms);
     srcEl.textContent = sourceWords(f);
     // a screen reader reads every value change of a focused slider: while playing, its value waits
     // until playback stops (setPlaying); the knob and the title above still move
     if (!(state.playing && document.activeElement === el.range)) {
       el.range.value = String(ms);
-      el.range.setAttribute("aria-valuetext", (f.kind === "radar" ? "Radar, " : "Forecast, ") + dayClock(ms) + ", " +
+      el.range.setAttribute("aria-valuetext", (f.kind === "radar" ? "Radar, " : f.kind === "satellite" ? "Satellite, " : "Forecast, ") + dayClock(ms) + ", " +
         sourceWords(f) + nowWords(ms, f));
     }
     var pct = (frac(ms) * 100).toFixed(3) + "%";
@@ -1157,12 +1168,14 @@
     var now = nowRaw();              // the real now: the clamped one (nowMs) is only for placing the tick
     if (Math.abs(ms - now) <= 10 * MIN) return ", now";
     if (f.kind === "radar") return ", latest radar picture";
+    if (f.kind === "satellite") return ", latest satellite picture";     // one scan: never "this hour"
     return Math.floor(now / HOUR) * HOUR === ms ? ", this hour" : "";
   }
 
   /** The source in plain words: radar estimate or model forecast, never blended. */
   function sourceWords(f) {
     var sample = /^SAMPLE/.test(f.source || "");
+    if (f.kind === "satellite") return f.source;      // the build's own words (a sample build says SAMPLE)
     if (f.kind === "radar") return sample ? "sample, not NOAA radar" : "NOAA radar estimate";
     var run = f.run ? ", run " + clock(Date.parse(f.run)) : "";
     return sample ? "sample, not the HRRR model" : "HRRR model" + run;
@@ -1214,6 +1227,7 @@
     if (!n) {
       var why = [];
       if (state.layer === "precip" && st.radar && !st.radar.ok) why.push("radar: " + st.radar.detail);
+      if (state.layer === "satellite" && st.satellite && !st.satellite.ok) why.push("satellite: " + st.satellite.detail);
       if (st.forecast && !st.forecast.ok) why.push("model forecast: " + st.forecast.detail);
       warns.push("No " + LAYER_WORD[state.layer].toLowerCase() + " pictures in this update" + (why.length ? " (" + why.join("; ") + ")" : "") +
         ". This is not an all-clear.");
@@ -1337,7 +1351,7 @@
   function hatchInView() {
     var h = { gap: "", spare: "", outside: false };
     if (!map || !map._imageBounds) return h;
-    var f = state.frames[state.pos], kind = function (x) { return x.kind === "radar" ? "radar" : "model"; };
+    var f = state.frames[state.pos], kind = function (x) { return x.kind === "radar" || x.kind === "satellite" ? x.kind : "model"; };
     if (f && f.nodata && !f._failed) h.gap = kind(f);
     else state.frames.some(function (x) { if (x.nodata) h.spare = kind(x); return x.nodata; });
     h.outside = !map._imageBounds.contains(map.getBounds());
@@ -1373,7 +1387,8 @@
 
   /** The layer menu's swatches use each layer's own legend colours (built by Python). */
   function paintSwatches() {
-    ["precip", "temp", "wind"].forEach(function (k) {
+    // every layer in data/map.json (the satellite layer is there only in --storm-layers builds)
+    Object.keys(data.layers).forEach(function (k) {
       var sw = el.layers.querySelector(".sw-" + k);
       var L_ = data.layers[k];
       if (sw && L_ && L_.gradient) sw.style.background = L_.gradient;
@@ -2102,7 +2117,7 @@
       } else if (!repFailed) html += "<p>No reports. No report is not \u201cno hail\u201d.</p>";
     }
     var st = data.status || {};
-    var bad = ["radar", "forecast", "alerts", "forecasts", "reports"].filter(function (k) { return st[k] && !st[k].ok; });
+    var bad = ["radar", "forecast", "alerts", "forecasts", "reports", "satellite"].filter(function (k) { return st[k] && !st[k].ok; });
     if (bad.length) {
       html += "<h3>Sources with problems</h3><ul>" + bad.map(function (k) {
         return "<li>" + esc(st[k].label) + ": " + esc(st[k].detail) + ".</li>";
@@ -2135,6 +2150,7 @@
       // a sample card also shows the "Sample data ... not weather" banner, so a short name fits one line
       var sample = /^SAMPLE/.test(f.source || "");
       main = (f.kind === "radar" ? (sample ? "Sample radar" : "NOAA radar estimate") :
+        f.kind === "satellite" ? (sample ? "Sample satellite picture" : "NOAA satellite picture") :
         (sample ? "Sample forecast" : "HRRR model forecast")) + " \u00b7 " + clock(state.times[state.pos]);
     }
     // words true of all the hatching in view: a gap in the frame, the band outside the pictures, or both

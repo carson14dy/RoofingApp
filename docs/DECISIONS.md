@@ -499,6 +499,24 @@ values, P2 the Band 13 picture, P3 MESH only with verified units, P4 the echo-to
 cloud-top classes, P6 a two-hour loop), behind a build flag that is off by default; a link-only
 globe only after the P4 gate and a separate approval of a vendored library and JavaScript caps.
 
+P2 build, 2026-10-17: Carson asked to start P2. `website/satellite.py` draws one NOAA GOES-East (GOES-19)
+band 13 picture (10.3 µm, clean infrared) of the newest 5-minute CONUS scan on the map's image box, as a
+fourth layer named Satellite. It is built only with `--storm-layers` (the flag is off by default and only
+branch previews pass it), so the default build's pages and data have no satellite words, keys or files. The
+shared map script's code changed (its ?v= hash too); no satellite word reaches a default page or data file. The picture is an
+observation: its frame kind is `satellite`, it is never blended with the radar estimate or the model
+forecast, and its words never claim a height, a clear sky, a dry area or hail (they say "not a height" and
+"not a hail signal"). Two of the README's proposals are adopted
+for this build: the freshness limits (stale after 1,200 s, when the picture is still drawn; no picture
+after 3,600 s, D34) and the observation wording of the proposed `satellite_image` kind (D33; this build
+names its kind `satellite`). GOES-East is read first, and GOES-West (noaa-goes18) when East fails or has no
+scan in the last hour, because GOES-West's CONUS grid misses the south-east corner of the map's box (about 0.2% of it). Only
+quality flag 0 is drawn; every other value is hatched as no satellite data, never drawn as clear sky. An
+uncorrected cloud top is drawn away from the satellite (the parallax in the corrections below), and the
+About page and the picture's own words say so. The two counsel items, D-G10 (publishing terms for NOAA-derived
+products) and D-G11 (the GOES access banner), are still open: no GOES layer reaches users until counsel has
+read both (research/globe/README.md section 2).
+
 The proposed decision entries that follow are listed in README
 section 9b as D31 onward and wait for Carson.
 

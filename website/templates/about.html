@@ -24,6 +24,8 @@
       reported; a report is a point, not the edge of a storm.</li>
     {% if storm_layers %}<li><strong>Radar echo tops</strong> are NOAA's radar estimate (MRMS) for each town: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data, in metres above sea level ("at least" when heights above it had no radar value). The 11 heights run from 500 to 15,000 m above sea level. They are not observed hail or damage, and no echo is not an all-clear.</li>
     {% endif %}
+    {% if storm_layers %}<li><strong>Satellite picture</strong> is NOAA's GOES infrared picture (band 13, 10.3 µm) of the newest 5-minute scan over the map's area, in kelvin. It is an observation of the infrared brightness temperature of the cloud tops and of the ground where there is no cloud. It is not a height and not a hail signal. GOES-East is read first; GOES-West is used when GOES-East fails or has no scan in the last hour. An uncorrected cloud top is drawn away from the satellite (north-west for GOES-East, north-east for GOES-West), about 3 to 4 km for a 2 km top and 20 to 33 km for a 12 to 15 km top. Missing pixels are hatched, never drawn as clear sky. Areas warmer than 300 K are left uncoloured, and missing areas show hatch lines; uncoloured is not a statement about the weather.</li>
+    {% endif %}
   </ul>
 
   <h2>Flags</h2>
