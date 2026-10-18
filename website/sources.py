@@ -144,6 +144,21 @@ CONTRACTS = {
                    "didn't load gets 'Echo top not available', never a value. No echo at 35 dBZ is not an all-clear. "
                    "A radar estimate, not observed hail or damage.",
     },
+    "satellite": {
+        "name": "NOAA GOES satellite picture (band 13, observation)",
+        "request": "noaa-goes19.s3.amazonaws.com (GOES-East; GOES-West noaa-goes18 if East fails or has no scan in "
+                   "the last hour), ABI-L2-CMIPC band 13: one NetCDF file per 5-minute CONUS scan; the newest scan "
+                   "of the current or previous UTC hour",
+        "units": "Infrared brightness temperature in kelvin at 2 km (nadir), drawn as one picture on the map's image box. "
+                 "An observation: not a height, not a hail signal. An uncorrected cloud top is drawn away from the "
+                 "satellite (north-west for GOES-East, north-east for GOES-West), about 3 to 4 km for a 2 km top and "
+                 "20 to 33 km for a 12 to 15 km top",
+        "timing": "A new scan every 5 minutes, on the bucket about 30 s after the scan ends. A newest scan older than "
+                  "20 minutes is reported as stale; none within 60 minutes: no picture",
+        "missing": "Fill values, raw values outside the file's valid range, quality flags other than 0 and cells outside "
+                   "the satellite's grid are hatched as no satellite data, never drawn as clear sky. If the file doesn't "
+                   "load, the map says so and shows no satellite picture. Not an all-clear.",
+    },
     "basemap": {
         "name": "Map outlines and names",
         "request": "Natural Earth 10m (public domain) and US Census county lines (us-atlas 3.0.1), built into "
@@ -151,6 +166,19 @@ CONTRACTS = {
         "units": "Longitude and latitude, rounded to 4 decimals and simplified for statewide viewing.",
         "timing": "Built by hand when the map changes; served by this site.",
         "missing": "Without the outlines the map still shows the weather layers and towns.",
+    },
+    "imagery": {
+        "name": "USGS National Map imagery (ImageryTopo), base map",
+        "request": "basemap.nationalmap.gov, USGSImageryTopo tiles, fetched by the viewer's browser only after they "
+                   "switch the base map to Imagery, or open a link that starts on Imagery",
+        "units": "Aerial photographs with roads, rivers, boundaries and place names, and at small scales a global "
+                 "image; not weather and not evidence",
+        "timing": "USGS's service says its data were refreshed in April 2026; its main source is leaf-on NAIP "
+                  "imagery. This site shows no flight dates; the tiles are shown to zoom 16.",
+        "missing": "A tile that doesn't load leaves a plain near-white background, with the Montana outline, state "
+                   "lines and town bubbles, and the credit row says that imagery didn't load until a tile loads. The "
+                   "base map's roads, lakes, rivers, counties and names stay hidden while Imagery is on. Outside the "
+                   "United States, tiles above zoom 8 are blank or missing in the places checked.",
     },
 }
 

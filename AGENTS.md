@@ -25,23 +25,24 @@ shipped. Its rules below (1–3) apply only if work on it resumes.
 ## Layout
 ```
 website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · gridded.py (MRMS radar
-           + HRRR model → map frames) · build.py (collect → frames + data/map.json → pages) ·
-           sample.py (labelled sample data) · towns.json · templates/ · static/ (style, Leaflet, fonts,
-           map/ = map.js, map.css, basemap.json)
+           + HRRR model → map frames) · storm.py and satellite.py (radar echo tops and the GOES
+           band 13 picture, both behind --storm-layers) · build.py (collect → frames + data/map.json →
+           pages) · sample.py (labelled sample data) · towns.json · templates/ · static/ (style, Leaflet,
+           fonts, map/ = map.js, map.css, basemap.json)
 tools/     build_basemap.py (rebuilds static/map/basemap.json from Natural Earth + Census; by hand)
 .github/workflows/website.yml   build every 10 min from main → GitHub Pages; branch pushes = live check
 payload/   the parked app — updates itself. app.py (routes) · weather.py (feeds, evidence, alert matching,
            rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
 desktop/   the shell — changes only with a new installer. launcher.py (window, local server,
            notifications, recovery page) · updater.py (GitHub updates, self-test, rollback)
-tests/     test_site.py, test_gridded.py, test_basemap.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
+tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
            update channel vs fake GitHub
 build.py   PyInstaller build      ship.py   test → bump version → commit → push
 ```
 
 ## Commands
 ```bash
-pip install requests jinja2 pillow numpy pygrib tzdata          # enough for the website
+pip install requests jinja2 pillow numpy pygrib h5py tzdata     # enough for the website
 python -m website.build --out _site --sample             # labelled sample data, no network
 python -m website.build --out _site --require-live       # live data; exit 1 if any source failed
 python -m http.server -d _site 8000                      # then open http://localhost:8000
@@ -69,7 +70,9 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
    `website/static/map/map.js` — playback, scrubbing, menus, sheets, geolocation, D28; app: the
    ~20-line bridge in `templates/live.html`). Owner
    preference — don't add a JS framework. Third-party code (Leaflet) and fonts are served by the
-   site, not a CDN.
+   site, not a CDN. The browser fetches only site files, except the USGS imagery tiles, which it
+   fetches only while Imagery is on (switched on by the viewer, or by a link that starts on it; D32),
+   from the one host named in `website/build.py`.
 5. **Evidence honesty.** Keep forecast, radar estimate, point report, official alert and
    inspection separate. Never state confirmed damage, insurance eligibility or a damage
    probability. No report is not “no hail.” Missing inputs show “Data unavailable,” never an

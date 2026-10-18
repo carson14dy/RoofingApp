@@ -142,8 +142,8 @@ colour alone. Contrast, computed:
 
 **Spacing.** 8 px base: 4, 8, 12, 16, 24, 32, 48, 64. Cards 16 px padding; sections 48 px apart.
 
-**Map.** Leaflet 1.9.4 served by the site. USGS topo base in greyscale (inverted in dark mode) so
-radar and warning colours stand out. Radar is NOAA's composite saved as one picture per build with
+**Map.** Leaflet 1.9.4 served by the site. A white vector base map (inverted in dark mode; the opt-in
+USGS imagery is in section 8) so radar and warning colours stand out. Radar is NOAA's composite saved as one picture per build with
 its frame time, at 72% opacity, so everyone sees the same frame the page describes. Warning
 polygons use the chip colours. Towns are white dots with labels; each label's side is set in
 `towns.json` so no label covers another or a dot. A town shows from its `min_zoom` in `towns.json`
@@ -281,14 +281,14 @@ in the Livingston corridor (Wind gusts layer, the 25 mph ring on the bubbles); a
    keys), sheets close with Escape or a button, no hover-only information.
 4. *Python builds the data; the browser only plays it.* Frames, legends and every number are made
    by the build. `map.js` handles what only a browser can: the playback timer, scrubbing, menus,
-   sheets and geolocation.
+   sheets and geolocation. The one thing it fetches from off the site is the imagery, and only while Imagery is on (D32).
 
 **Layout.** Full screen (100dvh, safe areas respected).
 | Region | Contents |
 |---|---|
 | Top left | Close (back to Now); the legend for the active layer with its note and a "Map data" link (on a portrait phone the keys sit beside a shorter scale, "Map data" in the title row: about 135–170 px tall instead of about 270–340) |
-| Top right | Layers (Precipitation, Temperature, Wind gusts; Warnings and Storm reports toggles), My location, List (every alert, including those without an outline, then every town) |
-| Map | White vector basemap; the active layer's frame; warning outlines; storm reports; town bubbles |
+| Top right | Layers (Precipitation, Temperature, Wind gusts; Base map: Map or Imagery; Warnings and Storm reports toggles), My location, List (every alert, including those without an outline, then every town) |
+| Map | White vector basemap, or USGS imagery when the Base map switch is on (D32); the active layer's frame; warning outlines; storm reports; town bubbles |
 | Bottom | Timeline: play/pause, "Radar"/"Forecast" with time and source, "1h | 12h", scrubber with a Now tick |
 | Sheets | Town (NWS forecast for the selected hour, flags in words, alerts, link to the town page), alert (official text), report |
 
@@ -298,20 +298,28 @@ in the Livingston corridor (Wind gusts layer, the 25 mph ring on the bubbles); a
 | Precipitation | MRMS radar estimate, every 10 min for the past hour | HRRR: 15-min steps for the next hour (1h) or hourly to 12 h (12h) | NWS temperature; no ring |
 | Temperature | — | HRRR 2 m temperature, hourly to 12 h | NWS temperature; ring below 40 °F or above 95 °F |
 | Wind gusts | — | HRRR surface gusts, hourly to 12 h | NWS gusts; ring at the 25 mph limit |
+| Satellite (with `--storm-layers`) | GOES-East band 13 picture of the newest 5-minute scan: one observation, not radar and not a model | — | NWS temperature; no ring |
+| Base map: Map (default) or Imagery (opt-in, D32) | Under every layer, the same before and after now: the white map, or USGS aerial imagery with roads and names, only while Imagery is on (after the switch, or on a link that starts on it) | The same | No change |
 
 A ring's key stays for the whole timeline when any of its hours rings a town in sight, so the legend
-never changes height during playback.
+never changes height during playback. The satellite picture (with `--storm-layers`, branch previews only
+until counsel reads the publishing terms) is one observation of cloud-top brightness temperature: no time
+series and no ring. It is never a height and never a hail signal, and its words and legend note say so.
 
 **Colour.** Precipitation by rate as liquid water, using the American Meteorological Society's
 rainfall-rate classes: light under 0.1 in/h, moderate 0.1–0.3 in/h, heavy 0.3–2 in/h, extreme over
 2 in/h; light blue through violet and magenta to yellow, like the reference. Temperature from purple
 (−20 °F) through blue, cyan, green, yellow and orange to dark red (105 °F). Gusts from clear (calm)
 through blue, yellow at the 25 mph limit, orange, red and purple. No-coverage hatch in grey.
+Satellite (with `--storm-layers`): infrared brightness temperature in kelvin, the coldest tops in
+orange-red, then magenta, violet and blue, through greys; warm surfaces fade from 275 K, are faint at 290 K
+and are transparent from 300 K, so the basemap shows through. Its legend labels carry the kelvin values.
 
 **Basemap.** White land, Montana slightly brighter than its neighbours, thin grey state and province
 lines, faint county lines and interstates from zoom 7, pale-blue lakes and rivers, grey uppercase
 region names, dark town names with a white halo. Dark mode inverts to charcoal. Built once from
-Natural Earth and Census lines; no tile service. Past the padded box a coarse context layer runs the
+Natural Earth and Census lines; no tile service (the opt-in imagery below is the one
+exception). Past the padded box a coarse context layer runs the
 state and province lines out to 37.5–60.5° N and 122–95.2° W (east of the Pacific coast), with state
 and province abbreviations and ten cities from zoom 6, so a phone's map runs edge to edge like the reference; it
 draws no land, water or roads, and the hatch still marks it outside the map's area.
@@ -329,6 +337,18 @@ view the note says "Hatched areas have no radar (model) data on this map." and t
 move; the hatching note itself steps aside while a town's bubble or name is under it (after a zoom,
 a pan or My location, or on a screen too short for Montana), and the legend's keys still name the
 hatching. Names may run off the screen's edge, as in the reference.
+
+**Imagery base map (opt-in, D32).** The Layers menu's Base map group switches the white map for USGS aerial
+imagery with roads and names (The National Map, ImageryTopo). While it is on, the vector land, water, roads, county
+lines, place dots and names are hidden and the USGS tiles show in their place. The Montana outline and the state and
+country borders stay on top, and every weather layer, outline, report and town bubble is drawn as before. The zoom
+limit is 16 while it is on and 11 when it is off. The credit row is a legend row with the privacy sentence: "Imagery:
+USDA, USGS, The National Map. Your IP address and the map area you view go to USGS." Dark mode shows the imagery as
+it is. On a portrait phone the credit row makes the legend about 60 px taller (210 px at 390 px wide, against 151 px
+without imagery; 271 px at 320 px, against 182 px; checked 2026-10-18). On a short landscape phone the credit row sits
+below the visible legend, and the legend scrolls to it (the Imagery choice then needs a scroll of the Layers menu on
+first view; accepted 2026-10-18). The card never uses it. The page address records the choice as `base=imagery`, and
+nothing else stores it.
 
 **States.**
 - Frame: loading (the previous frame stays until the next has loaded) · shown · missing (a gap in the
@@ -348,6 +368,20 @@ hatching. Names may run off the screen's edge, as in the reference.
   (CloseWatcher). The layer menu sits over the timeline and scrolls inside on a short screen.
 - Very short screens (under 301 px tall, e.g. 400% zoom): the legend folds to its title row beside
   the close button and the timeline stops short of the right-hand buttons.
+- Satellite (with `--storm-layers`): one picture of the newest scan. Older than 20 minutes, the picture
+  stays and the banner gives its age; no scan in the last 60 minutes, there is no picture and the
+  timeline says so. Both are in words with "This is not an all-clear."
+- Base map: Map (default) or Imagery (opt-in). Tiles come from USGS only while Imagery is on (after the switch,
+  or on a link that starts on it), as the viewer pans. A tile error replaces the credit in the credit row with
+  "Imagery didn't load from USGS. Outlines and towns are still shown.", and the credit comes back when a tile loads.
+  With every tile refused, the map keeps a plain near-white background with the Montana outline, state lines and town
+  bubbles on it; the base map's roads, lakes, rivers, counties and names stay hidden while Imagery is on. Outside the
+  United States, tiles above zoom 8 are blank or missing: from zoom 9 the Canadian places checked (Calgary, Lethbridge
+  and Regina) show a blank white tile, Toronto a near-white one, and Paris, Sydney and Tokyo get a 404, which the row
+  reports as a failed tile. Switching Imagery off sets the zoom limit back to 11; the view zooms out only if it is
+  above 11. On a short landscape phone (667x375, 740x360, 844x390) the credit row sits below the legend's visible part,
+  so the legend is scrolled to reach it, and the Imagery choice needs a scroll of the Layers menu on first view;
+  accepted 2026-10-18.
 - Site updated while open: the first picture that fails to load makes the page ask for map.json
   once; if it is newer, a banner says "This map was updated after you opened it" with Reload.
 - Card mode (Now and Storm reports pages): latest frame, outlines and bubbles, no controls except
@@ -369,11 +403,18 @@ hatching. Names may run off the screen's edge, as in the reference.
 `image_bounds` (all frames share one Web-Mercator image box, 43–50.5° N, 118.5–101° W), `view`,
 `now` (the newest radar frame), `layers` (per layer: `title`, `unit`, `legend` stops, `legend_note`
 (in a sample build it says the pictures are invented, not NOAA radar or the HRRR model),
-chronological `frames` with `time`, `kind` radar|forecast, `src`, `source`, `run` and `lead_min` for
-model frames, `nodata`; `modes` with frame indices and `now_index`), `status` (radar, forecast,
-alerts, forecasts, reports), `towns` (hourly NWS values for the timeline window, `alert_ids` or null
-when the check failed), `alerts` (with geometry or null; it holds every alert in a town's
-`alert_ids`, since the build adds what the town checks found to the statewide list), `reports`. Frames are PNG files in
+chronological `frames` with `time`, `kind` radar|forecast|satellite, `src`, `source`, `run` and
+`lead_min` for model frames, `nodata`; a satellite frame also has `satellite` (G19 or G18; SAMPLE in a
+sample build), `scan_start` and `scan_end` (ISO times in UTC), and `coldest_k` and `warmest_k` (whole
+kelvin over the drawn pixels, for the words); `modes` with frame indices and
+`now_index`), `status` (radar, forecast, alerts, forecasts, reports, and satellite with
+`--storm-layers`), `towns` (hourly NWS values for the timeline window, `alert_ids` or null when the
+check failed), `alerts` (with geometry or null; it holds every alert in a town's
+`alert_ids`, since the build adds what the town checks found to the statewide list), `reports`, and `imagery` (D32:
+the USGS tile address with `{z}/{y}/{x}`, `max_zoom` 16, `credit_line` and `failed_line` (the two words the
+credit row shows) and `host`; the same values sit in the Map page's
+`data-imagery` attribute, and the browser requests tiles from them only while Imagery is on).
+Frames are PNG files in
 `map/frames/`, named by layer and valid time (UTC); model frames add the run hour
 (`temp-202610160000-r2026101522.png`). GitHub Pages lets browsers reuse a file for 10 minutes and
 each hourly HRRR run redraws the same valid times, so a name must never stand for two pictures. The

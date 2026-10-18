@@ -1,0 +1,1121 @@
+{
+ "workstream": "Imagery base map switch (D32), stage B: integration and browser verification",
+ "slug": "imagery-switch-verification",
+ "checked_at_utc": "2026-10-18T01:01:48Z",
+ "branch": "imagery-basemap branch (uncommitted worktree changes)",
+ "base_commit": "9c05feb515e48e152fca513657daf7fc9e6c9efd (the storm-layers-p2 branch)",
+ "status": "Nothing committed, pushed or staged, and git state is unchanged. The same 12 tracked files are modified as at stage D; two untracked files: this record and imagery-switch-review.json.",
+ "environment": {
+  "python": "3.13.16",
+  "browser": "Chromium at /opt/pw-browsers/chromium, driven by Playwright for Python",
+  "map_library": "Leaflet 1.9.4, served from website/static/leaflet",
+  "data": "Sample data only (build --sample at a fixed --now of 2026-10-18T12:00:00Z). No live feed was read.",
+  "network": "basemap.nationalmap.gov answered from this machine on 2026-10-18 (see probes)"
+ },
+ "builds": {
+  "method": "The base commit was exported with git archive into a scratch folder. Both trees were built with --sample, with and without --storm-layers, at the same --now.",
+  "files": {
+   "base_default": 91,
+   "new_default": 91,
+   "base_storm_layers": 93,
+   "new_storm_layers": 93
+  },
+  "determinism_control": "A second build of the base commit is identical (diff -rq silent).",
+  "final_rebuild": "The final tree, rebuilt after the documentation edits, is byte-identical to the builds checked (diff -rq silent for both).",
+  "differences_from_base": {
+   "map.html": "data-imagery attribute on main#app; the Base map fieldset in the Layers menu after the weather layers; new ?v= hashes for map.js and map.css.",
+   "data/map.json": "one new top-level key, imagery. Every other key is equal.",
+   "about.html": "the Base map imagery paragraph; one new row in the sources table (the imagery contract, from CONTRACTS).",
+   "static/map/map.js": "browser code (D32).",
+   "static/map/map.css": "the Base map styles and the is-imagery rules.",
+   "unchanged": "index.html, reports.html and every town page, in both builds."
+  }
+ },
+ "off_site_scan": {
+  "method": "Every page tag with src, href, srcset, data, poster, action or content was checked for a scheme or protocol-relative URL. The CSS and JS files were checked for url() and @import.",
+  "result": "About has the same four weather.gov office links as the base commit (a tags, which are not fetched on load). map.html has none. No url() or @import with a scheme in map.css, map.js or style.css.",
+  "imagery_host_in_built_files": [
+   "data/map.json (the full tile address)",
+   "map.html (the full tile address, in data-imagery)",
+   "about.html (the host name in the contract row text only)"
+  ]
+ },
+ "unit_tests": {
+  "command": "python3 -m unittest discover -s tests (in the worktree)",
+  "result": "Ran 378 tests, OK. Run before the documentation edits (49.8 s) and again after them (48.9 s).",
+  "base_commit_count": "363 tests, OK (the same command in the base export). The change adds 15: 7 in ImageryBaseMap and 8 in ImageryPages, both in tests/test_site.py.",
+  "stage_d": "Ran 378 tests, OK after the review's changes (same count; two tests renamed and several assertions changed; no test removed)."
+ },
+ "browser_checks": {
+  "tools_smoke_map": {
+   "command": "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py <build> --shots <dir>",
+   "builds": [
+    "build --sample (default)",
+    "build --sample --storm-layers"
+   ],
+   "result": "Stage D (review) re-run on the final flag-on build with --shots: PASS (exit 0), no Note lines. Default build and the re-runs: see imagery-switch-review.json, verification.smoke_map_default_final and verification.flake. The leftover-layer mutant fails (exit 1); the earlier build without the check passed it.",
+   "checks_added_in_stage_d": [
+    "imagery_gone after each switch back to Map, and again after a second round to Imagery and back",
+    "check_imagery_refused: every request to the imagery host is aborted; the base map's shapes and names must stay hidden, while the outline, borders, bubbles and weather picture show, with no script error"
+   ]
+  },
+  "tools_smoke_pages": {
+   "command": "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_pages.py <build>",
+   "builds": [
+    "build --sample (default)",
+    "build --sample --storm-layers"
+   ],
+   "result": "PASS on both: every page fits the screen at 288, 320, 375, 768 and 1440 px, light and dark."
+  },
+  "scratch_measurement": {
+   "script": "imagery-work/scripts/measure_imagery.py (not in the repo; it reuses tools/smoke_map.py's JS helpers)",
+   "default_state": {
+    "build_default": {
+     "is_imagery_class": false,
+     "choice": "map",
+     "address_base": "",
+     "credit_rows": [],
+     "tile_imgs_from_host": 0,
+     "tile_imgs_drawn": 0,
+     "vector_shapes_painted": 46,
+     "land_painted": 12,
+     "borders_painted": 5,
+     "place_names_shown": 37,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 344,
+     "container_background": "rgb(250, 250, 250)",
+     "zoom_after_wheel_to_max": "11.00",
+     "requests_total": 34,
+     "requests_to_imagery_host": 0,
+     "requests_offsite": [],
+     "page_errors": [],
+     "imagery_choice_present": 1
+    },
+    "build_storm_layers": {
+     "is_imagery_class": false,
+     "choice": "map",
+     "address_base": "",
+     "credit_rows": [],
+     "tile_imgs_from_host": 0,
+     "tile_imgs_drawn": 0,
+     "vector_shapes_painted": 46,
+     "land_painted": 12,
+     "borders_painted": 5,
+     "place_names_shown": 37,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 344,
+     "container_background": "rgb(250, 250, 250)",
+     "zoom_after_wheel_to_max": "11.00",
+     "requests_total": 35,
+     "requests_to_imagery_host": 0,
+     "requests_offsite": [],
+     "page_errors": [],
+     "imagery_choice_present": 1
+    }
+   },
+   "after_switch_fit_zoom": {
+    "build_default": {
+     "is_imagery_class": true,
+     "choice": "imagery",
+     "address_base": "imagery",
+     "credit_rows": [
+      "Imagery: USDA, USGS, The National Map"
+     ],
+     "tile_imgs_from_host": 35,
+     "tile_imgs_drawn": 35,
+     "vector_shapes_painted": 0,
+     "land_painted": 0,
+     "borders_painted": 5,
+     "place_names_shown": 0,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 377,
+     "container_background": "rgb(250, 250, 250)",
+     "ms_to_first_drawn_tile": 211,
+     "requests_to_imagery_host_before_switch": 0,
+     "tile_requests_total_so_far": 35
+    },
+    "build_storm_layers": {
+     "is_imagery_class": true,
+     "choice": "imagery",
+     "address_base": "imagery",
+     "credit_rows": [
+      "Imagery: USDA, USGS, The National Map"
+     ],
+     "tile_imgs_from_host": 35,
+     "tile_imgs_drawn": 35,
+     "vector_shapes_painted": 0,
+     "land_painted": 0,
+     "borders_painted": 5,
+     "place_names_shown": 0,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 377,
+     "container_background": "rgb(250, 250, 250)",
+     "ms_to_first_drawn_tile": 214,
+     "requests_to_imagery_host_before_switch": 0,
+     "tile_requests_total_so_far": 35
+    }
+   },
+   "after_zoom_to_max": {
+    "build_default": {
+     "zoom_after_wheel_to_max": "16.00",
+     "tile_levels_requested_after_zoom": [
+      9,
+      16
+     ]
+    },
+    "build_storm_layers": {
+     "zoom_after_wheel_to_max": "16.00",
+     "tile_levels_requested_after_zoom": [
+      9,
+      16
+     ]
+    }
+   },
+   "after_switch_back": {
+    "build_default": {
+     "is_imagery_class": false,
+     "choice": "map",
+     "address_base": "",
+     "credit_rows": [],
+     "tile_imgs_from_host": 0,
+     "tile_imgs_drawn": 0,
+     "vector_shapes_painted": 352,
+     "land_painted": 12,
+     "borders_painted": 5,
+     "place_names_shown": 99,
+     "town_bubbles_shown": 14,
+     "main_towns": 10,
+     "frame_zoom": "11.00",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 326,
+     "container_background": "rgb(250, 250, 250)",
+     "imagery_requests_after_switch_back": 0,
+     "zoom_after_wheel_to_max": "11.00",
+     "page_errors": []
+    },
+    "build_storm_layers": {
+     "is_imagery_class": false,
+     "choice": "map",
+     "address_base": "",
+     "credit_rows": [],
+     "tile_imgs_from_host": 0,
+     "tile_imgs_drawn": 0,
+     "vector_shapes_painted": 352,
+     "land_painted": 12,
+     "borders_painted": 5,
+     "place_names_shown": 99,
+     "town_bubbles_shown": 14,
+     "main_towns": 10,
+     "frame_zoom": "11.00",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 326,
+     "container_background": "rgb(250, 250, 250)",
+     "imagery_requests_after_switch_back": 0,
+     "zoom_after_wheel_to_max": "11.00",
+     "page_errors": []
+    }
+   },
+   "direct_open_base_imagery": {
+    "build_default": {
+     "is_imagery_class": true,
+     "choice": "imagery",
+     "address_base": "imagery",
+     "credit_rows": [
+      "Imagery: USDA, USGS, The National Map"
+     ],
+     "tile_imgs_from_host": 35,
+     "tile_imgs_drawn": 35,
+     "vector_shapes_painted": 0,
+     "land_painted": 0,
+     "borders_painted": 5,
+     "place_names_shown": 0,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 377,
+     "container_background": "rgb(250, 250, 250)",
+     "ms_to_first_drawn_tile": 229,
+     "page_errors": []
+    },
+    "build_storm_layers": {
+     "is_imagery_class": true,
+     "choice": "imagery",
+     "address_base": "imagery",
+     "credit_rows": [
+      "Imagery: USDA, USGS, The National Map"
+     ],
+     "tile_imgs_from_host": 35,
+     "tile_imgs_drawn": 35,
+     "vector_shapes_painted": 0,
+     "land_painted": 0,
+     "borders_painted": 5,
+     "place_names_shown": 0,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 377,
+     "container_background": "rgb(250, 250, 250)",
+     "ms_to_first_drawn_tile": 236,
+     "page_errors": []
+    }
+   },
+   "dark_colour_scheme_imagery": {
+    "build_default": {
+     "is_imagery_class": true,
+     "choice": "imagery",
+     "address_base": "imagery",
+     "credit_rows": [
+      "Imagery: USDA, USGS, The National Map"
+     ],
+     "tile_imgs_from_host": 35,
+     "tile_imgs_drawn": 35,
+     "vector_shapes_painted": 0,
+     "land_painted": 0,
+     "borders_painted": 5,
+     "place_names_shown": 0,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 377,
+     "container_background": "rgb(27, 30, 34)",
+     "page_errors": []
+    },
+    "build_storm_layers": {
+     "is_imagery_class": true,
+     "choice": "imagery",
+     "address_base": "imagery",
+     "credit_rows": [
+      "Imagery: USDA, USGS, The National Map"
+     ],
+     "tile_imgs_from_host": 35,
+     "tile_imgs_drawn": 35,
+     "vector_shapes_painted": 0,
+     "land_painted": 0,
+     "borders_painted": 5,
+     "place_names_shown": 0,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 377,
+     "container_background": "rgb(27, 30, 34)",
+     "page_errors": []
+    }
+   },
+   "card_with_base_imagery": {
+    "build_default": {
+     "is_imagery_class": false,
+     "requests_to_imagery_host": 0,
+     "page_errors": []
+    },
+    "build_storm_layers": {
+     "is_imagery_class": false,
+     "requests_to_imagery_host": 0,
+     "page_errors": []
+    }
+   },
+   "every_tile_refused": {
+    "build_default": {
+     "is_imagery_class": true,
+     "choice": "imagery",
+     "address_base": "imagery",
+     "credit_rows": [
+      "Imagery: USDA, USGS, The National Map"
+     ],
+     "tile_imgs_from_host": 35,
+     "tile_imgs_drawn": 0,
+     "vector_shapes_painted": 0,
+     "land_painted": 0,
+     "borders_painted": 5,
+     "place_names_shown": 0,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 377,
+     "container_background": "rgb(250, 250, 250)",
+     "requests_failed": 35,
+     "banner_text": [
+      "Sample data. Everything here is invented to review the layout. It is not weather.",
+      "Sample data."
+     ],
+     "page_errors": []
+    },
+    "build_storm_layers": {
+     "is_imagery_class": true,
+     "choice": "imagery",
+     "address_base": "imagery",
+     "credit_rows": [
+      "Imagery: USDA, USGS, The National Map"
+     ],
+     "tile_imgs_from_host": 35,
+     "tile_imgs_drawn": 0,
+     "vector_shapes_painted": 0,
+     "land_painted": 0,
+     "borders_painted": 5,
+     "place_names_shown": 0,
+     "town_bubbles_shown": 10,
+     "main_towns": 10,
+     "frame_zoom": "6.75",
+     "scroll_width_vs_client": [
+      1280,
+      1280
+     ],
+     "legend_height_px": 377,
+     "container_background": "rgb(250, 250, 250)",
+     "requests_failed": 35,
+     "banner_text": [
+      "Sample data. Everything here is invented to review the layout. It is not weather.",
+      "Sample data."
+     ],
+     "page_errors": []
+    }
+   },
+   "widths_default_vs_imagery": {
+    "build_default": {
+     "288x640": {
+      "map_scroll_vs_client": [
+       288,
+       288
+      ],
+      "map_legend_px": 283,
+      "imagery_scroll_vs_client": [
+       288,
+       288
+      ],
+      "imagery_legend_px": 343,
+      "page_errors": []
+     },
+     "320x640": {
+      "map_scroll_vs_client": [
+       320,
+       320
+      ],
+      "map_legend_px": 182,
+      "imagery_scroll_vs_client": [
+       320,
+       320
+      ],
+      "imagery_legend_px": 228,
+      "page_errors": []
+     },
+     "375x812": {
+      "map_scroll_vs_client": [
+       375,
+       375
+      ],
+      "map_legend_px": 165,
+      "imagery_scroll_vs_client": [
+       375,
+       375
+      ],
+      "imagery_legend_px": 196,
+      "page_errors": []
+     },
+     "390x844": {
+      "map_scroll_vs_client": [
+       390,
+       390
+      ],
+      "map_legend_px": 151,
+      "imagery_scroll_vs_client": [
+       390,
+       390
+      ],
+      "imagery_legend_px": 181,
+      "page_errors": []
+     },
+     "768x1024": {
+      "map_scroll_vs_client": [
+       768,
+       768
+      ],
+      "map_legend_px": 344,
+      "imagery_scroll_vs_client": [
+       768,
+       768
+      ],
+      "imagery_legend_px": 377,
+      "page_errors": []
+     },
+     "1440x900": {
+      "map_scroll_vs_client": [
+       1440,
+       1440
+      ],
+      "map_legend_px": 344,
+      "imagery_scroll_vs_client": [
+       1440,
+       1440
+      ],
+      "imagery_legend_px": 377,
+      "page_errors": []
+     }
+    },
+    "build_storm_layers": {
+     "288x640": {
+      "map_scroll_vs_client": [
+       288,
+       288
+      ],
+      "map_legend_px": 283,
+      "imagery_scroll_vs_client": [
+       288,
+       288
+      ],
+      "imagery_legend_px": 343,
+      "page_errors": []
+     },
+     "320x640": {
+      "map_scroll_vs_client": [
+       320,
+       320
+      ],
+      "map_legend_px": 182,
+      "imagery_scroll_vs_client": [
+       320,
+       320
+      ],
+      "imagery_legend_px": 228,
+      "page_errors": []
+     },
+     "375x812": {
+      "map_scroll_vs_client": [
+       375,
+       375
+      ],
+      "map_legend_px": 165,
+      "imagery_scroll_vs_client": [
+       375,
+       375
+      ],
+      "imagery_legend_px": 196,
+      "page_errors": []
+     },
+     "390x844": {
+      "map_scroll_vs_client": [
+       390,
+       390
+      ],
+      "map_legend_px": 151,
+      "imagery_scroll_vs_client": [
+       390,
+       390
+      ],
+      "imagery_legend_px": 181,
+      "page_errors": []
+     },
+     "768x1024": {
+      "map_scroll_vs_client": [
+       768,
+       768
+      ],
+      "map_legend_px": 344,
+      "imagery_scroll_vs_client": [
+       768,
+       768
+      ],
+      "imagery_legend_px": 377,
+      "page_errors": []
+     },
+     "1440x900": {
+      "map_scroll_vs_client": [
+       1440,
+       1440
+      ],
+      "map_legend_px": 344,
+      "imagery_scroll_vs_client": [
+       1440,
+       1440
+      ],
+      "imagery_legend_px": 377,
+      "page_errors": []
+     }
+    }
+   }
+  },
+  "simulated_no_internet": {
+   "method": "tools/smoke_map.py's check() and main() run with every request to basemap.nationalmap.gov aborted in the browser (scratch wrapper, not in the repo). Default build.",
+   "result": "exit 0. Two notes, no failures: 'desktop imagery: tile did not load (no answer ... 20 seconds ...)' and 'direct open: tile did not load'. main() printed the notes as 'Note:' lines and then the pass line."
+  },
+  "simulated_outage_http_503": {
+   "method": "The same wrapper, with every request to the imagery host answered HTTP 503 text/html. Default build.",
+   "result": "exit 1. Failures: 'imagery: the tile answered HTTP 503 as text/html, not 200 image/jpeg' and the same for the direct open. This is the owner decision recorded in owner_decisions."
+  }
+ },
+ "tiles": {
+  "host": "basemap.nationalmap.gov",
+  "service": "USGSImageryTopo",
+  "requests_before_switch": 0,
+  "tiles_at_fit_zoom_desktop": 35,
+  "levels_at_fit_zoom": [
+   7
+  ],
+  "status_and_type": {
+   "200": "image/jpeg for all 35 (both builds)"
+  },
+  "access_control_allow_origin": "*",
+  "bytes_min": 15744,
+  "bytes_max": 32286,
+  "bytes_total": 780028,
+  "bytes_in_request_order": [
+   19284,
+   27401,
+   24265,
+   20079,
+   29740,
+   31138,
+   18937,
+   23787,
+   26385,
+   32286,
+   21551,
+   20485,
+   26856,
+   25876,
+   21390,
+   26249,
+   27449,
+   15896,
+   21454,
+   15744,
+   26312,
+   18261,
+   17811,
+   23225,
+   25093,
+   18700,
+   19354,
+   17747,
+   19899,
+   18525,
+   19160,
+   17606,
+   25954,
+   17742,
+   18387
+  ],
+  "ms_to_first_drawn_tile": {
+   "switch_default_build": 211,
+   "switch_storm_layers_build": 214
+  },
+  "levels_requested_after_zoom_to_16": [
+   9,
+   16
+  ]
+ },
+ "direct_probes_from_this_machine_2026_10_18": [
+  {
+   "place": "Billings",
+   "z": 6,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 25057,
+   "acao": "*",
+   "jpeg_magic": true
+  },
+  {
+   "place": "Billings",
+   "z": 7,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 21551,
+   "acao": "*",
+   "jpeg_magic": true
+  },
+  {
+   "place": "Billings",
+   "z": 9,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 33183,
+   "acao": "*",
+   "jpeg_magic": true
+  },
+  {
+   "place": "Billings",
+   "z": 13,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 31295,
+   "acao": "*",
+   "jpeg_magic": true
+  },
+  {
+   "place": "Billings",
+   "z": 16,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 35490,
+   "acao": "*",
+   "jpeg_magic": true
+  },
+  {
+   "place": "Billings",
+   "z": 17,
+   "status": 404,
+   "content_type": "text/html;charset=utf-8",
+   "bytes": 572
+  },
+  {
+   "place": "Tokyo",
+   "z": 8,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 15962,
+   "acao": "*",
+   "jpeg_magic": true
+  },
+  {
+   "place": "Tokyo",
+   "z": 9,
+   "status": 404,
+   "content_type": "text/html;charset=utf-8",
+   "bytes": 572
+  },
+  {
+   "place": "Toronto",
+   "z": 8,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 22448,
+   "acao": "*",
+   "jpeg_magic": true
+  },
+  {
+   "place": "Toronto",
+   "z": 9,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 2767,
+   "acao": "*",
+   "jpeg_magic": true
+  }
+ ],
+ "outside_us_probes_2026_10_18": [
+  {
+   "place": "Calgary",
+   "z": 8,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 20564,
+   "mean_rgb": 67.9,
+   "rgb_std": 42.7
+  },
+  {
+   "place": "Calgary",
+   "z": 9,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 2419,
+   "mean_rgb": 255.0,
+   "rgb_std": 0.0
+  },
+  {
+   "place": "Lethbridge",
+   "z": 8,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 20707,
+   "mean_rgb": 88.8,
+   "rgb_std": 35.8
+  },
+  {
+   "place": "Lethbridge",
+   "z": 9,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 2419,
+   "mean_rgb": 255.0,
+   "rgb_std": 0.0
+  },
+  {
+   "place": "Regina",
+   "z": 8,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 21606,
+   "mean_rgb": 95.0,
+   "rgb_std": 36.3
+  },
+  {
+   "place": "Regina",
+   "z": 9,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 2419,
+   "mean_rgb": 255.0,
+   "rgb_std": 0.0
+  },
+  {
+   "place": "Vancouver",
+   "z": 8,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 24591,
+   "mean_rgb": 57.8,
+   "rgb_std": 52.0
+  },
+  {
+   "place": "Vancouver",
+   "z": 9,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 8197,
+   "mean_rgb": 247.3,
+   "rgb_std": 31.6
+  },
+  {
+   "place": "Paris",
+   "z": 8,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 16961,
+   "mean_rgb": 69.0,
+   "rgb_std": 28.3
+  },
+  {
+   "place": "Paris",
+   "z": 9,
+   "status": 404,
+   "content_type": "text/html;charset=utf-8",
+   "bytes": 572,
+   "mean_rgb": null,
+   "rgb_std": null
+  },
+  {
+   "place": "Sydney",
+   "z": 8,
+   "status": 200,
+   "content_type": "image/jpeg",
+   "bytes": 12688,
+   "mean_rgb": 63.9,
+   "rgb_std": 36.1
+  },
+  {
+   "place": "Sydney",
+   "z": 9,
+   "status": 404,
+   "content_type": "text/html;charset=utf-8",
+   "bytes": 572,
+   "mean_rgb": null,
+   "rgb_std": null
+  }
+ ],
+ "layers_menu_geometry": {
+  "label_left_px_phone_390": {
+   "Precipitation, Temperature, Wind gusts": 109,
+   "Map, Imagery": 73
+  },
+  "label_left_px_desktop_1280": {
+   "Precipitation, Temperature, Wind gusts": 999,
+   "Map, Imagery": 963
+  },
+  "note": "The Map and Imagery rows have no swatch, so their labels start 36 px left of the weather labels."
+ },
+ "screenshots": {
+  "kept_at": "Not in the repo; the record says so plainly. The review's pictures from the final flag-on build are in imagery-work/fix/shots-final-storm/ (desktop-map.png, desktop-imagery.png, phone-map.png, phone-imagery.png). To make them again: PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py <built site> --shots <dir>. The earlier builder's folders listed below are scratch and also outside the repo.",
+  "smoke_map_default_build": [
+   "shots-off/desktop-map.png",
+   "shots-off/desktop-imagery.png",
+   "shots-off/phone-map.png",
+   "shots-off/phone-imagery.png"
+  ],
+  "smoke_map_storm_layers_build": [
+   "shots-on/desktop-map.png",
+   "shots-on/desktop-imagery.png",
+   "shots-on/phone-map.png",
+   "shots-on/phone-imagery.png"
+  ],
+  "measurement_default_build": [
+   "shots-measure-off/measure-desktop-imagery-fit.png",
+   "shots-measure-off/measure-desktop-imagery-z16.png",
+   "shots-measure-off/measure-dark-imagery.png",
+   "shots-measure-off/measure-desktop-imagery-refused.png"
+  ],
+  "measurement_storm_layers_build": [
+   "shots-measure-on/measure-desktop-imagery-fit.png",
+   "shots-measure-on/measure-desktop-imagery-z16.png",
+   "shots-measure-on/measure-dark-imagery.png",
+   "shots-measure-on/measure-desktop-imagery-refused.png"
+  ],
+  "layers_menu": [
+   "shots-menu/menu-desktop.png",
+   "shots-menu/menu-phone.png",
+   "shots-menu/menu-phone-map.png"
+  ],
+  "read_by_eye": "Opened and read by eye: shots-off desktop-map, desktop-imagery, phone-map and phone-imagery; shots-measure-off measure-desktop-imagery-z16, measure-dark-imagery and measure-desktop-imagery-refused; shots-menu menu-desktop and menu-phone; and two crops of the Montana borders and the top-left hatch. Not opened by eye: menu-phone-map, measure-desktop-imagery-fit (the same view as desktop-imagery) and the shots-measure-on copies.",
+  "storm_layers_copies": "Compared by pixel with the default build: 0.0000% to 0.0002% of pixels differ by more than 16 of 255 in every pair."
+ },
+ "observations": [
+  "Imagery under the weather picture: the USGS tiles show under the radar or forecast picture, the town bubbles, the NWS outlines and the credit row. The Montana outline and the state and country borders stay visible as pale lines.",
+  "USGS draws its own place names and region names in the raster (for example MONTANA, IDAHO, Yellowstone National Park, Bighorn River, Boise). They sit beside our town bubbles. The builder saw a second Helena name beside its bubble at about zoom 8; this check did not look for double names.",
+  "ImageryTopo carries USGS contour lines with elevation numbers at high zoom (seen at zoom 16 on a rural spot). The contract's units text does not mention contours.",
+  "The outside-area hatch (faint diagonal lines) still draws over the imagery outside the picture's box, so the Outside map area key still matches the map.",
+  "Portrait phone legend: with imagery on, the credit row makes the legend taller: 181 px at 390 px wide (151 px without), 196 at 375 (165), 228 at 320 (182), 343 at 288 (283). DESIGN.md gives 135 to 170 px for the portrait legend; the new figure is recorded there.",
+  "Layers menu: the Map and Imagery rows have no swatch, so their labels sit 36 px left of the weather labels. It reads fine; a spacer would align them.",
+  "Tiles refused (every request aborted): the white paper background, borders and bubbles remain, there is no banner and no script error, and the credit row still shows.",
+  "Dark mode: the imagery is shown in natural colour (no filter); only the page chrome changes.",
+  "No sideways scroll at 288, 320, 375, 390, 768 or 1440 px, in the default state and with imagery on (scroll width equals client width in every case).",
+  "Corrected in this stage (2026-10-18): the brief's statement that zoom 9 and up outside the United States return 404 is wrong for most of Canada. At zoom 9, Calgary, Lethbridge and Regina return a blank white 200 tile (2,419 bytes, every pixel 255). Toronto returns a near-white one (2,767 bytes; 99.7% of pixels at 250 or more), and Vancouver a mostly white one (8,197 bytes; about 91% at 250 or more). Paris, Sydney and Tokyo return 404. DECISIONS D32 and DESIGN.md now say so. Measured by fetching the tiles and decoding them (imagery-work/fix/tiles-check/stats.json).",
+  "Corrected in this stage (2026-10-18): the ImageryTopo facts are in labels-on-globe.json and montana-imagery-buildings.json, not base-imagery.json (which covers the ImageryOnly service). The measured tile sizes are 15.7 to 35.7 KB: 15.7 to 32.3 KB at zoom 7 in the fit view (35 tiles), and 35.5 KB (Billings) and 35.7 KB (Missoula) at zoom 16. The 23 to 38 KB range in labels-on-globe.json is a summary note with no listed measurement, so D32 no longer uses 38 KB.",
+  "Tiles refused: the credit row still reads 'Imagery: USDA, USGS, The National Map' while no imagery is drawn, and nothing says so. This follows the design (no banner), but a reader can take the white map for a failed imagery layer. A short line is the suggested follow-up (see the owner decisions).",
+  "Corrected in this stage (2026-10-18): the earlier builder's report that on a short landscape phone the credit row is hidden until the info button opens the legend is wrong. At 667x375, 740x360 and 844x390 with imagery on, the credit row starts below the visible legend (363 px at 667x375). The info button only shows the legend note, which pushes the credit lower (430 px). The legend column scrolls (213 px visible of 291 px at 667x375), and after scrolling it the credit row is in view (284 to 313 px). The credit is reached by scrolling the legend, not by the info button (imagery-work/fix/probe-landscape.json).",
+  "Failed tiles (review, 2026-10-18): with every imagery request aborted, the map shows a near-white background, the Montana outline, the state and country lines and the 10 town bubbles, and no base-map land, lakes, rivers, roads, counties or names (0 shapes, 0 names). The credit row still shows and no banner appears. The brief's wording ('leaves the white map showing underneath') was wrong; sources.py, DESIGN.md and D32 now say what happens, and smoke_map check_imagery_refused tests it (imagery-work/fix/probe-refused-before.json, refused-before.png).",
+  "Request headers (review, 2026-10-18; imagery-work/fix/probe-headers.json): a tile request sends an Origin header (the page's origin) and a Referer that holds the origin only (http://127.0.0.1:PORT/ on the local test server; that is what the browser's default referrer policy sends for a request to another site), the browser's User-Agent and client hints, and no cookies. The review's first note, that the Referer held the full page address, was wrong. Stage E re-checks the headers on the final build. The privacy line names none of these; D32 records them and leaves the wording to the owner.",
+  "Link behaviour (review, 2026-10-18; imagery-work/fix/probe-direct.json): map.html?base=imagery made 35 requests to the imagery host while the page opened, with no click, and was on Imagery when the probe read it, 8 seconds after the page opened. The privacy line is inside the closed Layers menu, so it is not seen on arrival. D32, DESIGN.md and the About page say a link can switch Imagery on. Stage E: the credit row with the privacy words is on the page from the start (see the stage E observations).",
+  "Layers menu on a 667x375 phone (review; imagery-work/fix/probe-menu.json): the menu box is 56 to 363 px and scrolls (305 px visible, 487 px tall). The Imagery label starts at 356 px, and only its top 7 px fit above the menu's bottom edge at 363 px, so it needs a scroll on first view. At 1280x800 it is in view (312 to 389 px).",
+  "Leftover tile layer (review): with the removeLayer call deleted from setBase, switching back to Map kept one tile layer and 35 imagery pictures on the page, and the browser check still passed. The check now asserts after each switch back that the layer and its pictures are gone (tools/smoke_map.py imagery_gone); the good build has none (imagery-work/fix/probe-mut-m4.json, probe-good.json).",
+  "Stage E follow-up 1 (2026-10-18): the credit row carries its privacy words while Imagery is on: 'Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS.' The words come from build.py (IMAGERY credit_line). The About page quotes USGS's requested acknowledgment verbatim and links the FAQ it comes from. smoke_map (check_imagery_switch and check_imagery_direct) asserts the sentence, and tests/test_site.py pins the words.",
+  "Stage E follow-up 2 (2026-10-18): a tile error (Leaflet's tileerror) puts 'Imagery didn't load from USGS. Outlines and towns are still shown.' (build.py failed_line) in the credit row in place of the credit, and a tile load (tileload) puts the credit back. With every request refused (smoke_map check_imagery_refused), the row shows the failure words, no base-map shape or name is drawn, the outline and borders are drawn, and the 10 bubbles show. With the requests let through again and the map moved one zoom step, a tile loads and the credit returns.",
+  "Stage E follow-up 3 (2026-10-18): map.html?base=imagery shows Imagery on and the credit row with the privacy words as the page opens (imagery-work/stage-e/probe-e-on.json, 'arrival': the last row is the credit with the sentence; the Layers menu is closed). About and D32 say that a link which opens on Imagery loads the tiles as the page opens.",
+  "Stage E follow-up 4 (2026-10-18): tools/smoke_map.py check_empty_layer_switch waits for domcontentloaded. The base commit used wait_until='load' in this check (line 317 of the base file), and the held precipitation pictures keep that event open, which timed the check out under load (the fix stage's full runs). The wrapper now names the check that could not run.",
+  "Stage E correction (2026-10-18): a tile request's Referer holds the page's origin only. imagery-work/stage-e/probe-e-on.json on the final storm build: origin 'http://127.0.0.1:PORT', Referer 'http://127.0.0.1:PORT/' for a page at map.html; no cookie header; the user-agent and sec-ch-ua hints are sent. The stage D statement that the Referer holds the full page address was wrong and is corrected above.",
+  "Stage E correction (2026-10-18): the base map's roads, lakes, rivers, counties and names stay hidden for as long as Imagery is on (the #app.is-imagery rules in map.css have no tile condition). The earlier wording 'until a tile loads' was wrong; sources.py, DESIGN.md and D32 now say 'while Imagery is on'.",
+  "Stage E (2026-10-18), portrait phone legend with the privacy sentence in the credit row (probe-e-on.json, 'legend'): at 390x844 the legend is 151 px without Imagery and 210 px with it (the credit row is 4 lines, at 271 to 328 px); at 320x568, 182 and 271 px (5 lines); at 288x640, 283 and 400 px (7 lines). The stage B figures (151 and 181 px at 390 px) were for the shorter credit line.",
+  "Stage E (2026-10-18), short landscape phones with the longer credit row (probe-e2-on.json): at 667x375 the legend box is 110 to 325 px and the credit row, at 363 to 434 px, is below it; after the legend is scrolled to its end the credit row is at 242 to 313 px. At 740x360 it is at 227 to 298 px and at 844x390 at 257 to 328 px after the scroll. The stage D figures were for the shorter text.",
+  "Stage E (2026-10-18), 404 answers (probe-e-on.json, 'all_404'): with every imagery request answered 404 instead of refused, the credit row shows the failure words. A 404 from USGS, such as one outside the United States above zoom 8, is reported the same way for that tile.",
+  "Stage E (2026-10-18), sideways overflow with Imagery on (probe-e2-on.json, 'width'): the document width equals the window width at 288, 320, 375, 390, 768, 1280 and 1440 px."
+ ],
+ "not_verified": [
+  "The live Website workflow on GitHub (only local runs were made). Every build checked used sample data; no live build with --require-live was run.",
+  "A machine with no internet at all. The simulated run aborts the host's requests in the browser; the real network stack was not disabled.",
+  "Browsers other than Chromium (Firefox, Safari, Android Chrome), touch gestures and pinch zoom.",
+  "Keyboard zoom. Headless Chromium drops the first plus or minus presses, so the checks zoom with the mouse wheel.",
+  "Tile content accuracy and currency, and whether bubble names duplicate USGS names at every zoom.",
+  "The licence for the ImageryTopo road and name data. USGS states none; this stays open for Carson.",
+  "The effect on load and cost at real traffic levels.",
+  "Landscape phone sizes with imagery on. The scroll check used portrait widths and desktop sizes. The smoke menu-row check covers the Layers menu on short landscape screens in the default state only."
+ ],
+ "owner_decisions": [
+  "Licence: whether to accept USGS's public-domain statement for the road and name data on ImageryTopo (open in rights-matrix.json).",
+  "Outage behaviour: an answer from USGS that is not 200 image/jpeg fails the branch smoke step, while no answer at all is only a note. Say if an outage should be a note too.",
+  "Bubble names on imagery: whether the town bubbles' names should be hidden while imagery is on, because USGS draws its own names.",
+  "Contract wording: whether the imagery contract should mention the contour lines.",
+  "Privacy line: add that the tile request also carries the page's origin and the browser's User-Agent? D32 records both.",
+  "Phone legend height with imagery: the privacy sentence in the credit row makes the legend 210 px at 390 px wide (151 px without imagery) and 400 px at 288 px (283 px without). Shorten the credit on small screens, or accept? Also whether the Map and Imagery rows should align with the weather labels.",
+  "Failure words: while every tile fails, the failure words replace the credit row, so the privacy sentence is off the row (the requests were still sent; the Layers menu and About keep the sentence). Keep the words as the supervisor specified, or add the sentence to the failure line?"
+ ],
+ "failures": [],
+ "notes": [
+  "tests/test_site.py has two imagery classes (ImageryBaseMap, added by the earlier builder, and ImageryPages). They overlap on the address and contract checks. Both were kept unchanged, and no assertion was removed, so the test count still rises by 15.",
+  "The smoke test's imagery check fails on a non-200 answer from USGS (see the owner decisions). Its fallback is a note when there is no answer at all.",
+  "Reading scope: tools/smoke_map.py was read in full. map.js and map.css were read hunk by hunk, with the functions around each change (createMap, fitView, zoomClasses, fitMinZoom, renderKeys, saveUrl, setBase, the layer and key rules). Neither file was read end to end."
+ ],
+ "stage_d_review": "research/globe/validation-evidence/imagery-switch-review.json (2026-10-18): the findings, their outcomes and the commands. The leftover-layer check and the failed-tile check are in tools/smoke_map.py; the corrected statements are in the observations above.",
+ "decided_2026_10_18_owner_delegated": [
+  "Failed tiles (stage B question): yes. The credit row reads 'Imagery didn't load from USGS. Outlines and towns are still shown.' while tiles fail, and the credit comes back when a tile loads. The words come from build.py (failed_line).",
+  "Link behaviour (stage D question): the credit row carries the privacy words from the start, so a link that opens on Imagery shows them as the page opens. The About page and D32 say that the tiles load as the page opens.",
+  "Credit wording (stage D question): the credit row keeps 'Imagery: USDA, USGS, The National Map' and adds the privacy sentence. The About page quotes USGS's requested acknowledgment verbatim and links the USGS FAQ.",
+  "Short landscape phones (stage D question): accepted. DESIGN.md (section 8 and the states) says the Imagery choice needs a scroll of the Layers menu on first view at 667x375."
+ ],
+ "stage_e": {
+  "scope": "The supervisor's follow-ups 1 to 5 of stage E: the credit row's privacy words (1), the failed-tile words (2), the arrival case (3), the empty-layer check and its wrapper (4), and this record (5). Findings F29 to F37 are in imagery-switch-review.json.",
+  "files_changed_in_stage_e": [
+   "website/build.py (IMAGERY: credit_line and failed_line replace credit)",
+   "website/sources.py (imagery missing text)",
+   "website/static/map/map.js (failure and privacy words; tileerror and tileload handlers)",
+   "website/templates/about.html (arrival sentence; USGS acknowledgment and FAQ link)",
+   "tools/smoke_map.py (wrapper names the check; domcontentloaded; credit, failure and return checks; PRIVACY)",
+   "tests/test_site.py (assertions for the new words and About text; the renamed config test)",
+   "docs/DECISIONS.md (D32), docs/DESIGN.md (section 8, states, data contract), docs/ROADMAP.md (item 17)",
+   "research/globe/validation-evidence/imagery-switch-verification.json (stage D corrections, then this stage)",
+   "research/globe/validation-evidence/imagery-switch-review.json (new in stage E)",
+   "Unchanged in stage E: map.css, map.html, AGENTS.md. The same 12 tracked files are modified as at stage D."
+  ],
+  "unit_tests": {
+   "command": "python3 -m unittest discover -s tests (in the worktree)",
+   "result": "Ran 378 tests in 52.061s, OK",
+   "log": "stage-e/unittest-final.txt",
+   "after_docs": "A second run after the documentation edits, same command: Ran 378 tests in 50.209s, OK (imagery-work/stage-e/unittest-last.txt)."
+  },
+  "builds": {
+   "final-off": "91 files; final-on: 93 files; --sample --now 2026-10-18T12:00:00Z (the second with --storm-layers)"
+  },
+  "runner_summary": [
+   "smoke-final-off-1 exit 0 in 36s",
+   "smoke-final-off-2 exit 0 in 37s",
+   "smoke-final-on-1 exit 0 in 46s",
+   "smoke-final-on-2 exit 0 in 47s",
+   "smokepages-final-off exit 0 in 20s",
+   "smokepages-final-on exit 0 in 19s",
+   "DONE"
+  ],
+  "browser_runs": [
+   {
+    "log": "stage-e/smoke-final-off-1.txt",
+    "outcome": "pass",
+    "notes": [],
+    "problems": [],
+    "run": "smoke-final-off-1",
+    "build": "final-off (default)"
+   },
+   {
+    "log": "stage-e/smoke-final-off-2.txt",
+    "outcome": "pass",
+    "notes": [],
+    "problems": [],
+    "run": "smoke-final-off-2",
+    "build": "final-off (default)"
+   },
+   {
+    "log": "stage-e/smoke-final-on-1.txt",
+    "outcome": "pass",
+    "notes": [],
+    "problems": [],
+    "run": "smoke-final-on-1",
+    "build": "final-on (--storm-layers)"
+   },
+   {
+    "log": "stage-e/smoke-final-on-2.txt",
+    "outcome": "pass",
+    "notes": [],
+    "problems": [],
+    "run": "smoke-final-on-2",
+    "build": "final-on (--storm-layers)"
+   }
+  ],
+  "page_width_runs": [
+   {
+    "log": "stage-e/smokepages-final-off.txt",
+    "outcome": "pass",
+    "notes": [],
+    "problems": [],
+    "run": "smokepages-final-off",
+    "build": "final-off (default)"
+   },
+   {
+    "log": "stage-e/smokepages-final-on.txt",
+    "outcome": "pass",
+    "notes": [],
+    "problems": [],
+    "run": "smokepages-final-on",
+    "build": "final-on (--storm-layers)"
+   }
+  ],
+  "mutants": [
+   {
+    "log": "stage-e/smoke-mut-a.txt",
+    "outcome": "fail",
+    "notes": [],
+    "problems": [
+     "imagery refused: the credit row does not say that imagery didn't load (rows: ['1 NWS alert has no outline (county or zone): see List', 'Town numbers: NWS forecast, °F', 'No radar coverage', 'Outside map area', 'Warning area (NWS)', 'Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS.'])",
+     "imagery refused: the credit row still shows the credit while the tiles are refused"
+    ],
+    "mutant": "A",
+    "what": "map.js without the tileerror handler (the credit row never says the tiles failed)",
+    "expected": "fail"
+   },
+   {
+    "log": "stage-e/smoke-mut-b.txt",
+    "outcome": "fail",
+    "notes": [],
+    "problems": [
+     "imagery refused: a tile loaded, but the credit row does not show the credit with its privacy words (rows: ['1 NWS alert has no outline (county or zone): see List', 'Town numbers: NWS forecast, °F', 'No radar coverage', 'Outside map area', 'Warning area (NWS)', \"Imagery didn't load from USGS. Outlines and towns are still shown.\"])"
+    ],
+    "mutant": "B",
+    "what": "map.js without the tileload handler (the credit does not come back when a tile loads)",
+    "expected": "fail"
+   },
+   {
+    "log": "stage-e/smoke-mut-c2.txt",
+    "outcome": "fail",
+    "notes": [],
+    "problems": [
+     "imagery: the credit line in map.json has no privacy words (D32)"
+    ],
+    "mutant": "C",
+    "what": "the privacy sentence removed from credit_line in map.html and data/map.json (the data the check reads); the first run, before the standalone privacy assertion was added, passed (smoke-mut-c.txt); this run is after it",
+    "expected": "fail"
+   },
+   {
+    "log": "stage-e/smoke-mut-e.txt",
+    "outcome": "fail",
+    "notes": [],
+    "problems": [
+     "imagery refused: the credit row does not say that imagery didn't load (rows: ['1 NWS alert has no outline (county or zone): see List', 'Town numbers: NWS forecast, °F', 'No radar coverage', 'Outside map area', 'Warning area (NWS)', 'Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS.'])",
+     "imagery refused: the credit row still shows the credit while the tiles are refused"
+    ],
+    "mutant": "E",
+    "what": "map.js shows the credit line while the tiles fail (no failure words)",
+    "expected": "fail"
+   }
+  ],
+  "probes": {
+   "files": [
+    "imagery-work/stage-e/probe-e-on.json",
+    "imagery-work/stage-e/probe-e2-on.json"
+   ],
+   "note": "Read-only scratch probes (not in the repo); headers, arrival, 404, legend heights, landscape scroll and width."
+  },
+  "screenshots": {
+   "kept_at": "imagery-work/final-on/shots/ (scratch, not in the repo)",
+   "files": [
+    "desktop-imagery.png",
+    "desktop-map.png",
+    "phone-imagery.png",
+    "phone-map.png",
+    "refused-desktop.png",
+    "refused-phone.png"
+   ],
+   "read_by_eye": "Viewed 2026-10-18: desktop-map, desktop-imagery, phone-map, phone-imagery (the --shots pictures of the final storm-layers run), and refused-desktop and refused-phone (every imagery request refused). The credit row with the privacy sentence is legible and sits in the legend; the imagery is under the weather frame; the town bubbles and names show; no sideways overflow. The refused pictures show the failure words in the row, the plain background, the outline, borders, bubbles and weather frame, with the base map's own shapes and names hidden. The phone legend is taller with imagery (about 210 px at 390 px wide), and the map keeps usable room."
+  },
+  "not_verified": [
+   "The live Website workflow on GitHub (no push, no branch build).",
+   "Tile content and its currency beyond the sizes and the decode of the probed tiles.",
+   "Browsers other than Chromium, touch gestures and pinch zoom.",
+   "The live site's Referer (the origin only is checked on the local server; the same default policy applies on https).",
+   "A machine with no network at all (refusals are made in the browser).",
+   "Shortening the credit on small screens (an owner decision; no change made)."
+  ],
+  "browser_runs_note": "Six full runs and two page-width runs passed. The check that timed out in the fix stage (check_empty_layer_switch) passed in each of these runs; no load was added, so this does not show the timeout is gone."
+ }
+}

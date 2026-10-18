@@ -93,11 +93,11 @@ downloaded from the run.
 
 Needs Python 3.10+.
 ```bash
-pip install requests jinja2 pillow numpy pygrib tzdata
+pip install requests jinja2 pillow numpy pygrib h5py tzdata
 python -m website.build --out _site --sample   # invented sample data, labelled on every page
 python -m website.build --out _site            # live data
 python -m http.server -d _site 8000            # open http://localhost:8000
-python -m unittest tests.test_site tests.test_gridded tests.test_basemap   # website tests, offline, seconds
+python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_website_workflow   # website tests, offline, seconds
 python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
 python tools/smoke_pages.py _site              # no page wider than the screen, 288–1440 px
 ```
@@ -106,6 +106,8 @@ python tools/smoke_pages.py _site              # no page wider than the screen, 
 ```
 website/sources.py     NWS and SPC requests, parsers, flag limits, feed contracts
 website/gridded.py     NOAA radar (MRMS) and HRRR model grids → map picture frames
+website/storm.py       NOAA radar echo tops for each town (behind --storm-layers, text only)
+website/satellite.py   NOAA GOES band 13 satellite picture → one map frame (behind --storm-layers)
 website/build.py       collect every source → map frames and data/map.json → pages (Jinja) → _site/
 website/sample.py      invented, labelled sample data for design checks and tests
 website/towns.json     the 17 towns, with each map label's side and each town's min_zoom
@@ -114,7 +116,9 @@ website/static/        style.css (tokens and look), Leaflet 1.9.4, Atkinson Hype
 website/static/map/    map.js and map.css (the interactive map), basemap.json (outlines and names)
 tools/build_basemap.py rebuilds basemap.json from Natural Earth and Census data (run by hand)
 tests/                 test_site.py (pages, failures), test_gridded.py (radar and model frames),
-                       test_basemap.py (the outline file)
+                       test_basemap.py (the outline file), test_storm.py (radar echo tops),
+                       test_satellite.py (the GOES satellite picture), test_website_workflow.py
+                       (the workflow file)
 ```
 
 ---

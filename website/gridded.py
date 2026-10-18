@@ -84,11 +84,18 @@ WIND_STOPS = ((0, "#d0ebff", 0.0), (10, "#d0ebff", 0.25), (15, "#a5d8ff", 0.40),
               (25, "#ffd43b", 0.60), (35, "#ff922b", 0.65), (45, "#f03e3e", 0.70), (60, "#ae3ec9", 0.75),
               (75, "#5f3dc4", 0.80))
 HATCH = ("#8e8e93", 0.35)                 # stripes over areas without data, transparent between
+# Satellite band 13 brightness temperature in K, ascending (the legend needs ascending stops). Cold
+# tops are the saturated colours; 300 K and warmer is transparent, so the basemap shows through.
+SAT_STOPS = ((195, "#ff6a3d", 0.95), (205, "#c42fa0", 0.90), (215, "#7b3fd6", 0.85),
+             (225, "#3b4fc9", 0.80), (240, "#5c6b8a", 0.70), (255, "#8e9299", 0.60), (275, "#c9ccd1", 0.45),
+             (290, "#e6e8eb", 0.20), (300, "#e6e8eb", 0.0))
 
 # Layer -> (stops, log scale, colour levels). Palette index 0 is transparent, 1 the hatch, 2.. one
 # entry per level. 48 log levels for precipitation (16 % steps; 254 looked the same at half the
-# file size on a rainy day), 1 °F steps for temperature (-20..105), 1 mph steps for gusts (0..75).
-STYLE = {"precip": (PRECIP_STOPS, True, 48), "temp": (TEMP_STOPS, False, 126), "wind": (WIND_STOPS, False, 76)}
+# file size on a rainy day), 1 °F steps for temperature (-20..105), 1 mph steps for gusts (0..75),
+# 1 K steps for the satellite picture (195..300).
+STYLE = {"precip": (PRECIP_STOPS, True, 48), "temp": (TEMP_STOPS, False, 126), "wind": (WIND_STOPS, False, 76),
+         "satellite": (SAT_STOPS, False, 106)}
 SMOOTH_PX = 1.0                           # Gaussian sigma before colouring: soft edges, smaller files
 LAYER_TEXT = {
     "precip": {"title": "Precipitation", "unit": "in/h",
@@ -103,6 +110,10 @@ SAMPLE_NOTES = {
     "temp": "Sample: invented pictures, not the HRRR model.",
     "wind": f"Sample: invented pictures, not the HRRR model. Roofing limit {src.LIMITS['gust_mph']} mph.",
 }
+# The satellite picture's width, layer text and sample note live in satellite.py (satellite.WIDTH,
+# satellite.LAYER_TEXT, satellite.SAMPLE_NOTE): tests/test_gridded.py pins these three dicts to the
+# radar and model layers.
+LEGEND_UNIT = {"temp": "°", "wind": " mph", "satellite": " K"}   # the unit after each legend label
 RADAR_SOURCE = "NOAA MRMS radar estimate"
 MODEL_SOURCE = "NOAA HRRR model"
 SAMPLE_RADAR_SOURCE = "SAMPLE — invented radar picture, not NOAA data"
@@ -402,7 +413,7 @@ def legend(layer: str) -> tuple[list[dict], str]:
     if layer == "precip":
         points = [(label, mm, _sig1(mm / MM_PER_INCH)) for label, mm in PRECIP_CLASSES]
     else:
-        unit = "°" if layer == "temp" else " mph"
+        unit = LEGEND_UNIT[layer]
         points = [(f"{v}{unit}".replace("-", "−"), v, v) for v, _c, a in reversed(stops) if a > 0]
     n = len(points)
     entries = []

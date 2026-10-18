@@ -499,6 +499,24 @@ values, P2 the Band 13 picture, P3 MESH only with verified units, P4 the echo-to
 cloud-top classes, P6 a two-hour loop), behind a build flag that is off by default; a link-only
 globe only after the P4 gate and a separate approval of a vendored library and JavaScript caps.
 
+P2 build, 2026-10-17: Carson asked to start P2. `website/satellite.py` draws one NOAA GOES-East (GOES-19)
+band 13 picture (10.3 µm, clean infrared) of the newest 5-minute CONUS scan on the map's image box, as a
+fourth layer named Satellite. It is built only with `--storm-layers` (the flag is off by default and only
+branch previews pass it), so the default build's pages and data have no satellite words, keys or files. The
+shared map script's code changed (its ?v= hash too); no satellite word reaches a default page or data file. The picture is an
+observation: its frame kind is `satellite`, it is never blended with the radar estimate or the model
+forecast, and its words never claim a height, a clear sky, a dry area or hail (they say "not a height" and
+"not a hail signal"). Two of the README's proposals are adopted
+for this build: the freshness limits (stale after 1,200 s, when the picture is still drawn; no picture
+after 3,600 s, D34) and the observation wording of the proposed `satellite_image` kind (D33; this build
+names its kind `satellite`). GOES-East is read first, and GOES-West (noaa-goes18) when East fails or has no
+scan in the last hour, because GOES-West's CONUS grid misses the south-east corner of the map's box (about 0.2% of it). Only
+quality flag 0 is drawn; every other value is hatched as no satellite data, never drawn as clear sky. An
+uncorrected cloud top is drawn away from the satellite (the parallax in the corrections below), and the
+About page and the picture's own words say so. The two counsel items, D-G10 (publishing terms for NOAA-derived
+products) and D-G11 (the GOES access banner), are still open: no GOES layer reaches users until counsel has
+read both (research/globe/README.md section 2).
+
 The proposed decision entries that follow are listed in README
 section 9b as D31 onward and wait for Carson.
 
@@ -540,6 +558,83 @@ label moved about 0.03°; nothing else moved.
 *Why:* a population cut-off anyone can check (the 2020 census) is easier to defend than a hand-picked list,
 and each town gets its own card, page and forecast. A per-town `min_zoom` replaces the single "minor" flag,
 so a town appears at the first zoom where it is clear of its neighbours, not at a fixed zoom 7.
+
+**D32 · Imagery base map, opt-in (2026-10-17).** Carson asked for a satellite-style base map with roads and
+names, after two screen recordings of Google Maps' satellite view. Decision: the white vector map stays the
+default, and the Layers menu gets a Base map switch to imagery. The chosen source is USGS The National Map's
+`USGSImageryTopo` service: aerial imagery with roads, rivers, boundaries and place names. USGS says its map
+services are free and in the public domain, and asks for an acknowledgment. While imagery is on, the credit row
+reads "Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS." Tiles are 256 px
+JPEG, need no key, send CORS headers and are served to zoom 16. Design: `docs/DESIGN.md` section 8, "Imagery base map".
+
+- *Rule change.* The browser fetched only site files (AGENTS.md rule 4). Now it also fetches the imagery tiles,
+  and only those, while Imagery is on: after the viewer switches to it, or when a link opens the page on it
+  (`?base=imagery`). The tiles come from the one host named in `website/build.py` (`IMAGERY`). This amends the D27
+  line "Nothing from third-party servers but data", and AGENTS.md rule 4. build.py passes the address and the two
+  lines the credit row shows to the Map page as `data-imagery` and to `data/map.json` as `imagery`; `map.js` holds no
+  address, host name or line of words. Tests check that the address is https on that host, that it appears only in
+  those two places, and that `map.js` names no URL, host or line of words.
+- *Privacy line.* While Imagery is on, the credit row says "Imagery: USDA, USGS, The National Map. Your IP address and
+  the map area you view go to USGS.", and the same words, with "while it is on", sit under the Imagery choice and on
+  the About page. With
+  the switch off the page makes no request to another site. A link that opens on Imagery (`?base=imagery`) loads the
+  tiles as the page opens; the credit row with the same words is there from the start, so the arrival case has the
+  line too. While every tile fails, the row shows the failure words instead, without the sentence (the requests were
+  still sent; the Layers menu and About keep the sentence). Each tile request also carries an Origin header (the
+  page's origin) and a Referer that holds the page's origin only, which is the browser's default policy for a request
+  to another site (checked 2026-10-18 from a local server; the live site was not checked, and the same policy applies
+  there), the browser's User-Agent and client hints, and no cookies. The line names none of these; whether to add them
+  is open for Carson.
+- *What changes on the map.* The tile layer is made on the first switch. While imagery is on, the vector base
+  map's land, water, roads, county lines, place dots and names are hidden; the Montana outline and the state and
+  country borders stay. Weather frames, warning outlines, storm reports and town bubbles are unchanged. The zoom
+  limit is 16 while imagery is on and 11 when it is off. The credit is a legend row. The card never uses imagery.
+  The page address keeps `base=imagery`, and nothing else stores the choice. Dark mode shows the imagery as it is.
+- *If a tile does not load.* A tile error (Leaflet's `tileerror`) replaces the credit in the row with "Imagery didn't
+  load from USGS. Outlines and towns are still shown.", and the row goes back to the credit when a tile loads
+  (`tileload`). With every tile refused, the map keeps a plain near-white background with the Montana outline, the
+  state and country lines and the town bubbles. The base map's roads, lakes, rivers, counties and names stay hidden
+  while Imagery is on: a white map under the tiles would draw its names over the photograph. The words come from
+  `build.py` (`failed_line`), not from `map.js`. A 404 from USGS also counts as a tile error (outside the United
+  States above zoom 8, see the facts above), so the row says imagery didn't load for that tile, and it returns when a
+  tile loads. `tools/smoke_map.py` (check_imagery_refused) checks the words, the hidden shapes and names, and the
+  return to the credit when a tile comes back (a note when no tile can come).
+- *Facts checked on 2026-10-17, and the tiles and terms again on 2026-10-18.* The terms and the limits of the
+  service are in `base-imagery.json`; the ImageryTopo facts are in `labels-on-globe.json` and
+  `montana-imagery-buildings.json` (all in `research/globe/validation-evidence/`). The tile address is
+  `.../USGSImageryTopo/MapServer/tile/{z}/{y}/{x}` (row before column). Measured tiles are 15.7 to 35.7 KB: 15.7 to
+  32.3 KB at zoom 7 in the fit view, and 35.5 to 35.7 KB at zoom 16 over Billings and Missoula. Tiles at zoom 6, 9,
+  13 and 16 over Billings answer 200 image/jpeg; zoom 17 and up return 404, because the service's largest scale is
+  level 16 (its metadata gives 1:9,028). Outside the United States, USGS does not document what the tiles up to
+  zoom 8 show. From zoom 9, Calgary, Lethbridge and Regina get a blank white tile (2,419 bytes), Toronto a
+  near-white one (2,767 bytes; 99.7% of pixels at 250 or more), Vancouver a mostly white one (8,197 bytes; about
+  91% at 250 or more), and Paris, Sydney and Tokyo a 404 (all checked 2026-10-18).
+- *Licence.* USGS's FAQ says its map services and data are free and in the public domain, with no restrictions,
+  and asks that products derived from them carry this acknowledgment: "Map services and data available from U.S.
+  Geological Survey, National Geospatial Program." The About page quotes it verbatim and links the FAQ. The record
+  gives USGS's own imagery credit as "USDA, USGS"; the credit row adds the service name and does not carry the full
+  acknowledgment (decided 2026-10-18, owner-delegated: the About page carries it). USGS's topographic maps are public
+  domain except three cases that apply only to US Topo maps (produced 2009 to date). The case that matters here: most
+  US Topo maps from 2010 to 2016 contain commercially licensed road data. USGS states no licence for ImageryTopo's road
+  and name data (`labels-on-globe.json`, `rights-matrix.json`). That is an open point for Carson, not a clearance.
+- *History.* D9 used USGS tiles in the parked app; D28 retired them for the white map. The 3D research (D30; its
+  D-G15 in `research/globe/README.md`) listed streamed tiles as a route that needs a rule change, a named host list
+  and a privacy line. This entry supplies all three.
+- *Sources checked and not chosen.* Google imagery: its terms exclude hosting and caching (D-G4 in
+  `research/globe/README.md`). Esri: its terms bar programmatic use of session tokens and limit the public plan to
+  personal use; whether anonymous tile requests are covered is not established. NASA GIBS: its licence is
+  contested (NASA's data-use guidance says NASA-led data are CC0; its imagery pages say the imagery is not in the
+  public domain), and the layers checked stop at zoom 8, 9 or 13. EOX's 2018 to 2025 layer is CC BY-NC-SA, which is
+  non-commercial. Also not chosen: self-hosted tiles, our own labels over imagery (the rejected second option), and
+  the globe.
+
+*Why:* Carson wants a satellite look with the names on it. The service meets these tests in the record: USGS
+states that its map services are public domain (with the US Topo exceptions); it needs no key; it sends CORS
+headers; and its tiles load in a browser to zoom 16. Its main imagery, NAIP, is public domain by USGS's listing. Its
+road and name licence is not settled, and that stays open for Carson. Carson kept the white map as the default on
+2026-10-17, after comparing the satellite view; the reason was not recorded. The white map is the vector map D28
+built, it loads the same first view, and with the switch off the page makes no request to another site. Writing
+the exception down keeps the next change from streaming tiles from another host without a decision.
 
 ## Gotchas found the hard way
 - An absolutely positioned element escapes a scroll box that isn't its containing block: the

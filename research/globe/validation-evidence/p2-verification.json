@@ -1,0 +1,208 @@
+{
+  "slug": "p2-integrate-verify",
+  "subject": "P2: the GOES band 13 satellite picture on the Map page behind --storm-layers. Integration review, offline and browser checks, and a live build checked against the source file (integrate stage).",
+  "checked_at_utc": "2026-10-17T17:14:48Z",
+  "review_note": "Written by the integrate stage. The review of this branch (research/globe/validation-evidence/p2-review.json) changed the code after this run: GOES-West is also tried when GOES-East has no scan in the last hour; a GOES-West picture after an East failure is ok by freshness, and its status names the East failure; the describe() wording (height-specific parallax, and the uncoloured sentence); the About and DESIGN wording; and the note box measurement. So describe_text, open items 3 and 4, and the About wording quoted here are superseded. The measured figures in this file are the integrate stage's run and are not re-measured here.",
+  "scratch": "Build outputs, downloads, screenshots and check scripts are in the session scratchpad (folder stage-b), not in the repository. The brief's /tmp paths were replaced with scratchpad paths, per the environment rule.",
+  "repo_state": {
+    "base": "7282156 (main, with P1 merged in pull request #7)",
+    "checkpoint": "3a98500 (WIP checkpoint of the P2 build, made before this stage; the stage's edits are uncommitted)",
+    "commits_or_pushes_by_agents": 0,
+    "git_status_short": [
+      " M .github/workflows/website.yml",
+      " M AGENTS.md",
+      " M README.md",
+      " M docs/DECISIONS.md",
+      " M docs/DESIGN.md",
+      " M tests/test_site.py",
+      " M tools/smoke_map.py",
+      " M website/satellite.py"
+    ],
+    "diff_vs_base": "17 files changed, 1700 insertions(+), 49 deletions(-) (tracked files; the new record is the only untracked file)",
+    "diff_vs_checkpoint": "8 files changed, 32 insertions(+), 19 deletions(-) (this stage's uncommitted edits)"
+  },
+  "edited_in_this_stage": [
+    {"file": "docs/DESIGN.md", "change": "data contract names coldest_k and warmest_k on satellite frames"},
+    {"file": "docs/DECISIONS.md", "change": "P2 paragraph: its words claim no height, clear sky, dry area or hail (they say 'not a height' and 'not a hail signal')"},
+    {"file": ".github/workflows/website.yml", "change": "comment only: the branch-build comment names the satellite picture"},
+    {"file": "README.md", "change": "unittest command and test list name test_storm, test_satellite and test_website_workflow"},
+    {"file": "AGENTS.md", "change": "tests layout line names test_storm.py and test_satellite.py"},
+    {"file": "website/satellite.py", "change": "comments and docstring only: the read_cmip note on the _Unsigned flag matches the file; sample_frame notes that sample_elevation is in thousands of feet"}
+  ],
+  "commands": [
+    {"cmd": "python -m unittest discover -s tests (before the documentation edits)", "exit": 0, "result": "Ran 355 tests in 44.118s, OK"},
+    {"cmd": "python -m unittest discover -s tests (final run, after the last documentation edit)", "exit": 0, "result": "Ran 355 tests in 43.498s, OK"},
+    {"cmd": "python -m website.build --out <scratchpad>/p2-off --sample", "exit": 0, "result": "default sample build"},
+    {"cmd": "python -m website.build --out <scratchpad>/p2-on --sample --storm-layers", "exit": 0, "result": "flag-on sample build; one satellite frame, 17,685 bytes"},
+    {"cmd": "python -m website.build --out <scratchpad>/fx-off --sample --now 2026-10-17T16:00:00Z (and fx-on with --storm-layers; base-site from git archive of 7282156 built the same way)", "exit": 0, "result": "fixed-time trees for exact comparison; rebuilt after the edits and identical to the first fixed-time trees, logs identical"},
+    {"cmd": "python -m website.build --out <scratchpad>/p2-live --storm-layers", "exit": 0, "result": "live build, 47.8 s wall time; all eight statuses ok"},
+    {"cmd": "python -m website.build --out <scratchpad>/p2-live-req --require-live --storm-layers (the branch-build command of the workflow)", "exit": 0, "result": "46.7 s wall time; all eight statuses ok"},
+    {"cmd": "python -I find_scan.py (scan end 2026-10-17T16:58:56Z; listing of the GOES-East bucket; download into an empty folder)", "exit": 0, "result": "one matching object, 3,935,745 bytes"},
+    {"cmd": "python -I verify_live.py (independent read of the downloaded file with h5py and pyproj; compared with the frame PNG)", "exit": 0, "result": "see independent_check"},
+    {"cmd": "python -I smooth_check.py (the same comparison after the repository's 1-pixel Gaussian)", "exit": 0, "result": "see independent_check"},
+    {"cmd": "python -I time_satellite.py (satellite stage alone, against the live buckets, with the build's own fetcher)", "exit": 0, "result": "0.7 s in total; frame 114,921 bytes"},
+    {"cmd": "PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_map.py <scratchpad>/p2-live", "exit": 0, "result": "Map smoke test passed: page, frames, basemap, bubbles, play, layers and card all work, and no request went to another site (26.3 s)"},
+    {"cmd": "PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_map.py <scratchpad>/p2-on", "exit": 0, "result": "Map smoke test passed (sample, flag on)"},
+    {"cmd": "PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_pages.py <scratchpad>/p2-on", "exit": 0, "result": "Page width check passed: every page fits the screen at 288, 320, 375, 768, 1440 px, light and dark"},
+    {"cmd": "shots.py: map.html?layer=satellite at 288x640, 390x844 and 1440x900 (live build)", "exit": 0, "result": "three screenshots, layout facts in layout_and_screenshots"},
+    {"cmd": "pixel_change.py on the live build and on the flag-on sample build (the smoke helpers, Precipitation to Satellite)", "exit": 0, "result": "see smoke"},
+    {"cmd": "/usr/bin/python3.12 -m venv, then pip install requests jinja2 pillow numpy pygrib h5py (the workflow's install line); python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_website_workflow", "exit": 0, "result": "Ran 311 tests, OK, under Python 3.12"},
+    {"cmd": "python -m unittest discover -s tests under Python 3.12 (same environment)", "exit": 1, "result": "three payload test modules fail to import (flask is not installed in that environment). The payload app is parked and is not part of the website line that CI runs."},
+    {"cmd": "python -m pyflakes on the changed Python files; node --check website/static/map/map.js; git diff --check; py_compile; YAML parse of the workflow", "exit": 0, "result": "all clean"}
+  ],
+  "live_build": {
+    "started_utc": "2026-10-17T17:01:11Z",
+    "status_table": {
+      "alerts": "ok: 3 active",
+      "forecasts": "ok: 14 of 14 towns",
+      "observations": "ok: 14 of 14 towns, 14 with a reading under 75 minutes old",
+      "reports": "ok: 0 reports in 3 days",
+      "radar": "ok: 7 frames, latest 10:58 am",
+      "forecast": "ok: run 9:00 am, 12 hours",
+      "satellite": "ok: scan ended 10:58 am (GOES-East)",
+      "storm": "ok: 11 heights, valid 10:58 am MDT; echo top at 0 of 14 towns, no radar value above ground at 14 of 14 towns"
+    },
+    "require_live_rerun": {"all_eight_ok": true, "satellite": "ok: scan ended 11:03 am (GOES-East)"},
+    "describe_text": "Satellite picture: NOAA GOES-East (GOES-19) band 13, scan ended 10:58 am MDT, retrieved 11:01 am. Coldest brightness temperature in the picture 210 K, warmest 302 K. An observation of infrared brightness temperature: not a height and not a hail signal. Cloud tops are drawn about 3 to 33 km north-west of their true place (parallax), more for higher tops.",
+    "stderr": "Only GRIB decoder messages from the radar step (dataTime seconds truncation). No satellite messages. The decoding code is not changed by this work.",
+    "file_used": {
+      "name": "OR_ABI-L2-CMIPC-M6C13_G19_s20262901656175_e20262901658560_c20262901659012.nc",
+      "listed_bytes": 3935745,
+      "s3_last_modified_utc": "2026-10-17T16:59:23Z"
+    }
+  },
+  "satellite_used": "GOES-East (GOES-19); GOES-West was not needed",
+  "scan_and_times": {
+    "scan_start_utc": "2026-10-17T16:56:17.5Z",
+    "scan_end_utc": "2026-10-17T16:58:56.0Z (10:58 am MDT)",
+    "retrieved_utc": "2026-10-17T17:01:11Z (11:01 am MDT), the build's own time",
+    "s3_upload_latency_s_after_scan_end": 27,
+    "file_creation_to_s3_upload_s": 22,
+    "scan_end_to_build_retrieval_s": 135,
+    "notes": "The brief's median upload latency is 30 s (G19 range 26 to 46 s); this scan is within that range."
+  },
+  "listing_timing": {
+    "measured_utc": "2026-10-17T17:08:48Z",
+    "satellite_stage_total_s": 0.7,
+    "requests": [
+      "GOES-East listing, current hour: 0.24 s",
+      "GOES-East listing, previous hour: 0.06 s",
+      "GOES-East band 13 file of 3,938,409 bytes: 0.16 s (scan ended 2026-10-17T17:03:56Z)"
+    ]
+  },
+  "satellite_frame": {
+    "src": "map/frames/satellite-202610171658-g19.png",
+    "bytes": 114312,
+    "limit_bytes": 150000,
+    "size_px": [700, 439],
+    "mode": "P (palette)",
+    "palette_entries": 108,
+    "transparency": true,
+    "palette_index_range": [17, 107],
+    "hatch_pixels": 0,
+    "no_value_pixels": 0,
+    "coldest_k": 210,
+    "warmest_k": 302,
+    "nodata": false,
+    "scan_start": "2026-10-17T16:56:17Z",
+    "scan_end": "2026-10-17T16:58:56Z",
+    "second_live_frame": {"src": "map/frames/satellite-202610171703-g19.png", "bytes": 114921, "scan_end": "2026-10-17T17:03:56Z"}
+  },
+  "independent_check": {
+    "method": "The downloaded band 13 file was read with h5py and pyproj, with no repository code. Each picture pixel centre (Web-Mercator rows, linear longitudes, the map's image box) was mapped to GOES fixed-grid scan angles with PROJ geos using the file's own parameters. The nearest native pixel was taken with searchsorted on the file's x and y arrays. The file's scale and offset were applied, and the quality rule was DQF 0, not fill, inside valid_range. The kelvin field was then compared with the kelvin implied by each palette index (195 + index - 2 K).",
+    "file_attributes": {
+      "platform_ID": "G19",
+      "band_id": 13,
+      "scene_id": "CONUS",
+      "CMI": "int16, shape 1500 x 2500, units K, scale_factor 0.06145332008600235, add_offset 89.62000274658203, _FillValue -1, valid_range [0, 4095], _Unsigned 'true'",
+      "DQF_value_counts": {"0": 3702837, "-1 (fill, the same cells as CMI)": 47163},
+      "x": "scale_factor 5.6000000768108293e-05, add_offset -0.10133200138807297 (rad)",
+      "y": "scale_factor -5.6000000768108293e-05, add_offset 0.12821200489997864 (rad)",
+      "projection": "perspective_point_height 35786023.0, semi_major_axis 6378137.0, semi_minor_axis 6356752.31414, longitude_of_projection_origin -75.0, sweep_angle_axis x"
+    },
+    "box": {
+      "pixels": 307300,
+      "outside_grid": 0,
+      "without_a_good_value": 0,
+      "file_K_min_max": [210.31, 302.13],
+      "file_K_p10_p50_p90": [228.07, 274.66, 293.15],
+      "coldest_pixel": {"lat": 49.1375, "lon": -111.2125, "K": 210.31}
+    },
+    "palette_against_file_unsmoothed": {
+      "covers": "The palette range 195 to 299 K: the 306,983 picture pixels at levels 195 to 299 K (index 2 to 106). The 317 pixels at 300 K and warmer (index 107) are drawn transparent and are not compared.",
+      "pixels_compared": 306983,
+      "abs_diff_K_p50_p90_p99_max": [0.62, 2.58, 5.89, 16.4],
+      "share_within_1K": 0.6533,
+      "share_within_3K": 0.9261
+    },
+    "palette_against_file_after_the_repository_smoothing": {
+      "method": "five-tap Gaussian, sigma 1 pixel, edge padding, normalised over valid pixels (as gridded.smooth)",
+      "covers": "The same 306,983 pixels: the palette range 195 to 299 K. The 317 transparent pixels at 300 K and warmer are not compared.",
+      "pixels_compared": 306983,
+      "abs_diff_K_p50_p90_p99_max": [0.25, 0.45, 0.49, 0.5],
+      "share_within_0p5K": 1.0
+    },
+    "cold_pixels": {
+      "file_pixels_at_or_below_220K": 10860,
+      "share_drawn_at_or_below_220K": 0.9721
+    },
+    "result": "Over the palette range 195 to 299 K, the drawn picture agrees with the file's own kelvin values to within 0.5 K after the repository's one-pixel smoothing (the palette's 1 K steps). Before smoothing, 65% of those pixels are within 1 K and 93% within 3 K. The 317 pixels at 300 K and warmer are drawn transparent and are outside this comparison. The cold tops are where the file has them."
+  },
+  "smoke": {
+    "tools/smoke_map.py, live build": "passed (exit 0, 26.3 s): no request went to another site",
+    "tools/smoke_map.py, flag-on sample build": "passed (exit 0)",
+    "tools/smoke_pages.py, flag-on sample build": "passed (exit 0)",
+    "layer switch from Precipitation to Satellite (smoke helpers; gate is more than 2 percent of map-canvas pixels)": {
+      "live": {"desktop_1280x800_changed_percent": 45.78, "phone_390x844_changed_percent": 17.76, "off_site_requests": 0},
+      "sample_flag_on": {"desktop_1280x800_changed_percent": 52.83, "phone_390x844_changed_percent": 17.49, "off_site_requests": 0}
+    }
+  },
+  "layout_and_screenshots": {
+    "files": ["satellite-w288.png (288 x 640)", "satellite-w390.png (390 x 844)", "satellite-w1440.png (1440 x 900)"],
+    "location": "session scratchpad, folder stage-b/p2-shots",
+    "document_width_equals_window": {"288": true, "390": true, "1440": true},
+    "picture_on_screen_at_full_opacity": {"288": true, "390": true, "1440": true},
+    "legend_title": "Satellite (legend bar from 290 K at the top to 195 K at the bottom; the legend note is in the layer's own words)",
+    "observed": "Cold tops are coloured violet and magenta over north-central and west-central Montana. Warm areas are transparent, so the basemap shows. The legend card sits over the top of the picture. The timeline names the Satellite layer and the scan (Saturday 10:58 am, NOAA GOES-East (GOES-19) band 13, observation). The area outside the picture's box is hatched, with the note 'Hatched areas are outside this map's area.' Nothing overflows.",
+    "off_site_requests": [],
+    "page_errors": []
+  },
+  "sample_on_off": {
+    "default_build_against_base_commit": "Only static/map/map.js and the map.html line carrying its ?v= hash differ. No satellite word appears in any default HTML or JSON file, and no band 13 word appears in any default file.",
+    "flag_on_against_flag_off": {
+      "added_files": [
+        "map/frames/satellite-202610171558-sample.png (17,685 bytes, 700 x 439, palette mode, 108 palette entries)",
+        "static/map/storm.js"
+      ],
+      "changed_files": ["about.html", "data/map.json", "data/state.json", "index.html", "map.html", "reports.html", "town pages (14)"],
+      "changes_are_additions_only": "Each change adds to a list, a section or a table that the flag controls. The 'Loaded' line gains the two flag-only sources.",
+      "layers_precip_temp_wind_identical": true,
+      "radar_and_model_frames_byte_identical": "48 of 48",
+      "towns_identical_apart_from_storm_key": true,
+      "statuses_identical_for_existing_sources": true
+    }
+  },
+  "unit_tests": {
+    "python_3_13_discover_final": "Ran 355 tests in 43.498 s, OK (after the last documentation edit)",
+    "python_3_12_ci_website_line": "tests.test_site, test_gridded, test_basemap, test_storm, test_satellite and test_website_workflow: Ran 311 tests in 40.4 s, OK"
+  },
+  "not_verified": [
+    "Upload latency over seven days (the README section 6 gate, to be measured on main).",
+    "Counsel's reading of D-G10 and D-G11. The layer stays on branch previews until both are read.",
+    "The workflow run itself. The same commands were run locally with Python 3.13 and 3.12.",
+    "A stale picture (20 to 60 minutes old) and a GOES-West fallback on live data. No live feed was stale or failed during the checks; both paths are tested with fake feeds, and the reader was run on the real files in the core stage.",
+    "Browsers other than headless Chromium. The List sheet's satellite section was checked in the built HTML, not opened in a browser.",
+    "The payload app's test modules under Python 3.12 (flask not installed there). The payload app is parked and is not in the website CI line."
+  ],
+  "open_items_for_the_supervisor": [
+    "Branch name in docs/ROADMAP.md: the P2 entry names the P2 branch, as the brief asks. The rule against AI-product names in repo files also covers branch names, and the repository already names agent branches with one prefix in the workflow's branch filter, README, DECISIONS and ROADMAP. The supervisor needs to decide the naming.",
+    "gridded.py: WIDTHS, LAYER_TEXT and SAMPLE_NOTES have no satellite key, although brief section 4.2 asked for one each. tests/test_gridded.py pins those dicts exactly, and the brief requires existing tests to pass unchanged, so the values live in satellite.py (WIDTH, LAYER_TEXT, SAMPLE_NOTE). Please confirm.",
+    "Superseded by the review (p2-review.json): GOES-West is also tried when GOES-East has no scan in the last hour. This run gave 'no satellite scan in the last 60 minutes' with no West attempt.",
+    "Superseded by the review (p2-review.json): a picture drawn from GOES-West after an East failure is ok by freshness alone, as an East picture is, and its status names the East failure.",
+    "Test edits by the checks stage: the test_site Contracts key set gains 'satellite'; the About check skips STORM_CONTRACTS; the StormLayers noscript comparison starts at the satellite heading. Each follows from the brief's design; please review them as part of the diff.",
+    "Frames carry coldest_k and warmest_k, which describe() needs. DESIGN.md's data contract now lists them.",
+    "map.js changes beyond the brief, each commented in the file: buildTimeline clamps state.pos (fixes a TypeError when a one-frame layer is picked during playback); the card caption; the no-picture reason in the note; the List's 'Sources with problems' includes the satellite; the workflow step summary prints the satellite sentence.",
+    "The shared map.js changed in the default build too (its code names the satellite layer, and the page's ?v= hash changed). No satellite word reaches a default page or data file.",
+    "The sample source and status labels keep the em-dash that the brief spells out. This matches the radar sample labels in gridded.py."
+  ]
+}
