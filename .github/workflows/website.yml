@@ -28,6 +28,7 @@ on:
       - "tests/test_gridded.py"
       - "tests/test_basemap.py"
       - "tests/test_storm.py"
+      - "tests/test_satellite.py"
       - "tests/test_website_workflow.py"
       - "tools/**"
       - ".github/workflows/website.yml"
@@ -84,11 +85,11 @@ jobs:
 
       - name: Install
         if: steps.plan.outputs.run == 'true'
-        run: python -m pip install requests jinja2 pillow numpy pygrib
+        run: python -m pip install requests jinja2 pillow numpy pygrib h5py
 
       - name: Website tests (offline)
         if: steps.plan.outputs.run == 'true'
-        run: python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_website_workflow
+        run: python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_website_workflow
 
       - name: Build from live data
         if: steps.plan.outputs.run == 'true'
@@ -97,7 +98,7 @@ jobs:
         run: |
           args=(--out _site)
           if [ -n "$PAGES_URL" ]; then args+=(--previous "$PAGES_URL"); fi
-          # Branch pushes also read NOAA radar echo tops (text only; off on main until reviewed).
+          # Branch pushes also read NOAA radar echo tops (text only) and the GOES satellite picture; off on main until reviewed.
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then args+=(--require-live --storm-layers); fi
           python -m website.build "${args[@]}" | tee build-result.json
 
@@ -137,6 +138,8 @@ jobs:
               print("\nRadar echo tops (branch preview, --storm-layers):")
               for name, text in storm:
                   print(f"- {name}: {text}")
+          if c.get("satellite"):
+              print("\nSatellite picture (branch preview, --storm-layers): " + c["satellite"])
           if c.get("alert_events"):
               print("\nAlerts: " + "; ".join(c["alert_events"]))
           print("\nReports per SPC day: " + ", ".join(f"{d}: {n}" for d, n in (c.get("reports_by_day") or {}).items()))

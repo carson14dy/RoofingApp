@@ -1,0 +1,203 @@
+{
+  "slug": "p2-review",
+  "subject": "Review findings A to I on the P2 satellite picture (the P2 branch at checkpoint 76b023a): the fixes, offline tests on Python 3.10, 3.12 and 3.13, the sample and live builds, browser checks, and mutation checks showing that the new tests can fail.",
+  "checked_at_utc": "2026-10-18T00:08:23Z",
+  "repo_state": {
+    "base": "7282156 (main, with P1 merged in pull request #7)",
+    "checkpoint": "76b023a (P2 checkpoint; the working tree was clean before this review)",
+    "later_commit": "99754a8 'WIP checkpoint 3' appeared on the branch at 2026-10-18T00:12:35Z while this review was running. This stage did not make it. It holds this stage's edits as they were at that time, including this file; the only later change is the one-line comment wrap in tests/test_satellite.py.",
+    "commits_or_pushes_by_this_stage": 0,
+    "git_commands_used": ["git status", "git diff", "git log", "git archive 7282156 (read only, extracted into the scratchpad)"],
+    "files_changed_by_this_stage": [
+      "website/satellite.py",
+      "tests/test_satellite.py",
+      "website/sources.py",
+      "website/templates/about.html",
+      "website/static/map/map.js",
+      "tools/smoke_map.py",
+      "docs/DESIGN.md",
+      "docs/DECISIONS.md",
+      "research/globe/validation-evidence/p2-verification.json (finding G, a review_note, and two open items marked superseded)",
+      "research/globe/validation-evidence/p2-review.json (this file)"
+    ],
+    "diffstat_vs_checkpoint": "9 files changed, 241 insertions, 70 deletions (before this file was added)"
+  },
+  "findings": [
+    {
+      "id": "A",
+      "severity": "major",
+      "file": "tests/test_satellite.py",
+      "claim": "No test pins the GOES-West grid edge, and the far-side test cannot fail because of the horizon rule (its point is outside the grid anyway).",
+      "outcome": "fixed; two numbers in the review did not match the geometry, see contradictions K1 and K2",
+      "change": "Added Sampling.g18(), a GOES-West stand-in (raw 3000 everywhere, quality flags 0, the G18 grid constants from the brief). test_goes_west_has_no_data_past_its_last_column: 43.7358 N 101.0125 W falls at column 2500 (one past the last column) and is NaN; 43.0 N 101.0 W falls at column 2517 and is NaN; 43.7358 N 101.03 W falls at column 2499 and is drawn at 273.98 K. Added test_a_point_over_the_horizon_is_no_data_because_of_the_horizon_alone: 50.0 N 151.5 W is beyond GOES-East's horizon (visible False), and its pixel (column 96, row 192) lies inside the grid; with the horizon rule patched to report every point visible, the same point is drawn.",
+      "evidence": "Mutant M2 (the grid test uses column <= 2500) fails test_goes_west_has_no_data_past_its_last_column. Mutant M1 (no horizon rule) fails test_a_point_over_the_horizon_is_no_data_because_of_the_horizon_alone. Both mutants ran in scratch copies, not in the repository."
+    },
+    {
+      "id": "B",
+      "severity": "major on Python 3.10, the README's stated minimum (no effect on 3.11 and later)",
+      "file": "website/satellite.py",
+      "claim": "time_coverage_start and time_coverage_end carry one fraction digit (2026-10-17T15:58:55.9Z); datetime.fromisoformat cannot read it before Python 3.11.",
+      "outcome": "reproduced on Python 3.10.20, then fixed",
+      "change": "_iso_utc(text) reads the ISO UTC text with a regex and strptime, with one fraction digit, several, or none. read_cmip uses it in place of fromisoformat. The README's Python minimum is unchanged. Tests: test_a_file_scan_time_reads_with_one_fraction_digit_none_or_six (the helper, including a bad string) and test_a_file_whose_scan_end_has_no_fraction_or_six_digits_is_read (through read_cmip; the one-digit case is the existing read test).",
+      "evidence": "On Python 3.10.20, datetime.fromisoformat('2026-10-17T15:58:55.9+00:00') raises ValueError (Invalid isoformat string). With the old parse reinstated in a scratch copy, the satellite tests on 3.10 fail five ReadFile tests (one failure, four errors). With the fix, the six website test modules pass on 3.10 (319 tests), 3.12 (319 tests) and 3.13 (363 tests in the full discovery)."
+    },
+    {
+      "id": "C",
+      "severity": "major (behaviour; the supervisor's decision)",
+      "file": "website/satellite.py; tests/test_satellite.py; website/sources.py; website/templates/about.html; docs/DECISIONS.md",
+      "claim": "GOES-West was tried only when GOES-East's listing, download or decode failed, and a GOES-West picture after an East failure was not ok. An East scan older than the hour gave no picture and no West attempt.",
+      "outcome": "fixed, both rules",
+      "change": "(1) _newest raises _NoScan when East lists no scan, or its newest scan is older than UNAVAILABLE (60 minutes); _live then tries GOES-West. (2) A GOES-West picture is ok by freshness alone, like an East picture. Its status detail names the East reason in brackets, for example 'scan ended 9:58 am (GOES-West; GOES-East file list didn't load (HTTP 503))'. Reason strings now begin with the satellite's name and drop the leading 'the', to match that example. With no picture, the detail is 'no satellite scan in the last 60 minutes' when no satellite has a scan; otherwise each satellite's reason is named. Tests updated: test_east_listing_failing_draws_west_and_says_so, test_east_download_failing_draws_west, test_east_file_that_does_not_decode_draws_west, test_a_picture_with_no_usable_value_is_a_failed_file, test_both_failing_names_both, test_east_failing_and_no_west_scan_names_both_reasons, test_a_fetcher_that_raises_is_a_status_and_never_a_crash, test_a_listing_that_fails_is_named_and_raised, test_no_scan_in_the_last_hour_draws_no_picture (now also checks that GOES-West was asked), test_the_west_picture_is_drawn_north_east_and_says_why, test_a_live_picture_is_described_in_plain_words. The old test test_an_old_east_scan_does_not_fall_back_to_west became test_an_east_scan_older_than_the_hour_falls_back_to_a_fresh_west_scan. Added: test_an_east_listing_with_no_scan_falls_back_to_west, test_a_west_picture_after_an_east_failure_goes_stale_like_an_east_one, test_a_stale_west_picture_after_an_east_failure_says_both_and_is_not_an_all_clear.",
+      "evidence": "Printed status for each case: East fresh; East list fails with West fresh, or with West 25 minutes old; East download fails; East has no scan with West fresh; East 61 minutes old with West 5 minutes old; East old with no West; no files; both lists fail; each one-sided failure. Mutant M3 (break instead of continue when a satellite has no scan) fails 3 tests. Mutant M4 (the old ok rule) fails 5 tests."
+    },
+    {
+      "id": "D",
+      "severity": "minor",
+      "file": "website/satellite.py (describe); tests/test_satellite.py",
+      "claim": "The parallax sentence gave a broad range (3 to 33 km, more for higher tops).",
+      "outcome": "fixed",
+      "change": "describe() now reads: 'A cloud top 2 km up is drawn about 3 to 4 km north-west of its true place, and a top 12 to 15 km up about 20 to 33 km (parallax).' The direction is north-east for GOES-West. The tests assert the new sentence and that 'more for higher tops' is gone.",
+      "evidence": "The flag-on sample build's map.html carries the sentence twice (the noscript panel and the List template)."
+    },
+    {
+      "id": "E",
+      "severity": "minor",
+      "file": "website/templates/about.html; docs/DESIGN.md; website/satellite.py (describe)",
+      "claim": "The wording said 'over Montana', 'how bright the cloud tops are', had no uncoloured sentence, and DESIGN said warm surfaces (290 K and above) are faded out.",
+      "outcome": "fixed",
+      "change": "About: 'of the newest 5-minute scan over the map's area'; 'It is an observation of the infrared brightness temperature of the cloud tops and of the ground where there is no cloud'; 'Areas warmer than 300 K are left uncoloured, and missing areas show hatch lines; uncoloured is not a statement about the weather.' DESIGN: 'warm surfaces fade from 275 K, are faint at 290 K and are transparent from 300 K, so the basemap shows through.' describe() carries the uncoloured sentence, so the noscript panel and the List share one text.",
+      "consequence": "The About bullet, sources.CONTRACTS['satellite'].request and DECISIONS.md said GOES-West is used only if East fails. They now say East fails or has no scan in the last hour (finding C).",
+      "evidence": "Rendered flag-on pages: about.html contains 'over the map's area' once and the uncoloured sentence once; map.html contains the uncoloured sentence twice."
+    },
+    {
+      "id": "F",
+      "severity": "minor (without the filter, the default build's reserved note box grows in width)",
+      "file": "website/static/map/map.js (noteBox); docs/DECISIONS.md",
+      "claim": "The satellite hatch keys are measured in every build, so they reach the default build's reserved note box. The DECISIONS sentence said the shared script 'does nothing without the layer's data', which is not what the code does.",
+      "outcome": "fixed; measured in Chromium",
+      "change": "noteBox measures the satellite hatch keys only when data.layers.satellite exists. The DECISIONS sentence now reads: 'The shared map script's code changed (its ?v= hash too); no satellite word reaches a default page or data file.'",
+      "measurement": "A read-only probe was added to scratch copies of the built sites (the repository and the built sites are unchanged). Default build from main at 7282156 against the branch's default build, both sample builds at the same fixed time. Reserved room: 26 px in both. Note box at 288 px: 264 x 33.78 in both. At 390 px: 272.86 x 16.89 in both. At 1440 px: 272.86 x 16.89 in both. Zoom, centre and bubble positions are identical at all three widths. Without the filter (scratch copy of the branch's default build), the default box at 390 and 1440 px is 282.09 x 16.89: the height is unchanged and the width grows. The flag-on build reserves 282.09 px at 390 and 1440 px, because its hatch note names the satellite.",
+      "default_build_vs_main": "diff -rq: map.html differs only in the map.js ?v= value (a04d3f4c5ff2 to 18fba797e7ff); static/map/map.js differs in its code. No satellite word appears in any default file outside static/map/."
+    },
+    {
+      "id": "G",
+      "severity": "minor (evidence record)",
+      "file": "research/globe/validation-evidence/p2-verification.json",
+      "claim": "The pixel agreement figures did not say which palette range they cover, and 'every pixel' wording was requested for removal.",
+      "outcome": "fixed; 'every pixel' not found in the file",
+      "change": "Added a 'covers' key to both palette comparisons: the 306,983 picture pixels at levels 195 to 299 K (index 2 to 106); the 317 pixels at 300 K and warmer (index 107) are drawn transparent and are not compared. The result sentence now names the range and the smoothing: within 0.5 K after the repository's one-pixel smoothing; before smoothing, 65% of pixels are within 1 K and 93% within 3 K. The earlier sentence said 'within the palette's 1 K steps' without that caveat.",
+      "evidence": "The integrate stage's picture (scratch) was counted again in this review: 317 pixels at palette index 107, 306,983 at index 2 to 106, in a 700 x 439 palette PNG. The phrase 'every pixel' does not occur in the file; the only 'every' is 'every page fits the screen' in the smoke_pages line, which is about pages."
+    },
+    {
+      "id": "H",
+      "severity": "minor (browser coverage of a page error fixed earlier)",
+      "file": "tools/smoke_map.py",
+      "claim": "No browser check switches to the Satellite layer while the timeline plays.",
+      "outcome": "fixed",
+      "change": "check_satellite_while_playing(browser, base, want) runs on a desktop and a phone: it plays Precipitation, waits until the slider moves, picks Satellite while it plays, checks the legend title, and fails on any page error. check_satellite calls it.",
+      "evidence": "Flag-on sample build: passes. Live build: passes. With the state.pos clamp removed in a scratch copy: exit 1, with 'desktop: page error after picking Satellite while playing: Cannot read properties of undefined (reading 'kind')' and the same for phone."
+    },
+    {
+      "id": "I",
+      "severity": "none (decided by the supervisor)",
+      "outcome": "no change, as instructed",
+      "items": [
+        "The compact phone legend hides the legend note behind the (i) button (existing pattern).",
+        "docs/ROADMAP.md keeps the branch name.",
+        "gridded.py keeps no satellite keys in WIDTHS, LAYER_TEXT and SAMPLE_NOTES (they live in satellite.py).",
+        "Frames keep coldest_k and warmest_k."
+      ]
+    },
+    {
+      "id": "X1",
+      "severity": "minor",
+      "file": "website/satellite.py (describe, _after_failure)",
+      "claim": "After finding C(2), a GOES-West picture after an East failure is ok, so describe() (noscript panel, List, build log) would no longer say that East failed.",
+      "outcome": "fixed (own finding)",
+      "change": "When the status is ok and the picture is from GOES-West, describe() adds the East reason: 'GOES-East file list didn't load (HTTP 503).' The reason is read back from the status words by _after_failure."
+    },
+    {
+      "id": "X2",
+      "severity": "minor",
+      "file": "website/sources.py; docs/DECISIONS.md; website/templates/about.html",
+      "claim": "Text said GOES-West is used only when East fails, which is no longer the rule.",
+      "outcome": "fixed (consequence of finding C)"
+    },
+    {
+      "id": "X3",
+      "severity": "minor",
+      "file": "research/globe/validation-evidence/p2-verification.json",
+      "claim": "Earlier statements now superseded: describe_text, open items 3 and 4 (the fallback and the ok rule), and the 'within the palette's 1 K steps' sentence.",
+      "outcome": "marked: a review_note at the top; the two open items say they are superseded by the review; the measured numbers are kept as the integrate stage's run"
+    },
+    {
+      "id": "X4",
+      "severity": "none",
+      "file": "website/satellite.py (sample source and status labels); docs/DESIGN.md (table placeholder)",
+      "claim": "Three em-dashes appear in added lines. One is a table placeholder in DESIGN.md, which follows the table's convention. Two are the sample source and sample status labels, which the brief spells out and which gridded.py's radar sample labels also use.",
+      "outcome": "not changed; the supervisor to decide whether sample labels keep the dash"
+    }
+  ],
+  "contradictions_with_the_decisions": [
+    {
+      "id": "K1",
+      "claim": "43.7358 N 101.0125 W falls at column 2517, off the 2500-column grid.",
+      "fact": "It falls at column 2500 (unrounded 2499.66), one past the last column. Column 2517 belongs to 43.0 N 101.0 W, the brief's south-east corner. Both points are NaN.",
+      "action": "The test asserts NaN at 43.7358 N 101.0125 W with its true column (2500), and NaN at 43.0 N 101.0 W with column 2517. The supervisor should confirm the wording."
+    },
+    {
+      "id": "K2",
+      "claim": "42.811 N 117.182 W is a far-side point for GOES-East, so it is NaN only because of the visibility rule.",
+      "fact": "It is visible from GOES-East (visible True; scan angles x -0.080654 and y 0.110991 rad; column 369, row 308, inside the grid), so it is drawn at a finite value. It is also visible from GOES-West (column 1996, row 259). Neither satellite sees it as far side.",
+      "action": "Not used as the far-side point. The far-side test uses 50.0 N 151.5 W, found by search: not visible from GOES-East, inside the grid bounds, and drawn when the horizon rule is switched off. The named point is kept in a test that asserts it is visible and drawn. The supervisor should confirm this substitute."
+    }
+  ],
+  "commands": [
+    {"cmd": "python -m unittest tests.test_satellite (before the test edits)", "exit": 1, "result": "FAILED (failures=11): the old-behaviour and old-wording tests, as expected"},
+    {"cmd": "python -m unittest tests.test_satellite (after the test edits)", "exit": 0, "result": "Ran 75 tests in 7.350s; OK"},
+    {"cmd": "python -m pyflakes tools/smoke_map.py website/satellite.py tests/test_satellite.py; node --check website/static/map/map.js", "exit": 0, "result": "no output from either (clean)"},
+    {"cmd": "python -m unittest discover -s tests (after the last code edit)", "exit": 0, "result": "Ran 363 tests in 37.123s; OK (flask is installed here, so the parked app's tests run too)"},
+    {"cmd": "python -m website.build --out <scratchpad>/stage-d/fix-off --sample", "exit": 0, "result": "the build's JSON summary; no traceback"},
+    {"cmd": "python -m website.build --out <scratchpad>/stage-d/fix-on --sample --storm-layers", "exit": 0, "result": "the build's JSON summary; the satellite describe text is in the content section"},
+    {"cmd": "git archive 7282156 | tar -x -C <scratchpad>/stage-d/main-src", "exit": 0, "result": "read only; the base commit extracted into an empty scratch folder"},
+    {"cmd": "python <scratchpad>/stage-d/run_build.py <scratchpad>/stage-d/main-src --out <scratchpad>/stage-d/main-off-now --sample --now 2026-10-17T16:00:00Z", "exit": 0, "result": "the wrapper adds only the given source root to the path. A first try with python -I failed (jinja2 is in the user site-packages), so this run is without -I"},
+    {"cmd": "python -m website.build --out <scratchpad>/stage-d/fx-off-now --sample --now 2026-10-17T16:00:00Z", "exit": 0, "result": "fixed-time default build of the branch"},
+    {"cmd": "python -m website.build --out <scratchpad>/stage-d/fx-on-now --sample --storm-layers --now 2026-10-17T16:00:00Z", "exit": 0, "result": "fixed-time flag-on build of the branch"},
+    {"cmd": "diff -rq main-off-now fx-off-now; diff main-off-now/map.html fx-off-now/map.html", "exit": 1, "result": "two files differ: map.html (the map.js ?v= value only: a04d3f4c5ff2 to 18fba797e7ff) and static/map/map.js (code). Exit 1 is diff's 'files differ'"},
+    {"cmd": "grep -ril 'satellite|band 13' fx-off-now --exclude-dir=static", "exit": 1, "result": "no output: no satellite word or band 13 outside static/map/ in the default build (grep exit 1 means no match)"},
+    {"cmd": "PW_CHROMIUM=/opt/pw-browsers/chromium python <scratchpad>/stage-d/probe_box.py <scratchpad>/stage-d/box-probe.json main-off-now fx-off-now fx-on-now", "exit": 0, "result": "reserved room 26 px in all three; default build equal to main at 288, 390 and 1440 px (see finding F); flag-on box 282.09 px wide at 390 and 1440 px"},
+    {"cmd": "probe_box.py on fx-off-nofilter (scratch copy with the satellite filter removed)", "exit": 0, "result": "default build box at 390 and 1440 px 282.09 x 16.89, against 272.86 x 16.89 on main: the filter is what keeps the default box unchanged"},
+    {"cmd": "PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_map.py <scratchpad>/stage-d/fix-on", "exit": 0, "result": "Map smoke test passed: page, frames, basemap, bubbles, play, layers and card all work, and no request went to another site."},
+    {"cmd": "PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_map.py <scratchpad>/stage-d/fix-on-noclamp (the state.pos clamp removed in a scratch copy)", "exit": 1, "result": "desktop and phone: page error after picking Satellite while playing: Cannot read properties of undefined (reading 'kind')"},
+    {"cmd": "PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_pages.py <scratchpad>/stage-d/fix-on", "exit": 0, "result": "Page width check passed: every page fits the screen at 288, 320, 375, 768, 1440 px, light and dark."},
+    {"cmd": "python -m website.build --out <scratchpad>/stage-d/live --storm-layers", "exit": 0, "result": "48.5 s. Satellite status ok: 'scan ended 5:58 pm (GOES-East)'. One frame, map/frames/satellite-202610172358-g19.png, 110,626 bytes, 700 x 439, nodata false, 210 K to 292 K"},
+    {"cmd": "PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_map.py <scratchpad>/stage-d/live", "exit": 0, "result": "Map smoke test passed: page, frames, basemap, bubbles, play, layers and card all work, and no request went to another site."},
+    {"cmd": "PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_pages.py <scratchpad>/stage-d/live", "exit": 0, "result": "Page width check passed: every page fits the screen at 288, 320, 375, 768, 1440 px, light and dark."},
+    {"cmd": "share_check.py (smoke helpers: Precipitation to Satellite, share of changed map-canvas pixels) on fix-on and live", "exit": 0, "result": "sample: 52.81% desktop, 17.49% phone; live: 65.5% desktop, 22.75% phone (gate: more than 2%)"},
+    {"cmd": "mutate.py (four regressions in scratch copies; python -m unittest tests.test_satellite in each)", "exit": 1, "result": "M1 no horizon rule: 1 failing (the horizon test). M2 grid edge one column too wide: 1 failing (the GOES-West edge test). M3 break instead of continue on a missing scan: 3 failing. M4 old ok rule for a West picture: 5 failing."},
+    {"cmd": "python -c 'from datetime import datetime; datetime.fromisoformat(...)' on Python 3.10.20 (scratchpad venv); the check catches the error and prints it", "exit": 0, "result": "ValueError: Invalid isoformat string: '2026-10-17T15:58:55.9+00:00' (the reason for finding B)"},
+    {"cmd": "Python 3.10.20: python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_website_workflow", "exit": 0, "result": "Ran 319 tests in 37.155s; OK"},
+    {"cmd": "Python 3.10.20 with the old parse reinstated (scratch copy): python -m unittest tests.test_satellite", "exit": 1, "result": "FAILED (failures=1, errors=4): the ReadFile tests that read a file's scan time"},
+    {"cmd": "Python 3.12.3 venv created in the scratchpad (pip install numpy pillow requests jinja2 h5py); python -m unittest of the six website test modules", "exit": 0, "result": "Ran 319 tests in 34.207s; OK (the CI version)"},
+    {"cmd": "count_box.py on the integrate stage's G19 file (repository reader and grid); count of index 107 in the integrate stage's P2 picture", "exit": 0, "result": "box pixels 307,300, all with a value; values of 300 K and above 217 and of 299.5 K and above 369 on the unsmoothed field; the picture itself has 317 pixels at index 107 and 306,983 at index 2 to 106"},
+    {"cmd": "geo_check.py and geo_search.py (scratch scripts; repository geometry functions)", "exit": 0, "result": "43.7358 N 101.0125 W: GOES-West column 2500, unrounded 2499.66; 43.0 N 101.0 W: column 2517; 42.811 N 117.182 W: visible from both satellites; 50.0 N 151.5 W: not visible from GOES-East, column 96, row 192; 43.7358 N 101.03 W: column 2499"},
+    {"cmd": "python -c 'json.load' on research/globe/validation-evidence/p2-verification.json", "exit": 0, "result": "parses"},
+    {"cmd": "git diff --stat HEAD", "exit": 0, "result": "9 files changed, 241 insertions(+), 70 deletions(-) (the review's own edits, before this file was added)"},
+    {"cmd": "grep of the added lines of the changed files for model and vendor names", "exit": 1, "result": "no matches (grep exit 1 means no match)"}
+  ],
+  "not_done": [
+    "Nothing was committed or pushed, and git state was not changed. The branch is at 76b023a with the uncommitted edits listed above.",
+    "The GitHub Actions workflow was not run. The branch-push live check and the CI run are the supervisor's.",
+    "The GOES-West fallback was not exercised on live data, because GOES-East was fine on every live run here. It is covered by fake feeds and by the mutation checks.",
+    "The seven-day upload latency gate (README section 6) cannot be measured here and belongs on main.",
+    "Browsers other than headless Chromium were not checked. Python 3.11 was not run separately; 3.10, 3.12 and 3.13 were.",
+    "The README's Python minimum was not changed, as instructed."
+  ],
+  "open_for_the_supervisor": [
+    "Confirm the wording of K1 (column 2500, not 2517, for 43.7358 N 101.0125 W).",
+    "Confirm the substitute far-side point 50.0 N 151.5 W (K2); the named point 42.811 N 117.182 W is visible from both satellites.",
+    "Confirm the reason wording without the leading 'the' (GOES-East file list didn't load (HTTP 503)), which follows the decision's example.",
+    "Review the consequences listed under E, X1, X2 and X3 in the diff, since they go beyond the list of decided items.",
+    "Decide whether the sample source and status labels keep the em-dash (X4)."
+  ]
+}

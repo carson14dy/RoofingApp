@@ -77,3 +77,22 @@ class StormFlag(unittest.TestCase):
         self.assertEqual(len(unit), 1)
         self.assertIn("tests.test_storm", unit[0])
         self.assertIn('"tests/test_storm.py"', self.text)
+
+
+class SatelliteReader(unittest.TestCase):
+    """The GOES reader imports h5py (website/satellite.py read_cmip). The Install step installs it with the
+    other packages, and the satellite tests run in the offline unittest line and the path filter."""
+
+    def setUp(self):
+        self.text = (ROOT / ".github/workflows/website.yml").read_text()
+
+    def test_the_install_step_installs_h5py_with_the_other_packages(self):
+        installs = [line for line in self.text.splitlines() if "python -m pip install" in line and "pygrib" in line]
+        self.assertEqual(len(installs), 1)
+        self.assertIn("h5py", installs[0].split())
+
+    def test_the_satellite_tests_run_in_the_unittest_line_and_the_path_filter(self):
+        unit = [line for line in self.text.splitlines() if "python -m unittest" in line]
+        self.assertEqual(len(unit), 1)
+        self.assertIn("tests.test_satellite", unit[0].split())
+        self.assertIn('"tests/test_satellite.py"', self.text)

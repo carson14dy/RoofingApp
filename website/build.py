@@ -3,7 +3,7 @@
     python -m website.build --out _site                 # live data (needs internet)
     python -m website.build --out _site --sample        # labelled sample data, no network
     python -m website.build --out _site --require-live  # fail if any source failed (preview checks)
-    python -m website.build --out _site --storm-layers  # also NOAA radar echo tops for the towns (text only)
+    python -m website.build --out _site --storm-layers  # also NOAA radar echo tops (text) and the GOES satellite picture
 
 GitHub Actions runs the live build every 10 minutes and publishes the folder with GitHub Pages
 (.github/workflows/website.yml). Every page says when its data was fetched; nothing on a page is
@@ -224,10 +224,31 @@ class Collector:
         self.note("storm", storm_mod.LABEL, st["ok"], st["detail"])
         return results
 
+    def satellite(self, out_dir: Path, sample: bool) -> dict:
+        """The GOES band 13 satellite picture for the map (website/satellite.py; --storm-layers only): the
+        layer for data/map.json, with one frame or none. One status line, like the others."""
+        from . import satellite as sat
+        fetch = getattr(self.f, "binary", None)
+        get = fetch if fetch else (lambda url, headers=None: (None, "no downloader"))
+        layer, st = sat.build_satellite(out_dir, get, self.now, sample=sample)
+        self.note("satellite", sat.LABEL, bool(st.get("ok")), st.get("detail") or "not built")
+        return layer
+
 
 # ---------------------------------------------------------------- map page data
 
 MAP_VIEW = {"bounds": [[44.35, -116.06], [49.01, -104.03]], "min_zoom": 5, "max_zoom": 11}
+
+# The imagery base map (D32): USGS The National Map's aerial imagery with roads and names, as 256 px tiles.
+# The browser asks for tiles only while Imagery is on (map.js setBase): after a switch, or when the address
+# starts on it. The full address is set in one place; the host name also appears in the feed text (sources.py)
+# and in the browser check (tools/smoke_map.py). The two lines are the words the credit row shows (map.js):
+# the credit with the privacy words while Imagery is on, and the line that replaces it while tiles fail.
+IMAGERY = {
+    "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}",
+    "max_zoom": 16, "host": "basemap.nationalmap.gov",
+    "credit_line": "Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS.",
+    "failed_line": "Imagery didn't load from USGS. Outlines and towns are still shown."}
 
 
 def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dict, reports: dict,
@@ -252,7 +273,7 @@ def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dic
     (s_, w_), (n_, e_) = gridded.IMAGE_BOUNDS
     return {
         "version": 1, "built": src._iso(now), "sample": sample, "tz": "America/Denver",
-        "image_bounds": [[s_, w_], [n_, e_]], "view": MAP_VIEW,
+        "image_bounds": [[s_, w_], [n_, e_]], "view": MAP_VIEW, "imagery": IMAGERY,
         "now": radar_times[-1] if radar_times else src._iso(now),
         "layers": layers, "status": status, "towns": out_towns,
         "alerts": {"ok": alerts["ok"], "checked": alerts["checked"], "last_known": alerts.get("last_known"),
@@ -381,6 +402,8 @@ VERSIONED = ("style.css", "map/map.js", "map/map.css", "map/basemap.json")
 
 
 STORM_JS = "map/storm.js"   # places the storm text in the Map's List and town sheets; --storm-layers only
+# Feeds listed on the About page only in a --storm-layers build (their words and layers ship with the flag)
+STORM_CONTRACTS = ("storm_levels", "satellite")
 
 
 def asset_versions(static: Path, names=VERSIONED) -> dict:
@@ -415,6 +438,11 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     c.add_town_alerts(alerts, towns)
     reports = c.reports()
     layers = c.gridded(out, sample)
+    satellite_text = None
+    if storm_layers:
+        from . import satellite as sat
+        layers["satellite"] = c.satellite(out, sample)
+        satellite_text = sat.describe(layers["satellite"], c.status["satellite"], now)
     if storm_layers:
         storms = c.storm(towns, sample)
         for t in towns:
@@ -422,9 +450,10 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
 
     base = {"built": now, "built_ms": int(now.timestamp() * 1000),
             "asset_v": asset_versions(out / "static", VERSIONED + ((STORM_JS,) if storm_layers else ())),
-            "status": c.status, "sample": sample, "storm_layers": storm_layers,
-            "limits": src.LIMITS, "offices": OFFICES, "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
-            "contracts": {k: v for k, v in src.CONTRACTS.items() if storm_layers or k != "storm_levels"},
+            "status": c.status, "sample": sample, "storm_layers": storm_layers, "satellite_text": satellite_text,
+            "limits": src.LIMITS, "imagery": IMAGERY, "offices": OFFICES,
+            "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
+            "contracts": {k: v for k, v in src.CONTRACTS.items() if storm_layers or k not in STORM_CONTRACTS},
             "fresh_min": src.FRESH_MINUTES, "qc_words": src.QC_WORDS,
             "qc_rejected": src.QC_REJECTED}
     e = env()
@@ -462,7 +491,7 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
             "towns_with_gusts": sum(1 for t in towns if t["summary"]["gusts_known"]),
             "towns_with_readings": sum(1 for t in towns if t["obs"]["now"]),
             "reports": len(reports["items"]), "map": map_summary(layers),
-            "content": content_sample(alerts, towns, reports)}
+            "content": content_sample(alerts, towns, reports, satellite_text)}
 
 
 def map_summary(layers: dict) -> dict:
@@ -478,10 +507,10 @@ def map_summary(layers: dict) -> dict:
     return out
 
 
-def content_sample(alerts, towns, reports) -> dict:
+def content_sample(alerts, towns, reports, satellite_text: str | None = None) -> dict:
     """What the pages say, in brief, for the build log: rule 7 asks for a look at the content,
     not just a 200. The workflow prints the town table in the run summary."""
-    return {
+    out = {
         "alert_events": [f"{a['event']} until {fmt_time(a['until'])}" for a in alerts["items"][:10]],
         "towns": {t["name"]: {"lo": t["summary"]["lo"], "hi": t["summary"]["hi"], "gust": t["summary"]["gust"],
                               "wind": t["summary"]["wind"], "precip": t["summary"]["precip"],
@@ -492,6 +521,9 @@ def content_sample(alerts, towns, reports) -> dict:
                   for t in towns},
         "reports_by_day": {d: sum(1 for r in reports["items"] if r["day"] == d) for d in reports["days"]},
     }
+    if satellite_text:                       # --storm-layers only
+        out["satellite"] = satellite_text
+    return out
 
 
 def reading_sample(s: dict | None) -> dict | None:
@@ -520,7 +552,8 @@ def main(argv=None) -> int:
     ap.add_argument("--previous", help="URL of the live site, for last-known alerts if NWS fails")
     ap.add_argument("--require-live", action="store_true", help="exit 1 if any source failed")
     ap.add_argument("--storm-layers", action="store_true",
-                    help="also read NOAA radar echo tops for each town (text only; off by default)")
+                    help="also read NOAA radar echo tops for each town (text only) and the GOES satellite "
+                         "picture for the map; off by default")
     ap.add_argument("--now", help="build time (ISO, UTC); default: now")
     a = ap.parse_args(argv)
     now = src.parse_iso(a.now) if a.now else datetime.now(UTC).replace(microsecond=0)
