@@ -636,6 +636,19 @@ road and name licence is not settled, and that stays open for Carson. Carson kep
 built, it loads the same first view, and with the switch off the page makes no request to another site. Writing
 the exception down keeps the next change from streaming tiles from another host without a decision.
 
+**D33 · Scheduled rebuilds run off the top of the hour (2026-10-18).** Carson asked for updates that are
+consistent and as recent as possible. Between 2026-10-16 19:42 UTC and 2026-10-17 08:57 UTC (about 13
+hours), the `*/10 * * * *` schedule on `main` started four times, with gaps of 151.5, 141.6 and 264.5
+minutes (`research/globe/validation-evidence/p0-gates.json`). GitHub's docs say the schedule "can be
+delayed during periods of high loads", that "High load times include the start of every hour", and that
+"some queued jobs may be dropped". The schedule becomes 7, 17, 27, 37, 47 and 57 minutes past the hour:
+still six rebuilds an hour, but not on the hour. The cause of the gaps has not been diagnosed, so this is
+an experiment, not a fix. The measurement is the count of scheduled starts in the 24 hours after the change
+reaches `main` (144 is the every-10-minutes figure), to compare with the four runs above.
+
+*Why:* GitHub's own advice for delayed schedules is to "schedule your workflow to run at a different time of
+the hour". The change is one line and easy to undo, so the measured count can decide whether it stays.
+
 ## Gotchas found the hard way
 - An absolutely positioned element escapes a scroll box that isn't its containing block: the
   visually hidden "(over limit)" words in the hourly table widened every town page with a flagged
