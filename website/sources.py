@@ -167,6 +167,19 @@ CONTRACTS = {
         "timing": "Built by hand when the map changes; served by this site.",
         "missing": "Without the outlines the map still shows the weather layers and towns.",
     },
+    "imagery": {
+        "name": "USGS National Map imagery (ImageryTopo), base map",
+        "request": "basemap.nationalmap.gov, USGSImageryTopo tiles, fetched by the viewer's browser only after they "
+                   "switch the base map to Imagery, or open a link that starts on Imagery",
+        "units": "Aerial photographs with roads, rivers, boundaries and place names, and at small scales a global "
+                 "image; not weather and not evidence",
+        "timing": "USGS's service says its data were refreshed in April 2026; its main source is leaf-on NAIP "
+                  "imagery. This site shows no flight dates; the tiles are shown to zoom 16.",
+        "missing": "A tile that doesn't load leaves a plain near-white background, with the Montana outline, state "
+                   "lines and town bubbles, and the credit row says that imagery didn't load until a tile loads. The "
+                   "base map's roads, lakes, rivers, counties and names stay hidden while Imagery is on. Outside the "
+                   "United States, tiles above zoom 8 are blank or missing in the places checked.",
+    },
 }
 
 

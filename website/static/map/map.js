@@ -6,7 +6,9 @@
    every radar and model picture, every number, the legends, the basemap and data/map.json. This file
    only places those finished pieces with Leaflet 1.9.4 (served from static/leaflet) and plays them.
 
-   - Vanilla JavaScript: no framework, no build step, no request to anything but this site's files.
+   - Vanilla JavaScript: no framework, no build step, no request to anything but this site's files, except
+     the USGS imagery tiles, which load only while Imagery is on (D32; the address comes from build.py in
+     data-imagery).
    - Evidence honesty: before "Now" a frame is NOAA's radar estimate, after it the HRRR model; the
      timeline title and subtitle always say which. Town numbers are the NWS hourly forecast. Missing
      data is said in words and never drawn as a clear sky.
@@ -54,6 +56,7 @@
   var phoneQuery = window.matchMedia ? window.matchMedia("(max-width: 520px) and (orientation: portrait)") : null;
   var builtMs = Number(document.body.getAttribute("data-built")) || 0;
   var limits = readJSON(app.getAttribute("data-limits")) || {};
+  var imageryCfg = readJSON(app.getAttribute("data-imagery")) || null;   // the imagery source from build.py (D32)
 
   var el = {
     banners: byId("banners"), legendTitle: byId("legend-title"), legendScale: byId("legend-scale"),
@@ -75,13 +78,15 @@
   var data = null;                   // data/map.json
   var map = null;                    // the Leaflet map
   var state = {
-    layer: "precip", mode: "12h", frames: [], times: [], pos: 0, nowPos: 0,
+    layer: "precip", base: "map", mode: "12h", frames: [], times: [], pos: 0, nowPos: 0,
     playing: false, timer: null, resumeOnShow: false, dragging: false,
     warnings: true, reports: params.get("overlay") === "reports", goToken: 0, userMoved: false,
     ready: false,                    // true once the first timeline is built
     autoplay: true                   // play once the first picture shows, unless the viewer chose first (setPlaying)
   };
   var overlays = [], front = 0, swapToken = 0;   // two image overlays, crossfaded
+  var imageryLayer = null;                       // the imagery tile layer (D32): made on the first switch to Imagery
+  var imageryFailed = false;                     // true while the tiles fail (tileerror), until one loads (tileload)
   var cache = {};                                // picture src -> {ok: null|true|false, cbs: []}
   var preloaded = {};                            // layer key -> true once its frames are queued
   var renderers = {};
@@ -230,6 +235,7 @@
     el.reports.checked = state.reports;
     setReports(state.reports, true);
     setLayer(want && data.layers[want] ? want : "precip", { atNow: true, first: true });
+    if (params.get("base") === "imagery") setBase(true, { first: true });   // D32: the page address opens on imagery
     if (CARD) setupCard();        // before the fit: the card's fit keeps Montana above the caption
     fitView();
     if (document.fonts && document.fonts.ready) {   // text first measured in a fallback font: measure again
@@ -1316,6 +1322,7 @@
       if (data.reports.some(function (r) { return r.kind === "wind"; })) keys.push(["key-wind", "Wind report"]);
     }
     if (locState && locState.here && townVisible(locState.here)) keys.push(["key-here", "Your location"]);
+    if (state.base === "imagery" && imageryCfg) keys.push(["key-credit", imageryFailed ? imageryCfg.failed_line : imageryCfg.credit_line]);   // D32: no colour, so its text lines up with the keys
     var html = keys.map(function (k) { return '<li><span class="key ' + k[0] + '" aria-hidden="true"></span>' + esc(k[1]) + "</li>"; }).join("");
     // a frame without the gaps other frames of this timeline have keeps the gap row's room: hidden
     // and last, so it reads as padding
@@ -1393,6 +1400,50 @@
       var L_ = data.layers[k];
       if (sw && L_ && L_.gradient) sw.style.background = L_.gradient;
     });
+  }
+
+  // ------------------------------------------------------------------ base map: white or imagery (D32)
+
+  /** Switch the base map. The white vector map is the default. Imagery (opt-in) is USGS aerial imagery with
+      roads and names: its tile layer is made on the first switch, and the browser asks for tiles only while
+      it is on (a switch, or an address that starts on it). While it is on, the vector base map's land, water,
+      roads, county lines, place dots and names are hidden (is-imagery, map.css); the Montana outline and the
+      state and country borders stay, and so do the weather, the warning outlines, the reports and the bubbles.
+      The zoom limit goes up to the imagery's and back to the map's own (Leaflet zooms out to it when needed).
+      The credit row shows the credit with its privacy words while it is on, and the failure words while tiles
+      fail (setImageryFailed). The card never uses imagery. */
+  function setBase(imagery, opts) {
+    if (CARD || !data || !imageryCfg) return;
+    opts = opts || {};
+    state.base = imagery ? "imagery" : "map";
+    var radios = el.layers.querySelectorAll("input[name=base]");
+    for (var i = 0; i < radios.length; i++) radios[i].checked = radios[i].value === state.base;
+    app.classList.toggle("is-imagery", imagery);
+    if (imagery) {
+      if (!imageryLayer) {
+        imageryLayer = L.tileLayer(imageryCfg.url, { maxZoom: imageryCfg.max_zoom, maxNativeZoom: imageryCfg.max_zoom,
+          tileSize: 256, crossOrigin: "anonymous", pane: "tilePane" });
+        imageryLayer.on("tileerror", function () { setImageryFailed(true); });   // the credit row says so
+        imageryLayer.on("tileload", function () { setImageryFailed(false); });   // and goes back to the credit
+      }
+      imageryFailed = false;         // a switch on starts with the credit; a tile that fails is said again
+      imageryLayer.addTo(map);
+      map.setMaxZoom(imageryCfg.max_zoom);
+    } else {
+      if (imageryLayer) map.removeLayer(imageryLayer);
+      map.setMaxZoom((data.view && data.view.max_zoom) || 11);
+    }
+    renderKeys();                    // the credit row comes and goes with the switch
+    if (!opts.first) saveUrl();
+  }
+
+  /** The credit row while Imagery is on: the failure words (imagery.failed_line from build.py) while tiles fail
+      (Leaflet's tileerror), and the credit with its privacy words (imagery.credit_line) again when one loads
+      (tileload). The words are not written here, so build.py is the one place they change. */
+  function setImageryFailed(failed) {
+    if (imageryFailed === failed) return;
+    imageryFailed = failed;
+    if (state.base === "imagery") renderKeys();
   }
 
   // ------------------------------------------------------------------ playback
@@ -1476,6 +1527,7 @@
     });
     el.layers.addEventListener("change", function (e) {
       if (e.target.name === "layer") setLayer(e.target.value);
+      else if (e.target.name === "base") setBase(e.target.value === "imagery");
       else if (e.target === el.warnings) setWarnings(el.warnings.checked);
       else if (e.target === el.reports) setReports(el.reports.checked);
     });
@@ -1623,6 +1675,7 @@
     var modes = Object.keys(layer().modes || {});
     if (modes.length > 1 && state.mode !== "12h") q.set("mode", state.mode); else q.delete("mode");
     if (state.reports) q.set("overlay", "reports"); else q.delete("overlay");
+    if (state.base === "imagery") q.set("base", "imagery"); else q.delete("base");
     var s = q.toString();
     history.replaceState(null, "", location.pathname + (s ? "?" + s : "") + location.hash);
   }

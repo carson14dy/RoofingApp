@@ -239,6 +239,17 @@ class Collector:
 
 MAP_VIEW = {"bounds": [[44.35, -116.06], [49.01, -104.03]], "min_zoom": 5, "max_zoom": 11}
 
+# The imagery base map (D32): USGS The National Map's aerial imagery with roads and names, as 256 px tiles.
+# The browser asks for tiles only while Imagery is on (map.js setBase): after a switch, or when the address
+# starts on it. The full address is set in one place; the host name also appears in the feed text (sources.py)
+# and in the browser check (tools/smoke_map.py). The two lines are the words the credit row shows (map.js):
+# the credit with the privacy words while Imagery is on, and the line that replaces it while tiles fail.
+IMAGERY = {
+    "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}",
+    "max_zoom": 16, "host": "basemap.nationalmap.gov",
+    "credit_line": "Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS.",
+    "failed_line": "Imagery didn't load from USGS. Outlines and towns are still shown."}
+
 
 def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dict, reports: dict,
              status: dict) -> dict:
@@ -262,7 +273,7 @@ def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dic
     (s_, w_), (n_, e_) = gridded.IMAGE_BOUNDS
     return {
         "version": 1, "built": src._iso(now), "sample": sample, "tz": "America/Denver",
-        "image_bounds": [[s_, w_], [n_, e_]], "view": MAP_VIEW,
+        "image_bounds": [[s_, w_], [n_, e_]], "view": MAP_VIEW, "imagery": IMAGERY,
         "now": radar_times[-1] if radar_times else src._iso(now),
         "layers": layers, "status": status, "towns": out_towns,
         "alerts": {"ok": alerts["ok"], "checked": alerts["checked"], "last_known": alerts.get("last_known"),
@@ -440,7 +451,8 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     base = {"built": now, "built_ms": int(now.timestamp() * 1000),
             "asset_v": asset_versions(out / "static", VERSIONED + ((STORM_JS,) if storm_layers else ())),
             "status": c.status, "sample": sample, "storm_layers": storm_layers, "satellite_text": satellite_text,
-            "limits": src.LIMITS, "offices": OFFICES, "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
+            "limits": src.LIMITS, "imagery": IMAGERY, "offices": OFFICES,
+            "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
             "contracts": {k: v for k, v in src.CONTRACTS.items() if storm_layers or k not in STORM_CONTRACTS},
             "fresh_min": src.FRESH_MINUTES, "qc_words": src.QC_WORDS,
             "qc_rejected": src.QC_REJECTED}

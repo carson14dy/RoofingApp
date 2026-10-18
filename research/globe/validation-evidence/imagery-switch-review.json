@@ -1,0 +1,1073 @@
+{
+ "workstream": "Imagery base map switch (D32), stage D: fixes after the independent review",
+ "slug": "imagery-switch-review",
+ "checked_at_utc": "2026-10-18T02:41:59Z",
+ "branch": "imagery-basemap worktree (nothing committed, pushed or staged)",
+ "base_commit": "9c05feb515e48e152fca513657daf7fc9e6c9efd",
+ "status": "Nothing committed, pushed or staged, and git state is unchanged. git status shows the same 12 tracked files modified as at stage D, plus two untracked files: imagery-switch-verification.json and this record.",
+ "scope": "Every blocking and major finding was reproduced or checked against the live source, then fixed or recorded with evidence. Minor findings were applied when plainly right and cheap; the rest are recorded. Stage E (F29 to F37) ran the supervisor's four follow-ups and recorded what they exposed. Findings F3 and F21, F4 and F18, F2 and F22, and F5 and F26 are the same points, reported twice.",
+ "findings_total": 37,
+ "findings": [
+  {
+   "id": "F1",
+   "severity": "major",
+   "file": "website/templates/about.html",
+   "line": 33,
+   "lens": "rules",
+   "claim": "The About page says USGS says its map services are free and in the public domain, with no exception, for imagery with roads and names.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "Live FAQ 'What are the Terms of Use/Licensing for map services and data from The National Map?' (fetched 2026-10-18): map services and data are free and in the public domain, with an acknowledgment requested. Live FAQ 'Are there any costs or restrictions to usage of data downloaded from The National Map?' (costs FAQ, not the terms FAQ): USGS topographic maps are public domain except three cases that apply only to US Topo maps (produced 2009 to present); most maps from 2010 to 2016 contain commercially licensed road data; Alaska and Hawaii orthoimages. The record's labels-on-globe.json review refuted the unqualified claim for ImageryTopo roads, and its rights matrix says the ImageryTopo road licence is not stated.",
+   "changes": "about.html paragraph now qualifies the public-domain statement (US Topo exceptions; no stated licence for this service's road and name layers). D32 licence bullet. tests/test_site.py: About-page assertions for 'commercially licensed road data', 'has not stated a licence', 'some exceptions'.",
+   "commands": [
+    "curl -sSL <FAQ terms URL> -o imagery-work/fix/usgs-faq.html",
+    "curl -sSL <FAQ costs URL> -o imagery-work/fix/usgs-costs.html",
+    "python3 -I text search of both saved pages for 'public domain', 'except', 'Topo'",
+    "python3 -m unittest discover -s tests"
+   ]
+  },
+  {
+   "id": "F2",
+   "severity": "major",
+   "file": "website/sources.py",
+   "line": 175,
+   "lens": "rules",
+   "claim": "The imagery timing text says USGS says when each area was flown on its own site. Nothing supports that.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "Live service metadata (MapServer?f=pjson, fetched 2026-10-18): copyrightText 'USGS The National Map: Orthoimagery and US Topo. Data refreshed April, 2026.v1.2.'; description: NAIP is the majority source, 1 m, leaf-on; no per-area flight date. A search of research/globe for 'flown', 'flight date', 'acquisition date', 'capture date' and 'acquired' found no USGS statement of flight dates.",
+   "changes": "sources.py timing now: the refresh date (April 2026), the leaf-on NAIP main source, and that this site shows no flight dates. Test asserts 'refreshed in April 2026' and no 'flown'.",
+   "commands": [
+    "curl -sS 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer?f=pjson' -o imagery-work/fix/svc-now.json",
+    "python3 -I read copyrightText and description",
+    "grep -rn -i -E 'flown|flight date|acquisition date|capture date|acquired' research/globe/validation-evidence/*.json research/globe/*.md"
+   ]
+  },
+  {
+   "id": "F3",
+   "severity": "major",
+   "file": "docs/DECISIONS.md",
+   "line": 577,
+   "lens": "rules",
+   "claim": "D32 says USGS is the only imagery source checked that is public domain, needs no key and serves zoom 16. The record shows other public-domain sources, and the conjunctive reading is not stated.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "montana-imagery-buildings.json terms[1]: NAIP 'Media Sources/Usage: Public Domain' (USGS EROS page), and the live service description names NAIP as the majority source. terms[0]: Montana State Library content is public domain for its own content. gibs.json: NASA-led data 'licensed as Creative Commons Zero (CC0)' under NASA's guidance, while base-imagery.json facts[14] records NASA imagery pages saying the imagery is not in the public domain (contested). The GIBS zoom levels checked are 8, 9 and 13 by layer, so no single GIBS zoom limit is stated.",
+   "changes": "D32 'Why' no longer makes a uniqueness claim: it lists the tests the service meets in the record (USGS statement with US Topo exceptions, no key, CORS headers, tiles to zoom 16), says its main imagery is NAIP (public domain by USGS's listing), and leaves the road and name licence open. 'Sources checked and not chosen' states each source's record separately.",
+   "commands": [
+    "python3 -I json reads of montana-imagery-buildings.json terms, base-imagery.json facts and terms_by_source, gibs.json terms",
+    "grep -o -i '.{160}CC0.{120}' research/globe/validation-evidence/*.json"
+   ]
+  },
+  {
+   "id": "F4",
+   "severity": "major",
+   "file": "docs/DECISIONS.md",
+   "line": 578,
+   "lens": "rules",
+   "claim": "D32 says the white map stays the default because it is the look Carson asked for in D28. D28 does not say that.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "D28 (DECISIONS.md lines 359-381) records Carson asking for a map that 'looks like' Apple Weather's precipitation map. It names no white map and gives no reason. The owner's 2026-10-17 decision (keep the existing white vector map after comparing the satellite view) gives no reason either.",
+   "changes": "D32 'Why': Carson kept the white map as the default on 2026-10-17 after comparing the satellite view; the reason was not recorded; the white map is the vector map D28 built.",
+   "commands": [
+    "sed -n '359,381p' docs/DECISIONS.md"
+   ]
+  },
+  {
+   "id": "F5",
+   "severity": "minor",
+   "file": "website/static/map/map.js",
+   "line": 236,
+   "lens": "rules",
+   "claim": "A page opened with ?base=imagery turns imagery on at load and fetches tiles before any click, but the docs say tiles come only after a switch.",
+   "verdict": "confirmed (wording wrong; behaviour is the brief's item 2)",
+   "outcome": "behaviour kept; wording made accurate in stage D; resolved in stage E (follow-up 3): the credit row with the privacy words is on the page as a link opens on Imagery, and the About page and D32 say so",
+   "evidence": "probe_direct.py: map.html?base=imagery made 35 requests to basemap.nationalmap.gov with no click and was on Imagery at once; plain map.html made 0. The privacy line sits inside the closed Layers menu, so it is not seen on arrival (imagery-work/fix/probe-direct.json). The brief's item 2 says a page opened with ?base=imagery starts on imagery. Stage E: probe_e.py ('arrival'): map.html?base=imagery shows Imagery on, the menu closed, and the credit row with the privacy words as its last row; smoke_map check_imagery_direct asserts the words on arrival.",
+   "changes": "Wording now says a link that starts on Imagery can switch it on: DESIGN.md (states paragraph, layout row, data contract, section 4 item 4); sources.py request text; about.html; D32 rule-change and privacy bullets; AGENTS.md rule 4; map.js header and setBase comments; ROADMAP item 17. Behaviour unchanged.",
+   "commands": [
+    "probe_direct.py <built site> (scratch, reads only the built site)",
+    "tests/test_site.py contract and About assertions"
+   ]
+  },
+  {
+   "id": "F6",
+   "severity": "minor",
+   "file": "website/templates/map.html",
+   "line": 123,
+   "lens": "rules",
+   "claim": "The privacy line says only the IP address and the map area go to USGS. The tile request also carries the page's origin and the browser's User-Agent.",
+   "verdict": "confirmed",
+   "outcome": "recorded in D32 with the origin-only Referer (corrected in stage E); owner decision open",
+   "evidence": "probe_refused.py headers mode, real network, flag-on build (stage D): the tile request carries an Origin header and a Referer, the user-agent and client hints, and no cookie header (imagery-work/fix/probe-headers.json). The Referer holds the page's origin only (http://127.0.0.1:PORT/). Stage D's note that it held the full page address was wrong. Stage E re-checked on the final storm build (imagery-work/stage-e/probe-e-on.json, 'headers'): origin http://127.0.0.1:PORT, Referer http://127.0.0.1:PORT/, no cookie header. The browser's default referrer policy sends the origin alone to another site; the live https site was not checked, and the same policy applies there.",
+   "changes": "D32 privacy-line bullet records the Origin header, the origin-only Referer, the User-Agent and client hints, and no cookies. The line's wording is as the brief wrote it; the owner decides whether to add them.",
+   "commands": [
+    "probe_refused.py <flag-on build> <png> headers (scratch)"
+   ]
+  },
+  {
+   "id": "F7",
+   "severity": "minor",
+   "file": "tests/test_site.py",
+   "line": 1240,
+   "lens": "rules",
+   "claim": "The unit test named for the card never having imagery checks only index.html and reports.html, not the card page.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "The card is map.html?card=1 in iframes; the runtime guard is setBase returning when CARD is set; the runtime check is smoke_map check_card_ignores_imagery.",
+   "changes": "Renamed to test_the_white_map_is_the_default_and_the_pages_with_the_card_have_no_imagery, with a comment pointing at check_card_ignores_imagery for the card page itself.",
+   "commands": [
+    "python3 -m unittest discover -s tests"
+   ]
+  },
+  {
+   "id": "F8",
+   "severity": "minor",
+   "file": "docs/DESIGN.md",
+   "line": 370,
+   "lens": "rules",
+   "claim": "'Off again, the zoom comes back to 11' misstates the behaviour, and 'from zoom 9 most of Canada shows a blank white tile' generalises from a few points.",
+   "verdict": "confirmed",
+   "outcome": "fixed (wording)",
+   "evidence": "leaflet.js 1.9.4 setMaxZoom sets the maximum and calls setZoom only when the current zoom is above the new maximum (grep of website/static/leaflet/leaflet.js). Canada at zoom 9 (fetched today): Calgary, Lethbridge and Regina blank; Toronto near-white; Vancouver mostly white; Paris, Sydney and Tokyo 404.",
+   "changes": "DESIGN.md states paragraph: the Canadian places checked, the zoom limit and the view zooming out only above 11.",
+   "commands": [
+    "grep -o 'setMaxZoom:function.\\{0,160\\}' website/static/leaflet/leaflet.js",
+    "curl -sS -o <file> <tile URL>; python3 -I scripts/tile_stats.py"
+   ]
+  },
+  {
+   "id": "F9",
+   "severity": "minor",
+   "file": "docs/DECISIONS.md",
+   "line": 563,
+   "lens": "rules",
+   "claim": "D32 says tiles are about 16 to 38 KB. No measurement reaches 38 KB.",
+   "verdict": "confirmed for the measurements; the 23 to 38 KB figure is a summary note in labels-on-globe.json with no listed measurement",
+   "outcome": "fixed",
+   "evidence": "imagery-switch-verification.json tiles: 15,744 to 32,286 bytes at zoom 7 in the fit view (35 tiles). montana-imagery-buildings.json urls_checked and today's fetch: zoom 16 Billings 35,490 bytes and Missoula 35,716 bytes.",
+   "changes": "D32 'Facts checked' bullet: measured 15.7 to 35.7 KB. The evidence record's observation is corrected.",
+   "commands": [
+    "python3 -I json reads of the evidence files",
+    "curl -sS <zoom 16 tile URLs> into imagery-work/fix/tiles-check/"
+   ]
+  },
+  {
+   "id": "F10",
+   "severity": "minor",
+   "file": "docs/DECISIONS.md",
+   "line": 573,
+   "lens": "rules",
+   "claim": "'Esri (its terms bar it)' is stronger than the record.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "base-imagery.json facts[8]: anonymous use 'not established'. facts[11]: footnote 10 bars programmatic use of session tokens; footnote 74 limits the public plan to personal use.",
+   "changes": "D32 'Sources checked and not chosen' states the two terms and says anonymous coverage is not established.",
+   "commands": [
+    "python3 -I print base-imagery.json facts[8] and facts[11]"
+   ]
+  },
+  {
+   "id": "F11",
+   "severity": "minor",
+   "file": "docs/DECISIONS.md",
+   "line": 570,
+   "lens": "rules",
+   "claim": "D32 credits D30 for a named host list and a privacy line. Those are in research/globe/README.md row D-G15 option (c); D30 only has the site-files rule.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "research/globe/README.md row D-G15 option (c) lists the rule change, the named host list and the privacy line. DECISIONS D30 names the site-files rule only.",
+   "changes": "D32 'History' cites D-G15 for the list and the line, and D30 for the rule.",
+   "commands": [
+    "grep -n 'D-G15' research/globe/README.md",
+    "sed -n of DECISIONS.md D30"
+   ]
+  },
+  {
+   "id": "F12",
+   "severity": "minor",
+   "file": "website/templates/about.html",
+   "line": 34,
+   "lens": "rules",
+   "claim": "The credit quoted as 'USDA, USGS, The National Map' omits US Topo and the Imagery label. The exact acknowledgment USGS asks for is not recorded.",
+   "verdict": "confirmed",
+   "outcome": "fixed in stage E (follow-up 1): the About page quotes USGS's requested acknowledgment verbatim and links the FAQ; the on-screen credit keeps its own words and carries the privacy sentence (supervisor's decision)",
+   "evidence": "Live copyrightText names US Topo. The live FAQ asks for this acknowledgment in products derived from the map services: 'Map services and data available from U.S. Geological Survey, National Geospatial Program.' The record gives USGS's own imagery credit as 'USDA, USGS' (base-imagery.json).",
+   "changes": "About quotes the on-screen credit with its label. D32 records USGS's requested wording and the record's USGS credit, and that the on-screen credit does not use them. The on-screen credit is brief-specified, so it is not changed; naming US Topo or changing the wording is an owner decision. Stage E: about.html has the verbatim quote in its own paragraph, with a link to the USGS FAQ it comes from.",
+   "commands": [
+    "curl live service metadata",
+    "curl live FAQ (usgs-faq.html)",
+    "python3 -I json reads of base-imagery.json terms"
+   ]
+  },
+  {
+   "id": "F13",
+   "severity": "minor",
+   "file": "website/sources.py",
+   "line": 174,
+   "lens": "rules",
+   "claim": "The units text says 'Aerial photographs', but the service also shows NASA Blue Marble at small scales.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "Live description: 'Blue Marble: Next Generation source is displayed at small to medium scales.' The flag-off build must not name the satellite picture, so the reviewer's 'satellite photographs' wording was not used: the first try failed test_flag_off_has_no_satellite_or_band_13_words_in_any_page_or_data_file.",
+   "changes": "Units: 'Aerial photographs with roads, rivers, boundaries and place names, and at small scales a global image; not weather and not evidence'. Test asserts the global-image wording and that 'satellite' is absent.",
+   "commands": [
+    "curl live service metadata",
+    "python3 -m unittest discover -s tests (test_flag_off_has_no_satellite_or_band_13_words_in_any_page_or_data_file)"
+   ]
+  },
+  {
+   "id": "F14",
+   "severity": "minor",
+   "file": "website/build.py",
+   "line": 244,
+   "lens": "rules",
+   "claim": "The comment says the address is named in one place. The host name also appears in the feed text and the browser check.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "grep: the host appears in website/sources.py (feed text) and tools/smoke_map.py (IMAGERY_HOST), besides build.py.",
+   "changes": "Comment now says the full address is set in one place and names where the host also appears.",
+   "commands": [
+    "grep -n 'basemap.nationalmap.gov' website/sources.py website/build.py tools/smoke_map.py"
+   ]
+  },
+  {
+   "id": "F15",
+   "severity": "minor",
+   "file": "docs/DESIGN.md",
+   "line": 145,
+   "lens": "rules",
+   "claim": "Section 4's Map paragraph still says 'USGS topo base in greyscale'. That base map was retired by D28. The line predates this branch.",
+   "verdict": "confirmed",
+   "outcome": "fixed in passing",
+   "evidence": "DECISIONS D28 retired the USGS tiles for the website; the basemap is the vector map.",
+   "changes": "'A white vector base map (inverted in dark mode; the opt-in USGS imagery is in section 8)'.",
+   "commands": [
+    "grep -n 'USGS topo base' docs/DESIGN.md"
+   ]
+  },
+  {
+   "id": "F16",
+   "severity": "blocking",
+   "file": "tools/smoke_map.py",
+   "line": 709,
+   "lens": "technical",
+   "claim": "The browser check says switching back restores the white map and asks for no more tiles, but nothing checks that the tile layer is removed. A leftover tile layer passes the whole smoke test.",
+   "verdict": "confirmed (reproduced)",
+   "outcome": "fixed",
+   "evidence": "Before the fix, the m4 mutant (removeLayer deleted from setBase) passed the flag-on browser check with exit 0 (imagery-work/fix/log-smoke-mut-m4-before.txt). probe_leftover.py: after switching back, the mutant had 1 tile layer, 35 tile images and 35 host images; the good build had 0, 0 and 0 (probe-mut-m4.json, probe-good.json).",
+   "changes": "tools/smoke_map.py: TILE_LAYERS and HOST_PICTURES probes; imagery_gone() waits up to 3 s for both to reach zero; check_imagery_switch asserts this after the first switch back, and again after a second round (switch to Imagery, check that the layer count is 1, switch back, check it is gone). The module docstring says so.",
+   "commands": [
+    "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py <m4 mutant> (after the fix: exit 1, 'switching back to Map left the imagery tile layer on the page (1 layer(s), 24 picture(s)...)' and the second-round message)",
+    "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py <final flag-on build> (exit 0)"
+   ]
+  },
+  {
+   "id": "F17",
+   "severity": "major",
+   "file": "website/sources.py",
+   "line": 176,
+   "lens": "technical",
+   "claim": "The 'missing' text says a tile that fails leaves the white map showing underneath. The About page prints it, and DESIGN.md repeats it. The vector land, roads and names are hidden on Imagery, so the failed-tile view is a near-white field.",
+   "verdict": "confirmed (reproduced)",
+   "outcome": "fixed in stage D (text, and a browser check that locks the behaviour); fixed in stage E (follow-up 2): the credit row shows the failed-tile words from build.py while tiles fail and the credit again when a tile loads, and check_imagery_refused asserts both",
+   "evidence": "probe_refused.py, flag-on build, every imagery request aborted: refused requests 35; imagery on; land 0; lakes, rivers, roads and counties 0; borders 5; names 0; bubbles 10; background rgb(250, 250, 250); credit row still shown; no page errors (probe-refused-before.json; refused-before.png shows a near-white field with the Montana outline, state lines, the town bubbles and our own town names).",
+   "changes": "sources.py 'missing', DESIGN.md failed-tile state and D32 'If a tile does not load' bullet now describe the plain background, the hidden base-map shapes and names, and the bubbles that stay. New smoke_map check_imagery_refused (listed in the checks and the docstring) aborts every imagery request and asserts: imagery on; base-map shapes and names hidden; outline and borders drawn; bubbles and weather picture shown; no script error. Mutant m5 (CSS that stops hiding the base-map shapes and names) fails it with 46 shapes and 38 names drawn with no tiles. Stage E: build.py failed_line; map.js tileerror and tileload handlers and setImageryFailed; smoke_map check_imagery_refused asserts the words, then the return to the credit after the map moves one zoom step.",
+   "commands": [
+    "probe_refused.py <flag-on build> <png> refused (scratch)",
+    "run_one_check.py <tools> <mutant m5 build> check_imagery_refused (scratch driver)",
+    "PW_CHROMIUM=... python3 tools/smoke_map.py <final flag-on build> (exit 0)"
+   ]
+  },
+  {
+   "id": "F18",
+   "severity": "major",
+   "file": "docs/DECISIONS.md",
+   "line": 578,
+   "lens": "technical",
+   "claim": "Same as F4: the D28 attribution for the white default.",
+   "verdict": "confirmed (same as F4)",
+   "outcome": "fixed (same change as F4)",
+   "evidence": "See F4.",
+   "changes": "See F4.",
+   "commands": [
+    "sed -n '359,381p' docs/DECISIONS.md"
+   ]
+  },
+  {
+   "id": "F19",
+   "severity": "minor",
+   "file": "research/globe/validation-evidence/imagery-switch-verification.json",
+   "line": null,
+   "lens": "technical",
+   "claim": "The record says that on a short landscape phone the credit row is hidden until the info button opens the legend.",
+   "verdict": "wrong",
+   "outcome": "fixed in the evidence record",
+   "evidence": "probe_landscape.py, imagery on: at 667x375, 740x360 and 844x390 the credit row starts at 363 px (not in view). The info button shows the note and pushes the credit to 430 px. The legend column scrolls (213 px visible of 291 px at 667x375); after scrolling, the credit is at 284 to 313 px, in view (probe-landscape.json).",
+   "changes": "The observation is corrected in imagery-switch-verification.json: the credit is reached by scrolling the legend, not by the info button.",
+   "commands": [
+    "probe_landscape.py <flag-on build> (scratch)"
+   ]
+  },
+  {
+   "id": "F20",
+   "severity": "minor",
+   "file": "docs/DECISIONS.md",
+   "line": 566,
+   "lens": "technical",
+   "claim": "Calgary, Lethbridge, Regina and Toronto all get a blank white tile of about 2.4 to 2.8 KB at zoom 9.",
+   "verdict": "confirmed for Toronto (near-white, not blank)",
+   "outcome": "fixed",
+   "evidence": "Fetched today and decoded: Calgary, Lethbridge, Regina 2,419 bytes, mean luma 255.0, std 0.0 (blank). Toronto 2,767 bytes, mean 254.7, std 6.0, 99.7% of pixels at 250 or more (near-white). Vancouver 8,197 bytes, mean 247.2, 90.8% at 250 or more (mostly white). Paris, Sydney and Tokyo 404 (tiles-check/stats.json).",
+   "changes": "D32 and DESIGN.md say blank for three, near-white for Toronto, and mostly white for Vancouver; the evidence observation is corrected.",
+   "commands": [
+    "curl -sS <z9 tile URLs> into imagery-work/fix/tiles-check/",
+    "python3 -I scripts/tile_stats.py fetch.json tiles-check stats.json"
+   ]
+  },
+  {
+   "id": "F21",
+   "severity": "minor",
+   "file": "docs/DECISIONS.md",
+   "line": 577,
+   "lens": "technical",
+   "claim": "The 'only one that is public domain' sentence is a superlative about a provider (AGENTS.md rule 9).",
+   "verdict": "confirmed (same text as F3)",
+   "outcome": "fixed (same change as F3)",
+   "evidence": "See F3.",
+   "changes": "See F3.",
+   "commands": [
+    "see F3"
+   ]
+  },
+  {
+   "id": "F22",
+   "severity": "minor",
+   "file": "website/sources.py",
+   "line": 175,
+   "lens": "technical",
+   "claim": "The 'flown on its own site' claim has no record behind it.",
+   "verdict": "confirmed (same claim as F2)",
+   "outcome": "fixed (same change as F2)",
+   "evidence": "See F2.",
+   "changes": "See F2.",
+   "commands": [
+    "see F2"
+   ]
+  },
+  {
+   "id": "F23",
+   "severity": "minor",
+   "file": "website/templates/about.html",
+   "line": 33,
+   "lens": "technical",
+   "claim": "The credit 'USDA, USGS, The National Map' is presented as USGS's stated credit. The record gives USGS's own credit as 'USDA, USGS'.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "base-imagery.json terms: the imagery credit reads 'USDA, USGS'. The on-screen credit adds the service name.",
+   "changes": "D32 'Licence' bullet gives both; About quotes the on-screen credit with its label.",
+   "commands": [
+    "python3 -I json reads of base-imagery.json terms"
+   ]
+  },
+  {
+   "id": "F24",
+   "severity": "minor",
+   "file": "tests/test_site.py",
+   "line": 475,
+   "lens": "technical",
+   "claim": "The test named test_map_page_loads_only_files_from_this_site overstates the rule now that the imagery tiles are an exception.",
+   "verdict": "confirmed",
+   "outcome": "fixed",
+   "evidence": "The test checks the default page's script, link and image tags. The tiles are not in any tag; map.js asks for them only while Imagery is on.",
+   "changes": "Renamed to test_map_page_tags_load_only_site_files, with a comment naming the D32 exception. research/globe/validation-evidence/judge-engineering.json:90 cites the old name as a record of what was read on disk; that record is historical and was not edited.",
+   "commands": [
+    "python3 -m unittest discover -s tests"
+   ]
+  },
+  {
+   "id": "F25",
+   "severity": "minor",
+   "file": "docs/DECISIONS.md",
+   "line": 344,
+   "lens": "technical",
+   "claim": "D28's 'Nothing from third-party servers but data' is unqualified, and D32 does not say it amends that line.",
+   "verdict": "confirmed, with a citation correction: the line is in D27 (heading at line 314; D28 begins at line 359), not D28",
+   "outcome": "fixed",
+   "evidence": "grep of the decision headings and the line's position.",
+   "changes": "D32 'Rule change' bullet says it amends the D27 line 'Nothing from third-party servers but data', and AGENTS.md rule 4.",
+   "commands": [
+    "grep -n '^\\*\\*D2[78] ' docs/DECISIONS.md",
+    "grep -n 'Nothing from third-party servers' docs/DECISIONS.md"
+   ]
+  },
+  {
+   "id": "F26",
+   "severity": "minor",
+   "file": "website/templates/map.html",
+   "line": 123,
+   "lens": "technical",
+   "claim": "A page opened with ?base=imagery starts on imagery and fetches tiles at once, and the privacy sentence is shown only in the Layers menu and on About.",
+   "verdict": "confirmed (same as F5)",
+   "outcome": "resolved in stage E (follow-up 3), the same point as F5",
+   "evidence": "See F5 (probe_direct.py: 35 requests with no click).",
+   "changes": "See F5.",
+   "commands": [
+    "probe_direct.py <flag-on build> (scratch)"
+   ]
+  },
+  {
+   "id": "F27",
+   "severity": "minor",
+   "file": "website/templates/map.html",
+   "line": 123,
+   "lens": "technical",
+   "claim": "On a 667x375 landscape phone the Imagery choice sits below the bottom of the Layers menu on first view.",
+   "verdict": "confirmed",
+   "outcome": "accepted by the supervisor (2026-10-18); DESIGN.md section 8 and its states say so and give the stage E figures",
+   "evidence": "probe_menu.py: the menu box is 56 to 363 px and scrolls (305 px visible, 487 px tall). The Imagery label is at 356 to 433 px (not in view); the Map label at 310 to 354 px. At 1280x800 the Imagery label is at 312 to 389 px (in view). Stage E (probe_e2.py): with the longer credit row, the legend box at 667x375 is 110 to 325 px and the credit row (363 to 434 px) is below it; after the legend is scrolled to its end, the credit row is at 242 to 313 px.",
+   "changes": "None. Moving the Base map group would change a menu order that tests check, and the choice is reachable by scrolling and the keyboard.",
+   "commands": [
+    "probe_menu.py <flag-on build> (scratch)"
+   ]
+  },
+  {
+   "id": "F28",
+   "severity": "minor",
+   "file": "research/globe/validation-evidence/imagery-switch-verification.json",
+   "line": null,
+   "lens": "technical",
+   "claim": "The record asks for screenshots at 1280x800 and 390x844 in both modes 'for the record' but has none in the repo.",
+   "verdict": "confirmed",
+   "outcome": "stated plainly in the record; PNGs not committed",
+   "evidence": "The earlier record says the PNG files are not in the repo, which is still true. The review's pictures from the final flag-on build are in imagery-work/fix/shots-final-storm/ (desktop-map, desktop-imagery, phone-map, phone-imagery).",
+   "changes": "The record's screenshots entry says the PNGs are outside the repo and gives the command that makes them: PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py <built site> --shots <dir>.",
+   "commands": [
+    "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py imagery-work/fix/final-storm --shots imagery-work/fix/shots-final-storm"
+   ]
+  },
+  {
+   "id": "F29",
+   "severity": "major",
+   "file": "website/build.py (IMAGERY credit_line); website/static/map/map.js (renderKeys)",
+   "line": null,
+   "lens": "follow-up 1",
+   "claim": "While Imagery is on, the credit row said only 'Imagery: USDA, USGS, The National Map'. The privacy sentence was in the Layers menu, which is closed by default, and on the About page, so a viewer looking at the map was not told that their IP address and the map area they view go to USGS.",
+   "verdict": "confirmed (follow-up 1 of the supervisor's list, owner-delegated)",
+   "outcome": "fixed (stage E): build.py's credit_line reads 'Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS.'; map.js shows it while Imagery is on; smoke_map asserts the sentence on the switch and on arrival; the unit tests pin the words.",
+   "changes": "build.py IMAGERY (credit_line and failed_line replace the old credit key; url and host unchanged); map.js renderKeys; smoke_map PRIVACY and the credit checks in check_imagery_switch and check_imagery_direct; tests/test_site.py ImageryBaseMap and ImageryPages; D32; DESIGN.md section 8 and its data contract; ROADMAP item 17.",
+   "evidence": "stage-e/probe-e-on.json 'arrival': the credit row with the sentence, Imagery on, menu closed. Mutant C (the sentence removed from the data that the browser check reads) is in verification.stage_e.mutants.",
+   "commands": [
+    "python3 -m website.build --out <dir> --sample --now 2026-10-18T12:00:00Z (and --storm-layers)",
+    "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py <dir>",
+    "python3 -m unittest discover -s tests"
+   ]
+  },
+  {
+   "id": "F30",
+   "severity": "major",
+   "file": "website/static/map/map.js (setBase, setImageryFailed); website/build.py (failed_line)",
+   "line": null,
+   "lens": "follow-up 2",
+   "claim": "When every imagery tile failed, the credit row still showed the credit and nothing said that the tiles had failed, so a reader could take the plain background for a working layer (stage D, F17, which left the words open).",
+   "verdict": "confirmed (follow-up 2 of the supervisor's list)",
+   "outcome": "fixed (stage E): a tile error (tileerror) puts build.py's failed_line in the row in place of the credit, and a tile load (tileload) puts the credit back. check_imagery_refused asserts the failure words, that the credit is not shown while failing, and the return to the credit.",
+   "changes": "map.js: tileerror and tileload handlers on the imagery layer; setImageryFailed; the flag is reset on each switch on; renderKeys shows failed_line while the flag is set. smoke_map check_imagery_refused. tests/test_site.py asserts the words and that map.js holds neither line.",
+   "evidence": "Mutant A (no tileerror handler) and mutant E (the credit shown while failing) fail check_imagery_refused; mutant B (no tileload handler) fails its return step; the good build passes (verification.stage_e.mutants).",
+   "commands": [
+    "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py <build> (good build and four mutants)"
+   ]
+  },
+  {
+   "id": "F31",
+   "severity": "minor",
+   "file": "website/templates/about.html; docs/DECISIONS.md (D32); docs/DESIGN.md",
+   "line": null,
+   "lens": "follow-up 3",
+   "claim": "A link that opens on Imagery (map.html?base=imagery) loads the tiles as the page opens, and the privacy sentence was not on the page then, because it sat in the closed Layers menu (stage D, F5 and F26).",
+   "verdict": "confirmed (stage D probe: 35 tile requests with no click; the sentence not visible as the page opened)",
+   "outcome": "decided and recorded (stage E, follow-up 3): the credit row with the privacy words is on the page from the start, so the arrival case has the line; the About page says a link that opens on Imagery loads the tiles as the page opens; D32 and DESIGN.md say so; smoke_map check_imagery_direct asserts the words on arrival.",
+   "changes": "about.html (the arrival sentence in the Base map paragraph); D32 privacy bullet; DESIGN.md section 8 and the states; smoke_map check_imagery_direct; tests/test_site.py About assertions.",
+   "evidence": "stage-e/probe-e-on.json 'arrival': Imagery on, the menu closed, and the credit row with the sentence as the last row.",
+   "commands": [
+    "probe_e.py <flag-on build> (scratch, stage E)",
+    "smoke_map check_imagery_direct"
+   ]
+  },
+  {
+   "id": "F32",
+   "severity": "minor",
+   "file": "tools/smoke_map.py (check_empty_layer_switch; check())",
+   "line": null,
+   "lens": "technical",
+   "claim": "check_empty_layer_switch waited for the load event on its page.goto. The held precipitation pictures keep that event open, so the check timed out under load ('Page.goto: Timeout 30000ms exceeded'), and the wrapper reported 'a check could not run: ...' without naming the check. The wait is pre-existing: the base commit has the same wait_until='load' in this check.",
+   "verdict": "confirmed (pre-existing at 9c05feb; the fix stage's full runs timed out in this check)",
+   "outcome": "changed (stage E, follow-up 4): page.goto waits for domcontentloaded; the check's own wait for the is-loading class is the readiness signal (the class is set only once a picture starts loading, after the controls are wired); the wrapper names the check: 'a check could not run (check_empty_layer_switch): ...'. The rate of the timeout before and after is not measured: the six stage E runs passed, and no load was added.",
+   "changes": "tools/smoke_map.py only.",
+   "evidence": "git --no-pager show 9c05feb:tools/smoke_map.py: check_empty_layer_switch has page.goto(..., wait_until='load'); imagery-work/fix/log-smoke-final-default.txt (the timeout, stage D); the stage E full runs are in verification.stage_e.browser_runs.",
+   "commands": [
+    "git --no-pager show 9c05feb:tools/smoke_map.py",
+    "PW_CHROMIUM=... python3 tools/smoke_map.py <build> (stage E)"
+   ]
+  },
+  {
+   "id": "F33",
+   "severity": "minor",
+   "file": "website/sources.py (imagery missing); docs/DESIGN.md (section 8 states); docs/DECISIONS.md (D32)",
+   "line": null,
+   "lens": "technical",
+   "claim": "The imagery contract, DESIGN.md and D32 said the base map's roads, lakes, rivers, counties and names 'stay hidden until a tile loads'. The rule (website/static/map/map.css, #app.is-imagery) has no tile condition: they stay hidden for as long as Imagery is on.",
+   "verdict": "confirmed (the is-imagery rule does not depend on tiles)",
+   "outcome": "fixed (stage E): the wording says 'while Imagery is on' in sources.py, DESIGN.md and D32.",
+   "changes": "sources.py missing text; DESIGN.md states paragraph; D32 failed-tile bullet; tests/test_site.py asserts the phrase.",
+   "evidence": "website/static/map/map.css: the #app.is-imagery rule for .bm-land, .bm-lake, .bm-river, .bm-road, .bm-county and .bm-label.",
+   "commands": [
+    "grep -n 'is-imagery' website/static/map/map.css"
+   ]
+  },
+  {
+   "id": "F34",
+   "severity": "minor",
+   "file": "docs/DECISIONS.md (D32 privacy line); research/globe/validation-evidence/imagery-switch-verification.json",
+   "line": null,
+   "lens": "technical",
+   "claim": "The Referer of a tile request was described as the full page address on the local test server. The probe shows the origin only.",
+   "verdict": "wrong as written in stage D; confirmed by the probes",
+   "outcome": "fixed (stage E): D32 and the records say the Referer holds the origin only; re-checked on the final storm build.",
+   "changes": "D32 privacy bullet; the verification record (the stage D observation is corrected in the update script, and a stage E observation is added); F6 above.",
+   "evidence": "imagery-work/fix/probe-headers.json (stage D) and imagery-work/stage-e/probe-e-on.json (stage E): Referer 'http://127.0.0.1:PORT/' for a page at map.html.",
+   "commands": [
+    "probe_e.py <flag-on build> (stage E)"
+   ]
+  },
+  {
+   "id": "F35",
+   "severity": "minor",
+   "file": "docs/DESIGN.md (section 8 states); docs/DECISIONS.md (D32 failed-tile bullet)",
+   "line": null,
+   "lens": "technical",
+   "claim": "A tile that answers 404 (outside the United States above zoom 8: Paris, Sydney and Tokyo at zoom 9) fires the tile error too, so the credit row says the imagery didn't load for that tile. The words describe what happened, not why.",
+   "verdict": "confirmed (every tile answering 404 shows the failure words)",
+   "outcome": "recorded (stage E): DESIGN.md and D32 say a 404 counts as a failed tile; no code change.",
+   "changes": "DESIGN.md states; D32 failed-tile bullet.",
+   "evidence": "imagery-work/stage-e/probe-e-on.json 'all_404': with every imagery request answered 404, the row shows the failure words.",
+   "commands": [
+    "probe_e.py <flag-on build> (stage E)"
+   ]
+  },
+  {
+   "id": "F36",
+   "severity": "minor",
+   "file": "website/build.py (failed_line); docs/DECISIONS.md (D32)",
+   "line": null,
+   "lens": "rules",
+   "claim": "While every tile fails, the failure words replace the credit row, so the privacy sentence is off the row. The requests were still sent; the Layers menu and the About page keep the sentence.",
+   "verdict": "confirmed by the code and by check_imagery_refused (the failure row has no sentence)",
+   "outcome": "open for the owner: the words are the ones the supervisor specified; recorded in D32 and in the open list. Not changed.",
+   "changes": "None. The owner decides whether the failure line should also carry the sentence.",
+   "evidence": "check_imagery_refused (stage E) reads the failure words in the row, with every request refused.",
+   "commands": [
+    "smoke_map check_imagery_refused"
+   ]
+  },
+  {
+   "id": "F37",
+   "severity": "minor",
+   "file": "docs/DESIGN.md (section 8); website/build.py (credit_line)",
+   "line": null,
+   "lens": "technical",
+   "claim": "With the privacy sentence in the credit row, the legend on a portrait phone is much taller: 210 px at 390 px wide (151 px without Imagery), 271 px at 320 px (182 px), and 400 px at 288 px (283 px). The stage D figure (181 px at 390 px) was for the shorter credit.",
+   "verdict": "measured (stage E probe)",
+   "outcome": "recorded in DESIGN.md section 8 with the stage E figures; open for the owner: shorten the credit on small screens, or accept.",
+   "changes": "DESIGN.md section 8 figures.",
+   "evidence": "imagery-work/stage-e/probe-e-on.json 'legend' (390x844, 320x568 and 288x640; legend height with Imagery off and on).",
+   "commands": [
+    "probe_e.py <flag-on build> (stage E)"
+   ]
+  }
+ ],
+ "verification": {
+  "unit_tests": {
+   "command": "python3 -m unittest discover -s tests",
+   "result": "Ran 378 tests, OK (the base commit had 363; the count is unchanged by this review). The review renamed two tests and changed several assertions; no test was removed.",
+   "log": "imagery-work/fix/log-unittest-3.txt",
+   "stage_e": "Stage E: Ran 378 tests in 52.061s, OK. No test function was added or removed; assertions were updated for the new words and the About text. A second run after the documentation edits, same command: Ran 378 tests in 50.209s, OK (imagery-work/stage-e/unittest-last.txt)."
+  },
+  "sample_builds_and_diffs": {
+   "commands": [
+    "python3 -m website.build --out <dir> --sample --now 2026-10-18T12:00:00Z (default)",
+    "python3 -m website.build --out <dir> --sample --storm-layers --now 2026-10-18T12:00:00Z (flag on)",
+    "base: git archive 9c05feb extracted to imagery-work/fix/base-src (read only; git state unchanged), built the same way",
+    "diff -rq base final"
+   ],
+   "result": "Default: 91 files each; 86 byte-identical; 5 differ (about.html, data/map.json, map.html, static/map/map.css, static/map/map.js). Flag on: 93 files each; 88 byte-identical; the same 5 differ. map.json gains only the imagery key; map.html gains the data-imagery attribute, the Base map fieldset and new asset hashes; about.html gains the Base map paragraph and the imagery contract row; map.css and map.js gain only the imagery rules and comments.",
+   "logs": [
+    "imagery-work/fix/log-final-default.txt",
+    "imagery-work/fix/log-final-storm.txt",
+    "imagery-work/fix/diff-base-default-vs-final-default.txt",
+    "imagery-work/fix/diff-base-storm-vs-final-storm.txt"
+   ]
+  },
+  "smoke_map_flag_on_final": {
+   "command": "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py imagery-work/fix/final-storm --shots imagery-work/fix/shots-final-storm",
+   "result": "PASS (exit 0), no Note lines: the desktop tile answered HTTP 200 image/jpeg and was drawn; the switch, the layer removal and the second round all passed.",
+   "log": "imagery-work/fix/log-smoke-final-storm.txt"
+  },
+  "smoke_pages_flag_on_final": {
+   "command": "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_pages.py imagery-work/fix/final-storm",
+   "result": "PASS: every page fits the screen at 288, 320, 375, 768 and 1440 px, light and dark.",
+   "log": "imagery-work/fix/log-smokepages-final-storm.txt"
+  },
+  "smoke_map_default_final": {
+   "command": "PW_CHROMIUM=/opt/pw-browsers/chromium python3 tools/smoke_map.py imagery-work/fix/final-default",
+   "result": "Formal run: see log. Logged re-runs of the same build: log-smoke-final-default.txt: timeout, log-smoke-final-default-formal.txt: missing, log-logged-final-default.txt: pass, log-rep-final-default-1.txt: timeout, log-rep-final-default-2.txt: pass, log-rep-final-default-3.txt: pass.",
+   "log": "imagery-work/fix/log-smoke-final-default-formal.txt",
+   "earlier_direct_run_log": "imagery-work/fix/log-smoke-final-default.txt"
+  },
+  "mutant_leftover_layer_m4": {
+   "command": "python3 tools/smoke_map.py <copy of the flag-on build with removeLayer deleted from setBase>",
+   "before_the_fix": "exit 0 (passed; the gap is real): imagery-work/fix/log-smoke-mut-m4-before.txt",
+   "after_the_fix": "exit 1 with the leftover-layer messages (first round and second round): imagery-work/fix/log-smoke-mut-m4-after-fix.txt and log-smoke-mut-m4-final.txt"
+  },
+  "mutant_base_map_visible_m5": {
+   "command": "run_one_check.py <tools> <copy of the flag-on build with the CSS rule that hides the base map removed> check_imagery_refused",
+   "result": "Fails: 46 shape(s) of the base map drawn with no tiles and 38 name(s) shown with no tiles."
+  },
+  "probes_scratch_outside_repo": [
+   "imagery-work/fix/scripts/probe_leftover.py (leftover layer)",
+   "scripts/probe_refused.py (all imagery requests aborted; headers mode)",
+   "scripts/probe_direct.py (link opens on Imagery)",
+   "scripts/probe_landscape.py (credit row, short landscape)",
+   "scripts/probe_menu.py (Layers menu rows)",
+   "scripts/tile_coords.py, scripts/tile_stats.py (tiles, decoded in isolated Python)",
+   "scripts/run_logged.py, scripts/repeat_empty_layer.py, scripts/run_one_check.py (checks with timing)"
+  ],
+  "flake": {
+   "check": "check_empty_layer_switch (existing, unchanged from the base commit)",
+   "mechanism": "The check holds every precipitation picture with page.route and then calls page.goto(..., wait_until='load'). If map.js requests a picture before the load event, the load event waits on the held request and goto times out after 30 s. Which happens depends on timing.",
+   "isolated_runs": "Run alone, the check passed 8 of 8 times on the base build and 8 of 8 times on the final build (repeat_empty_layer.py).",
+   "under_added_cpu_load": "Four CPU-bound processes added: the base build's check timed out on its fifth run (4 passes, then the timeout); the final build passed all 6 runs.",
+   "full_runs_final_storm": {
+    "pass": 8,
+    "timeout": 1,
+    "fail": 0,
+    "missing": 0
+   },
+   "full_runs_final_default": {
+    "pass": 3,
+    "timeout": 2,
+    "fail": 0,
+    "missing": 1
+   },
+   "full_runs_base_flag_on_interleaved_with_final": {
+    "pass": 5,
+    "timeout": 0,
+    "fail": 0,
+    "missing": 0
+   },
+   "full_runs_base_default_old_tool_low_load": {
+    "pass": 5,
+    "timeout": 0,
+    "fail": 0,
+    "missing": 0
+   },
+   "full_runs_pre_edit_flag_on": {
+    "pass": 1,
+    "timeout": 1,
+    "fail": 0,
+    "missing": 0
+   },
+   "timed_out_check_by_log": {
+    "log-rep-final-storm-3.txt": "check_empty_layer_switch",
+    "log-rep-final-default-1.txt": "check_empty_layer_switch"
+   },
+   "outcome": "Pre-existing timing flake (present at 9c05feb). Stage E changed the check's goto to domcontentloaded and the wrapper names the check (F32). Not reproduced in the six stage E full runs, which added no load, so the change is not shown to cure it under load. The stage E runs are in verification.stage_e.browser_runs."
+  },
+  "stage_e": {
+   "builds": [
+    "final-off: python3 -m website.build --out <dir> --sample --now 2026-10-18T12:00:00Z (91 files)",
+    "final-on: the same with --storm-layers (93 files)"
+   ],
+   "unit_tests": {
+    "command": "python3 -m unittest discover -s tests (in the worktree)",
+    "result": "Ran 378 tests in 52.061s, OK",
+    "log": "stage-e/unittest-final.txt"
+   },
+   "browser_runs": [
+    {
+     "log": "stage-e/smoke-final-off-1.txt",
+     "outcome": "pass",
+     "notes": [],
+     "problems": [],
+     "run": "smoke-final-off-1",
+     "build": "final-off (default)"
+    },
+    {
+     "log": "stage-e/smoke-final-off-2.txt",
+     "outcome": "pass",
+     "notes": [],
+     "problems": [],
+     "run": "smoke-final-off-2",
+     "build": "final-off (default)"
+    },
+    {
+     "log": "stage-e/smoke-final-on-1.txt",
+     "outcome": "pass",
+     "notes": [],
+     "problems": [],
+     "run": "smoke-final-on-1",
+     "build": "final-on (--storm-layers)"
+    },
+    {
+     "log": "stage-e/smoke-final-on-2.txt",
+     "outcome": "pass",
+     "notes": [],
+     "problems": [],
+     "run": "smoke-final-on-2",
+     "build": "final-on (--storm-layers)"
+    }
+   ],
+   "page_width_runs": [
+    {
+     "log": "stage-e/smokepages-final-off.txt",
+     "outcome": "pass",
+     "notes": [],
+     "problems": [],
+     "run": "smokepages-final-off",
+     "build": "final-off (default)"
+    },
+    {
+     "log": "stage-e/smokepages-final-on.txt",
+     "outcome": "pass",
+     "notes": [],
+     "problems": [],
+     "run": "smokepages-final-on",
+     "build": "final-on (--storm-layers)"
+    }
+   ],
+   "runner_summary": [
+    "smoke-final-off-1 exit 0 in 36s",
+    "smoke-final-off-2 exit 0 in 37s",
+    "smoke-final-on-1 exit 0 in 46s",
+    "smoke-final-on-2 exit 0 in 47s",
+    "smokepages-final-off exit 0 in 20s",
+    "smokepages-final-on exit 0 in 19s",
+    "DONE"
+   ],
+   "mutants": [
+    {
+     "log": "stage-e/smoke-mut-a.txt",
+     "outcome": "fail",
+     "notes": [],
+     "problems": [
+      "imagery refused: the credit row does not say that imagery didn't load (rows: ['1 NWS alert has no outline (county or zone): see List', 'Town numbers: NWS forecast, °F', 'No radar coverage', 'Outside map area', 'Warning area (NWS)', 'Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS.'])",
+      "imagery refused: the credit row still shows the credit while the tiles are refused"
+     ],
+     "mutant": "A",
+     "what": "map.js without the tileerror handler (the credit row never says the tiles failed)",
+     "expected": "fail"
+    },
+    {
+     "log": "stage-e/smoke-mut-b.txt",
+     "outcome": "fail",
+     "notes": [],
+     "problems": [
+      "imagery refused: a tile loaded, but the credit row does not show the credit with its privacy words (rows: ['1 NWS alert has no outline (county or zone): see List', 'Town numbers: NWS forecast, °F', 'No radar coverage', 'Outside map area', 'Warning area (NWS)', \"Imagery didn't load from USGS. Outlines and towns are still shown.\"])"
+     ],
+     "mutant": "B",
+     "what": "map.js without the tileload handler (the credit does not come back when a tile loads)",
+     "expected": "fail"
+    },
+    {
+     "log": "stage-e/smoke-mut-c2.txt",
+     "outcome": "fail",
+     "notes": [],
+     "problems": [
+      "imagery: the credit line in map.json has no privacy words (D32)"
+     ],
+     "mutant": "C",
+     "what": "the privacy sentence removed from credit_line in map.html and data/map.json (the data the check reads); the first run, before the standalone privacy assertion was added, passed (smoke-mut-c.txt); this run is after it",
+     "expected": "fail"
+    },
+    {
+     "log": "stage-e/smoke-mut-e.txt",
+     "outcome": "fail",
+     "notes": [],
+     "problems": [
+      "imagery refused: the credit row does not say that imagery didn't load (rows: ['1 NWS alert has no outline (county or zone): see List', 'Town numbers: NWS forecast, °F', 'No radar coverage', 'Outside map area', 'Warning area (NWS)', 'Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS.'])",
+      "imagery refused: the credit row still shows the credit while the tiles are refused"
+     ],
+     "mutant": "E",
+     "what": "map.js shows the credit line while the tiles fail (no failure words)",
+     "expected": "fail"
+    }
+   ],
+   "probes": {
+    "probe_e": {
+     "headers": {
+      "tile_requests": 35,
+      "page_url": "http://127.0.0.1:42133/map.html?base=imagery",
+      "origin": "http://127.0.0.1:42133",
+      "referer": "http://127.0.0.1:42133/",
+      "cookie": "(not sent)",
+      "user_agent_start": "Mozilla/5.0 (X11; Linux x86_64) AppleWeb",
+      "client_hints": [
+       "sec-ch-ua",
+       "sec-ch-ua-mobile",
+       "sec-ch-ua-platform"
+      ]
+     },
+     "arrival": {
+      "is_imagery": true,
+      "rows_last": [
+       "Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS."
+      ],
+      "menu_open": false
+     },
+     "all_404": {
+      "failed_words_shown": true,
+      "rows_last": [
+       "Imagery didn't load from USGS. Outlines and towns are still shown."
+      ]
+     },
+     "legend": {
+      "390x844": {
+       "imagery_off": {
+        "legend_h": 151,
+        "client_h": 149,
+        "scroll_h": 149
+       },
+       "imagery_on": {
+        "legend_h": 210,
+        "client_h": 208,
+        "scroll_h": 208,
+        "twocol": true,
+        "credit_top": 271,
+        "credit_bottom": 328,
+        "credit_lines": 4
+       }
+      },
+      "320x568": {
+       "imagery_off": {
+        "legend_h": 182,
+        "client_h": 180,
+        "scroll_h": 180
+       },
+       "imagery_on": {
+        "legend_h": 271,
+        "client_h": 269,
+        "scroll_h": 269,
+        "twocol": true,
+        "credit_top": 302,
+        "credit_bottom": 389,
+        "credit_lines": 5
+       }
+      },
+      "288x640": {
+       "imagery_off": {
+        "legend_h": 283,
+        "client_h": 281,
+        "scroll_h": 281
+       },
+       "imagery_on": {
+        "legend_h": 400,
+        "client_h": 398,
+        "scroll_h": 398,
+        "twocol": true,
+        "credit_top": 403,
+        "credit_bottom": 518,
+        "credit_lines": 7
+       }
+      },
+      "667x375": {
+       "imagery_off": {
+        "legend_h": 215,
+        "client_h": 213,
+        "scroll_h": 258
+       },
+       "imagery_on": {
+        "legend_h": 215,
+        "client_h": 213,
+        "scroll_h": 334,
+        "twocol": false,
+        "credit_top": 363,
+        "credit_bottom": 434,
+        "credit_lines": 4
+       }
+      },
+      "740x360": {
+       "imagery_off": {
+        "legend_h": 200,
+        "client_h": 198,
+        "scroll_h": 258
+       },
+       "imagery_on": {
+        "legend_h": 200,
+        "client_h": 198,
+        "scroll_h": 334,
+        "twocol": false,
+        "credit_top": 363,
+        "credit_bottom": 434,
+        "credit_lines": 4
+       }
+      },
+      "844x390": {
+       "imagery_off": {
+        "legend_h": 230,
+        "client_h": 228,
+        "scroll_h": 258
+       },
+       "imagery_on": {
+        "legend_h": 230,
+        "client_h": 228,
+        "scroll_h": 334,
+        "twocol": false,
+        "credit_top": 363,
+        "credit_bottom": 434,
+        "credit_lines": 4
+       }
+      },
+      "1280x800": {
+       "imagery_off": {
+        "legend_h": 344,
+        "client_h": 342,
+        "scroll_h": 342
+       },
+       "imagery_on": {
+        "legend_h": 420,
+        "client_h": 418,
+        "scroll_h": 418,
+        "twocol": false,
+        "credit_top": 403,
+        "credit_bottom": 475,
+        "credit_lines": 4
+       }
+      }
+     }
+    },
+    "probe_e2": {
+     "landscape": {
+      "667x375": {
+       "legend_top_bottom": [
+        110,
+        325
+       ],
+       "credit_before_scroll": [
+        363,
+        434
+       ],
+       "credit_after_legend_scroll": [
+        242,
+        313
+       ],
+       "viewport_h": 375
+      },
+      "740x360": {
+       "legend_top_bottom": [
+        110,
+        310
+       ],
+       "credit_before_scroll": [
+        363,
+        434
+       ],
+       "credit_after_legend_scroll": [
+        227,
+        298
+       ],
+       "viewport_h": 360
+      },
+      "844x390": {
+       "legend_top_bottom": [
+        110,
+        340
+       ],
+       "credit_before_scroll": [
+        363,
+        434
+       ],
+       "credit_after_legend_scroll": [
+        257,
+        328
+       ],
+       "viewport_h": 390
+      }
+     },
+     "width": {
+      "288x640": {
+       "scroll_w": 288,
+       "client_w": 288,
+       "body_scroll_w": 288
+      },
+      "320x568": {
+       "scroll_w": 320,
+       "client_w": 320,
+       "body_scroll_w": 320
+      },
+      "375x667": {
+       "scroll_w": 375,
+       "client_w": 375,
+       "body_scroll_w": 375
+      },
+      "390x844": {
+       "scroll_w": 390,
+       "client_w": 390,
+       "body_scroll_w": 390
+      },
+      "768x1024": {
+       "scroll_w": 768,
+       "client_w": 768,
+       "body_scroll_w": 768
+      },
+      "1280x800": {
+       "scroll_w": 1280,
+       "client_w": 1280,
+       "body_scroll_w": 1280
+      },
+      "1440x900": {
+       "scroll_w": 1440,
+       "client_w": 1440,
+       "body_scroll_w": 1440
+      }
+     }
+    }
+   },
+   "screenshots": [
+    "desktop-imagery.png",
+    "desktop-map.png",
+    "phone-imagery.png",
+    "phone-map.png",
+    "refused-desktop.png",
+    "refused-phone.png"
+   ]
+  },
+  "screenshots_stage_e": {
+   "kept_at": "imagery-work/final-on/shots/ (scratch, not in the repo)",
+   "read_by_eye": "Viewed 2026-10-18: desktop-map, desktop-imagery, phone-map, phone-imagery (the --shots pictures of the final storm-layers run), and refused-desktop and refused-phone (every imagery request refused). The credit row with the privacy sentence is legible and sits in the legend; the imagery is under the weather frame; the town bubbles and names show; no sideways overflow. The refused pictures show the failure words in the row, the plain background, the outline, borders, bubbles and weather frame, with the base map's own shapes and names hidden. The phone legend is taller with imagery (about 210 px at 390 px wide), and the map keeps usable room."
+  }
+ },
+ "open_for_owner": [
+  "Licence for the ImageryTopo road and name data: USGS states none, and its US Topo exception covers commercially licensed road data in most 2010 to 2016 maps. Not a clearance.",
+  "Privacy line: whether to add the request headers (the Origin header, the origin-only Referer, the User-Agent and the client hints). D32 records them (F6, F34).",
+  "Failure words: while every tile fails, the words replace the credit row, so the privacy sentence is off the row (F36). Keep the words as specified, or add the sentence?",
+  "Phone legend: the privacy sentence makes the legend 210 px at 390 px wide (151 px without) and 400 px at 288 px (283 px without). Shorten the credit on small screens, or accept? (F37)",
+  "Town bubble names: whether a bubble's name should be hidden while Imagery is on, because USGS draws its own names.",
+  "Outage behaviour: an answer from USGS that is not 200 image/jpeg fails the browser check, and no answer at all is only a note. Should an outage be a note too?",
+  "Contract wording: whether the imagery contract should mention the contour lines that USGS draws at high zoom.",
+  "Layers menu: whether the Map and Imagery rows should align with the weather labels (cosmetic)."
+ ],
+ "notes": [
+  "Stage E: the fix stage's wrapper note is resolved. The smoke test's wrapper now names the check that could not run (F32).",
+  "Stage E: the stage D correction script was run as a corrected copy (imagery-work/stage-e/scripts/update_evidence_d.py). Three statements the probe files do not support were changed before it ran: the Referer (origin only), 'at once', and the menu row. The fix stage's original script is unchanged.",
+  "Stage E: the two-step check of the failed tiles is in check_imagery_refused. The tiles are let through by unrouting the host and moving the map one zoom step, because Leaflet does not ask again for a tile that failed. A mutant with no tileload handler fails at that step, so the check tests the return to the credit and not only the layer switch.",
+  "Two of the review's citations were corrected while checking: the line 'Nothing from third-party servers but data' is in D27 (not D28), and the imagery credit's 'USDA, USGS' is the record's USGS credit, not the product credit.",
+  "The review's 'satellite photographs' wording for the units was not used: the flag-off build must not name the satellite picture, and the test that enforces it caught the first attempt.",
+  "Scratch outputs are under imagery-work/fix/ (stage D) and imagery-work/stage-e/ (stage E), and are not in the repo. Repo checks: tools/smoke_map.py, tools/smoke_pages.py, tests/test_site.py."
+ ],
+ "decided_2026_10_18": [
+  "Credit row: the privacy sentence is on the credit row while Imagery is on (follow-up 1, F29). The About page quotes USGS's requested acknowledgment verbatim and links the FAQ (F12).",
+  "Failed tiles: the credit row says that imagery didn't load while tiles fail, and the credit comes back when a tile loads (follow-up 2, F30).",
+  "A link that opens on Imagery: the credit row with the privacy words is on the page from the start, and the About page says the tiles load as the page opens (follow-up 3, F31).",
+  "Short landscape phones: the Imagery choice's scroll on first view is accepted; DESIGN.md section 8 says so (F27)."
+ ]
+}

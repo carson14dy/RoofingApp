@@ -28,6 +28,17 @@
     {% endif %}
   </ul>
 
+  <h2>Base map imagery</h2>
+  <p>The map's base is a white map of public outlines. In the Layers menu you can switch it to aerial imagery with roads and
+    names from USGS, The National Map. USGS says its map services are free and in the public domain. Its topographic maps
+    have some exceptions: USGS says most US Topo maps from 2010 to 2016 contain commercially licensed road data, and it has
+    not stated a licence for this service's road and name layers. The credit on the map reads "Imagery: USDA, USGS, The
+    National Map". The imagery is off unless you switch it on or open a link that switches it on. A link that opens on
+    Imagery loads the tiles as the page opens. Your IP address and the map area you view go to USGS while it is on. The white
+    map makes no request to any other site.</p>
+  <p>USGS asks that products derived from its map services carry this acknowledgment: "Map services and data available from
+    U.S. Geological Survey, National Geospatial Program." (<a href="https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map">USGS FAQ: terms of use and licensing for map services</a>)</p>
+
   <h2>Flags</h2>
   <p>An hour is flagged for gusts of {{ limits.gust_mph }}&nbsp;mph or more, sustained wind of {{ limits.wind_mph }}&nbsp;mph or more, a
     {{ limits.pop_pct }}% or higher chance of rain or snow, or a temperature under {{ limits.cold_f }}&nbsp;°F or over {{ limits.hot_f }}&nbsp;°F.

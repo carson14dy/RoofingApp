@@ -15,6 +15,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
@@ -352,7 +353,7 @@ class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
         self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "stations",
                                               "observations", "reports", "radar", "forecast_model", "storm_levels",
-                                              "satellite", "basemap"})
+                                              "satellite", "basemap", "imagery"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
@@ -471,7 +472,10 @@ class SampleBuild(unittest.TestCase):
         self.assertEqual(r["map"]["temp"]["frames"], 13)
         self.assertEqual(r["map"]["wind"]["frames"], 13)
 
-    def test_map_page_loads_only_files_from_this_site(self):
+    def test_map_page_tags_load_only_site_files(self):
+        # The page's own tags (scripts, stylesheets, icons) name only this site's files. The one exception, the
+        # USGS imagery tiles (D32), is not in any tag: map.js asks for them only while Imagery is on, from the
+        # address in data-imagery; ImageryBaseMap checks where that address appears.
         html = page(self.out, "map.html")
         for needed in ("static/leaflet/leaflet.js", "static/leaflet/leaflet.css", "static/map/map.js",
                        "static/map/map.css", "data/map.json", "static/map/basemap.json"):
@@ -1190,6 +1194,183 @@ class StormLayers(unittest.TestCase):
                 contextlib.redirect_stderr(err):
             self.assertEqual(site.main(argv), 1)
         self.assertIn("Sources that failed or were stale: satellite", err.getvalue())
+
+
+class ImageryBaseMap(unittest.TestCase):
+    """The imagery base map (D32): the one place the browser fetches from off this site. The address is
+    build.py's IMAGERY. The Map page reads it from data-imagery and data/map.json carries it; map.js holds no
+    address or host name (AGENTS.md rule 4). The default map is the white one, and the card never uses imagery."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-imagery-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, NOW, sample=True)
+
+    def test_the_address_is_https_on_one_named_host(self):
+        url, host = site.IMAGERY["url"], site.IMAGERY["host"]
+        parts = urllib.parse.urlsplit(url)
+        self.assertEqual((parts.scheme, parts.netloc), ("https", host))
+        self.assertEqual(host, "basemap.nationalmap.gov")                  # USGS The National Map
+        self.assertIn("/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}", url)   # the service's order: row, then column
+        self.assertEqual(site.IMAGERY["max_zoom"], 16)
+
+    def test_the_address_is_only_in_the_map_page_attribute_and_map_json(self):
+        url, host = site.IMAGERY["url"], site.IMAGERY["host"]
+        html = page(self.out, "map.html")
+        found = re.findall(r"data-imagery='([^']*)'", html)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(json.loads(found[0]), site.IMAGERY)
+        self.assertNotIn(host, html.replace(found[0], ""))                  # the host is named nowhere else on the page
+        self.assertEqual(json.loads(page(self.out, "data/map.json"))["imagery"], site.IMAGERY)
+        for path in self.out.rglob("*"):
+            if not path.is_file() or path.suffix not in (".html", ".json", ".js", ".css"):
+                continue
+            name = path.relative_to(self.out).as_posix()
+            if name not in ("map.html", "data/map.json"):
+                self.assertNotIn(url, path.read_text(encoding="utf-8"), name)
+
+    def test_map_js_holds_no_address_or_host_name(self):
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8").lower()
+        for needle in ("http:", "https:", "nationalmap", "usgsimagery", ".gov"):
+            self.assertNotIn(needle, js, needle)
+        # the credit row's words come from build.py (imagery.credit_line and failed_line), not from the script
+        for words in ("your ip address", "didn't load from usgs", "outlines and towns are still shown", "imagery: usda"):
+            self.assertNotIn(words, js, words)
+
+    def test_the_white_map_is_the_default_and_the_pages_with_the_card_have_no_imagery(self):
+        # The card's own page (map.html?card=1) is checked at run time by tools/smoke_map.py
+        # (check_card_ignores_imagery); here the pages that embed the card carry no imagery.
+        html = page(self.out, "map.html")
+        self.assertIn('<legend>Base map</legend>', html)
+        self.assertIn('<input type="radio" name="base" value="map" checked>', html)
+        self.assertNotIn('value="imagery" checked', html)
+        for name in ("index.html", "reports.html"):
+            self.assertNotIn("data-imagery", page(self.out, name), name)
+            self.assertNotIn('name="base"', page(self.out, name), name)
+
+    def test_the_switch_has_its_privacy_line_and_the_about_page_says_it_is_off_by_default(self):
+        html = " ".join(page(self.out, "map.html").split())
+        self.assertIn('<input type="radio" name="base" value="imagery"><span class="choice-text">Imagery<small>'
+                      "Aerial imagery with roads and names from USGS. Your IP address and the map area you view go to "
+                      "USGS while it is on.</small>", html)
+        about = " ".join(page(self.out, "about.html").split())
+        self.assertIn("Base map imagery", about)
+        self.assertIn("in the public domain", about)
+        self.assertIn("commercially licensed road data", about)              # the US Topo exception, as USGS states it
+        self.assertIn("has not stated a licence for this service's road and name layers", about)
+        self.assertIn("USDA, USGS, The National Map", about)
+        self.assertIn("The imagery is off unless you switch it on or open a link that switches it on.", about)
+        self.assertIn("A link that opens on Imagery loads the tiles as the page opens.", about)
+
+    def test_the_imagery_feed_says_what_it_is_and_where_it_stops(self):
+        c = src.CONTRACTS["imagery"]
+        self.assertIn("basemap.nationalmap.gov", c["request"])
+        self.assertIn("only after they switch the base map to Imagery", c["request"])
+        self.assertIn("at small scales a global image", c["units"])          # the service also shows Blue Marble
+        self.assertNotIn("satellite", c["units"])                            # the flag-off build names no satellite picture
+        self.assertIn("not weather and not evidence", c["units"])
+        self.assertIn("shown to zoom 16", c["timing"])
+        self.assertIn("Outside the United States, tiles above zoom 8 are blank or missing", c["missing"])
+
+    def test_the_storm_layers_build_has_the_same_switch(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-imagery-on-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, NOW, sample=True, storm_layers=True)
+        self.assertIn('<input type="radio" name="base" value="imagery">', page(out, "map.html"))
+        self.assertEqual(json.loads(page(out, "data/map.json"))["imagery"], site.IMAGERY)
+
+
+class ImageryPages(unittest.TestCase):
+    """The imagery base map (D32) on the pages, and the helpers the browser check (tools/smoke_map.py) uses. The default
+    map page asks no other site for a script, stylesheet, icon or frame; the base map choice sits in the Layers menu
+    after the weather layers; the About page carries the privacy line; the credit and the zoom are the design's."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-imagery-pages-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, NOW, sample=True)
+
+    def test_the_default_map_page_has_no_off_site_script_link_image_or_frame(self):
+        html = page(self.out, "map.html")
+        tags = re.findall(r"<(?:script|link|img|iframe)\b[^>]*>", html, re.IGNORECASE)
+        self.assertGreater(len(tags), 5)                       # its scripts, stylesheets and icons are all there
+        off = [t for t in tags if re.search(r"""\b(?:src|href|srcset)\s*=\s*["']?\s*(?:https?:)?//""", t, re.IGNORECASE)]
+        self.assertEqual(off, [])
+
+    def test_the_base_map_choice_is_in_the_layers_menu_after_the_weather_layers(self):
+        html = page(self.out, "map.html")
+        menu = html[html.index('id="layers"'):]
+        menu = menu[:menu.index("</section>")]
+        weather_end = menu.index("</fieldset>")           # the weather layers' fieldset closes first
+        self.assertLess(menu.index('name="layer"'), weather_end)
+        self.assertGreater(menu.index('name="base"'), weather_end)
+        self.assertLess(menu.index("<legend>Base map</legend>"), menu.index('name="base"'))
+
+    def test_the_tile_address_is_on_the_element_that_holds_the_map(self):
+        tag = re.search(r'<main id="app"[^>]*>', page(self.out, "map.html"))
+        self.assertIsNotNone(tag, 'map.html has no <main id="app">')
+        self.assertIn("data-imagery=", tag.group(0))
+
+    def test_the_about_page_has_the_privacy_line_the_credit_and_the_public_domain_statement(self):
+        about = " ".join(page(self.out, "about.html").split())
+        self.assertIn("Your IP address and the map area you view go to USGS while it is on.", about)
+        self.assertIn("USDA, USGS, The National Map", about)
+        self.assertIn("public domain", about)
+        self.assertIn("some exceptions", about)                              # the public-domain statement is qualified
+        # USGS's requested acknowledgment, verbatim, with a link to the USGS FAQ it comes from (checked 2026-10-18)
+        self.assertIn('"Map services and data available from U.S. Geological Survey, National Geospatial Program."', about)
+        self.assertIn("https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map", about)
+
+    def test_the_imagery_config_has_its_fields_and_the_two_words_the_credit_row_shows(self):
+        self.assertEqual(set(site.IMAGERY), {"url", "max_zoom", "host", "credit_line", "failed_line"})
+        self.assertEqual(site.IMAGERY["credit_line"], "Imagery: USDA, USGS, The National Map. Your IP address and the "
+                         "map area you view go to USGS.")
+        self.assertEqual(site.IMAGERY["failed_line"], "Imagery didn't load from USGS. Outlines and towns are still shown.")
+        self.assertTrue(site.IMAGERY["url"].endswith("/tile/{z}/{y}/{x}"))
+
+    def test_the_contract_names_the_feed_and_its_limits_as_the_design_does(self):
+        c = src.CONTRACTS["imagery"]
+        self.assertEqual(c["name"], "USGS National Map imagery (ImageryTopo), base map")
+        self.assertIn("USGSImageryTopo tiles", c["request"])
+        self.assertIn("refreshed in April 2026", c["timing"])                # USGS's service metadata, checked 2026-10-18
+        self.assertNotIn("flown", c["timing"])                               # no flight-date source is recorded
+        self.assertIn("leaves a plain near-white background", c["missing"])
+        self.assertIn("the credit row says that imagery didn't load until a tile loads", c["missing"])
+        self.assertIn("roads, lakes, rivers, counties and names stay hidden while Imagery is on", c["missing"])
+        self.assertNotIn("white map showing underneath", c["missing"])       # the vector base map is hidden, not under
+
+    def test_the_zoom_is_read_back_from_the_width_of_a_picture_overlay(self):
+        class FakePage:
+            def __init__(self, width):
+                self.width = width
+
+            def evaluate(self, *args):
+                return self.width
+
+        data = {"image_bounds": [[43.0, -118.5], [50.5, -101.0]]}      # 17.5 degrees of longitude
+        for zoom in (5.0, 6.75, 11.0, 16.0):
+            width = 256 * 2 ** zoom * 17.5 / 360                       # the overlay's width on screen at this zoom
+            self.assertAlmostEqual(smoke_map().map_zoom(FakePage(width), data), zoom, places=6)
+        self.assertIsNone(smoke_map().map_zoom(FakePage(0), data))     # no overlay on the page: no reading
+
+    def test_the_browser_check_refuses_an_imagery_entry_that_is_not_https_on_the_named_host(self):
+        smoke = smoke_map()
+        good = {"url": site.IMAGERY["url"], "max_zoom": 16, "credit_line": "x", "host": "basemap.nationalmap.gov"}
+        self.assertIsNone(smoke.imagery_problem({"imagery": good}))
+        self.assertIn("no imagery entry", smoke.imagery_problem({}))
+        self.assertIn("not https", smoke.imagery_problem({"imagery": {**good, "url": good["url"].replace("https:", "http:")}}))
+        self.assertIn("not https", smoke.imagery_problem({"imagery": {**good, "url": "https://example.org/{z}/{y}/{x}"}}))
+
+
+def smoke_map():
+    """tools/smoke_map.py, loaded by path (it is a script, not a package; its browser code runs only when called)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("smoke_map", ROOT / "tools" / "smoke_map.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class MapLabels(unittest.TestCase):
