@@ -11,8 +11,14 @@ name: Website
 # the Actions tab if the site stops updating. Every page says how old it is.
 
 on:
+  # Off the top of the hour: a measured experiment adopted 2026-10-18 (docs/DECISIONS.md, D33).
+  # From 2026-10-16 19:42 to 2026-10-17 08:57 UTC (about 13 hours) the */10 schedule on main started
+  # 4 times, with gaps of 151.5, 141.6 and 264.5 minutes. GitHub's docs say scheduled runs can be
+  # delayed at high load, "High load times include the start of every hour", and queued jobs may be
+  # dropped. To judge the change, count the scheduled runs in the 24 hours after this merges (144 is
+  # every 10 minutes) and compare the count with those 4 runs.
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "7,17,27,37,47,57 * * * *"
   workflow_dispatch:
   push:
     branches: [main, "claude/**", "codex/**"]
