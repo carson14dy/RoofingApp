@@ -3,7 +3,7 @@
     python -m website.build --out _site                 # live data (needs internet)
     python -m website.build --out _site --sample        # labelled sample data, no network
     python -m website.build --out _site --require-live  # fail if any source failed (preview checks)
-    python -m website.build --out _site --storm-layers  # also NOAA radar echo tops (text) and the GOES satellite picture
+    python -m website.build --out _site --storm-layers  # also NOAA radar echo tops (text), the GOES satellite picture and the hail swath layers
     python -m website.build --out _site --hail-history  # also the five-year hail history (website/hail.py)
     python -m website.build --out _site --sample --hail-history --hail-store store.tar.gz  # a local store, not the download
 
@@ -47,8 +47,10 @@ class Collector:
         self.status: dict[str, dict] = {}
         self.replaced: set[str] = set()        # alert ids a newer message in this build's responses replaced
 
-    def note(self, key, label, ok, detail="", when=None):
+    def note(self, key, label, ok, detail="", when=None, words=None):
         self.status[key] = {"label": label, "ok": ok, "detail": detail, "when": src._iso(when or self.now)}
+        if words:                  # a sentence the pages print after the detail (live-1: the all-clear line)
+            self.status[key]["words"] = words
 
     def alerts(self):
         doc, err = self.f.json(f"{src.NWS}/alerts/active", {"area": "MT"})
@@ -238,6 +240,42 @@ class Collector:
         layer, st = sat.build_satellite(out_dir, get, self.now, sample=sample)
         self.note("satellite", sat.LABEL, bool(st.get("ok")), st.get("detail") or "not built")
         return layer
+
+    def swath(self, out_dir: Path, sample: bool, towns: list) -> tuple[dict, list]:
+        """The live hail swath layers for the map (website/swath.py; --storm-layers only): the newest 60-minute and
+        24-hour pictures, and their live files in hail/live/<window>/<stamp>/ (D14). Returns (the two layers for
+        data/map.json, hail_60 and hail_1440, and the plain-words lines for the List and the panel). One status
+        line for both layers, named "Hail swath (radar estimate)": it is ok only when both are fresh."""
+        from . import swath as sw
+        fetch = getattr(self.f, "binary", None)
+        get = fetch if fetch else (lambda url, headers=None: (None, "no downloader"))
+        frames, _files, states = sw.collect(self.now, None, out_dir, towns, get=get, sample=sample)
+        blocks = sw.map_data_swath(frames)
+        pieces = []
+        for product in sw.PRODUCTS:
+            block, frame = blocks[product.key], frames[product.key]
+            # the legend's stops carry their size in inches with the class word (every colour with its word)
+            block["legend"] = [{**e, "label": f"{e['value']:.2f} in, {e['label']}"} for e in block["legend"]]
+            block["legend_uncoloured"] = sw.WORDS_SWATH["uncoloured"].format(window=product.window_word)   # its own line (map.css)
+            block["window_word"] = product.window_word
+            block["kind"] = "hail_swath"             # map.js: the layer's kind (its frame is "hail_swath" too)
+            block["words"].update(SWATH_SITE_WORDS)
+            pieces.append(self._swath_status(product, frame))
+        ok = all(s["ok"] for s in states.values())
+        self.note("hail_swath", sw.LABEL, ok, "; ".join(pieces),
+                  words=None if ok else sw.WORDS_SWATH["all_clear"])
+        lines = [{"title": sw.PRODUCT_BY_KEY[key].title, "lines": sw.describe(frames[key], self.now, towns)}
+                 for key in ("hail_60", "hail_1440")]
+        return blocks, lines
+
+    @staticmethod
+    def _swath_status(product, frame: dict) -> str:
+        """One layer's part of the status line, in plain words: its state and when its file was made."""
+        if frame.get("state") == "unavailable":
+            return SWATH_SITE_WORDS["status_unavailable"].format(title=product.title, problem=frame.get("problem"))
+        key = "status_stale" if frame.get("state") == "stale" else "status_fresh"
+        return SWATH_SITE_WORDS[key].format(title=product.title, valid=frame["valid_text"], age=frame["age_min"],
+                                            limit=int(product.fresh.total_seconds() // 60))
 
     def hail(self, out_dir: Path, sample: bool, store: str | None, towns: list) -> dict:
         """The five-year hail history (website/hail.py; --hail-history only). The store's hail/ files are copied
@@ -448,7 +486,7 @@ VERSIONED = ("style.css", "map/map.js", "map/map.css", "map/basemap.json")
 
 STORM_JS = "map/storm.js"   # places the storm text in the Map's List and town sheets; --storm-layers only
 # Feeds listed on the About page only in a --storm-layers build (their words and layers ship with the flag)
-STORM_CONTRACTS = ("storm_levels", "satellite")
+STORM_CONTRACTS = ("storm_levels", "satellite", "hail_swath")
 
 # The five-year hail history (--hail-history only; website/hail.py holds the words and the store format)
 HAIL_LABEL = "Hail history (radar estimates)"        # the status line's name
@@ -461,6 +499,25 @@ HAIL_SITE_WORDS = {"fetch_failed": "the history for this spot didn't load in thi
 HAIL_STALE_DAYS = hs.STALE_DAYS    # map.js: an as_of older than this (in days) shows the stale line
 HAIL_AT_ZOOM = 9                   # map.js: ?at=lat,lon opens at this zoom, or the current one if it is higher
 HAIL_TENTHS_PER_MM = 10            # map.js: the store's tenths of a millimetre, for the millimetre text
+
+# The hail swath layers (B4, --storm-layers only): the words the Map page shows that website/swath.py does not hold.
+# map.js fills the {placeholders} from data/map.json "words" (the module's WORDS_SWATH and these), and writes none.
+SWATH_SITE_WORDS = {
+    "list_heading": "Hail swath (radar estimate)",
+    "hatch_key": "No radar coverage",                    # the legend key for hatched cells (-3 in the product)
+    "hatch_note": "Hatched areas have no radar coverage.",
+    "hatch_key_out": "No radar coverage on this map",    # hatched cells with the band outside the picture in view
+    "hatch_note_out": "Hatched areas have no radar coverage on this map.",
+    "no_picture": "No picture in this update.",          # the timeline when the layer has no picture at all
+    "live_loading": "Loading the live radar estimate for this spot.",
+    "live_failed": "The live radar estimate for this spot could not be loaded. This is not an all-clear.",
+    # the status line's parts (joined with "; "; the List and the banner add their own full stop)
+    "status_fresh": "{title}: valid {valid}, {age} min ago",
+    "status_stale": "{title}: valid {valid}, {age} min ago. That is more than {limit} minutes old, so it may be "
+                    "out of date",
+    "status_unavailable": "{title}: {problem}",
+    "sample_credit": "SAMPLE: invented values, not NOAA data.",   # a sample build's List and panel
+}
 
 
 def asset_versions(static: Path, names=VERSIONED) -> dict:
@@ -500,8 +557,10 @@ def hail_store(out: Path, store: str | None, sample: bool, fetch) -> dict:
 
 
 def _copy_hail(root: Path, out: Path, index: dict) -> dict:
-    """Copy root/hail/ into the site as out/hail/ (the shards the map and the town pages read)."""
-    shutil.copytree(root / "hail", out / "hail")
+    """Copy root/hail/ into the site as out/hail/ (the shards the map and the town pages read). The folder may already
+    hold the swath's live files (hail/live, B4, written before this copy in a --storm-layers build), so the copy merges
+    into it: the store has no live folder, so no file of either is replaced."""
+    shutil.copytree(root / "hail", out / "hail", dirs_exist_ok=True)
     return index
 
 
@@ -646,10 +705,13 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     reports = c.reports()
     layers = c.gridded(out, sample)
     satellite_text = None
+    swath_text = None
     if storm_layers:
         from . import satellite as sat
         layers["satellite"] = c.satellite(out, sample)
         satellite_text = sat.describe(layers["satellite"], c.status["satellite"], now)
+        swath_layers, swath_text = c.swath(out, sample, towns)     # hail_60 and hail_1440 (B4)
+        layers.update(swath_layers)
     if storm_layers:
         storms = c.storm(towns, sample)
         for t in towns:
@@ -659,6 +721,7 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     base = {"built": now, "built_ms": int(now.timestamp() * 1000),
             "asset_v": asset_versions(out / "static", VERSIONED + ((STORM_JS,) if storm_layers else ())),
             "status": c.status, "sample": sample, "storm_layers": storm_layers, "satellite_text": satellite_text,
+            "swath_text": swath_text, "swath_site": SWATH_SITE_WORDS,
             "hail_history": hail_history, "hail_words": hs.WORDS if hail_history else None,
             "limits": src.LIMITS, "imagery": IMAGERY, "offices": OFFICES,
             "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
@@ -696,7 +759,7 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
                                       for s in t["obs"]["stations"]] for t in towns if t["obs"]["stations"]}}
     (out / "data" / "state.json").write_text(json.dumps(state, indent=1), encoding="utf-8")
     (out / ".nojekyll").write_text("", encoding="utf-8")
-    content = content_sample(alerts, towns, reports, satellite_text)
+    content = content_sample(alerts, towns, reports, satellite_text, swath_text)
     if hail_history:                         # --hail-history only: each town's hail line, for the build log
         content["hail"] = {t["name"]: t["hail"]["lead"] or t["hail"]["unavailable"] or t["hail"]["outside"]
                            for t in towns}
@@ -722,7 +785,7 @@ def map_summary(layers: dict) -> dict:
     return out
 
 
-def content_sample(alerts, towns, reports, satellite_text: str | None = None) -> dict:
+def content_sample(alerts, towns, reports, satellite_text: str | None = None, swath_text: list | None = None) -> dict:
     """What the pages say, in brief, for the build log: rule 7 asks for a look at the content,
     not just a 200. The workflow prints the town table in the run summary."""
     out = {
@@ -738,6 +801,8 @@ def content_sample(alerts, towns, reports, satellite_text: str | None = None) ->
     }
     if satellite_text:                       # --storm-layers only
         out["satellite"] = satellite_text
+    if swath_text:                           # --storm-layers only: the two hail swath layers' lines (B4)
+        out["hail_swath"] = {layer["title"]: layer["lines"] for layer in swath_text}
     return out
 
 
@@ -767,8 +832,9 @@ def main(argv=None) -> int:
     ap.add_argument("--previous", help="URL of the live site, for last-known alerts if NWS fails")
     ap.add_argument("--require-live", action="store_true", help="exit 1 if any source failed")
     ap.add_argument("--storm-layers", action="store_true",
-                    help="also read NOAA radar echo tops for each town (text only) and the GOES satellite "
-                         "picture for the map; off by default")
+                    help="also read NOAA radar echo tops for each town (text only), the GOES satellite "
+                         "picture and the live hail swath layers (last hour, last 24 hours) for the map; "
+                         "off by default")
     ap.add_argument("--hail-history", action="store_true",
                     help="also the five-year hail history: the store's files, a cell history on the map and a "
                          "section on each town page; off by default")

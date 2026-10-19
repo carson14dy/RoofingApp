@@ -139,7 +139,8 @@ CONTRACTS = {
                  "NWS forecast grid point's elevation in metres, not a surveyed terrain height.",
         "timing": "A new set every 2 minutes. A set older than 30 minutes is reported as stale, the same limit as "
                   "the radar frames.",
-        "missing": "-99 and -999 mean no radar value; their meaning is not verified, and they are never a value or 0. "
+        "missing": "-99 and -999 mean no radar value: -99 is missing and -999 is no coverage (NOAA's MRMS GRIB2 "
+                   "user table, versions 12.0 to 12.2). They are never a value, never 0. "
                    "Heights below the town's ground height are counted and not used. A town whose NWS grid height "
                    "didn't load gets 'Echo top not available', never a value. No echo at 35 dBZ is not an all-clear. "
                    "A radar estimate, not observed hail or damage.",
@@ -158,6 +159,14 @@ CONTRACTS = {
         "missing": "Fill values, raw values outside the file's valid range, quality flags other than 0 and cells outside "
                    "the satellite's grid are hatched as no satellite data, never drawn as clear sky. If the file doesn't "
                    "load, the map says so and shows no satellite picture. Not an all-clear.",
+    },
+    # --storm-layers builds only (build.py STORM_CONTRACTS): the live hail swath layers (B4)
+    "hail_swath": {
+        "name": "NOAA MRMS MESH hail swath, last hour and last 24 hours (radar estimates)",
+        "request": "noaa-mrms-pds.s3.amazonaws.com, CONUS/MESH_Max_60min_00.50 (GRIB2 parameter 30, a file every 2 minutes) and CONUS/MESH_Max_1440min_00.50 (parameter 34, a file every 30 minutes). Each build lists today's folder (yesterday's when today's is empty, just after 00:00 UTC), takes the newest file of each product and downloads it once (a gzipped GRIB2 file). The grid is regular latitude and longitude, 7,000 by 3,500 cells of 0.01 degree, from 54.995 degrees north, 230.005 degrees east (stored 0 to 360) to 20.005 degrees north, 299.995 degrees east.",
+        "units": "Millimetres (NOAA's GRIB2 user table, UserTable_MRMS_v12.2: MESH (maximum estimated size of hail) and its maxima), stored in tenths of a millimetre. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact (513 tenths: 2.01 in, 51.3 mm). Size classes start at 0.25 in (64 tenths), 0.75 in (191), 1.00 in (254), 1.50 in (381), 2.00 in (508) and 2.75 in (699). A radar estimate of the largest hail over each 0.01 degree cell, about 0.7 miles north to south and 0.5 miles east to west, in the last hour or the last 24 hours.",
+        "timing": "The hour file is new every 2 minutes: fresh within 20 minutes of its valid time, stale to 60 minutes, then unavailable. The 24-hour file is new every 30 minutes: fresh within 60 minutes, stale to 120 minutes, then unavailable. The valid time is the header's date and time in UTC and must equal the file name's time. The valid time is the end of the window. The window comes from the parameter number (30 is 60 minutes, 34 is 1,440 minutes) and must match the folder. A stale picture is drawn and says so.",
+        "missing": "-1 is missing and -3 is no coverage in NOAA's table; neither is stored as a value or as 0. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart. Cells under 0.25 in (64 tenths) are not drawn and not written to the live files. A cell with no coverage is hatched, and its tile's live file lists it as no radar coverage. A file that is missing, unreadable, or does not match its time or window, and a request that fails, make the layer unavailable with its reason and no picture. This is not an all-clear. An estimate, not observed hail and not damage.",
     },
     "basemap": {
         "name": "Map outlines and names",

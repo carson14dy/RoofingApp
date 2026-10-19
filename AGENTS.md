@@ -25,8 +25,8 @@ shipped. Its rules below (1–3) apply only if work on it resumes.
 ## Layout
 ```
 website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · gridded.py (MRMS radar
-           + HRRR model → map frames) · storm.py and satellite.py (radar echo tops and the GOES
-           band 13 picture, both behind --storm-layers) · build.py (collect → frames + data/map.json →
+           + HRRR model → map frames) · storm.py, satellite.py and swath.py (radar echo tops, the GOES
+           band 13 picture and the MRMS hail swath, all behind --storm-layers) · build.py (collect → frames + data/map.json →
            pages) · sample.py (labelled sample data) · towns.json · templates/ · static/ (style, Leaflet,
            fonts, map/ = map.js, map.css, basemap.json)
            hail.py (hail history: grid, size words, store readers, daily build; --hail-history) · hail_fixture_data.py (the
@@ -40,7 +40,7 @@ payload/   the parked app — updates itself. app.py (routes) · weather.py (fee
            rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
 desktop/   the shell — changes only with a new installer. launcher.py (window, local server,
            notifications, recovery page) · updater.py (GitHub updates, self-test, rollback)
-tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
+tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_swath.py, test_hail.py, test_joins.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
            update channel vs fake GitHub
 build.py   PyInstaller build      ship.py   test → bump version → commit → push
 ```

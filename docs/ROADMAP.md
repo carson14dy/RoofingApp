@@ -42,6 +42,11 @@ Measured for the daily job (`hail-store.yml`), in the re-check: run time, bytes 
 
 Measured for the joins (`website/joins.py`) in the re-check: the Benchland rows (B2-1), the counts against the research (B2-2), the bytes of `j/`, `z/` and `s/` against their budgets, the job's run time, the requests and failures per source, the two-run hashes (B2-8), and the Chromium widths and off-site requests (B2-7); round 4 measured them, and the record holds the results (the cold-cache run is not measured). The record is `research/hail-history/validation-evidence/b2-verification.json`.
 
+## Built, not merged: live hail swaths behind `--storm-layers` (D37)
+| Area | What works | Limits |
+|---|---|---|
+| Live hail swaths (Next 11 and 19; D37; branch `claude/hail-b4`, not merged) | Two MRMS MESH layers on the Map behind `--storm-layers`: the last hour (a file every 2 minutes) and the last 24 hours (every 30 minutes). Each is one picture with a legend of six classes, each with its word; hatched no-coverage cells; and a line on the clicked cell's sheet. The module checks each file's units, codes, valid time and window, downloads the newest file of each product once per build, and draws it with B1's classes and two-decimal floor. Freshness: fresh within 20 minutes (hour) or 60 (24 hours), stale to 60 or 120, then unavailable; the browser works the age out when a layer is switched on and once a minute while it is on. A cell's live file is read only after the store puts the cell in Montana. Measured in the module re-checks: the round trip has 0 mismatches; five module runs (02:53:58, 03:55:09, 05:45:09, 06:56:57 and 14:23:56 UTC on 2026-10-19) each decode a valid time equal to their file name; pictures are 2,989 to 3,045 bytes | A radar estimate, not observed hail and not damage; uncoloured is not "no hail". Gate B4-7 reads the D17 rule (16 changed pixels in a box around a listed value cell, viewed at zoom 10 or closer): the sample build passes it on 2026-10-19 (zoom 11; 14,074 and 14,010 pixels in the box). The smoke on a live build under that rule passed on 2026-10-19 (2,815 pixels in the box at zoom 11; the hour layer had no value in the box) and smoke_pages passed; the branch's live preview runs on the push. Open: the picture reaches into Canada, and the words put Montana first (D15); at the statewide view a 0.01-degree cell is about one screen pixel on a 1,280-pixel desktop (B4 browser-10) |
+
 ## Next, in priority order
 1. **Go live.** Done in part, 2026-10-16: PR #3 merged; its first deployment (run 38933159167)
    failed with Pages disabled; the publication repair (PR #4) now rejects failed or invalid Pages
@@ -77,11 +82,11 @@ Measured for the joins (`website/joins.py`) in the re-check: the Benchland rows 
 10. **Nearby station observations: done (D29, 2026-10-16).** Next for them: the readings on the map's
    town sheets (a D28 contract change), and a check on real phones that the card line stays one
    line.
-11. **Real hail footprint.** MRMS MESH (same bucket and decoder as the map's radar, D28) drawn as a
-   map layer and as outlines per swath (nodata handled, 1 km resolution recorded), labelled as a
-   radar estimate, apart from reports. Check against SPC 2025-06-15 (Benchland, 1.75″).
-   Or a commercial trial in shadow mode (Xweather, The Weather Company HailZone, Verisk, Cotality;
-   use the review's procurement questions). No "best" claims (D21).
+11. **Real hail footprint: the MRMS layers are built (D37, 2026-10-19; see Done).** Built on `claude/hail-b4`,
+   not merged: one picture per window, labelled as a radar estimate and apart from reports. Still open: the
+   outlines per swath, the check against SPC 2025-06-15 (Benchland, 1.75″), and a commercial trial in shadow
+   mode (Xweather, The Weather Company HailZone, Verisk, Cotality; use the review's procurement questions).
+   No "best" claims (D21).
 12. **Alerts to phones.** A static site can't push. Needs a small service (push, SMS or email) and the
    p95 delivery gate below.
 13. **History.** Date ranges and multi-day events; NCEI Storm Events for older context.
@@ -94,7 +99,7 @@ Measured for the joins (`website/joins.py`) in the re-check: the Benchland rows 
 16. **3D storm view (globe).** Research done 2026-10-17 in `research/globe/` (read sections 1, 2 and 6).
     It waits on the owner decisions in README section 2 (D-G1 to D-G26). Chosen 2026-10-17: route (a),
     storm layers on the Map page behind a default-off flag, P1 (text values) first. P0 gates before it:
-    schedule cadence, counsel on publishing terms before P2, the -99/-999 check, the below-ground share.
+    schedule cadence, counsel on publishing terms before P2, the -99/-999 check (done, D34), the below-ground share.
     Nothing reaches `main` until they pass. A link-only globe only after P1 to P4 and a library approval.
     P1 merged in pull request #7 behind the flag (on `main`, off by default: website/storm.py,
     tests/test_storm.py). P2 is built on branch `claude/storm-layers-p2` behind the same flag (the GOES
@@ -114,7 +119,7 @@ Measured for the joins (`website/joins.py`) in the re-check: the Benchland rows 
    tiles as the page opens; the About page quotes USGS's requested acknowledgment; the landscape menu scroll is
    accepted.
 18. **Hail B3, addresses and search (D34): the legal go-live gate.** Starts after B2 passes its re-check and the byte budget question in D35 is decided. Dots from zoom 13 for the 674,715 MSL points, search and About terms; the flag waits for counsel on D34's items.
-19. **Hail B4, live swaths (D34).** MESH 30 to 1440 minute swath layers on the Map behind `--storm-layers`, after B1 to B3 (the globe plan's P3).
+19. **Hail B4, live swaths (D34): built on `claude/hail-b4`, not merged (D37).** MESH 30 to 1440 minute swath layers on the Map behind `--storm-layers`, after B1 to B3 (the globe plan's P3). The module is in the built table above; the site side and the completion pass are in the branch's commit. Gates B4-1 to B4-6 pass (B4-2's name clause reads by parameter number, D18); B4-7 passed locally under the D17 rule on a live build and waits for the branch's live preview after the push (`research/globe/validation-evidence/p3-verification.json`).
 20. **Hail B5, the other kinds of record (the D34 hand-off; the B5 brief).** Starts after B2's gates pass on the round-7 build. Joins the kinds B2 does not read, with the research's counts for 2021-10-19 to 2026-10-19: NCEI county-coded records (points) within 5 miles, tornado (13 rows), flood (60), flash flood (52), heavy rain (85), funnel cloud (30), lightning (6) and debris flow (10), 256 rows in all; the flood products FL.W (43 events), FA.W (37), FA.Y (548), FL.A (35) and FL.Y (10), and the county-only FA.A (18) and FF.A (2); the snow squall warning SQ.W (78); and the winter, heat, frost and freeze zone products WW.Y (865), WS.A (226), HT.Y (58), EH.W (4), EH.A (3), FR.Y (14) and FZ.W (4). Under D35, B2 joins FA.A (flood watch) as a zone product; FL.W and the other flood products move to B5's polygon path and county path. Settle these first (`DECISIONS.md` D35 open items 17 and 18): whether the zone-coded FF.A (18) events join, and whether the high wind watch HW.A (277) and the blowing dust advisory DU.Y (3) join, which the B5 brief lists and D35 does not. The B5 brief's NCEI counts are 2020 to 2026 totals (open item 19). Zone products that B5 adds follow the period rule (D33).
 
 ## Independent review priorities, for the website
@@ -154,6 +159,9 @@ Measured for the joins (`website/joins.py`) in the re-check: the Benchland rows 
   relax the site-files-only browser rule; rule on the one new browser script for the storm text (P1) and,
   later at the P4 gate, a vendored WebGL library; may storm or height views ever reach homeowners, adjusters
   or insurers?
+- Hail swath layers (D37): should the picture stop at the Montana line? It reaches past the state into Canada and the neighbouring states. D15 and D19 put Montana first in the words and drop the whole-area count; the picture itself is unchanged.
+- Hail swath failure words (B4 live-3): the radar and satellite pictures still show a raw exception name when a request fails with no message (`gridded._problem`, pinned by their tests). The swath layers show plain words now, and keep the raw reason in their record. A shared request-words helper in `website/sources.py` is the owner's call.
+- Hail swath statewide view (B4 browser-10): at the statewide view a 0.01-degree cell is about one screen pixel on a 1,280-pixel desktop, so the day layer can look empty while its List reports a value. The owner or the supervisor rules: a fixed-size mark per value cell, or the sparse picture with the Montana count.
 
 ## Missing inputs
 - The handoff's two images (dashboard concept, hero photo) were not provided.

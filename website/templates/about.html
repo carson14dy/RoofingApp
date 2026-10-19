@@ -26,6 +26,8 @@
     {% endif %}
     {% if storm_layers %}<li><strong>Satellite picture</strong> is NOAA's GOES infrared picture (band 13, 10.3 µm) of the newest 5-minute scan over the map's area, in kelvin. It is an observation of the infrared brightness temperature of the cloud tops and of the ground where there is no cloud. It is not a height and not a hail signal. GOES-East is read first; GOES-West is used when GOES-East fails or has no scan in the last hour. An uncorrected cloud top is drawn away from the satellite (north-west for GOES-East, north-east for GOES-West), about 3 to 4 km for a 2 km top and 20 to 33 km for a 12 to 15 km top. Missing pixels are hatched, never drawn as clear sky. Areas warmer than 300 K are left uncoloured, and missing areas show hatch lines; uncoloured is not a statement about the weather.</li>
     {% endif %}
+    {% if storm_layers %}<li><strong>Hail swath (radar estimate)</strong> is NOAA's MRMS MESH (maximum estimated size of hail), a radar estimate of the largest hail over each 0.01-degree cell, about 0.7 miles north to south and 0.5 miles east to west, in the last hour and in the last 24 hours. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart, so uncoloured is not the same as no hail. Hatched cells have no radar coverage. It is an estimate, not observed hail and not damage. The map works out how old each picture is when you look at it, and an old or missing picture says "This is not an all-clear."</li>
+    {% endif %}
   </ul>
 
 {% if hail_history %}

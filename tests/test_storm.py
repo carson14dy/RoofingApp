@@ -232,9 +232,9 @@ class Sentinels(StormCase):
         self.assertIsNone(wy["echo_top_m"])
         self.assertIsNone(wy["max_dbz"])
         self.assertTrue(all(level["dbz"] is None for level in wy["levels"]))
-        self.assertEqual(wy["text"], "No radar value (radar estimate; codes -99 or -999, meaning not verified) at any "
-                                     "of the 8 heights above ground, valid 3:06 am MDT (3 heights below ground, not "
-                                     "used). This is not an all-clear.")
+        self.assertEqual(wy["text"], "No radar value (radar estimate; code -99 means missing, code -999 means no "
+                                     "coverage) at any of the 8 heights above ground, valid 3:06 am MDT (3 heights "
+                                     "below ground, not used). This is not an all-clear.")
         self.assert_words(wy["text"])
 
     def test_valid_and_no_data_levels_always_add_up_to_eleven(self):
@@ -562,7 +562,8 @@ class SourceText(unittest.TestCase):
         self.assertIn("mean sea level", c["units"])
         self.assertIn("2 minutes", c["timing"])
         self.assertIn("30 minutes", c["timing"])
-        self.assertIn("-99 and -999 mean no radar value", c["missing"])
+        self.assertIn("-99 and -999 mean no radar value: -99 is missing and -999 is no coverage", c["missing"])
+        self.assertNotIn("not verified", c["missing"])
         self.assertIn("never a value", c["missing"])
         self.assertIn("Echo top not available", c["missing"])
         self.assertIn("not a surveyed terrain height", c["units"])
