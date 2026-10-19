@@ -14,6 +14,16 @@
      data is said in words and never drawn as a clear sky.
    - The satellite picture (--storm-layers builds only) is an infrared observation of cloud tops:
      never a height and never a hail signal.
+   - The live hail swath layers, "Hail, last hour" and "Hail, last 24 hours" (--storm-layers builds only; see "live hail
+     swath" below): one picture each of NOAA's radar estimate of the largest hail, with the legend and its words from
+     data/map.json. Two duties are the browser's alone (AGENTS.md rule 4): (1) the freshness of a layer is worked out
+     when it is switched on and again every minute while it is on (D7), from the frame's valid time and the fresh and
+     stale minutes in map.json, and it fills the {age} templates; the build's own state line is used only for a layer
+     with no picture; an unavailable layer shows no picture; (2) the sheet's live line (--hail-history builds, a hail
+     layer on) reads the clicked cell's tile file at the frame's valid time, once for the page (a click on a tile already
+     read reads nothing), and only for a point the store puts in Montana (the shard answers first; a point outside Montana
+     reads the shard alone; F-9), and a 404 is "no estimate" only while the layer is fresh or stale (D16). No threshold, unit,
+     window length or sentence of these layers is written here.
    - The hail history (--hail-history builds only; see "hail history at a spot" below): a click or tap on the map
      that no bubble, alert or report takes opens the five-year radar-estimated hail history for the 0.01-degree
      cell under it. The browser finds the cell from data/map.json (hail.grid). Outside Montana is decided by the
@@ -47,6 +57,7 @@
   var RETRY_MS = 10000;              // a picture that failed is asked for again after this, on the viewer's own step
   var TZ = "America/Denver";         // every time on the map is Montana time
   var MIN = 60000, HOUR = 3600000;
+  var STATE_TICK = MIN;              // a hail layer's state (fresh, stale, unavailable) is checked every minute (D7)
   var BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
   var FALLBACK_VIEW = { bounds: [[44.35, -116.06], [49.01, -104.03]], min_zoom: 5, max_zoom: 11 };
   var KIND_WORD = { warning: "Warning", watch: "Watch", advisory: "Advisory", statement: "Statement" };
@@ -82,6 +93,7 @@
   var el = {
     banners: byId("banners"), legendTitle: byId("legend-title"), legendScale: byId("legend-scale"),
     legendBar: byId("legend-bar"), legendStops: byId("legend-stops"), legendNote: byId("legend-note"),
+    legendUncoloured: byId("legend-uncoloured"),
     legendKeys: byId("legend-keys"), layersBtn: byId("btn-layers"), locateBtn: byId("btn-locate"),
     listBtn: byId("btn-list"), layers: byId("layers"), warnings: byId("tg-warnings"), reports: byId("tg-reports"),
     note: byId("frame-note"), toast: byId("toast"), near: byId("near-chip"), timeline: byId("timeline"),
@@ -862,6 +874,8 @@
     if (pick.indexOf(state.mode) < 0) state.mode = pick.indexOf("12h") >= 0 ? "12h" : (pick[0] || "12h");
     renderLegend();
     buildTimeline(keep, opts.first);
+    hailWatch(!!swathLayer());          // a hail layer's state is worked out again every minute while it is on (D7)
+    if (swathLayer()) hailTick();
     if (!opts.first) saveUrl();
   }
 
@@ -1069,7 +1083,7 @@
       if (token !== state.goToken) return;
       f._failed = !ok;
       app.classList.remove("is-loading");
-      showPicture(ok ? f.src : null, { layer: state.layer, kind: f.kind });
+      showPicture(ok && hailShowable() ? f.src : null, { layer: state.layer, kind: f.kind });   // no picture once unavailable (D7)
       renderNote();
       refitForNote();                // a new layer or mode, or a picture found to have failed
       if (CARD) renderCardChip();
@@ -1176,27 +1190,32 @@
 
   /** Title, subtitle, slider value and fill for the frame on the timeline. */
   function renderTimeline() {
-    var n = state.frames.length;
+    var n = state.frames.length, swath = swathLayer();
     if (!n) {
-      el.title.textContent = state.layer === "precip" ? "No radar or forecast" :
-        state.layer === "satellite" ? "No satellite picture" : "No forecast";
-      whenEl.textContent = "Nothing to show for " + LAYER_WORD[state.layer].toLowerCase();
+      if (swath) {                   // a hail layer with no picture: its title, and its words in the note (noteWarnings)
+        el.title.textContent = swath.title;
+        whenEl.textContent = swath.words.no_picture;
+      } else {
+        el.title.textContent = state.layer === "precip" ? "No radar or forecast" :
+          state.layer === "satellite" ? "No satellite picture" : "No forecast";
+        whenEl.textContent = "Nothing to show for " + LAYER_WORD[state.layer].toLowerCase();
+      }
       srcEl.textContent = "";
-      el.range.setAttribute("aria-valuetext", "No pictures in this update");
+      el.range.setAttribute("aria-valuetext", swath ? swath.words.no_picture : "No pictures in this update");
       el.fill.style.width = "0";
       el.knob.style.left = "0";
       return;
     }
-    var f = state.frames[state.pos], ms = state.times[state.pos];
-    el.title.textContent = f.kind === "radar" ? "Radar" : f.kind === "satellite" ? "Satellite" : "Forecast";
+    var f = state.frames[state.pos], ms = state.times[state.pos], hail = f.kind === "hail_swath";
+    el.title.textContent = f.kind === "radar" ? "Radar" : f.kind === "satellite" ? "Satellite" : hail ? swath.title : "Forecast";
     whenEl.textContent = dayClock(ms);
     srcEl.textContent = sourceWords(f);
     // a screen reader reads every value change of a focused slider: while playing, its value waits
     // until playback stops (setPlaying); the knob and the title above still move
     if (!(state.playing && document.activeElement === el.range)) {
       el.range.value = String(ms);
-      el.range.setAttribute("aria-valuetext", (f.kind === "radar" ? "Radar, " : f.kind === "satellite" ? "Satellite, " : "Forecast, ") + dayClock(ms) + ", " +
-        sourceWords(f) + nowWords(ms, f));
+      el.range.setAttribute("aria-valuetext", (f.kind === "radar" ? "Radar, " : f.kind === "satellite" ? "Satellite, " :
+        hail ? swath.title + ", " : "Forecast, ") + dayClock(ms) + ", " + sourceWords(f) + nowWords(ms, f));
     }
     var pct = (frac(ms) * 100).toFixed(3) + "%";
     el.fill.style.width = pct;
@@ -1208,7 +1227,7 @@
       frame is the "latest radar picture", not now; the first model hour of the temperature and
       gust layers is "this hour". Other frames say nothing (a frame 10 minutes after now isn't now). */
   function nowWords(ms, f) {
-    if (state.pos !== state.nowPos) return "";
+    if (state.pos !== state.nowPos || f.kind === "hail_swath") return "";   // a hail picture's age is its own line (hailView)
     var now = nowRaw();              // the real now: the clamped one (nowMs) is only for placing the tick
     if (Math.abs(ms - now) <= 10 * MIN) return ", now";
     if (f.kind === "radar") return ", latest radar picture";
@@ -1219,6 +1238,7 @@
   /** The source in plain words: radar estimate or model forecast, never blended. */
   function sourceWords(f) {
     var sample = /^SAMPLE/.test(f.source || "");
+    if (f.kind === "hail_swath") return hailView().line;   // the state line, worked out now (D7)
     if (f.kind === "satellite") return f.source;      // the build's own words (a sample build says SAMPLE)
     if (f.kind === "radar") return sample ? "sample, not NOAA radar" : "NOAA radar estimate";
     var run = f.run ? ", run " + clock(Date.parse(f.run)) : "";
@@ -1236,7 +1256,7 @@
     var f = state.frames[state.pos], k = f && !warn ? hatchKind() : "";
     // same rule as the legend keys (whenever hatching is in view); a warning takes the line alone,
     // so it stays short, and the keys still name the hatching
-    if (k) info = HATCH[k][1];
+    if (k) info = hatchWords(k)[1];
     var html = warn ? '<span class="note-warn">' + esc(warn) + "</span>" : info ? '<span class="note-info">' + esc(info) + "</span>" : "";
     var before = el.note._html + el.note.hidden;
     if (el.note._html !== html) { el.note.innerHTML = html; el.note._html = html; }
@@ -1268,6 +1288,7 @@
       picture. Shared by renderNote and noteRoom, so the room fitted is the room the note takes. */
   function noteWarnings(pos) {
     var n = state.frames.length, st = data.status || {}, warns = [];
+    if (!n && swathLayer()) return [swathPre(swathLayer()) + swathLayer().state_line];   // the build's words for a hail layer with no picture
     if (!n) {
       var why = [];
       if (state.layer === "precip" && st.radar && !st.radar.ok) why.push("radar: " + st.radar.detail);
@@ -1309,8 +1330,11 @@
     el.legendBar.style.background = L_.gradient || "";
     legendForm = legendFormNow();
     app.classList.toggle("legend-2col", twoColLegend());
-    var barH = compactLegend() ? 64 : Math.max(96, (stops.length - 1) * 16);
-    var shown = thinStops(stops, barH);
+    // a hail layer's classes are colours with words (B4): every stop keeps its label, and the bar is tall enough for them
+    var swath = !!swathLayer();
+    var barH = swath ? Math.max(compactLegend() ? 64 : 96, (stops.length - 1) * 16) :
+      compactLegend() ? 64 : Math.max(96, (stops.length - 1) * 16);
+    var shown = swath ? stops.map(function () { return true; }) : thinStops(stops, barH);
     el.legendScale.style.setProperty("--bar-h", barH + "px");
     el.legendStops.innerHTML = stops.map(function (s, i) {
       if (!shown[i]) return "";
@@ -1321,6 +1345,8 @@
     [].forEach.call(el.legendStops.children, function (li) { w = Math.max(w, li.offsetWidth); });
     if (w) el.legendScale.style.setProperty("--scale-w", Math.ceil(16 + w + 2) + "px");
     el.legendNote.textContent = L_.legend_note || "";
+    if (el.legendUncoloured) el.legendUncoloured.textContent = L_.legend_uncoloured || "";   // a hail layer's own line (build.py); --storm-layers only
+    el.legend.classList.toggle("swath-words", swath);               // the kind and uncoloured lines stay in view (map.css)
     renderKeys();
     tidyLabels();                    // another scale can move the "Map data" link, or resize the legend
     if (el.legendWrap.offsetHeight !== noteFit.legendH) refitForBanner();
@@ -1351,7 +1377,7 @@
     var keys = [];
     keys.push(["key-bubble", state.layer === "wind" ? "Town numbers: NWS gust forecast, mph" : "Town numbers: NWS forecast, \u00b0F"]);
     var hatch = hatchInView();
-    if (hatch.gap) keys.push(["key-hatch", HATCH[hatch.gap][0]]);
+    if (hatch.gap) keys.push(["key-hatch", hatchWords(hatch.gap)[0]]);
     if (hatch.outside) keys.push(["key-hatch-out", HATCH.outside[0]]);
     if (ringsOnTimeline()) keys.push(["key-ring", ringWords()]);
     if (state.warnings) (state.alertKinds || []).forEach(function (k) { keys.push(["key-hz key-" + k, KIND_WORD[k] + " area (NWS)"]); });
@@ -1364,7 +1390,7 @@
     var html = keys.map(function (k) { return '<li><span class="key ' + k[0] + '" aria-hidden="true"></span>' + esc(k[1]) + "</li>"; }).join("");
     // a frame without the gaps other frames of this timeline have keeps the gap row's room: hidden
     // and last, so it reads as padding
-    if (hatch.spare) html += '<li class="key-spare"><span class="key key-hatch"></span>' + esc(HATCH[hatch.spare][0]) + "</li>";
+    if (hatch.spare) html += '<li class="key-spare"><span class="key key-hatch"></span>' + esc(hatchWords(hatch.spare)[0]) + "</li>";
     // alerts issued by county or zone have no outline to draw (AGENTS.md rule 6: null geometry never
     // means "no alert"): one row says how many, whatever the Warnings switch says, and opens the List.
     // First, so a legend that scrolls (a phone on its side) shows it without scrolling.
@@ -1396,18 +1422,29 @@
   function hatchInView() {
     var h = { gap: "", spare: "", outside: false };
     if (!map || !map._imageBounds) return h;
-    var f = state.frames[state.pos], kind = function (x) { return x.kind === "radar" || x.kind === "satellite" ? x.kind : "model"; };
+    var f = state.frames[state.pos], kind = function (x) {
+      return x.kind === "radar" || x.kind === "satellite" || x.kind === "hail_swath" ? x.kind : "model";
+    };
     if (f && f.nodata && !f._failed) h.gap = kind(f);
     else state.frames.some(function (x) { if (x.nodata) h.spare = kind(x); return x.nodata; });
     h.outside = !map._imageBounds.contains(map.getBounds());
     return h;
   }
 
-  /** HATCH's key for the hatching in view: a gap ("radar", "model"), "radarOut" or "modelOut" when the
-      band outside the pictures is in view too, "outside" for the band alone, "" for none. */
+  /** HATCH's key for the hatching in view: a gap ("radar", "model", "satellite", "hail_swath"), with "Out" added when
+      the band outside the pictures is in view too, "outside" for the band alone, "" for none. */
   function hatchKind() {
     var h = hatchInView();
     return h.gap ? h.gap + (h.outside ? "Out" : "") : h.outside ? "outside" : "";
+  }
+
+  /** [legend key, note line] for a hatch kind. A hail layer's words are the build's (map.json "words", the site words
+      in website/build.py), so the hail kinds have none here. */
+  function hatchWords(k) {
+    var lay = swathLayer();
+    if (k === "hail_swath" && lay) return [lay.words.hatch_key, lay.words.hatch_note];
+    if (k === "hail_swathOut" && lay) return [lay.words.hatch_key_out, lay.words.hatch_note_out];
+    return HATCH[k] || ["", ""];
   }
 
   /** Whether a town's bubble is on screen (a town appears from its min_zoom: 7 for the minor towns). */
@@ -1960,6 +1997,8 @@
     var opener = sheetState.opener, v = sheetState.view, panned = sheetState.revealed, resized = sheetState.resized;
     if (sheetState.watcher) { sheetState.watcher.onclose = null; sheetState.watcher.destroy(); }
     sheetState = null;
+    liveFor = null;
+    liveNode = null;
     if (wasHail) { hailAt = null; saveUrl(); }      // an ?at= spot is dropped with its sheet
     el.sheet.hidden = true;
     el.scrim.hidden = true;
@@ -2213,7 +2252,7 @@
     }
     if (hailData() && byId("hail-list")) html += byId("hail-list").innerHTML;   // the hail note (map.html template)
     var st = data.status || {};
-    var bad = ["radar", "forecast", "alerts", "forecasts", "reports", "satellite", "hail_history"].filter(
+    var bad = ["radar", "forecast", "alerts", "forecasts", "reports", "satellite", "hail_swath", "hail_history"].filter(
       function (k) { return st[k] && !st[k].ok; });
     if (bad.length) {
       html += "<h3>Sources with problems</h3><ul>" + bad.map(function (k) {
@@ -2431,6 +2470,7 @@
     }
     el.sheetBody.innerHTML = "";
     el.sheetBody.appendChild(frag);
+    liveAttach();                                                       // the live line stays first (liveOpen)
     if (sheetState && sheetState.ll) reveal(sheetState.ll, HAIL_EXT);   // a longer sheet may cover the spot now
   }
 
@@ -2450,16 +2490,21 @@
     openSheet("hail", h.words.title, "", opener, { noSampleTag: true });   // the sample label comes from the words
     sheetState.ll = cell ? L.latLng(p.lat, p.lon) : null;      // off the grid there is no spot to keep in sight
     if (cell) reveal(sheetState.ll, HAIL_EXT);
+    liveOpen(p, cell, seq);                                             // the live line, when a hail layer is on
     if (!cell) return hailShow(h, "outside", h.words.outside);          // off the grid: outside Montana for certain
     if (h.state === "unavailable") return hailShow(h, "unavailable", fill(h.words.unavailable, { problem: h.problem }));
     if (!hailListed(h, hailTileName(h, cell))) return hailShow(h, "outside", outside);   // no fetch
     hailShow(h, "loading", h.words.loading);
     var current = function () { return seq === hailSeq && sheetState && sheetState.kind === "hail"; };
-    var failed = function () { hailShow(h, "unavailable", fill(h.words.unavailable, { problem: h.words.fetch_failed })); };
+    var failed = function () { liveMontana("unknown"); hailShow(h, "unavailable", fill(h.words.unavailable, { problem: h.words.fetch_failed })); };
     hailTile(hailShardUrl(h, cell)).then(function (doc) {
       if (!current()) return;
       if (!doc || !Array.isArray(doc.state)) return failed();          // a listed tile that is not in the format
-      if (!hailInState(doc, hailKey(h, cell))) return hailShow(h, "outside", outside);   // in the tile, not in Montana
+      if (!hailInState(doc, hailKey(h, cell))) {          // in the tile, not in Montana: the live line says so too
+        liveMontana(false);
+        return hailShow(h, "outside", outside);
+      }
+      liveMontana(true);
       var text;
       try { text = hailText(h, cell, doc); } catch (e) { return failed(); }
       hailShow(h, "loaded", text, null);                // the radar days at once; the joins follow in their own sections
@@ -2485,6 +2530,176 @@
     if (!m) return null;
     var p = hailPoint(Number(m[1]), Number(m[2]));
     return isFinite(p.lat) && isFinite(p.lon) ? p : null;
+  }
+
+  // ------------------------------------------------------------------ live hail swath (--storm-layers builds, B4)
+
+  /** The two hail swath layers (data/map.json layers with "kind": "hail_swath"): one picture each on the map's image box,
+      with its legend, title and words from the layer block. Their freshness is worked out here, at view time (D7):
+      hailView reads the frame's valid time against the viewer's clock and the fresh and stale minutes the build wrote, and
+      fills the build's templates; hailWatch runs it again every minute while a hail layer is on, and the picture goes once
+      the layer is unavailable. The sheet's live line (liveOpen, liveMontana, liveLoad) reads the clicked cell's tile file once
+      per click, and only after the shard has put the point in Montana (F-9). The file's
+      URL holds the frame's valid time, so each is read once for the page. A 404 is no file: no cell of the tile reaches the
+      floor. It gives the no-estimate words while the layer is fresh or stale (D16). A file's own lists give a cell's value
+      (the sizes and the class word come from the hail block) or its no-coverage words. Any other failure gives the build's
+      could-not-be-loaded words. A point outside the picture's box gets the build's outside words, with no fetch. Every
+      sentence, size, class and threshold is the build's; this code fills them in. */
+  var swathTimer = null;             // the check, every minute, of a hail layer's state, while one is on
+  var liveNode = null;               // the sheet's live line: a paragraph kept first in the sheet's body (liveAttach)
+  var liveFor = null;                // the live line of the sheet: {layer, point, cell, seq, inside, got}
+  var liveTiles = {};                // live file URL -> promise of its JSON, or of null for "no file"; kept for the page
+  var NO_FILE = 404;                 // the status of a tile with no live file (D4)
+
+  /** The hail swath layer on the map now, or null. */
+  function swathLayer() { var lay = layer(); return lay.kind === "hail_swath" ? lay : null; }
+
+  /** The state of a hail layer at this moment (D7): "fresh", "stale" or "unavailable", its line (the build's templates,
+      with the age worked out now), the age in whole minutes and, when unavailable, the problem. The age is the viewer's
+      clock less the frame's valid time; a clock behind the file's time reads as age zero. A layer with no picture is
+      unavailable with the build's own line. */
+  /** The sample label a sample build's state lines begin with (D10): the build's own words; "" on a real build. */
+  function swathPre(lay) { return lay && lay.sample ? lay.words.sample_sheet + " " : ""; }
+
+  function hailView(lay) {
+    lay = lay || swathLayer();
+    var pre = swathPre(lay);
+    if (!lay || !lay.frames || !lay.frames.length) return { state: "unavailable", line: lay ? pre + lay.state_line : "", age: null, problem: null };
+    var w = lay.words, ms = Math.max(0, Date.now() - Date.parse(lay.valid)), age = Math.floor(ms / MIN);
+    // the timeline's line has no clock time of its own: the day clock above it is the one time (browser-13)
+    if (ms <= lay.fresh_min * MIN) return { state: "fresh", line: pre + fill(w.timeline_fresh, { age: age }), age: age, problem: null };
+    // {limit} is the fresh minutes here: "more than {limit} minutes old" (the module writes the same, swath.py _drawn)
+    if (ms <= lay.stale_min * MIN) return { state: "stale", line: pre + fill(w.timeline_stale, { age: age, limit: lay.fresh_min }), age: age, problem: null };
+    var problem = fill(w.age_out, { age: Math.ceil(ms / MIN), limit: lay.stale_min });
+    return { state: "unavailable", line: pre + fill(w.unavailable, { title: lay.title, problem: problem }), age: age, problem: problem };
+  }
+
+  /** Whether the picture may show: a hail layer's picture is not drawn once the layer is unavailable (D7). */
+  function hailShowable() { var lay = swathLayer(); return !lay || hailView(lay).state !== "unavailable"; }
+
+  /** The check each minute (D7): on while a hail layer is on, off with any other layer. */
+  function hailWatch(on) {
+    if (on && !swathTimer) swathTimer = setInterval(hailTick, STATE_TICK);
+    if (!on && swathTimer) { clearInterval(swathTimer); swathTimer = null; }
+  }
+
+  /** One check: the timeline's line, the picture (gone once unavailable) and the sheet's live line, from what is known
+      already. No request is made here. */
+  function hailTick() {
+    if (!swathLayer()) return hailWatch(false);
+    if (state.frames.length) renderTimeline();
+    if (!hailShowable()) showPicture(null);
+    liveRender();
+  }
+
+  /** The words of the sheet's live line for a clicked point, for the state the layer is in now (D5, D9, D16). */
+  function liveText(f) {
+    var lay = f.layer, v = hailView(lay), w = lay.words, pre = swathPre(lay);   // a sample build's line begins with its label (D10)
+    if (!f.inside) return pre + w.outside;              // the picture's box does not reach the point: nothing is drawn there
+    // Montana decides (B1): a point the store puts outside Montana shows no value, and "unknown" (the store or the
+    // shard did not load) shows no value either; neither says "no hail"
+    if (f.montana === false) return v.state === "unavailable" ? v.line : pre + w.outside_montana_live;
+    if (f.montana === "unknown") return v.state === "unavailable" ? v.line : pre + w.live_failed;
+    if (f.montana === "pending" || !f.got) return v.state === "unavailable" ? v.line : pre + w.live_loading;   // still being read (D16)
+    if (f.got.failed) return pre + w.live_failed;       // a fetch error other than 404 (D16), in any state
+    if (v.state === "unavailable") return v.line;       // an unavailable layer's words, and no value from it (D16); labelled in hailView
+    var H = hailData(), doc = f.got.doc, row = f.cell.row, col = f.cell.col, hit = doc ? liveFind(doc.cells, row, col) : null, line;
+    if (doc && liveFind(doc.nocov, row, col)) line = w.no_coverage;
+    else if (hit) {
+      var cls = hailClass(H, hit[2]);
+      line = fill(w.live_line, { window: lay.window_word, "in": hailInches(H, hit[2]), mm: hailMm(H, hit[2]),
+        "class": cls ? cls.word : "", valid: lay.valid_text });
+      if (hit[2] >= H.large_note_tenths) line += " " + w.large_note;
+    } else line = fill(w.no_estimate, { window: lay.window_word, valid: lay.valid_text });   // no file, or no entry: no estimate
+    if (v.state === "stale") line += " " + w.all_clear;
+    return pre + line;
+  }
+
+  /** The entry [row, column, ...] of one cell in a live file's list (its cells or its nocov), or null. */
+  function liveFind(list, row, col) {
+    for (var i = 0; list && i < list.length; i++) if (list[i][0] === row && list[i][1] === col) return list[i];
+    return null;
+  }
+
+  /** Writes the live line from what is known now (the minute's check calls it again, with no request). */
+  function liveRender() {
+    if (!liveFor || !liveNode) return;
+    liveNode.textContent = liveText(liveFor);
+    liveAttach();
+  }
+
+  /** The live line stays first in the sheet's body: the sheet's own lines are written over the body at each change
+      (hailShow), and the line goes back in front. */
+  function liveAttach() {
+    if (liveNode && sheetState && sheetState.kind === "hail" && el.sheetBody.firstChild !== liveNode) el.sheetBody.insertBefore(liveNode, el.sheetBody.firstChild);
+  }
+
+  /** The shard's answer on whether the point is in Montana (openHail): the live line follows it at once. Only a point the
+      shard puts in Montana reads its live file (liveLoad), so a point outside Montana reads the shard alone (D16, F-9). */
+  function liveMontana(value) {
+    if (!liveFor || !liveCurrent(liveFor.seq)) return;
+    liveFor.montana = value;
+    if (value === true) liveLoad(liveFor);
+    liveRender();
+  }
+
+  /** Reads a point's live file once (liveFile) when its shard has put the point in Montana (liveMontana calls it): only
+      inside the picture's box, in a tile the store lists, with a folder. A 404 is no file (D16); any other failure is the
+      could-not-be-loaded words. */
+  function liveLoad(f) {
+    var H = hailData(), lay = f.layer;
+    if (f.got || !f.inside || !f.cell || !H || !lay.live || !lay.live.pattern) return;
+    liveFile(lay.live.pattern.replace("{tile}", hailTileName(H, f.cell))).then(function (doc) {
+      if (!liveCurrent(f.seq)) return;
+      f.got = { doc: doc };
+      liveRender();
+    }, function () {
+      if (!liveCurrent(f.seq)) return;
+      f.got = { failed: true };
+      liveRender();
+    });
+  }
+
+  /** Whether an answer belongs to the sheet that is open now: a newer click, or a closed sheet, overtakes it. */
+  function liveCurrent(seq) { return seq === hailSeq && !!sheetState && sheetState.kind === "hail"; }
+
+  /** One live file, read once for the page: its URL holds the frame's valid time, so a stamp is read once. A 404 gives
+      null (no file for the tile). Any other failure rejects, and the next click asks again. */
+  function liveFile(url) {
+    if (!liveTiles[url]) {
+      liveTiles[url] = fetch(url, { credentials: "same-origin" }).then(function (r) {
+        if (r.status === NO_FILE) return null;
+        if (!r.ok) throw new Error(url);
+        return r.json().then(function (doc) {
+          if (!doc || typeof doc !== "object" || Array.isArray(doc)) throw new Error(url);
+          return doc;
+        }, function () { throw new Error(url); });
+      }, function () { throw new Error(url); });
+      liveTiles[url].then(null, function () { delete liveTiles[url]; });
+    }
+    return liveTiles[url];
+  }
+
+  /** The sheet's live line for a clicked point (openHail calls it for every point). With a hail layer on, the point's
+      tile is read once (liveFile), after the shard says the point is in Montana (liveMontana); with none, there is no line and
+      no request. The cell (null off the grid) and whether the
+      picture's box holds the point decide the words. */
+  function liveOpen(p, cell, seq) {
+    var lay = swathLayer(), H = hailData();
+    liveFor = null;
+    liveNode = null;
+    if (!lay || !H) return;
+    liveNode = document.createElement("p");
+    liveNode.className = "sub";
+    liveNode.setAttribute("data-live", "swath");
+    var b = lay.bounds;                                 // [[south, west], [north, east]]: the picture's box
+    var inside = !!cell && p.lat >= b[0][0] && p.lat <= b[1][0] && p.lon >= b[0][1] && p.lon <= b[1][1];
+    // Montana, as the store says (openHail reads the tile's shard): a tile the store does not list has no Montana cell,
+    // so the answer is known now and no file is read; a listed tile waits for its shard ("pending"); "unknown" when the
+    // store did not load, which is no answer either way
+    var montana = !cell ? false : H.state === "unavailable" ? "unknown" : hailListed(H, hailTileName(H, cell)) ? "pending" : false;
+    liveFor = { layer: lay, point: p, cell: cell, seq: seq, inside: inside, montana: montana, got: null };
+    liveRender();   // no request here: a listed tile waits for its shard, and liveMontana(true) reads the file (liveLoad, F-9)
   }
 
   // ------------------------------------------------------------------ joined records at a spot (--hail-history builds, B2)
@@ -3003,7 +3218,7 @@
     var k = f && !f._failed ? hatchKind() : "";
     var html = '<span class="card-main">' + esc(main) + "</span>" + (k ? '<span class="card-hatch"><span class="key ' +
       (k === "outside" ? "key-hatch-out" : "key-hatch") + '" aria-hidden="true"></span>' +
-      '<span class="visually-hidden">. Hatched areas: </span>' + esc(HATCH[k][0]) + "</span>" : "");
+      '<span class="visually-hidden">. Hatched areas: </span>' + esc(hatchWords(k)[0]) + "</span>" : "");
     // the Storm reports card: alerts without an outline aren't on it (the Now page card sits beside
     // the full alert list, so it needn't say). One line on a phone; the page's key says where they are
     var n = state.reports ? noOutlineCount() : 0;

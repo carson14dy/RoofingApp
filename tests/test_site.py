@@ -356,7 +356,7 @@ class Contracts(unittest.TestCase):
                                               "observations", "reports", "radar", "forecast_model", "storm_levels",
                                               "satellite", "basemap", "imagery", "hail_history", "lsr",
                                               "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons",
-                                              "nws_zone_products", "asos_daily_gusts"})
+                                              "nws_zone_products", "asos_daily_gusts", "hail_swath"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
@@ -2576,6 +2576,545 @@ class HailJoinedRecords(unittest.TestCase):
         got = node_join_sections(self.site, h, tz, cell)[0]
         for key in JOIN_IDS:
             self.assertEqual(got[key]["sample"], "", key)
+
+
+SHARED_STATIC = ("static/map/map.js", "static/map/map.css")   # left out of the identity check: they change with the feature
+VERSION_QUERY = re.compile(rb"(static/map/map\.(?:js|css))\?v=[0-9a-f]{12}")
+
+
+def default_digests(root: Path) -> dict:
+    """Relative path -> digest for every file of a build: the bytes (the pages' ?v= hashes normalised), or for a PNG the
+    decoded RGBA pixels with the size, so the encoder does not matter. Shared script and style files are left out."""
+    from PIL import Image
+    out = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        name = path.relative_to(root).as_posix()
+        if name in SHARED_STATIC:
+            continue
+        if path.suffix == ".png":
+            with Image.open(path) as opened:
+                image = opened.convert("RGBA")
+            digest = hashlib.sha256(f"{image.size[0]}x{image.size[1]}".encode() + image.tobytes()).hexdigest()
+        else:
+            data = path.read_bytes()
+            if path.suffix == ".html":
+                data = VERSION_QUERY.sub(rb"\1?v=HASH", data)
+            digest = hashlib.sha256(data).hexdigest()
+        out[name] = digest
+    return out
+
+
+def write_default_manifest(build_dir, base: str) -> Path:
+    """Writes tests/fixtures/default-build-manifest.json from a default build of the base commit (its tree extracted, then
+    python -m website.build --out <dir> --sample --now 2026-10-19T12:00:00Z run there). A PR that changes the default build
+    on purpose runs this on its own build and commits the file, with the command in its description:
+    python -c "import sys; sys.path.insert(0, 'tests'); import test_site as t; t.write_default_manifest('<dir>', '<base>')"
+    """
+    files = default_digests(Path(build_dir))
+    path = ROOT / "tests" / "fixtures" / "default-build-manifest.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"base": base, "build": "python -m website.build --sample --now 2026-10-19T12:00:00Z",
+                                "files": files}, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
+class HailSwathLayers(unittest.TestCase):
+    """The live hail swath layers (B4; website/swath.py) behind --storm-layers, sample builds only (the live feed is
+    checked by the Website workflow and tools/smoke_map.py): the two Map layers and their status line, the List and the
+    no-JavaScript panel (with the SAMPLE credit), the map page's two radios, the About bullet, the words, the browser's
+    scans (map.js: no threshold, word, unit or numeric literal in the swath section), a layer that cannot be read, and
+    the default build's identity with the base commit (B4-6)."""
+
+    NOW_SWATH = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    SWATH_BASE = "c860e23"                  # the base of this stage: the default build must match its build (B4-6)
+    # words that must not appear unless a negation comes before them (the same rule as test_swath's WordsTests)
+    NEGATED = (("damage", "not "), ("observed hail", "not "), ("no hail", "same as "), ("dry", "not "),
+               ("insurance", "not "), ("eligib", "not "), ("confirmed", "not "))
+    HAIL_TITLES = ("Hail, last hour", "Hail, last 24 hours")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.off = Path(tempfile.mkdtemp(prefix="hailwatch-swath-off-"))
+        cls.on = Path(tempfile.mkdtemp(prefix="hailwatch-swath-on-"))
+        cls.addClassCleanup(shutil.rmtree, cls.off, True)      # only the folders this class made
+        cls.addClassCleanup(shutil.rmtree, cls.on, True)
+        cls.off_result = site.build(cls.off, None, cls.NOW_SWATH, sample=True)
+        cls.on_result = site.build(cls.on, None, cls.NOW_SWATH, sample=True, storm_layers=True)
+        cls.env = site.env()
+
+    @staticmethod
+    def panel(html: str) -> str:
+        """The map page's <noscript> panel (the one with the class; the head has a style-only one)."""
+        blocks = [b for b in re.findall(r"<noscript>.*?</noscript>", html, re.S) if 'class="noscript"' in b]
+        assert len(blocks) == 1
+        return blocks[0]
+
+    def phrase(self, text: str) -> str:
+        """The text as the page renders it (Jinja escapes an apostrophe)."""
+        return self.env.from_string("{{ t }}").render(t=text)
+
+    def test_the_flag_adds_the_two_layers_and_their_status_and_nothing_else_to_the_contract(self):
+        off = json.loads(page(self.off, "data/map.json"))
+        on = json.loads(page(self.on, "data/map.json"))
+        self.assertEqual(set(on["layers"]), {"precip", "temp", "wind", "satellite", "hail_60", "hail_1440"})
+        self.assertNotIn("hail_60", off["layers"])
+        self.assertNotIn("hail_swath", off["status"])
+        self.assertNotIn("hail_swath", json.loads(page(self.off, "data/state.json"))["status"])
+        self.assertEqual(on["status"]["hail_swath"]["label"], "Hail swath (radar estimate)")
+        self.assertNotIn("hail", on)                       # the flag does not turn on the history (B1's flag)
+        self.assertTrue((self.on / "hail" / "live").is_dir())    # the live files are written with this flag
+        self.assertFalse((self.on / "hail" / "t").exists())      # the history store (--hail-history) is not
+        self.assertFalse((self.off / "hail").exists())           # and the default build writes no hail folder
+
+    def test_the_swath_layers_carry_the_words_and_the_numbers_the_browser_fills(self):
+        on = json.loads(page(self.on, "data/map.json"))
+        for key, window, word, stamp, title in (("hail_60", 60, "hour", "202610191158", self.HAIL_TITLES[0]),
+                                                ("hail_1440", 1440, "24 hours", "202610191130", self.HAIL_TITLES[1])):
+            L = on["layers"][key]
+            self.assertEqual((L["kind"], L["title"], L["unit"], L["window"], L["window_word"]),
+                             ("hail_swath", title, "in", window, word))
+            self.assertEqual((L["fresh_min"], L["stale_min"]), (20, 60) if window == 60 else (60, 120))
+            self.assertEqual(L["live"]["pattern"], f"hail/live/{window}/{stamp}/{{tile}}.json")
+            self.assertNotIn("?", L["live"]["pattern"])                       # the folder carries the time (D14)
+            self.assertEqual(L["frames"][0]["src"], f"map/frames/hail-{window}-{stamp}.png")
+            self.assertTrue((self.on / L["frames"][0]["src"]).is_file())
+            self.assertTrue((self.on / "hail" / "live" / str(window) / stamp).is_dir())
+            self.assertEqual((L["modes"], L["now_index"]), ({"12h": [0]}, {"12h": 0}))
+            self.assertEqual(L["bounds"], [[43.0, -118.5], [50.5, -101.0]])
+            self.assertTrue(L["sample"])
+            self.assertEqual(L["valid"][:16], f"2026-10-19T{stamp[8:10]}:{stamp[10:12]}")
+            for name in ("fresh", "stale", "unavailable", "age_out", "all_clear", "live_line", "no_estimate",
+                         "no_coverage", "large_note", "sample_sheet", "outside", "hatch_key", "hatch_note",
+                         "hatch_key_out", "hatch_note_out", "live_failed", "live_loading", "no_picture", "list_heading"):
+                self.assertIn(name, L["words"], name)
+            self.assertIn("{age}", L["words"]["fresh"])
+            self.assertIn("{age}", L["words"]["stale"])
+            self.assertIn("{window}", L["words"]["live_line"])
+            self.assertEqual(L["live"]["tenths_per_inch"], 254)
+            self.assertEqual(L["live"]["floor_tenths"], 64)
+
+    def test_the_legend_has_every_class_with_its_inches_and_the_uncoloured_sentence(self):
+        from website import hail as hs
+        from website import swath as sw
+        L = json.loads(page(self.on, "data/map.json"))["layers"]["hail_60"]
+        self.assertEqual([e["label"] for e in L["legend"]], [f"{c['min_in']:.2f} in, {c['word']}" for c in reversed(hs.CLASSES)])
+        self.assertEqual(len({e["color"] for e in L["legend"]}), len(hs.CLASSES))
+        self.assertTrue(L["legend_note"].startswith("Sample: invented field, not NOAA MRMS MESH."), L["legend_note"])
+        self.assertEqual(L["legend_uncoloured"], sw.WORDS_SWATH["uncoloured"].format(window=L["window_word"]))   # its own line
+        self.assertEqual(L["legend_uncoloured"], "Uncoloured: no radar hail estimate of 0.25 in or more in the last hour, "
+                         "or no value; NOAA's data does not tell the two apart.")
+        for field in ("legend_note", "legend_uncoloured"):                          # no template left unfilled in the legend
+            self.assertNotIn("{", L[field], field)
+        self.assertNotIn(sw.WORDS_SWATH["uncoloured"].format(window=L["window_word"]), L["legend_note"])   # not repeated
+        self.assertIn("not observed hail and not damage", L["legend_note"])
+
+    def test_the_status_line_names_both_layers_with_their_valid_time_and_age(self):
+        status = self.on_result["status"]["hail_swath"]
+        self.assertTrue(status["ok"], status)
+        self.assertEqual(status["detail"], "Hail, last hour: valid Oct 19, 5:58 am MDT, 2 min ago; "
+                                           "Hail, last 24 hours: valid Oct 19, 5:30 am MDT, 30 min ago")
+        state = json.loads(page(self.on, "data/state.json"))["status"]["hail_swath"]
+        self.assertEqual(state["label"], "Hail swath (radar estimate)")
+
+    def test_the_panel_and_the_list_carry_the_build_s_lines_and_credit_the_sample(self):
+        html = page(self.on, "map.html")
+        panel = self.panel(html)
+        lines = self.on_result["content"]["hail_swath"]
+        self.assertEqual(set(lines), set(self.HAIL_TITLES))
+        self.assertIn("<h3>Hail swath (radar estimate)</h3>", panel)
+        self.assertIn('<p class="sample-tag">SAMPLE: invented values, not NOAA data.</p>', panel)
+        self.assertLess(panel.index("<h3>Satellite picture</h3>"), panel.index("<h3>Hail swath (radar estimate)</h3>"))
+        self.assertLess(panel.index("<h3>Hail swath (radar estimate)</h3>"), panel.index("<h3>Radar echo tops</h3>"))
+        template = re.search(r'<template id="storm-list">.*?</template>', html, re.S).group(0)
+        self.assertIn('data-storm="hail"', template)
+        self.assertIn('<h3 id="hail-swath-list-h">Hail swath (radar estimate)</h3>', template)
+        for title in self.HAIL_TITLES:
+            self.assertIn(f"<h4>{title}</h4>", panel)
+            self.assertIn(f"<h4>{title}</h4>", template)
+            for row in lines[title]:
+                self.assertIn(f"<p>{self.phrase(row)}</p>", panel, row)
+                self.assertIn(f"<p>{self.phrase(row)}</p>", template, row)
+        self.assertIn("SAMPLE: invented radar estimate, not NOAA data.", " ".join(lines["Hail, last hour"]))
+
+    def test_the_map_page_has_the_two_radios_after_the_weather_layers_and_only_with_the_flag(self):
+        from website import swath as sw
+        on, off = page(self.on, "map.html"), page(self.off, "map.html")
+        self.assertEqual([p.title for p in sw.PRODUCTS], list(self.HAIL_TITLES))
+        for value, title in (("hail_60", self.HAIL_TITLES[0]), ("hail_1440", self.HAIL_TITLES[1])):
+            self.assertEqual(on.count(f'<input type="radio" name="layer" value="{value}">'), 1)
+            self.assertIn(f'<span class="choice-text">{title}</span>', on)
+            self.assertIn(f"sw-{value}", on)                       # the swatch is painted from the layer's legend
+            self.assertNotIn(value, off)
+        self.assertLess(on.index('value="satellite"'), on.index('value="hail_60"'))
+        self.assertLess(on.index('value="hail_1440"'), on.index("<legend>Base map</legend>"))
+
+    def test_the_about_page_has_the_bullet_with_the_contract_words_and_only_with_the_flag(self):
+        about = page(self.on, "about.html")
+        c = src.CONTRACTS["hail_swath"]
+        self.assertIn("<strong>Hail swath (radar estimate)</strong> is NOAA's MRMS MESH (maximum estimated size of hail), "
+                      "a radar estimate", about)
+        self.assertIn("not observed hail and not damage", about)
+        self.assertIn(self.phrase(c["name"]), about)
+        self.assertIn("This is not an all-clear.", about)
+        self.assertNotIn("Hail swath", page(self.off, "about.html"))
+        self.assertNotIn(c["name"], page(self.off, "about.html"))
+
+    def test_a_default_build_has_no_swath_word_in_any_page_or_data_file(self):
+        for path in self.off.rglob("*"):
+            if path.is_file() and path.suffix in (".html", ".json"):
+                text = path.read_text(encoding="utf-8", errors="replace")
+                for word in ("hail_60", "hail_1440", "Hail swath", "hail_swath", "hail/live"):
+                    self.assertNotIn(word, text, f"{word!r} in {path.relative_to(self.off)}")
+
+    def test_a_storm_layers_build_without_the_history_has_the_layers_and_no_sheet_words(self):
+        on_map = page(self.on, "map.html")
+        self.assertNotIn('id="hail-sheet"', on_map)           # the live line is part of the history sheet (--hail-history)
+        self.assertNotIn("data-live", on_map)                 # made by the script, and only when a hail layer is on
+        self.assertIn('value="hail_60"', on_map)
+
+    def test_a_layer_that_cannot_be_read_still_builds_with_its_words_and_says_so(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-down-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, FailingFetcher(), self.NOW_SWATH, storm_layers=True)
+        self.assertFalse(result["status"]["hail_swath"]["ok"])
+        self.assertIn("hail_swath", [k for k, v in result["status"].items() if not v["ok"]])
+        on = json.loads(page(out, "data/map.json"))
+        for key in ("hail_60", "hail_1440"):
+            L = on["layers"][key]
+            self.assertEqual((L["state"], L["frames"], L["modes"]), ("unavailable", [], {"12h": []}))
+            self.assertTrue(L["state_line"].endswith("This is not an all-clear."), L["state_line"])
+            self.assertIn("is unavailable: ", L["state_line"])
+        self.assertIn("Hail swath problem", page(out, "map.html"))
+        self.assertIn("Hail, last hour is unavailable: ", self.panel(page(out, "map.html")))
+        self.assert_status_ends_with_all_clear(out)
+        self.assert_swath_words_clean(out)
+
+    def test_require_live_fails_when_a_swath_status_is_not_ok(self):
+        from website import swath as sw
+        real = sw.collect
+
+        def one_stale(now, cache_dir, out_dir, towns, get=None, sample=False, offline=False):
+            frames, files, states = real(now, cache_dir, out_dir, towns, get=get, sample=sample, offline=offline)
+            states["hail_1440"]["ok"] = False                  # a stale day picture: not fresh, so not ok
+            return frames, files, states
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-live-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        err = io.StringIO()
+        argv = ["--out", str(out / "site"), "--sample", "--storm-layers", "--require-live", "--now", "2026-10-19T12:00:00Z"]
+        with mock.patch.object(sw, "collect", one_stale), contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(err):
+            self.assertEqual(site.main(argv), 1)
+        self.assertIn("Sources that failed or were stale: hail_swath", err.getvalue())
+
+    def test_the_site_words_say_no_forbidden_term_and_no_dash(self):
+        from website import swath as sw
+        for name, text in list(sw.WORDS_SWATH.items()) + list(site.SWATH_SITE_WORDS.items()):
+            self.assertNotIn("\u2014", text, name)          # no em dash
+            self.assertNotIn("\u2013", text, name)          # no en dash
+            low = text.lower()
+            for word, before in self.NEGATED:
+                for m in re.finditer(re.escape(word), low):
+                    self.assertTrue(low[max(0, m.start() - len(before)):m.start()].endswith(before), f"{name}: {word}")
+            for m in re.finditer(r"all-clear", low):
+                self.assertEqual(low[max(0, m.start() - 7):m.start()], "not an ", f"{name}: all-clear")
+            self.assertNotIn("clear", low.replace("all-clear", ""), f"{name}: clear")
+
+    def test_the_live_swath_section_of_the_map_script_holds_no_threshold_word_unit_or_size_literal(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        start = js.index("live hail swath (--storm-layers builds, B4)")
+        section = js[start:js.index("joined records at a spot (--hail-history builds, B2)")]
+        code = re.sub(r"/\*.*?\*/", "", section, flags=re.S)           # comments out
+        code = re.sub(r"//[^\n]*", "", code)
+        strings = [a or b for a, b in re.findall(r'"((?:[^"\\\n]|\\.)*)"|\'((?:[^\'\\\n]|\\.)*)\'', code)]
+        bare = re.sub(r'"(?:[^"\\\n]|\\.)*"|\'(?:[^\'\\\n]|\\.)*\'', '""', code)
+        # the numbers left in the code: indexes (0, 1, 2) and the HTTP status of a tile with no live file (404, D4)
+        self.assertEqual(set(re.findall(r"(?<![\w.])\d+(?:\.\d+)?", bare)), {"0", "1", "2", "404"})
+        forbidden = ("0.25", "0.75", "1.00", "1.50", "2.00", "2.75", "25.4", "6.35", "pea", "penny", "quarter",
+                     "ping-pong", "hen egg", "baseball", "mothball", "not observed", "not damage", "uncoloured",
+                     "hatched", "valid ", "min ago", "older than", "all-clear", "basemap", "polygon", "geometry",
+                     "estimate", "NOAA", "SAMPLE", "Montana", "in the last", "No radar")
+        for text in strings:
+            for word in forbidden:
+                self.assertNotIn(word, text, f"{word!r} in the string {text!r}")
+        for name in ("function hailView(", "function hailShowable(", "function hailWatch(", "function hailTick(",
+                     "function liveText(", "function liveFile(", "function liveOpen(", "function liveAttach(",
+                     "NO_FILE = 404"):
+            self.assertIn(name, section, name)
+        header = js[:js.index("*/")]
+        self.assertIn("(D7)", header)                                  # the duties are documented in the header
+        self.assertIn("(D16)", header)
+
+    def assert_status_ends_with_all_clear(self, out: Path) -> None:
+        """A failed swath status ends its line with the all-clear sentence on every page that shows the status (live-1):
+        the index, About, the storm reports and a town page."""
+        town = sorted((out / "town").glob("*.html"))[0].relative_to(out).as_posix()
+        for name in ("index.html", "about.html", "reports.html", town):
+            span = re.search(r'<span class="bad">Hail swath \(radar estimate\) problem: .*?</span>', page(out, name), re.S)
+            self.assertIsNotNone(span, name)
+            self.assertTrue(span.group(0).endswith("This is not an all-clear.</span>"), f"{name}: {span.group(0)[-80:]}")
+
+    def assert_swath_words_clean(self, out: Path) -> None:
+        """The words the swath layers show on the map page and the About page keep the rules (rules-6): the two Layers
+        labels, the no-JavaScript panel, the List block (tags stripped), the About bullet and the "Hail swath problem" line."""
+        def plain(html: str) -> str:
+            return " ".join(re.sub(r"<[^>]+>", " ", html).split())
+        map_html, about_html = page(out, "map.html"), page(out, "about.html")
+        labels = [plain(m) for m in re.findall(r"<label[^>]*>.*?</label>", map_html, re.S) if "Hail, last" in m]
+        self.assertEqual(len(labels), 2)
+        block = re.search(r'<section class="storm-sec" data-storm="hail".*?</section>', map_html, re.S)
+        bullet = re.search(r"<li><strong>Hail swath \(radar estimate\)</strong>.*?</li>", about_html, re.S)
+        self.assertIsNotNone(block)
+        self.assertIsNotNone(bullet)
+        panel = self.panel(map_html)
+        start = panel.index("Hail swath (radar estimate)</h3>")
+        end = panel.find("<h3>", start + 5)
+        swath_panel = panel[start:] if end < 0 else panel[start:end]          # the panel's swath part, up to the next heading
+        words = plain(map_html)
+        problem = words[words.index("Hail swath problem"):]
+        problem = problem[:problem.index("This is not an all-clear.") + len("This is not an all-clear.")]
+        for where, text in (("layer labels", " ".join(labels)), ("panel", plain(swath_panel)),
+                            ("list", plain(block.group(0))), ("about bullet", plain(bullet.group(0))),
+                            ("problem line", problem)):
+            self.assert_clean_words(text, where)
+
+    def assert_clean_words(self, text: str, where: str) -> None:
+        """The swath's word rules on a rendered fragment: no dash; a damage, observed-hail or no-hail word only with its
+        negation before it; "all-clear" only as "not an all-clear"; no bare "clear"."""
+        self.assertNotIn("\u2014", text, where)
+        self.assertNotIn("\u2013", text, where)
+        low = text.lower()
+        for word, before in self.NEGATED:
+            for m in re.finditer(re.escape(word), low):
+                self.assertTrue(low[max(0, m.start() - len(before)):m.start()].endswith(before), f"{where}: {word}")
+        for m in re.finditer(r"all-clear", low):
+            self.assertEqual(low[max(0, m.start() - 7):m.start()], "not an ", f"{where}: all-clear")
+        self.assertNotIn("clear", low.replace("all-clear", ""), f"{where}: clear")
+
+    def test_a_storm_layers_build_with_the_hail_history_builds_both_flags_together(self):
+        """The preview's flags together (rules-3): the swath's live folder and the store's tiles share hail/, and the store
+        copy merges into it (build.py _copy_hail, dirs_exist_ok). No FileExistsError; both folders are there."""
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-both-flags-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, None, self.NOW_SWATH, sample=True, storm_layers=True, hail_history=True)
+        self.assertTrue(result["status"]["hail_swath"]["ok"], result["status"]["hail_swath"])
+        self.assertTrue(result["status"]["hail_history"]["ok"], result["status"]["hail_history"])
+        map_json = json.loads(page(out, "data/map.json"))
+        self.assertEqual(map_json["hail"]["state"], "sample")
+        pattern = map_json["layers"]["hail_60"]["live"]["pattern"]           # hail/live/60/<stamp>/{tile}.json
+        self.assertTrue((out / pattern.split("{tile}")[0]).is_dir(), pattern)
+        self.assertTrue((out / "hail" / "t").is_dir())
+        for path in out.rglob("*.html"):
+            self.assertNotIn("FileExistsError", path.read_text(encoding="utf-8", errors="replace"), path.name)
+
+    def test_a_stale_hour_file_ends_its_status_on_every_page_with_the_all_clear_sentence(self):
+        from website import swath as sw
+        real = sw.collect
+
+        def hour_stale(now, cache_dir, out_dir, towns, get=None, sample=False, offline=False):
+            frames, files, states = real(now, cache_dir, out_dir, towns, get=get, sample=sample, offline=offline)
+            frames["hail_60"]["state"] = "stale"       # a stale hour file: not fresh, so not ok (a sample frame is ok by design)
+            states["hail_60"]["ok"] = False
+            return frames, files, states
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-stale-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with mock.patch.object(sw, "collect", hour_stale):
+            result = site.build(out, None, self.NOW_SWATH, sample=True, storm_layers=True)
+        self.assertFalse(result["status"]["hail_swath"]["ok"])
+        self.assertEqual(result["status"]["hail_swath"]["words"], sw.WORDS_SWATH["all_clear"])
+        self.assertIn("Hail, last hour: valid ", result["status"]["hail_swath"]["detail"])
+        self.assertIn("That is more than 20 minutes old", result["status"]["hail_swath"]["detail"])
+        for name in ("index.html", "about.html", "reports.html"):
+            span = re.search(r'<span class="bad">Hail swath \(radar estimate\) problem: .*?</span>', page(out, name), re.S)
+            self.assertIsNotNone(span, name)
+            self.assertTrue(span.group(0).endswith("This is not an all-clear.</span>"), name)
+            self.assertEqual(span.group(0).count("This is not an all-clear."), 1, name)     # once, not doubled
+            self.assertNotIn("..", span.group(0), name)                                    # no doubled full stop
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner, "the single-problem banner on the map page")
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
+        state = json.loads(page(out, "data/state.json"))["status"]["hail_swath"]
+        self.assertEqual(state["words"], sw.WORDS_SWATH["all_clear"])                    # state.json: the sentence once
+        self.assertNotIn("This is not an all-clear.", state["detail"])
+        self.assertNotIn("..", state["detail"])
+
+    def test_an_unavailable_hour_file_says_the_all_clear_once_on_every_page(self):
+        """rules-12: on an unavailable live-path build (the hour layer's file cannot be read; the other sources are fine,
+        so the banner is the single-problem form), the freshness line, the banner and state.json each carry "This is not
+        an all-clear." exactly once, with no doubled full stop."""
+        from website import swath as sw
+        real = sw.collect
+
+        def hour_down(now, cache_dir, out_dir, towns, get=None, sample=False, offline=False):
+            frames, files, states = real(now, cache_dir, out_dir, towns, get=get, sample=sample, offline=offline)
+            frames["hail_60"] = sw._unavailable(sw.PRODUCT_BY_KEY["hail_60"],
+                                                "the file list for the last hour didn't load: NOAA could not be reached")
+            states["hail_60"].update(state="unavailable", ok=False, detail=frames["hail_60"]["state_line"])
+            return frames, files, states
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-swath-down-once-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with mock.patch.object(sw, "collect", hour_down):
+            result = site.build(out, None, self.NOW_SWATH, sample=True, storm_layers=True)
+        self.assertFalse(result["status"]["hail_swath"]["ok"])
+        for name in ("index.html", "about.html", "reports.html"):
+            span = re.search(r'<span class="bad">Hail swath \(radar estimate\) problem: .*?</span>', page(out, name), re.S)
+            self.assertIsNotNone(span, name)
+            self.assertEqual(span.group(0).count("This is not an all-clear."), 1, name)
+            self.assertNotIn("..", span.group(0), name)
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner, "the single-problem banner on the map page")
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
+        state = json.loads(page(out, "data/state.json"))["status"]["hail_swath"]
+        self.assertEqual(state["words"], sw.WORDS_SWATH["all_clear"])
+        self.assertNotIn("This is not an all-clear.", state["detail"])
+        self.assertNotIn("..", state["detail"])
+
+    def test_the_sheet_notes_name_each_kind_of_cell_in_words_and_no_bare_kind_token(self):
+        """The smoke tool's notes for a build with no cell of a kind (browser-17, rules-14, live-14): one phrase per kind,
+        and no bare kind word such as "none cell"."""
+        smoke = smoke_map()
+        frame = {"frames": [1], "title": "Hail, last hour"}
+        data = {"hail": {}, "layers": {"hail_60": dict(frame), "hail_1440": {"frames": [1], "title": "Hail, last 24 hours"}}}
+        with mock.patch.object(smoke, "swath_spots", return_value={}):
+            problems = smoke.check_swath_sheet(None, "http://127.0.0.1/", Path(tempfile.gettempdir()), data, None)
+        for title in ("Hail, last hour", "Hail, last 24 hours"):
+            for phrase in ("with a value", "without an estimate in a tile that has a live file", "in a tile with no live file"):
+                want = (f"note: {title}: this build has no Montana cell {phrase}, so the sheet's live line is not checked")
+                self.assertIn(want, problems)
+        self.assertEqual(len(problems), 6, problems)
+        for msg in problems:
+            self.assertIsNone(re.search(r"\b(?:none|missing|value) cell", msg), msg)
+        self.assertEqual(smoke.KIND_WORDS["none"], "without an estimate in a tile that has a live file")
+
+    def test_the_timeline_words_of_a_hail_layer_carry_no_clock_time(self):
+        from website import swath as sw
+        for name in ("timeline_fresh", "timeline_stale"):
+            self.assertIsNone(re.search(r"\d{1,2}(?::\d{2})?\s?(?:am|pm)|Valid|MDT|MST", sw.WORDS_SWATH[name], re.I), name)
+        self.assertEqual(sw.WORDS_SWATH["timeline_fresh"], "Radar estimate, {age} min ago.")
+        self.assertIn("This is not an all-clear.", sw.WORDS_SWATH["timeline_stale"])
+
+    def swath_section(self) -> str:
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        return js[js.index("live hail swath (--storm-layers builds, B4)"):js.index("joined records at a spot (--hail-history builds, B2)")]
+
+    def test_the_timeline_line_is_the_timeline_words_with_the_sample_label_on_a_sample_build(self):
+        section = self.swath_section()
+        self.assertIn("function swathPre(lay) { return lay && lay.sample ? lay.words.sample_sheet + \" \" : \"\"; }", section)
+        self.assertIn("var pre = swathPre(lay);", section)
+        self.assertIn("pre + fill(w.timeline_fresh, { age: age })", section)
+        self.assertIn("pre + fill(w.timeline_stale, { age: age, limit: lay.fresh_min })", section)   # {limit} is the fresh minutes
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn("return [swathPre(swathLayer()) + swathLayer().state_line];", js)     # the note's words, labelled on a sample build
+        self.assertNotIn("fill(w.fresh, { valid", section)                  # the valid clause stays in the List and the status
+
+    def test_the_hail_state_is_checked_once_a_minute_and_the_docs_say_so(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn("var STATE_TICK = MIN;", js)
+        self.assertIn("setInterval(hailTick, STATE_TICK)", js)
+        self.assertNotIn("MIN / 6", js)                                    # not ten seconds
+        self.assertNotIn("every 10 seconds", js)
+        self.assertIn("is checked every minute (D7)", js)                  # the STATE_TICK comment, above the section
+        # the docs' hail passages say the same cadence: DESIGN section 11, the D37 entry and the ROADMAP's B4 row
+        design = (ROOT / "docs" / "DESIGN.md").read_text(encoding="utf-8").split("## 11. ")[1]
+        decisions = (ROOT / "docs" / "DECISIONS.md").read_text(encoding="utf-8")
+        decisions = decisions[decisions.index("**D37 · "):]
+        roadmap = (ROOT / "docs" / "ROADMAP.md").read_text(encoding="utf-8")
+        roadmap = roadmap[roadmap.index("| Live hail swaths"):][:roadmap[roadmap.index("| Live hail swaths"):].index("\n")]
+        for where, part in (("DESIGN section 11", design), ("DECISIONS D37", decisions), ("ROADMAP B4 row", roadmap)):
+            self.assertNotIn("every 10 seconds", part, where)
+            self.assertNotIn("10-second", part, where)
+
+    def test_the_smoke_picture_gate_for_the_sparse_hail_layers_is_the_d17_rule(self):
+        """D17 (the B4 brief): the gate zooms to a listed value cell at zoom 10 or closer, needs 16 changed pixels at that
+        spot, notes the no-values case and records the count. The 2 percent rule stays with the dense radar and satellite."""
+        smoke = (ROOT / "tools" / "smoke_map.py").read_text(encoding="utf-8")
+        gate = smoke[smoke.index("def check_swath_gate("):smoke.index("def check_swath_tick(")]
+        self.assertIn("GATE_MIN_CHANGED = 16", smoke)
+        self.assertIn("GATE_MIN_ZOOM = 10", smoke)
+        self.assertIn("cell = value_cell(root, L)", gate)                  # a listed cell with a value, nothing else
+        self.assertIn("zoom_on_spot(page, data, lat, lon)", gate)           # zoomed on the spot, not the centre
+        self.assertIn("changed_count_at(without, shown", gate)              # counted in a box around the spot
+        self.assertIn("GATE_SPOT_RADIUS = 80", smoke)
+        self.assertIn("zoom < GATE_MIN_ZOOM - 0.05", gate)
+        self.assertIn("no values in the box: pixel gate not applicable", gate)
+        self.assertIn("pixels changed at the spot", gate)                  # the count is recorded as a note
+        self.assertNotIn("0.02", gate)
+        self.assertIn("TICK_MS = 60_000", smoke)
+
+    def test_the_hail_words_name_the_window_by_its_own_name_and_never_in_the_window(self):
+        """D21: the About bullet and the contract row say "in the last hour" or "in the last 24 hours" (the window's own
+        words), and "this map's area" stands in for "the picture" in every viewer's sentence."""
+        about = page(self.on, "about.html")
+        words = json.dumps(src.CONTRACTS["hail_swath"]) + about
+        self.assertNotIn("in the window", words)
+        self.assertIn("in the last hour (hour layer) or the last 24 hours (24-hour layer)", about)
+        from website import swath as sw
+        self.assertNotIn("in the window", json.dumps(sw.WORDS_SWATH))
+        self.assertIn("this map's area", sw.WORDS_SWATH["montana_outside"])
+
+    def test_the_live_line_reads_no_tile_for_a_point_the_store_puts_outside_montana(self):
+        from website import swath as sw
+        section = self.swath_section()
+        self.assertIn("outside_montana_live", sw.WORDS_SWATH)
+        self.assertIn("w.outside_montana_live", section)
+        self.assertIn('var montana = !cell ? false : H.state === "unavailable" ? "unknown" : '
+                      'hailListed(H, hailTileName(H, cell)) ? "pending" : false;', section)
+        open_live = section[section.index("function liveOpen("):]
+        self.assertNotIn("liveFile(", open_live)                       # liveOpen reads no tile: the shard answers first (F-9)
+        live_montana = section[section.index("function liveMontana("):section.index("function liveCurrent(")]
+        self.assertIn("if (value === true) liveLoad(liveFor);", live_montana)   # only a point the shard puts in Montana
+        self.assertIn("function liveLoad(f) {", section)
+        self.assertEqual(section.count("liveFile("), 2)                 # its definition and its one call, in liveLoad
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        open_hail = js[js.index("function openHail("):js.index("function onHailClick(")]
+        self.assertIn("liveMontana(false);", open_hail)                       # the shard's answer reaches the live line
+        self.assertIn("liveMontana(true);", open_hail)
+        self.assertIn('liveMontana("unknown")', open_hail)                    # a store or shard that did not load is no answer
+
+    def test_a_closed_hail_sheet_takes_its_live_line_with_it(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn("sheetState = null;\n    liveFor = null;\n    liveNode = null;\n", js)
+        self.assertIn('if (liveNode && sheetState && sheetState.kind === "hail" && el.sheetBody.firstChild !== liveNode)', js)
+
+    def test_the_legend_keeps_the_hail_sentences_in_view_on_phones_and_its_keys_match_the_pictures(self):
+        css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        self.assertIn(".legend.swath-words .legend-note:not(:empty) { display: block; }", css)
+        self.assertIn(".legend-uncoloured { margin-top: 3px;", css)
+        self.assertIn(".legend-2col .legend-head, .legend-2col .legend-note, .legend-2col .legend-uncoloured", css)
+        self.assertIn("html:not(.is-card) .legend:not(.show-note) .legend-uncoloured { display: none !important; }", css)
+        # the picture's no-coverage stripes (gridded.HATCH, 1 px every 5 px) in both themes; the outside band as the map draws it
+        self.assertEqual(css.count("--hatch-gap: rgba(142, 142, 147, 0.35);"), 2)
+        self.assertIn(".key-hatch { background: repeating-linear-gradient(-45deg, var(--hatch-gap) 0 1px, transparent 1px 5px);", css)
+        self.assertIn(".key-hatch-out { background: repeating-linear-gradient(-45deg, var(--hatch-out) 0 1px, transparent 1px 6px);", css)
+
+    def test_the_legend_of_a_hail_layer_has_its_own_uncoloured_line_and_only_on_the_flag(self):
+        from website import swath as sw
+        self.assertIn('id="legend-uncoloured"', page(self.on, "map.html"))
+        self.assertNotIn("legend-uncoloured", page(self.off, "map.html"))
+        self.assertNotIn(sw.WORDS_SWATH["uncoloured"].format(window="hour"),
+                         json.loads(page(self.on, "data/map.json"))["layers"]["hail_60"]["legend_note"])
+
+    # B4-6 without git history (the Website workflow checks out shallow): the default build's files as digests, against
+    # the manifest of the base commit's build. The shared script and style files are left out (they change with the
+    # feature), the pages' ?v= hashes are normalised, and PNG frames are compared by their decoded pixels, so an encoder
+    # change does not count. Regenerate with write_default_manifest (see its docstring).
+    MANIFEST = ROOT / "tests" / "fixtures" / "default-build-manifest.json"
+
+    def test_the_default_build_matches_the_manifest_of_its_base_commit(self):
+        expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
+        work = Path(tempfile.mkdtemp(prefix="hailwatch-identity-"))
+        self.addCleanup(shutil.rmtree, work, True)
+        out = work / "site"
+        done = subprocess.run([sys.executable, "-m", "website.build", "--out", str(out), "--sample",
+                               "--now", "2026-10-19T12:00:00Z"], cwd=ROOT, capture_output=True, text=True, timeout=900)
+        self.assertEqual(done.returncode, 0, done.stderr[-800:])
+        now = default_digests(out)
+        self.assertEqual(sorted(set(now) ^ set(expected["files"])), [], f"base {expected['base']}: files differ")
+        changed = sorted(name for name in now if now[name] != expected["files"][name])
+        self.assertEqual(changed, [], f"base {expected['base']}: these files differ from the base build")
 
 
 if __name__ == "__main__":

@@ -109,7 +109,7 @@ pip install pyshp                                                # the joins nee
 python -m website.joins build --store store --cache joins-cache  # the joins: reports, records, detections, warnings, zone products, station gusts
 python -m website.joins verify store                             # check the joins
 python -m http.server -d _site 8000            # open http://localhost:8000
-python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_website_workflow   # website tests, offline, seconds
+python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_swath tests.test_hail tests.test_joins tests.test_website_workflow   # website tests, offline, seconds
 python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
 python tools/smoke_pages.py _site              # no page wider than the screen, 288–1440 px
 ```
@@ -120,6 +120,7 @@ website/sources.py     NWS and SPC requests, parsers, flag limits, feed contract
 website/gridded.py     NOAA radar (MRMS) and HRRR model grids → map picture frames
 website/storm.py       NOAA radar echo tops for each town (behind --storm-layers, text only)
 website/satellite.py   NOAA GOES band 13 satellite picture → one map frame (behind --storm-layers)
+website/swath.py        NOAA MRMS hail swath, last hour and last 24 hours → two map layers and per-tile live files (behind --storm-layers; a radar estimate, not observed hail)
 website/hail.py        the hail history (behind --hail-history): grid, size classes and words, store readers, daily build
 website/joins.py       the hail history joins (behind --hail-history): reports, official records, radar detections, warnings, zone products, station gusts
 website/data/hail-fixture/ a labelled SAMPLE store for --sample builds and tests
@@ -134,7 +135,7 @@ tools/build_basemap.py rebuilds basemap.json from Natural Earth and Census data 
 tests/                 test_site.py (pages, failures), test_gridded.py (radar and model frames),
                        test_basemap.py (the outline file), test_storm.py (radar echo tops),
                        test_satellite.py (the GOES satellite picture), test_hail.py (the hail history store),
-                       test_joins.py (the hail history joins),
+                       test_joins.py (the hail history joins), test_swath.py (the MRMS hail swath layers),
                        test_website_workflow.py
                        (the workflow file)
 ```

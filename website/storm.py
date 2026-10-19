@@ -11,9 +11,9 @@ reads the town's cell from each file, and works out:
 - the counts behind it: heights with a dBZ value, heights with no radar value (-99 or -999), and
   heights below the town's ground height, which are counted and not used.
 
--99 and -999 mean "no radar value". Their meaning is not verified (research/globe/validation-evidence/
-mrms.json; p0-gates.json says "not settled"), so they are never a value and never 0. Other negative
-values are weak echoes: values.
+-99 and -999 mean "no radar value": -99 is missing and -999 is no coverage (the MergedReflectivityQC row of
+NOAA's MRMS GRIB2 user table, versions 12.0 to 12.2, which agree; the archive files do not state a version;
+docs/DECISIONS.md D34). They are never a value and never 0. Other negative values are weak echoes: values.
 
 This is a radar estimate. No echo is not an all-clear, and no text here says dry, clear or no hail.
 
@@ -57,7 +57,7 @@ REFLECTIVITY = (209, 9, 0)      # discipline, category, number: checked on the 1
 GRID_SHAPE = (7000, 3500)       # Ni, Nj of the regular latitude-longitude grid (0.01 degree)
 ECHO_DBZ = 35.0
 ECHO_EPS = 1e-4                 # float rounding allowance on the 35 dBZ test
-NO_DATA = (-99.0, -999.0)       # "no radar value"; meaning unverified; never a value, never 0
+NO_DATA = (-99.0, -999.0)       # "no radar value": -99 missing, -999 no coverage (D34); never a value, never 0
 JOIN = timedelta(seconds=10)    # the 11 heights of one time may differ by up to 10 s
 WINDOW = timedelta(minutes=60)  # how far back the file lists look for a common time
 STALE = gridded.RADAR_STALE     # 30 minutes, as the radar frames
@@ -240,7 +240,7 @@ def _describe(col: dict, when: datetime, age_min: int, stale: bool, sample: bool
         body = (f"All {len(HEIGHTS_M)} sampled heights are below ground here, so no echo top is stated "
                 f"(radar estimate, valid {clock}).")
     elif col["data"] == 0:
-        body = (f"No radar value (radar estimate; codes -99 or -999, meaning not verified) at any of the "
+        body = (f"No radar value (radar estimate; code -99 means missing, code -999 means no coverage) at any of the "
                 f"{_plural(col['above'], 'height', 'heights')} above ground, valid {clock}"
                 f"{_notes(col, nodata=False)}.")
     elif col["hits"] == 0:
