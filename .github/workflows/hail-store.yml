@@ -1,9 +1,11 @@
 name: Hail history store
 
-# The daily job for the five-year hail history (B1, D34). It rebuilds the trailing store of the NOAA MRMS MESH
-# archive (website/hail.py) and publishes it as one release asset, which the Website build reads with
-# --hail-history. 12:43 UTC is after the 12:00 UTC file is published (about 12:08 UTC). A failed run leaves the
-# last published release in place, because the upload is the last step.
+# The daily job for the five-year hail history (B1, D34; the joins of B2). It rebuilds the trailing store of the
+# NOAA MRMS MESH archive (website/hail.py), joins the reports, official records, radar detections, warnings, zone
+# products and station gusts to each tile (website/joins.py), and publishes the store as one release asset, which
+# the Website build reads with --hail-history. 12:43 UTC is after the 12:00 UTC file is published (about 12:08
+# UTC). A source that fails in this job marks its part unavailable in the store (the sheet says so); a failed
+# verify or build leaves the last published release in place, because the upload is the last step.
 
 on:
   schedule:
@@ -19,6 +21,7 @@ on:
       - ".github/workflows/hail-store.yml"
       - "website/hail.py"
       - "website/hail_fixture_data.py"
+      - "website/joins.py"
 
 permissions:
   contents: write
@@ -40,8 +43,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install the GRIB reader and the HTTP client
-        run: pip install numpy pygrib requests
+      - name: Install the GRIB reader, the HTTP client and the shapefile reader
+        run: pip install numpy pygrib requests pyshp
 
       - name: Name the download cache by month
         id: month
@@ -60,6 +63,20 @@ jobs:
 
       - name: Verify the store
         run: python -m website.hail verify store
+
+      - name: Restore the joins' downloads (optional; a cold cache builds the same joins)
+        uses: actions/cache@v4
+        with:
+          path: joins-cache
+          key: joins-cache-${{ steps.month.outputs.key }}
+          restore-keys: |
+            joins-cache-
+
+      - name: Join reports, records, detections, warnings, zone products and station gusts
+        run: python -m website.joins build --store store --cache joins-cache --procs 4
+
+      - name: Verify the joins (the Benchland gate rows are printed)
+        run: python -m website.joins verify store
 
       - name: Pack the store
         run: tar czf hail-store.tar.gz -C store hail

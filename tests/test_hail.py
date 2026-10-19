@@ -611,10 +611,14 @@ class ReaderTests(unittest.TestCase):
             h.cell_events(dest, *BENCHLAND)
 
     def test_manifest_passes_on_the_fixture(self):
+        # the B2 layout: B1's shards and index, and the joins' j/, s/ and z/ files (the fire zone files of the sample's
+        # tiles included). A manifest does not list itself, so hail/manifest.json is not in this list.
         manifest = h.check_manifest(FIXTURE)
-        self.assertEqual(sorted(manifest["files"]),
-                         ["hail/index.json", "hail/t/r0079_c0198.json", "hail/t/r0079_c0199.json",
-                          "hail/t/r0092_c0214.json"])
+        self.assertEqual(sorted(manifest["files"]), [
+            "hail/index.json", "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
+            "hail/j/r0092_c0214.json", "hail/s/1LM.json", "hail/s/6S8.json", "hail/s/BIL.json", "hail/s/LWT.json",
+            "hail/t/r0079_c0198.json", "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json",
+            "hail/z/MTZ235.json", "hail/z/MTZ313.json", "hail/z/fire-MTZ117.json", "hail/z/fire-MTZ128.json"])
 
     def test_manifest_catches_a_changed_shard(self):
         dest = self.copy_fixture()
@@ -736,21 +740,36 @@ class ReaderTests(unittest.TestCase):
 
 
 class FixtureTests(unittest.TestCase):
-    def test_fixture_is_under_50_kb_and_holds_only_the_store_files(self):
+    def test_fixture_is_under_50_kb_and_holds_only_the_store_and_joins_files(self):
         files = sorted(p.relative_to(FIXTURE).as_posix() for p in FIXTURE.rglob("*") if p.is_file())
-        self.assertEqual(files, ["hail/index.json", "hail/manifest.json", "hail/t/r0079_c0198.json",
-                                 "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json"])
+        self.assertEqual(files, [
+            "hail/index.json", "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
+            "hail/j/r0092_c0214.json", "hail/manifest.json", "hail/s/1LM.json", "hail/s/6S8.json", "hail/s/BIL.json",
+            "hail/s/LWT.json", "hail/t/r0079_c0198.json", "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json",
+            "hail/z/MTZ235.json", "hail/z/MTZ313.json", "hail/z/fire-MTZ117.json", "hail/z/fire-MTZ128.json"])
         total = sum(p.stat().st_size for p in FIXTURE.rglob("*") if p.is_file())
         self.assertLess(total, 50_000)
 
     def test_fixture_is_the_current_output_of_fixture_store(self):
+        # The joins layer and its manifest come from the joins build (tests/test_joins.py checks them), so this compares
+        # the B1 part: the shards byte for byte, and the index and manifest without the joins block. It writes into a
+        # folder this test made, never into the committed fixture.
         tmp = Path(tempfile.mkdtemp(prefix="hail-fixture-"))
         try:
             h.fixture_store(tmp)
-            for path in (tmp / "hail").rglob("*"):
-                if path.is_file():
-                    rel = path.relative_to(tmp)
-                    self.assertEqual(path.read_bytes(), (FIXTURE / rel).read_bytes(), str(rel))
+            for path in (tmp / "hail" / "t").rglob("*.json"):
+                rel = path.relative_to(tmp)
+                self.assertEqual(path.read_bytes(), (FIXTURE / rel).read_bytes(), str(rel))
+            generated = json.loads((tmp / "hail" / "index.json").read_text(encoding="utf-8"))
+            committed = json.loads((FIXTURE / "hail" / "index.json").read_text(encoding="utf-8"))
+            committed.pop("joins")
+            self.assertEqual(committed, generated)
+            generated = json.loads((tmp / "hail" / "manifest.json").read_text(encoding="utf-8"))
+            committed = json.loads((FIXTURE / "hail" / "manifest.json").read_text(encoding="utf-8"))
+            committed.pop("joins")
+            for doc in (generated, committed):      # the index's own entry hashes the index with its joins block
+                doc["files"] = {k: v for k, v in doc["files"].items() if k.startswith("hail/t/")}
+            self.assertEqual(committed, generated)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -1660,8 +1679,9 @@ class CompareGateTests(unittest.TestCase):
 
 class WorkflowTests(unittest.TestCase):
     def test_the_daily_job_installs_unpinned_like_the_site_build(self):
+        # the B2 brief's job section and D12: the job also installs pyshp (the zone shapefiles, joins.py only)
         text = (ROOT / ".github" / "workflows" / "hail-store.yml").read_text(encoding="utf-8")
-        self.assertIn("run: pip install numpy pygrib requests\n", text)
+        self.assertIn("run: pip install numpy pygrib requests pyshp\n", text)
         self.assertNotIn("==", text)
         self.assertIn('python-version: "3.12"', text)
         self.assertIn("python -m website.hail verify store", text)

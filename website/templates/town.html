@@ -137,6 +137,12 @@
 </section>
 
 {% if hail_history and town.hail %}{% set h = town.hail %}
+<style>
+/* the joined records under the radar history (B2): a heading per kind, and the rows past the first ten in a details element */
+/* a long name in a join section (a fire zone's county list) breaks inside the word, not past the screen's edge */
+.joins-sec { margin-top: 20px; overflow-wrap: anywhere; }
+.joins-more summary { cursor: pointer; margin: 8px 0; color: var(--ink-2); }
+</style>
 <section aria-labelledby="hail-h">
   <div class="section-head"><h2 id="hail-h">Hail history, five years</h2></div>
   {% if h.sample %}<p class="sub"><span class="chip chip-unknown">{{ h.sample }}</span></p>{% endif %}
@@ -172,6 +178,45 @@
   {% if h.missing %}<p class="sub">{{ h.missing }}</p>{% endif %}
   {% if h.stale %}<p class="sub"><strong>{{ h.stale }}</strong></p>{% endif %}
   <p class="sub">{{ h.source }}</p>
+  {% if h.joins %}{% set j = h.joins %}
+  {% for s in j.sections %}
+  <section class="joins-sec" data-section="{{ s.key }}" aria-labelledby="join-{{ s.key }}">
+    <h3 id="join-{{ s.key }}">{{ s.heading }}</h3>
+    {% if s.unavailable %}<p class="empty">{{ s.unavailable }}</p>{% endif %}
+    {% if s.lead %}<p class="sub">{{ s.lead }}</p>{% endif %}
+    {% if s.fire_lead %}<p class="sub">{{ s.fire_lead }}</p>{% endif %}
+    {% if s.rows %}
+    <div class="table-box">
+      <table>
+        <caption class="visually-hidden">{{ s.heading }}</caption>
+        <thead><tr><th scope="col">{{ s.head }}</th></tr></thead>
+        <tbody>
+        {% for r in s.rows[:j.show_first] %}
+          <tr><td>{{ r.text }}{% if r.note %}<br><small>{{ r.note }}</small>{% endif %}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if s.rows|length > j.show_first %}
+      <details class="joins-more">
+        <summary>{{ s.show_all }}</summary>
+        <table>
+          <caption class="visually-hidden">{{ s.heading }}, all rows</caption>
+          <tbody>
+          {% for r in s.rows[j.show_first:] %}
+            <tr><td>{{ r.text }}{% if r.note %}<br><small>{{ r.note }}</small>{% endif %}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </details>
+      {% endif %}
+    </div>
+    {% endif %}
+    <p class="sub">{{ s.what }}</p>
+    {% if s.note %}<p class="sub">{{ s.note }}</p>{% endif %}
+  </section>
+  {% endfor %}
+  {% if j.times %}<p class="sub">{{ j.times }}</p>{% endif %}
+  {% endif %}
   {% endif %}
 </section>
 {% endif %}

@@ -41,6 +41,30 @@
     at 12:43 UTC and shows here on the next rebuild, usually within the hour. The as-of date is on every page that shows the
     history. The units and the source are in the data
     sources table below.</p>
+  <h3>Other records for the same cell</h3>
+  <p>The history also joins the other kinds of record for the same cell. Each row keeps its own kind word, and no
+    record is turned into another kind: reports are what people sent the National Weather Service (NWS local storm
+    reports within 5 miles, of every type); official records are NOAA's Storm Events database (hail and thunderstorm
+    wind points within 5 miles, and the zone-coded rows of every type, such as high wind, winter storm and drought,
+    for the cell's public forecast zone); radar detections are the NEXRAD hail signatures within 2 miles, the radar
+    algorithm's detection for a storm cell and not hail on the ground; official warnings are the NWS severe
+    thunderstorm, tornado and flash flood polygons that covered the cell, with the forecast tags they carried at issue
+    time; zone products are the NWS high wind, winter storm, blizzard, ice storm, extreme cold, wind chill, dust
+    storm, wind advisory and flood watch products for the cell's whole public forecast zone, named, and they cover the
+    whole zone, not this spot alone; red flag warnings are the NWS fire weather zone products for the cell's fire
+    weather zone, a separate zone map from the public forecast zones, and they cover that whole fire weather zone too;
+    and station readings are the peak gusts at the two nearest airport stations within 40 miles, which are at the
+    airport and not at this address.</p>
+  <p>Not joined: the SPC storm reports (they come from the same reports as the local storm reports, so they would
+    count twice); the HRRR modelled gust (a model, not a reading); and the DAT storm survey points (few in Montana).
+    Not joined yet: NOAA's county-coded Storm Events records (points, not zone rows) of tornado, flood, flash flood,
+    heavy rain, funnel cloud, lightning and debris flow; the same types appear among the reports when people sent them
+    to the NWS. The flood warnings, flood watches and flood advisories as polygons, the areal flood warnings and areal
+    flood advisories, the county-only areal flood watches, and the flash flood watches; snow squall warnings; and the
+    winter weather advisories, winter storm watches, heat advisories, excessive heat warnings and watches, frost
+    advisories and freeze warnings. Other NWS products are not joined yet. Known gaps: NCEI's database runs behind the
+    other sources, and the sheet says to which date; SWDI's inventory is not complete; the wind unit of the local
+    storm reports is inferred; and warning tags are the forecast threat at issue time, not what fell.</p>
 {% endif %}
   <h2>Base map imagery</h2>
   <p>The map's base is a white map of public outlines. In the Layers menu you can switch it to aerial imagery with roads and

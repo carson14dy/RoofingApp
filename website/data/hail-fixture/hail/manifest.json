@@ -11,8 +11,40 @@
  },
  "files": {
   "hail/index.json": {
-   "bytes": 1112,
-   "sha256": "5c6490d9c5f036855687efc0ecddd76697801d591207c6ac95b0595e5c9ceda0"
+   "bytes": 5919,
+   "sha256": "362cd80a409f69131b8c2993084503877d1feb5eef0b65d43d53f093589291ad"
+  },
+  "hail/j/events.json": {
+   "bytes": 3068,
+   "sha256": "53b6cf9aa1b8c33d48600d9ab0fd0c68797c282245c52ddb1f0f6b8e9e972956"
+  },
+  "hail/j/r0079_c0198.json": {
+   "bytes": 1005,
+   "sha256": "97cde138fcafafa1660e782fc088561c17629c93c618f607a1d5bc0e2f6bfd5f"
+  },
+  "hail/j/r0079_c0199.json": {
+   "bytes": 1041,
+   "sha256": "437ef7e739bcc75a09a887d80d1b322f6914a25bec688ed9f0d0d3d96c4172be"
+  },
+  "hail/j/r0092_c0214.json": {
+   "bytes": 930,
+   "sha256": "6930bae7c41f0bb3e8269f19bff42821ae7e6817d87dfb975110472e3efa87a5"
+  },
+  "hail/s/1LM.json": {
+   "bytes": 97,
+   "sha256": "f3eed8c3ff0201b9173d2c6eb098250ad31b3b5c82e7331eb977f1b21b7bfef2"
+  },
+  "hail/s/6S8.json": {
+   "bytes": 102,
+   "sha256": "17f376fc40cf8c6d537b02867077e4835d6758ef5fc395aa7a41d9d1c9ca4c92"
+  },
+  "hail/s/BIL.json": {
+   "bytes": 127,
+   "sha256": "90e7ddeff2b03deaf7e256674923b038b33195533a633a7a255258242dd71729"
+  },
+  "hail/s/LWT.json": {
+   "bytes": 115,
+   "sha256": "fe09ef0f685b86fc1f5d06380d54fa4b663ea709341d672c22f19a8c6b66d6de"
   },
   "hail/t/r0079_c0198.json": {
    "bytes": 7727,
@@ -25,6 +57,33 @@
   "hail/t/r0092_c0214.json": {
    "bytes": 2680,
    "sha256": "513ce3599ea9901dd3ae8357f43f6265c5f22ca33c47e20b9138a3ef3c25d2f9"
+  },
+  "hail/z/MTZ235.json": {
+   "bytes": 95,
+   "sha256": "04ae48a22a821d5283ddcf7db6616694c57e52d0026f1968576a19594e85c0eb"
+  },
+  "hail/z/MTZ313.json": {
+   "bytes": 105,
+   "sha256": "c12f36f2a05e1299cdaf9166bcb2716cabffca2878764cf53da23495caec6214"
+  },
+  "hail/z/fire-MTZ117.json": {
+   "bytes": 142,
+   "sha256": "b72af51680fee655961b70ccdd6beecd48b288717aef37a5722e0f53b1954582"
+  },
+  "hail/z/fire-MTZ128.json": {
+   "bytes": 103,
+   "sha256": "bc2e84d15c84816bf043b26a46b92d675e12f5418369fb2b0b12f782f762a9ab"
   }
+ },
+ "joins": {
+  "format": "hail-joins-v1",
+  "tiles": [
+   "r0079_c0198",
+   "r0079_c0199",
+   "r0092_c0214"
+  ],
+  "zones": 2,
+  "stations": 4,
+  "state": "sample"
  }
 }

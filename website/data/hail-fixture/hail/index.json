@@ -48,5 +48,280 @@
   "coverage": {},
   "partial": []
  },
- "sample": true
+ "sample": true,
+ "joins": {
+  "format": "hail-joins-v1",
+  "events_format": "hail-events-v1",
+  "built_at": "2026-10-18T23:17:14Z",
+  "as_of": "2026-10-15",
+  "window": [
+   "2021-10-16",
+   "2026-10-15"
+  ],
+  "sample": true,
+  "state": "sample",
+  "parts": {
+   "reports": "loaded",
+   "records": "loaded",
+   "detections": "loaded",
+   "warnings": "loaded",
+   "zones": "loaded",
+   "stations": "loaded"
+  },
+  "reasons": {},
+  "partial": {},
+  "lags": {
+   "ncei": "2026-06-29",
+   "swdi": "2026-09-28",
+   "warnings": "2026-09-18"
+  },
+  "types": {
+   "2": "blowing dust",
+   "5": "freezing rain",
+   "6": "extreme cold",
+   "7": "extr wind chill",
+   "A": "high sust winds",
+   "B": "downburst",
+   "C": "funnel cloud",
+   "D": "tstm wnd dmg",
+   "E": "flood",
+   "F": "flash flood",
+   "G": "tstm wnd gst",
+   "H": "hail",
+   "I": "extreme heat",
+   "J": "fog",
+   "L": "lightning",
+   "M": "marine tstm wind",
+   "N": "non-tstm wnd gst",
+   "O": "non-tstm wnd dmg",
+   "P": "misc mrn/srf hzd",
+   "Q": "snow squall",
+   "R": "rain",
+   "S": "snow",
+   "T": "tornado",
+   "U": "wildfire",
+   "V": "avalanche",
+   "W": "landspout",
+   "X": "debris flow",
+   "Z": "blizzard"
+  },
+  "zone_list": [
+   "MTZ235",
+   "MTZ313"
+  ],
+  "zone_names": {
+   "MTZ235": "Southwestern Yellowstone",
+   "MTZ313": "Judith Basin County and Judith Gap"
+  },
+  "zones": 2,
+  "station_list": [
+   "1LM",
+   "6S8",
+   "BIL",
+   "LWT"
+  ],
+  "stations": 4,
+  "fire_zone_list": [
+   "MTZ117",
+   "MTZ128"
+  ],
+  "fire_zones": {
+   "state": "loaded",
+   "reason": null,
+   "zones": 2
+  },
+  "fire_zone_names": {
+   "MTZ117": "Central and Eastern Lewis and Clark National Forest Areas",
+   "MTZ128": "Yellowstone County"
+  },
+  "tiles": 3,
+  "sample_days": [
+   "2025-06-14",
+   "2025-06-15",
+   "2025-06-16"
+  ],
+  "source": "cut from the joins build of 2026-10-18T23:17:14Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
+  "cover": "25 lower-case hex digits; bit k (the cell key 0 to 99) is set when the cell centre is inside",
+  "shapes": {
+   "report": [
+    "d",
+    "t",
+    "lat",
+    "lon",
+    "code",
+    "mag_text",
+    "unit",
+    "qual",
+    "src",
+    "city",
+    "remark"
+   ],
+   "record": [
+    "d",
+    "t",
+    "lat",
+    "lon",
+    "code",
+    "mag_text",
+    "unit",
+    "qual",
+    "src",
+    "city",
+    "remark",
+    "mag_mph",
+    "mag_kt"
+   ],
+   "warning": [
+    "k",
+    "b",
+    "e",
+    "o",
+    "tags"
+   ],
+   "detection": [
+    "d",
+    "t",
+    "lat",
+    "lon",
+    "size_hundredths_in"
+   ],
+   "station_day": [
+    "d",
+    "mph",
+    "kt"
+   ]
+  },
+  "tile": {
+   "reports": "indexes into events.reports, sorted by the row's first five fields",
+   "records": "indexes into events.records, sorted the same way",
+   "warnings": "[index into events.warnings, cover]",
+   "detections": "[d, t, lat, lon, size_hundredths_in]",
+   "zones": "{zone code: [cell keys]}",
+   "fire": "{fire weather zone code: [cell keys]}",
+   "stations": "[{id, name, lat, lon, miles}]"
+  },
+  "montana_time": [
+   [
+    "2020-01-01T00:00Z",
+    "MST"
+   ],
+   [
+    "2020-03-08T09:00Z",
+    "MDT"
+   ],
+   [
+    "2020-11-01T08:00Z",
+    "MST"
+   ],
+   [
+    "2021-03-14T09:00Z",
+    "MDT"
+   ],
+   [
+    "2021-11-07T08:00Z",
+    "MST"
+   ],
+   [
+    "2022-03-13T09:00Z",
+    "MDT"
+   ],
+   [
+    "2022-11-06T08:00Z",
+    "MST"
+   ],
+   [
+    "2023-03-12T09:00Z",
+    "MDT"
+   ],
+   [
+    "2023-11-05T08:00Z",
+    "MST"
+   ],
+   [
+    "2024-03-10T09:00Z",
+    "MDT"
+   ],
+   [
+    "2024-11-03T08:00Z",
+    "MST"
+   ],
+   [
+    "2025-03-09T09:00Z",
+    "MDT"
+   ],
+   [
+    "2025-11-02T08:00Z",
+    "MST"
+   ],
+   [
+    "2026-03-08T09:00Z",
+    "MDT"
+   ],
+   [
+    "2026-11-01T08:00Z",
+    "MST"
+   ],
+   [
+    "2027-03-14T09:00Z",
+    "MDT"
+   ],
+   [
+    "2027-11-07T08:00Z",
+    "MST"
+   ]
+  ],
+  "events": {
+   "reports": 16,
+   "records": 7,
+   "warnings": 4
+  },
+  "compare": {},
+  "bytes": {},
+  "counts": {},
+  "station_days_by_year": {},
+  "station_dropped": 0,
+  "station_days": 0,
+  "station_missing": 0,
+  "zone_rows_unmatched": 0,
+  "ncei_zone_rows_unmatched": 0,
+  "sources": {},
+  "failures": [],
+  "failure_count": 0,
+  "zone_editions": [
+   {
+    "file": "z_18mr25.zip",
+    "effective": "2025-03-18",
+    "current": false,
+    "read": true,
+    "zones": 83,
+    "same_codes": 83,
+    "renamed": {},
+    "geometry_max_diff_deg": 0.0
+   },
+   {
+    "file": "z_16ap26.zip",
+    "effective": "2026-04-16",
+    "current": true,
+    "read": true,
+    "zones": 83
+   }
+  ],
+  "zone_edition_cutover": "2026-04-16",
+  "zone_products_unplaced": 0,
+  "zone_products_renumbered": 0,
+  "ncei_zone_rows_renumbered": 0,
+  "malformed_rows": {
+   "reports": 0,
+   "records": 0,
+   "detections": 0,
+   "warnings": 0,
+   "zones": 0,
+   "stations": 0
+  },
+  "repull": {
+   "months": [],
+   "years": []
+  },
+  "offline": true
+ }
 }

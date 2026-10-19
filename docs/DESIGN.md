@@ -1,4 +1,4 @@
-# Design — Montana Hail Watch website
+# Design: Montana Hail Watch website
 
 Design spec for the Montana Hail Watch website (D27), written 2026-10-14 with the design-playbook
 method (frame → explore → make → validate → ship). It replaces the desktop app's design of
@@ -206,7 +206,7 @@ final:
   phone rule for minor towns.
 - On phones the hourly table hid gusts off-screen. Gusts now come first, and the sky and reasons
   columns drop below 560 px.
-- Missing values showed as "—%". They now show a dash with a sentence.
+- Missing values showed as an em dash and a percent sign. They now show a dash with a sentence.
 - The 7-day forecast was one row per 12-hour period. It is now one row per day with the high and
   low together.
 - Numbers and their units no longer split across lines.
@@ -296,9 +296,9 @@ in the Livingston corridor (Wind gusts layer, the 25 mph ring on the bubbles); a
 | Layer | Before now | After now | Bubble value |
 |---|---|---|---|
 | Precipitation | MRMS radar estimate, every 10 min for the past hour | HRRR: 15-min steps for the next hour (1h) or hourly to 12 h (12h) | NWS temperature; no ring |
-| Temperature | — | HRRR 2 m temperature, hourly to 12 h | NWS temperature; ring below 40 °F or above 95 °F |
-| Wind gusts | — | HRRR surface gusts, hourly to 12 h | NWS gusts; ring at the 25 mph limit |
-| Satellite (with `--storm-layers`) | GOES-East band 13 picture of the newest 5-minute scan: one observation, not radar and not a model | — | NWS temperature; no ring |
+| Temperature | None | HRRR 2 m temperature, hourly to 12 h | NWS temperature; ring below 40 °F or above 95 °F |
+| Wind gusts | None | HRRR surface gusts, hourly to 12 h | NWS gusts; ring at the 25 mph limit |
+| Satellite (with `--storm-layers`) | GOES-East band 13 picture of the newest 5-minute scan: one observation, not radar and not a model | None | NWS temperature; no ring |
 | Base map: Map (default) or Imagery (opt-in, D32) | Under every layer, the same before and after now: the white map, or USGS aerial imagery with roads and names, only while Imagery is on (after the switch, or on a link that starts on it) | The same | No change |
 
 A ring's key stays for the whole timeline when any of its hours rings a town in sight, so the legend
@@ -482,4 +482,97 @@ keep their address across rebuilds) and `data/map.json` with `?v=` = the build m
 - The browser rule, in order (`map.js`): a tile name not in `tiles` gets the outside words and no fetch; a key not in the shard's `state` gets the outside words; a key in `state` with no entry in `cells` gets the no-estimate words; any other key gets its rows. A shard that cannot be read gets the unavailable words. The browser also picks the largest day, counts the classes and chooses between the lead templates; every sentence it fills is Python's (website/hail.py WORDS).
 - The index, `hail/index.json` (format `hail-store-v1`): `built_at`, `as_of`, `window`, `d0`, `grid`, `state` ("Montana"), `cells_in_state` (450,765), `floor_tenths`, `floor_in`, `days_expected` (1,826), `days_present`, `missing_days`, `events`, `shards`, `bytes`, `tiles` (the sorted names of every shard, such as `r0079_c0199`), `source` (the product `MESH_Max_1440min_00.50`, the bucket, the 12:00 UTC file time, the SPC day rule and the units table), `copy_check` (`coverage` and `frames` for each re-derived day, `partial`, `rederived`, `days_differed`, `days_checked`, `skipped`), and `"sample": true` only in the SAMPLE store. Each `coverage` entry has `listed`, `near_duplicate_pairs`, `distinct_slots` (the two-minute slots filled; 720 for a full day) and `largest_gap_s`.
 - The manifest, `hail/manifest.json` (format `hail-manifest-v1`): the `bytes` and `sha256` of every other file under `hail/`, and the index's counts. The build checks every hash after unpacking and refuses the store on any mismatch.
-- Budget: all of `hail/` at most 60 MB on disk; the `tiles` list is about 4,600 names (its bytes are measured in the re-check). The SAMPLE store, `website/data/hail-fixture/`, is under 50 KB and labelled sample in its index.
+- Budget: all of `hail/` at most 60 MB on disk; the `tiles` list holds 4,597 names: 78,152 bytes as `hail/index.json` writes it (pretty-printed) and 64,359 bytes in `data/map.json` (about 11 KB gzipped over the wire). The SAMPLE store, `website/data/hail-fixture/`, is under 50 KB and labelled sample in its index.
+
+### Joined records (B2, 2026-10-18, `DECISIONS.md` D35)
+
+**Frame.** Under the radar estimate, the sheet and each town table carry six more sections, one per kind of record. Each section names its kind in its heading and says what it is in a what-this-is sentence under that heading. Together they answer "what else was on record here in five years". None of them states damage, an all-clear, insurance or eligibility. The word "damage" appears in three places only: in the NWS damage threat tag ("NWS damage threat tag: {value}", with the value the warning gave); in a report remark quoted as the NWS office wrote it ("Remark, as written:"); and as a source's own type word. No type word in this build contains it; the LSR archive writes "dmg" (`DECISIONS.md` D35, D4).
+
+**Principles added by B2.**
+1. *Kinds apart.* No count adds two kinds together. Each section has its own rows, its own lead and its own gaps.
+2. *The place is in the row.* A report gives its miles and bearing from the spot, a station its name and miles, a zone its name. Each heading gives the radius for the rest.
+3. *Missing is said.* A part that did not load shows its unavailable sentence. A part with no rows shows its "no ... within" sentence, never a blank section.
+4. *Every row has its label (D3).* The row starts with "Report:", "Record:", "Detection:", "Warning:", "Zone product:" or "Station:", so the kind is read before the date.
+5. *Python writes the words.* `WORDS_JOINS` in `website/joins.py` holds every sentence. The browser fills the templates from `data/map.json` and holds no word of its own.
+
+**The six sections.** The sheet shows them after the radar days, in this order. The town tables show the same six after the hail days.
+| Section (heading) | Kind label and what it holds | Radius, time and units |
+|---|---|---|
+| Reports within 5 miles | "Report:", an NWS local storm report, every type in IEM's archive (the archive's type word, lower-cased) | 5 miles of the spot (8.05 km); Montana time; hail, rain and snow in inches; gusts and sustained wind in mph; other types show the type word only; qualifier estimated, measured or unknown |
+| Official records within 5 miles (NCEI Storm Events) | "Record:", an NCEI hail or thunderstorm wind point within 5 miles, and the zone rows of every type (such as High Wind, Strong Wind and Winter Storm) for the spot's zone | 5 miles for points, the zone for zone rows; time from MST-7, shown as Montana time; hail in inches; wind in knots with mph beside; the qualifier on every wind row |
+| Radar hail detections within 2 miles | "Detection:", the radar algorithm's hail signature for a storm cell, counted by SPC day | 2 miles (3.22 km); the largest MAXSIZE in inches |
+| Warnings that covered this spot | "Warning:", a severe thunderstorm, tornado or flash flood warning whose issuance polygon covered the spot | The spot inside the polygon; the times the polygon was in effect, in Montana time; tags as the archive gives them: hail in inches, wind in mph, the NWS damage threat tag |
+| Zone products for {zone name} ({zone}) | "Zone product:", a high wind warning (HW.W), winter storm warning (WS.W), blizzard warning (BZ.W), ice storm warning (IS.W), extreme cold warning (EC.W), wind chill warning (WC.W), dust storm warning (DS.W) or wind advisory (WI.Y) for the spot's public forecast zone; and a red flag warning (FW.W) for its fire weather zone (D7, D34) | The whole zone, named; Montana time; the span as recorded (D6, D16, D26, D31) |
+| Peak gusts at the nearest stations | "Station:", the highest gust a nearby MT_ASOS station logged on a day | The two nearest stations within 40 miles of the tile; days at 50 kt (58 mph) or more; whole numbers, "{kt} kt ({mph} mph)" (D18) |
+
+**The joined kinds, exactly (D34, round 6; D35, round 7), and what B5 adds.** B2 joins the kinds in the first column and no others (`DECISIONS.md` D35). The last column gives B5's hand-off with the research's count for the window, 2021-10-19 to 2026-10-19; IEM counts are events and NCEI counts are rows.
+
+| Kind (section) | Joined in B2 | Added in B5, with the window count |
+|---|---|---|
+| Reports (IEM LSR) | Every type the archive returns, within 5 miles | None |
+| Records (NCEI Storm Events) | Hail and thunderstorm wind points within 5 miles; zone-coded rows of every type for the public zone | NCEI county-coded points of tornado 13, flood 60, flash flood 52, heavy rain 85, funnel cloud 30, lightning 6 and debris flow 10 within 5 miles (256 rows in the window); the same types are joined as IEM reports in B2 |
+| Detections (SWDI) | Hail signatures within 2 miles | None |
+| Warnings (IEM polygons) | Severe thunderstorm (SV.W), tornado (TO.W) and flash flood (FF.W) warnings whose issuance polygon covered the spot | Flood warning FL.W 43, areal flood warning FA.W 37, areal flood advisory FA.Y 548, flood watch FL.A 35, flood advisory FL.Y 10 and snow squall warning SQ.W 78 (events); county-only flood watch FA.A 18 and flash flood watch FF.A 2 (events); the zone-coded FA.A events are in the zone products row |
+| Zone products, public zone (IEM) | High wind HW.W, winter storm WS.W, blizzard BZ.W, ice storm IS.W, extreme cold EC.W, wind chill WC.W, dust storm DS.W, wind advisory WI.Y and flood watch FA.A | Winter weather advisory WW.Y 865, winter storm watch WS.A 226, heat advisory HT.Y 58, excessive heat warning EH.W 4, excessive heat watch EH.A 3, frost advisory FR.Y 14 and freeze warning FZ.W 4 (events). FL.W stays out of this list (its polygon rows carry no zone code, so the zone path finds none; B5 takes it). D34 dropped FA.A and D35 restores it (64 zone-coded events in the window). Named in the B5 brief but not in D35's list: HW.A 277 and DU.Y 3 (open item 18). FF.A's 18 zone-coded events are not joined either (open item 17) |
+| Zone products, fire weather zone (IEM) | Red flag warning (FW.W) | None |
+| Stations (MT_ASOS daily gusts) | The two nearest within 40 miles | None |
+
+Not joined, and not in B5's hand-off: the SPC storm reports (they come from the same reports as the local storm reports), the HRRR modelled gust (a model, not a reading) and the DAT storm survey points (few in Montana).
+
+Two products are named flood watch. FA.A is joined in B2 on the zone path, and its 18 county-only events are B5's; FL.A is a polygon product in B5. The codes tell them apart.
+
+**Leads.** The first sentence of each section, with rows and without. "{n}", "{start}", "{end}" and "{newest}" are filled by Python. A single row or detection uses the singular form. The zone section has two leads (D17). Lines after the rows carry the lag, the no-outline and the unplaced counts, and the fire zone's own sentences.
+| Section | With rows | With no rows |
+|---|---|---|
+| Reports | "{n} NWS local storm reports within 5 miles between {start} and {end}." | "No NWS local storm report within 5 miles in these five years. Reports are what people sent the NWS; they are not a complete record." |
+| Official records | "NCEI's database runs to {newest}. {n} official records for this spot or its zone between {start} and {end}." | "NCEI's database runs to {newest}. No official record for this spot or its zone between {start} and {end}. Records are not a complete account of every storm." |
+| Radar hail detections | "{n} radar hail detections within 2 miles between {start} and {end}." Then the line "The newest detection in this build is from {newest}." | "No radar hail detection within 2 miles between {start} and {end}. The archive has known gaps, so this is not evidence of no hail." Then "No detection date is in this build." when the build has none |
+| Warnings that covered this spot | "{n} warnings covered this spot between {start} and {end}." Then the line "The newest warning in this build starts on {newest}." | "No warning in the archive covered this spot between {start} and {end}. Warnings cover areas, and a spot outside every polygon is not a statement that no storm reached it." When some warnings have no outline on file: "Warnings for this spot cannot be checked in this build, because some warnings in these five years have no outline on file. That is not the same as no warning.", then "{n} warnings in these five years have no outline on file, so they cannot be matched to this spot." |
+| Zone products, public zone (D17) | "{n} products for zone {zone name} ({zone}) between {start} and {end}." | "No product for zone {zone name} ({zone}) between {start} and {end} is listed. That does not mean the weather was calm." |
+| Zone products, fire weather zone (D17) | "{m} red flag warnings for fire weather zone {zone name} ({zone}) between {start} and {end}." | "No red flag warning for fire weather zone {zone name} ({zone}) between {start} and {end} is listed. That does not mean the weather was calm." |
+| Peak gusts at the nearest stations | "{n} days with a peak gust of 50 kt (58 mph) or more at the nearest stations between {start} and {end}." | "No day between {start} and {end} at the nearest stations reached 50 kt (58 mph). A station is one point, not this address." Where no station lies within 40 miles: "No station within 40 miles of this spot." |
+
+Other sentences the sections can show: "{n} official zone records in Montana in the window could not be placed on a zone; their zone codes are not in the public zone editions the NWS page links." and the same for zone products ("{n} zone products in Montana in the window ..."). These counts are for Montana as a whole, and the sentence says so (D11). "The forecast zone for this cell could not be determined." (no public zone). "The fire weather zone for this cell could not be determined." (no fire zone). "Red flag warnings are not listed (fire weather zones were not available)." (the fire zone file did not load). "{n} readings of {kt} kt or more were left out as implausible." (stations).
+
+**What each section says it is** (the what-this-is sentence, under its heading):
+- Reports: "A report is what a spotter, a member of the public or a sensor sent to the National Weather Service (an NWS local storm report). A report is not an inspection and not a finding about a roof. Hail sizes are in inches as reported. Wind speeds are read as miles per hour, because the archive does not state the unit. Estimated and measured are the archive's own codes. Reports are not a complete record. A report's remark and a warning's tag are the NWS's own words about the report or the forecast threat, not a finding about this address."
+- Official records: "Official records are NOAA's Storm Events entries. This list has hail and thunderstorm wind points within 5 miles. The zone rows (zone-coded events of every type, such as high wind or winter storm) are for the spot's forecast zone and cover the whole zone, not this spot alone. Wind magnitudes are in knots, with miles per hour beside them."
+- Radar detections: "A detection is the radar algorithm's hail signature for a storm cell, not hail on the ground. Detections are counted by SPC day (12:00 UTC to 12:00 UTC the next day). The archive has known gaps and is not a complete inventory."
+- Warnings: "A warning is listed when its issuance polygon covered this spot when it was issued. The times are when that polygon was in effect, which can differ from the warning's own valid time; this sheet does not show the valid time. Tags are the forecast threat at issue time, not what fell. The archive keeps the number only, so a value the text gave as less than shows as that number. A report's remark and a warning's tag are the NWS's own words about the report or the forecast threat, not a finding about this address."
+- Zone products: "These covered the whole zone, not this spot alone. A zone product is an NWS warning, watch or advisory for a forecast zone, named by its product." (The red flag rows are named by their fire weather zone; this sentence does not yet say so, see `DECISIONS.md` D35.)
+- Peak gusts: "A station reading is at the airport, not at this address. It is the highest gust the station logged that day, in knots with miles per hour beside it."
+
+**Rows.** Newest first, except zone products, which are grouped by product with the earliest event first in each group. Detections have one row per SPC day. Dates read "Jun 15, 2025"; times read "8:10 pm MDT" in Montana time. A row that crosses midnight shows both dates (D13). Every row starts with its label.
+- Report: "Report: {date} {time}: {type}, {magnitude}{qualifier}, {source}, {miles} mi {bearing}", with the qualifier " (estimated)", " (measured)" or " (unknown)" where the archive gives one. The magnitude is "{in} in" (two decimals) for hail, rain and snow; "{mph} mph" for gusts and sustained wind; "no size given" for a unit type with no number. A typed row reads "Report: {date} {time}: {type}{qualifier}, {source}, {miles} mi {bearing}", with no magnitude (D9, D19). The remark follows on its own line: "Remark, as written: “{remark}”" (no remark, no line).
+- Record: the same shape, with NCEI's magnitude "{kt} kt ({mph} mph)" and the NCEI qualifier ("measured gust", "estimated gust", "measured sustained" or "estimated sustained"). A zone row reads "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, across zone {zone}"; a typed zone row, such as a winter storm, has no magnitude.
+- Detection: "Detection: {date}: {n} detections, largest {in} in" (one: "Detection: {date}: 1 detection, largest {in} in").
+- Warning: "Warning: {date} {begin} to {end}, issuance polygon in effect: {kind} warning, {office}; tags: {tags}", with the tags as the archive gives them: "hail {in} in", "wind {mph} mph", "tornado {value}", "NWS damage threat tag: {value}", or "none stated".
+- Zone product: "Zone product: {product}: {events}", each event "{date} {begin} to {end}". A missing start or end reads "start not recorded; end {end}", "start and end not recorded" or "end not recorded"; a cancelled event adds ", cancelled" and an upgraded event adds ", upgraded" (D31). When a cancellation or upgrade time is at or before the begin, the event reads "cancelled at {time}" or "upgraded at {time}" in place of "{begin} to {end}" (D26, D31). A red flag warning's product reads "Red flag warning, fire weather zone {zone name} ({zone})".
+- Station: "Station: {date}: {kt} kt ({mph} mph) at {station}, about {miles} miles away", with whole numbers (D18).
+
+**States.** Each part's state is set by its requests. The sheet and the town tables use the same words; the browser shows the same sentence as Python (D2).
+| State | When | Words |
+|---|---|---|
+| Loaded (a section) | Every request for the part answered and parsed | The lead with rows, or the "no ... within" lead with none. Never a blank section |
+| Partial | Some requests failed (for example, one month). The rows from the periods that loaded are shown | "Data unavailable for some periods: {feed} did not load for {periods} ({reason}). This is not an all-clear." above the rows |
+| Unavailable | Every request failed, or the part's table could not be read | The part's sentence, in place of the rows (D20), exactly: "{Part} could not be loaded in this update; that is not the same as no {part}." The six parts give "Reports ... no reports.", "Records ... no records.", "Detections ... no detections.", "Warnings ... no warnings.", "Zone products ... no zone products." and "Station readings ... no station readings." The reason is kept in the index, not in the sentence (open item 13 covers the plural) |
+| Joins block unavailable | The joins cannot be read at build time | Each of the six sections shows its unavailable sentence. The radar estimate still shows |
+| Fire zones not read | The NWS fire zone shapefile cannot be read | "Red flag warnings are not listed (fire weather zones were not available)." in the zone section |
+| No public zone for the cell | No public zone holds the cell's centre, even within 2 km of an edge (D8) | "The forecast zone for this cell could not be determined." |
+| No fire zone for the cell | No fire weather zone holds the cell's centre (no nearest-edge rule for fire zones, open item 12) | "The fire weather zone for this cell could not be determined." |
+| Warnings with no outline | Some warnings in the window have no outline, so a spot may not be matchable | The no-outline sentences under the warnings lead (above); never read as no warning |
+| Outside Montana | The spot is outside the state | No joined section and no fetch; the B1 outside words only |
+| Sample | A `--sample` build | "SAMPLE data" in the body of each joined section and in the town tables, as in B1 |
+
+**Browser duty (`map.js`).** The browser's part is the click, the fetches, the distance filter and the template fill. Its header documents each step.
+- *Fetches.* After the radar estimate's shard, a click fetches each file it needs once per page: `hail/j/events.json` (the events table, once), the tile's `hail/j/r{tr}_c{tc}.json`, the public zone file `hail/z/MTZ###.json` for the cell's zone, the fire zone file `hail/z/fire-MTZ###.json` for the cell's fire zone (D17), and the station files `hail/s/<id>.json` the tile lists (at most two). The first click on a page makes up to seven requests in all, the B1 shard included; a click whose files were read earlier makes none. A file that fails shows its part's unavailable sentence. (`DECISIONS.md` D35 records this count as an open item.)
+- *Distance filter.* The browser measures miles from the cell centre (great-circle, on the earth radius and mile length the build wrote) and keeps reports and records within 5 miles and detections within 2 miles. A warning is kept when the cell's key is set in its cover. Zone products are the zone's own events. Stations are the two the tile lists.
+- *Template fill.* The browser fills the build's templates with the values, groups detections by SPC day, picks the lead and the largest day, prints station values as whole numbers, and formats each time in Montana time with the zone named in the data. It holds no word, unit or radius of its own; the tests read `map.js` for them.
+
+**Data contract additions** (with `--hail-history` only):
+- `data/map.json["hail"]["joins"]`: `state`, `parts`, `reasons`, `problem`, `lags`, `window`, `as_of`; `radius_miles` (report 5, detection 2, station 40); the unit factors and thresholds (`mph_per_kt`, `km_per_mile`, `station_kt` 50, `implausible_kt` 130, `station_mph`); the kind, type, product, qualifier and fire zone name words; `unit_codes`, the type codes that carry a unit (D19; every other code is typed); `compass` (the bearing words); `words` (every template); `shards` (the file templates); `montana_time`. The build also writes `earth_radius_km`, `here_miles` and `spc_hours` into the block.
+- `hail/j/events.json` (`hail-events-v1`): every report, record and warning in the window, once each. `hail/j/r{tr:04d}_c{tc:04d}.json` (`hail-joins-v1`): one per B1 tile, with the indexes into the events table, the detections, the warning covers (25 hex digits: bit k is set when the centre of cell key k lies inside the polygon), the public zone map and the fire zone map (zone code and cell keys), and the two nearest stations.
+- `hail/z/MTZ###.json` (`hail-zone-v1`): the zone's name, its NWS products (each with its begin `b`, its end `e`, and `st` "cancelled" or "upgraded" when a cancellation or upgrade row set the end) and its NCEI zone rows. `hail/z/fire-MTZ###.json` (`hail-zone-v1`, kind `fire`): the fire weather zone's name and its red flag warnings in the same shape.
+- `hail/s/<id>.json` (`hail-station-v1`): the station's name and position, its days at 50 kt or more as `[day index, mph, kt]` (whole numbers, D18), and the count left out as implausible.
+- `hail/index.json` gains `joins`: `state`, `parts`, `reasons`, the partial periods, `lags`, the counts, the malformed and short rows (D10, D21), the zone editions, the report types, the request summary (with `served_from_cache_since` where a stale copy was used) and its first failures, and the bytes. `hail/manifest.json` lists every `j/`, `z/` and `s/` file with its bytes and SHA-256.
+- Budget: `j/` at most 40 MB and `z/` and `s/` under 2 MB (the B2 brief). The 2026-10-19 re-check measured `j/` at 19,912,416 bytes in 4,598 files (49.8 percent of 40 MB; `events.json` 5,351,807 bytes and the 4,597 tile files 14,560,609 bytes); `z/` at 919,402 bytes in 115 files (83 public zones holding 4,960 zone events and 32 fire weather zones holding 660) and `s/` at 22,478 bytes in 60 files (1,261 station days at 50 kt or more), both against 2 MB; and all of `hail/` at 54,227,125 bytes in 9,372 files, against B1's 60 MB (90.4 percent). B3's address shards share that cap (`DECISIONS.md` D35, open item 1). The re-check measures each file again. Round 7 (D35) restores the flood watch zone events: the rebuilt store has z/ at 919,402 bytes (round 6 had 875,220), and j/, s/ and t/ unchanged from round 6 (`DECISIONS.md` D35).
