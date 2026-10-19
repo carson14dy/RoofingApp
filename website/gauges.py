@@ -104,9 +104,13 @@ WORDS = {
                  "at this gauge."),
     "none_near": ("No gauge with an NWS flood stage is within 10 miles of {place}. That is not a statement that the "
                   "river did not flood there."),
-    "gauge_unavailable": "{Part} could not be loaded in this update; that is not the same as no {one}.",
-    "peaks_unavailable": "{Part} could not be loaded in this update; that is not the same as no {one}.",
-    "unavailable": "{part} could not be loaded in this update; that is not the same as no {part}.",
+    "gauge_unavailable": ("{Part} could not be loaded in this update; that is not the same as no {one}. "
+                          "This is not an all-clear."),
+    "peaks_unavailable": ("{Part} could not be loaded in this update; that is not the same as no {one}. "
+                          "This is not an all-clear."),
+    # D28 (B5 part B1): the D20 sentence the unavailable block carries in "problem"; the technical reason is "detail"
+    "unavailable": ("River gauges could not be loaded in this update; that is not the same as no river gauge. "
+                    "This is not an all-clear."),
     "source": ("Source: NWS river gauges (National Water Prediction Service flood categories) and USGS annual peak "
                "stage, water years. Observations courtesy of U.S. Geological Survey."),
     "stage_note": "Flood stage is the NWS minor category. Stages are in feet at the gauge.",
@@ -387,9 +391,10 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
     except GaugeError as exc:
         for old in (store / G_PREFIX).glob("*.json") if (store / G_PREFIX).is_dir() else []:
             old.unlink()
-        _merge_index(store, {"state": "unavailable", "problem": str(exc), "rule": _rule()})
+        _merge_index(store, {"state": "unavailable", "problem": WORDS["unavailable"], "detail": str(exc),
+                             "rule": _rule()})
         S._merge_manifest(store, {}, prefixes=(G_PREFIX,))
-        return {"state": "unavailable", "problem": str(exc)}
+        return {"state": "unavailable", "problem": WORDS["unavailable"], "detail": str(exc)}
     details = got["details"]
     failed = got["failed"]
     status = {lid: pool_status(g) for lid, g in details.items()}

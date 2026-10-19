@@ -8,6 +8,7 @@ website workflow (`python -m website.build --require-live` on branch pushes).
 
 import contextlib
 import hashlib
+import html
 import io
 import json
 import re
@@ -356,9 +357,13 @@ class Contracts(unittest.TestCase):
                                               "observations", "reports", "radar", "forecast_model", "storm_levels",
                                               "satellite", "basemap", "imagery", "hail_history", "lsr",
                                               "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons",
-                                              "nws_zone_products", "asos_daily_gusts"})
+                                              "nws_zone_products", "asos_daily_gusts", "nclimgrid_daily",
+                                              "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_lsr",
+                                              "nwps_gauges", "usgs_water_api", "census_counties", "roof_references"})
         for key, c in src.CONTRACTS.items():
-            self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
+            # a row a B5 row replaces names it (superseded_by); every other row has the five fields only
+            self.assertTrue({"name", "request", "units", "timing", "missing"} <= set(c) <= {"name", "request", "units",
+                            "timing", "missing", "superseded_by"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
         self.assertIn("hundredths of an inch", src.CONTRACTS["reports"]["units"])
         self.assertIn("PrecipRate", src.CONTRACTS["radar"]["request"])
@@ -1425,7 +1430,7 @@ class HailHistory(unittest.TestCase):
     for the tile list and state lists the browser reads."""
 
     HAIL_NOW = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
-    HAIL_PAGE_WORDS = ("Hail history, five years", "<h2>Hail history</h2>", 'id="hail-sheet"', 'id="hail-list"',
+    HAIL_PAGE_WORDS = ("Five-year weather history at", "<h2>Hail history</h2>", 'id="hail-sheet"', 'id="hail-list"',
                        "legend-tap", "data-hail", "Tap or click the map for the five-year hail history")
     # the words that must not appear unless a sentence says "not the same as no hail" or "'no hail'" (the negation)
     FORBIDDEN = re.compile(r"\bdamag\w*|\bdry\b|\bclear\b|\binsurance\b|\beligib\w*|\bconfirm\w*|\bno hail\b", re.I)
@@ -1532,15 +1537,13 @@ class HailHistory(unittest.TestCase):
         from website import hail as hs            # the source line's words are hail.WORDS; the page must carry them
         fixture = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
         town = page(self.on, "town/billings.html")
-        self.assertIn("Hail history, five years", town)
+        self.assertIn("Five-year weather history at Billings", town)
         self.assertIn("SAMPLE data", town)
-        self.assertIn("4 days with a radar-estimated hail size of 0.25 in or more between Oct 16, 2021 and "
-                      "Oct 15, 2026. Largest: 0.62 in (16.0 mm) on Jul 24, 2022.", town)     # 160 tenths: 0.62, not 0.63
-        self.assertIn("<th scope=\"row\">Jul 24, 2022</th>", town)
-        self.assertIn("<td class=\"n\">16.0</td>", town)
-        self.assertIn("<td>pea to mothball</td>", town)
-        self.assertIn("Days with no data, not counted: Jun 8, 2022.", town)
-        self.assertIn(hs.WORDS["source"].format(as_of=hs.fmt_date(date.fromisoformat(fixture["as_of"]))), town)
+        self.assertIn("Radar estimate: Jul 24, 2022: 0.62 in (16.0 mm), pea to mothball", visible(town))   # 160 tenths: 0.62
+        self.assertIn("Radar estimate: Jun 15, 2025: 0.25 in (6.5 mm), pea to mothball", visible(town))
+        self.assertIn("Radar days by size class in these five seasons: 4 days pea to mothball", visible(town))
+        as_of = hs.fmt_date(date.fromisoformat(fixture["as_of"]))
+        self.assertIn(f"the 1,826 SPC days ending {as_of}", visible(town))           # the window's as-of date is on the page
         about = " ".join(page(self.on, "about.html").split())      # the template wraps the sentences across lines
         self.assertIn("<h2>Hail history</h2>", page(self.on, "about.html"))
         self.assertIn("An estimate is not a measurement at the ground and not an inspection.", about)
@@ -1580,7 +1583,7 @@ class HailHistory(unittest.TestCase):
         self.assertTrue(result["status"]["hail_history"]["ok"])
         for path in sorted((out / "town").glob("*.html")):
             self.assertNotIn(">None<", path.read_text(encoding="utf-8"), path.name)
-        self.assertIn("Hail history, five years", page(out, "town/billings.html"))
+        self.assertIn("Five-year weather history at Billings", page(out, "town/billings.html"))
 
     def test_the_contract_row_carries_the_same_sentences(self):
         row = src.CONTRACTS["hail_history"]
@@ -1765,7 +1768,7 @@ class HailHistory(unittest.TestCase):
         self.assertEqual(h["tiles"], [])                       # no tile is known: the map says unavailable, not outside
         self.assertIn("missing", h["problem"])
         self.assertFalse((out / "hail").exists())
-        self.assertIn("Hail history is unavailable: the history store file store.tar.gz is missing.",
+        self.assertIn("Weather history could not be loaded in this update: the history store file store.tar.gz is missing.",
                       page(out, "town/billings.html"))
         self.assertTrue((out / "index.html").is_file())
         self.assertIn("Hail history (radar estimates)", page(out, "index.html"))
@@ -1807,7 +1810,7 @@ class HailHistory(unittest.TestCase):
         self.assertEqual(h["state"], "loaded")          # a store file is real data: no SAMPLE label on it
         self.assertEqual(h["tiles"], json.loads((store / "hail" / "index.json").read_text(encoding="utf-8"))["tiles"])
         self.assertNotIn("SAMPLE data", page(out, "town/billings.html"))
-        self.assertIn("4 days with a radar-estimated hail size", page(out, "town/billings.html"))
+        self.assertIn("Radar estimate: Jul 24, 2022: 0.62 in (16.0 mm), pea to mothball", visible(page(out, "town/billings.html")))
         self.assertEqual((out / "hail" / "t" / "r0079_c0199.json").read_bytes(),
                          (store / "hail" / "t" / "r0079_c0199.json").read_bytes())
 
@@ -1865,8 +1868,10 @@ class HailJoins(unittest.TestCase):
     About paragraph on the kinds joined and the sources not joined, the sheet and town markup, and a flag-off build with
     none of it. The records themselves are checked in tests/test_joins.py (builder 1)."""
 
-    JOIN_KEYS = ("lsr", "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons", "nws_zone_products",
-                 "asos_daily_gusts")
+    # the joined feeds the About page lists in a hail build: the B2 rows that B5 keeps and the three B5 rows that replace
+    # the B2 feeds (sources.py superseded_by); the replaced rows stay in CONTRACTS for the record and are not listed
+    JOIN_KEYS = ("ncei_storm_events", "swdi_nx3hail", "asos_daily_gusts", "iem_lsr", "iem_watchwarn")
+    SUPERSEDED = ("lsr", "nws_warnings_polygons", "nws_zone_products")
     HAIL_NOW = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
     # the words a row or paragraph must not state as a fact (AGENTS.md rule 5); "damage threat" is the warning tag's own
     # word and "not the same as no hail" is the negation the words always carry
@@ -1882,14 +1887,16 @@ class HailJoins(unittest.TestCase):
         site.build(cls.off, None, cls.HAIL_NOW, sample=True)
         site.build(cls.on, None, cls.HAIL_NOW, sample=True, hail_history=True)
 
-    def test_six_contract_rows_are_present_complete_and_gated_like_the_store(self):
-        for key in self.JOIN_KEYS:
+    def test_the_joined_feed_rows_are_present_complete_and_gated_like_the_store(self):
+        for key in self.JOIN_KEYS + self.SUPERSEDED:
             row = src.CONTRACTS[key]
             for field in ("name", "request", "units", "timing", "missing"):
                 self.assertTrue(row[field].strip(), (key, field))
             self.assertIn(key, site.HAIL_CONTRACTS)
             self.assertNotIn(key, site.STORM_CONTRACTS)
-        self.assertEqual(list(src.CONTRACTS)[-6:], list(self.JOIN_KEYS))
+        for key in self.SUPERSEDED:
+            self.assertIn(src.CONTRACTS[key]["superseded_by"], src.CONTRACTS)     # the row that replaces it exists
+        self.assertEqual(list(src.CONTRACTS)[-len(site.B5_CONTRACTS):], list(site.B5_CONTRACTS))
 
     def test_the_contract_rows_state_no_damage_insurance_or_all_clear(self):
         for key in self.JOIN_KEYS:
@@ -1902,28 +1909,28 @@ class HailJoins(unittest.TestCase):
     def test_the_about_page_names_the_kinds_joined_and_the_sources_not_joined(self):
         about = " ".join(page(self.on, "about.html").split())
         self.assertIn("Other records for the same cell", about)
-        for phrase in ("NWS local storm reports within 5 miles", "NEXRAD hail signatures within 2 miles",
-                       "not hail on the ground", "severe thunderstorm, tornado and flash flood polygons",
-                       "the two nearest airport stations within 40 miles", "Not joined: the SPC storm reports",
-                       "the HRRR modelled gust (a model, not a reading)", "the DAT storm survey points (few in Montana)"):
+        for phrase in ("NWS local storm reports within 5 miles, of every type the history reads",
+                       "NEXRAD hail signatures within 2 miles", "not hail on the ground",
+                       "the NWS polygons that intersect the cell", "the two nearest airport stations within 40 miles",
+                       "Not in this history", "Flood zones (FEMA)", "Iowa State's inventory of radar detections is not complete"):
             self.assertIn(phrase, about)
-        for name in ("NWS local storm reports (Iowa State archive)",):
-            self.assertIn(name, about)
         self.assertNotIn("Other records for the same cell", page(self.off, "about.html"))
-        self.assertNotIn("Not joined: the SPC", page(self.off, "about.html"))
+        self.assertNotIn("Not in this history", page(self.off, "about.html"))
 
-    def test_the_six_contract_rows_appear_on_the_about_page_only_with_the_flag(self):
+    def test_the_joined_feed_rows_appear_on_the_about_page_only_with_the_flag(self):
         on, off = page(self.on, "about.html"), page(self.off, "about.html")
         for key in self.JOIN_KEYS:
             name = src.CONTRACTS[key]["name"]
-            self.assertIn(name, on)
-            self.assertNotIn(name, off)
+            self.assertIn(jesc(name), on)
+            self.assertNotIn(jesc(name), off)
+        for key in self.SUPERSEDED:                  # the rows a B5 row replaces are not listed on the About page
+            self.assertNotIn(jesc(src.CONTRACTS[key]["name"]), on, key)
 
     def test_the_flag_off_build_has_no_join_markup_anywhere(self):
         for path in sorted(self.off.rglob("*.html")):
             text = path.read_text(encoding="utf-8")
             for words in ("hail-join-sec", "joins-sec", "joins-rows", "joins-more", 'data-hail="joins"',
-                          "Other records for the same cell", "Hail history, five years"):
+                          "Other records for the same cell", "Five-year weather history at"):
                 self.assertNotIn(words, text, f"{words!r} in {path.name}")
         self.assertFalse((self.off / "hail").exists())
         self.assertNotIn("hail", json.loads(page(self.off, "data/map.json")))
@@ -2232,14 +2239,14 @@ class HailJoinedRecords(unittest.TestCase):
         for key in ("not_known", "zone_unknown_name", "zone_unknown_code"):
             self.assertNotIn(key, j["words"])
 
-    def test_the_billings_town_page_has_the_six_tables_in_order(self):
+    def test_the_billings_town_page_joins_sit_in_their_sections_newest_first(self):
         town = page(self.site, "town/billings.html")
-        order = re.findall(r'<section class="joins-sec" data-section="(\w+)"', town)
-        self.assertEqual(order, ["reports", "records", "detections", "warnings", "zones", "stations"])
-        self.assertIn("Station: Jun 15, 2025: 50 kt (58 mph) at Billings Logan, about 1.2 miles away", town)
-        self.assertIn("Station: Jun 14, 2025: 60 kt (69 mph) at Billings Logan, about 1.2 miles away", town)
-        self.assertLess(town.index("Jun 15, 2025: 50 kt"), town.index("Jun 14, 2025: 60 kt"))    # newest first
-        self.assertIn("A station reading is at the airport, not at this address.", town)
+        wind = town[town.index('id="sec-wind"'):town.index('id="sec-storms"')]     # the station rows are the wind section's
+        self.assertIn("Station: Jun 15, 2025: 50 kt (58 mph) at Billings Logan, about 1.2 miles away", visible(wind))
+        self.assertIn("Station: Jun 14, 2025: 60 kt (69 mph) at Billings Logan, about 1.2 miles away", visible(wind))
+        self.assertLess(wind.index("Jun 15, 2025: 50 kt"), wind.index("Jun 14, 2025: 60 kt"))    # newest first
+        from website import summary as sm
+        self.assertIn(jesc(sm.WORDS_INDICATORS["what_station"]), wind)                        # the kind's own sentence
 
     def test_the_module_words_for_the_gate_and_benchland_cells(self):
         from website import hail as hs
@@ -2263,9 +2270,8 @@ class HailJoinedRecords(unittest.TestCase):
         self.assertEqual(golf[0]["remark"], "Remark, as written: “Public caller updated with golf ball sized hail "
                          "a few minutes after initial call.”")
 
-    def test_a_store_without_the_records_says_so_on_every_section(self):
-        town = page(self.plain, "town/billings.html")       # a town in a sample tile: six sections, each saying why
-        self.assertEqual(town.count('class="joins-sec"'), 6)
+    def test_a_store_without_the_records_says_so_in_the_history(self):
+        town = page(self.plain, "town/billings.html")       # a town in a sample tile: each joined part says why, once
         for sentence in ("Reports could not be loaded in this update; that is not the same as no report.",
                          "Records could not be loaded in this update; that is not the same as no record.",
                          "Detections could not be loaded in this update; that is not the same as no detection.",
@@ -2273,7 +2279,6 @@ class HailJoinedRecords(unittest.TestCase):
                          "Zone products could not be loaded in this update; that is not the same as no zone product.",
                          "Station readings could not be loaded in this update; that is not the same as no station reading."):
             self.assertIn(sentence, town)
-        self.assertNotIn("Data unavailable", town)
         m = json.loads(page(self.plain, "data/map.json"))["hail"]["joins"]
         self.assertEqual(m["state"], "unavailable")   # the sample fixture holds no records: every part says so
 
@@ -2577,6 +2582,283 @@ class HailJoinedRecords(unittest.TestCase):
         got = node_join_sections(self.site, h, tz, cell)[0]
         for key in JOIN_IDS:
             self.assertEqual(got[key]["sample"], "", key)
+
+
+# ---------------------------------------------------------------- the five-season history (B5, --hail-history)
+
+def jesc(text: str) -> str:
+    """The text as Jinja writes it into a page (its autoescape: quotes and apostrophes as entities)."""
+    from markupsafe import escape
+    return str(escape(text))
+
+
+def write_manifest(root: Path) -> None:
+    """A test store's manifest: every file under hail/ with its bytes and SHA-256 (hail.check_manifest reads it)."""
+    from website import hail as hs
+    files = {}
+    for path in sorted((root / "hail").rglob("*")):
+        if path.is_file() and path.name != "manifest.json":
+            data = path.read_bytes()
+            files[path.relative_to(root).as_posix()] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+    (root / "hail" / "manifest.json").write_text(json.dumps({"format": hs.MANIFEST_FORMAT, "files": files}), encoding="utf-8")
+
+
+def fixture_store(variant: str = "full") -> Path:
+    """A store tests/test_summary.py writes, with its manifest. The summary fixture writes the parts the five-season table
+    reads; the joined records also read the lag, cover and clock keys of the B2 index, which are added here (their values
+    are the fixture's own, as the real index gives them)."""
+    from tests import test_summary as ts
+    root, _ = ts.build_store(variant)
+    path = root / "hail" / "index.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    joins_block = doc["joins"]
+    joins_block.setdefault("cover", "")
+    joins_block.setdefault("lags", {"ncei": None, "swdi": doc["as_of"], "warnings": doc["as_of"]})
+    joins_block.setdefault("montana_time", [])
+    joins_block.setdefault("shapes", {})
+    joins_block.setdefault("types", {})
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    write_manifest(root)
+    return root
+
+
+def set_index(root: Path, **blocks) -> None:
+    """Change blocks of a test store's index and rewrite its manifest (so the store still checks out)."""
+    path = root / "hail" / "index.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    doc.update(blocks)
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    write_manifest(root)
+
+
+def visible(fragment: str) -> str:
+    """The text a reader sees in an HTML fragment (tags out, entities back, blank runs squeezed)."""
+    text = re.sub(r"<style>.*?</style>", " ", fragment, flags=re.S)
+    text = re.sub(r"<(?:br|/?(?:p|li|h2|h3|h4|tr|table|ol|ul|section|details|summary))[^>]*>", "\n", text)
+    return re.sub(r"[ \t]+", " ", html.unescape(re.sub(r"<[^>]+>", " ", text)))
+
+
+class FiveSeasonHistory(unittest.TestCase):
+    """The town page's five-season table and sections, the About words and the copies (B5, --hail-history), on the
+    synthetic store that tests/test_summary.py writes (a spot at Billings with every part present). Nothing here is real."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    SECTIONS = ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made")
+    B5_KEYS = ("nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_lsr", "nwps_gauges",
+               "usgs_water_api", "census_counties", "roof_references")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.store = fixture_store("full")
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-on-"))
+        cls.off = Path(tempfile.mkdtemp(prefix="hailwatch-b5-off-"))
+        for path in (cls.store, cls.out, cls.off):
+            cls.addClassCleanup(shutil.rmtree, path, True)
+        cls.result = site.build(cls.out, None, cls.NOW, sample=True, hail_history=True, hail_store_path=str(cls.store))
+        site.build(cls.off, None, cls.NOW, sample=True)
+        cls.town = page(cls.out, "town/billings.html")
+        cls.summary = cls.town[cls.town.index('id="hist-h"'):cls.town.index('id="obs-h"')]       # the table, after the alerts
+        cls.details = cls.town[cls.town.index('id="sec-hail"'):cls.town.index('id="other-h"')]  # the sections, after the 7-day forecast
+        cls.section = cls.summary + cls.details
+
+    def test_the_sections_come_in_the_brief_order(self):
+        pos = [self.section.index(f'id="sec-{s}"') for s in self.SECTIONS]
+        self.assertEqual(pos, sorted(pos))
+        self.assertLess(self.section.index('<table class="five">'), pos[0])       # the table leads
+        for season in ("2021-22", "2022-23", "2023-24", "2024-25", "2025-26", "Five seasons"):
+            self.assertIn(f'<th scope="col" class="num">{season}</th>', self.section)
+
+    def test_the_summary_sits_after_the_alerts_and_the_sections_after_the_seven_day_forecast(self):
+        # D38: the table leads the history, right after the official alerts and before observed now; the detail sections
+        # come after the 7-day forecast, so no forecast sits inside the summary or the sections
+        town = self.town
+        anchors = ("alerts-h", "hist-h", "obs-h", "hours-h", "days-h", "sec-hail", "sec-made", "other-h")
+        order = [town.index(f'id="{anchor}"') for anchor in anchors]
+        self.assertEqual(order, sorted(order))
+        self.assertLess(town.index('<table class="five">'), town.index('id="obs-h"'))
+        self.assertNotIn('id="hours-h"', self.summary)
+        self.assertNotIn('id="hours-h"', self.details)
+        self.assertNotIn('id="obs-h"', self.details)
+
+    def test_every_row_names_its_kind_word_and_its_unit(self):
+        heads = re.findall(r'<th scope="row" class="row-head">(.*?)</th>', self.section, re.S)
+        self.assertGreaterEqual(len(heads), 20)
+        for head in heads:
+            kind = re.search(r'<span class="kind">([^<]*)</span>', head)
+            self.assertIsNotNone(kind, head)
+            self.assertRegex(kind.group(1), r"^(Radar estimate|Radar detection|Report|Official record|Warning|Zone product|"
+                                            r"County product|Station reading|Grid estimate|Reference|Data unavailable)")
+            self.assertRegex(kind.group(1), r"(inches|days|degrees Fahrenheit|count|knots|none)")
+
+    def test_every_season_value_carries_its_unit_or_says_data_unavailable(self):
+        cells = re.findall(r'<td class="num"[^>]*>(.*?)</td>', self.section, re.S)
+        self.assertGreater(len(cells), 100)
+        for cell in cells:
+            text = visible(re.sub(r"<sup>.*?</sup>|<span class=\"cov\">.*?</span>", "", cell, flags=re.S)).strip()
+            if text.startswith("Data unavailable") or text.startswith("No "):
+                continue
+            self.assertRegex(text, r"\d", text)
+            self.assertRegex(text, r"\b(in|F|days?|kt|reports?|warnings?|watch(?:es)?|advisor\w*|mph)\b", text)
+
+    def test_a_season_with_missing_days_says_how_many(self):
+        self.assertIn("31 days missing", visible(self.section))      # the fixture's 2023-24 season has 31 missing grid days
+
+    def test_the_partial_line_sits_below_the_table_and_the_radar_sentence_under_it(self):
+        self.assertLess(self.section.index("</table>"), self.section.index("2026-27 so far"))
+        self.assertLess(self.section.index("2026-27 so far"), self.section.index("Radar estimates can miss hail that people"))
+
+    def test_a_cell_that_did_not_load_says_data_unavailable_with_its_reason_in_a_footnote(self):
+        store = fixture_store("climate_unavailable")
+        self.addCleanup(shutil.rmtree, store, True)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-climate-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        town = page(out, "town/billings.html")
+        section = town[town.index('id="hist-h"'):town.index('id="obs-h"')]
+        self.assertRegex(section, r"Data unavailable<sup>1</sup>")
+        footnotes = section[section.index('<ol class="hist-foot">'):]
+        footnotes = footnotes[:footnotes.index("</ol>")]
+        self.assertIn("could not be loaded", visible(footnotes))
+        grid_rows = ("Highest temperature", "Lowest temperature", "Days with a high of 90 F", "Days with a low below 32 F",
+                     "Freeze-thaw days", "Precipitation", "Largest one-day precipitation")
+        for label in grid_rows:                                           # an unloaded grid value is never a zero
+            row = re.search(r'<tr>\s*<th scope="row" class="row-head">' + re.escape(label) + r".*?</tr>", section, re.S)
+            self.assertIsNotNone(row, label)
+            cells = re.findall(r'<td class="num"[^>]*>(.*?)</td>', row.group(0), re.S)
+            self.assertTrue(cells, label)
+            for cell in cells:
+                self.assertTrue(visible(cell).strip().startswith("Data unavailable"), (label, visible(cell)))
+
+    def test_the_about_page_has_the_b5_terms_only_with_the_flag(self):
+        from website import summary as sm, joins as jn
+        on = page(self.out, "about.html")
+        off = page(self.off, "about.html")
+        for text in (sm.WORDS_SUMMARY["analysis_held"], jn.WORDS_JOINS["about_hit_miss"], src.CENSUS_TERMS,
+                     sm.REFERENCE_LINES["R1"]["source"], sm.REFERENCE_LINES["R19"]["source"]):
+            self.assertIn(jesc(text), on, text[:60])
+            self.assertNotIn(jesc(text), off, text[:60])
+        for key in self.B5_KEYS:
+            self.assertIn(jesc(src.CONTRACTS[key]["name"]), on, key)
+            self.assertNotIn(jesc(src.CONTRACTS[key]["name"]), off, key)
+        self.assertNotIn(jesc(src.CONTRACTS["lsr"]["name"]), on)     # superseded by iem_lsr
+        self.assertNotIn(jesc(src.CONTRACTS["nws_zone_products"]["name"]), on)
+
+    def test_every_b5_contract_row_has_units_timing_and_missing_rules(self):
+        for key in self.B5_KEYS:
+            row = src.CONTRACTS[key]
+            for field in ("name", "request", "units", "timing", "missing"):
+                self.assertTrue(row.get(field), f"{key}.{field}")
+        self.assertIn("Flood", src.CONTRACTS["ncei_storm_events"]["request"])                 # the point types B5 joins
+        self.assertIn("left out", src.CONTRACTS["nohrsc_season_snowfall"]["units"] + src.CONTRACTS["nohrsc_season_snowfall"]["missing"])
+
+    def test_the_partial_line_and_the_roof_lines_name_their_kinds_in_the_page(self):
+        self.assertIn("Reference", self.section)
+        self.assertIn("Data unavailable", self.section)
+
+    def test_the_sections_words_say_no_forbidden_term_outside_quotes(self):
+        from website import summary as sm
+        text = visible(self.section)
+        sentences = [s for s in re.split(r"(?<=[.!?])\s+|\n", text) if s.strip()]
+        hits = {s.strip()[:80]: sm.forbidden_hits(s) for s in sentences if sm.forbidden_hits(s)}
+        self.assertEqual(hits, {})
+
+    def test_flag_off_builds_have_no_five_season_section_or_b5_key(self):
+        off = page(self.off, "town/billings.html")
+        self.assertNotIn('id="hist-h"', off)
+        self.assertNotIn("Five-year weather history", off)
+        self.assertNotIn("hail_history", json.loads(page(self.off, "data/map.json")))
+        self.assertNotIn("climate", json.loads(page(self.off, "data/map.json")).get("hail", {}))
+        self.assertFalse((self.off / "hail").exists())
+
+    def test_the_map_block_carries_every_b5_block_from_its_functions(self):
+        m = json.loads(page(self.out, "data/map.json"))["hail"]
+        for key in ("climate", "summary", "snow", "stations", "gauges", "county"):
+            self.assertIn(key, m)
+        self.assertEqual(m["climate"]["state"], "loaded")
+        self.assertEqual(m["snow"]["state"], "unavailable")          # the fixture's snow analysis is not shown
+        self.assertFalse(m["snow"]["shown"])
+        self.assertIn("words", m["summary"])
+        self.assertIn("rows", m["summary"])
+
+    def test_the_hail_copies_are_the_store_folders_and_n_only_when_shown(self):
+        copied = {p.name for p in (self.out / "hail").iterdir() if p.is_dir()}
+        stored = {p.name for p in (self.store / "hail").iterdir() if p.is_dir()}
+        self.assertEqual(copied, stored)                                   # the fixture has no snow folder
+        self.assertNotIn("n", copied)
+
+    def test_a_snow_folder_is_copied_only_when_the_index_says_it_is_shown(self):
+        for shown in (True, False):
+            store = fixture_store("full")
+            self.addCleanup(shutil.rmtree, store, True)
+            (store / "hail" / "n").mkdir()
+            (store / "hail" / "n" / "r0092_c0214.json").write_text("{}", encoding="utf-8")
+            set_index(store, snow={"state": "loaded", "shown": shown, "check": {}, "water_years": []})
+            out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-n-"))
+            self.addCleanup(shutil.rmtree, out, True)
+            site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+            self.assertEqual((out / "hail" / "n").is_dir(), shown, shown)
+
+    def test_a_store_whose_file_changed_after_its_manifest_is_refused_before_any_copy(self):
+        store = fixture_store("full")
+        self.addCleanup(shutil.rmtree, store, True)
+        (store / "hail" / "c" / next(iter(sorted(p.name for p in (store / "hail" / "c").iterdir())))).write_text("{}")
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-bad-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        self.assertFalse(result["status"]["hail_history"]["ok"])
+        self.assertFalse((out / "hail").exists())
+        town = page(out, "town/billings.html")
+        self.assertIn("Weather history could not be loaded in this update", town)
+
+    def test_a_b2_only_store_builds_and_every_b5_part_is_unavailable(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b5-b2-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True)
+        m = json.loads(page(out, "data/map.json"))["hail"]
+        for key in ("climate", "snow", "stations", "gauges"):
+            self.assertEqual(m[key]["state"], "unavailable", key)
+            self.assertTrue(m[key]["problem"], key)
+        self.assertIn("Five-year weather history at Billings", page(out, "town/billings.html"))
+
+    def test_the_section_router_sends_each_joined_row_to_one_section(self):
+        cases = {
+            "Report: Jun 15, 2025 8:41 pm MDT: hail, 0.75 in (estimated), Public, 4.2 mi NE": "hail",
+            "Report: Jun 16, 2025 5:16 pm MDT: tstm wnd gst, 59 mph (measured), Mesonet, 1.7 mi E": "wind",
+            "Report: Jan 5, 2025 7:00 am MST: freezing rain, 0.10 in (estimated), Public, 1 mi": "ice",
+            "Report: Jan 5, 2025 7:00 am MST: heavy snow, 6.0 in, Public, 1 mi": "snow",
+            "Report: Jul 1, 2024 1:00 pm MDT: extreme heat, 105 F, Public, 2 mi": "heat",
+            "Report: Jul 1, 2024 1:00 pm MDT: heavy rain, 1.20 in (estimated), Public, 2 mi": "rain",
+            "Report: Jul 1, 2024 1:00 pm MDT: flash flood, Public, 2 mi": "flooding",
+            "Report: Jul 1, 2024 1:00 pm MDT: tornado, Public, 2 mi": "storms",
+            "Record: Jul 1, 2024 1:00 pm MDT: debris flow, Public, across zone MTZ001": "flooding",
+            "Station: Jun 16, 2025: 50 kt (58 mph) at Billings/Logan Intl, about 3.9 miles away": "wind",
+            "Detection: Jun 15, 2025: 1 detection, largest 1.75 in": "hail",
+            "Warning: Jun 15, 2025 8:00 pm to 9:00 pm, issuance polygon in effect: Flash flood warning, BYZ; tags: x": "flooding",
+            "Warning: Jun 15, 2025 8:00 pm to 9:00 pm, issuance polygon in effect: Severe thunderstorm warning, BYZ; tags: x": "storms",
+            "Zone product: High wind warning: Jun 15, 2025 2:00 pm MDT to 4:00 pm MDT": "wind",
+            "Zone product: Winter storm warning: Jun 15, 2025": "ice",
+            "Zone product: Red flag warning, fire weather zone Yellowstone (MTZ001): Jun 15, 2025": "storms",
+        }
+        for text, want in cases.items():
+            label, body = site._split_kind(text)
+            self.assertEqual(site._section_of(label, body), want, text)
+        self.assertEqual(site._split_kind("no label here"), ("", "no label here"))
+
+    def test_an_unavailable_summary_gives_its_words_and_no_sections(self):
+        from website import joins as jn
+        s = site.summary_unavailable("the history index file is missing")
+        view = site.history_view(s, site.join_view_unavailable(jn), {"state": "unavailable", "unavailable": "x"},
+                                 {"name": "Billings", "slug": "billings"}, self.NOW, None)
+        self.assertEqual(view["state"], "unavailable")
+        self.assertEqual(view["sections"], [])
+        self.assertIn("the history index file is missing", " ".join(view["notices"]))
+
+    def test_a_spot_outside_the_store_says_so_in_words(self):
+        from website import summary as sm
+        s = sm._result("outside", "x", {}, None, sm._empty_table(), None, [], None, None)
+        view = site.history_view(s, {"sections": []}, {"state": "outside"}, {"name": "Glasgow"}, self.NOW, None)
+        self.assertEqual(view["state"], "outside")
+        self.assertEqual(view["notices"], [site.HISTORY_WORDS["outside"]])
 
 
 if __name__ == "__main__":

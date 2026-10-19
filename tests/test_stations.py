@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import sys
 import tempfile
 import time
 import unittest
@@ -16,6 +17,9 @@ from unittest import mock
 import requests
 
 from website import stations as S
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # tests/ (words_rules: the sentences a scan allows)
+import words_rules as W  # noqa: E402
 
 FORBIDDEN = re.compile(r"\b(damag\w*|dry|clear\w*|insurance|eligib\w*|confirm\w*|coverage|risk|probab\w*|claim\w*|"
                        r"loss\w*|all-clear|structure|warrant\w*)\b|\bno hail\b", re.IGNORECASE)
@@ -33,6 +37,12 @@ def dly_line(sid: str, year: int, month: int, element: str, days: dict) -> str:
 
 def station_line(sid: str, lat: float, lon: float, state: str, name: str) -> str:
     return f"{sid:<11} {lat:8.4f} {lon:9.4f} {1000.0:6.1f} {state:<2} {name:<30}"
+
+
+def unread_entry(name: str, reason: str = "the source did not answer") -> dict:
+    """A stations block entry for a candidate whose file did not load (B5 job-1 and job-3): null counts, unread true."""
+    return {"name": name, "lat": 47.0, "lon": -110.0, "elev": 1000.0, "net": "COOP", "unread": True, "reason": reason,
+            "cover": {"SNOW": None}}
 
 
 def summary(name: str, ok: int, current=True, net: str = "COOP") -> dict:
@@ -180,6 +190,76 @@ class RuleTests(unittest.TestCase):
         result = S.choose([(3.0, "A"), (4.0, "B")], {"B": summary("B", 2100)}, "SNOW", AS_OF, frozenset({"A"}))
         self.assertEqual([c["id"] for c in result["chosen"]], ["B"])
         self.assertTrue(result["examined"][0]["unavailable"])
+        self.assertIsNone(result["examined"][0]["pass"])        # never read: neither a pass nor a non-pass (B5 job-3)
+        self.assertEqual([u["id"] for u in result["unread"]], ["A"])
+        self.assertTrue(result["incomplete"])                    # the nearer file might pass: the two nearest are not known
+        self.assertEqual(result["state"], "one")
+        words = S.station_words(result, "SNOW")
+        self.assertEqual(len(words), 1)
+        self.assertTrue(words[0].startswith("Data unavailable for some stations: A did not load, so the two nearest"))
+        self.assertTrue(words[0].endswith("the two nearest stations that pass are not known for snowfall. "
+                                          "This is not an all-clear."))
+        self.assertIsNone(FORBIDDEN.search(W.residue(words[0])))
+
+    def test_candidates_that_all_failed_are_unavailable_not_none(self):
+        # B5 job-1: a location whose candidates all failed reads unavailable, and no station is said to have too few reports
+        light = {"A": unread_entry("Alpha"), "B": unread_entry("Bravo")}
+        result = S.choose([(3.0, "A"), (4.0, "B")], light, "SNOW", AS_OF)
+        self.assertEqual((result["state"], result["chosen"]), ("unavailable", []))
+        self.assertEqual([u["name"] for u in result["unread"]], ["Alpha", "Bravo"])
+        words = S.station_words(result, "SNOW")
+        self.assertEqual(words, ["Data unavailable for snowfall: Alpha and Bravo did not load (the source did not answer), "
+                                 "so it is not known whether a station within 40 miles has enough reports. This is not an "
+                                 "all-clear."])
+        self.assertNotIn("No station", " ".join(words))
+        self.assertIsNone(FORBIDDEN.search(W.residue(words[0])))
+
+    def test_the_unread_names_are_capped_at_three_and_the_rest_are_counted(self):
+        # a sentence a roofer can read: the three nearest by name, then the count (nearest first, as the walk meets them)
+        ids = ["A", "B", "C", "D", "E"]
+        light = {sid: unread_entry(f"Station {sid}") for sid in ids}
+        result = S.choose([(float(i + 1), sid) for i, sid in enumerate(ids)], light, "SNOW", AS_OF)
+        self.assertEqual(S.station_words(result, "SNOW"), [
+            "Data unavailable for snowfall: Station A, Station B, Station C and 2 more stations did not load (the source "
+            "did not answer), so it is not known whether a station within 40 miles has enough reports. This is not an "
+            "all-clear."])
+
+    def test_one_passing_and_one_unread_keeps_one_and_does_not_claim_only_one(self):
+        # B5 job-1 (kept as "one"): the passing station stays; the words say the other file did not load, not "only one"
+        light = {"A": unread_entry("Alpha"), "B": summary("Bravo", 2100)}
+        result = S.choose([(3.0, "A"), (4.0, "B")], light, "SNOW", AS_OF)
+        self.assertEqual((result["state"], [c["name"] for c in result["chosen"]]), ("one", ["Bravo"]))
+        words = S.station_words(result, "SNOW")
+        self.assertEqual(words, ["Data unavailable for some stations: Alpha did not load (the source did not answer), so the "
+                                 "two nearest stations that pass are not known for snowfall. This is not an all-clear."])
+        self.assertNotIn("Only one station", " ".join(words))
+
+    def test_a_failed_nearest_station_is_named_and_the_farther_passes_are_partial(self):
+        # B5 job-3: the two farther stations pass; they are shown under the partial words, never as the two nearest
+        light = {"A": unread_entry("Alpha"), "B": summary("Bravo", 2100), "C": summary("Charlie", 2000)}
+        result = S.choose([(3.0, "A"), (5.0, "B"), (8.0, "C"), (12.0, "D")], light, "SNOW", AS_OF)
+        self.assertEqual([c["id"] for c in result["chosen"]], ["B", "C"])
+        self.assertEqual([r["id"] for r in result["examined"]], ["A", "B", "C"])     # D is never read
+        self.assertEqual((result["state"], result["incomplete"]), ("two", True))
+        words = S.station_words(result, "SNOW")
+        self.assertEqual(len(words), 1)
+        self.assertTrue(words[0].startswith("Data unavailable for some stations: Alpha did not load"))
+        self.assertIn("are not known for snowfall", words[0])
+        self.assertNotIn("Bravo did not load", words[0])
+        self.assertIsNone(FORBIDDEN.search(W.residue(words[0])))
+
+    def test_a_failed_file_after_the_second_pass_changes_nothing(self):
+        light = {"A": summary("Alpha", 2100), "B": summary("Bravo", 2100), "C": unread_entry("Charlie")}
+        result = S.choose([(3.0, "A"), (4.0, "B"), (9.0, "C")], light, "SNOW", AS_OF)
+        self.assertEqual((result["state"], result["incomplete"], result["unread"]), ("two", False, []))
+        self.assertEqual(S.station_words(result, "SNOW"), [])
+
+    def test_a_failed_file_may_be_named_by_a_mapping_of_reasons(self):
+        result = S.choose([(3.0, "A"), (4.0, "B")], {"B": summary("Bravo", 2100)}, "SNOW", AS_OF,
+                          {"A": "the file was in an unexpected format"})
+        self.assertEqual(result["unread"][0]["reason"], "the file was in an unexpected format")
+        self.assertIn("A did not load (the file was in an unexpected format), so the two nearest",
+                      S.station_words(result, "SNOW")[0])
 
     def test_a_missing_summary_asks_for_that_station(self):
         result = S.choose([(3.0, "A")], {}, "SNOW", AS_OF)
@@ -192,8 +272,17 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(got, ["NEAR"])                               # 0.5 degree is about 34.5 miles; 1.2 degrees about 83
 
     def test_no_forbidden_term_in_any_station_word(self):
+        # the required sentence of an unavailable line is allowed (tests/words_rules.py); nothing else is removed
         for key, text in S.WORDS.items():
-            self.assertIsNone(FORBIDDEN.search(text), f"{key}: {text}")
+            self.assertIsNone(FORBIDDEN.search(W.residue(text)), f"{key}: {text}")
+
+    def test_the_unavailable_lines_end_with_the_negation(self):
+        # every unavailable or unread line ends with the required sentence (D13, D20); data_unavailable is the season
+        # line that the supervisor decides (rules-13 item 5b), so it is not in this list
+        checked = sorted(k for k in S.WORDS if ("unavailable" in k or k.startswith("unread")) and k != "data_unavailable")
+        self.assertEqual(checked, ["unavailable", "unread_block", "unread_element", "unread_partial"])
+        for key in checked:
+            self.assertTrue(S.WORDS[key].endswith("This is not an all-clear."), key)
 
 
 class OfflineBuildTests(unittest.TestCase):
@@ -256,7 +345,43 @@ class OfflineBuildTests(unittest.TestCase):
         self.assertEqual(result["state"], "unavailable")
         block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]
         self.assertEqual(block["state"], "unavailable")
-        self.assertIn("could not be read", block["problem"])
+        # D28: the D20 sentence is the block's problem; the technical reason sits beside it as the detail
+        self.assertEqual(block["problem"], "Station readings could not be loaded in this update; that is not the same "
+                                           "as no station reading. This is not an all-clear.")
+        self.assertIn("could not be read", block["detail"])
+
+    def test_the_failed_station_reaches_the_block_and_the_rule_at_a_town_and_a_tile_centre(self):
+        # B5 job-1 and job-3: the failed file is listed block-wide, is an unread entry with null counts, has no sd file,
+        # and the rule at a town and at a tile centre (not stored in the block) sees it as unread, not as a non-pass
+        S.build(self.store, self.cache, offline=True, procs=1)
+        block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]
+        self.assertEqual(block["failed_station_ids"], ["USC00000002"])
+        entry = block["stations"]["USC00000002"]
+        self.assertTrue(entry["unread"])
+        self.assertEqual(entry["cover"], {"SNOW": None})
+        self.assertFalse((self.store / "hail" / "sd" / "USC00000002.json").exists())
+        # D28: the partial sentence is the problem, and the technical reason sits beside it as the detail
+        self.assertEqual(block["problem"], "Data unavailable for some stations: 1 file could not be loaded in this update, "
+                                           "so the rows that loaded are shown. This is not an all-clear.")
+        self.assertIn("USC00000002", block["detail"])
+        # the town row: Lewistown's nearest-first walk meets the failed file, so the row is incomplete and names it
+        towns = [slug for slug, per in block["towns"].items() if "USC00000002" in [r["id"] for r in per["SNOW"]["examined"]]]
+        self.assertEqual(towns, ["lewistown"])
+        row = block["towns"]["lewistown"]["SNOW"]
+        self.assertEqual((row["state"], row["incomplete"], row["unread"]), ("one", True, ["USC00000002"]))
+        self.assertEqual(row["chosen"], ["USC00000001"])
+        failed = [r for r in row["examined"] if r["id"] == "USC00000002"][0]
+        self.assertEqual((failed["unavailable"], failed["pass"]), (True, None))
+        # a tile centre (47.05 N, 109.95 W) is not stored; point_rule reads the block and gives the build's answer
+        here = S.point_rule(block["stations"], 47.05, -109.95, "SNOW", date(2026, 10, 16))
+        self.assertEqual((here["state"], [c["id"] for c in here["chosen"]], [u["id"] for u in here["unread"]]),
+                         ("one", ["USC00000001"], ["USC00000002"]))
+        # the failed file lists SNOW only, so no other element reads it
+        self.assertEqual(S.point_rule(block["stations"], 47.05, -109.95, "TMAX", date(2026, 10, 16))["unread"], [])
+        # verify: the loaded files match the loaded entries, and the failed file is listed with no sd file
+        checks = {c["check"]: c["pass"] for c in S.verify(self.store)["checks"]}
+        self.assertTrue(checks["sd files match the stations block"])
+        self.assertTrue(checks["failed files are listed, and none has an sd file"])
 
 
 class FakeResponse:

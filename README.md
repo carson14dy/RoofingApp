@@ -101,15 +101,21 @@ Needs Python 3.10+.
 pip install requests jinja2 pillow numpy pygrib h5py tzdata
 python -m website.build --out _site --sample   # invented sample data, labelled on every page
 python -m website.build --out _site            # live data
-python -m website.build --out _site --sample --hail-history   # the hail history with labelled sample data (off by default)
+python -m website.build --out _site --sample --hail-history   # the hail history with labelled sample data (off by default; it also carries the B5 weather files)
 python -m website.hail build --out store --cache hail-cache  # the daily store from NOAA's archive; a cold cache works
 python -m website.hail verify store                          # check a built store
 python -m website.build --out _site --hail-history --hail-store hail-store.tar.gz   # a local store instead of the download
 pip install pyshp                                                # the joins need it; the site build does not
 python -m website.joins build --store store --cache joins-cache  # the joins: reports, records, detections, warnings, zone products, station gusts
 python -m website.joins verify store                             # check the joins
+python -m website.climate backfill --cache climate-cache        # the past weather (D38): the 63 scaled months, once (222 s measured; needs h5py)
+python -m website.climate update --cache climate-cache          # then daily: the prelim days and any new scaled month
+python -m website.climate build --store store --cache climate-cache
+python -m website.stations build --store store --cache b5-cache --scope daily   # station readings; --scope monthly reads the whole union
+python -m website.snowgrid build --store store --cache b5-cache --offline       # NOHRSC snow analysis; the unit check decides whether it shows
+python -m website.gauges build --store store --cache b5-cache                   # NWS flood stages and USGS peaks, within 10 miles
 python -m http.server -d _site 8000            # open http://localhost:8000
-python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_website_workflow   # website tests, offline, seconds
+python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_climate tests.test_stations tests.test_snowgrid tests.test_gauges tests.test_summary tests.test_website_workflow   # website tests, offline, seconds
 python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
 python tools/smoke_pages.py _site              # no page wider than the screen, 288–1440 px
 ```
@@ -121,7 +127,12 @@ website/gridded.py     NOAA radar (MRMS) and HRRR model grids → map picture fr
 website/storm.py       NOAA radar echo tops for each town (behind --storm-layers, text only)
 website/satellite.py   NOAA GOES band 13 satellite picture → one map frame (behind --storm-layers)
 website/hail.py        the hail history (behind --hail-history): grid, size classes and words, store readers, daily build
-website/joins.py       the hail history joins (behind --hail-history): reports, official records, radar detections, warnings, zone products, station gusts
+website/joins.py       the hail history joins (behind --hail-history): reports, official records, radar detections, warnings, zone products, station gusts; B5 adds the county path, the period rule and the per-tile event files
+website/climate.py     the past weather (B5, D38): NOAA nClimGrid daily rain, highs and lows per 1/24 degree cell (grid estimates); the backfill once, the daily update, the release archive
+website/stations.py    GHCN-Daily station readings (B5): the station rule (40 miles, 80 and 95 percent coverage), season totals and season highs and lows
+website/snowgrid.py    NOHRSC season snowfall (B5): the unit check; the analysis stays out unless the check passes
+website/gauges.py      NWS flood stages and USGS annual peaks (B5): the nearest gauge within 10 miles
+website/summary.py     the five-season table that leads the sheet and the roof lines (B5); every word is Python's
 website/data/hail-fixture/ a labelled SAMPLE store for --sample builds and tests
 website/build.py       collect every source → map frames and data/map.json → pages (Jinja) → _site/
 website/sample.py      invented, labelled sample data for design checks and tests
@@ -130,11 +141,13 @@ website/templates/     base, Now, town, Storm reports, About
 website/static/        style.css (tokens and look), Leaflet 1.9.4, Atkinson Hyperlegible fonts, icons
 website/static/map/    map.js and map.css (the interactive map), basemap.json (outlines and names)
 tools/build_basemap.py rebuilds basemap.json from Natural Earth and Census data (run by hand)
-.github/workflows/hail-store.yml  the daily hail store job (12:43 UTC): build, join, verify, publish the release asset
+.github/workflows/hail-store.yml  the daily hail store job (12:43 UTC): build, join, add the B5 weather parts (non-fatal steps with timeouts), verify, publish the release assets; monthly and once-only steps by input (D26, D38)
 tests/                 test_site.py (pages, failures), test_gridded.py (radar and model frames),
                        test_basemap.py (the outline file), test_storm.py (radar echo tops),
                        test_satellite.py (the GOES satellite picture), test_hail.py (the hail history store),
-                       test_joins.py (the hail history joins),
+                       test_joins.py (the hail history joins), test_climate.py (the grid), test_stations.py
+                       (the station rule), test_snowgrid.py (the snow analysis), test_gauges.py (river gauges),
+                       test_summary.py (the summary table and its words),
                        test_website_workflow.py
                        (the workflow file)
 ```

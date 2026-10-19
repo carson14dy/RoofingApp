@@ -20,7 +20,7 @@ import re
 import shutil
 import sys
 import tempfile
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -245,8 +245,10 @@ class Collector:
         that doesn't load is a failed source, the pages say so in words, and the build goes on (--require-live
         then fails). Returns the map.json block. The copy is made only after the store's manifest checks out."""
         sampled = sample and store is None          # the SAMPLE fixture only; a --hail-store file is real data
+        through = None                              # the newest grid day the store holds (the climate block)
         try:
             index = hail_store(out_dir, store, sample, self.f)
+            through = (index.get("climate") or {}).get("through")
             tiles = hail_tiles(index, out_dir)
             cells = [hs.cell_events(out_dir, t["lat"], t["lon"]) for t in towns]
             words = [hs.describe(index, events, self.now, sample=sampled) for events in cells]
@@ -254,9 +256,14 @@ class Collector:
             block["tiles"] = tiles                  # the browser's outside test: a tile not listed has no Montana cell
             joins_block, joins_views = hail_joins(out_dir, index, towns, self.now, sampled)
             block["joins"] = joins_block            # the joined records behind the sheet (B2)
-            detail = (f"{index['events']:,} events in {index['shards']} shard files, {index['days_present']} of "
-                      f"{index['days_expected']} days, as of {index['as_of']}; joined records "
-                      f"{joins_block['state']}")
+            block.update(b5_map_blocks(index))      # the five-season history's blocks (B5), beside the joins
+            summaries = [town_summary(out_dir, t, self.now) for t in towns]
+            # the counts the build log shows are the store's own, when its index holds them (a store without them builds too)
+            counts = (f"{index['events']:,} events in {index['shards']} shard files, " if "events" in index and "shards" in index
+                      else "")
+            days = (f"{index['days_present']} of {index['days_expected']} days, " if "days_present" in index
+                    and "days_expected" in index else "")
+            detail = f"{counts}{days}as of {index['as_of']}; joined records {joins_block['state']}"
             self.note("hail_history", HAIL_LABEL, True, ("SAMPLE store: " if sampled else "") + detail)
         except (hs.HailStoreError, OSError, ValueError, KeyError, TypeError) as e:
             problem = str(e) if isinstance(e, hs.HailStoreError) else f"the history files couldn't be read ({type(e).__name__})"
@@ -267,8 +274,10 @@ class Collector:
             from . import joins as jn
             block["joins"] = join_block_unavailable(jn, problem)
             joins_views = [join_view_unavailable(jn) for _ in towns]
-        for t, w, jv in zip(towns, words, joins_views):
-            t["hail"] = {**w, "joins": jv}
+            block.update(b5_map_blocks(None))       # every B5 block says unavailable, with the reason
+            summaries = [summary_unavailable(problem, t) for t in towns]
+        for t, w, jv, s in zip(towns, words, joins_views, summaries):
+            t["hail"] = {**w, "joins": jv, "summary": s, "view": history_view(s, jv, w, t, self.now, through)}
         block["words"].update(HAIL_SITE_WORDS)
         block["stale_days"] = HAIL_STALE_DAYS
         block["at_zoom"] = HAIL_AT_ZOOM
@@ -455,7 +464,10 @@ HAIL_LABEL = "Hail history (radar estimates)"        # the status line's name
 # the joined records (B2, website/joins.py) are on the About page only in a --hail-history build, with the store
 JOIN_CONTRACTS = ("lsr", "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons", "nws_zone_products",
                   "asos_daily_gusts")
-HAIL_CONTRACTS = ("hail_history",) + JOIN_CONTRACTS  # on the About page only in a --hail-history build
+# the B5 feeds (sources.py rows, B5 brief): on the About page only in a --hail-history build
+B5_CONTRACTS = ("nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_lsr", "nwps_gauges",
+                "usgs_water_api", "census_counties", "roof_references")
+HAIL_CONTRACTS = ("hail_history",) + JOIN_CONTRACTS + B5_CONTRACTS  # on the About page only in a --hail-history build
 # Words map.js fills that hail.WORDS doesn't hold: a shard that didn't load (the unavailable line's problem)
 HAIL_SITE_WORDS = {"fetch_failed": "the history for this spot didn't load in this update"}
 HAIL_STALE_DAYS = hs.STALE_DAYS    # map.js: an as_of older than this (in days) shows the stale line
@@ -499,9 +511,32 @@ def hail_store(out: Path, store: str | None, sample: bool, fetch) -> dict:
         return _copy_hail(Path(tmp), out, index)
 
 
+# The store's folders the site copies (B2 and B5). hail/j/ holds the joined records and hail/j/e/ the per-tile event files
+# (D30); hail/n/ (the snow analysis) is copied only when the index's snow block says it is shown (D7, D23).
+HAIL_FILES = ("index.json", "manifest.json")
+HAIL_FOLDERS = ("t", "j", "z", "s")              # B2: shards, joined records (with j/e), zone and station files
+HAIL_FOLDERS_B5 = ("c", "sd", "g", "k")          # B5: grid tiles, station files, gauges, county files
+
+
+def snow_shown(index: dict) -> bool:
+    """True when the store's snow block says the analysis is shown (its unit check passed, D7)."""
+    block = index.get("snow") if isinstance(index, dict) else None
+    return isinstance(block, dict) and block.get("shown") is True
+
+
 def _copy_hail(root: Path, out: Path, index: dict) -> dict:
-    """Copy root/hail/ into the site as out/hail/ (the shards the map and the town pages read)."""
-    shutil.copytree(root / "hail", out / "hail")
+    """Copy the store's hail/ files into the site as out/hail/: the B2 folders, the B5 folders (c, sd, g, k; j/e comes with
+    j), and hail/n only when the snow block says it is shown. The manifest is checked first, so every copied file is one the
+    manifest lists and its bytes match (hail.check_manifest). A store without a B5 folder (a B2-only store) copies what it
+    has, and the pages say which part is unavailable."""
+    hs.check_manifest(root)
+    (out / "hail").mkdir(parents=True)
+    for name in HAIL_FILES:
+        shutil.copy2(root / "hail" / name, out / "hail" / name)
+    folders = HAIL_FOLDERS + HAIL_FOLDERS_B5 + (("n",) if snow_shown(index) else ())
+    for name in folders:
+        if (root / "hail" / name).is_dir():
+            shutil.copytree(root / "hail" / name, out / "hail" / name)
     return index
 
 
@@ -627,6 +662,320 @@ def hail_tiles(index: dict, out: Path) -> list[str]:
     return tiles
 
 
+# ---------------------------------------------------------------- the five-season history (B5; --hail-history only)
+# summary.py holds the table, the roof lines and their sentences; the functions here join them with the joined records
+# (joins.describe_joins), the radar words (hail.describe) and the river gauge into the town page's view, and build the
+# map.json blocks the browser fills. Every word the page shows is written in Python (AGENTS rule 4).
+
+HISTORY_SHOW_FIRST = 10     # rows a section shows before its "show all" (the joined tables' count)
+HISTORY_WORDS = {
+    "unavailable": "Weather history could not be loaded in this update: {problem}. That is not the same as no weather history. This is not an all-clear.",
+    "outside": "This spot is outside Montana, so the weather history does not cover it.",
+    "no_reason": "No reason was recorded for this value in this update.",
+    "show_all": "Show all {n} rows",
+    "town_title": "Five-year weather history at {town}",
+    "cell": ("The table is for the grid cell at the town's centre, about 0.7 miles north to south and 0.5 miles east to west. "
+             "The grid and radar rows are for that cell; each station row names its station and its distance from the town."),
+    "footnotes": "Data unavailable, with the reason",
+    "table_caption": "Five seasons, July to June, at {town}: each row names its kind of record and its unit.",
+    "gauge_label": "River gauge",
+    "reference_label": "Reference",
+    "times": "Times are Montana time, with the zone abbreviation (MDT or MST).",
+}
+HISTORY_SECTIONS = ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made")
+# the kind label a joins row starts with (B2 D3); the rest of the row is the joins' own words
+_KIND_LABEL = re.compile(r"^(Report|Record|Detection|Warning|Zone product|County product|Station): (.*)$", re.S)
+# the sections a joins row can go to, by its type or product words (the first rule that matches decides; a row no rule
+# matches is a storm or warning row, so no joined row is dropped)
+_SECTION_RULES = (
+    ("ice", re.compile(r"\b(freezing|sleet|ice|winter|blizzard|wind chill|extreme cold|frost|freeze|cold)\b", re.I)),
+    ("heat", re.compile(r"\bheat\b", re.I)),
+    ("flooding", re.compile(r"\b(flood|flash|debris)\b", re.I)),
+    ("snow", re.compile(r"\bsnow", re.I)),
+    ("hail", re.compile(r"\bhail\b", re.I)),
+    ("rain", re.compile(r"\b(rain|drought)\b", re.I)),
+    ("wind", re.compile(r"\b(winds?|wnd|gusts?|dust)\b", re.I)),
+)
+
+
+def _split_kind(text: str) -> tuple[str, str]:
+    """A joined row's kind label and its words: "Report: ..." gives ("Report", "...")."""
+    m = _KIND_LABEL.match(text)
+    return (m.group(1), m.group(2)) if m else ("", text)
+
+
+def _section_of(label: str, body: str) -> str:
+    """The section a joined row belongs to, from its kind and its type or product words (B5): a station row is wind, a
+    detection is hail, a warning or zone row takes its product's name, and a report or record takes its type word."""
+    if label == "Station":
+        return "wind"
+    if label == "Detection":
+        return "hail"
+    if label == "Warning":
+        m = re.search(r"in effect: ([^,;]+)", body)
+        words = m.group(1) if m else body
+    elif label in ("Zone product", "County product"):
+        words = re.split(r", fire weather zone|:", body, maxsplit=1)[0]
+    else:
+        m = re.search(r"\d{1,2}:\d{2} ?[ap]m(?: [A-Z]{2,4})?: (.*)$", body, re.I)     # "5:16 pm MDT: tstm wnd gst, ..."
+        words = re.split(r", | \(", m.group(1) if m else body, maxsplit=1)[0]
+    for key, rule in _SECTION_RULES:
+        if rule.search(words):
+            return key
+    return "storms"
+
+
+def snow_map_block(index: dict | None) -> dict:
+    """map.json["hail"]["snow"]: the snow analysis's state, its unit check and its words (D7, D23). The grid files
+    (hail/n/) are in the site only when the check passes; the browser reads this block for the words."""
+    from . import snowgrid
+    block = index.get("snow") if isinstance(index, dict) else None
+    block = block if isinstance(block, dict) else None
+    shown = snow_shown(index or {})
+    return {"state": block.get("state", "unavailable") if block else "unavailable", "shown": shown,
+            "problem": (block or {}).get("problem") or (None if block else "the snow analysis is not in this store"),
+            "water_years": list((block or {}).get("water_years") or []), "tile": "hail/n/{tile}.json",
+            "terms": snowgrid.TERMS_NOTE, "words": dict(snowgrid.WORDS), "check": (block or {}).get("check") if shown else None}
+
+
+def stations_map_block(index: dict | None) -> dict:
+    """map.json["hail"]["stations"]: the station rule's constants, the counts and the words (D5, D18). The per-station
+    files are hail/sd/; the rule's results for each town stay in the index."""
+    from . import stations
+    block = index.get("stations") if isinstance(index, dict) else None
+    block = block if isinstance(block, dict) else None
+    return {"state": (block or {}).get("state", "unavailable"),
+            "problem": (block or {}).get("problem") or (None if block else "the station files are not in this store"),
+            "as_of": (block or {}).get("as_of"), "rule": (block or {}).get("rule"), "counts": (block or {}).get("counts"),
+            "radius_miles": stations.RADIUS_MILES, "fresh_days": stations.FRESH_DAYS, "cover_min": stations.COVER_MIN,
+            "season_min": stations.SEASON_MIN, "cover_days": stations.COVER_DAYS, "tile": "hail/sd/{station}.json",
+            "words": dict(stations.WORDS)}
+
+
+def gauges_map_block(index: dict | None) -> dict:
+    """map.json["hail"]["gauges"]: the river gauge rule, its counts and the words (D6, D21). The gauge files are hail/g/."""
+    from . import gauges
+    block = index.get("gauges") if isinstance(index, dict) else None
+    block = block if isinstance(block, dict) else None
+    return {"state": (block or {}).get("state", "unavailable"),
+            "problem": (block or {}).get("problem") or (None if block else "the river gauge files are not in this store"),
+            "rule": (block or {}).get("rule"), "counts": (block or {}).get("counts"),
+            "radius_miles": gauges.RADIUS_MILES, "tile": "hail/g/{usgs}.json", "words": dict(gauges.WORDS)}
+
+
+def county_map_block(index: dict | None) -> dict:
+    """map.json["hail"]["county"]: the county names and the county words (B5 source 4, D11); the county files are hail/k/."""
+    from . import joins as jn
+    joins_block = index.get(jn.INDEX_KEY) if isinstance(index, dict) else None
+    counties = (joins_block or {}).get("counties") if isinstance(joins_block, dict) else None
+    counties = counties if isinstance(counties, dict) else {}
+    return {"state": counties.get("state", "unavailable"),
+            "problem": counties.get("reason") or (None if counties else "the county files are not in this store"),
+            "count": counties.get("count"), "names": dict(counties.get("names") or {}), "tile": "hail/k/{county}.json",
+            "words": {k: v for k, v in jn.WORDS_JOINS.items() if k.startswith("county_")}}
+
+
+def b5_map_blocks(index: dict | None) -> dict:
+    """The map.json["hail"] blocks of the five-season history: climate (climate.map_data_climate), summary
+    (summary.map_data_summary) and the snow, stations, gauges and county blocks. None gives every block unavailable."""
+    from . import climate, summary
+    return {"climate": climate.map_data_climate(index), "summary": summary.map_data_summary(index),
+            "snow": snow_map_block(index), "stations": stations_map_block(index),
+            "gauges": gauges_map_block(index), "county": county_map_block(index)}
+
+
+def summary_unavailable(problem: str, town: dict | None = None) -> dict:
+    """The summary's shape when the store cannot give it: state unavailable, the reason and no rows (D16)."""
+    from . import summary as sm
+    return {"format": sm.FORMAT, "state": "unavailable", "problem": str(problem), "place": {"town": (town or {}).get("slug")},
+            "as_of": None, "window": [], "title": sm.WORDS_SUMMARY["table_title"], "plain": sm.WORDS_SUMMARY["plain"],
+            "table": {"columns": list(sm.COLUMNS), "rows": [], "partial": None, "held": None},
+            "radar_sentence": sm.WORDS_SUMMARY["radar_sentence"], "roof": None, "sections": [], "how_made": [], "about": [],
+            "town": None, "stale": None}
+
+
+def town_summary(out: Path, town: dict, now: datetime) -> dict:
+    """The five-season summary at a town's grid cell (summary.describe_summary, with the town point for the stations and the
+    river gauge). A store that cannot be read gives the unavailable shape with its reason."""
+    from . import summary
+    row, col = hs.cell_for(town["lat"], town["lon"])
+    point = {"slug": town["slug"], "name": town["name"], "lat": town["lat"], "lon": town["lon"]}
+    try:
+        return summary.describe_summary(out, row, col, now, town=point)
+    except (hs.HailStoreError, OSError, ValueError, KeyError, TypeError, IndexError) as e:
+        return summary_unavailable(f"the summary could not be built ({type(e).__name__})", town)
+
+
+def _table_view(s: dict, foot) -> list[dict]:
+    """The table's rows as the page shows them: every season and the five-season column with its unit's words; a cell that
+    is Data unavailable carries a footnote number, and its reason is listed under the table (foot)."""
+    from . import summary as sm
+    out = []
+    for r in s["table"]["rows"]:
+        if r["key"] == "held":          # the four held items: one line, its reason in a footnote
+            reason = " ".join(r["notes"]) or HISTORY_WORDS["no_reason"]     # the four held items, as one footnote
+            out.append({"label": r["label"], "kind": r["kind"], "unit": r["unit"], "unit_word": sm.UNIT_SPEC[r["unit"]]["word"],
+                        "held": True, "foot": foot(reason), "cells": [], "five": None, "town_only": False})
+            continue
+        notes = r["notes"]
+
+        def cell(text, cov):
+            text = text or sm.WORDS_SUMMARY["cell_unavailable"]
+            if text.startswith(sm.WORDS_SUMMARY["cell_unavailable"]):
+                reason = text if text != sm.WORDS_SUMMARY["cell_unavailable"] else (notes[0] if notes else HISTORY_WORDS["no_reason"])
+                return {"text": sm.WORDS_SUMMARY["cell_unavailable"], "foot": foot(reason), "cov": cov or ""}
+            return {"text": text, "foot": None, "cov": cov or ""}
+        out.append({"label": r["label"], "kind": r["kind"], "unit": r["unit"], "unit_word": sm.UNIT_SPEC[r["unit"]]["word"],
+                    "held": False, "town_only": bool(r.get("town_only")),
+                    "cells": [cell(t, c) for t, c in zip(r["texts"], r["coverage"])],
+                    "five": cell(r["five_text"], r["five_coverage"]), "foot": None})
+    return out
+
+
+def _per_season(rows: dict, label: str, keys: tuple, names: tuple) -> list[dict]:
+    """One row per season from the table's own words for these keys (highest and lowest, a count, a depth), with the
+    coverage line of any missing days (never a zero for a missing day)."""
+    from . import summary as sm
+    out = []
+    for k, season in enumerate(sm.FIVE):
+        parts, cov = [], []
+        for key, word in zip(keys, names):
+            row = rows.get(key)
+            if row is None:
+                continue
+            text = row["texts"][k] or sm.WORDS_SUMMARY["cell_unavailable"]
+            if text.startswith(sm.WORDS_SUMMARY["cell_unavailable"]):   # a season that did not load says so in the table's footnotes
+                continue
+            parts.append(f"{word} {text}")
+            if row["coverage"][k]:
+                cov.append(row["coverage"][k])
+        if parts:
+            out.append({"label": label, "text": f"{season}: " + "; ".join(parts) + (f" ({'; '.join(cov)})" if cov else "")})
+    return out
+
+
+def _window_lines(s: dict, through: str | None) -> list[str]:
+    """How the periods are counted: the radar and report windows, the grid's newest day and the station window."""
+    from . import summary as sm
+    W = sm.WORDS_SUMMARY
+    lines = []
+    if s.get("window") and s.get("as_of"):
+        first, last = (hs.fmt_date(date.fromisoformat(x)) for x in s["window"])
+        as_of = hs.fmt_date(date.fromisoformat(s["as_of"]))
+        lines.append(W["window_radar"].format(first=first, last=last, as_of=as_of, season=sm.FIVE[0]))
+        lines.append(W["window_reports"].format(first=first, last=last))
+    if through:
+        lines.append(W["window_grid"].format(through=hs.fmt_date(date.fromisoformat(through))))
+    lines.append(W["window_station"])
+    return lines
+
+
+def kind_what() -> dict:
+    """The sentence each kind of record opens with on its section: the words the modules already hold (hail.WORDS,
+    summary.WORDS_INDICATORS, joins.WORDS_JOINS), keyed by the row label the section shows."""
+    from . import joins as jn, summary as sm
+    W = sm.WORDS_INDICATORS
+    return {"Radar estimate": hs.WORDS["what_this_is"], "Report": W["what_reports"],
+            "Record": jn.WORDS_JOINS["records_what"], "Detection": jn.WORDS_JOINS["detections_what"],
+            "Warning": W["what_warnings"], "Zone product": jn.WORDS_JOINS["zones_what"],
+            "County product": jn.WORDS_JOINS["county_what"], "Station": W["what_station"],
+            "Station reading": W["what_station"], "Grid estimate": W["what_grid"]}
+
+
+def history_view(s: dict, jv: dict, radar: dict, town: dict, now, through: str | None) -> dict:
+    """One town's five-season history as the page shows it: the notices, the table (with footnotes), the partial line, the
+    radar sentence and the sections in the brief's order, each with its lead, its kind word, its rows (each starting with its
+    kind label) and its notes. s is summary.describe_summary's result, jv the joined records' view and radar the radar
+    words (hail.describe); all three are plain dicts, so an unavailable part shows its words without a crash."""
+    from . import summary as sm
+    W, H = sm.WORDS_SUMMARY, HISTORY_WORDS
+    view = {"state": s.get("state"), "problem": s.get("problem"), "title": H["town_title"].format(town=town["name"]),
+            "plain": W["plain"], "cell": H["cell"], "notices": [], "table": None, "partial": None,
+            "radar_sentence": W["radar_sentence"], "footnotes": [], "sections": [], "stale": s.get("stale"),
+            "sample": radar.get("sample"), "show_first": HISTORY_SHOW_FIRST,
+            "table_caption": H["table_caption"].format(town=town["name"]), "footnote_title": H["footnotes"]}
+    if s.get("state") == "unavailable":
+        view["notices"] = [H["unavailable"].format(problem=s.get("problem") or "the store could not be read")]
+        return view
+    if s.get("state") == "outside":                   # the radar words say which: the sample's, or Montana's outside line
+        view["notices"] = [radar.get("outside") or H["outside"]]
+        return view
+    notes_foot: list[str] = []
+
+    def foot(reason: str) -> int:
+        if reason not in notes_foot:
+            notes_foot.append(reason)
+        return notes_foot.index(reason) + 1      # the footnote number; the list is set at the end
+
+    view["table"] = {"columns": list(s["table"]["columns"]), "rows": _table_view(s, foot)}
+    view["partial"] = s["table"]["partial"]
+    view["notices"] += [sec["unavailable"] for sec in jv.get("sections", []) if sec.get("unavailable")]
+    if radar.get("unavailable"):
+        view["notices"].append(radar["unavailable"])
+    rows = {r["key"]: r for r in s["table"]["rows"]}
+
+    # the rows of each section: the grid and station rows (per season), the radar days and the joined rows by kind
+    bucket: dict[str, list[dict]] = {k: [] for k in HISTORY_SECTIONS}
+    bucket["temperature"] += _per_season(rows, "Grid estimate", ("tmax", "tmin"), ("highest", "lowest"))
+    bucket["temperature"] += _per_season(rows, "Station reading", ("tmax_station", "tmin_station"), ("highest", "lowest"))
+    bucket["rain"] += _per_season(rows, "Grid estimate", ("precip", "precip_max"), ("precipitation", "largest one day"))
+    bucket["snow"] += _per_season(rows, "Station reading", ("snow", "snow_depth"), ("snowfall", "deepest snow"))
+    bucket["ice"] += _per_season(rows, "Grid estimate", ("freeze_thaw", "frost32"), ("freeze-thaw", "low below 32 F"))
+    bucket["heat"] += _per_season(rows, "Grid estimate", ("hot90",), ("high of 90 F or more",))
+    if radar.get("state") == "loaded":
+        bucket["hail"] += [{"label": "Radar estimate", "text": r["text"]} for r in radar.get("rows", [])]
+    for sec in jv.get("sections", []):
+        for row in sec.get("rows", []):
+            label, body = _split_kind(row["text"])
+            bucket[_section_of(label, body)].append({"label": label, "text": body, "note": row.get("note") or ""})
+    bucket["flooding"] = [{"label": H["gauge_label"], "text": line} for line in (s.get("town") or {}).get("gauge") or []] \
+        + bucket["flooding"]
+
+    notes = {k: [] for k in bucket}
+    for sec_id, keys in (("hail", ("radar_max", "radar_1in", "hail_max", "hail_n")), ("wind", ("gust_days", "gust_max", "wind_n", "hw_zone")),
+                         ("storms", ("hail_warnings", "flood_warn")), ("temperature", ("tmax", "tmin")),
+                         ("rain", ("precip", "precip_max")), ("snow", ("snow", "snow_depth")),
+                         ("flooding", ("flood_report_n", "flood_warn", "county_watch")),
+                         ("ice", ("freezing_rain_n", "ice_warn", "freeze_thaw")), ("heat", ("hot90",))):
+        for key in keys:
+            for note in (rows.get(key) or {}).get("notes", []):
+                if note not in notes[sec_id]:
+                    notes[sec_id].append(note)
+    notes["snow"].append(W["analysis_held"])                    # D23: the analysis was checked and left out
+    notes["made"] = list(s.get("how_made") or []) + _window_lines(s, through) + [H["times"]]
+    # each section opens with what its kinds of record are (the words each kind has, per section, once)
+    what = kind_what()
+    for sid in HISTORY_SECTIONS:
+        kinds = list(dict.fromkeys(row["label"] for row in bucket[sid]))
+        notes[sid] = [what[k] for k in kinds if k in what] + notes[sid]
+    entries = {sec["id"]: sec for sec in s.get("sections", [])}
+    for sid in HISTORY_SECTIONS:
+        entry = entries.get(sid, {"heading": W["section_titles"][sid], "lead": "", "kind": ""})
+        sec = {"id": sid, "heading": entry["heading"], "lead": entry["lead"], "kind": entry["kind"],
+               "rows": bucket[sid], "notes": notes[sid] if sid != "roof" else [],
+               "show_all": H["show_all"].format(n=len(bucket[sid]))}
+        if sid == "roof" and s.get("roof"):
+            sec["groups"] = [{"name": g["name"], "lines": [{"label": ln["label"], "text": ln["text"], "kind": ln["kind"]}
+                                                           for ln in g["lines"]],
+                              "references": [{"label": H["reference_label"], "text": r["text"]} for r in g["references"]],
+                              "held": [{"label": h["label"], "text": h["text"], "kind": h["kind"]} for h in g["held"]]}
+                             for g in s["roof"]["groups"]]
+            sec["notes"] = list(s["roof"].get("how_made") or [])
+        view["sections"].append(sec)
+    view["footnotes"] = list(notes_foot)
+    return view
+
+
+def about_hail_context() -> dict:
+    """The About page's words for the five-season history (--hail-history only): the snow analysis left out (D23), the
+    hit-and-miss sentence (B5 D15), the Census acknowledgement, the held items and the roof reference lines."""
+    from . import joins as jn, summary as sm
+    refs = [{"id": rid, "source": ref["source"], "url": ref["url"], "quote": ref["quote"]}
+            for rid, ref in sorted(sm.REFERENCE_LINES.items(), key=lambda kv: int(kv[0][1:]))]
+    return {"analysis": sm.WORDS_SUMMARY["analysis_held"], "hit_miss": jn.WORDS_JOINS["about_hit_miss"],
+            "census": src.CENSUS_TERMS, "refs": refs, "held": sm.WORDS_INDICATORS["held"]}
+
+
 def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | None = None,
           sample: bool = False, storm_layers: bool = False, hail_history: bool = False,
           hail_store_path: str | None = None) -> dict:
@@ -663,7 +1012,10 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
             "limits": src.LIMITS, "imagery": IMAGERY, "offices": OFFICES,
             "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
             "contracts": {k: v for k, v in src.CONTRACTS.items()
-                          if (storm_layers or k not in STORM_CONTRACTS) and (hail_history or k not in HAIL_CONTRACTS)},
+                          if (storm_layers or k not in STORM_CONTRACTS) and (hail_history or k not in HAIL_CONTRACTS)
+                          # a row a B5 row replaces is listed once, as the B5 row (sources.py superseded_by)
+                          and not (hail_history and v.get("superseded_by"))},
+            "about_hail": about_hail_context() if hail_history else None,
             "fresh_min": src.FRESH_MINUTES, "qc_words": src.QC_WORDS,
             "qc_rejected": src.QC_REJECTED}
     e = env()

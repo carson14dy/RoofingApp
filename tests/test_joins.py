@@ -416,7 +416,7 @@ class JoinRuleTests(unittest.TestCase):
         sec = self._section(out["sections"], "warnings")
         self.assertEqual(len(sec["rows"]), 1)
         text = sec["rows"][0]["text"]
-        self.assertEqual(text, "Warning: Jun 14, 2025 6:26 pm MDT to 7:08 pm MDT, issuance polygon in effect: Severe "
+        self.assertEqual(text, "Warning: Jun 14, 2025 6:26 pm MDT to 7:08 pm MDT, issuance polygon in effect: severe "
                                "thunderstorm warning, TFX; tags: hail 1.00 in, wind 60 mph, NWS damage threat tag: "
                                "considerable")
         self.assertIn("Tags are the forecast threat at issue time, not what fell.", sec["what"])
@@ -424,7 +424,7 @@ class JoinRuleTests(unittest.TestCase):
         check_words(self, text)
 
     def test_a_warning_with_no_tags_shows_no_tags_clause_and_a_tornado_tag_is_shown(self):
-        doc = _cell_doc(warnings=[({"k": "TO", "b": "2025-06-15T05:39Z", "e": "2025-06-15T05:59Z", "o": "BYZ",
+        doc = _cell_doc(warnings=[({"k": "TO", "s": "W", "b": "2025-06-15T05:39Z", "e": "2025-06-15T05:59Z", "o": "BYZ",
                                     "tags": {"hail_in": None, "wind_mph": None, "tornado": "OBSERVED",
                                              "damage": None}}, J.cover_hex([GATE_KEY]))])
         out = self._describe(doc)
@@ -578,9 +578,9 @@ class ZoneProductListTests(unittest.TestCase):
 
     def test_the_records_contract_row_names_the_points_joined_and_the_points_not_joined(self):
         request = " ".join(src.CONTRACTS["ncei_storm_events"]["request"].split())
-        self.assertIn("Hail and Thunderstorm Wind rows with coordinates within 5 miles", request)
-        self.assertIn("Not joined in this version: tornado, flood, flash flood, heavy rain, funnel cloud, lightning and "
-                      "debris flow points", request)
+        self.assertIn("Joined as points: Hail, Thunderstorm Wind, Flood, Flash Flood, Heavy Rain, Tornado, Funnel Cloud, "
+                      "Lightning and Debris Flow rows with coordinates within 5 miles of a cell's centre", request)
+        self.assertIn("Other county-coded types are not joined as points.", request)
 
 
 class ZoneAssignmentTests(unittest.TestCase):
@@ -933,7 +933,7 @@ class LabelTests(unittest.TestCase):
                       "Benchland", ""]],
             records=[[day, 2010, 47.08, -110.02, "hail", "1.75", "in", "", "Public", "Benchland", "", None, None]],
             detections=[[day, 2010, 47.03, -110.13, 175]],
-            warnings=[({"k": "SV", "b": "2025-06-15T19:53Z", "e": "2025-06-15T20:02Z", "o": "TFX",
+            warnings=[({"k": "SV", "s": "W", "b": "2025-06-15T19:53Z", "e": "2025-06-15T20:02Z", "o": "TFX",
                         "tags": {"hail_in": 1.0, "wind_mph": None, "tornado": None, "damage": None}},
                        J.cover_hex([GATE_KEY]))],
             zones={"MTZ313": [GATE_KEY]},
@@ -1359,8 +1359,8 @@ class ZoneEditionTests(unittest.TestCase):
                                         "Oct 16, 2026.")
         self.assertEqual(zones["fire_lead"], "2 red flag warnings for fire weather zone Central and Eastern Lewis and "
                                              "Clark (MTZ117) between Oct 17, 2021 and Oct 16, 2026.")
-        self.assertIn("3 zone products in Montana in the window could not be placed on a zone; their zone codes are not "
-                      "in the public zone editions the NWS page links.", zones["lines"])
+        self.assertIn("3 zone products in Montana in these five years could not be placed on a zone; their zone codes "
+                      "are not in the public zone editions the NWS publishes.", zones["lines"])
         self.assertEqual(len(zones["rows"]), 2)
         for text in [zones["lead"], zones["fire_lead"]]:
             check_words(self, text)
@@ -2312,6 +2312,7 @@ class TouchRuleTests(unittest.TestCase):
             self.assertTrue(set(centre) <= set(touched))
 
 
+@unittest.skipUnless(HAVE_PYSHP, "pyshp is not installed (the daily job installs it)")
 class PolygonParseTests(unittest.TestCase):
     """The polygon path (B5): any polygon product's NEW polygons; an outline-less NEW row is kept as a null, never dropped."""
 
@@ -2535,6 +2536,12 @@ class TownAndPairTests(unittest.TestCase):
 
 
 class WordsB5Tests(unittest.TestCase):
+    def test_the_b5_unavailable_line_ends_with_the_negation(self):
+        # rules-13: the B5 county line ends with the required sentence; B2's own D20 sentence stays exact, with no
+        # all-clear (DECISIONS.md, B2 "States"; test_joins UnavailableWordsTests)
+        self.assertTrue(J.WORDS_JOINS["county_unavailable"].endswith("This is not an all-clear."))
+        self.assertNotIn("all-clear", J.WORDS_JOINS["unavailable"])
+
     def test_the_radar_sentence_is_the_brief_sentence(self):
         self.assertEqual(J.WORDS_JOINS["radar_sentence"], "Radar estimates can miss hail that people reported and can "
                                                           "show hail that no one reported.")
@@ -2578,6 +2585,7 @@ class WordsB5Tests(unittest.TestCase):
         self.assertNotIn("{cause}", J.WORDS_JOINS["records_row"])
 
 
+@unittest.skipUnless(HAVE_PYSHP, "pyshp is not installed (the daily job installs it)")
 class CountyFileTests(unittest.TestCase):
     def test_a_county_file_without_the_56_montana_counties_is_refused(self):
         import shapefile
@@ -3036,6 +3044,169 @@ class HwAWindowNoteTests(unittest.TestCase):
         self.assertIn("HW.A has no NEW rows in the archive", hw["note"])
         self.assertIn("earliest CON issue", hw["note"])
         self.assertIn(J.B5_WINDOW_NOTES["HW.A"], hw["note"])
+
+
+class B5PartB1Tests(unittest.TestCase):
+    """B5 part B1 (D27, D29, D30 and the wording rulings): the zone editions and their placement, a kind word for every
+    product, the per-tile events files, and the sentences the brief quotes."""
+
+    FIXTURE = Path(__file__).resolve().parent.parent / "website" / "data" / "hail-fixture" / "hail"
+
+    def test_every_product_code_the_store_holds_has_an_nws_kind_word(self):
+        """D29: every product code the store joins (the polygon and zone products, the fire weather zone product and
+        every code in the committed sample's events, zone, fire and county files) has a kind word by its NWS name."""
+        codes = {f"{p}.{s}" for p, s in J.POLYGON_PRODUCTS + J.ZONE_PRODUCTS}
+        for path in (self.FIXTURE / "j" / J.EVENTS_NAME,):
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            codes |= {f"{row['k']}.{row['s']}" for row in doc["warnings"]}
+        for folder in ("z", "k"):
+            for path in (self.FIXTURE / folder).glob("*.json"):
+                doc = json.loads(path.read_text(encoding="utf-8"))
+                codes |= {f"{ev['k']}.{ev['s']}" for ev in doc.get("events", [])}
+        self.assertTrue(len(codes) >= 20, sorted(codes))
+        for code in sorted(codes):
+            name = J.KIND_WORDS.get(code)
+            self.assertIsNotNone(name, f"no kind word for {code}")
+            self.assertNotEqual(name, code)
+            self.assertRegex(name, r"^[a-z]", code)
+            self.assertNotRegex(name, r"\bwarning warning\b", code)
+            self.assertEqual(name, J.PRODUCT_NAMES[code][:1].lower() + J.PRODUCT_NAMES[code][1:], code)
+
+    def test_a_warning_row_names_its_product_and_never_reads_as_a_bare_code(self):
+        item = {"k": "FA", "s": "Y", "o": "TFX", "b": utc(2025, 1, 10, 7), "e": utc(2025, 1, 11, 8),
+                "tags": {"hail_in": None, "wind_mph": None, "tornado": None, "damage": None}}
+        text = J._warning_text(item["b"], item["e"], item, J.WORDS_JOINS)
+        self.assertIn("issuance polygon in effect: areal flood advisory, TFX; tags: none stated", text)
+        self.assertNotIn("FA warning", text)
+        item = dict(item, k="FL", s="A")
+        self.assertIn("in effect: flood watch, TFX", J._warning_text(item["b"], item["e"], item, J.WORDS_JOINS))
+        item = dict(item, k="SQ", s="W")
+        self.assertIn("in effect: snow squall warning, TFX", J._warning_text(item["b"], item["e"], item, J.WORDS_JOINS))
+
+    def test_the_browser_phenomenon_words_cover_each_significance_in_the_store(self):
+        words = J.PHENOMENON_KIND_WORDS
+        self.assertEqual(set(words), {"SV", "TO", "FF", "FL", "FA", "SQ"})
+        self.assertIn("advisory", words["FA"])
+        self.assertIn("watch", words["FL"])
+        self.assertIn("advisory", words["FL"])
+        self.assertNotIn("FA", " ".join(words.values()))
+
+    def test_the_change_history_editions_are_dated_by_their_names_and_all_predate_the_published_ones(self):
+        dates = [J.zone_name_date(name) for name in J.ZONE_EDITION_ARCHIVE]
+        self.assertEqual(dates, sorted(dates))
+        self.assertEqual(dates[0], date(2021, 9, 8))
+        self.assertEqual(dates[-1], date(2024, 3, 5))
+        self.assertTrue(all(day < date(2025, 3, 18) for day in dates))
+        self.assertEqual(J.zone_name_date("z_18mr25.zip"), date(2025, 3, 18))
+        self.assertEqual(J.zone_name_date("z_16ap26.zip"), date(2026, 4, 16))
+        self.assertIn("zone_ch_log.txt", J.ZONE_CHANGE_LOG_URL)
+
+    def test_a_product_under_an_unpublished_edition_keeps_its_code_and_one_under_a_read_edition_is_mapped(self):
+        """D27: the edition in force decides the placement. An edition the NWS does not publish keeps the code (kept);
+        a read edition maps it (mapped), and a code no current zone holds is unplaced with its reason."""
+        current = [{"zone": "MTZ313", "name": "Judith Basin County", "rings": [[(0, 0), (1, 0), (1, 1), (0, 0)]]}]
+        ctx = J.Context()
+        ctx.zone_editions = [
+            {"file": "z_08se21.zip", "date": date(2021, 9, 8), "zones": None, "why": "not published"},
+            {"file": "z_18mr25.zip", "date": date(2025, 3, 18),
+             "zones": [{"zone": "MTZ010", "name": "Old", "rings": []},
+                       {"zone": "MTZ313", "name": "Judith", "rings": []}],
+             "why": None},
+            {"file": "z_16ap26.zip", "date": date(2026, 4, 16), "zones": current, "why": None},
+        ]
+        ctx.zone_edition_maps = {"z_18mr25.zip": {"MTZ010": None, "MTZ313": "MTZ313"}}
+        names = {"MTZ313"}
+        zone, edition, how = J._place(ctx, names, "MTZ313", utc(2022, 3, 1, 12))
+        self.assertEqual((zone, edition["file"], how), ("MTZ313", "z_08se21.zip", "kept"))
+        zone, edition, how = J._place(ctx, names, "MTZ010", utc(2022, 3, 1, 12))
+        self.assertEqual((zone, how), (None, "kept"))
+        zone, edition, how = J._place(ctx, names, "MTZ010", utc(2025, 6, 1, 12))
+        self.assertEqual((zone, edition["file"], how), (None, "z_18mr25.zip", "mapped"))
+        zone, edition, how = J._place(ctx, names, "MTZ313", utc(2026, 5, 1, 12))
+        self.assertEqual((zone, edition["file"], how), ("MTZ313", "z_16ap26.zip", "current"))
+        self.assertEqual(J.ZONE_UNPLACED_REASONS, {"current": "not_in_current", "mapped": "retired_zone",
+                                                   "kept": "edition_unpublished"})
+
+    def test_a_zone_group_placed_or_left_off_is_counted_per_product_edition_and_way(self):
+        ctx = J.Context()
+        edition = {"file": "z_16ap26.zip", "date": date(2026, 4, 16), "zones": None, "why": None}
+        J._note_placed(ctx, "WW.Y", edition, "current")
+        J._note_placed(ctx, "WW.Y", edition, "current")
+        J._note_placed(ctx, "WW.Y", None, "kept")
+        J._note_unplaced(ctx, "WW.Y", "MTZ010", utc(2022, 3, 1, 12), {"file": "z_18mr25.zip"}, "mapped")
+        self.assertEqual(ctx.zone_placement, {"WW.Y": {"z_16ap26.zip": {"current": 2}, "none": {"kept": 1}}})
+        self.assertEqual(ctx.zone_unplaced_rows, [["WW.Y", "MTZ010", "2022-03-01", "z_18mr25.zip", "retired_zone"]])
+
+    def test_the_zone_words_say_in_these_five_years_and_name_the_products_placed_by_code_alone(self):
+        for key in ("zones_unplaced_one", "zones_unplaced_many", "records_unplaced_one", "records_unplaced_many"):
+            text = J.WORDS_JOINS[key]
+            self.assertIn("in these five years", text, key)
+            self.assertNotIn("in the window", text, key)
+            self.assertNotIn("page links", text, key)
+            self.assertIn("publishes", text, key)
+            check_words(self, text.format(n=2))
+        for key in ("zones_kept_one", "zones_kept_many", "zones_kept_note"):
+            check_words(self, J.WORDS_JOINS[key].format(n=2, date="18 March 2025"))
+        self.assertIn("does not publish", J.WORDS_JOINS["reason_not_published"])
+        self.assertIn("HTTP 404", J.WORDS_JOINS["reason_not_published"])
+
+    def test_the_radar_sentence_and_the_about_sentence_for_hail_misses_are_as_the_brief_states(self):
+        self.assertEqual(J.WORDS_JOINS["radar_sentence"], "Radar estimates can miss hail that people reported and can "
+                                                          "show hail that no one reported.")
+        about = J.WORDS_JOINS["about_hit_miss"]
+        self.assertTrue(about.startswith("NWS hail reports of one inch or more were checked against the radar "
+                                         "estimate"))
+        self.assertIsNone(re.search(r"\d", about), about)          # the About summary is in words, without numbers
+        check_words(self, about)
+        check_words(self, J.WORDS_JOINS["radar_sentence"])
+
+    def test_a_tile_events_file_holds_the_rows_its_tile_refers_to_under_their_own_indexes(self):
+        reports = [["r0"], ["r1"], ["r2"]]
+        records = [["c0"]]
+        warnings = [{"k": "SV", "s": "W"}, {"k": "FA", "s": "Y"}]
+        doc = {"r": 93, "c": 194, "reports": [2, 0], "records": [], "warnings": [[1, "0" * 25]]}
+        out = J._tile_events(doc, reports, records, warnings)
+        self.assertEqual(out["f"], J.TILE_EVENTS_FORMAT)
+        self.assertEqual(out["reports"], {"2": ["r2"], "0": ["r0"]})
+        self.assertEqual(out["records"], {})
+        self.assertEqual(out["warnings"], {"1": {"k": "FA", "s": "Y"}})
+
+    def test_the_events_block_names_the_largest_files_and_the_budget(self):
+        block = J._events_tiles_block([("r1.json", 100, 50), ("r2.json", 300, 20), ("r3.json", 200, 50)],
+                                      {"reports": 4, "records": 1, "warnings": 2})
+        self.assertEqual(block["format"], "hail-events-tile-v1")
+        self.assertEqual(block["count"], 3)
+        self.assertEqual(block["largest_raw"], {"file": "r2.json", "bytes": 300})
+        self.assertEqual(block["largest_gzip"], {"file": "r3.json", "bytes": 50})
+        self.assertEqual(block["budget_gzip"], 100_000)
+        self.assertEqual(block["gzip_bytes"], 120)
+        self.assertEqual(block["referenced"], {"reports": 4, "records": 1, "warnings": 2})
+
+    def test_the_committed_fixture_has_an_events_file_for_every_tile_and_its_index_names_them(self):
+        index = json.loads((self.FIXTURE / "index.json").read_text(encoding="utf-8"))
+        block = index[J.INDEX_KEY]
+        self.assertEqual(block["events_tiles"]["format"], "hail-events-tile-v1")
+        self.assertEqual(block["events_tiles"]["count"], len(index["tiles"]))
+        for tile in index["tiles"]:
+            path = self.FIXTURE / "j" / J.TILE_EVENTS_DIR / f"{tile}.json"
+            self.assertTrue(path.is_file(), tile)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["f"], "hail-events-tile-v1")
+        self.assertLessEqual(block["events_tiles"]["largest_gzip"]["bytes"], block["events_tiles"]["budget_gzip"])
+
+    def test_the_wind_zone_contract_row_says_in_these_five_years_and_names_the_editions(self):
+        """B2's 'in the window' phrase in the wind zone contract row is reworded (B5 part B1), and the row's edition
+        sentence says what the build reads (D27): the two published editions and the six the NWS does not publish."""
+        row = src.CONTRACTS["nws_zone_products"]
+        missing = " ".join(row["missing"].split())
+        request = " ".join(row["request"].split())
+        self.assertIn("A zone with no product in these five years is listed as none, which is not the same as no wind.",
+                      missing)
+        self.assertNotIn("in the window", missing)
+        self.assertNotIn("in the window", request)
+        self.assertIn("z_18mr25.zip (effective 18 March 2025) and z_16ap26.zip (effective 16 April 2026)", request)
+        self.assertIn("are not published (HTTP 404 when checked on 2026-10-19)", request)
+        self.assertNotIn("the NWS links two editions", request)
+        check_words(self, missing)
 
 
 if __name__ == "__main__":

@@ -35,6 +35,13 @@ provisional):
     value of that element, and it must be at least COVER_MIN (0.80);
   * the two nearest candidates that pass are chosen. Fewer than two: those that pass are shown and the words say so.
     None: "No station within 40 miles has enough reports for {element} from 2020 to 2025."
+  * a candidate whose file did not load is never read, and it is never counted as a non-pass: its row says unavailable
+    (pass null) and the walk goes past it. A failed candidate met before the walk stops makes the result incomplete
+    (incomplete true, named in unread). With no station passing the state is "unavailable" (D16: "Data unavailable");
+    with some passing, the passing stations are shown under the B2 partial pattern (DECISIONS.md, B2 "States"), and the
+    words say the two nearest that pass are not known. The stations block keeps each failed candidate that the rule can
+    reach as an entry with unread true and null counts, so the rule the sheet and the town pages run (point_rule) is the
+    build's rule. failed_station_ids lists every failed file, uncapped (failures is capped at 50)
   * a season or calendar value shows only when at least SEASON_MIN (0.95) of its days have an unflagged value, and
     every station's share is shown.
 Thresholds (D1, shared with the roof lines of B5): a 90 F day is a TMAX of at least 322 tenths of a degree C (32.2 C; GHCN
@@ -92,6 +99,7 @@ import sys
 import tempfile
 import threading
 import time
+from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
@@ -153,7 +161,16 @@ WORDS = {
     "none": "No station within 40 miles has enough reports for {element} from 2020 to 2025.",
     "two_of_one": ("Only one station within 40 miles has enough reports for {element} from 2020 to 2025: {station}. "
                    "Stations that did not pass are not shown."),
-    "unavailable": "{part} could not be loaded in this update; that is not the same as no {part}.",
+    # D28 (B5 part B1): the D20 sentence the unavailable block carries in "problem"; the technical reason is "detail"
+    "unavailable": ("Station readings could not be loaded in this update; that is not the same as no station reading. "
+                    "This is not an all-clear."),
+    # B5 job-1 and job-3: a candidate station whose file did not load. "element" is the plain element name.
+    "unread_element": ("Data unavailable for {element}: {stations} did not load{reason}, so it is not known whether a "
+                       "station within 40 miles has enough reports. This is not an all-clear."),
+    "unread_partial": ("Data unavailable for some stations: {stations} did not load{reason}, so the two nearest stations "
+                       "that pass are not known for {element}. This is not an all-clear."),
+    "unread_block": ("Data unavailable for some stations: {count} {file} could not be loaded in this update, so the rows "
+                     "that loaded are shown. This is not an all-clear."),
     "trace": "Traces are counted as zero in sums; a trace is a real but tiny amount of precipitation or snow.",
     "share": "{station}: {k} of {d} days ({share} percent) with a {element} value.",
     "lead": ("Station readings come from the two nearest stations within 40 miles that have enough reports; a reading "
@@ -538,21 +555,31 @@ def ordered_candidates(base: list[tuple[float, str]], inventory: dict, element: 
 
 
 def choose(candidates: list[tuple[float, str]], summaries: dict, element: str, as_of: date,
-           failed: frozenset = frozenset()) -> dict:
+           failed=frozenset()) -> dict:
     """The rule for one location and element. candidates is ordered_candidates(); summaries holds the station summaries
     (by id) the walk has; a candidate without a summary stops the walk with state "need" and names it.
 
-    Returns {"state": "two" | "one" | "none" | "need", "chosen": [...], "examined": [...], "need": id or None,
-    "candidates": n}. Each examined row carries its id, miles, ok, of, share, pass, current and (for a failed file)
-    unavailable. The walk stops at two passing stations, so the examined rows are exactly the stations the rule read."""
-    chosen, examined = [], []
+    failed holds the ids whose file did not load: a set, or a mapping from id to the reason. A candidate that is in
+    failed, or whose summary is an unread entry of a stations block, is never read: its row says unavailable with pass
+    None, and the walk goes past it, because it might have passed (B5 job-1 and job-3).
+
+    Returns {"state": "two" | "one" | "unavailable" | "none" | "need", "chosen": [...], "examined": [...],
+    "need": id or None, "candidates": n, "unread": [{"id", "name", "miles", "reason"}], "incomplete": bool}.
+    "unavailable": no station passes and a candidate was not read. "one" or "two" with unread candidates are
+    incomplete: the two nearest that pass are not known, and station_words says so. Each examined row carries its id,
+    miles, ok, of, share, pass, current; a row for a candidate that did not load carries unavailable true and pass
+    None. The walk stops at two passing stations, so the examined rows are exactly the stations the rule read."""
+    chosen, examined, unread = [], [], []
     for miles, sid in candidates:
-        if sid in failed:
-            examined.append({"id": sid, "miles": round(miles, 1), "unavailable": True, "pass": False})
+        entry = summaries.get(sid) or {}
+        if sid in failed or entry.get("unread"):
+            reason = failed[sid] if isinstance(failed, Mapping) and sid in failed else entry.get("reason")
+            examined.append({"id": sid, "miles": round(miles, 1), "unavailable": True, "pass": None})
+            unread.append({"id": sid, "name": entry.get("name") or sid, "miles": round(miles, 1), "reason": reason})
             continue
         if sid not in summaries:
             return {"state": "need", "need": sid, "chosen": chosen, "examined": examined,
-                    "candidates": len(candidates)}
+                    "candidates": len(candidates), "unread": unread, "incomplete": bool(unread)}
         sd = summaries[sid]
         ok = sd["cover"].get(element, 0)
         share = ok / COVER_DAYS
@@ -566,18 +593,69 @@ def choose(candidates: list[tuple[float, str]], summaries: dict, element: str, a
                            "of": COVER_DAYS, "share": round(share, 4)})
             if len(chosen) == 2:
                 break
-    state = "two" if len(chosen) == 2 else ("one" if chosen else "none")
-    return {"state": state, "chosen": chosen, "examined": examined, "need": None, "candidates": len(candidates)}
+    if len(chosen) == 2:
+        state = "two"
+    elif chosen:
+        state = "one"
+    else:
+        state = "unavailable" if unread else "none"
+    return {"state": state, "chosen": chosen, "examined": examined, "need": None, "candidates": len(candidates),
+            "unread": unread, "incomplete": bool(unread)}
+
+
+def unread_of(light: dict) -> dict[str, str | None]:
+    """The candidates whose file did not load, as {id: reason}: the entries of a stations block with unread true."""
+    return {sid: row.get("reason") for sid, row in light.items() if row.get("unread")}
+
+
+def point_rule(light: dict, lat: float, lon: float, element: str, as_of: date) -> dict:
+    """The rule at one point (a town, a gate or a tile centre) from a stations block's entries: the walk the build ran,
+    with the unread candidates as failed. The site's summary reads the sheet's tile centres and the town points this
+    way, so every point's choice is the build's rule (the tile centres are not stored in the block)."""
+    base = within_radius(light, lat, lon)
+    inventory = {sid: row.get("cover", {}) for sid, row in light.items()}
+    return choose(ordered_candidates(base, inventory, element), light, element, as_of, failed=unread_of(light))
+
+
+UNREAD_NAMES_SHOWN = 3       # the nearest unread stations named in a sentence; the rest are counted
+
+
+def _join_names(names: list[str]) -> str:
+    names = [n for n in names if n]
+    if len(names) <= 1:
+        return "".join(names)
+    return ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def _unread_text(unread: list[dict]) -> tuple[str, str]:
+    """(the station names, the reason in brackets or ""): the nearest UNREAD_NAMES_SHOWN unread stations by name, then
+    the count of the others. The list is nearest first, as the rule walks it."""
+    names = [str(u.get("name") or u["id"]) for u in unread]
+    more = len(names) - UNREAD_NAMES_SHOWN
+    listed = _join_names(names[:UNREAD_NAMES_SHOWN])
+    if more > 0:
+        listed = f"{', '.join(names[:UNREAD_NAMES_SHOWN])} and {more} more {'station' if more == 1 else 'stations'}"
+    reasons = sorted({str(u["reason"]) for u in unread if u.get("reason")})
+    return listed, (f" ({'; '.join(reasons)})" if reasons else "")
 
 
 def station_words(result: dict, element: str) -> list[str]:
-    """The plain lines for a rule result (D5): the none sentence, or the one-station sentence."""
+    """The plain lines for a rule result (D5). A candidate whose file did not load comes first (B5 job-1 and job-3):
+    "unavailable" says a station within 40 miles may pass, and "one" or "two" with an unread candidate says the two
+    nearest that pass are not known, so neither reads as "no station" or "only one station". Without one, the none
+    sentence, or the one-station sentence."""
     lines = []
-    if result["state"] == "none":
-        lines.append(WORDS["none"].format(element=element_name(element)))
+    name = element_name(element)
+    unread = result.get("unread") or []
+    if unread:
+        names, reason = _unread_text(unread)
+        key = "unread_element" if result["state"] == "unavailable" else "unread_partial"
+        lines.append(WORDS[key].format(element=name, stations=names, reason=reason))
+    elif result["state"] == "none":
+        lines.append(WORDS["none"].format(element=name))
     elif result["state"] == "one":
         only = result["chosen"][0]
-        lines.append(WORDS["two_of_one"].format(element=element_name(element), station=only["name"]))
+        lines.append(WORDS["two_of_one"].format(element=name, station=only["name"]))
     return lines
 
 
@@ -901,7 +979,7 @@ def collect(index: dict, cache: Path, *, offline: bool = False, refresh="none", 
         for loc in locs:
             results[loc["key"]] = {}
             for element in CORE:
-                res = choose(lists[loc["key"]][element], summaries, element, as_of, frozenset(failed))
+                res = choose(lists[loc["key"]][element], summaries, element, as_of, fails_by_id)
                 results[loc["key"]][element] = res
                 if res["state"] == "need":
                     needs.add(res["need"])
@@ -921,7 +999,7 @@ def collect(index: dict, cache: Path, *, offline: bool = False, refresh="none", 
             "rule_bytes": rule_bytes, "locs": locs, "chosen_ids": chosen_ids, "requests": pacer.requests,
             "downloaded": pacer.downloaded,
             "refresh": scope or ("all" if every else ("ids" if ids else "none")), "refresh_ids": len(ids),
-            "unchanged": sorted(unchanged)}
+            "unchanged": sorted(unchanged), "inventory": inventory, "fails_by_id": dict(fails_by_id)}
 
 
 def sd_bytes(sd: dict) -> bytes:
@@ -956,7 +1034,34 @@ def _towns_block(results: dict, summaries: dict, locs: list[dict], as_of: date) 
 
 def _rule_row(res: dict, element: str) -> dict:
     return {"state": res["state"], "chosen": [c["id"] for c in res["chosen"]],
-            "examined": [{k: v for k, v in row.items() if k != "name"} for row in res["examined"]]}
+            "examined": [{k: v for k, v in row.items() if k != "name"} for row in res["examined"]],
+            "incomplete": bool(res.get("incomplete")), "unread": [u["id"] for u in res.get("unread", [])]}
+
+
+def _unread_entries(got: dict) -> dict[str, dict]:
+    """The stations block's entries for the candidates whose file did not load (B5 job-1 and job-3): the name, the
+    position and the network the rule needs, unread true, the reason, and null counts for each element the inventory
+    lists (a missing count is never read as zero). Only the failed stations the rule can reach (alive) are kept."""
+    out = {}
+    for sid in sorted(got["failed"]):
+        meta = got["alive"].get(sid)
+        if meta is None:
+            continue
+        out[sid] = {"name": meta["name"], "lat": meta["lat"], "lon": meta["lon"], "elev": meta["elev"],
+                    "net": meta["net"], "unread": True, "reason": got["fails_by_id"].get(sid),
+                    "cover": {element: None for element in sorted(got["inventory"].get(sid, {}))}}
+    return out
+
+
+def _partial_problem(failures: list[dict]) -> str:
+    """The D20-style sentence for a stations block that is partial (D28): the count of files that did not load."""
+    n = len(failures)
+    return WORDS["unread_block"].format(count=n, file="file" if n == 1 else "files")
+
+
+def _failure_detail(failures: list[dict]) -> str:
+    """The technical reason beside the partial sentence (D28): each failure's station or source, and its reason."""
+    return "; ".join(f"{f.get('station') or f.get('source')}: {f.get('reason')}" for f in failures[:50])
 
 
 def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", procs: int = 4,
@@ -978,10 +1083,10 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
         # build are removed, because the manifest must not list files this build did not make
         for old in (store / SD_PREFIX).glob("*.json") if (store / SD_PREFIX).is_dir() else []:
             old.unlink()
-        block = {"state": "unavailable", "problem": str(exc), "rule": _rule_constants()}
+        block = {"state": "unavailable", "problem": WORDS["unavailable"], "detail": str(exc), "rule": _rule_constants()}
         _merge_index(store, block)
         _merge_manifest(store, {}, prefixes=(SD_PREFIX,))
-        return {"state": "unavailable", "problem": str(exc)}
+        return {"state": "unavailable", "problem": WORDS["unavailable"], "detail": str(exc)}
     as_of = got["as_of"]
     sd_files = write_sd(store, got["summaries"])
     towns = _towns_block(got["results"], got["summaries"], got["locs"], as_of)
@@ -991,7 +1096,8 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
     state = "partial" if got["failures"] else "loaded"
     block = {
         "state": state,
-        "problem": None if state == "loaded" else "some station files did not load (see failures)",
+        "problem": None if state == "loaded" else _partial_problem(got["failures"]),
+        "detail": None if state == "loaded" else _failure_detail(got["failures"]),
         "as_of": as_of.isoformat(),
         "rule": _rule_constants(),
         "sources": {
@@ -1022,9 +1128,11 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
         "chosen_station_ids": got["chosen_ids"],
         "malformed": got["malformed"],
         "failures": got["failures"][:50],
+        "failed_station_ids": sorted(got["failed"]),
         "towns": towns,
         "gates": gates,
-        "stations": {sid: _light(got["summaries"][sid]) for sid in sorted(got["summaries"])},
+        "stations": {**{sid: _light(got["summaries"][sid]) for sid in sorted(got["summaries"])},
+                     **_unread_entries(got)},
     }
     _merge_index(store, block)
     _merge_manifest(store, sd_files, prefixes=(SD_PREFIX,))
@@ -1090,8 +1198,14 @@ def verify(store: Path) -> dict:
     manifest = json.loads((store / "hail" / "manifest.json").read_text(encoding="utf-8"))
     sd_dir = store / "hail" / "sd"
     files = sorted(sd_dir.glob("*.json")) if sd_dir.is_dir() else []
-    check("sd files match the stations block", len(files) == len(block.get("stations", {})),
-          f"{len(files)} files, {len(block.get('stations', {}))} stations")
+    loaded = [sid for sid, row in block.get("stations", {}).items() if not row.get("unread")]
+    unread = sorted(sid for sid, row in block.get("stations", {}).items() if row.get("unread"))
+    check("sd files match the stations block", len(files) == len(loaded),
+          f"{len(files)} files, {len(loaded)} stations loaded, {len(unread)} unread")
+    failed_ids = set(block.get("failed_station_ids", []))
+    check("failed files are listed, and none has an sd file",
+          set(unread) <= failed_ids and not any((sd_dir / f"{sid}.json").exists() for sid in failed_ids),
+          f"{len(failed_ids)} failed, {len(unread)} unread entries")
     bad = 0
     for path in files:
         data = path.read_bytes()

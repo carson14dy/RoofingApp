@@ -615,7 +615,8 @@ class ReaderTests(unittest.TestCase):
         # tiles included). A manifest does not list itself, so hail/manifest.json is not in this list.
         manifest = h.check_manifest(FIXTURE)
         self.assertEqual(sorted(manifest["files"]), [
-            "hail/index.json", "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
+            "hail/index.json", "hail/j/e/r0079_c0198.json", "hail/j/e/r0079_c0199.json", "hail/j/e/r0092_c0214.json",
+            "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
             "hail/j/r0092_c0214.json", "hail/k/MTC045.json", "hail/k/MTC111.json", "hail/s/1LM.json", "hail/s/6S8.json",
             "hail/s/BIL.json", "hail/s/LWT.json", "hail/t/r0079_c0198.json", "hail/t/r0079_c0199.json",
             "hail/t/r0092_c0214.json", "hail/z/MTZ235.json", "hail/z/MTZ313.json", "hail/z/fire-MTZ117.json",
@@ -744,7 +745,8 @@ class FixtureTests(unittest.TestCase):
     def test_fixture_is_under_50_kb_and_holds_only_the_store_and_joins_files(self):
         files = sorted(p.relative_to(FIXTURE).as_posix() for p in FIXTURE.rglob("*") if p.is_file())
         self.assertEqual(files, [
-            "hail/index.json", "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
+            "hail/index.json", "hail/j/e/r0079_c0198.json", "hail/j/e/r0079_c0199.json", "hail/j/e/r0092_c0214.json",
+            "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
             "hail/j/r0092_c0214.json", "hail/k/MTC045.json", "hail/k/MTC111.json", "hail/manifest.json",
             "hail/s/1LM.json", "hail/s/6S8.json", "hail/s/BIL.json", "hail/s/LWT.json", "hail/t/r0079_c0198.json",
             "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json", "hail/z/MTZ235.json", "hail/z/MTZ313.json",

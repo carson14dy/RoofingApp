@@ -16,6 +16,10 @@ Output, written into the store next to B1's shards (store/hail/):
                               tile's 100-bit cover], detections in full, the zone map {zone code: [cell keys]}, the fire
                               weather zones {code: [keys]}, the counties {MTC code: [keys]} (B5: each Montana cell is in
                               one county, written here once), and the two nearest stations within 40 miles
+  j/e/r{tr:04d}_c{tc:04d}.json  one per B1 tile (D30): the events that tile's file refers to, in the events table's own
+                              row shapes and keyed by their index in events.json (format hail-events-tile-v1); the
+                              browser fetches it on a tap (D22); the index's events_tiles block names the format and
+                              the sizes, and verify checks every referenced event is in its tile's file
   z/MTZ###.json               one per current Montana forecast zone: its zone products, one event per period (D8; B2
                               D33 implemented in B5), and its NCEI zone-coded rows
   z/fire-MTZ###.json          one per fire weather zone: red flag warnings (D7), in the same event shape
@@ -57,11 +61,15 @@ or before the begin: "cancelled at", D26, D31), else the latest expiry of its ro
 recorded", D6). A tie in product time reads cancelled. The window takes a period by its begin. VTEC events (the key
 without the zone; the earliest NEW or CON issue, else the earliest issue) are counted separately in vtec_counts.
 
-Zone editions (D16): every public zone edition the NWS page links is read (z_18mr25.zip and z_16ap26.zip; each date
-is the day and month in its file name). A product takes the zone code of the edition in force on its issue day. The
-two linked editions hold the same 83 zones with the same codes, names and outlines; the index records that. A code no
-current zone holds is counted as unplaced (D11), and the zone sections say so for Montana as a whole. Some codes of the
-2021 to 2025 products (MTZ009, MTZ010, MTZ014, MTZ045, MTZ054 among them) are not current zones; their products are unplaced.
+Zone editions (D16, D27): the NWS GIS page links two public zone editions, z_18mr25.zip (effective 18 March 2025) and
+z_16ap26.zip (effective 16 April 2026); each date is the day and month in its file name. The NWS change history names
+six older editions for 2021 to 2024 (ZONE_EDITION_ARCHIVE). Each is requested on every build, and on 2026-10-19 each
+returned HTTP 404 at the NWS address, so the index records it as not published. A product takes the zone code of the
+edition in force on its issue day when that edition is published (placed "mapped" or "current"). A product issued
+while an unpublished edition was in force keeps its zone code and is checked against the current edition ("kept"):
+that is the approximation the zone words say. A code no current zone holds is counted as unplaced (D11) with its
+reason (not_in_current, retired_zone or edition_unpublished); zone_placement and zone_unplaced_rows in the index hold
+the counts per product and edition, and every unplaced zone group with its code and day.
 
 Requests (B5): each IEM watchwarn request (polygon shapefiles and zone CSVs, and the polygon CSVs for the county twins)
 runs from 1 December of the year before to 31 January of the year after, and the copies of a row that two years' files
@@ -156,6 +164,11 @@ ZONE_FORMAT = "hail-zone-v1"        # z/ files (B5: one event per period, D8; th
 COUNTY_FORMAT = "hail-county-v1"    # k/ files: the county-only events and the polygon events joined by county (B5)
 EVENTS_FORMAT = "hail-events-v2"    # j/events.json: every report, record and warning row once (B5: type word, cause)
 EVENTS_NAME = "events.json"
+# D30 (B5 part B1): hail/j/e/<tile>.json holds the events one tile refers to, in the events table's own row shapes and
+# keyed by their index in events.json, so the tile file's indexes stay valid. The browser fetches it on a tap (D22).
+TILE_EVENTS_FORMAT = "hail-events-tile-v1"
+TILE_EVENTS_DIR = "e"                       # the folder beside events.json: hail/j/e/
+TILE_EVENTS_BUDGET_GZIP = 100_000           # the largest tile events file, gzipped (100 KB, D30)
 STATION_FORMAT = "hail-station-v2"  # s/ files (B5: a fourth element, 1 when the reading is flagged for check)
 INDEX_KEY = "joins"                 # the block in hail/index.json (and manifest["joins"])
 MILE_KM = 1.609344
@@ -226,7 +239,16 @@ PRODUCT_NAMES = {
     "EH.W": "Excessive heat warning", "EH.A": "Excessive heat watch", "FR.Y": "Frost advisory",
     "FZ.W": "Freeze warning", "DU.Y": "Blowing dust advisory",
 }
-KIND_WORDS = {"SV": "Severe thunderstorm", "TO": "Tornado", "FF": "Flash flood"}
+# D29 (B5 part B1): the kind word of every product the store holds, by its NWS name in lower case, for the middle of a
+# row ("flood advisory", never "FA warning"). Keyed by product code (phenomenon and significance). Derived from
+# PRODUCT_NAMES; tests/test_joins.py lists every code in the store and asserts a name for each.
+KIND_WORDS = {code: name[:1].lower() + name[1:] for code, name in PRODUCT_NAMES.items()}
+# D29: the kind word the browser's warning rows take from the map block, by phenomenon only (the browser reads an
+# event's phenomenon, not its significance). Each word covers every significance the phenomenon has in the store. Part
+# B2 switches the browser to the product names (map block "products", keyed by code).
+PHENOMENON_KIND_WORDS = {"SV": "severe thunderstorm warning", "TO": "tornado warning",
+                         "FF": "flash flood warning or watch", "FL": "flood warning, watch or advisory",
+                         "FA": "flood warning or advisory", "SQ": "snow squall warning"}
 # D31: the statuses that end a zone event (a cancellation or an upgrade), and the "st" word each one gives the event
 ZONE_STOP_STATE = {"CAN": "cancelled", "UPG": "upgraded"}
 # the WORDS_JOINS keys for an "st" word: the suffix after a span, and "{word} at {time}" for an end at or before
@@ -289,6 +311,14 @@ KNOWN_HAIL_CASES = (
 TOWNS_FILE = Path(__file__).resolve().parent / "towns.json"
 EDITION_DATE = date(2026, 4, 16)    # the effective date of the newest public zone edition the NWS page links (z_16ap26.zip,
                                     # read from its file name); each edition's own date comes from its name (D16)
+# D27 (B5 part B1): the older public zone editions the NWS change history names (zone_ch_log.txt: "Effective ...
+# (z_08se21.*)" and so on), oldest first. The GIS page links two editions, z_18mr25.zip (effective 18 March 2025) and
+# z_16ap26.zip (16 April 2026). The six older names are requested on every build; on 2026-10-19 each returned HTTP 404
+# at the NWS address, so the index records them as not published. A product issued while an unpublished edition was in
+# force keeps its zone code, checked against the current edition (zone_placement and zone_placed_by_code_alone in the
+# index).
+ZONE_EDITION_ARCHIVE = ("z_08se21.zip", "z_22mr22.zip", "z_07se22.zip", "z_13se22.zip", "z_08mr23.zip", "z_05mr24.zip")
+ZONE_CHANGE_LOG_URL = "https://www.weather.gov/source/gis/Shapefiles/WSOM/zone_ch_log.txt"
 JOINS_DEADLINE_S = 35 * 60          # the joins' own limit from the start of the build (the job has 60 minutes; D34, D35)
 NWS_FIRE_URL = "https://www.weather.gov/gis/FireZones"      # the fire weather zone editions (D7)
 
@@ -349,10 +379,10 @@ WORDS_JOINS = {
     "records_row_here_typed_b5": "Record: {date} {time}: {type}{cause}{qualifier}, {source}, {miles} mi",
     "records_zone_row": "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, across zone {zone}",
     "records_zone_row_typed": "Record: {date} {time}: {type}{qualifier}, {source}, across zone {zone}",
-    "records_unplaced_one": ("1 official zone record in Montana in the window could not be placed on a zone; its zone "
-                             "code is not in the public zone editions the NWS page links."),
-    "records_unplaced_many": ("{n} official zone records in Montana in the window could not be placed on a zone; their "
-                              "zone codes are not in the public zone editions the NWS page links."),
+    "records_unplaced_one": ("1 official zone record in Montana in these five years could not be placed on a zone; its "
+                             "zone code is not in the public zone editions the NWS publishes."),
+    "records_unplaced_many": ("{n} official zone records in Montana in these five years could not be placed on a zone; "
+                              "their zone codes are not in the public zone editions the NWS publishes."),
     # radar detections
     "detections_heading": "Radar hail detections within 2 miles",
     "detections_what": ("A detection is the radar algorithm's hail signature for a storm cell, not hail on the "
@@ -386,7 +416,7 @@ WORDS_JOINS = {
                                 "this spot."),
     "warnings_no_outline_many": ("{n} warnings in these five years have no outline on file, so they cannot be matched "
                                  "to this spot."),
-    "warnings_row": "Warning: {date} {begin} to {end}, issuance polygon in effect: {kind} warning, {office}; tags: {tags}",
+    "warnings_row": "Warning: {date} {begin} to {end}, issuance polygon in effect: {kind}, {office}; tags: {tags}",
     "warnings_tags_none": "none stated",
     "warnings_row_b5": "Warning: {date} {span}: {product}, {office}, covered this cell or part of it{tags}",
     "warnings_span": "{begin} to {end}",
@@ -420,10 +450,18 @@ WORDS_JOINS = {
     "zones_upgraded": ", upgraded",                # D31: an upgrade ends the lower product at its upgrade time
     "zones_upgraded_at": "upgraded at {time}",     # D31: an upgrade time at or before the begin, as D26
     "zones_no_zone": "The forecast zone for this cell could not be determined.",
-    "zones_unplaced_one": ("1 zone product in Montana in the window could not be placed on a zone; its zone code is "
-                           "not in the public zone editions the NWS page links."),
-    "zones_unplaced_many": ("{n} zone products in Montana in the window could not be placed on a zone; their zone codes "
-                            "are not in the public zone editions the NWS page links."),
+    "zones_unplaced_one": ("1 zone product in Montana in these five years could not be placed on a zone; its zone code "
+                           "is not in the public zone editions the NWS publishes."),
+    "zones_unplaced_many": ("{n} zone products in Montana in these five years could not be placed on a zone; their "
+                            "zone codes are not in the public zone editions the NWS publishes."),
+    # D27: a product issued while an edition the NWS does not publish was in force keeps its zone code, checked
+    # against the current edition; the zone sections say how many (zone_placed_by_code_alone in the index)
+    "zones_kept_one": ("1 zone product in Montana was placed by its zone code alone, because the NWS does not publish "
+                       "the zone edition in force when it was issued."),
+    "zones_kept_many": ("{n} zone products in Montana were placed by their zone codes alone, because the NWS does not "
+                        "publish the zone edition in force when they were issued."),
+    "zones_kept_note": ("Products issued before {date} are placed by their zone codes alone, because the NWS does not "
+                        "publish the zone editions in force then."),
     "zones_fire_unavailable": "Red flag warnings are not listed (fire weather zones were not available).",
     "zones_fire_none": "The fire weather zone for this cell could not be determined.",
     "fire_product": "{product}, fire weather zone {zone_name} ({zone})",
@@ -472,6 +510,8 @@ WORDS_JOINS = {
     "reason_events": "the joins table could not be read",
     "reason_no_file_year": "the NCEI file list has no file for this year",
     "reason_offline": "the file is not in the cache and this build does not fetch",
+    "reason_not_published": ("the NWS does not publish this zone edition at its address (HTTP 404 when checked on "
+                             "2026-10-19)"),
     # B5: section headings, kind words, the radar sentence, the flag and county words, and the touch rule
     "section_flooding": "Flooding",
     "section_ice": "Ice and winter",
@@ -502,7 +542,8 @@ WORDS_JOINS = {
     "county_lead_none": ("No county product for {county_name} County between {start} and {end} is listed. That does not "
                          "mean the weather was calm."),
     "county_row": "County product: {product}, whole county {county_name} County: {events}",
-    "county_unavailable": "County products could not be loaded in this update; that is not the same as no county products.",
+    "county_unavailable": ("County products could not be loaded in this update; that is not the same as no county "
+                           "products. This is not an all-clear."),
     "period_note": ("A product can show more than one span: a cancellation, upgrade or expiry closes a span, and a later "
                     "continuation or new issue opens the next."),
     "hit_miss_summary": ("At the report's own cell, radar estimates showed hail of one inch or more at fewer than half of "
@@ -833,7 +874,8 @@ def _ncei_utc(text: str, tz: str) -> tuple[datetime, datetime]:
 
 def parse_ncei(data: bytes) -> dict:
     """The Montana rows of one NCEI Storm Events details file (bulk CSV, gzip or plain). Returns the point rows
-    (Hail and Thunderstorm Wind with coordinates), the zone-coded rows (CZ_TYPE Z, any type), the newest local event
+    (the nine NCEI_POINT_TYPES with coordinates: Hail, Thunderstorm Wind, Flood, Flash Flood, Heavy Rain, Tornado,
+    Funnel Cloud, Lightning and Debris Flow), the zone-coded rows (CZ_TYPE Z, any type), the newest local event
     time and the count of short rows skipped (D10). Narratives are not carried. The qualifier is kept as NCEI's code
     (MG, EG, MS, ES, or blank); the words come from NCEI_QUALIFIERS where a row is shown (D5)."""
     reader = _ncei_rows(data)
@@ -1508,6 +1550,8 @@ class Context:
         self.zone_edition_maps: dict[str, dict] = {}  # an older edition's code -> the current code (None: no zone)
         self.zone_edition_report: list[dict] = []     # the index's record of each edition (D16, F-05)
         self.zone_products_unplaced = 0               # distinct in-window products no zone holds (D11)
+        self.zone_placement: dict = {}                # D27: product -> edition file -> how placed -> zone groups
+        self.zone_unplaced_rows: list = []            # D27: [product, code, day, edition, reason] per unplaced group
         self.zone_products_renumbered = 0             # products placed under a code their edition renamed (D16)
         self.zone_products_fire_missing = 0           # red flag products when the fire zones did not load (D7)
         self.zone_records_renumbered = 0              # NCEI zone rows placed under a renamed code (D16)
@@ -1566,11 +1610,13 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
                        check=_checker(parse_asos_rows))
     listing = fetcher.get("ncei", NCEI_DIR, "ncei/listing.html", refresh=True, check=check_listing)
     counties = fetcher.get("counties", COUNTY_URL, COUNTY_FILE, check=_checker(parse_county_zip))
-    edition_names: list[str] = []
+    page_names: list[str] = []
     if page.ok:
-        edition_names, _why = _take(page, zone_zip_names)
-        edition_names = edition_names or []
-    zone_name = edition_names[-1] if edition_names else None     # the current edition: the newest linked (D16)
+        page_names, _why = _take(page, zone_zip_names)
+        page_names = page_names or []
+    zone_name = page_names[-1] if page_names else None           # the current edition: the newest linked (D16)
+    # D27: the older editions of the NWS change history are requested too; with no page there is no current edition
+    edition_names = sorted(set(page_names) | set(ZONE_EDITION_ARCHIVE), key=zone_name_date) if page_names else []
     fire_name, fire_why = _take(fire_page, fire_zip_name)
     # the listing is read whether or not it answered: _take gives the reason it did not (job-6, D10)
     ncei_names, listing_why = _take(listing, lambda d: ncei_listing_names(d, years))
@@ -1721,7 +1767,11 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
                     seen_zone_rows.add(key)
                     ctx.zone_rows.append(row)
     for name in edition_names:
-        zones, why = _take(by_tag[("zone_map", name)], parse_zone_map)
+        result = by_tag[("zone_map", name)]
+        zones, why = _take(result, parse_zone_map)
+        if zones is None and name in ZONE_EDITION_ARCHIVE and (
+                result.status == 404 or (result.status is None and result.error == WORDS_JOINS["reason_offline"])):
+            why = WORDS_JOINS["reason_not_published"]            # D27: the NWS does not publish it at its address
         ctx.zone_editions.append({"file": name, "date": zone_name_date(name), "zones": zones, "why": why})
     if zone_name is None:
         ctx.part_all_failed["zones"] = True
@@ -2042,6 +2092,40 @@ def _joins_for_tile(tile: dict, ctx: Context, prep: dict, stats: dict | None = N
     return doc
 
 
+def _tile_events(doc: dict, report_table: list, record_table: list, warning_table: list) -> dict:
+    """D30: the events one tile's file refers to: its reports, records and warnings, each row as the events table holds
+    it, keyed by the row's index in events.json (a string key, since JSON keys are strings)."""
+    return {"f": TILE_EVENTS_FORMAT, "r": doc["r"], "c": doc["c"],
+            "reports": {str(i): report_table[i] for i in doc["reports"]},
+            "records": {str(i): record_table[i] for i in doc["records"]},
+            "warnings": {str(ref): warning_table[ref] for ref, _cover in doc["warnings"]}}
+
+
+def _events_tiles_block(entries: list, referenced: dict) -> dict:
+    """D30: the index's events_tiles block from (file name, raw bytes, gzip bytes) of each tile's events file, and the
+    counts of the events the tile files refer to (reports, records, warnings)."""
+    raw_big = max(entries, key=lambda e: (e[1], e[0]), default=("", 0, 0))
+    gz_big = max(entries, key=lambda e: (e[2], e[0]), default=("", 0, 0))
+    return {"format": TILE_EVENTS_FORMAT, "dir": "hail/j/" + TILE_EVENTS_DIR + "/", "count": len(entries),
+            "bytes": sum(e[1] for e in entries), "gzip_bytes": sum(e[2] for e in entries),
+            "largest_raw": {"file": raw_big[0], "bytes": raw_big[1]},
+            "largest_gzip": {"file": gz_big[0], "bytes": gz_big[2]},
+            "budget_gzip": TILE_EVENTS_BUDGET_GZIP, "referenced": dict(referenced)}
+
+
+def _read_tile_events(store_dir, tile_name: str) -> tuple:
+    """D30: (the events file of one tile, its bytes). A missing or unreadable file, or one in another format, raises."""
+    path = Path(store_dir) / "hail" / "j" / TILE_EVENTS_DIR / f"{tile_name}.json"
+    try:
+        data = path.read_bytes()
+        doc = json.loads(data.decode("utf-8"))
+    except (OSError, ValueError):
+        raise JoinsError(WORDS_JOINS["reason_no_answer"]) from None
+    if doc.get("f") != TILE_EVENTS_FORMAT:
+        raise JoinsError(WORDS_JOINS["reason_format"])
+    return doc, data
+
+
 def _cover_sets(rings, tile) -> tuple[list[int], list[int]]:
     """(centre keys, touched keys) of one polygon for one B1 tile (D11). A cell is a centre key when its centre lies inside
     the polygon (the centre rule, B2). It is a touched key when the polygon intersects the cell's square: a polygon vertex
@@ -2256,16 +2340,50 @@ def _edition_in_force(editions: list[dict], day: date) -> dict | None:
     return chosen
 
 
-def _place_code(ctx: Context, names: set, code: str, issued: datetime) -> str | None:
-    """The current zone a row filed under code places on, given when it was issued (D16): the edition in force on the
-    issue day (Montana time) maps the code; the current edition keeps it, and an edition that did not load keeps it
-    too. None when the current edition holds no zone for it."""
+def _place(ctx: Context, names: set, code: str, issued: datetime) -> tuple:
+    """(current zone or None, the edition in force or None, how) for a zone code filed by a product issued at issued
+    (D16, D27). The edition in force is the newest whose effective date is on or before the issue day (Montana time); a
+    day before every edition takes the oldest. How it places: "current" (the current edition is in force, or none is
+    known), "mapped" (the edition in force was read: its code maps to a current zone, or to none) or "kept" (the
+    edition in force is not published, so its code is kept as it is and checked against the current edition: the
+    approximation the zone words say)."""
     edition = _edition_in_force(ctx.zone_editions, _local(issued).date())
-    mapping = None
-    if edition is not None and ctx.zone_editions and edition is not ctx.zone_editions[-1]:
+    if edition is None or not ctx.zone_editions or edition is ctx.zone_editions[-1]:
+        how, mapped = "current", code
+    else:
         mapping = ctx.zone_edition_maps.get(edition["file"])
-    mapped = code if mapping is None else mapping.get(code)
-    return mapped if mapped in names else None
+        if mapping is None:
+            how, mapped = "kept", code
+        else:
+            how, mapped = "mapped", mapping.get(code)
+    return (mapped if mapped in names else None), edition, how
+
+
+def _place_code(ctx: Context, names: set, code: str, issued: datetime) -> str | None:
+    """The current zone a row filed under code places on, given when it was issued (D16; see _place). None when the
+    current edition holds no zone for it."""
+    return _place(ctx, names, code, issued)[0]
+
+
+def _note_placed(ctx: Context, product: str, edition: dict | None, how: str) -> None:
+    """D27: one zone product (a VTEC group whose first issue is in the window) placed, counted per product, per edition
+    in force and per way it was placed (the index's zone_placement)."""
+    cells = ctx.zone_placement.setdefault(product, {})
+    counts = cells.setdefault("none" if edition is None else edition["file"], {})
+    counts[how] = counts.get(how, 0) + 1
+
+
+# D27: why a zone product stays off the zones, by the way it was placed
+ZONE_UNPLACED_REASONS = {"current": "not_in_current", "mapped": "retired_zone", "kept": "edition_unpublished"}
+
+
+def _note_unplaced(ctx: Context, product: str, code: str, issued: datetime, edition: dict | None, how: str) -> None:
+    """D27: one zone product that stays unplaced, with its zone code, its issue day (Montana time), the edition in force
+    and the reason: not_in_current (the current edition has no such zone), retired_zone (the edition in force maps the
+    code to no current zone) or edition_unpublished (the edition in force is not published, so the code cannot be
+    checked)."""
+    ctx.zone_unplaced_rows.append([product, code, _local(issued).date().isoformat(),
+                                   "none" if edition is None else edition["file"], ZONE_UNPLACED_REASONS[how]])
 
 
 def periods(rows: list[dict]) -> list[dict]:
@@ -2387,11 +2505,15 @@ def _zone_events(ctx: Context, start: datetime, end: datetime) -> dict:
                     continue
                 target, zone_code = fire, code
             else:
-                zone_code = _place_code(ctx, zone_names, code, first_issue)
+                zone_code, edition, how = _place(ctx, zone_names, code, first_issue)
+                in_window = start <= first_issue < end
                 if zone_code is None:
-                    if start <= first_issue < end:
+                    if in_window:
                         unplaced.add(gkey)
+                        _note_unplaced(ctx, f"{phen}.{sig}", code, first_issue, edition, how)
                     continue
+                if in_window:
+                    _note_placed(ctx, f"{phen}.{sig}", edition, how)
                 if zone_code != code:
                     renumbered += 1
                 target = out
@@ -2588,6 +2710,8 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
         largest = (0, "")
         totals = {"reports": 0, "records": 0, "detections": 0, "warnings": 0, "tiles_with_warnings": 0}
         (hail_dir / "k").mkdir(parents=True)
+        (hail_dir / "j" / TILE_EVENTS_DIR).mkdir(parents=True)
+        events_tiles = {"entries": [], "referenced": {"reports": 0, "records": 0, "warnings": 0}}
         for tile in tiles:
             doc = _joins_for_tile(tile, ctx, prep, cover_stats)
             data = _compact(doc)
@@ -2596,6 +2720,14 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
             tile_bytes += len(data)
             if len(data) > largest[0]:
                 largest = (len(data), name)
+            # D30: the events this tile refers to, beside events.json (hail/j/e/<tile>.json)
+            edata = _compact(_tile_events(doc, report_table, record_table, warning_table))
+            egz = len(gzip.compress(edata, compresslevel=9, mtime=0))
+            (hail_dir / "j" / TILE_EVENTS_DIR / name).write_bytes(edata)
+            events_tiles["entries"].append((name, len(edata), egz))
+            for kind, refs in (("reports", doc["reports"]), ("records", doc["records"]),
+                               ("warnings", doc["warnings"])):
+                events_tiles["referenced"][kind] += len(refs)
             totals["reports"] += len(doc["reports"])
             totals["records"] += len(doc["records"])
             totals["detections"] += len(doc["detections"])
@@ -2676,6 +2808,7 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
         block["counties"]["cells_by_nearest_edge"] = prep["county_nearest"]
         block["vtec_counts_research"] = {k: dict(v) for k, v in sorted(ctx.vtec_counts_research.items())}
         block["research_window"] = [RESEARCH_START.date().isoformat(), RESEARCH_END.date().isoformat()]
+        block["events_tiles"] = _events_tiles_block(events_tiles["entries"], events_tiles["referenced"])
         new_index = dict(index)
         new_index[INDEX_KEY] = block
         (hail_dir / "index.json").write_bytes(_pretty(new_index))
@@ -2784,6 +2917,11 @@ def _index_block(ctx, index, tiles, zone_list, station_index, totals, bytes_by, 
         "zone_events": counts["zone_events"],
         "zone_rows_unmatched": ctx.zone_unmatched,
         "zone_products_unplaced": ctx.zone_products_unplaced,
+        "zone_placement": {p: {e: dict(sorted(h.items())) for e, h in sorted(cells.items())}
+                           for p, cells in sorted(ctx.zone_placement.items())},
+        "zone_placed_by_code_alone": sum(h.get("kept", 0) for cells in ctx.zone_placement.values()
+                                         for h in cells.values()),
+        "zone_unplaced_rows": sorted(ctx.zone_unplaced_rows, key=lambda r: (r[0], r[2], r[1], r[3])),
         "zone_products_renumbered": ctx.zone_products_renumbered,
         "zone_editions": ctx.zone_edition_report,
         "zone_edition_cutover": ctx.zone_editions[-1]["date"].isoformat() if ctx.zone_editions else None,
@@ -2914,7 +3052,8 @@ def _finish_manifest(root: Path, stage: Path, block: dict) -> None:
     manifest["files"] = {k: files[k] for k in sorted(files)}
     manifest[INDEX_KEY] = {"format": FORMAT, "tiles": block["tiles"], "zones": block["zones"],
                            "stations": block["stations"], "bytes": block["bytes"], "state": block["state"],
-                           "counties": block.get("counties", {}).get("count", 0)}
+                           "counties": block.get("counties", {}).get("count", 0),
+                           "events_tiles": block.get("events_tiles", {}).get("count", 0)}
     (hail_stage / "manifest.json").write_bytes(_pretty(manifest))
 
 
@@ -3233,7 +3372,15 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
                                 "utc": None})
         unplaced = block.get("zone_products_unplaced", 0)
         if unplaced:
-            sec["lines"].append(w["zones_unplaced_one" if unplaced == 1 else "zones_unplaced_many"].format(n=unplaced))
+            sec["lines"].append(w["zones_unplaced_one" if unplaced == 1 else "zones_unplaced_many"].format(
+                n=f"{unplaced:,}"))
+        kept = block.get("zone_placed_by_code_alone", 0)     # D27: placed by code alone (no published edition in force)
+        if kept:
+            sec["lines"].append(w["zones_kept_one" if kept == 1 else "zones_kept_many"].format(n=f"{kept:,}"))
+            published = [ed for ed in block.get("zone_editions", []) if ed.get("read")]
+            if published:
+                sec["lines"].append(w["zones_kept_note"].format(
+                    date=fmt_day(date.fromisoformat(published[0]["effective"]))))
         if county:
             if block.get("counties", {}).get("state") != "loaded" or county_lost:
                 sec["lines"].append(w["county_unavailable"])
@@ -3482,6 +3629,12 @@ def _zone_record_text(utc, r, zone, w) -> str:
     return w["records_zone_row_typed"].format(**base)
 
 
+def _kind_word(item: dict) -> str:
+    """D29: the NWS name of a warning row's product (KIND_WORDS by code), never the bare code."""
+    code = f"{item['k']}.{item['s']}"
+    return KIND_WORDS.get(code, code)
+
+
 def _warning_text(b, e, item, w) -> str:
     """A warning row (D4, B2): the kind word, the office, the begin and end (Montana time, the end's date only on a later
     day) and the tags the archive gives (hail, wind, tornado, and the NWS damage threat tag where the product has one),
@@ -3499,7 +3652,7 @@ def _warning_text(b, e, item, w) -> str:
         tags.append(w["tag_damage"].format(value=str(tg["damage"]).lower()))
     tag_text = ", ".join(tags) if tags else w["warnings_tags_none"]
     return w["warnings_row"].format(date=fmt_day(_local(b).date()), begin=fmt_clock(b), end=fmt_end(e, b),
-                                    kind=KIND_WORDS.get(item["k"], item["k"]), office=item["o"], tags=tag_text)
+                                    kind=_kind_word(item), office=item["o"], tags=tag_text)
 
 
 # ---------------------------------------------------------------- the map block (map.json["hail"]["joins"])
@@ -3523,7 +3676,7 @@ def map_data_joins(index: dict, sample: bool = False) -> dict:
         "station_mph": int(round(STATION_KT * MPH_PER_KT)),
         "implausible_kt": IMPLAUSIBLE_KT,
         "types": dict(block.get("types", {})),
-        "kinds": dict(KIND_WORDS),
+        "kinds": dict(PHENOMENON_KIND_WORDS),
         "products": dict(PRODUCT_NAMES),
         "qualifiers": dict(LSR_QUALIFIERS),
         "ncei_qualifiers": dict(NCEI_QUALIFIERS),
@@ -3536,6 +3689,8 @@ def map_data_joins(index: dict, sample: bool = False) -> dict:
         "events": "hail/j/events.json",
         "events_format": EVENTS_FORMAT,
         "shards": {"j": "hail/j/{tile}.json", "z": "hail/z/{zone}.json", "s": "hail/s/{station}.json"},
+        "events_tiles": "hail/j/e/{tile}.json",          # D30: the tile's events file (the browser fetches it on a tap)
+        "events_tiles_format": TILE_EVENTS_FORMAT,
         "words": dict(WORDS_JOINS),
         "problem": None,
     }
@@ -3918,6 +4073,39 @@ def verify(store_dir, cache_dir=None) -> dict:
                 bad_ints += 1
     check("events and tile whole numbers", bad_ints == 0, f"{bad_ints} not whole")
     check("tile references point into the events table", bad_refs == 0, f"{bad_refs} bad")
+    # D30: every event a tile refers to is in that tile's events file, as the events table holds it; the file's size
+    tile_missing, tile_extra, tile_files_n = 0, 0, 0
+    largest_raw, largest_gzip = (0, ""), (0, "")
+    for t, doc in docs.items():
+        try:
+            edoc, edata = _read_tile_events(root, t)
+        except JoinsError:
+            tile_missing += 1
+            continue
+        tile_files_n += 1
+        egz = len(gzip.compress(edata, compresslevel=9, mtime=0))
+        largest_raw = max(largest_raw, (len(edata), t))
+        largest_gzip = max(largest_gzip, (egz, t))
+        for kind, refs in (("reports", doc.get("reports", [])), ("records", doc.get("records", [])),
+                           ("warnings", [ref for ref, _cover in doc.get("warnings", [])])):
+            held = edoc.get(kind, {})
+            if events is not None:
+                for ref in refs:
+                    if str(ref) not in held or held[str(ref)] != events[kind][ref]:
+                        tile_missing += 1
+            if set(held) != {str(ref) for ref in refs}:
+                tile_extra += 1
+    check("every event a tile refers to is in its tile's events file", tile_missing == 0 and tile_extra == 0,
+          f"{tile_missing} missing or different, {tile_extra} extra keys")
+    check("every tile has an events file in its format", tile_files_n == len(docs) == len(tiles),
+          f"{tile_files_n} files for {len(tiles)} tiles")
+    check("tile events files are within the gzip budget", largest_gzip[0] <= TILE_EVENTS_BUDGET_GZIP,
+          f"largest {largest_gzip[1]}: {largest_gzip[0]} bytes gzip (budget {TILE_EVENTS_BUDGET_GZIP}); "
+          f"largest raw {largest_raw[0]} bytes ({largest_raw[1]})")
+    check("the index names the tile events format and count",
+          block.get("events_tiles", {}).get("format") == TILE_EVENTS_FORMAT
+          and block.get("events_tiles", {}).get("count") == tile_files_n,
+          str(block.get("events_tiles", {}).get("count")))
     check("warning covers are 25 hex digits", bad_cover == 0, f"{bad_cover} bad")
     check("zone codes are current zones and keys are cells", bad_zone == 0, f"{bad_zone} bad")
     check("fire zone codes are current fire zones and keys are cells", bad_fire == 0, f"{bad_fire} bad")
@@ -3942,7 +4130,7 @@ def verify(store_dir, cache_dir=None) -> dict:
         check("every station has an s/ file", True, f"{len(block.get('station_list', []))} stations")
     manifest = json.loads((root / "hail" / "manifest.json").read_text(encoding="utf-8"))
     listed = [k for k in manifest["files"] if k.startswith(("hail/j/", "hail/z/", "hail/s/", "hail/k/"))]
-    on_disk = [p for sub in ("j", "z", "s", "k") for p in (root / "hail" / sub).glob("*.json")]
+    on_disk = [p for sub in ("j", "z", "s", "k") for p in (root / "hail" / sub).rglob("*.json")]     # D30: j/e/ too
     check("manifest lists every j, z, s and k file", len(listed) == len(on_disk),
           f"{len(listed)} listed, {len(on_disk)} files")
     disagree, examples = _name_disagreements(root, block)
@@ -4305,6 +4493,8 @@ def fixture(out_dir, from_store) -> dict:
     hail_out = out / "hail"
     for sub in ("j", "z", "s", "k"):
         (hail_out / sub).mkdir(parents=True, exist_ok=True)
+    (hail_out / "j" / TILE_EVENTS_DIR).mkdir(parents=True, exist_ok=True)
+    ref_counts = {"reports": 0, "records": 0, "warnings": 0}
     new_events: dict[str, list] = {"reports": [], "records": [], "warnings": []}
     seen: dict[tuple, int] = {}
 
@@ -4341,6 +4531,10 @@ def fixture(out_dir, from_store) -> dict:
         fires_needed.update(doc.get("fire", {}).keys())
         counties_needed.update(doc.get("counties", {}).keys())
         (hail_out / "j" / f"{name}.json").write_bytes(_compact(keep))
+        (hail_out / "j" / TILE_EVENTS_DIR / f"{name}.json").write_bytes(_compact(
+            _tile_events(keep, new_events["reports"], new_events["records"], new_events["warnings"])))
+        for kind in ref_counts:
+            ref_counts[kind] += len(keep[kind])
     (hail_out / "j" / EVENTS_NAME).write_bytes(_compact({
         "f": EVENTS_FORMAT, "d0": hail.D0.isoformat(), "reports": new_events["reports"],
         "records": new_events["records"], "warnings": new_events["warnings"]}))
@@ -4389,8 +4583,14 @@ def fixture(out_dir, from_store) -> dict:
         "zone_editions": list(real_block.get("zone_editions", [])),
         "zone_edition_cutover": real_block.get("zone_edition_cutover"),
         "zone_products_unplaced": 0, "zone_products_renumbered": 0, "ncei_zone_rows_renumbered": 0,
+        "zone_placement": {}, "zone_placed_by_code_alone": 0, "zone_unplaced_rows": [],
         "malformed_rows": {p: 0 for p in PARTS}, "repull": {"months": [], "years": []}, "offline": True,
     }
+    e_entries = []
+    for path in sorted((hail_out / "j" / TILE_EVENTS_DIR).glob("*.json")):
+        raw = path.read_bytes()
+        e_entries.append((path.name, len(raw), len(gzip.compress(raw, compresslevel=9, mtime=0))))
+    block["events_tiles"] = _events_tiles_block(e_entries, ref_counts)
     index_bytes = _pretty(dict(sample, **{INDEX_KEY: block}))
     (hail_out / "index.json").write_bytes(index_bytes)
     manifest = json.loads((hail_out / "manifest.json").read_text(encoding="utf-8"))

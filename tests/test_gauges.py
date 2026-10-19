@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,6 +18,9 @@ import requests
 
 from website import gauges as Gs
 from website import stations as S
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # tests/ (words_rules: the sentences a scan allows)
+import words_rules as W  # noqa: E402
 
 FORBIDDEN = re.compile(r"\b(damag\w*|dry|clear\w*|insurance|eligib\w*|confirm\w*|coverage|risk|probab\w*|claim\w*|"
                        r"loss\w*|all-clear|structure|warrant\w*)\b|\bno hail\b", re.IGNORECASE)
@@ -151,8 +155,16 @@ class PeakTests(unittest.TestCase):
         self.assertEqual(doc["unit"], "hundredths of a foot")
 
     def test_words_are_plain_and_forbidden_free(self):
+        # the required sentence of an unavailable line is allowed (tests/words_rules.py); nothing else is removed
         for key, text in Gs.WORDS.items():
-            self.assertIsNone(FORBIDDEN.search(text), f"{key}: {text}")
+            self.assertIsNone(FORBIDDEN.search(W.residue(text)), f"{key}: {text}")
+
+    def test_the_unavailable_lines_end_with_the_negation(self):
+        # every unavailable line of the gauges ends with the required sentence (D13, D20, D28)
+        checked = sorted(k for k in Gs.WORDS if "unavailable" in k)
+        self.assertEqual(checked, ["gauge_unavailable", "peaks_unavailable", "unavailable"])
+        for key in checked:
+            self.assertTrue(Gs.WORDS[key].endswith("This is not an all-clear."), key)
         self.assertEqual(Gs.WORDS["lead"].format(name="Yellowstone River at Billings", miles="2.0"),
                          "River flood record at the Yellowstone River at Billings gauge, 2.0 miles away; it does not "
                          "say water reached this address.")
@@ -270,7 +282,10 @@ class OfflineBuildTests(unittest.TestCase):
         self.assertEqual(result["state"], "unavailable")
         block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["gauges"]
         self.assertEqual(block["state"], "unavailable")
-        self.assertIn("could not be read", block["problem"])
+        # D28: the D20 sentence is the block's problem; the technical reason sits beside it as the detail
+        self.assertEqual(block["problem"], "River gauges could not be loaded in this update; that is not the same as "
+                                           "no river gauge. This is not an all-clear.")
+        self.assertIn("could not be read", block["detail"])
 
     def test_a_json_array_in_place_of_the_list_is_unavailable_not_an_exception(self):
         # the cached list is an array: the whole gauge section is unavailable, and nothing raises
@@ -413,7 +428,7 @@ class RoutedBuildTests(unittest.TestCase):
         self.assertEqual(block["towns"]["billings"]["lid"], "BILM8")
         self.assertEqual(block["towns"]["billings"]["peaks_sentence"],
                          "The annual peaks at this gauge could not be loaded in this update; that is not the same as no "
-                         "annual peak.")
+                         "annual peak. This is not an all-clear.")
         self.assertEqual(block["gates"]["billings_peak"], {"found": False, "peaks": "unavailable"})
         self.assertFalse((self.store / "hail" / "g" / "06214500.json").exists())
         self.assertTrue((self.store / "hail" / "g" / "06214600.json").is_file())
@@ -471,7 +486,7 @@ class RoutedBuildTests(unittest.TestCase):
         self.assertIn("could not be loaded in this update; that is not the same as no river flood record",
                       billings["sentence"])
         self.assertNotIn("No gauge", billings["sentence"])
-        self.assertIsNone(FORBIDDEN.search(billings["sentence"]))
+        self.assertIsNone(FORBIDDEN.search(W.residue(billings["sentence"])))
         self.assertNotIn("BILM8", [p["lid"] for p in block["pool"]])
 
 

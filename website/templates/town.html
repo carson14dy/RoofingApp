@@ -32,6 +32,77 @@
   {% endif %}
 </section>
 
+{% if hail_history and town.hail %}{% set h = town.hail %}{% set v = h.view %}
+<style>
+/* the five-season table (B5, summary.py): a row header, then one cell per season and the five-season cell; at phone width
+   each row becomes a card with its label first and each cell's season as its label (no sideways scroll) */
+.hist-sec { margin-top: var(--space-6); overflow-wrap: anywhere; }
+.hist-sec h3 { margin-bottom: var(--space-2); }
+.hist-note { margin-top: var(--space-2); }
+.hist-foot { margin-top: var(--space-2); padding-left: var(--space-5); color: var(--color-text-muted); font-size: var(--text-sm); }
+.hist-foot li + li { margin-top: var(--space-1); }
+table.five { font-size: var(--text-sm); width: 100%; }
+table.five th, table.five td { vertical-align: top; text-align: left; padding: var(--space-2); border-top: 1px solid var(--color-line);
+  overflow-wrap: anywhere; }
+table.five thead th { border-top: 0; color: var(--color-text-muted); }
+table.five th.row-head { min-width: 8rem; font-weight: 600; }
+table.five td.num { font-variant-numeric: tabular-nums; min-width: 5.5rem; }
+table.five .kind, table.five .cov { display: block; color: var(--color-text-muted); font-size: var(--text-xs); font-family: var(--font-sans); font-weight: 400; }
+table.five sup { font-size: 0.75em; }
+table.five .held-cell { color: var(--color-text-muted); }
+.hist-rows { margin-top: var(--space-2); padding: 0; list-style: none; }
+.hist-rows li { padding: var(--space-2) 0; border-top: 1px solid var(--color-line); overflow-wrap: anywhere; }
+.hist-rows .label { font-weight: 700; }
+.hist-more summary { cursor: pointer; margin: var(--space-2) 0; color: var(--color-text-muted); }
+.hist-roof h4 { margin-top: var(--space-4); }
+@media (max-width: 899px) {
+  table.five thead { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  table.five, table.five tbody, table.five tr, table.five th, table.five td { display: block; width: 100%; }
+  table.five tr { margin-top: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid var(--card-line); border-radius: var(--radius-sm); background: var(--card-bg); }
+  table.five th, table.five td { border: 0; padding: var(--space-1) 0; }
+  table.five th.row-head { min-width: 0; font-size: var(--text-base); }
+  table.five td::before { content: attr(data-label); display: block; color: var(--color-text-muted); font-size: var(--text-xs); }
+}
+</style>
+<section aria-labelledby="hist-h" class="history">
+  <div class="section-head"><h2 id="hist-h">{{ v.title }}</h2></div>
+  {% if v.sample %}<p class="sub"><span class="chip chip-unknown">{{ v.sample }}</span></p>{% endif %}
+  {% for n in v.notices %}<p class="empty">{{ n }}</p>{% endfor %}
+  {% if v.state in ('loaded', 'partial') %}
+  <p class="sub">{{ v.plain }}</p>
+  <p class="sub">{{ v.cell }}</p>
+  {% if v.stale %}<p class="sub"><strong>{{ v.stale }}</strong></p>{% endif %}
+  <div class="table-box">
+    <table class="five">
+      <caption class="visually-hidden">{{ v.table_caption }}</caption>
+      <thead><tr><th scope="col">Measure</th>{% for c in v.table.columns %}<th scope="col" class="num">{{ c }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for r in v.table.rows %}
+        <tr>
+          <th scope="row" class="row-head">{{ r.label }}<span class="kind">{{ r.kind }}, {{ r.unit_word }}{% if r.town_only %}, this town{% endif %}</span></th>
+          {% if r.held %}
+          <td colspan="{{ v.table.columns|length }}" class="held-cell" data-label="Not measured here">Data unavailable{% if r.foot %}<sup>{{ r.foot }}</sup>{% endif %}</td>
+          {% else %}
+          {% for c in r.cells %}
+          <td class="num" data-label="{{ v.table.columns[loop.index0] }}">{{ c.text }}{% if c.foot %}<sup>{{ c.foot }}</sup>{% endif %}{% if c.cov %}<span class="cov">{{ c.cov }}</span>{% endif %}</td>
+          {% endfor %}
+          <td class="num" data-label="{{ v.table.columns[-1] }}">{{ r.five.text }}{% if r.five.foot %}<sup>{{ r.five.foot }}</sup>{% endif %}{% if r.five.cov %}<span class="cov">{{ r.five.cov }}</span>{% endif %}</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if v.footnotes %}
+  <h3>{{ v.footnote_title }}</h3>
+  <ol class="hist-foot">{% for n in v.footnotes %}<li>{{ n }}</li>{% endfor %}</ol>
+  {% endif %}
+  {% if v.partial %}<p class="sub hist-note">{{ v.partial.text }}</p>{% endif %}
+  <p class="sub hist-note">{{ v.radar_sentence }}</p>
+  {% endif %}
+</section>
+{% endif %}
+
 <section aria-labelledby="obs-h">
   <div class="section-head"><h2 id="obs-h">Observed now</h2></div>
   {% set o = town.obs %}
@@ -136,89 +207,40 @@
   {% endif %}
 </section>
 
-{% if hail_history and town.hail %}{% set h = town.hail %}
-<style>
-/* the joined records under the radar history (B2): a heading per kind, and the rows past the first ten in a details element */
-/* a long name in a join section (a fire zone's county list) breaks inside the word, not past the screen's edge */
-.joins-sec { margin-top: 20px; overflow-wrap: anywhere; }
-.joins-more summary { cursor: pointer; margin: 8px 0; color: var(--ink-2); }
-</style>
-<section aria-labelledby="hail-h">
-  <div class="section-head"><h2 id="hail-h">Hail history, five years</h2></div>
-  {% if h.sample %}<p class="sub"><span class="chip chip-unknown">{{ h.sample }}</span></p>{% endif %}
-  {% if h.unavailable %}
-  <p class="empty">{{ h.unavailable }}</p>
-  {% elif h.state == "outside" %}
-  <p class="sub">{{ h.outside }}</p>
-  {% else %}
-  <p class="sub">{{ h.lead }}</p>
-  {% if h.rows %}
-  <div class="table-box">
-    <table>
-      <caption class="visually-hidden">Days with a radar-estimated hail size of 0.25 in or more at {{ town.name }}, newest first</caption>
-      <thead><tr><th scope="col">Date</th><th scope="col" class="n">Size in</th><th scope="col" class="n">Size mm</th><th scope="col">Size class</th></tr></thead>
-      <tbody>
-      {% for r in h.rows %}
-        <tr>
-          <th scope="row">{{ r.date }}</th>
-          <td class="n">{{ r.in }}</td>
-          <td class="n">{{ r.mm }}</td>
-          <td>{{ r.class }}{% if r.severe %} <strong>{{ hail_words.severe_tag }}</strong>{% endif %}{% if r.note %}<br><small>{{ r.note }}</small>{% endif %}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
-  {% if h.class_lines %}
-  <h3>{{ h.class_title }}</h3>
-  <ul>{% for line in h.class_lines %}<li>{{ line }}</li>{% endfor %}</ul>
-  {% endif %}
-  <p class="sub">{{ h.what_this_is }}</p>
-  {% if h.missing %}<p class="sub">{{ h.missing }}</p>{% endif %}
-  {% if h.stale %}<p class="sub"><strong>{{ h.stale }}</strong></p>{% endif %}
-  <p class="sub">{{ h.source }}</p>
-  {% if h.joins %}{% set j = h.joins %}
-  {% for s in j.sections %}
-  <section class="joins-sec" data-section="{{ s.key }}" aria-labelledby="join-{{ s.key }}">
-    <h3 id="join-{{ s.key }}">{{ s.heading }}</h3>
-    {% if s.unavailable %}<p class="empty">{{ s.unavailable }}</p>{% endif %}
+{# B5 D38: the sections follow the 7-day forecast; the five-season summary leads the history, after the alerts #}
+{% if hail_history and town.hail %}{% set h = town.hail %}{% set v = h.view %}
+{% if v.state in ('loaded', 'partial') %}
+  {% for s in v.sections %}
+  <section class="hist-sec{{ ' hist-roof' if s.id == 'roof' }}" id="sec-{{ s.id }}" aria-labelledby="sec-{{ s.id }}-h">
+    <h3 id="sec-{{ s.id }}-h">{{ s.heading }}</h3>
     {% if s.lead %}<p class="sub">{{ s.lead }}</p>{% endif %}
-    {% if s.fire_lead %}<p class="sub">{{ s.fire_lead }}</p>{% endif %}
-    {% if s.rows %}
-    <div class="table-box">
-      <table>
-        <caption class="visually-hidden">{{ s.heading }}</caption>
-        <thead><tr><th scope="col">{{ s.head }}</th></tr></thead>
-        <tbody>
-        {% for r in s.rows[:j.show_first] %}
-          <tr><td>{{ r.text }}{% if r.note %}<br><small>{{ r.note }}</small>{% endif %}</td></tr>
-        {% endfor %}
-        </tbody>
-      </table>
-      {% if s.rows|length > j.show_first %}
-      <details class="joins-more">
-        <summary>{{ s.show_all }}</summary>
-        <table>
-          <caption class="visually-hidden">{{ s.heading }}, all rows</caption>
-          <tbody>
-          {% for r in s.rows[j.show_first:] %}
-            <tr><td>{{ r.text }}{% if r.note %}<br><small>{{ r.note }}</small>{% endif %}</td></tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </details>
-      {% endif %}
-    </div>
+    {% for n in s.notes %}<p class="sub hist-note">{{ n }}</p>{% endfor %}
+    {% if s.groups %}
+      {% for g in s.groups %}
+      <h4>{{ g.name }}</h4>
+      <ul class="hist-rows">
+        {% for ln in g.lines %}<li>{{ ln.text }}</li>{% endfor %}
+        {% for r in g.references %}<li><span class="label">{{ r.label }}:</span> {{ r.text }}</li>{% endfor %}
+        {% for x in g.held %}<li>{{ x.text }}</li>{% endfor %}
+      </ul>
+      {% endfor %}
     {% endif %}
-    <p class="sub">{{ s.what }}</p>
-    {% if s.note %}<p class="sub">{{ s.note }}</p>{% endif %}
+    {% if s.rows %}
+    <ul class="hist-rows">
+      {% for r in s.rows[:v.show_first] %}<li><span class="label">{{ r.label }}:</span> {{ r.text }}{% if r.note %}<br><small>{{ r.note }}</small>{% endif %}</li>{% endfor %}
+    </ul>
+    {% if s.rows|length > v.show_first %}
+    <details class="hist-more">
+      <summary>{{ s.show_all }}</summary>
+      <ul class="hist-rows">
+        {% for r in s.rows[v.show_first:] %}<li><span class="label">{{ r.label }}:</span> {{ r.text }}{% if r.note %}<br><small>{{ r.note }}</small>{% endif %}</li>{% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+    {% endif %}
   </section>
   {% endfor %}
-  {% if j.times %}<p class="sub">{{ j.times }}</p>{% endif %}
-  {% endif %}
-  {% endif %}
-</section>
+{% endif %}
 {% endif %}
 <section aria-labelledby="other-h">
   <div class="section-head"><h2 id="other-h">Other towns</h2></div>

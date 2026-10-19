@@ -52,7 +52,7 @@
  "joins": {
   "format": "hail-joins-v2",
   "events_format": "hail-events-v2",
-  "built_at": "2026-10-19T13:07:51Z",
+  "built_at": "2026-10-19T16:38:12Z",
   "as_of": "2026-10-15",
   "window": [
    "2021-10-16",
@@ -148,7 +148,7 @@
    "2025-06-15",
    "2025-06-16"
   ],
-  "source": "cut from the joins build of 2026-10-19T13:07:51Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
+  "source": "cut from the joins build of 2026-10-19T16:38:12Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
   "cover": "25 lower-case hex digits; bit k (the cell key 0 to 99) is set when the polygon touches the cell's square (D11: a vertex in it, an edge across its side, or its centre inside)",
   "shapes": {
    "report": [
@@ -311,6 +311,48 @@
   "failure_count": 0,
   "zone_editions": [
    {
+    "file": "z_08se21.zip",
+    "effective": "2021-09-08",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_22mr22.zip",
+    "effective": "2022-03-22",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_07se22.zip",
+    "effective": "2022-09-07",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_13se22.zip",
+    "effective": "2022-09-13",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_08mr23.zip",
+    "effective": "2023-03-08",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_05mr24.zip",
+    "effective": "2024-03-05",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
     "file": "z_18mr25.zip",
     "effective": "2025-03-18",
     "current": false,
@@ -332,6 +374,9 @@
   "zone_products_unplaced": 0,
   "zone_products_renumbered": 0,
   "ncei_zone_rows_renumbered": 0,
+  "zone_placement": {},
+  "zone_placed_by_code_alone": 0,
+  "zone_unplaced_rows": [],
   "malformed_rows": {
    "reports": 0,
    "records": 0,
@@ -344,6 +389,27 @@
    "months": [],
    "years": []
   },
-  "offline": true
+  "offline": true,
+  "events_tiles": {
+   "format": "hail-events-tile-v1",
+   "dir": "hail/j/e/",
+   "count": 3,
+   "bytes": 5538,
+   "gzip_bytes": 1944,
+   "largest_raw": {
+    "file": "r0079_c0199.json",
+    "bytes": 2020
+   },
+   "largest_gzip": {
+    "file": "r0079_c0199.json",
+    "bytes": 709
+   },
+   "budget_gzip": 100000,
+   "referenced": {
+    "reports": 20,
+    "records": 11,
+    "warnings": 10
+   }
+  }
  }
 }

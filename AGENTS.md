@@ -32,15 +32,20 @@ website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · g
            hail.py (hail history: grid, size words, store readers, daily build; --hail-history) · hail_fixture_data.py (the
            SAMPLE store's events) · data/hail-fixture/ (the SAMPLE store) · joins.py (the hail history joins, B2, D35:
            reports, official records, radar detections, warnings, zone products and red flag warnings by fire weather
-           zone, station gusts; pyshp imported lazily)
+           zone, station gusts; pyshp imported lazily) · climate.py (the past weather, B5, D38: the NOAA nClimGrid
+           daily grid per cell, the backfill once and its release archive, hail/c/; h5py imported lazily) · stations.py
+           (GHCN-Daily station readings and the station rule, D5 and D18; hail/sd/) · snowgrid.py (the NOHRSC season
+           snowfall grid and its unit check, D7; hail/n/) · gauges.py (NWS flood stages and USGS annual peaks, the
+           nearest gauge within 10 miles, D6; hail/g/) · summary.py (the five-season table that leads the sheet and the
+           roof lines, B5; its words are Python's)
 tools/     build_basemap.py (rebuilds static/map/basemap.json from Natural Earth + Census; by hand)
 .github/workflows/website.yml   build every 10 min from main → GitHub Pages; branch pushes = live check
-.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, join its sources (website/joins.py), verify both, publish the release asset (D34, D35)
+.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, join its sources, add the B5 weather parts (climate, stations, NOHRSC, gauges; non-fatal steps with timeouts; monthly and once-only steps by input), verify, publish the release assets (D34, D35, D38)
 payload/   the parked app — updates itself. app.py (routes) · weather.py (feeds, evidence, alert matching,
            rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
 desktop/   the shell — changes only with a new installer. launcher.py (window, local server,
            notifications, recovery page) · updater.py (GitHub updates, self-test, rollback)
-tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
+tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py, test_climate.py, test_stations.py, test_snowgrid.py, test_gauges.py, test_summary.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
            update channel vs fake GitHub
 build.py   PyInstaller build      ship.py   test → bump version → commit → push
 ```
@@ -52,6 +57,12 @@ python -m website.build --out _site --sample             # labelled sample data,
 python -m website.build --out _site --hail-history       # the five-year hail history; off by default (D34)
 python -m website.joins build --store store --cache joins-cache   # the hail joins (D35); needs pyshp
 python -m website.joins verify store                     # check the hail joins
+python -m website.climate backfill --cache climate-cache   # B5, once: the 63 scaled months into aggregates (D38; 222 s measured)
+python -m website.climate update --cache climate-cache     # B5 daily: prelim days (and a new scaled month when one appears)
+python -m website.climate build --store store --cache climate-cache   # then: stations, snowgrid, gauges (the same store)
+python -m website.stations build --store store --cache b5-cache --scope daily   # --scope monthly for the whole union
+python -m website.snowgrid build --store store --cache b5-cache --offline       # drop --offline to check NOAA (monthly)
+python -m website.gauges build --store store --cache b5-cache                   # --refresh for the monthly read
 python -m website.build --out _site --require-live       # live data; exit 1 if any source failed
 python -m http.server -d _site 8000                      # then open http://localhost:8000
 pip install -r requirements.txt                          # the parked desktop app

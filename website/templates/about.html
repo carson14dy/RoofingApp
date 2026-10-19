@@ -28,7 +28,7 @@
     {% endif %}
   </ul>
 
-{% if hail_history %}
+{% if hail_history %}{% set ah = about_hail %}
   <h2>Hail history</h2>
   <p>The hail history is NOAA's radar estimate (MRMS MESH) of the largest hail over this cell, about 0.7 miles north to south
     and 0.5 miles east to west, during the day, for the five years to the newest day in the store. The cell is the one under
@@ -41,30 +41,47 @@
     at 12:43 UTC and shows here on the next rebuild, usually within the hour. The as-of date is on every page that shows the
     history. The units and the source are in the data
     sources table below.</p>
+  <h2>Five-year weather history</h2>
+  <p>Each town's page has a five-season table for July 2021 to June 2026, with the partial 2026-27
+    season below it. Each row names its kind of record and its unit, and no row mixes two kinds of record. The table leads the history,
+    which sits below each town's forecast. The sections under it come in one order: Hail, Wind, Storms and warnings, Temperature, Rain, Snow, Flooding,
+    Ice and winter, Heat, Weather that matters for a roof, and How this was made.</p>
+  <p>The kinds of record are these. A radar estimate is NOAA's MRMS MESH value for a grid cell about 0.7 miles north to
+    south and 0.5 miles east to west. A report is what a spotter, a member of the public or a sensor sent to the National
+    Weather Service. An official record is a NOAA Storm Events entry. A warning is the NWS polygon that covered the spot,
+    with the tags it carried when it was issued. A zone product is an NWS product for a whole forecast zone, and a county
+    product is one for a whole county. A station reading is a value at a named station, with its distance. A grid estimate
+    is NOAA's gridded daily value for a cell about 4.6 km across. A reference is a public statement about a stress on roofs.
+    A grid estimate and a station reading are not readings at the address, and no row is an inspection or a finding about
+    a roof.</p>
+  <p>Temperatures are shown in degrees Fahrenheit and rain and snow in inches. A day with a high of 90 F or more is one whose
+    high, rounded to the tenth of a degree, is 32.2 C or more; a freeze-thaw day has a high above 32 F and a low below 32 F. A missing day is never a zero: the
+    page says how many days are missing, and a season with too many missing days shows Data unavailable with the reason.</p>
   <h3>Other records for the same cell</h3>
-  <p>The history also joins the other kinds of record for the same cell. Each row keeps its own kind word, and no
-    record is turned into another kind: reports are what people sent the National Weather Service (NWS local storm
-    reports within 5 miles, of every type); official records are NOAA's Storm Events database (hail and thunderstorm
-    wind points within 5 miles, and the zone-coded rows of every type, such as high wind, winter storm and drought,
-    for the cell's public forecast zone); radar detections are the NEXRAD hail signatures within 2 miles, the radar
-    algorithm's detection for a storm cell and not hail on the ground; official warnings are the NWS severe
-    thunderstorm, tornado and flash flood polygons that covered the cell, with the forecast tags they carried at issue
-    time; zone products are the NWS high wind, winter storm, blizzard, ice storm, extreme cold, wind chill, dust
-    storm, wind advisory and flood watch products for the cell's whole public forecast zone, named, and they cover the
-    whole zone, not this spot alone; red flag warnings are the NWS fire weather zone products for the cell's fire
-    weather zone, a separate zone map from the public forecast zones, and they cover that whole fire weather zone too;
-    and station readings are the peak gusts at the two nearest airport stations within 40 miles, which are at the
-    airport and not at this address.</p>
-  <p>Not joined: the SPC storm reports (they come from the same reports as the local storm reports, so they would
-    count twice); the HRRR modelled gust (a model, not a reading); and the DAT storm survey points (few in Montana).
-    Not joined yet: NOAA's county-coded Storm Events records (points, not zone rows) of tornado, flood, flash flood,
-    heavy rain, funnel cloud, lightning and debris flow; the same types appear among the reports when people sent them
-    to the NWS. The flood warnings, flood watches and flood advisories as polygons, the areal flood warnings and areal
-    flood advisories, the county-only areal flood watches, and the flash flood watches; snow squall warnings; and the
-    winter weather advisories, winter storm watches, heat advisories, excessive heat warnings and watches, frost
-    advisories and freeze warnings. Other NWS products are not joined yet. Known gaps: NCEI's database runs behind the
-    other sources, and the sheet says to which date; SWDI's inventory is not complete; the wind unit of the local
-    storm reports is inferred; and warning tags are the forecast threat at issue time, not what fell.</p>
+  <p>The history also joins the other records for the same cell, each with its own kind word. Reports are NWS local storm
+    reports within 5 miles, of every type the history reads. Official records are NOAA Storm Events points within 5 miles
+    (hail, thunderstorm wind, flood, flash flood, heavy rain, tornado, funnel cloud, lightning and debris flow) and the
+    zone-coded rows of every type for the cell's forecast zone. Radar detections are the NEXRAD hail signatures within 2
+    miles, which are the radar algorithm's detections for a storm cell and not hail on the ground. Warnings are the NWS
+    polygons that intersect the cell, with the forecast tags they carried at issue time. Zone products cover a whole
+    forecast zone, and county products a whole county; red flag warnings cover a fire weather zone. Station readings are
+    the peak gusts at the two nearest airport stations within 40 miles, and the daily values of the nearest stations that
+    pass the coverage rule.</p>
+  <h3>Not in this history</h3>
+  <ul>{% for text in ah.held.values() %}<li>{{ text }}</li>{% endfor %}</ul>
+  <h3>Snow analysis</h3>
+  <p>{{ ah.analysis }}</p>
+  <h3>Reports and radar</h3>
+  <p>{{ ah.hit_miss }}</p>
+  <h3>County boundaries</h3>
+  <p>{{ ah.census }} Source: U.S. Census Bureau, TIGER/Line 2026 county boundaries.</p>
+  <h3>Roof references</h3>
+  <p>The roof lines quote public statements in their own words. Each line says it is a reference, not a finding about any
+    roof, weather event or address.</p>
+  <ul>{% for r in ah.refs %}<li><a href="{{ r.url }}">{{ r.source }}</a>: "{{ r.quote }}"</li>{% endfor %}</ul>
+  <p>Known gaps: NCEI's database runs behind the other sources, and the page says to which date. The wind unit of the local
+    storm reports is inferred. Warning tags are the forecast threat at issue time, not what fell. Iowa State's inventory of
+    radar detections is not complete.</p>
 {% endif %}
   <h2>Base map imagery</h2>
   <p>The map's base is a white map of public outlines. In the Layers menu you can switch it to aerial imagery with roads and

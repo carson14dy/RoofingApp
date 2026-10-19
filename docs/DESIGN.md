@@ -575,4 +575,106 @@ Other sentences the sections can show: "{n} official zone records in Montana in 
 - `hail/z/MTZ###.json` (`hail-zone-v1`): the zone's name, its NWS products (each with its begin `b`, its end `e`, and `st` "cancelled" or "upgraded" when a cancellation or upgrade row set the end) and its NCEI zone rows. `hail/z/fire-MTZ###.json` (`hail-zone-v1`, kind `fire`): the fire weather zone's name and its red flag warnings in the same shape.
 - `hail/s/<id>.json` (`hail-station-v1`): the station's name and position, its days at 50 kt or more as `[day index, mph, kt]` (whole numbers, D18), and the count left out as implausible.
 - `hail/index.json` gains `joins`: `state`, `parts`, `reasons`, the partial periods, `lags`, the counts, the malformed and short rows (D10, D21), the zone editions, the report types, the request summary (with `served_from_cache_since` where a stale copy was used) and its first failures, and the bytes. `hail/manifest.json` lists every `j/`, `z/` and `s/` file with its bytes and SHA-256.
-- Budget: `j/` at most 40 MB and `z/` and `s/` under 2 MB (the B2 brief). The 2026-10-19 re-check measured `j/` at 19,912,416 bytes in 4,598 files (49.8 percent of 40 MB; `events.json` 5,351,807 bytes and the 4,597 tile files 14,560,609 bytes); `z/` at 919,402 bytes in 115 files (83 public zones holding 4,960 zone events and 32 fire weather zones holding 660) and `s/` at 22,478 bytes in 60 files (1,261 station days at 50 kt or more), both against 2 MB; and all of `hail/` at 54,227,125 bytes in 9,372 files, against B1's 60 MB (90.4 percent). B3's address shards share that cap (`DECISIONS.md` D35, open item 1). The re-check measures each file again. Round 7 (D35) restores the flood watch zone events: the rebuilt store has z/ at 919,402 bytes (round 6 had 875,220), and j/, s/ and t/ unchanged from round 6 (`DECISIONS.md` D35).
+- Budget: `j/` at most 40 MB and `z/` and `s/` under 2 MB (the B2 brief). The 2026-10-19 re-check measured `j/` at 19,912,416 bytes in 4,598 files (49.8 percent of 40 MB; `events.json` 5,351,807 bytes and the 4,597 tile files 14,560,609 bytes); `z/` at 919,402 bytes in 115 files (83 public zones holding 4,960 zone events and 32 fire weather zones holding 660) and `s/` at 22,478 bytes in 60 files (1,261 station days at 50 kt or more), both against 2 MB; and all of `hail/` at 54,227,125 bytes in 9,372 files, against B1's 60 MB (90.4 percent). B3's address shards share that cap (`DECISIONS.md` D35, open item 1). The re-check measures each file again. Round 7 (D35) restores the flood watch zone events: the rebuilt store has z/ at 919,402 bytes (round 6 had 875,220), and j/, s/ and t/ unchanged from round 6 (`DECISIONS.md` D35). B5's store (the products build, 2026-10-19) measures `j/` with `j/e/` at 86,247,482 bytes (86.2 MB: `j/` 23,164,558 and `j/e/` 63,082,924), against the 40 MB cap; `z/` at 1,793,693 bytes in 115 files (the 919,402 above is the round-7 figure), `s/` at 25,000 bytes in 60 files; and all of `hail/` at 161,961,394 bytes in 19,269 files (162.0 MB), against the 60 MB cap. B5 breaks both caps; the owner or the supervisor rules on both (DECISIONS D38, O12).
+
+## 12. The past weather of every location (B5, 2026-10-19, behind `--hail-history`)
+
+Sections 10 and 11 arrive with the B3 and B4 branches; this section is B5's (`DECISIONS.md` D38).
+
+**Frame.** The owner's request is quoted once, in D38. A sheet, and each town page, answers one question for one place: what the weather there did over five seasons, in every kind of record, with its unit. The place's summary table leads, under the address line and one plain sentence. The details follow under headings in one fixed order. Each row is one kind of record. Nothing in the section is a finding about a roof, an address or a claim.
+
+**Users and moments.** A roofer on a phone at a job's address, who reads the five seasons on one screen before any detail. A town page reader, who compares the grid cell with the two nearest stations, each named with its distance.
+
+**Principles (B5; they extend section 9).**
+1. *The summary leads.* One table: five seasons and their total, one row per measure, under the address line and the plain sentence.
+2. *Every number has its unit and its kind word.* A cell shows its value with its unit. The row names the kind. A station value names its station and distance. A grid value is an estimate for a cell about 4.6 km across.
+3. *Missing is not zero.* A season with missing days shows its value over the days present, and "{n} days missing" under it. A season with no usable day shows "Data unavailable" and the reason. A count is zero only when the days were there and none met the rule.
+4. *Kinds apart.* A row names one source. On a town page the grid and the stations are separate rows with their own kind words, and the page does not reconcile them (D13).
+5. *Python writes every word.* `WORDS_SUMMARY` and `WORDS_INDICATORS` (`website/summary.py`), `WORDS_CLIMATE` (`climate.py`), `WORDS_JOINS` (`joins.py`) and the station, gauge and snow words. `map_data_summary` hands the templates to the browser, which holds none of its own.
+6. *No finding.* Nothing says damage, risk, a probability, insurance, eligibility or an all-clear. "This is not an all-clear." closes each missing, stale and unplaced sentence.
+
+**The summary table.** Title: "Five seasons, July to June". Columns: 2021-22, 2022-23, 2023-24, 2024-25, 2025-26 and "Five seasons". Lead above it: "Five seasons of weather for this spot, from grid estimates, station readings and NWS records. Each row says what kind of record it is." The sheet has 22 measures and the held line, in this order. A town page adds two station rows after the grid's highest and lowest temperature: "Highest temperature at the station" and "Lowest temperature at the station", each with its station's name.
+| Row (label) | Kind word | Unit | Cell shows |
+|---|---|---|---|
+| Largest radar hail estimate at this cell | Radar estimate | in | "{inches} in on {date}"; "No radar estimate of 0.25 in or more" when none |
+| Days with a radar hail estimate of 1 inch or more | Radar estimate | days | "{n} days" |
+| Largest hail reported within 5 miles | Report | in | "{inches} in on {date}"; "No report of hail within 5 miles" when none |
+| Hail reports within 5 miles | Report | count | the count |
+| Peak gust of 50 knots (58 mph) or more | Station reading | days | "{n} days at {station}"; "No day at 50 kt or more" when none |
+| Strongest gust at that station | Station reading | kt | "{kt} kt ({mph} mph) on {date}" |
+| Wind reports within 5 miles | Report | count | the count |
+| High wind watches and warnings for the zone | Zone product | count | the count |
+| Highest temperature | Grid estimate | F | "{f} F on {date}" |
+| Lowest temperature | Grid estimate | F | "{f} F on {date}" |
+| Days with a high of 90 F or more | Grid estimate | days | "{n} days" |
+| Days with a low below 32 F | Grid estimate | days | "{n} days" |
+| Freeze-thaw days | Grid estimate | days | "{n} days" |
+| Precipitation | Grid estimate | in | "{inches} in" |
+| Largest one-day precipitation | Grid estimate | in | "{inches} in on {date}" |
+| Snowfall, July to June | Station reading | in, one decimal | "{inches} in at {station}" |
+| Deepest snow on the ground | Station reading | in, one decimal | "{inches} in on {date} at {station}" |
+| Freezing rain reports within 5 miles | Report | count | the count |
+| Winter storm and ice storm warnings | Zone product | count | the count |
+| Flood and flash flood reports within 5 miles | Report | count | the count |
+| Flood and flash flood warnings | Warning | count | the count |
+| Flood and flash flood watches for the county | County product | count | the count |
+| Lightning, UV and sunlight, roof surface temperature, ponding | Data unavailable | none | "Data unavailable", with the reason |
+
+Under the table, in this order:
+- *Coverage.* A partial season carries "{n} days missing" under its value. A season with no usable day reads "Data unavailable for {season}: no day of this season is in the {source}. This is not an all-clear."
+- *Radar sentence.* "Radar estimates can miss hail that people reported and can show hail that no one reported."
+- *Window lines.* "Radar history: {first} to {last}, the 1,826 SPC days ending {as_of}. Days before {first} are not in it, so {season} shows them as missing." The grid: "Grid estimates: from July 1, 2021 to the newest grid day, {through}. Scaled months are NOAA's monthly values; the newest days are preliminary."
+- *The partial season.* One line for 2026-27 with its own counts: the grid's sentence for the days so far, then "Reports so far in {season} within 5 miles: {hail} hail {hail_word}, {wind} wind {wind_word}, {flood} flood or flash flood {flood_word}. Radar estimate: {r1} {r1_word} with hail of 1 inch or more so far." With no day of the season in the data: "No day of the {season} season is in the data yet. This is not an all-clear."
+
+**The sections.** Eleven sections, in this order, each with a heading, one lead sentence that names its kind, and rows that begin with their kind label (B2, D3).
+| Section (heading) | Lead | Kind words |
+|---|---|---|
+| Hail | "Radar estimate: {radar} with hail of 1 inch or more, and {reports} within 5 miles, in these five years." | Radar estimate, Report |
+| Wind | "Station reading: {gust} with a gust of 50 kt or more at {station}; Report: {wind} within 5 miles." | Station reading, Report |
+| Storms and warnings | "Zone product: {hw}; Warning: {sv} covered this spot." | Zone product, Warning |
+| Temperature | "Grid estimate: highest {tmax}; lowest {tmin}, in these five seasons." | Grid estimate |
+| Rain | "Grid estimate: {precip} of precipitation in these five seasons; the largest one day {pmax}." | Grid estimate |
+| Snow | "Station reading: {snow} of snowfall in the five seasons (the station named in each season); the deepest snow on the ground {depth}." | Station reading |
+| Flooding | "Report: {flood} within 5 miles; Warning: {flood_w} covered this spot, in these five years." | Report, Warning; river gauge on town pages |
+| Ice and winter | "Report: {fr} within 5 miles; Zone product: {ice}." | Report, Zone product |
+| Heat | "Grid estimate: {hot} with a high of 90 F or more in these five seasons; Report: {xheat} within 5 miles." | Grid estimate, Report |
+| Weather that matters for a roof | "Each line is a count or a measurement with its kind word, from the same records as the table; none of them says what a roof needs." | Reference, and the kinds above |
+| How this was made | "Where each number comes from, the distance and coverage rules, the units and the licence sentences." | Reference |
+
+The roof section has 23 lines, one per indicator (for example "Radar estimate: {count} with hail of 1 inch or more in these five years; the largest radar estimate was {largest}."). Its reference lines are quoted under the groups "Thresholds", "Snow and ice", "Wind and hail", "Heat and rain" and "Lightning and sun", each with kind "Reference" and its source. Its seven held lines read "Data unavailable" and the reason, for ponding, lightning, UV and sunlight, roof surface temperature, the FEMA flood zones, ground snow load and SNOTEL. The code holds two leads for this section, `lead_roof` in the section list and `section_lead` in the roof block; the build shows one (open item for the summary builder).
+
+**States.**
+| State | When | Words |
+|---|---|---|
+| Loaded | The part has values | The lead with its values, then the rows with their kind labels |
+| Station season short | A station has fewer than 95 percent of a season's days | "Data unavailable for {season}: {station} has {k} of {d} days with a {element} value, so this season is not shown; a missing value is not zero." |
+| No station | No candidate passes the rule | "No station within 40 miles has enough reports for {element} from 2020 to 2025." |
+| One station | One candidate passes | "Only one station within 40 miles has enough reports for {element} from 2020 to 2025: {station}. Stations that did not pass are not shown." |
+| Stations rule | Every station row | Town pages: "Stations: the two nearest that pass the coverage rule at the town point. A station value shows only when 95 percent of its season's days have the element." Sheet: the same at the 0.1 degree tile centre, with distances from the spot |
+| Zone products not placed | Montana zone products whose zone codes the editions read do not hold | "{n} Montana zone products could not be placed in a zone in this update (their zone codes are not in the zone editions read). This zone's first placed product is {first}, so a zero in a season that ends before it is shown as Data unavailable. This is not an all-clear." With no placed product in the zone: "{n} Montana zone products could not be placed in a zone in this update (their zone codes are not in the zone editions read). This zone has no placed product in this update, so its zeros are shown as Data unavailable. This is not an all-clear." |
+| Part did not load | A source failed (D16) | "{part} could not be loaded in this update; that is not the same as no {part_lower}. This is not an all-clear." |
+| Stale radar | The newest radar day is more than 3 days older than the as-of day | "The newest radar day in this history is {as_of}; newer days have not been added yet. This is not an all-clear." |
+| Snow analysis left out | The NOHRSC units do not pass the D7 check | The snow row: "Analysis: not shown. Its amounts did not match measured snowfall closely enough to be sure they are in inches. Station readings are shown instead." The About page: "The NOAA National Snow Analysis was checked against station season totals and left out: its amounts did not match the station totals closely enough to show." |
+| Gust days | Station gusts | "Only days with a gust of 50 kt or more are kept in the store, so a season with no such day shows no value rather than a lower gust." Under the station's own row: "The store keeps each station's days at 50 kt or more, not its full daily record, so a 0 means no such day in the store; it does not show that the station was calm." |
+| Flagged gust | A reading flagged for check (D12) | "{kt} kt ({mph} mph) on {date}, flagged for check" |
+| Gauge (town page) | The nearest gauge with a flood stage within 10 miles | "River flood record at the {name} gauge, {miles} miles away; it does not say water reached this address." With none: "No gauge with an NWS flood stage is within 10 miles of {place}. That is not a statement that the river did not flood there." |
+
+**Town pages.** The same table for the town's centre cell, the two nearest stations that pass the rule at the town point (named with their distance from the town), and the two station rows. The station reading's caveat: "This reading is from {station}, about {miles} miles from this address. A station reading is at the station, not at this address. Snow and rain can differ a lot over a short distance." The Flooding section carries the gauge line. The roof and "How this was made" sections follow in the same order as the sheet. Below 900 px the table reflows into one card per row: the label first, then each season with its season as the label, and no sideways scroll (`town.html`). The header row is kept for screen readers and hidden visually.
+
+**The About page** (Python, `about.html`, under "Five-year weather history"). An intro: each town's page has the five-season table for July 2021 to June 2026, with the partial 2026-27 season below it; each row names its kind and unit; no row mixes two kinds; the sections come in the order above. Then, each under its own heading: "Other records for the same cell" (the reports, official records, radar detections, warnings, zone products and station readings, each with its kind and its radius); "Not in this history" (the seven held lines, in the words the roof section uses); "Snow analysis" (the analysis-held sentence above); "Reports and radar" (the hit-and-miss sentence: "NWS hail reports of one inch or more were checked against the radar estimate and the radar signatures near each report, for the same day. The radar missed many of them."); "County boundaries" (the Census use constraint, then "Source: U.S. Census Bureau, TIGER/Line 2026 county boundaries."); "Roof references" (each roof line is a reference, not a finding about any roof, weather event or address; then each reference with its link and its quotation); and "Known gaps" (NCEI's database runs behind the other sources and the page says to which date; the wind unit of the local storm reports is inferred; warning tags are the forecast threat at issue time, not what fell; Iowa State's inventory of radar detections is not complete).
+
+**Data contract additions** (with `--hail-history` only):
+- `data/map.json["hail"]`: `summary` (`map_data_summary`: the table's templates, the row order, the kind words, the units and the section leads), `climate` (`map_data_climate`), `snow`, `stations`, `gauges` and `county`.
+- Under `hail/`: `c/rRRRR_cCCCC.json` (`hail-climate-v1`), `sd/<id>.json` (`hail-stn-v1`), `g/<usgs>.json` (`hail-gauge-v1`), `k/MTC###.json` (the county-only events), `j/e/r{tr:04d}_c{tc:04d}.json` (`hail-events-tile-v1`, one per tile, D30), and `n/<tile>.json` (`hail-snow-v1`) only when the D7 check passes. `n/` is absent now.
+- `hail/index.json` blocks `climate`, `stations`, `gauges` and `snow`, each with its state, its problem sentence, its counts, its sources and its words. The county counts sit in the `joins` block. `hail/manifest.json` lists every new file with its bytes and SHA-256.
+- Measured on the products store (`store-ready.json`, announced 2026-10-19 16:49 UTC): `c/` 35,149,062 bytes in 4,569 files; `sd/` 3,071,175 bytes in 571; `g/` 285,713 bytes in 104; `k/` 13,689 bytes in 56; `j/e/` 63,082,924 bytes raw in 4,597 files, 10,423,190 bytes gzip in all, the largest 22,933 bytes gzip against a 100,000-byte budget. The whole store is 162,102,993 bytes in 19,268 manifest files. All of `hail/` is 161,961,394 bytes (162.0 MB), against the 60 MB cap, and `j/` with `j/e/` is 86.2 MB, against the 40 MB cap (DECISIONS D38, O12).
+
+**Browser duties for part B2 (pending; not built).**
+1. Fill the table and the sections from `map.json` (`hail.summary`): the templates, the row order, the kind words and the units. The browser holds no word, unit or threshold of its own.
+2. Fetch `hail/j/e/<tile>.json` on a tap, once per tile per page, in place of `hail/j/events.json` (D22, D30). The phone view at zoom 15 stays under the 650 KB gzip gate with the B5 files (B5-12).
+3. Show Python's sentence for every part that did not load (D16), and the held lines. No section is left blank.
+4. The card layout at phone width: one card per row, the label first, no sideways scroll, 16 px gutters. Check it at 390 px and 1280 px in Chromium (B5-11, B5-18).
+5. Make no request off the site. Every B5 fetch is a same-origin store file (B5-18).
+6. After the switch, remove the keys in `map.js` that `WORDS_JOINS` no longer fills. `warnings_tags_none` stays until then (`DECISIONS.md` D38, part A completion).
+
+*Why:* the owner asked for every kind of weather at a place, in one view, in words a roofer reads without decoding. The table puts five seasons on one screen, with a unit and a kind word on every number, so the answer comes before the detail. A missing value is said, not written as a zero, because a zero that means "not measured" would read as a clear season. The detail follows the same order everywhere, so a reader who has learned one place can read the next.
