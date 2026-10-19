@@ -26,6 +26,15 @@
      gets its days. ?at=lat,lon opens a spot on arrival. Closing the sheet drops ?at= from the address, so a
      reload does not reopen it. Off the grid, or when the history didn't load, it shows the build's words with no
      fetch. No threshold, unit or sentence is written in this file: data/map.json and website/hail.py hold them.
+   - The joined records under the radar estimate (--hail-history builds only; see "joined records at a spot" below): six
+     sections, one per kind of record (reports, official records, radar detections, warnings, zone products and station
+     gusts), each with its kind word. After the cell's shard the browser fetches the tile's record file (hail/j), and only
+     when that file names them the cell's forecast zone and fire weather zone (hail/z, the fire files as fire-<zone>) and the
+     station files the tile names (hail/s). It measures
+     distances in miles on the earth radius the build wrote, keeps the records inside the radii the build wrote, reads the
+     warning cover bit for the cell's key, formats the UTC times in the zone named by data.tz (Intl), and fills the build's
+     templates (hail.joins.words, website/joins.py). A part that does not load shows its own unavailable sentence. No
+     sentence, unit, radius or threshold is written in this file (tests/test_site.py reads it for them).
    - The viewer's location never leaves the browser: it draws the dot and finds the nearest town.
 */
 (function () {
@@ -2285,24 +2294,35 @@
   function hailInState(doc, key) { return doc.state.indexOf(key) >= 0; }
 
   /** One fetch per tile for the life of the page: the tile's JSON. Any failure rejects, a missing file included: the
-      build lists only the tiles it wrote, so a 404 means a broken store, which is not the same as no hail. The next
-      click asks again. */
+      build lists only the tiles it wrote, so a 404 means a broken store, which is not the same as no hail. A file that is
+      not JSON, or is JSON but not an object, is a failed load too, in the format (D27). Each error gives its reason (see
+      hailFailure). The next click asks again. */
   function hailTile(url) {
     if (!hailTiles[url]) {
       hailTiles[url] = fetch(url, { credentials: "same-origin" }).then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      });
+        if (!r.ok) throw hailFailure("no_answer", url);
+        return r.json().then(function (doc) {
+          if (!doc || typeof doc !== "object" || Array.isArray(doc)) throw hailFailure("format", url);
+          return doc;
+        }, function () { throw hailFailure("format", url); });
+      }, function () { throw hailFailure("no_answer", url); });
       hailTiles[url].then(null, function () { delete hailTiles[url]; });
     }
     return hailTiles[url];
   }
 
+  /** The error of a file that did not load. Its reason is "no_answer" (the file is missing or the request failed) or
+      "format" (the file is not JSON, or not in the shape the sheet reads it as): the two reasons joins.py's readers give. */
+  function hailFailure(reason, url) { var e = new Error(url); e.reason = reason; return e; }
+
   /** The ISO date (UTC) of a day index: the store counts whole days from its d0. */
   function hailIso(h, d) { return new Date(Date.parse(h.d0) + d * HAIL_DAY_MS).toISOString().slice(0, 10); }
 
   /** "Jun 15, 2025" for an ISO date, read in UTC so the SPC day's date never moves with the viewer's time zone. */
-  function hailDate(iso) { return dtfUtcDay.format(new Date(Date.parse(iso))); }
+  function hailDate(iso) {                  // an empty or unreadable date (a store with no records) gives an empty string, never a throw
+    var ms = Date.parse(iso || "");
+    return isNaN(ms) ? "" : dtfUtcDay.format(new Date(ms));
+  }
 
   /** The size in inches, shown to the hundredth and rounded down (see D34 in docs/DECISIONS.md): the exact tenths times
       100, over the build's tenths per inch, floored, with two decimal places. Rounding down never crosses a class
@@ -2376,7 +2396,7 @@
 
   /** The sheet's body: a loaded cell from the template in map.html (<template id="hail-sheet">), or one line of
       words for the other states (loading, outside, unavailable). The sheet's own title is set by openSheet. */
-  function hailShow(h, kind, payload) {
+  function hailShow(h, kind, payload, joins) {
     var frag;
     if (kind === "loaded") {
       frag = document.getElementById("hail-sheet").content.cloneNode(true);
@@ -2395,6 +2415,7 @@
       show(slot("stale"), payload.stale);
       show(slot("missing"), payload.missing);
       show(slot("source"), payload.source);
+      if (joins) joinRender(slot("joins"), joins);
     } else {
       frag = document.createDocumentFragment();
       if (h.state === "sample") {          // a sample build labels every state of the sheet, as the town tables do
@@ -2441,7 +2462,12 @@
       if (!hailInState(doc, hailKey(h, cell))) return hailShow(h, "outside", outside);   // in the tile, not in Montana
       var text;
       try { text = hailText(h, cell, doc); } catch (e) { return failed(); }
-      hailShow(h, "loaded", text);
+      hailShow(h, "loaded", text, null);                // the radar days at once; the joins follow in their own sections
+      joinSections(h, cell).then(function (joins) {     // never rejects: a part that fails says so in its own section
+        if (!current() || !joins) return;               // no joins block: the radar days stand alone
+        joinRender(el.sheetBody.querySelector('[data-hail="joins"]'), joins);
+        if (sheetState && sheetState.ll) reveal(sheetState.ll, HAIL_EXT);   // a longer sheet may cover the spot now
+      });
     }, function () { if (current()) failed(); });
   }
 
@@ -2459,6 +2485,491 @@
     if (!m) return null;
     var p = hailPoint(Number(m[1]), Number(m[2]));
     return isFinite(p.lat) && isFinite(p.lon) ? p : null;
+  }
+
+  // ------------------------------------------------------------------ joined records at a spot (--hail-history builds, B2)
+
+  /** The six joined sections under the radar estimate, in JOIN_PARTS order. They follow the rules and the templates of
+      website/joins.py describe_joins (the town pages write the same sentences from the same records), so a sheet and a
+      town page for one cell say the same words. The build writes the record files (hail/j per tile, hail/z per zone and
+      per fire weather zone, hail/s per station), the templates (hail.joins.words), the shard templates, the radii and the
+      earth radius, the counts the lines say, the lags and each part's state. The browser does these steps and no others: the
+      tile's file (one fetch, kept for the page); the forecast zone's file, the fire weather zone's file and each station
+      file the tile names; the distance from the cell's centre in miles; the filters (reports and records within the report
+      radius, detections within the detection radius, the warnings whose cover bit is set for the cell's key, the zone
+      products and the station days in the window); the newest-first order; the Montana-time text (Intl, the zone named by
+      data.tz); and the fill of the templates. A part the build marks unavailable, or whose file does not load, shows its own
+      unavailable sentence and nothing else; a partial part keeps its lead and rows. It writes no sentence, unit, radius or
+      threshold of its own: tests/test_site.py runs this block under node and compares it with describe_joins. */
+  var JOIN_PARTS = ["reports", "records", "detections", "warnings", "zones", "stations"];
+  var joinFmts = null;                        // the Montana-time formatters, made on first use
+  // the fields of a joined row, as joins.py writes them: a report or a record, a detection and a station day
+  var JROW = { day: 0, hhmm: 1, lat: 2, lon: 3, code: 4, mag: 5, unit: 6, qual: 7, source: 8, city: 9, remark: 10,
+    mph: 11, kt: 12 };
+  var JDET = { day: 0, hhmm: 1, lat: 2, lon: 3, size: 4 };
+  var JDAY = { day: 0, mph: 1, kt: 2 };
+
+  /** The formatters for a Montana calendar date and for a clock time with its zone. */
+  function joinFormats() {
+    if (!joinFmts) {
+      joinFmts = {
+        day: new Intl.DateTimeFormat("en-US", { timeZone: data.tz, month: "short", day: "numeric", year: "numeric" }),
+        clock: new Intl.DateTimeFormat("en-US", { timeZone: data.tz, hour: "numeric", minute: "2-digit", hour12: true,
+                                                  timeZoneName: "short" })
+      };
+    }
+    return joinFmts;
+  }
+
+  /** "Jun 14, 2025": the Montana calendar date of an instant (ms), as describe_joins writes a local date. */
+  function joinDay(ms) { return joinFormats().day.format(new Date(ms)); }
+
+  /** The qualifier part of a record row (" (word)"), or "" when the code has no word: the module's _qualifier lookup. */
+  function joinQualifier(J, code) {
+    var word = code ? (J.qualifiers[code] || J.ncei_qualifiers[code] || "") : "";
+    return word ? fill(J.words.qualifier_part, { qualifier: word }) : "";
+  }
+
+  /** The clock text of an instant in Montana time, from the build's time template (hour, minute, am or pm, zone). */
+  function joinClock(J, ms) {
+    var p = {};
+    joinFormats().clock.formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+    return fill(J.words.time, { hour: p.hour, minute: p.minute, ampm: p.dayPeriod === "AM" ? J.words.am : J.words.pm,
+      zone: p.timeZoneName });
+  }
+
+  /** The UTC instant of a record: its UTC day index (counted from the store's d0) and its UTC time as hhmm. */
+  function joinInstant(h, day, hhmm) {
+    return Date.parse(h.d0) + day * HAIL_DAY_MS + (Math.floor(hhmm / 100) * 60 + hhmm % 100) * MIN;
+  }
+
+  /** The great-circle distance in miles between two points, on the earth radius and mile length the build wrote. */
+  function joinMiles(J, lat1, lon1, lat2, lon2) {
+    var r = Math.PI / 180, dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * J.earth_radius_km * Math.asin(Math.min(1, Math.sqrt(a))) / J.km_per_mile;
+  }
+
+  /** The compass word from one point to another: the bearing clockwise from north, in the build's words (joins.compass). */
+  function joinCompass(J, lat1, lon1, lat2, lon2) {
+    var r = Math.PI / 180, dl = (lon2 - lon1) * r;
+    var y = Math.sin(dl) * Math.cos(lat2 * r);
+    var x = Math.cos(lat1 * r) * Math.sin(lat2 * r) - Math.sin(lat1 * r) * Math.cos(lat2 * r) * Math.cos(dl);
+    var turn = 2 * Math.PI, n = J.compass.length, step = turn / n;
+    return J.compass[Math.floor((((Math.atan2(y, x) + turn) % turn) + step / 2) % turn / step) % n];
+  }
+
+  /** Whether a warning covers a cell: the build's cover is one bit per cell key, key 0 the lowest bit of the 25 hex digits. */
+  function joinCovers(hex, key) {
+    var text = String(hex), n = Math.floor(key / 4);          // four keys to a hex digit
+    return ((parseInt(text.charAt(text.length - 1 - n), 16) >> (key % 4)) & 1) === 1;
+  }
+
+  /** The SPC report day of an instant: the UTC date of the instant less the report day's start hour (joins.spc_day). */
+  function joinSpcIso(J, ms) { return new Date(ms - J.spc_hours * HOUR).toISOString().slice(0, 10); }
+
+  /** The centre of a cell, in degrees, from the grid in map.json (the same arithmetic as hailCell, read back). */
+  function hailCentre(g, cell) {
+    var per = Math.round(1 / g.cell_deg);     // cells per degree
+    return { lat: g.row0_lat - cell.row / per, lon: g.col0_lon + cell.col / per };
+  }
+
+  /** The magnitude of a row (joins._magnitude): a speed in knots with its miles per hour beside it, or a magnitude in its
+      unit (the build's words); "" is missing and shows the build's "no size given" words. */
+  function joinMagnitude(J, r) {
+    var W = J.words, text = r[JROW.mag], unit = r[JROW.unit];
+    if (r[JROW.kt] !== null && r[JROW.kt] !== undefined) return fill(W.magnitude_kt_mph, { value: r[JROW.kt], mph: r[JROW.mph] });
+    if (text === null || text === undefined || text === "") return W.magnitude_none;
+    if (unit === J.hail_unit) return fill(W.magnitude_in, { value: Number(text).toFixed(2) });
+    return fill(W[J.unit_words[unit]] || W.magnitude_unitless, { value: text });
+  }
+
+  /** The text of a report row (joins._report_text): the label, the Montana date and time, the type word, the magnitude when
+      the code has a unit (J.unit_codes), the qualifier, the source, the distance and the bearing (none for a spot at the
+      centre). A code with no unit shows its type word and qualifier only (D19). */
+  function joinReportText(J, r, ms, miles, bearing) {
+    var W = J.words, code = r[JROW.code], typed = J.unit_codes.indexOf(code) < 0, here = bearing === null;
+    var base = { date: joinDay(ms), time: joinClock(J, ms), type: J.types[code] || String(code || "").toLowerCase(),
+      qualifier: joinQualifier(J, r[JROW.qual]), source: r[JROW.source] || "", miles: miles.toFixed(1) };
+    if (!typed) base.magnitude = joinMagnitude(J, r);
+    if (!here) base.bearing = bearing;
+    var key = here ? (typed ? "reports_row_here_typed" : "reports_row_here") : (typed ? "reports_row_typed" : "reports_row");
+    return fill(W[key], base);
+  }
+
+  /** The text of a record row (joins._record_text): the label of a record, the magnitude when its type carries a unit
+      (J.unit_codes, D19), the qualifier, the source, the distance and the bearing. */
+  function joinRecordText(J, r, ms, miles, bearing) {
+    var W = J.words, typed = J.unit_codes.indexOf(r[JROW.code]) < 0, here = bearing === null;
+    var base = { date: joinDay(ms), time: joinClock(J, ms), type: r[JROW.code], qualifier: joinQualifier(J, r[JROW.qual]),
+      source: r[JROW.source] || "", miles: miles.toFixed(1) };
+    if (!typed) base.magnitude = joinMagnitude(J, r);
+    if (!here) base.bearing = bearing;
+    var key = here ? (typed ? "records_row_here_typed" : "records_row_here") : (typed ? "records_row_typed" : "records_row");
+    return fill(W[key], base);
+  }
+
+  /** The text of a zone record row (joins._zone_record_text): the same words with the zone's code in place of the place. */
+  function joinZoneRecordText(J, r, ms, zone) {
+    var W = J.words, typed = J.unit_codes.indexOf(r[JROW.code]) < 0;
+    var base = { date: joinDay(ms), time: joinClock(J, ms), type: r[JROW.code], qualifier: joinQualifier(J, r[JROW.qual]),
+      source: r[JROW.source] || "", zone: zone };
+    if (!typed) base.magnitude = joinMagnitude(J, r);
+    return fill(W[typed ? "records_zone_row_typed" : "records_zone_row"], base);
+  }
+
+  /** The unavailable sentence of a part (joins._unavailable_text, D20): the build's sentence with the part's name and its
+      singular. A part with some periods that did not load gets the partial sentence, with its periods and reason. */
+  function joinUnavailable(J, part, periods, reason) {
+    var W = J.words;
+    if (periods && periods.length) return fill(W.partial, { feed: W["feed_" + part], periods: periods.join(", "),
+      reason: reason || (J.reasons && J.reasons[part]) || W.reason_no_answer });
+    return fill(W.unavailable, { part: W["part_" + part], one: W["one_" + part] });
+  }
+
+  /** The words for the reason a file did not load (D27): the file did not answer, or it was in an unexpected format. */
+  function joinReason(W, err) { return err && err.reason === "format" ? W.reason_format : W.reason_no_answer; }
+
+  /** The zone code whose cell keys include a key, in the tile's map of field ("zones" for the forecast zones, "fire" for the
+      fire weather zones: {code: [keys]}); null when none does. */
+  function joinZoneOf(j, field, key) {
+    var zones = j[field] || {}, codes = Object.keys(zones);
+    for (var i = 0; i < codes.length; i++) { if (zones[codes[i]].indexOf(key) >= 0) return codes[i]; }
+    return null;
+  }
+
+  /** The heading of a section: the zone's name and code for the zone products (zones_heading, or the no-zone heading), else
+      the section's own heading. */
+  function joinHeading(W, k, zoneName, zone) {
+    if (k !== "zones") return W[k + "_heading"];
+    return zone ? fill(W.zones_heading, { zone_name: zoneName, zone: zone }) : W.zones_heading_no_zone;
+  }
+
+  /** The events table (hail/j/events.json), read as the format it is written in (joins._read_events): a file in any other
+      format is a failed load, and the three sections it feeds say so. */
+  function joinEvents(J, url) {
+    return hailTile(url).then(function (doc) {
+      if (doc.f !== J.events_format) throw hailFailure("format", url);
+      return doc;
+    });
+  }
+
+  /** A zone, fire weather zone or station file as the sheet reads it (joins._read_part_file, D27): where it has them, its row
+      lists are arrays. A file that is not in that shape is a failed load, in the format. */
+  function joinFile(url) {
+    return hailTile(url).then(function (doc) {
+      if (["events", "records", "days"].some(function (k) { return doc[k] !== undefined && !Array.isArray(doc[k]); })) {
+        throw hailFailure("format", url);
+      }
+      return doc;
+    });
+  }
+
+  /** The record files one cell needs: the events table (hail/j/events.json, one fetch for the page, which holds every
+      report, record and warning row once), the cell's tile (one fetch), then the forecast zone, the fire weather zone and each
+      station file the tile names. Resolves with {j, events, eventsError, zoneCode, zone, fireCode, fire, stations, sdocs}; a
+      part that fails holds its error. The tile's own failure is the whole result's error. Never rejects. */
+  function joinLoad(h, cell) {
+    var J = h.joins, key = hailKey(h, cell), name = hailTileName(h, cell);
+    var part = function (load, url) {
+      return load(url).then(function (doc) { return { doc: doc }; }, function (e) { return { error: e }; });
+    };
+    return part(function (url) { return joinEvents(J, url); }, J.events).then(function (ev) {
+      return part(hailTile, J.shards.j.replace("{tile}", name)).then(function (got) {
+        if (got.error) return { error: got.error };
+        var j = got.doc, zoneCode = joinZoneOf(j, "zones", key), fireCode = joinZoneOf(j, "fire", key), list = j.stations || [];
+        return Promise.all([
+          zoneCode ? part(joinFile, J.shards.z.replace("{zone}", zoneCode)) : null,
+          fireCode ? part(joinFile, J.shards.fire.replace("{zone}", fireCode)) : null,
+          Promise.all(list.map(function (st) { return part(joinFile, J.shards.s.replace("{station}", st.id)); }))
+        ]).then(function (all) {
+          return { j: j, events: ev.doc || null, eventsError: ev.error || null, zoneCode: zoneCode, zone: all[0],
+            fireCode: fireCode, fire: all[1], stations: list, sdocs: all[2] };
+        });
+      });
+    });
+  }
+
+  /** The six sections for one cell (never rejects): {reports, records, detections, warnings, zones, stations, times}; each
+      section {id, heading, what, lead, rows, lines, unavailable}, and a row {text, remark}. A section that did not load says
+      so in its unavailable sentence and shows nothing else, except a partial part, which keeps its lead and rows. */
+  function joinSections(h, cell) {
+    if (!h.joins || !h.joins.words) return Promise.resolve(null);
+    var J = h.joins, W = J.words, key = hailKey(h, cell), spot = hailCentre(h.grid, cell);
+    var lag = J.lags || {}, counts = J.counts || {};
+    var parts = function (k) { return J.parts[k] === "unavailable" ? "unavailable" : J.parts[k] === "partial" ? "partial" : "loaded"; };
+    var shell = function (k, heading) {
+      return { id: k, heading: heading, what: [W[k + "_what"], W["source_" + k]].filter(Boolean).join(" "), lead: "",
+        fire_lead: "", rows: [], lines: [], unavailable: null };
+    };
+    var finish = function (out) {
+      JOIN_PARTS.forEach(function (k) {
+        out[k].showFirst = J.show_first;
+        out[k].showAll = fill(W.show_all, { n: out[k].rows.length });
+        out[k].sample = J.state === "sample" ? W.sample : "";      // a sample build labels each section, as the B1 tag does
+      });
+      out.times = W.times_note;
+      return out;
+    };
+    var allUnavailable = function () {               // every part says why and shows nothing else (the town pages do the same)
+      var out = {};
+      JOIN_PARTS.forEach(function (k) { out[k] = shell(k, joinHeading(W, k, null, null)); out[k].unavailable = joinUnavailable(J, k); });
+      return finish(out);
+    };
+    if (J.state === "unavailable") return Promise.resolve(allUnavailable());   // no records in the store: no fetch; the words say why
+    var ftn = { start: hailDate(J.window[0]), end: hailDate(J.window[1]) };   // read only once the store is known to hold records
+    var joinFill = function (got) {
+      var out = {};
+      JOIN_PARTS.forEach(function (k) { out[k] = shell(k, joinHeading(W, k, null, null)); });
+      var j = got.j, zoneErr = got.zoneCode && got.zone && got.zone.error ? got.zone.error : null, zoneLost = !!zoneErr;
+      var zdoc = got.zone && !got.zone.error ? got.zone.doc : null;
+      var fdoc = got.fire && !got.fire.error ? got.fire.doc : null, fireLost = !!(got.fireCode && got.fire && got.fire.error);
+      if (got.zoneCode) out.zones.heading = joinHeading(W, "zones", J.zone_names[got.zoneCode] || got.zoneCode, got.zoneCode);
+      var within = function (b) {                        // a time that does not parse is not in the window
+        if (isNaN(b)) return false;
+        var iso = new Date(b).toISOString().slice(0, 10);
+        return iso >= J.window[0] && iso <= J.window[1];
+      };
+
+      // reports: the point rows within the report radius of the centre, newest first (describe_joins "reports")
+      if (parts("reports") === "unavailable" || !got.events) out.reports.unavailable = joinUnavailable(J, "reports");
+      else {
+        var rep = [];
+        (j.reports || []).forEach(function (ref) {
+          var r = got.events.reports[ref], miles = joinMiles(J, spot.lat, spot.lon, r[JROW.lat], r[JROW.lon]);
+          if (miles <= J.radius_miles.report) rep.push({ ms: joinInstant(h, r[JROW.day], r[JROW.hhmm]), miles: miles, r: r });
+        });
+        rep.sort(function (a, b) { return b.ms - a.ms; });
+        out.reports.lead = fill(W[rep.length === 1 ? "reports_lead_one" : rep.length ? "reports_lead_many" : "reports_lead_none"],
+          Object.assign({ n: rep.length }, ftn));
+        out.reports.rows = rep.map(function (x) {
+          var bearing = x.miles < J.here_miles ? null : joinCompass(J, spot.lat, spot.lon, x.r[JROW.lat], x.r[JROW.lon]);
+          return { text: joinReportText(J, x.r, x.ms, x.miles, bearing),
+            remark: x.r[JROW.remark] ? fill(W.remark_line, { remark: x.r[JROW.remark] }) : "" };
+        });
+        if (parts("reports") === "partial") out.reports.unavailable = joinUnavailable(J, "reports", J.partial.reports);
+      }
+
+      // official records: the NCEI point rows within the report radius, then the zone's rows (describe_joins "records")
+      if (parts("records") === "unavailable" || !got.events) out.records.unavailable = joinUnavailable(J, "records");
+      else {
+        var rec = [];
+        (j.records || []).forEach(function (ref) {
+          var r = got.events.records[ref], miles = joinMiles(J, spot.lat, spot.lon, r[JROW.lat], r[JROW.lon]);
+          if (miles <= J.radius_miles.report) rec.push({ ms: joinInstant(h, r[JROW.day], r[JROW.hhmm]), miles: miles, r: r, zone: null });
+        });
+        ((zdoc && zdoc.records) || []).forEach(function (r) {
+          rec.push({ ms: joinInstant(h, r[JROW.day], r[JROW.hhmm]), miles: null, r: r, zone: got.zoneCode });
+        });
+        rec.sort(function (a, b) { return b.ms - a.ms; });
+        var newest = lag.ncei ? hailDate(lag.ncei) : W.unknown_date;
+        out.records.lead = fill(W[rec.length === 1 ? "records_lead_one" : rec.length ? "records_lead_many" : "records_lead_none"],
+          Object.assign({ n: rec.length, newest: newest }, ftn));
+        out.records.rows = rec.map(function (x) {
+          if (x.zone !== null) return { text: joinZoneRecordText(J, x.r, x.ms, x.zone), remark: "" };
+          var bearing = x.miles < J.here_miles ? null : joinCompass(J, spot.lat, spot.lon, x.r[JROW.lat], x.r[JROW.lon]);
+          return { text: joinRecordText(J, x.r, x.ms, x.miles, bearing), remark: "" };
+        });
+        if (counts.ncei_zone_rows_unmatched) out.records.lines.push(fill(W[counts.ncei_zone_rows_unmatched === 1 ? "records_unplaced_one" : "records_unplaced_many"],
+          { n: counts.ncei_zone_rows_unmatched }));
+        if (parts("records") === "partial") out.records.unavailable = joinUnavailable(J, "records", J.partial.records);
+        if (zoneLost) out.records.unavailable = joinUnavailable(J, "records", [got.zoneCode], joinReason(W, zoneErr));   // D27
+      }
+
+      // radar detections: the hail detections within the detection radius, grouped by SPC day (describe_joins "detections")
+      if (parts("detections") === "unavailable") out.detections.unavailable = joinUnavailable(J, "detections");
+      else {
+        var byDay = {}, detN = 0;
+        (j.detections || []).forEach(function (d) {
+          if (joinMiles(J, spot.lat, spot.lon, d[JDET.lat], d[JDET.lon]) > J.radius_miles.detection) return;
+          var iso = joinSpcIso(J, joinInstant(h, d[JDET.day], d[JDET.hhmm]));
+          (byDay[iso] || (byDay[iso] = [])).push(d[JDET.size]);
+          detN += 1;
+        });
+        out.detections.lead = fill(W[detN === 1 ? "detections_lead_one" : detN ? "detections_lead_many" : "detections_lead_none"],
+          Object.assign({ n: detN }, ftn));
+        out.detections.rows = Object.keys(byDay).sort().reverse().map(function (iso) {
+          var sizes = byDay[iso], largest = Math.max.apply(null, sizes), inches = (largest / J.hundredths_per_inch).toFixed(2);
+          return { text: fill(W[sizes.length === 1 ? "detections_row_one" : "detections_row_many"],
+            { date: hailDate(iso), n: sizes.length, "in": inches }), remark: "" };
+        });
+        out.detections.lines = [lag.swdi ? fill(W.detections_lag, { newest: hailDate(lag.swdi) }) : W.detections_lag_none];
+        if (parts("detections") === "partial") out.detections.unavailable = joinUnavailable(J, "detections", J.partial.detections);
+      }
+
+      // warnings: the warnings whose cover has this cell's key, newest first (describe_joins "warnings")
+      if (parts("warnings") === "unavailable" || !got.events) out.warnings.unavailable = joinUnavailable(J, "warnings");
+      else {
+        var wrn = [];
+        (j.warnings || []).forEach(function (pair) {
+          if (!joinCovers(pair[1], key)) return;
+          var item = got.events.warnings[pair[0]];
+          wrn.push({ b: Date.parse(item.b), e: Date.parse(item.e), w: item });
+        });
+        wrn.sort(function (a, b) { return b.b - a.b; });
+        var noOutline = counts.warnings_no_outline || 0;
+        out.warnings.lead = !wrn.length && noOutline ? W.warnings_lead_unknown
+          : fill(W[wrn.length === 1 ? "warnings_lead_one" : wrn.length ? "warnings_lead_many" : "warnings_lead_none"],
+            Object.assign({ n: wrn.length }, ftn));
+        out.warnings.rows = wrn.map(function (x) {
+          var t = x.w.tags || {}, tags = [];
+          if (t.hail_in !== null && t.hail_in !== undefined) tags.push(fill(W.tag_hail, { value: Number(t.hail_in).toFixed(2) }));
+          if (t.wind_mph !== null && t.wind_mph !== undefined) tags.push(fill(W.tag_wind, { value: String(Math.round(t.wind_mph)) }));
+          if (t.tornado) tags.push(fill(W.tag_tornado, { value: String(t.tornado).toLowerCase() }));
+          if (t.damage) tags.push(fill(W.tag_damage, { value: String(t.damage).toLowerCase() }));
+          var ends = joinDay(x.e) === joinDay(x.b) ? "" : joinDay(x.e) + " ";      // the end's date only on a later Montana day
+          return { text: fill(W.warnings_row, { date: joinDay(x.b), begin: joinClock(J, x.b), end: ends + joinClock(J, x.e),
+            kind: J.kinds[x.w.k] || x.w.k, office: x.w.o, tags: tags.length ? tags.join(", ") : W.warnings_tags_none }), remark: "" };
+        });
+        out.warnings.lines = [lag.warnings ? fill(W.warnings_lag, { newest: hailDate(lag.warnings) }) : W.warnings_lag_none];
+        if (noOutline) out.warnings.lines.push(fill(W[noOutline === 1 ? "warnings_no_outline_one" : "warnings_no_outline_many"],
+          { n: noOutline }));
+        if (parts("warnings") === "partial") out.warnings.unavailable = joinUnavailable(J, "warnings", J.partial.warnings);
+      }
+
+      // zone products: the forecast zone's products and the fire weather zone's red flag warnings (D7, D17), windowed and
+      // ordered by their begin, or by their end when the begin is not recorded (joins._zone_when)
+      if (parts("zones") === "unavailable" || zoneLost) out.zones.unavailable = joinUnavailable(J, "zones");
+      else {
+        var groups = {}, zoneN = 0, fireN = 0, fireName = null;
+        var add = function (e, fireLabel) {                  // fireLabel: the fire weather zone's name, or null for a forecast zone
+          var begin = e.b ? Date.parse(e.b) : null, endAt = e.e ? Date.parse(e.e) : null;
+          var when = begin !== null ? begin : endAt;          // the time an event is windowed and ordered by (joins._zone_when)
+          if (when === null || !within(when)) return false;
+          var name = J.products[e.k + "." + e.s] || (e.k + "." + e.s);
+          if (fireLabel !== null) name = fill(W.fire_product, { product: name, zone_name: fireLabel, zone: got.fireCode });
+          (groups[name] || (groups[name] = [])).push({ b: begin, e: endAt, when: when, stop: joinStop(e) });
+          return true;
+        };
+        ((zdoc && zdoc.events) || []).forEach(function (e) { if (add(e, null)) zoneN += 1; });
+        if (fdoc) {
+          fireName = fdoc.name || J.fire_zone_names[got.fireCode] || got.fireCode;
+          (fdoc.events || []).forEach(function (e) { if (add(e, fireName)) fireN += 1; });
+        }
+        var zoneName = J.zone_names[got.zoneCode] || got.zoneCode;
+        out.zones.lead = !got.zoneCode ? W.zones_no_zone
+          : fill(W[zoneN === 1 ? "zones_lead_one" : zoneN ? "zones_lead_many" : "zones_lead_none"],
+            { n: zoneN, zone_name: zoneName, zone: got.zoneCode, start: ftn.start, end: ftn.end });
+        Object.keys(groups).sort(function (a, b) { return minOf(groups[b]) - minOf(groups[a]); }).forEach(function (name) {
+          var texts = groups[name].sort(function (a, b) { return a.when - b.when; }).map(function (ev) { return joinZoneSpan(J, ev); });
+          out.zones.rows.push({ text: fill(W.zones_row, { product: name, events: texts.join("; ") }), remark: "" });
+        });
+        if (counts.zone_products_unplaced) out.zones.lines.push(fill(W[counts.zone_products_unplaced === 1 ? "zones_unplaced_one" : "zones_unplaced_many"],
+          { n: counts.zone_products_unplaced }));
+        if (J.fire_state !== "loaded" || fireLost) out.zones.lines.push(W.zones_fire_unavailable);
+        else if (!got.fireCode) out.zones.lines.push(W.zones_fire_none);
+        else out.zones.fire_lead = fill(W[fireN === 1 ? "fire_lead_one" : fireN ? "fire_lead_many" : "fire_lead_none"],
+          { n: fireN, zone_name: fireName, zone: got.fireCode, start: ftn.start, end: ftn.end });
+        if (parts("zones") === "partial") out.zones.unavailable = joinUnavailable(J, "zones", J.partial.zones);
+      }
+
+      // station gusts: the station days in the window, newest first, and the days each station's file dropped (describe_joins)
+      var stationLost = got.sdocs.some(function (x) { return x && x.error; });     // a station file that did not load (D27)
+      if (parts("stations") === "unavailable" || stationLost) out.stations.unavailable = joinUnavailable(J, "stations");
+      else if (!got.stations.length) out.stations.lead = fill(W.stations_none_near, { miles: Math.floor(J.radius_miles.station) });
+      else {
+        var days = [], dropped = 0;
+        got.stations.forEach(function (st, i) {
+          var sdoc = got.sdocs[i] && !got.sdocs[i].error ? got.sdocs[i].doc : null;
+          ((sdoc && sdoc.days) || []).forEach(function (row) {
+            var iso = hailIso(h, row[JDAY.day]);
+            if (iso < J.window[0] || iso > J.window[1]) return;
+            days.push({ iso: iso, mph: row[JDAY.mph], kt: row[JDAY.kt], st: st });
+          });
+          dropped += (sdoc && sdoc.dropped) || 0;
+        });
+        days.sort(function (a, b) { return a.iso < b.iso ? 1 : a.iso > b.iso ? -1 : b.mph - a.mph; });
+        out.stations.lead = fill(W[days.length === 1 ? "stations_lead_one" : days.length ? "stations_lead_many" : "stations_lead_none"],
+          Object.assign({ n: days.length, kt_min: J.station_kt, mph_min: J.station_mph }, ftn));
+        out.stations.rows = days.map(function (x) {
+          return { text: fill(W.stations_row, { date: hailDate(x.iso), kt: Math.floor(x.kt), mph: Math.floor(x.mph),
+            station: x.st.name, miles: Number(x.st.miles).toFixed(1) }), remark: "" };
+        });
+        if (dropped) out.stations.lines.push(fill(W[dropped === 1 ? "stations_dropped_one" : "stations_dropped"],
+          { n: dropped, kt: J.implausible_kt }));
+      }
+      if (parts("stations") === "partial" && !stationLost) out.stations.unavailable = joinUnavailable(J, "stations", J.partial.stations);
+      return finish(out);
+    };
+    return joinLoad(h, cell).then(function (got) {
+      if (got.error) return allUnavailable();                        // the tile did not load: all six say so
+      try { return joinFill(got); } catch (e) { return allUnavailable(); }    // a file in a shape the sheet cannot read
+    }, allUnavailable);
+  }
+
+  /** The earliest instant of a zone group's events, by their windowing time (the begin, or the end when there is none). */
+  function minOf(list) { return list.reduce(function (m, x) { return x.when < m ? x.when : m; }, Infinity); }
+
+  /** The stop that ended a zone event (joins.ZONE_STOP_STATE, D31): "cancelled" or "upgraded", the status the build gives the
+      event's "st"; null when no stop ended it. Its words are zones_<stop> and zones_<stop>_at in WORDS_JOINS. */
+  function joinStop(e) { return e.st === "cancelled" || e.st === "upgraded" ? e.st : null; }
+
+  /** One zone event's span in words (joins._zone_event_text, D6, D16, D26, D31): "{date} {begin} to {end}", "end not recorded"
+      when there is no end, "start not recorded; end {end}" when there is no begin. An end at or before the begin of a stop
+      reads "{stop} at {time}" in place of the span (zones_<stop>_at); a stop's word follows the span (zones_<stop>). */
+  function joinZoneSpan(J, ev) {
+    var W = J.words, text, stop = ev.stop ? "zones_" + ev.stop : null;
+    if (stop && ev.b !== null && ev.e !== null && ev.e <= ev.b) return fill(W[stop + "_at"], { time: joinSpanEnd(J, ev.e, null) });
+    if (ev.b === null && ev.e === null) text = W.zones_event_no_span;
+    else if (ev.b === null) text = fill(W.zones_event_no_start, { end: joinSpanEnd(J, ev.e, null) });
+    else text = fill(W.zones_event, { date: joinDay(ev.b), begin: joinClock(J, ev.b),
+      end: ev.e === null ? W.zones_end_unset : joinSpanEnd(J, ev.e, ev.b) });
+    return text + (stop ? W[stop] : "");
+  }
+
+  /** The end of a span in Montana time (joins.fmt_end): the clock alone on the begin's day, the date and clock on a later
+      day, and the date and clock when there is no begin. */
+  function joinSpanEnd(J, e, b) {
+    if (b === null || joinDay(e) !== joinDay(b)) return joinDay(e) + " " + joinClock(J, e);
+    return joinClock(J, e);
+  }
+
+  /** The rows of one section as a list: the text, and the remark (when there is one) on a line of its own. */
+  function joinList(list, rows) {
+    list.hidden = !rows.length;
+    rows.forEach(function (row) {
+      var li = document.createElement("li");
+      li.textContent = row.text;
+      if (row.remark) { var small = document.createElement("small"); small.textContent = row.remark; li.appendChild(small); }
+      list.appendChild(li);
+    });
+  }
+
+  /** The six sections, in order, cloned from the template in map.html (#hail-join-sec) into the sheet's slot. A section that
+      did not load shows its unavailable sentence; a partial part also shows its lead and rows. The rows past the build's first
+      count go in the details element, which the reader opens. The zone's note (the Montana time line) follows the sections. */
+  function joinRender(slotEl, sections) {
+    if (!slotEl) return;
+    JOIN_PARTS.forEach(function (key) {
+      var sec = sections[key], frag = document.getElementById("hail-join-sec").content.cloneNode(true);
+      var root = frag.querySelector(".joins-sec"), at = function (name) { return root.querySelector('[data-join="' + name + '"]'); };
+      root.dataset.section = key;
+      root.hidden = false;
+      at("heading").textContent = sec.heading || "";
+      at("sample").textContent = sec.sample || "";
+      at("sample").hidden = !sec.sample;
+      if (sec.unavailable) { at("unavailable").textContent = sec.unavailable; at("unavailable").hidden = false; }
+      at("lead").textContent = sec.lead || "";
+      at("lead").hidden = !sec.lead;
+      at("fire-lead").textContent = sec.fire_lead || "";
+      at("fire-lead").hidden = !sec.fire_lead;
+      joinList(at("rows"), sec.rows.slice(0, sec.showFirst));
+      if (sec.rows.length > sec.showFirst) {
+        at("more").hidden = false;
+        at("more-summary").textContent = sec.showAll;
+        joinList(at("more-rows"), sec.rows.slice(sec.showFirst));
+      }
+      at("what").textContent = sec.what || "";
+      if (sec.lines && sec.lines.length) { at("note").textContent = sec.lines.join(" "); at("note").hidden = false; }
+      slotEl.appendChild(root);
+    });
+    if (sections.times) {
+      var note = document.createElement("p");
+      note.className = "muted";
+      note.textContent = sections.times;
+      slotEl.appendChild(note);
+    }
   }
 
   // ------------------------------------------------------------------ card mode (inside other pages)

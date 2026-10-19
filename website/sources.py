@@ -202,6 +202,129 @@ CONTRACTS = {
                    "estimate, never 'no hail'. A day with no file is listed on the page and not counted, and a day that "
                    "fails stays missing. An estimate is not a measurement at the ground and not an inspection.",
     },
+    # --hail-history builds only (build.py HAIL_CONTRACTS): the joined records behind the history's sheet and tables
+    # (B2). Each row says what its records are for the cell; the words built from them are in website/joins.py.
+    "lsr": {
+        "name": "NWS local storm reports (Iowa State archive)",
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py for Montana, one CSV per calendar month the window "
+                   "touches (the count moves with the window); the last two months are read again each daily run. Every "
+                   "window report is kept in the events table, and the sheet and town tables show those within 5 miles "
+                   "of a cell's centre.",
+        "units": "Hail in inches as reported. Thunderstorm wind gusts and sustained wind as the archive's magnitude, shown "
+                 "in mph: the archive does not state its wind unit, and the research checked it against NCEI's knots. "
+                 "Qualifier E is estimated, M measured and U unknown, in Iowa State's words. Times are UTC, shown in Montana "
+                 "time. Source is in sentence case; the remark is shown to its first 160 characters.",
+        "timing": "Each report carries the time it was valid, in UTC. The files are monthly, and the newest month grows as "
+                  "reports arrive, so its last two months are read again each day.",
+        "missing": "A magnitude of 'None' is missing, not zero; it appears on many type codes, for example D, O, E, F, "
+                   "C, T, W and Z. A report is what someone sent the NWS, not a complete record: no report is not the same "
+                   "as no hail. Known gaps: the wind "
+                   "unit is inferred; Iowa State does not document the basis of qualifiers on reports from before September "
+                   "2024.",
+    },
+    "ncei_storm_events": {
+        "name": "NOAA NCEI Storm Events, bulk details files (hail and thunderstorm wind)",
+        "request": "ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d<year>_c<creation>.csv.gz "
+                   "for the window's years; the creation date is read from NCEI's directory listing, and each file is cached "
+                   "by its name. Joined as points: Hail and Thunderstorm Wind rows with coordinates within 5 miles of a "
+                   "cell's centre. Zone-coded rows (CZ_TYPE Z) of any event type, such as High Wind, Winter Storm, Heavy "
+                   "Snow and Drought, have no coordinates and are joined by the cell's forecast zone. Not joined in this "
+                   "version: tornado, flood, flash flood, heavy rain, funnel cloud, lightning and debris flow points, and "
+                   "any county-coded row of another type.",
+        "units": "Hail in inches (MAGNITUDE). Thunderstorm wind in knots, shown in knots and in mph (1 knot is 1.15078 mph). "
+                 "MAGNITUDE_TYPE: MG measured gust, EG estimated gust, MS measured sustained, ES estimated sustained. Begin "
+                 "times are local (MST-7, the file's CZ_TIMEZONE), converted to UTC and then to Montana time.",
+        "timing": "Yearly files that NCEI updates monthly. The sheet shows the newest event the database holds, so the lag is "
+                  "stated on each page.",
+        "missing": "A zone-coded row has no coordinates and is shown with its zone, not as a point. A county-coded row "
+                   "with no coordinates is not joined. A blank magnitude is missing, not zero. Known gaps: NCEI's database "
+                   "runs behind the other sources and has no "
+                   "events after its newest event date (shown on the sheet); NCEI cuts source names at 20 characters. "
+                   "NCEI's documentation checked does not say whether its begin times use daylight time. In summer 2025, "
+                   "some NCEI begin times ran an hour before the matching LSR reports; the cause is not established.",
+    },
+    "swdi_nx3hail": {
+        "name": "NCEI SWDI NEXRAD hail signatures (radar detections)",
+        "request": "ncei.noaa.gov/swdiws/csv/nx3hail/<start>:<end>?bbox=-116.05,44.36,-104.04,49.00, one request per month "
+                   "(start inclusive, end exclusive). Exact duplicate rows are dropped, and the three footer lines (summary, "
+                   "count and time) are not rows. Detections within 2 miles of a cell's centre are joined, grouped by SPC day.",
+        "units": "MAXSIZE in inches, in steps of a quarter inch. PROB is the probability of hail in percent; this filtered "
+                 "product keeps PROB 100 with a maximum size above zero. A signature is the radar algorithm's detection for a "
+                 "storm cell, not hail on the ground.",
+        "timing": "Each detection is dated to the second, in UTC. The archive's inventory lagged the data by a median of "
+                  "0.75 day from 1 September to 14 October 2026, but by 19.5 days (June 2025) and 64.4 days (February "
+                  "2026) in the inventory samples checked. Its last-update times do not state a time zone, so the lags are "
+                  "good to about 0.2 day. The sheet shows the newest detection date in this build, the last day with a "
+                  "detection, not the archive's last day.",
+        "missing": "The filtered product drops most signatures, so a day with none is not the same as no hail. A missing or "
+                   "zero MAXSIZE is not shown as a size. Known gaps: the archive's inventory is not complete. On 2025-06-15 "
+                   "it holds no signature in this box after 03:29 UTC, although its inventory lists the day as complete. "
+                   "SWDI states a general spatial accuracy of 1 degree by 1 km, from 1 km to 4 km at 230 km from a radar.",
+    },
+    "nws_warnings_polygons": {
+        "name": "NWS severe thunderstorm, tornado and flash flood warnings (Iowa State archive)",
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py for Montana, per year and one phenomenon per "
+                   "request (SV, TO and FF are not returned together), with limitps=1 and the issuance polygons only. Expired "
+                   "rows are skipped, and county rows (gtype C) are twins of polygon rows, also skipped. A cell is covered "
+                   "when its centre lies inside a polygon.",
+        "units": "Begin and end times are UTC, shown in Montana time. Tags as the archive gives them: hail in inches, wind in "
+                 "mph, the tornado tag word and the NWS damage threat tag. Iowa State drops the '<' sign of a tag, so a tag "
+                 "shows its number only.",
+        "timing": "Each warning is dated by its issue and polygon times, in UTC. The newest year is read again each daily run.",
+        "missing": "A new warning with no outline cannot be tied to a spot: it is counted, and the sheet says how many. "
+                   "When no matched warning covers a spot and some warnings have no outline, the sheet says the warnings "
+                   "cannot be checked, which is not the same as no warning. A missing tag is shown as not given, never as "
+                   "zero. Tags are the forecast threat at issue time, not what fell. Known gaps: follow-up polygons are not "
+                   "used, so a warning extended after issue shows at its issue polygon. In the five-year window the archive "
+                   "gives both hail and wind tags for every severe thunderstorm warning checked.",
+    },
+    "nws_zone_products": {
+        "name": "NWS zone-based warnings (Iowa State archive, zone rows)",
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py for Montana, zone rows (gtype C with a UGC "
+                   "zone code), per year and one phenomenon per request with limitps=1, for ten products: HW.W (high "
+                   "wind warning), WS.W (winter storm warning), BZ.W (blizzard warning), IS.W (ice storm warning), EC.W "
+                   "(extreme cold warning), WC.W (wind chill warning), DS.W (dust storm warning), WI.Y (wind advisory), "
+                   "FW.W (red flag warning) and FA.A (flood watch). A cell's forecast zone is its NWS public forecast "
+                   "zone, found by point in "
+                   "polygon at build time from the NWS zone file. Red flag warnings are matched to the cell's NWS fire "
+                   "weather zone, a separate zone map, found the same way from the NWS fire zone file. Each product takes "
+                   "the zone code of the public zone edition in force at its issue time: the NWS links two editions across "
+                   "the window, and the earlier one is read too.",
+        "units": "Begin and end times are UTC, shown in Montana time. The product is named in words, for example 'High wind "
+                 "warning'. No measurement is given: the product covered the whole zone.",
+        "timing": "Each row has its issue and expiry times and a status (NEW, CON, EXT, EXA, EXB, UPG, EXP or CAN). A zone "
+                  "event is one VTEC event: its key is the zone, the phenomenon, the significance, the issuing office, the "
+                  "event number and the year, and rows with other issue times are updates of that event, never new events. "
+                  "A span starts at the earliest issue time of its new or continued rows, or of its earliest row when it has "
+                  "none. It ends at the earliest cancellation or upgrade time when the archive gives one (an upgrade ends the "
+                  "lower product at the upgrade time, as NWS Instruction 10-1703 says, and the sheet says upgraded), else at "
+                  "the latest expiry of its other rows. Its end is not recorded when neither is given. The newest year is "
+                  "read again each daily run.",
+        "missing": "A zone with no product in the window is listed as none, which is not the same as no wind. The product "
+                   "covered the whole forecast zone, named, and not this spot alone. A product the build cannot place on a zone "
+                   "(its code is in no zone of the edition in force) is counted, and the sheet says how many in Montana. "
+                   "FL.W (flood warning) is a polygon product and is not joined in this version. Flood watches are joined "
+                   "where the archive gives a zone code; county-only flood watches are not joined in this version. Known "
+                   "gaps: zone "
+                   "rows carry cancelled and expired statuses as the archive gives them. An event number that NWS "
+                   "re-used for separate periods in one zone is one span here, which can hide a later period (four zones in "
+                   "five years). NCEI names some zones by an "
+                   "older name (Little Rocky Mountains under code MTZ060, for example); rows are placed by code, not by name.",
+    },
+    "asos_daily_gusts": {
+        "name": "Iowa State daily summary, Montana airport stations (ASOS)",
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/daily.py for the MT_ASOS network, one station and year per "
+                   "request (max_wind_gust_kts). The two nearest stations to a tile's centre within 40 miles are joined. Each "
+                   "station's file is cached by station and year, and the current year is read again each daily run.",
+        "units": "Knots as the archive gives them, which are not always whole knots. Shown as whole knots and whole miles per "
+                 "hour (1 knot is 1.15078 mph before rounding). Days with a maximum gust of 50 knots (58 mph) or more are "
+                 "listed. Values of 130 knots or more are dropped as implausible for these sites and counted.",
+        "timing": "One maximum per station per local day. The current year is read again each daily run.",
+        "missing": "A station-day with no value is missing, not zero. A station reading is at the airport, not at this "
+                   "address. Known gaps: the summary does not name the reading its gust comes from (a METAR gust or the peak "
+                   "wind); about 39 percent of the values checked were not whole knots, and they match whole mph; 42 of the "
+                   "network's 60 stations are ongoing, so some places have no station within 40 miles.",
+    },
 }
 
 

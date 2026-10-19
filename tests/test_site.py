@@ -354,7 +354,9 @@ class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
         self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "stations",
                                               "observations", "reports", "radar", "forecast_model", "storm_levels",
-                                              "satellite", "basemap", "imagery", "hail_history"})
+                                              "satellite", "basemap", "imagery", "hail_history", "lsr",
+                                              "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons",
+                                              "nws_zone_products", "asos_daily_gusts"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
@@ -1709,6 +1711,18 @@ class HailHistory(unittest.TestCase):
         self.assertIn('tag.className = "sample-tag";', show)
         self.assertIn("tag.textContent = h.words.sample;", show)
 
+    def test_the_sheet_shows_the_radar_days_before_the_joins(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        open_hail = js[js.index("function openHail("):js.index("function onHailClick(")]
+        self.assertIn('hailShow(h, "loaded", text, null);', open_hail)
+        self.assertIn('joinRender(el.sheetBody.querySelector(\'[data-hail="joins"]\'), joins);', open_hail)
+        self.assertNotIn('hailShow(h, "loaded", text, joins)', open_hail)
+
+    def test_a_warning_row_gives_the_end_date_only_on_a_later_montana_day(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('var ends = joinDay(x.e) === joinDay(x.b) ? "" : joinDay(x.e) + " ";', js)
+        self.assertIn("end: ends + joinClock(J, x.e),", js)
+
     def test_every_placeholder_is_filled_by_the_map_script(self):
         from website import hail as hs
         js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
@@ -1844,6 +1858,724 @@ class HailHistory(unittest.TestCase):
         for name in ("check_hail", "check_no_hail", "no_estimate_spot", "outside_spot"):
             self.assertTrue(callable(getattr(smoke, name, None)), name)
         self.assertEqual(smoke.HAIL_GATE, (47.025, -110.135))       # the centre of cell (797, 1986) (decision 15)
+
+
+class HailJoins(unittest.TestCase):
+    """The joined records behind the hail history (B2, website/joins.py): six contract rows gated like the store's, the
+    About paragraph on the kinds joined and the sources not joined, the sheet and town markup, and a flag-off build with
+    none of it. The records themselves are checked in tests/test_joins.py (builder 1)."""
+
+    JOIN_KEYS = ("lsr", "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons", "nws_zone_products",
+                 "asos_daily_gusts")
+    HAIL_NOW = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
+    # the words a row or paragraph must not state as a fact (AGENTS.md rule 5); "damage threat" is the warning tag's own
+    # word and "not the same as no hail" is the negation the words always carry
+    FORBIDDEN = re.compile(r"\bdamag\w*|\bdry\b|\bclear\b|\binsurance\b|\beligib\w*|\bconfirm\w*|\bcustomers?\b|"
+                           r"\bbest\b|\bguarantee\w*", re.I)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.off = Path(tempfile.mkdtemp(prefix="hailwatch-join-off-"))
+        cls.on = Path(tempfile.mkdtemp(prefix="hailwatch-join-on-"))
+        cls.addClassCleanup(shutil.rmtree, cls.off, True)      # only the folders this class made
+        cls.addClassCleanup(shutil.rmtree, cls.on, True)
+        site.build(cls.off, None, cls.HAIL_NOW, sample=True)
+        site.build(cls.on, None, cls.HAIL_NOW, sample=True, hail_history=True)
+
+    def test_six_contract_rows_are_present_complete_and_gated_like_the_store(self):
+        for key in self.JOIN_KEYS:
+            row = src.CONTRACTS[key]
+            for field in ("name", "request", "units", "timing", "missing"):
+                self.assertTrue(row[field].strip(), (key, field))
+            self.assertIn(key, site.HAIL_CONTRACTS)
+            self.assertNotIn(key, site.STORM_CONTRACTS)
+        self.assertEqual(list(src.CONTRACTS)[-6:], list(self.JOIN_KEYS))
+
+    def test_the_contract_rows_state_no_damage_insurance_or_all_clear(self):
+        for key in self.JOIN_KEYS:
+            text = " ".join(src.CONTRACTS[key].values())
+            plain = re.sub(r"damage threat|not the same as no (?:hail|wind)", "", text, flags=re.I)
+            self.assertIsNone(self.FORBIDDEN.search(plain), key)
+            self.assertNotRegex(plain, r"\bno hail\b", key)
+            self.assertNotRegex(plain, r"\bno wind\b", key)
+
+    def test_the_about_page_names_the_kinds_joined_and_the_sources_not_joined(self):
+        about = " ".join(page(self.on, "about.html").split())
+        self.assertIn("Other records for the same cell", about)
+        for phrase in ("NWS local storm reports within 5 miles", "NEXRAD hail signatures within 2 miles",
+                       "not hail on the ground", "severe thunderstorm, tornado and flash flood polygons",
+                       "the two nearest airport stations within 40 miles", "Not joined: the SPC storm reports",
+                       "the HRRR modelled gust (a model, not a reading)", "the DAT storm survey points (few in Montana)"):
+            self.assertIn(phrase, about)
+        for name in ("NWS local storm reports (Iowa State archive)",):
+            self.assertIn(name, about)
+        self.assertNotIn("Other records for the same cell", page(self.off, "about.html"))
+        self.assertNotIn("Not joined: the SPC", page(self.off, "about.html"))
+
+    def test_the_six_contract_rows_appear_on_the_about_page_only_with_the_flag(self):
+        on, off = page(self.on, "about.html"), page(self.off, "about.html")
+        for key in self.JOIN_KEYS:
+            name = src.CONTRACTS[key]["name"]
+            self.assertIn(name, on)
+            self.assertNotIn(name, off)
+
+    def test_the_flag_off_build_has_no_join_markup_anywhere(self):
+        for path in sorted(self.off.rglob("*.html")):
+            text = path.read_text(encoding="utf-8")
+            for words in ("hail-join-sec", "joins-sec", "joins-rows", "joins-more", 'data-hail="joins"',
+                          "Other records for the same cell", "Hail history, five years"):
+                self.assertNotIn(words, text, f"{words!r} in {path.name}")
+        self.assertFalse((self.off / "hail").exists())
+        self.assertNotIn("hail", json.loads(page(self.off, "data/map.json")))
+
+    def test_the_sheet_has_the_template_slots_for_the_six_sections(self):
+        on = page(self.on, "map.html")
+        self.assertIn('<template id="hail-join-sec">', on)
+        self.assertIn('<div data-hail="joins"></div>', on)
+        for slot in ("heading", "sample", "lead", "fire-lead", "rows", "more", "more-summary", "more-rows", "what", "note",
+                     "unavailable"):
+            self.assertIn(f'data-join="{slot}"', on, slot)
+        off = page(self.off, "map.html")
+        self.assertNotIn("hail-join-sec", off)
+        self.assertNotIn('data-hail="joins"', off)
+
+
+    # the browser's joined-records block (map.js, from "joined records at a spot" to the card mode): code only, no comments
+    BLOCK_FORBIDDEN = (" in ", "mph", " kt", "knot", "mile", " mi", "inch", "hundredth", "millimet", "damage", "insurance",
+                       "eligib", "all clear", "no hail", "no wind", "estimated", "measured", "unknown", "warning",
+                       "radar", "nws", "ncei", "swdi", "iem", "benchland", "utica", "montana", "severe", "tornado",
+                       "flash", "hail", "wind", "rain", "snow", "dbz", "tenths", "radius")
+
+    @staticmethod
+    def joins_block_code() -> str:
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        block = js[js.index("joined records at a spot (--hail-history builds, B2)"):js.index("card mode (inside other pages)")]
+        code = re.sub(r"/\*.*?\*/", "", block, flags=re.S)
+        return re.sub(r"//[^\n]*", "", code)
+
+    def test_the_browser_joins_hold_no_unit_threshold_or_sentence_of_their_own(self):
+        code = self.joins_block_code()
+        for text in re.findall(r'"((?:[^"\\\n]|\\.)*)"', code):          # every double-quoted string
+            if " " not in text:                                           # an identifier or a key, not a sentence
+                continue
+            for word in self.BLOCK_FORBIDDEN:
+                self.assertNotIn(word, text.lower(), (word, text))
+        # the field maps name the record rows' indices: their declarations are the one place those numbers live
+        bare = re.sub(r"var (?:JROW|JDET|JDAY) = \{[^}]*\};", "", code)
+        numbers = set(re.findall(r"(?<![\w.])(\d+(?:\.\d+)?)", bare))
+        # 0-4: indices, the nibble and digit arithmetic and the decimal places; 10: an ISO date's length; 16: hex;
+        # 60 and 100: the hhmm and minute arithmetic of the time codes; 180: the degrees-to-radians factor
+        self.assertLessEqual(numbers, {"0", "1", "2", "3", "4", "10", "16", "60", "100", "180"}, numbers)
+
+    def test_every_word_the_browser_fills_is_one_the_build_writes(self):
+        from website import joins as jn
+        known = set(jn.WORDS_JOINS) | set(site.JOIN_SITE_WORDS)
+        code = self.joins_block_code()
+        used = set(re.findall(r"\bW\.(\w+)", code)) | set(re.findall(r'\bW\["(\w+)"\]', code)) | \
+            set(re.findall(r"\bJ\.words\.(\w+)", code))
+        self.assertFalse(sorted(used - known), sorted(used - known))
+        for part in jn.PARTS:                                            # the keys each part's sections are built from
+            for key in (f"{part}_heading", f"{part}_what", f"source_{part}", f"feed_{part}"):
+                self.assertIn(key, known, key)
+            if part != "zones":
+                self.assertIn(f"{part}_lead_none", known, part)
+        for key in ("reports_row", "reports_row_here", "records_zone_row", "detections_row_one", "detections_row_many",
+                    "warnings_row", "zones_row", "zones_event", "stations_row", "unavailable", "partial", "show_all"):
+            self.assertIn(key, known, key)
+        for stop in jn.ZONE_STOP_WORDS:                 # the browser names a stop's words as zones_<stop> and zones_<stop>_at
+            for key in (f"zones_{stop}", f"zones_{stop}_at"):
+                self.assertIn(key, jn.WORDS_JOINS, key)
+        for stop in ("cancelled", "upgraded"):          # the stops map.js reads: joins.ZONE_STOP_STATE's words
+            self.assertIn(stop, jn.ZONE_STOP_WORDS)
+
+
+def write_joined_store(dest: Path) -> Path:
+    """A small store with the joined records (hail/j, hail/z, hail/s) built on the B1 fixture, written into dest (a folder
+    the caller made). The values are invented for the test; the formats are joins.py's: one events table holds every
+    report, record and warning row once (hail/j/events.json), each tile refers to its rows by index, a warning comes
+    with the tile's cover of cell keys, and a tile's zones map each zone code to its cell keys. The Benchland day
+    (2025-06-15) has an LSR hail report of 1.75 in at 20:10 UTC and an NCEI record at the same time, a Thunderstorm Wind
+    record in knots, radar detections, a severe thunderstorm warning covering the cell, one zone, and the Billings
+    station's gusts. The manifest lists every file, as hail.load_store checks it."""
+    from website import hail as hs
+    hail = dest / "hail"
+    shutil.copytree(hs.FIXTURE_DIR / "hail", hail)
+    day = (date(2025, 6, 15) - hs.D0).days
+    prev = (date(2025, 6, 14) - hs.D0).days
+    later = (date(2025, 6, 17) - hs.D0).days
+
+    def cover(keys):
+        value = 0
+        for key in keys:
+            value |= 1 << key
+        return f"{value:025x}"
+
+    def row(d, t, lat, lon, code, mag, unit, qual, src, city, remark):
+        return [d, t, lat, lon, code, mag, unit, qual, src, city, remark]
+
+    def record(d, t, lat, lon, code, mag, unit, qual, src, city, remark, mph, kt):
+        return row(d, t, lat, lon, code, mag, unit, qual, src, city, remark) + [mph, kt]
+
+    remark = "Public caller updated with golf ball sized hail a few minutes after initial call."
+    reports = [row(day, 545, 46.97, -110.09, "H", "1.0", "in", "E", "Public", "Utica", ""),                     # 0
+               row(day, 2010, 47.08, -110.02, "H", "1.75", "in", "E", "Public", "Benchland", remark),           # 1
+               row(day, 2005, 47.08, -110.02, "H", "1.0", "in", "M", "Public", "Benchland", ""),                # 2
+               row(day, 2020, 47.08, -110.02, "H", "1.25", "in", "M", "Trained Spotter", "Benchland", "")]      # 3
+    records = [record(day, 2010, 47.08, -110.02, "hail", "1.75", "in", "", "Public", "Judith Basin", "", None, None),
+               record(day, 2000, 47.00, -110.10, "thunderstorm wind", "56", "kt", "MG", "Mesonet", "Test", "", 64, 56)]
+    warnings = [{"k": "SV", "b": "2025-06-15T20:33Z", "e": "2025-06-15T21:00Z", "o": "TFX",
+                 "tags": {"hail_in": 1.0, "wind_mph": 50.0, "damage": "", "tornado": ""}}]
+    bil = {"id": "BIL", "name": "Billings Logan", "lat": 45.8072, "lon": -108.5429, "miles": 30.2}
+    tiles = {
+        "r0079_c0198": {   # the gate cell's tile (797, 1986): key 76, the zone MTZ048
+            "reports": [0, 1], "records": [0, 1], "warnings": [[0, cover([76])]],
+            "detections": [[day, 300, 47.02, -110.13, 75], [day, 2030, 47.07, -110.01, 100]],
+            "zones": {"MTZ048": [76]}, "fire": {"MTZ117": [76]}, "stations": [bil]},
+        "r0079_c0199": {   # Benchland's own cell (792, 1998): key 28, the same zone
+            "reports": [2, 1, 3], "records": [0], "warnings": [[0, cover([28])]],
+            "detections": [[day, 2030, 47.07, -110.01, 100], [day, 2000, 47.075, -110.015, 75]],
+            "zones": {"MTZ048": [28]}, "stations": [bil]},
+        "r0092_c0214": {   # Billings' tile: no reports; the airport's gusts
+            "reports": [], "records": [], "warnings": [], "detections": [], "zones": {},
+            "stations": [dict(bil, miles=1.2)]},
+    }
+    (hail / "j").mkdir(exist_ok=True)
+    events = {"f": "hail-events-v1", "d0": "2020-01-01", "reports": reports, "records": records, "warnings": warnings}
+    (hail / "j" / "events.json").write_text(json.dumps(events, separators=(",", ":")), encoding="utf-8")
+    for name, body in tiles.items():
+        doc = {"f": "hail-joins-v1", "r": int(name[1:5]), "c": int(name[7:11]), "d0": "2020-01-01", **body}
+        (hail / "j" / f"{name}.json").write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
+    (hail / "z").mkdir(exist_ok=True)
+    # the zone's products: a high wind warning, and a winter storm warning cancelled with no start recorded (D16)
+    zone = {"f": "hail-zone-v1", "zone": "MTZ048", "name": "Judith Basin",
+            "events": [{"k": "HW", "s": "W", "b": "2025-06-15T18:00Z", "e": "2025-06-16T02:00Z", "o": "BYZ"},
+                       {"k": "WS", "s": "W", "b": None, "e": "2025-06-15T06:00Z", "st": "cancelled", "o": "BYZ"}],
+            "records": [record(day, 1100, 47.0, -110.5, "high wind", "58", "kt", "", "Mesonet", "Test", "", 67, 58),
+                        record(day, 300, 47.0, -110.5, "winter storm", "", "", "", "Mesonet", "Test", "", None, None)]}
+    (hail / "z" / "MTZ048.json").write_text(json.dumps(zone, separators=(",", ":")), encoding="utf-8")
+    # the fire weather zone's red flag warnings (D7, D17): one with a start and an end, and one with a start and no end
+    fire = {"f": "hail-zone-v1", "kind": "fire", "zone": "MTZ117", "name": "Central and Eastern Lewis and Clark National "
+            "Forest Areas", "events": [{"k": "FW", "s": "W", "b": "2025-06-15T16:00Z", "e": "2025-06-15T23:00Z", "o": "TFX"},
+                                       {"k": "FW", "s": "W", "b": "2025-06-14T15:00Z", "e": None, "o": "TFX"}]}
+    (hail / "z" / "fire-MTZ117.json").write_text(json.dumps(fire, separators=(",", ":")), encoding="utf-8")
+    (hail / "s").mkdir(exist_ok=True)
+    station = {"f": "hail-station-v1", "id": "BIL", "name": "Billings Logan", "lat": 45.8072, "lon": -108.5429,
+               "days": [[day, 58, 50], [prev, 69, 60], [later, 40, 35]], "dropped": 1}
+    (hail / "s" / "BIL.json").write_text(json.dumps(station, separators=(",", ":")), encoding="utf-8")
+    index = json.loads((hail / "index.json").read_text(encoding="utf-8"))
+    index["joins"] = {
+        "built_at": "2026-10-18T12:00:00Z", "lsr_rows": 4, "ncei_rows": 2, "ncei_newest_event": "2026-06-30",
+        "swdi_rows": 3, "warnings": {"SV": 2, "TO": 0, "FF": 0}, "zone_events": 2, "zones": 1, "stations": 1,
+        "station_days": 3, "sources": {}, "state": "loaded",
+        "parts": {part: "loaded" for part in ("reports", "records", "detections", "warnings", "zones", "stations")},
+        "reasons": {}, "lags": {"ncei": "2026-06-30", "swdi": "2026-10-14", "warnings": "2026-10-16"}, "partial": {},
+        "zone_names": {"MTZ048": "Judith Basin"}, "fire_zones": {"state": "loaded"},
+        "fire_zone_names": {"MTZ117": "Central and Eastern Lewis and Clark National Forest Areas"},
+        "zone_products_unplaced": 2, "warnings_no_outline": 0,
+        "types": {"H": "hail", "G": "thunderstorm wind gust", "N": "non-thunderstorm wind gust", "R": "heavy rain"},
+        "cover": "bit k is cell key k", "shapes": {}, "montana_time": []}
+    (hail / "index.json").write_text(json.dumps(index, indent=1), encoding="utf-8")
+    manifest_path = hail / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    files = {}
+    for path in sorted(hail.rglob("*")):
+        if path.is_dir() or path.name == "manifest.json":
+            continue
+        data = path.read_bytes()
+        files[path.relative_to(dest).as_posix()] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+    manifest["files"] = files
+    manifest_path.write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+    return dest
+
+
+def write_store_without_joins(dest: Path) -> Path:
+    """The SAMPLE fixture's hail/ folder copied into dest with its joined records taken out (no j/, z/ or s/ folders and no
+    joins block in the index), with a manifest that lists what is left: a store of the B1 kind."""
+    from website import hail as hs
+    hail = dest / "hail"
+    shutil.copytree(hs.FIXTURE_DIR / "hail", hail)
+    for name in ("j", "z", "s"):
+        shutil.rmtree(hail / name, ignore_errors=True)
+    index_path = hail / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    index.pop("joins", None)
+    index_path.write_text(json.dumps(index, indent=1), encoding="utf-8")
+    manifest_path = hail / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["files"] = {}
+    for path in sorted(hail.rglob("*")):
+        if path.is_dir() or path.name == "manifest.json":
+            continue
+        data = path.read_bytes()
+        manifest["files"][path.relative_to(dest).as_posix()] = {"bytes": len(data),
+                                                              "sha256": hashlib.sha256(data).hexdigest()}
+    manifest_path.write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+    return dest
+
+
+JOIN_IDS = ("reports", "records", "detections", "warnings", "zones", "stations")
+BROWSER_JOINS_START = "joined records at a spot (--hail-history builds, B2)"     # the joined block in map.js
+BROWSER_JOINS_END = "card mode (inside other pages)"
+# node runs the sheet's joined-records code from map.js: the input (code, h, cells, site, tz) comes on stdin as JSON, the six
+# sections of each cell go out as JSON. Only fetch is stubbed: it reads the built site's files, as the browser would.
+NODE_JOINS_SCRIPT = r"""
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+let raw = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => { raw += chunk; });
+process.stdin.on("end", () => {
+  const input = JSON.parse(raw);
+  const fetchFile = (url) => new Promise((resolve) => {
+    fs.readFile(path.join(input.site, url), "utf8", (err, text) => resolve(err ? { ok: false, status: 404 }
+      : { ok: true, status: 200, json: () => new Promise((ok) => ok(JSON.parse(text))) }));   // a bad body rejects, as json() does
+  });
+  const ctx = vm.createContext({ Intl: Intl, Date: Date, Math: Math, JSON: JSON, Promise: Promise, Set: Set,
+    Object: Object, Array: Array, String: String, Number: Number, Error: Error, isFinite: isFinite,
+    fetch: fetchFile, data: { tz: input.tz }, hailTiles: {} });
+  vm.runInContext(input.code, ctx);
+  vm.runInContext("this.runCells = async (h, cells) => { const out = []; for (const c of cells) " +
+    "out.push(await joinSections(h, c)); return out; };", ctx);
+  ctx.runCells(input.h, input.cells).then((out) => process.stdout.write(JSON.stringify(out)),
+    (err) => { process.stderr.write(String((err && err.stack) || err)); process.exit(1); });
+});
+"""
+
+
+def js_function(js: str, name: str) -> str:
+    """One top-level function of map.js (two-space indent, as the file writes them): its own line when it is one line,
+    else its lines up to the closing brace at the same indent."""
+    lines = js.split("\n")
+    first = next(n for n, line in enumerate(lines) if line.startswith(f"  function {name}("))
+    if lines[first].count("{") == lines[first].count("}"):
+        return lines[first]
+    last = next(n for n in range(first + 1, len(lines)) if lines[n] == "  }")
+    return "\n".join(lines[first:last + 1])
+
+
+def browser_join_code(js: str) -> str:
+    """The part of map.js the sheet's joined records run on: the constants and helpers the block calls, then the block
+    from its heading to the card mode. Nothing else of the page is run."""
+    consts = [line for line in js.split("\n") if re.match(r"  var (MIN|HAIL_DAY_MS|dtfUtcDay|hailTiles)\b", line)]
+    helpers = [js_function(js, name) for name in ("fill", "pad4", "hailIso", "hailDate", "hailKey", "hailTileName",
+                                                  "hailTile", "hailFailure")]
+    start = js.rindex("\n", 0, js.index(BROWSER_JOINS_START)) + 1          # from the start of the heading's line
+    end = js.rindex("\n", 0, js.index(BROWSER_JOINS_END)) + 1               # up to the card mode's heading line
+    return "\n".join(consts + helpers + [js[start:end]])
+
+
+def node_join_sections(site: Path, h: dict, tz: str, cells: list[dict]) -> list[dict]:
+    """The six sections for each cell as the browser's code writes them (joinSections in map.js, under node), with h the
+    map.json hail block the page would read and site the built folder its fetches read."""
+    js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+    payload = {"code": browser_join_code(js), "site": str(site), "h": h, "tz": tz, "cells": cells}
+    done = subprocess.run([shutil.which("node"), "-e", NODE_JOINS_SCRIPT], input=json.dumps(payload),
+                          capture_output=True, text=True, timeout=120)
+    if done.returncode:
+        raise AssertionError(f"the browser's joined records did not run under node: {done.stderr[-800:]}")
+    return json.loads(done.stdout)
+
+
+def module_view(sec: dict) -> dict:
+    """A section as describe_joins writes it, in the comparable form the browser's section is put in below."""
+    return {"id": sec["id"], "heading": sec["heading"], "what": " ".join(x for x in (sec["what"], sec["source"]) if x),
+            "lead": sec["lead"] or "", "fire_lead": sec.get("fire_lead") or "",
+            "rows": [[r["text"], r["remark"] or ""] for r in sec["rows"]],
+            "lines": list(sec["lines"]), "unavailable": sec["unavailable"] or ""}
+
+
+def browser_view(sec: dict) -> dict:
+    """A section as the browser's code writes it (its what already holds the source line), in the same form."""
+    return {"id": sec["id"], "heading": sec["heading"], "what": sec["what"], "lead": sec["lead"] or "",
+            "fire_lead": sec.get("fire_lead") or "", "rows": [[r["text"], r["remark"] or ""] for r in sec["rows"]],
+            "lines": list(sec["lines"] or []), "unavailable": sec["unavailable"] or ""}
+
+
+class HailJoinedRecords(unittest.TestCase):
+    """The joined records in a built site (B2), from a store made here: the sheet's data, the town tables, the words the
+    build writes, and a store without the records. The store is invented for the test (write_joined_store says so); the
+    real store is checked by tools/smoke_map.py and by builder 1's verification."""
+
+    NOW = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = Path(tempfile.mkdtemp(prefix="hailwatch-joined-"))        # this class made it; only it removes it
+        cls.addClassCleanup(shutil.rmtree, cls.tmp, True)
+        cls.store = write_joined_store(cls.tmp / "store")
+        cls.site = cls.tmp / "site"
+        cls.result = site.build(cls.site, None, cls.NOW, sample=True, hail_history=True,
+                                hail_store_path=str(cls.store))     # sample: no network for the other feeds
+        cls.plain = cls.tmp / "plain"
+        cls.plain_store = write_store_without_joins(cls.tmp / "plain-store")
+        cls.plain_site = site.build(cls.plain, None, cls.NOW, sample=True, hail_history=True,
+                                    hail_store_path=str(cls.plain_store))
+
+    def test_the_map_block_carries_the_words_radii_and_zone_names_the_browser_reads(self):
+        m = json.loads(page(self.site, "data/map.json"))["hail"]
+        j = m["joins"]
+        self.assertEqual(j["state"], "loaded")
+        self.assertEqual(j["radius_miles"], {"report": 5.0, "detection": 2.0, "station": 40.0})
+        self.assertEqual(j["shards"], {"j": "hail/j/{tile}.json", "z": "hail/z/{zone}.json", "s": "hail/s/{station}.json",
+                                       "fire": "hail/z/fire-{zone}.json"})
+        self.assertEqual(j["fire_state"], "loaded")
+        self.assertEqual(j["counts"], {"warnings_no_outline": 0, "ncei_zone_rows_unmatched": 0, "zone_products_unplaced": 2})
+        self.assertGreater(j["earth_radius_km"], 6000)
+        self.assertEqual(j["zone_names"], {"MTZ048": "Judith Basin"})
+        self.assertEqual((j["hail_unit"], j["show_first"], j["spc_hours"], j["hundredths_per_inch"]), ("in", 10, 12, 100))
+        self.assertEqual(j["unit_words"], {"mph": "magnitude_mph", "kt": "magnitude_kt"})
+        for key in ("show_all", "times_note", "reports_row", "zones_heading_no_zone", "unknown_date", "unavailable",
+                    "partial", "part_reports", "one_reports", "fire_lead_one", "zones_lead_one", "fire_product"):
+            self.assertIn(key, j["words"])
+        for key in ("not_known", "zone_unknown_name", "zone_unknown_code"):
+            self.assertNotIn(key, j["words"])
+
+    def test_the_billings_town_page_has_the_six_tables_in_order(self):
+        town = page(self.site, "town/billings.html")
+        order = re.findall(r'<section class="joins-sec" data-section="(\w+)"', town)
+        self.assertEqual(order, ["reports", "records", "detections", "warnings", "zones", "stations"])
+        self.assertIn("Station: Jun 15, 2025: 50 kt (58 mph) at Billings Logan, about 1.2 miles away", town)
+        self.assertIn("Station: Jun 14, 2025: 60 kt (69 mph) at Billings Logan, about 1.2 miles away", town)
+        self.assertLess(town.index("Jun 15, 2025: 50 kt"), town.index("Jun 14, 2025: 60 kt"))    # newest first
+        self.assertIn("A station reading is at the airport, not at this address.", town)
+
+    def test_the_module_words_for_the_gate_and_benchland_cells(self):
+        from website import hail as hs
+        from website import joins as jn
+        index = hs.load_index(self.site)
+        def words(lat, lon):
+            row, col = hs.cell_for(lat, lon)
+            tile = json.loads((self.site / "hail" / "j" / f"{hs.tile_name(row // 10, col // 10)}.json").read_text("utf-8"))
+            return jn.describe_joins(index, tile, row, col, self.NOW, sample=False, store_dir=self.site)
+        gate = {sec["id"]: sec for sec in words(47.025, -110.135)["sections"]}
+        self.assertIn("1 NWS local storm report within 5 miles", gate["reports"]["lead"])   # the 1.75 report is 6.6 miles away
+        self.assertIn("Jun 14, 2025 11:45 pm MDT", gate["reports"]["rows"][0]["text"])  # 05:45 UTC on Jun 15, the newest report
+        self.assertIn("Jun 14, 2025 11:45 pm MDT: hail, 1.00 in (estimated), Public, 4.4 mi SE", gate["reports"]["rows"][0]["text"])
+        self.assertIn("TFX", gate["warnings"]["rows"][0]["text"])
+        bench = {sec["id"]: sec for sec in words(47.075, -110.015)["sections"]}
+        rows = bench["reports"]["rows"]                       # newest first: the 2:20 pm report leads
+        self.assertIn("Jun 15, 2025 2:20 pm MDT: hail, 1.25 in (measured), Trained Spotter, 0.4 mi NW", rows[0]["text"])
+        golf = [r for r in rows if "1.75 in (estimated)" in r["text"]]
+        self.assertEqual(len(golf), 1)
+        self.assertIn("Jun 15, 2025 2:10 pm MDT", golf[0]["text"])
+        self.assertEqual(golf[0]["remark"], "Remark, as written: “Public caller updated with golf ball sized hail "
+                         "a few minutes after initial call.”")
+
+    def test_a_store_without_the_records_says_so_on_every_section(self):
+        town = page(self.plain, "town/billings.html")       # a town in a sample tile: six sections, each saying why
+        self.assertEqual(town.count('class="joins-sec"'), 6)
+        for sentence in ("Reports could not be loaded in this update; that is not the same as no report.",
+                         "Records could not be loaded in this update; that is not the same as no record.",
+                         "Detections could not be loaded in this update; that is not the same as no detection.",
+                         "Warnings could not be loaded in this update; that is not the same as no warning.",
+                         "Zone products could not be loaded in this update; that is not the same as no zone product.",
+                         "Station readings could not be loaded in this update; that is not the same as no station reading."):
+            self.assertIn(sentence, town)
+        self.assertNotIn("Data unavailable", town)
+        m = json.loads(page(self.plain, "data/map.json"))["hail"]["joins"]
+        self.assertEqual(m["state"], "unavailable")   # the sample fixture holds no records: every part says so
+
+    # the three cells the parity checks read: the gate cell, Benchland's own cell, and a cell with no records (Billings' tile)
+    PARITY_CELLS = {"the gate cell": (47.025, -110.135), "Benchland's cell": (47.075, -110.015),
+                    "a cell with no records (Billings)": (45.7833, -108.5007)}
+
+    def page_hail(self) -> tuple[dict, str]:
+        """The map block the page reads (data/map.json "hail") and the page's time zone."""
+        m = json.loads(page(self.site, "data/map.json"))
+        return m["hail"], m["tz"]
+
+    def assert_browser_matches_module(self, index: dict, h: dict, tz: str, label: str) -> None:
+        """For the three cells, the browser's sections (map.js run under node on the page's own block and files) say what
+        describe_joins says for the same index: the same headings, leads, rows, remarks, lines, unavailable sentences and
+        times, section by section."""
+        from website import hail as hs
+        from website import joins as jn
+        cells = []
+        for lat, lon in self.PARITY_CELLS.values():
+            row, col = hs.cell_for(lat, lon)
+            cells.append({"row": row, "col": col})
+        browser = node_join_sections(self.site, h, tz, cells)
+        for (name, (lat, lon)), got in zip(self.PARITY_CELLS.items(), browser):
+            row, col = hs.cell_for(lat, lon)
+            tile = json.loads((self.site / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json")
+                              .read_text(encoding="utf-8"))
+            want = jn.describe_joins(index, tile, row, col, self.NOW, sample=False, store_dir=self.site)
+            self.assertEqual([browser_view(got[key]) for key in JOIN_IDS], [module_view(s) for s in want["sections"]],
+                             f"{label}: {name}")
+            self.assertEqual(got["times"], want["times_note"], f"{label}: {name} times")
+
+    def test_the_browser_joins_say_what_the_module_says_for_three_cells(self):
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        h, tz = self.page_hail()
+        self.assert_browser_matches_module(hs.load_index(self.site), h, tz, "the built store")
+        row, col = hs.cell_for(*self.PARITY_CELLS["a cell with no records (Billings)"])
+        billings = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]
+        for key in ("reports", "records", "detections", "warnings"):       # the cell the name says has no records
+            self.assertEqual(billings[key]["rows"], [], key)
+
+    def test_the_zone_sections_name_both_leads_and_the_red_flag_rows(self):
+        """The gate cell's zone section as the sheet shows it (the browser's code, under node): the forecast zone's lead and
+        the fire weather zone's lead (D17), the red flag rows with their fire weather words (D7), a cancelled product with
+        no recorded start (D16), a red flag warning with no end, and the unplaced line (D11)."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        h, tz = self.page_hail()
+        row, col = hs.cell_for(47.025, -110.135)
+        zones = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]["zones"]
+        self.assertIn("2 products for zone Judith Basin (MTZ048) between", zones["lead"])
+        self.assertIn("2 red flag warnings for fire weather zone Central and Eastern Lewis and Clark National Forest Areas "
+                      "(MTZ117) between", zones["fire_lead"])
+        self.assertIn("Zone product: Red flag warning, fire weather zone Central and Eastern Lewis and Clark National Forest "
+                      "Areas (MTZ117): Jun 14, 2025 9:00 am MDT to end not recorded", " ".join(r["text"] for r in zones["rows"]))
+        texts = [r["text"] for r in zones["rows"]]
+        self.assertIn("Zone product: High wind warning: Jun 15, 2025 12:00 pm MDT to 8:00 pm MDT", texts)
+        self.assertIn("Zone product: Winter storm warning: start not recorded; end Jun 15, 2025 12:00 am MDT, cancelled", texts)
+        red = [x for x in texts if x.startswith("Zone product: Red flag warning, fire weather zone Central")]
+        self.assertEqual(len(red), 1)
+        self.assertIn("Jun 15, 2025 10:00 am MDT to 5:00 pm MDT", red[0])
+        self.assertIn("end not recorded", red[0])
+        self.assertNotIn("end end", " ".join(texts))
+        from website import joins as jn
+        self.assertEqual(zones["lines"], [jn.WORDS_JOINS["zones_unplaced_many"].format(n=2)])   # the module's own words
+
+    def test_a_record_with_no_unit_reads_as_its_type_word_and_no_size_is_given(self):
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        h, tz = self.page_hail()
+        row, col = hs.cell_for(47.025, -110.135)
+        got = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]
+        winter = [r["text"] for r in got["records"]["rows"] if "winter storm" in r["text"]]
+        self.assertEqual(winter, ["Record: Jun 14, 2025 9:00 pm MDT: winter storm, Mesonet, across zone MTZ048"])
+        for part in JOIN_IDS:
+            self.assertNotIn("no size given", json.dumps(got[part]), part)
+        wind = [r["text"] for r in got["records"]["rows"] if "thunderstorm wind" in r["text"]]
+        self.assertEqual(len(wind), 1)                              # a unit type: its speeds, knots first (D5, D19)
+        self.assertIn("thunderstorm wind, 56 kt (64 mph) (measured gust), Mesonet, 2.4 mi SE", wind[0])
+        row, col = hs.cell_for(47.075, -110.015)                    # Benchland's cell: the 1.75 in hail record is 0.4 miles away
+        bench = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]["records"]["rows"]
+        hail = [r["text"] for r in bench if ": hail, " in r["text"]]
+        self.assertEqual(len(hail), 1)
+        self.assertIn("hail, 1.75 in, Public", hail[0])
+
+    def test_a_part_that_did_not_load_reads_the_same_on_both_surfaces(self):
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        index = hs.load_index(self.site)
+        h, tz = self.page_hail()
+        marks = {"parts": {"reports": "unavailable", "records": "partial", "detections": "partial"},
+                 "partial": {"records": ["Jun 14, 2025"], "detections": ["Jun 14, 2025"]}}
+        for block in (index["joins"], h["joins"]):     # the same mark on the store's index and on the page's block
+            block["parts"].update(marks["parts"])
+            block["partial"] = dict(marks["partial"])
+        self.assert_browser_matches_module(index, h, tz, "a part marked unavailable or partial")
+        got = node_join_sections(self.site, h, tz, [{"row": hs.cell_for(47.025, -110.135)[0],
+                                                       "col": hs.cell_for(47.025, -110.135)[1]}])[0]
+        self.assertEqual(got["reports"]["lead"], "")                 # a part that did not load says no lead ("No ...")
+        self.assertEqual(got["reports"]["rows"], [])
+        self.assertTrue(got["reports"]["unavailable"])
+        self.assertTrue(got["records"]["unavailable"])              # a partial part keeps its rows and says why
+        self.assertTrue(got["records"]["rows"])
+
+    GATE_POINT = (47.025, -110.135)          # the gate cell (797, 1986): one forecast zone and one fire weather zone
+    STATION_UNAVAILABLE = ("Station readings could not be loaded in this update; that is not the same as no station "
+                           "reading.")
+    ZONE_UNAVAILABLE = "Zone products could not be loaded in this update; that is not the same as no zone product."
+
+    def copy_site(self) -> Path:
+        """A copy of the built site's hail folder, for one test to change. The test makes it and removes it."""
+        folder = Path(tempfile.mkdtemp(prefix="hailwatch-copy-"))
+        self.addCleanup(shutil.rmtree, folder, True)
+        shutil.copytree(self.site / "hail", folder / "hail")
+        return folder
+
+    def gate_copy(self) -> Path:
+        """A copy of the site whose gate tile lists two stations: Billings (the site's own file, with days in the window)
+        and Lima (the B1 fixture's file, which holds no day). A test changes or removes one of the two files."""
+        from website import hail as hs
+        folder = self.copy_site()
+        row, col = hs.cell_for(*self.GATE_POINT)
+        path = folder / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json"
+        tile = json.loads(path.read_text(encoding="utf-8"))
+        tile["stations"].append({"id": "1LM", "name": "Lima", "lat": 46.7, "lon": -109.7333, "miles": 38.6})
+        path.write_text(json.dumps(tile, separators=(",", ":")), encoding="utf-8")
+        return folder
+
+    def both_ways(self, folder: Path) -> tuple[dict, dict]:
+        """The gate cell's six sections as the browser's code writes them (under node, reading the folder's files), and as
+        describe_joins writes them from the same folder; each side keyed by section id, in the comparable views."""
+        from website import hail as hs
+        from website import joins as jn
+        h, tz = self.page_hail()
+        row, col = hs.cell_for(*self.GATE_POINT)
+        got = node_join_sections(folder, h, tz, [{"row": row, "col": col}])[0]
+        tile = json.loads((folder / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json")
+                          .read_text(encoding="utf-8"))
+        want = jn.describe_joins(hs.load_index(folder), tile, row, col, self.NOW, sample=False, store_dir=folder)
+        self.assertEqual(got["times"], want["times_note"])
+        return {key: browser_view(got[key]) for key in JOIN_IDS}, {s["id"]: module_view(s) for s in want["sections"]}
+
+    def test_a_store_with_no_records_says_every_part_is_unavailable_in_the_browser(self):
+        """The published store may hold no joined records at all (the B1 asset until the daily job's joins step has run,
+        or a job whose joins step failed). The browser then shows every section's unavailable sentence and nothing else,
+        and throws nothing: the block's empty window dates are read only once the store is known to hold records (the
+        preview of 2026-10-19 failed on exactly this: "Invalid time value" and six silent sections)."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import build as bd
+        from website import hail as hs
+        from website import joins as jn
+        h, tz = self.page_hail()
+        h = dict(h)
+        h["joins"] = bd.join_block_unavailable(jn, "the joined records are not in this history store")
+        self.assertEqual(h["joins"]["window"], ["", ""])          # the shape the build writes for such a store
+        row, col = hs.cell_for(47.025, -110.135)
+        got = node_join_sections(self.site, h, tz, [{"row": row, "col": col}])[0]
+        w = jn.WORDS_JOINS
+        for part in jn.PARTS:
+            self.assertEqual(got[part]["unavailable"], w["unavailable"].format(part=w["part_" + part], one=w["one_" + part]))
+            self.assertEqual((got[part]["lead"], got[part]["rows"], got[part]["lines"]), ("", [], []))
+
+    def test_a_station_file_that_did_not_load_says_so_and_gives_no_count(self):
+        """A station file the browser cannot load makes the stations section show its unavailable sentence and nothing else
+        (D27, D28): no lead, no rows, no note, and none of the other station's days. The gate cell's tile lists Billings and
+        Lima (gate_copy); Lima's file is removed, not JSON, not an object, or JSON whose days are not a list. Each case
+        matches describe_joins on the same folder, which reads the same failure."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        browser, module = self.both_ways(self.gate_copy())                  # the baseline: both files load
+        self.assertEqual(browser["stations"], module["stations"])
+        self.assertEqual(browser["stations"]["unavailable"], "")
+        self.assertTrue(any("Billings Logan" in r[0] for r in browser["stations"]["rows"]))
+        for label, text in (("missing", None), ("not JSON", "{not json"), ("not an object", "null"),
+                            ("days that are not a list", '{"f": "hail-station-v1", "days": "x"}')):
+            with self.subTest(label):
+                folder = self.gate_copy()
+                path = folder / "hail" / "s" / "1LM.json"
+                if text is None:
+                    path.unlink()
+                else:
+                    path.write_text(text, encoding="utf-8")
+                browser, module = self.both_ways(folder)
+                got = browser["stations"]
+                self.assertEqual(got["unavailable"], self.STATION_UNAVAILABLE)
+                self.assertEqual((got["lead"], got["rows"], got["lines"]), ("", [], []))
+                self.assertEqual(got, module["stations"])
+
+    def test_a_zone_file_that_did_not_load_keeps_the_point_records_and_says_so(self):
+        """A zone file the browser cannot load (D27) makes the zone products section show its unavailable sentence and nothing
+        else. The records section keeps the point records that loaded, with the partial sentence for the zone part: it names
+        the zone and the reason (the file did not answer, or it was in an unexpected format). Each case matches describe_joins
+        on the same folder: the zone file is removed, is not JSON, or is JSON whose records are not a list."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import joins as jn
+        for label, text, reason in (("missing", None, jn.WORDS_JOINS["reason_no_answer"]),
+                                    ("not JSON", "{not json", jn.WORDS_JOINS["reason_format"]),
+                                    ("records that are not a list", '{"f": "hail-zone-v1", "records": "x"}',
+                                     jn.WORDS_JOINS["reason_format"])):
+            with self.subTest(label):
+                folder = self.copy_site()
+                path = folder / "hail" / "z" / "MTZ048.json"
+                if text is None:
+                    path.unlink()
+                else:
+                    path.write_text(text, encoding="utf-8")
+                browser, module = self.both_ways(folder)
+                zones = browser["zones"]
+                self.assertEqual(zones["unavailable"], self.ZONE_UNAVAILABLE)
+                self.assertEqual((zones["lead"], zones["fire_lead"], zones["rows"], zones["lines"]), ("", "", [], []))
+                records = browser["records"]
+                self.assertEqual(records["unavailable"], jn.WORDS_JOINS["partial"].format(
+                    feed=jn.WORDS_JOINS["feed_records"], periods="MTZ048", reason=reason))
+                texts = [r[0] for r in records["rows"]]
+                self.assertTrue(any("thunderstorm wind" in t for t in texts))        # the point record within five miles stays
+                self.assertFalse(any("winter storm" in t for t in texts))            # the zone's own records are missing
+                self.assertNotEqual(records["lead"], "")
+                self.assertEqual(browser, module)
+
+    def test_a_fire_weather_zone_file_that_did_not_load_keeps_the_public_products(self):
+        """D7, D17: a fire weather zone file that does not load leaves the public zone products as they are. The zone section
+        gets the line that red flag warnings are not listed (the fire weather zones were not available) and no fire weather
+        lead. The browser and describe_joins agree on the folder."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import joins as jn
+        folder = self.copy_site()
+        (folder / "hail" / "z" / "fire-MTZ117.json").unlink()
+        browser, module = self.both_ways(folder)
+        zones = browser["zones"]
+        self.assertEqual(zones["unavailable"], "")
+        self.assertIn(jn.WORDS_JOINS["zones_fire_unavailable"], zones["lines"])
+        self.assertEqual(zones["fire_lead"], "")
+        self.assertTrue(any(r[0].startswith("Zone product: High wind warning:") for r in zones["rows"]))
+        self.assertEqual(browser, module)
+
+    def test_a_cancelled_zone_product_at_or_before_its_begin_reads_cancelled_at_as_the_module_does(self):
+        """D26: a cancellation at or before the product's begin reads "cancelled at {time}" in place of the span, in the module
+        and in the sheet alike. The gate cell's zone file gets such a product here (the row is built in this test): a winter
+        storm warning that begins at 6 am Montana time and is cancelled an hour earlier."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import joins as jn
+        folder = self.copy_site()
+        path = folder / "hail" / "z" / "MTZ048.json"
+        zone = json.loads(path.read_text(encoding="utf-8"))
+        zone["events"].append({"k": "WS", "s": "W", "b": "2025-06-15T12:00Z", "e": "2025-06-15T11:00Z", "st": "cancelled",
+                               "o": "BYZ"})
+        path.write_text(json.dumps(zone, separators=(",", ":")), encoding="utf-8")
+        browser, module = self.both_ways(folder)
+        self.assertEqual(browser["zones"], module["zones"])
+        winter = [r[0] for r in browser["zones"]["rows"] if r[0].startswith("Zone product: Winter storm warning:")]
+        self.assertEqual(len(winter), 1)
+        self.assertIn(jn.WORDS_JOINS["zones_cancelled_at"].format(time="Jun 15, 2025 5:00 am MDT"), winter[0])
+        self.assertNotIn("Jun 15, 2025 6:00 am MDT to", winter[0])
+
+    def test_an_upgraded_zone_product_reads_its_span_with_upgraded_and_one_upgraded_at_its_begin_reads_so(self):
+        """D31: an upgrade ends the lower product at its upgrade time, and the span reads "{begin} to {end}, upgraded"; an
+        upgrade at or before the begin reads "upgraded at {time}" in place of the span. Both rows are built here into the gate
+        cell's zone file, and the browser and describe_joins agree on every section."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import joins as jn
+        folder = self.copy_site()
+        path = folder / "hail" / "z" / "MTZ048.json"
+        zone = json.loads(path.read_text(encoding="utf-8"))
+        zone["events"].append({"k": "HW", "s": "W", "b": "2025-06-15T20:00Z", "e": "2025-06-15T22:00Z", "st": "upgraded",
+                               "o": "BYZ"})                                        # 2:00 pm to 4:00 pm, upgraded
+        zone["events"].append({"k": "WS", "s": "W", "b": "2025-06-15T12:00Z", "e": "2025-06-15T12:00Z", "st": "upgraded",
+                               "o": "BYZ"})                                        # upgraded at 6:00 am, the begin's own time
+        path.write_text(json.dumps(zone, separators=(",", ":")), encoding="utf-8")
+        browser, module = self.both_ways(folder)
+        self.assertEqual(browser["zones"], module["zones"])
+        rows = {r[0].split(": ")[1]: r[0] for r in browser["zones"]["rows"]}      # by the product's name (the row's second part)
+        self.assertIn("Jun 15, 2025 2:00 pm MDT to 4:00 pm MDT" + jn.WORDS_JOINS["zones_upgraded"], rows["High wind warning"])
+        self.assertIn(jn.WORDS_JOINS["zones_upgraded_at"].format(time="Jun 15, 2025 6:00 am MDT"), rows["Winter storm warning"])
+
+    def test_each_joined_section_of_a_sample_build_carries_the_sample_label(self):
+        """A sample build's six sections each say SAMPLE data, as the sheet's own tag does. map_data_joins writes the state
+        "sample" for a sample build; this class's store is real-format, so the state is set here, and nothing else in the
+        block depends on it."""
+        if shutil.which("node") is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        from website import hail as hs
+        from website import joins as jn
+        h, tz = self.page_hail()
+        row, col = hs.cell_for(47.025, -110.135)
+        cell = [{"row": row, "col": col}]
+        h["joins"]["state"] = "sample"
+        got = node_join_sections(self.site, h, tz, cell)[0]
+        for key in JOIN_IDS:
+            self.assertEqual(got[key]["sample"], jn.WORDS_JOINS["sample"], key)
+        h["joins"]["state"] = "loaded"
+        got = node_join_sections(self.site, h, tz, cell)[0]
+        for key in JOIN_IDS:
+            self.assertEqual(got[key]["sample"], "", key)
 
 
 if __name__ == "__main__":

@@ -252,8 +252,11 @@ class Collector:
             words = [hs.describe(index, events, self.now, sample=sampled) for events in cells]
             block = hs.map_data(index, sample=sampled)
             block["tiles"] = tiles                  # the browser's outside test: a tile not listed has no Montana cell
+            joins_block, joins_views = hail_joins(out_dir, index, towns, self.now, sampled)
+            block["joins"] = joins_block            # the joined records behind the sheet (B2)
             detail = (f"{index['events']:,} events in {index['shards']} shard files, {index['days_present']} of "
-                      f"{index['days_expected']} days, as of {index['as_of']}")
+                      f"{index['days_expected']} days, as of {index['as_of']}; joined records "
+                      f"{joins_block['state']}")
             self.note("hail_history", HAIL_LABEL, True, ("SAMPLE store: " if sampled else "") + detail)
         except (hs.HailStoreError, OSError, ValueError, KeyError, TypeError) as e:
             problem = str(e) if isinstance(e, hs.HailStoreError) else f"the history files couldn't be read ({type(e).__name__})"
@@ -261,8 +264,11 @@ class Collector:
             words = [hs.describe_unavailable(problem) for _ in towns]
             block = hs.map_data_unavailable(problem)
             block["tiles"] = []                     # no store, so no tile is known: the map says unavailable, not outside
-        for t, w in zip(towns, words):
-            t["hail"] = w
+            from . import joins as jn
+            block["joins"] = join_block_unavailable(jn, problem)
+            joins_views = [join_view_unavailable(jn) for _ in towns]
+        for t, w, jv in zip(towns, words, joins_views):
+            t["hail"] = {**w, "joins": jv}
         block["words"].update(HAIL_SITE_WORDS)
         block["stale_days"] = HAIL_STALE_DAYS
         block["at_zoom"] = HAIL_AT_ZOOM
@@ -446,7 +452,10 @@ STORM_CONTRACTS = ("storm_levels", "satellite")
 
 # The five-year hail history (--hail-history only; website/hail.py holds the words and the store format)
 HAIL_LABEL = "Hail history (radar estimates)"        # the status line's name
-HAIL_CONTRACTS = ("hail_history",)                    # on the About page only in a --hail-history build
+# the joined records (B2, website/joins.py) are on the About page only in a --hail-history build, with the store
+JOIN_CONTRACTS = ("lsr", "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons", "nws_zone_products",
+                  "asos_daily_gusts")
+HAIL_CONTRACTS = ("hail_history",) + JOIN_CONTRACTS  # on the About page only in a --hail-history build
 # Words map.js fills that hail.WORDS doesn't hold: a shard that didn't load (the unavailable line's problem)
 HAIL_SITE_WORDS = {"fetch_failed": "the history for this spot didn't load in this update"}
 HAIL_STALE_DAYS = hs.STALE_DAYS    # map.js: an as_of older than this (in days) shows the stale line
@@ -494,6 +503,110 @@ def _copy_hail(root: Path, out: Path, index: dict) -> dict:
     """Copy root/hail/ into the site as out/hail/ (the shards the map and the town pages read)."""
     shutil.copytree(root / "hail", out / "hail")
     return index
+
+
+# The joined records (B2): website/joins.py writes them and holds their rules and words. These are the site's own
+# words and the few values the browser needs that the module does not export (map.json hail.joins).
+JOIN_SITE_WORDS = {
+    "show_all": "Show all {n} rows",
+    "unknown_date": "an unknown date",       # a missing NCEI lag reads so (joins._records_lead writes the same words)
+    "reason_no_store_joins": "the joined records are not in this history store",
+}
+JOIN_SHOW_FIRST = 10          # rows a section shows before "show all" (the sheet and the town tables)
+JOIN_HERE_MILES = 0.05        # nearer than this to a report, no bearing is shown (joins._place_bits)
+JOIN_SPC_HOURS = 12           # an SPC report day starts at 12:00 UTC (joins.spc_day)
+JOIN_HUNDREDTHS = 100         # detection sizes are stored in hundredths of an inch (joins._joins_for_tile)
+JOIN_HAIL_UNIT = "in"         # the unit a hail magnitude is written in (joins.LSR_UNITS)
+JOIN_UNIT_WORDS = {"mph": "magnitude_mph", "kt": "magnitude_kt"}   # unit -> the words key that shows it
+JOIN_HEADS = {"reports": "Report", "records": "Record", "detections": "Detection", "warnings": "Warning",
+              "zones": "Zone product", "stations": "Station"}     # the town tables' one column: the row labels of D3
+
+
+# the store's counts that the sheet's lines read (joins.describe_joins): the browser takes the same values from the block
+JOIN_FIRE_SHARD = "hail/z/fire-{zone}.json"   # a fire weather zone's file (joins writes it under fire-<zone>)
+JOIN_COUNTS = ("warnings_no_outline", "ncei_zone_rows_unmatched", "zone_products_unplaced")
+
+
+def join_block(jn, index: dict, sample: bool) -> dict:
+    """map.json["hail"]["joins"] for a store with the records: joins.map_data_joins, plus the values the browser needs
+    beside it (the earth radius the module writes its distances on, the partial periods, the zone names, the counts
+    the lines say, and whether the fire weather zones loaded)."""
+    block = jn.map_data_joins(index, sample=sample)
+    store = index[jn.INDEX_KEY]
+    block.update({"earth_radius_km": jn.EARTH_KM, "here_miles": JOIN_HERE_MILES, "spc_hours": JOIN_SPC_HOURS,
+                  "hundredths_per_inch": JOIN_HUNDREDTHS, "hail_unit": JOIN_HAIL_UNIT,
+                  "unit_words": dict(JOIN_UNIT_WORDS), "show_first": JOIN_SHOW_FIRST,
+                  "partial": dict(store.get("partial", {})), "zone_names": dict(store.get("zone_names", {})),
+                  "counts": {key: int(store.get(key, 0)) for key in JOIN_COUNTS},
+                  "fire_state": store.get("fire_zones", {}).get("state", "unavailable")})
+    block["words"] = {**block["words"], **JOIN_SITE_WORDS}
+    block["shards"] = {**block["shards"], "fire": JOIN_FIRE_SHARD}
+    return block
+
+
+def join_block_unavailable(jn, problem: str) -> dict:
+    """map.json["hail"]["joins"] when the store holds no records: every part says why, and the browser fetches nothing."""
+    parts = {part: "unavailable" for part in jn.PARTS}
+    fake = {"as_of": "", "window": ["", ""], jn.INDEX_KEY: {
+        "state": "unavailable", "parts": parts, "reasons": {part: problem for part in jn.PARTS}, "lags": {},
+        "partial": {}, "zone_names": {}, "types": {}, "cover": "", "shapes": {}, "montana_time": []}}
+    block = join_block(jn, fake, False)
+    block.update({"state": "unavailable", "problem": problem})
+    return block
+
+
+def join_heading(jn, part: str) -> str:
+    if part == "zones":        # the zone is not known here, so the heading names no zone (the module's words)
+        return jn.WORDS_JOINS["zones_heading_no_zone"]
+    return jn.WORDS_JOINS[f"{part}_heading"]
+
+
+def join_view(section: dict) -> dict:
+    """One section of a town's hail history, as the town page shows it (joins.describe_joins)."""
+    rows = [{"text": r["text"], "note": r.get("remark") or ""} for r in section["rows"]]
+    return {"key": section["id"], "head": JOIN_HEADS[section["id"]], "heading": section["heading"],
+            "lead": section["lead"] or "", "fire_lead": section.get("fire_lead") or "", "rows": rows,
+            "what": " ".join(x for x in (section["what"], section["source"]) if x),
+            "note": " ".join(section["lines"]), "unavailable": section["unavailable"] or "",
+            "show_all": JOIN_SITE_WORDS["show_all"].format(n=len(rows))}
+
+
+def join_view_unavailable(jn) -> dict:
+    """A town's six sections when their words cannot be written from the records: each part says why."""
+    w = jn.WORDS_JOINS
+    sections = []
+    for part in jn.PARTS:
+        sections.append({
+            "key": part, "head": JOIN_HEADS[part], "heading": join_heading(jn, part), "lead": "", "fire_lead": "", "rows": [],
+            "what": " ".join(x for x in (w[f"{part}_what"], w[f"source_{part}"]) if x), "note": "",
+            "unavailable": jn._unavailable_text(part, None), "show_all": ""})
+    return {"show_first": JOIN_SHOW_FIRST, "times": w["times_note"], "sections": sections}
+
+
+def hail_joins(out: Path, index: dict, towns: list, now: datetime, sample: bool) -> tuple[dict, list]:
+    """The joined records (B2): the map block (map.json hail.joins) and each town's six sections. A store without the
+    records, or a tile whose record file is missing or unreadable, gives the unavailable words for the part, never an
+    empty section. Returns (block, one view per town)."""
+    from . import joins as jn
+    if not isinstance(index.get(jn.INDEX_KEY), dict):
+        problem = JOIN_SITE_WORDS["reason_no_store_joins"]
+        return join_block_unavailable(jn, problem), [join_view_unavailable(jn) for _ in towns]
+    block = join_block(jn, index, sample)
+    events = jn._read_events(out)             # the events table, read once for every town
+    views = []
+    for t in towns:
+        row, col = hs.cell_for(t["lat"], t["lon"])
+        name = hs.tile_name(row // hs.TILE, col // hs.TILE)
+        try:
+            tile = json.loads((out / "hail" / "j" / f"{name}.json").read_text(encoding="utf-8"))
+            words = jn.describe_joins(index, tile, row, col, now, sample=sample, store_dir=out, events=events)
+            views.append({"show_first": JOIN_SHOW_FIRST, "times": words["times_note"],
+                          "sections": [join_view(s) for s in words["sections"]]})
+        except OSError:
+            views.append(join_view_unavailable(jn))
+        except (ValueError, KeyError, TypeError, IndexError, jn.JoinsError):
+            views.append(join_view_unavailable(jn))
+    return block, views
 
 
 TILE_NAME = re.compile(r"r\d{4}_c\d{4}")

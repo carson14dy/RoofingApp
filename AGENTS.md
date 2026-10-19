@@ -30,15 +30,17 @@ website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · g
            pages) · sample.py (labelled sample data) · towns.json · templates/ · static/ (style, Leaflet,
            fonts, map/ = map.js, map.css, basemap.json)
            hail.py (hail history: grid, size words, store readers, daily build; --hail-history) · hail_fixture_data.py (the
-           SAMPLE store's events) · data/hail-fixture/ (the SAMPLE store)
+           SAMPLE store's events) · data/hail-fixture/ (the SAMPLE store) · joins.py (the hail history joins, B2, D35:
+           reports, official records, radar detections, warnings, zone products and red flag warnings by fire weather
+           zone, station gusts; pyshp imported lazily)
 tools/     build_basemap.py (rebuilds static/map/basemap.json from Natural Earth + Census; by hand)
 .github/workflows/website.yml   build every 10 min from main → GitHub Pages; branch pushes = live check
-.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, verify it, publish the release asset (D34)
+.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, join its sources (website/joins.py), verify both, publish the release asset (D34, D35)
 payload/   the parked app — updates itself. app.py (routes) · weather.py (feeds, evidence, alert matching,
            rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
 desktop/   the shell — changes only with a new installer. launcher.py (window, local server,
            notifications, recovery page) · updater.py (GitHub updates, self-test, rollback)
-tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
+tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
            update channel vs fake GitHub
 build.py   PyInstaller build      ship.py   test → bump version → commit → push
 ```
@@ -48,6 +50,8 @@ build.py   PyInstaller build      ship.py   test → bump version → commit →
 pip install requests jinja2 pillow numpy pygrib h5py tzdata     # enough for the website
 python -m website.build --out _site --sample             # labelled sample data, no network
 python -m website.build --out _site --hail-history       # the five-year hail history; off by default (D34)
+python -m website.joins build --store store --cache joins-cache   # the hail joins (D35); needs pyshp
+python -m website.joins verify store                     # check the hail joins
 python -m website.build --out _site --require-live       # live data; exit 1 if any source failed
 python -m http.server -d _site 8000                      # then open http://localhost:8000
 pip install -r requirements.txt                          # the parked desktop app
@@ -101,6 +105,7 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
 - Store UTC. Show a job's NWS time zone (or the company zone). SPC dates follow 12:00–11:59 UTC
   reporting days. Hail sizes in SPC CSVs are hundredths of an inch; `UNK` wind stays unknown.
 - Hail history sizes (D34): to the hundredth of an inch, rounded down, with the millimetres exact beside them; the classes use the exact tenths.
+- Hail history kinds (D35): every section names its kind, and every row starts with its kind label (D3: "Report:", "Record:", "Detection:", "Warning:", "Zone product:", "Station:"); a report is not an inspection; a detection is not hail on the ground; a warning's tags are the forecast threat; a zone product covers its whole zone; a station reading is at the station; NCEI times are MST-7 local, shown as Montana time; "damage" appears only as the NWS damage threat tag, in a quoted remark or as a source's type word (D4).
 - Add or update tests with every behavior change.
 
 ## Owner's working preferences

@@ -32,7 +32,11 @@ On a --hail-history build the hail history at a spot is checked too (check_hail;
 ?at= and a click open the sheet with the store's own words; the gate cell (797, 1986) shows 2.01 in (51.3 mm) on Jun 15,
 2025 and Benchland's own cell 0.72 in (18.5 mm); a point outside Montana gets the outside words and asks for no shard (a
 sample build gets its own outside words, with SAMPLE data); a Montana cell with no value gets the no-estimate words after
-one shard request; a shard that fails or is missing gets the unavailable words.
+one shard request; a shard that fails or is missing gets the unavailable words. The six joined sections (check_joins)
+must match the module row for row, lead for lead and sentence for sentence; a sample build labels each section; a
+station file that fails shows its unavailable sentence (check_station_unavailable); and a zone file that fails leaves
+the zone section with its unavailable sentence and the records section with its rows and the partial sentence
+(check_zone_unavailable, D27).
 Every browser context counts the requests that leave this server, and that count must be zero, except for
 the imagery host in the contexts that have switched to Imagery. Exits 1 with the reasons if anything fails.
 The Website workflow runs it on branch pushes; locally set PW_CHROMIUM to a Chromium executable if
@@ -41,12 +45,16 @@ Playwright's own isn't installed.
 from __future__ import annotations
 
 import argparse
+import copy
 import functools
 import http.server
 import json
 import math
 import os
+import re
+import shutil
 import sys
+import tempfile
 import threading
 import time
 from datetime import datetime
@@ -188,6 +196,8 @@ def check(root: Path, shots: Path | None = None) -> list[str]:
                       ("check_imagery_refused", lambda: check_imagery_refused(browser, base, data)),
                       ("check_hail", lambda: check_hail(browser, base, root, data, shots))
                       if "hail" in data else ("check_no_hail", lambda: check_no_hail(browser, base, data)))
+            if "hail" in data and data["hail"].get("joins"):
+                extras += (("check_joins", lambda: check_joins(browser, base, root, data, shots)),)
             for name, extra in extras:
                 try:
                     problems += extra()
@@ -1353,6 +1363,424 @@ def check_no_hail(browser, base: str, data: dict) -> list[str]:
         page.wait_for_timeout(600)
         if not page.locator("#sheet").is_hidden():
             problems.append("no hail: a click on the map opened a sheet")
+    finally:
+        ctx.close()
+    return problems
+
+
+# ---------------------------------------------------------------- joined records (B2): the six sections under the sheet
+
+JOIN_SECTIONS = ("reports", "records", "detections", "warnings", "zones", "stations")   # the sheet's data-section keys
+GATE_UTICA_TIME = "11:45 pm"        # the Utica 1.0 in report of 2025-06-15 05:45 UTC, read in Montana time: Jun 14, 2025
+GATE_UTICA_DAY = "Jun 14, 2025"     # the gate cell's only report within 5 miles (4.35 mi, research LSR row 202506150545)
+BENCHLAND_TIME = "2:10 pm"          # the 1.75 in report of 2025-06-15 20:10 UTC (LSR 202506152010, NCEI EVENT 1258081)
+BENCHLAND_DAY = "Jun 15, 2025"
+GATE_OFFICE = "TFX"                 # a warning that covered the gate cell's spot: the office code the row shows
+
+
+def joins_sheet(page) -> dict:
+    """Each joined section on the open sheet, keyed by its data-section: whether it is shown, the text a reader sees
+    (innerText: the first rows, and the rows behind 'Show all' only once opened) and the full text of the section
+    (textContent: every row, including the ones behind a closed 'Show all'). The radar days show first and the six
+    sections follow when their files arrive, so the read waits for all six (20 s); a section that never comes is missing
+    from the result, and the checks name it. Each section also gives its heading, its what sentence, its lead and its fire
+    weather lead (each empty when hidden), and its rows: shown_rows and more_rows, each row its text and its remark."""
+    try:
+        page.wait_for_function("(n) => document.querySelectorAll('#sheet-body .joins-sec[data-section]').length === n",
+                               arg=len(JOIN_SECTIONS), timeout=20000)
+    except Exception:       # noqa: BLE001 - the checks name what is missing
+        pass
+    return page.evaluate("""() => { const out = {};
+        const items = ol => ol ? [...ol.querySelectorAll(':scope > li')].map(li => ({
+          text: li.firstChild ? li.firstChild.textContent : '',
+          remark: li.querySelector('small') ? li.querySelector('small').textContent : ''})) : [];
+        const shown = (s, name) => { const el = s.querySelector('[data-join="' + name + '"]');
+          return el && !el.hidden ? el.textContent : ''; };
+        document.querySelectorAll('#sheet-body .joins-sec[data-section]').forEach(s => {
+          out[s.dataset.section] = {shown: !s.hidden && getComputedStyle(s).display !== 'none',
+                                    text: s.innerText, full: s.textContent,
+                                    heading: shown(s, 'heading'), what: shown(s, 'what'),
+                                    lead: shown(s, 'lead'), fire_lead: shown(s, 'fire-lead'),
+                                    shown_rows: items(s.querySelector('[data-join="rows"]')),
+                                    more_rows: items(s.querySelector('[data-join="more-rows"]'))}; });
+        return out; }""")
+
+
+_EVENTS: dict = {}          # the site's events table, read once (joins_expected)
+_INDEX: dict = {}           # the store's index, read once (joins_expected)
+
+
+def joins_expected(root: Path, data: dict, point: tuple[float, float], part: str | None = None) -> dict:
+    """The six sections for a cell as the town pages write them (website/joins.py describe_joins), from the built site's
+    store copy. The sheet must show the same leads and rows, so the check follows the module rather than fixed words."""
+    hs = hail_store()
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from website import joins as jn
+    if str(root) not in _INDEX:
+        _INDEX[str(root)] = hs.load_index(root)
+    index = _INDEX[str(root)]
+    if part is not None:       # the same index with one part marked unavailable (check_part_unavailable)
+        index = copy.deepcopy(index)
+        index[jn.INDEX_KEY]["parts"][part] = "unavailable"
+    row, col = hs.cell_for(*point)
+    tile = json.loads((root / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json").read_text(encoding="utf-8"))
+    built = datetime.fromisoformat(data["built"].replace("Z", "+00:00"))
+    if str(root) not in _EVENTS:
+        _EVENTS[str(root)] = jn._read_events(root)
+    return jn.describe_joins(index, tile, row, col, built, sample=False, store_dir=root,
+                             events=_EVENTS[str(root)])
+
+
+JOIN_SHOW_FIRST = 10     # the sheet shows this many rows of a section; the rest sit behind 'Show all' (build.py JOIN_SHOW_FIRST)
+
+
+def _flat(text: str) -> str:
+    """Whitespace folded to single spaces, as HTML shows it, so a trailing space in the module's text is not a difference."""
+    return " ".join(text.split())
+
+
+def sheet_matches(label: str, sections: dict, expected: dict) -> list[str]:
+    """Each section of the module's cell is on the sheet as the module writes it (browser-5, D28): its heading, its what
+    sentence with the source, its lead and its fire weather lead (empty where the module writes none), and its rows in
+    order with their remarks: the first JOIN_SHOW_FIRST visible and the rest behind 'Show all', with equal counts. The
+    unavailable sentence and the lines under the rows must be on the sheet."""
+    problems = []
+    for sec in expected["sections"]:
+        got = sections.get(sec["id"], {})
+        shown = _flat(got.get("text", ""))
+
+        def exact(what: str, want, have) -> None:     # equal once the whitespace is folded; an absent text is empty
+            if _flat(want or "") != _flat(have or ""):
+                problems.append(f"{label}: the {sec['id']} {what} on the sheet is {_flat(have or '')[:70]!r}, the module's "
+                                f"is {_flat(want or '')[:70]!r}")
+
+        exact("heading", sec["heading"], got.get("heading"))
+        exact("what sentence", " ".join(x for x in (sec["what"], sec["source"]) if x), got.get("what"))
+        exact("lead", sec["lead"], got.get("lead"))
+        exact("fire weather lead", sec.get("fire_lead"), got.get("fire_lead"))      # D17: the second zone lead
+        for line in sec["lines"]:                                              # the sentences under the rows (D11, D20)
+            if _flat(line) not in shown:
+                problems.append(f"{label}: the {sec['id']} sheet lacks the line {line[:70]!r}")
+        if sec["unavailable"] and _flat(sec["unavailable"]) not in shown:
+            problems.append(f"{label}: the {sec['id']} sheet lacks the module's unavailable sentence ({sec['unavailable'][:70]!r})")
+        head, tail = sec["rows"][:JOIN_SHOW_FIRST], sec["rows"][JOIN_SHOW_FIRST:]
+        for where, have, want, start in (("", got.get("shown_rows", []), head, 0),
+                                         (" behind Show all", got.get("more_rows", []), tail, JOIN_SHOW_FIRST)):
+            if len(have) != len(want):
+                problems.append(f"{label}: the {sec['id']} sheet has {len(have)} rows{where}, the module's {len(want)}")
+            for i, (g, w) in enumerate(zip(have, want), start + 1):
+                exact(f"row {i}", w["text"], g.get("text"))
+                exact(f"remark of row {i}", w.get("remark"), g.get("remark"))
+    return problems
+
+
+NO_REPORT_SECTIONS = ("reports", "records", "detections", "warnings")   # the sections that say "no" for a cell with none
+
+
+def no_join_spot(root: Path, data: dict, budget: int = 4000):
+    """A Montana cell (a key of its tile's state list) with no report, record, detection or warning within the module's
+    radii: the first one found in the store's tiles, or None after `budget` cells. Its sections come from the module."""
+    hs = hail_store()
+    tested = 0
+    for name in sorted(data["hail"]["tiles"])[::23]:          # spread over the state; the first tiles are zone-covered
+        if not (root / "hail" / "j" / f"{name}.json").is_file():
+            continue
+        tr, tc = int(name[1:5]), int(name[7:11])
+        for key in hail_shard(root, name)["state"][::33]:
+            if tested >= budget:
+                return None
+            tested += 1
+            point = hs.cell_centre(tr * 10 + key // 10, tc * 10 + key % 10)
+            words = joins_expected(root, data, point)
+            if not any(sec["rows"] for sec in words["sections"] if sec["id"] in NO_REPORT_SECTIONS):
+                return point
+    return None
+
+
+def check_joins(browser, base: str, root: Path, data: dict, shots: Path | None) -> list[str]:
+    """The six joined sections under the radar estimate, in Chromium at 1280 and 390 px (B2 gates 1, 5 and 7):
+    - the gate cell (797, 1986): six sections, shown in order; the reports section lists the 1.0 in report of Jun 14, 2025
+      at 11:45 pm (Montana time, from the UTC record); the warnings section names a TFX warning;
+    - Benchland's own cell (792, 1998): the reports section lists the 1.75 in report at 2:10 pm on Jun 15, 2025;
+    - no section holds a template brace, and no page scrolls sideways on the phone;
+    - a part the build marks unavailable shows its own sentence and no lead, rows or note (check_part_unavailable);
+    - each section's heading, sentences, leads, rows and remarks are the module's (sheet_matches), each section of a
+      sample build carries the sample label (check_sample_labels), a station file that fails shows its unavailable
+      sentence and nothing else (check_station_unavailable), and a zone file that fails does the same for its section
+      (check_zone_unavailable)."""
+    problems: list[str] = []
+    loading = data["hail"]["words"]["loading"]
+    if data["hail"]["joins"].get("state") == "unavailable":      # a store without the records (the published asset before
+        words = data["hail"]["joins"]["words"]                   # the joins step has run): every part says so in the module's
+        for label, size in HAIL_SIZES:                           # own sentence (D20) and shows nothing else, and the page throws
+            ctx = browser.new_context(viewport={"width": size[0], "height": size[1]})   # nothing (the preview of 2026-10-19)
+            page = ctx.new_page()
+            errors: list[str] = []
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            try:
+                hail_open(page, base, hail_at(HAIL_GATE))
+                sheet_settled(page, loading, 20)
+                sections = joins_sheet(page)
+                for key in JOIN_SECTIONS:
+                    text = sections.get(key, {}).get("text", "")
+                    expected = words["unavailable"].format(part=words["part_" + key], one=words["one_" + key])
+                    if expected not in text:
+                        problems.append(f"{label}: the {key} section does not say its records are unavailable")
+                    if "Data unavailable" in text:
+                        problems.append(f"{label}: the {key} section says 'Data unavailable' instead of the module's sentence")
+                if errors:
+                    problems.append(f"{label}: script error: " + "; ".join(errors[:3]))
+            finally:
+                ctx.close()
+        return problems
+    for label, size in HAIL_SIZES:
+        ctx = browser.new_context(viewport={"width": size[0], "height": size[1]})
+        page = ctx.new_page()
+        errors: list[str] = []
+        page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+        try:
+            hail_open(page, base, hail_at(HAIL_GATE))
+            sheet_settled(page, loading, 20)
+            sections = joins_sheet(page)
+            problems += check_sample_labels(sections, data, f"{label} gate")
+            keys = [k for k in JOIN_SECTIONS if k in sections]
+            if keys != list(JOIN_SECTIONS):
+                problems.append(f"{label}: the sheet's joined sections are {keys}, expected the six in order")
+            for key in JOIN_SECTIONS:
+                if key in sections and not sections[key]["shown"]:
+                    problems.append(f"{label}: the {key} section is hidden on the gate cell")
+                if key in sections and ("{" in sections[key]["full"] or "}" in sections[key]["full"]):
+                    problems.append(f"{label}: a template brace was left in the {key} section")
+            reports = sections.get("reports", {}).get("full", "")
+            if GATE_UTICA_DAY not in reports or GATE_UTICA_TIME not in reports:
+                problems.append(f"{label}: the gate cell's reports lack the Utica report at {GATE_UTICA_TIME} on {GATE_UTICA_DAY}")
+            if GATE_OFFICE not in sections.get("warnings", {}).get("text", ""):
+                problems.append(f"{label}: the gate cell's warnings lack a {GATE_OFFICE} warning")
+            expected = joins_expected(root, data, HAIL_GATE)
+            problems += sheet_matches(f"{label} gate", sections, expected)
+            spot = no_join_spot(root, data)
+            if spot is None:    # no tile of the real store is empty; the sample build holds one and checks these words
+                pass
+            else:
+                hail_open(page, base, hail_at(spot))
+                sheet_settled(page, loading, 20)
+                empty = joins_sheet(page)
+                problems += sheet_matches(f"{label} no-join", empty, joins_expected(root, data, spot))
+                for key in ("reports", "detections", "warnings"):
+                    if key in empty and "No " not in empty[key]["text"] and "Data unavailable" not in empty[key]["text"]:
+                        problems.append(f"{label}: the {key} section of a cell with no records has no no-report words")
+            snap(page, shots, f"joins-gate-{label}.png")
+            hail_open(page, base, hail_at(HAIL_CELL_CENTRE))
+            sheet_settled(page, loading, 20)
+            bench_sections = joins_sheet(page)
+            bench = bench_sections.get("reports", {}).get("full", "")
+            problems += sheet_matches(f"{label} Benchland", bench_sections, joins_expected(root, data, HAIL_CELL_CENTRE))
+            if "1.75" not in bench or BENCHLAND_TIME not in bench or BENCHLAND_DAY not in bench:
+                problems.append(f"{label}: Benchland's own cell lacks the 1.75 in report at {BENCHLAND_TIME} on {BENCHLAND_DAY}")
+            if label == "phone" and page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth"):
+                problems.append("phone: the sheet makes the page scroll sideways")
+            problems += [f"{label}: {e}" for e in errors]
+        finally:
+            ctx.close()
+    problems += check_part_unavailable(browser, base, root, data)
+    problems += check_station_unavailable(browser, base, root, data)
+    problems += check_zone_unavailable(browser, base, root, data)
+    problems += check_cross_day_end(browser, base, root, data)
+    return problems
+
+
+PART_UNAVAILABLE = "reports"     # the part the unavailable check marks as not loaded
+
+
+def check_part_unavailable(browser, base: str, root: Path, data: dict) -> list[str]:
+    """A part the build marks unavailable shows its own sentence and no lead, rows or note, as describe_joins writes it;
+    the other sections still show (browser-1, D2). The map's data file is answered with that part marked unavailable, and
+    the module's words come from the same index with the same mark. The store on disk is not changed."""
+    problems: list[str] = []
+    loading = data["hail"]["words"]["loading"]
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = ctx.new_page()
+    errors: list[str] = []
+    page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+
+    def mark_unavailable(route):
+        response = route.fetch()
+        doc = response.json()
+        doc["hail"]["joins"]["parts"][PART_UNAVAILABLE] = "unavailable"
+        route.fulfill(status=200, content_type="application/json", body=json.dumps(doc))
+
+    page.route("**/data/map.json*", mark_unavailable)
+    try:
+        hail_open(page, base, hail_at(HAIL_GATE))
+        sheet_settled(page, loading, 20)
+        sections = joins_sheet(page)
+        normal = {sec["id"]: sec for sec in joins_expected(root, data, HAIL_GATE)["sections"]}
+        expected = joins_expected(root, data, HAIL_GATE, PART_UNAVAILABLE)
+        got = sections.get(PART_UNAVAILABLE, {})
+        text = _flat(got.get("full", ""))
+        sentence = next(sec["unavailable"] for sec in expected["sections"] if sec["id"] == PART_UNAVAILABLE)
+        if not got.get("shown"):
+            problems.append(f"the {PART_UNAVAILABLE} section is hidden when that part did not load")
+        if not sentence or _flat(sentence) not in text:
+            problems.append(f"the {PART_UNAVAILABLE} section lacks the module's unavailable sentence")
+        lead = normal[PART_UNAVAILABLE]["lead"]
+        if lead and _flat(lead) in text:
+            problems.append(f"the {PART_UNAVAILABLE} section shows a lead for a part that did not load")
+        if any(_flat(row["text"]) in text for row in normal[PART_UNAVAILABLE]["rows"]):
+            problems.append(f"the {PART_UNAVAILABLE} section shows a row of a part that did not load")
+        problems += sheet_matches("unavailable part", sections, expected)   # the other sections keep their leads and rows
+        problems += [f"unavailable part: {e}" for e in errors]
+    finally:
+        ctx.close()
+    return problems
+
+
+def check_sample_labels(sections: dict, data: dict, label: str) -> list[str]:
+    """Each joined section of a sample build says the build's sample word, and no section of a store build says it
+    (browser-4): the label is in each section, besides the sheet's own tag above the sections."""
+    joins = data["hail"]["joins"]
+    word, sample = joins["words"]["sample"], joins.get("state") == "sample"
+    problems: list[str] = []
+    for key in JOIN_SECTIONS:
+        text = _flat(sections.get(key, {}).get("text", ""))
+        if sample and word not in text:
+            problems.append(f"{label}: the {key} section of a sample build does not say {word!r}")
+        if not sample and word in text:
+            problems.append(f"{label}: the {key} section of a store build says {word!r}")
+    return problems
+
+
+def check_station_unavailable(browser, base: str, root: Path, data: dict) -> list[str]:
+    """A station file that does not load (browser-1, D27): the first station file the sheet asks for is refused, in a
+    browser context of its own. The stations section then shows its unavailable sentence and no lead, rows or note, and
+    the other five sections keep what the module writes for them. The module's words come from the same index with the
+    stations part marked unavailable (joins_expected), which is how describe_joins writes a part that did not load."""
+    problems: list[str] = []
+    if data["hail"]["joins"].get("state") == "unavailable":     # a store without the records has no station file to fail
+        return problems
+    loading = data["hail"]["words"]["loading"]
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = ctx.new_page()
+    errors: list[str] = []
+    page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+    refused: list[str] = []
+
+    def refuse_first_station(route):
+        if not refused:
+            refused.append(route.request.url)
+            return route.abort()
+        return route.continue_()
+
+    page.route("**/hail/s/**", refuse_first_station)
+    try:
+        hail_open(page, base, hail_at(HAIL_GATE))
+        sheet_settled(page, loading, 20)
+        sections = joins_sheet(page)
+        if not refused:
+            problems.append("the station check refused no station file: the gate cell asked for none")
+        problems += sheet_matches("station file", sections, joins_expected(root, data, HAIL_GATE, "stations"))
+        problems += [f"station file: {e}" for e in errors]
+    finally:
+        ctx.close()
+    return problems
+
+
+HAIL_CROSS_DAY_CENTRE = (48.985, -110.955)   # the centre of cell (601, 1904): a warning that ends on the next Montana day
+
+
+def gate_zone(root: Path, point: tuple[float, float]) -> str | None:
+    """The forecast zone code of the cell at a point, from its tile's zone map (None when the cell has none)."""
+    hs = hail_store()                       # puts the repository on sys.path before the website package is imported
+    from website import joins as jn
+    row, col = hs.cell_for(*point)
+    tile = json.loads((root / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json").read_text(encoding="utf-8"))
+    return jn._zone_for_key(tile, hs.cell_key(row, col))
+
+
+def zone_lost_expected(root: Path, data: dict, point: tuple[float, float], zone: str) -> dict:
+    """The six sections for a point as describe_joins writes them when the zone's file did not load: the same store with
+    that one file left out of a copy (the copy holds the store's j, s and z folders, and the index; the zone is removed
+    from the copy's z folder). The copy is made here and removed here."""
+    copied = Path(tempfile.mkdtemp(prefix="hailwatch-zone-"))
+    try:
+        (copied / "hail").mkdir()
+        shutil.copy(root / "hail" / "index.json", copied / "hail" / "index.json")
+        for part in ("j", "s", "z"):
+            shutil.copytree(root / "hail" / part, copied / "hail" / part)
+        (copied / "hail" / "z" / f"{zone}.json").unlink()
+        return joins_expected(copied, data, point)
+    finally:
+        shutil.rmtree(copied, ignore_errors=True)
+
+
+def check_zone_unavailable(browser, base: str, root: Path, data: dict) -> list[str]:
+    """A zone file that does not load (D27): the gate cell's forecast zone file is refused in a browser context of its own.
+    The zone products section then shows its unavailable sentence and nothing else, and the records section keeps the
+    point records that loaded, with the partial sentence that names the zone and the reason. The module's words come from
+    describe_joins on a copy of the store without that zone file (zone_lost_expected). The fire weather zone's file is not
+    refused."""
+    problems: list[str] = []
+    if data["hail"]["joins"].get("state") == "unavailable":     # a store without the records has no zone file to fail
+        return problems
+    zone = gate_zone(root, HAIL_GATE)
+    if not zone:
+        return ["the zone check: the gate cell has no forecast zone to refuse"]
+    loading = data["hail"]["words"]["loading"]
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = ctx.new_page()
+    errors: list[str] = []
+    page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
+    refused: list[str] = []
+
+    def public_zone_file(url: str) -> bool:
+        return "/hail/z/" in url and "/hail/z/fire-" not in url
+
+    def refuse_first_zone(route):
+        if not refused:
+            refused.append(route.request.url)
+            return route.abort()
+        return route.continue_()
+
+    page.route(public_zone_file, refuse_first_zone)
+    try:
+        hail_open(page, base, hail_at(HAIL_GATE))
+        sheet_settled(page, loading, 20)
+        sections = joins_sheet(page)
+        if not refused:
+            problems.append("the zone check refused no zone file: the gate cell asked for none")
+        problems += sheet_matches("zone file", sections, zone_lost_expected(root, data, HAIL_GATE, zone))
+        problems += [f"zone file: {e}" for e in errors]
+    finally:
+        ctx.close()
+    return problems
+
+
+def check_cross_day_end(browser, base: str, root: Path, data: dict) -> list[str]:
+    """A warning that ends on a later Montana day shows that day with its end time on the sheet, as the town table does
+    (rules-6, D13). The cell's expected rows with such an end must all be on the sheet. A build that does not hold the
+    cell's tile (a sample build holds three) gets a note and no check, as no_join_spot skips such tiles (F-08)."""
+    hs = hail_store()
+    row, col = hs.cell_for(*HAIL_CROSS_DAY_CENTRE)
+    name = hs.tile_name(row // hs.TILE, col // hs.TILE)
+    if not (root / "hail" / "j" / f"{name}.json").is_file():
+        return [f"{NOTE}the cross-day check did not run: this build holds no record file for tile {name}"]
+    loading = data["hail"]["words"]["loading"]
+    expected = joins_expected(root, data, HAIL_CROSS_DAY_CENTRE)
+    warn = next(sec for sec in expected["sections"] if sec["id"] == "warnings")
+    cross = [r["text"] for r in warn["rows"] if re.search(r" to [A-Z][a-z]{2} \d{1,2}, \d{4} ", r["text"])]
+    if not cross:
+        return [f"the cross-day check found no warning ending on a later day at {HAIL_CROSS_DAY_CENTRE}"]
+    problems: list[str] = []
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = ctx.new_page()
+    try:
+        hail_open(page, base, hail_at(HAIL_CROSS_DAY_CENTRE))
+        sheet_settled(page, loading, 20)
+        text = _flat(joins_sheet(page).get("warnings", {}).get("full", ""))
+        for row in cross:
+            if _flat(row) not in text:
+                problems.append(f"the warnings sheet lacks the cross-day row {row[:90]!r}")
     finally:
         ctx.close()
     return problems
