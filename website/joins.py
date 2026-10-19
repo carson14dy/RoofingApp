@@ -1,72 +1,133 @@
-"""Hail history joins (B2): what else happened at each spot, joined to the B1 store's tiles.
+"""Hail history joins (B2, extended in B5): what else happened at each spot, joined to the B1 store's tiles.
 
-Five kinds of evidence sit beside the radar estimate (docs/DECISIONS.md D34; the B2 brief), each with its own kind
-word and never merged into another: a report (an NWS local storm report, IEM's LSR archive), an official record
-(NCEI Storm Events: hail and thunderstorm wind points, and zone-coded rows; D34), a radar detection (NCEI's SWDI
-nx3hail hail signatures), a warning (the NWS warning polygon
-that covered the spot, IEM's watchwarn archive) and a zone product (an NWS zone-wide product for the spot's forecast
-zone), plus a station reading (the nearest ASOS gusts, IEM's daily summaries). Nothing here states damage, an
-all-clear, insurance or eligibility (AGENTS.md rule 5). A missing source says so: "Data unavailable".
+Kinds of evidence sit beside the radar estimate (docs/DECISIONS.md D34 and D35; the B2 and B5 briefs), each with its own
+kind word and never merged into another: a report (an NWS local storm report, IEM's LSR archive), an official record
+(NCEI Storm Events: point records and zone-coded rows), a radar detection (NCEI's SWDI nx3hail signatures), a warning
+(the NWS warning polygon that covered the spot, IEM's watchwarn archive), a zone product (an NWS product for the spot's
+forecast zone, or a county product for its county) and a station reading (the nearest ASOS gusts, IEM's daily
+summaries). Nothing here states damage, an all-clear, insurance or eligibility (AGENTS.md rule 5). A missing source says
+so: "Data unavailable".
 
 Output, written into the store next to B1's shards (store/hail/):
-  j/events.json               every report (LSR), record (NCEI hail and thunderstorm wind points) and warning
-                              (SV, TO, FF) in the window, once each; the rows carry the fields of the B2 brief
-  j/r{tr:04d}_c{tc:04d}.json  one per B1 tile, for the tile's bounds (the browser filters by the cell's distance):
-                              reports and records as indexes into events.json, warnings as [index, 100-bit
-                              cover], detections in full, the zone map as {zone code: [cell keys]}, the fire weather
-                              zones as {fire zone code: [cell keys]}, and the two nearest stations within 40 miles
-                              of the tile centre
-  z/MTZ###.json               one per current Montana forecast zone: its zone products (the ten in ZONE_PRODUCTS;
-                              FL.W is a polygon product and the county-only flood watches go to B5's county path,
-                              D34, D35) and NCEI zone-coded rows. A
-                              product's "b" is its begin (the earliest NEW or CON issue, else the issue time its rows
-                              carry), "e" its end (the earliest cancellation (CAN) or upgrade (UPG) time, else the
-                              latest expiry of its other rows; null when none is recorded; D26 keeps a cancellation or
-                              upgrade time even when it is not after the begin) and "st": "cancelled" or "upgraded",
-                              the status of the row that set the end (D6, D16, D26, D31)
+  j/events.json               every report (LSR), record (NCEI points) and warning (polygon) in the window, once each;
+                              a report's twelfth field is its type word (B5, source 6); a record's fourteenth is NCEI's
+                              FLOOD_CAUSE as written (B5)
+  j/r{tr:04d}_c{tc:04d}.json  one per B1 tile: reports and records as indexes into events.json, warnings as [index, the
+                              tile's 100-bit cover], detections in full, the zone map {zone code: [cell keys]}, the fire
+                              weather zones {code: [keys]}, the counties {MTC code: [keys]} (B5: each Montana cell is in
+                              one county, written here once), and the two nearest stations within 40 miles
+  z/MTZ###.json               one per current Montana forecast zone: its zone products, one event per period (D8; B2
+                              D33 implemented in B5), and its NCEI zone-coded rows
   z/fire-MTZ###.json          one per fire weather zone: red flag warnings (D7), in the same event shape
-  s/<id>.json                 one per MT_ASOS station: the days with a gust of 50 kt (58 mph) or more, as whole numbers
-  hail/index.json             gains a "joins" block (counts, parts, the request summary, the lags, the report types,
-                              the zone editions and the malformed-row counts)
-  hail/manifest.json          lists every j/, z/ and s/ file with its bytes and SHA-256
+  k/MTC###.json               one per Montana county (B5, source 4): the county-only events (FA.A and FF.A with county
+                              codes and no zone code) and the outline-less polygons joined by county (D11)
+  s/<id>.json                 one per MT_ASOS station: the days with a gust of 50 kt (58 mph) or more, as
+                              [day index, mph, kt, flag] (B5: flag 1 is a reading flagged for check, D12)
+  hail/index.json             gains a "joins" block (counts, parts, the request summary, the lags, the report types, the
+                              type words, the zone editions, the cover counts, the counties, the VTEC counts, the town
+                              point check and the malformed-row counts)
+  hail/manifest.json          lists every j/, z/, s/ and k/ file with its bytes and SHA-256
 
-Each report lies within five miles of about seven tiles, so the events table keeps each row once; the j/ files are
-19.9 MB in the current build (the budget is 40 MB).
+Each report lies within five miles of about seven tiles, so the events table keeps each row once.
 
-Units and conventions (the B2 brief): LSR hail and rain/snow in inches as reported; LSR gusts and sustained wind in
-mph (the archive gives no unit; the research reads it as mph); LSR MAG "None" is missing. NCEI BEGIN times are MST-7
-local (UTC = local + 7 h) and every shown time is Montana time (MDT or MST). NCEI wind is in knots, with mph =
-round(kt x 1.15078) beside it. SWDI MAXSIZE is inches, stored as hundredths (an integer), exact duplicate rows
-dropped. IEM daily gusts are knots: many are whole knots, and nearly all the rest fit a whole mph multiplied by
-0.8689762 (inferred from the values; the feed does not document it). Station days are whole knots and whole mph, the
-mph from the unrounded knots (D18). Warning tags are the NWS numbers as the archive gives them, in inches and mph.
-Times are UTC in the store.
+Units and conventions (the B2 brief; B5 additions): LSR hail, rain and snow in inches as reported; LSR gusts and sustained
+wind in mph (the archive gives no unit; the research reads it as mph); LSR MAG "None" is missing. LSR magnitudes are shown
+only for codes H, R, S (inches) and G, N, A (mph), the codes B2 verified; codes 5, 6, 7, I and J (freezing rain, extreme
+cold, wind chill, extreme heat, fog) show no magnitude and show the remark as written. NCEI BEGIN times are MST-7 local
+(UTC = local + 7 h; CZ_TIMEZONE is MST-7 on all 9,299 Montana rows) and every shown time is Montana time (MDT or MST). NCEI
+wind is in knots, with mph = round(kt x 1.15078) beside it. NCEI hail is inches. The B5 point types (flood, flash flood,
+heavy rain, tornado, funnel cloud, lightning, debris flow) carry no MAGNITUDE in these files and show their type word only.
+SWDI MAXSIZE is inches, stored as hundredths (an integer), exact duplicate rows dropped. IEM daily gusts are knots:
+many are whole knots, and nearly all the rest fit a whole mph multiplied by 0.8689762 (inferred from the values; the feed
+does not document it). Station days are whole knots and whole mph, the mph from the unrounded knots (D18). Warning tags are the
+NWS numbers as the archive gives them, in inches and mph. Times are UTC in the store.
+
+Polygon cover (D11, B5): a polygon covers a cell when it intersects the cell's square (half a cell each way from the
+centre: a polygon vertex in the square, or an edge across one of its sides, or the square inside the polygon). The
+centre rule (the centre inside) is a subset and is counted beside it per product (cover_counts in the index). A town
+point is tested by exact point-in-polygon against every polygon of 2021 to 2026 (town_checks; every disagreement with the
+centre rule is listed). A polygon with no outline is never read as no warning: it joins by the MTC codes its product
+carries, and is counted in polygon_nulls otherwise.
+
+Zone periods (D8, B5): rows of one VTEC event (zone, phenomenon, significance, office, event number, year) are taken in
+product order (utc_prodissue). A CAN, UPG or EXP closes the open period; a closing row with no open period starts one of its
+own at its issue time; a NEW, CON, EXT, EXA or EXB opens a period when none is open and otherwise continues it. Each period
+is a span: begin = the opening row's issue time (UTC), end = the closing row's expiry (a cancellation or upgrade time, even at
+or before the begin: "cancelled at", D26, D31), else the latest expiry of its rows (None when not after the begin: "end not
+recorded", D6). A tie in product time reads cancelled. The window takes a period by its begin. VTEC events (the key
+without the zone; the earliest NEW or CON issue, else the earliest issue) are counted separately in vtec_counts.
 
 Zone editions (D16): every public zone edition the NWS page links is read (z_18mr25.zip and z_16ap26.zip; each date
 is the day and month in its file name). A product takes the zone code of the edition in force on its issue day. The
 two linked editions hold the same 83 zones with the same codes, names and outlines; the index records that. A code no
-current zone holds is counted as unplaced (D11), and the zone sections say so for Montana as a whole.
+current zone holds is counted as unplaced (D11), and the zone sections say so for Montana as a whole. Some codes of the
+2021 to 2025 products (MTZ009, MTZ010, MTZ014, MTZ045, MTZ054 among them) are not current zones; their products are unplaced.
+
+Requests (B5): each IEM watchwarn request (polygon shapefiles and zone CSVs, and the polygon CSVs for the county twins)
+runs from 1 December of the year before to 31 January of the year after, and the copies of a row that two years' files
+share are one row (53 duplicates dropped in the window, measured 2026-10-19). A year-only request lost the rows whose
+product was issued in the year before, so B2's per-year zone counts were short (HW.W, WW.Y, HW.A and WC.W by 1 to 2 events
+in the window). The cache folders are ww-m and zones-m, so no year-only file is mixed in.
 
 Malformed rows (D21): a row whose date, position or magnitude cannot be read is skipped and counted (malformed_rows in
 the index); a row with too few fields is counted as short (D10). Neither fails its file or the build.
 
-Cache (D10, D15): a re-pull window (the last two months of LSR and SWDI, the current year of warnings, zone products
-and station days, and in January the previous year too) is fetched fresh and written over the cached copy. The cached
-copy is used only when the fresh request fails, and the index then says "served from cache since". --offline makes no
-request at all: the cache is the only input, so two offline builds from one cache are byte-identical.
+Cache (D10, D15): a re-pull window (the last two months of LSR and SWDI, the current year of warnings, zone products and
+station days, and in January the previous year too) is fetched fresh and written over the cached copy. The cached copy is
+used only when the fresh request fails, and the index then says "served from cache since". --offline makes no request at
+all: the cache is the only input, so two offline builds from one cache are byte-identical. The county file (TIGER 2026) is
+fetched once and kept (annual or on change).
 
-The window is the B1 store's window: SPC report days from window[0] to window[1], that is UTC instants from
-12:00 UTC on the first day up to 12:00 UTC on the day after the last.
+The window is the B1 store's window: SPC report days from window[0] to window[1], that is UTC instants from 12:00 UTC on the
+first day up to 12:00 UTC on the day after the last. The research's own window (calendar days 2021-10-19 to 2026-10-19)
+is counted separately from every row read (vtec_counts_research).
 
-Command line (run from the repository root):
-    python -m website.joins build --store DIR [--cache DIR] [--procs 4] [--today YYYY-MM-DD] [--offline]
-    python -m website.joins verify DIR                      check the joins in a store (exit 1 on a failure)
-    python -m website.joins compare DIR                    the research counts against this build
-    python -m website.joins fixture [--out DIR] [--from-store DIR]   write the SAMPLE joins for the fixture
+Sources and terms (B5, quoted from the records; each name is the source's own):
+  IEM watchwarn, LSR and daily summaries: "The materials found on this website are in the public domain and may be used
+  freely by anyone for any lawful purpose." "Attributing the Iowa Environmental Mesonet of Iowa State University would be
+  appreciated." "We therefore provide this information without any warranty of accuracy."
+  NWS warnings: "The information on National Weather Service Web servers and Web sites is in the public domain, unless
+  specifically annotated otherwise, and may be used freely by the public." "You also cannot present information of your
+  own in a way that makes it appear to be official government information."
+  Census county boundaries (TIGER/Line 2026, the file's own use constraints): "The TIGER/Line shapefile products are not
+  copyrighted; however, TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are
+  free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source."
+  That is the county file's own wording (tl_2026_us_county.shp.iso.xml in the cached county zip: 50,509 bytes, SHA-256
+  828948a3ccab9bfbc2ab6987686790e421ca0c88e61aaecbabe826fa41ce1eb7). The state file and the Beaverhead (2025) and
+  Yellowstone (2026) roads files carry the variant "The TIGER/Line Shapefile products are not copyrighted however TIGER/Line
+  and Census TIGER are registered trademarks ..." (a capital S and no semicolon), as the research record
+  legal-terms-review.json quotes it.
+  NCEI Storm Events: the licence text was not read in this run (the NCEI terms page returned 503 in the research).
+
+Feed facts for the contract rows (B5):
+  nws_warnings_polygons (IEM watchwarn shapefile, accept=shapefile): products FL.W, FA.W, FA.Y, FL.A, FL.Y, SQ.W (and
+    SV.W, TO.W, FF.W from B2; FF.A's polygon); NEW rows with GTYPE P; POLY_BEG and POLY_END UTC (YYYYMMDDHHMM); tags
+    HAILTAG (in), WINDTAG (mph), TORNTAG, DAMAGTAG (the NWS damage threat tag, shown as the NWS's: SQ.W and FF.W carry
+    one); blank tags are missing; the research's note: "no hail, wind or tornado tags in these products" (except SV);
+    cadence per request year (the current year and January's previous year fresh).
+  nws_zone_products (IEM watchwarn CSV, accept=csv): products HW.W, WS.W, BZ.W, IS.W, EC.W, WC.W, FW.W (fire zones), DS.W,
+    WI.Y, FA.A, WW.Y, WS.A, HW.A, HT.Y, EH.W, EH.A, FR.Y, FZ.W, DU.Y, FF.A; utc_issue, utc_expire and utc_prodissue UTC; a row
+    with a zone code (MTZ) is a zone row, a row with a county code (MTC) is a county row; blank UGC rows are polygon rows.
+  nws_county_products: FA.A and FF.A county-only events (MTC rows, no MTZ row of the same key): 18 and 2 in the research
+    window; the county file is Census TIGER/Line 2026, 56 Montana counties; a cell no county polygon holds (177 cells, all
+    within 2 km of a county edge) takes the nearest county edge within 2 km, the zone rule (D8).
+  ncei_storm_events: point rows (BEGIN_LAT and BEGIN_LON present, CZ_TYPE C) of Hail, Thunderstorm Wind, Flood, Flash Flood,
+    Heavy Rain, Tornado, Funnel Cloud, Lightning and Debris Flow, within 5 miles like hail; zone-coded rows (CZ_TYPE Z, any
+    type) by their zone; BEGIN times MST-7; MAGNITUDE blank on the B5 types; FLOOD_CAUSE as written ("Heavy Rain",
+    "Heavy Rain / Snow Melt", "Heavy Rain / Burn Area", "Ice Jam"); the 2020 to 2026 totals are Flood 76, Flash Flood 60,
+    Heavy Rain 144, Tornado 17, Funnel Cloud 35, Lightning 8, Debris Flow 11 (351 rows); the window rows are in verify.
+  iem_lsr: VALID is UTC; the type word of each row is kind (LSR_KIND_FOLD: HEAVY RAIN and RAIN are rain; HEAVY SNOW and SNOW
+    are snow; EXTR WIND CHILL and WIND CHILL are wind chill; EXCESSIVE HEAT and EXTREME HEAT are extreme heat; all others
+    their TYPETEXT in lower case). The labels and their first and last dates are in the index's type_words (the IEM
+    documentation's own dates were not read in this run; the dates are the data's).
+  station gusts (IEM daily, MT_ASOS): knots and mph whole; a reading of 130 kt or more is dropped and counted (D12: LWT
+    182.5 kt on 2023-03-13 among three, 255.0 at SDY and 165.1 at DLN); HVR 105.1 kt on 2025-02-20 and MSO 86.0 kt on
+    2025-05-09 are flagged for check (FLAG_CHECK, the two the brief names: the flag words are shown with them).
 """
 from __future__ import annotations
 
 import argparse
+import collections
 import csv
 import gzip
 import hashlib
@@ -88,11 +149,12 @@ from zoneinfo import ZoneInfo
 
 from . import hail
 
-FORMAT = "hail-joins-v1"            # j/ files
-ZONE_FORMAT = "hail-zone-v1"        # z/ files
-EVENTS_FORMAT = "hail-events-v1"    # j/events.json: every report, record and warning row once
+FORMAT = "hail-joins-v2"            # j/ files (B5: the touch rule D11, the counties map, a report's type word)
+ZONE_FORMAT = "hail-zone-v1"        # z/ files (B5: one event per period, D8; the shape is B2's)
+COUNTY_FORMAT = "hail-county-v1"    # k/ files: the county-only events and the polygon events joined by county (B5)
+EVENTS_FORMAT = "hail-events-v2"    # j/events.json: every report, record and warning row once (B5: type word, cause)
 EVENTS_NAME = "events.json"
-STATION_FORMAT = "hail-station-v1"  # s/ files
+STATION_FORMAT = "hail-station-v2"  # s/ files (B5: a fourth element, 1 when the reading is flagged for check)
 INDEX_KEY = "joins"                 # the block in hail/index.json (and manifest["joins"])
 MILE_KM = 1.609344
 REPORT_MILES = 5.0
@@ -120,24 +182,32 @@ SWDI_URL = "https://www.ncei.noaa.gov/swdiws/csv/nx3hail/{start}:{end}"
 SWDI_BBOX = "-116.05,44.36,-104.04,49.00"
 NWS_GIS_URL = "https://www.weather.gov/gis/PublicZones"
 NWS_BASE_URL = "https://www.weather.gov/source/gis/Shapefiles/WSOM/"
-WARNING_PHENOMENA = ("SV", "TO", "FF")                     # significance W, issuance polygons only
-# D34, D35: the zone products B2 reads, from IEM's zone rows (one request per product and year). Flood warnings (FL.W)
-# are polygon products: their IEM rows have no zone code (polygon rows) or are county rows (MTC), so the zone path
-# places no FL.W event and FL.W is not a zone product here; B5 joins it through the polygon path. Flood watches (FA.A)
-# are zone products where IEM gives a zone code, so the zone-coded flood watches are joined. The 18 county-only flood
-# watch events (county rows, MTC) go to B5's county path.
+# B5 (D11, D34, D35 and the B5 brief): the polygon products, read from IEM's watchwarn shapefiles, issuance polygons
+# (NEW rows with GTYPE P). SV.W, TO.W and FF.W are B2's; FL.W, FA.W, FA.Y, FL.A, FL.Y and SQ.W are B5's; FF.A is read
+# too, since its one polygon event is routed by its own rows (the window holds none; its other rows are zone and
+# county rows). Each product is requested with its own significance.
+POLYGON_PRODUCTS = (("SV", "W"), ("TO", "W"), ("FF", "W"), ("FL", "W"), ("FA", "W"), ("FA", "Y"), ("FL", "A"),
+                    ("FL", "Y"), ("SQ", "W"), ("FF", "A"))
+# The zone products, from IEM's zone rows (one request per product and year, with a margin of a month either side:
+# B5, see MARGIN_MONTHS). B2's ten (D34, D35) and B5's ten (WW.Y, WS.A, HW.A, HT.Y, EH.W, EH.A, FR.Y, FZ.W, DU.Y, FF.A).
+# FL.W is a polygon product (its rows have no zone code), so it is not a zone product; its county rows (MTC) go to the
+# county path only when the event has no polygon.
 ZONE_PRODUCTS = (("HW", "W"), ("WS", "W"), ("BZ", "W"), ("IS", "W"), ("EC", "W"), ("WC", "W"), ("FW", "W"),
-                 ("DS", "W"), ("WI", "Y"), ("FA", "A"))
+                 ("DS", "W"), ("WI", "Y"), ("FA", "A"), ("WW", "Y"), ("WS", "A"), ("HW", "A"), ("HT", "Y"),
+                 ("EH", "W"), ("EH", "A"), ("FR", "Y"), ("FZ", "W"), ("DU", "Y"), ("FF", "A"))
 LSR_HEADER = ("VALID", "VALID2", "LAT", "LON", "MAG", "WFO", "TYPECODE", "TYPETEXT", "CITY", "COUNTY", "STATE",
               "SOURCE", "REMARK", "UGC", "UGCNAME", "QUALIFIER")
 LSR_UNITS = {"H": "in", "R": "in", "S": "in", "G": "mph", "N": "mph", "A": "mph"}
 LSR_QUALIFIERS = {"E": "estimated", "M": "measured", "U": "unknown"}
 NCEI_QUALIFIERS = {"MG": "measured gust", "EG": "estimated gust", "MS": "measured sustained",
                    "ES": "estimated sustained"}
-NCEI_POINT_TYPES = ("Hail", "Thunderstorm Wind")
+# B5 (source 5): NCEI county-coded points of these types join as records within 5 miles, like hail and thunderstorm
+# wind. Their rows carry no MAGNITUDE in these files (checked: 351 rows), so they are typed rows (D19).
+NCEI_POINT_TYPES = ("Hail", "Thunderstorm Wind", "Flood", "Flash Flood", "Heavy Rain", "Tornado", "Funnel Cloud",
+                    "Lightning", "Debris Flow")
 NCEI_WIND_TYPES = ("Thunderstorm Wind", "High Wind", "Strong Wind")
 # D19: the type codes that carry a unit (a magnitude is shown only for these); every other code is typed (type word only).
-NCEI_UNIT_CODES = frozenset(t.lower() for t in NCEI_POINT_TYPES + NCEI_WIND_TYPES)
+NCEI_UNIT_CODES = frozenset(t.lower() for t in ("Hail",) + NCEI_WIND_TYPES)   # B5: not the new point types
 UNIT_CODES = frozenset(LSR_UNITS) | NCEI_UNIT_CODES
 SWDI_HEADER = ("ZTIME", "WSR_ID", "CELL_ID", "PROB", "SEVPROB", "MAXSIZE", "LAT", "LON")
 COMPASS = ("N", "NE", "E", "SE", "S", "SW", "W", "NW")
@@ -147,6 +217,12 @@ PRODUCT_NAMES = {
     "BZ.W": "Blizzard warning", "IS.W": "Ice storm warning", "EC.W": "Extreme cold warning",
     "WC.W": "Wind chill warning", "FW.W": "Red flag warning", "FA.A": "Flood watch",
     "DS.W": "Dust storm warning", "WI.Y": "Wind advisory",
+    # B5 (the polygon products, D11, and the zone products added in B5)
+    "FL.W": "Flood warning", "FA.W": "Areal flood warning", "FA.Y": "Areal flood advisory", "FL.A": "Flood watch",
+    "FL.Y": "Flood advisory", "SQ.W": "Snow squall warning", "FF.A": "Flash flood watch",
+    "WW.Y": "Winter weather advisory", "WS.A": "Winter storm watch", "HT.Y": "Heat advisory",
+    "EH.W": "Excessive heat warning", "EH.A": "Excessive heat watch", "FR.Y": "Frost advisory",
+    "FZ.W": "Freeze warning", "DU.Y": "Blowing dust advisory",
 }
 KIND_WORDS = {"SV": "Severe thunderstorm", "TO": "Tornado", "FF": "Flash flood"}
 # D31: the statuses that end a zone event (a cancellation or an upgrade), and the "st" word each one gives the event
@@ -168,6 +244,47 @@ RESEARCH_COUNTS = {
 BENCHLAND_GATE = {"cell": (797, 1986), "report_cell": (792, 1998), "day": "2025-06-15", "hhmm": 2010,
                   "in": "1.75"}     # B2 gate 1 (D1): the warnings and the zone at cell, the report at report_cell
 ZONE_NEAR_KM = 2.0                  # D8: a Montana cell no public zone claims takes the nearest zone edge this close
+# B5 (D11): a polygon covers a cell when it intersects the cell's square, which runs this far each side of the centre
+COVER_HALF_DEG = 0.005
+# B5 (D8): a row whose status opens a period (when none is open) and one whose status closes the open period
+OPEN_STATUS = ("NEW", "CON", "EXT", "EXA", "EXB")
+CLOSE_STATUS = ("CAN", "UPG", "EXP")
+# B5 (D8): the order of rows that share a product time
+STATUS_ORDER = {"NEW": 0, "CON": 1, "EXT": 2, "EXA": 3, "EXB": 4, "CAN": 5, "UPG": 6, "EXP": 7}  # a tie: CAN first
+# B5 (source 1 and D8): IEM's zone and polygon requests cover the year and a month either side. A request for the
+# year alone loses the rows whose product was issued in the year before and whose event begins in the year (WW.Y 2,
+# HW.A 1 and HW.W 1 in the window, measured 2026-10-19), so the margin is part of the request.
+MARGIN_MONTHS = 1
+# B5 (source 4 and the research): the research's own window, calendar days 2021-10-19 to 2026-10-19 (UTC), which the
+# research's counts use; the store's window (B1's as_of) can end a few days earlier, so the counts are kept for both
+RESEARCH_START = datetime(2021, 10, 19, tzinfo=timezone.utc)
+RESEARCH_END = datetime(2026, 10, 19, tzinfo=timezone.utc)
+# B5 (source 4): the Census county boundaries (TIGER 2026; 56 Montana counties), read from the cache
+COUNTY_URL = "https://www2.census.gov/geo/tiger/TIGER2026/COUNTY/tl_2026_us_county.zip"
+COUNTY_FILE = "counties/tl_2026_us_county.zip"
+COUNTY_STATE = "30"                 # the FIPS state code of Montana
+# B5 (D12): the station readings flagged for check: the two values the brief names (HVR 105.1 kt on 2025-02-20 and MSO
+# 86.0 kt on 2025-05-09). Each is shown with the flag words; no other reading is flagged by this list.
+FLAG_CHECK = {("HVR", "2025-02-20"), ("MSO", "2025-05-09")}
+# B5 (source 6): the LSR type words that changed in 2023 and 2024 fold into one word per kind; every other label shows
+# its own words, lower case. The labels and their dates are read from the store's table (type_words in the index).
+LSR_KIND_FOLD = {"HEAVY RAIN": "rain", "RAIN": "rain", "HEAVY SNOW": "snow", "SNOW": "snow",
+                 "EXTR WIND CHILL": "wind chill", "WIND CHILL": "wind chill", "EXCESSIVE HEAT": "extreme heat",
+                 "EXTREME HEAT": "extreme heat"}
+# B5 (D15, gate 17): the hit-and-miss record. HIT_MISS_ROWS are named cases the table must hold: inside the store's
+# window, and checked only when the store holds their tile (otherwise verify says why it did not run). KNOWN_HAIL_CASES
+# are research values outside the window; verify writes them into the record as research_cases, never as table rows.
+# D15 and gate 17 name Glendive 4.00 in (June 2021, before the window); Petrolia Lake (3.50 in, 2025) is the in-window case
+# the record checks beside Lewistown (2.50 in at a 0.0 mm cell).
+HIT_MISS_ROWS = (
+    {"name": "Lewistown", "lat": 47.03, "lon": -109.42, "utc": "2025-06-15T22:48Z", "in": "2.50"},
+    {"name": "Petrolia Lake", "lat": 46.93, "lon": -108.25, "utc": "2025-06-16T01:01Z", "in": "3.50"},
+)
+KNOWN_HAIL_CASES = (
+    {"name": "Glendive", "lat": 47.09, "lon": -104.53, "utc": "2021-06-08T22:26Z", "in": "4.00",
+     "mesh_mm_research": 14.4, "note": "a research value outside the window (June 2021); not a table row"},
+)
+TOWNS_FILE = Path(__file__).resolve().parent / "towns.json"
 EDITION_DATE = date(2026, 4, 16)    # the effective date of the newest public zone edition the NWS page links (z_16ap26.zip,
                                     # read from its file name); each edition's own date comes from its name (D16)
 JOINS_DEADLINE_S = 35 * 60          # the joins' own limit from the start of the build (the job has 60 minutes; D34, D35)
@@ -206,12 +323,12 @@ WORDS_JOINS = {
     "remark_line": "Remark, as written: \u201c{remark}\u201d",
     # official records
     "records_heading": "Official records within 5 miles (NCEI Storm Events)",
-    "records_what": ("Official records are NOAA's Storm Events entries. This list has hail and thunderstorm wind points "
-                     "within 5 miles. Zone-coded records (high wind, winter storm, heavy snow and the other events "
-                     "NCEI codes to a forecast zone) are for the spot's forecast zone and cover the whole zone, not this "
-                     "spot alone. NCEI county-coded points of tornado, flood, flash flood, heavy rain, funnel cloud, "
-                     "lightning and debris flow are not joined in this version; the NWS local storm reports of those "
-                     "kinds are joined as reports. Wind magnitudes are in knots, with miles per hour beside them."),
+    "records_what": ("Official records are NOAA's Storm Events entries. This list has the point records within 5 miles: "
+                     "hail, thunderstorm wind, flood, flash flood, heavy rain, tornado, funnel cloud, lightning and debris "
+                     "flow. Zone-coded records (high wind, winter storm, heavy snow and the other events NCEI codes to a "
+                     "forecast zone) are for the spot's forecast zone and cover the whole zone, not this spot alone. "
+                     "Wind magnitudes are in knots, with miles per hour beside them. A flood record shows NCEI's cause "
+                     "as written. Records are not a complete account of every storm."),
     "records_lag": "NCEI's database runs to {newest}.",
     "records_lead_many": ("NCEI's database runs to {newest}. {n} official records for this spot or its zone between "
                           "{start} and {end}."),
@@ -219,10 +336,11 @@ WORDS_JOINS = {
                          "{start} and {end}."),
     "records_lead_none": ("NCEI's database runs to {newest}. No official record for this spot or its zone between "
                           "{start} and {end}. Records are not a complete account of every storm."),
-    "records_row": "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, {miles} mi {bearing}",
-    "records_row_here": "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, {miles} mi",
-    "records_row_typed": "Record: {date} {time}: {type}{qualifier}, {source}, {miles} mi {bearing}",
-    "records_row_here_typed": "Record: {date} {time}: {type}{qualifier}, {source}, {miles} mi",
+    "records_row": "Record: {date} {time}: {type}{cause}, {magnitude}{qualifier}, {source}, {miles} mi {bearing}",
+    "records_row_here": "Record: {date} {time}: {type}{cause}, {magnitude}{qualifier}, {source}, {miles} mi",
+    "records_row_typed": "Record: {date} {time}: {type}{cause}{qualifier}, {source}, {miles} mi {bearing}",
+    "records_row_here_typed": "Record: {date} {time}: {type}{cause}{qualifier}, {source}, {miles} mi",
+    "records_cause": ", NCEI cause as written: {cause}",
     "records_zone_row": "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, across zone {zone}",
     "records_zone_row_typed": "Record: {date} {time}: {type}{qualifier}, {source}, across zone {zone}",
     "records_unplaced_one": ("1 official zone record in Montana in the window could not be placed on a zone; its zone "
@@ -239,17 +357,17 @@ WORDS_JOINS = {
     "detections_lead_many": "{n} radar hail detections within 2 miles between {start} and {end}.",
     "detections_lead_one": "1 radar hail detection within 2 miles between {start} and {end}.",
     "detections_lead_none": ("No radar hail detection within 2 miles between {start} and {end}. The archive has "
-                             "known gaps, so this is not evidence of no hail."),
+                             "known gaps, so this is not the same as no hail."),
     "detections_row_many": "Detection: {date}: {n} detections, largest {in} in",
     "detections_row_one": "Detection: {date}: 1 detection, largest {in} in",
     # warnings
     "warnings_heading": "Warnings that covered this spot",
-    "warnings_what": ("A warning is listed when its issuance polygon covered this spot when it was issued. The times are "
-                      "when that polygon was in effect, which can differ from the warning's own valid time; this sheet "
-                      "does not show the valid time. Tags are the forecast threat at issue time, not what fell. The "
-                      "archive keeps the number only, so a value the text gave as less than shows as that number. A "
-                      "report's remark and a warning's tag are the NWS's own words about the report or the forecast "
-                      "threat, not a finding about this address."),
+    "warnings_what": ("A warning is listed when its issuance polygon covered this cell or part of it when it was "
+                      "issued. The times are when that polygon was in effect, which can differ from the warning's own "
+                      "valid time; this sheet does not show the valid time. Tags are the forecast threat at issue time, "
+                      "not what fell. The archive keeps the number only, so a value the text gave as less than shows as "
+                      "that number. A report's remark and a warning's tag are the NWS's own words about the report or "
+                      "the forecast threat, not a finding about this address."),
     "warnings_lag": "The newest warning in this build starts on {newest}.",
     "warnings_lag_none": "No warning start date is in this build.",
     "warnings_lead_many": "{n} warnings covered this spot between {start} and {end}.",
@@ -262,8 +380,10 @@ WORDS_JOINS = {
                                 "this spot."),
     "warnings_no_outline_many": ("{n} warnings in these five years have no outline on file, so they cannot be matched "
                                  "to this spot."),
-    "warnings_row": "Warning: {date} {begin} to {end}, issuance polygon in effect: {kind} warning, {office}; tags: {tags}",
-    "warnings_tags_none": "none stated",
+    "warnings_row": "Warning: {date} {span}: {product}, {office}, covered this cell or part of it{tags}",
+    "warnings_span": "{begin} to {end}",
+    "warnings_span_none": "{begin}, end not recorded",
+    "warnings_tags": "; tags: {tags}",
     "tag_hail": "hail {value} in",
     "tag_wind": "wind {value} mph",
     "tag_tornado": "tornado {value}",
@@ -344,6 +464,45 @@ WORDS_JOINS = {
     "reason_events": "the joins table could not be read",
     "reason_no_file_year": "the NCEI file list has no file for this year",
     "reason_offline": "the file is not in the cache and this build does not fetch",
+    # B5: section headings, kind words, the radar sentence, the flag and county words, and the touch rule
+    "section_flooding": "Flooding",
+    "section_ice": "Ice and winter",
+    "section_heat": "Heat",
+    "kind_radar_estimate": "Radar estimate",
+    "kind_radar_detection": "Radar detection",
+    "kind_report": "Report",
+    "kind_record": "Record (NCEI)",
+    "kind_warning": "Warning (NWS polygon, relayed by IEM)",
+    "kind_zone": "Zone product",
+    "kind_county": "County product",
+    "kind_station": "Station reading",
+    "kind_analysis": "Analysis (NOHRSC)",
+    "kind_gauge": "River gauge",
+    "kind_grid": "Grid estimate",
+    "kind_reference": "Reference",
+    "kind_unavailable": "Data unavailable",
+    "radar_sentence": "Radar estimates can miss hail that people reported and can show hail that no one reported.",
+    "flag_check": "Flagged for check: this reading is high for the station and has not been checked against other sources.",
+    "flag_suffix": " (flagged for check)",
+    "flag_check_line": ("Readings flagged for check are shown with that flag. They are the station's own readings, not "
+                        "checked against other stations."),
+    "county_heading": "County products for {county_name} County ({county})",
+    "county_what": ("These covered the whole county, not this spot alone. A county product is an NWS warning or watch "
+                    "for a county, named by its product."),
+    "county_lead_many": "{n} county products for {county_name} County between {start} and {end}.",
+    "county_lead_one": "1 county product for {county_name} County between {start} and {end}.",
+    "county_lead_none": ("No county product for {county_name} County between {start} and {end} is listed. That does not "
+                         "mean the weather was calm."),
+    "county_row": "County product: {product}, whole county {county_name} County: {events}",
+    "county_unavailable": "County products could not be loaded in this update; that is not the same as no county products.",
+    "period_note": ("A product can show more than one span: a cancellation, upgrade or expiry closes a span, and a later "
+                    "continuation or new issue opens the next."),
+    "hit_miss_summary": ("At the report's own cell, radar estimates showed hail of one inch or more at fewer than half of "
+                         "the NWS hail reports of one inch or more. Counting radar detections within 2 miles as well, most "
+                         "reports had a radar value of one inch or more. A radar miss, where neither showed one inch or "
+                         "more, is not a finding about the hail that fell."),
+    "about_hit_miss": ("NWS hail reports of one inch or more were checked against the radar estimate and the radar "
+                       "signatures near each report, for the same day. The radar missed many of them."),
 }
 WORDS_JOINS["compass_words"] = list(COMPASS)
 WORDS_JOINS["threshold_note"] = "A day counts at {kt} kt ({mph} mph) or more."
@@ -585,6 +744,13 @@ def _lsr_mag(code: str, raw: str):
     return f"{value:g}", ""
 
 
+def lsr_kind(typetext: str) -> str:
+    """The type word a report row shows (source 6): one word for the two labels of a kind that NWS changed in 2023 and
+    2024 (LSR_KIND_FOLD), otherwise the archive's own TYPETEXT in lower case."""
+    text = " ".join(str(typetext).split()).upper()
+    return LSR_KIND_FOLD.get(text, text.lower())
+
+
 def parse_lsr_rows(data: bytes) -> dict:
     """The rows of one IEM LSR monthly CSV (state MT) as {"rows": [...], "short": n, "malformed": n}. A row with fewer
     fields than the header is skipped and counted as short (D10); a row whose time, position or magnitude cannot be
@@ -615,7 +781,7 @@ def parse_lsr_rows(data: bytes) -> dict:
         qual = rec["QUALIFIER"].strip().upper()
         out.append({
             "utc": utc, "lat": lat, "lon": lon, "code": code,
-            "type": rec["TYPETEXT"].strip().lower(), "mag_text": mag, "unit": unit,
+            "type": rec["TYPETEXT"].strip().lower(), "kind": lsr_kind(rec["TYPETEXT"]), "mag_text": mag, "unit": unit,
             "qual": qual if qual in LSR_QUALIFIERS else "", "src": _sentence_case(rec["SOURCE"]),
             "city": " ".join(rec["CITY"].split()), "remark": " ".join(rec["REMARK"].split())[:160],
             "wfo": rec["WFO"].strip(),
@@ -697,7 +863,7 @@ def parse_ncei(data: bytes) -> dict:
                                "lon": _float(row["BEGIN_LON"], "BEGIN_LON"), "code": kind.lower(), "mag_text": mag,
                                "unit": unit, "qual": qual, "src": src,
                                "city": _sentence_case(row["BEGIN_LOCATION"]), "remark": "", "mag_mph": mph,
-                               "mag_kt": kt})
+                               "mag_kt": kt, "cause": " ".join((row.get("FLOOD_CAUSE") or "").split())})
         except (JoinsError, ValueError):
             malformed += 1               # D21: a row whose position or magnitude cannot be read
     return {"points": points, "zone_rows": zone_rows, "newest_local": newest, "short": short,
@@ -854,10 +1020,14 @@ def parse_ww_csv(data: bytes) -> dict:
         except ValueError:
             malformed += 1                       # D21: a row with a bad time is skipped and counted
             continue
+        try:
+            prod = datetime.strptime(row["utc_prodissue"].strip(), "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+        except (KeyError, ValueError, AttributeError):
+            prod = issue                         # no product time: the issue time orders the rows (D8)
         out.append({"wfo": row["wfo"].strip(), "phen": row["phenomena"].strip(), "sig": row["significance"].strip(),
                     "eventid": row["eventid"].strip(), "status": row["status"].strip(),
                     "ugc": row["ugc"].strip(), "vtec_year": row["vtec_year"].strip(), "issue": issue,
-                    "expire": expire, "gtype": row["gtype"].strip()})
+                    "expire": expire, "gtype": row["gtype"].strip(), "prod": prod})
     return {"rows": out, "short": short, "malformed": malformed}
 
 
@@ -901,10 +1071,12 @@ def _rings(shape) -> list:
     return out
 
 
-def parse_ww_shapefile(data: bytes) -> dict:
-    """The issuance polygons of one IEM watchwarn shapefile (a zip): {"events": [...], "no_outline": n}. Keeps NEW
-    polygons (the issuance, not a continuation), skips county twins (GTYPE C) and EXP rows; POLY_BEG and POLY_END are
-    UTC YYYYMMDDHHMM. A NEW polygon with no outline cannot be tied to a spot, so it is counted and shown as such."""
+def parse_ww_shapefile(data: bytes, phen: str = "", sig: str = "") -> dict:
+    """The issuance polygons of one IEM watchwarn shapefile (a zip): {"events": [...], "nulls": [...], "no_outline": n,
+    "malformed": n}. Keeps NEW polygons (the issuance, not a continuation) of any polygon product (B5, D11) and skips
+    county twins (GTYPE C) and EXP rows. POLY_BEG and POLY_END are UTC YYYYMMDDHHMM. A NEW polygon with no outline is
+    kept in "nulls" with its codes: it never reads as no warning (D11), so the build joins it by its county codes where
+    the product carries them, and counts it otherwise."""
     members = _zip_members(data)
     reader = _shape_reader(members)
     fields = [f[0] for f in reader.fields[1:]]
@@ -912,7 +1084,7 @@ def parse_ww_shapefile(data: bytes) -> dict:
             "TORNTAG", "DAMAGTAG", "VTEC_YR"}
     if not need <= set(fields):
         raise JoinsError(WORDS_JOINS["reason_format"])
-    out, no_outline, malformed = [], 0, 0
+    out, nulls, malformed = [], [], 0
     for sr in reader.iterShapeRecords():
         rec = dict(zip(fields, sr.record))
         if _s(rec["GTYPE"]) != "P" or _s(rec["STATUS"]) != "NEW":
@@ -927,23 +1099,50 @@ def parse_ww_shapefile(data: bytes) -> dict:
         except (ValueError, JoinsError):
             malformed += 1
             continue
-        rings = _rings(sr.shape)
-        if not rings:
-            no_outline += 1
-            continue
-        out.append({
-            "k": _s(rec["PHENOM"]), "b": beg, "e": end, "o": _s(rec["WFO"]),
-            "eventid": _s(rec["ETN"]), "vtec_year": _s(rec["VTEC_YR"]),
+        base = {
+            "k": _s(rec["PHENOM"]) or phen, "s": _s(rec.get("SIG")) or sig, "b": beg,
+            "e": end if end > beg else None,        # D6: an end not after the begin is not recorded (June 2022: 31)
+            "o": _s(rec["WFO"]), "eventid": _s(rec["ETN"]), "vtec_year": _s(rec["VTEC_YR"]),
             "hail_in": hail_in, "wind_mph": wind_mph,
             "tornado": _s(rec["TORNTAG"]) or None, "damage": _s(rec["DAMAGTAG"]) or None,
-            "rings": [[(float(x), float(y)) for x, y in ring] for ring in rings],
-        })
-    return {"events": out, "no_outline": no_outline, "malformed": malformed}
+        }
+        rings = _rings(sr.shape)
+        if not rings:
+            nulls.append(base)
+            continue
+        base["rings"] = [[(float(x), float(y)) for x, y in ring] for ring in rings]
+        out.append(base)
+    return {"events": out, "nulls": nulls, "no_outline": len(nulls), "malformed": malformed}
 
 
 def _s(value) -> str:
     """A DBF field as text; a blank (None) field is the empty string, never "None"."""
     return "" if value is None else str(value).strip()
+
+
+def parse_county_zip(data: bytes) -> list[dict]:
+    """The Montana counties from the Census TIGER 2026 county file (a zip of the shapefile; B5 source 4): the IEM code
+    of each county (MTC plus its three-digit FIPS code), its name and its rings (lon, lat). Refuses a file that does not
+    hold the 56 Montana counties."""
+    members = _zip_members(data)
+    reader = _shape_reader(members)
+    fields = [f[0] for f in reader.fields[1:]]
+    if not {"STATEFP", "COUNTYFP", "NAME"} <= set(fields):
+        raise JoinsError(WORDS_JOINS["reason_format"])
+    out = []
+    for sr in reader.iterShapeRecords():
+        rec = dict(zip(fields, sr.record))
+        if _s(rec["STATEFP"]).zfill(2) != COUNTY_STATE:
+            continue
+        rings = _rings(sr.shape)
+        if not rings:
+            raise JoinsError(WORDS_JOINS["reason_format"])
+        out.append({"zone": "MTC" + _s(rec["COUNTYFP"]).zfill(3), "name": " ".join(_s(rec["NAME"]).split()),
+                    "rings": [[(float(x), float(y)) for x, y in ring] for ring in rings]})
+    if len(out) != 56:
+        raise JoinsError(WORDS_JOINS["reason_format"])
+    out.sort(key=lambda c: c["zone"])
+    return out
 
 
 def check_ww_shapefile(data: bytes) -> None:
@@ -1258,6 +1457,8 @@ class Context:
     """Everything one build collects: the parsed sources, the parts, and the reasons for any part that did not load."""
 
     def __init__(self):
+        self.window_bounds = (None, None)            # set by _collect's caller (the window's UTC instants)
+        self.ncei_all_points: list[dict] = []        # every Montana point row read, for the totals (verify)
         self.lsr: list[dict] = []
         self.ncei_points: list[dict] = []
         self.ncei_zone_rows: list[dict] = []
@@ -1295,6 +1496,20 @@ class Context:
         self.fire_map: list | None = None             # the fire weather zones (D7); None when they did not load
         self.fire_reason: str | None = None
         self.fire_events: dict[str, list] = {}        # fire zone code -> its red flag events in the window
+        # B5: the polygon events of every year read (for the town point check, D11), the outline-less polygons, the
+        # county rows of the polygon products (a null polygon joins by them), the Montana counties, and the counts
+        self.ww_all: list[dict] = []
+        self.ww_nulls: list[dict] = []
+        self.poly_rows: list[dict] = []
+        self.polygon_duplicates = 0
+        self.county_map: list | None = None           # the Montana counties (D-B5 source 4); None when not loaded
+        self.county_reason: str | None = None
+        self.county_events: dict[str, list] = {}      # county code -> its county-only events (and joined polygons)
+        self.county_unplaced = 0
+        self.null_polygons = {"window": 0, "joined": 0, "unjoined": 0}
+        self.vtec_counts: dict[str, dict] = {}        # product -> {"zone", "county", "polygon", "window"} (VTEC events)
+        self.zone_periods = 0                         # the spans (periods) kept in the window, zone and county
+        self.vtec_counts_research: dict[str, dict] = {}   # the same counts over the research window (every row read)
 
 
 def _take(result: Result, parser):
@@ -1322,6 +1537,7 @@ def _refresh_year(year: int, today: date) -> bool:
 def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
     ctx = Context()
     start, end, first, last = window_utc(index)
+    ctx.window_bounds = (start, end)
     years = list(range(first.year, last.year + 1))
     months = _months(first, last + timedelta(days=1))
 
@@ -1330,6 +1546,7 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
     asos = fetcher.get("asos", ASOS_URL, "network/MT_ASOS.geojson", refresh=True,
                        check=_checker(parse_asos_rows))
     listing = fetcher.get("ncei", NCEI_DIR, "ncei/listing.html", refresh=True, check=check_listing)
+    counties = fetcher.get("counties", COUNTY_URL, COUNTY_FILE, check=_checker(parse_county_zip))
     edition_names: list[str] = []
     if page.ok:
         edition_names, _why = _take(page, zone_zip_names)
@@ -1370,13 +1587,17 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
         if year in ncei_names:
             add(("records", year), lambda n=ncei_names[year]: fetcher.get(
                 "ncei", NCEI_DIR + n, f"ncei/{n}", check=_checker(parse_ncei)))
-        for phen in WARNING_PHENOMENA:
-            add(("warnings", (phen, year)), lambda ph=phen, y=year: fetcher.get(
-                "ww", WW_URL, f"ww/{ph}-{y}.zip", refresh=_refresh_year(y, today),
-                check=check_ww_shapefile, params=_ww_params(ph, "W", y, shapefile=True)))
+        for phen, sig in POLYGON_PRODUCTS:
+            add(("warnings", (phen, sig, year)), lambda ph=phen, sg=sig, y=year: fetcher.get(
+                "ww", WW_URL, _ww_rel(ph, sg, y, True), refresh=_refresh_year(y, today),
+                check=check_ww_shapefile, params=_ww_params(ph, sg, y, shapefile=True)))
+            add(("polygon_rows", (phen, sig, year)), lambda ph=phen, sg=sig, y=year: fetcher.get(
+                "ww", WW_URL, _ww_rel(ph, sg, y, False).replace("zones-m/", "ww-m/"),
+                refresh=_refresh_year(y, today), check=_checker(parse_ww_csv),
+                params=_ww_params(ph, sg, y, shapefile=False)))
         for phen, sig in ZONE_PRODUCTS:
             add(("zones", (phen, sig, year)), lambda ph=phen, sg=sig, y=year: fetcher.get(
-                "zone_products", WW_URL, f"zones/{ph}{sg}-{y}.csv", refresh=_refresh_year(y, today),
+                "zone_products", WW_URL, _ww_rel(ph, sg, y, False), refresh=_refresh_year(y, today),
                 check=_checker(parse_ww_csv), params=_ww_params(ph, sg, y, shapefile=False)))
     for name in edition_names:          # every linked edition is read (D16); a file name is its own cache key
         add(("zone_map", name), lambda n=name: fetcher.get(
@@ -1438,24 +1659,31 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
             for r in parsed["points"]:
                 if r["code"] == "hail":
                     ctx.ncei_hail_by_year[r["local_year"]] = ctx.ncei_hail_by_year.get(r["local_year"], 0) + 1
+            ctx.ncei_all_points.extend(parsed["points"])
             ctx.ncei_points.extend(r for r in parsed["points"] if start <= r["utc"] < end)
             ctx.ncei_zone_rows.extend(r for r in parsed["zone_rows"] if start <= r["utc"] < end)
             newest = parsed["newest_local"]
             if newest is not None and (ctx.ncei_newest_local is None or newest > ctx.ncei_newest_local):
                 ctx.ncei_newest_local = newest
     for year in years:
-        for phen in WARNING_PHENOMENA:
-            label = f"{phen} {year}"
-            parsed, why = _take(by_tag[("warnings", (phen, year))], parse_ww_shapefile)
+        for phen, sig in POLYGON_PRODUCTS:
+            label = f"{phen}.{sig} {year}"
+            parsed, why = _take(by_tag[("warnings", (phen, sig, year))], lambda d, p=phen, s=sig: parse_ww_shapefile(d, p, s))
             if unit("warnings", label, parsed, why):
-                stale("warnings", label, by_tag[("warnings", (phen, year))])
+                stale("warnings", label, by_tag[("warnings", (phen, sig, year))])
                 ctx.warnings_no_outline += parsed["no_outline"]
                 ctx.malformed["warnings"] += parsed["malformed"]
                 for event in parsed["events"]:
+                    ctx.ww_all.append(event)
                     if start <= event["b"] < end:
                         ctx.ww_events.append(event)
                     if ctx.ww_newest is None or event["b"] > ctx.ww_newest:
                         ctx.ww_newest = event["b"]
+                for event in parsed["nulls"]:
+                    ctx.ww_nulls.append(event)
+            rows_parsed, _why = _take(by_tag[("polygon_rows", (phen, sig, year))], parse_ww_csv)
+            if rows_parsed is not None:
+                ctx.poly_rows.extend(dict(row, phen=phen, sig=sig) for row in rows_parsed["rows"])
     for year in years:
         for phen, sig in ZONE_PRODUCTS:
             label = f"{phen} {year}"
@@ -1487,6 +1715,7 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
             ctx.fire_reason = why or WORDS_JOINS["reason_zone_map"]
         else:
             ctx.fire_map = fire
+    ctx.county_map, ctx.county_reason = _take(counties, parse_county_zip)
     if not asos.ok or not stations:
         ctx.part_all_failed["stations"] = True
         ctx.part_reason["stations"] = (WORDS_JOINS["reason_no_answer"] if not asos.ok
@@ -1505,16 +1734,55 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
         failed = ctx.part_hard[part]
         if failed and len(failed) >= max(1, ctx.part_total[part]):
             ctx.part_all_failed[part] = True
+    _dedupe_polygons(ctx)
     return ctx
 
 
+def _dedupe_polygons(ctx: Context) -> None:
+    """One polygon event per VTEC event (wfo, phenomenon, significance, event number, year). The margin requests repeat
+    a row that falls in two years' requests; the repeats are identical copies (checked 2026-10-19), so the first copy
+    is kept and the rest are counted. The outline-less ones are de-duplicated the same way (ctx.ww_nulls)."""
+    def dedupe(rows, key_of, keep_rings=True):
+        seen, out, dupes = {}, [], 0
+        for event in rows:
+            key = key_of(event)
+            if key in seen:
+                dupes += 1
+                if keep_rings and "rings" in event and "rings" not in out[seen[key]]:
+                    out[seen[key]] = event
+                continue
+            seen[key] = len(out)
+            out.append(event)
+        return out, dupes
+
+    def key_of(e):
+        return (e["o"], e["k"], e["s"], e["eventid"], e["vtec_year"])
+    ctx.ww_all, d1 = dedupe(sorted(ctx.ww_all, key=lambda e: (e["b"], key_of(e))), key_of)
+    ctx.ww_events = [e for e in ctx.ww_all if _in_window(e["b"], ctx)]
+    ctx.ww_nulls, d2 = dedupe(ctx.ww_nulls, key_of, keep_rings=False)
+    ctx.polygon_duplicates = d1 + d2
+
+
+def _in_window(when: datetime, ctx: Context) -> bool:
+    start, end = ctx.window_bounds
+    return start <= when < end
+
+
 def _ww_params(phen: str, sig: str, year: int, shapefile: bool) -> dict:
+    """The IEM watchwarn request for one product and one year. B5: the request runs from 1 December of the year before
+    to 31 January of the year after (MARGIN_MONTHS on each side), since a request for the year alone loses the rows
+    whose product was issued in the year before (see MARGIN_MONTHS). Rows that repeat across two years are one row."""
     params = {"simple": "1", "location_group": "states", "states[]": "MT", "timeopt": "1",
-              "year1": str(year), "month1": "1", "day1": "1", "hour1": "0", "minute1": "0",
-              "year2": str(year), "month2": "12", "day2": "31", "hour2": "23", "minute2": "59",
+              "year1": str(year - 1), "month1": "12", "day1": "1", "hour1": "0", "minute1": "0",
+              "year2": str(year + 1), "month2": "1", "day2": "31", "hour2": "23", "minute2": "59",
               "phenomena[]": phen, "significance[]": sig, "limitps": "1"}
     params["accept"] = "shapefile" if shapefile else "csv"
     return params
+
+
+def _ww_rel(phen: str, sig: str, year: int, shapefile: bool) -> str:
+    """The cache path of one watchwarn request (B5: the margin folders, so B2's year-only files are never mixed in)."""
+    return f"ww-m/{phen}{sig}-{year}.zip" if shapefile else f"zones-m/{phen}{sig}-{year}.csv"
 
 
 def _daily_params(sid: str, year: int) -> dict:
@@ -1627,6 +1895,9 @@ def _station_near(stations: list[dict], lat: float, lon: float) -> list[dict]:
 
 
 def _report_entry(row: dict, utc: datetime, record: bool) -> list:
+    """A row of the events table, in the shape the index names (shapes): a report carries its type word (kind, B5) as
+    the twelfth field; a record carries its magnitude in mph and knots and its FLOOD_CAUSE as written (B5) as the
+    fourteenth. Positions 0 to 10 are the same in every version of the format."""
     d = utc_day_index(utc)
     t = hhmm(utc)
     lat = None if row["lat"] is None else round(row["lat"], 5)
@@ -1634,14 +1905,17 @@ def _report_entry(row: dict, utc: datetime, record: bool) -> list:
     base = [d, t, lat, lon, row["code"], row["mag_text"], row["unit"], row["qual"], row["src"], row["city"],
             row["remark"]]
     if record:
-        base += [row.get("mag_mph"), row.get("mag_kt")]
+        base += [row.get("mag_mph"), row.get("mag_kt"), row.get("cause", "")]
+    else:
+        base += [row.get("kind", row["code"])]
     return base
 
 
-def _joins_for_tile(tile: dict, ctx: Context, prep: dict) -> dict:
+def _joins_for_tile(tile: dict, ctx: Context, prep: dict, stats: dict | None = None) -> dict:
     """One tile's file. A row is not repeated here: reports and records are indexes into the events table, and a
     warning is [index into the events table, the tile's 100-bit cover]. Detections (small) are written in full. The
-    zone map lists each zone's cell keys."""
+    zone map lists each zone's cell keys, and the counties map each county's (B5). stats, when given, collects the
+    cover counts per product (D11): the centre rule's cells and the touch rule's, for the Montana cells of the tile."""
     np = _np()
     south, north, west, east = tile_bounds(tile["r"], tile["c"])
     doc = {"f": FORMAT, "r": tile["r"], "c": tile["c"], "d0": hail.D0.isoformat()}
@@ -1693,12 +1967,20 @@ def _joins_for_tile(tile: dict, ctx: Context, prep: dict) -> dict:
     warnings = []
     for idx in prep["warning_candidates"](south, north, west, east):
         event = ctx.ww_events[idx]
-        bits = _tile_cover(event["rings"], tile)
-        if not any(k in keys_in_state for k in bits):
+        centre_keys, touched = _cover_sets(event["rings"], tile)          # D11: the touch rule
+        touched_set = set(touched)
+        mont_touched = [k for k in touched if k in keys_in_state]
+        if not mont_touched:
             continue
-        warnings.append([event["ref"], cover_hex(bits)])
+        if stats is not None:
+            row = stats.setdefault(f"{event['k']}.{event['s']}",
+                                   {"centre": 0, "touched": 0, "centre_not_touched": 0})
+            row["centre"] += sum(1 for k in centre_keys if k in keys_in_state)
+            row["touched"] += len(mont_touched)
+            row["centre_not_touched"] += sum(1 for k in centre_keys if k not in touched_set)
+        warnings.append([event["ref"], cover_hex(touched)])
     doc["warnings"] = sorted(warnings, key=lambda w: (warning_table[w[0]]["b"], warning_table[w[0]]["k"],
-                                                      warning_table[w[0]]["o"]))
+                                                      warning_table[w[0]]["s"], warning_table[w[0]]["o"]))
 
     by_zone: dict[str, list[int]] = {}
     zone_map = prep["zone_by_cell"]
@@ -1718,25 +2000,97 @@ def _joins_for_tile(tile: dict, ctx: Context, prep: dict) -> dict:
             by_fire.setdefault(code, []).append(key)
     doc["fire"] = {code: sorted(keys) for code, keys in sorted(by_fire.items())}
 
+    by_county: dict[str, list[int]] = {}
+    county_by_cell = prep.get("county_by_cell", {})
+    for key in tile["keys"]:
+        row, col = 10 * tile["r"] + key // 10, 10 * tile["c"] + key % 10
+        code = county_by_cell.get((row, col))
+        if code:
+            by_county.setdefault(code, []).append(key)
+    doc["counties"] = {code: sorted(keys) for code, keys in sorted(by_county.items())}
+
     lat_c = (south + north) / 2
     lon_c = (west + east) / 2
     doc["stations"] = _station_near(ctx.stations, lat_c, lon_c)
     return doc
 
 
-
-def _tile_cover(rings, tile) -> list[int]:
-    """The keys (0 to 99) of the tile's cells whose centre lies inside the polygon."""
+def _cover_sets(rings, tile) -> tuple[list[int], list[int]]:
+    """(centre keys, touched keys) of one polygon for one B1 tile (D11). A cell is a centre key when its centre lies inside
+    the polygon (the centre rule, B2). It is a touched key when the polygon intersects the cell's square: a polygon vertex
+    lies in the square, or a polygon edge crosses one of the square's four sides, or the square lies inside the polygon
+    (its centre is then inside). Every centre key is a touched key. The square is half a cell each way (COVER_HALF_DEG)."""
     np = _np()
-    lats, lons, keys = [], [], []
+    lats, lons = [], []
     for key in range(100):
         row, col = 10 * tile["r"] + key // 10, 10 * tile["c"] + key % 10
         lat, lon = hail.cell_centre(row, col)
         lats.append(lat)
         lons.append(lon)
-        keys.append(key)
-    inside = points_in_rings(np.array(lons), np.array(lats), rings)
-    return [keys[i] for i in range(100) if inside[i]]
+    lat_a, lon_a = np.array(lats), np.array(lons)
+    centre = points_in_rings(lon_a, lat_a, rings)
+    south, north, west, east = tile_bounds(tile["r"], tile["c"])
+    vx, vy, ex1, ey1, ex2, ey2 = [], [], [], [], [], []
+    for ring in rings:
+        arr = np.asarray(ring, dtype=float)
+        if arr.shape[0] < 2:
+            continue
+        nxt = np.roll(arr, -1, axis=0)
+        near_v = (arr[:, 0] >= west) & (arr[:, 0] <= east) & (arr[:, 1] >= south) & (arr[:, 1] <= north)
+        vx.extend(arr[near_v, 0])
+        vy.extend(arr[near_v, 1])
+        lo_x, hi_x = np.minimum(arr[:, 0], nxt[:, 0]), np.maximum(arr[:, 0], nxt[:, 0])
+        lo_y, hi_y = np.minimum(arr[:, 1], nxt[:, 1]), np.maximum(arr[:, 1], nxt[:, 1])
+        near_e = (hi_x >= west) & (lo_x <= east) & (hi_y >= south) & (lo_y <= north)
+        ex1.extend(arr[near_e, 0]); ey1.extend(arr[near_e, 1])
+        ex2.extend(nxt[near_e, 0]); ey2.extend(nxt[near_e, 1])
+    touched = centre.copy()
+    h = COVER_HALF_DEG
+    if vx:
+        vxa, vya = np.array(vx), np.array(vy)
+        inside = ((vxa[:, None] >= lon_a[None, :] - h) & (vxa[:, None] <= lon_a[None, :] + h)
+                  & (vya[:, None] >= lat_a[None, :] - h) & (vya[:, None] <= lat_a[None, :] + h))
+        touched |= inside.any(axis=0)
+    if ex1:
+        p1 = np.stack([np.array(ex1), np.array(ey1)], axis=1)
+        p2 = np.stack([np.array(ex2), np.array(ey2)], axis=1)
+        q1, q2 = [], []
+        for lat, lon in zip(lat_a, lon_a):          # the four sides of each cell's square, in key order
+            sw, se = (lon - h, lat - h), (lon + h, lat - h)
+            ne, nw = (lon + h, lat + h), (lon - h, lat + h)
+            for a, b in ((sw, se), (se, ne), (ne, nw), (nw, sw)):
+                q1.append(a)
+                q2.append(b)
+        q1, q2 = np.array(q1), np.array(q2)
+        hit = _segments_cross(p1, p2, q1, q2).reshape(p1.shape[0], 100, 4)
+        touched |= hit.any(axis=(0, 2))
+    centre_keys = [k for k in range(100) if centre[k]]
+    touched_keys = [k for k in range(100) if touched[k]]
+    return centre_keys, touched_keys
+
+
+def _segments_cross(p1, p2, q1, q2):
+    """(E, M) booleans: whether segment i of (p1, p2) meets segment j of (q1, q2), closed segments (touching counts)."""
+    np = _np()
+    P1, P2 = p1[:, None, :], p2[:, None, :]
+    Q1, Q2 = q1[None, :, :], q2[None, :, :]
+
+    def orient(a, b, c):
+        return (b[..., 0] - a[..., 0]) * (c[..., 1] - a[..., 1]) - (b[..., 1] - a[..., 1]) * (c[..., 0] - a[..., 0])
+
+    d1, d2 = orient(Q1, Q2, P1), orient(Q1, Q2, P2)
+    d3, d4 = orient(P1, P2, Q1), orient(P1, P2, Q2)
+    hit = (d1 * d2 <= 0) & (d3 * d4 <= 0)
+    hit &= (np.maximum(P1[..., 0], P2[..., 0]) >= np.minimum(Q1[..., 0], Q2[..., 0])) \
+        & (np.maximum(Q1[..., 0], Q2[..., 0]) >= np.minimum(P1[..., 0], P2[..., 0]))
+    hit &= (np.maximum(P1[..., 1], P2[..., 1]) >= np.minimum(Q1[..., 1], Q2[..., 1])) \
+        & (np.maximum(Q1[..., 1], Q2[..., 1]) >= np.minimum(P1[..., 1], P2[..., 1]))
+    return hit
+
+
+def _tile_cover(rings, tile) -> list[int]:
+    """The keys (0 to 99) of the tile's cells that the polygon touches (D11): the 100 bits of the cover."""
+    return _cover_sets(rings, tile)[1]
 
 
 def _warning_index(events: list[dict]):
@@ -1778,6 +2132,15 @@ def _prep(ctx: Context, tiles: list[dict]) -> dict:
     prep["cells"] = cells
     prep["zone_by_cell"] = assign_zones(cells, ctx.zone_map)
     prep["fire_by_cell"] = assign_zones(cells, ctx.fire_map, near_km=0.0) if ctx.fire_map else {}
+    # B5 (source 4): the county of every Montana cell, by its centre; a cell no county polygon holds (the Census outline
+    # and the state's outline differ along the border) takes the nearest county edge within ZONE_NEAR_KM, as a zone does
+    prep["county_by_cell"], prep["county_nearest"] = {}, 0
+    if ctx.county_map:
+        strict = assign_zones(cells, ctx.county_map, near_km=0.0)
+        missing = [c for c in cells if (c[0], c[1]) not in strict]
+        near = assign_zones(missing, ctx.county_map, near_km=ZONE_NEAR_KM) if missing else {}
+        prep["county_by_cell"] = {**strict, **near}
+        prep["county_nearest"] = len(near)
     return prep
 
 
@@ -1878,105 +2241,158 @@ def _place_code(ctx: Context, names: set, code: str, issued: datetime) -> str | 
     return mapped if mapped in names else None
 
 
+def periods(rows: list[dict]) -> list[dict]:
+    """D8 (B2 D33, implemented in B5): the periods of one VTEC event, from its rows in product order (the product's
+    issue time, then the status order). A CAN, UPG or EXP closes the open period; a closing row with no open period
+    starts one of its own, at its issue time. A NEW, CON, EXT, EXA or EXB opens a period when none is open and otherwise
+    updates the open one. Each period is a span: its begin is the issue time of the row that opened it; its end is the
+    expiry of the row that closed it (a cancellation or upgrade time, even at or before the begin, D26 and D31), else the
+    latest expiry of its rows, or None when that is not after the begin (D6). Returns [{"begin", "end", "stop"}], where
+    stop is the closing status (CAN, UPG or EXP) or None for an open period."""
+    rows = sorted(rows, key=lambda r: (r["prod"], r["issue"], STATUS_ORDER.get(r["status"], 9)))
+    out, cur = [], None
+    for r in rows:
+        status = r["status"]
+        if status in OPEN_STATUS:
+            if cur is None:
+                cur = {"begin": r["issue"], "live": r["expire"], "stop": None, "end": None}
+            elif r["expire"] is not None and (cur["live"] is None or r["expire"] > cur["live"]):
+                cur["live"] = r["expire"]
+        elif status in CLOSE_STATUS:
+            if cur is None:
+                cur = {"begin": r["issue"], "live": None, "stop": None, "end": None}
+            cur["stop"], cur["end"] = status, r["expire"]
+            out.append(cur)
+            cur = None
+        elif cur is not None and r["expire"] is not None and (cur["live"] is None or r["expire"] > cur["live"]):
+            cur["live"] = r["expire"]
+    if cur is not None:
+        out.append(cur)
+    result = []
+    for p in out:
+        if p["stop"] is not None:
+            end = p["end"]
+        else:
+            end = p["live"] if (p["live"] is not None and p["live"] > p["begin"]) else None
+        result.append({"begin": p["begin"], "end": end, "stop": p["stop"]})
+    return result
+
+
 def _zone_events(ctx: Context, start: datetime, end: datetime) -> dict:
-    """{zone code: [event dicts]} for the IEM zone products in the window, one event per VTEC event (D30).
+    """{zone code: [event dicts]} for the zone-coded IEM products in the window: one event per period (D8). Rows are
+    grouped by VTEC event (zone, phenomenon, significance, office, event number and year: D30); within a group the
+    periods are found by periods() (B2 D33, B5). A zone product goes to its public zone (_place_code, D16); a red flag
+    warning (FW) goes to its fire weather zone (D7, ctx.fire_events). A county-only event (its rows carry MTC codes and
+    the same VTEC key has no zone row, B5 source 4) goes to its county (ctx.county_events). An event is counted, not
+    placed, when no current zone holds its code (D11), or a red flag warning when the fire zones did not load.
 
-    The group key is (zone, phenomenon, significance, issuing office, event number, year). That is the VTEC event's
-    identity: the office assigns the event number, so the key keeps the office. The key holds no issue time, so rows
-    with other issue times (CON, EXT, EXA, EXB, UPG, EXP, CAN) are updates of their event, never new events; D30
-    withdraws D25's split by issue time. In the cache no event (zone, phenomenon, significance, event number and year)
-    has rows from two offices, so the office never splits an event, and 21 groups carry more than one issue time (their
-    other-issue rows are updates).
-    Known limit (DECISIONS D35, open items 15 and 16): an event number that NWS re-used for separate periods in one zone
-    is one group, so its periods read as one span, and a period outside that span (after the earliest cancellation or
-    upgrade) is not listed. Four zones in five years do this: MTZ004 WS 2024 event 1 (a CON on 11 January after a CAN on
-    10 January is not shown), MTZ302 HW 2022 event 38 (its second cancelled period is not shown), MTZ320 WS 2023 event 4
-    (the expiry period after the cancellation is not shown) and MTZ003 WS 2021 event 12 (its two periods are in one
-    span). A broader check (a row issued after the group's earliest end) flags 19 groups in the window; B5's period rule
-    (D33) covers them all.
-
-    A product goes to its public zone (_place_code, D16); a red flag warning (FW) goes to its fire weather zone (D7). A
-    product is counted, not placed (D11), when no current zone holds its code, or a red flag warning when the fire
-    zones did not load. The span begins at the earliest issue time of the event's NEW and CON rows (D25). Most events
-    have no NEW or CON row in the archive (the zone rows are mostly CAN and EXP), and every row of a group with a NEW
-    row carries that group's issue time (the 110 zone groups with a NEW row, 69 public and 41 fire weather, and 113 NEW
-    rows in the cache for the ten products), so an event without a NEW or CON row begins at the earliest issue time of
-    its rows.
-
-    It ends at the earliest cancellation (CAN) or upgrade (UPG) time (D26, D31). A cancellation's expire is the
-    cancellation time, and an upgrade's expire is the time the lower event was upgraded (NWS Instruction 10-1703). The
-    status of the row that sets the end is kept as "st" ("cancelled" or "upgraded"); a tie reads as cancelled. Without
-    either, the end is the latest expiry of the other rows. A cancellation or upgrade time is the end even when it is
-    not after the begin (D26); otherwise the end is null ("end not recorded") when no expiry is after the begin (D6).
-    The window takes an event by its begin. Fire zone events go to ctx.fire_events."""
+    A period begins at its opening row's issue time (or at the closing row's when no row opened it), and ends at its
+    cancellation, upgrade or expiry time (D26, D31) or at the latest expiry of its rows (D6). The window takes a period by
+    its begin. ctx.vtec_counts counts the VTEC events (the key without the zone, B2's begin rule: the earliest NEW or CON
+    issue, else the earliest issue of its rows) in the window, per product, zone-coded and county-only, which is the
+    count the research gives. Known limit, now closed: an event number that NWS re-used for separate periods is one
+    group, and its periods are now separate spans (D8)."""
     zone_names = {z["zone"] for z in ctx.zone_map}
     fire_names = None if ctx.fire_map is None else {z["zone"] for z in ctx.fire_map}
-    grouped: dict[tuple, dict] = {}
+    county_names = None if ctx.county_map is None else {c["zone"] for c in ctx.county_map}
+    groups: dict[tuple, list] = {}
+    zone_keys: set = set()
+    vtec: dict[tuple, dict] = {}
     for row in ctx.zone_rows:
         if row["gtype"] not in ("C", "Z", "P", ""):
             continue
-        if not row["ugc"].startswith("MTZ"):
+        code = row["ugc"]
+        if code.startswith("MTZ"):
+            level = "zone"
+        elif code.startswith("MTC"):
+            level = "county"
+        else:
             continue
-        key = (row["ugc"], row["phen"], row["sig"], row["wfo"], row["eventid"], row["vtec_year"])     # D30
-        item = grouped.setdefault(key, {"issue": None, "start": None, "stop_end": None, "stop_status": None,
-                                        "live_end": None})
-        status, issue, expire = row["status"], row["issue"], row["expire"]
-        if issue is not None and (item["issue"] is None or issue < item["issue"]):
-            item["issue"] = issue
-        if status in ("NEW", "CON") and issue is not None and (item["start"] is None or issue < item["start"]):
-            item["start"] = issue
-        if status in ZONE_STOP_STATE:       # D26, D31: a cancellation or an upgrade ends the event at its time
-            earlier = item["stop_end"] is None or expire < item["stop_end"]
-            tie_cancel = expire == item["stop_end"] and status == "CAN"     # a tie reads as cancelled
-            if earlier or tie_cancel:
-                item["stop_end"], item["stop_status"] = expire, status
-        elif item["live_end"] is None or expire > item["live_end"]:
-            item["live_end"] = expire
-        if status == "CAN" and issue is not None and start <= issue < end and (issue.hour, issue.minute) == (0, 0):
+        ekey = (row["phen"], row["sig"], row["wfo"], row["eventid"], row["vtec_year"])
+        if level == "zone":
+            zone_keys.add(ekey)
+        groups.setdefault((level, code) + ekey, []).append(row)
+        item = vtec.setdefault(ekey, {"issues": [], "new": [], "level": set()})
+        item["issues"].append(row["issue"])
+        if row["status"] in ("NEW", "CON"):
+            item["new"].append(row["issue"])
+        item["level"].add(level)
+        if row["status"] == "CAN" and start <= row["issue"] < end and (row["issue"].hour, row["issue"].minute) == (0, 0):
             ctx.zone_can_midnight += 1
-        if issue is not None and start <= issue < end:
-            if row["phen"] != "FW" and _place_code(ctx, zone_names, row["ugc"], issue) is None:
-                ctx.zone_unmatched += 1
-            elif row["phen"] == "FW" and fire_names is not None and row["ugc"] not in fire_names:
-                ctx.zone_unmatched += 1
+    counts: dict[str, dict] = {}
+    research: dict[str, dict] = {}
+    for ekey, item in vtec.items():
+        begin = min(item["new"]) if item["new"] else min(item["issues"])
+        name = f"{ekey[0]}.{ekey[1]}"
+        if RESEARCH_START <= begin < RESEARCH_END:        # the research's own window, from every row read
+            row = research.setdefault(name, {"zone": 0, "county": 0, "window": 0})
+            row["window"] += 1
+            row["zone" if "zone" in item["level"] else "county"] += 1
+        if not (start <= begin < end):
+            continue
+        row = counts.setdefault(name, {"zone": 0, "county": 0, "window": 0})
+        row["window"] += 1
+        if "zone" in item["level"]:
+            row["zone"] += 1
+        else:
+            row["county"] += 1
+    ctx.vtec_counts = counts
+    ctx.vtec_counts_research = research
     out: dict[str, list] = {}
     fire: dict[str, list] = {}
+    county: dict[str, list] = {}
     unplaced, fire_missing = set(), set()
-    renumbered = 0
-    for key, item in grouped.items():
-        zone, phen, sig, wfo, _eid, _yr = key
-        begin = item["start"] if item["start"] is not None else item["issue"]
-        if begin is None or not (start <= begin < end):
-            continue
-        end_at = item["stop_end"] if item["stop_end"] is not None else item["live_end"]
-        # D26: a cancellation or upgrade time is the end even when it is not after the begin; a live expiry is not (D6)
-        if item["stop_end"] is None and end_at is not None and end_at <= begin:
-            end_at = None
-        event = {"k": phen, "s": sig, "b": iso_utc(begin), "e": None if end_at is None else iso_utc(end_at), "o": wfo}
-        if item["stop_status"] is not None:
-            event["st"] = ZONE_STOP_STATE[item["stop_status"]]
-        if phen == "FW":
-            if fire_names is None:
-                fire_missing.add(key)
-            elif zone in fire_names:
-                fire.setdefault(zone, []).append(event)
+    renumbered = kept = 0
+    for gkey in sorted(groups, key=lambda g: (g[0], g[1], g[2], g[3], g[4], g[5], g[6])):
+        level, code, phen, sig, wfo, eid, yr = gkey
+        rows = groups[gkey]
+        if level == "county" and (phen, sig, wfo, eid, yr) in zone_keys:
+            continue                              # a county twin of a zone-coded event: the zone rows carry it
+        first_issue = min(r["issue"] for r in rows)
+        if level == "zone":
+            if phen == "FW":
+                if fire_names is None:
+                    fire_missing.add(gkey)
+                    continue
+                if code not in fire_names:
+                    if start <= first_issue < end:
+                        unplaced.add(gkey)
+                    continue
+                target, zone_code = fire, code
             else:
-                unplaced.add(key)
-            continue
-        code = _place_code(ctx, zone_names, zone, begin)
-        if code is None:
-            unplaced.add(key)
-            continue
-        if code != zone:
-            renumbered += 1
-        out.setdefault(code, []).append(event)
-    for group in (out, fire):
+                zone_code = _place_code(ctx, zone_names, code, first_issue)
+                if zone_code is None:
+                    if start <= first_issue < end:
+                        unplaced.add(gkey)
+                    continue
+                if zone_code != code:
+                    renumbered += 1
+                target = out
+        else:
+            if county_names is None or code not in county_names:
+                if start <= first_issue < end:
+                    ctx.county_unplaced += 1
+                continue
+            target, zone_code = county, code
+        for period in periods(rows):
+            begin = period["begin"]
+            if not (start <= begin < end):
+                continue
+            event = {"k": phen, "s": sig, "b": iso_utc(begin),
+                     "e": None if period["end"] is None else iso_utc(period["end"]), "o": wfo}
+            if period["stop"] in ZONE_STOP_STATE:
+                event["st"] = ZONE_STOP_STATE[period["stop"]]
+            target.setdefault(zone_code, []).append(event)
+            kept += 1
+    for group in (out, fire, county):
         for zone in group:
             group[zone].sort(key=lambda e: (e["b"], e["k"], e["o"]))
     ctx.zone_products_unplaced = len(unplaced)
     ctx.zone_products_renumbered = renumbered
     ctx.zone_products_fire_missing = len(fire_missing)
     ctx.fire_events = fire
+    ctx.county_events = county
+    ctx.zone_periods = kept
     return out
 
 
@@ -1998,6 +2414,77 @@ def _zone_records(ctx: Context, start: datetime, end: datetime) -> dict:
         out[zone].sort(key=lambda r: (r[0], r[1], r[4], r[8]))
     ctx.zone_records_unmatched = unmatched
     ctx.zone_records_renumbered = renumbered
+    return out
+
+
+def _polygon_vtec(ctx: Context) -> None:
+    """The polygon VTEC events of the window, per product (ctx.vtec_counts; the zone counts are set by _zone_events)."""
+    for event in ctx.ww_events:
+        name = f"{event['k']}.{event['s']}"
+        row = ctx.vtec_counts.setdefault(name, {"zone": 0, "county": 0, "polygon": 0, "window": 0})
+        row["polygon"] += 1
+        row["window"] += 1
+    for name, row in ctx.vtec_counts.items():
+        row.setdefault("polygon", 0)
+
+
+def _join_nulls(ctx: Context, start: datetime, end: datetime) -> None:
+    """D11: a NEW polygon with no outline never reads as no warning. It joins by the county codes its product carries
+    (the MTC rows of the same VTEC event in the product's own rows) and is counted otherwise (ctx.null_polygons)."""
+    county_names = set() if ctx.county_map is None else {c["zone"] for c in ctx.county_map}
+    codes: dict[tuple, set] = {}
+    for row in ctx.poly_rows:
+        if row["gtype"] not in ("C", "Z", "P", "") or not row["ugc"].startswith("MTC"):
+            continue
+        codes.setdefault((row["phen"], row["sig"], row["wfo"], row["eventid"], row["vtec_year"]), set()).add(row["ugc"])
+    for event in sorted(ctx.ww_nulls, key=lambda e: (e["b"], e["k"], e["o"], e["eventid"])):
+        if not (start <= event["b"] < end):
+            continue
+        ctx.null_polygons["window"] += 1
+        key = (event["k"], event["s"], event["o"], event["eventid"], event["vtec_year"])
+        found = sorted(codes.get(key, set()) & county_names)
+        if not found:
+            ctx.null_polygons["unjoined"] += 1
+            continue
+        ctx.null_polygons["joined"] += 1
+        row = {"k": event["k"], "s": event["s"], "b": iso_utc(event["b"]),
+               "e": None if event["e"] is None else iso_utc(event["e"]), "o": event["o"],
+               "n": 1}
+        for code in found:
+            ctx.county_events.setdefault(code, []).append(dict(row))
+    for group in ctx.county_events.values():
+        group.sort(key=lambda e: (e["b"], e["k"], e["o"]))
+
+
+def town_checks(ctx: Context, towns: list[dict]) -> dict:
+    """D11, the town point check: each town's point against every polygon product event of 2021 to 2026, by the exact
+    point-in-polygon test of the point and by the centre rule (the centre of the cell that holds the point). Every case
+    where the two rules disagree is listed, with the product, the event and the cell."""
+    np = _np()
+    boxes = [(e, ring_bbox(e["rings"])) for e in ctx.ww_all]
+    out = {"towns": [], "events_checked": len(ctx.ww_all), "pairs_tested": 0, "disagreements": []}
+    for town in towns:
+        lat, lon = float(town["lat"]), float(town["lon"])
+        row, col = hail.cell_for(lat, lon)
+        clat, clon = hail.cell_centre(row, col)
+        hits_point = hits_centre = 0
+        for event, (minx, miny, maxx, maxy) in boxes:
+            near_point = minx <= lon <= maxx and miny <= lat <= maxy
+            near_centre = minx <= clon <= maxx and miny <= clat <= maxy
+            if not (near_point or near_centre):
+                continue                          # outside the polygon's box, neither point is inside it
+            out["pairs_tested"] += 1
+            point_in = bool(points_in_rings(np.array([lon]), np.array([lat]), event["rings"])[0])
+            centre_in = bool(points_in_rings(np.array([clon]), np.array([clat]), event["rings"])[0])
+            hits_point += point_in
+            hits_centre += centre_in
+            if point_in != centre_in:
+                out["disagreements"].append({
+                    "town": town["name"], "product": f"{event['k']}.{event['s']}", "office": event["o"],
+                    "eventid": event["eventid"], "vtec_year": event["vtec_year"], "begin": iso_utc(event["b"]),
+                    "point_inside": point_in, "centre_inside": centre_in, "cell": [row, col]})
+        out["towns"].append({"town": town["name"], "cell": [row, col], "point_inside": hits_point,
+                             "centre_inside": hits_centre})
     return out
 
 
@@ -2028,7 +2515,19 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
     prep = _prep(ctx, tiles)
     zone_events = _zone_events(ctx, start, end)
     zone_records = _zone_records(ctx, start, end)
-    log(f"joins: zones assigned to {len(prep['zone_by_cell'])} of {len(prep['cells'])} Montana cells")
+    _polygon_vtec(ctx)
+    for event in ctx.ww_all:                         # the research window, from every polygon read (B5)
+        if RESEARCH_START <= event["b"] < RESEARCH_END:
+            row = ctx.vtec_counts_research.setdefault(f"{event['k']}.{event['s']}",
+                                                      {"zone": 0, "county": 0, "polygon": 0, "window": 0})
+            row["polygon"] += 1
+            row["window"] += 1
+    _join_nulls(ctx, start, end)
+    towns = json.loads(TOWNS_FILE.read_text(encoding="utf-8"))
+    town_check = town_checks(ctx, towns) if ctx.ww_all else {"towns": [], "events_checked": 0, "pairs_tested": 0,
+                                                              "disagreements": []}
+    log(f"joins: zones assigned to {len(prep['zone_by_cell'])} of {len(prep['cells'])} Montana cells; "
+        f"counties to {len(prep['county_by_cell'])}")
 
     report_table = []
     for i, row in enumerate(ctx.lsr):
@@ -2041,12 +2540,16 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
     warning_table = []
     for i, event in enumerate(ctx.ww_events):
         event["ref"] = i
-        warning_table.append({"k": event["k"], "b": iso_utc(event["b"]), "e": iso_utc(event["e"]), "o": event["o"],
+        warning_table.append({"k": event["k"], "s": event["s"], "b": iso_utc(event["b"]),
+                              "e": None if event["e"] is None else iso_utc(event["e"]),
+                              "o": event["o"],
                               "tags": {"hail_in": event["hail_in"], "wind_mph": event["wind_mph"],
                                        "tornado": event["tornado"], "damage": event["damage"]}})
     prep["report_table"], prep["record_table"], prep["warning_table"] = report_table, record_table, warning_table
     events_bytes = _compact({"f": EVENTS_FORMAT, "d0": hail.D0.isoformat(), "reports": report_table,
                              "records": record_table, "warnings": warning_table})
+    cover_stats: dict[str, dict] = {}
+    county_names = {} if ctx.county_map is None else {c["zone"]: c["name"] for c in ctx.county_map}
 
     stage = Path(tempfile.mkdtemp(prefix=".joins-stage-", dir=str(root)))
     try:
@@ -2057,8 +2560,9 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
         tile_bytes = 0
         largest = (0, "")
         totals = {"reports": 0, "records": 0, "detections": 0, "warnings": 0, "tiles_with_warnings": 0}
+        (hail_dir / "k").mkdir(parents=True)
         for tile in tiles:
-            doc = _joins_for_tile(tile, ctx, prep)
+            doc = _joins_for_tile(tile, ctx, prep, cover_stats)
             data = _compact(doc)
             name = f"{tile['name']}.json"
             (hail_dir / "j" / name).write_bytes(data)
@@ -2088,10 +2592,20 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
             (hail_dir / "z" / f"fire-{zone['zone']}.json").write_bytes(data)
             z_bytes += len(data)
 
+        k_bytes = 0
+        county_files = 0
+        for county in ctx.county_map or []:
+            doc = {"f": COUNTY_FORMAT, "county": county["zone"], "name": county["name"],
+                   "events": ctx.county_events.get(county["zone"], [])}
+            data = _compact(doc)
+            (hail_dir / "k" / f"{county['zone']}.json").write_bytes(data)
+            k_bytes += len(data)
+            county_files += 1
         s_bytes = 0
         station_days_total = 0
         station_dropped = 0
         station_index = []
+        dropped_list, flagged_list = [], []
         for st in ctx.stations:
             days = []
             dropped = 0
@@ -2101,8 +2615,12 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
                 kind = station_day_kind(kt)
                 if kind == "dropped":
                     dropped += 1
+                    dropped_list.append({"station": st["id"], "date": day.isoformat(), "kt": round(kt, 1)})
                 elif kind == "keep":
-                    days.append(station_day_row(day, kt))
+                    flag = 1 if (st["id"], day.isoformat()) in FLAG_CHECK else 0
+                    days.append(station_day_row(day, kt) + [flag])
+                    if flag:
+                        flagged_list.append({"station": st["id"], "date": day.isoformat(), "kt": round(kt, 1)})
             station_dropped += dropped
             station_days_total += len(days)
             doc = {"f": STATION_FORMAT, "id": st["id"], "name": st["name"], "lat": st["lat"], "lon": st["lon"],
@@ -2120,15 +2638,22 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
 
         counts = _counts(ctx, zone_events, first, last, start, end)
         block = _index_block(ctx, index, tiles, zone_list, station_index, totals,
-                             {"tiles": tile_bytes, "events": len(events_bytes), "z": z_bytes, "s": s_bytes},
+                             {"tiles": tile_bytes, "events": len(events_bytes), "z": z_bytes, "s": s_bytes,
+                              "k": k_bytes},
                              station_days_total, station_dropped, counts, all_station_years, today, fetcher, t0,
                              {"reports": len(report_table), "records": len(record_table),
                               "warnings": len(warning_table)})
+        block.update(_b5_block(ctx, cover_stats, county_names, county_files, k_bytes, town_check, dropped_list,
+                               flagged_list))
+        block["counties"]["cells_without_county"] = len(prep["cells"]) - len(prep["county_by_cell"])
+        block["counties"]["cells_by_nearest_edge"] = prep["county_nearest"]
+        block["vtec_counts_research"] = {k: dict(v) for k, v in sorted(ctx.vtec_counts_research.items())}
+        block["research_window"] = [RESEARCH_START.date().isoformat(), RESEARCH_END.date().isoformat()]
         new_index = dict(index)
         new_index[INDEX_KEY] = block
         (hail_dir / "index.json").write_bytes(_pretty(new_index))
         _finish_manifest(root, stage, block)
-        for sub in ("j", "z", "s"):
+        for sub in ("j", "z", "s", "k"):
             target = root / "hail" / sub
             if target.exists():
                 shutil.rmtree(target)
@@ -2214,6 +2739,7 @@ def _index_block(ctx, index, tiles, zone_list, station_index, totals, bytes_by, 
         "parts": parts,
         "reasons": reasons,
         "partial": {p: ctx.part_failures[p] for p in PARTS if ctx.part_failures[p]},
+        "unavailable_units": {p: ctx.part_hard[p] for p in PARTS if ctx.part_hard[p]},
         "lags": _lag_dates(ctx),
         "types": _type_legend([(r["code"], r["type"]) for r in ctx.lsr]),
         "lsr_rows": counts["lsr_rows"],
@@ -2262,20 +2788,24 @@ def _index_block(ctx, index, tiles, zone_list, station_index, totals, bytes_by, 
                    "detections": totals["detections"], "warnings": totals["warnings"]},
         "events": events_counts,
         "compare": counts,
-        "shapes": {"report": ["d", "t", "lat", "lon", "code", "mag_text", "unit", "qual", "src", "city", "remark"],
+        "shapes": {"report": ["d", "t", "lat", "lon", "code", "mag_text", "unit", "qual", "src", "city", "remark",
+                              "kind"],
                    "record": ["d", "t", "lat", "lon", "code", "mag_text", "unit", "qual", "src", "city", "remark",
-                              "mag_mph", "mag_kt"],
-                   "warning": ["k", "b", "e", "o", "tags"],
+                              "mag_mph", "mag_kt", "cause"],
+                   "warning": ["k", "b", "e", "o", "tags", "s"],
                    "detection": ["d", "t", "lat", "lon", "size_hundredths_in"],
-                   "station_day": ["d", "mph", "kt"]},
+                   "station_day": ["d", "mph", "kt", "flag"],
+                   "county_event": ["k", "s", "b", "e", "o", "st", "n"]},
         "tile": {"reports": "indexes into events.reports, sorted by the row's first five fields",
                  "records": "indexes into events.records, sorted the same way",
                  "warnings": "[index into events.warnings, cover]",
                  "detections": "[d, t, lat, lon, size_hundredths_in]",
                  "zones": "{zone code: [cell keys]}",
                  "fire": "{fire weather zone code: [cell keys]}",
+                 "counties": "{county code (MTC plus FIPS): [cell keys]} (B5: each Montana cell is in one county)",
                  "stations": "[{id, name, lat, lon, miles}]"},
-        "cover": "25 lower-case hex digits; bit k (the cell key 0 to 99) is set when the cell centre is inside",
+        "cover": ("25 lower-case hex digits; bit k (the cell key 0 to 99) is set when the polygon touches the cell's "
+                  "square (D11: a vertex in it, an edge across its side, or its centre inside)"),
         "montana_time": montana_transitions(first_utc.year - 1, last_utc.year + 1),
         "sources": {src: dict(row, **({"served_from_cache_since": fetcher.served_since[src]}
                                       if src in fetcher.served_since else {}))
@@ -2286,14 +2816,65 @@ def _index_block(ctx, index, tiles, zone_list, station_index, totals, bytes_by, 
 
 
 
+def _b5_block(ctx: Context, cover_stats: dict, county_names: dict, county_files: int, k_bytes: int,
+              town_check: dict, dropped_list: list, flagged_list: list) -> dict:
+    """The B5 additions to the index's joins block: the cover counts per product (D11), the counties (source 4), the
+    VTEC and period counts (source 4, D8), the polygon null joins (D11), the town point check (D11), the type words of
+    the LSR labels (source 6), the station readings dropped and flagged (D12), and the NCEI totals (source 5)."""
+    vtec = {}
+    for name in sorted(ctx.vtec_counts):
+        vtec[name] = dict(ctx.vtec_counts[name])
+    cover = {}
+    for name in sorted(cover_stats):
+        row = cover_stats[name]
+        cover[name] = dict(row, added=row["touched"] - row["centre"])
+    words: dict[str, dict] = {}
+    for r in ctx.lsr:
+        entry = words.setdefault(r["type"].upper(), {"word": r["kind"], "rows": 0, "first": None, "last": None})
+        entry["rows"] += 1
+        day = r["utc"].date().isoformat()
+        entry["first"] = day if entry["first"] is None or day < entry["first"] else entry["first"]
+        entry["last"] = day if entry["last"] is None or day > entry["last"] else entry["last"]
+    return {
+        "cover_counts": cover,
+        "counties": {"state": "loaded" if ctx.county_map is not None else "unavailable",
+                     "reason": None if ctx.county_map is not None else ctx.county_reason,
+                     "count": len(ctx.county_map or []), "names": county_names, "bytes": k_bytes,
+                     "files": county_files, "cells_without_county": None,
+                     "county_events": sum(len(v) for v in ctx.county_events.values()),
+                     "unplaced": ctx.county_unplaced},
+        "vtec_counts": vtec,
+        "zone_periods": ctx.zone_periods,
+        "polygon_duplicates_dropped": ctx.polygon_duplicates,
+        "polygon_nulls": {"no_outline": len(ctx.ww_nulls), **ctx.null_polygons},
+        "town_checks": town_check,
+        "type_words": {k: words[k] for k in sorted(words)},
+        "station_dropped_readings": dropped_list,
+        "station_flagged_readings": flagged_list,
+        "ncei_totals": _ncei_totals(ctx),
+    }
+
+
+def _ncei_totals(ctx: Context) -> dict:
+    """The NCEI Montana point rows of the new types, by type: every year read (the totals) and the window."""
+    out: dict[str, dict] = {}
+    for row in ctx.ncei_all_points:
+        name = row["code"]
+        entry = out.setdefault(name, {"total": 0, "window": 0})
+        entry["total"] += 1
+    for row in ctx.ncei_points:
+        out[row["code"]]["window"] = out.get(row["code"], {}).get("window", 0) + 1
+    return {k: out[k] for k in sorted(out)}
+
+
 def _finish_manifest(root: Path, stage: Path, block: dict) -> None:
     """Write the staged manifest: B1's entries that remain, the new j, z and s files, and the staged index (which
     build() wrote into the stage before this call)."""
     old = json.loads((root / "hail" / "manifest.json").read_text(encoding="utf-8"))
     files = {rel: meta for rel, meta in old.get("files", {}).items()
-             if not rel.startswith(("hail/j/", "hail/z/", "hail/s/", "hail/index.json"))}
+             if not rel.startswith(("hail/j/", "hail/z/", "hail/s/", "hail/k/", "hail/index.json"))}
     hail_stage = stage / "hail"
-    for sub in ("j", "z", "s"):
+    for sub in ("j", "z", "s", "k"):
         for path in sorted((hail_stage / sub).rglob("*")):
             if path.is_file():
                 data = path.read_bytes()
@@ -2304,7 +2885,8 @@ def _finish_manifest(root: Path, stage: Path, block: dict) -> None:
     manifest = dict(old)
     manifest["files"] = {k: files[k] for k in sorted(files)}
     manifest[INDEX_KEY] = {"format": FORMAT, "tiles": block["tiles"], "zones": block["zones"],
-                           "stations": block["stations"], "bytes": block["bytes"], "state": block["state"]}
+                           "stations": block["stations"], "bytes": block["bytes"], "state": block["state"],
+                           "counties": block.get("counties", {}).get("count", 0)}
     (hail_stage / "manifest.json").write_bytes(_pretty(manifest))
 
 
@@ -2430,6 +3012,7 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
     types = block.get("types", {})
     zone = _zone_for_key(tile_doc, key)
     fire = _zone_for_key(tile_doc, key, "fire")
+    county = _zone_for_key(tile_doc, key, "counties")
     fire_state = block.get("fire_zones", {}).get("state", "unavailable")
     out = {"sample": w["sample"] if sample else None, "as_of": index["as_of"], "sections": [],
            "times_note": w["times_note"]}
@@ -2545,7 +3128,7 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
             if not cover_has(cover, key):
                 continue
             item = events["warnings"][ref]
-            rows.append((parse_iso_utc(item["b"]), parse_iso_utc(item["e"]), item))
+            rows.append((parse_iso_utc(item["b"]), None if item["e"] is None else parse_iso_utc(item["e"]), item))
         rows.sort(key=lambda x: x[0], reverse=True)
         no_outline = block.get("warnings_no_outline", 0)
         sec["lead"] = (w["warnings_lead_unknown"] if (not rows and no_outline)
@@ -2571,8 +3154,8 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
     else:
         # D17: the public zone lead counts public products; the fire lead counts red flag warnings. Each event carries
         # its begin (null: start not recorded), the time it is windowed and ordered by, and its end (null: not recorded).
-        public_items, red_items = [], []
-        zone_lost = fire_lost = None           # D27: a zone file that did not load (its reason, or None)
+        public_items, red_items, county_items = [], [], []
+        zone_lost = fire_lost = county_lost = None     # D27: a zone or county file that did not load (its reason)
         if zone and store_dir:
             try:
                 zdoc = _read_part_file(store_dir, f"z/{zone}.json", ZONE_FORMAT)
@@ -2594,6 +3177,18 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
                 when = _zone_when(begin, end_at)
                 if when is not None and start <= when.date() <= end:
                     red_items.append((begin, end_at, ev.get("st"), ev))
+        county_name = (block.get("counties", {}).get("names", {}).get(county, county)).replace(" County", "") \
+            if county else None
+        if county and store_dir:           # B5: the cell's county products (whole-county, not this spot alone)
+            try:
+                kdoc = _read_part_file(store_dir, f"k/{county}.json", COUNTY_FORMAT)
+            except JoinsError as exc:
+                county_lost, kdoc = str(exc), {}
+            for ev in kdoc.get("events", []):
+                begin, end_at = _zone_span(ev)
+                when = _zone_when(begin, end_at)
+                if when is not None and start <= when.date() <= end:
+                    county_items.append((begin, end_at, ev.get("st"), ev))
         sec["lead"] = w["zones_no_zone"] if not zone else _zone_lead(len(public_items), zone_name, zone, ftn, w)
         grouped: dict[str, list] = {}
         for begin, end_at, st, ev in public_items:
@@ -2611,6 +3206,28 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
         unplaced = block.get("zone_products_unplaced", 0)
         if unplaced:
             sec["lines"].append(w["zones_unplaced_one" if unplaced == 1 else "zones_unplaced_many"].format(n=unplaced))
+        if county:
+            if block.get("counties", {}).get("state") != "loaded" or county_lost:
+                sec["lines"].append(w["county_unavailable"])
+            else:
+                county_grouped: dict[str, list] = {}
+                for begin, end_at, st, ev in county_items:
+                    name = PRODUCT_NAMES.get(f"{ev['k']}.{ev['s']}", f"{ev['k']}.{ev['s']}")
+                    county_grouped.setdefault(name, []).append((begin, end_at, st))
+                county_n = len(county_items)
+                ckw = dict(ftn, county_name=county_name, county=county)
+                if county_n == 0:
+                    sec["lines"].append(w["county_lead_none"].format(**ckw))
+                else:
+                    key_name = "county_lead_one" if county_n == 1 else "county_lead_many"
+                    sec["lines"].append(w[key_name].format(n=county_n, **ckw))
+                for name in sorted(county_grouped, key=lambda n: min(_zone_when(x[0], x[1]) for x in county_grouped[n]),
+                                   reverse=True):
+                    items = sorted(county_grouped[name], key=lambda x: _zone_when(x[0], x[1]))
+                    events_text = "; ".join(_zone_event_text(b, e, st, w) for b, e, st in items)
+                    sec["rows"].append({"text": w["county_row"].format(product=name, county_name=county_name,
+                                                                       events=events_text), "remark": None,
+                                        "utc": None})
         if fire_state != "loaded" or fire_lost:       # a fire zone file that did not load: no red flag lead
             sec["lines"].append(w["zones_fire_unavailable"])
         elif not fire:
@@ -2619,6 +3236,8 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
             sec["fire_lead"] = _fire_lead(len(red_items), fire_zone_name, fire, ftn, w)
         if parts.get("zones") == "partial":
             sec["unavailable"] = _unavailable_text("zones", reasons.get("zones"), partial.get("zones"))
+        if county_lost:
+            sec["lines"].append(w["county_unavailable"])
         if zone_lost:       # D27: no lead, rows or lines from a zone file that did not load; the section says so
             sec.update(lead=None, fire_lead=None, rows=[], lines=[], unavailable=_unavailable_text("zones", zone_lost))
     out["sections"].append(sec)
@@ -2642,18 +3261,19 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
                 except JoinsError as exc:
                     station_lost = str(exc)
                     break
-                for day_index, mph, kt in (sdoc or {}).get("days", []):
-                    day = hail.day_of_index(day_index)
+                for item in (sdoc or {}).get("days", []):
+                    day = hail.day_of_index(item[0])          # B5: [day, mph, kt] and the flag (0 or 1)
                     if start <= day <= end:
-                        rows.append((day, mph, kt, st))
+                        rows.append((day, item[1], item[2], st, item[3] if len(item) > 3 else 0))
                 dropped += (sdoc or {}).get("dropped", 0)
             rows.sort(key=lambda x: (x[0], x[1]), reverse=True)
             sec["lead"] = _stations_lead(len(rows), ftn, w)
-            for day, mph, kt, st in rows:
-                sec["rows"].append({"text": w["stations_row"].format(date=fmt_day(day), mph=int(mph), kt=int(kt),
-                                                                       station=st["name"],
-                                                                       miles=f"{st['miles']:.1f}"),
-                                    "remark": None, "utc": None})
+            for day, mph, kt, st, flag in rows:
+                text = w["stations_row"].format(date=fmt_day(day), mph=int(mph), kt=int(kt), station=st["name"],
+                                                miles=f"{st['miles']:.1f}")
+                sec["rows"].append({"text": text + (w["flag_suffix"] if flag else ""), "remark": None, "utc": None})
+            if any(row[4] for row in rows):
+                sec["lines"].append(w["flag_check_line"])
             if dropped:
                 key_name = "stations_dropped_one" if dropped == 1 else "stations_dropped"
                 sec["lines"].append(w[key_name].format(n=dropped, kt=IMPLAUSIBLE_KT))
@@ -2792,7 +3412,7 @@ def _report_text(utc, r, dist, clat, clon, lat, lon, w, types=None) -> str:
     distance and bearing (D3). The type word is the archive's TYPETEXT in lower case, from the store's legend. A type
     the archive gives no unit for (LSR_UNITS) shows its type word and qualifier only, with no number (D9)."""
     kind = r[4]
-    type_word = (types or {}).get(kind, kind.lower())
+    type_word = r[11] if len(r) > 11 and r[11] else (types or {}).get(kind, kind.lower())
     miles, bearing = _place_bits(lat, lon, clat, clon, w)
     base = dict(date=fmt_day(_local(utc).date()), time=fmt_clock(utc), type=type_word,
                 qualifier=_qualifier(r[7], w), source=r[8], miles=miles)
@@ -2808,10 +3428,12 @@ def _report_text(utc, r, dist, clat, clon, lat, lon, w, types=None) -> str:
 
 def _record_text(utc, r, dist, clat, clon, lat, lon, w) -> str:
     """A record row (D3, D9, D19): the magnitude only when its type carries a unit; any other type is typed (its type
-    word and qualifier, no number and no "no size given")."""
+    word and qualifier, no number and no "no size given"). A flood record shows NCEI's cause as written (B5)."""
     miles, bearing = _place_bits(lat, lon, clat, clon, w)
+    cause = r[13] if len(r) > 13 else ""
     base = dict(date=fmt_day(_local(utc).date()), time=fmt_clock(utc), type=r[4],
-                qualifier=_qualifier(r[7], w), source=r[8], miles=miles)
+                qualifier=_qualifier(r[7], w), source=r[8], miles=miles,
+                cause=w["records_cause"].format(cause=cause) if cause else "")
     if r[4] in UNIT_CODES:
         base["magnitude"] = _magnitude(r[5], r[6], w, mph=r[11], kt=r[12])
         key = "records_row_here" if bearing is None else "records_row"
@@ -2825,7 +3447,7 @@ def _record_text(utc, r, dist, clat, clon, lat, lon, w) -> str:
 def _zone_record_text(utc, r, zone, w) -> str:
     """A zone-coded record row (D9, D19): as _record_text, for the whole zone."""
     base = dict(date=fmt_day(_local(utc).date()), time=fmt_clock(utc), type=r[4],
-                qualifier=_qualifier(r[7], w), source=r[8], zone=zone)
+                qualifier=_qualifier(r[7], w), source=r[8], zone=zone, cause="")
     if r[4] in UNIT_CODES:
         base["magnitude"] = _magnitude(r[5], r[6], w, mph=r[11], kt=r[12])
         return w["records_zone_row"].format(**base)
@@ -2833,6 +3455,8 @@ def _zone_record_text(utc, r, zone, w) -> str:
 
 
 def _warning_text(b, e, item, w) -> str:
+    """A warning row (D4, D11, B5): the product's own name, the office, the words "covered this cell or part of it",
+    and the tags the archive gives (hail, wind, tornado, and the NWS damage threat tag where the product has one)."""
     tags = []
     tg = item["tags"]
     if tg.get("hail_in") is not None:
@@ -2843,9 +3467,14 @@ def _warning_text(b, e, item, w) -> str:
         tags.append(w["tag_tornado"].format(value=str(tg["tornado"]).lower()))
     if tg.get("damage"):
         tags.append(w["tag_damage"].format(value=str(tg["damage"]).lower()))
-    tag_text = ", ".join(tags) if tags else w["warnings_tags_none"]
-    return w["warnings_row"].format(date=fmt_day(_local(b).date()), begin=fmt_clock(b), end=fmt_end(e, b),
-                                    kind=KIND_WORDS.get(item["k"], item["k"]), office=item["o"], tags=tag_text)
+    product = PRODUCT_NAMES.get(f"{item['k']}.{item.get('s', 'W')}", f"{item['k']}.{item.get('s', 'W')}")
+    tag_text = w["warnings_tags"].format(tags=", ".join(tags)) if tags else ""
+    if e is None:
+        span = w["warnings_span_none"].format(begin=fmt_clock(b))
+    else:
+        span = w["warnings_span"].format(begin=fmt_clock(b), end=fmt_end(e, b))
+    return w["warnings_row"].format(date=fmt_day(_local(b).date()), span=span, product=product, office=item["o"],
+                                    tags=tag_text)
 
 
 # ---------------------------------------------------------------- the map block (map.json["hail"]["joins"])
@@ -2915,20 +3544,273 @@ def _name_disagreements(root: Path, block: dict) -> tuple[int, list]:
     return count, examples
 
 
-def verify(store_dir) -> dict:
-    """Check a built store's joins. Returns {"ok", "state", "parts", "checks", "gate"}: a failed check makes ok
+# ---------------------------------------------------------------- B5 checks (verify reads the store and the cache only)
+
+RESEARCH_B5 = {                       # source 4: the window counts the research gives (VTEC events; the zone ones and the
+    "FL.W": 43, "FA.W": 37, "FA.Y": 548, "FL.A": 35, "FL.Y": 10, "SQ.W": 78,              # county ones by key)
+    "WW.Y": 865, "WS.A": 226, "HW.A": 277, "HT.Y": 58, "EH.W": 4, "EH.A": 3, "FR.Y": 14, "FZ.W": 4, "DU.Y": 3,
+    "FF.A": 20,
+}
+RESEARCH_B5_COUNTY = {"FA.A": 18, "FF.A": 2}             # county-only events in the window
+RESEARCH_NCEI_TOTALS = {"Flood": 76, "Flash Flood": 60, "Heavy Rain": 144, "Tornado": 17, "Funnel Cloud": 35,
+                        "Lightning": 8, "Debris Flow": 11}          # 2020 to 2026 totals (rows, Montana)
+RESEARCH_NCEI_WINDOW = {"Flood": 60, "Flash Flood": 52, "Heavy Rain": 85, "Tornado": 13, "Funnel Cloud": 30,
+                        "Lightning": 6, "Debris Flow": 10}          # the window's rows (the research's 256)
+# D8's four named cases: zone, product, office, expected spans (begin, end, status) as the z/ file holds them
+PERIOD_CASES = (
+    ("MTZ004", "WS.W", "MSO", "2024-01-09T00:00Z", "2024-01-10T15:22Z", "cancelled",
+     "MTZ004 WS 2024 event 1: cancelled on 10 January, continued from 11 January"),
+    ("MTZ004", "WS.W", "MSO", "2024-01-11T12:00Z", "2024-01-12T12:00Z", None, "the continuation from 11 January"),
+    ("MTZ302", "HW.W", "TFX", "2022-12-26T18:00Z", "2022-12-27T07:19Z", "cancelled", "MTZ302 HW 2022 event 38: first period"),
+    ("MTZ302", "HW.W", "TFX", "2022-12-27T15:00Z", "2022-12-28T15:29Z", "cancelled", "MTZ302 HW 2022 event 38: second period"),
+    ("MTZ320", "WS.W", "TFX", "2023-02-19T18:00Z", "2023-02-22T10:54Z", "cancelled", "MTZ320 WS 2023 event 4: cancelled"),
+    ("MTZ320", "WS.W", "TFX", "2023-02-22T18:58Z", "2023-02-23T01:00Z", None, "MTZ320 WS 2023 event 4: the expiry after it"),
+    ("MTZ003", "WS.W", "MSO", "2021-12-19T04:00Z", "2021-12-19T15:00Z", None, "MTZ003 WS 2021 event 12: first period (expired)"),
+    ("MTZ003", "WS.W", "MSO", "2021-12-19T18:00Z", "2021-12-20T03:27Z", "cancelled", "MTZ003 WS 2021 event 12: second period"),
+)
+JUNE_2022_PLACES = (("Red Lodge", 45.1677, -109.2503), ("Gardiner (Yellowstone River at Corwin Springs)", 45.1121194,
+                                                          -110.7936667), ("Billings", None, None))
+GLENTANA = {"lat": 48.85, "lon": -106.25, "utc": "2022-07-18T23:47Z", "office": "NCEI tornado 1043279"}
+HAYS = {"day": "2021-07-07", "lat": 48.01, "lon": -108.79}
+
+
+def _mesh_in(root: Path, index: dict, lat: float, lon: float, day: date) -> float:
+    """The B1 MESH value at the cell that holds (lat, lon) on one SPC day, in inches; 0.0 when the day has no stored value
+    (below the floor of 0.25 in, B1)."""
+    rows = hail.cell_events(root, lat, lon, index) or []
+    for d, tenths in rows:
+        if d == day:
+            return tenths / hail.TENTHS_PER_INCH
+    return 0.0
+
+
+def _floor_hundredths(inches: float) -> float:
+    """A radar value in inches to the hundredth, rounded down (the B1 display rule, decision 10). A value of 0.996 in
+    shows 0.99, so a row never prints 1.00 for a value the hit test counts as a miss."""
+    return math.floor(inches * 100 + 1e-7) / 100
+
+
+def _hit_and_miss(root: Path, index: dict, events: dict) -> dict:
+    """D15: every LSR hail report of 1.00 in or more in the window, against the B1 MESH maximum at the report's cell on its
+    SPC day and the SWDI MAXSIZE of the detections within 2 miles of the report on that day. A hit is a radar value of
+    1.00 in or more (MESH or SWDI); a miss is not. under_by is the report's size less the larger radar value, when that is
+    positive."""
+    rows = []
+    for ref in range(len(events["reports"])):
+        r = events["reports"][ref]
+        if r[4] != "H" or r[6] != "in" or not r[5]:
+            continue
+        size = float(r[5])
+        if size < 1.0:
+            continue
+        utc = utc_from_row(r[0], r[1])
+        day = spc_day(utc)
+        mesh = _mesh_in(root, index, r[2], r[3], day)
+        swdi = _swdi_in(root, index, r[2], r[3], day)
+        radar = max(mesh, swdi)
+        rows.append({"utc": iso_utc(utc), "place": r[9], "lat": r[2], "lon": r[3], "report_in": round(size, 2),
+                     "mesh_in": _floor_hundredths(mesh), "swdi_in": _floor_hundredths(swdi),
+                     "hit": bool(radar >= 1.0), "under_by_in": round(max(0.0, size - radar), 2),
+                     "remark": r[10][:80]})
+    misses = [x for x in rows if not x["hit"]]
+    unders = sorted(x["under_by_in"] for x in misses)
+    summary = {"reports": len(rows), "hits": len(rows) - len(misses), "misses": len(misses),
+               "misses_under_by_median_in": unders[len(unders) // 2] if unders else None,
+               "misses_under_by_max_in": unders[-1] if unders else None}
+    return {"summary": summary, "rows": rows}
+
+
+def _swdi_in(root: Path, index: dict, lat: float, lon: float, day: date) -> float:
+    """The largest SWDI MAXSIZE (inches) of the detections within 2 miles of (lat, lon) on one SPC day, from the j/ file of
+    the tile that holds the point (its detections include every one within 2 miles of any point in the tile)."""
+    row, col = hail.cell_for(lat, lon)
+    tile = hail.tile_name(row // 10, col // 10)
+    try:
+        doc = _read_j(root, tile)
+    except JoinsError:
+        return 0.0
+    best = 0.0
+    for d_, t_, dlat, dlon, size in doc.get("detections", []):
+        if spc_day(utc_from_row(d_, t_)) != day:
+            continue
+        if haversine_km(lat, lon, dlat, dlon) / MILE_KM <= DETECT_MILES:
+            best = max(best, size / 100.0)
+    return best
+
+
+def _ncei_pairs(events: dict) -> dict:
+    """D10: NCEI hail records matched to LSR hail reports (the same size to 0.01 in, within 10 km and 3 hours, nearest in
+    time, each row used once). Each pair's offset is the LSR time less the NCEI time as the store holds it (the store's
+    NCEI time is MST-7 converted to UTC, so 0 hours is the MST rule). Pairs off 0 hours are listed, not explained."""
+    reports = [r for r in events["reports"] if r[4] == "H" and r[5]]
+    records = [r for r in events["records"] if r[4] == "hail" and r[5]]
+    used: set = set()
+    pairs = []
+    for ri, rec in enumerate(records):
+        best = None
+        rt = utc_from_row(rec[0], rec[1])
+        for li, lsr in enumerate(reports):
+            if li in used or float(lsr[5]) != float(rec[5]):
+                continue
+            lt = utc_from_row(lsr[0], lsr[1])
+            gap = (lt - rt).total_seconds() / 3600.0
+            if abs(gap) > 3.0:
+                continue
+            dist = float(haversine_km(rec[2], rec[3], lsr[2], lsr[3]))
+            if dist > 10.0:
+                continue
+            key = (abs(gap), dist)
+            if best is None or key < best[0]:
+                best = (key, li, gap, dist)
+        if best is not None:
+            used.add(best[1])
+            lsr = reports[best[1]]
+            pairs.append({"ncei_utc": iso_utc(rt), "lsr_utc": iso_utc(utc_from_row(lsr[0], lsr[1])),
+                          "offset_h": round(best[2], 2), "km": round(best[3], 2), "in": rec[5],
+                          "place": lsr[9]})
+    off = collections.Counter(p["offset_h"] for p in pairs)
+    off_rule = [p for p in pairs if abs(p["offset_h"]) >= 0.5]          # not within half an hour of the MST rule
+    return {"pairs": len(pairs), "offsets": {str(k): v for k, v in sorted(off.items())},
+            "on_rule": len(pairs) - len(off_rule), "off_rule": off_rule}
+
+
+def _june_2022(root: Path, index: dict, events: dict) -> dict:
+    """B5 gate 5 (E01): the flood warnings (FL.W and FA.W) and the NCEI flood records over Red Lodge, Gardiner and
+    Billings in June 2022, read from the tile files of the cells that hold the places."""
+    out = {}
+    towns = {t["name"]: t for t in json.loads(TOWNS_FILE.read_text(encoding="utf-8"))}
+    places = [(name, lat, lon) for name, lat, lon in JUNE_2022_PLACES if lat is not None]
+    if "Billings" in towns:
+        places.append(("Billings", towns["Billings"]["lat"], towns["Billings"]["lon"]))
+    for name, lat, lon in places:
+        row, col = hail.cell_for(lat, lon)
+        key = hail.cell_key(row, col)
+        clat, clon = hail.cell_centre(row, col)
+        tile = hail.tile_name(row // 10, col // 10)
+        if tile not in set(index["tiles"]):
+            out[name] = {"cell": [row, col], "not_in_store": True}      # the store holds no tile here: not checked
+            continue
+        doc = _read_j(root, tile)
+        warnings = []
+        for ref, cover in doc.get("warnings", []):
+            item = events["warnings"][ref]
+            if not cover_has(cover, key):
+                continue
+            if item["b"][:7] == "2022-06" or (item["e"] or "")[:7] == "2022-06":
+                warnings.append({"product": f"{item['k']}.{item.get('s', '')}", "b": item["b"], "e": item["e"],
+                                 "o": item["o"]})
+        floods = []
+        for ref in doc.get("records", []):
+            r = events["records"][ref]
+            utc = utc_from_row(r[0], r[1])
+            if utc.strftime("%Y-%m") == "2022-06" and r[4] in ("flood", "flash flood"):
+                miles = float(haversine_km(clat, clon, r[2], r[3])) / MILE_KM
+                floods.append({"utc": iso_utc(utc), "type": r[4], "cause": r[13] if len(r) > 13 else "",
+                               "miles": round(miles, 2)})
+        out[name] = {"cell": [row, col], "fl_fa_warnings_june_2022": sorted(warnings, key=lambda w: w["b"]),
+                     "ncei_flood_records_june_2022": floods}
+    return out
+
+
+def _periods_check(root: Path) -> list:
+    """D8: the four named cases, as the z/ files hold them (the begin is exact; the end and status too)."""
+    out = []
+    for zone, product, office, begin, end, st, label in PERIOD_CASES:
+        zdoc = _read_z(root, zone) or {}
+        phen, sig = product.split(".")
+        found = [e for e in zdoc.get("events", []) if e["k"] == phen and e["s"] == sig and e["o"] == office
+                 and e["b"] == begin]
+        ok = bool(found) and found[0].get("e") == end and found[0].get("st") == st
+        out.append({"case": label, "zone": zone, "begin": begin, "expected_end": end, "expected_st": st,
+                    "found": None if not found else {"e": found[0].get("e"), "st": found[0].get("st")},
+                    "ok": ok, "in_window": True})
+    return out
+
+
+def _county_cells(root: Path, index: dict) -> dict:
+    """The county of every Montana cell is written once: each cell appears under exactly one county in the j/ files."""
+    block = index[INDEX_KEY]
+    seen: dict[tuple, str] = {}
+    twice = 0
+    for t in index["tiles"]:
+        doc = _read_j(root, t)
+        for code, keys in doc.get("counties", {}).items():
+            for k in keys:
+                cell = (t, k)
+                if cell in seen:
+                    twice += 1
+                seen[cell] = code
+    expected = sum(len(tile["keys"]) for tile in load_tiles(root, index))
+    files = sorted((root / "hail" / "k").glob("MTC*.json"))
+    return {"cells_with_county": len(seen), "cells_in_state": expected, "cells_listed_twice": twice,
+            "county_files": len(files), "counties_in_index": len(block.get("counties", {}).get("names", {})),
+            "unassigned": expected - len(seen)}
+
+
+def _county_name_check(root: Path, index: dict) -> list:
+    block = index[INDEX_KEY]
+    out = []
+    for code, name in sorted(block.get("counties", {}).get("names", {}).items()):
+        path = root / "hail" / "k" / f"{code}.json"
+        if not path.is_file():
+            out.append(f"{code}: no k/ file")
+    return out
+
+
+def _research_compare(block: dict, research: bool = True) -> list:
+    """The research's window counts beside this build's: the VTEC events of the research window (research=True: every
+    row read, 2021-10-19 to 2026-10-19), or of the store's window (research=False)."""
+    rows = []
+    vt = block.get("vtec_counts_research" if research else "vtec_counts", {})
+    for name, want in sorted(RESEARCH_B5.items()):
+        ours = vt.get(name, {}).get("window")
+        rows.append({"product": name, "ours_window_vtec_events": ours, "research_window": want,
+                     "delta": None if ours is None else ours - want})
+    for name, want in sorted(RESEARCH_B5_COUNTY.items()):
+        ours = vt.get(name, {}).get("county")
+        rows.append({"product": name + " (county-only)", "ours_window_vtec_events": ours,
+                     "research_window": want, "delta": None if ours is None else ours - want})
+    return rows
+
+
+def _cover_counts_check(block: dict) -> dict:
+    cc = block.get("cover_counts", {})
+    bad = {k: v["centre_not_touched"] for k, v in cc.items() if v.get("centre_not_touched")}
+    return {"products": {k: {"centre_rule": v["centre"], "touch_rule": v["touched"], "added": v["added"]}
+                         for k, v in sorted(cc.items())},
+            "centre_not_touched": bad}
+
+
+def _gusts_check(block: dict) -> dict:
+    dropped = block.get("station_dropped_readings", [])
+    flagged = block.get("station_flagged_readings", [])
+    return {"dropped": dropped, "flagged": flagged,
+            "lwt_182_5_dropped": any(d["station"] == "LWT" and d["date"] == "2023-03-13" for d in dropped),
+            "hvr_flagged": any(f["station"] == "HVR" and f["date"] == "2025-02-20" for f in flagged),
+            "mso_flagged": any(f["station"] == "MSO" and f["date"] == "2025-05-09" for f in flagged)}
+
+
+def verify(store_dir, cache_dir=None) -> dict:
+    """Check a built store's joins. Returns {"ok", "state", "parts", "checks", "gate", "b5"}: a failed check makes ok
     False; a part that did not load is reported, not failed. The gate holds B2 gate 1's Benchland rows as found (D1):
-    the report and the record from the report cell's tile, the warnings and the zone from the gate cell's tile."""
+    the report and the record from the report cell's tile, the warnings and the zone from the gate cell's tile. The "b5"
+    block is the B5 record (D8, D10, D11, D12, D15, source 4 to 6): the counts, the tables and the cases, each as found.
+    cache_dir (optional) is the joins cache, read only for the NCEI 2020 file (the 2020 to 2026 totals)."""
     root = Path(store_dir)
     checks: list[tuple[str, bool, str]] = []
+    not_run: list[dict] = []        # F15: a check that did not run is named with its reason and never passes
 
     def check(name, ok, detail=""):
         checks.append((name, bool(ok), detail))
         return ok
 
-    def out(ok, state=None, parts=None, gate=None):
+    def skip(name, reason):
+        not_run.append({"name": name, "reason": reason})
+
+    def out(ok, state=None, parts=None, gate=None, b5=None):
         return {"ok": ok, "state": state, "parts": parts or {},
-                "checks": [{"name": n, "ok": o, "detail": d} for n, o, d in checks], "gate": gate or {}}
+                "checks": [{"name": n, "ok": o, "detail": d} for n, o, d in checks],
+                "not_run": list(not_run), "gate": gate or {}, "b5": b5 or {}}
 
     try:
         hail.check_manifest(root)
@@ -2947,7 +3829,8 @@ def verify(store_dir) -> dict:
         (root / "hail" / "j" / f"{t}.json").is_file() for t in tiles), f"{len(tile_files)} files, {len(tiles)} tiles")
     zone_names = set(block.get("zone_list", []))
     fire_names = set(block.get("fire_zone_list", []))
-    bad_ints = bad_refs = bad_cover = bad_zone = bad_fire = 0
+    county_names = set(block.get("counties", {}).get("names", {}))
+    bad_ints = bad_refs = bad_cover = bad_zone = bad_fire = bad_county = 0
     if events is not None:
         for kind in ("reports", "records"):
             for row in events[kind]:
@@ -2991,6 +3874,9 @@ def verify(store_dir) -> dict:
         for code, keys in doc.get("fire", {}).items():
             if code not in fire_names or not all(isinstance(k, int) and 0 <= k < 100 for k in keys):
                 bad_fire += 1
+        for code, keys in doc.get("counties", {}).items():
+            if code not in county_names or not all(isinstance(k, int) and 0 <= k < 100 for k in keys):
+                bad_county += 1
         for det in doc.get("detections", []):
             if not (isinstance(det[0], int) and isinstance(det[1], int) and isinstance(det[4], int)):
                 bad_ints += 1
@@ -3002,6 +3888,7 @@ def verify(store_dir) -> dict:
     check("warning covers are 25 hex digits", bad_cover == 0, f"{bad_cover} bad")
     check("zone codes are current zones and keys are cells", bad_zone == 0, f"{bad_zone} bad")
     check("fire zone codes are current fire zones and keys are cells", bad_fire == 0, f"{bad_fire} bad")
+    check("county codes are the Montana counties and keys are cells", bad_county == 0, f"{bad_county} bad")
     for zone in sorted(zone_names):
         if not (root / "hail" / "z" / f"{zone}.json").is_file():
             check(f"z/ file for {zone}", False)
@@ -3021,9 +3908,10 @@ def verify(store_dir) -> dict:
     else:
         check("every station has an s/ file", True, f"{len(block.get('station_list', []))} stations")
     manifest = json.loads((root / "hail" / "manifest.json").read_text(encoding="utf-8"))
-    listed = [k for k in manifest["files"] if k.startswith(("hail/j/", "hail/z/", "hail/s/"))]
-    on_disk = [p for sub in ("j", "z", "s") for p in (root / "hail" / sub).glob("*.json")]
-    check("manifest lists every j, z and s file", len(listed) == len(on_disk), f"{len(listed)} listed, {len(on_disk)} files")
+    listed = [k for k in manifest["files"] if k.startswith(("hail/j/", "hail/z/", "hail/s/", "hail/k/"))]
+    on_disk = [p for sub in ("j", "z", "s", "k") for p in (root / "hail" / sub).glob("*.json")]
+    check("manifest lists every j, z, s and k file", len(listed) == len(on_disk),
+          f"{len(listed)} listed, {len(on_disk)} files")
     disagree, examples = _name_disagreements(root, block)
     check("NCEI zone names against the 2026 names (reported, not failed)", True,
           f"{disagree} disagree after normalising" + (": " + "; ".join(examples) if examples else ""))
@@ -3058,9 +3946,10 @@ def verify(store_dir) -> dict:
     bad_station = 0
     for sid in block.get("station_list", []):
         for day in (_read_s(root, sid) or {}).get("days", []):
-            if not (len(day) == 3 and all(isinstance(v, int) and not isinstance(v, bool) for v in day)):
+            if not (len(day) in (3, 4) and all(isinstance(v, int) and not isinstance(v, bool) for v in day)):
                 bad_station += 1
-    check("station days are whole numbers (mph and kt, D18)", bad_station == 0, f"{bad_station} not whole")
+    check("station days are whole numbers (mph and kt, D18; the flag, B5)", bad_station == 0,
+          f"{bad_station} not whole")
     gate = {}
     gate_month = BENCHLAND_GATE["day"][:7]
     gate_month_loaded = (block["parts"].get("reports") != "unavailable"
@@ -3079,15 +3968,200 @@ def verify(store_dir) -> dict:
             check("gate 1: the gate cell's TFX warnings include the 19:53 and 21:23 UTC polygons",
                   {"2025-06-15T19:53Z", "2025-06-15T21:23Z"} <= begins, str(sorted(begins)))
         else:
-            check("gate 1: warnings part not loaded (not checked)", True, block["parts"].get("warnings"))
+            skip("gate 1: the gate cell's TFX warnings include the 19:53 and 21:23 UTC polygons",
+                 _part_reason(block, "warnings"))
         if block["parts"].get("zones") == "loaded":
             check("gate 1: the gate cell's zone is MTZ313", gate.get("zone") == "MTZ313", str(gate.get("zone")))
         else:
-            check("gate 1: zone part not loaded (not checked)", True, block["parts"].get("zones"))
+            skip("gate 1: the gate cell's zone is MTZ313", _part_reason(block, "zones"))
     elif docs.get(gate_tile) is not None:
-        check("gate 1: reports part not loaded (not checked)", True, block["parts"].get("reports"))
-    return out(all(c[1] for c in checks), block["state"], block["parts"], gate)
+        skip("gate 1: the LSR and NCEI hail rows at Benchland", _part_reason(block, "reports"))
+    else:
+        skip("gate 1: the LSR and NCEI hail rows at Benchland", "this store has no tile for Benchland's gate cell")
 
+    b5: dict = {}
+    if events is not None:
+        b5 = _verify_b5(root, index, events, block, check, cache_dir, skip)
+    b5["not_run"] = list(not_run)
+    b5["windows"] = {"store": [window_utc(index)[0].strftime("%Y-%m-%dT%H:%MZ"),
+                               window_utc(index)[1].strftime("%Y-%m-%dT%H:%MZ")],
+                     "research": [RESEARCH_START.strftime("%Y-%m-%dT%H:%MZ"), RESEARCH_END.strftime("%Y-%m-%dT%H:%MZ")]}
+    return out(all(c[1] for c in checks), block["state"], block["parts"], gate, b5)
+
+
+def _part_reason(block: dict, part: str) -> str:
+    """Why a check that needs this part did not run (verify's not_run, F15): the part is unavailable, or partial with the
+    files that did not load (their years, for the warnings), or loaded with no tile in this store for the check."""
+    state = block.get("parts", {}).get(part)
+    if state == "unavailable":
+        return f"{part} part unavailable"
+    if state == "partial":
+        labels = block.get("unavailable_units", {}).get(part, [])
+        names = sorted({lab.split()[-1] if " " in lab else lab for lab in labels})
+        if names:
+            return f"{part} part partial: the files for {', '.join(names)} did not load, so those years are not checked"
+        return f"{part} part partial: some files were served from the cache after a failed request"
+    return f"{part} part loaded, but this store has no tile for this check"
+
+
+def _counties_reason(block: dict) -> str:
+    counties = block.get("counties", {})
+    if counties.get("state") == "sample":
+        return "this store is the three-day fixture, so it does not hold every Montana cell's county"
+    if counties.get("reason"):
+        return f"the county file did not load: {counties['reason']}"
+    return "the county file did not load"
+
+
+def _verify_b5(root: Path, index: dict, events: dict, block: dict, check, cache_dir, skip) -> dict:
+    """The B5 checks and the record (D8, D10, D11, D12, D15; sources 4 to 6). A failed check is the gate's; the tables and
+    the research comparison are recorded as found."""
+    b5: dict = {}
+
+    def guarded(name, fn, default=None):
+        try:
+            return fn()
+        except (JoinsError, hail.HailStoreError, KeyError, IndexError, ValueError, TypeError) as exc:
+            check(f"B5 record: {name} could not be read", False, str(exc))
+            return default
+    cover = _cover_counts_check(block)
+    b5["cover"] = cover
+    check("D11: every centre-rule cell is also a touch-rule cell (per product)", not cover["centre_not_touched"],
+          str(cover["centre_not_touched"]))
+    town = block.get("town_checks")
+    town_record = town or {}
+    b5["town_point_check"] = {"towns": town_record.get("towns", []), "events_checked": town_record.get("events_checked"),
+                              "pairs_tested": town_record.get("pairs_tested"),
+                              "disagreements": town_record.get("disagreements", [])}
+    town_name = "D11: the town point check for the 17 towns (every polygon product, 2021 to 2026)"
+    if town is None:                    # the fixture cut and any store written before the check existed
+        skip(town_name, "this store has no town_checks block")
+    elif block["parts"].get("warnings") != "loaded":
+        skip(town_name, _part_reason(block, "warnings"))
+    elif not town.get("events_checked"):
+        skip(town_name, "no polygon event was read in this store")
+    else:
+        check("D11: the town point check ran for the 17 towns", len(town.get("towns", [])) == 17,
+              f"{len(town.get('towns', []))} towns; {len(town.get('disagreements', []))} disagreements listed")
+    nulls = block.get("polygon_nulls", {})
+    check("D11: every outline-less polygon is joined by county or counted otherwise",
+          nulls.get("window", 0) == nulls.get("joined", 0) + nulls.get("unjoined", 0),
+          str({k: nulls.get(k) for k in ("no_outline", "window", "joined", "unjoined")}))
+    b5["polygon_nulls"] = nulls
+    counties = guarded("county cells", lambda: _county_cells(root, index), {"cells_listed_twice": 0,
+                                                                              "unassigned": 0, "county_files": 0})
+    b5["counties"] = dict(counties, state=block.get("counties", {}).get("state"),
+                          reason=block.get("counties", {}).get("reason"))
+    if block.get("counties", {}).get("state") == "loaded":
+        check("source 4: every Montana cell has one county, written once",
+              counties["cells_listed_twice"] == 0 and counties["unassigned"] == 0 and counties["county_files"] == 56,
+              str(counties))
+    else:
+        skip("source 4: every Montana cell has one county, written once", _counties_reason(block))
+    b5["vtec_counts"] = block.get("vtec_counts", {})
+    b5["research_window_counts"] = _research_compare(block, research=True)
+    b5["store_window_counts"] = _research_compare(block, research=False)
+    b5["zone_periods"] = block.get("zone_periods")
+    b5["periods"] = guarded("period cases", lambda: _periods_check(root), [])
+    present = [p for p in b5["periods"] if p["zone"] in set(block.get("zone_list", []))]
+    check("D8: the named period cases are as the rows give (for the zones the store holds)",
+          all(p["ok"] for p in present) if present else True,
+          "; ".join(f"{p['case']}: {'ok' if p['ok'] else 'not as expected'}" for p in present) or "no case in store")
+    b5["june_2022"] = guarded("June 2022", lambda: _june_2022(root, index, events), {})
+    b5["hit_and_miss"] = guarded("hit and miss", lambda: _hit_and_miss(root, index, events), {})
+    hm = b5["hit_and_miss"]
+    hm["research_cases"] = [dict(c) for c in KNOWN_HAIL_CASES]          # research values outside the window
+    store_start = window_utc(index)[0]
+    early = [r for r in hm.get("rows", []) if parse_iso_utc(r["utc"]) < store_start]
+    check("D15: the hit-and-miss table holds no report before the window start", not early,
+          f"{len(early)} before {store_start:%Y-%m-%d %H:%M} UTC")
+    for case in HIT_MISS_ROWS:
+        name = f"D15: the named case {case['name']} ({case['in']} in, {case['utc']}) is in the table"
+        row_cell = hail.cell_for(case["lat"], case["lon"])
+        if hail.tile_name(row_cell[0] // 10, row_cell[1] // 10) not in set(index["tiles"]):
+            skip(name, f"this store has no tile for {case['name']}")
+            continue
+        found = [r for r in hm.get("rows", []) if r["utc"] == case["utc"] and case["name"] in (r["place"] or "")
+                 and r["report_in"] == float(case["in"])]
+        check(name, len(found) == 1, f"{len(found)} rows")
+    b5["ncei_pairs"] = guarded("NCEI pairs", lambda: _ncei_pairs(events), {})
+    b5["gusts"] = _gusts_check(block)
+    stations = set(block.get("station_list", []))
+    if {"LWT", "HVR", "MSO"} <= stations:
+        check("D12: the LWT 182.5 kt reading is dropped and counted; HVR and MSO are flagged",
+              b5["gusts"]["lwt_182_5_dropped"] and b5["gusts"]["hvr_flagged"] and b5["gusts"]["mso_flagged"],
+              str({k: b5["gusts"][k] for k in ("lwt_182_5_dropped", "hvr_flagged", "mso_flagged")}))
+    else:
+        skip("D12: LWT 182.5 kt is dropped and counted; HVR and MSO are flagged",
+             "this store has no station file for " + ", ".join(sorted({"LWT", "HVR", "MSO"} - stations)))
+    b5["type_words"] = block.get("type_words", {})
+    b5["ncei_totals_store"] = block.get("ncei_totals", {})
+    totals = {}
+    if cache_dir is not None:
+        totals = _ncei_totals_2020(Path(cache_dir))
+    store_totals = block.get("ncei_totals", {})          # keyed by the lower-case type word the rows carry
+    b5["ncei_totals_2020_2026"] = {
+        k: {"2020": totals.get(k, 0),
+            "2021_2026": store_totals.get(k.lower(), {}).get("total", 0),
+            "total": totals.get(k, 0) + store_totals.get(k.lower(), {}).get("total", 0),
+            "window": store_totals.get(k.lower(), {}).get("window", 0),
+            "research_total": RESEARCH_NCEI_TOTALS.get(k)}
+        for k in sorted(RESEARCH_NCEI_TOTALS)}
+    glen_tile = hail.tile_name(*(c // 10 for c in hail.cell_for(GLENTANA["lat"], GLENTANA["lon"])))
+    b5["glentana"] = guarded("Glentana", lambda: _glentana_check(root, index), {"found": None})
+    if glen_tile in set(index["tiles"]):
+        check("gate 7: Glentana (T04, 2022-07-18 23:47 UTC) is a record within 5 miles of its point",
+              b5["glentana"]["found"], str(b5["glentana"]))
+    else:
+        skip("gate 7: Glentana (T04, 2022-07-18 23:47 UTC) is a record within 5 miles of its point",
+             "this store has no tile for its point")
+    b5["hays_excluded"] = _hays_check(events, window_utc(index)[0])
+    check("gate 7: the Hays tornado (2021-07-07) is outside the window and no record holds it",
+          b5["hays_excluded"]["absent"] and b5["hays_excluded"]["outside_window"], str(b5["hays_excluded"]))
+    return b5
+
+
+def _ncei_totals_2020(cache: Path) -> dict:
+    """The NCEI 2020 Montana point rows of the new types, from the 2020 details file in the cache (or {} when absent)."""
+    found = sorted((cache / "ncei").glob("StormEvents_details-ftp_v1.0_d2020_*.csv.gz"))
+    if not found:
+        return {}
+    counts: dict[str, int] = {}
+    reader = _ncei_rows(found[-1].read_bytes())
+    for row in reader:
+        if None in row.values() or row.get("STATE", "").strip().upper() != "MONTANA":
+            continue
+        kind = row["EVENT_TYPE"].strip()
+        if kind in RESEARCH_NCEI_TOTALS and row["CZ_TYPE"].strip().upper() == "C" and row["BEGIN_LAT"].strip():
+            counts[kind] = counts.get(kind, 0) + 1
+    return counts
+
+
+def _glentana_check(root: Path, index: dict) -> dict:
+    """Gate 7: the NCEI tornado of Glentana at 2022-07-18 23:47 UTC, found in the records of the tile of its point and
+    within five miles of that cell's centre."""
+    row, col = hail.cell_for(GLENTANA["lat"], GLENTANA["lon"])
+    tile = hail.tile_name(row // 10, col // 10)
+    if tile not in set(index["tiles"]):
+        return {"found": None, "cell": [row, col], "in_store": False}
+    doc = _read_j(root, tile)
+    clat, clon = hail.cell_centre(row, col)
+    records = (_read_events(root) or {}).get("records", [])
+    for ref in doc.get("records", []):
+        r = records[ref]
+        if iso_utc(utc_from_row(r[0], r[1])) == GLENTANA["utc"] and r[4] == "tornado":
+            miles = float(haversine_km(clat, clon, r[2], r[3])) / MILE_KM
+            return {"found": miles <= REPORT_MILES, "cell": [row, col], "miles": round(miles, 2), "record": r[:11]}
+    return {"found": False, "cell": [row, col]}
+
+
+def _hays_check(events: dict, window_start: datetime) -> dict:
+    """Gate 7: the Hays tornado is in no record, and its day is before the store's window start (the caller passes the
+    store's first instant, window_utc, not a constant)."""
+    hits = [r for r in events["records"] if r[4] == "tornado" and iso_utc(utc_from_row(r[0], r[1])).startswith(
+        HAYS["day"])]
+    when = datetime.fromisoformat(HAYS["day"] + "T00:11").replace(tzinfo=timezone.utc)
+    return {"absent": not hits, "outside_window": when < window_start, "rows_on_day": len(hits)}
 
 
 def _benchland_gate(root: Path, index: dict, doc: dict, report_doc: dict, events: dict) -> dict:
@@ -3166,6 +4240,12 @@ def compare(store_dir) -> dict:
         ours = index[INDEX_KEY]["station_days_by_year"].get(str(year))
         row(f"Station days at or above 50 kt {year}", ours, research,
             "the IEM daily summary, station local days; the same CSV as the research")
+    for item in _research_compare(index[INDEX_KEY], research=True):
+        row(f"B5 window events {item['product']}", item["ours_window_vtec_events"], item["research_window"],
+            "VTEC events (the key without the zone) that begin in the research window, "
+            f"{RESEARCH_START:%Y-%m-%d %H:%M} UTC to {RESEARCH_END:%Y-%m-%d %H:%M} UTC (the research's own count); "
+            f"the store window ({window_utc(index)[0]:%Y-%m-%d %H:%M} UTC to {window_utc(index)[1]:%Y-%m-%d %H:%M} UTC) "
+            "is compared in verify")
     return {"rows": rows, "window": index["window"], "built_at": index[INDEX_KEY]["built_at"]}
 
 
@@ -3188,7 +4268,7 @@ def fixture(out_dir, from_store) -> dict:
     sample = hail.load_index(out)
     days = {date.fromisoformat(d) for d in FIXTURE_DAYS}
     hail_out = out / "hail"
-    for sub in ("j", "z", "s"):
+    for sub in ("j", "z", "s", "k"):
         (hail_out / sub).mkdir(parents=True, exist_ok=True)
     new_events: dict[str, list] = {"reports": [], "records": [], "warnings": []}
     seen: dict[tuple, int] = {}
@@ -3202,7 +4282,7 @@ def fixture(out_dir, from_store) -> dict:
     def on_day(row) -> bool:
         return utc_from_row(row[0], row[1]).date() in days
 
-    zones_needed, stations_needed, fires_needed = set(), set(), set()
+    zones_needed, stations_needed, fires_needed, counties_needed = set(), set(), set(), set()
     sample_tiles = sample["tiles"]
     for name in sample_tiles:
         doc = json.loads((src / "hail" / "j" / f"{name}.json").read_text(encoding="utf-8"))
@@ -3214,7 +4294,7 @@ def fixture(out_dir, from_store) -> dict:
         warnings = []
         for ref, cover in doc["warnings"]:
             item = real_events["warnings"][ref]
-            if parse_iso_utc(item["b"]).date() in days or parse_iso_utc(item["e"]).date() in days:
+            if parse_iso_utc(item["b"]).date() in days or (item["e"] and parse_iso_utc(item["e"]).date() in days):
                 warnings.append([remap("warnings", ref), cover])
         keep["warnings"] = sorted(warnings, key=lambda w: (new_events["warnings"][w[0]]["b"],
                                                            new_events["warnings"][w[0]]["k"],
@@ -3224,6 +4304,7 @@ def fixture(out_dir, from_store) -> dict:
         stations_needed.update(s["id"] for s in keep["stations"])
         zones_needed.update(doc["zones"].keys())
         fires_needed.update(doc.get("fire", {}).keys())
+        counties_needed.update(doc.get("counties", {}).keys())
         (hail_out / "j" / f"{name}.json").write_bytes(_compact(keep))
     (hail_out / "j" / EVENTS_NAME).write_bytes(_compact({
         "f": EVENTS_FORMAT, "d0": hail.D0.isoformat(), "reports": new_events["reports"],
@@ -3237,6 +4318,10 @@ def fixture(out_dir, from_store) -> dict:
         doc = json.loads((src / "hail" / "z" / f"fire-{zone}.json").read_text(encoding="utf-8"))
         doc["events"] = [e for e in doc["events"] if _zone_when(*_zone_span(e)).date() in days]
         (hail_out / "z" / f"fire-{zone}.json").write_bytes(_compact(doc))
+    for county in sorted(counties_needed):
+        doc = json.loads((src / "hail" / "k" / f"{county}.json").read_text(encoding="utf-8"))
+        doc["events"] = [e for e in doc["events"] if _zone_when(*_zone_span(e)).date() in days]
+        (hail_out / "k" / f"{county}.json").write_bytes(_compact(doc))
     station_list = sorted(stations_needed)
     for sid in station_list:
         doc = json.loads((src / "hail" / "s" / f"{sid}.json").read_text(encoding="utf-8"))
@@ -3251,6 +4336,9 @@ def fixture(out_dir, from_store) -> dict:
         "lags": dict(real_block["lags"]),
         "types": dict(real_block.get("types", {})),
         "zone_list": sorted(zones_needed),
+        "counties": {"state": "sample", "names": {c: real_block.get("counties", {}).get("names", {}).get(c, "")
+                                                  for c in sorted(counties_needed)},
+                     "count": len(counties_needed)},
         "zone_names": {z: real_block["zone_names"].get(z, "") for z in sorted(zones_needed)},
         "zones": len(zones_needed), "station_list": station_list, "stations": len(station_list),
         "fire_zone_list": sorted(fires_needed),
@@ -3272,8 +4360,8 @@ def fixture(out_dir, from_store) -> dict:
     (hail_out / "index.json").write_bytes(index_bytes)
     manifest = json.loads((hail_out / "manifest.json").read_text(encoding="utf-8"))
     files = {rel: meta for rel, meta in manifest["files"].items()
-             if not rel.startswith(("hail/j/", "hail/z/", "hail/s/"))}
-    for sub in ("j", "z", "s"):
+             if not rel.startswith(("hail/j/", "hail/z/", "hail/s/", "hail/k/"))}
+    for sub in ("j", "z", "s", "k"):
         for path in sorted((hail_out / sub).rglob("*.json")):
             data = path.read_bytes()
             files[path.relative_to(out).as_posix()] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
@@ -3285,6 +4373,7 @@ def fixture(out_dir, from_store) -> dict:
     hail.check_manifest(out)
     total = sum(p.stat().st_size for p in (out / "hail").rglob("*") if p.is_file())
     return {"out": str(out), "tiles": len(sample_tiles), "zones": len(zones_needed), "stations": len(station_list),
+            "counties": len(counties_needed),
             "events": events_counts, "bytes_on_disk": total}
 
 
@@ -3316,6 +4405,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="make no request: the cache is the only input (two such builds are byte-identical)")
     v = sub.add_parser("verify", help="check the joins in a store")
     v.add_argument("store")
+    v.add_argument("--cache", default=None, help="the joins cache (for the NCEI 2020 totals; optional)")
     c = sub.add_parser("compare", help="this build's counts against the research counts")
     c.add_argument("store")
     f = sub.add_parser("fixture", help="write the SAMPLE joins into the fixture store")
@@ -3334,8 +4424,10 @@ def main(argv=None) -> int:
                          indent=1, sort_keys=True))
         return 0
     if args.command == "verify":
-        result = verify(args.store)
+        result = verify(args.store, args.cache)
         print(json.dumps(result, indent=1, sort_keys=True, default=str))
+        for item in result.get("not_run", []):
+            print(f"not run: {item['name']}: {item['reason']}", file=sys.stderr)
         return 0 if result["ok"] else 1
     if args.command == "compare":
         print(json.dumps(compare(args.store), indent=1, sort_keys=True, default=str))

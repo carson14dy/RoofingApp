@@ -50,9 +50,9 @@
  },
  "sample": true,
  "joins": {
-  "format": "hail-joins-v1",
-  "events_format": "hail-events-v1",
-  "built_at": "2026-10-18T23:17:14Z",
+  "format": "hail-joins-v2",
+  "events_format": "hail-events-v2",
+  "built_at": "2026-10-19T13:07:51Z",
   "as_of": "2026-10-15",
   "window": [
    "2021-10-16",
@@ -73,7 +73,7 @@
   "lags": {
    "ncei": "2026-06-29",
    "swdi": "2026-09-28",
-   "warnings": "2026-09-18"
+   "warnings": "2026-09-19"
   },
   "types": {
    "2": "blowing dust",
@@ -109,6 +109,14 @@
    "MTZ235",
    "MTZ313"
   ],
+  "counties": {
+   "state": "sample",
+   "names": {
+    "MTC045": "Judith Basin",
+    "MTC111": "Yellowstone"
+   },
+   "count": 2
+  },
   "zone_names": {
    "MTZ235": "Southwestern Yellowstone",
    "MTZ313": "Judith Basin County and Judith Gap"
@@ -140,8 +148,8 @@
    "2025-06-15",
    "2025-06-16"
   ],
-  "source": "cut from the joins build of 2026-10-18T23:17:14Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
-  "cover": "25 lower-case hex digits; bit k (the cell key 0 to 99) is set when the cell centre is inside",
+  "source": "cut from the joins build of 2026-10-19T13:07:51Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
+  "cover": "25 lower-case hex digits; bit k (the cell key 0 to 99) is set when the polygon touches the cell's square (D11: a vertex in it, an edge across its side, or its centre inside)",
   "shapes": {
    "report": [
     "d",
@@ -154,7 +162,8 @@
     "qual",
     "src",
     "city",
-    "remark"
+    "remark",
+    "kind"
    ],
    "record": [
     "d",
@@ -169,14 +178,16 @@
     "city",
     "remark",
     "mag_mph",
-    "mag_kt"
+    "mag_kt",
+    "cause"
    ],
    "warning": [
     "k",
     "b",
     "e",
     "o",
-    "tags"
+    "tags",
+    "s"
    ],
    "detection": [
     "d",
@@ -188,7 +199,17 @@
    "station_day": [
     "d",
     "mph",
-    "kt"
+    "kt",
+    "flag"
+   ],
+   "county_event": [
+    "k",
+    "s",
+    "b",
+    "e",
+    "o",
+    "st",
+    "n"
    ]
   },
   "tile": {
@@ -198,6 +219,7 @@
    "detections": "[d, t, lat, lon, size_hundredths_in]",
    "zones": "{zone code: [cell keys]}",
    "fire": "{fire weather zone code: [cell keys]}",
+   "counties": "{county code (MTC plus FIPS): [cell keys]} (B5: each Montana cell is in one county)",
    "stations": "[{id, name, lat, lon, miles}]"
   },
   "montana_time": [
@@ -273,7 +295,7 @@
   "events": {
    "reports": 16,
    "records": 7,
-   "warnings": 4
+   "warnings": 7
   },
   "compare": {},
   "bytes": {},
