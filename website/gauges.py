@@ -374,7 +374,7 @@ def _peaks_status(usgs, peaks_failed: set, written: set) -> str:
         return "no USGS number"
     if usgs in peaks_failed:
         return "unavailable"
-    return "available" if usgs in written else "not in the store"
+    return "available" if usgs in written else "not written in this build"
 
 
 def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", procs: int = PROCS_DEFAULT,
@@ -461,8 +461,15 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
         "state": state,
         "problem": None if state == "loaded" else "some gauge files did not load (see failures)",
         "rule": _rule(),
-        "sources": {"list": LIST_URL, "detail": DETAIL_URL, "peaks": PEAKS_URL,
-                    "terms": "NWS public domain with conditions; USGS credit line"},
+        "sources": {"list": LIST_URL,
+                    "detail_example": DETAIL_URL.format(lid="BILM8"),
+                    "peaks_example": PEAKS_URL.format(usgs=BILLINGS_CHECK["usgs"]),
+                    "requests": ("one detail request per listed gauge (its LID is the last part of the URL) and one "
+                                 "peaks request per USGS number (the number is in the URL)"),
+                    "terms": ("NWS public-domain conditions (https://www.weather.gov/disclaimer): the information is "
+                              "not presented as your own, is not used to imply an endorsement by NOAA or the NWS, and is "
+                              "not changed and presented as official material. USGS credit: \"Observations courtesy of "
+                              "U.S. Geological Survey.\"")},
         "counts": {
             "listed": got["listed"], "mt_listed": sum(1 for g in details.values() if g["state"] == "MT"),
             "detail_files": len(details), "failed_details": len(failed),

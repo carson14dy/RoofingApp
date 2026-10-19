@@ -25,9 +25,12 @@ Source (the research record snow-stations.json and its refuter; quoted terms are
                   Creative Commons 1.0 Universal Public Domain Dedication (CC0-1.0) license"). Cite NCEI-PD-10-2-02.
   Missing list    a station file lists only the days it has values for; a day with no value is missing, never zero.
 
-The station rule (D5, one constant per number; the owner's decisions O8 and the supervisor's rulings are provisional):
-  * candidates: Montana stations within RADIUS_MILES (40, great-circle) of the location that have an unflagged value
-    within FRESH_DAYS (30) of the store's as_of date (any core element counts for "current");
+The station rule (D5 and D18, one constant per number; the owner's decisions O8 and the supervisor's rulings are
+provisional):
+  * candidates: Montana stations within RADIUS_MILES (40, great-circle) of the location;
+  * currency, per element (D18): a candidate is current for an element when that element has an unflagged value within
+    FRESH_DAYS (30) of the store's as_of date. The rule runs per element and location: a station current for TMAX is
+    not thereby current for SNOW, and its SNOW share cannot pass on its TMAX report;
   * per element: coverage is the share of the COVER_DAYS (2,192) days from 2020-01-01 to 2025-12-31 with an unflagged
     value of that element, and it must be at least COVER_MIN (0.80);
   * the two nearest candidates that pass are chosen. Fewer than two: those that pass are shown and the words say so.
@@ -45,12 +48,15 @@ day has both of their elements unflagged, with n = 0 when no day met the rule; t
 Every reader goes through count_of() or pair_of(), which return None for an absent key: a missing count is never read as
 zero, and an absent key is named as missing, never raised.
 
-Refresh and time (B5 jobs): refresh is "none" (the cache is read; a missing or unusable file is requested), "all" (every
-file, the station list and the inventory included: the monthly job), or a set of station ids (only those .dly files are
-re-read; the list and the inventory stay cached: the daily job). The rule's station ids of the last build are kept in the
-index as rule_station_ids; `python -m website.stations rule-ids` prints them. A request that would start after the job's
-deadline is not made, and its file is "the source did not answer". Every download is streamed: READ_TIMEOUT bounds each
-read and BODY_CAP_S bounds the whole file.
+Refresh and time (B5 jobs, D26): --scope daily refreshes the station list and the inventory and the files of the chosen
+stations of the last build (the index's chosen_station_ids). A cached file whose Last-Modified equals the date it was
+downloaded with is not fetched: one HEAD request decides it, and the file is counted as unchanged. --scope monthly
+refreshes every file the walk and the regression set read, the list and the inventory included, with no skip. Without a
+scope, refresh is "none" (the cache is read; a missing or unusable file is requested), "all" (as monthly, with no scope
+name) or a set of station ids (only those .dly files are re-read; the list and the inventory stay cached). The rule's
+station ids of the last build are kept in the index as rule_station_ids; `python -m website.stations rule-ids` prints
+them. A request that would start after the job's deadline is not made, and its file is "the source did not answer".
+Every download is streamed: READ_TIMEOUT bounds each read and BODY_CAP_S bounds the whole file.
 
 Store (format hail-stn-v1, see the module's functions):
   hail/sd/<id>.json   per station: its name and position, the newest unflagged date per element, the 2020-2025 coverage
@@ -70,8 +76,8 @@ the index's stations block, so every tile centre's choice is the same rule the b
 Tile centres (B2's definition, the midpoint of the tile's bounds): lat 54.950 - 0.1 * row_tile, lon -129.950 + 0.1 * col_tile.
 
 Command line (run from the repository root):
-    python -m website.stations build --store DIR --cache DIR [--procs 4] [--offline] [--refresh all|none]
-                                    [--refresh-ids FILE] [--deadline-at EPOCH]
+    python -m website.stations build --store DIR --cache DIR [--procs 4] [--offline] [--scope daily|monthly]
+                                    [--refresh all|none] [--refresh-ids FILE] [--deadline-at EPOCH]
     python -m website.stations rule-ids --store DIR        the daily refresh set (the last build's rule ids)
     python -m website.stations verify --store DIR          check the station figures and gates (exit 1 on a failure)
 """
@@ -247,6 +253,26 @@ def pair_of(period: dict | None, pair: str) -> int | None:
     return value if isinstance(value, int) else None
 
 
+SCOPES = ("daily", "monthly")
+
+
+def scope_settings(scope, index: dict, refresh="none") -> tuple[bool, frozenset, bool, bool]:
+    """(every_file, station_ids, skip_unchanged, list_refresh) for a job scope (D26), or for refresh when no scope is
+    given. daily: the station list and the inventory are refreshed, and the files of the index's chosen stations are
+    refreshed with the Last-Modified skip. monthly: every file the walk and the regression set read, the list and the
+    inventory included, with no skip."""
+    if scope is None:
+        every, ids = refresh_set(refresh)
+        return every, ids, False, every
+    if scope == "monthly":
+        return True, frozenset(), False, True
+    if scope == "daily":
+        block = index.get(INDEX_KEY) or {}
+        chosen = frozenset(str(s) for s in (block.get("chosen_station_ids") or []) if str(s).strip())
+        return False, chosen, True, True
+    raise StationsError("the scope is not daily or monthly")
+
+
 def refresh_set(refresh) -> tuple[bool, frozenset]:
     """(every_file, station_ids) for a refresh setting: "none" (or False), "all" (or True: every file, the monthly job),
     or a collection of station ids (only those daily files are re-read; the list and inventory stay cached)."""
@@ -344,7 +370,8 @@ def parse_dly(data: bytes | str, station_id: str, first_year: int = 2020) -> dic
 
 def summarize(meta: dict, parsed: dict, as_of: date) -> dict:
     """The hail/sd file content for one station (without the file's own envelope): its position, the newest unflagged
-    date per element, the 2020-2025 coverage counts, the current flag, and every period's figures (see the module doc).
+    date per element, the 2020-2025 coverage counts, the current flag per element (D18), and every period's figures
+    (see the module doc).
 
     Pure: the same parsed file and as_of always give the same dict (the byte-identical gate depends on it)."""
     obs = parsed["obs"]
@@ -441,7 +468,7 @@ def summarize(meta: dict, parsed: dict, as_of: date) -> dict:
     out = {
         "f": FORMAT, "id": meta["id"], "name": meta["name"], "lat": meta["lat"], "lon": meta["lon"],
         "elev": meta["elev"], "net": meta["net"], "as_of": as_of.isoformat(),
-        "current": bool(newest_current(newest, as_of)),
+        "current": {e: bool(newest_current({e: newest[e]}, as_of)) for e in CORE},
         "newest": {e: date_int(date.fromordinal(newest[e])) if newest[e] is not None else None for e in CORE},
         "cover": {e: cover.get(e, 0) for e in present},
         "periods": periods,
@@ -529,7 +556,7 @@ def choose(candidates: list[tuple[float, str]], summaries: dict, element: str, a
         sd = summaries[sid]
         ok = sd["cover"].get(element, 0)
         share = ok / COVER_DAYS
-        current = bool(sd["current"])
+        current = bool(sd["current"].get(element))          # D18: current for this element only
         passed = current and share >= COVER_MIN
         row = {"id": sid, "name": sd["name"], "net": sd["net"], "miles": round(miles, 1), "ok": ok,
                "of": COVER_DAYS, "share": round(share, 4), "current": current, "pass": passed}
@@ -619,13 +646,55 @@ def _write_atomic(path: Path, data: bytes) -> None:
             os.unlink(tmp)
 
 
+def _lastmod_path(path: Path) -> Path:
+    return path.with_name(path.name + ".lastmod")
+
+
+def _read_lastmod(path: Path) -> str | None:
+    """The Last-Modified value a cached file was downloaded with (D26), or None when none was kept."""
+    try:
+        value = _lastmod_path(path).read_text(encoding="utf-8").strip()
+    except (OSError, ValueError):
+        return None
+    return value or None
+
+
+def _write_lastmod(path: Path, value: str | None) -> None:
+    """Keeps the Last-Modified value of a file just written; with no header value, the old record is removed so that a
+    stale date is never compared. A record that cannot be kept only means the file is requested again next time."""
+    try:
+        if value:
+            _write_atomic(_lastmod_path(path), (value + "\n").encode("utf-8"))
+        elif _lastmod_path(path).is_file():
+            _lastmod_path(path).unlink()
+    except OSError:
+        pass
+
+
+def _head_last_modified(url: str, pacer: _Pacer) -> str | None:
+    """One HEAD request (D26): the Last-Modified header, or None when there is none, the status is not 200, or the
+    request fails (the caller then requests the file in full, as it would without this check)."""
+    import requests
+    pacer.wait()
+    try:
+        resp = requests.head(url, timeout=READ_TIMEOUT, headers={"User-Agent": USER_AGENT}, allow_redirects=True)
+    except requests.RequestException:
+        return None
+    if resp.status_code != 200:
+        return None
+    value = (resp.headers or {}).get("Last-Modified")
+    return str(value) if value else None
+
+
 def fetch(url: str, path: Path, check, *, offline: bool, refresh: bool, pacer: _Pacer, attempts: int = 3,
-          deadline_at: float | None = None):
+          deadline_at: float | None = None, skip_unchanged: bool = False):
     """(data or None, state, reason). A cached file is read unless refresh is set. A cached file must pass check too:
     an unusable copy is requested again (or, offline, reported as unusable). A download is kept only when check passes.
     offline, no request is made: a refresh then serves the cached copy and says so; a file the cache lacks fails.
     deadline_at (a time.monotonic() value): a request that would start after it is not made, and the file fails with
-    REASON_NO_ANSWER (or serves its cached copy). Never writes a file it has not checked."""
+    REASON_NO_ANSWER (or serves its cached copy). skip_unchanged (D26): a refresh of a cached file that has a kept
+    Last-Modified first asks for the header with one HEAD request; when it equals the kept value, the file is not
+    fetched and the state is "unchanged". Never writes a file it has not checked."""
     import requests
     cached, corrupt = None, None
     if path.is_file():
@@ -643,6 +712,11 @@ def fetch(url: str, path: Path, check, *, offline: bool, refresh: bool, pacer: _
         if corrupt:
             return None, "failed", f"the cached copy is not usable ({corrupt}), and this build makes no requests"
         return None, "failed", "the cache has no copy and this build makes no requests"
+    if skip_unchanged and cached is not None:
+        kept = _read_lastmod(path)
+        if kept and (deadline_at is None or time.monotonic() < deadline_at):
+            if _head_last_modified(url, pacer) == kept:
+                return cached, "unchanged", None
     last = REASON_NO_ANSWER
     for attempt in range(1, attempts + 1):
         if deadline_at is not None and time.monotonic() >= deadline_at:
@@ -650,7 +724,7 @@ def fetch(url: str, path: Path, check, *, offline: bool, refresh: bool, pacer: _
             break
         pacer.wait()
         try:
-            status, data, _headers = _get(url, {"User-Agent": USER_AGENT, "Accept-Encoding": "identity"})
+            status, data, headers = _get(url, {"User-Agent": USER_AGENT, "Accept-Encoding": "identity"})
         except requests.RequestException as exc:
             last = type(exc).__name__
         except StationsError as exc:
@@ -668,6 +742,7 @@ def fetch(url: str, path: Path, check, *, offline: bool, refresh: bool, pacer: _
                     except OSError as exc:          # a file that cannot be kept is a note, not a failed source
                         note = f"the file could not be kept in the cache ({type(exc).__name__})"
                         return data, "fetched", note
+                    _write_lastmod(path, _header_value(headers, "Last-Modified"))
                     return data, "fetched", ("the cached copy was not usable and was replaced" if corrupt else None)
             else:
                 last = f"HTTP {status}"
@@ -678,6 +753,14 @@ def fetch(url: str, path: Path, check, *, offline: bool, refresh: bool, pacer: _
     if cached is not None:
         return cached, "cache", f"served the cached copy after: {last}"
     return None, "failed", last
+
+
+def _header_value(headers: dict, name: str) -> str | None:
+    wanted = name.lower()
+    for key, value in (headers or {}).items():
+        if str(key).lower() == wanted:
+            return str(value)
+    return None
 
 
 def _check_list(data: bytes) -> None:
@@ -720,25 +803,28 @@ def _locations(index: dict) -> list[dict]:
 
 
 def collect(index: dict, cache: Path, *, offline: bool = False, refresh="none", procs: int = 4,
-            deadline_at: float | None = None) -> dict:
+            deadline_at: float | None = None, scope: str | None = None) -> dict:
     """Fetch (or read the cache for) the station list, the inventory and every daily file the rule and the snow check
     need, and summarise them. Returns the summaries, the byte counts, the request counts and the failures. The walk
     pulls the nearest few candidates of every location first, then only what the rule asks for. refresh is refresh_set's
     setting: "all" re-reads the list, the inventory and every file; a set of ids re-reads only those .dly files."""
     as_of = date.fromisoformat(index["as_of"])
     current_min_year = (as_of - timedelta(days=FRESH_DAYS)).year
-    every, ids = refresh_set(refresh)
+    every, ids, skip, lists_refresh = scope_settings(scope, index, refresh)
     pacer = _Pacer(PACE_S)
     failures: list[dict] = []
+    unchanged: set[str] = set()
     raw_list, state, reason = fetch(STATIONS_URL, cache / "ghcn" / "ghcnd-stations.txt", _check_list,
-                                    offline=offline, refresh=every, pacer=pacer, deadline_at=deadline_at)
+                                    offline=offline, refresh=lists_refresh, pacer=pacer, deadline_at=deadline_at,
+                                    skip_unchanged=skip)
     if raw_list is None:
         raise StationsError(f"the station list could not be read ({reason})")
     if reason:
         failures.append({"source": "stations", "reason": reason})
     stations = parse_station_list(raw_list.decode("latin-1"))
     raw_inv, state_i, reason_i = fetch(INVENTORY_URL, cache / "ghcn" / "ghcnd-inventory.txt", _check_inventory,
-                                       offline=offline, refresh=every, pacer=pacer, deadline_at=deadline_at)
+                                       offline=offline, refresh=lists_refresh, pacer=pacer, deadline_at=deadline_at,
+                                       skip_unchanged=skip)
     if raw_inv is None:
         raise StationsError(f"the station inventory could not be read ({reason_i})")
     if reason_i:
@@ -775,14 +861,16 @@ def collect(index: dict, cache: Path, *, offline: bool = False, refresh="none", 
         if procs > 1 and not offline:
             with ThreadPoolExecutor(max_workers=procs) as pool:
                 futs = {pool.submit(fetch, DLY_URL.format(id=sid), path, _check_dly(sid), offline=offline,
-                                    refresh=(every or sid in ids), pacer=pacer, deadline_at=deadline_at): sid
+                                    refresh=(every or sid in ids), pacer=pacer, deadline_at=deadline_at,
+                                    skip_unchanged=skip and sid in ids): sid
                         for sid, path in jobs}
                 for fut in futs:
                     results[futs[fut]] = fut.result()
         else:
             for sid, path in jobs:
                 results[sid] = fetch(DLY_URL.format(id=sid), path, _check_dly(sid), offline=offline,
-                                     refresh=(every or sid in ids), pacer=pacer, deadline_at=deadline_at)
+                                     refresh=(every or sid in ids), pacer=pacer, deadline_at=deadline_at,
+                                     skip_unchanged=skip and sid in ids)
         for sid, _path in jobs:
             data, state_d, reason_d = results[sid]
             if data is None:
@@ -791,6 +879,8 @@ def collect(index: dict, cache: Path, *, offline: bool = False, refresh="none", 
                 failures.append({"source": "daily", "station": sid, "reason": fails_by_id[sid]})
                 continue
             sizes[sid] = len(data)
+            if state_d == "unchanged":
+                unchanged.add(sid)
             parsed = parse_dly(data, sid)
             malformed += parsed["malformed"]
             summaries[sid] = summarize(dict(stations[sid], id=sid), parsed, as_of)
@@ -830,7 +920,8 @@ def collect(index: dict, cache: Path, *, offline: bool = False, refresh="none", 
             "failures": failures, "malformed": malformed, "results": results, "rule_ids": rule_ids,
             "rule_bytes": rule_bytes, "locs": locs, "chosen_ids": chosen_ids, "requests": pacer.requests,
             "downloaded": pacer.downloaded,
-            "refresh": "all" if every else ("ids" if ids else "none"), "refresh_ids": len(ids)}
+            "refresh": scope or ("all" if every else ("ids" if ids else "none")), "refresh_ids": len(ids),
+            "unchanged": sorted(unchanged)}
 
 
 def sd_bytes(sd: dict) -> bytes:
@@ -869,7 +960,7 @@ def _rule_row(res: dict, element: str) -> dict:
 
 
 def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", procs: int = 4,
-          deadline_at: float | None = None) -> dict:
+          deadline_at: float | None = None, scope: str | None = None) -> dict:
     """Builds hail/sd/ and the index's stations block for the store at store (a directory that holds hail/). The daily
     job re-reads the rule's files (refresh = the rule_station_ids of the last build, see rule_ids_of); the monthly job
     re-reads everything (refresh = "all")."""
@@ -877,8 +968,11 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
     index_path = store / "hail" / "index.json"
     index = json.loads(index_path.read_text(encoding="utf-8"))
     t0 = time.monotonic()
+    if scope is not None and scope not in SCOPES:
+        raise StationsError("the scope is not daily or monthly")
     try:
-        got = collect(index, Path(cache), offline=offline, refresh=refresh, procs=procs, deadline_at=deadline_at)
+        got = collect(index, Path(cache), offline=offline, refresh=refresh, procs=procs, deadline_at=deadline_at,
+                      scope=scope)
     except StationsError as exc:
         # the station side is marked unavailable and the rest of the store builds (D16); the files of an earlier
         # build are removed, because the manifest must not list files this build did not make
@@ -903,7 +997,8 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
         "sources": {
             "stations": {"url": STATIONS_URL, "bytes": len(_read_bytes(cache / "ghcn" / "ghcnd-stations.txt"))},
             "inventory": {"url": INVENTORY_URL, "bytes": len(_read_bytes(cache / "ghcn" / "ghcnd-inventory.txt"))},
-            "daily": DLY_URL,
+            "daily": {"example": DLY_URL.format(id="USC00240802"),
+                      "note": "one file per station: the station id is the file name, followed by .dly"},
         },
         "counts": {
             "mt_stations": len(got["stations"]),
@@ -921,7 +1016,8 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
             "requests": got["requests"],
             "downloaded_bytes": got["downloaded"],
         },
-        "refresh": {"mode": got["refresh"], "ids": got["refresh_ids"]},
+        "refresh": {"mode": got["refresh"], "ids": got["refresh_ids"], "unchanged": len(got["unchanged"])},
+        "unchanged_station_ids": got["unchanged"],
         "rule_station_ids": got["rule_ids"],
         "chosen_station_ids": got["chosen_ids"],
         "malformed": got["malformed"],
@@ -951,6 +1047,7 @@ def rule_ids_of(store: Path) -> list[str]:
 
 def _rule_constants() -> dict:
     return {"radius_miles": RADIUS_MILES, "fresh_days": FRESH_DAYS, "cover_min": COVER_MIN,
+            "current": "per element: an unflagged value of the element within fresh_days of as_of (D18)",
             "season_min": SEASON_MIN, "cover_days": COVER_DAYS, "cover_window": "2020-01-01 to 2025-12-31",
             "hot_tenths": HOT_TENTHS, "deep_mm": DEEP_MM, "pull_first": PULL_FIRST}
 
@@ -1064,8 +1161,18 @@ GATE_STATIONS = {
     ("billings", "PRCP"): ["USC00240802", "USW00024033"],
     ("billings", "SNOW"): ["USC00240802", "USW00024033"],
     ("billings", "SNWD"): ["USC00240802", "USW00024033"],
-    ("benchland", "SNOW"): ["US1MTFG0003", "USC00244978"],
+    ("benchland", "SNOW"): ["US1MTFG0003", "USC00243947"],     # D18: see GATE_REPLACED
     ("benchland", "SNWD"): ["USC00247864", "USS0009C01S"],
+}
+# D18 replacements: the station the per-element rule no longer picks, the station it picks, and the reason the verify
+# record gives (the old station's examined row must read current false for the element)
+GATE_REPLACED = {
+    ("benchland", "SNOW"): {
+        "was": "USC00244978", "now": "USC00243947",
+        "why": ("Lewistown 11 SSE (31.1 miles, 90.0 percent) has no SNOW report in the 30 days before the as_of date: its "
+                "last SNOW report is 2026-05-18. Its PRCP and TMAX are current, which the old any-element rule accepted. "
+                "Harlowton 11NW (34.8 miles, 99.5 percent, SNOW reported 2026-10-12) is the next station that passes."),
+    },
 }
 
 
@@ -1117,13 +1224,22 @@ def _check_series(check, name: str, got: list, want: list) -> None:
 
 
 def _verify_gates(block: dict, docs: dict, check) -> dict:
-    """Gate B5-3: the rule's stations at Billings and Benchland, element by element, against the brief's list."""
+    """Gate B5-3: the rule's stations at Billings and Benchland, element by element, against the brief's list. A pick
+    that D18 changed is checked against its recorded reason: the station it replaced must read not current for that
+    element in the rule's own examined rows."""
     out = {}
     gates = block.get("gates", {})
     for (place, element), want in sorted(GATE_STATIONS.items()):
         got = list(gates.get(place, {}).get(element, {}).get("chosen", []))
         check(f"gate B5-3 {place} {element}", sorted(got) == sorted(want), ", ".join(got) or "none")
         out[f"{place}_{element}"] = got
+        change = GATE_REPLACED.get((place, element))
+        if change:
+            examined = {row["id"]: row for row in gates.get(place, {}).get(element, {}).get("examined", [])}
+            old = examined.get(change["was"], {})
+            check(f"gate B5-3 {place} {element}: {change['was']} replaced by {change['now']} under D18",
+                  change["now"] in got and change["was"] not in got and old.get("current") is False
+                  and old.get("pass") is False, change["why"])
     return out
 
 
@@ -1135,10 +1251,13 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--cache", required=True, help="the cache root: ghcn/ holds the list, the inventory and dly/")
     b.add_argument("--procs", type=int, default=4)
     b.add_argument("--offline", action="store_true", help="no request is made; a refresh serves the cached copy")
-    b.add_argument("--refresh", choices=("none", "all"), default="none",
-                   help="all: re-read the list, the inventory and every file (the monthly job)")
+    b.add_argument("--scope", choices=SCOPES, default=None,
+                   help="daily: the list, the inventory and the chosen stations' files, skipping a file whose "
+                        "Last-Modified is unchanged; monthly: every file the rule and the regression set read (D26)")
+    b.add_argument("--refresh", choices=("none", "all"), default=None,
+                   help="all: re-read the list, the inventory and every file (the earlier monthly job)")
     b.add_argument("--refresh-ids", default=None,
-                   help="a file of station ids, one per line: re-read those .dly files only (the daily job)")
+                   help="a file of station ids, one per line: re-read those .dly files only (the earlier daily job)")
     b.add_argument("--deadline-at", type=float, default=None,
                    help="epoch seconds: no request starts after this time (the job's clock)")
     v = sub.add_parser("verify", help="check the stations block and the sd files")
@@ -1154,7 +1273,9 @@ def main(argv=None) -> int:
         print("\n".join(rule_ids_of(Path(args.store))))
         return 0
     if args.cmd == "build":
-        refresh: object = args.refresh
+        if args.scope and (args.refresh or args.refresh_ids):
+            build_parser().error("--scope cannot be combined with --refresh or --refresh-ids")
+        refresh: object = args.refresh or "none"
         if args.refresh_ids:
             refresh = frozenset(line.strip() for line in Path(args.refresh_ids).read_text(encoding="utf-8").split()
                                 if line.strip())
@@ -1162,7 +1283,7 @@ def main(argv=None) -> int:
         if args.deadline_at is not None:
             deadline_at = time.monotonic() + (args.deadline_at - time.time())
         result = build(Path(args.store), Path(args.cache), offline=args.offline, refresh=refresh,
-                       procs=args.procs, deadline_at=deadline_at)
+                       procs=args.procs, deadline_at=deadline_at, scope=args.scope)
         print(json.dumps(result, indent=1, sort_keys=True))
         return 0
     result = verify(Path(args.store))

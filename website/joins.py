@@ -65,7 +65,8 @@ current zone holds is counted as unplaced (D11), and the zone sections say so fo
 
 Requests (B5): each IEM watchwarn request (polygon shapefiles and zone CSVs, and the polygon CSVs for the county twins)
 runs from 1 December of the year before to 31 January of the year after, and the copies of a row that two years' files
-share are one row (53 duplicates dropped in the window, measured 2026-10-19). A year-only request lost the rows whose
+share are one row: D17 keeps one seen-set across every year and product of the zone requests (zone_row_copies in the
+index), and the polygon copies are dropped as before (53 duplicates in the window, measured 2026-10-19). A year-only request lost the rows whose
 product was issued in the year before, so B2's per-year zone counts were short (HW.W, WW.Y, HW.A and WC.W by 1 to 2 events
 in the window). The cache folders are ww-m and zones-m, so no year-only file is mixed in.
 
@@ -89,21 +90,22 @@ Sources and terms (B5, quoted from the records; each name is the source's own):
   NWS warnings: "The information on National Weather Service Web servers and Web sites is in the public domain, unless
   specifically annotated otherwise, and may be used freely by the public." "You also cannot present information of your
   own in a way that makes it appear to be official government information."
-  Census county boundaries (TIGER/Line 2026, the file's own use constraints): "The TIGER/Line shapefile products are not
-  copyrighted; however, TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are
-  free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source."
-  That is the county file's own wording (tl_2026_us_county.shp.iso.xml in the cached county zip: 50,509 bytes, SHA-256
-  828948a3ccab9bfbc2ab6987686790e421ca0c88e61aaecbabe826fa41ce1eb7). The state file and the Beaverhead (2025) and
-  Yellowstone (2026) roads files carry the variant "The TIGER/Line Shapefile products are not copyrighted however TIGER/Line
-  and Census TIGER are registered trademarks ..." (a capital S and no semicolon), as the research record
-  legal-terms-review.json quotes it.
+  Census county boundaries (TIGER/Line 2026, the county file's own use constraints, as its ISO metadata gives them):
+  "The TIGER/Line shapefile products are not copyrighted; however, TIGER/Line and Census TIGER are registered trademarks of
+  the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given
+  to the U.S. Census Bureau as the source." That is the county file's own wording (tl_2026_us_county.shp.iso.xml in the
+  cached county zip: 50,509 bytes, SHA-256 828948a3ccab9bfbc2ab6987686790e421ca0c88e61aaecbabe826fa41ce1eb7).
+  The 2025 state file's use constraint, as the research record legal-terms-review.json quotes it (sources 0, quotes 0):
+  "The TIGER/Line Shapefile products are not copyrighted however TIGER/Line and Census TIGER are registered trademarks of
+  the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given
+  to the U.S. Census Bureau as the source."
   NCEI Storm Events: the licence text was not read in this run (the NCEI terms page returned 503 in the research).
 
 Feed facts for the contract rows (B5):
   nws_warnings_polygons (IEM watchwarn shapefile, accept=shapefile): products FL.W, FA.W, FA.Y, FL.A, FL.Y, SQ.W (and
     SV.W, TO.W, FF.W from B2; FF.A's polygon); NEW rows with GTYPE P; POLY_BEG and POLY_END UTC (YYYYMMDDHHMM); tags
     HAILTAG (in), WINDTAG (mph), TORNTAG, DAMAGTAG (the NWS damage threat tag, shown as the NWS's: SQ.W and FF.W carry
-    one); blank tags are missing; the research's note: "no hail, wind or tornado tags in these products" (except SV);
+    one); blank tags are missing; the research's note: only SV carries hail, wind or tornado tags among these products;
     cadence per request year (the current year and January's previous year fresh).
   nws_zone_products (IEM watchwarn CSV, accept=csv): products HW.W, WS.W, BZ.W, IS.W, EC.W, WC.W, FW.W (fire zones), DS.W,
     WI.Y, FA.A, WW.Y, WS.A, HW.A, HT.Y, EH.W, EH.A, FR.Y, FZ.W, DU.Y, FF.A; utc_issue, utc_expire and utc_prodissue UTC; a row
@@ -336,11 +338,15 @@ WORDS_JOINS = {
                          "{start} and {end}."),
     "records_lead_none": ("NCEI's database runs to {newest}. No official record for this spot or its zone between "
                           "{start} and {end}. Records are not a complete account of every storm."),
-    "records_row": "Record: {date} {time}: {type}{cause}, {magnitude}{qualifier}, {source}, {miles} mi {bearing}",
-    "records_row_here": "Record: {date} {time}: {type}{cause}, {magnitude}{qualifier}, {source}, {miles} mi",
-    "records_row_typed": "Record: {date} {time}: {type}{cause}{qualifier}, {source}, {miles} mi {bearing}",
-    "records_row_here_typed": "Record: {date} {time}: {type}{cause}{qualifier}, {source}, {miles} mi",
+    "records_row": "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, {miles} mi {bearing}",
+    "records_row_here": "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, {miles} mi",
+    "records_row_typed": "Record: {date} {time}: {type}{qualifier}, {source}, {miles} mi {bearing}",
+    "records_row_here_typed": "Record: {date} {time}: {type}{qualifier}, {source}, {miles} mi",
     "records_cause": ", NCEI cause as written: {cause}",
+    "records_row_b5": "Record: {date} {time}: {type}{cause}, {magnitude}{qualifier}, {source}, {miles} mi {bearing}",
+    "records_row_here_b5": "Record: {date} {time}: {type}{cause}, {magnitude}{qualifier}, {source}, {miles} mi",
+    "records_row_typed_b5": "Record: {date} {time}: {type}{cause}{qualifier}, {source}, {miles} mi {bearing}",
+    "records_row_here_typed_b5": "Record: {date} {time}: {type}{cause}{qualifier}, {source}, {miles} mi",
     "records_zone_row": "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, across zone {zone}",
     "records_zone_row_typed": "Record: {date} {time}: {type}{qualifier}, {source}, across zone {zone}",
     "records_unplaced_one": ("1 official zone record in Montana in the window could not be placed on a zone; its zone "
@@ -380,7 +386,9 @@ WORDS_JOINS = {
                                 "this spot."),
     "warnings_no_outline_many": ("{n} warnings in these five years have no outline on file, so they cannot be matched "
                                  "to this spot."),
-    "warnings_row": "Warning: {date} {span}: {product}, {office}, covered this cell or part of it{tags}",
+    "warnings_row": "Warning: {date} {begin} to {end}, issuance polygon in effect: {kind} warning, {office}; tags: {tags}",
+    "warnings_tags_none": "none stated",
+    "warnings_row_b5": "Warning: {date} {span}: {product}, {office}, covered this cell or part of it{tags}",
     "warnings_span": "{begin} to {end}",
     "warnings_span_none": "{begin}, end not recorded",
     "warnings_tags": "; tags: {tags}",
@@ -1453,6 +1461,16 @@ def _lag_dates(ctx) -> dict:
     }
 
 
+def zone_row_key(row: dict) -> tuple:
+    """D17: the identity of one zone row (a row of parse_ww_csv, with its product's phen and sig). The margin requests
+    of two years share their December and January rows, so one row can come back from two requests; the key is the
+    row's own fields (office, product, event, status, zone, the issue, expire and product times, gtype). Checked on the
+    2021 to 2026 margin files (2026-10-19): every repeated key is an identical row, so dropping the copies changes no
+    field the joins read."""
+    return (row["wfo"], row["phen"], row["sig"], row["eventid"], row["status"], row["ugc"], row["vtec_year"],
+            row["issue"], row["expire"], row["prod"], row["gtype"])
+
+
 class Context:
     """Everything one build collects: the parsed sources, the parts, and the reasons for any part that did not load."""
 
@@ -1502,6 +1520,7 @@ class Context:
         self.ww_nulls: list[dict] = []
         self.poly_rows: list[dict] = []
         self.polygon_duplicates = 0
+        self.zone_row_copies = 0                      # D17: zone rows an overlapping request repeated (dropped)
         self.county_map: list | None = None           # the Montana counties (D-B5 source 4); None when not loaded
         self.county_reason: str | None = None
         self.county_events: dict[str, list] = {}      # county code -> its county-only events (and joined polygons)
@@ -1684,6 +1703,7 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
             rows_parsed, _why = _take(by_tag[("polygon_rows", (phen, sig, year))], parse_ww_csv)
             if rows_parsed is not None:
                 ctx.poly_rows.extend(dict(row, phen=phen, sig=sig) for row in rows_parsed["rows"])
+    seen_zone_rows: set = set()                 # D17: one seen-set across every year and product of the zone requests
     for year in years:
         for phen, sig in ZONE_PRODUCTS:
             label = f"{phen} {year}"
@@ -1692,7 +1712,14 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
                 stale("zones", label, by_tag[("zones", (phen, sig, year))])
                 ctx.short_rows["zones"] += parsed["short"]
                 ctx.malformed["zones"] += parsed["malformed"]
-                ctx.zone_rows.extend(dict(row, phen=phen, sig=sig) for row in parsed["rows"])
+                for row in parsed["rows"]:
+                    row = dict(row, phen=phen, sig=sig)
+                    key = zone_row_key(row)
+                    if key in seen_zone_rows:
+                        ctx.zone_row_copies += 1        # a copy from the neighbouring year's request: kept once
+                        continue
+                    seen_zone_rows.add(key)
+                    ctx.zone_rows.append(row)
     for name in edition_names:
         zones, why = _take(by_tag[("zone_map", name)], parse_zone_map)
         ctx.zone_editions.append({"file": name, "date": zone_name_date(name), "zones": zones, "why": why})
@@ -2846,6 +2873,7 @@ def _b5_block(ctx: Context, cover_stats: dict, county_names: dict, county_files:
         "vtec_counts": vtec,
         "zone_periods": ctx.zone_periods,
         "polygon_duplicates_dropped": ctx.polygon_duplicates,
+        "zone_row_copies_dropped": ctx.zone_row_copies,
         "polygon_nulls": {"no_outline": len(ctx.ww_nulls), **ctx.null_polygons},
         "town_checks": town_check,
         "type_words": {k: words[k] for k in sorted(words)},
@@ -3428,12 +3456,12 @@ def _report_text(utc, r, dist, clat, clon, lat, lon, w, types=None) -> str:
 
 def _record_text(utc, r, dist, clat, clon, lat, lon, w) -> str:
     """A record row (D3, D9, D19): the magnitude only when its type carries a unit; any other type is typed (its type
-    word and qualifier, no number and no "no size given"). A flood record shows NCEI's cause as written (B5)."""
+    word and qualifier, no number and no "no size given"). The B2 templates the browser fills, so the sheet and the town
+    page say the same words; NCEI's cause (r[13]) is kept in the events table and joins the row when part B switches
+    map.js to WORDS_JOINS["records_row_b5"]."""
     miles, bearing = _place_bits(lat, lon, clat, clon, w)
-    cause = r[13] if len(r) > 13 else ""
     base = dict(date=fmt_day(_local(utc).date()), time=fmt_clock(utc), type=r[4],
-                qualifier=_qualifier(r[7], w), source=r[8], miles=miles,
-                cause=w["records_cause"].format(cause=cause) if cause else "")
+                qualifier=_qualifier(r[7], w), source=r[8], miles=miles)
     if r[4] in UNIT_CODES:
         base["magnitude"] = _magnitude(r[5], r[6], w, mph=r[11], kt=r[12])
         key = "records_row_here" if bearing is None else "records_row"
@@ -3455,8 +3483,10 @@ def _zone_record_text(utc, r, zone, w) -> str:
 
 
 def _warning_text(b, e, item, w) -> str:
-    """A warning row (D4, D11, B5): the product's own name, the office, the words "covered this cell or part of it",
-    and the tags the archive gives (hail, wind, tornado, and the NWS damage threat tag where the product has one)."""
+    """A warning row (D4, B2): the kind word, the office, the begin and end (Montana time, the end's date only on a later
+    day) and the tags the archive gives (hail, wind, tornado, and the NWS damage threat tag where the product has one),
+    in the B2 template the browser fills (WORDS_JOINS["warnings_row"]). The B5 row, with the product's own name and the
+    words "covered this cell or part of it", is WORDS_JOINS["warnings_row_b5"], for part B."""
     tags = []
     tg = item["tags"]
     if tg.get("hail_in") is not None:
@@ -3467,14 +3497,9 @@ def _warning_text(b, e, item, w) -> str:
         tags.append(w["tag_tornado"].format(value=str(tg["tornado"]).lower()))
     if tg.get("damage"):
         tags.append(w["tag_damage"].format(value=str(tg["damage"]).lower()))
-    product = PRODUCT_NAMES.get(f"{item['k']}.{item.get('s', 'W')}", f"{item['k']}.{item.get('s', 'W')}")
-    tag_text = w["warnings_tags"].format(tags=", ".join(tags)) if tags else ""
-    if e is None:
-        span = w["warnings_span_none"].format(begin=fmt_clock(b))
-    else:
-        span = w["warnings_span"].format(begin=fmt_clock(b), end=fmt_end(e, b))
-    return w["warnings_row"].format(date=fmt_day(_local(b).date()), span=span, product=product, office=item["o"],
-                                    tags=tag_text)
+    tag_text = ", ".join(tags) if tags else w["warnings_tags_none"]
+    return w["warnings_row"].format(date=fmt_day(_local(b).date()), begin=fmt_clock(b), end=fmt_end(e, b),
+                                    kind=KIND_WORDS.get(item["k"], item["k"]), office=item["o"], tags=tag_text)
 
 
 # ---------------------------------------------------------------- the map block (map.json["hail"]["joins"])
@@ -3552,6 +3577,14 @@ RESEARCH_B5 = {                       # source 4: the window counts the research
     "FF.A": 20,
 }
 RESEARCH_B5_COUNTY = {"FA.A": 18, "FF.A": 2}             # county-only events in the window
+# rules-F26: the HW.A window note the compare step records. HW.A has no NEW rows (its rows are CON, UPG, CAN and EXT), so
+# its events begin at the earliest CON issue, or at the earliest issue when an event has no CON row (B2's begin rule).
+# The research counts from the earliest issue; its refuter found the window count the same under either rule.
+B5_WINDOW_NOTES = {
+    "HW.A": ("HW.A has no NEW rows in the archive (its rows are CON, UPG, CAN and EXT). This build begins an event at its "
+             "earliest CON issue, or at its earliest issue when it has no CON row; the research begins at the earliest issue, "
+             "and its window count is the same under both rules."),
+}
 RESEARCH_NCEI_TOTALS = {"Flood": 76, "Flash Flood": 60, "Heavy Rain": 144, "Tornado": 17, "Funnel Cloud": 35,
                         "Lightning": 8, "Debris Flow": 11}          # 2020 to 2026 totals (rows, Montana)
 RESEARCH_NCEI_WINDOW = {"Flood": 60, "Flash Flood": 52, "Heavy Rain": 85, "Tornado": 13, "Funnel Cloud": 30,
@@ -4241,11 +4274,13 @@ def compare(store_dir) -> dict:
         row(f"Station days at or above 50 kt {year}", ours, research,
             "the IEM daily summary, station local days; the same CSV as the research")
     for item in _research_compare(index[INDEX_KEY], research=True):
-        row(f"B5 window events {item['product']}", item["ours_window_vtec_events"], item["research_window"],
-            "VTEC events (the key without the zone) that begin in the research window, "
-            f"{RESEARCH_START:%Y-%m-%d %H:%M} UTC to {RESEARCH_END:%Y-%m-%d %H:%M} UTC (the research's own count); "
-            f"the store window ({window_utc(index)[0]:%Y-%m-%d %H:%M} UTC to {window_utc(index)[1]:%Y-%m-%d %H:%M} UTC) "
-            "is compared in verify")
+        note = ("VTEC events (the key without the zone) that begin in the research window, "
+                f"{RESEARCH_START:%Y-%m-%d %H:%M} UTC to {RESEARCH_END:%Y-%m-%d %H:%M} UTC (the research's own count); "
+                f"the store window ({window_utc(index)[0]:%Y-%m-%d %H:%M} UTC to {window_utc(index)[1]:%Y-%m-%d %H:%M} UTC) "
+                "is compared in verify.")
+        if item["product"] in B5_WINDOW_NOTES:
+            note += " " + B5_WINDOW_NOTES[item["product"]]
+        row(f"B5 window events {item['product']}", item["ours_window_vtec_events"], item["research_window"], note)
     return {"rows": rows, "window": index["window"], "built_at": index[INDEX_KEY]["built_at"]}
 
 

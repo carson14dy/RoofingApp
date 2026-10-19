@@ -35,8 +35,10 @@ def station_line(sid: str, lat: float, lon: float, state: str, name: str) -> str
     return f"{sid:<11} {lat:8.4f} {lon:9.4f} {1000.0:6.1f} {state:<2} {name:<30}"
 
 
-def summary(name: str, ok: int, current: bool = True, net: str = "COOP") -> dict:
-    return {"name": name, "net": net, "cover": {"SNOW": ok}, "current": current, "periods": {}}
+def summary(name: str, ok: int, current=True, net: str = "COOP") -> dict:
+    """A station summary for the rule. current is one flag for every element, or a dict of flags per element (D18)."""
+    flags = {e: current for e in S.CORE} if isinstance(current, bool) else dict(current)
+    return {"name": name, "net": net, "cover": {"SNOW": ok}, "current": flags, "periods": {}}
 
 
 class ReaderTests(unittest.TestCase):
@@ -453,7 +455,7 @@ class RefreshBuildTests(OfflineBuildTests):
     def test_the_rule_ids_are_recorded_and_the_daily_refresh_set_is_the_rule(self):
         S.build(self.store, self.cache, offline=True, procs=1, refresh=frozenset({"USC00000001"}))
         block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]
-        self.assertEqual(block["refresh"], {"mode": "ids", "ids": 1})
+        self.assertEqual(block["refresh"], {"mode": "ids", "ids": 1, "unchanged": 0})
         self.assertIn("USC00000001", block["rule_station_ids"])
         self.assertEqual(S.rule_ids_of(self.store), block["rule_station_ids"])
         self.assertEqual(block["counts"]["requests"], 0)                    # offline: no request was made
@@ -461,7 +463,7 @@ class RefreshBuildTests(OfflineBuildTests):
     def test_a_monthly_refresh_offline_names_the_cached_list_it_used(self):
         S.build(self.store, self.cache, offline=True, procs=1, refresh="all")
         block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]
-        self.assertEqual(block["refresh"], {"mode": "all", "ids": 0})
+        self.assertEqual(block["refresh"], {"mode": "all", "ids": 0, "unchanged": 0})
         reasons = [f["reason"] for f in block["failures"] if f.get("source") == "stations"]
         self.assertEqual(reasons, ["offline: the cached copy was used and was not re-read"])
 
@@ -475,6 +477,182 @@ class RefreshBuildTests(OfflineBuildTests):
 
     def test_the_rule_ids_are_an_empty_list_before_any_build(self):
         self.assertEqual(S.rule_ids_of(self.store), [])
+
+
+class PerElementCurrencyTests(unittest.TestCase):
+    """D18: a station is current for an element when that element has a report in the 30 days before as_of. The rule
+    runs per element, so a station current for one element is not thereby current for another."""
+
+    def test_summarize_flags_currency_per_element(self):
+        parsed = {"obs": {"TMAX": [(date(2026, 10, 10).toordinal(), 250, True, False)],
+                          "SNOW": [(date(2026, 5, 18).toordinal(), 0, True, False)]}, "malformed": 0}
+        sd = S.summarize(dict(META), parsed, AS_OF)
+        self.assertEqual(sd["current"], {"PRCP": False, "SNOW": False, "SNWD": False, "TMAX": True, "TMIN": False})
+
+    def test_choose_passes_a_station_only_for_the_element_it_is_current_for(self):
+        station = {"name": "A", "net": "COOP", "cover": {"TMAX": 2000, "SNOW": 2000}, "periods": {},
+                   "current": {"TMAX": True, "SNOW": False}}
+        candidates = [(3.0, "A")]
+        self.assertEqual(S.choose(candidates, {"A": station}, "TMAX", AS_OF)["state"], "one")
+        snow = S.choose(candidates, {"A": station}, "SNOW", AS_OF)
+        self.assertEqual(snow["state"], "none")
+        self.assertIs(snow["examined"][0]["current"], False)
+
+    def test_the_replaced_benchland_snow_pick_is_checked_against_its_recorded_reason(self):
+        gates = {"benchland": {"SNOW": {"chosen": ["US1MTFG0003", "USC00243947"], "examined": [
+            {"id": "USC00244978", "current": False, "pass": False}]}}}
+        checks = []
+        S._verify_gates({"gates": gates}, {}, lambda name, passed, detail="": checks.append((name, passed)))
+        self.assertEqual([p for n, p in checks if "replaced by" in n], [True])
+        gates["benchland"]["SNOW"]["examined"][0]["current"] = True
+        checks.clear()
+        S._verify_gates({"gates": gates}, {}, lambda name, passed, detail="": checks.append((name, passed)))
+        self.assertEqual([p for n, p in checks if "replaced by" in n], [False])
+
+
+class ScopeTests(unittest.TestCase):
+    """D26: the job scopes, and the earlier refresh meanings when no scope is given."""
+
+    def test_daily_refreshes_the_chosen_stations_and_the_list_with_the_last_modified_skip(self):
+        index = {"stations": {"chosen_station_ids": ["USC00000002", "USC00000001"]}}
+        self.assertEqual(S.scope_settings("daily", index),
+                         (False, frozenset({"USC00000001", "USC00000002"}), True, True))
+
+    def test_monthly_refreshes_every_file_with_no_skip(self):
+        self.assertEqual(S.scope_settings("monthly", {}), (True, frozenset(), False, True))
+
+    def test_no_scope_keeps_the_earlier_refresh_meanings(self):
+        self.assertEqual(S.scope_settings(None, {}, "none"), (False, frozenset(), False, False))
+        self.assertEqual(S.scope_settings(None, {}, "all"), (True, frozenset(), False, True))
+        self.assertEqual(S.scope_settings(None, {}, ["USC00000001"]), (False, frozenset({"USC00000001"}), False, False))
+        with self.assertRaises(S.StationsError):
+            S.scope_settings("weekly", {})
+
+    def test_the_command_line_refuses_a_scope_with_an_earlier_refresh_flag(self):
+        with mock.patch("sys.stderr"), self.assertRaises(SystemExit):
+            S.main(["build", "--store", "unused", "--cache", "unused", "--scope", "daily", "--refresh", "all"])
+
+
+class LastModifiedTests(unittest.TestCase):
+    """D26: a cached file whose kept Last-Modified equals the one header of a HEAD request is not fetched; any other
+    answer (a changed date, no kept date, a failed or non-200 HEAD) fetches the file as the earlier rule did."""
+
+    URL = "https://example.invalid/USC00000001.dly"
+    LM = "Mon, 05 Oct 2026 14:33:16 GMT"
+    LM_NEW = "Tue, 06 Oct 2026 14:33:16 GMT"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "USC00000001.dly"
+        self.body = dly_line("USC00000001", 2022, 1, "TMAX", {1: (322, " ", " ")}).encode("ascii")
+        self.path.write_bytes(self.body)
+        self.check = S._check_dly("USC00000001")
+        self.patches = [mock.patch("time.sleep", lambda seconds: None)]
+        for patch in self.patches:
+            patch.start()
+
+    def tearDown(self):
+        for patch in self.patches:
+            patch.stop()
+        self.tmp.cleanup()
+
+    @staticmethod
+    def head(value=None, status=200):
+        resp = FakeResponse(status)
+        resp.headers = {"Last-Modified": value} if value else {}
+        return resp
+
+    def fetch(self, *, skip=True):
+        return S.fetch(self.URL, self.path, self.check, offline=False, refresh=True, pacer=S._Pacer(0),
+                       skip_unchanged=skip)
+
+    def test_an_unchanged_last_modified_is_not_fetched(self):
+        S._write_lastmod(self.path, self.LM)
+        with mock.patch("requests.head", return_value=self.head(self.LM)) as head, \
+                mock.patch("requests.get") as get:
+            data, state, reason = self.fetch()
+        self.assertEqual((state, reason, data), ("unchanged", None, self.body))
+        self.assertEqual(head.call_count, 1)
+        get.assert_not_called()
+
+    def test_a_changed_last_modified_is_fetched_and_the_new_date_is_kept(self):
+        S._write_lastmod(self.path, self.LM)
+        answer = FakeResponse(200, self.body)
+        answer.headers = {"Last-Modified": self.LM_NEW}
+        with mock.patch("requests.head", return_value=self.head(self.LM_NEW)), \
+                mock.patch("requests.get", return_value=answer) as get:
+            data, state, _reason = self.fetch()
+        self.assertEqual(state, "fetched")
+        get.assert_called_once()
+        self.assertEqual(S._read_lastmod(self.path), self.LM_NEW)
+
+    def test_a_file_with_no_kept_date_is_fetched_without_a_head_request(self):
+        answer = FakeResponse(200, self.body)
+        answer.headers = {"Last-Modified": self.LM}
+        with mock.patch("requests.head") as head, mock.patch("requests.get", return_value=answer):
+            _data, state, _reason = self.fetch()
+        head.assert_not_called()
+        self.assertEqual((state, S._read_lastmod(self.path)), ("fetched", self.LM))
+
+    def test_a_failed_or_empty_head_request_fetches_the_file(self):
+        S._write_lastmod(self.path, self.LM)
+        for head_answer in ({"side_effect": requests.ConnectionError("no answer")},
+                            {"return_value": self.head(status=404)},
+                            {"return_value": self.head(None)}):
+            answer = FakeResponse(200, self.body)
+            answer.headers = {"Last-Modified": self.LM}
+            with mock.patch("requests.head", **head_answer), mock.patch("requests.get", return_value=answer) as get:
+                _data, state, _reason = self.fetch()
+            self.assertEqual(state, "fetched")
+            get.assert_called_once()
+
+    def test_a_refresh_without_the_skip_setting_makes_no_head_request(self):
+        S._write_lastmod(self.path, self.LM)
+        answer = FakeResponse(200, self.body)
+        answer.headers = {"Last-Modified": self.LM}
+        with mock.patch("requests.head") as head, mock.patch("requests.get", return_value=answer):
+            _data, state, _reason = self.fetch(skip=False)
+        head.assert_not_called()
+        self.assertEqual(state, "fetched")
+
+    def test_a_kept_date_that_cannot_be_written_is_a_note_and_the_file_still_loads(self):
+        S._write_lastmod(self.path, self.LM)
+        answer = FakeResponse(200, self.body)
+        answer.headers = {"Last-Modified": self.LM_NEW}
+        with mock.patch("requests.head", return_value=self.head(self.LM_NEW)), \
+                mock.patch("requests.get", return_value=answer), \
+                mock.patch.object(S, "_write_atomic", side_effect=OSError("disk full")):
+            data, state, reason = self.fetch()
+        self.assertEqual((data, state), (self.body, "fetched"))
+        self.assertIn("could not be kept", reason)
+
+
+class DailyScopeBuildTests(OfflineBuildTests):
+    """A daily build reads the chosen stations' files and the list and the inventory; a file whose kept Last-Modified
+    is unchanged is not fetched, and the block counts it."""
+
+    def test_a_daily_build_requests_the_list_and_the_chosen_file_and_skips_an_unchanged_one(self):
+        S.build(self.store, self.cache, offline=True, procs=1)
+        index = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(index["stations"]["chosen_station_ids"], ["USC00000001"])
+        dly = self.cache / "ghcn" / "dly" / "USC00000001.dly"
+        S._write_lastmod(dly, "Mon, 05 Oct 2026 14:33:16 GMT")
+        calls = []
+
+        def fake_get(url, **kwargs):
+            calls.append(url)
+            return FakeResponse(404)
+
+        head = FakeResponse(200)
+        head.headers = {"Last-Modified": "Mon, 05 Oct 2026 14:33:16 GMT"}
+        with mock.patch("requests.get", side_effect=fake_get), mock.patch("requests.head", return_value=head):
+            S.build(self.store, self.cache, offline=False, procs=1, scope="daily")
+        block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]
+        self.assertEqual(block["refresh"], {"mode": "daily", "ids": 1, "unchanged": 1})
+        self.assertEqual(block["unchanged_station_ids"], ["USC00000001"])
+        self.assertIn(S.STATIONS_URL, calls)
+        self.assertIn(S.INVENTORY_URL, calls)
+        self.assertNotIn(S.DLY_URL.format(id="USC00000001"), calls)
 
 
 class OfflineFailureTests(unittest.TestCase):

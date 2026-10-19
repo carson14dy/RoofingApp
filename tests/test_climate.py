@@ -97,6 +97,19 @@ class GridRule(unittest.TestCase):
 
 
 class Rounding(unittest.TestCase):
+    def test_d19_the_hundredth_step_32_15_counts_and_32_14_does_not(self):
+        # the daily value is rounded to the hundredth (3215, 3214), then to the tenth (322, 321); the tenth is compared
+        self.assertEqual(cl._centi(np, np.array([32.15, 32.14])).tolist(), [3215, 3214])
+        tmax = np.array([[32.15], [32.14]])
+        tmin = np.array([[10.0], [10.0]])
+        valid, cmm, tx, tn, _f = cl.daily_arrays(np, np.zeros((2, 1)), tmax, tmin)
+        self.assertEqual(tx[:, 0].tolist(), [322, 321])
+        fields = cl.month_fields(np, valid, cmm, tx, tn, 2)
+        self.assertEqual(int(fields[0, 9]), 1)                       # hot90: 32.15 C counts; 32.14 C does not
+        self.assertIn("32.15 C or more", cl.THRESHOLDS["hot_day"]["text"])
+        self.assertIn("hundredth of a degree C", cl.THRESHOLDS["rounding"])
+        self.assertIn("32.14 C does not count", " ".join(cl.WORDS_CLIMATE["how_made"]))
+
     def test_half_up_to_hundredths_and_tenths(self):
         values = np.array([32.2, 32.15, 32.14, 0.0, -0.04, -17.8, -17.75, 27.3125, 1.2265625, 0.125])
         cents = cl._centi(np, values)
@@ -755,7 +768,7 @@ class StoreBuild(unittest.TestCase):
     def test_verify_reports_the_airport_freeze_thaw_count_beside_the_grid_count(self):
         report = cl.verify_store(self.store, self.cache, basemap_path=self.basemap, log=lambda s: None)
         airport = report["airport_comparison_2025"]
-        self.assertEqual(set(airport), {"station", "year", "freeze_thaw_days", "days_with_both", "units",
+        self.assertEqual(set(airport), {"station", "year", "freeze_thaw_days", "days_with_both", "rule",
                                         "grid_billings_calendar_2025_freeze_thaw_days"})
         self.assertEqual((airport["station"], airport["year"]), ("USW00024033", 2025))
         self.assertEqual(airport["freeze_thaw_days"], 3)
@@ -763,6 +776,21 @@ class StoreBuild(unittest.TestCase):
         self.assertEqual(airport["grid_billings_calendar_2025_freeze_thaw_days"], 0)
         self.assertNotIn("colder", json.dumps(report))
         self.assertNotIn("note", airport)
+
+    def test_a_source_that_does_not_answer_is_recorded_and_not_raised_in_verify(self):
+        with mock.patch.object(cl, "fetch_ghcn",
+                               side_effect=cl.SourceError("the GHCN file USW00024033.dly", "ReadTimeout")):
+            report = cl.verify_store(self.store, self.cache, basemap_path=self.basemap, log=lambda s: None)
+        airport = report["airport_comparison_2025"]
+        self.assertTrue(airport["unavailable"])
+        self.assertEqual(airport["reason"], "ReadTimeout")
+        self.assertIn("could not be checked in this run: the request timed out.", airport["sentence"])
+        with mock.patch.object(cl, "independent_check",
+                               side_effect=cl.SourceError("the download of ncdd-202506-verify.nc", "ConnectionError")):
+            report = cl.verify_store(self.store, self.cache, independent=True, basemap_path=self.basemap,
+                                     log=lambda s: None)
+        self.assertIsNone(report["independent"]["ok"])
+        self.assertEqual(report["independent"]["reason"], "ConnectionError")
 
     def test_describe_unavailable_without_a_block_or_tile(self):
         out = cl.describe_climate({}, None, 800, 1990, NOW)
@@ -983,7 +1011,9 @@ class FiveSeasonsUnloaded(unittest.TestCase):
         partial = self.out["table"]["partial"]
         self.assertEqual((partial["valid"], partial["missing"]), (62, 0))
         self.assertTrue(partial["rows"])
-        self.assertTrue(partial["text"].startswith("Grid estimate: 2026-27 so far, 62 days with data, July 1, 2026 to "))
+        self.assertTrue(partial["text"].startswith("Grid estimate: 2026-27 so far, 62 days to "))
+        self.assertFalse(any("2026-27" in line for line in self.out["temperature"]["lines"]))   # not a season list entry
+        self.assertFalse(any("2026-27" in line for line in self.out["rain"]["lines"]))
         row = self.out["calendar"][cl.CALENDAR_YEARS.index(2026)]["row"]
         self.assertEqual((row["valid"], row["missing"]), (62, 181))
         lines = self.out["temperature"]["lines"]
@@ -1006,6 +1036,51 @@ def _walk_text(value, where: str):
             yield from _walk_text(item, f"{where}[{k}]")
     elif isinstance(value, str):
         yield where, value
+
+
+class PartialAndLeadTests(unittest.TestCase):
+    """D20 (the partial season's one line, with its own counts and the no-day sentence) and F06 (a lead never prints
+    None; the values come from the records as the build writes them)."""
+
+    @staticmethod
+    def partial_record(days=107, missing=0, rain=84, rain_max=30, tmax=710, tmin=280, below=2):
+        return cl._record_row([days, missing, rain, rain_max, 20261003, tmax, 20261003, tmin, 20261017, 0, 0, 0, below])
+
+    def test_the_partial_line_says_so_far_with_its_own_counts_and_no_store_word(self):
+        text = cl._partial_text(self.partial_record(), "2026-27", "2026-10-15")
+        self.assertEqual(text, "Grid estimate: 2026-27 so far, 107 days to " + cl.hail.fmt_date(date(2026, 10, 15))
+                         + ": highest 71.0 F on " + cl.hail.fmt_date(date(2026, 10, 3)) + "; lowest 28.0 F on "
+                         + cl.hail.fmt_date(date(2026, 10, 17)) + "; 0 days at 90 F or more; 2 days with a low below 32 F; "
+                         "0.84 in of rain, largest one day 0.30 in on " + cl.hail.fmt_date(date(2026, 10, 3))
+                         + ". The newest days are preliminary and provisional until NOAA publishes the scaled month.")
+        self.assertIsNone(re.search(r"\bstore\b", text))
+
+    def test_a_partial_season_with_no_day_in_the_store_says_no_day_is_in_the_data(self):
+        row = cl._record_row([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        self.assertEqual(cl._partial_text(row, "2026-27", None),
+                         "No day of the 2026-27 season is in the data yet. This is not an all-clear.")
+
+    def test_missing_days_of_the_partial_season_are_said_once_in_the_season_words(self):
+        text = cl._partial_text(self.partial_record(days=107, missing=7), "2026-27", "2026-10-15")
+        self.assertTrue(text.endswith("Data unavailable: 7 days missing in the 2026-27 season; the totals and counts "
+                                      "are for the days present. This is not an all-clear."))
+        self.assertEqual(text.count("days missing"), 1)
+
+    def test_a_partial_season_with_no_valid_day_is_unavailable_not_zero(self):
+        text = cl._partial_text(self.partial_record(days=107, missing=107), "2026-27", "2026-10-15")
+        self.assertTrue(text.startswith("Data unavailable for 2026-27"))
+        self.assertNotIn(" 0 days", text)
+
+    def test_f06_a_lead_never_prints_none(self):
+        row = cl._record_row([1826, 0, 4000, 300, 20250601, None, None, 280, 20250101, 3, 2, 1, 0])
+        temp, rain = cl._leads(row)
+        self.assertEqual(temp, cl.WORDS_CLIMATE["five_unavailable_temperature"])
+        self.assertTrue(rain.startswith("Grid estimate: 40.00 in of rain from July 1, 2021 to June 30, 2026, with the "
+                                        "largest one-day total 3.00 in on "))
+        self.assertNotIn("None", temp + rain)
+        both = cl._record_row([1826, 0, None, None, None, None, None, None, None, 3, 2, 1, 0])
+        self.assertEqual(cl._leads(both), (cl.WORDS_CLIMATE["five_unavailable_temperature"],
+                                           cl.WORDS_CLIMATE["five_unavailable_rain"]))
 
 
 class WordGuard(unittest.TestCase):

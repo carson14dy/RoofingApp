@@ -112,7 +112,11 @@ SECTION_403_TEXT = ("As required by 17 U.S.C. § 403, third parties producing co
                     "of the material appearing in NWS Web pages must provide notice with such work(s) identifying the "
                     "NWS material incorporated and stating that such material is not subject to copyright protection.")
 TERMS_NOTE = ("NWS terms, quoted as the live page reads (https://www.weather.gov/disclaimer, 2026-10-19): "
-              f"\"{PUBLIC_DOMAIN_TEXT}\" \"{SECTION_403_TEXT}\"")
+              f"\"{PUBLIC_DOMAIN_TEXT}\" \"{SECTION_403_TEXT}\" "
+              "In plain words: the public-domain paragraph has three conditions. The information is not presented as "
+              "the work of the person or company using it; it is not used to imply an endorsement by NOAA or the NWS; "
+              "and it is not changed and then presented as official government material. A work that uses NWS material "
+              "must say that the NWS material is not subject to copyright protection (17 U.S.C. 403).")
 REVISIONS_NOTE = ("The 2025-26 file (water year 2026) is checked with one HEAD request per run, and it is requested again "
                   "when its Last-Modified changes. The other water-year files are not checked for revisions after "
                   "their fetch.")
@@ -128,8 +132,8 @@ WORDS = {
     "analysis": ("Analysis: {inches} in of snow in the {water_year} water year, from the analysis cell about {miles} "
                  "miles away. An analysis, not a measurement at this address."),
     "no_value": ("Analysis: no value for the {water_year} water year at this cell. That is not the same as no snow."),
-    "unit_failed": ("Analysis: not shown. Its figures did not agree with station snowfall closely enough to show that "
-                    "they are in inches. Station readings are shown instead."),
+    "unit_failed": ("Analysis: not shown. Its amounts did not match measured snowfall closely enough to be sure they "
+                    "are in inches. Station readings are shown instead."),
     "unit_unchecked": ("Analysis: not shown. Its units could not be checked against station snowfall, so it is not "
                        "shown. Station readings are shown instead."),
     "unavailable": "{Part} could not be loaded in this update; that is not the same as no {one}.",
@@ -339,10 +343,14 @@ def _download(path: Path, year: int, *, deadline_at: float | None, pacer: S._Pac
                 else:
                     pacer.add_bytes(len(data))
                     last_modified = _header(headers, "Last-Modified")
-                    S._write_atomic(path, data)
-                    _write_meta(path, {"url": url, "last_modified": last_modified, "bytes": len(data),
-                                       "sha256": hashlib.sha256(data).hexdigest()})
-                    return grid, {"last_modified": last_modified}
+                    note = None
+                    try:
+                        S._write_atomic(path, data)
+                        _write_meta(path, {"url": url, "last_modified": last_modified, "bytes": len(data),
+                                           "sha256": hashlib.sha256(data).hexdigest()})
+                    except OSError as exc:              # a file that cannot be kept is a note, not a failed build
+                        note = f"the file could not be kept in the cache ({type(exc).__name__})"
+                    return grid, {"last_modified": last_modified, "note": note, "data": data}
             else:
                 last = f"HTTP {status}"
                 if status != 429 and status < 500:
@@ -368,6 +376,7 @@ def load_years(cache: Path, *, offline: bool, deadline_at: float | None = None,
         path = folder / water_year_file(year)
         rec: dict = {"file": path.name, "url": water_year_url(year)}
         grid = None
+        memory = None                               # the bytes of a fetched file that could not be kept in the cache
         if path.is_file():
             cached_meta = _read_meta(path) or {}
             grid, problem = _read_cached(path)
@@ -390,13 +399,19 @@ def load_years(cache: Path, *, offline: bool, deadline_at: float | None = None,
             elif now:                               # a file cached before dates were kept: its date is recorded, not re-read
                 rec["last_modified"] = now
                 rec["last_modified_note"] = "read by one HEAD request on this run; the file was cached before dates were kept"
-                _write_meta(path, dict(cached_meta, url=water_year_url(year), last_modified=now))
+                try:
+                    _write_meta(path, dict(cached_meta, url=water_year_url(year), last_modified=now))
+                except OSError:
+                    pass                            # the date is used for this run and recorded again on the next
         if grid is None and not offline:
             got, info = _download(path, year, deadline_at=deadline_at, pacer=pacer)
             if got is not None:
                 grid = got
                 rec["source"] = "fetched"
                 rec["last_modified"] = info.get("last_modified")
+                memory = info.get("data")
+                if info.get("note"):
+                    rec["note"] = info["note"]
             else:
                 rec["reason"] = info["reason"]
                 if fallback is not None:            # the cached copy is still good: it is used, and that is said
@@ -413,7 +428,7 @@ def load_years(cache: Path, *, offline: bool, deadline_at: float | None = None,
             records[str(year)] = rec
             continue
         grids[year] = grid
-        data = path.read_bytes()
+        data = memory if memory is not None else path.read_bytes()
         rec["bytes"] = len(data)
         rec["sha256"] = hashlib.sha256(data).hexdigest()
         rec.setdefault("last_modified", None)       # null: not recorded (a file cached before this record was kept)
@@ -501,8 +516,9 @@ def sample_values(grids: dict[int, np.ndarray]) -> dict:
 # ---------------------------------------------------------------- the build
 
 def hundredths_half_up(value) -> int:
-    """A non-negative value in inches to whole hundredths, rounded half up (the B5 rule): floor(value x 100 + 0.5).
-    Python's round() rounds halves to even (68.625 would give 6862), so it is not used here."""
+    """A finite value in inches to whole hundredths, rounded half up (the B5 rule): floor(value x 100 + 0.5), so a
+    negative value rounds toward plus infinity (-0.004 gives 0, -0.006 gives -1). Python's round() rounds halves to even
+    (68.625 would give 6862), so it is not used here."""
     return math.floor(float(value) * 100 + 0.5)
 
 
@@ -535,7 +551,7 @@ def build(store: Path, cache: Path, *, offline: bool = False, deadline_at: float
         return {"state": "unavailable", "missing": missing}
     if not sd_docs:
         block = dict(base, state="unavailable", problem=_unavailable_all(), shown=False,
-                     detail="the station files are not in the store, so the unit check cannot run", **counts)
+                     detail="the station files are not in this build, so the unit check cannot run", **counts)
         _merge_index(store, block)
         _merge_manifest(store, {}, prefixes=(N_PREFIX,))
         return {"state": "unavailable", "problem": "no station files"}
@@ -582,9 +598,10 @@ def build(store: Path, cache: Path, *, offline: bool = False, deadline_at: float
 
 def _write_n(store: Path, grids: dict[int, np.ndarray],
              index: dict) -> tuple[int, dict, int, dict]:
-    """Writes hail/n/<tile>.json for every tile that holds a box cell centre. Values are hundredths of an inch, rounded
-    half up. Returns (cells, files, bytes, negatives): negatives counts the finite negative values per water year, which
-    are written as null (a missing value is null, never zero)."""
+    """Writes hail/n/<tile>.json for every tile that holds a box cell centre. The rule for each value, in order: a
+    missing value (NaN or infinite) is null, never zero; otherwise the value is rounded half up to hundredths of an inch
+    (hundredths_half_up); a rounded value below zero is null and is counted per water year (negatives), because a
+    snowfall is not below zero; a value that rounds to zero is zero. Returns (cells, files, bytes, negatives)."""
     by_tile: dict[str, dict] = {}
     negatives = {str(y): 0 for y in WATER_YEARS}
     for row, col in box_cells():
@@ -595,11 +612,13 @@ def _write_n(store: Path, grids: dict[int, np.ndarray],
             v = grid[row, col] if grid is not None else np.nan
             if not np.isfinite(v):
                 vals.append(None)
-            elif v < 0:
+                continue
+            h = hundredths_half_up(v)
+            if h < 0:
                 negatives[str(year)] += 1
                 vals.append(None)
             else:
-                vals.append(hundredths_half_up(v))
+                vals.append(h)
         by_tile.setdefault(name, {})[cell_key(row, col)] = vals
     files = {}
     total = 0

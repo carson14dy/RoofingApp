@@ -310,6 +310,16 @@ class StoreWriteTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_a_value_that_rounds_to_zero_is_zero_and_a_rounded_negative_is_null_and_counted(self):
+        grids = {year: np.full((850, 1500), np.nan) for year in G.WATER_YEARS}
+        grids[2023][198, 399] = -0.004              # rounds to 0 hundredths: zero, not null and not counted
+        grids[2024][198, 399] = -0.006              # rounds to -1 hundredth: no value, and counted for 2024
+        with mock.patch.object(G, "box_cells", lambda: [(198, 399)]):
+            _cells, _files, _total, negatives = G._write_n(self.store, grids, {})
+        doc = json.loads((self.store / "hail" / "n" / f"{G.tile_name_for(198, 399)}.json").read_text(encoding="utf-8"))
+        self.assertEqual(doc["cells"]["198:399"], [None, 0, None, None, None])
+        self.assertEqual(negatives, {"2022": 0, "2023": 0, "2024": 1, "2025": 0, "2026": 0})
+
     def test_values_are_hundredths_null_is_null_never_zero(self):
         grids = {year: np.full((850, 1500), np.nan) for year in G.WATER_YEARS}
         grids[2026][G.cell_for(47.08, -110.02)] = 33.85
@@ -404,6 +414,26 @@ class UnavailableTests(SnowTestCase):
         self.assertTrue(block["shown"])
         self.assertEqual(calls.count(G.water_year_url(2025)), G.ATTEMPTS)     # tried, then named as missing
         self.assertIn("ReadTimeout", block["water_year_files"]["2025"]["reason"])
+
+    def test_a_file_that_cannot_be_kept_is_a_note_and_the_year_still_loads(self):
+        for year in (2022, 2023, 2024, 2026):
+            self.cache_year(year)
+        self.write_station_docs()
+        real_write = S._write_atomic
+
+        def refuse_tif(path, data):
+            if path.name.startswith("sfav2_"):           # the water-year file and its record cannot be written
+                raise OSError("disk full")
+            return real_write(path, data)
+
+        with mock.patch("requests.get", return_value=FakeResponse(200, default_tif(), headers={"Last-Modified": LM})), \
+                mock.patch.object(S, "_write_atomic", side_effect=refuse_tif):
+            result = G.build(self.store, self.cache)
+        block = self.block()
+        self.assertEqual(result["state"], "loaded")
+        self.assertEqual(block["missing_water_years"], [])
+        self.assertEqual(block["water_year_files"]["2025"]["source"], "fetched")
+        self.assertIn("could not be kept in the cache (OSError)", block["water_year_files"]["2025"]["note"])
 
     def test_all_five_connection_errors_are_unavailable_with_the_d20_sentence(self):
         self.write_station_docs()
@@ -648,8 +678,8 @@ class UrlAndWordsTests(unittest.TestCase):
 
     def test_the_unit_sentence_is_the_plain_sentence_with_no_regression_word(self):
         # the reader is not asked to decode a regression slope
-        self.assertEqual(G.WORDS["unit_failed"], "Analysis: not shown. Its figures did not agree with station snowfall "
-                                                 "closely enough to show that they are in inches. Station readings are "
+        self.assertEqual(G.WORDS["unit_failed"], "Analysis: not shown. Its amounts did not match measured snowfall "
+                                                 "closely enough to be sure they are in inches. Station readings are "
                                                  "shown instead.")
         self.assertNotIn("slope", G.WORDS["unit_failed"].lower())
         self.assertNotIn("regression", G.WORDS["unit_unchecked"].lower())
@@ -658,6 +688,18 @@ class UrlAndWordsTests(unittest.TestCase):
         self.assertEqual(G.WORDS["unavailable"].format(Part="Snow analysis", one="snow analysis"), D20_ALL)
         self.assertEqual(G.WORDS["unavailable"].format(Part="Snow analysis for water year 2025",
                                                        one="snow analysis for water year 2025"), D20_2025)
+
+    def test_the_nws_conditions_are_stated_in_plain_words_outside_the_quotes(self):
+        plain = re.sub(r'"[^"]*"', " ", G.TERMS_NOTE)
+        for phrase in ("not presented as", "not used to imply an endorsement by NOAA or the NWS",
+                       "not changed and then presented as official government material",
+                       "not subject to copyright protection", "17 U.S.C. 403"):
+            self.assertIn(phrase, plain)
+
+    def test_no_snow_word_or_term_says_store(self):
+        texts = [t for t in G.WORDS.values() if isinstance(t, str)] + [G.TERMS_NOTE, G.REVISIONS_NOTE, G.NOT_IN_STORE]
+        for text in texts:
+            self.assertNotRegex(text, r"\bstore\b")
 
     def test_the_terms_are_the_nws_text_quoted_and_outside_the_word_scan(self):
         # the verbatim public-domain paragraph and the 17 U.S.C. 403 sentence, inside quotation marks

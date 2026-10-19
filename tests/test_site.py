@@ -1991,9 +1991,10 @@ class HailJoins(unittest.TestCase):
 
 def write_joined_store(dest: Path) -> Path:
     """A small store with the joined records (hail/j, hail/z, hail/s) built on the B1 fixture, written into dest (a folder
-    the caller made). The values are invented for the test; the formats are joins.py's: one events table holds every
-    report, record and warning row once (hail/j/events.json), each tile refers to its rows by index, a warning comes
-    with the tile's cover of cell keys, and a tile's zones map each zone code to its cell keys. The Benchland day
+    the caller made). The values are invented for the test; the formats are joins.py's B5 formats (hail-events-v2,
+    hail-joins-v2, hail-station-v2): one events table holds every report, record and warning row once
+    (hail/j/events.json), each tile refers to its rows by index, a warning comes with the tile's cover of cell keys, and
+    a tile's zones map each zone code to its cell keys. The Benchland day
     (2025-06-15) has an LSR hail report of 1.75 in at 20:10 UTC and an NCEI record at the same time, a Thunderstorm Wind
     record in knots, radar detections, a severe thunderstorm warning covering the cell, one zone, and the Billings
     station's gusts. The manifest lists every file, as hail.load_store checks it."""
@@ -2010,20 +2011,20 @@ def write_joined_store(dest: Path) -> Path:
             value |= 1 << key
         return f"{value:025x}"
 
-    def row(d, t, lat, lon, code, mag, unit, qual, src, city, remark):
-        return [d, t, lat, lon, code, mag, unit, qual, src, city, remark]
+    def row(d, t, lat, lon, code, mag, unit, qual, src, city, remark, kind):
+        return [d, t, lat, lon, code, mag, unit, qual, src, city, remark, kind]
 
-    def record(d, t, lat, lon, code, mag, unit, qual, src, city, remark, mph, kt):
-        return row(d, t, lat, lon, code, mag, unit, qual, src, city, remark) + [mph, kt]
+    def record(d, t, lat, lon, code, mag, unit, qual, src, city, remark, mph, kt, cause=""):
+        return [d, t, lat, lon, code, mag, unit, qual, src, city, remark, mph, kt, cause]
 
     remark = "Public caller updated with golf ball sized hail a few minutes after initial call."
-    reports = [row(day, 545, 46.97, -110.09, "H", "1.0", "in", "E", "Public", "Utica", ""),                     # 0
-               row(day, 2010, 47.08, -110.02, "H", "1.75", "in", "E", "Public", "Benchland", remark),           # 1
-               row(day, 2005, 47.08, -110.02, "H", "1.0", "in", "M", "Public", "Benchland", ""),                # 2
-               row(day, 2020, 47.08, -110.02, "H", "1.25", "in", "M", "Trained Spotter", "Benchland", "")]      # 3
+    reports = [row(day, 545, 46.97, -110.09, "H", "1.0", "in", "E", "Public", "Utica", "", "hail"),                 # 0
+               row(day, 2010, 47.08, -110.02, "H", "1.75", "in", "E", "Public", "Benchland", remark, "hail"),       # 1
+               row(day, 2005, 47.08, -110.02, "H", "1.0", "in", "M", "Public", "Benchland", "", "hail"),            # 2
+               row(day, 2020, 47.08, -110.02, "H", "1.25", "in", "M", "Trained Spotter", "Benchland", "", "hail")]  # 3
     records = [record(day, 2010, 47.08, -110.02, "hail", "1.75", "in", "", "Public", "Judith Basin", "", None, None),
                record(day, 2000, 47.00, -110.10, "thunderstorm wind", "56", "kt", "MG", "Mesonet", "Test", "", 64, 56)]
-    warnings = [{"k": "SV", "b": "2025-06-15T20:33Z", "e": "2025-06-15T21:00Z", "o": "TFX",
+    warnings = [{"k": "SV", "s": "W", "b": "2025-06-15T20:33Z", "e": "2025-06-15T21:00Z", "o": "TFX",
                  "tags": {"hail_in": 1.0, "wind_mph": 50.0, "damage": "", "tornado": ""}}]
     bil = {"id": "BIL", "name": "Billings Logan", "lat": 45.8072, "lon": -108.5429, "miles": 30.2}
     tiles = {
@@ -2040,10 +2041,10 @@ def write_joined_store(dest: Path) -> Path:
             "stations": [dict(bil, miles=1.2)]},
     }
     (hail / "j").mkdir(exist_ok=True)
-    events = {"f": "hail-events-v1", "d0": "2020-01-01", "reports": reports, "records": records, "warnings": warnings}
+    events = {"f": "hail-events-v2", "d0": "2020-01-01", "reports": reports, "records": records, "warnings": warnings}
     (hail / "j" / "events.json").write_text(json.dumps(events, separators=(",", ":")), encoding="utf-8")
     for name, body in tiles.items():
-        doc = {"f": "hail-joins-v1", "r": int(name[1:5]), "c": int(name[7:11]), "d0": "2020-01-01", **body}
+        doc = {"f": "hail-joins-v2", "r": int(name[1:5]), "c": int(name[7:11]), "d0": "2020-01-01", "counties": {}, **body}
         (hail / "j" / f"{name}.json").write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
     (hail / "z").mkdir(exist_ok=True)
     # the zone's products: a high wind warning, and a winter storm warning cancelled with no start recorded (D16)
@@ -2059,8 +2060,8 @@ def write_joined_store(dest: Path) -> Path:
                                        {"k": "FW", "s": "W", "b": "2025-06-14T15:00Z", "e": None, "o": "TFX"}]}
     (hail / "z" / "fire-MTZ117.json").write_text(json.dumps(fire, separators=(",", ":")), encoding="utf-8")
     (hail / "s").mkdir(exist_ok=True)
-    station = {"f": "hail-station-v1", "id": "BIL", "name": "Billings Logan", "lat": 45.8072, "lon": -108.5429,
-               "days": [[day, 58, 50], [prev, 69, 60], [later, 40, 35]], "dropped": 1}
+    station = {"f": "hail-station-v2", "id": "BIL", "name": "Billings Logan", "lat": 45.8072, "lon": -108.5429,
+               "days": [[day, 58, 50, 0], [prev, 69, 60, 0], [later, 40, 35, 0]], "dropped": 1}
     (hail / "s" / "BIL.json").write_text(json.dumps(station, separators=(",", ":")), encoding="utf-8")
     index = json.loads((hail / "index.json").read_text(encoding="utf-8"))
     index["joins"] = {
@@ -2453,7 +2454,7 @@ class HailJoinedRecords(unittest.TestCase):
         self.assertEqual(browser["stations"]["unavailable"], "")
         self.assertTrue(any("Billings Logan" in r[0] for r in browser["stations"]["rows"]))
         for label, text in (("missing", None), ("not JSON", "{not json"), ("not an object", "null"),
-                            ("days that are not a list", '{"f": "hail-station-v1", "days": "x"}')):
+                            ("days that are not a list", '{"f": "hail-station-v2", "days": "x"}')):
             with self.subTest(label):
                 folder = self.gate_copy()
                 path = folder / "hail" / "s" / "1LM.json"

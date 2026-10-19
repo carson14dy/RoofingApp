@@ -43,13 +43,16 @@ Rules the build applies (B5 D1 to D4 and D16; docs/DECISIONS.md, the B5 brief):
 - Precipitation: each daily value is rounded to 0.01 mm and summed in hundredths of a mm; the period total is then
   converted to hundredths of an inch by round half up (10 x hundredths of a mm / 254). Largest one-day rain is the
   largest rounded daily value and its date (the first such day).
-- Temperature: each daily value is rounded to 0.01 C and then to a tenth of a degree C, half up (the value GHCN
-  stores; B5 D1). Tenths of a degree C are the unit for every temperature rule. Fahrenheit in tenths is
-  round half up of 1.8 x tenths-C + 320, so each Fahrenheit value is the Fahrenheit of the stored tenth.
-- Thresholds (stated once on the page, in THRESHOLDS): a day at or above 90 F has a high of at least 32.2 C in
-  tenths (D1: 32.15 C rounds to 32.2 and counts); a freeze-thaw day has a high above 0 C and a low below 0 C; a day
-  with a low below 32 F has a low below 0 C; a day at or below 0 F has a low of -17.8 C or colder in tenths. The
-  counts and the displayed Fahrenheit values agree for every value (checked by the tests).
+- Temperature (D19, the one rounding rule): each daily value is rounded to the hundredth of a degree C (the step the
+  file's precision allows: 32.15 C is 3215 hundredths), and that hundredth is then rounded half up to the tenth
+  (3215 gives 322; 3214 gives 321). Every temperature rule compares the tenth, which is the unit of the GHCN station
+  files. Fahrenheit in tenths is round half up of 1.8 x tenths-C + 320, so each Fahrenheit value is the Fahrenheit of
+  the stored tenth.
+- Thresholds (D1 and D19, stated once on the page, in THRESHOLDS): a day at or above 90 F has a high of at least 32.2 C
+  in tenths, which is a hundredth of 32.15 C or more: 32.15 C shows as 32.2 C and 90 F, and 32.14 C (32.1 C) does not
+  count. A freeze-thaw day has a high above 0 C and a low below 0 C; a day with a low below 32 F has a low below 0 C;
+  a day at or below 0 F has a low of -17.8 C or colder in tenths. The counts and the displayed Fahrenheit values agree
+  for every value (checked by the tests).
 - Periods (sums of months): seasons July to June (2021-22 to 2025-26, and the partial 2026-27), calendar years
   (2021 has July to December only; 2026 has January to the newest day) and water years (October to September; 2021 has
   July to September only; 2027 is the partial October 2026 onward). The "f" record is the five seasons together.
@@ -160,12 +163,13 @@ BLOCK_BYTES = 1 << 20                  # the Range reader's default block size (
 PRELIM_BLOCK_BYTES = 1 << 18           # the daily prelim read: 256 KB blocks read 5.8 MB for 18 days, 1 MB blocks 9.4 MB
 THRESHOLDS = {
     "hot_day": {"tenths_c": HOT_TENTHS, "f": 90,
-                "text": "a high of 90 F or more, where the high rounded to a tenth of a degree C is at least 32.2 C"},
+                "text": ("a high of 90 F or more, where the high rounded to the hundredth of a degree C and then to the "
+                         "tenth is at least 32.2 C (a high of 32.15 C or more)")},
     "freeze_thaw": {"text": "a high above 0 C and a low below 0 C (a high above 32 F and a low below 32 F)"},
     "below_32": {"tenths_c": 0, "f": 32, "text": "a low below 32 F (a low below 0 C)"},
     "at_or_below_0F": {"tenths_c": COLD_TENTHS, "f": 0, "text": "a low at or below 0 F (-17.8 C or colder, in tenths)"},
-    "rounding": ("each daily value is rounded to the hundredth the file states, then to a tenth of a degree C, half up; "
-                 "precipitation is rounded to the hundredth of a mm before it is summed"),
+    "rounding": ("each daily temperature is rounded to the hundredth of a degree C, then to the tenth, half up (32.15 C "
+                 "shows as 32.2 C); precipitation is rounded to the hundredth of a mm before it is summed"),
 }
 
 
@@ -1234,7 +1238,9 @@ def build_store(store: Path, cache: Path, *, log=print, basemap_path=None) -> di
         "state": state,
         "problem": problem,
         "source": {"name": "NOAA nClimGrid-Daily v1.0.0", "bucket": BUCKET,
-                   "files": "access/grids/YYYY/ncdd-YYYYMM-grd-scaled.nc; prelim only where no scaled file exists",
+                   "files": (f"{BUCKET}/access/grids/2025/ncdd-202506-grd-scaled.nc is the June 2025 scaled file (one "
+                             f"scaled file per month); a prelim file, for example {BUCKET}/access/grids/2026/"
+                             "ncdd-202610-grd-prelim.nc, is read only where no scaled file exists"),
                    "variables": ["prcp (mm)", "tmax (C)", "tmin (C)"],
                    "licence_attribute": f"license = {LICENSE_ATTRIBUTE}", "attribution": ATTRIBUTION},
         "grid": {"rows": ROWS, "cols": COLS, "per_degree": 24, "lat0": 24.5625, "lon0": -124.6875,
@@ -1331,7 +1337,8 @@ def _record_row(rec: list) -> dict:
     kind = WORDS_CLIMATE["kind"]
 
     def count(n):
-        return {"value": int(n) if has else None, "unit": "days", "kind": kind, "number": int(n) if has else None}
+        ok = has and n is not None                  # a count that is null reads as no value, never as None
+        return {"value": int(n) if ok else None, "unit": "days", "kind": kind, "number": int(n) if ok else None}
 
     def temp(f, d):
         ok = has and f is not None
@@ -1339,10 +1346,11 @@ def _record_row(rec: list) -> dict:
                 "kind": kind, "number": f if ok else None}
 
     rain_ok = has and rmax_hin is not None
+    total_ok = has and rain_hin is not None
     return {
         "days": days, "missing": missing, "valid": valid,
-        "rain": {"value": _hin_text(rain_hin) if has else None, "unit": "in", "kind": kind,
-                 "number": rain_hin if has else None},
+        "rain": {"value": _hin_text(rain_hin) if total_ok else None, "unit": "in", "kind": kind,
+                 "number": rain_hin if total_ok else None},
         "rain_max": {"value": _hin_text(rmax_hin) if rain_ok else None, "unit": "in",
                      "date": _date_text(rmax_date) if rain_ok else None, "kind": kind,
                      "number": rmax_hin if rain_ok else None},
@@ -1392,8 +1400,13 @@ WORDS_CLIMATE = {
                           "lowest temperature or rain total is shown. This is not an all-clear."),
     "days_missing": ("Data unavailable: {n} {days} missing in the {period}; the totals and counts are for the days "
                      "present. This is not an all-clear."),
-    "partial_season": ("Grid estimate: {season} so far, {n_days} days with data, July 1, 2026 to {through}. The newest "
+    "partial_season": ("Grid estimate: {season} so far, {n_days} days to {through}: highest {high} F on {high_date}; "
+                       "lowest {low} F on {low_date}; {hot} {hot_days} at 90 F or more; {frost} {frost_days} with a low "
+                       "below 32 F; {total} in of rain, largest one day {rain_max} in on {rain_max_date}. The newest "
                        "days are preliminary and provisional until NOAA publishes the scaled month."),
+    "partial_none": "No day of the {season} season is in the data yet. This is not an all-clear.",
+    "partial_partial": ("Data unavailable for {label}: part of this season has no valid grid value, so its highest, "
+                        "lowest and rain totals are not shown. This is not an all-clear."),
     "partial_months": "Data unavailable for some months: {months}. This is not an all-clear.",
     "reason_no_file_one": "no NOAA file was found for it when this update ran",
     "reason_no_file_many": "no NOAA file was found for them when this update ran",
@@ -1428,7 +1441,8 @@ WORDS_CLIMATE = {
         "Rain is rounded to the hundredth of a millimetre a day and summed, then shown in inches.",
         "Temperatures are rounded to the hundredth of a degree C and then to the tenth, which is the unit of the GHCN "
         "station files, and shown in degrees F.",
-        "A day with a high of 90 F or more has a high of at least 32.2 C; a freeze-thaw day has a high above 32 F and a low below 32 F.",
+        "A day with a high of 90 F or more has a high of at least 32.15 C, rounded to the hundredth of a degree (32.15 C "
+        "shows as 32.2 C and 90 F; 32.14 C does not count); a freeze-thaw day has a high above 32 F and a low below 32 F.",
         "A day with a low below 32 F has a low below 0 C; a day at or below 0 F has a low of -17.8 C or colder.",
         "A day with a missing value is counted as a missing day and is not counted as zero. Days after the newest grid day are not counted.",
         "Scaled months are the monthly values of the NOAA record; the newest days come from preliminary files, which NOAA says are provisional.",
@@ -1581,6 +1595,47 @@ def _unavailable(reason: str) -> dict:
             "how_made": list(w["how_made"])}
 
 
+def _leads(five_row: dict) -> tuple[str, str]:
+    """The temperature and rain leads of the five seasons (F06). A lead is written only from values that exist: a value
+    that is None (no valid day carries it) is never printed, and the unavailable sentence says so instead."""
+    w = WORDS_CLIMATE
+    t_high, t_low = five_row["tmax"], five_row["tmin"]
+    r_total, r_max = five_row["rain"], five_row["rain_max"]
+    temp_ok = all(part["value"] is not None and part["date"] is not None for part in (t_high, t_low))
+    rain_ok = r_total["value"] is not None and r_max["value"] is not None and r_max["date"] is not None
+    temp = (w["temperature_lead"].format(high=t_high["value"], high_date=t_high["date"], low=t_low["value"],
+                                         low_date=t_low["date"]) if temp_ok else w["five_unavailable_temperature"])
+    rain = (w["rain_lead"].format(total=r_total["value"], rain_max=r_max["value"], rain_max_date=r_max["date"])
+            if rain_ok else w["five_unavailable_rain"])
+    return temp, rain
+
+
+def _partial_text(row: dict, label: str, through) -> str:
+    """The one line below the table for the partial season (D20): "so far, n days to the newest day", with its own
+    counts. When the store holds no day of the season, the no-day sentence says so; when no day has a value, the
+    unavailable sentence does. Missing days are said in the words a season uses (D2). It is not a season list entry."""
+    w = WORDS_CLIMATE
+    if row["days"] == 0:
+        return w["partial_none"].format(season=label)
+    values = (row["tmax"]["value"], row["tmin"]["value"], row["rain"]["value"], row["rain_max"]["value"])
+    if row["valid"] <= 0:
+        text = w["season_unavailable"].format(label=label)
+    elif any(v is None for v in values):
+        text = w["partial_partial"].format(label=label)
+    else:
+        to = hail.fmt_date(date.fromisoformat(through)) if through else "the newest day"
+        text = w["partial_season"].format(
+            season=label, n_days=row["valid"], through=to,
+            high=row["tmax"]["value"], high_date=row["tmax"]["date"], low=row["tmin"]["value"],
+            low_date=row["tmin"]["date"], hot=row["hot90"]["value"],
+            hot_days=_plural(row["hot90"]["value"], "day", "days"), frost=row["below32"]["value"],
+            frost_days=_plural(row["below32"]["value"], "day", "days"), total=row["rain"]["value"],
+            rain_max=row["rain_max"]["value"], rain_max_date=row["rain_max"]["date"])
+    if row["missing"]:
+        text += " " + _missing_line(row, label + " season")
+    return text
+
+
 def describe_climate(index: dict | None, tile_doc: dict | None, row: int, col: int, now) -> dict:
     """The temperature and rain sections for the B1 cell (row, col), from the index and the climate tile that holds
     the grid cell which holds the cell's centre (climate_tile_for_cell). Returns plain dicts and the sentences;
@@ -1646,17 +1701,10 @@ def describe_climate(index: dict | None, tile_doc: dict | None, row: int, col: i
     partial_line = (block["partial_line"] if "partial_line" in block
                     else _partial_line(_problems_of(block)))
     five_row = five["row"]
-    if five_row["valid"] > 0:
-        temp_lead = w["temperature_lead"].format(high=five_row["tmax"]["value"], high_date=five_row["tmax"]["date"],
-                                                 low=five_row["tmin"]["value"], low_date=five_row["tmin"]["date"])
-        rain_lead = w["rain_lead"].format(total=five_row["rain"]["value"], rain_max=five_row["rain_max"]["value"],
-                                          rain_max_date=five_row["rain_max"]["date"])
-    else:
-        temp_lead = w["five_unavailable_temperature"]
-        rain_lead = w["five_unavailable_rain"]
+    temp_lead, rain_lead = _leads(five_row)
     temp_lines = []
     rain_lines = []
-    for s in seasons:
+    for s in seasons[:5]:           # D20: the partial season is not in the season lists; its line is below the table
         temp_lines.extend(s["temperature"])
         rain_lines.extend(s["rain"])
     for entry in calendar_out:
@@ -1668,11 +1716,7 @@ def describe_climate(index: dict | None, tile_doc: dict | None, row: int, col: i
         temp_lines.extend(t)
         rain_lines.extend(r)
     partial_row = seasons[-1]["row"]
-    partial_text = None
-    if partial_row["valid"] > 0:
-        partial_text = w["partial_season"].format(season=SEASONS[-1], n_days=partial_row["valid"],
-                                                  through=hail.fmt_date(date.fromisoformat(through))
-                                                  if through else "the newest day")
+    partial_text = _partial_text(partial_row, SEASONS[-1], through)
     return {
         "state": state,
         "problem": block.get("problem") if state == "partial" else None,
@@ -1817,12 +1861,19 @@ def verify_store(store, cache=None, *, independent: bool = False, session=None, 
     gates = _gate_cells(store, block, mask_set)
     airport = None
     if cache is not None:
-        dly = fetch_ghcn(Path(cache))
-        airport = ghcn_freeze_thaw(dly, 2025)
-        tr, tc, key = climate_tile(*climate_cell_for(*stations.GATE_POINTS["billings"]))
-        grid_rec = _read_tile(store, hail.tile_name(tr, tc))["cells"].get(str(key))
-        airport["grid_billings_calendar_2025_freeze_thaw_days"] = (
-            None if grid_rec is None else grid_rec["c"][CALENDAR_YEARS.index(2025)][11])
+        try:
+            dly = fetch_ghcn(Path(cache))
+        except SourceError as exc:
+            # job-F7: a file that does not come is a comparison that could not be made, recorded with its reason
+            airport = {"unavailable": True, "station": GHCN_BILLINGS, "year": 2025, "reason": exc.reason,
+                       "sentence": (f"The Billings airport comparison could not be checked in this run: "
+                                    f"{_plain_reason(exc.reason)}.")}
+        else:
+            airport = ghcn_freeze_thaw(dly, 2025)
+            tr, tc, key = climate_tile(*climate_cell_for(*stations.GATE_POINTS["billings"]))
+            grid_rec = _read_tile(store, hail.tile_name(tr, tc))["cells"].get(str(key))
+            airport["grid_billings_calendar_2025_freeze_thaw_days"] = (
+                None if grid_rec is None else grid_rec["c"][CALENDAR_YEARS.index(2025)][11])
     report = {
         "ok": True,
         "format": FORMAT,
@@ -1844,9 +1895,15 @@ def verify_store(store, cache=None, *, independent: bool = False, session=None, 
         "gates": gates,
     }
     if independent:
-        report["independent"] = independent_check(store, cache, session=session, log=log)
-        if not report["independent"]["ok"]:
-            raise ClimateError("the independent read does not match the store (see the report)")
+        try:
+            report["independent"] = independent_check(store, cache, session=session, log=log)
+        except SourceError as exc:
+            # job-F7: the source did not answer, so the independent read was not made; that is said, not raised
+            report["independent"] = {"ok": None, "unavailable": True, "reason": exc.reason,
+                                     "sentence": f"The independent read was not made in this run: {_plain_reason(exc.reason)}."}
+        else:
+            if not report["independent"]["ok"]:
+                raise ClimateError("the independent read does not match the store (see the report)")
     return report
 
 
@@ -1898,7 +1955,8 @@ def ghcn_freeze_thaw(dly_path: Path, year: int) -> dict:
     days = set(values["TMAX"]) & set(values["TMIN"])
     n = sum(1 for d in days if values["TMAX"][d] > 0 and values["TMIN"][d] < 0)
     return {"station": GHCN_BILLINGS, "year": year, "freeze_thaw_days": n, "days_with_both": len(days),
-            "units": "tenths of a degree C in the file; the count uses TMAX > 0 and TMIN < 0"}
+            "rule": ("a day counts when TMAX is above 0 C and TMIN is below 0 C on the same day, in tenths of a degree C "
+                     "from the file; a flagged or missing value is not used")}
 
 
 def fetch_ghcn(cache: Path) -> Path:

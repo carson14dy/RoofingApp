@@ -252,6 +252,18 @@ class OfflineBuildTests(unittest.TestCase):
         self.assertIn("hail/g/06214500.json", json.loads((self.store / "hail" / "manifest.json").read_text(
             encoding="utf-8"))["files"])
 
+    def test_the_index_sources_hold_examples_and_no_template_or_store_word(self):
+        Gs.build(self.store, self.cache, offline=True, procs=1)
+        block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["gauges"]
+        sources = block["sources"]
+        for key, text in sources.items():
+            self.assertNotIn("{", text, key)
+            self.assertNotIn("<", text, key)
+        self.assertEqual(sources["detail_example"], "https://api.water.noaa.gov/nwps/v1/gauges/BILM8")
+        self.assertEqual(sources["peaks_example"], Gs.PEAKS_URL.format(usgs="06214500"))
+        words = re.findall(r"[a-z-]+", sources["terms"].lower())
+        self.assertEqual([w for w in words if w.startswith(("claim", "damag", "risk", "insurance", "eligib"))], [])
+
     def test_a_missing_list_marks_the_block_unavailable(self):
         (self.cache / "nwps" / "gauges_list_wide.json").unlink()
         result = Gs.build(self.store, self.cache, offline=True, procs=1)

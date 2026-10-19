@@ -416,9 +416,9 @@ class JoinRuleTests(unittest.TestCase):
         sec = self._section(out["sections"], "warnings")
         self.assertEqual(len(sec["rows"]), 1)
         text = sec["rows"][0]["text"]
-        self.assertEqual(text, "Warning: Jun 14, 2025 6:26 pm MDT to 7:08 pm MDT: Severe thunderstorm warning, TFX, "
-                               "covered this cell or part of it; tags: hail 1.00 in, wind 60 mph, NWS damage threat "
-                               "tag: considerable")
+        self.assertEqual(text, "Warning: Jun 14, 2025 6:26 pm MDT to 7:08 pm MDT, issuance polygon in effect: Severe "
+                               "thunderstorm warning, TFX; tags: hail 1.00 in, wind 60 mph, NWS damage threat tag: "
+                               "considerable")
         self.assertIn("Tags are the forecast threat at issue time, not what fell.", sec["what"])
         self.assertIn("covered this cell or part of it", sec["what"])
         check_words(self, text)
@@ -432,8 +432,8 @@ class JoinRuleTests(unittest.TestCase):
         doc["warnings"][0][0]["tags"]["tornado"] = None
         out = self._describe(doc)
         text = self._section(out["sections"], "warnings")["rows"][0]["text"]
-        self.assertNotIn("tags", text)
-        self.assertTrue(text.endswith("covered this cell or part of it"), text)
+        self.assertTrue(text.endswith("; tags: none stated"), text)          # the browser's warnings_tags_none
+        self.assertNotIn("covered this cell", text)                          # the B5 row waits for part B (B5 key)
 
     def test_detections_group_by_spc_day(self):
         doc = _cell_doc(detections=[
@@ -2462,14 +2462,24 @@ class NcePointTypeTests(unittest.TestCase):
         for kind in ("flood", "flash flood", "tornado", "lightning", "debris flow", "heavy rain", "funnel cloud"):
             self.assertNotIn(kind, J.UNIT_CODES)
 
-    def test_a_flood_record_shows_its_type_word_and_its_cause_as_written_and_no_number(self):
+    def test_a_flood_record_shows_its_type_word_and_no_number(self):
         r = [0, 1300, 47.0, -110.0, "flood", "", "", "", "PUBLIC", "BENCHLAND", "", None, None,
              "Heavy Rain / Snow Melt"]
         text = J._record_text(utc(2025, 6, 15, 13), r, 1.0, 47.0, -110.0, 47.0, -110.0, J.WORDS_JOINS)
-        self.assertIn("Record: Jun 15, 2025 7:00 am MDT: flood, NCEI cause as written: Heavy Rain / Snow Melt, PUBLIC, "
-                      "0.0 mi", text)
+        self.assertIn("Record: Jun 15, 2025 7:00 am MDT: flood, PUBLIC, 0.0 mi", text)
         self.assertNotIn("no size given", text)
+        self.assertNotIn("cause", text)              # the B2 row the browser fills; the cause waits for part B
         check_words(self, text)
+
+    def test_the_b5_record_row_shows_the_cause_as_written(self):
+        w = J.WORDS_JOINS
+        cause = w["records_cause"].format(cause="Heavy Rain / Snow Melt")
+        self.assertEqual(w["records_row_here_typed_b5"].format(date="Jun 15, 2025", time="7:00 am MDT", type="flood",
+                                                               cause=cause, qualifier="", source="PUBLIC", miles="0.0"),
+                         "Record: Jun 15, 2025 7:00 am MDT: flood, NCEI cause as written: Heavy Rain / Snow Melt, PUBLIC, "
+                         "0.0 mi")
+        check_words(self, w["records_row_here_typed_b5"].format(date="d", time="t", type="flood", cause=cause,
+                                                                qualifier="", source="s", miles="0.0"))
 
 
 class GustFlagTests(unittest.TestCase):
@@ -2534,8 +2544,10 @@ class WordsB5Tests(unittest.TestCase):
                           J.WORDS_JOINS["section_heat"]), ("Flooding", "Ice and winter", "Heat"))
 
     def test_the_new_words_pass_the_forbidden_term_check(self):
-        samples = [J.WORDS_JOINS["warnings_row"].format(date="Jun 15, 2025", span="1:00 pm MDT to 2:00 pm MDT",
-                                                        product="Flood warning", office="TFX", tags=""),
+        samples = [J.WORDS_JOINS["warnings_row_b5"].format(date="Jun 15, 2025", span="1:00 pm MDT to 2:00 pm MDT",
+                                                           product="Flood warning", office="TFX", tags=""),
+                   J.WORDS_JOINS["warnings_row"].format(date="Jun 15, 2025", begin="1:00 pm MDT", end="2:00 pm MDT",
+                                                        kind="Flash flood", office="TFX", tags="none stated"),
                    J.WORDS_JOINS["warnings_span_none"].format(begin="1:00 pm MDT"),
                    J.WORDS_JOINS["county_row"].format(product="Flood watch", county_name="Judith Basin",
                                                       events="x"),
@@ -2547,8 +2559,23 @@ class WordsB5Tests(unittest.TestCase):
                 check_words(self, text)
 
     def test_the_warning_words_say_covered_this_cell_or_part_of_it(self):
-        self.assertIn("covered this cell or part of it", J.WORDS_JOINS["warnings_row"])
+        self.assertIn("covered this cell or part of it", J.WORDS_JOINS["warnings_row_b5"])
         self.assertIn("covered this cell or part of it", J.WORDS_JOINS["warnings_what"])
+
+    def test_the_browser_row_templates_keep_the_placeholders_the_browser_fills(self):
+        """WORDS_JOINS keeps the B2 template keys exactly as db84d76 writes them: the browser (map.js, unchanged until part
+        B) fills these placeholders and no others. The B5 rows sit beside them under their own keys."""
+        from string import Formatter
+        fields = {key: {field for _lit, field, _spec, _conv in Formatter().parse(J.WORDS_JOINS[key]) if field}
+                  for key in ("warnings_row", "records_row", "records_row_here", "records_row_typed",
+                              "records_row_here_typed")}
+        self.assertEqual(fields["warnings_row"], {"date", "begin", "end", "kind", "office", "tags"})
+        self.assertEqual(fields["records_row"], {"date", "time", "type", "magnitude", "qualifier", "source", "miles",
+                                                 "bearing"})
+        self.assertEqual(fields["records_row_here_typed"], {"date", "time", "type", "qualifier", "source", "miles"})
+        self.assertEqual(J.WORDS_JOINS["warnings_tags_none"], "none stated")
+        self.assertIn("{cause}", J.WORDS_JOINS["records_row_b5"])
+        self.assertNotIn("{cause}", J.WORDS_JOINS["records_row"])
 
 
 class CountyFileTests(unittest.TestCase):
@@ -2916,6 +2943,99 @@ class WordRulesTests(unittest.TestCase):
         self.assertEqual(W.forbidden_words("This is not an all-clear."), [])
         self.assertEqual(W.forbidden_words("Pass an all-clear."), ["all-clear"])
         self.assertEqual(W.forbidden_words("Warrant: a warrant."), ["warrant"])     # the words found, once each
+
+
+def _zone_csv(rows) -> bytes:
+    """An IEM watchwarn CSV of HW.W rows (the columns parse_ww_csv reads)."""
+    head = ("wfo,utc_issue,utc_expire,utc_prodissue,phenomena,gtype,significance,eventid,status,ugc,vtec_year,"
+            "hailtag,windtag,tornadotag,damagetag\n")
+    lines = [f"{r['wfo']},{r['issue']:%Y-%m-%d %H:%M},{r['expire']:%Y-%m-%d %H:%M},{r['prod']:%Y-%m-%d %H:%M},HW,C,W,"
+             f"{r['eid']},{r['status']},{r['ugc']},{r['yr']},,,," for r in rows]
+    return (head + "".join(line + "\n" for line in lines)).encode("utf-8")
+
+
+class ZoneRowsOnceTests(unittest.TestCase):
+    """D17: a zone row that two yearly requests share (the margins, B5) is read once, across every year and product, so no
+    copied row opens a phantom period (a cancellation read twice closed the period and opened a second one)."""
+
+    ROWS = [
+        {"wfo": "TFX", "issue": utc(2021, 12, 30, 12), "expire": utc(2022, 1, 1, 12), "prod": utc(2021, 12, 30, 12),
+         "eid": 7, "status": "NEW", "ugc": "MTZ012", "yr": 2021},
+        {"wfo": "TFX", "issue": utc(2022, 1, 1, 13), "expire": utc(2022, 1, 1, 13), "prod": utc(2022, 1, 1, 13),
+         "eid": 7, "status": "CAN", "ugc": "MTZ012", "yr": 2021},
+    ]
+
+    def _responder(self):
+        rows = self.ROWS
+
+        def responder(url, params):
+            if url == J.WW_URL and params.get("accept") == "csv" and params.get("phenomena[]") == "HW" \
+                    and params.get("significance[]") == "W":
+                lo = datetime(int(params["year1"]), int(params["month1"]), 1, tzinfo=timezone.utc)
+                hi = datetime(int(params["year2"]), int(params["month2"]), 28, tzinfo=timezone.utc)
+                return _zone_csv([r for r in rows if lo <= r["issue"] <= hi])
+            return canned(url, params)
+        return responder
+
+    def test_a_row_two_requests_share_is_kept_once_and_its_cancellation_closes_one_period(self):
+        index = _index()
+        index["window"] = ["2021-10-19", "2022-12-31"]                 # two request years, so the margins overlap
+        tmp = Path(tempfile.mkdtemp(prefix="joins-test-zone-once-"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        fetcher = FakeFetcher(tmp / "cache", None, self._responder())
+        ctx = J._collect(fetcher, index, date(2026, 10, 18))
+        mine = [r for r in ctx.zone_rows if r["ugc"] == "MTZ012" and r["phen"] == "HW"]
+        self.assertEqual(sorted(r["status"] for r in mine), ["CAN", "NEW"])
+        self.assertEqual(ctx.zone_row_copies, 2)
+        ctx.zone_map = [{"zone": "MTZ012", "name": "Test zone", "rings": []}]
+        start, end, _first, _last = J.window_utc(index)
+        events = J._zone_events(ctx, start, end)["MTZ012"]
+        self.assertEqual([(e["b"], e["e"], e.get("st")) for e in events],
+                         [("2021-12-30T12:00Z", "2022-01-01T13:00Z", "cancelled")])
+
+    def test_the_key_names_the_row_not_its_request(self):
+        # a row as parse_ww_csv keeps it, with its product's phen and sig added
+        row = {"wfo": "TFX", "phen": "HW", "sig": "W", "eventid": "7", "status": "NEW", "ugc": "MTZ012",
+               "vtec_year": "2021", "issue": utc(2021, 12, 30, 12), "expire": utc(2022, 1, 1, 12),
+               "gtype": "C", "prod": utc(2021, 12, 30, 12)}
+        self.assertEqual(J.zone_row_key(row), J.zone_row_key(dict(row)))
+        self.assertNotEqual(J.zone_row_key(row), J.zone_row_key(dict(row, status="CON")))
+        self.assertNotEqual(J.zone_row_key(row), J.zone_row_key(dict(row, phen="WS")))
+
+
+class TigerTermsTests(unittest.TestCase):
+    """rules-F23: the TIGER use constraint is quoted verbatim, the research record's own words for the state file and the
+    county file's words as its ISO metadata gives them (joins' module docstring)."""
+
+    RECORD = ("The TIGER/Line Shapefile products are not copyrighted however TIGER/Line and Census TIGER are registered "
+              "trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however "
+              "acknowledgement must be given to the U.S. Census Bureau as the source.")
+    COUNTY = ("The TIGER/Line shapefile products are not copyrighted; however, TIGER/Line and Census TIGER are registered "
+              "trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however "
+              "acknowledgement must be given to the U.S. Census Bureau as the source.")
+
+    def test_the_use_constraints_are_quoted_verbatim(self):
+        doc = " ".join(J.__doc__.split())
+        self.assertIn(self.RECORD, doc)
+        self.assertIn(self.COUNTY, doc)
+        self.assertNotIn("registered trademarks ...", doc)          # the abbreviated variant is not what the record says
+
+
+class HwAWindowNoteTests(unittest.TestCase):
+    """rules-F26: the compare step records the HW.A window note: HW.A has no NEW rows, so its begin is the earliest CON."""
+
+    def test_the_compare_step_records_the_hw_a_note(self):
+        block = {"compare": {"lsr_hail": 0, "lsr_g": 0, "ncei_hail_by_year": {}, "swdi_montana_polygon": 0,
+                             "sv_events": 0, "to_events": 0}, "built_at": "2026-10-19T00:00:00Z",
+                 "station_days_by_year": {}, "vtec_counts_research": {"HW.A": {"window": 277, "zone": 277}}}
+        fake = {"window": ["2021-10-17", "2026-10-16"], J.INDEX_KEY: block}
+        with mock.patch.object(J, "load_joins_index", return_value=fake):
+            rows = J.compare("unused")["rows"]
+        hw = next(r for r in rows if r["name"] == "B5 window events HW.A")
+        self.assertEqual(hw["research"], 277)
+        self.assertIn("HW.A has no NEW rows in the archive", hw["note"])
+        self.assertIn("earliest CON issue", hw["note"])
+        self.assertIn(J.B5_WINDOW_NOTES["HW.A"], hw["note"])
 
 
 if __name__ == "__main__":
