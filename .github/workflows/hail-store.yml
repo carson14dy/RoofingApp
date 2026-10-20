@@ -6,6 +6,10 @@ name: Hail history store
 # the Website build reads with --hail-history. 12:43 UTC is after the 12:00 UTC file is published (about 12:08
 # UTC). A source that fails in this job marks its part unavailable in the store (the sheet says so); a failed
 # verify or build leaves the last published release in place, because the upload is the last step.
+# The address step (B3, D9, D20, D36) runs after the joins: it reads the MSL Structures and Addresses Framework
+# (website/addresses.py: positions from the shapefile geometry, only the DBF fields of its allow-list, never an
+# owner or parcel field) into hail/a/ of the same store. No address step stops the job: a failed build or check
+# leaves the store with the address list marked unavailable (never missing) and the rest of the store as it was.
 
 on:
   schedule:
@@ -22,6 +26,9 @@ on:
       - "website/hail.py"
       - "website/hail_fixture_data.py"
       - "website/joins.py"
+      - "website/addresses.py"
+      - "website/streets.py"
+      - "website/buildings.py"
 
 permissions:
   contents: write
@@ -33,7 +40,10 @@ concurrency:
 jobs:
   store:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # 90 minutes is kept. The six build and verify caps total 45 minutes and the three unavailable caps 15.
+    # The uncapped steps (the hail build, the joins with their 35-minute deadline, the pack) are not timed in that
+    # measurement, so the total is not yet shown to fit.
+    timeout-minutes: 90
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -77,6 +87,206 @@ jobs:
 
       - name: Verify the joins (the Benchland gate rows are printed)
         run: python -m website.joins verify store
+
+      - name: Read the framework file's size and date from the MSL server (non-fatal; D20)
+        id: src
+        run: |
+          url="https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip"
+          head="$(curl -fsSI --retry 3 "$url" | tr -d '\r' || true)"
+          size="$(printf '%s\n' "$head" | awk 'tolower($1) ~ /^content-length:$/ {print $2}' | tail -n 1)"
+          modified="$(printf '%s\n' "$head" | sed -n 's/^[Ll]ast-[Mm]odified: //p' | tail -n 1)"
+          test -n "$size" && test -n "$modified" || echo "::warning::The framework file's size or date was not read; the address step still runs and marks its part unavailable if the download fails (D20)."
+          echo "size=$size" >> "$GITHUB_OUTPUT"
+          echo "modified=$(printf '%s' "$modified" | sha1sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "Framework file: $size bytes, last modified $modified"
+
+      - name: Restore the framework file (keyed by name, size, last-modified and month, so it is re-checked monthly)
+        id: structures
+        uses: actions/cache@v4
+        with:
+          path: structures
+          key: structures-StructuresFramework_shp.zip-${{ steps.src.outputs.size }}-${{ steps.src.outputs.modified }}-${{ steps.src.outputs.month }}
+
+      - name: Install the projection library (a compatible release; the address step only; non-fatal, D20)
+        run: pip install pyproj~=3.8 || echo "::warning::The projection library did not install; the address step marks its part unavailable (D20)."
+
+      - name: Read the roads file's size and date from the MSL server (non-fatal; D20, D25)
+        id: roads_src
+        run: |
+          url="https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip"
+          head="$(curl -fsSI --retry 3 "$url" | tr -d '\r' || true)"
+          size="$(printf '%s\n' "$head" | awk 'tolower($1) ~ /^content-length:$/ {print $2}' | tail -n 1)"
+          modified="$(printf '%s\n' "$head" | sed -n 's/^[Ll]ast-[Mm]odified: //p' | tail -n 1)"
+          test -n "$size" && test -n "$modified" || echo "::warning::The roads file's size or date was not read; the roads step still runs and marks its part unavailable if the download fails (D20)."
+          echo "size=$size" >> "$GITHUB_OUTPUT"
+          echo "modified=$(printf '%s' "$modified" | sha1sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "Roads file: $size bytes, last modified $modified"
+
+      - name: Restore the roads file (keyed by name, size, Last-Modified and month, so it is re-checked monthly)
+        id: roads
+        uses: actions/cache@v4
+        with:
+          path: roads
+          key: roads-TransportationFramework_shp.zip-${{ steps.roads_src.outputs.size }}-${{ steps.roads_src.outputs.modified }}-${{ steps.roads_src.outputs.month }}
+          restore-keys: |
+            roads-TransportationFramework_shp.zip-
+
+      - name: Build the streets from the Library's Transportation Framework (non-fatal; D20, D25; the layer stays flag-off on main)
+        id: roads_build
+        # Cap 15 min: a cold-cache run took 386 s with the 118 MB download (timed 2026-10-19, four cores, shared).
+        timeout-minutes: 15
+        continue-on-error: true
+        run: |
+          if python -m website.streets build --store store --cache roads --roads-source msl; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "built=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The roads build did not pass; the roads step after the check marks the roads unavailable (D20)."
+          fi
+
+      - name: Verify the roads (the record count recomputed from the file when it is there; non-fatal; D20)
+        id: roads_verify
+        # Cap 5 min: 18 s measured on a cold cache (timed 2026-10-19); the floor for a step that reads the zip.
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          zip_arg=""
+          if [ -f roads/TransportationFramework_shp.zip ]; then zip_arg="--zip roads/TransportationFramework_shp.zip"; fi
+          if python -m website.streets verify --store store --roads-source msl $zip_arg; then
+            echo "verified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The roads check did not pass; the roads step after it marks them unavailable (D20)."
+          fi
+
+      - name: Mark the roads unavailable when their build or their check did not pass (non-fatal; D20)
+        # The store keeps an unavailable roads block, never a missing one: after a crashed build or a failed check the
+        # block carries the reason and the r/ shards are removed (website/streets.py, the unavailable command).
+        if: steps.roads_build.outputs.built != 'true' || steps.roads_verify.outputs.verified != 'true'
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          python -m website.streets unavailable --store store --reason "the roads build or its check did not pass in this run"
+          echo "::warning::The roads are marked unavailable in this store, and the sheet says so (D20). The rest of the store is kept."
+
+      - name: Build the address shards and the search index from the framework file (non-fatal; D20, D36)
+        id: addr_build
+        # Cap 5 min: a cold-cache run took 86 s with the 66 MB download (timed 2026-10-19).
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          if python -m website.addresses build --store store --cache structures; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "built=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The address build did not pass; the unavailable step after the check marks the list unavailable (D20, D36)."
+          fi
+
+      - name: Verify the addresses (counts recomputed from the file when it is there, the no-owner check, the projection pairs, the manifest hashes; non-fatal, D36)
+        id: addr_verify
+        # Cap 5 min: 40 s measured on a cold cache (timed 2026-10-19).
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          zip_arg=""
+          if [ -f structures/StructuresFramework_shp.zip ]; then zip_arg="--zip structures/StructuresFramework_shp.zip"; fi
+          if python -m website.addresses verify --store store $zip_arg; then
+            echo "verified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The address check did not pass; the unavailable step after it marks the list unavailable (D20, D36)."
+          fi
+
+      - name: Mark the address list unavailable when its build or its check did not pass (non-fatal; D20, D36)
+        # The store keeps an unavailable block, never a missing one: after a crashed build or a failed check, the block
+        # carries the reason and the address files are removed (website/addresses.py, the unavailable command).
+        if: steps.addr_build.outputs.built != 'true' || steps.addr_verify.outputs.verified != 'true'
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          python -m website.addresses unavailable --store store --reason "the address build or its check did not pass in this run"
+          echo "::warning::The address list is marked unavailable in this store, and the sheet says so (D20, D36). The rest of the store is kept."
+
+      - name: Read the outline file's size and date from the USA Structures host (non-fatal; D20, D36)
+        id: bld_src
+        run: |
+          url="https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip"
+          head="$(curl -fsSI --retry 3 "$url" | tr -d '\r' || true)"
+          size="$(printf '%s\n' "$head" | awk 'tolower($1) ~ /^content-length:$/ {print $2}' | tail -n 1)"
+          modified="$(printf '%s\n' "$head" | sed -n 's/^[Ll]ast-[Mm]odified: //p' | tail -n 1)"
+          test -n "$size" && test -n "$modified" || echo "::warning::The outline file's size or date was not read; the buildings step still runs and marks its part unavailable if the download fails (D20)."
+          echo "size=$size" >> "$GITHUB_OUTPUT"
+          echo "modified=$(printf '%s' "$modified" | sha1sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "Outline file: $size bytes, last modified $modified"
+
+      - name: Restore the outline file (keyed by name, size, last-modified and month, so it is re-checked monthly)
+        uses: actions/cache@v4
+        with:
+          path: structures-fema/MT_Structures_20260913.zip*
+          key: structures-fema-MT_Structures_20260913.zip-${{ steps.bld_src.outputs.size }}-${{ steps.bld_src.outputs.modified }}-${{ steps.bld_src.outputs.month }}
+
+      - name: Restore the county boundary file (keyed by name and month; non-fatal; D34)
+        uses: actions/cache@v4
+        with:
+          path: counties
+          key: counties-cb_2025_us_county_500k-${{ steps.month.outputs.key }}
+
+      - name: Install the geometry reader (pyogrio, a compatible release; the buildings step only; non-fatal, D20)
+        run: pip install "pyogrio~=0.13" || echo "::warning::The geometry reader did not install; the buildings step marks its part unavailable (D20)."
+
+      - name: Build the building outlines, their dots and the address join (non-fatal; D20, D26 to D28, D32, D34)
+        id: bld_build
+        # Cap 10 min: a cold-cache run took 136 s with the 173 MB and 12 MB downloads (timed 2026-10-19). A download
+        # that needs its retries (website/buildings.py, three tries) can run past this cap; the step is then non-fatal.
+        timeout-minutes: 10
+        continue-on-error: true
+        run: |
+          if python -m website.buildings build --store store --cache structures-fema --counties-cache counties; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "built=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The outline build did not pass; the unavailable step after the check marks the outlines unavailable (D20)."
+          fi
+
+      - name: Verify the outlines (the bytes and counts recomputed from the file when it is there; non-fatal; D20)
+        id: bld_verify
+        # Cap 5 min: 119 s measured on a cold cache (timed 2026-10-19).
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          zip_arg=""
+          county_arg=""
+          if [ -f structures-fema/MT_Structures_20260913.zip ]; then zip_arg="--gdb-zip structures-fema/MT_Structures_20260913.zip"; fi
+          if [ -f counties/cb_2025_us_county_500k.zip ]; then county_arg="--counties-zip counties/cb_2025_us_county_500k.zip"; fi
+          if python -m website.buildings verify --store store $zip_arg $county_arg; then
+            echo "verified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The outline check did not pass; the unavailable step after it marks the outlines unavailable (D20)."
+          fi
+
+      - name: Check the address figures after the outline rewrite (the index block equals the files on disk; non-fatal; D49)
+        # The outline step moves the matched rows onto the building dots and rewrites the address block's figures
+        # (website/buildings.py); this store-only check fails when any figure is stale, so no stale figure is ever cited.
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          if ! python -m website.addresses verify --store store; then
+            echo "::warning::The address figures do not match the files after the outline rewrite (D49); rebuild the store."
+          fi
+
+      - name: Mark the outlines unavailable when their build or their check did not pass (non-fatal; D20)
+        # The store keeps an unavailable buildings block, never a missing one: after a crashed build or a failed check the
+        # block carries the reason and the b/ and counts files are removed (website/buildings.py, the unavailable command).
+        if: steps.bld_build.outputs.built != 'true' || steps.bld_verify.outputs.verified != 'true'
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          python -m website.buildings unavailable --store store --reason "the outline build or its check did not pass in this run"
+          echo "::warning::The building outlines are marked unavailable in this store, and the sheet says so (D20). The rest of the store is kept."
 
       - name: Pack the store
         run: tar czf hail-store.tar.gz -C store hail

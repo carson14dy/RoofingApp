@@ -814,8 +814,12 @@ class FixtureTests(unittest.TestCase):
     def test_the_committed_sample_joins_verify_and_are_small(self):
         result = J.verify(FIXTURE)
         self.assertTrue(result["ok"], result["checks"])
-        total = sum(p.stat().st_size for p in FIXTURE.rglob("*") if p.is_file())
-        self.assertLess(total, 50 * 1024, total)
+        # D10 and D18: the store and joins files, and the address files under hail/a/, each have a 50 KB budget
+        store_bytes = sum(p.stat().st_size for p in FIXTURE.rglob("*") if p.is_file()
+                          and not p.relative_to(FIXTURE).as_posix().startswith("hail/a/"))
+        address_bytes = sum(p.stat().st_size for p in (FIXTURE / "hail" / "a").rglob("*") if p.is_file())
+        self.assertLess(store_bytes, 50 * 1024, store_bytes)
+        self.assertLess(address_bytes, 50 * 1024, address_bytes)
 
     @staticmethod
     def _edit_zone_file(root: Path, rel: str, events: list) -> None:

@@ -6,6 +6,8 @@
     python -m website.build --out _site --storm-layers  # also NOAA radar echo tops (text) and the GOES satellite picture
     python -m website.build --out _site --hail-history  # also the five-year hail history (website/hail.py)
     python -m website.build --out _site --sample --hail-history --hail-store store.tar.gz  # a local store, not the download
+    python -m website.build --out _site --hail-history --hail-addresses  # also the address dots, streets and building outlines (B3)
+    python -m website.build --out _site --hail-history --hail-addresses --address-text off  # the same, with no address text (D35)
 
 GitHub Actions runs the live build every 10 minutes and publishes the folder with GitHub Pages
 (.github/workflows/website.yml). Every page says when its data was fetched; nothing on a page is
@@ -26,8 +28,11 @@ from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from . import addresses as ad
+from . import buildings as bd
 from . import hail as hs
 from . import sources as src
+from . import streets as st
 
 HERE = Path(__file__).resolve().parent
 UTC = timezone.utc
@@ -239,14 +244,16 @@ class Collector:
         self.note("satellite", sat.LABEL, bool(st.get("ok")), st.get("detail") or "not built")
         return layer
 
-    def hail(self, out_dir: Path, sample: bool, store: str | None, towns: list) -> dict:
+    def hail(self, out_dir: Path, sample: bool, store: str | None, towns: list, addresses: bool = False,
+             address_text: str = "on") -> dict:
         """The five-year hail history (website/hail.py; --hail-history only). The store's hail/ files are copied
         into the site, and each town gets its words (town["hail"]). One status line, like the others: a store
         that doesn't load is a failed source, the pages say so in words, and the build goes on (--require-live
         then fails). Returns the map.json block. The copy is made only after the store's manifest checks out."""
         sampled = sample and store is None          # the SAMPLE fixture only; a --hail-store file is real data
+        index, problem = None, None
         try:
-            index = hail_store(out_dir, store, sample, self.f)
+            index = hail_store(out_dir, store, sample, self.f, addresses)
             tiles = hail_tiles(index, out_dir)
             cells = [hs.cell_events(out_dir, t["lat"], t["lon"]) for t in towns]
             words = [hs.describe(index, events, self.now, sample=sampled) for events in cells]
@@ -273,7 +280,32 @@ class Collector:
         block["stale_days"] = HAIL_STALE_DAYS
         block["at_zoom"] = HAIL_AT_ZOOM
         block["tenths_per_mm"] = HAIL_TENTHS_PER_MM
+        if addresses:                           # --hail-addresses only (B3): the address, street and outline layers
+            block.update(self.layers(out_dir, index, problem, address_text))
         return block
+
+    def layers(self, out_dir: Path, index: dict | None, problem: str | None, address_text: str) -> dict:
+        """The address, street and building layers (B3; --hail-addresses only). Each module's map block goes into
+        map.json (hail.addresses, hail.roads, hail.buildings) with the attribution lines of the layers that loaded
+        (D29). One status line per layer: a layer that did not load is a failed source, the pages say so in words,
+        and the build goes on (D36). In the off mode (D35) the address text is removed from the copied files; if that
+        cannot be done, the address files are removed, so the site never shows text the mode leaves out."""
+        found = b3_index(index, problem)
+        try:
+            if address_text == "off" and index is not None:
+                strip_address_text(out_dir)
+            blocks = b3_map_blocks(found, address_text)
+        except (OSError, ValueError, KeyError, TypeError, hs.HailStoreError) as e:
+            shutil.rmtree(out_dir / "hail" / "a", ignore_errors=True)
+            shutil.rmtree(out_dir / "hail" / "b", ignore_errors=True)
+            found = b3_index(None, f"the address files couldn't be prepared ({type(e).__name__})")
+            blocks = b3_map_blocks(found, address_text)
+        self.b3_index = found
+        self.road_kind = found[st.INDEX_KEY].get("kind") if b3_loaded(found, st.INDEX_KEY) else None
+        for key, label, mod in B3_LISTS:
+            ok = b3_loaded(found, mod)
+            self.note(key, label, ok, b3_detail(found, mod) if ok else b3_reason(found, mod))
+        return blocks
 
 
 # ---------------------------------------------------------------- map page data
@@ -456,6 +488,7 @@ HAIL_LABEL = "Hail history (radar estimates)"        # the status line's name
 JOIN_CONTRACTS = ("lsr", "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons", "nws_zone_products",
                   "asos_daily_gusts")
 HAIL_CONTRACTS = ("hail_history",) + JOIN_CONTRACTS  # on the About page only in a --hail-history build
+ADDRESS_TEXT_MODES = ("on", "off")                 # --address-text (D35): off writes no address text at all
 # Words map.js fills that hail.WORDS doesn't hold: a shard that didn't load (the unavailable line's problem)
 HAIL_SITE_WORDS = {"fetch_failed": "the history for this spot didn't load in this update"}
 HAIL_STALE_DAYS = hs.STALE_DAYS    # map.js: an as_of older than this (in days) shows the stale line
@@ -478,7 +511,7 @@ def _unbuilt_static(storm_layers: bool):
     return ignore
 
 
-def hail_store(out: Path, store: str | None, sample: bool, fetch) -> dict:
+def hail_store(out: Path, store: str | None, sample: bool, fetch, addresses: bool = False) -> dict:
     """Copy the hail store's hail/ files into out/hail/ and return the store's index. Where the store comes from:
     --hail-store (a folder or a hail-store.tar.gz), else the SAMPLE fixture with --sample, else the release
     download (hail.fetch_store through the build's fetcher). Raises hail.HailStoreError with the problem in plain
@@ -489,20 +522,53 @@ def hail_store(out: Path, store: str | None, sample: bool, fetch) -> dict:
             raise hs.HailStoreError(f"the history store file {path.name} is missing")
         with tempfile.TemporaryDirectory(prefix="hail-store-") as tmp:
             root = hs.load_store(path, tmp)          # a folder is checked in place; an archive is unpacked into tmp
-            return _copy_hail(root, out, hs.load_index(root))
+            return _copy_hail(root, out, hs.load_index(root), addresses)
     if sample:
         index = hs.load_index(hs.FIXTURE_DIR)
         hs.check_manifest(hs.FIXTURE_DIR)
-        return _copy_hail(hs.FIXTURE_DIR, out, index)
+        return _copy_hail(hs.FIXTURE_DIR, out, index, addresses)
     with tempfile.TemporaryDirectory(prefix="hail-store-") as tmp:
         index = hs.fetch_store(fetch.binary, tmp, hs.STORE_URL)
-        return _copy_hail(Path(tmp), out, index)
+        return _copy_hail(Path(tmp), out, index, addresses)
 
 
-def _copy_hail(root: Path, out: Path, index: dict) -> dict:
-    """Copy root/hail/ into the site as out/hail/ (the shards the map and the town pages read)."""
-    shutil.copytree(root / "hail", out / "hail")
-    return index
+B3_FOLDERS = ("a", "b", "r")     # the store's address, outline and road folders (B3): copied only with --hail-addresses
+B3_FILES = ("counts.json",)      # the store's outline counts (buildings.py, B3): copied only with --hail-addresses
+B3_INDEX = (ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY)   # the index blocks the B3 modules write (addresses, roads, buildings)
+
+
+def _copy_hail(root: Path, out: Path, index: dict, addresses: bool = False) -> dict:
+    """Copy root/hail/ into the site as out/hail/ (the shards the map and the town pages read). The B3 folders and files
+    are copied only with --hail-addresses (default off, D35): a build without the flag carries no address, outline or
+    road file, its manifest lists none, and its index.json has none of the B3 blocks (the index is written again without
+    them and its manifest entry is updated, so the copy still checks out). The copy is checked against the manifest."""
+    if addresses:
+        shutil.copytree(root / "hail", out / "hail")
+        return index
+    b3_names = B3_FOLDERS + B3_FILES
+
+    def skip_b3(folder: str, names: list) -> list:
+        return [name for name in names if Path(folder) == root / "hail" and name in b3_names]
+
+    shutil.copytree(root / "hail", out / "hail", ignore=skip_b3)
+    manifest_path = out / "hail" / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    def b3_entry(rel: str) -> bool:
+        parts = rel.split("/")
+        return len(parts) > 1 and parts[1] in b3_names
+
+    manifest["files"] = {rel: entry for rel, entry in manifest.get("files", {}).items() if not b3_entry(rel)}
+    kept = index
+    if any(key in index for key in B3_INDEX):
+        kept = {key: value for key, value in index.items() if key not in B3_INDEX}
+        index_bytes = hs._pretty(kept)
+        (out / "hail" / "index.json").write_bytes(index_bytes)
+        manifest["files"]["hail/index.json"] = {"bytes": len(index_bytes),
+                                                "sha256": hashlib.sha256(index_bytes).hexdigest()}
+    manifest_path.write_bytes(hs._pretty(manifest))
+    hs.check_manifest(out)                           # raises HailStoreError if the copy does not match
+    return kept
 
 
 # The joined records (B2): website/joins.py writes them and holds their rules and words. These are the site's own
@@ -627,9 +693,233 @@ def hail_tiles(index: dict, out: Path) -> list[str]:
     return tiles
 
 
+# ---------------------------------------------------------------- the address, street and outline layers (B3)
+
+# --hail-addresses only. Each module (website/addresses.py, streets.py, buildings.py) writes its own map block and its
+# words; this site build puts the blocks into data/map.json (hail.addresses, hail.roads, hail.buildings), renders the
+# form, the legend lines and the About paragraphs, and removes the address text in the off mode (D35). The store keys
+# are the modules' INDEX_KEY values.
+B3_LISTS = (("address_list", "Montana address list", ad.INDEX_KEY),
+            ("street_list", "Montana streets", st.INDEX_KEY),
+            ("outline_list", "Building outlines", bd.INDEX_KEY))
+ADDRESS_SEARCH_KEYS = ("cities", "letter", "words", "search_words", "dir", "file_key")   # map.json: the search index's names
+# hail/index.json's addresses block: the letter-index counts and names, which describe the search files (D35, R-07)
+ADDRESS_LETTER_KEYS = ("cities", "letter_files", "largest_letter", "two_character_files", "over_limit_letter_files")
+# The drawing settings the browser's B3 layers read (map.json hail.draw). The label cap (300 names per view with the halo),
+# the fit margin (the name's piece is at least its width plus 10 px) and the angle step (5 degrees) are measured in
+# research-b35/rendering.json. The cache cap and the label grid cell are the site's own settings, not measured: 32 MiB of
+# shard files held in the page, and 48 px label cells for the collision test.
+B3_DRAW = {"cache_bytes": 32 * 1024 * 1024, "labels": {"per_view": 300, "fit_px": 10, "grid_px": 48, "angle_deg": 5}}
+ADDRESS_FORM_WORDS = ("title", "search_hint", "search_none", "search_capped", "privacy")  # map.json: the form's words
+FIND_BUTTON = "Find"                    # the form's button (the form's words are the module's; this one is the page's)
+B3_ROWS = ("msl_addresses", "usa_structures", "census_counties")  # the About rows of a --hail-addresses build
+ROAD_ROWS = {"msl": "msl_roads", "tiger": "census_roads"}        # the road row of the source the store built (D25)
+
+
+def b3_index(index: dict | None, problem: str | None) -> dict:
+    """The store's index as the three layer modules read it. Without a store, or with one that failed, each layer gets
+    an unavailable block that carries the reason, so every page says why and never draws an empty layer."""
+    if index is not None:
+        return index
+    reason = problem or "the store is not available"
+    return {key: {"state": "unavailable", "reason": reason} for key in (ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY)}
+
+
+def b3_loaded(index: dict, key: str) -> bool:
+    block = index.get(key)
+    return isinstance(block, dict) and block.get("state") == "loaded"
+
+
+def b3_reason(index: dict, key: str) -> str:
+    block = index.get(key)
+    return (block.get("reason") if isinstance(block, dict) else None) or "the list is not in the store"
+
+
+def b3_detail(found: dict, key: str) -> str:
+    """The short count a loaded layer's status line says (the build log and state.json)."""
+    block = found.get(key) or {}
+    if key == ad.INDEX_KEY:
+        return f"{block.get('rows', 0):,} address rows in {block.get('shards', 0)} shard files"
+    if key == st.INDEX_KEY:
+        return f"{block.get('lines_in_shards', 0):,} road lines in {block.get('shards', 0)} shard files"
+    return f"{block.get('footprints', (block.get('counts') or {}).get('footprints', 0)):,} outlines in {block.get('shards', 0)} shard files"
+
+
+def b3_about_addresses(found: dict | None) -> dict:
+    """describe_addresses (addresses.py) for the About page."""
+    described = dict(ad.describe_addresses(found))
+    return described
+
+
+def b3_map_blocks(found: dict, address_text: str) -> dict:
+    """map.json's three layer blocks (each module's map_data), the attribution lines of the layers that loaded (the
+    Leaflet attribution control, D29) and the address-text mode (D35). In the off mode the search index's names and the
+    form's words are left out of the block."""
+    addresses = ad.map_data_addresses(found)
+    if address_text == "off":
+        addresses = {k: v for k, v in addresses.items() if k not in ADDRESS_SEARCH_KEYS}
+        if isinstance(addresses.get("templates"), dict):
+            addresses["templates"] = {k: v for k, v in addresses["templates"].items() if k not in ADDRESS_FORM_WORDS}
+    addresses["text"] = address_text
+    roads = st.map_data_streets(found)
+    outlines = bd.map_data_buildings(found)
+    outlines["text"] = address_text
+    lines = []
+    if b3_loaded(found, ad.INDEX_KEY):
+        lines.append(addresses_attribution(found))
+    if b3_loaded(found, st.INDEX_KEY):
+        lines.append(st.describe_streets(found)["attribution"])
+    if b3_loaded(found, bd.INDEX_KEY):
+        lines.append(bd.describe_buildings(found)["source"])
+    return {"addresses": addresses, "roads": roads, "buildings": outlines, "attribution": lines, "draw": B3_DRAW}
+
+
+# The map's attribution line for the address list (D17, D44): the Library, the file's date when the index read one (D24),
+# and the use sentence quoted from the file's metadata (addresses.USE_CONVENIENCE_TEXT, quoted exactly in D8).
+ADDRESS_ATTRIBUTION = ("Addresses: Montana State Library, Structures and Addresses Framework, file dated {pubdate}. Terms in the "
+                       "file's metadata: \"{convenience}\"")
+ADDRESS_ATTRIBUTION_UNDATED = ("Addresses: Montana State Library, Structures and Addresses Framework (file date not available in "
+                               "this update). Terms in the file's metadata: \"{convenience}\"")
+
+
+def addresses_attribution(found: dict) -> str:
+    source = (found.get(ad.INDEX_KEY) or {}).get("source") or {}
+    if "pubdate" in source:
+        return ADDRESS_ATTRIBUTION.format(pubdate=source["pubdate"], convenience=ad.USE_CONVENIENCE_TEXT)
+    return ADDRESS_ATTRIBUTION_UNDATED.format(convenience=ad.USE_CONVENIENCE_TEXT)
+
+
+def b3_words(found: dict, address_text: str) -> dict:
+    """The words the Map and About pages print for the three layers: the form, the legend lines and the About
+    paragraphs, each from its module (D13, D17, D21, D29, D34, D35). No word names an owner or what a building is used
+    for, and a layer that did not load gets its module's unavailable sentence in place of its words."""
+    roads = st.describe_streets(found)
+    addr_ok, road_ok, outline_ok = b3_loaded(found, ad.INDEX_KEY), b3_loaded(found, st.INDEX_KEY), \
+        b3_loaded(found, bd.INDEX_KEY)
+    sample = found.get(ad.INDEX_KEY)
+    return {
+        "text": address_text,
+        "sample": isinstance(sample, dict) and sample.get("sample") is True,
+        "sample_words": ad.WORDS_ADDRESSES["sample"],
+        "unavailable": {"addresses": ad.WORDS_ADDRESSES["unavailable"], "roads": roads["unavailable"],
+                        "outlines": bd.WORDS_BUILDINGS["unavailable"]},
+        "attribution": [],                              # build() fills this from the map block (D29)
+        "outlines_loaded": outline_ok,                  # the outlines' own legend line says what the dots are (D43, R-05)
+        "form": {"title": ad.WORDS_ADDRESSES["title"], "hint": ad.WORDS_ADDRESSES["search_hint"],
+                 "privacy": ad.WORDS_ADDRESSES["privacy"], "button": FIND_BUTTON},
+        "legend": {
+            "shapes": bd.WORDS_BUILDINGS["legend"] if outline_ok else bd.WORDS_BUILDINGS["unavailable"],
+            "dots": ad.WORDS_ADDRESSES["legend"] if addr_ok else ad.WORDS_ADDRESSES["unavailable"],
+            "streets": roads.get("legend") if road_ok else roads["unavailable"],
+        },
+        "about": {"addresses": b3_about_addresses(found), "roads": roads,
+                  "outlines": bd.describe_buildings(found), "addresses_ok": addr_ok, "roads_ok": road_ok,
+                  "outlines_ok": outline_ok, "counties": bd.COUNTY_ACK if counties_loaded(found) else ""},
+    }
+
+
+def counties_loaded(found: dict) -> bool:
+    """Whether the counts by county were made (the county file was read): the About line names its Census file only then."""
+    if not b3_loaded(found, bd.INDEX_KEY):
+        return False
+    counties = found[bd.INDEX_KEY].get("counties")
+    return isinstance(counties, dict) and counties.get("state") == "loaded"
+
+
+def strip_address_text(out: Path) -> None:
+    """--address-text off (D35): the copied site files carry no address text. The search index (hail/a/idx/) is removed.
+    Each unmatched address row keeps its position and class and loses its line, city and zip. Each building outline
+    loses its address lines ("l" and "z") and the shard's common city and zip ("c"); positions, rings, classes and
+    counts stay. hail/manifest.json is rewritten to list the files as they now are, and the site's copy is checked."""
+    root = out / "hail"
+    shutil.rmtree(root / "a" / "idx", ignore_errors=True)
+    rewritten = {}
+    for path in sorted((root / "a").glob("*.json")):          # the unmatched address shards, hail/a/<name>.json
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        doc["a"] = [[row[0], row[1], "", "", "", row[5]] for row in doc.get("a", [])]
+        rewritten[path] = doc
+    for path in sorted((root / "b").glob("*.json")):          # the building shards, hail/b/<name>.json
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        doc["c"] = None
+        for entry in doc.get("a", []):
+            entry.pop("l", None)
+            entry.pop("z", None)
+        rewritten[path] = doc
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    files = {rel: entry for rel, entry in manifest.get("files", {}).items() if not rel.startswith("hail/a/idx/")}
+    shard_sizes = {}
+    for path, doc in rewritten.items():
+        data = json.dumps(doc, separators=(",", ":")).encode("utf-8")
+        path.write_bytes(data)
+        files[path.relative_to(out).as_posix()] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        if path.parent == root / "a":
+            shard_sizes[path.stem] = len(data)
+    index_path = root / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    block = index.get(ad.INDEX_KEY)
+    if isinstance(block, dict):                       # R-07: the letter files are gone, so their counts leave the block
+        for key in ADDRESS_LETTER_KEYS:
+            block.pop(key, None)
+        total = sum(shard_sizes.values())             # the shard files are the rewritten ones: their sizes are now these
+        block["bytes"] = {"shards": total, "a": total}
+        if shard_sizes and isinstance(block.get("largest_shard"), dict):
+            name = max(shard_sizes, key=lambda n: (shard_sizes[n], n))
+            block["largest_shard"] = {**block["largest_shard"], "name": name, "bytes": shard_sizes[name]}
+        index_bytes = hs._pretty(index)
+        index_path.write_bytes(index_bytes)
+        files[index_path.relative_to(out).as_posix()] = {"bytes": len(index_bytes),
+                                                         "sha256": hashlib.sha256(index_bytes).hexdigest()}
+    manifest["files"] = files
+    (root / "manifest.json").write_bytes(hs._pretty(manifest))
+    hs.check_manifest(out)                                       # raises HailStoreError if the copy does not match
+
+
+# The totals the B3 files are measured against (D38, D42): 60 MB each for the address dot shards and the letter files, 250 MB
+# for the outline shards. The road shards have no total of their own (their size per file is the rule, D26).
+B3_BUDGETS = {"outline_shards": 250 * 10 ** 6, "address_shards": 60 * 10 ** 6, "search_files": 60 * 10 ** 6}
+
+
+def b3_sizes(out: Path) -> dict:
+    """What the B3 budgets are measured against (D38), for the build's record: the outline shards (hail/b), the unmatched
+    address shards (hail/a, not the search files), the search files (hail/a/idx) and the road shards (hail/r), each with
+    its file count, its total bytes and its largest file."""
+    groups = {"outline_shards": out / "hail" / "b", "address_shards": out / "hail" / "a",
+              "search_files": out / "hail" / "a" / "idx", "road_shards": out / "hail" / "r"}
+    result = {}
+    for key, folder in groups.items():
+        files = [p for p in folder.rglob("*.json") if p.is_file()] if folder.is_dir() else []
+        if key == "address_shards":
+            files = [p for p in files if "idx" not in p.relative_to(folder).parts]
+        sizes = [p.stat().st_size for p in files]
+        largest = max(files, key=lambda p: p.stat().st_size) if files else None
+        budget = B3_BUDGETS.get(key)
+        result[key] = {"files": len(files), "bytes": sum(sizes), "largest": largest.name if largest else None,
+                       "largest_bytes": max(sizes) if sizes else 0, "budget_bytes": budget,
+                       "within_budget": budget is None or sum(sizes) <= budget}
+    return result
+
+
+def contract_shown(key: str, storm_layers: bool, hail_history: bool, hail_addresses: bool, road_row: str | None) -> bool:
+    """Whether a feed's About row is on the page: the storm and hail rows with their flags, the address and outline rows
+    with --hail-addresses, and the road row only for the source the store built."""
+    if key in STORM_CONTRACTS:
+        return storm_layers
+    if key in HAIL_CONTRACTS:
+        return hail_history
+    if key in B3_ROWS:
+        return hail_addresses and hail_history
+    if key in ROAD_ROWS.values():
+        return hail_addresses and hail_history and key == road_row
+    return True
+
+
 def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | None = None,
           sample: bool = False, storm_layers: bool = False, hail_history: bool = False,
-          hail_store_path: str | None = None) -> dict:
+          hail_store_path: str | None = None, hail_addresses: bool = False, address_text: str = "on") -> dict:
+    if hail_addresses and not hail_history:
+        raise ValueError("--hail-addresses needs --hail-history")
+    if address_text not in ADDRESS_TEXT_MODES:
+        raise ValueError("--address-text is on or off")
     if out.exists():
         shutil.rmtree(out)
     (out / "town").mkdir(parents=True)
@@ -654,16 +944,22 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
         storms = c.storm(towns, sample)
         for t in towns:
             t["storm"] = storms[t["slug"]]
-    hail_block = c.hail(out, sample, hail_store_path, towns) if hail_history else None
+    hail_block = c.hail(out, sample, hail_store_path, towns, addresses=hail_addresses,
+                        address_text=address_text) if hail_history else None
+    b3 = b3_words(c.b3_index, address_text) if hail_addresses else None
+    if b3 is not None:
+        b3["attribution"] = hail_block["attribution"]
+    road_row = ROAD_ROWS.get(c.road_kind) if hail_addresses else None
 
     base = {"built": now, "built_ms": int(now.timestamp() * 1000),
             "asset_v": asset_versions(out / "static", VERSIONED + ((STORM_JS,) if storm_layers else ())),
             "status": c.status, "sample": sample, "storm_layers": storm_layers, "satellite_text": satellite_text,
             "hail_history": hail_history, "hail_words": hs.WORDS if hail_history else None,
+            "hail_addresses": hail_addresses, "address_text": address_text, "b3": b3,
             "limits": src.LIMITS, "imagery": IMAGERY, "offices": OFFICES,
             "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
             "contracts": {k: v for k, v in src.CONTRACTS.items()
-                          if (storm_layers or k not in STORM_CONTRACTS) and (hail_history or k not in HAIL_CONTRACTS)},
+                          if contract_shown(k, storm_layers, hail_history, hail_addresses, road_row)},
             "fresh_min": src.FRESH_MINUTES, "qc_words": src.QC_WORDS,
             "qc_rejected": src.QC_REJECTED}
     e = env()
@@ -700,7 +996,8 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
     if hail_history:                         # --hail-history only: each town's hail line, for the build log
         content["hail"] = {t["name"]: t["hail"]["lead"] or t["hail"]["unavailable"] or t["hail"]["outside"]
                            for t in towns}
-    return {"status": c.status, "alerts": len(alerts["items"]),
+    return {**({"b3_sizes": b3_sizes(out)} if hail_addresses else {}),
+            "status": c.status, "alerts": len(alerts["items"]),
             "alerts_null_geometry": sum(1 for a in alerts["items"] if not a["geometry"]),
             "towns_with_forecast": sum(1 for t in towns if t["hours"]),
             "towns_with_gusts": sum(1 for t in towns if t["summary"]["gusts_known"]),
@@ -775,15 +1072,25 @@ def main(argv=None) -> int:
     ap.add_argument("--hail-store", metavar="PATH",
                     help="with --hail-history: a folder or hail-store.tar.gz holding hail/, used instead of the "
                          "download (local checks and the daily job's file)")
+    ap.add_argument("--hail-addresses", action="store_true",
+                    help="with --hail-history: also the address dots, the street lines and the building outlines "
+                         "(B3, the store's hail/a, hail/r and hail/b); off by default")
+    ap.add_argument("--address-text", choices=ADDRESS_TEXT_MODES, default="on",
+                    help="with --hail-addresses: off builds the dots with no address text and no search (D35)")
     ap.add_argument("--now", help="build time (ISO, UTC); default: now")
     a = ap.parse_args(argv)
     if a.hail_store and not a.hail_history:
         ap.error("--hail-store needs --hail-history")
+    if a.hail_addresses and not a.hail_history:
+        ap.error("--hail-addresses needs --hail-history")
+    if a.address_text != "on" and not a.hail_addresses:
+        ap.error("--address-text off needs --hail-addresses")
     now = src.parse_iso(a.now) if a.now else datetime.now(UTC).replace(microsecond=0)
     out = Path(a.out)
     result = build(out, None if a.sample else src.Fetcher(), now,
                    None if a.sample else load_previous(a.previous), sample=a.sample,
-                   storm_layers=a.storm_layers, hail_history=a.hail_history, hail_store_path=a.hail_store)
+                   storm_layers=a.storm_layers, hail_history=a.hail_history, hail_store_path=a.hail_store,
+                   hail_addresses=a.hail_addresses, address_text=a.address_text)
     print(json.dumps(result, indent=1, default=str))
     failed = [k for k, v in result["status"].items() if not v["ok"]]
     if a.require_live and failed:

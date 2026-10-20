@@ -96,6 +96,25 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
       {% endif %}
     </div>
 
+{% if hail_addresses and address_text == 'on' %}
+    <section class="glass find" id="find" aria-labelledby="find-title">
+      <h2 class="find-title" id="find-title">{{ b3.form.title }}</h2>
+      {% if b3.about.addresses_ok %}
+      <form class="find-form" id="address-form" role="search" autocomplete="off">
+        <label class="visually-hidden" for="address-input">{{ b3.form.hint }}</label>
+        <input type="search" class="find-input" id="address-input" name="q" placeholder="{{ b3.form.hint }}" autocomplete="off" autocapitalize="words" spellcheck="false" aria-describedby="address-privacy">
+        <button type="submit" class="find-go" id="address-go">{{ b3.form.button }}</button>
+      </form>
+      <p class="find-privacy" id="address-privacy">{{ b3.form.privacy }}</p>
+      {% if b3.sample %}<p class="sample-tag" data-addr="sample">{{ b3.sample_words }}</p>
+      {% endif %}
+      <ol class="find-results" id="address-results" hidden></ol>
+      <p class="find-status" id="address-status" role="status" hidden></p>
+      {% else %}
+      <p class="find-status" id="address-status" role="status">{{ b3.unavailable.addresses }}</p>
+      {% endif %}
+    </section>
+{% endif %}
     <div class="corners">
       <div class="corner-left">
         <a class="glass round close" href="{{ root }}index.html" aria-label="Close map">
@@ -148,7 +167,18 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
             <label class="toggle"><span class="toggle-text">Warnings<small>NWS outlines</small></span><input type="checkbox" role="switch" id="tg-warnings" checked></label>
             <label class="toggle"><span class="toggle-text">Storm reports<small>SPC, last 3 days</small></span><input type="checkbox" role="switch" id="tg-reports"></label>
           </div>
-        </section>
+{% if hail_addresses %}          <div class="b3-keys" id="b3-keys">
+            <p class="legend-tap b3-head">Addresses, streets and building outlines</p>
+            <p class="legend-tap" data-layer="shapes">{{ b3.legend.shapes }}</p>
+            {% if not b3.outlines_loaded %}<p class="legend-tap" data-layer="dots">{{ b3.legend.dots }}</p>
+            {% endif %}<p class="legend-tap" data-layer="streets">{{ b3.legend.streets }}</p>
+          </div>
+{% endif %}        </section>
+{% if hail_addresses and address_text == 'on' %}
+        <button type="button" class="glass round icon-btn find-open" id="btn-find" aria-label="{{ b3.form.title }}" title="{{ b3.form.title }}" aria-expanded="false" aria-controls="find">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2 20 20"/></svg>
+        </button>
+{% endif %}
         <button type="button" class="glass round icon-btn" id="btn-list" aria-label="List of alerts and towns" aria-haspopup="dialog">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle class="fill" cx="4.6" cy="6.5" r="1.3"/><circle class="fill" cx="4.6" cy="12" r="1.3"/><circle class="fill" cx="4.6" cy="17.5" r="1.3"/></svg>
         </button>
@@ -220,6 +250,14 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
       <h3>Hail history</h3>
       <p>Each town's page has its five-year hail history (NOAA radar estimates) as a table. A spot elsewhere on the map opens its history when you tap or click it, and that needs this interactive map.</p>
 {% endif %}
+{% if hail_addresses %}
+      <h3>Addresses, streets and building outlines</h3>
+      <p>{{ b3.legend.shapes }}</p>
+      {% if not b3.outlines_loaded %}<p>{{ b3.legend.dots }}</p>{% endif %}
+      <p>{{ b3.legend.streets }}</p>
+      {% for line in b3.attribution %}<p>{{ line }}</p>
+      {% endfor %}
+{% endif %}
 {% if storm_layers %}
       <h3>Satellite picture</h3>
       <p>{{ satellite_text }}</p>
@@ -281,6 +319,15 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
     <section class="hail-sec" aria-labelledby="hail-list-h">
       <h3 id="hail-list-h">Hail history</h3>
       <p>Each town's page has its five-year hail history (NOAA radar estimates) as a table. A spot elsewhere on the map opens its history when you tap or click it, and that needs this interactive map.</p>
+    </section>
+  </template>
+{% endif %}
+{% if hail_addresses %}
+  <template id="address-sec">
+    <section class="addr-sec" data-addr="section" hidden>
+      <ul class="addr-lines" data-addr="lines"></ul>
+      <p class="muted" data-addr="note" hidden></p>
+      <p class="muted" data-addr="units" hidden></p>
     </section>
   </template>
 {% endif %}

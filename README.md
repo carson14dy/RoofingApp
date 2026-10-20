@@ -55,6 +55,7 @@ Website** and re-enable it. Every page says how old it is, so a stalled site is 
 | Town (17) | Alerts at that town, what the three nearest weather stations measured (with each reading's age), the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
 | Storm reports | Hail and wind reports in and near Montana for the last three reporting days, on a map and in tables | SPC |
 | Hail history (build flag `--hail-history`, off on `main`) | On the Map, tap or click a spot for its five-year history of NOAA radar-estimated hail: each day at 0.25 in or more, in inches and millimetres, with its SPC day. The same spot also lists its NWS local storm reports, NCEI Storm Events records, radar hail detections, the warnings whose polygon covered it, the zone products for its forecast zone, the red flag warnings for its fire weather zone and the gusts at the nearest stations, each under its own kind label. Each town page has the same tables. An estimate is not a measurement or an inspection | NOAA MRMS radar estimate (MESH); NWS reports, warnings and zone products (IEM); NCEI Storm Events and SWDI; IEM station data |
+| Addresses, streets and building outlines (build flag `--hail-addresses`, off on `main`) | On the Map: the street lines, the arterials from zoom 13, the local streets from 15 and the names from 16; from zoom 15 each building outline has one dot, and each address that no outline holds has its own dot. Tap a dot for its address, if one is on file, and the weather history for its cell. A search box, "Find an address", finds a typed address; what is typed stays in the browser | Montana State Library (address points and roads); USA Structures, Oak Ridge National Laboratory and FEMA (building outlines); U.S. Census Bureau (roads, if the fallback is built). The terms are on the About page |
 | About | What each part is, the flag limits, what happens when something fails, the data sources in detail | — |
 
 Towns: every Montana city over 8,000 in the 2020 census, plus Sidney and four smaller towns
@@ -94,6 +95,8 @@ downloaded from the run.
 
 With `--hail-history` (off on `main`), a daily job, `.github/workflows/hail-store.yml`, runs at 12:43 UTC. It rebuilds the whole trailing five years of NOAA's radar archive each day (a full rebuild, not an append), joins the NWS reports, NCEI records, radar detections, warnings, zone products and station gusts to each tile (`website/joins.py`), verifies the result and publishes it as one release asset, which the 10-minute build downloads.
 
+The same job always builds the address dots, the street lines, the building outlines and the address search into that store (D36), from the State Library's address points and roads files and the FEMA and ORNL building outline file. The site shows them only with `--hail-addresses`, a second flag that is off on `main`. Each of these steps is non-fatal: a source that fails marks its layer unavailable, and the rest of the store is published. The job installs `pyproj~=3.8` and `pyogrio~=0.13` (compatible releases) for these steps only; the site build needs neither.
+
 ## Build it on your computer
 
 Needs Python 3.10+.
@@ -108,8 +111,17 @@ python -m website.build --out _site --hail-history --hail-store hail-store.tar.g
 pip install pyshp                                                # the joins need it; the site build does not
 python -m website.joins build --store store --cache joins-cache  # the joins: reports, records, detections, warnings, zone products, station gusts
 python -m website.joins verify store                             # check the joins
+python -m website.build --out _site --sample --hail-history --hail-addresses   # the address dots, streets and outlines with labelled sample data (D36; off by default)
+python -m website.build --out _site --sample --hail-history --hail-addresses --address-text off   # the same with no address text (D35)
+pip install pyproj~=3.8 pyogrio~=0.13                   # the job's address, street and outline steps only (compatible releases)
+python -m website.addresses build --store store --cache structures   # the address points (job)
+python -m website.addresses verify store                 # check them (add --zip FILE to recount from the file)
+python -m website.streets build --store store --cache roads --roads-source msl   # the streets (job); --roads-source tiger is the fallback
+python -m website.streets verify store --roads-source msl
+python -m website.buildings build --store store --cache structures-fema --counties-cache counties   # the outlines and their dots (job)
+python -m website.buildings verify store
 python -m http.server -d _site 8000            # open http://localhost:8000
-python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_website_workflow   # website tests, offline, seconds
+python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_addresses tests.test_streets tests.test_buildings tests.test_website_workflow   # website tests, offline, seconds
 python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
 python tools/smoke_pages.py _site              # no page wider than the screen, 288–1440 px
 ```
@@ -122,6 +134,9 @@ website/storm.py       NOAA radar echo tops for each town (behind --storm-layers
 website/satellite.py   NOAA GOES band 13 satellite picture → one map frame (behind --storm-layers)
 website/hail.py        the hail history (behind --hail-history): grid, size classes and words, store readers, daily build
 website/joins.py       the hail history joins (behind --hail-history): reports, official records, radar detections, warnings, zone products, station gusts
+website/addresses.py   the address points (behind --hail-addresses): the State Library file read as a stream, the dots, the search index, verify (job only; pyproj)
+website/streets.py     the street lines (behind --hail-addresses): the State Library roads (default) or the Census roads (fallback); job only
+website/buildings.py   the building outlines (behind --hail-addresses): one dot per outline, the address join, verify (job only; pyogrio)
 website/data/hail-fixture/ a labelled SAMPLE store for --sample builds and tests
 website/build.py       collect every source → map frames and data/map.json → pages (Jinja) → _site/
 website/sample.py      invented, labelled sample data for design checks and tests
@@ -130,11 +145,13 @@ website/templates/     base, Now, town, Storm reports, About
 website/static/        style.css (tokens and look), Leaflet 1.9.4, Atkinson Hyperlegible fonts, icons
 website/static/map/    map.js and map.css (the interactive map), basemap.json (outlines and names)
 tools/build_basemap.py rebuilds basemap.json from Natural Earth and Census data (run by hand)
-.github/workflows/hail-store.yml  the daily hail store job (12:43 UTC): build, join, verify, publish the release asset
+.github/workflows/hail-store.yml  the daily hail store job (12:43 UTC): build, join, the address, street and outline steps (non-fatal), verify, publish the release asset
 tests/                 test_site.py (pages, failures), test_gridded.py (radar and model frames),
                        test_basemap.py (the outline file), test_storm.py (radar echo tops),
                        test_satellite.py (the GOES satellite picture), test_hail.py (the hail history store),
                        test_joins.py (the hail history joins),
+                       test_addresses.py (the address dots and search), test_streets.py (the street lines),
+                       test_buildings.py (the outlines and the join),
                        test_website_workflow.py
                        (the workflow file)
 ```
