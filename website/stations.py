@@ -82,6 +82,12 @@ the index's stations block, so every tile centre's choice is the same rule the b
 
 Tile centres (B2's definition, the midpoint of the tile's bounds): lat 54.950 - 0.1 * row_tile, lon -129.950 + 0.1 * col_tile.
 
+Tile lists (D36; hail/tl/<tile>.json, format hail-stn-tiles-v1, one per B1 tile): for each element, the passing stations
+within 40 miles of the tile centre, nearest first, up to six (TILE_LIST_CAP), with each station's name, position, miles from
+the centre, unflagged days and share; and the candidates whose file did not load, named with their reason (D32). A passing
+station is the rule's own test (current for the element, at least 80 percent). The sheet picks the two nearest to the cell
+from the list; verify records the two picks at the Billings and Benchland points for every element (tile_picks).
+
 Command line (run from the repository root):
     python -m website.stations build --store DIR --cache DIR [--procs 4] [--offline] [--scope daily|monthly]
                                     [--refresh all|none] [--refresh-ids FILE] [--deadline-at EPOCH]
@@ -136,6 +142,9 @@ SEASON_YEARS = (2021, 2022, 2023, 2024, 2025, 2026)   # July to June: 2026 is th
 CALENDAR_YEARS = (2020, 2021, 2022, 2023, 2024, 2025, 2026)   # 2026 is partial
 MAX_ROWS_PER_FILE = 2_000_000
 TOWNS_FILE = Path(__file__).resolve().parent / "towns.json"
+TILE_LIST_PREFIX = "hail/tl/"        # D36: the tile lists, one file per B1 tile (the folder is rebuilt whole)
+TILE_LIST_FORMAT = "hail-stn-tiles-v1"
+TILE_LIST_CAP = 6                    # D36: up to six passing stations per element and tile
 # Gate points (B5 gates B5-3 and B5-9): Billings as the research measured it, and Benchland's point (47.08, 110.02). The
 # Benchland cell centre (47.075, 110.015) is checked too, in verify, and reported.
 GATE_POINTS = {"billings": (45.7836, -108.5047), "benchland": (47.08, -110.02)}
@@ -169,8 +178,12 @@ WORDS = {
                        "station within 40 miles has enough reports. This is not an all-clear."),
     "unread_partial": ("Data unavailable for some stations: {stations} did not load{reason}, so the two nearest stations "
                        "that pass are not known for {element}. This is not an all-clear."),
-    "unread_block": ("Data unavailable for some stations: {count} {file} could not be loaded in this update, so the rows "
-                     "that loaded are shown. This is not an all-clear."),
+    # D32 (B5 part B1): a partial block names each candidate whose file did not load (the D20 sentence); the other failed
+    # files are counted, never read as no station
+    "unread_named": ("Station readings could not be loaded in this update for {names}; that is not the same as no station "
+                     "reading. This is not an all-clear."),
+    "unread_block": ("Some station files could not be loaded in this update ({count} {file}); that is not the same as "
+                     "no station reading. This is not an all-clear."),
     "trace": "Traces are counted as zero in sums; a trace is a real but tiny amount of precipitation or snow.",
     "share": "{station}: {k} of {d} days ({share} percent) with a {element} value.",
     "lead": ("Station readings come from the two nearest stations within 40 miles that have enough reports; a reading "
@@ -603,6 +616,37 @@ def choose(candidates: list[tuple[float, str]], summaries: dict, element: str, a
             "unread": unread, "incomplete": bool(unread)}
 
 
+def _passing_list(candidates: list[tuple[float, str]], summaries: dict, element: str, as_of: date,
+                  failed=frozenset(), where: dict | None = None, cap: int = TILE_LIST_CAP) -> dict:
+    """D36: the candidates for one element and one tile centre, nearest first, walked as choose() walks them but up to
+    cap passing stations (choose() stops at two). A passing station is current for the element with at least COVER_MIN of
+    COVER_DAYS (the rule's own test). A candidate whose file did not load is listed in unread with its name, position and
+    reason, and the walk goes past it (D32: never silently). where maps an id to its (lat, lon, name) for the unread entries.
+    Returns {"passing": [...], "unread": [...], "capped": bool, "need": id or None}; need names a candidate with no summary
+    yet, and the caller pulls it and walks again."""
+    passing, unread = [], []
+    where = where or {}
+    for miles, sid in candidates:
+        entry = summaries.get(sid) or {}
+        if sid in failed or entry.get("unread"):
+            reason = failed[sid] if isinstance(failed, Mapping) and sid in failed else entry.get("reason")
+            lat, lon, name = where.get(sid, (None, None, None))
+            unread.append({"id": sid, "name": entry.get("name") or name or sid, "lat": lat, "lon": lon,
+                           "miles": round(miles, 1), "reason": reason})
+            continue
+        if sid not in summaries:
+            return {"passing": passing, "unread": unread, "capped": False, "need": sid}
+        sd = summaries[sid]
+        ok = sd["cover"].get(element, 0)
+        share = ok / COVER_DAYS
+        if bool(sd["current"].get(element)) and share >= COVER_MIN:
+            passing.append({"id": sid, "name": sd["name"], "lat": sd["lat"], "lon": sd["lon"],
+                            "miles": round(miles, 1), "ok": ok, "of": COVER_DAYS, "share": round(share, 4)})
+            if len(passing) >= cap:
+                return {"passing": passing, "unread": unread, "capped": True, "need": None}
+    return {"passing": passing, "unread": unread, "capped": False, "need": None}
+
+
 def unread_of(light: dict) -> dict[str, str | None]:
     """The candidates whose file did not load, as {id: reason}: the entries of a stations block with unread true."""
     return {sid: row.get("reason") for sid, row in light.items() if row.get("unread")}
@@ -987,19 +1031,37 @@ def collect(index: dict, cache: Path, *, offline: bool = False, refresh="none", 
             break
         pull(sorted(needs))
         rule_pulled |= set(summaries) | failed
+    # D36: the tile lists (up to TILE_LIST_CAP passing stations per element and tile). The walk pulls the files they need,
+    # and every file it reads joins the rule set (the daily refresh set) and the chosen set.
+    tile_keys = [loc["key"] for loc in locs if loc["key"].startswith("tile:")]
+    where = {sid: (meta["lat"], meta["lon"], meta["name"]) for sid, meta in alive.items()}
+    while True:
+        needs = set()
+        tile_lists = {key: {element: _passing_list(lists[key][element], summaries, element, as_of, fails_by_id, where)
+                            for element in CORE} for key in tile_keys}
+        for per in tile_lists.values():
+            for res in per.values():
+                if res["need"]:
+                    needs.add(res["need"])
+        if not needs:
+            break
+        pull(sorted(needs))
+        rule_pulled |= set(summaries) | failed
     rule_ids = sorted(rule_pulled)
     # the regression set (D7): pull and summarise every Montana station with a SNOW record in the five water years
     regression_pulled = [s for s in regression if s not in rule_pulled]
     pull(sorted(regression))
     rule_bytes = sum(sizes.get(s, 0) for s in rule_ids)
-    chosen_ids = sorted({c["id"] for loc in locs for element in CORE for c in results[loc["key"]][element]["chosen"]})
+    chosen_ids = sorted({c["id"] for loc in locs for element in CORE for c in results[loc["key"]][element]["chosen"]}
+                        | {p["id"] for per in tile_lists.values() for res in per.values() for p in res["passing"]})
     return {"as_of": as_of, "stations": stations, "alive": alive, "regression": regression,
             "regression_extra": regression_pulled, "summaries": summaries, "sizes": sizes, "failed": failed,
             "failures": failures, "malformed": malformed, "results": results, "rule_ids": rule_ids,
             "rule_bytes": rule_bytes, "locs": locs, "chosen_ids": chosen_ids, "requests": pacer.requests,
             "downloaded": pacer.downloaded,
             "refresh": scope or ("all" if every else ("ids" if ids else "none")), "refresh_ids": len(ids),
-            "unchanged": sorted(unchanged), "inventory": inventory, "fails_by_id": dict(fails_by_id)}
+            "unchanged": sorted(unchanged), "inventory": inventory, "fails_by_id": dict(fails_by_id),
+            "tile_lists": tile_lists}
 
 
 def sd_bytes(sd: dict) -> bytes:
@@ -1015,6 +1077,44 @@ def write_sd(store: Path, summaries: dict) -> dict[str, dict]:
         _write_atomic(store / rel, data)
         out[rel] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
     return out
+
+
+def tile_list_bytes(name: str, lists: dict) -> bytes:
+    """One tile list file (D36): the tile, its centre, the radius and the cap, and per element the passing and unread entries."""
+    tr, tc = int(name[1:5]), int(name[7:11])
+    lat, lon = tile_centre(tr, tc)
+    doc = {"f": TILE_LIST_FORMAT, "tile": name, "centre": [lat, lon], "miles": RADIUS_MILES, "cap": TILE_LIST_CAP,
+           "elements": {element: {"passing": res["passing"], "unread": res["unread"], "capped": res["capped"]}
+                        for element, res in sorted(lists.items())}}
+    return (json.dumps(doc, sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n").encode("utf-8")
+
+
+def write_tile_lists(store: Path, tile_lists: dict) -> dict[str, dict]:
+    """Writes hail/tl/<tile>.json for every tile of the walk (deterministic bytes) and returns {relative path: {bytes,
+    sha256}}. The folder is rebuilt whole, so a tile that left the index leaves no file."""
+    folder = Path(store) / TILE_LIST_PREFIX.rstrip("/")
+    if folder.is_dir():
+        for old in folder.glob("*.json"):
+            old.unlink()
+    out = {}
+    for key in sorted(tile_lists):
+        name = key[len("tile:"):]
+        data = tile_list_bytes(name, tile_lists[key])
+        rel = f"{TILE_LIST_PREFIX}{name}.json"
+        _write_atomic(Path(store) / rel, data)
+        out[rel] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+    return out
+
+
+def _tile_block(tl_files: dict, tile_lists: dict) -> dict:
+    """The index's tile_lists block: the format, the cap and radius, the file count and bytes, the lists that reached
+    the cap, the longest list, and the unread entries the walk met (D32)."""
+    results = [res for per in tile_lists.values() for res in per.values()]
+    return {"format": TILE_LIST_FORMAT, "cap": TILE_LIST_CAP, "miles": RADIUS_MILES, "files": len(tl_files),
+            "bytes": sum(v["bytes"] for v in tl_files.values()),
+            "capped": sum(1 for res in results if res["capped"]),
+            "longest": max((len(res["passing"]) for res in results), default=0),
+            "unread": sum(len(res["unread"]) for res in results)}
 
 
 def _light(sd: dict) -> dict:
@@ -1053,10 +1153,23 @@ def _unread_entries(got: dict) -> dict[str, dict]:
     return out
 
 
-def _partial_problem(failures: list[dict]) -> str:
-    """The D20-style sentence for a stations block that is partial (D28): the count of files that did not load."""
+def _partial_problem(unread: list[dict], failures: list[dict]) -> str:
+    """The D20 sentence for a stations block that is partial (D28, D32). Each candidate station whose file did not load
+    is named in it, with its id, in the order given (build gives id order); with no candidate failed, the failed files
+    are counted."""
+    if unread:
+        names = [f"{u['name']} ({u['id']})" for u in unread]
+        return WORDS["unread_named"].format(names=_named_list(names))
     n = len(failures)
     return WORDS["unread_block"].format(count=n, file="file" if n == 1 else "files")
+
+
+def _named_list(names: list[str]) -> str:
+    """The names: the first UNREAD_NAMES_SHOWN in full, the rest counted (a named failure, never a bare count)."""
+    more = len(names) - UNREAD_NAMES_SHOWN
+    if more <= 0:
+        return _join_names(names)
+    return f"{', '.join(names[:UNREAD_NAMES_SHOWN])} and {more} more {'station' if more == 1 else 'stations'}"
 
 
 def _failure_detail(failures: list[dict]) -> str:
@@ -1083,12 +1196,16 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
         # build are removed, because the manifest must not list files this build did not make
         for old in (store / SD_PREFIX).glob("*.json") if (store / SD_PREFIX).is_dir() else []:
             old.unlink()
+        for old in (store / TILE_LIST_PREFIX.rstrip("/")).glob("*.json") if (store / TILE_LIST_PREFIX.rstrip("/")).is_dir() else []:
+            old.unlink()
         block = {"state": "unavailable", "problem": WORDS["unavailable"], "detail": str(exc), "rule": _rule_constants()}
         _merge_index(store, block)
-        _merge_manifest(store, {}, prefixes=(SD_PREFIX,))
+        _merge_manifest(store, {}, prefixes=(SD_PREFIX, TILE_LIST_PREFIX))
         return {"state": "unavailable", "problem": WORDS["unavailable"], "detail": str(exc)}
     as_of = got["as_of"]
     sd_files = write_sd(store, got["summaries"])
+    tl_files = write_tile_lists(store, got["tile_lists"])
+    unread_entries = _unread_entries(got)
     towns = _towns_block(got["results"], got["summaries"], got["locs"], as_of)
     gates = {}
     for name, (lat, lon) in GATE_POINTS.items():
@@ -1096,7 +1213,8 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
     state = "partial" if got["failures"] else "loaded"
     block = {
         "state": state,
-        "problem": None if state == "loaded" else _partial_problem(got["failures"]),
+        "problem": None if state == "loaded" else _partial_problem(
+            [{"id": sid, "name": row["name"]} for sid, row in sorted(unread_entries.items())], got["failures"]),
         "detail": None if state == "loaded" else _failure_detail(got["failures"]),
         "as_of": as_of.isoformat(),
         "rule": _rule_constants(),
@@ -1131,11 +1249,12 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
         "failed_station_ids": sorted(got["failed"]),
         "towns": towns,
         "gates": gates,
+        "tile_lists": _tile_block(tl_files, got["tile_lists"]),
         "stations": {**{sid: _light(got["summaries"][sid]) for sid in sorted(got["summaries"])},
-                     **_unread_entries(got)},
+                     **unread_entries},
     }
     _merge_index(store, block)
-    _merge_manifest(store, sd_files, prefixes=(SD_PREFIX,))
+    _merge_manifest(store, {**sd_files, **tl_files}, prefixes=(SD_PREFIX, TILE_LIST_PREFIX))
     return {"state": state, "seconds": round(time.monotonic() - t0, 1), "files": len(sd_files), "bytes": block["counts"]["sd_bytes"],
             "rule_files": block["counts"]["rule_files"], "rule_bytes": block["counts"]["rule_bytes"],
             "failures": len(got["failures"]), "malformed": got["malformed"]}
@@ -1264,8 +1383,68 @@ def verify(store: Path) -> dict:
             f"{e} {counts[e]} of {5 * len(per.get(e, {}).get('chosen', []))}" for e in CORE))
     check("towns: five seasons counted per element at the two stations", len(towns_lines) == 17,
           f"{len(towns_lines)} towns")
+    picks = _verify_tile_lists(store, index, block, manifest, check)
     ok = all(c["pass"] for c in checks)
-    return {"ok": ok, "checks": checks, "towns_seasons_95": towns_lines, "gate_rules": rules}
+    return {"ok": ok, "checks": checks, "towns_seasons_95": towns_lines, "gate_rules": rules,
+            "tile_picks": picks}
+
+
+def _verify_tile_lists(store: Path, index: dict, block: dict, manifest: dict, check) -> dict:
+    """D36, verify. One tile list per index tile, in its format and under the cap, nearest first, with every passing entry
+    current at COVER_MIN (checked against the stations block); the manifest entries. Then, for the Billings and Benchland
+    points, the two nearest passing stations for every element, from the tile list of the tile that holds the point
+    (tile_picks). The gate picks of GATE_STATIONS must hold, and no failed candidate may be nearer than the second pick:
+    a failed candidate that is nearer leaves the picks not known (D32)."""
+    from . import hail
+    folder = store / TILE_LIST_PREFIX.rstrip("/")
+    tiles = [str(t) for t in index.get("tiles", [])]
+    files = sorted(folder.glob("*.json")) if folder.is_dir() else []
+    docs = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in files}
+    check("tile lists: one file per index tile", sorted(docs) == sorted(tiles),
+          f"{len(docs)} files for {len(tiles)} tiles")
+    bad = 0
+    for path in files:
+        data = path.read_bytes()
+        entry = manifest["files"].get(path.relative_to(store).as_posix())
+        if entry is None or entry["bytes"] != len(data) or entry["sha256"] != hashlib.sha256(data).hexdigest():
+            bad += 1
+    check("manifest lists each tile list with its bytes and SHA-256", bad == 0, f"{bad} mismatches")
+    problems = 0
+    stations_rows = block.get("stations", {})
+    for name, doc in docs.items():
+        if doc.get("f") != TILE_LIST_FORMAT or doc.get("tile") != name or doc.get("cap") != TILE_LIST_CAP:
+            problems += 1
+        for element, res in doc.get("elements", {}).items():
+            passing = res.get("passing", [])
+            if len(passing) > TILE_LIST_CAP or [p["miles"] for p in passing] != sorted(p["miles"] for p in passing):
+                problems += 1
+            for p in passing:
+                row = stations_rows.get(p["id"], {})
+                if row.get("unread") or not (row.get("current") or {}).get(element) or p["share"] < COVER_MIN:
+                    problems += 1
+    check("tile lists: format, the cap of six, nearest first, every passing entry current at 80 percent",
+          problems == 0, f"{problems} problems")
+    picks: dict = {}
+    for place, (lat, lon) in GATE_POINTS.items():
+        row, col = hail.cell_for(lat, lon)
+        doc = docs.get(hail.tile_name(row // hail.TILE, col // hail.TILE))
+        picks[place] = {}
+        for element in CORE:
+            res = ((doc or {}).get("elements") or {}).get(element) or {"passing": [], "unread": []}
+            ranked = sorted(res["passing"], key=lambda p: (haversine_miles(lat, lon, p["lat"], p["lon"]), p["id"]))
+            two = ranked[:2]
+            cut = haversine_miles(lat, lon, two[1]["lat"], two[1]["lon"]) if len(two) == 2 else float("inf")
+            failed_nearer = [u["id"] for u in res["unread"]
+                             if u.get("lat") is None or haversine_miles(lat, lon, u["lat"], u["lon"]) < cut]
+            picks[place][element] = {"picks": [p["id"] for p in two],
+                                     "miles": [round(haversine_miles(lat, lon, p["lat"], p["lon"]), 1) for p in two],
+                                     "failed_nearer": failed_nearer}
+            want = GATE_STATIONS.get((place, element))
+            if want is not None:
+                got = picks[place][element]["picks"]
+                check(f"tile picks at the {place} point, {element} (D36, gate B5-3)",
+                      sorted(got) == sorted(want) and not failed_nearer, ", ".join(got) or "none")
+    return picks
 
 
 GATE_STATIONS = {

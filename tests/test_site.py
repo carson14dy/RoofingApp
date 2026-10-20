@@ -1421,6 +1421,12 @@ class MapLabels(unittest.TestCase):
         self.assertGreaterEqual(js.count("townMinZoom(t)"), 5)     # the definition's use, and the four places
 
 
+def tile_names_of(block: dict) -> list[str]:
+    """The tile names a map.json hail block's split map lists (D40: no block lists every tile name), sorted."""
+    return sorted(f"r{int(row):04d}_c{c:04d}" for row, runs in block["tile_split"].items()
+                  for first, last in runs for c in range(first, last + 1))
+
+
 class HailHistory(unittest.TestCase):
     """The five-year hail history (--hail-history; website/hail.py) behind a flag. Off by default: no hail key, files
     or section, and no hail words on the pages. On with --sample: the labelled SAMPLE store on the Map's sheet data,
@@ -1430,7 +1436,7 @@ class HailHistory(unittest.TestCase):
     for the tile list and state lists the browser reads."""
 
     HAIL_NOW = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
-    HAIL_PAGE_WORDS = ("Five-year weather history at", "<h2>Hail history</h2>", 'id="hail-sheet"', 'id="hail-list"',
+    HAIL_PAGE_WORDS = ("Five years of weather at", "<h2>Hail history</h2>", 'id="hail-sheet"', 'id="hail-list"',
                        "legend-tap", "data-hail", "Tap or click the map for the five-year hail history")
     # the words that must not appear unless a sentence says "not the same as no hail" or "'no hail'" (the negation)
     FORBIDDEN = re.compile(r"\bdamag\w*|\bdry\b|\bclear\b|\binsurance\b|\beligib\w*|\bconfirm\w*|\bno hail\b", re.I)
@@ -1478,7 +1484,7 @@ class HailHistory(unittest.TestCase):
         h = json.loads(page(self.on, "data/map.json"))["hail"]
         self.assertEqual(h["state"], "sample")
         self.assertEqual((h["as_of"], h["window"][0], h["d0"]), (fixture["as_of"], fixture["window"][0], "2020-01-01"))
-        self.assertEqual(h["tiles"], fixture["tiles"])                  # the browser's outside test reads this list
+        self.assertEqual(tile_names_of(h), fixture["tiles"])            # the browser's outside test reads the split map (D40)
         self.assertEqual(h["shard"], "hail/t/r{r}_c{c}.json")
         self.assertEqual((h["tenths_per_inch"], h["tenths_per_mm"], h["floor_tenths"]), (254, 10, 64))
         self.assertEqual((h["stale_days"], h["at_zoom"]), (3, 9))
@@ -1494,7 +1500,7 @@ class HailHistory(unittest.TestCase):
 
     def test_every_listed_tile_has_a_shard_in_the_state_format(self):
         h = json.loads(page(self.on, "data/map.json"))["hail"]
-        names = h["tiles"]
+        names = tile_names_of(h)
         self.assertEqual(names, sorted(set(names)))
         self.assertTrue(names)
         for name in names:
@@ -1537,13 +1543,13 @@ class HailHistory(unittest.TestCase):
         from website import hail as hs            # the source line's words are hail.WORDS; the page must carry them
         fixture = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
         town = page(self.on, "town/billings.html")
-        self.assertIn("Five-year weather history at Billings", town)
+        self.assertIn("Five years of weather at Billings", town)
         self.assertIn("SAMPLE data", town)
         self.assertIn("Radar estimate: Jul 24, 2022: 0.62 in (16.0 mm), pea to mothball", visible(town))   # 160 tenths: 0.62
         self.assertIn("Radar estimate: Jun 15, 2025: 0.25 in (6.5 mm), pea to mothball", visible(town))
         self.assertIn("Radar days by size class in these five seasons: 4 days pea to mothball", visible(town))
         as_of = hs.fmt_date(date.fromisoformat(fixture["as_of"]))
-        self.assertIn(f"the 1,826 SPC days ending {as_of}", visible(town))           # the window's as-of date is on the page
+        self.assertIn(f"1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}", visible(town))   # the as-of date
         about = " ".join(page(self.on, "about.html").split())      # the template wraps the sentences across lines
         self.assertIn("<h2>Hail history</h2>", page(self.on, "about.html"))
         self.assertIn("An estimate is not a measurement at the ground and not an inspection.", about)
@@ -1583,7 +1589,7 @@ class HailHistory(unittest.TestCase):
         self.assertTrue(result["status"]["hail_history"]["ok"])
         for path in sorted((out / "town").glob("*.html")):
             self.assertNotIn(">None<", path.read_text(encoding="utf-8"), path.name)
-        self.assertIn("Five-year weather history at Billings", page(out, "town/billings.html"))
+        self.assertIn("Five years of weather at Billings", page(out, "town/billings.html"))
 
     def test_the_contract_row_carries_the_same_sentences(self):
         row = src.CONTRACTS["hail_history"]
@@ -1765,7 +1771,7 @@ class HailHistory(unittest.TestCase):
         self.assertIn("missing", status["detail"])
         h = json.loads(page(out, "data/map.json"))["hail"]
         self.assertEqual(h["state"], "unavailable")
-        self.assertEqual(h["tiles"], [])                       # no tile is known: the map says unavailable, not outside
+        self.assertEqual(h["tile_split"], {})                  # no tile is known: the map says unavailable, not outside
         self.assertIn("missing", h["problem"])
         self.assertFalse((out / "hail").exists())
         self.assertIn("Weather history could not be loaded in this update: the history store file store.tar.gz is missing.",
@@ -1808,7 +1814,7 @@ class HailHistory(unittest.TestCase):
         self.assertFalse(result["status"]["hail_history"]["detail"].startswith("SAMPLE"))
         h = json.loads(page(out, "data/map.json"))["hail"]
         self.assertEqual(h["state"], "loaded")          # a store file is real data: no SAMPLE label on it
-        self.assertEqual(h["tiles"], json.loads((store / "hail" / "index.json").read_text(encoding="utf-8"))["tiles"])
+        self.assertEqual(tile_names_of(h), json.loads((store / "hail" / "index.json").read_text(encoding="utf-8"))["tiles"])
         self.assertNotIn("SAMPLE data", page(out, "town/billings.html"))
         self.assertIn("Radar estimate: Jul 24, 2022: 0.62 in (16.0 mm), pea to mothball", visible(page(out, "town/billings.html")))
         self.assertEqual((out / "hail" / "t" / "r0079_c0199.json").read_bytes(),
@@ -1930,7 +1936,7 @@ class HailJoins(unittest.TestCase):
         for path in sorted(self.off.rglob("*.html")):
             text = path.read_text(encoding="utf-8")
             for words in ("hail-join-sec", "joins-sec", "joins-rows", "joins-more", 'data-hail="joins"',
-                          "Other records for the same cell", "Five-year weather history at"):
+                          "Other records for the same cell", "Five years of weather at"):
                 self.assertNotIn(words, text, f"{words!r} in {path.name}")
         self.assertFalse((self.off / "hail").exists())
         self.assertNotIn("hail", json.loads(page(self.off, "data/map.json")))
@@ -2391,7 +2397,8 @@ class HailJoinedRecords(unittest.TestCase):
     GATE_POINT = (47.025, -110.135)          # the gate cell (797, 1986): one forecast zone and one fire weather zone
     STATION_UNAVAILABLE = ("Station readings could not be loaded in this update; that is not the same as no station "
                            "reading.")
-    ZONE_UNAVAILABLE = "Zone products could not be loaded in this update; that is not the same as no zone product."
+    ZONE_UNAVAILABLE = ("Zone products could not be loaded in this update; that is not the same as no zone product. "
+                        "This is not an all-clear.")   # D41: the unavailable line ends with the all-clear sentence
 
     def copy_site(self) -> Path:
         """A copy of the built site's hail folder, for one test to change. The test makes it and removes it."""
@@ -2657,8 +2664,8 @@ class FiveSeasonHistory(unittest.TestCase):
         cls.result = site.build(cls.out, None, cls.NOW, sample=True, hail_history=True, hail_store_path=str(cls.store))
         site.build(cls.off, None, cls.NOW, sample=True)
         cls.town = page(cls.out, "town/billings.html")
-        cls.summary = cls.town[cls.town.index('id="hist-h"'):cls.town.index('id="obs-h"')]       # the table, after the alerts
-        cls.details = cls.town[cls.town.index('id="sec-hail"'):cls.town.index('id="other-h"')]  # the sections, after the 7-day forecast
+        cls.summary = cls.town[cls.town.index('id="hist-h"'):cls.town.index('id="sec-hail"')]    # the table leads the history
+        cls.details = cls.town[cls.town.index('id="sec-hail"'):cls.town.index('id="other-h"')]  # the sections
         cls.section = cls.summary + cls.details
 
     def test_the_sections_come_in_the_brief_order(self):
@@ -2668,17 +2675,50 @@ class FiveSeasonHistory(unittest.TestCase):
         for season in ("2021-22", "2022-23", "2023-24", "2024-25", "2025-26", "Five seasons"):
             self.assertIn(f'<th scope="col" class="num">{season}</th>', self.section)
 
-    def test_the_summary_sits_after_the_alerts_and_the_sections_after_the_seven_day_forecast(self):
-        # D38: the table leads the history, right after the official alerts and before observed now; the detail sections
-        # come after the 7-day forecast, so no forecast sits inside the summary or the sections
+    def test_the_forecast_keeps_the_top_and_the_history_follows_under_one_heading(self):
+        # D39: alerts, observed now, the hourly and 7-day forecast, then the one history heading with its summary table
+        # first; a jump link near the top opens it
         town = self.town
-        anchors = ("alerts-h", "hist-h", "obs-h", "hours-h", "days-h", "sec-hail", "sec-made", "other-h")
-        order = [town.index(f'id="{anchor}"') for anchor in anchors]
+        anchors = ("alerts-h", "obs-h", "hours-h", "days-h", 'id="history"', "hist-h", "sec-hail", "sec-made", "other-h")
+        order = [town.index(anchor if anchor.startswith('id=') else f'id="{anchor}"') for anchor in anchors]
         self.assertEqual(order, sorted(order))
-        self.assertLess(town.index('<table class="five">'), town.index('id="obs-h"'))
+        self.assertEqual(town.count('id="hist-h"'), 1)                    # one heading for the history
+        self.assertLess(town.index('href="#history"'), town.index('id="alerts-h"'))   # the jump link is in the first screen
+        self.assertLess(town.index('<table class="five">'), town.index('id="sec-hail"'))  # the table leads the history
         self.assertNotIn('id="hours-h"', self.summary)
         self.assertNotIn('id="hours-h"', self.details)
         self.assertNotIn('id="obs-h"', self.details)
+
+    def test_no_map_block_lists_every_tile_and_the_split_map_says_which_exist(self):
+        # D40: map.json carries a split map and URL patterns; no block holds every tile name
+        raw = page(self.out, "data/map.json")
+        m = json.loads(raw)["hail"]
+        self.assertNotIn("tiles", m)
+        self.assertNotIn("tile_names", m["climate"])
+        self.assertTrue(m["tile_split"])
+        self.assertLess(len(re.findall(r"r\d{4}_c\d{4}", raw)), 5)
+        self.assertEqual(m["climate"]["tile"], "hail/c/{tile}.json")
+        self.assertEqual(m["stations"]["tile"], "hail/sd/{station}.json")
+        self.assertEqual(m["gauges"]["tile"], "hail/g/{usgs}.json")
+        self.assertEqual(m["county"]["tile"], "hail/k/{county}.json")
+
+    def test_the_about_page_has_the_new_sources_terms_and_the_reference_note(self):
+        about = " ".join(page(self.out, "about.html").split())
+        self.assertIn("Terms of the new sources", about)
+        self.assertIn("license = no restrictions", about)
+        self.assertIn("Observations courtesy of U.S. Geological Survey", about)
+        self.assertIn("These data are in the public domain in the United States.", about)
+        self.assertIn("Five roof references are not quoted: R2 (NWS glossary, severe thunderstorm)", about)
+        self.assertNotIn("coverage rule", about)                          # D13: the stem leaves About
+        self.assertIn("enough-days rule", about)
+        self.assertIn("The history sits below the town's forecast", about)
+
+    def test_the_town_page_has_one_history_heading_and_a_jump_link_in_the_first_screen(self):
+        town = self.town
+        self.assertEqual(town.count('id="hist-h"'), 1)
+        self.assertIn('<a href="#history">Five years of weather at Billings</a>', town)
+        self.assertLess(town.index('href="#history"'), town.index('id="alerts-h"'))
+        self.assertEqual(town.count("River gauge: River gauge"), 0)       # D41: one label a line
 
     def test_every_row_names_its_kind_word_and_its_unit(self):
         heads = re.findall(r'<th scope="row" class="row-head">(.*?)</th>', self.section, re.S)
@@ -2688,7 +2728,7 @@ class FiveSeasonHistory(unittest.TestCase):
             self.assertIsNotNone(kind, head)
             self.assertRegex(kind.group(1), r"^(Radar estimate|Radar detection|Report|Official record|Warning|Zone product|"
                                             r"County product|Station reading|Grid estimate|Reference|Data unavailable)")
-            self.assertRegex(kind.group(1), r"(inches|days|degrees Fahrenheit|count|knots|none)")
+            self.assertRegex(kind.group(1), r"(inches|days|degrees Fahrenheit|count|knots|record)")   # the held row: its reason
 
     def test_every_season_value_carries_its_unit_or_says_data_unavailable(self):
         cells = re.findall(r'<td class="num"[^>]*>(.*?)</td>', self.section, re.S)
@@ -2714,7 +2754,7 @@ class FiveSeasonHistory(unittest.TestCase):
         self.addCleanup(shutil.rmtree, out, True)
         site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
         town = page(out, "town/billings.html")
-        section = town[town.index('id="hist-h"'):town.index('id="obs-h"')]
+        section = town[town.index('id="hist-h"'):town.index('id="other-h"')]
         self.assertRegex(section, r"Data unavailable<sup>1</sup>")
         footnotes = section[section.index('<ol class="hist-foot">'):]
         footnotes = footnotes[:footnotes.index("</ol>")]
@@ -2765,7 +2805,7 @@ class FiveSeasonHistory(unittest.TestCase):
     def test_flag_off_builds_have_no_five_season_section_or_b5_key(self):
         off = page(self.off, "town/billings.html")
         self.assertNotIn('id="hist-h"', off)
-        self.assertNotIn("Five-year weather history", off)
+        self.assertNotIn("Five years of weather at", off)
         self.assertNotIn("hail_history", json.loads(page(self.off, "data/map.json")))
         self.assertNotIn("climate", json.loads(page(self.off, "data/map.json")).get("hail", {}))
         self.assertFalse((self.off / "hail").exists())
@@ -2818,7 +2858,7 @@ class FiveSeasonHistory(unittest.TestCase):
         for key in ("climate", "snow", "stations", "gauges"):
             self.assertEqual(m[key]["state"], "unavailable", key)
             self.assertTrue(m[key]["problem"], key)
-        self.assertIn("Five-year weather history at Billings", page(out, "town/billings.html"))
+        self.assertIn("Five years of weather at Billings", page(out, "town/billings.html"))
 
     def test_the_section_router_sends_each_joined_row_to_one_section(self):
         cases = {

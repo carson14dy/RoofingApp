@@ -426,8 +426,8 @@ CONTRACTS = {
     "iem_watchwarn": {
         "name": "NWS warnings, watches, advisories and zone products (Iowa State archive: polygons, zones and counties)",
         "request": "mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py for Montana. Polygon shapefiles: FL.W (flood "
-                   "warning), FA.W (flood watch), FA.Y (flood advisory), FL.A (areal flood watch), FL.Y (flood advisory), SQ.W "
-                   "(snow squall warning), and SV.W, TO.W and FF.W. Zone CSVs: HW.W, WS.W, BZ.W, IS.W, EC.W, WC.W, DS.W, WI.Y, "
+                   "warning), FA.W (areal flood warning), FA.Y (areal flood advisory), FL.A (flood watch), FL.Y (flood advisory), "
+                   "SQ.W (snow squall warning), and SV.W, TO.W and FF.W. Zone CSVs: HW.W, WS.W, BZ.W, IS.W, EC.W, WC.W, DS.W, WI.Y, "
                    "WW.Y, WS.A, HW.A, HT.Y, EH.W, EH.A, FR.Y, FZ.W, DU.Y and FA.A, and the county twins of FA.A and FF.A (the "
                    "county-only events). FW.W (red flag warning) is matched to the fire weather zones. Each request covers 1 "
                    "December of the year before to 31 January of the year after, and a row that two years' files share is kept "
@@ -529,7 +529,12 @@ CONTRACTS = {
         "name": "Public references for the roof lines (reference statements, not findings)",
         "request": "The research record roof-indicators.json holds R1 to R20, each a statement from a public source. The sheet "
                    "quotes fifteen of them on its roof lines: R1, R3, R4, R5, R6, R7, R8, R10, R11, R12, R14, R15, R16, R18 and R19. "
-                   "Each quote is in the source's own words, and each line names its source and its address.",
+                   "Each quote is in the source's own words, and each line names its source and its address. R2, R9, R13, R17 and R20 "
+                   "are not quoted, and the record gives the reason for each: R2 (the NWS glossary) repeats the thresholds that R1 "
+                   "and R3 quote, with a missing space in its wording; R9 (FEMA P-957) describes a design value that the history "
+                   "holds out; R13 (ARMA) gives no mph threshold and its quote is a test standard's title; R17 (drought.gov, SNOTEL) "
+                   "concerns a network the history holds out; R20 is a secondary source found in search results and not fetched, "
+                   "which the record treats as unverified.",
         "units": "Kind word \"Reference\" on every line. A reference is a quoted statement from its source and gives no measurement "
                  "for this place.",
         "timing": "The quotes were read from the source pages during the research (2026-10-19). A source that changes its page is "

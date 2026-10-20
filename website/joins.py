@@ -167,9 +167,16 @@ EVENTS_NAME = "events.json"
 # D30 (B5 part B1): hail/j/e/<tile>.json holds the events one tile refers to, in the events table's own row shapes and
 # keyed by their index in events.json, so the tile file's indexes stay valid. The browser fetches it on a tap (D22).
 TILE_EVENTS_FORMAT = "hail-events-tile-v1"
+TOWNS_NAME = "towns.json"                    # D38: hail/j/towns.json, the polygon products that contain each town point
+TOWNS_FORMAT = "hail-joins-towns-v1"
+# D41: the label a warning row begins with, by the product's significance: a watch or an advisory is never a "Warning"
+SIGNIFICANCE_LABEL = {"W": "Warning", "A": "Watch", "Y": "Advisory"}
+# D37: the five July to June seasons the station gust files count (the rows the sheet shows; the partial 2026-27 season is
+# a line below the table, not a season list entry, D20, and its gust days are not in the files)
+SEASON_LABELS = tuple(f"{y}-{str(y + 1)[2:]}" for y in range(2021, 2026))
 TILE_EVENTS_DIR = "e"                       # the folder beside events.json: hail/j/e/
 TILE_EVENTS_BUDGET_GZIP = 100_000           # the largest tile events file, gzipped (100 KB, D30)
-STATION_FORMAT = "hail-station-v2"  # s/ files (B5: a fourth element, 1 when the reading is flagged for check)
+STATION_FORMAT = "hail-station-v3"  # s/ files (B5: a fourth element, 1 when the reading is flagged for check; D37: days reported per season)
 INDEX_KEY = "joins"                 # the block in hail/index.json (and manifest["joins"])
 MILE_KM = 1.609344
 REPORT_MILES = 5.0
@@ -230,7 +237,7 @@ PRODUCT_NAMES = {
     "SV.W": "Severe thunderstorm warning", "TO.W": "Tornado warning", "FF.W": "Flash flood warning",
     "HW.W": "High wind warning", "HW.A": "High wind watch", "WS.W": "Winter storm warning",
     "BZ.W": "Blizzard warning", "IS.W": "Ice storm warning", "EC.W": "Extreme cold warning",
-    "WC.W": "Wind chill warning", "FW.W": "Red flag warning", "FA.A": "Flood watch",
+    "WC.W": "Wind chill warning", "FW.W": "Red flag warning", "FA.A": "Areal flood watch",
     "DS.W": "Dust storm warning", "WI.Y": "Wind advisory",
     # B5 (the polygon products, D11, and the zone products added in B5)
     "FL.W": "Flood warning", "FA.W": "Areal flood warning", "FA.Y": "Areal flood advisory", "FL.A": "Flood watch",
@@ -380,9 +387,10 @@ WORDS_JOINS = {
     "records_zone_row": "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, across zone {zone}",
     "records_zone_row_typed": "Record: {date} {time}: {type}{qualifier}, {source}, across zone {zone}",
     "records_unplaced_one": ("1 official zone record in Montana in these five years could not be placed on a zone; its "
-                             "zone code is not in the public zone editions the NWS publishes."),
+                             "zone code is not in the public zone editions the NWS publishes. This is not an all-clear."),
     "records_unplaced_many": ("{n} official zone records in Montana in these five years could not be placed on a zone; "
-                              "their zone codes are not in the public zone editions the NWS publishes."),
+                              "their zone codes are not in the public zone editions the NWS publishes. This is not an "
+                              "all-clear."),
     # radar detections
     "detections_heading": "Radar hail detections within 2 miles",
     "detections_what": ("A detection is the radar algorithm's hail signature for a storm cell, not hail on the "
@@ -411,14 +419,16 @@ WORDS_JOINS = {
     "warnings_lead_none": ("No warning in the archive covered this spot between {start} and {end}. Warnings cover "
                            "areas, and a spot outside every polygon is not a statement that no storm reached it."),
     "warnings_lead_unknown": ("Warnings for this spot cannot be checked in this build, because some warnings in these "
-                              "five years have no outline on file. That is not the same as no warning."),
+                              "five years have no outline on file. That is not the same as no warning. This is not an "
+                              "all-clear."),
     "warnings_no_outline_one": ("1 warning in these five years has no outline on file, so it cannot be matched to "
-                                "this spot."),
+                                "this spot. This is not an all-clear."),
     "warnings_no_outline_many": ("{n} warnings in these five years have no outline on file, so they cannot be matched "
-                                 "to this spot."),
+                                 "to this spot. This is not an all-clear."),
     "warnings_row": "Warning: {date} {begin} to {end}, issuance polygon in effect: {kind}, {office}; tags: {tags}",
     "warnings_tags_none": "none stated",
-    "warnings_row_b5": "Warning: {date} {span}: {product}, {office}, covered this cell or part of it{tags}",
+    # D41 (B5 part B1): the label is the significance (Warning, Watch or Advisory) and the product gives the kind word
+    "warnings_row_b5": "{label}: {date} {span}: {product}, {office}, covered this cell or part of it; tags: {tags}",
     "warnings_span": "{begin} to {end}",
     "warnings_span_none": "{begin}, end not recorded",
     "warnings_tags": "; tags: {tags}",
@@ -449,11 +459,11 @@ WORDS_JOINS = {
     "zones_cancelled_at": "cancelled at {time}",   # D26: a cancellation time at or before the begin
     "zones_upgraded": ", upgraded",                # D31: an upgrade ends the lower product at its upgrade time
     "zones_upgraded_at": "upgraded at {time}",     # D31: an upgrade time at or before the begin, as D26
-    "zones_no_zone": "The forecast zone for this cell could not be determined.",
+    "zones_no_zone": "The forecast zone for this cell could not be determined. This is not an all-clear.",
     "zones_unplaced_one": ("1 zone product in Montana in these five years could not be placed on a zone; its zone code "
-                           "is not in the public zone editions the NWS publishes."),
+                           "is not in the public zone editions the NWS publishes. This is not an all-clear."),
     "zones_unplaced_many": ("{n} zone products in Montana in these five years could not be placed on a zone; their "
-                            "zone codes are not in the public zone editions the NWS publishes."),
+                            "zone codes are not in the public zone editions the NWS publishes. This is not an all-clear."),
     # D27: a product issued while an edition the NWS does not publish was in force keeps its zone code, checked
     # against the current edition; the zone sections say how many (zone_placed_by_code_alone in the index)
     "zones_kept_one": ("1 zone product in Montana was placed by its zone code alone, because the NWS does not publish "
@@ -462,8 +472,9 @@ WORDS_JOINS = {
                         "publish the zone edition in force when they were issued."),
     "zones_kept_note": ("Products issued before {date} are placed by their zone codes alone, because the NWS does not "
                         "publish the zone editions in force then."),
-    "zones_fire_unavailable": "Red flag warnings are not listed (fire weather zones were not available).",
-    "zones_fire_none": "The fire weather zone for this cell could not be determined.",
+    "zones_fire_unavailable": ("Red flag warnings are not listed (fire weather zones were not available). "
+                               "This is not an all-clear."),
+    "zones_fire_none": "The fire weather zone for this cell could not be determined. This is not an all-clear.",
     "fire_product": "{product}, fire weather zone {zone_name} ({zone})",
     # station gusts
     "stations_heading": "Peak gusts at the nearest stations",
@@ -482,7 +493,8 @@ WORDS_JOINS = {
     # missing data
     # D20: the sentence a part that did not load shows, exactly, in Python and in the browser. {part} and {one} come
     # from the part_ and one_ words below (the part's name, and its singular for "no {one}").
-    "unavailable": "{part} could not be loaded in this update; that is not the same as no {one}.",
+    "unavailable": ("{part} could not be loaded in this update; that is not the same as no {one}. "
+                    "This is not an all-clear."),
     "part_reports": "Reports", "one_reports": "report",
     "part_records": "Records", "one_records": "record",
     "part_detections": "Detections", "one_detections": "detection",
@@ -995,6 +1007,26 @@ def parse_daily(data: bytes) -> dict:
         except (ValueError, JoinsError):
             malformed += 1
     return {"days": out, "missing": missing, "malformed": malformed}
+
+
+def season_bounds(label: str, last: date) -> tuple[date, date]:
+    """The first and last day of a July to June season (D37). last caps a season that is not complete."""
+    year = int(label[:4])
+    return date(year, 7, 1), min(date(year + 1, 6, 30), last)
+
+
+def station_periods(rows, last: date) -> dict:
+    """D37: the days each station reported, per July to June season: {"season": {label: {"n": days in the season,
+    "ok": days with a peak gust value}}}, for the five seasons. n counts every day of the season (all of them are before the
+    window's last day); ok counts the days with a number in the IEM daily file (kept, flagged or left out as implausible
+    alike). A day with no value is missing, never reported."""
+    reported = {day for day, _kt in rows}
+    out = {}
+    for label in SEASON_LABELS:
+        first_day, end_day = season_bounds(label, last)
+        out[label] = {"n": (end_day - first_day).days + 1,
+                      "ok": sum(1 for day in reported if first_day <= day <= end_day)}
+    return {"season": out}
 
 
 def station_day_kind(kt: float) -> str:
@@ -2637,6 +2669,46 @@ def town_checks(ctx: Context, towns: list[dict]) -> dict:
     return out
 
 
+def _part_state(ctx: Context, part: str) -> str:
+    """The state of one part as the index block names it: unavailable, partial or loaded (D16)."""
+    if ctx.part_all_failed.get(part):
+        return "unavailable"
+    return "partial" if ctx.part_failures.get(part) else "loaded"
+
+
+def towns_polygon_file(ctx: Context, towns: list[dict]) -> dict:
+    """D38: for each town, every polygon product event of the window whose outline contains the town point (the exact
+    point-in-polygon test, D11; no cell), with its event id (the index in the events table's warnings), the product code,
+    the office, and the begin and the end (UTC; null when no end). The town pages count from this file ("covered this
+    spot"); the sheet counts the cell covers ("covered this cell or part of it"); towns_file_check compares the two."""
+    np = _np()
+    boxes = [(e, ring_bbox(e["rings"])) for e in ctx.ww_events]
+    state = _part_state(ctx, "warnings")
+    out = {}
+    for town in towns:
+        lat, lon = float(town["lat"]), float(town["lon"])
+        row, col = hail.cell_for(lat, lon)
+        found = []
+        for event, (minx, miny, maxx, maxy) in boxes:
+            if not (minx <= lon <= maxx and miny <= lat <= maxy):
+                continue
+            if bool(points_in_rings(np.array([lon]), np.array([lat]), event["rings"])[0]):
+                found.append([event["ref"], f"{event['k']}.{event['s']}", event["o"], iso_utc(event["b"]),
+                              None if event["e"] is None else iso_utc(event["e"])])
+        found.sort(key=lambda r: (r[3], r[1], r[2], r[0]))
+        out[town["slug"]] = {"name": town["name"], "lat": lat, "lon": lon, "cell": [row, col], "events": found}
+    # an unavailable or partial warnings part is said in the file: a town with no event here is not "no warning"
+    reason = None if state == "loaded" else ctx.part_reason.get("warnings") or WORDS_JOINS["reason_no_answer"]
+    return {"f": TOWNS_FORMAT, "d0": hail.D0.isoformat(), "state": state, "reason": reason, "towns": out}
+
+
+def _towns_file_block(doc: dict, size: int) -> dict:
+    """The index's towns_file block (D38): the format, the file, the towns, the town-event pairs and the bytes."""
+    pairs = sum(len(town["events"]) for town in doc["towns"].values())
+    return {"format": TOWNS_FORMAT, "file": f"hail/j/{TOWNS_NAME}", "towns": len(doc["towns"]), "events": pairs,
+            "bytes": size}
+
+
 def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetcher | None = None,
           max_age_s: float = MAX_AGE_S, log=_say, offline: bool = False) -> dict:
     """Build the joins into store_dir (a store with hail/index.json and its shards): pull (the re-pull windows fresh,
@@ -2735,6 +2807,11 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
             totals["tiles_with_warnings"] += 1 if doc["warnings"] else 0
         log(f"joins: wrote {len(tiles)} tile files ({tile_bytes} bytes; largest {largest[1]} {largest[0]} bytes) "
             f"and the events table ({len(events_bytes)} bytes)")
+        towns_doc = towns_polygon_file(ctx, towns)                    # D38: the town point test, written with the tiles
+        towns_bytes = _compact(towns_doc)
+        (hail_dir / "j" / TOWNS_NAME).write_bytes(towns_bytes)
+        log(f"joins: wrote the town polygon file ({len(towns_bytes)} bytes; "
+            f"{_towns_file_block(towns_doc, len(towns_bytes))['events']} town and polygon pairs)")
 
         zone_list = [z["zone"] for z in ctx.zone_map]
         z_bytes = 0
@@ -2783,7 +2860,8 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
             station_dropped += dropped
             station_days_total += len(days)
             doc = {"f": STATION_FORMAT, "id": st["id"], "name": st["name"], "lat": st["lat"], "lon": st["lon"],
-                   "days": days, "dropped": dropped}
+                   "days": days, "dropped": dropped,
+                   "periods": station_periods(ctx.station_days.get(st["id"], []), last)}
             data = _compact(doc)
             (hail_dir / "s" / f"{st['id']}.json").write_bytes(data)
             s_bytes += len(data)
@@ -2809,6 +2887,7 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
         block["vtec_counts_research"] = {k: dict(v) for k, v in sorted(ctx.vtec_counts_research.items())}
         block["research_window"] = [RESEARCH_START.date().isoformat(), RESEARCH_END.date().isoformat()]
         block["events_tiles"] = _events_tiles_block(events_tiles["entries"], events_tiles["referenced"])
+        block["towns_file"] = _towns_file_block(towns_doc, len(towns_bytes))
         new_index = dict(index)
         new_index[INDEX_KEY] = block
         (hail_dir / "index.json").write_bytes(_pretty(new_index))
@@ -3636,10 +3715,11 @@ def _kind_word(item: dict) -> str:
 
 
 def _warning_text(b, e, item, w) -> str:
-    """A warning row (D4, B2): the kind word, the office, the begin and end (Montana time, the end's date only on a later
-    day) and the tags the archive gives (hail, wind, tornado, and the NWS damage threat tag where the product has one),
-    in the B2 template the browser fills (WORDS_JOINS["warnings_row"]). The B5 row, with the product's own name and the
-    words "covered this cell or part of it", is WORDS_JOINS["warnings_row_b5"], for part B."""
+    """A warning row (D4, B2; B5 D41): the significance label (Warning, Watch or Advisory: never "Warning" for a watch or
+    an advisory), the begin and end (Montana time, the end's date only on a later day), the product's own kind word
+    (KIND_WORDS), the office and the tags the archive gives (hail, wind, tornado, and the NWS damage threat tag where the
+    product has one). The row is WORDS_JOINS["warnings_row_b5"]; the B2 template the browser fills
+    (WORDS_JOINS["warnings_row"]) stays until part B2 switches map.js."""
     tags = []
     tg = item["tags"]
     if tg.get("hail_in") is not None:
@@ -3651,8 +3731,10 @@ def _warning_text(b, e, item, w) -> str:
     if tg.get("damage"):
         tags.append(w["tag_damage"].format(value=str(tg["damage"]).lower()))
     tag_text = ", ".join(tags) if tags else w["warnings_tags_none"]
-    return w["warnings_row"].format(date=fmt_day(_local(b).date()), begin=fmt_clock(b), end=fmt_end(e, b),
-                                    kind=_kind_word(item), office=item["o"], tags=tag_text)
+    span = w["warnings_span"].format(begin=fmt_clock(b), end=fmt_end(e, b))
+    return w["warnings_row_b5"].format(label=SIGNIFICANCE_LABEL.get(item["s"], "Product"),
+                                       date=fmt_day(_local(b).date()), span=span,
+                                       product=_kind_word(item), office=item["o"], tags=tag_text)
 
 
 # ---------------------------------------------------------------- the map block (map.json["hail"]["joins"])
@@ -3978,6 +4060,60 @@ def _gusts_check(block: dict) -> dict:
             "mso_flagged": any(f["station"] == "MSO" and f["date"] == "2025-05-09" for f in flagged)}
 
 
+def towns_file_check(root: Path, index_tiles) -> dict:
+    """D38, verify: hail/j/towns.json against the cell covers. For each town, the events its polygon file lists are compared
+    with the events whose cover holds the town's cell (the touch rule, D11), in the tile file that holds the cell. Returns
+    the counts and up to five examples of each kind of disagreement: a town event the cover lacks (town_not_cover, which
+    must be zero) and a cover event the town point is not in (cover_not_town, recorded)."""
+    try:
+        doc = json.loads((root / "hail" / "j" / TOWNS_NAME).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return {"error": f"the town polygon file could not be read ({exc})"}
+    if doc.get("f") != TOWNS_FORMAT:
+        return {"error": "the town polygon file is not in its format"}
+    tiles, out = {}, {"towns": {}, "town_not_cover": 0, "cover_not_town": 0, "examples": [], "not_in_store": []}
+    for slug, town in sorted(doc["towns"].items()):
+        row, col = town["cell"]
+        name = hail.tile_name(row // hail.TILE, col // hail.TILE)
+        if name not in index_tiles:
+            out["not_in_store"].append(slug)           # a store cut to some tiles (the test and sample stores)
+            continue
+        if name not in tiles:
+            try:
+                tiles[name] = json.loads((root / "hail" / "j" / f"{name}.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                return {"error": f"the tile file {name} could not be read ({exc})"}
+        covers = {int(ref): cover for ref, cover in tiles[name]["warnings"]}
+        key = hail.cell_key(row, col)
+        cover_refs = {ref for ref, cover in covers.items() if cover_has(cover, key)}
+        town_refs = {event[0] for event in town["events"]}
+        missing, extra = sorted(town_refs - cover_refs), sorted(cover_refs - town_refs)
+        out["towns"][slug] = {"cell": [row, col], "events": len(town_refs), "cover": len(cover_refs),
+                              "town_not_cover": missing, "cover_not_town": extra}
+        out["town_not_cover"] += len(missing)
+        out["cover_not_town"] += len(extra)
+        for ref in missing[:2]:
+            out["examples"].append({"town": slug, "kind": "town point inside, cover lacks it", "event": ref})
+    return out
+
+
+def station_periods_check(root: Path, index: dict) -> dict:
+    """D37, verify: every s/ file has periods.season for the six seasons, n the days of the season up to the window's last
+    day, and ok an integer from 0 to n. Returns the file count, the problem count and up to five examples."""
+    last = date.fromisoformat(index["window"][1])
+    files = sorted((root / "hail" / "s").glob("*.json")) if (root / "hail" / "s").is_dir() else []
+    bad = []
+    for path in files:
+        seasons = ((json.loads(path.read_text(encoding="utf-8")).get("periods") or {}).get("season")) or {}
+        for label in SEASON_LABELS:
+            rec = seasons.get(label)
+            first_day, end_day = season_bounds(label, last)
+            n = (end_day - first_day).days + 1
+            if not rec or rec.get("n") != n or not isinstance(rec.get("ok"), int) or not 0 <= rec["ok"] <= n:
+                bad.append(f"{path.stem} {label}")
+    return {"files": len(files), "seasons": len(SEASON_LABELS), "bad": len(bad), "examples": bad[:5]}
+
+
 def verify(store_dir, cache_dir=None) -> dict:
     """Check a built store's joins. Returns {"ok", "state", "parts", "checks", "gate", "b5"}: a failed check makes ok
     False; a part that did not load is reported, not failed. The gate holds B2 gate 1's Benchland rows as found (D1):
@@ -4264,6 +4400,32 @@ def _verify_b5(root: Path, index: dict, events: dict, block: dict, check, cache_
     else:
         check("D11: the town point check ran for the 17 towns", len(town.get("towns", [])) == 17,
               f"{len(town.get('towns', []))} towns; {len(town.get('disagreements', []))} disagreements listed")
+    # D38: towns.json against the cell covers. A polygon that holds a town point touches the town's cell, so every such
+    # event must be in the cover; the cover-only events are the cell rule's wider reach and are recorded, not failed.
+    towns_name = "D38: the town polygon file agrees with the cell covers"
+    if block.get("towns_file") is None:             # a store written before D38 (the committed fixture until it is cut)
+        skip(towns_name, "this store has no towns file")
+    elif block["parts"].get("warnings") != "loaded":
+        skip(towns_name, _part_reason(block, "warnings"))
+    else:
+        towns_file = towns_file_check(root, set(index["tiles"]))
+        if towns_file.get("error"):
+            check(towns_name, False, towns_file["error"])
+        else:
+            check("D38: every polygon event that holds a town point is in that town's cell cover",
+                  towns_file["town_not_cover"] == 0,
+                  f"{towns_file['town_not_cover']} missing from the covers; {towns_file['cover_not_town']} cover-only "
+                  f"(the cell rule is wider than the point rule); {len(towns_file['not_in_store'])} towns not in this store")
+            b5["towns_file"] = towns_file
+    # D37: each station gust file carries the days it reported, per season, for the six seasons
+    if block["parts"].get("stations") == "unavailable":
+        skip("D37: every station gust file carries days reported per season", _part_reason(block, "stations"))
+    else:
+        gust_periods = station_periods_check(root, index)
+        check("D37: every station gust file carries days reported per season (n days, ok days, 0 to n)",
+              gust_periods["bad"] == 0 and gust_periods["files"] > 0,
+              f"{gust_periods['files']} files; {gust_periods['bad']} problems {gust_periods['examples']}")
+        b5["station_periods"] = gust_periods
     nulls = block.get("polygon_nulls", {})
     check("D11: every outline-less polygon is joined by county or counted otherwise",
           nulls.get("window", 0) == nulls.get("joined", 0) + nulls.get("unjoined", 0),
@@ -4535,6 +4697,22 @@ def fixture(out_dir, from_store) -> dict:
             _tile_events(keep, new_events["reports"], new_events["records"], new_events["warnings"])))
         for kind in ref_counts:
             ref_counts[kind] += len(keep[kind])
+    # D38: the towns of the cut whose cells are in the sample tiles; their events are the tiles' own warnings (the same
+    # polygons, cut to the same days), so the references map to the rows the tiles already hold
+    towns_real = json.loads((src / "hail" / "j" / TOWNS_NAME).read_text(encoding="utf-8"))
+    towns_keep = {}
+    for slug, town in sorted(towns_real["towns"].items()):
+        row, col = town["cell"]
+        if hail.tile_name(row // hail.TILE, col // hail.TILE) not in sample_tiles:
+            continue
+        kept = [[remap("warnings", ref), code, office, begin, end]
+                for ref, code, office, begin, end in town["events"]
+                if parse_iso_utc(begin).date() in days or (end and parse_iso_utc(end).date() in days)]
+        towns_keep[slug] = dict(town, events=sorted(kept, key=lambda r: (r[3], r[1], r[2], r[0])))
+    towns_doc = {"f": TOWNS_FORMAT, "d0": hail.D0.isoformat(), "state": towns_real["state"],
+                 "reason": towns_real.get("reason"), "towns": towns_keep}
+    towns_bytes = _compact(towns_doc)
+    (hail_out / "j" / TOWNS_NAME).write_bytes(towns_bytes)
     (hail_out / "j" / EVENTS_NAME).write_bytes(_compact({
         "f": EVENTS_FORMAT, "d0": hail.D0.isoformat(), "reports": new_events["reports"],
         "records": new_events["records"], "warnings": new_events["warnings"]}))
@@ -4591,6 +4769,7 @@ def fixture(out_dir, from_store) -> dict:
         raw = path.read_bytes()
         e_entries.append((path.name, len(raw), len(gzip.compress(raw, compresslevel=9, mtime=0))))
     block["events_tiles"] = _events_tiles_block(e_entries, ref_counts)
+    block["towns_file"] = _towns_file_block(towns_doc, len(towns_bytes))
     index_bytes = _pretty(dict(sample, **{INDEX_KEY: block}))
     (hail_out / "index.json").write_bytes(index_bytes)
     manifest = json.loads((hail_out / "manifest.json").read_text(encoding="utf-8"))

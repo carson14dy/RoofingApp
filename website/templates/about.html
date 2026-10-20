@@ -16,7 +16,7 @@
     <li><strong>The map</strong> plays the past hour of NOAA's radar estimate (MRMS, every 10 minutes) and then the
       HRRR computer model's forecast: every 15 minutes for the next hour, then hourly to 12 hours. Before "Now" it is
       radar; after "Now" it is a model forecast, and the map always says which. Far from a radar site the beam passes
-      over low clouds, so a blank area is not proof of dry weather; areas with no radar coverage are hatched.
+      over low clouds, so a blank area is not proof of dry weather; areas {% if hail_history %}beyond radar range{% else %}with no radar coverage{% endif %} are hatched.
       The temperature and wind-gust layers are the same model. The numbers on the towns are the NWS forecast.</li>
     <li><strong>Town forecasts</strong> are NWS forecasts for the 2.5 km grid square around each town. They are predictions for an area,
       not measurements at a roof.</li>
@@ -41,10 +41,11 @@
     at 12:43 UTC and shows here on the next rebuild, usually within the hour. The as-of date is on every page that shows the
     history. The units and the source are in the data
     sources table below.</p>
-  <h2>Five-year weather history</h2>
+  <h2>Five years of weather</h2>
   <p>Each town's page has a five-season table for July 2021 to June 2026, with the partial 2026-27
-    season below it. Each row names its kind of record and its unit, and no row mixes two kinds of record. The table leads the history,
-    which sits below each town's forecast. The sections under it come in one order: Hail, Wind, Storms and warnings, Temperature, Rain, Snow, Flooding,
+    season below it. Each row names its kind of record and its unit, and no row mixes two kinds of record. The history sits
+    below the town's forecast, under one heading, and a link at the top of the page jumps to it. The five-season table leads the
+    history, and the sections under it come in one order: Hail, Wind, Storms and warnings, Temperature, Rain, Snow, Flooding,
     Ice and winter, Heat, Weather that matters for a roof, and How this was made.</p>
   <p>The kinds of record are these. A radar estimate is NOAA's MRMS MESH value for a grid cell about 0.7 miles north to
     south and 0.5 miles east to west. A report is what a spotter, a member of the public or a sensor sent to the National
@@ -66,7 +67,7 @@
     polygons that intersect the cell, with the forecast tags they carried at issue time. Zone products cover a whole
     forecast zone, and county products a whole county; red flag warnings cover a fire weather zone. Station readings are
     the peak gusts at the two nearest airport stations within 40 miles, and the daily values of the nearest stations that
-    pass the coverage rule.</p>
+    pass the enough-days rule.</p>
   <h3>Not in this history</h3>
   <ul>{% for text in ah.held.values() %}<li>{{ text }}</li>{% endfor %}</ul>
   <h3>Snow analysis</h3>
@@ -79,6 +80,7 @@
   <p>The roof lines quote public statements in their own words. Each line says it is a reference, not a finding about any
     roof, weather event or address.</p>
   <ul>{% for r in ah.refs %}<li><a href="{{ r.url }}">{{ r.source }}</a>: "{{ r.quote }}"</li>{% endfor %}</ul>
+  <p>{{ ah.not_quoted }}</p>
   <p>Known gaps: NCEI's database runs behind the other sources, and the page says to which date. The wind unit of the local
     storm reports is inferred. Warning tags are the forecast threat at issue time, not what fell. Iowa State's inventory of
     radar detections is not complete.</p>
@@ -110,6 +112,14 @@
 
   <h2 id="sources">Data sources in detail</h2>
   <p>What each source sends and how this site treats it.</p>
+{% if hail_history %}
+  <h3>Terms of the new sources</h3>
+  <p>Each sentence below is the source's own words, from its record or its module.</p>
+  {% for t in about_hail.terms %}
+  <h4>{{ t.source }}</h4>
+  {% for s in t.terms %}<p>{{ s }}</p>{% endfor %}
+  {% endfor %}
+{% endif %}
 </div>
 <div class="table-box contracts">
   <table>

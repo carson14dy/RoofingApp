@@ -163,6 +163,8 @@ class PeakTests(unittest.TestCase):
         # every unavailable line of the gauges ends with the required sentence (D13, D20, D28)
         checked = sorted(k for k in Gs.WORDS if "unavailable" in k)
         self.assertEqual(checked, ["gauge_unavailable", "peaks_unavailable", "unavailable"])
+        # D32 and D41: the partial problem lines and the unplaced line carry the negation too
+        checked += ["partial_named", "partial_peaks", "partial_other", "unplaced"]
         for key in checked:
             self.assertTrue(Gs.WORDS[key].endswith("This is not an all-clear."), key)
         self.assertEqual(Gs.WORDS["lead"].format(name="Yellowstone River at Billings", miles="2.0"),
@@ -488,6 +490,54 @@ class RoutedBuildTests(unittest.TestCase):
         self.assertNotIn("No gauge", billings["sentence"])
         self.assertIsNone(FORBIDDEN.search(W.residue(billings["sentence"])))
         self.assertNotIn("BILM8", [p["lid"] for p in block["pool"]])
+
+    def test_a_failed_gauge_is_named_in_the_problem_line_with_the_d20_sentence(self):
+        # D32: the partial block's problem line is the D20 sentence and names the failed gauge; the detail gives the reason
+        self.cache_list()
+        self.cache_detail("PLOM8")
+        self.cache_peaks("06214600", self.plom_peaks)
+        self.routes[Gs.DETAIL_URL.format(lid="BILM8")] = FakeResponse(200, b"<html>a page, not JSON</html>")
+        Gs.build(self.store, self.cache, offline=False, procs=1)
+        block = self.block()
+        self.assertEqual(block["state"], "partial")
+        self.assertEqual(block["problem"], "River gauges could not be loaded in this update for Yellowstone River at "
+                                           "Billings (BILM8); that is not the same as no river gauge. This is not an "
+                                           "all-clear.")
+        self.assertIn("BILM8", block["detail"])
+        self.assertIsNone(FORBIDDEN.search(W.residue(block["problem"])))
+
+    def test_a_failed_gauge_with_no_listed_position_never_reads_as_no_gauge(self):
+        # D32: NOPOS is listed without a position and its detail fails, so no town can rule it out: its town reads
+        # unavailable, the problem line names it, and no town says "none"
+        self.list_doc["gauges"].append({"lid": "NOPOS", "name": "No Position Gauge", "state": {"abbreviation": "MT"}})
+        self.routes[self.list_url] = FakeResponse(200, json.dumps(self.list_doc).encode("utf-8"))
+        self.cache_list()
+        self.cache_detail("BILM8")
+        self.cache_detail("PLOM8")
+        self.cache_peaks("06214500", self.bil_peaks)
+        self.cache_peaks("06214600", self.plom_peaks)
+        self.routes[Gs.DETAIL_URL.format(lid="NOPOS")] = FakeResponse(500, b"")
+        Gs.build(self.store, self.cache, offline=False, procs=1)
+        block = self.block()
+        self.assertEqual(block["state"], "partial")
+        self.assertIn("gauge NOPOS", block["problem"])
+        self.assertIn("This is not an all-clear.", block["problem"])
+        lewistown = block["towns"]["lewistown"]
+        self.assertTrue(lewistown["unavailable"])
+        self.assertIn("cannot be checked in this update: 1 listed gauge had no position", lewistown["sentence"])
+        self.assertIn("This is not an all-clear.", lewistown["sentence"])
+        self.assertNotIn("none", block["towns"]["lewistown"])
+        for slug, row in block["towns"].items():
+            self.assertNotEqual(row, {"none": True}, slug)
+
+    def test_the_problem_helpers_name_gauges_and_series_and_have_a_plain_default(self):
+        peaks = Gs._gauge_problem([], ["Yellowstone River at Billings (USGS 06214500)"])
+        self.assertEqual(peaks, "USGS annual peaks could not be loaded in this update for Yellowstone River at Billings "
+                                "(USGS 06214500); that is not the same as no annual peak. This is not an all-clear.")
+        self.assertEqual(Gs._gauge_problem([], []), "Some river gauge files could not be loaded in this update; that is not "
+                                                    "the same as no river gauge. This is not an all-clear.")
+        detail = Gs._gauge_detail([{"lid": "BILM8", "reason": "the detail is not JSON"}, {"source": "nwps list", "reason": "x"}])
+        self.assertEqual(detail, "BILM8: the detail is not JSON; nwps list: x")
 
 
 if __name__ == "__main__":

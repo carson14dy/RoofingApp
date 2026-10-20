@@ -21,6 +21,7 @@ import tempfile
 import time
 import unittest
 import zipfile
+from types import SimpleNamespace
 from unittest import mock
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -54,6 +55,9 @@ except ImportError:
 
 def utc(*args) -> datetime:
     return datetime(*args, tzinfo=timezone.utc)
+
+
+AC = " This is not an all-clear."     # D41: the sentence every unavailable and partial line ends with
 
 
 def check_words(test: unittest.TestCase, text: str) -> None:
@@ -416,8 +420,8 @@ class JoinRuleTests(unittest.TestCase):
         sec = self._section(out["sections"], "warnings")
         self.assertEqual(len(sec["rows"]), 1)
         text = sec["rows"][0]["text"]
-        self.assertEqual(text, "Warning: Jun 14, 2025 6:26 pm MDT to 7:08 pm MDT, issuance polygon in effect: severe "
-                               "thunderstorm warning, TFX; tags: hail 1.00 in, wind 60 mph, NWS damage threat tag: "
+        self.assertEqual(text, "Warning: Jun 14, 2025 6:26 pm MDT to 7:08 pm MDT: severe thunderstorm warning, TFX, covered "
+                               "this cell or part of it; tags: hail 1.00 in, wind 60 mph, NWS damage threat tag: "
                                "considerable")
         self.assertIn("Tags are the forecast threat at issue time, not what fell.", sec["what"])
         self.assertIn("covered this cell or part of it", sec["what"])
@@ -433,7 +437,7 @@ class JoinRuleTests(unittest.TestCase):
         out = self._describe(doc)
         text = self._section(out["sections"], "warnings")["rows"][0]["text"]
         self.assertTrue(text.endswith("; tags: none stated"), text)          # the browser's warnings_tags_none
-        self.assertNotIn("covered this cell", text)                          # the B5 row waits for part B (B5 key)
+        self.assertIn("covered this cell or part of it; tags: none stated", text)   # D41: the B5 row (part B1)
 
     def test_detections_group_by_spc_day(self):
         doc = _cell_doc(detections=[
@@ -459,7 +463,7 @@ class JoinRuleTests(unittest.TestCase):
         self.assertIn("These covered the whole zone, not this spot alone.", sec["what"])
         none = self._describe(_cell_doc())
         self.assertEqual(self._section(none["sections"], "zones")["lead"],
-                         "The forecast zone for this cell could not be determined.")
+                         "The forecast zone for this cell could not be determined. This is not an all-clear.")
         self.assertEqual(self._section(none["sections"], "zones")["heading"], "Zone products")
 
     def test_zone_product_rows_from_the_zone_file(self):
@@ -503,7 +507,7 @@ class JoinRuleTests(unittest.TestCase):
         out = self._describe(_cell_doc(), index=index)
         sec = self._section(out["sections"], "warnings")
         self.assertEqual(sec["unavailable"], "Warnings could not be loaded in this update; that is not the same as no "
-                                             "warning.")
+                                             "warning. This is not an all-clear.")
         self.assertEqual(sec["rows"], [])
         check_words(self, sec["unavailable"])
 
@@ -542,14 +546,14 @@ class ZoneProductListTests(unittest.TestCase):
 
     def test_the_flood_watch_is_a_zone_product_named_flood_watch(self):
         self.assertIn(("FA", "A"), J.ZONE_PRODUCTS)
-        self.assertEqual(J.PRODUCT_NAMES["FA.A"], "Flood watch")
+        self.assertEqual(J.PRODUCT_NAMES["FA.A"], "Areal flood watch")   # D41: the areal product, not the hydrologic one
 
     def test_every_zone_product_has_a_name_and_no_zone_product_is_a_flood_warning(self):
         for phen, sig in J.ZONE_PRODUCTS:
             name = J.PRODUCT_NAMES[f"{phen}.{sig}"]
             self.assertNotIn("flood warning", name.lower(), name)
             if "flood" in name.lower():
-                self.assertIn(name, ("Flood watch", "Flash flood watch"))
+                self.assertIn(name, ("Flood watch", "Flash flood watch", "Areal flood watch"))
 
     def test_the_browser_product_names_are_the_zone_products_and_the_polygon_products(self):
         index = _index()
@@ -557,7 +561,7 @@ class ZoneProductListTests(unittest.TestCase):
                                "built_at": "x", "station_days_by_year": {}})
         products = J.map_data_joins(index)["products"]
         self.assertEqual(products["FL.W"], "Flood warning")
-        self.assertEqual(products["FA.A"], "Flood watch")
+        self.assertEqual(products["FA.A"], "Areal flood watch")
         for phen, sig in J.ZONE_PRODUCTS + J.POLYGON_PRODUCTS:
             self.assertIn(f"{phen}.{sig}", products)
 
@@ -616,7 +620,7 @@ class WordsTests(unittest.TestCase):
         self.assertIn("These covered the whole zone, not this spot alone.", words["zones_what"])
         self.assertIn("A station reading is at the airport, not at this address.", words["stations_what"])
         self.assertEqual(words["unavailable"], "{part} could not be loaded in this update; that is not the same as no "
-                                               "{one}.")
+                                               "{one}. This is not an all-clear.")
 
     def test_the_records_words_name_the_points_joined_and_the_points_not_joined(self):
         text = " ".join(J.WORDS_JOINS["records_what"].split())
@@ -1360,7 +1364,7 @@ class ZoneEditionTests(unittest.TestCase):
         self.assertEqual(zones["fire_lead"], "2 red flag warnings for fire weather zone Central and Eastern Lewis and "
                                              "Clark (MTZ117) between Oct 17, 2021 and Oct 16, 2026.")
         self.assertIn("3 zone products in Montana in these five years could not be placed on a zone; their zone codes "
-                      "are not in the public zone editions the NWS publishes.", zones["lines"])
+                      "are not in the public zone editions the NWS publishes. This is not an all-clear.", zones["lines"])
         self.assertEqual(len(zones["rows"]), 2)
         for text in [zones["lead"], zones["fire_lead"]]:
             check_words(self, text)
@@ -1371,12 +1375,12 @@ class UnavailableWordsTests(unittest.TestCase):
     the browser fill the same words from the map block, so they cannot disagree. It is never a "No ..." lead."""
 
     EXPECTED = {
-        "reports": "Reports could not be loaded in this update; that is not the same as no report.",
-        "records": "Records could not be loaded in this update; that is not the same as no record.",
-        "detections": "Detections could not be loaded in this update; that is not the same as no detection.",
-        "warnings": "Warnings could not be loaded in this update; that is not the same as no warning.",
-        "zones": "Zone products could not be loaded in this update; that is not the same as no zone product.",
-        "stations": "Station readings could not be loaded in this update; that is not the same as no station reading.",
+        "reports": "Reports could not be loaded in this update; that is not the same as no report." + AC,
+        "records": "Records could not be loaded in this update; that is not the same as no record." + AC,
+        "detections": "Detections could not be loaded in this update; that is not the same as no detection." + AC,
+        "warnings": "Warnings could not be loaded in this update; that is not the same as no warning." + AC,
+        "zones": "Zone products could not be loaded in this update; that is not the same as no zone product." + AC,
+        "stations": "Station readings could not be loaded in this update; that is not the same as no station reading." + AC,
     }
 
     def test_each_part_shows_its_own_sentence_from_the_one_template(self):
@@ -1391,7 +1395,7 @@ class UnavailableWordsTests(unittest.TestCase):
             browser = J.WORDS_JOINS["unavailable"].format(part=J.WORDS_JOINS[f"part_{part}"],
                                                           one=J.WORDS_JOINS[f"one_{part}"])
             self.assertEqual(browser, sentence, part)
-            self.assertNotIn("not an all-clear", sentence)
+            self.assertTrue(sentence.endswith(AC), part)      # D41: the sentence ends with the all-clear
 
     def test_the_part_names_and_the_sentence_pass_the_words_check(self):
         for sentence in self.EXPECTED.values():
@@ -1405,9 +1409,9 @@ class DamagedFileTests(unittest.TestCase):
     that did not load leaves out only the red flag warnings, with the sentence the sheet gives when the fire zones are
     missing."""
 
-    STATIONS = "Station readings could not be loaded in this update; that is not the same as no station reading."
-    ZONES = "Zone products could not be loaded in this update; that is not the same as no zone product."
-    FIRE_LINE = "Red flag warnings are not listed (fire weather zones were not available)."
+    STATIONS = "Station readings could not be loaded in this update; that is not the same as no station reading." + AC
+    ZONES = "Zone products could not be loaded in this update; that is not the same as no zone product." + AC
+    FIRE_LINE = "Red flag warnings are not listed (fire weather zones were not available)." + AC
     LWT = {"id": "LWT", "name": "Lewistown", "lat": 47.06, "lon": -109.4, "miles": 12.3}
     UNREADABLE = '{"f": "hail-zone-v1", "events": ['
 
@@ -1994,7 +1998,7 @@ class RedFlagTests(unittest.TestCase):
         index["joins"]["fire_zones"] = {"state": "unavailable", "reason": "the file was in an unexpected format"}
         out = J.describe_joins(index, _cell_doc(), *GATE)
         zones = next(s for s in out["sections"] if s["id"] == "zones")
-        self.assertIn("Red flag warnings are not listed (fire weather zones were not available).", zones["lines"])
+        self.assertIn("Red flag warnings are not listed (fire weather zones were not available)." + AC, zones["lines"])
 
     def test_fire_zone_events_appear_in_the_zone_section_with_their_zone_named(self):
         root = Path(tempfile.mkdtemp(prefix="joins-test-fire-"))
@@ -2052,7 +2056,7 @@ class NoOutlineTests(unittest.TestCase):
         out = J.describe_joins(index, _cell_doc(), *GATE, events=store_form({})[1])
         warnings = next(s for s in out["sections"] if s["id"] == "warnings")
         self.assertEqual(warnings["lead"], J.WORDS_JOINS["warnings_lead_unknown"])
-        self.assertIn("1 warning in these five years has no outline on file, so it cannot be matched to this spot.",
+        self.assertIn("1 warning in these five years has no outline on file, so it cannot be matched to this spot." + AC,
                       warnings["lines"])
         self.assertNotIn("No warning in the archive", warnings["lead"])
 
@@ -2537,10 +2541,9 @@ class TownAndPairTests(unittest.TestCase):
 
 class WordsB5Tests(unittest.TestCase):
     def test_the_b5_unavailable_line_ends_with_the_negation(self):
-        # rules-13: the B5 county line ends with the required sentence; B2's own D20 sentence stays exact, with no
-        # all-clear (DECISIONS.md, B2 "States"; test_joins UnavailableWordsTests)
+        # rules-13 and D41: every unavailable line ends with the required sentence, the D20 sentence included
         self.assertTrue(J.WORDS_JOINS["county_unavailable"].endswith("This is not an all-clear."))
-        self.assertNotIn("all-clear", J.WORDS_JOINS["unavailable"])
+        self.assertTrue(J.WORDS_JOINS["unavailable"].endswith("This is not an all-clear."))
 
     def test_the_radar_sentence_is_the_brief_sentence(self):
         self.assertEqual(J.WORDS_JOINS["radar_sentence"], "Radar estimates can miss hail that people reported and can "
@@ -2551,8 +2554,9 @@ class WordsB5Tests(unittest.TestCase):
                           J.WORDS_JOINS["section_heat"]), ("Flooding", "Ice and winter", "Heat"))
 
     def test_the_new_words_pass_the_forbidden_term_check(self):
-        samples = [J.WORDS_JOINS["warnings_row_b5"].format(date="Jun 15, 2025", span="1:00 pm MDT to 2:00 pm MDT",
-                                                           product="Flood warning", office="TFX", tags=""),
+        samples = [J.WORDS_JOINS["warnings_row_b5"].format(label="Warning", date="Jun 15, 2025",
+                                                           span="1:00 pm MDT to 2:00 pm MDT",
+                                                           product="flood warning", office="TFX", tags="none stated"),
                    J.WORDS_JOINS["warnings_row"].format(date="Jun 15, 2025", begin="1:00 pm MDT", end="2:00 pm MDT",
                                                         kind="Flash flood", office="TFX", tags="none stated"),
                    J.WORDS_JOINS["warnings_span_none"].format(begin="1:00 pm MDT"),
@@ -2638,7 +2642,7 @@ class B5SheetTests(unittest.TestCase):
         out = J.describe_joins(index, doc, *GATE, store_dir=self.root)
         sec = next(s for s in out["sections"] if s["id"] == "zones")
         texts = [row["text"] for row in sec["rows"]]
-        self.assertIn("County product: Flood watch, whole county Judith Basin County: Jan 10, 2025 12:00 am MST to "
+        self.assertIn("County product: Areal flood watch, whole county Judith Basin County: Jan 10, 2025 12:00 am MST to "
                       "Jan 11, 2025 1:00 am MST", texts)
         self.assertIn("1 county product for Judith Basin County between", " ".join(sec["lines"]))
         check_words(self, " ".join(sec["lines"]))
@@ -3076,12 +3080,18 @@ class B5PartB1Tests(unittest.TestCase):
         item = {"k": "FA", "s": "Y", "o": "TFX", "b": utc(2025, 1, 10, 7), "e": utc(2025, 1, 11, 8),
                 "tags": {"hail_in": None, "wind_mph": None, "tornado": None, "damage": None}}
         text = J._warning_text(item["b"], item["e"], item, J.WORDS_JOINS)
-        self.assertIn("issuance polygon in effect: areal flood advisory, TFX; tags: none stated", text)
+        self.assertIn("Advisory: Jan 10, 2025 12:00 am MST to Jan 11, 2025 1:00 am MST: areal flood advisory, TFX, covered "
+                      "this cell or part of it; tags: none stated", text)
         self.assertNotIn("FA warning", text)
+        self.assertFalse(text.startswith("Warning:"))           # D41: an advisory is never labelled a warning
         item = dict(item, k="FL", s="A")
-        self.assertIn("in effect: flood watch, TFX", J._warning_text(item["b"], item["e"], item, J.WORDS_JOINS))
+        watch = J._warning_text(item["b"], item["e"], item, J.WORDS_JOINS)
+        self.assertTrue(watch.startswith("Watch: "), watch)
+        self.assertIn(": flood watch, TFX, covered this cell or part of it", watch)
         item = dict(item, k="SQ", s="W")
-        self.assertIn("in effect: snow squall warning, TFX", J._warning_text(item["b"], item["e"], item, J.WORDS_JOINS))
+        snow = J._warning_text(item["b"], item["e"], item, J.WORDS_JOINS)
+        self.assertTrue(snow.startswith("Warning: "), snow)
+        self.assertIn(": snow squall warning, TFX, covered this cell or part of it", snow)
 
     def test_the_browser_phenomenon_words_cover_each_significance_in_the_store(self):
         words = J.PHENOMENON_KIND_WORDS
@@ -3207,6 +3217,113 @@ class B5PartB1Tests(unittest.TestCase):
         self.assertIn("are not published (HTTP 404 when checked on 2026-10-19)", request)
         self.assertNotIn("the NWS links two editions", request)
         check_words(self, missing)
+
+
+class TownsFileAndGustPeriodsTests(unittest.TestCase):
+    """D37 and D38: each station gust file carries the days it reported in the five seasons; hail/j/towns.json lists the
+    polygon products whose outline holds each town point, with the event id, the dates and the state of the warnings part;
+    towns_file_check compares it with the cell covers, and a town event the cover lacks is a failure."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="joins-test-towns-"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    @staticmethod
+    def square(lon0, lat0, lon1, lat1):
+        return [[lon0, lat0], [lon1, lat0], [lon1, lat1], [lon0, lat1], [lon0, lat0]]
+
+    @staticmethod
+    def ctx(events, state="loaded"):
+        return SimpleNamespace(ww_events=events,
+                               part_all_failed={"warnings": state == "unavailable"},
+                               part_failures={"warnings": ["one file"] if state == "partial" else []},
+                               part_reason={"warnings": "the file was in an unexpected format"})
+
+    def test_a_town_lists_the_polygon_products_whose_outline_holds_its_point(self):
+        inside = {"k": "FL", "s": "W", "o": "TFX", "b": datetime(2025, 6, 14, 0, 26, tzinfo=timezone.utc), "e": None,
+                  "rings": [self.square(-110.2, 47.0, -109.9, 47.2)], "ref": 0}
+        outside = {"k": "FA", "s": "Y", "o": "TFX", "b": datetime(2025, 6, 14, 0, 26, tzinfo=timezone.utc),
+                   "e": datetime(2025, 6, 14, 1, 0, tzinfo=timezone.utc),
+                   "rings": [self.square(-108.0, 46.0, -107.5, 46.5)], "ref": 1}
+        towns = [{"slug": "testtown", "name": "Test Town", "lat": 47.1, "lon": -110.05}]
+        doc = J.towns_polygon_file(self.ctx([inside, outside]), towns)
+        self.assertEqual((doc["f"], doc["state"], doc["reason"]), (J.TOWNS_FORMAT, "loaded", None))
+        events = doc["towns"]["testtown"]["events"]
+        self.assertEqual([row[0] for row in events], [0])          # the event id is the events table's index
+        self.assertEqual(events[0][1], "FL.W")
+        self.assertIsNone(events[0][4])                            # no end recorded
+
+    def test_an_unavailable_warnings_part_gives_no_events_and_says_so(self):
+        towns = [{"slug": "testtown", "name": "Test Town", "lat": 47.1, "lon": -110.05}]
+        doc = J.towns_polygon_file(self.ctx([], state="unavailable"), towns)
+        self.assertEqual(doc["state"], "unavailable")
+        self.assertEqual(doc["reason"], "the file was in an unexpected format")
+        self.assertEqual(doc["towns"]["testtown"]["events"], [])
+
+    def test_a_warning_row_takes_its_label_from_the_significance_and_the_kind_from_the_product(self):
+        begin = datetime(2025, 6, 14, 0, 26, tzinfo=timezone.utc)
+        end = datetime(2025, 6, 14, 1, 8, tzinfo=timezone.utc)
+        tags = {"hail_in": None, "wind_mph": None, "tornado": None, "damage": None}
+        for code, label, product in (("SV.W", "Warning", "severe thunderstorm warning"),
+                                     ("FL.A", "Watch", "flood watch"),
+                                     ("FA.Y", "Advisory", "areal flood advisory"),
+                                     ("FA.A", "Watch", "areal flood watch")):
+            phen, sig = code.split(".")
+            text = J._warning_text(begin, end, {"k": phen, "s": sig, "o": "TFX", "tags": tags}, J.WORDS_JOINS)
+            self.assertTrue(text.startswith(label + ": Jun 13, 2025 6:26 pm MDT to 7:08 pm MDT: "), text)   # 00:26 UTC is 6:26 pm MDT
+            self.assertIn(": " + product + ", TFX, covered this cell or part of it; tags: none stated", text)
+
+    def test_the_five_seasons_count_the_days_each_station_reported(self):
+        rows = [(date(2023, 7, 1), 50.0), (date(2023, 7, 2), 60.0), (date(2024, 6, 30), 40.0)]
+        periods = J.station_periods(rows, date(2026, 10, 16))["season"]
+        self.assertEqual(sorted(periods), ["2021-22", "2022-23", "2023-24", "2024-25", "2025-26"])
+        self.assertEqual(periods["2023-24"], {"n": 366, "ok": 3})          # 2024 is a leap year: 366 days
+        self.assertEqual(periods["2022-23"], {"n": 365, "ok": 0})          # reported no day: zero of 365, not missing
+        self.assertNotIn("2026-27", periods)
+
+    def test_the_towns_file_agrees_with_the_cell_cover_or_says_where_it_does_not(self):
+        lat, lon = 47.1, -110.05
+        row, col = hail.cell_for(lat, lon)
+        tile = hail.tile_name(row // hail.TILE, col // hail.TILE)
+        key = hail.cell_key(row, col)
+        jdir = self.tmp / "hail" / "j"
+        jdir.mkdir(parents=True)
+        town_event = [[0, "FL.W", "TFX", "2025-06-14T00:26:00Z", None]]
+        towns = {"testtown": {"name": "Test Town", "lat": lat, "lon": lon, "cell": [row, col], "events": town_event}}
+        (jdir / "towns.json").write_text(json.dumps({"f": J.TOWNS_FORMAT, "d0": "2021-10-17", "state": "loaded",
+                                                     "reason": None, "towns": towns}), encoding="utf-8")
+
+        def write_tile(warnings):
+            (jdir / f"{tile}.json").write_text(json.dumps({"warnings": warnings}), encoding="utf-8")
+
+        write_tile([[0, J.cover_hex([key])]])                       # the cover holds the town's cell: agreement
+        ok = J.towns_file_check(self.tmp, {tile})
+        self.assertEqual((ok["town_not_cover"], ok["cover_not_town"], ok["not_in_store"]), (0, 0, []))
+        write_tile([[0, J.cover_hex([(key + 1) % 100])]])           # the cover lacks the town's cell: a failure
+        missing = J.towns_file_check(self.tmp, {tile})
+        self.assertEqual(missing["town_not_cover"], 1)
+        write_tile([[1, J.cover_hex([key])]])                       # a cover-only event: recorded, not failed
+        extra = J.towns_file_check(self.tmp, {tile})
+        self.assertEqual((extra["town_not_cover"], extra["cover_not_town"]), (1, 1))
+        self.assertEqual(J.towns_file_check(self.tmp, set())["not_in_store"], ["testtown"])
+
+    def test_the_gust_file_check_names_a_season_that_is_missing_or_wrong(self):
+        index = {"window": ["2021-10-17", "2026-10-16"]}
+        sdir = self.tmp / "hail" / "s"
+        sdir.mkdir(parents=True)
+        seasons = {}
+        for label in J.SEASON_LABELS:
+            start, end = J.season_bounds(label, date(2026, 10, 16))
+            seasons[label] = {"n": (end - start).days + 1, "ok": 0}
+        (sdir / "GOOD.json").write_text(json.dumps({"periods": {"season": seasons}}), encoding="utf-8")
+        self.assertEqual(J.station_periods_check(self.tmp, index)["bad"], 0)
+        seasons["2023-24"]["ok"] = 999                              # more days than the season has
+        (sdir / "BAD.json").write_text(json.dumps({"periods": {"season": seasons}}), encoding="utf-8")
+        checked = J.station_periods_check(self.tmp, index)
+        self.assertEqual((checked["files"], checked["bad"]), (2, 1))
+        self.assertEqual(checked["examples"], ["BAD 2023-24"])
 
 
 if __name__ == "__main__":

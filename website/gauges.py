@@ -96,9 +96,10 @@ class GaugeError(S.StationsError):
 
 WORDS = {
     "lead": ("River flood record at the {name} gauge, {miles} miles away; it does not say water reached this address."),
-    "stages": ("River gauge: NWS flood stage {minor} ft (action {action} ft, moderate {moderate} ft, major {major} ft) "
+    # D41 (F8): the page prints "River gauge:" once in front of each line, so the words do not repeat it
+    "stages": ("NWS flood stage {minor} ft (action {action} ft, moderate {moderate} ft, major {major} ft) "
                "at this gauge."),
-    "peak": "River gauge: water year {wy}, peak {ft} ft on {date}{qual}, at or above the {minor} ft flood stage.",
+    "peak": "water year {wy}, peak {ft} ft on {date}{qual}, at or above the {minor} ft flood stage.",
     "peak_qual": " (USGS qualifier: {qual})",
     "no_peaks": ("No annual peak at or above the {minor} ft flood stage is listed for water years {first} to {last} "
                  "at this gauge."),
@@ -111,6 +112,16 @@ WORDS = {
     # D28 (B5 part B1): the D20 sentence the unavailable block carries in "problem"; the technical reason is "detail"
     "unavailable": ("River gauges could not be loaded in this update; that is not the same as no river gauge. "
                     "This is not an all-clear."),
+    # D32 (B5 part B1): a partial block names each failed gauge or USGS series in its problem line (the D20 sentence);
+    # a town whose gauge list entry cannot be placed never reads "no gauge within 10 miles"
+    "partial_named": ("River gauges could not be loaded in this update for {names}; that is not the same as no river "
+                      "gauge. This is not an all-clear."),
+    "partial_peaks": ("USGS annual peaks could not be loaded in this update for {names}; that is not the same as no annual "
+                      "peak. This is not an all-clear."),
+    "partial_other": ("Some river gauge files could not be loaded in this update; that is not the same as no river gauge. "
+                      "This is not an all-clear."),
+    "unplaced": ("The river gauge line for {place} cannot be checked in this update: {count} listed {gauges} had no "
+                 "position in the list, so a gauge within 10 miles cannot be ruled out. This is not an all-clear."),
     "source": ("Source: NWS river gauges (National Water Prediction Service flood categories) and USGS annual peak "
                "stage, water years. Observations courtesy of U.S. Geological Survey."),
     "stage_note": "Flood stage is the NWS minor category. Stages are in feet at the gauge.",
@@ -444,10 +455,17 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
         series += 1
         rows_total += len(rows)
     listed_failed = [got["failed_listing"][lid] for lid in sorted(got["failed_listing"])]
+    # D32: a failed gauge whose list entry has no position could be within 10 miles of any town
+    unplaced = [lid for lid in sorted(failed) if lid not in got["failed_listing"]]
     towns = {}
     for town in _towns():
         found = nearest_listed(pool, listed_failed, town["lat"], town["lon"])
-        if found is None:
+        if found is None and unplaced:
+            sentence = WORDS["unplaced"].format(place=town["name"], count=len(unplaced),
+                                               gauges="gauge" if len(unplaced) == 1 else "gauges")
+            towns[town["slug"]] = {"unavailable": True, "reason": "a listed gauge has no position",
+                                   "sentence": sentence}
+        elif found is None:
             towns[town["slug"]] = {"none": True}
         elif found.get("unavailable"):
             towns[town["slug"]] = found
@@ -462,9 +480,14 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
     gates["billings_nearest"] = billings
     gates["billings_peak"] = _billings_peak(store, peaks_failed)
     state = "partial" if failures or failed else "loaded"
+    names_by_usgs = {g["usgs"]: g["name"] for g in pool if g["usgs"]}
+    named = [f"{row['name']} ({lid})" for lid, row in sorted(got["failed_listing"].items())]
+    named += [f"gauge {lid}" for lid in unplaced]
+    peak_names = [f"{names_by_usgs.get(u, 'USGS ' + u)} (USGS {u})" for u in sorted(peaks_failed)]
     block = {
         "state": state,
-        "problem": None if state == "loaded" else "some gauge files did not load (see failures)",
+        "problem": None if state == "loaded" else _gauge_problem(named, peak_names),
+        "detail": None if state == "loaded" else _gauge_detail(failures),
         "rule": _rule(),
         "sources": {"list": LIST_URL,
                     "detail_example": DETAIL_URL.format(lid="BILM8"),
@@ -499,6 +522,20 @@ def build(store: Path, cache: Path, *, offline: bool = False, refresh="none", pr
     return {"state": state, "seconds": round(time.monotonic() - t0, 1), "pool": len(pool), "pool_mt": len(mt_pool),
             "g_files": series, "g_bytes": total, "peak_rows": rows_total, "failures": len(failures),
             "failed_lids": len(failed), "peaks_failed": len(peaks_failed), "towns": towns.get("billings")}
+
+
+def _gauge_problem(named: list[str], peak_names: list[str]) -> str:
+    """The D20 sentence for a gauges block that is partial (D28, D32): each failed gauge, or each USGS series, is named."""
+    if named:
+        return WORDS["partial_named"].format(names=S._named_list(named))
+    if peak_names:
+        return WORDS["partial_peaks"].format(names=S._named_list(peak_names))
+    return WORDS["partial_other"]
+
+
+def _gauge_detail(failures: list[dict]) -> str:
+    """The technical reasons beside the problem line (D28): each failure's gauge, USGS number or source, and its reason."""
+    return "; ".join(f"{f.get('lid') or f.get('usgs') or f.get('source')}: {f.get('reason')}" for f in failures[:50])
 
 
 def _scope(pool: list[dict], store: Path) -> list[dict]:

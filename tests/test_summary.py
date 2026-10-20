@@ -16,10 +16,13 @@ import unittest
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from website import climate, gauges, hail, joins, stations
-from website import summary as S
+import sys
 
-import words_rules
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # tests/ (words_rules: the shared forbidden list)
+from website import climate, gauges, hail, joins, stations  # noqa: E402
+from website import summary as S  # noqa: E402
+
+import words_rules  # noqa: E402
 
 AS_OF = date(2026, 10, 16)
 ROW, COL = 921, 2149                       # the B1 cell of Billings (45.7836 N, 108.5007 W)
@@ -377,8 +380,11 @@ class SummaryTests(unittest.TestCase):
         # the five-season figure needs every season: one short season makes it Data unavailable, with its reason
         self.assertIsNone(self.rows["gust_days"]["five"])
         self.assertIn("2021-22 has no usable value", " ".join(self.rows["gust_days"]["notes"]))
-        # the five-season total of snowfall needs every season: all five pass, so it is a sum
-        self.assertIsInstance(snow["five"], int)
+        # the five-season total of snowfall needs one station for all five seasons (D41, B5-16): the fixture has two, so
+        # there is no total, and the cell says why
+        self.assertIsNone(snow["five"])
+        self.assertIn("the seasons come from more than one station", snow["five_text"])
+        self.assertTrue(snow["five_text"].endswith("This is not an all-clear."), snow["five_text"])
 
     def test_radar_largest_and_one_inch_days(self):
         radar = self.rows["radar_max"]
@@ -612,7 +618,9 @@ class SummaryVariantTests(unittest.TestCase):
             snow = {r["key"]: r for r in result["table"]["rows"]}["snow"]
             self.assertIsNone(snow["values"][2])
             self.assertIsNone(snow["five"])
-            self.assertIn("Data unavailable", snow["texts"][2])
+            # no station passes on a loaded block: the no-station sentence, with every day of the season missing (D33)
+            self.assertIn("No station within 40 miles has enough reports for snowfall from 2020 to 2025.", snow["texts"][2])
+            self.assertIn("days missing", snow["coverage"][2])
         finally:
             shutil.rmtree(root, ignore_errors=True)
 
@@ -667,7 +675,8 @@ class FailureVariantTests(unittest.TestCase):
                          "Data unavailable: some products could not be placed to a zone. This is not an all-clear.")
         self.assertIn("Montana: 2 high wind products issued Dec 11, 2021 to Jan 2, 2022 could not be placed to a zone",
                       rows["hw_zone"]["coverage"][0])
-        self.assertTrue(rows["hw_zone"]["coverage"][0].endswith("(NWS change log)."), rows["hw_zone"]["coverage"][0])
+        self.assertTrue(rows["hw_zone"]["coverage"][0].endswith("(NWS change log). This is not an all-clear."),
+                        rows["hw_zone"]["coverage"][0])
         self.assertIn("Montana: 1 high wind product issued Jul 18, 2022 could not be placed to a zone; Partial: 68 days",
                       rows["hw_zone"]["coverage"][1])
         self.assertIn("Montana: 1 high wind product issued Oct 1, 2024 could not be placed to a zone.",
@@ -697,7 +706,7 @@ class FailureVariantTests(unittest.TestCase):
         sections = {s["id"]: s for s in result["sections"]}
         self.assertIn("1 heat advisory product in 2022-23", " ".join(sections["heat"]["notes"]))
         flood = " ".join(sections["flooding"]["notes"])
-        self.assertIn("1 flood advisory product in 2021-22 and 1 flash flood advisory product in 2021-22", flood)
+        self.assertIn("1 flood watch product in 2021-22 and 1 flash flood watch product in 2021-22", flood)
 
     def test_automated_reports_and_gust_coverage_are_said(self):
         result, rows = self._rows("full")
@@ -822,7 +831,10 @@ class WordsTests(unittest.TestCase):
             for phrase in ("covered this spot", "covering the spot", "covered the spot"):
                 self.assertNotIn(phrase, text)
         self.assertIn("covered this cell or part of it", " ".join(all_text(self.result)))
-        for text in list(strings_of(S.WORDS_SUMMARY)) + list(strings_of(S.WORDS_INDICATORS)) + [k["means"] for k in S.KIND_WORDS]:
+        # the town variant (D38) is the one place "covered this spot" is written; the sheet's words never say it
+        sheet_words = {k: v for k, v in S.WORDS_SUMMARY.items()
+                       if k != "covered_town" and not k.startswith("town_warnings")}
+        for text in list(strings_of(sheet_words)) + list(strings_of(S.WORDS_INDICATORS)) + [k["means"] for k in S.KIND_WORDS]:
             for phrase in ("covered this spot", "covering the spot", "covered the spot"):
                 self.assertNotIn(phrase, text)
 
@@ -842,8 +854,9 @@ class WordsTests(unittest.TestCase):
     def test_hail_lead_names_the_report_with_its_kind_label(self):
         hail = [s["lead"] for s in self.result["sections"] if s["id"] == "hail"][0]
         self.assertIn("with hail of 1 inch or more; Report: ", hail)
-        self.assertEqual(hail, "Radar estimate: 3 days with hail of 1 inch or more; Report: 3 hail reports within 5 miles, "
-                               "in these five years.")
+        self.assertTrue(hail.startswith("Radar estimate: 3 days with hail of 1 inch or more; Report: 3 hail reports within "
+                                        "5 miles, in these five years. "), hail)
+        self.assertIn("days missing in these five seasons, the most in any row of this section.", hail)   # D33
 
     def test_precipitation_wording_says_what_the_total_is(self):
         lines = {x["id"]: x for g in self.result["roof"]["groups"] for x in g["lines"]}
@@ -913,12 +926,13 @@ class StationTests(unittest.TestCase):
         try:
             result = S.describe_summary(root, ROW, COL, None)
             snow = {r["key"]: r for r in result["table"]["rows"]}["snow"]
-            self.assertIn("two stations: Billings WTP 2021-22 to 2022-23, Billings Logan 2023-24, Billings WTP 2024-25 to 2025-26",
-                          snow["five_text"])
+            self.assertEqual(snow["five_text"], "Data unavailable for the five seasons: the seasons come from more than one "
+                                                "station, so no five-season total is shown. This is not an all-clear.")
+            self.assertEqual([s for s in snow["stations"] if s], ["Billings WTP"] * 2 + ["Billings Logan"] + ["Billings WTP"] * 2)
             self.assertIn("Billings WTP has 82.2 percent of the 2023-24 days (300 of 365), under the 95 percent rule, so "
                           "Billings Logan is shown.", " ".join(snow["notes"]))
             lead = [s["lead"] for s in result["sections"] if s["id"] == "snow"][0]
-            self.assertIn("of snowfall in the five seasons, from two stations (the station named in each season)", lead)
+            self.assertIn("each season's snowfall is from the station named in it, and no five-season total is shown", lead)
         finally:
             shutil.rmtree(root, ignore_errors=True)
 
@@ -1095,6 +1109,190 @@ class GaugeFailureTests(unittest.TestCase):
             self.assertIsNone(result["problem"])
         finally:
             shutil.rmtree(root, ignore_errors=True)
+
+
+class ReviewFixTests(unittest.TestCase):
+    """The B1 review's fixes (D32 to D41) on the synthetic store: a failed station or gust file is named, never read as no
+    record or skipped; a zero report reads as the no-report sentence; the all-clear sentence ends every unavailable and
+    partial line; the town page counts its polygon warnings at the town point when the towns file is there (D38)."""
+
+    def _variant(self, variant: str = "full"):
+        root, _ = build_store(variant)
+        self.addCleanup(shutil.rmtree, root, True)
+        return root
+
+    def test_a_chosen_station_whose_record_did_not_load_is_named_and_never_read_as_no_reading(self):
+        root = self._variant("full")
+        (root / "hail" / "sd" / "USC00240802.json").unlink()          # the nearer passing station's file is gone
+        result = S.describe_summary(root, ROW, COL, None, town=BILLINGS)
+        snow = {r["key"]: r for r in result["table"]["rows"]}["snow"]
+        self.assertIn("Billings Logan", snow["texts"][0])              # the farther station is shown, and says so
+        self.assertIn("Billings WTP's record for 2021-22 could not be loaded in this update, so Billings Logan is shown; "
+                      "that is not the same as no snowfall reading. This is not an all-clear.", " ".join(snow["notes"]))
+        self.assertNotIn("no station has enough reports", " ".join(snow["texts"]))
+
+    def test_no_station_figure_from_failed_files_is_the_failed_sentence_not_a_no_station_claim(self):
+        root = self._variant("full")
+        for sid in ("USC00240802", "USW00024033"):
+            (root / "hail" / "sd" / f"{sid}.json").unlink()
+        snow = {r["key"]: r for r in S.describe_summary(root, ROW, COL, None, town=BILLINGS)["table"]["rows"]}["snow"]
+        self.assertTrue(snow["texts"][0].startswith("Data unavailable for 2021-22: Billings WTP and Billings Logan could not be "
+                                                    "loaded in this update"), snow["texts"][0])
+        self.assertTrue(snow["texts"][0].endswith("This is not an all-clear."), snow["texts"][0])
+        self.assertFalse(any("No station within 40 miles" in t for t in snow["texts"]), snow["texts"])
+        self.assertIsNone(snow["five"])
+
+    def test_a_gust_file_that_did_not_load_is_named_failed_and_the_rule_does_not_skip_it(self):
+        root = self._variant("full")
+        (root / "hail" / "s" / "BIL.json").unlink()
+        rows = {r["key"]: r for r in S.describe_summary(root, ROW, COL, None)["table"]["rows"]}
+        self.assertTrue(rows["gust_days"]["texts"][0].startswith("Data unavailable: Billings Logan could not be loaded"),
+                        rows["gust_days"]["texts"][0])
+        self.assertTrue(rows["gust_days"]["texts"][0].endswith("This is not an all-clear."))
+        self.assertIsNone(rows["gust_days"]["five"])
+
+    def test_a_no_report_count_reads_as_the_no_report_sentence_never_as_zero_reports(self):
+        root = self._variant("full")
+        result = S.describe_summary(root, ROW, COL, None)
+        for row in result["table"]["rows"]:
+            if row["kind"] != "Report":                  # warnings and zone products keep their counts
+                continue
+            for text in row["texts"] + [row["five_text"]]:
+                self.assertFalse(re.match(r"^0 (hail|wind|freezing|flood|rain|tornado|extreme)", text or ""), (row["key"], text))
+        hail_n = {r["key"]: r for r in result["table"]["rows"]}["hail_n"]
+        self.assertIn("No NWS local storm report of hail within 5 miles in 2021-22; reports are not a complete record.",
+                      hail_n["texts"][0])
+        lines = {x["id"]: x for g in result["roof"]["groups"] for x in g["lines"]}
+        self.assertIn("No NWS local storm report of tornado, funnel cloud or landspout within 5 miles in these five years; "
+                      "reports are not a complete record", lines["tornado_funnel"]["text"])
+
+    def test_every_unavailable_partial_and_held_line_ends_with_the_all_clear_sentence(self):
+        for variant in ("full", "snow_none", "gauge_unavailable", "stations_unavailable", "warnings_unavailable",
+                        "reports_unavailable", "zones_unplaced", "one_station", "climate_unavailable"):
+            root, _ = build_store(variant)
+            try:
+                result = S.describe_summary(root, ROW, COL, None, town=BILLINGS)
+            finally:
+                shutil.rmtree(root, ignore_errors=True)
+            for text in all_text(result):
+                if len(text) > 60 and not text.startswith("Kind words") and (
+                        "Data unavailable" in text or "could not be loaded in this update" in text or text.startswith("Partial")):
+                    self.assertTrue(text.endswith("This is not an all-clear."), (variant, text[-160:]))
+            self.assertTrue(result["table"]["partial"]["text"].endswith("This is not an all-clear."), variant)
+
+    def test_the_held_row_names_its_reason_in_the_unit_slot_and_no_unit_reads_none(self):
+        root = self._variant("full")
+        held = {r["key"]: r for r in S.describe_summary(root, ROW, COL, None)["table"]["rows"]}["held"]
+        self.assertEqual(held["unit"], "reason")
+        self.assertEqual(S.UNIT_SPEC["reason"]["word"], "no free public record was used in this history")
+        self.assertNotIn("none", [u["word"] for u in S.UNIT_SPEC.values()])
+
+    def test_a_town_page_counts_its_polygon_warnings_at_the_town_point_when_the_towns_file_is_there(self):
+        root = self._variant("full")
+        towns = {"f": joins.TOWNS_FORMAT if hasattr(joins, "TOWNS_FORMAT") else "hail-joins-towns-v1", "d0": "2020-01-01",
+                 "state": "loaded", "reason": None, "towns": {"billings": {
+                     "name": "Billings", "lat": 45.7833, "lon": -108.5007, "cell": [ROW, COL],
+                     "events": [[0, "FF.W", "TFX", "2022-06-14T10:00Z", None],
+                                [1, "FL.W", "TFX", "2024-06-14T10:00Z", None],
+                                [2, "SV.W", "TFX", "2023-05-20T00:00Z", None]]}}}
+        write_json(root / "hail" / "j" / "towns.json", towns)
+        result = S.describe_summary(root, ROW, COL, None, town=BILLINGS)
+        flood = {r["key"]: r for r in result["table"]["rows"]}["flood_warn"]
+        self.assertEqual(flood["texts"][0], "1 flood or flash flood warning")       # 2021-22: the town's FF.W (June 2022)
+        self.assertEqual(flood["texts"][2], "1 flood or flash flood warning")       # 2023-24: the town's FL.W (June 2024)
+        self.assertEqual(flood["five"], 2)
+        lines = {x["id"]: x for g in result["roof"]["groups"] for x in g["lines"]}
+        self.assertIn("covered this spot", lines["hail_warnings"]["text"])
+        self.assertIn("covered this spot", " ".join(s["lead"] for s in result["sections"] if s["id"] == "flooding"))
+        sheet = S.describe_summary(root, ROW, COL, None)                              # the sheet keeps the cell's words
+        self.assertIn("covered this cell or part of it", " ".join(s["lead"] for s in sheet["sections"] if s["id"] == "flooding"))
+
+    def test_a_towns_file_that_did_not_load_says_so_and_a_partial_one_says_why(self):
+        root = self._variant("full")
+        towns = {"f": "hail-joins-towns-v1", "d0": "2020-01-01", "state": "unavailable", "reason": "the warnings part did not answer",
+                 "towns": {}}
+        write_json(root / "hail" / "j" / "towns.json", towns)
+        result = S.describe_summary(root, ROW, COL, None, town=BILLINGS)
+        flood = {r["key"]: r for r in result["table"]["rows"]}["flood_warn"]
+        self.assertIsNone(flood["five"])
+        self.assertEqual(flood["five_text"], "Data unavailable")
+        self.assertTrue(" ".join(flood["notes"]).endswith("This is not an all-clear."), flood["notes"])
+        towns["state"] = "partial"
+        towns["towns"] = {"billings": {"name": "Billings", "lat": BILLINGS["lat"], "lon": BILLINGS["lon"], "cell": [ROW, COL],
+                                       "events": [[0, "FF.W", "TFX", "2022-06-14T10:00Z", None]]}}
+        write_json(root / "hail" / "j" / "towns.json", towns)
+        result = S.describe_summary(root, ROW, COL, None, town=BILLINGS)
+        notes = " ".join({r["key"]: r for r in result["table"]["rows"]}["flood_warn"]["notes"])
+        self.assertIn("Warnings for this spot were only partly checked in this update (the warnings part did not answer)", notes)
+        self.assertIn("Each count is a warning whose polygon covered this spot", notes)
+
+    def _tile_list(self, root, passing, unread=(), capped=False, element="SNOW"):
+        """Writes hail/tl/<tile>.json (stations.py's tile list, D36) for the spot's tile with these entries for one element."""
+        doc = {"f": S.TILE_LIST_FORMAT, "tile": "r0092_c0214", "centre": [45.75, -108.55], "miles": 40.0, "cap": 6,
+               "elements": {element: {"passing": passing, "unread": list(unread), "capped": capped}}}
+        write_json(root / "hail" / "tl" / "r0092_c0214.json", doc)
+
+    def test_the_two_nearest_passing_candidates_come_from_the_tile_list_at_the_point(self):
+        root = self._variant("full")
+        wtp = {"id": "USC00240802", "name": "BILLINGS WTP", "lat": 45.78, "lon": -108.52, "miles": 0.0, "ok": 2000, "of": 2192,
+               "share": 0.9124}
+        logan = {"id": "USW00024033", "name": "BILLINGS INTL AP", "lat": 45.8077, "lon": -108.5429, "miles": 0.0, "ok": 2100,
+                 "of": 2192, "share": 0.9578}
+        far = {"id": "US1MTYS0028", "name": "BILLINGS 4.2 WSW", "lat": 45.7595, "lon": -108.6613, "miles": 0.0, "ok": 2000,
+               "of": 2192, "share": 0.91}
+        self._tile_list(root, [far, wtp, logan])                 # not nearest-first on purpose: the rule sorts by the point
+        result = S.describe_summary(root, ROW, COL, None, town=BILLINGS)
+        self.assertEqual(result["town"]["stations"]["snow"][0]["name"], "BILLINGS WTP")
+        self.assertEqual([s["name"] for s in result["town"]["stations"]["snow"]], ["BILLINGS WTP", "BILLINGS INTL AP"])
+
+    def test_an_unread_candidate_nearer_than_the_second_pick_is_named_and_never_skipped(self):
+        root = self._variant("full")
+        wtp = {"id": "USC00240802", "name": "BILLINGS WTP", "lat": 45.78, "lon": -108.52, "miles": 0.0, "ok": 2000, "of": 2192,
+               "share": 0.9124}
+        logan = {"id": "USW00024033", "name": "BILLINGS INTL AP", "lat": 45.8077, "lon": -108.5429, "miles": 0.0, "ok": 2100,
+                 "of": 2192, "share": 0.9578}
+        unread = [{"id": "US1MTBIL0001", "name": "BILLINGS 1 N", "lat": 45.79, "lon": -108.5, "miles": 0.0,
+                   "reason": "the file did not load"}]
+        self._tile_list(root, [wtp, logan], unread=unread)
+        spot = S._Spot(root, hail.load_index(root), ROW, COL, dict(BILLINGS))
+        state, chosen, res = spot.chosen("SNOW")
+        self.assertEqual([c["name"] for c in chosen], ["BILLINGS WTP", "BILLINGS INTL AP"])
+        self.assertEqual([u["name"] for u in res["unread"]], ["BILLINGS 1 N"])
+        self.assertIn("BILLINGS 1 N", " ".join(stations.station_words(res, "SNOW")))
+
+    def test_a_capped_list_with_fewer_than_two_near_the_point_falls_back_to_the_station_block(self):
+        root = self._variant("full")
+        far = {"id": "USC00240802", "name": "BILLINGS WTP", "lat": 46.5, "lon": -108.0, "miles": 0.0, "ok": 2000, "of": 2192,
+               "share": 0.9124}
+        self._tile_list(root, [far], capped=True)
+        spot = S._Spot(root, hail.load_index(root), ROW, COL, dict(BILLINGS))
+        self.assertIsNone(spot.chosen_from_tile_list("SNOW"))
+        state, chosen, _res = spot.chosen("SNOW")
+        self.assertEqual(state, "two")                            # the station block answers, as before
+
+    def test_the_partial_season_grid_values_are_preliminary_and_never_a_record(self):
+        root = self._variant("full")
+        partial = S.describe_summary(root, ROW, COL, None)["table"]["partial"]["text"]
+        grid = partial.split(" Reports so far")[0]
+        self.assertTrue(grid.startswith("Preliminary grid estimate: 2026-27 so far"), grid)
+        self.assertNotIn("record", grid.lower())
+        self.assertIn("The newest days are preliminary and provisional until NOAA publishes the scaled month.", grid)
+
+    def test_gauge_lines_carry_one_river_gauge_label_each_and_the_gauge_is_read_once(self):
+        root = self._variant("full")
+        gauge = S.describe_summary(root, ROW, COL, None, town=BILLINGS)["town"]["gauge"]
+        for line in gauge:
+            self.assertFalse(line.startswith("River gauge"), line)
+            self.assertNotIn("River gauge", line)
+        self.assertTrue(any(line.startswith("NWS flood stage") for line in gauge), gauge)
+
+    def test_a_season_with_missing_days_names_them_once_on_its_coverage_line(self):
+        root = self._variant("full")
+        rows = {r["key"]: r for r in S.describe_summary(root, ROW, COL, None)["table"]["rows"]}
+        for key in ("tmax", "tmin"):
+            for cov in rows[key]["coverage"]:
+                if cov:
+                    self.assertEqual(cov.count("days missing"), 1, cov)
 
 
 if __name__ == "__main__":

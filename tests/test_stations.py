@@ -280,7 +280,7 @@ class RuleTests(unittest.TestCase):
         # every unavailable or unread line ends with the required sentence (D13, D20); data_unavailable is the season
         # line that the supervisor decides (rules-13 item 5b), so it is not in this list
         checked = sorted(k for k in S.WORDS if ("unavailable" in k or k.startswith("unread")) and k != "data_unavailable")
-        self.assertEqual(checked, ["unavailable", "unread_block", "unread_element", "unread_partial"])
+        self.assertEqual(checked, ["unavailable", "unread_block", "unread_element", "unread_named", "unread_partial"])
         for key in checked:
             self.assertTrue(S.WORDS[key].endswith("This is not an all-clear."), key)
 
@@ -361,8 +361,9 @@ class OfflineBuildTests(unittest.TestCase):
         self.assertEqual(entry["cover"], {"SNOW": None})
         self.assertFalse((self.store / "hail" / "sd" / "USC00000002.json").exists())
         # D28: the partial sentence is the problem, and the technical reason sits beside it as the detail
-        self.assertEqual(block["problem"], "Data unavailable for some stations: 1 file could not be loaded in this update, "
-                                           "so the rows that loaded are shown. This is not an all-clear.")
+        # D32: the problem line names the candidate whose file failed, with its id (the D20 sentence)
+        self.assertEqual(block["problem"], "Station readings could not be loaded in this update for MISSING (USC00000002); "
+                                           "that is not the same as no station reading. This is not an all-clear.")
         self.assertIn("USC00000002", block["detail"])
         # the town row: Lewistown's nearest-first walk meets the failed file, so the row is incomplete and names it
         towns = [slug for slug, per in block["towns"].items() if "USC00000002" in [r["id"] for r in per["SNOW"]["examined"]]]
@@ -810,3 +811,134 @@ class OfflineFailureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def passing_positions(store: Path, tile: str, element: str) -> list:
+    """The (lat, lon) of each passing station of a tile list of a test store, in the list's own order (nearest first)."""
+    doc = json.loads((store / "hail" / "tl" / f"{tile}.json").read_text(encoding="utf-8"))
+    return [(p["lat"], p["lon"]) for p in doc["elements"][element]["passing"]]
+
+
+class TileListTests(unittest.TestCase):
+    """D36 and D32: the tile list of r0079_c0199 (centre 47.05 N, 110.05 W) holds up to six passing stations per element,
+    nearest first, with positions and shares; a candidate whose file did not load is named in it and in the problem line.
+    Eight stations carry a full SNOW record; the nearest of them and one more are walked past or cut at the cap."""
+
+    TILE = "r0079_c0199"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.cache = self.root / "cache"
+        (self.cache / "ghcn" / "dly").mkdir(parents=True)
+        self.store = self.root / "store"
+        (self.store / "hail").mkdir(parents=True)
+        self.patches = [mock.patch.object(S, "_check_list", lambda data: None),
+                        mock.patch.object(S, "_check_inventory", lambda data: None)]
+        for patch in self.patches:
+            patch.start()
+        (self.store / "hail" / "index.json").write_text(json.dumps({
+            "as_of": "2026-10-16", "tiles": [self.TILE]}), encoding="utf-8")
+        (self.store / "hail" / "manifest.json").write_text(json.dumps({"files": {}}), encoding="utf-8")
+        ids = [f"USC0000{n:04d}" for n in range(101, 109)]              # eight stations, moving away from the centre
+        stations = [station_line(sid, 47.05 + 0.02 * k, -110.05 + 0.03 * k, "MT", f"STATION {k}")
+                    for k, sid in enumerate(ids)]
+        stations.append(station_line("USC00000150", 47.06, -110.04, "MT", "BROKEN"))   # nearest; its file is missing
+        inventory = [f"{sid:<11} {47.05 + 0.02 * k:8.4f} {-110.05 + 0.03 * k:9.4f} SNOW 2000 2026"
+                     for k, sid in enumerate(ids)]
+        inventory.append("USC00000150  47.0600 -110.0400 SNOW 2000 2026")
+        (self.cache / "ghcn" / "ghcnd-stations.txt").write_text("\n".join(stations) + "\n", encoding="utf-8")
+        (self.cache / "ghcn" / "ghcnd-inventory.txt").write_text("\n".join(inventory) + "\n", encoding="utf-8")
+        days = {d: (10, " ", " ") for d in range(1, 29)}
+        for sid in ids:
+            lines = [dly_line(sid, year, month, "SNOW", days) for year in range(2020, 2027) for month in range(1, 13)]
+            (self.cache / "ghcn" / "dly" / f"{sid}.dly").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def tearDown(self):
+        for patch in self.patches:
+            patch.stop()
+        self.tmp.cleanup()
+
+    def test_a_tile_list_holds_the_six_nearest_passing_stations_and_names_the_failed_candidate(self):
+        result = S.build(self.store, self.cache, offline=True, procs=1)
+        self.assertEqual(result["state"], "partial")
+        doc = json.loads((self.store / "hail" / "tl" / f"{self.TILE}.json").read_text(encoding="utf-8"))
+        self.assertEqual((doc["f"], doc["tile"], doc["cap"], doc["miles"]), ("hail-stn-tiles-v1", self.TILE, 6, 40.0))
+        self.assertEqual(doc["centre"], [47.05, -110.05])
+        snow = doc["elements"]["SNOW"]
+        self.assertEqual([p["id"] for p in snow["passing"]], [f"USC0000{n:04d}" for n in range(101, 107)])
+        self.assertTrue(snow["capped"])
+        self.assertEqual([u["id"] for u in snow["unread"]], ["USC00000150"])
+        self.assertEqual(snow["unread"][0]["name"], "BROKEN")
+        self.assertIsNotNone(snow["unread"][0]["lat"])
+        miles = [p["miles"] for p in snow["passing"]]
+        self.assertEqual(miles, sorted(miles))
+        for p in snow["passing"]:
+            self.assertEqual(p["of"], 2192)
+            self.assertGreaterEqual(p["share"], 0.8)
+            self.assertEqual(set(p), {"id", "name", "lat", "lon", "miles", "ok", "of", "share"})
+        self.assertEqual(doc["elements"]["TMAX"], {"passing": [], "unread": [], "capped": False})   # no TMAX candidate
+        block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]
+        self.assertEqual((block["tile_lists"]["capped"], block["tile_lists"]["unread"]), (1, 1))
+        self.assertEqual(block["tile_lists"]["format"], "hail-stn-tiles-v1")
+        # D32: the problem line names the failed candidate, with its name and id, and no absence claim
+        self.assertEqual(block["problem"], "Station readings could not be loaded in this update for BROKEN (USC00000150); "
+                                           "that is not the same as no station reading. This is not an all-clear.")
+        manifest = json.loads((self.store / "hail" / "manifest.json").read_text(encoding="utf-8"))
+        data = (self.store / "hail" / "tl" / f"{self.TILE}.json").read_bytes()
+        self.assertEqual(manifest["files"][f"hail/tl/{self.TILE}.json"]["sha256"], __import__("hashlib").sha256(data).hexdigest())
+
+    def test_the_tile_list_is_the_same_bytes_on_a_second_build(self):
+        S.build(self.store, self.cache, offline=True, procs=1)
+        first = (self.store / "hail" / "tl" / f"{self.TILE}.json").read_bytes()
+        S.build(self.store, self.cache, offline=True, procs=1)
+        self.assertEqual((self.store / "hail" / "tl" / f"{self.TILE}.json").read_bytes(), first)
+
+    def test_verify_records_the_two_picks_at_the_benchland_point_from_this_tile(self):
+        S.build(self.store, self.cache, offline=True, procs=1)
+        index = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))
+        block = index["stations"]
+        manifest = json.loads((self.store / "hail" / "manifest.json").read_text(encoding="utf-8"))
+        # the manifest of this synthetic store lists the tile lists and the station files it wrote
+        checks = []
+        picks = S._verify_tile_lists(self.store, index, block, manifest,
+                                     lambda name, passed, detail="": checks.append((name, passed, detail)))
+        self.assertEqual(sorted(picks), ["benchland", "billings"])
+        snow = picks["benchland"]["SNOW"]
+        self.assertEqual(len(snow["picks"]), 2)
+        self.assertTrue(set(snow["picks"]) <= {f"USC0000{n:04d}" for n in range(101, 107)})
+        # the failed candidate is nearer to the Benchland point than the second pick, so the picks are not known
+        broken = S.haversine_miles(47.08, -110.02, 47.06, -110.04)
+        second = passing_positions(self.store, self.TILE, "SNOW")[1]
+        cut = S.haversine_miles(47.08, -110.02, *second)
+        self.assertEqual(snow["failed_nearer"], ["USC00000150"] if broken < cut else [])
+        self.assertEqual(picks["benchland"]["TMAX"], {"picks": [], "miles": [], "failed_nearer": []})
+        # the listed checks: one file per index tile, the manifest entry, and the list's own rules
+        names = {name: passed for name, passed, _detail in checks}
+        self.assertTrue(names["tile lists: one file per index tile"])
+        self.assertTrue(names["manifest lists each tile list with its bytes and SHA-256"])
+        self.assertTrue(names["tile lists: format, the cap of six, nearest first, every passing entry current at 80 percent"])
+
+    def test_the_passing_walk_stops_at_the_cap_and_asks_for_a_missing_summary(self):
+        cands = [(1.0, "A"), (2.0, "B"), (3.0, "C"), (4.0, "D")]
+        def summary(sid, share_ok=2000):
+            return {"name": sid, "lat": 47.0, "lon": -110.0, "cover": {"SNOW": share_ok}, "current": {"SNOW": True}}
+        summaries = {"A": summary("A"), "B": summary("B"), "C": summary("C"), "D": summary("D")}
+        capped = S._passing_list(cands, summaries, "SNOW", date(2026, 10, 16), cap=3)
+        self.assertEqual([p["id"] for p in capped["passing"]], ["A", "B", "C"])
+        self.assertTrue(capped["capped"])
+        self.assertIsNone(capped["need"])
+        short = S._passing_list(cands, {"A": summary("A")}, "SNOW", date(2026, 10, 16), cap=3)
+        self.assertEqual((short["passing"][0]["id"], short["need"]), ("A", "B"))   # the walk pulls B, then walks again
+        failing = S._passing_list(cands, {"A": summary("A", 100), "B": summary("B")}, "SNOW", date(2026, 10, 16), cap=2)
+        self.assertEqual([p["id"] for p in failing["passing"]], ["B"])               # A is under 80 percent
+
+    def test_the_partial_problem_names_each_failed_candidate_and_counts_the_other_files(self):
+        named = S._partial_problem([{"id": "USC00000002", "name": "Buffalo 1.7 E"}], [])
+        self.assertEqual(named, "Station readings could not be loaded in this update for Buffalo 1.7 E (USC00000002); that is "
+                                "not the same as no station reading. This is not an all-clear.")
+        many = S._partial_problem([{"id": f"U{n}", "name": f"S{n}"} for n in range(5)], [])
+        self.assertIn("S0 (U0), S1 (U1), S2 (U2) and 2 more stations", many)
+        counted = S._partial_problem([], [{"source": "stations", "reason": "x"}, {"source": "daily", "station": "Z"}])
+        self.assertEqual(counted, "Some station files could not be loaded in this update (2 files); that is not the same as "
+                                  "no station reading. This is not an all-clear.")

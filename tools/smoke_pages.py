@@ -12,7 +12,8 @@ anything fails. The Website workflow runs it on branch pushes; locally set PW_CH
 executable if Playwright's own isn't installed.
 
 On a --hail-history build the five-season table of each town page is checked too, at TABLE_WIDTHS: no sideways scroll,
-and one card per row (the row's label first, each cell named by its season) below CARD_BELOW px.
+and one card per row (the row's label first, each cell named by its season) below CARD_BELOW px. At 390 px the page's jump
+link to the five-year history (D39) must be on the first screen, and its target must be on the page.
 """
 from __future__ import annotations
 
@@ -92,6 +93,15 @@ TABLE_CHECK = """() => {
 }"""
 
 
+# The jump link to a town page's five-year history (D39): its target is on the page, and the link is on the first screen.
+JUMP_CHECK = """() => {
+  const a = document.querySelector('a[href="#history"]');
+  if (!a) return null;
+  const target = document.getElementById('history');
+  const r = a.getBoundingClientRect();
+  return {present: !!target, onFirstScreen: r.top >= 0 && r.bottom <= window.innerHeight};
+}"""
+
 TABLES_CHECKED: dict[int, int] = {}      # width -> the town pages whose five-season table was read at that width
 
 
@@ -118,6 +128,13 @@ def check_tables(root: Path, base: str, browser, problems: list[str]) -> None:
                 problems.append(f"{name} at {width} px: the table does not reflow to one card per row with the label first")
             if width >= CARD_BELOW and res["card"]:
                 problems.append(f"{name} at {width} px: the table is cards where it should be a table")
+            if width == 390:
+                # D39: the jump link to the history is on the first screen, and the history's table leads its heading
+                link = page.evaluate(JUMP_CHECK)
+                if link is None or not link["present"]:
+                    problems.append(f"{name} at 390 px: the page has no jump link to its five-year history")
+                elif not link["onFirstScreen"]:
+                    problems.append(f"{name} at 390 px: the jump link to the history is below the first screen")
         ctx.close()
 
 

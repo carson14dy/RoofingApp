@@ -88,12 +88,21 @@ class HailStoreJobTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.text = WORKFLOW.read_text(encoding="utf-8")
-        cls.steps = job_steps(cls.text)
+        head, _, rest = cls.text.partition("\n  store:\n")
+        store_part, _, monthly_part = rest.partition("\n  monthly:\n")
+        cls.plan_steps = job_steps(head)
+        cls.steps = job_steps(store_part)              # the daily job: the B1, B2 and B5 steps
+        cls.monthly_steps = job_steps(monthly_part)    # the monthly job (D42)
         cls.names = [s.name for s in cls.steps]
 
     def step(self, prefix):
         found = [s for s in self.steps if s.name.startswith(prefix)]
         self.assertEqual(len(found), 1, f"one step named {prefix!r}")
+        return found[0]
+
+    def monthly_step(self, prefix):
+        found = [s for s in self.monthly_steps if s.name.startswith(prefix)]
+        self.assertEqual(len(found), 1, f"one monthly step named {prefix!r}")
         return found[0]
 
     def b5_steps(self):
@@ -133,8 +142,10 @@ class HailStoreJobTests(unittest.TestCase):
 
     def test_every_clock_step_reads_the_2400_second_window_from_job_start(self):
         clocks = [s for s in self.steps if s.name.startswith("Seconds left on the B5 clock")]
-        self.assertGreaterEqual(len(clocks), 15)
-        for clock in clocks:
+        self.assertEqual(len(clocks), 14)              # the monthly decision moved to the plan job (D42)
+        monthly = [s for s in self.monthly_steps if s.name.startswith("Seconds left on the monthly clock")]
+        self.assertEqual(len(monthly), 5)
+        for clock in clocks + monthly:
             self.assertTrue(clock.attr("id").startswith("clock_"), clock.name)
             self.assertEqual(clock.run(), 'echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"',
                              clock.name)
@@ -166,15 +177,26 @@ class HailStoreJobTests(unittest.TestCase):
                     self.assertIn("timeout --kill-after=30", stripped, f"{step.name}: {stripped}")
 
     def test_each_deadline_is_the_smaller_of_its_own_and_the_seconds_left_less_440(self):
-        for prefix in ("Station readings", "River gauges", "Snow analysis"):
+        for prefix in ("Station readings", "River gauges"):
             run = self.step(prefix).run()
             self.assertIn("budget=$(( LEFT - 440 ))", run, prefix)
             self.assertIn('if [ "$budget" -gt', run, prefix)
         self.assertIn("own=720", self.step("Station readings").run())
         self.assertIn("own=1620", self.step("Station readings").run())
-        self.assertIn("own=540", self.step("River gauges").run())
         self.assertIn("own=480", self.step("River gauges").run())
-        self.assertIn('if [ "$budget" -gt 240 ]', self.step("Snow analysis").run())
+        self.assertNotIn("--refresh", self.step("River gauges").run())   # the daily run reads the missing files only
+        self.assertIn("--offline", self.step("Snow analysis").run())     # the daily read of the cached NOHRSC files
+
+    def test_the_monthly_job_budgets_its_steps_by_their_own_deadlines(self):
+        stations = self.monthly_step("Station candidate union")
+        self.assertIn("--scope monthly", stations.run())
+        self.assertIn('if [ "$budget" -gt 1620 ]', stations.run())
+        gauges = self.monthly_step("River gauges (every")
+        self.assertIn("--refresh", gauges.run())
+        self.assertIn('if [ "$budget" -gt 540 ]', gauges.run())
+        snow = self.monthly_step("Snow analysis (NOAA")
+        self.assertIn('if [ "$budget" -gt 240 ]', snow.run())
+        self.assertNotIn("--offline", snow.run())                        # the one NOHRSC request of the month
 
     def test_the_climate_archive_is_versioned_by_run_id_and_never_clobbered(self):
         publish = self.step("Pack and publish the climate aggregates").run()
@@ -209,6 +231,40 @@ class HailStoreJobTests(unittest.TestCase):
     def test_the_store_asset_keeps_the_name_the_site_build_reads(self):
         self.assertTrue(h.STORE_URL.endswith("/hail-store/hail-store.tar.gz"), h.STORE_URL)
         self.assertIn("gh release upload hail-store hail-store.tar.gz --clobber", self.text)
+
+    def test_the_plan_job_decides_the_first_of_the_month_or_the_monthly_input(self):
+        plan = {s.name: s for s in self.plan_steps}
+        decide = plan["Decide whether the monthly job runs (a scheduled run on the first of the month, or the monthly input)"]
+        run = decide.run()
+        self.assertIn('if [ "$EVENT" = "schedule" ] && [ "$(date -u +%d)" = "01" ]; then due=yes; fi', run)
+        self.assertIn('if [ "$MONTHLY_INPUT" = "true" ]; then due=yes; fi', run)
+        self.assertEqual(decide.env().get("MONTHLY_INPUT"), "${{ inputs.monthly }}")
+        self.assertIn("monthly: ${{ steps.when.outputs.monthly }}", self.text)
+        store_text = self.text.partition("\n  store:\n")[2].partition("\n  monthly:\n")[0]
+        self.assertNotIn("steps.when", store_text)
+
+    def test_the_monthly_job_runs_after_the_store_job_and_is_non_fatal_throughout(self):
+        self.assertIn("    needs: [plan, store]\n", self.text)
+        self.assertIn("    if: ${{ always() && needs.plan.outputs.monthly != '' }}\n", self.text)
+        self.assertTrue(self.monthly_steps)
+        for step in self.monthly_steps:
+            self.assertEqual(step.attr("continue-on-error"), "true", step.name)
+            self.assertIsNotNone(step.attr("timeout-minutes"), step.name)
+
+    def test_the_timeouts_follow_the_re_check_figures_where_they_were_measured(self):
+        # 1.5 x the measured time, rounded up to whole minutes: the B1 build took 612 s in CI (16 minutes), the joins
+        # verify 20 s, the climate build 11 s and the NOHRSC read 1.0 s; the network steps keep their own deadlines,
+        # since the re-check measured them offline only
+        self.assertEqual(self.step("Build the store from the NOAA archive").attr("timeout-minutes"), "16")
+        self.assertEqual(self.step("Verify the joins").attr("timeout-minutes"), "1")
+        self.assertEqual(self.step("Build the climate files").attr("timeout-minutes"), "1")
+        self.assertEqual(self.step("Snow analysis").attr("timeout-minutes"), "1")
+        self.assertEqual(self.step("Join reports, records").attr("timeout-minutes"), "50")
+
+    def test_every_non_fatal_step_of_both_jobs_has_a_timeout(self):
+        for step in self.steps + self.monthly_steps:
+            if step.attr("continue-on-error") == "true":
+                self.assertIsNotNone(step.attr("timeout-minutes"), step.name)
 
 
 if __name__ == "__main__":

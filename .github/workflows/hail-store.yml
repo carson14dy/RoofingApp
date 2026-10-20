@@ -11,13 +11,15 @@ name: Hail history store
 # is published (about 12:08 UTC). A B5 source that fails marks its part unavailable in the store (the sheet says so).
 # Every B5 step is non-fatal (continue-on-error), has a timeout, and runs on one 40-minute clock (D16, D26).
 #
-# Scopes (D26). Every run is the daily scope: the station list and inventory, the chosen stations' files whose
-# Last-Modified changed, the NWPS gauge files that are missing from the cache, the climate prelim days (and a new
-# scaled month when NOAA posts one, inside the same update), the cached NOHRSC files (no request), and the product
+# Jobs (D26, D42). The plan job decides whether the monthly job runs: on the first day of the month by schedule, or
+# when the monthly input is on. The store job is the daily run: the station list and inventory, the chosen stations'
+# files whose Last-Modified changed, the NWPS gauge files that are missing from the cache, the climate prelim days (and
+# a new scaled month when NOAA posts one, inside the same update), the cached NOHRSC files (no request), and the product
 # pulls. D26 also asks for the NWPS gauge list and each pool detail on every run; the gauges step does not read them
-# on a daily run yet (DECISIONS D38, open). The monthly scope runs on the first day of the month (a scheduled run) or
-# when the monthly input is on: every file of the station candidate union and the regression set, the NWPS and USGS
-# refresh, and the NOHRSC check on NOAA (the only NOHRSC request).
+# on a daily run yet (DECISIONS D38, open). The monthly job starts from the release asset the store job published: every
+# file of the station candidate union and the regression set, the NWPS and USGS refresh, and the NOHRSC check on NOAA
+# (the only NOHRSC request); then it publishes the store again. Every B5 and monthly step is non-fatal, with a timeout;
+# the B1 and B2 build steps stay fatal, so a failed build never publishes a partial store (the last release stays).
 #
 # Once, by hand: the climate backfill (input climate_backfill) reads the 63 scaled months from July 2021 to September
 # 2026 and writes the release archive climate-aggregates-RUNID.tar.gz to the hail-climate release. Every later run
@@ -34,7 +36,7 @@ on:
   workflow_dispatch:
     inputs:
       monthly:
-        description: "Run the monthly steps: the whole station union, the NWPS and USGS refresh, the NOHRSC check"
+        description: "Run the monthly job: the whole station union, the NWPS and USGS refresh, the NOHRSC check"
         type: boolean
         default: false
       climate_backfill:
@@ -65,6 +67,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      monthly: ${{ steps.when.outputs.monthly }}
+    steps:
+      - name: Decide whether the monthly job runs (a scheduled run on the first of the month, or the monthly input)
+        id: when
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          MONTHLY_INPUT: ${{ inputs.monthly }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          due=""
+          if [ "$EVENT" = "schedule" ] && [ "$(date -u +%d)" = "01" ]; then due=yes; fi
+          if [ "$MONTHLY_INPUT" = "true" ]; then due=yes; fi
+          echo "monthly=$due" >> "$GITHUB_OUTPUT"
+          echo "the monthly job runs this time: ${due:-no}"
+
   store:
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -74,21 +96,26 @@ jobs:
         run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
 
       - name: Check out the repository
+        timeout-minutes: 5
         uses: actions/checkout@v4
 
       - name: Set up Python 3.12
+        timeout-minutes: 5
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install the GRIB reader, the HTTP client and the shapefile reader
+        timeout-minutes: 5
         run: pip install numpy pygrib requests pyshp
 
       - name: Name the download cache by month
+        timeout-minutes: 1
         id: month
         run: echo "key=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
 
       - name: Restore the downloaded files (optional; a cold cache builds the same store)
+        timeout-minutes: 10
         uses: actions/cache@v4
         with:
           path: hail-cache
@@ -97,12 +124,15 @@ jobs:
             hail-cache-
 
       - name: Build the store from the NOAA archive
+        timeout-minutes: 16
         run: python -m website.hail build --out store --cache hail-cache --procs 4
 
       - name: Verify the store
+        timeout-minutes: 5
         run: python -m website.hail verify store
 
       - name: Restore the joins' downloads (optional; a cold cache builds the same joins)
+        timeout-minutes: 10
         uses: actions/cache@v4
         with:
           path: joins-cache
@@ -118,6 +148,7 @@ jobs:
         run: python -m website.joins build --store store --cache joins-cache --procs 4
 
       - name: Verify the joins (the Benchland gate rows are printed)
+        timeout-minutes: 1
         run: python -m website.joins verify store
 
       # ---- B5 (D26, D38). The steps from here to the pack are non-fatal, and they share one clock. The first step
@@ -146,26 +177,6 @@ jobs:
         env:
           LEFT: ${{ steps.clock_readers.outputs.left }}
         run: timeout --kill-after=30 "$LEFT" pip install h5py Pillow
-
-      - name: Seconds left on the B5 clock before the monthly decision
-        id: clock_when
-        continue-on-error: true
-        timeout-minutes: 1
-        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
-
-      - name: Decide whether the monthly steps run (a scheduled run on the first of the month, or the monthly input)
-        id: when
-        if: ${{ steps.clock_when.outputs.left > 60 }}
-        continue-on-error: true
-        timeout-minutes: 2
-        env:
-          MONTHLY_INPUT: ${{ inputs.monthly }}
-        run: |
-          due=""
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%d)" = "01" ]; then due=yes; fi
-          if [ "$MONTHLY_INPUT" = "true" ]; then due=yes; fi
-          echo "monthly=$due" >> "$GITHUB_OUTPUT"
-          echo "monthly steps this run: ${due:-no}"
 
       - name: Seconds left on the B5 clock before the B5 downloads
         id: clock_cache
@@ -260,7 +271,7 @@ jobs:
       - name: Build the climate files (hail/c/; a cache with no plan raises and writes no block, which the sheet reports)
         if: ${{ steps.clock_climate_build.outputs.left > 60 }}
         continue-on-error: true
-        timeout-minutes: 5
+        timeout-minutes: 1
         env:
           LEFT: ${{ steps.clock_climate_build.outputs.left }}
         run: timeout --kill-after=30 "$LEFT" python -m website.climate build --store store --cache climate-cache
@@ -353,17 +364,16 @@ jobs:
         timeout-minutes: 1
         run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
 
-      - name: Station readings (the daily scope re-reads changed chosen files; the full union when the month is due or nothing was carried)
+      - name: Station readings (the daily scope re-reads changed chosen files; the full union when nothing was carried, as on a first run)
         id: stations
         if: ${{ steps.clock_stations.outputs.left > 60 }}
         continue-on-error: true
         timeout-minutes: 30
         env:
           CARRIED: ${{ steps.stations_carry.outputs.carried }}
-          MONTHLY: ${{ steps.when.outputs.monthly }}
           LEFT: ${{ steps.clock_stations.outputs.left }}
         run: |
-          if [ "$CARRIED" = "yes" ] && [ -z "$MONTHLY" ]; then
+          if [ "$CARRIED" = "yes" ]; then
             scope=daily
             own=720
           else
@@ -397,20 +407,18 @@ jobs:
         timeout-minutes: 1
         run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
 
-      - name: River gauges (the NWPS and USGS files; the monthly run refreshes every one)
+      - name: River gauges (the NWPS and USGS files that are missing from the cache; the monthly job refreshes every one)
         id: gauges
         if: ${{ steps.clock_gauges.outputs.left > 60 }}
         continue-on-error: true
         timeout-minutes: 10
         env:
-          MONTHLY: ${{ steps.when.outputs.monthly }}
           LEFT: ${{ steps.clock_gauges.outputs.left }}
         run: |
-          extra=""
-          if [ -n "$MONTHLY" ]; then own=540; extra="--refresh"; else own=480; fi
+          own=480
           budget=$(( LEFT - 440 ))
           if [ "$budget" -gt "$own" ]; then budget=$own; fi
-          timeout --kill-after=30 "$LEFT" python -m website.gauges build --store store --cache b5-cache --procs 3 $extra \
+          timeout --kill-after=30 "$LEFT" python -m website.gauges build --store store --cache b5-cache --procs 3 \
             --deadline-at "$(( $(date +%s) + budget ))"
 
       - name: Seconds left on the B5 clock before the snow analysis
@@ -419,23 +427,14 @@ jobs:
         timeout-minutes: 1
         run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
 
-      - name: Snow analysis (the cached NOHRSC files; the monthly run asks NOAA whether the latest file changed)
+      - name: Snow analysis (the cached NOHRSC files, offline; the monthly job asks NOAA whether the latest file changed)
         id: snow
         if: ${{ steps.clock_snow.outputs.left > 60 }}
         continue-on-error: true
-        timeout-minutes: 5
+        timeout-minutes: 1
         env:
-          MONTHLY: ${{ steps.when.outputs.monthly }}
           LEFT: ${{ steps.clock_snow.outputs.left }}
-        run: |
-          if [ -n "$MONTHLY" ]; then
-            budget=$(( LEFT - 440 ))
-            if [ "$budget" -gt 240 ]; then budget=240; fi
-            timeout --kill-after=30 "$LEFT" python -m website.snowgrid build --store store --cache b5-cache \
-              --deadline-at "$(( $(date +%s) + budget ))"
-          else
-            timeout --kill-after=30 "$LEFT" python -m website.snowgrid build --store store --cache b5-cache --offline
-          fi
+        run: timeout --kill-after=30 "$LEFT" python -m website.snowgrid build --store store --cache b5-cache --offline
 
       - name: Seconds left on the B5 clock before the station, gauge and snow verify
         id: clock_verify
@@ -458,9 +457,11 @@ jobs:
       # and the fatal store gates before the pack (DECISIONS D38, job-4), which need the stations module's commands.
 
       - name: Pack the store
+        timeout-minutes: 5
         run: tar czf hail-store.tar.gz -C store hail
 
       - name: Publish the release asset
+        timeout-minutes: 10
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -469,3 +470,150 @@ jobs:
               --notes "Radar estimates (NOAA MRMS MESH) for the five years to the last published day. One asset, rebuilt daily; the Website build with --hail-history reads it. Radar estimates, not measurements or inspections."
           fi
           gh release upload hail-store hail-store.tar.gz --clobber
+
+  monthly:
+    needs: [plan, store]
+    if: ${{ always() && needs.plan.outputs.monthly != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Start the job clock (the monthly steps share its 40 minutes; the job cap is 60)
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Check out the repository
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the monthly readers (the HTTP client, the shapefile reader, and h5py and Pillow for the NOHRSC check)
+        continue-on-error: true
+        timeout-minutes: 5
+        run: pip install numpy requests pyshp h5py Pillow
+
+      - name: Fetch the published store (the daily job's release asset, which the monthly steps change and publish again)
+        id: fetch
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf monthly-download store
+          mkdir -p monthly-download store
+          gh release download hail-store --pattern hail-store.tar.gz --dir monthly-download --clobber
+          tar xzf monthly-download/hail-store.tar.gz -C store
+          echo "fetched=yes" >> "$GITHUB_OUTPUT"
+
+      - name: Seconds left on the monthly clock before the B5 downloads
+        id: clock_cache
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the B5 downloads (the station, NWPS, USGS and NOHRSC files of the daily job; optional)
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_cache.outputs.left > 60 }}
+        uses: actions/cache@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b5-cache
+          key: b5-cache-${{ github.run_id }}
+          restore-keys: |
+            b5-cache-
+
+      - name: Seconds left on the monthly clock before the station union
+        id: clock_stations
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Station candidate union and regression set (every file of the monthly scope is read, none skipped)
+        id: stations
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_stations.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 30
+        env:
+          LEFT: ${{ steps.clock_stations.outputs.left }}
+        run: |
+          budget=$(( LEFT - 440 ))
+          if [ "$budget" -gt 1620 ]; then budget=1620; fi
+          timeout --kill-after=30 "$LEFT" python -m website.stations build --store store --cache b5-cache --procs 4 \
+            --scope monthly --deadline-at "$(( $(date +%s) + budget ))"
+
+      - name: Seconds left on the monthly clock before the river gauges
+        id: clock_gauges
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: River gauges (every NWPS and USGS file refreshed)
+        id: gauges
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_gauges.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          LEFT: ${{ steps.clock_gauges.outputs.left }}
+        run: |
+          budget=$(( LEFT - 440 ))
+          if [ "$budget" -gt 540 ]; then budget=540; fi
+          timeout --kill-after=30 "$LEFT" python -m website.gauges build --store store --cache b5-cache --procs 3 --refresh \
+            --deadline-at "$(( $(date +%s) + budget ))"
+
+      - name: Seconds left on the monthly clock before the snow analysis
+        id: clock_snow
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Snow analysis (NOAA's latest NOHRSC file, checked once a month; the only NOHRSC request)
+        id: snow
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_snow.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_snow.outputs.left }}
+        run: |
+          budget=$(( LEFT - 440 ))
+          if [ "$budget" -gt 240 ]; then budget=240; fi
+          timeout --kill-after=30 "$LEFT" python -m website.snowgrid build --store store --cache b5-cache \
+            --deadline-at "$(( $(date +%s) + budget ))"
+
+      - name: Seconds left on the monthly clock before the monthly verify
+        id: clock_verify
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the station, gauge and snow parts (informational; the index says what did not load)
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_verify.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_verify.outputs.left }}
+        run: |
+          timeout --kill-after=30 "$LEFT" python -m website.stations verify --store store || echo "stations verify did not pass; see the index"
+          timeout --kill-after=30 "$LEFT" python -m website.gauges verify --store store --cache b5-cache || echo "gauges verify did not pass; see the index"
+          timeout --kill-after=30 "$LEFT" python -m website.snowgrid verify --store store --cache b5-cache || echo "snow verify did not pass; see the index"
+
+      - name: Pack the store (whatever the monthly steps left in it)
+        id: pack
+        if: ${{ steps.fetch.outputs.fetched != '' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        run: tar czf hail-store.tar.gz -C store hail
+
+      - name: Publish the monthly store (the same release asset, replaced only once the pack has been made)
+        if: ${{ contains(steps.pack.outcome, 'success') }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload hail-store hail-store.tar.gz --clobber

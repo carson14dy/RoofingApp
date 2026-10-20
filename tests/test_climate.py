@@ -1011,7 +1011,7 @@ class FiveSeasonsUnloaded(unittest.TestCase):
         partial = self.out["table"]["partial"]
         self.assertEqual((partial["valid"], partial["missing"]), (62, 0))
         self.assertTrue(partial["rows"])
-        self.assertTrue(partial["text"].startswith("Grid estimate: 2026-27 so far, 62 days to "))
+        self.assertTrue(partial["text"].startswith("Grid estimate, preliminary: 2026-27 so far, 62 days to "))
         self.assertFalse(any("2026-27" in line for line in self.out["temperature"]["lines"]))   # not a season list entry
         self.assertFalse(any("2026-27" in line for line in self.out["rain"]["lines"]))
         row = self.out["calendar"][cl.CALENDAR_YEARS.index(2026)]["row"]
@@ -1048,12 +1048,14 @@ class PartialAndLeadTests(unittest.TestCase):
 
     def test_the_partial_line_says_so_far_with_its_own_counts_and_no_store_word(self):
         text = cl._partial_text(self.partial_record(), "2026-27", "2026-10-15")
-        self.assertEqual(text, "Grid estimate: 2026-27 so far, 107 days to " + cl.hail.fmt_date(date(2026, 10, 15))
+        self.assertEqual(text, "Grid estimate, preliminary: 2026-27 so far, 107 days to " + cl.hail.fmt_date(date(2026, 10, 15))
                          + ": highest 71.0 F on " + cl.hail.fmt_date(date(2026, 10, 3)) + "; lowest 28.0 F on "
                          + cl.hail.fmt_date(date(2026, 10, 17)) + "; 0 days at 90 F or more; 2 days with a low below 32 F; "
                          "0.84 in of rain, largest one day 0.30 in on " + cl.hail.fmt_date(date(2026, 10, 3))
-                         + ". The newest days are preliminary and provisional until NOAA publishes the scaled month.")
+                         + ". The newest days are preliminary and provisional until NOAA publishes the scaled month. "
+                         "This is not an all-clear.")
         self.assertIsNone(re.search(r"\bstore\b", text))
+        self.assertIsNone(re.search(r"\brecord\b", text))         # D33: no record wording on a partial line
 
     def test_a_partial_season_with_no_day_in_the_store_says_no_day_is_in_the_data(self):
         row = cl._record_row([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])

@@ -40,7 +40,7 @@ website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · g
            roof lines, B5; its words are Python's)
 tools/     build_basemap.py (rebuilds static/map/basemap.json from Natural Earth + Census; by hand)
 .github/workflows/website.yml   build every 10 min from main → GitHub Pages; branch pushes = live check
-.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, join its sources, add the B5 weather parts (climate, stations, NOHRSC, gauges; non-fatal steps with timeouts; monthly and once-only steps by input), verify, publish the release assets (D34, D35, D38)
+.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, join its sources, add the B5 weather parts (climate, stations, NOHRSC, gauges; non-fatal steps with timeouts), verify, publish the release assets; a plan job starts the monthly job (the first of the month, or by input) in its own job, and the once-only backfill runs by input (D34, D35, D38, D42)
 payload/   the parked app — updates itself. app.py (routes) · weather.py (feeds, evidence, alert matching,
            rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
 desktop/   the shell — changes only with a new installer. launcher.py (window, local server,

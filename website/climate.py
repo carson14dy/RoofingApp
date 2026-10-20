@@ -1400,10 +1400,13 @@ WORDS_CLIMATE = {
                           "lowest temperature or rain total is shown. This is not an all-clear."),
     "days_missing": ("Data unavailable: {n} {days} missing in the {period}; the totals and counts are for the days "
                      "present. This is not an all-clear."),
-    "partial_season": ("Grid estimate: {season} so far, {n_days} days to {through}: highest {high} F on {high_date}; "
-                       "lowest {low} F on {low_date}; {hot} {hot_days} at 90 F or more; {frost} {frost_days} with a low "
-                       "below 32 F; {total} in of rain, largest one day {rain_max} in on {rain_max_date}. The newest "
-                       "days are preliminary and provisional until NOAA publishes the scaled month."),
+    # D33 (B5 part B1): the partial season is labelled preliminary in its head, values included; nothing here calls a
+    # value a record (D13 holds the 111 F claim back). D41: a partial line ends with the all-clear sentence.
+    "partial_season": ("Grid estimate, preliminary: {season} so far, {n_days} days to {through}: highest {high} F on "
+                       "{high_date}; lowest {low} F on {low_date}; {hot} {hot_days} at 90 F or more; {frost} "
+                       "{frost_days} with a low below 32 F; {total} in of rain, largest one day {rain_max} in on "
+                       "{rain_max_date}. The newest days are preliminary and provisional until NOAA publishes the "
+                       "scaled month. This is not an all-clear."),
     "partial_none": "No day of the {season} season is in the data yet. This is not an all-clear.",
     "partial_partial": ("Data unavailable for {label}: part of this season has no valid grid value, so its highest, "
                         "lowest and rain totals are not shown. This is not an all-clear."),

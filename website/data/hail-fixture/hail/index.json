@@ -52,7 +52,7 @@
  "joins": {
   "format": "hail-joins-v2",
   "events_format": "hail-events-v2",
-  "built_at": "2026-10-19T16:38:12Z",
+  "built_at": "2026-10-20T00:13:17Z",
   "as_of": "2026-10-15",
   "window": [
    "2021-10-16",
@@ -148,7 +148,7 @@
    "2025-06-15",
    "2025-06-16"
   ],
-  "source": "cut from the joins build of 2026-10-19T16:38:12Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
+  "source": "cut from the joins build of 2026-10-20T00:13:17Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
   "cover": "25 lower-case hex digits; bit k (the cell key 0 to 99) is set when the polygon touches the cell's square (D11: a vertex in it, an edge across its side, or its centre inside)",
   "shapes": {
    "report": [
@@ -410,6 +410,13 @@
     "records": 11,
     "warnings": 10
    }
+  },
+  "towns_file": {
+   "format": "hail-joins-towns-v1",
+   "file": "hail/j/towns.json",
+   "towns": 1,
+   "events": 0,
+   "bytes": 177
   }
  }
 }

@@ -253,7 +253,8 @@ class Collector:
             cells = [hs.cell_events(out_dir, t["lat"], t["lon"]) for t in towns]
             words = [hs.describe(index, events, self.now, sample=sampled) for events in cells]
             block = hs.map_data(index, sample=sampled)
-            block["tiles"] = tiles                  # the browser's outside test: a tile not listed has no Montana cell
+            block.pop("tiles", None)                # D40: no block lists every tile; the split map says which tiles exist
+            block["tile_split"] = tile_split(tiles) # the browser's outside test: a tile with no run has no Montana cell
             joins_block, joins_views = hail_joins(out_dir, index, towns, self.now, sampled)
             block["joins"] = joins_block            # the joined records behind the sheet (B2)
             block.update(b5_map_blocks(index))      # the five-season history's blocks (B5), beside the joins
@@ -270,7 +271,8 @@ class Collector:
             self.note("hail_history", HAIL_LABEL, False, problem)
             words = [hs.describe_unavailable(problem) for _ in towns]
             block = hs.map_data_unavailable(problem)
-            block["tiles"] = []                     # no store, so no tile is known: the map says unavailable, not outside
+            block.pop("tiles", None)
+            block["tile_split"] = {}                # no store, so no tile is known: the map says unavailable, not outside
             from . import joins as jn
             block["joins"] = join_block_unavailable(jn, problem)
             joins_views = [join_view_unavailable(jn) for _ in towns]
@@ -602,7 +604,7 @@ def join_view(section: dict) -> dict:
     return {"key": section["id"], "head": JOIN_HEADS[section["id"]], "heading": section["heading"],
             "lead": section["lead"] or "", "fire_lead": section.get("fire_lead") or "", "rows": rows,
             "what": " ".join(x for x in (section["what"], section["source"]) if x),
-            "note": " ".join(section["lines"]), "unavailable": section["unavailable"] or "",
+            "note": " ".join(section["lines"]), "unavailable": _clear_words(section["unavailable"] or ""),
             "show_all": JOIN_SITE_WORDS["show_all"].format(n=len(rows))}
 
 
@@ -614,7 +616,7 @@ def join_view_unavailable(jn) -> dict:
         sections.append({
             "key": part, "head": JOIN_HEADS[part], "heading": join_heading(jn, part), "lead": "", "fire_lead": "", "rows": [],
             "what": " ".join(x for x in (w[f"{part}_what"], w[f"source_{part}"]) if x), "note": "",
-            "unavailable": jn._unavailable_text(part, None), "show_all": ""})
+            "unavailable": _clear_words(jn._unavailable_text(part, None)), "show_all": ""})
     return {"show_first": JOIN_SHOW_FIRST, "times": w["times_note"], "sections": sections}
 
 
@@ -673,7 +675,7 @@ HISTORY_WORDS = {
     "outside": "This spot is outside Montana, so the weather history does not cover it.",
     "no_reason": "No reason was recorded for this value in this update.",
     "show_all": "Show all {n} rows",
-    "town_title": "Five-year weather history at {town}",
+    "town_title": "Five years of weather at {town}",
     "cell": ("The table is for the grid cell at the town's centre, about 0.7 miles north to south and 0.5 miles east to west. "
              "The grid and radar rows are for that cell; each station row names its station and its distance from the town."),
     "footnotes": "Data unavailable, with the reason",
@@ -733,7 +735,7 @@ def snow_map_block(index: dict | None) -> dict:
     block = block if isinstance(block, dict) else None
     shown = snow_shown(index or {})
     return {"state": block.get("state", "unavailable") if block else "unavailable", "shown": shown,
-            "problem": (block or {}).get("problem") or (None if block else "the snow analysis is not in this store"),
+            "problem": _clear_words((block or {}).get("problem") or (None if block else "the snow analysis is not in this store")),
             "water_years": list((block or {}).get("water_years") or []), "tile": "hail/n/{tile}.json",
             "terms": snowgrid.TERMS_NOTE, "words": dict(snowgrid.WORDS), "check": (block or {}).get("check") if shown else None}
 
@@ -745,7 +747,7 @@ def stations_map_block(index: dict | None) -> dict:
     block = index.get("stations") if isinstance(index, dict) else None
     block = block if isinstance(block, dict) else None
     return {"state": (block or {}).get("state", "unavailable"),
-            "problem": (block or {}).get("problem") or (None if block else "the station files are not in this store"),
+            "problem": _clear_words((block or {}).get("problem") or (None if block else "the station files are not in this store")),
             "as_of": (block or {}).get("as_of"), "rule": (block or {}).get("rule"), "counts": (block or {}).get("counts"),
             "radius_miles": stations.RADIUS_MILES, "fresh_days": stations.FRESH_DAYS, "cover_min": stations.COVER_MIN,
             "season_min": stations.SEASON_MIN, "cover_days": stations.COVER_DAYS, "tile": "hail/sd/{station}.json",
@@ -758,7 +760,7 @@ def gauges_map_block(index: dict | None) -> dict:
     block = index.get("gauges") if isinstance(index, dict) else None
     block = block if isinstance(block, dict) else None
     return {"state": (block or {}).get("state", "unavailable"),
-            "problem": (block or {}).get("problem") or (None if block else "the river gauge files are not in this store"),
+            "problem": _clear_words((block or {}).get("problem") or (None if block else "the river gauge files are not in this store")),
             "rule": (block or {}).get("rule"), "counts": (block or {}).get("counts"),
             "radius_miles": gauges.RADIUS_MILES, "tile": "hail/g/{usgs}.json", "words": dict(gauges.WORDS)}
 
@@ -770,18 +772,50 @@ def county_map_block(index: dict | None) -> dict:
     counties = (joins_block or {}).get("counties") if isinstance(joins_block, dict) else None
     counties = counties if isinstance(counties, dict) else {}
     return {"state": counties.get("state", "unavailable"),
-            "problem": counties.get("reason") or (None if counties else "the county files are not in this store"),
+            "problem": _clear_words(counties.get("reason") or (None if counties else "the county files are not in this store")),
             "count": counties.get("count"), "names": dict(counties.get("names") or {}), "tile": "hail/k/{county}.json",
             "words": {k: v for k, v in jn.WORDS_JOINS.items() if k.startswith("county_")}}
 
 
 def b5_map_blocks(index: dict | None) -> dict:
     """The map.json["hail"] blocks of the five-season history: climate (climate.map_data_climate), summary
-    (summary.map_data_summary) and the snow, stations, gauges and county blocks. None gives every block unavailable."""
+    (summary.map_data_summary) and the snow, stations, gauges and county blocks. None gives every block unavailable.
+    D40: the climate block lists no tile names; it carries the URL pattern and the compact split map of its tiles, and
+    the stations, gauges and county blocks carry their URL patterns only."""
     from . import climate, summary
-    return {"climate": climate.map_data_climate(index), "summary": summary.map_data_summary(index),
+    climate_block = climate.map_data_climate(index)
+    names = climate_block.pop("tile_names", [])
+    climate_block["tile_split"] = tile_split(names)
+    return {"climate": climate_block, "summary": summary.map_data_summary(index),
             "snow": snow_map_block(index), "stations": stations_map_block(index),
             "gauges": gauges_map_block(index), "county": county_map_block(index)}
+
+
+TILE_PARTS = re.compile(r"r(\d{4})_c(\d{4})")
+
+
+def tile_split(names) -> dict:
+    """The tiles a store holds, as a compact split map (D40): {"<tile row>": [[first column, last column], ...]}, the
+    tile indices as the tile names write them (r0060_c0139 is row "60", column 139). No block lists every tile name
+    (the names are 4,597 and 4,569 strings); a tile with no run is not in the store, so it has no Montana cell."""
+    rows: dict[str, list[list[int]]] = {}
+    for name in sorted({n for n in names if isinstance(n, str)}):
+        m = TILE_PARTS.fullmatch(name)
+        if m is None:
+            continue
+        r, c = int(m.group(1)), int(m.group(2))
+        runs = rows.setdefault(str(r), [])
+        if runs and runs[-1][1] == c - 1:
+            runs[-1][1] = c
+        else:
+            runs.append([c, c])
+    return rows
+
+
+def _clear_words(text: str) -> str:
+    """A line the page shows as unavailable, partial or held, with the all-clear sentence at its end (D41)."""
+    from . import summary as sm
+    return sm._clear(text) if text else text
 
 
 def summary_unavailable(problem: str, town: dict | None = None) -> dict:
@@ -832,6 +866,15 @@ def _table_view(s: dict, foot) -> list[dict]:
     return out
 
 
+def _joined_coverage(pairs: list[tuple[str, str]]) -> str:
+    """The coverage lines of one season's figures as one phrase: the same line once, or each row's line named by its word
+    when the rows differ (highest and lowest, two stations), so "n days missing" is written once for each count."""
+    texts = list(dict.fromkeys(text for _word, text in pairs))
+    if len(texts) == 1:
+        return texts[0]
+    return "; ".join(f"{word}: {text}" for word, text in pairs)
+
+
 def _per_season(rows: dict, label: str, keys: tuple, names: tuple) -> list[dict]:
     """One row per season from the table's own words for these keys (highest and lowest, a count, a depth), with the
     coverage line of any missing days (never a zero for a missing day)."""
@@ -848,9 +891,9 @@ def _per_season(rows: dict, label: str, keys: tuple, names: tuple) -> list[dict]
                 continue
             parts.append(f"{word} {text}")
             if row["coverage"][k]:
-                cov.append(row["coverage"][k])
+                cov.append((word, row["coverage"][k]))
         if parts:
-            out.append({"label": label, "text": f"{season}: " + "; ".join(parts) + (f" ({'; '.join(cov)})" if cov else "")})
+            out.append({"label": label, "text": f"{season}: " + "; ".join(parts) + (f" ({_joined_coverage(cov)})" if cov else "")})
     return out
 
 
@@ -911,7 +954,7 @@ def history_view(s: dict, jv: dict, radar: dict, town: dict, now, through: str |
     view["partial"] = s["table"]["partial"]
     view["notices"] += [sec["unavailable"] for sec in jv.get("sections", []) if sec.get("unavailable")]
     if radar.get("unavailable"):
-        view["notices"].append(radar["unavailable"])
+        view["notices"].append(_clear_words(radar["unavailable"]))
     rows = {r["key"]: r for r in s["table"]["rows"]}
 
     # the rows of each section: the grid and station rows (per season), the radar days and the joined rows by kind
@@ -966,14 +1009,52 @@ def history_view(s: dict, jv: dict, radar: dict, town: dict, now, through: str |
     return view
 
 
+NOAA_REGISTRY_QUOTE = ("NOAA requests attribution for the use or dissemination of unaltered NOAA data. However, it is not "
+                       "permissible to state or imply endorsement by or affiliation with NOAA. If you modify NOAA data, you "
+                       "may not state or imply that it is original, unaltered NOAA data.")
+
+
+def about_terms() -> list[dict]:
+    """The licence and attribution sentences of the new sources, quoted from the module docstrings and the records (B5,
+    D41): each source's own words, in order. Where a source's use terms were not read, the page says so."""
+    from . import joins as jn, snowgrid
+    return [
+        {"source": "NOAA nClimGrid-Daily (daily temperature and rain grid)", "terms": [
+            "The file attribute reads \"license = no restrictions\". The NOAA registry reads: \"" + NOAA_REGISTRY_QUOTE + "\" "
+            "The page says \"US government data; NOAA declares no restrictions; attribution requested\". No NOAA page checked "
+            "says public domain for these grids, so this site does not say so."]},
+        {"source": "NOAA NOHRSC National Snow Analysis (season snowfall)", "terms": [
+            snowgrid.PUBLIC_DOMAIN_TEXT, snowgrid.SECTION_403_TEXT]},
+        {"source": "NOAA NCEI GHCN-Daily (station records)", "terms": [
+            "\"These data are in the public domain in the United States.\" (NCEI-PD-10-2-02, section 4(a)). CoCoRaHS records: "
+            "\"Unless otherwise noted, all CoCoRaHS content and data are released under a Creative Commons Attribution 3.0 "
+            "License\", and the source is to be acknowledged. Cite NCEI-PD-10-2-02."]},
+        {"source": "Iowa State IEM archive (warnings, zone products and local storm reports)", "terms": [
+            "\"The materials found on this website are in the public domain and may be used freely by anyone for any lawful "
+            "purpose.\" \"Attributing the Iowa Environmental Mesonet of Iowa State University would be appreciated.\" \"We "
+            "therefore provide this information without any warranty of accuracy.\"",
+            "\"The information on National Weather Service Web servers and Web sites is in the public domain, unless "
+            "specifically annotated otherwise, and may be used freely by the public.\" \"You also cannot present information "
+            "of your own in a way that makes it appear to be official government information.\""]},
+        {"source": "NOAA NCEI Storm Events (point and zone records)", "terms": [
+            "The use terms of this copy were not read in this build, so they are not quoted."]},
+        {"source": "NWS National Water Prediction Service and USGS (river gauges)", "terms": [
+            "\"Observations courtesy of U.S. Geological Survey\" (the NWPS attribution text). Not all USGS site content is "
+            "public domain; the peaks are USGS data."]},
+        {"source": "US Census Bureau TIGER/Line 2026 counties", "terms": [src.CENSUS_TERMS]},
+    ]
+
+
 def about_hail_context() -> dict:
-    """The About page's words for the five-season history (--hail-history only): the snow analysis left out (D23), the
-    hit-and-miss sentence (B5 D15), the Census acknowledgement, the held items and the roof reference lines."""
+    """The About page's words for the five-year history (--hail-history only): the snow analysis left out (D23), the
+    hit-and-miss sentence (B5 D15), the Census acknowledgement, the new sources' terms (about_terms), the held items and
+    the roof reference lines, with the five references the sheet does not quote and the reason (D41)."""
     from . import joins as jn, summary as sm
     refs = [{"id": rid, "source": ref["source"], "url": ref["url"], "quote": ref["quote"]}
             for rid, ref in sorted(sm.REFERENCE_LINES.items(), key=lambda kv: int(kv[0][1:]))]
     return {"analysis": sm.WORDS_SUMMARY["analysis_held"], "hit_miss": jn.WORDS_JOINS["about_hit_miss"],
-            "census": src.CENSUS_TERMS, "refs": refs, "held": sm.WORDS_INDICATORS["held"]}
+            "census": src.CENSUS_TERMS, "refs": refs, "held": sm.WORDS_INDICATORS["held"],
+            "terms": about_terms(), "not_quoted": sm.not_quoted_text()}
 
 
 def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | None = None,

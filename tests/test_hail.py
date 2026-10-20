@@ -617,7 +617,8 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual(sorted(manifest["files"]), [
             "hail/index.json", "hail/j/e/r0079_c0198.json", "hail/j/e/r0079_c0199.json", "hail/j/e/r0092_c0214.json",
             "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
-            "hail/j/r0092_c0214.json", "hail/k/MTC045.json", "hail/k/MTC111.json", "hail/s/1LM.json", "hail/s/6S8.json",
+            "hail/j/r0092_c0214.json", "hail/j/towns.json", "hail/k/MTC045.json", "hail/k/MTC111.json", "hail/s/1LM.json",
+            "hail/s/6S8.json",
             "hail/s/BIL.json", "hail/s/LWT.json", "hail/t/r0079_c0198.json", "hail/t/r0079_c0199.json",
             "hail/t/r0092_c0214.json", "hail/z/MTZ235.json", "hail/z/MTZ313.json", "hail/z/fire-MTZ117.json",
             "hail/z/fire-MTZ128.json"])
@@ -747,7 +748,8 @@ class FixtureTests(unittest.TestCase):
         self.assertEqual(files, [
             "hail/index.json", "hail/j/e/r0079_c0198.json", "hail/j/e/r0079_c0199.json", "hail/j/e/r0092_c0214.json",
             "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
-            "hail/j/r0092_c0214.json", "hail/k/MTC045.json", "hail/k/MTC111.json", "hail/manifest.json",
+            "hail/j/r0092_c0214.json", "hail/j/towns.json", "hail/k/MTC045.json", "hail/k/MTC111.json",
+            "hail/manifest.json",
             "hail/s/1LM.json", "hail/s/6S8.json", "hail/s/BIL.json", "hail/s/LWT.json", "hail/t/r0079_c0198.json",
             "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json", "hail/z/MTZ235.json", "hail/z/MTZ313.json",
             "hail/z/fire-MTZ117.json", "hail/z/fire-MTZ128.json"])

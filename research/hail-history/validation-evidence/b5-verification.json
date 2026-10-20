@@ -1,14 +1,14 @@
 {
   "record": "B5 verification: the past weather of every location (the climate grid, station readings, the NOHRSC snow analysis, river gauges, the zone and county products, the hail hit-and-miss record) (D38)",
-  "status": "part A gates settled; part B1 (the Python side) recorded from the products store; the job review round is applied to the workflow and the docs, and its code parts are routed to their owners (failed_checks); part B2 (the browser) and the final builds pending",
-  "verdict": "Not a supervisor gate yet. Gates B5-1 to B5-9, B5-13 (for the files that exist) and B5-15 pass on the part A records. B5-10, B5-11, B5-12, B5-14, B5-16, B5-17 and B5-18 are partial or pending: their browser halves (part B2), the town pages and the About page (part B1 build), and the end-to-end daily time are not yet measured. The supervisor decides the open items in this record.",
-  "written_by": "docs and job builder (part B1), 2026-10-19. This builder measured nothing. Every figure is quoted from the part A re-check completion record (/home/user/hail-b5/out/b5a-recheck-completion.json, run finished 2026-10-19T16:06:22Z) or from the products builder's store record (/home/user/hail-b5/out/b1/store-ready.json, announced 2026-10-19T16:49:44Z), each named where it is used. Job review round (2026-10-19): the workflow changes (the job clock, the join timeout, the versioned climate archive) and their checks in tests/test_hail_workflow.py; the code parts belong to their owners and are not in these edits. The sizes in measurements.store_sizes_2026_10_19 are file sizes read from the products store (no file content).",
+  "status": "part A gates settled; part B1 re-checked 2026-10-19 (the checker's record, /home/user/hail-b5/out/b5b1-recheck.json); the B1 completion of 2026-10-20 changed this part's files and rebuilt the joins, stations and gauges parts offline (/home/user/hail-b5/out/b1/store-ready.json). B5-10 and B5-11 are fixed pending re-check for this part's files, with the items in other owners' files named; B5-18's flag-off clause is fixed pending re-check; B5-16 is open with its owner; part B2 (the browser) and the final builds are pending",
+  "verdict": "Not a supervisor gate yet. Gates B5-1 to B5-9 and B5-15 pass on the part A records and the re-check; B5-14 and B5-17 pass in Python; B5-10, B5-11 and the flag-off clause of B5-18 are fixed pending re-check; B5-12 and B5-13 are partial; B5-16 is open with its owner; the browser halves and the live preview are part B2. The supervisor decides the open items in this record.",
+  "written_by": "docs and job builder (part B1), 2026-10-19: the original record, quoting the part A completion and the products store record. B1 completion (products, stations, gauges and docs fixer), 2026-10-20: the re-check numbers from /home/user/hail-b5/out/b5b1-recheck.json (run finished 2026-10-19T23:33:00Z) and the store numbers from /home/user/hail-b5/out/b1/store-ready.json (rebuilt 2026-10-20T00:15:32Z, offline, procs 2); the joins verify timed again on 2026-10-20 (13.9 s wall time).",
   "branch": "claude/hail-b5",
   "base": {
     "branch": "claude/hail-b1 at db84d76 (B2)",
     "commit": "db84d76"
   },
-  "head_commit": "de0793c (WIP, the part A completion pass); the part B1 edits are not committed",
+  "head_commit": "dcb7e93 (HEAD: WIP by the supervisor after the B1 review and fixes; fa33c8d and de0793c are earlier WIP commits on the branch). The B1 completion edits of 2026-10-20 are not committed.",
   "brief": "/home/user/wt/briefs/hail-b5-brief.md (gates B5-1 to B5-18; supervisor rulings D1 to D30; the part B1 list)",
   "decision": "docs/DECISIONS.md D38",
   "design": "docs/DESIGN.md section 12",
@@ -70,56 +70,76 @@
     {
       "id": "B5-10",
       "gate": "Words: the forbidden-term test covers every template and the six sheet strings; \"structure\" only in proper names; \"damage\" only in the allowed contexts; the four Data unavailable lines present with reasons; the radar sentence present.",
-      "status": "pending",
-      "evidence": "The part A word tables pass the scan (completion, forbidden_term_scan: WORDS_CLIMATE 57 values, WORDS_JOINS 175, KIND_WORDS 3, ZONE_STOP_WORDS 4, gauges WORDS 13, snowgrid WORDS 7, stations WORDS 14; zero flagged). The summary words (website/summary.py, WORDS_INDICATORS), the six sheet strings and the four Data unavailable lines are part B1 and are checked by the tests of this branch when the site build lands; not run in this record."
+      "status": "fixed pending re-check (this part's files); open in snowgrid.py",
+      "evidence": "Re-check 2026-10-19: fail on the all-clear rule (F6) and on 'coverage' in about.html (F11b). Fixed in the working tree on 2026-10-20: the unavailable, partial and unplaced lines of the joins, stations, gauges and climate word tables end with 'This is not an all-clear.'; in summary.py the held lines (summary.py:380 to 391) and the zone line (summary.py:204) carry it, and the zone-reconfigured lines (summary.py:219 to 221) do too; the 'pass the coverage rule' wording is gone from about.html. Open: snowgrid.py:137 and :139 have no all-clear sentence (F6d), a file this part does not own. The four Data unavailable lines and the radar sentence were present on the re-check; not re-read in a page.",
+      "findings": [
+        "F6d"
+      ]
     },
     {
       "id": "B5-11",
       "gate": "Readability: a reviewer reads the summary table for three places (the gate cell, Benchland, Billings): every cell has a unit and a kind word, no sentence needs decoding, the table is within the first screen at 390 px.",
-      "status": "pending",
-      "evidence": "Part B2 (the browser). The first-screen check at 390 px needs the browser build; the reviewer's reading is not done."
+      "status": "fixed pending re-check (this part's files); summary.py F7 and F9 not re-checked in a page",
+      "evidence": "Re-check 2026-10-19: every row head has a kind word on 17 of 17 tables; the Python half failed on F4, F5, F7, F8 and F9. Fixed in the working tree on 2026-10-20: F4 (the B5 warning row, joins.py:431, formatted by _warning_text at joins.py:3735; the label is Warning, Watch or Advisory by significance, joins.py:173; FA.A is named 'Areal flood watch', joins.py:240); F8 (gauges.py:99: the words carry no 'River gauge:' prefix); F12 (joins.py:240). In summary.py, F5 is fixed (summary.py:228 is the brief's no-report sentence; summary.py:337 to 338 carry 'A missing report is not a finding that nothing happened'). Not re-checked: F7 (a comment at summary.py:89 says the held row's unit carries its reason) and F9 (duplicate 'N days missing'). The 390 px first-screen check is part B2.",
+      "findings": [
+        "F7",
+        "F9"
+      ]
     },
     {
       "id": "B5-12",
       "gate": "Budget: the daily job runs end to end locally in under 25 minutes; the measured sizes recorded; the phone view at zoom 15 stays under 650 KB gzip.",
-      "status": "pending",
-      "evidence": "Measured components (part A completion, offline, this machine): joins 355 s; climate build 11 s; stations build 32 s; gauges build 2 s; NOHRSC build 1 s. Climate update 7 to 8 s with no new scaled month (climate.py docstring). The daily job's end-to-end time, with its downloads, is not measured. Sizes (store-ready.json): c/ 35,149,062 bytes in 4,569 files; sd/ 3,071,175 bytes in 571; g/ 285,713 bytes in 104; k/ 13,689 bytes in 56; s/ 25,000 bytes in 60; z/ 1,793,693 bytes in 115; j/events.json 6,083,996 bytes; j/e/ 63,082,924 bytes raw in 4,597 files (10,423,190 bytes gzip in all, as the record gives it). The phone view at zoom 15 (650 KB gzip gate) is part B2. Job review round (2026-10-19): the B5 steps share one 40-minute clock and each is killed at the seconds left (tests/test_hail_workflow.py, 15 checks pass); the joins are not on that clock, so the end-to-end time is still open. The caps (O12): j/ with j/e/ is 86,247,482 bytes against 40 MB; hail/ is 161,961,394 bytes against 60 MB (measurements.store_sizes_2026_10_19)."
+      "status": "partial (not confirmed)",
+      "evidence": "Offline steps measured on 2026-10-20 (store-ready.json, products_rebuild_2026_10_20): joins build 277 s, stations build 29.5 s, gauges build 1.5 s, joins verify 13.9 s (wall time); the re-check's climate build 11 s and NOHRSC build 1 s. The B1 store build is 612 s on CI (the brief). The daily pulls (the station refresh, NWPS, the preliminary climate, NOHRSC and the products pulls) were not run here, so the end-to-end time with downloads is not measured. Budget as written: one 40-minute clock for the B5 steps; the join step has a 50-minute timeout over its own 35-minute deadline; the job cap is 60 minutes; the monthly job runs on its own clock (hail-store.yml, D42).",
+      "findings": []
     },
     {
       "id": "B5-13",
       "gate": "Determinism: two builds from cache give byte-identical c/, n/, sd/, g/ and k/ files.",
       "status": "partial",
-      "evidence": "Part A completion, B5-13. A second store from the same tarball and caches, file by file against the first: c 4,569 of 4,569 identical; g 104 of 104; j 4,598 of 4,598; k 56 of 56; s 60 of 60; sd 571 of 571; t 4,597 of 4,597; z 115 of 115. n/ absent in both (the unit check fails). Not yet run: j/e/ (written after that store was built; store-ready.json lists 4,597 files) and the final store."
+      "evidence": "Part A completion, B5-13: a second store from the same tarball and caches matched the first file by file for c, g, j, k, s, sd, t and z (n absent in both). Not yet run: j/e/ and tl/ (written after that store was built) and the store rebuilt on 2026-10-20 (its towns file, periods and tile lists are new).",
+      "findings": []
     },
     {
       "id": "B5-14",
       "gate": "Failure: each source's failure marks its part unavailable (D16), in Python and in the browser, and the rest builds.",
-      "status": "partial",
-      "evidence": "Python, part A completion, B5-14: fake responses (ConnectionError, Timeout, HTTP 500, HTML 200) on the gauges, snow and stations builds; no exception escaped in 12 calls; every block unavailable; no g, n or sd file written. The snow block carries the D16 sentence. In the part A build the gauges and stations blocks carried only the technical reason; the words for their unavailable blocks now carry the D20 sentence (grep of website/stations.py and website/gauges.py, after the completion record). Whether each block carries it is for the part B1 tests to confirm. Browser half: part B2, not run."
+      "status": "partial: the Python half passes on the re-check (2026-10-19); the browser half is part B2",
+      "evidence": "Re-check 2026-10-19 (Python half): with the gauges and stations blocks removed from a scratch copy, the build finished with rc 0 and 17 pages; the D20 sentence with 'This is not an all-clear.' shows for stations and gauges (their unavailable words carry it). The snow block's words (snowgrid.py:137 and :139) have no all-clear sentence (F6d), for the snow owner. Part A (completion, B5-14): fake responses on the gauges, snow and stations builds raised no exception in 12 calls. Browser half: part B2, not run.",
+      "findings": [
+        "F6d"
+      ]
     },
     {
       "id": "B5-15",
       "gate": "Polygon rule (D11): the cell-cover counts before and after the change recorded per product; the town point check lists every disagreement between the centre rule and the point rule for the 17 towns; a null-geometry block test.",
       "status": "pass",
-      "evidence": "Part A completion, B5-15. Cell covers per product (centre rule, touch rule, added), recorded in the joins index: centre-not-touched 0 for every product; added: SV.W +310,012; FA.Y +63,796; SQ.W +11,514; FF.W +11,650; TO.W +1,797; FL.W +3,629; FA.W +3,321; FL.A +3,103; FL.Y +848 (9 products). Town point check: 17 towns, 4 disagreements (Belgrade SV.W 2023-08-30 03:01Z; Helena SV.W 2024-08-19 23:51Z and 2025-07-28 20:39Z; Kalispell SQ.W 2022-02-01 23:58Z). Null geometry: polygon_nulls 0 in the window (store-ready.json, joins: no_outline 0, window 0, joined 0, unjoined 0); NoOutlineTests pass (completion)."
+      "evidence": "Part A completion, B5-15. Cell covers per product (centre rule, touch rule, added), recorded in the joins index: centre-not-touched 0 for every product; added: SV.W +310,012; FA.Y +63,796; SQ.W +11,514; FF.W +11,650; TO.W +1,797; FL.W +3,629; FA.W +3,321; FL.A +3,103; FL.Y +848 (9 products). Town point check: 17 towns, 4 disagreements (Belgrade SV.W 2023-08-30 03:01Z; Helena SV.W 2024-08-19 23:51Z and 2025-07-28 20:39Z; Kalispell SQ.W 2022-02-01 23:58Z). Null geometry: polygon_nulls 0 in the window (store-ready.json, joins: no_outline 0, window 0, joined 0, unjoined 0); NoOutlineTests pass (completion). 2026-10-20 (joins verify, the D38 towns file): 0 town events missing from a cell cover; 12 cover-only events; 469 town-event pairs for the 17 towns.",
+      "findings": []
     },
     {
       "id": "B5-16",
       "gate": "Temperature extremes: the season highest-high and lowest-low rows carry dates and the grid kind word; the town pages' station rows carry the station's name; no row mixes sources.",
-      "status": "partial",
-      "evidence": "Store level, part A completion, B5-16: the season highest-high and lowest-low rows carry dates and the kind word \"Grid estimate\" (for example Billings 106.2 F on July 25, 2024, and -33.2 F on January 13, 2024); the station files carry the station name (571 of 571). Town-page rows and the no-mixed-sources check are part B1 (the town pages) and are not yet built."
+      "status": "open (owner: the summary builder; F10)",
+      "evidence": "Re-check 2026-10-19: grid rows carry 'Grid estimate' and dates on all 17 towns; station rows name their station in 167 of 167 cells. Fails 'no row mixes sources' for the five-season snowfall cell: Billings shows two stations in one number ('185.0 in; two stations: BILLINGS WTP 2021-22 to 2024-25, BILLINGS INTL AP 2025-26'), and Benchland's five-season cell names no station. Not fixed on 2026-10-20: summary.py:1598 still takes the station sum for that cell. F10 asks for a decision (show the five-season total only when one station supplies all five seasons, or say so).",
+      "findings": [
+        "F10"
+      ]
     },
     {
       "id": "B5-17",
       "gate": "Hail hit-and-miss (D15): the table built for every LSR hail report of 1.00 in or more in the window; the Lewistown and Glendive cases present; the About summary in words.",
-      "status": "partial",
-      "evidence": "Part A completion, B5-17 and D24. 737 rows: every LSR hail report of 1.00 in or more in the window; hits 464; misses 273 (a miss under by up to 3.01 in, median 0.88 in). Own-cell MESH hits 297 of 737 (40.3 percent, \"fewer than half\"). Lewistown 2.50 in (3 S Lewistown, 2025-06-15 22:48Z, MESH 0.0 mm) is present as a miss under by 2.50 in. Petrolia Lake 3.50 in (1 SSE Petrolia Lake, 2025-06-16 01:01Z) is present. Glendive 4.00 in (2021-06-08) is named as a research case outside the window, not a row (D24). The About page carries the sentence about_hit_miss (WORDS_JOINS): the reports were checked against the radar estimate and the radar signatures near each report, and \"The radar missed many of them.\" The fuller summary, hit_miss_summary (WORDS_JOINS; \"fewer than half\" and \"most\"; no digits), is not yet placed on any page."
+      "status": "pass",
+      "evidence": "Part A completion, B5-17 and D24. 737 rows: every LSR hail report of 1.00 in or more in the window; hits 464; misses 273 (a miss under by up to 3.01 in, median 0.88 in). Own-cell MESH hits 297 of 737 (40.3 percent, \"fewer than half\"). Lewistown 2.50 in (3 S Lewistown, 2025-06-15 22:48Z, MESH 0.0 mm) is present as a miss under by 2.50 in. Petrolia Lake 3.50 in (1 SSE Petrolia Lake, 2025-06-16 01:01Z) is present. Glendive 4.00 in (2021-06-08) is named as a research case outside the window, not a row (D24). The About page carries the sentence about_hit_miss (WORDS_JOINS): the reports were checked against the radar estimate and the radar signatures near each report, and \"The radar missed many of them.\" The fuller summary, hit_miss_summary (WORDS_JOINS; \"fewer than half\" and \"most\"; no digits), is not yet placed on any page. Re-check 2026-10-19: joins verify b5.hit_and_miss, 737 rows, hits 464, misses 273; the About page carries the sentence in words, with no numbers.",
+      "findings": []
     },
     {
       "id": "B5-18",
       "gate": "Flag-off and --hail-history-only builds unchanged; Chromium smoke at 390 and 1280 px; smoke_pages; the live preview build on the branch; zero off-site requests.",
-      "status": "pending",
-      "evidence": "Part A completion, the default --sample build compared with db84d76 (git archive): 94 files, byte-identical, empty diff and empty stderr. The flag-off and --hail-history builds after part B1 and B2, the Chromium smoke at 390 and 1280 px, smoke_pages, the live preview build on the branch and the zero off-site request count are not yet run."
+      "status": "fixed pending re-check for the flag-off clause; the live preview build and the zero off-site request count are part B2",
+      "evidence": "Re-check 2026-10-19: the smoke_pages clause passed on the combined-store build (every page fits 288 to 1440 px, light and dark; the five-season table on 17 pages at 10 widths). The flag-off clause failed on 17 town pages (one blank line, F2). Checked again on 2026-10-20: the flag-off sample build of this worktree and of db84d76 (git archive) each wrote 94 files, and diff -rq shows no difference. The live preview build on the branch and the zero off-site request count are part B2.",
+      "findings": [
+        "F2 (fixed 2026-10-20)"
+      ]
     }
   ],
   "measurements": {
@@ -128,17 +148,50 @@
       "tiles": 4597,
       "manifest_files": 19268,
       "store_bytes_total": 162102993,
-      "counts": {"c": 4569, "g": 104, "j": 4598, "j_e": 4597, "k": 56, "n": 0, "s": 60, "sd": 571, "t": 4597, "z": 115},
-      "bytes": {"c": 35149062, "events_json": 6083996, "g": 285713, "j": 23164558, "j_e": 63082924, "k": 13689, "n": 0, "s": 25000, "sd": 3071175, "t": 32022304, "z": 1793693},
+      "counts": {
+        "c": 4569,
+        "g": 104,
+        "j": 4598,
+        "j_e": 4597,
+        "k": 56,
+        "n": 0,
+        "s": 60,
+        "sd": 571,
+        "t": 4597,
+        "z": 115
+      },
+      "bytes": {
+        "c": 35149062,
+        "events_json": 6083996,
+        "g": 285713,
+        "j": 23164558,
+        "j_e": 63082924,
+        "k": 13689,
+        "n": 0,
+        "s": 25000,
+        "sd": 3071175,
+        "t": 32022304,
+        "z": 1793693
+      },
       "events_tiles": {
         "format": "hail-events-tile-v1",
         "files": 4597,
         "raw_bytes": 63082924,
         "gzip_bytes_total": 10423190,
-        "largest_gzip": {"file": "r0076_c0186.json", "bytes": 22933},
-        "largest_raw": {"file": "r0065_c0169.json", "bytes": 222343},
+        "largest_gzip": {
+          "file": "r0076_c0186.json",
+          "bytes": 22933
+        },
+        "largest_raw": {
+          "file": "r0065_c0169.json",
+          "bytes": 222343
+        },
         "gzip_budget": 100000,
-        "referenced": {"reports": 301678, "warnings": 137700, "records": 14477}
+        "referenced": {
+          "reports": 301678,
+          "warnings": 137700,
+          "records": 14477
+        }
       },
       "blocks": {
         "climate": "loaded",
@@ -147,7 +200,14 @@
         "joins": "loaded (4,597 tiles)",
         "snow": "unavailable (the D7 unit check fails by design; n/ absent)"
       },
-      "verify": {"climate": "ok", "gauges": "ok (9 checks listed)", "joins": "ok (every tile has j/ and j/e/ files; every referenced event is in its tile's events file)", "snow": "ok", "stations": "ok", "compare": "33 rows, no non-zero delta"}
+      "verify": {
+        "climate": "ok",
+        "gauges": "ok (9 checks listed)",
+        "joins": "ok (every tile has j/ and j/e/ files; every referenced event is in its tile's events file)",
+        "snow": "ok",
+        "stations": "ok",
+        "compare": "33 rows, no non-zero delta"
+      }
     },
     "part_a_completion": {
       "source": "/home/user/hail-b5/out/b5a-recheck-completion.json (run finished 2026-10-19T16:06:22Z; head fa33c8d, later de0793c)",
@@ -156,21 +216,78 @@
       "joins_build_offline_seconds": 355,
       "joins_verify": "34 checks, ok",
       "joins_compare": "33 of 33 rows, delta 0",
-      "stations_offline_build": {"seconds": 32, "sd_files": 571, "sd_bytes": 3071175, "rule_files": 466, "rule_bytes": 384021810, "chosen_files": 304, "chosen_bytes": 310139820, "verify_checks": 21},
-      "gauges_offline_build": {"seconds": 2, "g_files": 104, "g_bytes": 285713, "peak_rows": 7560, "pool_gauges": 192, "pool_montana": 102, "verify_checks": 9},
-      "snow_offline_build": {"seconds": 1, "regression_stations": 682, "slope": 0.664164, "intercept": 12.031601, "correlation": 0.809719, "rms_residual_in": 17.6727, "max_abs_residual_in": 124.2277, "verify_checks": 15},
+      "stations_offline_build": {
+        "seconds": 32,
+        "sd_files": 571,
+        "sd_bytes": 3071175,
+        "rule_files": 466,
+        "rule_bytes": 384021810,
+        "chosen_files": 304,
+        "chosen_bytes": 310139820,
+        "verify_checks": 21
+      },
+      "gauges_offline_build": {
+        "seconds": 2,
+        "g_files": 104,
+        "g_bytes": 285713,
+        "peak_rows": 7560,
+        "pool_gauges": 192,
+        "pool_montana": 102,
+        "verify_checks": 9
+      },
+      "snow_offline_build": {
+        "seconds": 1,
+        "regression_stations": 682,
+        "slope": 0.664164,
+        "intercept": 12.031601,
+        "correlation": 0.809719,
+        "rms_residual_in": 17.6727,
+        "max_abs_residual_in": 124.2277,
+        "verify_checks": 15
+      },
       "climate_build_seconds": 11,
       "climate_backfill_seconds_recorded_by_the_builder": 222,
-      "climate_tiles": {"files": 4569, "bytes": 35149062, "median_raw_bytes": 8038, "median_gzip_bytes": 1705, "source": "the medians are the supervisor's D25 figures in the brief; the files and bytes match store-ready.json"},
+      "climate_tiles": {
+        "files": 4569,
+        "bytes": 35149062,
+        "median_raw_bytes": 8038,
+        "median_gzip_bytes": 1705,
+        "source": "the medians are the supervisor's D25 figures in the brief; the files and bytes match store-ready.json"
+      },
       "climate_download_median_mb_per_s": 27.78,
-      "hit_and_miss": {"table": "built by python -m website.joins verify (joins.py _hit_and_miss, returned in the verify result as b5.hit_and_miss); the 737 rows are not copied into this record", "rows": 737, "hits": 464, "misses": 273, "own_cell_mesh_1in_or_more": 297, "own_cell_share_percent": 40.3, "misses_under_by_max_in": 3.01, "misses_under_by_median_in": 0.88},
+      "hit_and_miss": {
+        "table": "built by python -m website.joins verify (joins.py _hit_and_miss, returned in the verify result as b5.hit_and_miss); the 737 rows are not copied into this record",
+        "rows": 737,
+        "hits": 464,
+        "misses": 273,
+        "own_cell_mesh_1in_or_more": 297,
+        "own_cell_share_percent": 40.3,
+        "misses_under_by_max_in": 3.01,
+        "misses_under_by_median_in": 0.88
+      },
       "zone_events_public": 14703,
       "zone_row_copies_dropped": 4986,
       "zone_periods": 15476,
       "d8_periods_ok": "8 of 8",
-      "polygon_cover_added": {"SV.W": 310012, "FA.Y": 63796, "SQ.W": 11514, "FF.W": 11650, "TO.W": 1797, "FL.W": 3629, "FA.W": 3321, "FL.A": 3103, "FL.Y": 848},
-      "town_point_check": {"towns": 17, "disagreements": 4},
-      "gusts_d12": {"dropped": 3, "flagged": 2},
+      "polygon_cover_added": {
+        "SV.W": 310012,
+        "FA.Y": 63796,
+        "SQ.W": 11514,
+        "FF.W": 11650,
+        "TO.W": 1797,
+        "FL.W": 3629,
+        "FA.W": 3321,
+        "FL.A": 3103,
+        "FL.Y": 848
+      },
+      "town_point_check": {
+        "towns": 17,
+        "disagreements": 4
+      },
+      "gusts_d12": {
+        "dropped": 3,
+        "flagged": 2
+      },
       "fill_checks": "no -999.99 value in any sum (asserted)",
       "cache_listing_hash_before_and_after": "unchanged (180d00ab093e210d4c97e45f396d16dac6ce48e2cfd635eaf75906f712e034c7)"
     },
@@ -180,47 +297,287 @@
       "result": "one failure: test_summary.FailureVariantTests.test_town_gauge_none_and_unavailable_words still expects the gauge line without the all-clear sentence (rules-13 item 3, tests/test_summary.py lines 622-623, owned by the summary test builder); every other test passes",
       "skipped": 0,
       "pyshp": "installed (pyshp 3.1.6 in /home/user/hail-b1/venv); PolygonParseTests and CountyFileTests run",
-      "modules": {"tests/test_stations.py and tests/test_gauges.py": "101 tests, OK", "tests/test_joins.py": "234 tests, OK"},
+      "modules": {
+        "tests/test_stations.py and tests/test_gauges.py": "101 tests, OK",
+        "tests/test_joins.py": "234 tests, OK"
+      },
       "store_check": "offline rebuilds of the stations and gauges blocks in a scratch copy of the store: the 571 and 104 files are byte-identical to the shared store; each block is equal apart from the new fields (failed_station_ids, detail, incomplete, unread); both verify runs pass; the joins words that changed are not stored, so the joins part is not rebuilt",
       "earlier_run": "the rules-1 finding's scratch run (1,138 tests, OK, skipped 4) predates the other builders' tests and is not repeated here; line 154 is unchanged"
     },
     "zone_editions": {
       "source": "store-ready.json zone_editions and the joins index (zone_placement, zone_unplaced_rows)",
-      "current_read": ["z_18mr25.zip (effective 2025-03-18)", "z_16ap26.zip (effective 2026-04-16, the current edition)"],
-      "older_not_published_http_404_on_2026_10_19": ["z_08se21.zip (2021-09-08)", "z_22mr22.zip (2022-03-22)", "z_07se22.zip (2022-09-07)", "z_13se22.zip (2022-09-13)", "z_08mr23.zip (2023-03-08)", "z_05mr24.zip (2024-03-05)"],
+      "current_read": [
+        "z_18mr25.zip (effective 2025-03-18)",
+        "z_16ap26.zip (effective 2026-04-16, the current edition)"
+      ],
+      "older_not_published_http_404_on_2026_10_19": [
+        "z_08se21.zip (2021-09-08)",
+        "z_22mr22.zip (2022-03-22)",
+        "z_07se22.zip (2022-09-07)",
+        "z_13se22.zip (2022-09-13)",
+        "z_08mr23.zip (2023-03-08)",
+        "z_05mr24.zip (2024-03-05)"
+      ],
       "zone_products_unplaced": 1230,
       "unplaced_reason": "edition_unpublished (all 1,230)",
-      "unplaced_by_edition": {"z_08se21.zip": 828, "z_22mr22.zip": 379, "z_07se22.zip": 23},
-      "unplaced_by_product": {"WW.Y": 368, "HW.W": 354, "HW.A": 310, "WS.A": 57, "WS.W": 44, "HT.Y": 34, "WC.W": 32, "FA.A": 23, "BZ.W": 4, "FF.A": 4},
+      "unplaced_by_edition": {
+        "z_08se21.zip": 828,
+        "z_22mr22.zip": 379,
+        "z_07se22.zip": 23
+      },
+      "unplaced_by_product": {
+        "WW.Y": 368,
+        "HW.W": 354,
+        "HW.A": 310,
+        "WS.A": 57,
+        "WS.W": 44,
+        "HT.Y": 34,
+        "WC.W": 32,
+        "FA.A": 23,
+        "BZ.W": 4,
+        "FF.A": 4
+      },
       "zone_placed_by_code_alone": 10422,
       "zone_events": 14703,
       "zone_edition_cutover": "2026-04-16"
     },
-    "hit_and_miss_rows_example": {"lewistown_2_50_in": "3 S Lewistown 2025-06-15 22:48Z, MESH 0.0 mm, miss under by 2.50 in", "petrolia_lake_3_50_in": "1 SSE Petrolia Lake 2025-06-16 01:01Z"},
-    "roof_counts_billings_airport": {"highs_90_f_or_more_by_season": [45, 42, 27, 35, 25], "snow_1_in_or_more_on_the_ground_by_season": [55, 70, 30, 53, 25]},
-    "store_sizes_2026_10_19": {"source": "file sizes (os.walk; no file content) of /home/user/hail-b5/out/b1/store, the products store (store-ready.json announced 2026-10-19T16:49:44Z); read by the docs builder for the job review", "hail_folder_bytes": 161961394, "hail_folder_files": 19269, "j_folder_excluding_e_bytes": 23164558, "j_folder_excluding_e_files": 4598, "j_e_bytes": 63082924, "j_e_files": 4597, "j_with_e_bytes": 86247482, "events_json_bytes": 6083996, "z_bytes": 1793693, "z_files": 115, "z_public_files": 83, "z_fire_files": 32, "s_bytes": 25000, "s_files": 60, "c_bytes": 35149062, "c_files": 4569, "t_bytes": 32022304, "t_files": 4597, "sd_bytes": 3071175, "sd_files": 571, "g_bytes": 285713, "g_files": 104, "k_bytes": 13689, "k_files": 56, "index_and_manifest_bytes": 3353276, "ledger_bytes_outside_hail": 141599, "caps": {"j_with_e_mb": 40, "hail_mb": 60, "source": "the B2 brief (j/ at most 40 MB) and DECISIONS D34 and D35 (all of hail/ at most 60 MB)"}}
+    "hit_and_miss_rows_example": {
+      "lewistown_2_50_in": "3 S Lewistown 2025-06-15 22:48Z, MESH 0.0 mm, miss under by 2.50 in",
+      "petrolia_lake_3_50_in": "1 SSE Petrolia Lake 2025-06-16 01:01Z"
+    },
+    "roof_counts_billings_airport": {
+      "highs_90_f_or_more_by_season": [
+        45,
+        42,
+        27,
+        35,
+        25
+      ],
+      "snow_1_in_or_more_on_the_ground_by_season": [
+        55,
+        70,
+        30,
+        53,
+        25
+      ]
+    },
+    "store_sizes_2026_10_19": {
+      "source": "file sizes (os.walk; no file content) of /home/user/hail-b5/out/b1/store, the products store (store-ready.json announced 2026-10-19T16:49:44Z); read by the docs builder for the job review",
+      "hail_folder_bytes": 161961394,
+      "hail_folder_files": 19269,
+      "j_folder_excluding_e_bytes": 23164558,
+      "j_folder_excluding_e_files": 4598,
+      "j_e_bytes": 63082924,
+      "j_e_files": 4597,
+      "j_with_e_bytes": 86247482,
+      "events_json_bytes": 6083996,
+      "z_bytes": 1793693,
+      "z_files": 115,
+      "z_public_files": 83,
+      "z_fire_files": 32,
+      "s_bytes": 25000,
+      "s_files": 60,
+      "c_bytes": 35149062,
+      "c_files": 4569,
+      "t_bytes": 32022304,
+      "t_files": 4597,
+      "sd_bytes": 3071175,
+      "sd_files": 571,
+      "g_bytes": 285713,
+      "g_files": 104,
+      "k_bytes": 13689,
+      "k_files": 56,
+      "index_and_manifest_bytes": 3353276,
+      "ledger_bytes_outside_hail": 141599,
+      "caps": {
+        "j_with_e_mb": 40,
+        "hail_mb": 60,
+        "source": "the B2 brief (j/ at most 40 MB) and DECISIONS D34 and D35 (all of hail/ at most 60 MB)"
+      }
+    },
+    "re_check_2026_10_19": {
+      "source": "/home/user/hail-b5/out/b5b1-recheck.json (checker run finished 2026-10-19T23:33:00Z; a copy of the worktree at de0793c plus the working tree)",
+      "unit_tests": {
+        "ran": 1199,
+        "failures": 1,
+        "errors": 0,
+        "rc": 1,
+        "failure": "tests/test_site.py:1546 (now :1552): the expected sentence was the old wording; the working tree carries the new sentence"
+      },
+      "selftest_payload": "PASS payload 1.0.0 (rc 0)",
+      "flag_off_build_vs_db84d76": {
+        "files": 94,
+        "differing_town_pages": 17,
+        "difference": "one blank line before the observed-now section; on 2026-10-20 the diff is empty"
+      },
+      "hail_history_sample_build": {
+        "rc": 0,
+        "files": 116,
+        "bytes": "2.9 MB",
+        "seconds": 7.7
+      },
+      "hail_history_store_build": {
+        "rc": 0,
+        "files": 19363,
+        "bytes": "199 MB",
+        "seconds": 15.9,
+        "status": "2,638,537 events in 4597 shard files, 1825 of 1826 days, as of 2026-10-16; joined records loaded"
+      },
+      "smoke_pages": "rc 0 on the combined-store build: every page fits 288, 320, 375, 390, 768, 1280 and 1440 px, light and dark; the five-season table on 17 pages at 10 widths",
+      "store_at_recheck": {
+        "total_bytes": 162102993,
+        "manifest_files": 19268
+      },
+      "billings_summary_table": "25 body rows; 167 of 167 station cells name their station; the gust rows read Data unavailable at the re-check (F3, before the periods were written)",
+      "benchland_summary_table": "23 rows; the partial line is present; the 2021-22 zone cell reads Data unavailable with the all-clear sentence",
+      "gauge_lines": "Billings: 7 river gauge lines, with the duplicate label at the re-check (F8)",
+      "about": "the NOHRSC analysis sentence and the hit-and-miss sentence are present; the terms of the new sources are on the town pages only (F11c)",
+      "d27": {
+        "zone_events": 14703,
+        "placed_groups": 14534,
+        "kept": 10422,
+        "current": 785,
+        "mapped": 3327,
+        "unplaced_groups": 1230,
+        "unplaced_by_edition": {
+          "z_08se21": 828,
+          "z_22mr22": 379,
+          "z_07se22": 23
+        }
+      },
+      "hit_and_miss": {
+        "rows": 737,
+        "hits": 464,
+        "misses": 273,
+        "misses_under_by_max_in": 3.01,
+        "misses_under_by_median_in": 0.88
+      },
+      "em_dash_added_lines": 0,
+      "banned_name_hits": 3,
+      "decisions_needed": [
+        "D27 zone editions",
+        "D13-prelim (preliminary grid highs)",
+        "roof-refs (R2, R9, R13, R17, R20)",
+        "county-row (the 25th table row)",
+        "ice-dams (the roof line wording)",
+        "git-wip (fa33c8d, de0793c, dcb7e93)",
+        "banned-names (the list and the branch names)"
+      ]
+    },
+    "products_rebuild_2026_10_20": {
+      "source": "/home/user/hail-b5/out/b1/store-ready.json (rebuilt_utc 2026-10-20T00:15:32Z; rebuilt_by: products, stations, gauges and docs fixer)",
+      "store": "/home/user/hail-b5/out/b1/store",
+      "offline": true,
+      "procs": 2,
+      "what": "The joins part (j/, z/, s/, k/, events.json, towns.json, the joins block and its manifest entries), then the stations part (sd/, tl/, the stations block) and the gauges part (g/, the gauges block), rebuilt offline from the caches. The climate and snow parts were not rebuilt: their stored files did not change.",
+      "commands": [
+        "python -m website.joins build --store STORE --cache /home/user/hail-b5/cache/joins --offline --procs 2 --today 2026-10-19",
+        "python -m website.stations build --store STORE --cache /home/user/hail-b5/cache --offline --procs 2",
+        "python -m website.gauges build --store STORE --cache /home/user/hail-b5/cache --offline --procs 2",
+        "python -m website.joins verify STORE --cache /home/user/hail-b5/cache/joins",
+        "python -m website.stations verify --store STORE",
+        "python -m website.gauges verify --store STORE --cache /home/user/hail-b5/cache",
+        "python -m website.joins fixture --from-store STORE (the committed SAMPLE fixture)"
+      ],
+      "rc": {
+        "joins build": 0,
+        "stations build": 0,
+        "gauges build": 0,
+        "joins verify": 0,
+        "stations verify": 0,
+        "gauges verify": 0,
+        "fixture": 0
+      },
+      "seconds": {
+        "joins_build": 277,
+        "stations_build": 29.5,
+        "gauges_build": 1.5,
+        "joins_verify_wall": 13.9
+      },
+      "bytes": {
+        "j": 86276949,
+        "j_e": 63082924,
+        "events_json": 6083996,
+        "towns": 29467,
+        "tl": 13667217,
+        "s": 34913,
+        "z": 1793693,
+        "c": 35149062,
+        "sd": 3071175,
+        "g": 285713,
+        "k": 13689,
+        "t": 32022304,
+        "hail_total": 176293267
+      },
+      "counts": {
+        "j_files_incl_e": 9196,
+        "j_e": 4597,
+        "tl": 4597,
+        "s": 60,
+        "sd": 571,
+        "g": 104,
+        "k": 56,
+        "c": 4569,
+        "t": 4597,
+        "z": 115,
+        "manifest_files": 23866
+      },
+      "verify": {
+        "joins": "ok; 40 checks; no failure; town_not_cover 0; cover_not_town 12",
+        "stations": "ok; 32 checks; no failure",
+        "gauges": "ok; 9 checks; no failure",
+        "climate": "ok",
+        "snow": "ok (state unavailable by design; n/ absent)",
+        "compare": "33 rows; no non-zero delta"
+      },
+      "tile_lists": {
+        "format": "hail-stn-tiles-v1",
+        "files": 4597,
+        "bytes": 13667217,
+        "gzip_total": 2586828,
+        "gzip_median": 574,
+        "gzip_largest": 856,
+        "cap": 6,
+        "miles": 40.0,
+        "lists": 22985,
+        "lists_at_cap": 10543,
+        "longest": 6,
+        "unread_entries": 0
+      },
+      "towns_file": {
+        "format": "hail-joins-towns-v1",
+        "bytes": 29467,
+        "towns": 17,
+        "town_event_pairs": 469
+      },
+      "station_periods": {
+        "format": "hail-station-v3",
+        "files": 60,
+        "bytes": 34913,
+        "gzip_total": 16975,
+        "seasons": 5
+      },
+      "tile_picks": "Billings: USC00240802 and USW00024033 for all five elements; Benchland SNOW: US1MTFG0003 and USC00243947; SNWD: USC00247864 and USS0009C01S",
+      "flag_off_build_2026_10_20": "94 files each (this worktree and db84d76 by git archive); diff -rq empty",
+      "records": "/home/user/hail-b5/out/fixer-pscd/ (joins-build.log, stations-build2.json, gauges-build2.json, joins-verify3.json, stations-verify2.json, gauges-verify2.json, flagoff/)"
+    }
   },
   "open_items": [
-    "The six older zone editions return HTTP 404 at the NWS address the build uses (checked 2026-10-19). 1,230 zone products (edition_unpublished) are unplaced and listed row by row in the joins index; the owner or supervisor decides whether another source for those editions is sought (D27). The 1,230 are counted, not dropped.",
+    "The zone editions (D27, D31): 1,230 zone groups are unplaced (edition_unpublished). The six older editions return HTTP 404 at the NWS address the build uses (checked 2026-10-19). The research (zone-editions.json, 2026-10-19) found IEM's Montana zone sets for every date tested, simplified: 103 zones through 2022-09-13 12:00 UTC and 83 from 18:00 UTC. They serve code identity and coarse placement only, and IEM does not show the change log's 2022-09-07 date for the Montana switch. The owner or the supervisor decides between placing by the IEM sets and finding the full-resolution older files.",
     "The gauge cut-off: 10 miles (O4, provisional). The brief's figures: 10 miles covers 17.3 percent of Montana (12 of 14 towns); the 25-mile alternative covers 69.6 percent; 5 miles covers 4.8 percent. The owner confirms.",
     "The NOHRSC method: the regression slope is 0.664 over 682 station-seasons, outside the 0.85 to 1.15 band, so the analysis stays out (D7, D23). Whether to publish an analysis under a different method is an owner decision (O10).",
-    "The LSR unit codes: magnitudes for codes 5, 6, 7, I and J are not shown until the IEM documentation confirms their units (D15). The IEM documentation was not read in this run.",
-    "The data-site split (D22, D30): the events table stays for Python; the browser fetches the per-tile files hail/j/e/<tile>.json (largest 22,933 bytes gzip against a 100,000-byte budget). The browser change is part B2.",
-    "The schedule cadence: the daily job runs at 12:43 UTC. D26's daily station refresh needs the previous published station list; the job carries it from the last release (hail-store.tar.gz) and falls back to the full candidate union when none is carried. The daily job's end-to-end time is not yet measured against the 25-minute budget (B5-12).",
-    "The zone editions count: 1,230 unplaced products, from 10 product codes, across the three 2021-22 editions named above (open item 1).",
-    "D28 in the working tree: the gauges and stations blocks carry the D20 sentence (\"could not be loaded in this update; that is not the same as no ...\"). Confirm in the part B1 build.",
-    "B5-14 browser half and B5-16 town-page rows: part B2 and the town pages (part B1 build), not run here.",
-    "B5-18: the flag-off and --hail-history-only builds, the Chromium smoke, smoke_pages, the live preview build and the off-site request count are not run here.",
-    "NCEI Storm Events licence text: not read (the NCEI terms page returned 503 in research). Counsel item.",
-    "SNOTEL: Crystal Lake (USS0009C01S), a SNOTEL site, is read from the GHCN copy; the NRCS AWDB service is not fetched. Counsel confirms the held SNOTEL item covers the GHCN copy used by gate B5-3 (legal-terms-review.json, AWDB question). Stanford (USC00247864) is a COOP station by its ID; the part A completion record calls it a SNOTEL site, which the ID does not support.",
-    "O12, the byte caps (not ruled): j/ with j/e/ is 86,247,482 bytes (86.2 MB) against the 40 MB cap; all of hail/ is 161,961,394 bytes (162.0 MB) against the 60 MB cap. The owner or the supervisor rules on both (DECISIONS D38). The dedupe proposed under the B2 budget (warnings in one table; reports and records once per tile shard) is not built and would change D30's one-file-per-tap rule.",
-    "The joins are not on the B5 clock: joins.py counts its 35 minutes from its own start, so a join that starts about 11 minutes into the job and uses its full limit can leave no time before the pack. The fix is a job-clock deadline in joins.py (a flag), or the products pulls in their own non-fatal step with a deadline. The supervisor also rules on D26's non-fatal wording for the join: it stays fatal now, by the B2 rule (a crash could publish a half-written store, since only the verify follows).",
-    "The station carry and drop edit index.json with jq; the carry does not refresh manifest.json, and the drop removes the block only, not a failed run's sd/ files or manifest entries. The tested stations command, the containment step (run hail.check_manifest; on failure, or if containment itself fails, remove the B5 folders and their manifest entries, set the five blocks to unavailable with the D16 sentence, and delete hidden .stations-<8 random characters> temp files) and the fatal B1 and B2 gates after containment need a stations command (owner: stations.py). Until then a stations run that fails after writing some sd/ files can leave files the manifest does not list, and the site build would refuse the store.",
-    "D26's daily NWPS scope is not built: the daily gauges step reads only the files missing from the cache. The list and the 192 pool details (about 45 s at the measured 0.23 s a request) need a daily flag and a test; the gauges block's read dates (list, details and peaks) and the sources rows for nwps_gauges and usgs_water_api (their timing text) follow with that code. The supervisor decides whether details means the pool or all 486 gauges.",
-    "The monthly NOHRSC revision check: a daily rebuild replaces the whole snow block, so the next daily run erases the check's record (the snow module keeps it through the rebuild). The daily run makes no request; the timing text in sources.py and snowgrid.py that says so waits for that code.",
-    "The store asset hail-store keeps its fixed name: the site build reads releases/download/hail-store/hail-store.tar.gz (website/hail.py, STORE_URL). A versioned store name needs the reader to take the newest name first. The climate archive has the versioned name.",
-    "Brief edits for the supervisor (the brief is outside the repository): at line 225, delete 'NOHRSC current season (541,698 B), ' (that figure is the 2026-27 file, which no job fetches); at line 230, the gauge list is read daily once D26's NWPS scope is built, so the annual-or-on-change line changes with it.",
-    "tests/test_hail.py's WorkflowTests was not extended, because that file belongs to another builder. The job's checks are in tests/test_hail_workflow.py; the owner may move them into WorkflowTests."
+    "The LSR unit codes: magnitudes for codes 5, 6, 7, I and J are not shown until the IEM documentation confirms their units (D15). The IEM documentation was not read in the research.",
+    "The data-site split (D22, D30): the browser fetches the per-tile files on a tap, hail/j/e/<tile>.json (4,597 files; the largest 22,933 bytes gzip against a 100,000-byte budget) and hail/tl/<tile>.json (the largest 856 bytes gzip). The events table hail/j/events.json (6,083,996 bytes) stays for Python. The browser change is part B2 and not built; the determinism check of j/e/ and tl/ (B5-13) is pending.",
+    "The caps (O12, not ruled): j/ is 86,276,949 bytes raw in 9,196 files, j/e/ included, against 40 MB; hail/ is 176,293,267 bytes in 23,866 files against 60 MB. The owner or the supervisor rules on both (D38, D42).",
+    "The schedule and the monthly job (D42): the daily job runs at 12:43 UTC; the monthly job runs on the first day of each month or by the monthly input; the climate backfill runs once, by hand. The daily station refresh needs the station list carried from the last published store. The daily total with downloads is not measured against the 25-minute budget (B5-12).",
+    "The job clock and the joins: the B5 steps share a 40-minute clock in hail-store.yml, but the joins do not: joins.py counts its 35 minutes from its own start, so a late join can leave no time before the pack. The supervisor also rules on whether the join stays fatal (it does now, by the B2 rule).",
+    "The station carry, drop and containment: the carry and drop edit index.json without refreshing manifest.json. The tested stations command, the containment step and the fatal store gates before the pack are still to be built (DECISIONS D38).",
+    "The daily NWPS read and the gauge dates: D26 asks for the NWPS list and the pool details on every daily run; the daily gauges step does not read them yet.",
+    "The NOHRSC revision check: a daily rebuild replaces the snow block, so the monthly check's record is erased until the snow module keeps it through the rebuild.",
+    "The summary and the section router (other owners' files): website/summary.py (the partial-season line's all-clear sentence; the five-season snowfall cell, which still sums stations (B5-16, F10); the F7 and F9 re-checks); website/snowgrid.py (the unavailable and unit lines have no all-clear sentence, F6d); website/build.py (the section router needs the labels Watch and Advisory and the product after the span's colon; it reads in effect: at build.py:717).",
+    "The flag-off and browser checks: the flag-off build matches db84d76 (94 files, zero differences, 2026-10-20). The live preview build, the zero off-site request count, the 390 and 1280 px smoke, and the 390 px first-screen check are part B2.",
+    "Counsel: items 11 to 19 of the legal terms review, and the NCEI Storm Events licence text, which was not read (D38). SNOTEL: Crystal Lake (USS0009C01S) is read from the GHCN copy; counsel confirms the held SNOTEL item covers it.",
+    "Smaller items: a cache with no climate ledger makes climate build raise and write no climate block; the climate owner decides the fix. The owner confirms the list of banned names behind the no model or vendor names rule, which is not in the repository, and whether branch names count (3 mentions in DECISIONS.md and ROADMAP.md). The branch carries the WIP commits fa33c8d, de0793c and HEAD dcb7e93 and the uncommitted part B1 edits; the supervisor decides the clean-up."
   ],
   "notes": [
     "Two stores were built in the part A re-check, one at a time, and deleted after their checks (the disk rule); the shared cache /home/user/hail-b5/cache was unchanged (listing hash before and after).",
@@ -230,63 +587,140 @@
     "Words checked in the part A tables: no em dash, no model or vendor name in the added lines, and \"no hail\" only in quoted wording or in \"not the same as no hail\" (completion, em_dash_added_lines and banned_names_added_lines; the banned-name list is not in the repository and the owner is asked to confirm it).",
     "The part A completion records the WIP commit fa33c8d and later de0793c on claude/hail-b5. The branch is not cleaned up by this builder.",
     "The workflow parses as YAML (a scratch check with PyYAML: 43 steps, the job cap 60 minutes, every non-fatal step has a timeout), and every run block passes bash -n with the Actions expressions replaced. The repository test reads the file as text and needs no YAML package.",
-    "The climate archive ordering was checked on sample names: the highest run id first (sort -t- -k3,3nr), and the first fixed name last."
+    "The climate archive ordering was checked on sample names: the highest run id first (sort -t- -k3,3nr), and the first fixed name last.",
+    "2026-10-20 (B1 completion): the joins, stations and gauges parts were rebuilt offline in /home/user/hail-b5/out/b1/store (procs 2) and verified (joins verify ok, 40 checks; stations verify ok, 32 checks; gauges verify ok, 9 checks); the fixture was regenerated (rc 0); the flag-off build matches db84d76; the five test modules pass (617 tests) and test_hail_workflow passes (20 tests).",
+    "Nothing was committed, pushed, checked out, stashed, reset or added by the B1 completion; the git status is recorded in the worktree, and the WIP commits on the branch are the supervisor's."
   ],
   "failed_checks": [
     {
-      "check": "Part A completion item 4 (D20 no-day sentence)",
-      "status": "resolved by the supervisor's amendment",
-      "why": "The amendment of 2026-10-19 16:25 UTC sets the sentence to \"No day of the {season} season is in the data yet. This is not an all-clear.\", which is the wording the code now holds (climate.py partial_none)."
+      "check": "Re-check F1 (tests/test_site.py:1546, now :1552; docs/DESIGN.md:626)",
+      "status": "fixed in the working tree (outside the five modules; not re-run here)",
+      "why": "The expected sentence and DESIGN.md carry the new wording (1,826 storm-report days, each from 12:00 to 12:00 UTC)."
     },
     {
-      "check": "Part A completion item 15 (gauges and stations blocks carry the D20 sentence)",
-      "status": "applied in the working tree; confirm in part B1",
-      "why": "stations.py and gauges.py carry \"could not be loaded in this update; that is not the same as no ...\" in their unavailable words (D28)."
+      "check": "Re-check F2 (flag-off blank line, B5-18)",
+      "status": "fixed; verified 2026-10-20",
+      "why": "The flag-off sample build of this worktree equals the db84d76 build: 94 files, zero differences."
     },
     {
-      "check": "Part A completion audit D4 (cell arithmetic units)",
-      "status": "resolved by the supervisor's amendment",
-      "why": "The amendment accepts the climate cell function's exact 1/48-degree integer units under the same half-open rule (D4 as amended)."
+      "check": "Re-check F3 (gust rows unavailable everywhere)",
+      "status": "store side done; the site build on the rebuilt store not re-run in this part",
+      "why": "s/ files carry periods.season (60 files; joins verify ok); summary.py reads them (summary.py:1354 to 1358)."
+    },
+    {
+      "check": "Re-check F4 (advisory and watch rows labelled Warning; jargon)",
+      "status": "fixed in joins.py; map.js keeps the B2 template until part B2",
+      "why": "_warning_text uses WORDS_JOINS['warnings_row_b5'] (joins.py:431, 3735) with SIGNIFICANCE_LABEL (joins.py:173)."
+    },
+    {
+      "check": "Re-check F5 (no-report sentence; double negative)",
+      "status": "fixed in summary.py (another owner's file); not re-checked in a page",
+      "why": "summary.py:228 and 337 to 338."
+    },
+    {
+      "check": "Re-check F6 (all-clear sentence on unavailable and partial lines)",
+      "status": "partly fixed: this part's word tables and the held and zone lines in summary.py; open in snowgrid.py (F6d)",
+      "why": "snowgrid.py:137 and :139 have no all-clear sentence (0 matches)."
+    },
+    {
+      "check": "Re-check F7 (held row unit 'none')",
+      "status": "a comment at summary.py:89 says fixed; not re-checked",
+      "why": "The held row's unit slot carries its reason."
+    },
+    {
+      "check": "Re-check F8 (duplicate 'River gauge:' label)",
+      "status": "fixed in gauges.py",
+      "why": "gauges.py:99 comment; the words carry no prefix."
+    },
+    {
+      "check": "Re-check F9 (duplicate 'N days missing')",
+      "status": "not re-examined",
+      "why": "summary.py _cover (lines 709 to 715) not checked against its caller."
+    },
+    {
+      "check": "Re-check F10 (five-season snowfall mixes stations; B5-16)",
+      "status": "open (summary builder)",
+      "why": "summary.py:1598 still sums the station values for that cell."
+    },
+    {
+      "check": "Re-check F11 (About text and terms)",
+      "status": "F11a and F11b fixed in about.html; F11c not re-checked",
+      "why": "about.html:46 to 47 say the history sits below the forecast; the 'pass the coverage rule' wording is gone."
+    },
+    {
+      "check": "Re-check F12 (FA.A kind name)",
+      "status": "fixed",
+      "why": "joins.py:240 names FA.A 'Areal flood watch'."
+    },
+    {
+      "check": "Re-check D27 (zone editions)",
+      "status": "explained, not placed (decision)",
+      "why": "See DECISIONS D31 and the zone-editions research."
+    },
+    {
+      "check": "Re-check: section router (build.py)",
+      "status": "open (site builder)",
+      "why": "_KIND_LABEL (build.py:689) lacks Watch and Advisory; the product is read after 'in effect:' (build.py:717)."
     },
     {
       "check": "Part A completion, branch hygiene (nobody commits or pushes)",
       "status": "open",
-      "why": "The branch carries the WIP commits fa33c8d and de0793c, and the part B1 edits are uncommitted. The supervisor decides how the branch is cleaned up."
+      "why": "The branch carries the WIP commits fa33c8d, de0793c and HEAD dcb7e93. This part commits nothing; the supervisor decides the clean-up."
     },
     {
       "check": "Review: the join step had no timeout (rules-15)",
-      "status": "applied: timeout-minutes 50, still fatal; the supervisor rules on the D26 wording for the join",
-      "why": "The join's timeout is above JOINS_DEADLINE_S (a test). The budget problem stays open: on a stalled day the 60-minute cap binds before the B5 steps run (B5-12)."
+      "status": "applied: timeout-minutes 50 (hail-store.yml:144), still fatal",
+      "why": "The join's own deadline is 35 minutes (JOINS_DEADLINE_S, D23)."
     },
     {
       "check": "Review: deadlines per step, not per job (job-6)",
-      "status": "partly applied: the B5 steps share one 40-minute clock, are gated on it, run under timeout, and take the smaller of their deadline and the seconds left less 440",
-      "why": "The joins are not on the clock (joins.py has no job-clock deadline). The second-job option was not taken."
+      "status": "partly applied",
+      "why": "The B5 steps share one 40-minute clock; the joins are not on it."
     },
     {
-      "check": "Review: carry and drop without a manifest refresh; no store check before the pack (job-4)",
+      "check": "Review: carry and drop without a manifest refresh (job-4)",
       "status": "open: needs a stations command",
-      "why": "The tested carry and drop command, the containment step with the D16 words and the hidden temp-file removal, and the fatal B1 and B2 gates after containment belong in stations.py, which is not this builder's file. The workflow keeps the current carry and drop, and the fatal gates are not added before containment exists."
+      "why": "The containment step and the fatal gates before the pack are not built."
     },
     {
       "check": "Review: the B5 sizes against the caps (job-7)",
-      "status": "recorded in DECISIONS (the B2 budget, the j/e bullet, O12 and the job bullet), DESIGN (sections 11 and 12) and ROADMAP (the caps line and the open items); the rulings are open",
-      "why": "The measured sizes are in measurements.store_sizes_2026_10_19. The B2 budget's z/ figure (919,402 bytes) is superseded by 1,793,693 bytes."
+      "status": "recorded in DECISIONS D38 and D42 and ROADMAP; the rulings are open",
+      "why": "j/ 86,276,949 bytes against 40 MB; hail/ 176,293,267 bytes against 60 MB."
     },
     {
       "check": "Review: the NWPS list and details are not read daily (job-9)",
-      "status": "open: gauges.py, sources.py and the brief's line 230",
-      "why": "The workflow's comments say what the daily run does. D26's daily NWPS scope is recorded as open in DECISIONS and ROADMAP."
+      "status": "open",
+      "why": "D26's daily NWPS scope is not built (gauges.py, sources.py)."
     },
     {
       "check": "Review: the climate archive was replaced in place (job-10)",
-      "status": "applied for the climate archive; the store asset (line 292 of the workflow) keeps its name",
-      "why": "Versioned archives, no --clobber, the unpack check before the prune, and the newest-first restore. The store asset's reader (website/hail.py STORE_URL) takes a fixed name, so renaming it would break the site build."
+      "status": "applied for the climate archive",
+      "why": "Versioned archives; the store asset keeps its fixed name (website/hail.py STORE_URL)."
     },
     {
       "check": "Review: NOHRSC wording and the daily revision check (job-12)",
-      "status": "open: snowgrid.py, sources.py, tests/test_snowgrid.py and the brief's line 225",
-      "why": "The daily snow step already runs offline and makes no request. The wording, the block merge and their tests are the snow owner's."
+      "status": "open: snowgrid.py, sources.py and the brief",
+      "why": "The daily snow step makes no request; the wording is the snow owner's."
+    },
+    {
+      "check": "B5-12 daily budget",
+      "status": "open",
+      "why": "The end-to-end daily time with downloads is not measured."
+    },
+    {
+      "check": "Part A completion item 4 (D20 no-day sentence)",
+      "status": "resolved by the supervisor's amendment",
+      "why": "climate.py partial_none carries 'This is not an all-clear.'"
+    },
+    {
+      "check": "Part A completion item 15 (gauges and stations blocks carry the D20 sentence)",
+      "status": "fixed in the working tree (stations.py words; gauges.py words)",
+      "why": "The re-check's simulation showed the sentence in the Billings page."
+    },
+    {
+      "check": "Part A completion audit D4 (cell arithmetic units)",
+      "status": "resolved by the supervisor's amendment",
+      "why": "The climate cell function's 1/48-degree integer units under the same half-open rule."
     }
   ]
 }
