@@ -5030,6 +5030,7 @@ def fixture(out_dir, from_store) -> dict:
         return utc_from_row(row[0], row[1]).date() in days
 
     zones_needed, stations_needed, fires_needed, counties_needed = set(), set(), set(), set()
+    zones_before_needed = set()                       # D44: the removed zones (and MTZ060) the sample tiles name
     sample_tiles = sample["tiles"]
     for name in sample_tiles:
         doc = json.loads((src / "hail" / "j" / f"{name}.json").read_text(encoding="utf-8"))
@@ -5050,6 +5051,7 @@ def fixture(out_dir, from_store) -> dict:
         keep["stations"] = [dict(s) for s in doc["stations"]]
         stations_needed.update(s["id"] for s in keep["stations"])
         zones_needed.update(doc["zones"].keys())
+        zones_before_needed.update(doc.get("zones_before", {}).keys())
         fires_needed.update(doc.get("fire", {}).keys())
         counties_needed.update(doc.get("counties", {}).keys())
         (hail_out / "j" / f"{name}.json").write_bytes(_compact(keep))
@@ -5076,7 +5078,7 @@ def fixture(out_dir, from_store) -> dict:
     (hail_out / "j" / EVENTS_NAME).write_bytes(_compact({
         "f": EVENTS_FORMAT, "d0": hail.D0.isoformat(), "reports": new_events["reports"],
         "records": new_events["records"], "warnings": new_events["warnings"]}))
-    for zone in sorted(zones_needed):
+    for zone in sorted(zones_needed | zones_before_needed):
         doc = json.loads((src / "hail" / "z" / f"{zone}.json").read_text(encoding="utf-8"))
         doc["events"] = [e for e in doc["events"] if _zone_when(*_zone_span(e)).date() in days]
         doc["records"] = [r for r in doc["records"] if utc_from_row(r[0], r[1]).date() in days]
@@ -5103,10 +5105,12 @@ def fixture(out_dir, from_store) -> dict:
         "lags": dict(real_block["lags"]),
         "types": dict(real_block.get("types", {})),
         "zone_list": sorted(zones_needed),
+        "zones_before": dict(real_block.get("zones_before", {})),     # D44: the codes and cells, as the real build has them
+        "zone_list_before": sorted(zones_before_needed),
         "counties": {"state": "sample", "names": {c: real_block.get("counties", {}).get("names", {}).get(c, "")
                                                   for c in sorted(counties_needed)},
                      "count": len(counties_needed)},
-        "zone_names": {z: real_block["zone_names"].get(z, "") for z in sorted(zones_needed)},
+        "zone_names": {z: real_block["zone_names"].get(z, "") for z in sorted(zones_needed | zones_before_needed)},
         "zones": len(zones_needed), "station_list": station_list, "stations": len(station_list),
         "fire_zone_list": sorted(fires_needed),
         "fire_zones": {"state": "loaded", "reason": None, "zones": len(fires_needed)},

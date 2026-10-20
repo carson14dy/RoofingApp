@@ -80,6 +80,26 @@
   --banner-sample: #111c28;
   --on-banner-sample: var(--m-white);
 
+  /* roads, building outlines and address dots (B3; map.js b3Tokens): a dot is hazard-free, and every colour carries its word */
+  --hail-road: #aab2bc;
+  --hail-road-major: #6e7a87;
+  --hail-bldg: rgba(74, 98, 122, 0.20);
+  --hail-bldg-line: rgba(58, 72, 90, 0.62);
+  --hail-dot: #1f4e79;                 /* a building outline's dot */
+  --hail-dot-address: var(--m-grey-3); /* an address no outline holds: a neutral grey, 3.3:1 on white and 2.7:1 from the outline dot (not a hazard colour) */
+  --hail-dot-ring: var(--m-white);
+  --hail-name: var(--m-ink);
+  --hail-name-halo: var(--m-white);
+  --hail-hairline: 0.5px;
+  --hail-emphasis: 1.25px;
+  --hail-dot-ring-w: 1px;
+  --hail-halo: 3px;
+  --hail-name-size: 12px;
+  --hail-name-weight: 700;
+  --hail-count-size: 12px;
+  --hail-count-weight: 700;
+  --hail-count-pad: 5px;
+
   /* type, space, shape */
   --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
   --edge: 12px;
@@ -156,6 +176,15 @@
     --warn-text: #ff9b92;
     --banner-sample: #efcd5d;
     --on-banner-sample: #0f151c;
+    --hail-road: #5b6470;
+    --hail-road-major: #9aa5b1;
+    --hail-bldg: rgba(150, 178, 206, 0.22);
+    --hail-bldg-line: rgba(200, 218, 236, 0.50);
+    --hail-dot: #bcd7f2;
+    --hail-dot-address: var(--m-grey-2);   /* 3.3:1 on the dark map, 3.4:1 from the outline dot */
+    --hail-dot-ring: #121417;
+    --hail-name: #f2f2f7;
+    --hail-name-halo: #121417;
   }
 }
 
@@ -251,7 +280,8 @@ a { color: inherit; }
 .banner a { font-weight: 700; }
 
 @media (min-width: 900px) {
-  .banners { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: min(560px, 100% - 2 * 220px); }
+  /* the find panel (#find) is not positioned, so the positioned banner row paints above it where they overlap */
+  .banners { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: min(560px, 100% - 2 * 220px); z-index: 1; }
 }
 
 /* the map data didn't load: keep the close button and the banner, drop what needs data */
@@ -718,6 +748,55 @@ a { color: inherit; }
       calc(100dvh - var(--sheet-top, calc(var(--safe-t) + var(--edge))) - var(--edge) - 132px)); }
   .scrim { background: transparent; }
 }
+
+/* ---------------------------------------------------------------- roads, building outlines and addresses (B3) */
+/* the canvas map.js draws in the hail pane (Leaflet positions it; the pane passes no pointer events) */
+.hail-canvas { position: absolute; left: 0; top: 0; pointer-events: none; }
+/* the source lines of the layers (map.js b3Credits): Leaflet's attribution line, bottom right, wrapped to the screen width and to
+   560 px, so it stays right of the "Map data" link and the legend column (at 1280 px it starts at x 720). map.js b3Lift sets
+   --credit-lift: the line sits just above the bottom band (the note, toast, chip and timeline), not on top of it */
+.leaflet-container .leaflet-control-attribution { white-space: normal; max-width: min(560px, calc(100% - 16px)); font-size: 11px; line-height: 1.35; margin-bottom: var(--credit-lift, 0px); }
+
+/* find an address (map.html #find, map.js b3Search): a glass panel with one field and a button, 44 px to tap */
+.find { display: grid; gap: 6px; padding: 10px 12px; border-radius: 16px; pointer-events: auto; font-size: 14px; }
+.find-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--ink-2); letter-spacing: 0.02em; }
+.find-form { display: flex; gap: 6px; align-items: center; }
+/* 16 px type in the field: a phone does not zoom in on focus */
+.find-input { flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px;
+  background: var(--fill-ctl); color: var(--ink); font: inherit; font-size: 16px; }
+.find-input::placeholder { color: var(--ink-2); opacity: 1; }
+.find-input:focus-visible, .find-go:focus-visible, .find-row:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.find-go { flex: none; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--bubble);
+  color: var(--bubble-text); font: inherit; font-size: 15px; font-weight: 700; }
+.find-privacy { margin: 0; font-size: 12px; line-height: 1.3; color: var(--ink-2); }
+.find-status { margin: 0; font-size: 13px; line-height: 1.3; color: var(--ink-2); }
+.find-status[hidden], .find-results[hidden] { display: none; }
+.find .sample-tag { justify-self: start; display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12.5px;
+  font-weight: 700; background: var(--banner-sample); color: var(--on-banner-sample); }
+.find-results { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; max-height: 40vh; overflow: auto;
+  overscroll-behavior: contain; }
+.find-results li { margin: 0; }
+.find-row { display: block; width: 100%; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 12px;
+  background: var(--fill-ctl); color: var(--ink); font: inherit; font-size: 15px; line-height: 1.3; text-align: left; }
+.find-row:hover { background: var(--fill-ctl-hover); }
+/* a phone with the results open: the legend card steps aside (map.js b3Search sets .results-open on #top), so up to 20 rows do not
+   push it under the attribution lines and the timeline. The legend comes back when the list closes. */
+@media (max-width: 520px) { .top.results-open .legend-wrap { display: none; } }
+/* phones: the find panel sits behind the Find an address button (#btn-find, in the right column), so the legend card keeps
+   the map's centre (D43). While the panel is open (map.js b3FindOpen sets .find-shown on #top) the legend steps aside, as
+   it does for the results. Wider screens show the panel as before, and the button is not drawn. */
+.icon-btn.find-open { display: none; }
+@media (max-width: 520px) {
+  .icon-btn.find-open { display: grid; }
+  .top:not(.find-shown) > #find { display: none; }
+  .top.find-shown .legend-wrap { display: none; }
+}
+
+/* the address block at the top of a hail sheet (map.html #address-sec): the lines, then the notes */
+.sheet-body .addr-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.sheet-body .addr-lines li { padding: 10px 12px; border-radius: 14px; background: var(--fill-ctl); font-size: 16px; font-weight: 700;
+  line-height: 1.3; overflow-wrap: anywhere; }
+.sheet-body .addr-sec > .muted { margin: 8px 0 0; }
 
 /* ---------------------------------------------------------------- card mode (?card=1) */
 .card-ui { display: none; }

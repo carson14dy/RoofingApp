@@ -208,6 +208,117 @@ CONTRACTS = {
                    "estimate, never 'no hail'. A day with no file is listed on the page and not counted, and a day that "
                    "fails stays missing. An estimate is not a measurement at the ground and not an inspection.",
     },
+    # --hail-addresses builds only (build.py B3_ROWS and ROAD_ROWS): the address points, the road source built and the
+    # building outlines of the B3 layers. The words are in website/addresses.py, streets.py and buildings.py (D8, D13,
+    # D16, D17, D25, D29, D34); the road row shown is the source the store built (msl_roads, or census_roads when the
+    # store is built with the Census fallback, D25).
+    "msl_addresses": {
+        "name": "Montana State Library address points (Structures and Addresses Framework)",
+        "request": "The Montana State Library's address file, StructuresFramework_shp.zip (65.8 MB), from the Library's "
+                   "download server. Each daily update reads the position of every address point and these parts of its "
+                   "address: number, street, unit, city, zip, county and placement. No other field is read. The address "
+                   "dots and the search come from this file.",
+        "units": "Positions are longitude and latitude, converted from the file's Montana State Plane grid (metres) and "
+                 "checked against three recorded points within 2 metres. Address lines follow the file's street words in "
+                 "their standard order, with the unit title-cased. Each point carries the file's placement, which says how "
+                 "the point was placed: on the building, at the property entrance, along the road by its number, at the "
+                 "parcel, at the site, or by a method the file does not state. Only a point placed on its building joins a "
+                 "building outline; a point placed anywhere other than on the building keeps its own dot and says how it "
+                 "was placed.",
+        "timing": "The Library exports the file monthly, around the end of the month. Each daily update checks the file's "
+                  "size and last-changed date, reads the file again when either changes, and reads it once in each calendar "
+                  "month. The file's date and export date are on the About page, with the file's name.",
+        "missing": "A point with no street name is left out, a point with no city after the file's fallbacks is counted, "
+                   "and exact duplicates are merged; each count is kept with the data. A missing or changed file, or a "
+                   "terms sentence that is not the one quoted here, marks the list unavailable, and the map says so: an "
+                   "unavailable list is never shown as no addresses. The file's access terms read: \"None. All data "
+                   "contained in the Framework are publicly available and non-sensitive.\" Its terms say the Library makes "
+                   "the data available as a convenience to the public, \"and for no other purpose.\" Owner names and "
+                   "parcel identifiers are never read, stored or shown. The list is of addresses, not of buildings, and its "
+                   "coverage varies from county to county.",
+    },
+    "msl_roads": {
+        "name": "Montana State Library Transportation Framework, roads (the default street source)",
+        "request": "The Montana State Library's Transportation Framework zip (RoadCenterLine, 258,208 segments) from the "
+                   "Library's download server. The daily update reads the street name parts, the road class, the county "
+                   "and the surface, and no other field. Kept: the centre lines, the street names, each line's road class "
+                   "as one letter, and counts by county. The surface is read and not kept. The road lines are built from "
+                   "them and copied to this site.",
+        "units": "Lines are longitude and latitude, to 5 decimal places, simplified to within 2 metres. Drawn as "
+                 "primary and secondary roads from zoom 13, and as ramps, local streets, service drives, alleys, private "
+                 "roads and vehicular trails from zoom 15. A record of class Other is drawn as a local street when it is a "
+                 "public road; a trail, a ferry, a private drive or an airfield surface among them is left out, and each "
+                 "count is kept with the data. Where roads share one line, the line is drawn once with each name, joined by "
+                 "a slash. Abbreviations are spelled out (Highway, Road, Street). Placeholder names are drawn without a label "
+                 "and are never found by search.",
+        "timing": "The Library publishes the file with its own date, which is on the About page. The daily update "
+                  "reads it again only when its size or its last-changed date changes.",
+        "missing": "A road with no name is drawn without a label; almost every road in this file has a name. A missing "
+                   "file or a failed check marks the streets unavailable, and the map says so: unavailable is not the same "
+                   "as no streets. The file's metadata says the Library makes the data \"available as a convenience to the "
+                   "public, and for no other purpose.\" Its disclaimer says the data are provided for informational purposes "
+                   "only and are not suitable for legal, engineering, or surveying purposes.",
+    },
+    "census_roads": {
+        "name": "U.S. Census Bureau TIGER/Line 2026 roads (the fallback street source)",
+        "request": "www2.census.gov/geo/tiger/TIGER2026/ROADS/, the 56 Montana county files (tl_2026_30XXX_roads.zip, about "
+                   "88.9 MB). They are read by the daily update only when the site is built with this source, and the update "
+                   "reads the centre lines, the names, the class code (MTFCC), the route type (RTTYP) and the line ID "
+                   "(LINEARID), and no other field. Kept: the centre lines, the names, each line's class as one letter, and "
+                   "counts of lines left out by class code. The route type and the line ID are read and not kept.",
+        "units": "Lines are longitude and latitude, to 5 decimal places, simplified to within 2 metres. Drawn: primary roads, "
+                 "secondary roads, local streets, 4-wheel-drive roads, ramps, service drives, alleys and private roads. Left "
+                 "out and counted: the Census's internal roads (class S1750), parking lot roads (class S1780), and any other "
+                 "class not drawn (in the 2026 county files, S1710, S1720, S1820 and S1830). Each count is kept with the "
+                 "data. Features that share one line are drawn once, with each name joined by a slash.",
+        "timing": "The Census Bureau publishes the 2026 files; the daily update reads them when the site is built with this "
+                  "source. The date of the data is on the About page.",
+        "missing": "Most vehicular features in the rural counties carry no name in these files, so many roads are drawn "
+                   "without a label, and an unnamed road is never found by search. Placeholder names are drawn without a "
+                   "label. The Census Bureau's metadata says \"acknowledgement must be given to the U.S. Census Bureau as the "
+                   "source.\" It also says \"TIGER/Line and Census TIGER are registered trademarks of the U.S. Census "
+                   "Bureau.\" The files \"may not be suitable for high-precision measurement applications such as engineering "
+                   "problems, property transfers, or other uses that might require highly accurate measurements of the earth's "
+                   "surface.\" A failed file marks the streets unavailable; unavailable is not the same as no streets.",
+    },
+    "usa_structures": {
+        "name": "USA Structures, Oak Ridge National Laboratory and FEMA (building outlines)",
+        "request": "FEMA's public data server, the Montana file MT_Structures_20260913.zip (173,088,786 bytes), with 918,052 "
+                   "outlines in longitude and latitude. Only the outline geometry is read: no attribute column is read, so no "
+                   "other field of the file is ever read, stored or shown.",
+        "units": "Each outline is drawn from its exact edge, in longitude and latitude to 5 decimal places, with no "
+                 "simplification. Each outline has one dot at a point inside it. The address points that the Montana list "
+                 "places on an outline, or within 15 metres of its edge, are listed on that dot. A point placed anywhere other "
+                 "than on the building keeps its own dot and says how it was placed. Dots from zoom 15, fills and hairlines "
+                 "from zoom 16, and a heavier outline from zoom 17.",
+        "timing": "The file is dated 2026-09-13, and its outlines come from imagery dated 2008 to 2025. Each daily update "
+                  "checks the file's size and last-changed date and reads the file again when either changes, and once in each "
+                  "calendar month. The file's date is on the About page.",
+        "missing": "A county with no outlines in the file shows none; that is not the same as no buildings. Outlines are not "
+                   "surveys, and the file does not separate other kinds of building, so sheds and barns are outlines too. The "
+                   "attribution is \"Oak Ridge National Laboratory and FEMA, USA Structures.\"",
+    },
+    # --hail-addresses builds only (build.py B3_ROWS): the county boundary file the store job reads for the counts by county
+    # (buildings.py, D34). Its only use is the labels of those counts; its own metadata is quoted in the row.
+    "census_counties": {
+        "name": "U.S. Census Bureau county boundaries, 2025 cartographic file (1:500,000)",
+        "request": "www2.census.gov/geo/tiger/GENZ2025/shp/cb_2025_us_county_500k.zip (11.8 MB, last changed 2026-04-23 on the "
+                   "server). The store job reads it for the counts by county: from its attributes only the county code and name, "
+                   "and from its geometry the rings that place each building outline in a county. The address records are counted "
+                   "by the County field of the address file, not by this file.",
+        "units": "Whole counts: the building outlines and the address records in each county, kept beside each other. No area, "
+                 "length or distance is computed from the file, and none is shown.",
+        "timing": "The job keeps the file in a cache keyed by name and month, so it is downloaded once in each calendar month, "
+                  "or when the cache is empty. A failed download marks the counts by county unavailable in that store; the "
+                  "outlines and the addresses are kept.",
+        "missing": "Unavailable is not the same as zero: when the file cannot be read, the counts by county are unavailable and "
+                   "the outline and address totals are kept. At this file's scale of 1:500,000, a point near a county line can "
+                   "fall on either side, so each county count is a label, not a measurement. The Census Bureau's metadata says: "
+                   "\"These products are free to use in a product or publication, however acknowledgement must be given to the "
+                   "U.S. Census Bureau as the source.\" It also says: \"Cartographic boundary files should not be used for "
+                   "geographic analysis including area or perimeter calculation. Files should not be used for geocoding addresses. "
+                   "Files should not be used for determining precise geographic area relationships.\"",
+    },
     # --hail-history builds only (build.py HAIL_CONTRACTS): the joined records behind the history's sheet and tables
     # (B2). Each row says what its records are for the cell; the words built from them are in website/joins.py.
     "lsr": {
@@ -535,7 +646,7 @@ CONTRACTS = {
         "missing": "A series that could not be read is marked unavailable on its gauge's line, which never reads as no annual peak. "
                    "A water year with two USGS rows keeps both, each with its qualifiers. A gauge with no USGS number has no series.",
     },
-    "census_counties": {
+    "census_tiger_counties": {
         "name": "US Census Bureau TIGER/Line 2026 county boundaries",
         "request": "www2.census.gov/geo/tiger/TIGER2026/COUNTY/tl_2026_us_county.zip (83,378,454 bytes), read once and kept. It "
                    "places each Montana cell in one of the state's 56 counties (the MTC codes), joins the county-only watches (FA.A "

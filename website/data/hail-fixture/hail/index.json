@@ -49,10 +49,183 @@
   "partial": []
  },
  "sample": true,
+ "addresses": {
+  "format": "hail-addresses-v1",
+  "state": "loaded",
+  "sample": true,
+  "built_at": "2026-10-19T22:11:00Z",
+  "sample_of": "2026-10-19T22:11:00Z",
+  "source": {
+   "name": "Montana State Library Structures and Addresses Framework",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "file": "StructuresFramework_shp.zip",
+   "bytes": 65788772,
+   "export_date": "2026-09-30",
+   "pubdate": "2026-09-30",
+   "accconst": "None. All data contained in the Framework are publicly available and non-sensitive.",
+   "useconst": "DISCLAIMER: The Montana State Library Geographic Information Services provides this product/service for informational purposes only. The Library did not produce it for, nor is it suitable for legal, engineering, or surveying purposes. Consumers of this information should review or consult the primary data and information sources to ascertain the viability of the information for their purposes. The Library provides these data in good faith but does not represent or warrant its accuracy, adequacy, or completeness. In no event shall the Library be liable for any incorrect results or analysis; any direct, indirect, special, or consequential damages to any party; or any lost profits arising out of or in connection with the use or the inability to use the data or the services provided. The Library makes these data and services available as a convenience to the public, and for no other purpose. The Library reserves the right to change or revise published data and/or services at any time.",
+   "purpose": "To provide a statewide, standardized repository for structure and address point data. The Structures/Addresses Framework complies with the NENA Standard for NG9-1-1 GIS Data Model and is designed to support a wide range of public and private sector uses including: 9-1-1 and emergency response, elections management, broadband internet mapping, census programs, planning, natural resource studies, etc.",
+   "projection": "NAD_1983_2011_StatePlane_Montana_FIPS_2500",
+   "dbf_fields": 51,
+   "fields_read": [
+    "Add_Number",
+    "AddNum_Pre",
+    "AddNum_Suf",
+    "St_PreMod",
+    "St_PreDir",
+    "St_PreTyp",
+    "St_PreSep",
+    "St_Name",
+    "St_PosTyp",
+    "St_PosDir",
+    "St_PosMod",
+    "Post_Comm",
+    "Post_Code",
+    "Inc_Muni",
+    "County",
+    "Unit",
+    "Placement"
+   ],
+   "sha256": "7bc7a0fea8a190c0a8cbec2bf4f0facee357bb31314dc6884da07ac94671afba",
+   "last_modified": "Wed, 30 Sep 2026 15:23:57 GMT",
+   "note": "SAMPLE: a few rows of the real file, cut for the fixture"
+  },
+  "points": 360,
+  "left_out_no_position": 0,
+  "left_out_no_street": 0,
+  "left_out_no_city": 0,
+  "left_out_deleted": 0,
+  "merged_duplicates": 0,
+  "rows": 360,
+  "shards": 3,
+  "tiles": [
+   "r0079_c0198",
+   "r0079_c0199",
+   "r0092_c0214"
+  ],
+  "split": {},
+  "depths": {
+   "0": 3
+  },
+  "largest_shard": {
+   "name": "r0092_c0214",
+   "bytes": 22418,
+   "rows": 320
+  },
+  "cities": 4,
+  "letter_files": 46,
+  "largest_letter": {
+   "city": "Billings",
+   "key": "BR",
+   "rows": 81,
+   "bytes": 5104,
+   "file": "hail/a/idx/billings/BR.json"
+  },
+  "two_character_files": 19,
+  "over_limit_shards": [],
+  "over_limit_letter_files": [],
+  "bytes": {
+   "shards": 25325,
+   "letters": 24389,
+   "cities": 460,
+   "words": 427,
+   "idx": 25276,
+   "a": 50601
+  },
+  "fields_read": [
+   "Add_Number",
+   "AddNum_Pre",
+   "AddNum_Suf",
+   "St_PreMod",
+   "St_PreDir",
+   "St_PreTyp",
+   "St_PreSep",
+   "St_Name",
+   "St_PosTyp",
+   "St_PosDir",
+   "St_PosMod",
+   "Post_Comm",
+   "Post_Code",
+   "Inc_Muni",
+   "County",
+   "Unit",
+   "Placement"
+  ],
+  "projection": {
+   "from": "EPSG:6514",
+   "to": "EPSG:4326",
+   "always_xy": true,
+   "decimals": 5
+  },
+  "pyproj": "3.8.0",
+  "projection_pairs": [
+   {
+    "name": "1611 South Avenue West, Missoula",
+    "file": [
+     -114.02078,
+     46.84868
+    ],
+    "live": [
+     -114.0208,
+     46.84869
+    ],
+    "metres": 1.236
+   },
+   {
+    "name": "500 Colony Road, Roundup",
+    "file": [
+     -108.50031,
+     46.7175
+    ],
+    "live": [
+     -108.50032,
+     46.71751
+    ],
+    "metres": 1.2
+   },
+   {
+    "name": "1617 Euclid Avenue Unit 4, Helena",
+    "file": [
+     -112.05997,
+     46.60374
+    ],
+    "live": [
+     -112.05998,
+     46.60375
+    ],
+    "metres": 1.223
+   }
+  ],
+  "limits": {
+   "rows": 2500,
+   "depth_cap": 6
+  },
+  "placement": {
+   "classes": {
+    "S": 360,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "blank_as_unknown": 0,
+   "by_county": {
+    "(sample)": {
+     "S": 360,
+     "P": 0,
+     "G": 0,
+     "L": 0,
+     "T": 0,
+     "U": 0
+    }
+   }
+  }
+ },
  "joins": {
   "format": "hail-joins-v2",
   "events_format": "hail-events-v2",
-  "built_at": "2026-10-20T00:13:17Z",
+  "built_at": "2026-10-20T01:24:00Z",
   "as_of": "2026-10-15",
   "window": [
    "2021-10-16",
@@ -109,6 +282,57 @@
    "MTZ235",
    "MTZ313"
   ],
+  "zones_before": {
+   "codes": [
+    "MTZ008",
+    "MTZ009",
+    "MTZ010",
+    "MTZ011",
+    "MTZ012",
+    "MTZ013",
+    "MTZ014",
+    "MTZ015",
+    "MTZ044",
+    "MTZ045",
+    "MTZ046",
+    "MTZ047",
+    "MTZ048",
+    "MTZ049",
+    "MTZ050",
+    "MTZ051",
+    "MTZ052",
+    "MTZ053",
+    "MTZ054",
+    "MTZ055",
+    "MTZ060"
+   ],
+   "cells": {
+    "MTZ008": 16884,
+    "MTZ009": 7174,
+    "MTZ010": 4542,
+    "MTZ011": 9199,
+    "MTZ012": 8378,
+    "MTZ013": 12443,
+    "MTZ014": 7921,
+    "MTZ015": 10833,
+    "MTZ044": 6178,
+    "MTZ045": 4583,
+    "MTZ046": 3585,
+    "MTZ047": 13663,
+    "MTZ048": 8259,
+    "MTZ049": 2420,
+    "MTZ050": 5862,
+    "MTZ051": 14002,
+    "MTZ052": 5265,
+    "MTZ053": 3757,
+    "MTZ054": 7572,
+    "MTZ055": 8082,
+    "MTZ060": 2813
+   }
+  },
+  "zone_list_before": [
+   "MTZ050"
+  ],
   "counties": {
    "state": "sample",
    "names": {
@@ -118,6 +342,7 @@
    "count": 2
   },
   "zone_names": {
+   "MTZ050": "Judith Basin",
    "MTZ235": "Southwestern Yellowstone",
    "MTZ313": "Judith Basin County and Judith Gap"
   },
@@ -148,7 +373,7 @@
    "2025-06-15",
    "2025-06-16"
   ],
-  "source": "cut from the joins build of 2026-10-20T00:13:17Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
+  "source": "cut from the joins build of 2026-10-20T01:24:00Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
   "cover": "25 lower-case hex digits; bit k (the cell key 0 to 99) is set when the polygon touches the cell's square (D11: a vertex in it, an edge across its side, or its centre inside)",
   "shapes": {
    "report": [

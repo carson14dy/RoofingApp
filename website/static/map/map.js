@@ -35,6 +35,17 @@
      warning cover bit for the cell's key, formats the UTC times in the zone named by data.tz (Intl), and fills the build's
      templates (hail.joins.words, website/joins.py). A part that does not load shows its own unavailable sentence. No
      sentence, unit, radius or threshold is written in this file (tests/test_site.py reads it for them).
+   - The roads, building outlines and address dots (--hail-addresses builds only; see "roads, building outlines and
+     address dots" below): one canvas in the hail pane draws the roads by class, the outlines (a light fill from zoom 16,
+     the heavier line from 17), one dot per outline and one per unmatched address (from 15), a count bubble per tile (13
+     and 14, from hail/counts.json) and the street names (from 16, on the longest piece of each name per tile). Every
+     width, zoom, count and rule comes from data/map.json (the "hail" blocks roads, buildings and addresses, and
+     hail.draw for the cache cap and the label rules); the colours, the hairlines and the name sizes come from map.css. The
+     shard files of the tiles in view are fetched once each from this site, kept under a size cap (hail.draw.cache_bytes,
+     least recently used first; a failed file is asked again after the next move). A tap on a dot opens the hail sheet for
+     its point with its address lines on top, and the source lines of the layers sit in the attribution line at the bottom right, above the timeline. The search
+     form (#address-form) finds an address from the city index and one letter file; what is typed never leaves the
+     browser. window.hailMapTest is a test-only hook for tools/smoke_map.py.
    - The viewer's location never leaves the browser: it draws the dot and finds the nearest town.
 */
 (function () {
@@ -249,6 +260,7 @@
     drawReports();
     paintSwatches();
     wireControls();
+    b3Start();                                     // --hail-addresses builds: roads, outlines and address dots (B3)
     var want = params.get("layer");
     var mode = params.get("mode");
     if (mode === "1h" || mode === "12h") state.mode = mode;
@@ -292,7 +304,7 @@
       // the card can't be zoomed, so finer steps let it fill its width: a 328 px card shows Montana at
       // 5.2 (town names clear) instead of 5 (fitCard)
       zoomControl: false, attributionControl: false, zoomSnap: CARD ? 0.05 : 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 110,
-      minZoom: view.min_zoom || 5, maxZoom: view.max_zoom || 11, keyboard: interactive, dragging: interactive,
+      minZoom: view.min_zoom || 5, maxZoom: Math.max(view.max_zoom || 11, b3TopZoom()), keyboard: interactive, dragging: interactive,
       touchZoom: interactive, scrollWheelZoom: interactive, doubleClickZoom: interactive, boxZoom: interactive,
       tap: false, maxBoundsViscosity: 0.9, fadeAnimation: !reducedMotion(), zoomAnimation: !reducedMotion(),
       markerZoomAnimation: !reducedMotion(), inertia: !reducedMotion()
@@ -449,6 +461,10 @@
       });
     var nb = noteBox(tlTop);
     if (nb) boxes.push(nb);
+    if (B3 && B3.credit) {                                      // the source lines above the band (b3Lift): towns under them count too
+      var cr = B3.credit.getContainer().getBoundingClientRect();
+      if (cr.width && cr.height) boxes.push(cr);
+    }
     var best = y0, bestScore = Infinity;
     for (var y = y0; y <= y1; y += 2) {
       var score = 0;
@@ -485,6 +501,7 @@
     if (!data || !state.ready) return LINE;
     var room = LINE;
     noteWarningSet().forEach(function (t) { room = Math.max(room, noteSize(t, true).height + 8); });
+    if (B3 && B3.credit) room += B3.credit.getContainer().offsetHeight + 8;     // the source lines sit above the note (b3Lift)
     return Math.ceil(room);
   }
 
@@ -1244,6 +1261,7 @@
     el.note.classList.toggle("warn", !!warn);
     if (info && !el.note.hidden && overTown(textBox(el.note))) el.note.hidden = true;
     if (before !== html + el.note.hidden) tidyLabels();
+    b3Lift();                        // the note's height is part of the band the source lines sit above (--hail-addresses builds)
   }
 
   /** The box of an element's text on screen (without its padding or tap area). */
@@ -1321,6 +1339,7 @@
     [].forEach.call(el.legendStops.children, function (li) { w = Math.max(w, li.offsetWidth); });
     if (w) el.legendScale.style.setProperty("--scale-w", Math.ceil(16 + w + 2) + "px");
     el.legendNote.textContent = L_.legend_note || "";
+    b3Credits();                     // --hail-addresses builds: the source lines of the layers (D29)
     renderKeys();
     tidyLabels();                    // another scale can move the "Map data" link, or resize the legend
     if (el.legendWrap.offsetHeight !== noteFit.legendH) refitForBanner();
@@ -1469,7 +1488,7 @@
       map.setMaxZoom(imageryCfg.max_zoom);
     } else {
       if (imageryLayer) map.removeLayer(imageryLayer);
-      map.setMaxZoom((data.view && data.view.max_zoom) || 11);
+      map.setMaxZoom(Math.max((data.view && data.view.max_zoom) || 11, b3TopZoom()));
     }
     renderKeys();                    // the credit row comes and goes with the switch
     if (!opts.first) saveUrl();
@@ -1583,12 +1602,15 @@
       if (b) openList(b);
     });
     el.sheetClose.addEventListener("click", closeSheet);
-    el.scrim.addEventListener("click", function () {
+    el.scrim.addEventListener("click", function (e) {
       // the second click of a double-click on a bubble or an outline lands on the scrim the first one
       // put under the pointer: it must not close the sheet that click just opened (a time guard, as
       // iPhone Safari counts every tap as a single click)
       if (Date.now() - sheetOpenedAt < 400) return;
       closeSheet();
+      // the scrim takes every tap while a sheet is open, so a tap on another dot (B3) is handed to the dots' tap here, and its
+      // sheet opens in place of the one that closed. The tap's own point is the drag reference, not the last press on the canvas.
+      if (B3) { B3.down = { x: e.clientX, y: e.clientY }; b3Tap(e); }
     });
     el.sheetBack.addEventListener("click", backToList);
     el.sheetBody.addEventListener("click", onSheetClick);
@@ -1825,6 +1847,7 @@
   function bottomMoved() {
     if (data && state.ready) renderNote();
     tidyLabels();
+    b3Lift();                        // --hail-addresses builds: the source lines stay over the timeline
   }
 
   // ------------------------------------------------------------------ location
@@ -2243,6 +2266,7 @@
   var HAIL_MICRO = 1e6;                       // points are read to whole millionths of a degree, as the grid is
   var HAIL_DAY_MS = 24 * 60 * 60 * 1000;      // one day, in milliseconds (the store counts whole days)
   var HAIL_EXT = { l: 12, t: 12, r: 12, b: 12 };   // the clear space the sheet's point needs around it (reveal)
+  var hailTopNode = null;                     // the address block a dot's sheet shows on top (B3), for the sheet's current state
   var hailAt = null;                          // "lat,lon" of the spot the sheet shows; the address carries it as at=
   var hailTiles = {};                         // shard URL -> promise of its JSON (a failed load is asked again)
   var hailTileSet = null;                     // the tiles the store holds (hail.tiles), as a set; made on first use
@@ -2429,6 +2453,7 @@
       p.textContent = payload;
       frag.appendChild(p);
     }
+    if (hailTopNode) frag.insertBefore(hailTopNode.cloneNode(true), frag.firstChild);   // a dot's address block comes first (B3)
     el.sheetBody.innerHTML = "";
     el.sheetBody.appendChild(frag);
     if (sheetState && sheetState.ll) reveal(sheetState.ll, HAIL_EXT);   // a longer sheet may cover the spot now
@@ -2440,16 +2465,20 @@
       whose key the shard's state list lacks gets them after the one fetch; a --sample build gives those two cases the
       sample's own outside words, as describe() does. A build whose history didn't load gets its words with no fetch.
       The address carries the spot as at=lat,lon. */
-  function openHail(lat, lon, opener) {
+  function openHail(lat, lon, opener, extra) {
     var h = hailData();
     if (!h) return;
     var p = hailPoint(lat, lon), cell = hailCell(h.grid, p), seq = ++hailSeq;
     var outside = h.state === "sample" ? h.words.sample_outside : h.words.outside;   // a sample build's own words
+    var dot = !!(extra && extra.dot);                 // a dot (B3): D23's words off the grid, and its address block on top
+    if (dot) outside = b3GridWords();
+    hailTopNode = (extra && extra.top) || null;
     hailAt = p.lat + "," + p.lon;
     saveUrl();
     openSheet("hail", h.words.title, "", opener, { noSampleTag: true });   // the sample label comes from the words
     sheetState.ll = cell ? L.latLng(p.lat, p.lon) : null;      // off the grid there is no spot to keep in sight
     if (cell) reveal(sheetState.ll, HAIL_EXT);
+    if (!cell && dot) return hailShow(h, "outside", b3GridWords());     // a dot off the hail grid (B3)
     if (!cell) return hailShow(h, "outside", h.words.outside);          // off the grid: outside Montana for certain
     if (h.state === "unavailable") return hailShow(h, "unavailable", fill(h.words.unavailable, { problem: h.problem }));
     if (!hailListed(h, hailTileName(h, cell))) return hailShow(h, "outside", outside);   // no fetch
@@ -3012,6 +3041,985 @@
     el.cardChip.classList.toggle("warn", warn);
     if (state.ready && !cardFitting && map && el.cardChip.offsetHeight !== h0) fitView();
   }
+
+  // B3 layers: begin
+  // ------------------------------------------------------------------ roads, building outlines and address dots (B3, --hail-addresses builds)
+
+  /** The B3 layers on the Map page (data/map.json "hail": roads, buildings and addresses, plus "draw" and "attribution".
+      The sentences this script fills are in hail.buildings.templates and hail.addresses.templates; the form and the legend
+      lines are printed by map.html from the page's b3 context, built by build.py b3_words). Python writes every word, number and
+      rule. The browser does these steps and no others:
+        - the shard names a view needs: each 0.1-degree tile the view touches (the grid's arithmetic, from map.json), its
+          split leaves named from the split map, and the leaves' bounds from their quadtree digits (0 NW, 1 NE, 2 SW, 3 SE);
+        - one fetch per shard file, kept in memory with a size cap (data.hail.draw.cache_bytes): the least recently used
+          shard goes first, and a shard in view never does. A failed fetch is logged (window.hailMapTest) and the map
+          draws without it, so nothing throws;
+        - one canvas in the "hail" pane, drawn in this order: the roads by class (the width and the zoom of each class come
+          from map.json), the building outlines (a light fill and a hairline from buildings.zoom.fills, a heavier line from
+          buildings.zoom.emphasis), the dots (one per outline at its dot point, and one per unmatched address, from
+          buildings.zoom.dots), the count bubbles (from buildings.zoom.counts to the dots, from hail/counts.json), and the
+          street names last (from roads.zoom.names_from). A name is drawn once per tile on the longest piece with that name;
+          the piece must be longer than the name plus the fit allowance, the names keep clear of each other (a grid of
+          data.hail.draw.labels.grid_px) and of the dots unless labels.avoid_dots is false, their angles are quantised, and
+          at most labels.per_view are drawn;
+        - the tap: the nearest dot within the tap radius opens the hail sheet for that dot's point, with its address lines
+          above the cell's history (the template #address-sec in map.html). A tap that no dot takes goes on to the map as
+          before. The sheet of a dot off the hail grid, or in a tile with no hail file, gets the grid sentence (D23);
+        - the search (#address-form, #address-input, #address-results, #address-status): what is typed is read here and
+          never leaves the browser. The typed words are lower-cased, punctuation and "#" go, abbreviations are spelled out
+          (addresses.search_words), a trailing state is dropped, the town is the longest trailing run that the city index
+          (hail/a/idx/cities.json) names (else the site town nearest the map's centre), a leading number is the address
+          number, and the core name is the first word that is not a direction or a street type. The key file is the
+          core name's first character, or its first two when the city's index has only that key (addresses.file_key). One
+          letter file is fetched; the rows whose street holds every typed word are listed, the exact number first, then the
+          nearest numbers, up to addresses.limits.result_cap. Choosing a row zooms to its point (buildings.zoom.emphasis)
+          and opens its sheet. Text the index cannot give shows its module's unavailable sentence, never "no match".
+      The colours and the stroke widths of the pictures' own parts (the hairlines, the dot ring, the name's halo and size, the
+      count bubble's padding) come from map.css custom properties (--hail-...), read once and again when the colour scheme
+      changes. Nothing else is written here: no sentence, unit, radius, zoom, cap or colour (tests/test_site.py reads this
+      file for them). The numbers that are not data are a drawing speed and not a rule (B3_BATCH, the paths per fill or
+      stroke call), the layer order of the map's panes (B3_PANE, as at the pane list in boot) and the 50-entry log of draw
+      times kept for window.hailMapTest.
+      window.hailMapTest is a test-only hook: tools/smoke_map.py reads the shard counts, the dots, the labels, the fetch log,
+      the failures and the draw times from it. Nothing else reads it. */
+  var B3 = null;                              // the layers' state, made by b3Start when data.hail holds one of their blocks
+  var B3_FORMAT = { roads: "hail-roads-v1", buildings: "hail-buildings-v1", addresses: "hail-addresses-v1",
+    letter: "hail-address-idx-v1", cities: "hail-address-cities-v1", counts: "hail-building-counts-v1" };
+  var B3_PANE = 420;                          // the layers' pane: above the weather pictures (410), below the warning fills (430)
+  var B3_BATCH = 200;                         // paths per fill or stroke call (a drawing speed, not a display rule)
+  var B3_TAU = 2 * Math.PI;
+  var B3_DEG = Math.PI / 180;
+  var B3_NUMBER = /^\d+[a-z]?$|^\d+\/\d+$/;       // an address number as typed: 401, 401A or 1/2 (27th is a street word)
+
+  /** The zoom rules of the four blocks in one place, read from data/map.json (roads.zoom, roads.classes, buildings.zoom and
+      addresses.zoom). The dots of the addresses are the dots when there are no outlines, and the zoom a chosen search row
+      goes to is the addresses' own (D47), so an address-only build (no streets, no outlines) keeps both rules. */
+  function b3Zoom(h) {
+    var r = (h.roads && h.roads.zoom) || {}, b = (h.buildings && h.buildings.zoom) || {}, a = (h.addresses && h.addresses.zoom) || {};
+    var classes = (h.roads && h.roads.classes) || {};
+    var from = Infinity;
+    Object.keys(classes).forEach(function (k) { from = Math.min(from, classes[k].min_zoom); });
+    var counts = [].concat(b.counts || []);
+    var z = { roads: from, arterials: r.arterials_from, local: r.local_from, names: r.names_from,
+      counts: counts.length ? counts[0] : Infinity, dots: b.dots || a.dots, fills: b.fills, emphasis: b.emphasis, choose: a.choose };
+    z.top = Math.max(z.emphasis || 0, z.names || 0, z.local || 0, z.dots || 0, z.choose || 0);   // the highest zoom any layer asks for
+    return z;
+  }
+
+  /** The top zoom the B3 layers need (0 without them): the map's maximum zoom is raised to it (createMap, setBase). */
+  function b3TopZoom() {
+    var h = hailData();
+    return h && (h.roads || h.buildings || h.addresses) ? b3Zoom(h).top : 0;
+  }
+
+  /** The B3 state: the blocks that loaded (a block that did not load draws nothing, and its legend line says so), the grid,
+      the tile sets, the cache, the pane and the canvas. Nothing is fetched here. */
+  function b3Start() {
+    var h = hailData();
+    if (!h || !h.grid || !(h.roads || h.buildings || h.addresses)) return;
+    var live = function (block) { return !!block && (block.state === "loaded" || block.state === "sample"); };
+    var set = function (list) { var s = {}; (list || []).forEach(function (t) { s[t] = true; }); return s; };
+    var mode = (h.addresses && h.addresses.text) || (h.buildings && h.buildings.text) || "on";
+    B3 = {
+      h: h, grid: h.grid, draw: h.draw || {}, zoom: b3Zoom(h),
+      root: (app.getAttribute("data-map") || "").replace(/data\/map\.json.*$/, ""),
+      roads: live(h.roads) ? h.roads : null, bld: live(h.buildings) ? h.buildings : null, adr: live(h.addresses) ? h.addresses : null,
+      textOn: mode !== "off",                 // --address-text off (D35): no address text, no search
+      tiles: { roads: set(h.roads && h.roads.tiles), bld: set(h.buildings && h.buildings.tiles), adr: set(h.addresses && h.addresses.tiles) },
+      cache: new Map(), bytes: 0, cap: Number(((h.draw || {}).cache_bytes)) || 0, tick: 0, pinned: {},
+      fetches: [], failures: [], failed: {}, gen: 0, ms: [], stats: {}, hits: [], queued: false, down: null, cityNames: null,
+      dpr: window.devicePixelRatio || 1, col: {}, sz: {}, nameFont: "", countFont: ""
+    };
+    B3.bw = (B3.bld && B3.bld.templates) || {};
+    B3.aw = (B3.adr && B3.adr.templates) || B3.bw;
+    var tap = (B3.bld && B3.bld.tap_radius_px) || (B3.adr && B3.adr.limits && B3.adr.limits.tap_radius_px) || 0;
+    B3.tap = tap;
+    pane("hail", B3_PANE, false);
+    B3.canvas = document.createElement("canvas");
+    B3.canvas.className = "hail-canvas";
+    B3.canvas.setAttribute("aria-hidden", "true");
+    map.getPane("hail").appendChild(B3.canvas);
+    B3.ctx = B3.canvas.getContext("2d");
+    b3Tokens();
+    ["moveend", "zoomend"].forEach(function (ev) { map.on(ev, function () { if (B3) B3.gen++; }); });   // a move asks again for a file that failed (B3.failed)
+    ["moveend", "zoomend", "resize", "viewreset"].forEach(function (ev) { map.on(ev, b3Queue); });
+    if (window.matchMedia) {
+      var scheme = window.matchMedia("(prefers-color-scheme: dark)");
+      var again = function () { b3Tokens(); b3Queue(); };
+      if (scheme.addEventListener) scheme.addEventListener("change", again); else if (scheme.addListener) scheme.addListener(again);
+    }
+    el.canvas.addEventListener("pointerdown", function (e) { if (B3) B3.down = { x: e.clientX, y: e.clientY }; }, true);
+    el.canvas.addEventListener("click", b3Tap, true);
+    b3WireSearch();
+    b3WireFind();
+    window.hailMapTest = {                    // test-only (tools/smoke_map.py)
+      shards: function () { var n = {}; B3.cache.forEach(function (e) { if (e.state === "ready") n[e.kind] = (n[e.kind] || 0) + 1; }); return n; },
+      dots: function () { return { buildings: B3.stats.buildings || 0, addresses: B3.stats.addresses || 0 }; },
+      labels: function () { return B3.stats.labels || 0; },
+      counts: function () { return B3.stats.counts || 0; },
+      lines: function () { return B3.stats.lines || 0; },
+      fetches: function () { return B3.fetches.slice(); },
+      failures: function () { return B3.failures.slice(); },
+      draws: function () { return B3.ms.slice(); },
+      bytes: function () { return B3.bytes; },
+      cached: function () { return B3.cache.size; },
+      reset: function () { B3.fetches = []; B3.failures = []; B3.ms = []; },
+      view: function (lat, lon, zoom) { state.userMoved = true; map.setView([lat, lon], zoom, { animate: false }); return map.getZoom(); },
+      pan: function (dx, dy) { map.panBy([dx, dy], { animate: false }); },
+      redraws: function (n) { var out = []; for (var i = 0; i < n; i++) { map.panBy([i % 2 ? -1 : 1, 0], { animate: false }); b3Draw(); out.push(B3.ms[B3.ms.length - 1]); } return out; },
+      zoom: function () { return map.getZoom(); },
+      hits: function () { return B3.hits.map(function (h) { return [Math.round(h.x), Math.round(h.y), h.kind, h.kind === "b" ? (h.ref.l || []).length : 1]; }); },
+      state: function () { return { roads: !!B3.roads, bld: !!B3.bld, adr: !!B3.adr, zoom: B3.zoom, tiles: Object.keys(B3.tiles.roads).length,
+        bldTiles: Object.keys(B3.tiles.bld).length, adrTiles: Object.keys(B3.tiles.adr).length, root: B3.root, z: map.getZoom(), cap: B3.cap,
+        textOn: B3.textOn, searchOn: !!B3.searchOn, tap: B3.tap, minZoom: map.getMinZoom(), maxZoom: map.getMaxZoom() }; }
+    };
+    b3Queue();
+  }
+
+  /** Colours and sizes from map.css (the --hail-... properties and the page's font), read once, and again on a colour scheme change. */
+  function b3Tokens() {
+    if (!B3) return;
+    var cs = getComputedStyle(document.documentElement), get = function (n) { return cs.getPropertyValue(n).trim(); };
+    var px = function (n) { return parseFloat(get(n)) || 0; };
+    B3.col = { road: get("--hail-road"), major: get("--hail-road-major"), bldg: get("--hail-bldg"), bldgLine: get("--hail-bldg-line"),
+      dot: get("--hail-dot"), dotAddress: get("--hail-dot-address") || get("--hail-dot"), dotRing: get("--hail-dot-ring"),
+      name: get("--hail-name"), halo: get("--hail-name-halo"),
+      countBg: get("--bubble"), countInk: get("--bubble-text") };
+    B3.sz = { hair: px("--hail-hairline"), emph: px("--hail-emphasis"), ring: px("--hail-dot-ring-w"), halo: px("--hail-halo"),
+      nameSize: px("--hail-name-size"), countSize: px("--hail-count-size"), countPad: px("--hail-count-pad") };
+    B3.nameFont = get("--hail-name-weight") + " " + B3.sz.nameSize + "px " + get("--font");
+    B3.countFont = get("--hail-count-weight") + " " + B3.sz.countSize + "px " + get("--font");
+  }
+
+  /** The source lines of the layers built (data/map.json "hail".attribution, D29) go in the map's attribution line, bottom
+      right, so they are on the first screen at phone width too. Leaflet's prefix is left out; a line is escaped like the rest.
+      The line is lifted above the bottom band (b3Lift). The band changes height with its contents (a source line, a layer,
+      a turn, the toast) and the screen, so it is measured again when it changes, and so is the line's own height. */
+  function b3Credits() {
+    if (!B3 || !map || B3.credits || !(B3.h.attribution || []).length) return;
+    B3.credits = true;
+    var ctl = L.control.attribution({ prefix: false, position: "bottomright" }).addTo(map);
+    B3.h.attribution.forEach(function (line) { ctl.addAttribution(esc(line)); });
+    B3.credit = ctl;
+    if (window.ResizeObserver) {
+      var band = new ResizeObserver(b3Lift);
+      band.observe(el.bottom);
+      band.observe(el.canvas);
+      new ResizeObserver(refitForBanner).observe(ctl.getContainer());   // more text, more lines: the room the fit keeps (noteRoom)
+    } else window.addEventListener("resize", b3Lift);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(b3Lift);   // the band is measured in its own fonts
+    b3Lift();
+  }
+
+  /** The height of the bottom band in px, from its top to the bottom of the map: the note, the toast, the chip and the timeline.
+      Zero when the band is not drawn (print). The source lines sit above it and the count bubbles keep clear of it (b3DrawCounts). */
+  function b3LiftPx() {
+    if (!el.bottom || !el.bottom.getClientRects().length) return 0;
+    return Math.max(0, el.canvas.getBoundingClientRect().bottom - el.bottom.getBoundingClientRect().top);
+  }
+
+  /** The source lines sit just above the bottom band, with the band's own 8 px gap (b3LiftPx, measured). */
+  function b3Lift() {
+    if (!B3 || !B3.credit) return;
+    var h = b3LiftPx();
+    B3.credit.getContainer().style.setProperty("--credit-lift", (h ? Math.ceil(h + 8) : 0) + "px");
+  }
+
+  /** Ask for a redraw on the next frame (several events in one frame make one draw). */
+  function b3Queue() {
+    if (!B3 || B3.queued) return;
+    B3.queued = true;
+    var later = window.requestAnimationFrame || function (f) { setTimeout(f, 0); };
+    later(function () { if (B3) { B3.queued = false; b3Draw(); } });
+  }
+
+  // ---- tiles, leaves and bounds (the grid's arithmetic: map.json grid, the same rules as hailCell and hailTileName)
+
+  /** The bounds [west, south, east, north] of a 0.1-degree tile (row r, column c) from the grid in map.json. */
+  function b3TileBox(g, r, c) {
+    var cell = g.cell_deg, td = cell * g.tile_cells;
+    var north = g.row0_lat + cell / 2 - r * td, west = g.col0_lon - cell / 2 + c * td;
+    return [west, north - td, west + td, north];
+  }
+
+  /** The tile's file name, "r0079_c0199" (the name hail.tile_name writes). */
+  function b3TileName(r, c) { return "r" + pad4(r) + "_c" + pad4(c); }
+
+  /** One quadtree step: the quarter of a box named by one digit (0 NW, 1 NE, 2 SW, 3 SE; the midlines are the box's own). */
+  function b3Quarter(b, d) {
+    var mx = (b[0] + b[2]) / 2, my = (b[1] + b[3]) / 2;
+    if (d === "0") return [b[0], my, mx, b[3]];
+    if (d === "1") return [mx, my, b[2], b[3]];
+    if (d === "2") return [b[0], b[1], mx, my];
+    return [mx, b[1], b[2], my];
+  }
+
+  /** The bounds of a split leaf from its name: the tile's box, then one quarter per digit after the tile's own eleven characters. */
+  function b3NameBox(g, name) {
+    var box = b3TileBox(g, Number(name.slice(1, 5)), Number(name.slice(7, 11)));
+    for (var i = 11; i < name.length; i++) box = b3Quarter(box, name.charAt(i));
+    return box;
+  }
+
+  /** The tiles a view touches, as {r, c, name} (the rows and columns are the grid's tile indexes). */
+  function b3TilesIn(g, vb) {
+    var td = g.cell_deg * g.tile_cells, top = g.row0_lat + g.cell_deg / 2, left = g.col0_lon - g.cell_deg / 2;
+    var r0 = Math.max(0, Math.floor((top - vb[3]) / td)), r1 = Math.floor((top - vb[1]) / td);
+    var c0 = Math.max(0, Math.floor((vb[0] - left) / td)), c1 = Math.floor((vb[2] - left) / td);
+    var out = [];
+    for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++) out.push({ r: r, c: c, name: b3TileName(r, c) });
+    return out;
+  }
+
+  /** The shard leaves of one tile for a block: [{name, box}]. A tile with no split is one shard, named as the tile. The
+      buildings' split map gives [name, box] pairs; the roads' and the addresses' give names, and their boxes come from the names. */
+  function b3Leaves(block, t, boxed) {
+    var list = block.split && block.split[t.name];
+    if (!list) return [{ name: t.name, box: b3TileBox(B3.grid, t.r, t.c) }];
+    return list.map(function (x) { return boxed ? { name: x[0], box: x[1] } : { name: x, box: b3NameBox(B3.grid, x) }; });
+  }
+
+  /** Whether two boxes [w, s, e, n] (degrees) overlap. */
+  function b3Overlaps(a, b) { return a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1]; }
+
+  // ---- projection: Leaflet's Web Mercator in world pixels (256 px tiles, 2^zoom of them), with one offset per draw
+
+  /** The world pixels [x, y] of a point at a scale (256 times 2^zoom), written into out. */
+  function b3Proj(lat, lon, scale, out) {
+    var s = Math.sin(lat * B3_DEG);
+    out[0] = (lon + 180) / 360 * scale;
+    out[1] = (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * scale;
+    return out;
+  }
+
+  /** A line's vertices in world pixels at this zoom, and its length; cached on the row until the zoom changes. */
+  function b3Row(row, scale, zk) {
+    if (row.zk !== zk) {
+      var n = row.xy.length / 2, out = new Float64Array(n * 2), tmp = [0, 0], len = 0;
+      for (var i = 0; i < n; i++) {
+        b3Proj(row.xy[2 * i + 1], row.xy[2 * i], scale, tmp);
+        out[2 * i] = tmp[0]; out[2 * i + 1] = tmp[1];
+        if (i) len += Math.hypot(out[2 * i] - out[2 * i - 2], out[2 * i + 1] - out[2 * i - 1]);
+      }
+      row.wz = out; row.len = len; row.zk = zk;
+    }
+    return row.wz;
+  }
+
+  /** A building's rings in world pixels at this zoom, cached on the item until the zoom changes. */
+  function b3Item(item, scale, zk) {
+    if (item.zk !== zk) {
+      var tmp = [0, 0];
+      item.wz = item.rings.map(function (ring) {
+        var n = ring.length / 2, out = new Float64Array(n * 2);
+        for (var i = 0; i < n; i++) { b3Proj(ring[2 * i + 1], ring[2 * i], scale, tmp); out[2 * i] = tmp[0]; out[2 * i + 1] = tmp[1]; }
+        return out;
+      });
+      item.zk = zk;
+    }
+    return item.wz;
+  }
+
+  // ---- shard files: one fetch per file, the cache with its size cap, and the shape each kind is read as
+
+  /** The file's data in the shape the drawing reads it. A file that is not in its format is a failed load (the message says so). */
+  function b3Shape(kind, doc) {
+    if (!doc || doc.f !== B3_FORMAT[kind]) throw new Error("format");
+    if (kind === "roads") return b3ShapeRoads(doc);
+    if (kind === "buildings") return b3ShapeBuildings(doc);
+    if (kind === "counts") return { tiles: doc.tiles || {} };
+    if (kind === "cities") return { cities: doc.cities || {} };
+    if (!Array.isArray(doc.a)) throw new Error("rows");
+    return { rows: doc.a };                    // addresses (the unmatched dots) and letter files: the rows as the file writes them
+  }
+
+  /** A roads shard: the lines as typed arrays, their boxes and their classes (byClass), with the name table. */
+  function b3ShapeRoads(doc) {
+    var rows = doc.r || [], out = [], byClass = {};
+    for (var i = 0; i < rows.length; i++) {
+      var pts = rows[i][2], xy = new Float64Array(pts.length * 2), bb = [Infinity, Infinity, -Infinity, -Infinity];
+      for (var j = 0; j < pts.length; j++) {
+        xy[2 * j] = pts[j][0]; xy[2 * j + 1] = pts[j][1];
+        bb[0] = Math.min(bb[0], pts[j][0]); bb[1] = Math.min(bb[1], pts[j][1]);
+        bb[2] = Math.max(bb[2], pts[j][0]); bb[3] = Math.max(bb[3], pts[j][1]);
+      }
+      var row = { c: rows[i][0], n: rows[i][1], xy: xy, bb: bb, zk: null, wz: null, len: 0 };
+      out.push(row);
+      (byClass[row.c] = byClass[row.c] || []).push(row);
+    }
+    return { rows: out, byClass: byClass, names: doc.names || [], chains: b3Chains(out) };
+  }
+
+  /** The pieces of a shard's names: rows of one name that share an end point are one piece (the shard cuts a street at each
+      crossing, so a block is one row). Union-find over the end points; a row with no name is in no piece. */
+  function b3Chains(rows) {
+    var par = rows.map(function (r, i) { return i; }), seen = {};
+    var find = function (i) { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
+    rows.forEach(function (row, i) {
+      if (row.n < 0) return;
+      [0, row.xy.length / 2 - 1].forEach(function (j) {
+        var k = row.n + "|" + row.xy[2 * j].toFixed(5) + "|" + row.xy[2 * j + 1].toFixed(5);
+        if (seen[k] !== undefined) par[find(i)] = find(seen[k]); else seen[k] = i;
+      });
+    });
+    var pieces = {};
+    rows.forEach(function (row, i) {
+      if (row.n < 0) return;
+      var root = find(i), piece = pieces[root] || (pieces[root] = { n: row.n, rows: [], bb: [Infinity, Infinity, -Infinity, -Infinity], zk: null, len: 0 });
+      piece.rows.push(row);
+      piece.bb = [Math.min(piece.bb[0], row.bb[0]), Math.min(piece.bb[1], row.bb[1]), Math.max(piece.bb[2], row.bb[2]), Math.max(piece.bb[3], row.bb[3])];
+    });
+    return Object.keys(pieces).map(function (k) { return pieces[k]; });
+  }
+
+  /** A buildings shard: one item per outline (its dot point, its rings in typed arrays, its box, its address lines and the
+      shard's common city and zip). */
+  function b3ShapeBuildings(doc) {
+    var out = [];
+    (doc.a || []).forEach(function (e) {
+      var bb = [Infinity, Infinity, -Infinity, -Infinity];
+      var rings = (e.g || []).map(function (ring) {
+        var xy = new Float64Array(ring.length * 2);
+        ring.forEach(function (p, j) {
+          xy[2 * j] = p[0]; xy[2 * j + 1] = p[1];
+          bb[0] = Math.min(bb[0], p[0]); bb[1] = Math.min(bb[1], p[1]);
+          bb[2] = Math.max(bb[2], p[0]); bb[3] = Math.max(bb[3], p[1]);
+        });
+        return xy;
+      });
+      out.push({ p: e.p, rings: rings, bb: bb, l: e.l || [], z: e.z || null, c: doc.c || null, zk: null, wz: null });
+    });
+    return { items: out };
+  }
+
+  /** Fetch one file once: a promise of its shape. The cache keeps the entry (loading or ready); a failed file leaves the cache,
+      so the next draw asks again, and its failure is logged. A draw that asked for it redraws when it arrives. */
+  function b3Load(kind, url, keep, redraw) {
+    var B = B3, e = B.cache.get(url);
+    if (e) {
+      if (e.state === "ready") { B.cache.delete(url); B.cache.set(url, e); }   // least recently used goes first
+      return e.promise;
+    }
+    e = { kind: kind, state: "loading", data: null, bytes: 0, keep: !!keep, promise: null };
+    B.cache.set(url, e);
+    B.fetches.push(url);
+    e.promise = fetch(url, { credentials: "same-origin" }).then(function (r) {
+      if (!r.ok) throw new Error("status " + r.status);
+      return r.text();
+    }).then(function (text) {
+      var shaped = b3Shape(kind, JSON.parse(text));     // a file that is not JSON, or not in its format, fails here
+      e.data = shaped;
+      e.bytes = text.length;
+      e.state = "ready";
+      B.bytes += e.bytes;
+      b3Evict();
+      return shaped;
+    }).then(null, function (err) {
+      if (B.cache.get(url) === e) B.cache.delete(url);
+      B.failed[url] = B.gen;
+      B.failures.push({ url: url, kind: kind, reason: err && err.message ? err.message : "load" });
+      throw err;
+    });
+    e.promise.then(function () { if (redraw) b3Queue(); }, function () {});   // a failure is logged above, and never thrown
+    return e.promise;
+  }
+
+  /** Drop the least recently used files until the cache is under its cap. Files in view (B3.pinned), files still loading and
+      the files the search keeps are never dropped. */
+  function b3Evict() {
+    var B = B3, keys = [];
+    if (B.bytes <= B.cap) return;
+    B.cache.forEach(function (e, url) { keys.push(url); });
+    for (var i = 0; i < keys.length && B.bytes > B.cap; i++) {
+      var e = B.cache.get(keys[i]);
+      if (!e || e.state !== "ready" || e.keep || B.pinned[keys[i]]) continue;
+      B.cache.delete(keys[i]);
+      B.bytes -= e.bytes;
+    }
+  }
+
+  // ---- the draw
+
+  /** Draw the layers for the view: which files it needs, the fetches it starts, then the pictures from what is loaded. */
+  function b3Draw() {
+    var B = B3;
+    if (!B || !map) return;
+    var t0 = performance.now(), size = map.getSize(), z = map.getZoom(), Z = B.zoom, cv = B.canvas, ctx = B.ctx, dpr = B.dpr;
+    var w = Math.round(size.x * dpr), hgt = Math.round(size.y * dpr);
+    if (cv.width !== w || cv.height !== hgt) { cv.width = w; cv.height = hgt; }
+    cv.style.width = size.x + "px"; cv.style.height = size.y + "px";
+    L.DomUtil.setPosition(cv, map.containerPointToLayerPoint([0, 0]));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size.x, size.y);
+    B.hits = []; B.stats = { buildings: 0, addresses: 0, labels: 0, counts: 0, lines: 0 };
+    var bounds = map.getBounds(), vb = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+    var wantRoads = !!B.roads && z >= Z.roads, wantDots = !!B.bld && z >= Z.dots, wantAddr = !!B.adr && z >= Z.dots;
+    var wantCounts = !!B.bld && z >= Z.counts && z < Z.dots;
+    var tiles = (wantRoads || wantDots || wantAddr || wantCounts) ? b3TilesIn(B.grid, vb) : [];
+    // An outline is drawn from the leaf that holds its dot point, but its vertices can reach past that leaf by the file's
+    // overhang (buildings.overhang_deg, about 200 m). The outlines are drawn from the fills zoom, so from there the building
+    // leaves are chosen from the view grown by the overhang: a sliver at the view's edge, or at a tile or split edge, is fetched
+    // too. The dots of zooms 15 and 16 lie inside their leaves, so below the fills zoom the view stays as it is (no extra file).
+    var grow = wantDots && z >= Z.fills && B.bld ? (B.bld.overhang_deg || 0) : 0;
+    var bvb = grow ? [vb[0] - grow, vb[1] - grow, vb[2] + grow, vb[3] + grow] : vb;
+    var btiles = grow ? b3TilesIn(B.grid, bvb) : tiles;
+    var pinned = {}, roadEnts = [], bldEnts = [], adrEnts = [], countsDoc = null;
+    var want = function (kind, block, t, boxed, out, view) {
+      b3Leaves(block, t, boxed).forEach(function (leaf) {
+        if (!b3Overlaps(leaf.box, view)) return;
+        var url = B.root + block.shard.replace("{name}", leaf.name);
+        pinned[url] = true;
+        var e = B.cache.get(url);
+        if (!e) { if (B.failed[url] !== B.gen) b3Load(kind, url, false, true); }
+        else if (e.state === "ready") { b3Load(kind, url, false, false); out.push({ e: e, tile: t.name, box: leaf.box }); }
+      });
+    };
+    tiles.forEach(function (t) {
+      if (wantRoads && B.tiles.roads[t.name]) want("roads", B.roads, t, false, roadEnts, vb);
+      if (wantAddr && B.tiles.adr[t.name]) want("addresses", B.adr, t, false, adrEnts, vb);
+    });
+    btiles.forEach(function (t) {
+      if (wantDots && B.tiles.bld[t.name]) want("buildings", B.bld, t, true, bldEnts, bvb);
+    });
+    if (wantCounts && B.bld.counts_file) {
+      var curl = B.root + B.bld.counts_file;
+      pinned[curl] = true;
+      var ce = B.cache.get(curl);
+      if (!ce) b3Load("counts", curl, true, true); else if (ce.state === "ready") countsDoc = ce.data;
+    }
+    B.pinned = pinned;
+    var scale = 256 * Math.pow(2, z), tmp = [0, 0];
+    var c = map.getCenter(), wc = b3Proj(c.lat, c.lng, scale, [0, 0]), pc = map.latLngToContainerPoint(c);
+    var ox = pc.x - wc[0], oy = pc.y - wc[1];                       // world pixels to container pixels, for this draw
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    if (wantRoads) b3DrawRoads(roadEnts, vb, z, scale, ox, oy);
+    if (wantDots && z >= Z.fills) b3DrawBuildings(bldEnts, vb, z, scale, ox, oy);
+    var rad = b3Radius(z);
+    if ((wantDots || wantAddr) && rad > 0) b3DrawDots(z, bldEnts, adrEnts, vb, ox, oy, rad, scale, size, tmp);
+    if (wantCounts && countsDoc) b3DrawCounts(tiles, countsDoc, ox, oy, scale, size);
+    if (wantRoads && z >= Z.names && B.draw.labels) B.stats.labels = b3DrawNames(roadEnts, vb, z, scale, ox, oy, size);
+    var ms = performance.now() - t0;
+    B.ms.push(ms);
+    if (B.ms.length > 50) B.ms.shift();
+    b3Evict();
+  }
+
+  /** The roads by class, least prominent first, so the arterials draw on top. A class is drawn from its own zoom (map.json). */
+  function b3DrawRoads(ents, vb, z, scale, ox, oy) {
+    var B = B3, ctx = B.ctx, rd = B.roads, order = rd.class_order.split("").reverse();
+    order.forEach(function (letter) {
+      var cl = rd.classes[letter];
+      if (!cl || z < cl.min_zoom) return;
+      ctx.strokeStyle = cl.min_zoom <= B.zoom.arterials ? B.col.major : B.col.road;
+      ctx.lineWidth = cl.width;
+      ctx.beginPath();
+      var k = 0;
+      ents.forEach(function (ent) {
+        (ent.e.data.byClass[letter] || []).forEach(function (row) {
+          if (!b3Overlaps(row.bb, vb)) return;
+          var wz = b3Row(row, scale, z), n = wz.length / 2;
+          ctx.moveTo(wz[0] + ox, wz[1] + oy);
+          for (var i = 1; i < n; i++) ctx.lineTo(wz[2 * i] + ox, wz[2 * i + 1] + oy);
+          B.stats.lines++;
+          if (++k % B3_BATCH === 0) { ctx.stroke(); ctx.beginPath(); }
+        });
+      });
+      ctx.stroke();
+    });
+  }
+
+  /** The outlines: a light fill and a hairline from the fills zoom, and the heavier line from the emphasis zoom. */
+  function b3DrawBuildings(ents, vb, z, scale, ox, oy) {
+    var B = B3, ctx = B.ctx, Z = B.zoom;
+    if (z < Z.fills) return;
+    var pass = function (fill, width) {
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      var k = 0;
+      ents.forEach(function (ent) {
+        ent.e.data.items.forEach(function (it) {
+          if (!b3Overlaps(it.bb, vb)) return;
+          b3Item(it, scale, z).forEach(function (wz) {
+            var n = wz.length / 2;
+            ctx.moveTo(wz[0] + ox, wz[1] + oy);
+            for (var i = 1; i < n; i++) ctx.lineTo(wz[2 * i] + ox, wz[2 * i + 1] + oy);
+            ctx.closePath();
+          });
+          if (++k % B3_BATCH === 0) { if (fill) ctx.fill("evenodd"); ctx.stroke(); ctx.beginPath(); }
+        });
+      });
+      if (fill) ctx.fill("evenodd");
+      ctx.stroke();
+    };
+    ctx.fillStyle = B.col.bldg;
+    ctx.strokeStyle = B.col.bldgLine;
+    pass(true, B.sz.hair);
+    if (z >= Z.emphasis) pass(false, B.sz.emph);
+  }
+
+  /** The dot radius at a zoom: the buildings block's rule (dot_radius_px), or the addresses block's when there are no outlines. */
+  function b3Radius(z) {
+    var d = (B3.bld && B3.bld.dot_radius_px) || (B3.adr && B3.adr.dot_radius_px);
+    if (!d) return 0;
+    return Math.min(d.max, d.at_zoom + d.per_zoom * (z - d.zoom));
+  }
+
+  /** The dots: one per outline at its dot point, and one per unmatched address. Each drawn dot is kept for the tap (B3.hits).
+      The two kinds take their own colours (--hail-dot for an outline, --hail-dot-address for an address). A shard inside the
+      view is drawn from its own path (b3DotPath, built once per zoom and radius: the arcs were most of a draw's time); an edge
+      shard is drawn from the dots in view. The dots in view are found one by one, for the taps and for the names that keep off them. */
+  function b3DrawDots(z, bldEnts, adrEnts, vb, ox, oy, r, scale, size, tmp) {
+    var B = B3, ctx = B.ctx, m = r + 1;
+    B.dotR = r;
+    if (z < B3.zoom.dots) return;
+    ctx.strokeStyle = B.col.dotRing;
+    ctx.lineWidth = B.sz.ring;
+    // every shard of a kind goes into one path (one fill and one stroke a kind, not one for each shard)
+    var shard = function (kind, ent, rows, ll, all) {
+      var c = b3DotCache(ent, kind, rows, ll, z, r, scale);
+      // a shard inside the view has every one of its dots in view: its cached path is added, moved to its corner. An edge
+      // shard adds the dots in view only (a whole edge path would fill the dots that lie off the screen)
+      var b = ent.box, whole = b[0] >= vb[0] && b[2] <= vb[2] && b[1] >= vb[1] && b[3] <= vb[3];
+      if (whole) all.addPath(b3DotPath(c, r), new DOMMatrix([1, 0, 0, 1, c.origin[0] + ox, c.origin[1] + oy]));
+      for (var i = 0; i < rows.length; i++) {
+        var p = ll(rows[i]), lon = p[0], lat = p[1];
+        if (lon < vb[0] || lon > vb[2] || lat < vb[1] || lat > vb[3]) continue;
+        var x = c.xy[2 * i] + ox, y = c.xy[2 * i + 1] + oy;
+        if (x < -m || y < -m || x > size.x + m || y > size.y + m) continue;
+        B.hits.push({ x: x, y: y, kind: kind, lon: lon, lat: lat, ref: rows[i] });
+        B.stats[kind === "b" ? "buildings" : "addresses"]++;
+        if (!whole) { all.moveTo(x + r, y); all.arc(x, y, r, 0, B3_TAU); }
+      }
+    };
+    [["b", bldEnts, function (ent) { return ent.e.data.items; }, function (it) { return it.p; }, B.col.dot],
+      ["a", adrEnts, function (ent) { return ent.e.data.rows; }, function (row) { return row; }, B.col.dotAddress]].forEach(function (k) {
+      var all = new Path2D();
+      k[1].forEach(function (ent) { shard(k[0], ent, k[2](ent), k[3], all); });
+      ctx.fillStyle = k[4];
+      ctx.fill(all);
+      ctx.stroke(all);
+    });
+  }
+
+  /** A shard's dots of one kind at a zoom and radius: the world pixels of each dot (xy) and the world pixels of the north-west
+      corner of the shard's box (origin). Built once per zoom and radius, kept on the shard's data. The corner keeps the
+      canvas's numbers small (a world pixel at zoom 15 is about 8 million). b3DotPath adds the discs when a shard is wholly in view. */
+  function b3DotCache(ent, kind, rows, ll, z, r, scale) {
+    var d = ent.e.data, key = z + "|" + r;
+    d.dots = d.dots || {};
+    var c = d.dots[kind];
+    if (c && c.key === key) return c;
+    var o = b3Proj(ent.box[3], ent.box[0], scale, [0, 0]), tmp = [0, 0], xy = new Float64Array(rows.length * 2);
+    for (var i = 0; i < rows.length; i++) {
+      var p = ll(rows[i]);
+      b3Proj(p[1], p[0], scale, tmp);
+      xy[2 * i] = tmp[0]; xy[2 * i + 1] = tmp[1];
+    }
+    c = d.dots[kind] = { key: key, origin: o, xy: xy, path: null };
+    return c;
+  }
+
+  /** The discs of a shard's dots as one Path2D, in pixels from the shard's corner (b3DotCache's origin), built on first use. */
+  function b3DotPath(c, r) {
+    if (c.path) return c.path;
+    var path = new Path2D(), xy = c.xy, o = c.origin;
+    for (var i = 0; i < xy.length; i += 2) {
+      var lx = xy[i] - o[0], ly = xy[i + 1] - o[1];
+      path.moveTo(lx + r, ly);
+      path.arc(lx, ly, r, 0, B3_TAU);
+    }
+    c.path = path;
+    return path;
+  }
+
+  /** One rounded bubble per tile: the count of outlines in it ("1,240 buildings"; the words come from buildings.templates).
+      The bubble is centred in the part of its tile that shows: the tile's corners are clipped to the map below the banners and
+      the search card and above the bottom band (b3LiftPx), so a bubble is never drawn under a panel, under the band or off the
+      screen. A tile with no visible part gets none. */
+  function b3DrawCounts(tiles, doc, ox, oy, scale, size) {
+    var B = B3, ctx = B.ctx, pad = B.sz.countPad, p0 = [0, 0], p1 = [0, 0];
+    var mapTop = el.canvas.getBoundingClientRect().top, top = 0, find = document.getElementById("find");
+    [el.banners, find].forEach(function (e) {
+      if (e && e.getClientRects().length) top = Math.max(top, e.getBoundingClientRect().bottom - mapTop);
+    });
+    var bottom = size.y - b3LiftPx();
+    ctx.font = B.countFont;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    tiles.forEach(function (t) {
+      var n = doc.tiles[t.name];
+      if (!n) return;
+      var box = b3TileBox(B.grid, t.r, t.c);
+      b3Proj(box[3], box[0], scale, p0);                                    // the north-west corner of the tile, in world pixels
+      b3Proj(box[1], box[2], scale, p1);                                    // its south-east corner
+      var x0 = Math.max(0, Math.min(p0[0], p1[0]) + ox), x1 = Math.min(size.x, Math.max(p0[0], p1[0]) + ox);
+      var y0 = Math.max(top, Math.min(p0[1], p1[1]) + oy), y1 = Math.min(bottom, Math.max(p0[1], p1[1]) + oy);
+      if (x1 <= x0 || y1 <= y0) return;
+      var x = (x0 + x1) / 2, y = (y0 + y1) / 2;
+      var text = n === 1 ? B.bw.count_one : B3.bw.count_bubble.replace("{n}", n.toLocaleString("en-US"));
+      var w = ctx.measureText(text).width + 2 * pad, h = B.sz.countSize + 2 * pad;
+      ctx.fillStyle = B.col.countBg;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x - w / 2, y - h / 2, w, h, h / 2); else ctx.rect(x - w / 2, y - h / 2, w, h);
+      ctx.fill();
+      ctx.fillStyle = B.col.countInk;
+      ctx.fillText(text, x, y);
+      B.stats.counts++;
+    });
+  }
+
+  /** The point at a fraction of a line's length, in container pixels, and the direction of the segment it falls on. */
+  function b3AlongRow(wz, total, f, ox, oy) {
+    var n = wz.length / 2, target = total * f, acc = 0;
+    for (var i = 1; i < n; i++) {
+      var dx = wz[2 * i] - wz[2 * i - 2], dy = wz[2 * i + 1] - wz[2 * i - 1], seg = Math.hypot(dx, dy);
+      if (acc + seg >= target || i === n - 1) {
+        var t = seg ? Math.min(1, Math.max(0, (target - acc) / seg)) : 0;
+        return { x: wz[2 * i - 2] + dx * t + ox, y: wz[2 * i - 1] + dy * t + oy, dx: dx, dy: dy };
+      }
+      acc += seg;
+    }
+    return { x: wz[0] + ox, y: wz[1] + oy, dx: 1, dy: 0 };
+  }
+
+  /** The street names: one per name per tile, on its longest piece in view (a piece is a run of rows of one name, B3Chains).
+      The piece must be longer than the name plus the fit allowance. Candidates are sorted with the arterials first, then the
+      longest. A name tries the rows of its piece in view, the longest first, and keeps clear of the names already placed and
+      of the dots (a grid of labels.grid_px); at most labels.per_view are drawn. Angles are quantised to labels.angle_deg and
+      never upside down. Returns the count drawn. */
+  function b3DrawNames(ents, vb, z, scale, ox, oy, size) {
+    var B = B3, ctx = B.ctx, L_ = B.draw.labels, rd = B.roads, best = {};
+    var cap = L_.per_view, fit = L_.fit_px, cell = L_.grid_px, step = L_.angle_deg * B3_DEG;
+    ctx.font = B.nameFont;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ents.forEach(function (ent) {
+      var names = ent.e.data.names;
+      ent.e.data.chains.forEach(function (piece) {
+        if (!names[piece.n] || !b3Overlaps(piece.bb, vb)) return;
+        if (piece.zk !== z) {                  // the piece's length at this zoom (its rows' lengths)
+          piece.len = 0;
+          piece.rows.forEach(function (row) { b3Row(row, scale, z); piece.len += row.len; });
+          piece.zk = z;
+        }
+        var key = ent.tile + "|" + names[piece.n];         // one name per tile: a split road's leaves index their names differently
+        if (best[key] && piece.len <= best[key].len) return;   // a longer piece of this name is chosen already
+        var inView = piece.rows.filter(function (row) { return b3Overlaps(row.bb, vb); });
+        if (!inView.length) return;
+        inView.sort(function (a, b) { return b.len - a.len; });
+        best[key] = { len: piece.len, rows: inView, text: names[piece.n] };
+      });
+    });
+    var list = Object.keys(best).map(function (k) { return best[k]; });
+    list.forEach(function (x) {
+      var c = x.rows[0].c;
+      x.major = rd.classes[c] ? rd.classes[c].min_zoom <= B.zoom.arterials : false;
+    });
+    list.sort(function (a, b) { return (b.major - a.major) || (b.len - a.len); });
+    var occ = {}, dr = B.dotR || 0;
+    // a grid cell's key is a number (cx * 4096 + cy: the cells in view are a few dozen apart, so the keys stay unique)
+    var cells = function (x0, y0, x1, y1, fn) {
+      for (var cx = Math.floor(x0 / cell); cx <= Math.floor(x1 / cell); cx++) {
+        for (var cy = Math.floor(y0 / cell); cy <= Math.floor(y1 / cell); cy++) fn(cx * 4096 + cy);
+      }
+    };
+    var clashes = function (x0, y0, x1, y1) {
+      var found = false;
+      cells(x0, y0, x1, y1, function (k) {
+        (occ[k] || []).forEach(function (b) { if (b[0] < x1 && b[2] > x0 && b[1] < y1 && b[3] > y0) found = true; });
+      });
+      return found;
+    };
+    var put = function (x0, y0, x1, y1) {
+      cells(x0, y0, x1, y1, function (k) { (occ[k] = occ[k] || []).push([x0, y0, x1, y1]); });
+    };
+    if (L_.avoid_dots !== false) B.hits.forEach(function (h) { put(h.x - dr, h.y - dr, h.x + dr, h.y + dr); });   // a name keeps off the dots: on unless labels.avoid_dots is false
+    var placed = 0, ANCHORS = 8;                      // rows of the piece to try, the longest first
+    if (B.widthFont !== B.nameFont) { B.widthFont = B.nameFont; B.widths = new Map(); }   // a name's width, measured once per font
+    var widthOf = function (text) {
+      var v = B.widths.get(text);
+      if (v === undefined) { v = ctx.measureText(text).width; B.widths.set(text, v); }
+      return v;
+    };
+    for (var i = 0; i < list.length && placed < cap; i++) {
+      var cand = list[i], w = widthOf(cand.text);
+      if (cand.len < w + fit) continue;
+      for (var k = 0; k < Math.min(ANCHORS, cand.rows.length); k++) {
+        var row = cand.rows[k];
+        var at = b3AlongRow(row.wz, row.len, 0.5, ox, oy);
+        var ang = Math.atan2(at.dy, at.dx);
+        ang = Math.round(ang / step) * step;
+        if (ang > Math.PI / 2) ang -= Math.PI; else if (ang <= -Math.PI / 2) ang += Math.PI;
+        var cs = Math.abs(Math.cos(ang)), sn = Math.abs(Math.sin(ang)), hh = B.sz.nameSize;
+        var bw = w * cs + hh * sn, bh = w * sn + hh * cs;
+        var x0 = at.x - bw / 2, y0 = at.y - bh / 2, x1 = at.x + bw / 2, y1 = at.y + bh / 2;
+        if (x1 < 0 || y1 < 0 || x0 > size.x || y0 > size.y) continue;
+        if (clashes(x0, y0, x1, y1)) continue;
+        put(x0, y0, x1, y1);
+        placed++;
+        ctx.save();
+        ctx.translate(at.x, at.y);
+        ctx.rotate(ang);
+        ctx.lineWidth = B.sz.halo;
+        ctx.strokeStyle = B.col.halo;
+        ctx.strokeText(cand.text, 0, 0);
+        ctx.fillStyle = B.col.name;
+        ctx.fillText(cand.text, 0, 0);
+        ctx.restore();
+        break;
+      }
+    }
+    return placed;
+  }
+
+  // ---- the tap
+
+  /** The dot nearest a point in the canvas (its box moves with the map, so a tap in a pan still finds the dots), within the
+      tap radius (B3.tap), or null. */
+  function b3Nearest(x, y) {
+    var B = B3, best = null, bestD = B.tap * B.tap;
+    B.hits.forEach(function (h) {
+      var d = (h.x - x) * (h.x - x) + (h.y - y) * (h.y - y);
+      if (d <= bestD && (!best || d < bestD)) { best = h; bestD = d; }
+    });
+    return best;
+  }
+
+  /** A click on the map. A dot within the tap radius takes it: the hail sheet for the dot's point (a town, a drag or a sheet
+      that is open does not). Any other click goes on to the map as before. */
+  function b3Tap(e) {
+    var B = B3;
+    if (!B || CARD || sheetState || !B.hits.length) return;
+    if (e.target && e.target.closest && e.target.closest(".leaflet-marker-icon")) return;   // a town bubble or a place name
+    if (B.down && Math.hypot(e.clientX - B.down.x, e.clientY - B.down.y) > map.options.tapTolerance) return;   // a drag
+    var rect = B.canvas.getBoundingClientRect(), hit = b3Nearest(e.clientX - rect.left, e.clientY - rect.top);   // the canvas moves with the map pane
+    if (!hit) return;
+    e.stopPropagation();
+    e.preventDefault();
+    var list = hit.kind === "a" ? B.hits.filter(function (h) { return h.kind === "a" && h.lon === hit.lon && h.lat === hit.lat; })
+      .map(function (h) { return { line: h.ref[2], city: h.ref[3], zip: h.ref[4], cls: h.ref[5] }; }) : [hit.ref];
+    b3OpenDot({ kind: hit.kind, lon: hit.lon, lat: hit.lat, lines: hit.kind === "b" ? hit.ref : null, rows: list }, el.canvas);
+  }
+
+  /** The grid sentence for a dot outside the hail grid or in a tile with no file (D23): from the addresses words, else the buildings'. */
+  function b3GridWords() {
+    var b3 = B3 || {};
+    return (b3.aw && b3.aw.outside_grid) || (b3.bw && b3.bw.outside_grid) || hailData().words.outside;
+  }
+
+  /** The sheet for a dot or a search row: the hail sheet at its point, with the address block on top. */
+  function b3OpenDot(hit, opener) {
+    var top = b3Top(hit);
+    openHail(hit.lat, hit.lon, opener, { dot: true, top: top });
+  }
+
+  /** The address block at the top of the sheet, cloned from #address-sec: an outline's lines (or its no-address sentence),
+      or an address point's line with the sentence of how it was placed when it is not a Structure point (D32). Nothing in
+      the off mode (D35). */
+  function b3Top(hit) {
+    var B = B3, tpl = document.getElementById("address-sec");
+    if (!B.textOn || !tpl) return null;
+    var frag = tpl.content.cloneNode(true), sec = frag.querySelector('[data-addr="section"]');
+    var lines = sec.querySelector('[data-addr="lines"]'), note = sec.querySelector('[data-addr="note"]'), units = sec.querySelector('[data-addr="units"]');
+    var show = function (node, text) { node.textContent = text; node.hidden = !text; };
+    var addLine = function (words, line, pair) {
+      var li = document.createElement("li");
+      var city = pair ? pair[0] : "", zip = pair ? pair[1] : "";
+      li.textContent = !city ? line : zip ? fill(words.address_line, { line: line, city: city, zip: zip })
+        : fill(words.address_line_no_zip, { line: line, city: city });
+      lines.appendChild(li);
+    };
+    if (hit.kind === "b") {
+      var it = hit.lines, ls = it.l || [];
+      if (!ls.length) show(note, B.bld && B.bld.addresses === "unavailable" ? B.bw.addresses_unavailable : B.bw.no_address);
+      else {
+        ls.forEach(function (line, i) { addLine(B.bw, line, it.z && it.z[i] ? it.z[i] : it.c); });
+        show(units, ls.length > 1 ? fill(B.bw.units, { n: ls.length }) : "");
+      }
+    } else {
+      var rows = hit.rows;
+      if (rows.length > 1) show(units, fill(B.aw.same_point, { n: rows.length }));
+      rows.forEach(function (row) { addLine(B.aw, row.line, [row.city, row.zip]); });
+      var off = rows.filter(function (row) { return row.cls && row.cls !== "S"; })[0];
+      if (off) show(note, fill(B.aw.placed, { how: (B.aw.placed_how || {})[off.cls] || "" }));
+    }
+    sec.insertBefore(units, lines);      // the count ("Units on file", "{n} addresses at this point") comes before the lines (DESIGN section 10)
+    sec.hidden = false;
+    return frag;
+  }
+
+  // ---- the search
+
+  /** Lower-case words of a text, punctuation and "#" dropped ("St." is "st", "1/2" stays). */
+  function b3Words(text) {
+    return String(text || "").toLowerCase().replace(/#/g, " ").replace(/[^a-z0-9\/ ]+/g, " ").split(" ").filter(Boolean);
+  }
+
+  /** The folder of a city (addresses.slug): lower-case ASCII words joined with dashes. */
+  function b3Slug(name) {
+    var s = String(name).normalize("NFKD").replace(/[^\x00-\x7f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return s || "city";
+  }
+
+  /** The file name of a letter key (addresses.file_key): letters and digits as they are, any other character as _ and four hex digits. */
+  function b3FileKey(key) {
+    return String(key).replace(/[^A-Za-z0-9]/g, function (ch) { return "_" + ("000" + ch.charCodeAt(0).toString(16)).slice(-4); });
+  }
+
+  /** The address line of a result or a shard row, in the words of the module: "{line}, {city} {zip}". */
+  function b3LineText(words, item) {
+    return item.zip ? fill(words.address_line, { line: item.line, city: item.city, zip: item.zip })
+      : fill(words.address_line_no_zip, { line: item.line, city: item.city });
+  }
+
+  /** The site town nearest the map's centre (the town a search falls back to when the typed text names no city). */
+  function b3NearestTown() {
+    if (!data || !data.towns || !data.towns.length) return null;
+    var c = map.getCenter(), best = null, bestD = Infinity;
+    data.towns.forEach(function (t) {
+      var d = (t.lat - c.lat) * (t.lat - c.lat) + (t.lon - c.lng) * (t.lon - c.lng);
+      if (d < bestD) { best = t; bestD = d; }
+    });
+    return best;
+  }
+
+  /** The search, parsed (D6): the town, the leading address number, the spelled-out words of the street, the core name and the
+      key file. Null when the text has no words. The town is the longest run at the end that the city index names; with
+      none, the site town nearest the map's centre, when the index names it. */
+  function b3Parse(text, cityNames) {
+    var words = B3.adr.search_words || {}, tokens = b3Words(text);
+    if (!tokens.length) return null;
+    if (tokens.length > 1 && (tokens[tokens.length - 1] === "mt" || tokens[tokens.length - 1] === "montana")) tokens.pop();
+    var city = null, cut = tokens.length;
+    for (var k = 0; k < tokens.length && !city; k++) {
+      var named = cityNames.get(tokens.slice(k).join(" "));
+      if (named) { city = named; cut = k; }
+    }
+    if (!city) {
+      var town = b3NearestTown(), fallback = town ? cityNames.get(b3Words(town.name).join(" ")) : null;
+      if (fallback) city = fallback;
+    }
+    if (!city) return null;
+    var rest = tokens.slice(0, cut), number = "";
+    if (rest.length && B3_NUMBER.test(rest[0])) number = rest.shift();
+    var toks = [];
+    rest.forEach(function (t) { (words[t] ? String(words[t]).split(" ") : [t]).forEach(function (x) { toks.push(x); }); });
+    var kinds = {};
+    Object.keys(words).forEach(function (k) { String(words[k]).split(" ").forEach(function (x) { kinds[x] = true; }); });
+    var core = toks.filter(function (t) { return !kinds[t]; })[0] || toks[0] || "";
+    return { city: city, number: number, toks: toks, core: core };
+  }
+
+  /** Read the city index once (a promise of the map from a normalised city name to its display name, and the index itself). */
+  function b3Cities() {
+    var url = B3.root + B3.adr.cities;
+    return b3Load("cities", url, true, false).then(function (doc) {
+      if (!B3.cityNames) {
+        B3.cityNames = new Map();
+        Object.keys(doc.cities).forEach(function (name) { B3.cityNames.set(b3Words(name).join(" "), name); });
+      }
+      return doc.cities;
+    });
+  }
+
+  /** Wire the form: a submit searches, and the typed text never leaves this page. */
+  function b3WireSearch() {
+    var form = document.getElementById("address-form"), input = document.getElementById("address-input");
+    if (!B3.adr || !B3.textOn || !form || !input || !B3.adr.cities || !B3.adr.letter) return;
+    B3.searchOn = true;
+    form.addEventListener("submit", function (e) { e.preventDefault(); b3Search(input.value); });
+  }
+
+  /** The phone's Find an address button (#btn-find, drawn only on a phone: map.css) opens and closes the find panel. It is wired
+      whether or not the search is on: a list that did not load shows its sentence in the panel. */
+  function b3WireFind() {
+    var btn = document.getElementById("btn-find");
+    if (btn) btn.addEventListener("click", function () { b3FindOpen(!el.top.classList.contains("find-shown")); });
+  }
+
+  /** The find panel on a phone, open or closed (#top carries .find-shown while it is open, and the legend card steps aside for
+      it: map.css). Closing it closes the results too, so the legend comes back with the panel. The fit is asked again, as it is
+      when a banner comes or goes. Opening it puts the cursor in the field. */
+  function b3FindOpen(open) {
+    var btn = document.getElementById("btn-find"), input = document.getElementById("address-input"), list = document.getElementById("address-results");
+    el.top.classList.toggle("find-shown", !!open);
+    if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (!open && list) b3ResultsOpen(list, false);
+    refitForBanner();
+    if (open && input) input.focus();
+  }
+
+  /** Show a search message (the module's words), or hide the line when there is none. */
+  function b3Status(text) {
+    var st = document.getElementById("address-status");
+    if (!st) return;
+    st.textContent = text || "";
+    st.hidden = !text;
+  }
+
+  /** The results list shows or hides. While it shows, #top carries .results-open: on a phone the legend card steps aside for
+      it (map.css), and the fit is asked again, as it is when a banner comes or goes (unless the viewer has moved the map). */
+  function b3ResultsOpen(list, on) {
+    list.hidden = !on;
+    if (el.top.classList.contains("results-open") === !!on) return;
+    el.top.classList.toggle("results-open", !!on);
+    refitForBanner();
+  }
+
+  /** One search: the city index, one letter file, the list of rows (up to the cap) and the words for each outcome. */
+  function b3Search(text) {
+    var B = B3, list = document.getElementById("address-results"), W = B.aw;
+    if (!list) return;
+    b3Status("");
+    list.innerHTML = "";
+    b3ResultsOpen(list, false);
+    if (!b3Words(text).length) return b3Status(W.search_hint);
+    b3Cities().then(function (cities) {
+      var parts = b3Parse(text, B.cityNames);
+      if (!parts) return b3Status(W.search_none);
+      var entry = cities[parts.city] || {}, keys = entry.keys || {};
+      var c1 = parts.core.charAt(0).toUpperCase(), c2 = parts.core.length > 1 ? parts.core.slice(0, 2).toUpperCase() : c1 + " ";
+      var key = keys[c1] !== undefined ? c1 : keys[c2] !== undefined ? c2 : null;
+      if (!key) return b3Status(W.search_none);
+      var url = B.root + B.adr.letter.replace("{dir}", entry.dir || b3Slug(parts.city)).replace("{key}", b3FileKey(key));
+      return b3Load("letter", url, false, false).then(function (doc) {
+        var want = parts.toks, num = parts.number.toLowerCase(), n0 = parseInt(num, 10);
+        var rows = doc.rows.filter(function (r) {
+          var street = String(r[1]).toLowerCase().replace(/[^a-z0-9\/ ]+/g, " ").split(" ").filter(Boolean).join(" ");
+          return want.every(function (t) { return street.indexOf(t) >= 0; });
+        });
+        if (num) {
+          var near = function (r) { var v = parseInt(r[0], 10); return isNaN(v) ? Infinity : Math.abs(v - n0); };
+          rows.sort(function (a, b) {
+            var ea = String(a[0]).toLowerCase() === num ? 0 : 1, eb = String(b[0]).toLowerCase() === num ? 0 : 1;
+            return (ea - eb) || (near(a) - near(b));
+          });
+        }
+        if (!rows.length) return b3Status(W.search_none);
+        var cap = (B.adr.limits || {}).result_cap, shown = rows.slice(0, cap);
+        shown.forEach(function (r) {
+          var li = document.createElement("li"), btn = document.createElement("button");
+          var item = { line: [r[0], r[1], r[2]].filter(Boolean).join(" "), city: parts.city, zip: r[5], cls: r[6], lon: r[3], lat: r[4] };
+          btn.type = "button";
+          btn.className = "find-row";
+          btn.textContent = b3LineText(W, item);
+          btn.addEventListener("click", function () { b3Choose(item, btn); });
+          li.appendChild(btn);
+          list.appendChild(li);
+        });
+        b3ResultsOpen(list, true);
+        if (rows.length > shown.length) b3Status(W.search_capped);
+      }, function () { b3Status(B.adr.templates.unavailable); });
+    }, function () { b3Status(B.adr.templates.unavailable); });
+  }
+
+  /** A chosen result: zoom to its point and open its sheet (with its address line on top). */
+  function b3Choose(item, opener) {
+    state.userMoved = true;
+    map.setView([item.lat, item.lon], B3.zoom.choose || B3.zoom.emphasis, { animate: false });   // the search's zoom (D47)
+    b3OpenDot({ kind: "a", lon: item.lon, lat: item.lat, lines: null, rows: [item] }, opener);
+  }
+  // B3 layers: end
 
   boot();
 })();

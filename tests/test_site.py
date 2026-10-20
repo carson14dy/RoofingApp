@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
 import urllib.parse
@@ -357,10 +358,12 @@ class Contracts(unittest.TestCase):
                                               "observations", "reports", "radar", "forecast_model", "storm_levels",
                                               "satellite", "basemap", "imagery", "hail_history", "lsr",
                                               "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons",
-                                              "nws_zone_products", "asos_daily_gusts", "nclimgrid_daily",
-                                              "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_lsr",
-                                              "nwps_gauges", "usgs_water_api", "census_counties", "roof_references",
-                                              "iem_ugcs"})
+                                              "nws_zone_products", "asos_daily_gusts", "msl_addresses",
+                                              "msl_roads", "census_roads", "usa_structures", "census_counties",
+                                              "census_tiger_counties",
+                                              "nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily",
+                                              "iem_watchwarn", "iem_lsr", "nwps_gauges", "usgs_water_api",
+                                              "roof_references", "iem_ugcs"})
         for key, c in src.CONTRACTS.items():
             # a row a B5 row replaces names it (superseded_by); every other row has the five fields only
             self.assertTrue({"name", "request", "units", "timing", "missing"} <= set(c) <= {"name", "request", "units",
@@ -573,10 +576,11 @@ class SampleBuild(unittest.TestCase):
 
     def test_about_page_lists_every_source(self):
         html = page(self.out, "about.html")
+        b3 = site.B3_ROWS + tuple(site.ROAD_ROWS.values())                         # flag-gated: HailAddresses
         for key, c in src.CONTRACTS.items():
-            if key not in site.STORM_CONTRACTS and key not in site.HAIL_CONTRACTS:   # flag-gated: StormLayers, HailHistory
+            if key not in site.STORM_CONTRACTS and key not in site.HAIL_CONTRACTS and key not in b3:
                 self.assertIn(c["name"], html)
-        for key in site.STORM_CONTRACTS + site.HAIL_CONTRACTS:
+        for key in site.STORM_CONTRACTS + site.HAIL_CONTRACTS + b3:
             self.assertNotIn(src.CONTRACTS[key]["name"], html)
 
     def test_reports_page_shows_sizes_in_inches_and_unknown_wind(self):
@@ -2597,6 +2601,641 @@ class HailJoinedRecords(unittest.TestCase):
             self.assertEqual(got[key]["sample"], "", key)
 
 
+class HailAddresses(unittest.TestCase):
+    """The B3 layers (--hail-addresses, with --hail-history): the address dots and the typed-address search, the street
+    lines and the building outlines, each from its module (website/addresses.py, streets.py, buildings.py). Off by
+    default: no B3 key, words, form, legend line, About paragraph or contract row. --address-text off (D35) writes no
+    address text, no search index and no form. A layer that did not load says so in words and the build goes on (D36).
+    The browser checks are in tools/smoke_map.py (check_addresses, run with --addresses)."""
+
+    B3_NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    B3_HEADING = "Addresses, streets and building outlines"
+    B3_ABOUT_END = "<h2>Base map imagery</h2>"
+    B3_BEGIN, B3_END = "B3 layers: begin", "B3 layers: end"     # the markers of the B3 section in map.js
+    B3_FORM = ("Find an address", 'id="address-input"', 'id="address-form"', 'id="address-results"')
+    B3_LEGEND = ("Dots are addresses from Montana", "Each dot is one building outline", "Streets from the Montana State")
+    # D29 and D34: no word of a B3 template says what a building is or who uses it. "use" and the others are checked as
+    # whole words. The source's own quotes and labels are removed first (they are the sources' words, quoted exactly),
+    # and so are the proper names that contain "Structures" (the two data sources' names).
+    # The county file's quoted use sentence (sources.py census_counties, quoted from its metadata) is exempt as a quotation;
+    # "occupancy" is forbidden outside a quotation (D45, R-04). The quotes go first (the purpose sentence holds a proper
+    # name), then the proper names.
+    B3_CENSUS_USE = ("These products are free to use in a product or publication, however acknowledgement must be given to the "
+                     "U.S. Census Bureau as the source.")
+    B3_EXEMPT = ("Use terms in the file's metadata", "Structures and Addresses Framework", "Structures/Addresses Framework",
+                 "USA Structures", "Montana State Library Structures")
+    B3_FORBIDDEN = re.compile(r"\b(homes?|houses?|residences?|dwellings?|use|structures?|occupancy)\b", re.I)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dirs, cls.results = {}, {}
+        builds = (("off", {}), ("history", {"hail_history": True}),
+                  ("on", {"hail_history": True, "hail_addresses": True}),
+                  ("notext", {"hail_history": True, "hail_addresses": True, "address_text": "off"}))
+        for key, options in builds:
+            out = Path(tempfile.mkdtemp(prefix=f"hailwatch-b3-{key}-"))
+            cls.addClassCleanup(shutil.rmtree, out, True)
+            cls.results[key] = site.build(out, None, cls.B3_NOW, sample=True, **options)
+            cls.dirs[key] = out
+
+    def test_the_b3_sizes_are_recorded_for_the_budgets(self):
+        self.assertNotIn("b3_sizes", self.results["history"])
+        sizes = self.results["on"]["b3_sizes"]
+        self.assertEqual(set(sizes), {"outline_shards", "address_shards", "search_files", "road_shards"})
+        self.assertGreater(sizes["address_shards"]["files"], 0)
+        self.assertGreater(sizes["search_files"]["files"], 0)
+        self.assertEqual(sizes["outline_shards"]["files"], 0)          # the sample has no outline part
+        # D38 and D42: the totals are recorded beside their budgets (60 MB address shards and letter files, 250 MB outlines)
+        self.assertEqual({k: v["budget_bytes"] for k, v in sizes.items()},
+                         {"outline_shards": 250_000_000, "address_shards": 60_000_000, "search_files": 60_000_000,
+                          "road_shards": None})
+        self.assertTrue(all(v["within_budget"] for v in sizes.values()))
+        self.assertEqual(sizes["address_shards"]["largest_bytes"],
+                         max((self.dirs["on"] / "hail" / "a").glob("*.json"), key=lambda p: p.stat().st_size).stat().st_size)
+
+    def html_text(self, html: str) -> str:
+        import html as html_lib
+        return html_lib.unescape(re.sub(r"<[^>]+>", " ", html))
+
+    def test_the_flags_need_the_history_flag_and_the_text_mode_needs_the_flag(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-flags-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with self.assertRaises(ValueError):
+            site.build(out, None, self.B3_NOW, sample=True, hail_addresses=True)
+        with self.assertRaises(ValueError):
+            site.build(out, None, self.B3_NOW, sample=True, hail_history=True, address_text="maybe")
+        for argv, message in ((["--hail-addresses"], "--hail-addresses needs --hail-history"),
+                              (["--hail-history", "--address-text", "off"],
+                               "--address-text off needs --hail-addresses"),
+                              (["--hail-history", "--hail-addresses", "--address-text", "maybe"], "invalid choice")):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), self.assertRaises(SystemExit):
+                site.main(["--out", str(out), "--sample", *argv])
+            self.assertIn(message, err.getvalue(), argv)
+
+    def test_the_flag_off_builds_have_no_address_layer_key_words_form_row_or_text(self):
+        for key in ("off", "history"):
+            out = self.dirs[key]
+            m = json.loads(page(out, "data/map.json"))
+            for name in ("addresses", "roads", "buildings", "attribution"):
+                self.assertNotIn(name, m.get("hail", {}), key)
+            for path in sorted(out.rglob("*.html")):
+                text = path.read_text(encoding="utf-8")
+                for words in (self.B3_HEADING, *self.B3_FORM, *self.B3_LEGEND, "Montana State Library address points",
+                              "USA Structures, Oak Ridge", "Oak Ridge National Laboratory and FEMA, USA Structures"):
+                    self.assertNotIn(words, text, f"{words!r} in {key}/{path.name}")
+
+    def test_a_history_build_without_the_addresses_flag_has_no_contract_row_for_a_layer(self):
+        about = page(self.dirs["history"], "about.html")
+        for key in ("msl_addresses", "msl_roads", "census_roads", "usa_structures", "census_counties"):
+            self.assertNotIn(src.CONTRACTS[key]["name"], about, key)
+        self.assertNotIn(src.CONTRACTS["lsr"]["name"], about)       # superseded by iem_lsr (B5): listed once, as the B5 row
+        self.assertIn(src.CONTRACTS["iem_lsr"]["name"], about)      # the B2 reports still show with the history, through it
+
+    def test_the_sample_build_with_both_flags_has_the_address_layer_and_two_unavailable_layers(self):
+        from website import buildings, streets
+        out = self.dirs["on"]
+        m = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(m["addresses"]["state"], "sample")
+        self.assertGreater(m["addresses"]["count"], 0)
+        self.assertEqual(m["addresses"]["text"], "on")
+        for key in ("roads", "buildings"):
+            self.assertEqual(m[key]["state"], "unavailable", key)
+            self.assertTrue(m[key]["problem"], key)
+        # the address list loaded, so its line is there (D44); the two layers that did not load name no source (D29)
+        self.assertEqual(len(m["attribution"]), 1)
+        self.assertTrue(m["attribution"][0].startswith("Addresses: Montana State Library, Structures and Addresses Framework"))
+        status = json.loads(page(out, "data/state.json"))["status"]
+        self.assertTrue(status["address_list"]["ok"])
+        self.assertFalse(status["street_list"]["ok"])
+        self.assertFalse(status["outline_list"]["ok"])
+        self.assertTrue(status["hail_history"]["ok"])
+        html = page(out, "map.html")
+        for words in self.B3_FORM:
+            self.assertIn(words, html)
+        self.assertIn("SAMPLE data", html)                             # the fixture's address list is labelled
+        for words in self.B3_LEGEND[:1] + (streets.WORDS_STREETS["msl"]["unavailable"],
+                                           buildings.WORDS_BUILDINGS["unavailable"]):
+            self.assertIn(words, html)
+        about = page(out, "about.html")
+        self.assertIn(self.B3_HEADING, about)
+        self.assertIn(streets.WORDS_STREETS["msl"]["unavailable"], about)
+        self.assertIn(buildings.WORDS_BUILDINGS["unavailable"], about)
+        self.assertIn(src.CONTRACTS["msl_addresses"]["name"], about)
+        self.assertIn(src.CONTRACTS["usa_structures"]["name"], about)
+        self.assertNotIn(src.CONTRACTS["msl_roads"]["name"], about)    # no road part was built, so no road row (D25)
+        self.assertNotIn(src.CONTRACTS["census_roads"]["name"], about)
+
+    def test_a_row_is_shown_only_for_the_layer_that_is_built(self):
+        shown = site.contract_shown
+        self.assertTrue(shown("msl_addresses", False, True, True, None))
+        self.assertFalse(shown("msl_addresses", False, True, False, None))
+        self.assertFalse(shown("msl_addresses", False, False, True, None))
+        self.assertTrue(shown("census_roads", False, True, True, "census_roads"))
+        self.assertFalse(shown("msl_roads", False, True, True, "census_roads"))
+        self.assertFalse(shown("census_roads", False, True, True, None))
+        self.assertFalse(shown("msl_roads", False, True, False, "msl_roads"))
+        self.assertTrue(shown("census_counties", False, True, True, None))          # gated like the other B3 rows
+        self.assertFalse(shown("census_counties", False, True, False, None))
+        self.assertFalse(shown("census_counties", False, False, True, None))
+        self.assertTrue(shown("lsr", False, True, False, None))
+
+    def test_the_b3_contract_rows_name_their_files_and_their_limits(self):
+        for key in ("msl_addresses", "msl_roads", "census_roads", "usa_structures", "census_counties"):
+            self.assertEqual(set(src.CONTRACTS[key]), {"name", "request", "units", "timing", "missing"}, key)
+            self.assertTrue(all(isinstance(v, str) and v.strip() for v in src.CONTRACTS[key].values()), key)
+        request = src.CONTRACTS
+        self.assertIn("StructuresFramework_shp.zip", request["msl_addresses"]["request"])
+        self.assertIn("Montana State Plane grid", request["msl_addresses"]["units"])
+        self.assertIn("for no other purpose", request["msl_addresses"]["missing"])
+        self.assertIn("Transportation Framework", request["msl_roads"]["request"])
+        self.assertIn("for no other purpose", request["msl_roads"]["missing"])
+        self.assertIn("TIGER2026", request["census_roads"]["request"])
+        self.assertIn("acknowledgement must be given to the U.S. Census Bureau", request["census_roads"]["missing"])
+        self.assertIn("registered trademarks", request["census_roads"]["missing"])
+        self.assertIn("high-precision measurement", request["census_roads"]["missing"])
+        self.assertIn("MT_Structures_20260913.zip", request["usa_structures"]["request"])
+        self.assertIn("15 metres", request["usa_structures"]["units"])
+        self.assertIn("Only the outline geometry is", request["usa_structures"]["request"])
+        self.assertIn("not surveys", request["usa_structures"]["timing"] + request["usa_structures"]["missing"])
+        # D45 (R-04): no attribute field is named as read, and "occupancy" appears only in a quotation (none here)
+        self.assertIn("other field of the file is ever read, stored or shown", request["usa_structures"]["request"])
+        self.assertNotIn("occupancy", request["usa_structures"]["request"])
+        # D48: the county row quotes its file's own use sentence (cb_2025_us_county_500k.zip metadata); the TIGER road
+        # files' "not copyrighted" words are theirs, and the county row does not claim them
+        self.assertIn("cb_2025_us_county_500k.zip", request["census_counties"]["request"])
+        self.assertIn("acknowledgement must be given to the U.S. Census Bureau as the source", request["census_counties"]["missing"])
+        self.assertIn("should not be used for geocoding addresses", request["census_counties"]["missing"])
+        self.assertIn("label, not a measurement", request["census_counties"]["missing"])
+        self.assertNotIn("not copyrighted", request["census_counties"]["missing"])
+        self.assertIn("census_counties", site.B3_ROWS)
+
+    def test_the_about_page_states_the_attribution_and_no_counsel_reasoning_about_the_outline_licence(self):
+        # The licence reading is open with counsel (D14, counsel item 1): the About page gives the attribution only.
+        for key in ("on", "notext"):
+            about = " ".join(page(self.dirs[key], "about.html").split())
+            self.assertNotIn("licence reading", about, key)
+            self.assertNotIn("Data.gov", about, key)
+            self.assertIn("Oak Ridge National Laboratory and FEMA, USA Structures", about, key)
+
+    def test_the_address_text_off_build_writes_no_search_no_form_and_no_address_text(self):
+        from website import hail as hs
+        out = self.dirs["notext"]
+        self.assertFalse((out / "hail" / "a" / "idx").exists())
+        m = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(m["addresses"]["text"], "off")
+        self.assertEqual(m["buildings"]["text"], "off")
+        for key in ("cities", "letter", "words", "search_words", "dir", "file_key"):
+            self.assertNotIn(key, m["addresses"], key)
+        self.assertNotIn("title", m["addresses"]["templates"])
+        html = page(out, "map.html")
+        for words in self.B3_FORM:
+            self.assertNotIn(words, html)
+        self.assertIn("Dots are addresses from Montana", html)         # the legend line names no address
+        self.assertNotIn("What you type stays in your browser.", page(out, "about.html"))
+        hs.check_manifest(out)                                         # the copied files match the rewritten manifest
+        texts = []
+        for path in sorted((out / "hail" / "a").glob("*.json")):
+            for row in json.loads(path.read_text(encoding="utf-8"))["a"]:
+                self.assertEqual(row[2:5], ["", "", ""], path.name)
+                self.assertEqual(len(row), 6, path.name)
+            texts.append(path.read_text(encoding="utf-8"))
+        self.assertNotIn("Billings", "".join(texts))
+        on = [json.loads(p.read_text(encoding="utf-8")) for p in sorted((self.dirs["on"] / "hail" / "a").glob("*.json"))]
+        self.assertTrue(any(row[2] for doc in on for row in doc["a"]))  # the text-on build keeps the text
+
+    def test_the_address_text_on_build_keeps_the_text_and_the_search_index(self):
+        out = self.dirs["on"]
+        self.assertTrue((out / "hail" / "a" / "idx" / "cities.json").is_file())
+        m = json.loads(page(out, "data/map.json"))["hail"]["addresses"]
+        self.assertEqual(m["cities"], "hail/a/idx/cities.json")
+        self.assertEqual(m["letter"], "hail/a/idx/{dir}/{key}.json")
+
+    def test_a_failed_text_strip_removes_the_address_files_and_says_the_layer_failed(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-strip-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with mock.patch.object(site, "strip_address_text", side_effect=OSError("disk full")):
+            result = site.build(out, None, self.B3_NOW, sample=True, hail_history=True, hail_addresses=True,
+                                address_text="off")
+        self.assertFalse((out / "hail" / "a").exists())
+        m = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(m["addresses"]["state"], "unavailable")
+        self.assertIn("couldn't be prepared", m["addresses"]["problem"])
+        self.assertFalse(result["status"]["address_list"]["ok"])
+        self.assertNotIn('id="address-input"', page(out, "map.html"))
+
+    def test_a_store_that_is_missing_marks_the_three_layers_unavailable_with_its_reason(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-missing-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, None, self.B3_NOW, sample=True, hail_history=True, hail_addresses=True,
+                            hail_store_path=str(out / "no-such-store.tar.gz"))
+        m = json.loads(page(out, "data/map.json"))["hail"]
+        for key in ("addresses", "roads", "buildings"):
+            self.assertEqual(m[key]["state"], "unavailable", key)
+            self.assertIn("missing", m[key]["problem"], key)
+        self.assertEqual(m["attribution"], [])
+        self.assertFalse(result["status"]["hail_history"]["ok"])
+        for key in ("address_list", "street_list", "outline_list"):
+            self.assertFalse(result["status"][key]["ok"], key)
+        html = page(out, "map.html")
+        self.assertNotIn('id="address-input"', html)
+        self.assertIn("address list could not be loaded in this update", html)
+
+    def test_strip_address_text_writes_no_text_and_a_manifest_that_checks(self):
+        from website import hail as hs
+        root = Path(tempfile.mkdtemp(prefix="hailwatch-b3-unit-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "hail" / "a" / "idx" / "billings").mkdir(parents=True)
+        (root / "hail" / "b").mkdir()
+        shard = {"f": "hail-addresses-v1", "b": [-108.5, 45.7, -108.4, 45.8], "n": 1,
+                 "a": [[-108.45, 45.78, "401 North 27th Street", "Billings", "59101", "S"]]}
+        (root / "hail" / "a" / "r0092_c0213123.json").write_text(json.dumps(shard), encoding="utf-8")
+        (root / "hail" / "a" / "idx" / "cities.json").write_text(
+            json.dumps({"f": "hail-address-cities-v1", "cities": {"Billings": {"n": 1, "keys": {"N": 1}}}}),
+            encoding="utf-8")
+        (root / "hail" / "a" / "idx" / "billings" / "N.json").write_text(
+            json.dumps({"f": "hail-address-idx-v1", "a": [["401", "North 27th Street", "", -108.45, 45.78, "59101", "S"]]}),
+            encoding="utf-8")
+        outline = {"f": "hail-buildings-v1", "b": [-108.5, 45.7, -108.4, 45.8], "n": 1, "m": 1, "c": ["Billings", "59101"],
+                   "a": [{"p": [-108.45, 45.78], "g": [[[-108.46, 45.77], [-108.44, 45.77], [-108.44, 45.79],
+                                                         [-108.46, 45.77]]],
+                          "l": ["401 North 27th Street"], "z": [None]}]}
+        (root / "hail" / "b" / "r0092_c0213123.json").write_text(json.dumps(outline), encoding="utf-8")
+        index = {"format": hs.FORMAT, "as_of": "2026-10-15", "window": ["2021-10-15", "2026-10-15"], "missing_days": [],
+                 "floor_tenths": 64, "tiles": [], "d0": hs.D0.isoformat(), "grid": dict(hs.GRID)}
+        (root / "hail" / "index.json").write_text(json.dumps(index), encoding="utf-8")
+
+        def entry(rel):
+            data = (root / rel).read_bytes()
+            return {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+
+        rels = sorted(p.relative_to(root).as_posix() for p in (root / "hail").rglob("*.json") if p.name != "manifest.json")
+        manifest = {"format": hs.MANIFEST_FORMAT, "as_of": "2026-10-15", "sample": True, "counts": {},
+                    "files": {rel: entry(rel) for rel in rels}}
+        (root / "hail" / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        site.strip_address_text(root)
+        self.assertFalse((root / "hail" / "a" / "idx").exists())
+        doc = json.loads((root / "hail" / "a" / "r0092_c0213123.json").read_text(encoding="utf-8"))
+        self.assertEqual(doc["a"], [[-108.45, 45.78, "", "", "", "S"]])
+        bdoc = json.loads((root / "hail" / "b" / "r0092_c0213123.json").read_text(encoding="utf-8"))
+        self.assertIsNone(bdoc["c"])
+        self.assertNotIn("l", bdoc["a"][0])
+        self.assertNotIn("z", bdoc["a"][0])
+        self.assertEqual(bdoc["a"][0]["p"], [-108.45, 45.78])
+        self.assertEqual(bdoc["m"], 1)
+        listed = json.loads((root / "hail" / "manifest.json").read_text(encoding="utf-8"))["files"]
+        self.assertFalse(any(name.startswith("hail/a/idx/") for name in listed))
+        hs.check_manifest(root)
+
+    def test_only_the_addresses_flag_copies_the_store_address_outline_and_road_folders(self):
+        from website import hail as hs
+        self.assertFalse((self.dirs["off"] / "hail").exists())             # no history folder without --hail-history
+        out = self.dirs["history"]
+        for folder in ("a", "b", "r"):
+            self.assertFalse((out / "hail" / folder).exists(), f"history has hail/{folder}")
+        listed = json.loads(page(out, "hail/manifest.json"))["files"]
+        self.assertFalse([name for name in listed if name.split("/")[1] in ("a", "b", "r")])
+        hs.check_manifest(out)
+        self.assertTrue((self.dirs["on"] / "hail" / "a" / "idx").is_dir())
+        hs.check_manifest(self.dirs["on"])
+
+    def test_the_history_copy_drops_the_b3_blocks_files_and_folders_and_still_checks_out(self):
+        # D35 and gate B3-6: a history build without --hail-addresses has no B3 index block, file, folder or manifest
+        # entry. The synthetic store holds every B3 part (the fixture, counts.json, hail/b/, hail/r/ and the three blocks);
+        # with the flag on, the copy keeps all of them.
+        from website import addresses as ad, buildings as bd, hail as hs, streets as st
+        root = Path(tempfile.mkdtemp(prefix="hailwatch-b3-store-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        shutil.copytree(hs.FIXTURE_DIR / "hail", root / "hail")
+        (root / "hail" / "counts.json").write_bytes(b'{"f": "hail-buildings-counts-v1"}')
+        for folder in ("b", "r"):
+            (root / "hail" / folder).mkdir()
+            (root / "hail" / folder / "r0000_c0000.json").write_bytes(b'{"f": "test"}')
+        index = json.loads((root / "hail" / "index.json").read_text(encoding="utf-8"))
+        for key in (ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY):
+            index[key] = {"state": "loaded", "sample": True}
+        (root / "hail" / "index.json").write_bytes(hs._pretty(index))
+        manifest = json.loads((root / "hail" / "manifest.json").read_text(encoding="utf-8"))
+        manifest["files"] = {}
+        for path in sorted((root / "hail").rglob("*")):
+            if path.is_file() and path.name != "manifest.json":
+                data = path.read_bytes()
+                manifest["files"][path.relative_to(root).as_posix()] = {
+                    "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        (root / "hail" / "manifest.json").write_bytes(hs._pretty(manifest))
+        hs.check_manifest(root)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b3-copy-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        kept = site._copy_hail(root, out / "off", index, addresses=False)
+        hail_off = out / "off" / "hail"
+        for name in ("a", "b", "r", "counts.json"):
+            self.assertFalse((hail_off / name).exists(), name)
+        written = json.loads((hail_off / "index.json").read_text(encoding="utf-8"))
+        for key in (ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY):
+            self.assertNotIn(key, written)
+            self.assertNotIn(key, kept)
+        listed = json.loads((hail_off / "manifest.json").read_text(encoding="utf-8"))["files"]
+        self.assertFalse([rel for rel in listed if rel.split("/")[1] in ("a", "b", "r", "counts.json")])
+        self.assertEqual(listed["hail/index.json"]["sha256"],
+                         hashlib.sha256((hail_off / "index.json").read_bytes()).hexdigest())
+        hs.check_manifest(out / "off")
+        site._copy_hail(root, out / "on", index, addresses=True)
+        hail_on = out / "on" / "hail"
+        for name in ("a", "b", "r", "counts.json"):
+            self.assertTrue((hail_on / name).exists(), name)
+        self.assertEqual({ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY} & set(json.loads(page(out / "on", "hail/index.json"))),
+                         {ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY})
+        hs.check_manifest(out / "on")
+        # The sample history build (no flag) carries none of the B3 blocks or files either.
+        history = self.dirs["history"]
+        history_index = json.loads(page(history, "hail/index.json"))
+        self.assertFalse({"addresses", "roads", "buildings"} & set(history_index))
+        self.assertFalse((history / "hail" / "counts.json").exists())
+        hs.check_manifest(history)
+
+    def test_the_b3_words_and_the_rendered_b3_sections_say_no_forbidden_word(self):
+        from website import addresses as ad, buildings as bd, streets as st
+        # the longest quotes first: the TIGER acknowledgement is a part of the county file's sentence, so it must not go first
+        exempt = (self.B3_CENSUS_USE, ad.PURPOSE_TEXT, ad.USE_DISCLAIMER_TEXT, ad.USE_CONVENIENCE_TEXT, ad.ACCCONST_TEXT,
+                  st.TIGER_ACK, st.TIGER_TRADEMARK, st.TIGER_ACCURACY) + self.B3_EXEMPT
+        texts = [*ad.WORDS_ADDRESSES.values(), *bd.WORDS_BUILDINGS.values(), site.FIND_BUTTON]
+        for kind in st.WORDS_STREETS.values():
+            texts += list(kind.values())
+        for key in ("msl_addresses", "msl_roads", "census_roads", "usa_structures", "census_counties"):
+            texts += list(src.CONTRACTS[key].values())
+        on = self.dirs["on"]
+        about = page(on, "about.html")
+        texts.append(self.html_text(about[about.index('<h2 id="addresses">'):about.index(self.B3_ABOUT_END)]))
+        texts += json.loads(page(on, "data/map.json"))["hail"]["attribution"]     # the map's own attribution lines (D29, D44)
+        map_html = page(on, "map.html")
+        start = map_html.index('<section class="glass find"')
+        texts.append(self.html_text(map_html[start:map_html.index("</section>", start)]))
+        texts += [self.html_text(line) for line in re.findall(r'<p class="legend-tap" data-layer=[^\n]*', map_html)]
+        for text in texts:
+            self.assertNotIn("\u2014", text)                     # no em dash
+            self.assertNotIn("\u2013", text)                     # no en dash
+            rest = text
+            for quote in exempt:
+                rest = rest.replace(quote, " ")
+            self.assertIsNone(self.B3_FORBIDDEN.search(rest), text)
+
+    def test_the_map_attribution_carries_the_addresses_line_first_with_the_library_terms(self):
+        from website import addresses as ad
+        for key in ("on", "notext"):                  # the address text mode does not change the source's line
+            lines = json.loads(page(self.dirs[key], "data/map.json"))["hail"]["attribution"]
+            address = [line for line in lines if line.startswith(smoke_map().ADDRESS_ATTRIBUTION_START)]
+            self.assertEqual(len(address), 1, key)                              # D44: the line the smoke expects
+            self.assertIn(ad.USE_CONVENIENCE_TEXT, address[0], key)             # the quoted use sentence (D17)
+            self.assertEqual(lines[0], address[0], key)                         # the Library's line comes first
+        about = " ".join(page(self.dirs["on"], "about.html").split())
+        self.assertIn("Source: Montana State Library Structures and Addresses Framework, file dated", about)  # D44: About
+
+    def test_the_phone_legend_holds_no_b3_sentence_and_the_find_panel_sits_behind_a_button(self):
+        # D43 (R-01): the two B3 legend sentences are in the layer menu, not on the legend card; at a phone width the find
+        # panel is behind the Find an address button (map.css), so the card does not cover the map's centre. The legend's
+        # height and the centre tap are measured in Chromium (tools/smoke_map.py: check_phone_legend and check_taps).
+        html = page(self.dirs["on"], "map.html")
+        card = html[html.index('id="legend"'):html.index('<a class="mapdata"')]
+        self.assertNotIn('data-layer="shapes"', card)
+        self.assertNotIn('data-layer="dots"', card)
+        self.assertIn("Tap or click the map for the five-year hail history", card)
+        menu = html[html.index('id="b3-keys"'):html.index('id="btn-list"')]
+        self.assertIn('data-layer="shapes"', menu)
+        self.assertIn('data-layer="dots"', menu)                  # the sample has no outlines, so the dots line stays
+        self.assertIn('data-layer="streets"', menu)
+        self.assertEqual(html.count('id="btn-find"'), 1)
+        self.assertIn('aria-controls="find"', html)
+        self.assertNotIn('id="btn-find"', page(self.dirs["notext"], "map.html"))
+        css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        self.assertIn(".icon-btn.find-open { display: none; }", css)
+        self.assertIn("@media (max-width: 520px) {\n  .icon-btn.find-open { display: grid; }\n"
+                      "  .top:not(.find-shown) > #find { display: none; }\n"
+                      "  .top.find-shown .legend-wrap { display: none; }\n}", css)
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('b3FindOpen(!el.top.classList.contains("find-shown"))', js)
+
+    def test_the_outlines_line_stands_in_for_the_dot_sentence_when_the_outlines_load(self):
+        # D48 (R-05): the unmatched-address sentence shows only when the outline layer is absent; build.py's b3_words sets the
+        # flag, and map.html guards both places the sentence is printed (the layer menu and the no-script text).
+        from website import addresses as ad, buildings as bd, streets as st
+        loaded = {"state": "loaded", "sample": True}
+        missing = {"state": "unavailable", "reason": "not built"}
+        found = {ad.INDEX_KEY: loaded, st.INDEX_KEY: missing, bd.INDEX_KEY: loaded}
+        self.assertTrue(site.b3_words(found, "on")["outlines_loaded"])
+        found[bd.INDEX_KEY] = missing
+        self.assertFalse(site.b3_words(found, "on")["outlines_loaded"])
+        template = (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8")
+        self.assertEqual(template.count("{% if not b3.outlines_loaded %}"), 2)
+        self.assertEqual(template.count("{{ b3.legend.dots }}"), 2)
+        self.assertIn("Dots are addresses from Montana", page(self.dirs["on"], "map.html"))   # no outlines in the sample: shown
+
+    def test_the_about_names_the_county_file_only_when_its_counts_were_made(self):
+        from website import addresses as ad, buildings as bd, streets as st
+        made = {"state": "loaded", "sample": True, "counties": {"state": "loaded"}}
+        found = {ad.INDEX_KEY: {"state": "loaded", "sample": True}, st.INDEX_KEY: {"state": "unavailable", "reason": "x"},
+                 bd.INDEX_KEY: made}
+        self.assertTrue(site.counties_loaded(found))
+        self.assertEqual(site.b3_words(found, "on")["about"]["counties"], bd.COUNTY_ACK)
+        made["counties"] = {"state": "unavailable", "reason": "the county file could not be read"}
+        self.assertFalse(site.counties_loaded(found))
+        self.assertEqual(site.b3_words(found, "on")["about"]["counties"], "")
+        self.assertFalse(site.counties_loaded({}))
+        # the sample's outlines are unavailable, so About prints no county paragraph (no empty one either)
+        about = page(self.dirs["on"], "about.html")
+        self.assertNotIn(bd.COUNTY_ACK, about)
+        self.assertNotIn("<p> </p>", about)
+        self.assertIn(src.CONTRACTS["census_counties"]["name"], about)
+
+    def test_map_script_b3_section_holds_no_sentence_unit_radius_zoom_cap_width_or_colour_literal(self):
+        from website import addresses as ad, buildings as bd, streets as st
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIsNone(re.search(r"\b(houses?|residences?|dwellings?)\b", js, re.I))
+        begin, end = js.find(self.B3_BEGIN), js.find(self.B3_END)
+        self.assertTrue(begin >= 0 and end > begin, "map.js needs the B3 section between the two markers")
+        block = js[begin:end]
+        code = re.sub(r"/\*.*?\*/|//[^\n]*", " ", block, flags=re.S)  # comments may hold the words of the design
+        literals = re.findall(r'"((?:[^"\\\n]|\\.)*)"|\'((?:[^\'\\\n]|\\.)*)\'|`([^`]*)`', code)
+        for group in literals:
+            text = group[0] or group[1] or group[2]
+            words = text.split()
+            self.assertFalse(len(words) >= 3, f"a sentence in the B3 section: {text!r}")
+            self.assertIsNone(re.search(r"\b(mph|mm|inch|inches|miles?|metres?|kt|knots?)\b|%|°", text), text)
+            self.assertIsNone(re.search(r"#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(", text), text)
+        bare = re.sub(r'"(?:[^"\\\n]|\\.)*"|\'(?:[^\'\\\n]|\\.)*\'|`[^`]*`', " ", code)
+        # A number on a line about a zoom, a radius, a width, a cap, a limit or a grid is a display rule and must come from
+        # map.json. Geometry constants (0, 1, 2, 0.5, 180, 256, 360: the half turn, the tile size, the full turn) are allowed.
+        rule_words = re.compile(r"radius|width|\bcap\b|zoom|\bz\b|\bZ\.|tap|\bpx\b|limit|per_view|grid|min_|max_|from\b")
+        allowed = {"0", "1", "2", "0.5", "180", "256", "360"}
+        flagged = []
+        for line in bare.splitlines():
+            if rule_words.search(line):
+                flagged += [n for n in re.findall(r"(?<![\w.])\d+(?:\.\d+)?", line) if n not in allowed]
+        self.assertEqual(sorted(set(flagged)), [], "a display rule written in map.js (it must come from map.json)")
+        for text in [*ad.WORDS_ADDRESSES.values(), *bd.WORDS_BUILDINGS.values(), *st.WORDS_STREETS["msl"].values()]:
+            if "{" not in text and len(text) > 25:
+                self.assertNotIn(text, js, text)
+            elif "{" in text:
+                for part in re.split(r"\{\w+\}", text):
+                    if len(part) > 25:
+                        self.assertNotIn(part, js, part)
+
+    def test_the_workflow_previews_pass_the_addresses_flag_and_the_tests_and_smoke_run(self):
+        text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
+        args = [line for line in text.splitlines() if "args+=(" in line and "--hail-history" in line]
+        self.assertEqual(len(args), 1)
+        self.assertIn("--require-live --storm-layers --hail-history --hail-addresses", args[0])
+        unit = [line for line in text.splitlines() if "python -m unittest" in line]
+        self.assertEqual(len(unit), 1)
+        self.assertIn("tests.test_streets", unit[0])
+        self.assertIn("tests.test_buildings", unit[0])
+        self.assertIn("python tools/smoke_map.py _site --addresses", text)
+        self.assertIn('"tests/test_streets.py"', text)
+        self.assertIn('"tests/test_buildings.py"', text)
+
+    def test_the_smoke_test_has_the_address_checks(self):
+        smoke = smoke_map()
+        for name in ("check_addresses", "check_zoom_rules", "check_budget_and_pan", "check_taps", "check_attribution",
+                     "check_search", "check_address_text_off"):
+            self.assertTrue(callable(getattr(smoke, name, None)), name)
+        self.assertEqual(smoke.ADDRESS_GATE_ZOOM, 15)                 # the zoom of the gate and the budget (D30)
+        self.assertEqual(smoke.ADDRESS_FETCH_BUDGET_GZIP, 650 * 1024)
+        self.assertEqual(smoke.ADDRESS_DRAW_MS, 30)
+        self.assertEqual(smoke.PAN_FETCH_LIMIT, 20)
+        self.assertEqual(smoke.B3_BILLINGS, (45.7857, -108.5071))     # 401 North 27th Street, Billings
+
+
+class B3Completion(unittest.TestCase):
+    """The B3 completion rulings that need no full build (D42 to D48): the unpack limits and their refusals, the address zoom
+    rules run under node, the index rewrite of the address-text mode, and the workflow's install line. The builds and the
+    browser are checked in HailAddresses (offline) and tools/smoke_map.py (in Chromium)."""
+
+    def test_the_unpack_limits_are_800_mib_and_60000_files_and_hold_the_b3_store(self):
+        from website import hail as hs
+        self.assertEqual(hs.MAX_UNPACK_BYTES, 800 * 1024 * 1024)               # D42
+        self.assertEqual(hs.MAX_UNPACK_FILES, 60000)
+        # the B3 store as measured at the site re-check: 372,880,597 bytes in 31,129 files under hail/ (the fresh job store)
+        self.assertLess(372880597, hs.MAX_UNPACK_BYTES)
+        self.assertLess(31129, hs.MAX_UNPACK_FILES)
+
+    def test_the_unpack_refuses_more_files_or_bytes_than_the_limits_and_reads_up_to_them(self):
+        from website import hail as hs
+
+        def archive(members):
+            buf = io.BytesIO()
+            with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+                for name, data in members:
+                    info = tarfile.TarInfo(name)
+                    info.size = len(data)
+                    tar.addfile(info, io.BytesIO(data))
+            return buf.getvalue()
+
+        def stage():
+            path = Path(tempfile.mkdtemp(prefix="hailwatch-unpack-"))
+            self.addCleanup(shutil.rmtree, path, True)
+            return path
+
+        two = [("hail/index.json", b"{}"), ("hail/manifest.json", b"{}")]
+        with mock.patch.object(hs, "MAX_UNPACK_FILES", 2):
+            here = stage()
+            hs._unpack_hail(archive(two), here)                                  # at the file limit: read
+            self.assertTrue((here / "hail" / "index.json").is_file())
+            with self.assertRaises(hs.HailStoreError) as ctx:
+                hs._unpack_hail(archive(two + [("hail/a/x.json", b"{}")]), stage())
+            self.assertIn("larger than the limits", str(ctx.exception))
+        with mock.patch.object(hs, "MAX_UNPACK_BYTES", 4):
+            here = stage()
+            hs._unpack_hail(archive([("hail/index.json", b"{}")]), here)         # two bytes: within 4
+            with self.assertRaises(hs.HailStoreError) as ctx:
+                hs._unpack_hail(archive([("hail/index.json", b"{}"), ("hail/manifest.json", b"{}x")]), stage())
+            self.assertIn("larger than the limits", str(ctx.exception))
+
+    def test_the_address_zoom_keys_give_the_dots_and_the_chooser_zoom_without_outlines(self):
+        # D47 (R-02): an address-only build has no outline zoom and no street zoom; its own zoom keys still set the dots
+        # (15) and the search's zoom (17), and the top zoom the map may reach is at least the chooser's.
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("node is not installed")
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        code = js_function(js, "b3Zoom")
+
+        def zoom(h):
+            done = subprocess.run([node, "-e", code + f"\nconsole.log(JSON.stringify(b3Zoom({json.dumps(h)})));"],
+                                  capture_output=True, text=True, timeout=60)
+            self.assertEqual(done.returncode, 0, done.stderr[-500:])
+            return json.loads(done.stdout)
+
+        only_addresses = zoom({"addresses": {"zoom": {"dots": 15, "choose": 17}}})
+        self.assertEqual((only_addresses["dots"], only_addresses["choose"], only_addresses["top"]), (15, 17, 17))
+        with_outlines = zoom({"addresses": {"zoom": {"dots": 15, "choose": 17}},
+                              "buildings": {"zoom": {"dots": 15, "fills": 16, "emphasis": 17, "counts": 13}},
+                              "roads": {"zoom": {"arterials_from": 13, "local_from": 15, "names_from": 16}}})
+        self.assertEqual((with_outlines["dots"], with_outlines["choose"], with_outlines["emphasis"]), (15, 17, 17))
+        self.assertEqual(with_outlines["top"], 17)
+        bare = zoom({})
+        self.assertEqual(bare["top"], 0)
+        self.assertIsNone(bare.get("dots"))                                      # undefined is left out of the JSON
+        self.assertIn("B3.zoom.choose || B3.zoom.emphasis", js)                 # the chooser's zoom (b3Choose)
+
+    def test_strip_address_text_drops_the_letter_counts_and_rewrites_the_index_and_its_manifest(self):
+        from website import addresses as ad, hail as hs
+        root = Path(tempfile.mkdtemp(prefix="hailwatch-b3-index-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "hail" / "a" / "idx" / "billings").mkdir(parents=True)
+        shard = {"f": "hail-addresses-v1", "b": [-108.5, 45.7, -108.4, 45.8], "n": 1,
+                 "a": [[-108.45, 45.78, "401 North 27th Street", "Billings", "59101", "S"]]}
+        (root / "hail" / "a" / "r0092_c0213123.json").write_text(json.dumps(shard), encoding="utf-8")
+        (root / "hail" / "a" / "idx" / "cities.json").write_text(
+            json.dumps({"f": "hail-address-cities-v1", "cities": {"Billings": {"n": 1, "keys": {"N": 1}}}}), encoding="utf-8")
+        (root / "hail" / "a" / "idx" / "billings" / "N.json").write_text(
+            json.dumps({"f": "hail-address-idx-v1", "a": [["401", "North 27th Street", "", -108.45, 45.78, "59101", "S"]]}),
+            encoding="utf-8")
+        block = {"state": "loaded", "sample": True, "rows": 1, "shards": 1, "cities": 1, "letter_files": 1,
+                 "largest_letter": {"city": "Billings", "key": "N", "rows": 1, "bytes": 90,
+                                    "file": "hail/a/idx/billings/N.json"},
+                 "two_character_files": 0, "over_limit_letter_files": [],
+                 "largest_shard": {"name": "r0092_c0213123", "bytes": 999, "rows": 1},
+                 "bytes": {"shards": 999, "letters": 90, "cities": 60, "words": 20, "idx": 170, "a": 1169},
+                 "source": {"pubdate": "2026-09-30", "export_date": "2026-09-30"}}
+        index = {"format": hs.FORMAT, "as_of": "2026-10-15", "window": ["2021-10-15", "2026-10-15"], "missing_days": [],
+                 "floor_tenths": 64, "tiles": [], "d0": hs.D0.isoformat(), "grid": dict(hs.GRID), ad.INDEX_KEY: block}
+        (root / "hail" / "index.json").write_text(json.dumps(index), encoding="utf-8")
+
+        def entry(rel):
+            data = (root / rel).read_bytes()
+            return {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+
+        rels = sorted(p.relative_to(root).as_posix() for p in (root / "hail").rglob("*.json") if p.name != "manifest.json")
+        manifest = {"format": hs.MANIFEST_FORMAT, "as_of": "2026-10-15", "sample": True, "counts": {},
+                    "files": {rel: entry(rel) for rel in rels}}
+        (root / "hail" / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        site.strip_address_text(root)
+        written = json.loads((root / "hail" / "index.json").read_text(encoding="utf-8"))[ad.INDEX_KEY]
+        for key in site.ADDRESS_LETTER_KEYS:                                       # R-07: the letter counts leave the block
+            self.assertNotIn(key, written, key)
+        self.assertEqual(written["rows"], 1)                                       # the rest of the block stays
+        shard_bytes = (root / "hail" / "a" / "r0092_c0213123.json").stat().st_size
+        self.assertEqual(written["bytes"], {"shards": shard_bytes, "a": shard_bytes})
+        self.assertEqual(written["largest_shard"], {"name": "r0092_c0213123", "bytes": shard_bytes, "rows": 1})
+        listed = json.loads((root / "hail" / "manifest.json").read_text(encoding="utf-8"))["files"]
+        self.assertEqual(listed["hail/index.json"], entry("hail/index.json"))      # the manifest carries the new index
+        hs.check_manifest(root)
+
+    def test_the_workflow_installs_pyproj_and_pyogrio_as_compatible_releases_and_pins_nothing(self):
+        text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
+        installs = [line for line in text.splitlines() if "python -m pip install" in line and "pygrib" in line]
+        self.assertEqual(len(installs), 1)
+        self.assertIn('"pyproj~=3.8"', installs[0])                                # D19: a compatible release
+        self.assertIn('"pyogrio~=0.13"', installs[0])
+        self.assertIn("h5py", installs[0].split())                                 # the satellite reader's install is kept
+        for line in text.splitlines():
+            if "pip install" in line:
+                self.assertNotIn("==", line)                                       # no pin on any pip line (D19)
+        for module in ("tests.test_addresses", "tests.test_streets", "tests.test_buildings"):
+            unit = [line for line in text.splitlines() if "python -m unittest" in line]
+            self.assertEqual(len(unit), 1)
+            self.assertIn(module, unit[0].split())
+
+
 # ---------------------------------------------------------------- the five-season history (B5, --hail-history)
 
 def jesc(text: str) -> str:
@@ -2658,7 +3297,7 @@ class FiveSeasonHistory(unittest.TestCase):
     NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
     SECTIONS = ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made")
     B5_KEYS = ("nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_ugcs", "iem_lsr",
-               "nwps_gauges", "usgs_water_api", "census_counties", "roof_references")
+               "nwps_gauges", "usgs_water_api", "census_tiger_counties", "roof_references")
 
     @classmethod
     def setUpClass(cls):

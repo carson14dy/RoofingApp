@@ -20,6 +20,8 @@ from website import joins as J  # noqa: E402
 WORKFLOW = ROOT / ".github" / "workflows" / "hail-store.yml"
 CLOCK_START = "Seconds left on the B5 clock before the readers"
 PACK = "Pack the store"
+B5_LAST = "Verify the station, gauge and snow parts (informational; the index says what did not load)"
+B3_FIRST = "Read the framework file's size and date from the MSL server (non-fatal; D20)"
 PROGRAM = re.compile(r"(?<![\w.-])(gh|python|pip|jq|tar)\s")
 
 
@@ -106,9 +108,10 @@ class HailStoreJobTests(unittest.TestCase):
         return found[0]
 
     def b5_steps(self):
-        """The non-clock steps between the first B5 clock and the pack, in order."""
+        """The non-clock steps between the first B5 clock and the last B5 step, in order. The B3 address, street and
+        outline steps follow the last B5 step (D51): they are not on the B5 clock, and their own file checks them."""
         start = self.names.index(CLOCK_START)
-        end = self.names.index(PACK)
+        end = self.names.index(B5_LAST) + 1
         return [s for s in self.steps[start:end] if not s.name.startswith("Seconds left on the B5 clock")]
 
     def test_the_text_has_no_double_equals_and_no_em_dash(self):
@@ -154,6 +157,8 @@ class HailStoreJobTests(unittest.TestCase):
         self.assertLess(self.names.index("Verify the joins (the Benchland gate rows are printed)"),
                         self.names.index(CLOCK_START))
         self.assertLess(self.names.index(self.b5_steps()[-1].name), self.names.index(PACK))
+        self.assertLess(self.names.index(B5_LAST), self.names.index(B3_FIRST))
+        self.assertLess(self.names.index(B3_FIRST), self.names.index(PACK))
 
     def test_every_b5_step_runs_only_on_its_own_clock_and_is_killed_at_the_seconds_left(self):
         steps = self.steps

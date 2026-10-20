@@ -577,9 +577,120 @@ Other sentences the sections can show: "{n} official zone records in Montana in 
 - `hail/index.json` gains `joins`: `state`, `parts`, `reasons`, the partial periods, `lags`, the counts, the malformed and short rows (D10, D21), the zone editions, the report types, the request summary (with `served_from_cache_since` where a stale copy was used) and its first failures, and the bytes. `hail/manifest.json` lists every `j/`, `z/` and `s/` file with its bytes and SHA-256.
 - Budget: `j/` at most 40 MB and `z/` and `s/` under 2 MB (the B2 brief). The 2026-10-19 re-check measured `j/` at 19,912,416 bytes in 4,598 files (49.8 percent of 40 MB; `events.json` 5,351,807 bytes and the 4,597 tile files 14,560,609 bytes); `z/` at 919,402 bytes in 115 files (83 public zones holding 4,960 zone events and 32 fire weather zones holding 660) and `s/` at 22,478 bytes in 60 files (1,261 station days at 50 kt or more), both against 2 MB; and all of `hail/` at 54,227,125 bytes in 9,372 files, against B1's 60 MB (90.4 percent). B3's address shards share that cap (`DECISIONS.md` D35, open item 1). The re-check measures each file again. Round 7 (D35) restores the flood watch zone events: the rebuilt store has z/ at 919,402 bytes (round 6 had 875,220), and j/, s/ and t/ unchanged from round 6 (`DECISIONS.md` D35). B5's store (the products build, 2026-10-19) measures `j/` with `j/e/` at 86,247,482 bytes (86.2 MB: `j/` 23,164,558 and `j/e/` 63,082,924), against the 40 MB cap; `z/` at 1,793,693 bytes in 115 files (the 919,402 above is the round-7 figure), `s/` at 25,000 bytes in 60 files; and all of `hail/` at 161,961,394 bytes in 19,269 files (162.0 MB), against the 60 MB cap. B5 breaks both caps; the owner or the supervisor rules on both (DECISIONS D38, O12).
 
+## 10. Addresses, streets and building outlines (B3, 2026-10-19, behind `--hail-addresses`)
+
+**Frame.** Carson's decisions 2 and 6 (`DECISIONS.md` D34), and his request of 2026-10-19 (D36): on the Map page, the streets of Montana when zoomed in, the outline of each building with one dot on it, the address that the file holds for that building when there is one, and the weather history for its cell (section 9). A typed address takes the map to its dot. What the page shows is a building outline, not a house: the file does not say what a building is (D34).
+
+**Users and moments.** A crew lead on a phone at a job, typing "401 N 27th St Billings" or tapping the outline in front of the truck. A desktop reader following a rural road by its name. Both need to know what the dot is, which address the file holds for it, and how that address was placed.
+
+**Principles specific to B3.**
+1. *A dot is a building outline.* Every template says "building outline". No template says "house", "home", "residence" or "dwelling". Owner and parcel appear only in the About sentence "Owner names and parcel identifiers are never read, stored or shown." (D8, gate B3-5) and in the Parcel placement phrase "at the parcel" (D32). "Structure" appears only inside the two proper names, "USA Structures" and "Structures and Addresses Framework".
+2. *The address is the file's, and its placement is said.* An address line is the file's own words in NENA order, with the unit title-cased. A point that the file places anywhere other than on the building says how it was placed (D32). A Structure point inside an outline or within 15 m of its edge is listed on that outline's dot. Any other point keeps its own dot.
+3. *Missing is not none.* A layer, a block or a search that did not load says so, in the words of its module. "Unavailable" never reads as "no address" or "no buildings" (D20, D36).
+4. *What is typed stays in the browser.* The search sends no request that carries the text. The letter files are named by city and key only (D12).
+5. *The source is named where the map is read.* The map's attribution line, Leaflet's control at the bottom right above the timeline, carries the addresses line, the road line and the outline line for the layers that loaded, on the first screen (D44). The About page carries every source and its terms (D29).
+6. *Zoom decides the detail, and the count says what is there.* Between zoom 13 and 14 a count bubble per tile says how many buildings it holds, without fetching the outlines. From zoom 15 the dots appear (D27).
+
+**The layers, from which zoom, and in which colour.** The widths and zooms come from `data/map.json` (written by `website/streets.py` and `website/buildings.py`). The colours and hairlines are tokens in `website/static/map/map.css`, with the dark values under the dark scheme.
+
+| Layer | From zoom | Drawn as | Token (light, dark) |
+|---|---|---|---|
+| Primary and secondary roads | 13 | Lines 4.0 px (primary) and 3.0 px (secondary) | `--hail-road-major`: #6e7a87, #9aa5b1 |
+| Ramps, local streets, service drives, alleys, private roads, trails | 15 | Lines 2.0 px (ramp), 1.5 px (local street, service drive), 1.25 px (alley, private road, trail) | `--hail-road`: #aab2bc, #5b6470 |
+| Count bubble per tile | 13 and 14 | A bubble with "{n} buildings" or "1 building", 12 px, weight 700, padding 5 px | `--hail-count-size`, `--hail-count-weight`, `--hail-count-pad` |
+| Outline dot, and dot of an address that no outline holds | 15 | A dot with a ring, tap within 12 px | `--hail-dot`: #1f4e79, #bcd7f2; ring `--hail-dot-ring` (white, #121417) at `--hail-dot-ring-w` 1 px |
+| Outline fill | 16 | A fill with a hairline of 0.5 px | `--hail-bldg`: rgba(74, 98, 122, 0.20), rgba(150, 178, 206, 0.22); `--hail-hairline` |
+| Outline line (emphasis) | 17 | A line of 1.25 px | `--hail-bldg-line`: rgba(58, 72, 90, 0.62), rgba(200, 218, 236, 0.50); `--hail-emphasis` |
+| Street names | 16 | 12 px, weight 700, with a 3 px halo | `--hail-name`: ink, #f2f2f7; halo `--hail-name-halo`: white, #121417; `--hail-name-size`, `--hail-name-weight`, `--hail-halo` |
+
+- *Names.* One label per name per tile, on the longest piece that bears it, and only when the piece is longer than the name plus 10 px. Labels keep a 48 px grid clear of each other and of the dots, their angles are quantised to 5 degrees, and at most 300 are drawn in a view (`data.hail.draw.labels`). A name joined from two lines reads "Name / Other name". The placeholder names of D16a ("Internal", "Driveway", "Unknown", "Unnamed", "No Name" and the others) are never labelled and never found by search. A line with no name is drawn unlabelled.
+- *Co-located lists (D7).* An address dot whose point holds more than one address shows "{n} addresses at this point" and then the lines, one line each, above the cell's history. The research counted up to 141 addresses at one point (unit buildings). An outline with more than one address line shows "Units on file: {n}." above its lines.
+- *Taps.* The nearest dot within 12 px is taken. A tap that no dot takes goes to the map as before (the cell's history of section 9).
+- *Colour carries no hazard.* The dot colour is a plain map colour. No dot, line or fill says a hazard, a damage or a condition (D34).
+
+**The legend and the layer menu (D43, D48).** The two B3 sentences sit in the layer menu, under "Addresses, streets and building outlines", and not on the legend card. The outline sentence shows when the outlines load (its unavailable sentence otherwise). The address sentence shows only when the outline layer is absent (R-05, D48). The weather legend card stays for the weather layers. At phone width the find form is behind a "Find an address" button (`#btn-find`, in the right column), so the legend card keeps the map's centre; the legend steps aside while the panel is open (D43).
+
+**The sheet header, with the address lines.** A tapped dot opens the hail sheet of section 9, and the address block sits above the cell's history (the template `#address-sec` in `map.html`):
+1. One line per address: "{line}, {city} {zip}", or "{line}, {city}" when the zip is not on file. The line is the file's words (D3).
+2. Under a point that the file did not place on its building: "This address point was placed {how}, not on the building." (D32).
+3. Under an outline with no address line: "No address on file for this building. The weather history below is for this building's cell."
+4. Under an outline with more than one address line: "Units on file: {n}." For an address dot that shares its point with others: "{n} addresses at this point", above the lines.
+5. The cell's history follows, with the title "Hail history at this spot". The sheet's own "what this is" line of section 9 stays where it is.
+6. A dot outside the hail grid has no history: "This point is outside the hail grid's Montana outline; no hail history is kept here." (D23). It never reads as "no hail".
+
+The address carries the dot's point as `?at=lat,lon`, as the cell's sheet does, and the closing of the sheet drops it.
+
+**The search box, "Find an address".** A glass panel on the Map page (`#find`), in the page's top area. It holds the title, the input, a Find button, the privacy line under the input, the results list (`#address-results`, up to 20 rows) and a status line (`#address-status`). Choosing a row zooms to its dot at zoom 17 and opens its sheet. At phone width the panel is behind the "Find an address" button and opens in place of the legend card (D43).
+
+| State | When | Words on the page |
+|---|---|---|
+| Idle | The page opens; nothing typed | "Find an address" as the title; "Type a street address and a town" in the input; "What you type stays in your browser." under it |
+| Results | One to 20 rows match | The rows, "{line}, {city} {zip}"; the exact number first, then the nearest numbers |
+| Capped | More than 20 rows match | "Showing the first 20 matches. Type more of the address to narrow the list." above the rows |
+| No match | The city's letter file has no row that holds every typed word | "No match in Montana's address list; try the street name alone" |
+| Unavailable | The city index or the letter file cannot be read, or the address list is unavailable | "Montana's address list could not be loaded in this update; that is not the same as no addresses." |
+| Sample | A `--sample` build | "SAMPLE data" under the privacy line, above the results |
+| Off | `--address-text off` | No form, no search index and no privacy line (D35) |
+
+*Gap:* the words hold no "searching" sentence, so the status line stays empty until the letter file arrives. The report's proposed wording is "Looking in Montana's address list." It is a proposal, not an entry in the modules.
+
+Gate examples (the brief's gate B3-4): "401 N 27th St Billings" (an address that exists), "Colony Rd Roundup" (a rural road, found by its street name) and "qwzx 99" (no match). The typed words are lower-cased, punctuation and "#" are removed, and the abbreviations are spelled out from `hail/a/idx/words.json` (N to North, St to Street, Rd to Road, US to United States, MT to Montana and the rest). A trailing state is dropped. The town is the longest trailing match in `hail/a/idx/cities.json`, else the site town nearest the map's centre. A leading number is the address number, and the core name is the first word that is not a direction or a street type.
+
+**The words (Python).** Every sentence the browser shows is written in `website/addresses.py` (`WORDS_ADDRESSES`), `website/buildings.py` (`WORDS_BUILDINGS`) and `website/streets.py` (`WORDS_STREETS`), and filled from the build's own facts. The forbidden-word tests cover house, home, residence, dwelling, use and structure in every B3 template (tests/test_site.py B3_FORBIDDEN, D29); owner in the building word table, and owner and parcel in the address word table (tests/test_buildings.py, tests/test_addresses.py check_terms), with the About sentence exempt. The placement phrase "at the parcel" and the About sources row are not checked for parcel (tests/test_buildings.py says why).
+
+| Where | Sentence |
+|---|---|
+| Legend, the outlines | "Each dot is one building outline. Tap a dot for its address, if one is on file, and the weather history for its cell." |
+| Legend, the addresses | "Dots are addresses from Montana's public address list; tap one for its history" (in the layer menu; on the card only when the outline layer is absent, D48) |
+| Legend, the streets | "Streets from the Montana State Library's Transportation Framework; unnamed roads are drawn without a label" (or, on the Census fallback, "Streets from the U.S. Census Bureau's 2026 road files; unnamed roads are drawn without a label") |
+| Outline with no address | "No address on file for this building. The weather history below is for this building's cell." |
+| Outline with units | "Units on file: {n}." |
+| Placement | "This address point was placed {how}, not on the building." with {how} as "at the property entrance", "along the road by its number", "at the parcel", "at the site" or "by a method the file does not state" |
+| Count bubble | "{n} buildings", or "1 building" |
+| Outside the grid | "This point is outside the hail grid's Montana outline; no hail history is kept here." |
+| Unavailable, the three layers | "Montana's address list could not be loaded in this update; that is not the same as no addresses." / "Building outlines could not be loaded in this update; that is not the same as no buildings." / "Streets could not be loaded in this update; that is not the same as having no streets." |
+| Outline with its address lines unavailable | "Addresses for this building could not be loaded in this update; that is not the same as no address." |
+| About, addresses | "Source: Montana State Library Structures and Addresses Framework, file dated {pubdate}, exported {export_date}." Then the access and use terms, the purpose, "Owner names and parcel identifiers are never read, stored or shown.", "This site publishes no list of persons. Montana Code Annotated 2-6-1017 concerns lists of persons.", "The list is of addresses, not of buildings, and its coverage varies from county to county." and, with the text on, "What you type stays in your browser." |
+| About, roads | "Roads: Montana State Library, Transportation Framework, file dated {pubdate}. Terms in the file's metadata: ..." or the Census line with its acknowledgement and trademark note |
+| About, outlines | "Building outlines: USA Structures, Oak Ridge National Laboratory and FEMA (file dated {file_date})." Then, once (D45): "Outlines come from imagery dated 2008 to 2025 and are not surveys; sheds and barns are outlines too." |
+
+*Open wording (report items, not edits):* the About line "Counts by county show the outlines and the address records of each county." and the county line's "used to label the per-county counts only" describe counts that the page does not show (D21, D34); the dot legend ("Dots are addresses ...") and the outline legend ("Each dot is one building outline ...") describe two kinds of dot on the same map; D48 (R-05) settles it, since the address sentence shows only when the outline layer is absent.
+
+**Data contract additions (`--hail-addresses` builds only).**
+- `data/map.json["hail"]`:
+  - `addresses`: `text` ("on" or "off"), `templates` (the words above and `placed_how`), `zoom` (`dots` 15, `choose` 17) and `dot_radius_px` in every state (D47), `limits` (`tap_radius_px` 12, `result_cap` 20, `rows_per_file` 2,500), `classes` (S, P, G, L, T, U), `search_words`, the file-key rules, `source` (the export and publication dates).
+  - `buildings`: `text`, `zoom` (counts 13 and 14, dots 15, fills 16, emphasis 17), `tap_radius_px` 12, `templates`, the split map and the shard template.
+  - `roads`: `classes` (each with its name, width and `min_zoom`), `zoom` (`arterials_from` 13, `local_from` 15, `names_from` 16), and the legend and attribution words.
+  - `draw`: `cache_bytes` 33,554,432 (32 MiB), `labels` (`per_view` 300, `fit_px` 10, `grid_px` 48, `angle_deg` 5).
+  - `attribution`: the source lines of the layers that loaded, shown in Leaflet's attribution control.
+- `hail/index.json` gains `addresses`, `roads` and `buildings`. Each has `state` (`loaded` or `unavailable`, with the reason), `source` (file name, bytes, dates, the terms sentences as the file gives them, the file's fields read, the projection and the download's checksum), `counts`, `measures` and the shard counts. The address block has the placement counts per county and the merge report (`merged_groups`, D39). The outline block has `outside_grid`.
+- `hail/manifest.json` lists every `a/`, `b/`, `r/` and `counts.json` file with its bytes and SHA-256.
+- Formats: `hail-addresses-v1` (`a/<name>.json`, rows `[lon, lat, "line", "city", "zip", "class"]`, unmatched rows only, D28); `hail-address-cities-v1` (`a/idx/cities.json`); `hail-address-idx-v1` (`a/idx/<city>/<key>.json`, rows `[number, "street", "unit", lon, lat, "zip", "class"]`); `hail-address-words-v1` (`a/idx/words.json`); `hail-buildings-v1` (`b/<name>.json`, outlines `{"p": dot, "g": rings, "l": lines, "z": zips}` with the shard's common city and zip in `c`); `hail-building-counts-v1` (`counts.json`); `hail-roads-v1` (`r/<name>.json`, `"names"` table and lines `[class, name_index or -1, [[lon, lat], ...]]`, D26).
+- Class letters: addresses S (Structure), P (Property Access), G (Geocoding), L (Parcel), T (Site), U (Unknown); roads p, s, r, l, d, a, v, t. A row carries its class as its last element (D40).
+
+**States.** Each layer has one state, from its block in `hail/index.json`. The sheet and the search use the same words as the layers.
+| State | When | Words |
+|---|---|---|
+| Off | A build without `--hail-addresses` | Nothing is added to the page; the flag-off build differs only in the shared static assets (gate B3-6) |
+| Loaded | The block's state is `loaded` | The legend lines and the attribution lines |
+| Unavailable (layer) | The block's state is `unavailable` | The module's sentence in the legend's place (above); the files of that layer are not drawn |
+| Outside the grid | A dot in a tile the hail grid does not hold | The outside sentence (D23) |
+| No address on file | An outline with no address line | "No address on file for this building ..." |
+| Address lines unavailable | The outline's address lines cannot be read | "Addresses for this building could not be loaded in this update ..." |
+
+**Browser duties (`website/static/map/map.js`, the B3 block; its header documents each step).**
+- The shard names come from the grid's arithmetic, from `data/map.json`, and from the split map; the leaves' bounds come from their quadtree digits (0 NW, 1 NE, 2 SW, 3 SE).
+- One fetch per shard file, kept in memory under a 32 MiB cap. The least recently used file goes first, and a file in view never does. A failed fetch is logged and asked again after the next move. Nothing throws.
+- One canvas in the hail pane, drawn in this order: the roads by class, the outline fills and hairlines, the emphasis, the dots, the count bubbles and the names last.
+- The tap, the sheet and the search, as above. The search reads the typed text, fetches one letter file, lists the rows and zooms to the chosen one.
+- No sentence, unit, radius, zoom, cap or colour is written in `map.js`. The tests read the file for them, and the one number that is not data is the batch size of a draw call, a drawing speed and not a rule.
+- `window.hailMapTest` is a test-only hook for `tools/smoke_map.py`.
+
+**Checks.** The gates for this section are B3-2 to B3-7 (`DECISIONS.md` D36) and the synthesis gates 9 to 18 (D30). The re-check of the site build passed 14 of 18 gates. B3-5, B3-7, B3-10 and B3-18 are fixed in the completion pass (D43 to D46), and their re-check is pending. The results are in `research/hail-history/validation-evidence/b3-verification.json`.
+
 ## 12. The past weather of every location (B5, 2026-10-19, behind `--hail-history`)
 
-Sections 10 and 11 arrive with the B3 and B4 branches; this section is B5's (`DECISIONS.md` D38).
+Section 10 (B3) sits above this section, and section 11 arrives with the B4 branch; this section is B5's (`DECISIONS.md` D38).
 
 **Frame.** The owner's request is quoted once, in D38. A sheet, and each town page, answers one question for one place: what the weather there did over five seasons, in every kind of record, with its unit. On the sheet the place's summary table leads, under the address line and one plain sentence. On a town page the history follows the forecast (D39), and its summary table leads the history. The details follow under headings in one fixed order. Each row is one kind of record. Nothing in the section is a finding about a roof, an address or a claim.
 
