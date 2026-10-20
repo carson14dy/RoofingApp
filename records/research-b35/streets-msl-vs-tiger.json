@@ -1,0 +1,1469 @@
+{
+ "slug": "streets-msl-vs-tiger",
+ "asof": "2026-10-19",
+ "task": "Compare the Montana State Library (MSL) Transportation Framework roads with Census TIGER/Line roads for the Billings tile (45.75-45.85 N, 108.55-108.45 W) and the Benchland tile (47.05-47.15 N, 110.05-109.95 W); currency; legal basis; recommendation.",
+ "bottom_line": "Publish from TIGER/Line 2026, not from the state file, unless Montana State Library grants written permission. TIGER's use terms are explicit (not copyrighted, free to use, Census Bureau acknowledgement required). The state file (258,208 segments, exported 2026-09-30) has richer attributes and address ranges, but its metadata gives a disclaimer and no licence. Geometry agrees closely in both tiles (93.9 to 98.8 percent of each source's length lies within 15 m of the other), so the choice turns on legal clarity and cleaning, not on geometry.",
+ "recommendation": "1) Base layer: TIGER/Line 2026 county road files (roads layer, with FULLNAME, MTFCC and RTTYP) plus the TIGER 2026 ADDR address-range files for the address search (ADDR has no street names; names come from the EDGES file keyed by TLID, not tested here). All 56 Montana county road zips total 88,859,641 bytes (HEAD sizes). Credit the U.S. Census Bureau on the About page; avoid TIGER/Line or Census TIGER in product names (prudent inference from the trademark sentence, not a stated rule); carry the Census accuracy caveat (not for property transfers or engineering). 2) Clean before drawing or counting: merge or drop concurrent and doubled TIGER features (Benchland: 74.9 percent of in-tile length shares geometry with another TIGER feature; Billings: 18.8 percent), normalise names to one spelling (TIGER abbreviates, MSL spells out), and treat blank names (11.0 percent in Billings, 27.0 percent in Benchland, 25.6 percent county-wide) and placeholder names such as 'Internal' as unnamed. 3) Only if MSL confirms in writing that derived tiles may be redistributed: enrich TIGER lines with MSL name parts, RoadClass, SurfaceType, Ownership and FromAddr/ToAddr ranges by a within-15 m match, and publish the match rate per tile. Until then, MSL is an internal comparison reference only, and that use should be confirmed with MSL too.",
+ "method": [
+  "Downloaded and read the MSL shapefile zip by HTTP range requests (server returned 206): central directory, metadata XML, readme, DBF header (record count and fields).",
+  "Statewide road layer: the shapefile zip's roads members total 117,624,719 bytes compressed (over the 100 MB rule), so it was not downloaded. The geodatabase zip (81,190,547 bytes, under 100 MB) was downloaded in full, zip-tested and read with pyogrio 0.13.0 (bundled GDAL 3.12.4, OpenFileGDB driver) in a venv under the scratch folder.",
+  "TIGER: downloaded tl_2026_30111_roads.zip (newest; the prompt named TIGER2025 first, and TIGER2026 exists), tl_2025_30111_roads.zip for the currency comparison, tl_2026_30045_roads.zip for the Benchland tile (MSL County_L for all 73 Benchland segments is Judith Basin County, not Fergus County), and tl_2026_30111_addr.zip for the address-file check.",
+  "Tile test: a feature counts when any part intersects the tile box in lon/lat; length is the geodesic length (GRS80) of the in-box portion, Liang-Barsky clipped; MSL projected NAD83(2011) Montana (EPSG:6514, metres) is transformed to NAD83 lon/lat (EPSG:4269) with pyproj.",
+  "Names: upper-case, directional and type words mapped to USPS-style abbreviations, ordinals to numerals, route phrases ('United States Highway' to 'US HWY'), punctuation removed; matched on a compact key (spaces and hyphens removed). Placeholder names (Dwy, Driveway, Unknown, No Name, Unnamed, Internal is NOT treated as placeholder) excluded from name sets.",
+  "Geometry agreement: in-tile segments sampled every 5 m; each sample is within 15 m (or 30 m) of a sample of the other source, length-weighted. Internal overlap: share of in-tile length within 3 m of a different feature in the same source.",
+  "Sample points checked: 401 North 27th Street (45.7836 N, 108.5047 W) and a rural point near Benchland (47.08 N, 110.02 W), nearest segments in both sources.",
+  "Not done: no address-to-segment geocoding test (TIGER ADDR cannot be joined to the roads layer without the EDGES file, which was not downloaded to stay under the budget), no statewide county-by-county comparison, no check of the MSL REST map service."
+ ],
+ "decisions": [
+  "Newest TIGER release used as primary (TIGER2026, dated 2026-10-06); TIGER2025 kept as the comparison.",
+  "Statewide MSL roads: geodatabase zip (81.2 MB) chosen over the shapefile zip (117.6 MB) to stay under the 100 MB rule.",
+  "Benchland tile TIGER county: Judith Basin (30045), per MSL County_L; Fergus was an assumption that the data did not support.",
+  "Shared venv (/home/user/hail-b1/venv) has no FileGDB reader; a separate venv under the scratch folder was created with pyogrio 0.13.0 (PyPI). Installed size 220 MB; the pip cache at /root/.cache/pip is shared, so the PyPI network bytes were not isolated and are excluded from download_bytes_total."
+ ],
+ "sources": {
+  "msl_transportation_framework": {
+   "roads_layer": "RoadCenterLine (feature class in TransportationFramework.gdb; same content as RoadCenterLine.shp in the shapefile zip)",
+   "features_statewide": 258208,
+   "dbf_header_records": 258208,
+   "dbf_fields": 51,
+   "dbf_header_last_update": "2026-09-30",
+   "crs": "NAD83(2011) / Montana (EPSG:6514), metres (state file .prj: NAD_1983_2011_StatePlane_Montana_FIPS_2500)",
+   "null_geometry": 0,
+   "providers": 54,
+   "name_fields": "St_PreMod, St_PreDir, St_PreTyp, St_PreSep, St_Name, St_PosTyp, St_PosDir, St_PosMod (full name parts; spelled out, e.g. 'North', 'Street'); LSt_PreDir, LSt_Name, LSt_Typ, LSt_PosDir (label; abbreviated, e.g. 'N', 'ST')",
+   "route_field": "none found; route names sit inside St_PreTyp and St_Name (e.g. 'United States Highway' + '87')",
+   "functional_class_field": "RoadClass (13 values; statewide: Local 189,164; Secondary 19,651; Private 19,413; Other 15,416; Vehicular Trail 7,714; Alley 3,663; Primary 2,004; Ramp 1,010)",
+   "surface_field": "SurfaceType (Paved, Gravel, Dirt, Unknown, Other); blank for 61.07 percent of segments",
+   "ownership_field": "Ownership (Federal, City, County, Private, State, Public, Tribal); blank for 78.37 percent",
+   "address_fields": "FromAddr_L, ToAddr_L, FromAddr_R, ToAddr_R, Parity_L, Parity_R, AdNumPre_L/R; zero or null on 66,554 segments (25.8 percent)",
+   "other_fields": "SpeedLimit (non-null 208,552), OneWay, County_L/R, IncMuni_L/R, UnincCom, NbrhdCom, PostCode, Access, ProcessID, ProcessDte, DateUpdate, GlobalID",
+   "yellowstone_county_segments": 15072,
+   "yellowstone_county_full_length_mi": 2726.9,
+   "geodatabase_zip_bytes": 81190547,
+   "shapefile_zip_bytes": 117639105,
+   "shapefile_roads_members_compressed_bytes": 117624719,
+   "archive_exports": [
+    "2012-08-20",
+    "2013-11-07",
+    "2014-12-11",
+    "2015-12-31",
+    "2016-08-05",
+    "2017-07-07"
+   ]
+  },
+  "tiger2026_roads_yellowstone": {
+   "features": 6797,
+   "fields": "LINEARID, FULLNAME, RTTYP, MTFCC (no address, surface, ownership or route fields)",
+   "full_length_mi": 4345.2,
+   "blank_fullname_segments": 1740,
+   "blank_share_pct": 25.6,
+   "placeholder_names": 0,
+   "last_modified_http": "2026-10-06 23:34:38 GMT",
+   "crs": "NAD83 geographic (EPSG:4269)"
+  },
+  "tiger2025_roads_yellowstone": {
+   "features": 6798,
+   "full_length_mi": 4345.2,
+   "last_modified_http": "2025-09-22 23:49:25 GMT",
+   "difference_vs_2026": "1 LINEARID added and 2 removed; Billings tile segment count 1368 vs 1367; clipped length identical (420.36 mi)"
+  },
+  "tiger2026_roads_judith_basin": {
+   "features": 2140,
+   "bbox_lon_lat": [
+    -110.788223,
+    46.673147,
+    -109.745745,
+    47.416971
+   ],
+   "last_modified_http": "2026-10-06 23:34:38 GMT"
+  },
+  "tiger2026_addr_yellowstone": {
+   "records": 23334,
+   "fields": "TLID, FROMHN, TOHN, SIDE, ZIP, PLUS4, FROMTYP, TOTYP, ARID, MTFCC",
+   "bytes": 372540,
+   "note": "no street-name field; the prior validation evidence (geocoding-and-lookup.json) records that names come from the EDGES file keyed by TLID"
+  },
+  "montana_tiger2026_county_roads_total_bytes": 88859641
+ },
+ "tiles": {
+  "billings": {
+   "tile": "45.75-45.85 N, 108.55-108.45 W (Billings; MSL County_L Yellowstone County for all 4,128 segments)",
+   "msl": {
+    "segments": 4128,
+    "clipped_length_mi": 357.08,
+    "distinct_names_compact": 917,
+    "blank_name_segments": 0,
+    "placeholder_name_segments": 3,
+    "exact_duplicate_geometry_segments": 0
+   },
+   "tiger2026": {
+    "segments": 1367,
+    "clipped_length_mi": 420.36,
+    "distinct_names_compact": 947,
+    "blank_name_segments": 150,
+    "exact_duplicate_geometry_segments": 21
+   },
+   "tiger2025": {
+    "segments": 1368,
+    "clipped_length_mi": 420.36
+   },
+   "names_in_both_compact": 846,
+   "names_only_msl_compact": 71,
+   "names_only_tiger_compact": 101,
+   "names_only_msl_top20": [
+    [
+     "Garden Avenue",
+     16
+    ],
+    [
+     "Lakehills Drive",
+     13
+    ],
+    [
+     "Sugar Avenue",
+     7
+    ],
+    [
+     "Highway 87 North",
+     5
+    ],
+    [
+     "Jackson Court",
+     5
+    ],
+    [
+     "6th avenue Bypass",
+     4
+    ],
+    [
+     "Dale Earnhardt Way",
+     4
+    ],
+    [
+     "Exit 447 Ramp",
+     4
+    ],
+    [
+     "Exit 450 Ramp",
+     4
+    ],
+    [
+     "Exit 452 Ramp",
+     4
+    ],
+    [
+     "Richard Petty Way",
+     4
+    ],
+    [
+     "Highway 3",
+     3
+    ],
+    [
+     "Highway 312",
+     3
+    ],
+    [
+     "Madrid Drive",
+     3
+    ],
+    [
+     "North Broadway Street",
+     3
+    ],
+    [
+     "University Drive",
+     3
+    ],
+    [
+     "Wyndstone Court",
+     3
+    ],
+    [
+     "Alley",
+     2
+    ],
+    [
+     "Bench Connector",
+     2
+    ],
+    [
+     "Beverly Drive",
+     2
+    ]
+   ],
+   "names_only_tiger_top20": [
+    [
+     "Internal",
+     28
+    ],
+    [
+     "I- 90 Bus",
+     8
+    ],
+    [
+     "Chief Black Otter Trl",
+     7
+    ],
+    [
+     "US Hwy 87",
+     5
+    ],
+    [
+     "Cottonwood",
+     3
+    ],
+    [
+     "Swords Bypass Rd",
+     3
+    ],
+    [
+     "6th Ave Byp",
+     2
+    ],
+    [
+     "Access St",
+     2
+    ],
+    [
+     "Anchor St",
+     2
+    ],
+    [
+     "Augsburg Dr C",
+     2
+    ],
+    [
+     "Jansma Ln",
+     2
+    ],
+    [
+     "La Brun Ln",
+     2
+    ],
+    [
+     "N 28th St",
+     2
+    ],
+    [
+     "N Greenbriar Rd",
+     2
+    ],
+    [
+     "Old Hwy 87",
+     2
+    ],
+    [
+     "Sandy Ln",
+     2
+    ],
+    [
+     "US Hwy 212",
+     2
+    ],
+    [
+     "3 40",
+     1
+    ],
+    [
+     "Access Ramp",
+     1
+    ],
+    [
+     "Andele",
+     1
+    ]
+   ],
+   "geometry": {
+    "msl_in_tile_covered_by_tiger": {
+     "sample_points": 125414,
+     "in_tile_length_mi": 355.86,
+     "within_15m_pct_length": 98.47,
+     "within_30m_pct_length": 98.71,
+     "median_distance_m": 1.49
+    },
+    "tiger_in_tile_covered_by_msl": {
+     "sample_points": 145419,
+     "in_tile_length_mi": 418.92,
+     "within_15m_pct_length": 94.62,
+     "within_30m_pct_length": 95.32,
+     "median_distance_m": 1.68
+    }
+   },
+   "internal_overlap_pct_length_within_3m_of_other_feature": {
+    "msl": 1.66,
+    "tiger2026": 18.82
+   },
+   "sample_401_N_27th_street": {
+    "sample_point": "45.7836 N, 108.5047 W",
+    "msl_nearest": [
+     [
+      25.5,
+      "2nd Avenue North",
+      2616,
+      2624,
+      2615,
+      2623
+     ],
+     [
+      31.2,
+      "2nd Avenue North",
+      2602,
+      2614,
+      2601,
+      2613
+     ],
+     [
+      46.7,
+      "North 27th Street",
+      100,
+      128,
+      101,
+      199
+     ]
+    ],
+    "tiger2026_nearest": [
+     [
+      26.6,
+      "2nd Ave N"
+     ],
+     [
+      40.9,
+      "N 27th St"
+     ],
+     [
+      40.9,
+      "US Hwy 3"
+     ]
+    ],
+    "msl_400_block_segment_id_175712": {
+     "name": "North 27th Street",
+     "fl_tl_fr_tr": [
+      400,
+      568,
+      393,
+      555
+     ],
+     "distance_from_sample_m": 258.6
+    }
+   },
+   "tiger_top_mtfcc_counts": [
+    [
+     "S1400",
+     1191
+    ],
+    [
+     "S1640",
+     70
+    ],
+    [
+     "S1200",
+     27
+    ],
+    [
+     "S1630",
+     25
+    ],
+    [
+     "S1750",
+     15
+    ],
+    [
+     "S1730",
+     9
+    ],
+    [
+     "S1740",
+     9
+    ],
+    [
+     "S1820",
+     7
+    ]
+   ],
+   "msl_roadclass_counts": [
+    [
+     "Local",
+     3908
+    ],
+    [
+     "Secondary",
+     183
+    ],
+    [
+     "Primary",
+     24
+    ],
+    [
+     "Ramp",
+     13
+    ]
+   ]
+  },
+  "benchland": {
+   "tile": "47.05-47.15 N, 110.05-109.95 W (MSL County_L Judith Basin County for all 73 segments; ProcessID 198, City of Lewistown group)",
+   "msl": {
+    "segments": 73,
+    "clipped_length_mi": 42.603,
+    "distinct_names_compact": 18,
+    "blank_name_segments": 0,
+    "placeholder_name_segments": 12,
+    "placeholder_values": 12,
+    "exact_duplicate_geometry_segments": 0,
+    "roadclass_mix": [
+     [
+      "Local",
+      55
+     ],
+     [
+      "Private",
+      12
+     ],
+     [
+      "Secondary",
+      6
+     ]
+    ],
+    "surface_mix": [
+     [
+      "Gravel",
+      63
+     ],
+     [
+      "Paved",
+      6
+     ],
+     [
+      "Dirt",
+      4
+     ]
+    ]
+   },
+   "tiger2026_judith_basin": {
+    "segments": 63,
+    "clipped_length_mi": 78.815,
+    "distinct_names_compact": 34,
+    "blank_name_segments": 17,
+    "exact_duplicate_geometry_segments": 4,
+    "mtfcc_mix": [
+     [
+      "S1400",
+      59
+     ],
+     [
+      "S1200",
+      3
+     ],
+     [
+      "S1740",
+      1
+     ]
+    ]
+   },
+   "names_in_both_compact": 11,
+   "names_only_msl_compact": 7,
+   "names_only_tiger_compact": 23,
+   "names_only_msl_top20": [
+    [
+     "Fieldstone Road",
+     4
+    ],
+    [
+     "Double H Drive",
+     2
+    ],
+    [
+     "Stockfarm Cut Across",
+     2
+    ],
+    [
+     "Macaroni Hill Road",
+     1
+    ],
+    [
+     "South Fisherman Road",
+     1
+    ],
+    [
+     "Stockfarm Trail",
+     1
+    ],
+    [
+     "Sunset Trail",
+     1
+    ]
+   ],
+   "names_only_tiger_top20": [
+    [
+     "Co Rd 308",
+     2
+    ],
+    [
+     "Stockman Rd",
+     2
+    ],
+    [
+     "23352",
+     1
+    ],
+    [
+     "2nd Ave",
+     1
+    ],
+    [
+     "Agri Dr",
+     1
+    ],
+    [
+     "Antelope Way",
+     1
+    ],
+    [
+     "Co Rd 305",
+     1
+    ],
+    [
+     "Co Rd 306",
+     1
+    ],
+    [
+     "Co Rd 309",
+     1
+    ],
+    [
+     "Co Rd 323",
+     1
+    ],
+    [
+     "Co Rd 327",
+     1
+    ],
+    [
+     "Co Rd 343",
+     1
+    ],
+    [
+     "Fisherman Rd",
+     1
+    ],
+    [
+     "Gray St",
+     1
+    ],
+    [
+     "Louse Creek",
+     1
+    ],
+    [
+     "Macaroni Rd",
+     1
+    ],
+    [
+     "Mfcaroni Rd",
+     1
+    ],
+    [
+     "Prosperity Ln",
+     1
+    ],
+    [
+     "State Hwy 200",
+     1
+    ],
+    [
+     "State Hwy 207",
+     1
+    ]
+   ],
+   "geometry": {
+    "msl_in_tile_covered_by_tiger": {
+     "sample_points": 14075,
+     "in_tile_length_mi": 42.44,
+     "within_15m_pct_length": 98.77,
+     "within_30m_pct_length": 99.03,
+     "median_distance_m": 1.66
+    },
+    "tiger_in_tile_covered_by_msl": {
+     "sample_points": 26038,
+     "in_tile_length_mi": 78.52,
+     "within_15m_pct_length": 93.87,
+     "within_30m_pct_length": 94.49,
+     "median_distance_m": 1.71
+    }
+   },
+   "internal_overlap_pct_length_within_3m_of_other_feature": {
+    "msl": 0.22,
+    "tiger2026": 74.93
+   },
+   "tiger_overlap_examples": [
+    "US Hwy 87, State Hwy 3 and State Hwy 200: identical geometry under three LINEARIDs (9.42 mi each pair group)",
+    "Benchland Rd and State Hwy 207: 13.15 mi of overlapping geometry",
+    "Co Rd 308 and Louse Creek Rd: 8.6 mi of overlapping geometry (name pairs across LINEARIDs)"
+   ],
+   "sample_rural_47.08N_110.02W": {
+    "msl_nearest": [
+     [
+      78.6,
+      "Windham Benchland Road"
+     ],
+     [
+      141.3,
+      "Windham Benchland Road"
+     ],
+     [
+      141.3,
+      "North Fisherman Road"
+     ]
+    ],
+    "tiger2026_nearest": [
+     [
+      78.6,
+      "Windham Benchland Rd"
+     ],
+     [
+      78.6,
+      "2nd Ave"
+     ],
+     [
+      115.2,
+      "N Fisherman Rd"
+     ]
+    ]
+   }
+  }
+ },
+ "name_quality": {
+  "msl_statewide_blank_name_segments": {
+   "count": 324,
+   "pct": 0.125
+  },
+  "msl_statewide_placeholder_segments": {
+   "count": 22662,
+   "pct": 8.78,
+   "values": [
+    [
+     "Dwy",
+     11087
+    ],
+    [
+     "Driveway",
+     7744
+    ],
+    [
+     "Unknown",
+     3038
+    ],
+    [
+     "No Name",
+     424
+    ],
+    [
+     "Unnamed",
+     355
+    ],
+    [
+     "DRIVEWAY",
+     3
+    ],
+    [
+     "Driveway Road",
+     2
+    ],
+    [
+     "Driveway Lane",
+     2
+    ]
+   ],
+   "by_county_top": [
+    [
+     "Flathead County",
+     11510,
+     33567,
+     34.3
+    ],
+    [
+     "Gallatin County",
+     4533,
+     22698,
+     20.0
+    ],
+    [
+     "Silver Bow County",
+     2987,
+     9673,
+     30.9
+    ],
+    [
+     "Fergus County",
+     1585,
+     7004,
+     22.6
+    ],
+    [
+     "Judith Basin County",
+     582,
+     2402,
+     24.2
+    ],
+    [
+     "Chouteau County",
+     360,
+     4192,
+     8.6
+    ]
+   ],
+   "yellowstone_placeholder_pct": 0.03
+  },
+  "tiger2026_yellowstone_blank_pct": 25.6,
+  "spelling_yellowstone": {
+   "msl_name_full": {
+    "named": 15066,
+    "has_spelled_word": 14739,
+    "has_abbrev_word": 780,
+    "pct_spelled": 97.83,
+    "pct_abbrev": 5.18
+   },
+   "msl_label_abbrev": {
+    "named": 15065,
+    "has_spelled_word": 2099,
+    "has_abbrev_word": 14531,
+    "pct_spelled": 13.93,
+    "pct_abbrev": 96.46
+   },
+   "tiger2026_fullname": {
+    "named": 5057,
+    "has_spelled_word": 642,
+    "has_abbrev_word": 4871,
+    "pct_spelled": 12.7,
+    "pct_abbrev": 96.32
+   }
+  },
+  "spelling_benchland": {
+   "msl_name_full": {
+    "named": 61,
+    "has_spelled_word": 59,
+    "has_abbrev_word": 0,
+    "pct_spelled": 96.72,
+    "pct_abbrev": 0.0
+   },
+   "msl_label": {
+    "named": 61,
+    "has_spelled_word": 18,
+    "has_abbrev_word": 53,
+    "pct_spelled": 29.51,
+    "pct_abbrev": 86.89
+   },
+   "tiger2026_judith": {
+    "named": 46,
+    "has_spelled_word": 5,
+    "has_abbrev_word": 44,
+    "pct_spelled": 10.87,
+    "pct_abbrev": 95.65
+   }
+  },
+  "billings_matched_names_identical_raw_ci": 20,
+  "billings_matched_names_raw_differ": 824,
+  "billings_matched_example_pairs": [
+   [
+    "BENCH BLVD",
+    [
+     "Bench Boulevard"
+    ],
+    [
+     "Bench Blvd"
+    ]
+   ],
+   [
+    "LAKE ELMO DR",
+    [
+     "Lake Elmo Drive"
+    ],
+    [
+     "Lake Elmo Dr"
+    ]
+   ],
+   [
+    "MONTANA AVE",
+    [
+     "Montana Avenue"
+    ],
+    [
+     "Montana Ave"
+    ]
+   ],
+   [
+    "MAIN ST",
+    [
+     "Main Street"
+    ],
+    [
+     "Main St"
+    ]
+   ],
+   [
+    "ALKALI CRK RD",
+    [
+     "Alkali Creek Road"
+    ],
+    [
+     "Alkali Creek Rd"
+    ]
+   ],
+   [
+    "13TH ST W",
+    [
+     "13th Street West"
+    ],
+    [
+     "13th St W"
+    ]
+   ],
+   [
+    "2ND AVE N",
+    [
+     "2nd Avenue North"
+    ],
+    [
+     "2nd Ave N"
+    ]
+   ],
+   [
+    "6TH AVE N",
+    [
+     "6th Avenue North"
+    ],
+    [
+     "6th Ave N"
+    ]
+   ]
+  ],
+  "tiger_internal_name_billings_segments": 28,
+  "note": "MSL placeholder share is concentrated outside Yellowstone County (Flathead 34.3 percent of its segments); Billings and Benchland tiles have 0 to 16 percent placeholders."
+ },
+ "geometry": {
+  "billings": {
+   "msl_in_tile_covered_by_tiger": {
+    "sample_points": 125414,
+    "in_tile_length_mi": 355.86,
+    "within_15m_pct_length": 98.47,
+    "within_30m_pct_length": 98.71,
+    "median_distance_m": 1.49
+   },
+   "tiger_in_tile_covered_by_msl": {
+    "sample_points": 145419,
+    "in_tile_length_mi": 418.92,
+    "within_15m_pct_length": 94.62,
+    "within_30m_pct_length": 95.32,
+    "median_distance_m": 1.68
+   }
+  },
+  "benchland": {
+   "msl_in_tile_covered_by_tiger": {
+    "sample_points": 14075,
+    "in_tile_length_mi": 42.44,
+    "within_15m_pct_length": 98.77,
+    "within_30m_pct_length": 99.03,
+    "median_distance_m": 1.66
+   },
+   "tiger_in_tile_covered_by_msl": {
+    "sample_points": 26038,
+    "in_tile_length_mi": 78.52,
+    "within_15m_pct_length": 93.87,
+    "within_30m_pct_length": 94.49,
+    "median_distance_m": 1.71
+   }
+  }
+ },
+ "county_level_yellowstone": {
+  "msl_segments": 15072,
+  "msl_full_length_mi": 2726.9,
+  "tiger2026_segments": 6797,
+  "tiger2026_full_length_mi": 4345.2,
+  "msl_class_mi": [
+   [
+    "Local",
+    14215,
+    2273.5
+   ],
+   [
+    "Secondary",
+    597,
+    231.9
+   ],
+   [
+    "Primary",
+    176,
+    192.6
+   ],
+   [
+    "Ramp",
+    79,
+    22.9
+   ],
+   [
+    "Private",
+    5,
+    5.9
+   ]
+  ],
+  "tiger_mtfcc_mi": [
+   [
+    "S1400",
+    5649,
+    3126.5
+   ],
+   [
+    "S1740",
+    597,
+    619.3
+   ],
+   [
+    "S1100",
+    8,
+    309.9
+   ],
+   [
+    "S1200",
+    40,
+    147.5
+   ],
+   [
+    "S1750",
+    198,
+    60.7
+   ],
+   [
+    "S1630",
+    86,
+    27.4
+   ],
+   [
+    "S1500",
+    28,
+    23.2
+   ],
+   [
+    "S1640",
+    138,
+    18.2
+   ],
+   [
+    "S1820",
+    10,
+    6.2
+   ],
+   [
+    "S1730",
+    19,
+    3.6
+   ],
+   [
+    "S1780",
+    23,
+    2.8
+   ],
+   [
+    "S1720",
+    1,
+    0.2
+   ]
+  ],
+  "note": "gap of about 1,618 mi: TIGER code S1740 619.3 mi against MSL Private 5.9 mi (the label 'private roads for service vehicles' is inferred from the TIGER abstract; the code mapping was not checked against the feature catalog); TIGER S1400 3,126.5 mi against MSL Local 2,273.5 mi; TIGER also carries overlapping features (see overlap). Reason not fully verified."
+ },
+ "currency": {
+  "msl": {
+   "newest_file": "2026-09-30 (zip Last-Modified 2026-09-30 18:16 GMT; DBF header and metadata pubdate 20260930)",
+   "feature_process_dates": "ProcessDte 2023-01-23 to 2026-09-28; DateUpdate up to 2026-09-17",
+   "provider_dates": "RCL_Metadata: 54 providers, ProcessDate 2023-01-21 to 2026-09-28; oldest PublicationDate 2012-12-28 (Northern Cheyenne Reservation)",
+   "yellowstone_provider": "ProcessID 187 processed 2026-03-27, published 2026-03-25",
+   "benchland_provider": "ProcessID 198 (Fergus/Judith Basin/Petroleum group, DatasetCredit City of Lewistown) processed 2026-06-17, published 2026-06-16",
+   "stated_cadence": [
+    "The Transportation Framework downloads are exported monthly, around the end of the month (the exact date varies).",
+    "FGDC metadata update code: As needed (status: In work)",
+    "The goal of the Montana Transportation Framework is to have a regularly updated statewide database of road centerlines for Montana."
+   ],
+   "conflict": "readme says monthly exports; FGDC says As needed; the state page says regularly updated. The Archive folder holds six dated exports (2012-2017) and none from 2018 to 2025, so monthly exports are not verifiable from the files."
+  },
+  "tiger": {
+   "newest_file": "2026 release: Yellowstone and Judith Basin roads files Last-Modified 2026-10-06; TIGER2026 folder 2026-10-17; ROADS folder 2026-10-18 04:40 GMT",
+   "iso_dates": "Yellowstone roads ISO: publication 2026, creation 2026-09, lastUpdate 2026-10, dateStamp 2026-09-28",
+   "stated_cadence": "product metadata maintenanceAndUpdateFrequency = notPlanned; the TIGER2002 to TIGER2026 release folders (annual names since 2007) are visible in the root listing (TIGER2004 to TIGER2006 absent)",
+   "tiger2025_vs_2026": "Yellowstone: 1 LINEARID added, 2 removed; full length 4,345.2 mi in both"
+  }
+ },
+ "legal": {
+  "tiger": {
+   "source": "Census ISO metadata inside tl_2026_30111_roads.zip (tl_2026_30111_roads.shp.iso.xml) and the same text in tl_2026_30111_addr.zip",
+   "access_constraints": "Access constraints: None",
+   "use_constraints": "The TIGER/Line Shapefile products are not copyrighted however TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source.",
+   "accuracy": "The TIGER/Line Shapefiles may not be suitable for high-precision measurement applications such as engineering problems, property transfers, or other uses that might require highly accurate measurements of the earth's surface."
+  },
+  "msl": {
+   "source": "FGDC metadata inside TransportationFramework_shp.zip (TransportationFramework_metadata.xml); readme inside the zip",
+   "access_constraints": "None",
+   "use_constraints_key_sentences": [
+    "The Library makes these data and services available as a convenience to the public, and for no other purpose.",
+    "The Library provides these data in good faith but does not represent or warrant its accuracy, adequacy, or completeness.",
+    "The Library did not produce it for, nor is it suitable for legal, engineering, or surveying purposes."
+   ],
+   "reading": "A disclaimer, not a licence. No grant to copy, adapt or publish derived data, and no attribution rule was found on the metadata or on the MSL transportation page checked. 'for no other purpose' is ambiguous and needs MSL to explain it."
+  }
+ },
+ "sizes": {
+  "download_bytes_total": 90258824,
+  "download_bytes_breakdown": {
+   "msl_geodatabase_zip": 81190547,
+   "tiger2025_yellowstone_roads_zip": 1999745,
+   "tiger2026_yellowstone_roads_zip": 2000809,
+   "tiger2026_judith_basin_roads_zip": 916394,
+   "tiger2026_yellowstone_addr_zip": 372540,
+   "msl_shapefile_zip_range_reads": 1832506,
+   "html_pages_and_redirect_bodies_approx": 1702701,
+   "pypi_simple_index_pyogrio": 243582
+  },
+  "not_counted": "PyPI wheels for pyogrio, numpy, pyproj and pyshp were installed from the shared pip cache; their network bytes were not isolated (installed size 220 MB)",
+  "disk_on_scratch_before_cleanup": "about 245 MB in the downloads folder (extracted geodatabase about 145 MB)",
+  "deleted": "the downloads folder under the scratch folder is deleted at the end of this run; scripts and out_*.json are kept"
+ },
+ "urls_checked": [
+  {
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/",
+   "http_status": "200",
+   "bytes": 668,
+   "content_check": "listing: Archive/ (4/9/2025), TransportationFramework_gdb.zip 81,190,547 B (9/30/2026), TransportationFramework_shp.zip 117,639,105 B (9/30/2026); no per-county road files"
+  },
+  {
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/Archive/",
+   "http_status": "200",
+   "bytes": 1292,
+   "content_check": "six archived exports: 20120820, 20131107, 20141211, 20151231, 20160805, 20170707 (zip sizes 75.6 to 188.8 MB)"
+  },
+  {
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+   "http_status": "200 (HEAD); 206 (range)",
+   "bytes": 117639105,
+   "content_check": "Last-Modified 2026-09-30 18:16:04 GMT; Accept-Ranges bytes; 11 members listed from the central directory; DBF header 258,208 records, 51 fields; metadata and readme read by range (1.83 MB fetched in total)"
+  },
+  {
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_gdb.zip",
+   "http_status": "200",
+   "bytes": 81190547,
+   "content_check": "downloaded in full; zip test passed; 69 members; RoadCenterLine 258,208 features and RCL_Metadata 54 rows read with pyogrio; sha256 ed8eaf0015ee4e80615a6fb5b711339799e9d2dc6ce0e25a6f7b2f30efdd28ea"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30111_roads.zip",
+   "http_status": "200",
+   "bytes": 2000809,
+   "content_check": "Last-Modified 2026-10-06 23:34:38 GMT; 6,797 features; ISO metadata read (use and access constraints, maintenance code notPlanned)"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30111_roads.zip",
+   "http_status": "200",
+   "bytes": 1999745,
+   "content_check": "Last-Modified 2025-09-22 23:49:25 GMT; 6,798 features"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30045_roads.zip",
+   "http_status": "200",
+   "bytes": 916394,
+   "content_check": "Judith Basin County; 2,140 features; bbox -110.788 to -109.746, 46.673 to 47.417; Benchland tile inside"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ADDR/tl_2026_30111_addr.zip",
+   "http_status": "200",
+   "bytes": 372540,
+   "content_check": "Address Range Relationship File, Yellowstone; 23,334 records; fields TLID, FROMHN, TOHN, SIDE, ZIP, PLUS4, FROMTYP, TOTYP, ARID, MTFCC; same use constraints; notPlanned"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/",
+   "http_status": "200",
+   "bytes": 758100,
+   "content_check": "directory listing with tl_2025_30001 to tl_2025_30111 (56 Montana county road zips)"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/",
+   "http_status": "200 (HEAD)",
+   "bytes": 0,
+   "content_check": "Last-Modified 2026-10-18 04:40:29 GMT"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/",
+   "http_status": "200 (HEAD)",
+   "bytes": 0,
+   "content_check": "Last-Modified 2026-10-17 20:30:18 GMT"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/",
+   "http_status": "200",
+   "bytes": 29328,
+   "content_check": "root listing: TIGER2002, 2003, 2007 to 2026 (no 2004 to 2006)"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/ (56 Montana county zips, tl_2026_30001 to tl_2026_30111 odd FIPS)",
+   "http_status": "200 x56 (HEAD)",
+   "bytes": 0,
+   "content_check": "content-lengths sum to 88,859,641 bytes; smallest 202,087 (30109 Wibaux); largest 10,843,459 (30053)"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/FEATNAMES/tl_2026_30111_featnames.zip",
+   "http_status": "200 (HEAD)",
+   "bytes": 0,
+   "content_check": "content-length 552,752 (not downloaded)"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ADDRFEAT/tl_2026_30111_addrfeat.zip",
+   "http_status": "200 (HEAD)",
+   "bytes": 0,
+   "content_check": "content-length 1,833,506 (not downloaded)"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2024/ROADS/tl_2024_30111_roads.zip",
+   "http_status": "200 (HEAD)",
+   "bytes": 0,
+   "content_check": "content-length 1,994,297; Last-Modified 2025-06-27 (not used)"
+  },
+  {
+   "url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+   "http_status": "200",
+   "bytes": 349892,
+   "content_check": "visible text has no use-terms and no cadence statement (searched for public domain, copyright, annual, update)"
+  },
+  {
+   "url": "https://www.census.gov/data/developers/about/terms-of-service.html",
+   "http_status": "200",
+   "bytes": 302319,
+   "content_check": "terms for the Census API only; no statement on TIGER files"
+  },
+  {
+   "url": "https://www.census.gov/about/policies/copyright.html",
+   "http_status": "404",
+   "bytes": 26711,
+   "content_check": "page not found (guessed URL)"
+  },
+  {
+   "url": "https://msl.mt.gov/geoinfo/",
+   "http_status": "200",
+   "bytes": 79594,
+   "content_check": "geoinfo landing; links to data and MSDI pages"
+  },
+  {
+   "url": "https://msl.mt.gov/geoinfo/data/msdi/",
+   "http_status": "200",
+   "bytes": 29846,
+   "content_check": "MSDI index; Transportation link to ../../msdi/transportation/index"
+  },
+  {
+   "url": "https://msl.mt.gov/geoinfo/msdi/transportation/",
+   "http_status": "200",
+   "bytes": 27416,
+   "content_check": "The goal of the Montana Transportation Framework is to have a regularly updated statewide database of road centerlines for Montana. Data links: GIS Data List, metadata, Esri file geodatabase and shapefile downloads, ArcGIS Server map service REST endpoint. No licence text found."
+  },
+  {
+   "url": "https://msl.mt.gov/geoinfo/msdi/About_MSDI",
+   "http_status": "200",
+   "bytes": 25522,
+   "content_check": "navigation and contact text only; no data-use terms"
+  },
+  {
+   "url": "https://msl.mt.gov/geoinfo/data/",
+   "http_status": "200",
+   "bytes": 25600,
+   "content_check": "data index page; navigation only"
+  },
+  {
+   "url": "https://pypi.org/simple/pyogrio/",
+   "http_status": "200",
+   "bytes": 243582,
+   "content_check": "tooling index for pyogrio 0.13.0 (not a data source)"
+  }
+ ],
+ "facts": [
+  {
+   "claim": "MSL statewide roads row count",
+   "value": "258,208 segments (DBF header and GDB table agree; 0 null geometries)",
+   "evidence": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip DBF header via range read; https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_gdb.zip read with pyogrio"
+  },
+  {
+   "claim": "MSL roads layer size",
+   "value": "shapefile zip 117,639,105 B, roads members 117,624,719 B compressed; geodatabase zip 81,190,547 B",
+   "evidence": "range-read central directory of https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip; HEAD of https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_gdb.zip"
+  },
+  {
+   "claim": "MSL export date",
+   "value": "2026-09-30 (zip Last-Modified 18:16 GMT; DBF last update 2026-09-30; metadata pubdate 20260930; readme says exported 20260930)",
+   "evidence": "HTTP headers, _ReadMe.txt, FGDC metadata"
+  },
+  {
+   "claim": "MSL stated cadence (conflicting)",
+   "value": "readme: monthly; FGDC update: As needed; state page: regularly updated",
+   "evidence": "_ReadMe.txt; TransportationFramework_metadata.xml; https://msl.mt.gov/geoinfo/msdi/transportation/"
+  },
+  {
+   "claim": "MSL archive exports",
+   "value": "six dated exports: 2012-08-20, 2013-11-07, 2014-12-11, 2015-12-31, 2016-08-05, 2017-07-07; none listed for 2018 to 2025",
+   "evidence": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/Archive/ (200, 1,292 B)"
+  },
+  {
+   "claim": "MSL provider processing dates",
+   "value": "54 providers; ProcessDate 2023-01-21 to 2026-09-28; oldest PublicationDate 2012-12-28 (Northern Cheyenne Reservation)",
+   "evidence": "RCL_Metadata table in the geodatabase"
+  },
+  {
+   "claim": "MSL fields for names, class, surface, ownership and addresses",
+   "value": "St_* name parts (spelled out), LSt_* label (abbreviated), RoadClass, SurfaceType (61.07 percent blank), Ownership (78.37 percent blank), FromAddr/ToAddr L and R, Parity",
+   "evidence": "DBF header and GDB schema (51 fields)"
+  },
+  {
+   "claim": "MSL route field",
+   "value": "none; route names are in St_PreTyp and St_Name (e.g. 'United States Highway' 5,627 segments statewide)",
+   "evidence": "RoadCenterLine field list"
+  },
+  {
+   "claim": "TIGER roads fields",
+   "value": "LINEARID, FULLNAME, RTTYP, MTFCC only",
+   "evidence": "shapefile field list of tl_2026_30111_roads.dbf"
+  },
+  {
+   "claim": "TIGER address-range file",
+   "value": "23,334 records for Yellowstone; no street-name field; TLID links to EDGES (names) not downloaded",
+   "evidence": "tl_2026_30111_addr.zip; prior validation evidence geocoding-and-lookup.json records EDGES FULLNAME keyed by TLID"
+  },
+  {
+   "claim": "TIGER county road total (Montana)",
+   "value": "56 county zips, 88,859,641 B total (TIGER2026)",
+   "evidence": "HEAD of each tl_2026_30XXX_roads.zip"
+  },
+  {
+   "claim": "TIGER release dates",
+   "value": "TIGER2026 county files 2026-10-06; TIGER2026 folder 2026-10-17; ROADS folder 2026-10-18; TIGER2025 Yellowstone 2025-09-22",
+   "evidence": "HTTP Last-Modified headers"
+  },
+  {
+   "claim": "Billings tile MSL",
+   "value": "4,128 segments; 357.09 clipped mi; 917 distinct names; 0 blank; 3 placeholder; 0 exact duplicates; 1.7 percent of length within 3 m of another MSL feature",
+   "evidence": "run_billings.py and run_final.py outputs"
+  },
+  {
+   "claim": "Billings tile TIGER2026",
+   "value": "1,367 segments; 420.36 clipped mi; 947 distinct names (compact key); 150 blank (11.0 percent); 21 exact duplicates; 18.8 percent of length within 3 m of another feature",
+   "evidence": "run_billings.py and run_final.py outputs"
+  },
+  {
+   "claim": "Billings name agreement",
+   "value": "846 names in both; 71 only in MSL; 101 only in TIGER (compact key)",
+   "evidence": "run_final.py"
+  },
+  {
+   "claim": "Billings geometric agreement",
+   "value": "98.5 percent of MSL length within 15 m of TIGER; 94.6 percent of TIGER length within 15 m of MSL; median separation 1.5 and 1.7 m",
+   "evidence": "run_cover.py"
+  },
+  {
+   "claim": "Benchland county",
+   "value": "MSL County_L: Judith Basin County for all 73 segments (ProcessID 198)",
+   "evidence": "run_extra.py / out_extra.json"
+  },
+  {
+   "claim": "Benchland tile MSL",
+   "value": "73 segments; 42.60 clipped mi; 18 distinct names; 12 Driveway placeholders (16.4 percent); 0 blank; 0 duplicates",
+   "evidence": "out_extra.json"
+  },
+  {
+   "claim": "Benchland tile TIGER2026",
+   "value": "63 segments; 78.82 clipped mi; 34 distinct names; 17 blank (27.0 percent); 4 exact duplicates; 74.9 percent of length within 3 m of another TIGER feature",
+   "evidence": "out_extra.json; run_pairs.py"
+  },
+  {
+   "claim": "Benchland geometric agreement",
+   "value": "98.8 percent of MSL length within 15 m of TIGER; 93.9 percent of TIGER length within 15 m of MSL",
+   "evidence": "run_cover.py"
+  },
+  {
+   "claim": "TIGER overlap is real, not a rounding artifact",
+   "value": "US Hwy 87, State Hwy 3 and State Hwy 200 share identical geometry under three LINEARIDs (9.42 mi per pair); Benchland Rd and State Hwy 207 overlap 13.15 mi",
+   "evidence": "run_pairs.py output"
+  },
+  {
+   "claim": "Name spelling, Yellowstone County",
+   "value": "MSL full name has a spelled-out type or direction word in 97.8 percent of named segments; MSL label is abbreviated in 96.5 percent; TIGER FULLNAME is abbreviated in 96.3 percent",
+   "evidence": "out_extra.json spelling_yellowstone"
+  },
+  {
+   "claim": "Name spelling, matched streets in Billings",
+   "value": "824 of 844 matched names differ in raw spelling (case-insensitive); only 20 match exactly",
+   "evidence": "run_billings.py"
+  },
+  {
+   "claim": "Blank names",
+   "value": "MSL statewide 0.125 percent (324 segments); MSL Yellowstone 0.007 percent; TIGER Yellowstone 25.6 percent; TIGER Billings tile 11.0 percent; TIGER Benchland 27.0 percent",
+   "evidence": "out_billings.json, out_extra.json"
+  },
+  {
+   "claim": "MSL placeholder names statewide",
+   "value": "22,662 segments (8.8 percent): Dwy 11,087; Driveway 7,744; Unknown 3,038; No Name 424; Unnamed 355; about 94 percent of them (21,197) in five counties: Flathead, Gallatin, Silver Bow, Fergus, Judith Basin",
+   "evidence": "out_extra.json; out_cover.json by county"
+  },
+  {
+   "claim": "TIGER non-street name",
+   "value": "'Internal' on 28 segments in the Billings tile (TIGER only)",
+   "evidence": "run_final.py only_tiger list"
+  },
+  {
+   "claim": "401 North 27th Street sample point",
+   "value": "MSL 400-block segment (fl 400 to 568, fr 393 to 555) is 258.6 m from 45.7836 N, 108.5047 W; nearest MSL North 27th segment is the 100 block at 46.7 m; nearest TIGER N 27th St at 40.9 m",
+   "evidence": "out_billings.json sample_billings; out_cover.json sample_401_N27th"
+  },
+  {
+   "claim": "Rural sample near Benchland",
+   "value": "nearest MSL and TIGER road both 78.6 m away: Windham Benchland Road (MSL) and Windham Benchland Rd (TIGER)",
+   "evidence": "out_extra.json sample_benchland"
+  },
+  {
+   "claim": "County-level length gap",
+   "value": "Yellowstone County MSL 2,726.9 mi (15,072 segments) against TIGER2026 4,345.2 mi (6,797 features)",
+   "evidence": "run_billings.py county subset"
+  },
+  {
+   "claim": "TIGER overlap claim",
+   "value": "the TIGER abstract says the national MTS has no overlaps or gaps between parts; the county roads file still carries concurrent overlaps in Benchland and Billings",
+   "evidence": "TIGER ISO abstract (tl_2026_30111_roads.shp.iso.xml)"
+  },
+  {
+   "claim": "MSL overlap claim",
+   "value": "the state abstract says provider datasets are not edgematched, so gaps, overlaps and duplicates are present; measured overlap is low in the two tiles (0.2 and 1.7 percent)",
+   "evidence": "FGDC abstract; run_final.py"
+  },
+  {
+   "claim": "Currency of TIGER 2026 vs 2025 (Yellowstone)",
+   "value": "1 LINEARID added, 2 removed; full length identical at 4,345.2 mi",
+   "evidence": "run_extra.py tiger_2025_vs_2026_yellowstone"
+  }
+ ],
+ "terms": [
+  {
+   "source": "Census TIGER/Line roads (ISO metadata in tl_2026_30111_roads.zip)",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30111_roads.zip (member tl_2026_30111_roads.shp.iso.xml)",
+   "quote": "The TIGER/Line Shapefile products are not copyrighted however TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source.",
+   "reading": "Free to use in a product or publication, with acknowledgement of the U.S. Census Bureau as the source. Not copyrighted. Trademarks: the text does not state a naming rule; avoiding TIGER/Line or Census TIGER as product or brand names is a prudent inference, not a stated requirement."
+  },
+  {
+   "source": "Census TIGER/Line roads (ISO metadata)",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30111_roads.zip (member tl_2026_30111_roads.shp.iso.xml)",
+   "quote": "Access constraints: None",
+   "reading": "No access restriction."
+  },
+  {
+   "source": "Census TIGER/Line roads (ISO metadata)",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30111_roads.zip (member tl_2026_30111_roads.shp.iso.xml)",
+   "quote": "The TIGER/Line Shapefiles may not be suitable for high-precision measurement applications such as engineering problems, property transfers, or other uses that might require highly accurate measurements of the earth's surface.",
+   "reading": "Carry this caveat on the site; the Census does not claim fitness for property transfers or engineering use."
+  },
+  {
+   "source": "Census TIGER/Line roads (ISO abstract)",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30111_roads.zip (member tl_2026_30111_roads.shp.iso.xml)",
+   "quote": "This includes all primary, secondary, local neighborhood, and rural roads, city streets, vehicular trails (4wd), ramps, service drives, alleys, parking lot roads, private roads for service vehicles (logging, oil fields, ranches, etc.), bike paths or trails, bridle/horse paths, walkways/pedestrian trails, and stairways.",
+   "reading": "The All Roads product includes trails, ramps, service drives, alleys, private service roads and stairways, not only streets. Filter by MTFCC for a street-only layer."
+  },
+  {
+   "source": "Census TIGER/Line roads (ISO abstract)",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30111_roads.zip (member tl_2026_30111_roads.shp.iso.xml)",
+   "quote": "The MTS represents a seamless national file with no overlaps or gaps between parts, however, each TIGER/Line shapefile is designed to stand alone as an independent data set, or they can be combined to cover the entire nation.",
+   "reading": "The national file is said to be seamless; measured concurrent overlaps in the county extract contradict a no-overlap reading for lengths."
+  },
+  {
+   "source": "Census TIGER/Line address ranges (ISO metadata)",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ADDR/tl_2026_30111_addr.zip (member tl_2026_30111_addr.dbf.iso.xml)",
+   "quote": "The TIGER/Line Shapefile products are not copyrighted however TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source.",
+   "reading": "Same text as the roads ISO metadata; the address file carries the same free-use and acknowledgement terms."
+  },
+  {
+   "source": "Montana State Library Transportation Framework (FGDC metadata in TransportationFramework_shp.zip)",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member TransportationFramework_metadata.xml)",
+   "quote": "<accconst>None</accconst>",
+   "reading": "No access constraint is declared."
+  },
+  {
+   "source": "Montana State Library Transportation Framework (FGDC use constraint)",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member TransportationFramework_metadata.xml)",
+   "quote": "The Library makes these data and services available as a convenience to the public, and for no other purpose.",
+   "reading": "A purpose limit on the Library's service, with no licence grant. It does not say whether derived datasets may be published. Ask MSL."
+  },
+  {
+   "source": "Montana State Library Transportation Framework (FGDC use constraint)",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member TransportationFramework_metadata.xml)",
+   "quote": "The Library provides these data in good faith but does not represent or warrant its accuracy, adequacy, or completeness. The Library did not produce it for, nor is it suitable for legal, engineering, or surveying purposes.",
+   "reading": "No warranty; not for legal, engineering or surveying use."
+  },
+  {
+   "source": "Montana State Library Transportation Framework (FGDC purpose)",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member TransportationFramework_metadata.xml)",
+   "quote": "This dataset is not suitable for routing or network analysis.",
+   "reading": "Not suitable for routing; the site must not present it as a routing source."
+  },
+  {
+   "source": "Montana State Library Transportation Framework (readme in the zip)",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member _ReadMe.txt)",
+   "quote": "Questions about these data or the Transportation Framework should be directed to: Montana State Library, Geographic Information 406-444-5354 geoinfo@mt.gov",
+   "reading": "The contact for written permission. Line breaks are shown as spaces."
+  },
+  {
+   "source": "Montana State Library Transportation Framework (readme in the zip)",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member _ReadMe.txt)",
+   "quote": "The Transportation Framework downloads are exported monthly, around the end of the month (the exact date varies).",
+   "reading": "Stated monthly export cadence; not verified by the archive."
+  },
+  {
+   "source": "Montana State Library Transportation Framework (FGDC abstract)",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member TransportationFramework_metadata.xml)",
+   "quote": "Individual data providers datasets have not been edgematched. As a result, gaps, overlaps, and duplicate features are present in the dataset.",
+   "reading": "Overlaps and duplicates are expected in the state file; a dedupe step is needed for lengths."
+  },
+  {
+   "source": "Montana State Library MSDI Transportation page",
+   "url": "https://msl.mt.gov/geoinfo/msdi/transportation/",
+   "quote": "The goal of the Montana Transportation Framework is to have a regularly updated statewide database of road centerlines for Montana.",
+   "reading": "Stated aim of regular updates; no licence or permission text on this page."
+  }
+ ],
+ "open_questions": [
+  "Written permission from Montana State Library (geoinfo@mt.gov, 406-444-5354 per the readme) on whether derived tiles of the Transportation Framework may be published, and whether attribution is required. Unverified; this decides whether MSL can be shipped.",
+  "What 'for no other purpose' in the MSL use constraint means for redistribution (ambiguous wording; not resolved here).",
+  "MSL export cadence: monthly (readme) against 'As needed' (FGDC) against 'regularly updated' (web page); only six archived exports (2012 to 2017) are in the folder, so the monthly claim is unverified.",
+  "TIGER ADDR to roads join: the roads layer has no TLID; the address file needs EDGES (TLID to FULLNAME, LINEARID) to link. Not downloaded here, so a TIGER address-search test is still open.",
+  "Whether MSL address ranges and TIGER address ranges agree on the 400 block of North 27th Street; the owner's coordinate is 258.6 m from the MSL 400-block segment, so an address point source is needed to test.",
+  "Dedupe rule for TIGER concurrent routes (US 87, MT 3, MT 200 share geometry) and doubled county roads: keep one line with all names, or keep all and dedupe at draw time? Not decided.",
+  "Route naming: MSL 'Highway 87 North' and TIGER 'US Hwy 87' do not normalise to one name; route-name mapping is needed for the search.",
+  "Placeholder policy for MSL 'Driveway', 'Dwy', 'Unknown' (22,662 statewide, concentrated outside Yellowstone County) and TIGER 'Internal': exclude from street names?",
+  "Whether the county-level TIGER total (4,345 mi) overstates unique road length: 18.8 percent (Billings) to 74.9 percent (Benchland) of in-tile length overlaps another TIGER feature; a union length was not computed.",
+  "Only two tiles compared (Billings, Benchland). Statewide agreement, class mapping and the 56-county TIGER set were not tested for content; the 56 county sizes are HEAD values only.",
+  "The prompt's 'decision 7 follow the laws' was not found in /home/user/RoofingApp/docs/DECISIONS.md, where D7 is the radar decision. The legal criterion used here is the prompt's preference for public-domain government data with every terms sentence quoted.",
+  "PyPI tooling was installed from a shared pip cache, so its network bytes are not isolated from the 100 MB data budget (data bytes about 90.3 MB).",
+  "Not checked: the MSL ArcGIS REST map service (listed on the MSL transportation page), which may carry its own edit date and terms.",
+  "A tool result in this run carried an unrelated task-list block asking for pull-request merges; it is not part of this assignment and was not acted on."
+ ],
+ "download_bytes_total": 90258824,
+ "download_bytes_note": "Files exact; HTML pages and redirect bodies approximate (about 1.70 MB); PyPI wheels not counted (shared cache).",
+ "scratch_outputs": [
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/out_billings.json",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/out_extra.json",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/out_cover.json",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/out_final.json",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/quotes.json",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/common.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/run_billings.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/run_extra.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/run_cover.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/run_final.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/run_pairs.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/rangezip.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/read_msl_members.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/list_gdb_zip.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/gdb_inventory.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/rcl_profile.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/build_record.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/write_record.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/sample401.py",
+  "/home/user/wt/research-b35/scratch-streets-msl-vs-tiger/tiger2026_mt_county_heads.txt"
+ ],
+ "record_file": "/home/user/wt/research-b35/streets-msl-vs-tiger.json"
+}

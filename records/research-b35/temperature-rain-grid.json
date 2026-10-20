@@ -1,0 +1,967 @@
+{
+ "slug": "temperature-rain-grid",
+ "question": "Daily highs, lows and rain for every Montana location over the trailing five years from a public-domain gridded source: per-cell summaries, backfill-then-monthly design, contract row, open questions.",
+ "bottom_line": "Use NOAA nClimGrid-Daily scaled monthly files (AWS bucket noaa-nclimgrid-daily-pds) for daily precipitation, maximum and minimum temperature on its 1/24-degree grid: 25,902 Montana land cells. NOAA's file attribute says 'license = no restrictions' and the registry asks for attribution. The five years cannot be downloaded daily (60 scaled months total 3.55 GB; a daily run needs about 10 MB), so backfill once from whole monthly files into per-cell monthly aggregates, update monthly from each new scaled file, and update daily only from new preliminary days (about 1.4 MB per new day). Snow is not in this source. PRISM is not needed: its terms say the PRISM Group 'retains rights to ownership' and ask for attribution, so it is not public domain.",
+ "recommendation": "1) Source: nClimGrid-Daily access/grids/YYYY/ncdd-YYYYMM-grd-scaled.nc for prcp, tmax, tmin (tavg not needed). Use a prelim file only for months after the last scaled file, and label those values provisional. Newest scaled month at the time of the run: 2026-09 (created 2026-10-06).\n2) Backfill once: stream each of the 60 scaled months 2021-10 to 2026-09 as whole files (56.9 MB took 1.8 s here, 31.8 MB/s), read the three variables with h5py, and reduce each month to per-cell monthly aggregates for the 25,902 land cells: rain total, rain maximum and its day, tmax maximum and its day, tmin minimum and its day, days at or above 90 F, days at or below 0 F, freeze-thaw days (low under 32 F and high above 32 F on the same day), missing days. Cache the aggregates (estimate about 1.2 MB per month, not measured). Calendar and water-year totals come from the monthly sums.\n3) Monthly update: when a new scaled file appears (4 to 68 days after month end, median 66), read that month's three variables (about 41 MB by Range, 57 MB whole), replace that month's preliminary aggregates, drop the oldest month, rebuild the tiles.\n4) Daily update: list the year prefix (about 8 KB), then read only the new preliminary days' chunks by Range (about 1.37 MB per day for the three variables plus about 0.46 MB of file metadata per run). No five-year reads and no full-file downloads in the daily job. Never sum the -999.99 fill.\n5) Tiles: one JSON file per hail-store 0.1-degree tile (the B1 row/column rule from website/hail.py), one record per cell as integers (hundredths of an inch, tenths of a degree F, yyyymmdd dates). Measured for one month repeated over five records: 337 bytes per cell, 2,024 bytes median per tile, 1.21 MB gzip for all Montana tiles (see measurements.design_size).\n6) Wording: every cell value is a grid estimate about 4.6 km across, not a reading at the address. Show the nearest station reading in a separate row. At Billings the grid and the airport differed by 18.8 mm in July 2025 and the grid high was 1.0 C lower on 2025-06-15.",
+ "facts": [
+  {
+   "claim": "Grid geometry",
+   "value": "596 rows by 1,385 columns; 1/24 degree (0.041667 degree, 2.5 arc-minutes, about 4.6 km); daily cell centres lat 24.5625 + row/24 (rising) and lon -124.6875 + col/24; lat_last 49.354168, lon_last -67.020836",
+   "evidence": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-202506-grd-scaled.nc (HTTP 200, 56,872,702 bytes, read with h5py 3.16.0; dims and coordinate arrays); NCEI product page (1/24 degree statement)"
+  },
+  {
+   "claim": "Monthly product grid order",
+   "value": "same 1,385 by 596 grid; latitude stored north to south (descending) in the monthly file, so the Billings row is 86, not 509",
+   "evidence": "https://noaa-nclimgrid-monthly-pds.s3.amazonaws.com/nclimgrid_prcp.nc range probe (HTTP 206, lat array descending; centre 45.770866 N at row 86)"
+  },
+  {
+   "claim": "Variables, units, valid ranges, fill",
+   "value": "prcp in millimetres, valid 0 to 2000; tmax, tmin, tavg in degrees Celsius, valid -100 to 100; daily files float64 with NaN fill; monthly file float32; least_significant_digit 2",
+   "evidence": "netCDF attributes of the 2025-06 scaled file (units, valid_min, valid_max, _FillValue, least_significant_digit); README variable list (prcp mm; tavg, tmax, tmin degrees C)"
+  },
+  {
+   "claim": "Precision",
+   "value": "values are rounded to the nearest hundredth (the file's own comment); stored values such as 27.3125 read as 27.31",
+   "evidence": "2025-06 file comment attribute; Billings 2025-06-15 raw values 27.3125 C, 14.3516 C, 1.2266 mm"
+  },
+  {
+   "claim": "File layout and chunking",
+   "value": "one netCDF per month at access/grids/YYYY/ncdd-YYYYMM-grd-{scaled|prelim}.nc, plus ncdd-YYYYMM-version.txt; one chunk per day of shape (1, 596, 1385), gzip level 4 with shuffle",
+   "evidence": "README (doc/nclimgrid-daily_v1-0-0_readme-web.txt, HTTP 200, 7,143 bytes); S3 listings access/grids/2020 to 2026 (HTTP 200); h5 chunk index"
+  },
+  {
+   "claim": "Size of one month",
+   "value": "2025-06 scaled 56,872,702 bytes; compressed chunk bytes by variable in that month: prcp 7,583,742; tmax 16,994,442; tmin 16,383,790; tavg 15,850,833; prcp+tmax+tmin = 40,961,974 (72.0 percent of the file)",
+   "evidence": "full download of the 2025-06 file (HTTP 200); NCEI WAF HEAD for the same file (HTTP 200, Content-Length 56,872,702, identical); chunk index sizes"
+  },
+  {
+   "claim": "Five-year size",
+   "value": "calendar 2021 to 2025: 60 scaled files, 3,556,845,170 bytes (3.56 GB). Trailing 60 months 2021-10 to 2026-09: 60 scaled files, 3,548,877,305 bytes (3.55 GB). Per-year scaled totals: 2020 713,574,199; 2021 711,833,904; 2022 712,252,107; 2023 714,424,567; 2024 713,583,736; 2025 704,750,856 bytes",
+   "evidence": "S3 ListObjectsV2 for access/grids/2020 to 2026 (HTTP 200 each; 24 objects per year 2020 to 2025, 26 for 2026)"
+  },
+  {
+   "claim": "Scaled and preliminary",
+   "value": "scaled values are adjusted to match the monthly values; prelim values have not been scaled; prelim files are rewritten about daily. The README says the prelim file is removed once scaled exists, but the 2026 listing still shows both prelim and scaled for 2026-04 to 2026-09",
+   "evidence": "README (quoted in terms); S3 listing access/grids/2026/ (HTTP 200, 26 objects)"
+  },
+  {
+   "claim": "Scaled build lag",
+   "value": "21 scaled months checked (2025-01 to 2026-09): days from month end to the build date in the version file: median 66, range 4 to 68. Examples: 2025-06 created 2025-09-04 (66 days); 2025-07 and 2025-08 created 2025-09-04 (35 and 4 days); 2026-07 created 2026-10-06 (67); 2026-08 created 2026-10-06 (36); 2026-09 created 2026-10-06 (6)",
+   "evidence": "version files ncdd-YYYYMM-version.txt for 2025-01 to 2026-09 (21 files, 224 bytes or less each, HTTP 200)"
+  },
+  {
+   "claim": "Preliminary lag",
+   "value": "the 2026-10 prelim (S3 Last-Modified 2026-10-18 14:01 UTC) has valid values to 2026-10-15 and -999.99 from 2026-10-16; the 2026-09 prelim (Last-Modified 2026-10-02) has valid values to 2026-09-29 and -999.99 on 2026-09-30. Lag 2 to 3 days, matching the NCEI wording",
+   "evidence": "Range reads of the Billings cell from both prelim files; HEAD for the 2026-10 prelim (HTTP 200, 29,617,484 bytes); file sizes from the S3 listing for 2026-09 prelim (54,356,702 bytes)"
+  },
+  {
+   "claim": "Missing-value rules measured",
+   "value": "NaN marks non-land points; in June 2025 the grid has 10,671,060 NaN of 24,763,800 cells, and 71 Montana mask cells are NaN on all 30 days (water or non-land). Zero Montana land cells had a partial-month gap in June 2025. The prelim fill -999.99 (float32 -999.9922) marks days not yet available. The June 2025 scaled file has no values at or below -90 anywhere on the grid",
+   "evidence": "full-grid check of the 2025-06 scaled file (scripts/read_month.py, scripts/june_proto.py); Montana mask (scripts/montana_mask.py)"
+  },
+  {
+   "claim": "Billings sample cell (401 North 27th Street)",
+   "value": "nearest cell row 509, column 388; centre 45.770832 N, -108.520836 W; 1.9 km from the address point",
+   "evidence": "nearest-centre lookup on the 2025-06 scaled file lat and lon arrays (HTTP 200)"
+  },
+  {
+   "claim": "Billings cell, 2025-06-15",
+   "value": "tmax 27.31 C (81.2 F); tmin 14.35 C (57.8 F); prcp 1.23 mm (0.05 in); no missing day in June",
+   "evidence": "2025-06 scaled file, row 509, column 388 (daily values)"
+  },
+  {
+   "claim": "Billings cell, calendar 2025 precipitation",
+   "value": "468.94 mm (18.46 in) over 365 days with no missing day. Monthly mm: Jan 16.71, Feb 34.76, Mar 26.24, Apr 91.99, May 74.59, Jun 47.70, Jul 43.02, Aug 15.73, Sep 23.34, Oct 52.22, Nov 13.20, Dec 29.45",
+   "evidence": "Range reads of 11 months (HTTP 206; 31 to 42 requests per month) plus the local June file; 2025 totals in cells/billings-2025-summary.json"
+  },
+  {
+   "claim": "Monthly product cross-check (Billings, 2025)",
+   "value": "NCEI monthly prcp at the same cell sums to 468.98 mm for 2025; every month within 0.028 mm of the daily scaled sum (largest April)",
+   "evidence": "nclimgrid_prcp.nc 2025 column read (HTTP 206, 15 requests, 13,896,397 bytes); cells/monthly-prcp-billings-2025-col.json"
+  },
+  {
+   "claim": "Benchland rural sample cell (47.08 N, 110.02 W)",
+   "value": "nearest cell row 540, column 352; centre 47.0625 N, -110.020836 W; 1.95 km away. June 2025: rain 61.39 mm (2.42 in); largest day 15.30 mm (0.60 in) on 2025-06-21; highest 86.8 F on 2025-06-10; lowest 32.9 F on 2025-06-03; no day at or above 90 F, none at or below 0 F, no freeze-thaw day, no missing day",
+   "evidence": "2025-06 scaled file, row 540, column 352 (summary code, scripts/june_proto.py)"
+  },
+  {
+   "claim": "Billings cell, June 2025 summary",
+   "value": "rain 47.70 mm (1.88 in); largest day 9.45 mm (0.37 in) on 2025-06-22; highest 91.1 F on 2025-06-10; lowest 41.3 F on 2025-06-23; 2 days at or above 90 F; no day at or below 0 F; no freeze-thaw day",
+   "evidence": "2025-06 scaled file, row 509, column 388 (scripts/june_proto.py)"
+  },
+  {
+   "claim": "Montana cells and June 2025 spread",
+   "value": "25,973 cells inside the Montana polygon (31,968 in the bounding box); 25,902 land cells with values on all 30 days. Median June rain 47.7 mm (range 9.2 to 175.1 mm); largest-day median 14.2 mm (3.1 to 44.2 mm); highest 97.0 F; lowest 24.0 F; up to 11 freeze-thaw days in one cell",
+   "evidence": "Montana polygon from website/static/map/basemap.json (land feature named Montana; sources line: Natural Earth v5.1.2 and Census 2017 cartographic boundaries, public domain); 2025-06 scaled file"
+  },
+  {
+   "claim": "Hail-store tile rule and tile count",
+   "value": "B1 tiles are 10 by 10 cells of the 0.01-degree grid; cell row = floor(5500 - 100 x lat), column = floor(100 x lon + 13000), tile = row // 10 and column // 10. The 25,902 land cells fall in 4,568 tiles",
+   "evidence": "/home/user/wt/wt-b2/website/hail.py lines 9 to 10, 199 to 202, 231 to 236 (read only); tile count from scripts/june_proto.py"
+  },
+  {
+   "claim": "GHCN-Daily airport station USW00024033, 2025-06-15",
+   "value": "TMAX 28.3 C (82.9 F); TMIN 15.0 C (59.0 F); PRCP 3.3 mm (0.13 in); no measurement flags (source flag W)",
+   "evidence": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly (HTTP 200, 4,625,370 bytes, Last-Modified 2026-10-18 22:51:32 GMT, 17,131 lines of 269 characters, last date 2026-10-16)"
+  },
+  {
+   "claim": "Grid minus airport, one day (2025-06-15)",
+   "value": "tmax minus 0.99 C; tmin minus 0.65 C; prcp minus 2.07 mm (grid 1.23 mm, station 3.3 mm)",
+   "evidence": "the two sources above"
+  },
+  {
+   "claim": "Grid minus airport, calendar 2025",
+   "value": "grid cell 468.9 mm; airport 464.9 mm (365 days with value). Monthly differences from minus 11.8 mm (February) to plus 18.8 mm (July: grid 43.0, airport 24.2). June: grid 47.7, airport 48.7",
+   "evidence": "the two sources above; cells/ghcn-airport-2025.json"
+  },
+  {
+   "claim": "Airport S3 by_station file is stale",
+   "value": "csv/by_station/USW00024033.csv (13,856,867 bytes, Last-Modified 2025-02-09, ETag 8b19fc32...-3) ends at DATE 20250206, so it cannot check 2025-06-15",
+   "evidence": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USW00024033.csv (HTTP 200; full download parsed)"
+  },
+  {
+   "claim": "Preliminary vs scaled at Billings, September 2026",
+   "value": "prelim Sep 1 to 29 totals 54.72 mm against 66.21 mm scaled (minus 11.49 mm, about minus 17 percent). 9 of 29 days differ; largest daily gap 5.13 mm (Sep 20). Tmax on five valid sampled days differs by up to 0.28 C (Sep 1)",
+   "evidence": "Range reads of 2026-09 prelim and scaled (prcp 30 days: 7,175,778 and 7,925,033 bytes; tmax 6 sampled days: 2,991,890 and 3,434,651 bytes)"
+  },
+  {
+   "claim": "NCEI monthly product (full history)",
+   "value": "nclimgrid_prcp.nc 1,798,084,265 bytes; nclimgrid_tmax.nc 1,527,621,932; nclimgrid_tmin.nc 1,614,398,336; nclimgrid_tavg.nc 1,525,103,736. 1,581 months from 1895-01 to 2026-09; float32; one chunk per month (mean about 1.14 MB for prcp)",
+   "evidence": "https://noaa-nclimgrid-monthly-pds.s3.amazonaws.com/ root listing (HTTP 200, 4,225 bytes); HEAD and Range probe of nclimgrid_prcp.nc (HTTP 206, 33 requests, 2,162,688 bytes)"
+  },
+  {
+   "claim": "PRISM daily access and resolution",
+   "value": "web service path us/4km returns a zip (HTTP 200, application/zip, 3,196,167 bytes) named prism_tmax_us_25m_20250615.zip: a GeoTIFF on a 2.5 arc-minute (about 4 km) grid, built from a 30 arc-second (about 800 m) grid filtered with a Gaussian filter. Its metadata says 'Access pursuant to license agreement'",
+   "evidence": "https://services.nacse.org/prism/data/get/us/4km/tmax/20250615 (HTTP 200; zip listed and metadata read, not extracted); PRISM_datasets.pdf (HTTP 200, 1,129,424 bytes)"
+  },
+  {
+   "claim": "Snow",
+   "value": "nClimGrid has no snow variable (prcp, tmax, tmin, tavg only). Airport SNOW (mm) summed by calendar year from recorded daily values (365 or 366 values each year): 2021 1,189 mm (46.8 in); 2022 1,536 (60.5 in); 2023 1,132 (44.6 in); 2024 834 (32.8 in); 2025 2,012 (79.2 in), of which February 2025 is 782 mm; 2026 to Oct 16: 502 mm (19.8 in). Not quality checked; the February 2025 total needs checking before use. An earlier draft of these sums divided by ten in error and was corrected",
+   "evidence": "GHCN-Daily readme units (SNOW = Snowfall (mm)); USW00024033.dly (HTTP 200)"
+  },
+  {
+   "claim": "NCEI daily-summaries service unavailable",
+   "value": "HTTP 503 (Service Unavailable, 418-byte body) on two attempts (June 2025 with metric units, then June 14 to 16, 2025); no data taken from it",
+   "evidence": "https://www.ncei.noaa.gov/access/services/data/v1?dataset=daily-summaries&dataTypes=TMAX,TMIN,PRCP&stations=USW00024033 (HTTP 503)"
+  },
+  {
+   "claim": "Read time for one month (this machine)",
+   "value": "local June 2025 file, h5py 3.16.0, numpy 2.5.3, Python 3.13.16: full arrays prcp 1.88 s, tmax 2.23 s, tmin 2.00 s. Montana block only: prcp 0.71 s, tmax 0.62 s, tmin 0.64 s; per-cell summary of all Montana land cells 0.16 s. netCDF4 and xarray were not installed; h5py was enough",
+   "evidence": "scripts/read_month.py and scripts/june_proto.py timings"
+  },
+  {
+   "claim": "Cost of reading one cell by Range",
+   "value": "one cell, one variable, one month: 31 to 42 requests, 3.5 to 8.4 MB, 7.7 to 9.8 s over the network. A cell's full-year prcp is 75.3 MB by Range (11 months); its full-year tmax would be about 200 MB (estimate, chunks are whole days)",
+   "evidence": "scripts/range_cell.py outputs for 2025-01 to 2025-12 (cells/billings-prcp-2025MM.json)"
+  },
+  {
+   "claim": "Mistake and its cost",
+   "value": "the first monthly-product read used the daily row (509), which in the north-to-south monthly grid is 28.1 N (all NaN). The correct re-read cost 13.9 MB more",
+   "evidence": "cells/monthly-prcp-billings-2025.json (wrong row, 13,896,397 bytes) and cells/monthly-prcp-billings-2025-col.json (correct row)"
+  },
+  {
+   "claim": "Download total for this run",
+   "value": "212,165,683 bytes measured (about 212.2 MB) plus about 0.06 MB of small unlogged responses; under the 300 MB limit",
+   "evidence": "scripts/fetch.sh log (fetch-log.tsv), HttpRangeFile logs in cells/*.json, S3 listing sizes; breakdown in measurements.download_breakdown_bytes"
+  }
+ ],
+ "terms": [
+  {
+   "source": "nClimGrid-Daily 2025-06 scaled file, global attribute",
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-202506-grd-scaled.nc",
+   "quote": "license = no restrictions",
+   "reading": "The file declares no restrictions. Read with the registry terms below, which ask for attribution."
+  },
+  {
+   "source": "AWS Registry of Open Data, NOAA nClimGrid license paragraph",
+   "url": "https://registry.opendata.aws/noaa-nclimgrid/",
+   "quote": "NOAA makes data openly available to ensure maximum use of our data, and to spur and encourage exploration and innovation throughout the industry. NOAA requests attribution for the use or dissemination of unaltered NOAA data. However, it is not permissible to state or imply endorsement by or affiliation with NOAA. If you modify NOAA data, you may not state or imply that it is original, unaltered NOAA data.",
+   "reading": "Attribution is requested. The About page must not imply NOAA endorsement and must not present modified values as unaltered NOAA data. The page covers both the daily and the monthly bucket."
+  },
+  {
+   "source": "AWS Registry of Open Data, citation form",
+   "url": "https://registry.opendata.aws/noaa-nclimgrid/",
+   "quote": "NOAA U.S. Climate Gridded Dataset (NClimGrid) was accessed on DATE from https://registry.opendata.aws/noaa-nclimgrid.",
+   "reading": "Citation form for the About page, with the access date filled in."
+  },
+  {
+   "source": "AWS Registry of Open Data, EpiNOAA derivative (not used)",
+   "url": "https://registry.opendata.aws/noaa-nclimgrid/",
+   "quote": "Daily data are updated every 3 days with a preliminary data file and replaced with the scaled (i.e., quality controlled) data file every three months.",
+   "reading": "This describes the county-scale EpiNOAA derivative, not the gridded files. Quoted so the timing is not mixed up with the grids, whose scaled files lagged 4 to 68 days."
+  },
+  {
+   "source": "nClimGrid-Daily v1.0.0 README (AWS doc folder)",
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/doc/nclimgrid-daily_v1-0-0_readme-web.txt",
+   "quote": "Note that the prelim files will be updated daily. Once a \"scaled\" set has been created for a month for which all data are available, the corresponding \"prelim\" file will be removed.",
+   "reading": "Prelim is replaced by scaled. In the 2026 listing both still exist for 2026-04 to 2026-09 (open question). The daily job reads the scaled file where one exists."
+  },
+  {
+   "source": "nClimGrid-Daily v1.0.0 README",
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/doc/nclimgrid-daily_v1-0-0_readme-web.txt",
+   "quote": "scaled = Scaled, indicating that the values in the file have been adjusted to match corresponding monthly values",
+   "reading": "Scaled values match the monthly product (checked for Billings 2025: within 0.028 mm per month)."
+  },
+  {
+   "source": "nClimGrid-Daily v1.0.0 README",
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/doc/nclimgrid-daily_v1-0-0_readme-web.txt",
+   "quote": "prelim = Preliminary, indicating that the values in the file have not been scaled to match the corresponding values from the monthly nClimGrid product.",
+   "reading": "Prelim values are provisional and differ from scaled values (Billings, September 2026: 17 percent lower over 29 days)."
+  },
+  {
+   "source": "nClimGrid-Daily v1.0.0 README (CSV section)",
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/doc/nclimgrid-daily_v1-0-0_readme-web.txt",
+   "quote": "Values on nonexistent days such as February 30 are set to -999.99.",
+   "reading": "This is the CSV rule. The netCDF prelim files use -999.99 for days not yet available (measured), so the same sentinel must be treated as missing."
+  },
+  {
+   "source": "nClimGrid-Daily v1.0.0 README",
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/doc/nclimgrid-daily_v1-0-0_readme-web.txt",
+   "quote": "Gridded fields are organized into one Network Common Data Format (NetCDF) file per year-month",
+   "reading": "One netCDF per month, as used here."
+  },
+  {
+   "source": "nClimGrid-Daily 2025-06 scaled file, comment attribute",
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-202506-grd-scaled.nc",
+   "quote": "Values should be rounded to the nearest hundredth. Each daily value applies to the 24-hour period ending in the early morning of the specified day.",
+   "reading": "Round to 0.01 before use. A daily value is the 24 hours ending in the early morning of its date; this is the day definition for the page."
+  },
+  {
+   "source": "NCEI nClimGrid-Daily product page",
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "quote": "Although preliminary nClimGrid-Daily fields and area averages often become available two to three days after the observation date, they may not be accurate enough for some applications because of latency issues.",
+   "reading": "The source's own latency statement; the page should say that recent days are provisional."
+  },
+  {
+   "source": "NCEI nClimGrid-Daily product page",
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "quote": "Single-day values and individual points are inherently uncertain as a result of the spatial distribution of the underlying observations, differences in observation time between neighboring stations, and interpolation errors.",
+   "reading": "Source wording for the uncertainty note. Single-day cell values must not be shown as exact."
+  },
+  {
+   "source": "NCEI nClimGrid-Daily product page",
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "quote": "Occasional data stream interruptions can result in a longer production period for nClimGrid-Daily.",
+   "reading": "Production delays happen; the build must tolerate a late month without showing a false all-clear."
+  },
+  {
+   "source": "NCEI nClimGrid-Daily product page",
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "quote": "The gridded fields cover the land area between approximately 24°N and 49°N and between 67°W and 125°W at a resolution of 1/24 of a degree (0.0417°).",
+   "reading": "Grid extent and resolution (matches the file)."
+  },
+  {
+   "source": "NCEI nClimGrid-Daily product page",
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "quote": "The daily gridded fields are generated by interpolating morning and midnight observations from the Global Historical Climatology Network-daily (GHCNd) dataset",
+   "reading": "The grid is interpolated from station observations, so it is an estimate between stations."
+  },
+  {
+   "source": "NCEI nClimGrid-Monthly gridded README",
+   "url": "https://www.ncei.noaa.gov/data/nclimgrid-monthly/doc/gridded-readme.txt",
+   "quote": "The actual grid is 1/24th of a degree. The 1385x596 grid covers CONUS but the non-land points are filled with NaN.",
+   "reading": "Non-land points (including water) are NaN in the monthly product too."
+  },
+  {
+   "source": "PRISM Group Terms of Use",
+   "url": "https://prism.oregonstate.edu/terms/",
+   "quote": "Data. All data (gridded, polygon, tabular, graphical) retrieved from this website or otherwise provided on the website may be freely reproduced and distributed.",
+   "reading": "PRISM data may be reproduced and distributed freely, with the attribution below."
+  },
+  {
+   "source": "PRISM Group Terms of Use",
+   "url": "https://prism.oregonstate.edu/terms/",
+   "quote": "References to the Data. When the data are used, any description should clearly and prominently state, at a minimum, our name, URL, and the date of data access.",
+   "reading": "Required attribution wording if PRISM is ever used."
+  },
+  {
+   "source": "PRISM Group Terms of Use",
+   "url": "https://prism.oregonstate.edu/terms/",
+   "quote": "Copyright and Ownership. All data and information presented through this website are protected by United States copyright laws and applicable international copyright treaties. The PRISM Group, Oregon State University retains rights to ownership of the data and information.",
+   "reading": "PRISM is copyrighted and owned by Oregon State University, so it is not public domain; the owner's rule prefers public-domain data."
+  },
+  {
+   "source": "PRISM Group bulk download information",
+   "url": "https://prism.oregonstate.edu/downloads/",
+   "quote": "It is important to note that preliminary data fetched in this manner do not account for the fact that we produce 8 versions of a daily grid (and 7 versions of a monthly grid), out to six months, at which point we call it \"final.\"",
+   "reading": "PRISM also revises its daily grids over six months, so versions must be recorded if PRISM is used."
+  },
+  {
+   "source": "PRISM datasets documentation",
+   "url": "https://prism.oregonstate.edu/documents/PRISM_datasets.pdf",
+   "quote": "Availability: 4km and 800m versions are freely available at http://prism.oregonstate.edu.",
+   "reading": "4 km and 800 m versions exist (AN91d daily section)."
+  },
+  {
+   "source": "PRISM web-service zip, info file",
+   "url": "https://services.nacse.org/prism/data/get/us/4km/tmax/20250615",
+   "quote": "This grid was initially modeled with PRISM at 30-arc-second (~800-m) resolution to produce the source grid listed under PRISM_DATASET_FILENAME, on the date(s) listed under PRISM_DATASET_CREATE_DATE. This source grid was then upscaled to 2.5-arc-minute (~4-km) resolution with a Gaussian filter.",
+   "reading": "The 4 km grid is derived from an 800 m source by filtering, so its 4 km values are smoothed."
+  },
+  {
+   "source": "PRISM web-service zip, XML metadata",
+   "url": "https://services.nacse.org/prism/data/get/us/4km/tmax/20250615",
+   "quote": "Access pursuant to license agreement",
+   "reading": "The metadata refers to a license agreement that was not read in this run (open question)."
+  },
+  {
+   "source": "PRISM web-service zip, XML metadata",
+   "url": "https://services.nacse.org/prism/data/get/us/4km/tmax/20250615",
+   "quote": "Acknowledgement of the following agencies in products derived from these data: PRISM Climate Group at Oregon State University.",
+   "reading": "Acknowledgement wording from the metadata."
+  },
+  {
+   "source": "NCEI GHCN-Daily readme (units)",
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+   "quote": "PRCP = Precipitation (tenths of mm)",
+   "reading": "Station precipitation is in tenths of a millimetre; divide by 10."
+  },
+  {
+   "source": "NCEI GHCN-Daily readme (units)",
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+   "quote": "SNOW = Snowfall (mm)",
+   "reading": "Station snowfall is in millimetres, not tenths (an earlier draft got this wrong)."
+  },
+  {
+   "source": "NCEI GHCN-Daily readme (units)",
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+   "quote": "SNWD = Snow depth (mm)",
+   "reading": "Station snow depth is in millimetres."
+  },
+  {
+   "source": "NCEI GHCN-Daily readme (units)",
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+   "quote": "TMAX = Maximum temperature (tenths of degrees C)",
+   "reading": "Station maximum temperature is in tenths of a degree C."
+  }
+ ],
+ "urls_checked": [
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/?list-type=2&delimiter=/",
+   "http_status": "200",
+   "bytes": 797,
+   "content_check": "top-level prefixes EpiNOAA/, access/, archive/, doc/ and index.html; no README at the root"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/README.md",
+   "http_status": "404",
+   "bytes": 280,
+   "content_check": "NoSuchKey (README.txt and README also 404; no readme at the root)"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/index.html",
+   "http_status": "200",
+   "bytes": 36822,
+   "content_check": "S3 Explorer page; no data content"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/doc/nclimgrid-daily_v1-0-0_readme-web.txt",
+   "http_status": "200",
+   "bytes": 7143,
+   "content_check": "v1.0.0 README: layout, file names, prcp mm, tavg/tmax/tmin degrees C, prelim/scaled meanings, -999.99 CSV rule"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/doc/nclimgrid-daily_status-web.txt",
+   "http_status": "200",
+   "bytes": 1826,
+   "content_check": "release notes: v1.0.0 released 2022-09-26 to 28; monthly one netCDF per month"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/doc/nclimgrid-daily_v1-0-0_user-guide.pdf",
+   "http_status": "200",
+   "bytes": 119669,
+   "content_check": "user guide, 15,826 characters of text extracted (pdftotext)"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/doc/us-state-codes_ncei-to-fips.csv",
+   "http_status": "200",
+   "bytes": 972,
+   "content_check": "state code cross-reference (not used)"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/?list-type=2&prefix=access/grids/YYYY/ (2020 to 2026)",
+   "http_status": "200",
+   "bytes": 57198,
+   "content_check": "ListObjectsV2 for seven years: 24 objects per year 2020 to 2025 and 26 for 2026; sizes and dates recorded"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/?list-type=2&prefix=access/&delimiter=/",
+   "http_status": "200",
+   "bytes": 415,
+   "content_check": "access/averages/ and access/grids/ prefixes"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-202506-grd-scaled.nc",
+   "http_status": "200",
+   "bytes": 56872702,
+   "content_check": "full download; netCDF4/HDF5; 596 x 1385 x 30; license attribute; chunks (1,596,1385)"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-202506-grd-scaled.nc (Range bytes=0-1023)",
+   "http_status": "206",
+   "bytes": 1024,
+   "content_check": "Content-Range bytes 0-1023/56872702 (range support confirmed)"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/nclimgrid-daily/access/grids/2025/ncdd-202506-grd-scaled.nc",
+   "http_status": "200 (HEAD)",
+   "bytes": 0,
+   "content_check": "Content-Length 56872702, same as the AWS copy"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/YYYY/ncdd-YYYYMM-version.txt (21 months 2025-01 to 2026-09, plus 2026-08)",
+   "http_status": "200",
+   "bytes": 5152,
+   "content_check": "'created on' date and GHCN-Daily input per month (224 bytes or less each)"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2026/ncdd-202610-grd-prelim.nc",
+   "http_status": "200 (HEAD and Range)",
+   "bytes": 458752,
+   "content_check": "HEAD Content-Length 29617484; metadata Range read 458,752 bytes; prcp shape 31 days; valid to 2026-10-15, -999.99 from 2026-10-16"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2026/ncdd-202610-grd-prelim.nc (Billings prcp, 10 days)",
+   "http_status": "206",
+   "bytes": 1532316,
+   "content_check": "2026-10-10 0.0; 10-13 0.2422; 10-14 0.0; 10-15 0.0; 10-16 to 10-20 -999.9922; 10-31 -999.9922"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2026/ncdd-202609-grd-prelim.nc",
+   "http_status": "200 (HEAD) and 206",
+   "bytes": 7175778,
+   "content_check": "prelim prcp 30 days: Sep 1 to 29 valid, Sep 30 -999.99; full-month Range read 7,175,778 bytes"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2026/ncdd-202609-grd-scaled.nc",
+   "http_status": "200 (HEAD) and 206",
+   "bytes": 7925033,
+   "content_check": "scaled prcp 30 days, no fill; full-month Range read 7,925,033 bytes; tmax 6-day read 3,434,651 bytes"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2026/ncdd-202609-grd-prelim.nc (tmax, 6 days)",
+   "http_status": "206",
+   "bytes": 2991890,
+   "content_check": "tmax Sep 1 27.7422 C ... Sep 30 -999.9922 (prelim gap)"
+  },
+  {
+   "url": "https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-2025MM-grd-scaled.nc (MM 01 to 05, 07 to 12; Billings prcp Range reads)",
+   "http_status": "206",
+   "bytes": 75344153,
+   "content_check": "11 files; per month 31 to 42 requests; daily Billings prcp, no NaN; monthly sums 16.71 to 91.99 mm"
+  },
+  {
+   "url": "https://registry.opendata.aws/noaa-nclimgrid/",
+   "http_status": "200",
+   "bytes": 12438,
+   "content_check": "License paragraph (NOAA attribution), how-to-cite line, AWS CLI examples for the daily and monthly buckets, EpiNOAA paragraph"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "http_status": "200",
+   "bytes": 48706,
+   "content_check": "product page: 1/24 degree grid, latency wording (two to three days), uncertainty wording, production delays, GHCNd interpolation"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/",
+   "http_status": "200",
+   "bytes": 40014,
+   "content_check": "access options; no licence or public-domain statement for these grids"
+  },
+  {
+   "url": "https://www.noaa.gov/disclaimer",
+   "http_status": "200",
+   "bytes": 49563,
+   "content_check": "external-link disclaimer; no public-domain wording for these grids"
+  },
+  {
+   "url": "https://www.noaa.gov/information-technology/open-data-dissemination",
+   "http_status": "200",
+   "bytes": 80978,
+   "content_check": "NOAA Open Data Dissemination description; no public-domain wording for these grids"
+  },
+  {
+   "url": "https://noaa-nclimgrid-monthly-pds.s3.amazonaws.com/?list-type=2&delimiter=/",
+   "http_status": "200",
+   "bytes": 4225,
+   "content_check": "root: nclimgrid_prcp.nc (1,798,084,265 bytes), nclimgrid_tmax.nc, nclimgrid_tmin.nc, nclimgrid_tavg.nc and the .pnt files"
+  },
+  {
+   "url": "https://noaa-nclimgrid-monthly-pds.s3.amazonaws.com/nclimgrid_prcp.nc",
+   "http_status": "200 (HEAD); 206 (Range)",
+   "bytes": 2162688,
+   "content_check": "Content-Length 1798084265, Accept-Ranges bytes; metadata Range read 33 requests; float32; 1,581 monthly steps; chunks (1,596,1385)"
+  },
+  {
+   "url": "https://noaa-nclimgrid-monthly-pds.s3.amazonaws.com/nclimgrid_prcp.nc (2025 column)",
+   "http_status": "206",
+   "bytes": 13896397,
+   "content_check": "12 monthly chunks read in one pass; sum 468.98 mm at the Billings cell; 15 requests"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/nclimgrid-monthly/",
+   "http_status": "200",
+   "bytes": 1112,
+   "content_check": "web-accessible folder top: access/ and doc/"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/nclimgrid-monthly/access/",
+   "http_status": "200",
+   "bytes": 2804,
+   "content_check": "links to nclimgrid_*.nc and the .pnt files"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/nclimgrid-monthly/doc/",
+   "http_status": "200",
+   "bytes": 1026,
+   "content_check": "doc folder: gridded-readme.txt"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/nclimgrid-monthly/doc/gridded-readme.txt",
+   "http_status": "200",
+   "bytes": 3573,
+   "content_check": "monthly product record format, 1895 to present, 1/24 degree, NaN on non-land"
+  },
+  {
+   "url": "https://prism.oregonstate.edu/terms/",
+   "http_status": "200",
+   "bytes": 16331,
+   "content_check": "PRISM Data Terms of Use text"
+  },
+  {
+   "url": "https://prism.oregonstate.edu/downloads/",
+   "http_status": "200",
+   "bytes": 16906,
+   "content_check": "bulk download information; version statement"
+  },
+  {
+   "url": "https://prism.oregonstate.edu/about/",
+   "http_status": "404",
+   "bytes": 14333,
+   "content_check": "not used (wrong path for the about page)"
+  },
+  {
+   "url": "https://prism.oregonstate.edu/documents/PRISM_datasets.pdf",
+   "http_status": "200",
+   "bytes": 1129424,
+   "content_check": "datasets PDF: 4 km and 800 m availability; 2.5 arc-minute (about 4 km) daily grids"
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/us/4km/tmax/20250615",
+   "http_status": "200",
+   "bytes": 3196167,
+   "content_check": "zip prism_tmax_us_25m_20250615.zip: GeoTIFF, info, prj, stn.csv, xml metadata; read, not extracted. The first probe sent Range bytes=0-0 and received the full 200 body (same size assumed, not separately measured)"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USW00024033.csv",
+   "http_status": "200",
+   "bytes": 13856867,
+   "content_check": "period-of-record CSV; last DATE 20250206; Last-Modified 2025-02-09; no 2025-06-15 row (first attempt wrote 0 bytes because the folder did not exist; retried)"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme.txt",
+   "http_status": "200",
+   "bytes": 29587,
+   "content_check": "GHCN-Daily readme (bucket root)"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+   "http_status": "200",
+   "bytes": 29587,
+   "content_check": "units: PRCP tenths of mm; SNOW and SNWD mm; TMAX and TMIN tenths of degrees C"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly",
+   "http_status": "200",
+   "bytes": 4625370,
+   "content_check": "station file, fixed width 269 characters, last date 2026-10-16; 2025-06-15 TMAX 283, TMIN 150, PRCP 33 (tenths)"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/services/data/v1?dataset=daily-summaries&dataTypes=TMAX,TMIN,PRCP&stations=USW00024033&startDate=2025-06-01&endDate=2025-06-30&units=metric&format=csv",
+   "http_status": "503",
+   "bytes": 418,
+   "content_check": "Service Unavailable; retried for June 14 to 16 with the same result; no data used"
+  }
+ ],
+ "measurements": {
+  "grid": {
+   "rows": 596,
+   "cols": 1385,
+   "step_deg": 0.0416667,
+   "lat_first": 24.5625,
+   "lat_last": 49.354168,
+   "lon_first": -124.6875,
+   "lon_last": -67.020836
+  },
+  "montana": {
+   "polygon_source": "website/static/map/basemap.json land feature 'Montana' (212 vertices)",
+   "bbox_cells": 31968,
+   "mask_cells": 25973,
+   "no_value_cells_all_month_june_2025": 71,
+   "land_cells": 25902,
+   "partial_gap_cells_june_2025": 0
+  },
+  "tiles": {
+   "b1_tiles_with_land_cells": 4568,
+   "json_bytes_five_records_total": 8739694,
+   "json_bytes_per_cell_mean": 337.4,
+   "json_bytes_per_tile": {
+    "min": 369,
+    "median": 2024,
+    "max": 3056
+   },
+   "gzip_bytes_per_tile": {
+    "min": 135,
+    "median": 268,
+    "max": 384
+   },
+   "gzip_bytes_all_tiles_sum": 1211475,
+   "method": "one June 2025 record per cell, written five times (size stand-in, not five real years)"
+  },
+  "design_size": {
+   "per_cell_bytes_five_records": 337.4,
+   "per_tile_median_bytes": 2024,
+   "gzip_all_tiles_bytes": 1211475,
+   "note": "water-year totals (five more numbers per cell) are not included; estimate about 30 bytes per cell more"
+  },
+  "sizes_bytes": {
+   "june_2025_scaled": 56872702,
+   "calendar_2021_2025_scaled_60_files": 3556845170,
+   "trailing_60_months_2021_10_to_2026_09_scaled": 3548877305,
+   "scaled_2020": 713574199,
+   "scaled_2021": 711833904,
+   "scaled_2022": 712252107,
+   "scaled_2023": 714424567,
+   "scaled_2024": 713583736,
+   "scaled_2025": 704750856,
+   "scaled_2026_jan_to_sep": 521621262,
+   "prelim_2026_apr_to_oct": 359282490,
+   "monthly_nclimgrid_prcp_nc": 1798084265,
+   "monthly_nclimgrid_tmax_nc": 1527621932,
+   "monthly_nclimgrid_tmin_nc": 1614398336,
+   "monthly_nclimgrid_tavg_nc": 1525103736
+  },
+  "june_2025_compressed_chunk_bytes": {
+   "prcp": 7583742,
+   "tmax": 16994442,
+   "tmin": 16383790,
+   "tavg": 15850833,
+   "prcp_tmax_tmin": 40961974,
+   "share_of_file_prcp_tmax_tmin": 0.72
+  },
+  "backfill_estimates": {
+   "whole_file_download_bytes_60_months": 3548877305,
+   "range_download_three_variables_60_months_estimate": 2460000000,
+   "per_month_three_variable_range_bytes": 40961974,
+   "per_month_metadata_range_bytes_estimate": 459000,
+   "aggregate_cache_per_month_bytes_estimate": 1200000,
+   "note": "aggregate cache size is an estimate, not measured"
+  },
+  "daily_update_estimates": {
+   "per_new_day_three_variables_bytes": 1365398,
+   "per_run_metadata_bytes": 458752,
+   "example_week_run_bytes_estimate": 9999000,
+   "listing_bytes_per_year_prefix": 8038
+  },
+  "read_time_local_s": {
+   "full_prcp": 1.88,
+   "full_tmax": 2.23,
+   "full_tmin": 2.0,
+   "montana_block_prcp": 0.707,
+   "montana_block_tmax": 0.624,
+   "montana_block_tmin": 0.64,
+   "montana_summary_stats": 0.16
+  },
+  "read_time_range_network_s": {
+   "one_cell_prcp_per_month_range": "7.7 to 9.8 s, 31 to 42 requests, 3.5 to 8.4 MB"
+  },
+  "download_bytes_total": 212165683,
+  "download_breakdown_bytes": {
+   "logged_fetch_sh_downloads": 80092403,
+   "range_reads_by_file": 128818055,
+   "s3_listing_responses": 57198,
+   "range_probe": 1024,
+   "http_503_bodies": 836,
+   "prism_first_probe_assumed_same_as_second": 3196167,
+   "unlogged_small_responses_estimate": 60000
+  },
+  "transfer_speed": {
+   "whole_file_56872702_bytes_seconds": 1.79,
+   "mb_per_s": 31.8
+  },
+  "billings_cell": {
+   "row": 509,
+   "col": 388,
+   "centre": [
+    45.770832,
+    -108.520836
+   ],
+   "distance_km": 1.9,
+   "june_2025": {
+    "rain_mm": 47.703,
+    "rain_1d_mm": 9.453,
+    "rain_1d_day": "2025-06-22",
+    "tmax_F": 91.1,
+    "tmax_day": "2025-06-10",
+    "tmin_F": 41.3,
+    "tmin_day": "2025-06-23",
+    "days_at_or_above_90F": 2,
+    "days_at_or_below_0F": 0,
+    "freeze_thaw_days": 0
+   },
+   "calendar_2025_mm": 468.938,
+   "calendar_2025_in": 18.46,
+   "monthly_2025_mm": {
+    "01": 16.711,
+    "02": 34.758,
+    "03": 26.242,
+    "04": 91.992,
+    "05": 74.586,
+    "06": 47.703,
+    "07": 43.016,
+    "08": 15.727,
+    "09": 23.336,
+    "10": 52.219,
+    "11": 13.203,
+    "12": 29.445
+   },
+   "ncei_monthly_2025_mm_total": 468.98,
+   "max_monthly_gap_mm": 0.028
+  },
+  "benchland_cell": {
+   "row": 540,
+   "col": 352,
+   "centre": [
+    47.0625,
+    -110.020836
+   ],
+   "distance_km": 1.95,
+   "june_2025": {
+    "rain_mm": 61.391,
+    "rain_1d_mm": 15.297,
+    "rain_1d_day": "2025-06-21",
+    "tmax_F": 86.8,
+    "tmax_day": "2025-06-10",
+    "tmin_F": 32.9,
+    "tmin_day": "2025-06-03",
+    "days_at_or_above_90F": 0,
+    "days_at_or_below_0F": 0,
+    "freeze_thaw_days": 0
+   },
+   "day_2025_06_15": {
+    "tmax_C": 24.5781,
+    "tmin_C": 10.9609,
+    "prcp_mm": 3.0
+   }
+  },
+  "example_record_billings_june_2025": [
+   2025,
+   188,
+   188,
+   2,
+   0,
+   0,
+   37,
+   20250622,
+   911,
+   20250610,
+   413,
+   20250623,
+   0
+  ],
+  "example_record_fields": "[year, rain_calendar_hundredths_in, rain_water_year_hundredths_in, days_tmax_at_or_above_90F, days_tmin_at_or_below_0F, freeze_thaw_days, largest_day_rain_hundredths_in, largest_day_date, tmax_tenths_F, tmax_date, tmin_tenths_F, tmin_date, missing_days]",
+  "prelim_vs_scaled_billings_sep_2026": {
+   "prelim_sep1_29_mm": 54.72,
+   "scaled_sep1_29_mm": 66.21,
+   "difference_mm": -11.49,
+   "days_differing": 9,
+   "days_compared": 29,
+   "largest_daily_gap_mm": 5.13,
+   "largest_gap_day": "2026-09-20",
+   "tmax_sampled_days_max_abs_diff_C": 0.28
+  },
+  "lag_days_scaled_build_after_month_end": {
+   "n": 21,
+   "median": 66,
+   "min": 4,
+   "max": 68,
+   "values_by_month": {
+    "2025-01": 63,
+    "2025-02": 68,
+    "2025-03": 66,
+    "2025-04": 68,
+    "2025-05": 67,
+    "2025-06": 66,
+    "2025-07": 35,
+    "2025-08": 4,
+    "2025-09": 65,
+    "2025-10": 68,
+    "2025-11": 67,
+    "2025-12": 64,
+    "2026-01": 65,
+    "2026-02": 67,
+    "2026-03": 65,
+    "2026-04": 35,
+    "2026-05": 67,
+    "2026-06": 68,
+    "2026-07": 67,
+    "2026-08": 36,
+    "2026-09": 6
+   }
+  },
+  "lag_preliminary": {
+   "2026_10_valid_through": "2026-10-15",
+   "2026_10_build_date_s3": "2026-10-18",
+   "2026_09_valid_through": "2026-09-29",
+   "2026_09_s3_last_modified": "2026-10-02"
+  },
+  "airport_station_usw00024033": {
+   "ghcn_2025_06_15": {
+    "tmax_C": 28.3,
+    "tmin_C": 15.0,
+    "prcp_mm": 3.3
+   },
+   "grid_minus_station_2025_06_15": {
+    "tmax_C": -0.99,
+    "tmin_C": -0.65,
+    "prcp_mm": -2.07
+   },
+   "monthly_prcp_2025_mm": {
+    "01": 21.4,
+    "02": 46.6,
+    "03": 29.2,
+    "04": 86.0,
+    "05": 66.2,
+    "06": 48.7,
+    "07": 24.2,
+    "08": 20.0,
+    "09": 23.8,
+    "10": 48.7,
+    "11": 14.7,
+    "12": 35.4
+   },
+   "calendar_2025_mm": 464.9,
+   "days_with_value_2025": 365,
+   "grid_minus_station_monthly_mm": {
+    "01": -4.7,
+    "02": -11.8,
+    "03": -3.0,
+    "04": 6.0,
+    "05": 8.4,
+    "06": -1.0,
+    "07": 18.8,
+    "08": -4.3,
+    "09": -0.5,
+    "10": 3.5,
+    "11": -1.5,
+    "12": -6.0
+   },
+   "snow_mm_by_calendar_year": {
+    "2021": 1189,
+    "2022": 1536,
+    "2023": 1132,
+    "2024": 834,
+    "2025": 2012,
+    "2026_to_oct16": 502,
+    "feb_2025": 782
+   },
+   "snow_in_by_calendar_year": {
+    "2021": 46.8,
+    "2022": 60.5,
+    "2023": 44.6,
+    "2024": 32.8,
+    "2025": 79.2,
+    "2026_to_oct16": 19.8
+   },
+   "snow_caveat": "as recorded, not quality checked; the Feb 2025 total needs checking before use",
+   "station_coordinates": "not read from a station list in this run; the distance of about 4 km from the Billings cell centre uses the airport coordinates 45.8077 N, 108.5429 W as given in the query (unverified)"
+  },
+  "contract_row": {
+   "name": "NOAA nClimGrid-Daily (gridded daily precipitation, maximum and minimum temperature), scaled monthly files with prelim for the newest days",
+   "request": "AWS Open Data bucket noaa-nclimgrid-daily-pds, anonymous HTTPS, no key: access/grids/YYYY/ncdd-YYYYMM-grd-scaled.nc (prelim only where no scaled file exists); year listing by ListObjectsV2 with prefix access/grids/YYYY/",
+   "units": "precipitation in millimetres per day (the 24 hours ending in the early morning of the date); tmax and tmin in degrees Celsius; values rounded to 0.01 before use. Page units: inches (1 mm = 0.03937 in) and degrees F (C x 9/5 + 32). Threshold tests (90 F, 0 F, 32 F) use the unrounded converted value (open question).",
+   "cadence": "scaled files monthly when they appear; prelim days read daily by Range; no five-year reads in the daily job",
+   "lag": "scaled: 4 to 68 days after month end (median 66; 21 months). prelim: 2 to 3 days (NCEI wording; measured 3 days for 2026-09 and 2026-10 at 2026-10-18)",
+   "missing": "NaN is non-land (for example 71 Montana water cells are NaN on every day of June 2025): show no value, never zero. -999.99 in prelim files marks days not yet available: treat as missing and never sum it. Values outside valid_min to valid_max (prcp 0 to 2000 mm; temperatures -100 to 100 C) are missing. A day with any missing input is excluded and counted; a cell with no valid days shows Data unavailable; a year with too few valid days is shown as incomplete (threshold to be chosen by the owner)."
+  },
+  "design": {
+   "step_1": "backfill once: whole monthly files for 2021-10 to 2026-09 (60 files, 3.55 GB, about 2 minutes of transfer at the measured speed, plus about 2 s of read per month here); keep only per-cell monthly aggregates",
+   "step_2": "monthly job: when a new scaled file appears, read its three variables (about 41 MB by Range or 57 MB whole), replace that month's aggregates, drop the oldest month, rebuild tiles",
+   "step_3": "daily job: list the year prefix (about 8 KB), read only new prelim days (about 1.37 MB per day plus about 0.46 MB metadata per run), update the provisional month, rebuild only changed tiles",
+   "step_4": "storage: aggregates in an Actions cache keyed by month (not in the repository); Pages serves only tile JSON (about 1.2 MB gzip for Montana)",
+   "window": "the 60 full scaled months from 2021-10 to 2026-09 plus provisional prelim days from 2026-10-01 (recommended; owner to confirm)"
+  }
+ },
+ "open_questions": [
+  "1. Does the AWS mirror keep prelim files after a scaled file exists? The README says the prelim file is removed; the 2026 listing still shows both for 2026-04 to 2026-09. The daily job should always prefer scaled.",
+  "2. Threshold rule: the prototype rounded Fahrenheit to 0.1 before testing, so 32.20 C (89.96 F) counted as 90.0 F. Choose: test the unrounded converted value (recommended) or whole degrees F as displayed. The same choice applies to the 0 F and 32 F tests.",
+  "3. Snow is not in nClimGrid. Airport SNOW sums (2025: 2,012 mm; February 2025: 782 mm) need a check against NCEI Climate Data Online before use. A gridded snow source was not checked by this run; sibling research should verify it (NOHRSC, Daymet and others).",
+  "4. Water cells: 71 Montana mask cells have no value on any day of June 2025. Check whether any address points (B3) fall in them and word the page as no land value, not as zero.",
+  "5. Public-domain wording: no checked page says public domain for these grids. The file attribute says no restrictions and the registry asks for attribution. The owner should confirm the About-page wording against rule 7.",
+  "6. PRISM is not needed for this build. If it is wanted later, its terms keep ownership with Oregon State, require attribution, and its metadata mentions a license agreement that this run did not read.",
+  "7. Grid versus station: monthly differences reach 18.8 mm (July 2025) and single days differ by 2 mm of rain and 1 C of high temperature. Decide the page design: a grid row labelled estimate and a station row labelled station reading. Check the day convention (24 hours ending early morning) against the station's observation time.",
+  "8. The airport coordinates used for the distance check were not read from a station list (unverified; about 4 km).",
+  "9. The NCEI daily-summaries service returned HTTP 503 on two attempts. Retry before relying on it; this run used the NCEI .dly file instead.",
+  "10. The AWS by_station CSV for the airport stops at 2025-02-06. Check the freshness of by_station files for other stations before any use of that path.",
+  "11. Backfill runtime and cache size on the GitHub runner were not measured. Whole-file transfer was measured here at 31.8 MB/s; the Range path is slow for multi-variable backfill (about 8 to 10 s per variable-month for one cell, more for a block).",
+  "12. Confirm the window: 60 full scaled months (October 2021 to September 2026) plus provisional prelim days from October 2026, versus a rolling window to today.",
+  "13. Water-year totals were not checked against a full water year (only calendar 2025 at one cell, and June 2025 for all cells).",
+  "14. The -999 absence was checked on the full grid only for 2025-06 (scaled), and at one cell for 2025 and 2026-09. The backfill must assert it for every file.",
+  "15. Five-year size is a stand-in: one June 2025 record per cell written five times, without water-year totals. Re-measure on the real backfill.",
+  "16. The 1/24-degree cell to B1 tile assignment uses the hail store's row and column rule on the cell centre; confirm that the B3 address lookup uses the same rule."
+ ],
+ "process_notes": [
+  "A first monthly-product read used the daily row index (509) and landed in NaN at 28.1 N; the correct read cost another 13.9 MB.",
+  "The first fetch wrote 0 bytes when a folder did not exist (three cases: 2026-08 version file, the GHCN CSV, and one PRISM page); each was retried. The PRISM about page is a 404 and was not used.",
+  "The airport snow sums were first divided by ten by mistake (SNOW is in mm, per the GHCN readme); corrected in this record.",
+  "A first prototype summary failed on 71 water cells with no values and excluded them; the rule is in the record.",
+  "The first PRISM probe with a Range header received the full zip; it is counted in the total (same size assumed).",
+  "Temporary files from the first few calls were written under /tmp and removed; every other file is under /home/user/wt/research-b35/scratch-temperature-rain-grid/.",
+  "No repository file was edited. Repository files were read only: website/static/map/basemap.json, website/sources.py (contract format), and the B2 files in /home/user/wt/wt-b2 (hail.py rule, joins.py tile bounds).",
+  "netCDF4 and xarray were not installed in the venv; h5py was enough, so nothing was installed."
+ ],
+ "files": {
+  "record": "/home/user/wt/research-b35/temperature-rain-grid.json",
+  "scratch_root": "/home/user/wt/research-b35/scratch-temperature-rain-grid/",
+  "downloads": [
+   "downloads/nclimgrid-daily/2025/ncdd-202506-grd-scaled.nc",
+   "downloads/nclimgrid-daily/2025/ncdd-202506-version.txt",
+   "downloads/nclimgrid-daily/2026/ncdd-202608-version.txt",
+   "downloads/ghcn/USW00024033.csv",
+   "downloads/ghcn/USW00024033.dly",
+   "downloads/bucket-docs/ (README, status, user guide PDF, PRISM_datasets.pdf)",
+   "downloads/pages/ (NCEI, NOAA, PRISM and GHCN pages as text and HTML)",
+   "downloads/probes/prism-web-service-tmax-20250615.zip (not extracted)"
+  ],
+  "scripts": [
+   "scripts/fetch.sh",
+   "scripts/rangefile.py",
+   "scripts/range_cell.py",
+   "scripts/monthly_column.py",
+   "scripts/probe_h5.py",
+   "scripts/read_month.py",
+   "scripts/inspect_h5.py",
+   "scripts/montana_mask.py",
+   "scripts/summarize.py",
+   "scripts/june_proto.py",
+   "scripts/verify_quotes.py",
+   "scripts/s3list.py",
+   "scripts/html2txt.py",
+   "scripts/write_record.py"
+  ],
+  "outputs": [
+   "cells/montana_mask.npz",
+   "cells/montana-mask-doc.json",
+   "cells/june-proto-summary.json",
+   "cells/five-year-sizes.json",
+   "cells/byte-tally.json",
+   "cells/billings-2025-summary.json",
+   "cells/airport-snow-corrected.json",
+   "cells/scaled-build-lags.json",
+   "tiles-proto/ (prototype tile JSON)",
+   "fetch-log.tsv",
+   "listings/grids-2020.json to grids-2026.json"
+  ]
+ },
+ "download_bytes_total": 212165683
+}

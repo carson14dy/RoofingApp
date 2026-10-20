@@ -1,0 +1,320 @@
+{
+ "slug": "flood-ice-heat-products",
+ "refuter_for": "/home/user/wt/research-b35/flood-ice-heat-products.json",
+ "checked_utc": "2026-10-19, about 05:00 to 05:40 UTC (live pulls); worker pulls 03:21 to 03:40 UTC",
+ "recommendation_stands": true,
+ "recommendation_note": "Stands with corrections. The counts, sizes, samples and quotes reproduce, so the core path recommendations hold: polygon products by the shapefile path, zone-coded products by the zone path, county-only events by a county path, NCEI county-coded points, the LSR map and the NWPS gauge-crest kind. Required changes: route FF.A by event rows (mostly zone-coded); correct the LSR label dates and two counts; restate the FEMA hold's legal basis (4012a binds regulated lenders, not a public site) and keep the hold pending counsel and FEMA's terms; name the source in the 'Official alert' label; note that B2's uncommitted D34 change has already removed FL.W and FA.A from the zone list.",
+ "checks": [
+  {
+   "claim": "29 of 29 IEM watchwarn requests return HTTP 200 (states MT, timeopt=1, limitps=1, one phenomenon per request)",
+   "result": "confirmed",
+   "detail": "All 29 re-pulled live: HTTP 200 each. Byte sizes equal the worker manifest for every product (4,290,862 bytes in total)."
+  },
+  {
+   "claim": "Distinct events and 2021-10-19 to 2026-10-19 window counts per product; 23 requested products sum to 2,490",
+   "result": "confirmed",
+   "detail": "Recounted with key (wfo, phenomena, significance, eventid, vtec_year), begin = earliest utc_issue. Every product matches (e.g. WW.Y 1155/865, FA.Y 616/548, FL.W 62/43, FA.A 87/82, FF.A 28/20, SQ.W 100/78, HW.A 348/277, FF.W 155/148). Sum = 2,490. Window counts are unchanged under the NEW/CON begin rule."
+  },
+  {
+   "claim": "Polygon products carry a polygon and blank UGC; county twins are gtype C with MTC codes",
+   "result": "confirmed",
+   "detail": "FL.W P rows 62 of 62 blank UGC; the same holds for FA.W, FA.Y, FL.A, FL.Y, SQ.W, FF.W. County twins are C rows with MTC codes."
+  },
+  {
+   "claim": "Zone products (all years / window): WW.Y 1155/865, WS.A 276/226, HW.A 348/277, HT.Y 84/58, EH.W 15/4, EH.A 14/3, FR.Y 17/14, FZ.W 5/4, DU.Y 3/3, BZ.A, LE.W, HZ.W, DS.W 0",
+   "result": "confirmed",
+   "detail": "All reproduced. Every zone-product row carries an MTZ code."
+  },
+  {
+   "claim": "County-only events: FA.A 18 (all in window); FF.A 3 (2 in window)",
+   "result": "confirmed",
+   "detail": "FA.A county-only 18 (18 in window). FF.A county-only 3 (2 in window)."
+  },
+  {
+   "claim": "FF.A significance A is a polygon product (polygon path, 'polygon events, 1 in 2020-2026')",
+   "result": "corrected",
+   "detail": "FF.A's 28 events are 1 polygon, 24 zone, 3 county (window: 0 polygon, 18 zone, 2 county). Route each event by its own rows. The one polygon event has 2 NEW P rows, so the polygon join must de-duplicate by event key."
+  },
+  {
+   "claim": "Zone products carry few NEW rows (WS.W 4 for 313 events; HW.A 0 for 348)",
+   "result": "confirmed",
+   "detail": "NEW counts 4 and 0. The cause remains open (worker's own item). Event totals do not change under the NEW/CON begin rule."
+  },
+  {
+   "claim": "NEW row counts include county twins: SQ.W 154 = 100 P + 54 C; FA.Y 676 = 616 + 60; FF.W 163 = 155 + 8",
+   "result": "confirmed",
+   "detail": "Reproduced exactly from the live CSVs."
+  },
+  {
+   "claim": "2025 shapefile NEW polygon counts equal CSV NEW P rows (FA.W 7, FA.Y 87, FL.W 3, FL.Y 1, SQ.W 17, FL.A 0); POLY_BEG and POLY_END present",
+   "result": "confirmed",
+   "detail": "Six 2025 zips downloaded live and DBF parsed: NEW P = 7, 87, 3, 1, 17, 0, equal to the CSV 2025 NEW P counts. POLY_BEG and POLY_END are populated on every NEW P record."
+  },
+  {
+   "claim": "NWS damage tag: only FF.W (2) and SQ.W (12) non-empty; no hail, wind or tornado tags in these products",
+   "result": "confirmed",
+   "detail": "Across the 29 live CSVs: damagetag non-empty FF.W 2 and SQ.W 12. windtag, hailtag and tornadotag are empty everywhere."
+  },
+  {
+   "claim": "B2 HEAD (committed) joins.py: WARNING_PHENOMENA = SV, TO, FF; ZONE_PRODUCTS includes FL.W and FA.A (lines 120-122)",
+   "result": "confirmed",
+   "detail": "Committed HEAD cf1a36f: WARNING_PHENOMENA line 120; ZONE_PRODUCTS lines 121-122 include (FL, W) and (FA, A). The worker's line references match HEAD exactly."
+  },
+  {
+   "claim": "B2 reads 11 of the 29 IEM products checked",
+   "result": "corrected",
+   "detail": "True at HEAD (FF.W, HW.W, WS.W, BZ.W, IS.W, EC.W, WC.W, FL.W, FA.A, DS.W, WI.Y). The uncommitted working tree (joins.py modified 05:03:59 UTC; D34 ruling) removes FL.W and FA.A from ZONE_PRODUCTS and has no FL or FA code path, so it reads 9 of 29."
+  },
+  {
+   "claim": "B2 zone path returns 0 FL.W events; FL.W cache FLW-2025.csv has 6 rows (3 P blank UGC, 3 C MTC), 0 MTZ",
+   "result": "confirmed",
+   "detail": "Read-only check of the cache: 6 rows; P 3 with blank UGC; C 3 with MTC; MTZ 0. HEAD joins.py line 1907 requires startswith('MTZ'), so polygon and county rows never reach the zone path."
+  },
+  {
+   "claim": "NCEI county-coded Montana 2020-2026 with points: Flood 76, Flash Flood 60, Heavy Rain 144, Tornado 17, Funnel Cloud 35, Lightning 8, Debris Flow 11 (351)",
+   "result": "confirmed",
+   "detail": "Live recount of the seven NCEI files: all CZ_TYPE C with BEGIN_LAT. Per-year splits match too."
+  },
+  {
+   "claim": "NCEI zone-coded counts (Heavy Snow 652, Winter Storm 740, Winter Weather 383, Blizzard 126, Ice Storm 14, Extreme Cold/Wind Chill 326, Cold/Wind Chill 155, Frost/Freeze 25, Heat 10, Excessive Heat 3, Drought 582, Dense Fog 182, Wildfire 100, High Wind 2968 (2967 zone), Strong Wind 69 (68 zone))",
+   "result": "corrected",
+   "detail": "Counts reproduce. The phrase 'all CZ_TYPE Z, no BEGIN_LAT' is not exact: High Wind has one CZ_TYPE C row (2022) and Strong Wind one (2026), both with blank BEGIN_LAT. The totals 2968 and 69 are right."
+  },
+  {
+   "claim": "NCEI FLOOD_CAUSE values (Flood: Heavy Rain / Snow Melt 45, Heavy Rain 27, Ice Jam 4; Flash Flood: Heavy Rain 57, Heavy Rain / Snow Melt 1, Heavy Rain / Burn Area 2)",
+   "result": "confirmed",
+   "detail": "Reproduced exactly."
+  },
+  {
+   "claim": "NCEI Montana rows by year: 2020 1349, 2021 1424, 2022 1901, 2023 1124, 2024 1239, 2025 1432, 2026 830",
+   "result": "confirmed",
+   "detail": "Reproduced (9,299 rows in total)."
+  },
+  {
+   "claim": "B2 parse_ncei keeps points only for Hail and Thunderstorm Wind; county rows of other types are dropped",
+   "result": "confirmed",
+   "detail": "HEAD joins.py line 129 NCEI_POINT_TYPES = ('Hail', 'Thunderstorm Wind'); parse_ncei (line 650) keeps zone rows only for CZ_TYPE Z."
+  },
+  {
+   "claim": "B2 brief names tornado and flash flood among its NCEI joins (cited as hail-b2-brief.md line 20)",
+   "result": "corrected",
+   "detail": "Line 20 is the NCEI join spec. It names only Hail and Thunderstorm Wind points plus zone rows. The words that name tornado and flash flood sit in the brief's D34 section (about lines 255-262). The code does not join them."
+  },
+  {
+   "claim": "B2 brief D34: the zone path 'finds zero events' for FL.W and FA.A",
+   "result": "refuted",
+   "detail": "True for FL.W (0). False for FA.A: its zone path finds 69 events (64 in window) and drops only the 18 county-only events. The worker's own FA.A statement is correct."
+  },
+  {
+   "claim": "IEM LSR monthly pulls match B2's cache row for row (82 pulls; 61 B2 cache months; 0 mismatches)",
+   "result": "confirmed",
+   "detail": "All 82 re-pulled live. All 61 B2 cache months are byte-identical to the live pulls (21 months are not in B2's cache)."
+  },
+  {
+   "claim": "LSR total: 82 pulls, 60,073 rows",
+   "result": "corrected",
+   "detail": "60,074 data rows by CSV parse: 60,072 equal-width rows plus 2 shifted rows (2022-12, 2023-08; 17 fields against a 16-field header)."
+  },
+  {
+   "claim": "LSR type totals 2020-2026 (e.g. NON-TSTM WND GST 24,444; EXTR WIND CHILL 1217; TSTM WND GST 3766)",
+   "result": "corrected",
+   "detail": "All listed totals reproduce except NON-TSTM WND GST: 24,445 by two counts, not 24,444. EXTR WIND CHILL 1,217 and TSTM WND GST 3,766 include the two shifted rows (1,216 and 3,765 equal-width)."
+  },
+  {
+   "claim": "LSR label changes: HEAVY RAIN then RAIN from 2023; HEAVY SNOW then SNOW from 2024; EXTR WIND CHILL then WIND CHILL from 2024; EXTREME HEAT used once in 2025 (9 rows); EXCESSIVE HEAT not used",
+   "result": "corrected",
+   "detail": "The year-level claims hold. Dates: HEAVY RAIN last 2023-06-27, RAIN first 2023-05-31 (both labels in 2023). HEAVY SNOW last 2023-06-24 (so not 'from 2024'). EXTR WIND CHILL last 2023-02-24, WIND CHILL first 2024-01-11. EXTREME HEAT 2025-05-31 to 2025-08-19. EXCESSIVE HEAT has no rows in 2020-2026."
+  },
+  {
+   "claim": "LSR magnitude ranges: code 5 0 to 0.84; 6 -72 to 58; 7 -74 to -5; I 87 to 102; J 0 to 0.25; B2 LSR_UNITS maps only H, R, S, G, N, A",
+   "result": "confirmed",
+   "detail": "Ranges reproduced exactly (numeric counts 160, 1714, 1561, 9, 28). HEAD joins.py line 125 maps only H, R, S, G, N, A. Units for codes 5, 6, 7, I and J remain unverified (IEM legend not read)."
+  },
+  {
+   "claim": "Two shifted LSR rows: 2022-12 EXTR WIND CHILL and 2023-08 TSTM WND GST (comma in an unquoted field)",
+   "result": "confirmed",
+   "detail": "Both rows have 17 fields against 16 in the header; their TYPETEXT is as stated."
+  },
+  {
+   "claim": "NFHL Montana flood polygons (layer 28, DFIRM_ID 30*): 28,426",
+   "result": "confirmed",
+   "detail": "Live count 28,426."
+  },
+  {
+   "claim": "NFHL zone groups: X/F 20,342; AE/T 6,720; A/T 1,065; AO/T 99; AH/T 2; D/F 197",
+   "result": "corrected",
+   "detail": "Live groups match exactly except A/T = 1,066. The worker's facts list says 1,065; its own montana_zone_groups list says 1,066. The six groups sum to 28,426."
+  },
+  {
+   "claim": "NFHL Billings point: 1 polygon, FLD_ZONE X, AREA OF MINIMAL FLOOD HAZARD, SFHA_TF F, STATIC_BFE -9999.0, DFIRM 30111C",
+   "result": "confirmed",
+   "detail": "Live query matches (STUDY_TYP NP). The -9999.0 sentinel reading is not checked against FEMA's data dictionary (not read)."
+  },
+  {
+   "claim": "NFHL Benchland point (47.08 N, 110.02 W): 0 polygons",
+   "result": "confirmed",
+   "detail": "Live query returns 0 features."
+  },
+  {
+   "claim": "NFHL layer 28 and MapServer root: copyrightText and description are empty strings",
+   "result": "confirmed",
+   "detail": "Layer 28 (70,584 bytes) and the MapServer root both return empty strings. This is the absence of a notice, not a licence; FEMA's own terms are unread."
+  },
+  {
+   "claim": "NFHL availability layer: 3,199 records; 45 Montana study IDs",
+   "result": "unverified",
+   "detail": "Not re-run in this pass."
+  },
+  {
+   "claim": "NFHL ZONE_SUBTY counts (0.2 PCT 14,832; AREA OF MINIMAL FLOOD HAZARD 5,448; FLOODWAY 435; levee 10)",
+   "result": "unverified",
+   "detail": "Not re-run in this pass."
+  },
+  {
+   "claim": "NWPS: 278 Montana gauges of 12,936; numeric minor stage 102; all four numeric 57; none 157; historic entries 7,611",
+   "result": "confirmed",
+   "detail": "Live list 12,936 gauges, 278 MT. All 278 detail files re-pulled (3,930,208 bytes). Every count reproduced; historic and recent lists are identical for 278 of 278 gauges."
+  },
+  {
+   "claim": "NWPS: 388 crests dated 2020-2026 at 119 gauges (2020 87 ... 2026 4); 63 at or above minor at 39 gauges; 3 malformed years (BGCM8, CFMM8, PPRM8)",
+   "result": "confirmed",
+   "detail": "Reproduced after de-duplication (raw historic and recent lists each hold 388 entries in the window). Malformed years are 0205 and 0025."
+  },
+  {
+   "claim": "NWPS in service: 260 True, 18 False; usgsId present on 211 gauges",
+   "result": "confirmed",
+   "detail": "Reproduced."
+  },
+  {
+   "claim": "NWPS observed flood category at the pull: no_flooding 106; not_defined 119; obs_not_current 35; out_of_service 18",
+   "result": "confirmed",
+   "detail": "Identical at about 05:15 UTC, so the field did not change over roughly 95 minutes. The value is time-dependent."
+  },
+  {
+   "claim": "NWS disclaimer quotes (4): public domain; 'NWS is provides such information \"as is,\"...'; no endorsement; no official-government presentation",
+   "result": "confirmed",
+   "detail": "All four match the live weather.gov/disclaimer page exactly, including 'NWS is provides' as printed."
+  },
+  {
+   "claim": "IEM disclaimer quotes (3): public domain for any lawful purpose; attribution appreciated; no warranty of accuracy",
+   "result": "confirmed",
+   "detail": "All three match the live mesonet.agron.iastate.edu/disclaimer.php page exactly."
+  },
+  {
+   "claim": "NWPS attribution strings: 'USGS--Water Resources of the United States' and 'Observations courtesy of U.S. Geological Survey'",
+   "result": "confirmed",
+   "detail": "Both present in the live ABOM8 JSON. The second appears as the title of the second dataAttribution entry."
+  },
+  {
+   "claim": "42 U.S.C. 4012a(b)(1)(A) statute quote",
+   "result": "confirmed",
+   "detail": "The quoted text matches the live Cornell LII page. The lead-in reads 'Each Federal entity for lending regulation ... shall by regulation direct regulated lending institutions'. The duty sits with regulated lenders, not with a public website."
+  },
+  {
+   "claim": "FEMA and USGS terms pages could not be read (403)",
+   "result": "unverified",
+   "detail": "Not retried, because the proxy README says not to retry 403/407 denials. Still open."
+  },
+  {
+   "claim": "NCEI Storm Events terms could not be read (503 twice)",
+   "result": "unverified",
+   "detail": "Retried once more in this pass: 503 again (418 bytes). Still open."
+  },
+  {
+   "claim": "Downloads total 42,479,925 bytes excluding extracted copies; item sizes (iem-ww 4,290,862; iem-lsr 9,291,798; shapefile zips 204,302; NWPS details 3,930,216; NCEI 2020 10,444,606)",
+   "result": "confirmed",
+   "detail": "Summing the worker's downloads folder (excluding extracted shapefile copies) gives exactly 42,479,925. Each item matches its claimed size."
+  },
+  {
+   "claim": "NCEI 2021-2026 cache sizes equal the live listing; NCEI 2020 gzip test passes; 51 columns; 77 detail entries",
+   "result": "confirmed",
+   "detail": "Live downloads and the listing (53,138 bytes, identical to the worker copy) give the same six sizes as B2's cache. gzip -t passes; 51 columns; 77 detail entries in the listing."
+  },
+  {
+   "claim": "NWPS all-gauges list 13,172,005 bytes; NWPS details 3,930,216 bytes",
+   "result": "confirmed",
+   "detail": "Worker snapshot confirmed as recorded. Live drift since 03:37 UTC: list 13,171,894 bytes; details 3,930,208 bytes."
+  },
+  {
+   "claim": "Recommendation 1: add FL.W, FA.W, FA.Y, FL.A, FL.Y, SQ.W through the shapefile (polygon) path",
+   "result": "confirmed",
+   "detail": "Polygon counts and 2025 shapefile NEW counts support it (see the shapefile check above)."
+  },
+  {
+   "claim": "Recommendation 1 includes FF.A significance A in the polygon path",
+   "result": "corrected",
+   "detail": "Only 1 of 28 FF.A events is polygon-coded. FF.A should go to the zone path (18 window events) and county path (2), with the polygon event handled by its own rows."
+  },
+  {
+   "claim": "Recommendation 2: zone path adds WW.Y, WS.A, HW.A, HT.Y, EH.W, EH.A, FR.Y, FZ.W, DU.Y; county path for FA.A (18) and FF.A (2)",
+   "result": "confirmed",
+   "detail": "Counts reproduced; the county-only events fall in the window as stated."
+  },
+  {
+   "claim": "Recommendation 4: add county-coded NCEI rows with points under the 5-mile rule",
+   "result": "unverified",
+   "detail": "Counts confirmed. The 5-mile rule for county-coded rows is the worker's own open question: a county point may be a town centre rather than the flooded area."
+  },
+  {
+   "claim": "Recommendation 5: LSR type-word map (HEAVY SNOW to SNOW from 2024; HEAVY RAIN to RAIN from 2023; EXCESSIVE HEAT to EXTREME HEAT in 2025)",
+   "result": "corrected",
+   "detail": "Label dates are wrong in places (see the LSR label check). EXCESSIVE HEAT never appears, so no mapping is needed. Key the map by TYPETEXT and date, not TYPECODE: code 6 also covers FREEZE, code J covers DENSE FOG, code x covers LANDSLIDE, and code 5 also covers SNOW/ICE DMG."
+  },
+  {
+   "claim": "Recommendation 6: NWPS Gauge crest kind uses only the gauge's own stage words (102 with minor; 57 with all four)",
+   "result": "confirmed",
+   "detail": "Counts reproduced exactly."
+  },
+  {
+   "claim": "Recommendation 8: hold FEMA NFHL; 42 U.S.C. 4012a ties a special flood hazard area to lending and flood insurance; a flood zone label on the site would touch this rule",
+   "result": "refuted",
+   "detail": "The statute's text is accurate, but its duty binds regulated lenders through federal lending regulators. It does not, on its face, govern a public website, so 'would touch this rule' is unsupported. The hold can still stand on: FEMA's terms unread (403); reliance and accuracy exposure for counsel; AGENTS rule 5 (no insurance-eligibility statements and no 'not in a flood zone' wording). The NFHL metadata has no notice, which is not a licence."
+  },
+  {
+   "claim": "Recommendation 7: kind label 'Official alert (IEM)' for NWS warnings",
+   "result": "corrected",
+   "detail": "The NWS disclaimer bars presenting one's own information as official government information. Name the source in the label, for example 'NWS warning (relayed by IEM)'."
+  },
+  {
+   "claim": "An empty NFHL result means no mapped polygon in that service, not no flood hazard",
+   "result": "confirmed",
+   "detail": "The Benchland point returns no feature. The caution is correct."
+  }
+ ],
+ "corrections": [
+  "B2 state: the committed HEAD (cf1a36f) reads 11 of 29 products. The uncommitted working tree (joins.py modified 05:03:59 UTC; D34 ruling) removes FL.W and FA.A from ZONE_PRODUCTS and reads 9 of 29, with no FL or FA code path.",
+  "FF.A is mainly zone-coded: 24 of 28 events (window 18 of 20), with 3 county-only and 1 polygon event. The polygon event carries 2 NEW P rows, so de-duplicate by event key. Route by event rows, not as a product in the polygon path.",
+  "LSR row total is 60,074 data rows by CSV parse (60,072 equal-width plus 2 shifted rows), not 60,073.",
+  "LSR NON-TSTM WND GST total is 24,445, not 24,444 (confirmed by two counts). EXTR WIND CHILL 1,217 and TSTM WND GST 3,766 include the two shifted rows.",
+  "LSR label dates: HEAVY RAIN last 2023-06-27 and RAIN first 2023-05-31 (overlap); HEAVY SNOW last 2023-06-24 (not 'from 2024'); EXTR WIND CHILL last 2023-02-24 and WIND CHILL first 2024-01-11; EXCESSIVE HEAT never appears; EXTREME HEAT 2025-05-31 to 2025-08-19. Key the type-word map by TYPETEXT and date.",
+  "NFHL A/T count is 1,066, not 1,065 (the facts list is wrong; the worker's own zone-group list says 1,066).",
+  "NCEI High Wind and Strong Wind each have one county-coded row with blank BEGIN_LAT (2022 and 2026). 'All CZ_TYPE Z' is not exact; the totals 2,968 and 69 are right.",
+  "Brief citation: the words that name tornado and flash flood are in the brief's D34 section (about lines 255-262), not line 20. Line 20 is the NCEI join spec and names only hail and thunderstorm wind points.",
+  "Brief D34 wording: its statement that the zone path 'finds zero events' for FL.W and FA.A is wrong for FA.A, whose zone path finds 69 events (64 in window). Only FL.W finds zero.",
+  "Legal basis: 42 U.S.C. 4012a(b)(1)(A) binds regulated lenders through federal lending regulators. It does not, on its face, govern a public website, so 'a flood zone label on the site would touch this rule' is unsupported. The FEMA hold rests instead on unread FEMA terms, reliance and accuracy exposure for counsel, and AGENTS rule 5.",
+  "Kind label: 'Official alert (IEM)' should name the source (for example 'NWS warning, relayed by IEM') because of the NWS disclaimer's rule on official-looking information.",
+  "Observation: the FF.A polygon event has 2 NEW P rows, so the polygon join needs de-duplication by event key.",
+  "Observation: the live NWPS list and details drift from the worker's snapshot by 111 and 8 bytes. The observed flood categories are unchanged between 03:40 and 05:15 UTC."
+ ],
+ "terms_check": "Live re-fetch, 2026-10-19 about 05:05 UTC: the NWS disclaimer (4 quotes) and IEM disclaimer (3 quotes) match exactly, including the printed 'NWS is provides'. The NWPS ABOM8 attribution strings (2) match. The 42 U.S.C. 4012a(b)(1)(A) quote matches Cornell LII; its lead-in binds regulated lenders. The NFHL layer 28 and MapServer root return empty copyrightText and description. Not read: the FEMA and USGS pages (403; not retried, per the proxy README on 403/407 denials) and the NCEI metadata record (503 again). FEMA NFHL, USGS gauge and NCEI Storm Events use terms therefore remain open.",
+ "not_rerun": [
+  "NFHL availability layer counts (3,199 / 45)",
+  "NFHL ZONE_SUBTY counts",
+  "NFHL state zip (not reached by the worker either)",
+  "NWS VTEC page phenomenon names",
+  "NCEI 5-mile point rule for county rows (a design question)",
+  "LSR units for codes 5, 6, 7, I and J (IEM legend not read)"
+ ],
+ "b2_state": {
+  "committed_HEAD": "cf1a36f (2026-10-19 04:53:19 UTC): ZONE_PRODUCTS includes FL.W and FA.A (lines 121-122); worker line references match exactly",
+  "working_tree": "joins.py modified 05:03:59 UTC (uncommitted): FL.W and FA.A removed from ZONE_PRODUCTS; D34 comment added; no FL or FA path"
+ },
+ "downloads": {
+  "dir": "/home/user/wt/research-b35/scratch-refute-flood-ice-heat-products/downloads",
+  "files": 452,
+  "bytes": 111255362,
+  "note": "Includes the seven live NCEI years (78,483,844 bytes), 29 IEM watchwarn CSVs, 82 LSR months, 6 IEM shapefile zips and extracts, 278 NWPS gauge records, the NWPS list, NFHL responses and terms pages. Under the 150 MB budget."
+ },
+ "download_bytes_total": 111255362,
+ "scripts": "/home/user/wt/research-b35/scratch-refute-flood-ice-heat-products/scripts (fetch_all.sh, fetch_lsr.sh, fetch_nwps.py, iem_counts.py, ncei_counts.py, nwps_check.py, lsr_check.py, shp_check.py, check_terms.py, nfhl_check.py, sizes_check.py, final_checks.py, final_totals.py, write_record.py); all run with /home/user/hail-b1/venv/bin/python -I"
+}

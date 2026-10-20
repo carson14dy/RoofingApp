@@ -1,0 +1,2276 @@
+{
+ "generated_utc": "2026-10-19T23:49:26Z",
+ "task": "Locate NWS public forecast zone editions in force 2021-10-17 to 2025-03-18 (read-only research)",
+ "bottom_line": "No full-resolution NWS file for z_08se21, z_22mr22, z_07se22, z_13se22, z_08mr23 or z_05mr24 could be downloaded from this session. Wayback captures exist for four of them but every web.archive.org download was reset by the egress relay, and the CDX index returned 403 hostname_blocked. The IEM UGC API returns Montana zone sets for every valid date tested; these are simplified geometries. Per IEM, MT has 103 MTZ codes through 2022-09-13 12:00Z and 83 from 2022-09-13 18:00Z; the NWS change log dates the MT change 2022-09-07, which does not match.",
+ "window": {
+  "start": "2021-10-17",
+  "end": "2025-03-18"
+ },
+ "editions": [
+  {
+   "edition": "z_08se21",
+   "effective_date": "2021-09-08",
+   "in_force": "2021-09-08 to 2022-03-21",
+   "change_log_mt": "none listed (SCN 21-62 HNX CA, SCN 21-63 OTX WA)",
+   "nws_direct": "HTTP 404, 817 bytes",
+   "wayback": "no snapshot: availability API returns no capture for 3 URL forms at 2021-11-01",
+   "cache_file": null,
+   "iem_valid_checked": [
+    "2021-09-15T12:00:00Z",
+    "2021-10-17T00:00:00Z"
+   ],
+   "iem_MTZ": 103,
+   "status": "NOT FOUND as NWS file; no Wayback capture; IEM simplified geometry only"
+  },
+  {
+   "edition": "z_22mr22",
+   "effective_date": "2022-03-22",
+   "in_force": "2022-03-22 to 2022-09-06",
+   "change_log_mt": "none listed (CA, FL, AR, LA, GUM, SC, VT, TX, AK)",
+   "nws_direct": "HTTP 404, 817 bytes",
+   "wayback": "capture 20220805173609 located (availability API status 200); 2 download attempts reset by relay",
+   "cache_file": null,
+   "iem_valid_checked": [
+    "2022-06-01T12:00:00Z"
+   ],
+   "iem_MTZ": 103,
+   "status": "NOT FOUND as NWS file; Wayback capture located but not downloadable from this session"
+  },
+  {
+   "edition": "z_07se22",
+   "effective_date": "2022-09-07",
+   "in_force": "2022-09-07 to 2022-09-12",
+   "change_log_mt": "SCN 22-61 Reconfigured public zones in MT (WFO TFX)",
+   "nws_direct": "HTTP 404, 817 bytes",
+   "wayback": "capture 20220805173610 located (availability API status 200); 1 download attempt reset by relay",
+   "cache_file": null,
+   "iem_valid_checked": [
+    "2022-09-07T00:00:00Z",
+    "2022-09-10T12:00:00Z",
+    "2022-09-12T23:59:00Z",
+    "2022-09-13T12:00:00Z"
+   ],
+   "iem_MTZ": 103,
+   "status": "NOT FOUND as NWS file; Wayback capture located but not downloadable; IEM does not show the MT change before 2022-09-13 18:00Z"
+  },
+  {
+   "edition": "z_13se22",
+   "effective_date": "2022-09-13",
+   "in_force": "2022-09-13 to 2023-03-07",
+   "change_log_mt": "none listed (\"No new/deleted zones\"; AJK borders)",
+   "nws_direct": "HTTP 404, 817 bytes",
+   "wayback": "no snapshot: availability API returns no capture at 2022-11-01",
+   "cache_file": null,
+   "iem_valid_checked": [
+    "2022-09-13T18:00:00Z",
+    "2022-09-14T00:00:00Z",
+    "2022-09-20T12:00:00Z"
+   ],
+   "iem_MTZ": 83,
+   "status": "NOT FOUND anywhere reachable; IEM shows the 83-zone MT set from 2022-09-13 18:00Z"
+  },
+  {
+   "edition": "z_08mr23",
+   "effective_date": "2023-03-08",
+   "in_force": "2023-03-08 to 2024-03-04",
+   "change_log_mt": "none listed (NM, SD, WY, AK, southern CA, WA, LA, MS, AS, LWX, OKX, PBZ)",
+   "nws_direct": "HTTP 404, 817 bytes",
+   "wayback": "capture 20251020132226 located (availability API status 200, captured after supersession); 1 download attempt reset",
+   "cache_file": null,
+   "iem_valid_checked": [
+    "2023-06-01T12:00:00Z"
+   ],
+   "iem_MTZ": 83,
+   "status": "NOT FOUND as NWS file; Wayback capture located but not downloadable"
+  },
+  {
+   "edition": "z_05mr24",
+   "effective_date": "2024-03-05",
+   "in_force": "2024-03-05 to 2025-03-17",
+   "change_log_mt": "none listed (FL, OR, WA, AK); the 10 Sep 2024 fz10se24 changes were postponed",
+   "nws_direct": "HTTP 404, 817 bytes",
+   "wayback": "capture 20240114215013 located (availability API status 200); 1 download attempt reset",
+   "cache_file": null,
+   "iem_valid_checked": [
+    "2024-06-01T12:00:00Z"
+   ],
+   "iem_MTZ": 83,
+   "status": "NOT FOUND as NWS file; Wayback capture located but not downloadable"
+  },
+  {
+   "edition": "z_18mr25",
+   "effective_date": "2025-03-18",
+   "in_force": "2025-03-18 to 2026-04-15",
+   "change_log_mt": "none listed; change-log entries dated 20 Dec 2024 and 6 Feb 2025 are labelled z_18mr25.*, with no Effective line",
+   "nws_direct": "current NWS page (cache copy fetched 2026-10-18; sha256 matches the cache README)",
+   "wayback": "not checked (not needed)",
+   "cache_file": "z_18mr25.zip",
+   "iem_valid_checked": [
+    "2025-03-18T12:00:00Z",
+    "2025-03-20T12:00:00Z"
+   ],
+   "iem_MTZ": 83,
+   "status": "FOUND (cache); IEM 2025-03-18 MT codes match exactly"
+  },
+  {
+   "edition": "z_16ap26",
+   "effective_date": "2026-04-16",
+   "in_force": "2026-04-16 onward (outside the window; control only)",
+   "change_log_mt": "none listed in z_03mr26 entries (Dec 2025 SCN list has no MT)",
+   "nws_direct": "current NWS page (cache copy fetched 2026-10-18; sha256 matches the cache README)",
+   "wayback": "not checked",
+   "cache_file": "z_16ap26.zip",
+   "iem_valid_checked": [],
+   "iem_MTZ": null,
+   "status": "FOUND (cache); MT codes identical to z_18mr25"
+  }
+ ],
+ "mt_switch": {
+  "last_103_zone_valid_utc": "2022-09-13T12:00:00Z",
+  "first_83_zone_valid_utc": "2022-09-13T18:00:00Z",
+  "zones_removed_at_switch": [
+   "MTZ008",
+   "MTZ009",
+   "MTZ010",
+   "MTZ011",
+   "MTZ012",
+   "MTZ013",
+   "MTZ014",
+   "MTZ015",
+   "MTZ044",
+   "MTZ045",
+   "MTZ046",
+   "MTZ047",
+   "MTZ048",
+   "MTZ049",
+   "MTZ050",
+   "MTZ051",
+   "MTZ052",
+   "MTZ053",
+   "MTZ054",
+   "MTZ055"
+  ],
+  "zones_added_at_switch": [],
+  "geometry_changed_for_shared_codes": [
+   "MTZ060"
+  ],
+  "nws_change_log": {
+   "z_07se22": "Effective 07 September 2022 (z_07se22.*): Per SCN 22-60 AK AJK; Per SCN 22-61 Reconfigured public zones in MT (WFO TFX); Per SCN 22-62 IN and MI IWX",
+   "z_13se22": "Effective 13 September 2022 (z_13se22.*): No new/deleted zones. Some borders in the AJK WFO were redrawn"
+  },
+  "conflict": "IEM serves 103 MTZ codes at 2022-09-13T12:00Z and 83 at 2022-09-13T18:00Z, so its switch is on 13 Sep 2022, six days after the change-log date for SCN 22-61 (07 Sep 2022), and the z_13se22 note says no zones were deleted. Not resolved: the z_07se22 and z_13se22 files are needed."
+ },
+ "iem_mt_sets": [
+  {
+   "valid_utc": "2021-09-15T12:00:00Z",
+   "file": "iem-ugcs/valid-2021-09-15/MT.geojson",
+   "bytes": 553785,
+   "sha256": "0fc131371d5b57ba2fb3fbfcbf58eb82f1bbcf62399a491026ca52e08832d4df",
+   "features": 159,
+   "MTZ_count": 103,
+   "MTC_count": 56,
+   "MT_code_set_digest": "998642716e515ca6",
+   "MT_geometry_digest": "14ac8cb457189777",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2021-10-17T00:00:00Z",
+   "file": "probes/iem-ugcs-api/MT-valid-2021-10-17.geojson",
+   "bytes": 553785,
+   "sha256": "c968b0ea0a72d642c3cbd034264cf2a02adb6c5609c26ee242087e2568117377",
+   "features": 159,
+   "MTZ_count": 103,
+   "MTC_count": 56,
+   "MT_code_set_digest": "998642716e515ca6",
+   "MT_geometry_digest": "14ac8cb457189777",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2022-06-01T12:00:00Z",
+   "file": "iem-ugcs/valid-2022-06-01/MT.geojson",
+   "bytes": 553785,
+   "sha256": "498037fa4b25d1fb6c6e0552e402c5340bc393747f77fe97118b1ee9b15f1c8c",
+   "features": 159,
+   "MTZ_count": 103,
+   "MTC_count": 56,
+   "MT_code_set_digest": "998642716e515ca6",
+   "MT_geometry_digest": "14ac8cb457189777",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2022-09-07T00:00:00Z",
+   "file": "iem-ugcs/switch-probe-2022-09-07T00:00:00/MT.geojson",
+   "bytes": 553785,
+   "sha256": "d9c2de3a28b08ce002384d2b7ce8bcabf7fcac5ba29ed586ed6017cee2278a87",
+   "features": 159,
+   "MTZ_count": 103,
+   "MTC_count": 56,
+   "MT_code_set_digest": "998642716e515ca6",
+   "MT_geometry_digest": "14ac8cb457189777",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2022-09-10T12:00:00Z",
+   "file": "iem-ugcs/valid-2022-09-10/MT.geojson",
+   "bytes": 553785,
+   "sha256": "b75761e4d771e5545e44703fdbb609a1f71988882e08c10b41fabaec1afa24a9",
+   "features": 159,
+   "MTZ_count": 103,
+   "MTC_count": 56,
+   "MT_code_set_digest": "998642716e515ca6",
+   "MT_geometry_digest": "14ac8cb457189777",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2022-09-12T23:59:00Z",
+   "file": "iem-ugcs/switch-probe-2022-09-12T23:59:00/MT.geojson",
+   "bytes": 553785,
+   "sha256": "68c3ba2840bd510f634a30594c75ac78a44614fd34b74d4d1ecad34714024add",
+   "features": 159,
+   "MTZ_count": 103,
+   "MTC_count": 56,
+   "MT_code_set_digest": "998642716e515ca6",
+   "MT_geometry_digest": "14ac8cb457189777",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2022-09-13T00:00:00Z",
+   "file": "iem-ugcs/switch-probe-2022-09-13T00:00:00/MT.geojson",
+   "bytes": 553785,
+   "sha256": "527059799ad11fee339608bc4dcd15cfe1ad52d6c4ef9a3a58be6f137b275b4f",
+   "features": 159,
+   "MTZ_count": 103,
+   "MTC_count": 56,
+   "MT_code_set_digest": "998642716e515ca6",
+   "MT_geometry_digest": "14ac8cb457189777",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2022-09-13T12:00:00Z",
+   "file": "iem-ugcs/switch-probe-2022-09-13T12:00:00/MT.geojson",
+   "bytes": 553785,
+   "sha256": "c31782da7576855c6cac6babd799a8c28a16011c09d31f1ef80c8055bfc32587",
+   "features": 159,
+   "MTZ_count": 103,
+   "MTC_count": 56,
+   "MT_code_set_digest": "998642716e515ca6",
+   "MT_geometry_digest": "14ac8cb457189777",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2022-09-13T18:00:00Z",
+   "file": "iem-ugcs/switch-probe-2022-09-13T18:00:00/MT.geojson",
+   "bytes": 475411,
+   "sha256": "950175ea2ba674b8b323ae9d1cc28608d93f03b74c5cd7c157b987cee8b72f05",
+   "features": 139,
+   "MTZ_count": 83,
+   "MTC_count": 56,
+   "MT_code_set_digest": "5603da85fd482c40",
+   "MT_geometry_digest": "592f2b4ab973475f",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2022-09-14T00:00:00Z",
+   "file": "iem-ugcs/switch-probe-2022-09-14T00:00:00/MT.geojson",
+   "bytes": 475411,
+   "sha256": "3d33fe88780e7113b25915f828a2f8f40534f39cffb39fd32b0cd1b01a274202",
+   "features": 139,
+   "MTZ_count": 83,
+   "MTC_count": 56,
+   "MT_code_set_digest": "5603da85fd482c40",
+   "MT_geometry_digest": "592f2b4ab973475f",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2022-09-20T12:00:00Z",
+   "file": "iem-ugcs/valid-2022-09-20/MT.geojson",
+   "bytes": 475411,
+   "sha256": "3e5776f867130874eba42c3a117d99d1788e2d4149947e081235fe52c1f298fa",
+   "features": 139,
+   "MTZ_count": 83,
+   "MTC_count": 56,
+   "MT_code_set_digest": "5603da85fd482c40",
+   "MT_geometry_digest": "592f2b4ab973475f",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2023-06-01T12:00:00Z",
+   "file": "iem-ugcs/valid-2023-06-01/MT.geojson",
+   "bytes": 475411,
+   "sha256": "ba041fb90e7c166c62435104ddc3ada75aba9ca1848c19966128093c6ae2001f",
+   "features": 139,
+   "MTZ_count": 83,
+   "MTC_count": 56,
+   "MT_code_set_digest": "5603da85fd482c40",
+   "MT_geometry_digest": "592f2b4ab973475f",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2024-06-01T12:00:00Z",
+   "file": "iem-ugcs/valid-2024-06-01/MT.geojson",
+   "bytes": 475411,
+   "sha256": "6aa7acccb5d49fb15446ecfb00cea35dc99f12d13bd918d4bfa2f4cdf9d2581f",
+   "features": 139,
+   "MTZ_count": 83,
+   "MTC_count": 56,
+   "MT_code_set_digest": "5603da85fd482c40",
+   "MT_geometry_digest": "592f2b4ab973475f",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2025-03-18T12:00:00Z",
+   "file": "iem-ugcs/valid-2025-03-18/MT.geojson",
+   "bytes": 475411,
+   "sha256": "6b024fd08ea683abcd0c32506bebee7658bfa6fcef583731fe9e346f9ae66565",
+   "features": 139,
+   "MTZ_count": 83,
+   "MTC_count": 56,
+   "MT_code_set_digest": "5603da85fd482c40",
+   "MT_geometry_digest": "592f2b4ab973475f",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  },
+  {
+   "valid_utc": "2025-03-20T12:00:00Z",
+   "file": "iem-ugcs/valid-2025-03-20/MT.geojson",
+   "bytes": 475411,
+   "sha256": "e3f4310aea6fafd0d49bba8d470dfcf8bb54e64054aaef19d5687695798a8c30",
+   "features": 139,
+   "MTZ_count": 83,
+   "MTC_count": 56,
+   "MT_code_set_digest": "5603da85fd482c40",
+   "MT_geometry_digest": "592f2b4ab973475f",
+   "crs": "urn:ogc:def:crs:OGC:1.3:CRS84",
+   "null_geometry": 0
+  }
+ ],
+ "iem_mt_geometry_groups": [
+  {
+   "geometry_digest": "14ac8cb457189777",
+   "valid_utc": [
+    "2021-09-15T12:00:00Z",
+    "2021-10-17T00:00:00Z",
+    "2022-06-01T12:00:00Z",
+    "2022-09-07T00:00:00Z",
+    "2022-09-10T12:00:00Z",
+    "2022-09-12T23:59:00Z",
+    "2022-09-13T00:00:00Z",
+    "2022-09-13T12:00:00Z"
+   ]
+  },
+  {
+   "geometry_digest": "592f2b4ab973475f",
+   "valid_utc": [
+    "2022-09-13T18:00:00Z",
+    "2022-09-14T00:00:00Z",
+    "2022-09-20T12:00:00Z",
+    "2023-06-01T12:00:00Z",
+    "2024-06-01T12:00:00Z",
+    "2025-03-18T12:00:00Z",
+    "2025-03-20T12:00:00Z"
+   ]
+  }
+ ],
+ "nws_zip_checks": {
+  "z_18mr25": {
+   "file": "z_18mr25.zip",
+   "bytes": 25826029,
+   "sha256": "3af7485eebc773d8b7615ee6635da17c07d01a7da39eb6cf2f7934882d5cf4ca",
+   "shape_type": "POLYGON",
+   "record_count": 4114,
+   "fields": [
+    "STATE",
+    "CWA",
+    "TIME_ZONE",
+    "FE_AREA",
+    "ZONE",
+    "NAME",
+    "STATE_ZONE",
+    "LON",
+    "LAT",
+    "SHORTNAME"
+   ],
+   "mt_record_count": 83,
+   "mt_unique_codes": 83,
+   "mt_duplicate_codes": 0,
+   "mt_codes_first_last": [
+    "MTZ001",
+    "MTZ330"
+   ],
+   "mt_codes": [
+    "MTZ001",
+    "MTZ002",
+    "MTZ003",
+    "MTZ004",
+    "MTZ005",
+    "MTZ006",
+    "MTZ007",
+    "MTZ016",
+    "MTZ017",
+    "MTZ018",
+    "MTZ019",
+    "MTZ020",
+    "MTZ021",
+    "MTZ022",
+    "MTZ023",
+    "MTZ024",
+    "MTZ025",
+    "MTZ026",
+    "MTZ027",
+    "MTZ029",
+    "MTZ030",
+    "MTZ031",
+    "MTZ032",
+    "MTZ033",
+    "MTZ034",
+    "MTZ036",
+    "MTZ037",
+    "MTZ040",
+    "MTZ042",
+    "MTZ043",
+    "MTZ056",
+    "MTZ057",
+    "MTZ058",
+    "MTZ059",
+    "MTZ060",
+    "MTZ061",
+    "MTZ062",
+    "MTZ063",
+    "MTZ064",
+    "MTZ065",
+    "MTZ066",
+    "MTZ067",
+    "MTZ068",
+    "MTZ138",
+    "MTZ139",
+    "MTZ141",
+    "MTZ169",
+    "MTZ170",
+    "MTZ171",
+    "MTZ172",
+    "MTZ173",
+    "MTZ228",
+    "MTZ235",
+    "MTZ301",
+    "MTZ302",
+    "MTZ303",
+    "MTZ304",
+    "MTZ305",
+    "MTZ306",
+    "MTZ307",
+    "MTZ308",
+    "MTZ309",
+    "MTZ310",
+    "MTZ311",
+    "MTZ312",
+    "MTZ313",
+    "MTZ314",
+    "MTZ315",
+    "MTZ316",
+    "MTZ317",
+    "MTZ318",
+    "MTZ319",
+    "MTZ320",
+    "MTZ321",
+    "MTZ322",
+    "MTZ323",
+    "MTZ324",
+    "MTZ325",
+    "MTZ326",
+    "MTZ327",
+    "MTZ328",
+    "MTZ329",
+    "MTZ330"
+   ],
+   "mt_CWA_counts": {
+    "MSO": 8,
+    "GGW": 16,
+    "BYZ": 29,
+    "TFX": 30
+   },
+   "unsafe_members": [],
+   "prj_head": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137"
+  },
+  "z_16ap26": {
+   "file": "z_16ap26.zip",
+   "bytes": 26465980,
+   "sha256": "010dc5eab64b6e326c969e252bd016f56a037b0444df8303658707bca4cc7fd8",
+   "shape_type": "POLYGON",
+   "record_count": 4157,
+   "fields": [
+    "STATE",
+    "CWA",
+    "TIME_ZONE",
+    "FE_AREA",
+    "ZONE",
+    "NAME",
+    "STATE_ZONE",
+    "LON",
+    "LAT",
+    "SHORTNAME"
+   ],
+   "mt_record_count": 83,
+   "mt_unique_codes": 83,
+   "mt_duplicate_codes": 0,
+   "mt_codes_first_last": [
+    "MTZ001",
+    "MTZ330"
+   ],
+   "mt_codes": [
+    "MTZ001",
+    "MTZ002",
+    "MTZ003",
+    "MTZ004",
+    "MTZ005",
+    "MTZ006",
+    "MTZ007",
+    "MTZ016",
+    "MTZ017",
+    "MTZ018",
+    "MTZ019",
+    "MTZ020",
+    "MTZ021",
+    "MTZ022",
+    "MTZ023",
+    "MTZ024",
+    "MTZ025",
+    "MTZ026",
+    "MTZ027",
+    "MTZ029",
+    "MTZ030",
+    "MTZ031",
+    "MTZ032",
+    "MTZ033",
+    "MTZ034",
+    "MTZ036",
+    "MTZ037",
+    "MTZ040",
+    "MTZ042",
+    "MTZ043",
+    "MTZ056",
+    "MTZ057",
+    "MTZ058",
+    "MTZ059",
+    "MTZ060",
+    "MTZ061",
+    "MTZ062",
+    "MTZ063",
+    "MTZ064",
+    "MTZ065",
+    "MTZ066",
+    "MTZ067",
+    "MTZ068",
+    "MTZ138",
+    "MTZ139",
+    "MTZ141",
+    "MTZ169",
+    "MTZ170",
+    "MTZ171",
+    "MTZ172",
+    "MTZ173",
+    "MTZ228",
+    "MTZ235",
+    "MTZ301",
+    "MTZ302",
+    "MTZ303",
+    "MTZ304",
+    "MTZ305",
+    "MTZ306",
+    "MTZ307",
+    "MTZ308",
+    "MTZ309",
+    "MTZ310",
+    "MTZ311",
+    "MTZ312",
+    "MTZ313",
+    "MTZ314",
+    "MTZ315",
+    "MTZ316",
+    "MTZ317",
+    "MTZ318",
+    "MTZ319",
+    "MTZ320",
+    "MTZ321",
+    "MTZ322",
+    "MTZ323",
+    "MTZ324",
+    "MTZ325",
+    "MTZ326",
+    "MTZ327",
+    "MTZ328",
+    "MTZ329",
+    "MTZ330"
+   ],
+   "mt_CWA_counts": {
+    "MSO": 8,
+    "GGW": 16,
+    "BYZ": 29,
+    "TFX": 30
+   },
+   "unsafe_members": [],
+   "prj_head": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137"
+  }
+ },
+ "iem_vs_nws_z_18mr25_2025_03_18": {
+  "nws_mt_codes": 83,
+  "iem_mt_codes": 83,
+  "codes_only_in_nws": [],
+  "codes_only_in_iem": [],
+  "common": 83,
+  "bbox_max_abs_deg_dev_median": 0.004106642000024863,
+  "bbox_max_abs_deg_dev_max": 0.014098645999965242,
+  "codes_bbox_dev_gt_0p01deg": 2,
+  "worst_codes": [
+   "MTZ308",
+   "MTZ021",
+   "MTZ007",
+   "MTZ034",
+   "MTZ022"
+  ]
+ },
+ "found": [
+  {
+   "kind": "NWS zone shapefile (cache copy)",
+   "edition": "z_18mr25",
+   "effective_date": "2025-03-18 (from file name)",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_18mr25.zip",
+   "source": "/home/user/hail-b5/cache/zones-editions/z_18mr25.zip (fetched 2026-10-18, see its .meta.json)",
+   "bytes": 25826029,
+   "sha256": "3af7485eebc773d8b7615ee6635da17c07d01a7da39eb6cf2f7934882d5cf4ca",
+   "montana_zone_codes": 83,
+   "content_checked": "zip ok, 4 members (dbf, prj, shp, shx), POLYGON, 4114 records; fields STATE, CWA, TIME_ZONE, FE_AREA, ZONE, NAME, STATE_ZONE, LON, LAT, SHORTNAME; MT records 83, unique MTZ codes 83 (MTZ001 to MTZ330); MT CWA counts {'MSO': 8, 'GGW': 16, 'BYZ': 29, 'TFX': 30}; IEM 2025-03-18 MT code set identical; bbox deviation median 0.0041 deg, max 0.0141 deg",
+   "terms": "NWS public domain statement (see sources.nws)"
+  },
+  {
+   "kind": "NWS zone shapefile (cache copy, control)",
+   "edition": "z_16ap26",
+   "effective_date": "2026-04-16 (outside window)",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_16ap26.zip",
+   "source": "/home/user/hail-b5/cache/zones-editions/z_16ap26.zip (fetched 2026-10-18)",
+   "bytes": 26465980,
+   "sha256": "010dc5eab64b6e326c969e252bd016f56a037b0444df8303658707bca4cc7fd8",
+   "montana_zone_codes": 83,
+   "content_checked": "zip ok, 4157 records; MT unique codes 83; MT code list identical to z_18mr25: True",
+   "terms": "NWS public domain statement (see sources.nws)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2021-09-15T12:00:00Z",
+   "effective_date": "2021-09-15T12:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2021-09-15T12:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 553785,
+   "sha256": "0fc131371d5b57ba2fb3fbfcbf58eb82f1bbcf62399a491026ca52e08832d4df",
+   "montana_zone_codes": 103,
+   "content_checked": "159 features (103 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 14ac8cb457189777",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2021-10-17T00:00:00Z",
+   "effective_date": "2021-10-17T00:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2021-10-17T00:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 553785,
+   "sha256": "c968b0ea0a72d642c3cbd034264cf2a02adb6c5609c26ee242087e2568117377",
+   "montana_zone_codes": 103,
+   "content_checked": "159 features (103 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 14ac8cb457189777",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2022-06-01T12:00:00Z",
+   "effective_date": "2022-06-01T12:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-06-01T12:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 553785,
+   "sha256": "498037fa4b25d1fb6c6e0552e402c5340bc393747f77fe97118b1ee9b15f1c8c",
+   "montana_zone_codes": 103,
+   "content_checked": "159 features (103 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 14ac8cb457189777",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2022-09-07T00:00:00Z",
+   "effective_date": "2022-09-07T00:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-07T00:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 553785,
+   "sha256": "d9c2de3a28b08ce002384d2b7ce8bcabf7fcac5ba29ed586ed6017cee2278a87",
+   "montana_zone_codes": 103,
+   "content_checked": "159 features (103 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 14ac8cb457189777",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2022-09-10T12:00:00Z",
+   "effective_date": "2022-09-10T12:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-10T12:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 553785,
+   "sha256": "b75761e4d771e5545e44703fdbb609a1f71988882e08c10b41fabaec1afa24a9",
+   "montana_zone_codes": 103,
+   "content_checked": "159 features (103 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 14ac8cb457189777",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2022-09-12T23:59:00Z",
+   "effective_date": "2022-09-12T23:59:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-12T23:59:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 553785,
+   "sha256": "68c3ba2840bd510f634a30594c75ac78a44614fd34b74d4d1ecad34714024add",
+   "montana_zone_codes": 103,
+   "content_checked": "159 features (103 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 14ac8cb457189777",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2022-09-13T00:00:00Z",
+   "effective_date": "2022-09-13T00:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-13T00:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 553785,
+   "sha256": "527059799ad11fee339608bc4dcd15cfe1ad52d6c4ef9a3a58be6f137b275b4f",
+   "montana_zone_codes": 103,
+   "content_checked": "159 features (103 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 14ac8cb457189777",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2022-09-13T12:00:00Z",
+   "effective_date": "2022-09-13T12:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-13T12:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 553785,
+   "sha256": "c31782da7576855c6cac6babd799a8c28a16011c09d31f1ef80c8055bfc32587",
+   "montana_zone_codes": 103,
+   "content_checked": "159 features (103 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 14ac8cb457189777",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2022-09-13T18:00:00Z",
+   "effective_date": "2022-09-13T18:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-13T18:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 475411,
+   "sha256": "950175ea2ba674b8b323ae9d1cc28608d93f03b74c5cd7c157b987cee8b72f05",
+   "montana_zone_codes": 83,
+   "content_checked": "139 features (83 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 592f2b4ab973475f",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2022-09-14T00:00:00Z",
+   "effective_date": "2022-09-14T00:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-14T00:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 475411,
+   "sha256": "3d33fe88780e7113b25915f828a2f8f40534f39cffb39fd32b0cd1b01a274202",
+   "montana_zone_codes": 83,
+   "content_checked": "139 features (83 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 592f2b4ab973475f",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2022-09-20T12:00:00Z",
+   "effective_date": "2022-09-20T12:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-20T12:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 475411,
+   "sha256": "3e5776f867130874eba42c3a117d99d1788e2d4149947e081235fe52c1f298fa",
+   "montana_zone_codes": 83,
+   "content_checked": "139 features (83 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 592f2b4ab973475f",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2023-06-01T12:00:00Z",
+   "effective_date": "2023-06-01T12:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2023-06-01T12:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 475411,
+   "sha256": "ba041fb90e7c166c62435104ddc3ada75aba9ca1848c19966128093c6ae2001f",
+   "montana_zone_codes": 83,
+   "content_checked": "139 features (83 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 592f2b4ab973475f",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2024-06-01T12:00:00Z",
+   "effective_date": "2024-06-01T12:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2024-06-01T12:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 475411,
+   "sha256": "6aa7acccb5d49fb15446ecfb00cea35dc99f12d13bd918d4bfa2f4cdf9d2581f",
+   "montana_zone_codes": 83,
+   "content_checked": "139 features (83 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 592f2b4ab973475f",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2025-03-18T12:00:00Z",
+   "effective_date": "2025-03-18T12:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2025-03-18T12:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 475411,
+   "sha256": "6b024fd08ea683abcd0c32506bebee7658bfa6fcef583731fe9e346f9ae66565",
+   "montana_zone_codes": 83,
+   "content_checked": "139 features (83 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 592f2b4ab973475f",
+   "terms": "IEM API terms (see sources.iem)"
+  },
+  {
+   "kind": "IEM UGC geometry (simplified), not an NWS file",
+   "edition": "IEM ugcs valid 2025-03-20T12:00:00Z",
+   "effective_date": "2025-03-20T12:00:00Z",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2025-03-20T12:00:00Z",
+   "source": "Iowa Environmental Mesonet api/1/nws/ugcs.geojson (state=MT); geometries are simplified per the IEM OpenAPI text",
+   "bytes": 475411,
+   "sha256": "e3f4310aea6fafd0d49bba8d470dfcf8bb54e64054aaef19d5687695798a8c30",
+   "montana_zone_codes": 83,
+   "content_checked": "139 features (83 MTZ, 56 MTC county), all state MT, null geometry 0, crs urn:ogc:def:crs:OGC:1.3:CRS84; MT geometry digest 592f2b4ab973475f",
+   "terms": "IEM API terms (see sources.iem)"
+  }
+ ],
+ "not_found": [
+  "z_08se21: NWS direct HTTP 404 (817 B); no Wayback capture (availability API empty for 3 URL forms at 2021-11-01); IEM covers the window (103 MTZ at 2021-09-15 and 2021-10-17)",
+  "z_22mr22: NWS direct HTTP 404; Wayback capture 20220805173609 located (availability status 200) but download reset twice by the egress relay; IEM 2022-06-01 shows 103 MTZ",
+  "z_07se22: NWS direct HTTP 404; Wayback capture 20220805173610 located but download reset once; IEM 2022-09-10 and 2022-09-13T12:00Z show 103 MTZ, 2022-09-13T18:00Z shows 83",
+  "z_13se22: NWS direct HTTP 404; no Wayback capture (availability empty at 2022-11-01); IEM 2022-09-14 and 2022-09-20 show 83 MTZ",
+  "z_08mr23: NWS direct HTTP 404; Wayback capture 20251020132226 located (availability status 200) but download reset once; IEM 2023-06-01 shows 83 MTZ",
+  "z_05mr24: NWS direct HTTP 404; Wayback capture 20240114215013 located (availability status 200) but download reset once; IEM 2024-06-01 shows 83 MTZ",
+  "Wayback CDX index of the WSOM folder: first attempt reset (curl 35); retry over http returned 403 with x-block-reason hostname_blocked; not retried further",
+  "NWS WSOM folder listing (https://www.weather.gov/source/gis/Shapefiles/WSOM/): HTTP 500 on both attempts",
+  "NWS old geodata catalog (http://www.nws.noaa.gov/geodata/catalog/wsom/html/pubzone.htm): HTTP 403; not retried",
+  "IEM geojson/ugcs.py: not an endpoint (redirects to the API docs HTML); not used",
+  "IEM shapefile dump folder (data/gis/shape/4326/us/): current products only, no UGC or zone archive",
+  "tgftp.nws.noaa.gov SL.us008001 (ST.opnl, ST.expr): no public-zone archive found in listings; ST.opnl/DF.gis returned HTTP 403 from the NWS Apache server (folder not listable; not retried)",
+  "NWS notification page (https://www.weather.gov/notification/): 455 SCN links checked, none for SCN 22-60, 22-61 or 22-62"
+ ],
+ "requests": [
+  {
+   "ts": "2026-10-19T23:39:12Z",
+   "label": "nws-gis-page",
+   "url": "https://www.weather.gov/gis/PublicZones",
+   "http_status": 200,
+   "bytes": 28802,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/nws-gis-page/PublicZones.html",
+   "sha256": "482754bc658f4128f4a0f3d642c5e88f1b5b1d801b5f68e9d1b0c9988a8f3cf9"
+  },
+  {
+   "ts": "2026-10-19T23:39:13Z",
+   "label": "nws-change-log-recheck",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/zone_ch_log.txt",
+   "http_status": 200,
+   "bytes": 45853,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/nws-change-log/zone_ch_log.txt",
+   "sha256": "dce272be5428722a79f17011ce2e5f52f67cc6870d372cf199a362237a41242e"
+  },
+  {
+   "ts": "2026-10-19T23:39:15Z",
+   "label": "wayback-avail-z_22mr22",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_22mr22.zip&timestamp=20220601",
+   "http_status": 200,
+   "bytes": 311,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_22mr22.json",
+   "sha256": "7f0dc3929bcf2fe3b532cb2051b89a37f858c7b376afb3d1c8b36487aea8fcdb"
+  },
+  {
+   "ts": "2026-10-19T23:39:15Z",
+   "label": "iem-api-docs",
+   "url": "https://mesonet.agron.iastate.edu/api/",
+   "http_status": 200,
+   "bytes": 45549,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-api-docs/index.html",
+   "sha256": "7d61ee1b49a0c4bf8480ed710caa2eb8582666d3f76ef4e0913eb5a463ca2e36"
+  },
+  {
+   "ts": "2026-10-19T23:39:50Z",
+   "label": "wayback-cdx-WSOM-prefix",
+   "url": "https://web.archive.org/cdx/search/cdx?url=www.weather.gov/source/gis/Shapefiles/WSOM/&matchType=prefix&output=json&fl=timestamp,original,statuscode,digest,length,mimetype&filter=statuscode:200&limit=5000",
+   "http_status": 0,
+   "bytes": 0,
+   "curl_exit": 35,
+   "error": "curl: (35) Recv failure: Connection reset by peer",
+   "file": "probes/wayback-cdx/WSOM-prefix-200.json",
+   "sha256": null,
+   "note": "connection reset by the egress relay (ws_closed_mid_exchange, code 1006); not a server response"
+  },
+  {
+   "ts": "2026-10-19T23:39:50Z",
+   "label": "nws-awips-shapefiles-page",
+   "url": "https://www.weather.gov/gis/AWIPSShapefiles",
+   "http_status": 200,
+   "bytes": 29985,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/nws-awips/AWIPSShapefiles.html",
+   "sha256": "51590c335c9c1828f1107a882e3cc80f5d2e671857cb10c46794339b8ecaf97b"
+  },
+  {
+   "ts": "2026-10-19T23:39:51Z",
+   "label": "nws-public-zone-metadata-page",
+   "url": "https://www.weather.gov/gis/PublicZoneMetadata",
+   "http_status": 200,
+   "bytes": 39040,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/nws-zone-metadata/PublicZoneMetadata.html",
+   "sha256": "32b736c020c89dd79fa920c0352936d02f31d95a9c70e0c17e00c85565f25625"
+  },
+  {
+   "ts": "2026-10-19T23:39:52Z",
+   "label": "iem-ugcs-api-MT-2021-10-17",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2021-10-17T00:00:00Z",
+   "http_status": 200,
+   "bytes": 553785,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-ugcs-api/MT-valid-2021-10-17.geojson",
+   "sha256": "c968b0ea0a72d642c3cbd034264cf2a02adb6c5609c26ee242087e2568117377"
+  },
+  {
+   "ts": "2026-10-19T23:39:52Z",
+   "label": "iem-geojson-ugcs-py",
+   "url": "https://mesonet.agron.iastate.edu/geojson/ugcs.py?year=2021&month=10&day=17&hour=0&minute=0&state=MT",
+   "http_status": 200,
+   "bytes": 45549,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-geojson-ugcs/MT-2021-10-17.geojson",
+   "sha256": "7d61ee1b49a0c4bf8480ed710caa2eb8582666d3f76ef4e0913eb5a463ca2e36",
+   "note": "redirected to the IEM API docs HTML (not a data endpoint); body removed, headers kept"
+  },
+  {
+   "ts": "2026-10-19T23:39:52Z",
+   "label": "iem-shape-dir-listing",
+   "url": "https://mesonet.agron.iastate.edu/data/gis/shape/4326/us/",
+   "http_status": 200,
+   "bytes": 7376,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-shape-dir/listing.html",
+   "sha256": "62c479d9dbc21e8b493965a6a12ad348beaa8777fdb31a403eec43fd85adc1c4"
+  },
+  {
+   "ts": "2026-10-19T23:39:53Z",
+   "label": "tgftp-nws-gis-dir",
+   "url": "https://tgftp.nws.noaa.gov/SL.us008001/",
+   "http_status": 200,
+   "bytes": 2845,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/tgftp/SL.us008001.html",
+   "sha256": "e5cbcd93a363c3b7d0f2508d1a81af6f2cba7ac0602ef67c9daefc9309cf4328"
+  },
+  {
+   "ts": "2026-10-19T23:40:19Z",
+   "label": "tgftp-ST.opnl-dir",
+   "url": "https://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/",
+   "http_status": 200,
+   "bytes": 9032,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/tgftp/ST.opnl.html",
+   "sha256": "77f0799d8b2b923c4743537ae8c0b8b97e73884bc6d0b2abc339e31cbd8fd78e"
+  },
+  {
+   "ts": "2026-10-19T23:40:19Z",
+   "label": "wayback-cdx-WSOM-prefix-retry",
+   "url": "http://web.archive.org/cdx/search/cdx?url=www.weather.gov/source/gis/Shapefiles/WSOM/&matchType=prefix&output=json&fl=timestamp,original,statuscode,digest,length,mimetype&filter=statuscode:200&limit=2000",
+   "http_status": 403,
+   "bytes": 24,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-cdx/WSOM-prefix-200.json",
+   "sha256": null,
+   "note": "policy block: x-block-reason hostname_blocked (see headers file)"
+  },
+  {
+   "ts": "2026-10-19T23:40:20Z",
+   "label": "nws-geodata-catalog-pubzone",
+   "url": "http://www.nws.noaa.gov/geodata/catalog/wsom/html/pubzone.htm",
+   "http_status": 403,
+   "bytes": 431,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/nws-geodata-catalog/pubzone.htm",
+   "sha256": null
+  },
+  {
+   "ts": "2026-10-19T23:40:21Z",
+   "label": "wayback-avail-z_08se21",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_08se21.zip&timestamp=20211101",
+   "http_status": 200,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_08se21.json",
+   "sha256": "0039fc5e32ea1482362276eb2a8c7cafa6eb1de4f8c0a13a18e064ab6264daa6"
+  },
+  {
+   "ts": "2026-10-19T23:40:39Z",
+   "label": "wayback-avail-z_08se21-20210915",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_08se21.zip&timestamp=20210915",
+   "http_status": 429,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_08se21-20210915.json",
+   "sha256": null,
+   "note": "HTTP 429 from the Wayback availability API (rate limited); no result"
+  },
+  {
+   "ts": "2026-10-19T23:40:40Z",
+   "label": "wayback-avail-z_08se21-20220301",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_08se21.zip&timestamp=20220301",
+   "http_status": 429,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_08se21-20220301.json",
+   "sha256": null,
+   "note": "HTTP 429 from the Wayback availability API (rate limited); no result"
+  },
+  {
+   "ts": "2026-10-19T23:40:40Z",
+   "label": "wayback-avail-z_07se22-20220815",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_07se22.zip&timestamp=20220815",
+   "http_status": 429,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_07se22-20220815.json",
+   "sha256": null,
+   "note": "HTTP 429 from the Wayback availability API (rate limited); no result"
+  },
+  {
+   "ts": "2026-10-19T23:40:41Z",
+   "label": "wayback-avail-z_07se22-20220910",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_07se22.zip&timestamp=20220910",
+   "http_status": 429,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_07se22-20220910.json",
+   "sha256": null,
+   "note": "HTTP 429 from the Wayback availability API (rate limited); no result"
+  },
+  {
+   "ts": "2026-10-19T23:40:41Z",
+   "label": "wayback-avail-z_13se22-20221101",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_13se22.zip&timestamp=20221101",
+   "http_status": 429,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_13se22-20221101.json",
+   "sha256": null,
+   "note": "HTTP 429 from the Wayback availability API (rate limited); no result"
+  },
+  {
+   "ts": "2026-10-19T23:40:42Z",
+   "label": "wayback-avail-z_08mr23-20230501",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_08mr23.zip&timestamp=20230501",
+   "http_status": 429,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_08mr23-20230501.json",
+   "sha256": null,
+   "note": "HTTP 429 from the Wayback availability API (rate limited); no result"
+  },
+  {
+   "ts": "2026-10-19T23:40:43Z",
+   "label": "wayback-avail-z_05mr24-20240501",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_05mr24.zip&timestamp=20240501",
+   "http_status": 429,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_05mr24-20240501.json",
+   "sha256": null,
+   "note": "HTTP 429 from the Wayback availability API (rate limited); no result"
+  },
+  {
+   "ts": "2026-10-19T23:40:43Z",
+   "label": "wayback-avail-z_05mr24-20241001",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_05mr24.zip&timestamp=20241001",
+   "http_status": 429,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_05mr24-20241001.json",
+   "sha256": null,
+   "note": "HTTP 429 from the Wayback availability API (rate limited); no result"
+  },
+  {
+   "ts": "2026-10-19T23:40:44Z",
+   "label": "wayback-avail-z_22mr22-20220301",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_22mr22.zip&timestamp=20220301",
+   "http_status": 429,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_22mr22-20220301.json",
+   "sha256": null,
+   "note": "HTTP 429 from the Wayback availability API (rate limited); no result"
+  },
+  {
+   "ts": "2026-10-19T23:41:37Z",
+   "label": "iem-ugcs-api-MT-2021-09-15",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2021-09-15T12:00:00Z",
+   "http_status": 200,
+   "bytes": 553785,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/valid-2021-09-15/MT.geojson",
+   "sha256": "0fc131371d5b57ba2fb3fbfcbf58eb82f1bbcf62399a491026ca52e08832d4df"
+  },
+  {
+   "ts": "2026-10-19T23:41:37Z",
+   "label": "iem-ugcs-api-MT-2022-06-01",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-06-01T12:00:00Z",
+   "http_status": 200,
+   "bytes": 553785,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/valid-2022-06-01/MT.geojson",
+   "sha256": "498037fa4b25d1fb6c6e0552e402c5340bc393747f77fe97118b1ee9b15f1c8c"
+  },
+  {
+   "ts": "2026-10-19T23:41:38Z",
+   "label": "iem-ugcs-api-MT-2022-09-10",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-10T12:00:00Z",
+   "http_status": 200,
+   "bytes": 553785,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/valid-2022-09-10/MT.geojson",
+   "sha256": "b75761e4d771e5545e44703fdbb609a1f71988882e08c10b41fabaec1afa24a9"
+  },
+  {
+   "ts": "2026-10-19T23:41:39Z",
+   "label": "iem-ugcs-api-MT-2022-09-20",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-20T12:00:00Z",
+   "http_status": 200,
+   "bytes": 475411,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/valid-2022-09-20/MT.geojson",
+   "sha256": "3e5776f867130874eba42c3a117d99d1788e2d4149947e081235fe52c1f298fa"
+  },
+  {
+   "ts": "2026-10-19T23:41:40Z",
+   "label": "iem-ugcs-api-MT-2023-06-01",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2023-06-01T12:00:00Z",
+   "http_status": 200,
+   "bytes": 475411,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/valid-2023-06-01/MT.geojson",
+   "sha256": "ba041fb90e7c166c62435104ddc3ada75aba9ca1848c19966128093c6ae2001f"
+  },
+  {
+   "ts": "2026-10-19T23:41:41Z",
+   "label": "iem-ugcs-api-MT-2024-06-01",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2024-06-01T12:00:00Z",
+   "http_status": 200,
+   "bytes": 475411,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/valid-2024-06-01/MT.geojson",
+   "sha256": "6aa7acccb5d49fb15446ecfb00cea35dc99f12d13bd918d4bfa2f4cdf9d2581f"
+  },
+  {
+   "ts": "2026-10-19T23:41:41Z",
+   "label": "iem-ugcs-api-MT-2025-03-18",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2025-03-18T12:00:00Z",
+   "http_status": 200,
+   "bytes": 475411,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/valid-2025-03-18/MT.geojson",
+   "sha256": "6b024fd08ea683abcd0c32506bebee7658bfa6fcef583731fe9e346f9ae66565"
+  },
+  {
+   "ts": "2026-10-19T23:41:42Z",
+   "label": "iem-ugcs-api-MT-2025-03-20",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2025-03-20T12:00:00Z",
+   "http_status": 200,
+   "bytes": 475411,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/valid-2025-03-20/MT.geojson",
+   "sha256": "e3f4310aea6fafd0d49bba8d470dfcf8bb54e64054aaef19d5687695798a8c30"
+  },
+  {
+   "ts": "2026-10-19T23:41:43Z",
+   "label": "nws-disclaimer",
+   "url": "https://www.weather.gov/disclaimer",
+   "http_status": 200,
+   "bytes": 41679,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/nws-terms/disclaimer.html",
+   "sha256": "c08c1597ebd52b31e3ba749f76d2217c290dcd16dc894cb4c109655566ecbbd1"
+  },
+  {
+   "ts": "2026-10-19T23:41:43Z",
+   "label": "iem-home",
+   "url": "https://mesonet.agron.iastate.edu/",
+   "http_status": 200,
+   "bytes": 45804,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-terms/home.html",
+   "sha256": "1002c867a427c58f866c5627fd562021716250e0bb320107157f23f7320bab36"
+  },
+  {
+   "ts": "2026-10-19T23:41:44Z",
+   "label": "archive-org-terms",
+   "url": "https://archive.org/about/terms.php",
+   "http_status": 200,
+   "bytes": 1951,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-terms/terms.html",
+   "sha256": "7fd0001d8ff3c6122db5e3d3ef32ea3f47615ba046cebfd3a1d9d02e53b7b4ec"
+  },
+  {
+   "ts": "2026-10-19T23:42:33Z",
+   "label": "iem-ugcs-api-MT-switch-2022-09-07T00:00:00",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-07T00:00:00Z",
+   "http_status": 200,
+   "bytes": 553785,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/switch-probe-2022-09-07T00:00:00/MT.geojson",
+   "sha256": "d9c2de3a28b08ce002384d2b7ce8bcabf7fcac5ba29ed586ed6017cee2278a87"
+  },
+  {
+   "ts": "2026-10-19T23:42:34Z",
+   "label": "iem-ugcs-api-MT-switch-2022-09-12T23:59:00",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-12T23:59:00Z",
+   "http_status": 200,
+   "bytes": 553785,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/switch-probe-2022-09-12T23:59:00/MT.geojson",
+   "sha256": "68c3ba2840bd510f634a30594c75ac78a44614fd34b74d4d1ecad34714024add"
+  },
+  {
+   "ts": "2026-10-19T23:42:34Z",
+   "label": "iem-ugcs-api-MT-switch-2022-09-13T00:00:00",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-13T00:00:00Z",
+   "http_status": 200,
+   "bytes": 553785,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/switch-probe-2022-09-13T00:00:00/MT.geojson",
+   "sha256": "527059799ad11fee339608bc4dcd15cfe1ad52d6c4ef9a3a58be6f137b275b4f"
+  },
+  {
+   "ts": "2026-10-19T23:42:35Z",
+   "label": "iem-ugcs-api-MT-switch-2022-09-14T00:00:00",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-14T00:00:00Z",
+   "http_status": 200,
+   "bytes": 475411,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/switch-probe-2022-09-14T00:00:00/MT.geojson",
+   "sha256": "3d33fe88780e7113b25915f828a2f8f40534f39cffb39fd32b0cd1b01a274202"
+  },
+  {
+   "ts": "2026-10-19T23:42:36Z",
+   "label": "wayback-avail-z_07se22-20220815-retry",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_07se22.zip&timestamp=20220815",
+   "http_status": 200,
+   "bytes": 311,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_07se22-20220815.json",
+   "sha256": "64b44b1a73d3d67daf9b05f0db6e0696c236be2e20ada1e25ef99685fd25c28d"
+  },
+  {
+   "ts": "2026-10-19T23:42:37Z",
+   "label": "archive-org-terms-page",
+   "url": "https://archive.org/about/terms",
+   "http_status": 200,
+   "bytes": 1951,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-terms/about-terms.html",
+   "sha256": "7fd0001d8ff3c6122db5e3d3ef32ea3f47615ba046cebfd3a1d9d02e53b7b4ec"
+  },
+  {
+   "ts": "2026-10-19T23:42:38Z",
+   "label": "iem-api-1-docs",
+   "url": "https://mesonet.agron.iastate.edu/api/1/docs",
+   "http_status": 200,
+   "bytes": 1021,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-api-docs/api1-docs.html",
+   "sha256": "28534ad56ed61b366d54487ee0ad0c5da2012f6cbf91225115e8da54cdce2497"
+  },
+  {
+   "ts": "2026-10-19T23:42:38Z",
+   "label": "iem-info-page",
+   "url": "https://mesonet.agron.iastate.edu/info/",
+   "http_status": 200,
+   "bytes": 2448,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-terms/info.html",
+   "sha256": "9fa211761e46b655debf25a6baead22cc16059f94351b8518efac5f989d27d77"
+  },
+  {
+   "ts": "2026-10-19T23:43:13Z",
+   "label": "wayback-dl-z_22mr22-20220805173609",
+   "url": "https://web.archive.org/web/20220805173609id_/https://www.weather.gov/source/gis/Shapefiles/WSOM/z_22mr22.zip",
+   "http_status": 0,
+   "bytes": 0,
+   "curl_exit": 35,
+   "error": "curl: (35) Recv failure: Connection reset by peer",
+   "file": "z_22mr22/wayback-20220805173609/z_22mr22.zip",
+   "sha256": null,
+   "note": "connection reset by the egress relay (ws_closed_mid_exchange, code 1006); not a server response"
+  },
+  {
+   "ts": "2026-10-19T23:43:21Z",
+   "label": "wayback-dl-z_07se22-20220805173610",
+   "url": "https://web.archive.org/web/20220805173610id_/https://www.weather.gov/source/gis/Shapefiles/WSOM/z_07se22.zip",
+   "http_status": 0,
+   "bytes": 0,
+   "curl_exit": 35,
+   "error": "curl: (35) Recv failure: Connection reset by peer",
+   "file": "z_07se22/wayback-20220805173610/z_07se22.zip",
+   "sha256": null,
+   "note": "connection reset by the egress relay (ws_closed_mid_exchange, code 1006); not a server response"
+  },
+  {
+   "ts": "2026-10-19T23:43:26Z",
+   "label": "wayback-avail-z_13se22-20221101",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_13se22.zip&timestamp=20221101",
+   "http_status": 200,
+   "bytes": 117,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_13se22-20221101.json",
+   "sha256": "3b2d05b7fa80b27152a8085e67a6f7f7e87e2f8799becfa92a12536b49eba0c1"
+  },
+  {
+   "ts": "2026-10-19T23:43:27Z",
+   "label": "wayback-avail-z_08mr23-20230501",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_08mr23.zip&timestamp=20230501",
+   "http_status": 200,
+   "bytes": 311,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_08mr23-20230501.json",
+   "sha256": "146ef09ac1e8e082313b1d836b398523247ea07580e9c21cbb852e6b625fd9d1"
+  },
+  {
+   "ts": "2026-10-19T23:43:28Z",
+   "label": "wayback-avail-z_05mr24-20240501",
+   "url": "https://archive.org/wayback/available?url=www.weather.gov/source/gis/Shapefiles/WSOM/z_05mr24.zip&timestamp=20240501",
+   "http_status": 200,
+   "bytes": 311,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_05mr24-20240501.json",
+   "sha256": "708e2431ff0238e01e33558f370dc6a7ffeab92c1ddc43372c09a33095708aba"
+  },
+  {
+   "ts": "2026-10-19T23:43:29Z",
+   "label": "wayback-avail-z_08se21-variant",
+   "url": "https://archive.org/wayback/available?url=https://www.weather.gov/source/gis/Shapefiles/WSOM/z_08se21.zip&timestamp=20211101",
+   "http_status": 200,
+   "bytes": 125,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_08se21-variant-370168b2.json",
+   "sha256": "72a19ff689925ba0315cf91bbd5d076dfc0eab6e05352d3ace9cfeb0a17690d8"
+  },
+  {
+   "ts": "2026-10-19T23:43:30Z",
+   "label": "wayback-avail-z_08se21-variant",
+   "url": "https://archive.org/wayback/available?url=weather.gov/source/gis/Shapefiles/WSOM/z_08se21.zip&timestamp=20211101",
+   "http_status": 200,
+   "bytes": 113,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-avail/z_08se21-variant-7a40e122.json",
+   "sha256": "31789d45f0fb012bd8970d619dd0ec4eba4a28f9f28d35f6ad431a93bc041655"
+  },
+  {
+   "ts": "2026-10-19T23:43:31Z",
+   "label": "iem-info-datasets",
+   "url": "https://mesonet.agron.iastate.edu/info/datasets.php",
+   "http_status": 200,
+   "bytes": 65231,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-terms/datasets.html",
+   "sha256": "b21192b8ef505228df0fa2067f0530f7c59e3dad9e039faec361cb097137025f"
+  },
+  {
+   "ts": "2026-10-19T23:43:31Z",
+   "label": "iem-info-links",
+   "url": "https://mesonet.agron.iastate.edu/info/links.php",
+   "http_status": 200,
+   "bytes": 34505,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-terms/links.html",
+   "sha256": "29330f407341a5f80efcef8b8d762a59c07727f7f02e6f29dfe73306d773685b"
+  },
+  {
+   "ts": "2026-10-19T23:43:32Z",
+   "label": "iem-info-refs",
+   "url": "https://mesonet.agron.iastate.edu/info/refs.php",
+   "http_status": 200,
+   "bytes": 424866,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-terms/refs.html",
+   "sha256": "6a6ca283052bcc66c188ef8dd7cd09df8511dcdf53fc668381608e2c544c5213"
+  },
+  {
+   "ts": "2026-10-19T23:43:35Z",
+   "label": "iem-openapi",
+   "url": "https://mesonet.agron.iastate.edu/api/1/openapi.json",
+   "http_status": 200,
+   "bytes": 120597,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/iem-api-docs/openapi.json",
+   "sha256": "09bbfc79f0da4260270d593c35fdf0164af131e7dd66ebfe7f32a10e091de283"
+  },
+  {
+   "ts": "2026-10-19T23:44:07Z",
+   "label": "wayback-dl-z_22mr22-20220805173609-retry",
+   "url": "https://web.archive.org/web/20220805173609id_/https://www.weather.gov/source/gis/Shapefiles/WSOM/z_22mr22.zip",
+   "http_status": 0,
+   "bytes": 0,
+   "curl_exit": 35,
+   "error": "curl: (35) Recv failure: Connection reset by peer",
+   "file": "z_22mr22/wayback-20220805173609/z_22mr22.zip",
+   "sha256": null,
+   "note": "connection reset by the egress relay (ws_closed_mid_exchange, code 1006); not a server response"
+  },
+  {
+   "ts": "2026-10-19T23:44:09Z",
+   "label": "nws-WSOM-folder-listing",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/",
+   "http_status": 500,
+   "bytes": 533,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/nws-WSOM-folder/listing.html",
+   "sha256": null
+  },
+  {
+   "ts": "2026-10-19T23:44:09Z",
+   "label": "tgftp-ST.opnl-DF.gis",
+   "url": "https://tgftp.nws.noaa.gov/SL.us008001/ST.opnl/DF.gis/",
+   "http_status": 403,
+   "bytes": 199,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/tgftp/ST.opnl.DF.gis.html",
+   "sha256": null
+  },
+  {
+   "ts": "2026-10-19T23:44:09Z",
+   "label": "tgftp-ST.expr-dir",
+   "url": "https://tgftp.nws.noaa.gov/SL.us008001/ST.expr/",
+   "http_status": 200,
+   "bytes": 751,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/tgftp/ST.expr.html",
+   "sha256": "2857eae1291f7f9790475770c06a62fe6a7c387241bc284b8c1b973e1a3c6ae1"
+  },
+  {
+   "ts": "2026-10-19T23:45:02Z",
+   "label": "iem-switch-probe-2022-09-13T12",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-13T12:00:00Z",
+   "http_status": 200,
+   "bytes": 553785,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/switch-probe-2022-09-13T12:00:00/MT.geojson",
+   "sha256": "c31782da7576855c6cac6babd799a8c28a16011c09d31f1ef80c8055bfc32587"
+  },
+  {
+   "ts": "2026-10-19T23:45:14Z",
+   "label": "wayback-dl-z_05mr24-20240114215013",
+   "url": "https://web.archive.org/web/20240114215013id_/https://www.weather.gov/source/gis/Shapefiles/WSOM/z_05mr24.zip",
+   "http_status": 0,
+   "bytes": 0,
+   "curl_exit": 35,
+   "error": "curl: (35) Recv failure: Connection reset by peer",
+   "file": "z_05mr24/wayback-20240114215013/z_05mr24.zip",
+   "sha256": null,
+   "note": "connection reset by the egress relay (ws_closed_mid_exchange, code 1006); not a server response"
+  },
+  {
+   "ts": "2026-10-19T23:45:58Z",
+   "label": "wayback-dl-z_08mr23-20251020132226",
+   "url": "https://web.archive.org/web/20251020132226id_/https://www.weather.gov/source/gis/Shapefiles/WSOM/z_08mr23.zip",
+   "http_status": 0,
+   "bytes": 0,
+   "curl_exit": 35,
+   "error": "curl: (35) Recv failure: Connection reset by peer",
+   "file": "z_08mr23/wayback-20251020132226/z_08mr23.zip",
+   "sha256": null,
+   "note": "connection reset by the egress relay (ws_closed_mid_exchange, code 1006); not a server response"
+  },
+  {
+   "ts": "2026-10-19T23:45:59Z",
+   "label": "iem-switch-probe-2022-09-13T18",
+   "url": "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2022-09-13T18:00:00Z",
+   "http_status": 200,
+   "bytes": 475411,
+   "curl_exit": 0,
+   "error": null,
+   "file": "iem-ugcs/switch-probe-2022-09-13T18:00:00/MT.geojson",
+   "sha256": "950175ea2ba674b8b323ae9d1cc28608d93f03b74c5cd7c157b987cee8b72f05"
+  },
+  {
+   "ts": "2026-10-19T23:45:59Z",
+   "label": "nws-notification-page",
+   "url": "https://www.weather.gov/notification/",
+   "http_status": 200,
+   "bytes": 300718,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/nws-notification/notification.html",
+   "sha256": "28fd1f1b4781a4f9135c594887e2181aa21d23129959144a897383de39c61116"
+  },
+  {
+   "ts": "2026-10-19T23:46:36Z",
+   "label": "nws-direct-z_08se21",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_08se21.zip",
+   "http_status": 404,
+   "bytes": 817,
+   "curl_exit": 0,
+   "error": null,
+   "file": "z_08se21/nws-direct/z_08se21.zip",
+   "sha256": null
+  },
+  {
+   "ts": "2026-10-19T23:46:36Z",
+   "label": "nws-direct-z_22mr22",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_22mr22.zip",
+   "http_status": 404,
+   "bytes": 817,
+   "curl_exit": 0,
+   "error": null,
+   "file": "z_22mr22/nws-direct/z_22mr22.zip",
+   "sha256": null
+  },
+  {
+   "ts": "2026-10-19T23:46:37Z",
+   "label": "nws-direct-z_07se22",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_07se22.zip",
+   "http_status": 404,
+   "bytes": 817,
+   "curl_exit": 0,
+   "error": null,
+   "file": "z_07se22/nws-direct/z_07se22.zip",
+   "sha256": null
+  },
+  {
+   "ts": "2026-10-19T23:46:37Z",
+   "label": "nws-direct-z_13se22",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_13se22.zip",
+   "http_status": 404,
+   "bytes": 817,
+   "curl_exit": 0,
+   "error": null,
+   "file": "z_13se22/nws-direct/z_13se22.zip",
+   "sha256": null
+  },
+  {
+   "ts": "2026-10-19T23:46:38Z",
+   "label": "nws-direct-z_08mr23",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_08mr23.zip",
+   "http_status": 404,
+   "bytes": 817,
+   "curl_exit": 0,
+   "error": null,
+   "file": "z_08mr23/nws-direct/z_08mr23.zip",
+   "sha256": null
+  },
+  {
+   "ts": "2026-10-19T23:46:38Z",
+   "label": "nws-direct-z_05mr24",
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_05mr24.zip",
+   "http_status": 404,
+   "bytes": 817,
+   "curl_exit": 0,
+   "error": null,
+   "file": "z_05mr24/nws-direct/z_05mr24.zip",
+   "sha256": null
+  },
+  {
+   "ts": "2026-10-19T23:46:39Z",
+   "label": "wayback-help-rights",
+   "url": "https://help.archive.org/help/rights/",
+   "http_status": 200,
+   "bytes": 51216,
+   "curl_exit": 0,
+   "error": null,
+   "file": "probes/wayback-terms/help-rights.html",
+   "sha256": "870f732865a2ed8504821594f666ad98b2ceb05c63ffb8a4b2771ebf5f99a56e"
+  }
+ ],
+ "requests_count": 70,
+ "files_kept": [
+  {
+   "path": "README-probe-2026-10-19.txt",
+   "bytes": 878,
+   "sha256": "8d57a9dd988f0f02e4860954b4ae5eabc5fb11aa3c40c2e383b12a9e29c37d07"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-07T00:00:00/MT.geojson",
+   "bytes": 553785,
+   "sha256": "d9c2de3a28b08ce002384d2b7ce8bcabf7fcac5ba29ed586ed6017cee2278a87"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-07T00:00:00/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "65d69eb53cb0b9705c60b51c3a41ed7b92f1c91115d0056d4d7601dc0b9b86db"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-12T23:59:00/MT.geojson",
+   "bytes": 553785,
+   "sha256": "68c3ba2840bd510f634a30594c75ac78a44614fd34b74d4d1ecad34714024add"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-12T23:59:00/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "a128becf733aafea07258c9916f2fe766acf9367711d4cc75f732659e5b669bb"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-13T00:00:00/MT.geojson",
+   "bytes": 553785,
+   "sha256": "527059799ad11fee339608bc4dcd15cfe1ad52d6c4ef9a3a58be6f137b275b4f"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-13T00:00:00/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "8755bd2ae5dace2fbb1455ce2ca16c4ec32f494b3bf79119dcd6a5a530d75651"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-13T12:00:00/MT.geojson",
+   "bytes": 553785,
+   "sha256": "c31782da7576855c6cac6babd799a8c28a16011c09d31f1ef80c8055bfc32587"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-13T12:00:00/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "d9c95a29109e6975fb1bb23e77848c36564627e3ec2041f840580bcc3d7a1bb5"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-13T18:00:00/MT.geojson",
+   "bytes": 475411,
+   "sha256": "950175ea2ba674b8b323ae9d1cc28608d93f03b74c5cd7c157b987cee8b72f05"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-13T18:00:00/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "37bf0b204a267bab908b17d14b8004feefded19bda4326dbc9fa021ddab673c6"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-14T00:00:00/MT.geojson",
+   "bytes": 475411,
+   "sha256": "3d33fe88780e7113b25915f828a2f8f40534f39cffb39fd32b0cd1b01a274202"
+  },
+  {
+   "path": "iem-ugcs/switch-probe-2022-09-14T00:00:00/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "706b6ce6c004a840bda1e10ffc68ae91b22b96b085f3830c13332dd1b414013d"
+  },
+  {
+   "path": "iem-ugcs/valid-2021-09-15/MT.geojson",
+   "bytes": 553785,
+   "sha256": "0fc131371d5b57ba2fb3fbfcbf58eb82f1bbcf62399a491026ca52e08832d4df"
+  },
+  {
+   "path": "iem-ugcs/valid-2021-09-15/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "314ede2e669b266ed8493144671a7e2b316b66afff3ddac051fe3cb6f54538a0"
+  },
+  {
+   "path": "iem-ugcs/valid-2022-06-01/MT.geojson",
+   "bytes": 553785,
+   "sha256": "498037fa4b25d1fb6c6e0552e402c5340bc393747f77fe97118b1ee9b15f1c8c"
+  },
+  {
+   "path": "iem-ugcs/valid-2022-06-01/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "1f93eeb9dad309ec9b2374877d09f2e59e588175bb5db69f022369c5d4542bea"
+  },
+  {
+   "path": "iem-ugcs/valid-2022-09-10/MT.geojson",
+   "bytes": 553785,
+   "sha256": "b75761e4d771e5545e44703fdbb609a1f71988882e08c10b41fabaec1afa24a9"
+  },
+  {
+   "path": "iem-ugcs/valid-2022-09-10/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "b75348c378ac1c9bb457d8652c6e6d9621e1ea94a94e836588c7f5f3cafa54cc"
+  },
+  {
+   "path": "iem-ugcs/valid-2022-09-20/MT.geojson",
+   "bytes": 475411,
+   "sha256": "3e5776f867130874eba42c3a117d99d1788e2d4149947e081235fe52c1f298fa"
+  },
+  {
+   "path": "iem-ugcs/valid-2022-09-20/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "136bc5fabebda861f34b579dc02013a2dabb3c362abb697f12a785dd7e20a4be"
+  },
+  {
+   "path": "iem-ugcs/valid-2023-06-01/MT.geojson",
+   "bytes": 475411,
+   "sha256": "ba041fb90e7c166c62435104ddc3ada75aba9ca1848c19966128093c6ae2001f"
+  },
+  {
+   "path": "iem-ugcs/valid-2023-06-01/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "1c3ad69dea90da82d125a0ca51c964a443afda085d910eb56c43bf3023aed777"
+  },
+  {
+   "path": "iem-ugcs/valid-2024-06-01/MT.geojson",
+   "bytes": 475411,
+   "sha256": "6aa7acccb5d49fb15446ecfb00cea35dc99f12d13bd918d4bfa2f4cdf9d2581f"
+  },
+  {
+   "path": "iem-ugcs/valid-2024-06-01/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "bc5dd2f60e5bc249e192ad6e8ef5fc333b70a5289353c6d8f02828f069a9bf5c"
+  },
+  {
+   "path": "iem-ugcs/valid-2025-03-18/MT.geojson",
+   "bytes": 475411,
+   "sha256": "6b024fd08ea683abcd0c32506bebee7658bfa6fcef583731fe9e346f9ae66565"
+  },
+  {
+   "path": "iem-ugcs/valid-2025-03-18/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "e4cdc0edc2c49fb43a23e54504fb0925eca58245c47fd22bbe4d37b670ce1d59"
+  },
+  {
+   "path": "iem-ugcs/valid-2025-03-20/MT.geojson",
+   "bytes": 475411,
+   "sha256": "e3f4310aea6fafd0d49bba8d470dfcf8bb54e64054aaef19d5687695798a8c30"
+  },
+  {
+   "path": "iem-ugcs/valid-2025-03-20/MT.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "c12c08b130f157e107cce0cbd1e7b0dfbf0dc699b0cf502d87665110b43f8968"
+  },
+  {
+   "path": "probes/iem-api-docs/api1-docs.html",
+   "bytes": 1021,
+   "sha256": "28534ad56ed61b366d54487ee0ad0c5da2012f6cbf91225115e8da54cdce2497"
+  },
+  {
+   "path": "probes/iem-api-docs/api1-docs.html.headers.txt",
+   "bytes": 294,
+   "sha256": "1771652e1bd885291a483c9625887af2f62ea3f6c9a70df20587d90844b64173"
+  },
+  {
+   "path": "probes/iem-api-docs/index.html",
+   "bytes": 45549,
+   "sha256": "7d61ee1b49a0c4bf8480ed710caa2eb8582666d3f76ef4e0913eb5a463ca2e36"
+  },
+  {
+   "path": "probes/iem-api-docs/index.html.headers.txt",
+   "bytes": 359,
+   "sha256": "0e2e721e5eae24cca7ae1fbfb07ec0963b115133e6c41ff6627f04f65fff8f92"
+  },
+  {
+   "path": "probes/iem-api-docs/openapi.json",
+   "bytes": 120597,
+   "sha256": "09bbfc79f0da4260270d593c35fdf0164af131e7dd66ebfe7f32a10e091de283"
+  },
+  {
+   "path": "probes/iem-api-docs/openapi.json.headers.txt",
+   "bytes": 288,
+   "sha256": "2c2bb3d4b2b1d8880d03a1e355270efb34b35070bcbb0540117fca3b79ce54ac"
+  },
+  {
+   "path": "probes/iem-geojson-ugcs/MT-2021-10-17.geojson.headers.txt",
+   "bytes": 633,
+   "sha256": "6261a0e56853dc3ef8afb5af9905776b7818744ec2bf8cac049a2c6a5deb99a8"
+  },
+  {
+   "path": "probes/iem-shape-dir/listing.html",
+   "bytes": 7376,
+   "sha256": "62c479d9dbc21e8b493965a6a12ad348beaa8777fdb31a403eec43fd85adc1c4"
+  },
+  {
+   "path": "probes/iem-shape-dir/listing.html.headers.txt",
+   "bytes": 331,
+   "sha256": "c74d6f7906a85054020c0d7f806cd8c372d0704442151223f6a50e581b0161a9"
+  },
+  {
+   "path": "probes/iem-terms/datasets.html",
+   "bytes": 65231,
+   "sha256": "b21192b8ef505228df0fa2067f0530f7c59e3dad9e039faec361cb097137025f"
+  },
+  {
+   "path": "probes/iem-terms/datasets.html.headers.txt",
+   "bytes": 359,
+   "sha256": "0264d23e94974bdc4f75fe4721a7b56cea526fed263c144ea925e6fdf2ab0034"
+  },
+  {
+   "path": "probes/iem-terms/home.html",
+   "bytes": 45804,
+   "sha256": "1002c867a427c58f866c5627fd562021716250e0bb320107157f23f7320bab36"
+  },
+  {
+   "path": "probes/iem-terms/home.html.headers.txt",
+   "bytes": 359,
+   "sha256": "c36782dce6ec9e200f52943661a8725da2aacdd5dc146bb84c22a686d7570aaf"
+  },
+  {
+   "path": "probes/iem-terms/info.html",
+   "bytes": 2448,
+   "sha256": "9fa211761e46b655debf25a6baead22cc16059f94351b8518efac5f989d27d77"
+  },
+  {
+   "path": "probes/iem-terms/info.html.headers.txt",
+   "bytes": 331,
+   "sha256": "8c8ab63f26a86d897ddf1e7d19653a20d0d51c5455f63f21fc81f9d9152f70a4"
+  },
+  {
+   "path": "probes/iem-terms/links.html",
+   "bytes": 34505,
+   "sha256": "29330f407341a5f80efcef8b8d762a59c07727f7f02e6f29dfe73306d773685b"
+  },
+  {
+   "path": "probes/iem-terms/links.html.headers.txt",
+   "bytes": 359,
+   "sha256": "d11cd85b03dc8ffb2ee3b82214cc8b76fe4cb1e957a975aa6b6b24d5b3a133f8"
+  },
+  {
+   "path": "probes/iem-terms/refs.html",
+   "bytes": 424866,
+   "sha256": "6a6ca283052bcc66c188ef8dd7cd09df8511dcdf53fc668381608e2c544c5213"
+  },
+  {
+   "path": "probes/iem-terms/refs.html.headers.txt",
+   "bytes": 359,
+   "sha256": "eceba4dd215be4eda40e275db226d6b72a0a372646b782de381655ffcbf1b603"
+  },
+  {
+   "path": "probes/iem-ugcs-api/MT-valid-2021-10-17.geojson",
+   "bytes": 553785,
+   "sha256": "c968b0ea0a72d642c3cbd034264cf2a02adb6c5609c26ee242087e2568117377"
+  },
+  {
+   "path": "probes/iem-ugcs-api/MT-valid-2021-10-17.geojson.headers.txt",
+   "bytes": 296,
+   "sha256": "e020e02bdeeace79497f1841a507617febdcb603453126eff514670939b1a8ef"
+  },
+  {
+   "path": "probes/nws-WSOM-folder/listing.html.headers.txt",
+   "bytes": 1046,
+   "sha256": "57a38e776d928c0d2ed1e038c4b599c14b216584cfd60f0e7bcabd9023b1efc6"
+  },
+  {
+   "path": "probes/nws-awips/AWIPSShapefiles.html",
+   "bytes": 29985,
+   "sha256": "51590c335c9c1828f1107a882e3cc80f5d2e671857cb10c46794339b8ecaf97b"
+  },
+  {
+   "path": "probes/nws-awips/AWIPSShapefiles.html.headers.txt",
+   "bytes": 1032,
+   "sha256": "c46a8f86fc2518022afc6a24b8440efb929bc17d4d22ebf611ec52c539a18696"
+  },
+  {
+   "path": "probes/nws-change-log/zone_ch_log.txt",
+   "bytes": 45853,
+   "sha256": "dce272be5428722a79f17011ce2e5f52f67cc6870d372cf199a362237a41242e"
+  },
+  {
+   "path": "probes/nws-change-log/zone_ch_log.txt.headers.txt",
+   "bytes": 1079,
+   "sha256": "990450ffabad1d2abec0b5baa8f931b07014d70c2b1e5d14f0c9b4c415b1012d"
+  },
+  {
+   "path": "probes/nws-geodata-catalog/pubzone.htm.headers.txt",
+   "bytes": 189,
+   "sha256": "9b0d1efa1c9f499ecf7dad53363b3790a545380e8af6cf08c74f756605e198c9"
+  },
+  {
+   "path": "probes/nws-gis-page/PublicZones.html",
+   "bytes": 28802,
+   "sha256": "482754bc658f4128f4a0f3d642c5e88f1b5b1d801b5f68e9d1b0c9988a8f3cf9"
+  },
+  {
+   "path": "probes/nws-gis-page/PublicZones.html.headers.txt",
+   "bytes": 1032,
+   "sha256": "b8542192d9f2f539c2e12d49d20973ef595308a7b582d7f5d604e7c23c5df986"
+  },
+  {
+   "path": "probes/nws-notification/notification.html",
+   "bytes": 300718,
+   "sha256": "28fd1f1b4781a4f9135c594887e2181aa21d23129959144a897383de39c61116"
+  },
+  {
+   "path": "probes/nws-notification/notification.html.headers.txt",
+   "bytes": 1009,
+   "sha256": "2f8c3182144fd673f242d57faff414949fd10ac35a40312524472a2ab5602884"
+  },
+  {
+   "path": "probes/nws-terms/disclaimer.html",
+   "bytes": 41679,
+   "sha256": "c08c1597ebd52b31e3ba749f76d2217c290dcd16dc894cb4c109655566ecbbd1"
+  },
+  {
+   "path": "probes/nws-terms/disclaimer.html.headers.txt",
+   "bytes": 1032,
+   "sha256": "4f218df537f39ee01b819ea557679df86a246ddb74324dd64e5787a8d00222d2"
+  },
+  {
+   "path": "probes/nws-zone-metadata/PublicZoneMetadata.html",
+   "bytes": 39040,
+   "sha256": "32b736c020c89dd79fa920c0352936d02f31d95a9c70e0c17e00c85565f25625"
+  },
+  {
+   "path": "probes/nws-zone-metadata/PublicZoneMetadata.html.headers.txt",
+   "bytes": 1032,
+   "sha256": "57ef801ffbbff6301c8c1033d5e3706de188f4fef60ef625b21500454a126295"
+  },
+  {
+   "path": "probes/tgftp/SL.us008001.html",
+   "bytes": 2845,
+   "sha256": "e5cbcd93a363c3b7d0f2508d1a81af6f2cba7ac0602ef67c9daefc9309cf4328"
+  },
+  {
+   "path": "probes/tgftp/SL.us008001.html.headers.txt",
+   "bytes": 682,
+   "sha256": "0e6f8fc9e2cc67ea6e3a76823d2106bb7f9c288e819885a2f099922bf26f1501"
+  },
+  {
+   "path": "probes/tgftp/ST.expr.html",
+   "bytes": 751,
+   "sha256": "2857eae1291f7f9790475770c06a62fe6a7c387241bc284b8c1b973e1a3c6ae1"
+  },
+  {
+   "path": "probes/tgftp/ST.expr.html.headers.txt",
+   "bytes": 681,
+   "sha256": "113016bfa92d9bdc7a12e46561519faaac7861c913b9ab7e8937f7ef0ebb23a7"
+  },
+  {
+   "path": "probes/tgftp/ST.opnl.DF.gis.html.headers.txt",
+   "bytes": 671,
+   "sha256": "cb06b853c39a35a4edd70b9a57486dcc98ba2978919e74db971d2a554dc73885"
+  },
+  {
+   "path": "probes/tgftp/ST.opnl.html",
+   "bytes": 9032,
+   "sha256": "77f0799d8b2b923c4743537ae8c0b8b97e73884bc6d0b2abc339e31cbd8fd78e"
+  },
+  {
+   "path": "probes/tgftp/ST.opnl.html.headers.txt",
+   "bytes": 688,
+   "sha256": "a3e11ec7379a82212c7910ca867ba009ba55e07b598a605d0a1afacf949eab06"
+  },
+  {
+   "path": "probes/wayback-avail/z_05mr24-20240501.json",
+   "bytes": 311,
+   "sha256": "708e2431ff0238e01e33558f370dc6a7ffeab92c1ddc43372c09a33095708aba"
+  },
+  {
+   "path": "probes/wayback-avail/z_05mr24-20240501.json.headers.txt",
+   "bytes": 2598,
+   "sha256": "4468c4f1bed8231671dbca31fd06de59ca03ad0788a10326bd3dba51854a71b8"
+  },
+  {
+   "path": "probes/wayback-avail/z_05mr24-20241001.json.headers.txt",
+   "bytes": 2111,
+   "sha256": "5f884e56fbfec06d09deb8da00c48cef3f33adfe92e1090a47834b2df4575339"
+  },
+  {
+   "path": "probes/wayback-avail/z_07se22-20220815.json",
+   "bytes": 311,
+   "sha256": "64b44b1a73d3d67daf9b05f0db6e0696c236be2e20ada1e25ef99685fd25c28d"
+  },
+  {
+   "path": "probes/wayback-avail/z_07se22-20220815.json.headers.txt",
+   "bytes": 2597,
+   "sha256": "da3a277c18827b5ac0c96d5becb1f74ee31d5015e5680e5f5303a05c51bfa930"
+  },
+  {
+   "path": "probes/wayback-avail/z_07se22-20220910.json.headers.txt",
+   "bytes": 2111,
+   "sha256": "9d107d97d3b2b350d0659f8f42a8a01208f76e3d7fc2d4edeeabdb8c90a6116e"
+  },
+  {
+   "path": "probes/wayback-avail/z_08mr23-20230501.json",
+   "bytes": 311,
+   "sha256": "146ef09ac1e8e082313b1d836b398523247ea07580e9c21cbb852e6b625fd9d1"
+  },
+  {
+   "path": "probes/wayback-avail/z_08mr23-20230501.json.headers.txt",
+   "bytes": 2598,
+   "sha256": "458c31e63f56d0db786f6fc901140ef6fbda02fb28b0c7045ec4ad8df4eeffb7"
+  },
+  {
+   "path": "probes/wayback-avail/z_08se21-20210915.json.headers.txt",
+   "bytes": 2111,
+   "sha256": "3fbb4706d8be05b4d97a1bc9530c9970d595d71293dedc79a89834835b378435"
+  },
+  {
+   "path": "probes/wayback-avail/z_08se21-20220301.json.headers.txt",
+   "bytes": 2111,
+   "sha256": "8cee6f5dda548686fb54c08cdd45252eaaf4095bde3d3dfdd39b4440a4840009"
+  },
+  {
+   "path": "probes/wayback-avail/z_08se21-variant-370168b2.json",
+   "bytes": 125,
+   "sha256": "72a19ff689925ba0315cf91bbd5d076dfc0eab6e05352d3ace9cfeb0a17690d8"
+  },
+  {
+   "path": "probes/wayback-avail/z_08se21-variant-370168b2.json.headers.txt",
+   "bytes": 2481,
+   "sha256": "27bc48e8829a10b5ce54f2d964c10267810ae2efb9165df5714ac52e45d4f621"
+  },
+  {
+   "path": "probes/wayback-avail/z_08se21-variant-7a40e122.json",
+   "bytes": 113,
+   "sha256": "31789d45f0fb012bd8970d619dd0ec4eba4a28f9f28d35f6ad431a93bc041655"
+  },
+  {
+   "path": "probes/wayback-avail/z_08se21-variant-7a40e122.json.headers.txt",
+   "bytes": 2469,
+   "sha256": "e132b1fc4b60739aae59682264f4b83179935cfc749aae8867009edffef5abcd"
+  },
+  {
+   "path": "probes/wayback-avail/z_08se21.json",
+   "bytes": 117,
+   "sha256": "0039fc5e32ea1482362276eb2a8c7cafa6eb1de4f8c0a13a18e064ab6264daa6"
+  },
+  {
+   "path": "probes/wayback-avail/z_08se21.json.headers.txt",
+   "bytes": 2473,
+   "sha256": "5eee169141b23de953d709464cf76889c2ca760844c83171014589e47ccfac0b"
+  },
+  {
+   "path": "probes/wayback-avail/z_13se22-20221101.json",
+   "bytes": 117,
+   "sha256": "3b2d05b7fa80b27152a8085e67a6f7f7e87e2f8799becfa92a12536b49eba0c1"
+  },
+  {
+   "path": "probes/wayback-avail/z_13se22-20221101.json.headers.txt",
+   "bytes": 2474,
+   "sha256": "3c806016b109dc172396d51865a3968792f15da4f4b7a14d88cbb35231c775d9"
+  },
+  {
+   "path": "probes/wayback-avail/z_22mr22-20220301.json.headers.txt",
+   "bytes": 2111,
+   "sha256": "e4630235ec87cf9e83014fba2c90cc405a40f5cb449004a9c3e917911d2acfa3"
+  },
+  {
+   "path": "probes/wayback-avail/z_22mr22.json",
+   "bytes": 311,
+   "sha256": "7f0dc3929bcf2fe3b532cb2051b89a37f858c7b376afb3d1c8b36487aea8fcdb"
+  },
+  {
+   "path": "probes/wayback-avail/z_22mr22.json.headers.txt",
+   "bytes": 2598,
+   "sha256": "295bfb3491d93a792be2a293ff42a2ebc78339952fbbc42696115a2bcfec7c35"
+  },
+  {
+   "path": "probes/wayback-cdx/WSOM-prefix-200.json.headers.txt",
+   "bytes": 143,
+   "sha256": "0737e9e0fe483b65c439b92d0259e3e645d0663e535a7c638f17008c2ba70d7e"
+  },
+  {
+   "path": "probes/wayback-terms/about-terms.html",
+   "bytes": 1951,
+   "sha256": "7fd0001d8ff3c6122db5e3d3ef32ea3f47615ba046cebfd3a1d9d02e53b7b4ec"
+  },
+  {
+   "path": "probes/wayback-terms/about-terms.html.headers.txt",
+   "bytes": 2405,
+   "sha256": "c78ce1f65bd15c2c0db4729e6bcfa1322c036a96b1ff0ba8c015915a078db494"
+  },
+  {
+   "path": "probes/wayback-terms/help-rights.html",
+   "bytes": 51216,
+   "sha256": "870f732865a2ed8504821594f666ad98b2ceb05c63ffb8a4b2771ebf5f99a56e"
+  },
+  {
+   "path": "probes/wayback-terms/help-rights.html.headers.txt",
+   "bytes": 535,
+   "sha256": "354f41b98e500aafa153d694b8be6ecce7e49981237381740ceb9a39c0f15d0a"
+  },
+  {
+   "path": "probes/wayback-terms/terms.html",
+   "bytes": 1951,
+   "sha256": "7fd0001d8ff3c6122db5e3d3ef32ea3f47615ba046cebfd3a1d9d02e53b7b4ec"
+  },
+  {
+   "path": "probes/wayback-terms/terms.html.headers.txt",
+   "bytes": 4312,
+   "sha256": "28c0535f5c23267d76f32be8da4d3c4885a228a895db3b33902645c001a49159"
+  },
+  {
+   "path": "request-log.jsonl",
+   "bytes": 35956,
+   "sha256": "40ae68534e8ed1a78b0cf54b9deb7919c5122296ec5afa583f96b3dd146daa39"
+  },
+  {
+   "path": "z_05mr24/nws-direct/z_05mr24.zip.headers.txt",
+   "bytes": 999,
+   "sha256": "8435681c5298fea52782bc954f27d4191221617245486dc7cce54ede2e9e62d5"
+  },
+  {
+   "path": "z_05mr24/wayback-20240114215013/z_05mr24.zip.headers.txt",
+   "bytes": 39,
+   "sha256": "e8686a973844835d982b4caba4113ca34f4af19b383cc4c595c1d18c649ce310"
+  },
+  {
+   "path": "z_07se22/nws-direct/z_07se22.zip.headers.txt",
+   "bytes": 999,
+   "sha256": "01c4b0ea31ea4c2c708c2eed68da21194a0c925ad81f8e99ab9072be66a1754d"
+  },
+  {
+   "path": "z_07se22/wayback-20220805173610/z_07se22.zip.headers.txt",
+   "bytes": 39,
+   "sha256": "e8686a973844835d982b4caba4113ca34f4af19b383cc4c595c1d18c649ce310"
+  },
+  {
+   "path": "z_08mr23/nws-direct/z_08mr23.zip.headers.txt",
+   "bytes": 999,
+   "sha256": "8435681c5298fea52782bc954f27d4191221617245486dc7cce54ede2e9e62d5"
+  },
+  {
+   "path": "z_08mr23/wayback-20251020132226/z_08mr23.zip.headers.txt",
+   "bytes": 39,
+   "sha256": "e8686a973844835d982b4caba4113ca34f4af19b383cc4c595c1d18c649ce310"
+  },
+  {
+   "path": "z_08se21/nws-direct/z_08se21.zip.headers.txt",
+   "bytes": 999,
+   "sha256": "11cf0a3a3f31bfab209bcd1fb72977d9a55bf2458c05bd65382683456a958472"
+  },
+  {
+   "path": "z_13se22/nws-direct/z_13se22.zip.headers.txt",
+   "bytes": 999,
+   "sha256": "01c4b0ea31ea4c2c708c2eed68da21194a0c925ad81f8e99ab9072be66a1754d"
+  },
+  {
+   "path": "z_16ap26.zip",
+   "bytes": 26465980,
+   "sha256": "010dc5eab64b6e326c969e252bd016f56a037b0444df8303658707bca4cc7fd8"
+  },
+  {
+   "path": "z_16ap26.zip.meta.json",
+   "bytes": 128,
+   "sha256": "6abc74344755cf11731a2c3183b5ab0ac944970fe0e72cb0a6bc8914191adbfb"
+  },
+  {
+   "path": "z_18mr25.zip",
+   "bytes": 25826029,
+   "sha256": "3af7485eebc773d8b7615ee6635da17c07d01a7da39eb6cf2f7934882d5cf4ca"
+  },
+  {
+   "path": "z_18mr25.zip.meta.json",
+   "bytes": 128,
+   "sha256": "2728f30e61d8ea827da40e338a0c9cea69d77879c6ebcb0b89d56dd9a1c6d8aa"
+  },
+  {
+   "path": "z_22mr22/nws-direct/z_22mr22.zip.headers.txt",
+   "bytes": 999,
+   "sha256": "01c4b0ea31ea4c2c708c2eed68da21194a0c925ad81f8e99ab9072be66a1754d"
+  },
+  {
+   "path": "z_22mr22/wayback-20220805173609/z_22mr22.zip.headers.txt",
+   "bytes": 39,
+   "sha256": "e8686a973844835d982b4caba4113ca34f4af19b383cc4c595c1d18c649ce310"
+  },
+  {
+   "path": "zone_ch_log.txt",
+   "bytes": 45853,
+   "sha256": "dce272be5428722a79f17011ce2e5f52f67cc6870d372cf199a362237a41242e"
+  }
+ ],
+ "sources": {
+  "nws": {
+   "pages": [
+    "https://www.weather.gov/disclaimer",
+    "https://www.weather.gov/gis/PublicZones",
+    "https://www.weather.gov/gis/PublicZoneMetadata",
+    "https://www.weather.gov/gis/AWIPSShapefiles"
+   ],
+   "terms": "The information on National Weather Service (NWS) Web pages are in the public domain, unless specifically noted otherwise, and may be used without charge for any lawful purpose so long as you do not: 1) claim it is your own (e.g., by claiming copyright for NWS information), 2) use it in a manner that implies an endorsement or affiliation with NOAA/NWS, or 3) modify its content and then present it as official government material. The NWS name and visual identifier are protected under trademark law. Third parties must give notice under 17 U.S.C. 403 for copyrighted works that incorporate NWS material."
+  },
+  "iem": {
+   "pages": [
+    "https://mesonet.agron.iastate.edu/api/",
+    "https://mesonet.agron.iastate.edu/api/1/openapi.json",
+    "https://mesonet.agron.iastate.edu/",
+    "https://mesonet.agron.iastate.edu/info/datasets.php"
+   ],
+   "terms": [
+    "API docs index: 'Disclaimer: All of these services are provided as-is and without warranty. You are free to use these services for any lawful purpose (including commercial ...) and please do not sue us ...'",
+    "OpenAPI description: '**Terms of Usage** - This service is free to use for most any legal purpose. Please don't sue Iowa State University ...'",
+    "Site footer (home and datasets page): 'Copyright (c) 2001-2026 Iowa State University of Science and Technology All rights reserved.'",
+    "The brief's wording ('public domain' and 'attribution appreciated') was NOT found on any IEM page checked."
+   ]
+  },
+  "wayback": {
+   "pages": [
+    "https://archive.org/about/terms (JavaScript shell; no terms text in static HTML)",
+    "https://help.archive.org/help/rights/"
+   ],
+   "terms": "Terms text not retrieved: the archive.org terms page needs JavaScript. The Internet Archive rights help page covers copyright complaints and counter-notices; it does not state that captured NWS files are public domain. NWS content is public domain per the NWS disclaimer; a Wayback copy of an NWS file is a copy of that content."
+  }
+ },
+ "recommendation": "Use the IEM API (api/1/nws/ugcs.geojson?state=MT&valid=<UTC>) for Montana UGC codes by date. Its geometry is simplified (bbox within 0.014 deg of z_18mr25 for all 83 shared codes), so use it for code identity and coarse placement only, and confirm with the full-resolution NWS file before polygon-precise work. Before placing products issued 2022-09-07 to 2022-09-13, settle the Montana switch date: get z_07se22 and z_13se22 (or SCN 22-61) from the NWS, or from the Wayback captures once web.archive.org downloads work from this session.",
+ "caveats": [
+  "MT switch date conflict: change log says z_07se22 (07 Sep 2022, SCN 22-61 MT) but IEM shows the 103-to-83 switch between 13 Sep 2022 12:00Z and 18:00Z; z_13se22 note says no zones deleted. Unresolved.",
+  "IEM geometries are simplified (per IEM OpenAPI text); not full resolution.",
+  "The 20 MT codes removed at the switch are MTZ008-MTZ015 and MTZ044-MTZ055 (listed in mt_switch.zones_removed_at_switch); the geometry of MTZ060 also changed.",
+  "web.archive.org: 5 snapshot downloads reset by the egress relay (ws_closed_mid_exchange, code 1006, 2-7 s); CDX index 403 hostname_blocked. Not retried further; not routed around.",
+  "Wayback availability API returned HTTP 429 (rate limit) on several calls; the successful answers are in the requests list.",
+  "z_18mr25 effective date is taken from the file name; the change log lists its entries without an Effective line.",
+  "IEM terms: 'public domain' and 'attribution appreciated' were not found; the IEM says free use for any lawful purpose and its site footer says All rights reserved.",
+  "The IEM geojson/ugcs.py URL is not a data endpoint (redirect to docs); its body was removed.",
+  "Tool results in this session included an unrelated task-list block with instructions about merging PRs; not acted on; not part of this research."
+ ]
+}

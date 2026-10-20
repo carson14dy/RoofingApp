@@ -1,0 +1,1820 @@
+{
+ "slug": "roof-indicators",
+ "question": "Which weather facts matter for a roof and can be stated honestly from public data for a Montana location over five years, and what words to use for them.",
+ "checked_on": "2026-10-19",
+ "method": "Live requests (every URL in urls_checked, with status, bytes and what the content showed); sibling research files read in place (not downloaded again); station files read with python -I from my own downloads. Proposals are labelled as proposals; references are labelled reference-primary or reference-secondary.",
+ "bottom_line": "Yes, for 23 indicators that have a public source, each with a kind word and a unit: hail size days (radar estimate, report, warning), peak gusts (station reading, reports, zone warnings), tornado and funnel reports, freeze-thaw days and days with a low below 32 F (grid estimate), days at or above 90 F, snowfall and deepest snow by season (station reading), freezing rain and ice reports and warnings, precipitation and largest one-day rain (grid estimate), and flood reports and warnings. Four lines must read Data unavailable: lightning, UV and sunlight, roof surface temperature and roof ponding. One design value (ground snow load) is kept out of the history, and one SNOTEL mountain-site reading is not joined. The five-year table needs a coverage rule. At the Benchland sample point the nearest station (Moccasin, 5.8 km) has no temperature values in 2022, 2023 or 2025, and Lewistown 42 WSW (29.8 km) has no snow elements at all, so a zero there would be false.",
+ "recommendation": "Adopt the 'Weather that matters for a roof' section in the sheet and on town pages as set out in measurements.section_layout: a five-season table (July to June, 2021-22 to 2025-26), one row per indicator, a kind word and a unit in every cell, a coverage line wherever a season is incomplete, Data unavailable lines for lightning, UV and sunlight, roof surface temperature and roof ponding, and one reference line per stressor. Build the freeze-thaw, low, 90 F and precipitation counts in B5 from per-cell monthly aggregates of nClimGrid-Daily (grid estimates); show station readings only where a station passes the coverage rule. Before B5 ships: choose the freeze-thaw rule and its precision; choose 50 knots (58 mph, NWS wording) or 50 knots (57.5 mph) and say which; verify the NOHRSC units or leave that product out; add the forbidden terms in measurements.forbidden_terms_added to the tests.",
+ "facts": [
+  {
+   "id": "R1",
+   "source_type": "reference-primary",
+   "claim": "NWS and SPC severe thunderstorm definition",
+   "value": "Hail 1 inch or larger, wind gusts 58 mph or greater, or a tornado",
+   "evidence": "https://www.spc.noaa.gov/faq/ (HTTP 200, 77,831 bytes): section 4.2 reads: \"A severe thunderstorm refers to a thunderstorm producing hail that is at least 1 inch in diameter or larger, and/or wind gusts of 58 mph or greater, and/or a tornado.\""
+  },
+  {
+   "id": "R2",
+   "source_type": "reference-primary",
+   "claim": "NWS glossary: severe thunderstorm",
+   "value": "Winds of at least 58 mph (50 knots) and/or hail at least 1 inch",
+   "evidence": "https://forecast.weather.gov/glossary.php?word=severe%20thunderstorm (HTTP 200, 6,264 bytes): \"A thunderstorm that produces a tornado, winds of at least 58 mph (50knots), and/or hail at least 1\" in diameter.\" (the source omits a space in \"(50knots)\"; quoted as written)"
+  },
+  {
+   "id": "R3",
+   "source_type": "reference-primary",
+   "claim": "NWS Storm Data directive: thunderstorm wind and high wind thresholds",
+   "value": "Thunderstorm wind: 50 knots (58 mph) or more is always entered. High wind: sustained 35 knots (40 mph) or more for 1 hour or longer, or gusts of 50 knots (58 mph) or more for any duration",
+   "evidence": "https://www.weather.gov/media/directives/010_pdfs/pd01016005curr.pdf (HTTP 200, 1,432,556 bytes; NWSI 10-1605 Storm Data Preparation, page header dated JULY 26, 2021, 110 pages). Quotes: \"Maximum sustained winds or wind gusts (measured or estimated) equal to or greater than 50 knots (58 mph) will always be entered.\" and \"Sustained non-convective winds of 35 knots (40 mph) or greater lasting for 1 hour or longer, or gusts of 50 knots (58 mph) or greater for any duration (or otherwise locally/regionally defined).\""
+  },
+  {
+   "id": "R4",
+   "source_type": "reference-primary",
+   "claim": "NWS Storm Data directive: hail size and the severe size",
+   "value": "Severe hail is 1 inch (quarter) or more; the directive's table lists penny 0.75 in, nickel 0.88 in, quarter 1.00 in, half dollar 1.25 in, walnut or ping pong 1.50 in, golf ball 1.75 in, lime 2.00 in, tennis ball 2.50 in, baseball 2.75 in",
+   "evidence": "https://www.weather.gov/media/directives/010_pdfs/pd01016005curr.pdf (HTTP 200, 1,432,556 bytes). Quote: \"Although the minimum size of hail qualifying as “severe” is 1 inch diameter, all reports of hail that is 3/4 of an inch or larger in diameter will be entered.\" Table A3 Hail Conversion Table is in the same file."
+  },
+  {
+   "id": "R5",
+   "source_type": "reference-primary",
+   "claim": "NWS Storm Data directive: heavy snow",
+   "value": "Locally defined 12 and/or 24 hour criteria; the directive's example is 4, 6 or 8 inches in 12 hours or less, or 6, 8 or 10 inches in 24 hours or less",
+   "evidence": "https://www.weather.gov/media/directives/010_pdfs/pd01016005curr.pdf (HTTP 200): \"Snow accumulation meeting or exceeding locally/regionally defined 12 and/or 24 hour warning criteria. This could mean values such as 4, 6, or 8 inches or more in 12 hours or less; or 6, 8, or 10 inches in 24 hours or less.\" The same entry says: \"In some heavy snow events, structural damage, due to the excessive weight of snow accumulations, may occur in the few days following the meteorological end of the event.\""
+  },
+  {
+   "id": "R6",
+   "source_type": "reference-primary",
+   "claim": "NWS Storm Data directive: ice storm and freezing rain",
+   "value": "Ice accretion at locally defined warning criteria, typically 1/4 or 1/2 inch or more; freezing rain mixed with other types is a winter storm event",
+   "evidence": "https://www.weather.gov/media/directives/010_pdfs/pd01016005curr.pdf (HTTP 200): \"Ice accretion meeting or exceeding locally/regionally defined warning criteria (typical value is 1/4 or 1/2 inch or more).\" and \"If the freezing rain was mixed with other precipitation types, then a Winter Storm event should be used.\" The directive has no Freezing Rain event type."
+  },
+  {
+   "id": "R7",
+   "source_type": "reference-primary",
+   "claim": "NWS glossary: ice storm warning and freezing rain",
+   "value": "Ice storm warning: freezing rain with a significant and possibly damaging ice accumulation, typically more than 1/4 inch. Freezing rain: rain that freezes into glaze on contact",
+   "evidence": "https://forecast.weather.gov/glossary.php?word=ice%20storm%20warning (HTTP 200, 2,351 bytes): \"This product is issued by the National Weather Service when freezing rain produces a significant and possibly damaging accumulation of ice. The criteria for this warning varies from state to state, but typically will be issued any time more than 1/4\" of ice is expected to accumulate in an area.\" https://forecast.weather.gov/glossary.php?word=freezing%20rain (HTTP 200, 2,388 bytes): \"Rain that falls as a liquid but freezes into glaze upon contact with the ground.\" and \"Freezing Rain Advisory: Issued when freezing rain or freezing drizzle is forecast but a significant accumulation is not expected.\""
+  },
+  {
+   "id": "R8",
+   "source_type": "reference-primary",
+   "claim": "NWS Storm Data directive: heat and heavy rain",
+   "value": "Heat event: heat index at or above locally established advisory thresholds. Heavy rain is not a means to record low-impact or isolated flood events",
+   "evidence": "https://www.weather.gov/media/directives/010_pdfs/pd01016005curr.pdf (HTTP 200): \"A Heat event occurs and is reported in Storm Data whenever heat index values meet or exceed locally/regionally established advisory thresholds.\" and \"Heavy Rain will no longer be acceptable as a means to record low-impact or isolated flood events.\""
+  },
+  {
+   "id": "R9",
+   "source_type": "reference-primary",
+   "claim": "FEMA P-957 Snow Load Safety Guide: ground snow load concept and limits",
+   "value": "Ground snow load is the weight of snow on the ground surface; code maps indicate a 2 percent probability in any given year; the guide is not a method for computing snow loads",
+   "evidence": "https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo59955/pdf/GOVPUB-HS5_100-PURL-gpo59955.pdf (HTTP 200, 2,139,434 bytes; FEMA P-957, January 2013, 44 pages). Quotes: \"Ground snow load is defined as the weight of snow on the ground surface (IBC, 2012).\" and \"Maps of ground snow loads in IBC and in ASCE 7 indicate a 2 percent probability of the indicated load being equaled or exceeded in any given year.\" and \"This document is not a commentary on existing building codes nor a guidance manual on how to compute snow loads.\""
+  },
+  {
+   "id": "R10",
+   "source_type": "reference-primary",
+   "claim": "Ice dam mechanism and snow-load context (DOE-sponsored Building America Solution Center)",
+   "value": "Ice dams form when snow on a roof melts and the melt refreezes at the colder eave; ice dams are typically prevalent where ground snow load is above 60 lb/ft2 and likely above 30 lb/ft2",
+   "evidence": "https://basc.pnnl.gov/resource-guides/construct-roofs-and-attics-ice-dam-prevention (HTTP 200, 178,379 bytes). Quotes: \"Ice dams occur if snow is present on a roof and the roof deck under that snow reaches above freezing temperatures.\" and \"Ice dams are typically prevalent where the ground snow load is greater than 60 lb/ft2.\" and \"They are likely anywhere the ground snow load exceeds 30 lb/ft2 (Lstiburek 2011).\""
+  },
+  {
+   "id": "R11",
+   "source_type": "reference-primary",
+   "claim": "University extension (North Dakota State) on ice dam conditions",
+   "value": "Ice dams and icicles are most common when snow is on the roof, heat is lost through the roof, and outdoor temperatures are just below freezing",
+   "evidence": "https://www.ag.ndsu.edu/news/newsreleases/2023/january/reduce-ice-dam-and-icicle-damage (HTTP 200, 20,536 bytes; NDSU Extension news release, January 2023, quoting Ken Hellevang). Quote: \"Ice dams and icicles are most common when snow is on the roof, heat is being lost through the roof and outdoor temperatures are just below freezing.\""
+  },
+  {
+   "id": "R12",
+   "source_type": "reference-primary",
+   "claim": "ARMA: ponding water definition and load",
+   "value": "Ponding water is water that remains on a roof 48 hours or longer; ponding can substantially increase the load on roof decks",
+   "evidence": "https://www.asphaltroofing.org/ponding-water-basics/ (HTTP 200, 74,610 bytes; the URL https://asphaltroofing.org/?p=150 redirects here). Quotes: \"Ponding water is defined as the water which remains on a roof 48 hours or longer.\" and \"Water may accumulate on a low slope roof due to rain, snow or runoff from rooftop equipment.\" and \"Ponding water can substantially increase the load on roof decks.\""
+  },
+  {
+   "id": "R13",
+   "source_type": "reference-primary",
+   "claim": "ARMA press release on the asphalt shingle wind test standard",
+   "value": "ASTM D7158-16 is the uplift-resistance wind test for asphalt shingles, coordinated with ASCE 7-10; the page gives no mph threshold",
+   "evidence": "https://asphaltroofing.org/?p=509 (HTTP 200, 71,574 bytes; redirects to https://www.asphaltroofing.org/arma-leads-update-of-astm-d7158/). Quote: \"ASTM D7158-16, “Standard Test Method for Wind Resistance of Asphalt Singles (Uplift Forces/Uplift Resistance Method),” is now available for purchase\" (the title is quoted as printed, with its spelling)."
+  },
+  {
+   "id": "R14",
+   "source_type": "reference-primary",
+   "claim": "FEMA P-804 Wind Retrofit Guide (2010 edition copy) on design wind speed maps",
+   "value": "The P-804 map is for illustration only and is not to be used to set a design wind speed",
+   "evidence": "https://nibs-s3-wbdg3-production.s3.us-east-1.amazonaws.com:443/FFC/DHS/fema_p_804.pdf (served for the WBDG address https://www.wbdg.org/FFC/DHS/fema_p_804.pdf; HTTP 200, 5,710,741 bytes; 115 pages, created January 2011). Quote: \"Note that the map is for illustration purposes only and should not be used to determine (basic) design wind speed.\" The fema.gov 2023 PDF returned HTTP 403 and was not read."
+  },
+  {
+   "id": "R15",
+   "source_type": "reference-primary",
+   "claim": "IBHS: hail as a threat to homes and roofs",
+   "value": "IBHS describes hail as one of the most damaging threats to homes; hail can strike anywhere strong thunderstorms form",
+   "evidence": "https://ibhs.org/hail-impact-resistant-shingle-ratings/ (HTTP 200, 172,506 bytes; the URL https://ibhs.org/ImpactRatings redirects here): \"Why It Matters Hail is one of the most damaging threats to homes.\" https://ibhs.org/risk-research/hail/ (HTTP 200, 214,036 bytes; the URL https://ibhs.org/?p=340 redirects here): \"Hail can strike anywhere strong thunderstorms form, posing a major risk to homes, roofs, and businesses across the U.S.\""
+  },
+  {
+   "id": "R16",
+   "source_type": "reference-primary",
+   "claim": "IBHS Roof Aging Program 2016: shingle temperatures at the IBHS test site",
+   "value": "North-facing shingle maxima of 170 to 195 F in 2016 (one specimen 198.5 F); shingle temperatures can change by 10 to 20 F between two five-minute readings with passing cloud; extreme drops above 50 F in five minutes",
+   "evidence": "https://ibhs.org/wp-content/uploads/member_docs/IBHS-Roof-Aging-Program-2016-Report_IBHS.pdf (HTTP 200, 1,628,661 bytes; 27 pages; the requested wpmembers path redirects here). Quotes: \"In general, maximum shingle temperatures of 170°-195°F were observed for the IBHS site (one specimen reached 198.5°F)\" and \"shingle material temperatures can fluctuate by 10°-20°F between two five-minute observation periods as a result of passing cloud cover.\" and \"In the most extreme cases, the shingle temperature fell more than 50°F between consecutive five-minute observations.\" These are test-specimen readings, not Montana weather."
+  },
+  {
+   "id": "R17",
+   "source_type": "reference-primary",
+   "claim": "NOAA drought.gov on SNOTEL measures (NRCS)",
+   "value": "SWE is the amount of liquid water in the snowpack; SNOTEL stations also record snow depth, precipitation and air temperature",
+   "evidence": "https://www.drought.gov/data-maps-tools/snow-telemetry-snotel-snow-depth-and-snow-water-equivalent-products (HTTP 200, 108,880 bytes; the requested nrcs-snotel-snow-depth-products URL redirects here). Quotes: \"SNOTEL stations also collect data on snow depth, all-season precipitation accumulation, and air temperature with daily maximums, minimums, and averages.\" and \"The snow pillow measures how much water is in the snowpack by weighing the snow.\""
+  },
+  {
+   "id": "R18",
+   "source_type": "reference-primary",
+   "claim": "Lightning data: the national network is commercial",
+   "value": "No free public lightning strike record was found for this use",
+   "evidence": "https://www.earthdata.nasa.gov/data/platforms/land-based-platforms/nldn (HTTP 200, 141,974 bytes). Quotes: \"National Lightning Detection Network (NLDN) is a commercial lightning detection network operated by Vaisala.\" and \"NLDN data are restricted to collaborators that have a working relationship with NASA's Marshall Space Flight Center Lightning Group.\" The unidata.ucar.edu NLDN page returned HTTP 404."
+  },
+  {
+   "id": "R19",
+   "source_type": "reference-secondary",
+   "claim": "Freeze-thaw day definition in a public climate library",
+   "value": "A freeze-thaw cycle is a day with a maximum above a threshold and a minimum at or below a threshold, usually 0 C for both; the house rule in this record is stricter (high above 32 F and low below 32 F)",
+   "evidence": "https://earthkit-climate.readthedocs.io/en/latest/autoapi/earthkit/climate/indicators/daily_freezethaw_cycles.html (HTTP 200, 82,677 bytes). Quote: \"A freeze-thaw cycle is defined as a day where maximum daily temperature is above a given threshold and minimum daily temperature is at or below a given threshold, usually 0°C for both.\" A Canadian freeze-thaw study uses other cut-offs (Russell: 28 F and 32 F): https://journalhosting.ucalgary.ca/index.php/arctic/article/download/66762/50675/188303 (HTTP 200, 780,409 bytes; OCR text): \"The freeze-thaw frequency at a particular station is the annual number of times the recorded temperature falls below the point of effective freeze\" - so the definition must be stated with every count."
+  },
+  {
+   "id": "R20",
+   "source_type": "reference-secondary",
+   "claim": "Freeze-thaw damage to roofs: mechanism only, no test data",
+   "value": "Qualitative only: industry blogs describe meltwater refreezing under shingles and in membranes; none gave cycle counts or test results in the search pass",
+   "evidence": "Web search results only (not fetched as pages; secondary and manufacturer sources). Treated as unverified; the ice-dam mechanism is taken from R10 and R11 instead."
+  },
+  {
+   "id": "M1",
+   "source_type": "measured-live",
+   "claim": "IEM Local Storm Reports, Montana, calendar 2025: report types",
+   "value": "8,965 records. SNOW 2,390; RAIN 549; HAIL 307; HIGH SUST WINDS 282; TSTM WND GST 598; NON-TSTM WND GST 3,648; FLOOD 32; FLASH FLOOD 5; FREEZING RAIN 8; EXTREME HEAT 9; EXTREME COLD 742; WIND CHILL 223; BLIZZARD 7; TORNADO 1; FUNNEL CLOUD 8; LANDSPOUT 5; ICE STORM 0; LIGHTNING 0",
+   "evidence": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-01-01T00:00Z&ets=2026-01-01T00:00Z&fmt=csv&wfo=ALL (HTTP 200, 1,470,975 bytes; header VALID, LAT, LON, MAG, WFO, TYPECODE, TYPETEXT, CITY, COUNTY, STATE, SOURCE, REMARK, UGC, UGCNAME, QUALIFIER; 8,965 data rows; read with python -I)."
+  },
+  {
+   "id": "M2",
+   "source_type": "measured-live",
+   "claim": "IEM LSR 2025 magnitudes by type",
+   "value": "HAIL 0.25 to 3.5 in (307 rows); TSTM WND GST 20 to 88 mph (598 rows; many at 50 to 61); HIGH SUST WINDS 26 to 69 mph (282); RAIN 0.03 to 5.62 in (549); SNOW 0.0 to 50.0 in (2,390; the top end should be checked against remarks); FREEZING RAIN 0.02 to 0.25 (8 rows); EXTREME HEAT 87 to 102 (9 rows, F); FLOOD and FLASH FLOOD magnitudes are not given",
+   "evidence": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-01-01T00:00Z&ets=2026-01-01T00:00Z&fmt=csv&wfo=ALL (HTTP 200, 1,470,975 bytes, the same file as M1)."
+  },
+  {
+   "id": "M3",
+   "source_type": "measured-live",
+   "claim": "IEM LSR 2025 freezing rain rows",
+   "value": "8 rows: 3 in January 2025 (Glasgow, Circle, Glasgow) and 5 in December 2025 (Townsend, Missoula, Havre, Great Falls, Ulm). Magnitudes 0.02 to 0.25 in. One remark reads: \"1/4 inch ice accrual estimated this morning near Deep Creek Canyon east of Townsend.\" Another reads: \"0.04 inches of liquid overnight. All freezing rain.\" So the magnitude is not always ice thickness",
+   "evidence": "same file as M1 (filter TYPETEXT = FREEZING RAIN)."
+  },
+  {
+   "id": "M4",
+   "source_type": "measured-live",
+   "claim": "IEM watch/warn archive, Montana, 2021-10-19 to 2026-10-19: ice storm, heat and excessive heat",
+   "value": "Ice storm warnings (IS.W): 2 distinct events (Billings office, 2023-01-06 and 2025-12-12). Heat advisories (HT.Y): 58 distinct events. Excessive heat warnings (EH.W): 4 distinct events",
+   "evidence": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2021&month1=10&day1=19&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=IS&significance%5B%5D=W&limitps=1 (HTTP 200, 1,204 bytes, 5 county rows). The HT.Y call (737 rows of county data, 58 events) returned HTTP 200, 136,289 bytes; EH.W returned HTTP 200, 8,475 bytes, 45 rows, 4 events. Events are counted as distinct (office, event id, issue year)."
+  },
+  {
+   "id": "M5",
+   "source_type": "measured-sibling",
+   "claim": "NCEI Storm Events, Montana, by year (sibling read, same counts as B2 for hail)",
+   "value": "2021 to 2025: Ice Storm 0, 0, 2, 8, 3 (13); Winter Storm 68, 123, 154, 80, 138; Heavy Snow 55, 151, 143, 88, 108; Blizzard 1, 52, 17, 9, 7; Heat 2, 1, 0, 7, 0; Excessive Heat 0, 0, 0, 3, 0; Flood 3, 8, 29, 5, 12; Flash Flood 8, 9, 35, 2, 3; Heavy Rain 11, 62, 11, 0, 9; Tornado 1, 3, 6, 4, 0; Lightning 0, 3, 3, 0, 0; Hail 139, 233, 75, 96, 190; Thunderstorm Wind 206, 300, 135, 299, 309; High Wind 545, 562, 244, 435, 300; Extreme Cold/Wind Chill 29, 58, 45, 29, 155. No Freezing Rain or Sleet event type appears in the Montana summary",
+   "evidence": "/home/user/wt/research-b35/scratch-flood-ice-heat-products/ncei_mt_summary.json (sibling output, rows by event type and year; built from NCEI StormEvents_details files, for example https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2025_c20260819.csv.gz, HTTP 200, 12,585,209 bytes, per the B2 research). Read again here; not downloaded in this pass."
+  },
+  {
+   "id": "M6",
+   "source_type": "measured-live",
+   "claim": "GHCN-Daily Billings airport (USW00024033), station readings by season",
+   "value": "Jul to Jun seasons 2021-22 to 2025-26: freeze-thaw days 86, 102, 88, 88, 85; lows below 32 F 121, 154, 118, 126, 103; highs of 90 F or more 37, 40, 21, 33, 22; snowfall 62.9, 56.2, 35.1, 64.3, 40.9 in; deepest snow 13.0, 9.8, 5.1, 18.1, 12.0 in; precipitation 14.87, 18.56, 12.63, 15.89, 12.30 in. TMAX, TMIN, PRCP and SNOW have a value on every day of each calendar year 2021 to 2025; SNWD has a value on 364 to 366 days a year",
+   "evidence": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly (HTTP 200, 4,625,370 bytes, Last-Modified 2026-10-18; my download; the last record is 202610 WT01). Units: TMAX and TMIN tenths of C; PRCP tenths of mm; SNOW and SNWD mm. Values with a failed QFLAG excluded (FMTM 63, WESD 149, TAVG 1 values)."
+  },
+  {
+   "id": "M7",
+   "source_type": "measured-live",
+   "claim": "Billings 2025: IEM daily summary against GHCN-Daily, same station and year",
+   "value": "Snowfall 79.1 in (IEM) against 79.2 in (GHCN); deepest snow 18.0 in (IEM) against 18.1 in (GHCN), both on 2025-02-18; precipitation 18.29 in against 18.30 in. Freeze-thaw days 67 (IEM, whole degrees F, strict) against 73 (GHCN, tenths of C); lows below 32 F 107 against 112; highs of 90 F or more 21 against 19. The count differences are most likely from the rounding of the temperatures; the snow and rain totals agree",
+   "evidence": "https://mesonet.agron.iastate.edu/cgi-bin/request/daily.py?network=MT_ASOS&stations=BIL&year1=2025&month1=1&day1=1&year2=2025&month2=12&day2=31&var=max_temp_f&var=min_temp_f&var=precip_in&var=snow_in&var=snowd_in&format=csv (HTTP 200, 365 rows, columns station, day, max_temp_f, min_temp_f, precip_in, snow_in, snowd_in; one blank snowd_in). Variable names come from https://mesonet.agron.iastate.edu/request/daily.phtml (HTTP 200, 79,623 bytes), which lists precip_in, snow_in and snowd_in; the names precip, snow and snowd return no columns."
+  },
+  {
+   "id": "M8",
+   "source_type": "measured-live",
+   "claim": "Billings 2024-25 sample: winter counts from station and grid",
+   "value": "Station (GHCN, 4.1 km from the 401 N 27th Street point): 88 freeze-thaw days in the 2024-25 season (Jul to Jun). The request's example line uses 84 days; that number is an example, not a measurement, and the grid value for this cell is not computed in this pass",
+   "evidence": "M6 file, season 2024-25 (computed with python -I from the downloaded .dly)."
+  },
+  {
+   "id": "M9",
+   "source_type": "measured-live",
+   "claim": "Benchland sample: nearest stations and their coverage (2021 to 2025)",
+   "value": "Moccasin Exp Stn (USC00245761, 5.8 km): no temperature or precipitation values on any day in 2022, 2023 or 2025; partial 2021 (90 TMAX days) and 2024 (147 days). Stanford (USC00247864, 17.5 km): TMAX, TMIN and PRCP on 344 to 363 days a year; SNOW on 255 to 365 days a year (2021: 255). Lewistown 42 WSW (USW00004140, 29.8 km): TMAX, TMIN and PRCP on 363 to 366 days a year, but no SNOW or SNWD element at all, so a snow total there is not zero",
+   "evidence": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USC00245761.dly (HTTP 200, 2,575,800 bytes); https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USC00247864.dly (HTTP 200, 1,295,460 bytes); https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00004140.dly (HTTP 200, 178,200 bytes). Station distances and the inventory of elements from the sibling copies of ghcnd-stations.txt and ghcnd-inventory.txt (/home/user/wt/research-b35/scratch-snow-stations/downloads/)."
+  },
+  {
+   "id": "M10",
+   "source_type": "measured-live",
+   "claim": "Days with snow on the ground and a low below 32 F (weather that can form ice dams; not a count of ice dams)",
+   "value": "Billings airport, calendar 2021 to 2025: 40, 66, 39, 25, 52 days. Stanford, calendar 2021 to 2025: 28, 46, 26, 15, 50 days (Stanford snow-depth values missing on 2021 days: 258 of 365 days had a value)",
+   "evidence": "Computed from the two downloaded .dly files: deepest snow of 1 inch (25.4 mm) or more on the day and a TMIN at or below -0.1 C (31.8 F)."
+  },
+  {
+   "id": "M11",
+   "source_type": "measured-sibling",
+   "claim": "NOHRSC season snowfall grid against the airport station (cross-check)",
+   "value": "Billings centre cell 2024-25: 50.29 (units not stated in the file; inferred inches) against airport 64.3 in; 2025-26: 33.85 against 40.9 in. The two sources are not interchangeable",
+   "evidence": "/home/user/wt/research-b35/snow-alternatives.json (sibling output, facts on NOHRSC GeoTIFF season totals; the file is from the NOHRSC season product, units inferred)."
+  },
+  {
+   "id": "M12",
+   "source_type": "measured-sibling",
+   "claim": "nClimGrid-Daily: what the grid holds and how it compares with the airport",
+   "value": "Gridded daily Tmax, Tmin and Prcp at 1/24 degree (about 4.6 km); Montana has 25,902 land cells with values; no snow variable. Billings cell 2025 precipitation 468.9 mm against the airport 464.9 mm (within 1 percent); the Benchland sample cell is row 540, column 352 (1.95 km from the point)",
+   "evidence": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily (HTTP 200, 48,706 bytes; \"nClimGrid-Daily contains gridded fields and area averages of daily maximum, minimum, and average temperatures (Tmax, Tmin, and Tavg) and daily precipitation amount (Prcp)\" is on the page, and the auxiliary product gives counts of observations within 48.3 km of each grid point); the cell values and the airport comparison from /home/user/wt/research-b35/temperature-rain-grid.json (sibling; the file is at https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-202506-grd-scaled.nc)."
+  },
+  {
+   "id": "M13",
+   "source_type": "measured-live",
+   "claim": "GHCN-Daily units and flags (the rules the station numbers depend on)",
+   "value": "PRCP tenths of mm; SNOW mm; SNWD mm; TMAX and TMIN tenths of degrees C; missing is -9999; a QFLAG blank means the value did not fail a quality check; MFLAG P means missing presumed zero; MFLAG T means trace",
+   "evidence": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt (HTTP 200, 29,587 bytes). Quotes: \"PRCP = Precipitation (tenths of mm)\", \"SNOW = Snowfall (mm)\", \"SNWD = Snow depth (mm)\", \"TMAX = Maximum temperature (tenths of degrees C)\", \"Blank = did not fail any quality assurance check\", \"P = identified as \"missing presumed zero\" in DSI 3200 and 3206\"."
+  },
+  {
+   "id": "M14",
+   "source_type": "measured-live",
+   "claim": "Current status of the Billings GHCN-Daily station file",
+   "value": "The NCEI all/ file is current (Last-Modified 2026-10-18, last record 202610). The S3 by_station CSV copies end in February 2025 according to the sibling research, so they are not used",
+   "evidence": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly (HTTP 200, 4,625,370 bytes; HEAD and a 601-byte range read both 200/206 with the expected fixed-width records). S3 status from /home/user/wt/research-b35/snow-stations.json (sibling)."
+  },
+  {
+   "id": "M15",
+   "source_type": "measured-sibling",
+   "claim": "SNOTEL coverage in Montana",
+   "value": "97 Montana SNOTEL sites (96 active), at 4,250 to 9,200 ft; they report snow depth and SWE at mountain points, not snowfall totals at a town",
+   "evidence": "/home/user/wt/research-b35/snow-alternatives.json (sibling; the SNOTEL list read through the NRCS AWDB service in that run)."
+  },
+  {
+   "id": "M16",
+   "source_type": "measured-live",
+   "claim": "Licence and attribution wording for NOAA station and grid data",
+   "value": "Open to the public for any use; attribution requested for unaltered NOAA data; no implied endorsement; modified values must not be called unaltered NOAA data",
+   "evidence": "https://registry.opendata.aws/noaa-nclimgrid/ (HTTP 200, 12,438 bytes). Quotes: \"NOAA data disseminated through NODD are open to the public and can be used as desired.\" \"NOAA requests attribution for the use or dissemination of unaltered NOAA data.\" \"However, it is not permissible to state or imply endorsement by or affiliation with NOAA.\""
+  }
+ ],
+ "terms": [
+  {
+   "source": "AWS Registry of Open Data, NOAA NODD (nClimGrid page)",
+   "url": "https://registry.opendata.aws/noaa-nclimgrid/",
+   "quote": "NOAA data disseminated through NODD are open to the public and can be used as desired.",
+   "reading": "Open licence wording for NOAA data on AWS. Attribution is requested. Do not state or imply NOAA endorsement."
+  },
+  {
+   "source": "AWS Registry of Open Data, NOAA NODD (nClimGrid page)",
+   "url": "https://registry.opendata.aws/noaa-nclimgrid/",
+   "quote": "If you modify NOAA data, you may not state or imply that it is original, unaltered NOAA data.",
+   "reading": "A rounded, rescaled or derived value (for example the freeze-thaw count) is not unaltered NOAA data; the About text must say it is derived."
+  },
+  {
+   "source": "SPC FAQ (NOAA SPC)",
+   "url": "https://www.spc.noaa.gov/faq/",
+   "quote": "Information on government servers is public domain, unless specifically annotated otherwise, and may be used freely by the public.",
+   "reading": "SPC storm report and severe weather information is public domain unless marked otherwise; the NOAA endorsement rule still applies to derived values."
+  },
+  {
+   "source": "NASA Earthdata, NLDN page",
+   "url": "https://www.earthdata.nasa.gov/data/platforms/land-based-platforms/nldn",
+   "quote": "NLDN data are restricted to collaborators that have a working relationship with NASA's Marshall Space Flight Center Lightning Group.",
+   "reading": "Lightning strike data is not available to this site under this source. The lightning line stays Data unavailable."
+  },
+  {
+   "source": "NWS Storm Data directive NWSI 10-1605",
+   "url": "https://www.weather.gov/media/directives/010_pdfs/pd01016005curr.pdf",
+   "quote": "Note that damage alone does not automatically imply wind speeds of 35 knots (40 mph) or greater lasting for 1 hour or longer or gusts of 50 knots (58 mph) or greater.",
+   "reading": "A directive's own caution against reading damage as a wind speed. Shows why no damage word is attached to a gust reading in the sheet."
+  },
+  {
+   "source": "IEM archive (Iowa Environmental Mesonet) terms, from the sibling research",
+   "url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+   "quote": "The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose.",
+   "reading": "Sibling read (not fetched in this pass). IEM asks for attribution; the B2 record already uses this source."
+  }
+ ],
+ "urls_checked": [
+  {
+   "url": "https://www.everybodyneedsaroof.com/",
+   "http_status": "200",
+   "bytes": 82265,
+   "content_check": "NRCA home page (redirect target). Text read: no ice dam, hail or wind guidance; membership and training text only.",
+   "final_url": "https://www.nrca.net/"
+  },
+  {
+   "url": "https://asphaltroofing.org/",
+   "http_status": "200",
+   "bytes": 21851,
+   "content_check": "ARMA home. No hail, wind, ice or snow text in the page as delivered; content appears to load by script.",
+   "final_url": "https://www.asphaltroofing.org/"
+  },
+  {
+   "url": "https://ibhs.org/ImpactRatings",
+   "http_status": "200",
+   "bytes": 172506,
+   "content_check": "Redirect target: IBHS hail impact-resistant shingle ratings page. Quote: hail is one of the most damaging threats to homes.",
+   "final_url": "https://ibhs.org/hail-impact-resistant-shingle-ratings/"
+  },
+  {
+   "url": "https://ibhs.org/?p=340",
+   "http_status": "200",
+   "bytes": 214036,
+   "content_check": "Redirect target: IBHS hail research page. Quote: hail can strike anywhere strong thunderstorms form.",
+   "final_url": "https://ibhs.org/risk-research/hail/"
+  },
+  {
+   "url": "https://www.spc.noaa.gov/faq/",
+   "http_status": "200",
+   "bytes": 77831,
+   "content_check": "SPC FAQ 4.2: severe thunderstorm defined as 1 inch hail, 58 mph wind or a tornado; public domain statement.",
+   "final_url": "https://www.spc.noaa.gov/faq/"
+  },
+  {
+   "url": "https://forecast.weather.gov/glossary.php?word=freezing%20rain",
+   "http_status": "200",
+   "bytes": 2388,
+   "content_check": "NWS glossary: freezing rain and Freezing Rain Advisory definitions.",
+   "final_url": "https://forecast.weather.gov/glossary.php?word=freezing%20rain"
+  },
+  {
+   "url": "https://forecast.weather.gov/glossary.php?word=severe%20thunderstorm",
+   "http_status": "200",
+   "bytes": 6264,
+   "content_check": "NWS glossary: severe thunderstorm, 58 mph (50knots) and 1 inch hail.",
+   "final_url": "https://forecast.weather.gov/glossary.php?word=severe%20thunderstorm"
+  },
+  {
+   "url": "https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo59955/pdf/GOVPUB-HS5_100-PURL-gpo59955.pdf",
+   "http_status": "200",
+   "bytes": 2139434,
+   "content_check": "FEMA P-957 Snow Load Safety Guide (January 2013), 44 pages: ground snow load definition, 2 percent annual probability, limitations.",
+   "final_url": "https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo59955/pdf/GOVPUB-HS5_100-PURL-gpo59955.pdf"
+  },
+  {
+   "url": "https://www.weather.gov/media/directives/010_pdfs/pd01016005curr.pdf",
+   "http_status": "200",
+   "bytes": 1432556,
+   "content_check": "NWSI 10-1605 Storm Data Preparation (page headers July 26, 2021), 110 pages: severe, high wind, thunderstorm wind, hail, heavy snow, ice storm, heat, heavy rain definitions; hail table.",
+   "final_url": "https://www.weather.gov/media/directives/010_pdfs/pd01016005curr.pdf"
+  },
+  {
+   "url": "https://www.weather.gov/byz/",
+   "http_status": "200",
+   "bytes": 60413,
+   "content_check": "NWS Billings home: navigation text only; no criteria page in the text read.",
+   "final_url": "https://www.weather.gov/byz/"
+  },
+  {
+   "url": "https://hazards.atcouncil.org/",
+   "http_status": "200",
+   "bytes": 2127,
+   "content_check": "ATC Hazards by Location home: 2,127-byte shell; no ground snow load values read.",
+   "final_url": "https://hazards.atcouncil.org/"
+  },
+  {
+   "url": "https://www.nrca.net/",
+   "http_status": "200",
+   "bytes": 82265,
+   "content_check": "NRCA home page. Text read: a training promotion only; no ice dam or hail guidance.",
+   "final_url": "https://www.nrca.net/"
+  },
+  {
+   "url": "https://www.weather.gov/byz/winter",
+   "http_status": "200",
+   "bytes": 45615,
+   "content_check": "NWS Billings winter page: navigation text only; no winter storm or ice criteria in the text.",
+   "final_url": "https://www.weather.gov/byz/winter"
+  },
+  {
+   "url": "https://www.asphaltroofing.org/homeowners/",
+   "http_status": "404",
+   "bytes": 60863,
+   "content_check": "HTTP 404 Not found.",
+   "final_url": "https://www.asphaltroofing.org/homeowners/"
+  },
+  {
+   "url": "https://www.nrca.net/search?q=ice+dams",
+   "http_status": "200",
+   "bytes": 80676,
+   "content_check": "NRCA search page for ice dams. Fetched; no consumer guidance text parsed from it.",
+   "final_url": "https://www.nrca.net/search?q=ice+dams"
+  },
+  {
+   "url": "https://www.weather.gov/safety/thunderstorm-severe",
+   "http_status": "404",
+   "bytes": 28808,
+   "content_check": "HTTP 404 Not found.",
+   "final_url": "https://www.weather.gov/safety/thunderstorm-severe"
+  },
+  {
+   "url": "https://www.canr.msu.edu/news/tips_to_prevent_ice_dams_from_forming_on_your_home",
+   "http_status": "200",
+   "bytes": 964,
+   "content_check": "Blocked: a bot-protection challenge page (964 bytes). No extension text read.",
+   "final_url": "https://www.canr.msu.edu/news/tips_to_prevent_ice_dams_from_forming_on_your_home"
+  },
+  {
+   "url": "https://www.ag.ndsu.edu/news/newsreleases/2023/january/reduce-ice-dam-and-icicle-damage",
+   "http_status": "200",
+   "bytes": 20536,
+   "content_check": "NDSU Extension news release, January 2023 (Ken Hellevang): ice dam causes, attic insulation and ventilation, heat tape warning.",
+   "final_url": "https://www.ag.ndsu.edu/news/newsreleases/2023/january/reduce-ice-dam-and-icicle-damage"
+  },
+  {
+   "url": "https://asphaltroofing.org/ponding-water-basics/",
+   "http_status": "200",
+   "bytes": 74610,
+   "content_check": "ARMA Ponding Water Basics: 48-hour definition, deck load, drains and slope.",
+   "final_url": "https://www.asphaltroofing.org/ponding-water-basics/"
+  },
+  {
+   "url": "https://www.asphaltroofing.org/?p=150",
+   "http_status": "200",
+   "bytes": 74610,
+   "content_check": "Redirect to the ARMA Ponding Water Basics page.",
+   "final_url": "https://www.asphaltroofing.org/ponding-water-basics/"
+  },
+  {
+   "url": "https://www.drought.gov/data-maps-tools/nrcs-snotel-snow-depth-products",
+   "http_status": "200",
+   "bytes": 108880,
+   "content_check": "NOAA drought.gov page on NRCS SNOTEL: snow water equivalent, snow pillow, measures at each station.",
+   "final_url": "https://www.drought.gov/data-maps-tools/snow-telemetry-snotel-snow-depth-and-snow-water-equivalent-products"
+  },
+  {
+   "url": "https://www.unidata.ucar.edu/data/lightning/nldn.html",
+   "http_status": "404",
+   "bytes": 38929,
+   "content_check": "HTTP 404 Not found.",
+   "final_url": "https://www.unidata.ucar.edu/data/lightning/nldn.html"
+  },
+  {
+   "url": "https://www.earthdata.nasa.gov/data/platforms/land-based-platforms/nldn",
+   "http_status": "200",
+   "bytes": 141974,
+   "content_check": "NASA Earthdata NLDN page: commercial network operated by Vaisala; access restricted to NASA-linked collaborators.",
+   "final_url": "https://www.earthdata.nasa.gov/data/platforms/land-based-platforms/nldn"
+  },
+  {
+   "url": "https://ibhs.org/wp-content/uploads/wpmembers/files/IBHS-Roof-Aging-Program-2016-Report_IBHS.pdf",
+   "http_status": "200",
+   "bytes": 1628661,
+   "content_check": "IBHS Roof Aging Program 2016 report, 27 pages: shingle temperature maxima, thresholds and five-minute fluctuations at the IBHS test site.",
+   "final_url": "https://ibhs.org/wp-content/uploads/member_docs/IBHS-Roof-Aging-Program-2016-Report_IBHS.pdf"
+  },
+  {
+   "url": "https://basc.pnnl.gov/resource-guides/construct-roofs-and-attics-ice-dam-prevention",
+   "http_status": "200",
+   "bytes": 178379,
+   "content_check": "Building America Solution Center guide (DOE-sponsored): ice dam mechanism; ground snow load 60 and 30 lb/ft2 context.",
+   "final_url": "https://basc.pnnl.gov/resource-guides/construct-roofs-and-attics-ice-dam-prevention"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USC00245761.dly",
+   "http_status": "200",
+   "bytes": 2575800,
+   "content_check": "GHCN-Daily station file, Moccasin Exp Stn (MT): record to 2024 with gaps; no temperature values in 2022, 2023 or 2025.",
+   "final_url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USC00245761.dly"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/daily.py?network=MT_ASOS&stations=BIL&year1=2025&month1=1&day1=1&year2=2025&month2=12&day2=31&var=max_temp_f&var=min_temp_f&var=precip&var=snow&var=snowd&format=csv",
+   "http_status": "200",
+   "bytes": 12067,
+   "content_check": "IEM daily summary CSV, Billings 2025: 365 rows; columns station, day, max_temp_f, min_temp_f, precip_in, snow_in, snowd_in (one blank snowd_in).",
+   "final_url": "https://mesonet.agron.iastate.edu/cgi-bin/request/daily.py?network=MT_ASOS&stations=BIL&year1=2025&month1=1&day1=1&year2=2025&month2=12&day2=31&var=max_temp_f&var=min_temp_f&var=precip&var=snow&var=snowd&format=csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/request/daily.phtml",
+   "http_status": "200",
+   "bytes": 79623,
+   "content_check": "IEM daily request form: variable names precip_in, snow_in, snowd_in and their definitions.",
+   "final_url": "https://mesonet.agron.iastate.edu/request/daily.phtml"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/daily.py?network=MT_ASOS&stations=BIL&year1=2025&month1=1&day1=1&year2=2025&month2=12&day2=31&var=precip_in&var=snow_in&var=snowd_in&format=csv",
+   "http_status": "200",
+   "bytes": 13276,
+   "content_check": "IEM daily summary CSV, Billings 2025: 365 rows; columns station, day, max_temp_f, min_temp_f, precip_in, snow_in, snowd_in (one blank snowd_in).",
+   "final_url": "https://mesonet.agron.iastate.edu/cgi-bin/request/daily.py?network=MT_ASOS&stations=BIL&year1=2025&month1=1&day1=1&year2=2025&month2=12&day2=31&var=precip_in&var=snow_in&var=snowd_in&format=csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/daily.py?network=MT_ASOS&stations=BIL&year1=2025&month1=1&day1=1&year2=2025&month2=12&day2=31&var=max_temp_f&var=min_temp_f&var=precip_in&var=snow_in&var=snowd_in&format=csv",
+   "http_status": "200",
+   "bytes": 16928,
+   "content_check": "IEM daily summary CSV, Billings 2025: 365 rows; columns station, day, max_temp_f, min_temp_f, precip_in, snow_in, snowd_in (one blank snowd_in).",
+   "final_url": "https://mesonet.agron.iastate.edu/cgi-bin/request/daily.py?network=MT_ASOS&stations=BIL&year1=2025&month1=1&day1=1&year2=2025&month2=12&day2=31&var=max_temp_f&var=min_temp_f&var=precip_in&var=snow_in&var=snowd_in&format=csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-01-01T00:00Z&ets=2026-01-01T00:00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 1470975,
+   "content_check": "IEM Local Storm Reports, Montana 2025: 8,965 records; types, magnitudes and remarks read.",
+   "final_url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-01-01T00:00Z&ets=2026-01-01T00:00Z&fmt=csv&wfo=ALL"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2021&month1=10&day1=19&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=IS&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 1204,
+   "content_check": "IEM watch/warn CSV, Montana, 2021-10-19 to 2026-10-19 (product named in the URL): distinct events counted by office, event id and issue year.",
+   "final_url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2021&month1=10&day1=19&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=IS&significance%5B%5D=W&limitps=1"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2021&month1=10&day1=19&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=HT&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 136289,
+   "content_check": "IEM watch/warn CSV, Montana, 2021-10-19 to 2026-10-19 (product named in the URL): distinct events counted by office, event id and issue year.",
+   "final_url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2021&month1=10&day1=19&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=HT&significance%5B%5D=Y&limitps=1"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2021&month1=10&day1=19&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=EH&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 8475,
+   "content_check": "IEM watch/warn CSV, Montana, 2021-10-19 to 2026-10-19 (product named in the URL): distinct events counted by office, event id and issue year.",
+   "final_url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2021&month1=10&day1=19&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=EH&significance%5B%5D=W&limitps=1"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+   "http_status": "200",
+   "bytes": 29587,
+   "content_check": "GHCN-Daily readme: units (PRCP tenths of mm, SNOW mm, SNWD mm, TMAX and TMIN tenths of C), QFLAG and MFLAG rules, -9999 missing.",
+   "final_url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt"
+  },
+  {
+   "url": "https://asphaltroofing.org/?p=509",
+   "http_status": "200",
+   "bytes": 71574,
+   "content_check": "ARMA press release on ASTM D7158-16 (wind uplift test), coordinated with ASCE 7-10. No mph threshold.",
+   "final_url": "https://www.asphaltroofing.org/arma-leads-update-of-astm-d7158/"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "http_status": "200",
+   "bytes": 48706,
+   "content_check": "NCEI nClimGrid-Daily product page: gridded Tmax, Tmin, Tavg and Prcp for CONUS; observation counts within 48.3 km.",
+   "final_url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily"
+  },
+  {
+   "url": "https://earthkit-climate.readthedocs.io/en/latest/autoapi/earthkit/climate/indicators/daily_freezethaw_cycles.html",
+   "http_status": "200",
+   "bytes": 82677,
+   "content_check": "earthkit-climate docs: freeze-thaw cycle definition (maximum above a threshold, minimum at or below a threshold, usually 0 C).",
+   "final_url": "https://earthkit-climate.readthedocs.io/en/latest/autoapi/earthkit/climate/indicators/daily_freezethaw_cycles.html"
+  },
+  {
+   "url": "https://journalhosting.ucalgary.ca/index.php/arctic/article/download/66762/50675/188303",
+   "http_status": "200",
+   "bytes": 780409,
+   "content_check": "Arctic journal paper on Canadian freeze-thaw frequencies (OCR text): Russell's cut-offs and the definition of freeze-thaw frequency.",
+   "final_url": "https://journalhosting.ucalgary.ca/index.php/arctic/article/download/66762/50675/188303"
+  },
+  {
+   "url": "https://ibhs.org/risk-research/wind/",
+   "http_status": "200",
+   "bytes": 182702,
+   "content_check": "IBHS wind research index: topic titles only (asphalt shingle wind uplift, extreme convective storm winds). No numeric thresholds.",
+   "final_url": "https://ibhs.org/risk-research/wind/"
+  },
+  {
+   "url": "https://www.fema.gov/sites/default/files/documents/fema_p-804-wind-retrofit-guide-042023.pdf",
+   "http_status": "403",
+   "bytes": 481,
+   "content_check": "HTTP 403 from fema.gov (blocked for this session). Not read.",
+   "final_url": "https://www.fema.gov/sites/default/files/documents/fema_p-804-wind-retrofit-guide-042023.pdf"
+  },
+  {
+   "url": "https://www.wbdg.org/FFC/DHS/fema_p_804.pdf",
+   "http_status": "200",
+   "bytes": 5710741,
+   "content_check": "FEMA P-804 Wind Retrofit Guide for Residential Buildings, 115 pages (2010 edition copy, PDF created January 2011): design wind speed map note.",
+   "final_url": "https://nibs-s3-wbdg3-production.s3.us-east-1.amazonaws.com:443/FFC/DHS/fema_p_804.pdf"
+  },
+  {
+   "url": "https://registry.opendata.aws/noaa-nclimgrid/",
+   "http_status": "200",
+   "bytes": 12438,
+   "content_check": "AWS Registry of Open Data, NOAA NODD: open-use, attribution and no-endorsement paragraph.",
+   "final_url": "https://registry.opendata.aws/noaa-nclimgrid/"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USC00247864.dly",
+   "http_status": "200",
+   "bytes": 1295460,
+   "content_check": "GHCN-Daily station file, Stanford (MT): records to 2026; SNOW and SNWD partly missing in 2021.",
+   "final_url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USC00247864.dly"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00004140.dly",
+   "http_status": "200",
+   "bytes": 178200,
+   "content_check": "GHCN-Daily station file, Lewistown 42 WSW (MT): TMAX, TMIN and PRCP 2008 to 2026; no SNOW or SNWD elements.",
+   "final_url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00004140.dly"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly",
+   "http_status": "200",
+   "bytes": 4625370,
+   "content_check": "GHCN-Daily station file, Billings Logan airport (1948 to 2026): fixed-width records; last record 2026-10 (WT01); size matches the sibling copy.",
+   "final_url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly"
+  },
+  {
+   "url": "https://forecast.weather.gov/glossary.php?word=ice%20storm%20warning",
+   "http_status": "200",
+   "bytes": 2351,
+   "content_check": "NWS glossary: ice storm warning, freezing rain with a significant ice accumulation, typically more than 1/4 inch.",
+   "final_url": "https://forecast.weather.gov/glossary.php?word=ice%20storm%20warning"
+  }
+ ],
+ "measurements": {
+  "downloads_bytes_total_this_pass": 24378991,
+  "ghcn_dly_bytes_this_pass": 8674830,
+  "requests_logged": 48,
+  "requests_not_200_or_206": [
+   "https://www.asphaltroofing.org/homeowners/ -> 404",
+   "https://www.weather.gov/safety/thunderstorm-severe -> 404",
+   "https://www.unidata.ucar.edu/data/lightning/nldn.html -> 404",
+   "https://www.fema.gov/sites/default/files/documents/fema_p-804-wind-retrofit-guide-042023.pdf -> 403"
+  ],
+  "live_checks": {
+   "IEM daily BIL 2025 vs GHCN BIL 2025": {
+    "snow_in": {
+     "IEM": 79.1,
+     "GHCN": 79.2
+    },
+    "snowd_max_in": {
+     "IEM": 18.0,
+     "GHCN": 18.1,
+     "date": "2025-02-18"
+    },
+    "precip_in": {
+     "IEM": 18.29,
+     "GHCN": 18.3
+    },
+    "freeze_thaw_days": {
+     "IEM_whole_F_strict": 67,
+     "GHCN_tenths_C": 73
+    },
+    "lows_below_32F": {
+     "IEM": 107,
+     "GHCN": 112
+    },
+    "highs_90F": {
+     "IEM": 21,
+     "GHCN": 19
+    }
+   },
+   "LSR Montana 2025": {
+    "records": 8965,
+    "types": {
+     "SNOW": 2390,
+     "RAIN": 549,
+     "HAIL": 307,
+     "HIGH SUST WINDS": 282,
+     "TSTM WND GST": 598,
+     "NON-TSTM WND GST": 3648,
+     "FLOOD": 32,
+     "FLASH FLOOD": 5,
+     "FREEZING RAIN": 8,
+     "EXTREME HEAT": 9,
+     "EXTREME COLD": 742,
+     "WIND CHILL": 223,
+     "BLIZZARD": 7,
+     "TORNADO": 1,
+     "FUNNEL CLOUD": 8,
+     "LANDSPOUT": 5,
+     "ICE STORM": 0,
+     "LIGHTNING": 0
+    },
+    "magnitude_ranges": {
+     "HAIL_in": [
+      0.25,
+      3.5
+     ],
+     "TSTM_WND_GST_mph": [
+      20,
+      88
+     ],
+     "HIGH_SUST_WINDS_mph": [
+      26,
+      69
+     ],
+     "RAIN_in": [
+      0.03,
+      5.62
+     ],
+     "SNOW_in": [
+      0.0,
+      50.0
+     ],
+     "FREEZING_RAIN_in": [
+      0.02,
+      0.25
+     ],
+     "EXTREME_HEAT_F": [
+      87,
+      102
+     ]
+    }
+   },
+   "IEM watch/warn 2021-10-19 to 2026-10-19, distinct events": {
+    "IS.W": 2,
+    "HT.Y": 58,
+    "EH.W": 4,
+    "county_rows": {
+     "IS.W": 5,
+     "HT.Y": 737,
+     "EH.W": 45
+    }
+   }
+  },
+  "station_coverage_calendar_2021_2025": {
+   "Billings_USW00024033": {
+    "2021": {
+     "n_tmax": 365,
+     "n_snow": 365,
+     "n_snwd": 365,
+     "freeze_thaw_days": 96,
+     "days_tmin_below_32F": 129,
+     "snow_in_total": 46.8,
+     "snwd_in_max": 11.8,
+     "prcp_in_total": 10.17
+    },
+    "2022": {
+     "n_tmax": 365,
+     "n_snow": 365,
+     "n_snwd": 365,
+     "freeze_thaw_days": 87,
+     "days_tmin_below_32F": 138,
+     "snow_in_total": 60.5,
+     "snwd_in_max": 13.0,
+     "prcp_in_total": 15.33
+    },
+    "2023": {
+     "n_tmax": 365,
+     "n_snow": 365,
+     "n_snwd": 365,
+     "freeze_thaw_days": 106,
+     "days_tmin_below_32F": 140,
+     "snow_in_total": 44.6,
+     "snwd_in_max": 9.8,
+     "prcp_in_total": 17.48
+    },
+    "2024": {
+     "n_tmax": 366,
+     "n_snow": 366,
+     "n_snwd": 366,
+     "freeze_thaw_days": 97,
+     "days_tmin_below_32F": 122,
+     "snow_in_total": 32.8,
+     "snwd_in_max": 5.1,
+     "prcp_in_total": 11.97
+    },
+    "2025": {
+     "n_tmax": 365,
+     "n_snow": 365,
+     "n_snwd": 364,
+     "freeze_thaw_days": 73,
+     "days_tmin_below_32F": 112,
+     "snow_in_total": 79.2,
+     "snwd_in_max": 18.1,
+     "prcp_in_total": 18.3
+    }
+   },
+   "Stanford_USC00247864_17.5km": {
+    "2021": {
+     "n_tmax": 350,
+     "n_snow": 255,
+     "n_snwd": 258,
+     "freeze_thaw_days": 115,
+     "snow_in_total": 49.1,
+     "prcp_in_total": 10.19
+    },
+    "2022": {
+     "n_tmax": 355,
+     "n_snow": 359,
+     "n_snwd": 359,
+     "freeze_thaw_days": 106,
+     "snow_in_total": 60.5,
+     "prcp_in_total": 13.53
+    },
+    "2023": {
+     "n_tmax": 351,
+     "n_snow": 365,
+     "n_snwd": 365,
+     "freeze_thaw_days": 124,
+     "snow_in_total": 43.8,
+     "prcp_in_total": 18.62
+    },
+    "2024": {
+     "n_tmax": 345,
+     "n_snow": 363,
+     "n_snwd": 363,
+     "freeze_thaw_days": 108,
+     "snow_in_total": 39.3,
+     "prcp_in_total": 13.09
+    },
+    "2025": {
+     "n_tmax": 362,
+     "n_snow": 278,
+     "n_snwd": 286,
+     "freeze_thaw_days": 111,
+     "snow_in_total": 65.0,
+     "prcp_in_total": 15.53
+    }
+   },
+   "Lewistown42WSW_USW00004140_29.8km": {
+    "2021": {
+     "n_tmax": 365,
+     "n_snow": 0,
+     "freeze_thaw_days": 169,
+     "days_tmin_below_32F": 217,
+     "prcp_in_total": 12.1
+    },
+    "2022": {
+     "n_tmax": 365,
+     "n_snow": 0,
+     "freeze_thaw_days": 148,
+     "days_tmin_below_32F": 203,
+     "prcp_in_total": 17.66
+    },
+    "2023": {
+     "n_tmax": 363,
+     "n_snow": 0,
+     "freeze_thaw_days": 158,
+     "days_tmin_below_32F": 202,
+     "prcp_in_total": 20.54
+    },
+    "2024": {
+     "n_tmax": 364,
+     "n_snow": 0,
+     "freeze_thaw_days": 174,
+     "days_tmin_below_32F": 214,
+     "prcp_in_total": 16.7
+    },
+    "2025": {
+     "n_tmax": 364,
+     "n_snow": 0,
+     "freeze_thaw_days": 164,
+     "days_tmin_below_32F": 199,
+     "prcp_in_total": 17.84
+    }
+   },
+   "Moccasin_USC00245761_5.8km": {
+    "2021": {
+     "n_tmax": 90,
+     "n_tmin": 90,
+     "n_prcp": 90,
+     "n_snow": 76,
+     "freeze_thaw_days": 53
+    },
+    "2022": {
+     "n_tmax": 0,
+     "n_tmin": 0,
+     "n_prcp": 0,
+     "n_snow": 0,
+     "freeze_thaw_days": 0
+    },
+    "2023": {
+     "n_tmax": 0,
+     "n_tmin": 0,
+     "n_prcp": 0,
+     "n_snow": 0,
+     "freeze_thaw_days": 0
+    },
+    "2024": {
+     "n_tmax": 147,
+     "n_tmin": 146,
+     "n_prcp": 153,
+     "n_snow": 153,
+     "freeze_thaw_days": 54
+    },
+    "2025": {
+     "n_tmax": 0,
+     "n_tmin": 0,
+     "n_prcp": 0,
+     "n_snow": 0,
+     "freeze_thaw_days": 0
+    }
+   }
+  },
+  "station_ice_dam_weather_days": {
+   "Billings_calendar_2021_to_2025": [
+    40,
+    66,
+    39,
+    25,
+    52
+   ],
+   "Stanford_calendar_2021_to_2025": [
+    28,
+    46,
+    26,
+    15,
+    50
+   ]
+  },
+  "billings_station_table_seasons": {
+   "station": "USW00024033 Billings Logan airport, 4.1 km from 401 N 27th Street (GHCN-Daily, station reading)",
+   "seasons": [
+    "2021-22",
+    "2022-23",
+    "2023-24",
+    "2024-25",
+    "2025-26"
+   ],
+   "freeze_thaw_days": [
+    86,
+    102,
+    88,
+    88,
+    85
+   ],
+   "lows_below_32F_days": [
+    121,
+    154,
+    118,
+    126,
+    103
+   ],
+   "highs_90F_days": [
+    37,
+    40,
+    21,
+    33,
+    22
+   ],
+   "snowfall_in": [
+    62.9,
+    56.2,
+    35.1,
+    64.3,
+    40.9
+   ],
+   "snowfall_days_with_value": [
+    365,
+    365,
+    366,
+    365,
+    365
+   ],
+   "deepest_snow_in": [
+    13.0,
+    9.8,
+    5.1,
+    18.1,
+    12.0
+   ],
+   "deepest_snow_date": [
+    "2022-04-13",
+    "2023-03-27",
+    "2023-10-28",
+    "2025-02-18",
+    "2025-12-13"
+   ],
+   "days_snow_1in_or_more": [
+    55,
+    70,
+    30,
+    49,
+    18
+   ],
+   "precip_in": [
+    14.87,
+    18.56,
+    12.63,
+    15.89,
+    12.3
+   ],
+   "largest_day_precip_in": [
+    1.41,
+    2.19,
+    2.02,
+    1.23,
+    1.04
+   ],
+   "largest_day_precip_date": [
+    "2022-06-19",
+    "2023-06-02",
+    "2024-05-23",
+    "2024-09-18",
+    "2026-05-30"
+   ],
+   "days_precip_1in_or_more": [
+    1,
+    4,
+    1,
+    1,
+    1
+   ],
+   "note": "Season = July 1 to June 30. Station values from GHCN-Daily; the grid value for this cell is not computed in this pass."
+  },
+  "sample_five_season_table_rows": [
+   "Hail of 1 in or more (radar estimate, days)",
+   "Hail reports (report, count)",
+   "Peak gust 50 kt or more (station reading, days)",
+   "Wind reports (report, count)",
+   "Freeze-thaw days (grid estimate)",
+   "Days with a low below 32 F (grid estimate)",
+   "Days with a high of 90 F or more (grid estimate)",
+   "Snowfall (station reading, inches)",
+   "Deepest snow (station reading, inches)",
+   "Days with snow on the ground and a low below 32 F (station reading)",
+   "Freezing rain reports (report, count)",
+   "Ice storm and winter storm warnings (warning, count)",
+   "Precipitation (grid estimate, inches)",
+   "Largest one-day precipitation (grid estimate, inches)",
+   "Flood and flash flood reports (report, count)",
+   "Lightning, UV and roof surface temperature (Data unavailable)"
+  ],
+  "sibling_reads_not_downloaded_here": {
+   "NCEI Storm Events counts by year, Montana": "/home/user/wt/research-b35/scratch-flood-ice-heat-products/ncei_mt_summary.json",
+   "NOHRSC season grid values (Billings cell)": "/home/user/wt/research-b35/snow-alternatives.json; /home/user/wt/research-b35/scratch-snow-alternatives/nohrsc-season-*.json",
+   "nClimGrid-Daily cells, Billings and Benchland (June 2025 and airport comparison)": "/home/user/wt/research-b35/temperature-rain-grid.json",
+   "GHCN station list and inventory": "/home/user/wt/research-b35/scratch-snow-stations/downloads/ghcnd-stations.txt and ghcnd-inventory.txt",
+   "IEM watch/warn counts by product, all years": "/home/user/wt/research-b35/scratch-flood-ice-heat-products/ww_events_summary.json",
+   "SNOTEL site count (97 Montana sites, 96 active)": "/home/user/wt/research-b35/snow-alternatives.json"
+  },
+  "forbidden_term_check": {
+   "texts_checked": 117,
+   "hits": {},
+   "result": "pass"
+  },
+  "forbidden_terms_added": {
+   "note": "Added to the existing forbidden terms (test_joins FORBIDDEN, test_hail FORBIDDEN and evaluation-and-wording forbidden_terms). Each is tested against every template with its placeholders filled. Quoted source wording (in quotation marks) and the two required phrases 'This is not an all-clear' and 'not the same as no hail' are exempt.",
+   "words": [
+    "risk",
+    "risks",
+    "at risk",
+    "high risk",
+    "low risk",
+    "probability",
+    "probable",
+    "chance",
+    "odds",
+    "likely",
+    "fail",
+    "fails",
+    "failure",
+    "collapse",
+    "structural",
+    "structure",
+    "replace",
+    "replacement",
+    "repair",
+    "repairs",
+    "safe",
+    "unsafe",
+    "safely",
+    "exceed",
+    "exceeds",
+    "exceeded",
+    "overload",
+    "overloaded",
+    "aging",
+    "aged",
+    "lifespan",
+    "useful life",
+    "brittle",
+    "degrade",
+    "degraded",
+    "degradation",
+    "wear",
+    "worn",
+    "crack",
+    "cracked",
+    "cracks",
+    "leak",
+    "leaks",
+    "leaking",
+    "intact",
+    "okay",
+    "fine",
+    "good condition",
+    "poor condition",
+    "claim",
+    "claims",
+    "adjuster",
+    "adjusters",
+    "loss",
+    "losses",
+    "policy",
+    "warranty",
+    "warrant",
+    "expect",
+    "expected",
+    "struck",
+    "strike",
+    "strikes",
+    "lost",
+    "no damage",
+    "undamaged",
+    "damage (except as a source type word, a quoted remark or a quoted reference)",
+    "damaged",
+    "damaging",
+    "all clear (except 'This is not an all-clear')",
+    "no hail (except 'not the same as no hail')"
+   ],
+   "damage_rule": "The word 'damage' or 'damaged' may appear only (a) inside a source's own type word such as TSTM WND DMG, NON-TSTM WND DMG or SNOW/ICE DMG, which read as the type word next to a kind word, (b) inside a quoted remark or quoted reference, or (c) as the NWS tag label 'NWS damage threat tag' (B2 D4). It may not appear in a sentence about this address.",
+   "why": "Each added word is a claim about roofs, about probability, about insurance or about condition that the weather record cannot show (AGENTS rule 5). 'Risk' and 'probability' are named because the owner's question invites them and a damage probability is forbidden by rule 5."
+  },
+  "kind_words": [
+   {
+    "word": "Radar estimate",
+    "means": "A radar-derived size estimate for a cell (NOAA MRMS MESH, B1). Not a measurement at the ground.",
+    "basis": "B1 store; MESH definition from the B1 research"
+   },
+   {
+    "word": "Radar detection",
+    "means": "A hail signature the radar algorithm flagged (NCEI SWDI nx3hail, B2). Not hail on the ground.",
+    "basis": "B2 brief"
+   },
+   {
+    "word": "Report",
+    "means": "What a spotter, a member of the public or a sensor sent to the NWS (IEM local storm reports). Not a complete record and not an inspection.",
+    "basis": "B2 brief; NWS directive R3 and R4"
+   },
+   {
+    "word": "Official record",
+    "means": "A NOAA Storm Events entry (NCEI). Event counts, not measurements at this address.",
+    "basis": "B2 brief"
+   },
+   {
+    "word": "Warning",
+    "means": "An NWS warning polygon that covered the spot (IEM watch/warn archive). The tags are the forecast threat at issue time, not what fell.",
+    "basis": "B2 brief"
+   },
+   {
+    "word": "Zone product",
+    "means": "An NWS product for a whole forecast zone or fire zone, not this spot alone.",
+    "basis": "B2 brief"
+   },
+   {
+    "word": "Station reading",
+    "means": "An observation at a named station (airport or cooperative site), with its distance and its coverage shown. Not at this address.",
+    "basis": "GHCN-Daily readme R-units (M13); IEM daily (M7)"
+   },
+   {
+    "word": "Grid estimate",
+    "means": "A gridded analysis of station observations (NOAA nClimGrid-Daily, 1/24 degree, about 4.6 km cells). Not a reading at this address.",
+    "basis": "NCEI nClimGrid page (M12)"
+   },
+   {
+    "word": "Design value",
+    "means": "A code map value (ASCE 7 ground snow load, wind speed maps). It is not a measurement and is not shown in the five-year history.",
+    "basis": "R9, R14"
+   },
+   {
+    "word": "Reference",
+    "means": "A statement from a building or weather guide. Not a finding about this address.",
+    "basis": "R1 to R20"
+   },
+   {
+    "word": "Data unavailable",
+    "means": "The source does not cover this place, this element or this time, or did not load. It is never shown as zero or as an all-clear.",
+    "basis": "AGENTS rule 5; GHCN flags (M13)"
+   }
+  ],
+  "indicators": [
+   {
+    "id": "hail_size_days",
+    "label": "Hail of 1 inch or more (days, radar estimate)",
+    "kind": [
+     "Radar estimate"
+    ],
+    "unit": "days; inches (mm)",
+    "refs": [
+     "R4"
+    ],
+    "source": "B1 MESH store, 1,826 SPC days",
+    "status": "proposal on B1 data; severe size from R4",
+    "coverage": "A day counts only when the cell has an estimate; days with no data are listed as missing, not as no hail",
+    "template": "hail_radar",
+    "unavailable": "Hail history is unavailable: {problem}. This is not the same as no hail."
+   },
+   {
+    "id": "hail_reports",
+    "label": "Hail reports within 5 miles (inches as reported)",
+    "kind": [
+     "Report",
+     "Official record"
+    ],
+    "unit": "inches (mm)",
+    "refs": [
+     "R4"
+    ],
+    "source": "B2 joins (IEM LSR; NCEI Storm Events)",
+    "status": "B2 data; proposal for the year table",
+    "coverage": "Five years to the build date",
+    "template": "hail_report",
+    "unavailable": "Reports could not be loaded in this update; that is not the same as no report."
+   },
+   {
+    "id": "hail_signatures",
+    "label": "Radar hail detections within 2 miles",
+    "kind": [
+     "Radar detection"
+    ],
+    "unit": "days; inches",
+    "refs": [],
+    "source": "B2 joins (NCEI SWDI nx3hail)",
+    "status": "B2 data",
+    "coverage": "The inventory is not complete",
+    "template": "hail_detection",
+    "unavailable": "Detections could not be loaded in this update; that is not the same as no detection."
+   },
+   {
+    "id": "hail_warnings",
+    "label": "Severe thunderstorm warnings covering the spot",
+    "kind": [
+     "Warning"
+    ],
+    "unit": "count",
+    "refs": [
+     "R1",
+     "R2"
+    ],
+    "source": "B2 joins (IEM watch/warn archive, SV)",
+    "status": "B2 data",
+    "coverage": "Polygon covers the cell centre",
+    "template": "warning_row",
+    "unavailable": "Warnings could not be loaded in this update; that is not the same as no warning."
+   },
+   {
+    "id": "wind_gust_days",
+    "label": "Peak gust of 50 knots (58 mph) or more, nearest airports",
+    "kind": [
+     "Station reading"
+    ],
+    "unit": "days; knots and mph",
+    "refs": [
+     "R2",
+     "R3"
+    ],
+    "source": "B2 joins (IEM MT_ASOS daily peak gust, within 40 miles)",
+    "status": "B2 data; threshold from R3 (NWS writes 58 mph for 50 knots)",
+    "coverage": "Stations listed with distance; a station with no day values is not shown as zero",
+    "template": "wind_station",
+    "unavailable": "Station readings could not be loaded in this update; that is not the same as no gust."
+   },
+   {
+    "id": "wind_reports",
+    "label": "Wind reports within 5 miles (gust and sustained, mph)",
+    "kind": [
+     "Report",
+     "Official record"
+    ],
+    "unit": "mph",
+    "refs": [
+     "R3"
+    ],
+    "source": "B2 joins (IEM LSR TSTM WND GST, NON-TSTM WND GST, HIGH SUST WINDS; NCEI Thunderstorm Wind, High Wind)",
+    "status": "B2 data",
+    "coverage": "Five years to the build date",
+    "template": "wind_report",
+    "unavailable": "Reports could not be loaded in this update; that is not the same as no report."
+   },
+   {
+    "id": "wind_zone_warnings",
+    "label": "High wind warnings and watches for the zone",
+    "kind": [
+     "Zone product"
+    ],
+    "unit": "count",
+    "refs": [
+     "R3"
+    ],
+    "source": "B2 joins (IEM HW.W, HW.A) and the zone map",
+    "status": "B2 data",
+    "coverage": "Zone editions are matched by issue time (B2 D16)",
+    "template": "zone_row",
+    "unavailable": "Zone products could not be loaded in this update; that is not the same as no product."
+   },
+   {
+    "id": "tornado_funnel",
+    "label": "Tornado, funnel cloud and landspout reports; tornado warnings",
+    "kind": [
+     "Report",
+     "Official record",
+     "Warning"
+    ],
+    "unit": "count",
+    "refs": [],
+    "source": "B2 joins (LSR TORNADO, FUNNEL CLOUD, LANDSPOUT; NCEI Tornado; TO warnings)",
+    "status": "B2 data",
+    "coverage": "Five years to the build date",
+    "template": "report_row",
+    "unavailable": "Reports could not be loaded in this update; that is not the same as no report."
+   },
+   {
+    "id": "freeze_thaw_days",
+    "label": "Freeze-thaw days (high above 32 F and low below 32 F)",
+    "kind": [
+     "Grid estimate",
+     "Station reading"
+    ],
+    "unit": "days",
+    "refs": [
+     "R19",
+     "R20"
+    ],
+    "source": "nClimGrid-Daily Tmax and Tmin per cell (B5); station check from GHCN-Daily",
+    "status": "proposal; the stress itself is qualitative (R20)",
+    "coverage": "A season shows a number only when at least 95 percent of its days have both values (proposal)",
+    "template": "freeze_thaw",
+    "unavailable": "Data unavailable for {season}: {station} has {k} of {d} days with a high and a low, so this season is not shown. A missing value is not zero."
+   },
+   {
+    "id": "days_low_below_32",
+    "label": "Days with a low below 32 F",
+    "kind": [
+     "Grid estimate",
+     "Station reading"
+    ],
+    "unit": "days",
+    "refs": [
+     "R10",
+     "R11"
+    ],
+    "source": "nClimGrid-Daily Tmin; GHCN-Daily TMIN",
+    "status": "proposal",
+    "coverage": "As for freeze-thaw days",
+    "template": "low_below_32",
+    "unavailable": "Data unavailable for {season}: no low-temperature record for this season (see the coverage line)."
+   },
+   {
+    "id": "days_high_90",
+    "label": "Days with a high of 90 F or more",
+    "kind": [
+     "Grid estimate",
+     "Station reading"
+    ],
+    "unit": "days; F",
+    "refs": [
+     "R8"
+    ],
+    "source": "nClimGrid-Daily Tmax; GHCN-Daily TMAX",
+    "status": "proposal; 90 F is a site threshold, the NWS sets heat thresholds by region",
+    "coverage": "As for freeze-thaw days",
+    "template": "high_90",
+    "unavailable": "Data unavailable for {season}: no high-temperature record for this season."
+   },
+   {
+    "id": "temperature_extremes",
+    "label": "Highest high and lowest low (F, with date)",
+    "kind": [
+     "Grid estimate",
+     "Station reading"
+    ],
+    "unit": "F",
+    "refs": [],
+    "source": "nClimGrid-Daily; GHCN-Daily",
+    "status": "proposal",
+    "coverage": "As for freeze-thaw days",
+    "template": "extremes",
+    "unavailable": "Data unavailable for {season}."
+   },
+   {
+    "id": "snowfall_season",
+    "label": "Snowfall by season (Jul to Jun)",
+    "kind": [
+     "Station reading"
+    ],
+    "unit": "inches (cm)",
+    "refs": [
+     "R9"
+    ],
+    "source": "GHCN-Daily SNOW (mm) at a station with the element; NOHRSC season grid only after its units and method are checked",
+    "status": "proposal",
+    "coverage": "Shows the count of days with a snowfall value; a station with no SNOW element says Data unavailable, never zero (M9)",
+    "template": "snowfall",
+    "unavailable": "Data unavailable: {station} does not record snowfall, so no snowfall total is shown. This is not zero snow."
+   },
+   {
+    "id": "snow_depth",
+    "label": "Deepest snow on the ground and days with 1 inch or more",
+    "kind": [
+     "Station reading"
+    ],
+    "unit": "inches; days",
+    "refs": [],
+    "source": "GHCN-Daily SNWD (mm)",
+    "status": "proposal",
+    "coverage": "As for snowfall",
+    "template": "snow_depth",
+    "unavailable": "Data unavailable: {station} does not record snow depth for {season}."
+   },
+   {
+    "id": "ice_dam_weather_days",
+    "label": "Days with 1 inch or more on the ground and a low below 32 F",
+    "kind": [
+     "Station reading"
+    ],
+    "unit": "days",
+    "refs": [
+     "R10",
+     "R11"
+    ],
+    "source": "GHCN-Daily SNWD and TMIN at the nearest station with both",
+    "status": "proposal; this counts weather that can form ice dams, not ice dams",
+    "coverage": "Needs both elements on the day; a day with a missing element is not counted as no",
+    "template": "ice_dam_weather",
+    "unavailable": "Data unavailable for {season}: the snow-depth or low-temperature record is missing at {station}."
+   },
+   {
+    "id": "freezing_rain_reports",
+    "label": "Freezing rain reports within 5 miles",
+    "kind": [
+     "Report"
+    ],
+    "unit": "inches as reported",
+    "refs": [
+     "R7"
+    ],
+    "source": "B2 joins (IEM LSR FREEZING RAIN)",
+    "status": "B2 data; the magnitude may be liquid or ice (M3)",
+    "coverage": "Five years to the build date",
+    "template": "freezing_rain",
+    "unavailable": "Reports could not be loaded in this update; that is not the same as no report."
+   },
+   {
+    "id": "ice_storm_warnings",
+    "label": "Ice storm warnings covering the spot; ice storm events in Montana",
+    "kind": [
+     "Warning",
+     "Official record"
+    ],
+    "unit": "count",
+    "refs": [
+     "R6",
+     "R7"
+    ],
+    "source": "B2 joins (IEM IS.W zone products); NCEI Ice Storm (statewide counts only)",
+    "status": "B2 data; the NCEI count is statewide",
+    "coverage": "Statewide counts are labelled as statewide",
+    "template": "warning_row",
+    "unavailable": "Zone products could not be loaded in this update; that is not the same as no product."
+   },
+   {
+    "id": "winter_storm_warnings",
+    "label": "Winter storm warnings covering the zone",
+    "kind": [
+     "Zone product"
+    ],
+    "unit": "count",
+    "refs": [
+     "R5",
+     "R6"
+    ],
+    "source": "B2 joins (IEM WS.W); NCEI Winter Storm and Heavy Snow counts (statewide)",
+    "status": "B2 data",
+    "coverage": "Zone editions as for wind",
+    "template": "zone_row",
+    "unavailable": "Zone products could not be loaded in this update; that is not the same as no product."
+   },
+   {
+    "id": "precipitation_year",
+    "label": "Precipitation (rain and melted snow)",
+    "kind": [
+     "Grid estimate",
+     "Station reading"
+    ],
+    "unit": "inches",
+    "refs": [],
+    "source": "nClimGrid-Daily Prcp per cell; GHCN-Daily PRCP",
+    "status": "proposal; the grid holds no separate snow or rain amount",
+    "coverage": "A season or year shows a total only with full coverage",
+    "template": "precip_total",
+    "unavailable": "Data unavailable for {season}."
+   },
+   {
+    "id": "largest_one_day_rain",
+    "label": "Largest one-day precipitation; days with 1 inch or more",
+    "kind": [
+     "Grid estimate",
+     "Station reading"
+    ],
+    "unit": "inches; days",
+    "refs": [],
+    "source": "nClimGrid-Daily Prcp; GHCN-Daily PRCP",
+    "status": "proposal; the 1 inch day is a site threshold",
+    "coverage": "As for precipitation",
+    "template": "largest_day",
+    "unavailable": "Data unavailable for {season}."
+   },
+   {
+    "id": "rain_reports",
+    "label": "Rain reports within 5 miles (inches as reported)",
+    "kind": [
+     "Report"
+    ],
+    "unit": "inches",
+    "refs": [],
+    "source": "B2 joins (IEM LSR RAIN)",
+    "status": "B2 data",
+    "coverage": "Five years to the build date",
+    "template": "rain_report",
+    "unavailable": "Reports could not be loaded in this update; that is not the same as no report."
+   },
+   {
+    "id": "flood_reports_warnings",
+    "label": "Flood and flash flood reports and warnings",
+    "kind": [
+     "Report",
+     "Official record",
+     "Warning",
+     "Zone product"
+    ],
+    "unit": "count",
+    "refs": [
+     "R8"
+    ],
+    "source": "B2 joins (IEM LSR FLOOD, FLASH FLOOD; NCEI Flood, Flash Flood; FF.W; FL.W and FA.W zone products)",
+    "status": "B2 data",
+    "coverage": "Five years to the build date",
+    "template": "flood_report",
+    "unavailable": "Reports could not be loaded in this update; that is not the same as no report."
+   },
+   {
+    "id": "heat_reports_warnings",
+    "label": "Heat advisories, excessive heat warnings and extreme heat reports",
+    "kind": [
+     "Warning",
+     "Zone product",
+     "Report"
+    ],
+    "unit": "count; F",
+    "refs": [
+     "R8"
+    ],
+    "source": "IEM HT.Y and EH.W (statewide watch/warn counts in M4); LSR EXTREME HEAT (F)",
+    "status": "measured counts; not joined to cells yet",
+    "coverage": "Statewide counts are labelled as statewide",
+    "template": "heat_row",
+    "unavailable": "Data unavailable: the heat warning archive did not load in this update."
+   },
+   {
+    "id": "ponding",
+    "label": "Water ponding on a roof",
+    "kind": [
+     "Data unavailable"
+    ],
+    "unit": "none",
+    "refs": [
+     "R12"
+    ],
+    "source": "none in public weather records",
+    "status": "Data unavailable line only; ponding is a roof-level condition",
+    "coverage": "None",
+    "template": "ponding_na",
+    "unavailable": "Roof ponding: Data unavailable. No public weather record shows water on a roof."
+   },
+   {
+    "id": "lightning",
+    "label": "Lightning",
+    "kind": [
+     "Data unavailable"
+    ],
+    "unit": "none",
+    "refs": [
+     "R18"
+    ],
+    "source": "none free (NLDN is commercial); LSR had 0 LIGHTNING rows in 2025 (M1); NCEI lightning events are not strike counts",
+    "status": "Data unavailable line only",
+    "coverage": "None",
+    "template": "lightning_na",
+    "unavailable": "Lightning: Data unavailable. The national lightning network is commercial, and no free record of lightning at this spot was used."
+   },
+   {
+    "id": "uv_and_sun",
+    "label": "UV and sunlight",
+    "kind": [
+     "Data unavailable"
+    ],
+    "unit": "none",
+    "refs": [],
+    "source": "no source checked in this pass (open question)",
+    "status": "Data unavailable line only",
+    "coverage": "None",
+    "template": "uv_na",
+    "unavailable": "UV and sunlight: Data unavailable. No public UV or sunlight record for this spot was used in this history."
+   },
+   {
+    "id": "roof_surface_temperature",
+    "label": "Roof surface temperature at this spot",
+    "kind": [
+     "Data unavailable",
+     "Reference"
+    ],
+    "unit": "none",
+    "refs": [
+     "R16"
+    ],
+    "source": "none for this spot; R16 readings are from test roofs at the IBHS site",
+    "status": "Data unavailable line; the test-roof numbers are a reference only",
+    "coverage": "None",
+    "template": "roof_temp_na",
+    "unavailable": "Roof surface temperature: Data unavailable at this spot. Published roof temperatures come from test roofs, not from weather stations."
+   },
+   {
+    "id": "ground_snow_load_design",
+    "label": "Ground snow load (design map value)",
+    "kind": [
+     "Design value"
+    ],
+    "unit": "lb/ft2",
+    "refs": [
+     "R9",
+     "R10"
+    ],
+    "source": "ASCE 7 maps through a code tool (not fetched; the ATC page returned a shell)",
+    "status": "not shown in the history (open question)",
+    "coverage": "Not shown",
+    "template": "reference_only",
+    "unavailable": "Not shown: a design map value is not a measurement of snow on this roof."
+   },
+   {
+    "id": "snotel_snow_water",
+    "label": "Snow water equivalent at a SNOTEL site (mountain point)",
+    "kind": [
+     "Station reading"
+    ],
+    "unit": "inches of water",
+    "refs": [
+     "R17"
+    ],
+    "source": "NRCS SNOTEL (97 Montana sites, 96 active, sibling count M15)",
+    "status": "not joined; the nearest site may be far from the town and is a mountain point",
+    "coverage": "Shown only with its site name and distance",
+    "template": "snotel_note",
+    "unavailable": "Data unavailable: no SNOTEL site within 25 miles of this spot."
+   }
+  ],
+  "templates": {
+   "hail_radar": "Radar estimate: {n} days with hail of 1 in or more between {start} and {end} (largest {largest_in} in, {largest_mm} mm, on {largest_date}).",
+   "hail_report": "Report: {date} {time}: hail, {in} in, {source}, {miles} mi {bearing}.",
+   "hail_detection": "Radar detection: {n} days with a hail signature within 2 miles between {start} and {end}.",
+   "warning_row": "Warning: {date} {begin} to {end}: {kind} warning, {office}; the tags are the forecast threat at issue time.",
+   "wind_station": "Station reading: {n} days with a peak gust of 50 knots (58 mph) or more in {season} at {station}, about {miles} miles away.",
+   "wind_report": "Report: {date} {time}: {type}, {mph} mph, {source}, {miles} mi {bearing}.",
+   "zone_row": "Zone product: {n} {product} products for zone {zone} in {season}, covering the whole zone.",
+   "report_row": "Report: {date} {time}: {type}, {source}, {miles} mi {bearing}.",
+   "freeze_thaw": "Grid estimate: {n} freeze-thaw days in the {season} season (a high above 32 F and a low below 32 F).",
+   "low_below_32": "Grid estimate: {n} days with a low below 32 F in the {season} season.",
+   "high_90": "Grid estimate: {n} days with a high of 90 F or more in the {season} season (a site threshold).",
+   "extremes": "Grid estimate: highest high {hi_F} F on {hi_date}; lowest low {lo_F} F on {lo_date}, {season}.",
+   "snowfall": "Station reading: {in} in of snow in the {season} season at {station} ({k} of {d} days with a value).",
+   "snow_depth": "Station reading: deepest snow on the ground {in} in on {date} ({season}, {station}).",
+   "ice_dam_weather": "Station reading: {n} days with 1 in or more of snow on the ground and a low below 32 F in the {season} season (weather that can form ice dams, not a count of ice dams).",
+   "freezing_rain": "Report: {date} {time}: freezing rain, {in} in as reported, {source}, {miles} mi {bearing}.",
+   "precip_total": "Grid estimate: {in} in of precipitation in the {season} season (the grid has no separate snow or rain amount).",
+   "largest_day": "Grid estimate: largest one-day precipitation {in} in on {date} in the {season} season; days with 1 in or more: {n}.",
+   "rain_report": "Report: {date} {time}: rain, {in} in as reported, {source}, {miles} mi {bearing}.",
+   "flood_report": "Report: {date} {time}: {type}, {source}, {miles} mi {bearing}.",
+   "heat_row": "Report: {date}: {type}, {mag} F, {source}, {miles} mi {bearing}.",
+   "snotel_note": "Station reading: snow water equivalent at {site}, {miles} miles away, a mountain site; it is not a reading for this town.",
+   "ponding_na": "Roof ponding: Data unavailable; no public weather record shows water on a roof.",
+   "lightning_na": "Lightning: Data unavailable; the national lightning network is commercial, and no free record was used.",
+   "uv_na": "UV and sunlight: Data unavailable; no public record for this spot was used.",
+   "roof_temp_na": "Roof surface temperature: Data unavailable at this spot; published roof temperatures come from test roofs.",
+   "reference_only": "Reference: {source} says: “{quote}”.",
+   "coverage_line": "Data unavailable for {season}: {station} has {k} of {d} days with a {element} value, so this season is not shown; a missing value is not zero.",
+   "element_absent": "Data unavailable: {station} does not record {element}, so no {element} total is shown; this is not zero.",
+   "no_report": "No NWS local storm report of {type} within 5 miles in these five years; reports are not a complete record."
+  },
+  "what_this_is": {
+   "section_lead": "Weather that matters for a roof. These are weather conditions that roofing and building references name as stresses on roofs. Each line says what the weather record shows near this spot and what kind of record it is. Nothing here is a finding about any roof, and a count of days is not a count of problems.",
+   "kind_key": "Kind words: Radar estimate, Radar detection, Report, Official record, Warning, Zone product, Station reading, Grid estimate, Design value, Reference, Data unavailable.",
+   "reports": "A report is what a spotter, a member of the public or a sensor sent to the National Weather Service. A report is not an inspection and not a finding about a roof.",
+   "warnings": "A warning is the NWS polygon that covered this spot at issue time. Its tags are the forecast threat, not what fell.",
+   "station": "A station reading is at a named airport or cooperative site, with its distance and its coverage. It is not a reading at this address.",
+   "grid": "A grid estimate is a gridded analysis of station observations for a cell about 4.6 km across (NOAA nClimGrid-Daily). It is not a reading at this address.",
+   "no_report": "No report is not a finding that nothing happened. Reports are not a complete record.",
+   "coverage": "A season shows a value only when at least 95 percent of its days have the element (proposal). Otherwise the coverage line is shown in its place, and a missing value is never shown as zero."
+  },
+  "year_line_examples_2024_25": {
+   "snowfall": "Station reading: 64.3 in of snow in the 2024-25 season at Billings Logan airport (365 of 365 days with a value).",
+   "snow_depth": "Station reading: deepest snow on the ground 18.1 in on 2025-02-18 (2024-25, Billings Logan airport).",
+   "freeze_thaw_station": "Station reading: 88 freeze-thaw days in the 2024-25 season at Billings Logan airport (a high above 32 F and a low below 32 F).",
+   "low_below_32": "Station reading: 126 days with a low below 32 F in the 2024-25 season at Billings Logan airport.",
+   "precip_total": "Station reading: 15.89 in of precipitation in the 2024-25 season at Billings Logan airport.",
+   "largest_day": "Station reading: largest one-day precipitation 1.23 in on 2024-09-18 in the 2024-25 season at Billings Logan airport; days with 1 in or more: 1."
+  },
+  "claims_split": {
+   "from_references (R1 to R20, quoted with URLs)": [
+    "Severe thunderstorm: 1 inch hail, 58 mph wind or a tornado (R1, R2).",
+    "Thunderstorm wind: 50 knots (58 mph) or more is always entered; high wind: 35 knots sustained for 1 hour or 50 knots gust (R3).",
+    "Hail: 1 inch is the severe size; the directive's hail table (R4).",
+    "Heavy snow: locally defined 12 and 24 hour criteria, with the directive's example values (R5).",
+    "Ice storm: ice accretion at locally defined criteria, typically 1/4 or 1/2 inch; freezing rain mixed with other types is a winter storm (R6, R7).",
+    "Heat event: heat index at or above locally established advisory thresholds (R8).",
+    "Ground snow load is a design map value (2 percent annual probability), not a measurement and not a method (R9).",
+    "Ice dams form when snow on a roof melts, runs to a colder eave and refreezes; they are most common with snow on the roof, heat loss and temperatures just below freezing (R10, R11).",
+    "Ponding is water that stays on a roof 48 hours or longer; ponding can add load to roof decks (R12).",
+    "Shingle wind uplift is tested under ASTM D7158; the P-804 wind map is not a design tool (R13, R14).",
+    "Hail is described by IBHS as one of the most damaging threats to homes (R15); shingle temperatures at IBHS test roofs reached 170 to 195 F on north faces in 2016 (R16).",
+    "SNOTEL measures snow water equivalent, snow depth, precipitation and temperature at mountain sites (R17).",
+    "The national lightning network is commercial and restricted (R18)."
+   ],
+   "proposals (this record, not from a reference)": [
+    "The five-season table: July 1 to June 30 columns, 2021-22 to 2025-26, with the July 1 to build date line shown as partial.",
+    "The 90 F threshold for hot days and the 1 inch threshold for a heavy-rain day (site thresholds, labelled as such).",
+    "The freeze-thaw rule as a strict count (high above 32 F and low below 32 F), with the precision stated; the grid is the primary source for the five-year table.",
+    "The coverage rule: a season shows a value only with at least 95 percent of its days (a proposal, not a reference value).",
+    "The kind words in KIND_WORDS, the one-sentence lines in TEMPLATES, the notes in WHAT_THIS_IS and the section layout.",
+    "The forbidden-term additions in FORBIDDEN_ADDITIONS, and the rule that damage may appear only as a source's type word, a quoted remark or a quoted reference.",
+    "The recommendation to show station readings only where a station passes the coverage rule, and to show Data unavailable for lightning, UV and sunlight, roof surface temperature and roof ponding."
+   ]
+  },
+  "section_layout": {
+   "sheet": {
+    "heading": "Weather that matters for a roof",
+    "order": [
+     "section_lead",
+     "kind_key",
+     "five_season_table",
+     "details_by_indicator",
+     "not_available_lines",
+     "reference_lines",
+     "how_this_was_made"
+    ],
+    "five_season_table": {
+     "columns": [
+      "2021-22",
+      "2022-23",
+      "2023-24",
+      "2024-25",
+      "2025-26",
+      "Five seasons"
+     ],
+     "season_definition": "July 1 to June 30, so each winter is one column. The five seasons are complete; July 1 to the build date is shown as a partial line, never as a column.",
+     "rows": [
+      "Hail of 1 in or more (radar estimate, days)",
+      "Hail reports (report, count)",
+      "Peak gust 50 kt or more (station reading, days)",
+      "Wind reports (report, count)",
+      "Freeze-thaw days (grid estimate)",
+      "Days with a low below 32 F (grid estimate)",
+      "Days with a high of 90 F or more (grid estimate)",
+      "Snowfall (station reading, inches)",
+      "Deepest snow (station reading, inches)",
+      "Days with snow on the ground and a low below 32 F (station reading)",
+      "Freezing rain reports (report, count)",
+      "Ice storm and winter storm warnings (warning, count)",
+      "Precipitation (grid estimate, inches)",
+      "Largest one-day precipitation (grid estimate, inches)",
+      "Flood and flash flood reports (report, count)",
+      "Lightning, UV and roof surface temperature (Data unavailable)"
+     ],
+     "cell_rule": "Every cell shows its value with its kind word. A missing or partial season shows the coverage line, never a blank or a zero. Counts that depend on a site threshold say so in the row name."
+    },
+    "details_by_indicator": "One lead sentence and the report or warning rows for each indicator, with the B2 labels 'Report:', 'Warning:', 'Zone product:', 'Station:' at the start of each row (B2 D3).",
+    "not_available_lines": [
+     "ponding_na",
+     "lightning_na",
+     "uv_na",
+     "roof_temp_na"
+    ],
+    "reference_lines": "Each reference is one line with its link (R1 to R20 as used), grouped as 'Thresholds', 'Snow and ice', 'Wind and hail', 'Heat and rain', 'Lightning and sun'. None says what a roof needs.",
+    "how_this_was_made": "Sources, cell and station names with distances, the coverage rule, the freeze-thaw rule with its precision (whole degrees or tenths), the units and the licence sentence (M16)."
+   },
+   "town_page": {
+    "heading": "Weather that matters for a roof",
+    "what_changes": "The same five-season table is built for the town's centre cell and for the two nearest stations that pass the coverage rule. A town page never picks the nearest station silently: if the nearest station fails the coverage rule (as Moccasin does at Benchland, M9), the page names the station that was used and says why."
+   }
+  },
+  "searched_only_not_fetched": [
+   "Web search results on NRCA ice dam guidance (roofingmagazine.com, professionalroofing.net): secondary, not used as evidence",
+   "Web search results on ARMA hail pages (iibec.org, floridadisaster.org): secondary, not used",
+   "Web search results on ASCE 7 ground snow load (basc.pnnl.gov, strucalc.com): secondary",
+   "Web search results on freeze-thaw damage to roofs (facilitiesnet.com, simonroofing.com, gaf.com): manufacturer and contractor blogs, not used as evidence",
+   "Web search results on FEMA hail building-science guidance (fema.gov building science library): no FEMA hail publication found"
+  ]
+ },
+ "open_questions": [
+  "The freeze-thaw and 90 F counts are not yet computed from the nClimGrid grid for any cell. The per-cell monthly aggregates (B5) must be built and checked against the Billings station (GHCN 73 days in calendar 2025; IEM whole-degree feed 67 days) before any grid count is shown.",
+  "The freeze-thaw rule needs a decision: strict (high above 32 F and low below 32 F, as used here) or inclusive at 32 F (as the earthkit definition R19 uses for the low). The count moves with the rule and with the precision of the input (whole degrees in the IEM feed, tenths of a degree C in GHCN). The sheet must state the rule and the precision.",
+  "Coverage rule: this record proposes that a season show a value only when at least 95 percent of its days have the element. Stanford snowfall for 2021 has 255 of 365 days; Moccasin has no temperature values in 2022, 2023 or 2025. The threshold is a proposal, not a reference value.",
+  "The nearest station at Benchland (Moccasin, 5.8 km) fails the coverage rule for most years. Whether the town and address pages should use the 17.5 km Stanford station, the 29.8 km Lewistown 42 WSW station (no snow elements) or the grid alone is a design decision.",
+  "NOHRSC season snowfall (sibling read: 50.29 for 2024-25 at the Billings centre cell, against 64.3 in at the airport) differs from the station by about 14 inches. The units and the method of the NOHRSC product must be verified before it is shown; until then it is not shown.",
+  "The 50 knot threshold is 57.5 mph on the plain conversion (1 knot = 1.15078 mph). The NWS directive writes 50 knots as 58 mph. The site must choose one form and say which; this record quotes the NWS form.",
+  "LSR freezing rain magnitudes may be liquid or ice (M3). The IEM LSR definition for the magnitude of FREEZING RAIN must be read before the unit is given as ice.",
+  "LSR SNOW has a maximum of 50.0 in in 2025 (M2). That value should be checked against the remarks before any LSR snow maximum is shown.",
+  "NCEI Storm Events has no Freezing Rain event type in the Montana summary (M5). Freezing rain falls under Winter Storm or Ice Storm events; the NWS directive says so (R6). The count of freezing rain events statewide is therefore not available from NCEI.",
+  "Lightning: no free public strike record was found (R18). Lightning stays Data unavailable unless a licence is arranged; this was not pursued.",
+  "UV and sunlight: no public source was checked for this record. It stays Data unavailable.",
+  "Roof-level measures (ponding, roof surface temperature, shingle wind rating, roof age, condition) are not in any public weather record. The sheet can cite references about them but cannot show them for an address.",
+  "The ASCE 7 ground snow load for a point was not read: the ATC hazards page returned a 2,127-byte shell, and no other ASCE map service was fetched. Ground snow load is a design value, so it is not shown in the history unless the owner decides otherwise (R9).",
+  "NRCA: the primary consumer page was not found. everybodyneedsaroof.com redirects to the NRCA home page, which has no ice dam or hail guidance in its text. NRCA guidance on ice dams is therefore not cited as a primary source here; the trade-press summary is not used as evidence.",
+  "Michigan State University Extension (ice dams) returned a bot-protection page; University of Minnesota Extension returned HTTP 404 at the address tried. Two more extension sources would strengthen R10 and R11.",
+  "FEMA P-804: the fema.gov 2023 PDF returned HTTP 403 to this session. The copy read here is the 2010 edition from a WBDG S3 host. Its wind-speed statements may be superseded by the 2023 edition.",
+  "Freeze-thaw damage to roofs: the search found only manufacturer and contractor blogs (R20). No primary test data on freeze-thaw cycles and asphalt shingles was read. The stress is listed in the sheet as a count with no claim about damage.",
+  "NOAA storm data licence: the NCEI Storm Events licence wording was not read in this pass (the B2 research recorded no licence text). Attribution for derived counts follows the NOAA rule (M16) until the NCEI text is read.",
+  "The IBHS roof aging numbers (R16) come from the IBHS test site, not from Montana. They may not be quoted as Montana roof temperatures.",
+  "The LSR EXTREME COLD magnitudes (-64 to -20 in 2025) are read as degrees F; the IEM definition was not read to confirm the unit."
+ ],
+ "download_bytes_total": 24378991,
+ "record_file": "/home/user/wt/research-b35/roof-indicators.json"
+}

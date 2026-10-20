@@ -1,0 +1,205 @@
+{
+  "lid": "CLRM8",
+  "usgsId": "06185110",
+  "reachId": "",
+  "name": "Big Muddy Creek at US 2 west of Culbertson",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "GGW",
+    "name": "Glasgow"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Roosevelt",
+  "timeZone": "MST7MDT",
+  "latitude": 48.164444444444,
+  "longitude": -104.62944444444,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": 3.75,
+      "primaryUnit": "ft",
+      "secondary": -999,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T06:15:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 16,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 14,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2019-03-24T22:25:00Z",
+          "stage": 17.26,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-21T15:00:00Z",
+          "stage": 16.48,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-03-08T16:45:00Z",
+          "stage": 13.65,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-04-13T09:15:00Z",
+          "stage": 13.09,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-03-08T16:45:00Z",
+          "stage": 13.65,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-04-13T09:15:00Z",
+          "stage": 13.09,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-03-24T22:25:00Z",
+          "stage": 17.26,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-21T15:00:00Z",
+          "stage": 16.48,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/clrm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/clrm8_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "USGS",
+      "text": "06185110",
+      "title": "Observations courtesy of US Geological Service",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=06185110"
+    }
+  ],
+  "impactsLowWaters": [
+    {
+      "value": "5 ft",
+      "impact": "Stage needed to inundate designated Gulf Sturgeon critical habitat below Jim Woodruff Lock and Dam."
+    },
+    {
+      "value": "3 ft",
+      "impact": "Temporary (not sustainable) operating level for of Scholz Power Plant"
+    }
+  ],
+  "normalThreshold": null,
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "BGCM8",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

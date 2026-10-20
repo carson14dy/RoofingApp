@@ -1,0 +1,178 @@
+{
+  "lid": "CDYW4",
+  "usgsId": "",
+  "reachId": "12795803",
+  "name": "Reservoirs at Buffalo Bill Reservoir",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "RIW",
+    "name": "Riverton"
+  },
+  "state": {
+    "abbreviation": "WY",
+    "name": "Wyoming"
+  },
+  "county": "Park",
+  "timeZone": "MST7MDT",
+  "latitude": 44.5014,
+  "longitude": -109.18443,
+  "pedts": {
+    "observed": "HPIRG",
+    "forecast": "HPIFF"
+  },
+  "status": {
+    "observed": {
+      "primary": 5358.31,
+      "primaryUnit": "ft",
+      "secondary": -999,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:30:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 5395,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 5393.5,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [],
+      "recent": []
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/CDYW4.QINE.prob.weekint.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/CDYW4.volume.prob.weekint.gif"
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/CDYW4.QINE.exceed.90day.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/CDYW4.volume.exceed.90day.gif"
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/cdyw4_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/cdyw4_record.png"
+    },
+    "photos": [
+      {
+        "id": "6468294972980335086",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.5014,
+            -109.18443
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/cdyw4/6468294972980335086.jpeg",
+          "caption": "Upstream from Dam"
+        }
+      },
+      {
+        "id": "6474496579338244590",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.5014,
+            -109.18443
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/cdyw4/6474496579338244590.jpeg",
+          "caption": "Downstream from Dam"
+        }
+      }
+    ]
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Bureau of Reclamation",
+      "text": "USBR--Managing Water in the West",
+      "title": "US Bureau of Reclamation",
+      "url": "https://www.usbr.gov/gp/"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Gauge reading affected by reservoir operations.",
+      "effective": "0101",
+      "expiration": "1231"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "0",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

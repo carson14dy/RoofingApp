@@ -1,0 +1,400 @@
+{
+ "reviewer": "read-only final review of claude/hail-b3 (worktree /home/user/wt/wt-b3); the only file written is the record; scratch under out/reviewer and out/recheck",
+ "record": "/home/user/wt/wt-b3/research/hail-history/validation-evidence/b3-verification.json",
+ "verdict": "Not ready to merge: 14 of 18 gates pass; B3-5, B3-7, B3-10 and B3-18 fail. Blocking findings R-01, R-03, R-04, R-11. Unit suite and launcher selftest pass. R-02 is ranked non-blocking by the ranking rule but its fix is validated.",
+ "checks": {
+  "unittest_discover": "Ran 1069 tests, OK, 1 skipped (RealMetadataTests, skipped by default), exit 0",
+  "launcher_selftest_payload": "PASS payload 1.0.0, exit 0",
+  "decision_7_audit": "PASS: 88 deletion calls under tests/, each removes a path the test made",
+  "em_dashes_in_added_lines": 0,
+  "en_dashes_in_added_lines": 1,
+  "banned_field_names_in_added_lines": "only allow-lists, forbidden tuples, the Library field spec, tests and docs; no code reads them",
+  "forbidden_word_grep_built": "83 hits each on real and real-job; all are quoted MSL or NWS text, proper names, the exclusion sentence, the D32 phrase, or the About occupancy sentence (R-04)",
+  "law_citation_grep": "built output cites only Montana Code Annotated 2-6-1017; no 2-6-109 in built pages, map.json or source",
+  "verify_fresh_store": "addresses 24 of 24; roads 13 of 13; outlines 26 of 26",
+  "verify_stale_store": "addresses fails 2 checks (D39 merged groups); outlines crashes with KeyError 'dot_exceptions' at buildings.py 1725",
+  "identity_diffs": "flag-off vs 7b14b2d and --hail-history vs db84d76 each differ only in static/map/map.css, static/map/map.js and the ?v= lines of map.html (3 files)",
+  "determinism": "two sample builds at the same --now are byte-identical (diff -r empty); 9,827 outline files recomputed equal the stored bytes",
+  "smoke_pages_real": "PASS: no page wider than the screen at 288, 320, 375, 768 and 1440 px",
+  "live_requests": "reviewer made two requests to ftpgeoinfo.msl.mt.gov (see record live_requests)",
+  "not_run": [
+   "B3-8 on a GitHub runner (none available here)",
+   "B3-16 4x CPU slowdown run"
+  ],
+  "git": "HEAD 7b14b2d (WIP commits 43aa57b and 7b14b2d on top of db84d76); 19 tracked files modified (+3423 -121 against 7b14b2d); 5 untracked: the record, website/buildings.py, website/streets.py, tests/test_buildings.py, tests/test_streets.py. Nothing staged, committed or pushed by the reviewer."
+ },
+ "gates": [
+  {
+   "id": "B3-1",
+   "status": "PASS",
+   "evidence": "Fresh job run (out/recheck/job-1, verify --zip): 674,715 points = 663,759 rows + 4,212 left out (no street) + 6,744 merged duplicates in 4,863 groups; every row once (558,356 matched in hail/b + 105,403 unmatched in hail/a); 17 allow-listed fields (D41); largest shards under 300 KB. The store the brief names is stale (R-10)."
+  },
+  {
+   "id": "B3-2",
+   "status": "PASS",
+   "evidence": "Real builds: zoom 12 fetches nothing; zoom 13 fetches count and road files only (297 arterial lines, 8 count bubbles, no dots); zoom 15 fetches address and outline files; a pan across Billings at zoom 15 makes 2 requests (limit 20). Failure path without outlines loses the zoom-15 address dots (R-02)."
+  },
+  {
+   "id": "B3-3",
+   "status": "PASS",
+   "evidence": "A dot tap opens the sheet with the address line on top and the cell history below (check_taps and check_addresses pass). The cell-centre tap fails on the phone because the legend card covers it (R-01)."
+  },
+  {
+   "id": "B3-4",
+   "status": "PASS",
+   "evidence": "Real search: '401 N 27th St Billings' lists 401 North 27th Street; '27th Billings' lists 20 rows; 'Colony Rd Roundup' lists 5 rows including 500 Colony Road; 'qwzx 99' gives the no-match sentence (0 rows); choosing a row zooms to 17 and opens its sheet; no typed text in any request URL. The brief's '1 N 27th St Billings' is replaced by '401 N 27th St Billings' per D6 (the file has no 1 North 27th Street). Without outlines the chooser does not zoom (R-02)."
+  },
+  {
+   "id": "B3-5",
+   "status": "FAIL",
+   "evidence": "About has the source line (file date 2026-09-30), the quoted terms with the bracket marker, the exclusion, persons and privacy sentences. The forbidden word 'occupancy' appears on About outside the quotes (sources.py 281-282, R-04). The outline caveat is stated twice (R-06)."
+  },
+  {
+   "id": "B3-6",
+   "status": "PASS",
+   "evidence": "Flag-off build vs base 7b14b2d and --hail-history build vs db84d76 differ only in map.css, map.js and the ?v= lines of map.html. Against 7b14b2d the base copies hail/a into a build without the flag; the worktree gates that under D35."
+  },
+  {
+   "id": "B3-7",
+   "status": "FAIL",
+   "evidence": "Real smoke (--addresses --shots): 'phone legend: two-column=True, 247 px tall (want at most 180 px)' and 'a click on the cell's centre did not open the hail sheet' (R-01). real-off fails the legend; real-job fails both. smoke_pages real PASS. Scratch copy with the proposed R-01 fix (fix-real-full): exit 0, no failing check."
+  },
+  {
+   "id": "B3-8",
+   "status": "PASS",
+   "evidence": "Fresh-store local job, every step rc=0: addresses download 65,788,772 B (SHA-256 equal to the cached file), addresses verify 24/24, streets build and verify 13/13, buildings build and verify 26/26, pack hail-store.tar.gz 72,030,584 B. Not run on a GitHub runner."
+  },
+  {
+   "id": "B3-9",
+   "status": "PASS",
+   "evidence": "918,052 footprints, one dot each (911,517 centroid, 6,535 chord, 0 fallback); 447,291 with an address line (347,838 inside, 99,453 within 15 m); 470,761 with none (no-address sentence)."
+  },
+  {
+   "id": "B3-10",
+   "status": "FAIL",
+   "evidence": "Billings box (-108.51 to -108.50, 45.78 to 45.79; 307 footprints): module (closed box, merged rows) 864 points, 539 inside, 305 within 15 m, 20 farther. Synthesis 869, 535, 313, 21 is reproduced only as half-open before the merge (869); the inside, within and farther split is not reproduced under either rule (R-11)."
+  },
+  {
+   "id": "B3-11",
+   "status": "PASS",
+   "evidence": "The no-address sentence is in buildings.py (D29, D34) and map.js b3Top; the bare outline in the Billings tile shows the sentence and no address line."
+  },
+  {
+   "id": "B3-12",
+   "status": "PASS",
+   "evidence": "Caps: footprint shards max 249,764 B (cap 250,000; 5,615 files); road shards max 148,991 B (cap 150,000; 4,427 files); unmatched-address shards max 158,526 B (cap 175 KB; 4,211 files). Totals reported but not reconciled: outlines 196,302,000 B vs the 135.8 MB estimate (R-12)."
+  },
+  {
+   "id": "B3-13",
+   "status": "PASS",
+   "evidence": "Roads (Library route, D25): 258,208 records = 252,318 kept + 5,726 private drive + 80 trail + 66 airfield surface + 6 no road class + 1 parking lot + 10 walkway + 1 stairway, each counted. Placeholder names are drawn unnamed and never labelled; named share 92.5% of features."
+  },
+  {
+   "id": "B3-14",
+   "status": "PASS",
+   "evidence": "map.json and ZOOM constants: arterials 13, local 15, names 16, outline emphasis 17; counts 13 and 14, dots 15, fills 16, emphasis 17. Real smoke: zoom 13 no outline or address dots; zoom 15 1,100 street lines, 6,058 outline dots, 139 address dots; zoom 16 20 names. Failure path: house dots not drawn at 15 without outlines (R-02)."
+  },
+  {
+   "id": "B3-15",
+   "status": "PASS",
+   "evidence": "390 x 844 Billings view at zoom 15 (real): B3 files 267,801 B gzip (18 files) plus shell and data 356,665 B = 624,466 B, under 650 KB. The existing precipitation layer adds 630,399 B. Whether the gate counts that layer is an open supervisor decision."
+  },
+  {
+   "id": "B3-16",
+   "status": "PASS",
+   "evidence": "Zoom-rule redraws over Billings on real-job: zoom 15 median 6.6 ms, max 9.7 ms; zoom 16 median 10.5 ms, max 11.6 ms. All under 30 ms on this machine. The 4x CPU slowdown run was not done."
+  },
+  {
+   "id": "B3-17",
+   "status": "PASS",
+   "evidence": "Unit tests (1069, OK): the 17-field allow-list with forbidden names asserted absent (test_addresses); the buildings reader asks for no attribute columns (test_buildings); the road allow-list (test_streets). RealMetadataTests is skipped by default and passes with ADDRESS_FRAMEWORK_ZIP set."
+  },
+  {
+   "id": "B3-18",
+   "status": "FAIL",
+   "evidence": "About carries the addresses source line, roads and outlines lines, the caveat and the bracket marker. The map does not carry the Montana State Library addresses line: map.json hail.attribution has 2 items (build.py b3_map_blocks 764-770; shots-real/b3-map-390x844.png). The smoke attribution check reads its expectation from map.json, so it cannot see the gap (R-03, R-13)."
+  }
+ ],
+ "measurements": {
+  "addresses": {
+   "points": 674715,
+   "rows": 663759,
+   "left_out_no_street": 4212,
+   "left_out_with_nonzero_number": 6,
+   "merged_duplicates": 6744,
+   "merged_groups": 4863,
+   "placement_classes_after_merge": {
+    "S": 623330,
+    "P": 16969,
+    "G": 9863,
+    "L": 306,
+    "T": 1998,
+    "U": 11293
+   }
+  },
+  "address_store": {
+   "hail_a_unmatched_rows": 105403,
+   "hail_a_shard_bytes": 7520429,
+   "hail_a_files": "4211 (817 empty)",
+   "hail_b_matched_rows": 558356,
+   "letter_files": 7501,
+   "letters_and_indexes_bytes": 41732176,
+   "hail_r_bytes": 69632279,
+   "hail_r_files": 4427
+  },
+  "outlines": {
+   "footprints": 918052,
+   "shards": 5615,
+   "shard_bytes_total": 196301977,
+   "largest_shard_bytes": 249764,
+   "dot_centroid": 911517,
+   "dot_chord": 6535,
+   "with_address_inside": 347838,
+   "with_address_within_15m": 99453,
+   "without_address": 470761
+  },
+  "roads": {
+   "records": 258208,
+   "kept": 252318,
+   "lines_drawn_build": 539541,
+   "shards": 4427,
+   "largest_shard_bytes": 148991
+  },
+  "billings_box": {
+   "module_closed_merged": {
+    "points": 864,
+    "inside": 539,
+    "within_15m": 305,
+    "farther": 20
+   },
+   "synthesis": {
+    "points": 869,
+    "inside": 535,
+    "within_15m": 313,
+    "farther": 21
+   }
+  },
+  "store": {
+   "fresh_job_pack_bytes": 72030584,
+   "stale_store_pack_bytes": 72001593,
+   "whole_hail_tree_raw_bytes_fresh": 372880597
+  },
+  "budgets_D38": {
+   "hail_a_dot_shards_bytes": 7520429,
+   "letters_and_indexes_bytes": 41732176,
+   "limit_each_bytes": 60000000,
+   "outlines_bytes": 196301977,
+   "outlines_covered_by_D38_as_worded": false
+  },
+  "phone_budget_390x844_zoom15": {
+   "b3_gzip_bytes": 267801,
+   "shell_and_data_gzip_bytes": 356665,
+   "b3_plus_shell_gzip_bytes": 624466,
+   "precipitation_gzip_bytes": 630399
+  },
+  "draw_ms_real_job": {
+   "zoom15_median": 6.6,
+   "zoom15_max": 9.7,
+   "zoom16_median": 10.5,
+   "zoom16_max": 11.6
+  },
+  "tests": "1069 run, OK, 1 skipped; launcher selftest payload PASS",
+  "smoke_failing_check_counts": {
+   "real": 2,
+   "real_off": 1,
+   "real_job": 2,
+   "sample": 5,
+   "sample_off": 3,
+   "off": 0,
+   "history": 0,
+   "real_pages": 0
+  }
+ },
+ "failed_checks": [
+  "gate B3-5: About prints 'occupancy' outside the quoted terms (sources.py 281-282)",
+  "gate B3-7 real: phone legend 247 px tall (limit 180)",
+  "gate B3-7 real: phone cell-centre tap did not open the hail sheet",
+  "gate B3-7 real-off: phone legend 247 px tall",
+  "gate B3-7 real-job: phone legend 247 px tall and the cell-centre tap",
+  "gate B3-10: Billings box not reproduced (module 864/539/305/20 vs synthesis 869/535/313/21)",
+  "gate B3-18: Montana State Library addresses line missing from the map attribution",
+  "smoke sample (fixture): phone legend 233 px tall",
+  "smoke sample (fixture): phone cell-centre tap did not open the hail sheet",
+  "smoke sample (fixture): zoom 15 drew no unmatched address dots over Billings (R-02)",
+  "smoke sample (fixture): no outline with an address in the Billings tile's shard files (fixture has no outlines)",
+  "smoke sample (fixture): choosing '401 North 27th Street, Billings 59101' did not zoom to the address at zoom 17 (R-02)",
+  "smoke sample-off (fixture): phone legend 233 px tall",
+  "smoke sample-off (fixture): zoom 15 drew no unmatched address dots over Billings (R-02)",
+  "smoke sample-off (fixture): off mode, no outline in the Billings tile to tap (fixture has no outlines)",
+  "stale store out/buildings/hail-store.tar.gz: addresses verify fails 2 checks (D39 merged-group checks)",
+  "stale store: buildings verify crashes with KeyError 'dot_exceptions' (buildings.py 1725, R-08)",
+  "not failing: smoke_pages real; smoke off; smoke history"
+ ],
+ "findings": [
+  {
+   "id": "R-01",
+   "rank": 1,
+   "blocking": true,
+   "category": "layout",
+   "gate": "B3-7 and B3-3 (phone tap)",
+   "file": "website/templates/map.html (B3 legend-tap lines 138-139; section#find line 100; b3-keys line 172); website/static/map/map.css (phone rules for #find)",
+   "line": "138-139, 100",
+   "evidence": "At 390 x 844 the find section (147-287 px) pushes the B3 legend card to 349 px. The card is 233 px in the sample and 247 px in the real build (limit 180). It covers the centre pixel (197, 424), where the cell-centre tap lands (elementFromPoint gives DIV#legend; out/recheck/probe-centre.txt). Real smoke: legend 247 px and the centre tap fails.",
+   "fix": "(1) Remove the two B3 legend-tap lines (138-139) and show the same two sentences in the layer menu near line 172. (2) At phone width keep the find form out of the column above the legend: behind a Find an address button, or move section#find into the layer menu. Both are needed: with (1) alone the centre tap still fails. Validated on scratch copies: fix-real-r01b and fix-real-full exit 0 with no failing check (stand-in rule: @media (max-width: 500px) { #find { display: none !important; } })."
+  },
+  {
+   "id": "R-03",
+   "rank": 2,
+   "blocking": true,
+   "category": "attribution",
+   "gate": "B3-18",
+   "file": "website/build.py (b3_map_blocks, lines 764-770)",
+   "line": "764-770",
+   "evidence": "map.json hail.attribution holds 2 items (roads, outlines). The Montana State Library addresses line is absent from the credit control and the map help. The smoke attribution check reads its expectation from map.json, so it cannot detect the gap.",
+   "fix": "In b3_map_blocks, before the roads line: if b3_loaded(found, ad.INDEX_KEY): lines.append('Addresses: Montana State Library, Structures and Addresses Framework, file dated ' + str(found[ad.INDEX_KEY]['source']['pubdate']) + '. Terms in the file metadata: ' + ad.USE_CONVENIENCE_TEXT). Validated in the scratch build copy: the sample map.json carries the line."
+  },
+  {
+   "id": "R-04",
+   "rank": 3,
+   "blocking": true,
+   "category": "words",
+   "gate": "B3-5 (forbidden-term check)",
+   "file": "website/sources.py (usa_structures request text, lines 281-282)",
+   "line": "281-282",
+   "evidence": "About prints 'no occupancy, address, size, height or population field is ever read, stored or shown' (out/recheck/real/about.html). 'occupancy' is a forbidden word outside the quoted terms.",
+   "fix": "Replace 'no occupancy, address, size, height or population field is ever read, stored or shown' with 'no other field of the file is ever read, stored or shown', and update any test that pins the sentence."
+  },
+  {
+   "id": "R-11",
+   "rank": 4,
+   "blocking": true,
+   "category": "measurement",
+   "gate": "B3-10 (synthesis gate 10)",
+   "file": "research/hail-history synthesis section 2.5 (the gate text); website/buildings.py _box_stats (closed box, about line 1231)",
+   "line": "_box_stats ~1231",
+   "evidence": "Billings box (-108.51 to -108.50, 45.78 to 45.79; 307 footprints). Reviewer recount from the framework zip: half-open before the merge 869; half-open after 862; closed before 871; closed after 864 (the module). 15 points lie exactly on the east or north edge. The synthesis split 535/313/21 is not reproduced under either rule.",
+   "fix": "State the closed-box, merged-row rule and its figures (864, 539, 305, 20) in the gate text; or switch _box_stats to the half-open rule and recompute the join statistics."
+  },
+  {
+   "id": "R-02",
+   "rank": 5,
+   "blocking": false,
+   "category": "behaviour",
+   "gate": "D10 sample gate; D20/D36 failure path (no outlines); B3-2 and B3-4 pass on real builds",
+   "file": "website/static/map/map.js (b3Zoom 3095-3103; wantAddr 3452; b3Radius 3557-3559; b3Choose 3994-3996); website/addresses.py (map_data_addresses line 1627: no zoom or dot_radius_px key)",
+   "line": "map.js 3100-3102 (z literal, z.top), 3452 (wantAddr), 3558 (b3Radius reads dot_radius_px), 3996 (b3Choose); addresses.py 1627",
+   "evidence": "Without outlines (the D20 failure path and the sample builds) buildings.zoom is absent: Z.dots is undefined, so no address dot is wanted at any zoom, and b3Radius has no dot_radius_px. The chooser zooms to B3.zoom.emphasis, also absent, so setView keeps the current zoom. smoke-sample.out: zoom 15 drew no unmatched address dots; the chooser did not reach zoom 17.",
+   "fix": "addresses.py map_data_addresses: add 'zoom': {'dots': 15, 'choose': 17} and 'dot_radius_px' (import buildings.DOT_RADIUS_PX). map.js b3Zoom: var a = (h.addresses && h.addresses.zoom) || {}; dots falls back to a.dots; add choose: a.choose to z; z.top includes a.choose and a.dots. map.js b3Choose (line 3996): setView to B3.zoom.emphasis || B3.zoom.choose. tools/smoke_map.py lines 806-808: count the addresses choose zoom when addresses are loaded. Validated: sample copies go from 0 to 303 zoom-15 dots and the chooser passes; the full real copy exits 0. Promote to blocking if the failure path is a release gate."
+  },
+  {
+   "id": "R-05",
+   "rank": 6,
+   "blocking": false,
+   "category": "readability",
+   "gate": "B3-7 (readability)",
+   "file": "website/templates/map.html (dots lines 139 and 251, next to building lines 138 and 250)",
+   "line": "139, 251",
+   "evidence": "With outlines loaded, the legend and the map help describe the dots twice: 'Each dot is one building outline...' and 'Dots are addresses from Montana's public address list...'.",
+   "fix": "Show the unmatched-address sentence only when the outline layer is absent: add an outlines-loaded flag to the b3 context in build.py and wrap lines 139 and 251 in an if on that flag."
+  },
+  {
+   "id": "R-06",
+   "rank": 7,
+   "blocking": false,
+   "category": "readability",
+   "gate": "B3-5 (readability)",
+   "file": "website/buildings.py (WORDS_BUILDINGS about_source line 135, about_source_undated line 137, about_caveat lines 138-139); website/templates/about.html ~line 90",
+   "line": "135, 137, 138-139, about.html 90",
+   "evidence": "The About outline text says 'Outlines come from imagery and are not surveys.' twice: in the source sentence and in the D34 caveat.",
+   "fix": "Delete that sentence from about_source (135) and about_source_undated (137), and keep it once in the caveat (or in the map outlines line via build.py b3_map_blocks line 769)."
+  },
+  {
+   "id": "R-07",
+   "rank": 8,
+   "blocking": false,
+   "category": "data",
+   "gate": "D35 (text-off mode)",
+   "file": "website/build.py (strip_address_text, lines 801-826)",
+   "line": "801-826",
+   "evidence": "With --address-text off, hail/index.json still lists cities 433, letter_files 7501, two_character_files 363 and largest_letter (Bozeman, W.json, which is absent).",
+   "fix": "In strip_address_text, before manifest['files'] = files: pop cities, letter_files, largest_letter, two_character_files and over_limit_letter_files from index[ad.INDEX_KEY]; rewrite hail/index.json and its manifest entry (bytes and sha256). Tested in out/reviewer/fixsrc."
+  },
+  {
+   "id": "R-08",
+   "rank": 9,
+   "blocking": false,
+   "category": "robustness",
+   "gate": "D36 robustness (verify)",
+   "file": "website/buildings.py (verify loop, lines 1724-1726)",
+   "line": "1725-1726",
+   "evidence": "verify on the 09:04 store exits 1 with an uncaught KeyError 'dot_exceptions' at buildings.py 1725 (out/recheck/verify/bld-verify-zip.err).",
+   "fix": "Replace the compare with: indexed = block['counts'].get(key); check(f'recomputed {key} equals the index', indexed is not None and measured[key] == indexed, f'{measured[key]} recomputed, {indexed} in the index')."
+  },
+  {
+   "id": "R-09",
+   "rank": 10,
+   "blocking": false,
+   "category": "repository",
+   "gate": "B3R-06 (open)",
+   "file": ".gitignore (cache block, last lines)",
+   "line": "cache block",
+   "evidence": "roads/, counties/ and structures-fema/ are not ignored: git check-ignore shows ledger.jsonl, *.meta.json and MT_Structures.gdb/ files as untracked after a local run.",
+   "fix": "Add roads/, counties/ and structures-fema/ under the existing local caches comment."
+  },
+  {
+   "id": "R-10",
+   "rank": 11,
+   "blocking": false,
+   "category": "artifact",
+   "gate": "B3-1 and B3-8 (the store named by the brief)",
+   "file": "out/buildings/hail-store.tar.gz (09:04), the store the brief names",
+   "line": "n/a",
+   "evidence": "The named store is stale: its addresses block has no merged_groups (D39), so addresses verify fails 2 checks; hail/b differs from the current code in 1,737 files and hail/r in 4,147 (diff -rq against the fresh build).",
+   "fix": "Use out/recheck/job-1/hail-store.tar.gz (addresses 24/24, roads 13/13, outlines 26/26) as the real store and re-run the job for the branch preview. No code change."
+  },
+  {
+   "id": "R-12",
+   "rank": 12,
+   "blocking": false,
+   "category": "measurement",
+   "gate": "B3-12 (totals)",
+   "file": "research/hail-history synthesis section 2.4 (the 135.8 MB estimate); docs/DESIGN.md or ROADMAP",
+   "line": "n/a",
+   "evidence": "The outline total 196,302,000 B is 45% above the estimate. 20,716,842 B of it is address text on the dots (keys l, z, c).",
+   "fix": "Record the measured total and the basis of the estimate in the records. No code change."
+  },
+  {
+   "id": "R-13",
+   "rank": 13,
+   "blocking": false,
+   "category": "test-gap",
+   "gate": "test coverage for R-01, R-02, R-03",
+   "file": "tools/smoke_map.py (check_attribution, about lines 2099-2128); tests/test_site.py",
+   "line": "2099-2128",
+   "evidence": "check_attribution reads data['hail']['attribution'], so the real smoke passed while the MSL line was absent. No test covers the addresses-only zoom path (R-02) or the phone legend height with B3 on (R-01).",
+   "fix": "Add the addresses line to the expectation when addresses are loaded. Add offline tests: a map.json with addresses and no buildings.zoom gives address dots at zoom 15 and the chooser zoom 17; the phone legend height is at most 180 px with B3 on."
+  }
+ ],
+ "b3r_dispositions": {
+  "B3R-01": "confirmed fixed (db84d76 is an ancestor of HEAD)",
+  "B3R-02": "confirmed fixed (suite OK; fixture a/ 50,601 B; whole fixture 97,406 B)",
+  "B3R-03": "confirmed fixed (outside-grid tiles listed; outside_grid sentence in map data, D23)",
+  "B3R-04": "confirmed fixed (unit text: APT2 to Apt2, A to Unit A, #3 to Unit #3)",
+  "B3R-05": "confirmed fixed (D36 cases: wrong zip path, not a zip, missing projection library all exit 0 with the module unavailable)",
+  "B3R-06": "partly fixed (open): structures-fema/, counties/ and roads/ are not ignored (R-09)",
+  "B3R-07": "confirmed fixed (integer midline compare; MidlineTests pass at depths 1 and 4)",
+  "B3R-08": "refuted by D37 ('buildings' is the term; 'dwellings' is not used)",
+  "B3R-09": "refuted as written by D38 (both budgets hold; the open figure is hail/b at 196,302,000 B, see R-12)"
+ },
+ "refuted": [
+  "B3R-08: refuted by D37; the coverage sentence stands.",
+  "B3R-09: refuted as written by D38; both budgets hold, and the outline total is an open reconciliation (R-12)."
+ ],
+ "fix_candidates_validated_on_scratch_copies": {
+  "R-01_both_parts_real": "fix-real-r01b (legend lines removed, find hidden at phone width): exit 0, no failing check; fix-real-full (whole fix): exit 0, no failing check",
+  "R-01_legend_lines_only_real": "fix-real-r01: legend passes (under 180 px) but the cell-centre tap still fails (1 failing check)",
+  "R-01_R-02_sample": "fix-sample7: only the fixture item 'no outline with an address' fails; phone sheet checks pass",
+  "R-02_dots_and_chooser_sample": "fix-sample3: zoom-15 address dots 0 to 303; fix-sample4 and fix-sample6: chooser zoom-17 check passes",
+  "R-02_ceiling_control": "fix-sample5 (top zoom ceiling reverted): dots and chooser fail again and the phone failures are unchanged, so the raised ceiling is not the cause of the phone failures"
+ }
+}

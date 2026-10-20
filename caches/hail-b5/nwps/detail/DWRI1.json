@@ -1,0 +1,269 @@
+{
+  "lid": "DWRI1",
+  "usgsId": "",
+  "reachId": "23630072",
+  "name": "Dworshak Reservoir near Ahsahka",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "OTX",
+    "name": "Spokane"
+  },
+  "state": {
+    "abbreviation": "ID",
+    "name": "Idaho"
+  },
+  "county": "Clearwater",
+  "timeZone": "PST8PDT",
+  "latitude": 46.515,
+  "longitude": -116.29583333333,
+  "pedts": {
+    "observed": "HFIRX",
+    "forecast": "HFIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": 1516.47,
+      "primaryUnit": "ft",
+      "secondary": -999,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "not_defined",
+      "validTime": "2026-10-19T06:00:00Z"
+    },
+    "forecast": {
+      "primary": 1516.44,
+      "primaryUnit": "ft",
+      "secondary": -999,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "not_defined",
+      "validTime": "2026-10-19T12:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": -9999,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2020-06-22T00:00:00Z",
+          "stage": 1600.15,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-22T00:00:00Z",
+          "stage": 1600.08,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-07-01T00:00:00Z",
+          "stage": 1600.03,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-06-18T00:00:00Z",
+          "stage": 1600.02,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-06-30T00:00:00Z",
+          "stage": 1599.99,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2024-07-01T00:00:00Z",
+          "stage": 1599.89,
+          "flow": 0,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-29T00:00:00Z",
+          "stage": 1599.86,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-06-24T00:00:00Z",
+          "stage": 1596.93,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2024-07-01T00:00:00Z",
+          "stage": 1599.89,
+          "flow": 0,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-07-01T00:00:00Z",
+          "stage": 1600.03,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-29T00:00:00Z",
+          "stage": 1599.86,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-06-24T00:00:00Z",
+          "stage": 1596.93,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-06-22T00:00:00Z",
+          "stage": 1600.15,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-06-18T00:00:00Z",
+          "stage": 1600.02,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-06-30T00:00:00Z",
+          "stage": 1599.99,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-22T00:00:00Z",
+          "stage": 1600.08,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 1600,
+        "statement": "High flow operations. Significantly flooding likely downstream of the dam. "
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/DWRI1.QINE.prob.weekint.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/DWRI1.volume.prob.weekint.png"
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/DWRI1.QINE.exceed.90day.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/DWRI1.volume.exceed.90day.png"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/DWRI1.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/dwri1_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/dwri1_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "USACE",
+      "text": "DWR",
+      "title": "DWR",
+      "url": "https://www.nwd-wc.usace.army.mil/dd/common/dataquery/www/?k=dworshak"
+    },
+    {
+      "abbrev": "US Army Corps of Engineers",
+      "text": "Walla Walla District",
+      "title": "Walla Walla District",
+      "url": "https://www.nwd.usace.army.mil/Fact-Sheets/Article/3485167/dworshak-dam-and-dworshak-reservoir/"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [
+    {
+      "statement": "Gauge reading affected by power generation.",
+      "effective": "0101",
+      "expiration": "1231"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "PEKI1",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued routinely year-round.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "7",
+  "ObservedFloodCategory": "not_defined",
+  "ForecastFloodCategory": "not_defined"
+}

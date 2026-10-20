@@ -1,0 +1,730 @@
+{
+  "lid": "PRPI1",
+  "usgsId": "13251000",
+  "reachId": "24166140",
+  "name": "Payette River at Payette",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "BOI",
+    "name": "Boise"
+  },
+  "state": {
+    "abbreviation": "ID",
+    "name": "Idaho"
+  },
+  "county": "Payette",
+  "timeZone": "MST7MDT",
+  "latitude": 44.0422222,
+  "longitude": -116.9252778,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": 4.68,
+      "primaryUnit": "ft",
+      "secondary": 0.844,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:30:00Z"
+    },
+    "forecast": {
+      "primary": 5,
+      "primaryUnit": "ft",
+      "secondary": 1.21,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-24T12:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": 14,
+        "flow": 23771
+      },
+      "moderate": {
+        "stage": 12.8,
+        "flow": 20175
+      },
+      "minor": {
+        "stage": 12,
+        "flow": 17856
+      },
+      "action": {
+        "stage": 11.5,
+        "flow": 16237
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1997-01-02T00:00:00Z",
+          "stage": 14.5,
+          "flow": 32000,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1964-12-24T00:00:00Z",
+          "stage": 13.8,
+          "flow": 30900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-06T20:30:00Z",
+          "stage": 13.69,
+          "flow": 23566,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1955-12-23T00:00:00Z",
+          "stage": 12.75,
+          "flow": 21900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-04-10T00:00:00Z",
+          "stage": 12.66,
+          "flow": 19400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-04-28T00:00:00Z",
+          "stage": 12.64,
+          "flow": 19700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1998-05-28T00:00:00Z",
+          "stage": 12.33,
+          "flow": 19200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-05-19T00:00:00Z",
+          "stage": 12.17,
+          "flow": 19700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-21T02:00:00Z",
+          "stage": 11.97,
+          "flow": 17800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-06-27T00:00:00Z",
+          "stage": 11.96,
+          "flow": 20800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-02-16T00:00:00Z",
+          "stage": 11.67,
+          "flow": 17400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-21T00:00:00Z",
+          "stage": 11.6,
+          "flow": 17000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1957-05-19T00:00:00Z",
+          "stage": 11.53,
+          "flow": 17700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-06-25T00:00:00Z",
+          "stage": 11.5,
+          "flow": 17000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1983-05-31T00:00:00Z",
+          "stage": 11.46,
+          "flow": 16800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-03-09T00:00:00Z",
+          "stage": 11.05,
+          "flow": 15600,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-05-16T00:00:00Z",
+          "stage": 11.03,
+          "flow": 15000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-05-22T00:00:00Z",
+          "stage": 10.69,
+          "flow": 14300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2003-06-01T00:00:00Z",
+          "stage": 10.66,
+          "flow": 14300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1984-05-15T00:00:00Z",
+          "stage": 10.66,
+          "flow": 14400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-05-23T00:00:00Z",
+          "stage": 10.42,
+          "flow": 13400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1993-06-12T00:00:00Z",
+          "stage": 10.32,
+          "flow": 13900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-14T00:00:00Z",
+          "stage": 10.29,
+          "flow": 13100,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2009-06-07T00:00:00Z",
+          "stage": 10.15,
+          "flow": 12900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-05-20T00:00:00Z",
+          "stage": 9.75,
+          "flow": 11800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-05-29T00:00:00Z",
+          "stage": 9.37,
+          "flow": 10700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-05-12T00:00:00Z",
+          "stage": 9.24,
+          "flow": 10400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-05-27T00:00:00Z",
+          "stage": 9.2,
+          "flow": 10300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2024-06-04T00:00:00Z",
+          "stage": 9.16,
+          "flow": 10200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-06-07T00:00:00Z",
+          "stage": 9.08,
+          "flow": 10000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-05-10T02:00:00Z",
+          "stage": 8.8,
+          "flow": 9230,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-02-10T00:00:00Z",
+          "stage": 8.57,
+          "flow": 8600,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2004-06-06T00:00:00Z",
+          "stage": 7.95,
+          "flow": 7390,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2007-05-22T00:00:00Z",
+          "stage": 6.76,
+          "flow": 4850,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-04-06T00:00:00Z",
+          "stage": 6.68,
+          "flow": 4550,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-05-12T00:00:00Z",
+          "stage": 9.24,
+          "flow": 10400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2024-06-04T00:00:00Z",
+          "stage": 9.16,
+          "flow": 10200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-05-23T00:00:00Z",
+          "stage": 10.42,
+          "flow": 13400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-14T00:00:00Z",
+          "stage": 10.29,
+          "flow": 13100,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-04-06T00:00:00Z",
+          "stage": 6.68,
+          "flow": 4550,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-06-07T00:00:00Z",
+          "stage": 9.08,
+          "flow": 10000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-04-10T00:00:00Z",
+          "stage": 12.66,
+          "flow": 19400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-05-27T00:00:00Z",
+          "stage": 9.2,
+          "flow": 10300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-21T02:00:00Z",
+          "stage": 11.97,
+          "flow": 17800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-05-10T02:00:00Z",
+          "stage": 8.8,
+          "flow": 9230,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-02-10T00:00:00Z",
+          "stage": 8.57,
+          "flow": 8600,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-05-29T00:00:00Z",
+          "stage": 9.37,
+          "flow": 10700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-04-28T00:00:00Z",
+          "stage": 12.64,
+          "flow": 19700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-05-16T00:00:00Z",
+          "stage": 11.03,
+          "flow": 15000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-06T20:30:00Z",
+          "stage": 13.69,
+          "flow": 23566,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2009-06-07T00:00:00Z",
+          "stage": 10.15,
+          "flow": 12900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-05-22T00:00:00Z",
+          "stage": 10.69,
+          "flow": 14300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2007-05-22T00:00:00Z",
+          "stage": 6.76,
+          "flow": 4850,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-21T00:00:00Z",
+          "stage": 11.6,
+          "flow": 17000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-05-20T00:00:00Z",
+          "stage": 9.75,
+          "flow": 11800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2004-06-06T00:00:00Z",
+          "stage": 7.95,
+          "flow": 7390,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2003-06-01T00:00:00Z",
+          "stage": 10.66,
+          "flow": 14300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1998-05-28T00:00:00Z",
+          "stage": 12.33,
+          "flow": 19200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-01-02T00:00:00Z",
+          "stage": 14.5,
+          "flow": 32000,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-05-19T00:00:00Z",
+          "stage": 12.17,
+          "flow": 19700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1993-06-12T00:00:00Z",
+          "stage": 10.32,
+          "flow": 13900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-03-09T00:00:00Z",
+          "stage": 11.05,
+          "flow": 15600,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1984-05-15T00:00:00Z",
+          "stage": 10.66,
+          "flow": 14400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1983-05-31T00:00:00Z",
+          "stage": 11.46,
+          "flow": 16800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-02-16T00:00:00Z",
+          "stage": 11.67,
+          "flow": 17400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-06-25T00:00:00Z",
+          "stage": 11.5,
+          "flow": 17000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-06-27T00:00:00Z",
+          "stage": 11.96,
+          "flow": 20800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1964-12-24T00:00:00Z",
+          "stage": 13.8,
+          "flow": 30900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1957-05-19T00:00:00Z",
+          "stage": 11.53,
+          "flow": 17700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1955-12-23T00:00:00Z",
+          "stage": 12.75,
+          "flow": 21900,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 14,
+        "statement": "Major flooding will occur near the river in Payette County. Water will flow over the top of levees near the river. Water will be near the top of the embankment surrounding the Shady River Mobile Home Community. Houses along Highway 52 in the vicinity New Plymouth will flood. Water will flow over the road to a depth of at least 1 foot near the intersection of Highway 52 and Black Bridge Road. Portions of the industrial area in Payette will flood and water will cover portions of Park and River Streets."
+      },
+      {
+        "stage": 13.5,
+        "statement": "Water will approach the top of Carpenter and Girlock Levees. Some flooding along Killebrew Dr. near Payette is likely. Water will flow over the road near the intersection of Hwy 52 and Black Bridge Rd. Several houses along Hwy 52 near New Plymouth will flood. Portions of River St.and Park St. in Payette may flood. Flooding of low lying areas in the industrial section of Payette is possible. Extensive flooding of agricultural land will occur. Homes at the south end of Dutch Lane may be impacted by flooding."
+      },
+      {
+        "stage": 12.5,
+        "statement": "Flood waters will approach Highway 52 in the vicinity of New Plymouth threatening several houses in low areas near the river. Houses near Faulks Bridge may also be threatened. Large areas of pastureland near the river will be flooded and livestock should be moved to higher ground. Sections of the greenbelt path in Payette may be flooded."
+      },
+      {
+        "stage": 12,
+        "statement": "Minor flooding of pasture and farm fields will occur near the river in Payette County. High water may begin to affect portions of the greenbelt in Payette."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/PRPI1.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/prpi1_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/prpi1_record.png"
+    },
+    "photos": [
+      {
+        "id": "5791671700684083694",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.0422222,
+            -116.9252778
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/prpi1/5791671700684083694.jpeg",
+          "caption": "Payette River at Payette River Gage (PRPI1)"
+        }
+      },
+      {
+        "id": "5826450348687299054",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.0422222,
+            -116.9252778
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/prpi1/5826450348687299054.jpeg",
+          "caption": "Payette River at Payette staff gage looking upstream"
+        }
+      },
+      {
+        "id": "5859895426524975598",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.0422222,
+            -116.9252778
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/prpi1/5859895426524975598.jpeg",
+          "caption": "View of Highway 95 Bridge from river gage. River at 4.5 Ft and 745 CFS in September 2014"
+        }
+      },
+      {
+        "id": "5892132433141502446",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.0422222,
+            -116.9252778
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/prpi1/5892132433141502446.jpeg",
+          "caption": "Upstream view at 4.5 Ft and 745 CFS in September 2014"
+        }
+      }
+    ]
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "https://dashboard.waterdata.usgs.gov/app/nwd/en/"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "13251000",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/monitoring-location/13251000/#dataTypeId=continuous-00065-0&period=P7D&showMedian=false"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice.",
+      "effective": "1116",
+      "expiration": "0314"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": [
+        {
+          "label": "National Geodetic Vertical Datum of 1929",
+          "abbrev": "NGVD29",
+          "description": "A fixed reference adopted as a standard geodetic datum for elevations determined by leveling. The datum was derived for surveys from a general adjustment of the first-order leveling nets of both the United States and Canada. In the adjustment, mean sea level was held fixed as observed at 21 tide stations in the United States and 5 in Canada. The year indicates the time of the general adjustment. A synonym for Sea-level Datum of 1929. The geodetic datum is fixed and does not take into account the changing stands of sea level. Because there are many variables affecting sea level, and because the geodetic datum represents a best fit over a broad area, the relationship between the geodetic datum and local mean sea level is not consistent from one location to another in either time or space. For this reason, the National Geodetic Vertical Datum should not be confused with mean sea level. See North American Vertical Datum of 1988 (NAVD 88). NGVD 29 should not be used as Mean Sea Level. NGVD 29 is no longer supported by NGS.",
+          "value": 2138.44
+        }
+      ]
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "PLEI1",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued routinely year-round.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "7",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "no_flooding"
+}

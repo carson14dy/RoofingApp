@@ -1,0 +1,231 @@
+{
+  "lid": "FRCM8",
+  "usgsId": "",
+  "reachId": "12304265",
+  "name": "Frenchman Creek (MT) near Saco",
+  "description": "Frenchman Creek above Mouth",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "GGW",
+    "name": "Glasgow"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Phillips",
+  "timeZone": "MST7MDT",
+  "latitude": 48.528,
+  "longitude": -107.256,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": 2.41,
+      "primaryUnit": "ft",
+      "secondary": 0.0124,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "not_defined",
+      "validTime": "2026-10-19T05:45:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": -9999,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2023-04-13T22:30:00Z",
+          "stage": 17.12,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-04-24T10:00:00Z",
+          "stage": 15.49,
+          "flow": 3200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-03-15T00:00:00Z",
+          "stage": 13.28,
+          "flow": 2478,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-24T00:00:00Z",
+          "stage": 12.1,
+          "flow": 1818,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-10-08T00:00:00Z",
+          "stage": 11.79,
+          "flow": 1919,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-04-01T04:15:00Z",
+          "stage": 11.77,
+          "flow": 1872,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-06-23T00:00:00Z",
+          "stage": 10.36,
+          "flow": 1445,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2023-04-13T22:30:00Z",
+          "stage": 17.12,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-04-01T04:15:00Z",
+          "stage": 11.77,
+          "flow": 1872,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-04-24T10:00:00Z",
+          "stage": 15.49,
+          "flow": 3200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-24T00:00:00Z",
+          "stage": 12.1,
+          "flow": 1818,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-10-08T00:00:00Z",
+          "stage": 11.79,
+          "flow": 1919,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-06-23T00:00:00Z",
+          "stage": 10.36,
+          "flow": 1445,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-03-15T00:00:00Z",
+          "stage": 13.28,
+          "flow": 2478,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/frcm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/frcm8_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Graphical forecasts are not available during times of high water, forecast crest information can be found in the local WFO web page.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "0",
+  "ObservedFloodCategory": "not_defined",
+  "ForecastFloodCategory": "fcst_not_current"
+}

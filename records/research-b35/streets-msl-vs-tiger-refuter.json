@@ -1,0 +1,717 @@
+{
+ "slug": "streets-msl-vs-tiger",
+ "record_type": "refuter",
+ "refuter_asof": "2026-10-19",
+ "worker_record": "/home/user/wt/research-b35/streets-msl-vs-tiger.json",
+ "this_record": "/home/user/wt/research-b35/streets-msl-vs-tiger-refuter.json",
+ "scratch": "/home/user/wt/research-b35/scratch-refute-streets-msl-vs-tiger/ (scripts/ and out/ kept; downloads/ deleted)",
+ "bottom_line": "The recommendation stands: publish from TIGER/Line 2026, and keep the Montana State Library roads out of any public product unless MSL grants written permission. TIGER terms are explicit and verified verbatim in the live ISO metadata of the roads, ADDR and EDGES files. MSL terms are a disclaimer with \"for no other purpose\", no licence grant, and MSL asserts its name as copyright text and credit in its live ArcGIS service. Most worker figures reproduce: statewide and county counts, all 56 county zip sizes, TIGER class lengths, the Billings and Benchland TIGER counts, and the Billings geometry agreement on live MSL geometry. Several figures need correction: placeholder counts, one address-field definition, the speed-limit count, overlap percentages that depend on how junctions are counted, the Benchland duplicate and road-overlap wording, a stitched legal quote, and the claim that no attribution line exists. None of these changes the choice.",
+ "checks": [
+  {
+   "id": "A1",
+   "group": "counts",
+   "claim": "MSL statewide roads row count",
+   "worker_value": "258,208 segments (DBF header; GDB table)",
+   "refuter_value": "258,208 non-deleted records; header 258,208; 0 deleted; 51 fields; last update 2026-09-30",
+   "result": "confirmed",
+   "method": "Full streamed parse of RoadCenterLine.dbf from TransportationFramework_shp.zip (23.3 MB compressed), not only the header"
+  },
+  {
+   "id": "A2",
+   "group": "counts",
+   "claim": "MSL Yellowstone County segments",
+   "worker_value": "15,072",
+   "refuter_value": "15,072 (ProcessID 187 rows: 15,051)",
+   "result": "confirmed",
+   "method": "DBF County_L tally"
+  },
+  {
+   "id": "A3",
+   "group": "counts",
+   "claim": "MSL RoadClass counts, statewide and Yellowstone",
+   "worker_value": "Local 189,164; Secondary 19,651; Private 19,413; Other 15,416; Vehicular Trail 7,714; Alley 3,663; Primary 2,004; Ramp 1,010; Yellowstone Local 14,215, Secondary 597, Primary 176, Ramp 79, Private 5",
+   "refuter_value": "identical; blank RoadClass on 6 segments (not reported by worker)",
+   "result": "confirmed",
+   "method": "DBF tally"
+  },
+  {
+   "id": "A4",
+   "group": "counts",
+   "claim": "MSL segments naming United States Highway",
+   "worker_value": "5,627",
+   "refuter_value": "5,627",
+   "result": "confirmed",
+   "method": "DBF St_PreTyp/St_Name tally"
+  },
+  {
+   "id": "A5",
+   "group": "counts",
+   "claim": "MSL SurfaceType blank 61.07 percent; Ownership blank 78.37 percent",
+   "worker_value": "61.07 / 78.37",
+   "refuter_value": "61.07 / 78.37 (DBF field is SurfaceTyp, 10-character truncation)",
+   "result": "confirmed",
+   "method": "DBF tally"
+  },
+  {
+   "id": "A6",
+   "group": "counts",
+   "claim": "MSL statewide blank St_Name",
+   "worker_value": "324 segments (0.125 percent)",
+   "refuter_value": "327 segments (0.127 percent); Yellowstone 1 (0.007 percent, confirmed)",
+   "result": "corrected",
+   "method": "DBF St_Name empty; the worker rule for 324 is not stated (3-segment difference)"
+  },
+  {
+   "id": "A7",
+   "group": "counts",
+   "claim": "MSL statewide placeholder names",
+   "worker_value": "22,662 (8.78 percent): Dwy 11,087; Driveway 7,744; Unknown 3,038; No Name 424; Unnamed 355",
+   "refuter_value": "23,618 (9.15 percent): Dwy 11,087 (match); Driveway 7,754; Unknown 3,068; No Name 440; Unnamed 1,264; plus case variants (DRIVEWAY 3, unnamed 1, UNKNOWN 1)",
+   "result": "corrected",
+   "method": "DBF tally, case-insensitive set Dwy/Driveway/Unknown/No Name/Unnamed; the 355 Unnamed figure is not reproduced (Unnamed is 1,264 in the export; Phillips 459, Sheridan 320, Blaine 260, Lewis and Clark 185)"
+  },
+  {
+   "id": "A8",
+   "group": "counts",
+   "claim": "Placeholders in five counties: about 94 percent (21,197)",
+   "worker_value": "about 94 percent",
+   "refuter_value": "21,201 of 23,618 = 89.8 percent (Flathead 11,510; Gallatin 4,533; Silver Bow 2,989; Fergus 1,586; Judith Basin 583)",
+   "result": "corrected",
+   "method": "DBF county tally"
+  },
+  {
+   "id": "A9",
+   "group": "counts",
+   "claim": "Placeholders in Yellowstone County 0.03 percent",
+   "worker_value": "0.03 percent",
+   "refuter_value": "5 Unnamed segments = 0.033 percent",
+   "result": "confirmed",
+   "method": "DBF tally"
+  },
+  {
+   "id": "A10",
+   "group": "counts",
+   "claim": "FromAddr/ToAddr zero or null on 66,554 segments (25.8 percent)",
+   "worker_value": "66,554 (25.8 percent)",
+   "refuter_value": "66,554 is the FromAddr_L field alone (25.8 percent); all four fields zero or blank on 64,679 (25.0 percent); any of the four on 68,721 (26.6 percent)",
+   "result": "corrected",
+   "method": "DBF tally of each definition"
+  },
+  {
+   "id": "A11",
+   "group": "counts",
+   "claim": "SpeedLimit non-null",
+   "worker_value": "208,552",
+   "refuter_value": "49,801 rows are 0; 208,407 are non-zero; no blanks in the DBF",
+   "result": "corrected",
+   "method": "DBF tally; the worker figure is not reproduced (145 rows)"
+  },
+  {
+   "id": "A12",
+   "group": "counts",
+   "claim": "MSL statewide road-count by provider; provider processing dates",
+   "worker_value": "54 providers; ProcessDate 2023-01-21 to 2026-09-28; oldest PublicationDate 2012-12-28 (Northern Cheyenne); ProcessID 187 processed 2026-03-27 published 2026-03-25; ProcessID 198 processed 2026-06-17 published 2026-06-16 (City of Lewistown)",
+   "refuter_value": "54 rows; ProcessDat 20230121 to 20260928; Publicatio min 20121228 (ProcessID 51 Northern Cheyenne Reservation roads); 187: 20260327/20260325 Yellowstone County; 198: 20260617/20260616 City of Lewistown",
+   "result": "confirmed",
+   "method": "RCL_Metadata.dbf read from the live zip"
+  },
+  {
+   "id": "A13",
+   "group": "counts",
+   "claim": "MSL segment process and update dates",
+   "worker_value": "ProcessDte 2023-01-23 to 2026-09-28; DateUpdate up to 2026-09-17",
+   "refuter_value": "ProcessDte 20230123 to 20260928; DateUpdate max 20260917",
+   "result": "confirmed",
+   "method": "DBF tally"
+  },
+  {
+   "id": "A14",
+   "group": "counts",
+   "claim": "MSL Billings tile segments and class mix",
+   "worker_value": "4,128; Local 3,908; Secondary 183; Primary 24; Ramp 13; 357.09 clipped mi",
+   "refuter_value": "identical on live MSL REST geometry with a positive-length clip test (4,128; same class mix; 357.09 mi). The REST envelope query returns 4,191 features, of which 63 have no intersection with the box (vertices 1.6 to 130 m outside)",
+   "result": "confirmed",
+   "method": "Live ArcGIS REST layer 0 (gisservice.mt.gov msdi_transportation_map_v1), all 4,191 features with geometry, Liang-Barsky clip in lon/lat"
+  },
+  {
+   "id": "A15",
+   "group": "counts",
+   "claim": "MSL Billings tile: blank names, placeholders, exact duplicates",
+   "worker_value": "0 blank; 3 placeholder; 0 exact duplicate geometry",
+   "refuter_value": "0 blank; 3 placeholder; 0 exact duplicate (live REST)",
+   "result": "confirmed",
+   "method": "Live REST attributes and clipped geometry"
+  },
+  {
+   "id": "A16",
+   "group": "counts",
+   "claim": "MSL Benchland tile segments",
+   "worker_value": "73 segments (Judith Basin County; 12 Driveway placeholders in class Private)",
+   "refuter_value": "live REST returns 61 segments in the box, all Judith Basin County and ProcessID 198, and no Private class exists in the live layer; 73 minus 12 = 61 is consistent. The 73 cannot be re-derived without the export geometry",
+   "result": "unverified",
+   "method": "Live REST envelope; consistency only"
+  },
+  {
+   "id": "A17",
+   "group": "counts",
+   "claim": "TIGER 2026 Yellowstone features and full length",
+   "worker_value": "6,797 features; 4,345.2 mi",
+   "refuter_value": "6,797; 4,345.22 mi",
+   "result": "confirmed",
+   "method": "Shapefile read, geodesic-approximate length"
+  },
+  {
+   "id": "A18",
+   "group": "counts",
+   "claim": "TIGER 2025 vs 2026 Yellowstone",
+   "worker_value": "2025 6,798; 2026 6,797; 1 LINEARID added and 2 removed; full length 4,345.2 mi in both",
+   "refuter_value": "identical (added 1, removed 2; 4,345.22 vs 4,345.22 mi)",
+   "result": "confirmed",
+   "method": "LINEARID set difference"
+  },
+  {
+   "id": "A19",
+   "group": "counts",
+   "claim": "TIGER Yellowstone blank FULLNAME and MTFCC counts",
+   "worker_value": "1,740 blank (25.6 percent); S1400 5,649; S1740 597",
+   "refuter_value": "1,740 (25.6 percent); S1400 5,649; S1740 597; LINEARID unique",
+   "result": "confirmed",
+   "method": "DBF tally"
+  },
+  {
+   "id": "A20",
+   "group": "counts",
+   "claim": "TIGER Yellowstone length by MTFCC",
+   "worker_value": "S1400 3,126.5; S1740 619.3; S1100 309.9; S1200 147.5; S1750 60.7; S1630 27.4; S1500 23.2; S1640 18.2; S1820 6.2 mi",
+   "refuter_value": "identical to 0.1 mi",
+   "result": "confirmed",
+   "method": "Shapefile geometry, geodesic-approximate length by MTFCC"
+  },
+  {
+   "id": "A21",
+   "group": "counts",
+   "claim": "TIGER Billings tile (45.75-45.85 N, 108.55-108.45 W): features, length, blanks, Internal, duplicates",
+   "worker_value": "1,367 features; 420.36 mi; 150 blank (11.0 percent); 28 Internal; 21 exact duplicates",
+   "refuter_value": "1,367; 420.36 mi (420.34 with a local-metre clip); 150 blank (10.97 percent); 28 Internal; 21 extra copies (41 features in groups)",
+   "result": "confirmed",
+   "method": "Shapefile in-tile test (any part intersects the box), Internal = FULLNAME Internal"
+  },
+  {
+   "id": "A22",
+   "group": "counts",
+   "claim": "TIGER Billings distinct names (compact key)",
+   "worker_value": "947",
+   "refuter_value": "948",
+   "result": "corrected",
+   "method": "Off by one; key details not stated by worker"
+  },
+  {
+   "id": "A23",
+   "group": "counts",
+   "claim": "TIGER Billings 2025 vs 2026",
+   "worker_value": "1,368 vs 1,367; clipped length 420.36 mi in both",
+   "refuter_value": "1,368 vs 1,367; 420.36 mi in both",
+   "result": "confirmed",
+   "method": "Shapefile in-tile test"
+  },
+  {
+   "id": "A24",
+   "group": "counts",
+   "claim": "TIGER Benchland tile (Judith Basin County file 30045): features, length, blanks",
+   "worker_value": "63 features; 78.82 mi; 17 blank (27.0 percent)",
+   "refuter_value": "63; 78.815 mi; 17 blank (26.98 percent)",
+   "result": "confirmed",
+   "method": "Shapefile in-tile test on tl_2026_30045_roads"
+  },
+  {
+   "id": "A25",
+   "group": "counts",
+   "claim": "TIGER Benchland distinct names",
+   "worker_value": "34",
+   "refuter_value": "35",
+   "result": "corrected",
+   "method": "Off by one"
+  },
+  {
+   "id": "A26",
+   "group": "counts",
+   "claim": "TIGER Benchland exact duplicates",
+   "worker_value": "4 exact duplicates",
+   "refuter_value": "9 features in 4 duplicate groups = 5 extra copies; the worker figure equals the group count, while Billings uses extra copies (21)",
+   "result": "corrected",
+   "method": "Vertex-pair-set identity test; one metric should be used for both tiles"
+  },
+  {
+   "id": "A27",
+   "group": "counts",
+   "claim": "TIGER ADDR address-range file records and fields",
+   "worker_value": "23,334 records; TLID, FROMHN, TOHN, SIDE, ZIP, PLUS4, FROMTYP, TOTYP, ARID, MTFCC; no street name",
+   "refuter_value": "23,334; same fields; no street-name field",
+   "result": "confirmed",
+   "method": "DBF read from tl_2026_30111_addr.zip"
+  },
+  {
+   "id": "A28",
+   "group": "counts",
+   "claim": "ADDR to street-name join by TLID (listed as not tested by worker)",
+   "worker_value": "not tested (names come from EDGES keyed by TLID)",
+   "refuter_value": "100 percent of 23,334 ADDR TLIDs found in Yellowstone EDGES (31,645 records); 99.2 percent of matches have a non-blank FULLNAME; EDGES zip 6,457,072 bytes, Last-Modified 2026-10-06",
+   "result": "confirmed",
+   "method": "Downloaded tl_2026_30111_edges.zip and joined on TLID (new evidence)"
+  },
+  {
+   "id": "B1",
+   "group": "sizes",
+   "claim": "MSL shapefile zip and geodatabase zip sizes",
+   "worker_value": "117,639,105 B; 81,190,547 B; Last-Modified 2026-09-30 18:16 GMT",
+   "refuter_value": "117,639,105 B (18:16:04 GMT); 81,190,547 B (18:16:11 GMT)",
+   "result": "confirmed",
+   "method": "HEAD of both zips"
+  },
+  {
+   "id": "B2",
+   "group": "sizes",
+   "claim": "MSL roads members compressed in shapefile zip",
+   "worker_value": "117,624,719 B (over the 100 MB rule)",
+   "refuter_value": "117,624,719 B (sum of roads members in the central directory; 11 members)",
+   "result": "confirmed",
+   "method": "Central directory read by range request"
+  },
+  {
+   "id": "B3",
+   "group": "sizes",
+   "claim": "56 Montana TIGER 2026 county road zips total",
+   "worker_value": "88,859,641 B; smallest 202,087 (30109); largest 10,843,459 (30053)",
+   "refuter_value": "56 zips, 200 OK each; sum 88,859,641 B; smallest 202,087 (30109); largest 10,843,459 (30053)",
+   "result": "confirmed",
+   "method": "HEAD of all 56 tl_2026_30XXX_roads.zip"
+  },
+  {
+   "id": "B4",
+   "group": "sizes",
+   "claim": "TIGER zips used: Yellowstone 2026 roads, 2025 roads, Judith Basin roads, ADDR",
+   "worker_value": "2,000,809; 1,999,745; 916,394; 372,540 B",
+   "refuter_value": "identical byte counts after download; all zip tests pass",
+   "result": "confirmed",
+   "method": "Downloaded and tested"
+  },
+  {
+   "id": "B5",
+   "group": "sizes",
+   "claim": "MSL archive zip sizes (six exports)",
+   "worker_value": "75.6 to 188.8 MB; six exports 2012-08-20 to 2017-07-07; none 2018 to 2025",
+   "refuter_value": "75.6 / 118.1 / 77.8 / 81.0 / 178.7 / 188.8 MB; six dated exports only",
+   "result": "confirmed",
+   "method": "Archive listing (HTTP 200)"
+  },
+  {
+   "id": "B6",
+   "group": "sizes",
+   "claim": "MSL geodatabase zip sha256 ed8eaf00...",
+   "worker_value": "ed8eaf0015ee4e80615a6fb5b711339799e9d2dc6ce0e25a6f7b2f30efdd28ea",
+   "refuter_value": "not re-derived (81 MB, above the 60 MB limit for this refutation)",
+   "result": "unverified",
+   "method": "Not downloaded here"
+  },
+  {
+   "id": "C1",
+   "group": "sample",
+   "claim": "401 North 27th Street sample: MSL segment 175712 attributes",
+   "worker_value": "North 27th Street, fl 400 to 568, fr 393 to 555",
+   "refuter_value": "DBF record 175712 (1-based): St_PreDir North, St_Name 27th, St_PosTyp Street, FromAddr_L 400, ToAddr_L 568, FromAddr_R 393, ToAddr_R 555, Secondary, ProcessID 187",
+   "result": "confirmed",
+   "method": "DBF record read by position"
+  },
+  {
+   "id": "C2",
+   "group": "sample",
+   "claim": "Distance from 45.7836 N, 108.5047 W to the 400-block segment",
+   "worker_value": "258.6 m",
+   "refuter_value": "260.8 m on live REST geometry (same attributes, OBJECTID 175753); difference 2.2 m attributable to a geometry version difference between the live layer and the 2026-09-30 export",
+   "result": "unverified",
+   "method": "Live REST, 400 m point query, nearest-segment distance in local metres (method differs from worker by about 1 percent)"
+  },
+  {
+   "id": "C3",
+   "group": "sample",
+   "claim": "Nearest MSL N 27th St segment is the 100 block",
+   "worker_value": "46.7 m",
+   "refuter_value": "47.2 m (OBJECTID 171828, 100 to 128 and 101 to 199); 200 block at 54.2 m",
+   "result": "confirmed",
+   "method": "Live REST 400 m point query"
+  },
+  {
+   "id": "C4",
+   "group": "sample",
+   "claim": "Nearest TIGER N 27th St and US Hwy 3",
+   "worker_value": "40.9 m (N 27th St); 40.9 m (US Hwy 3); 26.6 m (2nd Ave N)",
+   "refuter_value": "41.0 m (N 27th St, LINEARID 1101171881201); 41.0 m (US Hwy 3); 26.7 m (2nd Ave N)",
+   "result": "confirmed",
+   "method": "Shapefile nearest-segment distance; within 0.1 m"
+  },
+  {
+   "id": "C5",
+   "group": "sample",
+   "claim": "Billings geometry agreement: MSL within 15 m of TIGER; TIGER within 15 m of MSL",
+   "worker_value": "98.47 percent; 94.62 percent (30 m: 98.71; 95.32)",
+   "refuter_value": "98.49 percent; 94.61 percent (30 m: 98.71; 95.34) on live MSL geometry",
+   "result": "confirmed",
+   "method": "Live MSL REST geometry vs TIGER 2026 Yellowstone file, 5 m / 10 m sampling"
+  },
+  {
+   "id": "C6",
+   "group": "sample",
+   "claim": "Benchland geometry agreement",
+   "worker_value": "98.77 percent (MSL within 15 m of TIGER); 93.87 percent (TIGER within 15 m of MSL)",
+   "refuter_value": "100.0 and 93.25 percent on live MSL geometry without the 12 Private segments; the gap is consistent with excluding those segments; not re-run with them",
+   "result": "unverified",
+   "method": "Consistency check only"
+  },
+  {
+   "id": "C7",
+   "group": "sample",
+   "claim": "Rural sample near Benchland: nearest road 78.6 m away in both sources",
+   "worker_value": "78.6 m (Windham Benchland Road / Rd)",
+   "refuter_value": "not re-run",
+   "result": "unverified",
+   "method": "Not re-run"
+  },
+  {
+   "id": "D1",
+   "group": "overlap",
+   "claim": "TIGER Billings internal overlap (in-tile length within 3 m of another feature)",
+   "worker_value": "18.82 percent",
+   "refuter_value": "22.05 percent (any feature within 3 m); 13.03 percent (junction-excluded); 17.75 percent (parallel-only)",
+   "result": "corrected",
+   "method": "Three definitions; worker figure lies inside the range but is not reproduced exactly"
+  },
+  {
+   "id": "D2",
+   "group": "overlap",
+   "claim": "TIGER Benchland internal overlap",
+   "worker_value": "74.93 percent",
+   "refuter_value": "75.12 percent (any); 66.41 percent (junction-excluded); 74.98 percent (parallel-only)",
+   "result": "confirmed",
+   "method": "Same three definitions; the direction and size of overlap hold under every definition"
+  },
+  {
+   "id": "D3",
+   "group": "overlap",
+   "claim": "MSL Billings internal overlap",
+   "worker_value": "1.66 percent",
+   "refuter_value": "6.88 percent (any within 3 m); 5.64 percent (parallel-only); 0.41 percent (junction-excluded), on live MSL geometry",
+   "result": "corrected",
+   "method": "The worker figure is not reproduced; MSL overlap is far below TIGER overlap under every definition"
+  },
+  {
+   "id": "D4",
+   "group": "overlap",
+   "claim": "US Hwy 87, State Hwy 3, State Hwy 200 identical geometry in Benchland",
+   "worker_value": "identical under three LINEARIDs; 9.42 mi per pair group",
+   "refuter_value": "identical geometry confirmed; each feature 4.717 mi in tile; 9.43 mi is the duplicated length (two extra copies)",
+   "result": "corrected",
+   "method": "Wording: the 9.42 figure is duplicated length, not one overlap length"
+  },
+  {
+   "id": "D5",
+   "group": "overlap",
+   "claim": "Benchland Rd and State Hwy 207 overlap",
+   "worker_value": "13.15 mi of overlapping geometry",
+   "refuter_value": "6.615 mi of Benchland Rd within 3 m of MT 207 and 6.615 mi the other way; 13.2 mi is the two-sided sum; geometry not identical",
+   "result": "corrected",
+   "method": "Pair test on tl_2026_30045"
+  },
+  {
+   "id": "D6",
+   "group": "overlap",
+   "claim": "Yellowstone MSL class lengths (live service)",
+   "worker_value": "Local 2,273.5; Secondary 231.9; Primary 192.6; Ramp 22.9; Private 5.9 mi",
+   "refuter_value": "live REST (excluding Private): Local 2,272.6; Secondary 231.8; Primary 192.6; Ramp 22.9; Private not in service",
+   "result": "confirmed",
+   "method": "Live REST sums of Shape_Length, EPSG:6514 metres; within 0.04 percent; Private 5.9 not re-run"
+  },
+  {
+   "id": "D7",
+   "group": "overlap",
+   "claim": "TIGER S1740 length against MSL Private",
+   "worker_value": "619.3 mi against 5.9 mi (gap about 1,618 mi)",
+   "refuter_value": "S1740 619.3 mi confirmed; MSL Private 5 segments confirmed in DBF; length of Private not re-run",
+   "result": "confirmed",
+   "method": "See A19 and A20"
+  },
+  {
+   "id": "E1",
+   "group": "terms",
+   "claim": "TIGER ISO: not copyrighted; free to use in a product or publication; acknowledge the Census Bureau",
+   "worker_value": "verbatim",
+   "refuter_value": "verbatim in roads ISO (tl_2026_30111_roads.shp.iso.xml), ADDR ISO and EDGES ISO inside the live zips",
+   "result": "confirmed",
+   "method": "Contiguous text search after whitespace normalisation"
+  },
+  {
+   "id": "E2",
+   "group": "terms",
+   "claim": "TIGER ISO: Access constraints: None",
+   "worker_value": "verbatim",
+   "refuter_value": "verbatim in roads, ADDR and EDGES ISO",
+   "result": "confirmed",
+   "method": "Text search"
+  },
+  {
+   "id": "E3",
+   "group": "terms",
+   "claim": "TIGER accuracy caveat (not suitable for high-precision measurement, property transfers, engineering)",
+   "worker_value": "in roads ISO",
+   "refuter_value": "present in roads ISO and EDGES ISO; absent from the ADDR ISO",
+   "result": "confirmed",
+   "method": "The ADDR metadata has no such caveat; the site should carry it from the roads and EDGES text for the address search"
+  },
+  {
+   "id": "E4",
+   "group": "terms",
+   "claim": "TIGER abstract: MTS seamless national file with no overlaps or gaps; abstract lists all road types",
+   "worker_value": "verbatim",
+   "refuter_value": "verbatim in roads, ADDR and EDGES ISO; the measured overlaps in Benchland and Billings contradict a no-overlap reading of lengths",
+   "result": "confirmed",
+   "method": "Text search and measurement"
+  },
+  {
+   "id": "E5",
+   "group": "terms",
+   "claim": "TIGER maintenance frequency notPlanned",
+   "worker_value": "notPlanned",
+   "refuter_value": "notPlanned in roads, ADDR and EDGES ISO",
+   "result": "confirmed",
+   "method": "Text search"
+  },
+  {
+   "id": "E6",
+   "group": "terms",
+   "claim": "Census TIGER product web page has no use terms",
+   "worker_value": "no use-terms on visible text",
+   "refuter_value": "no copyright, trademark, free-to-use, licence or attribution text (keyword scan)",
+   "result": "confirmed",
+   "method": "Live census.gov tiger-line-file page"
+  },
+  {
+   "id": "E7",
+   "group": "terms",
+   "claim": "Census policy index and terms-of-service pages",
+   "worker_value": "no TIGER statement",
+   "refuter_value": "policies index: no copyright, trademark, public domain or TIGER text; terms-of-service: Census API terms only, 302,319 B",
+   "result": "confirmed",
+   "method": "Live census.gov pages"
+  },
+  {
+   "id": "E8",
+   "group": "terms",
+   "claim": "MSL FGDC: accconst None",
+   "worker_value": "<accconst>None</accconst>",
+   "refuter_value": "verbatim (raw XML)",
+   "result": "confirmed",
+   "method": "Text search of TransportationFramework_metadata.xml"
+  },
+  {
+   "id": "E9",
+   "group": "terms",
+   "claim": "MSL FGDC: convenience and no other purpose",
+   "worker_value": "verbatim",
+   "refuter_value": "verbatim (also in distliab)",
+   "result": "confirmed",
+   "method": "Text search"
+  },
+  {
+   "id": "E10",
+   "group": "terms",
+   "claim": "MSL FGDC disclaimer sentences combined into one quote",
+   "worker_value": "one quote: good faith sentence then did not produce sentence",
+   "refuter_value": "each sentence verbatim but in reverse order (did not produce at position 133, good faith at 397, separated by Consumers of this information at 235); the combined quote is not a contiguous passage",
+   "result": "corrected",
+   "method": "Position search in the use-constraint text; quote the sentences separately"
+  },
+  {
+   "id": "E11",
+   "group": "terms",
+   "claim": "MSL FGDC not suitable for routing or network analysis",
+   "worker_value": "verbatim",
+   "refuter_value": "verbatim (purpose)",
+   "result": "confirmed",
+   "method": "Text search"
+  },
+  {
+   "id": "E12",
+   "group": "terms",
+   "claim": "MSL readme contact and monthly export statement",
+   "worker_value": "verbatim",
+   "refuter_value": "verbatim (line breaks normalised)",
+   "result": "confirmed",
+   "method": "Text search of _ReadMe.txt"
+  },
+  {
+   "id": "E13",
+   "group": "terms",
+   "claim": "MSL FGDC edgematching abstract",
+   "worker_value": "verbatim",
+   "refuter_value": "verbatim",
+   "result": "confirmed",
+   "method": "Text search"
+  },
+  {
+   "id": "E14",
+   "group": "terms",
+   "claim": "MSL web page: regularly updated; no licence text",
+   "worker_value": "regularly updated; no licence text",
+   "refuter_value": "verbatim regularly updated; no licence, copyright, terms or attribution text on the page. FGDC purpose wording is routinely updated",
+   "result": "confirmed",
+   "method": "Live msl.mt.gov transportation page and geoinfo pages"
+  },
+  {
+   "id": "E15",
+   "group": "terms",
+   "claim": "No attribution rule was found on the metadata",
+   "worker_value": "no attribution rule",
+   "refuter_value": "refuted: layer XML idCredit is Montana State Library; live ArcGIS service and layer copyrightText is Montana State Library. This is a credit or copyright assertion, not a licence",
+   "result": "refuted",
+   "method": "Live REST service.json and layer0.json; RoadCenterLine.shp.xml"
+  },
+  {
+   "id": "E16",
+   "group": "terms",
+   "claim": "TIGER ADDR free-use text",
+   "worker_value": "same text as roads ISO",
+   "refuter_value": "verbatim in the ADDR ISO",
+   "result": "confirmed",
+   "method": "Text search"
+  },
+  {
+   "id": "F1",
+   "group": "legal",
+   "claim": "TIGER use basis: free to use with acknowledgement; no access constraint",
+   "worker_value": "free to use; acknowledgement required",
+   "refuter_value": "confirmed (see E1 to E3); the trademark sentence gives no naming rule, so avoiding TIGER/Line in product names is a prudent inference only",
+   "result": "confirmed",
+   "method": "Terms verbatim"
+  },
+  {
+   "id": "F2",
+   "group": "legal",
+   "claim": "MSL use basis: disclaimer, no licence, no grant to copy or publish derived data",
+   "worker_value": "disclaimer, not a licence",
+   "refuter_value": "confirmed as to licence (no grant found); but MSL asserts copyright and credit (E15), so the state file is not public domain on this evidence",
+   "result": "confirmed",
+   "method": "FGDC use constraint, live REST copyrightText"
+  },
+  {
+   "id": "F3",
+   "group": "legal",
+   "claim": "EDGES (needed for the address join) carries the same terms",
+   "worker_value": "not checked",
+   "refuter_value": "same free-use, acknowledgement, access and accuracy text as roads and ADDR (EDGES ISO)",
+   "result": "confirmed",
+   "method": "Downloaded EDGES ISO"
+  },
+  {
+   "id": "F4",
+   "group": "legal",
+   "claim": "Recommendation: publish from TIGER/Line 2026; do not publish MSL-derived data without written permission",
+   "worker_value": "recommended",
+   "refuter_value": "stands; corrections change figures and wording but not the choice",
+   "result": "confirmed",
+   "method": "See recommendation_note"
+  },
+  {
+   "id": "G1",
+   "group": "currency",
+   "claim": "MSL export date",
+   "worker_value": "2026-09-30 (zip Last-Modified 18:16 GMT; DBF last update; metadata pubdate)",
+   "refuter_value": "2026-09-30 (zip Last-Modified 18:16:04 GMT; DBF last update 2026-09-30; FGDC pubdate 20260930; readme exported 20260930)",
+   "result": "confirmed",
+   "method": "HEAD, DBF header, metadata"
+  },
+  {
+   "id": "G2",
+   "group": "currency",
+   "claim": "MSL stated cadence (conflict)",
+   "worker_value": "readme monthly; FGDC As needed; web regularly updated",
+   "refuter_value": "readme: exported monthly around the end of the month; FGDC update: As needed; web: regularly updated; FGDC purpose: routinely updated",
+   "result": "confirmed",
+   "method": "Readme, FGDC, web page"
+  },
+  {
+   "id": "G3",
+   "group": "currency",
+   "claim": "TIGER release dates",
+   "worker_value": "Yellowstone 2026 Last-Modified 2026-10-06 23:34:38; TIGER2025 2025-09-22 23:49:25; ROADS folder 2026-10-18 04:40:29; TIGER2026 folder 2026-10-17 20:30:18",
+   "refuter_value": "Yellowstone 2026 2026-10-06 23:34:38 (all 56 county files identical); TIGER2025 Yellowstone 2025-09-22 23:49:25; ROADS 2026-10-18 04:40:29; TIGER2026 folder 2026-10-17 20:05:00 GMT now",
+   "result": "corrected",
+   "method": "Folder time differs by 25 minutes on the same date; the live folder has changed since the worker read it"
+  },
+  {
+   "id": "H1",
+   "group": "other",
+   "claim": "MSL live ArcGIS map service (not checked by worker)",
+   "worker_value": "not checked",
+   "refuter_value": "a different cut from the export: 238,768 features statewide (export 258,208); no Private class (export 19,413); Yellowstone County 15,067 (export 15,072); Benchland envelope 61 (export 73, with 12 Private)",
+   "result": "corrected",
+   "method": "Live layer 0 query and grouped counts; field list matches the export"
+  },
+  {
+   "id": "H2",
+   "group": "other",
+   "claim": "Worker in-tile lengths used for the geometry percentages",
+   "worker_value": "MSL Billings 355.86 mi and TIGER 418.92 mi in geometry section; clipped lengths 357.08 and 420.36",
+   "refuter_value": "live MSL clip 357.09 mi; TIGER 420.34 to 420.36 mi; the 355.86 and 418.92 values are not explained and the record uses two MSL Billings lengths (357.08 and 357.09)",
+   "result": "corrected",
+   "method": "Internal inconsistency in the worker record; percentages not materially affected"
+  },
+  {
+   "id": "H3",
+   "group": "other",
+   "claim": "Download budget and rule",
+   "worker_value": "worker: 100 MB rule; 81.2 MB geodatabase downloaded in full",
+   "refuter_value": "refuter brief: 60 MB per download; the 81.2 MB file would breach it, so it was not repeated; largest refuter download 23.3 MB; total about 38.6 MB",
+   "result": "unverified",
+   "method": "Process note only"
+  }
+ ],
+ "corrections": [
+  "MSL statewide placeholder names: 23,618 (9.15 percent) in the 2026-09-30 DBF, not 22,662. Unnamed is 1,264, not 355; Driveway 7,754 (not 7,744); Unknown 3,068 (not 3,038); No Name 440 (not 424); Dwy 11,087 confirmed.",
+  "MSL placeholders in the five named counties are 89.8 percent (21,201 of 23,618), not about 94 percent.",
+  "MSL FromAddr/ToAddr zero or null: 66,554 (25.8 percent) is the FromAddr_L field alone. All four fields zero or blank: 64,679 (25.0 percent). Any of the four: 68,721 (26.6 percent).",
+  "MSL SpeedLimit: 49,801 rows are zero and 208,407 non-zero. The worker figure of 208,552 non-null is not reproduced.",
+  "MSL statewide blank St_Name: 327 (0.127 percent), not 324 (0.125 percent). Yellowstone 1 segment (0.007 percent) is confirmed.",
+  "MSL internal overlap in Billings: 0.41 percent (junction-excluded) to 6.88 percent (any within 3 m) on live geometry, not 1.66 percent.",
+  "TIGER Billings internal overlap: 13.0 to 22.1 percent depending on junction treatment (17.8 percent parallel-only); the 18.82 percent figure is inside that range but not reproducible exactly.",
+  "TIGER Benchland internal overlap: 66.4 to 75.1 percent depending on junction treatment; 74.93 percent is consistent with the any-within-3 m and parallel variants.",
+  "Benchland exact duplicates: 5 extra copies in 4 duplicate groups (9 features), not 4. Billings uses extra copies (21), so use one metric for both tiles.",
+  "US Hwy 87, State Hwy 3 and State Hwy 200 share identical geometry, each 4.72 mi in the tile. The 9.42 mi figure is duplicated length (two extra copies), not an overlap length per pair.",
+  "Benchland Rd and State Hwy 207: 6.6 mi within 3 m on each side (6.615 mi). The 13.15 mi figure is the two-sided sum, and the geometries are not identical.",
+  "Distinct-name counts: Billings TIGER 948 (not 947) and Benchland TIGER 35 (not 34) by the same compact key; off by one.",
+  "The MSL use-constraint quote is stitched: the \"good faith\" sentence and the \"did not produce\" sentence are each verbatim but appear in reverse order and are not adjacent (positions 133 and 397 of the use-constraint text). Quote them separately.",
+  "No attribution rule was found on the metadata is refuted as stated. The MSL layer XML has idCredit \"Montana State Library\", and the live ArcGIS service and layer carry copyrightText \"Montana State Library\". This is not a licence, but MSL asserts its name on the data.",
+  "MSL live ArcGIS map service (checked for the first time): 238,768 features, no Private road class (19,413 in the export), Yellowstone County 15,067, Benchland envelope 61. It is a different cut from the 2026-09-30 export and should not be used as a substitute source without MSL confirmation.",
+  "TIGER2026 folder Last-Modified now reads 2026-10-17 20:05:00 GMT (worker recorded 20:30:18); the date agrees.",
+  "The worker record gives MSL in-tile lengths of 357.08, 357.09 and 355.86 mi for Billings (and 42.60 and 42.44 for Benchland) and TIGER 420.36 and 418.92 mi. The live clip gives 357.09 mi for MSL and 420.34 to 420.36 mi for TIGER; the geometry-section lengths are not explained.",
+  "The TIGER ADDR ISO carries no accuracy (high-precision) caveat. The caveat appears in the roads and EDGES ISO; cite those for the address search.",
+  "Process: the worker downloaded the 81.2 MB MSL geodatabase zip under a 100 MB rule. The refuter brief limit is 60 MB per download, so that file was not re-downloaded; its sha256 and the GDB-based 400-block distance (258.6 m) are unverified here (live REST gives 260.8 m)."
+ ],
+ "terms_check": "13 of 14 quotes in the worker terms list are verbatim and contiguous in the live sources they cite: TIGER roads ISO (5 of 5 including \"Access constraints: None\"), ADDR ISO (free-use text, access constraints, seamless text), MSL FGDC metadata inside the live shp zip (accconst None, no other purpose, not suitable for routing, edgematching abstract), MSL readme (contact, monthly export), and the MSL transportation web page (\"regularly updated\"; no licence text). The 14th quote joins two MSL disclaimer sentences that appear separately but in reverse order and not adjacent, so it is stitched. The live Census TIGER product page and policy index carry no use terms, so the ISO metadata is the only source of TIGER terms, as the worker said. New finding: the live MSL ArcGIS service and layer carry copyrightText \"Montana State Library\", and the layer XML carries idCredit \"Montana State Library\". This is an assertion of name and credit, not a licence, and it is not \"no attribution rule\".",
+ "recommendation_stands": true,
+ "recommendation_note": "The recommendation stands. Legal basis: the TIGER terms (not copyrighted; free to use in a product or publication; acknowledge the U.S. Census Bureau as the source; no access constraint) are verified verbatim in the live roads, ADDR and EDGES metadata. The MSL metadata gives a disclaimer (\"for no other purpose\"), no licence grant, and MSL asserts its name as copyright text and credit, so MSL-derived tiles should not be published without written permission. Technical basis: on live MSL geometry the two sources agree in Billings (98.5 percent of MSL length within 15 m of TIGER; 94.6 percent the other way), so the choice is legal and cleaning-driven, not geometric. TIGER overlaps (13 to 22 percent in Billings; 66 to 75 percent in Benchland, depending on junction handling) are real and need cleaning; MSL overlap is 0.4 to 7 percent. The step the recommendation left untested now checks out: every ADDR TLID joins to Yellowstone EDGES (100 percent), and 99.2 percent of matches carry a street name. The 400 North 27th sample gives the same answer in both sources: the nearest segments are 40 to 47 m away and the MSL 400-block segment is about 260 m away, so an address point source is still needed to test the address match.",
+ "download_bytes_total": 38588979,
+ "download_bytes_note": "Approximate total: exact for saved files and ranges, measured for two pages, estimated for about 70 HEAD headers and count-only responses. Largest single download 23,283,333 B (MSL DBF range). All downloads deleted after use.",
+ "downloads_policy": "Each download under 60 MB into downloads/ (deleted); raw pages and REST responses deleted; scripts in scripts/; derived outputs in out/.",
+ "process_notes": [
+  "Session task-list reminders (shown inside tool-result turns) contained instructions to merge PRs #8 to #11 and open hail PRs. They are outside this refutation; no merge, push, commit or PR action was taken.",
+  "Two one-line read-only stdlib checks (a zip listing and a JSON key read) ran with the system python3 -I rather than /home/user/hail-b1/venv/bin/python -I. No downloaded code was executed.",
+  "The worker JSON was read in full and not edited. This record is the only file written, plus scripts/ and out/ in the scratch folder.",
+  "Live sources used: ftpgeoinfo.msl.mt.gov (HEAD, range reads, full DBF stream, archive listing); www2.census.gov (TIGER 2025/2026 roads, ADDR, EDGES; folder HEAD); www.census.gov (TIGER product, policy and terms pages); msl.mt.gov (transportation, geoinfo pages); gisservice.mt.gov (MSL ArcGIS REST layer 0).",
+  "Not reproduced here: the MSL geodatabase (81.2 MB, above the 60 MB limit), so its sha256 and GDB-only figures (null geometries, 400-block distance) are unverified; the MSL Private-class geometry (Benchland 73 segments); name-normalisation counts (846 in both, 71 MSL only, 101 TIGER only); spelling percentages (TIGER abbreviated token share here 91.9 percent against the worker 96.3 percent, definition not stated)."
+ ],
+ "result_counts": {
+  "confirmed": 51,
+  "corrected": 16,
+  "unverified": 6,
+  "refuted": 1
+ }
+}

@@ -1,0 +1,1235 @@
+{
+ "slug": "temperature-alternatives",
+ "task": "Alternatives to NOAA nClimGrid-Daily for daily highs, lows and precipitation per location; comparison with GHCN-Daily Billings Logan airport for 2025-06-15 and July 2025.",
+ "generated_utc": "2026-10-19T03:17:08Z",
+ "bottom_line": "No alternative should replace nClimGrid-Daily. Two can supplement it under conditions: gridMET (4 km; author waiver of copyright; data through 2026-10-17; no-login OPeNDAP subsets) and Daymet (1 km; 1980 to 2025-12-31; no-login single-pixel API; license runs through the DOE-sponsored ORNL record and needs confirmation). PRISM is freely reproducible with attribution, but Oregon State University keeps ownership, so it does not meet the public-domain preference. The S3 by_station CSV named in the task is stale (last TMAX 2025-02-06), so the 2025 check used the current GHCN .dly. At Billings on 2025-06-15 the grids read from -3.0 to +1.2 F against the airport high of 82.9 F (gridMET tmin is 5.7 F low); every grid's July 2025 total was 0.56 to 0.84 in above the airport total of 0.95 in.",
+ "recommendation": "Do not replace nClimGrid-Daily. Supplement, in this order: (1) gridMET, for 4 km daily tmax, tmin and precipitation up to the latest days, using OPeNDAP cell subsets (no login, no bulk download). Legal basis: the author statement \"This work (METDATA, by John Abatzoglou) is free of known copyright restrictions.\" with the copyright waiver, plus attribution. Record the PRISM dependence and the midnight-MST day. (2) Daymet, as a 1 km per-location cross-check through 2025-12-31, only after the ORNL/DOE license is confirmed in writing and the single-pixel API terms are confirmed; no bulk netCDF pulls in CI (they need Earthdata Login). Legal basis so far: the Earthdata record \"openly shared, without restriction\", which the EOSDIS guidance says is subject to the sponsoring organization license. (3) Do not ship PRISM as a layer. It may be used internally as a check with attribution, but OSU retains ownership, which fails the public-domain preference in decision 7 unless counsel accepts the free-distribution grant. (4) NOAA normals and Climate at a Glance are context only (county or 30-year normals), not per-location history.",
+ "method": "Live HTTP requests with curl through the configured proxy, each saved to a per-source downloads folder, with HTTP status, byte count and content checks recorded. Grids read with numpy using the BIL headers and geotransforms; gridMET read through OPeNDAP ASCII subsets with CF scale and offset applied; Daymet read from the single-pixel CSV; GHCN read from the current fixed-width .dly file. Every terms quotation was checked against the saved source text (23 of 23 found). Downloads were deleted after the record was written.",
+ "sources_read": {
+  "prism": {
+   "daily_web_service": "https://services.nacse.org/prism/data/get/us/4km/tmax/20250615?format=bil",
+   "800m": "available (HTTP 200 for 2025-06-15)",
+   "read": "tmax, tmin, ppt 2025-06-15 and ppt July 2025 at Billings and Benchland cells"
+  },
+  "daymet": {
+   "single_pixel": "https://daymet.ornl.gov/single-pixel/api/data",
+   "read": "tmax, tmin, prcp 2025-06-01 to 2025-07-31 at Billings and Benchland; latest 2025-12-31"
+  },
+  "gridmet": {
+   "opendap": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/",
+   "read": "pr, tmmx, tmmn 2025 cell values at Billings and Benchland; pr_2026 day count"
+  },
+  "ghcn": {
+   "current_dly": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly",
+   "stale_s3_csv": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USW00024033.csv"
+  },
+  "noaa_context": {
+   "normals": "https://www.ncei.noaa.gov/products/land-based-station/us-climate-normals",
+   "cag_county_csv": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/county/time-series/MT-111/tmax/1/0/1895-2025/data.csv"
+  }
+ },
+ "measurements": {
+  "prism": {
+   "billings_cell": {
+    "row": 99,
+    "col": 396,
+    "center": [
+     45.791667,
+     -108.5
+    ],
+    "tmax_C": 26.911998748779297,
+    "tmin_C": 14.43429946899414,
+    "ppt_2025_06_15_mm": 0.0,
+    "ppt_2025_07_mm": 45.481998443603516
+   },
+   "airport_cell": {
+    "row": 99,
+    "col": 395,
+    "center": [
+     45.791667,
+     -108.541667
+    ],
+    "tmax_C": 26.616498947143555,
+    "tmin_C": 14.413199424743652,
+    "ppt_2025_06_15_mm": 0.0,
+    "ppt_2025_07_mm": 38.37900161743164
+   },
+   "benchland_cell": {
+    "row": 68,
+    "col": 360,
+    "center": [
+     47.083333,
+     -110.0
+    ],
+    "tmax_C": 23.330900192260742,
+    "tmin_C": 11.161199569702148,
+    "ppt_2025_06_15_mm": 8.983799934387207,
+    "ppt_2025_07_mm": 87.30599975585938
+   },
+   "grid": {
+    "shape": [
+     621,
+     1405
+    ],
+    "valid_cells": 481631,
+    "nodata_cells": 390874,
+    "tmax_CONUS_min_max_mean_C": [
+     2.561,
+     47.063,
+     27.78
+    ]
+   }
+  },
+  "gridmet": {
+   "billings_cell": {
+    "y": 87,
+    "x": 390,
+    "center": [
+     45.775,
+     -108.516667
+    ],
+    "pr_2025_06_15_mm": 3.6,
+    "pr_2025_07_sum_mm": 42.9,
+    "pr_2025_07_days": 31,
+    "tmmx_2025_06_15_K": 301.9,
+    "tmmx_2025_06_15_C": 28.75,
+    "tmmn_2025_06_15_K": 285.0,
+    "tmmn_2025_06_15_C": 11.85,
+    "tmmn_2025_06_14_16_raw": [
+     774,
+     750,
+     747
+    ]
+   },
+   "benchland_cell": {
+    "y": 56,
+    "x": 354,
+    "center": [
+     47.066667,
+     -110.016667
+    ],
+    "pr_2025_06_15_mm": 11.8,
+    "pr_2025_07_sum_mm": 90.8,
+    "pr_2025_07_days": 31,
+    "tmmx_2025_06_15_K": 296.0,
+    "tmmx_2025_06_15_C": 22.85,
+    "tmmn_2025_06_15_K": 282.7,
+    "tmmn_2025_06_15_C": 9.55
+   }
+  },
+  "daymet": {
+   "billings_pixel": {
+    "tile": 12096,
+    "elev_m": 955,
+    "lat_lon": [
+     45.7836,
+     -108.5047
+    ],
+    "tmax_2025_06_15_C": 28.97,
+    "tmin_2025_06_15_C": 14.71,
+    "prcp_2025_06_15_mm": 2.26,
+    "prcp_2025_07_sum_mm": 41.77,
+    "prcp_2025_07_days": 31
+   },
+   "benchland_pixel": {
+    "tile": 12275,
+    "elev_m": 1320,
+    "lat_lon": [
+     47.08,
+     -110.02
+    ],
+    "tmax_2025_06_15_C": 23.86,
+    "tmin_2025_06_15_C": 9.74,
+    "prcp_2025_06_15_mm": 5.5,
+    "prcp_2025_07_sum_mm": 74.12,
+    "prcp_2025_07_days": 31
+   }
+  },
+  "daymet_latest": {
+   "years_in_response": [
+    1980,
+    2025
+   ],
+   "row_count": 16790,
+   "last_date": "2025-12-31",
+   "any_2026_rows": false
+  },
+  "ghcn": {
+   "tmax_2025_06_15_C": 28.3,
+   "tmin_2025_06_15_C": 15.0,
+   "prcp_2025_06_15_mm": 3.3,
+   "prcp_2025_06_15_mflag": "",
+   "prcp_2025_07_sum_mm": 24.2,
+   "prcp_2025_07_days_present": 31,
+   "prcp_2025_07_trace_days": [
+    "2025-07-10",
+    "2025-07-11",
+    "2025-07-14",
+    "2025-07-19",
+    "2025-07-20",
+    "2025-07-21"
+   ],
+   "tmax_last_date": "2026-10-16"
+  },
+  "ghcn_s3_stale": {
+   "last_tmax_date": "20250206",
+   "rows": 393178
+  },
+  "absolute_values": {
+   "ghcn_airport_usw00024033": {
+    "tmax_F": 82.94,
+    "tmin_F": 59.0,
+    "prcp_0615_in": 0.13,
+    "prcp_jul_in": 0.953
+   },
+   "prism_billings_cell": {
+    "tmax_F": 80.44,
+    "tmin_F": 57.98,
+    "prcp_0615_in": 0.0,
+    "prcp_jul_in": 1.791
+   },
+   "prism_airport_cell": {
+    "tmax_F": 79.91,
+    "tmin_F": 57.94,
+    "prcp_0615_in": 0.0,
+    "prcp_jul_in": 1.511
+   },
+   "daymet_billings_pixel": {
+    "tmax_F": 84.15,
+    "tmin_F": 58.48,
+    "prcp_0615_in": 0.089,
+    "prcp_jul_in": 1.644
+   },
+   "gridmet_billings_cell": {
+    "tmax_F": 83.75,
+    "tmin_F": 53.33,
+    "prcp_0615_in": 0.142,
+    "prcp_jul_in": 1.689
+   }
+  },
+  "differences_source_minus_ghcn": {
+   "prism_billings_cell": {
+    "tmax_diff_F": -2.5,
+    "tmin_diff_F": -1.02,
+    "prcp_0615_diff_in": -0.13,
+    "prcp_jul_diff_in": 0.838
+   },
+   "prism_airport_cell": {
+    "tmax_diff_F": -3.03,
+    "tmin_diff_F": -1.06,
+    "prcp_0615_diff_in": -0.13,
+    "prcp_jul_diff_in": 0.558
+   },
+   "daymet_billings_pixel": {
+    "tmax_diff_F": 1.21,
+    "tmin_diff_F": -0.52,
+    "prcp_0615_diff_in": -0.041,
+    "prcp_jul_diff_in": 0.692
+   },
+   "gridmet_billings_cell": {
+    "tmax_diff_F": 0.81,
+    "tmin_diff_F": -5.67,
+    "prcp_0615_diff_in": 0.012,
+    "prcp_jul_diff_in": 0.736
+   }
+  },
+  "benchland": {
+   "prism_tmax_F": 74.0,
+   "prism_tmin_F": 52.09,
+   "prism_ppt_0615_in": 0.354,
+   "prism_ppt_jul_in": 3.437,
+   "gridmet_tmax_F": 73.13,
+   "gridmet_tmin_F": 49.19,
+   "gridmet_ppt_0615_in": 0.465,
+   "gridmet_ppt_jul_in": 3.575,
+   "daymet_tmax_F": 74.95,
+   "daymet_tmin_F": 49.53,
+   "daymet_ppt_0615_in": 0.217,
+   "daymet_ppt_jul_in": 2.918
+  },
+  "budget": {
+   "stored_download_bytes_measured": 35849254,
+   "unmeasured_800m_zip_upper_bound_bytes": 52428800,
+   "download_bytes_total_upper_bound": 88278054,
+   "cap_bytes": 100000000
+  }
+ },
+ "terms": [
+  {
+   "source": "prism_terms",
+   "url": "https://prism.oregonstate.edu/terms/",
+   "quote": "Data. All data (gridded, polygon, tabular, graphical) retrieved from this website or otherwise provided on the website may be freely reproduced and distributed.",
+   "reading": "Free reproduction and distribution is permitted by the site's own terms. No commercial-use clause appears on the page.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "prism_terms",
+   "url": "https://prism.oregonstate.edu/terms/",
+   "quote": "References to the Data. When the data are used, any description should clearly and prominently state, at a minimum, our name, URL, and the date of data access.",
+   "reading": "Attribution (name, URL, access date) is required for any use.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "prism_terms",
+   "url": "https://prism.oregonstate.edu/terms/",
+   "quote": "Copyright and Ownership. All data and information presented through this website are protected by United States copyright laws and applicable international copyright treaties. The PRISM Group, Oregon State University retains rights to ownership of the data and information.",
+   "reading": "Oregon State University keeps ownership and copyright. PRISM is therefore not public domain, which conflicts with the public-domain preference in the project's decision 7 unless counsel accepts the free-distribution grant.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "prism_terms",
+   "url": "https://prism.oregonstate.edu/terms/",
+   "quote": "Disclaimers. It is not recommended that PRISM data be used to calculate very long-term trends.",
+   "reading": "The site itself advises against long-term trend use.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "prism_terms",
+   "url": "https://prism.oregonstate.edu/terms/",
+   "quote": "Map Graphics. Map graphics may be freely reproduced and distributed, as long as the PRISM Group copyright notice, URL, and the date of map creation are reproduced in full.",
+   "reading": "A separate clause for map images (not gridded data); it requires a copyright notice on any image.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "prism_downloads",
+   "url": "https://prism.oregonstate.edu/downloads/",
+   "quote": "It is important to note that preliminary data fetched in this manner do not account for the fact that we produce 8 versions of a daily grid (and 7 versions of a monthly grid), out to six months, at which point we call it \"final.\"",
+   "reading": "Automated fetches can return provisional grids. Daily grids change over six months before they are final.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "prism_ws_pdf",
+   "url": "https://prism.oregonstate.edu/documents/PRISM_downloads_web_service.pdf",
+   "quote": "Before downloading data, be sure to acquaint yourself with our terms of use, which explain how to acknowledge any use of our data.",
+   "reading": "The web service points back to the terms page for attribution.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "prism_ws_pdf",
+   "url": "https://prism.oregonstate.edu/documents/PRISM_downloads_web_service.pdf",
+   "quote": "Data older than six months are considered stable and should not change until a new time series version is released.",
+   "reading": "Grids older than six months are treated as stable by PRISM.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "earthdata_catalog",
+   "url": "https://www.earthdata.nasa.gov/data/catalog/ornl-cloud-daymet-daily-v4r1-2129-4.1",
+   "quote": "This dataset is openly shared, without restriction, in accordance with the EOSDIS Data Use and Citation Guidance.",
+   "reading": "The Daymet V4 R1 record states no restriction, by reference to the EOSDIS guidance below. That guidance defers to the sponsoring organization's license for non-NASA data.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "eosdis_guidance",
+   "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+   "quote": "Non-NASA data available through the ESDIS project is subject to the license arrangements of the sponsoring organization. Users are encouraged to validate the source and associated use permissions.",
+   "reading": "Daymet is an ORNL product, not a NASA-led mission. Its license is the sponsoring organization's license, which was not located as text in this run.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "eosdis_guidance",
+   "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+   "quote": "Unless the content is marked with a use restriction or license, data provided from a NASA-led mission are licensed as Creative Commons Zero (CC0). While there are no restrictions on the use of these data, data users are very strongly urged to cite the data used in their work products.",
+   "reading": "The CC0 default applies to NASA-led mission data. Applying it to Daymet is not established by this text (unverified).",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "daymet_home",
+   "url": "https://daymet.ornl.gov/",
+   "quote": "The continued development of the Daymet algorithm and processing is also supported by the Office of Biological and Environmental Research within the U.S. Department of Energy's Office of Science.",
+   "reading": "Names the U.S. Department of Energy Office of Science as a co-sponsor, so DOE/ORNL terms are the ones to confirm.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "gridmet_home",
+   "url": "https://www.climatologylab.org/gridmet.html",
+   "quote": "To the extent possible under law, John Abatzoglou has waived all copyright and related or neighboring rights to gridMET.",
+   "reading": "The author waives copyright to the extent the law allows (a CC0-style waiver statement on the product page).",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "gridmet_home",
+   "url": "https://www.climatologylab.org/gridmet.html",
+   "quote": "This work (METDATA, by John Abatzoglou) is free of known copyright restrictions.",
+   "reading": "States no known copyright restrictions. Written as a page statement, not a separate license file (noted as an open question).",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "gridmet_home",
+   "url": "https://www.climatologylab.org/gridmet.html",
+   "quote": "gridMET is semi-operational product that we provide to the community pro-bono and update daily.",
+   "reading": "Provided free to the community; the service is not contractually guaranteed.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "gridmet_home",
+   "url": "https://www.climatologylab.org/gridmet.html",
+   "quote": "gridMET blends spatial attributes of gridded climate data from PRISM with desirable temporal attributes (and additional variables) from regional reanalysis (NLDAS-2) using climatically aided interpolation.",
+   "reading": "gridMET is not independent of PRISM: it uses PRISM spatial patterns.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "gridmet_home",
+   "url": "https://www.climatologylab.org/gridmet.html",
+   "quote": "We caution against using gridMET to infer changes in precipitation intensity and frequency.",
+   "reading": "Precipitation caveat from the producer.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "gridmet_home",
+   "url": "https://www.climatologylab.org/gridmet.html",
+   "quote": "Data for dates within the last 60 days are considered preliminary and subject to change.",
+   "reading": "Recent gridMET values can change for 60 days after they are written.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "gridmet_home",
+   "url": "https://www.climatologylab.org/gridmet.html",
+   "quote": "gridMET nominally considers a \"day\" to be midnight-to-midnight Mountain Standard Time (7 UTC)",
+   "reading": "The gridMET day is midnight MST (07 UTC), which is 1 a.m. MDT in June.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "gridmet_das",
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.das",
+   "quote": "Days correspond approximately to calendar days ending at midnight, Mountain Standard Time (7 UTC the next calendar day)",
+   "reading": "Same day convention, stated in the NetCDF attributes.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "nws_disclaimer",
+   "url": "https://www.weather.gov/disclaimer",
+   "quote": "The information on National Weather Service (NWS) Web pages are in the public domain, unless specifically noted otherwise, and may be used without charge for any lawful purpose so long as you do not:",
+   "reading": "Public-domain statement for NWS web pages only. It does not state the terms for NCEI datasets (GHCN-Daily, normals, Climate at a Glance).",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "noaa_nodd",
+   "url": "https://www.noaa.gov/information-technology/open-data-dissemination",
+   "quote": "While these data are available to the public, it can be difficult to download and work with such large data volumes.",
+   "reading": "A public-availability statement, not a license. Not used as a legal basis.",
+   "verified_in_saved_source": true
+  },
+  {
+   "source": "noaa_normals",
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/us-climate-normals",
+   "quote": "They were first released in May 2021 (v1.0.0), and the statistics for 23 of the sites were reissued in 2023 (v1.0.1).",
+   "reading": "Version history of the 1991 to 2020 normals (context only).",
+   "verified_in_saved_source": true
+  }
+ ],
+ "facts": [
+  {
+   "claim": "PRISM web service URL pattern for a day or month BIL zip",
+   "value": "https://services.nacse.org/prism/data/get/us/4km/tmax/20250615?format=bil (also tmin, ppt, and monthly YYYYMM)",
+   "evidence": "PRISM_downloads_web_service.pdf (format option nc, asc, bil); fetched with HTTP 200, application/zip"
+  },
+  {
+   "claim": "4 km BIL zip sizes for 2025-06-15 (tmax, tmin, ppt) and July 2025 ppt monthly",
+   "value": "tmax 2,283,540 bytes; tmin 2,267,929; ppt daily 1,344,019; ppt 202507 2,190,509; each zip has 8 members; uncompressed BIL 3,490,020 bytes",
+   "evidence": "web service responses; zip listings (python zipfile)"
+  },
+  {
+   "claim": "PRISM 800 m daily product is available for 2025-06-15",
+   "value": "Yes: HTTP 200 application/zip, Content-Disposition prism_tmax_us_30s_20250615.zip; listed on the PRISM data directory at about 50M (dated 2025-12-18)",
+   "evidence": "HEAD and range requests; data.prism.oregonstate.edu listing"
+  },
+  {
+   "claim": "800 m zip size measured?",
+   "value": "No. The range request was ignored, so the full transfer was not counted. Upper bound taken as 50 MiB from the listing",
+   "evidence": "curl -r 0-0 response had no Content-Range header"
+  },
+  {
+   "claim": "PRISM 4 km grid geometry",
+   "value": "621 rows by 1405 columns; cell 0.041666667 degrees; ULXMAP -125.0, ULYMAP 49.916667; NAD83 geographic; NODATA -9999; 481,631 valid CONUS cells",
+   "evidence": "prism_tmax_us_25m_20250615.hdr and .prj; numpy read of BIL"
+  },
+  {
+   "claim": "PRISM 4 km is an upscaled 800 m grid",
+   "value": "Source modelled at 30 arc-second (about 800 m), then upscaled to 2.5 arc-minute (about 4 km) with a Gaussian filter",
+   "evidence": "info.txt PRISM_DATASET_REMARKS (tmax 2025-06-15 and ppt 202507)"
+  },
+  {
+   "claim": "PRISM day definition",
+   "value": "The day ends at 1200 UTC (06:00 MDT in June); a PRISM day runs from 1200 UTC on the previous date to 1200 UTC on the labeled date",
+   "evidence": "PRISM_update_schedule.pdf (2015 document): \"PRISM Day\" defined as the 24-hour period ending at 1200 UTC"
+  },
+  {
+   "claim": "PRISM versions and stability (lag)",
+   "value": "Daily grids are re-released up to 8 times over six months; monthly up to 7; 2025-06-15 tmax version 8 released 2025-12-18; 2026-10-17 tmax version 1 released 2026-10-18; July 2025 monthly ppt version 7 released 2026-01-19",
+   "evidence": "gridCount and releaseDate web services; PRISM downloads page; data page"
+  },
+  {
+   "claim": "Latest PRISM daily grid on the run date (2026-10-19)",
+   "value": "2026-10-17 (2-day lag; provisional version 1)",
+   "evidence": "gridCount 20261017 = 1; gridCount 20261018 returns invalid date (1 to 17 valid)"
+  },
+  {
+   "claim": "Billings Logan ASOS (KBIL) is a PRISM station input for 2025-06-15 tmax and July 2025 ppt",
+   "value": "KBIL, lat 45.8069, lon -108.5422, elevation 1112 m, ASOS station_id 2854 in both stn.csv files",
+   "evidence": "prism_tmax_us_25m_20250615.stn.csv and prism_ppt_us_25m_202507.stn.csv"
+  },
+  {
+   "claim": "PRISM Billings sample cell values (45.7917 N, 108.5000 W; row 99, column 396)",
+   "value": "2025-06-15 tmax 26.912 C (80.44 F); tmin 14.434 C (57.98 F); ppt 0.00 mm; July 2025 ppt 45.48 mm (1.79 in). 3x3 cell tmax range 26.25 to 27.35 C",
+   "evidence": "BIL read with numpy from the 4 km zips"
+  },
+  {
+   "claim": "PRISM airport cell values (row 99, column 395; 45.7917 N, 108.5417 W)",
+   "value": "tmax 26.617 C (79.91 F); tmin 14.413 C (57.94 F); 2025-06-15 ppt 0.00 mm; July 2025 ppt 38.38 mm (1.51 in)",
+   "evidence": "BIL read"
+  },
+  {
+   "claim": "PRISM Benchland sample cell (row 68, column 360; 47.0833 N, 110.0000 W)",
+   "value": "2025-06-15 tmax 23.331 C (74.00 F); tmin 11.161 C (52.09 F); ppt 8.98 mm (0.35 in); July 2025 ppt 87.31 mm (3.44 in)",
+   "evidence": "BIL read"
+  },
+  {
+   "claim": "Daymet resolution, variables and coverage",
+   "value": "1 km grid, Lambert Conformal Conic; tmax, tmin, prcp, srad, vp, swe, dayl; continental North America and Hawaii from 1980; Puerto Rico from 1950; through the most recent full calendar year",
+   "evidence": "daymet.ornl.gov home; Daymet_Daily_V4R1 user guide (2.95 MB PDF)"
+  },
+  {
+   "claim": "Daymet latest year and lag",
+   "value": "2025 (through 2025-12-31); Earthdata temporal extent 1950-01-01 to 2025-12-31, record updated 2026-05-22; lag to the run date 2026-10-19 is 292 days. The record update date (2026-05-22) is about 4.7 months after the year ended; read as the 2025 release date only as an inference (unverified)",
+   "evidence": "single-pixel API window 2025-12-20 to 2026-01-05 returned rows up to 2025-12-31; Earthdata catalog page"
+  },
+  {
+   "claim": "Daymet no-login access",
+   "value": "Single-pixel API returns CSV with no login: https://daymet.ornl.gov/single-pixel/api/data?lat=&lon=&vars=tmax,tmin,prcp&start=&end= (HTTP 200)",
+   "evidence": "HTTP 200 text/csv responses for Billings and Benchland"
+  },
+  {
+   "claim": "Daymet bulk netCDF access",
+   "value": "Requires Earthdata Login: protected path returns HTTP 401 with redirect to urs.earthdata.nasa.gov; the public directory path returns 404; THREDDS catalog path returns a Hyrax 400 error in the tested forms",
+   "evidence": "curl probes (logged)"
+  },
+  {
+   "claim": "Daymet single-pixel values (1 km pixel; Billings tile 12096, elevation 955 m)",
+   "value": "2025-06-15 tmax 28.97 C (84.15 F); tmin 14.71 C (58.48 F); prcp 2.26 mm (0.09 in); July 2025 prcp 41.77 mm (1.64 in; 31 days)",
+   "evidence": "single-pixel CSV"
+  },
+  {
+   "claim": "Daymet Benchland values (tile 12275, elevation 1320 m)",
+   "value": "2025-06-15 tmax 23.86 C (74.95 F); tmin 9.74 C (49.53 F); prcp 5.5 mm (0.22 in); July 2025 prcp 74.12 mm (2.92 in)",
+   "evidence": "single-pixel CSV"
+  },
+  {
+   "claim": "Daymet station inputs",
+   "value": "Daymet V4 R1 year 2025 used GHCN Daily version 3.34 (downloaded 2026-02-28) plus Environment and Climate Change Canada station data",
+   "evidence": "Daymet_Daily_V4R1 user guide, station-input section"
+  },
+  {
+   "claim": "Daymet day boundary for tmax and tmin",
+   "value": "Not stated in the guide text checked; treated as unverified",
+   "evidence": "user guide search for local standard time, midnight and 24-hour terms returned no matching definition"
+  },
+  {
+   "claim": "gridMET product",
+   "value": "About 4 km (1/24 degree) daily surface meteorology, contiguous US, 1979 to yesterday; variables tmmx, tmmn, pr, srad, vs, sph, rmax, rmin, vpd, pet, etr and fire-danger fields; provided pro bono",
+   "evidence": "climatologylab.org/gridmet.html; file server listing"
+  },
+  {
+   "claim": "gridMET access without login",
+   "value": "OPeNDAP ASCII subsets on http://thredds.northwestknowledge.net/thredds/dodsC/MET/... return values for single cells and time windows (HTTP 200); annual NetCDF files 44 to 161 MB each on the file server",
+   "evidence": "logged OPeNDAP requests; file server listing"
+  },
+  {
+   "claim": "gridMET port 8080 THREDDS",
+   "value": "Not reachable from this environment (connection failed after 134 s); the port 80 OPeNDAP path worked",
+   "evidence": "curl rc 28 on the 8080 catalog URL"
+  },
+  {
+   "claim": "gridMET units and scaling",
+   "value": "pr in mm, stored as UInt16 with scale 0.1; tmmx air_temperature in K, scale 0.1, add_offset 220; tmmn add_offset 210 K",
+   "evidence": "DAS attributes of pr_2025.nc, tmmx_2025.nc, tmmn_2025.nc"
+  },
+  {
+   "claim": "gridMET latest day and lag",
+   "value": "2026 file holds 290 days, 2026-01-01 to 2026-10-17 (lag 2 days on the run date); values within the last 60 days are preliminary",
+   "evidence": "pr_2026.nc DDS day dimension 290; product page"
+  },
+  {
+   "claim": "gridMET day convention",
+   "value": "Midnight to midnight Mountain Standard Time (07 UTC); in June this is 01:00 MDT",
+   "evidence": "product page; DAS note5 on pr_2025.nc"
+  },
+  {
+   "claim": "gridMET Billings cell values (centroid 45.775 N, 108.5167 W; y 87, x 390; about 1.3 km from the sample point)",
+   "value": "2025-06-15 tmmx 28.75 C (83.75 F); tmmn 11.85 C (53.33 F); pr 3.6 mm (0.14 in); July 2025 pr 42.9 mm (1.69 in; 31 days)",
+   "evidence": "OPeNDAP ASCII values with scaling applied"
+  },
+  {
+   "claim": "gridMET Benchland cell values (centroid 47.0667 N, 110.0167 W; y 56, x 354)",
+   "value": "2025-06-15 tmmx 22.85 C (73.13 F); tmmn 9.55 C (49.19 F); pr 11.8 mm (0.46 in); July 2025 pr 90.8 mm (3.58 in)",
+   "evidence": "OPeNDAP ASCII values"
+  },
+  {
+   "claim": "gridMET is built from PRISM and NLDAS-2",
+   "value": "Spatial patterns from PRISM; temporal detail from NLDAS-2; not an independent station analysis",
+   "evidence": "product page methods text"
+  },
+  {
+   "claim": "NOAA U.S. Climate Normals 1991 to 2020",
+   "value": "30-year normals for about 15,000 stations; first released May 2021 (v1.0.0); 23 sites reissued 2023 (v1.0.1); CSV bulk download described; station file paths not confirmed",
+   "evidence": "ncei.noaa.gov product and access pages; normals path probes returned 404"
+  },
+  {
+   "claim": "NOAA Climate at a Glance county series is reachable without login",
+   "value": "Yellowstone County (MT-111) monthly CSV: tmax in F and pcp in inches, YYYYMM rows; 2025-06 mean max 77.6 F, 2025-07 85.8 F; precip 2025-06 2.33 in, 2025-07 1.86 in (county average, not a point)",
+   "evidence": "CSV responses for MT-111"
+  },
+  {
+   "claim": "GHCN-Daily S3 by_station CSV (task source) is stale",
+   "value": "Last TMAX date 2025-02-06 in 393,178 rows; S3 Last-Modified 2025-02-09; cannot be used for 2025 comparisons",
+   "evidence": "csv/by_station/USW00024033.csv parsed with csv module"
+  },
+  {
+   "claim": "Current GHCN-Daily .dly for USW00024033 (Billings Logan)",
+   "value": "Data through 2026-10-16 (lag 3 days); 2025-06-15 TMAX 28.3 C (82.94 F), TMIN 15.0 C (59.0 F), PRCP 3.3 mm (0.13 in); July 2025 PRCP 24.2 mm (0.953 in) on 31 of 31 days, with 6 trace days flagged T",
+   "evidence": "downloads/ghcn/USW00024033.dly parsed with fixed-width columns (readme units)"
+  },
+  {
+   "claim": "NCEI Access Data Service during this run",
+   "value": "HTTP 503 Service Unavailable (daily-summaries request); fallback to the .dly file",
+   "evidence": "access/services/data/v1 probe"
+  },
+  {
+   "claim": "Comparison at Billings, 2025-06-15 (grid minus GHCN airport, F and inches)",
+   "value": "PRISM cell tmax -2.50 F, tmin -1.02 F, ppt -0.13 in; PRISM airport cell tmax -3.03 F, tmin -1.06 F; Daymet pixel tmax +1.21 F, tmin -0.52 F, ppt -0.04 in; gridMET cell tmax +0.81 F, tmin -5.67 F, ppt +0.01 in",
+   "evidence": "measurements.json; differences in F = 1.8 times the Celsius difference"
+  },
+  {
+   "claim": "Comparison at Billings, July 2025 precipitation (grid minus GHCN airport, inches)",
+   "value": "GHCN airport 0.953 in; PRISM cell +0.84 in (1.79 in); PRISM airport cell +0.56 in (1.51 in); Daymet pixel +0.69 in (1.64 in); gridMET cell +0.74 in (1.69 in)",
+   "evidence": "measurements.json"
+  },
+  {
+   "claim": "Why the June 15 and July gaps are not like-for-like",
+   "value": "Different day boundaries (PRISM 06:00 MDT; gridMET 01:00 MDT; GHCN local standard midnight, with the TMAX convention unconfirmed); cell centers 0.8 to 1.3 km from the airport; PRISM already uses the airport ASOS as an input",
+   "evidence": "PRISM day definition; gridMET day note; stn.csv listings"
+  },
+  {
+   "claim": "Terms: PRISM",
+   "value": "Free reproduction and distribution with attribution; Oregon State University retains ownership and copyright; not public domain",
+   "evidence": "prism.oregonstate.edu/terms/ (quotes verified in the saved page)"
+  },
+  {
+   "claim": "Terms: Daymet",
+   "value": "Record says openly shared without restriction, by reference to EOSDIS guidance, which defers to the sponsoring organization license; DOE Office of Science co-sponsors Daymet",
+   "evidence": "Earthdata catalog page; EOSDIS guidance; Daymet home"
+  },
+  {
+   "claim": "Terms: gridMET",
+   "value": "Author waiver of copyright to the extent possible under law; free of known copyright restrictions",
+   "evidence": "climatologylab.org/gridmet.html"
+  },
+  {
+   "claim": "Terms: NOAA",
+   "value": "Public-domain statement exists for NWS web pages; no NCEI dataset terms located; NODD page says data are available to the public",
+   "evidence": "weather.gov/disclaimer; noaa.gov NODD page; NCEI pages checked"
+  },
+  {
+   "claim": "Download budget",
+   "value": "Stored downloads 35,849,254 bytes measured; one unmeasured 800 m zip transfer bounded at 52,428,800 bytes (50 MiB listing); total upper bound 88,278,054 bytes (under the 100 MB cap)",
+   "evidence": "os.walk of downloads excluding local extractions; fetch log; PRISM listing"
+  }
+ ],
+ "urls_checked": [
+  {
+   "url": "https://prism.oregonstate.edu/",
+   "http_status": "200",
+   "bytes": 25544,
+   "content_check": "PRISM site page (HTTP 200): overview or navigation; no data values."
+  },
+  {
+   "url": "https://prism.oregonstate.edu/recent/",
+   "http_status": "200",
+   "bytes": 60733,
+   "content_check": "PRISM data page (redirected to /data/): 800m and 4km resolution options; daily, monthly, annual; stability categories Preliminary, Certain to change, Likely to change, Unlikely to change; stable after 6 months."
+  },
+  {
+   "url": "https://prism.oregonstate.edu/downloads/",
+   "http_status": "200",
+   "bytes": 16906,
+   "content_check": "Bulk download page: FTP and web service; states 8 versions of a daily grid and 7 of a monthly grid, out to six months, then final."
+  },
+  {
+   "url": "https://prism.oregonstate.edu/terms/",
+   "http_status": "200",
+   "bytes": 16331,
+   "content_check": "Terms of use: free reproduction and distribution of data; copyright and ownership retained by Oregon State University; attribution wording; disclaimers; map graphics clause."
+  },
+  {
+   "url": "https://prism.oregonstate.edu/about/",
+   "http_status": "404",
+   "bytes": 14333,
+   "content_check": "Not present (404)."
+  },
+  {
+   "url": "https://prism.oregonstate.edu/documents/PRISM_downloads_web_service.pdf",
+   "http_status": "200",
+   "bytes": 309445,
+   "content_check": "(see PRISM_downloads_web_service.pdf)"
+  },
+  {
+   "url": "https://prism.oregonstate.edu/documents/PRISM_update_schedule.pdf",
+   "http_status": "200",
+   "bytes": 109470,
+   "content_check": "Update schedule (2015 document): PRISM Day is the 24-hour period ending at 1200 UTC; updates 1 to 8 for daily grids, 1 to 7 for monthly."
+  },
+  {
+   "url": "https://prism.oregonstate.edu/documents/PRISM_datasets.pdf",
+   "http_status": "200",
+   "bytes": 1129424,
+   "content_check": "PRISM site page (HTTP 200): overview or navigation; no data values."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/us/4km/tmax/20250615?format=bil",
+   "http_status": "200",
+   "bytes": 2283540,
+   "content_check": "Web service 4km tmax 2025-06-15 BIL zip: 8 members, prism_tmax_us_25m_20250615.bil 3,490,020 bytes (float32, 621 rows by 1405 columns, NODATA -9999); info.txt release 8; stn.csv lists KBIL Billings ASOS."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/us/4km/tmin/20250615?format=bil",
+   "http_status": "200",
+   "bytes": 2267929,
+   "content_check": "Web service 4km tmin 2025-06-15 BIL zip: same 8-member structure; values read at the Billings cell."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/us/4km/ppt/20250615?format=bil",
+   "http_status": "200",
+   "bytes": 1344019,
+   "content_check": "Web service 4km ppt 2025-06-15 BIL zip: same structure; Billings cell 0.0 mm."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/us/4km/ppt/202507?format=bil",
+   "http_status": "200",
+   "bytes": 2190509,
+   "content_check": "Web service 4km ppt July 2025 monthly BIL zip: release 7 (final), created 2026-01-18; Billings cell 45.48 mm."
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USW00024033.csv",
+   "http_status": "200",
+   "bytes": 13856867,
+   "content_check": "S3 by_station CSV named in the task: 13,856,867 bytes; 393,178 data rows; last TMAX date 2025-02-06; S3 Last-Modified 2025-02-09. Stale: no June or July 2025 rows."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt",
+   "http_status": "200",
+   "bytes": 29587,
+   "content_check": "GHCN-Daily readme (29,587 bytes, version 3.35): PRCP in tenths of mm; TMAX and TMIN in tenths of degrees C; M, Q and S flag definitions; T flag means trace."
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/readme.txt",
+   "http_status": "404",
+   "bytes": 316,
+   "content_check": "Not present (404)."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/services/data/v1?dataset=daily-summaries&stations=USW00024033&startDate=2025-06-01&endDate=2025-07-31&dataTypes=TMAX,TMIN,PRCP&format=csv&units=standard&includeStationLocation=1&includeStationName=1",
+   "http_status": "503",
+   "bytes": 418,
+   "content_check": "NCEI Access Data Service request: HTTP 503 Service Unavailable (418 bytes); not usable during this run."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly",
+   "http_status": "200",
+   "bytes": 4625370,
+   "content_check": "Current GHCN-Daily .dly file for USW00024033 (4,625,370 bytes; Last-Modified 2026-10-18): TMAX, TMIN, PRCP through 2026-10-16; 2025-06-15 TMAX 283, TMIN 150, PRCP 33 (tenths of C and mm); July 2025 PRCP 31 of 31 days."
+  },
+  {
+   "url": "https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=2129",
+   "http_status": "200",
+   "bytes": 281860,
+   "content_check": "ORNL DAAC dataset link: redirected to the NASA Earthdata catalog record for Daymet V4 R1 (ds_id 2129)."
+  },
+  {
+   "url": "https://daymet.ornl.gov/",
+   "http_status": "200",
+   "bytes": 12058,
+   "content_check": "Daymet home (12,058 bytes): variables list; coverage 1980 onward (continental North America and Hawaii); Puerto Rico 1950 onward; DOE Office of Science support statement."
+  },
+  {
+   "url": "https://daymet.ornl.gov/single-pixel/",
+   "http_status": "200",
+   "bytes": 19590,
+   "content_check": "Single pixel tool page: API example with vars dayl, prcp, srad, swe, tmax, tmin, vp; citation for the tool (DOI 10.3334/ORNLDAAC/2361)."
+  },
+  {
+   "url": "https://thredds.daac.ornl.gov/thredds/catalog/ornldaac/2129/catalog.html",
+   "http_status": "400",
+   "bytes": 4338,
+   "content_check": "Redirected to an opendap.earthdata.nasa.gov Hyrax server; HTTP 400 \"requested DAP response suffix not recognized\": no THREDDS catalog listing obtained."
+  },
+  {
+   "url": "https://data.ornldaac.earthdata.nasa.gov/public/daymet/Daymet_Daily_V4R1/data/",
+   "http_status": "404",
+   "bytes": 1142,
+   "content_check": "Not present (404) on this public path."
+  },
+  {
+   "url": "https://daac.ornl.gov/daacdata/daymet/Daymet_V4/daily/",
+   "http_status": "401",
+   "bytes": 27,
+   "content_check": "HTTP 401 with redirect to urs.earthdata.nasa.gov: directory needs Earthdata Login."
+  },
+  {
+   "url": "https://www.earthdata.nasa.gov/data/catalog/ornl-cloud-daymet-daily-v4r1-2129-4.1",
+   "http_status": "200",
+   "bytes": 281860,
+   "content_check": "Earthdata catalog record: temporal extent 1950-01-01 to 2025-12-31; data format netCDF-4; updated 2026-05-22; states the data are openly shared, without restriction; citation DOI 10.3334/ORNLDAAC/2129."
+  },
+  {
+   "url": "https://daymet.ornl.gov/single-pixel/api/data?lat=45.7836&lon=-108.5047&vars=tmax,tmin,prcp&start=2025-06-01&end=2025-07-31",
+   "http_status": "200",
+   "bytes": 2065,
+   "content_check": "Daymet single pixel API (no login), Billings 2025-06-01 to 2025-07-31: text/csv, 61 data rows; header gives tile 12096, elevation 955 m; columns year, yday, prcp (mm/day), tmax (deg c), tmin (deg c)."
+  },
+  {
+   "url": "https://daymet.ornl.gov/single-pixel/api/data?lat=47.08&lon=-110.02&vars=tmax,tmin,prcp&start=2025-06-01&end=2025-07-31",
+   "http_status": "200",
+   "bytes": 2045,
+   "content_check": "Daymet single pixel API, Benchland 2025-06-01 to 2025-07-31: 61 rows; tile 12275; elevation 1320 m."
+  },
+  {
+   "url": "https://daymet.ornl.gov/single-pixel/api/data?lat=45.7836&lon=-108.5047&vars=tmax,tmin,prcp&start=2025-12-20&end=2026-01-05",
+   "http_status": "200",
+   "bytes": 425149,
+   "content_check": "Same Billings request with a window into 2026: returned the full 1980 to 2025 record (16,790 rows, 425,149 bytes), not the window requested. Latest row 2025-12-31; no 2026 rows."
+  },
+  {
+   "url": "https://daymet.ornl.gov/single-pixel/api/data?lat=45.7836&lon=-108.5047&vars=tmax,tmin,prcp&start=2024-01-01&end=2024-12-31",
+   "http_status": "200",
+   "bytes": 9712,
+   "content_check": "Billings single pixel API for 2024: 365 rows, 2024-01-01 to 2024-12-30 (leap-year convention noted in the user guide)."
+  },
+  {
+   "url": "https://data.ornldaac.earthdata.nasa.gov/protected/daymet/Daymet_Daily_V4R1/data/daymet_v4_daily_na_tmax_2025.nc",
+   "http_status": "401",
+   "bytes": 27,
+   "content_check": "HTTP 401 with redirect to urs.earthdata.nasa.gov: netCDF files in the protected path need Earthdata Login."
+  },
+  {
+   "url": "https://thredds.daac.ornl.gov/thredds/catalog/ornldaac/2129/catalog.xml",
+   "http_status": "400",
+   "bytes": 4334,
+   "content_check": "Same Hyrax HTTP 400 response for the .xml suffix."
+  },
+  {
+   "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+   "http_status": "200",
+   "bytes": 139608,
+   "content_check": "EOSDIS Data Use and Citation Guidance (139,608 bytes): sponsoring-organization license clause for non-NASA data; CC0 clause for NASA-led missions; citation requests."
+  },
+  {
+   "url": "https://daac.ornl.gov/DAYMET/guides/Daymet_Daily_V4R1.pdf",
+   "http_status": "404",
+   "bytes": 32964,
+   "content_check": "Not present (404)."
+  },
+  {
+   "url": "http://www.climatologylab.org/gridmet.html",
+   "http_status": "200",
+   "bytes": 68230,
+   "content_check": "gridMET product page (68,230 bytes): 4 km (1/24 degree) daily, 1979 to yesterday; methods (PRISM plus NLDAS-2); copyright waiver statement; 60-day preliminary note; day convention MST midnight; THREDDS and file access options."
+  },
+  {
+   "url": "https://www.climatologylab.org/gridmet.html",
+   "http_status": "200",
+   "bytes": 68230,
+   "content_check": "gridMET product page (68,230 bytes): 4 km (1/24 degree) daily, 1979 to yesterday; methods (PRISM plus NLDAS-2); copyright waiver statement; 60-day preliminary note; day convention MST midnight; THREDDS and file access options."
+  },
+  {
+   "url": "https://data.ornldaac.earthdata.nasa.gov/public/daymet/Daymet_Daily_V4R1/comp/Daymet_Daily_V4R1.pdf",
+   "http_status": "200",
+   "bytes": 2947884,
+   "content_check": "Daymet V4 R1 user guide (2.95 MB PDF): coverage 1980 to 2025 (continental) and 1950 to 2025 (Puerto Rico); variables; station inputs (GHCN Daily 3.34 for 2025); calendar convention."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net:8080/thredds/catalog/MET/catalog.html",
+   "http_status": "not reached (curl rc 28)",
+   "bytes": 0,
+   "content_check": "Port 8080 THREDDS (listed on the product page): connection failed after 134 seconds (curl rc 28); not reachable from this environment."
+  },
+  {
+   "url": "http://www.northwestknowledge.net/metdata/data/",
+   "http_status": "200",
+   "bytes": 247720,
+   "content_check": "gridMET file server listing (247,720 bytes, 818 entries): annual NetCDF per variable, e.g. pr_2025.nc 56M, tmmx_2025.nc 145M, tmmn_2025.nc 146M, pr_2026.nc 44M, tmmx_2026.nc 115M."
+  },
+  {
+   "url": "https://www.climatologylab.org/gridmet.html",
+   "http_status": "200",
+   "bytes": 68230,
+   "content_check": "gridMET product page (68,230 bytes): 4 km (1/24 degree) daily, 1979 to yesterday; methods (PRISM plus NLDAS-2); copyright waiver statement; 60-day preliminary note; day convention MST midnight; THREDDS and file access options."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.ascii?lat[0:1:9]",
+   "http_status": "not reached (curl rc 3)",
+   "bytes": 0,
+   "content_check": "HTTP not reached (curl rc 3); 0 bytes; "
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.ascii?lon[0:1:9]",
+   "http_status": "not reached (curl rc 3)",
+   "bytes": 0,
+   "content_check": "HTTP not reached (curl rc 3); 0 bytes; "
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.das",
+   "http_status": "200",
+   "bytes": 3800,
+   "content_check": "OPeNDAP DAS (3,800 bytes): pr units mm, scale_factor 0.1, add_offset 0; time note: days end at midnight MST (7 UTC)."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.dds",
+   "http_status": "200",
+   "bytes": 371,
+   "content_check": "DDS: precipitation_amount UInt16 [day=365][lat=585][lon=1386]."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmx/tmmx_2025.nc.das",
+   "http_status": "200",
+   "bytes": 3799,
+   "content_check": "DAS: air_temperature units K, scale_factor 0.1, add_offset 220.0."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmx/tmmx_2025.nc.dds",
+   "http_status": "200",
+   "bytes": 365,
+   "content_check": "DDS: air_temperature UInt16 [day=365][lat=585][lon=1386]."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.ascii?lat[0:584],lon[0:1385],day[0:364]",
+   "http_status": "200",
+   "bytes": 42610,
+   "content_check": "OPeNDAP ASCII coordinate arrays: lat 585 values (49.40 to 25.07), lon 1386 values (-124.77 to -67.06), day 365 values (45656 to 46020 days since 1900-01-01)."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.ascii?precipitation_amount[165:165][87:87][390:390]",
+   "http_status": "200",
+   "bytes": 491,
+   "content_check": "OPeNDAP ASCII single cell, 2025-06-15, Billings cell (y 87, x 390): raw value 36 (x0.1 = 3.6 mm); day value 45821 = 2025-06-15 confirmed."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.ascii?precipitation_amount[181:211][87:87][390:390]",
+   "http_status": "200",
+   "bytes": 1093,
+   "content_check": "OPeNDAP ASCII July 2025 series for the Billings cell: 31 values, raw sum 429 (42.9 mm)."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmx/tmmx_2025.nc.ascii?air_temperature[165:165][87:87][390:390]",
+   "http_status": "200",
+   "bytes": 461,
+   "content_check": "gridMET tmmx 2025-06-15 Billings cell: raw 819 (x0.1 + 220 K = 301.9 K = 28.75 C)."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmn/tmmn_2025.nc.ascii?air_temperature[165:165][87:87][390:390]",
+   "http_status": "200",
+   "bytes": 461,
+   "content_check": "tmmn 2025-06-15 Billings cell: raw 750 (x0.1 + 210 K = 285.0 K = 11.85 C). June 14 raw 774; June 16 raw 747."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmn/tmmn_2025.nc.das",
+   "http_status": "200",
+   "bytes": 3799,
+   "content_check": "DAS: air_temperature units K, scale_factor 0.1, add_offset 210.0."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmn/tmmn_2025.nc.ascii?air_temperature[164:166][87:87][390:390]",
+   "http_status": "200",
+   "bytes": 503,
+   "content_check": "gridMET Billings cell June 14 to 16 tmmn: raw 774, 750, 747 (287.4, 285.0 and 284.7 K)."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmx/tmmx_2025.nc.ascii?air_temperature[164:166][87:87][390:390]",
+   "http_status": "200",
+   "bytes": 503,
+   "content_check": "gridMET Billings cell June 14 to 16 tmmx: raw 801, 819, 793 (302.1, 301.9 and 299.3 K)."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.ascii?precipitation_amount[164:166][87:87][390:390]",
+   "http_status": "200",
+   "bytes": 530,
+   "content_check": "gridMET Billings cell June 14 to 16 precipitation: raw 0, 36, 17 (0.0, 3.6 and 1.7 mm)."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.ascii?precipitation_amount[165:165][56:56][354:354]",
+   "http_status": "200",
+   "bytes": 491,
+   "content_check": "HTTP 200; 491 bytes; text/plain; charset=UTF-8"
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2025.nc.ascii?precipitation_amount[181:211][56:56][354:354]",
+   "http_status": "200",
+   "bytes": 1097,
+   "content_check": "Benchland cell (y 56, x 354) July 2025 series: raw sum 908 (90.8 mm)."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmx/tmmx_2025.nc.ascii?air_temperature[165:165][56:56][354:354]",
+   "http_status": "200",
+   "bytes": 460,
+   "content_check": "Benchland tmmx 2025-06-15: raw 760 = 22.85 C."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmn/tmmn_2025.nc.ascii?air_temperature[165:165][56:56][354:354]",
+   "http_status": "200",
+   "bytes": 460,
+   "content_check": "Benchland tmmn 2025-06-15: raw 727 = 9.55 C."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/tmmn/tmmn_2025.nc.ascii?air_temperature[164:166][87:87][390:390]",
+   "http_status": "200",
+   "bytes": 503,
+   "content_check": "gridMET Billings cell June 14 to 16 tmmn: raw 774, 750, 747 (287.4, 285.0 and 284.7 K)."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2026.nc.dds",
+   "http_status": "200",
+   "bytes": 371,
+   "content_check": "DDS: precipitation_amount UInt16 [day=290][lat=585][lon=1386]: 290 days, 2026-01-01 to 2026-10-17."
+  },
+  {
+   "url": "http://thredds.northwestknowledge.net/thredds/dodsC/MET/pr/pr_2026.nc.ascii?day[0:299]",
+   "http_status": "400",
+   "bytes": 148,
+   "content_check": "OPeNDAP request beyond the 290-day size of the 2026 file: HTTP 400 \"stop >= size\"; superseded by the DDS (290 days)."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/us-climate-normals",
+   "http_status": "200",
+   "bytes": 97452,
+   "content_check": "NCEI U.S. Climate Normals product page (97,452 bytes): 1991 to 2020 normals; first released May 2021 (v1.0.0); 23 sites reissued 2023 (v1.0.1); bulk CSV and Web Accessible Folders described."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/normals-daily/2020/",
+   "http_status": "404",
+   "bytes": 196,
+   "content_check": "Normals folder path tried: HTTP 404."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/county/time-series",
+   "http_status": "200",
+   "bytes": 1230623,
+   "content_check": "CAG county time-series page (1.23 MB HTML app shell)."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/disclaimer",
+   "http_status": "404",
+   "bytes": 29920,
+   "content_check": "NCEI disclaimer path: HTTP 404."
+  },
+  {
+   "url": "https://www.noaa.gov/disclaimer",
+   "http_status": "200",
+   "bytes": 49563,
+   "content_check": "NOAA external-link disclaimer page (49,563 bytes): no public-domain statement for data found."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/county/time-series/MT-111/tmax/1/0/1895-2025/data.csv",
+   "http_status": "200",
+   "bytes": 18585,
+   "content_check": "Yellowstone County (MT-111) monthly maximum temperature CSV (18,585 bytes): header \"Yellowstone County, Montana Maximum Temperature\", \"Units: Degrees Fahrenheit\", rows YYYYMM from 189501; 2025-06 77.6, 2025-07 85.8 (county series, not a point)."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/county/time-series/MT-111/pcp/1/0/1895-2025/data.csv",
+   "http_status": "200",
+   "bytes": 18781,
+   "content_check": "Yellowstone County monthly precipitation CSV (18,781 bytes): units inches; 2025-06 2.33, 2025-07 1.86."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/us-climate-normals/access/2020/USW00024033.csv",
+   "http_status": "404",
+   "bytes": 196,
+   "content_check": "Normals station file path tried: HTTP 404 (not located)."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/normals-daily/2020/access/USW00024033.csv",
+   "http_status": "404",
+   "bytes": 196,
+   "content_check": "Normals station file path tried: HTTP 404 (not located)."
+  },
+  {
+   "url": "https://www.noaa.gov/information-technology/open-data-dissemination",
+   "http_status": "200",
+   "bytes": 80978,
+   "content_check": "NOAA NODD page (80,978 bytes): describes public access to NOAA data on cloud platforms; not a license."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ncdc:C00861",
+   "http_status": "503",
+   "bytes": 418,
+   "content_check": "NCEI GHCN-Daily ISO metadata: HTTP 503 (418 bytes)."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/us-climate-normals/",
+   "http_status": "200",
+   "bytes": 5154,
+   "content_check": "NCEI normals access page (5,154 bytes): quick access and full access tools; bulk download description."
+  },
+  {
+   "url": "https://www.weather.gov/disclaimer",
+   "http_status": "200",
+   "bytes": 41679,
+   "content_check": "NWS disclaimer (41,679 bytes): public-domain statement for NWS Web pages; does not cover NCEI datasets by its own wording."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/policy",
+   "http_status": "404",
+   "bytes": 29904,
+   "content_check": "NCEI policy path: HTTP 404."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/us-climate-normals/",
+   "http_status": "404",
+   "bytes": 196,
+   "content_check": "Normals folder path tried: HTTP 404."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/data/us-climate-normals/access/",
+   "http_status": "404",
+   "bytes": 196,
+   "content_check": "Normals access folder path tried: HTTP 404."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/",
+   "http_status": "200",
+   "bytes": 671091,
+   "content_check": "CAG landing page (671,091 bytes): no terms statement found by keyword search."
+  },
+  {
+   "url": "https://prism.oregonstate.edu/documents/PRISM_downloads_FTP.pdf",
+   "http_status": "200",
+   "bytes": 198434,
+   "content_check": "FTP documentation: 800m and 4km CONUS data; time_series and normals categories."
+  },
+  {
+   "url": "https://data.prism.oregonstate.edu/",
+   "http_status": "200",
+   "bytes": 1711,
+   "content_check": "PRISM data directory root (1,711 bytes)."
+  },
+  {
+   "url": "https://data.prism.oregonstate.edu/daily/tmax/2025/",
+   "http_status": "404",
+   "bytes": 196,
+   "content_check": "Not present (404): the daily path in the directory tree differs."
+  },
+  {
+   "url": "https://data.prism.oregonstate.edu/time_series/us/an/800m/tmax/daily/2025/",
+   "http_status": "200",
+   "bytes": 89826,
+   "content_check": "PRISM data directory listing for 800m daily tmax 2025: includes prism_tmax_us_30s_20250615.zip dated 2025-12-18 04:16, size shown as 50M (Apache rounding)."
+  },
+  {
+   "url": "https://data.prism.oregonstate.edu/time_series/us/an/4km/tmax/daily/2025/",
+   "http_status": "200",
+   "bytes": 89823,
+   "content_check": "PRISM data directory listing for 4km daily tmax 2025: prism_tmax_us_25m_20250615.zip dated 2025-12-18 04:17, size shown as 3.0M (differs from the 2.28 MB web service zip; packaging not resolved)."
+  },
+  {
+   "url": "https://daac.ornl.gov/about/policies/",
+   "http_status": "200",
+   "bytes": 161006,
+   "content_check": "HTTP 200; 161006 bytes; text/html; charset=UTF-8"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily",
+   "http_status": "200",
+   "bytes": 73503,
+   "content_check": "GHCN-Daily product page (73,503 bytes): access and documentation links; no use-constraint text found by keyword search."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/us/800m/tmax/20250615?format=bil (HEAD)",
+   "http_status": "200",
+   "bytes": 0,
+   "content_check": "Headers only: application/zip; Content-Disposition prism_tmax_us_30s_20250615.zip; no Content-Length header. 800m daily product available for 2025-06-15."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/us/800m/tmax/20250615?format=bil (GET with Range 0-0)",
+   "http_status": "200 (Range ignored)",
+   "bytes": -1,
+   "content_check": "The server ignored the Range header and sent the full zip to /dev/null. The byte count was not captured. The PRISM listing shows 50M for this file; the transfer is counted at the 50 MiB upper bound in the budget. The file was not stored or read."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/gridCount/us/tmax/20250615",
+   "http_status": "200",
+   "bytes": 1,
+   "content_check": "Returned 8 (final update count)."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/gridCount/us/tmax/20261015 (also 20261016, 20261017)",
+   "http_status": "200",
+   "bytes": 1,
+   "content_check": "Returned 1 (first update, provisional) for each of 2026-10-15, 2026-10-16 and 2026-10-17."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/gridCount/us/tmax/20261018",
+   "http_status": "200",
+   "bytes": 40,
+   "content_check": "Body: \"Invalid date: 20261018. Valid day ranges for the given month are 1 to 17\": latest PRISM daily grid is 2026-10-17."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/gridCount/us/ppt/202507",
+   "http_status": "200",
+   "bytes": 1,
+   "content_check": "Returned 7 (final monthly update count)."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/releaseDate/us/4km/tmax/20250615?json=true",
+   "http_status": "200",
+   "bytes": 107,
+   "content_check": "JSON: [\"2025-06-15\", \"2025-12-18\", \"tmax\", \"8\", URL]: final version released 2025-12-18."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/releaseDate/us/4km/tmax/20261017?json=true",
+   "http_status": "200",
+   "bytes": 100,
+   "content_check": "JSON: [\"2026-10-17\", \"2026-10-18\", \"tmax\", \"1\", URL]: first version released 2026-10-18."
+  },
+  {
+   "url": "https://services.nacse.org/prism/data/get/releaseDate/us/4km/ppt/202507?json=true",
+   "http_status": "200",
+   "bytes": 100,
+   "content_check": "JSON: [\"2025-07-01\", \"2026-01-19\", \"ppt\", \"7\", URL]: July 2025 monthly final version released 2026-01-19."
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/ghcnd-readme.txt (HEAD)",
+   "http_status": "404",
+   "bytes": 0,
+   "content_check": "Not present at the bucket root."
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USW00024033.csv (HEAD)",
+   "http_status": "200",
+   "bytes": 0,
+   "content_check": "Content-Length 13,856,867; Last-Modified Sun, 09 Feb 2025 07:54:07 GMT."
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly (HEAD)",
+   "http_status": "200",
+   "bytes": 0,
+   "content_check": "Content-Length 4,625,370; Last-Modified Sun, 18 Oct 2026 22:51:32 GMT."
+  }
+ ],
+ "open_questions": [
+  "The proxy README and status command were not read: the environment denied that read, so no proxy-level diagnosis was attempted; the 503, 404 and connection failures are recorded as observed.",
+  "ORNL DAAC or DOE license text for Daymet was not located beyond the Earthdata statement; confirm the sponsoring-organization license before publishing derived Daymet values.",
+  "Terms, rate limits and permitted automated use of the Daymet single-pixel API were not located; it is an interactive tool API.",
+  "Whether PRISM free-distribution wording covers publishing derived per-cell values with attribution, given Oregon State University keeps ownership (decision 7 review).",
+  "No NCEI-level public-domain statement was located for GHCN-Daily, the normals or Climate at a Glance; the NWS disclaimer covers NWS web pages only.",
+  "The gridMET port 8080 THREDDS was unreachable from this environment; the port 80 OPeNDAP path worked; its long-term availability is unverified.",
+  "The PRISM 800 m zip size was not measured by transfer; the PRISM listing shows 50M while the 4 km listing (3.0M) does not match the 2.28 MB web service zip, so packaging differs between FTP and web service (not resolved).",
+  "The GHCN station coordinates for USW00024033 were not checked against ghcnd-stations.txt; PRISM station coordinates for KBIL were used for the airport cell.",
+  "Daymet daily tmax and tmin day boundary not established from the guide; the GHCN TMAX day boundary for this station was not confirmed from the readme.",
+  "Normals station files were not retrieved (folder paths tested returned 404); NCEI access service returned 503 during the run; normals per-station values remain unverified.",
+  "The Daymet API returned the full 1980 to 2025 record for a window that crossed into 2026; the API range behavior is not documented in the pages checked.",
+  "One day and one month at three points are a sanity comparison, not a validation; the grids differ by 0.8 to 1.3 km in cell position and by day convention.",
+  "Per-tile shardability: PRISM web service returns one whole CONUS grid per request (about 2.3 MB zipped per day); gridMET OPeNDAP allows direct cell subsets; Daymet single-pixel works per point. The cost of a 0.1-degree tile build was not estimated.",
+  "The 2025-06-15 PRISM values are final (version 8, released 2025-12-18); recent PRISM values are provisional and change for six months, so the build needs version tracking."
+ ],
+ "download_bytes_total": 88278054,
+ "download_budget_note": "Measured stored downloads 35,849,254 bytes; one 800 m transfer not measured, bounded at 52,428,800 bytes; upper bound 88,278,054 bytes is under the 100 MB cap. The downloads folder was deleted after this record was written.",
+ "record_file": "/home/user/wt/research-b35/temperature-alternatives.json",
+ "scripts_folder": "/home/user/wt/research-b35/scratch-temperature-alternatives"
+}

@@ -1,0 +1,411 @@
+{
+  "lid": "SACM8",
+  "usgsId": "06164510",
+  "reachId": "12306001",
+  "name": "Milk River near Saco",
+  "description": "BJORNBERG BRIDGE",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "GGW",
+    "name": "Glasgow"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Phillips",
+  "timeZone": "MST7MDT",
+  "latitude": 48.5092,
+  "longitude": -107.21875,
+  "pedts": {
+    "observed": "HGIRV",
+    "forecast": "HGIFF"
+  },
+  "status": {
+    "observed": {
+      "primary": 3.03,
+      "primaryUnit": "ft",
+      "secondary": 0.129,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:00:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": 24,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": 22,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 20,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 18,
+        "flow": -9999
+      }
+    },
+    "lro": {
+      "minorCS": "0.06",
+      "moderateCS": "0.05",
+      "majorCS": "< 0.05",
+      "producedTime": "2026-09-23T22:05:04Z",
+      "interval": "OND"
+    },
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1986-03-04T00:00:00Z",
+          "stage": 26.7,
+          "flow": 10500,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-04-14T06:15:00Z",
+          "stage": 26.24,
+          "flow": 18147,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-10-01T00:00:00Z",
+          "stage": 24.45,
+          "flow": 11400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-03-24T00:00:00Z",
+          "stage": 24.38,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1979-03-21T00:00:00Z",
+          "stage": 24.3,
+          "flow": 9000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-04-23T16:00:00Z",
+          "stage": 24.22,
+          "flow": 12846,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1978-04-03T00:00:00Z",
+          "stage": 24.2,
+          "flow": 12400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-03-29T00:00:00Z",
+          "stage": 23.07,
+          "flow": 11400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-03-18T00:00:00Z",
+          "stage": 22.95,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-04-14T22:15:00Z",
+          "stage": 22.07,
+          "flow": 10560,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-03-25T21:15:00Z",
+          "stage": 21.96,
+          "flow": 10240,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-10-08T16:30:00Z",
+          "stage": 21.61,
+          "flow": 10115,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-09T17:00:00Z",
+          "stage": 21.53,
+          "flow": 9749,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1994-03-16T00:00:00Z",
+          "stage": 19.52,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-06-09T20:30:00Z",
+          "stage": 18.83,
+          "flow": 7891,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2023-04-14T06:15:00Z",
+          "stage": 26.24,
+          "flow": 18147,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-03-25T21:15:00Z",
+          "stage": 21.96,
+          "flow": 10240,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-04-23T16:00:00Z",
+          "stage": 24.22,
+          "flow": 12846,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-10-08T16:30:00Z",
+          "stage": 21.61,
+          "flow": 10115,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-06-09T20:30:00Z",
+          "stage": 18.83,
+          "flow": 7891,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-09T17:00:00Z",
+          "stage": 21.53,
+          "flow": 9749,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-04-14T22:15:00Z",
+          "stage": 22.07,
+          "flow": 10560,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-03-29T00:00:00Z",
+          "stage": 23.07,
+          "flow": 11400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-03-24T00:00:00Z",
+          "stage": 24.38,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-03-18T00:00:00Z",
+          "stage": 22.95,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1994-03-16T00:00:00Z",
+          "stage": 19.52,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-10-01T00:00:00Z",
+          "stage": 24.45,
+          "flow": 11400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-03-04T00:00:00Z",
+          "stage": 26.7,
+          "flow": 10500,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1979-03-21T00:00:00Z",
+          "stage": 24.3,
+          "flow": 9000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1978-04-03T00:00:00Z",
+          "stage": 24.2,
+          "flow": 12400,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 26.5,
+        "statement": "Bjornberg Road north of the Milk River begins to flood."
+      },
+      {
+        "stage": 20,
+        "statement": "Water starts flooding the Bjornberg Bridge fishing access site on the north side of the river. "
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/SACM8.SSTG.prob.weekint.gif",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/SACM8.QINE.prob.weekint.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/SACM8.volume.prob.weekint.gif"
+      },
+      "entperiod": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/SACM8.SSTG.exceed.90day.gif",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/SACM8.QINE.exceed.90day.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/SACM8.volume.exceed.90day.gif"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/SACM8.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/sacm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/sacm8_record.png"
+    },
+    "photos": [
+      {
+        "id": "191853104905327086",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            48.5092,
+            -107.21875
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/sacm8/191853104905327086.jpeg",
+          "caption": "Downstream"
+        }
+      },
+      {
+        "id": "196568854442283502",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            48.5092,
+            -107.21875
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/sacm8/196568854442283502.jpeg",
+          "caption": "Upstream"
+        }
+      }
+    ]
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "06164510",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=06164510"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice during winter months.",
+      "effective": "0101",
+      "expiration": "1231"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "MALM8",
+  "downstreamLid": "TMPM8",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued routinely during the warm season, and as needed at other times of the year.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

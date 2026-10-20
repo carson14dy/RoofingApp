@@ -1,0 +1,933 @@
+{
+ "slug": "volume-and-job-budget",
+ "as_of_utc": "2026-10-19T03:00Z to about 03:40Z (measurements dated per row)",
+ "bottom_line": "Split the data. Keep the 10-minute Website site small (static files about 0.3 MB gzipped) and move the bulk data (about 358 MB raw, about 71 MB gzipped per full deploy) to a daily or monthly deploy of a second repository's own GitHub Pages site. One Pages site is replaced whole on every deploy, so bulk data kept in the 10-minute site would be re-uploaded up to 144 times a day. The 10-minute cadence is not delivered today: 17 scheduled runs in 52 hours, median gap 151 minutes. hail-store.yml is not on main (GitHub returns 404 for it), so the daily store job is not scheduled.",
+ "recommendation": "1) Layout. Main repo (10-minute Pages site): HTML, CSS, JS, fonts, basemap, data/map.json and a small per-town hail summary written by the daily job. The 10-minute build should stop downloading and copying the store. Today only branch builds with --hail-history download it; main does not. Data repo (new, project Pages site at https://<owner>.github.io/<repo>/): hail store, address shards and search index, street tiles, footprint shards, climate tiles (25,902 Montana land cells; 4,568 tiles; median 2.0 KB per tile; 8.7 MB raw and 1.2 MB gzip for all tiles), snow and stations (the 45 candidate stations' .dly files, 33.7 MB, not all 481 at 392 MB). Browsers fetch those files cross-origin; access-control-allow-origin: * was verified on this repo's Pages site, and gzip on JSON was verified on data/map.json. 2) Cadence. Daily job (hail store, joins, climate day, stations day): about 12 to 15 minutes, of which the hail build is 612 s (measured in CI on 2026-10-18), joins about 100 s (measured locally), pack and publish under 10 s. Monthly job (addresses: 65.8 MB zip, build 37 s, verify 9 to 39 s, all measured locally; climate: one scaled month, 41 to 57 MB, sources publish 4 to 68 days after month end) and an annual or on-change streets and footprints pass in separate jobs, so each stays under the 60-minute timeout set in hail-store.yml. 3) Browser budget at zoom 15 over Billings (details in measurements.browser_budget): dots, one street tile and footprint shards together are about 607 KB gzipped for a 390x844 phone view. Footprints at zoom 15 are the largest item (193 KB); moving footprints to zoom 16 and up cuts the phone view to about 393 KB (about 8 s on the Slow 3G preset). Footprints at zoom 13 would be about 797 KB and must not load there. 4) Egress. Fetching the 26.4 MB combined store on every 10-minute run would be about 3.8 GB a day (144 runs). The observed rate of 7.8 scheduled starts a day gives about 0.2 GB a day. Pages browser transfer is about 0.6 MB per phone visit at zoom 15, so the 100 GB a month soft limit is about 165,000 such visits. 5) The owner must set the 3G target: the repo does not define one. The figures here use the DevTools Slow 3G preset, about 50 KB/s with a 400 ms round-trip target.",
+ "urls_checked": [
+  {
+   "url": "https://api.github.com/repos/carson14dy/RoofingApp/actions/workflows/website.yml/runs?per_page=10",
+   "http_status": "200",
+   "bytes": 149423,
+   "content_check": "total_count 72; first 10 runs returned (superseded by the per_page=100 call)"
+  },
+  {
+   "url": "https://api.github.com/repos/carson14dy/RoofingApp/actions/workflows/website.yml/runs?per_page=100",
+   "http_status": "200",
+   "bytes": 1100967,
+   "content_check": "all 72 runs; 17 with event schedule on main, 2026-10-16T19:42:35Z to 2026-10-19T00:06:01Z; 26 push runs on the desktop-app branch"
+  },
+  {
+   "url": "https://api.github.com/repos/carson14dy/RoofingApp/actions/workflows/hail-store.yml/runs?per_page=30",
+   "http_status": "200",
+   "bytes": 15809,
+   "content_check": "1 run: push on the hail-b1 branch, 2026-10-18T13:57:47Z to 14:08:30Z, success; build step 612 s"
+  },
+  {
+   "url": "https://api.github.com/repos/carson14dy/RoofingApp",
+   "http_status": "200",
+   "bytes": 6554,
+   "content_check": "private: false (public repository)"
+  },
+  {
+   "url": "https://api.github.com/repos/carson14dy/RoofingApp/actions/runs/{id}/jobs (11 Website runs and 1 hail-store run)",
+   "http_status": "200",
+   "bytes": 70000,
+   "content_check": "job and step timings; byte figure is the approximate total of the 12 responses (4,840 to 6,851 each)"
+  },
+  {
+   "url": "https://api.github.com/repos/carson14dy/RoofingApp/contents/.github/workflows/website.yml?ref=main",
+   "http_status": "200",
+   "bytes": 12962,
+   "content_check": "main cron line: 7,17,27,37,47,57 * * * * (offset schedule); workflow file sha 795cffec"
+  },
+  {
+   "url": "https://api.github.com/repos/carson14dy/RoofingApp/contents/.github/workflows/hail-store.yml?ref=main",
+   "http_status": "404",
+   "bytes": 0,
+   "content_check": "no hail-store.yml on main, so the daily store cron (43 12 * * *) does not run from main"
+  },
+  {
+   "url": "https://api.github.com/repos/carson14dy/RoofingApp/releases?per_page=10",
+   "http_status": "200",
+   "bytes": 4476,
+   "content_check": "release hail-store, published 2026-10-18T14:08:19Z, prerelease; one asset hail-store.tar.gz 8,360,834 bytes"
+  },
+  {
+   "url": "https://api.github.com/repos/carson14dy/RoofingApp/pages",
+   "http_status": "403",
+   "bytes": 165,
+   "content_check": "proxy message: path not permitted through this proxy; not retried; Pages settings not read via API"
+  },
+  {
+   "url": "https://github.com/carson14dy/RoofingApp/releases/download/hail-store/hail-store.tar.gz",
+   "http_status": "200",
+   "bytes": 8360834,
+   "content_check": "gzip data (gzip size field 36,280,320 bytes uncompressed); 0.69 s wall; 12.3 MB/s in this environment"
+  },
+  {
+   "url": "https://carson14dy.github.io/RoofingApp/",
+   "http_status": "200",
+   "bytes": 18131,
+   "content_check": "HTTP/2; access-control-allow-origin: *; cache-control: max-age=600; content-encoding gzip when asked (3,686 bytes compressed)"
+  },
+  {
+   "url": "https://carson14dy.github.io/RoofingApp/map.html",
+   "http_status": "200",
+   "bytes": 11443,
+   "content_check": "11,443 bytes raw, 3,651 bytes gzip transfer; links fonts.css, leaflet.css, map.css, leaflet.js, map.js"
+  },
+  {
+   "url": "https://carson14dy.github.io/RoofingApp/data/map.json",
+   "http_status": "200",
+   "bytes": 6052,
+   "content_check": "content-type application/json; content-encoding gzip; access-control-allow-origin *; etag; cache-control max-age=600"
+  },
+  {
+   "url": "https://carson14dy.github.io/RoofingApp/static/style.css?v=687f7816fe39 (HEAD)",
+   "http_status": "200",
+   "bytes": 19944,
+   "content_check": "etag and last-modified present; access-control-allow-origin *"
+  },
+  {
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits",
+   "http_status": "200",
+   "bytes": 88734,
+   "content_check": "1 GB published site; 10-minute deployment timeout; 100 GB per month soft bandwidth; 10 builds per hour soft limit that does not apply to custom Actions workflows"
+  },
+  {
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages",
+   "http_status": "200",
+   "bytes": 141819,
+   "content_check": "artifact is a gzip archive of a single tar file under 10 GB, no symbolic or hard links"
+  },
+  {
+   "url": "https://raw.githubusercontent.com/actions/upload-pages-artifact/main/README.md",
+   "http_status": "200",
+   "bytes": 4550,
+   "content_check": "tar under 10 GB, recommended under 1 GB; retention-days default 1"
+  },
+  {
+   "url": "https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases",
+   "http_status": "200",
+   "bytes": 182780,
+   "content_check": "up to 1000 assets per release; each file under 2 GiB; no limit on total release size or bandwidth"
+  },
+  {
+   "url": "https://docs.github.com/en/actions/reference/limits",
+   "http_status": "200",
+   "bytes": 384271,
+   "content_check": "job time 6 hours; workflow run 35 days; cache upload 200 per minute and download 1500 per minute per repository; GITHUB_TOKEN 1000 requests per hour per repository; storage table (artifact 500 MB Free, cache 10 GB per repository)"
+  },
+  {
+   "url": "https://docs.github.com/en/actions/concepts/billing-and-usage",
+   "http_status": "200",
+   "bytes": 292466,
+   "content_check": "standard GitHub-hosted runner use is free in public repositories; quotas stated for private repositories"
+  },
+  {
+   "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions",
+   "http_status": "200",
+   "bytes": 227832,
+   "content_check": "public repositories that use standard GitHub-hosted runners are free; cache storage 10 GB per repository included; artifact and Packages share a pool for private repositories"
+  },
+  {
+   "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching",
+   "http_status": "200",
+   "bytes": 477330,
+   "content_check": "10 GB default per repository; entries not accessed for 7 days are removed"
+  },
+  {
+   "url": "https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github",
+   "http_status": "200",
+   "bytes": 212818,
+   "content_check": "warning above 50 MiB and block above 100 MiB for files in git; no total limit on release binaries"
+  },
+  {
+   "url": "https://docs.github.com/en/actions/tutorials/store-and-share-data",
+   "http_status": "200",
+   "bytes": 387975,
+   "content_check": "retention-days cannot exceed the repository retention limit"
+  },
+  {
+   "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows",
+   "http_status": "200",
+   "bytes": 1076249,
+   "content_check": "schedule can be delayed at high load, including the start of every hour; shortest interval 5 minutes; scheduled workflows run only on the default branch; disabled after 60 days without repository activity (public repositories)"
+  },
+  {
+   "url": "https://developer.chrome.com/docs/devtools/network/reference",
+   "http_status": "200",
+   "bytes": 327098,
+   "content_check": "names Slow 3G, Fast 3G and 4G presets; gives no numeric values (numbers taken from the source below)"
+  },
+  {
+   "url": "https://raw.githubusercontent.com/ChromeDevTools/devtools-frontend/main/front_end/core/sdk/NetworkManager.ts",
+   "http_status": "200",
+   "bytes": 117656,
+   "content_check": "Slow3GConditions: download 500*1000/8*.8 bytes per second (about 50 KB/s), latency target 400 ms; Slow4G 1.6 Mbps with 150 ms target"
+  },
+  {
+   "url": "https://raw.githubusercontent.com/GoogleChrome/lighthouse/main/core/config/constants.js",
+   "http_status": "200",
+   "bytes": 2908,
+   "content_check": "imports throttling from the Lantern module; values are not in this file (not used)"
+  },
+  {
+   "url": "https://raw.githubusercontent.com/GoogleChrome/lighthouse/main/core/lib/lantern/simulation/constants.js",
+   "http_status": "404",
+   "bytes": 14,
+   "content_check": "wrong path; not used"
+  },
+  {
+   "url": "https://raw.githubusercontent.com/ChromeDevTools/devtools-frontend/main/front_end/models/emulation/NetworkConditionsSelector.ts",
+   "http_status": "404",
+   "bytes": 14,
+   "content_check": "wrong path; not used"
+  },
+  {
+   "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows (also read for schedule text)",
+   "http_status": "200",
+   "bytes": 1076249,
+   "content_check": "same page as above"
+  },
+  {
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site",
+   "http_status": "200",
+   "bytes": 154137,
+   "content_check": "one Source setting per Pages site: deploy from a branch or a GitHub Actions workflow"
+  }
+ ],
+ "facts": [
+  {
+   "claim": "Current B2 store (hail/ folder): tiles and bytes",
+   "value": "4,597 tiles; t 32,022,304 B; j 19,912,416 B (4,597 tile files 14,560,609 B plus events table 5,351,807 B); z 918,423 B; s 22,478 B; index.json 94,411 B; manifest.json 1,256,109 B; hail/ total about 54.2 MB",
+   "evidence": "du -sb and ls on /home/user/hail-b2/out2/joins/store/hail; build1.out bytes block"
+  },
+  {
+   "claim": "Current B2 tar.gz",
+   "value": "12,876,200 B (gzip); 9,377 entries; member bytes sum 54,226,141 B",
+   "evidence": "/home/user/hail-b2/out2/joins/hail-store.tar.gz; tar -tzvf"
+  },
+  {
+   "claim": "Published release asset (B1 store, not B2)",
+   "value": "hail-store.tar.gz 8,360,834 B, release published 2026-10-18T14:08:19Z by the hail-b1 branch push run",
+   "evidence": "GitHub releases API; download timed at 0.69 s"
+  },
+  {
+   "claim": "B2 tar extraction (measured locally, 9,372 files, 54.2 MB)",
+   "value": "0.82 s, 0.59 s, 3.05 s wall in three runs; 0.42 s to list; user time about 0.45 s (system time dominates)",
+   "evidence": "tar -xzf into an empty folder under the scratch folder; tar -tzf timing"
+  },
+  {
+   "claim": "B2 folder pack and copy (measured locally)",
+   "value": "tar czf of the hail folder 4.1 s; cp -r of the 54 MB folder 0.7 s",
+   "evidence": "shell timer on the B2 folder"
+  },
+  {
+   "claim": "B3 address shards (measured 03:04 and 03:11; the B3 worker was rewriting the folder)",
+   "value": "4,211 shard files, 43,129,001 B (03:11) or 43,129,371 B (03:04); median 936 B, p90 33,548 B, p99 122,995 B, max 171,818 B (2,490 rows); depth histogram {0:3766, 1:153, 2:133, 3:155, 4:4}",
+   "evidence": "/home/user/hail-b3/out/module/store/hail/a; build1.out (wall 37.0 s, 663,761 rows)"
+  },
+  {
+   "claim": "B3 address search index",
+   "value": "7,501 to 7,515 letter files totalling 39,012,417 B (largest 149,537 B, Bozeman W, 2,488 rows); cities.json 64,768 B; words.json 427 B; a/ folder total about 82.2 MB",
+   "evidence": "measure script on the B3 folder; build1.out largest_letter"
+  },
+  {
+   "claim": "B3 manifest growth",
+   "value": "manifest.json 2,843,044 B with addresses (B2 alone 1,256,109 B)",
+   "evidence": "B3 hail folder"
+  },
+  {
+   "claim": "Gzip ratios measured on the B3 data",
+   "value": "address shards 6.48x (6,657,849 B gzip-6 from 43,129,001 B); letter files 5.83x (6,705,021 B from 39,077,612 B); B2 index.json 5.45x (17,320 B from 94,411 B)",
+   "evidence": "zlib level 6, the same deflate family as gzip -6; measured files"
+  },
+  {
+   "claim": "Combined B2 plus B3 candidate release tar",
+   "value": "21,086 files, 138,019,689 B on disk; tar.gz 26,364,427 B; tar czf 6.6 s; extract 8.7 s, 13.6 s, 12.4 s wall; cp -r 6.7 s",
+   "evidence": "snapshot of B2 t, j, z, s and index plus B3 a/ and manifest, 03:14 UTC"
+  },
+  {
+   "claim": "Address dots in the Billings viewport at zoom 15 (phone 390x844)",
+   "value": "3,737 dots; 7 shards loaded; 8,713 rows; about 566 KB raw; about 87 KB gzip (estimate from 64.98 B per row and 6.48x)",
+   "evidence": "addr_points.py on the coordinates of the 674,715 points (shapefile member read as data; .dbf not opened); quadtree 2,500 rows"
+  },
+  {
+   "claim": "Address dots in the Billings viewport at zoom 15 (desktop 1280x800)",
+   "value": "7,730 dots; 10 shards; about 798 KB raw; about 123 KB gzip (estimate)",
+   "evidence": "same run"
+  },
+  {
+   "claim": "Address dots at zoom 13, 16 and 17 (phone 390x844, Billings)",
+   "value": "zoom 13: 21,340 dots, 30 shards, 2.09 MB raw, about 322 KB gzip; zoom 16: 1,032 dots, 2 shards, about 27 KB gzip; zoom 17: 180 dots, 1 shard, about 14 KB gzip",
+   "evidence": "same run"
+  },
+  {
+   "claim": "Structures zip member timing (read as data, no field parsed)",
+   "value": "SiteStructureAddressPoint.dbf: 52,943,628 B compressed, 1,905,396,826 B inflated, 5.2 s; the .shp member (674,715 points) read and projected in 1.6 to 2.1 s; the B3 build logs 23.5 s for its parse; the brief's 30 s figure is the full build",
+   "evidence": "stream_time.py on /home/user/hail-b3/cache/structures/StructuresFramework_shp.zip"
+  },
+  {
+   "claim": "Footprints (USA Structures Montana, dated 2026-09-13), per-feature 5-decimal JSON",
+   "value": "918,052 features; 6,010,874 vertices; statewide JSON 135,516,372 B (5 decimals); 135,384,218 B at 0.5 m simplification; 134,327,752 B at 1.0 m; gzip ratio 5.29 to 5.36 on the footprint worker's Billings samples",
+   "evidence": "/home/user/wt/research-b35/scratch-footprints/statewide_feature_bytes.npz; footprints.json measurements.statewide_simplification and tiles_billings_box"
+  },
+  {
+   "claim": "Footprint bytes per 0.1-degree tile (B1 grid, centroid assignment)",
+   "value": "4,452 tiles with footprints; median 5,865 B; p90 41,215 B; p99 534,889 B; max 4,539,221 B (r0092_c0214, 28,308 features, Billings downtown)",
+   "evidence": "fp_tiles.py on the same npz"
+  },
+  {
+   "claim": "Footprint quadtree shards (2,500 rows or 300 KB cap)",
+   "value": "5,001 shards holding all 918,052 features; median 7,151 B; p90 87,814 B; p99 248,246 B; max 299,471 B. Caps 2,500/150 KB give 5,871 shards; 1,000/100 KB give 6,845",
+   "evidence": "fp_quad.py (outputs fp_quad_2500_300000.json and similar in the scratch folder)"
+  },
+  {
+   "claim": "Footprint bytes in the Billings viewport (zoom 15, 2,500/300 KB shards)",
+   "value": "phone 390x844: 8 shards, 1,022,977 B raw, about 193 KB gzip; desktop 1280x800: 11 shards, 1,509,482 B raw, about 285 KB gzip; zoom 13 phone: 33 shards, 4,218,541 B raw, about 797 KB gzip",
+   "evidence": "fp_quad.py; gzip estimated at 5.29x"
+  },
+  {
+   "claim": "Footprint bytes in the Billings viewport at zoom 16 and 17",
+   "value": "zoom 16 phone: 2 shards, 208,413 B raw, about 39 KB gzip; zoom 16 desktop: 5 shards, 660,784 B, about 125 KB; zoom 17 phone: 1 shard, 98,767 B, about 19 KB; zoom 17 desktop: 2 shards, 255,825 B, about 48 KB",
+   "evidence": "fp_zoom_gating.json"
+  },
+  {
+   "claim": "Microsoft alternative footprints",
+   "value": "773,199 Polygon features; outer ring median 4 vertices, p90 8, max 32; approximate 5-decimal JSON 118,632,538 B (6-decimal 128,036,116 B); ODbL with share-alike duties per the footprint-alternatives record",
+   "evidence": "footprint-alternatives.json measurements.microsoft_montana and microsoft_grid_0p1 (their approximation, not a full-file measurement)"
+  },
+  {
+   "claim": "TIGER/Line 2025 all roads, three Montana county files measured here",
+   "value": "Yellowstone 30111: 6,798 features, 169,470 vertices, JSON 3,717,744 B, gzip 868,085 B (4.28x); Judith Basin 30045: 2,142 features, 80,281 vertices, JSON 1,757,002 B, gzip 427,495 B (4.11x); Lincoln 30053: 15,442 features, 980,073 vertices, JSON 21,404,527 B, gzip 5,074,579 B (4.22x)",
+   "evidence": "shp_json.py on the streets worker's downloaded .shp files (read only); counts match streets.json measurements.counties_TIGER"
+  },
+  {
+   "claim": "Statewide TIGER all-roads JSON estimate (5 decimals, no simplification)",
+   "value": "about 170.6 MB (1.92 times the 88.86 MB zip total, mean of the three counties)",
+   "evidence": "shp_json_measure.json; streets.json zip total"
+  },
+  {
+   "claim": "Billings street tile (45.75 to 45.85 N, 108.55 to 108.45 W), all roads",
+   "value": "1,368 features; 30,823 vertices; JSON 676,778 B raw (gzip 153,098 B); after 2 m Douglas-Peucker 8,770 vertices, JSON 196,492 B (gzip 48,551 B, 4.05x)",
+   "evidence": "billings_streets.py (own parser and simplifier)"
+  },
+  {
+   "claim": "Streets worker's statewide estimate for simplified vehicular roads",
+   "value": "57.6 to 77.4 MB JSON after 2 m simplification (their range over three counties); 2.2 to 6.3 MB of names and classes",
+   "evidence": "streets.json recommendation and measurements.tiger_statewide_estimate"
+  },
+  {
+   "claim": "TIGER zip total, two editions named in the records",
+   "value": "56 county zips, 88,860,450 B (TIGER2025, streets.json) and 88,859,641 B (TIGER/Line 2026 HEAD sizes, streets-msl-vs-tiger.json)",
+   "evidence": "the two records"
+  },
+  {
+   "claim": "Climate tile prototype (nClimGrid, five years, one 0.1-degree tile)",
+   "value": "sample r0079_c0165: 1,366 B for 4 cells and five years (about 340 B per cell)",
+   "evidence": "/home/user/wt/research-b35/scratch-temperature-rain-grid/tiles-proto/sample-r0079_c0165-5yr.json"
+  },
+  {
+   "claim": "nClimGrid-Daily monthly file (whole CONUS grid 596 x 1385)",
+   "value": "ncdd-202506-grd-scaled.nc 56,872,702 B, HTTP 200 in 1.79 s; 60 monthly files for five years would be about 3.4 GB if fetched whole",
+   "evidence": "fetch-log.tsv of the climate worker (URL https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-202506-grd-scaled.nc)"
+  },
+  {
+   "claim": "nClimGrid monthly precipitation range reads",
+   "value": "one cell's monthly series: 33 range requests, 2,162,688 B (probe); an earlier run 15 requests, 13,896,397 B; file 1,798,084,265 B",
+   "evidence": "monthly-prcp-probe.json and monthly-prcp-billings-2025.json in the climate worker's folder"
+  },
+  {
+   "claim": "PRISM daily 4 km BIL zips (alternative, not chosen)",
+   "value": "tmax zip 2,283,540 B; tmin 2,267,929 B; daily precipitation 1,344,019 B; about 5.9 MB per day for three variables",
+   "evidence": "temperature-alternatives.json facts"
+  },
+  {
+   "claim": "NOHRSC season-total snowfall GeoTIFF (per water year, 0.04 degree)",
+   "value": "2,354,154 B (2025-26); 2,402,986 B (2024-25); 34,916 Montana cells; about 2.46 MB JSON for five seasons (estimate)",
+   "evidence": "snow-alternatives.json measurements.nohrsc_season_bytes and nohrsc_montana_json_bytes_5_seasons_estimate"
+  },
+  {
+   "claim": "SNODAS daily tars (daily snow, alternative)",
+   "value": "2025: 365 files, 3,927,019,520 B total, mean 10.76 MB per day; five-year backfill about 19.6 GB at the mean",
+   "evidence": "snow-alternatives.json measurements.snodas_2025_total_bytes"
+  },
+  {
+   "claim": "SNOTEL point data",
+   "value": "97 Montana stations (96 active); about 76 KB of JSON per station per water year for six elements; two stations for WY2025 152,674 B",
+   "evidence": "snow-alternatives.json recommendation and measurements"
+  },
+  {
+   "claim": "Station full-history files (481 stations in the snow-stations worker's list)",
+   "value": "dly files total 392,170,950 B (median 670,950 B, max 5,035,230 B); csv.gz total 148,485,655 B; mt_stations.json 1,325 stations, 546,587 B",
+   "evidence": "/home/user/wt/research-b35/scratch-snow-stations/outputs/sizes_multi.json and mt_stations.json"
+  },
+  {
+   "claim": "Website run durations (main, last completed runs)",
+   "value": "build job 73 to 100 s (install 7 to 13 s, tests 26 to 44 s, live build 26 to 45 s); deploy job 8 to 15 s (publish 5 to 11 s); scheduled runs wall clock median 81 s (63 to 130 s); branch builds with smoke tests 159 to 243 s",
+   "evidence": "GitHub jobs API, 11 runs"
+  },
+  {
+   "claim": "Scheduled cadence on main",
+   "value": "17 scheduled starts between 2026-10-16T19:42:35Z and 2026-10-19T00:06:01Z (52.4 h); median gap 151.5 min; gaps 115 to 398 min; last three gaps 131, 137 and 130 min; per UTC day 8 (10-17) and 6 (10-18)",
+   "evidence": "runs-all.json (cadence.py); GitHub docs say delays are possible at high load and the shortest interval is 5 minutes"
+  },
+  {
+   "claim": "Store step in the only hail-store run",
+   "value": "build step 612 s; whole job 639 s; checkout 2 s; install 7 s; verify 4 s; pack 2 s; publish 3 s",
+   "evidence": "jobs API for run 39133848230"
+  },
+  {
+   "claim": "Local joins build (B2)",
+   "value": "99 s wall (pulled and parsed 59 s); index build_seconds 90.5",
+   "evidence": "/home/user/hail-b2/out2/joins/build1.log and index.json"
+  },
+  {
+   "claim": "Local address build (B3)",
+   "value": "build 37.0 s wall; verify 9.3 s and 39.2 s in two logs",
+   "evidence": "/home/user/hail-b3/out/module/logs"
+  },
+  {
+   "claim": "Footprint and address quadtree builds (our Python, shard files not written)",
+   "value": "1.1 s for 918,052 footprints; 2.6 s for 674,715 points including the read",
+   "evidence": "fp_quad.py, addr_points.py"
+  },
+  {
+   "claim": "Static site files (live main, no data)",
+   "value": "map.html 11,443 B raw; leaflet.js 147,552 B (42,638 gzip); map.js 169,923 B (52,072 gzip); basemap.json 384,935 B (108,573 gzip); map.css 47,798 B (11,819 gzip); style.css 19,944 B (4,845 gzip); leaflet.css 14,806 B (3,534 gzip); fonts.css 2,490 B (416 gzip); woff2 faces 10,040 to 12,732 B each",
+   "evidence": "/home/user/wt/wt-b2/website/static (measured gzip-6) and live site headers"
+  },
+  {
+   "claim": "Imagery tile size (ImageryTopo, third party, reference)",
+   "value": "35.5 to 35.7 KB per tile at zoom 16 over Billings and Missoula; about 11 tiles for a phone view (estimate)",
+   "evidence": "wt-b2 docs/DECISIONS.md (checked 2026-10-17 and 2026-10-18)"
+  },
+  {
+   "claim": "Hail sheet tile fetch on a click, Billings",
+   "value": "t/r0092_c0214 5,019 B (gzip 1,587); j/r0092_c0214 8,310 B (gzip 3,101); r0092_c0215 t 7,215 B, j 7,473 B",
+   "evidence": "B2 store files"
+  },
+  {
+   "claim": "Slow 3G preset (DevTools source, used as the 3G reference)",
+   "value": "download 500 * 1000 / 8 * .8 bytes per second (about 50 KB/s); RTT target 400 ms; latency 2000 ms in the emulation object",
+   "evidence": "NetworkManager.ts Slow3GConditions, fetched 2026-10-19"
+  },
+  {
+   "claim": "Pages serves gzip and CORS on this repo's project site",
+   "value": "content-encoding gzip on data/map.json and index HTML; access-control-allow-origin: * on index, style.css and data/map.json; cache-control max-age=600; etag present",
+   "evidence": "curl HEAD and GET on carson14dy.github.io/RoofingApp"
+  },
+  {
+   "claim": "Pages builds in the workflow",
+   "value": "The Website build uses actions/upload-pages-artifact and actions/deploy-pages (custom workflow); 15-minute build timeout and 10-minute deploy timeout in website.yml",
+   "evidence": "/home/user/wt/wt-b2/.github/workflows/website.yml; GitHub docs"
+  },
+  {
+   "claim": "B2 build puts the store into the site on every run that has --hail-history",
+   "value": "hail_store() copies the whole hail/ tree into the output folder with copytree (about 54 MB now; 138 MB with addresses)",
+   "evidence": "/home/user/wt/wt-b2/website/build.py lines near 481 to 504"
+  },
+  {
+   "claim": "Climate tile and source sizes (climate worker's record, measured)",
+   "value": "25,902 Montana land cells; 4,568 B1 tiles with land cells; tile JSON median 2,024 B (369 to 3,056 B); all tiles 8,739,694 B raw (five records) and 1,211,475 B gzip; scaled monthly files 56.9 MB (June 2025) and 3.55 GB for 60 months; daily run about 1.37 MB per new preliminary day plus 0.46 MB metadata",
+   "evidence": "/home/user/wt/research-b35/temperature-rain-grid.json measurements.tiles, sizes_bytes, daily_update_estimates"
+  },
+  {
+   "claim": "Station file budgets (station worker's record, measured)",
+   "value": "481 stations with a 2025 core record: NCEI .dly 392,170,950 B in full (COOP 240.0 MB, SNOTEL 77.5 MB, WBAN 57.8 MB, CoCoRaHS 16.9 MB); 45 candidate stations within 40 miles of the two sample points 33,682,230 B; S3 by-station csv.gz 148,485,655 B; 114 S3 files stop at 2025-02-06 (SNOTEL and WBAN)",
+   "evidence": "/home/user/wt/research-b35/snow-stations.json measurements.budget_bytes and budget_per_network"
+  },
+  {
+   "claim": "SNODAS daily sample (alternative, not chosen for the backfill)",
+   "value": "20 sample dates, mean 11.94 MB per day; five-year estimate 21.8 GB at the mean (4.8 to 45.3 GB range)",
+   "evidence": "snow-stations.json measurements.snodas"
+  }
+ ],
+ "terms": [
+  {
+   "source": "GitHub Pages limits",
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits",
+   "quote": "Published GitHub Pages sites may be no larger than 1 GB.",
+   "reading": "Hard limit on the published site. About 358 MB raw is planned in one site, which is about 35% of the limit."
+  },
+  {
+   "source": "GitHub Pages limits",
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits",
+   "quote": "GitHub Pages deployments will timeout if they take longer than 10 minutes.",
+   "reading": "A full-site deploy every 10 minutes must finish inside 10 minutes; deploy time for a 358 MB site was not measured here."
+  },
+  {
+   "source": "GitHub Pages limits",
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits",
+   "quote": "GitHub Pages sites have a soft bandwidth limit of 100 GB per month.",
+   "reading": "Soft limit on browser transfer for the Pages site."
+  },
+  {
+   "source": "GitHub Pages limits",
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits",
+   "quote": "GitHub Pages is not intended for or allowed to be used as a free web-hosting service to run your online business, e-commerce site, or any other website that is primarily directed at either facilitating commercial transactions or providing commercial software as a service (SaaS).",
+   "reading": "The owner and counsel should read this against a weather site that serves a roofing company. This is not a legal conclusion; it may bear on whether the data site can be a Pages site."
+  },
+  {
+   "source": "GitHub Pages custom workflows",
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages",
+   "quote": "The tar file must be under 10GB in size and should not contain any symbolic or hard links.",
+   "reading": "Artifact limit for the deploy step."
+  },
+  {
+   "source": "actions/upload-pages-artifact README",
+   "url": "https://raw.githubusercontent.com/actions/upload-pages-artifact/main/README.md",
+   "quote": "The GitHub Pages officially supported maximum size limit is 1GB, so the subsequent deployment of larger tarballs are not guaranteed to succeed",
+   "reading": "The 1 GB figure is the supported limit; the action's own advice is to keep the tar under 1 GB."
+  },
+  {
+   "source": "GitHub releases",
+   "url": "https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases",
+   "quote": "Up to 1000 release assets may be associated with a single release. Each file included in a release must be under 2 GiB. There is no limit on the total size of a release, nor bandwidth usage.",
+   "reading": "The daily store tar fits as one asset. Browser fetches from release downloads are not covered by this sentence and were not tested."
+  },
+  {
+   "source": "GitHub large files",
+   "url": "https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github",
+   "quote": "GitHub blocks files larger than 100 MiB.",
+   "reading": "Applies to files committed to git; data should not be committed to the repository."
+  },
+  {
+   "source": "GitHub Actions limits",
+   "url": "https://docs.github.com/en/actions/reference/limits",
+   "quote": "Each job in a workflow can run for up to 6 hours of execution time. If a job reaches this limit, the job is terminated and fails.",
+   "reading": "Job time ceiling for the daily and monthly jobs."
+  },
+  {
+   "source": "GitHub Actions events",
+   "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows",
+   "quote": "The schedule event can be delayed during periods of high loads of GitHub Actions workflow runs. High load times include the start of every hour.",
+   "reading": "Explains part of the observed cadence (17 scheduled runs in 52 hours)."
+  },
+  {
+   "source": "GitHub Actions events",
+   "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows",
+   "quote": "Scheduled workflows will only run on the default branch.",
+   "reading": "hail-store.yml is absent on main, so its daily cron does not run."
+  },
+  {
+   "source": "GitHub Actions events",
+   "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows",
+   "quote": "The shortest interval you can run scheduled workflows is once every 5 minutes.",
+   "reading": "A 10-minute schedule is allowed; the delivery is the issue."
+  },
+  {
+   "source": "GitHub Actions billing",
+   "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions",
+   "quote": "GitHub Actions usage is free for self-hosted runners and for public repositories that use standard GitHub-hosted runners.",
+   "reading": "Public repository, standard runners: no minute charge. Storage allowances are stated for private repositories."
+  },
+  {
+   "source": "GitHub dependency caching",
+   "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching",
+   "quote": "GitHub will remove any cache entries that have not been accessed in over 7 days.",
+   "reading": "Monthly cache keys (as the hail workflow uses) are kept while in use."
+  },
+  {
+   "source": "GitHub Pages publishing source",
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site",
+   "quote": "You can configure your GitHub Pages site to publish when changes are pushed to a specific branch, or you can write a GitHub Actions workflow to publish your site.",
+   "reading": "One Source setting per site (Build and deployment, Source). A second Pages site needs a second repository; a second branch cannot be a second source in the same repository."
+  },
+  {
+   "source": "Chrome DevTools Slow 3G preset (source comment)",
+   "url": "https://raw.githubusercontent.com/ChromeDevTools/devtools-frontend/main/front_end/core/sdk/NetworkManager.ts",
+   "quote": "// ~500Kbps down ... // 400ms RTT",
+   "reading": "The preset used here as the 3G reference (about 50 KB/s, 400 ms round trip)."
+  }
+ ],
+ "measurements": {
+  "store_b2_hail_folder_bytes": {
+   "t": 32022304,
+   "j": 19912416,
+   "z": 918423,
+   "s": 22478,
+   "index": 94411,
+   "manifest": 1256109,
+   "tiles_joins": 4597,
+   "tar_gz": 12876200,
+   "tar_entries": 9377
+  },
+  "store_b1_published_asset_bytes": 8360834,
+  "store_b2_b3_candidate": {
+   "files": 21086,
+   "bytes_on_disk": 138019689,
+   "tar_gz_bytes": 26364427,
+   "tar_czf_seconds": 6.6,
+   "extract_seconds_three_runs": [
+    8.7,
+    13.6,
+    12.4
+   ],
+   "cp_r_seconds": 6.7
+  },
+  "store_b2_only_extract_seconds_three_runs": [
+   0.82,
+   0.59,
+   3.05
+  ],
+  "address_shards": {
+   "count_build": 4211,
+   "count_precheck": 4212,
+   "bytes_build": 43129001,
+   "bytes_precheck_json": 43526261,
+   "median_bytes": 936,
+   "p90_bytes": 33548,
+   "p99_bytes": 122995,
+   "max_bytes": 171818,
+   "gzip_ratio": 6.48,
+   "bytes_per_row": 64.98
+  },
+  "address_search_index": {
+   "letter_files": 7501,
+   "letter_bytes": 39012417,
+   "letter_gzip_ratio": 5.83,
+   "max_letter_bytes": 149537,
+   "cities_json_bytes": 64768
+  },
+  "address_points_total": 674715,
+  "address_structures_zip_bytes": 65788772,
+  "address_dbf_stream_seconds": 5.2,
+  "footprints_statewide": {
+   "features": 918052,
+   "vertices": 6010874,
+   "json_bytes_5dp": 135516372,
+   "json_bytes_dp05": 135384218,
+   "json_bytes_dp10": 134327752,
+   "gzip_ratio_assumed": 5.29,
+   "gzip_estimate_bytes": 25600000,
+   "tiles_with_features_B1_grid": 4452,
+   "tile_median_bytes": 5865,
+   "tile_p99_bytes": 534889,
+   "tile_max_bytes": 4539221,
+   "quadtree_shards_2500_300KB": 5001,
+   "quadtree_shard_max_bytes": 299471
+  },
+  "streets_tiger_county_check": {
+   "30111": {
+    "features": 6798,
+    "vertices": 169470,
+    "json_bytes": 3717744,
+    "gzip_bytes": 868085
+   },
+   "30045": {
+    "features": 2142,
+    "vertices": 80281,
+    "json_bytes": 1757002,
+    "gzip_bytes": 427495
+   },
+   "30053": {
+    "features": 15442,
+    "vertices": 980073,
+    "json_bytes": 21404527,
+    "gzip_bytes": 5074579
+   },
+   "statewide_all_roads_json_estimate_bytes": 170600000,
+   "statewide_dp2m_json_estimate_mb": [
+    57.6,
+    77.4
+   ],
+   "parse_seconds_three_counties": 4.1
+  },
+  "streets_billings_tile": {
+   "features": 1368,
+   "vertices_raw": 30823,
+   "json_raw_bytes": 676778,
+   "gzip_raw_bytes": 153098,
+   "vertices_dp2m": 8770,
+   "json_dp2m_bytes": 196492,
+   "gzip_dp2m_bytes": 48551
+  },
+  "climate": {
+   "montana_land_cells": 25902,
+   "bbox_cells": 31968,
+   "mask_cells": 25973,
+   "b1_tiles_with_land_cells": 4568,
+   "json_bytes_five_records_all_tiles": 8739694,
+   "json_bytes_per_cell_mean": 337.4,
+   "tile_json_bytes_min_median_max": [
+    369,
+    2024,
+    3056
+   ],
+   "tile_gzip_bytes_min_median_max": [
+    135,
+    268,
+    384
+   ],
+   "tiles_gzip_total_bytes": 1211475,
+   "water_year_extra_bytes_per_cell_estimate": 30,
+   "raw_with_water_year_estimate_bytes": 9520000,
+   "note": "five-year sizes use one June 2025 record per cell written five times as a stand-in (climate worker's method)",
+   "nclimgrid_daily_scaled_month_june2025_bytes": 56872702,
+   "scaled_trailing_60_months_bytes": 3548877305,
+   "three_variable_month_compressed_bytes_june2025": {
+    "prcp": 7583742,
+    "tmax": 16994442,
+    "tmin": 16383790,
+    "total": 40961974
+   },
+   "range_download_60_months_three_variables_estimate_bytes": 2460000000,
+   "daily_new_preliminary_day_three_variables_bytes": 1365398,
+   "daily_run_metadata_bytes": 458752,
+   "scaled_month_lag_days_min_median_max": [
+    4,
+    66,
+    68
+   ],
+   "preliminary_lag_days": [
+    2,
+    3
+   ],
+   "local_read_seconds": {
+    "full_prcp": 1.88,
+    "full_tmax": 2.23,
+    "full_tmin": 2.0,
+    "montana_block_per_variable": [
+     0.62,
+     0.71
+    ]
+   },
+   "one_cell_monthly_range_read": {
+    "seconds": [
+     7.7,
+     9.8
+    ],
+    "requests": [
+     31,
+     42
+    ],
+    "bytes": [
+     3500000,
+     8400000
+    ]
+   },
+   "climate_worker_download_total_bytes": 212165683,
+   "aggregate_cache_per_month_bytes_estimate": 1200000
+  },
+  "snow": {
+   "nohrsc_season_bytes": {
+    "2025-26": 2354154,
+    "2024-25": 2402986
+   },
+   "nohrsc_five_seasons_json_estimate_bytes": 2458622,
+   "snodas_2025_total_bytes": 3927019520,
+   "snodas_five_year_backfill_bytes_at_mean": 19635097600,
+   "snotel_bytes_per_station_water_year": 76000,
+   "snotel_station_count": 97
+  },
+  "stations": {
+   "montana_station_count_ghcn": 1325,
+   "with_2025_core_record": 481,
+   "with_2025_core_record_by_network": {
+    "COOP": 191,
+    "CoCoRaHS": 176,
+    "SNOTEL": 89,
+    "WBAN": 25
+   },
+   "ncei_dly_full_bytes_481": 392170950,
+   "ncei_dly_bytes_by_network": {
+    "COOP": 240012180,
+    "CoCoRaHS": 16858260,
+    "SNOTEL": 77511870,
+    "WBAN": 57788640
+   },
+   "ncei_dly_candidate_45_bytes": 33682230,
+   "csv_gz_bytes_481": 148485655,
+   "csv_bytes_481": 1372239465,
+   "s3_by_station_csv_stale_files": 114,
+   "s3_last_date": "2025-02-06",
+   "ncei_dly_last_modified": "2026-10-18",
+   "snodas_five_year_estimate_bytes_at_mean": 21800000000,
+   "snodas_daily_mean_bytes": 11940000,
+   "snotel_full_history_dly_bytes_per_station_mean": 870000
+  },
+  "viewport_phone_390x844_z15_billings": {
+   "dots": 3737,
+   "address_shards": 7,
+   "address_gzip_bytes": 87368,
+   "footprint_shards": 8,
+   "footprint_gzip_bytes": 193379,
+   "streets_tile_gzip_dp2m_bytes": 48551,
+   "hail_click_gzip_bytes": 4688,
+   "shell_gzip_bytes": 273389
+  },
+  "browser_budget": {
+   "shell_components_gzip_bytes": {
+    "map.html": 3651,
+    "style.css": 4845,
+    "fonts.css": 416,
+    "three_woff2_faces_assumed": 34841,
+    "leaflet.css": 3534,
+    "leaflet.js": 42638,
+    "map.css": 11819,
+    "map.js": 52072,
+    "basemap.json": 108573,
+    "data/map.json_with_hail_estimate": 11000
+   },
+   "shell_total_gzip_bytes": 273389,
+   "scenarios_gzip_bytes": {
+    "phone_z15_dots_and_streets_no_footprints": 413996,
+    "phone_z15_all_layers": 607375,
+    "phone_z16_all_layers_footprints_at_z16": 392888,
+    "desktop_1280x800_z15_all_layers": 735109,
+    "phone_z15_all_layers_plus_imagery_11_tiles_estimate": 999000,
+    "phone_z13_dots_only_plus_shell": 595658
+   },
+   "transfer_seconds_at_50KB_per_s_plus_RTT_400ms_per_wave": {
+    "phone_z15_all_layers": "about 12.2 s plus 1.2 s of round trips",
+    "phone_z15_dots_and_streets": "about 8.3 s plus round trips",
+    "phone_z16_all_layers": "about 7.9 s plus round trips",
+    "desktop_z15_all_layers": "about 14.7 s plus round trips"
+   },
+   "pages_visits_per_100GB_month_at_607KB": 164000
+  },
+  "egress": {
+   "per_day_if_store_fetched_each_10min_run": {
+    "b1_asset_8.36MB": 1203960096,
+    "b2_tar_12.88MB": 1854172800,
+    "b2_b3_candidate_26.36MB": 3796477488
+   },
+   "observed_scheduled_starts_per_day": 7.8,
+   "observed_per_day_b2_b3_candidate_bytes": 205000000
+  },
+  "deploy_size_if_bulk_data_stayed_in_10min_site": {
+   "raw_bytes_components": {
+    "shell": 900000,
+    "hail_store_b2": 54226141,
+    "addresses_b3": 84000000,
+    "streets_dp2m_estimate_mid": 70000000,
+    "footprints_5dp": 135516372,
+    "climate_measured_five_records": 9520000,
+    "nohrsc_estimate": 2458622,
+    "stations_metadata_and_candidates": 1000000
+   },
+   "raw_total_bytes_estimate": 358000000,
+   "raw_total_with_snotel_daily_estimate_bytes": 395000000,
+   "gzip_per_deploy_estimate_bytes": 71000000,
+   "gzip_per_deploy_range_bytes": [
+    66000000,
+    80000000
+   ],
+   "uploads_per_day_at_144_runs_gb": 10.2,
+   "files_estimate": 36611
+  },
+  "extract_and_copy_projection_estimates": {
+   "extract_seconds_at_36.6k_files": [
+    15,
+    25
+   ],
+   "cp_seconds": [
+    12,
+    18
+   ],
+   "tar_czf_seconds": [
+    17,
+    20
+   ]
+  },
+  "daily_job_seconds": {
+   "hail_store_build_measured_ci": 612,
+   "joins_build_measured_local": 99,
+   "pack_tar_measured_local": 4.1,
+   "publish_asset_measured_ci": 3,
+   "climate_day_three_variables_1.4MB_plus_metadata": [
+    5,
+    10
+   ],
+   "stations_candidate_45_dly_33.7MB_fetch_and_parse": [
+    10,
+    25
+   ],
+   "estimated_total_min": [
+    12,
+    15
+   ]
+  },
+  "monthly_job_seconds": {
+   "addresses_zip_download_monthly": "65.8 MB (not timed here; cache used)",
+   "addresses_build_measured_local": 37,
+   "addresses_verify_measured_local": [
+    9,
+    39
+   ],
+   "streets_parse_three_counties_measured": 4.1,
+   "streets_statewide_parse_estimate": [
+    26,
+    35
+   ],
+   "streets_dp_and_tile_write": "not measured",
+   "msl_statewide_pipeline_run_seconds_from_streets_record": 629.2,
+   "footprints_quadtree_measured_seconds": 1.1,
+   "footprints_geodatabase_read": "not measured",
+   "climate_scaled_month_41_to_57_MB_read_and_aggregate_estimate": [
+    10,
+    30
+   ]
+  },
+  "three_g_reference": {
+   "source": "DevTools Slow 3G preset",
+   "download_bytes_per_second": 50000,
+   "rtt_target_ms": 400,
+   "repo_defined_target": "none found (no 3G target in docs)"
+  },
+  "cadence": {
+   "website_scheduled_starts_per_day": 7.8,
+   "median_gap_min": 151.5,
+   "min_gap_min": 115.2,
+   "max_gap_min": 397.5,
+   "last_three_gaps_min": [
+    131,
+    137,
+    130
+   ],
+   "cron_on_main": "7,17,27,37,47,57 * * * *",
+   "ten_minute_runs_expected_per_day": 144
+  },
+  "run_durations_seconds": {
+   "scheduled_wall_median": 81,
+   "scheduled_wall_range": [
+    63,
+    130
+   ],
+   "build_job_main": [
+    73,
+    100
+   ],
+   "deploy_job_main": [
+    8,
+    15
+   ],
+   "branch_build_with_smoke": [
+    159,
+    243
+   ]
+  }
+ },
+ "open_questions": [
+  "The owner must set the 3G target. This record uses the DevTools Slow 3G preset (about 50 KB/s, 400 ms RTT), which is not written in the repo.",
+  "Climate and stations: the climate worker's record gives 25,902 land cells, which replaces the 30,000 figure in the brief. The five-year tile size is measured with one record per cell written five times (a stand-in); water-year totals add about 30 bytes per cell (estimate). The aggregate cache per month (1.2 MB) is an estimate.",
+  "The station worker's final record was not in the folder when this was written. Station sizes here are full-history file sizes, not the five-year extract.",
+  "Footprint geodatabase read (GDAL or FileGDB) and the footprint shard writes were not timed; the footprint quadtree was timed without writing files.",
+  "Streets: simplification and tile writes for the whole state were not timed; the MSL statewide run in the streets record took 629 s in that worker's pipeline.",
+  "Pages deploy time for a 358 MB site was not measured; the upload action's README advises keeping the tar under 1 GB because larger deploys are more likely to exceed the 10-minute deployment timeout.",
+  "The Pages settings were not read through the API (the proxy blocks that path), so the publishing source is taken from the working site and the workflow's own check.",
+  "Whether a second repository can serve its Pages site to the main site is not tested beyond the header check on this repo's site. The ACAO header is measured; the data site's own headers should be checked on first deploy.",
+  "The GitHub Pages usage text about online businesses (quoted in terms) needs a reading against this site's purpose by the owner or counsel.",
+  "The 10-minute cron on main does not deliver 10-minute runs. The median gap is 151 minutes. Whether an external trigger (repository dispatch from another scheduler) would fix this was not tested.",
+  "The B3 address folder was being rebuilt during measurement; figures are from 03:04 to 03:14 UTC and agree within 0.2 percent. The precheck shows 4,212 shards and 43.5 MB; the build shows 4,211 and 43.1 MB.",
+  "The TIGER edition is named two ways (2025 in streets.json, 2026 in streets-msl-vs-tiger.json). The zip totals differ by 809 bytes; the size is the same either way.",
+  "Tile grids differ: the B1 hail grid has tile edges at whole tenths of a degree, while the streets record uses edges at 0.05-degree offsets. One grid should be chosen before sharding; the Billings viewport crosses two B1 tiles but one streets tile.",
+  "The Microsoft footprint set (773,199, ODbL share-alike) is smaller by count but uses a different licence; its size is a record estimate, not a file measurement.",
+  "The station worker's 80 percent coverage rule was tested only at two points; the coverage of all 481 stations was not computed, so the station subset size for the whole state is not measured (45 candidates for two points is 33.7 MB)."
+ ],
+ "download_bytes_total": 13829992,
+ "record_file": "/home/user/wt/research-b35/volume-and-job-budget.json",
+ "download_note": "All downloads were kept in one folder under the scratch folder, deleted after this record was written. Derived copies (B2 and B3 store snapshots, extraction tests) were made from other folders and deleted too."
+}

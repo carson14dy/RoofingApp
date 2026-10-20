@@ -1,0 +1,161 @@
+{
+  "lid": "CSDI1",
+  "usgsId": "",
+  "reachId": "24177103",
+  "name": "Payette River at Cascade Dam",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "BOI",
+    "name": "Boise"
+  },
+  "state": {
+    "abbreviation": "ID",
+    "name": "Idaho"
+  },
+  "county": "Valley",
+  "timeZone": "MST7MDT",
+  "latitude": 44.52472222,
+  "longitude": -116.0461111,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "QRIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": 8.73,
+      "primaryUnit": "ft",
+      "secondary": 0.189,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:45:00Z"
+    },
+    "forecast": {
+      "primary": 0.205,
+      "primaryUnit": "kcfs",
+      "secondary": 8.8,
+      "secondaryUnit": "ft",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T12:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 17,
+        "flow": 7000
+      },
+      "action": {
+        "stage": 16.5,
+        "flow": 6300
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [],
+      "recent": []
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 17,
+        "statement": "...OR 7000 CFS... MINOR FLOODING WILL OCCUR DOWNSTREAM FROM CASCADE DAM.  SIGNIFICANT INNUNDATION OF RANCH LAND IN THE VICINITY OF CABARTON ROAD WILL OCCUR.  THE RIVER WILL BE BANKFULL THROUGH THE TOWN OF CASCASE AND WILL BE CLOSE TO THE LEVEL OF RV PARKS LOCATED NEAR THE RIVER IN CASCADE."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/CSDI1.QINE.prob.weekint.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/CSDI1.volume.prob.weekint.png"
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/CSDI1.QINE.exceed.90day.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/CSDI1.volume.exceed.90day.png"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/CSDI1.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/csdi1_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/csdi1_record.png"
+    },
+    "photos": [
+      {
+        "id": "9359708841168736750",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.52472222,
+            -116.0461111
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/csdi1/9359708841168736750.jpeg",
+          "caption": "Cascade Dam Releasing 6500 cfs - June 2010"
+        }
+      }
+    ]
+  },
+  "dataAttribution": [],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice.",
+      "effective": "1116",
+      "expiration": "0314"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "PAYI1",
+  "downstreamLid": "BNKI1",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued routinely year-round.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "7",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "no_flooding"
+}

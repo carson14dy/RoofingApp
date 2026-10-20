@@ -1,0 +1,330 @@
+{
+ "checks": [
+  {
+   "check": "index block present",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "index state is loaded or partial",
+   "detail": "loaded",
+   "pass": true
+  },
+  {
+   "check": "sd files match the stations block",
+   "detail": "571 files, 571 stations loaded, 0 unread",
+   "pass": true
+  },
+  {
+   "check": "failed files are listed, and none has an sd file",
+   "detail": "0 failed, 0 unread entries",
+   "pass": true
+  },
+  {
+   "check": "manifest lists each sd file with its bytes and SHA-256",
+   "detail": "0 mismatches",
+   "pass": true
+  },
+  {
+   "check": "manifest index entry is current",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "sd figures are integers and the format is hail-stn-v1",
+   "detail": "0 problems",
+   "pass": true
+  },
+  {
+   "check": "gate B5-3 benchland SNOW",
+   "detail": "US1MTFG0003, USC00243947",
+   "pass": true
+  },
+  {
+   "check": "gate B5-3 benchland SNOW: USC00244978 replaced by USC00243947 under D18",
+   "detail": "Lewistown 11 SSE (31.1 miles, 90.0 percent) has no SNOW report in the 30 days before the as_of date: its last SNOW report is 2026-05-18. Its PRCP and TMAX are current, which the old any-element rule accepted. Harlowton 11NW (34.8 miles, 99.5 percent, SNOW reported 2026-10-12) is the next station that passes.",
+   "pass": true
+  },
+  {
+   "check": "gate B5-3 benchland SNWD",
+   "detail": "USC00247864, USS0009C01S",
+   "pass": true
+  },
+  {
+   "check": "gate B5-3 billings PRCP",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "gate B5-3 billings SNOW",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "gate B5-3 billings SNWD",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "gate B5-3 billings TMAX",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "gate B5-3 billings TMIN",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "gate B5-9 Billings highs of 90 F by season (D1)",
+   "detail": "[45, 42, 27, 35, 25]",
+   "pass": true
+  },
+  {
+   "check": "gate B5-9 Billings days with 1 inch of snow on the ground by season",
+   "detail": "[55, 70, 30, 53, 25]",
+   "pass": true
+  },
+  {
+   "check": "Billings freeze-thaw days by season (refuter M6)",
+   "detail": "[86, 102, 88, 88, 85]",
+   "pass": true
+  },
+  {
+   "check": "Billings days with a low below 32 F by season (refuter M6)",
+   "detail": "[121, 154, 118, 126, 103]",
+   "pass": true
+  },
+  {
+   "check": "gate B5-9 Billings snow of 1 inch with a low below 32 F by calendar year (refuter M10)",
+   "detail": "[40, 66, 39, 25, 57]",
+   "pass": true
+  },
+  {
+   "check": "gate B5-9 Stanford snow of 1 inch with a low below 32 F by calendar year (refuter M10)",
+   "detail": "[34, 63, 34, 32, 60]",
+   "pass": true
+  },
+  {
+   "check": "towns: five seasons counted per element at the two stations",
+   "detail": "17 towns",
+   "pass": true
+  },
+  {
+   "check": "tile lists: one file per index tile",
+   "detail": "4597 files for 4597 tiles",
+   "pass": true
+  },
+  {
+   "check": "manifest lists each tile list with its bytes and SHA-256",
+   "detail": "0 mismatches",
+   "pass": true
+  },
+  {
+   "check": "tile lists: format, the cap of six, nearest first, every passing entry current at 80 percent",
+   "detail": "0 problems",
+   "pass": true
+  },
+  {
+   "check": "tile picks at the billings point, PRCP (D36, gate B5-3)",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "tile picks at the billings point, SNOW (D36, gate B5-3)",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "tile picks at the billings point, SNWD (D36, gate B5-3)",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "tile picks at the billings point, TMAX (D36, gate B5-3)",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "tile picks at the billings point, TMIN (D36, gate B5-3)",
+   "detail": "USC00240802, USW00024033",
+   "pass": true
+  },
+  {
+   "check": "tile picks at the benchland point, SNOW (D36, gate B5-3)",
+   "detail": "US1MTFG0003, USC00243947",
+   "pass": true
+  },
+  {
+   "check": "tile picks at the benchland point, SNWD (D36, gate B5-3)",
+   "detail": "USC00247864, USS0009C01S",
+   "pass": true
+  }
+ ],
+ "gate_rules": {
+  "benchland_SNOW": [
+   "US1MTFG0003",
+   "USC00243947"
+  ],
+  "benchland_SNWD": [
+   "USC00247864",
+   "USS0009C01S"
+  ],
+  "billings_PRCP": [
+   "USC00240802",
+   "USW00024033"
+  ],
+  "billings_SNOW": [
+   "USC00240802",
+   "USW00024033"
+  ],
+  "billings_SNWD": [
+   "USC00240802",
+   "USW00024033"
+  ],
+  "billings_TMAX": [
+   "USC00240802",
+   "USW00024033"
+  ],
+  "billings_TMIN": [
+   "USC00240802",
+   "USW00024033"
+  ]
+ },
+ "ok": true,
+ "tile_picks": {
+  "benchland": {
+   "PRCP": {
+    "failed_nearer": [],
+    "miles": [
+     10.9,
+     18.5
+    ],
+    "picks": [
+     "USC00247864",
+     "USW00004140"
+    ]
+   },
+   "SNOW": {
+    "failed_nearer": [],
+    "miles": [
+     20.9,
+     34.8
+    ],
+    "picks": [
+     "US1MTFG0003",
+     "USC00243947"
+    ]
+   },
+   "SNWD": {
+    "failed_nearer": [],
+    "miles": [
+     10.9,
+     31.3
+    ],
+    "picks": [
+     "USC00247864",
+     "USS0009C01S"
+    ]
+   },
+   "TMAX": {
+    "failed_nearer": [],
+    "miles": [
+     10.9,
+     18.5
+    ],
+    "picks": [
+     "USC00247864",
+     "USW00004140"
+    ]
+   },
+   "TMIN": {
+    "failed_nearer": [],
+    "miles": [
+     10.9,
+     18.5
+    ],
+    "picks": [
+     "USC00247864",
+     "USW00004140"
+    ]
+   }
+  },
+  "billings": {
+   "PRCP": {
+    "failed_nearer": [],
+    "miles": [
+     1.4,
+     2.6
+    ],
+    "picks": [
+     "USC00240802",
+     "USW00024033"
+    ]
+   },
+   "SNOW": {
+    "failed_nearer": [],
+    "miles": [
+     1.4,
+     2.6
+    ],
+    "picks": [
+     "USC00240802",
+     "USW00024033"
+    ]
+   },
+   "SNWD": {
+    "failed_nearer": [],
+    "miles": [
+     1.4,
+     2.6
+    ],
+    "picks": [
+     "USC00240802",
+     "USW00024033"
+    ]
+   },
+   "TMAX": {
+    "failed_nearer": [],
+    "miles": [
+     1.4,
+     2.6
+    ],
+    "picks": [
+     "USC00240802",
+     "USW00024033"
+    ]
+   },
+   "TMIN": {
+    "failed_nearer": [],
+    "miles": [
+     1.4,
+     2.6
+    ],
+    "picks": [
+     "USC00240802",
+     "USW00024033"
+    ]
+   }
+  }
+ },
+ "towns_seasons_95": [
+  "anaconda: PRCP 10 of 10, SNOW 5 of 5, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "belgrade: PRCP 10 of 10, SNOW 10 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "billings: PRCP 10 of 10, SNOW 9 of 10, SNWD 9 of 10, TMAX 9 of 10, TMIN 9 of 10",
+  "bozeman: PRCP 10 of 10, SNOW 10 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "butte: PRCP 9 of 10, SNOW 5 of 5, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "glasgow: PRCP 10 of 10, SNOW 10 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "glendive: PRCP 10 of 10, SNOW 10 of 10, SNWD 9 of 10, TMAX 5 of 5, TMIN 5 of 5",
+  "great-falls: PRCP 10 of 10, SNOW 10 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "havre: PRCP 10 of 10, SNOW 10 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "helena: PRCP 10 of 10, SNOW 8 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "kalispell: PRCP 5 of 10, SNOW 7 of 10, SNWD 6 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "lewistown: PRCP 10 of 10, SNOW 2 of 10, SNWD 8 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "livingston: PRCP 10 of 10, SNOW 3 of 10, SNWD 10 of 10, TMAX 9 of 10, TMIN 8 of 10",
+  "miles-city: PRCP 7 of 10, SNOW 5 of 5, SNWD 5 of 5, TMAX 10 of 10, TMIN 10 of 10",
+  "missoula: PRCP 5 of 10, SNOW 10 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "sidney: PRCP 7 of 10, SNOW 10 of 10, SNWD 9 of 10, TMAX 5 of 10, TMIN 5 of 10",
+  "west-yellowstone: PRCP 6 of 10, SNOW 1 of 10, SNWD 6 of 10, TMAX 7 of 10, TMIN 6 of 10"
+ ]
+}

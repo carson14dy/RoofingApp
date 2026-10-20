@@ -1,0 +1,532 @@
+{
+ "step": "B3 final recheck (read-only): gates B3-1 and B3-8, measurements, completion list and B3R findings",
+ "checker": "read-only final checker; nothing edited, staged, committed or pushed in /home/user/wt/wt-b3; scratch under /home/user/hail-b3/out/recheckc/",
+ "scope": "data module, the hail-store job's address steps, and the B1/B2 verify steps. Site gates B3-2 to B3-7, the Chromium smoke and docs records are not in this worktree and are not judged here.",
+ "worktree": {
+  "path": "/home/user/wt/wt-b3",
+  "branch": "claude/hail-b3",
+  "head": "43aa57b (WIP local safety: B3 address data module after review and fix)",
+  "db84d76_is_ancestor_of_head": true,
+  "diff_stat_vs_db84d76": "60 files changed, 3817 insertions(+), 16 deletions(-)",
+  "diff_stat_vs_HEAD": "58 files changed, 1051 insertions(+), 339 deletions(-)",
+  "unchanged_during_checks": "yes: HEAD, status and the key files' SHA-256 (addresses.py, test_addresses.py, hail.py, joins.py, workflow, .gitignore, fixture index and manifest, fixture a/) identical at start and end (snapshot-start.txt and snapshot-end.txt)",
+  "pyc_written_by_checks": 0,
+  "status_short": {
+   "full_list_file": "/home/user/hail-b3/out/recheckc/status-short.txt",
+   "count": 58,
+   "all_modified_unstaged": true,
+   "other_than_fixture_a": [
+    "M .github/workflows/hail-store.yml",
+    "M .gitignore",
+    "M tests/test_addresses.py",
+    "M tests/test_hail.py",
+    "M tests/test_joins.py",
+    "M website/addresses.py",
+    "M website/data/hail-fixture/hail/index.json",
+    "M website/data/hail-fixture/hail/manifest.json",
+    "M website/hail.py"
+   ],
+   "fixture_a_files_modified": 49
+  },
+  "status_short_summary": "58 modified (' M'), 0 staged, 0 stash entries, 0 untracked"
+ },
+ "commands": [
+  {
+   "name": "unittest full suite",
+   "command": "cd /home/user/wt/wt-b3 && PYTHONDONTWRITEBYTECODE=1 /home/user/hail-b1/venv/bin/python -m unittest discover -s tests",
+   "tail": [
+    "Ran 906 tests in 212.840s",
+    "OK (skipped=1)",
+    "exit=0"
+   ],
+   "result": "PASS",
+   "note": "the one skip is RealMetadataTests, which needs ADDRESS_FRAMEWORK_ZIP; run below. Log: recheckc/unittest-full.log (started about 07:28:40 UTC, after the last code edit at 07:20:18)."
+  },
+  {
+   "name": "unittest address tests with the real framework zip",
+   "command": "ADDRESS_FRAMEWORK_ZIP=/home/user/hail-b3/cache/structures/StructuresFramework_shp.zip python -m unittest discover -s tests -p test_addresses.py",
+   "tail": [
+    "Ran 129 tests in 12.961s",
+    "OK",
+    "exit=0"
+   ],
+   "result": "PASS"
+  },
+  {
+   "name": "launcher selftest",
+   "command": "python desktop/launcher.py --selftest payload",
+   "tail": [
+    "PASS  payload 1.0.0",
+    "exit=0"
+   ],
+   "result": "PASS"
+  },
+  {
+   "name": "addresses verify, completion store, with --zip",
+   "command": "python -m website.addresses verify --store /home/user/hail-b3/out/completion/store --zip /home/user/hail-b3/cache/structures/StructuresFramework_shp.zip (venv python -I, worktree code on the path)",
+   "result": "PASS: ok true, 22 of 22 checks, exit 0. The completion store's index block and hail/a tree equal a fresh build from the current code (see builds).",
+   "output": "recheckc/verify-completion-zip.json"
+  },
+  {
+   "name": "addresses verify, rebuilt store, with --zip",
+   "result": "PASS: ok true, 22 of 22 checks, exit 0",
+   "output": "recheckc/verify-build-a-zip.json"
+  },
+  {
+   "name": "two builds from the B2 tar and the framework zip",
+   "result": "PASS: both exit 0 ('addresses: 674,715 points, 663,759 rows after the merge'). hail/a trees byte-identical across build-a, build-b and the completion store (11,714 files; manifest hashes equal). Index blocks equal except built_at and build_seconds.",
+   "stores": [
+    "recheckc/build-a/store",
+    "recheckc/build-b/store"
+   ]
+  },
+  {
+   "name": "joins verify, B2 tar, this branch's code",
+   "command": "python -m website.joins verify <B2 tar extracted to recheckc/b2tar>",
+   "tail": [
+    "\"ok\": true",
+    "\"state\": \"loaded\"",
+    "six parts loaded",
+    "exit=0"
+   ],
+   "result": "PASS (B3R-01)"
+  },
+  {
+   "name": "hail verify, B2 tar (the B1 verify step)",
+   "tail": [
+    "\"ok\": true",
+    "shards 4597",
+    "events 2638537",
+    "missing_days [2022-06-08]",
+    "exit=0"
+   ],
+   "result": "PASS"
+  },
+  {
+   "name": "job steps replayed with the workflow's own commands (absolute paths, venv python -I; driver recheckc/scripts/job_steps.py)",
+   "cases": {
+    "good (cold download)": "PASS: HEAD 200, GET 200 fetched; zip SHA-256 7bc7a0fea8a190c0a8cbec2bf4f0facee357bb31314dc6884da07ac94671afba (the pre-check copy); build exit 0 in 88.4 s; verify exit 0 in 45.1 s; tar 26,659,555 B; hail/a identical to the completion store",
+    "warm (cache hit, real file)": "PASS: HEAD 200 checked, GET served from cache (ledger 'hit'); build exit 0 in 50.3 s; verify exit 0; hail/a identical to the cold build and the completion store; tar 26,658,809 B",
+    "head_down (no route to the source)": "PASS: HEAD ProxyError; build exit 0 in 1.3 s; list unavailable with reason 'the framework download's HEAD request failed (ProxyError)'; verify exit 0; store intact; no a/ folder",
+    "terms (use sentence changed; zip reached through the job's cache path)": "PASS: HEAD 200, cache hit on the altered zip; build exit 0 in 7.9 s; list unavailable ('the terms sentences in the file's metadata are not the ones the site quotes'); verify exit 0; store intact; no a/",
+    "fields (Unit field renamed in the DBF header; through the cache)": "PASS: build exit 0 in 14.8 s; list unavailable ('the table's field list ... is not the 51 fields this build reads'); verify exit 0; store intact; no a/",
+    "wrong_zip (job flags plus --zip to a missing path)": "FAIL: build exit 1 in 0.4 s ('the framework file ... is not there'); the list is NOT marked unavailable and the index keeps no addresses block; verify exit 1; the restore step puts back the B2 index and manifest. Store intact, but exit 0 and 'unavailable' were required (D36).",
+    "no_pyproj (pyproj not importable; real zip cached)": "FAIL (found in the replay): build exit 1 in 21.6 s with an uncaught ModuleNotFoundError at website/addresses.py:496 (lazy import); the list is NOT marked unavailable; verify exit 1; restore puts back the B2 index; the workflow's comment at lines 106-107 says the part is marked unavailable, which the code does not do. No test covers this path."
+   },
+   "store_facts": "for every case: no file outside hail/a, hail/index.json and hail/manifest.json changed; the index without its addresses block equals the B2 index; the manifest's non-address entries equal the B2 manifest"
+  },
+  {
+   "name": "fixture regenerated from the completion store",
+   "command": "python -m website.addresses fixture --store /home/user/hail-b3/out/completion/store --out <copy of website/data/hail-fixture>",
+   "result": "PASS: diff -rq clean; every fixture file (hail/a and the B1/B2 files, index and manifest) identical to the committed fixture"
+  },
+  {
+   "name": "git",
+   "command": "git -C /home/user/wt/wt-b3 status --short ; git diff --stat db84d76",
+   "result": "58 ' M' entries (summary in worktree.status_short; full list in recheckc/status-short.txt); 0 staged; 0 untracked; diff --stat db84d76 = 60 files, 3817 insertions(+), 16 deletions(-)"
+  }
+ ],
+ "checks": {
+  "unittest_full_suite": "PASS (906 run, OK, skipped=1; the skip passes with the real zip: 129 OK)",
+  "launcher_selftest_payload": "PASS (exit 0)",
+  "addresses_verify_completion_with_zip": "PASS (22 of 22; exit 0)",
+  "counts_against_D22": "PASS (points 674,715; left out 4,212; merged 6,744; rows 663,759; see d22_counts)",
+  "du_sb_against_D38_budgets": "PASS (dot shards 45,783,814 B < 60 MB; letter files plus cities and words 41,732,176 B < 60 MB; hail/a 87,515,990 B is the sum of the two, which D38 does not budget as one)",
+  "largest_shard_and_letter": "PASS (r0075_c01871.json 181,786 B, 2,492 rows, under 300 KB; bozeman/W.json 159,489 B, 2,488 rows)",
+  "tar_size": "recorded: 26,660,555 B (fresh tar of the completion store); job tars 26,659,555 B (cold) and 26,658,809 B (warm)",
+  "fixture_bytes_index_manifest_and_regenerated_a": "PASS (hail/ 97,406 B in 68 files: non-a 46,805 B, a/ 50,601 B, a/idx 25,276 B; manifest 67 entries, 0 mismatches, index hash listed; fixture verify ok; a/ regenerated byte-identical)",
+  "allow_list_grep_against_D1": "PASS (every fields[...] key and every slice is one of the 17 allow-listed names; forbidden names appear only in the DBF layout (addresses.py:119-131) and FORBIDDEN_FIELDS (141-142); the reader slices only FIELD_SLICES, built from ALLOWED_FIELDS (155, 296, 437); the only other byte access is the deletion flag record[0:1] (434))",
+  "2-6-109_grep": "PASS in intent: 2 hits, both assertNotIn lines in tests/test_addresses.py:826-827; none in module text, docs or site words",
+  "placement_letter_and_county_counts_D32": "PASS (independent scan: every one of 663,759 shard rows has a six-value row ending in a class letter and every letter row a seven-value row ending in one; verify records 58 counties; class totals add up to the 670,503 kept records)",
+  "forbidden_words_D34": "PASS for module words: 0 hits in 71 user-facing strings (house, home, residence, dwelling; and 'use' in the building templates: 0). Literal grep of added lines: 6 hits, 5 in tests/test_addresses.py regexes and assertion text (diff lines 382, 383, 914, 953, 972) and 1 in a code comment at website/addresses.py:224 ('a house-outline dot'); none in shown text",
+  "use_quote_marker": "PASS (' [...] ' present in about_use, addresses.py:211, and tested at tests/test_addresses.py:835)",
+  "canonical_cities_set_grep": "PASS (none)",
+  "Unit_APT2_grep": "PASS (none in the repo; unit_text('APT2') == 'Apt2')",
+  "integer_midline_compare_B3R-07": "PASS (quarter() at addresses.py:688-698 compares 2*lon and 2*lat in 64ths; quadtree asserts whole midlines; MidlineTests at tests/test_addresses.py:668-705 cover depth 1 and depth 4)",
+  "outside_grid_sentence_and_tile_list_B3R-03": "PASS (verify lists r0059_c0155 (2 rows), r0100_c0209 (1), r0100_c0230 (1), r0100_c0231 (1): 5 rows in 4 tiles; WORDS_ADDRESSES['outside_grid'] is the D23 sentence exactly and map_data carries it; OutsideGridTests)",
+  "workflow_yaml_and_double_equals": "PASS (parses; 19 steps; job timeout 90 min; build step 10 min; verify step 5 min; pip install pyproj~=3.8; 0 occurrences of '==')",
+  "gitignore_B3R-06": "PASS (address-cache/, structures/, hail-cache/, joins-cache/, store/, hail-store.tar.gz added; git check-ignore confirms each)",
+  "source_failure_simulations_D36": {
+   "wrong_zip_path": "FAIL (exit 1; list not marked unavailable)",
+   "terms_sentence_changed": "PASS (exit 0; unavailable; store intact)",
+   "changed_field_list": "PASS (exit 0; unavailable; store intact)",
+   "job_step_source_unreachable": "PASS (exit 0; unavailable; store intact)",
+   "job_step_pyproj_not_installed_extra": "FAIL (exit 1; list dropped, not unavailable)"
+  },
+  "joins_verify_of_B2_tar_on_this_branch_B3R-01": "PASS (exit 0; ok true)",
+  "git_status_and_diff_stat_db84d76": "recorded (see worktree and commands)",
+  "em_dash_and_banned_name_counts_added_lines": "PASS (em dash U+2014: 0; en dash U+2013: 0; D34 words in user-facing strings: 0; 6 literal hits as above; non-ASCII only as code literals U+FFFD and U+00A0 in addresses.py _text())",
+  "decision_7_audit": "PASS (details under decision_7_audit)"
+ },
+ "gates": {
+  "B3-1": {
+   "status": "PASS",
+   "evidence": [
+    "Points 674,715 = DBF records 674,715 (independent reader: 51 fields, 0 deleted) = .shp records; 0 null shapes.",
+    "Left out: 4,212 with no St_Name (independent count 4,212; 6 of them carry a nonzero house number, as D22 says); 0 without a position; 0 without a city; 0 deleted.",
+    "Merged exact duplicates 6,744; rows 663,759 = 674,715 - 4,212 - 6,744.",
+    "verify --zip recomputes points, left-out rows, rows, merges and the projection pairs from the zip (22 of 22 checks). Shard rows 663,759 = index rows = letter rows.",
+    "No owner, parcel or place-type field is read: the reader slices only the 17 allow-listed fields; the header check requires the exact 51-field list (ParcelID exists in the file and is not read); AllowListTests pass.",
+    "Largest shard r0075_c01871.json 181,786 B (2,492 rows), under 300 KB. Totals measured (see measurements).",
+    "The recheck's 171,818 B and 43,129,253 B predate the D32 placement letter: the increase is exactly 4 bytes per row (663,759 rows = 2,655,036) less 475 bytes from the B3R-04 unit fix = 2,654,561 (matches the shard and letter totals); the largest shard is +9,968 = 2,492 rows x 4."
+   ]
+  },
+  "B3-8": {
+   "status": "PARTIAL",
+   "evidence": [
+    "Deterministic build: build-a, build-b and the completion store have byte-identical hail/a trees (11,714 files); the cold-download and warm cache-hit job builds are identical to them.",
+    "Job address steps run as the workflow writes them (HEAD, download, cache hit, build, verify, restore, pack): cold build 88.4 s and verify 45.1 s, inside the workflow's 10 min and 5 min limits.",
+    "Source failures through the job steps: HEAD unreachable, changed terms and changed field list pass (exit 0, unavailable, store intact); a wrong --zip path and a missing projection library fail (see failed_checks).",
+    "Verify steps: hail verify (B1) and joins verify (B2) pass on the B2 tar with this branch's code (B3R-01 settled: db84d76 is an ancestor and joins.py is unchanged).",
+    "Not run here: the B1 MRMS build step and the B2 joins build step (network pulls upstream of this module, as in the recheck). Their code is unchanged from db84d76 (website/hail.py changes only the fixture writer and its command; website/joins.py is unchanged). B3-8 is PARTIAL until those two build steps run on the runner.",
+    "Workflow file: parses, 19 steps, job timeout 90 min, pyproj~=3.8, no '==', push paths include website/addresses.py; .gitignore entries present."
+   ]
+  }
+ },
+ "measurements": {
+  "source": {
+   "file": "StructuresFramework_shp.zip",
+   "bytes": 65788772,
+   "sha256": "7bc7a0fea8a190c0a8cbec2bf4f0facee357bb31314dc6884da07ac94671afba",
+   "server_last_modified": "Wed, 30 Sep 2026 15:23:57 GMT",
+   "export_date": "2026-09-30",
+   "pubdate": "2026-09-30",
+   "pyproj": "3.8.0",
+   "projection_pairs_metres": {
+    "1611 South Avenue West, Missoula": 1.236,
+    "500 Colony Road, Roundup": 1.2,
+    "1617 Euclid Avenue Unit 4, Helena": 1.223
+   }
+  },
+  "points": 674715,
+  "left_out_no_street": 4212,
+  "left_out_no_street_with_nonzero_number": 6,
+  "left_out_no_position": 0,
+  "left_out_no_city": 0,
+  "left_out_deleted": 0,
+  "merged_duplicates": 6744,
+  "rows": 663759,
+  "shards": 4211,
+  "address_tiles": 3815,
+  "split_tiles": 49,
+  "depths": {
+   "0": 3766,
+   "1": 153,
+   "2": 133,
+   "3": 155,
+   "4": 4
+  },
+  "over_limit_shards": 0,
+  "largest_shard": {
+   "name": "r0075_c01871.json",
+   "bytes": 181786,
+   "rows": 2492
+  },
+  "letter_files": 7501,
+  "two_character_letter_files": 363,
+  "over_limit_letter_files": 0,
+  "largest_letter": {
+   "file": "hail/a/idx/bozeman/W.json",
+   "bytes": 159489,
+   "rows": 2488
+  },
+  "largest_two_character_letter": {
+   "file": "hail/a/idx/great-falls/2N.json",
+   "bytes": 141783
+  },
+  "cities": 433,
+  "cities_json_bytes": 64771,
+  "words_json_bytes": 427,
+  "bytes": {
+   "hail_a_du_sb": 87515990,
+   "hail_a_idx_du_sb": 41732176,
+   "shards": 45783814
+  },
+  "D38_budgets": {
+   "dot_shards": {
+    "measured": 45783814,
+    "limit": 60000000,
+    "within": true
+   },
+   "letter_files_with_cities_and_words": {
+    "measured": 41732176,
+    "limit": 60000000,
+    "within": true
+   }
+  },
+  "tar_bytes_fresh_completion": 26660555,
+  "fixture": {
+   "hail_bytes_total": 97406,
+   "hail_files_total": 68,
+   "non_address_bytes": 46805,
+   "non_address_files": 17,
+   "a_bytes": 50601,
+   "a_files": 51,
+   "a_idx_bytes": 25276,
+   "budget_bytes_50KiB": 51200,
+   "note": "a/ is under 51,200 B (50 KiB, the unit the tests use) but over 50,000 B; D10 says 'under 50 KB'. State the unit."
+  },
+  "placement_classes_kept_records": {
+   "S": 625283,
+   "P": 21623,
+   "G": 9863,
+   "L": 306,
+   "T": 1998,
+   "U": 11430,
+   "blank_as_unknown": 390,
+   "counties": 58
+  },
+  "outside_hail_grid_tiles": {
+   "r0059_c0155": 2,
+   "r0100_c0209": 1,
+   "r0100_c0230": 1,
+   "r0100_c0231": 1
+  },
+  "builds_seconds": {
+   "zip_build_under_load": 66.7,
+   "job_cold_build": 88.4,
+   "job_warm_build": 50.3
+  },
+  "differences_from_recheck": "shards +2,654,561 B, letters +2,654,561 B, largest shard +9,968 B, largest letter +9,952 B: all from the D32 placement letter (4 bytes per row) less 475 bytes from the B3R-04 unit fix. Counts unchanged."
+ },
+ "d22_counts": {
+  "points": {
+   "d22": 674715,
+   "measured": 674715,
+   "match": true,
+   "independent_dbf_count": 674715
+  },
+  "left_out_no_street": {
+   "d22": 4212,
+   "measured": 4212,
+   "match": true,
+   "independent_dbf_count": 4212,
+   "of_which_nonzero_number": 6
+  },
+  "merged_duplicates": {
+   "d22": 6744,
+   "measured": 6744,
+   "match": true
+  },
+  "rows": {
+   "d22": 663759,
+   "measured": 663759,
+   "match": true
+  },
+  "differences_explained": "None against D22. The brief's pre-check figures (6,740 merged, 663,763 rows) came from a cruder key and are superseded by D22 (the recheck's table gives the same explanation). Shards 4,211 against the pre-check's 4,212: one row on a tile edge, placed by the pre-check's float rule (the recheck's explanation; not re-run here)."
+ },
+ "decision_7_audit": {
+  "verdict": "PASS",
+  "accconst": "quoted exactly; equal to the file's accconst",
+  "useconst": "disclaimer and convenience sentences both appear in the file's useconst. They are not adjacent there (three sentences sit between them), so the About text joins them with ' [...] ' (D24)",
+  "purpose": "quoted exactly; equal to the file's purpose",
+  "file_date": "pubdate and export date 2026-09-30, read from the file (not typed in)",
+  "exclusion": "'Owner names and parcel identifiers are never read, stored or shown.' exact",
+  "statute": "Montana Code Annotated 2-6-1017 only; no 2-6-109 in any shown text",
+  "privacy": "'What you type stays in your browser.' exact",
+  "commercial_use": "no positive claim; no hit for commercial, permitted or allowed in the words",
+  "counsel_text_on_site": "absent from the words (the counsel question belongs in ROADMAP)",
+  "coverage": "'The list is of addresses, not of buildings, and its coverage varies from county to county.' no number (D37 wording)",
+  "deletion_audit": "rmtree only on the store's own hail/a and its stage folder (addresses.py:819, 825, 829, 978)",
+  "about_page_template": "not in this worktree; the words are in website/addresses.py and describe_addresses()"
+ },
+ "completion_list": [
+  {
+   "item": "fixture per D18, with the four B1 and B2 tests green",
+   "status": "done",
+   "evidence": "suite OK; the four named tests pass (test_hail FixtureTests test_fixture_is_the_current_output_of_fixture_store and ReaderTests test_manifest_passes_on_the_fixture; test_hail test_fixture_without_the_address_files_is_under_50_kb_and_holds_only_the_store_and_joins (renamed from test_fixture_is_under_50_kb_and_holds_only_the_store_and_joins_files, test_hail.py:756); test_joins FixtureTests test_the_committed_sample_joins_verify_and_are_small); fixture a/ regenerated byte-identical"
+  },
+  {
+   "item": "'==' removal per D19",
+   "status": "done",
+   "evidence": "0 occurrences in .github/workflows/hail-store.yml; 'pip install pyproj~=3.8' (line 107)"
+  },
+  {
+   "item": "non-fatal source handling per D20, with a test of each failure path",
+   "status": "not done",
+   "evidence": "done for HEAD, download, field list, projection, terms, purpose, README, placement, table length and count, decode and point failures (tests at tests/test_addresses.py:488-575 and 1311-1446; job replays exit 0 and unavailable). Not done: a wrong --zip path exits 1 with the list unmarked (addresses.py:1096 raises before the try; main returns 1 at 1688; test at :567 pins it), and a missing projection library raises an uncaught ModuleNotFoundError (addresses.py:496; no test)."
+  },
+  {
+   "item": "About citation to MCA 2-6-1017 only (D13) in both places",
+   "status": "done",
+   "evidence": "WORDS_ADDRESSES['about_persons'] cites 2-6-1017 only; describe_addresses() reads the same words; 2-6-109 appears only in two assertNotIn lines (tests/test_addresses.py:826-827). docs/DECISIONS.md:735 names MCA 2-6-1017 and no 2-6-109. The site About template is not in this worktree."
+  },
+  {
+   "item": "coverage words per D21",
+   "status": "done",
+   "evidence": "about_coverage is 'The list is of addresses, not of buildings, and its coverage varies from county to county.' with no number (D37 wording); REVIEW_NOTE is absent from the repo. The county-ratio text for docs/ROADMAP.md is not in this worktree (no 0.48 or 1.36 in docs/ROADMAP.md)."
+  },
+  {
+   "item": "city spelling rule and its test (D22)",
+   "status": "done",
+   "evidence": "canonical_cities(names) counts every row's spelling (addresses.py:605-622); CityNameTests (tests/test_addresses.py:918-940) pass; no canonical_cities(set grep hit"
+  },
+  {
+   "item": "quadtree midline compare in integers (64ths), with a test",
+   "status": "done",
+   "evidence": "quarter() compares 2*lon >= west+east and 2*lat > south+north in sub-units (addresses.py:688-698); quadtree asserts whole middle lines; MidlineTests depth 1 and depth 4 pass"
+  },
+  {
+   "item": "unit title-casing of letter runs with digits ('APT2' to 'Apt2')",
+   "status": "done",
+   "evidence": "_title_word and unit_text (addresses.py:535-552); UnitCasingTests (tests/test_addresses.py:896-917): APT2 -> Apt2, RM403 -> Rm403, A1 -> Unit A1; no 'Unit APT2' in the repo"
+  },
+  {
+   "item": "verify limit check on two-character letter files",
+   "status": "done",
+   "evidence": "verify flags any letter file over 2,500 rows, two characters or not (addresses.py verify letter_bad); LetterLimitTests pass; the completion store has 363 two-character files, none over the limit"
+  },
+  {
+   "item": "job timeout 90 minutes",
+   "status": "done",
+   "evidence": "timeout-minutes: 90 (hail-store.yml line 41); WorkflowTests pass"
+  },
+  {
+   "item": "download() tests: HEAD, cache hit, refetch on a changed Last-Modified, failure marking unavailable",
+   "status": "done",
+   "evidence": "DownloadTests (tests/test_addresses.py:1285-1352) and DownloadBuildTests (1366-1392) pass; the warm job replay ledger shows HEAD checked then GET hit; the head_down replay shows the HEAD failure marking the list unavailable"
+  },
+  {
+   "item": "deleted-record flag",
+   "status": "done",
+   "evidence": "test_a_deleted_record_is_left_out_and_counted (tests/test_addresses.py:1128-1136) passes; the reader treats byte 0 '*' as deleted (addresses.py:434); the real table has 0 deleted"
+  },
+  {
+   "item": "ID and ND labels",
+   "status": "done",
+   "evidence": "test_an_out_of_state_label_does_not_remove_a_row (tests/test_addresses.py:1149-1161): rows kept, positions kept, labels not output"
+  },
+  {
+   "item": "statute citation",
+   "status": "done",
+   "evidence": "test_the_statute_citation_is_2_6_1017_only (tests/test_addresses.py:824-827) passes"
+  },
+  {
+   "item": ".gitignore entries for the local cache folders",
+   "status": "done",
+   "evidence": ".gitignore adds address-cache/, structures/, hail-cache/, joins-cache/, store/, hail-store.tar.gz; git check-ignore confirms each (B3R-06)"
+  },
+  {
+   "item": "D23's verify listing and words",
+   "status": "done",
+   "evidence": "verify lists the outside-grid tiles as detail (counts.tiles_outside_hail_grid); WORDS_ADDRESSES['outside_grid'] is exact; map data carries it; OutsideGridTests and test_the_d23_outside_grid_sentence_is_exact_and_the_map_data_carries_it pass"
+  },
+  {
+   "item": "D24's source line",
+   "status": "done",
+   "evidence": "describe_addresses() gives a file date only when the index read one, else the undated sentence; tests at tests/test_addresses.py:839-857 pass"
+  }
+ ],
+ "b3r_findings": [
+  {
+   "id": "B3R-01",
+   "status": "done",
+   "evidence": "db84d76 is an ancestor of HEAD 43aa57b; joins.py is unchanged against db84d76; joins verify on the B2 tar with this branch's code: exit 0, ok true. The brief records B3R-01 as settled by the rebase onto db84d76 (43aa57b)."
+  },
+  {
+   "id": "B3R-02",
+   "status": "done",
+   "evidence": "full suite OK (906 tests); the four fixture tests pass (one renamed, see completion item 1)"
+  },
+  {
+   "id": "B3R-03",
+   "status": "done",
+   "evidence": "verify lists the 4 outside-grid tiles (5 rows); outside_grid sentence exact; map data carries it; OutsideGridTests pass"
+  },
+  {
+   "id": "B3R-04",
+   "status": "done",
+   "evidence": "unit_text('APT2') == 'Apt2' (tests/test_addresses.py:900); RM403 and A1 cases at 900-905; no 'Unit APT2' in the repo"
+  },
+  {
+   "id": "B3R-05",
+   "status": "not done",
+   "evidence": "format, terms, field-list, projection, HEAD and download failures now raise SourceUnavailable and exit 0 with the list unavailable (the sites B3R-05 names are fixed; job replays confirm). Still open under D36, which settles B3R-05: a wrong --zip path (exit 1, list unmarked) and a missing projection library (uncaught ModuleNotFoundError, exit 1, list dropped). The job continues in both cases because the workflow guards the step."
+  },
+  {
+   "id": "B3R-06",
+   "status": "done",
+   "evidence": ".gitignore entries present; git check-ignore confirms all six patterns"
+  },
+  {
+   "id": "B3R-07",
+   "status": "done",
+   "evidence": "integer compare in 64ths (addresses.py:688-698); MidlineTests at depth 1 and depth 4 pass"
+  },
+  {
+   "id": "B3R-08",
+   "status": "not done",
+   "evidence": "the module and its tests use 'buildings' (about_coverage; tests/test_addresses.py:829-833), which is the D37 ruling. The finding's minimal fix also records the change in DECISIONS D21 (D37: 'the docs builder records the wording'); docs/DECISIONS.md has no D36-D38 entries in this worktree."
+  },
+  {
+   "id": "B3R-09",
+   "status": "done",
+   "evidence": "D38 settles it by two budgets: dot shards 45,783,814 B and letter files plus indexes 41,732,176 B, each under 60 MB; both measured and written to hail/index.json (block.bytes)"
+  }
+ ],
+ "failed_checks": [
+  {
+   "id": "wrong_zip_path_source_failure",
+   "expected": "exit 0, list unavailable, store intact (D36; this checker)",
+   "observed": "exit 1, list not marked, store intact, no addresses block",
+   "where": "website/addresses.py build() raises AddressesError before its try block (line 1096); main() returns 1 (line 1688); tests/test_addresses.py:567 asserts this behaviour, so the test and D36 disagree"
+  },
+  {
+   "id": "missing_projection_library_extra",
+   "expected": "list unavailable with exit 0 (D20, D36; the workflow's own comment at lines 106-107)",
+   "observed": "uncaught ModuleNotFoundError, exit 1, list dropped (state absent)",
+   "where": "website/addresses.py:496 (lazy import in _transformer()); no test covers it"
+  }
+ ],
+ "open_items": [
+  "Completion item 3 (non-fatal source handling with a test of each failure path): not done, because of the two failed checks above.",
+  "B3R-05 and B3R-08: not done (see b3r_findings).",
+  "B3-8: PARTIAL; the B1 MRMS build step and the B2 joins build step were not rerun here (network pulls upstream). Their code is unchanged from db84d76 except the fixture writer in website/hail.py.",
+  "Docs not in this worktree: DECISIONS entries for D36 to D38, the ROADMAP county-ratio text under D21, DESIGN section 9, and the About page template (site side). These are docs and site items, not judged here."
+ ],
+ "not_run": [
+  "B1 MRMS build step (python -m website.hail build)",
+  "B2 joins build step (python -m website.joins build)",
+  "full identity-level comparison of every address (done by the earlier recheck, b3a-recheck.json; not repeated; the counts come from verify --zip and an independent DBF count)",
+  "site gates B3-2 to B3-7 and the Chromium smoke (site scope)"
+ ],
+ "notes": [
+  "The completion store (07:15) is current: its index block and hail/a tree equal a fresh build from the current code. The worktree's addresses.py and tests/test_addresses.py were edited at 07:20, after the store was built, but the output is unchanged.",
+  "The 07:20 edits did not change the output: the rebuilt store and the completion store are byte-identical.",
+  "Forbidden-word note: 'house' appears once in a code comment (addresses.py:224) and in test regexes; no shown text uses house, home, residence or dwelling. 'use' appears in the About quotes (allowed: they quote the file), not in building templates.",
+  "Unit note: the a/ fixture is 50,601 B: under 51,200 B (50 KiB) but over 50,000 B.",
+  "The no-address-text mode (D35) is site-side and not in this worktree."
+ ],
+ "scratch": {
+  "dir": "/home/user/hail-b3/out/recheckc/",
+  "logs": [
+   "unittest-full.log",
+   "unittest-addresses-realzip.log",
+   "selftest.log",
+   "verify-completion-zip.json",
+   "verify-build-a-zip.json",
+   "joins-verify-b2tar.log",
+   "hail-verify-b2tar.log",
+   "job-good.json",
+   "job-warm.json",
+   "job-head_down.json",
+   "job-terms.json",
+   "job-fields.json",
+   "job-wrong_zip.json",
+   "job-no_pyproj.json",
+   "fixture-regen.json",
+   "placement_scan.json",
+   "audit_words_terms.json",
+   "snapshot-start.txt",
+   "snapshot-end.txt"
+  ],
+  "builds": [
+   "build-a/store",
+   "build-b/store",
+   "b2tar (B2 tar extracted)",
+   "variants/terms-changed.zip",
+   "variants/fields-changed.zip"
+  ]
+ },
+ "decision_7_detail_source": "recheckc/audit_words_terms.json"
+}

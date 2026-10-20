@@ -1,0 +1,150 @@
+{
+  "lid": "CRKM8",
+  "usgsId": "",
+  "reachId": "",
+  "name": "Lodge Creek near Chinook",
+  "description": "",
+  "rfc": {
+    "abbreviation": "",
+    "name": ""
+  },
+  "wfo": {
+    "abbreviation": "",
+    "name": ""
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "",
+  "timeZone": "GMT0GMT",
+  "latitude": 48.6754,
+  "longitude": -109.275,
+  "pedts": {
+    "observed": "",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "obs_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": -9999,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [],
+      "recent": []
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "",
+      "floodcat": ""
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "County",
+      "text": "Blaine",
+      "title": "",
+      "url": "https://www.water.noaa.gov/state/mt"
+    },
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS-Water Resources of the United States",
+      "title": "",
+      "url": "https://waterdata.usgs.gov/monitoring-location/USGS-06146980/#dataTypeId=continuous-00065-0&period=P7D&showFieldMeasurements=true"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "06146980",
+      "title": "",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=06146980"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "obs_not_current",
+  "ForecastFloodCategory": "fcst_not_current"
+}

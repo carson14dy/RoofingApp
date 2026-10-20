@@ -1,0 +1,727 @@
+{
+ "checker": "B5 part B1 re-check, final checker (read-only): gates B5-10, B5-11 (Python half), B5-12 (local half), B5-14 (Python half), B5-16, B5-17 and B5-18 (smoke_pages clause); every part B1 item; measurements; open items for part B2",
+ "branch": "claude/hail-b5",
+ "worktree": {
+  "path": "/home/user/wt/wt-b5",
+  "head": "de0793c WIP (local safety): B5 data modules after the completion pass (parents fa33c8d WIP (local safety), db84d76)",
+  "status": "26 entries: 21 modified, 5 untracked; diff --stat vs db84d76: 36 files, +13,207 / -606; 0 staged",
+  "changed_by_checker": false,
+  "process_note": "Two local WIP commits exist on the branch (fa33c8d, de0793c); the brief says nobody commits or pushes. Not changed here."
+ },
+ "scratch": "/home/user/hail-b5/out/b5b1-checker/ (all copies and builds deleted; logs and probe scripts kept)",
+ "run_finished_utc": "2026-10-19T23:33:00Z",
+ "checks": {
+  "unit_tests": {
+   "command": "PYTHONDONTWRITEBYTECODE=1 /home/user/hail-b1/venv/bin/python -m unittest discover -s tests, in a copy of the worktree without .git",
+   "tail": [
+    "Ran 1199 tests in 259.548s",
+    "FAILED (failures=1)",
+    "rc=1"
+   ],
+   "failure": "tests/test_site.py:1546 HailHistory.test_sample_words_show_in_the_town_section_and_the_about_paragraph: AssertionError 'the 1,826 SPC days ending Oct 15, 2026' not found in the Billings town page",
+   "errors": 0,
+   "other_tracebacks_in_log": "ZeroDivisionError in test_updates and the launcher's bad-version RuntimeError are expected test output, not failures",
+   "single_test_fix_check": "scratch copy only: the expected sentence at tests/test_site.py:1546 changed to '1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}'; that test then runs OK (Ran 1 test, OK)",
+   "result": "fail (1 of 1199)"
+  },
+  "selftest_payload": {
+   "command": "/home/user/hail-b1/venv/bin/python desktop/launcher.py --selftest payload",
+   "rc": 0,
+   "output": "PASS  payload 1.0.0",
+   "result": "pass"
+  },
+  "flag_off_build_vs_db84d76": {
+   "command": "python -m website.build --out <dir> --sample --now 2026-10-19T12:00:00Z, in a worktree copy and in git archive db84d76",
+   "files": {
+    "worktree": 94,
+    "db84d76": 94
+   },
+   "diff_rq": "17 files differ, all town pages: anaconda, belgrade, billings, bozeman, butte, glasgow, glendive, great-falls, havre, helena, kalispell, lewistown, livingston, miles-city, missoula, sidney, west-yellowstone. Each differs by one blank line before <section aria-labelledby=\"obs-h\"> (billings: diff hunk @@ -48,6 +48,7 @@). Static assets identical.",
+   "fix_check": "scratch copy: deleting template line website/templates/town.html:105 makes diff -rq empty (rc 0)",
+   "result": "fail (B5-18 flag-off clause)"
+  },
+  "hail_history_sample_build": {
+   "command": "python -m website.build --out <dir> --sample --hail-history --now 2026-10-19T12:00:00Z",
+   "rc": 0,
+   "files": 116,
+   "bytes": "2.9 MB",
+   "seconds": 7.7,
+   "result": "pass"
+  },
+  "hail_history_store_build": {
+   "command": "python -m website.build --out <dir> --sample --hail-history --hail-store <scratch copy of /home/user/hail-b5/out/b1/store> --now 2026-10-19T12:00:00Z (a folder is accepted; no tar needed)",
+   "rc": 0,
+   "files": 19363,
+   "bytes": "199 MB",
+   "seconds": 15.9,
+   "stderr_bytes": 0,
+   "hail_history_status": "2,638,537 events in 4597 shard files, 1825 of 1826 days, as of 2026-10-16; joined records loaded",
+   "result": "pass"
+  },
+  "smoke_pages_store_build": {
+   "command": "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python tools/smoke_pages.py <store build dir>",
+   "tail": [
+    "Page width check passed: every page fits the screen at 288, 320, 375, 390, 768, 1280, 1440 px, light and dark.",
+    "Five-season table check passed on town pages (no sideways scroll; cards below 900 px): 288 px: 17 pages, 320 px: 17 pages, 375 px: 17 pages, 390 px: 17 pages, 640 px: 17 pages, 768 px: 17 pages, 899 px: 17 pages, 900 px: 17 pages, 1280 px: 17 pages, 1440 px: 17 pages.",
+    "rc=0"
+   ],
+   "result": "pass"
+  },
+  "billings_summary_table": {
+   "page": "town/billings.html (combined-store build)",
+   "rows": "25 body rows: 23 indicator rows, 2 town-only station rows, and the held row",
+   "kind_word_and_unit_on_every_row_head": "pass (17 of 17 town tables, 0 rows without a kind word)",
+   "station_rows_named": "167 of 167 station-row value cells name their station (17 towns)",
+   "zero_for_missing": "no zero stands for a missing season. Zeros are counts over the days present, with the 'n days missing' line (D2)",
+   "decoding_defects": "held row reads 'Data unavailable, none' (summary.py:132); 'issuance polygon in effect' (joins.py:419); '(8 days missing; 8 days missing)' (summary.py:566-573); 'No report is not a finding that nothing happened' (summary.py:275); '0 freezing rain reports' (104 cells across 17 pages)",
+   "gust_rows": "Peak gust and Strongest gust: Data unavailable in every season and the five-season cell (12 cells per town, 204 in all)",
+   "snowfall_five_season": "'185.0 in; two stations: BILLINGS WTP 2021-22 to 2024-25, BILLINGS INTL AP 2025-26' (mixes two stations)",
+   "result": "fail (B5-11 python half; see findings F3 to F10)"
+  },
+  "benchland_summary_table": {
+   "note": "Benchland has no town page. Probed with summary.describe_summary on the combined store, cell row 792, col 1998 (tile r0079_c0199; the point 47.08 N, 110.02 W).",
+   "rows": 23,
+   "kind_word_and_unit": "every row head has a kind word; every value has a unit or is Data unavailable",
+   "gust_rows": "Data unavailable in all five seasons and the five-season cell",
+   "zone_2021_22": "'Data unavailable: some products could not be placed to a zone. This is not an all-clear.' (no zero)",
+   "snowfall_five_season": "'191.9 in' with no station named (season cells name HARLOWTON 11NW)",
+   "gauge_line": "none (no gauge line on the non-town summary)",
+   "partial_line": "present: 'Grid estimate: 2026-27 so far, 107 days to Oct 15, 2026: highest 98.6 F on Jul 13, 2026; ...'",
+   "result": "partial (F3, F5, F10)"
+  },
+  "partial_line_and_sections": {
+   "partial_line": "present on 17 of 17 town pages ('2026-27 so far, 107 days to Oct 15, 2026: ...'); Billings adds the reports and radar counts for the partial season",
+   "section_order": "17 of 17 pages: Official alerts > Five-year weather history (table) > Observed now > Next 24 hours > Next 7 days > Hail > Wind > Storms and warnings > Temperature > Rain > Snow > Flooding > Ice and winter > Heat > Weather that matters for a roof > How this was made > Other towns",
+   "table_position": "the table sits above the forecast, which contradicts About text (F11a)",
+   "result": "pass for order; About text fails (F11a)"
+  },
+  "gauge_lines": {
+   "billings": "7 river gauge lines (1 record, 1 stage, 5 peaks: water years 1974, 1996, 1997, 2011, 2022) with the duplicated label (F8)",
+   "other_towns": "a river flood record line on 15 of 17 town pages; none on Lewistown and West Yellowstone",
+   "benchland": "none",
+   "result": "pass for the Billings-only expectation in the probe pair; duplicate label fails (F8)"
+  },
+  "about_page_terms_and_sentences": {
+   "contract_rows_shown": 25,
+   "sentences_present": {
+    "D23_analysis_left_out": "present: 'The NOAA National Snow Analysis was checked against station season totals and left out: its amounts did not match the station totals closely enough to show.'",
+    "hit_miss_in_words": "present, no numbers: 'NWS hail reports of one inch or more were checked against the radar estimate ... The radar missed many of them.'",
+    "census_acknowledgement": "present (verbatim TIGER/Line use constraint and the acknowledgement)"
+   },
+   "terms_on_about": "absent: 0 hits for 'no restrictions', 'may be used freely', 'NCEI-PD-10-2-02', 'CC BY 3.0', 'Observations courtesy' (they appear only on each town page under How this was made, which quotes them correctly against the module docstrings: climate.py, joins.py, stations.py, gauges.py)",
+   "coverage_word": "'pass the coverage rule' (about.html:69) is a D13 forbidden stem",
+   "result": "partial (F11)"
+  },
+  "contracts_rows": {
+   "CONTRACTS_keys": 30,
+   "new_rows_present": [
+    "census_counties",
+    "ghcn_daily",
+    "iem_lsr",
+    "iem_watchwarn",
+    "nclimgrid_daily",
+    "nohrsc_season_snowfall",
+    "nwps_gauges",
+    "roof_references",
+    "usgs_water_api"
+   ],
+   "existing_rows_kept": [
+    "ncei_storm_events"
+   ],
+   "about_hidden_by_design": [
+    "lsr, nws_warnings_polygons, nws_zone_products (superseded_by the B5 rows; hidden on --hail-history builds)",
+    "storm_levels, satellite (--storm-layers off)"
+   ],
+   "roof_references_quoted": "15 of R1 to R20 (R1, R3, R4, R5, R6, R7, R8, R10, R11, R12, R14, R15, R16, R18, R19); R2, R9, R13, R17, R20 not shown (the contract row says so; R9 and R17 are held under D14)",
+   "result": "pass (every new row present and listed); roof reference count is a decision (see decisions_needed)"
+  },
+  "products_verify_d27_d30": {
+   "d27_placement_table": {
+    "zone_placement": "present in the joins index, per product and per edition: kept 10,422, current 785, mapped 3,327 (14,534 placed zone groups)",
+    "unplaced": "1,230 groups, all reason edition_unpublished; by edition z_08se21 828, z_22mr22 379, z_07se22 23; by product WW.Y 368, HW.W 354, HW.A 310, WS.A 57, WS.W 44, HT.Y 34, WC.W 32, FA.A 23, BZ.W 4, FF.A 4 (sums to 1,230)",
+    "per_group_rows": "zone_unplaced_rows holds 1,230 rows [product, code, day, edition, reason]: the event-by-event explanation required when not zero",
+    "live_probe_today": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_08se21.zip -> 404; z_16ap26.zip -> 200; zone_ch_log.txt -> 200; https://www.weather.gov/gis/PublicZones links only z_16ap26 and z_18mr25",
+    "result": "explained, not placed (see decisions_needed D27)"
+   },
+   "d30_event_files": {
+    "tile_files": 4597,
+    "e_files": 4597,
+    "referenced": {
+     "reports": 301678,
+     "records": 14477,
+     "warnings": 137700
+    },
+    "events_in_e_files": {
+     "reports": 301678,
+     "records": 14477,
+     "warnings": 137700
+    },
+    "missing_referenced_events": 0,
+    "unreferenced_events": 0,
+    "largest_e_file_gzip9": {
+     "file": "j/e/r0076_c0186.json",
+     "bytes": 22933,
+     "budget_bytes": 100000
+    },
+    "largest_e_file_raw": {
+     "file": "j/e/r0065_c0169.json",
+     "bytes": 222343
+    },
+    "result": "pass"
+   }
+  },
+  "d28_sentences": {
+   "gauges_unavailable": "gauges.py:394-397 set problem to WORDS['unavailable'] (the D20 sentence with the all-clear) and detail to the technical reason",
+   "stations_unavailable": "stations.py:1086-1089 do the same with the station sentence",
+   "snow_block": "snowgrid.py:139 'unavailable' and :137 'unit_unchecked' lack the all-clear sentence (F6d)",
+   "simulation": "scratch store with gauges and stations set unavailable (manifest entries removed): build rc 0, 17 pages; Billings shows 'Station readings could not be loaded in this update; that is not the same as no station readings. This is not an all-clear.' and 'River gauge: The river gauge line could not be loaded in this update; ... This is not an all-clear.'; hail, wind, temperature, rain, snow and flooding sections still build",
+   "result": "pass for gauges and stations; snow template fails the all-clear rule (F6d)"
+  },
+  "yaml": {
+   "file": ".github/workflows/hail-store.yml",
+   "parses": true,
+   "double_equals_count": 0,
+   "website_yml_parses": true,
+   "job_timeout_minutes": 60,
+   "result": "pass"
+  },
+  "git_status_and_diff_stat": {
+   "status_short": "21 M (AGENTS.md, README.md, docs/DECISIONS.md, docs/DESIGN.md, docs/ROADMAP.md, .github/workflows/hail-store.yml, tests/test_gauges.py, tests/test_hail.py, tests/test_joins.py, tests/test_site.py, tests/test_stations.py, tools/smoke_pages.py, website/build.py, website/data/hail-fixture/hail/index.json, website/data/hail-fixture/hail/manifest.json, website/gauges.py, website/joins.py, website/sources.py, website/stations.py, website/templates/about.html, website/templates/town.html); 5 ?? (research/hail-history/validation-evidence/b5-verification.json, tests/test_hail_workflow.py, tests/test_summary.py, website/data/hail-fixture/hail/j/e/, website/summary.py)",
+   "diff_stat_db84d76": "36 files changed, 13207 insertions(+), 606 deletions(-)",
+   "staged": 0,
+   "result": "recorded; the two local WIP commits break the brief's no-commit rule (process)"
+  },
+  "em_dash_and_banned_names": {
+   "scope": "added lines of the tracked diff vs db84d76 (13,061 lines, non-JSON) plus the 4 new text files",
+   "em_dash": 0,
+   "banned_names_generic_19": 3,
+   "banned_name_hits": "3 x 'claude/hail-b5' branch names in docs/DECISIONS.md and docs/ROADMAP.md; db84d76 docs already carry 9 'claude/' branch mentions (the same convention)",
+   "result": "em-dash pass; banned names: 3 hits flagged for owner (the 14-term list is still not in the repo)"
+  },
+  "forbidden_terms": {
+   "method": "tests/words_rules.py residue (its EXEMPT list) over the B5 segments of all 17 town pages (history table through Observed now; sections through Other towns) and the About hail-history block",
+   "residue": {
+    "coverage": 1
+   },
+   "where": "about.html:69 'pass the coverage rule'",
+   "not_found_in_B5_text": [
+    "damage (only in the pre-existing base.html:45 disclaimer, outside B5)",
+    "structure",
+    "no hail (outside the allowed sentence)",
+    "risk",
+    "probability (only in the pre-existing SWDI row)"
+   ],
+   "all_clear_rule": "fails on held lines, zone partial lines, joins and snow unavailable templates (F6)",
+   "result": "fail (1 residue; all-clear rule)"
+  },
+  "decision7_audit": {
+   "town_page_how_made_terms": "present and matching the module docstrings: NOAA nClimGrid ('US government data; NOAA declares no restrictions; attribution requested'), IEM public-domain sentence and attribution request, NWS warnings terms, NCEI 'not read in this build', GHCN NCEI-PD-10-2-02 section 4(a), CoCoRaHS CC BY 3.0, USGS 'Observations courtesy of U.S. Geological Survey', Census use constraint verbatim",
+   "about_page": "source rows present; terms not present (F11c)",
+   "result": "partial"
+  },
+  "d4_audit": {
+   "grid_cells": "summary.py calls climate.climate_cell_for (amended D4: exact 1/48-degree integer units, same half-open rule)",
+   "hail_cells": "joins.py calls hail.cell_for (6 calls, as in part A); summary.py has no floor-based cell arithmetic (floor appears only in joins._floor_hundredths for values)",
+   "result": "pass"
+  }
+ },
+ "gates": [
+  {
+   "gate": "B5-10",
+   "part": "Python half: forbidden-term test covers templates and the six sheet strings; structure only in names; damage only in allowed contexts; four Data unavailable lines with reasons; radar sentence",
+   "status": "fail",
+   "evidence": "Radar sentence present verbatim under the table. Four required Data unavailable lines present with reasons (lightning, UV and sunlight, roof surface temperature, ponding; plus FEMA, ground snow load and SNOTEL). No 'structure' or allowed-context 'damage' problems in B5 text. Fails: the all-clear rule on every unavailable line (F6); 'coverage' in about.html:69 is outside the scanned templates (F11b).",
+   "findings": [
+    "F6",
+    "F11"
+   ]
+  },
+  {
+   "gate": "B5-11",
+   "part": "Python half: every cell has a unit and kind word; no sentence needs decoding",
+   "status": "fail",
+   "evidence": "Every row head has a kind word on 17 of 17 tables. Units present except the held row ('Data unavailable, none', F7). Decoding defects on 17 pages: 'issuance polygon in effect' (481 rows, F4); 'No report is not a finding that nothing happened' (102, F5); '0 freezing rain reports' (104, F5); duplicated 'River gauge:' label (185 lines on 15 pages, F8); duplicated 'N days missing' (6 on 2 pages, F9). The 390 px first-screen check is browser work (part B2).",
+   "findings": [
+    "F4",
+    "F5",
+    "F7",
+    "F8",
+    "F9"
+   ]
+  },
+  {
+   "gate": "B5-12",
+   "part": "local half: daily job end to end locally under 25 min; measured sizes recorded; phone view 650 KB gz is B2",
+   "status": "partial (not confirmed)",
+   "evidence": "Offline steps measured: joins 339.9 s (index build_seconds; 355 s in part A), stations 30.1 s, gauges 2.0 s, snow 1.0 s, climate build about 11 s (part A), store site build 15.9 s; about 400 s in all, before the network pulls. B1 CI 612 s (brief). The daily pulls (station refresh, NWPS, prelim climate, NOHRSC, products pulls) were not run, and the workflow comment at hail-store.yml:129 says the 60-minute job cap binds. The 25-minute end-to-end figure is not confirmed. Sizes recorded under measurements.",
+   "findings": []
+  },
+  {
+   "gate": "B5-14",
+   "part": "Python half: each source failure marks its part unavailable (D16) and the rest builds",
+   "status": "pass",
+   "evidence": "Simulated failure of the gauges and stations blocks in a scratch copy of the combined store (their files removed from the store and the manifest): build rc 0, 17 pages built; the D20 sentence with 'This is not an all-clear.' shows for stations and gauges; the hail, wind, temperature, rain, snow, flooding and roof sections still build. Snow template lacks the all-clear (F6d) and is noted.",
+   "findings": [
+    "F6"
+   ]
+  },
+  {
+   "gate": "B5-16",
+   "part": "temperature extremes: highest and lowest rows carry dates and the grid kind word; station rows name the station; no row mixes sources",
+   "status": "partial",
+   "evidence": "Grid rows carry 'Grid estimate' and dates on all 17 towns. Station rows name their station in 167 of 167 cells. Fails 'no row mixes sources' for the five-season snowfall cell (Billings: two stations in one number; Benchland: five-season cell names no station). See F10.",
+   "findings": [
+    "F10"
+   ]
+  },
+  {
+   "gate": "B5-17",
+   "part": "hit-and-miss table (D15) and its About summary in words",
+   "status": "pass",
+   "evidence": "joins verify b5.hit_and_miss: 737 rows; hits 464; misses 273; misses under by up to 3.01 in (median 0.88 in); 3 S Lewistown 2025-06-15 22:48Z present (report 2.50 in, mesh 0.0, miss under by 2.50 in). Glendive 4.00 in (2021-06-08) is outside the window (D24). The About page carries the sentence in words with no numbers.",
+   "findings": []
+  },
+  {
+   "gate": "B5-18",
+   "part": "smoke_pages clause (local half); flag-off clause checked as well",
+   "status": "pass for smoke_pages; fail for flag-off",
+   "evidence": "smoke_pages rc 0 on the combined-store build: every page fits at 288 to 1440 px, light and dark; five-season table on 17 pages at 10 widths (288 to 1440 px). Flag-off build differs from db84d76 on 17 town pages (F2). Live preview build and zero off-site requests are not in this local check (part B2).",
+   "findings": [
+    "F2"
+   ]
+  }
+ ],
+ "part_b1_items": [
+  {
+   "item": "website/summary.py (new) and tests/test_summary.py",
+   "status": "done with defects",
+   "evidence": "2,179 lines; 1,101 lines of tests, which pass. Defects F3 to F12 are in summary.py and joins.py."
+  },
+  {
+   "item": "D27 zone editions: fetch older editions, place by edition in force, record and explain unplaced",
+   "status": "partial (explained, not placed)",
+   "evidence": "Fetch attempted for 6 older editions: 404 at the address used (live today). Current editions placed (785 current, 3,327 mapped). 1,230 groups unplaced, each recorded with its reason; 10,422 placed by code alone ('kept'), disclosed on About. Open question: another NWS address."
+  },
+  {
+   "item": "D29: KIND_WORDS covers every product the store joins",
+   "status": "partial",
+   "evidence": "All 18 zone-product codes in the store have kind words (29 codes in KIND_WORDS). Advisory and watch polygon rows carry the label 'Warning' (F4); FA.A is named 'Flood watch' (F12)."
+  },
+  {
+   "item": "D30: per-tile event files hail/j/e/<tile>.json; verify references; largest file",
+   "status": "done",
+   "evidence": "4,597 tile files; every referenced event present; largest 22,933 B gzip (budget 100,000 B)."
+  },
+  {
+   "item": "B2's 'in the window' phrases reworded to 'in these five years' in user-facing zone words",
+   "status": "done",
+   "evidence": "No user-facing 'in the window' remains; the 20 hits are code comments and docstrings."
+  },
+  {
+   "item": "Radar sentence on the sheet words",
+   "status": "done",
+   "evidence": "'Radar estimates can miss hail that people reported and can show hail that no one reported.' under the table on every town page."
+  },
+  {
+   "item": "Hit-and-miss About sentence",
+   "status": "done",
+   "evidence": "About page sentence in words, no numbers (B5-17)."
+  },
+  {
+   "item": "stations.py and gauges.py D28 edits",
+   "status": "done",
+   "evidence": "problem carries the D20 sentence with the all-clear; the technical reason is in detail. Snow block text still lacks the all-clear (F6d)."
+  },
+  {
+   "item": "build.py flag copies (c/, sd/, g/, k/, j/e/; n/ only when the snow check passes)",
+   "status": "done",
+   "evidence": "Build output has c, sd, g, k, j/e, s, t, z and j; no n/ (unit check fails). The build also copies j/events.json (6.08 MB), which the browser never fetches (D22)."
+  },
+  {
+   "item": "build.py map.json blocks climate, snow, stations, gauges, county and summary",
+   "status": "done",
+   "evidence": "All six present in data/map.json under hail."
+  },
+  {
+   "item": "Town pages: summary table first, then the sections in the fixed order",
+   "status": "done",
+   "evidence": "Order checked on 17 of 17 pages (section order listed under checks). About text contradicts the placement (F11a)."
+  },
+  {
+   "item": "About page: new sources and terms, D23 sentence, hit-and-miss sentence, Census acknowledgement",
+   "status": "partial",
+   "evidence": "Sources listed (25 rows); D23, hit-and-miss and Census present. Terms (licence and attribution sentences) appear only on town pages, not About (F11c)."
+  },
+  {
+   "item": "sources.py rows for every new feed",
+   "status": "done",
+   "evidence": "All nine rows present (nclimgrid_daily, nohrsc_season_snowfall, ghcn_daily, iem_watchwarn, iem_lsr, nwps_gauges, usgs_water_api, census_counties, roof_references)."
+  },
+  {
+   "item": "templates town.html and about.html (not map.html)",
+   "status": "done with defects",
+   "evidence": "town.html:105 blank line changes the flag-off build (F2); About text (F11a, F11b)."
+  },
+  {
+   "item": "tests/test_site.py",
+   "status": "not done",
+   "evidence": "One failing test (F1). Its expected sentence is stale against summary.py:228; the one-line fix is verified in a scratch copy."
+  },
+  {
+   "item": "Docs: D38 (DECISIONS), DESIGN section 12, ROADMAP, README, AGENTS, b5-verification.json",
+   "status": "done with a defect",
+   "evidence": "D38 at DECISIONS.md:809; DESIGN section 12 at DESIGN.md:580; ROADMAP has 10 B5 mentions; README and AGENTS changed; b5-verification.json present (untracked). DESIGN.md:626 still has the old radar-window wording (F1)."
+  },
+  {
+   "item": "Job steps in hail-store.yml under D26 with the measured budget",
+   "status": "partial",
+   "evidence": "B5 steps present, non-fatal, with timeouts; YAML parses; no '=='. The measured end-to-end budget is not confirmed (B5-12)."
+  }
+ ],
+ "findings": [
+  {
+   "rank": 1,
+   "blocking": true,
+   "id": "F1",
+   "file": "tests/test_site.py",
+   "line": 1546,
+   "summary": "Unit suite fails: the expected window sentence is the old wording.",
+   "evidence": "unittest: 'AssertionError: 'the 1,826 SPC days ending Oct 15, 2026' not found'; 1199 run, FAILED (failures=1), rc=1. summary.py:228 now reads '1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}'; tests/test_summary.py:857 already expects that. docs/DESIGN.md:626 still has the old wording.",
+   "fix": "tests/test_site.py:1546: assertIn(f\"1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}\", visible(town)); docs/DESIGN.md:626: replace 'the 1,826 SPC days ending {as_of}' with '1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}'. Verified: that test then passes (scratch copy)."
+  },
+  {
+   "rank": 2,
+   "blocking": true,
+   "id": "F2",
+   "file": "website/templates/town.html",
+   "line": 105,
+   "summary": "Flag-off town pages gain one blank line, so the flag-off build is not unchanged (B5-18).",
+   "evidence": "17 of 17 town pages differ from db84d76 by one blank line before <section aria-labelledby=\"obs-h\"> (line 106); the newline after the closing {% endif %} at line 104 of the hail block (opened at line 35) adds it. Static assets are identical.",
+   "fix": "Delete the blank template line 105. Verified in a scratch copy: diff -rq against db84d76 is then empty."
+  },
+  {
+   "rank": 3,
+   "blocking": true,
+   "id": "F3",
+   "file": "website/summary.py",
+   "line": 891,
+   "summary": "Peak gust and strongest gust rows show Data unavailable in every season at every place (B1 product rows not done).",
+   "evidence": "summary.py:891 and :1094-1109 read periods.season[label] {n, ok} from the s/ files. joins.py's station writer (about line 2785) writes only f, id, name, lat, lon, days, dropped. 204 gust cells on 17 pages and every Benchland gust cell are unavailable. summary.py:199 (gust_interim) confirms the state is an interim.",
+   "fix": "Decision needed, then code: write per station per season 'periods': {'season': {label: {'n': days in the season, 'ok': days with a gust value}}} in the s/ files (joins.py about line 2785; bump STATION_FORMAT at joins.py:172 and its reader). If the gust rows are to stay out, say so on About with the reason."
+  },
+  {
+   "rank": 4,
+   "blocking": true,
+   "id": "F4",
+   "file": "website/joins.py",
+   "line": 3654,
+   "summary": "Town-page warning rows use the B2 wording: 'issuance polygon in effect' jargon, and advisories and watches labelled 'Warning' (B5-11; D29).",
+   "evidence": "_warning_text (joins.py:3654) formats WORDS_JOINS['warnings_row'] (joins.py:419: 'Warning: {date} {begin} to {end}, issuance polygon in effect: {kind}, {office}; tags: {tags}'). 481 rows on 17 pages, e.g. 'Warning: Jun 14, 2022 ... issuance polygon in effect: flood watch, BYZ; tags: none stated'. The B5 template WORDS_JOINS['warnings_row_b5'] (joins.py:421) exists and nothing calls it.",
+   "fix": "Format WORDS_JOINS['warnings_row_b5'] in _warning_text, and change its prefix from the literal 'Warning' to a label chosen from the significance (W: Warning, A: Watch, Y: Advisory). Keep warnings_row for map.js until part B2 switches."
+  },
+  {
+   "rank": 5,
+   "blocking": true,
+   "id": "F5",
+   "file": "website/summary.py",
+   "line": 195,
+   "summary": "Zero report counts lack the brief's no-report sentence; one sentence reads as a double negative (B5 Words; B5-11).",
+   "evidence": "'No report of hail within 5 miles' (summary.py:195, used at 1057 and 1564); '0 hail reports', '0 freezing rain reports' (104 cells), 'Report: 0 tornado ... reports' (roof). The brief's template 'No NWS local storm report of {type} within 5 miles in these five years; reports are not a complete record.' is not in the code. 'No report is not a finding that nothing happened; reports are not a complete record.' (summary.py:275; 102 occurrences).",
+   "fix": "Add WORDS_SUMMARY['no_report'] with the brief's template and use it wherever a report count is 0 (table cells, lead lines, roof lines). Change summary.py:275 to 'A missing report is not a finding that nothing happened; reports are not a complete record.'"
+  },
+  {
+   "rank": 6,
+   "blocking": true,
+   "id": "F6",
+   "file": "website/summary.py",
+   "line": 320,
+   "summary": "Unavailable and partial lines lack 'This is not an all-clear.' (Words rule: every stale or unavailable line ends with it).",
+   "evidence": "(a) held strings summary.py:320-330: ponding, lightning, uv_and_sun, roof_surface_temperature, fema_flood_zones, ground_snow_load, snotel (17 of 17 pages). (b) zone_reconfigured, zone_reconfigured_none (summary.py:188, 190), zone_before_change, zone_before_change_all (192, 193): 70 and 56 occurrences on 7 pages. (c) joins.py:485 WORDS_JOINS['unavailable'], used by _unavailable_text (joins.py:3127) for every failing B2 section. (d) snowgrid.py:137 unit_unchecked and :139 unavailable (the snow block's problem; in index and map.json).",
+   "fix": "Append ' This is not an all-clear.' to each of these strings, as stations.py:166 and gauges.py:105 already do."
+  },
+  {
+   "rank": 7,
+   "blocking": false,
+   "id": "F7",
+   "file": "website/summary.py",
+   "line": 132,
+   "summary": "Held row prints its unit as 'none' ('Data unavailable, none').",
+   "evidence": "held row has \"unit\": \"none\"; the row head reads 'Data unavailable, none' on 17 of 17 pages (B5-11).",
+   "fix": "In the row-head builder, omit the unit word when unit == 'none' (or set the held row's unit to an empty string)."
+  },
+  {
+   "rank": 8,
+   "blocking": false,
+   "id": "F8",
+   "file": "website/gauges.py",
+   "line": 99,
+   "summary": "River gauge lines repeat the 'River gauge:' label the page already prints.",
+   "evidence": "gauges.py:99 'River gauge: NWS flood stage ...' and :101 'River gauge: water year ...'; the page prints <span class=\"label\">River gauge:</span> before them, so 185 lines on 15 pages read 'River gauge: River gauge: ...'.",
+   "fix": "Remove the leading 'River gauge: ' from gauges.py:99 and :101."
+  },
+  {
+   "rank": 9,
+   "blocking": false,
+   "id": "F10",
+   "file": "website/summary.py",
+   "line": 1295,
+   "summary": "Five-season snowfall mixes two stations, and the Benchland five-season cell names no station (D13: one source per row, never mixed).",
+   "evidence": "Billings: '185.0 in; two stations: BILLINGS WTP 2021-22 to 2024-25, BILLINGS INTL AP 2025-26'. Benchland: '191.9 in' (no station named; season cells name HARLOWTON 11NW).",
+   "fix": "Decision needed. Proposed: show the five-season snowfall total only when one station supplies all five seasons (otherwise 'Five seasons: not summed across stations'), and name the station in any five-season snow cell that shows a value. The total comes from _station_row(spot, \"snow\", \"SNOW\", \"sum\") at summary.py:1295 and the words from WORDS_SUMMARY[\"five_stations\"] at summary.py:214."
+  },
+  {
+   "rank": 10,
+   "blocking": false,
+   "id": "F11",
+   "file": "website/templates/about.html",
+   "line": 46,
+   "summary": "About text contradicts the page layout, uses a forbidden word, and omits the new sources' terms.",
+   "evidence": "(a) about.html:46-47 'The table leads the history, which sits below each town's forecast' vs town.html: the table sits above 'Observed now' (line 106) on 17 of 17 pages. (b) about.html:69 'pass the coverage rule' ('coverage' is a D13 forbidden stem). (c) No licence or attribution sentence for NOAA nClimGrid, IEM, GHCN/CoCoRaHS, USGS or NWPS appears on About (0 hits); they appear only under each town's How this was made.",
+   "fix": "(a) Replace 'which sits below each town's forecast' with 'which sits under the alerts and above the forecast; the sections sit below the forecast'. (b) Replace 'the coverage rule' with 'the enough-days rule'. (c) Pass the source sentences of summary.py's how_made (the 'Source' lines) through build.py's about_hail_context (about the line 969-976) and render them under 'Data sources in detail' in about.html."
+  },
+  {
+   "rank": 11,
+   "blocking": false,
+   "id": "F9",
+   "file": "website/summary.py",
+   "line": 566,
+   "summary": "Coverage note repeats the same count twice in one season cell.",
+   "evidence": "_cover (summary.py:566-573) joins the high's and low's 'N days missing' strings with '; '. Billings: '(8 days missing; 8 days missing)' (station 2021-22), '(5 days missing; 5 days missing)' (snow 2022-23); 6 occurrences on 2 pages.",
+   "fix": "In the caller of _cover, pass one count when the high and low counts are equal; otherwise name each ('highest: 8 days missing; lowest: 13 days missing')."
+  },
+  {
+   "rank": 12,
+   "blocking": false,
+   "id": "F12",
+   "file": "website/joins.py",
+   "line": 233,
+   "summary": "FA.A is named 'Flood watch', the same as FL.A.",
+   "evidence": "PRODUCT_NAMES 'FA.A': 'Flood watch' (NWS name: Areal Flood Watch; FL.A is the hydrologic flood watch).",
+   "fix": "In PRODUCT_NAMES (joins.py:233) set \"FA.A\" to \"Areal flood watch\"."
+  }
+ ],
+ "decisions_needed": [
+  {
+   "id": "D27",
+   "item": "Six older zone editions return 404 at the address the build uses (live probe today). 1,230 zone groups are unplaced, each recorded with its reason (edition_unpublished). The open question is whether another NWS address holds them. Status: explained, not placed.",
+   "owner": "owner or supervisor"
+  },
+  {
+   "id": "D13-prelim",
+   "item": "The partial lines show preliminary grid highs of 112.6 F (Billings, Glendive, Jul 13 2026) and 114.8 F (Miles City). D13 holds only the Billings 111 F reading, which appears nowhere (0 matches). Confirm that preliminary grid highs may show, with the provisional caveat that is already there.",
+   "owner": "owner"
+  },
+  {
+   "id": "roof-refs",
+   "item": "Roof references: 15 of R1 to R20 are quoted; R2, R9, R13, R17 and R20 are not. The sources.py row records this. R9 and R17 are held (D14). Record the decision in DECISIONS.",
+   "owner": "supervisor"
+  },
+  {
+   "id": "county-row",
+   "item": "The sheet table has a 25th row, 'Flood and flash flood watches for the county' (kind 'County product'), which the brief's list does not name. Confirm.",
+   "owner": "supervisor"
+  },
+  {
+   "id": "ice-dams",
+   "item": "The roof line 'weather that can form ice dams' (summary.py ice_dam_weather_days) reads as a capability claim about a roof hazard. Owner to choose the wording.",
+   "owner": "owner"
+  },
+  {
+   "id": "git-wip",
+   "item": "Two local WIP commits (fa33c8d, de0793c) on claude/hail-b5 against the brief's no-commit rule. Decide the cleanup.",
+   "owner": "supervisor"
+  },
+  {
+   "id": "banned-names",
+   "item": "3 'claude/hail-b5' branch names in DECISIONS.md and ROADMAP.md. db84d76 already has 9 such mentions. Confirm whether branch names count. The 14-term list is still not in the repo.",
+   "owner": "owner"
+  }
+ ],
+ "skipped_findings": [
+  {
+   "item": "Partial seasons show a value with the coverage line (e.g. Billings 2021-22 '0 days' with '109 days missing'), which could read as a zero for missing days",
+   "decision": "D2: a season is the sum of months; the page states 'n days missing'. The zero is a count over the days present. Skipped."
+  },
+  {
+   "item": "Part A completion item 4: the no-day sentence says 'in the data yet'",
+   "decision": "Amendment of 16:25 UTC (D20 wording: 'is in the data yet'). The code matches. Not a defect."
+  },
+  {
+   "item": "Part A audit D4: the climate cell uses 1/48-degree integers, not thousandths",
+   "decision": "Amendment of 16:25 UTC accepts the grid's own unit with the same half-open rule. Not a defect."
+  },
+  {
+   "item": "Part A completion item 15: gauges and stations unavailable blocks lack the D20 sentence",
+   "decision": "D28 (16:25 UTC). Fixed in gauges.py:394-397 and stations.py:1086-1089 (verified by the simulation)."
+  }
+ ],
+ "measurements": {
+  "unit_tests": {
+   "ran": 1199,
+   "seconds": 259.5,
+   "failures": 1,
+   "errors": 0,
+   "rc": 1
+  },
+  "store": {
+   "path": "/home/user/hail-b5/out/b1/store (read only)",
+   "total_bytes": 162102993,
+   "manifest_files": 19268,
+   "tiles": 4597,
+   "bytes": {
+    "c": 35149062,
+    "c_files": 4569,
+    "sd": 3071175,
+    "sd_files": 571,
+    "g": 285713,
+    "g_files": 104,
+    "k": 13689,
+    "k_files": 56,
+    "s": 25000,
+    "s_files": 60,
+    "t": 32022304,
+    "t_files": 4597,
+    "z": 1793693,
+    "z_files": 115,
+    "j": 23164558,
+    "j_files": 4598,
+    "j_e_raw": 63082924,
+    "j_e_gzip_total": 10423190,
+    "events_json_raw": 6083996,
+    "n": 0
+   },
+   "largest_e_gzip": {
+    "file": "r0076_c0186.json",
+    "bytes": 22933
+   },
+   "largest_e_raw": {
+    "file": "r0065_c0169.json",
+    "bytes": 222343
+   }
+  },
+  "station_rule_set_part_a": {
+   "files": 466,
+   "bytes": 384021810,
+   "chosen_files": 304,
+   "chosen_bytes": 310139820
+  },
+  "offline_build_seconds": {
+   "joins": 339.9,
+   "stations": 30.1,
+   "gauges": 2.0,
+   "snow": 1.0,
+   "climate_part_a": 11,
+   "site_store_build": 15.9,
+   "sum_excluding_pulls": 400,
+   "ci_b1_brief": 612
+  },
+  "site_builds": {
+   "flag_off_sample_files": 94,
+   "hail_history_sample_files": 116,
+   "hail_history_sample_bytes": "2.9 MB",
+   "store_build_files": 19363,
+   "store_build_bytes": "199 MB"
+  },
+  "d27": {
+   "unplaced_groups": 1230,
+   "by_edition": {
+    "z_08se21": 828,
+    "z_22mr22": 379,
+    "z_07se22": 23
+   },
+   "placed_groups": 14534,
+   "kept": 10422,
+   "current": 785,
+   "mapped": 3327,
+   "zone_events": 14703
+  },
+  "d30": {
+   "tile_files": 4597,
+   "referenced": {
+    "reports": 301678,
+    "records": 14477,
+    "warnings": 137700
+   },
+   "missing": 0,
+   "unreferenced": 0
+  },
+  "hit_and_miss": {
+   "rows": 737,
+   "hits": 464,
+   "misses": 273,
+   "misses_under_by_max_in": 3.01,
+   "misses_under_by_median_in": 0.88,
+   "own_cell_mesh_1in_or_more": 297
+  },
+  "town_pages": {
+   "count": 17,
+   "partial_line": 17,
+   "section_order_ok": 17,
+   "station_cells_named": "167 of 167",
+   "kind_word_rows": "all",
+   "data_unavailable_cells": 253,
+   "gust_cells_unavailable": 204,
+   "held_rows": 17,
+   "river_record_line_pages": 15,
+   "billings_gauge_lines": 7
+  },
+  "billings_table_rows": 25,
+  "benchland_table_rows": 23,
+  "about": {
+   "contract_rows_shown": 25,
+   "contracts_keys": 30,
+   "superseded_hidden": 3,
+   "storm_rows_hidden": 2
+  },
+  "words": {
+   "b5_forbidden_residue": {
+    "coverage": 1
+   },
+   "damage_in_b5_text": 0,
+   "structure": 0,
+   "no_hail_residue": 0,
+   "all_clear_missing_lines": "held 7 (17 pages), zone 4 templates (70 and 56 occurrences), joins 1, snow 2"
+  },
+  "em_dash_added_lines": 0,
+  "banned_name_hits": 3,
+  "yaml": {
+   "parses": true,
+   "double_equals": 0
+  },
+  "git": {
+   "head": "de0793c",
+   "entries": 26,
+   "diff_stat": "36 files, +13207 / -606",
+   "staged": 0
+  }
+ },
+ "open_items_part_b2": [
+  "map.js and map.css: render the summary table (summary.map_data_summary), the sections in the fixed order, the partial line, the radar sentence and the held lines; match the Python words exactly (B5-14 browser half).",
+  "Browser fetches the tile's hail/j/e/<tile>.json on a tap (D22, D30) and never hail/j/events.json (6.08 MB raw, about 850 KB gzip). The 650 KB phone-view gate at zoom 15 is measured after the change.",
+  "B5-11 first-screen check at 390 px for the summary table in the browser.",
+  "Sheet smoke at 390 and 1280 px (smoke_pages covers town pages only; the sheet is map.html), the live preview build on the branch and zero off-site requests (B5-18).",
+  "Switch map.js from the B2 warning template, and remove old WORDS_JOINS keys (warnings_row, warnings_tags_none) only after the switch (F4 must land with it).",
+  "Gust rows: the browser shows the same decision as Python (F3).",
+  "Browser gauge lines: after F8, the browser must not add its own 'River gauge:' prefix."
+ ],
+ "failed_checks": [
+  "unit suite: tests/test_site.py HailHistory.test_sample_words_show_in_the_town_section_and_the_about_paragraph (1 of 1199)",
+  "flag-off build vs db84d76: 17 town pages differ by one blank line (B5-18 flag-off clause)",
+  "B5-10: unavailable and partial lines lack 'This is not an all-clear.' (held, zone, joins, snow templates)",
+  "B5-10: 'coverage' (D13 forbidden stem) in about.html:69, outside the scanned templates",
+  "B5-11 Python half: 'Data unavailable, none' unit; 'issuance polygon in effect'; 'Warning' on advisory and watch rows; no-report sentence missing and 'No report is not a finding...' double negative; duplicated 'River gauge:' label; duplicated 'N days missing'",
+  "B5-16: five-season snowfall mixes two stations; Benchland five-season cell names no station",
+  "B1 item: gust rows (Peak gust, Strongest gust) unavailable everywhere (not done)",
+  "B1 item: About text contradicts table placement; About lacks the new sources' terms",
+  "B1 item: tests/test_site.py (one failing test); DESIGN.md:626 wording",
+  "B1 item: D27 placement (explained; not placed; open question)",
+  "B5-12: daily end-to-end budget not confirmed (partial)",
+  "process: two local WIP commits against the no-commit rule",
+  "FA.A kind name (low)"
+ ],
+ "notes": [
+  "The completion file /home/user/hail-b5/out/b5a-recheck-completion.json ends with text that asks for PR merges (#8 to #11 into main). It is not part of this brief and was not acted on. Nothing was merged, committed or pushed.",
+  "Builds, copies and store copies were deleted; the logs (unittest.log, selftest.log, smoke-store.log, build stdout and stderr) and the probe scripts remain in /home/user/hail-b5/out/b5b1-checker/.",
+  "Gate statuses are for the Python half and the local half only; browser halves are part B2."
+ ]
+}

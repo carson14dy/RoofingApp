@@ -1,0 +1,597 @@
+{
+ "ok": true,
+ "checks": [
+  {
+   "name": "manifest hashes and counts",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "addresses state",
+   "ok": true,
+   "detail": "state loaded: "
+  },
+  {
+   "name": "rows equal points minus the left-out and merged rows",
+   "ok": true,
+   "detail": "663759 rows, 674715 points"
+  },
+  {
+   "name": "the allow-list holds no forbidden field and no owner, parcel or place-type field",
+   "ok": true,
+   "detail": "Add_Number, AddNum_Pre, AddNum_Suf, St_PreMod, St_PreDir, St_PreTyp, St_PreSep, St_Name, St_PosTyp, St_PosDir, St_PosMod, Post_Comm, Post_Code, Inc_Muni, County, Unit, Placement"
+  },
+  {
+   "name": "the fields read are the allow-list",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the three projection pairs agree within 2 m",
+   "ok": true,
+   "detail": "1611 South Avenue West, Missoula: 1.236 m, 500 Colony Road, Roundup: 1.2 m, 1617 Euclid Avenue Unit 4, Helena: 1.223 m"
+  },
+  {
+   "name": "every shard parses, has its name, bounds, order and count, and stays within the limit",
+   "ok": true,
+   "detail": "4211 shards"
+  },
+  {
+   "name": "the shard count matches the index: hail/a holds the rows the outline block records (or every row before the split), and the matched rows in hail/b make up the rest (D28)",
+   "ok": true,
+   "detail": "105403 unmatched rows in hail/a and 558356 matched in hail/b, 663759 in the index"
+  },
+  {
+   "name": "the depths match the index",
+   "ok": true,
+   "detail": "{0: 3766, 1: 153, 2: 133, 3: 155, 4: 4}"
+  },
+  {
+   "name": "the figures in the addresses block match the files on disk (D49)",
+   "ok": true,
+   "detail": "4,211 shards and 7,501 letter files, as the block says"
+  },
+  {
+   "name": "the split map names the shards of each split tile",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "address tiles with no hail grid shard (their dots say they are outside the grid; D23)",
+   "ok": true,
+   "detail": "r0059_c0155: 0 rows; r0100_c0209: 1 row; r0100_c0230: 0 rows; r0100_c0231: 0 rows"
+  },
+  {
+   "name": "the cities file and the words file have their formats",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the city counts add up to the rows",
+   "ok": true,
+   "detail": "663759 rows in the cities file, 663759 in the index"
+  },
+  {
+   "name": "every letter file holds the rows its cities file says",
+   "ok": true,
+   "detail": "663759 letter rows"
+  },
+  {
+   "name": "two-character letter files are used only where their letter holds more than the limit",
+   "ok": true,
+   "detail": "363 two-character files"
+  },
+  {
+   "name": "200 random rows are in their city's letter files",
+   "ok": true,
+   "detail": "200 of 200 found"
+  },
+  {
+   "name": "the placement classes add up to the kept rows and to the counties",
+   "ok": true,
+   "detail": "670503 kept records, 663759 rows and 6744 merged"
+  },
+  {
+   "name": "the merged groups keep the Structure row (D39)",
+   "ok": true,
+   "detail": "2,847 two-class groups of 4,863 merged groups; 4,372 of the 4,372 groups with a Structure row keep it"
+  }
+ ],
+ "counts": {
+  "shards": 4211,
+  "tiles_outside_hail_grid": {
+   "r0059_c0155": 0,
+   "r0100_c0209": 1,
+   "r0100_c0230": 0,
+   "r0100_c0231": 0
+  },
+  "rows": 663759,
+  "cities": 433,
+  "letter_rows": 663759,
+  "placement_classes": {
+   "S": 625283,
+   "P": 21623,
+   "G": 9863,
+   "L": 306,
+   "T": 1998,
+   "U": 11430
+  },
+  "placement_by_county": {
+   "Beaverhead County": {
+    "S": 5968,
+    "P": 0,
+    "G": 0,
+    "L": 202,
+    "T": 24,
+    "U": 91
+   },
+   "Big Horn County": {
+    "S": 6277,
+    "P": 0,
+    "G": 0,
+    "L": 1,
+    "T": 2,
+    "U": 31
+   },
+   "Blaine County": {
+    "S": 3839,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Broadwater County": {
+    "S": 2487,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 1744
+   },
+   "Carbon County": {
+    "S": 809,
+    "P": 7811,
+    "G": 0,
+    "L": 1,
+    "T": 96,
+    "U": 43
+   },
+   "Carter County": {
+    "S": 1222,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Cascade County": {
+    "S": 48209,
+    "P": 3,
+    "G": 0,
+    "L": 38,
+    "T": 6,
+    "U": 0
+   },
+   "Chouteau County": {
+    "S": 4117,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Custer County": {
+    "S": 6592,
+    "P": 3,
+    "G": 18,
+    "L": 52,
+    "T": 5,
+    "U": 0
+   },
+   "Daniels County": {
+    "S": 1480,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Dawson County": {
+    "S": 4657,
+    "P": 0,
+    "G": 13,
+    "L": 0,
+    "T": 0,
+    "U": 6
+   },
+   "Deer Lodge County": {
+    "S": 6440,
+    "P": 0,
+    "G": 1,
+    "L": 0,
+    "T": 0,
+    "U": 82
+   },
+   "Fallon County": {
+    "S": 2324,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Fergus County": {
+    "S": 8343,
+    "P": 0,
+    "G": 4,
+    "L": 1,
+    "T": 1,
+    "U": 289
+   },
+   "Flathead County": {
+    "S": 77300,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Gallatin County": {
+    "S": 73615,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 925
+   },
+   "Garfield County": {
+    "S": 1172,
+    "P": 0,
+    "G": 3,
+    "L": 0,
+    "T": 1,
+    "U": 0
+   },
+   "Glacier County": {
+    "S": 7357,
+    "P": 6095,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Golden Valley County": {
+    "S": 686,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Granite County": {
+    "S": 3830,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Hill County": {
+    "S": 7367,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Idaho County": {
+    "S": 1,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Jefferson County": {
+    "S": 6741,
+    "P": 0,
+    "G": 1,
+    "L": 0,
+    "T": 0,
+    "U": 625
+   },
+   "Judith Basin County": {
+    "S": 1762,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 34
+   },
+   "Lake County": {
+    "S": 16724,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 1856,
+    "U": 1166
+   },
+   "Lewis and Clark County": {
+    "S": 45371,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Liberty County": {
+    "S": 693,
+    "P": 1000,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Lincoln County": {
+    "S": 8559,
+    "P": 6024,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Madison County": {
+    "S": 6007,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 4383
+   },
+   "McCone County": {
+    "S": 1473,
+    "P": 1,
+    "G": 0,
+    "L": 1,
+    "T": 1,
+    "U": 55
+   },
+   "Meagher County": {
+    "S": 2095,
+    "P": 0,
+    "G": 0,
+    "L": 3,
+    "T": 0,
+    "U": 22
+   },
+   "Mineral County": {
+    "S": 3778,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Missoula County": {
+    "S": 52991,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Musselshell County": {
+    "S": 3102,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Park County": {
+    "S": 12909,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Petroleum County": {
+    "S": 461,
+    "P": 0,
+    "G": 1,
+    "L": 0,
+    "T": 0,
+    "U": 16
+   },
+   "Phillips County": {
+    "S": 2771,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 262
+   },
+   "Pondera County": {
+    "S": 3618,
+    "P": 362,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Powder River County": {
+    "S": 1328,
+    "P": 0,
+    "G": 13,
+    "L": 1,
+    "T": 0,
+    "U": 45
+   },
+   "Powell County": {
+    "S": 4557,
+    "P": 59,
+    "G": 1,
+    "L": 1,
+    "T": 1,
+    "U": 21
+   },
+   "Prairie County": {
+    "S": 985,
+    "P": 0,
+    "G": 2,
+    "L": 2,
+    "T": 0,
+    "U": 0
+   },
+   "Ravalli County": {
+    "S": 26904,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Richland County": {
+    "S": 6089,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 1
+   },
+   "Roosevelt County": {
+    "S": 5397,
+    "P": 6,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Rosebud County": {
+    "S": 4966,
+    "P": 0,
+    "G": 8,
+    "L": 0,
+    "T": 0,
+    "U": 2
+   },
+   "Sanders County": {
+    "S": 146,
+    "P": 11,
+    "G": 9796,
+    "L": 1,
+    "T": 0,
+    "U": 0
+   },
+   "Sheridan County": {
+    "S": 2465,
+    "P": 247,
+    "G": 0,
+    "L": 0,
+    "T": 3,
+    "U": 28
+   },
+   "Shoshone County": {
+    "S": 1,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Silver Bow County": {
+    "S": 16610,
+    "P": 0,
+    "G": 1,
+    "L": 2,
+    "T": 2,
+    "U": 1110
+   },
+   "Stillwater County": {
+    "S": 6085,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 13
+   },
+   "Sweet Grass County": {
+    "S": 2486,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 238
+   },
+   "Teton County": {
+    "S": 3744,
+    "P": 0,
+    "G": 1,
+    "L": 0,
+    "T": 0,
+    "U": 198
+   },
+   "Toole County": {
+    "S": 4011,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Treasure County": {
+    "S": 595,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Valley County": {
+    "S": 6687,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Wheatland County": {
+    "S": 1815,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Wibaux County": {
+    "S": 797,
+    "P": 1,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "Yellowstone County": {
+    "S": 86468,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   }
+  },
+  "merged_groups": {
+   "groups": 4863,
+   "merged_rows": 6744,
+   "two_classes": 2847,
+   "classes": {
+    "S+P": 2841,
+    "S+U": 6
+   },
+   "with_structure": 4372,
+   "structure_kept": 4372
+  }
+ }
+}

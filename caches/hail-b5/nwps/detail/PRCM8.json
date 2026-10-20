@@ -1,0 +1,396 @@
+{
+  "lid": "PRCM8",
+  "usgsId": "12390700",
+  "reachId": "22976274",
+  "name": "Prospect Creek at Thompson Falls",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "MSO",
+    "name": "Missoula"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Sanders",
+  "timeZone": "MST7MDT",
+  "latitude": 47.586111111111,
+  "longitude": -115.35416666667,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": 0.39,
+      "primaryUnit": "ft",
+      "secondary": 0.035,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:15:00Z"
+    },
+    "forecast": {
+      "primary": 0.39,
+      "primaryUnit": "ft",
+      "secondary": 0.035,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T12:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": 9,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": 8,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 7.5,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 6.5,
+        "flow": -9999
+      }
+    },
+    "lro": {
+      "minorCS": "< 0.05",
+      "moderateCS": "< 0.05",
+      "majorCS": "< 0.05",
+      "producedTime": "2026-10-18T18:35:53Z",
+      "interval": "OND"
+    },
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1974-01-16T00:00:00Z",
+          "stage": 9.86,
+          "flow": 5490,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-02-09T00:00:00Z",
+          "stage": 9.54,
+          "flow": 5160,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-19T00:00:00Z",
+          "stage": 8.1,
+          "flow": 3640,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-05-13T00:00:00Z",
+          "stage": 7.6,
+          "flow": 2860,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1956-05-21T00:00:00Z",
+          "stage": 7.6,
+          "flow": 2860,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-05-19T00:00:00Z",
+          "stage": 7.27,
+          "flow": 3030,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1976-05-11T00:00:00Z",
+          "stage": 7.09,
+          "flow": 2850,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1972-06-01T00:00:00Z",
+          "stage": 7.09,
+          "flow": 2430,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-05-17T00:00:00Z",
+          "stage": 6.94,
+          "flow": 2680,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-04-25T00:00:00Z",
+          "stage": 6.52,
+          "flow": 2370,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-12-11T00:00:00Z",
+          "stage": 6.35,
+          "flow": 2370,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2002-04-14T00:00:00Z",
+          "stage": 6.23,
+          "flow": 2160,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-05-07T00:00:00Z",
+          "stage": 5.01,
+          "flow": 1510,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-05-31T00:00:00Z",
+          "stage": 4.54,
+          "flow": 1210,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-05-02T00:00:00Z",
+          "stage": 3.99,
+          "flow": 904,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-03-28T00:00:00Z",
+          "stage": 3.55,
+          "flow": 692,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-12-11T00:00:00Z",
+          "stage": 6.35,
+          "flow": 2370,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-03-28T00:00:00Z",
+          "stage": 3.55,
+          "flow": 692,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-05-07T00:00:00Z",
+          "stage": 5.01,
+          "flow": 1510,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-05-02T00:00:00Z",
+          "stage": 3.99,
+          "flow": 904,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-05-31T00:00:00Z",
+          "stage": 4.54,
+          "flow": 1210,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-19T00:00:00Z",
+          "stage": 8.1,
+          "flow": 3640,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-04-25T00:00:00Z",
+          "stage": 6.52,
+          "flow": 2370,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-05-19T00:00:00Z",
+          "stage": 7.27,
+          "flow": 3030,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2002-04-14T00:00:00Z",
+          "stage": 6.23,
+          "flow": 2160,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-05-17T00:00:00Z",
+          "stage": 6.94,
+          "flow": 2680,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-02-09T00:00:00Z",
+          "stage": 9.54,
+          "flow": 5160,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1976-05-11T00:00:00Z",
+          "stage": 7.09,
+          "flow": 2850,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-01-16T00:00:00Z",
+          "stage": 9.86,
+          "flow": 5490,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1972-06-01T00:00:00Z",
+          "stage": 7.09,
+          "flow": 2430,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-05-13T00:00:00Z",
+          "stage": 7.6,
+          "flow": 2860,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1956-05-21T00:00:00Z",
+          "stage": 7.6,
+          "flow": 2860,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 8.5,
+        "statement": "A petroleum gas pipeline becomes exposed underneath the creek due to high flood flows."
+      },
+      {
+        "stage": 8.19,
+        "statement": "Homes along Prospect Creek become surrounded with water from Prospect Creek."
+      },
+      {
+        "stage": 8.1,
+        "statement": "Water begins flowing across Prospect Creek Road."
+      },
+      {
+        "stage": 7.5,
+        "statement": "Road washouts are possible along Prospect Creek Road."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/PRCM8.SSTG.prob.weekint.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/PRCM8.QINE.prob.weekint.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/PRCM8.volume.prob.weekint.png"
+      },
+      "entperiod": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/PRCM8.SSTG.exceed.90day.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/PRCM8.QINE.exceed.90day.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/PRCM8.volume.exceed.90day.png"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/PRCM8.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/prcm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/prcm8_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "http://waterdata.usgs.gov/mt/nwis/rt"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "12390700",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=12390700"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued routinely year-round.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "7",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "no_flooding"
+}

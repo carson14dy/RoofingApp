@@ -1,0 +1,365 @@
+{
+  "lid": "DLGM8",
+  "usgsId": "12324200",
+  "reachId": "24293584",
+  "name": "Clark Fork River at Deer Lodge",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "MSO",
+    "name": "Missoula"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Powell",
+  "timeZone": "MST7MDT",
+  "latitude": 46.397777777778,
+  "longitude": -112.74194444444,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": 2.72,
+      "primaryUnit": "ft",
+      "secondary": 0.178,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:30:00Z"
+    },
+    "forecast": {
+      "primary": 2.76,
+      "primaryUnit": "ft",
+      "secondary": 0.193,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-28T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 6,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 5,
+        "flow": -9999
+      }
+    },
+    "lro": {
+      "minorCS": "< 0.05",
+      "moderateCS": "-999",
+      "majorCS": "-999",
+      "producedTime": "2026-10-18T18:35:53Z",
+      "interval": "OND"
+    },
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2018-06-22T00:00:00Z",
+          "stage": 5.38,
+          "flow": 2290,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1981-05-23T00:00:00Z",
+          "stage": 5.35,
+          "flow": 2500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-02-25T00:00:00Z",
+          "stage": 5.2,
+          "flow": 2090,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-06-14T00:00:00Z",
+          "stage": 5.07,
+          "flow": 2020,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-14T00:00:00Z",
+          "stage": 5.02,
+          "flow": 1970,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-14T00:00:00Z",
+          "stage": 4.81,
+          "flow": 1710,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-06-09T00:00:00Z",
+          "stage": 4.75,
+          "flow": 1770,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-17T00:00:00Z",
+          "stage": 4.68,
+          "flow": 1540,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1984-06-22T00:00:00Z",
+          "stage": 4.67,
+          "flow": 1730,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1980-05-26T00:00:00Z",
+          "stage": 4.58,
+          "flow": 1710,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-02-08T00:00:00Z",
+          "stage": 4.46,
+          "flow": 1400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-12T00:00:00Z",
+          "stage": 3.82,
+          "flow": 936,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-05-30T00:00:00Z",
+          "stage": 3.18,
+          "flow": 439,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-05-30T00:00:00Z",
+          "stage": 3.18,
+          "flow": 439,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-12T00:00:00Z",
+          "stage": 3.82,
+          "flow": 936,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-06-09T00:00:00Z",
+          "stage": 4.75,
+          "flow": 1770,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-06-22T00:00:00Z",
+          "stage": 5.38,
+          "flow": 2290,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-14T00:00:00Z",
+          "stage": 4.81,
+          "flow": 1710,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-14T00:00:00Z",
+          "stage": 5.02,
+          "flow": 1970,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-17T00:00:00Z",
+          "stage": 4.68,
+          "flow": 1540,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-06-14T00:00:00Z",
+          "stage": 5.07,
+          "flow": 2020,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-02-08T00:00:00Z",
+          "stage": 4.46,
+          "flow": 1400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-02-25T00:00:00Z",
+          "stage": 5.2,
+          "flow": 2090,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1984-06-22T00:00:00Z",
+          "stage": 4.67,
+          "flow": 1730,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1981-05-23T00:00:00Z",
+          "stage": 5.35,
+          "flow": 2500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1980-05-26T00:00:00Z",
+          "stage": 4.58,
+          "flow": 1710,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 6,
+        "statement": "Water begins approaching some homes in Deerlodge. Flooding of Cottonwood Creek 1/4 mile downstream from Deerlodge is also possible."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/DLGM8.SSTG.prob.weekint.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/DLGM8.QINE.prob.weekint.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/DLGM8.volume.prob.weekint.png"
+      },
+      "entperiod": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/DLGM8.SSTG.exceed.90day.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/DLGM8.QINE.exceed.90day.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/DLGM8.volume.exceed.90day.png"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/DLGM8.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/dlgm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/dlgm8_record.png"
+    },
+    "photos": [
+      {
+        "id": "16391153493472711153",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            46.397777777778,
+            -112.74194444444
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/dlgm8/16391153493472711153.jpeg",
+          "caption": "View of gauge station (looking east)"
+        }
+      }
+    ]
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "http://waterdata.usgs.gov/mt/nwis/rt"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "12324200",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=12324200"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": [
+        {
+          "label": "National Geodetic Vertical Datum of 1929",
+          "abbrev": "NGVD29",
+          "description": "A fixed reference adopted as a standard geodetic datum for elevations determined by leveling. The datum was derived for surveys from a general adjustment of the first-order leveling nets of both the United States and Canada. In the adjustment, mean sea level was held fixed as observed at 21 tide stations in the United States and 5 in Canada. The year indicates the time of the general adjustment. A synonym for Sea-level Datum of 1929. The geodetic datum is fixed and does not take into account the changing stands of sea level. Because there are many variables affecting sea level, and because the geodetic datum represents a best fit over a broad area, the relationship between the geodetic datum and local mean sea level is not consistent from one location to another in either time or space. For this reason, the National Geodetic Vertical Datum should not be confused with mean sea level. See North American Vertical Datum of 1988 (NAVD 88). NGVD 29 should not be used as Mean Sea Level. NGVD 29 is no longer supported by NGS.",
+          "value": 4502.2
+        }
+      ]
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued routinely year-round.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "7",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "no_flooding"
+}

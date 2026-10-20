@@ -1,0 +1,273 @@
+{
+  "lid": "BGCW4",
+  "usgsId": "",
+  "reachId": "5335941",
+  "name": "Big Goose Creek below Beaver Creek",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "BYZ",
+    "name": "Billings"
+  },
+  "state": {
+    "abbreviation": "WY",
+    "name": "Wyoming"
+  },
+  "county": "Sheridan",
+  "timeZone": "MST7MDT",
+  "latitude": 44.763888888889,
+  "longitude": -107.07416666667,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFE"
+  },
+  "status": {
+    "observed": {
+      "primary": 0.65,
+      "primaryUnit": "ft",
+      "secondary": 0.024,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:30:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 4.5,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2015-05-25T13:54:00Z",
+          "stage": 5.36,
+          "flow": 1920,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-30T00:00:00Z",
+          "stage": 4.85,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-19T00:00:00Z",
+          "stage": 4.8,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2024-06-11T00:00:00Z",
+          "stage": 4.7,
+          "flow": 1096,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-06T00:00:00Z",
+          "stage": 3.71,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-12T00:00:00Z",
+          "stage": 3.27,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-06-05T00:00:00Z",
+          "stage": 3.15,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2024-06-11T00:00:00Z",
+          "stage": 4.7,
+          "flow": 1096,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-19T00:00:00Z",
+          "stage": 4.8,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-06-05T00:00:00Z",
+          "stage": 3.15,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-05-25T13:54:00Z",
+          "stage": 5.36,
+          "flow": 1920,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-12T00:00:00Z",
+          "stage": 3.27,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-06T00:00:00Z",
+          "stage": 3.71,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-30T00:00:00Z",
+          "stage": 4.85,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 5.5,
+        "statement": "Flooding of low lying property becomes more widespread along the right bank upstream and downstream of gage. Water begins to encroach low lying areas west of the highway bridge adjacent to gage. Flooding downstream in sheridan at leopard street and at nb avenue intensifiies and becomes more widespread. Flood wave travel time from gage to sheridan is 4 to 6 hours."
+      },
+      {
+        "stage": 5,
+        "statement": "Flood stage. Minor flooding of low lying property along right bank upstream and downstream of gage. Water level up to beaver creek road and owl creek road near the gauge and on leopard street in sheridan. Any higher and road closures will be needed and access to some homes is cut off. Flood wave travel time from gage to sheridan is 4 to 6 hours."
+      },
+      {
+        "stage": 4.5,
+        "statement": "Bankfull stage. Water begins to encroach low lying areas along right bank upstream and downstream from gage. DES indicating low land flooding in the Sheridan vicinity begins around this stage. "
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/bgcw4_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/bgcw4_record.png"
+    },
+    "photos": [
+      {
+        "id": "8163778835434901998",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.763888888889,
+            -107.07416666667
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/bgcw4/8163778835434901998.jpeg",
+          "caption": "Looking Upstream_Fall_2019"
+        }
+      }
+    ]
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "City of Sheridan Wyoming",
+      "text": "City of Sheridan Wyoming",
+      "title": "City of Sheridan Wyoming",
+      "url": "https://www.sheridancountywy.gov/departments/emergency_management/index.php"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice during winter months.",
+      "effective": "1015",
+      "expiration": "0430"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "BGDW4",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

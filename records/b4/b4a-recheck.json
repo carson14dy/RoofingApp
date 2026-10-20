@@ -1,0 +1,621 @@
+{
+ "task": "B4 final recheck (read-only). Scratch: /home/user/hail-b4/out/final-checker/. Live output: /home/user/hail-b4/out/recheck/live/.",
+ "verdict": "NOT READY. Data, rendering, freshness, words and the decision 7 audit pass. Three blocking items are open in the worktree: B-1 (CONTRACTS hail_swath row, its storm-only tuple entry and test key), B-2 (CI test line and paths entry) and B-3 (D8 valid-time pattern). A verified patch covers B-1 to B-3, N-2 and N-3 (git apply --check passes; the patched scratch copy passes all 813 tests). N-1 needs a ruling; N-4 is cosmetic and outside the patch.",
+ "worktree": {
+  "path": "/home/user/wt/wt-b4",
+  "branch": "claude/hail-b4",
+  "head": "35f12339cfb3c39e483070fecbd2d9c72c2e11de",
+  "status_short": [
+   "M docs/ROADMAP.md",
+   "M research/globe/README.md",
+   "M tests/test_storm.py",
+   "M website/gridded.py",
+   "M website/sample.py",
+   "M website/sources.py",
+   "M website/storm.py",
+   "?? tests/test_swath.py",
+   "?? website/swath.py"
+  ],
+  "diff_stat_35f1233": "7 files changed, 127 insertions(+), 63 deletions(-)",
+  "changed_by_this_check": false
+ },
+ "commands": {
+  "unittest": "/home/user/hail-b1/venv/bin/python -m unittest discover -s tests: tail 'Ran 813 tests in 203.823s', 'OK'; exit 0; wall 3m26s",
+  "selftest": "python desktop/launcher.py --selftest payload: 'PASS  payload 1.0.0'; exit 0",
+  "test_swath": "python -m unittest tests.test_swath -v: 'Ran 75 tests in 15.063s', 'OK'; exit 0",
+  "live_path": "website.swath.main --out /home/user/hail-b4/out/recheck/live --cache /home/user/hail-b4/out/recheck/cache (run through a python -I driver): exit 0 in 5.4 s; record /home/user/hail-b4/out/recheck/live-record.json; now 2026-10-19T05:45:09Z",
+  "sample_path": "website.swath.main --sample --out /home/user/hail-b4/out/recheck/sample: exit 0; 576 files",
+  "round_trip": "/home/user/hail-b4/out/final-checker/roundtrip.py: own pygrib decode and own Mercator mapping; output roundtrip.json"
+ },
+ "gates": {
+  "B4-1": {
+   "status": "pass",
+   "evidence": "Round trip with my own decode. Live day PNG (hail-1440-202610190530.png, 1750 x 1097, 1,919,750 px): 0 mismatches over all pixels and over 1,000 sampled pixels (seed 20261019). Live hour PNG (hail-60-202610190542.png): 0 mismatches over all 1,919,750 px (all uncoloured, matching the decode). Sample PNGs (sample_1440, sample_60): 0 mismatches over all pixels. Per-tile live files (hail/live/1440, 3 files, 10 cells): 0 value mismatches; 0 decoded cells at or above 64 tenths missing from the files; 0 listed cells below the floor. Hour window: 0 decoded cells at the floor, 0 files, as written."
+  },
+  "B4-2": {
+   "status": "partial",
+   "evidence": "Listed: the module's ledger (172 hour keys, 12 day keys) and my own S3 listing at about 05:49 UTC (175 hour keys, 12 day keys, not truncated). Newest hour key 054200 at the module's run, and 054800 uploaded 05:49:17Z; newest day key 053000 (uploaded 05:38:18Z) equals the module's pick. Downloaded: 34,328 B (hour) and 109,454 B (day). Decoded with pygrib: 1 message each; discipline 209, category 3; parameter 30 (hour) and 34 (day); centre 161; generating process 97; grid 7000 x 3500 (values shape 3500 x 7000); first point 54.995 N, 230.005 E; last 20.005 N, 299.995 E; step 0.01; scans 0/0; packing grid_png, decimal scale 1, binary scale 0. Valid times from dataDate and dataTime: 2026-10-19 05:42 and 05:30 UTC, equal to the file names. Two builds an hour apart: out/swath/live-run-1.json (now 02:53:58Z, hour valid 02:52, day valid 02:30) and live-run-3.json (now 03:55:09Z, hour valid 03:52, day valid 03:30), 61 min 11 s apart; their downloaded files decode to the same header times as their names. This run (05:45:09Z) is a third.",
+   "caveat": "Literal header check not met: pygrib reads the header name, shortName and units as 'unknown', and table2Version and localTablesVersionNumber as unreadable. Identification uses discipline, category and parameter number (D2), and units use the NOAA user table row (MESHMax60min and MESHMax1440min: mm; -1 missing; -3 no coverage; 2-min and 30-min; the MESH rows are identical in v12.0, v12.1 and v12.2). The earlier runs' code version is not recorded; I decoded their files, not their code."
+  },
+  "B4-3": {
+   "status": "partial",
+   "evidence": "tests.test_swath (75 tests) passes. FreshnessTests: hour 20:00 fresh, 20:01 stale, 60:00 stale, 61:00 unavailable with '61 min old, more than 60 min', 60:30 unavailable with 61 (ceil); day 60:00 fresh, 61:00 stale, 120:00 stale, 121:00 unavailable; a file 6 min ahead of the build is unavailable ('newer than this build's time'). CollectTests: a stale day file is drawn with its words; an old hour file is unavailable with no picture; a failed listing and a failed download name the reason; offline and sample builds run.",
+   "caveat": "The live smoke (tools/smoke_map.py in Chromium) belongs to the site run and was not run in this module run."
+  },
+  "B4-4": {
+   "status": "partial",
+   "evidence": "Independent check over 28 strings (module words, live and sample record lines, legend): 0 forbidden-term hits (damage, dry, clear, insurance, eligible, confirmed, guarantee, customer; 'not damage' and 'not an all-clear' are the only forms); 0 bare 'no hail'. Present: 'not observed hail and not damage' (legend note; what-this-is), 'This is not an all-clear.' (stale, unavailable and sheet lines), 'Hatched: no radar coverage.', 'Uncoloured: no radar hail estimate of 0.25 in or more in the window, or no value; the product does not tell the two apart.' Every legend colour has its class word (6 entries); SAMPLE appears on every sample line and on no live line.",
+   "caveat": "The feed row CONTRACTS['hail_swath'] that must carry the same sentences is absent from the worktree (B-1)."
+  },
+  "B4-5": {
+   "status": "pass",
+   "evidence": "PNG bytes: live hour 2,989 B; live day 3,021 B; sample hour 4,288 B; sample day 4,753 B; earlier live runs 2,989 B and 2,995 B (their records). All far under 150 KB. Live per-tile files (D4 format, measured): day 3 files, 373 B in total (164, 120 and 89 B); hour 0 files (no cell at the floor). Earlier day files: 1 file of 89 B each (runs 1 and 3, and the pre-check); earlier hour files: none."
+  }
+ },
+ "measurements": {
+  "live_run": {
+   "now_utc": "2026-10-19T05:45:09Z",
+   "exit": 0,
+   "wall_s": 5.365,
+   "hour": {
+    "file": "MRMS_MESH_Max_60min_00.50_20261019-054200.grib2.gz",
+    "gzip_bytes": 34328,
+    "download_s": 0.06,
+    "valid_utc": "2026-10-19T05:42:00Z",
+    "age_min": 3,
+    "state": "fresh",
+    "png_bytes": 2989,
+    "module_pack": {
+     "n_pos": 0,
+     "n_minus1": 1312500,
+     "n_minus3": 0,
+     "n_ge_floor": 0
+    },
+    "tile_files": 0,
+    "tile_bytes": 0
+   },
+   "day": {
+    "file": "MRMS_MESH_Max_1440min_00.50_20261019-053000.grib2.gz",
+    "gzip_bytes": 109454,
+    "download_s": 0.11,
+    "valid_utc": "2026-10-19T05:30:00Z",
+    "age_min": 15,
+    "state": "fresh",
+    "png_bytes": 3021,
+    "module_pack": {
+     "n_pos": 39,
+     "n_ge_floor": 10,
+     "max_mm": 19.1,
+     "n_minus1": 1312461,
+     "n_minus3": 0
+    },
+    "largest": {
+     "in": "0.75",
+     "mm": "19.1",
+     "class": "penny to nickel",
+     "centre": "48.115 N, 116.135 W",
+     "nearest_town": "Kalispell",
+     "miles": 84.0
+    },
+    "cells_ge_severe": 0,
+    "montana_largest_tenths": 66,
+    "tile_files": 3,
+    "tile_bytes": 373,
+    "tile_bytes_each": {
+     "r0068_c0138": 164,
+     "r0069_c0138": 120,
+     "r0070_c0227": 89
+    }
+   },
+   "output_files": 5,
+   "live_bytes_total": 373
+  },
+  "own_listing_about_0549Z": {
+   "hour_keys": 175,
+   "hour_newest": "054800 (LastModified 05:49:17Z)",
+   "day_keys": 12,
+   "day_newest": "053000 (LastModified 05:38:18Z)",
+   "truncated": false
+  },
+  "own_decode": {
+   "live_day_053000": {
+    "cells": 24500000,
+    "minus1": 16240207,
+    "minus3": 8227860,
+    "positive": 31933,
+    "zero": 0,
+    "nan": 0,
+    "other_negative": 0,
+    "positive_off_tenth": 0,
+    "ge_6p35mm": 1259,
+    "ge_25p4mm": 6,
+    "max_mm": 41.4,
+    "montana_box_positive": 8,
+    "montana_box_max_mm": 6.6
+   },
+   "live_hour_054200": {
+    "positive": 558,
+    "minus1": 16271582,
+    "minus3": 8227860,
+    "ge_6p35mm": 8,
+    "max_mm": 7.4,
+    "montana_box_positive": 0
+   },
+   "precheck_day_013000": {
+    "positive": 38837,
+    "max_mm": 41.4,
+    "montana_box_positive": 8
+   },
+   "precheck_hour_015800": {
+    "positive": 1582,
+    "max_mm": 16.9,
+    "montana_box_positive": 0
+   },
+   "earlier_run1_day_023000": {
+    "positive": 37321
+   },
+   "earlier_run1_hour_025200": {
+    "positive": 1505
+   },
+   "earlier_run3_day_033000": {
+    "positive": 35516
+   },
+   "earlier_run3_hour_035200": {
+    "positive": 1126
+   },
+   "all_eight_files_off_tenth_positive": 0
+  },
+  "earlier_module_runs": {
+   "live-run-1": "now 02:53:58Z; hour 02:52; day 02:30",
+   "live-run-3": "now 03:55:09Z; hour 03:52; day 03:30",
+   "gap_min_s": "61 min 11 s",
+   "cached_files_decoded": 4,
+   "data_reviewer_cli_live_now": "now 04:06:06Z (record only; not decoded)"
+  },
+  "round_trip": {
+   "live_day": {
+    "px": 1919750,
+    "size": "1750x1097",
+    "mismatch_all": 0,
+    "mismatch_1000": 0,
+    "expected": {
+     "uncoloured": 1919736,
+     "class0": 11,
+     "class1": 3,
+     "hatched": 0
+    },
+    "palette_indices_used": [
+     0,
+     17,
+     41
+    ],
+    "decoded_cells_at_floor": 10,
+    "pixels_at_floor": 14
+   },
+   "live_hour": {
+    "px": 1919750,
+    "mismatch_all": 0,
+    "mismatch_1000": 0,
+    "expected": {
+     "uncoloured": 1919750
+    },
+    "palette_indices_used": [
+     0
+    ]
+   },
+   "sample_day": {
+    "px": 1919750,
+    "mismatch_all": 0,
+    "mismatch_1000": 0,
+    "hatched_px_expected": 27250,
+    "hatched_px_actual": 5450,
+    "palette_indices_used": [
+     0,
+     1,
+     17,
+     41,
+     64,
+     95,
+     134
+    ]
+   },
+   "sample_hour": {
+    "px": 1919750,
+    "mismatch_all": 0,
+    "mismatch_1000": 0,
+    "hatched_px_expected": 27250,
+    "hatched_px_actual": 5450,
+    "palette_indices_used": [
+     0,
+     1,
+     17,
+     41,
+     64,
+     95,
+     134,
+     207
+    ]
+   },
+   "tile_check_live_day": {
+    "files": 3,
+    "cells_listed": 10,
+    "value_mismatches": 0,
+    "missing": 0,
+    "extra": 0
+   },
+   "palette": {
+    "entries": 256,
+    "alpha_index0": 0,
+    "alpha_index1": 89,
+    "alpha_index2": 204
+   }
+  },
+  "sample_build": {
+   "files": 576,
+   "pngs": 2,
+   "tile_files": 574,
+   "tile_bytes_day": 612028,
+   "tile_bytes_hour": 201811,
+   "sample_flag_in_tiles": true,
+   "source_line_on_sample": "SAMPLE: invented radar estimate, not NOAA data."
+  },
+  "packing": {
+   "decimalScaleFactor": 1,
+   "binaryScaleFactor": 0,
+   "referenceValue": -30.0,
+   "bitsPerValue_day": 16,
+   "bitsPerValue_hour": 8,
+   "dataRepresentation": 41
+  },
+  "header": {
+   "discipline": 209,
+   "parameterCategory": 3,
+   "parameterNumber": {
+    "hour": 30,
+    "day": 34
+   },
+   "centre": 161,
+   "generatingProcessIdentifier": 97,
+   "productDefinitionTemplateNumber": 0,
+   "gridType": "regular_ll",
+   "Ni": 7000,
+   "Nj": 3500,
+   "first": [
+    54.995,
+    230.005
+   ],
+   "last": [
+    20.005001,
+    299.994998
+   ],
+   "step_deg": 0.01,
+   "jScansPositively": 0,
+   "iScansNegatively": 0,
+   "pygrib_name_shortName_units": "unknown",
+   "table_version_keys": "unreadable (RuntimeError)"
+  },
+  "user_table_v12_2": "209,3,30 MESHMax60min 2-min mm -1 -3; 209,3,34 MESHMax1440min 30-min mm -1 -3; MESH rows identical in v12.0, v12.1, v12.2",
+  "fixed_scratch_copy": {
+   "unittest_discover": "813 tests OK in 227.8 s",
+   "test_swath": "75 OK",
+   "test_site.Contracts": "2 OK"
+  },
+  "default_build_about_check": {
+   "method": "python -m website.build --sample in a scratch copy",
+   "control_vs_control_changed_files": 23,
+   "about_hits_row_only": 1,
+   "about_hits_row_plus_storm_tuple": 0,
+   "fixed_about_vs_control_changed_lines": 4,
+   "fixed_about_changed_lines_are": "build time only"
+  },
+  "patch": {
+   "path": "/home/user/hail-b4/out/final-checker/fixes.patch",
+   "files": 7,
+   "lines": 119,
+   "git_apply_check": "passes (nothing written)"
+  },
+  "words": {
+   "strings_checked": 28,
+   "forbidden_hits": 0,
+   "bare_no_hail": 0
+  },
+  "dashes_and_names": {
+   "added_lines_tracked": 128,
+   "added_lines_untracked": 1679,
+   "em_dash": 0,
+   "en_dash_in_tracked_added_lines": 21,
+   "banned_name_hits": 0,
+   "banned_name_pattern": "Claude|Anthropic|ChatGPT|OpenAI|GPT|Codex|Gemini|Copilot|Llama|Mistral|Haiku|Sonnet|Opus|Grok|DeepSeek|Qwen|LLM"
+  }
+ },
+ "F1": {
+  "status": "partial",
+  "applied": "four places, reworded to the verified meanings with the NOAA user table and D34; ROADMAP 97 and 102 keep the clear-night question open; tests/test_storm.py 235-237 and 565-566 updated",
+  "quotes": [
+   {
+    "where": "website/storm.py lines 11-14",
+    "text": "-99 and -999 mean \"no radar value\": -99 is missing and -999 is no coverage (the MergedReflectivityQC row of NOAA's MRMS GRIB2 user table, versions 12.0 to 12.2, which agree; the archive files do not state a version; docs/DECISIONS.md D34). They are never a value and never 0."
+   },
+   {
+    "where": "website/storm.py line 60",
+    "text": "NO_DATA = (-99.0, -999.0)       # \"no radar value\": -99 missing, -999 no coverage (D34); never a value, never 0"
+   },
+   {
+    "where": "website/storm.py line 243",
+    "text": "No radar value (radar estimate; code -99 means missing, code -999 means no coverage) at any of the"
+   },
+   {
+    "where": "website/sources.py lines 142-143 (the key is storm_levels; the brief says storm_layers)",
+    "text": "-99 and -999 mean no radar value: -99 is missing and -999 is no coverage (NOAA's MRMS GRIB2 user table, versions 12.0 to 12.2). They are never a value or 0."
+   }
+  ],
+  "gap": "line 143 says 'never a value or 0'; the brief asks for 'never a value, never 0' (fix N-3)"
+ },
+ "F2": {
+  "status": "partial",
+  "applied": "GP-1 to GP-11 labels; no D31 to D41 proposal labels left (grep count 0); the required sentence is at line 553 exactly; ROADMAP 97 says '(done, D34)' and 102 keeps the clear-night ruling",
+  "gap": "GP-9 (line 541) and GP-10 (line 542) sit above GP-1 (line 543); D12 says move them after GP-8 (line 550), before GP-11 (line 551) (fix N-2)"
+ },
+ "decisions": {
+  "D1": "applied",
+  "D2": "applied",
+  "D3": "applied",
+  "D4": "applied (tile format and floor; producer gap in N-1)",
+  "D5": "applied",
+  "D6": "applied",
+  "D7": "applied in the module (thresholds, valid time, templates); the browser duty is for the site run",
+  "D8": "NOT applied: pattern lacks ?v= (B-3)",
+  "D9": "partial: state, all-clear, 4.00 in note and nocov read are applied; the tile producer does not carry nocov for -3-only tiles (N-1)",
+  "D10": "applied",
+  "D11": "NOT applied: CONTRACTS row, storm tuple, CI test line (B-1, B-2)",
+  "D12": "NOT applied: GP order (N-2)"
+ },
+ "completion_list": {
+  "F-1 sample source line (D10)": "applied",
+  "CONTRACTS row and CI test line (D11)": "not applied (B-1, B-2)",
+  "sheet_line state, stale sentence, 4.00 in note, nocov (D9)": "partial (N-1)",
+  "?v= live pattern (D8)": "not applied (B-3)",
+  "thresholds and valid time in map_data_swath (D7)": "applied",
+  "age rounds up (61 min); 'newer than this build's time'": "applied",
+  "'{title} is unavailable: {problem}. This is not an all-clear.'; 'in this map's area'": "applied",
+  "bands equal B1 classes test": "applied (test_class_edges_follow_b1; palette test)",
+  "tests for sample describe, offline, CLI, hatched line, bare clear": "applied (75 tests pass)",
+  "one-picture-column docstring": "applied",
+  "GP table order (D12)": "not applied (N-2)"
+ },
+ "build_brief_decisions": {
+  "7 (tests never delete above their own folder)": "pass",
+  "10 (inches floored to the hundredth, mm exact)": "applied",
+  "16 (test clean-up audit)": "pass"
+ },
+ "decision_7_16_audit": {
+  "deletion_calls": 65,
+  "mechanical_created": 61,
+  "hand_checked": 4,
+  "result": "pass",
+  "hand_checked_list": [
+   "tests/test_hail.py:717 store = copy_fixture() = self.tmp/'store'",
+   "tests/test_hail.py:1370 self.store = self.tmp/'store'",
+   "tests/test_hail.py:1436 out = build_store() = self.tmp/'store'",
+   "tests/test_site.py:2092 hail under dest = cls.tmp/'plain-store' (mkdtemp at line 2198)"
+  ]
+ },
+ "findings_open": [
+  {
+   "rank": 1,
+   "id": "B-1",
+   "blocking": true,
+   "file": "website/sources.py",
+   "line": "insert after line 162; F1 phrase line 143; also website/build.py line 451 and tests/test_site.py line 359",
+   "summary": "CONTRACTS['hail_swath'] is absent from the worktree (D11; AGENTS rule 7). The row exists only in out/fixer-followups/patched/website/sources.py lines 163-170.",
+   "evidence": "grep -c hail_swath website/sources.py = 0; CONTRACTS keys have no hail_swath; website/swath.py:25 cites it. In a scratch copy the row alone adds a hail row to the default About page (1 hit); with 'hail_swath' also in build.py STORM_CONTRACTS (line 451) the hit is 0, and the About page differs from the control only in the build-time lines. Without the key in tests/test_site.py line 359 the suite fails ('hail_swath' in the first set but not the second).",
+   "fix": "Apply fixes.patch hunks: website/sources.py (row after line 162; timing gains 'The valid time is the end of the window.'), website/build.py line 451 STORM_CONTRACTS = (\"storm_levels\", \"satellite\", \"hail_swath\"), tests/test_site.py line 359 add \"hail_swath\" to the key set."
+  },
+  {
+   "rank": 2,
+   "id": "B-2",
+   "blocking": true,
+   "file": ".github/workflows/website.yml",
+   "line": "paths list after line 34; test step line 95",
+   "summary": "tests.test_swath is not in the Website test step and tests/test_swath.py is not in the paths filter (D11), so the new tests never run in CI.",
+   "evidence": "Line 95 lists tests.test_site ... tests.test_website_workflow only; lines 27-34 have no test_swath entry.",
+   "fix": "Insert '      - \"tests/test_swath.py\"' after line 34; append ' tests.test_swath' to the end of line 95."
+  },
+  {
+   "rank": 3,
+   "id": "B-3",
+   "blocking": true,
+   "file": "website/swath.py",
+   "line": "783 (map block pattern; frame pattern at 671 is informational); test tests/test_swath.py line 816",
+   "summary": "D8: the per-tile live pattern lacks '?v=<YYYYMMDDHHMM>' of the frame's valid time, so a cached tile from an earlier build can be paired with a newer layer. The test at line 816 asserts the pattern without ?v=.",
+   "evidence": "Line 783: \"pattern\": f\"{LIVE_DIR}/{product.window}/{{tile}}.json\". Test line 816 asserts the same string.",
+   "fix": "In map_data_swath after the 'drawn' line add stamp = (frame.get(\"valid\") or \"\")[:16].replace(\"-\", \"\").replace(\":\", \"\").replace(\"T\", \"\") and use f\"{LIVE_DIR}/{product.window}/{{tile}}.json?v={stamp}\" at line 783; update test line 816 to the same pattern. Verified: test_swath 75 OK; full suite 813 OK in the patched copy."
+  },
+  {
+   "rank": 4,
+   "id": "N-1",
+   "blocking": false,
+   "needs_ruling": true,
+   "file": "website/swath.py",
+   "line": "463-476 (live_files); tests/test_swath.py 412-415 and 428-442",
+   "summary": "D9 says the nocov list is carried 'for any -3 cell inside it', but live_files writes tiles only for tiles with a cell at or above 64 tenths (D4). A -3 cell in a tile with no such cell reads 'No radar hail estimate ... here' instead of 'No radar coverage at this point in the product.' The test comment calls this 'the known gap, D9 vs D4'.",
+   "evidence": "Sample build: 27,250 -3 picture pixels in the north-east corner, none of them in a written tile. Live today: 0 -3 cells in the picture window, so no live effect now.",
+   "fix": "If D9 wins: after line 476 add 'for name in holes: tiles.setdefault(name, [])' (cells may be []), and update tests 412-415 and 428-442. If D4 wins: the brief's D9 words need a ruling. Not applied."
+  },
+  {
+   "rank": 5,
+   "id": "N-2",
+   "blocking": false,
+   "file": "research/globe/README.md",
+   "line": "541-542 (GP-9, GP-10) move after line 550 (GP-8)",
+   "summary": "D12 / F2: the table does not run GP-1 to GP-11 in order.",
+   "evidence": "grep -n '^| GP-' gives 541 GP-9, 542 GP-10, 543 GP-1 ... 550 GP-8, 551 GP-11.",
+   "fix": "Move the two rows to follow GP-8 (in fixes.patch; order verified in the patched copy)."
+  },
+  {
+   "rank": 6,
+   "id": "N-3",
+   "blocking": false,
+   "file": "website/sources.py",
+   "line": "143",
+   "summary": "F1: the storm_levels row still says 'never a value or 0'; the brief asks for 'never a value, never 0'.",
+   "evidence": "Line 143 text quoted in F1.quotes[3].",
+   "fix": "Replace 'They are never a value or 0. ' with 'They are never a value, never 0. ' (in fixes.patch)."
+  },
+  {
+   "rank": 7,
+   "id": "N-4",
+   "blocking": false,
+   "file": "website/swath.py",
+   "line": "114",
+   "summary": "Cosmetic: the 'stale' entry of WORDS_SWATH is indented 8 spaces where the other entries use 4. No behaviour change.",
+   "evidence": "Line 114 begins with eight spaces before \"stale\".",
+   "fix": "Dedent line 114 to four spaces (not in fixes.patch)."
+  }
+ ],
+ "gate_notes": [
+  "B4-2: the literal 'product name in the GRIB header' cannot be read from these files (pygrib reports unknown); D2's parameter-number identification is what the code and tests use. The owner or supervisor should accept it or change the gate text.",
+  "B4-3: the live smoke (tools/smoke_map.py, Chromium) is for the site run; not run here.",
+  "Builder 3 items are not in the worktree (no D37 entry in docs/DECISIONS.md, no DESIGN.md or README.md or AGENTS.md change, no research/globe/validation-evidence/p3-verification.json, ROADMAP Next 11 not written). They are not in this module run's completion list, so they are not counted as defects here.",
+  "The brief's F1 names CONTRACTS['storm_layers']; the key in website/sources.py is 'storm_levels' (line 130). The F1 edit sits in that row.",
+  "CI installs Python 3.12 (website.yml); this check ran on Python 3.13.16 (the venv). tests.test_swath was not run under 3.12.",
+  "B-1 adds the row to STORM_CONTRACTS; without that entry the row shows on every default build's About page (measured).",
+  "B4-6 and B4-7 were not run in this recheck (the default-build About check above is the only B4-6 evidence)."
+ ],
+ "applied": [
+  {
+   "id": "A-1",
+   "one_line": "F1 reworded in storm.py lines 11-14, 60 and 243 and sources.py 142-143 to the verified -99 missing / -999 no coverage meanings (sources phrase is N-3)."
+  },
+  {
+   "id": "A-2",
+   "one_line": "D1: -1 is uncoloured, -3 is hatched, and the legend sentences are verbatim (swath.py 105-107, 454)."
+  },
+  {
+   "id": "A-3",
+   "one_line": "D2: header dataDate and dataTime must equal the file-name time and the parameter must match the folder window (swath.py 213-248)."
+  },
+  {
+   "id": "A-4",
+   "one_line": "D3: newest key of today's folder, yesterday's when today's is empty (swath.py 362-368); the live run took the bucket's newest keys."
+  },
+  {
+   "id": "A-5",
+   "one_line": "D4: tile files only for tiles with a cell at or above 64 tenths, with keys f, window, valid and cells (swath.py 458-485)."
+  },
+  {
+   "id": "A-6",
+   "one_line": "D5: the no-estimate sentence is verbatim (swath.py 111; sheet_line 566)."
+  },
+  {
+   "id": "A-7",
+   "one_line": "D6: fresh and stale limits 20/60 min (hour) and 60/120 min (day) with unavailable after (swath.py 90-93, 506-516; tests pass)."
+  },
+  {
+   "id": "A-8",
+   "one_line": "D7: map block carries valid, fresh_min 20/60, stale_min 60/120 and the templates with {age} (swath.py 777-787)."
+  },
+  {
+   "id": "A-9",
+   "one_line": "D9 (partial): sheet_line returns the state line first when unavailable, adds the all-clear when stale, the 4.00 in note at 1016 tenths and reads nocov (swath.py 548-571; producer gap N-1)."
+  },
+  {
+   "id": "A-10",
+   "one_line": "D10: SAMPLE on the state line, the sheet line, the source line and each tile ('sample': true); verified on the sample record and a sample tile."
+  },
+  {
+   "id": "A-11",
+   "one_line": "Completion: unavailable age rounds up (61 min) and says 'newer than this build's time'; '{title} is unavailable: {problem}. This is not an all-clear.' (swath.py 116, 510, 515)."
+  },
+  {
+   "id": "A-12",
+   "one_line": "Completion: 'in this map's area' wording (swath.py 108, 121, 126) and the one-picture-column docstring (swath.py 5-6)."
+  },
+  {
+   "id": "A-13",
+   "one_line": "Completion: band edges 6.4/19.0, 19.1/25.3, 25.4/38.0, 38.1/50.7, 50.8/69.8, 69.9/110.0 mm equal the B1 class minima 64, 191, 254, 381, 508, 699 tenths; test_class_edges_follow_b1 and the palette test pass."
+  },
+  {
+   "id": "A-14",
+   "one_line": "Completion: tests for sample describe, offline mode, the CLI, the hatched line and bare 'clear' exist and pass (75 tests)."
+  },
+  {
+   "id": "A-15",
+   "one_line": "Build-brief decision 10: sizes are inches floored to the hundredth with exact millimetres (hail.inches; live line '0.75 in (19.1 mm)')."
+  },
+  {
+   "id": "A-16",
+   "one_line": "Build-brief decisions 7 and 16: the test clean-up audit passes (65 of 65 deletion calls act on test-created folders)."
+  },
+  {
+   "id": "A-17",
+   "one_line": "F2: GP-1 to GP-11 labels with no D31 to D41 proposal labels left, the required sentence at line 553, and ROADMAP 97 and 102 updated (row order is N-2)."
+  },
+  {
+   "id": "A-18",
+   "one_line": "gridded STYLE 'hail_swath' (254 levels inside 256 palette entries) and the 6-entry legend with class words; no code iterates STYLE, so other layers are unchanged."
+  }
+ ],
+ "refuted": [
+  {
+   "id": "R-1",
+   "one_line": "-1 cells hatched (D1): refuted; only -3 cells are hatched (swath.py 454) and the round trip has 0 mismatches over all pixels."
+  },
+  {
+   "id": "R-2",
+   "one_line": "Header valid time differs from the file name: refuted; all eight decoded files match."
+  },
+  {
+   "id": "R-3",
+   "one_line": "Palette blend zones between bands colour cells: refuted; class_palette uses band-middle levels (swath.py 161-172)."
+  },
+  {
+   "id": "R-4",
+   "one_line": "Off-tenth positive values would make the live layer unavailable (swath.py 270): refuted for this product; decimal scale 1 and binary scale 0 in the four live and pre-check files, 0 off-tenth values in all eight files."
+  },
+  {
+   "id": "R-5",
+   "one_line": "Age rounds down so 60.5 min shows as 60: refuted; math.ceil (swath.py 515) and the test asserts 61."
+  },
+  {
+   "id": "R-6",
+   "one_line": "Tests delete outside their own folders (decision 7): refuted; 65 of 65 calls act on test-created folders."
+  },
+  {
+   "id": "R-7",
+   "one_line": "Em-dashes or banned model or vendor names in added lines: refuted; 0 and 0 (21 en-dashes are not em-dashes)."
+  },
+  {
+   "id": "R-8",
+   "one_line": "Leftover D31 to D41 proposal labels in the globe plan: refuted; 0 occurrences remain."
+  },
+  {
+   "id": "R-9",
+   "one_line": "The new STYLE key changes other layers: refuted; no code iterates STYLE (gridded.py 330, 339, 359, 445 index by layer name)."
+  },
+  {
+   "id": "R-10",
+   "one_line": "Sample tiles lack the sample flag: refuted; the sample tile ends with \"sample\":true."
+  },
+  {
+   "id": "R-11",
+   "one_line": "Sample palette or pack mismatch: refuted; 0 mismatches over all pixels of both sample PNGs."
+  },
+  {
+   "id": "R-12",
+   "one_line": "Picture width does not match the grid: refuted; 17.5 degrees at 0.01 degree gives 1,750 columns (WIDTH, IMAGE_BOUNDS)."
+  },
+  {
+   "id": "R-13",
+   "one_line": "Live tile values differ from the decode: refuted; all 10 floor cells are listed with equal values."
+  }
+ ],
+ "scratch_and_outputs": {
+  "scratch": "/home/user/hail-b4/out/final-checker/",
+  "live_output": "/home/user/hail-b4/out/recheck/live/",
+  "live_record": "/home/user/hail-b4/out/recheck/live-record.json",
+  "sample_record": "/home/user/hail-b4/out/recheck/sample-record.json",
+  "fixes_patch": "/home/user/hail-b4/out/final-checker/fixes.patch",
+  "patched_copy": "/home/user/hail-b4/out/final-checker/copy/tree/"
+ }
+}

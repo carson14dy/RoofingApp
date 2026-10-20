@@ -1,0 +1,365 @@
+{
+  "lid": "WHRM8",
+  "usgsId": "12366000",
+  "reachId": "24344205",
+  "name": "Whitefish River near Kalispell",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "MSO",
+    "name": "Missoula"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Flathead",
+  "timeZone": "MST7MDT",
+  "latitude": 48.320277777778,
+  "longitude": -114.2775,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": 1.45,
+      "primaryUnit": "ft",
+      "secondary": 0.057,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:45:00Z"
+    },
+    "forecast": {
+      "primary": 1.44,
+      "primaryUnit": "ft",
+      "secondary": 0.056,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T12:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 5.4,
+        "flow": 1440
+      },
+      "action": {
+        "stage": 5,
+        "flow": 1300
+      }
+    },
+    "lro": {
+      "minorCS": "< 0.05",
+      "moderateCS": "-999",
+      "majorCS": "-999",
+      "producedTime": "2026-10-18T18:35:53Z",
+      "interval": "OND"
+    },
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2022-06-15T00:00:00Z",
+          "stage": 4.95,
+          "flow": 1290,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1964-06-09T00:00:00Z",
+          "stage": 4.68,
+          "flow": 1400,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1997-06-06T00:00:00Z",
+          "stage": 4.46,
+          "flow": 1230,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1950-06-26T00:00:00Z",
+          "stage": 4.45,
+          "flow": 1260,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1996-06-12T00:00:00Z",
+          "stage": 4.43,
+          "flow": 1200,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1991-05-22T00:00:00Z",
+          "stage": 4.42,
+          "flow": 1130,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1948-05-30T00:00:00Z",
+          "stage": 4.41,
+          "flow": 1290,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1990-06-04T00:00:00Z",
+          "stage": 4.27,
+          "flow": 1010,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1932-06-03T00:00:00Z",
+          "stage": 4.26,
+          "flow": 1270,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1947-05-12T00:00:00Z",
+          "stage": 4.17,
+          "flow": 1170,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "2020-06-02T00:00:00Z",
+          "stage": 4.13,
+          "flow": 966,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1933-06-18T00:00:00Z",
+          "stage": 4.01,
+          "flow": 1140,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1995-06-21T00:00:00Z",
+          "stage": 4,
+          "flow": 949,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "2021-05-27T00:00:00Z",
+          "stage": 3.62,
+          "flow": 728,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-05-18T00:00:00Z",
+          "stage": 3.27,
+          "flow": 579,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-05-18T00:00:00Z",
+          "stage": 3.27,
+          "flow": 579,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-15T00:00:00Z",
+          "stage": 4.95,
+          "flow": 1290,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-05-27T00:00:00Z",
+          "stage": 3.62,
+          "flow": 728,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-06-02T00:00:00Z",
+          "stage": 4.13,
+          "flow": 966,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-06-06T00:00:00Z",
+          "stage": 4.46,
+          "flow": 1230,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1996-06-12T00:00:00Z",
+          "stage": 4.43,
+          "flow": 1200,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1995-06-21T00:00:00Z",
+          "stage": 4,
+          "flow": 949,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1991-05-22T00:00:00Z",
+          "stage": 4.42,
+          "flow": 1130,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1990-06-04T00:00:00Z",
+          "stage": 4.27,
+          "flow": 1010,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1964-06-09T00:00:00Z",
+          "stage": 4.68,
+          "flow": 1400,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1950-06-26T00:00:00Z",
+          "stage": 4.45,
+          "flow": 1260,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1948-05-30T00:00:00Z",
+          "stage": 4.41,
+          "flow": 1290,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1947-05-12T00:00:00Z",
+          "stage": 4.17,
+          "flow": 1170,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1933-06-18T00:00:00Z",
+          "stage": 4.01,
+          "flow": 1140,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1932-06-03T00:00:00Z",
+          "stage": 4.26,
+          "flow": 1270,
+          "preliminary": "O",
+          "olddatum": true
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 5.6,
+        "statement": "Bank erosion downstream of the town of Whitefish threatens homes along the river bank."
+      },
+      {
+        "stage": 5.4,
+        "statement": "Water from the Whitefish River begins flooding homeowners yards and driveways along River Road in Kalispell."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/WHRM8.SSTG.prob.weekint.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/WHRM8.QINE.prob.weekint.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/WHRM8.volume.prob.weekint.png"
+      },
+      "entperiod": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/WHRM8.SSTG.exceed.90day.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/WHRM8.QINE.exceed.90day.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/WHRM8.volume.exceed.90day.png"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/WHRM8.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/whrm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/whrm8_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "USGS",
+      "text": "12366000",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=12366000"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued routinely year-round.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "7",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "no_flooding"
+}

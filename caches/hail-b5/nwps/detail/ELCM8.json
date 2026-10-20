@@ -1,0 +1,278 @@
+{
+  "lid": "ELCM8",
+  "usgsId": "",
+  "reachId": "12395670",
+  "name": "Sun River below Elk Creek near Augusta",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "TFX",
+    "name": "Great Falls"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Lewis and Clark",
+  "timeZone": "MST7MDT",
+  "latitude": 47.5066666666667,
+  "longitude": -112.281944444444,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFF"
+  },
+  "status": {
+    "observed": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "obs_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": -9999,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1953-06-04T00:00:00Z",
+          "stage": 16.7,
+          "flow": 7600,
+          "preliminary": "R",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1979-03-08T00:00:00Z",
+          "stage": 15.63,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1947-03-16T00:00:00Z",
+          "stage": 12.82,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1981-05-22T00:00:00Z",
+          "stage": 12.68,
+          "flow": 3910,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1964-06-09T00:00:00Z",
+          "stage": 12.24,
+          "flow": 3750,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1975-05-07T00:00:00Z",
+          "stage": 11.88,
+          "flow": 3830,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1951-03-22T00:00:00Z",
+          "stage": 10.8,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1947-06-10T00:00:00Z",
+          "stage": 10.5,
+          "flow": 1800,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1978-03-18T00:00:00Z",
+          "stage": 10.3,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "1981-05-22T00:00:00Z",
+          "stage": 12.68,
+          "flow": 3910,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1979-03-08T00:00:00Z",
+          "stage": 15.63,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1978-03-18T00:00:00Z",
+          "stage": 10.3,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1975-05-07T00:00:00Z",
+          "stage": 11.88,
+          "flow": 3830,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1964-06-09T00:00:00Z",
+          "stage": 12.24,
+          "flow": 3750,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1953-06-04T00:00:00Z",
+          "stage": 16.7,
+          "flow": 7600,
+          "preliminary": "R",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1951-03-22T00:00:00Z",
+          "stage": 10.8,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1947-06-10T00:00:00Z",
+          "stage": 10.5,
+          "flow": 1800,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1947-03-16T00:00:00Z",
+          "stage": 12.82,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": true
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/elcm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/elcm8_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/rt"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice during winter months.",
+      "effective": "0101",
+      "expiration": "1231"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "SRVM8",
+  "downstreamLid": "SSRM8",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": {
+    "units": "ft",
+    "value": 0
+  },
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "obs_not_current",
+  "ForecastFloodCategory": "fcst_not_current"
+}

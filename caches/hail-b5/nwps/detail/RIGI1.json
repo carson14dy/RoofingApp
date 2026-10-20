@@ -1,0 +1,392 @@
+{
+  "lid": "RIGI1",
+  "usgsId": "13316500",
+  "reachId": "23568769",
+  "name": "Little Salmon River at Riggins",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "MSO",
+    "name": "Missoula"
+  },
+  "state": {
+    "abbreviation": "ID",
+    "name": "Idaho"
+  },
+  "county": "Idaho",
+  "timeZone": "MST7MDT",
+  "latitude": 45.413055555556,
+  "longitude": -116.32472222222,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": 2.34,
+      "primaryUnit": "ft",
+      "secondary": 0.14,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T06:00:00Z"
+    },
+    "forecast": {
+      "primary": 2.86,
+      "primaryUnit": "ft",
+      "secondary": 0.297,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-23T12:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 10,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 9,
+        "flow": -9999
+      }
+    },
+    "lro": {
+      "minorCS": "< 0.05",
+      "moderateCS": "-999",
+      "majorCS": "< 0.05",
+      "producedTime": "2026-10-18T18:35:53Z",
+      "interval": "OND"
+    },
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1974-06-17T00:00:00Z",
+          "stage": 12.18,
+          "flow": 12600,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-01-01T00:00:00Z",
+          "stage": 12,
+          "flow": 10500,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-01-16T00:00:00Z",
+          "stage": 11,
+          "flow": 9700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1948-06-01T00:00:00Z",
+          "stage": 10.7,
+          "flow": 9200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1955-12-22T00:00:00Z",
+          "stage": 10.4,
+          "flow": 8500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-04T00:00:00Z",
+          "stage": 10.26,
+          "flow": 8710,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-05-13T00:00:00Z",
+          "stage": 10.12,
+          "flow": 5520,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2003-05-30T00:00:00Z",
+          "stage": 9.96,
+          "flow": 7230,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-05-18T00:00:00Z",
+          "stage": 9.8,
+          "flow": 7520,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-20T00:00:00Z",
+          "stage": 9.75,
+          "flow": 6920,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1999-05-25T00:00:00Z",
+          "stage": 9.29,
+          "flow": 6280,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-04-26T00:00:00Z",
+          "stage": 9.1,
+          "flow": 7090,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-05T00:00:00Z",
+          "stage": 9,
+          "flow": 6180,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-11T00:00:00Z",
+          "stage": 8.73,
+          "flow": 5760,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-05-31T00:00:00Z",
+          "stage": 8.64,
+          "flow": 5620,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-05-29T00:00:00Z",
+          "stage": 8.2,
+          "flow": 4951,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-05-29T00:00:00Z",
+          "stage": 8.2,
+          "flow": 4951,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-11T00:00:00Z",
+          "stage": 8.73,
+          "flow": 5760,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-05-31T00:00:00Z",
+          "stage": 8.64,
+          "flow": 5620,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-05T00:00:00Z",
+          "stage": 9,
+          "flow": 6180,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-04-26T00:00:00Z",
+          "stage": 9.1,
+          "flow": 7090,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-04T00:00:00Z",
+          "stage": 10.26,
+          "flow": 8710,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-20T00:00:00Z",
+          "stage": 9.75,
+          "flow": 6920,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2003-05-30T00:00:00Z",
+          "stage": 9.96,
+          "flow": 7230,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1999-05-25T00:00:00Z",
+          "stage": 9.29,
+          "flow": 6280,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-01-01T00:00:00Z",
+          "stage": 12,
+          "flow": 10500,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-05-18T00:00:00Z",
+          "stage": 9.8,
+          "flow": 7520,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-06-17T00:00:00Z",
+          "stage": 12.18,
+          "flow": 12600,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-01-16T00:00:00Z",
+          "stage": 11,
+          "flow": 9700,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-05-13T00:00:00Z",
+          "stage": 10.12,
+          "flow": 5520,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1955-12-22T00:00:00Z",
+          "stage": 10.4,
+          "flow": 8500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1948-06-01T00:00:00Z",
+          "stage": 10.7,
+          "flow": 9200,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 12,
+        "statement": "Flooding from pinehurst to Riggins can be expected with possible flooding to Highway 95."
+      },
+      {
+        "stage": 11,
+        "statement": "Bank erosion will possibly affect homes adjacent to the river."
+      },
+      {
+        "stage": 10,
+        "statement": "Expect flooding to low lying areas adjacent to the river."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/RIGI1.SSTG.prob.weekint.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/RIGI1.QINE.prob.weekint.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/RIGI1.volume.prob.weekint.png"
+      },
+      "entperiod": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/RIGI1.SSTG.exceed.90day.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/RIGI1.QINE.exceed.90day.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/RIGI1.volume.exceed.90day.png"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/RIGI1.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/rigi1_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/rigi1_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "http://waterdata.usgs.gov/id/nwis/rt"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "13316500",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=13316500"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued routinely year-round.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "7",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "no_flooding"
+}

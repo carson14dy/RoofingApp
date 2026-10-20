@@ -1,0 +1,1048 @@
+{
+ "slug": "snow-alternatives",
+ "title": "Snow sources beyond GHCN-Daily: SNOTEL (AWDB), SNODAS, NOHRSC snowfall analysis, CoCoRaHS",
+ "checked_on": "2026-10-19 (requests from 03:01 to 03:12 UTC; SNODAS 2025 size survey ran separately, about 03:05 to 03:08 UTC)",
+ "bottom_line": "NOHRSC publishes one season-total snowfall GeoTIFF per water year (2008-09 through 2026-27 to date). Measured files: 2,354,154 bytes for 2025-26 and 2,402,986 bytes for 2024-25, on a 0.04 degree WGS84 grid. At the Billings centre cell the two seasons read 33.85 and 50.29 (units not stated in the file; inferred to be inches). SNODAS solid precipitation (product 1025, IL01) is a daily water equivalent per 1 km cell; summing it by water year would give a per-year value everywhere, but that needs the same daily tar downloads and is model output, not snowfall. SNOTEL has 97 Montana sites (96 active) at 4,250 to 9,200 ft, so it covers mountain points only. SNODAS gives daily 1 km snow depth and SWE, but five years of daily tars come to about 19.6 GB at the 2025 average.",
+ "recommendation": "1) Snow by year at every location: NOHRSC season-total GeoTIFF per water year (0.04 degree). Legal basis: NWS public-domain terms with three conditions (no ownership claim, no implied endorsement, no altered content presented as official). Store per-cell season values for the Montana box (34,916 cells; about 0.14 MB raw float32 per season, about 2.46 MB JSON for five seasons, estimate). Five water years is about 12 MB of downloads (two seasons measured, three estimated at the measured size). Caveat: a 4 km analysis, not a point measurement; units and accuracy must be confirmed before display. 2) Daily snow on the ground: SNODAS via NSIDC (G02158), only if the owner needs a daily history. Cite the data set (NSIDC condition). Backfill is about 19.6 GB for five years at the 2025 mean (43.3 GB if the winter sample day is used as the per-day size). The 2021-2026 window is outside the 2014-10-09 to 2019-10-10 zero-error period. Treat int16 32,767 cells as errors (high-elevation Cascades in the sample). 3) Mountain point checks: SNOTEL (AWDB). Use wildcard triplets (*:MT:SNTL). About 76 KB of JSON per station per water year for six elements. USDA terms are not verified (usda.gov and nrcs.usda.gov policy pages returned 403 and 503). 4) CoCoRaHS: do not scrape the ViewData pages (HTML report pages, no export found). CoCoRaHS data are CC BY (attribution). The NOHRSC analysis already assimilates CoCoRaHS observer reports (PDD), so a direct feed adds little for season totals.",
+ "method_notes": [
+  "Requests went through the environment HTTPS proxy with standard certificate checks. No TLS verification was disabled.",
+  "One attempt to read the proxy README and proxy status page was denied by the environment permission classifier. It was not retried and no workaround was attempted.",
+  "AWDB reset the connection 3 times in about 11 requests; retries succeeded. The v1 elements path returned 404; reference-data?referenceLists=elements worked.",
+  "NOHRSC HEAD responses had no Content-Length; sizes come from GET bodies.",
+  "SNODAS 2025 sizes come from 365 HEAD requests (scratch file snodas-2025-sizes.tsv). Two sample days were downloaded and read in memory with tarfile; nothing was extracted to disk.",
+  "Interpreter used for reading downloads: /home/user/hail-b1/venv/bin/python -I. The venv has numpy, pyshp, pyproj, pygrib, h5py; PIL and tifffile were already present in the same venv. No package was installed.",
+  "Downloads folder: /home/user/wt/research-b35/scratch-snow-alternatives/downloads (deleted at the end of the run)."
+ ],
+ "scripts_and_outputs": {
+  "request_log": "/home/user/wt/research-b35/scratch-snow-alternatives/request-log.tsv",
+  "snodas_2025_size_survey": "/home/user/wt/research-b35/scratch-snow-alternatives/snodas-2025-sizes.tsv",
+  "snodas_readers": [
+   "/home/user/wt/research-b35/scratch-snow-alternatives/snodas_read.py"
+  ],
+  "snodas_outputs": [
+   "/home/user/wt/research-b35/scratch-snow-alternatives/snodas-20250115-read.json",
+   "/home/user/wt/research-b35/scratch-snow-alternatives/snodas-20240801-read.json"
+  ],
+  "nohrsc_reader": "/home/user/wt/research-b35/scratch-snow-alternatives/nohrsc_read.py",
+  "nohrsc_outputs": [
+   "/home/user/wt/research-b35/scratch-snow-alternatives/nohrsc-season-2025-26-read.json",
+   "/home/user/wt/research-b35/scratch-snow-alternatives/nohrsc-24h-2026-10-19-read.json",
+   "/home/user/wt/research-b35/scratch-snow-alternatives/nohrsc-season-2024-25_sfav2_CONUS_2024093012_to_2025093012.tif.json",
+   "/home/user/wt/research-b35/scratch-snow-alternatives/nohrsc-season-current_sfav2_CONUS_2026093012_to_2026101812.tif.json"
+  ],
+  "snotel_scripts": [
+   "/home/user/wt/research-b35/scratch-snow-alternatives/snotel_analyze.py",
+   "/home/user/wt/research-b35/scratch-snow-alternatives/snotel_parse.py",
+   "/home/user/wt/research-b35/scratch-snow-alternatives/snotel_latest.py"
+  ],
+  "metrics_script": "/home/user/wt/research-b35/scratch-snow-alternatives/final_metrics.py",
+  "user_guide_text": "/home/user/wt/research-b35/scratch-snow-alternatives/userguide.txt",
+  "pdd_text": "/home/user/wt/research-b35/scratch-snow-alternatives/nohrsc-pdd.txt"
+ },
+ "urls_checked": [
+  {
+   "url": "https://creativecommons.org/licenses/by/3.0/",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 31824,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:05:18Z"
+  },
+  {
+   "url": "https://creativecommons.org/licenses/by/4.0/",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 31950,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:05:18Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 629,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:02:43Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/ancillary/",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 311,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:03:33Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 2813,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:02:42Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2024/08_Aug/SNODAS_20240801.tar",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 3112960,
+   "content_type": "application/octet-stream",
+   "timestamp_utc": "2026-10-19T03:08:23Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2025/01_Jan/",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 4041,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:02:42Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2025/01_Jan/SNODAS_20250115.tar",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 23746560,
+   "content_type": "application/octet-stream",
+   "timestamp_utc": "2026-10-19T03:06:02Z"
+  },
+  {
+   "url": "https://nsidc.org/about/data-use-and-copyright",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 70573,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:05:18Z"
+  },
+  {
+   "url": "https://nsidc.org/data/g02158/versions/1",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 119146,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:02:41Z"
+  },
+  {
+   "url": "https://nsidc.org/data/user-resources/help-center/how-do-i-convert-snodas-binary-files-geotiff-or-netcdf",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 74883,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:05:17Z"
+  },
+  {
+   "url": "https://nsidc.org/data/user-resources/help-center/what-if-i-need-snodas-data-real-or-neal-real-time",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 66974,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:07:18Z"
+  },
+  {
+   "url": "https://nsidc.org/sites/default/files/g02158-v001-userguide_2_1.pdf",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 756907,
+   "content_type": "application/pdf",
+   "timestamp_utc": "2026-10-19T03:06:32Z"
+  },
+  {
+   "url": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data?stationTriplets=427:MT:SNTL,407:MT:SNTL&elements=WTEQ,SNWD,PRCP,PREC,TMAX,TMIN&duration=DAILY&beginDate=2024-10-01&endDate=2025-09-30&returnFlags=false&centralTendencyType=NONE",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 152674,
+   "content_type": "application/json",
+   "timestamp_utc": "2026-10-19T03:05:59Z"
+  },
+  {
+   "url": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data?stationTriplets=427:MT:SNTL,407:MT:SNTL&elements=WTEQ,SNWD,PRCP,TMAX&duration=DAILY&beginDate=2026-09-25&endDate=2026-10-19&returnFlags=false&centralTendencyType=NONE",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 8057,
+   "content_type": "application/json",
+   "timestamp_utc": "2026-10-19T03:06:01Z"
+  },
+  {
+   "url": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/elements",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "404",
+   "bytes": 103,
+   "content_type": "application/json",
+   "timestamp_utc": "2026-10-19T03:03:02Z"
+  },
+  {
+   "url": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/reference-data?referenceLists=elements",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 28713,
+   "content_type": "application/json",
+   "timestamp_utc": "2026-10-19T03:04:15Z"
+  },
+  {
+   "url": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations?stateCds=MT&networkCds=SNTL&logicalAnd=true&returnForecastPointMetadata=false&returnReservoirMetadata=false&returnStationElements=false&activeOnly=false",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 2620501,
+   "content_type": "application/json",
+   "timestamp_utc": "2026-10-19T03:02:40Z"
+  },
+  {
+   "url": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations?stationTriplets=*:MT:SNTL&activeOnly=false",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 42928,
+   "content_type": "application/json",
+   "timestamp_utc": "2026-10-19T03:05:15Z"
+  },
+  {
+   "url": "https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 734,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:02:16Z"
+  },
+  {
+   "url": "https://wcc.sc.egov.usda.gov/awdbRestApi/v3/api-docs",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 27035,
+   "content_type": "application/json",
+   "timestamp_utc": "2026-10-19T03:02:17Z"
+  },
+  {
+   "url": "https://www.cocorahs.org/",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 22725,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:03:36Z"
+  },
+  {
+   "url": "https://www.cocorahs.org/Content.aspx?page=CoCoRaHS_Uses",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 31177,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:04:31Z"
+  },
+  {
+   "url": "https://www.cocorahs.org/Content.aspx?page=datausagepolicy",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 12765,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:04:30Z"
+  },
+  {
+   "url": "https://www.cocorahs.org/ViewData/",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 21108,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:07:14Z"
+  },
+  {
+   "url": "https://www.cocorahs.org/ViewData/ListDailyPrecipReports.aspx",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 129868,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:08:26Z"
+  },
+  {
+   "url": "https://www.cocorahs.org/ViewData/ListSnowSummaryReports.aspx",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 22725,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:08:27Z"
+  },
+  {
+   "url": "https://www.cocorahs.org/ViewData/ListSnowflakeReports.aspx",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 28355,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:10:33Z"
+  },
+  {
+   "url": "https://www.cocorahs.org/ViewData/StationPrecipSummary.aspx",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 24204,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:12:12Z"
+  },
+  {
+   "url": "https://www.cocorahs.org/ViewData/StationSnowSummary.aspx",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 24228,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:10:31Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/nsa/",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 35811,
+   "content_type": "text/html; charset=UTF-8",
+   "timestamp_utc": "2026-10-19T03:05:16Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snow_model/",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 117,
+   "content_type": "text/html; charset=UTF-8",
+   "timestamp_utc": "2026-10-19T03:03:34Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 21664,
+   "content_type": "text/html; charset=UTF-8",
+   "timestamp_utc": "2026-10-19T03:03:35Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202509/sfav2_CONUS_2024093012_to_2025093012.tif",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 2402986,
+   "content_type": "image/tiff",
+   "timestamp_utc": "2026-10-19T03:12:09Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202609/sfav2_CONUS_2025093012_to_2026093012.tif",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 2354154,
+   "content_type": "image/tiff",
+   "timestamp_utc": "2026-10-19T03:07:12Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202610/sfav2_CONUS_2026093012_to_2026101812.tif",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 542182,
+   "content_type": "image/tiff",
+   "timestamp_utc": "2026-10-19T03:12:08Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202610/sfav2_CONUS_24h_2026101900.tif",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 219274,
+   "content_type": "image/tiff",
+   "timestamp_utc": "2026-10-19T03:07:14Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202610/sfav2_CONUS_48h_2026101900.tif",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 221442,
+   "content_type": "image/tiff",
+   "timestamp_utc": "2026-10-19T03:12:11Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202610/sfav2_CONUS_72h_2026101900.tif",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 226694,
+   "content_type": "image/tiff",
+   "timestamp_utc": "2026-10-19T03:12:11Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/index.js",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 5146,
+   "content_type": "application/javascript",
+   "timestamp_utc": "2026-10-19T03:05:15Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/technology/pdf/PDD_National_Gridded_Snowfall_Analysis.pdf",
+   "method": "GET",
+   "attempts": 2,
+   "http_status": "200",
+   "bytes": 135359,
+   "content_type": "application/pdf",
+   "timestamp_utc": "2026-10-19T03:08:24Z"
+  },
+  {
+   "url": "https://www.nrcs.usda.gov/",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 244270,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:07:15Z"
+  },
+  {
+   "url": "https://www.wcc.nrcs.usda.gov/",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 268395,
+   "content_type": "text/html; charset=utf-8",
+   "timestamp_utc": "2026-10-19T03:07:16Z"
+  },
+  {
+   "url": "https://www.weather.gov/disclaimer.php",
+   "method": "GET",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 41679,
+   "content_type": "text/html; charset=UTF-8",
+   "timestamp_utc": "2026-10-19T03:04:28Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/ancillary/SNODAS_Zero_Repair_Mask.tif",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 0,
+   "content_type": "image/tiff",
+   "timestamp_utc": "2026-10-19T03:04:27Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2003/01_Jan/SNODAS_20030101.tar",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "404",
+   "bytes": 0,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:04:23Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2008/07_Jul/SNODAS_20080715.tar",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 0,
+   "content_type": "application/octet-stream",
+   "timestamp_utc": "2026-10-19T03:04:23Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2012/12_Dec/SNODAS_20121225.tar",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 0,
+   "content_type": "application/octet-stream",
+   "timestamp_utc": "2026-10-19T03:04:24Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2019/06_Jun/SNODAS_20190610.tar",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 0,
+   "content_type": "application/octet-stream",
+   "timestamp_utc": "2026-10-19T03:04:24Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2023/02_Feb/SNODAS_20230210.tar",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 0,
+   "content_type": "application/octet-stream",
+   "timestamp_utc": "2026-10-19T03:04:24Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2025/10_Oct/SNODAS_20251015.tar",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 0,
+   "content_type": "application/octet-stream",
+   "timestamp_utc": "2026-10-19T03:04:25Z"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2026/09_Sep/SNODAS_20260915.tar",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 0,
+   "content_type": "application/octet-stream",
+   "timestamp_utc": "2026-10-19T03:04:26Z"
+  },
+  {
+   "url": "https://wcc.sc.egov.usda.gov/",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 0,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:07:16Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/200909/sfav2_CONUS_2008093012_to_2009093012.tif",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "200",
+   "bytes": 0,
+   "content_type": "image/tiff",
+   "timestamp_utc": "2026-10-19T03:12:09Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202509/sfav2_CONUS_2024093018_to_2025093018.tif",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "404",
+   "bytes": 0,
+   "content_type": "text/html; charset=iso-8859-1",
+   "timestamp_utc": "2026-10-19T03:06:32Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202609/sfav2_CONUS_2025093000_to_2026093000.tif",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "404",
+   "bytes": 0,
+   "content_type": "text/html; charset=iso-8859-1",
+   "timestamp_utc": "2026-10-19T03:06:31Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202609/sfav2_CONUS_2025093018_to_2026093018.nc",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "404",
+   "bytes": 0,
+   "content_type": "text/html; charset=iso-8859-1",
+   "timestamp_utc": "2026-10-19T03:06:32Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202609/sfav2_CONUS_2025093018_to_2026093018.tif",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "404",
+   "bytes": 0,
+   "content_type": "text/html; charset=iso-8859-1",
+   "timestamp_utc": "2026-10-19T03:06:31Z"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snowfall/data/202610/sfav2_CONUS_2026093000_to_2026101900.tif",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "404",
+   "bytes": 0,
+   "content_type": "text/html; charset=iso-8859-1",
+   "timestamp_utc": "2026-10-19T03:06:30Z"
+  },
+  {
+   "url": "https://www.nrcs.usda.gov/policies-and-links",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "503",
+   "bytes": 0,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:10:35Z"
+  },
+  {
+   "url": "https://www.nrcs.usda.gov/resources/data-and-reports/snow-and-water-data",
+   "method": "HEAD",
+   "attempts": 4,
+   "http_status": "503",
+   "bytes": 0,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:12:17Z"
+  },
+  {
+   "url": "https://www.usda.gov/non-discrimination-statement",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "403",
+   "bytes": 0,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:10:34Z"
+  },
+  {
+   "url": "https://www.usda.gov/policies-and-links",
+   "method": "HEAD",
+   "attempts": 2,
+   "http_status": "403",
+   "bytes": 0,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:10:34Z"
+  },
+  {
+   "url": "https://www.usda.gov/privacy-policy",
+   "method": "HEAD",
+   "attempts": 1,
+   "http_status": "403",
+   "bytes": 0,
+   "content_type": "text/html",
+   "timestamp_utc": "2026-10-19T03:10:34Z"
+  }
+ ],
+ "facts": [
+  {
+   "claim": "AWDB REST API v1 surface",
+   "value": "OpenAPI 3.1.0 \"AWDB REST API\" v1.0 with /services/v1/stations, /reference-data, /forecasts and /data. The stations endpoint has no state parameter; an unfiltered MT request returned 7,148 stations across all states and networks.",
+   "evidence": "https://wcc.sc.egov.usda.gov/awdbRestApi/v3/api-docs HTTP 200, application/json, 27,035 B; https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations?stateCds=MT&networkCds=SNTL&... HTTP 200, 2,620,501 B (all networks in response)"
+  },
+  {
+   "claim": "Wildcard triplet selects Montana SNOTEL",
+   "value": "stationTriplets=*:MT:SNTL returns 97 records, all stateCode MT and networkCode SNTL.",
+   "evidence": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations?stationTriplets=*:MT:SNTL&activeOnly=false HTTP 200, application/json, 42,928 B"
+  },
+  {
+   "claim": "Montana SNOTEL station count and elevation",
+   "value": "97 stations; 96 active (endDate 2100-01-01) and 1 ended 2023-07-11. Elevation 4,250 to 9,200 ft, median 6,870 ft. Begin dates 1937-10-01 to 2025-07-11.",
+   "evidence": "Station file above, counted locally"
+  },
+  {
+   "claim": "Montana station counts by network (all-network response)",
+   "value": "974 Montana stations: SNOW 267 (3,250 to 9,690 ft), USGS 241 (1,850 to 7,080 ft), COOP 221 (1,930 to 7,560 ft), SNTL 97 (4,250 to 9,200 ft), MPRC 81, BOR 52, SCAN 8, SNTLT 4, OTHER 3.",
+   "evidence": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations?stateCds=MT&networkCds=SNTL&logicalAnd=true&... HTTP 200, 2,620,501 B; counted locally"
+  },
+  {
+   "claim": "SNOTEL element definitions",
+   "value": "WTEQ SNOW WATER EQUIVALENT (in; mm). SNWD SNOW DEPTH (in; cm). PREC PRECIPITATION ACCUMULATION, water-year accumulated (in; mm). PRCP PRECIPITATION INCREMENT (in; mm). TMAX, TMIN, TAVG, TOBS (degF; degC). Also RHUM, WSPD, WDIR, BATT.",
+   "evidence": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/reference-data?referenceLists=elements HTTP 200, 28,713 B"
+  },
+  {
+   "claim": "Nearest SNOTEL to Benchland (47.08 N, 110.02 W)",
+   "value": "427:MT:SNTL Crystal Lake, 46.78936 N, 109.51202 W, 6,130 ft, Fergus County, 50.3 km by great-circle distance (computed). dataTimeZone -8.0.",
+   "evidence": "Station file; computed locally"
+  },
+  {
+   "claim": "Nearest SNOTEL to the Billings address (45.7836 N, 108.5047 W)",
+   "value": "407:MT:SNTL Cole Creek, 45.19405 N, 109.34548 W, 7,910 ft, Carbon County, 92.7 km. Next: 981:MT:SNTL Burnt Mtn at 95.9 km. dataTimeZone -8.0.",
+   "evidence": "Station file; computed locally"
+  },
+  {
+   "claim": "WY2025 daily values, two stations",
+   "value": "2024-10-01 to 2025-09-30: WTEQ, SNWD, PREC, PRCP, TMAX, TMIN. 365 rows each, except 427 TMAX and TMIN with 364. WTEQ peak 17.9 in at 427 on 2025-04-17 and 19.6 in at 407 on 2025-04-30. SNWD peak 65 in at 427 on 2025-01-24 and 60 in at 407 on 2025-04-28.",
+   "evidence": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data?stationTriplets=427:MT:SNTL,407:MT:SNTL&elements=WTEQ,SNWD,PRCP,PREC,TMAX,TMIN&duration=DAILY&beginDate=2024-10-01&endDate=2025-09-30&returnFlags=false&centralTendencyType=NONE HTTP 200, 152,674 B"
+  },
+  {
+   "claim": "SNOTEL newest daily value at request time (lag)",
+   "value": "Request at 2026-10-19T03:06:01Z returned newest rows dated 2026-10-17 for WTEQ, SNWD and TMAX at both sites. PRCP at 427 ends 2026-10-14. No 2026-10-18 row yet.",
+   "evidence": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data?stationTriplets=427:MT:SNTL,407:MT:SNTL&elements=WTEQ,SNWD,PRCP,TMAX&duration=DAILY&beginDate=2026-09-25&endDate=2026-10-19 HTTP 200, 8,057 B"
+  },
+  {
+   "claim": "SNOTEL update cadence and terms on WCC/NRCS pages read",
+   "value": "No cadence, lag or public-domain sentence found on the WCC predefined-reports page or the AWDB swagger shell page.",
+   "evidence": "https://www.wcc.nrcs.usda.gov/ redirects to https://www.nrcs.usda.gov/resources/data-and-reports/snow-and-climate-monitoring-predefined-reports-and-maps HTTP 200, 268,395 B; https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html HTTP 200, 734 B"
+  },
+  {
+   "claim": "USDA policy pages were not readable",
+   "value": "usda.gov policies-and-links, non-discrimination-statement and privacy-policy: HTTP 403. nrcs.usda.gov policies-and-links and snow-and-water-data: HTTP 503 on repeated tries.",
+   "evidence": "HEAD and GET checks this run (urls_checked)"
+  },
+  {
+   "claim": "SNODAS archive URL pattern and coverage",
+   "value": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/YYYY/MM_Mon/SNODAS_YYYYMMDD.tar. User guide: masked files span 30 September 2003 to the present. 2003-01-01 returned 404 (153 B), consistent with that start.",
+   "evidence": "Directory listings HTTP 200 (masked/, masked/2025/01_Jan/); user guide https://nsidc.org/sites/default/files/g02158-v001-userguide_2_1.pdf HTTP 200, application/pdf, 756,907 B"
+  },
+  {
+   "claim": "SNODAS masked daily tar sizes (Content-Length)",
+   "value": "2025-01-15 23,746,560 B; 2012-12-25 25,180,160; 2023-02-10 24,125,440; 2024-08-01 3,112,960 (also GET); 2019-06-10 6,901,760; 2008-07-15 2,856,960; 2025-10-15 6,645,760; 2026-09-15 4,454,400.",
+   "evidence": "HEAD Content-Length for each date, all HTTP 200; the 2025-01-15 and 2024-08-01 tars were GET with HTTP 200 and matching bytes"
+  },
+  {
+   "claim": "SNODAS 2025 full year",
+   "value": "All 365 days HTTP 200. Total 3,927,019,520 B. Mean 10,758,958 B per day. Median 7,864,320. Min 1,648,640 (2025-09-09). Max 29,757,440 (2025-02-24). Monthly means (MB): Jan 21.5, Feb 22.4, Mar 16.8, Apr 12.4, May 7.5, Jun 4.6, Jul 3.8, Aug 3.1, Sep 2.8, Oct 5.1, Nov 8.7, Dec 21.2.",
+   "evidence": "scratch file snodas-2025-sizes.tsv (365 HEAD requests)"
+  },
+  {
+   "claim": "SNODAS tar members and product codes",
+   "value": "16 members per day: 8 .dat.gz data files and 8 .txt.gz headers. Products: 1025 liquid precipitation IL00 (150,685 B gz); 1025 solid precipitation IL01 (283,235 B); 1034 SWE (5,210,466 B); 1036 snow depth (7,785,012 B); 1038 snowpack temperature (2,181,107 B); 1039 blowing snow sublimation (411,460 B); 1044 melt runoff at base (1,458,708 B); 1050 sublimation from pack (6,244,102 B).",
+   "evidence": "tarfile listing of SNODAS_20250115.tar read in memory; user guide Table 1 and section 1.5"
+  },
+  {
+   "claim": "SNODAS grid, units and format",
+   "value": "6935 x 3351 int16 big-endian, 1/120 degree cells (about 1 km). Benchmark centre -124.729166666667 lon, 52.8708333333333 lat. No-data -9999. SWE and depth \"Meters / 1000\" (stored value = mm). Solid precipitation \"Kilograms per square meter / 10\" (stored value = 0.1 mm). Uncompressed grid 46,478,370 B.",
+   "evidence": "header members in SNODAS_20250115.tar; user guide section 1.2 (flat binary 16-bit signed integer big-endian)"
+  },
+  {
+   "claim": "Billings cell snow depth on 2025-01-15 (SNODAS)",
+   "value": "Row 850, col 1947 (centre 45.7875 N, 108.504167 W). The point is 0.47 cell from this row centre. Snow depth 83 mm (8.3 cm, 3.3 in); 3x3 range 74 to 89 mm. SWE 16 mm (0.6 in); 3x3 range 14 to 17 mm. Solid precipitation 0 mm for the 24 h ending 2025-01-15 06 UTC. Snowpack temperature 270 K.",
+   "evidence": "snodas-20250115-read.json (members 1036, 1034, 1025 IL01, 1038)"
+  },
+  {
+   "claim": "Benchland cell snow depth on 2025-01-15 (SNODAS)",
+   "value": "Row 695, col 1765. Snow depth 55 mm (3x3 53 to 80 mm). SWE 8 mm (3x3 7 to 12 mm).",
+   "evidence": "snodas-20250115-read.json"
+  },
+  {
+   "claim": "SNODAS summer sample (2024-08-01)",
+   "value": "Billings and Benchland cells: snow depth 0 mm, SWE 0 mm, solid precipitation 0 mm.",
+   "evidence": "snodas-20240801-read.json (tar GET HTTP 200, 3,112,960 B)"
+  },
+  {
+   "claim": "Montana box from SNODAS (approximate box)",
+   "value": "Box 44.36 to 49.00 N and 116.05 to 104.04 W (approximate; not checked against a boundary). 559 x 1443 = 806,637 cells; raw int16 1,613,274 B per product. Winter 2025-01-15, gzip level 6: SWE 676,808 B, depth 962,412 B, solid precipitation 3,164 B. Summer 2024-08-01, gzip level 6: 2,986 B, 2,986 B, 1,597 B.",
+   "evidence": "snodas-20250115-read.json and snodas-20240801-read.json (montana_crop)"
+  },
+  {
+   "claim": "SNODAS high-elevation SWE artifact",
+   "value": "SWE of 32.767 m or more is stored as 32,767 (int16 maximum). Both sample days had 8 to 9 SWE cells and 24 to 25 depth cells at 32,767, centred near 47.1 N, 121.8 W (Cascades). None in the approximate Montana box.",
+   "evidence": "user guide section 1.9.1; counts computed locally from the two tars"
+  },
+  {
+   "claim": "SNODAS zero-error period 2014-2019",
+   "value": "No-data -9999 through 2014-10-08. Erroneous 0.0 SWE and depth from 2014-10-09 through 2019-10-10 in some cells. Valid from 2019-10-11. Repair mask SNODAS_Zero_Repair_Mask.tif is 33,587,802 B (not downloaded).",
+   "evidence": "user guide Table 2; https://noaadata.apps.nsidc.org/NOAA/G02158/ancillary/SNODAS_Zero_Repair_Mask.tif HTTP 200, image/tiff, HEAD Content-Length 33,587,802"
+  },
+  {
+   "claim": "SNODAS latency",
+   "value": "NSIDC scripts run several times a day and post new files. NOHRSC can supply data sooner. The 2025-01-15 tar Last-Modified is 2025-01-15 14:00:39 GMT, about 8 h after its 06 UTC snapshot.",
+   "evidence": "https://nsidc.org/data/user-resources/help-center/what-if-i-need-snodas-data-real-or-neal-real-time HTTP 200, 66,974 B; HEAD of the 2025-01-15 tar"
+  },
+  {
+   "claim": "SNODAS five-year backfill arithmetic (365 x 5 x per-day size)",
+   "value": "Mean 10,758,958 B: 19,635,097,600 B (19.6 GB; equals 5 x the 2025 total). Winter sample 23,746,560 B: 43,337,472,000 B (43.3 GB). Summer sample 3,112,960 B: 5,681,152,000 B (5.7 GB). 2025 min day: 3,008,768,000 B. 2025 max day: 54,307,328,000 B.",
+   "evidence": "arithmetic on the 2025 survey and the two sample sizes"
+  },
+  {
+   "claim": "NOHRSC data pages and product list",
+   "value": "Snowfall page lists seasons 2026-2027 back to 2008-2009; durations 6-hour, 24-hour, 48-hour, 72-hour and season accumulation; formats NetCDF, GeoTIFF, projected NetCDF, projected GRIB2.",
+   "evidence": "https://www.nohrsc.noaa.gov/snowfall/ HTTP 200, text/html, 21,664 B; https://www.nohrsc.noaa.gov/snowfall/index.js HTTP 200, application/javascript, 5,146 B"
+  },
+  {
+   "claim": "NOHRSC file naming",
+   "value": "24-hour: data/YYYYMM/sfav2_CONUS_24h_YYYYMMDDHH.tif (48h, 72h and 6h analogous). Season: data/YYYYMM/sfav2_CONUS_<season start year>0930HH_to_YYYYMMDDHH.tif. The page script says projected season totals are not available. 00 UTC season names returned 404; 12 UTC season names returned 200.",
+   "evidence": "index.js src_path logic (lines 60 to 97 and 183); HEAD and GET checks listed in urls_checked"
+  },
+  {
+   "claim": "NOHRSC season total for water year 2025-26",
+   "value": "2,354,154 B GeoTIFF (end 2026-09-30 12 UTC). 1500 x 850 float32; 0.04 degree WGS84 geographic; upper-left corner -126.0 E, 55.0 N; LZW compression. No-data -99999 in 763,954 cells (60%). Valid max 1,110.8 at 48.78 N, 121.82 W (Mount Baker area); second 1,094.9 at 46.86 N, 121.74 W (Mount Rainier area).",
+   "evidence": "https://www.nohrsc.noaa.gov/snowfall/data/202609/sfav2_CONUS_2025093012_to_2026093012.tif HTTP 200, image/tiff, 2,354,154 B; read with PIL, tags with tifffile"
+  },
+  {
+   "claim": "NOHRSC season totals at Billings and Benchland centre cells",
+   "value": "Billings (row 230, col 437): 2025-26 33.85 (3x3 33.8 to 38.8); 2024-25 50.29 (3x3 50.3 to 57.1). Benchland (row 198, col 399): 2025-26 94.05 (3x3 88.0 to 97.7); 2024-25 87.17 (3x3 82.6 to 94.2). Units not stated in the file or in the PDD text read; inferred to be inches from magnitude and location of maxima.",
+   "evidence": "nohrsc-season-2025-26-read.json; https://www.nohrsc.noaa.gov/snowfall/data/202509/sfav2_CONUS_2024093012_to_2025093012.tif HTTP 200, image/tiff, 2,402,986 B"
+  },
+  {
+   "claim": "NOHRSC 2026-27 season to date",
+   "value": "Season file through 2026-10-18 12 UTC: 542,182 B. Billings cell 0.15; Benchland cell 18.19 (same unit caveat).",
+   "evidence": "https://www.nohrsc.noaa.gov/snowfall/data/202610/sfav2_CONUS_2026093012_to_2026101812.tif HTTP 200, image/tiff, 542,182 B"
+  },
+  {
+   "claim": "NOHRSC older season file exists",
+   "value": "2008-09 season (end 2009-09-30 12 UTC) returns HTTP 200 image/tiff. Size not reported by HEAD.",
+   "evidence": "https://www.nohrsc.noaa.gov/snowfall/data/200909/sfav2_CONUS_2008093012_to_2009093012.tif HEAD 200"
+  },
+  {
+   "claim": "NOHRSC 24h, 48h and 72h files (2026-10-19 00 UTC)",
+   "value": "24h 219,274 B; 48h 221,442 B; 72h 226,694 B. The 24h file was retrievable at 03:07 UTC on 2026-10-19, about 3 h after the 00 UTC analysis time.",
+   "evidence": "GET HTTP 200 image/tiff for each; request log 2026-10-19T03:07:14Z for the 24h file"
+  },
+  {
+   "claim": "NOHRSC Montana box on the 0.04 degree grid",
+   "value": "34,916 cells (rows 150 to 266, cols 248 to 549), all valid in 2025-26. Max 655.0, mean 86.6 (same unit caveat). Raw float32 139,664 B per season. Per-cell JSON with one-decimal values for two seasons: 983,449 B, so about 2.46 MB for five seasons (estimate).",
+   "evidence": "computed locally from the 2025-26 and 2024-25 season GeoTIFFs (final_metrics.py)"
+  },
+  {
+   "claim": "NOHRSC analysis method and inputs (PDD, updated March 2022)",
+   "value": "Season total resets each 1 October. 24-hour analyses at 00 and 12 UTC; 6-hour at 00, 06, 12 and 18 UTC; 48-hour, 72-hour and season totals aggregated from daily 12 UTC analyses. Regenerated several times a day for 5 days. Inputs: Cooperative observers, CoCoRaHS observers, NWS spotter reports; Stage IV QPE and HRRR in the background; GHCN-D used for a snowfall-to-liquid-ratio climatology.",
+   "evidence": "https://www.nohrsc.noaa.gov/technology/pdf/PDD_National_Gridded_Snowfall_Analysis.pdf HTTP 200, application/pdf, 135,359 B (text via pdftotext)"
+  },
+  {
+   "claim": "CoCoRaHS direct access pages",
+   "value": "ViewData pages are ASP.NET HTML report pages. No export, CSV or Excel control was found on ListDailyPrecipReports (129,868 B), StationSnowSummary (24,228 B) or ListSnowflakeReports (28,355 B). The ViewData landing page (21,108 B) says Water Year Summary Reports are \"available for download\"; that link was not located.",
+   "evidence": "https://www.cocorahs.org/ViewData/ pages HTTP 200 (urls_checked)"
+  },
+  {
+   "claim": "CoCoRaHS license statements disagree on one page",
+   "value": "Policy body: all CoCoRaHS content and data are released under CC BY 3.0. Footer of the same page: all content on the CoCoRaHS website is released under CC BY 4.0.",
+   "evidence": "https://www.cocorahs.org/Content.aspx?page=datausagepolicy HTTP 200, 12,765 B"
+  },
+  {
+   "claim": "GHCN-D US1 overlap for CoCoRaHS",
+   "value": "Not checked in this run (covered by the GHCN-Daily worker).",
+   "evidence": "n/a"
+  },
+  {
+   "claim": "SNODAS solid precipitation as a water-year sum (not measured)",
+   "value": "Product 1025 IL01 is a 24-hour water-equivalent total (kg/m2 = mm; stored value / 10) per 1 km cell, 06 UTC to 06 UTC. It could be summed by water year, but each day needs the full masked tar. Sample 2025-01-15 Billings cell: 0 mm.",
+   "evidence": "snodas-20250115-read.json (SOLIDPRECIP_1025_IL01); user guide Table 1 (driving variable)"
+  }
+ ],
+ "terms": [
+  {
+   "source": "NWS disclaimer (NOHRSC pages link to it as \"Disclaimer\")",
+   "url": "https://www.weather.gov/disclaimer (fetched via https://www.weather.gov/disclaimer.php, 1 redirect; HTTP 200, 41,679 B)",
+   "quote": "The information on National Weather Service (NWS) Web pages are in the public domain, unless specifically noted otherwise, and may be used without charge for any lawful purpose so long as you do not: 1) claim it is your own (e.g., by claiming copyright for NWS information -- see below), 2) use it in a manner that implies an endorsement or affiliation with NOAA/NWS, or 3) modify its content and then present it as official government material.",
+   "reading": "Public domain with three conditions. Applies to NOHRSC NWS web products and their downloads as linked from the page footer."
+  },
+  {
+   "source": "NWS disclaimer, second statement",
+   "url": "https://www.weather.gov/disclaimer (same page)",
+   "quote": "The information on National Weather Service Web servers and Web sites is in the public domain, unless specifically annotated otherwise, and may be used freely by the public. Before using information obtained from this server special attention should be given to the date & time of the data and products being displayed. This information shall not be modified in content and then presented as official government material.",
+   "reading": "Show the date and time of the data. Do not present modified content as official."
+  },
+  {
+   "source": "NSIDC G02158 landing page (SNODAS)",
+   "url": "https://nsidc.org/data/g02158/versions/1 (HTTP 200, 119,146 B)",
+   "quote": "As a condition of using these data, you must cite the use of this data set. Such a practice gives credit to data set producers and advances principles of transparency and reproducibility.",
+   "reading": "Citation is a stated condition of use for SNODAS obtained from NSIDC. No other use restriction was found on the page. Citation text (verbatim): National Operational Hydrologic Remote Sensing Center. (2004). Snow Data Assimilation System (SNODAS) Data Products at NSIDC . (G02158, Version 1). [Data Set]. Boulder, Colorado USA. National Snow and Ice Data Center. https://doi.org/10.7265/N5TB14TC ."
+  },
+  {
+   "source": "NSIDC data use and copyright page",
+   "url": "https://nsidc.org/about/data-use-and-copyright (HTTP 200, 70,573 B)",
+   "quote": "You may download and use photographs, imagery, or text from our web site, unless limitations for its use are specifically stated. Please credit the National Snow and Ice Data Center as described below.",
+   "reading": "Covers site photographs, imagery and text. The SNODAS data-set condition is the G02158 landing text above."
+  },
+  {
+   "source": "CoCoRaHS data usage policy (data statement)",
+   "url": "https://www.cocorahs.org/Content.aspx?page=datausagepolicy (HTTP 200, 12,765 B)",
+   "quote": "The data gathered by volunteer observers through the CoCoRaHS network is freely available to governments, academic institutions and the private sector as well as participants and the general public for the purposes of promoting learning, enhancing scientific knowledge and protecting life and property.",
+   "reading": "Free availability for listed uses; the license terms that follow apply."
+  },
+  {
+   "source": "CoCoRaHS data usage policy (attribution and license)",
+   "url": "https://www.cocorahs.org/Content.aspx?page=datausagepolicy",
+   "quote": "In addition, we ask that everyone who uses CoCoRaHS data to please acknowledge its source when displaying it. Unless otherwise noted, all CoCoRaHS content and data are released under a Creative Commons Attribution 3.0 License .",
+   "reading": "Attribution is requested (\"we ask\"). The data license stated in the body is CC BY 3.0. The footer on the same page says CC BY 4.0 for website content; this is a discrepancy to resolve."
+  },
+  {
+   "source": "CoCoRaHS data usage policy (disclaimer)",
+   "url": "https://www.cocorahs.org/Content.aspx?page=datausagepolicy",
+   "quote": "Disclaimer: The data are provided \"as is\", and in no event shall the providers be liable for any damage or loss due to missing data or misinterpretation of its content.",
+   "reading": "No warranty; missing-data and misinterpretation caveat."
+  },
+  {
+   "source": "CoCoRaHS website footer",
+   "url": "https://www.cocorahs.org/Content.aspx?page=datausagepolicy (footer)",
+   "quote": "Unless otherwise noted, all content on the CoCoRaHS website is released under a Creative Commons Attribution 4.0 License .",
+   "reading": "See the 3.0 versus 4.0 discrepancy above."
+  },
+  {
+   "source": "Creative Commons BY 4.0 deed",
+   "url": "https://creativecommons.org/licenses/by/4.0/ (HTTP 200, 31,950 B)",
+   "quote": "copy and redistribute the material in any medium or format for any purpose, even commercially. ... You must give appropriate credit, provide a link to the license, and indicate if changes were made.",
+   "reading": "Commercial reuse is permitted with attribution, a license link and a note of changes."
+  },
+  {
+   "source": "Creative Commons BY 3.0 deed",
+   "url": "https://creativecommons.org/licenses/by/3.0/ (HTTP 200, 31,824 B)",
+   "quote": "copy and redistribute the material in any medium or format for any purpose, even commercially.",
+   "reading": "Same freedoms as 4.0 for the purposes checked here."
+  },
+  {
+   "source": "NOHRSC National Gridded Snowfall Analysis PDD (updated March 2022)",
+   "url": "https://www.nohrsc.noaa.gov/technology/pdf/PDD_National_Gridded_Snowfall_Analysis.pdf (HTTP 200, application/pdf, 135,359 B)",
+   "quote": "The National Gridded Snowfall Analysis is downloadable in multiple formats including stand-alone images, Geographic Information System (GIS)-compliant datasets (GRIB2, NetCDF, projected NetCDF, GeoTiff), and as an interactive web map.",
+   "reading": "Download formats. No separate license or use-restriction sentence was found in the PDD text read; the NWS disclaimer is the operative public-domain statement."
+  },
+  {
+   "source": "NOHRSC snowfall page script",
+   "url": "https://www.nohrsc.noaa.gov/snowfall/index.js (HTTP 200, 5,146 B)",
+   "quote": "In this case, projected data is not available for season totals.",
+   "reading": "Season totals exist only in the unprojected NetCDF and GeoTIFF files."
+  },
+  {
+   "source": "NSIDC SNODAS real-time help page",
+   "url": "https://nsidc.org/data/user-resources/help-center/what-if-i-need-snodas-data-real-or-neal-real-time (HTTP 200, 66,974 B)",
+   "quote": "If you need data sooner than the normal timeframe that NSIDC uploads files to our FTP site, you can contact NOHRSC , as they distribute the data for operational users.",
+   "reading": "Latency: NSIDC posts on a schedule; NOHRSC is the source for operational timing."
+  },
+  {
+   "source": "SNODAS user guide section 1.9.1 (erroneous SWE)",
+   "url": "https://nsidc.org/sites/default/files/g02158-v001-userguide_2_1.pdf (HTTP 200, 756,907 B)",
+   "quote": "Any SWE value >= 32.767 meters will thereby scale to 32,767 which is the maximum value of a two-byte signed integer.",
+   "reading": "The value 32,767 marks an overflow, not a measurement. Filter it out."
+  },
+  {
+   "source": "SNODAS user guide Table 2 (zero-error period)",
+   "url": "https://nsidc.org/sites/default/files/g02158-v001-userguide_2_1.pdf",
+   "quote": "2014-10-09 through 2019-10-10 0.0 (erroneous SWE/depth data value)",
+   "reading": "Affects 2014 to 2019 only. The 2021-2026 window is outside it."
+  },
+  {
+   "source": "AWDB / WCC terms",
+   "url": "https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html; https://www.nrcs.usda.gov/resources/data-and-reports/snow-and-climate-monitoring-predefined-reports-and-maps",
+   "quote": "NOT FOUND in pages read",
+   "reading": "unverified. USDA policy pages returned 403 (usda.gov) and 503 (nrcs.usda.gov). The USDA public-domain statement the owner asked about has not been retrieved live."
+  }
+ ],
+ "design_options": [
+  {
+   "option": "A. NOHRSC season-total GeoTIFF per water year (snow by year at every location)",
+   "what_it_gives": "Season snowfall total per 0.04 degree cell per water year; resets 1 October; 2008-09 to 2026-27 (to date).",
+   "bytes": "2,354,154 B (2025-26) and 2,402,986 B (2024-25) measured; 542,182 B (2026-27 to 2026-10-18 12 UTC). Five water years about 12 MB (estimate). Montana box per season raw 139,664 B.",
+   "legal_basis": "NWS public domain with three conditions (weather.gov disclaimer).",
+   "caveats": "Analysis that blends observations with background fields; a 4 km cell, not a point measurement. Units not stated in the file (inches inferred). No accuracy statement found in the PDD text read."
+  },
+  {
+   "option": "B. SNOTEL point checks at mountain sites (AWDB REST)",
+   "what_it_gives": "Daily WTEQ, SNWD, PREC, PRCP, TMAX, TMIN at 96 active Montana sites (4,250 to 9,200 ft).",
+   "bytes": "About 76 KB JSON per station per water year for six elements (152,674 B measured for two stations). All 96 active sites about 7.3 MB JSON per water year (estimate).",
+   "legal_basis": "Not verified. No USDA or AWDB terms sentence retrieved; policy pages blocked.",
+   "caveats": "Mountain sites only; not town locations. Lag of about two days at request time. dataTimeZone reported as -8.0 for both sample sites."
+  },
+  {
+   "option": "C. SNODAS daily snow depth and SWE at 1 km (NSIDC G02158)",
+   "what_it_gives": "Daily modelled snow depth, SWE, solid precipitation (24 h), snowpack temperature, from 30 September 2003. Product 1025 IL01 (solid precipitation, 24 h, water equivalent) summed by water year is a model water-equivalent per 1 km cell (not a snowfall depth).",
+   "bytes": "Daily masked tar 1.6 MB to 29.8 MB (2025 mean 10.8 MB). Five-year backfill about 19.6 GB (mean), 43.3 GB (winter sample), 5.7 GB (summer sample). Montana box per winter day about 1.6 MB gzip (SWE plus depth); summer about 6 KB.",
+   "legal_basis": "NOAA/NOHRSC data distributed by NSIDC; citation is a stated condition (G02158 landing page).",
+   "caveats": "Model output, not observations. 32,767 overflow cells at high elevation. 2014-10-09 to 2019-10-10 zero errors (outside the 2021-2026 window). Not a snow-by-year total."
+  },
+  {
+   "option": "D. CoCoRaHS direct access",
+   "what_it_gives": "Volunteer precipitation and snow reports (station pages).",
+   "bytes": "Unknown. No bulk export found on the pages checked.",
+   "legal_basis": "CC BY (3.0 in the data statement; 4.0 in the footer), with a request to acknowledge the source.",
+   "caveats": "Pages are ASP.NET report pages; scraping is not a documented data path. Reports already feed the NOHRSC analysis (PDD)."
+  }
+ ],
+ "measurements": {
+  "montana_snotel_stations_active_plus_inactive": 97,
+  "montana_snotel_active": 96,
+  "montana_snotel_elev_ft_min_median_max": [
+   4250,
+   6870,
+   9200
+  ],
+  "montana_all_network_station_counts": {
+   "SNOW": 267,
+   "USGS": 241,
+   "COOP": 221,
+   "SNTL": 97,
+   "MPRC": 81,
+   "BOR": 52,
+   "SCAN": 8,
+   "SNTLT": 4,
+   "OTHER": 3
+  },
+  "snotel_wy2025_wteq_peak_in": {
+   "427:MT:SNTL": [
+    17.9,
+    "2025-04-17"
+   ],
+   "407:MT:SNTL": [
+    19.6,
+    "2025-04-30"
+   ]
+  },
+  "snotel_wy2025_snwd_peak_in": {
+   "427:MT:SNTL": [
+    65,
+    "2025-01-24"
+   ],
+   "407:MT:SNTL": [
+    60,
+    "2025-04-28"
+   ]
+  },
+  "snotel_wy2025_bytes_two_stations": 152674,
+  "snodas_2025_days_http200": 365,
+  "snodas_2025_total_bytes": 3927019520,
+  "snodas_2025_mean_bytes": 10758957.6,
+  "snodas_2025_min_bytes": 1648640,
+  "snodas_2025_max_bytes": 29757440,
+  "snodas_backfill_5y_bytes_at_mean": 19635097600,
+  "snodas_backfill_5y_bytes_at_winter_sample": 43337472000,
+  "snodas_backfill_5y_bytes_at_summer_sample": 5681152000,
+  "snodas_billings_depth_mm_2025_01_15": 83,
+  "snodas_billings_swe_mm_2025_01_15": 16,
+  "snodas_benchland_depth_mm_2025_01_15": 55,
+  "snodas_montana_box_winter_gzip6_bytes": {
+   "SWE": 676808,
+   "depth": 962412,
+   "solid_precip": 3164
+  },
+  "snodas_montana_box_summer_gzip6_bytes": {
+   "SWE": 2986,
+   "depth": 2986,
+   "solid_precip": 1597
+  },
+  "nohrsc_season_bytes": {
+   "2025-26": 2354154,
+   "2024-25": 2402986,
+   "2026-27_to_2026-10-18_12UTC": 542182
+  },
+  "nohrsc_billings_center_value": {
+   "2025-26": 33.85,
+   "2024-25": 50.29,
+   "2026-27_to_date": 0.154
+  },
+  "nohrsc_benchland_center_value": {
+   "2025-26": 94.05,
+   "2024-25": 87.17,
+   "2026-27_to_date": 18.193
+  },
+  "nohrsc_grid": {
+   "cols": 1500,
+   "rows": 850,
+   "cell_deg": 0.04,
+   "dtype": "float32",
+   "nodata": -99999,
+   "upper_left": [
+    -126.0,
+    55.0
+   ]
+  },
+  "nohrsc_montana_box_cells": 34916,
+  "nohrsc_montana_box_raw_bytes_per_season": 139664,
+  "nohrsc_montana_json_bytes_5_seasons_estimate": 2458622,
+  "nohrsc_24h_bytes": 219274,
+  "nohrsc_48h_bytes": 221442,
+  "nohrsc_72h_bytes": 226694,
+  "download_body_bytes_logged_get_200": 37936541,
+  "download_body_bytes_all_get_attempts": 37936644,
+  "downloads_folder_deleted_after_record": true
+ },
+ "open_questions": [
+  "NOHRSC GeoTIFF units are not printed in the file or the PDD text read. Inches are inferred from magnitude and location of maxima. Confirm with NOHRSC (contact in the PDD) or the interactive map legend before any display.",
+  "NOHRSC accuracy for points away from observers is not stated in the PDD text read. Treat it as an analysis until an accuracy statement is found.",
+  "NOHRSC season-file names with 00 UTC end times returned 404 and 12 UTC end times returned 200 (three tests), consistent with the PDD (season totals aggregate daily 12 UTC analyses). Not tested: intermediate regenerations within the 5-day window.",
+  "USDA public-domain statement not retrieved (usda.gov policy pages 403; nrcs.usda.gov 503). Needed before SNOTEL data are published.",
+  "SNOTEL update cadence and day boundary not documented on pages read. Observed lag only. dataTimeZone -8.0 is the station-list value; the Montana local-time convention was not verified.",
+  "CoCoRaHS license discrepancy (CC BY 3.0 in the data statement; CC BY 4.0 in the footer of the same page) needs owner or CoCoRaHS confirmation.",
+  "CoCoRaHS Water Year Summary download link not located (ViewData landing says it is available for download). Format and terms not checked.",
+  "GHCN-D US1 overlap for CoCoRaHS not checked here.",
+  "Montana box coordinates are approximate and not clipped to the state boundary; Montana box numbers include neighbouring states.",
+  "Snow by year at the town level needs a point or cell rule (which NOHRSC cell serves an address). Not tested here.",
+  "SNODAS daily cadence beyond one sample per year (2025) and the per-day size for 2021 to 2024 were not measured; the backfill numbers use 2025 as the proxy.",
+  "Five-year NOHRSC total (about 12 MB) assumes the three unmeasured seasons are close in size to the two measured.",
+  "SNODAS 1025 IL01 summed by water year would give a model water-equivalent per 1 km cell for every location. Not built or tested here; it would need the full daily tar archive (about 19.6 GB for five years)."
+ ],
+ "record_file": "/home/user/wt/research-b35/snow-alternatives.json"
+}

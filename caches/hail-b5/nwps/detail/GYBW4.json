@@ -1,0 +1,402 @@
+{
+  "lid": "GYBW4",
+  "usgsId": "",
+  "reachId": "12804398",
+  "name": "Bighorn River at Greybull",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "RIW",
+    "name": "Riverton"
+  },
+  "state": {
+    "abbreviation": "WY",
+    "name": "Wyoming"
+  },
+  "county": "Big Horn",
+  "timeZone": "MST7MDT",
+  "latitude": 44.48868,
+  "longitude": -108.04698,
+  "pedts": {
+    "observed": "HGIRZ",
+    "forecast": "HGIFF"
+  },
+  "status": {
+    "observed": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "obs_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": 95,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": 93.5,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 92,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 90,
+        "flow": -9999
+      }
+    },
+    "lro": {
+      "minorCS": "< 0.05",
+      "moderateCS": "< 0.05",
+      "majorCS": "< 0.05",
+      "producedTime": "2026-09-23T22:05:04Z",
+      "interval": "OND"
+    },
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2014-03-09T12:00:00Z",
+          "stage": 93.5,
+          "flow": -9999,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-02-22T16:00:00Z",
+          "stage": 91.9,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1991-06-08T00:00:00Z",
+          "stage": 91.1,
+          "flow": 17000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-11T06:30:00Z",
+          "stage": 90.5,
+          "flow": 14000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-17T00:00:00Z",
+          "stage": 90.15,
+          "flow": 13200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-03-10T16:00:00Z",
+          "stage": 89.06,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-05-12T10:00:00Z",
+          "stage": 89,
+          "flow": 10000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-06-02T08:00:00Z",
+          "stage": 87.65,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-05-24T00:00:00Z",
+          "stage": 87.65,
+          "flow": 6000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1990-06-12T00:00:00Z",
+          "stage": 85.6,
+          "flow": 4500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-25T03:00:00Z",
+          "stage": 85.5,
+          "flow": 4300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1990-06-18T00:00:00Z",
+          "stage": 85.4,
+          "flow": 4100,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2018-06-02T08:00:00Z",
+          "stage": 87.65,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-03-10T16:00:00Z",
+          "stage": 89.06,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-02-22T16:00:00Z",
+          "stage": 91.9,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-03-09T12:00:00Z",
+          "stage": 93.5,
+          "flow": -9999,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-11T06:30:00Z",
+          "stage": 90.5,
+          "flow": 14000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-17T00:00:00Z",
+          "stage": 90.15,
+          "flow": 13200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-05-24T00:00:00Z",
+          "stage": 87.65,
+          "flow": 6000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-25T03:00:00Z",
+          "stage": 85.5,
+          "flow": 4300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-05-12T10:00:00Z",
+          "stage": 89,
+          "flow": 10000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1991-06-08T00:00:00Z",
+          "stage": 91.1,
+          "flow": 17000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1990-06-18T00:00:00Z",
+          "stage": 85.4,
+          "flow": 4100,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1990-06-12T00:00:00Z",
+          "stage": 85.6,
+          "flow": 4500,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 95,
+        "statement": "Levee around Greybull will be overtopped causing widespread flooding."
+      },
+      {
+        "stage": 92,
+        "statement": "Flood stage. Low lying flooding intensifies and becomes more widespread along southern areas of Greybull. Levee may be in danger of failing in many area with prolonged high flows. Corresponds to \"7\" reference point measured at staff gage under Highway 14 Bridge."
+      },
+      {
+        "stage": 91.1,
+        "statement": "Record high stage (6/8/1991). Estimated flow: 20,000 - 22,000 cfs."
+      },
+      {
+        "stage": 91,
+        "statement": "Water may begin to surge over low spots along the levee near the southern end of Greybull. Flooding expected along areas behind levee near southern areas of Greybull. Water will begin to surge against the rest of the levee throughout the town. Corresponds to \"6\" reference point measured at staff gage under Highway 14 Bridge."
+      },
+      {
+        "stage": 90,
+        "statement": "Bankfull stage. Constant monitoring of levee is needed. Water begins to surge against base of levee near the south end of Greybull. Corresponds to \"d\" reference point measured at base of dike under Highway 14 Bridge."
+      },
+      {
+        "stage": 80,
+        "statement": "Baseflow stage of the river (3880' elevation above sea level)."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/GYBW4.SSTG.prob.weekint.gif",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/GYBW4.QINE.prob.weekint.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/GYBW4.volume.prob.weekint.gif"
+      },
+      "entperiod": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/GYBW4.SSTG.exceed.90day.gif",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/GYBW4.QINE.exceed.90day.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/GYBW4.volume.exceed.90day.gif"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/GYBW4.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/gybw4_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/gybw4_record.png"
+    },
+    "photos": [
+      {
+        "id": "13441693055466803694",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.48868,
+            -108.04698
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/gybw4/13441693055466803694.jpeg",
+          "caption": "Looking Upstream---Moderate Flow"
+        }
+      },
+      {
+        "id": "13448039294848405998",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.48868,
+            -108.04698
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/gybw4/13448039294848405998.jpeg",
+          "caption": "Looking Downstream---Moderate Flow"
+        }
+      },
+      {
+        "id": "4733264078162104814",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.48868,
+            -108.04698
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/gybw4/4733264078162104814.jpeg",
+          "caption": "Looking Downstream---High flows due to ice jam---late February 2017"
+        }
+      },
+      {
+        "id": "4740630578434937326",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.48868,
+            -108.04698
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/gybw4/4740630578434937326.jpeg",
+          "caption": "Looking Upstream---High flows due to ice jam---late February 2017"
+        }
+      }
+    ]
+  },
+  "dataAttribution": [],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Stage measured manually and reported by river observer. No automated gauge on-site.",
+      "effective": "0101",
+      "expiration": "1231"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "BHBW4",
+  "downstreamLid": "LVEW4",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued as needed during times of high water, but are not routinely available.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "3",
+  "ObservedFloodCategory": "obs_not_current",
+  "ForecastFloodCategory": "fcst_not_current"
+}

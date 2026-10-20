@@ -1,0 +1,350 @@
+{
+  "lid": "TCKW4",
+  "usgsId": "06036940",
+  "reachId": "",
+  "name": "Tantalus Creek at Norris Junction",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "RIW",
+    "name": "Riverton"
+  },
+  "state": {
+    "abbreviation": "WY",
+    "name": "Wyoming"
+  },
+  "county": "Park",
+  "timeZone": "MST7MDT",
+  "latitude": 44.7328,
+  "longitude": -110.7133,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": 1.53,
+      "primaryUnit": "ft",
+      "secondary": 0.0043,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T06:15:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 3,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2014-08-30T00:00:00Z",
+          "stage": 2.73,
+          "flow": 25,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2004-07-03T00:00:00Z",
+          "stage": 2.6,
+          "flow": 22,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2007-07-25T00:00:00Z",
+          "stage": 2.48,
+          "flow": 20,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-09T00:00:00Z",
+          "stage": 2.4,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-10-24T00:00:00Z",
+          "stage": 2.4,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-07-10T00:00:00Z",
+          "stage": 2.39,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2009-10-19T00:00:00Z",
+          "stage": 2.39,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-07-08T00:00:00Z",
+          "stage": 2.37,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-09-30T00:00:00Z",
+          "stage": 2.37,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-09-20T00:00:00Z",
+          "stage": 2.3,
+          "flow": 16,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-08-26T00:00:00Z",
+          "stage": 2.27,
+          "flow": 16,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2009-05-14T00:00:00Z",
+          "stage": 2.22,
+          "flow": 15,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-06-22T22:15:00Z",
+          "stage": 2.15,
+          "flow": 15,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-06-01T14:15:00Z",
+          "stage": 2.15,
+          "flow": 14,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-07T21:00:00Z",
+          "stage": 2.06,
+          "flow": 12,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2015-07-08T00:00:00Z",
+          "stage": 2.37,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-08-30T00:00:00Z",
+          "stage": 2.73,
+          "flow": 25,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-09-30T00:00:00Z",
+          "stage": 2.37,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-09T00:00:00Z",
+          "stage": 2.4,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-10-24T00:00:00Z",
+          "stage": 2.4,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2009-10-19T00:00:00Z",
+          "stage": 2.39,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2009-05-14T00:00:00Z",
+          "stage": 2.22,
+          "flow": 15,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-09-20T00:00:00Z",
+          "stage": 2.3,
+          "flow": 16,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2007-07-25T00:00:00Z",
+          "stage": 2.48,
+          "flow": 20,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-08-26T00:00:00Z",
+          "stage": 2.27,
+          "flow": 16,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-07T21:00:00Z",
+          "stage": 2.06,
+          "flow": 12,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-07-10T00:00:00Z",
+          "stage": 2.39,
+          "flow": 18,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-06-22T22:15:00Z",
+          "stage": 2.15,
+          "flow": 15,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-06-01T14:15:00Z",
+          "stage": 2.15,
+          "flow": 14,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2004-07-03T00:00:00Z",
+          "stage": 2.6,
+          "flow": 22,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/tckw4_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/tckw4_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "USGS",
+      "text": "06036940",
+      "title": "Data courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/monitoring-location/06036940/"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

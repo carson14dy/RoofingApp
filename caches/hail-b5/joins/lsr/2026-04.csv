@@ -1,0 +1,586 @@
+VALID,VALID2,LAT,LON,MAG,WFO,TYPECODE,TYPETEXT,CITY,COUNTY,STATE,SOURCE,REMARK,UGC,UGCNAME,QUALIFIER
+202604010600,2026/04/01 06:00,45.81,-108.55,1.2,BYZ,S,SNOW,1 NNW Billings,Yellowstone,MT,ASOS,Billings Airport.,MTC111,Yellowstone,M
+202604011200,2026/04/01 12:00,45.67,-109.47,3.0,BYZ,S,SNOW,4 ESE Reed Point,Stillwater,MT,Cocorahs,Cocorahs station MT-SW-1 Reed Point 5 SE.,MTC095,Stillwater,M
+202604011200,2026/04/01 12:00,45.67,-109.47,5.1,BYZ,S,SNOW,4 ESE Reed Point,Stillwater,MT,Cocorahs,Cocorahs station MT-SW-1 Reed Point 5 SE.,MTC095,Stillwater,M
+202604011300,2026/04/01 13:00,46.17,-109.77,1.0,BYZ,S,SNOW,10 ENE Melville,Sweet Grass,MT,Cocorahs,Cocorahs station MT-SG-9 Melville 10.1 ENE.,MTC097,Sweet Grass,M
+202604011300,2026/04/01 13:00,46.53,-109.34,1.0,BYZ,S,SNOW,9 NE Hedgesville,Golden Valley,MT,CO-OP Observer,CO-OP Observer station RYGM8 9.4 NE Hedgesville.,MTC037,Golden Valley,M
+202604011300,2026/04/01 13:00,45.62,-109.10,1.3,BYZ,S,SNOW,7 E Columbus,Stillwater,MT,Cocorahs,Cocorahs station MT-SW-2 Columbus 7.2 E.,MTC095,Stillwater,M
+202604011300,2026/04/01 13:00,45.50,-109.01,2.0,BYZ,S,SNOW,2 NW Joliet,Carbon,MT,Cocorahs,Cocorahs station MT-CB-13 Joliet 2.2 WNW.,MTC009,Carbon,M
+202604011300,2026/04/01 13:00,45.64,-110.43,6.0,BYZ,S,SNOW,7 ESE Livingston,Park,MT,Cocorahs,Cocorahs station MT-PK-7 Livingston 6.6 ESE.,MTC067,Park,M
+202604011400,2026/04/01 14:00,45.25,-108.96,1.0,BYZ,S,SNOW,3 SW East Bridger,Carbon,MT,Trained Spotter,,MTC009,Carbon,E
+202604011400,2026/04/01 14:00,45.74,-110.23,2.0,BYZ,S,SNOW,Springdale,Park,MT,CO-OP Observer,CO-OP Observer station SPDM8 Springdale.,MTC067,Park,M
+202604011400,2026/04/01 14:00,45.66,-110.58,3.7,BYZ,S,SNOW,1 WSW Livingston,Park,MT,Cocorahs,Cocorahs station MT-PK-14 Livingston 0.9 WSW.,MTC067,Park,M
+202604011500,2026/04/01 15:00,45.64,-109.27,3.9,BYZ,S,SNOW,1 WNW Columbus,Stillwater,MT,CO-OP Observer,CO-OP Observer station COSM8 Columbus.,MTC095,Stillwater,M
+202604012244,2026/04/01 22:44,46.55,-114.06,0.7,MSO,H,HAIL,3 NNE Stevensville,Ravalli,MT,NWS Employee,Wind gusts estimated at 40 mph.,MTC081,Ravalli,E
+202604012308,2026/04/01 23:08,46.92,-114.09,44.0,MSO,G,TSTM WND GST,6 NW Missoula,Missoula,MT,Official NWS Obs,Wind direction was 230 degrees.,MTC063,Missoula,M
+202604021445,2026/04/02 14:45,46.84,-110.70,5.0,TFX,S,SNOW,7 SSE Neihart,Meagher,MT,Public,Overnight snowfall via ski hill.,MTC059,Meagher,M
+202604021815,2026/04/02 18:15,45.53,-110.61,52.0,BYZ,N,NON-TSTM WND GST,3 NW Pine Creek,Park,MT,Mesonet,Mesonet station MTM84 Brisbin.,MTC067,Park,M
+202604021815,2026/04/02 18:15,45.50,-110.57,55.0,BYZ,N,NON-TSTM WND GST,Pine Creek,Park,MT,Mesonet,Mesonet station DW8455 Livingston.,MTC067,Park,M
+202604021939,2026/04/02 19:39,47.33,-111.48,0.68,TFX,R,RAIN,7 SSE Ulm,Cascade,MT,Trained Spotter,Snow is beginning to mix in as of early afternoon. Precipitation report as of 18:00 last night.,MTC013,Cascade,M
+202604022116,2026/04/02 21:16,45.30,-111.75,50.0,TFX,N,NON-TSTM WND GST,3 SSW Ennis,Madison,MT,Mesonet,Convective wind gust with rain and snow showers moving through. Mesonet station ENNM8 Ennis RAWS.,MTC057,Madison,M
+202604022130,2026/04/02 21:30,45.22,-112.63,1.0,TFX,S,SNOW,Dillon,Beaverhead,MT,Trained Spotter,1 inch of new snowfall in the past hour.,MTC001,Beaverhead,M
+202604022200,2026/04/02 22:00,45.22,-112.63,2.0,TFX,S,SNOW,Dillon,Beaverhead,MT,Trained Spotter,Snowfall up to 2 inches in the past hour and half.,MTC001,Beaverhead,M
+202604022245,2026/04/02 22:45,45.22,-112.63,3.0,TFX,S,SNOW,Dillon,Beaverhead,MT,Trained Spotter,New snowfall up to 3 inches in the past 2 hours.,MTC001,Beaverhead,M
+202604022300,2026/04/02 23:00,47.46,-111.39,2.5,TFX,S,SNOW,5 WSW Great Falls,Cascade,MT,Official NWS Obs,2.5 inches of new snow since 2 PM.,MTC013,Cascade,M
+202604030100,2026/04/03 01:00,47.33,-111.48,3.5,TFX,S,SNOW,7 SSE Ulm,Cascade,MT,Trained Spotter,3.5 inches of heavy wet snow since 1 PM today. Total liquid of 1.31 inches since yesterday evening.,MTC013,Cascade,M
+202604030200,2026/04/03 02:00,45.76,-111.04,3.0,TFX,S,SNOW,6 N Bozeman,Gallatin,MT,Trained Spotter,3 inches of new snow this evening.,MTC031,Gallatin,M
+202604031153,2026/04/03 11:53,47.47,-111.38,1.08,TFX,R,RAIN,5 WSW Great Falls,Cascade,MT,ASOS,ASOS station KGTF Great Falls Airport.,MTC013,Cascade,M
+202604031200,2026/04/03 12:00,45.79,-111.16,2.8,TFX,S,SNOW,1 NE Belgrade,Gallatin,MT,Other Federal,Corrects previous snow report from 1 NE Belgrade. Bozeman Airport measured 2.8 inches of snow.,MTC031,Gallatin,M
+202604031200,2026/04/03 12:00,47.46,-111.39,7.7,TFX,S,SNOW,5 WSW Great Falls,Cascade,MT,Official NWS Obs,NWS Great Falls measured 7.7 inches of snow.,MTC013,Cascade,M
+202604031200,2026/04/03 12:00,47.33,-111.48,11.5,TFX,S,SNOW,7 SSE Ulm,Cascade,MT,Trained Spotter,Trained spotter measured 11.5 inches of snowfall. Total liquid equivalent moisture from 7 PM to 6 PM this morning was 0.36 inches. Two-day liquid (April 1st night to April 3 morning) amounts were 1.67 inches.,MTC013,Cascade,M
+202604031238,2026/04/03 12:38,46.52,-111.91,2.5,TFX,S,SNOW,1 SE Montana City,Jefferson,MT,Trained Spotter,Spotter measured 2.5 inches of snow.,MTC043,Jefferson,M
+202604031300,2026/04/03 13:00,46.00,-110.66,1.0,BYZ,S,SNOW,Wilsall,Park,MT,Cocorahs,Cocorahs station MT-PK-5 Wilsall 0.3 NW.,MTC067,Park,M
+202604031300,2026/04/03 13:00,45.59,-106.12,1.4,BYZ,S,SNOW,10 ESE Ashland,Powder River,MT,Cocorahs,Cocorahs station MT-PR-6 Ashland 9.7 ESE.,MTC075,Powder River,M
+202604031300,2026/04/03 13:00,46.39,-104.52,2.6,BYZ,S,SNOW,2 S Plevna,Fallon,MT,Cocorahs,Cocorahs station MT-FL-7 Plevna 1.6 S.,MTC025,Fallon,M
+202604031300,2026/04/03 13:00,46.54,-104.75,3.0,BYZ,S,SNOW,3 NE Ismay,Custer,MT,Cocorahs,Cocorahs station MT-CS-11 Ismay 3.4 NE.,MTC017,Custer,M
+202604031300,2026/04/03 13:00,45.64,-110.43,3.0,BYZ,S,SNOW,7 ESE Livingston,Park,MT,Cocorahs,Cocorahs station MT-PK-7 Livingston 6.6 ESE.,MTC067,Park,M
+202604031302,2026/04/03 13:02,48.06,-110.62,1.8,TFX,S,SNOW,10 NNW Loma,Chouteau,MT,Trained Spotter,Trained spotter measured 1.8 inches of snow with a total liquid precipitation of 0.34 inches.,MTC015,Chouteau,M
+202604031303,2026/04/03 13:03,45.16,-109.29,1.5,BYZ,S,SNOW,3 SW Red Lodge,Carbon,MT,Cocorahs,Cocorahs station MT-CB-5 Red Lodge 3.0 SW.,MTC009,Carbon,M
+202604031325,2026/04/03 13:25,47.28,-111.43,8.0,TFX,S,SNOW,11 SSE Ulm,Cascade,MT,Trained Spotter,A trained spotter measured 8 inches of snow with a total liquid amount of 0.8 inches.,MTC013,Cascade,E
+202604031332,2026/04/03 13:32,45.75,-111.31,4.5,TFX,S,SNOW,Church Hill,Gallatin,MT,Trained Spotter,Trained spotter measured 4.5 inches of snow.,MTC031,Gallatin,M
+202604031348,2026/04/03 13:48,45.13,-108.30,55.0,BYZ,N,NON-TSTM WND GST,18 ENE Warren,Carbon,MT,Mesonet,Mesonet station BRTM8 Wild Horse.,MTC009,Carbon,M
+202604031400,2026/04/03 14:00,45.59,-111.20,5.0,TFX,S,SNOW,Gallatin Gateway,Gallatin,MT,Trained Spotter,Trained Spotter measured 5 inches of snow.,MTC031,Gallatin,M
+202604031400,2026/04/03 14:00,45.63,-111.04,9.0,TFX,S,SNOW,3 S Bozeman,Gallatin,MT,Public,Public reported 9 inches of snow 3 miles south of Bozeman.,MTC031,Gallatin,E
+202604031400,2026/04/03 14:00,45.03,-107.32,55.0,BYZ,N,NON-TSTM WND GST,3 SE Aberdeen,Big Horn,MT,Mesonet,Mesonet station MTABR 2.5 SE Aberdeen (MT DOT).,MTC003,Big Horn,M
+202604031409,2026/04/03 14:09,47.85,-111.71,5.0,TFX,S,SNOW,Dutton,Teton,MT,Public,Public reported 5 inches of snow in Dutton.,MTC099,Teton,E
+202604031412,2026/04/03 14:12,47.16,-111.96,1.0,TFX,S,SNOW,6 N Craig,Cascade,MT,Public,Public reported 1 inch of wet snow 6 miles north of Craig.,MTC013,Cascade,E
+202604031426,2026/04/03 14:26,45.76,-111.04,8.0,TFX,R,RAIN,6 N Bozeman,Gallatin,MT,Trained Spotter,Spotter measured 8 inches of snow.,MTC031,Gallatin,M
+202604031426,2026/04/03 14:26,45.76,-111.04,8.0,TFX,S,SNOW,6 N Bozeman,Gallatin,MT,Trained Spotter,Corrects previous rain report from 6 N Bozeman. Spotter measured 8 inches of snow.,MTC031,Gallatin,M
+202604031427,2026/04/03 14:27,47.49,-112.39,5.0,TFX,S,SNOW,Augusta,Lewis and Clark,MT,Public,5 inches of wet snow were reported in Augusta.,MTC049,Lewis and Clark,E
+202604031443,2026/04/03 14:43,47.82,-110.67,0.8,TFX,S,SNOW,1 SW Fort Benton,Chouteau,MT,NWS Employee,A NWS Employee measured 0.8 inches of snow with a liquid amount (rain and snow) of 0.75 inches.,MTC015,Chouteau,M
+202604031445,2026/04/03 14:45,47.51,-111.81,1.5,TFX,S,SNOW,Fort  Shaw,Cascade,MT,Public,Public measured 1.5 inches of snow.,MTC013,Cascade,E
+202604031600,2026/04/03 16:00,45.30,-110.07,2.0,BYZ,S,SNOW,14 SW Limestone,Sweet Grass,MT,Other Federal,,MTC097,Sweet Grass,M
+202604031600,2026/04/03 16:00,45.27,-110.25,4.0,BYZ,S,SNOW,22 SW Limestone,Park,MT,Other Federal,SWE 0.4 SLR 10:1.,MTC067,Park,E
+202604031600,2026/04/03 16:00,46.34,-106.70,4.0,BYZ,S,SNOW,5 N Forsyth,Rosebud,MT,Trained Spotter,,MTC087,Rosebud,E
+202604031600,2026/04/03 16:00,45.22,-110.24,5.0,BYZ,S,SNOW,21 NW Cooke City,Park,MT,Other Federal,SWE 0.3 SLR 15:1.,MTC067,Park,E
+202604031600,2026/04/03 16:00,45.42,-110.09,8.0,BYZ,S,SNOW,10 WSW Limestone,Sweet Grass,MT,Other Federal,SWE 0.5 SLR 15:1.,MTC097,Sweet Grass,E
+202604031600,2026/04/03 16:00,46.11,-110.47,8.0,BYZ,S,SNOW,12 NE Wilsall,Park,MT,Other Federal,SWE 0.6.,MTC067,Park,M
+202604031600,2026/04/03 16:00,45.05,-109.94,9.0,BYZ,S,SNOW,3 NNW Cooke City,Park,MT,Other Federal,SWE 0.6 SLR 15:1.,MTC067,Park,E
+202604031600,2026/04/03 16:00,45.06,-109.94,9.0,BYZ,S,SNOW,3 NNW Cooke City,Park,MT,Other Federal,SWE 0.6 SLR 15:1.,MTC067,Park,E
+202604031600,2026/04/03 16:00,45.19,-109.35,9.0,BYZ,S,SNOW,5 W Red Lodge,Carbon,MT,Other Federal,SWE 0.6 SLR 15:1.,MTC009,Carbon,E
+202604031600,2026/04/03 16:00,45.26,-110.41,17.0,BYZ,S,SNOW,15 ESE Chico,Park,MT,Mesonet,,MTC067,Park,M
+202604031600,2026/04/03 16:00,46.09,-110.43,18.0,BYZ,S,SNOW,13 ENE Wilsall,Park,MT,Other Federal,SWE 1.2 SLR 15:1.,MTC067,Park,E
+202604032033,2026/04/03 20:33,46.60,-111.99,1.0,TFX,S,SNOW,2 ENE Helena,Lewis and Clark,MT,Trained Spotter,Helena Airport recorded 1 inch of snowfall.,MTC049,Lewis and Clark,M
+202604032038,2026/04/03 20:38,45.79,-111.16,2.8,TFX,S,SNOW,1 NE Belgrade,Gallatin,MT,ASOS,Bozeman Airport measured 2.8 inches of snow.,MTC031,Gallatin,E
+202604032046,2026/04/03 20:46,46.32,-107.08,2.0,BYZ,S,SNOW,3 NNE Sanders,Treasure,MT,Mesonet,,MTC103,Treasure,M
+202604032047,2026/04/03 20:47,46.28,-106.31,2.0,BYZ,S,SNOW,5 W Hathaway,Rosebud,MT,Mesonet,,MTC087,Rosebud,M
+202604032048,2026/04/03 20:48,46.41,-105.95,3.5,BYZ,S,SNOW,4 NNW Ulmer,Custer,MT,Mesonet,,MTC017,Custer,M
+202604032049,2026/04/03 20:49,45.96,-107.09,1.7,BYZ,S,SNOW,19 NNW Stacey,Treasure,MT,Mesonet,,MTC103,Treasure,M
+202604032049,2026/04/03 20:49,46.18,-106.71,2.4,BYZ,S,SNOW,6 SSW Forsyth,Rosebud,MT,Mesonet,,MTC087,Rosebud,M
+202604032050,2026/04/03 20:50,45.63,-108.49,1.5,BYZ,S,SNOW,11 SSE Billings,Yellowstone,MT,Mesonet,,MTC111,Yellowstone,M
+202604032050,2026/04/03 20:50,45.59,-107.44,6.1,BYZ,S,SNOW,1 SE Crow Agency,Big Horn,MT,Mesonet,,MTC003,Big Horn,M
+202604032050,2026/04/03 20:50,45.31,-107.52,12.8,BYZ,S,SNOW,7 W Lodge Grass,Big Horn,MT,Mesonet,,MTC003,Big Horn,M
+202604032051,2026/04/03 20:51,45.66,-106.49,9.1,BYZ,S,SNOW,6 ENE Lame Deer,Rosebud,MT,Mesonet,,MTC087,Rosebud,M
+202604032051,2026/04/03 20:51,45.52,-106.93,10.3,BYZ,S,SNOW,1 ESE Busby,Big Horn,MT,Mesonet,,MTC003,Big Horn,M
+202604032052,2026/04/03 20:52,45.34,-106.52,7.2,BYZ,S,SNOW,2 N Birney,Rosebud,MT,Mesonet,,MTC087,Rosebud,M
+202604032053,2026/04/03 20:53,45.57,-106.14,4.5,BYZ,S,SNOW,9 ESE Ashland,Powder River,MT,Mesonet,,MTC075,Powder River,M
+202604032053,2026/04/03 20:53,45.25,-105.98,5.9,BYZ,S,SNOW,2 NNE Sayle,Powder River,MT,Mesonet,,MTC075,Powder River,M
+202604032120,2026/04/03 21:20,45.64,-106.58,13.0,BYZ,S,SNOW,2 NE Lame Deer,Rosebud,MT,Public,,MTC087,Rosebud,E
+202604032237,2026/04/03 22:37,45.63,-106.62,13.0,BYZ,S,SNOW,1 NNW Lame Deer,Rosebud,MT,Trained Spotter,,MTC087,Rosebud,M
+202604032300,2026/04/03 23:00,45.18,-109.25,2.6,BYZ,S,SNOW,1 SSW Red Lodge,Carbon,MT,CO-OP Observer,CO-OP Observer station RELM8 0.6 S Red Lodge.,MTC009,Carbon,M
+202604032300,2026/04/03 23:00,45.63,-104.39,6.0,BYZ,S,SNOW,1 SSW Belltower,Carter,MT,CO-OP Observer,CO-OP Observer station BTWM8 0.6 SW Belltower.,MTC011,Carter,M
+202604040000,2026/04/04 00:00,45.82,-106.23,7.0,BYZ,S,SNOW,1 E Brandenberg,Rosebud,MT,CO-OP Observer,CO-OP Observer station BDBM8 0.9 E Brandenberg.,MTC087,Rosebud,M
+202604040007,2026/04/04 00:07,46.42,-104.52,4.1,BYZ,S,SNOW,Plevna,Fallon,MT,CO-OP Observer,CO-OP Observer station PLEM8 Plevna.,MTC025,Fallon,M
+202604040400,2026/04/04 04:00,45.11,-104.64,4.0,BYZ,S,SNOW,13 WNW Alzada,Carter,MT,Trained Spotter,Storm Total.,MTC011,Carter,M
+202604040800,2026/04/04 08:00,45.31,-106.68,12.0,BYZ,S,SNOW,8 W Birney,Rosebud,MT,Public,,MTC087,Rosebud,E
+202604041300,2026/04/04 13:00,45.19,-104.22,4.0,BYZ,S,SNOW,3 E Albion,Carter,MT,Public,Heavy wet snow.,MTC011,Carter,M
+202604041730,2026/04/04 17:30,45.89,-106.63,7.6,BYZ,S,SNOW,Colstrip,Rosebud,MT,Public,,MTC087,Rosebud,M
+202604071045,2026/04/07 10:45,48.45,-113.20,67.0,TFX,N,NON-TSTM WND GST,1 ENE East Glacier Park,Glacier,MT,Mesonet,Mesonet station MTBRN Two Medicine Bridge (MT DOT).,MTC035,Glacier,M
+202604071121,2026/04/07 11:21,48.36,-113.11,77.0,TFX,N,NON-TSTM WND GST,8 SE East Glacier Park,Glacier,MT,Mesonet,Mesonet station DCRM8 Deep Creek RAWS.,MTC035,Glacier,M
+202604071145,2026/04/07 11:45,48.54,-112.98,70.0,TFX,N,NON-TSTM WND GST,2 SE Browning,Glacier,MT,Mesonet,Mesonet station MTBWG Browning (MT DOT).,MTC035,Glacier,M
+202604071200,2026/04/07 12:00,48.51,-112.93,58.0,TFX,N,NON-TSTM WND GST,5 SE Browning,Glacier,MT,Mesonet,Mesonet station SHBM Browning.,MTC035,Glacier,M
+202604071200,2026/04/07 12:00,47.77,-112.60,67.0,TFX,N,NON-TSTM WND GST,20 SW Bynum,Teton,MT,Mesonet,Mesonet station SALMT Salmond Ranch.,MTC099,Teton,M
+202604071300,2026/04/07 13:00,48.76,-114.58,56.0,MSO,N,NON-TSTM WND GST,11 NE Stryker,Flathead,MT,Mesonet,Mesonet station LKMMT Link Mountain.,MTC029,Flathead,M
+202604071325,2026/04/07 13:25,48.12,-112.66,65.0,TFX,N,NON-TSTM WND GST,9 SW Dupuyer,Teton,MT,Mesonet,Mesonet station DVI01084 Dupuyer.,MTC099,Teton,M
+202604071355,2026/04/07 13:55,47.96,-112.49,78.0,TFX,N,NON-TSTM WND GST,8 W Bynum,Teton,MT,Mesonet,Bynum W Montana Mesonet reported a 78 mph wind gust.,MTC099,Teton,M
+202604071400,2026/04/07 14:00,48.15,-113.93,70.0,MSO,N,NON-TSTM WND GST,9 NE Bigfork,Flathead,MT,Mesonet,Mesonet station MAEMT Mount Aeneas.,MTC029,Flathead,M
+202604071411,2026/04/07 14:11,48.38,-114.06,40.0,MSO,N,NON-TSTM WND GST,Hungry Horse,Flathead,MT,Mesonet,Mesonet station HNYM8 Hungry Horse Raws.,MTC029,Flathead,M
+202604071415,2026/04/07 14:15,47.98,-112.61,71.0,TFX,N,NON-TSTM WND GST,14 W Bynum,Teton,MT,Mesonet,Mesonet station DELMT Dellwo (MCSCN).,MTC099,Teton,M
+202604071415,2026/04/07 14:15,48.54,-112.98,72.0,TFX,N,NON-TSTM WND GST,2 SE Browning,Glacier,MT,Mesonet,Mesonet station MTBWG Browning (MT DOT).,MTC035,Glacier,M
+202604071421,2026/04/07 14:21,48.56,-113.01,64.0,TFX,N,NON-TSTM WND GST,Browning,Glacier,MT,Mesonet,Mesonet station BGRM8 Browning RAWS.,MTC035,Glacier,M
+202604071515,2026/04/07 15:15,48.07,-112.33,77.0,TFX,N,NON-TSTM WND GST,2 NW Pendroy,Teton,MT,Mesonet,Mesonet station MTPND Pendroy (MT DOT).,MTC099,Teton,M
+202604071520,2026/04/07 15:20,48.53,-112.63,63.0,TFX,N,NON-TSTM WND GST,16 WSW Cut Bank,Glacier,MT,Mesonet,Mission Lake S Montana Mesonet reported a 63 mph wind gust.,MTC035,Glacier,E
+202604071530,2026/04/07 15:30,47.70,-112.23,74.0,TFX,N,NON-TSTM WND GST,8 SSW Choteau,Teton,MT,Mesonet,Mesonet station MTCTS Choteau South Us-287 Mp 56.0.,MTC099,Teton,M
+202604071550,2026/04/07 15:50,47.96,-112.49,55.0,TFX,A,HIGH SUST WINDS,8 W Bynum,Teton,MT,Mesonet,Bynum W Montana Mesonet averaged 55 mph sustained winds for 2 hrs ad 55 minutes ending at report time.,MTC099,Teton,M
+202604071609,2026/04/07 16:09,48.88,-114.51,56.0,MSO,N,NON-TSTM WND GST,6 WSW Trailcreek,Flathead,MT,Mesonet,Mesonet station CYFM8 Hornet Mountain.,MTC029,Flathead,M
+202604071615,2026/04/07 16:15,47.70,-112.23,51.0,TFX,A,HIGH SUST WINDS,8 SSW Choteau,Teton,MT,Mesonet,Choteau S MT DOT averaged 51 mph sustained winds for 1 hour ending at report time.,MTC099,Teton,M
+202604071635,2026/04/07 16:35,47.59,-112.36,66.0,TFX,N,NON-TSTM WND GST,7 NNE Augusta,Teton,MT,Mesonet,Augusta N Montana Mesonet reported a 66 mph Wind Gust.,MTC099,Teton,M
+202604071700,2026/04/07 17:00,47.65,-112.29,58.0,TFX,N,NON-TSTM WND GST,12 NNE Augusta,Teton,MT,Mesonet,Mesonet station HODMT Hodgkiss.,MTC099,Teton,M
+202604071724,2026/04/07 17:24,47.33,-112.58,61.0,TFX,N,NON-TSTM WND GST,14 SW Augusta,Lewis and Clark,MT,Mesonet,Upper Elk Creek - KMTAUGUS3.,MTC049,Lewis and Clark,M
+202604071730,2026/04/07 17:30,47.86,-112.22,58.0,TFX,N,NON-TSTM WND GST,4 NNW Choteau,Teton,MT,Mesonet,Mesonet station GW6907 CHOTEAU FOUR NW.,MTC099,Teton,M
+202604071730,2026/04/07 17:30,48.04,-112.20,62.0,TFX,N,NON-TSTM WND GST,5 ESE Pendroy,Teton,MT,Mesonet,Mesonet station RICMT Rice Ridge.,MTC099,Teton,M
+202604071735,2026/04/07 17:35,46.25,-114.13,43.0,MSO,N,NON-TSTM WND GST,1 E Hamilton,Ravalli,MT,AWOS,AWOS station KHRF 1 E Hamilton.,MTC081,Ravalli,M
+202604071737,2026/04/07 17:37,46.92,-114.10,48.0,MSO,N,NON-TSTM WND GST,6 WNW Missoula,Missoula,MT,ASOS,ASOS station KMSO Missoula_ MT.,MTC063,Missoula,M
+202604071745,2026/04/07 17:45,47.54,-114.10,43.0,MSO,N,NON-TSTM WND GST,1 N Ronan,Lake,MT,Mesonet,Mesonet station MTM97 Ronan.,MTC047,Lake,M
+202604071745,2026/04/07 17:45,45.27,-111.88,63.0,TFX,N,NON-TSTM WND GST,4 SE Virginia City,Madison,MT,Mesonet,Mesonet station MTM17 BLM - Virginia City.,MTC057,Madison,M
+202604071815,2026/04/07 18:15,46.52,-112.81,44.0,MSO,N,NON-TSTM WND GST,Garrison,Powell,MT,Mesonet,Mesonet station MTGAR Garrison (MT DOT).,MTC077,Powell,M
+202604071815,2026/04/07 18:15,47.02,-114.39,48.0,MSO,N,NON-TSTM WND GST,1 ENE Ninemile,Missoula,MT,Mesonet,Mesonet station MTNNM 0.9 E Ninemile (MT DOT).,MTC063,Missoula,M
+202604071815,2026/04/07 18:15,47.61,-114.62,51.0,MSO,N,NON-TSTM WND GST,2 E Camas,Sanders,MT,Mesonet,Mesonet station HOTM8 1 SW Hot Springs.,MTC089,Sanders,M
+202604071826,2026/04/07 18:26,47.47,-114.88,41.0,MSO,N,NON-TSTM WND GST,Plains,Sanders,MT,Mesonet,Mesonet station PLAM8 Plains.,MTC089,Sanders,M
+202604071830,2026/04/07 18:30,48.19,-114.14,41.0,MSO,N,NON-TSTM WND GST,Creston,Flathead,MT,Mesonet,Mesonet station MTM03 Creston (MT-MESO).,MTC029,Flathead,M
+202604071830,2026/04/07 18:30,48.37,-114.24,43.0,MSO,N,NON-TSTM WND GST,3 W Columbia Falls,Flathead,MT,Mesonet,Mesonet station MTBMN Blue Moon Us-2 Mp 133.9.,MTC029,Flathead,M
+202604071830,2026/04/07 18:30,46.45,-110.21,58.0,BYZ,N,NON-TSTM WND GST,7 WNW Twodot,Wheatland,MT,Mesonet,,MTC107,Wheatland,M
+202604071832,2026/04/07 18:32,47.02,-114.11,41.0,MSO,N,NON-TSTM WND GST,1 SW Evaro,Missoula,MT,Mesonet,Mesonet station MTEVH Evaro Hill Us-93 Mp 5.5.,MTC063,Missoula,M
+202604071835,2026/04/07 18:35,46.15,-112.87,41.0,MSO,N,NON-TSTM WND GST,4 NNW Opportunity,Deer Lodge,MT,AWOS,AWOS station K3U3 3 NW Opportunity.,MTC023,Deer Lodge,M
+202604071846,2026/04/07 18:46,47.73,-114.19,45.0,MSO,N,NON-TSTM WND GST,3 NNW Polson,Lake,MT,Mesonet,Mesonet station EW6663 Polson.,MTC047,Lake,M
+202604071855,2026/04/07 18:55,47.47,-114.90,48.0,MSO,N,NON-TSTM WND GST,1 WNW Plains,Sanders,MT,AWOS,AWOS station KS34 Plains.,MTC089,Sanders,M
+202604071859,2026/04/07 18:59,47.07,-114.40,40.0,MSO,N,NON-TSTM WND GST,4 N Ninemile,Missoula,MT,Mesonet,Mesonet station NINM8 Ninemile Raws.,MTC063,Missoula,M
+202604071859,2026/04/07 18:59,47.04,-113.99,46.0,MSO,N,NON-TSTM WND GST,5 E Evaro,Missoula,MT,Mesonet,Mesonet station PNTM8 Point 6.,MTC063,Missoula,M
+202604071900,2026/04/07 19:00,46.16,-114.17,45.0,MSO,N,NON-TSTM WND GST,2 N Charlos Heights,Ravalli,MT,Mesonet,Mesonet station MTM77 Charlo Heights Mda.,MTC081,Ravalli,M
+202604071900,2026/04/07 19:00,46.96,-113.37,47.0,MSO,N,NON-TSTM WND GST,3 S Clearwater,Missoula,MT,Mesonet,Mesonet station MTM08 2.8 S Clearwater (MT-MESO).,MTC063,Missoula,M
+202604071900,2026/04/07 19:00,46.34,-112.77,47.0,MSO,N,NON-TSTM WND GST,4 NNW Racetrack,Powell,MT,Mesonet,Mesonet station DRLM 4.0 N Racetrack (AGRIMET).,MTC077,Powell,M
+202604071900,2026/04/07 19:00,47.70,-114.51,59.0,MSO,N,NON-TSTM WND GST,6 E Lonepine,Lake,MT,Mesonet,Mesonet station MTM57 5.7 E Lonepine (MT-MESO).,MTC047,Lake,M
+202604071900,2026/04/07 19:00,48.32,-113.69,61.0,MSO,N,NON-TSTM WND GST,3 SW Pinnacle,Flathead,MT,Mesonet,Mesonet station TRWMT Tunnel Ridge Wind.,MTC029,Flathead,M
+202604071900,2026/04/07 19:00,48.26,-113.50,66.0,MSO,N,NON-TSTM WND GST,3 WSW Blacktail - Railr,Flathead,MT,Mesonet,Mesonet station SNSLP 2.9 W Blacktail - Railroad ID (GNP).,MTC029,Flathead,M
+202604071909,2026/04/07 19:09,45.93,-113.74,48.0,MSO,N,NON-TSTM WND GST,13 ENE Sula,Ravalli,MT,Mesonet,Mesonet station TEPM8 Tepee Pt.,MTC081,Ravalli,M
+202604071910,2026/04/07 19:10,47.98,-114.36,43.0,MSO,N,NON-TSTM WND GST,3 NNE Lake Mary Ronan,Flathead,MT,Mesonet,Mesonet station TT726 Blacktail.,MTC029,Flathead,M
+202604071910,2026/04/07 19:10,47.90,-113.44,58.0,MSO,N,NON-TSTM WND GST,19 E Swan Lake,Flathead,MT,Mesonet,Mesonet station TT727 Spotted Bear Lookout.,MTC029,Flathead,M
+202604071914,2026/04/07 19:14,46.56,-114.07,42.0,MSO,N,NON-TSTM WND GST,3 NNE Stevensville,Ravalli,MT,Mesonet,Mesonet station STVM8 Stevi.,MTC081,Ravalli,M
+202604071914,2026/04/07 19:14,46.42,-110.41,58.0,TFX,N,NON-TSTM WND GST,5 WSW Martinsdale,Meagher,MT,Public,IngerRanch - KMTMONTA17.,MTC059,Meagher,M
+202604071915,2026/04/07 19:15,46.32,-113.30,41.0,MSO,N,NON-TSTM WND GST,1 SSW Philipsburg,Granite,MT,Mesonet,Mesonet station PHGM8 Philipsburg.,MTC039,Granite,M
+202604071915,2026/04/07 19:15,46.70,-112.66,44.0,MSO,N,NON-TSTM WND GST,5 SSE Finn,Powell,MT,Mesonet,Mesonet station MTAVN 5.2 SE Finn (MT DOT).,MTC077,Powell,M
+202604071916,2026/04/07 19:16,45.79,-112.94,61.0,TFX,N,NON-TSTM WND GST,1 ESE Wise River,Beaverhead,MT,Mesonet,Mesonet station WRSM8 Wise River.,MTC001,Beaverhead,M
+202604071917,2026/04/07 19:17,47.47,-111.38,61.0,TFX,N,NON-TSTM WND GST,5 WSW Great Falls,Cascade,MT,ASOS,A wind gust of 61 mph was reported by the Great Falls Airport.,MTC013,Cascade,M
+202604071925,2026/04/07 19:25,46.39,-112.76,41.0,MSO,N,NON-TSTM WND GST,2 WSW Deer Lodge,Powell,MT,AWOS,AWOS station 38S9 1 WSW Deer Lodge.,MTC077,Powell,M
+202604071928,2026/04/07 19:28,48.53,-112.63,44.0,TFX,A,HIGH SUST WINDS,16 WSW Cut Bank,Glacier,MT,Mesonet,Mission Lake S Montana Mesonet averaged 44 mph over 8:50 am - 11:05 am.,MTC035,Glacier,M
+202604071930,2026/04/07 19:30,46.61,-113.65,42.0,MSO,N,NON-TSTM WND GST,Quigley,Granite,MT,Mesonet,Mesonet station FW8742 Clinton.,MTC039,Granite,M
+202604071930,2026/04/07 19:30,46.19,-113.30,46.0,MSO,N,NON-TSTM WND GST,3 WSW Georgetown,Granite,MT,Mesonet,Mesonet station MTGTL 2.7 W Georgetown (MT DOT).,MTC039,Granite,M
+202604071935,2026/04/07 19:35,46.15,-112.87,43.0,MSO,N,NON-TSTM WND GST,4 NNW Opportunity,Deer Lodge,MT,AWOS,AWOS station K3U3 3 NW Opportunity.,MTC023,Deer Lodge,M
+202604071940,2026/04/07 19:40,46.16,-113.14,44.0,MSO,N,NON-TSTM WND GST,6 ESE Georgetown,Deer Lodge,MT,Mesonet,Mesonet station YNKM8 Yankee Flat.,MTC023,Deer Lodge,M
+202604071940,2026/04/07 19:40,48.78,-113.12,44.0,TFX,A,HIGH SUST WINDS,14 E Saint Mary,Glacier,MT,Mesonet,A sustained wind of 44 mph from 5:00 AM - 9:05 AM was reported at Wetzel NE Montana Mesonet.,MTC035,Glacier,E
+202604071941,2026/04/07 19:41,46.53,-114.05,53.0,MSO,N,NON-TSTM WND GST,2 ENE Stevensville,Ravalli,MT,Mesonet,Mesonet station AV610 Stevensville.,MTC081,Ravalli,M
+202604071942,2026/04/07 19:42,48.28,-113.43,41.0,MSO,N,NON-TSTM WND GST,1 E Blacktail - Railroa,Flathead,MT,Mesonet,Mesonet station FIEM8 5 W Marias Pass.,MTC029,Flathead,M
+202604071945,2026/04/07 19:45,45.72,-110.25,60.0,BYZ,N,NON-TSTM WND GST,1 SW Springdale,Park,MT,Mesonet,Mesonet station MTSPD Springdale I-90 Mp 352.3.,MTC067,Park,M
+202604071947,2026/04/07 19:47,48.54,-112.98,49.0,TFX,A,HIGH SUST WINDS,2 SE Browning,Glacier,MT,Dept of Highways,A sustained wind of 49 mph from 5:00 AM to 10:30 AM was reported by Browning MDT.,MTC035,Glacier,E
+202604071950,2026/04/07 19:50,47.41,-111.72,42.0,TFX,A,HIGH SUST WINDS,8 SSE Fort  Shaw,Cascade,MT,Mesonet,Sun River SE (Montana Mesonet) averaged 42 mph sustained winds for 1 hr and 10 minutes ending at report time. It also averaged 41 mph sustained winds between 320 PM and 445 PM.,MTC013,Cascade,M
+202604071950,2026/04/07 19:50,45.97,-112.50,45.0,MSO,N,NON-TSTM WND GST,3 SSE Butte,Silver Bow,MT,ASOS,ASOS station KBTM Butte-mooney Ap.,MTC093,Silver Bow,M
+202604071955,2026/04/07 19:55,45.80,-109.97,60.0,BYZ,N,NON-TSTM WND GST,2 SSW Big Timber,Sweet Grass,MT,AWOS,AWOS station K6S0 Big Timber.,MTC097,Sweet Grass,M
+202604071955,2026/04/07 19:55,47.10,-110.17,60.0,TFX,N,NON-TSTM WND GST,2 NW Windham,Judith Basin,MT,AWOS,AWOS station K1CM Charlie.,MTC045,Judith Basin,M
+202604071956,2026/04/07 19:56,48.38,-113.06,50.0,TFX,A,HIGH SUST WINDS,9 ESE East Glacier Park,Glacier,MT,Mesonet,A sustained wind of 50 mph from 4:45 AM to 5:45 AM was reported by Dog Gun Lake Montana Mesonet.,MTC035,Glacier,E
+202604072000,2026/04/07 20:00,47.66,-111.98,61.0,TFX,N,NON-TSTM WND GST,3 N Fairfield,Teton,MT,Mesonet,Fairfield - MT Mesonet FARM8.,MTC099,Teton,M
+202604072015,2026/04/07 20:15,48.70,-111.20,60.0,TFX,N,NON-TSTM WND GST,15 S Whitlash,Liberty,MT,Mesonet,Mesonet station GW4063 EAGLE CREEK COLONY.,MTC051,Liberty,M
+202604072045,2026/04/07 20:45,47.28,-111.62,59.0,TFX,N,NON-TSTM WND GST,4 E Cascade,Cascade,MT,Mesonet,Mesonet station MTM76 Cascade E Mda.,MTC013,Cascade,M
+202604072045,2026/04/07 20:45,48.81,-111.26,62.0,TFX,N,NON-TSTM WND GST,6 S Whitlash,Liberty,MT,Mesonet,Mesonet station GW3546 WHITLASH SEVEN SOUTH.,MTC051,Liberty,M
+202604072054,2026/04/07 20:54,46.31,-111.70,61.0,TFX,N,NON-TSTM WND GST,8 W Townsend,Broadwater,MT,Mesonet,Mesonet station EKHM8 Elkhorn RAWS - 8 W Townsend.,MTC007,Broadwater,M
+202604072115,2026/04/07 21:15,46.69,-109.75,58.0,BYZ,N,NON-TSTM WND GST,Judith Gap,Wheatland,MT,Mesonet,Mesonet station MTJUD Judith Gap (MT DOT).,MTC107,Wheatland,M
+202604072125,2026/04/07 21:25,45.03,-109.41,64.0,BYZ,N,NON-TSTM WND GST,13 SW Washoe,Carbon,MT,Mesonet,Mesonet station TT839 Quad Creek (RAWS).,MTC009,Carbon,M
+202604072130,2026/04/07 21:30,48.56,-110.76,59.0,TFX,N,NON-TSTM WND GST,Joplin,Liberty,MT,Mesonet,Mesonet station GW0416 Joplin.,MTC051,Liberty,M
+202604072145,2026/04/07 21:45,48.41,-111.11,60.0,TFX,N,NON-TSTM WND GST,7 SE Lothair,Liberty,MT,Mesonet,Mesonet station GW3478 TCTIBER.,MTC051,Liberty,M
+202604072200,2026/04/07 22:00,45.44,-110.95,58.0,TFX,N,NON-TSTM WND GST,16 SE Gallatin Gateway,Gallatin,MT,Mesonet,Mesonet station GNFHY 10.7 W Emigrant (AVALANCHE).,MTC031,Gallatin,M
+202604072205,2026/04/07 22:05,45.70,-110.43,62.0,BYZ,N,NON-TSTM WND GST,7 ENE Livingston,Park,MT,ASOS,ASOS station KLVM Livingston.,MTC067,Park,M
+202604072212,2026/04/07 22:12,46.16,-110.38,63.0,BYZ,N,NON-TSTM WND GST,17 NE Wilsall,Park,MT,Mesonet,Mesonet station TT453 Crazy.,MTC067,Park,M
+202604072220,2026/04/07 22:20,48.10,-111.66,41.0,TFX,A,HIGH SUST WINDS,9 ENE Brady,Pondera,MT,Mesonet,Brady NE Montana Mesonet averaged 41 mph sustained winds for 1 hour ending at report time.,MTC073,Pondera,M
+202604072224,2026/04/07 22:24,46.42,-110.41,59.0,TFX,N,NON-TSTM WND GST,5 WSW Martinsdale,Meagher,MT,Public,IngerRanch - KMTMONTA17.,MTC059,Meagher,M
+202604072230,2026/04/07 22:30,48.74,-110.93,58.0,TFX,N,NON-TSTM WND GST,14 NNW Joplin,Liberty,MT,Mesonet,Mesonet station DW4821 Chester.,MTC051,Liberty,M
+202604072230,2026/04/07 22:30,46.72,-109.77,59.0,TFX,N,NON-TSTM WND GST,2 SSW Garneill,Judith Basin,MT,Mesonet,Judith Gap Montana Mesonet reported a 59 mph gust.,MTC045,Judith Basin,M
+202604072230,2026/04/07 22:30,45.67,-110.80,64.0,TFX,N,NON-TSTM WND GST,12 E Bozeman,Gallatin,MT,Mesonet,Mesonet station MTBZH Bozeman Pass (MT DOT).,MTC031,Gallatin,M
+202604072245,2026/04/07 22:45,45.82,-109.09,56.0,BYZ,N,NON-TSTM WND GST,8 WSW Molt,Stillwater,MT,Mesonet,Mesonet station MTM20 8.4 S Halfbreed Lake Wildlife (MT-MESO).,MTC095,Stillwater,M
+202604072245,2026/04/07 22:45,47.89,-108.32,63.0,GGW,N,NON-TSTM WND GST,10 ESE Zortman,Phillips,MT,Mesonet,BLM Zortman E_ MT (MT-MESO - GGW).,MTC071,Phillips,M
+202604072245,2026/04/07 22:45,47.89,-108.32,63.0,GGW,N,NON-TSTM WND GST,10 ESE Zortman,Phillips,MT,Mesonet,Mesonet station MTM38 Blm Zortman E.,MTC071,Phillips,M
+202604072300,2026/04/07 23:00,45.80,-109.43,55.0,BYZ,N,NON-TSTM WND GST,9 NE Reed Point,Stillwater,MT,Mesonet,Mesonet station MTM22 8.8 NE Reed Point (MT-MESO).,MTC095,Stillwater,M
+202604072300,2026/04/07 23:00,47.01,-108.36,59.0,GGW,N,NON-TSTM WND GST,1 NNW Winnett,Petroleum,MT,Mesonet,Mesonet station MTWIN Winnett Mt-200 Mp 136.0.,MTC069,Petroleum,M
+202604072300,2026/04/07 23:00,47.33,-108.68,59.0,TFX,N,NON-TSTM WND GST,13 E Roy,Fergus,MT,Mesonet,Roy East MT-Mesonet - RYOM8.,MTC027,Fergus,M
+202604072315,2026/04/07 23:15,47.96,-108.31,63.0,GGW,N,NON-TSTM WND GST,11 ENE Zortman,Phillips,MT,Mesonet,52 mph sustained_ Mesonet station MTMAL 11.3 SW Phillips (MT DOT).,MTC071,Phillips,M
+202604072317,2026/04/07 23:17,48.22,-106.62,62.0,GGW,N,NON-TSTM WND GST,2 NNE Glasgow,Valley,MT,ASOS,ASOS station KGGW Glasgow Airport (ASOS).,MTC105,Valley,M
+202604072318,2026/04/07 23:18,48.30,-108.72,59.0,TFX,N,NON-TSTM WND GST,13 S Fort Belknap,Blaine,MT,Mesonet,Mesonet station FBLM8 Fort Belknap RAWS.,MTC005,Blaine,M
+202604072330,2026/04/07 23:30,47.96,-108.31,65.0,GGW,N,NON-TSTM WND GST,11 ENE Zortman,Phillips,MT,Mesonet,Malta South US-191 MP 122.5_ MT (MT DOT - GGW).,MTC071,Phillips,M
+202604072335,2026/04/07 23:35,47.93,-108.34,59.0,GGW,N,NON-TSTM WND GST,9 E Zortman,Phillips,MT,Mesonet,Mesonet station MTRM8 (Matador Ranch).,MTC071,Phillips,M
+202604072340,2026/04/07 23:40,47.11,-109.09,40.0,TFX,A,HIGH SUST WINDS,8 N Forestgrove,Fergus,MT,Mesonet,Forestgrove N Montana Mesonet averaged 40 mph sustained winds over the course of 1 hour ending at report time.,MTC027,Fergus,M
+202604072340,2026/04/07 23:40,46.97,-108.50,58.0,GGW,N,NON-TSTM WND GST,7 SE Tiegen,Petroleum,MT,Mesonet,Mesonet station WIEM8 (Winnett SW).,MTC069,Petroleum,M
+202604072344,2026/04/07 23:44,47.80,-107.02,60.0,GGW,N,NON-TSTM WND GST,14 NNW Hell Creek Rec A,Valley,MT,Mesonet,Mesonet station KIGM8 King Coulee.,MTC105,Valley,M
+202604072344,2026/04/07 23:44,46.45,-109.80,64.0,BYZ,N,NON-TSTM WND GST,2 ENE Harlowton,Wheatland,MT,AWOS,AWOS station K1KM 2 ENE Harlowton.,MTC107,Wheatland,M
+202604072347,2026/04/07 23:47,46.60,-111.98,61.0,TFX,N,NON-TSTM WND GST,2 E Helena,Lewis and Clark,MT,ASOS,ASOS station KHLN Helena Airport.,MTC049,Lewis and Clark,M
+202604080000,2026/04/08 00:00,46.78,-107.92,58.0,GGW,N,NON-TSTM WND GST,15 S Mosby,Petroleum,MT,Mesonet,Mesonet station MOYM8 (Mosby S).,MTC069,Petroleum,M
+202604080000,2026/04/08 00:00,48.69,-113.72,59.0,TFX,N,NON-TSTM WND GST,14 WSW Saint Mary,Glacier,MT,Mesonet,Mesonet station LGPVC Logan Pass (GNP).,MTC035,Glacier,M
+202604080005,2026/04/08 00:05,47.93,-108.34,62.0,GGW,N,NON-TSTM WND GST,9 E Zortman,Phillips,MT,Mesonet,Matador Ranch_ MT (UMRB-UMT - GGW).,MTC071,Phillips,M
+202604080014,2026/04/08 00:14,47.33,-106.95,59.0,GGW,N,NON-TSTM WND GST,2 WNW Jordan,Garfield,MT,ASOS,ASOS station KJDN Jordan.,MTC033,Garfield,M
+202604080015,2026/04/08 00:15,47.74,-106.15,62.0,GGW,N,NON-TSTM WND GST,13 NNE Nelson Creek Rec,McCone,MT,Mesonet,Fort Peck S surface observation station.,MTC055,McCone,M
+202604080015,2026/04/08 00:15,47.74,-106.15,62.0,GGW,N,NON-TSTM WND GST,13 NNE Nelson Creek Rec,McCone,MT,Mesonet,Mesonet station MTM87 Fort Peck S.,MTC055,McCone,M
+202604080015,2026/04/08 00:15,47.80,-105.79,69.0,GGW,N,NON-TSTM WND GST,14 NNE Weldon,McCone,MT,Mesonet,Mesonet station VDWM8 (Vida W).,MTC055,McCone,M
+202604080015,2026/04/08 00:15,47.80,-105.79,69.0,GGW,N,NON-TSTM WND GST,14 NNE Weldon,McCone,MT,Mesonet,Vida W surface observation station.,MTC055,McCone,M
+202604080018,2026/04/08 00:18,48.10,-105.58,58.0,GGW,N,NON-TSTM WND GST,3 ENE Wolf Point,Roosevelt,MT,ASOS,ASOS station KOLF Wolf Point Airport.,MTC085,Roosevelt,M
+202604080029,2026/04/08 00:29,48.09,-105.58,62.0,GGW,N,NON-TSTM WND GST,3 E Wolf Point,Roosevelt,MT,ASOS,RMK AO2 PK WND 32054/0029.,MTC085,Roosevelt,M
+202604080030,2026/04/08 00:30,46.58,-107.40,57.0,BYZ,N,NON-TSTM WND GST,2 W Ingomar,Rosebud,MT,Mesonet,Mesonet station MTING 1.6 W Ingomar (MT DOT).,MTC087,Rosebud,M
+202604080030,2026/04/08 00:30,46.70,-106.59,65.0,BYZ,N,NON-TSTM WND GST,9 ENE Bascom,Rosebud,MT,Mesonet,Mesonet station MTM89 Angela W.,MTC087,Rosebud,M
+202604080035,2026/04/08 00:35,47.38,-108.68,41.0,TFX,A,HIGH SUST WINDS,13 ENE Roy,Fergus,MT,Mesonet,Roy E Montana Mesonet averaged 41 mph sustained winds over the past 1 hr and 15 minutes ending at report time.,MTC027,Fergus,M
+202604080035,2026/04/08 00:35,45.58,-109.88,57.0,BYZ,N,NON-TSTM WND GST,9 N Limestone,Sweet Grass,MT,Mesonet,Mesonet station DBYM8 Derby Mountain.,MTC097,Sweet Grass,M
+202604080045,2026/04/08 00:45,46.83,-106.27,55.0,BYZ,N,NON-TSTM WND GST,2 NW Rock Springs,Rosebud,MT,Mesonet,Mesonet station MTHIL 1.6 NW Rock Springs (MT DOT).,MTC087,Rosebud,M
+202604080115,2026/04/08 01:15,45.78,-108.16,57.0,BYZ,N,NON-TSTM WND GST,11 WSW Corinth,Yellowstone,MT,Mesonet,Mesonet station MTARC 11.8 S Ballantine (MT DOT).,MTC111,Yellowstone,M
+202604080115,2026/04/08 01:15,47.70,-104.73,61.0,GGW,N,NON-TSTM WND GST,2 E Enid,Richland,MT,Mesonet,Lambert MT DOT surface observation station.,MTC083,Richland,M
+202604080115,2026/04/08 01:15,47.70,-104.73,61.0,GGW,N,NON-TSTM WND GST,2 E Enid,Richland,MT,Mesonet,Mesonet station MTLBT Lambert Mt-200 Mp 45.0.,MTC083,Richland,M
+202604080116,2026/04/08 01:16,47.42,-104.96,62.0,GGW,N,NON-TSTM WND GST,2 W Bloomfield,Dawson,MT,Mesonet,Station GW0525 Bloomfield.,MTC021,Dawson,M
+202604080122,2026/04/08 01:22,46.43,-105.88,68.0,BYZ,N,NON-TSTM WND GST,3 NW Miles City,Custer,MT,ASOS,ASOS station KMLS Miles City.,MTC017,Custer,M
+202604080130,2026/04/08 01:30,46.40,-105.63,57.0,BYZ,N,NON-TSTM WND GST,8 SE Tusler,Custer,MT,Mesonet,Mesonet station MTGOV 5.5 E Murn (MT DOT).,MTC017,Custer,M
+202604080135,2026/04/08 01:35,45.75,-107.66,56.0,BYZ,N,NON-TSTM WND GST,2 WNW Hardin,Big Horn,MT,AWOS,AWOS station K00U 2 WNW Hardin.,MTC003,Big Horn,M
+202604080135,2026/04/08 01:35,47.78,-104.25,58.0,GGW,N,NON-TSTM WND GST,6 NW Sidney,Richland,MT,Mesonet,Sidney_ MT (UMRB-UMT - GGW).,MTC083,Richland,M
+202604080139,2026/04/08 01:39,46.35,-104.25,61.0,BYZ,N,NON-TSTM WND GST,1 SE Baker,Fallon,MT,ASOS,ASOS station KBHK Baker.,MTC025,Fallon,M
+202604080140,2026/04/08 01:40,47.57,-104.32,63.0,GGW,N,NON-TSTM WND GST,3 W Crane,Richland,MT,Mesonet,Crane W_ MT (UMRB-UMT - GGW).,MTC083,Richland,M
+202604080145,2026/04/08 01:45,46.30,-105.98,56.0,BYZ,N,NON-TSTM WND GST,4 SW Ulmer,Custer,MT,Mesonet,Mesonet station MTM26 4.4 SE Horton (MT-MESO).,MTC017,Custer,M
+202604080200,2026/04/08 02:00,46.92,-104.75,59.0,GGW,N,NON-TSTM WND GST,5 E Hoyt,Dawson,MT,Mesonet,BLM Glendive_ MT (MT-MESO - GGW).,MTC021,Dawson,M
+202604080200,2026/04/08 02:00,45.64,-106.94,65.0,BYZ,N,NON-TSTM WND GST,6 SSW Stacey,Big Horn,MT,Mesonet,Mesonet station MTM91 Busby N.,MTC003,Big Horn,M
+202604080215,2026/04/08 02:15,46.35,-105.83,55.0,BYZ,N,NON-TSTM WND GST,4 E Ulmer,Custer,MT,Mesonet,Mesonet station MTM25 4.3 S Miles City (MT-MESO).,MTC017,Custer,M
+202604080230,2026/04/08 02:30,47.02,-104.33,57.0,GGW,N,NON-TSTM WND GST,4 NE Hodges,Dawson,MT,Mesonet,Beaver Hill I-94 MP 234.8_ MT (MT DOT - GGW).,MTC021,Dawson,M
+202604080240,2026/04/08 02:40,46.31,-105.03,57.0,BYZ,N,NON-TSTM WND GST,4 SE Knowlton,Custer,MT,Mesonet,Mesonet station KTFM8 Knowlton.,MTC017,Custer,M
+202604080256,2026/04/08 02:56,47.70,-104.20,52.0,GGW,N,NON-TSTM WND GST,2 WSW Sidney,Richland,MT,AWOS,AWOS station KSDY Sidney Airport.,MTC083,Richland,M
+202604080324,2026/04/08 03:24,45.05,-105.95,66.0,BYZ,N,NON-TSTM WND GST,2 W Moorhead,Powder River,MT,Mesonet,Mesonet station BSHM8 Bradshaw Creek.,MTC075,Powder River,M
+202604080330,2026/04/08 03:30,47.43,-104.37,60.0,GGW,N,NON-TSTM WND GST,2 SW Savage,Richland,MT,Mesonet,Mesonet station MTSVG Savage Mt-16 Mp 29.5.,MTC083,Richland,M
+202604080330,2026/04/08 03:30,47.43,-104.37,60.0,GGW,N,NON-TSTM WND GST,2 SW Savage,Richland,MT,Mesonet,Savage MT-16 MP 29.5_ MT (MT DOT - GGW).,MTC083,Richland,M
+202604081126,2026/04/08 11:26,48.21,-106.62,58.0,GGW,N,NON-TSTM WND GST,1 NE Glasgow,Valley,MT,Mesonet,Glasgow Airport.,MTC105,Valley,M
+202604081215,2026/04/08 12:15,47.80,-105.79,59.0,GGW,N,NON-TSTM WND GST,14 NNE Weldon,McCone,MT,Mesonet,Vida W surface observation station.,MTC055,McCone,M
+202604081245,2026/04/08 12:45,47.74,-106.15,61.0,GGW,N,NON-TSTM WND GST,13 NNE Nelson Creek Rec,McCone,MT,Mesonet,Fort Peck South surface observation station.,MTC055,McCone,M
+202604081350,2026/04/08 13:50,48.01,-106.40,62.0,GGW,N,NON-TSTM WND GST,2 E Fort Peck,McCone,MT,Mesonet,Fort Peck Dam observation station.,MTC055,McCone,M
+202604081400,2026/04/08 14:00,47.35,-106.49,58.0,GGW,N,NON-TSTM WND GST,5 W Van Norman,Garfield,MT,Public,Jordan East surface station.,MTC033,Garfield,M
+202604081430,2026/04/08 14:30,46.84,-105.26,61.0,GGW,N,NON-TSTM WND GST,4 NE Terry,Prairie,MT,Mesonet,BLM Terry station.,MTC079,Prairie,M
+202604081515,2026/04/08 15:15,46.70,-106.59,62.0,BYZ,N,NON-TSTM WND GST,9 ENE Bascom,Rosebud,MT,Mesonet,Mesonet station MTM89 Angela W.,MTC087,Rosebud,M
+202604081515,2026/04/08 15:15,46.65,-104.23,62.0,GGW,N,NON-TSTM WND GST,7 W Carlyle,Wibaux,MT,Mesonet,Ash Creek MT DOT surface station.,MTC109,Wibaux,M
+202604081526,2026/04/08 15:26,46.43,-105.88,58.0,BYZ,N,NON-TSTM WND GST,3 NW Miles City,Custer,MT,ASOS,ASOS station KMLS Miles City.,MTC017,Custer,M
+202604081530,2026/04/08 15:30,46.92,-104.75,66.0,GGW,N,NON-TSTM WND GST,5 E Hoyt,Dawson,MT,Mesonet,BLM Glendive surface station.,MTC021,Dawson,M
+202604081540,2026/04/08 15:40,46.48,-104.07,58.0,BYZ,N,NON-TSTM WND GST,7 S Ollie,Fallon,MT,Mesonet,Mesonet station CACM8 Cannonball Creek.,MTC025,Fallon,M
+202604081545,2026/04/08 15:45,46.44,-104.43,57.0,BYZ,N,NON-TSTM WND GST,5 ENE Plevna,Fallon,MT,Mesonet,Mesonet station MTM39 4.7 E Plevna (MT-MESO).,MTC025,Fallon,M
+202604081546,2026/04/08 15:46,47.42,-104.96,61.0,GGW,N,NON-TSTM WND GST,2 W Bloomfield,Dawson,MT,Mesonet,GW0525 Bloomfield_ MT surface station.,MTC021,Dawson,M
+202604081556,2026/04/08 15:56,46.35,-104.25,64.0,BYZ,N,NON-TSTM WND GST,1 SE Baker,Fallon,MT,ASOS,ASOS station KBHK Baker.,MTC025,Fallon,M
+202604081600,2026/04/08 16:00,46.08,-104.44,56.0,BYZ,N,NON-TSTM WND GST,4 NE Medicine Rocks Sta,Fallon,MT,Mesonet,Mesonet station MTEKA Baker Mt-7 Mp 14.2.,MTC025,Fallon,M
+202604081615,2026/04/08 16:15,46.20,-105.70,51.0,BYZ,N,NON-TSTM WND GST,15 SE Ulmer,Custer,MT,Mesonet,Mesonet station MTM40 16.4 S Murn (MT-MESO).,MTC017,Custer,M
+202604081615,2026/04/08 16:15,46.30,-105.98,57.0,BYZ,N,NON-TSTM WND GST,4 SW Ulmer,Custer,MT,Mesonet,Mesonet station MTM26 4.4 SE Horton (MT-MESO).,MTC017,Custer,M
+202604081630,2026/04/08 16:30,45.71,-104.34,52.0,BYZ,N,NON-TSTM WND GST,6 NNE Belltower,Carter,MT,Mesonet,Mesonet station MTM93 Ekalaka Se.,MTC011,Carter,M
+202604081630,2026/04/08 16:30,47.28,-105.29,59.0,GGW,N,NON-TSTM WND GST,8 NW Lindsay,Dawson,MT,Mesonet,Lindsay Divide MT DOT station.,MTC021,Dawson,M
+202604081630,2026/04/08 16:30,47.92,-104.33,61.0,GGW,N,NON-TSTM WND GST,12 WSW Nohly,Richland,MT,Mesonet,Sioux Pass MT-16 surface observation station.,MTC083,Richland,M
+202604081645,2026/04/08 16:45,45.33,-104.14,56.0,BYZ,N,NON-TSTM WND GST,8 SSW Capitol,Carter,MT,Mesonet,Mesonet station MTM33 8.2 SW Capitol (MT-MESO).,MTC011,Carter,M
+202604081654,2026/04/08 16:54,45.81,-104.46,53.0,BYZ,N,NON-TSTM WND GST,7 SE Ekalaka,Carter,MT,Mesonet,Mesonet station EKIM8 Mosby 16.3nne.,MTC011,Carter,M
+202604081715,2026/04/08 17:15,45.55,-105.89,50.0,BYZ,N,NON-TSTM WND GST,10 NNW Sonnette,Powder River,MT,Mesonet,Mesonet station MTHCD Home Creek Divide Us-212 Mp 81.5.,MTC075,Powder River,M
+202604081715,2026/04/08 17:15,47.70,-104.73,60.0,GGW,N,NON-TSTM WND GST,2 E Enid,Richland,MT,Mesonet,Lambert MT-DOT surface observation station.,MTC083,Richland,M
+202604112115,2026/04/11 21:15,46.84,-110.70,0.25,TFX,H,HAIL,7 SSE Neihart,Meagher,MT,Public,Pea size hail falling.,MTC059,Meagher,E
+202604112145,2026/04/11 21:45,47.39,-110.13,58.0,TFX,G,TSTM WND GST,4 NW Coffee Creek,Fergus,MT,Mesonet,58 mph convective wind gust.,MTC027,Fergus,M
+202604112230,2026/04/11 22:30,45.82,-109.09,50.0,BYZ,N,NON-TSTM WND GST,8 WSW Molt,Stillwater,MT,Mesonet,Mesonet station MTM20 8.4 S Halfbreed Lake Wildlife (MT-MESO).,MTC095,Stillwater,M
+202604112245,2026/04/11 22:45,47.05,-109.46,52.0,TFX,G,TSTM WND GST,2 SW Lewistown,Fergus,MT,ASOS,52 mph convective wind gust.,MTC027,Fergus,M
+202604112300,2026/04/11 23:00,45.64,-110.55,50.0,BYZ,N,NON-TSTM WND GST,1 SSE Livingston,Park,MT,Mesonet,Mesonet station MTLRH Livingston River Hill.,MTC067,Park,M
+202604120015,2026/04/12 00:15,47.01,-108.36,64.0,GGW,G,TSTM WND GST,1 NNW Winnett,Petroleum,MT,Mesonet,Winnett MT DOT surface station.,MTC069,Petroleum,M
+202604120029,2026/04/12 00:29,45.10,-108.22,53.0,BYZ,N,NON-TSTM WND GST,22 SW Fort Smith,Carbon,MT,Mesonet,Mesonet station HBOM8 Hillsboro.,MTC009,Carbon,M
+202604120030,2026/04/12 00:30,47.96,-108.31,60.0,GGW,G,TSTM WND GST,11 ENE Zortman,Phillips,MT,Mesonet,Malta South MT DOT station.,MTC071,Phillips,M
+202604120030,2026/04/12 00:30,47.96,-108.31,60.0,GGW,G,TSTM WND GST,11 ENE Zortman,Phillips,MT,Mesonet,Mesonet station MTMAL 11.3 SW Phillips (MT DOT).,MTC071,Phillips,M
+202604120041,2026/04/12 00:41,47.24,-108.36,54.0,GGW,G,TSTM WND GST,16 N Winnett,Petroleum,MT,Mesonet,Dry Blood Creek station.,MTC069,Petroleum,M
+202604120115,2026/04/12 01:15,48.37,-107.92,53.0,GGW,G,TSTM WND GST,2 WNW Malta,Phillips,MT,Mesonet,Malta Airport station.,MTC071,Phillips,M
+202604120115,2026/04/12 01:15,48.35,-108.00,54.0,GGW,G,TSTM WND GST,4 ESE Wagner,Phillips,MT,Mesonet,Malta W MDA station.,MTC071,Phillips,M
+202604120140,2026/04/12 01:40,47.33,-106.95,62.0,GGW,G,TSTM WND GST,2 WNW Jordan,Garfield,MT,Mesonet,Jordan Airport station.,MTC033,Garfield,M
+202604120144,2026/04/12 01:44,47.80,-107.02,54.0,GGW,G,TSTM WND GST,14 NNW Hell Creek Rec A,Valley,MT,Mesonet,King Coulee station.,MTC105,Valley,M
+202604120200,2026/04/12 02:00,46.70,-106.59,53.0,BYZ,G,TSTM WND GST,9 ENE Bascom,Rosebud,MT,Mesonet,Mesonet station MTM89 Angela W.,MTC087,Rosebud,M
+202604120200,2026/04/12 02:00,47.99,-107.11,55.0,GGW,G,TSTM WND GST,11 SSW The Bentonite Pl,Valley,MT,Mesonet,Triple Crossing Agrimet station.,MTC105,Valley,M
+202604120242,2026/04/12 02:42,48.21,-106.62,60.0,GGW,G,TSTM WND GST,1 NE Glasgow,Valley,MT,Mesonet,Glasgow ASOS.,MTC105,Valley,M
+202604120246,2026/04/12 02:46,48.09,-106.48,62.0,GGW,G,TSTM WND GST,4 SSE Whatley,Valley,MT,Trained Spotter,Personal weather station peak gust.,MTC105,Valley,M
+202604120250,2026/04/12 02:50,48.01,-106.40,59.0,GGW,G,TSTM WND GST,2 E Fort Peck,McCone,MT,Mesonet,Mesonet station GGWFP 2.4 E Fort Peck (GGWWFO).,MTC055,McCone,M
+202604120250,2026/04/12 02:50,48.01,-106.40,59.0,GGW,N,NON-TSTM WND GST,2 E Fort Peck,McCone,MT,Mesonet,Mesonet station GGWFP 2.4 E Fort Peck (GGWWFO).,MTC055,McCone,M
+202604120300,2026/04/12 03:00,48.42,-106.56,54.0,GGW,G,TSTM WND GST,2 NW Saint Marie,Valley,MT,Mesonet,Mesonet station MTSTM St. Marie Mt-24 Mp 18.0.,MTC105,Valley,M
+202604120300,2026/04/12 03:00,48.42,-106.56,54.0,GGW,N,NON-TSTM WND GST,2 NW Saint Marie,Valley,MT,Mesonet,Mesonet station MTSTM St. Marie Mt-24 Mp 18.0.,MTC105,Valley,M
+202604120333,2026/04/12 03:33,46.52,-111.91,0.53,TFX,R,RAIN,1 SE Montana City,Jefferson,MT,Trained Spotter,Rainfall since 1300 local time.,MTC043,Jefferson,M
+202604122345,2026/04/12 23:45,44.81,-112.72,54.0,TFX,G,TSTM WND GST,6 N Dell,Beaverhead,MT,Mesonet,Delayed report. 54 mph convective wind gust on Sunday evening at Kidd Montana Mesonet site.,MTC001,Beaverhead,M
+202604122350,2026/04/12 23:50,45.27,-111.65,56.0,TFX,G,TSTM WND GST,5 NNE Cameron,Madison,MT,AWOS,Convective wind gust of 56 mph at AWOS station KEKS Ennis Big Sky AWOS.,MTC057,Madison,M
+202604130015,2026/04/13 00:15,45.50,-111.70,61.0,TFX,G,TSTM WND GST,4 NNE Mcallister,Madison,MT,Mesonet,61 mph convective wind gust. Mesonet station MTNOR Norris Hill (MT DOT).,MTC057,Madison,M
+202604130100,2026/04/13 01:00,45.55,-112.33,0.25,TFX,H,HAIL,Twin Bridges,Madison,MT,Trained Spotter,Pea size hail falling.,MTC057,Madison,E
+202604130115,2026/04/13 01:15,45.79,-111.32,56.0,TFX,G,TSTM WND GST,2 N Amsterdam,Gallatin,MT,Mesonet,Delayed report. 56 mph convective wind gust on Sunday evening at Manhattan S Montana Mesonet site.,MTC031,Gallatin,M
+202604130230,2026/04/13 02:30,46.52,-111.91,0.48,TFX,R,RAIN,1 SE Montana City,Jefferson,MT,Trained Spotter,1.01 inches of rain since 1300 local time on 4/11.,MTC043,Jefferson,M
+202604131400,2026/04/13 14:00,47.33,-111.48,0.3,TFX,R,RAIN,7 SSE Ulm,Cascade,MT,Trained Spotter,Rain began between 8 and 830 PM last night and diminished sometime overnight.,MTC013,Cascade,M
+202604141430,2026/04/14 14:30,46.62,-106.11,1.25,BYZ,R,RAIN,9 SSE Angela,Custer,MT,Trained Spotter,,MTC017,Custer,M
+202604141921,2026/04/14 19:21,48.36,-113.11,62.0,TFX,N,NON-TSTM WND GST,8 SE East Glacier Park,Glacier,MT,Mesonet,Mesonet station DCRM8 Deep Creek RAWS.,MTC035,Glacier,M
+202604150000,2026/04/15 00:00,48.69,-113.72,58.0,TFX,N,NON-TSTM WND GST,14 WSW Saint Mary,Glacier,MT,Mesonet,Mesonet station LGPVC Logan Pass (GNP).,MTC035,Glacier,M
+202604150123,2026/04/15 01:23,48.91,-110.91,58.0,TFX,N,NON-TSTM WND GST,15 E Whitlash,Liberty,MT,Mesonet,Mesonet station GW0718 Joplin 25nnw.,MTC051,Liberty,M
+202604150125,2026/04/15 01:25,45.03,-109.41,52.0,BYZ,N,NON-TSTM WND GST,13 SW Washoe,Carbon,MT,Mesonet,Mesonet station TT839 Quad Creek (RAWS).,MTC009,Carbon,M
+202604150615,2026/04/15 06:15,45.65,-110.60,53.0,BYZ,N,NON-TSTM WND GST,2 WSW Livingston,Park,MT,Mesonet,Mesonet station MTLWM 2.0 SW Livingston (MT DOT).,MTC067,Park,M
+202604150715,2026/04/15 07:15,45.64,-110.55,61.0,BYZ,N,NON-TSTM WND GST,1 SSE Livingston,Park,MT,Mesonet,Mesonet station MTLRH Livingston River Hill.,MTC067,Park,M
+202604152115,2026/04/15 21:15,45.35,-110.68,50.0,BYZ,N,NON-TSTM WND GST,2 S Pray,Park,MT,Mesonet,Mesonet station MTM86 Emigrant E.,MTC067,Park,M
+202604152200,2026/04/15 22:00,45.79,-108.47,53.0,BYZ,N,NON-TSTM WND GST,3 SW Lockwood,Yellowstone,MT,Mesonet,Mesonet station MTYRB 3.1 SW Lockwood (MT DOT).,MTC111,Yellowstone,M
+202604152249,2026/04/15 22:49,45.70,-110.43,56.0,BYZ,N,NON-TSTM WND GST,7 ENE Livingston,Park,MT,ASOS,ASOS station KLVM Livingston.,MTC067,Park,M
+202604152300,2026/04/15 23:00,45.07,-109.96,64.0,BYZ,N,NON-TSTM WND GST,4 NNW Cooke City,Park,MT,Mesonet,Mesonet station GNFCC Cooke City.,MTC067,Park,M
+202604152302,2026/04/15 23:02,44.68,-111.83,50.0,TFX,N,NON-TSTM WND GST,6 NNW Lakeview,Beaverhead,MT,Mesonet,Mesonet station RRDM8 Red Rock RAWS.,MTC001,Beaverhead,M
+202604152315,2026/04/15 23:15,45.65,-110.60,52.0,BYZ,N,NON-TSTM WND GST,2 WSW Livingston,Park,MT,Mesonet,Mesonet station MTLWM 2.0 SW Livingston (MT DOT).,MTC067,Park,M
+202604152315,2026/04/15 23:15,45.64,-110.55,61.0,BYZ,N,NON-TSTM WND GST,1 SSE Livingston,Park,MT,Mesonet,Mesonet station MTLRH Livingston River Hill.,MTC067,Park,M
+202604152316,2026/04/15 23:16,45.30,-111.75,52.0,TFX,N,NON-TSTM WND GST,3 SSW Ennis,Madison,MT,Mesonet,Mesonet station ENNM8 Ennis RAWS.,MTC057,Madison,M
+202604152330,2026/04/15 23:30,45.27,-111.65,54.0,TFX,N,NON-TSTM WND GST,5 NNE Cameron,Madison,MT,AWOS,AWOS station KEKS Ennis Big Sky AWOS.,MTC057,Madison,M
+202604152340,2026/04/15 23:40,45.70,-110.43,59.0,BYZ,N,NON-TSTM WND GST,7 ENE Livingston,Park,MT,ASOS,ASOS station KLVM Livingston.,MTC067,Park,M
+202604152350,2026/04/15 23:50,45.27,-111.65,40.0,TFX,A,HIGH SUST WINDS,5 NNE Cameron,Madison,MT,AWOS,AWOS station at KEKS Ennis Big Sky averaged a sustained wind of 40 mph between 1650 and 1750 local time.,MTC057,Madison,M
+202604160030,2026/04/16 00:30,45.64,-110.55,63.0,BYZ,N,NON-TSTM WND GST,1 SSE Livingston,Park,MT,Mesonet,Mesonet station MTLRH Livingston River Hill.,MTC067,Park,M
+202604160045,2026/04/16 00:45,45.35,-110.68,50.0,BYZ,N,NON-TSTM WND GST,2 S Pray,Park,MT,Mesonet,Mesonet station MTM86 Emigrant E.,MTC067,Park,M
+202604160100,2026/04/16 01:00,45.41,-108.56,52.0,BYZ,N,NON-TSTM WND GST,2 WSW Pryor,Big Horn,MT,Mesonet,Mesonet station MTC01 Pryor.,MTC003,Big Horn,M
+202604160200,2026/04/16 02:00,45.35,-110.68,54.0,BYZ,N,NON-TSTM WND GST,2 S Pray,Park,MT,Mesonet,Mesonet station MTM86 Emigrant E.,MTC067,Park,M
+202604160215,2026/04/16 02:15,45.50,-111.70,40.0,TFX,A,HIGH SUST WINDS,4 NNE Mcallister,Madison,MT,Dept of Highways,Average sustained wind speed of 40 mph from 1915 to 2015 local time.,MTC057,Madison,M
+202604160215,2026/04/16 02:15,45.50,-111.70,54.0,TFX,N,NON-TSTM WND GST,4 NNE Mcallister,Madison,MT,Mesonet,Mesonet station MTNOR Norris Hill (MT DOT).,MTC057,Madison,M
+202604160215,2026/04/16 02:15,45.64,-110.55,66.0,BYZ,N,NON-TSTM WND GST,1 SSE Livingston,Park,MT,Mesonet,Mesonet station MTLRH Livingston River Hill.,MTC067,Park,M
+202604160230,2026/04/16 02:30,45.65,-110.60,57.0,BYZ,N,NON-TSTM WND GST,2 WSW Livingston,Park,MT,Mesonet,Mesonet station MTLWM 2.0 SW Livingston (MT DOT).,MTC067,Park,M
+202604160253,2026/04/16 02:53,45.25,-112.55,53.0,TFX,N,NON-TSTM WND GST,5 ENE Dillon,Beaverhead,MT,ASOS,ASOS station KDLN Dillon Airport.,MTC001,Beaverhead,M
+202604160315,2026/04/16 03:15,46.97,-112.36,57.0,TFX,N,NON-TSTM WND GST,13 NNW Canyon Creek,Lewis and Clark,MT,Mesonet,Mesonet station MTFPS Flesher Pass S-279 Mp 30.5.,MTC049,Lewis and Clark,M
+202604161051,2026/04/16 10:51,45.75,-111.31,6.5,TFX,S,SNOW,Church Hill,Gallatin,MT,Trained Spotter,Accumulations on road surfaces have been minimal_ with the 6.5 inches being measured in a grassy area.,MTC031,Gallatin,M
+202604161256,2026/04/16 12:56,45.62,-111.04,8.5,TFX,S,SNOW,4 S Bozeman,Gallatin,MT,Public,A member of the public measured 8.5 inches of snow in the grass with 3 inches on his driveway.,MTC031,Gallatin,M
+202604161300,2026/04/16 13:00,46.00,-110.66,1.8,BYZ,S,SNOW,Wilsall,Park,MT,Cocorahs,Cocorahs station MT-PK-5 Wilsall 0.3 NW.,MTC067,Park,M
+202604161300,2026/04/16 13:00,46.91,-109.41,2.0,TFX,S,SNOW,11 S Lewistown,Fergus,MT,CO-OP Observer,CO-OP Observer station LWSM8 10.9 S Lewistown.,MTC027,Fergus,M
+202604161300,2026/04/16 13:00,45.66,-111.03,6.5,TFX,S,SNOW,2 SSE Bozeman,Gallatin,MT,Cocorahs,Cocorahs station MT-GN-11 1 SE Bozeman CoCoRaHS.,MTC031,Gallatin,M
+202604161300,2026/04/16 13:00,45.64,-110.43,10.5,BYZ,S,SNOW,7 ESE Livingston,Park,MT,Cocorahs,Cocorahs station MT-PK-7 Livingston 6.6 ESE.,MTC067,Park,M
+202604161300,2026/04/16 13:00,45.60,-111.96,11.0,TFX,S,SNOW,5 SW Pony,Madison,MT,Mesonet,11 inches of snow in the past 18 hours at Albro Lake Snotel.,MTC057,Madison,E
+202604161328,2026/04/16 13:28,45.75,-111.31,9.5,TFX,S,SNOW,Church Hill,Gallatin,MT,Trained Spotter,Measured on grassy surfaces. Noted some power and internet outages.,MTC031,Gallatin,M
+202604161339,2026/04/16 13:39,44.66,-111.10,2.0,TFX,S,SNOW,West Yellowstone,Gallatin,MT,CO-OP Observer,CO-OP Observer station WYGM8 West Yellowstone.,MTC031,Gallatin,M
+202604161400,2026/04/16 14:00,45.66,-110.58,1.4,BYZ,S,SNOW,1 WSW Livingston,Park,MT,Cocorahs,Cocorahs station MT-PK-14 Livingston 0.9 WSW.,MTC067,Park,M
+202604161430,2026/04/16 14:30,46.81,-114.03,0.0,MSO,S,SNOW,4 SSW Missoula,Missoula,MT,Cocorahs,Cocorahs station MT-MS-33 Missoula 3.8 SSW.,MTC063,Missoula,M
+202604161500,2026/04/16 15:00,46.61,-114.01,0.1,MSO,S,SNOW,4 ESE Florence,Ravalli,MT,Cocorahs,Cocorahs station MT-RV-5 3 ESE Florence.,MTC081,Ravalli,M
+202604161500,2026/04/16 15:00,45.34,-111.71,3.8,TFX,S,SNOW,1 SSW Jeffers,Madison,MT,CO-OP Observer,CO-OP Observer station ENSM8 Ennis COOP.,MTC057,Madison,M
+202604161615,2026/04/16 16:15,48.50,-113.98,5.5,MSO,S,SNOW,West Glacier,Flathead,MT,Public,Public report of 5 to 6 inches of snow in West Glacier. Actively snowing.,MTC029,Flathead,E
+202604161630,2026/04/16 16:30,45.82,-110.90,16.0,TFX,S,SNOW,12 NE Bozeman,Gallatin,MT,Public,16 inches of snow on the web cam of an elevated surface at Bridger Bowl ski area.,MTC031,Gallatin,E
+202604161652,2026/04/16 16:52,46.61,-113.65,0.0,MSO,S,SNOW,Quigley,Granite,MT,Cocorahs,Cocorahs station MT-MS-34 Clinton 11.1 SSE.,MTC039,Granite,M
+202604161800,2026/04/16 18:00,45.06,-109.94,21.0,BYZ,S,SNOW,3 NNW Cooke City,Park,MT,Other Federal,,MTC067,Park,E
+202604161900,2026/04/16 19:00,44.51,-111.13,15.0,TFX,S,SNOW,11 S West Yellowstone,Gallatin,MT,Mesonet,Estimated 15 inches of new snowfall in the past 24 hours at Black Bear Snotel site.,MTC031,Gallatin,E
+202604161915,2026/04/16 19:15,48.38,-114.07,6.0,MSO,S,SNOW,Hungry Horse,Flathead,MT,Trained Spotter,Spotter reports over 6 inches of snow in Hungry Horse with ongoing inch an hour snowfall rates.,MTC029,Flathead,E
+202604161930,2026/04/16 19:30,45.22,-112.63,1.0,TFX,S,SNOW,Dillon,Beaverhead,MT,Trained Spotter,1 inch of new snow in the past half hour.,MTC001,Beaverhead,M
+202604161930,2026/04/16 19:30,45.44,-110.70,6.5,BYZ,S,SNOW,4 NNW Pray,Park,MT,Public,,MTC067,Park,M
+202604162023,2026/04/16 20:23,48.36,-114.20,5.3,MSO,S,SNOW,1 SW Columbia Falls,Flathead,MT,Public,Snow has mostly stopped_ occasional light flurry.,MTC029,Flathead,M
+202604162055,2026/04/16 20:55,48.41,-114.34,3.0,MSO,S,SNOW,Whitefish,Flathead,MT,Public,Accumulation from 9am to 2pm local time.,MTC029,Flathead,M
+202604162105,2026/04/16 21:05,48.86,-114.28,4.0,MSO,S,SNOW,6 N Polebridge,Flathead,MT,Public,,MTC029,Flathead,E
+202604162151,2026/04/16 21:51,48.88,-115.06,3.0,MSO,S,SNOW,Eureka,Lincoln,MT,Public,,MTC053,Lincoln,E
+202604162200,2026/04/16 22:00,45.24,-109.73,6.0,BYZ,S,SNOW,3 ENE Mystic Lake,Stillwater,MT,CO-OP Observer,CO-OP Observer station MYSM8 Fishtail 18 SW.,MTC095,Stillwater,M
+202604162200,2026/04/16 22:00,45.66,-111.05,7.1,TFX,S,SNOW,1 S Bozeman,Gallatin,MT,CO-OP Observer,CO-OP Observer station BZEM8 Bozeman MSU COOP.,MTC031,Gallatin,M
+202604162228,2026/04/16 22:28,48.19,-114.14,6.0,MSO,S,SNOW,Creston,Flathead,MT,Public,,MTC029,Flathead,E
+202604162242,2026/04/16 22:42,48.24,-114.35,2.5,MSO,S,SNOW,4 WNW Evergreen,Flathead,MT,Public,,MTC029,Flathead,M
+202604162318,2026/04/16 23:18,45.94,-108.35,0.3,BYZ,S,SNOW,Shepherd,Yellowstone,MT,Trained Spotter,,MTC111,Yellowstone,E
+202604162318,2026/04/16 23:18,48.71,-114.87,5.0,MSO,S,SNOW,Trego,Lincoln,MT,Public,,MTC053,Lincoln,E
+202604162321,2026/04/16 23:21,48.17,-114.00,3.5,MSO,S,SNOW,6 ESE Creston,Flathead,MT,Public,Corrects previous snow report time from 6 ESE Creston.,MTC029,Flathead,E
+202604170000,2026/04/17 00:00,48.08,-116.00,0.2,MSO,S,SNOW,3 NW Heron,Sanders,MT,CO-OP Observer,CO-OP Observer station HERM8 2.5 NW Heron.,MTC089,Sanders,M
+202604170007,2026/04/17 00:07,46.42,-104.52,0.2,BYZ,S,SNOW,Plevna,Fallon,MT,CO-OP Observer,CO-OP Observer station PLEM8 Plevna.,MTC025,Fallon,M
+202604170125,2026/04/17 01:25,48.06,-114.07,3.4,MSO,S,SNOW,Bigfork,Flathead,MT,Cocorahs,,MTC029,Flathead,M
+202604170218,2026/04/17 02:18,48.21,-114.36,3.9,MSO,S,SNOW,3 WNW Kalispell,Flathead,MT,Trained Spotter,,MTC029,Flathead,M
+202604170300,2026/04/17 03:00,45.19,-109.35,4.0,BYZ,S,SNOW,5 W Red Lodge,Carbon,MT,Other Federal,,MTC009,Carbon,M
+202604170300,2026/04/17 03:00,45.42,-110.09,14.0,BYZ,S,SNOW,10 WSW Limestone,Sweet Grass,MT,Other Federal,,MTC097,Sweet Grass,E
+202604170300,2026/04/17 03:00,45.22,-110.24,17.0,BYZ,S,SNOW,21 NW Cooke City,Park,MT,Other Federal,,MTC067,Park,E
+202604170600,2026/04/17 06:00,48.18,-109.69,1.0,TFX,S,SNOW,7 SE Rocky Boy,Hill,MT,Trained Spotter,Trained spotter measured 1 inch of snowfall with a liquid equivalent of 0.6.,MTC041,Hill,M
+202604171246,2026/04/17 12:46,45.16,-109.29,2.5,BYZ,S,SNOW,3 SW Red Lodge,Carbon,MT,Cocorahs,Cocorahs station MT-CB-5 Red Lodge 3.0 SW.,MTC009,Carbon,M
+202604171300,2026/04/17 13:00,45.59,-106.12,1.1,BYZ,S,SNOW,10 ESE Ashland,Powder River,MT,Cocorahs,Cocorahs station MT-PR-6 Ashland 9.7 ESE.,MTC075,Powder River,M
+202604171300,2026/04/17 13:00,46.39,-104.52,1.2,BYZ,S,SNOW,2 S Plevna,Fallon,MT,Cocorahs,Cocorahs station MT-FL-7 Plevna 1.6 S.,MTC025,Fallon,M
+202604171300,2026/04/17 13:00,44.66,-111.09,1.4,TFX,R,RAIN,1 SE West Yellowstone,Gallatin,MT,Public,Delayed report. Total storm water equivalent past 48 hours was 1.40 inches of liquid.,MTC031,Gallatin,M
+202604171300,2026/04/17 13:00,46.00,-110.66,1.8,BYZ,S,SNOW,Wilsall,Park,MT,Cocorahs,Cocorahs station MT-PK-5 Wilsall 0.3 NW.,MTC067,Park,M
+202604171300,2026/04/17 13:00,45.64,-110.43,5.5,BYZ,S,SNOW,7 ESE Livingston,Park,MT,Cocorahs,Cocorahs station MT-PK-7 Livingston 6.6 ESE.,MTC067,Park,M
+202604171300,2026/04/17 13:00,44.66,-111.09,11.0,TFX,S,SNOW,1 SE West Yellowstone,Gallatin,MT,CO-OP Observer,Delayed report. Storm total of 11 inches over the past 2 days. (9 inches of the 11 inches fell from 7 AM Thu to 7 AM Fri.).,MTC031,Gallatin,M
+202604171300,2026/04/17 13:00,45.64,-110.43,16.0,BYZ,S,SNOW,7 ESE Livingston,Park,MT,Cocorahs,Cocorahs station MT-PK-7 Livingston 6.6 ESE.,MTC067,Park,M
+202604171321,2026/04/17 13:21,48.17,-114.00,3.5,MSO,S,SNOW,6 ESE Creston,Flathead,MT,Public,,MTC029,Flathead,E
+202604171430,2026/04/17 14:30,45.18,-104.14,5.8,BYZ,S,SNOW,7 E Albion,Carter,MT,Public,,MTC011,Carter,M
+202604221100,2026/04/22 11:00,45.23,-111.45,59.0,TFX,N,NON-TSTM WND GST,6 WSW Big Sky,Madison,MT,Mesonet,Mesonet station YCTIM Yellowstone Club - Avalanche.,MTC057,Madison,M
+202604221535,2026/04/22 15:35,45.88,-111.57,58.0,TFX,N,NON-TSTM WND GST,1 SW Three Forks,Gallatin,MT,AWOS,AWOS station K9S5 Three Forks Apt.,MTC031,Gallatin,M
+202604221541,2026/04/22 15:41,45.25,-112.55,61.0,TFX,N,NON-TSTM WND GST,5 ENE Dillon,Beaverhead,MT,ASOS,ASOS station KDLN Dillon Airport.,MTC001,Beaverhead,M
+202604221615,2026/04/22 16:15,45.35,-110.68,53.0,BYZ,N,NON-TSTM WND GST,2 S Pray,Park,MT,Mesonet,Mesonet station MTM86 Emigrant E.,MTC067,Park,M
+202604221700,2026/04/22 17:00,45.64,-110.55,61.0,BYZ,N,NON-TSTM WND GST,1 SSE Livingston,Park,MT,Mesonet,Mesonet station MTLRH Livingston River Hill.,MTC067,Park,M
+202604221753,2026/04/22 17:53,45.70,-110.43,63.0,BYZ,N,NON-TSTM WND GST,7 ENE Livingston,Park,MT,ASOS,ASOS station KLVM Livingston.,MTC067,Park,M
+202604221800,2026/04/22 18:00,45.65,-110.60,56.0,BYZ,N,NON-TSTM WND GST,2 WSW Livingston,Park,MT,Mesonet,Mesonet station MTLWM 2.0 SW Livingston (MT DOT).,MTC067,Park,M
+202604221815,2026/04/22 18:15,45.69,-110.50,63.0,BYZ,N,NON-TSTM WND GST,3 ENE Livingston,Park,MT,Mesonet,Mesonet station MTELV 3.3 E Livingston (MT DOT).,MTC067,Park,M
+202604221900,2026/04/22 19:00,46.04,-109.24,50.0,BYZ,N,NON-TSTM WND GST,4 NW Hailstone Wildlife,Stillwater,MT,Mesonet,Mesonet station MTM19 3.9 NW Hailstone Wildlife Refuge (MT-MESO).,MTC095,Stillwater,M
+202604221900,2026/04/22 19:00,45.65,-110.60,59.0,BYZ,N,NON-TSTM WND GST,2 WSW Livingston,Park,MT,Mesonet,Mesonet station MTLWM 2.0 SW Livingston (MT DOT).,MTC067,Park,M
+202604221925,2026/04/22 19:25,45.50,-110.57,54.0,BYZ,N,NON-TSTM WND GST,Pine Creek,Park,MT,Mesonet,Mesonet station DW8455 Livingston.,MTC067,Park,M
+202604221929,2026/04/22 19:29,45.33,-112.51,62.0,TFX,N,NON-TSTM WND GST,10 NE Dillon,Beaverhead,MT,Public,Ambient Weather Station - Spudfarm.,MTC001,Beaverhead,M
+202604221945,2026/04/22 19:45,45.64,-110.55,68.0,BYZ,N,NON-TSTM WND GST,1 SSE Livingston,Park,MT,Mesonet,Mesonet station MTLRH Livingston River Hill.,MTC067,Park,M
+202604222030,2026/04/22 20:30,45.53,-110.61,57.0,BYZ,N,NON-TSTM WND GST,3 NW Pine Creek,Park,MT,Mesonet,Mesonet station MTM84 Brisbin.,MTC067,Park,M
+202604222030,2026/04/22 20:30,45.35,-110.68,61.0,BYZ,N,NON-TSTM WND GST,2 S Pray,Park,MT,Mesonet,Mesonet station MTM86 Emigrant E.,MTC067,Park,M
+202604222100,2026/04/22 21:00,45.94,-108.15,50.0,BYZ,G,TSTM WND GST,1 SSE Ballantine,Yellowstone,MT,Mesonet,Mesonet station MTBAL Ballantine I-94 Mp 15.0.,MTC111,Yellowstone,M
+202604222100,2026/04/22 21:00,45.87,-107.60,55.0,BYZ,G,TSTM WND GST,9 N Hardin,Big Horn,MT,Mesonet,Mesonet station MTM75 Hardin N Mda.,MTC003,Big Horn,M
+202604222114,2026/04/22 21:14,45.22,-111.74,63.0,TFX,N,NON-TSTM WND GST,3 WNW Cameron,Madison,MT,Public,Ambient Weather Station - TGLM.,MTC057,Madison,M
+202604222130,2026/04/22 21:30,45.72,-110.25,50.0,BYZ,N,NON-TSTM WND GST,1 SW Springdale,Park,MT,Mesonet,Mesonet station MTSPD Springdale I-90 Mp 352.3.,MTC067,Park,M
+202604222130,2026/04/22 21:30,46.25,-108.46,53.0,BYZ,G,TSTM WND GST,11 SSE Klein,Musselshell,MT,Mesonet,Mesonet station MTBUL 11.1 SE Klein (MT DOT).,MTC065,Musselshell,M
+202604222145,2026/04/22 21:45,46.58,-107.40,52.0,BYZ,G,TSTM WND GST,2 W Ingomar,Rosebud,MT,Mesonet,Mesonet station MTING 1.6 W Ingomar (MT DOT).,MTC087,Rosebud,M
+202604222150,2026/04/22 21:50,46.78,-107.94,55.0,GGW,G,TSTM WND GST,15 S Mosby,Petroleum,MT,Mesonet,Mosby S_ MT (UMT - GGW) Elev: 2805.0 ft; Lat/Lon: 46.78230/-107.92134.,MTC069,Petroleum,M
+202604222200,2026/04/22 22:00,46.58,-108.74,60.0,BYZ,N,NON-TSTM WND GST,13 NW Roundup,Musselshell,MT,Mesonet,Mesonet station MTM41 12.9 NW Roundup (MT-MESO).,MTC065,Musselshell,M
+202604222210,2026/04/22 22:10,46.89,-106.21,59.0,GGW,G,TSTM WND GST,7 WSW Crow Rock,Garfield,MT,Mesonet,Rock Springs N_ MT (UMT - GGW) Elev: 2769.2 ft; Lat/Lon: 46.88529/-106.21369.,MTC033,Garfield,E
+202604222210,2026/04/22 22:10,46.89,-106.21,59.0,GGW,G,TSTM WND GST,7 WSW Crow Rock,Garfield,MT,Public,Rock Springs N_ MT (UMT - GGW) Elev: 2769.2 ft; Lat/Lon: 46.88529/-106.21369.,MTC033,Garfield,E
+202604222215,2026/04/22 22:15,48.78,-111.60,60.0,TFX,N,NON-TSTM WND GST,8 ENE Ferdig,Toole,MT,Mesonet,Mesonet station MTM53 MDA Oilmont.,MTC101,Toole,M
+202604222218,2026/04/22 22:18,45.07,-107.89,53.0,BYZ,N,NON-TSTM WND GST,18 S Fort Smith,Big Horn,MT,Mesonet,Mesonet station BHMM8 Bighorn Mountain.,MTC003,Big Horn,M
+202604222230,2026/04/22 22:30,45.03,-107.32,51.0,BYZ,N,NON-TSTM WND GST,3 SE Aberdeen,Big Horn,MT,Mesonet,Mesonet station MTABR 2.5 SE Aberdeen (MT DOT).,MTC003,Big Horn,M
+202604222230,2026/04/22 22:30,45.01,-106.89,51.0,BYZ,N,NON-TSTM WND GST,4 W Decker,Big Horn,MT,Mesonet,Mesonet station MTDKR Decker S-314 Mp 1.2.,MTC003,Big Horn,M
+202604222243,2026/04/22 22:43,47.33,-106.95,60.0,GGW,N,NON-TSTM WND GST,2 WNW Jordan,Garfield,MT,ASOS,ASOS station KJDN Jordan.,MTC033,Garfield,M
+202604222245,2026/04/22 22:45,46.27,-106.31,56.0,BYZ,G,TSTM WND GST,5 W Hathaway,Rosebud,MT,Mesonet,Mesonet station MTSWC 5.2 W Hathaway (MT DOT).,MTC087,Rosebud,M
+202604222254,2026/04/22 22:54,47.33,-106.95,64.0,GGW,G,TSTM WND GST,2 WNW Jordan,Garfield,MT,ASOS,ASOS station KJDN Jordan.,MTC033,Garfield,M
+202604222300,2026/04/22 23:00,46.70,-106.59,65.0,BYZ,G,TSTM WND GST,9 ENE Bascom,Rosebud,MT,Mesonet,Mesonet station MTM89 Angela W.,MTC087,Rosebud,M
+202604222315,2026/04/22 23:15,46.08,-104.44,50.0,BYZ,N,NON-TSTM WND GST,4 NE Medicine Rocks Sta,Fallon,MT,Mesonet,Mesonet station MTEKA Baker Mt-7 Mp 14.2.,MTC025,Fallon,M
+202604222315,2026/04/22 23:15,46.30,-105.98,52.0,BYZ,G,TSTM WND GST,4 SW Ulmer,Custer,MT,Mesonet,Mesonet station MTM26 4.4 SE Horton (MT-MESO).,MTC017,Custer,M
+202604222315,2026/04/22 23:15,48.81,-111.26,61.0,TFX,N,NON-TSTM WND GST,6 S Whitlash,Liberty,MT,Mesonet,Mesonet station GW3546 WHITLASH SEVEN SOUTH.,MTC051,Liberty,M
+202604222315,2026/04/22 23:15,45.07,-109.15,66.0,BYZ,N,NON-TSTM WND GST,6 SSE Washoe,Carbon,MT,Mesonet,Mesonet station MTM98 Ruby Creek.,MTC009,Carbon,M
+202604222320,2026/04/22 23:20,46.35,-104.25,52.0,BYZ,N,NON-TSTM WND GST,1 SE Baker,Fallon,MT,ASOS,ASOS station KBHK Baker.,MTC025,Fallon,M
+202604222325,2026/04/22 23:25,48.75,-111.17,59.0,TFX,N,NON-TSTM WND GST,11 SSE Whitlash,Liberty,MT,Mesonet,Mesonet station GW2412 Hill 2sw.,MTC051,Liberty,M
+202604222335,2026/04/22 23:35,46.91,-106.68,55.0,GGW,G,TSTM WND GST,10 SSW Cohagen,Garfield,MT,Mesonet,Montana Mesonet station HAGM8 (Cohange S).,MTC033,Garfield,M
+202604222342,2026/04/22 23:42,46.43,-105.88,52.0,BYZ,G,TSTM WND GST,3 NW Miles City,Custer,MT,ASOS,ASOS station KMLS Miles City.,MTC017,Custer,M
+202604222345,2026/04/22 23:45,48.81,-111.26,61.0,TFX,N,NON-TSTM WND GST,6 S Whitlash,Liberty,MT,Mesonet,Mesonet station GW3546 WHITLASH SEVEN SOUTH.,MTC051,Liberty,M
+202604230000,2026/04/23 00:00,46.91,-104.75,56.0,GGW,N,NON-TSTM WND GST,5 ESE Hoyt,Dawson,MT,Mesonet,Mesonet station MTM28 5.2 E Hoyt (MT-MESO).,MTC021,Dawson,M
+202604230000,2026/04/23 00:00,48.70,-111.20,61.0,TFX,N,NON-TSTM WND GST,15 S Whitlash,Liberty,MT,Mesonet,Mesonet station GW4063 EAGLE CREEK COLONY.,MTC051,Liberty,M
+202604230000,2026/04/23 00:00,47.74,-106.15,66.0,GGW,G,TSTM WND GST,13 E Haxby,McCone,MT,Mesonet,Montana Mesonet station MTM87 (Fort Peck S).,MTC055,McCone,M
+202604230010,2026/04/23 00:10,48.75,-111.17,61.0,TFX,N,NON-TSTM WND GST,11 SSE Whitlash,Liberty,MT,Mesonet,Mesonet station GW2412 Hill 2sw.,MTC051,Liberty,M
+202604230015,2026/04/23 00:15,45.01,-105.38,51.0,BYZ,N,NON-TSTM WND GST,6 SSW Biddle,Powder River,MT,Mesonet,Mesonet station MTBID 6.2 S Biddle (MT DOT).,MTC075,Powder River,M
+202604230015,2026/04/23 00:15,47.80,-105.79,58.0,GGW,G,TSTM WND GST,14 W Vida,McCone,MT,Mesonet,Montana Mesonet station VDWM8 (Vida W).,MTC055,McCone,M
+202604230020,2026/04/23 00:20,48.72,-110.71,40.0,TFX,A,HIGH SUST WINDS,11 N Inverness,Hill,MT,Mesonet,Over a duration of 6 hours from 6:20 PM 04/22/2026 to 12:20 AM 04/23/2026_ Inverness N Montana Mesonet reported sustained winds of 40.6 mph.,MTC041,Hill,M
+202604230030,2026/04/23 00:30,47.92,-105.35,57.0,GGW,G,TSTM WND GST,9 NE Vida,McCone,MT,Mesonet,Montana Mesonet station VDNM8 (Vida NE).,MTC055,McCone,M
+202604230030,2026/04/23 00:30,46.65,-104.23,62.0,GGW,N,NON-TSTM WND GST,7 W Carlyle,Wibaux,MT,Mesonet,Mesonet station MTASH Ash Creek Mt-7 Mp 55.2.,MTC109,Wibaux,M
+202604230035,2026/04/23 00:35,47.92,-105.35,60.0,GGW,G,TSTM WND GST,9 NE Vida,McCone,MT,Mesonet,Corrects previous tstm wnd gst report from 9 NE Vida. Montana Mesonet station VDNM8 (Vida NE).,MTC055,McCone,M
+202604230040,2026/04/23 00:40,46.48,-104.07,50.0,BYZ,N,NON-TSTM WND GST,7 S Ollie,Fallon,MT,Mesonet,Mesonet station CACM8 Cannonball Creek.,MTC025,Fallon,M
+202604230045,2026/04/23 00:45,47.70,-104.73,58.0,GGW,G,TSTM WND GST,2 E Enid,Richland,MT,Mesonet,Mesonet station MTLBT Lambert Mt-200 Mp 45.0.,MTC083,Richland,M
+202604230048,2026/04/23 00:48,48.01,-106.40,66.0,GGW,G,TSTM WND GST,2 E Fort Peck,McCone,MT,Mesonet,Mesonet station GGWFP 2.4 E Fort Peck (GGWWFO).,MTC055,McCone,M
+202604230050,2026/04/23 00:50,47.53,-104.39,60.0,GGW,G,TSTM WND GST,4 WNW Midway,Richland,MT,Mesonet,Mesonet station FW8536 Savage.,MTC083,Richland,M
+202604230050,2026/04/23 00:50,47.57,-104.32,61.0,GGW,G,TSTM WND GST,3 W Crane,Richland,MT,Mesonet,Montana Mesonet station CRBM8 (Crane W).,MTC083,Richland,M
+202604230055,2026/04/23 00:55,48.18,-105.22,58.0,GGW,G,TSTM WND GST,5 N Poplar,Roosevelt,MT,Mesonet,Montana Mesonet Station PARM8 (Poplar N).,MTC085,Roosevelt,M
+202604230100,2026/04/23 01:00,47.95,-104.94,59.0,GGW,G,TSTM WND GST,12 SSE Sprole,Richland,MT,Mesonet,Mesonet station FW2498 Badger Creek.,MTC083,Richland,M
+202604230115,2026/04/23 01:15,47.43,-104.37,59.0,GGW,G,TSTM WND GST,2 SW Savage,Richland,MT,Mesonet,Mesonet station MTSVG Savage Mt-16 Mp 29.5.,MTC083,Richland,M
+202604230120,2026/04/23 01:20,48.22,-104.77,62.0,GGW,G,TSTM WND GST,6 NNW Fort Kipp,Roosevelt,MT,Mesonet,Montana Mesonet station FTKM8 (Fort Kipp NW).,MTC085,Roosevelt,M
+202604230150,2026/04/23 01:50,48.52,-104.73,64.0,GGW,G,TSTM WND GST,10 W Medicine Lake,Sheridan,MT,Mesonet,Montana Mesonet station MEDM8 (Medicine Lake W).,MTC091,Sheridan,M
+202604230158,2026/04/23 01:58,48.49,-104.48,64.0,GGW,G,TSTM WND GST,2 SE Medicine Lake,Sheridan,MT,Mesonet,Mesonet station MLKM8 Medicine Lake 1ESE.,MTC091,Sheridan,M
+202604230210,2026/04/23 02:10,48.52,-104.73,71.0,GGW,G,TSTM WND GST,10 W Medicine Lake,Sheridan,MT,Mesonet,54G71 Medicine Lake W_ MT (UMT - GGW).,MTC091,Sheridan,M
+202604230220,2026/04/23 02:20,48.55,-105.26,64.0,GGW,G,TSTM WND GST,4 NNE Bredette,Roosevelt,MT,Mesonet,Bredette NE_ MT (UMT - GGW).,MTC085,Roosevelt,M
+202604230230,2026/04/23 02:30,48.81,-104.25,58.0,GGW,G,TSTM WND GST,6 S Comertown,Sheridan,MT,Mesonet,Comertown Turn-Off MT-5 MP 13.4.,MTC091,Sheridan,M
+202604230230,2026/04/23 02:30,48.81,-105.06,60.0,GGW,G,TSTM WND GST,1 N Navajo,Daniels,MT,Mesonet,Navajo MT-5 16.7.,MTC019,Daniels,M
+202604230235,2026/04/23 02:35,48.79,-104.52,71.0,GGW,G,TSTM WND GST,2 ENE Plentywood,Sheridan,MT,Mesonet,Sher-Wood Airport_ MT.,MTC091,Sheridan,M
+202604230245,2026/04/23 02:45,45.55,-105.89,55.0,BYZ,N,NON-TSTM WND GST,10 NNW Sonnette,Powder River,MT,Mesonet,Mesonet station MTHCD Home Creek Divide Us-212 Mp 81.5.,MTC075,Powder River,M
+202604230255,2026/04/23 02:55,45.80,-109.97,48.0,BYZ,N,NON-TSTM WND GST,2 SSW Big Timber,Sweet Grass,MT,AWOS,AWOS station K6S0 Big Timber.,MTC097,Sweet Grass,M
+202604230258,2026/04/23 02:58,48.49,-104.48,66.0,GGW,G,TSTM WND GST,2 SE Medicine Lake,Sheridan,MT,Mesonet,MEDICINE LAKE_ MT.,MTC091,Sheridan,M
+202604230300,2026/04/23 03:00,48.86,-105.50,58.0,GGW,G,TSTM WND GST,6 NW Scobey,Daniels,MT,Mesonet,Scobey NW.,MTC019,Daniels,M
+202604230315,2026/04/23 03:15,48.41,-110.64,59.0,TFX,N,NON-TSTM WND GST,Rudyard 11 S,Hill,MT,Public,At 9:15 PM on 04/22/2026_ Rudyard 11 S reported a wind gust of 59 mph.,MTC041,Hill,E
+202604230345,2026/04/23 03:45,45.80,-109.43,45.0,BYZ,N,NON-TSTM WND GST,9 NE Reed Point,Stillwater,MT,Mesonet,Mesonet station MTM22 8.8 NE Reed Point (MT-MESO).,MTC095,Stillwater,M
+202604230355,2026/04/23 03:55,46.43,-105.88,60.0,BYZ,G,TSTM WND GST,3 NW Miles City,Custer,MT,ASOS,ASOS station KMLS Miles City.,MTC017,Custer,M
+202604230400,2026/04/23 04:00,46.35,-105.83,49.0,BYZ,N,NON-TSTM WND GST,4 E Ulmer,Custer,MT,Mesonet,Mesonet station MTM25 4.3 S Miles City (MT-MESO).,MTC017,Custer,M
+202604230415,2026/04/23 04:15,46.22,-105.76,45.0,BYZ,N,NON-TSTM WND GST,12 SE Ulmer,Custer,MT,Mesonet,Mesonet station MTM74 Miles City S Mda.,MTC017,Custer,M
+202604230415,2026/04/23 04:15,46.20,-105.70,46.0,BYZ,N,NON-TSTM WND GST,15 SE Ulmer,Custer,MT,Mesonet,Mesonet station MTM40 16.4 S Murn (MT-MESO).,MTC017,Custer,M
+202604230450,2026/04/23 04:50,48.02,-107.58,72.0,GGW,N,NON-TSTM WND GST,1 W Content,Phillips,MT,Mesonet,Content_ MT (UMT - GGW) Elev: 705.0 ft; Lat/Lon: 48.01769/-107.57919.,MTC071,Phillips,M
+202604230500,2026/04/23 05:00,45.82,-109.09,47.0,BYZ,N,NON-TSTM WND GST,8 WSW Molt,Stillwater,MT,Mesonet,Mesonet station MTM20 8.4 S Halfbreed Lake Wildlife (MT-MESO).,MTC095,Stillwater,M
+202604230525,2026/04/23 05:25,48.87,-108.39,40.0,TFX,A,HIGH SUST WINDS,2 NNE Turner,Blaine,MT,Mesonet,Turner North Mesonet measured an average sustained wind of 40 mph between 2225 and 2325 local time.,MTC005,Blaine,M
+202604230535,2026/04/23 05:35,45.70,-108.76,51.0,BYZ,N,NON-TSTM WND GST,2 NNE Laurel,Yellowstone,MT,AWOS,AWOS station K6S8 2 NNE Laurel.,MTC111,Yellowstone,M
+202604230545,2026/04/23 05:45,45.80,-109.43,49.0,BYZ,N,NON-TSTM WND GST,9 NE Reed Point,Stillwater,MT,Mesonet,Mesonet station MTM22 8.8 NE Reed Point (MT-MESO).,MTC095,Stillwater,M
+202604230600,2026/04/23 06:00,45.61,-109.56,49.0,BYZ,N,NON-TSTM WND GST,6 S Reed Point,Stillwater,MT,Mesonet,Mesonet station MTM67 6.1 S Reed Point (MT-MESO).,MTC095,Stillwater,M
+202604230645,2026/04/23 06:45,45.94,-108.15,52.0,BYZ,N,NON-TSTM WND GST,1 SSE Ballantine,Yellowstone,MT,Mesonet,Mesonet station MTBAL Ballantine I-94 Mp 15.0.,MTC111,Yellowstone,M
+202604230650,2026/04/23 06:50,45.80,-108.55,58.0,BYZ,N,NON-TSTM WND GST,1 NW Billings,Yellowstone,MT,ASOS,ASOS station KBIL Billings.,MTC111,Yellowstone,M
+202604230715,2026/04/23 07:15,45.75,-107.66,48.0,BYZ,N,NON-TSTM WND GST,2 WNW Hardin,Big Horn,MT,AWOS,AWOS station K00U 2 WNW Hardin.,MTC003,Big Horn,M
+202604230720,2026/04/23 07:20,48.85,-111.04,71.0,TFX,N,NON-TSTM WND GST,10 ESE Whitlash,Liberty,MT,Mesonet,At 1:20 AM on 04/23/2026_ Mt Lebanon SE Montana Mesonet reported a 71 mph wind gust.,MTC051,Liberty,M
+202604230744,2026/04/23 07:44,47.80,-107.02,61.0,GGW,N,NON-TSTM WND GST,14 NNW Hell Creek Rec A,Valley,MT,Mesonet,Mesonet station KIGM8 King Coulee.,MTC105,Valley,M
+202604230745,2026/04/23 07:45,45.79,-108.47,49.0,BYZ,N,NON-TSTM WND GST,3 SW Lockwood,Yellowstone,MT,Mesonet,Mesonet station MTYRB 3.1 SW Lockwood (MT DOT).,MTC111,Yellowstone,M
+202604230748,2026/04/23 07:48,48.01,-106.40,74.0,GGW,N,NON-TSTM WND GST,2 E Fort Peck,McCone,MT,Mesonet,Mesonet station GGWFP 2.4 E Fort Peck (GGWWFO).,MTC055,McCone,M
+202604230815,2026/04/23 08:15,45.41,-108.56,45.0,BYZ,N,NON-TSTM WND GST,2 WSW Pryor,Big Horn,MT,Mesonet,Mesonet station MTC01 Pryor.,MTC003,Big Horn,M
+202604230832,2026/04/23 08:32,47.91,-108.50,66.0,GGW,N,NON-TSTM WND GST,1 ESE Zortman,Phillips,MT,Mesonet,Mesonet station ALDM8 Zortman 1E.,MTC071,Phillips,M
+202604230845,2026/04/23 08:45,45.14,-107.39,48.0,BYZ,N,NON-TSTM WND GST,Wyola,Big Horn,MT,Mesonet,Mesonet station MTM95 Wyola.,MTC003,Big Horn,M
+202604230845,2026/04/23 08:45,45.64,-106.94,50.0,BYZ,N,NON-TSTM WND GST,6 SSW Stacey,Big Horn,MT,Mesonet,Mesonet station MTM91 Busby N.,MTC003,Big Horn,M
+202604230845,2026/04/23 08:45,47.96,-108.31,62.0,GGW,N,NON-TSTM WND GST,11 ENE Zortman,Phillips,MT,Mesonet,Mesonet station MTMAL 11.3 SW Phillips (MT DOT).,MTC071,Phillips,M
+202604230848,2026/04/23 08:48,45.13,-108.30,50.0,BYZ,N,NON-TSTM WND GST,18 ENE Warren,Carbon,MT,Mesonet,Mesonet station BRTM8 Wild Horse.,MTC009,Carbon,M
+202604230915,2026/04/23 09:15,46.22,-105.76,49.0,BYZ,N,NON-TSTM WND GST,12 SE Ulmer,Custer,MT,Mesonet,Mesonet station MTM74 Miles City S Mda.,MTC017,Custer,M
+202604230915,2026/04/23 09:15,46.20,-105.70,49.0,BYZ,N,NON-TSTM WND GST,15 SE Ulmer,Custer,MT,Mesonet,Mesonet station MTM40 16.4 S Murn (MT-MESO).,MTC017,Custer,M
+202604230915,2026/04/23 09:15,45.01,-106.89,52.0,BYZ,N,NON-TSTM WND GST,4 W Decker,Big Horn,MT,Mesonet,Mesonet station MTDKR Decker S-314 Mp 1.2.,MTC003,Big Horn,M
+202604230930,2026/04/23 09:30,45.44,-105.36,45.0,BYZ,N,NON-TSTM WND GST,2 ESE Broadus,Powder River,MT,Mesonet,Mesonet station MTM32 2.4 E Broadus (MT-MESO).,MTC075,Powder River,M
+202604230930,2026/04/23 09:30,46.69,-109.75,47.0,BYZ,N,NON-TSTM WND GST,Judith Gap,Wheatland,MT,Mesonet,Mesonet station MTJUD Judith Gap (MT DOT).,MTC107,Wheatland,M
+202604230930,2026/04/23 09:30,46.83,-106.27,48.0,BYZ,N,NON-TSTM WND GST,2 NW Rock Springs,Rosebud,MT,Mesonet,Mesonet station MTHIL 1.6 NW Rock Springs (MT DOT).,MTC087,Rosebud,M
+202604231000,2026/04/23 10:00,45.73,-105.59,47.0,BYZ,N,NON-TSTM WND GST,1 SW Coalwood,Powder River,MT,Mesonet,Mesonet station MTCWD Coalwood Mt-59 Mp 55.9.,MTC075,Powder River,M
+202604231020,2026/04/23 10:20,48.41,-106.52,68.0,GGW,N,NON-TSTM WND GST,1 NE Saint Marie,Valley,MT,Mesonet,Mesonet station 07MT 1.0 NE Saint Marie (GGWWFO).,MTC105,Valley,M
+202604231100,2026/04/23 11:00,46.91,-110.85,7.0,TFX,S,SNOW,Onion Park SNOTEL,Meagher,MT,Mesonet,,MTC059,Meagher,E
+202604231100,2026/04/23 11:00,46.93,-110.90,7.0,TFX,S,SNOW,Stringer Creek SNOTEL,Meagher,MT,Mesonet,,MTC059,Meagher,E
+202604231100,2026/04/23 11:00,44.96,-111.29,8.0,TFX,S,SNOW,Carrot Basin SNOTEL,Gallatin,MT,Mesonet,,MTC031,Gallatin,E
+202604231100,2026/04/23 11:00,45.02,-111.85,10.0,TFX,S,SNOW,Clover Meadow SNOTEL,Madison,MT,Mesonet,,MTC057,Madison,E
+202604231100,2026/04/23 11:00,44.59,-111.12,10.0,TFX,S,SNOW,Madison Plateau SNOTEL,Gallatin,MT,Mesonet,,MTC031,Gallatin,E
+202604231200,2026/04/23 12:00,45.41,-112.96,6.0,TFX,S,SNOW,Mule Creek SNOTEL,Beaverhead,MT,Mesonet,,MTC001,Beaverhead,E
+202604231200,2026/04/23 12:00,44.95,-111.36,7.0,TFX,S,SNOW,Beaver Creek SNOTEL,Gallatin,MT,Mesonet,,MTC031,Gallatin,E
+202604231200,2026/04/23 12:00,44.51,-111.13,15.0,TFX,S,SNOW,Black Bear SNOTEL,Gallatin,MT,Mesonet,,MTC031,Gallatin,E
+202604231225,2026/04/23 12:25,48.86,-105.50,58.0,GGW,N,NON-TSTM WND GST,6 NW Scobey,Daniels,MT,Mesonet,Scobey NW_ MT (UMT - GGW) Elev: 2467.0 ft; Lat/Lon: 48.86020/-105.49718.,MTC019,Daniels,M
+202604231248,2026/04/23 12:48,48.01,-106.40,47.0,GGW,A,HIGH SUST WINDS,2 E Fort Peck,McCone,MT,Mesonet,FORT PECK DAM_ MT (GGWWFO - GGW) Elev: 2280.0 ft; Lat/Lon: 48.0084/-106.3962 6:48AM - 9:48 AM.,MTC055,McCone,E
+202604231300,2026/04/23 13:00,48.21,-106.63,None,GGW,Z,BLIZZARD,1 NE Glasgow,Valley,MT,Official NWS Obs,Visibility of 1/4 mile or less in blowing snow. Wind speeds of 35-45 mph. Snowfall of 2.7 in. measured. Wet snow_ compacting and melting.,MTC105,Valley,
+202604231308,2026/04/23 13:08,46.17,-113.10,1.3,MSO,S,SNOW,4 WNW West Valley,Deer Lodge,MT,Trained Spotter,0.14 inches of snow water equivalent. 0.46 inches of rain fell before it changed to snow. Total precipitation 0.60 inches.,MTC023,Deer Lodge,M
+202604231318,2026/04/23 13:18,48.36,-114.20,4.0,MSO,S,SNOW,1 SW Columbia Falls,Flathead,MT,Trained Spotter,,MTC029,Flathead,M
+202604231330,2026/04/23 13:30,45.82,-110.90,16.0,TFX,S,SNOW,12 NE Bozeman,Gallatin,MT,Public,Delayed report. Estimated 16 inches of snow in the past 12 hours. Web cam at Bridger Bowl.,MTC031,Gallatin,E
+202604231345,2026/04/23 13:45,48.80,-115.11,3.5,MSO,S,SNOW,6 SSW Eureka,Lincoln,MT,Trained Spotter,When he woke up at 0530AM the ground was bare. Visibility is a quarter to half mile and snowing good. Elevation 4000 feet.,MTC053,Lincoln,M
+202604231350,2026/04/23 13:50,48.54,-105.66,44.0,GGW,A,HIGH SUST WINDS,11 NNE Volt,Roosevelt,MT,Mesonet,Volt N_ MT (UMT - GGW) Elev: 2392.0 ft; Lat/Lon: 48.54228/-105.66213 7:50 to 12:35 AM.,MTC085,Roosevelt,E
+202604231400,2026/04/23 14:00,46.91,-110.85,10.0,TFX,S,SNOW,6 WSW Neihart,Meagher,MT,Mesonet,Delayed report. Estimated 10 inches of new snow at Onion Park Snotel in the past 14 hours.,MTC059,Meagher,E
+202604231445,2026/04/23 14:45,47.33,-106.95,64.0,GGW,N,NON-TSTM WND GST,2 WNW Jordan,Garfield,MT,ASOS,ASOS station KJDN Jordan.,MTC033,Garfield,M
+202604231500,2026/04/23 15:00,48.86,-105.50,45.0,GGW,A,HIGH SUST WINDS,6 NW Scobey,Daniels,MT,Mesonet,Scobey NW_ MT (UMT - GGW) Elev: 2467.0 ft; Lat/Lon: 48.86020/-105.49718 8:45AM - 10:15 PM.,MTC019,Daniels,M
+202604231500,2026/04/23 15:00,48.28,-106.56,None,GGW,Z,BLIZZARD,6 NNE Glasgow,Valley,MT,Dept of Highways,Montana DOT website reported severe driving conditions on MT-Highway 24 in Valley County between Glasgow and Opheim. Additionally_ at 9:15 AM DOT reported a semi-truck slide resulting in blocked lanes of traffic.,MTC105,Valley,
+202604231515,2026/04/23 15:15,46.58,-108.74,51.0,BYZ,N,NON-TSTM WND GST,13 NW Roundup,Musselshell,MT,Mesonet,Mesonet station MTM41 12.9 NW Roundup (MT-MESO).,MTC065,Musselshell,M
+202604231530,2026/04/23 15:30,47.08,-105.66,40.0,GGW,A,HIGH SUST WINDS,13 NNW Mccloud,Prairie,MT,Mesonet,Sheep Mountain S-253 MP 28.0_ MT (MT DOT - GGW) Elev: 3304.0 ft; Lat/Lon: 47.08200/-105.66800 9:30AM - 11:45AM.,MTC079,Prairie,M
+202604231545,2026/04/23 15:45,47.80,-105.79,41.0,GGW,A,HIGH SUST WINDS,14 NNE Weldon,McCone,MT,Mesonet,Vida W_ MT (UMT - GGW) Elev: 2526.3 ft; Lat/Lon: 47.80094/-105.78957 9:45 - 11:45.,MTC055,McCone,M
+202604231600,2026/04/23 16:00,48.81,-105.06,43.0,GGW,A,HIGH SUST WINDS,1 N Navajo,Daniels,MT,Mesonet,Navajo MT-5 16.7_ MT (MT DOT - GGW) Elev: 2569.0 ft; Lat/Lon: 48.81161/-105.06078 10:00 AM - 1:15 PM.,MTC019,Daniels,E
+202604231613,2026/04/23 16:13,48.10,-105.58,58.0,GGW,N,NON-TSTM WND GST,3 ENE Wolf Point,Roosevelt,MT,ASOS,ASOS station KOLF Wolf Point Airport.,MTC085,Roosevelt,M
+202604231615,2026/04/23 16:15,48.81,-104.25,45.0,GGW,A,HIGH SUST WINDS,6 S Comertown,Sheridan,MT,Mesonet,Comertown Turn-Off MT-5 MP 13.4_ MT (MT DOT - GGW) Elev: 2359.0 ft; Lat/Lon: 48.81000/-104.25290 10:15AM - 22:30PM.,MTC091,Sheridan,E
+202604231630,2026/04/23 16:30,45.61,-109.56,51.0,BYZ,N,NON-TSTM WND GST,6 S Reed Point,Stillwater,MT,Mesonet,Mesonet station MTM67 6.1 S Reed Point (MT-MESO).,MTC095,Stillwater,M
+202604231635,2026/04/23 16:35,47.92,-105.35,43.0,GGW,A,HIGH SUST WINDS,9 NE Vida,McCone,MT,Mesonet,Vida NE_ MT (UMT - GGW) Elev: 2224.5 ft; Lat/Lon: 47.92282/-105.34951 10:35 - 12:35.,MTC055,McCone,E
+202604231645,2026/04/23 16:45,46.90,-108.74,41.0,TFX,A,HIGH SUST WINDS,Beacon Hill MDT,Fergus,MT,Dept of Highways,Beacon Hill MDT averaged a sustained wind of 41 mph between 0900 and 1045 local time.,MTC027,Fergus,M
+202604231645,2026/04/23 16:45,48.41,-106.26,None,GGW,Z,BLIZZARD,12 SSW Larslan,Valley,MT,NWS Employee,While traveling_ an NWS employee experienced white-out blizzard conditions between Nashua and Larslan along state road 438 from 6:30 AM to 8:00 AM. Wind speeds from nearby observations were sustained at 30 to 35 mph and gusts were 35 to 45 mph.,MTC105,Valley,
+202604231655,2026/04/23 16:55,48.78,-104.52,45.0,GGW,A,HIGH SUST WINDS,2 ENE Plentywood,Sheridan,MT,Mesonet,Sher-Wood Airport_ MT (ASOS/AWOS - GGW) Elev: 2264.0 ft; Lat/Lon: 48.78900/-104.52297 10:55AM - 2:55 PM.,MTC091,Sheridan,M
+202604231700,2026/04/23 17:00,48.79,-106.43,None,GGW,Z,BLIZZARD,5 SSW Opheim,Valley,MT,CO-OP Observer,Co-op observer reported white-out blizzard conditions from 2:30 AM to 11:00 AM local time. Nearby wind speed observations were sustained at 35-40 mph with gusts consistently at 45 to 50 mph. Snowfall total estimated at 6 in. Even after snowfall ended_ enough dry snow was present to sustain ground blizzard conditions until 11:00 AM.,MTC105,Valley,
+202604231740,2026/04/23 17:40,46.48,-104.07,51.0,BYZ,N,NON-TSTM WND GST,7 S Ollie,Fallon,MT,Mesonet,Mesonet station CACM8 Cannonball Creek.,MTC025,Fallon,M
+202604231745,2026/04/23 17:45,46.91,-104.75,57.0,GGW,N,NON-TSTM WND GST,5 ESE Hoyt,Dawson,MT,Mesonet,Mesonet station MTM28 5.2 E Hoyt (MT-MESO).,MTC021,Dawson,M
+202604231753,2026/04/23 17:53,46.60,-112.06,5.7,TFX,S,SNOW,2 W Helena,Lewis and Clark,MT,Trained Spotter,Snow started at 7:45 PM 04/22/2026.,MTC049,Lewis and Clark,M
+202604231834,2026/04/23 18:34,47.42,-106.03,None,GGW,Z,BLIZZARD,9 NE Flowing Wells Rest,McCone,MT,Public,Public report at 20 W Circle of white-out blizzard conditions. Wind speeds sustained at 30 mph_ gusting to 40 mph.,MTC055,McCone,
+202604232200,2026/04/23 22:00,48.50,-113.98,4.0,MSO,S,SNOW,West Glacier,Flathead,MT,CO-OP Observer,,MTC029,Flathead,M
+202604240041,2026/04/24 00:41,47.28,-111.43,0.9,TFX,R,RAIN,11 SSE Ulm,Cascade,MT,Trained Spotter,Trained spotter measured 0.9 inches of rain over the past 24 hours.,MTC013,Cascade,M
+202604240048,2026/04/24 00:48,45.66,-111.89,4.5,TFX,S,SNOW,Pony,Madison,MT,Public,Over the past 48 hours a member of the public measured 4.5 inches of snow.,MTC057,Madison,M
+202604240130,2026/04/24 01:30,48.36,-114.20,4.0,MSO,S,SNOW,1 SW Columbia Falls,Flathead,MT,Trained Spotter,,MTC029,Flathead,M
+202604240945,2026/04/24 09:45,48.81,-111.26,55.0,TFX,N,NON-TSTM WND GST,6 S Whitlash,Liberty,MT,Mesonet,Mesonet station GW3546 WHITLASH SEVEN SOUTH.,MTC051,Liberty,M
+202604241000,2026/04/24 10:00,45.02,-111.85,7.0,TFX,S,SNOW,Clover Meadow SNOTEL,Madison,MT,Mesonet,48 hour storm total.,MTC057,Madison,E
+202604241100,2026/04/24 11:00,46.50,-114.09,3.5,MSO,S,SNOW,1 SSE Stevensville,Ravalli,MT,NWS Employee,12 hr snowfall. Light snow continues.,MTC081,Ravalli,M
+202604241131,2026/04/24 11:31,48.81,-111.26,61.0,TFX,N,NON-TSTM WND GST,6 S Whitlash,Liberty,MT,Mesonet,Mesonet station GW3546 WHITLASH SEVEN SOUTH.,MTC051,Liberty,M
+202604241200,2026/04/24 12:00,48.18,-109.69,6.0,TFX,S,SNOW,7 SE Rocky Boy,Hill,MT,Trained Spotter,Delayed Report: Measured 6 inches of snow between 0600 April 23rd and 0600 April 24th. Estimated snow accumulations up to 9 inches over the higher mountain peaks.,MTC041,Hill,M
+202604241200,2026/04/24 12:00,48.16,-113.95,7.0,MSO,S,SNOW,9 NE Bigfork,Flathead,MT,Mesonet,Noisy Basin SNOTEL snow depth increase. 1.00 inch snow water equivalent since 4PM MDT Apr 22. Current depth 104 inches or 8.7 feet.,MTC029,Flathead,M
+202604241200,2026/04/24 12:00,46.27,-113.16,12.0,MSO,S,SNOW,6 NE Georgetown,Granite,MT,Mesonet,Warm Springs SNOTEL depth increase. 1.20 inches of snow water equivalent since 4PM MDT Apr 22. Current snow depth 82 inches or 6.8 feet. Current temp 13 degrees F.,MTC039,Granite,M
+202604241248,2026/04/24 12:48,45.16,-109.29,8.0,BYZ,S,SNOW,3 SW Red Lodge,Carbon,MT,Cocorahs,Cocorahs station MT-CB-5 Red Lodge 3.0 SW.,MTC009,Carbon,M
+202604241300,2026/04/24 13:00,45.62,-109.10,0.1,BYZ,S,SNOW,7 E Columbus,Stillwater,MT,Cocorahs,Cocorahs station MT-SW-2 Columbus 7.2 E.,MTC095,Stillwater,M
+202604241300,2026/04/24 13:00,45.50,-109.01,0.5,BYZ,S,SNOW,2 NW Joliet,Carbon,MT,Cocorahs,Cocorahs station MT-CB-13 Joliet 2.2 WNW.,MTC009,Carbon,M
+202604241300,2026/04/24 13:00,48.10,-114.64,0.5,MSO,S,SNOW,1 SE Marion,Flathead,MT,Cocorahs,Cocorahs station MT-FH-12 1 ESE Marion.,MTC029,Flathead,M
+202604241300,2026/04/24 13:00,48.17,-114.46,2.5,MSO,S,SNOW,4 N Kila,Flathead,MT,Cocorahs,Cocorahs station MT-FH-38 Kalispell 6.8 WSW.,MTC029,Flathead,M
+202604241300,2026/04/24 13:00,48.26,-113.47,2.7,MSO,S,SNOW,1 SW Blacktail - Railro,Flathead,MT,Mesonet,BNSF Shed 4 snow depth increase that mainly occurred between 5AM and 8AM MDT on Apr 23. Current temperature is 20 degrees F.,MTC029,Flathead,M
+202604241300,2026/04/24 13:00,45.64,-110.43,4.0,BYZ,S,SNOW,7 ESE Livingston,Park,MT,Cocorahs,Cocorahs station MT-PK-7 Livingston 6.6 ESE.,MTC067,Park,M
+202604241300,2026/04/24 13:00,46.13,-114.22,4.5,MSO,S,SNOW,2 W Charlos Heights,Ravalli,MT,Cocorahs,Cocorahs station MT-RV-18 2 W Charlos Heights.,MTC081,Ravalli,M
+202604241300,2026/04/24 13:00,48.91,-114.77,5.0,MSO,S,SNOW,12 NNE Fortine,Lincoln,MT,Mesonet,Grave Creek SNOTEL snow depth increase. Elevation 4300 feet. 0.70 inches of snow water equivalent. Current snow depth 2 inches.,MTC053,Lincoln,M
+202604241300,2026/04/24 13:00,45.73,-114.48,5.0,MSO,S,SNOW,22 SW Conner,Ravalli,MT,Mesonet,Nez Perce Camp SNOTEL at 5650 feet. 0.70 inches of snow water equivalent.,MTC081,Ravalli,M
+202604241300,2026/04/24 13:00,46.88,-113.60,5.1,MSO,S,SNOW,1 WSW Potomac,Missoula,MT,Cocorahs,Cocorahs station MT-MS-39 Potomac 0.8 WSW.,MTC063,Missoula,M
+202604241300,2026/04/24 13:00,46.79,-109.51,6.0,TFX,S,SNOW,Crystal Lake SNOTEL,Fergus,MT,Mesonet,48 hour storm total.,MTC027,Fergus,E
+202604241300,2026/04/24 13:00,46.17,-113.09,6.4,MSO,S,SNOW,3 WNW West Valley,Deer Lodge,MT,Cocorahs,Cocorahs station MT-DL-1 7 NW Anaconda.,MTC023,Deer Lodge,M
+202604241300,2026/04/24 13:00,45.17,-113.50,7.0,TFX,S,SNOW,Bloody Dick SNOTEL,Beaverhead,MT,Mesonet,48 hour storm total.,MTC001,Beaverhead,E
+202604241300,2026/04/24 13:00,44.47,-112.98,8.0,TFX,S,SNOW,Beagle Springs SNOTEL,Beaverhead,MT,Mesonet,48 hour storm total.,MTC001,Beaverhead,E
+202604241300,2026/04/24 13:00,46.93,-110.90,8.0,TFX,S,SNOW,Stringer Creek SNOTEL,Meagher,MT,Mesonet,48 hour storm total.,MTC059,Meagher,E
+202604241300,2026/04/24 13:00,47.45,-112.81,8.0,TFX,S,SNOW,Wood Creek SNOTEL,Lewis and Clark,MT,Mesonet,48 hour storm total.,MTC049,Lewis and Clark,E
+202604241300,2026/04/24 13:00,48.24,-113.57,8.5,MSO,S,SNOW,3 SE Essex,Flathead,MT,Mesonet,BNSF Java East snow plot. This is a cumulative snow depth increase since 5AM Apr 23. Current snow depth 2 inches. Current temperature is 21 degrees.,MTC029,Flathead,M
+202604241300,2026/04/24 13:00,44.96,-111.29,9.0,TFX,S,SNOW,Carrot Basin SNOTEL,Gallatin,MT,Mesonet,48 hour storm total.,MTC031,Gallatin,E
+202604241300,2026/04/24 13:00,45.80,-112.52,10.0,MSO,S,SNOW,8 S Janney,Silver Bow,MT,Mesonet,Basin Creek SNOTEL snow depth increase. Elevation 7180 feet. 0.50 inches of precipitation since 3AM MDT Apr 23. Current snow depth is 11 inches. Current temperature is 14 degrees F which is the 3rd coldest low temperature for this date since 1991 unofficially.,MTC093,Silver Bow,M
+202604241300,2026/04/24 13:00,46.91,-110.85,11.0,TFX,S,SNOW,Onion Park SNOTEL,Meagher,MT,Mesonet,48 hour storm total.,MTC059,Meagher,E
+202604241300,2026/04/24 13:00,44.59,-111.12,12.0,TFX,S,SNOW,Madison Plateau SNOTEL,Gallatin,MT,Mesonet,48 hour storm total.,MTC031,Gallatin,E
+202604241300,2026/04/24 13:00,45.40,-110.96,12.0,TFX,S,SNOW,Shower Falls SNOTEL,Gallatin,MT,Mesonet,48 hour storm total.,MTC031,Gallatin,E
+202604241300,2026/04/24 13:00,45.17,-113.58,17.0,TFX,S,SNOW,Darkhorse Lake SNOTEL,Beaverhead,MT,Mesonet,48 hour storm total.,MTC001,Beaverhead,E
+202604241315,2026/04/24 13:15,46.86,-114.10,0.5,MSO,S,SNOW,5 W Missoula,Missoula,MT,Cocorahs,Cocorahs station MT-MS-14 5 W Missoula.,MTC063,Missoula,M
+202604241335,2026/04/24 13:35,46.99,-113.93,13.0,MSO,S,SNOW,8 ESE Evaro,Missoula,MT,Mesonet,Stuart Mtn SNOTEL snow depth increase. 1.70 inches of snow water equivalent since 1100AM Apr 22. Current depth 8 feet.,MTC063,Missoula,M
+202604241345,2026/04/24 13:45,48.81,-111.26,64.0,TFX,N,NON-TSTM WND GST,6 S Whitlash,Liberty,MT,Mesonet,Mesonet station GW3546 WHITLASH SEVEN SOUTH.,MTC051,Liberty,M
+202604241400,2026/04/24 14:00,48.83,-115.71,1.5,MSO,S,SNOW,Yaak,Lincoln,MT,Cocorahs,Cocorahs station MT-LN-6 Yaak.,MTC053,Lincoln,M
+202604241400,2026/04/24 14:00,46.23,-114.12,2.0,MSO,S,SNOW,2 ESE Hamilton,Ravalli,MT,Public,Blowing and drifting.,MTC081,Ravalli,E
+202604241400,2026/04/24 14:00,45.66,-110.58,2.3,BYZ,S,SNOW,1 WSW Livingston,Park,MT,Cocorahs,Cocorahs station MT-PK-14 Livingston 0.9 WSW.,MTC067,Park,M
+202604241400,2026/04/24 14:00,46.28,-114.10,3.0,MSO,S,SNOW,3 SSE Corvallis,Ravalli,MT,Public,,MTC081,Ravalli,E
+202604241400,2026/04/24 14:00,46.75,-114.15,3.0,MSO,S,SNOW,3 WSW Lolo,Missoula,MT,Public,,MTC063,Missoula,E
+202604241400,2026/04/24 14:00,46.76,-113.39,5.0,MSO,S,SNOW,5 NW Bearmouth,Granite,MT,Mesonet,Combination SNOTEL at 5600 feet. Depth 5 inches.,MTC039,Granite,M
+202604241400,2026/04/24 14:00,46.18,-113.85,6.0,MSO,S,SNOW,6 SW Skalkaho Pass,Ravalli,MT,Mesonet,Daly Creek SNOTEL at 5780 feet. 0.30 inches of snow water equivalent. Depth is 5 inches.,MTC081,Ravalli,M
+202604241400,2026/04/24 14:00,46.56,-111.29,6.0,TFX,S,SNOW,Boulder Mountain SNOTEL,Meagher,MT,Mesonet,48 hour storm total.,MTC059,Meagher,E
+202604241400,2026/04/24 14:00,46.84,-112.51,6.0,TFX,S,SNOW,Nevada Ridge SNOTEL,Lewis and Clark,MT,Mesonet,48 hour storm total.,MTC049,Lewis and Clark,E
+202604241400,2026/04/24 14:00,44.79,-111.71,6.0,TFX,S,SNOW,Tepee Creek SNOTEL,Madison,MT,Mesonet,48 hour storm total.,MTC057,Madison,E
+202604241400,2026/04/24 14:00,46.52,-114.13,7.0,MSO,S,SNOW,2 WNW Stevensville,Ravalli,MT,Trained Spotter,Measured six areas with depths between 6.5 and 8 inches. Nearby observations showed winds gusting up to 25 mph during the night.,MTC081,Ravalli,M
+202604241400,2026/04/24 14:00,44.95,-111.36,7.0,TFX,S,SNOW,Beaver Creek SNOTEL,Gallatin,MT,Mesonet,48 hour storm total.,MTC031,Gallatin,E
+202604241400,2026/04/24 14:00,45.89,-110.94,7.0,TFX,S,SNOW,Brackett Creek SNOTEL,Gallatin,MT,Mesonet,48 hour storm total.,MTC031,Gallatin,E
+202604241400,2026/04/24 14:00,46.44,-112.19,7.0,TFX,S,SNOW,Frohner Meadow,Jefferson,MT,Mesonet,48 hour storm total.,MTC043,Jefferson,E
+202604241400,2026/04/24 14:00,46.36,-112.26,7.0,TFX,S,SNOW,Rocker Peak SNOTEL,Jefferson,MT,Mesonet,48 hour storm total.,MTC043,Jefferson,E
+202604241400,2026/04/24 14:00,45.41,-112.96,9.0,TFX,S,SNOW,Mule Creek SNOTEL,Beaverhead,MT,Mesonet,48 hour storm total.,MTC001,Beaverhead,E
+202604241400,2026/04/24 14:00,45.60,-111.96,10.0,TFX,S,SNOW,Albro Lake SNOTEL,Madison,MT,Mesonet,48 hour storm total.,MTC057,Madison,E
+202604241400,2026/04/24 14:00,45.27,-111.43,12.0,TFX,S,SNOW,Lone Mountain SNOTEL,Madison,MT,Mesonet,48 hour storm total.,MTC057,Madison,E
+202604241400,2026/04/24 14:00,44.99,-113.44,13.0,TFX,S,SNOW,18 W Grant,Beaverhead,MT,Mesonet,48 hour storm total.,MTC001,Beaverhead,E
+202604241400,2026/04/24 14:00,44.51,-111.13,16.0,TFX,S,SNOW,Black Bear SNOTEL,Gallatin,MT,Mesonet,48 hour storm total.,MTC031,Gallatin,E
+202604241415,2026/04/24 14:15,48.70,-111.20,65.0,TFX,N,NON-TSTM WND GST,15 S Whitlash,Liberty,MT,Mesonet,Mesonet station GW4063 EAGLE CREEK COLONY.,MTC051,Liberty,M
+202604241440,2026/04/24 14:40,46.40,-114.08,5.0,MSO,S,SNOW,3 SE Bell Crossing,Ravalli,MT,Public,,MTC081,Ravalli,E
+202604241444,2026/04/24 14:44,46.75,-114.20,5.0,MSO,S,SNOW,6 W Lolo,Missoula,MT,Public,,MTC063,Missoula,E
+202604241451,2026/04/24 14:51,46.77,-113.71,3.0,MSO,S,SNOW,Clinton,Missoula,MT,Public,,MTC063,Missoula,E
+202604241451,2026/04/24 14:51,45.72,-114.28,4.5,MSO,S,SNOW,16 W Lost Trail Pass,Ravalli,MT,Public,Location estimated near Painted Rocks.,MTC081,Ravalli,E
+202604241452,2026/04/24 14:52,47.07,-114.44,3.0,MSO,S,SNOW,4 NNW Ninemile,Missoula,MT,Public,,MTC063,Missoula,E
+202604241457,2026/04/24 14:57,47.85,-114.04,1.0,MSO,S,SNOW,8 N Finley Point,Lake,MT,Trained Spotter,,MTC047,Lake,M
+202604241600,2026/04/24 16:00,46.83,-113.34,8.0,MSO,S,SNOW,Garnet,Granite,MT,Public,Garnet Ghost Town mentioned that at least 3 people have tried to drive there this past weekend_ got stuck and had to pay a lot to get towed out.,MTC039,Granite,E
+202604241715,2026/04/24 17:15,48.05,-110.62,60.0,TFX,N,NON-TSTM WND GST,10 NW Loma,Chouteau,MT,Mesonet,Mesonet station GW6710 MEADOWLANE.,MTC015,Chouteau,M
+202604241815,2026/04/24 18:15,46.70,-106.59,52.0,BYZ,N,NON-TSTM WND GST,9 ENE Bascom,Rosebud,MT,Mesonet,Mesonet station MTM89 Angela W.,MTC087,Rosebud,M
+202604241859,2026/04/24 18:59,46.43,-105.88,51.0,BYZ,N,NON-TSTM WND GST,3 NW Miles City,Custer,MT,ASOS,ASOS station KMLS Miles City.,MTC017,Custer,M
+202604241944,2026/04/24 19:44,46.11,-110.47,6.0,BYZ,S,SNOW,12 NE Wilsall,Park,MT,Other Federal,,MTC067,Park,E
+202604241944,2026/04/24 19:44,46.09,-110.43,24.0,BYZ,S,SNOW,13 ENE Wilsall,Park,MT,Other Federal,,MTC067,Park,E
+202604241945,2026/04/24 19:45,45.27,-110.25,1.0,BYZ,S,SNOW,22 SW Limestone,Park,MT,Other Federal,,MTC067,Park,E
+202604241946,2026/04/24 19:46,45.30,-110.07,2.0,BYZ,S,SNOW,14 SW Limestone,Sweet Grass,MT,Other Federal,,MTC097,Sweet Grass,E
+202604241946,2026/04/24 19:46,45.42,-110.09,3.6,BYZ,S,SNOW,10 WSW Limestone,Sweet Grass,MT,Other Federal,,MTC097,Sweet Grass,E
+202604241946,2026/04/24 19:46,45.22,-110.24,6.0,BYZ,S,SNOW,21 NW Cooke City,Park,MT,Other Federal,,MTC067,Park,E
+202604241947,2026/04/24 19:47,45.05,-109.94,7.5,BYZ,S,SNOW,3 NNW Cooke City,Park,MT,Other Federal,,MTC067,Park,E
+202604241947,2026/04/24 19:47,45.06,-109.94,13.5,BYZ,S,SNOW,3 NNW Cooke City,Park,MT,Other Federal,,MTC067,Park,E
+202604241948,2026/04/24 19:48,45.24,-109.46,5.0,BYZ,S,SNOW,3 SSW Luther,Carbon,MT,Other Federal,,MTC009,Carbon,E
+202604241950,2026/04/24 19:50,45.19,-109.35,12.0,BYZ,S,SNOW,5 W Red Lodge,Carbon,MT,Other Federal,,MTC009,Carbon,E
+202604242002,2026/04/24 20:02,46.32,-114.03,4.0,MSO,S,SNOW,4 E Corvallis,Ravalli,MT,Trained Spotter,They measured a snow water equivalent of 0.38 inches.,MTC081,Ravalli,M
+202604242300,2026/04/24 23:00,45.18,-109.25,6.0,BYZ,S,SNOW,1 SSW Red Lodge,Carbon,MT,CO-OP Observer,CO-OP Observer station RELM8 0.6 S Red Lodge.,MTC009,Carbon,M
+202604250600,2026/04/25 06:00,45.66,-111.93,6.0,TFX,S,SNOW,2 WNW Pony,Madison,MT,Public,Estimated about 6 inches of snowfall over the past few days.,MTC057,Madison,E
+202604251220,2026/04/25 12:20,45.16,-109.29,2.5,BYZ,S,SNOW,3 SW Red Lodge,Carbon,MT,Cocorahs,Cocorahs station MT-CB-5 Red Lodge 3.0 SW.,MTC009,Carbon,M
+202604262357,2026/04/26 23:57,45.81,-108.55,1.2,BYZ,S,SNOW,1 NNW Billings,Yellowstone,MT,ASOS,Just a trace remaining on the ground as of 6pm MDT 4/26.,MTC111,Yellowstone,M
+202604271650,2026/04/27 16:50,45.99,-107.93,2.3,BYZ,S,SNOW,1 ESE Pompeys Pillar,Yellowstone,MT,Trained Spotter,,MTC111,Yellowstone,M
+202604271933,2026/04/27 19:33,46.34,-106.70,2.0,BYZ,S,SNOW,5 N Forsyth,Rosebud,MT,Trained Spotter,0.17 inches of liquid.,MTC087,Rosebud,M

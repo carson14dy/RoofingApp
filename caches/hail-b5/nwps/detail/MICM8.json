@@ -1,0 +1,1127 @@
+{
+  "lid": "MICM8",
+  "usgsId": "06308500",
+  "reachId": "12751711",
+  "name": "Tongue River at Miles City",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "BYZ",
+    "name": "Billings"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Custer",
+  "timeZone": "MST7MDT",
+  "latitude": 46.3845944,
+  "longitude": -105.8455222,
+  "pedts": {
+    "observed": "HGIRA",
+    "forecast": "HGIFE"
+  },
+  "status": {
+    "observed": {
+      "primary": 1.69,
+      "primaryUnit": "ft",
+      "secondary": 0.145,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:00:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": 15,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": 13,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 10,
+        "flow": -9999
+      },
+      "action": {
+        "stage": -9999,
+        "flow": -9999
+      }
+    },
+    "lro": {
+      "minorCS": "< 0.05",
+      "moderateCS": "< 0.05",
+      "majorCS": "< 0.05",
+      "producedTime": "2026-09-23T22:05:04Z",
+      "interval": "OND"
+    },
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2011-05-21T00:00:00Z",
+          "stage": 13.99,
+          "flow": 15300,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-02-15T00:00:00Z",
+          "stage": 13.27,
+          "flow": 9000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1994-03-04T00:00:00Z",
+          "stage": 12.1,
+          "flow": 9100,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1949-03-06T00:00:00Z",
+          "stage": 11.8,
+          "flow": 12000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1962-06-15T00:00:00Z",
+          "stage": 11.33,
+          "flow": 13300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2007-06-08T00:00:00Z",
+          "stage": 10.97,
+          "flow": 8520,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1965-04-04T00:00:00Z",
+          "stage": 10.76,
+          "flow": 10400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-03-21T00:00:00Z",
+          "stage": 10.59,
+          "flow": 7470,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1969-03-18T00:00:00Z",
+          "stage": 10.55,
+          "flow": 10000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1975-05-07T00:00:00Z",
+          "stage": 10.4,
+          "flow": 10200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1978-05-23T00:00:00Z",
+          "stage": 10.18,
+          "flow": 8650,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2003-03-15T00:00:00Z",
+          "stage": 10,
+          "flow": 4000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-05-25T00:00:00Z",
+          "stage": 9.66,
+          "flow": 6190,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1967-06-14T00:00:00Z",
+          "stage": 9.45,
+          "flow": 7990,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1993-07-04T00:00:00Z",
+          "stage": 9.07,
+          "flow": 6530,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-05-31T00:00:00Z",
+          "stage": 8.87,
+          "flow": 5050,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1972-10-03T00:00:00Z",
+          "stage": 8.66,
+          "flow": 6430,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-06-18T00:00:00Z",
+          "stage": 8.02,
+          "flow": 3740,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1948-06-05T00:00:00Z",
+          "stage": 7.92,
+          "flow": 7470,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1968-08-24T00:00:00Z",
+          "stage": 7.82,
+          "flow": 5120,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1964-06-19T00:00:00Z",
+          "stage": 7.76,
+          "flow": 5540,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-06-20T00:00:00Z",
+          "stage": 7.72,
+          "flow": 3480,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-06-07T00:00:00Z",
+          "stage": 7.68,
+          "flow": 3370,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1958-07-03T00:00:00Z",
+          "stage": 7.59,
+          "flow": 6970,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-06-09T00:00:00Z",
+          "stage": 7.4,
+          "flow": 3750,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2024-05-08T00:00:00Z",
+          "stage": 7.3,
+          "flow": 3100,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1973-06-19T00:00:00Z",
+          "stage": 7.15,
+          "flow": 4330,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-06-27T00:00:00Z",
+          "stage": 7.06,
+          "flow": 3240,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-06-19T00:00:00Z",
+          "stage": 7,
+          "flow": 3080,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1995-05-14T00:00:00Z",
+          "stage": 6.95,
+          "flow": 3270,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1999-06-14T00:00:00Z",
+          "stage": 6.9,
+          "flow": 3330,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-07-04T00:00:00Z",
+          "stage": 6.88,
+          "flow": 2800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-05-22T00:00:00Z",
+          "stage": 6.75,
+          "flow": 2620,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1991-09-15T00:00:00Z",
+          "stage": 6.67,
+          "flow": 3610,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-09-25T00:00:00Z",
+          "stage": 6.57,
+          "flow": 3620,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1984-06-16T00:00:00Z",
+          "stage": 6.52,
+          "flow": 3570,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1970-06-01T00:00:00Z",
+          "stage": 6.49,
+          "flow": 3430,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-24T00:00:00Z",
+          "stage": 6.39,
+          "flow": 2630,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-06-01T00:00:00Z",
+          "stage": 6.28,
+          "flow": 2530,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2009-06-16T00:00:00Z",
+          "stage": 5.57,
+          "flow": 1900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1955-05-04T00:00:00Z",
+          "stage": 5.53,
+          "flow": 3810,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-03-07T00:00:00Z",
+          "stage": 5.37,
+          "flow": 1200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1953-06-20T00:00:00Z",
+          "stage": 5.16,
+          "flow": 3100,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2000-06-04T00:00:00Z",
+          "stage": 5.07,
+          "flow": 1470,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2004-03-10T00:00:00Z",
+          "stage": 5.07,
+          "flow": 500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1987-08-14T00:00:00Z",
+          "stage": 5.04,
+          "flow": 2180,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1946-06-12T00:00:00Z",
+          "stage": 4.94,
+          "flow": 3140,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1954-08-17T00:00:00Z",
+          "stage": 4.92,
+          "flow": 2780,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-03-01T00:00:00Z",
+          "stage": 4.67,
+          "flow": 1300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1989-03-27T00:00:00Z",
+          "stage": 4.67,
+          "flow": 1900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-06-21T00:00:00Z",
+          "stage": 4.66,
+          "flow": 1870,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2001-07-27T00:00:00Z",
+          "stage": 4.65,
+          "flow": 1150,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1998-06-24T00:00:00Z",
+          "stage": 4.6,
+          "flow": 1250,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1951-09-02T00:00:00Z",
+          "stage": 4.55,
+          "flow": 2680,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1983-06-17T00:00:00Z",
+          "stage": 4.54,
+          "flow": 1780,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1977-05-19T00:00:00Z",
+          "stage": 4.54,
+          "flow": 1910,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1976-06-15T00:00:00Z",
+          "stage": 4.5,
+          "flow": 1880,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1990-06-21T00:00:00Z",
+          "stage": 4.49,
+          "flow": 1770,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-09-25T00:00:00Z",
+          "stage": 4.42,
+          "flow": 1140,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1988-06-06T00:00:00Z",
+          "stage": 4.31,
+          "flow": 1650,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-07-05T00:00:00Z",
+          "stage": 4.17,
+          "flow": 1510,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1992-07-06T00:00:00Z",
+          "stage": 4.06,
+          "flow": 1510,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-06-11T00:00:00Z",
+          "stage": 4.03,
+          "flow": 1030,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1985-08-03T00:00:00Z",
+          "stage": 3.68,
+          "flow": 1220,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1980-06-16T00:00:00Z",
+          "stage": 3.63,
+          "flow": 1170,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1966-07-29T00:00:00Z",
+          "stage": 3.59,
+          "flow": 1110,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2002-06-25T00:00:00Z",
+          "stage": 3.31,
+          "flow": 335,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1961-07-30T00:00:00Z",
+          "stage": 2.6,
+          "flow": 1090,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2024-05-08T00:00:00Z",
+          "stage": 7.3,
+          "flow": 3100,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-06-20T00:00:00Z",
+          "stage": 7.72,
+          "flow": 3480,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-07-04T00:00:00Z",
+          "stage": 6.88,
+          "flow": 2800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-06-11T00:00:00Z",
+          "stage": 4.03,
+          "flow": 1030,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2020-03-01T00:00:00Z",
+          "stage": 4.67,
+          "flow": 1300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-03-21T00:00:00Z",
+          "stage": 10.59,
+          "flow": 7470,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-05-22T00:00:00Z",
+          "stage": 6.75,
+          "flow": 2620,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-09-25T00:00:00Z",
+          "stage": 4.42,
+          "flow": 1140,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-06-07T00:00:00Z",
+          "stage": 7.68,
+          "flow": 3370,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-06-18T00:00:00Z",
+          "stage": 8.02,
+          "flow": 3740,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-05-31T00:00:00Z",
+          "stage": 8.87,
+          "flow": 5050,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-03-07T00:00:00Z",
+          "stage": 5.37,
+          "flow": 1200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-05-21T00:00:00Z",
+          "stage": 13.99,
+          "flow": 15300,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-05-25T00:00:00Z",
+          "stage": 9.66,
+          "flow": 6190,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2009-06-16T00:00:00Z",
+          "stage": 5.57,
+          "flow": 1900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-06-27T00:00:00Z",
+          "stage": 7.06,
+          "flow": 3240,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2007-06-08T00:00:00Z",
+          "stage": 10.97,
+          "flow": 8520,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2006-05-24T00:00:00Z",
+          "stage": 6.39,
+          "flow": 2630,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2005-06-09T00:00:00Z",
+          "stage": 7.4,
+          "flow": 3750,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2004-03-10T00:00:00Z",
+          "stage": 5.07,
+          "flow": 500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2003-03-15T00:00:00Z",
+          "stage": 10,
+          "flow": 4000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2002-06-25T00:00:00Z",
+          "stage": 3.31,
+          "flow": 335,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2001-07-27T00:00:00Z",
+          "stage": 4.65,
+          "flow": 1150,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2000-06-04T00:00:00Z",
+          "stage": 5.07,
+          "flow": 1470,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1999-06-14T00:00:00Z",
+          "stage": 6.9,
+          "flow": 3330,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1998-06-24T00:00:00Z",
+          "stage": 4.6,
+          "flow": 1250,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-06-19T00:00:00Z",
+          "stage": 7,
+          "flow": 3080,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-06-01T00:00:00Z",
+          "stage": 6.28,
+          "flow": 2530,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1995-05-14T00:00:00Z",
+          "stage": 6.95,
+          "flow": 3270,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1994-03-04T00:00:00Z",
+          "stage": 12.1,
+          "flow": 9100,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1993-07-04T00:00:00Z",
+          "stage": 9.07,
+          "flow": 6530,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1992-07-06T00:00:00Z",
+          "stage": 4.06,
+          "flow": 1510,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1991-09-15T00:00:00Z",
+          "stage": 6.67,
+          "flow": 3610,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1990-06-21T00:00:00Z",
+          "stage": 4.49,
+          "flow": 1770,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1989-03-27T00:00:00Z",
+          "stage": 4.67,
+          "flow": 1900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1988-06-06T00:00:00Z",
+          "stage": 4.31,
+          "flow": 1650,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1987-08-14T00:00:00Z",
+          "stage": 5.04,
+          "flow": 2180,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-09-25T00:00:00Z",
+          "stage": 6.57,
+          "flow": 3620,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1985-08-03T00:00:00Z",
+          "stage": 3.68,
+          "flow": 1220,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1984-06-16T00:00:00Z",
+          "stage": 6.52,
+          "flow": 3570,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1983-06-17T00:00:00Z",
+          "stage": 4.54,
+          "flow": 1780,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-07-05T00:00:00Z",
+          "stage": 4.17,
+          "flow": 1510,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1980-06-16T00:00:00Z",
+          "stage": 3.63,
+          "flow": 1170,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1978-05-23T00:00:00Z",
+          "stage": 10.18,
+          "flow": 8650,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1977-05-19T00:00:00Z",
+          "stage": 4.54,
+          "flow": 1910,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1976-06-15T00:00:00Z",
+          "stage": 4.5,
+          "flow": 1880,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1975-05-07T00:00:00Z",
+          "stage": 10.4,
+          "flow": 10200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-06-21T00:00:00Z",
+          "stage": 4.66,
+          "flow": 1870,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1973-06-19T00:00:00Z",
+          "stage": 7.15,
+          "flow": 4330,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1972-10-03T00:00:00Z",
+          "stage": 8.66,
+          "flow": 6430,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-02-15T00:00:00Z",
+          "stage": 13.27,
+          "flow": 9000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1970-06-01T00:00:00Z",
+          "stage": 6.49,
+          "flow": 3430,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1969-03-18T00:00:00Z",
+          "stage": 10.55,
+          "flow": 10000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1968-08-24T00:00:00Z",
+          "stage": 7.82,
+          "flow": 5120,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1967-06-14T00:00:00Z",
+          "stage": 9.45,
+          "flow": 7990,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1966-07-29T00:00:00Z",
+          "stage": 3.59,
+          "flow": 1110,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1965-04-04T00:00:00Z",
+          "stage": 10.76,
+          "flow": 10400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1964-06-19T00:00:00Z",
+          "stage": 7.76,
+          "flow": 5540,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1962-06-15T00:00:00Z",
+          "stage": 11.33,
+          "flow": 13300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1961-07-30T00:00:00Z",
+          "stage": 2.6,
+          "flow": 1090,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1958-07-03T00:00:00Z",
+          "stage": 7.59,
+          "flow": 6970,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1955-05-04T00:00:00Z",
+          "stage": 5.53,
+          "flow": 3810,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1954-08-17T00:00:00Z",
+          "stage": 4.92,
+          "flow": 2780,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1953-06-20T00:00:00Z",
+          "stage": 5.16,
+          "flow": 3100,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1951-09-02T00:00:00Z",
+          "stage": 4.55,
+          "flow": 2680,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1949-03-06T00:00:00Z",
+          "stage": 11.8,
+          "flow": 12000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1948-06-05T00:00:00Z",
+          "stage": 7.92,
+          "flow": 7470,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1946-06-12T00:00:00Z",
+          "stage": 4.94,
+          "flow": 3140,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 10,
+        "statement": "Flooding of low lands south and west of Miles City."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/MICM8.SSTG.prob.weekint.gif",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/MICM8.QINE.prob.weekint.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/MICM8.volume.prob.weekint.gif"
+      },
+      "entperiod": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/MICM8.SSTG.exceed.90day.gif",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/MICM8.QINE.exceed.90day.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/MICM8.volume.exceed.90day.gif"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/MICM8.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/micm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/micm8_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/rt"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "06308500",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=06308500"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice during winter months.",
+      "effective": "1015",
+      "expiration": "0430"
+    },
+    {
+      "statement": "River forecasts will be issued for this location when the water level reaches 2 feet from flood stage.",
+      "effective": "0101",
+      "expiration": "1231"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": [
+        {
+          "label": "North American Vertical Datum of 1988",
+          "abbrev": "NAVD88",
+          "description": "A fixed reference for elevations determined by geodetic leveling. The datum was derived from a general adjustment of the first-order terrestrial leveling nets of the United States, Canada, and Mexico. In the adjustment, only the height of the primary tidal bench mark, referenced to the International Great Lakes Datum of 1985 (IGLD 85) local mean sea level height value, at Father Point, Rimouski, Quebec, Canada was held fixed, thus providing minimum constraint. NAVD 88 and IGLD 85 are identical. However, NAVD 88 bench mark values are given in Helmert orthometric height units while IGLD 85 values are in dynamic heights. See International Great Lakes Datum of 1985, National Geodetic Vertical Datum of 1929, and geopotential difference. NAVD 88 should not be used as Mean Sea Level.",
+          "value": 2351.4
+        }
+      ]
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "ASLM8",
+  "downstreamLid": "MILM8",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued as needed during times of high water, but are not routinely available.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

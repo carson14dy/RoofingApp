@@ -1,0 +1,185 @@
+{
+  "lid": "LBFM8",
+  "usgsId": "12324590",
+  "reachId": "",
+  "name": "Little Blackfoot River near Garrison 1SE",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "MSO",
+    "name": "Missoula"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Powell",
+  "timeZone": "MST7MDT",
+  "latitude": 46.519722,
+  "longitude": -112.7925,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": 0.66,
+      "primaryUnit": "ft",
+      "secondary": 0.067,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "not_defined",
+      "validTime": "2026-10-19T05:30:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": -9999,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2025-05-19T00:00:00Z",
+          "stage": 2.22,
+          "flow": 546,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-05-19T00:00:00Z",
+          "stage": 2.22,
+          "flow": 546,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/lbfm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/lbfm8_record.png"
+    },
+    "photos": [
+      {
+        "id": "14672103394678739441",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            46.519722,
+            -112.7925
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/lbfm8/14672103394678739441.jpeg",
+          "caption": "View of gauge station (looking west)"
+        }
+      },
+      {
+        "id": "11681635516081639921",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            46.519722,
+            -112.7925
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/lbfm8/11681635516081639921.jpeg",
+          "caption": "View of gauge station (looking upstream)."
+        }
+      }
+    ]
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "USGS",
+      "text": "12324590",
+      "title": "USGS",
+      "url": "https://waterdata.usgs.gov/monitoring-location/12324590/#dataTypeId=continuous-00065-0&period=P7D&showMedian=false"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "not_defined",
+  "ForecastFloodCategory": "fcst_not_current"
+}

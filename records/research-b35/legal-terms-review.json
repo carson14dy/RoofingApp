@@ -1,0 +1,3408 @@
+{
+ "slug": "legal-terms-review",
+ "record_date_utc": "2026-10-19",
+ "read_window_utc": [
+  "2026-10-19T02:37:39Z",
+  "2026-10-19T02:51:31Z"
+ ],
+ "scope": "Terms of candidate sources for a public website run by a commercial roofing company that publishes derived per-tile files (streets, building shapes, addresses, past weather). Quotes are verbatim from live reads. Readings are not legal advice.",
+ "method": [
+  "Live requests with curl through the configured proxy and CA bundle; redirects followed; HTTP status, bytes, SHA-256, server Date and read time (UTC) recorded per URL in the manifest.",
+  "Each quote was matched against the downloaded text after whitespace and quote-mark normalisation only (see verification).",
+  "Zip members (TIGER/Line, MSL structures and transportation) were read by range request: the last 64 KB for the central directory, then only the metadata member; CRC checked.",
+  "Web search was used only to find candidate URLs; no search-result text is quoted.",
+  "AGENTS.md rules 5, 6 and 9 read from the repository file and quoted verbatim.",
+  "No 403 or CDN block was worked around; blocked pages are listed as not read.",
+  "Downloads kept under 100 MB; the downloads folder is deleted after this record was written."
+ ],
+ "constraints_followed": [
+  "Rule 7: live request and content check per source",
+  "No edits outside /home/user/wt/research-b35",
+  "No vendor or model names in this record"
+ ],
+ "sources": [
+  {
+   "key": "census_tiger_line",
+   "name": "Census TIGER/Line (streets, boundaries)",
+   "manifest_ids": [
+    "tiger_state_iso_xml",
+    "tiger_roads_beaverhead_iso",
+    "census_citation",
+    "census_copyright",
+    "census_terms_html"
+   ],
+   "quotes": [
+    {
+     "label": "tiger_use",
+     "quote": "Access constraints: None Use Constraints: The TIGER/Line Shapefile products are not copyrighted however TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source.",
+     "file": "tiger_state_iso_member.xml",
+     "file_sha256": "b199416773957109d33a91c9e7c7d64ee9ceada2ce11363fe3f911aaf683d669",
+     "url": "https://www2.census.gov/geo/tiger/TIGER2025/STATE/tl_2025_us_state.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:47:58Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "tiger_boundary",
+     "quote": "The boundary information in the TIGER/Line Shapefiles are for statistical data collection and tabulation purposes only; their depiction and designation for statistical purposes does not constitute a determination of jurisdictional authority or rights of ownership or entitlement and they are not legal land descriptions.",
+     "file": "tiger_state_iso_member.xml",
+     "file_sha256": "b199416773957109d33a91c9e7c7d64ee9ceada2ce11363fe3f911aaf683d669",
+     "url": "https://www2.census.gov/geo/tiger/TIGER2025/STATE/tl_2025_us_state.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:47:58Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "tiger_roads_use",
+     "quote": "The horizontal spatial accuracy information present in these files is provided for the purposes of statistical analysis and census operations only.",
+     "file": "tiger_roads_iso_member.xml",
+     "file_sha256": "7661b7d9ebf87ea5e62fc641d4979da08d4a409d32c980cd7c5a30a180a5f4bb",
+     "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30001_roads.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:48:48Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "census_cite",
+     "quote": "Data users who create their own estimates using data from disseminated tables and other data should cite the Census Bureau as the source of the original data only.",
+     "file": "census_citation.txt",
+     "file_sha256": "d9c59065b7781be9b8cacbe1a4c2ab9569ea46e01441dbf22db590f0a6a7edf0",
+     "url": "https://www.census.gov/about/policies/citation.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:47:01Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Yes on the text read. The metadata says the products are not copyrighted and are free to use in a product or publication, with acknowledgement of the Census Bureau as the source. No share-alike and no commercial-use bar appear in that text.",
+    "attribution": "Required by the metadata: acknowledgement must be given to the U.S. Census Bureau as the source. Census citation guidance: cite the Census Bureau as the source of the original data.",
+    "commercial_or_redistribution_clause": "None found beyond the acknowledgement; the text says the products are free to use in a product or publication.",
+    "share_alike": "None.",
+    "plain_words": "Lowest friction of the street and address candidates. Two things to get right: credit the Census Bureau, and do not use the registered TIGER/Line or Census TIGER names to suggest endorsement. The boundary text says boundaries are not legal land descriptions and do not decide jurisdiction; the site should say the same.",
+    "note": "Only the state zip metadata and the Beaverhead County roads metadata were read; other counties were not checked and are assumed to carry the same wording."
+   },
+   "risk_level": "Low",
+   "counsel_must_read_before_go_live": {
+    "required": false,
+    "why": "No counsel read needed for the streets layer on the text read. Counsel read only if the site uses Census names or marks in branding or implies official status."
+   },
+   "unverified_or_not_read": [
+    "census.gov copyright page not found (404 on the two paths tried)",
+    "other county roads metadata not read; only Beaverhead County (tl_2025_30001) and the state file",
+    "census API terms not applicable to the layer"
+   ]
+  },
+  {
+   "key": "msl_structures_addresses",
+   "name": "Montana State Library Structures and Addresses Framework (address points and structures)",
+   "manifest_ids": [
+    "msl_struct_meta_xml",
+    "msl_struct_zip_tail",
+    "msl_struct_readme_txt",
+    "msl_struct_map",
+    "msl_structures_page",
+    "msl_home",
+    "msl_policies",
+    "msl_privacy",
+    "msl_dl_struct",
+    "msl_gis_datalist",
+    "msl_gis_msdi"
+   ],
+   "quotes": [
+    {
+     "label": "msl_struct_access",
+     "quote": "None. All data contained in the Framework are publicly available and non-sensitive.",
+     "file": "msl_struct_metadata_member.xml",
+     "file_sha256": "189d6cc5995d76b63b491f3de7f68736af84eda088c5350c3dd2d3c00e7e6f44",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:39:32Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "msl_struct_use",
+     "quote": "The Library makes these data and services available as a convenience to the public, and for no other purpose.",
+     "file": "msl_struct_metadata_member.xml",
+     "file_sha256": "189d6cc5995d76b63b491f3de7f68736af84eda088c5350c3dd2d3c00e7e6f44",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:39:32Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "msl_struct_notlegal",
+     "quote": "The Library did not produce it for, nor is it suitable for legal, engineering, or surveying purposes.",
+     "file": "msl_struct_metadata_member.xml",
+     "file_sha256": "189d6cc5995d76b63b491f3de7f68736af84eda088c5350c3dd2d3c00e7e6f44",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:39:32Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "msl_struct_purpose",
+     "quote": "To provide a statewide, standardized repository for structure and address point data.",
+     "file": "msl_struct_metadata_member.xml",
+     "file_sha256": "189d6cc5995d76b63b491f3de7f68736af84eda088c5350c3dd2d3c00e7e6f44",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:39:32Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "msl_struct_viability",
+     "quote": "Consumers of this information should review or consult the primary data and information sources to ascertain the viability of the information for their purposes.",
+     "file": "msl_struct_metadata_member.xml",
+     "file_sha256": "189d6cc5995d76b63b491f3de7f68736af84eda088c5350c3dd2d3c00e7e6f44",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:39:32Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Not answered by the text read. The access statement says the data are publicly available and non-sensitive. The use statement limits the data to a convenience to the public and for no other purpose. Whether per-address derived files for a commercial roofing site fall within that purpose is the open question. No express commercial-use bar, and no express redistribution clause, appears in the text read.",
+    "attribution": "No attribution wording in the metadata. The map service copyrightText is \"Montana State Library\" (a credit in practice).",
+    "commercial_or_redistribution_clause": "No express commercial-use bar and no express redistribution clause. \"for no other purpose\" is the nearest limit; its reach for commercial use is unverified.",
+    "share_alike": "None stated.",
+    "origin_providers": {
+     "origin_entries": 63,
+     "unique_origins": 63,
+     "note": "Metadata says the framework integrates data from local, tribal, state, federal and private providers; the origin list includes county, tribal, federal and state entries."
+    },
+    "mca_citations_in_this_metadata": {
+     "2-6-1017": 0,
+     "2-6-109": 0
+    },
+    "owner_field": "The structures metadata has no owner field in its text. The field-level check (51 DBF fields, no owner field) comes from prior evidence and the B3 pre-check; this review did not read the DBF.",
+    "metadata_pubdate": "20260930",
+    "plain_words": "Address points without names are the layer the owner wants. The text does not say whether a public address map used by a roofing business is inside the purpose clause. Counsel question."
+   },
+   "risk_level": "Medium",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Purpose clause (\"for no other purpose\") and the MCA 2-6-1017 question (see montana_law) must be settled before the address dots go live."
+   },
+   "unverified_or_not_read": [
+    "MSL general data licence not found: MSL-Policies, privacy and GIS DataList pages read, none is a data licence; DataList detail pages are client-rendered",
+    "origin providers terms not checked (county, tribal and federal sources)",
+    "structures DBF not re-read in this run (about 1.9 GB inflated)"
+   ]
+  },
+  {
+   "key": "msl_transportation",
+   "name": "Montana State Library Transportation Framework (road centerlines)",
+   "manifest_ids": [
+    "msl_trans_meta_xml",
+    "msl_trans_page_zip_tail",
+    "msl_trans_readme_txt",
+    "msl_trans_map",
+    "msl_transport_page",
+    "msl_dl_trans"
+   ],
+   "quotes": [
+    {
+     "label": "msl_trans_use",
+     "quote": "The Library makes these data and services available as a convenience to the public, and for no other purpose.",
+     "file": "msl_trans_metadata_member.xml",
+     "file_sha256": "9941472afd5d97ed931448f941421fa53d7a1adecedecfde20d27d3dc8d8a5dd",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:39:32Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "msl_trans_purpose",
+     "quote": "This dataset is not suitable for routing or network analysis.",
+     "file": "msl_trans_metadata_member.xml",
+     "file_sha256": "9941472afd5d97ed931448f941421fa53d7a1adecedecfde20d27d3dc8d8a5dd",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:39:32Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "msl_trans_gaps",
+     "quote": "Individual data providers datasets have not been edgematched. As a result, gaps, overlaps, and duplicate features are present in the dataset.",
+     "file": "msl_trans_metadata_member.xml",
+     "file_sha256": "9941472afd5d97ed931448f941421fa53d7a1adecedecfde20d27d3dc8d8a5dd",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+     "http_status": "206",
+     "read_utc": "2026-10-19T02:39:32Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Not answered by the text read; same use clause as the structures framework.",
+    "attribution": "No attribution wording; map copyrightText \"Montana State Library\".",
+    "commercial_or_redistribution_clause": "No express commercial-use bar and no express redistribution clause; \"for no other purpose\" applies as above.",
+    "share_alike": "None stated.",
+    "origin_providers": {
+     "origin_entries": 61,
+     "unique_origins": 61
+    },
+    "mca_citations_in_this_metadata": {
+     "2-6-1017": 0,
+     "2-6-109": 0
+    },
+    "metadata_pubdate": "20260930",
+    "plain_words": "The MSL roads set has gaps and duplicates between providers and is not for routing. The streets layer can instead use TIGER/Line (Low risk) if the owner prefers the simpler terms."
+   },
+   "risk_level": "Medium",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Same purpose clause as the structures framework, and the origin providers; required only if the MSL roads are used instead of TIGER/Line."
+   },
+   "unverified_or_not_read": [
+    "origin providers terms not checked",
+    "transport DBF not read (zip member only)"
+   ]
+  },
+  {
+   "key": "msl_parcel_metadata_not_used",
+   "name": "Montana State Library parcel metadata (not used by any layer here)",
+   "manifest_ids": [
+    "msl_parcel_meta",
+    "msl_parcel_map",
+    "msl_cadastral_page"
+   ],
+   "quotes": [
+    {
+     "label": "parcel_mca_1017",
+     "quote": "State law (Montana Code Annotated 2-6-1017) prohibits public agencies from distributing or selling a distribution list without first securing the permission of those on the list;",
+     "file": "msl_parcel_meta.body",
+     "file_sha256": "967a471d28d7e86708d590fcaa34979c067ccaee829b3cecf4220abe7f80957f",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/MontanaCadastral_ParcelMetadata.xml",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:41Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "parcel_mca_109",
+     "quote": "State law ( Montana Code Annotated 2-6-109 (1)(a) ) explicitly prohibits State agencies from selling or distributing a list of persons to be used as a mailing list without first securing the permission of those on the list.",
+     "file": "msl_parcel_meta.body",
+     "file_sha256": "967a471d28d7e86708d590fcaa34979c067ccaee829b3cecf4220abe7f80957f",
+     "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/MontanaCadastral_ParcelMetadata.xml",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:41Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Not applicable: parcel data include owner names and are not used by the address layer.",
+    "note": "This metadata quotes MCA 2-6-109 as if it were in force. The live MCA page says 2-6-109 is repealed. Flag for counsel and for the About text; do not repeat the 2-6-109 citation as current law.",
+    "mca_citations_in_this_metadata": {
+     "2-6-1017": 1,
+     "2-6-109": 2
+    },
+    "metadata_pubdate": "20261006"
+   },
+   "risk_level": "Not applicable to the layers; flagged",
+   "counsel_must_read_before_go_live": {
+    "required": false,
+    "why": "Not used. Counsel note: the MSL metadata cites a repealed section."
+   },
+   "unverified_or_not_read": [
+    "parcel owner field names were not used or recorded in this run"
+   ]
+  },
+  {
+   "key": "usa_structures_fema_orni",
+   "name": "FEMA and ORNL USA Structures (building footprints)",
+   "manifest_ids": [
+    "usa_struct_datagov",
+    "usa_struct_amerigeoss",
+    "usa_struct_hub",
+    "usa_struct_gee",
+    "usa_struct_item_json"
+   ],
+   "quotes": [
+    {
+     "label": "usa_struct_desc",
+     "quote": "collaborated to build and maintain the nation’s first comprehensive inventory of all structures larger than 450 square feet",
+     "file": "usa_struct_datagov.txt",
+     "file_sha256": "17868ab70702a061c37fe1f0a26db49248a585c277037224b98d7ec81fa4d4b7",
+     "url": "https://catalog.data.gov/dataset/usa-structures",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:05Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "usa_struct_license",
+     "quote": "License https://www.usa.gov/government-works",
+     "file": "usa_struct_datagov.txt",
+     "file_sha256": "17868ab70702a061c37fe1f0a26db49248a585c277037224b98d7ec81fa4d4b7",
+     "url": "https://catalog.data.gov/dataset/usa-structures",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:05Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "usa_struct_rights",
+     "quote": "rights null",
+     "file": "usa_struct_datagov.txt",
+     "file_sha256": "17868ab70702a061c37fe1f0a26db49248a585c277037224b98d7ec81fa4d4b7",
+     "url": "https://catalog.data.gov/dataset/usa-structures",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:05Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "usa_struct_access",
+     "quote": "Access Level public",
+     "file": "usa_struct_datagov.txt",
+     "file_sha256": "17868ab70702a061c37fe1f0a26db49248a585c277037224b98d7ec81fa4d4b7",
+     "url": "https://catalog.data.gov/dataset/usa-structures",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:05Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "usa_struct_amerigeoss",
+     "quote": "No License Provided",
+     "file": "usa_struct_amerigeoss.txt",
+     "file_sha256": "441696547dff88524d32114f3634e94515b0b3c035e96d84b335f34b1a05274f",
+     "url": "https://data.amerigeoss.org/dataset/usa-structures",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:05Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Probably yes if the government-works statement holds (Data.gov lists it, with rights null and access level public). The FEMA Hub item licence field was not read; the ArcGIS-hosted copy lists no licence. The licence must be fixed from the FEMA item before derived footprints are published.",
+    "attribution": "None quoted in the Data.gov record; the Data.gov description names DHS, FIMA, FEMA Response Geospatial Office, ORNL and USGS as the builders.",
+    "commercial_or_redistribution_clause": "None found in the fields read.",
+    "share_alike": "None found.",
+    "plain_words": "Public and government-works on Data.gov, no licence on the ArcGIS copy. That conflict is the question. The footprints also sit beside other building sources with ODbL terms."
+   },
+   "risk_level": "Medium",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Licence fields conflict or are missing; confirm the FEMA Hub item licence before any footprint layer goes live."
+   },
+   "unverified_or_not_read": [
+    "FEMA Hub item licence field not read (Hub page is client-rendered; item id not found)",
+    "FEMA primary pages blocked (403), so no FEMA terms page was read",
+    "imagery provenance terms not stated in the text read"
+   ]
+  },
+  {
+   "key": "microsoft_us_building_footprints",
+   "name": "Microsoft US Building Footprints (ODbL)",
+   "manifest_ids": [
+    "ms_readme",
+    "odbl_text",
+    "ms_license_master",
+    "ms_repo"
+   ],
+   "quotes": [
+    {
+     "label": "ms_licensed",
+     "quote": "This data is licensed by Microsoft under the [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).",
+     "file": "ms_readme.txt",
+     "file_sha256": "0ca36dbf14e96d7bcd8e8b102f0ca8a7f3c518ca124820a64c2dcc841d36f259",
+     "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:41Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ms_free",
+     "quote": "This data is freely available for download and use.",
+     "file": "ms_readme.txt",
+     "file_sha256": "0ca36dbf14e96d7bcd8e8b102f0ca8a7f3c518ca124820a64c2dcc841d36f259",
+     "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:41Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ms_trademark",
+     "quote": "The licenses for this project do not grant you rights to use any Microsoft names, logos, or trademarks.",
+     "file": "ms_readme.txt",
+     "file_sha256": "0ca36dbf14e96d7bcd8e8b102f0ca8a7f3c518ca124820a64c2dcc841d36f259",
+     "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:41Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "odbl_42",
+     "quote": "4.2 Notices. If You Publicly Convey this Database, any Derivative Database, or the Database as part of a Collective Database, then You must:",
+     "file": "odbl_text.txt",
+     "file_sha256": "e0abeb80d3207d92136df0b8ec1e8a416a3160c4b0c076b56b2913d20182c587",
+     "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "odbl_43a",
+     "quote": "4.3 Notice for using output (Contents). Creating and Using a Produced Work does not require the notice in Section 4.2.",
+     "file": "odbl_text.txt",
+     "file_sha256": "e0abeb80d3207d92136df0b8ec1e8a416a3160c4b0c076b56b2913d20182c587",
+     "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "odbl_43b",
+     "quote": "However, if you Publicly Use a Produced Work, You must include a notice associated with the Produced Work reasonably calculated to make any Person that uses, views, accesses, interacts with, or is otherwise exposed to the Produced Work aware that Content was obtained from the Database, Derivative Database, or the Database as part of a Collective Database, and that it is available under this License.",
+     "file": "odbl_text.txt",
+     "file_sha256": "e0abeb80d3207d92136df0b8ec1e8a416a3160c4b0c076b56b2913d20182c587",
+     "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "odbl_44a",
+     "quote": "4.4 Share alike. a. Any Derivative Database that You Publicly Use must be only under the terms of:",
+     "file": "odbl_text.txt",
+     "file_sha256": "e0abeb80d3207d92136df0b8ec1e8a416a3160c4b0c076b56b2913d20182c587",
+     "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "odbl_44b",
+     "quote": "b. For the avoidance of doubt, Extraction or Re-utilisation of the whole or a Substantial part of the Contents into a new database is a Derivative Database and must comply with Section 4.4.",
+     "file": "odbl_text.txt",
+     "file_sha256": "e0abeb80d3207d92136df0b8ec1e8a416a3160c4b0c076b56b2913d20182c587",
+     "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "odbl_44c",
+     "quote": "c. Derivative Databases and Produced Works. A Derivative Database is Publicly Used and so must comply with Section 4.4. if a Produced Work created from the Derivative Database is Publicly Used.",
+     "file": "odbl_text.txt",
+     "file_sha256": "e0abeb80d3207d92136df0b8ec1e8a416a3160c4b0c076b56b2913d20182c587",
+     "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "odbl_46a",
+     "quote": "4.6 Access to Derivative Databases. If You Publicly Use a Derivative Database or a Produced Work from a Derivative Database, You must also offer to recipients of the Derivative Database or Produced Work a copy in a machine readable form of:",
+     "file": "odbl_text.txt",
+     "file_sha256": "e0abeb80d3207d92136df0b8ec1e8a416a3160c4b0c076b56b2913d20182c587",
+     "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "odbl_46b",
+     "quote": "The Derivative Database (under a.) or alteration file (under b.) must be available at no more than a reasonable production cost for physical distributions and free of charge if distributed over the internet.",
+     "file": "odbl_text.txt",
+     "file_sha256": "e0abeb80d3207d92136df0b8ec1e8a416a3160c4b0c076b56b2913d20182c587",
+     "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Yes for rendered views with notice. Per-tile footprint files are likely a Derivative Database: ODbL 4.4(b) treats extraction or re-use of a Substantial part of the Contents into a new database as a Derivative Database, which must comply with 4.4 (share alike) and 4.6 (machine-readable offer) when publicly used.",
+    "attribution": "ODbL 4.3 notice for Produced Works (for example \"Contains information from [database], which is made available here under the Open Database License (ODbL).\"); the README gives no separate attribution text.",
+    "commercial_or_redistribution_clause": "ODbL does not bar commercial use on its face; the README says the data is freely available for download and use. No Microsoft names, logos or trademarks may be used (README legal notice).",
+    "share_alike": "Yes for Derivative Databases (ODbL 4.4).",
+    "plain_words": "Rendered dots and map images with the notice are one case. Publishing per-tile building shapes is a different case that carries share-alike and offer duties."
+   },
+   "risk_level": "High (per-tile files as drafted); Low-Medium (rendered views with notice)",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Derivative Database and share-alike question under ODbL 4.4 and 4.6; counsel decision before any per-tile footprint file goes live."
+   },
+   "unverified_or_not_read": [
+    "GitHub repository page not accessible from this session; README read from the raw path",
+    "LICENSE file not present at raw paths (404)",
+    "footprint data itself not downloaded"
+   ]
+  },
+  {
+   "key": "overture_maps",
+   "name": "Overture Maps (buildings, transportation, addresses)",
+   "manifest_ids": [
+    "overture_attr",
+    "overture_buildings",
+    "overture_transport",
+    "overture_addresses",
+    "overture_home"
+   ],
+   "quotes": [
+    {
+     "label": "ov_buildings",
+     "quote": "Because it includes OpenStreetMap data, the buildings theme is published under the ODbL license. This requires that any other source included in the theme also be provided under ODbL or a compatible license, such as CC BY 4.0;",
+     "file": "overture_buildings.txt",
+     "file_sha256": "8286897087b0731972bf96dc9915b22dedf415c1565c019eca065e2432c3bf6f",
+     "url": "https://docs.overturemaps.org/guides/buildings/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ov_transport",
+     "quote": "Because it includes OpenStreetMap data, the transportation theme is published under the ODbL license.",
+     "file": "overture_transport.txt",
+     "file_sha256": "6d4b15a45634a72025775aeed837ff071fb6728dc587df9b5837ef4b03004a46",
+     "url": "https://docs.overturemaps.org/guides/transportation/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:43Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ov_ms",
+     "quote": "Global ML Building Footprints. Licensed by Microsoft under the Open Database License.",
+     "file": "overture_attr.txt",
+     "file_sha256": "1acbb6ba1cdefe19cc93ee870a2c868ea1920b00f59384e39f013425bcd77cc9",
+     "url": "https://docs.overturemaps.org/attribution/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ov_google",
+     "quote": "Google Open Buildings. Available under CC BY 4.0.",
+     "file": "overture_attr.txt",
+     "file_sha256": "1acbb6ba1cdefe19cc93ee870a2c868ea1920b00f59384e39f013425bcd77cc9",
+     "url": "https://docs.overturemaps.org/attribution/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ov_osm_line",
+     "quote": "© OpenStreetMap contributors. Available under the Open Database License.",
+     "file": "overture_attr.txt",
+     "file_sha256": "1acbb6ba1cdefe19cc93ee870a2c868ea1920b00f59384e39f013425bcd77cc9",
+     "url": "https://docs.overturemaps.org/attribution/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ov_nad",
+     "quote": "The National Address Database is licensed under the National Address Database Access and Usage License.",
+     "file": "overture_attr.txt",
+     "file_sha256": "1acbb6ba1cdefe19cc93ee870a2c868ea1920b00f59384e39f013425bcd77cc9",
+     "url": "https://docs.overturemaps.org/attribution/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ov_cite",
+     "quote": "If you are the author of a publication or research report that uses Overture data, you may choose to add the following citation, including the date the data were accessed: Overture Maps Foundation, overturemaps.org.",
+     "file": "overture_attr.txt",
+     "file_sha256": "1acbb6ba1cdefe19cc93ee870a2c868ea1920b00f59384e39f013425bcd77cc9",
+     "url": "https://docs.overturemaps.org/attribution/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Buildings theme: ODbL, because it includes OpenStreetMap data; other sources in the theme must be ODbL or compatible (for example CC BY 4.0). The same share-alike and offer duties as the OSM and Microsoft footprints apply. Transportation theme: ODbL. Addresses theme: a mix of source licences; the NAD line names a \"National Address Database Access and Usage License\" (not read in full in this run).",
+    "attribution": "Per the Overture attribution page: \"© OpenStreetMap contributors. Available under the Open Database License.\"; \"Global ML Building Footprints. Licensed by Microsoft under the Open Database License.\"; \"Google Open Buildings. Available under CC BY 4.0.\"; a citation for publications.",
+    "commercial_or_redistribution_clause": "None stated beyond ODbL and the source licences.",
+    "share_alike": "Yes for ODbL-licensed themes (buildings and transportation).",
+    "plain_words": "Overture buildings are an ODbL database, so the footprint question is the same as for OSM and Microsoft. The NAD licence name needs reconciling with the CC0 statement recorded in prior evidence (not re-read in this run)."
+   },
+   "risk_level": "High (buildings, ODbL); Medium (addresses, mixed sources)",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "ODbL duties if any Overture building or transport data is published; mixed address licences need a source-by-source check."
+   },
+   "unverified_or_not_read": [
+    "Overture per-source licence list (over 175 address sources) not read in full",
+    "NAD licence text not read; prior evidence recorded CC0 on data.gov (not re-read here)"
+   ]
+  },
+  {
+   "key": "openstreetmap",
+   "name": "OpenStreetMap (ODbL, attribution guideline)",
+   "manifest_ids": [
+    "osm_copyright",
+    "osm_attr_guide",
+    "osm_community",
+    "osm_licence"
+   ],
+   "quotes": [
+    {
+     "label": "osm_odbl",
+     "quote": "OpenStreetMap is open data, licensed under the Open Data Commons Open Database License (ODbL) by the OpenStreetMap Foundation (OSMF).",
+     "file": "osm_copyright.txt",
+     "file_sha256": "eb3452504f8d045a431788ca2f13dae5c841a6ad8397bdc3702fbacbc9491f99",
+     "url": "https://www.openstreetmap.org/copyright",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:43Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "osm_alter",
+     "quote": "If you alter or build upon our data, you may distribute the result only under the same license.",
+     "file": "osm_copyright.txt",
+     "file_sha256": "eb3452504f8d045a431788ca2f13dae5c841a6ad8397bdc3702fbacbc9491f99",
+     "url": "https://www.openstreetmap.org/copyright",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:43Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "osm_credit",
+     "quote": "Where you use OpenStreetMap data, you are required to do the following two things:",
+     "file": "osm_copyright.txt",
+     "file_sha256": "eb3452504f8d045a431788ca2f13dae5c841a6ad8397bdc3702fbacbc9491f99",
+     "url": "https://www.openstreetmap.org/copyright",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:43Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "osm_guide_attr",
+     "quote": "OpenStreetMap (OSM) data is distributed under the Open Database License (ODbL). If you want to use OpenStreetMap data in something you create and distribute, you must attribute OpenStreetMap.",
+     "file": "osm_attr_guide.txt",
+     "file_sha256": "3a18266ab64ce8afc2895dedf77a580de88b974e593246563c656e9ca5cc06c7",
+     "url": "https://wiki.osmfoundation.org/wiki/Licence/Attribution_Guidelines",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:43Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "osm_guide_pw",
+     "quote": "Note that attribution is only necessary when a Produced Work is used Publicly (as defined by the ODbL). This guideline does not concern internal uses.",
+     "file": "osm_attr_guide.txt",
+     "file_sha256": "3a18266ab64ce8afc2895dedf77a580de88b974e593246563c656e9ca5cc06c7",
+     "url": "https://wiki.osmfoundation.org/wiki/Licence/Attribution_Guidelines",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:43Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "odbl_44b",
+     "quote": "b. For the avoidance of doubt, Extraction or Re-utilisation of the whole or a Substantial part of the Contents into a new database is a Derivative Database and must comply with Section 4.4.",
+     "file": "odbl_text.txt",
+     "file_sha256": "e0abeb80d3207d92136df0b8ec1e8a416a3160c4b0c076b56b2913d20182c587",
+     "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:42Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Yes under the ODbL with attribution; derived databases must be ODbL (share alike). The OSMF guideline says attribution is only necessary when a Produced Work is used publicly, and internal use is not covered.",
+    "attribution": "Credit OpenStreetMap and show that the data is available under the Open Database License; placement depends on map type (OSMF guideline).",
+    "commercial_or_redistribution_clause": "ODbL does not bar commercial use on its face.",
+    "share_alike": "Yes for derived databases: \"If you alter or build upon our data, you may distribute the result only under the same license.\"",
+    "plain_words": "Map views with credit are low risk. Per-tile OSM-derived shapes are the share-alike case."
+   },
+   "risk_level": "Medium-High for derived per-tile files; Low for attributed map views",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Required before any OSM-derived shapes are published."
+   },
+   "unverified_or_not_read": [
+    "OSM building and address extracts not downloaded; no test of tile shape publication"
+   ]
+  },
+  {
+   "key": "noaa_ncei",
+   "name": "NOAA NCEI (GHCN-Daily, nClimGrid, Storm Events, SWDI)",
+   "manifest_ids": [
+    "ncei_ghcnd_meta",
+    "ncei_nclimgrid_m_meta",
+    "ncei_nclimgrid_d_meta",
+    "ncei_storm_meta",
+    "ncei_swdi",
+    "ncei_ghcnd",
+    "ncei_nclimgrid_d",
+    "noaa_disclaimer"
+   ],
+   "quotes": [
+    {
+     "label": "ncei_cite_pubs",
+     "quote": "Publications citing this dataset should also cite the following article:",
+     "file": "ncei_ghcnd_meta.txt",
+     "file_sha256": "493a7630ae5cd44ec2e7252bb8d2bf8883d2ec27965b2d052e8ec3a9d029ba47",
+     "url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00861/html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:07Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ncei_use_liab",
+     "quote": "Use liability: NOAA and NCEI cannot provide any warranty as to the accuracy, reliability, or completeness of furnished data.",
+     "file": "ncei_ghcnd_meta.txt",
+     "file_sha256": "493a7630ae5cd44ec2e7252bb8d2bf8883d2ec27965b2d052e8ec3a9d029ba47",
+     "url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00861/html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:07Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ncei_dist_liab",
+     "quote": "Distribution liability: NOAA and NCEI make no warranty, expressed or implied, regarding these data, nor does the fact of distribution constitute such a warranty.",
+     "file": "ncei_ghcnd_meta.txt",
+     "file_sha256": "493a7630ae5cd44ec2e7252bb8d2bf8883d2ec27965b2d052e8ec3a9d029ba47",
+     "url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00861/html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:07Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ncei_fees",
+     "quote": "In most cases, electronic downloads of the data are free.",
+     "file": "ncei_ghcnd_meta.txt",
+     "file_sha256": "493a7630ae5cd44ec2e7252bb8d2bf8883d2ec27965b2d052e8ec3a9d029ba47",
+     "url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00861/html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:07Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ncei_nclimgrid_cite",
+     "quote": "NOAA Monthly U.S. Climate Gridded Dataset (NClimGrid), Version 1.",
+     "file": "ncei_nclimgrid_m_meta.txt",
+     "file_sha256": "167a2d9002f4097453c23e0451e7d20ae483518169f28956aafb74ab1738d0a9",
+     "url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc%3AC00332/html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:07Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ncei_storm_cite",
+     "quote": "Cite dataset when used as a source.",
+     "file": "ncei_storm_meta.txt",
+     "file_sha256": "f7e47b9a890abf5c7404411a837268347a94724f9f5f179933d15a5f9e2234a2",
+     "url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00510/html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:07Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "ncei_storm_unverified",
+     "quote": "An effort is made to use the best available information but because of time and resource constraints, information from these sources may be unverified by the NWS.",
+     "file": "ncei_storm_meta.txt",
+     "file_sha256": "f7e47b9a890abf5c7404411a837268347a94724f9f5f179933d15a5f9e2234a2",
+     "url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00510/html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:07Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "swdi_qc",
+     "quote": "SWDI provides a uniform way to access data from a variety of sources, but it does not provide any additional quality control beyond the processing that takes place during data archival.",
+     "file": "ncei_swdi.txt",
+     "file_sha256": "da266b03750cf862aef82ee4e8cc3d2c6e443f016c36b8cd6774ba3da1874f38",
+     "url": "https://www.ncei.noaa.gov/products/severe-weather-data-inventory",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:51:31Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "swdi_absence",
+     "quote": "The absence of SWDI data for a particular location and time doesn’t mean that no severe weather occurred",
+     "file": "ncei_swdi.txt",
+     "file_sha256": "da266b03750cf862aef82ee4e8cc3d2c6e443f016c36b8cd6774ba3da1874f38",
+     "url": "https://www.ncei.noaa.gov/products/severe-weather-data-inventory",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:51:31Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Yes on the statements read: no bar on derived products is stated; use is the user responsibility; warranties are disclaimed.",
+    "attribution": "Citation required for publications: GHCN-D \"Publications citing this dataset should also cite the following article:\"; Storm Events \"Cite dataset when used as a source.\"; nClimGrid \"Cite as\" string.",
+    "commercial_or_redistribution_clause": "None found. Fees apply only to custom orders, certifications, analog copies and physical media.",
+    "share_alike": "None.",
+    "plain_words": "Gridded temperature and precipitation and storm-event records can be shown with citation and the warranty disclaimers. Storm Events says information \"may be unverified by the NWS\", so the site must not present it as complete (rule 5). SWDI: absence of data does not mean that no severe weather occurred."
+   },
+   "risk_level": "Low to Medium",
+   "counsel_must_read_before_go_live": {
+    "required": false,
+    "why": "No counsel read needed on the text read if the citations and disclaimers are shown. Counsel read only if the site sells or certifies the data."
+   },
+   "unverified_or_not_read": [
+    "NOAA general disclaimer (noaa.gov) blocked (403); not read",
+    "Storm Events FAQ and nClimGrid monthly product page not readable (shell or 404); the ISO metadata was used"
+   ]
+  },
+  {
+   "key": "noaa_nodd_aws",
+   "name": "NOAA on AWS (NODD: MRMS and HRRR registry pages)",
+   "manifest_ids": [
+    "aws_mrms",
+    "aws_hrrr",
+    "aws_mrms_readme",
+    "aws_hrrr_readme",
+    "aws_mrms_bucket",
+    "noaa_nodd"
+   ],
+   "quotes": [
+    {
+     "label": "nodd_open",
+     "quote": "NOAA data disseminated through NODD are open to the public and can be used as desired.",
+     "file": "aws_mrms.txt",
+     "file_sha256": "67ecd7ef9e2375d6c51b953f78f45ce6719ae65d3b537fe7d7f1cbb9efb1ff5c",
+     "url": "https://registry.opendata.aws/noaa-mrms-pds/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:45Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nodd_attr",
+     "quote": "NOAA requests attribution for the use or dissemination of unaltered NOAA data.",
+     "file": "aws_mrms.txt",
+     "file_sha256": "67ecd7ef9e2375d6c51b953f78f45ce6719ae65d3b537fe7d7f1cbb9efb1ff5c",
+     "url": "https://registry.opendata.aws/noaa-mrms-pds/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:45Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nodd_endorse",
+     "quote": "However, it is not permissible to state or imply endorsement by or affiliation with NOAA.",
+     "file": "aws_mrms.txt",
+     "file_sha256": "67ecd7ef9e2375d6c51b953f78f45ce6719ae65d3b537fe7d7f1cbb9efb1ff5c",
+     "url": "https://registry.opendata.aws/noaa-mrms-pds/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:45Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nodd_modified",
+     "quote": "If you modify NOAA data, you may not state or imply that it is original, unaltered NOAA data.",
+     "file": "aws_mrms.txt",
+     "file_sha256": "67ecd7ef9e2375d6c51b953f78f45ce6719ae65d3b537fe7d7f1cbb9efb1ff5c",
+     "url": "https://registry.opendata.aws/noaa-mrms-pds/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:45Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Yes: \"NOAA data disseminated through NODD are open to the public and can be used as desired.\"",
+    "attribution": "Requested for unaltered NOAA data.",
+    "commercial_or_redistribution_clause": "None stated.",
+    "share_alike": "None; modified NOAA data may not be presented as original, unaltered NOAA data.",
+    "plain_words": "Derived products are fine with attribution. Do not imply NOAA endorsement, and do not present modified data as NOAA original."
+   },
+   "risk_level": "Low",
+   "counsel_must_read_before_go_live": {
+    "required": false,
+    "why": "No counsel read needed for the wording above."
+   },
+   "unverified_or_not_read": [
+    "bucket README not present (404); the registry page statement was used"
+   ]
+  },
+  {
+   "key": "iem",
+   "name": "Iowa Environmental Mesonet",
+   "manifest_ids": [
+    "iem_disclaimer",
+    "iem_home",
+    "iem_info"
+   ],
+   "quotes": [
+    {
+     "label": "iem_public",
+     "quote": "The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose.",
+     "file": "iem_disclaimer.txt",
+     "file_sha256": "27a2adce7e25797e6ff21b5f66e9a035c14c131e0c7208d36aa5d9770668647c",
+     "url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "iem_attr",
+     "quote": "Attributing the Iowa Environmental Mesonet of Iowa State University would be appreciated.",
+     "file": "iem_disclaimer.txt",
+     "file_sha256": "27a2adce7e25797e6ff21b5f66e9a035c14c131e0c7208d36aa5d9770668647c",
+     "url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "iem_warranty",
+     "quote": "We therefore provide this information without any warranty of accuracy.",
+     "file": "iem_disclaimer.txt",
+     "file_sha256": "27a2adce7e25797e6ff21b5f66e9a035c14c131e0c7208d36aa5d9770668647c",
+     "url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Yes: IEM says its materials are in the public domain and may be used freely by anyone for any lawful purpose. The underlying NWS and NCEI data keep their own statements.",
+    "attribution": "Requested, not required: \"Attributing the Iowa Environmental Mesonet of Iowa State University would be appreciated.\"",
+    "commercial_or_redistribution_clause": "None; \"for any lawful purpose\".",
+    "share_alike": "None.",
+    "plain_words": "Low risk; credit IEM and keep the warranty disclaimer."
+   },
+   "risk_level": "Low",
+   "counsel_must_read_before_go_live": {
+    "required": false,
+    "why": "No counsel read needed for IEM materials on the text read."
+   },
+   "unverified_or_not_read": [
+    "IEM citation and data download pages returned 404"
+   ]
+  },
+  {
+   "key": "nws_nwps",
+   "name": "NWS disclaimer, NWS API and NWPS API",
+   "manifest_ids": [
+    "nws_disclaimer",
+    "weather_gov_disclaimer_php",
+    "nws_api_docs",
+    "nws_api_root",
+    "nwps_openapi_c",
+    "nwps_swagger_init",
+    "nwps_docs",
+    "nwps_openapi_a",
+    "nwps_openapi_b"
+   ],
+   "quotes": [
+    {
+     "label": "nws_public",
+     "quote": "The information on National Weather Service (NWS) Web pages are in the public domain, unless specifically noted otherwise, and may be used without charge for any lawful purpose so long as you do not: 1) claim it is your own (e.g., by claiming copyright for NWS information -- see below), 2) use it in a manner that implies an endorsement or affiliation with NOAA/NWS, or 3) modify its content and then present it as official government material.",
+     "file": "nws_disclaimer.txt",
+     "file_sha256": "3057a54d6f4409de4608bd8e7e05554c32a9d776f6e02575033cc09c5ad2f331",
+     "url": "https://www.weather.gov/disclaimer",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nws_trademark",
+     "quote": "Use of the NWS name (\"National Weather Service\") and/or visual identifier are protected under trademark law and may not be used without permission from the NWS.",
+     "file": "nws_disclaimer.txt",
+     "file_sha256": "3057a54d6f4409de4608bd8e7e05554c32a9d776f6e02575033cc09c5ad2f331",
+     "url": "https://www.weather.gov/disclaimer",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nws_asis",
+     "quote": "The user assumes the entire risk related to its use of information on NWS Web pages.",
+     "file": "nws_disclaimer.txt",
+     "file_sha256": "3057a54d6f4409de4608bd8e7e05554c32a9d776f6e02575033cc09c5ad2f331",
+     "url": "https://www.weather.gov/disclaimer",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nws_api_open",
+     "quote": "All of the information presented via the API is intended to be open data, free to use for any purpose.",
+     "file": "nws_api_docs.txt",
+     "file_sha256": "f22995dd226f5bd9005461e10da35d95194de379b535f0a3db6992047f20ca8b",
+     "url": "https://www.weather.gov/documentation/services-web-api",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nws_api_ua",
+     "quote": "A User Agent is required to identify your application.",
+     "file": "nws_api_docs.txt",
+     "file_sha256": "f22995dd226f5bd9005461e10da35d95194de379b535f0a3db6992047f20ca8b",
+     "url": "https://www.weather.gov/documentation/services-web-api",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Yes, with conditions: NWS web content is public domain unless noted, may be used without charge for any lawful purpose, must not be claimed as your own, must not imply endorsement, and must not be modified and presented as official.",
+    "attribution": "No attribution demand beyond the conditions. The NWS name and visual identifier are protected; unaltered NWS content may be shown with the NWS name.",
+    "commercial_or_redistribution_clause": "None; \"for any lawful purpose\" and \"free to use for any purpose\".",
+    "share_alike": "None.",
+    "plain_words": "NWS data is the lowest-friction weather source in this review. The site must not present NWS data as official government material or imply NWS endorsement, and API calls need a User-Agent."
+   },
+   "risk_level": "Low (data); the alert path has its own rules (AGENTS.md rule 6)",
+   "counsel_must_read_before_go_live": {
+    "required": false,
+    "why": "No counsel read needed for the data use text. Read the trademark sentence before using NWS names or logos."
+   },
+   "unverified_or_not_read": [
+    "NOAA-wide disclaimer (noaa.gov/disclaimer) blocked (403); the NWS disclaimer was used",
+    "NWPS OpenAPI info block has no licence field; NWPS-specific terms not found"
+   ]
+  },
+  {
+   "key": "usgs",
+   "name": "USGS (public domain statement)",
+   "manifest_ids": [
+    "usgs_copyright",
+    "usgs_disclaimers"
+   ],
+   "quotes": [
+    {
+     "label": "usgs_pd",
+     "quote": "USGS-authored or produced data and information are considered to be in the U.S. Public Domain.",
+     "file": "usgs_copyright.txt",
+     "file_sha256": "ca1dff58ccca51de2672fdef5883bbae922c643acc647ab3c2ad899197a0c45b",
+     "url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:47Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "usgs_thirdparty",
+     "quote": "While the content of most USGS websites is in the U.S. Public Domain, not all information, illustrations, or photographs on our site are.",
+     "file": "usgs_copyright.txt",
+     "file_sha256": "ca1dff58ccca51de2672fdef5883bbae922c643acc647ab3c2ad899197a0c45b",
+     "url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:47Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "usgs_credit",
+     "quote": "When using information from USGS information products, publications, or websites, we ask that proper credit be given.",
+     "file": "usgs_copyright.txt",
+     "file_sha256": "ca1dff58ccca51de2672fdef5883bbae922c643acc647ab3c2ad899197a0c45b",
+     "url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:47Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Yes for USGS-authored or produced data (public domain). Third-party photographs and images on USGS sites are not necessarily public domain.",
+    "attribution": "Credit requested: \"Credit: U.S. Geological Survey\".",
+    "commercial_or_redistribution_clause": "None stated for USGS-produced data.",
+    "share_alike": "None.",
+    "plain_words": "Low risk for USGS data. Third-party imagery needs its own check; this review did not read the imagery base-map provider terms."
+   },
+   "risk_level": "Low (USGS data); Medium for third-party imagery",
+   "counsel_must_read_before_go_live": {
+    "required": false,
+    "why": "No counsel read for USGS-produced data. Imagery base-map provider terms are outside this review."
+   },
+   "unverified_or_not_read": [
+    "USGS disclaimers page returned 404"
+   ]
+  },
+  {
+   "key": "prism",
+   "name": "PRISM Climate Group (Oregon State University)",
+   "manifest_ids": [
+    "prism_terms",
+    "prism_home",
+    "prism_about"
+   ],
+   "quotes": [
+    {
+     "label": "prism_free",
+     "quote": "Data. All data (gridded, polygon, tabular, graphical) retrieved from this website or otherwise provided on the website may be freely reproduced and distributed.",
+     "file": "prism_terms.txt",
+     "file_sha256": "a5732125f13569b0f2a9b2386512b872e8deb7503588efea9e74e14d2158ef47",
+     "url": "https://prism.oregonstate.edu/terms/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:47Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "prism_ref",
+     "quote": "References to the Data. When the data are used, any description should clearly and prominently state, at a minimum, our name, URL, and the date of data access.",
+     "file": "prism_terms.txt",
+     "file_sha256": "a5732125f13569b0f2a9b2386512b872e8deb7503588efea9e74e14d2158ef47",
+     "url": "https://prism.oregonstate.edu/terms/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:47Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "prism_owner",
+     "quote": "The PRISM Group, Oregon State University retains rights to ownership of the data and information.",
+     "file": "prism_terms.txt",
+     "file_sha256": "a5732125f13569b0f2a9b2386512b872e8deb7503588efea9e74e14d2158ef47",
+     "url": "https://prism.oregonstate.edu/terms/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:47Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "prism_warranty",
+     "quote": "No Warranty. All content on this website is provided \"as is,\" without warranty of any kind, either express or implied.",
+     "file": "prism_terms.txt",
+     "file_sha256": "a5732125f13569b0f2a9b2386512b872e8deb7503588efea9e74e14d2158ef47",
+     "url": "https://prism.oregonstate.edu/terms/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:47Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "The terms say the data may be freely reproduced and distributed, with a clear reference (name, URL and date of access). They also reserve ownership of the data to the PRISM Group.",
+    "attribution": "Required reference, at minimum name, URL and date of data access (example in the terms).",
+    "commercial_or_redistribution_clause": "None stated.",
+    "share_alike": "None.",
+    "plain_words": "Free reproduction and distribution, with a reference, read together with a reservation of ownership. The two sentences should be read together; the reference wording is clear."
+   },
+   "risk_level": "Low to Medium",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Short read: the free-distribution sentence and the ownership sentence point in different directions; counsel should confirm before per-tile PRISM values go live."
+   },
+   "unverified_or_not_read": [
+    "PRISM about page returned 404"
+   ]
+  },
+  {
+   "key": "daymet_nasa_earthdata",
+   "name": "Daymet (ORNL DAAC) and NASA Earthdata terms",
+   "manifest_ids": [
+    "daac_daymet_ds",
+    "daymet_dataset_check",
+    "earthdata_datause",
+    "earthdata_datainfo",
+    "earthdata_home",
+    "urs_home",
+    "daac_policies",
+    "daac_home"
+   ],
+   "quotes": [
+    {
+     "label": "daymet_open",
+     "quote": "This dataset is openly shared, without restriction, in accordance with the EOSDIS Data Use and Citation Guidance.",
+     "file": "daac_daymet_ds.txt",
+     "file_sha256": "17f041f0e52ceebbc4cb6353c9addff095fbc1baaca50a60c990891f230d0fb8",
+     "url": "https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=2129",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:48Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "earthdata_nonnasa",
+     "quote": "Non-NASA data available through the ESDIS project is subject to the license arrangements of the sponsoring organization.",
+     "file": "earthdata_datause.txt",
+     "file_sha256": "473fccfe0a6151f797686e69cc535e1956ca71fca015fde5f553ad102fd556e0",
+     "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:08Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "earthdata_cite",
+     "quote": "NASA data are freely accessible; however, when you publish these data or works based on the data, we request that you cite the datasets within the text of the publication and include a reference to them in your reference list.",
+     "file": "earthdata_datause.txt",
+     "file_sha256": "473fccfe0a6151f797686e69cc535e1956ca71fca015fde5f553ad102fd556e0",
+     "url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:08Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "The Daymet catalog page says the dataset is openly shared without restriction. NASA general guidance says non-NASA data follows the license of the sponsoring organization; Daymet is an ORNL product, and the ORNL DAAC policy page was not found.",
+    "attribution": "Citation requested (EOSDIS Data Use and Citation Guidance; NASA asks for citation).",
+    "commercial_or_redistribution_clause": "None stated in the text read.",
+    "share_alike": "None stated.",
+    "plain_words": "Low risk on the catalog wording. One check: confirm the ORNL DAAC licence statement for Daymet, because the NASA guidance defers non-NASA data to the sponsor."
+   },
+   "risk_level": "Low (catalog wording); confirm the ORNL DAAC statement",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Short confirmation of the ORNL DAAC Daymet licence text recommended before the layer goes live."
+   },
+   "unverified_or_not_read": [
+    "ORNL DAAC policy page not found (404); the Earthdata catalog wording was used"
+   ]
+  },
+  {
+   "key": "nrcs_awdb",
+   "name": "NRCS AWDB (Air-Water Database, National Water and Climate Center)",
+   "manifest_ids": [
+    "awdb_datagov",
+    "nrcs_wcc_reportgen",
+    "nrcs_wcc_home",
+    "nrcs_awdb_services",
+    "nrcs_wcc_portal",
+    "nrcs_wcc_old",
+    "usda_policies"
+   ],
+   "quotes": [
+    {
+     "label": "awdb_restricted",
+     "quote": "Access restricted. Contact the publisher to request access.",
+     "file": "awdb_datagov.txt",
+     "file_sha256": "eb1af4279120192a55da79c0509257e0fd9af1993110c711f64757b8b029aad5",
+     "url": "https://catalog.data.gov/dataset/awdb",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:06Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "awdb_level",
+     "quote": "restricted public",
+     "file": "awdb_datagov.txt",
+     "file_sha256": "eb1af4279120192a55da79c0509257e0fd9af1993110c711f64757b8b029aad5",
+     "url": "https://catalog.data.gov/dataset/awdb",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:06Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "awdb_desc",
+     "quote": "Atmospheric & Water Database available to public through National Water and Climate Center",
+     "file": "awdb_datagov.txt",
+     "file_sha256": "eb1af4279120192a55da79c0509257e0fd9af1993110c711f64757b8b029aad5",
+     "url": "https://catalog.data.gov/dataset/awdb",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:06Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nrcs_liability",
+     "quote": "Data are released on condition that neither the NRCS nor the United States Government may be held liable for any damages resulting from its use.",
+     "file": "nrcs_wcc_reportgen.txt",
+     "file_sha256": "5d0e723ce0fc5988b68c9dfec567face8e1a65931263c58c9cb0f4df2c1f3f12",
+     "url": "https://wcc.sc.egov.usda.gov/reportGenerator/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:47:41Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Unresolved. The Data.gov record says access is restricted and tells users to contact the publisher; its distribution description says the database is available to the public through the National Water and Climate Center. The WCC report generator says data are released on condition that the NRCS and U.S. Government cannot be held liable.",
+    "attribution": "None found.",
+    "commercial_or_redistribution_clause": "None found; the access restriction on the catalog record is the main issue.",
+    "share_alike": "None.",
+    "plain_words": "Do not publish AWDB-based values in a public layer until NRCS confirms public access and reuse terms in writing."
+   },
+   "risk_level": "High until NRCS confirms public access terms",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Conflicting access statements; NRCS own AWDB terms not found."
+   },
+   "unverified_or_not_read": [
+    "NRCS AWDB own terms page not found",
+    "WCC portal and old host connection failures",
+    "USDA policy page blocked (403)"
+   ]
+  },
+  {
+   "key": "noaa_nohrsc",
+   "name": "NOAA NOHRSC (National Snow Analysis and related products)",
+   "manifest_ids": [
+    "nohrsc_home",
+    "nohrsc_gisdatasets",
+    "nohrsc_disclaimer",
+    "weather_gov_disclaimer_php"
+   ],
+   "quotes": [
+    {
+     "label": "nws_public",
+     "quote": "The information on National Weather Service (NWS) Web pages are in the public domain, unless specifically noted otherwise, and may be used without charge for any lawful purpose so long as you do not: 1) claim it is your own (e.g., by claiming copyright for NWS information -- see below), 2) use it in a manner that implies an endorsement or affiliation with NOAA/NWS, or 3) modify its content and then present it as official government material.",
+     "file": "nws_disclaimer.txt",
+     "file_sha256": "3057a54d6f4409de4608bd8e7e05554c32a9d776f6e02575033cc09c5ad2f331",
+     "url": "https://www.weather.gov/disclaimer",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nws_asis",
+     "quote": "The user assumes the entire risk related to its use of information on NWS Web pages.",
+     "file": "nws_disclaimer.txt",
+     "file_sha256": "3057a54d6f4409de4608bd8e7e05554c32a9d776f6e02575033cc09c5ad2f331",
+     "url": "https://www.weather.gov/disclaimer",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:46Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "NOHRSC product-level terms not found. The NOHRSC home page links its disclaimer to the NWS disclaimer, whose public-domain statement is the nearest text.",
+    "attribution": "None found for NOHRSC products.",
+    "commercial_or_redistribution_clause": "None found.",
+    "share_alike": "None found.",
+    "plain_words": "Treat as unverified for NOHRSC products until the product statement is read."
+   },
+   "risk_level": "Low to Medium (product-level text unverified)",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Short read of NOHRSC product terms before snow products go live (the owner asked for snow by year)."
+   },
+   "unverified_or_not_read": [
+    "NOHRSC disclaimer page 404",
+    "NOHRSC product-level terms not found"
+   ]
+  },
+  {
+   "key": "fema_nfhl",
+   "name": "FEMA National Flood Hazard Layer (NFHL) and flood-zone disclaimer",
+   "manifest_ids": [
+    "fema_nfhl_datagov",
+    "fema_nfhl_alt2",
+    "fema_nfhl_layer3",
+    "fema_msc_home",
+    "fema_msc_faq",
+    "fema_nfhl_page",
+    "fema_disclaimer",
+    "fema_nfhl_mapserver"
+   ],
+   "quotes": [
+    {
+     "label": "nfhl_license",
+     "quote": "License https://www.usa.gov/government-works",
+     "file": "fema_nfhl_datagov.txt",
+     "file_sha256": "b9aca3698ba96eb2a1269ada4a5b932f2d2a1bdd0d5ba4d264700d750004a1f8",
+     "url": "https://catalog.data.gov/dataset/national-flood-hazard-layer-nfhl",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:05Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "nfhl_access",
+     "quote": "Access Level public",
+     "file": "fema_nfhl_datagov.txt",
+     "file_sha256": "b9aca3698ba96eb2a1269ada4a5b932f2d2a1bdd0d5ba4d264700d750004a1f8",
+     "url": "https://catalog.data.gov/dataset/national-flood-hazard-layer-nfhl",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:45:05Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "msc_official",
+     "quote": "The FEMA Flood Map Service Center (MSC) is the official public source for flood hazard information produced in support of the National Flood Insurance Program (NFIP).",
+     "file": "fema_msc_home.txt",
+     "file_sha256": "7aba261f910107d46ecaf0fba72bc6b8e3e6618ae4f676087a77fa788afe0527",
+     "url": "https://msc.fema.gov/portal/home",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:49Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "Data.gov lists a government-works licence and public access. FEMA primary disclaimer text was not read (fema.gov blocked). The MSC page calls itself the official public source for NFIP flood hazard information, so the site must not present zones as a determination.",
+    "attribution": "None found.",
+    "commercial_or_redistribution_clause": "None found in the fields read.",
+    "share_alike": "None found.",
+    "plain_words": "Show the flood layer as FEMA information, not as a legal flood-zone determination. The exact FEMA wording must be read before go-live."
+   },
+   "risk_level": "Medium (disclaimer not read)",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "FEMA primary disclaimer and flood-zone wording must be read before the flood layer goes live."
+   },
+   "unverified_or_not_read": [
+    "FEMA primary pages blocked (403); no FEMA disclaimer read",
+    "NFHL service JSON and FIRM layer JSON have no description or copyright text",
+    "third-party copies of FEMA wording (search results) were not used as evidence"
+   ]
+  },
+  {
+   "key": "montana_code_annotated",
+   "name": "Montana Code Annotated 2-6-1017 (in force) and 2-6-109 (repealed)",
+   "manifest_ids": [
+    "mca_1017_p100",
+    "mca_1017_legmt",
+    "mca_2_6_109",
+    "mca_toc_2_6",
+    "mca_sections_index_c6",
+    "mca_parts_index_c6",
+    "mca_chapters_index_t2"
+   ],
+   "quotes": [
+    {
+     "label": "mca_1017_lead",
+     "quote": "(1) Except as provided in subsections (3) through (10), to protect the privacy of those who deal with state and local government:",
+     "file": "mca_1017_p100.txt",
+     "file_sha256": "95edaed81fd7b7a32560ced842ba2101fe70a1b77a247d9501fa9283b35ea9ce",
+     "url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:40:01Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "mca_1017_a",
+     "quote": "(a) a public agency may not distribute or sell a distribution list without first securing the permission of those on the list; and",
+     "file": "mca_1017_p100.txt",
+     "file_sha256": "95edaed81fd7b7a32560ced842ba2101fe70a1b77a247d9501fa9283b35ea9ce",
+     "url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:40:01Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "mca_1017_b",
+     "quote": "(b) a list of persons prepared by a public agency may not be used as a distribution list except by the public agency or another public agency without first securing the permission of those on the list.",
+     "file": "mca_1017_p100.txt",
+     "file_sha256": "95edaed81fd7b7a32560ced842ba2101fe70a1b77a247d9501fa9283b35ea9ce",
+     "url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:40:01Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "mca_1017_2",
+     "quote": "(2) As used in this section, \"distribution list\" means any list of personal contact information collected by a public agency and used to facilitate unsolicited contact with individuals on the distribution list.",
+     "file": "mca_1017_p100.txt",
+     "file_sha256": "95edaed81fd7b7a32560ced842ba2101fe70a1b77a247d9501fa9283b35ea9ce",
+     "url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:40:01Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "mca_1017_3",
+     "quote": "(3) This section does not prevent an individual from compiling a distribution list by examination of records that are otherwise open to public inspection.",
+     "file": "mca_1017_p100.txt",
+     "file_sha256": "95edaed81fd7b7a32560ced842ba2101fe70a1b77a247d9501fa9283b35ea9ce",
+     "url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:40:01Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "mca_1017_4",
+     "quote": "(4) This section does not apply to the lists of:",
+     "file": "mca_1017_p100.txt",
+     "file_sha256": "95edaed81fd7b7a32560ced842ba2101fe70a1b77a247d9501fa9283b35ea9ce",
+     "url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:40:01Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "mca_1017_11",
+     "quote": "(11) A person violating the provisions of subsection (1)(b) is guilty of a misdemeanor.",
+     "file": "mca_1017_p100.txt",
+     "file_sha256": "95edaed81fd7b7a32560ced842ba2101fe70a1b77a247d9501fa9283b35ea9ce",
+     "url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:40:01Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "mca_1017_hist",
+     "quote": "History: En. Sec. 11, Ch. 348, L. 2015; amd. Sec. 1, Ch. 51, L. 2019; amd. Sec. 1, Ch. 147, L. 2019; amd. Sec. 1, Ch. 457, L. 2021.",
+     "file": "mca_1017_p100.txt",
+     "file_sha256": "95edaed81fd7b7a32560ced842ba2101fe70a1b77a247d9501fa9283b35ea9ce",
+     "url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:40:01Z",
+     "matched_in_downloaded_text": true
+    },
+    {
+     "label": "mca_109_repealed",
+     "quote": "2-6-109. Repealed. Sec. 59, Ch. 348, L. 2015.",
+     "file": "mca_2_6_109.txt",
+     "file_sha256": "922c66bd650ec30743b922c2f3baf2d4c92796830950f616501cfad1cff9ce86",
+     "url": "https://leg.mt.gov/bills/mca/title_0020/chapter_0060/part_0010/section_0090/0020-0060-0010-0090.html",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:37:50Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "status_2_6_1017": "In force on the live page (Montana Code Annotated 2025); history through 2021.",
+    "status_2_6_109": "Repealed on the live page: \"2-6-109. Repealed. Sec. 59, Ch. 348, L. 2015.\"",
+    "note": "Both history lines cite the same 2015 session law (Ch. 348, L. 2015); the 2-6-1017 history begins there. The relationship is for counsel to confirm.",
+    "plain_reading_not_legal_advice": "Subsection (1) restricts two things: (a) a public agency giving out or selling a distribution list without the permission of the people on it, and (b) anyone other than the agency using a list of persons prepared by a public agency as a distribution list without that permission. Breaching (1)(b) is a misdemeanor under (11). Subsection (2) defines a distribution list by content and purpose: personal contact information collected by a public agency and used to facilitate unsolicited contact with individuals on the list. The definition does not mention names. For a site that shows addresses without names, the text leaves three open points: whether an address point is personal contact information; whether a public, searchable map of address points is a list of persons prepared by a public agency; and whether the site facilitates unsolicited contact when the operator is a roofing business that may use the map for outreach. A map with no names, no export and no contact function is a different case from a list handed to a sales team, but the text does not decide it. Subsection (3) allows compiling a list from records otherwise open to public inspection, which may be relevant to how the address data is obtained, not to what the site does with it. The exceptions in (4) to (10) name specific groups (registered electors, licence holders, property owners in a water or sewer district, sign-in sheets and others); none of the listed exceptions is an address-point dataset on the text read.",
+    "msl_reference": "The MSL parcel metadata cites 2-6-1017 and 2-6-109 for owner-bearing parcel data. The structures and transportation metadata do not cite either section (see mca_refs in the sources).",
+    "b3_brief_note": "The B3 brief (lines 36 and 162) plans to say that 2-6-1017 and 2-6-109 concern lists of persons. Because 2-6-109 is repealed on the live page, the About text should cite 2-6-1017 only, or describe 2-6-109 as repealed, for counsel to decide."
+   },
+   "risk_level": "Medium (open reading)",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "The reading of 2-6-1017 for an address map used by a commercial business is a counsel question, and the repealed 2-6-109 must not be cited as current law."
+   },
+   "unverified_or_not_read": [
+    "2-6-1017 subsections (5) to (10) read; none reads as an address-point exception, but the reading is for counsel"
+   ]
+  },
+  {
+   "key": "google_open_buildings_alt",
+   "name": "Google Open Buildings (footprint alternative; not in the requested list)",
+   "manifest_ids": [
+    "google_open_buildings"
+   ],
+   "quotes": [
+    {
+     "label": "google_choice",
+     "quote": "The data is shared under the Creative Commons Attribution (CC BY-4.0) license and the Open Data Commons Open Database License (ODbL) v1.0 license. As the user, you can pick which of the two licenses you prefer and use the data under the terms of that license.",
+     "file": "google_open_buildings.txt",
+     "file_sha256": "a603cd56c65fa6f287f315d4a075928593e960db2624147efe67e9733b0239b4",
+     "url": "https://sites.research.google/open-buildings/",
+     "http_status": "200",
+     "read_utc": "2026-10-19T02:51:31Z",
+     "matched_in_downloaded_text": true
+    }
+   ],
+   "reading": {
+    "may_publish_derived_files": "The page says the user can pick CC BY 4.0 or ODbL v1.0 and use the data under the terms of the chosen licence.",
+    "attribution": "CC BY 4.0 attribution if the CC BY option is chosen; ODbL notice if ODbL is chosen.",
+    "plain_words": "A possible footprint source with a choice of licence; the choice must be recorded and the liability footnotes (not read) checked."
+   },
+   "risk_level": "Low to Medium",
+   "counsel_must_read_before_go_live": {
+    "required": true,
+    "why": "Record the licence option chosen; liability footnotes not read."
+   },
+   "unverified_or_not_read": [
+    "liability footnotes not read"
+   ]
+  }
+ ],
+ "montana_law": {
+  "MCA_2_6_1017": {
+   "source_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+   "status": "In force (live page, Montana Code Annotated 2025)",
+   "read_utc": "2026-10-19T02:40:01Z"
+  },
+  "MCA_2_6_109": {
+   "source_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0010/section_0090/0020-0060-0010-0090.html",
+   "status": "Repealed (live page): \"2-6-109. Repealed. Sec. 59, Ch. 348, L. 2015.\"",
+   "read_utc": "2026-10-19T02:37:50Z"
+  },
+  "mca_references_in_msl_metadata": {
+   "msl_struct_metadata_member.xml": {
+    "2-6-1017": 0,
+    "2-6-109": 0
+   },
+   "msl_trans_metadata_member.xml": {
+    "2-6-1017": 0,
+    "2-6-109": 0
+   },
+   "msl_parcel_meta.body": {
+    "2-6-1017": 1,
+    "2-6-109": 2
+   }
+  },
+  "msl_metadata_pubdates": {
+   "msl_struct_metadata_member.xml": "20260930",
+   "msl_trans_metadata_member.xml": "20260930",
+   "msl_parcel_meta.body": "20261006"
+  }
+ },
+ "agents_md_rules": {
+  "rule_5_verbatim": "5. **Evidence honesty.** Keep forecast, radar estimate, point report, official alert and inspection separate. Never state confirmed damage, insurance eligibility or a damage probability. No report is not \"no hail.\" Missing inputs show \"Data unavailable,\" never an all-clear. Demo data only under the demo event, labelled DEMO everywhere.",
+  "rule_6_verbatim": "6. **Official alerts.** Match by warning polygon, else the place's NWS forecast zone / county / fire-zone codes. Null geometry never means \"no alert\"; can't-tell shows as can't-tell. Never clear a warning after a failed request. No AI-generated text anywhere in the alert path.",
+  "rule_9_verbatim": "9. **No \"best\" claims** for any provider or model until the evaluation in `docs/ROADMAP.md` supports it.",
+  "words_must_respect": [
+   "No statement of confirmed damage, insurance eligibility or a damage probability in the About, terms or layer text (rule 5).",
+   "No report is not \"no hail\": terms and data-gap sentences must say that a missing record does not mean that nothing happened (rule 5; the SWDI disclaimer supports this wording).",
+   "A failed or blocked source shows \"Data unavailable\", never an all-clear (rule 5); a licence that cannot be confirmed should disable the layer, not leave it silently on.",
+   "Official alert text is never AI-generated and the terms text is not alert text; the About text must not claim alert coverage (rule 6).",
+   "Null geometry never means no alert (rule 6); the same caution applies to building or address gaps, which must not be described as absence of buildings.",
+   "No \"best\" claims (rule 9): NCEI wording such as \"best available information\" must not be repeated as a site claim.",
+   "Plain wording, sentence case, no em-dashes in site text (conventions and owner preferences)."
+  ]
+ },
+ "counsel_questions": [
+  "MCA 2-6-1017: is a public map of address points with no names a \"list of persons prepared by a public agency\" or \"personal contact information\" under subsections (1)(b) and (2)?",
+  "MCA 2-6-1017: does a commercial roofing operator using the map for outreach make the site \"used to facilitate unsolicited contact\", and does a no-export, no-contact design change that answer?",
+  "MCA 2-6-1017 and 2-6-109: the B3 About plan cites both sections. 2-6-109 is repealed on the live page. Should the About text cite 2-6-1017 only? Should the MSL be told its parcel metadata cites a repealed section?",
+  "MSL purpose clause: does \"made available as a convenience to the public, and for no other purpose\" limit commercial use of the address and road layers, or only the purpose of the data itself?",
+  "MSL origin providers: the structures and transportation metadata list dozens of county, tribal, federal and state providers. Do their terms bind the derived files, and who is the licensor for the derived output?",
+  "ODbL: are per-tile footprint or road shape files from OSM, Overture or Microsoft a Derivative Database under ODbL 4.4(b)? If so, must the derived tiles be licensed under the ODbL and offered in machine-readable form under 4.6?",
+  "ODbL: is the rendered map (a Produced Work) with the 4.3 notice sufficient for the map view, and what exact notice text should the site show?",
+  "Overture buildings: if any Overture building data is used, the theme is ODbL and other sources must be ODbL or compatible. Is the source-by-source compatibility documented?",
+  "Google Open Buildings: if chosen as an alternative, which licence (CC BY 4.0 or ODbL v1.0) will the site adopt, and is the choice recorded in the layer metadata?",
+  "FEMA USA Structures: the Data.gov record says government-works and public, the ArcGIS copy says no licence, and the Hub licence field was not read. Which licence applies, and do the commercial imagery provenance terms matter?",
+  "NRCS AWDB: the Data.gov record says access is restricted and to contact the publisher. Can AWDB values be published in a public layer without written NRCS confirmation?",
+  "FEMA NFHL: what disclaimer and flood-zone wording must the flood layer show? FEMA primary text was not read (fema.gov blocked).",
+  "NOHRSC: is there a product-level data-use statement beyond the NWS disclaimer for snow analysis products?",
+  "PRISM: how do \"may be freely reproduced and distributed\" and \"retains rights to ownership of the data\" apply to per-tile derived values?",
+  "Daymet: does the ORNL DAAC licence statement match the Earthdata catalog wording (\"openly shared, without restriction\")?",
+  "Census TIGER/Line: confirm the acknowledgement wording and that the registered TIGER/Line names are not used to imply endorsement.",
+  "Commercial use: none of the NWS, USGS, IEM, NCEI or NODD texts read here bars commercial use on its face. Confirm that reading for the site as a whole.",
+  "Other privacy rules: the search box, geolocation and any analytics may raise questions outside MCA 2-6-1017. Not reviewed here; counsel to check.",
+  "Disclaimers: the MSL text says the data are not suitable for legal, engineering or surveying purposes. Confirm the About text does not imply legal accuracy for a business that uses the map to sell roofing work."
+ ],
+ "unverified_or_blocked": [
+  "NOAA general disclaimer (noaa.gov/disclaimer and noaa.gov open-data page): HTTP 403 \"Request blocked\" from the CDN; not read.",
+  "FEMA primary pages (fema.gov disclaimer, NFHL page, required notices): HTTP 403 Access Denied from the CDN; not read.",
+  "USDA policies page: HTTP 403 from the CDN; not read.",
+  "GitHub repository page for the Microsoft footprints: refused for this session; README read from the raw path; LICENSE file not at raw paths.",
+  "FEMA Hub item licence field for USA Structures: Hub page read, licence not in readable text; item id not found.",
+  "NRCS AWDB own terms: not found; WCC portal connection failures.",
+  "NCEI Storm Events FAQ: shell page only; nClimGrid monthly product page 404 (ISO metadata used).",
+  "NOHRSC product-level terms: not found; NWS disclaimer is the nearest text.",
+  "ORNL DAAC policy: not found; Earthdata catalog wording used.",
+  "MSL general data licence: none found; per-dataset FGDC constraints used.",
+  "Census copyright page: 404; TIGER/Line ISO metadata used for the state and one county roads file only.",
+  "MSL structures and transportation DBF files: not re-read (large); the no-owner-field finding comes from prior evidence and the B3 pre-check.",
+  "Overture NAD licence name and the CC0 statement recorded in prior evidence: not reconciled in this run.",
+  "Google Open Buildings liability footnotes: not read.",
+  "Other Census county roads files: assumed same wording; not checked."
+ ],
+ "urls_checked": [
+  {
+   "id": "census_copyright",
+   "requested_url": "https://www.census.gov/about/policies/copyright.html",
+   "final_url": "https://www.census.gov/about/policies/copyright.html",
+   "http_status": "404",
+   "bytes": 26711,
+   "sha256": "ae12e4d2e02ff90bb0ca2c0d79bdddeec8aa5d2891e896d455cb023ab12147a3",
+   "server_date": "Mon, 19 Oct 2026 02:37:40 GMT",
+   "read_utc": "2026-10-19T02:37:39Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 404 at /about/policies/copyright.html; no Census copyright page read."
+  },
+  {
+   "id": "census_api_tos",
+   "requested_url": "https://www.census.gov/data/developers/about/terms-of-service.html",
+   "final_url": "https://www.census.gov/data/developers/about/terms-of-service.html",
+   "http_status": "200",
+   "bytes": 302319,
+   "sha256": "be4752a9a73c317158a6786b8fcc5130a063439f58cebb85fa94acd6175c867d",
+   "server_date": "Mon, 19 Oct 2026 02:37:40 GMT",
+   "read_utc": "2026-10-19T02:37:39Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Census API terms read; API-only terms, not used for these layers."
+  },
+  {
+   "id": "census_tiger_state_dir",
+   "requested_url": "https://www2.census.gov/geo/tiger/TIGER2025/STATE/",
+   "final_url": "https://www2.census.gov/geo/tiger/TIGER2025/STATE/",
+   "http_status": "200",
+   "bytes": 14734,
+   "sha256": "a945691050d9fbc8493a4eeda827a6d96d0e0d06171c252a13c62dc46e9d416d",
+   "server_date": "Mon, 19 Oct 2026 02:37:40 GMT",
+   "read_utc": "2026-10-19T02:37:40Z",
+   "content_type": "text/html;charset=ISO-8859-1",
+   "content_check": "STATE listing read; tl_2025_us_state.zip present."
+  },
+  {
+   "id": "census_tiger_dir",
+   "requested_url": "https://www2.census.gov/geo/tiger/TIGER2025/",
+   "final_url": "https://www2.census.gov/geo/tiger/TIGER2025/",
+   "http_status": "200",
+   "bytes": 24306,
+   "sha256": "bacf9b8bcd5b9b35e30650b05aa00299f1ad20d4809def1ab6d24ed8263a079c",
+   "server_date": "Mon, 19 Oct 2026 02:37:40 GMT",
+   "read_utc": "2026-10-19T02:37:40Z",
+   "content_type": "text/html;charset=ISO-8859-1",
+   "content_check": "TIGER2025 directory listing read; no README or terms file listed."
+  },
+  {
+   "id": "census_tiger_roads_dir",
+   "requested_url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/",
+   "final_url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/",
+   "http_status": "200",
+   "bytes": 758100,
+   "sha256": "a99a36342f558e521f09a2ea239c7a251fd37e379fa2c4257637b6a550c050de",
+   "server_date": "Mon, 19 Oct 2026 02:37:40 GMT",
+   "read_utc": "2026-10-19T02:37:39Z",
+   "content_type": "text/html;charset=ISO-8859-1",
+   "content_check": "ROADS listing read; per-county roads zips (for example tl_2025_30001_roads.zip)."
+  },
+  {
+   "id": "msl_home",
+   "requested_url": "https://msl.mt.gov/geoinfo/",
+   "final_url": "https://msl.mt.gov/geoinfo/",
+   "http_status": "200",
+   "bytes": 79594,
+   "sha256": "9b5233676497da6d1adde0ff3bcf546ffba802e75be99357e84a6a9fbf244720",
+   "server_date": "Mon, 19 Oct 2026 02:37:40 GMT",
+   "read_utc": "2026-10-19T02:37:40Z",
+   "content_type": "text/html",
+   "content_check": "MSL home (msl.mt.gov/geoinfo) read; no data licence text."
+  },
+  {
+   "id": "msl_ftp_msdi",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/",
+   "http_status": "200",
+   "bytes": 1668,
+   "sha256": "829f6e43c387dab3b5a26d38ac84fbc2ae7878236b68a56013de542f715e8d02",
+   "server_date": "Mon, 19 Oct 2026 02:37:41 GMT",
+   "read_utc": "2026-10-19T02:37:40Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "status recorded; body not relied on for any quote"
+  },
+  {
+   "id": "msl_structures_page",
+   "requested_url": "https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/index",
+   "final_url": "https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/",
+   "http_status": "200",
+   "bytes": 28523,
+   "sha256": "cd7710cafa05aa656af26f82383c9e6b2c50ff99c3477daae6fe06ae986b101c",
+   "server_date": "Mon, 19 Oct 2026 02:37:41 GMT",
+   "read_utc": "2026-10-19T02:37:40Z",
+   "content_type": "text/html",
+   "content_check": "Structures and Addresses page read; description and links; no licence text on the page."
+  },
+  {
+   "id": "msl_ftp_addr",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/",
+   "http_status": "200",
+   "bytes": 667,
+   "sha256": "784a1ae21b77d7222f7147dcc19c7df38eb5ebac7eeff0f36d5688f00567b131",
+   "server_date": "Mon, 19 Oct 2026 02:37:41 GMT",
+   "read_utc": "2026-10-19T02:37:40Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "AddressStructures folder listing read (zip sizes and dates)."
+  },
+  {
+   "id": "msl_ftp_trans",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/",
+   "http_status": "200",
+   "bytes": 668,
+   "sha256": "7f217379c3a7ea96f2304283c7e43e7a74f51ee13c50255303678ec019dff118",
+   "server_date": "Mon, 19 Oct 2026 02:37:41 GMT",
+   "read_utc": "2026-10-19T02:37:41Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Transportation folder listing read (zip sizes and dates)."
+  },
+  {
+   "id": "msl_cadastral_page",
+   "requested_url": "https://msl.mt.gov/geoinfo/msdi/cadastral/index",
+   "final_url": "https://msl.mt.gov/geoinfo/msdi/cadastral/",
+   "http_status": "200",
+   "bytes": 33541,
+   "sha256": "4c7c486d6242d20e9c314aff1b5e29e13052ab5fc4d479eb5c6a10d6cd9ae66b",
+   "server_date": "Mon, 19 Oct 2026 02:37:41 GMT",
+   "read_utc": "2026-10-19T02:37:40Z",
+   "content_type": "text/html",
+   "content_check": "Cadastral page read (not used for any layer)."
+  },
+  {
+   "id": "msl_parcel_meta",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/MontanaCadastral_ParcelMetadata.xml",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/MontanaCadastral_ParcelMetadata.xml",
+   "http_status": "200",
+   "bytes": 35131,
+   "sha256": "967a471d28d7e86708d590fcaa34979c067ccaee829b3cecf4220abe7f80957f",
+   "server_date": "Mon, 19 Oct 2026 02:37:41 GMT",
+   "read_utc": "2026-10-19T02:37:41Z",
+   "content_type": "text/xml",
+   "content_check": "Parcel FGDC metadata XML read live (pubdate 20261006): quotes MCA 2-6-1017 and 2-6-109."
+  },
+  {
+   "id": "msl_transport_page",
+   "requested_url": "https://msl.mt.gov/geoinfo/msdi/transportation/index",
+   "final_url": "https://msl.mt.gov/geoinfo/msdi/transportation/",
+   "http_status": "200",
+   "bytes": 27416,
+   "sha256": "29766fb1c26e135b9e30832ea8cc1fed781693fde4b393edaa5d6bcda63dd715",
+   "server_date": "Mon, 19 Oct 2026 02:37:42 GMT",
+   "read_utc": "2026-10-19T02:37:40Z",
+   "content_type": "text/html",
+   "content_check": "Transportation page read; download and metadata links; no licence text on the page."
+  },
+  {
+   "id": "census_tiger_page",
+   "requested_url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+   "final_url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+   "http_status": "200",
+   "bytes": 349893,
+   "sha256": "ba2d7a7a544f8174bd079eadf228490a8df2802f19e60982654c3cd4286102dd",
+   "server_date": "Mon, 19 Oct 2026 02:37:41 GMT",
+   "read_utc": "2026-10-19T02:37:40Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "TIGER/Line landing page read; no licence or use text in the readable page."
+  },
+  {
+   "id": "ms_license_master",
+   "requested_url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/LICENSE",
+   "final_url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/LICENSE",
+   "http_status": "404",
+   "bytes": 14,
+   "sha256": "d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed",
+   "server_date": "Mon, 19 Oct 2026 02:37:42 GMT",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "text/plain; charset=utf-8",
+   "content_check": "Raw LICENSE path on master returned 404; the README is the licence statement read."
+  },
+  {
+   "id": "msl_struct_map",
+   "requested_url": "https://gisservice.mt.gov/arcgis/rest/services/msdi_structures_addresses_map_v1/MapServer?f=pjson",
+   "final_url": "https://gisservice.mt.gov/arcgis/rest/services/msdi_structures_addresses_map_v1/MapServer?f=pjson",
+   "http_status": "200",
+   "bytes": 6983,
+   "sha256": "f7103156e3e04613231fd9411680fabb199d14ae88021cb4cfab8040d9394000",
+   "server_date": "Mon, 19 Oct 2026 02:37:42 GMT",
+   "read_utc": "2026-10-19T02:37:41Z",
+   "content_type": "text/plain; charset=UTF-8",
+   "content_check": "Structures map service JSON read: copyrightText \"Montana State Library\"; description read."
+  },
+  {
+   "id": "ms_readme",
+   "requested_url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+   "final_url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+   "http_status": "200",
+   "bytes": 13784,
+   "sha256": "30c22fb127004f0882349c8ec6082ebfbeea650f63b1b72c0d4cb4726bd07099",
+   "server_date": "Mon, 19 Oct 2026 02:37:42 GMT",
+   "read_utc": "2026-10-19T02:37:41Z",
+   "content_type": "text/plain; charset=utf-8",
+   "content_check": "README read: \"## License\" section and \"freely available for download and use\"; Legal Notices section read."
+  },
+  {
+   "id": "msl_parcel_map",
+   "requested_url": "https://gisservice.mt.gov/arcgis/rest/services/msdi_cadastral_map_v1/MapServer?f=pjson",
+   "final_url": "https://gisservice.mt.gov/arcgis/rest/services/msdi_cadastral_map_v1/MapServer?f=pjson",
+   "http_status": "200",
+   "bytes": 8486,
+   "sha256": "6ad67021a91cd7e0842ef4cfa1ddc258f23eae86411148a32fef4e538bab5eee",
+   "server_date": "Mon, 19 Oct 2026 02:37:42 GMT",
+   "read_utc": "2026-10-19T02:37:41Z",
+   "content_type": "text/plain; charset=UTF-8",
+   "content_check": "Parcel map service JSON read: copyrightText empty; not used."
+  },
+  {
+   "id": "msl_trans_map",
+   "requested_url": "https://gisservice.mt.gov/arcgis/rest/services/msdi_transportation_map_v1/MapServer?f=pjson",
+   "final_url": "https://gisservice.mt.gov/arcgis/rest/services/msdi_transportation_map_v1/MapServer?f=pjson",
+   "http_status": "200",
+   "bytes": 4946,
+   "sha256": "11b53b68220ac11b1d76e701a6349201301e97248fe5ef4a6277d12c29acd3e6",
+   "server_date": "Mon, 19 Oct 2026 02:37:42 GMT",
+   "read_utc": "2026-10-19T02:37:41Z",
+   "content_type": "text/plain; charset=UTF-8",
+   "content_check": "Transportation map service JSON read: copyrightText \"Montana State Library\"; description read."
+  },
+  {
+   "id": "ms_license_md_main",
+   "requested_url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/main/LICENSE.md",
+   "final_url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/main/LICENSE.md",
+   "http_status": "404",
+   "bytes": 14,
+   "sha256": "d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed",
+   "server_date": "Mon, 19 Oct 2026 02:37:42 GMT",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "text/plain; charset=utf-8",
+   "content_check": "Raw LICENSE.md path on main returned 404."
+  },
+  {
+   "id": "ms_repo",
+   "requested_url": "https://github.com/microsoft/USBuildingFootprints",
+   "final_url": "https://github.com/microsoft/USBuildingFootprints",
+   "http_status": "403",
+   "bytes": 378,
+   "sha256": "b3e03aaaff81d68730d67392a135ac3fdfdf022880c66632ab188d2fe084cda3",
+   "server_date": "NA",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "application/json; charset=utf-8",
+   "content_check": "GitHub repository page refused for this session (\"GitHub access to this repository is not enabled for this session\"); not used."
+  },
+  {
+   "id": "ms_license_main",
+   "requested_url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/main/LICENSE",
+   "final_url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/main/LICENSE",
+   "http_status": "404",
+   "bytes": 14,
+   "sha256": "d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed",
+   "server_date": "Mon, 19 Oct 2026 02:37:43 GMT",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "text/plain; charset=utf-8",
+   "content_check": "Raw LICENSE path on main returned 404."
+  },
+  {
+   "id": "odbl_summary",
+   "requested_url": "https://opendatacommons.org/licenses/odbl/summary/",
+   "final_url": "https://opendatacommons.org/licenses/odbl/summary/",
+   "http_status": "200",
+   "bytes": 26255,
+   "sha256": "c0fd47b0aee3385865ebb1f61750231173099a07198a4131b65a24abe026e1d6",
+   "server_date": "Mon, 19 Oct 2026 02:37:43 GMT",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "ODbL summary page read (not quoted)."
+  },
+  {
+   "id": "odbl_text",
+   "requested_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "final_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "http_status": "200",
+   "bytes": 51176,
+   "sha256": "b8d8aebb21bf405f93f6e21bbf0d8f0a749844f9812ec58692f189add6402b47",
+   "server_date": "Mon, 19 Oct 2026 02:37:43 GMT",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "ODbL 1.0 full text read; sections 4.2 to 4.6 and definitions quoted."
+  },
+  {
+   "id": "overture_buildings",
+   "requested_url": "https://docs.overturemaps.org/guides/buildings/",
+   "final_url": "https://docs.overturemaps.org/guides/buildings/",
+   "http_status": "200",
+   "bytes": 33349,
+   "sha256": "4b4e769e7b6a3907cc1b417ddc44f677cb5cb656d5321ab730372e90a90c4d74",
+   "server_date": "Mon, 19 Oct 2026 02:37:43 GMT",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Overture buildings theme page read: ODbL statement and licence compatibility sentence."
+  },
+  {
+   "id": "overture_home",
+   "requested_url": "https://docs.overturemaps.org/",
+   "final_url": "https://docs.overturemaps.org/",
+   "http_status": "200",
+   "bytes": 16982,
+   "sha256": "1635452e402c645cfb470d18c751122ee3f224bbde79d202b613e665d25289dd",
+   "server_date": "Mon, 19 Oct 2026 02:37:43 GMT",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Overture documentation home read (attribution section; not quoted)."
+  },
+  {
+   "id": "overture_attr",
+   "requested_url": "https://docs.overturemaps.org/attribution/",
+   "final_url": "https://docs.overturemaps.org/attribution/",
+   "http_status": "200",
+   "bytes": 125952,
+   "sha256": "505d216b53064565c917110999e215fb04cbdabdf85b9332ef84c367792c57b2",
+   "server_date": "Mon, 19 Oct 2026 02:37:43 GMT",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Overture attribution and licensing page read: per-theme licence headings and attribution lines."
+  },
+  {
+   "id": "overture_transport",
+   "requested_url": "https://docs.overturemaps.org/guides/transportation/",
+   "final_url": "https://docs.overturemaps.org/guides/transportation/",
+   "http_status": "200",
+   "bytes": 72857,
+   "sha256": "cc623da2e0f0029acdcc2c50c7d864bff391dfc7358515d14195c46db92b9ca1",
+   "server_date": "Mon, 19 Oct 2026 02:37:44 GMT",
+   "read_utc": "2026-10-19T02:37:43Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Overture transportation theme page read: ODbL statement."
+  },
+  {
+   "id": "overture_addresses",
+   "requested_url": "https://docs.overturemaps.org/guides/addresses/",
+   "final_url": "https://docs.overturemaps.org/guides/addresses/",
+   "http_status": "200",
+   "bytes": 61781,
+   "sha256": "017231a5a5b29c2a5a487c584eccdc2c94e89bf7927ef2e57bc0f511366ca34e",
+   "server_date": "Mon, 19 Oct 2026 02:37:44 GMT",
+   "read_utc": "2026-10-19T02:37:42Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Overture addresses theme page read: source licences vary."
+  },
+  {
+   "id": "osm_copyright",
+   "requested_url": "https://www.openstreetmap.org/copyright",
+   "final_url": "https://www.openstreetmap.org/copyright",
+   "http_status": "200",
+   "bytes": 21314,
+   "sha256": "2be3f9c6a5321ec97e565b5d5eed07da14e1b9ed54593991db7384e5cd3aa2e4",
+   "server_date": "Mon, 19 Oct 2026 02:37:44 GMT",
+   "read_utc": "2026-10-19T02:37:43Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "OpenStreetMap copyright and licence page read: ODbL summary and credit duty."
+  },
+  {
+   "id": "osm_attr_guide",
+   "requested_url": "https://wiki.osmfoundation.org/wiki/Licence/Attribution_Guidelines",
+   "final_url": "https://osmfoundation.org/wiki/Licence/Attribution_Guidelines",
+   "http_status": "200",
+   "bytes": 58627,
+   "sha256": "96f36a7507c89005ee9e2b2b910b52eb77cd0e10644b9b94324e829f30ddbf70",
+   "server_date": "Mon, 19 Oct 2026 02:37:44 GMT",
+   "read_utc": "2026-10-19T02:37:43Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "OSMF Attribution Guidelines read (osmfoundation.org after redirect): attribution duty for Produced Works."
+  },
+  {
+   "id": "osm_community",
+   "requested_url": "https://wiki.osmfoundation.org/wiki/Licence/Community_Guidelines",
+   "final_url": "https://osmfoundation.org/wiki/Licence/Community_Guidelines",
+   "http_status": "200",
+   "bytes": 38389,
+   "sha256": "648020b0e706c5707f3241abcf56e8ec1a33742e7e03bd68850f1c02d9323624",
+   "server_date": "Mon, 19 Oct 2026 02:37:44 GMT",
+   "read_utc": "2026-10-19T02:37:43Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "OSMF Community Guidelines fetched; not quoted."
+  },
+  {
+   "id": "osm_licence",
+   "requested_url": "https://wiki.osmfoundation.org/wiki/Licence",
+   "final_url": "https://osmfoundation.org/wiki/Licence",
+   "http_status": "200",
+   "bytes": 34296,
+   "sha256": "e653acac5400689199e2c7f8312ee370431057b2e512d7f69bd710926ed7e6fb",
+   "server_date": "Mon, 19 Oct 2026 02:37:45 GMT",
+   "read_utc": "2026-10-19T02:37:43Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "OSMF licence page fetched; not quoted."
+  },
+  {
+   "id": "ncei_ghcnd",
+   "requested_url": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily",
+   "final_url": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily",
+   "http_status": "200",
+   "bytes": 73503,
+   "sha256": "2e8915534112d9edf32da8b97906f8555f371668c5ea6cc14ab973989d4877b9",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:45Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "GHCN-Daily product page read; no citation or use block on the product page."
+  },
+  {
+   "id": "ncei_storm",
+   "requested_url": "https://www.ncei.noaa.gov/products/storm-events-database",
+   "final_url": "https://www.ncei.noaa.gov/products/storm-events-database",
+   "http_status": "404",
+   "bytes": 30148,
+   "sha256": "5fde0f7fa1d4d0152428a0b7f2528ca6bba1acd99dcbe851ded0818580392ca2",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:45Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404 at the Storm Events products path."
+  },
+  {
+   "id": "noaa_disclaimer",
+   "requested_url": "https://www.noaa.gov/disclaimer",
+   "final_url": "https://www.noaa.gov/disclaimer",
+   "http_status": "403",
+   "bytes": 919,
+   "sha256": "3f099d97794f4795faab47cf3bcc4971289663c744958032f78dcb9e62452395",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:45Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 403 \"Request blocked\" from the CDN; not read (not worked around)."
+  },
+  {
+   "id": "ncei_nclimgrid_m",
+   "requested_url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-monthly",
+   "final_url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-monthly",
+   "http_status": "404",
+   "bytes": 30208,
+   "sha256": "b75930aa31a5045581d0ab520dac6361a2dabf802417d43cdb4c75737971c554",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:45Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404 at the nClimGrid monthly product path."
+  },
+  {
+   "id": "noaa_nodd",
+   "requested_url": "https://www.noaa.gov/information-technology/open-data-dissemination",
+   "final_url": "https://www.noaa.gov/information-technology/open-data-dissemination",
+   "http_status": "403",
+   "bytes": 919,
+   "sha256": "09b46ff0f66fb2368d8ee152fdde891dae360e46e5cbc73534bd44f7a53a26ec",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:45Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 403 \"Request blocked\" from the CDN; not read."
+  },
+  {
+   "id": "ncei_nclimgrid_d",
+   "requested_url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "final_url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "http_status": "200",
+   "bytes": 48706,
+   "sha256": "62717d7aa50188202e07595592a9185ea02294f2735307390f4df4b83b6d62ef",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:45Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "nClimGrid-Daily product page read: How to Cite (Durre et al. 2022b)."
+  },
+  {
+   "id": "ncei_citation",
+   "requested_url": "https://www.ncei.noaa.gov/resources/citing-ncei-data",
+   "final_url": "https://www.ncei.noaa.gov/resources/citing-ncei-data",
+   "http_status": "404",
+   "bytes": 30135,
+   "sha256": "012bf692700060a0d7aeaf7297996531a3276d404b741e7e5e0ad72067b71fd4",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:45Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404 at /resources/citing-ncei-data."
+  },
+  {
+   "id": "aws_hrrr",
+   "requested_url": "https://registry.opendata.aws/noaa-hrrr-pds/",
+   "final_url": "https://registry.opendata.aws/noaa-hrrr-pds/",
+   "http_status": "200",
+   "bytes": 12402,
+   "sha256": "2840b9f39e946f11e9f63d3fa417174c48878c866a76822471e0935156a3ccea",
+   "server_date": "Mon, 19 Oct 2026 02:37:47 GMT",
+   "read_utc": "2026-10-19T02:37:46Z",
+   "content_type": "text/html",
+   "content_check": "AWS Registry page for HRRR read: License section (NODD statement) and How to Cite."
+  },
+  {
+   "id": "aws_mrms",
+   "requested_url": "https://registry.opendata.aws/noaa-mrms-pds/",
+   "final_url": "https://registry.opendata.aws/noaa-mrms-pds/",
+   "http_status": "200",
+   "bytes": 15165,
+   "sha256": "b72f49e7e508e821efd799bd6451854c10d3a3de03d5bafde1d81a5948e610f1",
+   "server_date": "Mon, 19 Oct 2026 02:37:47 GMT",
+   "read_utc": "2026-10-19T02:37:45Z",
+   "content_type": "text/html",
+   "content_check": "AWS Registry page for MRMS read: License section (NODD statement) and How to Cite."
+  },
+  {
+   "id": "iem_home",
+   "requested_url": "https://mesonet.agron.iastate.edu/",
+   "final_url": "https://mesonet.agron.iastate.edu/",
+   "http_status": "200",
+   "bytes": 46877,
+   "sha256": "dc60d91bbf4aa4c7b858dae65c32b31fd93fc191e6b5272ce3da43c8f56ab467",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:46Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "IEM home read: footer copyright; the Disclaimer page is the use statement."
+  },
+  {
+   "id": "iem_disclaimer",
+   "requested_url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+   "final_url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+   "http_status": "200",
+   "bytes": 31469,
+   "sha256": "5a8b5c647681c7b39ec42bf27f2f2baa585bd1186f4bdf0264860a6dc165629a",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:46Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "IEM Disclaimer / Privacy Policy read: public-domain statement, attribution request and warranty statement."
+  },
+  {
+   "id": "aws_nodd",
+   "requested_url": "https://registry.opendata.aws/noaa-nodd/",
+   "final_url": "https://registry.opendata.aws/noaa-nodd/",
+   "http_status": "404",
+   "bytes": 2294494,
+   "sha256": "87f2e8621f4d8e994bb0a1af969ed41a40598424d74cfb2510527de987edce25",
+   "server_date": "Mon, 19 Oct 2026 02:37:46 GMT",
+   "read_utc": "2026-10-19T02:37:46Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 404 at registry path noaa-nodd."
+  },
+  {
+   "id": "iem_info",
+   "requested_url": "https://mesonet.agron.iastate.edu/info/",
+   "final_url": "https://mesonet.agron.iastate.edu/info/",
+   "http_status": "200",
+   "bytes": 2448,
+   "sha256": "6e46cccd8b5433b9cb6ebcb347024ee45a18bdaa15b74b957394c0f5102bce35",
+   "server_date": "Mon, 19 Oct 2026 02:37:47 GMT",
+   "read_utc": "2026-10-19T02:37:46Z",
+   "content_type": "text/html;charset=ISO-8859-1",
+   "content_check": "IEM info page (2,448 B) read; no terms."
+  },
+  {
+   "id": "iem_datadownload",
+   "requested_url": "https://mesonet.agron.iastate.edu/info/datadownload/",
+   "final_url": "https://mesonet.agron.iastate.edu/info/datadownload/",
+   "http_status": "404",
+   "bytes": 19274,
+   "sha256": "6b67a7afdec72af3e7a893e74a60cf7f31766d4e40c5530088d3937e35a6c8c9",
+   "server_date": "Mon, 19 Oct 2026 02:37:47 GMT",
+   "read_utc": "2026-10-19T02:37:46Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404."
+  },
+  {
+   "id": "iem_citation",
+   "requested_url": "https://mesonet.agron.iastate.edu/info/citation.php",
+   "final_url": "https://mesonet.agron.iastate.edu/info/citation.php",
+   "http_status": "404",
+   "bytes": 19274,
+   "sha256": "6b67a7afdec72af3e7a893e74a60cf7f31766d4e40c5530088d3937e35a6c8c9",
+   "server_date": "Mon, 19 Oct 2026 02:37:47 GMT",
+   "read_utc": "2026-10-19T02:37:46Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404."
+  },
+  {
+   "id": "nws_api_docs",
+   "requested_url": "https://www.weather.gov/documentation/services-web-api",
+   "final_url": "https://www.weather.gov/documentation/services-web-api",
+   "http_status": "200",
+   "bytes": 48997,
+   "sha256": "e0ca8a9105fe46b8773463030f78d437ad50b5cc831c652014a1ad904b32446f",
+   "server_date": "Mon, 19 Oct 2026 02:37:47 GMT",
+   "read_utc": "2026-10-19T02:37:46Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "NWS API documentation read: open data statement and User-Agent requirement."
+  },
+  {
+   "id": "nws_api_root",
+   "requested_url": "https://api.weather.gov/",
+   "final_url": "https://api.weather.gov/",
+   "http_status": "200",
+   "bytes": 9056,
+   "sha256": "2100019b03f8bbba28e60955eb3ba91abe4e4130b1313db4df745e49305595e7",
+   "server_date": "Mon, 19 Oct 2026 02:37:47 GMT",
+   "read_utc": "2026-10-19T02:37:47Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "api.weather.gov root read: no terms text; links to disclaimer and FOIA."
+  },
+  {
+   "id": "nws_disclaimer",
+   "requested_url": "https://www.weather.gov/disclaimer",
+   "final_url": "https://www.weather.gov/disclaimer",
+   "http_status": "200",
+   "bytes": 41679,
+   "sha256": "8919bb160c331dbee30b25a03f3061b9f934bf05bb684c62fd1680e44ae43b8f",
+   "server_date": "Mon, 19 Oct 2026 02:37:48 GMT",
+   "read_utc": "2026-10-19T02:37:46Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "NWS Disclaimer read: public-domain statement, endorsement limit, NWS name protection, as-is statement, third-party imagery."
+  },
+  {
+   "id": "nwps_docs",
+   "requested_url": "https://api.water.noaa.gov/nwps/v1/docs/",
+   "final_url": "https://api.water.noaa.gov/nwps/v1/docs/",
+   "http_status": "200",
+   "bytes": 805,
+   "sha256": "1b66c7cd0f7794ee38bc1e6244684e279e7a4b8c1d97c549809be18f358e2fac",
+   "server_date": "Mon, 19 Oct 2026 02:37:48 GMT",
+   "read_utc": "2026-10-19T02:37:47Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "NWPS Swagger UI shell read; initializer points to swagger.json."
+  },
+  {
+   "id": "prism_terms",
+   "requested_url": "https://prism.oregonstate.edu/terms/",
+   "final_url": "https://prism.oregonstate.edu/terms/",
+   "http_status": "200",
+   "bytes": 16331,
+   "sha256": "6391f53b5a8286eb4298bf78657af7b0e303c6b833acf3fcae88b460a2690e63",
+   "server_date": "Mon, 19 Oct 2026 02:37:48 GMT",
+   "read_utc": "2026-10-19T02:37:47Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "PRISM Terms of Use read: free reproduction and distribution, reference wording, ownership, no warranty."
+  },
+  {
+   "id": "daymet_home",
+   "requested_url": "https://daymet.ornl.gov/",
+   "final_url": "https://daymet.ornl.gov/",
+   "http_status": "200",
+   "bytes": 12058,
+   "sha256": "22e940857e0c06ed98d2ee3b04479006ca4d8b7788dffb6eca0c506525bce3fb",
+   "server_date": "Mon, 19 Oct 2026 02:37:48 GMT",
+   "read_utc": "2026-10-19T02:37:47Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Daymet home read (not quoted)."
+  },
+  {
+   "id": "prism_home",
+   "requested_url": "https://prism.oregonstate.edu/",
+   "final_url": "https://prism.oregonstate.edu/",
+   "http_status": "200",
+   "bytes": 25544,
+   "sha256": "74d6ef8ad5c65fc9beda74c8e72f9791fcba1ff6cb92e174998988abc7b29775",
+   "server_date": "Mon, 19 Oct 2026 02:37:48 GMT",
+   "read_utc": "2026-10-19T02:37:47Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "PRISM home read (not quoted)."
+  },
+  {
+   "id": "daymet_overview",
+   "requested_url": "https://daymet.ornl.gov/overview",
+   "final_url": "https://daymet.ornl.gov/overview",
+   "http_status": "200",
+   "bytes": 29679,
+   "sha256": "63dafd15aa5dd890f4fbb7c5e2410f9879d7ffff2b31d5573f4b01984a630a27",
+   "server_date": "Mon, 19 Oct 2026 02:37:48 GMT",
+   "read_utc": "2026-10-19T02:37:47Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Daymet overview read; citations section present (not quoted)."
+  },
+  {
+   "id": "daac_policies",
+   "requested_url": "https://daac.ornl.gov/policies/",
+   "final_url": "https://daac.ornl.gov/policies/",
+   "http_status": "404",
+   "bytes": 32963,
+   "sha256": "b988099a561498dabee9ed0f7a673b07a93ab288f2937e58409f16615e8cbeef",
+   "server_date": "Mon, 19 Oct 2026 02:37:49 GMT",
+   "read_utc": "2026-10-19T02:37:48Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404 at daac.ornl.gov/policies/."
+  },
+  {
+   "id": "prism_about",
+   "requested_url": "https://prism.oregonstate.edu/about/",
+   "final_url": "https://prism.oregonstate.edu/about/",
+   "http_status": "404",
+   "bytes": 14333,
+   "sha256": "b03760a383b0067774ebc2ebe955d3700d4dbff2bd8dd151b347667088358807",
+   "server_date": "Mon, 19 Oct 2026 02:37:49 GMT",
+   "read_utc": "2026-10-19T02:37:47Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404."
+  },
+  {
+   "id": "usgs_disclaimers",
+   "requested_url": "https://www.usgs.gov/information-policies-and-instructions/disclaimers",
+   "final_url": "https://www.usgs.gov/information-policies-and-instructions/disclaimers",
+   "http_status": "404",
+   "bytes": 85433,
+   "sha256": "bb03c919492f82a51f1602341a9fdc5ad4b8d46715e9b0bbe2da3e2ad41d581b",
+   "server_date": "Mon, 19 Oct 2026 02:37:49 GMT",
+   "read_utc": "2026-10-19T02:37:47Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "HTTP 404."
+  },
+  {
+   "id": "urs_home",
+   "requested_url": "https://urs.earthdata.nasa.gov/",
+   "final_url": "https://urs.earthdata.nasa.gov/",
+   "http_status": "200",
+   "bytes": 10387,
+   "sha256": "20a354c402a1cbcf7a2ac2dba72551e10a956e87b8e632109b38d1826f52c586",
+   "server_date": "Mon, 19 Oct 2026 02:37:49 GMT",
+   "read_utc": "2026-10-19T02:37:48Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Earthdata Login home read: privacy links only."
+  },
+  {
+   "id": "earthdata_policy",
+   "requested_url": "https://www.earthdata.nasa.gov/engage/open-data-services-and-software/data-information-policy",
+   "final_url": "https://www.earthdata.nasa.gov/engage/open-data-services-and-software/data-information-policy",
+   "http_status": "404",
+   "bytes": 133243,
+   "sha256": "92cb3f7ad6635bb5d6cdabd189286493e2e5b245cacd88ccb4c552f864a96ded",
+   "server_date": "Mon, 19 Oct 2026 02:37:49 GMT",
+   "read_utc": "2026-10-19T02:37:48Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404 at the old policy path."
+  },
+  {
+   "id": "nrcs_wcc_home",
+   "requested_url": "https://wcc.sc.egov.usda.gov/",
+   "final_url": "https://wcc.sc.egov.usda.gov/",
+   "http_status": "200",
+   "bytes": 75,
+   "sha256": "08bbf12813d206bf46e0e96eced52a0fa040ccb8aa44432afea090d863685feb",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:49Z",
+   "content_type": "text/html",
+   "content_check": "WCC home returned a 75-byte banner; no terms."
+  },
+  {
+   "id": "usda_policies",
+   "requested_url": "https://www.usda.gov/policies-and-links",
+   "final_url": "https://www.usda.gov/policies-and-links",
+   "http_status": "403",
+   "bytes": 392,
+   "sha256": "ce3f264dce7db80ae4ce6d32e4fd58a7113996ae33781e041ac9dd41345113be",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:49Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 403 Access Denied from the CDN; not read (not worked around)."
+  },
+  {
+   "id": "earthdata_home",
+   "requested_url": "https://www.earthdata.nasa.gov/",
+   "final_url": "https://www.earthdata.nasa.gov/",
+   "http_status": "200",
+   "bytes": 183047,
+   "sha256": "62575e08e9fcfe5b36a93074c10546c2abba2b93b6befa788f337c72e4695597",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:48Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Earthdata home read: links to Open Data, Services and Software Policies."
+  },
+  {
+   "id": "daac_daymet_ds",
+   "requested_url": "https://daac.ornl.gov/cgi-bin/dsviewer.pl?ds_id=2129",
+   "final_url": "https://www.earthdata.nasa.gov/data/catalog/ornl-cloud-daymet-daily-v4r1-2129-4.1",
+   "http_status": "200",
+   "bytes": 281860,
+   "sha256": "687074eabab548a391dfa9079f8087d333de5b18643d03b90be9e9ab1c418e46",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:48Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "NASA Earthdata catalog page for Daymet V4 R1 read: citation statement \"openly shared, without restriction\"."
+  },
+  {
+   "id": "nohrsc_home",
+   "requested_url": "https://www.nohrsc.noaa.gov/",
+   "final_url": "https://www.nohrsc.noaa.gov/",
+   "http_status": "200",
+   "bytes": 18001,
+   "sha256": "d04782d747e2fc0510b79a3839a8390e68477fd1669845b232fe20f90c7a5d00",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:49Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "NOHRSC home read: disclaimer link to weather.gov/disclaimer.php; snow analysis downloads."
+  },
+  {
+   "id": "fema_msc_home",
+   "requested_url": "https://msc.fema.gov/portal/home",
+   "final_url": "https://msc.fema.gov/portal/home",
+   "http_status": "200",
+   "bytes": 36662,
+   "sha256": "afcb262f2bd86ca2b81c4e2b5f8636117c42d52a0ac035a3e3dc76af6c0d1295",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:49Z",
+   "content_type": "text/html;charset=UTF-8",
+   "content_check": "FEMA Flood Map Service Center home read: \"official public source\" statement; no disclaimer text."
+  },
+  {
+   "id": "fema_nfhl_page",
+   "requested_url": "https://www.fema.gov/flood-maps/national-flood-hazard-layer",
+   "final_url": "https://www.fema.gov/flood-maps/national-flood-hazard-layer",
+   "http_status": "403",
+   "bytes": 424,
+   "sha256": "a199838e66dde5f512b008e2add389d74c0334722fdffd05eec9e943b34e0dd2",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:49Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 403 Access Denied from the CDN; not read (not worked around)."
+  },
+  {
+   "id": "usgs_copyright",
+   "requested_url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+   "final_url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+   "http_status": "200",
+   "bytes": 88994,
+   "sha256": "fdd8eb50704b1478595fe3e6e92b215b6eedfef31de1830a07d498272f4218b5",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:47Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "USGS Copyrights and Credits page read: public-domain statement and credit request."
+  },
+  {
+   "id": "nohrsc_disclaimer",
+   "requested_url": "https://www.nohrsc.noaa.gov/disclaimer/",
+   "final_url": "https://www.nohrsc.noaa.gov/disclaimer/",
+   "http_status": "404",
+   "bytes": 236,
+   "sha256": "9448f8a1159c9b14e3e1b9d8eab1a6ddf88d26e1f888a34cef430c756e4e6e1e",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:49Z",
+   "content_type": "text/html; charset=iso-8859-1",
+   "content_check": "HTTP 404."
+  },
+  {
+   "id": "fema_msc_disclaimer",
+   "requested_url": "https://msc.fema.gov/portal/disclaimer",
+   "final_url": "https://msc.fema.gov/portal/home",
+   "http_status": "200",
+   "bytes": 36662,
+   "sha256": "afcb262f2bd86ca2b81c4e2b5f8636117c42d52a0ac035a3e3dc76af6c0d1295",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:50Z",
+   "content_type": "text/html;charset=UTF-8",
+   "content_check": "Same MSC home page (redirect target)."
+  },
+  {
+   "id": "nrcs_awdb_services",
+   "requested_url": "https://wcc.sc.egov.usda.gov/awdbWebService/services",
+   "final_url": "https://wcc.sc.egov.usda.gov/awdbWebService/services",
+   "http_status": "405",
+   "bytes": 22,
+   "sha256": "d5fcb859d6251a4b8fdfe6ebbbb0ca1affe2309c256afc624d651029c9e22a9a",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:49Z",
+   "content_type": "text/plain;charset=ISO-8859-1",
+   "content_check": "AWDB web service root returned 405 \"HTTP GET not supported\" (SOAP endpoint); no terms."
+  },
+  {
+   "id": "fema_disclaimer",
+   "requested_url": "https://www.fema.gov/about/disclaimer",
+   "final_url": "https://www.fema.gov/about/disclaimer",
+   "http_status": "403",
+   "bytes": 386,
+   "sha256": "9f2f12e0471f744424107ada02a5d19cce55cdf8754e70c8c57fdc56743f8430",
+   "server_date": "Mon, 19 Oct 2026 02:37:50 GMT",
+   "read_utc": "2026-10-19T02:37:50Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 403 Access Denied from the CDN; not read."
+  },
+  {
+   "id": "mca_toc_2_6",
+   "requested_url": "https://leg.mt.gov/bills/mca_toc/2_6.htm",
+   "final_url": "https://archive.legmt.gov/bills/mca_toc/2_6.htm",
+   "http_status": "404",
+   "bytes": 49280,
+   "sha256": "cc392e24c7b37ff0d48abc2f95430b45a059cdd236df8a4a94d54f1371066a23",
+   "server_date": "Mon, 19 Oct 2026 02:37:51 GMT",
+   "read_utc": "2026-10-19T02:37:50Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404 at the archive table-of-contents path."
+  },
+  {
+   "id": "mca_2_6_109",
+   "requested_url": "https://leg.mt.gov/bills/mca/title_0020/chapter_0060/part_0010/section_0090/0020-0060-0010-0090.html",
+   "final_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0010/section_0090/0020-0060-0010-0090.html",
+   "http_status": "200",
+   "bytes": 9579,
+   "sha256": "4807d47278f0e05fd8c138883d19abeab3fee08c01a00b94e8f1dd1efd41c574",
+   "server_date": "Mon, 19 Oct 2026 02:37:52 GMT",
+   "read_utc": "2026-10-19T02:37:50Z",
+   "content_type": "text/html",
+   "content_check": "MCA page for 2-6-109 read (final URL mca.legmt.gov): \"Repealed\"; history line quoted."
+  },
+  {
+   "id": "mca_2_6_1017",
+   "requested_url": "https://leg.mt.gov/bills/mca/title_0020/chapter_0060/part_0010/section_0170/0020-0060-0010-0170.html",
+   "final_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0010/section_0170/0020-0060-0010-0170.html",
+   "http_status": "404",
+   "bytes": 49280,
+   "sha256": "cc392e24c7b37ff0d48abc2f95430b45a059cdd236df8a4a94d54f1371066a23",
+   "server_date": "Mon, 19 Oct 2026 02:37:52 GMT",
+   "read_utc": "2026-10-19T02:37:50Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 404 at the part_0010 path (wrong part number); the correct part_0100 path was read."
+  },
+  {
+   "id": "msl_dl_struct",
+   "requested_url": "https://mslservices.mt.gov/Geographic_Information/Data/DataList/datalist_Details.aspx?did={E8C6A50B-EBC9-4625-93FC-B798179A8C04}",
+   "final_url": "https://mslservices.mt.gov/Geographic_Information/Data/DataList/datalist_Details.aspx?did=E8C6A50B-EBC9-4625-93FC-B798179A8C04",
+   "http_status": "200",
+   "bytes": 34964,
+   "sha256": "318442e99b544b9b4fef4adca989aa7233ac65aff051f718bdf15d3fd103c59a",
+   "server_date": "Mon, 19 Oct 2026 02:39:01 GMT",
+   "read_utc": "2026-10-19T02:39:00Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "MSL DataList detail page: client-rendered shell; no constraint text readable."
+  },
+  {
+   "id": "msl_privacy",
+   "requested_url": "https://msl.mt.gov/privacy",
+   "final_url": "https://msl.mt.gov/privacy",
+   "http_status": "200",
+   "bytes": 26670,
+   "sha256": "54f37270094887d641d4ba9a6ae7b5f9263ee0b7dc154817e45c0548cadb3a23",
+   "server_date": "Mon, 19 Oct 2026 02:39:00 GMT",
+   "read_utc": "2026-10-19T02:39:00Z",
+   "content_type": "text/html",
+   "content_check": "MSL privacy page read: website privacy and third-party policies, not a data licence."
+  },
+  {
+   "id": "msl_datalist_std",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Documents/Metadata_Tools/DataListMetadataStandard.html",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Documents/Metadata_Tools/DataListMetadataStandard.html",
+   "http_status": "200",
+   "bytes": 32596,
+   "sha256": "ce5ccda20dad3d06bfb8cd17b2e0c5f19114f3cbe794981d336c8d0704864737",
+   "server_date": "Mon, 19 Oct 2026 02:39:01 GMT",
+   "read_utc": "2026-10-19T02:39:00Z",
+   "content_type": "text/html",
+   "content_check": "status recorded; body not relied on for any quote"
+  },
+  {
+   "id": "msl_dl_trans",
+   "requested_url": "https://mslservices.mt.gov/Geographic_Information/Data/DataList/datalist_Details.aspx?did={26E71BA8-914E-458B-B2EC-62F22AD06C30}",
+   "final_url": "https://mslservices.mt.gov/Geographic_Information/Data/DataList/datalist_Details.aspx?did=26E71BA8-914E-458B-B2EC-62F22AD06C30",
+   "http_status": "200",
+   "bytes": 34964,
+   "sha256": "6f47ceb8ed80baca59c4007d4d7b956adbe0f60a742bff1d629146a74c3a301a",
+   "server_date": "Mon, 19 Oct 2026 02:39:01 GMT",
+   "read_utc": "2026-10-19T02:39:00Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "MSL DataList detail page (transport): client-rendered shell; no constraint text readable."
+  },
+  {
+   "id": "msl_policies",
+   "requested_url": "https://msl.mt.gov/MSL-Policies",
+   "final_url": "https://msl.mt.gov/MSL-Policies",
+   "http_status": "200",
+   "bytes": 29928,
+   "sha256": "60625b16d01eeff4b5902ede5b5024b87e7c2111ee25a96b9df3955707a719be",
+   "server_date": "Mon, 19 Oct 2026 02:39:00 GMT",
+   "read_utc": "2026-10-19T02:39:00Z",
+   "content_type": "text/html",
+   "content_check": "MSL-Policies page read: library policies, not a data licence."
+  },
+  {
+   "id": "msl_trans_page_zip_tail",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+   "http_status": "206",
+   "bytes": 65536,
+   "sha256": "73ab748fcd8c684d4d56520143a44a6a7daf60d1d34e83c5dc72f574fb83e6fa",
+   "server_date": "Mon, 19 Oct 2026 02:39:01 GMT",
+   "read_utc": "2026-10-19T02:39:00Z",
+   "content_type": "application/x-zip-compressed",
+   "content_check": "Last 64 KB of TransportationFramework_shp.zip read; central directory parsed (11 entries)."
+  },
+  {
+   "id": "msl_struct_zip_head",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "http_status": "206",
+   "bytes": 1024,
+   "sha256": "b2dff5c988c9d89f770608eb94cdd6676d4d2e26ed095b6029db1a7e9741d315",
+   "server_date": "Mon, 19 Oct 2026 02:39:01 GMT",
+   "read_utc": "2026-10-19T02:39:01Z",
+   "content_type": "application/x-zip-compressed",
+   "content_check": "status recorded; body not relied on for any quote"
+  },
+  {
+   "id": "msl_gis_msdi",
+   "requested_url": "https://msl.mt.gov/GIS/msdi",
+   "final_url": "https://msl.mt.gov/geoinfo/data/msdi/",
+   "http_status": "200",
+   "bytes": 29846,
+   "sha256": "328dcfc485b897f50b590fccdcd182c5dbe16a2d0329321798438dd19a5dec21",
+   "server_date": "Mon, 19 Oct 2026 02:39:01 GMT",
+   "read_utc": "2026-10-19T02:39:00Z",
+   "content_type": "text/html",
+   "content_check": "MSL GIS MSDI page read; no constraint text in the readable page."
+  },
+  {
+   "id": "msl_trans_zip_head",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_SHP.zip",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_SHP.zip",
+   "http_status": "206",
+   "bytes": 1024,
+   "sha256": "12d275a58d212cc17a02700bf46237c8aa9453dd98b7d55cf03ca96183e34fff",
+   "server_date": "Mon, 19 Oct 2026 02:39:01 GMT",
+   "read_utc": "2026-10-19T02:39:01Z",
+   "content_type": "application/x-zip-compressed",
+   "content_check": "status recorded; body not relied on for any quote"
+  },
+  {
+   "id": "msl_gis_datalist",
+   "requested_url": "https://msl.mt.gov/GIS/DataList",
+   "final_url": "https://mslservices.mt.gov/Geographic_Information/Data/DataList/",
+   "http_status": "200",
+   "bytes": 52033,
+   "sha256": "1fad3de655dba30dd789b9212f4b2d2314280556c3da7eeb702a665414a6cffa",
+   "server_date": "Mon, 19 Oct 2026 02:39:02 GMT",
+   "read_utc": "2026-10-19T02:39:00Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "MSL GIS DataList page read; no constraint text in the readable page."
+  },
+  {
+   "id": "msl_struct_zip_tail",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "http_status": "206",
+   "bytes": 65536,
+   "sha256": "45801045730c319d43b42d1eddeadd0f5eba0848a4c44ceede1265b044cb07c9",
+   "server_date": "Mon, 19 Oct 2026 02:39:01 GMT",
+   "read_utc": "2026-10-19T02:39:01Z",
+   "content_type": "application/x-zip-compressed",
+   "content_check": "Last 64 KB of StructuresFramework_shp.zip read; central directory parsed (11 entries)."
+  },
+  {
+   "id": "msl_struct_readme_txt",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "http_status": "206",
+   "bytes": 1535,
+   "sha256": "4da88092676bdaaf8995c06ae235fbee6ed5b618f0aceceb228e028147b7e9f4",
+   "server_date": "Mon, 19 Oct 2026 02:39:33 GMT",
+   "read_utc": "2026-10-19T02:39:32Z",
+   "content_type": "application/x-zip-compressed",
+   "content_check": "_ReadMe.txt member extracted; export date 20260930; contact for questions."
+  },
+  {
+   "id": "msl_struct_meta_xml",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "http_status": "206",
+   "bytes": 9449,
+   "sha256": "358fb0386bd06471f18958a8c719c3d5a5d538d41a64c6db928800f1d378f038",
+   "server_date": "Mon, 19 Oct 2026 02:39:33 GMT",
+   "read_utc": "2026-10-19T02:39:32Z",
+   "content_type": "application/x-zip-compressed",
+   "content_check": "FGDC metadata member StructuresFramework_metadata.xml extracted by range read; CRC ok; accconst, useconst, purpose, origins read."
+  },
+  {
+   "id": "msl_trans_meta_xml",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+   "http_status": "206",
+   "bytes": 7969,
+   "sha256": "48c57fadcebdcc105c0f5f7a192aa4a0b63166e67c8d5ed0e1532e10b0558ed1",
+   "server_date": "Mon, 19 Oct 2026 02:39:33 GMT",
+   "read_utc": "2026-10-19T02:39:32Z",
+   "content_type": "application/x-zip-compressed",
+   "content_check": "FGDC metadata member TransportationFramework_metadata.xml extracted by range read; CRC ok; constraints read."
+  },
+  {
+   "id": "msl_trans_readme_txt",
+   "requested_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+   "final_url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+   "http_status": "206",
+   "bytes": 1543,
+   "sha256": "7acf19bc7983f602f42022b365339003bc6efd95a536f1d9242afd02ec59841b",
+   "server_date": "Mon, 19 Oct 2026 02:39:33 GMT",
+   "read_utc": "2026-10-19T02:39:32Z",
+   "content_type": "application/x-zip-compressed",
+   "content_check": "_ReadMe.txt member extracted (transport); export date 20260930."
+  },
+  {
+   "id": "mca_parts_index_c6",
+   "requested_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/parts_index.html",
+   "final_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/parts_index.html",
+   "http_status": "200",
+   "bytes": 10975,
+   "sha256": "3b5f7e63ad70391e990a634b9de7235db9b6bf437d85caea5418c7db19c8f3ea",
+   "server_date": "Mon, 19 Oct 2026 02:40:02 GMT",
+   "read_utc": "2026-10-19T02:40:01Z",
+   "content_type": "text/html",
+   "content_check": "MCA chapter 6 parts index read (not quoted)."
+  },
+  {
+   "id": "mca_chapters_index_t2",
+   "requested_url": "https://mca.legmt.gov/bills/mca/title_0020/chapters_index.html",
+   "final_url": "https://mca.legmt.gov/bills/mca/title_0020/chapters_index.html",
+   "http_status": "200",
+   "bytes": 12804,
+   "sha256": "eb703678941b8a7e2ac5ef656368303d4a26a54e38b5bda2d0fcda3aef4b02f2",
+   "server_date": "Mon, 19 Oct 2026 02:40:02 GMT",
+   "read_utc": "2026-10-19T02:40:01Z",
+   "content_type": "text/html",
+   "content_check": "MCA title 2 chapters index read (not quoted)."
+  },
+  {
+   "id": "mca_sections_index_c6",
+   "requested_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/sections_index.html",
+   "final_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/sections_index.html",
+   "http_status": "404",
+   "bytes": 49280,
+   "sha256": "cc392e24c7b37ff0d48abc2f95430b45a059cdd236df8a4a94d54f1371066a23",
+   "server_date": "Mon, 19 Oct 2026 02:40:02 GMT",
+   "read_utc": "2026-10-19T02:40:01Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 404 at the sections index path."
+  },
+  {
+   "id": "mca_1017_p100",
+   "requested_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+   "final_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+   "http_status": "200",
+   "bytes": 15177,
+   "sha256": "ff492b1d9e4fe73316217e8b625fbfd5e6a445db0df08698805d7923a9c4487d",
+   "server_date": "Mon, 19 Oct 2026 02:40:02 GMT",
+   "read_utc": "2026-10-19T02:40:01Z",
+   "content_type": "text/html",
+   "content_check": "MCA page for 2-6-1017 read: statute text in force, Montana Code Annotated 2025; history quoted."
+  },
+  {
+   "id": "mca_1017_legmt",
+   "requested_url": "https://leg.mt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+   "final_url": "https://mca.legmt.gov/bills/mca/title_0020/chapter_0060/part_0100/section_0170/0020-0060-0100-0170.html",
+   "http_status": "200",
+   "bytes": 14607,
+   "sha256": "52e89889c57a21834df9bd40eb195bdf787ce46d960e6dce6e460b23c79fb85f",
+   "server_date": "Mon, 19 Oct 2026 02:40:03 GMT",
+   "read_utc": "2026-10-19T02:40:01Z",
+   "content_type": "text/html",
+   "content_check": "Same 2-6-1017 page via the leg.mt.gov host (redirected to mca.legmt.gov)."
+  },
+  {
+   "id": "nwps_swagger_init",
+   "requested_url": "https://api.water.noaa.gov/nwps/v1/docs/swagger-initializer.js",
+   "final_url": "https://api.water.noaa.gov/nwps/v1/docs/swagger-initializer.js",
+   "http_status": "200",
+   "bytes": 508,
+   "sha256": "e1fe8941e3854417cb4b425996aa4278d722473b1584a6b6475b453603270962",
+   "server_date": "Mon, 19 Oct 2026 02:41:48 GMT",
+   "read_utc": "2026-10-19T02:41:47Z",
+   "content_type": "text/javascript; charset=utf-8",
+   "content_check": "Swagger initializer read: spec url \"swagger.json\"."
+  },
+  {
+   "id": "nwps_openapi_a",
+   "requested_url": "https://api.water.noaa.gov/nwps/v1/openapi.json",
+   "final_url": "https://api.water.noaa.gov/nwps/v1/openapi.json",
+   "http_status": "404",
+   "bytes": 58,
+   "sha256": "aa31f03f93cff765c9630b98f5e17f804afdf583ba7ab98e905520189c6228ed",
+   "server_date": "Mon, 19 Oct 2026 02:41:48 GMT",
+   "read_utc": "2026-10-19T02:41:47Z",
+   "content_type": "application/json",
+   "content_check": "HTTP 404 at /nwps/v1/openapi.json."
+  },
+  {
+   "id": "nwps_openapi_c",
+   "requested_url": "https://api.water.noaa.gov/nwps/v1/docs/swagger.json",
+   "final_url": "https://api.water.noaa.gov/nwps/v1/docs/swagger.json",
+   "http_status": "200",
+   "bytes": 44091,
+   "sha256": "1faff501ce54c5224fe4edc4de53c03ae9102d1e377d9659b681c9c338aa4dcc",
+   "server_date": "Mon, 19 Oct 2026 02:41:48 GMT",
+   "read_utc": "2026-10-19T02:41:47Z",
+   "content_type": "application/json",
+   "content_check": "NWPS swagger.json read: info block has title, description, version and contact only; no license or termsOfService field."
+  },
+  {
+   "id": "nwps_openapi_b",
+   "requested_url": "https://api.water.noaa.gov/nwps/v1/docs/openapi.json",
+   "final_url": "https://api.water.noaa.gov/nwps/v1/docs/openapi.json",
+   "http_status": "404",
+   "bytes": 19,
+   "sha256": "b16e15764b8bc06c5c3f9f19bc8b99fa48e7894aa5a6ccdad65da49bbf564793",
+   "server_date": "Mon, 19 Oct 2026 02:41:48 GMT",
+   "read_utc": "2026-10-19T02:41:48Z",
+   "content_type": "text/plain; charset=utf-8",
+   "content_check": "HTTP 404 at /nwps/v1/docs/openapi.json."
+  },
+  {
+   "id": "census_policies",
+   "requested_url": "https://www.census.gov/about/policies.html",
+   "final_url": "https://www.census.gov/about/policies.html",
+   "http_status": "200",
+   "bytes": 346371,
+   "sha256": "d69f36c8ab895e216dfe86f91e1d0e2be63196c7fb66ecc29611548ec415cd95",
+   "server_date": "Mon, 19 Oct 2026 02:45:06 GMT",
+   "read_utc": "2026-10-19T02:45:05Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Census policies hub read; policy links only; no public-domain or copyright statement in the readable text."
+  },
+  {
+   "id": "census_copyright2",
+   "requested_url": "https://www.census.gov/about/policies/copyright",
+   "final_url": "https://www.census.gov/about/policies/copyright",
+   "http_status": "404",
+   "bytes": 26711,
+   "sha256": "d1650668e2b3676504491ee066305409ae53ee832687bba549c85a7f666ce82b",
+   "server_date": "Mon, 19 Oct 2026 02:45:06 GMT",
+   "read_utc": "2026-10-19T02:45:05Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 404 at /about/policies/copyright."
+  },
+  {
+   "id": "census_terms",
+   "requested_url": "https://www.census.gov/about/policies/terms-of-service.html",
+   "final_url": "https://www.census.gov/about/policies/terms-of-service.html",
+   "http_status": "404",
+   "bytes": 26711,
+   "sha256": "857aa1daf19215a9342f24967b0aada76f94d7d560a223a85ae98ce75c2521c5",
+   "server_date": "Mon, 19 Oct 2026 02:45:06 GMT",
+   "read_utc": "2026-10-19T02:45:05Z",
+   "content_type": "text/html",
+   "content_check": "HTTP 404 at /about/policies/terms-of-service.html."
+  },
+  {
+   "id": "usa_struct_gee",
+   "requested_url": "https://gee-community-catalog.org/projects/usa_structures/",
+   "final_url": "https://gee-community-catalog.org/projects/usa_structures/",
+   "http_status": "200",
+   "bytes": 206915,
+   "sha256": "691aa4e7e0bf9b90cb8893e58afb97c567ec24dcb44d0404f948aa62812c8912",
+   "server_date": "Mon, 19 Oct 2026 02:45:06 GMT",
+   "read_utc": "2026-10-19T02:45:05Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Earth Engine community catalog page read; no licence quoted."
+  },
+  {
+   "id": "fema_nfhl_datagov",
+   "requested_url": "https://catalog.data.gov/dataset/national-flood-hazard-layer-nfhl",
+   "final_url": "https://catalog.data.gov/dataset/national-flood-hazard-layer-nfhl",
+   "http_status": "200",
+   "bytes": 111784,
+   "sha256": "acb061a1a0f6eb689ff90ea19e0b4e43aaa82d6ec1c51a207a095bf998cac58e",
+   "server_date": "Mon, 19 Oct 2026 02:45:07 GMT",
+   "read_utc": "2026-10-19T02:45:05Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Data.gov record for NFHL read: license government-works URL; access level public; last updated October 24, 2022."
+  },
+  {
+   "id": "usa_struct_datagov",
+   "requested_url": "https://catalog.data.gov/dataset/usa-structures",
+   "final_url": "https://catalog.data.gov/dataset/usa-structures",
+   "http_status": "200",
+   "bytes": 115877,
+   "sha256": "e27b1242c3d3cb5f4ad22a381086a5d691fae6ecfd228da932937bbb6671cf66",
+   "server_date": "Mon, 19 Oct 2026 02:45:06 GMT",
+   "read_utc": "2026-10-19T02:45:05Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Data.gov record for USA Structures read: license government-works URL, rights null, access level public, last updated 2025-04-01."
+  },
+  {
+   "id": "fema_nfhl_mapserver",
+   "requested_url": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer?f=pjson",
+   "final_url": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer?f=pjson",
+   "http_status": "404",
+   "bytes": 1575,
+   "sha256": "272d0226f3fa72c107bea90a077727a73d1a52a5fe525cb82f354946ecc8c192",
+   "server_date": "Mon, 19 Oct 2026 02:45:07 GMT",
+   "read_utc": "2026-10-19T02:45:05Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404 with a WebSEAL error template at this path."
+  },
+  {
+   "id": "awdb_datagov",
+   "requested_url": "https://catalog.data.gov/dataset/awdb",
+   "final_url": "https://catalog.data.gov/dataset/awdb",
+   "http_status": "200",
+   "bytes": 116290,
+   "sha256": "28a10b49fd25b96ac41608acab875e811f9466f9d94f7074d3e203928eec7d70",
+   "server_date": "Mon, 19 Oct 2026 02:45:07 GMT",
+   "read_utc": "2026-10-19T02:45:06Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Data.gov record for AWDB read: accessLevel \"restricted public\"; accessRights \"Access restricted. Contact the publisher to request access.\""
+  },
+  {
+   "id": "usa_struct_amerigeoss",
+   "requested_url": "https://data.amerigeoss.org/dataset/usa-structures",
+   "final_url": "https://data.amerigeoss.org/dataset/usa-structures",
+   "http_status": "200",
+   "bytes": 58564,
+   "sha256": "21cc0804b0765ef621725ea24e133630051a56a9530d7ec320b9362fd4b661ad",
+   "server_date": "Mon, 19 Oct 2026 02:45:07 GMT",
+   "read_utc": "2026-10-19T02:45:05Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "ArcGIS-hosted copy of USA Structures (CKAN copy): \"License No License Provided\"."
+  },
+  {
+   "id": "nrcs_wcc_portal",
+   "requested_url": "https://www.nrcs.usda.gov/wps/portal/wcc/home/",
+   "final_url": "https://www.nrcs.usda.gov/wps/portal/wcc/home/",
+   "http_status": "000",
+   "bytes": 0,
+   "sha256": "NA",
+   "server_date": "NA",
+   "read_utc": "2026-10-19T02:45:06Z",
+   "content_type": "NA",
+   "content_check": "Connection failed (curl 000); not read."
+  },
+  {
+   "id": "ncei_storm_faq",
+   "requested_url": "https://www.ncei.noaa.gov/stormevents/faq.jsp",
+   "final_url": "https://www.ncei.noaa.gov/access/storm-events-database/",
+   "http_status": "200",
+   "bytes": 1162,
+   "sha256": "b4f85cc01988ba162c767ef5989aaaa0a215001882a62bf1735df58d0d2cd5c5",
+   "server_date": "Mon, 19 Oct 2026 02:45:08 GMT",
+   "read_utc": "2026-10-19T02:45:07Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Storm Events access page is a shell (1,162 B); no FAQ text readable."
+  },
+  {
+   "id": "ncei_storm_meta",
+   "requested_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00510/html",
+   "final_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00510/html",
+   "http_status": "200",
+   "bytes": 47693,
+   "sha256": "f9baf30595cd1f38c7b9535956fa69db449250b22061ec1dcb7e766e8f68459d",
+   "server_date": "Mon, 19 Oct 2026 02:45:08 GMT",
+   "read_utc": "2026-10-19T02:45:07Z",
+   "content_type": "text/html;charset=UTF-8",
+   "content_check": "Storm Events ISO record read: Use Constraints (\"Cite dataset when used as a source.\") and NWS verification caveat."
+  },
+  {
+   "id": "ncei_nclimgrid_m_meta",
+   "requested_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc%3AC00332/html",
+   "final_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc%3AC00332/html",
+   "http_status": "200",
+   "bytes": 66468,
+   "sha256": "3a9344ade31ea9c6987b4ff2b078fca5cd67fdf48924b165a724088c12c8adeb",
+   "server_date": "Mon, 19 Oct 2026 02:45:08 GMT",
+   "read_utc": "2026-10-19T02:45:07Z",
+   "content_type": "text/html;charset=UTF-8",
+   "content_check": "nClimGrid monthly ISO record read: Use and Access Constraints and \"Cite as\"."
+  },
+  {
+   "id": "ncei_nclimgrid_d_meta",
+   "requested_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C01589/html",
+   "final_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C01589/html",
+   "http_status": "200",
+   "bytes": 63177,
+   "sha256": "a7c924763f8f6920910a684167cf4ca9ae0c2934c03f343efbfcbcd749369045",
+   "server_date": "Mon, 19 Oct 2026 02:45:08 GMT",
+   "read_utc": "2026-10-19T02:45:07Z",
+   "content_type": "text/html;charset=UTF-8",
+   "content_check": "nClimGrid-Daily ISO record read: Use and Access Constraints."
+  },
+  {
+   "id": "ncei_ghcnd_meta",
+   "requested_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00861/html",
+   "final_url": "https://www.ncei.noaa.gov/metadata/geoportal/rest/metadata/item/gov.noaa.ncdc:C00861/html",
+   "http_status": "200",
+   "bytes": 85956,
+   "sha256": "da4ff150820c7f3ff2687bc922295bcfeb5c18a9b7c54a45f20a451e8ec23971",
+   "server_date": "Mon, 19 Oct 2026 02:45:08 GMT",
+   "read_utc": "2026-10-19T02:45:07Z",
+   "content_type": "text/html;charset=UTF-8",
+   "content_check": "GHCN-Daily ISO record (geoportal HTML) read: Use Constraints, Access Constraints, citation and fees."
+  },
+  {
+   "id": "ncei_nclimgrid_m_node",
+   "requested_url": "https://www.ncei.noaa.gov/node/2273",
+   "final_url": "https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily",
+   "http_status": "200",
+   "bytes": 48706,
+   "sha256": "62717d7aa50188202e07595592a9185ea02294f2735307390f4df4b83b6d62ef",
+   "server_date": "Mon, 19 Oct 2026 02:45:09 GMT",
+   "read_utc": "2026-10-19T02:45:08Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "node/2273 redirected to the nClimGrid-Daily product page, not the monthly page."
+  },
+  {
+   "id": "earthdata_datause",
+   "requested_url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+   "final_url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
+   "http_status": "200",
+   "bytes": 139608,
+   "sha256": "3f81bfed1864cf34c8a5ceda83dda73e17f9f22260d4b6b0b3b829b09ef492fd",
+   "server_date": "Mon, 19 Oct 2026 02:45:09 GMT",
+   "read_utc": "2026-10-19T02:45:08Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Data Use and Citation Guidance read: NASA data freely accessible; CC0 default; non-NASA data follows sponsor licence."
+  },
+  {
+   "id": "earthdata_datainfo",
+   "requested_url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-information-guidance",
+   "final_url": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-information-guidance",
+   "http_status": "200",
+   "bytes": 142101,
+   "sha256": "f1ae8ae3b5910e07349e45761f882eabd07c93bd63ad30b34c060bb660c88bb2",
+   "server_date": "Mon, 19 Oct 2026 02:45:10 GMT",
+   "read_utc": "2026-10-19T02:45:08Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Data information guidance page read (not quoted)."
+  },
+  {
+   "id": "weather_gov_disclaimer_php",
+   "requested_url": "https://www.weather.gov/disclaimer.php",
+   "final_url": "https://www.weather.gov/disclaimer",
+   "http_status": "200",
+   "bytes": 41679,
+   "sha256": "8919bb160c331dbee30b25a03f3061b9f934bf05bb684c62fd1680e44ae43b8f",
+   "server_date": "Mon, 19 Oct 2026 02:45:10 GMT",
+   "read_utc": "2026-10-19T02:45:08Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "weather.gov/disclaimer.php (the NOHRSC and NCEI disclaimer link) redirects to the same NWS disclaimer text."
+  },
+  {
+   "id": "daac_home",
+   "requested_url": "https://daac.ornl.gov/",
+   "final_url": "https://www.earthdata.nasa.gov/centers/ornl-daac",
+   "http_status": "200",
+   "bytes": 161006,
+   "sha256": "584658a0e345f0e11cb894e55c8ac15950cacd58cecfd8555ee47c2d716f1bba",
+   "server_date": "Mon, 19 Oct 2026 02:45:11 GMT",
+   "read_utc": "2026-10-19T02:45:09Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Earthdata ORNL DAAC centre page read: links to Earthdata policies; no ORNL-specific policy text."
+  },
+  {
+   "id": "ncei_storm_index",
+   "requested_url": "https://www.ncei.noaa.gov/stormevents/",
+   "final_url": "https://www.ncei.noaa.gov/access/storm-events-database/",
+   "http_status": "200",
+   "bytes": 1162,
+   "sha256": "b4f85cc01988ba162c767ef5989aaaa0a215001882a62bf1735df58d0d2cd5c5",
+   "server_date": "Mon, 19 Oct 2026 02:45:50 GMT",
+   "read_utc": "2026-10-19T02:45:49Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Storm Events access page is a shell (1,162 B)."
+  },
+  {
+   "id": "ncei_storm_faq2",
+   "requested_url": "https://www.ncei.noaa.gov/stormevents/faq.jsp",
+   "final_url": "https://www.ncei.noaa.gov/access/storm-events-database/",
+   "http_status": "200",
+   "bytes": 1162,
+   "sha256": "b4f85cc01988ba162c767ef5989aaaa0a215001882a62bf1735df58d0d2cd5c5",
+   "server_date": "Mon, 19 Oct 2026 02:45:50 GMT",
+   "read_utc": "2026-10-19T02:45:49Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Storm Events access page is a shell (1,162 B); no FAQ text readable."
+  },
+  {
+   "id": "fema_nfhl_alt2",
+   "requested_url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer?f=pjson",
+   "final_url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer?f=pjson",
+   "http_status": "200",
+   "bytes": 11814,
+   "sha256": "22df132084b15179a2b216343cc6705e20d2e5e306e85ce385b97cc3fdd86a72",
+   "server_date": "Mon, 19 Oct 2026 02:45:51 GMT",
+   "read_utc": "2026-10-19T02:45:49Z",
+   "content_type": "text/plain;charset=UTF-8",
+   "content_check": "NFHL MapServer JSON read: copyrightText and description empty; layers listed."
+  },
+  {
+   "id": "fema_nfhl_alt3",
+   "requested_url": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/0?f=pjson",
+   "final_url": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/0?f=pjson",
+   "http_status": "404",
+   "bytes": 1577,
+   "sha256": "5ba3c8d84fcf71e4401c4b2c37df451fdca823d909b9d3f59e79a7de4c78055d",
+   "server_date": "Mon, 19 Oct 2026 02:45:51 GMT",
+   "read_utc": "2026-10-19T02:45:50Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404 at the layer path (gis/nfhl)."
+  },
+  {
+   "id": "fema_nfhl_alt1",
+   "requested_url": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer",
+   "final_url": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer",
+   "http_status": "404",
+   "bytes": 1567,
+   "sha256": "f0b3939a1135f9751640e662a20119a06130097e03f0e2aeb8a4647463fc9508",
+   "server_date": "Mon, 19 Oct 2026 02:46:50 GMT",
+   "read_utc": "2026-10-19T02:45:49Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "HTTP 404 at the gis/nfhl path."
+  },
+  {
+   "id": "census_citation",
+   "requested_url": "https://www.census.gov/about/policies/citation.html",
+   "final_url": "https://www.census.gov/about/policies/citation.html",
+   "http_status": "200",
+   "bytes": 369391,
+   "sha256": "581fb7d38e4b353590dc76d07b810591ca48ab6bef1ff8fc6f01d5a078e64708",
+   "server_date": "Mon, 19 Oct 2026 02:47:03 GMT",
+   "read_utc": "2026-10-19T02:47:01Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Census citation page read; citation guidance quoted."
+  },
+  {
+   "id": "census_terms_html",
+   "requested_url": "https://www.census.gov/about/policies/terms.html",
+   "final_url": "https://www.census.gov/about/policies/terms.html",
+   "http_status": "200",
+   "bytes": 331127,
+   "sha256": "b4438809bca8747152e5853fc6a1d83cffeca1feadfdcacfa85a4bfac376b569",
+   "server_date": "Mon, 19 Oct 2026 02:47:03 GMT",
+   "read_utc": "2026-10-19T02:47:01Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Census terms.html read: its readable text is a notice about inappropriate terms in older reports, not a use policy."
+  },
+  {
+   "id": "aws_mrms_readme",
+   "requested_url": "https://noaa-mrms-pds.s3.amazonaws.com/README.txt",
+   "final_url": "https://noaa-mrms-pds.s3.amazonaws.com/README.txt",
+   "http_status": "404",
+   "bytes": 301,
+   "sha256": "f3b0cf2b4fcd1dec2fe8dd5f95c36529f6a7f2430891bfab755481ad631750ae",
+   "server_date": "Mon, 19 Oct 2026 02:47:41 GMT",
+   "read_utc": "2026-10-19T02:47:41Z",
+   "content_type": "application/xml",
+   "content_check": "HTTP 404 for the bucket README.txt on the MRMS bucket."
+  },
+  {
+   "id": "tiger_state_zip_tail",
+   "requested_url": "https://www2.census.gov/geo/tiger/TIGER2025/STATE/tl_2025_us_state.zip",
+   "final_url": "https://www2.census.gov/geo/tiger/TIGER2025/STATE/tl_2025_us_state.zip",
+   "http_status": "206",
+   "bytes": 65536,
+   "sha256": "40a77183321079440d177da2e683b0eb5a01a1c7efcf1391886d46a53c853c08",
+   "server_date": "Mon, 19 Oct 2026 02:47:42 GMT",
+   "read_utc": "2026-10-19T02:47:41Z",
+   "content_type": "application/zip",
+   "content_check": "Last 64 KB of the zip read; central directory parsed (7 entries)."
+  },
+  {
+   "id": "aws_hrrr_readme",
+   "requested_url": "https://noaa-hrrr-bdp-pds.s3.amazonaws.com/README.txt",
+   "final_url": "https://noaa-hrrr-bdp-pds.s3.amazonaws.com/README.txt",
+   "http_status": "404",
+   "bytes": 281,
+   "sha256": "ef38e1c7aafff10e2acb0e390cd113633b67e06de0cbae40a85f0018394715c8",
+   "server_date": "Mon, 19 Oct 2026 02:47:42 GMT",
+   "read_utc": "2026-10-19T02:47:41Z",
+   "content_type": "application/xml",
+   "content_check": "HTTP 404 for the bucket README.txt on the HRRR bucket."
+  },
+  {
+   "id": "nrcs_wcc_reportgen",
+   "requested_url": "https://wcc.sc.egov.usda.gov/reportGenerator/",
+   "final_url": "https://wcc.sc.egov.usda.gov/reportGenerator/",
+   "http_status": "200",
+   "bytes": 367156,
+   "sha256": "a34dae8cfdd7ea1cd107050bce28690abbe4f9ca7782e6876f6f53fde62eb61a",
+   "server_date": "Mon, 19 Oct 2026 02:47:43 GMT",
+   "read_utc": "2026-10-19T02:47:41Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "WCC report generator read: \"Warning and Disclaimer\" block quoted."
+  },
+  {
+   "id": "daymet_dataset_check",
+   "requested_url": "https://www.earthdata.nasa.gov/data/catalog/ornl-cloud-daymet-daily-v4r1-2129-4.1",
+   "final_url": "https://www.earthdata.nasa.gov/data/catalog/ornl-cloud-daymet-daily-v4r1-2129-4.1",
+   "http_status": "200",
+   "bytes": 281860,
+   "sha256": "687074eabab548a391dfa9079f8087d333de5b18643d03b90be9e9ab1c418e46",
+   "server_date": "Mon, 19 Oct 2026 02:47:43 GMT",
+   "read_utc": "2026-10-19T02:47:41Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "Same Earthdata catalog page (second read); Daymet title confirmed."
+  },
+  {
+   "id": "aws_mrms_bucket",
+   "requested_url": "https://noaa-mrms-pds.s3.amazonaws.com/",
+   "final_url": "https://noaa-mrms-pds.s3.amazonaws.com/",
+   "http_status": "200",
+   "bytes": 392988,
+   "sha256": "e060918e07f9d552ee1248b9e602540e10109a5184248783cff2d5c9571769a2",
+   "server_date": "Mon, 19 Oct 2026 02:47:43 GMT",
+   "read_utc": "2026-10-19T02:47:41Z",
+   "content_type": "application/xml",
+   "content_check": "MRMS bucket listing read; no README entry used."
+  },
+  {
+   "id": "nrcs_wcc_old",
+   "requested_url": "https://www.wcc.nrcs.usda.gov/",
+   "final_url": "https://www.wcc.nrcs.usda.gov/",
+   "http_status": "000",
+   "bytes": 0,
+   "sha256": "NA",
+   "server_date": "NA",
+   "read_utc": "2026-10-19T02:47:41Z",
+   "content_type": "NA",
+   "content_check": "Connection failed (curl 000); not read."
+  },
+  {
+   "id": "tiger_state_iso_xml",
+   "requested_url": "https://www2.census.gov/geo/tiger/TIGER2025/STATE/tl_2025_us_state.zip",
+   "final_url": "https://www2.census.gov/geo/tiger/TIGER2025/STATE/tl_2025_us_state.zip",
+   "http_status": "206",
+   "bytes": 7699,
+   "sha256": "0e83244ee1d46686591d9d75507f0193e48447efeaee7607dc9c835e899b1b42",
+   "server_date": "Mon, 19 Oct 2026 02:47:59 GMT",
+   "read_utc": "2026-10-19T02:47:58Z",
+   "content_type": "application/zip",
+   "content_check": "Zip member tl_2025_us_state.shp.iso.xml extracted by range read; CRC ok; access and use constraints quoted."
+  },
+  {
+   "id": "usa_struct_hub",
+   "requested_url": "https://gis-fema.hub.arcgis.com/pages/usa-structures",
+   "final_url": "https://gis-fema.hub.arcgis.com/pages/usa-structures",
+   "http_status": "200",
+   "bytes": 133541,
+   "sha256": "e7d20dda44742767a094184383a4656f7f674dd132d275228e3b59c78d585650",
+   "server_date": "Mon, 19 Oct 2026 02:48:30 GMT",
+   "read_utc": "2026-10-19T02:48:30Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "FEMA GIS Hub page for USA Structures read (133,541 B); no licence or use text in the readable text (page is client-rendered)."
+  },
+  {
+   "id": "fema_msc_faq",
+   "requested_url": "https://msc.fema.gov/portal/resources/faq",
+   "final_url": "https://msc.fema.gov/portal/resources/faq",
+   "http_status": "200",
+   "bytes": 53765,
+   "sha256": "bfe0b7f38b3e9be02badf552593dcb62f407ffb280e1ecd6ee4c65ca94336b7d",
+   "server_date": "Mon, 19 Oct 2026 02:48:31 GMT",
+   "read_utc": "2026-10-19T02:48:30Z",
+   "content_type": "text/html;charset=UTF-8",
+   "content_check": "MSC FAQ read: flood zone definitions link; no disclaimer text found."
+  },
+  {
+   "id": "tiger_roads_listing_check",
+   "requested_url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/",
+   "final_url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/",
+   "http_status": "200",
+   "bytes": 758100,
+   "sha256": "d21bf26b21374de44138cc2b914364c7301d9c76bef0d2dad28c0317ead0a1ed",
+   "server_date": "Mon, 19 Oct 2026 02:48:31 GMT",
+   "read_utc": "2026-10-19T02:48:30Z",
+   "content_type": "text/html;charset=ISO-8859-1",
+   "content_check": "status recorded; body not relied on for any quote"
+  },
+  {
+   "id": "nohrsc_gisdatasets",
+   "requested_url": "https://www.nohrsc.noaa.gov/gisdatasets/",
+   "final_url": "https://www.nohrsc.noaa.gov/gisdatasets/",
+   "http_status": "200",
+   "bytes": 31583,
+   "sha256": "c0141782598fd60779aebf029c91ef889a22769e735717213cb44b58b184bccb",
+   "server_date": "Mon, 19 Oct 2026 02:48:31 GMT",
+   "read_utc": "2026-10-19T02:48:30Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "NOHRSC GIS datasets page read: dataset-specific disclaimer (ski locations) and credits."
+  },
+  {
+   "id": "tiger_roads_beaverhead_tail",
+   "requested_url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30001_roads.zip",
+   "final_url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30001_roads.zip",
+   "http_status": "206",
+   "bytes": 65536,
+   "sha256": "b5661456577e91cd852d5d9e8dd298df0b2a13d86a1b68af22d989dcdb67456b",
+   "server_date": "Mon, 19 Oct 2026 02:48:41 GMT",
+   "read_utc": "2026-10-19T02:48:40Z",
+   "content_type": "application/zip",
+   "content_check": "Last 64 KB of the Beaverhead County roads zip read; central directory parsed."
+  },
+  {
+   "id": "tiger_roads_beaverhead_iso",
+   "requested_url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30001_roads.zip",
+   "final_url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30001_roads.zip",
+   "http_status": "206",
+   "bytes": 8091,
+   "sha256": "a5dbd8c2edf40ccce2f5ab7c38ecc2e65aad5fe63e211f5c10936c364686c539",
+   "server_date": "Mon, 19 Oct 2026 02:48:50 GMT",
+   "read_utc": "2026-10-19T02:48:48Z",
+   "content_type": "application/zip",
+   "content_check": "Zip member tl_2025_30001_roads.shp.iso.xml extracted by range read; CRC ok; constraints quoted."
+  },
+  {
+   "id": "usa_struct_item_json",
+   "requested_url": "https://www.arcgis.com/sharing/rest/content/items/22a4ad974fc3664a5ebfdf2ac3fb578f?f=json",
+   "final_url": "https://www.arcgis.com/sharing/rest/content/items/22a4ad974fc3664a5ebfdf2ac3fb578f?f=json",
+   "http_status": "200",
+   "bytes": 113,
+   "sha256": "65915fb331b297e9907690d5a715a75062b6dc04c3bae84bfdae5fc17e705d5c",
+   "server_date": "Mon, 19 Oct 2026 02:48:50 GMT",
+   "read_utc": "2026-10-19T02:48:48Z",
+   "content_type": "application/json;charset=utf-8",
+   "content_check": "ArcGIS item JSON for a candidate id returned error \"Item does not exist or is inaccessible.\""
+  },
+  {
+   "id": "fema_nfhl_layer3",
+   "requested_url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3?f=pjson",
+   "final_url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3?f=pjson",
+   "http_status": "200",
+   "bytes": 8307,
+   "sha256": "fccc4fb936d9d6baf2816706feb78a9f8299157d349aaef631492daa41b53465",
+   "server_date": "Mon, 19 Oct 2026 02:49:15 GMT",
+   "read_utc": "2026-10-19T02:49:14Z",
+   "content_type": "text/plain;charset=UTF-8",
+   "content_check": "FIRM Panels layer JSON read: no description or copyright text."
+  },
+  {
+   "id": "fema_nfhl_layer0",
+   "requested_url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/0?f=pjson",
+   "final_url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/0?f=pjson",
+   "http_status": "000",
+   "bytes": 0,
+   "sha256": "NA",
+   "server_date": "NA",
+   "read_utc": "2026-10-19T02:49:14Z",
+   "content_type": "NA",
+   "content_check": "Connection failed (curl 000); not read."
+  },
+  {
+   "id": "ncei_swdi",
+   "requested_url": "https://www.ncei.noaa.gov/products/severe-weather-data-inventory",
+   "final_url": "https://www.ncei.noaa.gov/products/severe-weather-data-inventory",
+   "http_status": "200",
+   "bytes": 39954,
+   "sha256": "b7c85e2415f996de2fdb9157921417b758ec871304316e58b919e15dc205e208",
+   "server_date": "Mon, 19 Oct 2026 02:51:32 GMT",
+   "read_utc": "2026-10-19T02:51:31Z",
+   "content_type": "text/html; charset=UTF-8",
+   "content_check": "SWDI product page read: Quality Control Disclaimer quoted; no licence text on the page."
+  },
+  {
+   "id": "google_open_buildings",
+   "requested_url": "https://sites.research.google/open-buildings/",
+   "final_url": "https://sites.research.google/gr/open-buildings/",
+   "http_status": "200",
+   "bytes": 107645,
+   "sha256": "39a4693b4f4b3317acc9fda3320a06208012a19e1e2f0c57f47898c4ed04d916",
+   "server_date": "Mon, 19 Oct 2026 02:51:32 GMT",
+   "read_utc": "2026-10-19T02:51:31Z",
+   "content_type": "text/html; charset=utf-8",
+   "content_check": "Google Open Buildings page read: CC BY 4.0 or ODbL v1.0 choice; liability footnotes not read."
+  }
+ ],
+ "download_bytes_total": 11520963,
+ "urls_fetched": 146,
+ "verification": {
+  "quotes_checked": 90,
+  "quotes_matched": 90,
+  "mismatches": []
+ },
+ "downloads_folder_deleted_after_write": true
+}

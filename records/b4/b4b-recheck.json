@@ -1,0 +1,703 @@
+{
+ "task": "B4 part B final check, read-only. Worktree /home/user/wt/wt-b4 (branch claude/hail-b4), HEAD c860e23 with no new commits and nothing staged; 17 tracked files modified (+1,969 / -128 against c860e23) and 2 untracked paths. Scratch: /home/user/hail-b4/out/b4b-final-checker/ (src copy of the worktree without .git, logs, probes, round trip).",
+ "checked_at_utc": "2026-10-19T14:41Z",
+ "verdict": "NOT READY. Data, module, default-build identity, freshness, the 404 and 500 paths, the sheet lines, the List and no-JavaScript words and the SAMPLE credit pass in Chromium on a live build and on a sample build with the real store. Blocking: (1) gate B4-7's pixel rule was replaced in tools/smoke_map.py by a 16-pixel count, not the brief's more than 2 percent, with no decision, and the live preview on the branch has not run; (2) gate B4-2's product-name clause cannot be met as written (pygrib reads the name as unknown) and needs a ruling. High: 'in the window' remains where decision D1 superseded it, and the live line wording differs from the brief with no decision. Medium and low: stale DESIGN, D37 and ROADMAP text (cadence, 2 percent claims, list wording, PNG range).",
+ "failed_checks": [
+  "B4-7 pixel-change gate: smoke_map.py enforces 16 changed pixels (line 1812); brief says more than 2 percent. Live day picture changed 0.04 percent (365 px).",
+  "B4-7 live preview build on claude/hail-b4 not run (branch not pushed).",
+  "B4-2 product-name clause (header name, shortName and units read as unknown by pygrib).",
+  "B4-4 words: 'in the window' remains in the About bullet (about.html:29, two occurrences) and in the contract row (sources.py:169); D1 amendment supersedes it.",
+  "Brief Product line for the sheet's live line differs from website/swath.py:118 with no decision recorded (D37 and DESIGN quote the old line).",
+  "DESIGN.md section 11 List and sheet wording stale (lines 618-625 and 633) against swath.py:118, 124, 133, 143, 144.",
+  "Refresh cadence docs say every minute (DESIGN.md:654, DECISIONS.md:817, ROADMAP.md:48); map.js:59 runs every 10 seconds.",
+  "Docs say the sample build fails the 2 percent rule (DESIGN.md:663, DECISIONS D37, ROADMAP.md:48 and :122); current sample build changes 17.34 and 30.95 percent.",
+  "PNG size range 2,989 to 3,041 bytes (DESIGN.md:661, DECISIONS.md:823) excludes this build's day picture, 3,045 bytes.",
+  "map.js:2682 reads a listed tile's live file before the shard says the point is in Montana (two requests for a point outside Montana).",
+  "Untracked tests/fixtures/default-build-manifest.json and research/globe/validation-evidence/p3-verification.json must be committed with the change.",
+  "North-star wording: count line mixes Montana and whole-picture scopes (swath.py:143)."
+ ],
+ "gates": {
+  "B4-1": {
+   "status": "pass",
+   "evidence": "Own round trip (rt/roundtrip-live.json; the module's roundtrip.py run with -I on this build's two PNGs and the NOAA files of the same valid times (hour 14:22, day 14:00), downloaded from noaa-mrms-pds). Hour picture: 0 mismatches over all 1,919,750 px and over 1,000 uniform px; 0 coloured px. Day picture: 0 mismatches over all px and over 1,000 uniform px; 31 coloured px, palette classes 0:28 and 1:3, equal to the decoded classes. Live tiles of the day folder (202610191400): 6 files, 21 cells at or above 64 tenths, 0 value mismatches, 0 missing, 0 extra. Module re-checks (b4a-recheck-completion.json): 0 mismatches at the 06:54 and 06:30 run and on the precheck files; (b4a-recheck.json): sample PNGs 0 mismatches."
+  },
+  "B4-2": {
+   "status": "partial",
+   "evidence": "Two-builds clause met by the four module live runs (table module_runs_for_B4_2), each decoding a header valid time equal to its file-name time: 02:53:58Z (hour valid 02:52, day 02:30), 03:55:09Z (03:52, 03:30), 05:45:09Z (05:42, 05:30), 06:56:57Z (06:54, 06:30). This reviewer's live build (14:23:56Z; hour 14:22, day 14:00) also matches. Each file: discipline 209, category 3, parameter 30 (hour) or 34 (day), centre 161, regular_ll 7000 by 3500, values 3500 by 7000. Units: every positive value is whole tenths of a mm; codes are only -1 and -3 (stray_codes 0, non_tenth_values 0). Product-name clause NOT met as written: pygrib 2.1.8 reports name, shortName and units as 'unknown' on both NOAA files (checked here), so identity rests on the parameter number (D2, DECISIONS D37). Needs a ruling (open item O-2)."
+  },
+  "B4-3": {
+   "status": "pass",
+   "evidence": "Freshness states exercised by tests: tests.test_swath, 95 tests OK (unittest-swath.log); full suite 891 OK including FreshnessTests and CollectTests. Smoke on the live build (rc 0) ran the hail checks; its skipped checks were the hour layer's picture gate (no value in the file) and the value, no-estimate-with-file and town-card checks, because the live build has no Montana value (smoke-live.log notes). Chromium probes (probe-live.json, 31 checks, 0 fail; probe-sample.json): hour layer fresh at 20:00 ('Radar estimate, 20 min ago.'), stale at 20:01 and 60:00 (with 'This is not an all-clear.'), unavailable from 60:01 (age rounds to 61) with the picture removed; day layer fresh at 60:00, stale at 60:01 and 120:00, unavailable from 120:01 (121 min); the 10-second check moved the hour line from 19 to 20 min with no reload (B2). Caveat: the brief's 2 percent picture rule sits in the smoke's picture gate and is recorded under B4-7."
+  },
+  "B4-4": {
+   "status": "partial",
+   "evidence": "Met: the legend on both builds lists six classes, each with its inch value and class word (for example '0.25 in, pea to mothball'); the legend note is exact ('Radar estimate of the largest hail in the last hour, in inches (NOAA MRMS MESH). An estimate, not observed hail and not damage.'); the uncoloured line names its window; 'This is not an all-clear.' is on every stale and unavailable line; 'not observed hail' and 'not damage' appear in the legend note, the List and the About bullet; no unnegated forbidden term in the shipped swath words (website/*.py, templates, map.js). Not met: 'in the window' remains in website/templates/about.html:29 (two occurrences) and website/sources.py:169, superseded by the D1 amendment that names the window per layer; the same sentence is quoted in DESIGN.md:607 and DECISIONS.md:821."
+  },
+  "B4-5": {
+   "status": "pass",
+   "evidence": "PNG bytes: live hour 2,989; live day 3,045; sample hour 4,288; sample day 4,753; all far under 150 KB. Live per-tile files (day folder, 202610191400): 6 files of 180, 103, 103, 89, 164 and 120 bytes, total 759; live hour: no folder, because no cell reaches 64 tenths (D4). Sample build: hour 325 files (411,461 bytes; 150 with cells; 175 no-coverage-only at 1,198 bytes each); day 599 files (822,028 bytes; 424 with cells; 175 no-coverage-only at 1,200 bytes each). DESIGN.md:661 and DECISIONS.md:823 quote 2,989 to 3,041 bytes; this build's day picture is 3,045 (finding F-8)."
+  },
+  "B4-6": {
+   "status": "pass",
+   "evidence": "Default build (no flags), --sample --now 2026-10-19T02:00:00Z, 94 files each: c860e23 (git archive) against the worktree copy: diff -rq differs only in static/map/map.js, static/map/map.css and map.html; the map.html difference is two lines, both '?v=' hashes of map.css and map.js. Same against db84d76 (build/base-db84-default.log; the same three files). --storm-layers --sample build without --hail-history: rc 0 (build/src-storm-sample.log). test_the_default_build_matches_the_manifest_of_its_base_commit passes in the 891-test run."
+  },
+  "B4-7": {
+   "status": "not met",
+   "evidence": "tools/smoke_map.py on the live build with --shots: rc 0, 'Map smoke test passed'. Its one picture-gate note: the day picture at the spot changed 365 px, 0.04 percent of the 1280 by 800 canvas (the brief's rule is more than 2 percent, 20,480 px). The code's rule is GATE_MIN_CHANGED = 16 (tools/smoke_map.py:1812; the test at :2242); no decision in D1 to D16 sets it. On the sample build with the real store: rc 0; hour 177,545 px (17.34 percent) and day 316,913 px (30.95 percent), so the 2 percent rule passes there. smoke_pages on the live build: rc 0, every page fits the screen at 288, 320, 375, 768 and 1440 px, light and dark. The live preview build on claude/hail-b4 has not run: the branch is not pushed. A local --require-live build (rc 0, every source ok) stands in. Gate fails as written."
+  }
+ },
+ "module_runs_for_B4_2": [
+  {
+   "run": "module live run (live-run-1)",
+   "now_utc": "2026-10-19T02:53:58Z",
+   "hour_valid": "02:52",
+   "day_valid": "02:30",
+   "record": "/home/user/hail-b4/out/swath/live-run-1.json",
+   "names_match": true
+  },
+  {
+   "run": "module live run (live-run-3)",
+   "now_utc": "2026-10-19T03:55:09Z",
+   "hour_valid": "03:52",
+   "day_valid": "03:30",
+   "record": "/home/user/hail-b4/out/swath/live-run-3.json",
+   "names_match": true
+  },
+  {
+   "run": "module live run (first re-check)",
+   "now_utc": "2026-10-19T05:45:09Z",
+   "hour_valid": "05:42",
+   "day_valid": "05:30",
+   "record": "/home/user/hail-b4/out/recheck/live-record.json",
+   "names_match": true
+  },
+  {
+   "run": "module live run (completion re-check)",
+   "now_utc": "2026-10-19T06:56:57Z",
+   "hour_valid": "06:54",
+   "day_valid": "06:30",
+   "record": "/home/user/hail-b4/out/recheckc/live_record.json",
+   "names_match": true
+  },
+  {
+   "run": "reviewer live build (--require-live)",
+   "now_utc": "2026-10-19T14:23:56Z",
+   "hour_valid": "14:22",
+   "day_valid": "14:00",
+   "record": "/home/user/hail-b4/out/b4b-final-checker/build/live.log (JSON status block); NOAA files downloaded to rt/",
+   "names_match": true
+  }
+ ],
+ "part_b": [
+  {
+   "id": "B-01",
+   "item": "build.py Collector.swath behind --storm-layers: frames, hail/live stamp folders, map.json layers hail_60 and hail_1440, status line, List and no-JS words",
+   "status": "done",
+   "evidence": "Live and sample map.json carry both layers with state, valid, fresh_min, stale_min, live pattern with the stamp; the status 'Hail swath (radar estimate)' is in the Loaded list on every page; the List block carries describe() lines."
+  },
+  {
+   "id": "B-02",
+   "item": "build.py SWATH_SITE_WORDS, swath_text, swath_site; page-side SAMPLE credit (D10)",
+   "status": "done",
+   "evidence": "Sample List: 'SAMPLE: invented values, not NOAA data.' under the heading; sheet lines begin with the same credit; sample legend note begins 'Sample: invented field, not NOAA MRMS MESH.'"
+  },
+  {
+   "id": "B-03",
+   "item": "build.py _copy_hail merges into the folder that holds hail/live",
+   "status": "done",
+   "evidence": "Live build output holds hail/live/1440/202610191400 with the store's hail/ folder beside it (build/live.log, rc 0)."
+  },
+  {
+   "id": "B-04",
+   "item": "templates/map.html: Layers radios under the weather layers, List block, no-JS panel",
+   "status": "done",
+   "evidence": "Radios value hail_60 and hail_1440 after the Satellite choice; List section data-storm hail; no-JS panel text present (F.no_js_panel_words PASS)."
+  },
+  {
+   "id": "B-05",
+   "item": "templates/about.html bullet beside the satellite picture (storm builds only)",
+   "status": "done with defect",
+   "evidence": "Present only with --storm-layers (default build: 0 occurrences). Wording defect F-3: 'in the window' at about.html:29."
+  },
+  {
+   "id": "B-06",
+   "item": "templates/base.html status words (s.words)",
+   "status": "done",
+   "evidence": "Problem lines carry the all-clear sentence when the status has words (swath unavailable)."
+  },
+  {
+   "id": "B-07",
+   "item": "map.js: the two one-frame layers as the satellite layer (menu, legend, picture, title)",
+   "status": "done",
+   "evidence": "Probes A and B: legend title, note, uncoloured line and six classes for each layer; picture shown when fresh or stale and removed when unavailable."
+  },
+  {
+   "id": "B-08",
+   "item": "map.js: view-time freshness (D7) from valid, fresh_min, stale_min with {age} templates",
+   "status": "done",
+   "evidence": "Probe B thresholds and B2 tick pass on both builds. Cadence is 10 seconds (map.js:59), which the docs misstate (F-6)."
+  },
+  {
+   "id": "B-09",
+   "item": "map.js: sheet live line with D16 (404, other failures, outside Montana, no file, value, no-coverage, loading)",
+   "status": "done with finding",
+   "evidence": "Probes C, D, D2 and probe2 (500) pass on the live build; sample probes show value, no-estimate-with-file and outside lines correct. Finding F-9: a listed tile outside Montana reads its live file as well."
+  },
+  {
+   "id": "B-10",
+   "item": "map.js: header documents the browser duties (AGENTS rule 4)",
+   "status": "done",
+   "evidence": "map.js header lines 14 to 25 list the duties and say that no threshold, word or unit is written there."
+  },
+  {
+   "id": "B-11",
+   "item": "map.js: no literal threshold, word, unit or window length",
+   "status": "done",
+   "evidence": "Literal scan of the added code: none. Literals are the 10-second check (MIN / 6), HTTP 404, and presentation sizes (64, 96, 16 px bar heights)."
+  },
+  {
+   "id": "B-12",
+   "item": "map.css: uncoloured line, swath-words display rule, hatch keys",
+   "status": "done",
+   "evidence": "Rules present; layout at 390 and 1280 px passes smoke_map and smoke_pages; I did not inspect the rendering by eye."
+  },
+  {
+   "id": "B-13",
+   "item": "tools/smoke_map.py hail checks: layers, legend words, pixel gate, state line, live line, 404 path, zero off-site requests",
+   "status": "done with deviation",
+   "evidence": "All present and run (live rc 0, sample rc 0). Deviation F-1: the pixel gate counts 16 px, not 2 percent."
+  },
+  {
+   "id": "B-14",
+   "item": "tools/smoke_pages.py at 288 to 1,440 px",
+   "status": "done",
+   "evidence": "rc 0 on the live build (smoke_pages_live log)."
+  },
+  {
+   "id": "B-15",
+   "item": "tests/test_site.py: flag plumbing, identity against c860e23, map.js literal scan, templates with and without the flag, List words from a fixture frame",
+   "status": "done",
+   "evidence": "Part of the 891-test run (OK). The identity fixture tests/fixtures/default-build-manifest.json is untracked (F-10)."
+  },
+  {
+   "id": "B-16",
+   "item": "tests/test_swath.py: freshness, words, bands, CLI, sample and offline paths",
+   "status": "done",
+   "evidence": "95 tests OK."
+  },
+  {
+   "id": "B-17",
+   "item": ".github/workflows/website.yml: test step and paths (D11)",
+   "status": "done",
+   "evidence": "Test step line 96 runs tests.test_swath; paths line 35 names tests/test_swath.py; branch preview flags line 108 (--require-live --storm-layers --hail-history). YAML parses. Already in c860e23."
+  },
+  {
+   "id": "B-18",
+   "item": "docs/DECISIONS.md D37",
+   "status": "done with stale text",
+   "evidence": "Entry exists. Stale: 'every minute' (line 817), 'in the window' (line 821), 'fails the 2 percent pixel rule' (the 'Built on claude/hail-b4' paragraph), and the list of open items is current. See F-3, F-6, F-7."
+  },
+  {
+   "id": "B-19",
+   "item": "docs/DESIGN.md section 11 (layers, colours, states, data contract)",
+   "status": "done with stale text",
+   "evidence": "Section present (lines 579 to 664). Stale: list and sheet wording (618 to 625, 633), 'every minute' (654), 2 percent statements (659, 663). See F-3, F-5, F-6, F-7."
+  },
+  {
+   "id": "B-20",
+   "item": "docs/ROADMAP.md: Next 11 done, Next 19 status, Built row, open questions",
+   "status": "done with stale text",
+   "evidence": "Next 11 says built, not merged; Next 19 says B4-3 and B4-7 not met (consistent with this check); the Built row says 'every minute' and the 2 percent failure of the sample (lines 48, 122)."
+  },
+  {
+   "id": "B-21",
+   "item": "README.md and AGENTS.md layout lines (swath.py, test_swath.py)",
+   "status": "done",
+   "evidence": "AGENTS.md layout and the README test and layout lines name swath.py and test_swath.py."
+  },
+  {
+   "id": "B-22",
+   "item": "research/globe/README.md P3 row and the F2 label renames",
+   "status": "done",
+   "evidence": "P3 row names D37 and the p3 file; table GP-1 to GP-11 in order at lines 541 to 551; the required sentence at line 553; the seven prose range edits are faithful renames of the eleven-proposal range (D31 to D41)."
+  },
+  {
+   "id": "B-23",
+   "item": "research/globe/validation-evidence/p3-verification.json with gates B4-1 to B4-7 and measurements",
+   "status": "done with stale text",
+   "evidence": "Exists with seven gates and the four module runs. B4-3 and B4-7 evidence still cites the 2 percent smoke failure. Untracked (F-10)."
+  },
+  {
+   "id": "B-24",
+   "item": "D10 sample credit on the page side",
+   "status": "done",
+   "evidence": "See B-02; the sample build's List and sheet lines carry 'SAMPLE: invented values, not NOAA data.'"
+  },
+  {
+   "id": "B-25",
+   "item": "D15 Montana-first words in the List, the no-JS panel and the sheet",
+   "status": "done",
+   "evidence": "Live: 'No cell in Montana has a radar hail estimate ...'; 24-hour lead 'The largest value in the picture, 0.75 in, is outside Montana.' Sample: 'Largest radar estimate in Montana: 2.06 in (52.4 mm), hen egg to tennis ball. It is at 46.635 degrees north, 107.835 degrees west, 66.9 miles from Billings.'"
+  },
+  {
+   "id": "B-26",
+   "item": "D13 and D14: -3-only tile files with nocov; stamp folders",
+   "status": "done",
+   "evidence": "Sample: 175 no-coverage-only tiles per product; live and sample folders carry the PNG stamp only; no query strings."
+  },
+  {
+   "id": "B-27",
+   "item": "D9 sheet_line states, stale sentence, 4.00 in note, no-coverage line",
+   "status": "done with gap",
+   "evidence": "Stale, unavailable, no-estimate and no-coverage lines checked in Chromium (no-coverage on a modified copy of the sample tile, restored byte for byte). The 4.00 in note (1,016 tenths) is unit-tested only; no 4.00 in value exists in these builds."
+  },
+  {
+   "id": "B-28",
+   "item": "Chromium smoke at 390 and 1280 px",
+   "status": "done with deviation",
+   "evidence": "tools/smoke_map.py HAIL_SIZES: desktop 1280 by 800 and phone 390 by 844; both builds rc 0 with F-1."
+  },
+  {
+   "id": "B-29",
+   "item": "Live preview build on the branch (website.yml branch run)",
+   "status": "not done",
+   "evidence": "The branch is not pushed. A local --require-live build passed; the branch run has not happened."
+  }
+ ],
+ "findings": [
+  {
+   "rank": 1,
+   "blocking": true,
+   "id": "F-1",
+   "gate": "B4-7",
+   "file": "tools/smoke_map.py",
+   "line": "1812 (GATE_MIN_CHANGED = 16); 2200 (docstring); 2242 (changed < GATE_MIN_CHANGED fails)",
+   "summary": "The hail picture gate passes at 16 changed pixels; the brief's Build section requires more than 2 percent of pixels when the live file has values. No decision authorises the change.",
+   "evidence": "smoke-live.log: '365 pixels changed at the spot on the desktop (0.04% of the canvas, for the record)'. 2 percent of the 1280 by 800 canvas is 20,480 px; the live day picture colours 31 px (rt/roundtrip-live.json). Sample build passes 2 percent (smoke-sample.log: 17.34 and 30.95 percent). DESIGN.md:659 and DECISIONS D37 say the smoke fails the 2 percent rule; the code no longer does.",
+   "fix": "Either restore the brief's rule in check_swath_gate (replace the GATE_MIN_CHANGED test with share < 0.02, keeping the control) and let B4-7 fail on the quiet live day, or have the owner or supervisor record a decision that replaces the rule (DECISIONS.md) and then update DESIGN.md section 11, D37, ROADMAP.md Next 19 and the Built row, p3 gates B4-3 and B4-7, and the docstring at lines 2196 to 2201. Ruling needed (O-1)."
+  },
+  {
+   "rank": 2,
+   "blocking": true,
+   "id": "F-2",
+   "gate": "B4-2",
+   "file": "/home/user/wt/briefs/hail-b4-brief.md (gate 2); research/globe/validation-evidence/p3-verification.json (open_items)",
+   "summary": "Gate B4-2 asks for the product name in the GRIB header; pygrib reads name, shortName and units as unknown on both NOAA files.",
+   "evidence": "Reviewer check with pygrib on hour.grib2 and day.grib2 (rt/): name 'unknown', shortName 'unknown', units 'unknown', parameterName '30' and '34', discipline 209, parameterCategory 3.",
+   "fix": "Owner or supervisor accepts identity by discipline 209, category 3 and parameter 30 or 34 (the rule in D2 and DECISIONS D37) and rewrites gate B4-2's clause to say so. No code change; until then B4-2 stays partial."
+  },
+  {
+   "rank": 3,
+   "blocking": false,
+   "id": "F-3",
+   "gate": "B4-4 (D1)",
+   "file": "website/templates/about.html; website/sources.py; docs/DESIGN.md; docs/DECISIONS.md",
+   "summary": "The uncoloured sentence still says 'in the window', which D1's amendment supersedes (the window is named per layer).",
+   "evidence": "about.html:29 (storm build): 'no radar hail estimate of 0.25 in or more in the window, or no value' (two occurrences); sources.py:169 same words; DESIGN.md:607; DECISIONS.md:821. The live legend says 'in the last hour' / 'in the last 24 hours' (map.json legend_uncoloured).",
+   "fix": "about.html:29: replace 'in the window' with 'in the last hour or in the last 24 hours, for each layer'; sources.py:169: the same change; DESIGN.md:607 and DECISIONS.md:821: quote the per-layer sentence."
+  },
+  {
+   "rank": 4,
+   "blocking": false,
+   "id": "F-4",
+   "gate": "brief Product section (sheet line)",
+   "file": "website/swath.py:118 (WORDS_SWATH['live_line']); docs/DESIGN.md:633; docs/DECISIONS.md (D37)",
+   "summary": "The sheet's value line differs from the brief's quoted line, and no decision records the change.",
+   "evidence": "Brief: 'In the last {window}: {in} in ({mm} mm), {class word}, radar estimate at {valid time}.' Code: '...the largest radar estimate for the period ending {valid}.' Probe C.day_value_line text: 'In the last 24 hours: 0.25 in (6.4 mm), pea to mothball, the largest radar estimate for the period ending Oct 18, 7:30 pm MDT.'",
+   "fix": "Either restore the brief's wording at swath.py:118 and its test expectations, or have the owner accept the new wording as a decision and update DESIGN.md:633 and D37 to match."
+  },
+  {
+   "rank": 5,
+   "id": "F-11",
+   "gate": "north star (a sentence that needs decoding); D15",
+   "blocking": false,
+   "file": "website/swath.py:143 (WORDS_SWATH['severe_count'])",
+   "summary": "The count line says 'in this map's area' directly after the Montana count and lead, so one List block mixes Montana and whole-picture scopes; the picture reaches past Montana.",
+   "evidence": "Sample map.html: 'Cells with a radar estimate of 0.25 in or more in Montana: 12725.' then 'Cells with a radar estimate of 1.00 in or more in this map's area: 5785.' Live build: the same pattern with 0. DECISIONS D37 open item 2 raises the same scope question.",
+   "fix": "Minimal wording fix that needs no decision: 'Cells with a radar estimate of 1.00 in or more in the whole picture, which reaches past Montana: {n}.' If the owner wants Montana only, the count itself changes (open item O-5)."
+  },
+  {
+   "rank": 6,
+   "blocking": false,
+   "id": "F-5",
+   "gate": "docs (DESIGN section 11)",
+   "file": "docs/DESIGN.md lines 618 to 625 and 633",
+   "summary": "The List block and sheet table quote strings the code no longer prints.",
+   "evidence": "swath.py:124 'That is more than {limit} minutes old'; :133 'Largest radar estimate in Montana: ... It is at ...'; :143 'Cells with a radar estimate of 1.00 in or more in this map's area: {n}.'; :144 'MESH (maximum estimated size of hail) is ...'. DESIGN quotes 'That is older than a current map', 'Largest value in Montana ... Its cell centre is at', 'Cells at or above 1.00 in in this map's area', 'MESH is a radar estimate'.",
+   "fix": "Copy the current strings from website/swath.py into DESIGN.md lines 618 to 625 and 633 (or change the code back, if the owner prefers the DESIGN wording)."
+  },
+  {
+   "rank": 7,
+   "blocking": false,
+   "id": "F-6",
+   "gate": "docs vs code (D7)",
+   "file": "docs/DESIGN.md:654; docs/DECISIONS.md:817; docs/ROADMAP.md:48; website/static/map/map.js:59 (code)",
+   "summary": "The docs say the browser re-checks the state every minute; the code re-checks every 10 seconds.",
+   "evidence": "map.js:59 'var STATE_TICK = MIN / 6;' with the comment 'checked every 10 seconds (D7)'; map.js:20 and :876 say 10 seconds; smoke TICK_MS = 10_000.",
+   "fix": "Change 'every minute' to 'every 10 seconds' in DESIGN.md:654, DECISIONS.md:817 and ROADMAP.md:48 (or change map.js:59 if the owner prefers a minute)."
+  },
+  {
+   "rank": 8,
+   "blocking": false,
+   "id": "F-7",
+   "gate": "docs vs measurement (B4-3, B4-7)",
+   "file": "docs/DESIGN.md:659 and :663 to 666; docs/DECISIONS.md D37 (site side paragraph); docs/ROADMAP.md:48 and :122; research/globe/validation-evidence/p3-verification.json",
+   "summary": "The docs say the sample build fails the 2 percent rule (hour 1.03 percent, day 1.12 to 1.13 percent). On the current sample build the same measurement is 17.34 and 30.95 percent; only the live build fails.",
+   "evidence": "smoke-sample.log notes: 'Hail, last hour: 177545 pixels changed at the spot on the desktop (17.34% of the canvas ...)' and 'Hail, last 24 hours: 316913 pixels ... (30.95% ...)'. smoke-live.log: 0.04 percent.",
+   "fix": "After the F-1 ruling, rewrite those sentences with the current numbers and say which build fails; keep the logs as the source."
+  },
+  {
+   "rank": 9,
+   "blocking": false,
+   "id": "F-8",
+   "gate": "docs numbers (B4-5)",
+   "file": "docs/DESIGN.md:661; docs/DECISIONS.md:823; docs/ROADMAP.md:48",
+   "summary": "The live PNG range 2,989 to 3,041 bytes excludes this build's day picture.",
+   "evidence": "Reviewer build: hail-1440-202610191400.png 3,045 bytes; hail-60-202610191422.png 2,989 bytes (live.log build output).",
+   "fix": "Change the range to 2,989 to 3,045 bytes, or cite the run it comes from."
+  },
+  {
+   "rank": 10,
+   "blocking": false,
+   "id": "F-9",
+   "gate": "D4 and D16 (fetch rule)",
+   "file": "website/static/map/map.js:2682 (liveFile call in liveOpen, line 2665); the comment at :2676 says a listed tile waits for its shard; the pending wording at :2601",
+   "summary": "A listed tile's live file is fetched while the Montana answer is still pending, so a point outside Montana in a listed tile reads two files (live and shard) before the words are set.",
+   "evidence": "Probe4 on the live build, cell (600, 1390) in tile r0060_c0139: requests /hail/live/60/202610191422/r0060_c0139.json and /hail/t/r0060_c0139.json; text 'Outside Montana: no radar estimate is shown for this spot.' Unlisted outside tiles (Canada, Wyoming, Idaho probes): 0 hail requests.",
+   "fix": "Call liveFile only from the shard callback when hailInState is true (inside liveMontana(true)), as the comment at liveOpen says ('a listed tile waits for its shard')."
+  },
+  {
+   "rank": 11,
+   "blocking": false,
+   "id": "F-10",
+   "gate": "git hygiene",
+   "file": "tests/fixtures/default-build-manifest.json (untracked); research/globe/validation-evidence/p3-verification.json (untracked)",
+   "summary": "Two new files are not in git yet; the identity test needs the manifest.",
+   "evidence": "git status --short: '?? research/globe/validation-evidence/p3-verification.json' and '?? tests/fixtures/'.",
+   "fix": "Add both files in the commit (not done here; read-only)."
+  }
+ ],
+ "measurements": {
+  "unit_tests": "python -m unittest discover -s tests in the src copy: Ran 891 tests in 328.858s, OK, EXIT 0 (unittest-full.log). Two tracebacks in the log are deliberate error-path cases in payload and desktop tests. An earlier run was discarded: the root disk filled (ENOSPC) during it.",
+  "test_swath": "Ran 95 tests in 23.669s, OK (unittest-swath.log).",
+  "selftest": "python desktop/launcher.py --selftest payload: PASS payload 1.0.0, exit 0.",
+  "default_build_vs_c860e23": {
+   "files_each": 94,
+   "total_bytes_c860e23": 2412344,
+   "total_bytes_worktree_build": 2427584,
+   "differ": [
+    "map.html (2 lines: ?v= of map.css and map.js)",
+    "static/map/map.css (47,798 to 49,028 bytes)",
+    "static/map/map.js (173,269 to 187,279 bytes)"
+   ],
+   "other_files_identical": 91,
+   "log": "build/default-diff.txt"
+  },
+  "default_build_vs_db84d76": {
+   "files_each": 94,
+   "differ": [
+    "map.html (the same two ?v= lines)",
+    "static/map/map.css",
+    "static/map/map.js"
+   ],
+   "log": "build/base-db84-default.log"
+  },
+  "storm_layers_sample_no_history": {
+   "rc": 0,
+   "hail_layers_in_map_json": [
+    "hail_60",
+    "hail_1440"
+   ],
+   "log": "build/src-storm-sample.log"
+  },
+  "storm_layers_hail_history_sample_with_store": {
+   "rc": 0,
+   "store": "/home/user/hail-b2/out2/joins/hail-store.tar.gz (12,876,689 bytes)",
+   "frames": [
+    "hail-60-202610190158.png 4,288 B",
+    "hail-1440-202610190130.png 4,753 B"
+   ],
+   "log": "build/src-hail-sample.log (copy removed after the checks)"
+  },
+  "live_build": {
+   "command": "python -m website.build --out build/live --storm-layers --hail-history --hail-store <store> --require-live",
+   "rc": 0,
+   "started_utc": "2026-10-19T14:23:56Z",
+   "finished_utc": "2026-10-19T14:25:24Z",
+   "wall_s": 88,
+   "sources_ok": [
+    "alerts",
+    "forecasts",
+    "observations",
+    "reports",
+    "radar",
+    "forecast",
+    "satellite",
+    "hail_swath",
+    "storm",
+    "hail_history"
+   ],
+   "hail_swath_status": "Hail, last hour: valid Oct 19, 8:22 am MDT, 1 min ago; Hail, last 24 hours: valid Oct 19, 8:00 am MDT, 23 min ago",
+   "log": "build/live.log"
+  },
+  "live_pictures": {
+   "hour_1422_bytes": 2989,
+   "day_1400_bytes": 3045,
+   "hour_coloured_px": 0,
+   "day_coloured_px": 31
+  },
+  "live_tiles": {
+   "day_1400_files": 6,
+   "bytes_each": {
+    "r0046_c0257": 180,
+    "r0047_c0256": 103,
+    "r0054_c0262": 103,
+    "r0054_c0263": 89,
+    "r0068_c0138": 164,
+    "r0069_c0138": 120
+   },
+   "total_bytes": 759,
+   "cells_at_or_above_floor": 21,
+   "hour_1422_files": 0
+  },
+  "noaa_downloads_for_roundtrip": {
+   "hour_1422_gz_bytes": 33692,
+   "day_1400_gz_bytes": 99263,
+   "hour_validDate": "2026-10-19 14:22:00",
+   "day_validDate": "2026-10-19 14:00:00"
+  },
+  "round_trip_live": {
+   "hour_full_picture_mismatches": 0,
+   "day_full_picture_mismatches": 0,
+   "uniform_1000_mismatches": {
+    "hour": 0,
+    "day": 0
+   },
+   "day_palette_classes_expected_vs_png": {
+    "0": [
+     28,
+     28
+    ],
+    "1": [
+     3,
+     3
+    ]
+   },
+   "tile_value_mismatches": 0,
+   "tile_missing": 0,
+   "largest_day_value": {
+    "tenths": 191,
+    "in": "0.75",
+    "mm": 19.1,
+    "lat": 48.115,
+    "lon": -116.135,
+    "row": 688,
+    "col": 1386
+   },
+   "results": "rt/roundtrip-live.json"
+  },
+  "sample_tiles": {
+   "hour_files": 325,
+   "hour_bytes": 411461,
+   "hour_with_cells": 150,
+   "hour_nocov_only_bytes_each": 1198,
+   "day_files": 599,
+   "day_bytes": 822028,
+   "day_with_cells": 424,
+   "day_nocov_only_bytes_each": 1200,
+   "nocov_only_tiles_per_product": 175
+  },
+  "freshness_probe_thresholds": {
+   "hour": {
+    "fresh_at": "20:00 ('Radar estimate, 20 min ago.')",
+    "stale_at": [
+     "20:01",
+     "60:00"
+    ],
+    "unavailable_at": "60:01 (age 61)"
+   },
+   "day": {
+    "fresh_at": "60:00 ('Radar estimate, 60 min ago.')",
+    "stale_at": [
+     "60:01",
+     "120:00"
+    ],
+    "unavailable_at": "120:01 (age 121)"
+   },
+   "tick": "hour line moved from 19 to 20 minutes with no reload"
+  },
+  "smoke_live": {
+   "rc": 0,
+   "pixel_note": "365 px, 0.04 percent of canvas (day)",
+   "skipped_notes": 8,
+   "log": "smoke-live.log"
+  },
+  "smoke_sample": {
+   "rc": 0,
+   "pixel_notes": {
+    "hour": "177545 px, 17.34 percent",
+    "day": "316913 px, 30.95 percent"
+   },
+   "log": "smoke-sample.log"
+  },
+  "smoke_pages_live": {
+   "rc": 0,
+   "widths": [
+    288,
+    320,
+    375,
+    768,
+    1440
+   ],
+   "log": "smoke-pages-live.log"
+  },
+  "probes": {
+   "live": "31 checks, 0 fail (probe-live.json)",
+   "sample": "34 checks, 2 fail, both my own expectation: the sample legend note has no '(NOAA MRMS MESH)' by design (probe-sample.json)",
+   "d16_500_live": "pass, both states (probe2-live.json)",
+   "d16_500_sample": "text correct with the SAMPLE credit (my expectation omitted it) (probe2-sample.json)",
+   "no_coverage_modified_copy": "PASS: 'SAMPLE: invented values, not NOAA data. No radar coverage at this point in the product.' (copy restored byte for byte)",
+   "listed_outside_tile": "1 live and 1 shard request (probe4.py)"
+  },
+  "per_click_fetch": {
+   "open_with_at": 1,
+   "second_click_same_tile": 0,
+   "click_other_tile": 1,
+   "statuses": [
+    404,
+    404
+   ]
+  },
+  "off_site_requests": {
+   "live": 0,
+   "sample": 0
+  },
+  "sample_value_line": "SAMPLE: invented values, not NOAA data. In the last 24 hours: 0.25 in (6.4 mm), pea to mothball, the largest radar estimate for the period ending Oct 18, 7:30 pm MDT.",
+  "sample_no_estimate_with_file": "SAMPLE: invented values, not NOAA data. No radar hail estimate of 0.25 in or more in the last 24 hours here (as of Oct 18, 7:30 pm MDT) with status 200",
+  "list_montana_lead": {
+   "live": "No cell in Montana has a radar hail estimate of 0.25 in or more in the last hour. That is not the same as no hail.",
+   "sample": "Largest radar estimate in Montana: 2.06 in (52.4 mm), hen egg to tennis ball. It is at 46.635 degrees north, 107.835 degrees west, 66.9 miles from Billings. (24-hour layer)"
+  },
+  "p3_schedule_claim": {
+   "claim": "six scheduled runs in the 24 hours to 04:25 UTC on 2026-10-19 (runs 58, 59, 69 to 72)",
+   "check": "counted 6 in /home/user/hail-b4/out/docs-fixer-schedule-runs.tsv (runs 58, 59, 69, 70, 71, 72)"
+  },
+  "em_dashes_added_lines": {
+   "em_dash_U+2014": 0,
+   "en_dash_U+2013": 0,
+   "added_lines_checked": 2112
+  },
+  "git": {
+   "HEAD": "c860e23 (no new commit)",
+   "status_short": "17 modified, 2 untracked (tests/fixtures/, research/globe/validation-evidence/p3-verification.json)",
+   "diff_stat_vs_c860e23": "17 files changed, 1969 insertions(+), 128 deletions(-)",
+   "staged": 0
+  },
+  "disk": {
+   "note": "root filesystem was full during the first unit run; I removed my own base-archive copy to free space and the rerun was clean. Final scratch size about 38 MB."
+  }
+ },
+ "commands": {
+  "unit_tests": "rc 0, Ran 891 tests in 328.858s, OK",
+  "selftest": "rc 0, PASS payload 1.0.0",
+  "build_default_vs_c860e23": "rc 0; diff -rq: map.html, map.css, map.js only",
+  "build_default_vs_db84d76": "rc 0; same three files",
+  "build_storm_layers_sample": "rc 0",
+  "build_storm_layers_hail_history_sample_store": "rc 0",
+  "build_live_require_live": "rc 0, every source ok, about 88 s",
+  "smoke_map_live": "PW_CHROMIUM=/opt/pw-browsers/chromium tools/smoke_map.py build/live --shots: rc 0",
+  "smoke_pages_live": "rc 0",
+  "smoke_map_sample_store": "rc 0",
+  "reviewer_probes": "probe.py (live, sample), probe2.py (500 path), probe3.py (no-coverage on a modified copy), probe4.py (listed outside-Montana tile)",
+  "yaml": "website.yml parses; test step line 96 runs tests.test_swath; paths line 35; preview flags line 108",
+  "git": "status --short and diff --stat c860e23 as recorded above",
+  "swath_tests": "tests.test_swath: Ran 95 tests, OK"
+ },
+ "static_checks": {
+  "em_dashes": "0 em dashes and 0 en dashes on 2,112 added lines (tracked diff and the p3 file); the fixture has none.",
+  "banned_terms": "no unnegated forbidden term in shipped swath words (website/*.py, templates, map.js); occurrences in tests and docs are rule lists or negated sentences; the scan of the live pages found the same in swath lines only.",
+  "map_js_literal_scan": "no threshold, word, unit or window length in the added code; literals are MIN / 6 (the 10-second check), HTTP 404, and presentation sizes 64, 96, 16 px",
+  "decision_7_and_16_audit": "PASS: 80 deletion calls in tests/ (rmtree, unlink, remove, rmdir). Every call acts on a path from tempfile.mkdtemp or a copy the test made (copy_site, copy_fixture, build_store, gate_copy, write_store_without_joins). Helper origins read by AST (audit_rm2.out).",
+  "F1_storm_wording": "PASS: storm.py lines 11 to 15 give the verified meanings; test_storm.py:566 asserts 'not verified' is absent.",
+  "F2_globe_labels": "PASS: GP-1 to GP-11 in order at lines 541 to 551; sentence at line 553. The seven prose range edits (lines 3, 45, 152, 535, 1017, 1134, 1147) rename the eleven-proposal range D31 to D41 faithfully.",
+  "traced_numbers": {
+   "traced": [
+    "schedule runs (six, verified from the tsv)",
+    "tile sizes 89 to 180 bytes (my build)",
+    "sample tile sizes 1,198 and 1,200 bytes (my build)",
+    "sample PNGs 4,288 and 4,753 (my build)",
+    "module run times and valid times (records)",
+    "largest 0.75 in at 48.115 N, 116.135 W (module and my day file)",
+    "future tolerance 5 minutes (swath.py:66)"
+   ],
+   "not_traced": [
+    "PNG 2,989 to 3,041 (F-8)",
+    "'in the window' is not a number but is superseded (F-3)"
+   ]
+  }
+ },
+ "open_items": [
+  "O-1 (blocking, owner or supervisor): the pixel rule. A quiet-day picture cannot pass 2 percent of the canvas (20,480 px); the live day picture colours 31 px. Choose a rule and record it as a decision (F-1).",
+  "O-2 (blocking, owner or supervisor): accept parameter-number identity for the product, or change gate B4-2's clause (F-2).",
+  "O-3: push claude/hail-b4 to run the website workflow's branch build and its smoke (B4-7). Not done here (read-only).",
+  "O-4: should the picture stop at the Montana line? (D37 open 1). The words put Montana first (D15).",
+  "O-5: the count 'Cells with a radar estimate of 1.00 in or more in this map's area' (swath.py:143) counts Canada, next to the Montana count. Count Montana only, or label it (D37 open 2).",
+  "O-6: accept the module's live-line wording (F-4) or restore the brief's.",
+  "O-7: 'The largest value in the picture, {in} in, is outside Montana.' keeps D15's words; the completion list asked for 'this map's area'. D15 governs; the owner should confirm the plain words.",
+  "O-8: the 4.00 in note (1,016 tenths) is unit-tested only; no 4.00 in value exists in these builds.",
+  "O-9: legend keys and the hatch stripes at phone width were not inspected by eye; smoke and smoke_pages cover layout.",
+  "O-10: 22 eccodes warnings ('Key dataTime (unpack_long): Truncating time: non-zero seconds(35) ignored') appear in the live build's log. The swath files decode silently (validDate matches), so another feed is the source; not attributed further."
+ ],
+ "passed_checks": [
+  "python -m unittest discover -s tests: 891 OK (EXIT 0)",
+  "tests.test_swath: 95 OK",
+  "launcher --selftest payload: PASS",
+  "default build identity against c860e23 and db84d76 (only map.js, map.css and two ?v= lines)",
+  "--storm-layers --sample without --hail-history: rc 0",
+  "--storm-layers --hail-history --sample with the real store: rc 0",
+  "live build --require-live: rc 0, every source ok",
+  "round trip, live hour and day: 0 mismatches over all pixels and 1,000 sampled pixels",
+  "live tile files equal decoded tenths for every cell at or above 64 tenths",
+  "legend words for both layers on both builds",
+  "view-time thresholds for both layers (Chromium)",
+  "10-second check moves the line without reload",
+  "404 path (fresh, stale, unavailable)",
+  "fetch error other than 404 gives the could-not-load words, one request, no script or console errors",
+  "outside-Montana points (Canada, Wyoming, Idaho): words correct, zero hail requests for unlisted tiles",
+  "value line and no-estimate-with-file line on the sample build",
+  "no-coverage line (modified copy of the sample tile)",
+  "one live fetch per window per click; cached on a second click in the same tile",
+  "zero off-site requests",
+  "no-JS panel and List: Montana-first lead; SAMPLE credit on the sample build only",
+  "smoke_map on live (rc 0) and sample (rc 0)",
+  "smoke_pages on live (rc 0)",
+  "YAML parses; test step and paths",
+  "decision 7 and 16 audit",
+  "em dashes: 0",
+  "F1 wording and F2 labels",
+  "traced numbers (schedule, tile sizes, module times)"
+ ],
+ "scratch_outputs": [
+  "/home/user/hail-b4/out/b4b-final-checker/unittest-full.log",
+  "/home/user/hail-b4/out/b4b-final-checker/unittest-swath.log",
+  "/home/user/hail-b4/out/b4b-final-checker/selftest.log",
+  "/home/user/hail-b4/out/b4b-final-checker/build/ (logs, default-diff.txt, live.log, src-storm-sample.log, base-db84-default.log; the live folder holds only the picture, the live tiles and map.json)",
+  "/home/user/hail-b4/out/b4b-final-checker/smoke-live.log, smoke-sample.log, smoke-pages-live.log",
+  "/home/user/hail-b4/out/b4b-final-checker/probe-live.json, probe-sample.json, probe2-live.json, probe2-sample.json",
+  "/home/user/hail-b4/out/b4b-final-checker/rt/roundtrip-live.json",
+  "/home/user/hail-b4/out/b4b-final-checker/audit_rm2.out",
+  "/home/user/hail-b4/out/b4b-final-checker/shots-live/ and shots-sample/",
+  "/home/user/hail-b4/out/b4b-final-checker/src/ (copy of the worktree without .git)",
+  "/home/user/hail-b4/out/b4b-final-checker/full.diff"
+ ],
+ "scope_note": "Read-only. Nothing in /home/user/wt/wt-b4 was edited, staged, committed or pushed. Builds, tests and probes ran in the scratch copy. The sample build's no-coverage tile was modified only in the scratch copy and restored.",
+ "gate_summary": {
+  "B4-1": "pass",
+  "B4-2": "partial",
+  "B4-3": "pass",
+  "B4-4": "partial",
+  "B4-5": "pass",
+  "B4-6": "pass",
+  "B4-7": "not met"
+ }
+}

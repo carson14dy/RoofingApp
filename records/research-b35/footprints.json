@@ -1,0 +1,1197 @@
+{
+ "slug": "footprints",
+ "question": "Source for building footprints in Montana, and the join of state address points to those shapes so one dot sits on each house.",
+ "checked_at_utc": "2026-10-19T02:56:02Z",
+ "bottom_line": "Building shapes: use the FEMA and ORNL USA Structures file for Montana (MT_Structures_20260913.zip, 173,088,786 bytes, dated 2026-09-13): 918,052 structure footprints in a file geodatabase, WGS 84. Its own metadata states no access or use constraints, and the Esri-hosted copy of the same layer states CC BY 4.0, so FEMA should confirm the licence in writing before publishing. Do not use the Microsoft footprints (ODbL; 773,199 features in prior evidence) or Overture buildings (ODbL theme): publishing tiles derived from them would make the tiles a share-alike database under ODbL section 4.4. Join: the 674,715 Montana State Library address points join to footprints by location. In the Billings test box, 535 of 869 points sit inside a footprint, 313 are within 15 m of one, and 21 are farther; 131 of 307 footprints hold no address point inside. Simplifying to 0.5 m or 1 m saves almost nothing (-0.1% and -0.9% statewide), so skip that step.",
+ "recommendation": "One source: the USA Structures Montana file dated 2026-09-13 (918,052 footprints), attributed to ORNL and FEMA. Ship 5-decimal [lon,lat] rings with no Douglas-Peucker pass. Footprint payload per tile (closing vertex and holes included): statewide median 427 bytes at zoom 15 (3 footprints) and 272 bytes at zoom 17 (2 footprints); p99 26,471 and 5,812 bytes; the densest zoom-15 tile in the Billings box is 57,036 bytes of JSON (10,773 bytes gzip) for 328 footprints, and the densest zoom-17 tile is 6,384 bytes (1,190 gzip) for 50 footprints. Address dots (coordinates plus street text, about 44 bytes per record): zoom-15 tile median 87 bytes and p99 11,550; zoom-17 median 43 and p99 2,143. Dot rule: one dot per footprint that holds at least one address point inside it or within 15 m, placed at a point inside the footprint, listing the deduplicated addresses; every address point farther than 15 m gets its own dot (12.1% statewide, 2.4% in Billings); footprints with no address are drawn as shape only (60.2% of statewide footprints hold no address point inside). Do not describe any shape as a damage or condition finding; the producer ran no formal accuracy test.",
+ "urls_checked": [
+  {
+   "url": "https://disasters.geoplatform.gov/USA_Structures/",
+   "http_status": "200 (final https://gis-fema.hub.arcgis.com/pages/usa-structures-data)",
+   "bytes": 118096,
+   "content_check": "FEMA hub page; site state decoded; no licence text on the page"
+  },
+  {
+   "url": "https://www.arcgis.com/sharing/rest/search?q=\"USA Structures\" AND owner:FEMA_HUB&f=json&num=20",
+   "http_status": "200",
+   "bytes": 13907,
+   "content_check": "12 items owned by FEMA_HUB, incl. Hub data page 8388995e... (USA Structures Data)"
+  },
+  {
+   "url": "https://www.arcgis.com/sharing/rest/content/items/8388995e228e4e30a882686ac3ab256e?f=json",
+   "http_status": "200",
+   "bytes": 1081,
+   "content_check": "Hub page item record"
+  },
+  {
+   "url": "https://www.arcgis.com/sharing/rest/content/items/8388995e228e4e30a882686ac3ab256e/data?f=json",
+   "http_status": "200",
+   "bytes": 12693,
+   "content_check": "Download table: Montana row links to MT_Structures_20260913.zip; 57 Download links"
+  },
+  {
+   "url": "https://www.arcgis.com/sharing/rest/content/items/e61af49373004bb69a98283692f58bfd/data?f=json",
+   "http_status": "200",
+   "bytes": 22360,
+   "content_check": "Older USA Structures hub page: description, FEMA/ORNL partnership, annual updates"
+  },
+  {
+   "url": "https://www.arcgis.com/sharing/rest/content/items/0ec8512ad21e4bb987d7e848d14e7e24?f=json",
+   "http_status": "200",
+   "bytes": 9507,
+   "content_check": "Esri-owned Feature Service item (owner Esri_US_Federal_Data): licenseInfo CC BY 4.0; access information ORNL and FEMA"
+  },
+  {
+   "url": "https://www.arcgis.com/sharing/rest/content/items/0ec8512ad21e4bb987d7e848d14e7e24/data?f=json",
+   "http_status": "200",
+   "bytes": 12928,
+   "content_check": "Layer attribute table elements and symbology"
+  },
+  {
+   "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer?f=json",
+   "http_status": "200",
+   "bytes": 2913,
+   "content_check": "Service root; layer 0 is USA_Structures_B"
+  },
+  {
+   "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer/0?f=json",
+   "http_status": "200",
+   "bytes": 22587,
+   "content_check": "Layer fields (36, incl. STATE_FIPS and GlobalID); editingInfo dates; copyrightText empty"
+  },
+  {
+   "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer/0/query?where=STATE_FIPS='30'&returnCountOnly=true&f=json",
+   "http_status": "200",
+   "bytes": 16,
+   "content_check": "count 768908"
+  },
+  {
+   "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer/0/query?where=PROP_ST='Montana'&returnCountOnly=true&f=json",
+   "http_status": "200",
+   "bytes": 16,
+   "content_check": "count 768908"
+  },
+  {
+   "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer/0/query (envelope -108.51,45.78,-108.50,45.79, count)",
+   "http_status": "200",
+   "bytes": 13,
+   "content_check": "count 293 (file: 307 intersecting)"
+  },
+  {
+   "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer/0/query (envelope -110.025,47.075,-110.015,47.085, count)",
+   "http_status": "200",
+   "bytes": 12,
+   "content_check": "count 24 (file: 28)"
+  },
+  {
+   "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer/0/query (point -108.5047,45.7836)",
+   "http_status": "200",
+   "bytes": 2435,
+   "content_check": "one feature: 175 NORTH 27TH STREET, BILLINGS 59101, SQFEET 22020.23, VAL_METHOD Automated"
+  },
+  {
+   "url": "https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip",
+   "http_status": "200 (HEAD and GET)",
+   "bytes": 173088786,
+   "content_check": "Content-Length 173088786; Last-Modified 2026-09-22 20:23:59 GMT; zip test OK; MT_Structures.gdb and metadata XML"
+  },
+  {
+   "url": "https://fema-femadata.s3.us-east-1.amazonaws.com/?list-type=2&prefix=Partners/ORNL/USA_Structures/Montana/",
+   "http_status": "200",
+   "bytes": 1485,
+   "content_check": "Montana folder: Deliverable20230502MT.zip 313470795 B; Deliverable20250606MT.zip 115444521 B; MT_Structures_20260913.zip 173088786 B"
+  },
+  {
+   "url": "https://api.figshare.com/v2/collections/6895333",
+   "http_status": "200",
+   "bytes": 4131,
+   "content_check": "Collection of USA Structures state deposits (2023 version); 56 articles"
+  },
+  {
+   "url": "https://api.figshare.com/v2/collections/6895333/articles?page=1&page_size=30",
+   "http_status": "200",
+   "bytes": 24475,
+   "content_check": "Article list page 1"
+  },
+  {
+   "url": "https://api.figshare.com/v2/collections/6895333/articles?page=2&page_size=30",
+   "http_status": "200",
+   "bytes": 21216,
+   "content_check": "Article list page 2; 'USA Structures: MT (2023)' id 24428776"
+  },
+  {
+   "url": "https://api.figshare.com/v2/articles/24428776",
+   "http_status": "200",
+   "bytes": 4760,
+   "content_check": "MT deposit: license CC0 (https://creativecommons.org/publicdomain/zero/1.0/); file Deliverable20230502MT.zip 313470795 B"
+  },
+  {
+   "url": "https://api.figshare.com/v2/articles/24428914",
+   "http_status": "200",
+   "bytes": 4648,
+   "content_check": "VI deposit: license CC0"
+  },
+  {
+   "url": "https://www.nature.com/articles/s41597-024-03219-x",
+   "http_status": "200 (final URL carries a cookies query string)",
+   "bytes": 379980,
+   "content_check": "Scientific Data descriptor 'A baseline structure inventory with critical attribution for the US and its territories'"
+  },
+  {
+   "url": "https://gisservice.mt.gov/arcgis/rest/services/msdi_structures_addresses_map_v1/MapServer/0/query?where=1=1&returnCountOnly=true&f=json",
+   "http_status": "200",
+   "bytes": 16,
+   "content_check": "count 674469 (file: 674715)"
+  },
+  {
+   "url": "https://gisservice.mt.gov/arcgis/rest/services/msdi_structures_addresses_map_v1/MapServer/0/query (envelope Billings box, count)",
+   "http_status": "200",
+   "bytes": 13,
+   "content_check": "count 886 (file: 869 in the same box)"
+  },
+  {
+   "url": "https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/",
+   "http_status": "200 (index URL returned 404)",
+   "bytes": 28523,
+   "content_check": "MSL Structures and Addresses page: download and service links; no licence text on the page"
+  },
+  {
+   "url": "https://msl.mt.gov/geoinfo/msdi/cadastral/index",
+   "http_status": "200",
+   "bytes": 33541,
+   "content_check": "Used only to find the structures link"
+  },
+  {
+   "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+   "http_status": "200",
+   "bytes": 13784,
+   "content_check": "ODbL licence statement; Montana row 773,199 features, 200.45 MiB"
+  },
+  {
+   "url": "https://minedbuildings.z5.web.core.windows.net/legacy/usbuildings-v2/Montana.geojson.zip",
+   "http_status": "200 (HEAD; range 206 for the tail 131072 bytes)",
+   "bytes": 131072,
+   "content_check": "Content-Length 26578292; Last-Modified Thu, 07 Nov 2024 17:00:11 GMT; central directory: one member Montana.geojson, 210192210 bytes uncompressed, deflate"
+  },
+  {
+   "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "http_status": "200",
+   "bytes": 51176,
+   "content_check": "ODbL 1.0 text, sections 3 to 4.6 and definitions"
+  },
+  {
+   "url": "https://docs.overturemaps.org/attribution/",
+   "http_status": "200",
+   "bytes": 125952,
+   "content_check": "Buildings theme licence text and sub-source licences"
+  },
+  {
+   "url": "https://docs.overturemaps.org/getting-data/",
+   "http_status": "200",
+   "bytes": 30749,
+   "content_check": "Access methods: overturemaps download with --bbox; DuckDB read_parquet from S3"
+  },
+  {
+   "url": "https://stac.overturemaps.org/catalog.json",
+   "http_status": "200",
+   "bytes": 6529,
+   "content_check": "latest = 2026-09-23.1"
+  },
+  {
+   "url": "https://overturemaps-us-west-2.s3.us-west-2.amazonaws.com/?list-type=2&prefix=release/2026-09-23.1/theme%3Dbuildings/type%3Dbuilding/&max-keys=1000",
+   "http_status": "200",
+   "bytes": 211847,
+   "content_check": "512 parquet keys, not truncated; listed sizes total 276863520053 bytes"
+  },
+  {
+   "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+   "http_status": "200",
+   "bytes": 48742,
+   "content_check": "CC BY 4.0 legal code, section 3(a)"
+  },
+  {
+   "url": "https://www.copyright.gov/title17/92chap1.html",
+   "http_status": "200",
+   "bytes": 675161,
+   "content_check": "17 U.S.C. 101 (definitions) and 105 (United States Government works)"
+  },
+  {
+   "url": "PyPI: pyogrio 0.13.0 manylinux_2_28 wheel (pip download)",
+   "http_status": "200",
+   "bytes": 33334097,
+   "content_check": "Installed with --no-deps into the scratch folder pylib; GDAL 3.12.4 bundled; the shared venv was not changed"
+  },
+  {
+   "url": "PyPI: shapely 2.2.0 wheel (pip download)",
+   "http_status": "200",
+   "bytes": 2299018,
+   "content_check": "Installed with --no-deps into the scratch folder pylib"
+  },
+  {
+   "url": "local: /home/user/hail-b3/cache/structures/StructuresFramework_shp.zip (not downloaded in this run)",
+   "http_status": "local",
+   "bytes": 0,
+   "content_check": "65788772 bytes; zip test OK; 674715 point records; metadata and README read in place"
+  }
+ ],
+ "facts": [
+  {
+   "claim": "Montana deliverable location and size",
+   "value": "https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip; 173,088,786 bytes; Last-Modified 2026-09-22 20:23:59 GMT",
+   "evidence": "Hub data page table (Montana row); HEAD and GET 200; zip test OK; S3 folder listing"
+  },
+  {
+   "claim": "Other Montana deliverables in the same folder",
+   "value": "Deliverable20230502MT.zip 313,470,795 B (2023-05-05); Deliverable20250606MT.zip 115,444,521 B (2025-06-12)",
+   "evidence": "S3 listing of Partners/ORNL/USA_Structures/Montana/ (HTTP 200, 1,485 bytes); not downloaded (download budget)"
+  },
+  {
+   "claim": "Format and contents of the 2026 file",
+   "value": "MT_Structures.gdb (file geodatabase) with one polygon table, plus MT_Structures_metadata.xml; 23 members; uncompressed 333,734,188 bytes",
+   "evidence": "zipfile listing; pyogrio driver OpenFileGDB reads the layer"
+  },
+  {
+   "claim": "Feature count (Montana file)",
+   "value": "918,052 features (MultiPolygon, EPSG:4326); 919,067 polygon parts (915 features have more than one part; max 9 per feature); 927,947 rings; 8,880 interior rings; 6,010,874 vertices including closing vertices",
+   "evidence": "pyogrio read_info and raw read; shapely parse of every feature (statewide run)"
+  },
+  {
+   "claim": "Extent of the file",
+   "value": "lon -116.04906654799998 to -104.040825127; lat 44.36524112500001 to 49.000573901999985; every feature has PROP_ST Montana and a FIPS starting 30; 56 counties",
+   "evidence": "pyogrio total_bounds; full column read of PROP_ST and FIPS (918,052 of 918,052)"
+  },
+  {
+   "claim": "Hosted Esri layer count (edition gap)",
+   "value": "Montana 768,908 by STATE_FIPS=30 and by PROP_ST=Montana (16.2% fewer than the file); Billings envelope 293 (file 307); Benchland 24 (file 28); point query returns 175 NORTH 27TH STREET with SQFEET 22020.23 and VAL_METHOD Automated, the file shows 25461.5 and Manual",
+   "evidence": "FeatureServer query results (HTTP 200)"
+  },
+  {
+   "claim": "No owner or parcel field in the file",
+   "value": "Field set: BUILD_ID, OCC_CLS, PRIM_OCC, SEC_OCC, PROP_ADDR, PROP_CITY, PROP_ST, PROP_ZIP, PROP_CNTY, OUTBLDG, HEIGHT, SQMETERS, SQFEET, H_ADJ_ELEV, L_ADJ_ELEV, FIPS, CENSUSCODE, PROD_DATE, SOURCE, USNG, LONGITUDE, LATITUDE, IMAGE_NAME, IMAGE_DATE, VAL_METHOD, REMARKS, UUID, B_CODE, POP_CI95_LOWER, POP_MEDIAN, POP_CI95_UPPER (+ OBJECTID, Shape, Shape_Length, Shape_Area); none is an owner, parcel or account field",
+   "evidence": "GDB field list (pyogrio) and the 35 attrlabl entries in MT_Structures_metadata.xml"
+  },
+  {
+   "claim": "Licence text in the 2026 file",
+   "value": "accconst and useconst both \"None\"; no copyright, credit, licence or terms statement in the 25,157-byte XML (search for licen, Creative, public domain, copyright, restrict, distrib, credit: no hits)",
+   "evidence": "MT_Structures_metadata.xml inside the zip (read in place)"
+  },
+  {
+   "claim": "Licence of the hosted Esri copy",
+   "value": "CC BY 4.0 (licenseInfo text quoted in the terms section); owner Esri_US_Federal_Data; accessInformation: ORNL and FEMA Geospatial Response Office",
+   "evidence": "Item record 0ec8512a... (HTTP 200)"
+  },
+  {
+   "claim": "Licence of the 2023 Figshare copies",
+   "value": "CC0 1.0 for the Montana (24428776) and VI (24428914) deposits; DOI 10.6084/m9.figshare.24428776.v1; published 2024-04-17",
+   "evidence": "figshare API article records (HTTP 200)"
+  },
+  {
+   "claim": "Producer and method",
+   "value": "ORNL and FEMA Geospatial Response Office; structure outlines from imagery with a CNN (SCRIBE) and a verification model (VVM), regularized; attributes from authoritative layers",
+   "evidence": "MT_Structures_metadata.xml process steps; hub overview text (older page)"
+  },
+  {
+   "claim": "Imagery and accuracy statements",
+   "value": "Imagery WorldView-2/3 and NAIP; positional accuracy limited by imagery (WorldView under 3.5 m; NAIP at least 5 m); no formal attribute accuracy or completeness test was run",
+   "evidence": "MT_Structures_metadata.xml (quoted in terms)"
+  },
+  {
+   "claim": "Dates in the file",
+   "value": "PROD_DATE 2008-01-01 to 2026-04-28; IMAGE_DATE 2008-01-01 to 2025-11-01; 2026 update dated 9/13/2026; metadata time period 20080101 to 20251101 (IM_DATE)",
+   "evidence": "statewide column read; metadata time period text"
+  },
+  {
+   "claim": "Attribute fill, statewide (918,052 features)",
+   "value": "PROP_ADDR 642,983 (70.0%); PROP_CITY 642,751; PROP_ZIP 642,884; OCC_CLS 918,052 (100%); PRIM_OCC 918,052; SOURCE 918,052; VAL_METHOD 918,052; B_CODE 354,332 (38.6%); POP_MEDIAN 773,530 (84.3%); HEIGHT 3,552 (0.39%, range 0.82 to 45.93 m); OUTBLDG 0 (all None); SEC_OCC 0 (all None); REMARKS 14",
+   "evidence": "statewide column read (no values stored)"
+  },
+  {
+   "claim": "Occupancy and validation mix, statewide",
+   "value": "Occupancy: Residential 775,098; Agriculture 50,016; Commercial 40,937; Unclassified 33,785; Education 11,736; Assembly 2,537; Industrial 1,781; Government 1,102; Utility and Misc 1,060. Validation: Manual 486,567; Spatial Intersect 247,193; Automated 96,079; Unverified 88,213. Source: ORNL 914,500; NGA 3,552",
+   "evidence": "statewide column read"
+  },
+  {
+   "claim": "Billings test box (45.78 to 45.79 N, 108.51 to 108.50 W): footprints",
+   "value": "307 footprints intersect the box (282 have the centroid inside); 2,687 vertices including closing; 321 rings; PROP_ADDR filled for 278 (90.6%); Residential 250, Commercial 51, Unclassified 5, Assembly 1; Manual 279, Automated 28",
+   "evidence": "pyogrio bbox read and shapely intersects test (billings_sample.py)"
+  },
+  {
+   "claim": "Billings test box: address points and join (file: 674,715 points; box 869)",
+   "value": "869 points in the box: 535 inside a footprint (61.6%), 313 within 15 m but not inside (36.0%), 21 farther than 15 m (2.4%; median 24.9 m, max 44.7 m). Footprints: 131 of 307 have no address point inside (42.7%); 28 have none inside or within 15 m (9.1%)",
+   "evidence": "STRtree intersects and buffered-polygon tests in metric EPSG:6514; address points from the SHP only (no attribute fields used for the join)"
+  },
+  {
+   "claim": "Billings box: text join from PROP_ADDR to the address text",
+   "value": "278 footprints carry PROP_ADDR; 245 match a box address point by normalised text; of those, 149 have the point inside the footprint, 73 within 15 m, 23 farther. 451 of 869 box address points have text equal to some footprint PROP_ADDR",
+   "evidence": "text_join.py (uppercase, spaces collapsed; street number, direction, name, type, post direction)"
+  },
+  {
+   "claim": "Billings box: footprint bytes and simplification (5-decimal rings, JSON, closing vertex included)",
+   "value": "Before: 60,395 bytes (197 per footprint), 2,687 vertices. 0.5 m: 60,307 bytes (-0.1%), 2,683 vertices. 1.0 m: 59,263 bytes (-1.9%), 2,635 vertices. No footprint collapsed to empty",
+   "evidence": "billings_dp.py; byte count checked against json.dumps on every footprint (307 of 307 equal, max difference 0)"
+  },
+  {
+   "claim": "Rounding and simplification error (Billings box, metres, Hausdorff to the source shape)",
+   "value": "5-decimal rounding alone: max 0.668 m, median 0.535 m. 0.5 m DP then rounding: max 0.735 m. 1.0 m DP then rounding: max 1.323 m. DP only: 0.5 m max 0.481 m; 1.0 m max 0.997 m. 6-decimal rounding alone: max 0.068 m; 6-decimal bytes 65,788 (+8.9%)",
+   "evidence": "billings_dp.py (EPSG:6514 metric distances)"
+  },
+  {
+   "claim": "Benchland test box (47.075 to 47.085 N, 110.025 to 110.015 W): rural",
+   "value": "28 footprints (158 vertices); PROP_ADDR filled 7 (25%); Residential 22, Agriculture 5, Assembly 1; Spatial Intersect 24, Unverified 4. 6 address points in the box: 2 inside, 2 within 15 m, 2 farther (median 30.5 m, max 36.8 m). 26 of 28 footprints have no address inside; 24 have none within 15 m",
+   "evidence": "run_box(benchland) through the same join; live envelope count 24 (HTTP 200)"
+  },
+  {
+   "claim": "401 North 27th Street check and the brief coordinate",
+   "value": "The brief coordinate (45.7836 N, 108.5047 W) lies inside the footprint PROP_ADDR 175 NORTH 27TH STREET (25,461.5 sq ft in the file; 22,020 sq ft in the hosted layer). The three MSL records for 401 North 27th Street sit at 45.785706 N, 108.507092 W (one inside footprint PROP_ADDR 401 NORTH 27TH STREET, 21,436.6 sq ft, Residential, Manual) and at 45.785656 N, 108.507173 W (2.6 m from that footprint), about 299 m from the brief coordinate",
+   "evidence": "address DBF fields (only the name fields read) and footprint containment; live point query (HTTP 200)"
+  },
+  {
+   "claim": "Statewide join (674,715 address points; 918,052 footprints)",
+   "value": "Inside a footprint 449,670 (66.6%); within 15 m but not inside 143,240 (21.2%); farther than 15 m 81,805 (12.1%; median 57.9 m, p95 445.8 m). Footprints with no address point inside: 552,791 (60.2%); with none inside or within 15 m: 376,985 (41.1%)",
+   "evidence": "statewide_join run (metric EPSG:6514; full address SHP; no DBF fields used)"
+  },
+  {
+   "claim": "Statewide simplification (918,052 footprints)",
+   "value": "Before: 135,516,372 bytes (5-decimal JSON, footprint sets only; 147.6 per footprint); 0.5 m: 135,384,218 (-0.10%), 6,004,805 vertices; 1.0 m: 134,327,752 (-0.88%), 5,956,293 vertices. Empty results after simplification: 0. Sampled Hausdorff (20,000 features): 0.5 m DP max 0.499 m; 1.0 m DP max 1.18 m; after 5-decimal rounding 0.924 m and 1.483 m (p95 0.62 and 0.63 m)",
+   "evidence": "statewide run (vectorised byte count, validated on the Billings box)"
+  },
+  {
+   "claim": "Per-tile footprint bytes, statewide (centroid assignment, web Mercator XYZ)",
+   "value": "Zoom 15: 82,791 tiles with footprints; footprints per tile median 3, p90 18, p99 174, max 952; bytes median 427, p90 2,578, p99 26,471, max 141,783. Zoom 17: 229,364 tiles; footprints median 2, p90 8, p99 39, max 114; bytes median 272, p90 1,180, p99 5,812, max 19,643",
+   "evidence": "statewide run; sums of tile bytes equal the total file bytes"
+  },
+  {
+   "claim": "Billings box tiles (zoom 15 and 17)",
+   "value": "Zoom 15: 4 tiles (x 6507-6508, y 11685-11686); densest 328 footprints, 56,707 bytes formula, 57,036 bytes exact JSON with the wrapper, 10,773 bytes gzip (ratio 5.3). Zoom 17: 30 tiles; densest 50 footprints, 6,333 formula, 6,384 exact, 1,190 gzip (ratio 5.4). Wrapper bytes = 2 + (footprints - 1), checked",
+   "evidence": "tiles_billings.py (exact payload from polygon_payload; gzip level 9)"
+  },
+  {
+   "claim": "Address dots per tile (estimate)",
+   "value": "Record [lon,lat,\"street\"] plus separator, mean 43.7 bytes (Billings street text mean 18.9 characters). Zoom 15: 53,716 tiles with points; points per tile median 2, p99 264, max 1,765; bytes median 87, p99 11,550, max 77,195. Zoom 17: 160,181 tiles; points median 1, p99 49, max 273; bytes median 43, p99 2,143, max 11,927",
+   "evidence": "address coordinates from the SHP (5-decimal); text length from the Billings sample"
+  },
+  {
+   "claim": "Address file versus live service",
+   "value": "File 674,715 points; live msdi_structures_addresses_map_v1 layer 0 count 674,469 (the prior record had 674,469 too). Billings box: file 869; live 886 (not reconciled)",
+   "evidence": "MSL MapServer query counts (HTTP 200); file counts from the SHP"
+  },
+  {
+   "claim": "Microsoft Building Footprints, Montana (prior evidence, partly re-checked)",
+   "value": "773,199 polygon features (prior full scan of the stored copy, not re-verified: that copy is not on disk); live: zip Content-Length 26,578,292; one member Montana.geojson, 210,192,210 bytes uncompressed; ODbL README statement; prior check: keys only release and capture_dates_range (no address or owner field)",
+   "evidence": "range read 206 (131,072 bytes) and HEAD (HTTP 200); README (HTTP 200); validation-evidence/montana-addresses.json facts 30 to 32"
+  },
+  {
+   "claim": "Overture Maps buildings (access, licence, count)",
+   "value": "Latest release 2026-09-23.1 (stac latest). Buildings: 512 parquet files under release/2026-09-23.1/theme=buildings/type=building/, listed total 276,863,520,053 bytes. Access: overturemaps download --bbox ... --type=building, or DuckDB read_parquet from s3://overturemaps-us-west-2 with a bbox filter. Licence: ODbL for the theme (plus Microsoft ODbL and CC BY inputs). Montana count: not obtained",
+   "evidence": "stac catalog (HTTP 200); S3 listing (HTTP 200); docs pages (HTTP 200)"
+  },
+  {
+   "claim": "Address points source file (join input)",
+   "value": "StructuresFramework_shp.zip (cached, 65,788,772 bytes): SiteStructureAddressPoint.shp 18,892,120 bytes = 100 + 674,715 x 28 (point records); DBF 674,715 records; export 2026-09-30; zip test OK; no ParcelID, Place_Type, MT_PlcType, Latitude, Longitude, GlobalID or NGUID field was read",
+   "evidence": "zipfile read in place; SHP header and record sizes; DBF header"
+  },
+  {
+   "claim": "Download total for this run",
+   "value": "210738265 bytes (about 210.7 MB) including the 173,088,786-byte Montana zip and the two wheels; the cached address zip was read in place, not downloaded",
+   "evidence": "sum of the byte column in urls_checked"
+  }
+ ],
+ "terms": [
+  {
+   "source": "Esri item 0ec8512a... (USA Structures feature layer)",
+   "url": "https://www.arcgis.com/sharing/rest/content/items/0ec8512ad21e4bb987d7e848d14e7e24?f=json",
+   "quote": "This work is licensed under a Creative Commons by Attribution (CC BY 4.0) license. See Credits and Map for Attribution.",
+   "reading": "CC BY 4.0 for the hosted layer: attribution required, no share-alike. Applies to the hosted copy; the 2026-09-13 file is not stated there."
+  },
+  {
+   "source": "Esri item 0ec8512a... description",
+   "url": "https://www.arcgis.com/sharing/rest/content/items/0ec8512ad21e4bb987d7e848d14e7e24/data?f=json",
+   "quote": "Data currency: June 6, 2025",
+   "reading": "The hosted layer is a June 2025 snapshot, older than the 2026-09-13 file."
+  },
+  {
+   "source": "Esri item 0ec8512a... description",
+   "url": "https://www.arcgis.com/sharing/rest/content/items/0ec8512ad21e4bb987d7e848d14e7e24?f=json",
+   "quote": "Data modification: added State FIPS, PROP_CNTY, and Global ID fields.",
+   "reading": "The hosted layer has fields the file lacks (STATE_FIPS, GlobalID); the file has no STATE_FIPS or GlobalID field."
+  },
+  {
+   "source": "FEMA Hub data page (USA Structures Data)",
+   "url": "https://www.arcgis.com/sharing/rest/content/items/8388995e228e4e30a882686ac3ab256e/data?f=json",
+   "quote": "Download USA Structures building footprints and critical attribution in a File Geodatabase format.",
+   "reading": "The file download is the State GDB product; no licence sentence appears on the page."
+  },
+  {
+   "source": "Older FEMA Hub page (USA Structures)",
+   "url": "https://www.arcgis.com/sharing/rest/content/items/e61af49373004bb69a98283692f58bfd/data?f=json",
+   "quote": "USA Structures is a national geospatial dataset of building footprints for structures larger than 450 square feet, covering all United States and territories.",
+   "reading": "Scope: footprints for structures over 450 square feet, all US states and territories."
+  },
+  {
+   "source": "Older FEMA Hub page (USA Structures)",
+   "url": "https://www.arcgis.com/sharing/rest/content/items/e61af49373004bb69a98283692f58bfd/data?f=json",
+   "quote": "USA Structures is updated annually to reflect changes in the built environment. Data updates are typically released in batches of states.",
+   "reading": "Annual cycle, released state by state; the Montana file is one batch."
+  },
+  {
+   "source": "FEMA/ORNL file metadata (MT_Structures_metadata.xml inside the Montana zip)",
+   "url": "https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip",
+   "quote": "<accconst>None</accconst> and <useconst>None</useconst>",
+   "reading": "Element text \"None\" for access and use constraints. No restriction is stated; no licence or credit statement appears anywhere in the 25,157-byte metadata. The licence needs FEMA confirmation."
+  },
+  {
+   "source": "FEMA/ORNL file metadata",
+   "url": "https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip",
+   "quote": "This update (as of 9/13/2026) is provided with additional attributions, where available: B_CODE, POP_CI95_LOWER, POP_MEDIAN, POP_CI95_UPPER.",
+   "reading": "The 2026 update added the B_CODE and population fields; the update is dated 9/13/2026."
+  },
+  {
+   "source": "FEMA/ORNL file metadata",
+   "url": "https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip",
+   "quote": "No formal attribute accuracy test was conducted. Data from the authoritative sources are assumed to be correct and accurate.",
+   "reading": "The producer ran no formal accuracy test; the shapes are not independently checked."
+  },
+  {
+   "source": "FEMA/ORNL file metadata",
+   "url": "https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip",
+   "quote": "WorldView-2 and WorldView-3 sensors have a reported geolocation accuracy of less than 3.5 meters. NAIP reports a horizontal accuracy of at least 5 meters within a 1 meter ground sample distance.",
+   "reading": "Shape positions are limited by the imagery (3.5 m to 5 m), so simplification below that scale adds no accuracy."
+  },
+  {
+   "source": "FEMA/ORNL file metadata",
+   "url": "https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip",
+   "quote": "Phase 2 attribute expansion: Population of OCC_CLS, PRIM_OCC, PROP_ADDR, PROP_CITY, PROP_ZIP, and PROP_ST with best available data. Coverage of address related fields maybe incomplete.",
+   "reading": "PROP_ADDR coverage is incomplete by the producer statement; measured fill is in the measurements."
+  },
+  {
+   "source": "FEMA/ORNL file metadata (input list)",
+   "url": "https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip",
+   "quote": "A spatial intersection for occupancy classification with aggregated land use codes where appropriate",
+   "reading": "LightBox SmartParcels (2024-09-09) is an input to occupancy class; the metadata gives no licence text for it."
+  },
+  {
+   "source": "FEMA/ORNL file metadata (input list)",
+   "url": "https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip",
+   "quote": "Street Number, Street Name, Zip, and City where appropriate",
+   "reading": "National Address Database (U.S. DOT, 2026-01-14) gives the PROP_ADDR street fields; NAD is public domain per the prior record (data.gov catalog, not re-checked here)."
+  },
+  {
+   "source": "Figshare article 24428776 (USA Structures: MT (2023))",
+   "url": "https://api.figshare.com/v2/articles/24428776",
+   "quote": "\"license\": {\"value\": 2, \"name\": \"CC0\", \"url\": \"https://creativecommons.org/publicdomain/zero/1.0/\"}",
+   "reading": "The 2023 Montana copy is CC0 1.0 (no conditions). It is an older edition (2023-05-02 deliverable), not the 2026 file."
+  },
+  {
+   "source": "Figshare article 24428776",
+   "url": "https://api.figshare.com/v2/articles/24428776",
+   "quote": "Copy of https://disasters.geoplatform.gov/publicdata/Partners/ORNL/USA_Structures/ (Accessed Oct, 24,2023)",
+   "reading": "The 2023 Figshare files are copies of the FEMA bucket made in October 2023."
+  },
+  {
+   "source": "Scientific Data descriptor (USA Structures)",
+   "url": "https://www.nature.com/articles/s41597-024-03219-x",
+   "quote": "Data can be freely and openly accessed through Figshare data repository, ESRI’s Living Atlas or FEMA’s Geodata platform.",
+   "reading": "The producers name Figshare, Esri Living Atlas and the FEMA Geodata platform as open access routes; the descriptor article itself is CC BY 4.0."
+  },
+  {
+   "source": "Scientific Data descriptor (USA Structures)",
+   "url": "https://www.nature.com/articles/s41597-024-03219-x",
+   "quote": "This article is licensed under a Creative Commons Attribution 4.0 International License",
+   "reading": "Licence of the article text only; the dataset licence is the one on the item or the figshare record."
+  },
+  {
+   "source": "Montana State Library Structures and Addresses Framework (StructuresFramework_metadata.xml, in the cached zip)",
+   "url": "https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/",
+   "quote": "None. All data contained in the Framework are publicly available and non-sensitive.",
+   "reading": "Access constraints: none; the data are described as public and non-sensitive. No licence (CC or ODbL) is stated."
+  },
+  {
+   "source": "MSL Structures Framework metadata (use constraints)",
+   "url": "https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/",
+   "quote": "The Library makes these data and services available as a convenience to the public, and for no other purpose.",
+   "reading": "Use disclaimer: provided for convenience, with no warranty of accuracy (quoted with the next sentence in the metadata)."
+  },
+  {
+   "source": "MSL Structures Framework metadata (use constraints)",
+   "url": "https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/",
+   "quote": "The Library provides these data in good faith but does not represent or warrant its accuracy, adequacy, or completeness.",
+   "reading": "No warranty of accuracy; the record should say so next to the dots."
+  },
+  {
+   "source": "MSL _ReadMe.txt (in the cached zip)",
+   "url": "https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/",
+   "quote": "The Montana Structures Framework data contained in this zip file were exported from the Montana State Library enterprise geodatabase on 20260930.",
+   "reading": "The cached copy was exported 2026-09-30."
+  },
+  {
+   "source": "MSL _ReadMe.txt (in the cached zip)",
+   "url": "https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/",
+   "quote": "The Structures Framework downloads are exported monthly, around the end of the month (the exact date varies).",
+   "reading": "Monthly exports: refresh the address join each month."
+  },
+  {
+   "source": "Microsoft USBuildingFootprints README",
+   "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+   "quote": "This data is licensed by Microsoft under the Open Data Commons Open Database License (ODbL).",
+   "reading": "ODbL 1.0 applies to the Microsoft Montana footprints."
+  },
+  {
+   "source": "Microsoft USBuildingFootprints README",
+   "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+   "quote": "This data is freely available for download and use.",
+   "reading": "Free to use, subject to the ODbL share-alike and access duties."
+  },
+  {
+   "source": "ODbL 1.0 section 4.3 (notice for a Produced Work)",
+   "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "quote": "if you Publicly Use a Produced Work, You must include a notice associated with the Produced Work reasonably calculated to make any Person that uses, views, accesses, interacts with, or is otherwise exposed to the Produced Work aware that Content was obtained from the Database, Derivative Database, or the Database as part of a Collective Database, and that it is available under this License.",
+   "reading": "A rendered map that shows the data needs a notice that the content comes from an ODbL database."
+  },
+  {
+   "source": "ODbL 1.0 section 4.4 a (share alike)",
+   "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "quote": "Any Derivative Database that You Publicly Use must be only under the terms of: i. This License; ii. A later version of this License similar in spirit to this License; or iii. A compatible license.",
+   "reading": "Tiles served to the public from a derived database must be released under ODbL or a compatible licence."
+  },
+  {
+   "source": "ODbL 1.0 section 4.4 b (extraction is a derived database)",
+   "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "quote": "For the avoidance of doubt, Extraction or Re-utilisation of the whole or a Substantial part of the Contents into a new database is a Derivative Database and must comply with Section 4.4.",
+   "reading": "Cutting the Microsoft footprints into tiles is extraction, so the tiles are a derived database."
+  },
+  {
+   "source": "ODbL 1.0 section 4.6 (access to derived databases)",
+   "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "quote": "If You Publicly Use a Derivative Database or a Produced Work from a Derivative Database, You must also offer to recipients of the Derivative Database or Produced Work a copy in a machine readable form of:",
+   "reading": "If the tiles are public, the site must also offer the whole derived database, or the method of making it, in machine-readable form."
+  },
+  {
+   "source": "ODbL 1.0 definitions",
+   "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+   "quote": "Means a database based upon the Database, and includes any translation, adaptation, arrangement, modification, or any other alteration of the Database or of a Substantial part of the Contents.",
+   "reading": "Simplified and rounded footprints joined to addresses are a derived database."
+  },
+  {
+   "source": "CC BY 4.0 legal code section 3(a)(1)",
+   "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+   "quote": "If You Share the Licensed Material (including in modified form), You must: retain the following if it is supplied by the Licensor with the Licensed Material: identification of the creator(s) of the Licensed Material and any others designated to receive attribution",
+   "reading": "Attribution: name ORNL and FEMA, link the licence and the source, and say the data were simplified and joined (the other clause quoted next)."
+  },
+  {
+   "source": "CC BY 4.0 legal code section 3(a)(1)",
+   "url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+   "quote": "indicate if You modified the Licensed Material and retain an indication of any previous modifications",
+   "reading": "Changes (simplified, rounded, joined) must be indicated."
+  },
+  {
+   "source": "17 U.S.C. 105",
+   "url": "https://www.copyright.gov/title17/92chap1.html",
+   "quote": "Copyright protection under this title is not available for any work of the United States Government",
+   "reading": "Federal works are not copyrighted, but this covers only works of the United States Government as defined in section 101."
+  },
+  {
+   "source": "17 U.S.C. 101 (definition of a work of the United States Government)",
+   "url": "https://www.copyright.gov/title17/92chap1.html",
+   "quote": "a work prepared by an officer or employee of the United States Government as part of that person’s official duties.",
+   "reading": "ORNL staff are not shown to be federal officers or employees here; so the public-domain route is not established by this definition alone."
+  },
+  {
+   "source": "Overture Maps attribution (Buildings)",
+   "url": "https://docs.overturemaps.org/attribution/",
+   "quote": "License for theme: ODbL © OpenStreetMap contributors. Available under the Open Database License",
+   "reading": "The Overture buildings theme is ODbL, so the same share-alike duty applies."
+  },
+  {
+   "source": "Overture Maps attribution (Buildings)",
+   "url": "https://docs.overturemaps.org/attribution/",
+   "quote": "Licensed by Microsoft under the Open Database License",
+   "reading": "The Microsoft footprints inside Overture are ODbL as well."
+  },
+  {
+   "source": "Overture Maps getting-data guide",
+   "url": "https://docs.overturemaps.org/getting-data/",
+   "quote": "The tool reads directly from Overture's cloud-hosted GeoParquet and transfers only the data inside your bounding box.",
+   "reading": "Access is a bounding-box read; no Montana count was made (cost)."
+  }
+ ],
+ "measurements": {
+  "montana_file": {
+   "features": 918052,
+   "parts": 919067,
+   "rings": 927947,
+   "interior_rings": 8880,
+   "vertices_incl_closing": 6010874,
+   "vertices_per_feature": {
+    "mean": 6.55,
+    "median": 5.0,
+    "p95": 11.0,
+    "p99": 17.0,
+    "max": 891
+   },
+   "features_with_gt_100_vertices": 44,
+   "features_multi_part": 915,
+   "max_parts_per_feature": 9,
+   "fill": {
+    "PROP_ADDR": 642983,
+    "PROP_CITY": 642751,
+    "PROP_ZIP": 642884,
+    "PROP_CNTY": 918052,
+    "OCC_CLS": 918052,
+    "PRIM_OCC": 918052,
+    "SEC_OCC": 0,
+    "SOURCE": 918052,
+    "VAL_METHOD": 918052,
+    "FIPS": 918052,
+    "B_CODE": 354332,
+    "REMARKS": 14,
+    "UUID": 918052,
+    "CENSUSCODE": 918052,
+    "OUTBLDG": 0,
+    "POP_MEDIAN": 773530,
+    "HEIGHT": 3552,
+    "SQFEET": 918052
+   },
+   "occ_cls": [
+    [
+     "Residential",
+     775098
+    ],
+    [
+     "Agriculture",
+     50016
+    ],
+    [
+     "Commercial",
+     40937
+    ],
+    [
+     "Unclassified",
+     33785
+    ],
+    [
+     "Education",
+     11736
+    ],
+    [
+     "Assembly",
+     2537
+    ],
+    [
+     "Industrial",
+     1781
+    ],
+    [
+     "Government",
+     1102
+    ],
+    [
+     "Utility and Misc",
+     1060
+    ]
+   ],
+   "val_method": [
+    [
+     "Manual",
+     486567
+    ],
+    [
+     "Spatial Intersect",
+     247193
+    ],
+    [
+     "Automated",
+     96079
+    ],
+    [
+     "Unverified",
+     88213
+    ]
+   ],
+   "source": [
+    [
+     "ORNL",
+     914500
+    ],
+    [
+     "NGA",
+     3552
+    ]
+   ],
+   "prod_date_range": [
+    "2008-01-01",
+    "2026-04-28"
+   ],
+   "image_date_range": [
+    "2008-01-01",
+    "2025-11-01"
+   ],
+   "prop_cnty_distinct": 56,
+   "fips_distinct": 56,
+   "uuid_distinct": 918052,
+   "build_id_distinct": 918052
+  },
+  "hosted_layer_counts": {
+   "montana_by_state_fips": 768908,
+   "montana_by_prop_st": 768908,
+   "billings_envelope": 293,
+   "benchland_envelope": 24,
+   "file_minus_hosted": 149144
+  },
+  "billings_box": {
+   "box": [
+    -108.51,
+    45.78,
+    -108.5,
+    45.79
+   ],
+   "footprints_intersecting": 307,
+   "footprints_centroid_in_box": 282,
+   "vertices_incl_closing": 2687,
+   "rings": 321,
+   "prop_addr_filled": 278,
+   "occ_cls": {
+    "Residential": 250,
+    "Commercial": 51,
+    "Unclassified": 5,
+    "Assembly": 1
+   },
+   "val_method": {
+    "Manual": 279,
+    "Automated": 28
+   },
+   "address_points_in_box": 869,
+   "addr_in_footprint": 535,
+   "addr_within_15m_not_inside": 313,
+   "addr_farther_than_15m": 21,
+   "addr_farther_median_m": 24.9,
+   "addr_farther_max_m": 44.7,
+   "footprints_checked": 307,
+   "footprints_no_address_inside": 131,
+   "footprints_no_address_within_15m": 28,
+   "footprints_with_address_inside_pct": 57.33,
+   "dp": {
+    "before_bytes": 60395,
+    "dp05_bytes": 60307,
+    "dp10_bytes": 59263,
+    "dp05_vertices": 2683,
+    "dp10_vertices": 2635,
+    "rounding_only_hausdorff_m": {
+     "max": 0.668,
+     "p95": 0.635,
+     "median": 0.535
+    },
+    "dp05_then_round_hausdorff_m": {
+     "max": 0.735,
+     "p95": 0.636,
+     "median": 0.535
+    },
+    "dp10_then_round_hausdorff_m": {
+     "max": 1.323,
+     "p95": 0.668,
+     "median": 0.537
+    },
+    "dp05_only_hausdorff_m": {
+     "max": 0.481,
+     "p95": 0.0,
+     "median": 0.0
+    },
+    "dp10_only_hausdorff_m": {
+     "max": 0.997,
+     "p95": 0.576,
+     "median": 0.0
+    },
+    "six_decimal_before_bytes": 65788,
+    "six_decimal_rounding_only_hausdorff_m": {
+     "max": 0.068,
+     "p95": 0.063,
+     "median": 0.053
+    }
+   }
+  },
+  "benchland_box": {
+   "box": [
+    -110.025,
+    47.075,
+    -110.015,
+    47.085
+   ],
+   "footprints": 28,
+   "vertices_incl_closing": 158,
+   "prop_addr_filled": 7,
+   "occ_cls": {
+    "Residential": 22,
+    "Agriculture": 5,
+    "Assembly": 1
+   },
+   "val_method": {
+    "Spatial Intersect": 24,
+    "Unverified": 4
+   },
+   "address_points_in_box": 6,
+   "addr_in_footprint": 2,
+   "addr_within_15m_not_inside": 2,
+   "addr_farther_than_15m": 2,
+   "addr_farther_median_m": 30.5,
+   "addr_farther_max_m": 36.8,
+   "footprints_no_address_inside": 26,
+   "footprints_no_address_within_15m": 24
+  },
+  "sample_401": {
+   "brief_point": [
+    -108.5047,
+    45.7836
+   ],
+   "brief_point_containing_footprint_PROP_ADDR": "175 NORTH 27TH STREET (file SQFEET 25461.5; live 22020.23)",
+   "msl_401_north_27th_points": [
+    {
+     "lon": -108.507092,
+     "lat": 45.785706,
+     "distance_from_brief_m": 298.9,
+     "inside_footprint_PROP_ADDR": "401 NORTH 27TH STREET (21436.6 sq ft, Residential, Manual)"
+    },
+    {
+     "lon": -108.507173,
+     "lat": 45.785656,
+     "distance_from_brief_m": 298.5,
+     "inside_footprint": false,
+     "distance_to_401_footprint_m": 2.62
+    },
+    {
+     "lon": -108.507173,
+     "lat": 45.785655,
+     "distance_from_brief_m": 298.5,
+     "inside_footprint": false,
+     "distance_to_401_footprint_m": 2.63
+    }
+   ],
+   "address_points_within_100m_of_brief_point": 11
+  },
+  "text_join_billings": {
+   "footprints_with_prop_addr": 278,
+   "footprints_text_match_to_box_points": 245,
+   "of_those_point_inside_footprint": 149,
+   "of_those_point_within_15m_not_inside": 73,
+   "of_those_point_farther_than_15m": 23,
+   "box_address_points": 869,
+   "box_points_whose_text_equals_a_footprint_PROP_ADDR": 451,
+   "examples_text_match_min_distance_m": [
+    [
+     "613 NORTH 25TH STREET",
+     1,
+     0.0
+    ],
+    [
+     "524 NORTH 23RD STREET",
+     27,
+     0.0
+    ],
+    [
+     "300 NORTH 25TH STREET",
+     1,
+     0.0
+    ],
+    [
+     "2825 3RD AVENUE NORTH",
+     1,
+     0.0
+    ],
+    [
+     "214 NORTH 24TH STREET",
+     1,
+     2.62
+    ]
+   ],
+   "nomatch_examples": [
+    "115 NORTH 23RD STREET",
+    "2021 4TH AVENUE NORTH",
+    "2 SOUTH 29TH STREET",
+    "510 NORTH BROADWAY",
+    "2600 6TH AVENUE NORTH",
+    "515 NORTH 27TH STREET",
+    "808 NORTH 25TH STREET",
+    "415 NORTH 30TH STREET"
+   ]
+  },
+  "statewide_join": {
+   "address_points": 674715,
+   "inside_footprint": 449670,
+   "within_15m_not_inside": 143240,
+   "farther_than_15m": 81805,
+   "farther_median_m": 57.87,
+   "farther_p95_m": 445.81,
+   "footprints": 918052,
+   "footprints_no_address_inside": 552791,
+   "footprints_no_address_within_15m": 376985
+  },
+  "statewide_simplification": {
+   "before_bytes": 135516372,
+   "before_vertices": 6010874,
+   "dp05": {
+    "bytes_json_set_formula": 135384218,
+    "vertices": 6004805,
+    "features_collapsed_to_empty_kept_original": 0,
+    "empty_parts_dropped": 0,
+    "bytes_vs_before_pct": -0.1,
+    "vertices_vs_before_pct": -0.1,
+    "hausdorff_sample20k_dp_only_m": {
+     "max": 0.499,
+     "p95": 0.0
+    },
+    "hausdorff_sample20k_dp_then_round5_m": {
+     "max": 0.924,
+     "p95": 0.619
+    }
+   },
+   "dp10": {
+    "bytes_json_set_formula": 134327752,
+    "vertices": 5956293,
+    "features_collapsed_to_empty_kept_original": 0,
+    "empty_parts_dropped": 0,
+    "bytes_vs_before_pct": -0.88,
+    "vertices_vs_before_pct": -0.91,
+    "hausdorff_sample20k_dp_only_m": {
+     "max": 1.18,
+     "p95": 0.0
+    },
+    "hausdorff_sample20k_dp_then_round5_m": {
+     "max": 1.483,
+     "p95": 0.633
+    }
+   }
+  },
+  "tiles_footprints_statewide": {
+   "z15": {
+    "tiles_with_features": 82791,
+    "features_per_tile": {
+     "median": 3.0,
+     "p90": 18.0,
+     "p99": 174.0,
+     "max": 952
+    },
+    "bytes_before": {
+     "median": 427,
+     "p90": 2578,
+     "p99": 26471,
+     "max": 141783,
+     "total": 135516372
+    },
+    "bytes_0.5": {
+     "median": 427,
+     "p90": 2575,
+     "p99": 26467,
+     "max": 141738,
+     "total": 135384218
+    },
+    "bytes_1.0": {
+     "median": 425,
+     "p90": 2552,
+     "p99": 26314,
+     "max": 140646,
+     "total": 134327752
+    }
+   },
+   "z17": {
+    "tiles_with_features": 229364,
+    "features_per_tile": {
+     "median": 2.0,
+     "p90": 8.0,
+     "p99": 39.0,
+     "max": 114
+    },
+    "bytes_before": {
+     "median": 272,
+     "p90": 1180,
+     "p99": 5812,
+     "max": 19643,
+     "total": 135516372
+    },
+    "bytes_0.5": {
+     "median": 272,
+     "p90": 1179,
+     "p99": 5806,
+     "max": 19512,
+     "total": 135384218
+    },
+    "bytes_1.0": {
+     "median": 272,
+     "p90": 1170,
+     "p99": 5763,
+     "max": 18908,
+     "total": 134327752
+    }
+   }
+  },
+  "tiles_billings_box": {
+   "z15_tiles": 4,
+   "z15_top3": [
+    {
+     "x": 6507,
+     "y": 11686,
+     "features": 328,
+     "bytes_before": 56707,
+     "bytes_dp05": 56663,
+     "bytes_dp10": 55835
+    },
+    {
+     "x": 6507,
+     "y": 11685,
+     "features": 265,
+     "bytes_before": 48657,
+     "bytes_dp05": 48613,
+     "bytes_dp10": 47743
+    },
+    {
+     "x": 6508,
+     "y": 11686,
+     "features": 238,
+     "bytes_before": 38656,
+     "bytes_dp05": 38591,
+     "bytes_dp10": 38352
+    }
+   ],
+   "z15_densest_exact": {
+    "x": 6507,
+    "y": 11686,
+    "features": 328,
+    "json_bytes_exact": 57036,
+    "gzip_bytes": 10773,
+    "matches_formula_bytes": false
+   },
+   "z17_tiles": 30,
+   "z17_top3": [
+    {
+     "x": 26030,
+     "y": 46740,
+     "features": 50,
+     "bytes_before": 6333,
+     "bytes_dp05": 6333,
+     "bytes_dp10": 6333
+    },
+    {
+     "x": 26029,
+     "y": 46740,
+     "features": 40,
+     "bytes_before": 5450,
+     "bytes_dp05": 5450,
+     "bytes_dp10": 5450
+    },
+    {
+     "x": 26032,
+     "y": 46742,
+     "features": 28,
+     "bytes_before": 4233,
+     "bytes_dp05": 4233,
+     "bytes_dp10": 4233
+    }
+   ],
+   "z17_densest_exact": {
+    "x": 26030,
+    "y": 46740,
+    "features": 50,
+    "json_bytes_exact": 6384,
+    "gzip_bytes": 1190,
+    "matches_formula_bytes": false
+   }
+  },
+  "address_dot_tiles_estimate": {
+   "z15": {
+    "tiles_with_points": 53716,
+    "points_per_tile": {
+     "median": 2.0,
+     "p90": 16.0,
+     "p99": 264.0,
+     "max": 1765
+    },
+    "bytes_per_tile_est": {
+     "median": 87,
+     "p90": 701,
+     "p99": 11550,
+     "max": 77195
+    },
+    "record_bytes_mean": 43.68
+   },
+   "z17": {
+    "tiles_with_points": 160181,
+    "points_per_tile": {
+     "median": 1.0,
+     "p90": 8.0,
+     "p99": 49.0,
+     "max": 273
+    },
+    "bytes_per_tile_est": {
+     "median": 43,
+     "p90": 350,
+     "p99": 2143,
+     "max": 11927
+    },
+    "record_bytes_mean": 43.68
+   }
+  },
+  "microsoft_prior": {
+   "features": 773199,
+   "zip_content_length": 26578292,
+   "uncompressed_geojson_bytes": 210192210,
+   "verified_this_run": "headers and member size only"
+  },
+  "overture": {
+   "latest_release": "2026-09-23.1",
+   "buildings_files_listed": 512,
+   "listed_bytes": 276863520053,
+   "montana_count": "not obtained"
+  },
+  "downloads": [
+   {
+    "what": "USA Structures Montana file (2026-09-13 zip)",
+    "bytes": 173088786,
+    "path": "/home/user/wt/research-b35/scratch-footprints/downloads/usa_structures_mt/MT_Structures_20260913.zip",
+    "extracted_to": "/home/user/wt/research-b35/scratch-footprints/downloads/usa_structures_mt/unzipped/"
+   },
+   {
+    "what": "pyogrio 0.13.0 wheel (PyPI)",
+    "bytes": 33334097,
+    "path": "/home/user/wt/research-b35/scratch-footprints/wheels/pyogrio-0.13.0-cp311-abi3-manylinux_2_28_x86_64.whl",
+    "installed_to": "/home/user/wt/research-b35/scratch-footprints/pylib (target; not the shared venv)"
+   },
+   {
+    "what": "shapely 2.2.0 wheel (PyPI)",
+    "bytes": 2299018,
+    "path": "/home/user/wt/research-b35/scratch-footprints/wheels/shapely-2.2.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl",
+    "installed_to": "/home/user/wt/research-b35/scratch-footprints/pylib (target)"
+   },
+   {
+    "what": "all other HTTP bodies (small)",
+    "bytes": 2016364,
+    "note": "hub, search, service, Figshare, MSL, Microsoft range read, Overture listing and docs, ODbL, CC BY, 17 USC"
+   }
+  ],
+  "packages": [
+   "pyogrio 0.13.0 (GDAL 3.12.4 bundled wheel) and shapely 2.2.0 installed with --no-deps into the scratch pylib folder; numpy 2.5.3, pyproj and packaging taken from the existing venv"
+  ],
+  "time_bounds_and_method_notes": "Byte counts: 5-decimal JSON of [[lon,lat],...] rings per polygon part, closing vertex included, holes included; minimal decimal text. Distances in EPSG:6514 (NAD83(2011) / Montana). Address join uses the SHP only; no ParcelID, Place_Type, owner or parcel field was read."
+ },
+ "open_questions": [
+  "Licence of the 2026-09-13 file: the file metadata says access and use constraints are None, the hosted item says CC BY 4.0, and the 2023 Figshare copies say CC0 1.0. Ask FEMA for a written statement before publishing (unverified).",
+  "Public-domain route: 17 U.S.C. 101 defines a work of the United States Government as one prepared by an officer or employee as part of official duties. Whether ORNL staff are federal employees was not checked, so CC BY 4.0 is the operative licence; attribute ORNL and FEMA.",
+  "Third-party inputs: the file metadata names LightBox SmartParcels (2024-09-09) and HIFLD (2023-03-01) as inputs to occupancy class, and the National Address Database (2026-01-14) for PROP_ADDR. No licence text for LightBox or HIFLD appears in the file. Counsel to confirm before publishing OCC_CLS or PROP_* fields.",
+  "Edition gap: the hosted layer counts 768,908 Montana features against 918,052 in the 2026-09-13 file (16.2% fewer), and its description gives data currency June 6, 2025. The 2025 deliverable (115,444,521 bytes) was not downloaded (download budget), so the match is not checked.",
+  "Address fields in the footprints: PROP_ADDR is filled for 70.0% of statewide footprints, 90.6% in the Billings box and 25% in the Benchland box; the metadata says coverage may be incomplete.",
+  "OUTBLDG and SEC_OCC are blank for all 918,052 features, and HEIGHT is filled for 3,552 (0.4%). A roof-height or outbuilding filter is not possible from this file.",
+  "Address records: 401 North 27th Street has three MSL records (two at one spot), so the dot rule must deduplicate. MSL live counts differ from the file (674,469 vs 674,715 statewide; 886 vs 869 in the Billings box); not reconciled.",
+  "Brief coordinate: 45.7836 N, 108.5047 W is inside the footprint of 175 North 27th Street and about 299 m from the 401 North 27th Street address point (45.785706 N, 108.507092 W). Check the brief's coordinate before using it as a fixture.",
+  "Microsoft count 773,199 is prior evidence and was not re-verified in this run (the stored copy the prior record names is not on disk). Overture Montana count was not obtained: 512 parquet files, 276.9 GB listed; a bounding-box read was not run (download and time budget).",
+  "Tile method: each footprint is assigned to the tile holding its centroid, with no clipping at tile edges. Per-tile totals exclude the outer array wrapper (2 bytes plus commas; 329 bytes in the densest zoom-15 Billings tile). Clipping at tile edges would add bytes; not measured.",
+  "Accuracy: the metadata ties positional accuracy to the imagery (WorldView under 3.5 m, NAIP at least 5 m). Simplification at 0.5 or 1 m and 5-decimal rounding (up to 0.67 m in the Billings box) are below that, so simplification buys almost nothing. Six-decimal rounding costs 8.9% more bytes in the Billings box for a 0.07 m rounding error.",
+  "The statewide Hausdorff figures are from a 20,000-feature random sample; the Billings figures are over every footprint in the box.",
+  "GDAL printed a performance warning that a polygon has more than 100 parts; the parsed geometry has at most 9 polygon parts per feature (915 features have more than one part). The warning source was not identified.",
+  "The Scientific Data descriptor says the national inventory has more than 125 million structures; the national count and the Montana share of it were not checked.",
+  "The Esri-hosted layer's address and occupancy fields may differ from the file (older edition); a single authoritative edition must be pinned in the build and in the About page."
+ ],
+ "download_bytes_total": 210738265,
+ "record_file": "/home/user/wt/research-b35/footprints.json",
+ "legal_reading": [
+  "ODbL (Microsoft Montana footprints; Overture buildings theme): if the site publishes tiles cut from these footprints, the tiles are a derived database. Section 4.4 a requires that a derived database the public uses be released under ODbL or a compatible licence, and section 4.4 b says that extracting a substantial part into a new database is a derived database. Section 4.6 then requires that the site also offer a machine-readable copy of the whole derived database, or the method of making it, at no more than reasonable cost. Section 4.3 requires a notice on rendered maps. In plain words: the joined address and footprint layer would have to be released under ODbL with its own machine-readable copy. That is a share-alike duty and is not recommended for a published site.",
+  "CC BY 4.0 (the USA Structures copy hosted by Esri, stated as CC BY 4.0): section 3(a)(1) requires credit to the creators (ORNL and FEMA), a copyright or licence notice, a link to the licence, and an indication that the data were changed. There is no share-alike duty. This is the cleanest licence for published tiles, provided FEMA confirms it for the 2026-09-13 file, whose own metadata says None.",
+  "Public domain: 17 U.S.C. 105 says copyright is not available for a work of the United States Government, and section 101 defines that as a work prepared by an officer or employee of the United States Government as part of official duties. ORNL staff are not shown here to be federal employees, so the public-domain route is not established by this definition alone. The Montana State Library address file states that its data are publicly available and non-sensitive and carries a use disclaimer, but it names no licence. The National Address Database inputs to PROP_ADDR are public domain per the prior record (data.gov catalog, not re-checked in this run).",
+  "Decision 7 (follow the laws): use the USA Structures file under its CC BY 4.0 statement, with an attribution line for ORNL and FEMA, a licence link, and a note that footprints are simplified or rounded and joined to addresses. Get FEMA's written licence for the 2026 file before the first publish. Do not publish tiles cut from the Microsoft footprints or from Overture (ODbL). Use the MSL address points with the MSL disclaimer and ask MSL to state a licence. Counsel should confirm the LightBox SmartParcels and HIFLD inputs to occupancy class before any OCC_CLS field is shown."
+ ]
+}

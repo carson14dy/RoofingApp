@@ -1,0 +1,252 @@
+{
+  "lid": "PNTW4",
+  "usgsId": "",
+  "reachId": "",
+  "name": "Paint Rock Creek near Hyattville",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "RIW",
+    "name": "Riverton"
+  },
+  "state": {
+    "abbreviation": "WY",
+    "name": "Wyoming"
+  },
+  "county": "Big Horn",
+  "timeZone": "MST7MDT",
+  "latitude": 44.267222222222,
+  "longitude": -107.55694444444,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": 1.62,
+      "primaryUnit": "ft",
+      "secondary": 0.0672,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:15:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 6,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 5,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2011-06-29T09:30:00Z",
+          "stage": 7.46,
+          "flow": 2621,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "2014-05-29T21:15:00Z",
+          "stage": 5.34,
+          "flow": 2691,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-03T23:30:00Z",
+          "stage": 5.33,
+          "flow": 2667,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-06-07T23:00:00Z",
+          "stage": 5.26,
+          "flow": 2480,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-05-28T11:00:00Z",
+          "stage": 5.16,
+          "flow": 2155,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-06-02T20:00:00Z",
+          "stage": 5.05,
+          "flow": 2022,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-06-11T23:45:00Z",
+          "stage": 4.98,
+          "flow": 2166,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-05T22:00:00Z",
+          "stage": 4.8,
+          "flow": 1745,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2019-06-07T23:00:00Z",
+          "stage": 5.26,
+          "flow": 2480,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-05-28T11:00:00Z",
+          "stage": 5.16,
+          "flow": 2155,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-05T22:00:00Z",
+          "stage": 4.8,
+          "flow": 1745,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-06-02T20:00:00Z",
+          "stage": 5.05,
+          "flow": 2022,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-05-29T21:15:00Z",
+          "stage": 5.34,
+          "flow": 2691,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-06-11T23:45:00Z",
+          "stage": 4.98,
+          "flow": 2166,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-03T23:30:00Z",
+          "stage": 5.33,
+          "flow": 2667,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-29T09:30:00Z",
+          "stage": 7.46,
+          "flow": 2621,
+          "preliminary": "O",
+          "olddatum": true
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/pntw4_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/pntw4_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "WYSEO",
+      "text": "Wyoming State Engineers Office",
+      "title": "Data courtesy of WY State Engineers Office",
+      "url": "https://seoflow.wyo.gov/Data/DataSet/Chart/Location/0209PBD4/DataSet/Stage/Gage%20Height(ft)/Interval/Latest"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

@@ -1,0 +1,5412 @@
+{
+ "slug": "snow-stations",
+ "checked_on": "2026-10-19 (UTC session date)",
+ "question": "GHCN-Daily snow, precipitation and temperature stations for Montana, 2020 to 2026: station counts, units and flags, named-station metrics, daily budget, station rule test, SNODAS option.",
+ "bottom_line": "GHCN-Daily gives usable station history for Montana, but the S3 by-station CSV files are not current for two networks. All 89 SNOTEL and all 25 airport (WBAN) Montana files end on 2025-02-06 in S3 (Last-Modified 2025-02-09), while the NCEI all/<ID>.dly copies of the same stations run to 2026-10-16. Use the NCEI files. Snow totals come from airport, COOP and CoCoRaHS stations; SNOTEL sites report depth, not snowfall. SNODAS is not practical for a five-year backfill (about 21.8 GB estimated against a 300 MB budget).",
+ "recommendation": "1) Source: read NCEI https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/<ID>.dly (complete and current for all 481 Montana stations with a 2025 record: 392.2 MB in full; 33.7 MB for the 45 stations within 40 miles of the two sample points). Use S3 csv.gz for COOP and CoCoRaHS only after checking it against the .dly (checked so far: the Billings airport csv.gz equals its csv, and two CoCoRaHS csv files equal their .dly; csv.gz against .dly not yet checked for COOP or CoCoRaHS). Never use S3 by-station files for SNOTEL or WBAN stations until S3 catches up. Mark any station not current when its newest report is more than 30 days old (proposed). 2) Station rule, per element and per location: candidates are Montana stations within 40 miles (great-circle) with a report in the last 30 days; coverage is days with an unflagged value over days in 2020 to 2025 (2,192 days), at least 80 percent; take the two nearest that pass. If fewer than two pass, show those that pass and say so; if none pass, show that no station qualifies. Never fill a gap with zero. Test result: the Billings point gets Billings WTP COOP USC00240802 (1.4 mi) and Billings Logan USW00024033 (2.6 mi) for all five elements; the two nearest CoCoRaHS sites fail (snow 59 and 31 percent, depth 1 and 3 percent). The Benchland point gets different pairs by element: snow Buffalo 1.7 E US1MTFG0003 (20.9 mi, 81.7 percent) and Lewistown 11 SSE USC00244978 (31.1 mi, 90.0 percent); depth Stanford USC00247864 (10.9 mi, 81.9 percent) and Crystal Lake SNOTEL USS0009C01S (31.3 mi, 99.9 percent); precipitation and temperatures Stanford (10.9 mi, 96 to 97 percent) and Lewistown 42 WSW USW00004140 (18.5 mi, 100 and 99.8 percent). The 80 percent cut is close for Stanford snow (79.9 percent misses by 0.1 point), so show every station's share instead of hiding the near misses. 3) Caveat words (plain): 'This reading is from {station}, about {miles} miles from this address. A station reading is at the station, not at this address. Snow and rain can differ a lot over a short distance.' Missing: '{station} reported {element} on {n} of {days} days from {start} to {end}. Days it did not report are left blank, not counted as zero.' SNOTEL: '{station} is a SNOTEL site. It reports snow depth, not snowfall.' Stale: 'The newest report from {station} is dated {date}.' None found: 'No station within 40 miles has enough reports for {element} from 2020 to 2025.' 4) Contract row: see the contract field. 5) SNODAS: do not start a backfill; the five-year total is about 22 GB (sample range 4.8 to 45 GB), about 4.4 GB a year.",
+ "contract_row_draft": {
+  "name": "ghcn_daily",
+  "what": "NOAA GHCN-Daily station observations: snow depth (SNWD), snowfall (SNOW), precipitation (PRCP), daily maximum and minimum temperature (TMAX, TMIN)",
+  "primary_url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/{station_id}.dly",
+  "mirror_url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/{station_id}.csv (not current for WBAN and SNOTEL files: last date 2025-02-06 as of 2026-10-19)",
+  "units": {
+   "SNOW": "mm",
+   "SNWD": "mm",
+   "PRCP": "tenths of mm (divide by 10 for mm)",
+   "TMAX": "tenths of degrees C (divide by 10)",
+   "TMIN": "tenths of degrees C (divide by 10)"
+  },
+  "missing": ".dly VALUE -9999 means missing; the csv has no row for a missing day (no -9999 rows found in five csv files); a missing day is never zero",
+  "quality": "Q-flag blank means the value passed; any other Q-flag means it failed a QA check: exclude from totals, records and unflagged coverage. M-flag T is a trace: 0 in sums, counted as reported.",
+  "source_flags_seen_in_montana": "N = CoCoRaHS; W = WBAN ASOS summary of the day (ISD); 0 = COOP summary of the day; T = SNOTEL; 1 = CF6 (NWS); X = first-order summary; Z = Datzilla addition; D = short-delay CF6 (High Plains RCC). S (GSOD) does not occur in SNOW or PRCP for the 45 candidate stations.",
+  "timing": "Real-time values are replaced by archive-quality values about 45 to 60 days after month end (NCEI product page); show the newest report date with each value",
+  "cadence": "Daily: NCEI .dly Last-Modified 2026-10-18 for all 481 Montana files; latest data 2026-10-16. Freshness rule (proposed): station not current when newest report is older than 30 days.",
+  "inventory": "ghcnd-inventory.txt FIRSTYEAR and LASTYEAR are the first and last year of unflagged data (a range, not coverage). Compute coverage from days.",
+  "licence": "NOAA data via NODD: Creative Commons CC0 1.0 per https://registry.opendata.aws/noaa-ghcn/ (no restrictions on use). No licence text found on the NCEI product page.",
+  "tests": [
+   "flag handling: non-blank Q-flag excluded; trace counted as 0 in sums",
+   "-9999 and absent rows are missing, never zero",
+   "units converted once: SNOW and SNWD mm; PRCP and TMAX/TMIN tenths",
+   "stale station state when newest report older than 30 days",
+   "two-nearest rule per element with coverage shares shown"
+  ]
+ },
+ "facts": [
+  {
+   "claim": "GHCN-D version in the bucket",
+   "value": "3.35-upd-2026101717 (an update that started 2026-10-17 17:00 UTC); status.txt: 'Version 3.35 is released' dated October 1, 2026",
+   "evidence": "https://noaa-ghcn-pds.s3.amazonaws.com/ghcnd-version.txt 200, 270 bytes; https://noaa-ghcn-pds.s3.amazonaws.com/status.txt 200, 38,016 bytes"
+  },
+  {
+   "claim": "Montana station records in ghcnd-stations.txt",
+   "value": "1,325 MT records (133,039 stations in file); by network: COOP 702, CoCoRaHS 394, RAWS 109, SNOTEL 90, WBAN 30",
+   "evidence": "https://noaa-ghcn-pds.s3.amazonaws.com/ghcnd-stations.txt 200, 11,441,354 bytes; fixed columns per readme section IV; 0 short lines"
+  },
+  {
+   "claim": "Inventory: stations whose element range covers 2020 to 2025 (FIRSTYEAR <= 2020 and LASTYEAR >= 2025)",
+   "value": "SNOW 288 (CoCoRaHS 109, COOP 170, WBAN 9); SNWD 338 (CoCoRaHS 71, COOP 168, SNOTEL 89, WBAN 10); PRCP 417 (CoCoRaHS 119, COOP 184, SNOTEL 89, WBAN 25); TMAX 263 (COOP 149, SNOTEL 89, WBAN 25); TMIN 263 (same as TMAX)",
+   "evidence": "https://noaa-ghcn-pds.s3.amazonaws.com/ghcnd-inventory.txt 200, 36,396,304 bytes, 791,224 rows; ranges only"
+  },
+  {
+   "claim": "Inventory: stations with LASTYEAR >= 2025 for each element",
+   "value": "SNOW 344; SNWD 376; PRCP 475; TMAX 263; TMIN 263",
+   "evidence": "same inventory file"
+  },
+  {
+   "claim": "Montana stations with a 2025 record for any core element (the daily job's file set)",
+   "value": "481: CoCoRaHS 176, COOP 191, SNOTEL 89, WBAN 25. The 109 RAWS stations have no core-element record in 2025.",
+   "evidence": "inventory LASTYEAR; RAWS prefix USR"
+  },
+  {
+   "claim": "Network code in IDs",
+   "value": "USW = WBAN (airports, e.g. USW00024033 Billings Logan); USC = COOP; US1 = CoCoRaHS (e.g. US1MTYS0041); USS = SNOTEL (e.g. USS0009C01S Crystal Lake); USR = RAWS",
+   "evidence": "readme section IV (network code 1 = CoCoRaHS, C = COOP, S = SNOTEL, W = WBAN); ghcnd-stations.txt"
+  },
+  {
+   "claim": "Task premise correction: Billings CoCoRaHS IDs",
+   "value": "Yellowstone County CoCoRaHS IDs are US1MTYS####; the full station list has 0 IDs starting US1MTYL and 32 starting US1MTYS. Used US1MTYS0041 (3.4 mi) and US1MTYS0046 (3.6 mi).",
+   "evidence": "https://noaa-ghcn-pds.s3.amazonaws.com/ghcnd-stations.txt 200; bucket listing csv/by_station/US1MT 398 keys, 32 US1MTYS, 0 US1MTYL"
+  },
+  {
+   "claim": "Units (README)",
+   "value": "SNOW mm; SNWD mm; PRCP tenths of mm; TMAX and TMIN tenths of degrees C. Checked on data: Billings airport 2025-02 snowfall total 782 mm; TMAX record 417 tenths = 41.7 C (107.1 F).",
+   "evidence": "https://noaa-ghcn-pds.s3.amazonaws.com/readme.txt 200, 29,587 bytes (section III); data in USW00024033 .dly and csv"
+  },
+  {
+   "claim": "Missing values",
+   "value": "In .dly files VALUE = -9999 is missing (README: 'missing = -9999'). In the csv files no -9999 values occur (0 rows in five files); a missing day has no row. Reported-day counts match between .dly and csv for the CoCoRaHS stations.",
+   "evidence": "readme.txt; csv files US1MTYS0041.csv 3,825 rows (0 values of -9999), US1MTYS0046.csv 2,061 rows, USW00024033.csv 393,178 rows"
+  },
+  {
+   "claim": "Quality flags used",
+   "value": "Q-flag blank = passed; non-blank = failed one of 14 checks (e.g. I internal consistency, X bounds, Z Datzilla). Excluded from totals, records and unflagged coverage here. M-flag T = trace, counted as 0 in sums but as reported.",
+   "evidence": "readme.txt QFLAG and MFLAG tables; in the S3 csv, Crystal Lake TMAX on 2024-01-12 carries Q-flag O (-32.6 C); the NCEI .dly has -32.8 C with no flag. Billings airport SNOW 2024-25: all 365 days unflagged."
+  },
+  {
+   "claim": "Inventory years are unflagged-data ranges, not coverage",
+   "value": "US1MTYS0041 SNWD inventory range 2020 to 2025, but the whole file has 21 SNWD values; 2020 to 2025 SNWD coverage is 0.3 to 2 percent a year. US1MTYS0046 inventory SNOW 2002 to 2026, but 2020 to 2022 coverage is 0 to 0.8 percent.",
+   "evidence": "readme.txt section VII (FIRSTYEAR/LASTYEAR = first/last year of unflagged data); US1MTYS0041.csv and US1MTYS0046.csv"
+  },
+  {
+   "claim": "S3 by-station files are not current for SNOTEL and WBAN stations",
+   "value": "114 Montana files (all 89 SNOTEL and all 25 WBAN) have Last-Modified Sun, 09 Feb 2025 07:52 to 07:54 GMT and content ending 2025-02-06. Content-checked 15 of them (Billings Logan, Great Falls AP, Crystal Lake, plus 12 seeded csv.gz samples): all 15 end 2025-02-06.",
+   "evidence": "HEAD on https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/<ID>.csv (481 requests, 200); GET csv for USW00024033 (13,856,867 bytes), USW00024143 (14,337,973), USS0009C01S (3,379,636); csv.gz samples in outputs/sample_content_check.json"
+  },
+  {
+   "claim": "S3 by-station files are current for COOP and CoCoRaHS stations (sampled)",
+   "value": "All 176 CoCoRaHS and 191 COOP Montana files have Last-Modified 2026-10-19 01:03 to 01:09 GMT. Content: CoCoRaHS US1MTYS0041 last 2026-10-15, US1MTYS0046 2026-10-12, US1MTMS0026 2026-10-14, US1MTMH0024 2026-10-12, US1MTCH0006 2026-10-16; COOP USC00240770 2026-09-28, USC00241169 2026-10-13. One COOP station ends early and is consistent across sources: USC00242827 EUREKA RS last 2025-10-05 in both S3 and NCEI.",
+   "evidence": "HEAD on 481 S3 csv URLs; csv.gz GET samples; https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USC00242827.dly 200, 1,276,020 bytes"
+  },
+  {
+   "claim": "NCEI .dly files are current for all 481 Montana stations",
+   "value": "All 481 Last-Modified 2026-10-18 (about 22:30 to 22:55 GMT in the samples). Billings Logan USW00024033 .dly: last value 2026-10-16 (289 days reported in 2026).",
+   "evidence": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly 200, 4,625,370 bytes (GET, parsed with readme section III); HEAD on 481 .dly URLs (6 retried after curl rc=35)"
+  },
+  {
+   "claim": "Billings Logan: last date in the file versus today (2026-10-19)",
+   "value": "S3 csv: last DATE 2025-02-06 (620 days behind; no 2026 rows; 393,178 rows). NCEI .dly: last value 2026-10-16 (3 days behind). The S3 csv.gz has the same rows as the csv (only the header line differs).",
+   "evidence": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USW00024033.csv 200, 13,856,867 bytes; https://noaa-ghcn-pds.s3.amazonaws.com/csv.gz/by_station/USW00024033.csv.gz 200, 1,595,346 bytes"
+  },
+  {
+   "claim": "S3 csv versus NCEI .dly agreement for overlapping days (2020-01-01 to 2025-02-06)",
+   "value": "Billings Logan 9,179 of 9,320 identical (141 differ: mostly source flags D or W, plus single tenths of a degree C in TMAX or TMIN and 3 to 5 mm in SNWD on a few days); Great Falls AP 9,030 of 9,320 (290 differ the same way, with 13 to 25 mm SNOW or SNWD changes on a few days); Crystal Lake SNOTEL 3,774 of 7,444 identical: TMIN differs on 1,848 days (NCEI minus S3 mean -1.2 C), TMAX on 1,815 (mean -0.3 C), PRCP on 7; CoCoRaHS US1MTYS0041 2,719 of 2,719 and US1MTYS0046 980 of 980 identical.",
+   "evidence": "outputs/named_metrics.json csv_vs_dly_agreement fields; diffcheck output"
+  },
+  {
+   "claim": "2024-25 season snow total (July 1 2024 to June 30 2025), Billings Logan USW00024033",
+   "value": "1,633 mm (64.3 in), 365 of 365 days reported (NCEI .dly). Monthly: Nov 100 mm, Dec 58, Jan 282, Feb 782, Mar 185, Apr 226. The S3 csv gives 685 mm (27.0 in) on 221 days, ending 2025-02-06, so it misses the season after that date.",
+   "evidence": "NCEI https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly 200, 4,625,370 bytes; S3 csv 13,856,867 bytes"
+  },
+  {
+   "claim": "2024-25 season snow total, Great Falls AP USW00024143",
+   "value": "1,203 mm (47.4 in), 365 of 365 days (NCEI .dly); S3 csv gives 777 mm (30.6 in) through 2025-02-06 only",
+   "evidence": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024143.dly 200, 4,705,560 bytes; S3 csv 14,337,973 bytes"
+  },
+  {
+   "claim": "2024-25 season snow total, CoCoRaHS sites in Billings",
+   "value": "US1MTYS0041 (Billings 1.7 W): 1,138 mm (44.8 in), 247 of 365 days reported (224 zero days, 23 with snow). US1MTYS0046 (Billings 1.9 WNW): 1,500 mm (59.1 in), 286 of 365 days (266 zero days, 20 with snow, 6 trace). Csv and .dly agree.",
+   "evidence": "S3 csv US1MTYS0041.csv 142,557 bytes (last 2026-10-15); US1MTYS0046.csv 76,771 bytes (last 2026-10-12)"
+  },
+  {
+   "claim": "Season snow for SNOTEL Crystal Lake USS0009C01S",
+   "value": "Not available: GHCN has no SNOW (snowfall) element for any Montana SNOTEL station (0 SNOW records in its file; inventory has no SNOW row). SNWD only.",
+   "evidence": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USS0009C01S.dly (current, 3,395 lines); S3 csv 3,379,636 bytes; readme element list"
+  },
+  {
+   "claim": "Largest snow depth in 2024-25 with date",
+   "value": "Billings Logan 460 mm (18.1 in) on 2025-02-18; Great Falls AP 254 mm (10.0 in) on 2025-01-06; Crystal Lake SNOTEL 1,651 mm (65.0 in) on 2025-01-24; US1MTYS0046 432 mm (17.0 in) on 2025-02-08; US1MTYS0041 no 2024-25 depth report (SNWD reported on 0.3 percent of 2024 days). Largest 2020 to 2025: Billings 460 mm (2025-02-18); Great Falls 254 mm (2025-01-06); Crystal Lake 1,803 mm (71.0 in) on 2023-04-20.",
+   "evidence": "NCEI .dly files for the stations; csv depth values agree where the csv covers the date"
+  },
+  {
+   "claim": "2025 calendar-year precipitation",
+   "value": "Billings Logan 464.9 mm (18.3 in), 365 of 365 days; Great Falls AP 310.4 mm (12.2 in), 365 of 365; Crystal Lake SNOTEL 1,217.4 mm (47.9 in), 365 reported, 364 unflagged; US1MTYS0041 527.5 mm (20.8 in), 358 days; US1MTYS0046 358.1 mm (14.1 in), 343 days (342 unflagged). S3 csv gives only Jan 1 to Feb 6 for airport and SNOTEL files (38.9 mm Billings).",
+   "evidence": "NCEI .dly files; S3 csv for CoCoRaHS (current)"
+  },
+  {
+   "claim": "2020 to 2025 record high and low (unflagged daily values)",
+   "value": "Billings Logan: TMAX 41.7 C (107.1 F) on 2021-07-19; TMIN -32.1 C (-25.8 F) on 2024-01-13. Great Falls AP: TMAX 39.4 C (102.9 F) on 2024-07-24; TMIN -38.2 C (-36.8 F) on 2024-01-13. Crystal Lake SNOTEL: TMAX 34.1 C (93.4 F) on 2024-07-24; TMIN -41.9 C (-43.4 F) on 2024-01-12. CoCoRaHS sites report no temperature.",
+   "evidence": "NCEI .dly files (Crystal Lake csv gives 33.0 C and -42.0 C; the .dly is newer)"
+  },
+  {
+   "claim": "Daily coverage by year (days reported over days in the year)",
+   "value": "Billings Logan and Great Falls AP: 100 percent for SNOW, SNWD, PRCP, TMAX, TMIN in each year 2020 to 2024; 2025 SNWD 99.7 percent (Billings), others 100; 2026 to Oct 16: 79.2 percent of 365 days. Crystal Lake: SNWD 99.5 to 100, PRCP 99.5 to 100, TMAX/TMIN 99.7 to 100 (2021 99.7). US1MTYS0041: SNOW 32.5 (2020, starts Aug), 61 to 67 (2021 to 2025); PRCP 40 (2020), 96 to 100 (2021 to 2025); SNWD 0.3 to 1.9. US1MTYS0046: SNOW 0.8 (2020), 0 (2021, 2022), 28 (2023), 78 (2024), 77 (2025); PRCP 0.8, 0, 0, 31.5, 96.7, 94.0; SNWD 0 to 10.1.",
+   "evidence": "outputs/named_metrics.json coverage_by_year_dly (per element, year, reported and unflagged shares)"
+  },
+  {
+   "claim": "Two CoCoRaHS gauges 0.61 km apart differ",
+   "value": "US1MTYS0041 and US1MTYS0046 are 0.61 km apart. 2025 precipitation 20.8 in vs 14.1 in; 2024-25 snow 44.8 in vs 59.1 in. Days reported differ (358 vs 343 for 2025 PRCP; 247 vs 286 for the season). Shows that a station reading is at the gauge and that missing days change totals.",
+   "evidence": "NCEI .dly for US1MTYS0041 (210 lines) and US1MTYS0046 (102 lines); S3 csv match exactly"
+  },
+  {
+   "claim": "February 2025 snowfall agreed in direction across three stations",
+   "value": "Billings Logan 782 mm (30.8 in); US1MTYS0041 650 mm (25.6 in); US1MTYS0046 863 mm (34.0 in). Agreement shows the event; it is not an independent total check.",
+   "evidence": "NCEI .dly and S3 csv for the three stations"
+  },
+  {
+   "claim": "Rule test: Billings sample point (45.7836 N, 108.5047 W), 29 Montana stations within 40 miles with a 2025 record",
+   "value": "Two nearest passing 80 percent in 2020 to 2025 (unflagged): SNOW, SNWD, PRCP, TMAX, TMIN all: Billings WTP USC00240802 (1.40 mi; 98.1, 98.4, 99.2, 97.2, 97.4 percent) and Billings Logan USW00024033 (2.58 mi; 100 percent). Passing counts: SNOW 12, SNWD 10, PRCP 20, TMAX 8, TMIN 8 of 29. Nearest CoCoRaHS: US1MTYS0041 (3.38 mi) SNOW 58.7 percent, SNWD 1.0, PRCP 88.5, TMAX/TMIN not reported; US1MTYS0046 (3.59 mi) SNOW 30.7, SNWD 2.9, PRCP 37.1.",
+   "evidence": "outputs/rule_test.json (NCEI .dly for all 29 stations)"
+  },
+  {
+   "claim": "Rule test: Benchland sample point (47.08 N, 110.02 W), 13 Montana stations within 40 miles with a 2025 record",
+   "value": "SNOW: Buffalo 1.7 E US1MTFG0003 (20.89 mi, 81.7 percent) and Lewistown 11 SSE USC00244978 (31.10 mi, 90.0 percent); Stanford USC00247864 (10.90 mi) is 79.9 percent (misses). SNWD: Stanford (10.90 mi, 81.9 percent) and Crystal Lake SNOTEL USS0009C01S (31.31 mi, 99.9 percent). PRCP: Stanford (96.3 percent) and Lewistown 42 WSW USW00004140 (18.53 mi, 100 percent). TMAX/TMIN: Stanford (96.6 / 96.5 percent) and Lewistown 42 WSW (99.8 / 99.8 percent). Passing counts: SNOW 3, SNWD 6, PRCP 11, TMAX 9, TMIN 9 of 13.",
+   "evidence": "outputs/rule_test.json (NCEI .dly for all 13 stations); Lewistown 42 WSW is CRN-flagged"
+  },
+  {
+   "claim": "Stations that stopped reporting (the rule needs a recency test)",
+   "value": "Lewistown COOP USC00244976 last PRCP 2024-11-13; Worden 2.5 W US1MTYS0048 last 2025-10-06; Eureka RS USC00242827 last 2025-10-05 (ended); Roundup 8.1 SE US1MTMH0010 last PRCP 2025-12-26.",
+   "evidence": "NCEI .dly for each (candidate set and USC00242827)"
+  },
+  {
+   "claim": "Judith Basin near Benchland: no active station in 2025",
+   "value": "Judith Gap COOP USC00244538 (30.6 mi from Benchland) last SNOW 2023, PRCP 2022; Judith Gap 13 E USC00244545 (41.5 mi) last 2021; Judith Gap 20.0 E CoCoRaHS US1MTGV0008 (44.3 mi) last 2021. Nearest active SNOTEL: Crystal Lake USS0009C01S (31.3 mi; 46.79 N, 109.51 W; elevation 1,844 m); then Daisy Peak USS0010C15S (31.9 mi), Spur Park USS0010C06S (35.1 mi), Deadman Creek USS0010C09S (37.0 mi).",
+   "evidence": "outputs/mt_stations.json from ghcnd-inventory.txt and ghcnd-stations.txt"
+  },
+  {
+   "claim": "Budget: Montana by-station files that matter (481 files with a 2025 record), S3 csv",
+   "value": "1,372,239,465 bytes (1,372.2 MB). COOP 869.3 MB (191 files, median 4.6 MB, largest USC00244558 15.9 MB); SNOTEL 285.7 MB (89, median 3.3 MB); WBAN 176.1 MB (25, median 8.3 MB); CoCoRaHS 41.1 MB (176, median 0.14 MB).",
+   "evidence": "HEAD on 481 csv URLs (200); outputs/sizes_multi.json lists every file's size and Last-Modified"
+  },
+  {
+   "claim": "Budget: same files as csv.gz",
+   "value": "148,485,655 bytes (148.5 MB): COOP 89.4 MB, SNOTEL 35.0, WBAN 20.0, CoCoRaHS 4.1",
+   "evidence": "HEAD on 481 csv.gz URLs (200)"
+  },
+  {
+   "claim": "Budget: same files as NCEI .dly (complete and current)",
+   "value": "392,170,950 bytes (392.2 MB): COOP 240.0 MB, SNOTEL 77.5, WBAN 57.8, CoCoRaHS 16.9. The 45 stations within 40 miles of either sample point: 33,682,230 bytes (33.7 MB).",
+   "evidence": "HEAD on 481 .dly URLs (6 retried); 45 GETs of .dly files totalling 33,682,230 bytes"
+  },
+  {
+   "claim": "Other GHCN bulk files (not used)",
+   "value": "csv/by_year/2025.csv is 1,311,113,622 bytes (one year of all stations worldwide). parquet/ has by_station and by_year prefixes (by_year partitions last modified 2025-01-14 in the sample; not checked for Montana).",
+   "evidence": "https://noaa-ghcn-pds.s3.amazonaws.com/?list-type=2&prefix=csv/by_year/2025 200 (Size 1311113622); parquet listing 200"
+  },
+  {
+   "claim": "GHCN update cadence statement vs observed",
+   "value": "The by-station readme says 'all files are updated daily for the entire period of record'. Observed: true for COOP, CoCoRaHS and all NCEI .dly files; false in S3 for 114 SNOTEL and WBAN files (last date 2025-02-06, 620 days before 2026-10-19). The S3 status-by_station notice is dated April 25, 2021 and reports a 'critical system failure' (historic, not a current notice).",
+   "evidence": "https://noaa-ghcn-pds.s3.amazonaws.com/readme-by_station.txt 200, 1,210 bytes; https://noaa-ghcn-pds.s3.amazonaws.com/status-by_station.txt 200, 173 bytes"
+  },
+  {
+   "claim": "SNODAS archive location and naming",
+   "value": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/YYYY/MM_Mon/SNODAS_YYYYMMDD.tar (for example 2025/01_Jan/SNODAS_20250101.tar)",
+   "evidence": "HEAD 200 for 2025-01-01 (15,339,520 bytes, Last-Modified Wed 01 Jan 2025 14:00:29 GMT) and 2026-10-16 (6,338,560 bytes, Fri 16 Oct 2026 13:00:23 GMT); directory listing https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2025/01_Jan/ 200, 4,041 bytes"
+  },
+  {
+   "claim": "SNODAS daily tar sizes (20 sample dates, 2021 to 2026)",
+   "value": "min 2.61 MB (2024-07-15), max 24.82 MB (2023-01-15), mean 11.94 MB, median 10.87 MB. Five-year estimate for 2021 to 2025 (1,826 daily tars): about 21.8 GB at the mean (4.8 GB at the minimum, 45.3 GB at the maximum), about 4.4 GB a year.",
+   "evidence": "HEAD 200 on 18 dates plus the two GET dates (outputs/snodas_sample_raw.tsv, outputs/extras.json)"
+  },
+  {
+   "claim": "SNODAS contents (16 members per daily tar; products and grid)",
+   "value": "Snow water equivalent (11034, 'Modeled snow water equivalent, total of snow layers', units Meters/1000); snow layer thickness (11036, 'Modeled snow layer thickness, total of snow layers', Meters/1000); snowfall (01025SlL01, 'Scaled Snow accumulation, 24-hour total', kg/m2 /10); non-snow accumulation (01025SlL00); melt (11044); sublimation (11050); blowing snow sublimation (11039); average snow temperature (11038, Kelvins). Grid 3,351 rows at 0.00833 degree (about 1 km), no-data -9999.",
+   "evidence": "tar member listing (tar -tvf, no extraction) and the first lines of each .txt.gz header member streamed to stdout (not extracted) from SNODAS_20250101.tar"
+  },
+  {
+   "claim": "SNODAS dataset coverage and service level",
+   "value": "Temporal coverage 30 September 2003 to present; temporal resolution 1 day; spatial resolution 1 km; format Binary; DOI 10.7265/N5TB14TC. Level of service: 'Basic' ('due to funding limitations').",
+   "evidence": "https://nsidc.org/data/g02158 200, 119,146 bytes"
+  },
+  {
+   "claim": "NOHRSC SNODAS pages",
+   "value": "https://www.nohrsc.noaa.gov/snodas/ returns 404 (236 bytes). https://www.nohrsc.noaa.gov/snow_model/ redirects to /nsa/. The /nsa/ page (35,811 bytes) has no SNODAS terms text. No NOHRSC point-query product was found in this run.",
+   "evidence": "https://www.nohrsc.noaa.gov/snodas/ 404; https://www.nohrsc.noaa.gov/snow_model/ 200, 117 bytes; https://www.nohrsc.noaa.gov/nsa/ 200, 35,811 bytes"
+  },
+  {
+   "claim": "NCEI product page status",
+   "value": "Banner on the fetched page: NCEI is moving its data and applications to the cloud and access may be delayed; 'Current Impact: Intermittent degraded order fulfillment services.' The page describes GHCNd as having 'About half the stations only report precipitation.'",
+   "evidence": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily 200, 73,503 bytes"
+  },
+  {
+   "claim": "Station cross-check, 2025 rain and temperature, Billings sample point",
+   "value": "Precipitation 2025: Billings Logan 18.30 in (365 days), Billings WTP COOP USC00240802 18.32 in (363 days), Billings WFO COOP USC00240801 19.26 in (365 days): within about 1 inch. CoCoRaHS US1MTYS0041 20.77 in (358 days) and US1MTYS0046 14.10 in (343 days) differ by 6.7 in from each other. Mean TMAX 2025: airport 60.3 F, WTP 62.3 F, WFO 63.2 F. Mean TMIN 2025: airport 38.4 F, WTP 36.6 F, WFO 37.0 F. Record low 2020 to 2025: airport -25.8 F, WTP -35.6 C (-32.1 F), WFO -35.0 C (-31.0 F), all three on 2024-01-13; the valley COOP sites are colder than the airport on the same night (elevations 944 m and 971 m vs 1,094 m).",
+   "evidence": "NCEI .dly files USW00024033, USC00240802, USC00240801, US1MTYS0041, US1MTYS0046; outputs/cross_check.json"
+  },
+  {
+   "claim": "Station cross-check, 2025 rain and temperature, Benchland sample point",
+   "value": "Precipitation 2025: Stanford COOP USC00247864 15.53 in (354 days); Lewistown 42 WSW CRN USW00004140 17.84 in (365 days); Lewistown 11 SSE COOP USC00244978 27.87 in (364 days); Crystal Lake SNOTEL USS0009C01S 47.93 in (365 days, elevation 1,844 m). Mean TMIN 2025: Stanford 33.2 F, Lewistown 42 WSW 28.4 F, Lewistown 11 SSE 31.8 F, Crystal Lake 28.3 F. 2020 to 2025 lows: Stanford -37.8 C (-36.0 F, 2024-01-15); Lewistown 42 WSW -44.1 C (-47.4 F, 2024-01-13); Lewistown 11 SSE -38.9 C (-38.0 F, 2024-01-13). The 27.9 in at Lewistown 11 SSE against 17.8 in at Lewistown 42 WSW, 41 miles apart, shows precipitation can differ a lot between stations in one area.",
+   "evidence": "NCEI .dly files for the four stations; outputs/cross_check.json"
+  },
+  {
+   "claim": "Billings WFO COOP record high disagrees with nearby stations on the same day",
+   "value": "USC00240801 BILLINGS WFO reads TMAX 43.9 C (111.0 F) on 2021-07-19 (S-flag 7, no Q-flag). The same day: Billings Logan 41.7 C (417 tenths), WTP 37.2 C. Its 2021-07-16 to 07-22 values sit in the 35 to 44 C range. Treat the WFO record as unconfirmed until checked; it is the highest 2020 to 2025 reading in the Billings group.",
+   "evidence": "NCEI .dly USC00240801 (parsed), USW00024033 and USC00240802 on 2021-07-19"
+  }
+ ],
+ "terms": [
+  {
+   "source": "NOAA GHCN-D on AWS Open Data Registry (NODD)",
+   "url": "https://registry.opendata.aws/noaa-ghcn/",
+   "quote": "NOAA data disseminated through NODD is made available under the Creative Commons 1.0 Universal Public Domain Dedication (CC0-1.0) license , which is well-known and internationally recognized. There are no restrictions on the use of the data. The data are open to the public and can be used as desired.",
+   "reading": "The S3 copy of GHCN-D is CC0 with no use restrictions per this page. The page does not say the NCEI host carries the same statement; NCEI page text had no licence sentence."
+  },
+  {
+   "source": "NOAA GHCN-D on AWS Open Data Registry (NODD)",
+   "url": "https://registry.opendata.aws/noaa-ghcn/",
+   "quote": "How to Cite NOAA Global Historical Climatology Network Daily (GHCN-D) was accessed on DATE from https://registry.opendata.aws/noaa-ghcn.",
+   "reading": "Citation form the page gives; not a legal condition."
+  },
+  {
+   "source": "NOAA GHCN-D on AWS Open Data Registry (NODD)",
+   "url": "https://registry.opendata.aws/noaa-ghcn/",
+   "quote": "The NODD team is working on improving performance and access to the GHCNd data and will be implementing an updated prefix structure.",
+   "reading": "The S3 layout may change; the job should not hard-code prefixes without a check."
+  },
+  {
+   "source": "NCEI GHCN-Daily product page",
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily",
+   "quote": "Generally, real-time replacement of updated data streams are replaced by archive-ready data sources 45 to 60 days after the end of a month.",
+   "reading": "Recent values may change for about 45 to 60 days after month end; show the newest date."
+  },
+  {
+   "source": "NCEI GHCN-Daily product page",
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily",
+   "quote": "Active U.S. stations in GHCNd have updates both via real-time data feeds and via time-delay, archive-quality data feeds.",
+   "reading": "Some recent values are real-time; the readme's source flags say which feed."
+  },
+  {
+   "source": "NCEI GHCN-Daily product page",
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily",
+   "quote": "NCEI is currently moving its data and applications to the cloud. This upgrade may result in temporary data access delays.",
+   "reading": "Banner as fetched 2026-10-19; a possible cause of delayed or stale copies is not confirmed."
+  },
+  {
+   "source": "GHCN-Daily readme",
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme.txt",
+   "quote": "VALUE1 is the value on the first day of the month (missing = -9999).",
+   "reading": "In .dly files -9999 is the missing value."
+  },
+  {
+   "source": "GHCN-Daily readme",
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme.txt",
+   "quote": "QFLAG1 is the quality flag for the first day of the month. There are fourteen possible values: Blank = did not fail any quality assurance check",
+   "reading": "A blank Q-flag means the value passed; any other letter means it failed a check. Whitespace collapsed; wording unchanged."
+  },
+  {
+   "source": "GHCN-Daily readme",
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme.txt",
+   "quote": "T     = trace of precipitation, snowfall, or snow depth",
+   "reading": "A trace is a real but tiny amount; counted as 0 in sums here. Whitespace collapsed; wording unchanged."
+  },
+  {
+   "source": "GHCN-Daily readme",
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme.txt",
+   "quote": "NOTE: \"S\" values are derived from hourly synoptic reports exchanged on the Global Telecommunications System (GTS). Daily values derived in this fashion may differ significantly from \"true\" daily data, particularly for precipitation (i.e., use with caution).",
+   "reading": "Source flag S (GSOD) needs a caveat; none of the 45 candidates has S values in SNOW or PRCP for 2020 to 2025. Whitespace collapsed; wording unchanged."
+  },
+  {
+   "source": "GHCN-Daily readme",
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme.txt",
+   "quote": "FIRSTYEAR is the first year of unflagged data for the given element.",
+   "reading": "Inventory years are unflagged-data ranges, not coverage."
+  },
+  {
+   "source": "GHCN-Daily readme",
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme.txt",
+   "quote": "LASTYEAR is the last year of unflagged data for the given element.",
+   "reading": "Same as above."
+  },
+  {
+   "source": "GHCN-Daily by-station readme",
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme-by_station.txt",
+   "quote": "all files are updated daily for the entire period of record.",
+   "reading": "Not true in S3 for 114 Montana SNOTEL and WBAN files as of 2026-10-19 (see facts)."
+  },
+  {
+   "source": "GHCN-Daily status (by-station)",
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/status-by_station.txt",
+   "quote": "A critical system failure at NCEI is preventing updates to GHCN daily, including the by_station files.",
+   "reading": "Dated April 25, 2021: a historic notice; it does not explain the 2025-02-06 stop."
+  },
+  {
+   "source": "NSIDC G02158 SNODAS",
+   "url": "https://nsidc.org/data/g02158",
+   "quote": "As a condition of using these data, you must cite the use of this data set.",
+   "reading": "Citation is a condition of use; the page gives the citation with DOI 10.7265/N5TB14TC. No other use constraint was found on the page."
+  },
+  {
+   "source": "NSIDC G02158 SNODAS",
+   "url": "https://nsidc.org/data/g02158",
+   "quote": "Overview Notice: Due to funding limitations, this data set was recently changed to a \"Basic\" Level of Service.",
+   "reading": "Service level reduced; NSIDC support for this product may be limited."
+  }
+ ],
+ "urls_checked": [
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/?delimiter=/",
+   "http_status": "200",
+   "bytes": 5228,
+   "content_check": "root keys: ghcnd-countries/inventory/states/stations/version .txt, index.html, mingle-list.txt, readme.txt, readme-by_station.txt, readme-by_year.txt, status.txt, status-by_station.txt, status-by_year.txt, test.txt; prefixes csv/, csv.gz/, parquet/"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme.txt",
+   "http_status": "200",
+   "bytes": 29587,
+   "content_check": "GHCN-Daily readme version 3.35; section III elements, units, flags; section IV stations; VII inventory"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/readme-by_station.txt",
+   "http_status": "200",
+   "bytes": 1210,
+   "content_check": "by-station csv fields; 'updated daily' statement"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/ghcnd-version.txt",
+   "http_status": "200",
+   "bytes": 270,
+   "content_check": "3.35-upd-2026101717"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/status.txt",
+   "http_status": "200",
+   "bytes": 38016,
+   "content_check": "Version 3.35 released October 1, 2026"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/status-by_station.txt",
+   "http_status": "200",
+   "bytes": 173,
+   "content_check": "April 25, 2021 notice (historic)"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/ghcnd-stations.txt",
+   "http_status": "200",
+   "bytes": 11441354,
+   "content_check": "133,039 station rows; 1,325 MT rows; 0 short lines"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/ghcnd-inventory.txt",
+   "http_status": "200",
+   "bytes": 36396304,
+   "content_check": "791,224 rows; 132,892 stations"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/ghcnd-states.txt",
+   "http_status": "200",
+   "bytes": 1086,
+   "content_check": "state codes including MT"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/?list-type=2&prefix=csv/by_station/US1MT&max-keys=1000",
+   "http_status": "200",
+   "bytes": 123883,
+   "content_check": "398 keys; 32 US1MTYS; 0 US1MTYL"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USW00024033.csv",
+   "http_status": "200",
+   "bytes": 13856867,
+   "content_check": "393,178 rows; last DATE 20250206; header ID,DATE,ELEMENT,DATA_VALUE,M_FLAG,Q_FLAG,S_FLAG,OBS_TIME; no -9999"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USW00024143.csv",
+   "http_status": "200",
+   "bytes": 14337973,
+   "content_check": "406,484 rows; last DATE 20250206"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/USS0009C01S.csv",
+   "http_status": "200",
+   "bytes": 3379636,
+   "content_check": "98,228 rows; last DATE 20250206; no SNOW element"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/US1MTYS0041.csv",
+   "http_status": "200",
+   "bytes": 142557,
+   "content_check": "3,825 rows; last DATE 20261015 (PRCP, SNOW); last SNWD 20251129"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/US1MTYS0046.csv",
+   "http_status": "200",
+   "bytes": 76771,
+   "content_check": "2,061 rows; last DATE 20261012; last SNWD 20251216"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv.gz/by_station/USW00024033.csv.gz",
+   "http_status": "200",
+   "bytes": 1595346,
+   "content_check": "same data rows as the csv (header differs only)"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv/by_station/<ID>.csv (HEAD, 481 Montana IDs with 2025 records)",
+   "http_status": "200 for all 481",
+   "bytes": 1372239465,
+   "content_check": "bytes is the sum of Content-Length (HEAD, not downloaded). Last-Modified: 2026-10-19 for 367 (COOP, CoCoRaHS); 2025-02-09 for 114 (SNOTEL, WBAN). Total is the sum of Content-Length."
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv.gz/by_station/<ID>.csv.gz (HEAD, 481)",
+   "http_status": "200 for all 481",
+   "bytes": 148485655,
+   "content_check": "bytes is the sum of Content-Length (HEAD, not downloaded); same Last-Modified pattern as the csv"
+  },
+  {
+   "url": "https://noaa-ghcn-pds.s3.amazonaws.com/csv.gz/by_station/ (18 sample GETs)",
+   "http_status": "200 for all 18",
+   "bytes": 8187487,
+   "content_check": "downloaded; 15 SNOTEL and WBAN files end 20250206; COOP USC00242827 20251005; COOP USC00240770 20260928; COOP USC00241169 20261013; CoCoRaHS 20261014, 20261012, 20261016 (sizes in outputs/sample_content_check.json)"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USW00024033.dly",
+   "http_status": "200",
+   "bytes": 4625370,
+   "content_check": "17,131 lines; last value 2026-10-16 for SNOW, SNWD, PRCP, TMAX, TMIN; 289 days in 2026"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/<ID>.dly (HEAD, 481 Montana IDs)",
+   "http_status": "200 for all 481 (6 retried after curl rc=35)",
+   "bytes": 392170950,
+   "content_check": "bytes is the sum of Content-Length (HEAD, not downloaded); Last-Modified 2026-10-18 for all 481"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/<ID>.dly (GET, 45 candidate stations)",
+   "http_status": "200 for all 45",
+   "bytes": 33682230,
+   "content_check": "45 files parsed; list in outputs/union_ids.txt"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USS0009C01S.dly",
+   "http_status": "200",
+   "bytes": 916650,
+   "content_check": "3,395 lines; last value 2026-10-16 for SNWD, TMAX, TMIN; PRCP 2026-10-14; no SNOW element"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USC00242827.dly",
+   "http_status": "200",
+   "bytes": 1276020,
+   "content_check": "last value 2025-10-05 for all core elements; agrees with S3 csv and inventory"
+  },
+  {
+   "url": "https://registry.opendata.aws/noaa-ghcn/",
+   "http_status": "200",
+   "bytes": 13202,
+   "content_check": "CC0 1.0 licence text; update frequency daily; prefix change note"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily",
+   "http_status": "200",
+   "bytes": 73503,
+   "content_check": "real-time and archive-quality statement; cloud migration banner; no licence sentence found"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2025/01_Jan/SNODAS_20250101.tar",
+   "http_status": "200",
+   "bytes": 15339520,
+   "content_check": "16 members (8 .dat.gz with matching .txt.gz headers); listed with tar -tvf; headers streamed to stdout, not extracted"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2026/10_Oct/SNODAS_20261016.tar",
+   "http_status": "200",
+   "bytes": 6338560,
+   "content_check": "16 members, same products, smaller sizes in October"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/2025/01_Jan/",
+   "http_status": "200",
+   "bytes": 4041,
+   "content_check": "directory listing with SNODAS_20250101.tar onward"
+  },
+  {
+   "url": "https://noaadata.apps.nsidc.org/NOAA/G02158/masked/<YYYY>/<MM_Mon>/SNODAS_<YYYYMMDD>.tar (HEAD, 18 dates)",
+   "http_status": "200 for all 18",
+   "bytes": 217118720,
+   "content_check": "HEAD only, not downloaded: bytes is the sum of Content-Length for 18 dates (2.61 to 24.82 MB each); list in outputs/snodas_sample_raw.tsv"
+  },
+  {
+   "url": "https://nsidc.org/data/g02158",
+   "http_status": "200",
+   "bytes": 119146,
+   "content_check": "citation condition; Basic level of service; temporal and spatial coverage"
+  },
+  {
+   "url": "https://nsidc.org/about/policies/citation",
+   "http_status": "404",
+   "bytes": 64597,
+   "content_check": "not found; NSIDC citation-policy page not verified"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snodas/",
+   "http_status": "404",
+   "bytes": 236,
+   "content_check": "not found"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/snow_model/",
+   "http_status": "200",
+   "bytes": 117,
+   "content_check": "meta refresh to /nsa/"
+  },
+  {
+   "url": "https://www.nohrsc.noaa.gov/nsa/",
+   "http_status": "200",
+   "bytes": 35811,
+   "content_check": "no SNODAS terms text found"
+  }
+ ],
+ "measurements": {
+  "montana_station_count": 1325,
+  "montana_network_mix_all": {
+   "COOP": 702,
+   "CoCoRaHS": 394,
+   "RAWS": 109,
+   "SNOTEL": 90,
+   "WBAN": 30
+  },
+  "mt_with_2025_core_record": {
+   "total": 481,
+   "COOP": 191,
+   "CoCoRaHS": 176,
+   "SNOTEL": 89,
+   "WBAN": 25
+  },
+  "inventory_covering_2020_2025": {
+   "SNOW": 288,
+   "SNWD": 338,
+   "PRCP": 417,
+   "TMAX": 263,
+   "TMIN": 263
+  },
+  "inventory_last_ge_2025": {
+   "SNOW": 344,
+   "SNWD": 376,
+   "PRCP": 475,
+   "TMAX": 263,
+   "TMIN": 263
+  },
+  "budget_bytes": {
+   "csv_481": 1372239465,
+   "csvgz_481": 148485655,
+   "dly_481": 392170950,
+   "dly_candidates_45": 33682230
+  },
+  "budget_per_network": {
+   "COOP": {
+    "files": 191,
+    "csv_bytes": 869291721,
+    "csvgz_bytes": 89415518,
+    "dly_bytes": 240012180,
+    "csv_lm_dates": [
+     "Mon, 19 Oct 2026"
+    ],
+    "dly_lm_dates": [
+     "Sun, 18 Oct 2026"
+    ]
+   },
+   "CoCoRaHS": {
+    "files": 176,
+    "csv_bytes": 41122066,
+    "csvgz_bytes": 4068513,
+    "dly_bytes": 16858260,
+    "csv_lm_dates": [
+     "Mon, 19 Oct 2026"
+    ],
+    "dly_lm_dates": [
+     "Sun, 18 Oct 2026"
+    ]
+   },
+   "SNOTEL": {
+    "files": 89,
+    "csv_bytes": 285697597,
+    "csvgz_bytes": 35005580,
+    "dly_bytes": 77511870,
+    "csv_lm_dates": [
+     "Sun, 09 Feb 2025"
+    ],
+    "dly_lm_dates": [
+     "Sun, 18 Oct 2026"
+    ]
+   },
+   "WBAN": {
+    "files": 25,
+    "csv_bytes": 176128081,
+    "csvgz_bytes": 19996044,
+    "dly_bytes": 57788640,
+    "csv_lm_dates": [
+     "Sun, 09 Feb 2025"
+    ],
+    "dly_lm_dates": [
+     "Sun, 18 Oct 2026"
+    ]
+   }
+  },
+  "s3_stale_files": {
+   "count": 114,
+   "networks": {
+    "SNOTEL": 89,
+    "WBAN": 25
+   },
+   "last_date": "2025-02-06",
+   "last_modified": "2025-02-09",
+   "days_behind_2026_10_19": 620
+  },
+  "ncei_dly_current": {
+   "count": 481,
+   "last_modified": "2026-10-18",
+   "billings_last_value": "2026-10-16"
+  },
+  "download_bytes_total_get": 146501809,
+  "named_station_metrics": {
+   "USW00024033": {
+    "source_note": "dly = NCEI all/<ID>.dly (complete); csv = S3 csv/by_station/<ID>.csv (as requested)",
+    "season_2024_25_snow_dly": {
+     "snow_mm": 1633.0,
+     "snow_in": 64.3,
+     "days_reported": 365,
+     "days_unflagged": 365,
+     "days_in_window": 365,
+     "last_snow_record": "2025-06-30"
+    },
+    "season_2024_25_snow_csv": {
+     "snow_mm": 685.0,
+     "snow_in": 27.0,
+     "days_reported": 221,
+     "days_unflagged": 221,
+     "days_in_window": 365,
+     "last_snow_record": "2025-02-06"
+    },
+    "snwd_max_2024_25_dly": {
+     "snwd_max_mm": 460,
+     "snwd_max_in": 18.1,
+     "date": "2025-02-18"
+    },
+    "snwd_max_2024_25_csv": {
+     "snwd_max_mm": 229,
+     "snwd_max_in": 9.0,
+     "date": "2025-01-05"
+    },
+    "snwd_max_2020_2025_dly": {
+     "snwd_max_mm": 460,
+     "snwd_max_in": 18.1,
+     "date": "2025-02-18"
+    },
+    "prcp_2025_dly": {
+     "prcp_mm": 464.9,
+     "prcp_in": 18.3,
+     "days_reported": 365,
+     "days_unflagged": 365,
+     "last_unflagged_date": "2025-12-31"
+    },
+    "prcp_2025_csv": {
+     "prcp_mm": 38.9,
+     "prcp_in": 1.53,
+     "days_reported": 37,
+     "days_unflagged": 37,
+     "last_unflagged_date": "2025-02-06"
+    },
+    "records_2020_2025_dly": {
+     "tmax_c": 41.7,
+     "tmax_f": 107.1,
+     "tmax_date": "2021-07-19",
+     "tmin_c": -32.1,
+     "tmin_f": -25.8,
+     "tmin_date": "2024-01-13"
+    },
+    "records_2020_2025_csv": {
+     "tmax_c": 41.7,
+     "tmax_f": 107.1,
+     "tmax_date": "2021-07-19",
+     "tmin_c": -32.1,
+     "tmin_f": -25.8,
+     "tmin_date": "2024-01-13"
+    },
+    "coverage_by_year_dly": {
+     "SNOW": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 364,
+       "days_in_year": 365,
+       "share_reported": 0.997,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2026": {
+       "reported": 288,
+       "days_in_year": 365,
+       "share_reported": 0.789,
+       "unflagged": 288,
+       "share_unflagged": 0.789
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     }
+    },
+    "coverage_by_year_csv": {
+     "SNOW": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     }
+    },
+    "window_coverage_2020_2025_dly": {
+     "SNOW": {
+      "reported": 2192,
+      "unflagged": 2192,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     },
+     "SNWD": {
+      "reported": 2191,
+      "unflagged": 2191,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     },
+     "PRCP": {
+      "reported": 2192,
+      "unflagged": 2192,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     },
+     "TMAX": {
+      "reported": 2192,
+      "unflagged": 2192,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     },
+     "TMIN": {
+      "reported": 2192,
+      "unflagged": 2192,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     }
+    },
+    "csv_vs_dly_agreement_2020_01_01_to_2025_02_06": {
+     "matched_keys": 9320,
+     "identical": 9179,
+     "value_or_flag_differs": 141,
+     "only_in_csv": 0,
+     "only_in_dly": 0
+    },
+    "csv_vs_dly_agreement_all_csv_dates": {
+     "matched_keys": 140799,
+     "identical": 140658,
+     "value_or_flag_differs": 141,
+     "only_in_csv": 0,
+     "only_in_dly": 3083
+    }
+   },
+   "USW00024143": {
+    "source_note": "dly = NCEI all/<ID>.dly (complete); csv = S3 csv/by_station/<ID>.csv (as requested)",
+    "season_2024_25_snow_dly": {
+     "snow_mm": 1203.0,
+     "snow_in": 47.4,
+     "days_reported": 365,
+     "days_unflagged": 365,
+     "days_in_window": 365,
+     "last_snow_record": "2025-06-30"
+    },
+    "season_2024_25_snow_csv": {
+     "snow_mm": 777.0,
+     "snow_in": 30.6,
+     "days_reported": 221,
+     "days_unflagged": 221,
+     "days_in_window": 365,
+     "last_snow_record": "2025-02-06"
+    },
+    "snwd_max_2024_25_dly": {
+     "snwd_max_mm": 254,
+     "snwd_max_in": 10.0,
+     "date": "2025-01-06"
+    },
+    "snwd_max_2024_25_csv": {
+     "snwd_max_mm": 254,
+     "snwd_max_in": 10.0,
+     "date": "2025-01-06"
+    },
+    "snwd_max_2020_2025_dly": {
+     "snwd_max_mm": 254,
+     "snwd_max_in": 10.0,
+     "date": "2025-01-06"
+    },
+    "prcp_2025_dly": {
+     "prcp_mm": 310.4,
+     "prcp_in": 12.22,
+     "days_reported": 365,
+     "days_unflagged": 365,
+     "last_unflagged_date": "2025-12-31"
+    },
+    "prcp_2025_csv": {
+     "prcp_mm": 38.4,
+     "prcp_in": 1.51,
+     "days_reported": 37,
+     "days_unflagged": 37,
+     "last_unflagged_date": "2025-02-06"
+    },
+    "records_2020_2025_dly": {
+     "tmax_c": 39.4,
+     "tmax_f": 102.9,
+     "tmax_date": "2024-07-24",
+     "tmin_c": -38.2,
+     "tmin_f": -36.8,
+     "tmin_date": "2024-01-13"
+    },
+    "records_2020_2025_csv": {
+     "tmax_c": 39.4,
+     "tmax_f": 102.9,
+     "tmax_date": "2024-07-24",
+     "tmin_c": -38.2,
+     "tmin_f": -36.8,
+     "tmin_date": "2024-01-13"
+    },
+    "coverage_by_year_dly": {
+     "SNOW": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     }
+    },
+    "coverage_by_year_csv": {
+     "SNOW": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     }
+    },
+    "window_coverage_2020_2025_dly": {
+     "SNOW": {
+      "reported": 2192,
+      "unflagged": 2192,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     },
+     "SNWD": {
+      "reported": 2192,
+      "unflagged": 2192,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     },
+     "PRCP": {
+      "reported": 2192,
+      "unflagged": 2192,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     },
+     "TMAX": {
+      "reported": 2192,
+      "unflagged": 2192,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     },
+     "TMIN": {
+      "reported": 2192,
+      "unflagged": 2192,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 1.0
+     }
+    },
+    "csv_vs_dly_agreement_2020_01_01_to_2025_02_06": {
+     "matched_keys": 9320,
+     "identical": 9030,
+     "value_or_flag_differs": 290,
+     "only_in_csv": 0,
+     "only_in_dly": 0
+    },
+    "csv_vs_dly_agreement_all_csv_dates": {
+     "matched_keys": 159981,
+     "identical": 159691,
+     "value_or_flag_differs": 290,
+     "only_in_csv": 0,
+     "only_in_dly": 3085
+    }
+   },
+   "USS0009C01S": {
+    "source_note": "dly = NCEI all/<ID>.dly (complete); csv = S3 csv/by_station/<ID>.csv (as requested)",
+    "season_2024_25_snow_dly": {
+     "snow_mm": 0.0,
+     "snow_in": 0.0,
+     "days_reported": 0,
+     "days_unflagged": 0,
+     "days_in_window": 365,
+     "last_snow_record": null
+    },
+    "season_2024_25_snow_csv": {
+     "snow_mm": 0.0,
+     "snow_in": 0.0,
+     "days_reported": 0,
+     "days_unflagged": 0,
+     "days_in_window": 365,
+     "last_snow_record": null
+    },
+    "snwd_max_2024_25_dly": {
+     "snwd_max_mm": 1651,
+     "snwd_max_in": 65.0,
+     "date": "2025-01-24"
+    },
+    "snwd_max_2024_25_csv": {
+     "snwd_max_mm": 1473,
+     "snwd_max_in": 58.0,
+     "date": "2025-01-23"
+    },
+    "snwd_max_2020_2025_dly": {
+     "snwd_max_mm": 1803,
+     "snwd_max_in": 71.0,
+     "date": "2023-04-20"
+    },
+    "prcp_2025_dly": {
+     "prcp_mm": 1217.4,
+     "prcp_in": 47.93,
+     "days_reported": 365,
+     "days_unflagged": 364,
+     "last_unflagged_date": "2025-12-31"
+    },
+    "prcp_2025_csv": {
+     "prcp_mm": 251.2,
+     "prcp_in": 9.89,
+     "days_reported": 35,
+     "days_unflagged": 34,
+     "last_unflagged_date": "2025-02-06"
+    },
+    "records_2020_2025_dly": {
+     "tmax_c": 34.1,
+     "tmax_f": 93.4,
+     "tmax_date": "2024-07-24",
+     "tmin_c": -41.9,
+     "tmin_f": -43.4,
+     "tmin_date": "2024-01-12"
+    },
+    "records_2020_2025_csv": {
+     "tmax_c": 33.0,
+     "tmax_f": 91.4,
+     "tmax_date": "2024-07-24",
+     "tmin_c": -42.0,
+     "tmin_f": -43.6,
+     "tmin_date": "2024-01-12"
+    },
+    "coverage_by_year_dly": {
+     "SNOW": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 365,
+       "days_in_year": 366,
+       "share_reported": 0.997,
+       "unflagged": 365,
+       "share_unflagged": 0.997
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 363,
+       "share_unflagged": 0.995
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 289,
+       "share_unflagged": 0.792
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 364,
+       "days_in_year": 366,
+       "share_reported": 0.995,
+       "unflagged": 364,
+       "share_unflagged": 0.995
+      },
+      "2025": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2026": {
+       "reported": 287,
+       "days_in_year": 365,
+       "share_reported": 0.786,
+       "unflagged": 287,
+       "share_unflagged": 0.786
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 364,
+       "days_in_year": 365,
+       "share_reported": 0.997,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 365,
+       "days_in_year": 366,
+       "share_reported": 0.997,
+       "unflagged": 365,
+       "share_unflagged": 0.997
+      },
+      "2025": {
+       "reported": 364,
+       "days_in_year": 365,
+       "share_reported": 0.997,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 288,
+       "share_unflagged": 0.789
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 364,
+       "days_in_year": 365,
+       "share_reported": 0.997,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 365,
+       "days_in_year": 366,
+       "share_reported": 0.997,
+       "unflagged": 365,
+       "share_unflagged": 0.997
+      },
+      "2025": {
+       "reported": 364,
+       "days_in_year": 365,
+       "share_reported": 0.997,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2026": {
+       "reported": 289,
+       "days_in_year": 365,
+       "share_reported": 0.792,
+       "unflagged": 288,
+       "share_unflagged": 0.789
+      }
+     }
+    },
+    "coverage_by_year_csv": {
+     "SNOW": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 365,
+       "days_in_year": 366,
+       "share_reported": 0.997,
+       "unflagged": 365,
+       "share_unflagged": 0.997
+      },
+      "2025": {
+       "reported": 34,
+       "days_in_year": 365,
+       "share_reported": 0.093,
+       "unflagged": 32,
+       "share_unflagged": 0.088
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 364,
+       "days_in_year": 366,
+       "share_reported": 0.995,
+       "unflagged": 364,
+       "share_unflagged": 0.995
+      },
+      "2025": {
+       "reported": 35,
+       "days_in_year": 365,
+       "share_reported": 0.096,
+       "unflagged": 34,
+       "share_unflagged": 0.093
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 364,
+       "days_in_year": 365,
+       "share_reported": 0.997,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 365,
+       "days_in_year": 366,
+       "share_reported": 0.997,
+       "unflagged": 364,
+       "share_unflagged": 0.995
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 366,
+       "days_in_year": 366,
+       "share_reported": 1.0,
+       "unflagged": 366,
+       "share_unflagged": 1.0
+      },
+      "2021": {
+       "reported": 364,
+       "days_in_year": 365,
+       "share_reported": 0.997,
+       "unflagged": 364,
+       "share_unflagged": 0.997
+      },
+      "2022": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2023": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2024": {
+       "reported": 365,
+       "days_in_year": 366,
+       "share_reported": 0.997,
+       "unflagged": 365,
+       "share_unflagged": 0.997
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     }
+    },
+    "window_coverage_2020_2025_dly": {
+     "SNOW": {
+      "reported": 0,
+      "unflagged": 0,
+      "days": 2192,
+      "share_reported": 0.0,
+      "share_unflagged": 0.0
+     },
+     "SNWD": {
+      "reported": 2191,
+      "unflagged": 2189,
+      "days": 2192,
+      "share_reported": 1.0,
+      "share_unflagged": 0.999
+     },
+     "PRCP": {
+      "reported": 2190,
+      "unflagged": 2189,
+      "days": 2192,
+      "share_reported": 0.999,
+      "share_unflagged": 0.999
+     },
+     "TMAX": {
+      "reported": 2189,
+      "unflagged": 2188,
+      "days": 2192,
+      "share_reported": 0.999,
+      "share_unflagged": 0.998
+     },
+     "TMIN": {
+      "reported": 2189,
+      "unflagged": 2189,
+      "days": 2192,
+      "share_reported": 0.999,
+      "share_unflagged": 0.999
+     }
+    },
+    "csv_vs_dly_agreement_2020_01_01_to_2025_02_06": {
+     "matched_keys": 7444,
+     "identical": 3774,
+     "value_or_flag_differs": 3670,
+     "only_in_csv": 0,
+     "only_in_dly": 5
+    },
+    "csv_vs_dly_agreement_all_csv_dates": {
+     "matched_keys": 51586,
+     "identical": 33358,
+     "value_or_flag_differs": 18228,
+     "only_in_csv": 0,
+     "only_in_dly": 2469
+    }
+   },
+   "US1MTYS0041": {
+    "source_note": "dly = NCEI all/<ID>.dly (complete); csv = S3 csv/by_station/<ID>.csv (as requested)",
+    "season_2024_25_snow_dly": {
+     "snow_mm": 1138.0,
+     "snow_in": 44.8,
+     "days_reported": 247,
+     "days_unflagged": 247,
+     "days_in_window": 365,
+     "last_snow_record": "2025-06-30"
+    },
+    "season_2024_25_snow_csv": {
+     "snow_mm": 1138.0,
+     "snow_in": 44.8,
+     "days_reported": 247,
+     "days_unflagged": 247,
+     "days_in_window": 365,
+     "last_snow_record": "2025-06-30"
+    },
+    "snwd_max_2024_25_dly": null,
+    "snwd_max_2024_25_csv": null,
+    "snwd_max_2020_2025_dly": {
+     "snwd_max_mm": 254,
+     "snwd_max_in": 10.0,
+     "date": "2021-02-07"
+    },
+    "prcp_2025_dly": {
+     "prcp_mm": 527.5,
+     "prcp_in": 20.77,
+     "days_reported": 358,
+     "days_unflagged": 358,
+     "last_unflagged_date": "2025-12-31"
+    },
+    "prcp_2025_csv": {
+     "prcp_mm": 527.5,
+     "prcp_in": 20.77,
+     "days_reported": 358,
+     "days_unflagged": 358,
+     "last_unflagged_date": "2025-12-31"
+    },
+    "records_2020_2025_dly": {},
+    "records_2020_2025_csv": {},
+    "coverage_by_year_dly": {
+     "SNOW": {
+      "2020": {
+       "reported": 119,
+       "days_in_year": 366,
+       "share_reported": 0.325,
+       "unflagged": 119,
+       "share_unflagged": 0.325
+      },
+      "2021": {
+       "reported": 224,
+       "days_in_year": 365,
+       "share_reported": 0.614,
+       "unflagged": 224,
+       "share_unflagged": 0.614
+      },
+      "2022": {
+       "reported": 229,
+       "days_in_year": 365,
+       "share_reported": 0.627,
+       "unflagged": 229,
+       "share_unflagged": 0.627
+      },
+      "2023": {
+       "reported": 243,
+       "days_in_year": 365,
+       "share_reported": 0.666,
+       "unflagged": 243,
+       "share_unflagged": 0.666
+      },
+      "2024": {
+       "reported": 241,
+       "days_in_year": 366,
+       "share_reported": 0.658,
+       "unflagged": 241,
+       "share_unflagged": 0.658
+      },
+      "2025": {
+       "reported": 230,
+       "days_in_year": 365,
+       "share_reported": 0.63,
+       "unflagged": 230,
+       "share_unflagged": 0.63
+      },
+      "2026": {
+       "reported": 188,
+       "days_in_year": 365,
+       "share_reported": 0.515,
+       "unflagged": 188,
+       "share_unflagged": 0.515
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 7,
+       "days_in_year": 366,
+       "share_reported": 0.019,
+       "unflagged": 7,
+       "share_unflagged": 0.019
+      },
+      "2021": {
+       "reported": 5,
+       "days_in_year": 365,
+       "share_reported": 0.014,
+       "unflagged": 5,
+       "share_unflagged": 0.014
+      },
+      "2022": {
+       "reported": 6,
+       "days_in_year": 365,
+       "share_reported": 0.016,
+       "unflagged": 6,
+       "share_unflagged": 0.016
+      },
+      "2023": {
+       "reported": 1,
+       "days_in_year": 365,
+       "share_reported": 0.003,
+       "unflagged": 1,
+       "share_unflagged": 0.003
+      },
+      "2024": {
+       "reported": 1,
+       "days_in_year": 366,
+       "share_reported": 0.003,
+       "unflagged": 1,
+       "share_unflagged": 0.003
+      },
+      "2025": {
+       "reported": 1,
+       "days_in_year": 365,
+       "share_reported": 0.003,
+       "unflagged": 1,
+       "share_unflagged": 0.003
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 148,
+       "days_in_year": 366,
+       "share_reported": 0.404,
+       "unflagged": 148,
+       "share_unflagged": 0.404
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 350,
+       "days_in_year": 365,
+       "share_reported": 0.959,
+       "unflagged": 350,
+       "share_unflagged": 0.959
+      },
+      "2023": {
+       "reported": 362,
+       "days_in_year": 365,
+       "share_reported": 0.992,
+       "unflagged": 362,
+       "share_unflagged": 0.992
+      },
+      "2024": {
+       "reported": 357,
+       "days_in_year": 366,
+       "share_reported": 0.975,
+       "unflagged": 357,
+       "share_unflagged": 0.975
+      },
+      "2025": {
+       "reported": 358,
+       "days_in_year": 365,
+       "share_reported": 0.981,
+       "unflagged": 358,
+       "share_unflagged": 0.981
+      },
+      "2026": {
+       "reported": 282,
+       "days_in_year": 365,
+       "share_reported": 0.773,
+       "unflagged": 282,
+       "share_unflagged": 0.773
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     }
+    },
+    "coverage_by_year_csv": {
+     "SNOW": {
+      "2020": {
+       "reported": 119,
+       "days_in_year": 366,
+       "share_reported": 0.325,
+       "unflagged": 119,
+       "share_unflagged": 0.325
+      },
+      "2021": {
+       "reported": 224,
+       "days_in_year": 365,
+       "share_reported": 0.614,
+       "unflagged": 224,
+       "share_unflagged": 0.614
+      },
+      "2022": {
+       "reported": 229,
+       "days_in_year": 365,
+       "share_reported": 0.627,
+       "unflagged": 229,
+       "share_unflagged": 0.627
+      },
+      "2023": {
+       "reported": 243,
+       "days_in_year": 365,
+       "share_reported": 0.666,
+       "unflagged": 243,
+       "share_unflagged": 0.666
+      },
+      "2024": {
+       "reported": 241,
+       "days_in_year": 366,
+       "share_reported": 0.658,
+       "unflagged": 241,
+       "share_unflagged": 0.658
+      },
+      "2025": {
+       "reported": 230,
+       "days_in_year": 365,
+       "share_reported": 0.63,
+       "unflagged": 230,
+       "share_unflagged": 0.63
+      },
+      "2026": {
+       "reported": 188,
+       "days_in_year": 365,
+       "share_reported": 0.515,
+       "unflagged": 188,
+       "share_unflagged": 0.515
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 7,
+       "days_in_year": 366,
+       "share_reported": 0.019,
+       "unflagged": 7,
+       "share_unflagged": 0.019
+      },
+      "2021": {
+       "reported": 5,
+       "days_in_year": 365,
+       "share_reported": 0.014,
+       "unflagged": 5,
+       "share_unflagged": 0.014
+      },
+      "2022": {
+       "reported": 6,
+       "days_in_year": 365,
+       "share_reported": 0.016,
+       "unflagged": 6,
+       "share_unflagged": 0.016
+      },
+      "2023": {
+       "reported": 1,
+       "days_in_year": 365,
+       "share_reported": 0.003,
+       "unflagged": 1,
+       "share_unflagged": 0.003
+      },
+      "2024": {
+       "reported": 1,
+       "days_in_year": 366,
+       "share_reported": 0.003,
+       "unflagged": 1,
+       "share_unflagged": 0.003
+      },
+      "2025": {
+       "reported": 1,
+       "days_in_year": 365,
+       "share_reported": 0.003,
+       "unflagged": 1,
+       "share_unflagged": 0.003
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 148,
+       "days_in_year": 366,
+       "share_reported": 0.404,
+       "unflagged": 148,
+       "share_unflagged": 0.404
+      },
+      "2021": {
+       "reported": 365,
+       "days_in_year": 365,
+       "share_reported": 1.0,
+       "unflagged": 365,
+       "share_unflagged": 1.0
+      },
+      "2022": {
+       "reported": 350,
+       "days_in_year": 365,
+       "share_reported": 0.959,
+       "unflagged": 350,
+       "share_unflagged": 0.959
+      },
+      "2023": {
+       "reported": 362,
+       "days_in_year": 365,
+       "share_reported": 0.992,
+       "unflagged": 362,
+       "share_unflagged": 0.992
+      },
+      "2024": {
+       "reported": 357,
+       "days_in_year": 366,
+       "share_reported": 0.975,
+       "unflagged": 357,
+       "share_unflagged": 0.975
+      },
+      "2025": {
+       "reported": 358,
+       "days_in_year": 365,
+       "share_reported": 0.981,
+       "unflagged": 358,
+       "share_unflagged": 0.981
+      },
+      "2026": {
+       "reported": 282,
+       "days_in_year": 365,
+       "share_reported": 0.773,
+       "unflagged": 282,
+       "share_unflagged": 0.773
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     }
+    },
+    "window_coverage_2020_2025_dly": {
+     "SNOW": {
+      "reported": 1286,
+      "unflagged": 1286,
+      "days": 2192,
+      "share_reported": 0.587,
+      "share_unflagged": 0.587
+     },
+     "SNWD": {
+      "reported": 21,
+      "unflagged": 21,
+      "days": 2192,
+      "share_reported": 0.01,
+      "share_unflagged": 0.01
+     },
+     "PRCP": {
+      "reported": 1940,
+      "unflagged": 1940,
+      "days": 2192,
+      "share_reported": 0.885,
+      "share_unflagged": 0.885
+     },
+     "TMAX": {
+      "reported": 0,
+      "unflagged": 0,
+      "days": 2192,
+      "share_reported": 0.0,
+      "share_unflagged": 0.0
+     },
+     "TMIN": {
+      "reported": 0,
+      "unflagged": 0,
+      "days": 2192,
+      "share_reported": 0.0,
+      "share_unflagged": 0.0
+     }
+    },
+    "csv_vs_dly_agreement_2020_01_01_to_2025_02_06": {
+     "matched_keys": 2719,
+     "identical": 2719,
+     "value_or_flag_differs": 0,
+     "only_in_csv": 0,
+     "only_in_dly": 0
+    },
+    "csv_vs_dly_agreement_all_csv_dates": {
+     "matched_keys": 3717,
+     "identical": 3717,
+     "value_or_flag_differs": 0,
+     "only_in_csv": 0,
+     "only_in_dly": 0
+    }
+   },
+   "US1MTYS0046": {
+    "source_note": "dly = NCEI all/<ID>.dly (complete); csv = S3 csv/by_station/<ID>.csv (as requested)",
+    "season_2024_25_snow_dly": {
+     "snow_mm": 1500.0,
+     "snow_in": 59.1,
+     "days_reported": 286,
+     "days_unflagged": 286,
+     "days_in_window": 365,
+     "last_snow_record": "2025-06-30"
+    },
+    "season_2024_25_snow_csv": {
+     "snow_mm": 1500.0,
+     "snow_in": 59.1,
+     "days_reported": 286,
+     "days_unflagged": 286,
+     "days_in_window": 365,
+     "last_snow_record": "2025-06-30"
+    },
+    "snwd_max_2024_25_dly": {
+     "snwd_max_mm": 432,
+     "snwd_max_in": 17.0,
+     "date": "2025-02-08"
+    },
+    "snwd_max_2024_25_csv": {
+     "snwd_max_mm": 432,
+     "snwd_max_in": 17.0,
+     "date": "2025-02-08"
+    },
+    "snwd_max_2020_2025_dly": {
+     "snwd_max_mm": 432,
+     "snwd_max_in": 17.0,
+     "date": "2025-02-08"
+    },
+    "prcp_2025_dly": {
+     "prcp_mm": 358.1,
+     "prcp_in": 14.1,
+     "days_reported": 343,
+     "days_unflagged": 342,
+     "last_unflagged_date": "2025-12-31"
+    },
+    "prcp_2025_csv": {
+     "prcp_mm": 358.1,
+     "prcp_in": 14.1,
+     "days_reported": 343,
+     "days_unflagged": 342,
+     "last_unflagged_date": "2025-12-31"
+    },
+    "records_2020_2025_dly": {},
+    "records_2020_2025_csv": {},
+    "coverage_by_year_dly": {
+     "SNOW": {
+      "2020": {
+       "reported": 3,
+       "days_in_year": 366,
+       "share_reported": 0.008,
+       "unflagged": 3,
+       "share_unflagged": 0.008
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 103,
+       "days_in_year": 365,
+       "share_reported": 0.282,
+       "unflagged": 103,
+       "share_unflagged": 0.282
+      },
+      "2024": {
+       "reported": 285,
+       "days_in_year": 366,
+       "share_reported": 0.779,
+       "unflagged": 285,
+       "share_unflagged": 0.779
+      },
+      "2025": {
+       "reported": 283,
+       "days_in_year": 365,
+       "share_reported": 0.775,
+       "unflagged": 282,
+       "share_unflagged": 0.773
+      },
+      "2026": {
+       "reported": 223,
+       "days_in_year": 365,
+       "share_reported": 0.611,
+       "unflagged": 223,
+       "share_unflagged": 0.611
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 12,
+       "days_in_year": 365,
+       "share_reported": 0.033,
+       "unflagged": 12,
+       "share_unflagged": 0.033
+      },
+      "2024": {
+       "reported": 15,
+       "days_in_year": 366,
+       "share_reported": 0.041,
+       "unflagged": 15,
+       "share_unflagged": 0.041
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 3,
+       "days_in_year": 366,
+       "share_reported": 0.008,
+       "unflagged": 3,
+       "share_unflagged": 0.008
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 115,
+       "days_in_year": 365,
+       "share_reported": 0.315,
+       "unflagged": 115,
+       "share_unflagged": 0.315
+      },
+      "2024": {
+       "reported": 354,
+       "days_in_year": 366,
+       "share_reported": 0.967,
+       "unflagged": 354,
+       "share_unflagged": 0.967
+      },
+      "2025": {
+       "reported": 343,
+       "days_in_year": 365,
+       "share_reported": 0.94,
+       "unflagged": 342,
+       "share_unflagged": 0.937
+      },
+      "2026": {
+       "reported": 279,
+       "days_in_year": 365,
+       "share_reported": 0.764,
+       "unflagged": 279,
+       "share_unflagged": 0.764
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     }
+    },
+    "coverage_by_year_csv": {
+     "SNOW": {
+      "2020": {
+       "reported": 3,
+       "days_in_year": 366,
+       "share_reported": 0.008,
+       "unflagged": 3,
+       "share_unflagged": 0.008
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 103,
+       "days_in_year": 365,
+       "share_reported": 0.282,
+       "unflagged": 103,
+       "share_unflagged": 0.282
+      },
+      "2024": {
+       "reported": 285,
+       "days_in_year": 366,
+       "share_reported": 0.779,
+       "unflagged": 285,
+       "share_unflagged": 0.779
+      },
+      "2025": {
+       "reported": 283,
+       "days_in_year": 365,
+       "share_reported": 0.775,
+       "unflagged": 282,
+       "share_unflagged": 0.773
+      },
+      "2026": {
+       "reported": 223,
+       "days_in_year": 365,
+       "share_reported": 0.611,
+       "unflagged": 223,
+       "share_unflagged": 0.611
+      }
+     },
+     "SNWD": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 12,
+       "days_in_year": 365,
+       "share_reported": 0.033,
+       "unflagged": 12,
+       "share_unflagged": 0.033
+      },
+      "2024": {
+       "reported": 15,
+       "days_in_year": 366,
+       "share_reported": 0.041,
+       "unflagged": 15,
+       "share_unflagged": 0.041
+      },
+      "2025": {
+       "reported": 37,
+       "days_in_year": 365,
+       "share_reported": 0.101,
+       "unflagged": 37,
+       "share_unflagged": 0.101
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "PRCP": {
+      "2020": {
+       "reported": 3,
+       "days_in_year": 366,
+       "share_reported": 0.008,
+       "unflagged": 3,
+       "share_unflagged": 0.008
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 115,
+       "days_in_year": 365,
+       "share_reported": 0.315,
+       "unflagged": 115,
+       "share_unflagged": 0.315
+      },
+      "2024": {
+       "reported": 354,
+       "days_in_year": 366,
+       "share_reported": 0.967,
+       "unflagged": 354,
+       "share_unflagged": 0.967
+      },
+      "2025": {
+       "reported": 343,
+       "days_in_year": 365,
+       "share_reported": 0.94,
+       "unflagged": 342,
+       "share_unflagged": 0.937
+      },
+      "2026": {
+       "reported": 279,
+       "days_in_year": 365,
+       "share_reported": 0.764,
+       "unflagged": 279,
+       "share_unflagged": 0.764
+      }
+     },
+     "TMAX": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     },
+     "TMIN": {
+      "2020": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2021": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2022": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2023": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2024": {
+       "reported": 0,
+       "days_in_year": 366,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2025": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      },
+      "2026": {
+       "reported": 0,
+       "days_in_year": 365,
+       "share_reported": 0.0,
+       "unflagged": 0,
+       "share_unflagged": 0.0
+      }
+     }
+    },
+    "window_coverage_2020_2025_dly": {
+     "SNOW": {
+      "reported": 674,
+      "unflagged": 673,
+      "days": 2192,
+      "share_reported": 0.307,
+      "share_unflagged": 0.307
+     },
+     "SNWD": {
+      "reported": 64,
+      "unflagged": 64,
+      "days": 2192,
+      "share_reported": 0.029,
+      "share_unflagged": 0.029
+     },
+     "PRCP": {
+      "reported": 815,
+      "unflagged": 814,
+      "days": 2192,
+      "share_reported": 0.372,
+      "share_unflagged": 0.371
+     },
+     "TMAX": {
+      "reported": 0,
+      "unflagged": 0,
+      "days": 2192,
+      "share_reported": 0.0,
+      "share_unflagged": 0.0
+     },
+     "TMIN": {
+      "reported": 0,
+      "unflagged": 0,
+      "days": 2192,
+      "share_reported": 0.0,
+      "share_unflagged": 0.0
+     }
+    },
+    "csv_vs_dly_agreement_2020_01_01_to_2025_02_06": {
+     "matched_keys": 980,
+     "identical": 980,
+     "value_or_flag_differs": 0,
+     "only_in_csv": 0,
+     "only_in_dly": 0
+    },
+    "csv_vs_dly_agreement_all_csv_dates": {
+     "matched_keys": 2059,
+     "identical": 2059,
+     "value_or_flag_differs": 0,
+     "only_in_csv": 0,
+     "only_in_dly": 0
+    }
+   }
+  },
+  "rule_test": {
+   "billings40": [
+    {
+     "id": "USC00240802",
+     "name": "BILLINGS WTP",
+     "network": "COOP",
+     "miles": 1.4,
+     "share_reported": {
+      "SNOW": 0.981,
+      "SNWD": 0.984,
+      "PRCP": 0.992,
+      "TMAX": 0.972,
+      "TMIN": 0.974
+     },
+     "share_unflagged": {
+      "SNOW": 0.981,
+      "SNWD": 0.984,
+      "PRCP": 0.992,
+      "TMAX": 0.972,
+      "TMIN": 0.974
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2026-10-16",
+      "SNWD": "2026-10-16",
+      "PRCP": "2026-10-16",
+      "TMAX": "2026-10-16",
+      "TMIN": "2026-10-16"
+     }
+    },
+    {
+     "id": "USW00024033",
+     "name": "BILLINGS INTL AP",
+     "network": "WBAN",
+     "miles": 2.58,
+     "share_reported": {
+      "SNOW": 1.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 1.0,
+      "TMIN": 1.0
+     },
+     "share_unflagged": {
+      "SNOW": 1.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 1.0,
+      "TMIN": 1.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2026-10-16",
+      "SNWD": "2026-10-16",
+      "PRCP": "2026-10-16",
+      "TMAX": "2026-10-16",
+      "TMIN": "2026-10-16"
+     }
+    },
+    {
+     "id": "US1MTYS0041",
+     "name": "BILLINGS 1.7 W",
+     "network": "CoCoRaHS",
+     "miles": 3.38,
+     "share_reported": {
+      "SNOW": 0.587,
+      "SNWD": 0.01,
+      "PRCP": 0.885,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.587,
+      "SNWD": 0.01,
+      "PRCP": 0.885,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 5,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-15",
+      "SNWD": "2025-11-29",
+      "PRCP": "2026-10-15",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTYS0046",
+     "name": "BILLINGS 1.9 WNW",
+     "network": "CoCoRaHS",
+     "miles": 3.59,
+     "share_reported": {
+      "SNOW": 0.307,
+      "SNWD": 0.029,
+      "PRCP": 0.372,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.307,
+      "SNWD": 0.029,
+      "PRCP": 0.371,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 2,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-12",
+      "SNWD": "2025-12-16",
+      "PRCP": "2026-10-12",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTYS0027",
+     "name": "BILLINGS 3.2 NNE",
+     "network": "CoCoRaHS",
+     "miles": 3.71,
+     "share_reported": {
+      "SNOW": 0.741,
+      "SNWD": 0.154,
+      "PRCP": 0.959,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.74,
+      "SNWD": 0.152,
+      "PRCP": 0.959,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-16",
+      "SNWD": "2026-03-31",
+      "PRCP": "2026-10-16",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTYS0047",
+     "name": "BILLINGS 4.3 S",
+     "network": "CoCoRaHS",
+     "miles": 3.87,
+     "share_reported": {
+      "SNOW": 0.156,
+      "SNWD": 0.006,
+      "PRCP": 0.21,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.156,
+      "SNWD": 0.006,
+      "PRCP": 0.21,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 0,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-12",
+      "SNWD": "2026-10-12",
+      "PRCP": "2026-10-12",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "USC00240801",
+     "name": "BILLINGS WFO",
+     "network": "COOP",
+     "miles": 3.89,
+     "share_reported": {
+      "SNOW": 1.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 1.0,
+      "TMIN": 1.0
+     },
+     "share_unflagged": {
+      "SNOW": 1.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 1.0,
+      "TMIN": 1.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2026-10-16",
+      "SNWD": "2026-10-16",
+      "PRCP": "2026-10-16",
+      "TMAX": "2026-10-16",
+      "TMIN": "2026-10-16"
+     }
+    },
+    {
+     "id": "US1MTYS0014",
+     "name": "BILLINGS 4.5 NE",
+     "network": "CoCoRaHS",
+     "miles": 4.46,
+     "share_reported": {
+      "SNOW": 0.995,
+      "SNWD": 0.997,
+      "PRCP": 0.998,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.995,
+      "SNWD": 0.996,
+      "PRCP": 0.998,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-14",
+      "SNWD": "2026-10-14",
+      "PRCP": "2026-10-14",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTYS0028",
+     "name": "BILLINGS 4.2 WSW",
+     "network": "CoCoRaHS",
+     "miles": 5.49,
+     "share_reported": {
+      "SNOW": 0.542,
+      "SNWD": 0.011,
+      "PRCP": 0.844,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.542,
+      "SNWD": 0.011,
+      "PRCP": 0.842,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 4,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-09",
+      "SNWD": "2025-12-15",
+      "PRCP": "2026-10-09",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTYS0050",
+     "name": "BILLINGS 5.2 WSW",
+     "network": "CoCoRaHS",
+     "miles": 6.5,
+     "share_reported": {
+      "SNOW": 0.151,
+      "SNWD": 0.154,
+      "PRCP": 0.151,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.151,
+      "SNWD": 0.153,
+      "PRCP": 0.151,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 1,
+      "SNWD": 1,
+      "PRCP": 1,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-15",
+      "SNWD": "2026-10-12",
+      "PRCP": "2026-10-15",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTYS0052",
+     "name": "BILLINGS 6.2 W",
+     "network": "CoCoRaHS",
+     "miles": 7.84,
+     "share_reported": {
+      "SNOW": 0.068,
+      "SNWD": 0.003,
+      "PRCP": 0.103,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.068,
+      "SNWD": 0.003,
+      "PRCP": 0.103,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 0,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-12",
+      "SNWD": "2026-04-27",
+      "PRCP": "2026-10-12",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "USC00244345",
+     "name": "HUNTLEY EXP STN",
+     "network": "COOP",
+     "miles": 15.76,
+     "share_reported": {
+      "SNOW": 0.986,
+      "SNWD": 0.985,
+      "PRCP": 0.995,
+      "TMAX": 0.997,
+      "TMIN": 0.997
+     },
+     "share_unflagged": {
+      "SNOW": 0.986,
+      "SNWD": 0.985,
+      "PRCP": 0.995,
+      "TMAX": 0.997,
+      "TMIN": 0.996
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2026-09-30",
+      "SNWD": "2026-09-30",
+      "PRCP": "2026-10-17",
+      "TMAX": "2026-10-17",
+      "TMIN": "2026-10-17"
+     }
+    },
+    {
+     "id": "US1MTYS0048",
+     "name": "WORDEN 2.5 W",
+     "network": "CoCoRaHS",
+     "miles": 18.6,
+     "share_reported": {
+      "SNOW": 0.099,
+      "SNWD": 0.0,
+      "PRCP": 0.133,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.099,
+      "SNWD": 0.0,
+      "PRCP": 0.133,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 0,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2025-10-03",
+      "SNWD": null,
+      "PRCP": "2025-10-06",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "USC00245791",
+     "name": "MOLT 6 SW",
+     "network": "COOP",
+     "miles": 22.25,
+     "share_reported": {
+      "SNOW": 0.84,
+      "SNWD": 0.771,
+      "PRCP": 0.932,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.84,
+      "SNWD": 0.771,
+      "PRCP": 0.932,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 4,
+      "SNWD": 3,
+      "PRCP": 5,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2025-10-27",
+      "SNWD": "2025-10-27",
+      "PRCP": "2026-09-04",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTSW0005",
+     "name": "PARK CITY 0.5 S",
+     "network": "CoCoRaHS",
+     "miles": 22.74,
+     "share_reported": {
+      "SNOW": 0.755,
+      "SNWD": 0.155,
+      "PRCP": 0.957,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.755,
+      "SNWD": 0.155,
+      "PRCP": 0.956,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 1,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-10",
+      "SNWD": "2026-04-27",
+      "PRCP": "2026-10-12",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTSW0012",
+     "name": "PARK CITY 6.0 WSW",
+     "network": "CoCoRaHS",
+     "miles": 28.41,
+     "share_reported": {
+      "SNOW": 0.735,
+      "SNWD": 0.0,
+      "PRCP": 0.999,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.735,
+      "SNWD": 0.0,
+      "PRCP": 0.999,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-16",
+      "SNWD": "2025-02-20",
+      "PRCP": "2026-10-16",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTCB0012",
+     "name": "FROMBERG 2.7 NE",
+     "network": "CoCoRaHS",
+     "miles": 30.64,
+     "share_reported": {
+      "SNOW": 0.675,
+      "SNWD": 0.007,
+      "PRCP": 0.982,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.675,
+      "SNWD": 0.007,
+      "PRCP": 0.981,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 3,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-15",
+      "SNWD": "2025-12-12",
+      "PRCP": "2026-10-15",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTSW0010",
+     "name": "COLUMBUS 8.2 ESE",
+     "network": "CoCoRaHS",
+     "miles": 30.96,
+     "share_reported": {
+      "SNOW": 0.812,
+      "SNWD": 0.191,
+      "PRCP": 0.99,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.812,
+      "SNWD": 0.19,
+      "PRCP": 0.99,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 5,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-14",
+      "SNWD": "2026-10-13",
+      "PRCP": "2026-10-14",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTSW0002",
+     "name": "COLUMBUS 7.2 E",
+     "network": "CoCoRaHS",
+     "miles": 31.03,
+     "share_reported": {
+      "SNOW": 0.756,
+      "SNWD": 0.409,
+      "PRCP": 0.923,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.756,
+      "SNWD": 0.409,
+      "PRCP": 0.923,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 1,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-16",
+      "SNWD": "2026-10-16",
+      "PRCP": "2026-10-16",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTCB0013",
+     "name": "JOLIET 2.2 WNW",
+     "network": "CoCoRaHS",
+     "miles": 31.31,
+     "share_reported": {
+      "SNOW": 0.63,
+      "SNWD": 0.001,
+      "PRCP": 0.757,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.63,
+      "SNWD": 0.001,
+      "PRCP": 0.757,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 1,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-14",
+      "SNWD": "2025-03-19",
+      "PRCP": "2026-10-14",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTMH0024",
+     "name": "ROUNDUP 13.9 S",
+     "network": "CoCoRaHS",
+     "miles": 32.18,
+     "share_reported": {
+      "SNOW": 0.146,
+      "SNWD": 0.009,
+      "PRCP": 0.179,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.146,
+      "SNWD": 0.009,
+      "PRCP": 0.179,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 0,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-12",
+      "SNWD": "2026-10-12",
+      "PRCP": "2026-09-23",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "USC00241102",
+     "name": "BRIDGER 2 N",
+     "network": "COOP",
+     "miles": 37.18,
+     "share_reported": {
+      "SNOW": 0.999,
+      "SNWD": 0.999,
+      "PRCP": 0.999,
+      "TMAX": 0.999,
+      "TMIN": 0.999
+     },
+     "share_unflagged": {
+      "SNOW": 0.999,
+      "SNWD": 0.999,
+      "PRCP": 0.999,
+      "TMAX": 0.998,
+      "TMIN": 0.999
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2026-10-13",
+      "SNWD": "2026-10-13",
+      "PRCP": "2026-10-14",
+      "TMAX": "2026-10-14",
+      "TMIN": "2026-10-14"
+     }
+    },
+    {
+     "id": "USC00246647",
+     "name": "POMPEYS PILLAR 15N",
+     "network": "COOP",
+     "miles": 37.34,
+     "share_reported": {
+      "SNOW": 0.929,
+      "SNWD": 0.928,
+      "PRCP": 0.929,
+      "TMAX": 0.922,
+      "TMIN": 0.891
+     },
+     "share_unflagged": {
+      "SNOW": 0.929,
+      "SNWD": 0.928,
+      "PRCP": 0.929,
+      "TMAX": 0.922,
+      "TMIN": 0.891
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 5,
+      "SNWD": 5,
+      "PRCP": 5,
+      "TMAX": 5,
+      "TMIN": 5
+     },
+     "last_date": {
+      "SNOW": "2026-10-17",
+      "SNWD": "2026-10-17",
+      "PRCP": "2026-10-17",
+      "TMAX": "2026-10-17",
+      "TMIN": "2026-10-17"
+     }
+    },
+    {
+     "id": "US1MTSW0013",
+     "name": "COLUMBUS 6.0 SSE",
+     "network": "CoCoRaHS",
+     "miles": 37.98,
+     "share_reported": {
+      "SNOW": 0.521,
+      "SNWD": 0.0,
+      "PRCP": 0.984,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.521,
+      "SNWD": 0.0,
+      "PRCP": 0.984,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-16",
+      "SNWD": null,
+      "PRCP": "2026-10-16",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "USC00241938",
+     "name": "COLUMBUS",
+     "network": "COOP",
+     "miles": 38.04,
+     "share_reported": {
+      "SNOW": 1.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 1.0,
+      "TMIN": 1.0
+     },
+     "share_unflagged": {
+      "SNOW": 1.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 0.999,
+      "TMIN": 1.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2026-07-15",
+      "SNWD": "2026-07-15",
+      "PRCP": "2026-07-15",
+      "TMAX": "2026-07-15",
+      "TMIN": "2026-07-15"
+     }
+    },
+    {
+     "id": "USC00247220",
+     "name": "ROUNDUP 15 SW",
+     "network": "COOP",
+     "miles": 39.1,
+     "share_reported": {
+      "SNOW": 0.925,
+      "SNWD": 0.925,
+      "PRCP": 0.923,
+      "TMAX": 0.924,
+      "TMIN": 0.924
+     },
+     "share_unflagged": {
+      "SNOW": 0.925,
+      "SNWD": 0.925,
+      "PRCP": 0.923,
+      "TMAX": 0.924,
+      "TMIN": 0.924
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2025-11-06",
+      "SNWD": "2025-11-06",
+      "PRCP": "2026-09-14",
+      "TMAX": "2025-11-06",
+      "TMIN": "2025-11-06"
+     }
+    },
+    {
+     "id": "US1MTMH0017",
+     "name": "ROUNDUP 7.4 SSE",
+     "network": "CoCoRaHS",
+     "miles": 39.15,
+     "share_reported": {
+      "SNOW": 0.969,
+      "SNWD": 0.943,
+      "PRCP": 0.97,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.969,
+      "SNWD": 0.941,
+      "PRCP": 0.97,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-06-04",
+      "SNWD": "2026-05-26",
+      "PRCP": "2026-06-04",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTMH0010",
+     "name": "ROUNDUP 8.1 SE",
+     "network": "CoCoRaHS",
+     "miles": 39.34,
+     "share_reported": {
+      "SNOW": 0.613,
+      "SNWD": 0.138,
+      "PRCP": 0.729,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.613,
+      "SNWD": 0.138,
+      "PRCP": 0.728,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 3,
+      "SNWD": 0,
+      "PRCP": 4,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2025-12-26",
+      "SNWD": "2025-12-15",
+      "PRCP": "2025-12-26",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "US1MTMH0022",
+     "name": "ROUNDUP 7.3 SE",
+     "network": "CoCoRaHS",
+     "miles": 39.94,
+     "share_reported": {
+      "SNOW": 0.263,
+      "SNWD": 0.002,
+      "PRCP": 0.357,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.263,
+      "SNWD": 0.002,
+      "PRCP": 0.357,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 0,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2025-11-16",
+      "SNWD": "2020-01-30",
+      "PRCP": "2025-11-16",
+      "TMAX": null,
+      "TMIN": null
+     }
+    }
+   ],
+   "benchland40": [
+    {
+     "id": "USC00247864",
+     "name": "STANFORD",
+     "network": "COOP",
+     "miles": 10.9,
+     "share_reported": {
+      "SNOW": 0.799,
+      "SNWD": 0.819,
+      "PRCP": 0.963,
+      "TMAX": 0.967,
+      "TMIN": 0.966
+     },
+     "share_unflagged": {
+      "SNOW": 0.799,
+      "SNWD": 0.819,
+      "PRCP": 0.963,
+      "TMAX": 0.966,
+      "TMIN": 0.965
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 3,
+      "SNWD": 3,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2026-10-16",
+      "SNWD": "2026-10-16",
+      "PRCP": "2026-10-16",
+      "TMAX": "2026-10-16",
+      "TMIN": "2026-10-16"
+     }
+    },
+    {
+     "id": "USW00004140",
+     "name": "LEWISTOWN 42 WSW",
+     "network": "WBAN",
+     "miles": 18.53,
+     "share_reported": {
+      "SNOW": 0.0,
+      "SNWD": 0.0,
+      "PRCP": 1.0,
+      "TMAX": 0.998,
+      "TMIN": 0.998
+     },
+     "share_unflagged": {
+      "SNOW": 0.0,
+      "SNWD": 0.0,
+      "PRCP": 1.0,
+      "TMAX": 0.998,
+      "TMIN": 0.998
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": null,
+      "SNWD": null,
+      "PRCP": "2026-10-16",
+      "TMAX": "2026-10-16",
+      "TMIN": "2026-10-16"
+     }
+    },
+    {
+     "id": "US1MTFG0003",
+     "name": "BUFFALO 1.7 E",
+     "network": "CoCoRaHS",
+     "miles": 20.89,
+     "share_reported": {
+      "SNOW": 0.817,
+      "SNWD": 0.0,
+      "PRCP": 0.955,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.817,
+      "SNWD": 0.0,
+      "PRCP": 0.955,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 5,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-13",
+      "SNWD": "2022-04-13",
+      "PRCP": "2026-10-13",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "USW00024036",
+     "name": "LEWISTOWN AP",
+     "network": "WBAN",
+     "miles": 26.57,
+     "share_reported": {
+      "SNOW": 0.001,
+      "SNWD": 0.349,
+      "PRCP": 0.996,
+      "TMAX": 0.999,
+      "TMIN": 1.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.001,
+      "SNWD": 0.349,
+      "PRCP": 0.996,
+      "TMAX": 0.998,
+      "TMIN": 0.999
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 2,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2024-04-29",
+      "SNWD": "2024-04-30",
+      "PRCP": "2026-10-15",
+      "TMAX": "2026-10-15",
+      "TMIN": "2026-10-15"
+     }
+    },
+    {
+     "id": "US1MTFG0006",
+     "name": "LEWISTOWN 0.4 SW",
+     "network": "CoCoRaHS",
+     "miles": 27.59,
+     "share_reported": {
+      "SNOW": 0.106,
+      "SNWD": 0.0,
+      "PRCP": 0.184,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.106,
+      "SNWD": 0.0,
+      "PRCP": 0.184,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 0,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2025-10-24",
+      "SNWD": "2026-03-16",
+      "PRCP": "2026-09-20",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "USC00244976",
+     "name": "LEWISTOWN",
+     "network": "COOP",
+     "miles": 28.71,
+     "share_reported": {
+      "SNOW": 0.368,
+      "SNWD": 0.337,
+      "PRCP": 0.465,
+      "TMAX": 0.695,
+      "TMIN": 0.693
+     },
+     "share_unflagged": {
+      "SNOW": 0.368,
+      "SNWD": 0.337,
+      "PRCP": 0.465,
+      "TMAX": 0.693,
+      "TMIN": 0.693
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 1,
+      "SNWD": 0,
+      "PRCP": 1,
+      "TMAX": 3,
+      "TMIN": 3
+     },
+     "last_date": {
+      "SNOW": "2023-02-19",
+      "SNWD": "2023-02-19",
+      "PRCP": "2024-11-13",
+      "TMAX": "2025-01-24",
+      "TMIN": "2025-01-24"
+     }
+    },
+    {
+     "id": "USC00244978",
+     "name": "LEWISTOWN 11 SSE",
+     "network": "COOP",
+     "miles": 31.1,
+     "share_reported": {
+      "SNOW": 0.9,
+      "SNWD": 0.667,
+      "PRCP": 0.995,
+      "TMAX": 0.989,
+      "TMIN": 0.982
+     },
+     "share_unflagged": {
+      "SNOW": 0.9,
+      "SNWD": 0.667,
+      "PRCP": 0.995,
+      "TMAX": 0.989,
+      "TMIN": 0.981
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 4,
+      "SNWD": 2,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2026-05-18",
+      "SNWD": "2026-04-27",
+      "PRCP": "2026-10-06",
+      "TMAX": "2026-10-06",
+      "TMIN": "2026-10-06"
+     }
+    },
+    {
+     "id": "USS0009C01S",
+     "name": "Crystal Lake",
+     "network": "SNOTEL",
+     "miles": 31.31,
+     "share_reported": {
+      "SNOW": 0.0,
+      "SNWD": 1.0,
+      "PRCP": 0.999,
+      "TMAX": 0.999,
+      "TMIN": 0.999
+     },
+     "share_unflagged": {
+      "SNOW": 0.0,
+      "SNWD": 0.999,
+      "PRCP": 0.999,
+      "TMAX": 0.998,
+      "TMIN": 0.999
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": null,
+      "SNWD": "2026-10-16",
+      "PRCP": "2026-10-14",
+      "TMAX": "2026-10-16",
+      "TMIN": "2026-10-16"
+     }
+    },
+    {
+     "id": "USS0010C15S",
+     "name": "Daisy Peak",
+     "network": "SNOTEL",
+     "miles": 31.89,
+     "share_reported": {
+      "SNOW": 0.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 0.993,
+      "TMIN": 0.991
+     },
+     "share_unflagged": {
+      "SNOW": 0.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 0.993,
+      "TMIN": 0.99
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": null,
+      "SNWD": "2026-10-16",
+      "PRCP": "2026-10-16",
+      "TMAX": "2026-10-16",
+      "TMIN": "2026-10-16"
+     }
+    },
+    {
+     "id": "USC00243947",
+     "name": "HARLOWTON 11NW",
+     "network": "COOP",
+     "miles": 34.81,
+     "share_reported": {
+      "SNOW": 0.995,
+      "SNWD": 0.996,
+      "PRCP": 0.996,
+      "TMAX": 0.993,
+      "TMIN": 0.993
+     },
+     "share_unflagged": {
+      "SNOW": 0.995,
+      "SNWD": 0.996,
+      "PRCP": 0.996,
+      "TMAX": 0.992,
+      "TMIN": 0.993
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 6,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": "2026-10-12",
+      "SNWD": "2026-10-14",
+      "PRCP": "2026-10-14",
+      "TMAX": "2026-10-14",
+      "TMIN": "2026-10-14"
+     }
+    },
+    {
+     "id": "USS0010C06S",
+     "name": "Spur Park",
+     "network": "SNOTEL",
+     "miles": 35.09,
+     "share_reported": {
+      "SNOW": 0.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 1.0,
+      "TMIN": 1.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.0,
+      "SNWD": 0.998,
+      "PRCP": 0.999,
+      "TMAX": 1.0,
+      "TMIN": 0.999
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": null,
+      "SNWD": "2026-10-16",
+      "PRCP": "2026-10-16",
+      "TMAX": "2026-10-16",
+      "TMIN": "2026-10-16"
+     }
+    },
+    {
+     "id": "US1MTCH0006",
+     "name": "GERALDINE 12.0 E",
+     "network": "CoCoRaHS",
+     "miles": 35.75,
+     "share_reported": {
+      "SNOW": 0.747,
+      "SNWD": 0.001,
+      "PRCP": 0.994,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.747,
+      "SNWD": 0.001,
+      "PRCP": 0.994,
+      "TMAX": 0.0,
+      "TMIN": 0.0
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 0,
+      "PRCP": 6,
+      "TMAX": 0,
+      "TMIN": 0
+     },
+     "last_date": {
+      "SNOW": "2026-10-16",
+      "SNWD": "2026-02-10",
+      "PRCP": "2026-10-16",
+      "TMAX": null,
+      "TMIN": null
+     }
+    },
+    {
+     "id": "USS0010C09S",
+     "name": "Deadman Creek",
+     "network": "SNOTEL",
+     "miles": 37.03,
+     "share_reported": {
+      "SNOW": 0.0,
+      "SNWD": 1.0,
+      "PRCP": 1.0,
+      "TMAX": 1.0,
+      "TMIN": 1.0
+     },
+     "share_unflagged": {
+      "SNOW": 0.0,
+      "SNWD": 0.999,
+      "PRCP": 1.0,
+      "TMAX": 1.0,
+      "TMIN": 0.998
+     },
+     "years_ge80_unflagged": {
+      "SNOW": 0,
+      "SNWD": 6,
+      "PRCP": 6,
+      "TMAX": 6,
+      "TMIN": 6
+     },
+     "last_date": {
+      "SNOW": null,
+      "SNWD": "2026-10-16",
+      "PRCP": "2026-10-16",
+      "TMAX": "2026-10-16",
+      "TMIN": "2026-10-16"
+     }
+    }
+   ]
+  },
+  "snodas": {
+   "sample_dates": 20,
+   "min_mb": 2.61,
+   "max_mb": 24.82,
+   "mean_mb": 11.94,
+   "median_mb": 10.87,
+   "five_year_days_2021_2025": 1826,
+   "est_total_gb_at_mean": 21.8,
+   "est_total_gb_at_min": 4.8,
+   "est_total_gb_at_max": 45.3,
+   "per_year_gb_at_mean": 4.4,
+   "members_per_tar": 16
+  },
+  "cocorahs_pair_km": 0.61,
+  "snow_zero_vs_positive_2024_25": {
+   "USW00024033": {
+    "reported": 365,
+    "zero_days": 331,
+    "positive_days": 34,
+    "trace_mflag": 24
+   },
+   "USW00024143": {
+    "reported": 365,
+    "zero_days": 321,
+    "positive_days": 44,
+    "trace_mflag": 25
+   },
+   "US1MTYS0041": {
+    "reported": 247,
+    "zero_days": 224,
+    "positive_days": 23,
+    "trace_mflag": 0
+   },
+   "US1MTYS0046": {
+    "reported": 286,
+    "zero_days": 266,
+    "positive_days": 20,
+    "trace_mflag": 6
+   }
+  },
+  "stations_with_gsod_s_flag_in_snow_or_prcp_2020_2025": 0,
+  "cross_check_2025_rain_and_temperature": {
+   "Billings (401 N 27th St sample)": {
+    "USW00024033": {
+     "name": "BILLINGS INTL AP",
+     "elev_m": 1094.2,
+     "prcp_2025_in": 18.3,
+     "prcp_2025_days": 365,
+     "tmax_mean_2025_F": 60.3,
+     "tmin_mean_2025_F": 38.4,
+     "records_2020_2025": {
+      "tmax_c": 41.7,
+      "tmax_f": 107.1,
+      "tmax_date": "2021-07-19",
+      "tmin_c": -32.1,
+      "tmin_f": -25.8,
+      "tmin_date": "2024-01-13"
+     }
+    },
+    "USC00240802": {
+     "name": "BILLINGS WTP",
+     "elev_m": 944.0,
+     "prcp_2025_in": 18.32,
+     "prcp_2025_days": 363,
+     "tmax_mean_2025_F": 62.3,
+     "tmin_mean_2025_F": 36.6,
+     "records_2020_2025": {
+      "tmax_c": 40.0,
+      "tmax_f": 104.0,
+      "tmax_date": "2024-07-25",
+      "tmin_c": -35.6,
+      "tmin_f": -32.1,
+      "tmin_date": "2024-01-13"
+     }
+    },
+    "USC00240801": {
+     "name": "BILLINGS WFO",
+     "elev_m": 970.8,
+     "prcp_2025_in": 19.26,
+     "prcp_2025_days": 365,
+     "tmax_mean_2025_F": 63.2,
+     "tmin_mean_2025_F": 37.0,
+     "records_2020_2025": {
+      "tmax_c": 43.9,
+      "tmax_f": 111.0,
+      "tmax_date": "2021-07-19",
+      "tmin_c": -35.0,
+      "tmin_f": -31.0,
+      "tmin_date": "2024-01-13"
+     }
+    },
+    "US1MTYS0041": {
+     "name": "BILLINGS 1.7 W",
+     "elev_m": 999.7,
+     "prcp_2025_in": 20.77,
+     "prcp_2025_days": 358,
+     "tmax_mean_2025_F": null,
+     "tmin_mean_2025_F": null,
+     "records_2020_2025": {}
+    },
+    "US1MTYS0046": {
+     "name": "BILLINGS 1.9 WNW",
+     "elev_m": 1030.8,
+     "prcp_2025_in": 14.1,
+     "prcp_2025_days": 343,
+     "tmax_mean_2025_F": null,
+     "tmin_mean_2025_F": null,
+     "records_2020_2025": {}
+    }
+   },
+   "Benchland (47.08 N 110.02 W sample)": {
+    "USC00247864": {
+     "name": "STANFORD",
+     "elev_m": 1307.3,
+     "prcp_2025_in": 15.53,
+     "prcp_2025_days": 354,
+     "tmax_mean_2025_F": 57.3,
+     "tmin_mean_2025_F": 33.2,
+     "records_2020_2025": {
+      "tmax_c": 37.2,
+      "tmax_f": 99.0,
+      "tmax_date": "2022-09-07",
+      "tmin_c": -37.8,
+      "tmin_f": -36.0,
+      "tmin_date": "2024-01-15"
+     }
+    },
+    "USW00004140": {
+     "name": "LEWISTOWN 42 WSW",
+     "elev_m": 1545.3,
+     "prcp_2025_in": 17.84,
+     "prcp_2025_days": 365,
+     "tmax_mean_2025_F": 55.7,
+     "tmin_mean_2025_F": 28.4,
+     "records_2020_2025": {
+      "tmax_c": 35.7,
+      "tmax_f": 96.3,
+      "tmax_date": "2022-09-03",
+      "tmin_c": -44.1,
+      "tmin_f": -47.4,
+      "tmin_date": "2024-01-13"
+     }
+    },
+    "USC00244978": {
+     "name": "LEWISTOWN 11 SSE",
+     "elev_m": 1513.3,
+     "prcp_2025_in": 27.87,
+     "prcp_2025_days": 364,
+     "tmax_mean_2025_F": 55.0,
+     "tmin_mean_2025_F": 31.8,
+     "records_2020_2025": {
+      "tmax_c": 35.0,
+      "tmax_f": 95.0,
+      "tmax_date": "2022-09-08",
+      "tmin_c": -38.9,
+      "tmin_f": -38.0,
+      "tmin_date": "2024-01-13"
+     }
+    },
+    "USS0009C01S": {
+     "name": "Crystal Lake",
+     "elev_m": 1844.0,
+     "prcp_2025_in": 47.93,
+     "prcp_2025_days": 365,
+     "tmax_mean_2025_F": 50.9,
+     "tmin_mean_2025_F": 28.3,
+     "records_2020_2025": {
+      "tmax_c": 34.1,
+      "tmax_f": 93.4,
+      "tmax_date": "2024-07-24",
+      "tmin_c": -41.9,
+      "tmin_f": -43.4,
+      "tmin_date": "2024-01-12"
+     }
+    }
+   }
+  }
+ },
+ "open_questions": [
+  "Why do the S3 by-station files for all SNOTEL and WBAN Montana stations stop at 2025-02-06 while the NCEI .dly files are current? Is it the NODD prefix change or the NCEI cloud migration? Check the GHCN status feed and the parquet/ copy before deciding whether any S3 file is used.",
+  "Crystal Lake SNOTEL temperatures differ between S3 csv and NCEI .dly (TMIN: NCEI minus S3 mean -1.2 C on 1,848 days). The .dly is newer; confirm which values the owner should show and record the version.",
+  "The 2024-25 season totals (64.3 in at Billings Logan, 47.4 in at Great Falls) are as recorded. They were not checked against an NWS climate product in this run; the three-station February 2025 agreement is not an independent check of totals.",
+  "The 80 percent threshold is close for some stations (Stanford snow 79.9 percent). The distribution of coverage across all 481 Montana stations was not computed (it needs the .dly set, 392 MB, or csv.gz for COOP and CoCoRaHS).",
+  "The smallest daily file set is not known. Compute the union of the two-nearest-per-element stations over all town and tile centres before choosing between csv.gz and .dly, and check the superghcnd diff files (not examined here).",
+  "CoCoRaHS absent days: US1MTYS0041 reports 247 of 365 days in 2024-25 (224 zero days, 23 with snow). Are absent days non-reports or zero-snow days in CoCoRaHS practice? This decides whether coverage penalises snowless months. Not checked against CoCoRaHS documentation.",
+  "Snow depth from CoCoRaHS in Montana was not measured across the state; US1MTYS0041 reports depth on 0.3 percent of days. Depth should come from SNOTEL, COOP and airport stations unless a wider check shows otherwise.",
+  "SNODAS terms beyond the citation condition and any NOHRSC point-query product were not verified (NOHRSC /snodas/ is 404, the NSIDC citation-policy page is 404, /nsa/ has no SNODAS terms). A five-year backfill would be about 21.8 GB, so it is not practical here; if gridded snow is wanted later, plan a separate budget and a per-point extraction method.",
+  "NCEI product page has no licence sentence; the CC0 text is on the AWS registry page for NODD. The owner may want an NOAA data policy quote for the About page; not fetched in this run.",
+  "Judith Basin: no station near Benchland reported in 2025 (Judith Gap stations end 2021 to 2023). Crystal Lake SNOTEL (31.3 mi) and Stanford COOP (10.9 mi) are the nearest active stations for the Benchland point.",
+  "RAWS stations (109 in Montana) have no core-element records in 2025 and are not in the daily set; their wind or other elements were not checked.",
+  "The inventory counts are ranges. Coverage in this report comes from the files for 45 candidate stations and the 5 named stations only.",
+  "Billings WFO COOP reads 43.9 C (111.0 F) on 2021-07-19, when Billings Logan reads 41.7 C and WTP 37.2 C. Check the WFO value (and its S-flag 7 source) against an NWS climate product before any record high is shown for Billings; station records differ by several degrees on the same day."
+ ],
+ "download_bytes_total": 146501809,
+ "record_file": "/home/user/wt/research-b35/snow-stations.json",
+ "scripts_dir": "/home/user/wt/research-b35/scratch-snow-stations/scripts",
+ "outputs_dir": "/home/user/wt/research-b35/scratch-snow-stations/outputs",
+ "downloads_dir": "/home/user/wt/research-b35/scratch-snow-stations/downloads",
+ "fetch_log": "/home/user/wt/research-b35/scratch-snow-stations/fetchlog.tsv"
+}

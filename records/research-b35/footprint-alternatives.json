@@ -1,0 +1,1006 @@
+{
+  "slug": "footprint-alternatives",
+  "date_utc": "2026-10-19",
+  "scope": "Footprint sources beyond FEMA and ORNL USA Structures: Microsoft US Building Footprints (Montana), Overture buildings (release 2026-09-23.1), OpenStreetMap buildings (Billings sample box), shape and count comparison at the Billings sample, legal reading of ODbL 1.0 sections 4.2 to 4.6.",
+  "bottom_line": "Microsoft US Building Footprints (ODbL) is the statewide set measured here: 773,199 Montana polygons, all single-ring. In the Billings sample box, Overture repeats OSM geometry (428 of 441 outlines identical to OSM), so it adds little independent shape there. Microsoft and OpenStreetMap are ODbL, and Overture buildings are ODbL with CC BY 4.0 components, so any published per-tile footprint JSON from these sources carries share-alike duties. The USGS zoom 17 tile cache returned 404 in four requests, so the visual overlay used zoom-17-extent exports instead.",
+  "recommendation": "Order of preference for publishing per-tile footprint data, with legal basis (not a quality ranking): 1) a federal public-domain footprint set, only after its authors and terms are verified (17 U.S.C. 105 covers works by federal employees; public-domain data has no ODbL share-alike); 2) Microsoft US Building Footprints for Montana (ODbL 1.0, one licence, one bulk file, all polygons, release and capture-date tags present for 11.7 percent of features); publish the tiles under ODbL with the licence copy or URI and the 4.3 notice, keep the full tile set downloadable (4.6); 3) OpenStreetMap buildings (ODbL 1.0; credit line 'OpenStreetMap contributors'; same-licence duty), extract needed for Montana, not measured here; 4) Overture buildings last: ODbL for the theme plus CC BY 4.0 components that need their own credit, and in the Billings box most outlines repeat OSM. Mixing public-domain and ODbL data in one tile file likely puts the whole file under ODbL. Counsel should confirm the US reading of ODbL before publishing.",
+  "request_log": [
+    {
+      "time_utc": "2026-10-19T02:36:17Z",
+      "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+      "http_status": "200",
+      "bytes": 13784,
+      "content_type": "text/plain; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:17Z",
+      "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/main/README.md",
+      "http_status": "404",
+      "bytes": 14,
+      "content_type": "text/plain; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:18Z",
+      "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/LICENSE",
+      "http_status": "404",
+      "bytes": 14,
+      "content_type": "text/plain; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:18Z",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "http_status": "200",
+      "bytes": 51176,
+      "content_type": "text/html; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:19Z",
+      "url": "https://www.openstreetmap.org/copyright",
+      "http_status": "200",
+      "bytes": 21314,
+      "content_type": "text/html; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:19Z",
+      "url": "https://docs.overturemaps.org/attribution/",
+      "http_status": "200",
+      "bytes": 125952,
+      "content_type": "text/html; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:20Z",
+      "url": "https://docs.overturemaps.org/getting-data/",
+      "http_status": "200",
+      "bytes": 30749,
+      "content_type": "text/html; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:20Z",
+      "url": "https://stac.overturemaps.org/catalog.json",
+      "http_status": "200",
+      "bytes": 6529,
+      "content_type": "application/json",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:33Z",
+      "url": "https://api.github.com/repos/microsoft/USBuildingFootprints/contents/",
+      "http_status": "400",
+      "bytes": 138,
+      "content_type": "application/json; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:34Z",
+      "url": "https://api.github.com/repos/microsoft/USBuildingFootprints/license",
+      "http_status": "403",
+      "bytes": 378,
+      "content_type": "application/json; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:36:44Z",
+      "url": "https://minedbuildings.z5.web.core.windows.net/legacy/usbuildings-v2/Montana.geojson.zip",
+      "http_status": "200",
+      "bytes": 26578292,
+      "content_type": "application/x-zip-compressed",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:37:44Z",
+      "url": "https://docs.overturemaps.org/getting-data/cloud-sources/",
+      "http_status": "200",
+      "bytes": 30739,
+      "content_type": "text/html; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:37:44Z",
+      "url": "https://docs.overturemaps.org/release-calendar/",
+      "http_status": "200",
+      "bytes": 28554,
+      "content_type": "text/html; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:37:45Z",
+      "url": "https://stac.overturemaps.org/2026-09-23.1/catalog.json",
+      "http_status": "200",
+      "bytes": 1633,
+      "content_type": "application/json",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:37:45Z",
+      "url": "https://stac.overturemaps.org/2026-09-23.1/buildings/building/collection.json",
+      "http_status": "200",
+      "bytes": 108922,
+      "content_type": "application/json",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:37:52Z",
+      "url": "https://stac.overturemaps.org/2026-09-23.1/buildings/catalog.json",
+      "http_status": "200",
+      "bytes": 962,
+      "content_type": "application/json",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:38:19Z",
+      "url": "https://stac.overturemaps.org/2026-09-23.1/buildings/building/00039/00039.json",
+      "http_status": "200",
+      "bytes": 2786,
+      "content_type": "application/json",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:38:19Z",
+      "url": "https://stac.overturemaps.org/2026-09-23.1/buildings/building/00040/00040.json",
+      "http_status": "200",
+      "bytes": 2786,
+      "content_type": "application/json",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:39:43Z",
+      "url": "https://overpass-api.de/api/interpreter",
+      "http_status": "000",
+      "bytes": 0,
+      "content_type": "",
+      "curl_rc_note": "rc=35"
+    },
+    {
+      "time_utc": "2026-10-19T02:39:43Z",
+      "url": "https://overpass.kumi.systems/api/interpreter",
+      "http_status": "500",
+      "bytes": 646,
+      "content_type": "text/html; charset=iso-8859-1",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:39:50Z",
+      "url": "https://lz4.overpass-api.de/api/interpreter",
+      "http_status": "000",
+      "bytes": 0,
+      "content_type": "",
+      "curl_rc_note": "rc=35"
+    },
+    {
+      "time_utc": "2026-10-19T02:39:50Z",
+      "url": "https://overpass.openstreetmap.fr/api/interpreter",
+      "http_status": "403",
+      "bytes": 53,
+      "content_type": "application/octet-stream",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:40:04Z",
+      "url": "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+      "http_status": "200",
+      "bytes": 319375,
+      "content_type": "application/json",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:40:33Z",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/17/46743/26030",
+      "http_status": "404",
+      "bytes": 572,
+      "content_type": "text/html;charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:40:33Z",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/17/46743/26031",
+      "http_status": "404",
+      "bytes": 572,
+      "content_type": "text/html;charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:40:40Z",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer?f=pjson",
+      "http_status": "200",
+      "bytes": 10338,
+      "content_type": "text/plain;charset=UTF-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:40:52Z",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/16/23371/13015",
+      "http_status": "200",
+      "bytes": 34579,
+      "content_type": "image/jpeg",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:40:53Z",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/16/23371/13016",
+      "http_status": "200",
+      "bytes": 32410,
+      "content_type": "image/jpeg",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:40:54Z",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/17/46743/26030",
+      "http_status": "404",
+      "bytes": 572,
+      "content_type": "text/html;charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:41:06Z",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/17/46000/25000",
+      "http_status": "404",
+      "bytes": 572,
+      "content_type": "text/html;charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:41:17Z",
+      "url": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage?bbox=-12078884.9577,5745618.5421,-12078579.2096,5745924.2903&bboxSR=3857&imageSR=3857&size=512,512&format=jpg&f=image",
+      "http_status": "504",
+      "bytes": 132,
+      "content_type": "text/html",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:41:18Z",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/export?bbox=-12078884.9577,5745618.5421,-12078579.2096,5745924.2903&bboxSR=3857&imageSR=3857&size=512,512&format=jpg&f=image",
+      "http_status": "200",
+      "bytes": 48532,
+      "content_type": "image/jpeg",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:41:32Z",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/export?bbox=-12078579.2096,5745618.5421,-12078273.4615,5745924.2903&bboxSR=3857&imageSR=3857&size=512,512&format=jpg&f=image",
+      "http_status": "200",
+      "bytes": 49341,
+      "content_type": "image/jpeg",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:41:43Z",
+      "url": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage?bbox=-12078884.9577,5745618.5421,-12078579.2096,5745924.2903&bboxSR=3857&imageSR=3857&size=512,512&format=jpg&f=image",
+      "http_status": "504",
+      "bytes": 132,
+      "content_type": "text/html",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:47:25Z",
+      "url": "https://opendatacommons.org/licenses/odbl/summary/",
+      "http_status": "200",
+      "bytes": 26255,
+      "content_type": "text/html; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:47:25Z",
+      "url": "https://www.law.cornell.edu/uscode/text/17/105",
+      "http_status": "200",
+      "bytes": 68298,
+      "content_type": "text/html; charset=utf-8",
+      "curl_rc_note": "rc=0"
+    },
+    {
+      "time_utc": "2026-10-19T02:47:27Z",
+      "url": "https://wiki.osmfoundation.org/wiki/Licence/Attribution_Guidelines",
+      "http_status": "200",
+      "bytes": 58627,
+      "content_type": "text/html; charset=UTF-8",
+      "curl_rc_note": "rc=0"
+    }
+  ],
+  "range_request_log": [
+    {
+      "time_utc": "2026-10-19T02:38:36Z",
+      "label": "ov-part-00039",
+      "offset": 610245425,
+      "bytes": 65536,
+      "status": "206"
+    },
+    {
+      "time_utc": "2026-10-19T02:38:37Z",
+      "label": "ov-part-00039",
+      "offset": 608851983,
+      "bytes": 1458970,
+      "status": "206"
+    },
+    {
+      "time_utc": "2026-10-19T02:38:48Z",
+      "label": "ov-part-00039-meta",
+      "offset": 610245425,
+      "bytes": 65536,
+      "status": "206"
+    },
+    {
+      "time_utc": "2026-10-19T02:38:49Z",
+      "label": "ov-part-00039-meta",
+      "offset": 608851983,
+      "bytes": 1458970,
+      "status": "206"
+    },
+    {
+      "time_utc": "2026-10-19T02:39:16Z",
+      "label": "ov-part-00039-read",
+      "offset": 608174080,
+      "bytes": 2136881,
+      "status": "206"
+    },
+    {
+      "time_utc": "2026-10-19T02:39:17Z",
+      "label": "ov-part-00039-read",
+      "offset": 444596224,
+      "bytes": 4194304,
+      "status": "206"
+    },
+    {
+      "time_utc": "2026-10-19T02:39:18Z",
+      "label": "ov-part-00039-read",
+      "offset": 448790528,
+      "bytes": 4194304,
+      "status": "206"
+    }
+  ],
+  "urls_checked": [
+    {
+      "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+      "http_status": "200",
+      "bytes": 13784,
+      "content_check": "README read: ODbL licence statement, Montana row 773,199 buildings and 200.45 MiB unzipped, capture-date tag text, EPSG 4326"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/main/README.md",
+      "http_status": "404",
+      "bytes": 14,
+      "content_check": "no main-branch README; default branch is master"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/LICENSE",
+      "http_status": "404",
+      "bytes": 14,
+      "content_check": "no LICENSE file at this path; repo root listing not readable (API 403, repo not attached)"
+    },
+    {
+      "url": "https://minedbuildings.z5.web.core.windows.net/legacy/usbuildings-v2/Montana.geojson.zip",
+      "http_status": "200 (HEAD and GET)",
+      "bytes": 26578292,
+      "content_check": "Content-Length 26,578,292; zip test OK; one member Montana.geojson 210,192,210 bytes; 773,199 Feature lines parsed, 0 bad lines; Last-Modified Thu, 07 Nov 2024 17:00:11 GMT"
+    },
+    {
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "http_status": "200",
+      "bytes": 51176,
+      "content_check": "full ODbL 1.0 text; sections 1.0 definitions and 4.2 to 4.6 read and quoted"
+    },
+    {
+      "url": "https://opendatacommons.org/licenses/odbl/summary/",
+      "http_status": "200",
+      "bytes": 26255,
+      "content_check": "human summary; its own disclaimer says it has no legal value"
+    },
+    {
+      "url": "https://www.openstreetmap.org/copyright",
+      "http_status": "200",
+      "bytes": 21314,
+      "content_check": "OSM licence summary: credit OpenStreetMap and its contributors; same-license rule for altered data"
+    },
+    {
+      "url": "https://osmfoundation.org/wiki/Licence/Attribution_Guidelines",
+      "http_status": "200 (redirected from wiki.osmfoundation.org)",
+      "bytes": 58627,
+      "content_check": "attribution guidelines page read; not quoted in the record"
+    },
+    {
+      "url": "https://docs.overturemaps.org/attribution/",
+      "http_status": "200",
+      "bytes": 125952,
+      "content_check": "per-theme licence: Buildings 'License for theme: ODbL' with OSM, Microsoft (ODbL) and CC BY 4.0 components listed"
+    },
+    {
+      "url": "https://docs.overturemaps.org/getting-data/",
+      "http_status": "200",
+      "bytes": 30749,
+      "content_check": "DuckDB and CLI examples; release path s3://overturemaps-us-west-2/release/2026-09-23.1/ in example; latest release via STAC"
+    },
+    {
+      "url": "https://docs.overturemaps.org/getting-data/cloud-sources/",
+      "http_status": "200",
+      "bytes": 30739,
+      "content_check": "S3 base s3://overturemaps-us-west-2/release/<RELEASE>; Azure https://overturemapswestus2.blob.core.windows.net/release/<RELEASE>; root catalog has a latest field"
+    },
+    {
+      "url": "https://stac.overturemaps.org/catalog.json",
+      "http_status": "200",
+      "bytes": 6529,
+      "content_check": "latest = 2026-09-23.1; child releases 2026-08-19.0, 2026-09-23.0, 2026-09-23.1"
+    },
+    {
+      "url": "https://stac.overturemaps.org/2026-09-23.1/buildings/building/collection.json",
+      "http_status": "200",
+      "bytes": 108922,
+      "content_check": "license ODbL-1.0; 512 partitions; table:row_count 2,533,842,612; extent list holds 512 per-partition bboxes"
+    },
+    {
+      "url": "https://stac.overturemaps.org/2026-09-23.1/buildings/building/00039/00039.json",
+      "http_status": "200",
+      "bytes": 2786,
+      "content_check": "asset part-00039 file:size 610,310,961; bbox covers the Billings sample point; 4,895,221 rows; 256 row groups"
+    },
+    {
+      "url": "https://overturemaps-us-west-2.s3.us-west-2.amazonaws.com/release/2026-09-23.1/theme=buildings/type=building/part-00039-d706067c-e536-5a31-8c97-55f70757ee77-c000.zstd.parquet",
+      "http_status": "200 (HEAD); 206 (range reads)",
+      "bytes": 13574501,
+      "content_check": "Content-Length 610,310,961; Accept-Ranges bytes; footer 1,524,506 bytes; row groups 184 and 185 read (37,208 rows); 441 bbox hits in the Billings box"
+    },
+    {
+      "url": "https://overpass-api.de/api/interpreter",
+      "http_status": "curl exit 35 (TLS connect error)",
+      "bytes": 0,
+      "content_check": "not reachable from this session"
+    },
+    {
+      "url": "https://lz4.overpass-api.de/api/interpreter",
+      "http_status": "curl exit 35 (TLS connect error)",
+      "bytes": 0,
+      "content_check": "not reachable from this session"
+    },
+    {
+      "url": "https://overpass.openstreetmap.fr/api/interpreter",
+      "http_status": "403",
+      "bytes": 53,
+      "content_check": "'This service is only available to white-listed usages'"
+    },
+    {
+      "url": "https://overpass.kumi.systems/api/interpreter",
+      "http_status": "500",
+      "bytes": 646,
+      "content_check": "HTML 500 page; no data"
+    },
+    {
+      "url": "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+      "http_status": "200",
+      "bytes": 319375,
+      "content_check": "Overpass JSON; 433 closed ways and 2 relations; osm3s timestamp 2026-10-19T02:37:40Z; ODbL copyright string. Third-party mirror, used because the primary endpoints were unreachable"
+    },
+    {
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer?f=pjson",
+      "http_status": "200",
+      "bytes": 10338,
+      "content_check": "service JSON: copyright 'USDA, USGS The National Map: Orthoimagery. Data refreshed June, 2024.v1.2'; described as visible to the 1:9,028 scale; maxScale 9,027.98"
+    },
+    {
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/17/46743/26030",
+      "http_status": "404",
+      "bytes": 572,
+      "content_check": "ArcGIS REST 'Error: Not Found' page; zoom 17 tile not served (also 17/46743/26031 and 17/46000/25000 returned 404)"
+    },
+    {
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/16/23371/13015",
+      "http_status": "200",
+      "bytes": 34579,
+      "content_check": "image/jpeg 256x256; zoom 16 tile served (sample area)"
+    },
+    {
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/16/23371/13016",
+      "http_status": "200",
+      "bytes": 32410,
+      "content_check": "image/jpeg 256x256; zoom 16 tile served (east neighbour)"
+    },
+    {
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/export (bbox of zoom 17 tile 46743/26030, 512 px)",
+      "http_status": "200",
+      "bytes": 48532,
+      "content_check": "image/jpeg 512x512; orthoimagery of the zoom 17 tile extent; used for the overlay"
+    },
+    {
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/export (bbox of zoom 17 tile 46743/26031, 512 px)",
+      "http_status": "200",
+      "bytes": 49341,
+      "content_check": "image/jpeg 512x512; east neighbour extent; used for the overlay"
+    },
+    {
+      "url": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage (sample extent)",
+      "http_status": "504 (twice)",
+      "bytes": 264,
+      "content_check": "gateway timeout; NAIP export not obtained"
+    },
+    {
+      "url": "https://www.law.cornell.edu/uscode/text/17/105",
+      "http_status": "200",
+      "bytes": 68298,
+      "content_check": "17 U.S.C. 105 text: 'Copyright protection under this title is not available for any work of the United States Government...'; section 101 definition quoted in annotations"
+    }
+  ],
+  "facts": [
+    {
+      "claim": "Microsoft US Building Footprints, Montana file",
+      "value": "Montana.geojson.zip, 26,578,292 bytes (zip); inner Montana.geojson 210,192,210 bytes; README: 773,199 buildings, 200.45 MiB unzipped",
+      "evidence": "HEAD and GET of the README-listed URL, zip test OK, 773,199 Feature lines parsed, 0 bad lines"
+    },
+    {
+      "claim": "Microsoft polygon count and geometry type",
+      "value": "773,199 polygons; all single-ring Polygon; 0 interior rings",
+      "evidence": "ms_stats.py over the full member"
+    },
+    {
+      "claim": "Microsoft vertices per polygon (Montana, outer ring, distinct vertices)",
+      "value": "median 4; p90 8; p99 14; max 32; mean 5.08",
+      "evidence": "ms_stats.py"
+    },
+    {
+      "claim": "Microsoft polygons in the Billings sample box (45.78 to 45.79 N, 108.51 to 108.50 W)",
+      "value": "328 with bbox intersecting the box; 305 with bbox centre inside; vertices median 4, p90 12, max 30",
+      "evidence": "ms_stats.py"
+    },
+    {
+      "claim": "Microsoft polygons in the rural box (47.07 to 47.09 N, 110.03 to 110.01 W)",
+      "value": "35 intersecting; 35 with centre inside; vertices median 4, p90 8, max 10",
+      "evidence": "ms_stats.py"
+    },
+    {
+      "claim": "Microsoft release and capture-date properties",
+      "value": "properties keys: release and capture_dates_range; release 1 = 682,510 features (capture_dates_range empty); release 2 = 90,689 features (capture_dates_range set); capture values 7/28/2019-7/30/2019 (60,092), 7/24/2019-7/27/2019 (30,595), 7/3/2013-3/6/2017 (2); all 328 Billings-box polygons are release 2 with 7/28/2019-7/30/2019. The README does not define the release values.",
+      "evidence": "ms_stats.py and ms_cells.py"
+    },
+    {
+      "claim": "Microsoft statewide extent",
+      "value": "lon -116.055753 to -104.03416; lat 44.444715 to 49.005013",
+      "evidence": "ms_stats.py bbox over all features"
+    },
+    {
+      "claim": "Microsoft self-reported quality (not independently checked)",
+      "value": "README: polygon precision 98.5%, recall 92.4%; IoU 0.86 on about 15k buildings (vendor evaluation)",
+      "evidence": "README text; unverified"
+    },
+    {
+      "claim": "Overture current release",
+      "value": "2026-09-23.1 (STAC root 'latest'); 2026-09-23.0 and 2026-08-19.0 also listed",
+      "evidence": "stac.overturemaps.org/catalog.json"
+    },
+    {
+      "claim": "Overture buildings access path",
+      "value": "S3 s3://overturemaps-us-west-2/release/2026-09-23.1/theme=buildings/type=building/*.parquet; HTTPS https://overturemaps-us-west-2.s3.us-west-2.amazonaws.com/release/2026-09-23.1/theme=buildings/type=building/part-XXXXX-*.zstd.parquet; Azure https://overturemapswestus2.blob.core.windows.net/release/2026-09-23.1/theme=buildings/type=building/; 512 files; 2,533,842,612 rows",
+      "evidence": "STAC collection and item JSON; cloud-sources page"
+    },
+    {
+      "claim": "Overture Billings-box read (bbox row-group pruning)",
+      "value": "Billings point in partition part-00039 (not 00040); 256 row groups; row groups 184 and 185 selected by bbox statistics; 37,208 rows read; 441 features intersect the box, 412 have bbox centre inside",
+      "evidence": "ov_select.py and ov_read.py with HTTP range reads (pyarrow, no new packages)"
+    },
+    {
+      "claim": "Overture Billings-box geometry",
+      "value": "441 features, all single polygon; outer ring vertices median 4, p90 10, max 37, min 4; sources: 235 Microsoft ML Buildings plus OpenStreetMap, 203 OpenStreetMap only, 3 Microsoft ML Buildings only",
+      "evidence": "ov_read.py"
+    },
+    {
+      "claim": "Overture licence for the buildings theme",
+      "value": "STAC collection license ODbL-1.0; attribution page: 'License for theme: ODbL' with OpenStreetMap contributors; components listed as Global ML Building Footprints (Microsoft, ODbL), Google Open Buildings (CC BY 4.0), Esri Community Maps contributors (CC BY 4.0), Qian Shi et al. 2023 (CC BY 4.0), IGN BTN 2024 (CC BY 4.0), USGS 3DEP",
+      "evidence": "docs.overturemaps.org/attribution and STAC collection"
+    },
+    {
+      "claim": "Overture statewide partition count",
+      "value": "3 of 512 partitions (indices 39, 46, 47) have STAC bboxes touching Montana; statewide row-group pruning not measured",
+      "evidence": "STAC extent list"
+    },
+    {
+      "claim": "OpenStreetMap buildings in the Billings box (via a third-party Overpass mirror)",
+      "value": "433 closed building ways and 2 multipolygon relations (435 building objects); building=yes 419, commercial 5, apartments 4, others 7; way vertices median 4, p90 10, max 37, min 4; osm3s timestamp 2026-10-19T02:37:40Z",
+      "evidence": "osm_stats.py on the maps.mail.ru response"
+    },
+    {
+      "claim": "Primary Overpass endpoints",
+      "value": "overpass-api.de and lz4.overpass-api.de failed with TLS error (curl 35); overpass.openstreetmap.fr returned 403; overpass.kumi.systems returned 500; the maps.mail.ru mirror returned 200",
+      "evidence": "url_log.tsv"
+    },
+    {
+      "claim": "Cross-source identity in the Billings box",
+      "value": "428 of 441 Overture outlines are identical to an OSM outline at 7 decimal places (428 of 435 OSM outlines have an Overture twin); exact matches to Microsoft outlines are 2 (7 dp) and 3 (5 dp)",
+      "evidence": "match.py"
+    },
+    {
+      "claim": "Agreement between sources (rasterised IoU, approximate, best match per building, not one-to-one)",
+      "value": "OSM to Microsoft: 275 of 435 at IoU >= 0.5 (median best 0.733; 39 with no candidate); Microsoft to OSM: 275 of 328 at IoU >= 0.5 (median best 0.794; 20 with no candidate). Method check: identical outlines 1.0, disjoint 0.0, a 1 m shift of a house outline about 0.94.",
+      "evidence": "match.py with PIL rasterisation at 0.5 m"
+    },
+    {
+      "claim": "Sample address point",
+      "value": "45.7836 N, 108.5047 W lies inside exactly one footprint in each source (Microsoft 1, OSM 1, Overture 1)",
+      "evidence": "point-in-ring test in overlay.py"
+    },
+    {
+      "claim": "USGS imagery at zoom 17",
+      "value": "tile cache returns 404 at zoom 17 (sample tile twice, east neighbour, and a rural probe); zoom 16 tiles served as 256 px JPEG; the MapServer export at the zoom 17 tile extent returned 512 px JPEG",
+      "evidence": "fetch log lines for the tile and export URLs"
+    },
+    {
+      "claim": "Visual alignment in the sample tile (zoom-17-extent export, both tiles reviewed)",
+      "value": "Microsoft (red): outlines follow most visible roofs; some outlines appear to take in neighbouring surfaces or omit small structures; the east tile shows fewer narrow outlines at lower right than OSM. OpenStreetMap (blue) and Overture (green): nearly identical outlines that follow roof edges closely, including narrow structures. No measurement claimed from the visual check.",
+      "evidence": "overlay_sample_grid.png, overlay_east_grid.png (scratch folder)"
+    },
+    {
+      "claim": "Imagery and footprint vintage",
+      "value": "USGS service copyright says data refreshed June 2024; Microsoft footprints in the Billings box are dated 28 to 30 July 2019; the mismatch may explain some visual offsets (not tested)",
+      "evidence": "service JSON and capture_dates_range values"
+    },
+    {
+      "claim": "Public-domain basis for federal works",
+      "value": "17 U.S.C. 105: copyright protection is not available for any work of the United States Government; section 101 definition: a work prepared by an officer or employee of the United States Government as part of that person's official duties",
+      "evidence": "law.cornell.edu/uscode/text/17/105 and annotations"
+    },
+    {
+      "claim": "Size estimate for statewide per-tile JSON, Microsoft footprints only",
+      "value": "4,296 cells of 0.1 degree contain footprints; per cell median 5,466 bytes, p90 38,128, max 5,108,352; total about 118.6 MB at 5 decimal places (about 128.0 MB at 6 places), about 153 bytes per building; buildings per cell median 38, p90 256, max 30,800. Estimate: compact coordinate arrays plus 20 bytes per building, no gzip, no ids or properties.",
+      "evidence": "ms_cells.py"
+    },
+    {
+      "claim": "Overture Microsoft-sourced features are a different Microsoft release",
+      "value": "Overture attribution credits Microsoft via Global ML Building Footprints (github.com/microsoft/GlobalMLBuildingFootprints), not the US Building Footprints file; the 238 Microsoft-tagged Billings features are therefore not proven to be the US file",
+      "evidence": "docs.overturemaps.org/attribution buildings section; ov_read.py source counts"
+    }
+  ],
+  "terms": [
+    {
+      "source": "Microsoft US Building Footprints README (master)",
+      "url": "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md",
+      "quote": "This data is licensed by Microsoft under the [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).",
+      "reading": "The Microsoft footprints are ODbL data by the owner's own statement. No separate LICENSE text was found for the data."
+    },
+    {
+      "source": "ODbL 1.0, section 4.2 Notices",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "quote": "If You Publicly Convey this Database, any Derivative Database, or the Database as part of a Collective Database, then You must: a. Do so only under the terms of this License or another license permitted under Section 4.4; b. Include a copy of this License (or, as applicable, a license permitted under Section 4.4) or its Uniform Resource Identifier (URI) with the Database or Derivative Database, including both in the Database or Derivative Database and in any relevant documentation; and c. Keep intact any copyright or Database Right notices and notices that refer to this License.",
+      "reading": "Publishing per-tile files that are a Derivative Database requires the licence copy or URI with the files and intact notices."
+    },
+    {
+      "source": "ODbL 1.0, section 4.3 Notice for using output (Contents)",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "quote": "Creating and Using a Produced Work does not require the notice in Section 4.2. However, if you Publicly Use a Produced Work, You must include a notice associated with the Produced Work reasonably calculated to make any Person that uses, views, accesses, interacts with, or is otherwise exposed to the Produced Work aware that Content was obtained from the Database, Derivative Database, or the Database as part of a Collective Database, and that it is available under this License.",
+      "reading": "A rendered map view of footprints (a Produced Work) needs a visible ODbL notice, and no share-alike, under section 4.5(b). The notice example in 4.3 is: 'Contains information from DATABASE NAME, which is made available here under the Open Database License (ODbL).'"
+    },
+    {
+      "source": "ODbL 1.0, section 4.4 Share alike, (a) and (b)",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "quote": "a. Any Derivative Database that You Publicly Use must be only under the terms of: i. This License; ii. A later version of this License similar in spirit to this License; or iii. A compatible license. ... b. For the avoidance of doubt, Extraction or Re-utilisation of the whole or a Substantial part of the Contents into a new database is a Derivative Database and must comply with Section 4.4.",
+      "reading": "Per-tile footprint JSON that is publicly used must be published under ODbL (or a compatible licence); extracting a substantial part into a new database triggers this."
+    },
+    {
+      "source": "ODbL 1.0, section 4.4(c)",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "quote": "c. Derivative Databases and Produced Works. A Derivative Database is Publicly Used and so must comply with Section 4.4. if a Produced Work created from the Derivative Database is Publicly Used.",
+      "reading": "A map that is produced from a Derivative Database can bring the Derivative Database under share-alike when the map is public."
+    },
+    {
+      "source": "ODbL 1.0, section 4.5 Limits of Share Alike, (b) and (c)",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "quote": "b. Using this Database, a Derivative Database, or this Database as part of a Collective Database to create a Produced Work does not create a Derivative Database for purposes of Section 4.4; and c. Use of a Derivative Database internally within an organisation is not to the public and therefore does not fall under the requirements of Section 4.4.",
+      "reading": "A public map image made from the data is a Produced Work under 4.5(b), so share-alike does not follow from the image alone. Internal use is outside share-alike."
+    },
+    {
+      "source": "ODbL 1.0, section 4.6 Access to Derivative Databases",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "quote": "If You Publicly Use a Derivative Database or a Produced Work from a Derivative Database, You must also offer to recipients of the Derivative Database or Produced Work a copy in a machine readable form of: a. The entire Derivative Database; or b. A file containing all of the alterations made to the Database or the method of making the alterations to the Database (such as an algorithm), including any additional Contents, that make up all the differences between the Database and the Derivative Database. The Derivative Database (under a.) or alteration file (under b.) must be available at no more than a reasonable production cost for physical distributions and free of charge if distributed over the internet.",
+      "reading": "The published tile set must itself be downloadable as a whole, free, in machine-readable form. Dropping some tiles does not remove the duty for the set in use."
+    },
+    {
+      "source": "ODbL 1.0, definition of Substantial",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "quote": "Substantial: Means substantial in terms of quantity or quality or a combination of both. The repeated and systematic Extraction or Re-utilisation of insubstantial parts of the Contents may amount to the Extraction or Re-utilisation of a Substantial part of the Contents.",
+      "reading": "A statewide set of small per-building tiles is systematic extraction, so 'small pieces' is not a safe harbour."
+    },
+    {
+      "source": "ODbL 1.0, definition of Derivative Database",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "quote": "Derivative Database: Means a database based upon the Database, and includes any translation, adaptation, arrangement, modification, or any other alteration of the Database or of a Substantial part of the Contents. This includes, but is not limited to, Extracting or Re-utilising the whole or a Substantial part of the Contents in a new Database.",
+      "reading": "Per-tile JSON built from the footprints is a Derivative Database in plain terms."
+    },
+    {
+      "source": "ODbL 1.0, definition of Database Right",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "quote": "Database Right: Means rights resulting from the Chapter III (sui generis) rights in the Database Directive (as amended and as transposed by member states), which includes the Extraction and Re-utilisation of the whole or a Substantial part of the Contents, as well as any similar rights available in the relevant jurisdiction under Section 10.4.",
+      "reading": "The licence is built around EU database rights and 'similar rights' in each jurisdiction. Whether US users are bound by share-alike through the licence as a contract is a question for counsel; not resolved here."
+    },
+    {
+      "source": "ODbL 1.0 human summary (states it has no legal value)",
+      "url": "https://opendatacommons.org/licenses/odbl/summary/",
+      "quote": "Share-Alike: If you publicly use any adapted version of this database, or works produced from an adapted database, you must also offer that adapted database under the ODbL.",
+      "reading": "Plain-words version of 4.4. The page disclaims legal effect; the full text governs."
+    },
+    {
+      "source": "OpenStreetMap copyright page",
+      "url": "https://www.openstreetmap.org/copyright",
+      "quote": "You are free to copy, distribute, transmit and adapt our data, as long as you credit OpenStreetMap and its contributors. If you alter or build upon our data, you may distribute the result only under the same license.",
+      "reading": "OSM data is ODbL. Credit and same-licence duties apply to the OSM-derived per-tile files."
+    },
+    {
+      "source": "Overpass response, osm3s copyright string (maps.mail.ru mirror)",
+      "url": "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+      "quote": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+      "reading": "Confirms the ODbL label on the mirror output; the mirror itself is not the primary OSM service."
+    },
+    {
+      "source": "Overture attribution, Buildings theme",
+      "url": "https://docs.overturemaps.org/attribution/",
+      "quote": "License for theme: ODbL. © OpenStreetMap contributors. Available under the Open Database License. ... Global ML Building Footprints. Licensed by Microsoft under the Open Database License. ... Google Open Buildings. Available under CC BY 4.0. ... Esri Community Maps contributors. Available under CC BY 4.0.",
+      "reading": "Overture buildings carry ODbL duties from OSM and Microsoft, plus CC BY 4.0 attribution for the listed components. Per-feature 'sources' fields are needed to attribute correctly."
+    },
+    {
+      "source": "Overture STAC buildings collection",
+      "url": "https://stac.overturemaps.org/2026-09-23.1/buildings/building/collection.json",
+      "quote": "\"license\": \"ODbL-1.0\"",
+      "reading": "The machine-readable licence for the buildings type in release 2026-09-23.1 is ODbL 1.0."
+    },
+    {
+      "source": "17 U.S.C. 105, United States Government works",
+      "url": "https://www.law.cornell.edu/uscode/text/17/105",
+      "quote": "Copyright protection under this title is not available for any work of the United States Government, but the United States Government is not precluded from receiving and holding copyrights transferred to it by assignment, bequest, or otherwise.",
+      "reading": "Works prepared by federal employees in official duties are outside US copyright (section 101 definition). Data produced under contract or grant is not covered by this sentence; the source's own terms and authorship must be checked per dataset."
+    },
+    {
+      "source": "USGS imagery service, copyright text (used only for internal comparison)",
+      "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer?f=pjson",
+      "quote": "USDA, USGS The National Map: Orthoimagery. Data refreshed June, 2024.v1.2",
+      "reading": "The imagery was used only to compare footprints, not republished. Its terms of use were not read in full; treat as unverified for any publication."
+    }
+  ],
+  "measurements": {
+    "microsoft_montana": {
+      "features": 773199,
+      "geometry": {
+        "Polygon": 773199
+      },
+      "interior_rings": 0,
+      "release_values": {
+        "1": 682510,
+        "2": 90689
+      },
+      "capture_dates_range_nonempty": 90689,
+      "vertices_outer_ring": {
+        "min": 4,
+        "median": 4,
+        "p90": 8,
+        "p99": 14,
+        "max": 32,
+        "mean": 5.08
+      },
+      "bbox": {
+        "xmin": -116.055753,
+        "xmax": -104.03416,
+        "ymin": 44.444715,
+        "ymax": 49.005013
+      },
+      "box_hits": {
+        "billings": {
+          "intersect": 328,
+          "center": 305
+        },
+        "rural": {
+          "intersect": 35,
+          "center": 35
+        }
+      },
+      "box_vertices": {
+        "billings": {
+          "n": 328,
+          "median": 4,
+          "p90": 12,
+          "max": 30
+        },
+        "rural": {
+          "n": 35,
+          "median": 4,
+          "p90": 8,
+          "max": 10
+        }
+      }
+    },
+    "microsoft_capture_values": {
+      "7/28/2019-7/30/2019": 60092,
+      "7/24/2019-7/27/2019": 30595,
+      "7/3/2013-3/6/2017": 2
+    },
+    "microsoft_grid_0p1": {
+      "features": 773199,
+      "release_by_capture_nonempty": {
+        "(1, False)": 682510,
+        "(2, True)": 90689
+      },
+      "capture_dates_range_distinct_values": 4,
+      "capture_dates_range_top": [
+        [
+          "",
+          682510
+        ],
+        [
+          "7/28/2019-7/30/2019",
+          60092
+        ],
+        [
+          "7/24/2019-7/27/2019",
+          30595
+        ],
+        [
+          "7/3/2013-3/6/2017",
+          2
+        ]
+      ],
+      "capture_year_mentions": {
+        "2013": 2,
+        "2017": 2,
+        "2019": 181374
+      },
+      "grid_0p1_cells_with_buildings": 4296,
+      "per_cell_bytes_5dp_approx": {
+        "median": 5466,
+        "p90": 38128,
+        "max": 5108352,
+        "total": 118632538
+      },
+      "per_cell_buildings": {
+        "median": 38,
+        "p90": 256,
+        "max": 30800
+      },
+      "total_bytes_5dp_approx": 118632538,
+      "total_bytes_6dp_approx": 128036116,
+      "bytes_per_building_5dp_approx": 153.4
+    },
+    "overture_billings": {
+      "release": "2026-09-23.1",
+      "partition": "part-00039",
+      "row_groups_selected": [
+        184,
+        185
+      ],
+      "rows_read": 37208,
+      "bbox_intersect_hits": 441,
+      "bbox_center_hits": 412,
+      "outer_ring_vertices": {
+        "median": 4,
+        "p90": 10,
+        "max": 37,
+        "min": 4
+      },
+      "sources_dataset_counts": {
+        "OpenStreetMap": 438,
+        "Microsoft ML Buildings": 238
+      },
+      "class_counts": {
+        "null": 408,
+        "shelter": 12,
+        "parking": 6,
+        "commercial": 5,
+        "apartments": 4,
+        "library": 1,
+        "school": 1,
+        "pavilion": 1,
+        "roof": 1,
+        "hotel": 1,
+        "shed": 1
+      },
+      "http_bytes_read_in_run": 10525489
+    },
+    "osm_billings": {
+      "ways_closed": 433,
+      "relations": 2,
+      "building_objects": 435,
+      "way_vertices_median": 4,
+      "way_vertices_p90": 10,
+      "way_vertices_max": 37,
+      "way_vertices_min": 4
+    },
+    "cross_source_billings": {
+      "exact": {
+        "ov_in_osm_exact_7dp": 428,
+        "osm_in_ov_exact_7dp": 428,
+        "ms_in_ov_exact_7dp": 2,
+        "ms_in_osm_exact_7dp": 2,
+        "ov_in_osm_exact_6dp": 428,
+        "osm_in_ov_exact_6dp": 428,
+        "ms_in_ov_exact_6dp": 2,
+        "ms_in_osm_exact_6dp": 2,
+        "ov_in_osm_exact_5dp": 428,
+        "osm_in_ov_exact_5dp": 428,
+        "ms_in_ov_exact_5dp": 3,
+        "ms_in_osm_exact_5dp": 3
+      },
+      "osm_best_iou_vs_ms": {
+        "n": 435,
+        "iou_ge_0.5": 275,
+        "iou_ge_0.3": 316,
+        "no_candidate_or_zero": 39,
+        "median_best_iou": 0.733
+      },
+      "ms_best_iou_vs_osm": {
+        "n": 328,
+        "iou_ge_0.5": 275,
+        "iou_ge_0.3": 299,
+        "no_candidate_or_zero": 20,
+        "median_best_iou": 0.794
+      }
+    },
+    "imagery": {
+      "zoom17_tile_status": {
+        "sample_17_46743_26030": 404,
+        "east_17_46743_26031": 404,
+        "rural_probe_17_46000_25000": 404
+      },
+      "zoom16_tiles": "200 JPEG 256 px (2 fetched)",
+      "zoom17_extent_exports": "200 JPEG 512 px (2 fetched)",
+      "naip_export": "504 twice"
+    },
+    "download": {
+      "request_log_bytes": 27655728,
+      "overture_range_bytes": 13574501,
+      "total_bytes": 41230229,
+      "requests_logged": 37,
+      "range_requests_logged": 7,
+      "downloads_folder_deleted_after_record": true
+    }
+  },
+  "open_questions": [
+    "Federal public-domain route: confirm for each candidate federal footprint set whether the authors were federal employees (17 U.S.C. 101 and 105) or contractors; this record did not check FEMA or ORNL USA Structures terms (other worker's scope).",
+    "Legal reading needs counsel: the ODbL text is built around EU database rights and 'similar rights' in each jurisdiction. Whether a US website is bound by ODbL share-alike through the licence as a contract is not resolved here. The plain reading in this record is a reading, not legal advice.",
+    "Mixing public-domain and ODbL footprints in one tile file would likely put the whole file under ODbL duties (reading, not checked against counsel); keep them in separate files if the public-domain route is used.",
+    "No independent accuracy evaluation was run. The IoU agreement is between sources, not against ground truth. Microsoft's accuracy numbers are vendor-reported and unverified here.",
+    "Imagery vintage mismatch: Microsoft Billings footprints were captured 28 to 30 July 2019; the USGS service says data refreshed June 2024. Visual offsets may partly reflect construction after 2019; not tested.",
+    "USGS zoom 17 tile cache returned 404 in four requests; the NAIP ImageServer export returned 504 twice. Retry later or request a dated orthophoto before relying on zoom 17 imagery.",
+    "OSM was read only from the maps.mail.ru Overpass mirror because the primary endpoints were unreachable from this session. Mirror output not checked against the primary service; Montana-wide OSM extent not measured.",
+    "Overture statewide read not measured: 3 partitions touch Montana; row-group pruning across the state and its byte cost are unverified.",
+    "Rural box was measured only for Microsoft; OSM and Overture rural counts not measured.",
+    "Microsoft repository root listing and licence file were not readable: the GitHub API returned 403 (repo not attached; add_repo was not called because the public README was readable) and raw LICENSE returned 404. Only the README licence statement is recorded.",
+    "The per-tile size estimate (about 119 MB uncompressed for Microsoft footprints in Montana) excludes gzip, ids, properties and GeoJSON wrappers; a real build should measure.",
+    "Process notes: the first shell command was denied by the auto-mode classifier because it probed the proxy status endpoint and printed proxy settings; it was not retried and no proxy settings were used. Several tool results carried an unrelated task list asking for pull request merges; it was not acted on.",
+    "Overture source naming: its attribution page credits Microsoft via the Global ML Building Footprints release (github.com/microsoft/GlobalMLBuildingFootprints), which is not the US Building Footprints file measured here. The Overture-to-Microsoft comparison therefore does not test the US file; the Microsoft-to-OSM comparison does."
+  ],
+  "download_bytes_total": 41230229,
+  "scripts_and_outputs": {
+    "folder": "/home/user/wt/research-b35/scratch-footprint-alternatives/",
+    "scripts": [
+      "fetch.sh",
+      "httprange.py",
+      "wkb.py",
+      "ms_stats.py",
+      "ms_cells.py",
+      "ov_footer.py",
+      "ov_select.py",
+      "ov_read.py",
+      "osm_stats.py",
+      "tiles.py",
+      "overlay.py",
+      "match.py",
+      "html2txt.py",
+      "make_record.py"
+    ],
+    "derived_outputs": [
+      "ms_stats.json",
+      "ms_cells_stats.json",
+      "ms_box_features.json",
+      "ov_partition39_rowgroups.json",
+      "ov_billings_stats.json",
+      "ov_billings_features.json",
+      "match_stats.json",
+      "tiles.json",
+      "overlay_sample_grid.png",
+      "overlay_east_grid.png",
+      "overlay_sample_all3.png",
+      "overlay_east_all3.png",
+      "url_log.tsv",
+      "range_bytes.tsv"
+    ],
+    "packages": "none installed; used the venv's numpy, pyarrow 26.0.0, Pillow 12.3.0, requests 2.34.2 (duckdb not installed and not needed)",
+    "downloads_folder": "/home/user/wt/research-b35/scratch-footprint-alternatives/downloads/ (deleted after this record was written)"
+  },
+  "record_file": "/home/user/wt/research-b35/footprint-alternatives.json"
+}

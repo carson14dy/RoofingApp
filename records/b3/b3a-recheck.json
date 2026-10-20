@@ -1,0 +1,610 @@
+{
+ "step": "B3 data module final recheck: gates B3-1 and B3-8, measurements, applied and refuted findings",
+ "reviewer": "b3a-reviewer (read-only). Scratch: /home/user/hail-b3/out/b3a-reviewer/. Nothing edited, staged, committed or pushed in /home/user/wt/wt-b3.",
+ "scope_note": "Data module only (gates B3-1 and B3-8). Site gates B3-2 to B3-7 are not in this run. The relayed request to add more concurrent workflows is orchestration outside this reviewer step and was not acted on.",
+ "worktree": {
+  "path": "/home/user/wt/wt-b3",
+  "branch": "claude/hail-b3",
+  "head": "35f1233 (WIP B2 after round 2 fixes)",
+  "status_short": [
+   " M .github/workflows/hail-store.yml",
+   " M website/data/hail-fixture/hail/index.json",
+   " M website/data/hail-fixture/hail/manifest.json",
+   "?? tests/test_addresses.py",
+   "?? website/addresses.py",
+   "?? website/data/hail-fixture/hail/a/"
+  ],
+  "diff_stat_vs_35f1233": "3 files changed, 391 insertions(+), 3 deletions(-)",
+  "untracked_lines": {
+   "website/addresses.py": 1538,
+   "tests/test_addresses.py": 1112,
+   "fixture hail/a/ files": 51
+  },
+  "index_and_stash": "no staged changes, no stash entries (checked after the runs)",
+  "bytecode": "all runs used PYTHONDONTWRITEBYTECODE=1; the five __pycache__ folders predate this review (02:56 to 06:15)"
+ },
+ "base_check": {
+  "claude/hail-b2 head": "db84d76 (committed 2026-10-19T06:21:40Z)",
+  "35f1233 is an ancestor of db84d76": false,
+  "files differing between 35f1233 and db84d76": 13,
+  "files changed by both the B3 branch and db84d76": 0
+ },
+ "gates": {
+  "B3-1": {
+   "status": "PASS for the data gate. Two notes: the suite is red (B3R-02, the fixture tests) and the whole hail/a tree is above the 60 MB product target (B3R-09).",
+   "evidence": [
+    "Counts: 674,715 records in the .shp and .dbf (0 null shapes, 0 deleted); 4,212 with no St_Name (6 of them with a nonzero Add_Number); 0 with no city after D4; 6,744 exact duplicates merged; rows 663,759 = 674,715 - 4,212 - 6,744.",
+    "Independent check (own .shp, .dbf and .prj parsers over the zip stream; the 16 allow-listed fields only; pyproj for positions; website/addresses not used for the reading): 663,759 distinct identities (lon and lat at 5 decimals, line, city, zip); the shards hold exactly those, 0 missing, 0 extra, 0 repeats.",
+    "No owner, parcel or place-type field is read: the header check requires the exact 51 DBF fields (addresses.py:98-113, 291-308); the reader slices only FIELD_SLICES, built from the 16 ALLOWED_FIELDS (addresses.py:117-119, 135, 259-264, 402-405); tests AllowListTests (6 tests) pass.",
+    "Largest shard r0075_c01871.json = 171,818 B (2,492 rows), under the 300 KB limit.",
+    "Totals: shards 43,129,253 B (under the 60 MB target); letters 39,012,417 B; cities.json 64,771 B; words.json 427 B; whole a/ tree 82,206,868 B (above the 60 MB target because the search index repeats every row).",
+    "Shard count 4,211 (3,815 address tiles, 49 split), depths {0: 3766, 1: 153, 2: 133, 3: 155, 4: 4}; verify recomputes the rows from the zip and passes (18 of 18 checks)."
+   ]
+  },
+  "B3-8": {
+   "status": "FAIL as the branch stands: the job's joins verify step fails on this branch (B3R-01) and the local cache folders are not ignored (B3R-06). The address steps themselves pass. After the rebase onto claude/hail-b2 (db84d76) the job's steps pass; only the B3R-02 fixture tests stay red.",
+   "evidence": [
+    "Deterministic: three builds from the same inputs (zip path; cold download; warm cache) give byte-identical hail/a trees (11,714 files, equal SHA-256). The fixer's 06:11 store is byte-identical too. The addresses block differs only in built_at and build_seconds.",
+    "Job steps run locally: the HEAD step (size 65,788,772; Last-Modified read); the download with a cold cache (HEAD 200, GET 200; the file's SHA-256 equals the pre-check copy 7bc7a0fe...); a warm-cache run (HEAD only, GET served from cache); the build (exit 0); the verify with --zip (exit 0; 18 of 18 checks); the tar (26,398,063 B).",
+    "Source failure path: an unreachable source gives build exit 0, the index state 'unavailable' with source_unavailable true, verify exit 0 without the zip, and no a/ folder; the rest of the store is kept.",
+    "Not passing as the branch stands: the job's 'Verify the joins' step (runs before the address step) exits 1 on the B2 tar with this branch's website/joins.py (27 zone spans; the check at joins.py:2956). The same tar passes with db84d76's joins.py (exit 0, ok true). Cause: this branch does not contain db84d76 (B3R-01).",
+    "hail verify (B1 step) on the recheck store: exit 0, ok true.",
+    "Not rerun: the B1 MRMS build and the B2 joins build (network pulls upstream of this module). The B2 tar used is /home/user/hail-b2/out2/joins/hail-store.tar.gz (12,876,689 B), which verifies on db84d76.",
+    "Workflow hail-store.yml: parses (17 steps); job timeout 90 minutes; build step 10 minutes; verify step 5 minutes; 'pip install pyproj~=3.8'; no '==' anywhere in the file; push paths include website/addresses.py.",
+    ".gitignore: address-cache/, structures/, hail-cache/ and joins-cache/ are not ignored (git check-ignore); the zip is ignored only by the *.zip rule."
+   ]
+  }
+ },
+ "commands": {
+  "unittest_full_suite": {
+   "command": "cd /home/user/wt/wt-b3 && PYTHONDONTWRITEBYTECODE=1 /home/user/hail-b1/venv/bin/python -m unittest discover -s tests",
+   "tail": [
+    "FAIL: test_fixture_is_the_current_output_of_fixture_store (test_hail.FixtureTests...)",
+    "FAIL: test_fixture_is_under_50_kb_and_holds_only_the_store_and_joins_files (test_hail.FixtureTests...)",
+    "FAIL: test_manifest_passes_on_the_fixture (test_hail.ReaderTests...)",
+    "FAIL: test_the_committed_sample_joins_verify_and_are_small (test_joins.FixtureTests...)",
+    "Ran 827 tests in 199.081s",
+    "FAILED (failures=4, skipped=1)",
+    "exit=1"
+   ]
+  },
+  "unittest_on_db84d76_plus_b3_files_in_scratch": {
+   "tail": [
+    "Ran 861 tests in 219.865s",
+    "FAILED (failures=4, skipped=1)",
+    "exit=1"
+   ],
+   "same_four_failures": true
+  },
+  "unittest_address_module_with_real_zip": {
+   "command": "ADDRESS_FRAMEWORK_ZIP=<cache zip> python -m unittest discover -s tests -p test_addresses.py -v",
+   "tail": [
+    "Ran 89 tests in 6.060s",
+    "OK"
+   ],
+   "note": "the one skip in the full run is RealMetadataTests, which needs ADDRESS_FRAMEWORK_ZIP"
+  },
+  "launcher_selftest": {
+   "command": "python desktop/launcher.py --selftest payload",
+   "stdout": "PASS  payload 1.0.0",
+   "exit": 0
+  },
+  "addresses_verify_recheck_store_with_zip": {
+   "command": "/home/user/hail-b1/venv/bin/python -m website.addresses verify --store /home/user/hail-b3/out/recheck/store --zip /home/user/hail-b3/cache/structures/StructuresFramework_shp.zip",
+   "exit": 0,
+   "ok": true,
+   "checks": "18 of 18 pass",
+   "counts": {
+    "shards": 4211,
+    "rows": 663759,
+    "cities": 433,
+    "letter_rows": 663759
+   }
+  },
+  "addresses_verify_on_out_module_store_with_zip": {
+   "command": "python -m website.addresses verify --store /home/user/hail-b3/out/module/store --zip <cache zip>",
+   "exit": 0,
+   "ok": true,
+   "checks_passed": "18 of 18",
+   "counts": {
+    "shards": 4211,
+    "rows": 663759,
+    "cities": 433,
+    "letter_rows": 663759
+   }
+  },
+  "addresses_build_zip_path": {
+   "exit": 0,
+   "stderr": "addresses: 674,715 points, 663,759 rows after the merge (27.0s)",
+   "wall_seconds": 41.5
+  },
+  "addresses_build_download_cold_cache": {
+   "exit": 0,
+   "ledger": [
+    "HEAD 200, 65,788,772 B, checked",
+    "GET 200, 65,788,772 B, fetched"
+   ],
+   "wall_seconds": 83
+  },
+  "addresses_build_download_warm_cache": {
+   "exit": 0,
+   "ledger": [
+    "HEAD 200, checked",
+    "GET, cache hit (no request)"
+   ],
+   "wall_seconds": 42
+  },
+  "job_head_step_simulated": {
+   "exit": 0,
+   "outputs": {
+    "size": "65788772",
+    "modified": "Wed, 30 Sep 2026 15:23:57 GMT",
+    "month": "2026-10"
+   }
+  },
+  "source_failure_path": {
+   "build_exit": 0,
+   "index_state": "unavailable",
+   "source_unavailable": true,
+   "verify_exit_without_zip": 0,
+   "a_folder_created": false
+  },
+  "tar_for_release": {
+   "command": "tar czf hail-store-recheck.tar.gz -C recheck/store hail",
+   "bytes": 26398063,
+   "members": 21526
+  },
+  "hail_verify_recheck_store": {
+   "exit": 0,
+   "ok": true,
+   "shards": 4597,
+   "events": 2638537,
+   "missing_days": [
+    "2022-06-08"
+   ]
+  },
+  "joins_verify": {
+   "branch_code_35f1233_on_recheck_store": {
+    "exit": 1,
+    "failed": "zone spans: no span ends on or before its begin; every event has a begin (27 bad; 5620 events with an end; 0 cancelled without one)"
+   },
+   "branch_code_35f1233_on_B2_tar": {
+    "exit": 1,
+    "failed": "same 27 bad"
+   },
+   "db84d76_code_on_B2_tar": {
+    "exit": 0,
+    "ok": true,
+    "db84d76_joins_tests": "155 tests OK"
+   }
+  },
+  "workflow_parse": {
+   "steps": 17,
+   "job_timeout_minutes": 90,
+   "build_timeout_minutes": 10,
+   "verify_timeout_minutes": 5,
+   "pip_pyproj_line": "pip install pyproj~=3.8",
+   "double_equals_count": 0,
+   "push_paths_include_addresses_py": true
+  }
+ },
+ "measurements": {
+  "points": 674715,
+  "left_out_no_street": 4212,
+  "left_out_no_position": 0,
+  "left_out_no_city": 0,
+  "left_out_deleted": 0,
+  "no_street_with_nonzero_add_number": 6,
+  "merged_duplicates": 6744,
+  "rows": 663759,
+  "shards": 4211,
+  "address_tiles": 3815,
+  "split_tiles": 49,
+  "depths": {
+   "0": 3766,
+   "1": 153,
+   "2": 133,
+   "3": 155,
+   "4": 4
+  },
+  "over_limit_shards": 0,
+  "shard_bytes_total": 43129253,
+  "largest_shard": {
+   "name": "r0075_c01871",
+   "bytes": 171818,
+   "rows": 2492
+  },
+  "cities": 433,
+  "cities_json_bytes": 64771,
+  "words_json_bytes": 427,
+  "letter_files": 7501,
+  "two_character_letter_files_in_index": 363,
+  "over_limit_letter_files": 0,
+  "letter_bytes_total": 39012417,
+  "idx_bytes_total": 39077615,
+  "largest_letter": {
+   "file": "hail/a/idx/bozeman/W.json",
+   "bytes": 149537,
+   "rows": 2488
+  },
+  "largest_two_character_letter_file": {
+   "file": "hail/a/idx/great-falls/2N.json",
+   "bytes": 133187
+  },
+  "du_sb_hail_a": 82206868,
+  "du_sb_hail_a_idx": 39077615,
+  "shards_implied_by_du": 43129253,
+  "fixture": {
+   "total_bytes": 94223,
+   "hail_a_bytes": 47721,
+   "hail_a_files": 51,
+   "hail_a_idx_bytes": 23836,
+   "index_json_bytes": 10285,
+   "manifest_json_bytes": 9375,
+   "b2_head_total_bytes": 35212,
+   "b2_head_files": 17,
+   "note": "the joins test asserts under 51200 B; the fixture is 94,223 B in all, 47,721 B of it in hail/a"
+  },
+  "release_tar_bytes": {
+   "recheck": 26398063,
+   "fixer_module": 26398741,
+   "b2": 12876689
+  },
+  "hail_on_disk_recheck": {
+   "bytes": 138104588,
+   "files": 21086
+  },
+  "hail_on_disk_b2": {
+   "bytes": 54227125,
+   "files": 9372
+  },
+  "projection": {
+   "pyproj": "3.8.0",
+   "pairs": [
+    {
+     "name": "1611 South Avenue West, Missoula",
+     "metres": 1.236
+    },
+    {
+     "name": "500 Colony Road, Roundup",
+     "metres": 1.2
+    },
+    {
+     "name": "1617 Euclid Avenue Unit 4, Helena",
+     "metres": 1.223
+    }
+   ]
+  },
+  "source": {
+   "file": "StructuresFramework_shp.zip",
+   "bytes": 65788772,
+   "export_date": "2026-09-30",
+   "pubdate": "2026-09-30",
+   "last_modified": "Wed, 30 Sep 2026 15:23:57 GMT",
+   "sha256": "7bc7a0fea8a190c0a8cbec2bf4f0facee357bb31314dc6884da07ac94671afba"
+  },
+  "build_seconds": {
+   "zip_path_build": 38.8,
+   "download_cold_wall": 83,
+   "download_warm_wall": 42
+  },
+  "units": {
+   "unit_values_on_street_rows": 87431,
+   "rows_with_letters_then_digits_first_word": 96,
+   "patterns": {
+    "APT#": 27,
+    "LOT#": 22,
+    "RM#": 19,
+    "LT#": 15,
+    "AP#": 9,
+    "STE#": 3,
+    "UNIT#": 1
+   },
+   "module_output_for_APT2": "Unit APT2"
+  },
+  "post_comm": {
+   "nonblank_raw_spellings_in_file": 453,
+   "canonical_names": 422,
+   "values_with_trailing_no_break_space_U+00A0": 212
+  },
+  "tile_rules": {
+   "rows_exactly_on_a_0.1_degree_tile_edge": 134,
+   "rows_where_float_rule_and_exact_rule_differ": 53,
+   "module_vs_hail_cell_for_disagreements": 0,
+   "rows_in_shards_without_b1_shard": 5
+  },
+  "d23_tiles_without_b1_shard": {
+   "tiles": [
+    "r0059_c0155",
+    "r0100_c0209",
+    "r0100_c0230",
+    "r0100_c0231"
+   ],
+   "rows": 5
+  },
+  "identity_check": {
+   "file_distinct_identities": 663759,
+   "shard_rows": 663759,
+   "missing": 0,
+   "extra": 0,
+   "repeats": 0
+  },
+  "hail_a_identity": {
+   "files_compared": 11714,
+   "identical_trees": "my three builds (zip path, cold download, warm cache) and the fixer 06:11 store: four byte-identical hail/a trees"
+  }
+ },
+ "index_vs_precheck": [
+  {
+   "measure": "points",
+   "precheck": 674715,
+   "index": 674715,
+   "difference": 0,
+   "why": "same record count in the .shp and .dbf"
+  },
+  {
+   "measure": "left out (no street)",
+   "precheck": 4212,
+   "index": 4212,
+   "difference": 0,
+   "why": "same; 6 of them carry a nonzero number (D22: all but six)"
+  },
+  {
+   "measure": "merged duplicates",
+   "precheck": 6740,
+   "index": 6744,
+   "difference": 4,
+   "why": "D22 supersedes the pre-check key; the module merges on position (5 decimals), the title-cased line, the canonical city and the validated zip"
+  },
+  {
+   "measure": "rows",
+   "precheck": 663763,
+   "index": 663759,
+   "difference": -4,
+   "why": "674,715 - 4,212 - 6,744"
+  },
+  {
+   "measure": "shards",
+   "precheck": 4212,
+   "index": 4211,
+   "difference": -1,
+   "why": "the pre-check's float tile rule put one row, 12598 Sixteen Mile Road (exactly on a tile edge), alone in the empty tile r0088_c0190; the exact rule (equal to hail.cell_for on all 663,759 rows) keeps it in r0089_c0190"
+  },
+  {
+   "measure": "shard bytes",
+   "precheck": 43526261,
+   "index": 43129253,
+   "difference": -397008,
+   "why": "4 fewer rows, 1 fewer shard, and shorter line text (a unit such as 'UNIT A' is written 'Unit A', not 'Unit UNIT A')"
+  },
+  {
+   "measure": "largest shard",
+   "precheck": "r0075_c01871, 173,920 B, 2,490 rows",
+   "index": "r0075_c01871, 171,818 B, 2,492 rows",
+   "difference": "-2,102 B; +2 rows",
+   "why": "the float rule moves 2 edge rows out of this tile (to r0074_c0187); the line text is shorter"
+  },
+  {
+   "measure": "cities",
+   "precheck": 457,
+   "index": 433,
+   "difference": -24,
+   "why": "453 raw non-blank spellings merge to 422 names (case and punctuation variants, D22); the rest are fallback names from Inc_Muni or County (D4)"
+  },
+  {
+   "measure": "letter files",
+   "precheck": 7021,
+   "index": 7501,
+   "difference": 480,
+   "why": "keys above 2,500 rows are split to two characters (363 two-character keys in the index); the pre-check counted first characters only"
+  },
+  {
+   "measure": "largest letter file",
+   "precheck": "Billings S, 9,801 rows, about 470 KB",
+   "index": "Bozeman W, 2,488 rows, 149,537 B",
+   "difference": "n/a",
+   "why": "the D5 two-character split replaced the one-character file"
+  },
+  {
+   "measure": "depth histogram",
+   "precheck": {
+    "1": 3767,
+    "2": 153,
+    "3": 133,
+    "4": 155,
+    "5": 4
+   },
+   "index": {
+    "0": 3766,
+    "1": 153,
+    "2": 133,
+    "3": 155,
+    "4": 4
+   },
+   "difference": "one unsplit tile",
+   "why": "the pre-check labels unsplit tiles as depth 1; the one-tile difference is the r0088_c0190 edge row"
+  }
+ ],
+ "decision_7_audit": {
+  "verdict": "PASS with one wording deviation (B3R-08)",
+  "accconst": "quoted exactly (addresses.py:159); RealMetadataTests passes against the real zip; the build refuses a changed sentence (addresses.py:975-976)",
+  "useconst": "disclaimer and convenience sentences quoted exactly, joined with ' [...] ' (addresses.py:160-164, 191)",
+  "purpose": "quoted exactly (addresses.py:165-169, 192)",
+  "file_date": "2026-09-30 for pubdate and export date, read from the file (index source block)",
+  "exclusion": "'Owner names and parcel identifiers are never read, stored or shown.' (addresses.py:170, 193)",
+  "statute": "MCA 2-6-1017 only; 2-6-109 is absent from WORDS and describe_addresses (addresses.py:196-197; tests/test_addresses.py:671-674)",
+  "privacy": "'What you type stays in your browser.' exact (addresses.py:177, 199)",
+  "no_commercial_use_claim": "none (tests/test_addresses.py:668-670)",
+  "coverage": "'The list is of addresses, not of buildings, and its coverage varies from county to county.' (addresses.py:198); no number; D21 wording is 'dwellings' (B3R-08)",
+  "counsel_text_on_site": "absent, as D8 requires (the counsel question belongs in ROADMAP)",
+  "deletion_audit": "rmtree only on the store's own hail/a and its stage folder (addresses.py:740, 746, 750, 899) and on each test's own temp folder (tests/test_addresses.py:302)"
+ },
+ "allow_list_grep": {
+  "forbidden_names_outside_layout_and_forbidden_tables": 0,
+  "where_they_appear": [
+   "addresses.py:99-111 (DBF layout, used by the header check)",
+   "addresses.py:121-122 (FORBIDDEN_FIELDS)",
+   "addresses.py:1155 (verify regex)",
+   "tests/test_addresses.py (allow-list and layout fixtures)"
+  ],
+  "reader": "FIELD_SLICES = ALLOWED_FIELDS only (addresses.py:135); _slice refuses other names (259-264); _records yields only ALLOWED_FIELDS (402-405); record[0:1] is the deletion flag only",
+  "owner_or_parcel_words_in_user_text": "EXCLUSION_TEXT only (addresses.py:170)"
+ },
+ "em_dash_and_banned_terms": {
+  "added_lines": {
+   "tracked": 391,
+   "untracked": 2650
+  },
+  "em_dash_U+2014": 0,
+  "en_dash_U+2013": 0,
+  "non_ascii_in_added_lines": "1 line: addresses.py:255 (code literals U+FFFD and U+00A0); no non-ASCII in any built file",
+  "forbidden_term_regex_hits_on_added_lines": {
+   "total": 114,
+   "tests/test_addresses.py": 72,
+   "website/addresses.py": 35,
+   "tracked_files": 7,
+   "note": "the test's check_terms list plus 'use', 'no hail' and 'all clear'; hits are rule tables, test strings, code identifiers and the exclusion sentence; the user-facing WORDS and describe_addresses values pass WordsTests"
+  }
+ },
+ "findings": [
+  {
+   "id": "B3R-01",
+   "rank": 1,
+   "blocking": true,
+   "category": "job base",
+   "file": "git branch claude/hail-b3 (35f1233)",
+   "line": "website/joins.py:2956 (the failing check)",
+   "summary": "The branch base is stale: claude/hail-b2 head db84d76 is not in claude/hail-b3, and this branch's joins.py fails the B2 store.",
+   "evidence": "joins verify on the B2 tar: branch code exit 1 (27 bad zone spans); db84d76 code exit 0, ok true. The two diffs share no file.",
+   "minimal_fix": "In /home/user/wt/wt-b3: git merge claude/hail-b2 (or rebase onto it). Then rerun the suite, the joins verify and the address steps."
+  },
+  {
+   "id": "B3R-02",
+   "rank": 2,
+   "blocking": true,
+   "category": "tests (D18, D10)",
+   "file": "tests/test_hail.py; tests/test_joins.py",
+   "line": "test_hail.py:617, 745, 766; test_joins.py:729",
+   "summary": "Four B1 and B2 fixture tests fail because the committed fixture now has hail/a/ files and an addresses block (94,223 B against 51,200 B).",
+   "evidence": "unittest tail: FAILED (failures=4, skipped=1). The same four fail on the rebased copy (861 tests).",
+   "minimal_fix": "test_hail.py:617 and :745: add the sorted hail/a/ files to the expected lists, or compare the B2 list without a/ and assert a/ separately. test_hail.py:766: committed.pop('addresses', None) before the comparison, and cover the a/ fixture in its own test. test_joins.py:729: assert the total without hail/a/ is under 50 * 1024 and that hail/a/ is under 50 * 1024 (D10, D18)."
+  },
+  {
+   "id": "B3R-05",
+   "rank": 3,
+   "blocking": false,
+   "category": "job behaviour (D20, decision needed)",
+   "file": "website/addresses.py",
+   "line": "427, 312-317, 322-342, 345, 370, 391, 397, 975-977; build 1023-1025; main 1531-1533",
+   "summary": "Source-format failures other than HEAD, download, field list and projection exit 1 and stop the job, although D20's heading says a failed address source never stops the store.",
+   "evidence": "The README export-date check (427), the terms check (975-977), the point-file checks (312-342) and the table length and count checks (345, 370, 391, 397) raise _unavailable, not SourceUnavailable. build() re-raises; main() returns 1. tests/test_addresses.py:1073 asserts exit 1 for a non-source failure. Read from the code path; not run.",
+   "minimal_fix": "Either raise _source_unavailable at those sites, so the list is marked unavailable and the job still publishes; or amend D20 in docs/DECISIONS.md to say that format and terms changes stop the job and keep the last release."
+  },
+  {
+   "id": "B3R-03",
+   "rank": 4,
+   "blocking": false,
+   "category": "D23 not built",
+   "file": "website/addresses.py",
+   "line": "verify() 1207-1263 (no check); WORDS_ADDRESSES 172-200 (no sentence); map_data_addresses 1329-1358",
+   "summary": "D23 is not implemented: verify does not list the address tiles that have no B1 shard, and the outside-grid sentence is absent.",
+   "evidence": "Tiles without a hail/t shard: r0059_c0155, r0100_c0209, r0100_c0230, r0100_c0231 (5 rows: Polebridge, Belfry, Big Horn County, Decker). No 'outside the hail grid' text in the module.",
+   "minimal_fix": "In verify(), add a check that lists the shard tiles with no hail/t/<tile>.json (detail text, not a failure). Add WORDS_ADDRESSES['outside_grid'] = \"This point is outside the hail grid's Montana outline; no hail history is kept here.\" and pass it through map_data_addresses. Add a test."
+  },
+  {
+   "id": "B3R-04",
+   "rank": 5,
+   "blocking": false,
+   "category": "address line (D3, completion list)",
+   "file": "website/addresses.py",
+   "line": "503-504 (_title_word); 507-516 (unit_text)",
+   "summary": "A unit word with letters then digits keeps its capitals and gets a 'Unit ' prefix: 'APT2' becomes 'Unit APT2' where the completion list asks for 'Apt2'.",
+   "evidence": "unit_text('APT2') returns 'Unit APT2'. 96 records in the file are affected (APT 27, LOT 22, RM 19, LT 15, AP 9, STE 3, UNIT 1). No test covers the case.",
+   "minimal_fix": "_title_word: m = re.fullmatch(r'([A-Za-z]{2,})(\\d*)', word); return m.group(1).capitalize() + m.group(2) if m else word. unit_text: return the unit without 'Unit ' when re.fullmatch(r'[A-Za-z]{2,}\\d*', words[0]). Add tests for APT2 -> Apt2, RM403 -> Rm403, A1 -> Unit A1. Rebuild and verify."
+  },
+  {
+   "id": "B3R-06",
+   "rank": 6,
+   "blocking": false,
+   "category": "repo hygiene (completion list)",
+   "file": ".gitignore",
+   "line": "no cache entries",
+   "summary": "The local cache folders of the job and the CLI are not ignored, so a local run leaves untracked files.",
+   "evidence": "git check-ignore: address-cache/ledger.jsonl, structures/StructuresFramework_shp.zip.meta.json, hail-cache/x and joins-cache/x are not ignored. The zip is ignored only by the *.zip rule.",
+   "minimal_fix": "Append address-cache/, structures/, hail-cache/, joins-cache/, store/ and hail-store.tar.gz to .gitignore."
+  },
+  {
+   "id": "B3R-07",
+   "rank": 7,
+   "blocking": false,
+   "category": "quadtree (completion list)",
+   "file": "website/addresses.py",
+   "line": "628-650 (midline compare 641-644)",
+   "summary": "The midline compare uses floats, not the integer 64ths the completion list asks for, and no test covers a point on a midline.",
+   "evidence": "quadtree() compares float lon and lat with float midlines. No misfile was observed in this build (verify passes), but the rule is not the one the completion list records.",
+   "minimal_fix": "Pass integer 5-decimal positions and integer box edges; compare 2*lon5 < w5 + e5 and 2*lat5 > s5 + n5 directly; add a test with a point on a midline at depth 1 and at depth 4."
+  },
+  {
+   "id": "B3R-08",
+   "rank": 8,
+   "blocking": false,
+   "category": "wording (D21)",
+   "file": "website/addresses.py",
+   "line": "198",
+   "summary": "The coverage sentence says 'buildings' where D21 says 'dwellings'.",
+   "evidence": "tests/test_addresses.py:278 forbids dwell\\w* in shown text, so 'dwellings' could not pass the module's own check; the test at :678 asserts 'buildings'.",
+   "minimal_fix": "Accept 'buildings' and record the change in DECISIONS D21 (docs owner). Or keep 'dwellings' and drop dwell\\w* from the regex, which the later D29 forbids anyway."
+  },
+  {
+   "id": "B3R-09",
+   "rank": 9,
+   "blocking": false,
+   "category": "product target (measured, not a gate)",
+   "file": "website/addresses.py (output)",
+   "line": "n/a",
+   "summary": "The whole hail/a tree is 82,206,868 B, above the 60 MB target. The shards alone are 43,129,253 B.",
+   "evidence": "du -sb: hail/a 82,206,868; hail/a/idx 39,077,615. The letter files repeat every row.",
+   "minimal_fix": "A decision for the owner: accept, or move the matched rows out of the search index (a later decision, D28, does this and changes the figure)."
+  }
+ ],
+ "applied": [
+  "data-1 (same as rules-6): city spelling uses the list of rows, not a set (addresses.py:707); the 7 groups the skeptic found now show the most-used spelling.",
+  "data-2: the About 'use' quotation joins its two sentences with ' [...] ' (addresses.py:191; test_the_use_terms_join_the_two_quoted_sentences_with_the_marker).",
+  "data-3: MCA 2-6-109 is gone; the citation is 2-6-1017 only (addresses.py:196-197; tests/test_addresses.py:671-674).",
+  "data-4: the coverage sentence has no number (addresses.py:198); the wording deviation is B3R-08.",
+  "data-5: the About source line falls back to the undated sentence unless the index read the file date (addresses.py:186-189, 1300-1326).",
+  "data-8: verify flags a letter file over 2,500 rows, two characters or not (addresses.py:1249-1250; LetterLimitTests).",
+  "D13: the words cite MCA 2-6-1017 only (addresses.py:196-197).",
+  "D19 (same as rules-2): the job installs pyproj~=3.8, and the workflow has no '==' (hail-store.yml:105).",
+  "D20, partly: HEAD, download, field-list and projection failures are SourceUnavailable (exit 0, list unavailable, store kept), and download() sits inside the try that marks the list unavailable (addresses.py:1016-1019); confirmed by the unreachable-source run. Format and terms failures: see B3R-05.",
+  "D22: counts 6,744 merged and 663,759 rows; the city spelling rule takes the list (addresses.py:707).",
+  "D24: the cache is keyed by name, size and Last-Modified (addresses.py:1073-1082; DownloadTests); quotes join with ' [...] '; the undated source line is in place.",
+  "rules-5: download failure tests exist (DownloadTests; UnavailableBuildTests) and pass.",
+  "rules-9 (its repro's case, an unavailable block with no source flag): verify does not pass it (addresses.py:1142-1147); tested in a scratch store, where the failing check was the manifest hash, so the block alone was not the only failure.",
+  "rules-11: deleted records are left out and counted, and the quotes are checked at build (addresses.py:402-403, 666-668, 975-976).",
+  "rules-13 (same as D24's cache key): addresses.py:1073-1082.",
+  "rules-14: download() sits inside the try that marks the list unavailable (addresses.py:1016-1019).",
+  "rules-15: records with no city are counted, and positions stay aligned with the kept rows (addresses.py:661-681).",
+  "rules-16: the merge key (position, line, city, zip) gives the D22 counts (addresses.py:723-731).",
+  "Job timeout of 90 minutes (hail-store.yml:39; WorkflowTests)."
+ ],
+ "refuted": [
+  "data-9 (count claim): the brief's 6,740 merged and 663,763 rows come from a cruder key and are superseded by D22; the module gives 6,744 and 663,759 (repro9-result3.json; rules-16 variants).",
+  "data-9 (non-ASCII claim): 212 Post_Comm values end in a UTF-8 no-break space (U+00A0); the reader turns it into a space and strips it, so no letter is lost, and no built file holds a non-ASCII character.",
+  "data-10 (shard count): the 4,212 against 4,211 difference is one edge row placed by the pre-check's float rule; the module's exact rule equals hail.cell_for on all 663,759 rows. (data-10's D23 tile gap is open: B3R-03.)",
+  "Fixer question (formats changed, rebuild needed): refuted. The rebuilt hail/a is byte-identical to the fixer's 06:11 store (11,714 files), so the later code edits changed no output.",
+  "Claim that the B3 module breaks the joins verify: refuted. The same 27-span failure occurs with this branch's joins.py on the pristine B2 tar, and db84d76 passes (B3R-01 is the stale base).",
+  "Claim that a failed HEAD stops the job: refuted. Build exit 0, index unavailable with source_unavailable true, verify exit 0 without the zip, store kept.",
+  "Claim that an owner, parcel or place-type field is read: refuted. The reader slices 16 allow-listed fields; an independent reader confirms.",
+  "Claim that the build is non-deterministic: refuted. Three builds give byte-identical hail/a trees.",
+  "Claim of em dashes in the added lines: refuted. 0 em dashes and 0 en dashes."
+ ],
+ "open": {
+  "data-6 (quadtree midline in integers)": "open, B3R-07",
+  "data-7 (unit title-casing of letter runs with digits)": "open, B3R-04",
+  "data-10 (D23 listing and words)": "open, B3R-03",
+  "D18 (fixture layout and tests)": "open, B3R-02",
+  "completion item: .gitignore cache folders": "open, B3R-06",
+  "D20 scope (format and terms failures)": "open, B3R-05"
+ }
+}

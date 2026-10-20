@@ -1,0 +1,301 @@
+{
+ "slug": "temperature-alternatives",
+ "record_type": "refuter",
+ "refuted_record": "/home/user/wt/research-b35/temperature-alternatives.json",
+ "generated_utc": "2026-10-19T03:53:32Z",
+ "scope": "Re-ran the five most consequential checks: (1) counts, (2) sizes, (3) sample content at Billings, (4) all 23 terms quotes against live pages, (5) the recommendation's legal basis. Every claim is marked confirmed, refuted, corrected or unverified.",
+ "method": "Live curl requests through the configured proxy into per-source folders under scratch-refute-temperature-alternatives/downloads, each under 60 MB (largest 13856867 bytes). PRISM zips extracted into fresh folders and read with numpy using the BIL headers. GHCN .dly parsed by fixed columns; the S3 CSV and ghcnd-stations.txt parsed directly. Daymet and gridMET read from single-pixel CSV and OPeNDAP ASCII, with CF scale and offset applied from the DAS. Terms quotes matched against live HTML and pdftotext output after normalising spacing around punctuation. Analysis scripts are in scratch-refute-temperature-alternatives/scripts and were run with python -I. The 800 m PRISM zip was HEAD-checked only. Downloads were deleted after this record was written.",
+ "bottom_line": "Most measured values reproduce exactly and all 23 terms quotes appear on the live pages. The recommendation's direction stands. Corrections: the distances to the airport (1.8 to 4.3 km, not 0.8 to 1.3 km); the airport-nearest comparison (June 15 tmax -3.0 to -0.5 F, not -3.0 to +1.2 F; July totals 0.56 to 0.59 in above the airport at those cells); the gridMET legal basis (PRISM attribution is a condition); the decision 7 citation; and the nClimGrid clause, which has no nClimGrid measurement behind it.",
+ "recommendation_stands": true,
+ "recommendation_note": "The recommendation stands in direction: no alternative replaces nClimGrid-Daily as the baseline; gridMET comes first as a supplement and Daymet second, conditional on its licence; PRISM stays off the layer list on the public-domain preference (a policy call); NOAA normals and Climate at a Glance stay context only. Four points must be fixed before the record is relied on. (1) The airport comparison: the sampled cells are 1.8 to 4.3 km from the GHCN airport station, and the June 15 tmax range should read -3.0 to -0.5 F at the cells nearest the airport. (2) The gridMET legal basis must make PRISM attribution a condition, because gridMET blends PRISM and OSU keeps PRISM ownership. (3) The decision 7 citation is not in docs/DECISIONS.md; cite the research prompt's Decision 7 (Follow the laws) or the decision text itself once located. (4) The do-not-replace nClimGrid clause has no nClimGrid measurement behind it, and nClimGrid is itself built from GHCNd, so the airport station cannot test it; restate it as a decision on licence, lag and coverage, or add a held-out-station test.",
+ "five_checks": {
+  "1_counts": "Confirmed. Each PRISM zip has 8 members; BIL 3,490,020 bytes; grid 621 x 1405; 481,631 valid CONUS cells. GHCN July 2025: 31 of 31 days, 6 trace days. S3 CSV: 393,178 rows, last TMAX 2025-02-06, no June or July 2025 rows. Daymet: 61 rows for June 1 to July 31 and 16,790 rows for 1980 to 2025 (46 x 365), no 2026 rows. gridMET 2026 file: 290 days.",
+  "2_sizes": "Confirmed for every re-fetched file: the four PRISM zips to the byte; S3 CSV 13,856,867; .dly 4,625,370; Daymet CSVs 2,065, 2,045 and 425,149. 17 of 17 page and PDF sizes match the record (one within 1 byte). Not measured: the 800 m PRISM zip (HEAD only). Stored-download total: the fetch log sums to 35,849,757, not 35,849,254 (corrected, immaterial). This refuter's downloads: 43396257 bytes across 59 files, largest 13856867, all under 60 MB; deleted.",
+  "3_sample_content": "Values confirmed for the PRISM Billings, airport and Benchland cells, GHCN 2025-06-15 and July 2025, Daymet Billings and Benchland, and gridMET Billings and Benchland. Corrected: the distances (cells are 1.8 to 4.3 km from the airport, not 0.8 to 1.3 km), and the June 15 tmax range at the airport, which is -3.0 to -0.5 F using the cells nearest the airport, not -3.0 to +1.2 F.",
+  "4_terms_quotes": "23 of 23 quotes found on the live pages after normalising spacing around punctuation. 14 match exactly as extracted; the other 9 differ only in spacing. Wording confirmed for every quote.",
+  "5_legal_basis": "PRISM: not public domain (OSU ownership) and free reproduction and distribution with attribution, both confirmed. gridMET: waiver and 'free of known copyright restrictions' confirmed, but gridMET blends PRISM spatial patterns, so PRISM attribution must be a condition (corrected). Daymet: 'openly shared, without restriction' and the EOSDIS sponsor-licence clause confirmed; the ORNL/DOE licence was not found, so the conditional stands. The decision 7 citation is wrong for this repo (corrected). NOAA: no NCEI terms found; 17 U.S.C. section 105 not addressed (open)."
+ },
+ "checks": [
+  {
+   "claim": "PRISM 4 km BIL zips for 2025-06-15 tmax, tmin and ppt, and July 2025 ppt, return HTTP 200 application/zip",
+   "result": "confirmed",
+   "detail": "All four live requests returned HTTP 200 application/zip."
+  },
+  {
+   "claim": "4 km zip sizes: tmax 2,283,540; tmin 2,267,929; ppt daily 1,344,019; ppt 202507 2,190,509 bytes",
+   "result": "confirmed",
+   "detail": "Exact byte matches on the live downloads."
+  },
+  {
+   "claim": "Each zip has 8 members; uncompressed BIL 3,490,020 bytes",
+   "result": "confirmed",
+   "detail": "8 members each (BIL, hdr, prj, stx, stn.csv, info.txt, xml, aux.xml). BIL = 621 x 1405 x 4 bytes = 3,490,020."
+  },
+  {
+   "claim": "Grid 621 x 1405; 481,631 valid CONUS cells; tmax CONUS min/max/mean 2.561 / 47.063 / 27.78 C",
+   "result": "confirmed",
+   "detail": "Valid cells 481,631; min 2.561, max 47.063, mean 27.78."
+  },
+  {
+   "claim": "800 m daily tmax for 2025-06-15 is available (HTTP 200)",
+   "result": "unverified",
+   "detail": "Availability confirmed by HEAD (200, application/zip, prism_tmax_us_30s_20250615.zip). Transfer size not measured; no Content-Length header."
+  },
+  {
+   "claim": "PRISM day is the 24 h ending 1200 UTC (06:00 MDT in June); 2015 schedule document",
+   "result": "confirmed",
+   "detail": "Schedule PDF: PRISM Day is the 24-hour period ending at 1200 UTC; document last updated 17 Sep 2015."
+  },
+  {
+   "claim": "Latest PRISM daily grid is 2026-10-17 (provisional v1); 2026-10-18 invalid",
+   "result": "confirmed",
+   "detail": "gridCount 20261017 = 1; 20261018 returns Invalid date, valid day ranges 1 to 17; releaseDate 2026-10-17 v1 released 2026-10-18."
+  },
+  {
+   "claim": "Release history: 2025-06-15 tmax final v8 released 2025-12-18; July 2025 ppt v7 released 2026-01-19",
+   "result": "confirmed",
+   "detail": "releaseDate JSON for both grids."
+  },
+  {
+   "claim": "KBIL (45.8069, -108.5422, 1112 m) is a PRISM station input for 2025-06-15 tmax and July 2025 ppt",
+   "result": "confirmed",
+   "detail": "stn.csv in both zips lists KBIL, BILLINGS/LOG, -108.5422, 45.8069, 1112, ASOS, 2854. Under the header cell-centre convention KBIL falls in row 99, column 395 (the worker's airport cell)."
+  },
+  {
+   "claim": "PRISM Billings cell (row 99, col 396): 2025-06-15 tmax 26.912 C (80.44 F), tmin 14.434 C (57.98 F), ppt 0.0 mm; July 45.48 mm (1.79 in); 3x3 tmax 26.25-27.35 C",
+   "result": "confirmed",
+   "detail": "Read from the BIL: 26.912 C / 80.44 F; 14.434 C / 57.98 F; 0.0 mm; 45.482 mm = 1.791 in; 3x3 range 26.251 to 27.349 C."
+  },
+  {
+   "claim": "PRISM airport cell (row 99, col 395): tmax 26.617 C (79.91 F), tmin 14.413 C (57.94 F), July 38.38 mm (1.51 in)",
+   "result": "confirmed",
+   "detail": "26.6165 C / 79.91 F; 14.4132 C / 57.94 F; 38.379 mm = 1.511 in."
+  },
+  {
+   "claim": "PRISM Benchland cell (row 68, col 360): tmax 74.00 F, tmin 52.09 F, ppt 0.35 in, July 3.44 in",
+   "result": "confirmed",
+   "detail": "23.331 C / 74.00 F; 11.161 C / 52.09 F; 8.98 mm = 0.354 in; 87.306 mm = 3.437 in."
+  },
+  {
+   "claim": "Current GHCN .dly USW00024033, 2025-06-15: TMAX 28.3 C (82.94 F), TMIN 15.0 C (59.0 F), PRCP 3.3 mm (0.13 in)",
+   "result": "confirmed",
+   "detail": "Fixed-column parse of tenths: 283, 150, 33; measurement flags blank."
+  },
+  {
+   "claim": "GHCN July 2025 PRCP 24.2 mm (0.953 in), 31 of 31 days, 6 trace days",
+   "result": "confirmed",
+   "detail": "Sum 242 tenths over 31 days; trace (T) days 2025-07-10, 11, 14, 19, 20, 21."
+  },
+  {
+   "claim": "GHCN .dly runs through 2026-10-16",
+   "result": "confirmed",
+   "detail": "Last TMAX date 2026-10-16; 4,625,370 bytes; Last-Modified 2026-10-18 22:51:32 GMT."
+  },
+  {
+   "claim": "Named S3 by_station CSV is stale: last TMAX 2025-02-06; 393,178 rows; no June or July 2025 rows",
+   "result": "confirmed",
+   "detail": "393,178 data rows; last TMAX DATE 20250206; 0 rows for 202506 or 202507; 13,856,867 bytes; Last-Modified Sun 09 Feb 2025."
+  },
+  {
+   "claim": "NCEI Access Data Service returned HTTP 503 during the run",
+   "result": "confirmed",
+   "detail": "Re-run returned HTTP 503 (418 bytes). The .dly file was used instead."
+  },
+  {
+   "claim": "Daymet single-pixel API returns CSV with no login (HTTP 200)",
+   "result": "confirmed",
+   "detail": "text/csv, HTTP 200, no login, for Billings, Benchland and the airport coordinates."
+  },
+  {
+   "claim": "Daymet Billings pixel (tile 12096, 955 m): 2025-06-15 tmax 28.97 C (84.15 F), tmin 14.71 C (58.48 F), prcp 2.26 mm (0.09 in); July prcp 41.77 mm (1.64 in, 31 days)",
+   "result": "confirmed",
+   "detail": "61 rows for June 1 to July 31; header Tile 12096, Elevation 955 m; yday 166 = 28.97 / 14.71 / 2.26; July sum 41.77 mm over 31 rows."
+  },
+  {
+   "claim": "Daymet Benchland 2025-06-15 tmax 23.86, tmin 9.74, prcp 5.5 mm; July 74.12 mm",
+   "result": "confirmed",
+   "detail": "Values and July sum reproduce. Tile 12275 and 1320 m not re-read."
+  },
+  {
+   "claim": "Daymet ends 2025-12-31; a window into 2026 returns the full 1980-2025 record (16,790 rows, no 2026 rows)",
+   "result": "confirmed",
+   "detail": "16,790 = 46 years x 365; last row 2025 yday 365. A 2026-10 window returned the same 425,149 bytes."
+  },
+  {
+   "claim": "Daymet bulk netCDF needs Earthdata Login (protected path 401); public directory 404",
+   "result": "corrected",
+   "detail": "Protected netCDF path returns HTTP 302 to urs.earthdata.nasa.gov, not 401; login is still required. Public directory returns 404 (confirmed)."
+  },
+  {
+   "claim": "Daymet tmax/tmin day boundary not stated in the user guide",
+   "result": "unverified",
+   "detail": "Guide (2.95 MB PDF; 23 KB extracted text) has no match for midnight, local standard time, UTC or 24-hour. Consistent with the worker; not a full read."
+  },
+  {
+   "claim": "gridMET Billings cell (y 87, x 390; 45.775 N, 108.5167 W): 2025-06-15 tmmx 28.75 C (83.75 F), tmmn 11.85 C (53.33 F), pr 3.6 mm (0.14 in); July pr 42.9 mm (1.69 in, 31 days)",
+   "result": "confirmed",
+   "detail": "Raw 819, 750, 36; July raw sum 429 over 31 days; scale 0.1 with offsets 220 K (tmmx) and 210 K (tmmn) from the DAS; coordinates 45.775 and -108.5167 confirmed."
+  },
+  {
+   "claim": "gridMET Benchland cell (y 56, x 354): tmmx 22.85 C (73.13 F), tmmn 9.55 C (49.19 F), pr 11.8 mm (0.46 in); July 90.8 mm (3.58 in)",
+   "result": "corrected",
+   "detail": "Values reproduce (760, 727, 118; July raw sum 908). 90.8 mm = 3.575 in, which is 3.57 in to two decimals, not 3.58."
+  },
+  {
+   "claim": "gridMET 2026 file holds 290 days (2026-01-01 to 2026-10-17)",
+   "result": "confirmed",
+   "detail": "pr_2026 DDS: day = 290."
+  },
+  {
+   "claim": "gridMET day is midnight MST (07 UTC); last 60 days preliminary; 1/24 degree; 1979 to yesterday",
+   "result": "confirmed",
+   "detail": "Product page: 1979-yesterday; 1/24th degree ~4-km; dates within the last 60 days preliminary. DAS note5 gives midnight MST (7 UTC)."
+  },
+  {
+   "claim": "gridMET port 8080 THREDDS unreachable; port 80 OPeNDAP works",
+   "result": "unverified",
+   "detail": "Port 80 confirmed (every OPeNDAP request returned 200). Port 8080 not retested."
+  },
+  {
+   "claim": "Cell centres are 0.8 to 1.3 km from the airport",
+   "result": "corrected",
+   "detail": "GHCN USW00024033 BILLINGS INTL AP at 45.8072, -108.5461, 1094.2 m (ghcnd-stations.txt; the worker left it unchecked). Distances: PRISM 99,395 1.76 km; PRISM 99,396 3.97 km; gridMET y87 x390 (sampled) 4.25 km; Daymet request point 4.15 km. The 1.3 km figure is gridMET y87 x390 to the Daymet request point (1.33 km), not to the airport. The gridMET cell containing the airport is y86 x389 (centre 45.8167, -108.5583; 1.42 km), which the worker did not sample."
+  },
+  {
+   "claim": "June 15 tmax at Billings: grids read -3.0 to +1.2 F against the airport high of 82.9 F",
+   "result": "corrected",
+   "detail": "Sampled-cell arithmetic holds (-3.03 to +1.21 F). Cells nearest the airport: PRISM 99,395 79.91 F (-3.03); gridMET y86 x389 82.49 F (-0.45); Daymet pixel at the airport coordinates 82.36 F (-0.58). The +1.21 F Daymet and +0.81 F gridMET values come from cells about 4.2 km away. Range at the airport: -3.0 to -0.5 F."
+  },
+  {
+   "claim": "gridMET tmin is 5.7 F low at Billings on 2025-06-15",
+   "result": "corrected",
+   "detail": "Sampled cell -5.67 F; nearest cell (y86, x389) 53.69 F, i.e. -5.31 F; Daymet airport pixel -1.67 F; PRISM airport cell -1.06 F."
+  },
+  {
+   "claim": "July 2025 totals: each grid 0.56 to 0.84 in above the airport total of 0.95 in",
+   "result": "corrected",
+   "detail": "Arithmetic holds across the four sampled cells (0.558 to 0.838 in). Cells nearest the airport: PRISM 99,395 +0.56 (1.511 in); Daymet airport pixel +0.56 (1.516 in); gridMET y86 x389 +0.59 (1.543 in). Spread at the airport is 0.56 to 0.59 in."
+  },
+  {
+   "claim": "GHCN airport July 2025 total 0.953 in",
+   "result": "confirmed",
+   "detail": "24.2 mm = 0.9528 in."
+  },
+  {
+   "claim": "All 23 terms quotes appear in the source text (verified_in_saved_source)",
+   "result": "confirmed",
+   "detail": "23 of 23 found on the live pages after normalising spacing around punctuation. 14 match exactly as extracted; the other 9 differ only in spacing (extraction adds a space before full stops, commas and inside parentheses). No word differs."
+  },
+  {
+   "claim": "PRISM terms: free reproduction and distribution with attribution (name, URL, access date); OSU retains ownership; no commercial-use clause",
+   "result": "confirmed",
+   "detail": "Quotes 01 to 05 found. The word commercial does not appear on the page."
+  },
+  {
+   "claim": "PRISM downloads page and web-service PDF: 8 daily and 7 monthly versions; acknowledge terms; stable after six months",
+   "result": "confirmed",
+   "detail": "Quotes 06 to 08 found."
+  },
+  {
+   "claim": "Earthdata record: openly shared, without restriction; temporal extent 1950-01-01 to 2025-12-31; record updated 2026-05-22",
+   "result": "confirmed",
+   "detail": "Quote 09 and the extent found. 2026-05-22 appears on the page, but its label (updated or published) was not checked."
+  },
+  {
+   "claim": "EOSDIS guidance: non-NASA data subject to the sponsoring organisation's licence; CC0 is the default for NASA-led missions",
+   "result": "confirmed",
+   "detail": "Quotes 10 and 11 found."
+  },
+  {
+   "claim": "Daymet home: DOE Office of Science supports development",
+   "result": "confirmed",
+   "detail": "Quote 12 found."
+  },
+  {
+   "claim": "gridMET: 'To the extent possible under law, John Abatzoglou has waived all copyright' and 'free of known copyright restrictions'",
+   "result": "confirmed",
+   "detail": "Quotes 13 and 14 found on the live page."
+  },
+  {
+   "claim": "gridMET is built from PRISM spatial patterns and NLDAS-2 temporal detail",
+   "result": "confirmed",
+   "detail": "Quote 16 found: gridMET blends spatial attributes of gridded climate data from PRISM with temporal attributes from NLDAS-2."
+  },
+  {
+   "claim": "Recommendation 1 legal basis for gridMET: author waiver plus attribution",
+   "result": "corrected",
+   "detail": "The waiver covers the author's rights in gridMET. gridMET blends PRISM spatial patterns, and PRISM's terms reserve ownership to OSU and require attribution (name, URL, date of access). PRISM attribution is therefore a condition of the gridMET basis, not only a note to record the PRISM dependence. NLDAS-2 terms were not checked."
+  },
+  {
+   "claim": "Recommendation 2 legal basis for Daymet: Earthdata 'openly shared, without restriction', read through EOSDIS as the sponsoring organisation's licence; confirm in writing",
+   "result": "confirmed",
+   "detail": "A fair reading of quotes 09 and 10. No licence, restriction or public-domain wording found for ORNL/DOE on the ORNL DAAC policy page (it redirects to Earthdata's ORNL DAAC centre page; only Data Use Guidance entries appear), the Daymet home page or the single-pixel page (keyword check). The conditional stands."
+  },
+  {
+   "claim": "Recommendation 3: PRISM is not public domain; keep it off the layer list under the public-domain preference in 'the project's decision 7'",
+   "result": "corrected",
+   "detail": "Not-public-domain is confirmed (OSU ownership clause). The citation is wrong for this repo: docs/DECISIONS.md D7 (2026-10-11) is the NOAA radar layer decision and contains no public-domain rule. The preference is the research prompt's 'Decision 7 (Follow the laws)', quoted in river-flood-gauges.json line 1086 ('prefer public-domain government data') and cited in streets-msl-vs-tiger.json line 1439, which notes it is not in DECISIONS.md. Keeping PRISM off the layer list is a policy call on that preference; the terms permit free reproduction and distribution with attribution."
+  },
+  {
+   "claim": "Recommendation 4: NOAA normals and Climate at a Glance are context only; no NCEI dataset terms located",
+   "result": "unverified",
+   "detail": "No NCEI dataset terms on the pages checked (normals page, GHCN-Daily product page, NOAA disclaimer, NODD: 0 licence or public-domain hits on the first three; NODD says data are publicly available, which is not a licence). The NWS disclaimer covers NWS web pages only (quote 21 found). Not addressed: 17 U.S.C. section 105 (US government works), which river-flood-gauges.json cites."
+  },
+  {
+   "claim": "Normals first released May 2021 (v1.0.0); 23 sites reissued 2023 (v1.0.1)",
+   "result": "confirmed",
+   "detail": "Quote 23 found."
+  },
+  {
+   "claim": "Stored downloads 35,849,254 bytes measured; total upper bound 88,278,054 bytes under the 100 MB cap",
+   "result": "corrected",
+   "detail": "The worker's fetch log sums to 35,849,757 bytes across 82 stored entries (one -1 Range response counted as 0), 503 bytes more than the record. The upper-bound arithmetic (35,849,254 + 52,428,800 = 88,278,054) holds. Immaterial to the cap."
+  },
+  {
+   "claim": "Recommendation: do not replace nClimGrid-Daily",
+   "result": "unverified",
+   "detail": "No nClimGrid value was measured. The nClimGrid-Daily product page says the data are derived from GHCNd morning and midnight observations, so GHCN at the airport cannot test it. The page has no licence or public-domain wording (keyword check, 0 hits)."
+  }
+ ],
+ "corrections": [
+  "Distances to the airport: the GHCN station USW00024033 (45.8072, -108.5461, 1094.2 m) is 1.76 km from the PRISM airport cell, 3.97 km from the PRISM Billings cell, 4.25 km from the sampled gridMET cell (y87, x390) and 4.15 km from the Daymet request point. Replace '0.8 to 1.3 km' with these. The 1.3 km figure is gridMET y87 x390 to the Daymet request point.",
+  "Add the gridMET cell that contains the airport (y86, x389; centre 45.8167, -108.5583; 1.42 km away). It reads 82.49 F tmax, 53.69 F tmin and 0.039 in on 2025-06-15, and 1.543 in in July 2025.",
+  "Bottom line, June 15 tmax: at the cells nearest the airport the grids read -3.03 F (PRISM 99,395), -0.58 F (Daymet pixel at the airport coordinates, 82.36 F) and -0.45 F (gridMET y86 x389), not -3.0 to +1.2 F. The +1.21 F Daymet and +0.81 F gridMET values come from cells about 4.2 km away.",
+  "Bottom line, gridMET tmin: -5.31 F at the nearest cell (53.69 F) and -5.67 F at the sampled cell. The Daymet airport pixel is -1.67 F.",
+  "Bottom line, July 2025: at the cells nearest the airport the grids are +0.56 (PRISM), +0.56 (Daymet, 1.516 in) and +0.59 (gridMET, 1.543 in) above the airport 0.953 in. The 0.56 to 0.84 range holds only across the four sampled cells.",
+  "Legal basis for gridMET (recommendation 1): PRISM attribution (name, URL, date of access) is a condition, not only a note. gridMET blends PRISM spatial patterns and OSU retains ownership of PRISM data; the author's waiver does not reach that part. NLDAS-2 terms were not checked.",
+  "Citation for decision 7 (recommendation 3): /home/user/RoofingApp/docs/DECISIONS.md D7 (2026-10-11) is the NOAA radar layer decision, not a public-domain rule. Cite the research prompt's 'Decision 7 (Follow the laws)' as quoted in river-flood-gauges.json line 1086 and streets-msl-vs-tiger.json line 1439, or the source text once located.",
+  "Daymet bulk netCDF: the protected path returns HTTP 302 to urs.earthdata.nasa.gov, not 401. Login is still required.",
+  "gridMET Benchland July 2025: 90.8 mm is 3.57 in (3.5748), not 3.58 in.",
+  "Download total: the worker's fetch log sums to 35,849,757 bytes across 82 stored entries, 503 bytes more than the 35,849,254 in the record. Immaterial to the 100 MB cap.",
+  "Recommendation 'do not replace nClimGrid-Daily': no nClimGrid value was measured. The nClimGrid-Daily product page says the data are derived from GHCNd morning and midnight observations, so GHCN at the airport cannot test it. State this clause as a decision on licence, lag and coverage, or add a held-out-station test.",
+  "Open question closed: the GHCN station coordinates were unchecked in the record. ghcnd-stations.txt gives 45.8072, -108.5461, 1094.2 m, BILLINGS INTL AP."
+ ],
+ "terms_check": "23 of 23 quotes found on the live pages (PRISM terms, downloads and web-service PDF; gridMET home and DAS; Earthdata record; EOSDIS guidance; Daymet home; NWS disclaimer; NODD; normals) after normalising quotes, whitespace and the spacing the text extraction puts before full stops, commas and inside parentheses. Exact as extracted: 14 of 23; the other 9 differ only in spacing. No wording differs.",
+ "open_items": [
+  "PRISM 800 m zip transfer size not measured (HEAD only). The worker's 50 MiB bound remains an assumption.",
+  "nClimGrid-Daily not sampled. The product page says it is derived from GHCNd morning and midnight observations, so the airport station cannot test it independently. No licence or public-domain wording on the product page (keyword check).",
+  "ORNL/DOE licence for Daymet not located on the ORNL DAAC policy page, the Daymet home page or the single-pixel page. Confirm in writing before use.",
+  "Daymet single-pixel API terms and rate limits: none found; the only policy-type text on the page is a Privacy Policy link.",
+  "Daymet tmax/tmin day boundary: not stated in the user guide text checked.",
+  "17 U.S.C. section 105 (US government works), cited in river-flood-gauges.json, is not addressed in this record. Counsel should consider it for NOAA-origin data (GHCN-D, normals, Climate at a Glance).",
+  "NLDAS-2 terms (gridMET temporal input) not checked.",
+  "gridMET port 8080 THREDDS not retested; port 80 OPeNDAP worked on every request this run.",
+  "Earthdata record: the 2026-05-22 date is on the page; its label (updated or published) was not checked.",
+  "One day and one month at four to five cells is a sanity comparison, not validation."
+ ],
+ "downloads": {
+  "files": 59,
+  "measured_bytes": 43396257,
+  "largest_bytes": 13856867,
+  "limit_bytes_per_download": 60000000,
+  "not_downloaded": [
+   "PRISM 800 m zip for 2025-06-15 (HEAD only; transfer size unmeasured)"
+  ],
+  "deleted": true,
+  "folder": "/home/user/wt/research-b35/scratch-refute-temperature-alternatives/downloads"
+ },
+ "download_bytes_total": 43396257,
+ "scripts_folder": "/home/user/wt/research-b35/scratch-refute-temperature-alternatives/scripts",
+ "worker_fetch_log": "/home/user/wt/research-b35/scratch-temperature-alternatives/fetch-log.txt"
+}

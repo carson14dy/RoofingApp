@@ -1,0 +1,159 @@
+{
+  "lid": "CYNM8",
+  "usgsId": "",
+  "reachId": "3025118",
+  "name": "Missouri River at Canyon Ferry Reservoir",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "TFX",
+    "name": "Great Falls"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Lewis and Clark",
+  "timeZone": "MST7MDT",
+  "latitude": 46.649166666667,
+  "longitude": -111.7275,
+  "pedts": {
+    "observed": "HPIRG",
+    "forecast": "HPIFF"
+  },
+  "status": {
+    "observed": {
+      "primary": 3784.49,
+      "primaryUnit": "ft",
+      "secondary": -999,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T06:00:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 3800,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [],
+      "recent": []
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 3800,
+        "statement": "At 3800 Feet...Canyon Ferry Reservoir would start to flood. (June 2017)"
+      },
+      {
+        "stage": 3797,
+        "statement": "At 3797 Feet...Canyon Ferry Reservoir is full. It becomes a pass thru. (June 2017)"
+      },
+      {
+        "stage": 3782,
+        "statement": "Per Bureau of Reclamation, water levels below 3782 feet make lauching of a boat too low to safely launch a boat at Silos South Ramp boat launch location. (April 2018)"
+      },
+      {
+        "stage": 3781,
+        "statement": "Per Bureau of Reclamation, water levels below 3781 feet make lauching of a boat too low to safely launch a boat at White Earth boat launch location. (April 2018)"
+      },
+      {
+        "stage": 3780,
+        "statement": "Per Bureau of Reclamation, water levels below 3780 feet make lauching of a boat too low to safely launch a boat at Silos North Ramp and Kims Marina launch locations. (April 2018)"
+      },
+      {
+        "stage": 3777,
+        "statement": "Per Bureau of Reclamation, water levels below 3777 feet make lauching of a boat too low to safely launch a boat at Yacht Basin Ramp location. (April 2018)"
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/CYNM8.QINE.prob.weekint.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/CYNM8.volume.prob.weekint.gif"
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/CYNM8.QINE.exceed.90day.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/CYNM8.volume.exceed.90day.gif"
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/cynm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/cynm8_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "TOSM8",
+  "downstreamLid": "HASM8",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

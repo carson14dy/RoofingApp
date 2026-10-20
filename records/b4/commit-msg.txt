@@ -1,0 +1,6 @@
+Live hail swath layers on the Map behind --storm-layers: the last hour and the last 24 hours from MRMS MESH, with the sheet's live line (D37)
+
+Two one-frame layers draw NOAA's MRMS MESH maximum-hail estimates (the 60-minute and 1,440-minute products) on the map's image box with B1's class stops and their words; code -1 stays uncoloured and -3 is hatched, and an uncoloured cell is never read as "no hail". Each build writes the frames and small per-tile live files in a folder named by the valid time; the sheet reads the clicked cell's file only after the store puts the cell in Montana. The browser works a layer's age out at view time, once a minute, from the frame's valid time and the thresholds in map.json; every stale or unavailable line ends "This is not an all-clear." The List view and the no-JavaScript panel name Montana first. The CONTRACTS row records the units, cadences, codes and the floor, and the smoke's picture gate for these sparse layers counts changed pixels at a listed cell. Full suite 895 tests, self-test, default build identical to the base except map.js and map.css; the independent round trip has 0 mismatches over every pixel of both pictures.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01D7npHSU4NQFAmdz8Ep5sV7

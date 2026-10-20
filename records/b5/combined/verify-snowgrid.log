@@ -1,0 +1,95 @@
+{
+ "check": {
+  "correlation": 0.809719,
+  "fit": "ordinary least squares of station inches on the grid value",
+  "intercept": 12.031601,
+  "max_abs_residual_in": 124.2277,
+  "pass": false,
+  "rms_residual_in": 17.6727,
+  "rule": "slope from 0.85 to 1.15 means inches (D7)",
+  "slope": 0.664164,
+  "stations": 682,
+  "unit": null
+ },
+ "checks": [
+  {
+   "check": "snow block present",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "cell_for: Benchland point is row 198, column 399",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "cell_for: Billings point is row 230, column 437",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "cell_for: the north edge of row 198 is row 198 and the east edge of column 399 is column 400",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "Montana box has 34,916 cells in rows 150 to 265 and columns 248 to 548",
+   "detail": "34916 cells",
+   "pass": true
+  },
+  {
+   "check": "snow block state is loaded or unavailable with words",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "missing water years are named",
+   "detail": "[]",
+   "pass": true
+  },
+  {
+   "check": "one concrete URL per water year, with no template marks",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "unit check recorded",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "display decision follows the D7 check",
+   "detail": "slope 0.664164",
+   "pass": true
+  },
+  {
+   "check": "check slope and intercept are finite numbers",
+   "detail": "",
+   "pass": true
+  }
+ ],
+ "ok": true,
+ "pairs_billings": [
+  {
+   "grid_in": 50.29,
+   "station": "USC00240802",
+   "station_in": 36.02,
+   "wy": 2025
+  },
+  {
+   "grid_in": 57.05,
+   "station": "USW00024033",
+   "station_in": 64.29,
+   "wy": 2025
+  },
+  {
+   "grid_in": 36.42,
+   "station": "USW00024033",
+   "station_in": 40.91,
+   "wy": 2026
+  }
+ ],
+ "shown": false,
+ "state": "unavailable"
+}
+exit 0

@@ -1,0 +1,4041 @@
+{
+ "slug": "flood-ice-heat-products",
+ "question": "Official and recorded history of flooding, ice, heavy snow, heat and wind that B2 does not yet join, Montana 2020 to 2026: IEM warnings, NCEI Storm Events, IEM LSR, FEMA NFHL, NWS/USGS river gauges.",
+ "checked_utc": {
+  "pulls": "2026-10-19 03:21 to 03:40 UTC",
+  "record_built": "2026-10-19 03:46 UTC"
+ },
+ "bottom_line": "B2 reads only 11 of the 29 IEM products checked, and of those FL.W returns zero events because its zone path drops polygon rows. In Montana 2020-2026 the IEM archive holds about 2,500 distinct events for the requested products in the five-year window (begin 2021-10-19 to 2026-10-19), most of them winter (WW.Y 865 events in window), flood (FA.Y 548, FL.W 43, FA.W 37, FL.A 35, FL.Y 10) and snow squall (SQ.W 78). NCEI county-coded rows of flood (76), flash flood (60), heavy rain (144), tornado (17), funnel cloud (35), lightning (8) and debris flow (11), 351 rows in all with points in 2020-2026, are dropped by B2 today. IEM LSR pulls match B2's cache row for row. NWPS covers 278 Montana river gauges with crest history (388 crests dated 2020-2026 at 119 gauges). FEMA NFHL is queryable (28,426 Montana polygons), but showing flood zones needs the owner's and counsel's ruling first; FEMA and USGS terms pages could not be read in this session.",
+ "recommendation": {
+  "phenomena_to_add_by_path": {
+   "polygon_path_shapefile_like_SV_TO_FF": [
+    "FL.W (flood warning)",
+    "FA.W (areal flood warning)",
+    "FA.Y (areal flood advisory)",
+    "FL.A (flood watch)",
+    "FL.Y (flood advisory)",
+    "SQ.W (snow squall warning)",
+    "FF.A significance A (polygon events, 1 in 2020-2026; mixed with zone and county rows)"
+   ],
+   "zone_path_csv_like_existing_ZONE_PRODUCTS": [
+    "WW.Y (winter weather advisory, 1155 events)",
+    "WS.A (winter storm watch, 276)",
+    "HW.A (high wind watch, 348)",
+    "HT.Y (heat advisory, 84)",
+    "EH.W and EH.A (excessive heat, 15 and 14)",
+    "FR.Y (frost advisory, 17)",
+    "FZ.W (freeze warning, 5)",
+    "DU.Y (blowing dust advisory, 3)"
+   ],
+   "county_path_new_code_needed": [
+    "FA.A county-only events (18 in window) and FF.A county-only events (2 in window): B2 drops MTC-only events today; a county join needs a Montana county boundary file (not downloaded in this research)"
+   ],
+   "already_in_B2_but_check": [
+    "FL.W: zone path returns 0 events (polygon rows dropped): move to the polygon path",
+    "FA.A: zone path keeps MTZ events only; add the county path",
+    "WI.Y, HW.W, WS.W, BZ.W, EC.W, WC.W, IS.W, DS.W: zone path as built (DS.W has 0 events in 2020-2026)"
+   ],
+   "no_rows_in_2020_2026": [
+    "BZ.A, LE.W, HZ.W, DS.W (zero events): keep for completeness or drop; no rows to show"
+   ]
+  },
+  "ncei_storm_events": [
+   "Add county-coded rows with BEGIN_LAT for Flood, Flash Flood, Heavy Rain, Tornado, Funnel Cloud, Lightning, Debris Flow under the same 5-mile point rule B2 uses for hail (76, 60, 144, 17, 35, 8 and 11 rows, 2020-2026)",
+   "Keep zone-coded rows of any type by zone (already in B2): heavy snow, winter storm, winter weather, blizzard, ice storm, cold and wind chill, frost and freeze, heat, drought, fog, wildfire, high wind",
+   "Show the FLOOD_CAUSE value beside Flood and Flash Flood rows (values: Heavy Rain / Snow Melt, Heavy Rain, Ice Jam, Heavy Rain / Burn Area)",
+   "Correct the B2 brief: tornado and flash flood are not joined today, and in Montana 2020-2026 their NCEI rows are county-coded"
+  ],
+  "iem_lsr": [
+   "Keep all LSR types within 5 miles (B2 does), with a type-word map for the label changes (HEAVY RAIN and RAIN; HEAVY SNOW and SNOW; EXTR WIND CHILL and WIND CHILL; EXCESSIVE HEAT and EXTREME HEAT)",
+   "Do not show magnitudes for codes 5, 6, 7, I and J until the IEM unit for each code is confirmed (the value ranges suggest inches for code 5 and degrees F for 6, 7 and I; unverified)",
+   "Drop or repair the two shifted rows (2022-12, 2023-08) with a counted note, as B2's parser docstring describes"
+  ],
+  "river_gauges_NWPS": [
+   "New kind: Gauge crest. Use the 278 Montana gauges; show the nearest gauges within a distance (25 miles is a starting proposal, not checked for fit), the gauge name, the distance and the crests with dates and stages",
+   "Only a gauge's own NWS minor, moderate or major stage words may be used, and only where that gauge has the stage (102 gauges have a minor stage; 57 have all four)",
+   "Drop the 3 malformed crest years and count them; the historic and recent lists repeat the same entries, so count once"
+  ],
+  "fema_nfhl": "Hold. Do not join or show FEMA flood zones (layer 28) until the owner and counsel rule: the lender rule in 42 U.S.C. 4012a ties the special flood hazard designation to flood insurance, and AGENTS rule 5 forbids insurance eligibility statements. If approved later: point-in-polygon on the cell centre; an empty result reads as no mapped polygon in this service, never as no flood hazard.",
+  "kinds_and_words": {
+   "Official alert": "An NWS watch, warning or advisory row (IEM). Name the product in words (for example Flood warning, Areal flood advisory, Winter weather advisory). Say it was the forecast warning at issue time, not what happened. Zone products: This product covered the whole zone, not this spot alone. Flood, heat and winter products carry no hail, wind or tornado tags; keep the NWS damage threat tag rule (D4) for the FF.W rows (2) and SQ.W rows (12) that carry a damage threat value.",
+   "Record": "An NCEI Storm Events row (official record compiled after the event, with lag). Say NCEI's database runs to its newest event. County-coded rows name the county; the point is where NCEI places the event.",
+   "Report": "An LSR row (a report sent to the NWS). Reports are not a complete record; no report is not no event. Quote the remark as written.",
+   "Gauge crest": "A river crest at an NWPS gauge (observed stage). The gauge is at a stream, not at the address; show the distance and the gauge name.",
+   "Mapped flood zone (hold)": "FEMA NFHL polygon label. Hold until the owner and counsel rule (see fema_nfhl)."
+  },
+  "forbidden_or_careful_words_in_new_text": [
+   "damage (only as a source type word such as NON-TSTM WND DMG, or inside a quoted remark or tag label)",
+   "insured, insurance, eligible, eligibility, covered (as in insured), safe, all clear, no flood, flood-free, not in a flood zone, no hail, no wind as a fact"
+  ],
+  "join_rules": [
+   "Polygon events (as B2's parse_ww_shapefile for SV, TO, FF): NEW polygons only; county twins (GTYPE C) and EXP rows skipped; the time window is POLY_BEG to POLY_END (UTC); a cell is covered when its centre lies inside the polygon (even-odd test); a NEW polygon with no outline is counted and shown as such, never as no warning",
+   "Zone events: group rows by zone, phenomenon, significance, event number, year (D30); begin is the earliest NEW or CON issue time, else the earliest utc_issue on the event's rows (D25); a CAN row gives the end (cancelled at); an UPG row ends the lower event (D31); events with no end read end not recorded",
+   "County events: the cell's county (Census county boundaries, public domain, to be checked) and the same event rules as zone events",
+   "NCEI points (county-coded or hail or wind): within 5 miles of the cell centre, trailing five years, same as B2 hail rows; zone-coded NCEI rows: by zone, as B2 does",
+   "LSR: within 5 miles, all types, type word from TYPETEXT lower-cased through the type-word map",
+   "River gauges: nearest gauges by distance from the cell centre; the crest date and stage from the gauge record; no inference about flooding at the address"
+  ],
+  "b2_fixes_found_while_checking": [
+   "FL.W (polygon) yields 0 events in B2's zone path: route polygon rows of zone-listed products to the polygon path",
+   "County-only events (FA.A 18 in window) are dropped by the MTZ filter",
+   "NCEI county-coded rows of flood, flash flood, heavy rain, tornado, funnel cloud, lightning and debris flow are dropped (no B2 rule); 351 rows in 2020-2026, all with points",
+   "The brief's list of NCEI joins (tornado, flash flood) does not match the code"
+  ]
+ },
+ "b2_coverage_today": [
+  {
+   "product": "FA.W",
+   "name": "Areal flood warning",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 37
+  },
+  {
+   "product": "FA.Y",
+   "name": "Areal flood advisory",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 548
+  },
+  {
+   "product": "FA.A",
+   "name": "",
+   "in_b2": "listed in ZONE_PRODUCTS; zone path keeps MTZ events only (county-only events dropped)",
+   "events_five_year_window": 82
+  },
+  {
+   "product": "FL.W",
+   "name": "Flood warning",
+   "in_b2": "listed in ZONE_PRODUCTS; zone path returns 0 events (polygon rows dropped)",
+   "events_five_year_window": 43
+  },
+  {
+   "product": "FL.Y",
+   "name": "Flood advisory",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 10
+  },
+  {
+   "product": "FL.A",
+   "name": "Flood watch",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 35
+  },
+  {
+   "product": "FF.A",
+   "name": "Flash flood watch",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 20
+  },
+  {
+   "product": "WW.Y",
+   "name": "Winter weather advisory",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 865
+  },
+  {
+   "product": "WS.A",
+   "name": "Winter storm watch",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 226
+  },
+  {
+   "product": "BZ.A",
+   "name": "Blizzard watch",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 0
+  },
+  {
+   "product": "IS.W",
+   "name": "Ice storm warning",
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "events_five_year_window": 2
+  },
+  {
+   "product": "LE.W",
+   "name": "Lake effect snow warning",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 0
+  },
+  {
+   "product": "EH.W",
+   "name": "Excessive heat warning",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 4
+  },
+  {
+   "product": "EH.A",
+   "name": "Excessive heat watch",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 3
+  },
+  {
+   "product": "HT.Y",
+   "name": "Heat advisory",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 58
+  },
+  {
+   "product": "FZ.W",
+   "name": "Freeze warning",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 4
+  },
+  {
+   "product": "FR.Y",
+   "name": "Frost advisory",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 14
+  },
+  {
+   "product": "HZ.W",
+   "name": "Hard freeze warning",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 0
+  },
+  {
+   "product": "WI.Y",
+   "name": "Wind advisory",
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "events_five_year_window": 181
+  },
+  {
+   "product": "HW.A",
+   "name": "High wind watch",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 277
+  },
+  {
+   "product": "DU.Y",
+   "name": "Blowing dust advisory",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 3
+  },
+  {
+   "product": "DS.W",
+   "name": "Dust storm warning",
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "events_five_year_window": 0
+  },
+  {
+   "product": "SQ.W",
+   "name": "Snow squall warning",
+   "in_b2": "not in B2 (no join)",
+   "events_five_year_window": 78
+  },
+  {
+   "product": "FF.W",
+   "name": "Flash flood warning",
+   "in_b2": "polygon path (shapefile) in WARNING_PHENOMENA",
+   "events_five_year_window": 148
+  },
+  {
+   "product": "WS.W",
+   "name": "Winter storm warning",
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "events_five_year_window": 256
+  },
+  {
+   "product": "BZ.W",
+   "name": "Blizzard warning",
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "events_five_year_window": 36
+  },
+  {
+   "product": "HW.W",
+   "name": "High wind warning",
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "events_five_year_window": 339
+  },
+  {
+   "product": "EC.W",
+   "name": "Extreme cold warning",
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "events_five_year_window": 22
+  },
+  {
+   "product": "WC.W",
+   "name": "Wind chill warning",
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "events_five_year_window": 26
+  }
+ ],
+ "iem_watchwarn_table": [
+  {
+   "distinct_events_2020_2026": 39,
+   "distinct_events_five_year_window": 37,
+   "events_by_kind_2020_2026": {
+    "polygon": 39
+   },
+   "events_by_vtec_year": {
+    "2020": 2,
+    "2022": 10,
+    "2023": 11,
+    "2024": 2,
+    "2025": 7,
+    "2026": 7
+   },
+   "events_five_year_window_by_kind": {
+    "polygon": 37
+   },
+   "gtype_rows": {
+    "C": 49,
+    "P": 39
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Areal flood warning",
+   "new_rows_2020_2026": 43,
+   "new_rows_five_year_window": 41,
+   "product": "FA.W",
+   "requested_in_task": true,
+   "rows_2020_2026": 88,
+   "ugc_prefix_rows": {
+    "(blank)": 39,
+    "MTC": 49
+   }
+  },
+  {
+   "distinct_events_2020_2026": 616,
+   "distinct_events_five_year_window": 548,
+   "events_by_kind_2020_2026": {
+    "polygon": 616
+   },
+   "events_by_vtec_year": {
+    "2020": 32,
+    "2021": 36,
+    "2022": 85,
+    "2023": 253,
+    "2024": 30,
+    "2025": 87,
+    "2026": 93
+   },
+   "events_five_year_window_by_kind": {
+    "polygon": 548
+   },
+   "gtype_rows": {
+    "C": 963,
+    "P": 616
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Areal flood advisory",
+   "new_rows_2020_2026": 676,
+   "new_rows_five_year_window": 605,
+   "product": "FA.Y",
+   "requested_in_task": true,
+   "rows_2020_2026": 1579,
+   "ugc_prefix_rows": {
+    "(blank)": 616,
+    "MTC": 963
+   }
+  },
+  {
+   "distinct_events_2020_2026": 87,
+   "distinct_events_five_year_window": 82,
+   "events_by_kind_2020_2026": {
+    "county": 18,
+    "zone": 69
+   },
+   "events_by_vtec_year": {
+    "2020": 5,
+    "2022": 12,
+    "2023": 26,
+    "2024": 5,
+    "2025": 14,
+    "2026": 25
+   },
+   "events_five_year_window_by_kind": {
+    "county": 18,
+    "zone": 64
+   },
+   "gtype_rows": {
+    "C": 643
+   },
+   "in_b2": "listed in ZONE_PRODUCTS; zone path keeps MTZ events only (county-only events dropped)",
+   "name": "",
+   "new_rows_2020_2026": 6,
+   "new_rows_five_year_window": 6,
+   "product": "FA.A",
+   "requested_in_task": true,
+   "rows_2020_2026": 643,
+   "ugc_prefix_rows": {
+    "MTC": 109,
+    "MTZ": 534
+   }
+  },
+  {
+   "distinct_events_2020_2026": 62,
+   "distinct_events_five_year_window": 43,
+   "events_by_kind_2020_2026": {
+    "polygon": 62
+   },
+   "events_by_vtec_year": {
+    "2020": 18,
+    "2021": 1,
+    "2022": 17,
+    "2023": 20,
+    "2024": 3,
+    "2025": 3
+   },
+   "events_five_year_window_by_kind": {
+    "polygon": 43
+   },
+   "gtype_rows": {
+    "C": 73,
+    "P": 62
+   },
+   "in_b2": "listed in ZONE_PRODUCTS; zone path returns 0 events (polygon rows dropped)",
+   "name": "Flood warning",
+   "new_rows_2020_2026": 62,
+   "new_rows_five_year_window": 43,
+   "product": "FL.W",
+   "requested_in_task": true,
+   "rows_2020_2026": 135,
+   "ugc_prefix_rows": {
+    "(blank)": 62,
+    "MTC": 73
+   }
+  },
+  {
+   "distinct_events_2020_2026": 20,
+   "distinct_events_five_year_window": 10,
+   "events_by_kind_2020_2026": {
+    "polygon": 20
+   },
+   "events_by_vtec_year": {
+    "2020": 8,
+    "2021": 2,
+    "2022": 5,
+    "2023": 2,
+    "2024": 2,
+    "2025": 1
+   },
+   "events_five_year_window_by_kind": {
+    "polygon": 10
+   },
+   "gtype_rows": {
+    "C": 26,
+    "P": 20
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Flood advisory",
+   "new_rows_2020_2026": 20,
+   "new_rows_five_year_window": 10,
+   "product": "FL.Y",
+   "requested_in_task": true,
+   "rows_2020_2026": 46,
+   "ugc_prefix_rows": {
+    "(blank)": 20,
+    "MTC": 26
+   }
+  },
+  {
+   "distinct_events_2020_2026": 40,
+   "distinct_events_five_year_window": 35,
+   "events_by_kind_2020_2026": {
+    "polygon": 40
+   },
+   "events_by_vtec_year": {
+    "2020": 5,
+    "2022": 13,
+    "2023": 13,
+    "2024": 5,
+    "2026": 4
+   },
+   "events_five_year_window_by_kind": {
+    "polygon": 35
+   },
+   "gtype_rows": {
+    "C": 48,
+    "P": 40
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Flood watch",
+   "new_rows_2020_2026": 42,
+   "new_rows_five_year_window": 37,
+   "product": "FL.A",
+   "requested_in_task": true,
+   "rows_2020_2026": 88,
+   "ugc_prefix_rows": {
+    "(blank)": 40,
+    "MTC": 32,
+    "MTZ": 16
+   }
+  },
+  {
+   "distinct_events_2020_2026": 28,
+   "distinct_events_five_year_window": 20,
+   "events_by_kind_2020_2026": {
+    "county": 3,
+    "polygon": 1,
+    "zone": 24
+   },
+   "events_by_vtec_year": {
+    "2020": 1,
+    "2021": 7,
+    "2022": 4,
+    "2024": 3,
+    "2025": 5,
+    "2026": 8
+   },
+   "events_five_year_window_by_kind": {
+    "county": 2,
+    "zone": 18
+   },
+   "gtype_rows": {
+    "C": 85,
+    "P": 2
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Flash flood watch",
+   "new_rows_2020_2026": 4,
+   "new_rows_five_year_window": 2,
+   "product": "FF.A",
+   "requested_in_task": true,
+   "rows_2020_2026": 87,
+   "ugc_prefix_rows": {
+    "(blank)": 2,
+    "MTC": 8,
+    "MTZ": 77
+   }
+  },
+  {
+   "distinct_events_2020_2026": 1155,
+   "distinct_events_five_year_window": 865,
+   "events_by_kind_2020_2026": {
+    "zone": 1155
+   },
+   "events_by_vtec_year": {
+    "2019": 2,
+    "2020": 178,
+    "2021": 181,
+    "2022": 185,
+    "2023": 172,
+    "2024": 165,
+    "2025": 181,
+    "2026": 91
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 865
+   },
+   "gtype_rows": {
+    "C": 7893
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Winter weather advisory",
+   "new_rows_2020_2026": 75,
+   "new_rows_five_year_window": 68,
+   "product": "WW.Y",
+   "requested_in_task": true,
+   "rows_2020_2026": 7893,
+   "ugc_prefix_rows": {
+    "MTZ": 7893
+   }
+  },
+  {
+   "distinct_events_2020_2026": 276,
+   "distinct_events_five_year_window": 226,
+   "events_by_kind_2020_2026": {
+    "zone": 276
+   },
+   "events_by_vtec_year": {
+    "2019": 3,
+    "2020": 34,
+    "2021": 24,
+    "2022": 46,
+    "2023": 39,
+    "2024": 51,
+    "2025": 56,
+    "2026": 23
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 226
+   },
+   "gtype_rows": {
+    "C": 1712
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Winter storm watch",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "WS.A",
+   "requested_in_task": true,
+   "rows_2020_2026": 1712,
+   "ugc_prefix_rows": {
+    "MTZ": 1712
+   }
+  },
+  {
+   "distinct_events_2020_2026": 0,
+   "distinct_events_five_year_window": 0,
+   "events_by_kind_2020_2026": {},
+   "events_by_vtec_year": {},
+   "events_five_year_window_by_kind": {},
+   "gtype_rows": {},
+   "in_b2": "not in B2 (no join)",
+   "name": "Blizzard watch",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "BZ.A",
+   "requested_in_task": true,
+   "rows_2020_2026": 0,
+   "ugc_prefix_rows": {}
+  },
+  {
+   "distinct_events_2020_2026": 2,
+   "distinct_events_five_year_window": 2,
+   "events_by_kind_2020_2026": {
+    "zone": 2
+   },
+   "events_by_vtec_year": {
+    "2023": 1,
+    "2025": 1
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 2
+   },
+   "gtype_rows": {
+    "C": 5
+   },
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "name": "Ice storm warning",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "IS.W",
+   "requested_in_task": true,
+   "rows_2020_2026": 5,
+   "ugc_prefix_rows": {
+    "MTZ": 5
+   }
+  },
+  {
+   "distinct_events_2020_2026": 0,
+   "distinct_events_five_year_window": 0,
+   "events_by_kind_2020_2026": {},
+   "events_by_vtec_year": {},
+   "events_five_year_window_by_kind": {},
+   "gtype_rows": {},
+   "in_b2": "not in B2 (no join)",
+   "name": "Lake effect snow warning",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "LE.W",
+   "requested_in_task": true,
+   "rows_2020_2026": 0,
+   "ugc_prefix_rows": {}
+  },
+  {
+   "distinct_events_2020_2026": 15,
+   "distinct_events_five_year_window": 4,
+   "events_by_kind_2020_2026": {
+    "zone": 15
+   },
+   "events_by_vtec_year": {
+    "2021": 11,
+    "2024": 4
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 4
+   },
+   "gtype_rows": {
+    "C": 174
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Excessive heat warning",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "EH.W",
+   "requested_in_task": true,
+   "rows_2020_2026": 174,
+   "ugc_prefix_rows": {
+    "MTZ": 174
+   }
+  },
+  {
+   "distinct_events_2020_2026": 14,
+   "distinct_events_five_year_window": 3,
+   "events_by_kind_2020_2026": {
+    "zone": 14
+   },
+   "events_by_vtec_year": {
+    "2021": 11,
+    "2024": 3
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 3
+   },
+   "gtype_rows": {
+    "C": 166
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Excessive heat watch",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "EH.A",
+   "requested_in_task": true,
+   "rows_2020_2026": 166,
+   "ugc_prefix_rows": {
+    "MTZ": 166
+   }
+  },
+  {
+   "distinct_events_2020_2026": 84,
+   "distinct_events_five_year_window": 58,
+   "events_by_kind_2020_2026": {
+    "zone": 84
+   },
+   "events_by_vtec_year": {
+    "2020": 8,
+    "2021": 18,
+    "2022": 19,
+    "2023": 8,
+    "2024": 11,
+    "2025": 10,
+    "2026": 10
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 58
+   },
+   "gtype_rows": {
+    "C": 963
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Heat advisory",
+   "new_rows_2020_2026": 14,
+   "new_rows_five_year_window": 14,
+   "product": "HT.Y",
+   "requested_in_task": true,
+   "rows_2020_2026": 963,
+   "ugc_prefix_rows": {
+    "MTZ": 963
+   }
+  },
+  {
+   "distinct_events_2020_2026": 5,
+   "distinct_events_five_year_window": 4,
+   "events_by_kind_2020_2026": {
+    "zone": 5
+   },
+   "events_by_vtec_year": {
+    "2020": 1,
+    "2024": 2,
+    "2025": 1,
+    "2026": 1
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 4
+   },
+   "gtype_rows": {
+    "C": 23
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Freeze warning",
+   "new_rows_2020_2026": 9,
+   "new_rows_five_year_window": 9,
+   "product": "FZ.W",
+   "requested_in_task": true,
+   "rows_2020_2026": 23,
+   "ugc_prefix_rows": {
+    "MTZ": 23
+   }
+  },
+  {
+   "distinct_events_2020_2026": 17,
+   "distinct_events_five_year_window": 14,
+   "events_by_kind_2020_2026": {
+    "zone": 17
+   },
+   "events_by_vtec_year": {
+    "2021": 3,
+    "2022": 1,
+    "2024": 5,
+    "2025": 3,
+    "2026": 5
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 14
+   },
+   "gtype_rows": {
+    "C": 52
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Frost advisory",
+   "new_rows_2020_2026": 27,
+   "new_rows_five_year_window": 26,
+   "product": "FR.Y",
+   "requested_in_task": true,
+   "rows_2020_2026": 52,
+   "ugc_prefix_rows": {
+    "MTZ": 52
+   }
+  },
+  {
+   "distinct_events_2020_2026": 0,
+   "distinct_events_five_year_window": 0,
+   "events_by_kind_2020_2026": {},
+   "events_by_vtec_year": {},
+   "events_five_year_window_by_kind": {},
+   "gtype_rows": {},
+   "in_b2": "not in B2 (no join)",
+   "name": "Hard freeze warning",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "HZ.W",
+   "requested_in_task": true,
+   "rows_2020_2026": 0,
+   "ugc_prefix_rows": {}
+  },
+  {
+   "distinct_events_2020_2026": 237,
+   "distinct_events_five_year_window": 181,
+   "events_by_kind_2020_2026": {
+    "zone": 237
+   },
+   "events_by_vtec_year": {
+    "2020": 43,
+    "2021": 30,
+    "2022": 41,
+    "2023": 30,
+    "2024": 31,
+    "2025": 39,
+    "2026": 23
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 181
+   },
+   "gtype_rows": {
+    "C": 566
+   },
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "name": "Wind advisory",
+   "new_rows_2020_2026": 46,
+   "new_rows_five_year_window": 46,
+   "product": "WI.Y",
+   "requested_in_task": true,
+   "rows_2020_2026": 566,
+   "ugc_prefix_rows": {
+    "MTZ": 566
+   }
+  },
+  {
+   "distinct_events_2020_2026": 348,
+   "distinct_events_five_year_window": 277,
+   "events_by_kind_2020_2026": {
+    "zone": 348
+   },
+   "events_by_vtec_year": {
+    "2019": 2,
+    "2020": 45,
+    "2021": 48,
+    "2022": 55,
+    "2023": 39,
+    "2024": 42,
+    "2025": 63,
+    "2026": 54
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 277
+   },
+   "gtype_rows": {
+    "C": 2613
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "High wind watch",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "HW.A",
+   "requested_in_task": true,
+   "rows_2020_2026": 2613,
+   "ugc_prefix_rows": {
+    "MTZ": 2613
+   }
+  },
+  {
+   "distinct_events_2020_2026": 3,
+   "distinct_events_five_year_window": 3,
+   "events_by_kind_2020_2026": {
+    "zone": 3
+   },
+   "events_by_vtec_year": {
+    "2026": 3
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 3
+   },
+   "gtype_rows": {
+    "C": 18
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Blowing dust advisory",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "DU.Y",
+   "requested_in_task": true,
+   "rows_2020_2026": 18,
+   "ugc_prefix_rows": {
+    "MTZ": 18
+   }
+  },
+  {
+   "distinct_events_2020_2026": 0,
+   "distinct_events_five_year_window": 0,
+   "events_by_kind_2020_2026": {},
+   "events_by_vtec_year": {},
+   "events_five_year_window_by_kind": {},
+   "gtype_rows": {},
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "name": "Dust storm warning",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "product": "DS.W",
+   "requested_in_task": true,
+   "rows_2020_2026": 0,
+   "ugc_prefix_rows": {}
+  },
+  {
+   "distinct_events_2020_2026": 100,
+   "distinct_events_five_year_window": 78,
+   "events_by_kind_2020_2026": {
+    "polygon": 100
+   },
+   "events_by_vtec_year": {
+    "2020": 22,
+    "2021": 2,
+    "2022": 36,
+    "2023": 7,
+    "2024": 8,
+    "2025": 17,
+    "2026": 8
+   },
+   "events_five_year_window_by_kind": {
+    "polygon": 78
+   },
+   "gtype_rows": {
+    "C": 184,
+    "P": 100
+   },
+   "in_b2": "not in B2 (no join)",
+   "name": "Snow squall warning",
+   "new_rows_2020_2026": 154,
+   "new_rows_five_year_window": 120,
+   "product": "SQ.W",
+   "requested_in_task": true,
+   "rows_2020_2026": 284,
+   "ugc_prefix_rows": {
+    "(blank)": 100,
+    "MTC": 184
+   }
+  },
+  {
+   "distinct_events_2020_2026": 155,
+   "distinct_events_five_year_window": 148,
+   "events_by_kind_2020_2026": {
+    "polygon": 155
+   },
+   "events_by_vtec_year": {
+    "2020": 1,
+    "2021": 6,
+    "2022": 11,
+    "2023": 67,
+    "2024": 3,
+    "2025": 25,
+    "2026": 42
+   },
+   "events_five_year_window_by_kind": {
+    "polygon": 148
+   },
+   "gtype_rows": {
+    "C": 212,
+    "P": 155
+   },
+   "in_b2": "polygon path (shapefile) in WARNING_PHENOMENA",
+   "name": "Flash flood warning",
+   "new_rows_2020_2026": 163,
+   "new_rows_five_year_window": 156,
+   "note": "B2 comparator, not in the task list",
+   "product": "FF.W",
+   "requested_in_task": false,
+   "rows_2020_2026": 367,
+   "ugc_prefix_rows": {
+    "(blank)": 155,
+    "MTC": 212
+   }
+  },
+  {
+   "distinct_events_2020_2026": 313,
+   "distinct_events_five_year_window": 256,
+   "events_by_kind_2020_2026": {
+    "zone": 313
+   },
+   "events_by_vtec_year": {
+    "2019": 1,
+    "2020": 41,
+    "2021": 26,
+    "2022": 55,
+    "2023": 42,
+    "2024": 60,
+    "2025": 62,
+    "2026": 26
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 256
+   },
+   "gtype_rows": {
+    "C": 1719
+   },
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "name": "Winter storm warning",
+   "new_rows_2020_2026": 4,
+   "new_rows_five_year_window": 4,
+   "note": "B2 comparator, not in the task list",
+   "product": "WS.W",
+   "requested_in_task": false,
+   "rows_2020_2026": 1719,
+   "ugc_prefix_rows": {
+    "MTZ": 1719
+   }
+  },
+  {
+   "distinct_events_2020_2026": 42,
+   "distinct_events_five_year_window": 36,
+   "events_by_kind_2020_2026": {
+    "zone": 42
+   },
+   "events_by_vtec_year": {
+    "2020": 5,
+    "2021": 2,
+    "2022": 15,
+    "2023": 6,
+    "2024": 5,
+    "2025": 4,
+    "2026": 5
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 36
+   },
+   "gtype_rows": {
+    "C": 163
+   },
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "name": "Blizzard warning",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "note": "B2 comparator, not in the task list",
+   "product": "BZ.W",
+   "requested_in_task": false,
+   "rows_2020_2026": 163,
+   "ugc_prefix_rows": {
+    "MTZ": 163
+   }
+  },
+  {
+   "distinct_events_2020_2026": 430,
+   "distinct_events_five_year_window": 339,
+   "events_by_kind_2020_2026": {
+    "zone": 430
+   },
+   "events_by_vtec_year": {
+    "2019": 1,
+    "2020": 63,
+    "2021": 56,
+    "2022": 73,
+    "2023": 49,
+    "2024": 50,
+    "2025": 70,
+    "2026": 68
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 339
+   },
+   "gtype_rows": {
+    "C": 3312
+   },
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "name": "High wind warning",
+   "new_rows_2020_2026": 8,
+   "new_rows_five_year_window": 8,
+   "note": "B2 comparator, not in the task list",
+   "product": "HW.W",
+   "requested_in_task": false,
+   "rows_2020_2026": 3312,
+   "ugc_prefix_rows": {
+    "MTZ": 3312
+   }
+  },
+  {
+   "distinct_events_2020_2026": 22,
+   "distinct_events_five_year_window": 22,
+   "events_by_kind_2020_2026": {
+    "zone": 22
+   },
+   "events_by_vtec_year": {
+    "2025": 20,
+    "2026": 2
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 22
+   },
+   "gtype_rows": {
+    "C": 156
+   },
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "name": "Extreme cold warning",
+   "new_rows_2020_2026": 0,
+   "new_rows_five_year_window": 0,
+   "note": "B2 comparator, not in the task list",
+   "product": "EC.W",
+   "requested_in_task": false,
+   "rows_2020_2026": 156,
+   "ugc_prefix_rows": {
+    "MTZ": 156
+   }
+  },
+  {
+   "distinct_events_2020_2026": 35,
+   "distinct_events_five_year_window": 26,
+   "events_by_kind_2020_2026": {
+    "zone": 35
+   },
+   "events_by_vtec_year": {
+    "2020": 4,
+    "2021": 9,
+    "2022": 12,
+    "2023": 4,
+    "2024": 6
+   },
+   "events_five_year_window_by_kind": {
+    "zone": 26
+   },
+   "gtype_rows": {
+    "C": 334
+   },
+   "in_b2": "listed in ZONE_PRODUCTS (zone path)",
+   "name": "Wind chill warning",
+   "new_rows_2020_2026": 8,
+   "new_rows_five_year_window": 8,
+   "note": "B2 comparator, not in the task list",
+   "product": "WC.W",
+   "requested_in_task": false,
+   "rows_2020_2026": 334,
+   "ugc_prefix_rows": {
+    "MTZ": 334
+   }
+  }
+ ],
+ "ncei_storm_events_table_mt_2020_2026": [
+  {
+   "B2_joins_these_rows": "none: county-coded, no B2 rule",
+   "CZ_TYPE_C_county": 76,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 13,
+    "2021": 3,
+    "2022": 8,
+    "2023": 29,
+    "2024": 5,
+    "2025": 12,
+    "2026": 6
+   },
+   "event_type": "Flood",
+   "events_2020_2025": 70,
+   "events_2020_2026": 76,
+   "with_BEGIN_LAT": 76
+  },
+  {
+   "B2_joins_these_rows": "none: county-coded, no B2 rule",
+   "CZ_TYPE_C_county": 60,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 8,
+    "2022": 9,
+    "2023": 35,
+    "2024": 2,
+    "2025": 3,
+    "2026": 3
+   },
+   "event_type": "Flash Flood",
+   "events_2020_2025": 57,
+   "events_2020_2026": 60,
+   "with_BEGIN_LAT": 60
+  },
+  {
+   "B2_joins_these_rows": "none: county-coded, no B2 rule",
+   "CZ_TYPE_C_county": 144,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 48,
+    "2021": 11,
+    "2022": 62,
+    "2023": 11,
+    "2024": 0,
+    "2025": 9,
+    "2026": 3
+   },
+   "event_type": "Heavy Rain",
+   "events_2020_2025": 141,
+   "events_2020_2026": 144,
+   "with_BEGIN_LAT": 144
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 652,
+   "by_year_2020_to_2026": {
+    "2020": 83,
+    "2021": 55,
+    "2022": 151,
+    "2023": 143,
+    "2024": 88,
+    "2025": 108,
+    "2026": 24
+   },
+   "event_type": "Heavy Snow",
+   "events_2020_2025": 628,
+   "events_2020_2026": 652,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 740,
+   "by_year_2020_to_2026": {
+    "2020": 126,
+    "2021": 68,
+    "2022": 123,
+    "2023": 154,
+    "2024": 80,
+    "2025": 138,
+    "2026": 51
+   },
+   "event_type": "Winter Storm",
+   "events_2020_2025": 689,
+   "events_2020_2026": 740,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 383,
+   "by_year_2020_to_2026": {
+    "2020": 62,
+    "2021": 39,
+    "2022": 70,
+    "2023": 43,
+    "2024": 46,
+    "2025": 79,
+    "2026": 44
+   },
+   "event_type": "Winter Weather",
+   "events_2020_2025": 339,
+   "events_2020_2026": 383,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 14,
+   "by_year_2020_to_2026": {
+    "2020": 1,
+    "2021": 0,
+    "2022": 0,
+    "2023": 2,
+    "2024": 8,
+    "2025": 3,
+    "2026": 0
+   },
+   "event_type": "Ice Storm",
+   "events_2020_2025": 14,
+   "events_2020_2026": 14,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 126,
+   "by_year_2020_to_2026": {
+    "2020": 25,
+    "2021": 1,
+    "2022": 52,
+    "2023": 17,
+    "2024": 9,
+    "2025": 7,
+    "2026": 15
+   },
+   "event_type": "Blizzard",
+   "events_2020_2025": 111,
+   "events_2020_2026": 126,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "mixed",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "event_type": "Lake-Effect Snow",
+   "events_2020_2025": 0,
+   "events_2020_2026": 0,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "mixed",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "event_type": "Sleet",
+   "events_2020_2025": 0,
+   "events_2020_2026": 0,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 25,
+   "by_year_2020_to_2026": {
+    "2020": 7,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 6,
+    "2025": 3,
+    "2026": 9
+   },
+   "event_type": "Frost/Freeze",
+   "events_2020_2025": 16,
+   "events_2020_2026": 25,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 3,
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 3,
+    "2025": 0,
+    "2026": 0
+   },
+   "event_type": "Excessive Heat",
+   "events_2020_2025": 3,
+   "events_2020_2026": 3,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 10,
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 2,
+    "2022": 1,
+    "2023": 0,
+    "2024": 7,
+    "2025": 0,
+    "2026": 0
+   },
+   "event_type": "Heat",
+   "events_2020_2025": 10,
+   "events_2020_2026": 10,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 155,
+   "by_year_2020_to_2026": {
+    "2020": 20,
+    "2021": 43,
+    "2022": 59,
+    "2023": 11,
+    "2024": 15,
+    "2025": 7,
+    "2026": 0
+   },
+   "event_type": "Cold/Wind Chill",
+   "events_2020_2025": 155,
+   "events_2020_2026": 155,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 326,
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 29,
+    "2022": 58,
+    "2023": 45,
+    "2024": 29,
+    "2025": 155,
+    "2026": 10
+   },
+   "event_type": "Extreme Cold/Wind Chill",
+   "events_2020_2025": 316,
+   "events_2020_2026": 326,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "none: county-coded, no B2 rule",
+   "CZ_TYPE_C_county": 8,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 2,
+    "2021": 0,
+    "2022": 3,
+    "2023": 3,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "event_type": "Lightning",
+   "events_2020_2025": 8,
+   "events_2020_2026": 8,
+   "with_BEGIN_LAT": 8
+  },
+  {
+   "B2_joins_these_rows": "mixed",
+   "CZ_TYPE_C_county": 1,
+   "CZ_TYPE_Z_zone": 68,
+   "by_year_2020_to_2026": {
+    "2020": 12,
+    "2021": 18,
+    "2022": 6,
+    "2023": 0,
+    "2024": 8,
+    "2025": 14,
+    "2026": 11
+   },
+   "event_type": "Strong Wind",
+   "events_2020_2025": 58,
+   "events_2020_2026": 69,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "mixed",
+   "CZ_TYPE_C_county": 1,
+   "CZ_TYPE_Z_zone": 2967,
+   "by_year_2020_to_2026": {
+    "2020": 472,
+    "2021": 545,
+    "2022": 562,
+    "2023": 244,
+    "2024": 435,
+    "2025": 300,
+    "2026": 410
+   },
+   "event_type": "High Wind",
+   "events_2020_2025": 2558,
+   "events_2020_2026": 2968,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 3,
+   "by_year_2020_to_2026": {
+    "2020": 1,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 0,
+    "2026": 2
+   },
+   "event_type": "Dust Storm",
+   "events_2020_2025": 1,
+   "events_2020_2026": 3,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 100,
+   "by_year_2020_to_2026": {
+    "2020": 15,
+    "2021": 32,
+    "2022": 8,
+    "2023": 2,
+    "2024": 24,
+    "2025": 15,
+    "2026": 4
+   },
+   "event_type": "Wildfire",
+   "events_2020_2025": 96,
+   "events_2020_2026": 100,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "points only",
+   "CZ_TYPE_C_county": 944,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 172,
+    "2021": 139,
+    "2022": 233,
+    "2023": 75,
+    "2024": 96,
+    "2025": 190,
+    "2026": 39
+   },
+   "event_type": "Hail",
+   "events_2020_2025": 905,
+   "events_2020_2026": 944,
+   "with_BEGIN_LAT": 944
+  },
+  {
+   "B2_joins_these_rows": "points only",
+   "CZ_TYPE_C_county": 1643,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 235,
+    "2021": 206,
+    "2022": 300,
+    "2023": 135,
+    "2024": 299,
+    "2025": 309,
+    "2026": 159
+   },
+   "event_type": "Thunderstorm Wind",
+   "events_2020_2025": 1484,
+   "events_2020_2026": 1643,
+   "with_BEGIN_LAT": 1643
+  },
+  {
+   "B2_joins_these_rows": "none: county-coded, no B2 rule",
+   "CZ_TYPE_C_county": 17,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 3,
+    "2021": 1,
+    "2022": 3,
+    "2023": 6,
+    "2024": 4,
+    "2025": 0,
+    "2026": 0
+   },
+   "event_type": "Tornado",
+   "events_2020_2025": 17,
+   "events_2020_2026": 17,
+   "with_BEGIN_LAT": 17
+  },
+  {
+   "B2_joins_these_rows": "none: county-coded, no B2 rule",
+   "CZ_TYPE_C_county": 35,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 3,
+    "2021": 2,
+    "2022": 6,
+    "2023": 11,
+    "2024": 10,
+    "2025": 3,
+    "2026": 0
+   },
+   "event_type": "Funnel Cloud",
+   "events_2020_2025": 35,
+   "events_2020_2026": 35,
+   "with_BEGIN_LAT": 35
+  },
+  {
+   "B2_joins_these_rows": "none: county-coded, no B2 rule",
+   "CZ_TYPE_C_county": 11,
+   "CZ_TYPE_Z_zone": 0,
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 1,
+    "2022": 0,
+    "2023": 5,
+    "2024": 0,
+    "2025": 4,
+    "2026": 1
+   },
+   "event_type": "Debris Flow",
+   "events_2020_2025": 10,
+   "events_2020_2026": 11,
+   "with_BEGIN_LAT": 11
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 182,
+   "by_year_2020_to_2026": {
+    "2020": 30,
+    "2021": 17,
+    "2022": 20,
+    "2023": 71,
+    "2024": 25,
+    "2025": 12,
+    "2026": 7
+   },
+   "event_type": "Dense Fog",
+   "events_2020_2025": 175,
+   "events_2020_2026": 182,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 7,
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 3,
+    "2024": 0,
+    "2025": 0,
+    "2026": 4
+   },
+   "event_type": "Freezing Fog",
+   "events_2020_2025": 3,
+   "events_2020_2026": 7,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 582,
+   "by_year_2020_to_2026": {
+    "2020": 18,
+    "2021": 201,
+    "2022": 158,
+    "2023": 78,
+    "2024": 40,
+    "2025": 59,
+    "2026": 28
+   },
+   "event_type": "Drought",
+   "events_2020_2025": 554,
+   "events_2020_2026": 582,
+   "with_BEGIN_LAT": 0
+  },
+  {
+   "B2_joins_these_rows": "zone rows only (CZ_TYPE Z)",
+   "CZ_TYPE_C_county": 0,
+   "CZ_TYPE_Z_zone": 16,
+   "by_year_2020_to_2026": {
+    "2020": 1,
+    "2021": 3,
+    "2022": 9,
+    "2023": 1,
+    "2024": 0,
+    "2025": 2,
+    "2026": 0
+   },
+   "event_type": "Avalanche",
+   "events_2020_2025": 16,
+   "events_2020_2026": 16,
+   "with_BEGIN_LAT": 0
+  }
+ ],
+ "iem_lsr_table_mt_2020_2026": [
+  {
+   "TYPETEXT": "FLASH FLOOD",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 10,
+    "2022": 10,
+    "2023": 35,
+    "2024": 2,
+    "2025": 5,
+    "2026": 16
+   },
+   "total": 78
+  },
+  {
+   "TYPETEXT": "FLOOD",
+   "by_year_2020_to_2026": {
+    "2020": 5,
+    "2021": 1,
+    "2022": 20,
+    "2023": 51,
+    "2024": 2,
+    "2025": 32,
+    "2026": 10
+   },
+   "total": 121
+  },
+  {
+   "TYPETEXT": "HEAVY RAIN",
+   "by_year_2020_to_2026": {
+    "2020": 655,
+    "2021": 561,
+    "2022": 421,
+    "2023": 307,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "total": 1944
+  },
+  {
+   "TYPETEXT": "RAIN",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 412,
+    "2024": 691,
+    "2025": 549,
+    "2026": 700
+   },
+   "total": 2352
+  },
+  {
+   "TYPETEXT": "FREEZING RAIN",
+   "by_year_2020_to_2026": {
+    "2020": 19,
+    "2021": 14,
+    "2022": 40,
+    "2023": 33,
+    "2024": 40,
+    "2025": 8,
+    "2026": 6
+   },
+   "total": 160
+  },
+  {
+   "TYPETEXT": "ICE STORM",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "total": 0
+  },
+  {
+   "TYPETEXT": "SLEET",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "total": 0
+  },
+  {
+   "TYPETEXT": "HEAVY SNOW",
+   "by_year_2020_to_2026": {
+    "2020": 618,
+    "2021": 446,
+    "2022": 659,
+    "2023": 524,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "total": 2247
+  },
+  {
+   "TYPETEXT": "SNOW",
+   "by_year_2020_to_2026": {
+    "2020": 3062,
+    "2021": 2704,
+    "2022": 3078,
+    "2023": 2787,
+    "2024": 2541,
+    "2025": 2390,
+    "2026": 982
+   },
+   "total": 17544
+  },
+  {
+   "TYPETEXT": "SNOW SQUALL",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 11,
+    "2025": 7,
+    "2026": 0
+   },
+   "total": 18
+  },
+  {
+   "TYPETEXT": "SNOW/ICE DMG",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 11,
+    "2024": 0,
+    "2025": 4,
+    "2026": 1
+   },
+   "total": 16
+  },
+  {
+   "TYPETEXT": "BLIZZARD",
+   "by_year_2020_to_2026": {
+    "2020": 17,
+    "2021": 0,
+    "2022": 19,
+    "2023": 13,
+    "2024": 13,
+    "2025": 7,
+    "2026": 20
+   },
+   "total": 89
+  },
+  {
+   "TYPETEXT": "EXTREME COLD",
+   "by_year_2020_to_2026": {
+    "2020": 7,
+    "2021": 6,
+    "2022": 27,
+    "2023": 14,
+    "2024": 813,
+    "2025": 742,
+    "2026": 105
+   },
+   "total": 1714
+  },
+  {
+   "TYPETEXT": "EXTR WIND CHILL",
+   "by_year_2020_to_2026": {
+    "2020": 44,
+    "2021": 161,
+    "2022": 861,
+    "2023": 151,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "total": 1217
+  },
+  {
+   "TYPETEXT": "WIND CHILL",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 383,
+    "2025": 223,
+    "2026": 122
+   },
+   "total": 728
+  },
+  {
+   "TYPETEXT": "EXCESSIVE HEAT",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "total": 0
+  },
+  {
+   "TYPETEXT": "EXTREME HEAT",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 9,
+    "2026": 0
+   },
+   "total": 9
+  },
+  {
+   "TYPETEXT": "LIGHTNING",
+   "by_year_2020_to_2026": {
+    "2020": 2,
+    "2021": 2,
+    "2022": 4,
+    "2023": 2,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "total": 10
+  },
+  {
+   "TYPETEXT": "NON-TSTM WND GST",
+   "by_year_2020_to_2026": {
+    "2020": 4350,
+    "2021": 4694,
+    "2022": 3885,
+    "2023": 1602,
+    "2024": 2697,
+    "2025": 3648,
+    "2026": 3568
+   },
+   "total": 24444
+  },
+  {
+   "TYPETEXT": "NON-TSTM WND DMG",
+   "by_year_2020_to_2026": {
+    "2020": 92,
+    "2021": 91,
+    "2022": 33,
+    "2023": 8,
+    "2024": 15,
+    "2025": 84,
+    "2026": 22
+   },
+   "total": 345
+  },
+  {
+   "TYPETEXT": "TSTM WND GST",
+   "by_year_2020_to_2026": {
+    "2020": 604,
+    "2021": 442,
+    "2022": 511,
+    "2023": 331,
+    "2024": 589,
+    "2025": 598,
+    "2026": 691
+   },
+   "total": 3766
+  },
+  {
+   "TYPETEXT": "TSTM WND DMG",
+   "by_year_2020_to_2026": {
+    "2020": 80,
+    "2021": 56,
+    "2022": 33,
+    "2023": 45,
+    "2024": 112,
+    "2025": 28,
+    "2026": 20
+   },
+   "total": 374
+  },
+  {
+   "TYPETEXT": "HAIL",
+   "by_year_2020_to_2026": {
+    "2020": 474,
+    "2021": 247,
+    "2022": 425,
+    "2023": 250,
+    "2024": 208,
+    "2025": 307,
+    "2026": 157
+   },
+   "total": 2068
+  },
+  {
+   "TYPETEXT": "HIGH SUST WINDS",
+   "by_year_2020_to_2026": {
+    "2020": 45,
+    "2021": 10,
+    "2022": 38,
+    "2023": 67,
+    "2024": 71,
+    "2025": 282,
+    "2026": 135
+   },
+   "total": 648
+  },
+  {
+   "TYPETEXT": "TORNADO",
+   "by_year_2020_to_2026": {
+    "2020": 2,
+    "2021": 1,
+    "2022": 2,
+    "2023": 4,
+    "2024": 3,
+    "2025": 1,
+    "2026": 0
+   },
+   "total": 13
+  },
+  {
+   "TYPETEXT": "FUNNEL CLOUD",
+   "by_year_2020_to_2026": {
+    "2020": 3,
+    "2021": 3,
+    "2022": 8,
+    "2023": 16,
+    "2024": 11,
+    "2025": 8,
+    "2026": 2
+   },
+   "total": 51
+  },
+  {
+   "TYPETEXT": "DENSE FOG",
+   "by_year_2020_to_2026": {
+    "2020": 3,
+    "2021": 4,
+    "2022": 2,
+    "2023": 0,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   },
+   "total": 9
+  },
+  {
+   "TYPETEXT": "FOG",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 1,
+    "2024": 1,
+    "2025": 16,
+    "2026": 10
+   },
+   "total": 28
+  },
+  {
+   "TYPETEXT": "WILDFIRE",
+   "by_year_2020_to_2026": {
+    "2020": 7,
+    "2021": 4,
+    "2022": 1,
+    "2023": 0,
+    "2024": 0,
+    "2025": 3,
+    "2026": 0
+   },
+   "total": 15
+  },
+  {
+   "TYPETEXT": "DUST STORM",
+   "by_year_2020_to_2026": {
+    "2020": 3,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 0,
+    "2026": 2
+   },
+   "total": 5
+  },
+  {
+   "TYPETEXT": "BLOWING DUST",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 1,
+    "2025": 0,
+    "2026": 3
+   },
+   "total": 4
+  },
+  {
+   "TYPETEXT": "AVALANCHE",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 1,
+    "2022": 8,
+    "2023": 2,
+    "2024": 2,
+    "2025": 3,
+    "2026": 0
+   },
+   "total": 16
+  },
+  {
+   "TYPETEXT": "DEBRIS FLOW",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 2,
+    "2022": 3,
+    "2023": 3,
+    "2024": 1,
+    "2025": 3,
+    "2026": 2
+   },
+   "total": 14
+  },
+  {
+   "TYPETEXT": "LANDSPOUT",
+   "by_year_2020_to_2026": {
+    "2020": 0,
+    "2021": 0,
+    "2022": 0,
+    "2023": 4,
+    "2024": 2,
+    "2025": 5,
+    "2026": 1
+   },
+   "total": 12
+  }
+ ],
+ "iem_lsr_notes": {
+  "monthly_pulls": 82,
+  "rows": 60073,
+  "b2_cache_months_compared": 61,
+  "b2_cache_mismatches": 0,
+  "b2_cache_span_note": "B2's LSR cache holds 61 months (2021-10 to 2026-10); the brief says 73 months; the 61 that exist match live counts"
+ },
+ "fema_nfhl": {
+  "service": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
+  "layer": "28 Flood Hazard Zones (polygon)",
+  "maxRecordCount": 2000,
+  "montana_polygons": 28426,
+  "montana_zone_groups": [
+   {
+    "FLD_ZONE": "X",
+    "SFHA_TF": "F",
+    "n": 20342
+   },
+   {
+    "FLD_ZONE": "AE",
+    "SFHA_TF": "T",
+    "n": 6720
+   },
+   {
+    "FLD_ZONE": "A",
+    "SFHA_TF": "T",
+    "n": 1066
+   },
+   {
+    "FLD_ZONE": "AO",
+    "SFHA_TF": "T",
+    "n": 99
+   },
+   {
+    "FLD_ZONE": "AH",
+    "SFHA_TF": "T",
+    "n": 2
+   },
+   {
+    "FLD_ZONE": "D",
+    "SFHA_TF": "F",
+    "n": 197
+   }
+  ],
+  "zone_subtype_strings_in_montana": [
+   {
+    "FLD_ZONE": "X",
+    "ZONE_SUBTY": "0.2 PCT ANNUAL CHANCE FLOOD HAZARD",
+    "n": 14832
+   },
+   {
+    "FLD_ZONE": "X",
+    "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+    "n": 5448
+   },
+   {
+    "FLD_ZONE": "AE",
+    "ZONE_SUBTY": "FLOODWAY",
+    "n": 435
+   },
+   {
+    "FLD_ZONE": "X",
+    "ZONE_SUBTY": "1 PCT DEPTH LESS THAN 1 FOOT",
+    "n": 37
+   },
+   {
+    "FLD_ZONE": "X",
+    "ZONE_SUBTY": "0.2 PCT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+    "n": 11
+   },
+   {
+    "FLD_ZONE": "X",
+    "ZONE_SUBTY": "AREA WITH REDUCED FLOOD RISK DUE TO LEVEE",
+    "n": 10
+   },
+   {
+    "FLD_ZONE": "X",
+    "ZONE_SUBTY": "1 PCT DRAINAGE AREA LESS THAN 1 SQUARE MILE",
+    "n": 4
+   },
+   {
+    "FLD_ZONE": "AE",
+    "ZONE_SUBTY": "ADMINISTRATIVE FLOODWAY",
+    "n": 3
+   }
+  ],
+  "availability_layer_0": {
+   "records_all": 3199,
+   "records_montana_study_id_30": 45
+  },
+  "state_download": "not reached (TLS failures); size unverified",
+  "samples": {
+   "billings_45.7836N_108.5047W": "X, AREA OF MINIMAL FLOOD HAZARD, SFHA_TF F, STATIC_BFE -9999.0 (sentinel), DFIRM 30111C",
+   "benchland_47.08N_110.02W": "no polygon returned (empty)"
+  },
+  "terms": "copyrightText and description are empty strings; FEMA pages blocked (403)",
+  "why_hold": "The lender rule in 42 U.S.C. 4012a ties a special flood hazard area to flood insurance; AGENTS rule 5 forbids insurance eligibility statements; the owner and counsel must rule before any zone is shown."
+ },
+ "river_gauges_nwps": {
+  "crests_2020_2026_by_year": {
+   "2020": 87,
+   "2021": 61,
+   "2022": 67,
+   "2023": 74,
+   "2024": 45,
+   "2025": 50,
+   "2026": 4
+  },
+  "crests_2020_2026_entries": 388,
+  "crests_2020_2026_gauges": 119,
+  "crests_at_or_above_minor_2020_2026": 63,
+  "crests_at_or_above_minor_by_year": {
+   "2020": 19,
+   "2021": 1,
+   "2022": 13,
+   "2023": 23,
+   "2024": 1,
+   "2025": 5,
+   "2026": 1
+  },
+  "flood_category_keys_present": 278,
+  "gauges_mt": 278,
+  "gauges_with_numeric_minor_stage": 102,
+  "gauges_with_such_crest": 39,
+  "historic_and_recent_same_entries": true,
+  "historic_crest_entries_total": 7611,
+  "in_service": {
+   "False": 18,
+   "True": 260
+  },
+  "malformed_crest_years": [
+   [
+    "BGCM8",
+    "0205-03-02"
+   ],
+   [
+    "CFMM8",
+    "0025-05-13"
+   ],
+   [
+    "PPRM8",
+    "0205-03-02"
+   ]
+  ],
+  "observed_flood_category_at_pull": {
+   "no_flooding": 106,
+   "not_defined": 119,
+   "obs_not_current": 35,
+   "out_of_service": 18
+  },
+  "stage_numeric": {
+   "all4": 57,
+   "none": 157,
+   "some": 64
+  },
+  "usgs_id_present": 211
+ },
+ "shapefile_path_check_2025": {
+  "FA.W": {
+   "fields": [
+    "WFO",
+    "ISSUED",
+    "EXPIRED",
+    "INIT_ISS",
+    "INIT_EXP",
+    "PHENOM",
+    "GTYPE",
+    "SIG",
+    "ETN",
+    "STATUS",
+    "NWS_UGC",
+    "AREA_KM2",
+    "UPDATED",
+    "HV_NWSLI",
+    "HV_SEV",
+    "HV_CAUSE",
+    "HV_REC",
+    "EMERGENC",
+    "POLY_BEG",
+    "POLY_END",
+    "WINDTAG",
+    "HAILTAG",
+    "TORNTAG",
+    "DAMAGTAG",
+    "PROD_ID",
+    "FCSTER",
+    "VTEC_YR"
+   ],
+   "gtype": {
+    "C": 6,
+    "P": 7
+   },
+   "has_POLY_BEG_END": true,
+   "members": [
+    "wwa_202501010000_202512312359.cpg",
+    "wwa_202501010000_202512312359.csv",
+    "wwa_202501010000_202512312359.dbf",
+    "wwa_202501010000_202512312359.prj",
+    "wwa_202501010000_202512312359.shp",
+    "wwa_202501010000_202512312359.shx"
+   ],
+   "new_P_records_shapefile": 7,
+   "new_P_rows_csv_2025": 7,
+   "shapes": 13,
+   "status": {
+    "CAN": 2,
+    "CON": 1,
+    "EXT": 1,
+    "NEW": 9
+   }
+  },
+  "FA.Y": {
+   "fields": [
+    "WFO",
+    "ISSUED",
+    "EXPIRED",
+    "INIT_ISS",
+    "INIT_EXP",
+    "PHENOM",
+    "GTYPE",
+    "SIG",
+    "ETN",
+    "STATUS",
+    "NWS_UGC",
+    "AREA_KM2",
+    "UPDATED",
+    "HV_NWSLI",
+    "HV_SEV",
+    "HV_CAUSE",
+    "HV_REC",
+    "EMERGENC",
+    "POLY_BEG",
+    "POLY_END",
+    "WINDTAG",
+    "HAILTAG",
+    "TORNTAG",
+    "DAMAGTAG",
+    "PROD_ID",
+    "FCSTER",
+    "VTEC_YR"
+   ],
+   "gtype": {
+    "C": 150,
+    "P": 87
+   },
+   "has_POLY_BEG_END": true,
+   "members": [
+    "wwa_202501010000_202512312359.cpg",
+    "wwa_202501010000_202512312359.csv",
+    "wwa_202501010000_202512312359.dbf",
+    "wwa_202501010000_202512312359.prj",
+    "wwa_202501010000_202512312359.shp",
+    "wwa_202501010000_202512312359.shx"
+   ],
+   "new_P_records_shapefile": 87,
+   "new_P_rows_csv_2025": 87,
+   "shapes": 237,
+   "status": {
+    "CAN": 80,
+    "EXP": 58,
+    "NEW": 99
+   }
+  },
+  "FL.A": {
+   "fields": [
+    "WFO",
+    "ISSUED",
+    "EXPIRED",
+    "INIT_ISS",
+    "INIT_EXP",
+    "PHENOM",
+    "GTYPE",
+    "SIG",
+    "ETN",
+    "STATUS",
+    "NWS_UGC",
+    "AREA_KM2",
+    "UPDATED",
+    "HV_NWSLI",
+    "HV_SEV",
+    "HV_CAUSE",
+    "HV_REC",
+    "EMERGENC",
+    "POLY_BEG",
+    "POLY_END",
+    "WINDTAG",
+    "HAILTAG",
+    "TORNTAG",
+    "DAMAGTAG",
+    "PROD_ID",
+    "FCSTER",
+    "VTEC_YR"
+   ],
+   "gtype": {},
+   "has_POLY_BEG_END": true,
+   "members": [
+    "wwa_202501010000_202512312359.cpg",
+    "wwa_202501010000_202512312359.csv",
+    "wwa_202501010000_202512312359.dbf",
+    "wwa_202501010000_202512312359.prj",
+    "wwa_202501010000_202512312359.shp",
+    "wwa_202501010000_202512312359.shx"
+   ],
+   "new_P_records_shapefile": 0,
+   "new_P_rows_csv_2025": 0,
+   "shapes": 0,
+   "status": {}
+  },
+  "FL.W": {
+   "fields": [
+    "WFO",
+    "ISSUED",
+    "EXPIRED",
+    "INIT_ISS",
+    "INIT_EXP",
+    "PHENOM",
+    "GTYPE",
+    "SIG",
+    "ETN",
+    "STATUS",
+    "NWS_UGC",
+    "AREA_KM2",
+    "UPDATED",
+    "HV_NWSLI",
+    "HV_SEV",
+    "HV_CAUSE",
+    "HV_REC",
+    "EMERGENC",
+    "POLY_BEG",
+    "POLY_END",
+    "WINDTAG",
+    "HAILTAG",
+    "TORNTAG",
+    "DAMAGTAG",
+    "PROD_ID",
+    "FCSTER",
+    "VTEC_YR"
+   ],
+   "gtype": {
+    "C": 3,
+    "P": 3
+   },
+   "has_POLY_BEG_END": true,
+   "members": [
+    "wwa_202501010000_202512312359.cpg",
+    "wwa_202501010000_202512312359.csv",
+    "wwa_202501010000_202512312359.dbf",
+    "wwa_202501010000_202512312359.prj",
+    "wwa_202501010000_202512312359.shp",
+    "wwa_202501010000_202512312359.shx"
+   ],
+   "new_P_records_shapefile": 3,
+   "new_P_rows_csv_2025": 3,
+   "shapes": 6,
+   "status": {
+    "CAN": 3,
+    "NEW": 3
+   }
+  },
+  "FL.Y": {
+   "fields": [
+    "WFO",
+    "ISSUED",
+    "EXPIRED",
+    "INIT_ISS",
+    "INIT_EXP",
+    "PHENOM",
+    "GTYPE",
+    "SIG",
+    "ETN",
+    "STATUS",
+    "NWS_UGC",
+    "AREA_KM2",
+    "UPDATED",
+    "HV_NWSLI",
+    "HV_SEV",
+    "HV_CAUSE",
+    "HV_REC",
+    "EMERGENC",
+    "POLY_BEG",
+    "POLY_END",
+    "WINDTAG",
+    "HAILTAG",
+    "TORNTAG",
+    "DAMAGTAG",
+    "PROD_ID",
+    "FCSTER",
+    "VTEC_YR"
+   ],
+   "gtype": {
+    "C": 1,
+    "P": 1
+   },
+   "has_POLY_BEG_END": true,
+   "members": [
+    "wwa_202501010000_202512312359.cpg",
+    "wwa_202501010000_202512312359.csv",
+    "wwa_202501010000_202512312359.dbf",
+    "wwa_202501010000_202512312359.prj",
+    "wwa_202501010000_202512312359.shp",
+    "wwa_202501010000_202512312359.shx"
+   ],
+   "new_P_records_shapefile": 1,
+   "new_P_rows_csv_2025": 1,
+   "shapes": 2,
+   "status": {
+    "CAN": 1,
+    "NEW": 1
+   }
+  },
+  "SQ.W": {
+   "fields": [
+    "WFO",
+    "ISSUED",
+    "EXPIRED",
+    "INIT_ISS",
+    "INIT_EXP",
+    "PHENOM",
+    "GTYPE",
+    "SIG",
+    "ETN",
+    "STATUS",
+    "NWS_UGC",
+    "AREA_KM2",
+    "UPDATED",
+    "HV_NWSLI",
+    "HV_SEV",
+    "HV_CAUSE",
+    "HV_REC",
+    "EMERGENC",
+    "POLY_BEG",
+    "POLY_END",
+    "WINDTAG",
+    "HAILTAG",
+    "TORNTAG",
+    "DAMAGTAG",
+    "PROD_ID",
+    "FCSTER",
+    "VTEC_YR"
+   ],
+   "gtype": {
+    "C": 32,
+    "P": 17
+   },
+   "has_POLY_BEG_END": true,
+   "members": [
+    "wwa_202501010000_202512312359.cpg",
+    "wwa_202501010000_202512312359.csv",
+    "wwa_202501010000_202512312359.dbf",
+    "wwa_202501010000_202512312359.prj",
+    "wwa_202501010000_202512312359.shp",
+    "wwa_202501010000_202512312359.shx"
+   ],
+   "new_P_records_shapefile": 17,
+   "new_P_rows_csv_2025": 17,
+   "shapes": 49,
+   "status": {
+    "CAN": 7,
+    "CON": 8,
+    "EXP": 11,
+    "NEW": 23
+   }
+  }
+ },
+ "terms": [
+  {
+   "source": "NWS disclaimer (weather.gov)",
+   "url": "https://www.weather.gov/disclaimer",
+   "quote": "The information on National Weather Service Web servers and Web sites is in the public domain, unless specifically annotated otherwise, and may be used freely by the public.",
+   "reading": "NWS web information is public domain unless annotated otherwise (checked live 2026-10-19)"
+  },
+  {
+   "source": "NWS disclaimer (weather.gov)",
+   "url": "https://www.weather.gov/disclaimer",
+   "quote": "NWS is provides such information \"as is,\" and NWS disclaims any and all warranties, whether express or implied, including (without limitation) any implied warranties of merchantability or fitness for a particular purpose.",
+   "reading": "No warranty; NWS data is provided as is"
+  },
+  {
+   "source": "NWS disclaimer (weather.gov)",
+   "url": "https://www.weather.gov/disclaimer",
+   "quote": "Neither the name nor visual identifier may be used, however, in a manner that implies an endorsement or affiliation with NOAA/NWS.",
+   "reading": "No use of the NWS name or logo to imply endorsement or affiliation"
+  },
+  {
+   "source": "NWS disclaimer (weather.gov)",
+   "url": "https://www.weather.gov/disclaimer",
+   "quote": "You also cannot present information of your own in a way that makes it appear to be official government information.",
+   "reading": "Our own information must not look like official government information (the site must not present B2 output as NWS output)"
+  },
+  {
+   "source": "IEM disclaimer (mesonet.agron.iastate.edu)",
+   "url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+   "quote": "The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose.",
+   "reading": "IEM materials (watchwarn, LSR, daily summaries) are public domain for any lawful purpose"
+  },
+  {
+   "source": "IEM disclaimer (mesonet.agron.iastate.edu)",
+   "url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+   "quote": "Attributing the Iowa Environmental Mesonet of Iowa State University would be appreciated.",
+   "reading": "Attribution requested (not a licence condition)"
+  },
+  {
+   "source": "IEM disclaimer (mesonet.agron.iastate.edu)",
+   "url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+   "quote": "We therefore provide this information without any warranty of accuracy.",
+   "reading": "No accuracy warranty; the site must say the data is as given"
+  },
+  {
+   "source": "NWPS gauge attribution (api.water.noaa.gov gauge JSON)",
+   "url": "https://api.water.noaa.gov/nwps/v1/gauges/ABOM8",
+   "quote": "USGS--Water Resources of the United States",
+   "reading": "The gauge attribution names USGS water data; the USGS terms page was not reachable (403)"
+  },
+  {
+   "source": "NWPS gauge attribution (api.water.noaa.gov gauge JSON)",
+   "url": "https://api.water.noaa.gov/nwps/v1/gauges/ABOM8",
+   "quote": "Observations courtesy of U.S. Geological Survey",
+   "reading": "Observations credited to USGS on the gauge record"
+  },
+  {
+   "source": "NFHL ArcGIS layer metadata (hazards.fema.gov)",
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28?f=pjson",
+   "quote": "copyrightText: \"\" ; description: \"\"",
+   "reading": "The service states no copyright or use terms in its metadata; FEMA's own terms could not be read (see open questions)"
+  },
+  {
+   "source": "42 U.S.C. 4012a(b)(1)(A) (statute text via Cornell LII)",
+   "url": "https://www.law.cornell.edu/uscode/text/42/4012a",
+   "quote": "(A) not to make, increase, extend, or renew any loan secured by improved real estate or a mobile home located or to be located in an area that has been identified by the Administrator as an area having special flood hazards and in which flood insurance has been made available under the National Flood Insurance Act of 1968 [ 42 U.S.C. 4001 et seq.], unless the building or mobile home and any personal property securing such loan is covered for the term of the loan by flood insurance in an amount at least equal to the outstanding principal balance of the loan or the maximum limit of coverage made available under the Act with respect to [...]",
+   "reading": "Statute, not FEMA wording: a lender rule tied to flood insurance. A flood zone label on the site would touch this rule, so counsel must rule first (AGENTS rule 5)"
+  },
+  {
+   "source": "FEMA (www.fema.gov) terms, glossary and open data disclaimer",
+   "url": "https://www.fema.gov/about/open/data-disclaimer",
+   "quote": "(no text retrieved: 403 Access Denied)",
+   "reading": "unverified; not retried"
+  },
+  {
+   "source": "USGS copyrights and credits",
+   "url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+   "quote": "(no text retrieved: 403 Request blocked)",
+   "reading": "unverified; not retried"
+  },
+  {
+   "source": "NCEI Storm Events metadata (ncei.noaa.gov)",
+   "url": "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ncdc:C00510",
+   "quote": "(no text retrieved: 503 twice)",
+   "reading": "unverified; NCEI use terms still to be read"
+  }
+ ],
+ "facts": [
+  {
+   "claim": "IEM watchwarn CSV request form works for each phenomenon and significance, 2020-01-01 to 2026-10-19",
+   "value": "29 of 29 requests HTTP 200; states[]=MT, timeopt=1, limitps=1, one phenomenon per request, accept=csv",
+   "evidence": "downloads/iem-manifest.json (watchwarn entries); /home/user/hail-b2/out/joins/cache ww form: warnings-archive.json urls_checked"
+  },
+  {
+   "claim": "Polygon (gtype P) products: NEW rows carry the polygon and a blank UGC; county twins are gtype C with MTC codes",
+   "value": "FL.W 62 events (43 in window); FA.W 39 (37); FA.Y 616 (548); FL.A 40 (35); FL.Y 20 (10); SQ.W 100 (78); FF.W 155 (148)",
+   "evidence": "ww_events_summary.json; ww_summary.json (P_rows_with_blank_ugc)"
+  },
+  {
+   "claim": "Zone (gtype C, MTZ UGC) products: WW.Y, WS.W, WS.A, HW.W, HW.A, WI.Y, HT.Y and others",
+   "value": "WW.Y 1155 events (865 in window); WS.W 313 (256); WS.A 276 (226); HW.W 430 (339); HW.A 348 (277); WI.Y 237 (181); HT.Y 84 (58); BZ.W 42 (36); WC.W 35 (26); EC.W 22 (22); FR.Y 17 (14); EH.W 15 (4); EH.A 14 (3); FZ.W 5 (4); DU.Y 3 (3); IS.W 2 (2); BZ.A, LE.W, HZ.W, DS.W 0",
+   "evidence": "ww_events_summary.json (events_by_kind_all_years, events_five_year_window_by_kind)"
+  },
+  {
+   "claim": "County-only events (MTC rows, no MTZ rows)",
+   "value": "FA.A 18 events (all in window); FF.A 3 events (2 in window)",
+   "evidence": "ww_events_summary.json events_by_kind_all_years, events_five_year_window_by_kind"
+  },
+  {
+   "claim": "Zone products carry few NEW rows; the event begin is on the other rows' utc_issue",
+   "value": "WS.W 4 NEW rows for 313 events; HW.A 0 NEW rows for 348 events; WS.A 0 for 276; the begin of such an event is its earliest utc_issue",
+   "evidence": "ww_events_summary.json (new_rows_all_years); downloads/iem-ww WS.W sample (BYZ 2023 event 1: CAN rows, utc_issue 2023-01-27 01:00, utc_prodissue 2023-01-26 21:20)"
+  },
+  {
+   "claim": "NEW row counts include county twins for some polygon products",
+   "value": "SQ.W 154 NEW rows = 100 polygon + 54 county; FA.Y 676 = 616 + 60; FF.W 163 = 155 + 8",
+   "evidence": "ww_summary.json new_rows_by_gtype"
+  },
+  {
+   "claim": "B2 zone path cannot see polygon-coded FL.W rows (blank UGC, gtype P) or county-only rows",
+   "value": "B2 cached FLW-2025.csv: 6 rows (3 gtype P with blank UGC, 3 gtype C with MTC); 0 MTZ rows, so 0 events",
+   "evidence": "/home/user/hail-b2/out/joins/cache/zones/FLW-2025.csv (read only); /home/user/wt/wt-b2/website/joins.py _zone_events (gtype filter and startswith MTZ)"
+  },
+  {
+   "claim": "Shapefile path reproduces the polygon NEW counts for 2025",
+   "value": "NEW P records vs CSV NEW P rows: FA.W 7 vs 7; FA.Y 87 vs 87; FL.W 3 vs 3; FL.Y 1 vs 1; SQ.W 17 vs 17; FL.A 0 vs 0; all have POLY_BEG and POLY_END",
+   "evidence": "downloads/iem-shp-2025/*.zip read via shp_check_summary.json"
+  },
+  {
+   "claim": "NWS tag fields are empty for the flood, heat, cold and winter products checked",
+   "value": "Only FF.W (2 damage threat values) and SQ.W (12) have a non-empty damagetag; no hail, wind or tornado tags in these products",
+   "evidence": "ww CSV tag columns (ww_summary and tag count run)"
+  },
+  {
+   "claim": "B2 phenomenon list vs these products",
+   "value": "B2 WARNING_PHENOMENA = SV, TO, FF (W, polygon); ZONE_PRODUCTS = HW.W, WS.W, BZ.W, IS.W, EC.W, WC.W, FW.W, FL.W, FA.A, DS.W, WI.Y (zone)",
+   "evidence": "/home/user/wt/wt-b2/website/joins.py lines 120-122"
+  },
+  {
+   "claim": "NCEI Montana 2020-2026: county-coded types with a point (no B2 join for these rows)",
+   "value": "Flood 76; Flash Flood 60; Heavy Rain 144; Tornado 17; Funnel Cloud 35; Lightning 8; Debris Flow 11; all CZ_TYPE C and all with BEGIN_LAT",
+   "evidence": "ncei_mt_summary.json rows; ncei_table in record_parts.json"
+  },
+  {
+   "claim": "NCEI Montana 2020-2026: zone-coded types with no point (B2 joins by zone)",
+   "value": "Heavy Snow 652; Winter Storm 740; Winter Weather 383; Blizzard 126; Ice Storm 14; Extreme Cold/Wind Chill 326; Cold/Wind Chill 155; Frost/Freeze 25; Excessive Heat 3; Heat 10; Drought 582; Dense Fog 182; Wildfire 100; High Wind 2968 (2967 zone); Strong Wind 69 (68 zone); all CZ_TYPE Z, no BEGIN_LAT",
+   "evidence": "ncei_mt_summary.json; ncei_table"
+  },
+  {
+   "claim": "NCEI Storm Events types in Montana 2020-2026 that B2 does not place at all",
+   "value": "Flood, Flash Flood, Heavy Rain, Tornado, Funnel Cloud, Lightning, Debris Flow (county-coded rows); B2 adds only Hail and Thunderstorm Wind county-coded rows as points",
+   "evidence": "/home/user/wt/wt-b2/website/joins.py parse_ncei lines 642-687 (CZ_TYPE Z rows, then NCEI_POINT_TYPES = Hail, Thunderstorm Wind)"
+  },
+  {
+   "claim": "The B2 brief names tornado and flash flood among its NCEI joins; the code and the data do not join them",
+   "value": "All 17 Montana tornado rows and all 60 flash flood rows are county-coded (CZ_TYPE C); B2 keeps only zone-coded rows of any type plus hail and thunderstorm wind points",
+   "evidence": "/home/user/wt/briefs/hail-b2-brief.md line 20; joins.py parse_ncei; ncei_mt_summary.json"
+  },
+  {
+   "claim": "NCEI FLOOD_CAUSE field (Flood and Flash Flood rows only)",
+   "value": "Flood: Heavy Rain / Snow Melt 45, Heavy Rain 27, Ice Jam 4; Flash Flood: Heavy Rain 57, Heavy Rain / Burn Area 2, Heavy Rain / Snow Melt 1; field present in all seven files",
+   "evidence": "ncei_mt_summary.json flood_cause and header"
+  },
+  {
+   "claim": "NCEI 2020 details file downloaded and checked; 2021 to 2026 cache sizes equal the live listing",
+   "value": "2020: 10444606 bytes, gzip test passes; 2021-2026: 6 of 6 sizes equal the live listing",
+   "evidence": "downloads/ncei/StormEvents_details-ftp_v1.0_d2020_c20260323.csv.gz; ncei_listing_live.html"
+  },
+  {
+   "claim": "NCEI Montana rows per year (STATE = MONTANA)",
+   "value": "{\"2020\": 1349, \"2021\": 1424, \"2022\": 1901, \"2023\": 1124, \"2024\": 1239, \"2025\": 1432, \"2026\": 830}",
+   "evidence": "ncei_mt_summary.json header"
+  },
+  {
+   "claim": "IEM LSR: monthly pulls match B2's cache row for row",
+   "value": "82 monthly pulls (2020-01 to 2026-10) = 60073 rows, all HTTP 200; the 61 B2 cache months (2021-10 to 2026-10) have identical row counts (0 mismatches)",
+   "evidence": "lsr_summary.json (per_month_live, b2_compare); /home/user/hail-b2/out/joins/cache/lsr (read only)"
+  },
+  {
+   "claim": "LSR type counts 2020-2026 (requested types)",
+   "value": "FLASH FLOOD 78; FLOOD 121; HEAVY RAIN 1944 (none after 2023); RAIN 2352 (from 2023); FREEZING RAIN 160; ICE STORM 0; SLEET 0; HEAVY SNOW 2247 (none after 2023); SNOW 17544; BLIZZARD 89; EXTREME COLD 1714; EXCESSIVE HEAT 0 (EXTREME HEAT 9 in 2025); LIGHTNING 10; NON-TSTM WND GST 24444; NON-TSTM WND DMG 345",
+   "evidence": "lsr_table in record_parts.json; lsr_summary.json"
+  },
+  {
+   "claim": "LSR label changes over time",
+   "value": "EXTR WIND CHILL 1217 (2020-2023) then WIND CHILL 728 (2024-2026); HEAVY RAIN then RAIN; HEAVY SNOW then SNOW; EXCESSIVE HEAT not used, EXTREME HEAT used once in 2025 (9 rows)",
+   "evidence": "lsr_summary.json bytype_by_year"
+  },
+  {
+   "claim": "LSR magnitudes for some codes have no unit in B2's map",
+   "value": "codes 5 (FREEZING RAIN, 0 to 0.84), 6 (EXTREME COLD, -72 to 58), 7 (WIND CHILL, -74 to -5), I (EXTREME HEAT, 87 to 102), J (FOG, 0 to 0.25) have MAG values; B2 LSR_UNITS maps only H, R, S, G, N, A; unit for these codes unverified",
+   "evidence": "joins.py LSR_UNITS line 125; lsr MAG ranges from the live files"
+  },
+  {
+   "claim": "LSR rows with a shifted layout",
+   "value": "2 rows (2022-12 EXTR WIND CHILL; 2023-08 TSTM WND GST) have a comma in an unquoted field; B2's parser docstring says it handles unquoted commas in CITY",
+   "evidence": "downloads/iem-lsr/2022-12.csv and 2023-08.csv; joins.py parse_lsr docstring"
+  },
+  {
+   "claim": "NFHL Montana flood hazard polygons (layer 28, DFIRM_ID prefix 30)",
+   "value": "28426 polygons; X/F 20342; AE/T 6720; X/F ZONE_SUBTY AREA OF MINIMAL FLOOD HAZARD 5448; X/F 0.2 PCT ANNUAL CHANCE FLOOD HAZARD 14832; A/T 1065; AE FLOODWAY 435; D/F 197; AO/T 99; AH/T 2",
+   "evidence": "nfhl_q_mt_count.json; nfhl_mt_zone_subtype.json (read in facts above)"
+  },
+  {
+   "claim": "NFHL point at the Billings sample (45.7836 N, 108.5047 W)",
+   "value": "1 polygon: FLD_ZONE X, ZONE_SUBTY AREA OF MINIMAL FLOOD HAZARD, SFHA_TF F, STATIC_BFE -9999.0, DFIRM_ID 30111C",
+   "evidence": "downloads/nfhl_q_billings.json"
+  },
+  {
+   "claim": "NFHL point at the Benchland sample (47.08 N, 110.02 W)",
+   "value": "0 polygons returned (empty features list); an empty result means no mapped polygon in this layer at that point, not no flood hazard",
+   "evidence": "downloads/nfhl_q_benchland.json"
+  },
+  {
+   "claim": "NFHL availability layer",
+   "value": "3199 records with no filter; 45 records with STUDY_ID beginning 30 (Montana)",
+   "evidence": "nfhl_q_avail_count.json; nfhl_avail_mt_count.json"
+  },
+  {
+   "claim": "NFHL service terms fields",
+   "value": "copyrightText and description are empty strings in the layer and service JSON; no coded-value domains on FLD_ZONE or SFHA_TF",
+   "evidence": "nfhl_layer_28.json; nfhl_probe_arcgis.json"
+  },
+  {
+   "claim": "NFHL state download (zip) not reached",
+   "value": "directory listing and a guessed file name failed at the TLS handshake (4 attempts); file name and size unverified",
+   "evidence": "downloads/nfhl_dir_retry2.html (failed), nfhl_state_head_probe.hdr"
+  },
+  {
+   "claim": "FEMA and USGS terms pages blocked for this session",
+   "value": "www.fema.gov pages returned 403 (Akamai Access Denied); usgs.gov copyright page returned 403 (CloudFront); not retried per the proxy rule on denials",
+   "evidence": "downloads/nfhl_fema_page.html, fema_glossary_sfha.html, fema_disclaimer.html, fema_privacy.html, usgs_copyright.html"
+  },
+  {
+   "claim": "Statute: the lender rule that ties a special flood hazard area to flood insurance (42 U.S.C. 4012a(b)(1)(A), via Cornell)",
+   "value": "quoted in terms; the rule applies to loans in an area identified as having special flood hazards where flood insurance is available",
+   "evidence": "downloads/terms/cornell_42_4012a.html"
+  },
+  {
+   "claim": "NWPS gauges in Montana",
+   "value": "278 of 12936 gauges in the live list (state.abbreviation MT); all 278 detail pulls HTTP 200 (3930216 bytes)",
+   "evidence": "nwps_gauges_all.json; nwps_fetch_manifest.json"
+  },
+  {
+   "claim": "NWPS flood category stages",
+   "value": "action, minor, moderate, major keys present for 278 of 278; numeric minor stage at 102 gauges; all four numeric at 57; none at 157",
+   "evidence": "downloads/nwps-gauges/*.json (flood.categories)"
+  },
+  {
+   "claim": "NWPS historic crest history",
+   "value": "7611 historic entries (the recent list holds the same entries in date order, 278 of 278 gauges); 388 entries dated 2020-2026 at 119 gauges (2020 87, 2021 61, 2022 67, 2023 74, 2024 45, 2025 50, 2026 4)",
+   "evidence": "downloads/nwps-gauges/*.json (flood.crests); record_parts.json nwps"
+  },
+  {
+   "claim": "NWPS crests at or above a gauge's minor flood stage, 2020-2026",
+   "value": "63 crests at 39 gauges (2020 19, 2021 1, 2022 13, 2023 23, 2024 1, 2025 5, 2026 1)",
+   "evidence": "record_parts.json nwps; computed from the gauge JSON"
+  },
+  {
+   "claim": "NWPS malformed crest years",
+   "value": "3 entries: BGCM8 0205-03-02, CFMM8 0025-05-13, PPRM8 0205-03-02 (dropped and counted in any build)",
+   "evidence": "downloads/nwps-gauges/BGCM8.json, CFMM8.json, PPRM8.json"
+  },
+  {
+   "claim": "NWPS observed flood category at pull time (2026-10-19 about 03:40 UTC)",
+   "value": "no_flooding 106; not_defined 119; obs_not_current 35; out_of_service 18; no action, minor, moderate or major category at the pull",
+   "evidence": "record_parts.json nwps observed_flood_category_at_pull"
+  },
+  {
+   "claim": "NWPS attribution",
+   "value": "USGS text on gauges with usgsId (211 of 278); 18 gauges out of service (inService.enabled false)",
+   "evidence": "downloads/nwps-gauges/ABOM8.json dataAttribution; record_parts.json nwps"
+  },
+  {
+   "claim": "NWS VTEC page does not name the phenomena",
+   "value": "page text about 2609 characters with no phenomenon name table",
+   "evidence": "downloads/vtec_page.html"
+  }
+ ],
+ "urls_checked": [
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-01-01T00%3A00Z&ets=2020-02-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 117427,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 826 data rows",
+   "local_file": "iem-lsr/2020-01.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-02-01T00%3A00Z&ets=2020-03-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 179650,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1286 data rows",
+   "local_file": "iem-lsr/2020-02.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-03-01T00%3A00Z&ets=2020-04-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 162619,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1144 data rows",
+   "local_file": "iem-lsr/2020-03.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-04-01T00%3A00Z&ets=2020-05-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 112017,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 794 data rows",
+   "local_file": "iem-lsr/2020-04.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-05-01T00%3A00Z&ets=2020-06-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 132475,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 849 data rows",
+   "local_file": "iem-lsr/2020-05.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-06-01T00%3A00Z&ets=2020-07-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 117526,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 722 data rows",
+   "local_file": "iem-lsr/2020-06.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-07-01T00%3A00Z&ets=2020-08-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 75503,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 495 data rows",
+   "local_file": "iem-lsr/2020-07.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-08-01T00%3A00Z&ets=2020-09-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 43850,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 275 data rows",
+   "local_file": "iem-lsr/2020-08.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-09-01T00%3A00Z&ets=2020-10-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 60208,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 391 data rows",
+   "local_file": "iem-lsr/2020-09.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-10-01T00%3A00Z&ets=2020-11-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 196688,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1380 data rows",
+   "local_file": "iem-lsr/2020-10.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-11-01T00%3A00Z&ets=2020-12-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 135723,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 883 data rows",
+   "local_file": "iem-lsr/2020-11.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2020-12-01T00%3A00Z&ets=2021-01-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 146423,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1048 data rows",
+   "local_file": "iem-lsr/2020-12.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-01-01T00%3A00Z&ets=2021-02-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 191503,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1300 data rows",
+   "local_file": "iem-lsr/2021-01.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-02-01T00%3A00Z&ets=2021-03-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 207100,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1475 data rows",
+   "local_file": "iem-lsr/2021-02.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-03-01T00%3A00Z&ets=2021-04-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 105883,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 708 data rows",
+   "local_file": "iem-lsr/2021-03.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-04-01T00%3A00Z&ets=2021-05-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 89785,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 623 data rows",
+   "local_file": "iem-lsr/2021-04.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-05-01T00%3A00Z&ets=2021-06-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 107198,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 671 data rows",
+   "local_file": "iem-lsr/2021-05.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-06-01T00%3A00Z&ets=2021-07-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 61888,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 368 data rows",
+   "local_file": "iem-lsr/2021-06.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-07-01T00%3A00Z&ets=2021-08-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 58286,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 359 data rows",
+   "local_file": "iem-lsr/2021-07.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-08-01T00%3A00Z&ets=2021-09-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 78208,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 489 data rows",
+   "local_file": "iem-lsr/2021-08.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-09-01T00%3A00Z&ets=2021-10-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 32511,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 202 data rows",
+   "local_file": "iem-lsr/2021-09.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-10-01T00%3A00Z&ets=2021-11-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 62055,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 428 data rows",
+   "local_file": "iem-lsr/2021-10.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-11-01T00%3A00Z&ets=2021-12-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 169816,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1123 data rows",
+   "local_file": "iem-lsr/2021-11.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2021-12-01T00%3A00Z&ets=2022-01-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 245097,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1720 data rows",
+   "local_file": "iem-lsr/2021-12.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-01-01T00%3A00Z&ets=2022-02-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 158186,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1096 data rows",
+   "local_file": "iem-lsr/2022-01.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-02-01T00%3A00Z&ets=2022-03-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 178478,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1268 data rows",
+   "local_file": "iem-lsr/2022-02.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-03-01T00%3A00Z&ets=2022-04-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 71917,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 490 data rows",
+   "local_file": "iem-lsr/2022-03.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-04-01T00%3A00Z&ets=2022-05-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 188971,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1273 data rows",
+   "local_file": "iem-lsr/2022-04.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-05-01T00%3A00Z&ets=2022-06-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 107908,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 718 data rows",
+   "local_file": "iem-lsr/2022-05.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-06-01T00%3A00Z&ets=2022-07-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 79179,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 499 data rows",
+   "local_file": "iem-lsr/2022-06.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-07-01T00%3A00Z&ets=2022-08-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 111542,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 731 data rows",
+   "local_file": "iem-lsr/2022-07.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-08-01T00%3A00Z&ets=2022-09-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 26275,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 168 data rows",
+   "local_file": "iem-lsr/2022-08.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-09-01T00%3A00Z&ets=2022-10-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 25566,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 171 data rows",
+   "local_file": "iem-lsr/2022-09.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-10-01T00%3A00Z&ets=2022-11-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 61071,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 385 data rows",
+   "local_file": "iem-lsr/2022-10.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-11-01T00%3A00Z&ets=2022-12-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 205038,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1314 data rows",
+   "local_file": "iem-lsr/2022-11.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2022-12-01T00%3A00Z&ets=2023-01-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 295702,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1978 data rows",
+   "local_file": "iem-lsr/2022-12.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-01-01T00%3A00Z&ets=2023-02-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 93730,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 614 data rows",
+   "local_file": "iem-lsr/2023-01.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-02-01T00%3A00Z&ets=2023-03-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 176344,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1157 data rows",
+   "local_file": "iem-lsr/2023-02.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-03-01T00%3A00Z&ets=2023-04-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 186056,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1149 data rows",
+   "local_file": "iem-lsr/2023-03.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-04-01T00%3A00Z&ets=2023-05-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 156361,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 871 data rows",
+   "local_file": "iem-lsr/2023-04.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-05-01T00%3A00Z&ets=2023-06-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 38148,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 234 data rows",
+   "local_file": "iem-lsr/2023-05.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-06-01T00%3A00Z&ets=2023-07-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 100611,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 646 data rows",
+   "local_file": "iem-lsr/2023-06.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-07-01T00%3A00Z&ets=2023-08-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 41813,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 235 data rows",
+   "local_file": "iem-lsr/2023-07.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-08-01T00%3A00Z&ets=2023-09-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 57655,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 368 data rows",
+   "local_file": "iem-lsr/2023-08.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-09-01T00%3A00Z&ets=2023-10-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 16887,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 111 data rows",
+   "local_file": "iem-lsr/2023-09.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-10-01T00%3A00Z&ets=2023-11-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 99901,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 626 data rows",
+   "local_file": "iem-lsr/2023-10.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-11-01T00%3A00Z&ets=2023-12-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 40321,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 273 data rows",
+   "local_file": "iem-lsr/2023-11.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2023-12-01T00%3A00Z&ets=2024-01-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 52520,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 389 data rows",
+   "local_file": "iem-lsr/2023-12.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-01-01T00%3A00Z&ets=2024-02-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 276580,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1761 data rows",
+   "local_file": "iem-lsr/2024-01.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-02-01T00%3A00Z&ets=2024-03-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 151548,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1053 data rows",
+   "local_file": "iem-lsr/2024-02.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-03-01T00%3A00Z&ets=2024-04-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 72968,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 541 data rows",
+   "local_file": "iem-lsr/2024-03.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-04-01T00%3A00Z&ets=2024-05-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 52605,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 370 data rows",
+   "local_file": "iem-lsr/2024-04.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-05-01T00%3A00Z&ets=2024-06-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 155749,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1046 data rows",
+   "local_file": "iem-lsr/2024-05.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-06-01T00%3A00Z&ets=2024-07-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 89494,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 547 data rows",
+   "local_file": "iem-lsr/2024-06.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-07-01T00%3A00Z&ets=2024-08-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 44545,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 250 data rows",
+   "local_file": "iem-lsr/2024-07.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-08-01T00%3A00Z&ets=2024-09-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 78068,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 459 data rows",
+   "local_file": "iem-lsr/2024-08.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-09-01T00%3A00Z&ets=2024-10-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 69387,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 390 data rows",
+   "local_file": "iem-lsr/2024-09.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-10-01T00%3A00Z&ets=2024-11-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 80683,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 487 data rows",
+   "local_file": "iem-lsr/2024-10.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-11-01T00%3A00Z&ets=2024-12-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 74715,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 462 data rows",
+   "local_file": "iem-lsr/2024-11.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2024-12-01T00%3A00Z&ets=2025-01-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 141863,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 844 data rows",
+   "local_file": "iem-lsr/2024-12.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-01-01T00%3A00Z&ets=2025-02-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 176681,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1095 data rows",
+   "local_file": "iem-lsr/2025-01.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-02-01T00%3A00Z&ets=2025-03-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 321155,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 1996 data rows",
+   "local_file": "iem-lsr/2025-02.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-03-01T00%3A00Z&ets=2025-04-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 65479,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 402 data rows",
+   "local_file": "iem-lsr/2025-03.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-04-01T00%3A00Z&ets=2025-05-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 92269,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 593 data rows",
+   "local_file": "iem-lsr/2025-04.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-05-01T00%3A00Z&ets=2025-06-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 64452,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 401 data rows",
+   "local_file": "iem-lsr/2025-05.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-06-01T00%3A00Z&ets=2025-07-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 47108,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 296 data rows",
+   "local_file": "iem-lsr/2025-06.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-07-01T00%3A00Z&ets=2025-08-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 78047,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 472 data rows",
+   "local_file": "iem-lsr/2025-07.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-08-01T00%3A00Z&ets=2025-09-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 43913,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 272 data rows",
+   "local_file": "iem-lsr/2025-08.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-09-01T00%3A00Z&ets=2025-10-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 14218,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 84 data rows",
+   "local_file": "iem-lsr/2025-09.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-10-01T00%3A00Z&ets=2025-11-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 62327,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 374 data rows",
+   "local_file": "iem-lsr/2025-10.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-11-01T00%3A00Z&ets=2025-12-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 123621,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 733 data rows",
+   "local_file": "iem-lsr/2025-11.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2025-12-01T00%3A00Z&ets=2026-01-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 382816,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 2247 data rows",
+   "local_file": "iem-lsr/2025-12.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-01-01T00%3A00Z&ets=2026-02-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 157666,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 969 data rows",
+   "local_file": "iem-lsr/2026-01.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-02-01T00%3A00Z&ets=2026-03-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 100122,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 619 data rows",
+   "local_file": "iem-lsr/2026-02.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-03-01T00%3A00Z&ets=2026-04-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 332062,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 2011 data rows",
+   "local_file": "iem-lsr/2026-03.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-04-01T00%3A00Z&ets=2026-05-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 94871,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 585 data rows",
+   "local_file": "iem-lsr/2026-04.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-05-01T00%3A00Z&ets=2026-06-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 101322,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 619 data rows",
+   "local_file": "iem-lsr/2026-05.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-06-01T00%3A00Z&ets=2026-07-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 103164,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 652 data rows",
+   "local_file": "iem-lsr/2026-06.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-07-01T00%3A00Z&ets=2026-08-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 45282,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 273 data rows",
+   "local_file": "iem-lsr/2026-07.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-08-01T00%3A00Z&ets=2026-09-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 30212,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 191 data rows",
+   "local_file": "iem-lsr/2026-08.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-09-01T00%3A00Z&ets=2026-10-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 63498,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 387 data rows",
+   "local_file": "iem-lsr/2026-09.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py?state=MT&sts=2026-10-01T00%3A00Z&ets=2026-11-01T00%3A00Z&fmt=csv&wfo=ALL",
+   "http_status": "200",
+   "bytes": 43689,
+   "content_check": "HTTP 200; LSR CSV header has VALID, LAT, LON, MAG, TYPETEXT, UGC; 269 data rows",
+   "local_file": "iem-lsr/2026-10.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=BZ&significance%5B%5D=A&limitps=1",
+   "http_status": "200",
+   "bytes": 286,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 0 data rows; gtype {}; NEW rows 0",
+   "local_file": "iem-ww/BZ.A_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=BZ&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 30229,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 163 data rows; gtype {'C': 163}; NEW rows 0",
+   "local_file": "iem-ww/BZ.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=DS&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 286,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 0 data rows; gtype {}; NEW rows 0",
+   "local_file": "iem-ww/DS.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=DU&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 3506,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 18 data rows; gtype {'C': 18}; NEW rows 0",
+   "local_file": "iem-ww/DU.Y_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=EC&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 28362,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 156 data rows; gtype {'C': 156}; NEW rows 0",
+   "local_file": "iem-ww/EC.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=EH&significance%5B%5D=A&limitps=1",
+   "http_status": "200",
+   "bytes": 30952,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 166 data rows; gtype {'C': 166}; NEW rows 0",
+   "local_file": "iem-ww/EH.A_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=EH&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 32128,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 174 data rows; gtype {'C': 174}; NEW rows 0",
+   "local_file": "iem-ww/EH.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FA&significance%5B%5D=A&limitps=1",
+   "http_status": "200",
+   "bytes": 122428,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 643 data rows; gtype {'C': 643}; NEW rows 6",
+   "local_file": "iem-ww/FA.A_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FA&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 18122,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 88 data rows; gtype {'C': 49, 'P': 39}; NEW rows 43",
+   "local_file": "iem-ww/FA.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FA&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 318633,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 1579 data rows; gtype {'C': 963, 'P': 616}; NEW rows 676",
+   "local_file": "iem-ww/FA.Y_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FF&significance%5B%5D=A&limitps=1",
+   "http_status": "200",
+   "bytes": 16859,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 87 data rows; gtype {'C': 85, 'P': 2}; NEW rows 4",
+   "local_file": "iem-ww/FF.A_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FF&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 74710,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 367 data rows; gtype {'C': 212, 'P': 155}; NEW rows 163",
+   "local_file": "iem-ww/FF.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FL&significance%5B%5D=A&limitps=1",
+   "http_status": "200",
+   "bytes": 18082,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 88 data rows; gtype {'C': 48, 'P': 40}; NEW rows 42",
+   "local_file": "iem-ww/FL.A_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FL&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 27623,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 135 data rows; gtype {'C': 73, 'P': 62}; NEW rows 62",
+   "local_file": "iem-ww/FL.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FL&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 9459,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 46 data rows; gtype {'C': 26, 'P': 20}; NEW rows 20",
+   "local_file": "iem-ww/FL.Y_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FR&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 9388,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 52 data rows; gtype {'C': 52}; NEW rows 27",
+   "local_file": "iem-ww/FR.Y_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=FZ&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 4318,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 23 data rows; gtype {'C': 23}; NEW rows 9",
+   "local_file": "iem-ww/FZ.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=HT&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 176827,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 963 data rows; gtype {'C': 963}; NEW rows 14",
+   "local_file": "iem-ww/HT.Y_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=HW&significance%5B%5D=A&limitps=1",
+   "http_status": "200",
+   "bytes": 471807,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 2613 data rows; gtype {'C': 2613}; NEW rows 0",
+   "local_file": "iem-ww/HW.A_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=HW&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 599636,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 3312 data rows; gtype {'C': 3312}; NEW rows 8",
+   "local_file": "iem-ww/HW.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=HZ&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 286,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 0 data rows; gtype {}; NEW rows 0",
+   "local_file": "iem-ww/HZ.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=IS&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 1204,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 5 data rows; gtype {'C': 5}; NEW rows 0",
+   "local_file": "iem-ww/IS.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=LE&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 286,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 0 data rows; gtype {}; NEW rows 0",
+   "local_file": "iem-ww/LE.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=SQ&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 53585,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 284 data rows; gtype {'C': 184, 'P': 100}; NEW rows 154",
+   "local_file": "iem-ww/SQ.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=WC&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 61053,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 334 data rows; gtype {'C': 334}; NEW rows 8",
+   "local_file": "iem-ww/WC.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=WI&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 103791,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 566 data rows; gtype {'C': 566}; NEW rows 46",
+   "local_file": "iem-ww/WI.Y_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=WS&significance%5B%5D=A&limitps=1",
+   "http_status": "200",
+   "bytes": 315340,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 1712 data rows; gtype {'C': 1712}; NEW rows 0",
+   "local_file": "iem-ww/WS.A_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=WS&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 315410,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 1719 data rows; gtype {'C': 1719}; NEW rows 4",
+   "local_file": "iem-ww/WS.W_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2020&month1=1&day1=1&hour1=0&minute1=0&year2=2026&month2=10&day2=19&hour2=23&minute2=59&phenomena%5B%5D=WW&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 1446266,
+   "content_check": "HTTP 200; CSV header has phenomena, gtype, status, ugc, utc_issue, utc_expire, eventid, vtec_year; 7893 data rows; gtype {'C': 7893}; NEW rows 75",
+   "local_file": "iem-ww/WW.Y_2020-01-01_2026-10-19.csv"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=shapefile&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2025&month1=1&day1=1&hour1=0&minute1=0&year2=2025&month2=12&day2=31&hour2=23&minute2=59&phenomena%5B%5D=FA&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 10575,
+   "content_check": "HTTP 200 zip with shp, dbf, shx; shapes 13; GTYPE {'C': 6, 'P': 7}; NEW P records 7 (CSV NEW P rows for 2025: 7)",
+   "local_file": "downloads/iem-shp-2025/FA.W_2025.zip"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=shapefile&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2025&month1=1&day1=1&hour1=0&minute1=0&year2=2025&month2=12&day2=31&hour2=23&minute2=59&phenomena%5B%5D=FA&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 144638,
+   "content_check": "HTTP 200 zip with shp, dbf, shx; shapes 237; GTYPE {'C': 150, 'P': 87}; NEW P records 87 (CSV NEW P rows for 2025: 87)",
+   "local_file": "downloads/iem-shp-2025/FA.Y_2025.zip"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=shapefile&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2025&month1=1&day1=1&hour1=0&minute1=0&year2=2025&month2=12&day2=31&hour2=23&minute2=59&phenomena%5B%5D=FL&significance%5B%5D=A&limitps=1",
+   "http_status": "200",
+   "bytes": 1689,
+   "content_check": "HTTP 200 zip with shp, dbf, shx; shapes 0; GTYPE {}; NEW P records 0 (CSV NEW P rows for 2025: 0)",
+   "local_file": "downloads/iem-shp-2025/FL.A_2025.zip"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=shapefile&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2025&month1=1&day1=1&hour1=0&minute1=0&year2=2025&month2=12&day2=31&hour2=23&minute2=59&phenomena%5B%5D=FL&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 5357,
+   "content_check": "HTTP 200 zip with shp, dbf, shx; shapes 6; GTYPE {'C': 3, 'P': 3}; NEW P records 3 (CSV NEW P rows for 2025: 3)",
+   "local_file": "downloads/iem-shp-2025/FL.W_2025.zip"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=shapefile&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2025&month1=1&day1=1&hour1=0&minute1=0&year2=2025&month2=12&day2=31&hour2=23&minute2=59&phenomena%5B%5D=FL&significance%5B%5D=Y&limitps=1",
+   "http_status": "200",
+   "bytes": 3551,
+   "content_check": "HTTP 200 zip with shp, dbf, shx; shapes 2; GTYPE {'C': 1, 'P': 1}; NEW P records 1 (CSV NEW P rows for 2025: 1)",
+   "local_file": "downloads/iem-shp-2025/FL.Y_2025.zip"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=shapefile&simple=1&location_group=states&states%5B%5D=MT&timeopt=1&year1=2025&month1=1&day1=1&hour1=0&minute1=0&year2=2025&month2=12&day2=31&hour2=23&minute2=59&phenomena%5B%5D=SQ&significance%5B%5D=W&limitps=1",
+   "http_status": "200",
+   "bytes": 38492,
+   "content_check": "HTTP 200 zip with shp, dbf, shx; shapes 49; GTYPE {'C': 32, 'P': 17}; NEW P records 17 (CSV NEW P rows for 2025: 17)",
+   "local_file": "downloads/iem-shp-2025/SQ.W_2025.zip"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/",
+   "http_status": "200",
+   "bytes": 53138,
+   "content_check": "Apache index; 77 StormEvents_details entries with sizes; 2020 entry 10444606 bytes modified 2026-03-23 13:24; 2021 to 2026 names and sizes listed",
+   "local_file": "downloads/ncei_listing_live.html"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2020_c20260323.csv.gz",
+   "http_status": "200",
+   "bytes": 10444606,
+   "content_check": "gzip test passes; 51 columns including EVENT_TYPE, CZ_TYPE, CZ_FIPS, BEGIN_LAT, BEGIN_LON, FLOOD_CAUSE, MAGNITUDE; Montana rows 1349 in 2020",
+   "local_file": "downloads/ncei/StormEvents_details-ftp_v1.0_d2020_c20260323.csv.gz"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2021_c20260323.csv.gz",
+   "http_status": "200 (live listing; file read from B2 cache, not re-downloaded)",
+   "bytes": 10563953,
+   "content_check": "size equals the live listing size; read in place from /home/user/hail-b2/out/joins/cache/ncei (read-only)",
+   "local_file": "/home/user/hail-b2/out/joins/cache/ncei/StormEvents_details-ftp_v1.0_d2021_c20260323.csv.gz"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2022_c20260625.csv.gz",
+   "http_status": "200 (live listing; file read from B2 cache, not re-downloaded)",
+   "bytes": 11817849,
+   "content_check": "size equals the live listing size; read in place from /home/user/hail-b2/out/joins/cache/ncei (read-only)",
+   "local_file": "/home/user/hail-b2/out/joins/cache/ncei/StormEvents_details-ftp_v1.0_d2022_c20260625.csv.gz"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2023_c20260323.csv.gz",
+   "http_status": "200 (live listing; file read from B2 cache, not re-downloaded)",
+   "bytes": 12888092,
+   "content_check": "size equals the live listing size; read in place from /home/user/hail-b2/out/joins/cache/ncei (read-only)",
+   "local_file": "/home/user/hail-b2/out/joins/cache/ncei/StormEvents_details-ftp_v1.0_d2023_c20260323.csv.gz"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2024_c20260728.csv.gz",
+   "http_status": "200 (live listing; file read from B2 cache, not re-downloaded)",
+   "bytes": 12693243,
+   "content_check": "size equals the live listing size; read in place from /home/user/hail-b2/out/joins/cache/ncei (read-only)",
+   "local_file": "/home/user/hail-b2/out/joins/cache/ncei/StormEvents_details-ftp_v1.0_d2024_c20260728.csv.gz"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2025_c20260819.csv.gz",
+   "http_status": "200 (live listing; file read from B2 cache, not re-downloaded)",
+   "bytes": 12585209,
+   "content_check": "size equals the live listing size; read in place from /home/user/hail-b2/out/joins/cache/ncei (read-only)",
+   "local_file": "/home/user/hail-b2/out/joins/cache/ncei/StormEvents_details-ftp_v1.0_d2025_c20260819.csv.gz"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2026_c20260918.csv.gz",
+   "http_status": "200 (live listing; file read from B2 cache, not re-downloaded)",
+   "bytes": 7490892,
+   "content_check": "size equals the live listing size; read in place from /home/user/hail-b2/out/joins/cache/ncei (read-only)",
+   "local_file": "/home/user/hail-b2/out/joins/cache/ncei/StormEvents_details-ftp_v1.0_d2026_c20260918.csv.gz"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer?f=pjson",
+   "http_status": "200",
+   "bytes": 11814,
+   "content_check": "MapServer root: layers include 28 Flood Hazard Zones (polygon) and 0 NFHL Availability; maxRecordCount 2000; copyrightText empty",
+   "local_file": "downloads/nfhl_probe_arcgis.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28?f=pjson",
+   "http_status": "200",
+   "bytes": 70584,
+   "content_check": "Flood Hazard Zones layer: fields DFIRM_ID, FLD_AR_ID, FLD_ZONE, ZONE_SUBTY, SFHA_TF, STATIC_BFE, STUDY_TYP, SOURCE_CIT; copyrightText and description empty strings; no coded-value domains",
+   "local_file": "downloads/nfhl_layer_28.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/0?f=pjson",
+   "http_status": "200",
+   "bytes": 5110,
+   "content_check": "NFHL Availability layer: fields OBJECTID, STUDY_ID, GlobalID, SHAPE; no description or copyright",
+   "local_file": "downloads/nfhl_layer_0.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=-108.5047,45.7836 (Billings sample, point query, outFields DFIRM_ID,FLD_AR_ID,FLD_ZONE,ZONE_SUBTY,SFHA_TF,STATIC_BFE,STUDY_TYP,SOURCE_CIT)",
+   "http_status": "200",
+   "bytes": 1105,
+   "content_check": "1 feature: DFIRM_ID 30111C, FLD_ZONE X, ZONE_SUBTY AREA OF MINIMAL FLOOD HAZARD, SFHA_TF F, STATIC_BFE -9999.0, STUDY_TYP NP (first attempt timed out; retry succeeded)",
+   "local_file": "downloads/nfhl_q_billings.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=-110.02,47.08 (Benchland sample, point query)",
+   "http_status": "200",
+   "bytes": 904,
+   "content_check": "features: [] (no flood hazard polygon returned at this point)",
+   "local_file": "downloads/nfhl_q_benchland.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?where=DFIRM_ID LIKE '30%'&returnCountOnly=true",
+   "http_status": "200",
+   "bytes": 15,
+   "content_check": "count 28426 (Montana DFIRM_ID prefix 30)",
+   "local_file": "downloads/nfhl_q_mt_count.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?where=DFIRM_ID LIKE '30%'&groupByFieldsForStatistics=FLD_ZONE,SFHA_TF (outStatistics count)",
+   "http_status": "200",
+   "bytes": 654,
+   "content_check": "6 groups summing to 28426",
+   "local_file": "downloads/nfhl_q_mt_by_zone.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?where=DFIRM_ID LIKE '30%'&groupByFieldsForStatistics=FLD_ZONE,ZONE_SUBTY,SFHA_TF (outStatistics count)",
+   "http_status": "200",
+   "bytes": 1770,
+   "content_check": "15 groups summing to 28426; ZONE_SUBTY strings listed in facts",
+   "local_file": "downloads/nfhl_mt_zone_subtype.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/0/query?where=1=1&returnCountOnly=true",
+   "http_status": "200",
+   "bytes": 14,
+   "content_check": "count 3199 (all availability records, no state filter)",
+   "local_file": "downloads/nfhl_q_avail_count.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/0/query?where=STUDY_ID LIKE '30%'&returnCountOnly=true",
+   "http_status": "200",
+   "bytes": 12,
+   "content_check": "count 45 (Montana study IDs)",
+   "local_file": "downloads/nfhl_avail_mt_count.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/0/query?where=1=1&outFields=*&resultRecordCount=3&returnGeometry=false",
+   "http_status": "200",
+   "bytes": 356284,
+   "content_check": "JSON with fields OBJECTID, STUDY_ID (first value 01001); response larger than 3 features requested (not analysed further)",
+   "local_file": "downloads/nfhl_q_avail_sample.json"
+  },
+  {
+   "url": "https://hazards.fema.gov/nfhlv2/output/State/",
+   "http_status": "failed (TLS SSL_ERROR_SYSCALL, 4 attempts)",
+   "bytes": 0,
+   "content_check": "state download directory not reached; the state zip name and size are unverified",
+   "local_file": null
+  },
+  {
+   "url": "https://hazards.fema.gov/nfhlv2/output/State/NFHL_30_20250331.zip (HEAD, name guessed)",
+   "http_status": "proxy 200 Connection Established, then TLS failure",
+   "bytes": 0,
+   "content_check": "file name not confirmed; no size obtained",
+   "local_file": null
+  },
+  {
+   "url": "https://hazards.fema.gov/femaportal/wps/portal",
+   "http_status": "302 once; TLS failure on later attempts",
+   "bytes": 0,
+   "content_check": "FEMA portal page not read (the hazards.fema.gov root redirects here)",
+   "local_file": null
+  },
+  {
+   "url": "https://hazards.fema.gov/",
+   "http_status": "200",
+   "bytes": 413,
+   "content_check": "meta refresh to /femaportal/wps/portal; no terms text",
+   "local_file": "downloads/terms/fema_hazards_home.html"
+  },
+  {
+   "url": "https://www.fema.gov/flood-maps/national-flood-hazard-layer",
+   "http_status": "403",
+   "bytes": 424,
+   "content_check": "Access Denied (Akamai) to this session; not retried",
+   "local_file": "downloads/nfhl_fema_page.html"
+  },
+  {
+   "url": "https://www.fema.gov/about/glossary",
+   "http_status": "403",
+   "bytes": 384,
+   "content_check": "Access Denied (Akamai); not retried",
+   "local_file": "downloads/fema_glossary_sfha.html"
+  },
+  {
+   "url": "https://www.fema.gov/about/open/data-disclaimer",
+   "http_status": "403",
+   "bytes": 404,
+   "content_check": "Access Denied (Akamai); not retried",
+   "local_file": "downloads/fema_disclaimer.html"
+  },
+  {
+   "url": "https://www.fema.gov/about/policy",
+   "http_status": "403",
+   "bytes": 382,
+   "content_check": "Access Denied (Akamai); not retried",
+   "local_file": "downloads/fema_privacy.html"
+  },
+  {
+   "url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+   "http_status": "403",
+   "bytes": 919,
+   "content_check": "CloudFront Request blocked; not retried; USGS terms unverified",
+   "local_file": "downloads/usgs_copyright.html"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/products/storm-events-database",
+   "http_status": "404",
+   "bytes": 30148,
+   "content_check": "wrong page for NCEI terms (not used)",
+   "local_file": "downloads/terms/ncei_storm_events_page.html"
+  },
+  {
+   "url": "https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ncdc:C00510",
+   "http_status": "503 (twice)",
+   "bytes": 418,
+   "content_check": "NCEI metadata record for Storm Events not retrieved; NCEI terms unverified",
+   "local_file": "downloads/terms/ncei_iso_retry.html"
+  },
+  {
+   "url": "https://www.weather.gov/disclaimer",
+   "http_status": "200",
+   "bytes": 41679,
+   "content_check": "NWS disclaimer; public domain, endorsement, warranty and official-government sentences found (quoted)",
+   "local_file": "downloads/terms/nws_disclaimer.html"
+  },
+  {
+   "url": "https://mesonet.agron.iastate.edu/disclaimer.php",
+   "http_status": "200",
+   "bytes": 31469,
+   "content_check": "IEM public domain, attribution and warranty sentences found (quoted)",
+   "local_file": "downloads/terms/iem_disclaimer.html"
+  },
+  {
+   "url": "https://www.noaa.gov/disclaimer",
+   "http_status": "200",
+   "bytes": 49564,
+   "content_check": "external-link disclaimer only; no data-use statement found",
+   "local_file": "downloads/terms/noaa_disclaimer.html"
+  },
+  {
+   "url": "https://www.weather.gov/vtec/",
+   "http_status": "200",
+   "bytes": 26218,
+   "content_check": "page text about 2,609 characters; no table of phenomenon names found in the text",
+   "local_file": "downloads/vtec_page.html"
+  },
+  {
+   "url": "https://www.law.cornell.edu/uscode/text/42/4012a",
+   "http_status": "200",
+   "bytes": 162233,
+   "content_check": "statute text of 42 U.S.C. 4012a; the lender requirement sentence is quoted (this is statute text, not FEMA wording)",
+   "local_file": "downloads/terms/cornell_42_4012a.html"
+  },
+  {
+   "url": "https://api.water.noaa.gov/nwps/v1/gauges",
+   "http_status": "200",
+   "bytes": 13172005,
+   "content_check": "12936 gauges; 278 with state.abbreviation MT; status.observed.floodCategory and pedts present",
+   "local_file": "downloads/nwps_gauges_all.json"
+  },
+  {
+   "url": "https://api.water.noaa.gov/nwps/v1/gauges?state=MT",
+   "http_status": "504",
+   "bytes": 132,
+   "content_check": "gateway timeout (not retried); the unfiltered list was used",
+   "local_file": null
+  },
+  {
+   "url": "https://api.water.noaa.gov/nwps/v1/",
+   "http_status": "503",
+   "bytes": 136,
+   "content_check": "code 5 Endpoint not found; the root is not an endpoint",
+   "local_file": null
+  },
+  {
+   "url": "https://api.water.noaa.gov/nwps/v1/docs/",
+   "http_status": "200",
+   "bytes": 805,
+   "content_check": "HTML wrapper for the swagger document",
+   "local_file": "downloads/nwps_docs.html"
+  },
+  {
+   "url": "https://api.water.noaa.gov/nwps/v1/docs/swagger.json",
+   "http_status": "200",
+   "bytes": 44091,
+   "content_check": "11 paths including /gauges, /gauges/{identifier}, /ratings, /riverflow, /stageflow; schema defines FloodCrests with historic and recent lists",
+   "local_file": "downloads/nwps_swagger.json"
+  },
+  {
+   "url": "https://api.water.noaa.gov/nwps/v1/gauges/ABOM8",
+   "http_status": "200",
+   "bytes": 19682,
+   "content_check": "gauge detail: flood.categories (action, minor, moderate, major with stage), flood.crests.historic and recent (40 entries each), dataAttribution (USGS text)",
+   "local_file": "downloads/nwps-gauges/ABOM8.json"
+  },
+  {
+   "url": "https://api.water.noaa.gov/nwps/v1/gauges/{lid} for the 278 Montana lids",
+   "http_status": "200 (all 278)",
+   "bytes": 3930216,
+   "content_check": "278 gauge detail JSON files; crest history and flood categories per gauge; see nwps section",
+   "local_file": "downloads/nwps-gauges/"
+  },
+  {
+   "url": "https://water.noaa.gov/about/api",
+   "http_status": "200",
+   "bytes": 24038,
+   "content_check": "NWPS data services page: streamflow, crest history, flood category levels named",
+   "local_file": "downloads/terms/nws_water_api_page2.html"
+  }
+ ],
+ "measurements": {
+  "b2_cache_read_only_not_counted": "NCEI 2021-2026 (about 68 MB, read in place), LSR cache months, zones FL/FA CSVs",
+  "download_misc_bytes": 14318141,
+  "downloads_total_bytes_excluding_extracted_copies": 42479925,
+  "iem_bytes_watchwarn_and_lsr": 13582660,
+  "iem_lsr_monthly_requests": 82,
+  "iem_requests_all_http_200": true,
+  "iem_shapefile_requests": 6,
+  "iem_shapefile_zip_bytes": 204302,
+  "iem_watchwarn_requests": 29,
+  "lsr_months_compared_to_b2_cache": 61,
+  "lsr_months_with_row_mismatch": 0,
+  "lsr_rows_2020_2026_live": 60073,
+  "ncei_2020_download_bytes": 10444606,
+  "ncei_listing_bytes": 53138,
+  "ncei_montana_rows_by_year": {
+   "2020": 1349,
+   "2021": 1424,
+   "2022": 1901,
+   "2023": 1124,
+   "2024": 1239,
+   "2025": 1432,
+   "2026": 830
+  },
+  "nwps_gauge_detail_bytes": 3930216,
+  "nwps_gauge_detail_requests": 278,
+  "nwps_gauge_list_bytes": 13172005,
+  "run_seconds": {
+   "iem_ww_lsr": 30,
+   "nwps_details": 70
+  }
+ },
+ "downloads": {
+  "total_bytes_written_to_downloads_excluding_extracted_copies": 42479925,
+  "items": [
+   "IEM watchwarn CSVs, 29 files, 2020-01-01 to 2026-10-19 (4,290,862 bytes)",
+   "IEM LSR monthly CSVs, 82 files (9,291,798 bytes)",
+   "IEM shapefile zips for 2025, 6 files (204,302 bytes; extracted copies also written, not counted)",
+   "NCEI 2020 details gz (10,444,606 bytes)",
+   "NCEI listing html (53,138 bytes)",
+   "NWPS all-gauges list (13,172,005 bytes)",
+   "NWPS Montana gauge details, 278 files (3,930,216 bytes)",
+   "NFHL JSON and query results (about 0.6 MB, including a 356 KB availability sample)",
+   "terms pages and the statute page (about 0.35 MB)"
+  ],
+  "b2_cache_read_in_place_not_copied": "NCEI 2021-2026 detail files (about 68 MB, read only), LSR cache (read only), zones FLW and FAA CSVs (read only)",
+  "under_300MB_budget": true
+ },
+ "scripts": [
+  "fetch_iem.py",
+  "ww_analyze.py",
+  "ww_probe.py",
+  "ww_events.py",
+  "ncei_analyze.py",
+  "lsr_analyze.py",
+  "fetch_nwps.py",
+  "nwps_analyze.py",
+  "fetch_shp.py",
+  "shp_check.py",
+  "build_record.py",
+  "assemble_record.py"
+ ],
+ "open_questions": [
+  "FEMA terms and definitions: www.fema.gov returned 403 (Akamai) and hazards.fema.gov's portal failed the TLS handshake; FEMA's own wording for special flood hazard area, zone X and the insurance requirement is unverified. The statute text is used instead and is labelled as statute.",
+  "NFHL state download: the state zip name, date and size (for Montana) were not reached; the directory failed the TLS handshake. Size for the 'state download' option is unverified.",
+  "NFHL coverage: the Benchland point returned no polygon, so the mapped share of Montana is unmeasured; an empty result must not read as no hazard.",
+  "USGS terms: usgs.gov returned 403; the NWPS gauge attribution names USGS but the USGS policy text is unverified.",
+  "NCEI terms: the NCEI metadata page returned 503 twice and the URL tried first was wrong (404); NCEI use terms are unverified.",
+  "IEM LSR units for codes 5, 6, 7, I and J: not documented in this session; magnitudes not shown until confirmed.",
+  "NWPS crest flags O, P and R: the API schema defines no meanings; the NWS legend was not read.",
+  "Zone events with few NEW rows: why the IEM CSV carries so few NEW rows for zone products is not established; B2's begin rule covers it, but the IEM owner should confirm.",
+  "Event numbers reused in one zone (already an open item in B2 D30) also apply to the new zone products.",
+  "The shapefile path was checked for 2025 only; 2020-2024 polygon counts for FA.Y, FL.W and SQ.W are not reproduced here.",
+  "County boundary file for the county path (FA.A, FF.A county-only events, NCEI county-coded points) is not downloaded here; its licence is unverified.",
+  "River gauge distance threshold (25 miles proposed) and how many gauges a town page should list: owner decision.",
+  "The 5-mile point rule for county-coded NCEI rows: NCEI's point may be a town centre rather than the flooded area; the sentence wording needs review.",
+  "Owner and counsel ruling on any FEMA flood zone display (lender rule and insurance wording), before any join.",
+  "Units and meanings for NCEI MAGNITUDE on non-wind non-hail types: not used; not verified.",
+  "NCEI and LSR damage fields (property loss estimates) were not evaluated for any use; if ever shown, they need the owner's wording rule (type word or quoted only)."
+ ],
+ "method_notes": [
+  "Live requests only for the sources in urls_checked; B2 code and cache were read, not run.",
+  "Scripts were run with the venv python in isolated mode (-I) and read downloads only; nothing was executed from downloads/.",
+  "Counts: five-year window = event begin in [2021-10-19, 2026-10-19); calendar counts use the VTEC year; NCEI and LSR counts use the calendar year of the event.",
+  "Retries: transient TLS and gateway failures were retried a few times; 403 denials were not retried (proxy README).",
+  "No em dashes; no product or model names in text."
+ ]
+}

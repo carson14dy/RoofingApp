@@ -1,0 +1,1136 @@
+{
+ "slug": "river-flood-gauges",
+ "title": "River flood gauge history for Montana locations: feasibility, terms and join rule",
+ "record_date_utc": "2026-10-19",
+ "question": "Can gauge flood history (NWS flood categories, observed history, USGS daily and instantaneous values, IEM flood warnings) support a per-location river flood record for Montana in the first version, and on what join rule and legal basis?",
+ "bottom_line": "Feasible as a narrow first-version layer, not as a daily flood-day history. NWPS lists 277 Montana gauges; 102 define an NWS flood stage and 57 define all four categories. Billings (BILM8, USGS 06214500) has flood stage 13.5 ft and sits 2.0 miles from the town centre. The USGS annual peak stage record there runs 1963 to 2024; water year 2022 is the only year in 2021 to 2025 at or above flood stage (peak 16.37 ft on 2022-06-15 09:30 MDT). Neither USGS service carries a daily gage height series for this gauge, so 'days above flood stage per water year' has to come from 15-minute values. The requested USGS endpoint (waterservices.usgs.gov) is being shut down on 2027-02-22 and degraded from 2026-11-16; api.waterdata.usgs.gov answered every anonymous request tested. Only 17.3 percent of Montana land lies within 10 miles of a flood-stage gauge; 12 of the 14 towns in the repository's towns.json do.",
+ "recommendation": "IN for the first version, narrowed: a 'river flood record at the gauge' line built only from (1) NWS flood categories and (2) USGS annual peak stage per water year, for the nearest flood-stage gauge within 10 miles, from api.waterdata.usgs.gov and NWPS (US federal works, public domain). OUT for v1: daily flood-day counts and 15-minute stage histories (no daily stage series; 2.75 MB raw JSON per gauge per water year). Per-address lines wait behind the same counsel gate as the other per-address layers (research README section 8.3, OW-H7); a per-town gauge table could ship first. Official flood warnings (IEM FL.W) are a separate lane: the June 2022 record is usable (14 products; every NEW product carries UGC codes and a LAT...LON polygon), but the IEM terms conflict, so take the NWS text or resolve IEM's terms first.",
+ "join_rule": {
+  "pool": "NWPS gauges (api.water.noaa.gov/nwps/v1/gauges) that define an NWS flood stage (minor category), any state, after the elevation-scale exclusion below; 271 gauges in the Montana wider box, 102 of them in Montana.",
+  "exclude": [
+   "gauges with no flood stage defined (not_defined or -9999); this drops reservoir gauges that define only an action level",
+   "gauges whose NWS categories are elevations: any category of 1,000 ft or more (32 gauges in the wider box; 13 of them define a minor stage, all in Idaho, South Dakota or Wyoming, for example Lake Pend Oreille at Hope at 2,063.5 ft). These 13 are removed; the nearest of them to a Montana grid point is 13.7 miles (Lake Pend Oreille at Hope, HOPI1; grid 0.05 degree), the next 25.0 miles; no Montana gauge has this problem",
+   "gauges with no USGS number stay in the pool for the NWS stage but have no annual peak series (3 Montana gauges: ULLM8, KELM8, COTM8)"
+  ],
+  "distance": "great-circle distance from the address point to the gauge point (NWPS latitude and longitude), nearest wins, cut-off 10 miles (16.1 km); beyond 10 miles no gauge line is shown",
+  "display": "gauge name, LID, USGS number, miles to one decimal, flood stage in ft, water-year peaks at or above flood stage",
+  "words": "River flood record at the {name} gauge, {miles} miles away; it does not say water reached this address.",
+  "no_gauge_words": "No gauge with an NWS flood stage is within 10 miles of this address. That is not a statement that the river did not flood here.",
+  "kind_label": "River gauge (a new kind word; separate from Official alert, Forecast and Report)",
+  "time": "store UTC; show water years (October 1 to September 30); show the gauge's local zone (MST7MDT) where a time of day is shown",
+  "not_said": "no damage, no roof, no insurance, no 'water reached'"
+ },
+ "nwps": {
+  "api_root_check": {
+   "url": "https://api.water.noaa.gov/nwps/v1/",
+   "http_status": 503,
+   "content": "JSON body 'Endpoint not found'; the root is not an endpoint"
+  },
+  "swagger": {
+   "url": "https://api.water.noaa.gov/nwps/v1/docs/swagger.json",
+   "http_status": 200,
+   "bytes": 44091,
+   "content": "Swagger 2.0, title 'National Water Prediction Service API', version 1.0.0; endpoints: gauges (bbox, srid, catfim), gauges/{id}, gauges/{id}/stageflow, stageflow/{product} (observed or forecast), ratings, riverflow, products/stageflow, reaches; no licence or terms field in info"
+  },
+  "montana_gauge_count": {
+   "state_field_MT": 277,
+   "tight_box": 263,
+   "wide_box_note": "wide box adds 14 Montana gauges on the Canadian border (lat 49.01 to 49.45), all fetched",
+   "all_four_categories": 57,
+   "flood_stage_minor_defined": 102,
+   "partial_with_minor": 45,
+   "partial_without_minor": 19,
+   "no_category_values": 156,
+   "usgs_number_present": 211,
+   "out_of_service_or_not_in_service": 18,
+   "observed_status_counts": {
+    "not_defined": 119,
+    "no_flooding": 106,
+    "obs_not_current": 34,
+    "out_of_service": 18
+   }
+  },
+  "billings_BILM8": {
+   "name": "Yellowstone River at Billings",
+   "lid": "BILM8",
+   "usgs": "06214500",
+   "lat": 45.8001194,
+   "lon": -108.4680306,
+   "county": "Yellowstone",
+   "wfo": "BYZ",
+   "timezone": "MST7MDT",
+   "flood_stage_ft": {
+    "action": 12.5,
+    "minor": 13.5,
+    "moderate": 14.5,
+    "major": 15
+   },
+   "flood_flow_cfs": "not defined (-9999)",
+   "stage_units": "ft",
+   "historic_crests_count": 64,
+   "historic_crests_top": [
+    [
+     "2022-06-15",
+     16.37,
+     83600,
+     "R"
+    ],
+    [
+     "1997-06-12",
+     15,
+     82000,
+     "O"
+    ],
+    [
+     "1974-06-19",
+     14.6,
+     69500,
+     "O"
+    ],
+    [
+     "2011-07-02",
+     14.37,
+     70600,
+     "O"
+    ],
+    [
+     "1996-06-12",
+     13.73,
+     61900,
+     "O"
+    ],
+    [
+     "1975-07-07",
+     13.48,
+     67600,
+     "O"
+    ],
+    [
+     "2018-05-28",
+     13.47,
+     63200,
+     "O"
+    ],
+    [
+     "1982-06-30",
+     13.25,
+     56600,
+     "O"
+    ]
+   ],
+   "preliminary_code_meaning": "not defined in the swagger spec (codes seen: R, O)",
+   "dataAttribution": [
+    {
+     "abbrev": "US Geological Survey",
+     "text": "USGS--Water Resources of the United States",
+     "title": "US Geological Survey",
+     "url": "https://waterdata.usgs.gov/nwis/rt"
+    },
+    {
+     "abbrev": "USGS",
+     "text": "06214500",
+     "title": "Observations courtesy of U.S. Geological Survey",
+     "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=06214500"
+    }
+   ],
+   "observed_stage_now": {
+    "ft": 2.94,
+    "validTime": "2026-10-19T02:00:00Z",
+    "category": "no_flooding"
+   },
+   "observed_series": {
+    "url": "https://api.water.noaa.gov/nwps/v1/gauges/BILM8/stageflow/observed",
+    "http_status": 200,
+    "bytes": 416131,
+    "points": 2779,
+    "from": "2026-09-19T02:30:00Z",
+    "to": "2026-10-19T02:00:00Z",
+    "step_minutes": "15 for 2759 of 2778 steps; the rest are 30 to 75 minutes",
+    "span_days": 29.98,
+    "date_parameter_probe": "start= and end= for 2022 returned identical bytes and sha256 (9fc97fe09707...), so the window is fixed at about 30 days"
+   }
+  },
+  "benchland_judith": {
+   "reference_point": "Benchland centre 47.075 N, 110.015 W (from the B2 brief; not confirmed against a gazetteer; the Census 2024 place file has no row named Benchland)",
+   "nearest_any_gauge": {
+    "lid": "JRUM8",
+    "name": "Judith River near abv Carr Ck nr Utica",
+    "usgs": "06110020",
+    "miles": 13.6,
+    "flood_stage": "not defined (all four categories -9999)",
+    "observed_status": "not_defined"
+   },
+   "nearest_flood_stage_gauge": {
+    "lid": "BTCM8",
+    "name": "Belt Creek near Monarch",
+    "usgs": "06090500",
+    "miles": 44.1,
+    "flood_stage_ft": 6.5
+   },
+   "result": "no flood-stage gauge within 10 miles of the Benchland centre"
+  },
+  "historic_crest_check": "NWPS historic crest list for BILM8 matches the USGS annual peak stage list (16.37 ft 2022; 15.0 ft 1997; 14.6 ft 1974; 14.37 ft 2011; 13.73 ft 1996)",
+  "guide_quotes": [
+   "This service does not contain historical data other than crest and low water history.",
+   "The NWPS API makes available the data used by the NWPS application, which includes official NWS streamflow forecasts, stream observations, National Water Model streamflow output, crest history, flood impacts, low water history, flood category levels, and location metadata."
+  ]
+ },
+ "usgs": {
+  "legacy_daily_values": {
+   "url": "https://waterservices.usgs.gov/nwis/dv/?format=json&sites=06214500&parameterCd=00065,00060&startDT=2020-10-01&endDT=2025-09-30&siteStatus=all",
+   "http_status": 200,
+   "bytes": 138326,
+   "series_returned": [
+    "00060 Streamflow, ft3/s (1,826 daily values, 2020-10-01 to 2025-09-30, no gaps)"
+   ],
+   "gage_height_00065": "no series returned; a 00065-only request returned 0 series (1,150 bytes)",
+   "units": {
+    "00060": "ft3/s",
+    "00065": "ft (instantaneous only)"
+   },
+   "missing_codes": "noDataValue -999999.0 (no sentinel values found); missing days are absent rows",
+   "qualifiers_seen": {
+    "A": 1143,
+    "A,e": 472,
+    "P": 211
+   },
+   "notes": "Judith gauge 06110020 returns the same shape: 1,826 daily discharge values, 137,987 bytes, no 00065"
+  },
+  "instantaneous_gage_height_billings": {
+   "url_pattern": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=06214500&parameterCd=00065&startDT=<WY start>&endDT=<WY end>",
+   "per_water_year": [
+    {
+     "wy": 2021,
+     "bytes": 2768776,
+     "values": 35014,
+     "expected": 35040,
+     "missing": 26,
+     "max_ft": 10.31,
+     "qualifiers": "A"
+    },
+    {
+     "wy": 2022,
+     "bytes": 2751621,
+     "values": 34787,
+     "expected": 35040,
+     "missing": 253,
+     "max_ft": 16.37,
+     "qualifiers": "A"
+    },
+    {
+     "wy": 2023,
+     "bytes": 2718175,
+     "values": 34374,
+     "expected": 35040,
+     "missing": 666,
+     "max_ft": 10.32,
+     "qualifiers": "A"
+    },
+    {
+     "wy": 2024,
+     "bytes": 2778836,
+     "values": 35135,
+     "expected": 35136,
+     "missing": 1,
+     "max_ft": 11.5,
+     "qualifiers": "A"
+    },
+    {
+     "wy": 2025,
+     "bytes": 2770905,
+     "values": 35039,
+     "expected": 35040,
+     "missing": 1,
+     "max_ft": 10.56,
+     "qualifiers": "A 14834, P 20205 (provisional)"
+    }
+   ],
+   "calendar_days_with_no_values": [
+    "2022-07-14",
+    "2023-08-02"
+   ],
+   "total_bytes_five_water_years": 13788313
+  },
+  "flood_days_by_water_year_from_15_minute_values": {
+   "method": "local calendar day of each 15-minute value; daily mean and daily peak compared with 13.5 ft (NWS minor); 12.5 action, 14.5 moderate, 15.0 major also tested",
+   "result": {
+    "WY2021": {
+     "days_mean_ge_13_5": 0,
+     "days_peak_ge_13_5": 0,
+     "days_peak_only": 0,
+     "days_peak_ge_12_5": 0,
+     "max_ft": 10.31,
+     "max_day": "2021-06-07"
+    },
+    "WY2022": {
+     "days_mean_ge_13_5": 2,
+     "days_peak_ge_13_5": 2,
+     "days_peak_only": 0,
+     "days_peak_ge_12_5": 3,
+     "max_ft": 16.37,
+     "max_day": "2022-06-15"
+    },
+    "WY2023": {
+     "days_mean_ge_13_5": 0,
+     "days_peak_ge_13_5": 0,
+     "days_peak_only": 0,
+     "days_peak_ge_12_5": 0,
+     "max_ft": 10.32,
+     "max_day": "2022-12-11"
+    },
+    "WY2024": {
+     "days_mean_ge_13_5": 0,
+     "days_peak_ge_13_5": 0,
+     "days_peak_only": 0,
+     "days_peak_ge_12_5": 0,
+     "max_ft": 11.5,
+     "max_day": "2024-06-11"
+    },
+    "WY2025": {
+     "days_mean_ge_13_5": 0,
+     "days_peak_ge_13_5": 0,
+     "days_peak_only": 0,
+     "days_peak_ge_12_5": 0,
+     "max_ft": 10.56,
+     "max_day": "2025-06-03"
+    }
+   },
+   "water_years_with_any_flood_stage_day": [
+    "WY2022"
+   ]
+  },
+  "june_2022_flood_days": {
+   "days_at_or_above_13_5_ft": [
+    "2022-06-14",
+    "2022-06-15"
+   ],
+   "intervals_at_or_above_13_5": 170,
+   "first_at_or_above_utc": "2022-06-14T07:15:00Z",
+   "last_at_or_above_utc": "2022-06-16T03:30:00Z",
+   "approx_hours_above_flood_stage": 42.5,
+   "daily_mean_vs_peak": [
+    {
+     "day": "2022-06-14",
+     "mean_ft": 14.5,
+     "peak_ft": 15.79,
+     "peak_time_mdt": "23:00"
+    },
+    {
+     "day": "2022-06-15",
+     "mean_ft": 15.42,
+     "peak_ft": 16.37,
+     "peak_time_mdt": "09:30"
+    },
+    {
+     "day": "2022-06-13",
+     "mean_ft": 12.51,
+     "peak_ft": 13.36,
+     "peak_time_mdt": "23:45",
+     "note": "above action 12.5, below flood stage"
+    }
+   ],
+   "discharge_daily_mean_vs_peak": {
+    "daily_mean_2022_06_15_cfs": 74600,
+    "instantaneous_peak_cfs": 83600,
+    "peak_time_mdt": "2022-06-15 09:30",
+    "difference_pct": 10.8
+   },
+   "mismatch_risk": "In WY2021 to WY2025 the daily-mean and daily-peak rules flag the same days (0 peak-only days). On 2022-06-14 the peak was 1.29 ft above the daily mean and on 2022-06-15 0.95 ft; discharge daily mean was about 11 percent below the instantaneous peak. A daily-mean rule would understate a short crest; a daily-peak rule would overstate a few-minute spike. Use the annual peak for the record and state the peak's time."
+  },
+  "annual_peak_stage_billings": {
+   "url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/peaks/items?monitoring_location_id=USGS-06214500&limit=500&f=json",
+   "http_status": 200,
+   "bytes": 119757,
+   "water_years_00065": [
+    1963,
+    2024
+   ],
+   "rows_00065": 64,
+   "at_or_above_flood_stage_13_5": [
+    [
+     1974,
+     14.6
+    ],
+    [
+     1996,
+     13.73
+    ],
+    [
+     1997,
+     15.0
+    ],
+    [
+     2011,
+     14.37
+    ],
+    [
+     2022,
+     16.37
+    ]
+   ],
+   "at_or_above_moderate_14_5": [
+    [
+     1974,
+     14.6
+    ],
+    [
+     1997,
+     15.0
+    ],
+    [
+     2022,
+     16.37
+    ]
+   ],
+   "duplicate_years": "WY1987 and WY2023 each have two gage-height rows with qualifiers (BACKWATER, GHNOTASSCPKQ, NOTMAXGH)",
+   "wy2025": "not in the annual peak series (last WY2024)"
+  },
+  "new_api": {
+   "base": "https://api.waterdata.usgs.gov/ogcapi/v1/",
+   "anonymous_requests_tested": 109,
+   "status": "200 for all 109 (no 429 seen)",
+   "api_key": "documented as optional; the docs say API keys give higher rate limits (the limits themselves not read)",
+   "daily_00060_June_2022": {
+    "url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items?monitoring_location_id=USGS-06214500&parameter_code=00060&time=2022-06-12T00:00:00Z/2022-06-17T00:00:00Z&limit=100&f=json",
+    "http_status": 200,
+    "bytes": 5549,
+    "matches_legacy": true
+   },
+   "continuous_00065_June_13_16_2022": {
+    "url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/continuous/items?monitoring_location_id=USGS-06214500&parameter_code=00065&time=2022-06-13T00:00:00Z/2022-06-16T00:00:00Z&limit=1000&f=json",
+    "http_status": 200,
+    "bytes": 199490,
+    "features": 283,
+    "peak": "16.37 ft at 2022-06-15T15:30:00Z, Approved"
+   },
+   "daily_00065_WY2021_2025": {
+    "url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items?monitoring_location_id=USGS-06214500&parameter_code=00065&time=2020-10-01T00:00:00Z/2025-09-30T23:59:59Z&limit=2000&f=json",
+    "http_status": 200,
+    "bytes": 1639,
+    "features": 0,
+    "result": "no daily gage height for the Billings gauge in the new API either"
+   },
+   "timeseries_metadata_00065": {
+    "url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?monitoring_location_id=USGS-06214500&parameter_code=00065&f=json",
+    "http_status": 200,
+    "bytes": 10340,
+    "series": [
+     {
+      "statistic": "instantaneous (00011)",
+      "begin": "2007-10-01T07:00Z",
+      "end": "2026-10-18T09:00Z"
+     },
+     {
+      "statistic": "water-year peak (no statistic id)",
+      "begin": "1963-06-16T07:00Z",
+      "end": "2024-06-12T06:00Z"
+     }
+    ]
+   }
+  },
+  "montana_gage_height_inventory": {
+   "dv_00065_sites": 9,
+   "iv_00065_sites": 268,
+   "dv_00060_sites": 898,
+   "flood_stage_gauges_with_usgs_number": 99,
+   "of_those_with_daily_00065": 0,
+   "of_those_with_instantaneous_00065": 91,
+   "of_those_with_annual_peak_00065": 98,
+   "annual_peak_earliest_wy": 1894,
+   "annual_peak_latest_wy": 2025,
+   "annual_peak_median_years": 72
+  },
+  "decommission": {
+   "landing_url": "https://waterservices.usgs.gov/",
+   "quote": "WaterServices will be decommissioned February 22nd, 2027. WaterServices will be permanently shut down on February 22nd, 2027. Requests will be intentionally slowed down and there will be intentional outages beginning in January 2027. Users must migrate to https://api.waterdata.usgs.gov",
+   "blog_url": "https://waterdata.usgs.gov/blog/wdfn-waterservices-degradation/",
+   "blog_dates": "2026-11-16 adds a 2 second delay to every request; 2027-01-11 10 seconds; 2027-01-25 30 seconds; 2027-01-27 redirect about 24 hours; 2027-02-01 60 seconds; 2027-02-15 redirect about 48 hours; 2027-02-22 redirect and shutdown",
+   "blog_quote": "Users will need to migrate to the new Water Data APIs before November 16th, 2026, to avoid any impact."
+  }
+ },
+ "iem_fl_w_june_2022": {
+  "request": "https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py?accept=csv&sts=2022-06-01T00:00Z&ets=2022-07-15T00:00Z&location_group=states&states=MT&phenomena=FL&significance=W&timeopt=1&limitps=0 (and limitps=1)",
+  "http_status": 200,
+  "bytes_all": 392218,
+  "bytes_polygon_only": 7797,
+  "rows_all_phenomena_returned": 2055,
+  "note_phenomena_filter": "with limitps=0 the CSV still held SV, HW, FA and other phenomena; the FL.W subset is 37 rows; with limitps=1 the file held only FL.W (37 rows)",
+  "fl_w_rows": 37,
+  "gtype_P_rows": 17,
+  "gtype_C_rows": 20,
+  "events": 17,
+  "events_by_hsa": {
+   "BYZ": 9,
+   "MSO": 6,
+   "TFX": 2
+  },
+  "products_text": 14,
+  "products_by_hsa": {
+   "BYZ": 7,
+   "MSO": 6,
+   "TFX": 1
+  },
+  "csv_ugc_behaviour": "NEW (gtype P) rows have a blank ugc column; the county codes (gtype C) come with later CAN or EXT statuses of the same products; the text products carry UGC lines in the NEW product",
+  "csv_polygon_time_issue": "4 of 17 P rows have utc_polygon_end earlier than utc_polygon_begin; do not use these columns as spans",
+  "csv_issue_vs_vtec": "event 7 (BILM8): CSV utc_issue 2022-06-14 05:41 equals the VTEC begin; the product itself was issued 2022-06-13 16:45 UTC (10:45 AM MDT)",
+  "products": [
+   {
+    "product_id": "202206120304-KMSO-WGUS45-FLWMSO",
+    "hsa": "MSO",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0003",
+      "begin_utc": "220612T1200Z",
+      "end_utc": "000000T0000Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "ABOM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC063"
+    ],
+    "polygon_points": 9,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 2082,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206120311-KMSO-WGUS45-FLWMSO",
+    "hsa": "MSO",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0004",
+      "begin_utc": "220612T0600Z",
+      "end_utc": "000000T0000Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "BITM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC063"
+    ],
+    "polygon_points": 8,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 1643,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206120336-KMSO-WGUS45-FLWMSO",
+    "hsa": "MSO",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0005",
+      "begin_utc": "220612T0600Z",
+      "end_utc": "000000T0000Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "VICM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC081"
+    ],
+    "polygon_points": 8,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 2055,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206120845-KBYZ-WGUS45-FLWBYZ",
+    "hsa": "BYZ",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0003",
+      "begin_utc": "220612T0845Z",
+      "end_utc": "220614T1800Z"
+     },
+     {
+      "action": "NEW",
+      "etn": "0002",
+      "begin_utc": "220612T0845Z",
+      "end_utc": "220614T1200Z"
+     },
+     {
+      "action": "NEW",
+      "etn": "0001",
+      "begin_utc": "220612T0845Z",
+      "end_utc": "220614T1200Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "EDGM8",
+     "LIVM8",
+     "BFYM8"
+    ],
+    "hvtec_cause": [
+     "RS",
+     "RS",
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC009",
+     "MTC067",
+     "MTC097"
+    ],
+    "polygon_points": 6,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 5399,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206121558-KTFX-WGUS45-FLWTFX",
+    "hsa": "TFX",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0001",
+      "begin_utc": "220613T0000Z",
+      "end_utc": "220616T2200Z"
+     },
+     {
+      "action": "NEW",
+      "etn": "0002",
+      "begin_utc": "220613T0900Z",
+      "end_utc": "220617T1700Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "GLGM8",
+     "LOGM8"
+    ],
+    "hvtec_cause": [
+     "ER",
+     "ER"
+    ],
+    "ugc_codes": [
+     "MTC031"
+    ],
+    "polygon_points": 5,
+    "flood_stage_words_in_text": [
+     "minor",
+     "moderate"
+    ],
+    "text_bytes": 2646,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206121722-KBYZ-WGUS45-FLWBYZ",
+    "hsa": "BYZ",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0004",
+      "begin_utc": "220613T1200Z",
+      "end_utc": "220614T1200Z"
+     },
+     {
+      "action": "EXT",
+      "etn": "0002",
+      "begin_utc": "000000T0000Z",
+      "end_utc": "220615T0900Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "CORM8",
+     "LIVM8"
+    ],
+    "hvtec_cause": [
+     "RS",
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC067",
+     "MTC097"
+    ],
+    "polygon_points": 6,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 3770,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206121743-KBYZ-WGUS45-FLWBYZ",
+    "hsa": "BYZ",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0005",
+      "begin_utc": "220612T1743Z",
+      "end_utc": "220614T2100Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "SRAM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC095"
+    ],
+    "polygon_points": 6,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 2234,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206122208-KMSO-WGUS45-FLWMSO",
+    "hsa": "MSO",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0006",
+      "begin_utc": "220613T1500Z",
+      "end_utc": "000000T0000Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "CFMM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC029"
+    ],
+    "polygon_points": 20,
+    "flood_stage_words_in_text": [],
+    "text_bytes": 2527,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206130945-KBYZ-WGUS45-FLWBYZ",
+    "hsa": "BYZ",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0006",
+      "begin_utc": "220613T0945Z",
+      "end_utc": "220615T0003Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "BTMM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC097"
+    ],
+    "polygon_points": 6,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 2683,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206131645-KBYZ-WGUS45-FLWBYZ",
+    "hsa": "BYZ",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0007",
+      "begin_utc": "220614T0541Z",
+      "end_utc": "220616T0501Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "BILM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC095",
+     "MTC111"
+    ],
+    "polygon_points": 6,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 2732,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206141604-KMSO-WGUS45-FLWMSO",
+    "hsa": "MSO",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0007",
+      "begin_utc": "220614T1604Z",
+      "end_utc": "220616T0951Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "TRYM8"
+    ],
+    "hvtec_cause": [
+     "ER"
+    ],
+    "ugc_codes": [
+     "MTC053"
+    ],
+    "polygon_points": 15,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 1924,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206150715-KBYZ-WGUS45-FLWBYZ",
+    "hsa": "BYZ",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0008",
+      "begin_utc": "220615T0715Z",
+      "end_utc": "220617T0000Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "FRYM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC087",
+     "MTC103"
+    ],
+    "polygon_points": 6,
+    "flood_stage_words_in_text": [],
+    "text_bytes": 2752,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206151333-KMSO-WGUS45-FLWMSO",
+    "hsa": "MSO",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0008",
+      "begin_utc": "220615T1931Z",
+      "end_utc": "000000T0000Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "WHRM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC029"
+    ],
+    "polygon_points": 16,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 1803,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   },
+   {
+    "product_id": "202206151814-KBYZ-WGUS45-FLWBYZ",
+    "hsa": "BYZ",
+    "vtec": [
+     {
+      "action": "NEW",
+      "etn": "0009",
+      "begin_utc": "220616T1800Z",
+      "end_utc": "220618T1200Z"
+     }
+    ],
+    "hvtec_nwsli": [
+     "MILM8"
+    ],
+    "hvtec_cause": [
+     "RS"
+    ],
+    "ugc_codes": [
+     "MTC017"
+    ],
+    "polygon_points": 6,
+    "flood_stage_words_in_text": [
+     "minor"
+    ],
+    "text_bytes": 2677,
+    "content_check": "WGUS45 header, VTEC NEW, UGC and LAT...LON present"
+   }
+  ],
+  "polygon_test_repo_towns": {
+   "inside_new_polygon": {
+    "Billings": "202206131645-KBYZ-WGUS45-FLWBYZ",
+    "Miles City": "202206151814-KBYZ-WGUS45-FLWBYZ",
+    "Missoula": "202206120304-KMSO-WGUS45-FLWMSO"
+   },
+   "not_inside_any_june_2022_polygon": [
+    "Bozeman",
+    "Butte",
+    "Glasgow",
+    "Glendive",
+    "Great Falls",
+    "Havre",
+    "Helena",
+    "Kalispell",
+    "Lewistown",
+    "Livingston",
+    "West Yellowstone"
+   ]
+  },
+  "billings_official_alert_vs_gauge": {
+   "product": "202206131645-KBYZ-WGUS45-FLWBYZ",
+   "vtec": "/O.NEW.KBYZ.FL.W.0007.220614T0541Z-220616T0501Z/",
+   "hvtec": "/BILM8.1.RS.220614T0541Z.220614T1800Z.220615T0500Z.NO/",
+   "ugc": [
+    "MTC095",
+    "MTC111"
+   ],
+   "text_names": "Yellowstone River at Billings affecting Yellowstone and Stillwater Counties",
+   "flood_stage_text": "Flood stage is 13.5 feet.",
+   "warning_before_first_exceedance": "1 h 34 min",
+   "warning_after_last_exceedance": "1 h 31 min"
+  },
+  "text_product_fetch": {
+   "url": "https://mesonet.agron.iastate.edu/api/1/nwstext/202206131645-KBYZ-WGUS45-FLWBYZ",
+   "http_status": 200,
+   "bytes": 2732,
+   "content": "plain-text NWS bulletin WGUS45 KBYZ 131645 FLWBYZ, Flood Warning, Billings MT"
+  },
+  "other_products_fetch": "14 distinct product IDs fetched with the same API; all 200; sizes 1,643 to 5,399 bytes",
+  "disclaimer_quote": "The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose.",
+  "footer_quote": "Legal Copyright © 2001-2026 Iowa State University of Science and Technology All rights reserved.",
+  "permalink_probe": "https://mesonet.agron.iastate.edu/wx/afos/p.php?pid=... returned HTTP 422 (needs pil=); not used"
+ },
+ "coverage": {
+  "method": "MT outline ring stitched from the basemap's Montana state and Canada border segments (212 points, closed); 0.05 degree grid inside the ring; distance to the nearest gauge in the 271-gauge pool (flood stage defined, elevation-scale excluded, any state)",
+  "grid_points": 18022,
+  "join_pool_share_within_miles": {
+   "1": 0.2,
+   "2": 0.8,
+   "5": 4.8,
+   "10": 17.3,
+   "25": 69.6,
+   "50": 99.6
+  },
+  "any_gauge_share_within_miles": {
+   "1": 0.6,
+   "2": 2.1,
+   "5": 11.4,
+   "10": 35.4,
+   "25": 88.3,
+   "50": 100.0
+  },
+  "join_pool_median_miles": 19.1,
+  "join_pool_p90_miles": 33.9,
+  "join_pool_max_miles": 56.0
+ },
+ "towns_repo_list": [
+  {
+   "town": "Billings",
+   "nearest_flood_stage_gauge": "BILM8 Yellowstone River at Billings",
+   "usgs": "06214500",
+   "miles": 2.0,
+   "flood_stage_ft": 13.5,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "BILM8 Yellowstone River at Billings 2.0 mi (flood stage: defined)"
+  },
+  {
+   "town": "Bozeman",
+   "nearest_flood_stage_gauge": "EGRM8 East Gallatin River below Bridger Creek near Bozeman",
+   "usgs": "06048700",
+   "miles": 3.6,
+   "flood_stage_ft": 4.5,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "EGBM8 East Gallatin River near abv Water Recl Fac nr Bozeman 3.5 mi (flood stage: not defined)"
+  },
+  {
+   "town": "Butte",
+   "nearest_flood_stage_gauge": "BKTM8 Blacktail Creek at Butte",
+   "usgs": "12323240",
+   "miles": 0.6,
+   "flood_stage_ft": 4.3,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "BKTM8 Blacktail Creek at Butte 0.6 mi (flood stage: defined)"
+  },
+  {
+   "town": "Glasgow",
+   "nearest_flood_stage_gauge": "GLWM8 Milk River near Glasgow",
+   "usgs": "06174200",
+   "miles": 3.3,
+   "flood_stage_ft": 25,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "GLWM8 Milk River near Glasgow 3.3 mi (flood stage: defined)"
+  },
+  {
+   "town": "Glendive",
+   "nearest_flood_stage_gauge": "GLNM8 Yellowstone River at Glendive",
+   "usgs": "06327500",
+   "miles": 0.3,
+   "flood_stage_ft": 53.5,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "GLNM8 Yellowstone River at Glendive 0.3 mi (flood stage: defined)"
+  },
+  {
+   "town": "Great Falls",
+   "nearest_flood_stage_gauge": "ULMM8 Missouri River near Ulm",
+   "usgs": "06078200",
+   "miles": 6.4,
+   "flood_stage_ft": 13.5,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "RDZM8 Missouri River at Great Falls Central Ave Bridge 0.3 mi (flood stage: not defined)"
+  },
+  {
+   "town": "Havre",
+   "nearest_flood_stage_gauge": "HVRM8 Milk River at Havre",
+   "usgs": "06140500",
+   "miles": 1.1,
+   "flood_stage_ft": 10,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "HVRM8 Milk River at Havre 1.1 mi (flood stage: defined)"
+  },
+  {
+   "town": "Helena",
+   "nearest_flood_stage_gauge": "TMHM8 Tenmile Creek (MT) near Helena",
+   "usgs": "06063000",
+   "miles": 2.6,
+   "flood_stage_ft": 4.5,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "TMHM8 Tenmile Creek (MT) near Helena 2.6 mi (flood stage: defined)"
+  },
+  {
+   "town": "Kalispell",
+   "nearest_flood_stage_gauge": "SRLM8 Stillwater River at Lawrence Park at Kalispell",
+   "usgs": "12365700",
+   "miles": 1.8,
+   "flood_stage_ft": 7.5,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "SRLM8 Stillwater River at Lawrence Park at Kalispell 1.8 mi (flood stage: defined)"
+  },
+  {
+   "town": "Lewistown",
+   "nearest_flood_stage_gauge": "HLWM8 Musselshell River near Harlowton",
+   "usgs": "06120500",
+   "miles": 48.0,
+   "flood_stage_ft": 7,
+   "within_10_miles": false,
+   "nearest_gauge_any_type": "LTPM8 Big Spring Creek (MT) near Lewistown at R&B Trading Post 2.2 mi (flood stage: not defined)"
+  },
+  {
+   "town": "Livingston",
+   "nearest_flood_stage_gauge": "LIVM8 Yellowstone River near Livingston",
+   "usgs": "06192500",
+   "miles": 4.5,
+   "flood_stage_ft": 10,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "LIVM8 Yellowstone River near Livingston 4.5 mi (flood stage: defined)"
+  },
+  {
+   "town": "Miles City",
+   "nearest_flood_stage_gauge": "MILM8 Yellowstone River at Miles City",
+   "usgs": "06309000",
+   "miles": 1.3,
+   "flood_stage_ft": 14,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "MILM8 Yellowstone River at Miles City 1.3 mi (flood stage: defined)"
+  },
+  {
+   "town": "Missoula",
+   "nearest_flood_stage_gauge": "ABOM8 Clark Fork River above Missoula",
+   "usgs": "12340500",
+   "miles": 3.0,
+   "flood_stage_ft": 7.5,
+   "within_10_miles": true,
+   "nearest_gauge_any_type": "ABOM8 Clark Fork River above Missoula 3.0 mi (flood stage: defined)"
+  },
+  {
+   "town": "West Yellowstone",
+   "nearest_flood_stage_gauge": "CORM8 Yellowstone River at Corwin Springs",
+   "usgs": "06191500",
+   "miles": 34.6,
+   "flood_stage_ft": 11,
+   "within_10_miles": false,
+   "nearest_gauge_any_type": "MDSM8 Madison River near West Yellowstone 1.8 mi (flood stage: not defined)"
+  }
+ ],
+ "legal": {
+  "basis": "Decision 7 ('Follow the laws') as quoted in the B2 and B3 briefs; prefer public-domain government data; quote every terms sentence with its URL",
+  "federal_works": "17 U.S.C. section 105(a): 'Copyright protection under this title is not available for any work of the United States Government, but the United States Government is not precluded from receiving and holding copyrights transferred to it by assignment, bequest, or otherwise.' (https://www.copyright.gov/title17/92chap1.html)",
+  "nws": "NWS Web pages: public domain on three conditions; NWS name and visual identifier are protected (https://www.weather.gov/disclaimer)",
+  "usgs": "USGS-authored data are public domain; credit requested (https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits)",
+  "iem": "Conflict: disclaimer says public domain; footer says All rights reserved (https://mesonet.agron.iastate.edu/disclaimer.php and home page footer)",
+  "noaa": "NOAA-level pages returned HTTP 403 (noaa.gov/disclaimer, open-data-dissemination, legal/copyright): unverified",
+  "nwps": "No NWPS-specific reuse terms found in the API guide, Swagger info block or home page"
+ },
+ "measurements": {
+  "download_bytes_total": 37245565,
+  "download_requests_logged": 811,
+  "downloads_folder_deleted_after_record": true,
+  "v1_peak_table_bytes_raw": 207359,
+  "v1_peak_table_bytes_gzip": 54253,
+  "v1_peak_rows": 7116,
+  "v1_peak_gauges": 98,
+  "raw_15min_stage_bytes_per_gauge_water_year": "about 2.75 MB (JSON, WY2022 measured 2,751,621 bytes)",
+  "raw_15min_stage_estimate_99_gauges_5_water_years_bytes": 1361250000
+ },
+ "open_questions": [
+  "Owner: confirm the 10-mile cut-off (17.3 percent of Montana land; 12 of 14 repo towns) or choose 25 miles (69.6 percent) or 5 miles (4.8 percent).",
+  "Counsel (OW-H7): per-address river gauge lines are per-address output; confirm they wait behind the same gate as the hail and address layers.",
+  "IEM terms conflict (public domain disclaimer vs All rights reserved footer): pick the NWS text source for official flood warnings or get counsel's reading before any IEM-derived warning data ships.",
+  "USGS API keys and production rate limits: the docs say keys raise the limits; the limits were not read; 109 anonymous requests returned 200.",
+  "NWPS 'preliminary' codes (R, O) are not defined in the spec; crest dates are date-only at 00:00Z.",
+  "The NWPS observed window is about 30 days and date parameters are ignored; history must come from USGS.",
+  "The Benchland centre (47.075 N, 110.015 W) is from the B2 brief and is not confirmed (no Benchland row in the Census 2024 place file); the 10-mile result holds for any centre within a few miles because the nearest flood-stage gauge is 44 miles away.",
+  "Whether NWPS flood stages and USGS gage height share the same gauge datum was not reconciled (NWPS datum block not compared with USGS site datum).",
+  "Provisional data: WY2025 15-minute values at Billings are 20,205 of 35,039 provisional (P); recent years will change.",
+  "Missing data: 2022-07-14 and 2023-08-02 have no Billings stage values; 253 (WY2022) and 666 (WY2023) 15-minute intervals are missing.",
+  "IEM CGI: the phenomena filter was not applied with limitps=0; the alert archive counts for other years were not pulled (only June 2022).",
+  "NOAA-level terms pages returned 403; the NOAA-level public-domain statement is unverified.",
+  "The 14 Montana gauges on the Canadian border and the out-of-state gauges in the wider box were all fetched; the 271-gauge pool is the wider-box pool after the elevation-scale exclusion."
+ ],
+ "data_quality": [
+  "NWPS detail for BILM8 lists usgsId 06214500 (not 06295000, which is Yellowstone River at Forsyth).",
+  "Billings flood stage 13.5 ft is confirmed by three sources: NWPS categories, the NWS text product (Flood stage is 13.5 feet) and the USGS-linked annual peak list.",
+  "The IEM FL.W rows match the text products on event numbers and NWSLI codes (checked for the 14 products).",
+  "NWPS 'historic' list and USGS annual peaks agree to 0.01 ft on the top eight crests."
+ ],
+ "files": {
+  "coverage_v2": "/home/user/wt/research-b35/scratch-river-flood-gauges/coverage_v2.json",
+  "manifest": "/home/user/wt/research-b35/scratch-river-flood-gauges/manifest.tsv",
+  "scripts_folder": "/home/user/wt/research-b35/scratch-river-flood-gauges/",
+  "v1_table_sample": "/home/user/wt/research-b35/scratch-river-flood-gauges/v1_table_sample.json",
+  "coverage": "/home/user/wt/research-b35/scratch-river-flood-gauges/coverage.json",
+  "billings_flood_days": "/home/user/wt/research-b35/scratch-river-flood-gauges/billings_flood_days.json",
+  "flw_products": "/home/user/wt/research-b35/scratch-river-flood-gauges/flw_products_parsed.json",
+  "peak_stage_summary": "/home/user/wt/research-b35/scratch-river-flood-gauges/peak_stage_summary.json"
+ }
+}

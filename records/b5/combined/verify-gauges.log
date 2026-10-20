@@ -1,0 +1,65 @@
+{
+ "checks": [
+  {
+   "check": "gauges block present",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "gauges state is loaded, partial or unavailable",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "radius is 10 miles (D6)",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "manifest lists each g file with its bytes and SHA-256",
+   "detail": "0 mismatches",
+   "pass": true
+  },
+  {
+   "check": "g file count matches the counts",
+   "detail": "104 files",
+   "pass": true
+  },
+  {
+   "check": "g figures are integers (hundredths of a foot)",
+   "detail": "0 problems",
+   "pass": true
+  },
+  {
+   "check": "Billings gauge peak 16.37 ft on 2022-06-15 is in the record",
+   "detail": "",
+   "pass": true
+  },
+  {
+   "check": "Billings nearest gauge with a flood stage is BILM8 within 10 miles",
+   "detail": "{\"lid\": \"BILM8\", \"usgs\": \"06214500\", \"name\": \"Yellowstone River at Billings\", \"state\": \"MT\", \"miles\": 2.0, \"minor_ft\": 13.5, \"peaks\": \"available\"}",
+   "pass": true
+  }
+ ],
+ "counts": {
+  "detail_files": 486,
+  "downloaded_bytes": 0,
+  "elevation_excluded": 23,
+  "failed_details": 0,
+  "g_bytes": 285713,
+  "g_files": 104,
+  "g_rows": 7560,
+  "listed": 486,
+  "mt_listed": 277,
+  "no_flood_stage": 271,
+  "peaks_failed": 0,
+  "pool": 192,
+  "pool_mt": 102,
+  "pool_out_of_state": 90,
+  "pool_usgs_numbers": 174,
+  "requests": 0,
+  "scope": 108,
+  "scope_usgs_numbers": 104
+ },
+ "ok": true
+}

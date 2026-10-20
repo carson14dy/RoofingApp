@@ -1,0 +1,403 @@
+{
+  "lid": "LOCI1",
+  "usgsId": "13337000",
+  "reachId": "23588130",
+  "name": "Lochsa River near Lowell",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "MSO",
+    "name": "Missoula"
+  },
+  "state": {
+    "abbreviation": "ID",
+    "name": "Idaho"
+  },
+  "county": "Idaho",
+  "timeZone": "MST7MDT",
+  "latitude": 46.15083,
+  "longitude": -115.5872222,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": 1.81,
+      "primaryUnit": "ft",
+      "secondary": 0.359,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "not_defined",
+      "validTime": "2026-10-19T06:00:00Z"
+    },
+    "forecast": {
+      "primary": 2.19,
+      "primaryUnit": "ft",
+      "secondary": 0.608,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "not_defined",
+      "validTime": "2026-10-28T06:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": -9999,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1964-06-08T00:00:00Z",
+          "stage": 13.5,
+          "flow": 35100,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-06-16T00:00:00Z",
+          "stage": 13.26,
+          "flow": 32000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1972-06-02T00:00:00Z",
+          "stage": 13.18,
+          "flow": 31800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-06-05T00:00:00Z",
+          "stage": 12.78,
+          "flow": 30000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-05-17T00:00:00Z",
+          "stage": 12.7,
+          "flow": 30500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1995-11-30T00:00:00Z",
+          "stage": 12.14,
+          "flow": 27900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1955-05-24T00:00:00Z",
+          "stage": 12.12,
+          "flow": 28500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-05-03T00:00:00Z",
+          "stage": 12.01,
+          "flow": 27000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-05-20T00:00:00Z",
+          "stage": 11.63,
+          "flow": 25800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1950-06-17T00:00:00Z",
+          "stage": 11.51,
+          "flow": 26200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1954-05-21T00:00:00Z",
+          "stage": 11.08,
+          "flow": 24500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1970-06-06T00:00:00Z",
+          "stage": 11.06,
+          "flow": 23400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-05-13T00:00:00Z",
+          "stage": 11.02,
+          "flow": 22300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-11T00:00:00Z",
+          "stage": 10.9,
+          "flow": 23200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-16T00:00:00Z",
+          "stage": 10.06,
+          "flow": 19500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-05-12T00:00:00Z",
+          "stage": 8.47,
+          "flow": 14200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-12-12T00:00:00Z",
+          "stage": 7.99,
+          "flow": 12800,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-12-12T00:00:00Z",
+          "stage": 7.99,
+          "flow": 12800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-05-12T00:00:00Z",
+          "stage": 8.47,
+          "flow": 14200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-11T00:00:00Z",
+          "stage": 10.9,
+          "flow": 23200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-16T00:00:00Z",
+          "stage": 10.06,
+          "flow": 19500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-05-20T00:00:00Z",
+          "stage": 11.63,
+          "flow": 25800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-05-17T00:00:00Z",
+          "stage": 12.7,
+          "flow": 30500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1995-11-30T00:00:00Z",
+          "stage": 12.14,
+          "flow": 27900,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-06-16T00:00:00Z",
+          "stage": 13.26,
+          "flow": 32000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1974-06-05T00:00:00Z",
+          "stage": 12.78,
+          "flow": 30000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1972-06-02T00:00:00Z",
+          "stage": 13.18,
+          "flow": 31800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-05-13T00:00:00Z",
+          "stage": 11.02,
+          "flow": 22300,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1971-05-03T00:00:00Z",
+          "stage": 12.01,
+          "flow": 27000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1970-06-06T00:00:00Z",
+          "stage": 11.06,
+          "flow": 23400,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1964-06-08T00:00:00Z",
+          "stage": 13.5,
+          "flow": 35100,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1955-05-24T00:00:00Z",
+          "stage": 12.12,
+          "flow": 28500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1954-05-21T00:00:00Z",
+          "stage": 11.08,
+          "flow": 24500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1950-06-17T00:00:00Z",
+          "stage": 11.51,
+          "flow": 26200,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/LOCI1.SSTG.prob.weekint.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/LOCI1.QINE.prob.weekint.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/LOCI1.volume.prob.weekint.png"
+      },
+      "entperiod": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/LOCI1.SSTG.exceed.90day.png",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/LOCI1.QINE.exceed.90day.png",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/LOCI1.volume.exceed.90day.png"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/LOCI1.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/loci1_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/loci1_record.png"
+    },
+    "photos": [
+      {
+        "id": "16457788966282924529",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            46.15083,
+            -115.5872222
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/loci1/16457788966282924529.jpeg",
+          "caption": "View of gauge station."
+        }
+      }
+    ]
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "http://waterdata.usgs.gov/id/nwis/rt"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "13337000",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=13337000"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued routinely year-round.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "7",
+  "ObservedFloodCategory": "not_defined",
+  "ForecastFloodCategory": "not_defined"
+}

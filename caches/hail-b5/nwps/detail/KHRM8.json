@@ -1,0 +1,310 @@
+{
+  "lid": "KHRM8",
+  "usgsId": "",
+  "reachId": "12532566",
+  "name": "Peoples Creek near Dodson",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "GGW",
+    "name": "Glasgow"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Phillips",
+  "timeZone": "MST7MDT",
+  "latitude": 48.3637,
+  "longitude": -108.3578,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": 11.99,
+      "primaryUnit": "ft",
+      "secondary": -999,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "not_defined",
+      "validTime": "2026-10-19T05:15:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": -9999,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2023-04-09T14:45:00Z",
+          "stage": 21.16,
+          "flow": 2546,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-02-24T09:30:00Z",
+          "stage": 20.89,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-06-04T18:00:00Z",
+          "stage": 17.94,
+          "flow": 1115,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-03-12T00:00:00Z",
+          "stage": 13.47,
+          "flow": 1800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2004-03-10T00:00:00Z",
+          "stage": 13.37,
+          "flow": 930,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1994-03-02T00:00:00Z",
+          "stage": 12.93,
+          "flow": 1410,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "2003-03-14T00:00:00Z",
+          "stage": 12.28,
+          "flow": 640,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1997-01-02T00:00:00Z",
+          "stage": 11.69,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1993-07-21T00:00:00Z",
+          "stage": 11.08,
+          "flow": 1700,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1990-07-01T00:00:00Z",
+          "stage": 10.84,
+          "flow": 1000,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "2008-06-14T07:45:00Z",
+          "stage": 10.21,
+          "flow": 834,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1999-01-16T00:00:00Z",
+          "stage": 10,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": true
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-02-24T09:30:00Z",
+          "stage": 20.89,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-06-04T18:00:00Z",
+          "stage": 17.94,
+          "flow": 1115,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-04-09T14:45:00Z",
+          "stage": 21.16,
+          "flow": 2546,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2008-06-14T07:45:00Z",
+          "stage": 10.21,
+          "flow": 834,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "2004-03-10T00:00:00Z",
+          "stage": 13.37,
+          "flow": 930,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "2003-03-14T00:00:00Z",
+          "stage": 12.28,
+          "flow": 640,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1999-01-16T00:00:00Z",
+          "stage": 10,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1997-01-02T00:00:00Z",
+          "stage": 11.69,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1996-03-12T00:00:00Z",
+          "stage": 13.47,
+          "flow": 1800,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1994-03-02T00:00:00Z",
+          "stage": 12.93,
+          "flow": 1410,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1993-07-21T00:00:00Z",
+          "stage": 11.08,
+          "flow": 1700,
+          "preliminary": "O",
+          "olddatum": true
+        },
+        {
+          "occurredTime": "1990-07-01T00:00:00Z",
+          "stage": 10.84,
+          "flow": 1000,
+          "preliminary": "O",
+          "olddatum": true
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/khrm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/khrm8_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice during winter months.",
+      "effective": "0101",
+      "expiration": "1231"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "PEOM8",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "0",
+  "ObservedFloodCategory": "not_defined",
+  "ForecastFloodCategory": "fcst_not_current"
+}

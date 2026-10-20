@@ -1,0 +1,296 @@
+{
+  "lid": "PCCI1",
+  "usgsId": "",
+  "reachId": "24184596",
+  "name": "Pine Creek (West-central Idaho) near Cambridge",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "BOI",
+    "name": "Boise"
+  },
+  "state": {
+    "abbreviation": "ID",
+    "name": "Idaho"
+  },
+  "county": "Washington",
+  "timeZone": "MST7MDT",
+  "latitude": 44.5889,
+  "longitude": -116.7367,
+  "pedts": {
+    "observed": "QRIRZ",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": 0.00887,
+      "primaryUnit": "kcfs",
+      "secondary": -999,
+      "secondaryUnit": "ft",
+      "floodCategory": "not_defined",
+      "validTime": "2026-10-19T02:15:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": -9999,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2023-04-11T00:00:00Z",
+          "stage": 0,
+          "flow": 488,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-04T00:00:00Z",
+          "stage": 0,
+          "flow": 295,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-04-09T00:00:00Z",
+          "stage": 0,
+          "flow": 555,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-04T00:00:00Z",
+          "stage": 0,
+          "flow": 452,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-03-16T00:00:00Z",
+          "stage": 0,
+          "flow": 432,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-03-16T00:00:00Z",
+          "stage": 0,
+          "flow": 280,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-05-13T00:00:00Z",
+          "stage": 0,
+          "flow": 228,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-03-10T00:00:00Z",
+          "stage": 0,
+          "flow": 335,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-02-07T00:00:00Z",
+          "stage": 0,
+          "flow": 274,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-12-21T00:00:00Z",
+          "stage": 0,
+          "flow": 293,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-02-21T00:00:00Z",
+          "stage": 0,
+          "flow": 609,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2023-04-11T00:00:00Z",
+          "stage": 0,
+          "flow": 488,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2022-06-04T00:00:00Z",
+          "stage": 0,
+          "flow": 295,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-04-09T00:00:00Z",
+          "stage": 0,
+          "flow": 555,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-02-21T00:00:00Z",
+          "stage": 0,
+          "flow": 609,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-02-07T00:00:00Z",
+          "stage": 0,
+          "flow": 274,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-12-21T00:00:00Z",
+          "stage": 0,
+          "flow": 293,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-03-10T00:00:00Z",
+          "stage": 0,
+          "flow": 335,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-05-13T00:00:00Z",
+          "stage": 0,
+          "flow": 228,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-03-16T00:00:00Z",
+          "stage": 0,
+          "flow": 280,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-03-16T00:00:00Z",
+          "stage": 0,
+          "flow": 432,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2010-06-04T00:00:00Z",
+          "stage": 0,
+          "flow": 452,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": []
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/pcci1_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/pcci1_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice.",
+      "effective": "1116",
+      "expiration": "0317"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Graphical forecasts are not available during times of high water, forecast crest information can be found in the local WFO web page.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "1",
+  "ObservedFloodCategory": "not_defined",
+  "ForecastFloodCategory": "fcst_not_current"
+}

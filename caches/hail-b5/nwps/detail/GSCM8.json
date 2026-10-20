@@ -1,0 +1,354 @@
+{
+  "lid": "GSCM8",
+  "usgsId": "06166000",
+  "reachId": "12297370",
+  "name": "Beaver Creek (MT) near Saco",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "GGW",
+    "name": "Glasgow"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Phillips",
+  "timeZone": "MST7MDT",
+  "latitude": 48.356944444444,
+  "longitude": -107.58222222222,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFF"
+  },
+  "status": {
+    "observed": {
+      "primary": 0.89,
+      "primaryUnit": "ft",
+      "secondary": 0,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T06:15:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 11,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 9,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1986-09-26T00:00:00Z",
+          "stage": 14.68,
+          "flow": 23500,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-10-07T14:30:00Z",
+          "stage": 13.3,
+          "flow": 9041,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-03-24T00:00:00Z",
+          "stage": 12.93,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-04-06T14:00:00Z",
+          "stage": 12.35,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-08-28T15:00:00Z",
+          "stage": 12.18,
+          "flow": 4642,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-05-27T06:15:00Z",
+          "stage": 11.9,
+          "flow": 3525,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-13T01:00:00Z",
+          "stage": 11.8,
+          "flow": 3311,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-05-15T22:00:00Z",
+          "stage": 11.75,
+          "flow": 2641,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-03-16T00:00:00Z",
+          "stage": 11.42,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2023-04-10T20:15:00Z",
+          "stage": 11.4,
+          "flow": 2616,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-03-25T20:15:00Z",
+          "stage": 11.22,
+          "flow": 2168,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1989-03-29T00:00:00Z",
+          "stage": 11.09,
+          "flow": 1460,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-06-09T08:15:00Z",
+          "stage": 10.98,
+          "flow": 1750,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2004-03-18T00:00:00Z",
+          "stage": 10.94,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2023-04-10T20:15:00Z",
+          "stage": 11.4,
+          "flow": 2616,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-03-25T20:15:00Z",
+          "stage": 11.22,
+          "flow": 2168,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-04-06T14:00:00Z",
+          "stage": 12.35,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-10-07T14:30:00Z",
+          "stage": 13.3,
+          "flow": 9041,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-05-15T22:00:00Z",
+          "stage": 11.75,
+          "flow": 2641,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-08-28T15:00:00Z",
+          "stage": 12.18,
+          "flow": 4642,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-06-09T08:15:00Z",
+          "stage": 10.98,
+          "flow": 1750,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-13T01:00:00Z",
+          "stage": 11.8,
+          "flow": 3311,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-05-27T06:15:00Z",
+          "stage": 11.9,
+          "flow": 3525,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-03-24T00:00:00Z",
+          "stage": 12.93,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2004-03-18T00:00:00Z",
+          "stage": 10.94,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-03-16T00:00:00Z",
+          "stage": 11.42,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1989-03-29T00:00:00Z",
+          "stage": 11.09,
+          "flow": 1460,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1986-09-26T00:00:00Z",
+          "stage": 14.68,
+          "flow": 23500,
+          "preliminary": "R",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 13,
+        "statement": "Lower Harb Road starts to flood at the Beaver Creek Bridge."
+      },
+      {
+        "stage": 11,
+        "statement": "This is the estimated flood stage. Low land flooding begins."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/gscm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/gscm8_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "USGS",
+      "text": "06166000",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=06166000"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice.",
+      "effective": "0101",
+      "expiration": "0401"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "BCHM8",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

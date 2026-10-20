@@ -1,0 +1,74 @@
+{
+ "ok": true,
+ "checks": [
+  {
+   "check": "roads state",
+   "ok": true,
+   "detail": "loaded"
+  },
+  {
+   "check": "manifest lists every r/ file",
+   "ok": true,
+   "detail": "4427 listed, 4427 on disk"
+  },
+  {
+   "check": "manifest hashes match",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "shard format, classes and name indexes",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "shard bounds hold their lines",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "every shard within the byte limit or at the depth cap",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "line count in shards matches the block",
+   "ok": true,
+   "detail": "563102 lines in shards, 563102 in the block"
+  },
+  {
+   "check": "split map names existing shards",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "tiles list every shard's tile",
+   "ok": true,
+   "detail": "4284 tiles in the block, 4284 on disk"
+  },
+  {
+   "check": "largest shard recorded",
+   "ok": true,
+   "detail": "recorded 148991, found 148991"
+  },
+  {
+   "check": "Madrid Drive, Billings is named in a shard (D33)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "simplification: the gate is 2 m before rounding; the largest distance after rounding was 2.48 m when measured (D48)",
+   "ok": true,
+   "detail": "gate 2 m; 2.48 m measured by the supervisor, not recomputed by verify"
+  }
+ ],
+ "counts": {
+  "shards": 4427,
+  "lines_in_shards": 563102,
+  "shard_bytes": 69632279,
+  "largest_shard": 148991,
+  "names": 54294,
+  "simplify_gate_m": 2.0,
+  "post_rounding_max_m_measured": 2.48
+ }
+}

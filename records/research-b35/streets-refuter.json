@@ -1,0 +1,580 @@
+{
+ "slug": "streets",
+ "refuter_for": "streets (research worker, /home/user/wt/research-b35/streets.json)",
+ "as_of": "2026-10-19",
+ "method": "Live downloads into scratch-refute-streets/downloads (one directory per archive); scripts in scratch-refute-streets/scripts; read with /home/user/hail-b1/venv/bin/python -I (one helper edit to my own script used the system python3 and read no downloads); nothing edited outside research-b35; worker files read only.",
+ "five_checks_rerun": [
+  {
+   "check": "counts",
+   "what": "Recount of the three measured TIGER counties from zip members; statewide TIGER and state-file record and class counts (all 56 TIGER counties; all 258,208 state records)."
+  },
+  {
+   "check": "sizes",
+   "what": "HEAD on all 56 TIGER zips (sum 88,860,450 exact); statewide TIGER vehicular JSON bytes measured on all 56 counties before, at 2 m and at 5 m (same format as worker; Yellowstone reproduces exactly); state-file vehicular JSON re-measured statewide."
+  },
+  {
+   "check": "sample content",
+   "what": "N 27th St in TIGER (name, LINEARID, vertices, nearest distance); state-file 27TH records in the Billings window (class split, nearest distance); 27th Street agreement in both directions."
+  },
+  {
+   "check": "terms quotes",
+   "what": "All 17 streets.json terms quotes checked against the live TechDoc PDF, ISO and FGDC XML, _ReadMe.txt and Census pages; phrase scans for public domain, licence and copyright."
+  },
+  {
+   "check": "legal basis",
+   "what": "17 U.S.C. 105 and section 101 text from copyright.gov; Census and MSL policy and data-list pages scanned for reuse terms; partner-supplied content language in the TechDoc."
+  }
+ ],
+ "checks": [
+  {
+   "claim": "Census TIGER/Line 2025 All Roads: 56 Montana county files (odd FIPS 30001-30111), 88,860,450 bytes zipped",
+   "result": "confirmed",
+   "detail": "Listing has 56 Montana rows; HEAD on all 56 returned HTTP 200; Content-Length sums to 88860450."
+  },
+  {
+   "claim": "Yellowstone All Roads: 6,798 records, 169,470 vertices; fields LINEARID C22, FULLNAME C100, RTTYP C1, MTFCC C5; GCS NAD83",
+   "result": "confirmed",
+   "detail": "Recount from the live zip gives 6,798 records and 169,470 vertices; DBF widths match; .prj reads GCS_North_American_1983."
+  },
+  {
+   "claim": "Yellowstone MTFCC shares (S1400 83.11%, S1740 8.78%, ... S1720 0.01%)",
+   "result": "confirmed",
+   "detail": "All 12 shares reproduce to 0.01 point."
+  },
+  {
+   "claim": "FULLNAME blank: Yellowstone 25.6% (vehicular 23.2%); Judith Basin 54.8% (54.6%); Lincoln 39.0% (38.8%)",
+   "result": "confirmed",
+   "detail": "Exact counts reproduce: 1,740 of 6,798; 1,523 vehicular; 1,174 of 2,142; 1,166; 6,026 of 15,442; 5,966."
+  },
+  {
+   "claim": "Judith Basin S1400 local roads unnamed: 911 of 1,721 (52.9%)",
+   "result": "confirmed",
+   "detail": "911 of 1,721 reproduces."
+  },
+  {
+   "claim": "Exact duplicate geometries: 117 (Yellowstone), 39 (Judith Basin), 131 (Lincoln) extra records",
+   "result": "confirmed",
+   "detail": "Counts reproduce with the same 6-decimal key. The copies carry different names; see the dedupe claim below."
+  },
+  {
+   "claim": "N 27th St in TIGER: LINEARID 1101171881201, S1200, 115 vertices; nearest centreline 41.0 m from 45.7836 N 108.5047 W",
+   "result": "confirmed",
+   "detail": "One feature with 115 vertices; nearest distance 41.05 m in UTM 12N (41.0 to 41.1 at one decimal)."
+  },
+  {
+   "claim": "State file, Billings window: 40 records named 27TH (Secondary 38, Local 2); North 27th Street 23, South 17",
+   "result": "confirmed",
+   "detail": "Reproduced with the tile-plus-margin rule: 40 vehicular records; classes Secondary 38 and Local 2; North 23 and South 17. A looser box gives 49 (not claimed)."
+  },
+  {
+   "claim": "State file nearest centreline 46.9 m from the sample point (North 27th Street, FromAddr_L 100, ToAddr_L 128)",
+   "result": "confirmed",
+   "detail": "46.88 m; PreDir North; FromAddr_L 100; ToAddr_L 128; class Secondary."
+  },
+  {
+   "claim": "27th Street agreement, TIGER vertices to state lines: median 6.28 m, p95 8.43 m, 100% within 10 m (n=181)",
+   "result": "corrected",
+   "detail": "n=181, p95 8.45 m and 100% within 10 m reproduce; median is 6.77 m on re-run (projection and datum handling differ by about 0.5 m). Reverse direction is weaker: state-file 27th vertices (n=236) have median 5.24 m, 80.1% within 10 m, and 11.4% with no TIGER 27th line within 50 m. Agreement holds one way only."
+  },
+  {
+   "claim": "State road file: 258,208 records; 8,707,717 vertices; 259,213 parts; NAD83(2011) Montana State Plane FIPS 2500 (metres)",
+   "result": "confirmed",
+   "detail": "All three counts exact (258208, 8707717, 259213). .prj reads NAD_1983_2011_StatePlane_Montana_FIPS_2500."
+  },
+  {
+   "claim": "St_Name blank on 327 records (0.13%); 34,848 distinct St_Name values (case-insensitive)",
+   "result": "confirmed",
+   "detail": "327 blank records (0.127%); 34848 distinct."
+  },
+  {
+   "claim": "RoadClass counts (Local 189,164 ... Stairway 1)",
+   "result": "confirmed",
+   "detail": "All 13 class counts reproduce exactly."
+  },
+  {
+   "claim": "Vehicular share of state file: 242,774 of 258,208 (94.02%) for the eight classes used",
+   "result": "confirmed",
+   "detail": "242774 features in the eight classes; 94.02%."
+  },
+  {
+   "claim": "State-file SurfaceTyp blank 61.1%, Ownership blank 78.4%, Access blank 96.8%; two Expire dates",
+   "result": "unverified",
+   "detail": "Not re-run. Not used by the recommendation."
+  },
+  {
+   "claim": "TIGER ISO metadata: date 2025-09-18; publication 2025-10; bbox -108.925637 to -107.462651, 45.460405 to 46.496043; no positional accuracy number",
+   "result": "confirmed",
+   "detail": "Date, publication text and bbox reproduce. The ISO holds no numeric accuracy value (the only decimals are the bbox)."
+  },
+  {
+   "claim": "'public domain' absent from the TIGER product page (349,893 bytes) and the terms page (302,319 bytes)",
+   "result": "confirmed",
+   "detail": "Zero matches on both live pages (product page is 349,892 bytes on re-fetch; terms page 302,319). Also zero in the TechDoc and in the state metadata."
+  },
+  {
+   "claim": "State metadata: no positional accuracy figure; no license, credit or public-domain statement; use constraint is a disclaimer; not edgematched",
+   "result": "confirmed",
+   "detail": "Zero matches for licen, copyright, public domain and credit in the FGDC XML. The disclaimer and the edgematch sentences are present."
+  },
+  {
+   "claim": "State metadata status and dates: pubdate 20260930; status 'In work'; update 'As needed'; ReadMe says monthly export",
+   "result": "confirmed",
+   "detail": "All reproduce; ReadMe says the export is monthly and was made from the geodatabase on 20260930."
+  },
+  {
+   "claim": "Billings 0.1-degree tile, TIGER vehicular: 1,339 features; 22,476 vertices; 497,153 bytes at 5 dp; 2 m 148,101 bytes; 5 m 109,513 bytes; blank names 9.8%",
+   "result": "unverified",
+   "detail": "Not re-run in full (needs the clipped-piece convention). Unclipped tile-interior vertices re-run: 22373 (0.5% lower)."
+  },
+  {
+   "claim": "Billings 0.1-degree tile, state file vehicular: 4,128 features; 23,743 vertices; 530,603 bytes; 2 m 245,967; 5 m 218,005; blank names 0",
+   "result": "unverified",
+   "detail": "Not re-run per tile. Tile-interior vertices re-run: 23655 (0.4% lower)."
+  },
+  {
+   "claim": "Benchland tile counts and sizes (TIGER 63 features, 34,843 bytes; state 73 features, 21,355 bytes)",
+   "result": "unverified",
+   "detail": "Not re-run."
+  },
+  {
+   "claim": "Billings agreement, TIGER vertices to state lines: median 0.91 m; p90 7.53; p95 36.04; within 10 m 91.9%; no line within 50 m 4.1%",
+   "result": "confirmed",
+   "detail": "Re-run: median 0.91, p90 7.53, p95 36.26, within 10 m 91.85%, no line within 50 m 4.09%."
+  },
+  {
+   "claim": "Billings agreement, state vertices to TIGER lines: median 0.88; p90 3.81; p95 7.04; within 10 m 96.8%; no line within 50 m 1.4%",
+   "result": "confirmed",
+   "detail": "Re-run: median 0.89, p90 3.82, p95 7.05, within 10 m 96.77%, no line within 50 m 1.37%."
+  },
+  {
+   "claim": "Billings unmatched vertices beyond 20 m: TIGER 1,324 of 22,476; state 518 of 23,743 (all Local)",
+   "result": "unverified",
+   "detail": "Not re-run per class; distances were not retained."
+  },
+  {
+   "claim": "Douglas-Peucker validation: max deviation 1.9984 m at 2 m; 4.9997 m at 5 m (Billings, 1,242 pieces)",
+   "result": "confirmed",
+   "detail": "Method reproduces Yellowstone byte and vertex counts exactly. Max dropped-vertex deviation on Yellowstone pieces with 3+ vertices (6,134): 1.9999 m at 2 m and 4.9997 m at 5 m. Billings figure not re-run."
+  },
+  {
+   "claim": "Web Mercator at 45.8 N: zoom 17 0.83 m/px, zoom 18 0.42 m/px; 2 m = 2.4 px at z17 and 4.8 px at z18; 5 m = 6.0 px and 12.0 px",
+   "result": "confirmed",
+   "detail": "z17 0.833 m/px (2 m = 2.40 px, 5 m = 6.00 px); z18 0.416 m/px (2 m = 4.80 px, 5 m = 12.01 px)."
+  },
+  {
+   "claim": "Route type codes C, I, M, O, S, U (page last revised 16 Dec 2021)",
+   "result": "confirmed",
+   "detail": "Quote matches the live page, which says 'Last Revised - December 16, 2021'."
+  },
+  {
+   "claim": "FULLNAME is a concatenation of expanded name parts (TechDoc Appendix L-4.1)",
+   "result": "confirmed",
+   "detail": "Quote found verbatim in the live TechDoc text."
+  },
+  {
+   "claim": "TIGER All Roads has no address-range fields; state file has FromAddr/ToAddr fields",
+   "result": "confirmed",
+   "detail": "TIGER DBF has exactly LINEARID, FULLNAME, RTTYP, MTFCC; state file has FromAddr_L and ToAddr_L."
+  },
+  {
+   "claim": "State DiscrpAgID values (City of Lewistown, 153 Judith Basin records; Yellowstone County, Billings)",
+   "result": "unverified",
+   "detail": "Not re-run. Contact field only."
+  },
+  {
+   "claim": "TIGER statewide vehicular JSON before simplification: 161.4 to 176.6 MB (mean 169.9)",
+   "result": "confirmed",
+   "detail": "Measured on all 56 counties: 168.95 MB, inside the claimed range."
+  },
+  {
+   "claim": "TIGER statewide vehicular JSON at 2 m: 57.6 to 77.4 MB (mean 69.2)",
+   "result": "corrected",
+   "detail": "Measured on all 56 counties: 77.07 MB. Inside the range but about 11% above the claimed mean; the bottom line's 'about 69 MB' is too low."
+  },
+  {
+   "claim": "TIGER statewide vehicular JSON at 5 m: 42.9 to 54.5 MB (mean 47.5)",
+   "result": "corrected",
+   "detail": "Measured on all 56 counties: 54.67 MB, above the claimed maximum of 54.47 MB and about 15% above the claimed mean."
+  },
+  {
+   "claim": "TIGER statewide vehicular vertices 7.31 to 8.02 million; vehicular features 126 to 292 thousand",
+   "result": "confirmed",
+   "detail": "Measured: 7660241 vehicular vertices and 213613 vehicular features; both inside the claimed ranges."
+  },
+  {
+   "claim": "State-file vehicular JSON measured: before 171.4 MB; 2 m 48.8 MB (2,196,263 vertices); 5 m 32.7 MB (1,462,082 vertices)",
+   "result": "confirmed",
+   "detail": "Reproduced exactly: 171380407; 48805339; 32653357 bytes; 2196263 and 1462082 vertices."
+  },
+  {
+   "claim": "State file names 99.9% of records (blank on 0.13%)",
+   "result": "confirmed",
+   "detail": "257881 of 258208 records have St_Name (99.87%)."
+  },
+  {
+   "claim": "0.1-degree tile sizes (Yellowstone max 494,846 B; Lincoln max 416,114 B; state max 1,430,564 B at 48.2 N 114.3 W)",
+   "result": "unverified",
+   "detail": "Not re-run (vertex-assigned approximation)."
+  },
+  {
+   "claim": "SHA-256 of TL 30111, 30045, 30053, the state zip and the TechDoc PDF",
+   "result": "confirmed",
+   "detail": "All five match fresh live downloads: tl_2025_30111_roads.zip 9ccc5088ddb8; tl_2025_30045_roads.zip 786d37d53196; tl_2025_30053_roads.zip b74cfe8e38be; TransportationFramework_shp.zip 7fb951a6dca1; TGRSHP2025_TechDoc.pdf 21476bdba82f."
+  },
+  {
+   "claim": "download_bytes_total 137,792,388 = five files + HTML pages (1,790,721)",
+   "result": "confirmed",
+   "detail": "Arithmetic: 136,001,667 + 1,790,721 = 137,792,388."
+  },
+  {
+   "claim": "Terms quote (TechDoc 1.2): 'Copyright protection is not available for any work of the United States Government (Title 17 U.S.C., Section 105)...'",
+   "result": "confirmed",
+   "detail": "Verbatim in the live TechDoc."
+  },
+  {
+   "claim": "Terms quote (TechDoc 1.1): TIGER/Line trademark and product-name statement and repackaging request",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "Terms quote (TechDoc 1.1): no warranty on accuracy",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "Terms quote (TechDoc 1.3): obtain the files free of charge from the Census website",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "Terms quote (Yellowstone ISO Use Constraints): 'not copyrighted ... free to use in a product or publication, however acknowledgement must be given'",
+   "result": "confirmed",
+   "detail": "Verbatim in the county zip's ISO member."
+  },
+  {
+   "claim": "Terms quote (ISO): not suitable for high-precision measurement, property transfers or engineering",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "Terms quote (TechDoc 3.3.6): six decimals do not imply six decimals of accuracy",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "Terms quotes (TechDoc All Roads): overlapping segments by design; some features may have a misclassified MTFCC",
+   "result": "confirmed",
+   "detail": "Both verbatim."
+  },
+  {
+   "claim": "Terms quote (TechDoc Appendix L): FULLNAME definition",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "Terms quote (route type code page)",
+   "result": "confirmed",
+   "detail": "Verbatim (the page reads 'U U.S.')."
+  },
+  {
+   "claim": "Terms quote (Census Data API terms, attribution clause)",
+   "result": "confirmed",
+   "detail": "Verbatim; the worker is right that it does not govern TIGER downloads."
+  },
+  {
+   "claim": "Terms quote (MSL FGDC Use Constraints, disclaimer, verbatim)",
+   "result": "confirmed",
+   "detail": "Verbatim in the state zip's metadata."
+  },
+  {
+   "claim": "Terms quote (MSL FGDC abstract)",
+   "result": "corrected",
+   "detail": "Both sentences exist, but they are not adjacent: 'The Transportation Framework contains roads centerline feature geometry, along with address ranges and other attributes.' sits between them and is omitted without an ellipsis. Quote the sentences with '...' or in full."
+  },
+  {
+   "claim": "Terms quote (MSL FGDC purpose): not suitable for routing or network analysis",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "Terms quote (MSL _ReadMe.txt): monthly export",
+   "result": "confirmed",
+   "detail": "Verbatim in the _ReadMe.txt member."
+  },
+  {
+   "claim": "Terms quote (MSL FGDC field definitions): DiscrpAgID",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "Legal basis: 17 U.S.C. 105 makes copyright unavailable for works of the United States Government",
+   "result": "confirmed",
+   "detail": "Live copyright.gov text: 'Copyright protection under this title is not available for any work of the United States Government...'. Section 101 limits the term to a work prepared by an officer or employee as part of official duties."
+  },
+  {
+   "claim": "Legal basis is clear for the whole TIGER product (the Census statement covers the files)",
+   "result": "corrected",
+   "detail": "Section 105 covers Census-authored work. The TechDoc says the MAF/TIGER System is updated mainly by partner-supplied data from federal, state and local partners. State and local work is not a US Government work under section 101, and no statement found says what terms apply to partner-supplied features. The basis is clear for Census-authored content only. Not counsel-reviewed; this is not a legal opinion."
+  },
+  {
+   "claim": "TIGER/Line may not be used as or within a proprietary product name",
+   "result": "confirmed",
+   "detail": "Verbatim trademark statement in TechDoc 1.1."
+  },
+  {
+   "claim": "Attribution text on the About page (placement)",
+   "result": "corrected",
+   "detail": "The Census asks that the repackaging statement sit 'on the product's cover, the first page of the website, or elsewhere of comparable visibility'. An About page alone may not meet that. Place the statement on the first page or the map page footer."
+  },
+  {
+   "claim": "Metadata says the files are free to use in a product or publication with acknowledgement; this is not a license grant",
+   "result": "confirmed",
+   "detail": "ISO text says so. The worker's reading is right: it is a metadata statement, not a license."
+  },
+  {
+   "claim": "State file: no reuse or license terms; written reuse terms needed before publishing",
+   "result": "confirmed",
+   "detail": "No reuse statement in the FGDC metadata. No license or terms statement on the MSL geoinfo home page, MSDI page, transportation page or GIS data list (checked live). Guessed MSL policy URLs returned 404. Section 105 does not cover state works, so the file's status rests on Montana law and the Library's terms, which were not found."
+  },
+  {
+   "claim": "Recommendation: use TIGER All Roads 2025 (56 files) as the single source for the first build",
+   "result": "confirmed",
+   "detail": "Stands as the source choice: the only candidate with a stated federal basis; counts, the Billings geometry agreement and the statewide measure all reproduce. Subject to the corrections below."
+  },
+  {
+   "claim": "Recommendation: draw S1100, S1200, S1400, S1500, S1630, S1640, S1730, S1740",
+   "result": "confirmed",
+   "detail": "All present in the three measured counties; the same eight classes are used in the 56-county measure."
+  },
+  {
+   "claim": "Recommendation: leave out S1710, S1720, S1750, S1780, S1820; S1810 and S1830 absent in the three counties",
+   "result": "unverified",
+   "detail": "Consistent in the three counties (S1710 3 records in Lincoln; S1820 10 in Yellowstone). Statewide S1810 and S1830 counts not measured."
+  },
+  {
+   "claim": "Recommendation: dedupe exact duplicates, keep one record and carry its name if it has one",
+   "result": "corrected",
+   "detail": "In all 278 measured duplicate groups (116 Yellowstone, 38 Judith Basin, 124 Lincoln) the copies carry different FULLNAMEs, with the same MTFCC. Keeping one record drops a valid name in every group. Keep all names per geometry, or define a rule. Dedupe saves 1.83% of statewide bytes before simplification (1.48% at 2 m)."
+  },
+  {
+   "claim": "Recommendation: names are FULLNAME where not blank; unnamed roads stay unlabelled",
+   "result": "confirmed",
+   "detail": "Rule is consistent with the data; the size of the gap is in the next claim."
+  },
+  {
+   "claim": "Bottom line: 23 to 55 percent of vehicular features have no name (three counties)",
+   "result": "corrected",
+   "detail": "Correct for the three counties (23.2%, 54.6%, 38.8%). Statewide 62.8% of 213613 vehicular TIGER features are unnamed (134137); by county 18.0% (30031) to 94.7% (30033), median 61.7%."
+  },
+  {
+   "claim": "Recommendation: simplify with Douglas-Peucker in metres at 2 m (5 m option); coordinates at 5 decimals",
+   "result": "confirmed",
+   "detail": "Method reproduces the worker's Yellowstone byte counts (3,631,891; 1,296,987; 964,479) and vertex counts exactly."
+  },
+  {
+   "claim": "Recommendation: statewide TIGER vehicular JSON about 170 MB before, about 69 MB at 2 m, about 48 MB at 5 m",
+   "result": "corrected",
+   "detail": "Measured: 168.95 MB before (fine), 77.07 MB at 2 m, 54.67 MB at 5 m. Use the measured values; the 69 and 48 MB figures understate."
+  },
+  {
+   "claim": "Recommendation: switch to MSL for names and geometry only after written reuse terms",
+   "result": "confirmed",
+   "detail": "No terms found on any MSL page checked; the switch condition is correct."
+  },
+  {
+   "claim": "Bottom line: geometry agrees with the state file (median 0.9 m in Billings)",
+   "result": "confirmed",
+   "detail": "Re-run medians 0.91 and 0.89 m."
+  },
+  {
+   "claim": "Recommendation: no accuracy claim; do not present TIGER geometry as surveyed or for property boundaries",
+   "result": "confirmed",
+   "detail": "ISO and TechDoc text checked."
+  }
+ ],
+ "check_counts": {
+  "confirmed": 56,
+  "corrected": 9,
+  "unverified": 8
+ },
+ "corrections": [
+  "Names gap is far larger than stated. Statewide, 62.8% of 213613 vehicular TIGER features are unnamed (134137 records); the county range is 18.0% to 94.7% (median 61.7%). The 23 to 55 percent range covers only the three counties measured. Rural unlabelled lines will be most of the map unless names come from another source.",
+  "Statewide TIGER vehicular JSON, measured on all 56 counties: 168.95 MB before simplification, 77.07 MB at 2 m, 54.67 MB at 5 m. The recommendation's 69 MB (2 m) and 48 MB (5 m) are too low; use these values.",
+  "Dedupe rule must keep names. All 278 measured duplicate groups carry different FULLNAMEs; 'keep one record and carry its name if it has one' drops a name in each group. Dedupe saves only 1.3% to 1.8% of bytes statewide.",
+  "Attribution placement: the Census's requested statement belongs on the product's cover, the first page of the website, or elsewhere of comparable visibility. An About-page-only placement may not meet that.",
+  "Legal basis covers Census-authored content (17 U.S.C. 105). Partner-supplied features (state and local partners) are not addressed by that statute or by any statement found, so 'a clear, checked legal basis' should be qualified. Counsel review is still needed.",
+  "27th Street agreement is one-directional and the median is 6.77 m, not 6.28 m. State-file 27th Street vertices have 80.1% within 10 m of a TIGER 27th line and 11.4% with none within 50 m.",
+  "MSL abstract quote is not verbatim: the two sentences are not adjacent in the metadata; the quote omits the sentence between them without an ellipsis.",
+  "Minor re-fetch differences: the Census TIGER product page is 349,892 bytes (claimed 349,893) and the route-code page is 325,156 bytes (claimed 325,027); the quoted text is unchanged on both."
+ ],
+ "terms_check": "All 17 quote entries in streets.json terms were checked against live text: the TechDoc PDF (sha256 matches the worker's), the Yellowstone ISO member, the state FGDC XML and _ReadMe.txt, the Census route-code page, and the Census Data API terms page. 16 are verbatim. 1 is not verbatim: the MSL abstract joins two non-adjacent sentences without an ellipsis. Phrase scans: 'public domain' occurs 0 times in the TIGER product page, the terms page, the TechDoc and the state metadata. Additional live pages scanned for reuse terms (Census policies index, MSL geoinfo home, MSDI page, transportation page, GIS data list): no license or reuse statement found. 17 U.S.C. 105 and the section 101 definition were read from the live copyright.gov text.",
+ "recommendation_stands": true,
+ "recommendation_note": "The source choice stands: TIGER All Roads is the only candidate with a stated federal basis, and its counts, the Billings geometry agreement (median 0.91 m) and the statewide sizes reproduce from live data. It stands with corrections the owner must see before building: (1) statewide 62.8% of vehicular TIGER features are unnamed, not 23 to 55 percent, so most rural lines will be unlabelled; (2) statewide sizes are 168.95 / 77.07 / 54.67 MB (before / 2 m / 5 m), not 170 / 69 / 48; (3) the dedupe rule must keep names; (4) the attribution must sit on the first page or a comparably visible place; (5) the legal basis covers Census-authored content only and is not counsel-reviewed. If the owner needs names on most streets, the options are written reuse terms from the Montana State Library (names for 99.9% of records, status unknown) or a second named source, which the worker did not check (OpenStreetMap, MDT) and which would need its own terms review.",
+ "numbers": {
+  "tiger_56_counties": {
+   "records_all_classes": 218686,
+   "vehicular_features": 213613,
+   "vehicular_vertices": 7660241,
+   "vehicular_blank_fullname": 134137,
+   "vehicular_blank_share_pct": 62.79,
+   "county_blank_share_pct_min": 17.96,
+   "county_blank_share_pct_max": 94.71,
+   "county_blank_share_pct_median": 61.650000000000006,
+   "exact_duplicate_vehicular_features": 2159,
+   "bytes_before_simplification": 168952529,
+   "bytes_dp_2m": 77070453,
+   "bytes_dp_5m": 54671439,
+   "MB_before_2m_5m": [
+    168.95,
+    77.07,
+    54.67
+   ],
+   "vertices_after_dp_2m": 3483783,
+   "vertices_after_dp_5m": 2465646,
+   "dedupe_saving_pct_before_2m_5m": [
+    1.83,
+    1.48,
+    1.34
+   ],
+   "head_sum_bytes_56_files": 88860450,
+   "head_files": 56,
+   "county_min_fips": "30031",
+   "county_max_fips": "30033"
+  },
+  "msl_statewide": {
+   "records": 258208,
+   "parts_all": 259213,
+   "vertices_all": 8707717,
+   "class_counts": {
+    "Local": 189164,
+    "Other": 15416,
+    "Secondary": 19651,
+    "Alley": 3663,
+    "Primary": 2004,
+    "Ramp": 1010,
+    "Private": 19413,
+    "Service Drive": 155,
+    "Vehicular Trail": 7714,
+    "": 6,
+    "Parking Lot": 1,
+    "Walkway/Pedestrian Trail": 10,
+    "Stairway": 1
+   },
+   "st_name_blank_all": 327,
+   "st_name_blank_veh": 295,
+   "st_name_distinct_ci": 34848,
+   "veh_features": 242774,
+   "veh_parts": 243776,
+   "veh_vertices": 7767857,
+   "bytes_before_veh": 171380407,
+   "bytes_dp2_veh": 48805339,
+   "bytes_dp5_veh": 32653357,
+   "vertices_dp2_veh": 2196263,
+   "vertices_dp5_veh": 1462082,
+   "hits27_billings_window": 49
+  },
+  "billings_agreement_rerun": {
+   "tiger_to_msl": {
+    "n": 22373,
+    "median_m": 0.91,
+    "p90_m": 7.53,
+    "p95_m": 36.26,
+    "share_within_10m": 0.9185,
+    "share_no_line_within_50m": 0.0409
+   },
+   "msl_to_tiger": {
+    "n": 23655,
+    "median_m": 0.89,
+    "p90_m": 3.82,
+    "p95_m": 7.05,
+    "share_within_10m": 0.9677,
+    "share_no_line_within_50m": 0.0137
+   }
+  },
+  "n27_agreement_rerun": {
+   "tiger_27th_to_msl_27th": {
+    "n": 181,
+    "median_m": 6.77,
+    "p90_m": 8.11,
+    "p95_m": 8.45,
+    "share_within_10m": 1.0,
+    "share_no_line_within_50m": 0.0
+   },
+   "msl_27th_to_tiger_27th": {
+    "n": 236,
+    "median_m": 5.24,
+    "p90_m": 54.1,
+    "p95_m": NaN,
+    "share_within_10m": 0.8008,
+    "share_no_line_within_50m": 0.1144
+   }
+  },
+  "three_county_counts_rerun": {
+   "30111": {
+    "records": 6798,
+    "vertices": 169470,
+    "blank_fullname_all_pct": 25.6,
+    "blank_fullname_vehicular_pct": 23.2,
+    "exact_dup_extra": 117,
+    "distinct_geometries": 6681
+   },
+   "30045": {
+    "records": 2142,
+    "vertices": 80281,
+    "blank_fullname_all_pct": 54.81,
+    "blank_fullname_vehicular_pct": 54.64,
+    "exact_dup_extra": 39,
+    "distinct_geometries": 2103
+   },
+   "30053": {
+    "records": 15442,
+    "vertices": 980073,
+    "blank_fullname_all_pct": 39.02,
+    "blank_fullname_vehicular_pct": 38.79,
+    "exact_dup_extra": 131,
+    "distinct_geometries": 15311
+   }
+  },
+  "duplicate_name_conflicts_three_counties": {
+   "groups": {
+    "30111": 116,
+    "30045": 38,
+    "30053": 124
+   },
+   "groups_with_conflicting_names": {
+    "30111": 116,
+    "30045": 38,
+    "30053": 124
+   }
+  },
+  "tiger_prj_head": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137"
+ },
+ "sha256_downloads": {
+  "tl_2025_30111_roads.zip": "9ccc5088ddb8bf30f806bc3873d0ec88b67fd8d8a4d8e27548bee83e2fbfd20c",
+  "tl_2025_30045_roads.zip": "786d37d5319639232eae4e788efc4ae33d96b5ca870436e99937a4ea040fb08f",
+  "tl_2025_30053_roads.zip": "b74cfe8e38becd0738cd43a7a3c5d47daada8e07673883747a37bdaf3ebd791e",
+  "TransportationFramework_shp.zip": "7fb951a6dca181d0129549dbc30d09301b20fb0e20198ae82c97944369b3bec8",
+  "TGRSHP2025_TechDoc.pdf": "21476bdba82fe8072f8994ae59bda484260d1b932c13f31991f6414f8e04d551"
+ },
+ "download_bytes_total": 214245248,
+ "download_files": 74,
+ "scripts": [
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/billings_agree.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/compose_record.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/dp_dev_check.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/dup_names.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/fetch_counties.sh",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/fgdc_grep.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/fmt_debug.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/last_checks.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/measure_tiger.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/msl_measure.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/n27_agree.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/n27_distance.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/quote_diff.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/terms_check.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/tiger_counts.py",
+  "/home/user/wt/research-b35/scratch-refute-streets/scripts/write_record.py"
+ ],
+ "results_folder": "/home/user/wt/research-b35/scratch-refute-streets/results"
+}

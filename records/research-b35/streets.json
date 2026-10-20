@@ -1,0 +1,2183 @@
+{
+ "slug": "streets",
+ "question": "Source for every street in Montana with names, drawn by the site from its own per-tile JSON (no tile server, Leaflet only).",
+ "as_of": "2026-10-19",
+ "bottom_line": "Recommend the Census TIGER/Line 2025 All Roads county files as the one source for the first build: of the two candidates checked, the only one with a clear legal basis (a Census statement that its work is not copyrighted, plus a citation request). Its geometry agrees with the Montana State Library road file to a median of 0.9 m in the Billings tile. The gap is names: 23 to 55 percent of vehicular features have no name in the three counties measured, so unnamed streets will show without labels. The state file names almost every road (blank on 0.13 percent of records) but carries only a disclaimer, so it is not cleared for publication until the Library confirms reuse in writing. Simplified at 2 m, the statewide TIGER vehicular lines are about 69 MB (range 58 to 77) of 5-decimal JSON, against about 170 MB (range 161 to 177) before simplification; these are estimates from three counties. Measured statewide for the state file: before simplification 171.4 MB, at 2 m 48.8 MB, at 5 m 32.7 MB (vehicular classes; one-array polyline format).",
+ "recommendation": {
+  "pick": "U.S. Census Bureau TIGER/Line 2025 All Roads, the 56 Montana county files (88,860,450 bytes zipped), as the single source for the first build",
+  "why": "It is the only candidate with a clear, checked legal basis (the Census statement that its work is not copyrighted, with a citation request and a trademark rule). It covers local streets, alleys, frontage and private service roads, and it agrees with the state file to a median of 0.9 m in Billings. Its weakness is names: 23 to 55 percent of vehicular features are unnamed in the three counties measured.",
+  "legal_basis": "Title 17 U.S.C. 105 as stated in the Census technical documentation section 1.2 (Copyright protection is not available for any work of the United States Government). The file metadata says the files are free to use in a product or publication with acknowledgement. Attribution text on the About page; no TIGER/Line name in product names; no accuracy claim.",
+  "classes_to_draw": [
+   "S1100 primary road",
+   "S1200 secondary road",
+   "S1400 local neighborhood road, rural road, city street",
+   "S1500 vehicular trail (4WD)",
+   "S1630 ramp",
+   "S1640 frontage or access road",
+   "S1730 alley",
+   "S1740 service road for access to industrial, ranch, resource extraction"
+  ],
+  "classes_left_out": [
+   "S1710 walkway/pedestrian trail",
+   "S1720 stairway",
+   "S1750 internal Census use (outside the list; open question)",
+   "S1780 parking lot road (outside the list)",
+   "S1810 winter trail (not in these counties)",
+   "S1820 bike path or trail",
+   "S1830 bridle path (not in these counties)"
+  ],
+  "names": "Use FULLNAME where it is not blank. Leave unnamed features unlabelled. Do not name a road from a neighboring county or from another source unless the terms allow it.",
+  "dedupe": "Drop exact duplicate geometries before tiling (117, 39, 131 records in the three counties); keep one record and carry its name if it has one.",
+  "simplify": "Douglas-Peucker in metres at 2 m for the detail tiles (validated: maximum deviation 1.998 m on 1,242 Billings pieces); 5 m as the coarser option. Coordinates at 5 decimals.",
+  "statewide_bytes_TIGER_vehicular_MB": {
+   "before_simplification": [
+    161.39,
+    169.95,
+    176.6
+   ],
+   "dp_2m": [
+    57.63,
+    69.21,
+    77.38
+   ],
+   "dp_5m": [
+    42.86,
+    47.55,
+    54.47
+   ],
+   "attributes_name_and_class_est": [
+    2.2,
+    4.09,
+    6.29
+   ],
+   "order": "[min, mean, max] across the three measured counties, scaled to the 88,860,450-byte state zip total; estimate, not a measurement of the state"
+  },
+  "switch_condition": "Use the Montana State Library Transportation Framework for names and geometry only after written reuse terms. Its statewide measure is in measurements.msl_statewide; the Billings comparison is in measurements.tiles_billings_and_benchland and measurements.billings_agreement_TIGER_vs_MSL."
+ },
+ "urls_checked": [
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/",
+   "http_status": "200",
+   "bytes": 758100,
+   "content_check": "Apache index 'Index of /geo/tiger/TIGER2025/ROADS' with 56 Montana rows tl_2025_30001_roads.zip to tl_2025_30111_roads.zip (odd FIPS codes); listed sizes are rounded (for example 1.9M), so exact sizes came from HEAD"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_{FIPS}_roads.zip (56 Montana files, HEAD only)",
+   "http_status": "200 for all 56",
+   "bytes": 88860450,
+   "content_check": "Content-Length per file summed to 88,860,450 bytes; per-file table in tiger_files; no bodies downloaded"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30111_roads.zip",
+   "http_status": "200",
+   "bytes": 1999745,
+   "content_check": "zip test OK; members .dbf 877,104 B, .shp 3,092,308 B, .shx 54,484 B, .prj 165 B, .shp.iso.xml 50,358 B; 6,798 records read with pyshp; FULLNAME, RTTYP, MTFCC, LINEARID present"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30045_roads.zip",
+   "http_status": "200",
+   "bytes": 914175,
+   "content_check": "zip test OK; 2,142 records (Judith Basin County; contains the Benchland sample tile)"
+  },
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30053_roads.zip",
+   "http_status": "200",
+   "bytes": 10850223,
+   "content_check": "zip test OK; 15,442 records (Lincoln County; densest vertex count measured)"
+  },
+  {
+   "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf",
+   "http_status": "200",
+   "bytes": 4598419,
+   "content_check": "PDF 1.6; pdftotext gave 9,036 lines; sections 1.1 to 1.3 (legal, citation, contact), 3.3.5 to 3.3.7 (accuracy), All Roads description, Appendix E (MTFCC), Appendix L (record layouts, FULLNAME and RTTYP); no S1300 code in the 2025 MTFCC table"
+  },
+  {
+   "url": "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+   "http_status": "200",
+   "bytes": 349893,
+   "content_check": "searched for copyright, public domain, free of charge, attribution, reuse, no restrictions: no match; the phrase 'public domain' is not on this page"
+  },
+  {
+   "url": "https://www.census.gov/data/developers/about/terms-of-service.html",
+   "http_status": "200",
+   "bytes": 302319,
+   "content_check": "one attribution clause, which covers 'All services, which utilize or access the API'; it is the Data API notice, not a TIGER/Line file term; no 'public domain' phrase"
+  },
+  {
+   "url": "https://www.census.gov/about/policies/copyright.html",
+   "http_status": "404",
+   "bytes": 26711,
+   "content_check": "page not found; no statement"
+  },
+  {
+   "url": "https://www.census.gov/programs-surveys/geography/technical-documentation/records-layout/2025-tiger-record-layout.html",
+   "http_status": "404",
+   "bytes": 26711,
+   "content_check": "guessed URL; page not found (not used)"
+  },
+  {
+   "url": "https://www.census.gov/library/reference/code-lists/route-type-codes.html",
+   "http_status": "200",
+   "bytes": 325027,
+   "content_check": "table: Route Type Code, Route Type Code Description: C County, I Interstate, M Common Name, O Other, S State recognized, U (described as U.S. on the page text); page last revised December 16, 2021"
+  },
+  {
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/",
+   "http_status": "200",
+   "bytes": 668,
+   "content_check": "listing: Archive/ folder; TransportationFramework_gdb.zip 81,190,547 bytes and TransportationFramework_shp.zip 117,639,105 bytes, both dated 9/30/2026 12:16 PM"
+  },
+  {
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip",
+   "http_status": "200",
+   "bytes": 117639105,
+   "content_check": "application/x-zip-compressed; zip test OK; 11 members: RoadCenterLine.shp 153,787,240 B, RoadCenterLine.dbf 535,783,266 B, .shx, .prj, .sbn, .sbx, TransportationFramework_metadata.xml 32,089 B, _ReadMe.txt 1,473 B, RCL_Metadata.dbf; 258,208 records read with pyshp"
+  },
+  {
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/Archive/",
+   "http_status": "200",
+   "bytes": 1292,
+   "content_check": "six archived zips (2012 to 2017): 75,613,564; 118,121,377; 77,809,770; 81,043,218; 178,713,724; 188,773,690 bytes; not downloaded"
+  },
+  {
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_gdb.zip",
+   "http_status": "listed only (not fetched)",
+   "bytes": 81190547,
+   "content_check": "same export as the shapefile zip per the ReadMe; not downloaded to save budget"
+  }
+ ],
+ "downloads": [
+  {
+   "file": "tl_2025_30111_roads.zip",
+   "bytes": 1999745,
+   "sha256": "9ccc5088ddb8bf30f806bc3873d0ec88b67fd8d8a4d8e27548bee83e2fbfd20c",
+   "path": "/home/user/wt/research-b35/scratch-streets/downloads/tl_2025_30111_roads.zip"
+  },
+  {
+   "file": "tl_2025_30045_roads.zip",
+   "bytes": 914175,
+   "sha256": "786d37d5319639232eae4e788efc4ae33d96b5ca870436e99937a4ea040fb08f",
+   "path": "/home/user/wt/research-b35/scratch-streets/downloads/tl_2025_30045_roads.zip"
+  },
+  {
+   "file": "tl_2025_30053_roads.zip",
+   "bytes": 10850223,
+   "sha256": "b74cfe8e38becd0738cd43a7a3c5d47daada8e07673883747a37bdaf3ebd791e",
+   "path": "/home/user/wt/research-b35/scratch-streets/downloads/tl_2025_30053_roads.zip"
+  },
+  {
+   "file": "TransportationFramework_shp.zip",
+   "bytes": 117639105,
+   "sha256": "7fb951a6dca181d0129549dbc30d09301b20fb0e20198ae82c97944369b3bec8",
+   "path": "/home/user/wt/research-b35/scratch-streets/downloads/TransportationFramework_shp.zip"
+  },
+  {
+   "file": "TGRSHP2025_TechDoc.pdf",
+   "bytes": 4598419,
+   "sha256": "21476bdba82fe8072f8994ae59bda484260d1b932c13f31991f6414f8e04d551",
+   "path": "/home/user/wt/research-b35/scratch-streets/downloads/web/TGRSHP2025_TechDoc.pdf"
+  }
+ ],
+ "download_html_pages_bytes": 1790721,
+ "download_bytes_total": 137792388,
+ "facts": [
+  {
+   "claim": "TIGER/Line 2025 All Roads county files for Montana",
+   "value": "56 files tl_2025_30001_roads.zip to tl_2025_30111_roads.zip (odd FIPS codes); 88,860,450 bytes zipped in total",
+   "evidence": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/ HTTP 200 (758,100 bytes; 56 Montana rows); per-file HEAD HTTP 200 with Content-Length (tiger_files_table)"
+  },
+  {
+   "claim": "Yellowstone County All Roads record content",
+   "value": "6798 records; 169470 vertices; polyline; fields LINEARID (C22), FULLNAME (C100), RTTYP (C1), MTFCC (C5); degrees, GCS_North_American_1983",
+   "evidence": "tl_2025_30111_roads.zip HTTP 200 (1,999,745 bytes), zip test OK; pyshp read; .prj read"
+  },
+  {
+   "claim": "Yellowstone MTFCC distribution (share of records)",
+   "value": "S1400 83.11%; S1740 8.78%; S1750 2.91%; S1640 2.03%; S1630 1.27%; S1200 0.59%; S1500 0.41%; S1780 0.34%; S1730 0.28%; S1820 0.15%; S1100 0.12%; S1720 0.01%",
+   "evidence": "tiger30111_stats.json (pyshp count of the MTFCC field over 6,798 records)"
+  },
+  {
+   "claim": "FULLNAME blank share, TIGER",
+   "value": "Yellowstone 1740 of 6798 (25.6%), vehicular 23.2%; Judith Basin 1174 of 2142 (54.8%), vehicular 54.6%; Lincoln 6026 of 15442 (39.0%), vehicular 38.8%",
+   "evidence": "tiger30111_stats.json, tiger30045_stats.json, tiger30053_stats.json (pyshp; vehicular set from the MTFCC classes in the request)"
+  },
+  {
+   "claim": "Judith Basin rural local roads without a name",
+   "value": "S1400 local roads: 911 of 1721 unnamed (52.9%)",
+   "evidence": "tiger30045_stats.json MTFCC table"
+  },
+  {
+   "claim": "Exact duplicate geometries in All Roads",
+   "value": "Yellowstone 117 extra records (6681 distinct geometries); Judith Basin 39 (2103); Lincoln 131 (15311)",
+   "evidence": "stats JSON files: identical rounded (6-decimal) coordinate sequences, counted as extra records"
+  },
+  {
+   "claim": "N 27th St in TIGER (name and geometry)",
+   "value": "FULLNAME 'N 27th St', MTFCC S1200, LINEARID 1101171881201, 115 vertices in the feature; nearest centerline point to 45.7836 N 108.5047 W is 41.0 m (UTM 12N)",
+   "evidence": "tiger30111_stats.json hits27 list; distance by vertex-to-segment projection in EPSG:26912"
+  },
+  {
+   "claim": "N 27th St in the state file (name and geometry)",
+   "value": "Records with St_Name 27TH in the Billings window: {\"Secondary\": 38, \"Local\": 2} records 40, composed names {'North 27th Street': 23, 'South 27th Street': 17}; LSt_Name 27TH, LSt_Typ ST; nearest centerline to the sample point 46.9 m (North 27th Street, FromAddr_L 100, ToAddr_L 128)",
+   "evidence": "msl_attrs.py output; build_final.py recount of the Billings window (msl_27th.json)"
+  },
+  {
+   "claim": "27th Street centerlines, TIGER against state file",
+   "value": "TIGER 27th vertices to state-file 27th lines: median 6.28 m, p95 8.43 m, 100.0% within 10 m (n=181)",
+   "evidence": "billings_agreement.json"
+  },
+  {
+   "claim": "State road file content (Montana Transportation Framework RoadCenterLine)",
+   "value": "258208 records; 8707717 vertices; 259213 parts; polyline; NAD83(2011) Montana State Plane (FIPS 2500), meters; St_Name blank (pyshp count of the stripped field) on 327 records (0.13%); 34848 distinct St_Name values (case-insensitive)",
+   "evidence": "msl_statewide.json (every record read with pyshp); msl_stats.out (distinct name count)"
+  },
+  {
+   "claim": "State road file RoadClass counts",
+   "value": "Local 189164; Secondary 19651; Private 19413; Other 15416; Vehicular Trail 7714; Alley 3663; Primary 2004; Ramp 1010; Service Drive 155; Walkway/Pedestrian Trail 10;  6; Parking Lot 1; Stairway 1",
+   "evidence": "msl_statewide.json class_counts (every record)"
+  },
+  {
+   "claim": "State road file vehicular share (classes used here)",
+   "value": "242774 of 258208 records (94.02%); not used: Other 15416 (5.97%), walkway 10, blank 6, parking lot 1, stairway 1",
+   "evidence": "msl_statewide.json"
+  },
+  {
+   "claim": "State road file blank fields",
+   "value": "SurfaceTyp blank on 157,695 of 258,208 (61.1%); Ownership blank on 202,358 (78.4%); Access blank on 250,038 (96.8%); 2 records carry an Expire date (one in 2022, one dated 1899)",
+   "evidence": "msl_stats.out (pyshp counts of each field)"
+  },
+  {
+   "claim": "TIGER metadata (Yellowstone ISO 19115)",
+   "value": "date 2025-09-18; citation publication 2025-10; bbox lon -108.925637 to -107.462651, lat 45.460405 to 46.496043; no positional accuracy number; use constraint as quoted",
+   "evidence": "tl_2025_30111_roads.shp.iso.xml inside the county zip"
+  },
+  {
+   "claim": "'public domain' wording in Census pages",
+   "value": "not found on the TIGER product page (349,893 bytes) or the terms page (302,319 bytes); the equivalent statements are in technical documentation 1.2 and the ISO use constraints",
+   "evidence": "URLs in urls_checked; searched case-insensitively"
+  },
+  {
+   "claim": "State file metadata: positional accuracy and license",
+   "value": "no positional accuracy figure; no license, credit or public-domain statement found; use constraint is a disclaimer; abstract says data are federated and not edgematched (gaps, overlaps, duplicates)",
+   "evidence": "TransportationFramework_metadata.xml inside TransportationFramework_shp.zip (search terms: licen, copyright, credit, public domain, attribution, accura, positional)"
+  },
+  {
+   "claim": "State file metadata: status and dates",
+   "value": "pubdate 20260930; status 'In work'; update 'As needed'; ReadMe says the export is monthly and was made 20260930",
+   "evidence": "metadata XML and _ReadMe.txt inside the state zip"
+  },
+  {
+   "claim": "Billings 0.1 degree tile, TIGER vehicular",
+   "value": "1339 features; 1340 pieces; 22476 vertices; 497153 bytes at 5 dp before simplification (string count 497153); 2 m: 6610 vertices, 148101 bytes (-70.2%); 5 m: 4856 vertices, 109513 bytes (-78.0%); blank names 9.8%; 954 distinct names",
+   "evidence": "tiger30111_billings_tile.json (tile_measure.py, Liang-Barsky clip to the tile, Douglas-Peucker in metres)"
+  },
+  {
+   "claim": "Billings 0.1 degree tile, state file vehicular",
+   "value": "4128 features (pieces); 23743 vertices; 530603 bytes before simplification; 2 m: 10805 vertices, 245967 bytes (-53.6%); 5 m: 9534 vertices, 218005 bytes (-58.9%); blank names 0; 780 distinct names",
+   "evidence": "msl_billings_tile.json (same method; classes in tile: Local 3908, Secondary 183, Primary 24, Ramp 13)"
+  },
+  {
+   "claim": "Benchland 0.1 degree tile (47.08 N, 110.02 W), TIGER Judith Basin file",
+   "value": "63 vehicular features; 1578 vertices; 34843 bytes before simplification; 2 m: 10159 bytes (-70.8%); 5 m: 7145 bytes (-79.5%); blank names 17 (27.0%)",
+   "evidence": "tiger30045_benchland_tile.json"
+  },
+  {
+   "claim": "Benchland 0.1 degree tile, state file",
+   "value": "73 features; 964 vertices; 21355 bytes before simplification; 2 m: 7847 bytes (-63.2%); 5 m: 5867 bytes (-72.5%); blank names 0; 16 distinct names; County_L Judith Basin County",
+   "evidence": "msl_benchland_tile.json; msl_attrs.py (County_L counts)"
+  },
+  {
+   "claim": "Billings agreement, TIGER vertices to state-file lines",
+   "value": "median 0.91 m; p90 7.53 m; p95 36.04 m; within 5 m 85.7%; within 10 m 91.9%; within 20 m 94.1%; no line within 50 m 4.1%",
+   "evidence": "billings_agreement.json (vehicular sets; grid index 50 m)"
+  },
+  {
+   "claim": "Billings agreement, state-file vertices to TIGER lines",
+   "value": "median 0.88 m; p90 3.81 m; p95 7.04 m; within 5 m 92.8%; within 10 m 96.8%; within 20 m 97.8%; no line within 50 m 1.4%",
+   "evidence": "billings_agreement.json"
+  },
+  {
+   "claim": "Billings tile lengths",
+   "value": "TIGER 667.84 km; state file 573.86 km (TIGER is about 16% longer; overlapping coincident segments are a candidate cause, not measured in this tile)",
+   "evidence": "billings_agreement.json (length of clipped pieces, local metres)"
+  },
+  {
+   "claim": "Unmatched vertices (more than 20 m from the other source), Billings",
+   "value": "TIGER 1324 of 22476 vehicular vertices (5.9%): by MTFCC S1200 2 of 1854, S1400 618 of 18643, S1500 1 of 4, S1640 549 of 702, S1730 19 of 42, S1740 135 of 151; state file 518 of 23743 (2.2%), all Local, names such as Madrid Drive, Sierra Vista Circle, Meadowlark Lane, Sugar Pine Road, Dale Earnhardt Way",
+   "evidence": "unmatched_billings.json (unmatched.py)"
+  },
+  {
+   "claim": "Douglas-Peucker validation (Billings TIGER pieces)",
+   "value": "max deviation 1.9984 m at tolerance 2 m over 1242 pieces (22280 vertices before, 6414 after); 4.9997 m at 5 m (4660 after)",
+   "evidence": "dp_check.json (every original vertex measured to the simplified line)"
+  },
+  {
+   "claim": "Statewide TIGER vehicular JSON, estimate by county scaling",
+   "value": "before simplification 161.4 to 176.6 MB (mean 169.9); 2 m 57.6 to 77.4 MB (mean 69.2); 5 m 42.9 to 54.5 MB (mean 47.5); vehicular vertices 7.31 to 8.02 million; vehicular features 126 to 292 thousand",
+   "evidence": "assembled_inputs.json: each county JSON bytes / county zip bytes x 88,860,450 (Yellowstone, Judith Basin, Lincoln)"
+  },
+  {
+   "claim": "Statewide state-file vehicular JSON, measured",
+   "value": "before simplification 171.4 MB; 2 m 48.8 MB (2196263 vertices); 5 m 32.7 MB (1462082 vertices); all records before simplification 192.1 MB",
+   "evidence": "msl_statewide.json; msl_state_measure.py (every feature; DP per part; one-array format after correction)"
+  },
+  {
+   "claim": "Tile sizes (TIGER vehicular, Yellowstone County, 0.1 degree, vertex-assigned)",
+   "value": "100 tiles; before simplification median 18876 B, p90 72384 B, max 494846 B; 2 m median 7827 B, max 145992 B; 5 m max 107470 B",
+   "evidence": "tile_dist_*.json (tile_dist.py; approximation: unclipped features, each vertex assigned to its tile)"
+  },
+  {
+   "claim": "Tile sizes (TIGER vehicular, Judith Basin County, 0.1 degree, vertex-assigned)",
+   "value": "77 tiles; before simplification median 20168 B, p90 46128 B, max 69634 B; 2 m median 8456 B, max 34852 B; 5 m max 22508 B",
+   "evidence": "tile_dist_*.json (tile_dist.py; approximation: unclipped features, each vertex assigned to its tile)"
+  },
+  {
+   "claim": "Tile sizes (TIGER vehicular, Lincoln County, 0.1 degree, vertex-assigned)",
+   "value": "139 tiles; before simplification median 144932 B, p90 293926 B, max 416114 B; 2 m median 62616 B, max 157148 B; 5 m max 96340 B",
+   "evidence": "tile_dist_*.json (tile_dist.py; approximation: unclipped features, each vertex assigned to its tile)"
+  },
+  {
+   "claim": "Tile sizes (state file vehicular, statewide, 0.1 degree, vertex-assigned)",
+   "value": "4335 tiles; before simplification median 21978 B, p90 90329 B, max 1430564 B; 2 m median 4332 B, max 345040 B; 5 m max 294154 B",
+   "evidence": "tile_dist_msl.json (tile_dist.py)"
+  },
+  {
+   "claim": "Web Mercator resolution at 45.8 N and the tolerances",
+   "value": "zoom 15: 3.33 m/px; zoom 16: 1.67 m/px; zoom 17: 0.83 m/px; zoom 18: 0.42 m/px; 2 m tolerance is 2.4 px at zoom 17 and 4.8 px at zoom 18; 5 m is 6.0 px and 12.0 px",
+   "evidence": "dp_check.json (computed from the Web Mercator formula, not rendered)"
+  },
+  {
+   "claim": "Route type code list",
+   "value": "RTTYP codes C County, I Interstate, M Common Name, O Other, S State recognized, U U.S. (page last revised December 16, 2021)",
+   "evidence": "https://www.census.gov/library/reference/code-lists/route-type-codes.html (HTTP 200)"
+  },
+  {
+   "claim": "FULLNAME definition (TIGER primary roads record layout)",
+   "value": "Concatenation of expanded text for prefix qualifier, prefix direction, prefix type, base name, suffix type, suffix direction, and suffix qualifier (as available) with a space between each expanded text field; display name.",
+   "evidence": "TGRSHP2025_TechDoc.pdf, Appendix L-4.1 (text read with pdftotext)"
+  },
+  {
+   "claim": "State file contact field",
+   "value": "DiscrpAgID: Agency that receives a Discrepancy Report regarding the data; values include City of Lewistown (153 Judith Basin records in the Benchland window) and Yellowstone County (Billings window)",
+   "evidence": "TransportationFramework_metadata.xml; msl_attrs.py counts"
+  },
+  {
+   "claim": "Address check at 401 N 27th (45.7836 N, 108.5047 W)",
+   "value": "nearest centerline: TIGER N 27th St 41.0 m; state file North 27th Street 46.9 m (a rough check: an address point is not a centerline)",
+   "evidence": "tiger30111_stats.json; msl_attrs.py output"
+  }
+ ],
+ "terms": [
+  {
+   "source": "Census TIGER/Line Shapefile Technical Documentation 2025, section 1.2 Citation Information",
+   "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf",
+   "quote": "Copyright protection is not available for any work of the United States Government (Title 17 U.S.C., Section 105). Thus, you are free to reproduce census materials as you see fit. We would ask, however, that you cite the Census Bureau as the source.",
+   "reading": "The Census Bureau states that its work is not copyrighted under 17 U.S.C. 105 and asks for a citation. This is the strongest TIGER terms statement found. It does not use the words public domain."
+  },
+  {
+   "source": "Census TIGER/Line Shapefile Technical Documentation 2025, section 1.1 TIGER/Line Shapefile Legal Disclaimers",
+   "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf",
+   "quote": "TIGER/Line® is a registered trademark of the Census Bureau. TIGER/Line cannot be used as or within the proprietary product names of any commercial product including or otherwise relevant to Census Bureau data and may only be used to refer to the nature of such a product. The Census Bureau requests that any repackaging of the TIGER/Line Shapefile data, documentation, and other files accompanying it for distribution include a conspicuously placed statement to this effect on the product's cover, the first page of the website, or elsewhere of comparable visibility.",
+   "reading": "Do not use TIGER/Line in a product name. The site should add a visible statement about the source on its About page (the request asks for one on repackaged data)."
+  },
+  {
+   "source": "Census TIGER/Line Shapefile Technical Documentation 2025, section 1.1 (no warranty)",
+   "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf",
+   "quote": "No warranty, expressed or implied, is made with regard to the accuracy of the data in the TIGER/Line Shapefiles, and no liability is assumed by the United States Government in general, or the Census Bureau specifically, as to the positional or attribute accuracy of the data.",
+   "reading": "No accuracy promise from the source. The site must say so and must not present TIGER geometry as surveyed."
+  },
+  {
+   "source": "Census TIGER/Line Shapefile Technical Documentation 2025, section 1.3 Contact Information",
+   "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf",
+   "quote": "Members of the public can obtain the TIGER/Line Shapefiles free of charge through the Census Bureau’s website",
+   "reading": "Free of charge to the public; the download is the public source."
+  },
+  {
+   "source": "Yellowstone County roads ISO 19115 metadata (inside the county zip), element Use Constraints",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30111_roads.zip (member tl_2025_30111_roads.shp.iso.xml)",
+   "quote": "The TIGER/Line Shapefile products are not copyrighted however TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source. The horizontal spatial accuracy information present in these files is provided for the purposes of statistical analysis and census operations only. No warranty, expressed or implied is made with regard to the accuracy of the spatial accuracy, and no liability is assumed by the U.S. Government in general or the U.S. Census Bureau, specifically as to the spatial or attribute accuracy of the data. The TIGER/Line Shapefiles may not be suitable for high-precision measurement applications such as engineering problems, property transfers, or other uses that might require highly accurate measurements of the earth's surface.Coordinates in the TIGER/Line shapefiles have six implied decimal places, but the positional accuracy of these coordinates is not as great as the six decimal places suggest.",
+   "reading": "Same statement as the technical document, in the file's own metadata. 'free to use in a product or publication' with acknowledgement required. Not a license grant; it restates the Census statement with an acknowledgement request."
+  },
+  {
+   "source": "Yellowstone County roads ISO 19115 metadata, element Use Constraints (last sentence)",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30111_roads.zip (member tl_2025_30111_roads.shp.iso.xml)",
+   "quote": "The TIGER/Line Shapefiles may not be suitable for high-precision measurement applications such as engineering problems, property transfers, or other uses that might require highly accurate measurements of the earth's surface.",
+   "reading": "Not for property or engineering measurement; the site must not state property boundaries from these lines."
+  },
+  {
+   "source": "Census TIGER/Line Shapefile Technical Documentation 2025, section 3.3.6 Coordinates",
+   "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf",
+   "quote": "Coordinates in the TIGER/Line Shapefiles have six decimal places, but the positional accuracy of these coordinates may not be as great as the six decimal places suggest. The spatial accuracy varies with the source materials used.",
+   "reading": "Six decimals do not mean six decimals of accuracy. No accuracy figure is given; this record uses the cross-source comparison instead."
+  },
+  {
+   "source": "Census TIGER/Line Shapefile Technical Documentation 2025, All Roads description",
+   "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf",
+   "quote": "The All Roads shapefiles will contain multiple overlapping road segments where a segment is associated with more than one road feature.",
+   "reading": "Coincident duplicates are by design in All Roads. Deduplicate geometry before tiling (exact duplicates measured: 117, 39 and 131 records in the three counties)."
+  },
+  {
+   "source": "Census TIGER/Line Shapefile Technical Documentation 2025, All Roads description (classification)",
+   "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf",
+   "quote": "However, some street features may have a misclassified MTFCC.",
+   "reading": "Class codes are the Census classification and can be wrong; the class filter inherits that error."
+  },
+  {
+   "source": "Census TIGER/Line Shapefile Technical Documentation 2025, Appendix L record layout (field FULLNAME)",
+   "url": "https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc.pdf",
+   "quote": "Concatenation of expanded text for prefix qualifier, prefix direction, prefix type, base name, suffix type, suffix direction, and suffix qualifier (as available) with a space between each expanded text field; display name.",
+   "reading": "FULLNAME is the display name built from parts; a blank value means no name in this release."
+  },
+  {
+   "source": "Census route type code list",
+   "url": "https://www.census.gov/library/reference/code-lists/route-type-codes.html",
+   "quote": "Route Type Code Route Type Code Description C County I Interstate M Common Name O Other S State recognized U U.S.",
+   "reading": "RTTYP codes as published; the U description is cut in the extracted page text (reads U.S.). Used only as a field description."
+  },
+  {
+   "source": "Census Data API terms page (checked, not applicable to TIGER files)",
+   "url": "https://www.census.gov/data/developers/about/terms-of-service.html",
+   "quote": "Attribution All services, which utilize or access the API, should display the following notice prominently within the application",
+   "reading": "Applies to the Census Data API, not to the TIGER/Line downloads; no TIGER statement on this page. The phrase public domain was not found on the TIGER product page or this page."
+  },
+  {
+   "source": "Montana State Library Transportation Framework, FGDC metadata element Use Constraints (verbatim, full)",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member TransportationFramework_metadata.xml)",
+   "quote": "DISCLAIMER: The Montana State Library Geographic Information Services provides this product/service for informational purposes only. The Library did not produce it for, nor is it suitable for legal, engineering, or surveying purposes. Consumers of this information should review or consult the primary data and information sources to ascertain the viability of the information for their purposes. The Library provides these data in good faith but does not represent or warrant its accuracy, adequacy, or completeness. In no event shall the Library be liable for any incorrect results or analysis; any direct, indirect, special, or consequential damages to any party; or any lost profits arising out of or in connection with the use or the inability to use the data or the services provided. The Library makes these data and services available as a convenience to the public, and for no other purpose. The Library reserves the right to change or revise published data and/or services at any time.",
+   "reading": "A disclaimer, not a license. It grants no reuse or redistribution right and says the data are provided as a convenience. Reuse rights for publishing derived tiles are unverified; ask MSL in writing (geoinfo@mt.gov)."
+  },
+  {
+   "source": "Montana State Library Transportation Framework, FGDC metadata abstract",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member TransportationFramework_metadata.xml)",
+   "quote": "Through a federated approach, the Framework aggregates tribal, county, city, and federal road centerline data into a standardized database. Individual data providers datasets have not been edgematched. As a result, gaps, overlaps, and duplicate features are present in the dataset.",
+   "reading": "The data come from many agencies whose own terms are not stated here. Gaps and duplicates are known; the state file needs the same dedupe as TIGER."
+  },
+  {
+   "source": "Montana State Library Transportation Framework, FGDC metadata purpose",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member TransportationFramework_metadata.xml)",
+   "quote": "This dataset is not suitable for routing or network analysis.",
+   "reading": "Drawing is within the stated purpose; routing or address-based network use is not."
+  },
+  {
+   "source": "Montana State Library Transportation Framework, _ReadMe.txt",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member _ReadMe.txt)",
+   "quote": "The Transportation Framework downloads are exported monthly, around the end of the month (the exact date varies).",
+   "reading": "Monthly export; the metadata itself says the update is as needed."
+  },
+  {
+   "source": "Montana State Library Transportation Framework, FGDC metadata field definitions",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip (member TransportationFramework_metadata.xml)",
+   "quote": "DiscrpAgID Agency that receives a Discrepancy Report regarding the data.",
+   "reading": "DiscrpAgID is a contact agency for corrections, not the data provider. Provider attribution per feature is not established by this field."
+  }
+ ],
+ "measurements": {
+  "counties_TIGER": {
+   "30111": {
+    "name": "Yellowstone County",
+    "zip_bytes": 1999745,
+    "shp_records_all_roads": 6798,
+    "vertices_all_roads": 169470,
+    "mtfcc_counts_share_pct": {
+     "S1400": [
+      5650,
+      83.11,
+      135074,
+      789
+     ],
+     "S1740": [
+      597,
+      8.78,
+      15634,
+      506
+     ],
+     "S1750": [
+      198,
+      2.91,
+      4305,
+      198
+     ],
+     "S1640": [
+      138,
+      2.03,
+      1705,
+      107
+     ],
+     "S1630": [
+      86,
+      1.27,
+      1543,
+      86
+     ],
+     "S1200": [
+      40,
+      0.59,
+      4044,
+      0
+     ],
+     "S1500": [
+      28,
+      0.41,
+      781,
+      18
+     ],
+     "S1780": [
+      23,
+      0.34,
+      368,
+      18
+     ],
+     "S1730": [
+      19,
+      0.28,
+      109,
+      17
+     ],
+     "S1820": [
+      10,
+      0.15,
+      303,
+      1
+     ],
+     "S1100": [
+      8,
+      0.12,
+      5599,
+      0
+     ],
+     "S1720": [
+      1,
+      0.01,
+      5,
+      0
+     ]
+    },
+    "mtfcc_columns": "count, share of records (%), vertices, records with blank FULLNAME",
+    "blank_fullname_all": [
+     1740,
+     25.6
+    ],
+    "blank_fullname_vehicular": [
+     1523,
+     23.2
+    ],
+    "rttyp_counts": [
+     [
+      "M",
+      5017
+     ],
+     [
+      "",
+      1740
+     ],
+     [
+      "U",
+      22
+     ],
+     [
+      "I",
+      12
+     ],
+     [
+      "S",
+      4
+     ],
+     [
+      "O",
+      3
+     ]
+    ],
+    "exact_duplicate_geometry_extra_records": 117,
+    "distinct_geometries": 6681,
+    "linearid_distinct": 6798,
+    "vehicular_records": 6566,
+    "vehicular_records_share_pct": 96.59,
+    "vehicular_vertices": 164489,
+    "vehicular_vertices_share_pct": 97.06,
+    "json_bytes_5dp_vehicular": {
+     "before_dp": 3631891,
+     "dp_2m": 1296987,
+     "dp_5m": 964479
+    },
+    "json_bytes_5dp_all_roads": {
+     "before_dp": 3741937,
+     "dp_2m": 1335137,
+     "dp_5m": 993741
+    },
+    "vertices_after_dp_vehicular": {
+     "dp_2m": 58357,
+     "dp_5m": 43243
+    },
+    "attribute_bytes_name_and_class_est_vehicular": 141527
+   },
+   "30045": {
+    "name": "Judith Basin County",
+    "zip_bytes": 914175,
+    "shp_records_all_roads": 2142,
+    "vertices_all_roads": 80281,
+    "mtfcc_counts_share_pct": {
+     "S1400": [
+      1721,
+      80.35,
+      61818,
+      911
+     ],
+     "S1500": [
+      163,
+      7.61,
+      6432,
+      141
+     ],
+     "S1740": [
+      115,
+      5.37,
+      1887,
+      112
+     ],
+     "S1640": [
+      103,
+      4.81,
+      6235,
+      1
+     ],
+     "S1730": [
+      18,
+      0.84,
+      206,
+      1
+     ],
+     "S1200": [
+      14,
+      0.65,
+      3603,
+      0
+     ],
+     "S1750": [
+      8,
+      0.37,
+      100,
+      8
+     ]
+    },
+    "mtfcc_columns": "count, share of records (%), vertices, records with blank FULLNAME",
+    "blank_fullname_all": [
+     1174,
+     54.81
+    ],
+    "blank_fullname_vehicular": [
+     1166,
+     54.64
+    ],
+    "rttyp_counts": [
+     [
+      "",
+      1174
+     ],
+     [
+      "M",
+      800
+     ],
+     [
+      "C",
+      137
+     ],
+     [
+      "S",
+      20
+     ],
+     [
+      "O",
+      7
+     ],
+     [
+      "U",
+      4
+     ]
+    ],
+    "exact_duplicate_geometry_extra_records": 39,
+    "distinct_geometries": 2103,
+    "linearid_distinct": 2142,
+    "vehicular_records": 2134,
+    "vehicular_records_share_pct": 99.63,
+    "vehicular_vertices": 80181,
+    "vehicular_vertices_share_pct": 99.88,
+    "json_bytes_5dp_vehicular": {
+     "before_dp": 1768251,
+     "dp_2m": 796027,
+     "dp_5m": 560385
+    },
+    "json_bytes_5dp_all_roads": {
+     "before_dp": 1770467,
+     "dp_2m": 797165,
+     "dp_5m": 561171
+    },
+    "vertices_after_dp_vehicular": {
+     "dp_2m": 35989,
+     "dp_5m": 25278
+    },
+    "attribute_bytes_name_and_class_est_vehicular": 39056
+   },
+   "30053": {
+    "name": "Lincoln County",
+    "zip_bytes": 10850223,
+    "shp_records_all_roads": 15442,
+    "vertices_all_roads": 980073,
+    "mtfcc_counts_share_pct": {
+     "S1400": [
+      7724,
+      50.02,
+      571108,
+      4687
+     ],
+     "S1640": [
+      6261,
+      40.55,
+      346457,
+      14
+     ],
+     "S1740": [
+      834,
+      5.4,
+      19210,
+      806
+     ],
+     "S1500": [
+      490,
+      3.17,
+      33320,
+      449
+     ],
+     "S1750": [
+      57,
+      0.37,
+      1265,
+      57
+     ],
+     "S1730": [
+      52,
+      0.34,
+      373,
+      10
+     ],
+     "S1200": [
+      19,
+      0.12,
+      8275,
+      0
+     ],
+     "S1710": [
+      3,
+      0.02,
+      29,
+      2
+     ],
+     "S1780": [
+      2,
+      0.01,
+      36,
+      1
+     ]
+    },
+    "mtfcc_columns": "count, share of records (%), vertices, records with blank FULLNAME",
+    "blank_fullname_all": [
+     6026,
+     39.02
+    ],
+    "blank_fullname_vehicular": [
+     5966,
+     38.79
+    ],
+    "rttyp_counts": [
+     [
+      "M",
+      8590
+     ],
+     [
+      "",
+      6026
+     ],
+     [
+      "O",
+      800
+     ],
+     [
+      "U",
+      11
+     ],
+     [
+      "C",
+      8
+     ],
+     [
+      "S",
+      7
+     ]
+    ],
+    "exact_duplicate_geometry_extra_records": 131,
+    "distinct_geometries": 15311,
+    "linearid_distinct": 15442,
+    "vehicular_records": 15380,
+    "vehicular_records_share_pct": 99.6,
+    "vehicular_vertices": 978743,
+    "vehicular_vertices_share_pct": 99.86,
+    "json_bytes_5dp_vehicular": {
+     "before_dp": 21563107,
+     "dp_2m": 8868777,
+     "dp_5m": 5535161
+    },
+    "json_bytes_5dp_all_roads": {
+     "before_dp": 21592491,
+     "dp_2m": 8879417,
+     "dp_5m": 5542391
+    },
+    "vertices_after_dp_vehicular": {
+     "dp_2m": 401728,
+     "dp_5m": 250200
+    },
+    "attribute_bytes_name_and_class_est_vehicular": 268227
+   }
+  },
+  "tiger_statewide_estimate": {
+   "zip_total_bytes": 88860450,
+   "method": "each measured county JSON bytes divided by its zip bytes, times the 56-file zip total (3 counties measured)",
+   "estimate": {
+    "json_before_dp_vehicular": {
+     "min_MB": 161.39,
+     "mean_MB": 169.95,
+     "max_MB": 176.6,
+     "by_county_MB": {
+      "Yellowstone": 161.39,
+      "Judith Basin": 171.88,
+      "Lincoln": 176.6
+     }
+    },
+    "json_dp2_vehicular": {
+     "min_MB": 57.63,
+     "mean_MB": 69.21,
+     "max_MB": 77.38,
+     "by_county_MB": {
+      "Yellowstone": 57.63,
+      "Judith Basin": 77.38,
+      "Lincoln": 72.63
+     }
+    },
+    "json_dp5_vehicular": {
+     "min_MB": 42.86,
+     "mean_MB": 47.55,
+     "max_MB": 54.47,
+     "by_county_MB": {
+      "Yellowstone": 42.86,
+      "Judith Basin": 54.47,
+      "Lincoln": 45.33
+     }
+    },
+    "json_before_dp_all": {
+     "min_MB": 166.28,
+     "mean_MB": 171.74,
+     "max_MB": 176.84,
+     "by_county_MB": {
+      "Yellowstone": 166.28,
+      "Judith Basin": 172.09,
+      "Lincoln": 176.84
+     }
+    },
+    "json_dp2_all": {
+     "min_MB": 59.33,
+     "mean_MB": 69.84,
+     "max_MB": 77.49,
+     "by_county_MB": {
+      "Yellowstone": 59.33,
+      "Judith Basin": 77.49,
+      "Lincoln": 72.72
+     }
+    },
+    "json_dp5_all": {
+     "min_MB": 44.16,
+     "mean_MB": 48.03,
+     "max_MB": 54.55,
+     "by_county_MB": {
+      "Yellowstone": 44.16,
+      "Judith Basin": 54.55,
+      "Lincoln": 45.39
+     }
+    },
+    "attr_bytes_est_vehicular": {
+     "min_MB": 2.2,
+     "mean_MB": 4.09,
+     "max_MB": 6.29,
+     "by_county_MB": {
+      "Yellowstone": 6.29,
+      "Judith Basin": 3.8,
+      "Lincoln": 2.2
+     }
+    },
+    "vehicular_vertices_M_by_county": {
+     "Yellowstone": 7.31,
+     "Judith Basin": 7.79,
+     "Lincoln": 8.02
+    },
+    "vehicular_features_k_by_county": {
+     "Yellowstone": 291.8,
+     "Judith Basin": 207.4,
+     "Lincoln": 126.0
+    }
+   }
+  },
+  "tile_sizes_per_0.1deg_tile": {
+   "tiger_counties": {
+    "Yellowstone County": {
+     "before": {
+      "tiles_nonempty": 100,
+      "median_bytes": 18876,
+      "p90_bytes": 72384,
+      "p99_bytes": 369246,
+      "max_bytes": 494846,
+      "top3": [
+       {
+        "centre_lat": 45.8,
+        "centre_lon": -108.5,
+        "bytes": 494846
+       },
+       {
+        "centre_lat": 45.8,
+        "centre_lon": -108.6,
+        "bytes": 367978
+       },
+       {
+        "centre_lat": 45.8,
+        "centre_lon": -108.4,
+        "bytes": 237994
+       }
+      ],
+      "total_bytes_without_outer_wrapper": 3631890
+     },
+     "dp2": {
+      "tiles_nonempty": 100,
+      "median_bytes": 7827,
+      "p90_bytes": 24499,
+      "p99_bytes": 126221,
+      "max_bytes": 145992,
+      "top3": [
+       {
+        "centre_lat": 45.8,
+        "centre_lon": -108.5,
+        "bytes": 145992
+       },
+       {
+        "centre_lat": 45.8,
+        "centre_lon": -108.6,
+        "bytes": 126022
+       },
+       {
+        "centre_lat": 45.8,
+        "centre_lon": -108.4,
+        "bytes": 75854
+       }
+      ],
+      "total_bytes_without_outer_wrapper": 1296986
+     },
+     "dp5": {
+      "tiles_nonempty": 100,
+      "median_bytes": 6098,
+      "p90_bytes": 18374,
+      "p99_bytes": 94146,
+      "max_bytes": 107470,
+      "top3": [
+       {
+        "centre_lat": 45.8,
+        "centre_lon": -108.5,
+        "bytes": 107470
+       },
+       {
+        "centre_lat": 45.8,
+        "centre_lon": -108.6,
+        "bytes": 94012
+       },
+       {
+        "centre_lat": 45.8,
+        "centre_lon": -108.4,
+        "bytes": 51676
+       }
+      ],
+      "total_bytes_without_outer_wrapper": 964478
+     }
+    },
+    "Judith Basin County": {
+     "before": {
+      "tiles_nonempty": 77,
+      "median_bytes": 20168,
+      "p90_bytes": 46128,
+      "p99_bytes": 68329,
+      "max_bytes": 69634,
+      "top3": [
+       {
+        "centre_lat": 47.1,
+        "centre_lon": -110.6,
+        "bytes": 69634
+       },
+       {
+        "centre_lat": 46.8,
+        "centre_lon": -110.3,
+        "bytes": 67918
+       },
+       {
+        "centre_lat": 47.0,
+        "centre_lon": -110.4,
+        "bytes": 67578
+       }
+      ],
+      "total_bytes_without_outer_wrapper": 1768250
+     },
+     "dp2": {
+      "tiles_nonempty": 77,
+      "median_bytes": 8456,
+      "p90_bytes": 20012,
+      "p99_bytes": 32812,
+      "max_bytes": 34852,
+      "top3": [
+       {
+        "centre_lat": 46.8,
+        "centre_lon": -110.3,
+        "bytes": 34852
+       },
+       {
+        "centre_lat": 47.1,
+        "centre_lon": -110.6,
+        "bytes": 32168
+       },
+       {
+        "centre_lat": 46.9,
+        "centre_lon": -110.3,
+        "bytes": 30472
+       }
+      ],
+      "total_bytes_without_outer_wrapper": 796026
+     },
+     "dp5": {
+      "tiles_nonempty": 77,
+      "median_bytes": 6252,
+      "p90_bytes": 13274,
+      "p99_bytes": 21640,
+      "max_bytes": 22508,
+      "top3": [
+       {
+        "centre_lat": 46.9,
+        "centre_lon": -110.3,
+        "bytes": 22508
+       },
+       {
+        "centre_lat": 46.8,
+        "centre_lon": -110.3,
+        "bytes": 21366
+       },
+       {
+        "centre_lat": 47.1,
+        "centre_lon": -110.6,
+        "bytes": 19496
+       }
+      ],
+      "total_bytes_without_outer_wrapper": 560384
+     }
+    },
+    "Lincoln County": {
+     "before": {
+      "tiles_nonempty": 139,
+      "median_bytes": 144932,
+      "p90_bytes": 293926,
+      "p99_bytes": 405501,
+      "max_bytes": 416114,
+      "top3": [
+       {
+        "centre_lat": 48.8,
+        "centre_lon": -114.9,
+        "bytes": 416114
+       },
+       {
+        "centre_lat": 48.8,
+        "centre_lon": -115.1,
+        "bytes": 406320
+       },
+       {
+        "centre_lat": 48.7,
+        "centre_lon": -115.0,
+        "bytes": 404166
+       }
+      ],
+      "total_bytes_without_outer_wrapper": 21563106
+     },
+     "dp2": {
+      "tiles_nonempty": 139,
+      "median_bytes": 62616,
+      "p90_bytes": 121832,
+      "p99_bytes": 146955,
+      "max_bytes": 157148,
+      "top3": [
+       {
+        "centre_lat": 48.8,
+        "centre_lon": -115.1,
+        "bytes": 157148
+       },
+       {
+        "centre_lat": 48.8,
+        "centre_lon": -114.9,
+        "bytes": 147494
+       },
+       {
+        "centre_lat": 48.5,
+        "centre_lon": -115.5,
+        "bytes": 146078
+       }
+      ],
+      "total_bytes_without_outer_wrapper": 8868776
+     },
+     "dp5": {
+      "tiles_nonempty": 139,
+      "median_bytes": 38878,
+      "p90_bytes": 77462,
+      "p99_bytes": 92509,
+      "max_bytes": 96340,
+      "top3": [
+       {
+        "centre_lat": 48.8,
+        "centre_lon": -115.1,
+        "bytes": 96340
+       },
+       {
+        "centre_lat": 48.8,
+        "centre_lon": -114.9,
+        "bytes": 92604
+       },
+       {
+        "centre_lat": 48.5,
+        "centre_lon": -115.5,
+        "bytes": 92354
+       }
+      ],
+      "total_bytes_without_outer_wrapper": 5535160
+     }
+    }
+   },
+   "msl_statewide": {
+    "before": {
+     "tiles_nonempty": 4335,
+     "median_bytes": 21978,
+     "p90_bytes": 90329,
+     "p99_bytes": 275823,
+     "max_bytes": 1430564,
+     "top3": [
+      {
+       "centre_lat": 48.2,
+       "centre_lon": -114.3,
+       "bytes": 1430564
+      },
+      {
+       "centre_lat": 48.4,
+       "centre_lon": -114.3,
+       "bytes": 818602
+      },
+      {
+       "centre_lat": 48.3,
+       "centre_lon": -114.3,
+       "bytes": 771724
+      }
+     ],
+     "total_bytes_without_outer_wrapper": 171380406
+    },
+    "dp2": {
+     "tiles_nonempty": 4333,
+     "median_bytes": 4332,
+     "p90_bytes": 29958,
+     "p99_bytes": 86663,
+     "max_bytes": 345040,
+     "top3": [
+      {
+       "centre_lat": 48.2,
+       "centre_lon": -114.3,
+       "bytes": 345040
+      },
+      {
+       "centre_lat": 46.0,
+       "centre_lon": -112.5,
+       "bytes": 262090
+      },
+      {
+       "centre_lat": 45.8,
+       "centre_lon": -108.5,
+       "bytes": 244192
+      }
+     ],
+     "total_bytes_without_outer_wrapper": 48805338
+    },
+    "dp5": {
+     "tiles_nonempty": 4331,
+     "median_bytes": 2856,
+     "p90_bytes": 19226,
+     "p99_bytes": 58499,
+     "max_bytes": 294154,
+     "top3": [
+      {
+       "centre_lat": 48.2,
+       "centre_lon": -114.3,
+       "bytes": 294154
+      },
+      {
+       "centre_lat": 46.0,
+       "centre_lon": -112.5,
+       "bytes": 231180
+      },
+      {
+       "centre_lat": 45.8,
+       "centre_lon": -108.5,
+       "bytes": 216208
+      }
+     ],
+     "total_bytes_without_outer_wrapper": 32653356
+    }
+   },
+   "msl_statewide_features_vehicular_parts": [
+    242774,
+    243776,
+    7767857
+   ]
+  },
+  "msl_statewide": {
+   "records": 258208,
+   "points_total": 8707717,
+   "all": {
+    "features": 258208,
+    "parts": 259213,
+    "vertices": 8707717,
+    "vertices_after_dp_2m": 2505714,
+    "vertices_after_dp_5m": 1657366,
+    "json_bytes_5dp_before_dp": 192088201,
+    "json_bytes_5dp_dp_2m": 55644135,
+    "json_bytes_5dp_dp_5m": 36980479,
+    "blank_composed_name_features": 324,
+    "name_and_class_attribute_bytes_est": 7731582
+   },
+   "vehicular": {
+    "features": 242774,
+    "parts": 243776,
+    "vertices": 7767857,
+    "vertices_after_dp_2m": 2196263,
+    "vertices_after_dp_5m": 1462082,
+    "json_bytes_5dp_before_dp": 171380407,
+    "json_bytes_5dp_dp_2m": 48805339,
+    "json_bytes_5dp_dp_5m": 32653357,
+    "blank_composed_name_features": 292,
+    "name_and_class_attribute_bytes_est": 7304565
+   },
+   "nonvehicular": {
+    "features": 15434,
+    "parts": 15437,
+    "vertices": 939860,
+    "vertices_after_dp_2m": 309451,
+    "vertices_after_dp_5m": 195284,
+    "json_bytes_5dp_before_dp": 20707795,
+    "json_bytes_5dp_dp_2m": 6838797,
+    "json_bytes_5dp_dp_5m": 4327123,
+    "blank_composed_name_features": 32,
+    "name_and_class_attribute_bytes_est": 427017
+   },
+   "class_counts": {
+    "Local": 189164,
+    "Secondary": 19651,
+    "Private": 19413,
+    "Other": 15416,
+    "Vehicular Trail": 7714,
+    "Alley": 3663,
+    "Primary": 2004,
+    "Ramp": 1010,
+    "Service Drive": 155,
+    "Walkway/Pedestrian Trail": 10,
+    "": 6,
+    "Parking Lot": 1,
+    "Stairway": 1
+   },
+   "class_vertices": {
+    "Local": 6235323,
+    "Other": 939389,
+    "Vehicular Trail": 720708,
+    "Private": 421747,
+    "Secondary": 261262,
+    "Primary": 79821,
+    "Alley": 25216,
+    "Ramp": 14680,
+    "Service Drive": 9100,
+    "Walkway/Pedestrian Trail": 325,
+    "": 129,
+    "Parking Lot": 14,
+    "Stairway": 3
+   },
+   "lonlat_bbox": [
+    -116.05177649918186,
+    44.44138651916278,
+    -104.03923002045507,
+    49.001083382610936
+   ],
+   "format_note": "bytes = one JSON array of polylines with 5-decimal lon,lat; the raw run counted a per-feature wrapper and comma, which is removed here (subtract features + parts)",
+   "run_seconds": 629.2
+  },
+  "tiles_billings_and_benchland": {
+   "billings_0.1deg_lat45.75-45.85_lon-108.55--108.45": {
+    "TIGER_2025_Yellowstone": {
+     "candidates_bbox": 1368,
+     "features_in_tile_all_classes": 1368,
+     "classes_all": {
+      "S1400": 1192,
+      "S1640": 70,
+      "S1200": 27,
+      "S1630": 25,
+      "S1750": 15,
+      "S1730": 9,
+      "S1740": 9,
+      "S1820": 7,
+      "S1780": 6,
+      "S1100": 6,
+      "S1720": 1,
+      "S1500": 1
+     },
+     "vehicular_features": 1339,
+     "vehicular_pieces": 1340,
+     "vehicular_vertices": 22476,
+     "blank_name_features": 131,
+     "blank_name_share": 0.0978,
+     "distinct_names": 954,
+     "json_bytes_5dp_before_dp": 497153,
+     "json_bytes_check_by_string": 497153,
+     "vertices_after_dp_2m": 6610,
+     "json_bytes_5dp_dp_2m": 148101,
+     "reduction_pct_dp_2m": 70.21,
+     "vertices_after_dp_5m": 4856,
+     "json_bytes_5dp_dp_5m": 109513,
+     "reduction_pct_dp_5m": 77.97,
+     "all_classes_before_dp_bytes": 506495,
+     "attribute_bytes_name_and_class_est": 30163
+    },
+    "MSL_RoadCenterLine": {
+     "candidates_bbox": 6003,
+     "features_in_tile_all_classes": 4128,
+     "classes_all": {
+      "Local": 3908,
+      "Secondary": 183,
+      "Primary": 24,
+      "Ramp": 13
+     },
+     "vehicular_features": 4128,
+     "vehicular_pieces": 4128,
+     "vehicular_vertices": 23743,
+     "blank_name_features": 0,
+     "blank_name_share": 0.0,
+     "distinct_names": 780,
+     "json_bytes_5dp_before_dp": 530603,
+     "json_bytes_check_by_string": 530603,
+     "vertices_after_dp_2m": 10805,
+     "json_bytes_5dp_dp_2m": 245967,
+     "reduction_pct_dp_2m": 53.64,
+     "vertices_after_dp_5m": 9534,
+     "json_bytes_5dp_dp_5m": 218005,
+     "reduction_pct_dp_5m": 58.91,
+     "all_classes_before_dp_bytes": 530603,
+     "attribute_bytes_name_and_class_est": 80719
+    }
+   },
+   "benchland_0.1deg_lat47.05-47.15_lon-110.05--109.95": {
+    "TIGER_2025_JudithBasin": {
+     "candidates_bbox": 64,
+     "features_in_tile_all_classes": 63,
+     "classes_all": {
+      "S1400": 59,
+      "S1200": 3,
+      "S1740": 1
+     },
+     "vehicular_features": 63,
+     "vehicular_pieces": 63,
+     "vehicular_vertices": 1578,
+     "blank_name_features": 17,
+     "blank_name_share": 0.2698,
+     "distinct_names": 35,
+     "json_bytes_5dp_before_dp": 34843,
+     "json_bytes_check_by_string": 34843,
+     "vertices_after_dp_2m": 456,
+     "json_bytes_5dp_dp_2m": 10159,
+     "reduction_pct_dp_2m": 70.84,
+     "vertices_after_dp_5m": 319,
+     "json_bytes_5dp_dp_5m": 7145,
+     "reduction_pct_dp_5m": 79.49,
+     "all_classes_before_dp_bytes": 34843,
+     "attribute_bytes_name_and_class_est": 1353
+    },
+    "MSL_RoadCenterLine": {
+     "candidates_bbox": 153,
+     "features_in_tile_all_classes": 73,
+     "classes_all": {
+      "Local": 55,
+      "Private": 12,
+      "Secondary": 6
+     },
+     "vehicular_features": 73,
+     "vehicular_pieces": 73,
+     "vehicular_vertices": 964,
+     "blank_name_features": 0,
+     "blank_name_share": 0.0,
+     "distinct_names": 16,
+     "json_bytes_5dp_before_dp": 21355,
+     "json_bytes_check_by_string": 21355,
+     "vertices_after_dp_2m": 350,
+     "json_bytes_5dp_dp_2m": 7847,
+     "reduction_pct_dp_2m": 63.25,
+     "vertices_after_dp_5m": 260,
+     "json_bytes_5dp_dp_5m": 5867,
+     "reduction_pct_dp_5m": 72.53,
+     "all_classes_before_dp_bytes": 21355,
+     "attribute_bytes_name_and_class_est": 1656
+    }
+   }
+  },
+  "billings_agreement_TIGER_vs_MSL": {
+   "tile": [
+    45.75,
+    45.85,
+    -108.55,
+    -108.45
+   ],
+   "tiger_vehicular_pieces": 1340,
+   "tiger_vehicular_vertices": 22476,
+   "msl_vehicular_pieces": 4128,
+   "msl_vehicular_vertices": 23743,
+   "tiger_vertices_to_msl_lines": {
+    "n": 22476,
+    "median_m": 0.91,
+    "p90_m": 7.53,
+    "p95_m": 36.04,
+    "share_within_2m": 0.7439,
+    "share_within_5m": 0.8568,
+    "share_within_10m": 0.9186,
+    "share_within_20m": 0.9411,
+    "share_over_50m_or_no_line": 0.0408
+   },
+   "msl_vertices_to_tiger_lines": {
+    "n": 23743,
+    "median_m": 0.88,
+    "p90_m": 3.81,
+    "p95_m": 7.04,
+    "share_within_2m": 0.8063,
+    "share_within_5m": 0.9282,
+    "share_within_10m": 0.9678,
+    "share_within_20m": 0.9782,
+    "share_over_50m_or_no_line": 0.0137
+   },
+   "tiger_length_km": 667.84,
+   "msl_length_km": 573.86,
+   "tiger_27th_st_vertices_to_msl_27th": {
+    "n": 181,
+    "median_m": 6.28,
+    "p90_m": 8.09,
+    "p95_m": 8.43,
+    "share_within_2m": 0.221,
+    "share_within_5m": 0.3094,
+    "share_within_10m": 1.0,
+    "share_within_20m": 1.0,
+    "share_over_50m_or_no_line": 0.0
+   }
+  },
+  "billings_unmatched": {
+   "tile": [
+    45.75,
+    45.85,
+    -108.55,
+    -108.45
+   ],
+   "threshold_m": 20.0,
+   "tiger_vehicular_vertices": 22476,
+   "tiger_unmatched_vertices_gt20m": 1324,
+   "tiger_unmatched_share": 0.0589,
+   "tiger_unmatched_by_mtfcc": {
+    "S1100": [
+     0,
+     682,
+     0.0
+    ],
+    "S1200": [
+     2,
+     1854,
+     0.0011
+    ],
+    "S1400": [
+     618,
+     18643,
+     0.0331
+    ],
+    "S1500": [
+     1,
+     4,
+     0.25
+    ],
+    "S1630": [
+     0,
+     398,
+     0.0
+    ],
+    "S1640": [
+     549,
+     702,
+     0.7821
+    ],
+    "S1730": [
+     19,
+     42,
+     0.4524
+    ],
+    "S1740": [
+     135,
+     151,
+     0.894
+    ]
+   },
+   "tiger_unmatched_top_names": [
+    [
+     "",
+     750
+    ],
+    [
+     "Internal",
+     136
+    ],
+    [
+     "Two Moon Park Rd",
+     30
+    ],
+    [
+     "Northview Dr",
+     23
+    ],
+    [
+     "Summerhill Dr",
+     22
+    ],
+    [
+     "Morey St",
+     21
+    ],
+    [
+     "Asteroid Ave",
+     16
+    ],
+    [
+     "Zodiac Ave",
+     15
+    ],
+    [
+     "Island Park Rd",
+     11
+    ],
+    [
+     "Laurie Ln",
+     11
+    ],
+    [
+     "Spica Pl",
+     10
+    ],
+    [
+     "Cottonwood",
+     10
+    ]
+   ],
+   "msl_vehicular_vertices": 23743,
+   "msl_unmatched_vertices_gt20m": 518,
+   "msl_unmatched_share": 0.0218,
+   "msl_unmatched_by_roadclass": {
+    "Local": [
+     518,
+     21367
+    ],
+    "Primary": [
+     0,
+     1070
+    ],
+    "Ramp": [
+     0,
+     210
+    ],
+    "Secondary": [
+     0,
+     1096
+    ]
+   },
+   "msl_unmatched_top_names": [
+    [
+     "Madrid Drive",
+     71
+    ],
+    [
+     "Sierra Vista Circle",
+     54
+    ],
+    [
+     "Meadowlark Lane",
+     38
+    ],
+    [
+     "Sugar Pine Road",
+     36
+    ],
+    [
+     "Dale Earnhardt Way",
+     32
+    ],
+    [
+     "West Chalice Acres Circle",
+     26
+    ],
+    [
+     "Skyway Drive",
+     25
+    ],
+    [
+     "Modera Avenue",
+     24
+    ],
+    [
+     "Jackson Court",
+     20
+    ],
+    [
+     "Bill Dutcher Way",
+     19
+    ],
+    [
+     "North Chalice Acres Circle",
+     14
+    ],
+    [
+     "Sandra Drive",
+     14
+    ]
+   ]
+  },
+  "msl_27th_in_billings_window": {
+   "records_named_27th_in_billings_window": 40,
+   "vertices": 236,
+   "roadclass_counts": {
+    "Secondary": 38,
+    "Local": 2
+   },
+   "composed_names": {
+    "North 27th Street": 23,
+    "South 27th Street": 17
+   }
+  },
+  "dp_validation": {
+   "tiger_billings_dp_2m": {
+    "pieces_checked": 1242,
+    "vertices_before": 22280,
+    "vertices_after": 6414,
+    "max_deviation_m": 1.9984,
+    "tolerance_m": 2.0,
+    "within_tolerance": true
+   },
+   "tiger_billings_dp_5m": {
+    "pieces_checked": 1242,
+    "vertices_before": 22280,
+    "vertices_after": 4660,
+    "max_deviation_m": 4.9997,
+    "tolerance_m": 5.0,
+    "within_tolerance": true
+   }
+  },
+  "zoom_resolution": {
+   "m_per_px_at_45.8N_web_mercator_256px": {
+    "13": 13.322,
+    "14": 6.661,
+    "15": 3.331,
+    "16": 1.665,
+    "17": 0.833,
+    "18": 0.416,
+    "19": 0.208
+   },
+   "pixels_for_tolerance": {
+    "2.0": {
+     "13": 0.15,
+     "14": 0.3,
+     "15": 0.6,
+     "16": 1.2,
+     "17": 2.4,
+     "18": 4.81,
+     "19": 9.62
+    },
+    "5.0": {
+     "13": 0.38,
+     "14": 0.75,
+     "15": 1.5,
+     "16": 3.0,
+     "17": 6.0,
+     "18": 12.02,
+     "19": 24.04
+    }
+   }
+  },
+  "address_check_401_N_27th": {
+   "point": [
+    45.7836,
+    -108.5047
+   ],
+   "TIGER_nearest_centerline_m": 41.0,
+   "TIGER_feature": "N 27th St, S1200, LINEARID 1101171881201",
+   "MSL_nearest_centerline_m": 46.9,
+   "MSL_feature": "North 27th Street, Secondary, FromAddr_L 100, ToAddr_L 128",
+   "note": "rough check only: an address point is not a centerline"
+  },
+  "msl_state_fields": "LocalID, NGUID, GlobalID, DiscrpAgID, DateUpdate, Effective, Expire, AdNumPre_L, AdNumPre_R, FromAddr_L, ToAddr_L, FromAddr_R, ToAddr_R, Parity_L, Parity_R, St_PreMod, St_PreDir, St_PreTyp, St_PreSep, St_Name, St_PosTyp, St_PosDir, St_PosMod, LSt_PreDir, LSt_Name, LSt_Typ, LSt_PosDir, Country_L/R, State_L/R, County_L/R, IncMuni_L/R, UnincCom_L/R, NbrhdCom_L/R, PostCode_L/R, PostComm_L/R, RoadClass (C24), OneWay, SpeedLimit (N5), SurfaceTyp, Access, Ownership, ProcessID, ProcessDte",
+  "tiger_fields": {
+   "LINEARID": "C22",
+   "FULLNAME": "C100",
+   "RTTYP": "C1",
+   "MTFCC": "C5"
+  },
+  "geometry": {
+   "TIGER": "polyline, lon/lat, GCS_North_American_1983 (degrees)",
+   "MSL": "polyline, NAD_1983_2011_StatePlane_Montana_FIPS_2500 (Lambert Conformal Conic, meters; false easting 600000, central meridian -109.5, standard parallels 45 and 49)"
+  },
+  "simplification_method": "Douglas-Peucker with clamped segment distance in local equirectangular metres (R = 6371008.8 m) about each piece bbox centre; coordinates written with 5 decimals; bytes counted exactly as one array of [lon,lat] polylines",
+  "tile_rule": "Tiles are 0.1 degree with centres at multiples of 0.1 degree (index = floor(deg*10+0.5)); the Billings tile is lat 45.75 to 45.85, lon -108.55 to -108.45 as the task defined.",
+  "benchland_note": "Benchland (47.08 N, 110.02 W) falls in Judith Basin County (MSL County_L field); the TIGER file for that county was used.",
+  "msl_discrepancy_agency_note": "DiscrpAgID reads City of Lewistown for 153 Judith Basin records and Yellowstone County for Billings records; it is a contact field, not a provider field."
+ },
+ "open_questions": [
+  "MSL reuse terms (decisive for the name source): the metadata has only a disclaimer and no license, credit or redistribution statement, and it aggregates tribal, county, city and federal data. Ask Montana State Library (geoinfo@mt.gov, 406-444-5354) in writing whether the site may publish derived tiles with names, and whether contributing agencies add terms. Unverified until answered.",
+  "Names gap in the recommended source: FULLNAME is blank on 25.6% of Yellowstone records, 54.8% of Judith Basin records and 39.0% of Lincoln records (vehicular: 23.2%, 54.6%, 38.8%). Owner decision: leave unnamed roads unlabelled (recommended here) or add a label rule. Other open sources for names were not checked in this record (for example state highway data or OpenStreetMap, which would need its own terms review and live check).",
+  "Coverage: neither source covers every street alone. In the Billings tile 5.9% of TIGER vehicular vertices have no state-file line within 20 m (frontage roads S1640 at 78% of their vertices, private service roads S1740 at 89%, unnamed streets), and 2.4% of state-file Local vertices have no TIGER line within 20 m (subdivision streets such as Madrid Drive). A union needs a dedupe and conflict rule.",
+  "TIGER class S1750 ('Internal U.S. Census Bureau use') is outside the requested class list: 198 features (2.9%) in Yellowstone, 8 in Judith Basin, 57 in Lincoln, all blank-named in Yellowstone. Contents not examined; excluded here.",
+  "TIGER class S1780 (parking lot roads, 23 features in Yellowstone) is outside the requested list; excluded here. TIGER S1710, S1720, S1820 (walkway, stairway, bike path) excluded as requested.",
+  "State file class 'Other' (15,416 records, 6.0%): defined as 'Other is any road or path type that does not fit into the above categories.' Excluded here; its contents were not examined, so it may hide drivable roads.",
+  "TIGER FULLNAME 'Internal' appears on 73 Yellowstone features and on 136 unmatched Billings vertices; meaning not verified.",
+  "Duplicates: exact duplicate geometries are 117 (Yellowstone), 39 (Judith Basin) and 131 (Lincoln) records in All Roads. The state file has overlaps by its own description; its duplicate count was not fully measured (a first-part hash only).",
+  "Positional accuracy: neither source publishes a positional accuracy figure in the documents checked. Measured agreement in the Billings tile: TIGER vertices to state-file lines median 0.9 m, p95 36 m (the tail is the unmatched roads); 27th Street centerlines differ by a median 6.3 m (p95 8.4 m). Simplification tolerance of 2 to 5 m is below the 27th Street disagreement, so it adds little error relative to the source.",
+  "Datum: TIGER is NAD83 and is used as WGS84 without change. The state file is NAD83(2011) State Plane and was converted with pyproj without a datum grid. The NAD83 to WGS84 offset was not measured here (unverified; commonly stated as about 1 m or less in the conterminous US).",
+  "Address ranges: the TIGER All Roads file has no address range fields (LINEARID, FULLNAME, RTTYP, MTFCC only). The state file has FromAddr and ToAddr fields. The typed-address search (B3) needs address ranges from another product (TIGER address features were not checked) or from the state file under its terms.",
+  "Tile sizes: the statewide TIGER tile sizes are from three counties only. Lincoln County tiles are about 2 to 3 times the Yellowstone tiles (largest 416 KB before simplification, 157 KB at 2 m). The Billings tile is 497 KB before simplification and 148 KB at 2 m for TIGER. The state file is measured statewide: its largest 0.1 degree tile (centre 48.2 N, 114.3 W, the Kalispell area by coordinates) is 1.43 MB before simplification and 345 KB at 2 m, and its median tile is 22 KB before and 4.3 KB at 2 m. A per-tile byte budget is not set here.",
+  "State file pieces: the Billings tile has 4,128 pieces against 1,340 TIGER pieces, because the state file breaks lines at address changes (inferred from the per-piece ranges). Merging consecutive pieces of one street at shared endpoints was not measured and could cut the per-piece overhead.",
+  "Zoom and tolerance: the pixel figures are computed from the Web Mercator resolution at 45.8 N and were not rendered in a browser. At zoom 17 a 2 m tolerance is 2.4 px and a 5 m tolerance 6 px; at zoom 18 they are 4.8 px and 12 px. The owner should choose the tolerance per zoom band after a browser check (rule 8).",
+  "Freshness: TIGER/Line 2025 (metadata date 2025-09-18, citation publication 2025-10); the release cadence was not checked here. The state file was exported 2026-09-30; the ReadMe says the export is monthly and the metadata says the update is as needed; a refresh schedule is not set.",
+  "RTTYP blank on 1,740 Yellowstone records, same count as the blank FULLNAME; meaning of the blank code not verified.",
+  "Not checked in this record: OpenStreetMap (ODbL), Montana Department of Transportation road inventories, and any commercial source. None is recommended here."
+ ],
+ "scripts": [
+  "code/geom.py (clip, Douglas-Peucker, byte counts)",
+  "code/tile_measure.py",
+  "code/msl_state_measure.py",
+  "code/tile_dist.py",
+  "code/billings_agree.py",
+  "code/unmatched.py",
+  "code/dp_check.py",
+  "code/tiger_stats.py",
+  "code/msl_attrs.py",
+  "code/assemble.py",
+  "code/make_record.py",
+  "code/build_final.py"
+ ],
+ "record_file": "/home/user/wt/research-b35/streets.json",
+ "results_folder": "/home/user/wt/research-b35/scratch-streets/results",
+ "tiger_files_table": [
+  {
+   "file": "tl_2025_30001_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30001_roads.zip",
+   "http_status": 200,
+   "bytes": 4811985,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30003_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30003_roads.zip",
+   "http_status": 200,
+   "bytes": 1977570,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30005_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30005_roads.zip",
+   "http_status": 200,
+   "bytes": 1388042,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30007_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30007_roads.zip",
+   "http_status": 200,
+   "bytes": 1234692,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30009_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30009_roads.zip",
+   "http_status": 200,
+   "bytes": 1259238,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30011_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30011_roads.zip",
+   "http_status": 200,
+   "bytes": 1165584,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30013_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30013_roads.zip",
+   "http_status": 200,
+   "bytes": 1379630,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30015_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30015_roads.zip",
+   "http_status": 200,
+   "bytes": 969824,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30017_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30017_roads.zip",
+   "http_status": 200,
+   "bytes": 1158712,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30019_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30019_roads.zip",
+   "http_status": 200,
+   "bytes": 273725,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30021_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30021_roads.zip",
+   "http_status": 200,
+   "bytes": 474082,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30023_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30023_roads.zip",
+   "http_status": 200,
+   "bytes": 953741,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30025_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30025_roads.zip",
+   "http_status": 200,
+   "bytes": 542935,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30027_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30027_roads.zip",
+   "http_status": 200,
+   "bytes": 1099843,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30029_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30029_roads.zip",
+   "http_status": 200,
+   "bytes": 4980484,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30031_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30031_roads.zip",
+   "http_status": 200,
+   "bytes": 2483317,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30033_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30033_roads.zip",
+   "http_status": 200,
+   "bytes": 1559301,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30035_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30035_roads.zip",
+   "http_status": 200,
+   "bytes": 1002501,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30037_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30037_roads.zip",
+   "http_status": 200,
+   "bytes": 499798,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30039_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30039_roads.zip",
+   "http_status": 200,
+   "bytes": 2079201,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30041_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30041_roads.zip",
+   "http_status": 200,
+   "bytes": 1038285,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30043_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30043_roads.zip",
+   "http_status": 200,
+   "bytes": 2860211,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30045_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30045_roads.zip",
+   "http_status": 200,
+   "bytes": 914175,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30047_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30047_roads.zip",
+   "http_status": 200,
+   "bytes": 1832966,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30049_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30049_roads.zip",
+   "http_status": 200,
+   "bytes": 1819246,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30051_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30051_roads.zip",
+   "http_status": 200,
+   "bytes": 434918,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30053_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30053_roads.zip",
+   "http_status": 200,
+   "bytes": 10850223,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30055_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30055_roads.zip",
+   "http_status": 200,
+   "bytes": 394834,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30057_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30057_roads.zip",
+   "http_status": 200,
+   "bytes": 3816786,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30059_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30059_roads.zip",
+   "http_status": 200,
+   "bytes": 1573496,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30061_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30061_roads.zip",
+   "http_status": 200,
+   "bytes": 3752938,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30063_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30063_roads.zip",
+   "http_status": 200,
+   "bytes": 2031208,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30065_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30065_roads.zip",
+   "http_status": 200,
+   "bytes": 988978,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30067_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30067_roads.zip",
+   "http_status": 200,
+   "bytes": 1826492,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30069_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30069_roads.zip",
+   "http_status": 200,
+   "bytes": 546958,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30071_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30071_roads.zip",
+   "http_status": 200,
+   "bytes": 1220233,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30073_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30073_roads.zip",
+   "http_status": 200,
+   "bytes": 533837,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30075_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30075_roads.zip",
+   "http_status": 200,
+   "bytes": 1966643,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30077_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30077_roads.zip",
+   "http_status": 200,
+   "bytes": 2160858,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30079_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30079_roads.zip",
+   "http_status": 200,
+   "bytes": 240951,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30081_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30081_roads.zip",
+   "http_status": 200,
+   "bytes": 1844486,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30083_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30083_roads.zip",
+   "http_status": 200,
+   "bytes": 947068,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30085_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30085_roads.zip",
+   "http_status": 200,
+   "bytes": 783505,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30087_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30087_roads.zip",
+   "http_status": 200,
+   "bytes": 1386360,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30089_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30089_roads.zip",
+   "http_status": 200,
+   "bytes": 2097562,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30091_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30091_roads.zip",
+   "http_status": 200,
+   "bytes": 433526,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30093_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30093_roads.zip",
+   "http_status": 200,
+   "bytes": 1446225,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30095_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30095_roads.zip",
+   "http_status": 200,
+   "bytes": 851808,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30097_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30097_roads.zip",
+   "http_status": 200,
+   "bytes": 1028524,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30099_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30099_roads.zip",
+   "http_status": 200,
+   "bytes": 926494,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30101_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30101_roads.zip",
+   "http_status": 200,
+   "bytes": 570822,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30103_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30103_roads.zip",
+   "http_status": 200,
+   "bytes": 300461,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30105_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30105_roads.zip",
+   "http_status": 200,
+   "bytes": 1263769,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30107_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30107_roads.zip",
+   "http_status": 200,
+   "bytes": 679544,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30109_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30109_roads.zip",
+   "http_status": 200,
+   "bytes": 202110,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  },
+  {
+   "file": "tl_2025_30111_roads.zip",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/tl_2025_30111_roads.zip",
+   "http_status": 200,
+   "bytes": 1999745,
+   "last_modified": "Mon, 22 Sep 2025 23:49:25 GMT"
+  }
+ ],
+ "sha256_all": {
+  "tl_2025_30111_roads.zip": "9ccc5088ddb8bf30f806bc3873d0ec88b67fd8d8a4d8e27548bee83e2fbfd20c",
+  "tl_2025_30045_roads.zip": "786d37d5319639232eae4e788efc4ae33d96b5ca870436e99937a4ea040fb08f",
+  "tl_2025_30053_roads.zip": "b74cfe8e38becd0738cd43a7a3c5d47daada8e07673883747a37bdaf3ebd791e",
+  "TransportationFramework_shp.zip": "7fb951a6dca181d0129549dbc30d09301b20fb0e20198ae82c97944369b3bec8",
+  "TGRSHP2025_TechDoc.pdf": "21476bdba82fe8072f8994ae59bda484260d1b932c13f31991f6414f8e04d551"
+ }
+}

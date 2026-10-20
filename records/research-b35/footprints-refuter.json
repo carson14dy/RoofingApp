@@ -1,0 +1,471 @@
+{
+ "slug": "footprints",
+ "role": "refuter of the footprints worker record",
+ "record_checked": "/home/user/wt/research-b35/footprints.json",
+ "checked_at_utc": "2026-10-19T04:02:34Z",
+ "bottom_line": "The technical plan reproduces: one 918,052-footprint source, the join numbers (with stated scope), the statewide and tile byte budgets and the dot rule. The licence basis does not: no licence is established for the 2026-09-13 file, the CC0 Figshare fallback carries FEMA access and personal-data limits, and the ODbL 4.6 reading is incomplete. The recommendation stands only as a gated plan: no publication until FEMA and ORNL confirm the 2026-09-13 file's licence in writing.",
+ "recommendation_stands": true,
+ "recommendation_note": "Stands, conditionally. Keep the source choice (MT_Structures_20260913, 918,052 footprints) and the byte and dot-rule numbers, which reproduce. Do not publish tiles until FEMA and ORNL confirm in writing that the 2026-09-13 file may be published with attribution under CC BY 4.0, covering the OCC_CLS and PROP_* fields and the LightBox-derived inputs, and that the 2023 'not outside FEMA' note does not apply to the 2026 file. If they decline, the fallback is counsel's call: the explicit CC BY 4.0 statement on Esri's June 2025 hosted copy is the only explicit licence statement on a FEMA/ORNL Montana building layer from a 2025-or-later edition (the 2026 file has none; the 2023 deposit's CC0 label does not override its FEMA access limits). The Figshare CC0 copy is not clean (same file, FEMA-only access and personal-data notes). Microsoft and Overture stay out of published tiles (ODbL).",
+ "checks": [
+  {
+   "claim": "Montana file location, size and date: MT_Structures_20260913.zip, 173,088,786 bytes, Last-Modified 2026-09-22 20:23:59 GMT",
+   "result": "confirmed",
+   "detail": "Live S3 HEAD this run: Content-Length 173088786, Last-Modified Tue 22 Sep 2026 20:23:59 GMT. Local copy size matches."
+  },
+  {
+   "claim": "Montana zip is valid: 23 members; uncompressed 333,734,188 bytes; one polygon table",
+   "result": "confirmed",
+   "detail": "zipfile testzip returned None; 23 entries; uncompressed sum 333,734,188; GDAL lists one layer MT_Structures (MultiPolygon, EPSG:4326)."
+  },
+  {
+   "claim": "Local copy is the live object",
+   "result": "confirmed",
+   "detail": "Six live 256 KB byte ranges (1.5 MB) identical to the local copy; live metadata member sha256 identical. A full-file ETag match was not reproduced (multipart ETag with the stated 11 parts; 16 MiB and other part sizes tried), so identity rests on size, ranges and metadata, not a full hash."
+  },
+  {
+   "claim": "918,052 features; 919,067 parts; 927,947 rings; 8,880 interior rings; 6,010,874 vertices incl. closing",
+   "result": "confirmed",
+   "detail": "Full statewide read of the local copy with GDAL OpenFileGDB (pyogrio 0.13.0, GDAL 3.12.4; wheels fetched from PyPI and SHA-256 matched to PyPI digests)."
+  },
+  {
+   "claim": "915 multi-part features; max 9 parts; vertices median 5, p95 11, p99 17, max 891",
+   "result": "confirmed",
+   "detail": "Full read: 915 multi-part; max parts 9; vertex percentiles 5 / 11 / 17 / 891."
+  },
+  {
+   "claim": "Extent lon -116.049 to -104.041, lat 44.365 to 49.001; every feature PROP_ST Montana and FIPS starting 30",
+   "result": "confirmed",
+   "detail": "Bounds identical; PROP_ST 'Montana' on 918,052 rows; FIPS starting '30' on 918,052 rows. The 56-county count was not re-counted (unverified)."
+  },
+  {
+   "claim": "Attribute fill: PROP_ADDR 642,983 (70.0%); PROP_CITY 642,751; PROP_ZIP 642,884; B_CODE 354,332 (38.6%); POP_MEDIAN 773,530 (84.3%)",
+   "result": "confirmed",
+   "detail": "Full column read; counts identical."
+  },
+  {
+   "claim": "HEIGHT 3,552 features (0.39%), range 0.82 to 45.93 m; OUTBLDG and SEC_OCC blank for all",
+   "result": "confirmed",
+   "detail": "HEIGHT recount with NaN handling: 3,552 non-null (0.39%), min 0.82, max 45.93. OUTBLDG and SEC_OCC: 0 non-null. (My first HEIGHT count was wrong because float32 NaNs passed my filter; corrected.)"
+  },
+  {
+   "claim": "Occupancy, validation and source counts (Residential 775,098 ... ; Manual 486,567; ORNL 914,500; NGA 3,552)",
+   "result": "confirmed",
+   "detail": "Every category count matches exactly."
+  },
+  {
+   "claim": "No owner or parcel field; 33 non-geometry GDB fields; 35 metadata attribute labels",
+   "result": "confirmed",
+   "detail": "GDB field list has 33 fields (incl. Shape_Area and Shape_Length); 35 attrlabl entries; no owner, parcel or account field."
+  },
+  {
+   "claim": "Hosted Esri layer: 768,908 Montana features (16.2% fewer than the file); Billings envelope 293; Benchland 24",
+   "result": "confirmed",
+   "detail": "Live FeatureServer counts this run: STATE_FIPS=30 768908; PROP_ST=Montana 768908; Billings envelope 293; Benchland envelope 24. 149,144 / 918,052 = 16.2%."
+  },
+  {
+   "claim": "Live point query at (-108.5047, 45.7836) returns 175 NORTH 27TH STREET, SQFEET 22020.23, VAL_METHOD Automated",
+   "result": "confirmed",
+   "detail": "Live query this run returned exactly that record."
+  },
+  {
+   "claim": "Billings box: 307 footprints; 2,687 vertices; 321 rings; PROP_ADDR filled 278 (90.6%); Residential 250, Commercial 51; Manual 279, Automated 28",
+   "result": "confirmed",
+   "detail": "Local re-run on the 307 footprints intersecting the box: all identical."
+  },
+  {
+   "claim": "Billings box: 869 address points; 535 inside a footprint (61.6%)",
+   "result": "confirmed",
+   "detail": "Local re-run: 869 points in the lon/lat box; 535 inside (intersects)."
+  },
+  {
+   "claim": "Billings box: 313 points within 15 m but not inside; 21 farther (median 24.9 m, max 44.7 m)",
+   "result": "corrected",
+   "detail": "Scope matters: 313 and 21 hold when only the 307 box footprints are used. With all nearby footprints (the production join) it is 314 within 15 m and 20 farther; median 25.0 m, max 44.7 m. The record does not state its footprint scope."
+  },
+  {
+   "claim": "Billings box: 131 of 307 footprints have no address point inside; 28 have none inside or within 15 m",
+   "result": "confirmed",
+   "detail": "Local re-run with all address points in the expanded box: 131 and 28."
+  },
+  {
+   "claim": "Billings 5-decimal JSON 60,395 bytes (197 per footprint) before simplification",
+   "result": "corrected",
+   "detail": "60,395 is compact JSON (no spaces) of the 307 payloads plus the array wrapper (2 + n-1 = 308 bytes). Payloads alone are 60,087; with default json.dumps spacing they are 65,154 (+8%). The byte convention must be stated."
+  },
+  {
+   "claim": "Billings 6-decimal rounding 65,788 bytes (+8.9%)",
+   "result": "confirmed",
+   "detail": "Same convention: 65,480 payload bytes + 308 wrapper = 65,788; 65,788 / 60,395 = +8.9%."
+  },
+  {
+   "claim": "Billings DP simplification: 60,307 bytes at 0.5 m; 59,263 bytes at 1.0 m; vertices 2,683 and 2,635",
+   "result": "unverified",
+   "detail": "Not re-run. Magnitude is small under any method and the record recommends no DP pass either way."
+  },
+  {
+   "claim": "Rounding and DP Hausdorff errors (5-decimal max 0.668 m; 6-decimal max 0.068 m)",
+   "result": "unverified",
+   "detail": "Not re-run. Consistent with the theoretical rounding bound at Montana latitude (about 0.68 m for 5 decimals; about 0.07 m for 6)."
+  },
+  {
+   "claim": "Benchland box: 28 footprints; PROP_ADDR 7 (25%); 158 vertices; 6 address points (2 inside, 2 within 15 m, 2 farther); 26 and 24 footprints with no address inside / within 15 m; live envelope 24",
+   "result": "confirmed",
+   "detail": "Local re-run: 28 footprints, 7 PROP_ADDR, 158 vertices, 6 points (2/2/2), 26 and 24 footprints; live count 24."
+  },
+  {
+   "claim": "Brief coordinate 45.7836 N, 108.5047 W lies inside footprint 175 NORTH 27TH STREET (25,461.5 sq ft in the file)",
+   "result": "confirmed",
+   "detail": "Local containment test true; SQFEET 25461.496; Residential; Manual."
+  },
+  {
+   "claim": "401 North 27th Street: three MSL records at 45.785706 N -108.507092, 45.785656 N -108.507173, 45.785655 N -108.507173; the first sits in footprint 401 NORTH 27TH STREET (21,436.6 sq ft, Residential, Manual); the others 2.6 m from it; about 299 m from the brief point",
+   "result": "confirmed",
+   "detail": "Address DBF name fields streamed: three 'North 27th Street' rows (6313, 16312, 351518) with those coordinates. Distances to brief point 298.9 and 298.5 m; footprint SQFEET 21436.629, Residential, Manual; distance from row 16312 to that footprint 2.59 m. Live MSL query returns three North 27th records within about 1 m of the file coordinates. Hosted layer shows the same address with SQFEET 21,196.18 (Automated): the known edition difference."
+  },
+  {
+   "claim": "11 address points within 100 m of the brief point",
+   "result": "confirmed",
+   "detail": "Local count 11."
+  },
+  {
+   "claim": "Statewide join: 674,715 address points; inside a footprint 449,670 (66.6%)",
+   "result": "confirmed",
+   "detail": "Full statewide join with exact intersects in EPSG:6514 (address SHP is already NAD83(2011) Montana State Plane metres, identical to EPSG:6514 at a test point): 449,670."
+  },
+  {
+   "claim": "Statewide: 143,240 within 15 m but not inside (21.2%); 81,805 farther than 15 m (12.1%)",
+   "result": "corrected",
+   "detail": "Exact 15 m distance test gives 143,301 (21.2%) and 81,744 (12.1%). A 61-point difference, probably a boundary method (for example a buffered polygon); the percentages are unchanged and the decision is not affected."
+  },
+  {
+   "claim": "Statewide: 552,791 footprints (60.2%) have no address point inside",
+   "result": "confirmed",
+   "detail": "Full statewide join: 552,791."
+  },
+  {
+   "claim": "Statewide: 376,985 footprints (41.1%) have none within 15 m",
+   "result": "corrected",
+   "detail": "Exact distance gives 376,694 (41.0%): 291 fewer. Same boundary-method caveat."
+  },
+  {
+   "claim": "Statewide farther-point median 57.9 m, p95 445.8 m",
+   "result": "unverified",
+   "detail": "Not re-run (needs a second nearest-distance pass). Not used in the decision."
+  },
+  {
+   "claim": "Statewide 5-decimal footprint bytes 135,516,372 (147.6 per footprint), before simplification",
+   "result": "confirmed",
+   "detail": "Full statewide payload sum (compact JSON, no wrapper): 135,516,410, 38 bytes (0.00003%) above the record."
+  },
+  {
+   "claim": "Statewide DP byte totals: 135,384,218 at 0.5 m (-0.10%); 134,327,752 at 1.0 m (-0.88%)",
+   "result": "unverified",
+   "detail": "Not re-run. The statewide DP claim supports skipping DP; the Billings check is in the same direction."
+  },
+  {
+   "claim": "Zoom 15 tiles: 82,791 with footprints; median 3, p90 18, p99 174, max 952 footprints; bytes median 427, p90 2,578, p99 26,471, max 141,783",
+   "result": "confirmed",
+   "detail": "Full statewide tile pass (centroid, web Mercator XYZ): 82,791 tiles; footprints 3 / 18 / 174 / 952; bytes 427 / 2,578 / 26,472 / 141,783 (p99 differs by 1 byte)."
+  },
+  {
+   "claim": "Zoom 17 tiles: 229,364; median 2, p90 8, p99 39, max 114 footprints; bytes median 272, p90 1,180, p99 5,812, max 19,643",
+   "result": "confirmed",
+   "detail": "Full statewide tile pass: identical."
+  },
+  {
+   "claim": "Densest Billings zoom-15 tile (6507, 11686): 328 footprints; 57,036 bytes exact JSON with wrapper; 10,773 gzip",
+   "result": "confirmed",
+   "detail": "Re-run: 328 footprints; payload sum 56,707; exact wrapper 57,036; gzip level 9 10,773."
+  },
+  {
+   "claim": "Densest Billings zoom-17 tile (26030, 46740): 50 footprints; 6,384 bytes exact; 1,190 gzip",
+   "result": "confirmed",
+   "detail": "Re-run: 50 footprints; payload sum 6,333; exact 6,384; gzip level 9 1,190."
+  },
+  {
+   "claim": "Address points per tile: zoom 15 53,716 tiles (median 2, p99 264, max 1,765); zoom 17 160,181 tiles (median 1, p99 49, max 273)",
+   "result": "confirmed",
+   "detail": "Re-run from SHP coordinates: identical."
+  },
+  {
+   "claim": "Address dot bytes (about 43.7 per record; tile byte estimates 87 and 43 median)",
+   "result": "unverified",
+   "detail": "Point counts confirmed. Byte estimates depend on the street-text format; Billings street text mean is 18.8 characters here against 18.9 in the record."
+  },
+  {
+   "claim": "MSL live address layer count 674,469; Billings envelope 886",
+   "result": "confirmed",
+   "detail": "Live MapServer counts this run: 674469 and 886."
+  },
+  {
+   "claim": "Address file: 674,715 points; SHP 18,892,120 bytes = 100 + 674,715 x 28; export 2026-09-30",
+   "result": "confirmed",
+   "detail": "SHP header shape type 1 (point); length matches; DBF header 674,715 records; _ReadMe.txt export date quoted and found in the local zip."
+  },
+  {
+   "claim": "Microsoft Montana zip: Content-Length 26,578,292; one member Montana.geojson, 210,192,210 bytes uncompressed; README row 773,199 features, 200.45 MiB",
+   "result": "confirmed",
+   "detail": "Live HEAD and range read of the central directory: 26,578,292; member and uncompressed size identical; README row identical. The 773,199 feature count itself was not re-counted (unverified; not decision-relevant)."
+  },
+  {
+   "claim": "Overture buildings: 512 parquet files totalling 276,863,520,053 bytes (release 2026-09-23.1)",
+   "result": "confirmed",
+   "detail": "Live S3 listing: 512 keys, not truncated, sizes sum to 276863520053 exactly. Montana count not obtained (as the record says)."
+  },
+  {
+   "claim": "Other Montana deliverables: Deliverable20230502MT.zip 313,470,795 B; Deliverable20250606MT.zip 115,444,521 B",
+   "result": "confirmed",
+   "detail": "Live S3 listing sizes identical; last-modified 2023-05-05 and 2025-06-12."
+  },
+  {
+   "claim": "Licence in the 2026 file: access and use constraints are 'None'; no licence, credit or distribution statement",
+   "result": "confirmed",
+   "detail": "Live range read of MT_Structures_metadata.xml (25,157 bytes, sha256 identical to local). accconst and useconst are 'None'; no licen, Creative, copyright, credit, restrict or distrib hits. But see the 2023 entry below."
+  },
+  {
+   "claim": "The 2023 deliverable's metadata was not in the record: access limits and personal-data notes",
+   "result": "corrected",
+   "detail": "New finding: Deliverable20230502MT.zip metadata says accconst 'Access limited to FEMA's Response Geospatial Office. Dataset may contain personally identifiable information'; useconst 'Dataset may contain personally identifiable information'; supplinf: 'Address information may be considered as personally identifiable information and as such, this dataset should not be distributed outside of FEMA.Additionally, some addresses were taken from directly from proprietary data sources, likely inferring license restrictions.' The 2025 and 2026 metadata say 'None' and lack this wording, but the 2026 file still lists LightBox SmartParcels (2024-09-09) as an occupancy input."
+  },
+  {
+   "claim": "Hosted Esri item CC BY 4.0 (owner Esri_US_Federal_Data): 'This work is licensed under a Creative Commons by Attribution (CC BY 4.0) license. See Credits and Map for Attribution.'",
+   "result": "confirmed",
+   "detail": "Verbatim in item licenseInfo. But it is Esri's licence on its hosted copy (June 6, 2025 currency, 768,908 Montana features), not a FEMA/ORNL statement for the 2026-09-13 file. The record's 'same layer' wording is wrong."
+  },
+  {
+   "claim": "Esri item: 'Data currency: June 6, 2025'",
+   "result": "corrected",
+   "detail": "Verbatim, but it is in the item JSON description (?f=json), not in the /data endpoint the record cites."
+  },
+  {
+   "claim": "Esri item: 'Data modification: added State FIPS, PROP_CNTY, and Global ID fields.'",
+   "result": "confirmed",
+   "detail": "Verbatim in the item description."
+  },
+  {
+   "claim": "FEMA hub data page: 'Download USA Structures building footprints and critical attribution in a File Geodatabase format.'; Montana row MT_Structures_20260913.zip",
+   "result": "confirmed",
+   "detail": "Both found on the live page."
+  },
+  {
+   "claim": "Older FEMA hub page: scope (structures over 450 sq ft) and annual batch updates",
+   "result": "confirmed",
+   "detail": "Both sentences found verbatim."
+  },
+  {
+   "claim": "FEMA/ORNL metadata quote '<accconst>None</accconst> and <useconst>None</useconst>'",
+   "result": "corrected",
+   "detail": "Substance confirmed, but the quote is joined. The XML has two separate elements on consecutive lines, with no 'and' between them. Quote as two lines."
+  },
+  {
+   "claim": "FEMA/ORNL metadata: update 9/13/2026 attributions; 'No formal attribute accuracy test was conducted...'; WorldView/NAIP accuracy; Phase 2 coverage caveat; input list (spatial intersection; street number and name fields)",
+   "result": "confirmed",
+   "detail": "All six quoted sentences found verbatim in the live metadata."
+  },
+  {
+   "claim": "Figshare MT 2023 deposit: license CC0 1.0, 'no conditions'",
+   "result": "refuted",
+   "detail": "Licence object is verbatim CC0 (Figshare API, live). The deposited file is the 2023 deliverable (same name, 313,470,795 bytes), whose metadata limits access to FEMA's Response Geospatial Office, flags personal data and says the data should not be distributed outside FEMA. CC0 by the depositor does not remove those producer conditions, so it is not a clean fallback."
+  },
+  {
+   "claim": "Figshare description: 'Copy of https://disasters.geoplatform.gov/... (Accessed Oct, 24,2023)'",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "Montana State Library structures metadata: 'None. All data contained in the Framework are publicly available and non-sensitive.'; convenience and good-faith sentences",
+   "result": "corrected",
+   "detail": "All three verbatim in the cached address zip's StructuresFramework_metadata.xml, but NOT on the cited msl.mt.gov page (live page has no such text). Cite the zip's metadata."
+  },
+  {
+   "claim": "MSL _ReadMe.txt: export on 20260930; monthly exports",
+   "result": "corrected",
+   "detail": "Both verbatim in the cached zip's _ReadMe.txt; cite that file, not the web page."
+  },
+  {
+   "claim": "Microsoft README: 'This data is licensed by Microsoft under the Open Data Commons Open Database License (ODbL).'",
+   "result": "confirmed",
+   "detail": "The README wraps the licence name in a markdown link; the rendered sentence matches."
+  },
+  {
+   "claim": "Microsoft README: 'This data is freely available for download and use.'",
+   "result": "confirmed",
+   "detail": "Verbatim."
+  },
+  {
+   "claim": "ODbL 1.0 section 4.3: notice for a Produced Work",
+   "result": "confirmed",
+   "detail": "Verbatim (live licence page)."
+  },
+  {
+   "claim": "ODbL 1.0 section 4.4(a) share-alike; section 4.4(b) extraction is a derivative database; definition of Derivative Database",
+   "result": "confirmed",
+   "detail": "All three verbatim (live licence page)."
+  },
+  {
+   "claim": "ODbL 1.0 section 4.6: access to derivative databases",
+   "result": "corrected",
+   "detail": "First sentence verbatim. The record's reading is incomplete. Section 4.6 requires either a copy of the entire Derivative Database, or a file containing all the alterations (or the method of making them, such as an algorithm), with no more than a reasonable production cost for physical distribution and free of charge if distributed over the internet. 'Reasonable cost' applies only to physical media."
+  },
+  {
+   "claim": "CC BY 4.0 legal code section 3(a)(1): attribution to the creator(s); indicate modifications",
+   "result": "confirmed",
+   "detail": "Both quoted sentences verbatim (live legal code)."
+  },
+  {
+   "claim": "17 U.S.C. 105 and 101 (copyright not available for US Government works; definition of a work of the US Government)",
+   "result": "confirmed",
+   "detail": "Both quoted sentences verbatim (copyright.gov, live). Public-domain route not established: ORNL staff status not shown."
+  },
+  {
+   "claim": "Overture attribution: buildings theme ODbL; 'Licensed by Microsoft under the Open Database License'",
+   "result": "confirmed",
+   "detail": "Both verbatim (live Overture attribution page)."
+  },
+  {
+   "claim": "Scientific Data descriptor quotes (open access routes; article CC BY 4.0); Overture getting-data quote",
+   "result": "unverified",
+   "detail": "Not re-checked; not decision-relevant."
+  }
+ ],
+ "corrections": [
+  "Legal basis: the record says the Esri-hosted CC BY 4.0 copy is 'the same layer' and that CC BY 4.0 is 'the operative licence'. The hosted copy is a June 6, 2025 snapshot (768,908 Montana features; Billings 293, not 307; Benchland 24, not 28). Its CC BY 4.0 statement is Esri's, on its hosted item. The 2025 and 2026 FEMA/ORNL metadata both say 'None'. No licence is established for the MT_Structures_20260913.zip file.",
+  "Legal basis: the 2023 deliverable (same bytes as the Figshare 'CC0' deposit) says access is limited to FEMA's Response Geospatial Office, that it may contain personally identifiable information, and that it should not be distributed outside FEMA; some addresses come from proprietary sources 'likely inferring license restrictions'. The record's 'CC0 1.0 (no conditions)' reading is wrong. The 2026 metadata drops this wording but still lists LightBox SmartParcels as an occupancy input.",
+  "ODbL 4.6 reading: the record says the site must offer 'the whole derived database, or the method of making it, at no more than reasonable cost'. The text offers the entire Derivative Database or a file of all alterations (or the method of making them), free of charge if distributed over the internet.",
+  "FEMA metadata quote: '<accconst>None</accconst> and <useconst>None</useconst>' is not verbatim. The two elements are on consecutive lines with no 'and'.",
+  "MSL quotes: the three MSL access and use sentences and the two ReadMe sentences are in the cached address zip (StructuresFramework_metadata.xml and _ReadMe.txt). They are not on msl.mt.gov, which the record cites.",
+  "Esri 'Data currency: June 6, 2025' is in the item JSON description (?f=json). The record cites the /data endpoint, which does not contain it.",
+  "Statewide join: exact 15 m tests give 143,301 points within 15 m but not inside (record 143,240), 81,744 farther (record 81,805), and 376,694 footprints with none inside or within 15 m (record 376,985, 41.0% not 41.1%). Percentages barely move; the record should state its distance method.",
+  "Billings join scope: 535 / 313 / 21 uses only the 307 box footprints. With every nearby footprint it is 535 / 314 / 20 (one address point is within 15 m of a footprint just outside the box). State the scope.",
+  "Byte convention: the 60,395-byte Billings figure is compact JSON (no spaces) plus the array wrapper. Default json.dumps gives 65,154 bytes (+8%). State the separators and wrapper in the record and in the build.",
+  "Download budget: the record's total is 210,738,265 bytes, including a single 173,088,786-byte zip. The brief's 150 MB download limit is exceeded. This refuter downloaded 38,719,444 bytes and did not re-download the Montana zip; it used the worker's local copy, checked against live S3 by size, metadata hash and sampled ranges.",
+  "Microsoft footprint count 773,199 is README-stated and not re-counted (the zip size, member and uncompressed size are confirmed). Not decision-relevant, but the record should say the count is quoted, not verified."
+ ],
+ "legal_basis": {
+  "verdict": "The ODbL exclusion stands and the Esri CC BY statement is a real licence, but no licence is established for the 2026-09-13 FEMA/ORNL file. Publication should wait for written confirmation.",
+  "points": [
+   "The 2026-09-13 file's metadata says access and use constraints are 'None' and states no licence or credit. That is not a licence grant.",
+   "The only explicit CC BY 4.0 statement is on Esri's hosted item (owner Esri_US_Federal_Data), which is a June 6, 2025 snapshot with 768,908 Montana features. It does not cover the 2026 file (918,052 features).",
+   "The 2025 deliverable's metadata also says 'None'. The 2023 deliverable's metadata limits access to FEMA's RGO, flags personal data and says the data should not be distributed outside FEMA. Its Figshare CC0 label does not override those conditions.",
+   "The 2026 file still lists LightBox SmartParcels (2024-09-09) as an input to occupancy class, and the 2023 metadata says some addresses come from proprietary sources. Counsel should confirm before publishing OCC_CLS or PROP_* fields.",
+   "ODbL: if tiles are cut from Microsoft or Overture footprints and published, section 4.4 applies, and section 4.6 requires a whole-database or alteration-file offer, free over the internet. Keeping ODbL data out of published tiles is the right call.",
+   "CC BY 4.0 (if FEMA or ORNL confirm it for the 2026 file): credit ORNL and FEMA, keep the licence notice, link the licence, and state that the data were simplified, rounded and joined (section 3(a)(1)).",
+   "Public domain under 17 U.S.C. 105 is not established: ORNL staff are not shown to be federal employees. This is analysis, not legal advice."
+  ]
+ },
+ "terms_check": "36 quoted sentences or sources checked against live pages (Esri item and data endpoints, FEMA hub, Figshare API, Microsoft README, ODbL 1.0, CC BY 4.0 legal code, copyright.gov title 17, Overture attribution, MSL page) and local copies (cached MSL zip metadata and ReadMe; FEMA metadata of the 2023, 2025 and 2026 deliverables read live by range requests). Result: 24 verbatim and correct (the Microsoft ODbL sentence matches as rendered; its raw markdown wraps the licence name in a link); 1 quote form corrected (FEMA accconst/useconst are two elements, no 'and'); 8 entries with a citation or reading corrected (Esri data-currency endpoint; five MSL sentences cited to a web page that does not contain them; ODbL 4.6 reading; Figshare CC0 'no conditions' reading, refuted by the same file's metadata); 3 not re-checked (Scientific Data descriptor x2, Overture getting-data). Separate from the 36 entries: the 2023 deliverable's own access, personal-data and distribution notes, which the record omits, are a new source-level finding.",
+ "download_bytes_total": 38719444,
+ "download_bytes_note": "Sum of this refuter's transfers: pypi 35,717,985; S3 ranges 1,581,428; live pages 1,007,438; services 181,493; 2023/2025 metadata ranges 19,253; Overture listing 211,847. HEAD and header bytes excluded (about 1-2 KB per request). The Montana zip was not re-downloaded.",
+ "downloads": [
+  {
+   "path": "/home/user/wt/research-b35/scratch-refute-footprints/downloads/pypi-pyogrio/",
+   "bytes": 33356737,
+   "what": "pyogrio 0.13.0 wheel and PyPI JSON; SHA-256 matched PyPI digest"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-refute-footprints/downloads/pypi-shapely/",
+   "bytes": 2361248,
+   "what": "shapely 2.2.0 wheel and PyPI JSON; SHA-256 matched PyPI digest"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-refute-footprints/downloads/live-r1-s3-montana/",
+   "bytes": 1581428,
+   "what": "range reads of MT_Structures_20260913.zip (metadata member and six sampled ranges)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-refute-footprints/downloads/live-r1-* (pages)",
+   "bytes": 1007438,
+   "what": "live licence and catalogue pages (Esri item, FEMA hub, Figshare, Microsoft README, ODbL, CC BY, copyright.gov, Overture attribution, MSL page, S3 folder listing)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-refute-footprints/downloads/live-r1-svc/",
+   "bytes": 181493,
+   "what": "live FeatureServer and MSL MapServer counts and queries; Microsoft zip central directory range read"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-refute-footprints/downloads/live-r1-s3-mt-2025/ and live-r1-s3-mt-2023/",
+   "bytes": 19253,
+   "what": "range reads of the 2025 and 2023 Montana deliverable metadata"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-refute-footprints/downloads/live-r1-overture-listing/",
+   "bytes": 211847,
+   "what": "Overture buildings S3 listing (512 keys)"
+  }
+ ],
+ "scripts": [
+  "fetch_pypi.py",
+  "import_check.py",
+  "zip_checks.py",
+  "etag_try.py",
+  "s3_ranges.py",
+  "live_pages.py",
+  "locate_quotes.py",
+  "msl_zip_check.py",
+  "live_services.py",
+  "gdb_probe.py",
+  "billings_check.py",
+  "billings_check2.py",
+  "statewide.py",
+  "tiles_check.py",
+  "addr401.py",
+  "addr401b.py",
+  "older_deliverables.py",
+  "common.py",
+  "write_record.py"
+ ],
+ "logs": [
+  "logs/statewide.log",
+  "logs/statewide_arrays.npz"
+ ],
+ "errors_fixed_during_run": [
+  "Field-index mapping in the first Billings run (fixed by name lookup).",
+  "Footprint-level counts used only box points (fixed: all points in the expanded box).",
+  "HEIGHT float32 NaN counting (fixed: np.isfinite).",
+  "DBF header offset (fixed: read full header by declared length)."
+ ],
+ "most_consequential_checks": [
+  {
+   "id": 1,
+   "check": "Montana file identity, size, date, validity and licence metadata",
+   "result": "confirmed",
+   "method": "Live S3 HEAD; GDAL-free zip test; live range read of the metadata member; six live byte ranges compared with the local copy; full ETag reproduction attempted and failed (multipart, 11 parts).",
+   "refutation_attempt": "Tried to find a size, date or content mismatch between the record and the live object. None found. Identity is strong (size, metadata hash, six ranges) but not a full-file hash."
+  },
+  {
+   "id": 2,
+   "check": "Counts and attributes of the 918,052-feature file",
+   "result": "confirmed",
+   "method": "Full read of the local copy through OpenFileGDB with PyPI-verified pyogrio and shapely wheels; every count and fill rate recomputed.",
+   "refutation_attempt": "Recounted parts, rings, vertices, fills, occupancy and validation. All match except HEIGHT, which my first pass miscounted (float32 NaN) and then confirmed at 3,552."
+  },
+  {
+   "id": 3,
+   "check": "Licence basis and quoted terms",
+   "result": "corrected",
+   "method": "36 quoted sentences or sources checked (live pages and local copies); FEMA metadata of all three Montana deliverables read live.",
+   "refutation_attempt": "Tried to find an explicit licence for the 2026 file. None exists. Found a 2023 access/PII limit and a 'should not be distributed outside of FEMA' note that the record omits, and found that the CC BY statement belongs to a 2025 hosted snapshot."
+  },
+  {
+   "id": 4,
+   "check": "Billings test box: join, footprint and byte figures",
+   "result": "corrected",
+   "method": "Local re-run in EPSG:6514 with exact intersects and 15 m distance tests; compact and default JSON bytes; densest tiles; Benchland box.",
+   "refutation_attempt": "Numbers reproduce (869, 535, 131, 28, 2,687, 321, 278, 60,395, 65,788, tile bytes). Two differences: the 313/21 split uses only the 307 box footprints (314/20 with all nearby footprints), and the byte figure is compact JSON plus the array wrapper."
+  },
+  {
+   "id": 5,
+   "check": "Statewide join and tile byte statistics",
+   "result": "corrected",
+   "method": "Full statewide pass: exact joins for all 918,052 footprints and 674,715 points; payload bytes; zoom 15 and 17 tile statistics; address points per tile.",
+   "refutation_attempt": "Tile statistics match to the byte. Join counts for inside (449,670) and footprints with no address inside (552,791) match; the within-15 m split is off by 61 points and the none-within-15 m footprint count by 291 (method, immaterial)."
+  },
+  {
+   "id": 6,
+   "check": "401 North 27th Street sample, brief coordinate and live services",
+   "result": "confirmed",
+   "method": "Local containment and distance tests; streamed DBF name fields; live FeatureServer and MSL counts and point query; live MSL records for 401 North 27th.",
+   "refutation_attempt": "Brief point lies in 175 NORTH 27TH STREET; the three 401 North 27th records, 298.9 and 298.5 m distances, 2.59 m to the footprint, 11 points within 100 m and live counts all reproduce. Hosted SQFEET for 401 (21,196.18, Automated) differs from the file (21,436.63, Manual) as an edition difference."
+  }
+ ]
+}

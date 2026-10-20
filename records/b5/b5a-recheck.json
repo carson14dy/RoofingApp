@@ -1,0 +1,1201 @@
+{
+ "checker": "B5 part A recheck (read-only)",
+ "branch": "claude/hail-b5",
+ "worktree": {
+  "path": "/home/user/wt/wt-b5",
+  "head": "db84d760a3bc6f78c067f8c842514e4d343636ac (db84d76)",
+  "git_status_unchanged_by_checker": true,
+  "diff_stat": "12 files changed, 2251 insertions(+), 370 deletions(-)",
+  "uncommitted_untracked_files": 11,
+  "note": "Runs used a copy without .git (out/recheck/src, identical to the worktree); nothing was edited, staged, committed or pushed."
+ },
+ "scratch": "/home/user/hail-b5/out/recheck/",
+ "unit_tests": {
+  "command": "/home/user/hail-b1/venv/bin/python -m unittest discover -s tests",
+  "seconds": 277.4,
+  "tests_run": 1034,
+  "failures": 12,
+  "errors": 1,
+  "result": "FAILED",
+  "methods_per_module": {
+   "test_climate": 83,
+   "test_snowgrid": 46,
+   "test_stations": 42,
+   "test_gauges": 29,
+   "test_joins": 215,
+   "test_site": 156,
+   "test_hail": 178
+  },
+  "same_modules_at_db84d76": {
+   "test_hail": "178 run, OK",
+   "test_site": "156 run, OK"
+  }
+ },
+ "selftest_payload": {
+  "command": "python desktop/launcher.py --selftest payload",
+  "rc": 0,
+  "seconds": 2,
+  "output": "PASS  payload 1.0.0"
+ },
+ "gates": [
+  {
+   "gate": "B5-1",
+   "status": "pass",
+   "evidence": "Billings cell row 509, col 388 (tile r0092_c0214, key 27). Independent h5py read of 18 scaled months (2024-07 to 2025-12, 1,055,926,671 B downloaded whole, 549 days): zero mismatches in validity, hundredths of mm and tenths of C. Calendar 2025 rain: independent 46,898 hundredths of mm (468.98 mm, the NCEI monthly value); store 1,846 hundredths of an inch (468.9 mm rounded); difference 0. 2024-25 season: freeze-thaw 119 and 119, days at 90 F or more 44 and 44, lows below 32 F 156 and 156, missing 0 and 0. June 15, 2025 raw 1.2266 mm, 27.3125 C, 14.3516 C (store path 1.23 mm, 27.3 C = 81.1 F, 14.4 C = 57.9 F). Airport USW00024033 calendar 2025 freeze-thaw 73 days (GHCN); the Billings grid cell gives 104. Verify ok and independent ok."
+  },
+  {
+   "gate": "B5-2",
+   "status": "pass",
+   "evidence": "Ledger (cache/nclimgrid/ledger.json): 63 scaled months 2021-07 to 2026-09, one entry each, etag equal to md5 for all 63; 2026-10 prelim present. Verify: 25,902 land cells, 25,973 mask cells, 71 water cells with no land value; 64 months loaded, none missing or failed. Fill values in available days: 0 in every scaled month; sums use the valid mask (test_fill_is_missing_not_summed passes). Scaled bytes 3,721,141,537 (median month 58.7 MB); download median 27.8 MB/s (14.3 to 68.0); download plus read for the 63 months 123.6 s (read 68.2 s). Aggregates: 64 npz files, 16,013,234 B. 'Read once' is evidenced by the ledger; the backfill was not repeated."
+  },
+  {
+   "gate": "B5-3",
+   "status": "pass",
+   "evidence": "Billings picks (rule run in the build): PRCP, SNOW, SNWD, TMAX, TMIN all = USC00240802 (COOP, 1.4 mi, shares 99.2, 98.1, 98.4, 97.2, 97.4 percent) and USW00024033 (WBAN, 2.6 mi, 100 percent). Benchland SNOW = US1MTFG0003 (CoCoRaHS, 20.9 mi, 81.7 percent) and USC00244978 (COOP, 31.1 mi, 90.0 percent); USC00247864 (10.9 mi, 79.9 percent) fails. SNWD = USC00247864 (10.9 mi, 81.9 percent) and USS0009C01S (SNOTEL, 31.3 mi, 99.9 percent). Independent recount from the .dly files reproduces every share. Stations verify: 20 of 20 checks ok, including the 17 towns' five-season counts at two stations per element (towns_seasons_95)."
+  },
+  {
+   "gate": "B5-4",
+   "status": "pass",
+   "evidence": "D7 regression (OLS of station inches on the NOHRSC cell value, 682 station-seasons): slope 0.664164, intercept 12.031601, correlation 0.809719, RMS residual 17.6727 in, max absolute residual 124.2277 in. Pass is false (band 0.85 to 1.15). Decision followed: state unavailable, shown false, no n/ files, words say the analysis is not shown and station readings are shown instead. An independent recomputation (raw .dly plus the five GeoTIFFs) reproduces all six numbers. Five water years 2022 to 2026 present, 11,562,084 B in total (SHA-256 in the index); 2020-21 missing upstream (HTTP 404) and stated. Samples: Billings row 230, col 437 (2025 value 50.29); Benchland row 198, col 399 (2025 value 87.17)."
+  },
+  {
+   "gate": "B5-5",
+   "status": "partial",
+   "evidence": "Counts pass: 33 comparisons of the joins compare step, every delta 0 (FL.W 43, FA.W 37, FA.Y 548, FL.A 35, FL.Y 10, SQ.W 78, WW.Y 865, WS.A 226, HW.A 277, HT.Y 58, EH.W 4, EH.A 3, FR.Y 14, FZ.W 4, DU.Y 3, FA.A county-only 18, FF.A county-only 2; LSR hail 1,347; SV 2,240; TO 17). NCEI points 2020 to 2026 total 351 (Flood 76, Flash Flood 60, Heavy Rain 144, Tornado 17, Funnel Cloud 35, Lightning 8, Debris Flow 11), equal to the research. Billings gauge peak 16.37 ft on 2022-06-15 (water year 2022, USGS 06214500). June 2022 pairing does not match the gate wording (see open items)."
+  },
+  {
+   "gate": "B5-6",
+   "status": "pass",
+   "evidence": "All four named cases ok, in the window: MTZ004 WS 2024 event 1 cancelled 2024-01-10 15:22 UTC, continued 2024-01-11 12:00 to 2024-01-12 12:00; MTZ302 HW 2022 event 38 periods 2022-12-26 18:00 to 12-27 07:19 (cancelled) and 12-27 15:00 to 12-28 15:29 (cancelled); MTZ320 WS 2023 event 4 to 2023-02-22 10:54 (cancelled) and 2023-02-22 18:58 to 2023-02-23 01:00; MTZ003 WS 2021 event 12 2021-12-19 04:00 to 15:00 (expired) and 18:00 to 2021-12-20 03:27 (cancelled), inside the window. Synthetic-row tests for the four cases pass."
+  },
+  {
+   "gate": "B5-7",
+   "status": "pass",
+   "evidence": "Glentana (T04, 2022-07-18 23:47 UTC): NCEI tornado record found 0.41 mi from the point (cell 615, 2375). Hays tornado 2021-07-07: absent, outside the window, no rows on that day (asserted). The county-coded point rows join as records (2,097 record rows in the store)."
+  },
+  {
+   "gate": "B5-8",
+   "status": "pass",
+   "evidence": "Station gust file: LWT 182.5 kt on 2023-03-13 dropped and counted (station_dropped 3 with DLN 165.1 kt 2023-11-30 and SDY 255.0 kt 2023-08-06 under the 130 kt rule). HVR 105.1 kt on 2025-02-20 and MSO 86.0 kt on 2025-05-09 flagged for check (station_flagged_readings 2)."
+  },
+  {
+   "gate": "B5-9",
+   "status": "pass",
+   "evidence": "Billings airport (USW00024033) by season 2021-22 to 2025-26: highs of 90 F or more (TMAX of 322 tenths or more) [45, 42, 27, 35, 25] and days with 1 inch of snow on the ground (SNWD 25 mm or more) [55, 70, 30, 53, 25], both reproduced by the module and by the independent .dly reader. Research M6 freeze-thaw [86, 102, 88, 88, 85] and lows below 32 F [121, 154, 118, 126, 103] reproduced. M10 calendar 2021 to 2025 under D1: [40, 66, 39, 25, 57]; the research value [40, 66, 39, 25, 52] is the 25.4 mm threshold, and the independent read at 26 mm gives 52, so the 2025 difference is the D1 correction."
+  },
+  {
+   "gate": "B5-13",
+   "status": "pass",
+   "evidence": "Second build from the same caches, compared file by file: climate c/ 4,569 of 4,569 identical (35,149,062 B); stations sd/ 571 of 571 identical (3,037,279 B); gauges g/ 104 of 104 identical (285,713 B); products j/ 4,598 of 4,598 identical (23,164,558 B, including events.json), z/ 115 identical (2,163,070 B), s/ 60 identical (25,000 B), k/ 56 identical (13,689 B). Snow: no n/ files (unit check failed); index snow block and manifest identical. Joins index block identical except built_at and build_seconds."
+  },
+  {
+   "gate": "B5-14",
+   "status": "partial",
+   "evidence": "Python: real-cache failure injection on symlinked cache views (the shared cache unchanged). Snow with water year 2023 missing: missing_water_years [2023], the other years build (527 station-seasons in the regression), product state unavailable. Gauges with the Billings peaks file (06214500) missing: failures 1, state partial, peaks unavailable with the sentence 'The annual peaks at this gauge could not be loaded in this update; that is not the same as no annual peak.', 103 of 104 g files written. Python failure-path unit tests in test_climate, test_snowgrid, test_stations, test_gauges and test_joins pass (for example test_joins test_a_zone_file_that_is_missing_or_damaged_keeps_the_point_records). The site-side failure tests in test_site (zone, station, fire-zone and part-unavailable cases) FAIL; see failed_checks. The browser half of the rule is not in this worktree."
+  },
+  {
+   "gate": "B5-15",
+   "status": "pass",
+   "evidence": "Cell covers per product (centre rule, touch rule, added): SV.W 7,672,590, 7,982,602, +310,012; FA.Y 1,525,719, 1,589,515, +63,796; SQ.W 209,618, 221,132, +11,514; FF.W 124,672, 136,322, +11,650; TO.W 23,958, 25,755, +1,797; FL.W 28,921, 32,550, +3,629; FA.W 49,761, 53,082, +3,321; FL.A 21,824, 24,927, +3,103; FL.Y 6,711, 7,559, +848; centre-not-touched 0 in every product. Town point check: 17 towns, 3,449 events, 707 pairs, 4 disagreements listed (Belgrade SV.W 2023-08-30 03:01 UTC; Helena SV.W 2024-08-19 23:51 and 2025-07-28 20:39 UTC; Kalispell SQ.W 2022-02-01 23:58 UTC). Null geometry: polygon_nulls 0 in the window; The NoOutlineTests class and the outline-less polygon test in test_joins pass."
+  },
+  {
+   "gate": "B5-16",
+   "status": "partial",
+   "evidence": "Store level: five-season and season highest-high and lowest-low records carry dates (Billings 106.2 F on 2024-07-25 and -33.2 F on 2024-01-13; Benchland 97.5 F on 2024-07-24 and -39.5 F on 2024-01-13); kind word 'Grid estimate' is in WORDS_CLIMATE; station files carry the station name. Town-page rows and the no-mixed-sources check belong to part B and are not in this worktree."
+  },
+  {
+   "gate": "B5-17",
+   "status": "partial",
+   "evidence": "Hit-and-miss table: 737 rows = every LSR hail row of 1.00 in or more in the window (raw archive count 737; 721 distinct time, place and size). Hits 464, misses 273 (misses under by a maximum of 3.01 in and a median of 0.88 in). Lewistown (3 S Lewistown, 2025-06-15 22:48 UTC, 2.50 in, MESH 0.0 mm) is present as a miss under by 2.50 in. Petrolia Lake (2025-06-16 01:01 UTC, 3.50 in) is present. Glendive (4.00 in, 14.4 mm) is a research case outside the window, not a table row. The About summary in words is not in this worktree."
+  }
+ ],
+ "measurements": {
+  "builds": {
+   "climate": {
+    "build_A_seconds": 11.1,
+    "build_B_seconds": 12.6,
+    "verify_seconds": 10.8,
+    "independent_verify_seconds": 122.4,
+    "tiles": 4569,
+    "land_records": 25902,
+    "bytes_c": 35149062,
+    "months_loaded": 64,
+    "independent_bytes_downloaded": 1055926671
+   },
+   "stations": {
+    "build_A_seconds": 36.7,
+    "build_B_seconds": 34.0,
+    "verify_seconds": 0.7,
+    "sd_files": 571,
+    "sd_bytes": 3037279,
+    "rule_files": 466,
+    "rule_bytes": 384021810,
+    "chosen_files": 304,
+    "chosen_bytes": 310139820,
+    "failures": 0,
+    "malformed_lines": 0,
+    "requests": 0
+   },
+   "snow": {
+    "build_A_seconds": 2.8,
+    "build_B_seconds": 1.6,
+    "n_files": 0,
+    "n_bytes": 0,
+    "index_snow_block_bytes": 6055,
+    "nohrsc_five_files_bytes": 11562084,
+    "regression_station_seasons": 682,
+    "requests": 0
+   },
+   "gauges": {
+    "build_A_seconds": 1.9,
+    "build_B_seconds": 2.4,
+    "verify_seconds": 0.2,
+    "g_files": 104,
+    "g_bytes": 285713,
+    "peak_rows": 7560,
+    "pool_gauges": 192,
+    "pool_montana": 102,
+    "failures": 0,
+    "billings_nearest": "BILM8 (USGS 06214500) 2.0 mi, minor 13.50 ft"
+   },
+   "products": {
+    "build_A_seconds": 372.1,
+    "build_B_seconds": 353.8,
+    "verify_seconds": 10.0,
+    "compare_seconds": 0.1,
+    "tile_files": 4597,
+    "tile_bytes": 17080562,
+    "largest_tile": "r0093_c0194.json 11,778 B",
+    "events_json_bytes": 6083996,
+    "z_files": 115,
+    "z_bytes": 2163070,
+    "s_files": 60,
+    "s_bytes": 25000,
+    "k_files": 56,
+    "k_bytes": 13689,
+    "reports": 43510,
+    "records": 2097,
+    "swdi_detections": 69857,
+    "swdi_montana_polygon": 60357,
+    "warnings": 3156,
+    "zone_events": 18872,
+    "station_days": 1261,
+    "requests": 0,
+    "fetched": 0
+   },
+   "backfill_ledger": {
+    "scaled_months": 63,
+    "scaled_bytes": 3721141537,
+    "median_month_bytes": 58699661,
+    "download_mb_s_median": 27.78,
+    "download_mb_s_min": 14.25,
+    "download_mb_s_max": 67.96,
+    "aggregates_files": 64,
+    "aggregates_bytes": 16013234
+   }
+  },
+  "climate_tiles": {
+   "count": 4569,
+   "bytes_total": 35149062,
+   "bytes_median": 8038,
+   "bytes_max": 12439,
+   "bytes_max_tile": "r0093_c0236.json",
+   "gzip9_median": 1705,
+   "gzip9_max": 3073,
+   "gzip9_total": 7896777,
+   "gzip6_median": 1731
+  },
+  "per_click_gzip": {
+   "billings_gate": {
+    "b1_tile": "r0092_c0214",
+    "climate_tile": "r0092_c0214",
+    "files": 11,
+    "raw_bytes": 57793,
+    "gzip9_bytes": 13081,
+    "gzip6_bytes": 13210,
+    "events_json_once_per_page": {
+     "raw": 6083996,
+     "gzip9": 815008,
+     "gzip6": 852898
+    },
+    "file_list": [
+     "c/r0092_c0214.json 1293",
+     "t/r0092_c0214.json (B1, existing) 1561",
+     "j/r0092_c0214.json 3205",
+     "z/MTZ235.json 2120",
+     "z/fire-MTZ128.json 358",
+     "k/MTC111.json 163",
+     "s/BIL.json 296",
+     "s/6S8.json 187",
+     "sd/USC00240802.json 1577",
+     "sd/USW00024033.json 1380",
+     "g/06214500.json 941"
+    ]
+   },
+   "benchland_gate": {
+    "b1_tile": "r0079_c0199",
+    "climate_tile": "r0079_c0199",
+    "files": 13,
+    "raw_bytes": 98762,
+    "gzip9_bytes": 18199,
+    "gzip6_bytes": 18508,
+    "file_list": [
+     "c/r0079_c0199.json 1273",
+     "t/r0079_c0199.json (B1, existing) 3078",
+     "j/r0079_c0199.json 2303",
+     "z/MTZ313.json 4279",
+     "z/fire-MTZ117.json 403",
+     "k/MTC045.json 85",
+     "s/LWT.json 275",
+     "s/1LM.json 129",
+     "sd/USC00247864.json 1613",
+     "sd/USW00004140.json 1025",
+     "sd/US1MTFG0003.json 885",
+     "sd/USC00244978.json 1610",
+     "sd/USS0009C01S.json 1241"
+    ]
+   },
+   "note": "Per-click set = the climate tile, the B1 tile, the joins tile, the zone and fire-zone files, the county file, the two ASOS gust files, the sd files of the rule's chosen stations for the point, and the nearest gauge within 10 miles. file_list entries are 'file gzip9_bytes'. events.json is fetched once per page (map.js). Snow n/ files absent."
+  },
+  "climate_records": {
+   "billings": {
+    "tile": "r0092_c0214",
+    "key": 27,
+    "columns": [
+     "days",
+     "missing",
+     "rain_in",
+     "high_F",
+     "high_date",
+     "low_F",
+     "low_date",
+     "days_90F_or_more",
+     "days_0F_or_below",
+     "freeze_thaw_days",
+     "days_low_below_32F"
+    ],
+    "rows": {
+     "2021-22": [
+      365,
+      0,
+      14.81,
+      103.1,
+      "2021-07-20",
+      -22.0,
+      "2022-02-24",
+      47,
+      23,
+      113,
+      146
+     ],
+     "2022-23": [
+      365,
+      0,
+      17.41,
+      104.4,
+      "2022-07-18",
+      -28.1,
+      "2022-12-22",
+      49,
+      17,
+      127,
+      172
+     ],
+     "2023-24": [
+      366,
+      0,
+      13.54,
+      101.5,
+      "2023-07-25",
+      -33.2,
+      "2024-01-13",
+      27,
+      8,
+      127,
+      153
+     ],
+     "2024-25": [
+      365,
+      0,
+      15.67,
+      106.2,
+      "2024-07-25",
+      -26.1,
+      "2025-02-19",
+      44,
+      18,
+      119,
+      156
+     ],
+     "2025-26": [
+      365,
+      0,
+      12.43,
+      100.8,
+      "2025-08-20",
+      -6.7,
+      "2026-01-24",
+      29,
+      7,
+      116,
+      132
+     ],
+     "2026-27": [
+      107,
+      0,
+      5.25,
+      112.6,
+      "2026-07-13",
+      30.4,
+      "2026-10-14",
+      40,
+      0,
+      1,
+      1
+     ],
+     "five_seasons": [
+      1826,
+      0,
+      73.86,
+      106.2,
+      "2024-07-25",
+      -33.2,
+      "2024-01-13",
+      196,
+      73,
+      602,
+      759
+     ]
+    }
+   },
+   "benchland": {
+    "tile": "r0079_c0199",
+    "key": 37,
+    "columns": [
+     "days",
+     "missing",
+     "rain_in",
+     "high_F",
+     "high_date",
+     "low_F",
+     "low_date",
+     "days_90F_or_more",
+     "days_0F_or_below",
+     "freeze_thaw_days",
+     "days_low_below_32F"
+    ],
+    "rows": {
+     "2021-22": [
+      365,
+      0,
+      10.09,
+      95.5,
+      "2021-07-19",
+      -23.8,
+      "2022-02-23",
+      16,
+      26,
+      145,
+      184
+     ],
+     "2022-23": [
+      365,
+      0,
+      19.37,
+      96.4,
+      "2022-07-18",
+      -27.2,
+      "2022-12-23",
+      18,
+      19,
+      130,
+      174
+     ],
+     "2023-24": [
+      366,
+      0,
+      15.67,
+      94.8,
+      "2023-07-25",
+      -39.5,
+      "2024-01-13",
+      7,
+      14,
+      148,
+      178
+     ],
+     "2024-25": [
+      365,
+      0,
+      14.14,
+      97.5,
+      "2024-07-24",
+      -26.7,
+      "2025-02-11",
+      10,
+      21,
+      134,
+      173
+     ],
+     "2025-26": [
+      365,
+      0,
+      15.93,
+      93.7,
+      "2025-08-20",
+      -12.6,
+      "2026-01-24",
+      3,
+      11,
+      150,
+      166
+     ],
+     "2026-27": [
+      107,
+      0,
+      4.26,
+      98.6,
+      "2026-07-13",
+      22.1,
+      "2026-10-13",
+      15,
+      0,
+      7,
+      7
+     ],
+     "five_seasons": [
+      1826,
+      0,
+      75.2,
+      97.5,
+      "2024-07-24",
+      -39.5,
+      "2024-01-13",
+      54,
+      91,
+      707,
+      875
+     ]
+    }
+   }
+  },
+  "station_picks": {
+   "billings": {
+    "PRCP": {
+     "chosen": [
+      "USC00240802",
+      "USW00024033"
+     ],
+     "examined": [
+      "USC00240802 1.4 mi 2174/2192 99.2% pass",
+      "USW00024033 2.6 mi 2192/2192 100.0% pass"
+     ]
+    },
+    "SNOW": {
+     "chosen": [
+      "USC00240802",
+      "USW00024033"
+     ],
+     "examined": [
+      "USC00240802 1.4 mi 2150/2192 98.1% pass",
+      "USW00024033 2.6 mi 2192/2192 100.0% pass"
+     ]
+    },
+    "SNWD": {
+     "chosen": [
+      "USC00240802",
+      "USW00024033"
+     ],
+     "examined": [
+      "USC00240802 1.4 mi 2156/2192 98.4% pass",
+      "USW00024033 2.6 mi 2191/2192 100.0% pass"
+     ]
+    },
+    "TMAX": {
+     "chosen": [
+      "USC00240802",
+      "USW00024033"
+     ],
+     "examined": [
+      "USC00240802 1.4 mi 2130/2192 97.2% pass",
+      "USW00024033 2.6 mi 2192/2192 100.0% pass"
+     ]
+    },
+    "TMIN": {
+     "chosen": [
+      "USC00240802",
+      "USW00024033"
+     ],
+     "examined": [
+      "USC00240802 1.4 mi 2135/2192 97.4% pass",
+      "USW00024033 2.6 mi 2192/2192 100.0% pass"
+     ]
+    }
+   },
+   "benchland": {
+    "PRCP": {
+     "chosen": [
+      "USC00247864",
+      "USW00004140"
+     ],
+     "examined": [
+      "USC00247864 10.9 mi 2111/2192 96.3% pass",
+      "USW00004140 18.5 mi 2191/2192 100.0% pass"
+     ]
+    },
+    "SNOW": {
+     "chosen": [
+      "US1MTFG0003",
+      "USC00244978"
+     ],
+     "examined": [
+      "USC00247864 10.9 mi 1752/2192 79.9% fail",
+      "US1MTFG0003 20.9 mi 1791/2192 81.7% pass",
+      "USW00024036 26.6 mi 3/2192 0.1% fail",
+      "US1MTFG0006 27.6 mi 232/2192 10.6% fail",
+      "USC00244978 31.1 mi 1973/2192 90.0% pass"
+     ]
+    },
+    "SNWD": {
+     "chosen": [
+      "USC00247864",
+      "USS0009C01S"
+     ],
+     "examined": [
+      "USC00247864 10.9 mi 1796/2192 81.9% pass",
+      "US1MTFG0003 20.9 mi 1/2192 0.1% fail",
+      "USW00024036 26.6 mi 766/2192 34.9% fail",
+      "US1MTFG0006 27.6 mi 0/2192 0.0% fail",
+      "USC00244978 31.1 mi 1462/2192 66.7% fail",
+      "USS0009C01S 31.3 mi 2189/2192 99.9% pass"
+     ]
+    },
+    "TMAX": {
+     "chosen": [
+      "USC00247864",
+      "USW00004140"
+     ],
+     "examined": [
+      "USC00247864 10.9 mi 2117/2192 96.6% pass",
+      "USW00004140 18.5 mi 2187/2192 99.8% pass"
+     ]
+    },
+    "TMIN": {
+     "chosen": [
+      "USC00247864",
+      "USW00004140"
+     ],
+     "examined": [
+      "USC00247864 10.9 mi 2116/2192 96.5% pass",
+      "USW00004140 18.5 mi 2188/2192 99.8% pass"
+     ]
+    }
+   }
+  },
+  "roof_counts": {
+   "billings_90F_by_season": [
+    45,
+    42,
+    27,
+    35,
+    25
+   ],
+   "billings_snwd_1in_by_season": [
+    55,
+    70,
+    30,
+    53,
+    25
+   ],
+   "billings_m10_calendar_D1": [
+    40,
+    66,
+    39,
+    25,
+    57
+   ],
+   "stanford_m10_calendar_D1": [
+    34,
+    63,
+    34,
+    32,
+    60
+   ],
+   "independent_billings_90F": [
+    45,
+    42,
+    27,
+    35,
+    25
+   ],
+   "independent_billings_snwd": [
+    55,
+    70,
+    30,
+    53,
+    25
+   ]
+  },
+  "d7": {
+   "module": {
+    "slope": 0.664164,
+    "intercept": 12.031601,
+    "stations": 682,
+    "correlation": 0.809719,
+    "rms_residual_in": 17.6727,
+    "max_abs_residual_in": 124.2277
+   },
+   "independent": {
+    "mt_stations_with_dly": 571,
+    "complete_station_seasons": 682,
+    "pairs_with_grid_value": 682,
+    "slope": 0.664164,
+    "intercept": 12.031601,
+    "correlation": 0.809719,
+    "rms_residual_in": 17.6727,
+    "max_abs_residual_in": 124.2277
+   }
+  },
+  "lsr_hail_independent": {
+   "h_rows_all_cache": 1347,
+   "h_rows_window_dedup": 1325,
+   "duplicates_dropped": 22,
+   "h_ge_1in_window": 722
+  },
+  "cover_counts": {
+   "FA.W": {
+    "added": 3321,
+    "centre_rule": 49761,
+    "touch_rule": 53082
+   },
+   "FA.Y": {
+    "added": 63796,
+    "centre_rule": 1525719,
+    "touch_rule": 1589515
+   },
+   "FF.W": {
+    "added": 11650,
+    "centre_rule": 124672,
+    "touch_rule": 136322
+   },
+   "FL.A": {
+    "added": 3103,
+    "centre_rule": 21824,
+    "touch_rule": 24927
+   },
+   "FL.W": {
+    "added": 3629,
+    "centre_rule": 28921,
+    "touch_rule": 32550
+   },
+   "FL.Y": {
+    "added": 848,
+    "centre_rule": 6711,
+    "touch_rule": 7559
+   },
+   "SQ.W": {
+    "added": 11514,
+    "centre_rule": 209618,
+    "touch_rule": 221132
+   },
+   "SV.W": {
+    "added": 310012,
+    "centre_rule": 7672590,
+    "touch_rule": 7982602
+   },
+   "TO.W": {
+    "added": 1797,
+    "centre_rule": 23958,
+    "touch_rule": 25755
+   }
+  },
+  "hit_and_miss": {
+   "reports_in_table": 737,
+   "hits": 464,
+   "misses": 273,
+   "misses_under_by_max_in": 3.01,
+   "misses_under_by_median_in": 0.88,
+   "distinct_time_place_size": 721
+  },
+  "ncei_totals_2020_2026": {
+   "Debris Flow": {
+    "2020": 0,
+    "2021_2026": 11,
+    "research_total": 11,
+    "total": 11,
+    "window": 10
+   },
+   "Flash Flood": {
+    "2020": 0,
+    "2021_2026": 60,
+    "research_total": 60,
+    "total": 60,
+    "window": 52
+   },
+   "Flood": {
+    "2020": 13,
+    "2021_2026": 63,
+    "research_total": 76,
+    "total": 76,
+    "window": 60
+   },
+   "Funnel Cloud": {
+    "2020": 3,
+    "2021_2026": 32,
+    "research_total": 35,
+    "total": 35,
+    "window": 30
+   },
+   "Heavy Rain": {
+    "2020": 48,
+    "2021_2026": 96,
+    "research_total": 144,
+    "total": 144,
+    "window": 85
+   },
+   "Lightning": {
+    "2020": 2,
+    "2021_2026": 6,
+    "research_total": 8,
+    "total": 8,
+    "window": 6
+   },
+   "Tornado": {
+    "2020": 3,
+    "2021_2026": 14,
+    "research_total": 17,
+    "total": 17,
+    "window": 13
+   }
+  },
+  "window_counts_compare": {
+   "rows": 33,
+   "nonzero_deltas": 0
+  },
+  "gusts": {
+   "dropped": [
+    {
+     "date": "2023-11-30",
+     "kt": 165.1,
+     "station": "DLN"
+    },
+    {
+     "date": "2023-03-13",
+     "kt": 182.5,
+     "station": "LWT"
+    },
+    {
+     "date": "2023-08-06",
+     "kt": 255.0,
+     "station": "SDY"
+    }
+   ],
+   "flagged": [
+    {
+     "date": "2025-02-20",
+     "kt": 105.1,
+     "station": "HVR"
+    },
+    {
+     "date": "2025-05-09",
+     "kt": 86.0,
+     "station": "MSO"
+    }
+   ],
+   "hvr_flagged": true,
+   "lwt_182_5_dropped": true,
+   "mso_flagged": true
+  },
+  "june_2022": {
+   "Billings": {
+    "cell": [
+     921,
+     2149
+    ],
+    "fl_fa_warnings_june_2022": [
+     {
+      "b": "2022-06-14T05:41Z",
+      "e": null,
+      "o": "BYZ",
+      "product": "FL.W"
+     },
+     {
+      "b": "2022-06-14T06:00Z",
+      "e": null,
+      "o": "BYZ",
+      "product": "FL.A"
+     }
+    ],
+    "ncei_flood_records_june_2022": []
+   },
+   "Gardiner (Yellowstone River at Corwin Springs)": {
+    "cell": [
+     988,
+     1920
+    ],
+    "fl_fa_warnings_june_2022": [
+     {
+      "b": "2022-06-13T12:00Z",
+      "e": null,
+      "o": "BYZ",
+      "product": "FL.W"
+     }
+    ],
+    "ncei_flood_records_june_2022": []
+   },
+   "Red Lodge": {
+    "cell": [
+     983,
+     2074
+    ],
+    "fl_fa_warnings_june_2022": [
+     {
+      "b": "2022-06-12T05:00Z",
+      "e": "2022-06-12T19:15Z",
+      "o": "BYZ",
+      "product": "FA.W"
+     }
+    ],
+    "ncei_flood_records_june_2022": [
+     {
+      "cause": "Heavy Rain / Snow Melt",
+      "miles": 0.3,
+      "type": "flood",
+      "utc": "2022-06-10T07:00Z"
+     }
+    ]
+   }
+  },
+  "periods": [
+   {
+    "zone": "MTZ004",
+    "case": "MTZ004 WS 2024 event 1: cancelled on 10 January, continued from 11 January",
+    "ok": true,
+    "in_window": true
+   },
+   {
+    "zone": "MTZ004",
+    "case": "the continuation from 11 January",
+    "ok": true,
+    "in_window": true
+   },
+   {
+    "zone": "MTZ302",
+    "case": "MTZ302 HW 2022 event 38: first period",
+    "ok": true,
+    "in_window": true
+   },
+   {
+    "zone": "MTZ302",
+    "case": "MTZ302 HW 2022 event 38: second period",
+    "ok": true,
+    "in_window": true
+   },
+   {
+    "zone": "MTZ320",
+    "case": "MTZ320 WS 2023 event 4: cancelled",
+    "ok": true,
+    "in_window": true
+   },
+   {
+    "zone": "MTZ320",
+    "case": "MTZ320 WS 2023 event 4: the expiry after it",
+    "ok": true,
+    "in_window": true
+   },
+   {
+    "zone": "MTZ003",
+    "case": "MTZ003 WS 2021 event 12: first period (expired)",
+    "ok": true,
+    "in_window": true
+   },
+   {
+    "zone": "MTZ003",
+    "case": "MTZ003 WS 2021 event 12: second period",
+    "ok": true,
+    "in_window": true
+   }
+  ],
+  "store_digests": {
+   "climate_c": {
+    "bytes": 35149062,
+    "digest_sha256": "ae4afe75dd0f3dad346e39af478a775df1273f0f525bc8109c1b83963ca1078b",
+    "files": 4569
+   },
+   "gauges_g": {
+    "bytes": 285713,
+    "digest_sha256": "989c4259b8331568e00103945ceceaee7cc5447120b09bb745d3744a62b6ff49",
+    "files": 104
+   },
+   "products_j": {
+    "bytes": 23164558,
+    "digest_sha256": "226282d9032f35e3e25eed4c9c0757e814cf09b50e7dc67dc184d73603dad812",
+    "files": 4598
+   },
+   "products_j_second_build": {
+    "bytes": 23164558,
+    "digest_sha256": "226282d9032f35e3e25eed4c9c0757e814cf09b50e7dc67dc184d73603dad812",
+    "files": 4598
+   },
+   "products_k": {
+    "bytes": 13689,
+    "digest_sha256": "894ee567bf20fb4e8b279fd3263f3780099f27a70415ea9e0feef5df11ec3d3f",
+    "files": 56
+   },
+   "products_k_second_build": {
+    "bytes": 13689,
+    "digest_sha256": "894ee567bf20fb4e8b279fd3263f3780099f27a70415ea9e0feef5df11ec3d3f",
+    "files": 56
+   },
+   "products_s": {
+    "bytes": 25000,
+    "digest_sha256": "36cc261f1bf652eca33a89702e18d08f8b72348a80de7c30fc0c96fe2cf44c2c",
+    "files": 60
+   },
+   "products_z": {
+    "bytes": 2163070,
+    "digest_sha256": "0c409df20db3a102e29fe503999a417362f6b6cce091360529f391542e49ba05",
+    "files": 115
+   },
+   "snow_n": {
+    "bytes": 0,
+    "digest_sha256": null,
+    "files": 0
+   },
+   "stations_sd": {
+    "bytes": 3037279,
+    "digest_sha256": "3123278c3a9200de1b532a49d02760b4b4a21ad22f286e10018ca67cfcb7f515",
+    "files": 571
+   }
+  },
+  "determinism": {
+   "climate": {
+    "bytes_A": 35149062,
+    "differ": 0,
+    "files_A": 4569,
+    "files_B": 4569,
+    "identical": 4569,
+    "only_A": 0,
+    "only_B": 0
+   },
+   "stations": {
+    "bytes_A": 3037279,
+    "differ": 0,
+    "files_A": 571,
+    "files_B": 571,
+    "identical": 571,
+    "only_A": 0,
+    "only_B": 0
+   },
+   "gauges": {
+    "bytes_A": 285713,
+    "differ": 0,
+    "files_A": 104,
+    "files_B": 104,
+    "identical": 104,
+    "only_A": 0,
+    "only_B": 0
+   },
+   "products": {
+    "index_block_identical_excl_timestamps": true,
+    "j": {
+     "bytes_A": 23164558,
+     "bytes_B": 23164558,
+     "differ": 0,
+     "files_A": 4598,
+     "files_B": 4598,
+     "identical": 4598,
+     "only_A": 0,
+     "only_B": 0
+    },
+    "k": {
+     "bytes_A": 13689,
+     "bytes_B": 13689,
+     "differ": 0,
+     "files_A": 56,
+     "files_B": 56,
+     "identical": 56,
+     "only_A": 0,
+     "only_B": 0
+    },
+    "s": {
+     "bytes_A": 25000,
+     "bytes_B": 25000,
+     "differ": 0,
+     "files_A": 60,
+     "files_B": 60,
+     "identical": 60,
+     "only_A": 0,
+     "only_B": 0
+    },
+    "z": {
+     "bytes_A": 2163070,
+     "bytes_B": 2163070,
+     "differ": 0,
+     "files_A": 115,
+     "files_B": 115,
+     "identical": 115,
+     "only_A": 0,
+     "only_B": 0
+    }
+   }
+  },
+  "words_scan": {
+   "forbidden_terms_flagged": 0,
+   "strings_scanned": {
+    "website.climate.WORDS_CLIMATE": 55,
+    "website.snowgrid.WORDS": 7,
+    "website.stations.WORDS": 14,
+    "website.gauges.WORDS": 13,
+    "website.joins.KIND_WORDS": 3,
+    "website.joins.WORDS_JOINS": 169,
+    "website.joins.ZONE_STOP_WORDS": 4
+   }
+  },
+  "em_dash_added_lines": 0,
+  "em_dash_scope": "10,078 added lines (tracked diff plus 11 untracked files), counted at the start",
+  "banned_name_added_lines": 0,
+  "banned_names_checked": "model, AI-vendor and AI-product names (a 14-term list)",
+  "external_hosts_in_new_modules": [
+   "www.ncei.noaa.gov",
+   "api.water.noaa.gov",
+   "api.waterdata.usgs.gov",
+   "www.nohrsc.noaa.gov",
+   "mesonet.agron.iastate.edu",
+   "www2.census.gov",
+   "noaa-nclimgrid-daily-pds.s3.amazonaws.com",
+   "www.weather.gov (terms text)",
+   "github.com (user agent)"
+  ],
+  "cell_rule_checks": {
+   "billings_gate_b1_cell": [
+    921,
+    2149
+   ],
+   "benchland_lsr_b1_cell": [
+    792,
+    1998
+   ],
+   "petrolia_lake_b1_cell": [
+    807,
+    2175
+   ],
+   "climate_cells": {
+    "billings": [
+     509,
+     388
+    ],
+    "benchland": [
+     540,
+     352
+    ]
+   },
+   "snow_cells": {
+    "billings": [
+     230,
+     437
+    ],
+    "benchland": [
+     198,
+     399
+    ]
+   }
+  }
+ },
+ "contract_facts_part_b": {
+  "basis": "Module docstrings of website/climate.py, website/snowgrid.py and website/stations.py (the three modules part B reads first), with gauges.py and joins.py included because the site reads them too.",
+  "climate": {
+   "source": "NOAA nClimGrid-Daily, bucket noaa-nclimgrid-daily-pds, ncdd-YYYYMM-grd-scaled.nc (prelim files only where no scaled file exists); variables prcp (mm), tmax and tmin (C); 596 x 1385 grid at 1/24 degree; file attribute 'license = no restrictions'; registry text quoted in the docstring; the page says 'US government data; NOAA declares no restrictions; attribution requested' and must not say public domain for these grids unless the owner accepts that basis.",
+   "cell_rule": "Half-open: lat in (south, north], lon in [west, east) in 1/48 degree units (centres 1179 + 2i and -5985 + 2j); same as hail.cell_for in exact decimal arithmetic.",
+   "mask": "25,973 Montana centre cells; 25,902 land; 71 water ('No land value for this grid cell').",
+   "missing": "NaN, -999.99 and values outside valid_min/valid_max are missing, never summed or zero; a day with a missing input for a cell is a missing day.",
+   "rounding_thresholds": "Each daily value rounded to 0.01, then tenths of C (half up). F tenths = round half up (1.8 x tenths C + 320). 90 F day: tmax at least 322 tenths C. Freeze-thaw: tmax above 0 C and tmin below 0 C. Low below 32 F: tmin below 0 C. At or below 0 F: tmin at or below -178 tenths C.",
+   "periods": "Seasons July to June (2021-22 to 2025-26, partial 2026-27); calendar years 2021 to 2026; water years 2021 to 2027. Each period is 13 integers: [days, missing, rain hundredths of an inch, largest one-day rain hundredths, its date yyyymmdd, highest tenths F, its date, lowest tenths F, its date, days at or above 90 F, days at or below 0 F, freeze-thaw days, days with a low below 32 F]; null where no day has a value.",
+   "store": "hail/c/rRRRR_cCCCC.json per B1 tile, format hail-climate-v1: {f (five seasons together), r, c, state (sorted in-tile keys), cells {key: {i, j, f, s, c, w}}}. Water cells appear in state only.",
+   "units_words": "Inches (two decimals), degrees F (one decimal), days (whole), dates as 'Jun 15, 2025'. Kind word on every row: 'Grid estimate'. Timing: scaled months appear 4 to 68 days after month end; prelim days 2 to 3 days behind; ETags compared each run.",
+   "failure": "Each request retried; failures recorded (listing, month, reason). Failed listing: part unavailable. Failed or missing month: partial with the month named. No months loaded: unavailable.",
+   "cli": "python -m website.climate backfill|update|build|verify --store DIR --cache DIR [--today] [--independent]"
+  },
+  "snowgrid": {
+   "source": "NOHRSC National Snow Analysis, sfav2_CONUS_<Y>093012_to_<Y+1>093012.tif, one per water year: 2022 to 2026 present (11,562,084 B); 2020-21 missing upstream (HTTP 404). Terms: the NWS public-domain paragraph quoted in TERMS_NOTE (three conditions) and the 17 U.S.C. 403 sentence; the NWS name and identifier are trademark protected; a site may not present its own information as official.",
+   "grid": "1500 x 850 float32, 0.04 degree, PixelIsArea, WGS 84, origin -126.0 E, 55.0 N; no data below -9000; Montana box rows 150 to 265, columns 248 to 548 (34,916 cells).",
+   "units": "Units are not printed in the file. D7 decides: slope from 0.85 to 1.15 against station season totals in inches means inches. Currently fails (slope 0.664), so no values are shown. Words: 'Analysis: not shown ...' (unit_failed) and 'Analysis: {inches} in of snow in the {water_year} water year, from the analysis cell about {miles} miles away. An analysis, not a measurement at this address.'",
+   "cell_rule": "row = floor((55.0 - lat) / 0.04), col = floor((lon + 126.0) / 0.04) in exact decimal thousandths; an edge point goes to the cell south or east. Benchland (47.08, -110.02) is row 198, column 399.",
+   "store": "hail/n/<tile>.json format hail-snow-v1, five water years per cell, integers in hundredths of an inch, floor(value x 100 + 0.5), null for missing or negative; written only when D7 passes. Index block 'snow' carries the check, samples, files and terms.",
+   "cli": "python -m website.snowgrid build|verify --store DIR --cache DIR [--offline] [--deadline-at EPOCH]"
+  },
+  "stations": {
+   "source": "GHCN-Daily from NCEI: ghcnd-stations.txt, ghcnd-inventory.txt, all/<ID>.dly (the NCEI copy, not the stale S3 copy). Elements TMAX, TMIN (tenths C), PRCP (tenths mm), SNOW and SNWD (mm); -9999 missing; a non-blank Q-flag excludes a value; trace (T) counts as zero in sums and is said so.",
+   "timing": "Archive values replace real-time values about 45 to 60 days after month end; the newest report date is shown.",
+   "licence": "NOAA and federal records: public domain in the United States under NCEI-PD-10-2-02 section 4(a); CoCoRaHS (US1 prefix) under CC BY 3.0 with attribution; the NODD copy is CC0. Cite NCEI-PD-10-2-02.",
+   "rule": "Candidates within 40 miles with an unflagged value in the last 30 days; coverage over 2,192 days (2020-01-01 to 2025-12-31) at least 80 percent per element; the two nearest that pass; fewer than two: show those that pass and say so; none: 'No station within 40 miles has enough reports for {element} from 2020 to 2025.' Season or calendar values show only at 95 percent of days, and every station's share is shown.",
+   "thresholds": "90 F = TMAX 322 tenths C or more; 1 inch of snow depth = SNWD 25 mm or more (not 25.4). Freeze-thaw and low-below-32-F rules as for climate.",
+   "words": "'Station reading: {inches} in of snow in the {season} season at {station}, {miles} miles away ({k} of {d} days with a value).' Every station row names the station, its distance and kind word; 'Data unavailable' carries the reason.",
+   "store": "hail/sd/<id>.json format hail-stn-v1 per station: name, position, newest unflagged date per element, coverage counts 2020 to 2025, and per period (July to June, calendar, water years 2022 to 2026, Oct to Sep) per element: rep, ok, trace, sum, max/max_d/max_n or min/min_d/min_n, ge90, lt32, ge1, FT and DL day pairs. Dates yyyymmdd. Tile centres: lat 54.950 - 0.1 x row, lon -129.950 + 0.1 x col.",
+   "cli": "python -m website.stations build [--procs 4] [--offline] [--refresh all|none] [--refresh-ids FILE] [--deadline-at EPOCH]; rule-ids; verify"
+  },
+  "gauges": {
+   "source": "NWPS list and detail (api.water.noaa.gov/nwps/v1) for flood categories in feet; USGS peaks (api.waterdata.usgs.gov, parameter_code 00065, required) for annual peak stage by water year. Credit: 'Observations courtesy of U.S. Geological Survey.' NWS conditions apply to NWPS pages.",
+   "rule": "Nearest pool gauge within 10 miles (owner decision O4; 25 miles is the alternative). Pool: every gauge in the box that defines an NWS flood stage (minor category), excluding gauges whose categories are elevations of 1,000 ft or more (Lake Pend Oreille at Hope, 13.7 miles). A listed gauge whose detail failed is a candidate by position: 'could not be loaded', never 'none'.",
+   "store": "hail/g/<usgs>.json format hail-gauge-v1: name, position, stages in hundredths of a foot, LIDs sharing the number, peaks rows [water year, date, hundredths, qualifiers]. Scope 104 files (103 with peaks).",
+   "words": "'River flood record at the {name} gauge, {miles} miles away; it does not say water reached this address.' No daily flood-day counts.",
+   "cli": "python -m website.gauges build|verify --store DIR --cache DIR [--offline] [--refresh] [--procs 3]"
+  },
+  "joins": {
+   "sources": "IEM watchwarn, LSR and daily summaries (public domain; attribution requested; no warranty of accuracy); NWS public-domain terms; NCEI Storm Events (BEGIN times MST-7 on Montana rows); NCEI SWDI nx3hail; Census TIGER/Line 2026 counties (not copyrighted; trademarks; acknowledgement to the U.S. Census Bureau required).",
+   "window": "SPC report days 12:00 UTC to 12:00 UTC: store window 2021-10-17 12:00 UTC to 2026-10-17 12:00 UTC (research window 2021-10-19 to 2026-10-19 counted separately).",
+   "units": "LSR hail, rain, snow in inches; LSR gusts and sustained wind in mph; magnitudes shown only for codes H, R, S (inches) and G, N, A (mph); codes 5, 6, 7, I, J show no magnitude and show the remark as written (unit unverified). NCEI wind in knots with mph beside. SWDI MAXSIZE stored as hundredths of an inch. Station gust days: whole knots and whole mph; 50 kt (58 mph) or more is a day; 130 kt or more is dropped; flagged for check per D12.",
+   "polygon_cover": "A polygon covers a cell when it intersects the cell's square (D11); the centre rule is counted beside it. A town point is tested by exact point-in-polygon. Outline-less polygons join by county or zone code or are counted; never read as no warning.",
+   "zone_periods": "D8: CAN, UPG or EXP closes a period; a later NEW, CON, EXT, EXA or EXB opens the next; each period is a span with begin and end (cancelled at, upgraded, end not recorded).",
+   "store": "hail/j/events.json (hail-events-v2: every report, record and warning once); hail/j/r{tr:04d}_c{tc:04d}.json per B1 tile (reports and records as indexes; warnings as [index, 100-bit cover]; zones, fire zones, counties as cell-key lists; two nearest stations); hail/z/MTZ###.json and z/fire-MTZ###.json; hail/k/MTC###.json (county-only FA.A and FF.A and outline-less polygons); hail/s/<id>.json (gust days as [day index, mph, kt, flag]); index joins block; manifest.",
+   "kind_words": "Report; Record (NCEI); Warning (NWS polygon, relayed by IEM); Zone product; Station reading; Data unavailable. Damage threat tag shown as the NWS's own label.",
+   "requests": "Each IEM watchwarn request runs 1 December of the prior year to 31 January of the next; offline builds make no request; the re-pull window is fetched fresh and cached copies are used only if that fails.",
+   "cli": "python -m website.joins build --store DIR --cache DIR [--procs 4] [--today YYYY-MM-DD] [--offline]; verify STORE [--cache]; compare STORE; fixture"
+  }
+ },
+ "failed_checks": [
+  "unit: test_site.HailJoinedRecords.test_the_module_words_for_the_gate_and_benchland_cells (ERROR: TypeError, gate reports lead is None; assertIn on None)",
+  "unit: test_hail.FixtureTests.test_fixture_is_under_50_kb_and_holds_only_the_store_and_joins_files (fixture file list has new hail/k/ files; expectation not updated)",
+  "unit: test_hail.ReaderTests.test_manifest_passes_on_the_fixture (manifest list differs from the fixture's files)",
+  "unit: test_site.HailJoinedRecords.test_a_fire_weather_zone_file_that_did_not_load_keeps_the_public_products",
+  "unit: test_site.HailJoinedRecords.test_a_part_that_did_not_load_reads_the_same_on_both_surfaces",
+  "unit: test_site.HailJoinedRecords.test_a_record_with_no_unit_reads_as_its_type_word_and_no_size_is_given",
+  "unit: test_site.HailJoinedRecords.test_a_station_file_that_did_not_load_says_so_and_gives_no_count",
+  "unit: test_site.HailJoinedRecords.test_a_zone_file_that_did_not_load_keeps_the_point_records_and_says_so (3 subtests: the records slot shows the D16 unavailable sentence where the test expects the B2 partial sentence naming the zone)",
+  "unit: test_site.HailJoinedRecords.test_the_billings_town_page_has_the_six_tables_in_order",
+  "unit: test_site.HailJoinedRecords.test_the_browser_joins_say_what_the_module_says_for_three_cells",
+  "unit: test_site.HailJoins.test_every_word_the_browser_fills_is_one_the_build_writes (['warnings_tags_none'] is read by map.js but no longer written by joins.py)",
+  "unit suite: python -m unittest discover -s tests finished FAILED (failures=12, errors=1 over 1034 tests)",
+  "gate B5-5 partial: June 2022 per-place pairing (FA.W only at Red Lodge; FL.W at Gardiner and Billings) and NCEI flood records only at Red Lodge",
+  "gate B5-14 partial: site-side failure tests fail (zone-file records wording, station-file, fire-zone and part-unavailable cases in test_site); the browser half is not in this worktree (map.js unchanged)",
+  "gate B5-16 partial: town-page rows and the no-mixed-sources check are site-side and not in this worktree",
+  "gate B5-17 partial: Glendive 4.00 in at 14.4 mm (2021-06-08) is outside the window, so it is not a table row; the About summary is not in this worktree"
+ ],
+ "open_items": [
+  "DEFECT: joins.py no longer defines WORDS_JOINS['warnings_tags_none'] (base db84d76 line 266, used at line 2846). map.js (unchanged, line 2823) falls back to W.warnings_tags_none for a warning with no tags, so the browser can show an undefined value. Fix in part A (restore the key) or change map.js in part B.",
+  "UNIT TESTS: 11 test methods fail (12 failure entries and 1 error) in tests/test_site.py and tests/test_hail.py. Both modules pass at db84d76 (test_hail 178 OK; test_site 156 OK), so the failures come from the uncommitted part-A changes (joins.py, the regenerated fixture and the new hail/k/ folder). Each needs a code fix or an updated expectation; the owner or builder decides which.",
+  "D7 UNIT CHECK: slope 0.664164 is outside 0.85 to 1.15, so the analysis stays out of the sheet, as D7 requires. The regression reproduces exactly from raw files (682 station-seasons, correlation 0.809719, RMS residual 17.67 in, max residual 124.23 in). The owner or supervisor should decide whether the method (regression on a noisy 4 km grid) or the held state is the answer; the recheck does not settle the units.",
+  "BRIEF FIGURES ARE STALE: gauges are 104 files, 7,560 peak rows and 285,713 B (brief: 97 series, 7,084 rows, 207,359 B; the gauges docstring says the brief must follow). Climate tiles total 35,149,062 B with median 8,038 B raw and 1,705 B gzip (brief: 337 B per cell, 2,024 B median, 268 B gzip). The station rule set is 466 files and 384 MB (brief: 27.7 MB for 42 candidates of two sample points).",
+  "BROWSER BUDGET: hail/j/events.json is 6,083,996 B raw and 815,008 B gzip (9) per page (852,898 B gzip 6), which alone exceeds the 650 KB gate in the brief. map.js fetches it once per page. Decide whether the events table is split or the gate is restated (B5-12 is not in this recheck).",
+  "GATE B5-5 WORDING: the brief says FL.W and FA.W over Red Lodge, Gardiner and Billings. Found: FA.W at Red Lodge (2022-06-12 05:00 to 19:15 UTC), FL.W at Gardiner (from 2022-06-13 12:00 UTC) and Billings (from 2022-06-14 05:41 UTC), plus FL.A at Billings. NCEI flood records in June 2022 exist only at Red Lodge (2022-06-10 07:00 UTC). Confirm the intended pairing.",
+  "GATE B5-17 WORDING: Glendive (4.00 in, 14.4 mm, 2021-06-08) is outside the window (which starts 2021-10-17 12:00 UTC), so it is a research case, not a table row. Lewistown is present (2.50 in at 0.0 mm, 2025-06-15 22:48 UTC).",
+  "HIT-AND-MISS COUNT: the table has 737 rows, which equals the archive's LSR hail rows of 1.00 in or more in the window. 16 of those rows repeat the time, place and size of another row in the same monthly file with a different source or remark (one is a correction), so 721 distinct reports. Decide whether repeated rows count as one report.",
+  "D4 CHECK: the Petrolia Lake half-cell point (46.93 N, 108.25 W) is tested in test_climate (hail.cell_for gives (807, 2175); climate (537, 395)) and the Benchland point (47.08 N, 110.02 W) in test_climate and test_hail. No gap found; the research records the exact decimal column as 2174.5, which the half-open rule does not use.",
+  "MTZ003: WS 2021 event 12 begins 2021-12-19 04:00 UTC, which is inside the window. The brief said it may fall before the window; the period checks pass with in_window true.",
+  "MOCCASIN: USC00245761 is not current (newest value 2024-12-31), so it is not a candidate at Benchland. The town-page sentence that says why is site-side (part B) and not in this worktree.",
+  "PART B NOT IN THIS WORKTREE: website/static/map/map.js is unchanged, there is no website/summary.py and no site build changes. Not checked: the browser halves of B5-14 and B5-16, the About summary words (B5-17), the four Data unavailable lines, the radar sentence, the roof section, the Census acknowledgement on About, and the site smoke tests.",
+  "ZONE-FILE FAILURE WORDING: for a missing or damaged zone file, test_site expects the records section to carry the B2 partial sentence that names the zone and the reason ('Data unavailable for some periods: ... MTZ048 ...'). The browser side returns the D16 unavailable sentence ('Records could not be loaded in this update; that is not the same as no records.') in that slot, so the test fails. D16 says a failed source marks its part unavailable with the D20 sentence; the owner or builder must choose which contract holds and update the other side.",
+  "NCEI 2020 TOTALS: the 351-row total (Flood 76, Flash Flood 60, Heavy Rain 144, Tornado 17, Funnel Cloud 35, Lightning 8, Debris Flow 11) is reached only with the 2020 files, which verify reads from the joins cache (verify --cache). The store's 2021 to 2026 files give 282.",
+  "GUSTS: the brief's D12 names LWT 182.5 kt. The module also drops DLN (165.1 kt, 2023-11-30) and SDY (255.0 kt, 2023-08-06) under its 130 kt rule. Confirm that is intended.",
+  "STATION RULE: Stanford SNOW at Benchland is 1,752 of 2,192 days (79.9 percent), so it fails the 80 percent rule by 0.1 point, as the brief says. Crystal Lake (SNOTEL in the GHCN copy) is used for SNWD; the code does not fetch NRCS or AWDB. Counsel should confirm that the held SNOTEL item covers the direct NRCS service, not the GHCN copy used by gate B5-3.",
+  "COUNTY FILE: the TIGER 2026 county zip is cached twice (cache/joins/counties and cache/counties, 83 MB each). Operationally redundant.",
+  "CLIMATE INDEPENDENT READ: the first run failed with ENOSPC when the root filesystem fell to about 25 MB free during this recheck; the rerun passed. The re-read downloads whole monthly files (57 to 62 MB) one at a time and deletes each. The root filesystem was at 99 to 100 percent throughout the run.",
+  "STALE BUILDER OUTPUT: out/snow/store (built by an older stations.py) differs from this build in 538 of 571 sd files, in partial-season count keys (SNWD ge1, SNOW trace) and the index counts. The climate c/, gauges g/ and products j/, z/, s/ outputs from the builders match this build byte for byte.",
+  "CLIMATE VERIFY SCOPE: the gate B5-1 June 15, 2025 values are checked through the daily path (549 days, zero mismatches). The store keeps month extremes only, so there is no stored June 15 field to compare.",
+  "BACKFILL EVIDENCE: 'read once' for gate B5-2 comes from the ledger (64 entries, one per month, etag equal to md5 for all 63 scaled months); the backfill was not repeated in this recheck.",
+  "NOHRSC: water year 2021 (2020-21) is missing upstream (HTTP 404 on 2026-10-19), as stated in the snow index block. Water year 2026 (2025-26) is complete; the 2026-27 season file is not fetched because no consumer names it."
+ ],
+ "not_run_in_this_recheck": [
+  "B5-10 (words of the sheet), B5-11 (readability), B5-12 (budget job timing), B5-18 (flag-off build, Chromium smoke, smoke_pages, live preview): part B or the job, not in this worktree"
+ ]
+}

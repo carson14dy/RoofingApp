@@ -1,0 +1,325 @@
+{
+  "lid": "MLHW4",
+  "usgsId": "",
+  "reachId": "12829260",
+  "name": "Medicine Lodge Creek near Hyattville",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "RIW",
+    "name": "Riverton"
+  },
+  "state": {
+    "abbreviation": "WY",
+    "name": "Wyoming"
+  },
+  "county": "Big Horn",
+  "timeZone": "MST7MDT",
+  "latitude": 44.29431,
+  "longitude": -107.54025,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": 1.92,
+      "primaryUnit": "ft",
+      "secondary": 0.0901,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:15:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": 5,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 4.5,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 4,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2019-07-08T18:00:00Z",
+          "stage": 4.42,
+          "flow": 645,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-06T02:30:00Z",
+          "stage": 4.2,
+          "flow": 877,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-05-30T02:15:00Z",
+          "stage": 4.07,
+          "flow": 653,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-06-08T07:30:00Z",
+          "stage": 3.88,
+          "flow": 420,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-06T04:30:00Z",
+          "stage": 3.75,
+          "flow": 500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-05-28T12:00:00Z",
+          "stage": 3.75,
+          "flow": 650,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-06-02T07:00:00Z",
+          "stage": 3.4,
+          "flow": 385,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-06-12T06:45:00Z",
+          "stage": 3.03,
+          "flow": 440,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-06-05T07:00:00Z",
+          "stage": 2.82,
+          "flow": 195,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2019-07-08T18:00:00Z",
+          "stage": 4.42,
+          "flow": 645,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-06-08T07:30:00Z",
+          "stage": 3.88,
+          "flow": 420,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-05-28T12:00:00Z",
+          "stage": 3.75,
+          "flow": 650,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-06-06T04:30:00Z",
+          "stage": 3.75,
+          "flow": 500,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-06-05T07:00:00Z",
+          "stage": 2.82,
+          "flow": 195,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2015-06-02T07:00:00Z",
+          "stage": 3.4,
+          "flow": 385,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2014-05-30T02:15:00Z",
+          "stage": 4.07,
+          "flow": 653,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-06-12T06:45:00Z",
+          "stage": 3.03,
+          "flow": 440,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-06T02:30:00Z",
+          "stage": 4.2,
+          "flow": 877,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 5,
+        "statement": "Moderate Flood.  Upper and lower campsites inundated.  Flooding near Hyatteville near the confluence of Paint Rock and Medicine Lodge Creeks. "
+      },
+      {
+        "stage": 4.5,
+        "statement": "Flood Stage. Upper campsites will be totally inundated with water. Lower campsites will begin to be inundated with water.  Minor flooding near Hyattville near the confluence of Paint Rock and Medicine Lodge Creeks."
+      },
+      {
+        "stage": 4,
+        "statement": "Action Stage. Upper campsites will start to be inundated with water. Lower campsites may have low lying flooding."
+      },
+      {
+        "stage": 3.5,
+        "statement": "Bankfull stage. Minor low level flooding in and around upper campsites. "
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/mlhw4_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/mlhw4_record.png"
+    },
+    "photos": [
+      {
+        "id": "10811757698202407406",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.29431,
+            -107.54025
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/mlhw4/10811757698202407406.jpeg",
+          "caption": "Looking Downstream---Moderate Flow"
+        }
+      },
+      {
+        "id": "10820093078672708078",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.29431,
+            -107.54025
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/mlhw4/10820093078672708078.jpeg",
+          "caption": "Looking Upstream---Moderate Flow"
+        }
+      },
+      {
+        "id": "5062131128470933998",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            44.29431,
+            -107.54025
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/mlhw4/5062131128470933998.jpeg",
+          "caption": "Looking Upstream---High Flow---May 2014"
+        }
+      }
+    ]
+  },
+  "dataAttribution": [],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "0",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

@@ -1,0 +1,45 @@
+{
+ "ok": true,
+ "format": "hail-store-v1",
+ "as_of": "2026-10-16",
+ "window": [
+  "2021-10-17",
+  "2026-10-16"
+ ],
+ "days_expected": 1826,
+ "days_present": 1825,
+ "missing_days": [
+  "2022-06-08"
+ ],
+ "events": 2638537,
+ "shards": 4597,
+ "tiles": 4597,
+ "state_cells": 450765,
+ "bytes": 32022304,
+ "manifest_files": 45643,
+ "partial_days": [
+  {
+   "day": "2025-06-25",
+   "frames": 717,
+   "expected": 720
+  }
+ ],
+ "benchland": {
+  "point": [
+   47.025,
+   -110.135
+  ],
+  "cell": [
+   797,
+   1986
+  ],
+  "spc_day": "2025-06-15",
+  "tenths": 513,
+  "mm": "51.3",
+  "gate_expected_tenths": 513,
+  "checked": true,
+  "matches_gate_expectation": true,
+  "note": "the check cell is the centre of the cell nearest Benchland (47.08 N, 110.02 W) that holds 2.01 in on Jun 15, 2025, about 10.6 km from that point; it is checked on a built store whose window holds that day, not on the sample"
+ },
+ "checked_utc": "2026-10-20T02:03:45Z"
+}

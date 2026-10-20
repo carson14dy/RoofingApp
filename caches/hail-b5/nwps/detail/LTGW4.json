@@ -1,0 +1,229 @@
+{
+  "lid": "LTGW4",
+  "usgsId": "",
+  "reachId": "5338453",
+  "name": "Little Goose Creek at Big Horn",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "BYZ",
+    "name": "Billings"
+  },
+  "state": {
+    "abbreviation": "WY",
+    "name": "Wyoming"
+  },
+  "county": "Sheridan",
+  "timeZone": "MST7MDT",
+  "latitude": 44.683333333333,
+  "longitude": -106.98694444444,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": 0.96,
+      "primaryUnit": "ft",
+      "secondary": 0.0599,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T05:30:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 3,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "2022-05-31T00:00:00Z",
+          "stage": 4.04,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-05-25T00:00:00Z",
+          "stage": 3.52,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-05-20T00:00:00Z",
+          "stage": 1.98,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-06-06T00:00:00Z",
+          "stage": 1.9,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-06T00:00:00Z",
+          "stage": 1.66,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2022-05-31T00:00:00Z",
+          "stage": 4.04,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2021-06-06T00:00:00Z",
+          "stage": 1.9,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2013-05-20T00:00:00Z",
+          "stage": 1.98,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2012-06-06T00:00:00Z",
+          "stage": 1.66,
+          "flow": -9999,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-05-25T00:00:00Z",
+          "stage": 3.52,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 4.5,
+        "statement": "FLOODING OF LOW LAND PROPERTY ALONG LEFT AND RIGHT BANKS IN BIG HORN INTENSIFIES AND BECOMES MORE WIDESPREAD.  STANDING WATER ALONG THE LOW AREAS OF THE BIRD FARM ROAD NORTH OF THE BIRD FARM ROAD BRIDGE.  FLOODING OF THE WOODLAND PARK AREA IN SHERIDAN INTENSIFIES AND BECOMES MORE WIDESPREAD.  FLOOD INUNDATION  OF THE POWDER HORN GOLF COURSE BECOMES MORE WIDESPREAD.  FLOOD WAVE TRAVEL TIME FROM GAGE TO SHERIDAN IS 5 TO 7 HOURS."
+      },
+      {
+        "stage": 4,
+        "statement": "FLOOD STAGE. MINOR FLOODING OF LOW LYING PROPERTY IN BIG HORN ALONG LEFT AND RIGHT BANKS. WATER BEGINS TO ENCRAOCH LOW AREAS NEAR NORTH END OF BIRD FARM ROAD BRIDGE.  LOW LYING AREAS ALONG THE POWDER HORN GOLF COURSE BECOME INUNDATED. MINOR FLOODING OF THE WOODLAND PARK AREA IN SHERIDAN BEGINS.  FLOOD WAVE TRAVEL TIME FROM GAGE TO SHERIDAN IS 5 TO 7 HOURS."
+      },
+      {
+        "stage": 3.5,
+        "statement": "BANKFULL STAGE. WATER BEGINS TO ENCROACH LOW LYING AREAS ALONG RIGHT AND LEFT BANKS IN BIG HORN AND DOWNSTREAM AT THE POWDER HORN GOLF COURSE."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/ltgw4_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/ltgw4_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "City of Sheridan Wyoming",
+      "text": "City of Sheridan Wyoming",
+      "title": "City of Sheridan Wyoming",
+      "url": "https://www.sheridancountywy.gov/departments/emergency_management/index.php"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": null,
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice during winter months.",
+      "effective": "1015",
+      "expiration": "0430"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "LGDW4",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

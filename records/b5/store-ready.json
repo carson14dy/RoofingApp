@@ -1,0 +1,555 @@
+{
+ "announced_utc": "2026-10-19T16:49:44Z",
+ "blocks": {
+  "climate": {
+   "problem": null,
+   "state": "loaded"
+  },
+  "gauges": {
+   "problem": null,
+   "state": "loaded"
+  },
+  "joins": {
+   "state": "loaded",
+   "tiles": 4597,
+   "towns_file": {
+    "bytes": 29467,
+    "events": 469,
+    "file": "hail/j/towns.json",
+    "format": "hail-joins-towns-v1",
+    "towns": 17
+   }
+  },
+  "snow": {
+   "problem": "Analysis: not shown. Its amounts did not match measured snowfall closely enough to be sure they are in inches. Station readings are shown instead.",
+   "state": "unavailable"
+  },
+  "stations": {
+   "problem": null,
+   "state": "loaded"
+  }
+ },
+ "builds": {
+  "climate": "website.climate build --cache /home/user/hail-b5/cache/nclimgrid (cached aggregates; no download)",
+  "gauges": "website.gauges build --cache /home/user/hail-b5/cache --offline --procs 2",
+  "joins": "website.joins build --store STORE --cache /home/user/hail-b5/cache/joins --offline --procs 2 --today 2026-10-19",
+  "snow": "website.snowgrid build --cache /home/user/hail-b5/cache --offline (unit check fails by design: n/ absent)",
+  "stations": "website.stations build --cache /home/user/hail-b5/cache --offline --procs 2"
+ },
+ "bytes": {
+  "c": 35149062,
+  "events_json": 6083996,
+  "g": 285713,
+  "j": 87628936,
+  "j_e": 63082924,
+  "j_tiles_events_towns": 24546012,
+  "k": 13689,
+  "n": 0,
+  "s": 34913,
+  "sd": 3071175,
+  "t": 32022304,
+  "tl": 13667217,
+  "towns": 29467,
+  "z": 1943955
+ },
+ "counts": {
+  "c": 4569,
+  "g": 104,
+  "j": 9196,
+  "j_e": 4597,
+  "k": 56,
+  "n": 0,
+  "s": 60,
+  "sd": 571,
+  "t": 4597,
+  "tl": 4597,
+  "z": 135
+ },
+ "events_tiles": {
+  "budget_gzip": 100000,
+  "bytes": 63082924,
+  "count": 4597,
+  "dir": "hail/j/e/",
+  "format": "hail-events-tile-v1",
+  "gzip_bytes": 10423190,
+  "largest_gzip": {
+   "bytes": 22933,
+   "file": "r0076_c0186.json"
+  },
+  "largest_raw": {
+   "bytes": 222343,
+   "file": "r0065_c0169.json"
+  },
+  "referenced": {
+   "records": 14477,
+   "reports": 301678,
+   "warnings": 137700
+  }
+ },
+ "iem_sets": [
+  {
+   "bytes": 553785,
+   "sha256": "0fc131371d5b57ba2fb3fbfcbf58eb82f1bbcf62399a491026ca52e08832d4df",
+   "state": "loaded",
+   "valid": "2021-09-15T12:00:00Z",
+   "zones": 103
+  },
+  {
+   "bytes": 553785,
+   "sha256": "498037fa4b25d1fb6c6e0552e402c5340bc393747f77fe97118b1ee9b15f1c8c",
+   "state": "loaded",
+   "valid": "2022-06-01T12:00:00Z",
+   "zones": 103
+  },
+  {
+   "bytes": 553785,
+   "sha256": "b75761e4d771e5545e44703fdbb609a1f71988882e08c10b41fabaec1afa24a9",
+   "state": "loaded",
+   "valid": "2022-09-10T12:00:00Z",
+   "zones": 103
+  },
+  {
+   "bytes": 553785,
+   "sha256": "c31782da7576855c6cac6babd799a8c28a16011c09d31f1ef80c8055bfc32587",
+   "state": "loaded",
+   "valid": "2022-09-13T12:00:00Z",
+   "zones": 103
+  },
+  {
+   "bytes": 475411,
+   "sha256": "950175ea2ba674b8b323ae9d1cc28608d93f03b74c5cd7c157b987cee8b72f05",
+   "state": "loaded",
+   "valid": "2022-09-13T18:00:00Z",
+   "zones": 83
+  },
+  {
+   "bytes": 475411,
+   "sha256": "ba041fb90e7c166c62435104ddc3ada75aba9ca1848c19966128093c6ae2001f",
+   "state": "loaded",
+   "valid": "2023-06-01T12:00:00Z",
+   "zones": 83
+  },
+  {
+   "bytes": 475411,
+   "sha256": "6b024fd08ea683abcd0c32506bebee7658bfa6fcef583731fe9e346f9ae66565",
+   "state": "loaded",
+   "valid": "2025-03-18T12:00:00Z",
+   "zones": 83
+  }
+ ],
+ "joins_counts": {
+  "records": 2097,
+  "reports": 43510,
+  "warnings": 3156
+ },
+ "largest_events_tile_file": {
+  "budget_gzip": 100000,
+  "gzip_bytes": 22933,
+  "largest_gzip_name": "r0076_c0186.json",
+  "name": "r0065_c0169.json",
+  "raw_bytes": 222343
+ },
+ "made_from": "/home/user/hail-b2/out2/joins/hail-store.tar.gz (B2 store, db84d76 + part A modules)",
+ "manifest_files": 23886,
+ "products_rebuild_2026_10_20": {
+  "commands": [
+   "python -m website.joins build --store STORE --cache /home/user/hail-b5/cache/joins --offline --procs 2 --today 2026-10-19",
+   "python -m website.stations build --store STORE --cache /home/user/hail-b5/cache --offline --procs 2",
+   "python -m website.gauges build --store STORE --cache /home/user/hail-b5/cache --offline --procs 2",
+   "python -m website.joins verify STORE --cache /home/user/hail-b5/cache/joins",
+   "python -m website.stations verify --store STORE",
+   "python -m website.gauges verify --store STORE --cache /home/user/hail-b5/cache",
+   "python -m website.joins fixture --from-store STORE   (the committed SAMPLE fixture)"
+  ],
+  "gauges_seconds": 1.5,
+  "joins_seconds": 277,
+  "joins_verify_seconds": 13.9,
+  "offline": true,
+  "procs": 2,
+  "rc": {
+   "fixture": 0,
+   "gauges build": 0,
+   "gauges verify": 0,
+   "joins build": 0,
+   "joins verify": 0,
+   "stations build": 0,
+   "stations verify": 0
+  },
+  "records": "the run logs are in /home/user/hail-b5/out/fixer-pscd/ (joins-build2.log, stations-build2.json, gauges-build2.json, *-verify2.json)",
+  "stations_seconds": 29.5,
+  "store": "/home/user/hail-b5/out/b1/store",
+  "verify_rc_2026_10_20": {
+   "gauges": 0,
+   "joins": 0,
+   "stations": 0
+  },
+  "what": "The joins part (j/, z/, s/, k/, events.json, towns.json, the joins block and its manifest entries), then the stations part (sd/, tl/, the stations block) and the gauges part (g/, the gauges block), were rebuilt in this store offline with --procs 2 from the caches under /home/user/hail-b5/cache. The climate and snow parts were not rebuilt: their stored files did not change, and the climate partial words are rendered by the site build."
+ },
+ "products_rebuild_2026_10_20b": {
+  "commands": [
+   "python -m website.joins build --store STORE --cache /home/user/hail-b5/cache/joins --offline --procs 2 --today 2026-10-19",
+   "python -m website.joins verify STORE --cache /home/user/hail-b5/cache/joins",
+   "python -m website.joins compare STORE"
+  ],
+  "compare": {
+   "nonzero_deltas": 0,
+   "rows": 33
+  },
+  "compare_json": "/home/user/hail-b5/out/products-fixer-r2/compare-d44.json",
+  "joins_seconds_build_log": 312,
+  "joins_seconds_index": 303.5,
+  "log": "/home/user/hail-b5/out/products-fixer-r2/joins-build-d44.log",
+  "offline": true,
+  "placement": {
+   "changeover_week": 72,
+   "current": 785,
+   "expected_unplaced": 0,
+   "groups": 15764,
+   "iem_set": 11580,
+   "mapped": 3327,
+   "simplified_outline": 1279,
+   "unplaced": 0
+  },
+  "procs": 2,
+  "rc": {
+   "joins build": 0,
+   "joins compare": 0,
+   "joins verify": 0
+  },
+  "stations_gauges_climate_snow": "not rebuilt in this step; their files and blocks are as before",
+  "store": "/home/user/hail-b5/out/b1/store",
+  "verify_json": "/home/user/hail-b5/out/products-fixer-r2/verify-d44b.json",
+  "what": "The joins part (j/ with j/e/ and towns.json, z/ with the 20 removed zones, s/, k/, events.json, the joins block and its manifest entries) was rebuilt in place from the caches under /home/user/hail-b5/cache (the IEM zone snapshots copied to cache/joins/iem-ugcs/). The climate, stations, gauges and snow parts were not rebuilt in this step."
+ },
+ "rebuilt_by": "products fixer (part B1 second completion: D44 zone sets, D48 flood records row, D36 station picks from the spot; joins part only)",
+ "rebuilt_utc": "2026-10-20T01:24:00Z",
+ "station_periods": {
+  "bytes": 34913,
+  "files": 60,
+  "format": "hail-station-v3",
+  "gzip_total": 16975,
+  "seasons": 5
+ },
+ "store": "/home/user/hail-b5/out/b1/store",
+ "store_bytes_total": 177677748,
+ "store_bytes_total_note": "on-disk bytes of hail/ after the 2026-10-20 joins rebuild; the previous figure (176293267) was measured another way and is kept as store_bytes_total_prev",
+ "store_bytes_total_prev": 176293267,
+ "tile_lists": {
+  "bytes": 13667217,
+  "cap": 6,
+  "files": 4597,
+  "format": "hail-stn-tiles-v1",
+  "gzip_largest": 856,
+  "gzip_median": 574,
+  "gzip_total": 2586828,
+  "lists": 22985,
+  "lists_at_cap": 10543,
+  "longest": 6,
+  "miles": 40.0,
+  "unread_entries": 0
+ },
+ "tiles": 4597,
+ "towns_file": {
+  "bytes": 29467,
+  "format": "hail-joins-towns-v1",
+  "state": "loaded",
+  "town_event_pairs": 469,
+  "towns": 17
+ },
+ "verify": {
+  "climate": {
+   "ok": true,
+   "state": "loaded"
+  },
+  "compare": {
+   "nonzero_deltas": [],
+   "rows": 33
+  },
+  "gauges": {
+   "checks": 9,
+   "failed": [],
+   "ok": true
+  },
+  "joins": {
+   "checks": 48,
+   "cover_not_town": 12,
+   "failed": [],
+   "not_run": 0,
+   "ok": true,
+   "state": "loaded",
+   "town_not_cover": 0
+  },
+  "snow": {
+   "checks": [
+    {
+     "detail": "",
+     "name": "snow block present",
+     "ok": true
+    },
+    {
+     "detail": "",
+     "name": "cell_for: Benchland point is row 198, column 399",
+     "ok": true
+    },
+    {
+     "detail": "",
+     "name": "cell_for: Billings point is row 230, column 437",
+     "ok": true
+    },
+    {
+     "detail": "",
+     "name": "cell_for: the north edge of row 198 is row 198 and the east edge of column 399 is column 400",
+     "ok": true
+    },
+    {
+     "detail": "34916 cells",
+     "name": "Montana box has 34,916 cells in rows 150 to 265 and columns 248 to 548",
+     "ok": true
+    },
+    {
+     "detail": "",
+     "name": "snow block state is loaded or unavailable with words",
+     "ok": true
+    },
+    {
+     "detail": "[]",
+     "name": "missing water years are named",
+     "ok": true
+    },
+    {
+     "detail": "",
+     "name": "one concrete URL per water year, with no template marks",
+     "ok": true
+    },
+    {
+     "detail": "",
+     "name": "unit check recorded",
+     "ok": true
+    },
+    {
+     "detail": "slope 0.664164",
+     "name": "display decision follows the D7 check",
+     "ok": true
+    },
+    {
+     "detail": "",
+     "name": "check slope and intercept are finite numbers",
+     "ok": true
+    },
+    {
+     "detail": "50.2890 against 50.29",
+     "name": "research value billings water year 2025",
+     "ok": true
+    },
+    {
+     "detail": "33.8501 against 33.85",
+     "name": "research value billings water year 2026",
+     "ok": true
+    },
+    {
+     "detail": "87.1708 against 87.17",
+     "name": "research value benchland water year 2025",
+     "ok": true
+    },
+    {
+     "detail": "94.0466 against 94.05",
+     "name": "research value benchland water year 2026",
+     "ok": true
+    }
+   ],
+   "failed": [],
+   "ok": true,
+   "state": "unavailable"
+  },
+  "stations": {
+   "checks": 32,
+   "failed": [],
+   "ok": true,
+   "tile_picks": {
+    "benchland": {
+     "PRCP": [
+      "USC00247864",
+      "USW00004140"
+     ],
+     "SNOW": [
+      "US1MTFG0003",
+      "USC00243947"
+     ],
+     "SNWD": [
+      "USC00247864",
+      "USS0009C01S"
+     ],
+     "TMAX": [
+      "USC00247864",
+      "USW00004140"
+     ],
+     "TMIN": [
+      "USC00247864",
+      "USW00004140"
+     ]
+    },
+    "billings": {
+     "PRCP": [
+      "USC00240802",
+      "USW00024033"
+     ],
+     "SNOW": [
+      "USC00240802",
+      "USW00024033"
+     ],
+     "SNWD": [
+      "USC00240802",
+      "USW00024033"
+     ],
+     "TMAX": [
+      "USC00240802",
+      "USW00024033"
+     ],
+     "TMIN": [
+      "USC00240802",
+      "USW00024033"
+     ]
+    }
+   }
+  }
+ },
+ "zone_editions": [
+  {
+   "current": false,
+   "effective": "2021-09-08",
+   "file": "z_08se21.zip",
+   "read": false,
+   "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+  },
+  {
+   "current": false,
+   "effective": "2022-03-22",
+   "file": "z_22mr22.zip",
+   "read": false,
+   "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+  },
+  {
+   "current": false,
+   "effective": "2022-09-07",
+   "file": "z_07se22.zip",
+   "read": false,
+   "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+  },
+  {
+   "current": false,
+   "effective": "2022-09-13",
+   "file": "z_13se22.zip",
+   "read": false,
+   "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+  },
+  {
+   "current": false,
+   "effective": "2023-03-08",
+   "file": "z_08mr23.zip",
+   "read": false,
+   "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+  },
+  {
+   "current": false,
+   "effective": "2024-03-05",
+   "file": "z_05mr24.zip",
+   "read": false,
+   "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+  },
+  {
+   "current": false,
+   "effective": "2025-03-18",
+   "file": "z_18mr25.zip",
+   "read": true,
+   "reason": null
+  },
+  {
+   "current": true,
+   "effective": "2026-04-16",
+   "file": "z_16ap26.zip",
+   "read": true,
+   "reason": null
+  }
+ ],
+ "zone_list_before": [
+  "MTZ008",
+  "MTZ009",
+  "MTZ010",
+  "MTZ011",
+  "MTZ012",
+  "MTZ013",
+  "MTZ014",
+  "MTZ015",
+  "MTZ044",
+  "MTZ045",
+  "MTZ046",
+  "MTZ047",
+  "MTZ048",
+  "MTZ049",
+  "MTZ050",
+  "MTZ051",
+  "MTZ052",
+  "MTZ053",
+  "MTZ054",
+  "MTZ055"
+ ],
+ "zone_placement_table": {
+  "changeover_week": 72,
+  "current": 785,
+  "expected_unplaced": 0,
+  "groups": 15764,
+  "iem_set": 11580,
+  "mapped": 3327,
+  "simplified_outline": 1279,
+  "unplaced": 0
+ },
+ "zone_products_unplaced": 0,
+ "zones_before": {
+  "cells": {
+   "MTZ008": 16884,
+   "MTZ009": 7174,
+   "MTZ010": 4542,
+   "MTZ011": 9199,
+   "MTZ012": 8378,
+   "MTZ013": 12443,
+   "MTZ014": 7921,
+   "MTZ015": 10833,
+   "MTZ044": 6178,
+   "MTZ045": 4583,
+   "MTZ046": 3585,
+   "MTZ047": 13663,
+   "MTZ048": 8259,
+   "MTZ049": 2420,
+   "MTZ050": 5862,
+   "MTZ051": 14002,
+   "MTZ052": 5265,
+   "MTZ053": 3757,
+   "MTZ054": 7572,
+   "MTZ055": 8082,
+   "MTZ060": 2813
+  },
+  "codes": [
+   "MTZ008",
+   "MTZ009",
+   "MTZ010",
+   "MTZ011",
+   "MTZ012",
+   "MTZ013",
+   "MTZ014",
+   "MTZ015",
+   "MTZ044",
+   "MTZ045",
+   "MTZ046",
+   "MTZ047",
+   "MTZ048",
+   "MTZ049",
+   "MTZ050",
+   "MTZ051",
+   "MTZ052",
+   "MTZ053",
+   "MTZ054",
+   "MTZ055",
+   "MTZ060"
+  ]
+ }
+}

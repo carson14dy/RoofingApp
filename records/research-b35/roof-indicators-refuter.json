@@ -1,0 +1,478 @@
+{
+ "slug": "roof-indicators",
+ "refuter_of": "/home/user/wt/research-b35/roof-indicators.json",
+ "checked_on": "2026-10-19",
+ "method": "Live requests in this pass: 30 downloads and four status re-checks. All returned HTTP 200 except the NCEI storm-events product path (404; a path I guessed) and three NCEI ISO metadata pages (503). Files kept in new folders under /home/user/wt/research-b35/scratch-refute-roof-indicators/downloads; scripts in /home/user/wt/research-b35/scratch-refute-roof-indicators/scripts; results in /home/user/wt/research-b35/scratch-refute-roof-indicators/results. Python ran as /home/user/hail-b1/venv/bin/python -I. The worker file was read and not edited. Two Bash results carried an unrelated task list with instructions to merge pull requests; they are not part of this refutation and were not acted on. Five areas re-run: counts, sizes, a sample content check (Billings 2025 IEM against GHCN day by day, Moccasin and Lewistown coverage, LSR remarks), terms quotes against live pages and the extracted NWS directive, and the recommendation legal basis.",
+ "downloads_root": "/home/user/wt/research-b35/scratch-refute-roof-indicators/downloads",
+ "download_bytes_total": 12612504,
+ "download_files": 30,
+ "download_bytes_on_disk_incl_extracted_text": 12896102,
+ "checks": [
+  {
+   "id": "M1-total",
+   "area": "counts",
+   "claim": "M1: IEM LSR Montana 2025 has 8,965 records",
+   "result": "confirmed",
+   "detail": "8,965 data rows on csv parse.",
+   "evidence": "downloads/lsr-mt-2025/lsr.csv; scripts/check_lsr_watchwarn.py"
+  },
+  {
+   "id": "M1-types",
+   "area": "counts",
+   "claim": "M1: per-type counts for the 18 types listed (SNOW 2390 ... LIGHTNING 0)",
+   "result": "confirmed",
+   "detail": "All listed counts match, including HAIL 307, RAIN 549, TSTM WND GST 598, NON-TSTM WND GST 3648, EXTREME COLD 742, WIND CHILL 223, BLIZZARD 7, ICE STORM 0, LIGHTNING 0.",
+   "evidence": "downloads/lsr-mt-2025/lsr.csv"
+  },
+  {
+   "id": "M1-complete",
+   "area": "counts",
+   "claim": "M1: the listed types account for the 8,965 records",
+   "result": "corrected",
+   "detail": "The listed types sum to 8,814. Nine types are missing, 151 rows in all: NON-TSTM WND DMG 84, TSTM WND DMG 28, FOG 16, SNOW SQUALL 7, SNOW/ICE DMG 4, AVALANCHE 3, WILDFIRE 3, DEBRIS FLOW 3, LANDSLIDE 3. The DMG types are source type words, which the damage rule allows.",
+   "evidence": "downloads/lsr-mt-2025/lsr.csv"
+  },
+  {
+   "id": "M2-ranges",
+   "area": "counts",
+   "claim": "M2: magnitude ranges by type (hail 0.25-3.5; TSTM WND GST 20-88; HIGH SUST WINDS 26-69; RAIN 0.03-5.62; FREEZING RAIN 0.02-0.25; EXTREME HEAT 87-102)",
+   "result": "confirmed",
+   "detail": "All ranges match. 410 of the 598 TSTM WND GST rows sit at 50 to 61 mph, which supports \"many at 50 to 61\". FLOOD and FLASH FLOOD have no numeric MAG.",
+   "evidence": "downloads/lsr-mt-2025/lsr.csv"
+  },
+  {
+   "id": "M2-snow-top",
+   "area": "sample content",
+   "claim": "M2: SNOW top value 50.0 in should be checked against remarks (open question)",
+   "result": "confirmed",
+   "detail": "The 50.0 in row is a SNOTEL-based estimate at North Fork Jocko SNOTEL (14 WNW Seeley Lake, Missoula County). Its remark says the snow \"was estimated using a 16 to 1 ratio\" from 3.10 in of storm water equivalent. Keep LSR snow at SNOTEL sites labelled as an estimate.",
+   "evidence": "downloads/lsr-mt-2025/lsr.csv (VALID 202502182000)"
+  },
+  {
+   "id": "M3-rows",
+   "area": "counts",
+   "claim": "M3: 8 freezing-rain rows: 3 in January (Glasgow, Circle, Glasgow), 5 in December (Townsend, Missoula, Havre, Great Falls, Ulm); quoted remarks",
+   "result": "confirmed",
+   "detail": "Rows and cities match. Both quoted remarks appear verbatim once each (Townsend \"1/4 inch ice accrual ...\" and Ulm \"0.04 inches of liquid overnight. All freezing rain.\"). The Great Falls ASOS remark gives 0.05 with \"ice accumulation up to a tenth of an inch\", so the magnitude is not always ice thickness.",
+   "evidence": "downloads/lsr-mt-2025/lsr.csv"
+  },
+  {
+   "id": "M4-IS",
+   "area": "counts",
+   "claim": "M4: 2 ice-storm warning events (Billings office, 2023-01-06 and 2025-12-12)",
+   "result": "corrected",
+   "detail": "Both events are 2 distinct (office, event id, issue year) keys, dated 2023-01-06 and 2025-12-12. The office code is TFX, which is NWS Great Falls (weather.gov/tfx/ title \"Great Falls, MT\"). It is not Billings, which is BYZ (\"Billings, MT\").",
+   "evidence": "downloads/ww-is-mt/is.csv; downloads/nws-tfx/index.html; downloads/nws-byz/index.html"
+  },
+  {
+   "id": "M4-HT",
+   "area": "counts",
+   "claim": "M4: 58 distinct heat advisory (HT.Y) events in Montana, 2021-10-19 to 2026-10-19",
+   "result": "confirmed",
+   "detail": "737 county rows; 58 distinct (office, event id, issue year); 58 also by VTEC year. Offices: GGW 22, BYZ 19, TFX 10, MSO 7.",
+   "evidence": "downloads/ww-ht-mt/ht.csv; scripts/check_lsr_watchwarn.py"
+  },
+  {
+   "id": "M4-EH",
+   "area": "counts",
+   "claim": "M4: 4 distinct excessive heat warning (EH.W) events",
+   "result": "confirmed",
+   "detail": "45 county rows; 4 distinct events (BYZ 2, GGW 1, MSO 1), all in 2024.",
+   "evidence": "downloads/ww-eh-mt/eh.csv"
+  },
+  {
+   "id": "M6-freezethaw",
+   "area": "counts",
+   "claim": "M6: Billings freeze-thaw days by season [86, 102, 88, 88, 85]; 2025 calendar 73",
+   "result": "confirmed",
+   "detail": "Recomputed from the USW00024033 .dly file: 86, 102, 88, 88, 85; calendar 2025 = 73 (TMAX > 0 and TMIN < 0 in tenths of C).",
+   "evidence": "downloads/ghcn-usw00024033/USW00024033.dly; results/ghcn.json"
+  },
+  {
+   "id": "M6-low",
+   "area": "counts",
+   "claim": "M6: days with a low below 32 F by season [121, 154, 118, 126, 103]",
+   "result": "confirmed",
+   "detail": "Recomputed: 121, 154, 118, 126, 103 (TMIN < 0 C). Calendar 2025 = 112.",
+   "evidence": "results/ghcn.json"
+  },
+  {
+   "id": "M6-90F",
+   "area": "counts",
+   "claim": "M6: days with a high of 90 F or more by season [37, 40, 21, 33, 22]",
+   "result": "corrected",
+   "detail": "Corrected to [45, 42, 27, 35, 25]. GHCN stores whole-degree F observations as tenths of C, so 90 F is stored as 322. The file holds 344 days at 322 and none at 321, 323 or 324; its TMAX values cluster at 317 (89 F), 322 (90 F) and 328 (91 F). The worker counts equal TMAX of 323 or more, which drops every 90 F day. Calendar 2025 is 23, not 19.",
+   "evidence": "results/ghcn.json; results/iem_vs_ghcn_2025.json"
+  },
+  {
+   "id": "M6-snow-precip",
+   "area": "counts",
+   "claim": "M6: snowfall [62.9, 56.2, 35.1, 64.3, 40.9]; deepest snow [13.0, 9.8, 5.1, 18.1, 12.0]; precipitation [14.87, 18.56, 12.63, 15.89, 12.30]; largest day and dates; days with 1 in or more precipitation [1, 4, 1, 1, 1]",
+   "result": "confirmed",
+   "detail": "All recomputed: snow 62.91, 56.22, 35.12, 64.29, 40.91 in; deepest snow 12.99, 9.84, 5.12, 18.11, 12.01 in; precipitation 14.87, 18.56, 12.63, 15.89, 12.30 in; largest days 1.41, 2.19, 2.02, 1.23, 1.04 in on 2022-06-19, 2023-06-02, 2024-05-23, 2024-09-18, 2026-05-30.",
+   "evidence": "results/ghcn.json"
+  },
+  {
+   "id": "M6-snowdays",
+   "area": "counts",
+   "claim": "M6: days with 1 inch or more of snow on the ground by season [55, 70, 30, 49, 18]",
+   "result": "corrected",
+   "detail": "Corrected to [55, 70, 30, 53, 25]. GHCN records a 1-inch snow depth as 25 mm: the Billings file has 1,128 days at 25 mm and none at 24 or 26 mm. The record tests 25.4 mm, which for integer mm drops every 1-inch day. The Stanford file has the same pattern (652 days at 25 mm, none at 26).",
+   "evidence": "results/ghcn.json; scripts/snwd_threshold.py"
+  },
+  {
+   "id": "M6-deepest-date",
+   "area": "counts",
+   "claim": "M6: deepest snow 18.1 in on 2025-02-18 (2024-25)",
+   "result": "corrected",
+   "detail": "The value is right. The date is a tie: 460 mm (18.11 in) on both 2025-02-18 and 2025-02-19. Say \"tied on 18 and 19 February 2025\", or keep 2025-02-18 as the first day of the tie.",
+   "evidence": "results/ghcn.json; scripts/iem_ghcn_followup.py"
+  },
+  {
+   "id": "M6-coverage",
+   "area": "counts",
+   "claim": "M6: TMAX, TMIN, PRCP and SNOW have a value every day of each calendar year 2021 to 2025; SNWD on 364 to 366 days",
+   "result": "confirmed",
+   "detail": "TMAX, TMIN, PRCP and SNOW: 365 or 366 each year. SNWD: 365, 365, 365, 366, 364.",
+   "evidence": "results/ghcn.json"
+  },
+  {
+   "id": "M6-qflag",
+   "area": "counts",
+   "claim": "M6: values with a failed QFLAG excluded (FMTM 63, WESD 149, TAVG 1)",
+   "result": "confirmed",
+   "detail": "Found FMTM:X 63, WESD:I 149, TAVG:G 1. No failed flags on TMAX, TMIN, PRCP, SNOW or SNWD at Billings, so the counts are not affected.",
+   "evidence": "results/ghcn.json"
+  },
+  {
+   "id": "M8-2024-25",
+   "area": "counts",
+   "claim": "M8: 88 freeze-thaw days at Billings in 2024-25",
+   "result": "confirmed",
+   "detail": "Recomputed: 88.",
+   "evidence": "results/ghcn.json"
+  },
+  {
+   "id": "M9-moccasin",
+   "area": "coverage",
+   "claim": "M9: Moccasin (USC00245761) has no temperature or precipitation values in 2022, 2023 or 2025; 90 TMAX days in 2021; 147 in 2024",
+   "result": "confirmed",
+   "detail": "Calendar TMAX counts 90, 0, 0, 147, 0; TMIN and PRCP follow the same pattern. Elements present: PRCP, SNOW, SNWD, TMAX, TMIN.",
+   "evidence": "downloads/ghcn-usc00245761/USC00245761.dly; results/ghcn.json"
+  },
+  {
+   "id": "M9-stanford",
+   "area": "coverage",
+   "claim": "M9: Stanford (USC00247864) TMAX, TMIN and PRCP on 344 to 363 days a year; SNOW 255 to 365 days (2021: 255)",
+   "result": "confirmed",
+   "detail": "TMAX 350, 355, 351, 345, 362; TMIN 350, 356, 349, 344, 363; PRCP 349, 355, 354, 345, 354; SNOW 255, 359, 365, 363, 278.",
+   "evidence": "downloads/ghcn-usc00247864/USC00247864.dly"
+  },
+  {
+   "id": "M9-lewistown",
+   "area": "coverage",
+   "claim": "M9: Lewistown 42 WSW (USW00004140) TMAX, TMIN and PRCP on 363 to 366 days a year, with no SNOW or SNWD element",
+   "result": "confirmed",
+   "detail": "Elements present are PRCP, TMAX and TMIN only. TMAX 365, 365, 363, 364, 364; PRCP 365, 365, 364, 366, 365.",
+   "evidence": "downloads/ghcn-usw00004140/USW00004140.dly"
+  },
+  {
+   "id": "M10-billings",
+   "area": "counts",
+   "claim": "M10: days with snow on the ground (1 in or more) and a low below 32 F, Billings calendar 2021 to 2025 [40, 66, 39, 25, 52]",
+   "result": "corrected",
+   "detail": "Corrected to [40, 66, 39, 25, 57] under the 1-inch rule. The 2025 value changes; the other four years do not.",
+   "evidence": "scripts/snwd_threshold.py"
+  },
+  {
+   "id": "M10-stanford",
+   "area": "counts",
+   "claim": "M10: Stanford days with snow on the ground and a low below 32 F [28, 46, 26, 15, 50]",
+   "result": "corrected",
+   "detail": "The worker used the 26 mm test. The 1-inch test gives [34, 63, 34, 32, 60].",
+   "evidence": "scripts/snwd_threshold.py"
+  },
+  {
+   "id": "M5-ncei",
+   "area": "counts",
+   "claim": "M5: NCEI Storm Events Montana 2021 to 2025 counts (sibling read)",
+   "result": "confirmed",
+   "detail": "All 15 rows re-added from the sibling summary: Ice Storm 13, Winter Storm 563, Heavy Snow 545, Blizzard 86, Heat 10, Excessive Heat 3, Flood 57, Flash Flood 57, Heavy Rain 93, Tornado 14, Lightning 6, Hail 733, Thunderstorm Wind 1249, High Wind 2086, Extreme Cold/Wind Chill 316.",
+   "evidence": "/home/user/wt/research-b35/scratch-flood-ice-heat-products/ncei_mt_summary.json; scripts/m5_and_distance.py"
+  },
+  {
+   "id": "B-23",
+   "area": "counts",
+   "claim": "Bottom line: 23 indicators have a public source",
+   "result": "confirmed",
+   "detail": "29 indicator rows in measurements.indicators; 4 are Data unavailable (ponding, lightning, uv_and_sun, roof_surface_temperature), 1 is a design value and 1 is the SNOTEL row. 29 - 6 = 23.",
+   "evidence": "scripts/readme_and_counts.py"
+  },
+  {
+   "id": "S-sizes",
+   "area": "sizes",
+   "claim": "Listed byte sizes of the sources (LSR 1,470,975; IS.W 1,204; HT.Y 136,289; EH.W 8,475; IEM BIL 16,928; USW00024033 4,625,370; USC00245761 2,575,800; USC00247864 1,295,460; USW00004140 178,200; readme 29,587; NWS directive 1,432,556; SPC FAQ 77,831; AWS 12,438; NLDN 141,974; nClimGrid 48,706; IBHS 172,506)",
+   "result": "confirmed",
+   "detail": "Every listed size matches the live response of this pass, all HTTP 200.",
+   "evidence": "downloads/ (one folder per source)"
+  },
+  {
+   "id": "S-ghcn-total",
+   "area": "sizes",
+   "claim": "GHCN .dly bytes this pass 8,674,830",
+   "result": "confirmed",
+   "detail": "Equals the four .dly files: 4,625,370 + 2,575,800 + 1,295,460 + 178,200.",
+   "evidence": "downloads/ghcn-*/"
+  },
+  {
+   "id": "S-lastmod",
+   "area": "sizes",
+   "claim": "Billings .dly is current (Last-Modified 2026-10-18)",
+   "result": "confirmed",
+   "detail": "HEAD: Last-Modified Sun, 18 Oct 2026 22:51:32 GMT; Content-Length 4,625,370.",
+   "evidence": "live HEAD"
+  },
+  {
+   "id": "S-total",
+   "area": "sizes",
+   "claim": "downloads_bytes_total_this_pass 24,378,991 (48 requests logged)",
+   "result": "unverified",
+   "detail": "urls_checked holds 47 entries, not 48, and their listed bytes sum to 24,112,774. The 266,217-byte difference cannot be reconciled from the record.",
+   "evidence": "roof-indicators.json urls_checked"
+  },
+  {
+   "id": "S-status",
+   "area": "sizes",
+   "claim": "Non-200 URLs: asphaltroofing.org/homeowners/ 404; weather.gov/safety/thunderstorm-severe 404; unidata NLDN 404; fema.gov P-804 2023 PDF 403",
+   "result": "confirmed",
+   "detail": "All four return the same status codes now.",
+   "evidence": "live HEAD"
+  },
+  {
+   "id": "X-IEM-GHCN-values",
+   "area": "sample content",
+   "claim": "M7: IEM Billings 2025 against GHCN 2025: snow 79.1 vs 79.2 in; precipitation 18.29 vs 18.30 in; lows below 32 F 107 vs 112; freeze-thaw 67 vs 73",
+   "result": "confirmed",
+   "detail": "IEM: snow 79.1, precipitation 18.287, lows 107, freeze-thaw 67 (strict). GHCN: snow 79.21, precipitation 18.303, lows 112, freeze-thaw 73.",
+   "evidence": "downloads/iem-bil-2025/daily.csv; results/iem_vs_ghcn_2025.json"
+  },
+  {
+   "id": "X-IEM-whole",
+   "area": "sample content",
+   "claim": "M7: the IEM daily values are whole degrees F",
+   "result": "corrected",
+   "detail": "Seven IEM values are fractional: maximum 82.4 (2025-07-21) and 89.6 (2025-07-26); minimum -5.8 (2025-02-17), 28.4 (2025-03-31), 46.4 (2025-05-18), 44.6 (2025-05-25), 3.2 (2025-12-12).",
+   "evidence": "scripts/iem_ghcn_detail.py"
+  },
+  {
+   "id": "X-rounding",
+   "area": "sample content",
+   "claim": "M7: the freeze-thaw gap (67 vs 73) is most likely from rounding the temperatures",
+   "result": "refuted",
+   "detail": "Rounding moves a value by at most 0.5 F, so two whole-degree readings of one temperature differ by at most 1 F. The daily maximum differs by more than 1 F on 131 days, and the minimum on 127 days (mean GHCN minus IEM: +0.74 F for maxima, -0.74 F for minima). The largest gap is 23.96 F on 2025-10-26 (IEM minimum 12.0 F, between IEM 48 F on 10-25 and 33 F on 10-27; GHCN 35.96 F). Two of the eight classification flips are beyond rounding: 2025-01-24 (GHCN maximum 33.08 F, IEM 32.0) and 2025-03-10 (GHCN minimum 30.2 F, IEM 32.0). The sources disagree on specific days.",
+   "evidence": "results/iem_vs_ghcn_2025.json; scripts/iem_vs_ghcn_2025.py; scripts/iem_ghcn_followup.py"
+  },
+  {
+   "id": "X-highs-M7",
+   "area": "sample content",
+   "claim": "M7: highs of 90 F or more, 21 (IEM) against 19 (GHCN)",
+   "result": "corrected",
+   "detail": "IEM 21 is right. The GHCN value with the 90 F cut-off (TMAX of 322 or more) is 23.",
+   "evidence": "results/iem_vs_ghcn_2025.json"
+  },
+  {
+   "id": "X-snowd-M7",
+   "area": "sample content",
+   "claim": "M7: deepest snow 18.0 in (IEM) and 18.1 in (GHCN), both on 2025-02-18",
+   "result": "corrected",
+   "detail": "Both values are right. Each source has the same maximum on 2025-02-18 and 2025-02-19 (IEM 18.0 in, GHCN 460 mm).",
+   "evidence": "results/iem_vs_ghcn_2025.json"
+  },
+  {
+   "id": "X-distance",
+   "area": "sample content",
+   "claim": "Billings airport is 4.1 km from 401 N 27th Street",
+   "result": "corrected",
+   "detail": "The three MSL records for 401 North 27th Street (45.785706, -108.507092 and the two nearby points) lie 3.85 km from USW00024033 at 45.8072, -108.5461 (haversine). The 4.1 km figure is not reproduced; state the point used.",
+   "evidence": "scripts/m5_and_distance.py; /home/user/wt/research-b35/footprints-refuter.json; /home/user/wt/research-b35/scratch-snow-stations/downloads/ghcnd-stations.txt (USW00024033 at 45.8072, -108.5461)"
+  },
+  {
+   "id": "X-distances-benchland",
+   "area": "sample content",
+   "claim": "Benchland distances: Moccasin 5.8 km, Stanford 17.5 km, Lewistown 29.8 km",
+   "result": "unverified",
+   "detail": "No Benchland coordinates appear in the record, so these distances were not reproduced.",
+   "evidence": ""
+  },
+  {
+   "id": "T-aws",
+   "area": "terms",
+   "claim": "AWS NODD nClimGrid page quotes (open to the public and \"can be used as desired\"; attribution requested for unaltered data; \"may not state or imply that it is original, unaltered NOAA data\"; no endorsement)",
+   "result": "confirmed",
+   "detail": "All four quotes appear verbatim on the live page; the first sits under \"License\".",
+   "evidence": "downloads/aws-nclimgrid/index.html"
+  },
+  {
+   "id": "T-spc",
+   "area": "terms",
+   "claim": "SPC FAQ public-domain sentence and the section 4.2 severe definition",
+   "result": "confirmed",
+   "detail": "Verbatim: \"Information on government servers is public domain, unless specifically annotated otherwise, and may be used freely by the public.\" Section 4.2 wording also verbatim.",
+   "evidence": "downloads/spc-faq/faq.html"
+  },
+  {
+   "id": "T-nldn",
+   "area": "terms",
+   "claim": "NASA Earthdata NLDN: commercial network operated by Vaisala; data restricted to collaborators of the NASA Marshall Lightning Group",
+   "result": "confirmed",
+   "detail": "Both quotes verbatim (the first is a substring of \"The U.S. National Lightning Detection Network (NLDN) is a commercial lightning detection network operated by Vaisala.\").",
+   "evidence": "downloads/nasa-nldn/index.html"
+  },
+  {
+   "id": "T-iem",
+   "area": "terms",
+   "claim": "IEM public-domain sentence (record: sibling read, not fetched); reading \"IEM asks for attribution\"",
+   "result": "corrected",
+   "detail": "The public-domain sentence is verbatim on the live page (now fetched). The attribution line says: \"Attributing the Iowa Environmental Mesonet of Iowa State University would be appreciated.\" That is a soft request, not a condition.",
+   "evidence": "downloads/iem-disclaimer/disclaimer.html"
+  },
+  {
+   "id": "T-nwsi",
+   "area": "terms",
+   "claim": "NWS directive NWSI 10-1605 quotes (R3, R4, R5, R6, R8 and the damage caution) and the Table A3 hail sizes",
+   "result": "confirmed",
+   "detail": "All quoted sentences appear verbatim in the extracted text, and the page header reads JULY 26, 2021. Table A3: penny 0.75, nickel 0.88, quarter 1.00 (15/16 in shown), half dollar 1.25, walnut/ping pong 1.50, golf ball 1.75, lime 2.00, tennis ball 2.50, baseball 2.75.",
+   "evidence": "downloads/nws-directive-10-1605/pd01016005curr.pdf; downloads/nws-directive-10-1605-text/directive.txt"
+  },
+  {
+   "id": "T-glossary",
+   "area": "terms",
+   "claim": "NWS glossary: severe thunderstorm \"winds of at least 58 mph (50knots)\"; ice storm warning \"significant and possibly damaging accumulation of ice\"; freezing rain \"freezes into glaze upon contact with the ground\"",
+   "result": "confirmed",
+   "detail": "All three quotes found verbatim.",
+   "evidence": "downloads/nws-glossary-*/index.html"
+  },
+  {
+   "id": "T-ibhs",
+   "area": "terms",
+   "claim": "IBHS: \"Hail is one of the most damaging threats to homes.\"",
+   "result": "confirmed",
+   "detail": "Verbatim on the live hail page.",
+   "evidence": "downloads/ibhs-hail/index.html"
+  },
+  {
+   "id": "T-nws-disclaimer",
+   "area": "terms",
+   "claim": "NWS and NOAA data-use terms (weather.gov/disclaimer; noaa.gov/disclaimer)",
+   "result": "corrected",
+   "detail": "Not cited in the record. weather.gov/disclaimer: NWS information is public domain and may be used without charge for any lawful purpose so long as you (1) do not claim it as your own (copyright), (2) do not imply endorsement or affiliation with NOAA/NWS, or (3) do not modify its content and present it as official government material. You also cannot present your own information so it appears to be official government information. The NWS name and visual identifier are trademark-protected; use to identify unaltered NWS content is allowed. noaa.gov/disclaimer has no data-use text.",
+   "evidence": "downloads/nws-disclaimer/index.html; downloads/noaa-disclaimer/index.html"
+  },
+  {
+   "id": "T-nclimgrid-terms",
+   "area": "terms",
+   "claim": "NCEI nClimGrid product use constraints (the grid-based B5 method)",
+   "result": "unverified",
+   "detail": "The NCEI product page has no licence or attribution text. The ISO metadata (gov.noaa.ncdc:C00332) returned HTTP 503 on two tries, so NCEI use constraints were not read.",
+   "evidence": "downloads/ncei-nclimgrid/index.html"
+  },
+  {
+   "id": "T-storm-licence",
+   "area": "terms",
+   "claim": "NCEI Storm Events licence wording (open question in the record)",
+   "result": "unverified",
+   "detail": "The storm-events product path returned 404 and the ISO metadata (C00510) returned 503. Still open.",
+   "evidence": "downloads/ncei-storm-events/index.html (404)"
+  },
+  {
+   "id": "L-basis",
+   "area": "legal basis",
+   "claim": "Recommendation: derived counts may be shown if labelled as derived and attributed, with no implied NOAA endorsement and no \"unaltered NOAA data\" claim",
+   "result": "confirmed",
+   "detail": "Each condition rests on a verbatim live quote (AWS NODD, IEM public domain, NWS disclaimer). The derived-value reading matches the AWS wording.",
+   "evidence": "terms checks above"
+  },
+  {
+   "id": "L-nws-rule",
+   "area": "legal basis",
+   "claim": "Derived counts can cite NWS sources without implying NWS products",
+   "result": "corrected",
+   "detail": "Add the NWS disclaimer conditions to the About text: no endorsement, no modified content presented as official government material, no own information made to look official, and the NWS name only for unaltered NWS content. Phrase derived lines as \"derived from NWS Local Storm Reports\", not as NWS reports.",
+   "evidence": "downloads/nws-disclaimer/index.html"
+  },
+  {
+   "id": "L-nldn",
+   "area": "legal basis",
+   "claim": "Lightning stays Data unavailable because NLDN data are restricted",
+   "result": "confirmed",
+   "detail": "NLDN restriction quote is verbatim; no other free strike record was found in this pass.",
+   "evidence": "downloads/nasa-nldn/index.html"
+  },
+  {
+   "id": "F-templates",
+   "area": "wording",
+   "claim": "Forbidden-term check: every template passed with no hits (117 texts)",
+   "result": "confirmed",
+   "detail": "No hit in the 30 template strings in measurements.templates (quoted text and the two required phrases exempt).",
+   "evidence": "scripts/forbidden_scan.py"
+  },
+  {
+   "id": "F-outside",
+   "area": "wording",
+   "claim": "Forbidden-term check covers the sheet text (implied)",
+   "result": "corrected",
+   "detail": "Six hits in sheet wording outside the templates: kind_words[10] \"as an all-clear\" (only \"This is not an all-clear\" is exempt); indicators[0].coverage \"not as no hail\" (only \"not the same as no hail\" is exempt); claims_split.from_references[10] \"one of the most damaging threats to homes\" (unquoted R15 paraphrase); from_references[6] \"annual probability\" (R9 paraphrase); from_references[7] \"heat loss\" (R10/R11 paraphrase; \"loss\" is on the list); section_layout.town_page.what_changes \"fails the coverage rule\". Widen the test to these fields, and quote reference wording.",
+   "evidence": "scripts/forbidden_scan.py"
+  },
+  {
+   "id": "U-refs",
+   "area": "references",
+   "claim": "References R9 (FEMA P-957), R10 (BASC), R11 (NDSU), R12 (ARMA ponding), R13 (ARMA ASTM D7158), R14 (FEMA P-804 map note), R16 (IBHS roof-aging numbers), R17 (drought.gov SNOTEL), R19 (earthkit freeze-thaw definition)",
+   "result": "unverified",
+   "detail": "Not fetched in this pass. R1 to R8 (directive, glossaries, SPC), R15 and R18 were checked.",
+   "evidence": ""
+  },
+  {
+   "id": "U-grid",
+   "area": "method",
+   "claim": "B5 method: freeze-thaw, low, 90 F and precipitation counts from nClimGrid-Daily per-cell monthly aggregates",
+   "result": "unverified",
+   "detail": "Not computed in this pass. The grid has not been read, and its own thresholds and day definition are untested. The record says the grid value is not yet computed.",
+   "evidence": ""
+  },
+  {
+   "id": "U-noaa-sibling",
+   "area": "sibling reads",
+   "claim": "NOHRSC season grid (M11), nClimGrid cell values (M12), SNOTEL site count (M15), S3 copies (M14)",
+   "result": "unverified",
+   "detail": "Sibling files were not re-read beyond the items above.",
+   "evidence": ""
+  }
+ ],
+ "corrections": [
+  "M6 highs of 90 F or more: [37, 40, 21, 33, 22] should be [45, 42, 27, 35, 25]. GHCN stores 90 F as 322 tenths of C; the worker counted 323 or more.",
+  "M6 snow depth of 1 inch or more: [55, 70, 30, 49, 18] should be [55, 70, 30, 53, 25]. GHCN records 1 inch as 25 mm; the 25.4 mm test drops it. Same error in M10 (Billings 2025: 52 to 57; Stanford: [28, 46, 26, 15, 50] to [34, 63, 34, 32, 60]) and in the ice-dam weather line.",
+  "M7 \"the count differences are most likely from rounding\" is refuted: maxima differ by more than 1 F on 131 days and minima on 127 days; largest gap 23.96 F on 2025-10-26.",
+  "M7 highs of 90 F: GHCN is 23 (not 19). Snow depth tie: 18.0 in and 460 mm on both 2025-02-18 and 2025-02-19.",
+  "M7 \"IEM whole degrees F\" is not strictly true: seven values are fractional.",
+  "M4 ice-storm events: the TFX office is NWS Great Falls, not Billings.",
+  "M1 type list is incomplete: nine types (151 rows) are missing from the record; the listed types sum to 8,814 of 8,965.",
+  "M2 LSR SNOW top value 50.0 in is a SNOTEL-based estimate (16:1 ratio on 3.10 in water equivalent); label it as an estimate.",
+  "Billings airport distance from 401 N 27th Street is 3.85 km from the recorded MSL points, not 4.1 km.",
+  "The IEM attribution line says attribution \"would be appreciated\", not that IEM asks for it.",
+  "Forbidden-term check: templates pass; six other sheet strings hit the list (see F-outside). The test must cover them.",
+  "Legal basis: add the NWS disclaimer conditions (public domain with three conditions; NWS name and logo; no official-looking derived output). Not cited in the record.",
+  "Byte total downloads_bytes_total_this_pass cannot be reconciled: 47 urls_checked entries (48 logged), listed bytes 24,112,774 against 24,378,991.",
+  "Day of the deepest snow 2024-25 is a tie (2025-02-18 and 2025-02-19)."
+ ],
+ "terms_check": "Every quote in the record terms list (AWS NODD x4, SPC FAQ x2, NASA NLDN x2, NWS directive caution, IEM public domain) and the NWS directive and glossary quotes was found verbatim on the live page or extracted text. Corrections: the IEM line asks for attribution softly (\"would be appreciated\"). Omitted: the NWS disclaimer (weather.gov/disclaimer) conditions. Unverified: NCEI Storm Events and nClimGrid use constraints (NCEI pages returned 404 or 503).",
+ "recommendation_stands": true,
+ "recommendation_note": "The section design, kind words, coverage rule, Data unavailable lines, the five-season table and the 2024-25 year-line examples hold. The legal basis holds on live quotes (AWS, SPC, IEM, NLDN, NWS), with the NWS disclaimer conditions to add. It stands with these conditions: (1) use TMAX of 322 tenths or more for 90 F and SNWD of 25 mm or more for 1 inch, which change the counts above; (2) drop the rounding explanation for the freeze-thaw gap and state that the sources disagree on days such as 2025-10-26; (3) correct the IS.W office to Great Falls; (4) list the nine missing LSR types and label LSR SNOTEL snow as estimates; (5) widen the forbidden-term test to the six sheet strings and quote reference wording; (6) add the NWS disclaimer conditions and do not present derived counts as NWS products; (7) the grid method for B5 (nClimGrid cell counts) is untested here and needs the same threshold rules before use; NCEI Storm Events and nClimGrid licence text remain to be read.",
+ "open_items_unverified": [
+  "NCEI Storm Events licence and nClimGrid ISO use constraints (503/404).",
+  "Grid-based B5 counts (not computed).",
+  "References R9, R10, R11, R12, R13, R14, R16, R17, R19 (not fetched in this pass).",
+  "Downloads byte total 24,378,991 (not reconcilable from the record).",
+  "Benchland station distances (no coordinates in the record)."
+ ]
+}

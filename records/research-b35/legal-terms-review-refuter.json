@@ -1,0 +1,323 @@
+{
+  "slug": "legal-terms-review",
+  "refuter_of": "/home/user/wt/research-b35/legal-terms-review.json",
+  "refuter_slug": "legal-terms-review-refuter",
+  "record_date_utc": "2026-10-19",
+  "run_window_utc": {
+    "local_checks_from": "2026-10-19T03:26:48Z",
+    "live_requests_from": "2026-10-19T03:29:17Z",
+    "live_requests_to": "2026-10-19T03:35:57Z"
+  },
+  "scope": "Re-ran the five most consequential checks on legal-terms-review: (1) Montana law (MCA 2-6-109 repeal, MCA 2-6-1017 text, parcel metadata, B3 brief citation); (2) MSL structures and transport metadata (access and use clauses, origin counts, dates); (3) TIGER/Line use constraints; (4) ODbL and footprint licences, including the USA Structures and NRCS AWDB licence fields; (5) the public-domain and weather sources behind the lowest-friction list. Readings are not legal advice.",
+  "method": [
+    "Read the worker record in full (3,407 lines: 20 sources, 146 urls_checked entries, 19 counsel questions, 90 quote labels) and the worker summary.",
+    "Live requests with curl through the configured proxy, default curl user agent, redirects followed. 49 requests in total: 37 HTTP 200, 9 HTTP 206 range reads, 3 HTTP 403 (fema.gov disclaimer; USGS copyrights twice). No block was worked around; no headers were spoofed.",
+    "Zip members read by range request: central directory parsed from the last 64 KB (entry counts checked against the worker), member bytes fetched, CRC-32 verified, extracted SHA-256 compared with the worker's member hashes.",
+    "Quote check: HTML tags stripped, entities unescaped, curly quotes and dashes normalised, whitespace collapsed; each worker quote searched for in the live or re-downloaded text.",
+    "Cache check: three Data.gov pages were CloudFront cache hits on first read (x-cache Hit, age about 2,750 s). Re-requested under new URLs (CloudFront misses) at 03:34Z; those fresh copies were compared with the cached ones.",
+    "Scripts: /home/user/wt/research-b35/scratch-refute-legal-terms-review/scripts (run with /home/user/hail-b1/venv/bin/python -I). Request log: /home/user/wt/research-b35/scratch-refute-legal-terms-review/fetch-log.tsv.",
+    "Downloads folder /home/user/wt/research-b35/scratch-refute-legal-terms-review/downloads/ (peak 3.7 MB; every file under 60 MB) removed after the checks."
+  ],
+  "checks": [
+    {
+      "id": "C01",
+      "group": "K1 Montana law",
+      "claim": "MCA 2-6-109 is repealed on the live Montana Code (quote: 2-6-109. Repealed. Sec. 59, Ch. 348, L. 2015.)",
+      "result": "confirmed",
+      "detail": "Quote found on mca.legmt.gov at 03:29:17Z and again at 03:32:30Z (HTTP 200 both times). Statute text identical across the two responses."
+    },
+    {
+      "id": "C02",
+      "group": "K1 Montana law",
+      "claim": "2-6-109 page read at 9,579 B (sha256 4807d472...) on 02:37:50Z",
+      "result": "corrected",
+      "detail": "Bytes and hash differ per request: 10,119 B (sha 4f34f82f...) at 03:29:17Z and 11,172 B (sha 025b72ee...) at 03:32:30Z. The only difference between the two responses is a per-request anti-bot (F5 TSPD) script block; the statute text is identical. The worker's 9,579 B figure is not reproducible. The quote is."
+    },
+    {
+      "id": "C03",
+      "group": "K1 Montana law",
+      "claim": "MCA 2-6-1017 is in force (Montana Code Annotated 2025); quotes (1), (1)(a), (1)(b), (2), (3), (4), (11) and the history ending Ch. 457, L. 2021 match",
+      "result": "confirmed",
+      "detail": "All eight quotes found in the live page at 03:29:18Z (HTTP 200; 14,080 B this run against 15,177 B recorded, same script-block variance). Subsections (4)(a)-(f) and (5)-(10) read: none names an address-point set. (4)(e) excepts persons who own property in a county water and/or sewer district, an owner list rather than an address set. The worker's reading that (1)(b) and (2) turn on personal contact information and unsolicited contact matches the live text."
+    },
+    {
+      "id": "C04",
+      "group": "K1 Montana law",
+      "claim": "MSL parcel metadata still cites 2-6-109 as current law (pubdate 20261006; quotes for (1)(a) and (1)(b))",
+      "result": "confirmed",
+      "detail": "Fetched 03:29:18Z: 35,131 B, sha256 967a471d... identical to the worker's file. pubdate 20261006 (two occurrences; metd 20261006). 2-6-109 appears twice and 2-6-1017 once. Both quoted sentences found."
+    },
+    {
+      "id": "C05",
+      "group": "K1 Montana law",
+      "claim": "B3 brief still plans to cite 2-6-109 in the About text (lines 36 and 162); file mtime 2026-10-19 02:51 UTC",
+      "result": "corrected",
+      "detail": "Lines 36 and 162 still read 'MCA 2-6-1017 and 2-6-109' (checked at 03:26Z). The file mtime is 2026-10-19 03:20:00 UTC, not 02:51. D13 (lines 187-190) already says the About text cites 2-6-1017 only, that 2-6-109 is repealed, and that D8's citation is corrected; lines 36 and 162 were not updated to match."
+    },
+    {
+      "id": "C06",
+      "group": "K2 MSL metadata",
+      "claim": "MSL structures access 'None. All data contained in the Framework are publicly available and non-sensitive.' and use 'a convenience to the public, and for no other purpose'",
+      "result": "confirmed",
+      "detail": "StructuresFramework_metadata.xml range-read at 03:29:46Z: 38,917 B, CRC-32 ok, sha256 189d6cc5... identical to the worker's member hash. Both sentences found. The metadata contains no licence grant."
+    },
+    {
+      "id": "C07",
+      "group": "K2 MSL metadata",
+      "claim": "MSL transport use 'for no other purpose', 'not suitable for routing or network analysis', and the no-edgematch gap sentence",
+      "result": "confirmed",
+      "detail": "TransportationFramework_metadata.xml range-read at 03:29:46Z: 32,089 B, CRC ok, sha256 9941472a... identical. All three sentences found."
+    },
+    {
+      "id": "C08",
+      "group": "K2 MSL metadata",
+      "claim": "MSL origin entries: structures 63, transport 61",
+      "result": "corrected",
+      "detail": "Counted with an XML parser: structures has 64 origin elements in total (63 under idinfo/citation/citeinfo, all unique, plus 1 under lineage/srcinfo/srccite); transport has 62 (61 under idinfo, all unique, plus 1 lineage). The worker's 63 and 61 are the citation-level counts. The all-element totals are 64 and 62."
+    },
+    {
+      "id": "C09",
+      "group": "K2 MSL metadata",
+      "claim": "Neither MSL member cites MCA 2-6-1017 or 2-6-109; pubdate 20260930; structures has no owner field",
+      "result": "confirmed",
+      "detail": "Zero citations of either section in both members. pubdate and metd are 20260930 in both. The structures file's one 'owner' hit is a building-suite definition ('common ownership or tenancy'), not an owner field. The transport file has an attribute named 'Ownership' (road ownership class) that the worker did not mention; it is not a list of persons."
+    },
+    {
+      "id": "C10",
+      "group": "K3 TIGER/Line",
+      "claim": "TIGER/Line state ISO: access 'None'; use 'not copyrighted ... free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source'; boundary text is not a legal land description",
+      "result": "confirmed",
+      "detail": "tl_2025_us_state.shp.iso.xml range-read at 03:29:48Z: 49,139 B, CRC ok, sha256 b1994167... identical to the worker's member hash. The use-constraint and boundary sentences are both found."
+    },
+    {
+      "id": "C11",
+      "group": "K3 TIGER/Line",
+      "claim": "TIGER/Line roads (Beaverhead ISO): the only constraint quoted is the statistical-accuracy sentence",
+      "result": "corrected",
+      "detail": "tl_2025_30001_roads.shp.iso.xml: 50,356 B, CRC ok, sha256 7661b7d9... identical to the worker's member hash. It also states 'Access constraints: None' and the same 'Use Constraints' text as the state file (not copyrighted; free to use in a product or publication; acknowledgement to the Census Bureau), followed by the accuracy sentence. The quoted sentence is accurate but incomplete. The streets conclusion holds."
+    },
+    {
+      "id": "C12",
+      "group": "K3 TIGER/Line",
+      "claim": "Census citation: cite the Census Bureau as the source of the original data",
+      "result": "confirmed",
+      "detail": "census.gov citation page fetched at 03:32:56Z: 369,391 B; the sentence is found."
+    },
+    {
+      "id": "C13",
+      "group": "K4 footprints and licences",
+      "claim": "ODbL 1.0 text: 4.2, 4.3 (produced-work notice), 4.4(a)-(c) (share alike; 4.4(b) re-use of a Substantial part is a Derivative Database), 4.6 (machine-readable offer) and the free-of-charge sentence",
+      "result": "confirmed",
+      "detail": "opendatacommons.org ODbL 1.0 page: 51,176 B, sha256 b8d8aebb... identical to the worker's. All eight quotes found. The reading that per-tile files may be a Derivative Database is a reading, not text. Whether a single tile is a 'Substantial part' is open, which supports a counsel hold rather than a conclusion."
+    },
+    {
+      "id": "C14",
+      "group": "K4 footprints and licences",
+      "claim": "Microsoft US Building Footprints README is ODbL ('licensed by Microsoft under the ODbL'; 'freely available for download and use'; no Microsoft names or marks); Overture buildings theme is ODbL because it includes OSM; Overture attribution lines",
+      "result": "confirmed",
+      "detail": "README (raw) sha256 30c22fb1... identical, 13,784 B; three quotes found. Overture buildings guide sha 4b4e769e... identical, 33,349 B; quote found. Overture attribution page sha 505d216b... identical, 125,952 B; five quotes found."
+    },
+    {
+      "id": "C15",
+      "group": "K4 footprints and licences",
+      "claim": "OpenStreetMap copyright: ODbL; 'distribute the result only under the same license'; credit duty",
+      "result": "confirmed",
+      "detail": "Found at 03:29:50Z, 21,314 B. The sha256 differs from the worker's at the same byte size; the page carries a per-request CSRF token of fixed length. The quotes match."
+    },
+    {
+      "id": "C16",
+      "group": "K4 footprints and licences",
+      "claim": "USA Structures on Data.gov: licence https://www.usa.gov/government-works; rights null; Access Level public",
+      "result": "confirmed",
+      "detail": "Fresh origin copy (new URL, CloudFront miss) at 03:34:05Z: 115,877 B. License government-works; rights value null; Access Level public. The copy read at 03:29 was a CloudFront cache hit (age about 2,750 s), so it was not an independent origin read; its content matches the fresh copy apart from CSP nonces."
+    },
+    {
+      "id": "C17",
+      "group": "K4 footprints and licences",
+      "claim": "AmeriGEO copy: 'No License Provided' (described as an ArcGIS-hosted copy)",
+      "result": "corrected",
+      "detail": "Quote found on data.amerigeoss.org (CKAN catalog record, 58,564 B, fetched 03:30:58Z). The record's data source is FEMA's USA Structures State GDB download (disasters.geoplatform.gov). It is a CKAN catalog record, not an ArcGIS-hosted copy. The page also links an ArcGIS Hub dataset (see C18)."
+    },
+    {
+      "id": "C18",
+      "group": "K4 footprints and licences",
+      "claim": "USA Structures: FEMA Hub licence field not read, item id not found, and the ArcGIS copy lists no licence",
+      "result": "corrected",
+      "detail": "The ArcGIS item that the AmeriGEO page links as its Hub dataset (id 0ec8512ad21e4bb987d7e848d14e7e24; title 'USA Structures'; type Feature Service; owner Esri_US_Federal_Data; access public; modified 2026-07-31; service services2.arcgis.com/.../USA_Structures_View/FeatureServer; fetched 03:34:07Z) states: 'This work is licensed under a Creative Commons by Attribution (CC BY 4.0) license. See Credits and Map for Attribution', with CC BY 4.0 deed and legal-code links. Its badge image is the CC BY 3.0 button (by/3.0 88x31), which does not match the text. Credit line (accessInformation): 'Oak Ridge National Laboratory (ORNL); Federal Emergency Management Agency (FEMA) Geospatial Response Office'. The FEMA Hub page does not reference this id. Not the dataset: Hub-page item 9817bd365ef0433ab5e57df2170666bb is a screenshot image (licenseInfo None), and the null licenseInfo embedded on the Hub page belongs to the 'FEMA Geospatial Resource Center' Hub site application. Result: three licence statements exist (government-works on Data.gov; CC BY 4.0 on the ArcGIS item; none on AmeriGEO). The conflict must be resolved; the ArcGIS statement is the only one with an explicit licence."
+    },
+    {
+      "id": "C19",
+      "group": "K4 footprints and licences",
+      "claim": "NRCS AWDB: 'Access restricted. Contact the publisher to request access.'; accessLevel 'restricted public'",
+      "result": "confirmed",
+      "detail": "Fresh origin copy at 03:34:06Z, 116,290 B: both quoted items present; the record's description reads 'available to public through National Water and Climate Center'. Addition: the same record also lists license https://www.usa.gov/government-works, which the worker's entry omits. The access restriction is the operative statement for the hold; the licence field is a second conflict the record should name."
+    },
+    {
+      "id": "C20",
+      "group": "K4 footprints and licences",
+      "claim": "NFHL on Data.gov: licence government-works; access public",
+      "result": "confirmed",
+      "detail": "Fresh origin copy at 03:34:06Z, 111,784 B: both present."
+    },
+    {
+      "id": "C21",
+      "group": "K4 footprints and licences",
+      "claim": "FEMA primary disclaimer and flood-zone wording unreadable (fema.gov returned 403)",
+      "result": "confirmed",
+      "detail": "fema.gov/about/disclaimer re-requested at 03:31:03Z: 403, 386 B, same block template. Not worked around. msc.fema.gov home (sha afcb262f..., 36,662 B, identical) carries the 'official public source' sentence and no disclaimer text. The NFHL hold stands."
+    },
+    {
+      "id": "C22",
+      "group": "K5 recommendation basis: weather and climate sources",
+      "claim": "NWS disclaimer: public domain for any lawful purpose with three conditions; NWS name protected; as-is. NWS API 'free to use for any purpose'; a User-Agent is required",
+      "result": "confirmed",
+      "detail": "weather.gov/disclaimer at 03:31:00Z: 41,679 B, sha 8919bb16... identical; all three quotes found. NWS API documentation at 03:31:02Z: 48,997 B, sha e0ca8a91... identical; both quotes found."
+    },
+    {
+      "id": "C23",
+      "group": "K5 recommendation basis: weather and climate sources",
+      "claim": "IEM disclaimer: public domain, free for any lawful purpose; attribution appreciated; no warranty",
+      "result": "confirmed",
+      "detail": "mesonet.agron.iastate.edu/disclaimer.php at 03:31:01Z: 31,469 B, sha 5a8b5c64... identical; all three quotes found."
+    },
+    {
+      "id": "C24",
+      "group": "K5 recommendation basis: weather and climate sources",
+      "claim": "NOAA NODD (AWS registry, MRMS): open to the public and can be used as desired; attribution requested for unaltered data; no endorsement; modified data not presented as original",
+      "result": "confirmed",
+      "detail": "registry.opendata.aws/noaa-mrms-pds/ at 03:31:02Z: 15,165 B, sha b72f49e7... identical; all four quotes found."
+    },
+    {
+      "id": "C25",
+      "group": "K5 recommendation basis: weather and climate sources",
+      "claim": "NCEI: GHCN-Daily citation and use/distribution disclaimers, free electronic downloads; nClimGrid cite; Storm Events 'may be unverified by the NWS'; SWDI absence sentence",
+      "result": "confirmed",
+      "detail": "GHCN-Daily ISO record 85,956 B (sha da4ff150... identical; four quotes found). nClimGrid monthly ISO 66,468 B (sha 3a9344ad... identical; cite quote found). Storm Events ISO 47,693 B (sha f9baf305... identical; two quotes found). SWDI product page 39,954 B (sha b7c85e24... identical; two quotes found)."
+    },
+    {
+      "id": "C26",
+      "group": "K5 recommendation basis: weather and climate sources",
+      "claim": "USGS: USGS-authored data are public domain; third-party images not necessarily; credit requested",
+      "result": "unverified",
+      "detail": "Blocked in this run: CloudFront 403 ('ERROR: The request could not be satisfied', 919 B) at 03:31:01Z and on one retry at 03:32:30Z. Not worked around. The worker's 02:37:47Z read (200, 88,994 B) is not reproduced now. The USGS part of the lowest-friction list rests on that earlier read."
+    },
+    {
+      "id": "C27",
+      "group": "K5 recommendation basis: weather and climate sources",
+      "claim": "NOAA general disclaimer (noaa.gov/disclaimer) blocked (403) and not read",
+      "result": "refuted",
+      "detail": "Re-requested at 03:31:03Z: HTTP 200, 49,564 B. It is the 'Disclaimer for external Web links' page: external links do not imply NOAA endorsement, and NOAA exercises no editorial control over external sites. It contains no data-use, public-domain or licence sentence, so the NCEI and NODD readings do not change. Blocks are intermittent: the same host returned 403 to the worker and 200 here."
+    },
+    {
+      "id": "C28",
+      "group": "K5 recommendation basis: weather and climate sources",
+      "claim": "PRISM terms: data may be freely reproduced and distributed with a reference (name, URL, date of access); PRISM Group retains ownership; no warranty",
+      "result": "confirmed",
+      "detail": "prism.oregonstate.edu/terms/ at 03:32:31Z: 16,331 B, sha 6391f53b... identical; all four quotes found."
+    },
+    {
+      "id": "C29",
+      "group": "K5 recommendation basis: weather and climate sources",
+      "claim": "Daymet and NASA Earthdata: 'openly shared, without restriction'; non-NASA data follows the sponsor's licence; NASA asks for citation",
+      "result": "confirmed",
+      "detail": "Earthdata Daymet catalog page at 03:32:57Z: 281,860 B, sha 687074ea... identical; Daymet quote found. Earthdata data-use guidance at 03:32:32Z: 139,608 B, sha 3f81bfed... identical; both quotes found. The ORNL DAAC policy page was not re-requested (the worker recorded 404)."
+    },
+    {
+      "id": "C30",
+      "group": "K5 recommendation basis: weather and climate sources",
+      "claim": "NRCS WCC report generator: data released on condition that NRCS and the US Government cannot be held liable",
+      "result": "confirmed",
+      "detail": "wcc.sc.egov.usda.gov/reportGenerator/ at 03:33:33Z: 367,156 B (same size as the worker's; hash differs by a per-request nonce). The sentence is present."
+    },
+    {
+      "id": "C31",
+      "group": "K6 counts, sizes, dates, method",
+      "claim": "146 URL entries; 19 counsel questions; 15 unverified or blocked items; 20 sources",
+      "result": "confirmed",
+      "detail": "Counted in the record: 146 entries with unique ids; 19 questions; 15 unverified_or_blocked items; 20 sources. Status tally 97 x 200, 27 x 404, 12 x 206, 6 x 403, 3 x 000, 1 x 405, matching the record."
+    },
+    {
+      "id": "C32",
+      "group": "K6 counts, sizes, dates, method",
+      "claim": "verification: quotes_checked 90 and quotes_matched 90, with no mismatches",
+      "result": "corrected",
+      "detail": "93 quote entries, 90 unique labels (the worker's 90 counts labels), 87 distinct quote strings. 83 labels were re-run here and all matched: 82 by text search, plus 'rights null' checked against the catalog table row. 7 were not re-run: three USGS labels (blocked), two OSM attribution-guideline sentences, one Overture transportation sentence, and the Google licence-choice sentence."
+    },
+    {
+      "id": "C33",
+      "group": "K6 counts, sizes, dates, method",
+      "claim": "download_bytes_total 11,520,963",
+      "result": "confirmed",
+      "detail": "Equals the sum of the 146 'bytes' values in urls_checked (difference 0)."
+    },
+    {
+      "id": "C34",
+      "group": "K6 counts, sizes, dates, method",
+      "claim": "Worker downloads folder deleted after the record was written",
+      "result": "confirmed",
+      "detail": "No downloads folder remains in /home/user/wt/research-b35/scratch-legal-terms-review; it holds manifest.tsv and scripts/ only."
+    },
+    {
+      "id": "C35",
+      "group": "K6 counts, sizes, dates, method",
+      "claim": "Read timing: worker reads 02:37-02:51Z, server dates consistent with them",
+      "result": "corrected",
+      "detail": "Live timestamps in this run are 03:29-03:36Z, later than the worker's window. Three Data.gov pages were CloudFront cache hits on first read (age about 2,750 s, so cached near 02:45Z); their 02:45 content is the cached copy, and fresh origin copies at 03:34Z match it in content. Other re-read pages either match the worker's hashes exactly or differ only by per-request tokens, nonces or anti-bot script blocks."
+    },
+    {
+      "id": "C36",
+      "group": "K6 counts, sizes, dates, method",
+      "claim": "AGENTS.md rules 5, 6 and 9 are quoted verbatim",
+      "result": "confirmed",
+      "detail": "All three quoted rules are found verbatim in /home/user/RoofingApp/AGENTS.md (curly quotes normalised only)."
+    },
+    {
+      "id": "C37",
+      "group": "K6 counts, sizes, dates, method",
+      "claim": "Words that must be respected include 'no em-dashes in site text' (attributed to conventions and owner preferences)",
+      "result": "refuted",
+      "detail": "No em-dash rule in /home/user/RoofingApp/AGENTS.md, CLAUDE.md or docs/ (grep for em-dash, em dash and dash returns nothing). The attribution has no source in the repo. Drop it or cite a real source."
+    },
+    {
+      "id": "C38",
+      "group": "K6 counts, sizes, dates, method",
+      "claim": "Structures DBF: 51 fields and no owner field (from prior evidence)",
+      "result": "unverified",
+      "detail": "Not re-read: the structures zip is 65.8 MB and its DBF inflates to about 1.9 GB. The metadata-level no-owner-field finding is confirmed in C09."
+    }
+  ],
+  "corrections": [
+    "MCA 2-6-109 page: 10,119 B at 03:29:17Z and 11,172 B at 03:32:30Z in this run (worker: 9,579 B). A per-request anti-bot script block changes the bytes; the statute text and the repeal line are the same in both responses.",
+    "MCA 2-6-1017 page: 14,080 B in this run (worker: 15,177 B). Same per-request variance; all eight quotes found.",
+    "B3 brief: mtime is 2026-10-19 03:20:00 UTC, not 02:51. Lines 36 and 162 still cite MCA 2-6-1017 and 2-6-109; D13 (lines 187-190) already corrects the About citation to 2-6-1017 alone.",
+    "MSL origin counts: structures has 64 origin elements in total (63 citation-level plus 1 lineage); transport has 62 (61 plus 1). The record's 63 and 61 are citation-level counts only.",
+    "USA Structures licence: the ArcGIS Feature Service item 0ec8512ad21e4bb987d7e848d14e7e24 ('USA Structures', owner Esri_US_Federal_Data, modified 2026-07-31) states CC BY 4.0 with an ORNL and FEMA GRO credit line (its badge image is CC BY 3.0). The 'No License Provided' text is on the AmeriGEO CKAN record, whose data source is FEMA's State GDB download; that record is not an ArcGIS-hosted copy. The entry 'FEMA Hub licence field not read' is out of date for the item the AmeriGEO page links.",
+    "NRCS AWDB: the same Data.gov record also lists license https://www.usa.gov/government-works alongside 'Access restricted'. The record should name both.",
+    "NOAA general disclaimer (noaa.gov/disclaimer): HTTP 200 (49,564 B) at 03:31:03Z in this run. It is the external-links disclaimer and sets no data-use terms. The 'blocked, not read' entry is out of date for this run.",
+    "USGS copyright page: CloudFront 403 at 03:31:01Z and 03:32:30Z in this run. The worker's public-domain quotes are unverified in this run, not confirmed.",
+    "quotes_checked: 93 entries, 90 unique labels, 87 distinct strings. The worker's 90 counts labels; the record should say so.",
+    "Data.gov catalog pages (usa-structures, awdb, nfhl) were CloudFront cache hits on first read (age about 2,750 s). Their 02:45Z content is the cached copy; fresh origin copies at 03:34Z match in content.",
+    "The 'no em-dashes in site text' rule is attributed to 'conventions and owner preferences'. It is not in AGENTS.md, CLAUDE.md or docs/. Remove the attribution.",
+    "TIGER/Line roads (Beaverhead ISO): the file also states Access constraints None and the same Use Constraints as the state file. The record quotes only the accuracy sentence.",
+    "Transport metadata has an 'Ownership' road attribute. It is not a list of persons, but the record does not mention it."
+  ],
+  "unverified_this_run": [
+    "USGS public-domain and credit statements (blocked: 403 on two requests in this run).",
+    "Structures DBF field list (not re-read; the zip is 65.8 MB).",
+    "Census roads ISO records for counties other than Beaverhead (not checked).",
+    "ORNL DAAC Daymet policy page (not re-requested; the worker recorded 404).",
+    "USDA policies page (not re-requested; the worker recorded 403).",
+    "OSM attribution-guideline sentences, Overture transportation licence text, Google Open Buildings liability footnotes (not re-requested).",
+    "NFHL service and FIRM layer JSON copyright fields (not re-requested).",
+    "IEM citation and data-download pages (404 in the worker run; not re-requested)."
+  ],
+  "blocked_this_run": [
+    "fema.gov/about/disclaimer: 403 (386 B) at 03:31:03Z (reproduces the worker's block).",
+    "usgs.gov copyrights-and-credits: 403 (919 B) at 03:31:01Z and 03:32:30Z (does not reproduce the worker's 200 read)."
+  ],
+  "terms_check": "Re-ran 83 of the 90 quote labels live or in re-downloaded files; every one matched the text, including the MCA 2-6-109 and 2-6-1017, MSL structures and transport, TIGER/Line state and roads, ODbL, Microsoft, Overture, OSM, NWS, IEM, NODD, NCEI, PRISM, Daymet, NRCS WCC and AWDB quotes. Seven labels were not re-run (three USGS labels are blocked). Licence readings corrected: USA Structures (a CC BY 4.0 statement on the ArcGIS item, a third conflicting statement), AWDB (a government-works licence field on the same record), and the NOAA disclaimer (readable; external links only). AGENTS.md rules 5, 6 and 9 confirmed verbatim; the em-dash attribution has no source. Readings are not legal advice.",
+  "recommendation_stands": true,
+  "recommendation_note": "Stands, with amendments. Confirmed on the live text: TIGER/Line for streets (the state and Beaverhead roads ISO files carry the same use constraint); NWS, IEM, NODD and NCEI for weather history, with the citations and disclaimers each text asks for; the MSL address-dot hold (the 'for no other purpose' clause is quoted, and MCA 2-6-1017 subsections (4)-(10) contain no address-point exception); the per-tile footprint hold (ODbL 4.4(b) and 4.6 quoted from the live text; whether one tile is a Substantial part is for counsel); the NRCS AWDB hold (access restricted on the record, which also carries a government-works licence field); the NFHL hold (fema.gov disclaimer still 403); and the About citation (cite 2-6-1017 only, which matches the brief's D13). Amendments: (1) USA Structures: keep the hold, but change its reason. The ArcGIS item states CC BY 4.0 with an ORNL and FEMA GRO credit line, Data.gov states government-works, and AmeriGEO states no licence. Resolve that conflict first; if CC BY 4.0 is confirmed, the layer is low-friction with attribution. (2) USGS: keep it on the list but mark it as not re-verified in this run (CDN block). (3) Drop the 'no em-dashes' attribution. (4) Correct the counts and sizes in C02, C08, C32 and C35. Readings are not legal advice.",
+  "download_bytes_total": 3482728,
+  "downloads_folder_deleted": true
+}

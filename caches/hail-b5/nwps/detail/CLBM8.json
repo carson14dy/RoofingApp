@@ -1,0 +1,401 @@
+{
+  "lid": "CLBM8",
+  "usgsId": "06185500",
+  "reachId": "3012079",
+  "name": "Missouri River near Culbertson",
+  "description": "",
+  "rfc": {
+    "abbreviation": "MBRFC",
+    "name": "Missouri Basin River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "GGW",
+    "name": "Glasgow"
+  },
+  "state": {
+    "abbreviation": "MT",
+    "name": "Montana"
+  },
+  "county": "Richland",
+  "timeZone": "MST7MDT",
+  "latitude": 48.123333333333,
+  "longitude": -104.47333333333,
+  "pedts": {
+    "observed": "HGIRG",
+    "forecast": "HGIFF"
+  },
+  "status": {
+    "observed": {
+      "primary": 3.37,
+      "primaryUnit": "ft",
+      "secondary": 7.56,
+      "secondaryUnit": "kcfs",
+      "floodCategory": "no_flooding",
+      "validTime": "2026-10-19T06:00:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": 25,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": 21,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 19,
+        "flow": -9999
+      },
+      "action": {
+        "stage": 17,
+        "flow": -9999
+      }
+    },
+    "lro": {
+      "minorCS": "< 0.05",
+      "moderateCS": "< 0.05",
+      "majorCS": "< 0.05",
+      "producedTime": "2026-09-23T22:05:04Z",
+      "interval": "OND"
+    },
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1979-04-14T00:00:00Z",
+          "stage": 19.66,
+          "flow": 52000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1960-03-23T00:00:00Z",
+          "stage": 19.14,
+          "flow": 55000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1972-03-18T00:00:00Z",
+          "stage": 18.3,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1967-12-01T00:00:00Z",
+          "stage": 17.55,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-03-31T00:00:00Z",
+          "stage": 17.52,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-16T13:00:00Z",
+          "stage": 17.5,
+          "flow": 104000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1976-03-22T00:00:00Z",
+          "stage": 16.98,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2019-03-30T14:00:00Z",
+          "stage": 15.26,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1943-03-26T00:00:00Z",
+          "stage": 15.12,
+          "flow": 78200,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1951-03-28T00:00:00Z",
+          "stage": 15.1,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-04-01T00:00:00Z",
+          "stage": 14.99,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1978-03-30T00:00:00Z",
+          "stage": 14.98,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1947-03-28T00:00:00Z",
+          "stage": 14.83,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-21T16:00:00Z",
+          "stage": 12.06,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2019-03-30T14:00:00Z",
+          "stage": 15.26,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-03-21T16:00:00Z",
+          "stage": 12.06,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2011-06-16T13:00:00Z",
+          "stage": 17.5,
+          "flow": 104000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1997-03-31T00:00:00Z",
+          "stage": 17.52,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-04-01T00:00:00Z",
+          "stage": 14.99,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1979-04-14T00:00:00Z",
+          "stage": 19.66,
+          "flow": 52000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1978-03-30T00:00:00Z",
+          "stage": 14.98,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1976-03-22T00:00:00Z",
+          "stage": 16.98,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1972-03-18T00:00:00Z",
+          "stage": 18.3,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1967-12-01T00:00:00Z",
+          "stage": 17.55,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1960-03-23T00:00:00Z",
+          "stage": 19.14,
+          "flow": 55000,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1951-03-28T00:00:00Z",
+          "stage": 15.1,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1947-03-28T00:00:00Z",
+          "stage": 14.83,
+          "flow": 0,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1943-03-26T00:00:00Z",
+          "stage": 15.12,
+          "flow": 78200,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 25,
+        "statement": "Widespread lowland flooding occurs."
+      },
+      {
+        "stage": 21,
+        "statement": "Parking lot of fishing access site at highway 16 bridge begins to flood."
+      },
+      {
+        "stage": 19,
+        "statement": "Low land flooding occurs east of highway 16 bridge."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/CLBM8.SSTG.prob.weekint.gif",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/CLBM8.QINE.prob.weekint.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/CLBM8.volume.prob.weekint.gif"
+      },
+      "entperiod": {
+        "stage": "https://water.noaa.gov/resources/probabilistic/exceedance/CLBM8.SSTG.exceed.90day.gif",
+        "flow": "https://water.noaa.gov/resources/probabilistic/exceedance/CLBM8.QINE.exceed.90day.gif",
+        "volume": "https://water.noaa.gov/resources/probabilistic/exceedance/CLBM8.volume.exceed.90day.gif"
+      },
+      "shortrange": "https://water.noaa.gov/resources/probabilistic/short_term/CLBM8.shortrange.hefs.png"
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/clbm8_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/clbm8_record.png"
+    },
+    "photos": [
+      {
+        "id": "18256103815187993070",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            48.123333333333,
+            -104.47333333333
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/clbm8/18256103815187993070.jpeg",
+          "caption": "Downstream"
+        }
+      },
+      {
+        "id": "18395880184351756782",
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            48.123333333333,
+            -104.47333333333
+          ]
+        },
+        "properties": {
+          "image": "https://water.noaa.gov/resources/photos/clbm8/18395880184351756782.jpeg",
+          "caption": "Upstream"
+        }
+      }
+    ]
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "https://waterdata.usgs.gov/usa/nwis/rt"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "06185500",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=06185500"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [
+    {
+      "statement": "Stage may be affected by ice during winter months.",
+      "effective": "0101",
+      "expiration": "1231"
+    }
+  ],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "WPTM8",
+  "downstreamLid": "WLTN8",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are issued as needed during times of high water, but are not routinely available.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "-1",
+  "ObservedFloodCategory": "no_flooding",
+  "ForecastFloodCategory": "fcst_not_current"
+}

@@ -1,0 +1,340 @@
+{
+  "lid": "BVSI1",
+  "usgsId": "13113000",
+  "reachId": "23223274",
+  "name": "Beaver Creek (Mud Lake/Eastern Idaho) at Spencer",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "PIH",
+    "name": "Pocatello"
+  },
+  "state": {
+    "abbreviation": "ID",
+    "name": "Idaho"
+  },
+  "county": "Clark",
+  "timeZone": "MST7MDT",
+  "latitude": 44.355378,
+  "longitude": -112.1801,
+  "pedts": {
+    "observed": "",
+    "forecast": ""
+  },
+  "status": {
+    "observed": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "out_of_service",
+      "validTime": "0001-01-01T00:00:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "out_of_service",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": -9999,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 6.3,
+        "flow": 487
+      },
+      "action": {
+        "stage": 5.8,
+        "flow": 404
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1975-05-18T00:00:00Z",
+          "stage": 9.84,
+          "flow": 1190,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1985-04-15T00:00:00Z",
+          "stage": 8.7,
+          "flow": 903,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-05-03T00:00:00Z",
+          "stage": 8.4,
+          "flow": 887,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1969-04-24T00:00:00Z",
+          "stage": 7.63,
+          "flow": 642,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1952-04-27T00:00:00Z",
+          "stage": 7.5,
+          "flow": 549,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2018-03-23T00:00:00Z",
+          "stage": 6.65,
+          "flow": 530,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1993-05-22T00:00:00Z",
+          "stage": 6.13,
+          "flow": 386,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1990-04-04T00:00:00Z",
+          "stage": 4.57,
+          "flow": 225,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1988-04-18T00:00:00Z",
+          "stage": 4.5,
+          "flow": 207,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-05-21T00:00:00Z",
+          "stage": 4.29,
+          "flow": 149,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-04-25T00:00:00Z",
+          "stage": 4.17,
+          "flow": 175,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1989-04-18T00:00:00Z",
+          "stage": 4.04,
+          "flow": 151,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1991-05-19T00:00:00Z",
+          "stage": 3.68,
+          "flow": 109,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2018-03-23T00:00:00Z",
+          "stage": 6.65,
+          "flow": 530,
+          "preliminary": "P",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2017-04-25T00:00:00Z",
+          "stage": 4.17,
+          "flow": 175,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2016-05-21T00:00:00Z",
+          "stage": 4.29,
+          "flow": 149,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1993-05-22T00:00:00Z",
+          "stage": 6.13,
+          "flow": 386,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1991-05-19T00:00:00Z",
+          "stage": 3.68,
+          "flow": 109,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1990-04-04T00:00:00Z",
+          "stage": 4.57,
+          "flow": 225,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1989-04-18T00:00:00Z",
+          "stage": 4.04,
+          "flow": 151,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1988-04-18T00:00:00Z",
+          "stage": 4.5,
+          "flow": 207,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1985-04-15T00:00:00Z",
+          "stage": 8.7,
+          "flow": 903,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-05-03T00:00:00Z",
+          "stage": 8.4,
+          "flow": 887,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1975-05-18T00:00:00Z",
+          "stage": 9.84,
+          "flow": 1190,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1969-04-24T00:00:00Z",
+          "stage": 7.63,
+          "flow": 642,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1952-04-27T00:00:00Z",
+          "stage": 7.5,
+          "flow": 549,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 6.3,
+        "statement": "or 487 cfs... Possible flooding from Spencer to Camas, Idaho. High flows may create water backups in Dubois behind each bridge. Ponding in low-lying areas possible."
+      },
+      {
+        "stage": 5.8,
+        "statement": "or 404 cfs... Near bankfull in low-lying areas from Spencer to Camas, Idaho."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/bvsi1_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/bvsi1_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [
+    {
+      "abbrev": "US Geological Survey",
+      "text": "USGS--Water Resources of the United States",
+      "title": "US Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/rt"
+    },
+    {
+      "abbrev": "USGS",
+      "text": "13113000",
+      "title": "Observations courtesy of U.S. Geological Survey",
+      "url": "https://waterdata.usgs.gov/nwis/inventory/?site_no=13113000"
+    }
+  ],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": false,
+    "message": "Gage is currently out of service."
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "1",
+  "ObservedFloodCategory": "out_of_service",
+  "ForecastFloodCategory": "out_of_service"
+}

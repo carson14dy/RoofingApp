@@ -1,0 +1,228 @@
+{
+ "slug": "rendering",
+ "refuter_for": "/home/user/wt/research-b35/rendering.json (worker record, checked_at_utc 2026-10-19T04:51:32Z)",
+ "refuter_run": "2026-10-19, live requests this session",
+ "method": "Live: TIGER/Line 2026 Yellowstone roads zip; USGSTopo and USGSImageryTopo metadata and tiles (z16 and z17); USGS policy pages (403, not bypassed); FEMA/ORNL item JSON, service and layer metadata; object-ID and geometry query for the 0.1-degree store tile; count queries for the 0.01-degree box, Montana and four viewports; S3 HEAD and range reads of the 173 MB FEMA zip (XML metadata only); the MSL Structures and Addresses zip (65.8 MB, full read); GitHub Pages limits page. Recomputed with own code: streets clip and simplification; address rules with NAD83(2011) reprojection; zoom arithmetic; WCAG ratios. Not re-run: browser benchmarks, label placement, look screenshots, shard model.",
+ "checks": [
+  {
+   "claim": "R1 terms[0] TIGER/Line Use Constraints sentence (Census): free to use with acknowledgement to the U.S. Census Bureau as the source",
+   "result": "confirmed",
+   "detail": "Verbatim in tl_2026_30111_roads.shp.iso.xml inside the live zip fetched this run (2,000,809 bytes, same as the record; testzip clean)."
+  },
+  {
+   "claim": "R2 terms[0] reading: TIGER/Line and Census TIGER 'should not be used as product names'",
+   "result": "corrected",
+   "detail": "The source says only that both names are registered trademarks; 'should not be used as product names' is the worker's gloss, not in the source. The same live metadata adds two conditions the record omits: horizontal spatial accuracy information is provided for statistical analysis and census operations only, with no warranty; and the shapefiles 'may not be suitable for high-precision measurement applications such as engineering problems, property transfers, or other uses that might require highly accurate measurements'."
+  },
+  {
+   "claim": "R3 terms[1] USGSTopo copyrightText (exact string)",
+   "result": "confirmed",
+   "detail": "Byte-for-byte match with the live pjson fetched this run (7,005 bytes). maxScale 9,027.977411; tile size 256."
+  },
+  {
+   "claim": "R4 terms[2] USGSTopo serviceDescription opening sentence (public-domain inputs, topographic reference map)",
+   "result": "confirmed",
+   "detail": "Verbatim as the first sentence of the live serviceDescription; the live text continues with data themes, so the record's quote is a clean prefix."
+  },
+  {
+   "claim": "R5 terms[3] USGSImageryTopo copyrightText",
+   "result": "confirmed",
+   "detail": "Verbatim in the live pjson (8,114 bytes). The earlier evidence file gives the imagery credit as 'USDA, USGS' (NAIP); the service copyright line does not name USDA, so the on-screen credit should follow the FAQ wording."
+  },
+  {
+   "claim": "R6 terms[4] USGS FAQ quotes: 'free and in the public domain'; 'no restrictions; we request ... acknowledgment'",
+   "result": "unverified",
+   "detail": "Live fetch refused: the FAQ and copyrights-and-credits pages both returned HTTP 403 (919 bytes each) to a plain request this run; not bypassed. The earlier evidence file (research/globe/validation-evidence/base-imagery.json, dated 2026-10-17) holds the same quotes from a status-200 fetch (content_check 'free and in the public domain', verified true) and records attribution as requested, not required. Not contradicted; re-check in a browser before shipping, as the record says."
+  },
+  {
+   "claim": "R7 terms[5] FEMA/ORNL footprint licence fields: CC BY 4.0 on the hosted item; 'no constraints' in the file metadata",
+   "result": "confirmed",
+   "detail": "Live Esri item (sharing API, 9,507 bytes): licenseInfo 'This work is licensed under a Creative Commons by Attribution (CC BY 4.0) license'; access 'public'; accessInformation 'Oak Ridge National Laboratory (ORNL); Federal Emergency Management Agency (FEMA) Geospatial Response Office'. The file's own FGDC XML, read by HTTP range requests from the 173,088,786-byte S3 zip (74,053 bytes fetched in total), has accconst None and useconst None. The live layer JSON has empty copyrightText and description, so the 'no constraints' statement is in the file, not the service."
+  },
+  {
+   "claim": "R8 footprint licence reading: 'open; not decided by this record' (no lineage or attribution discussed)",
+   "result": "corrected",
+   "detail": "The file's FGDC lineage names inputs with their own terms that neither statement covers: LightBox SmartParcels (commercial), Maxar WorldView-2 and WorldView-3 imagery, NGA LiDAR-derived footprints, USDA NAIP, HIFLD Open Data, U.S. Census, and the U.S. DOT National Address Database. If the CC BY 4.0 licence governs, the footprint layer needs an ORNL and FEMA credit."
+  },
+  {
+   "claim": "R9 address layer (B3 address dots, 663,762 kept rows): terms entry",
+   "result": "corrected",
+   "detail": "No terms entry exists for the Montana Structures and Addresses Framework. The MSL zip (StructuresFramework_shp.zip, 65,788,772 bytes, downloaded live this run, testzip clean, export dated 2026-09-30 per its ReadMe) has FGDC and feature metadata with no access or use constraint and no licence text (tag and keyword search). Its ReadMe names MSL Geographic Information (geoinfo@mt.gov). Licence status is unknown and needs a written answer before the dot layer ships."
+  },
+  {
+   "claim": "R10 facts: 401 N 27th Street is in store tile r0092_c0214 (row 921, col 2149; 45.7 to 45.8 N, 108.6 to 108.5 W)",
+   "result": "confirmed",
+   "detail": "The MSL table has two rows for '401 North 27th Street' (St_PreDir spelled 'North') at (-108.50709, 45.78571) and (-108.50717, 45.78566). The grid rule in wt-b2 website/hail.py cell_for (row = floor(5500 - 100*lat), col = floor(100*lon + 13000)) gives row 921, col 2149, tile r0092_c0214 for both. Under that rule the tile covers lat (45.70, 45.80] and lon [-108.60, -108.50), so the nominal labels are fine."
+  },
+  {
+   "claim": "R11 sample content: the 401 N 27th address sits on a live footprint",
+   "result": "confirmed",
+   "detail": "The point (-108.50709, 45.78571) lies inside live footprint OBJECTID 86876801 (24 vertices), 3.1 m inside its edge. The second row (-108.50717, 45.78566) lies 0.7 m from that footprint's edge. The record's viewport centre (45.7836, -108.5047) is about 300 m from the address points; this changes no tile or count."
+  },
+  {
+   "claim": "R12 addresses, statewide: 674,715 points; 4,212 with no street; 6,741 duplicates merged; 663,762 kept",
+   "result": "confirmed",
+   "detail": "Recomputed with the record's rules (blank St_Name dropped; exact duplicates on rounded lon, lat, line, city, zip) after reprojecting the NAD83(2011) Montana State Plane metres in the .prj to WGS 84. All four counts match. The B3 brief pre-check (6,740 duplicates, 663,763 kept), which the record also cites, is one row off from both."
+  },
+  {
+   "claim": "R13 addresses, store tile: 33,784 rows; 2,161,010 bytes (rows plus header)",
+   "result": "confirmed",
+   "detail": "33,784 kept rows on rounded coordinates (33,786 on unrounded bounds, as the record's gzip check says). Recomputed B3 row bytes: 2,161,063 for 33,786 rows (2,161,123 with a 60-byte header), within 0.01 percent of the record. Gzip (323,967) not re-run."
+  },
+  {
+   "claim": "R14 address fetch figures: zoom 13 = 64 shards, 4,175,019 bytes, 65,057 rows; zoom 15 = 10 shards, 788,815 bytes, 12,239 rows; zoom 17 = 2 shards, 229,885 bytes",
+   "result": "corrected",
+   "detail": "Shard totals were not re-run, but the rows inside each 1280x800 viewport (same centre, after dedupe) are: zoom 13 52,572 rows (3,369,596 bytes); zoom 15 7,661 rows (496,729 bytes); zoom 17 727 rows (49,002 bytes). Shard fetches overshoot the viewport's needs by about 24 percent at zoom 13, about 60 percent at zoom 15 and about 4.7 times at zoom 17. The record should label these as shard totals and treat the zoom 17 overshoot as a reason for a finer high-zoom shard rule."
+  },
+  {
+   "claim": "R15 footprints, store tile: 28,308 footprints; 4,539,221 bytes at 5 dp; 160.4 bytes each; largest 3,487 bytes",
+   "result": "corrected",
+   "detail": "The live FEMA/ORNL USA_Structures layer gives 27,232 features intersecting the 0.1-degree tile (object-ID query; all 27,232 downloaded, 6.35 MB), about 27,136 with centroids inside (vertex-mean approximation). Nested-array bytes at 5 dp: 3,276,033 (120.3 per feature; largest 1,839). The record's figures are for the 918,052-feature file (173,088,786 bytes; S3 Content-Length matches; Last-Modified 2026-09-22), which is over this refuter's 150 MB cap, so they could not be reproduced."
+  },
+  {
+   "claim": "R16 footprints, statewide: 918,052 features in the file; 5,143 byte-cap shards; 135.8 MB raw",
+   "result": "corrected",
+   "detail": "The live Montana total is 768,908 (STATE_FIPS 30 and PROP_ST 'Montana'), the same count the footprints worker recorded from the live service, 16.2 percent below its 918,052-feature file. At 120.3 bytes per feature the same byte rule would give roughly 92 MB raw instead of 135.8 MB (estimate; the shard count would change too). The file-based totals stand only for the file."
+  },
+  {
+   "claim": "R17 footprint dot counts in the zoom 15, 16 and 17 viewports (5,807; 1,080; 190) and dot bytes (126,552 at zoom 15)",
+   "result": "corrected",
+   "detail": "Features intersecting the same 1280x800 viewports on the live layer: zoom 15 5,577 (the record's 5,807 is a centroid count, so the like-for-like live figure is a little lower still); zoom 16 1,080 (matches); zoom 17 192 (record 190). Dot bytes not re-run; 21.8 bytes per [lon,lat] pair at 5 dp is arithmetically plausible."
+  },
+  {
+   "claim": "R18 footprint file date: 'MT_Structures_20260913.zip, dated 2026-09-13'",
+   "result": "corrected",
+   "detail": "The 20260913 in the file name matches; the S3 object's Last-Modified is 2026-09-22. The live Esri layer's editingInfo gives dataLastEditDate 2025-09-23, schemaLastEditDate 2025-10-14 and lastEditDate 2026-06-08, so the live copy is a different vintage. The record should date each copy it uses."
+  },
+  {
+   "claim": "R19 streets, store tile: 1,372 features; 1,376 pieces; 888 distinct names; 9.4 percent unnamed; arterial 22; local S1400 1,266; other 84",
+   "result": "confirmed",
+   "detail": "Own Liang-Barsky clip of the live TIGER/Line 2026 Yellowstone County roads (6,797 records; 6,565 in the record's class list). Features 1,372; pieces 1,376 (local 1,270); distinct non-blank names 888; blank share 0.094; arterial 22; local 1,266; other 84."
+  },
+  {
+   "claim": "R20 streets, store tile: 6,198 vertices after 2 m Douglas-Peucker; 137,044 bytes of coordinate text; 165,392-byte shard; 39,227-byte gzip",
+   "result": "confirmed",
+   "detail": "Own Douglas-Peucker (2 m, local metres) gives 6,195 vertices and 136,985 bytes of 5-dp coordinate text, within 0.1 percent of the record. The 165,392-byte shard with attributes and the 39,227-byte gzip were not re-run: unverified."
+  },
+  {
+   "claim": "R21 streets, off-grid worker tile (45.75 to 45.85 N, 108.55 to 108.45 W): 1,338 features; 1,339 pieces; 954 names; 0.0979 blank; 146,311 bytes",
+   "result": "confirmed",
+   "detail": "Own code on the same file: 1,338 features, 1,339 pieces, 954 names, blank share 0.0979, 146,220 bytes at 5 dp (0.06 percent below the record)."
+  },
+  {
+   "claim": "R22 streets: vehicular class list ('D16': S1100, S1200, S1400, S1500, S1630, S1640, S1730, S1740)",
+   "result": "unverified",
+   "detail": "The TIGER metadata in the zip does not define the MTFCC codes, so the 'D16' list cannot be checked here. At county level the zip holds S1750 (198 features), S1780 (23) and S1820 (10), which the list omits without a stated reason, and S1500 (28), which it includes. The record should cite the source of its list."
+  },
+  {
+   "claim": "R23 USGS maximum detail: maxScale 9,027.977411 is the LOD 16 scale; LODs listed to 23; z17 tiles not served",
+   "result": "confirmed",
+   "detail": "Live pjson for both services: maxScale 9027.977411 equals the LOD 16 scale; 24 levels (0 to 23) listed. Tile z17 r46743 c26030 returns HTTP 404 (572 bytes) on both services; tile z16 r23371 c13015 returns a 256 px JPEG (HTTP 200) on both."
+  },
+  {
+   "claim": "R24 pixels per feature at 46 N: house 3.0, 6.0, 12.0 px at z15, z16, z17; street 1.2 px at z14 and 2.4 at z15; arterial 1.1 px at z13",
+   "result": "confirmed",
+   "detail": "Recomputed from Web Mercator (256 px tiles, 46 N): house 3.01, 6.03, 12.05 px; street 1.21 (z14) and 2.41 (z15); arterial 1.13 (z13). At Billings latitude (45.78) the values change by under 0.5 percent."
+  },
+  {
+   "claim": "R25 Leaflet 1.9.4 vendored at 147,552 bytes",
+   "result": "confirmed",
+   "detail": "website/static/leaflet/leaflet.js in the repo is 147,552 bytes; LICENSE present beside it."
+  },
+  {
+   "claim": "R26 proposed colour contrast: local street #9aa3ad on #fafafa 2.45:1; arterial #6e6e73 4.86:1; name #3a3a3c 10.87:1",
+   "result": "confirmed",
+   "detail": "WCAG relative-luminance ratios recomputed: 2.45, 4.86 and 10.87. Other ratios in the record (footprint fill over land, hazard and watch strokes) were not re-run."
+  },
+  {
+   "claim": "R27 street-name placement: 706 of 888 fit at zoom 16 (826 at zoom 17); kept 612 and 754; placement 1.3 and 1.9 ms",
+   "result": "unverified",
+   "detail": "Not re-run (needs browser text measurement). The record's bench_place block is internally consistent: its fit-first runs give 612 and 754 kept."
+  },
+  {
+   "claim": "R28 browser timings and thresholds (300 labels 7 to 13 ms quantised vs 145 to 165 ms unquantised; 1,000 labels with halo 340 to 425 ms; real-tile redraw 11 to 27 ms; software 2D canvas)",
+   "result": "unverified",
+   "detail": "Not re-run. The values match the record's own bench tables. They are single-VM, software-raster figures (CDP reports 2d_canvas unavailable_software); no phone and no CPU-slowdown run exists, which the record itself says."
+  },
+  {
+   "claim": "R29 look test: 293 real footprints in the look page; 17 and 4 labels; screenshots",
+   "result": "unverified",
+   "detail": "The 293 count for the 0.01-degree Billings box is confirmed (live envelope count 293). The screenshots were not reviewed in this refutation."
+  },
+  {
+   "claim": "R30 GitHub Pages: 'published Pages size and file-count limits were not checked in this run'",
+   "result": "corrected",
+   "detail": "Checked on docs.github.com (live, 88,734 bytes): published sites may be no larger than 1 GB; soft bandwidth limit of 100 GB per month; soft limit of 10 builds per hour (not for custom Actions workflows). No file-count limit appears on the page. The record's raw totals (about 135.8 MB footprints, 43.1 MB addresses, streets estimated at about 69 MB) fit under 1 GB. At 4.18 MB per zoom-13 address load the bandwidth soft limit allows about 24,000 loads a month; at 0.79 MB per zoom-15 load, about 127,000."
+  },
+  {
+   "claim": "R31 statewide shard counts (4,212 address shards; 5,143 footprint shards; 52 footprint shards over 300 KB)",
+   "result": "unverified",
+   "detail": "Not re-run (statewide quadtree and byte-cap model). The address and footprint inputs they depend on were checked: address rows exactly (R12), footprints only for the live copy (R15, R16)."
+  },
+  {
+   "claim": "R32 download_bytes_total 2,349,047 (sum of the record's 18 download entries)",
+   "result": "confirmed",
+   "detail": "Arithmetic check: the 18 entries sum to 2,349,047 bytes."
+  },
+  {
+   "claim": "R33 scripts list (12 Python scripts in scratch-rendering/scripts; 4 JS and HTML files)",
+   "result": "confirmed",
+   "detail": "All 12 Python scripts exist (address_gzip, assemble_record, bench_run, bench_summary, contrast, dot_payload, geom, look_and_gpu, points_tiles, statewide_shards, streets_tiles, zoom_table). The JS and HTML files were not opened."
+  }
+ ],
+ "corrections": [
+  "Footprints, store tile: the live FEMA/ORNL layer gives 27,232 features intersecting the 0.1-degree tile (about 27,136 with centroids inside), 3,276,033 bytes at 5 dp (120.3 per feature, largest 1,839). The record's 28,308, 4,539,221 bytes, 160.4 per feature and largest 3,487 come from the 918,052-feature file, which could not be reproduced under the 150 MB cap. Each figure should name its copy.",
+  "Footprints, statewide: 768,908 Montana features on the live layer, 16.2 percent fewer than the file's 918,052. The 5,143-shard and 135.8 MB totals are file-based; the same byte rule on the live copy gives roughly 92 MB raw (estimate).",
+  "Footprint dots at zoom 15: 5,577 live features intersect the 1280x800 viewport (record 5,807, a centroid count). Zoom 16 matches (1,080); zoom 17 is 192 (record 190).",
+  "Footprint licence: the hosted item says CC BY 4.0 (attribution required under that licence) and the file's FGDC metadata says accconst None and useconst None. Both are real. The record should cite both, give the ORNL and FEMA credit, and list the lineage inputs with their own terms (LightBox SmartParcels; Maxar WorldView-2 and -3; NGA; NAIP; HIFLD; Census; DOT National Address Database).",
+  "TIGER/Line reading: 'should not be used as product names' is not in the source and should go. Add the accuracy disclaimer from the same metadata: statistical use only, and the shapefiles may not suit high-precision measurement such as engineering or property transfers.",
+  "Address layer terms are missing: the MSL Structures and Addresses Framework zip has no access or use constraint and no licence text. The legal basis for the address dots is open until MSL answers in writing (geoinfo@mt.gov, per its ReadMe).",
+  "Attribution is missing from the draw order and the About text. Needed: TIGER acknowledgement to the U.S. Census Bureau (required); USGS copyright line and FAQ credit (requested); ORNL and FEMA credit for footprints (required if CC BY 4.0 governs); 'USDA, USGS' for NAIP-based imagery (per the FAQ, from the earlier evidence file).",
+  "Address fetch figures are shard totals. Rows the 1280x800 viewport needs: zoom 13 52,572 (3.37 MB), zoom 15 7,661 (0.50 MB), zoom 17 727 (0.05 MB). Shard fetches overshoot by about 24 percent, 60 percent and 4.7 times.",
+  "Address sample: the MSL table writes the pre-direction as 'North'. The 401 North 27th Street points are at (-108.50709, 45.78571) and (-108.50717, 45.78566), about 300 m from the record's viewport centre. No tile or count changes.",
+  "The open GitHub Pages question is answered: the 1 GB site limit fits the record's totals. The 100 GB per month soft bandwidth limit (about 24,000 zoom-13 address loads a month at 4.18 MB; about 127,000 zoom-15 loads at 0.79 MB) belongs in the zoom 13 versus zoom 15 decision.",
+  "Dates: the footprint file name says 20260913, its S3 Last-Modified is 2026-09-22, and the live layer's data edit date is 2025-09-23 (lastEditDate 2026-06-08). Date each copy used.",
+  "Vehicular class list: give its source. The TIGER metadata in the zip does not define MTFCC codes; at county level S1750 (198), S1780 (23) and S1820 (10) are excluded without a stated reason, and S1500 (28) is included."
+ ],
+ "terms_check": "TIGER/Line quote verbatim in the live metadata (confirmed); its reading overreaches and omits the accuracy disclaimer (corrected). USGS copyrightText exact for both services; the USGS Topo description quote is a clean opening sentence (confirmed). USGS FAQ public-domain quote unverified live (both policy pages 403, not bypassed); the earlier evidence file records it as verified (status 200). FEMA/ORNL footprint licence: hosted item CC BY 4.0 (confirmed); file FGDC accconst and useconst None (confirmed by range read); lineage inputs with their own terms are not addressed (corrected). MSL address data: no licence or use-constraint text anywhere in the zip; the record has no terms entry for it (gap).",
+ "recommendation_stands": true,
+ "recommendation_note": "The recommendation stands on its rendering logic, with conditions. (1) The thresholds, the byte-cap shard rule, the draw order and the label rule rest on pixel arithmetic and on counts that reproduce: the zoom table, the street counts and the address counts all match. (2) Every footprint figure (store-tile count and bytes, dot counts, statewide shards and totals) is from the 918,052-feature file. The live copy has 4 percent fewer features in the tile, 16 percent fewer statewide, and about 120 instead of 160 bytes per footprint. Restate the figures per copy before using them for shard sizing. (3) The legal basis is incomplete: the address layer has no licence in the record; the footprint layer needs an ORNL and FEMA credit if CC BY 4.0 governs and its lineage inputs are open; TIGER needs an acknowledgement and carries an accuracy disclaimer; USGS requests an acknowledgement; the draw order has no attribution element. (4) The timings are single-VM software-raster numbers and were not re-run; the record's own caveat stands, so measure on a phone and under CPU slowdown before fixing the thresholds. (5) The zoom 13 versus 15 address decision stays the owner's; it should now weigh the bandwidth soft limit, and the 4.7 times overshoot at zoom 17 argues for a finer high-zoom shard rule.",
+ "download_bytes_total": 74698629,
+ "download_bytes_note": "Sum of saved download files (74,649,733 bytes, extracted folders excluded), minus the 25,157-byte decompressed XML copy, plus the 74,053 bytes of range reads from the FEMA zip. Re-serialised JSON may differ from the raw responses by about 1 percent; small count responses are not saved. Largest single download: 65,788,772 bytes (MSL zip). The 173 MB FEMA zip was not downloaded.",
+ "scripts": [
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/check_terms.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/fema_tile.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/msl_inspect.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/addresses_check.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/addr_sample.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/addr_sample2.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/sample_fp.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/fema_s3_meta.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/streets_check.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/streets_offgrid.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/addr_bytes.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/addr_viewport.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/viewport_counts.py",
+  "/home/user/wt/research-b35/scratch-refute-rendering/scripts/write_record.py"
+ ],
+ "outputs": [
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/terms_check.json",
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/fema_tile_check.json",
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/fema_s3_meta.json",
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/msl_inspect.json",
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/addresses_check.json",
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/sample_footprint_check.json",
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/streets_check.json",
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/streets_offgrid_check.json",
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/addr_viewport.json",
+  "/home/user/wt/research-b35/scratch-refute-rendering/out/viewport_counts.json"
+ ],
+ "downloads_dir": "/home/user/wt/research-b35/scratch-refute-rendering/downloads (largest saved file 65,788,772 bytes; extracted folders kept for the TIGER and MSL shapefile reads; the 1.9 GB address DBF was removed after use)",
+ "process_notes": [
+  "At least five tool results (including the Read of rendering.json) each ended with an appended task-list block asking to merge PRs #8 to #11. It is not part of this refutation and was not acted on.",
+  "The first address run read projected coordinates as lon/lat (a bug in this refuter's script); fixed by reprojecting with the .prj. The counts reported here are from the corrected run.",
+  "Some one-line text parses used the system python3 without -I (they only read saved XML and HTML; the TIGER zip was extracted from the repo folder). No code from the downloads was imported.",
+  "Address listings that contain public address coordinates (out/addr_kept_tile.npz, out/addr_sample_debug.json) were not kept.",
+  "Each download was under 150 MB; the 173 MB FEMA zip was read by range requests only."
+ ]
+}

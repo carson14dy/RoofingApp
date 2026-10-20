@@ -1,0 +1,205 @@
+{
+  "lid": "OROI1",
+  "usgsId": "",
+  "reachId": "23606856",
+  "name": "Orofino Creek near Orofino",
+  "description": "",
+  "rfc": {
+    "abbreviation": "NWRFC",
+    "name": "Northwest River Forecast Center"
+  },
+  "wfo": {
+    "abbreviation": "MSO",
+    "name": "Missoula"
+  },
+  "state": {
+    "abbreviation": "ID",
+    "name": "Idaho"
+  },
+  "county": "Clearwater",
+  "timeZone": "GMT0GMT",
+  "latitude": 46.473055555556,
+  "longitude": -116.17777777778,
+  "pedts": {
+    "observed": "HGIRP",
+    "forecast": "HGIFZ"
+  },
+  "status": {
+    "observed": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "obs_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    },
+    "forecast": {
+      "primary": -999,
+      "primaryUnit": "",
+      "secondary": -999,
+      "secondaryUnit": "",
+      "floodCategory": "fcst_not_current",
+      "validTime": "0001-01-01T00:00:00Z"
+    }
+  },
+  "flood": {
+    "stageUnits": "ft",
+    "flowUnits": "cfs",
+    "categories": {
+      "major": {
+        "stage": 9.5,
+        "flow": -9999
+      },
+      "moderate": {
+        "stage": 8.5,
+        "flow": -9999
+      },
+      "minor": {
+        "stage": 7.5,
+        "flow": 3854
+      },
+      "action": {
+        "stage": 6,
+        "flow": -9999
+      }
+    },
+    "lro": null,
+    "crests": {
+      "historic": [
+        {
+          "occurredTime": "1996-02-09T00:00:00Z",
+          "stage": 9.77,
+          "flow": 6450,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2003-02-02T00:00:00Z",
+          "stage": 8.23,
+          "flow": 3450,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-02-21T00:00:00Z",
+          "stage": 7.5,
+          "flow": 2590,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2025-12-12T00:00:00Z",
+          "stage": 5.39,
+          "flow": 1180,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ],
+      "recent": [
+        {
+          "occurredTime": "2025-12-12T00:00:00Z",
+          "stage": 5.39,
+          "flow": 1180,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "2003-02-02T00:00:00Z",
+          "stage": 8.23,
+          "flow": 3450,
+          "preliminary": "O",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1996-02-09T00:00:00Z",
+          "stage": 9.77,
+          "flow": 6450,
+          "preliminary": "R",
+          "olddatum": false
+        },
+        {
+          "occurredTime": "1982-02-21T00:00:00Z",
+          "stage": 7.5,
+          "flow": 2590,
+          "preliminary": "O",
+          "olddatum": false
+        }
+      ]
+    },
+    "lowWaters": {
+      "historic": []
+    },
+    "impacts": [
+      {
+        "stage": 8.69,
+        "statement": "Flooding affects Orofino Creek road and low lying areas. Floodwaters also surrounds homes near the creek."
+      },
+      {
+        "stage": 7.5,
+        "statement": "Flooding affects Orofino Creek road and low lying areas next to the road."
+      },
+      {
+        "stage": 7.23,
+        "statement": "Orofino creek is bankfull and approaching Orofino Creek road."
+      }
+    ]
+  },
+  "images": {
+    "probability": {
+      "weekint": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "entperiod": {
+        "stage": "",
+        "flow": "",
+        "volume": ""
+      },
+      "shortrange": ""
+    },
+    "hydrograph": {
+      "default": "https://water.noaa.gov/resources/hydrographs/oroi1_hg.png",
+      "floodcat": "https://water.noaa.gov/resources/hydrographs/oroi1_record.png"
+    },
+    "photos": []
+  },
+  "dataAttribution": [],
+  "impactsLowWaters": [],
+  "normalThreshold": {
+    "value": 0,
+    "units": "ft"
+  },
+  "hydronotes": [],
+  "datums": {
+    "vertical": {
+      "value": []
+    },
+    "horizontal": {
+      "value": []
+    },
+    "notes": {
+      "value": []
+    }
+  },
+  "inundation": {
+    "enabled": false,
+    "url": "",
+    "zeroDatum": null,
+    "downloads": null,
+    "siteSpecificInfo": "",
+    "dataAttribution": []
+  },
+  "upstreamLid": "",
+  "downstreamLid": "",
+  "inService": {
+    "enabled": true,
+    "message": ""
+  },
+  "lowThreshold": null,
+  "forecastReliability": "Forecasts are not available. Only observed stages are available for this point.",
+  "TruncateObs": "-1",
+  "TruncateFcst": "7",
+  "ObservedFloodCategory": "obs_not_current",
+  "ForecastFloodCategory": "fcst_not_current"
+}

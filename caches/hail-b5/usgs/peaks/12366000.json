@@ -1,0 +1,1814 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.43",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1996-06-12",
+        "water_year": 1996,
+        "year": 1996,
+        "month": 6,
+        "day": 12,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "0011f8ec-4b1e-48ec-88ef-6964291ab6b7",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.27",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1990-06-04",
+        "water_year": 1990,
+        "year": 1990,
+        "month": 6,
+        "day": 4,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": [
+          "BACKWATER",
+          "GHNOTASSCPKQ"
+        ]
+      },
+      "id": "00eb8612-9800-4991-b254-1e634e33a263",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.71",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1988-05-31",
+        "water_year": 1988,
+        "year": 1988,
+        "month": 5,
+        "day": 31,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "02bb2159-7f2b-471a-929b-1c5067465355",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.65",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1976-05-15",
+        "water_year": 1976,
+        "year": 1976,
+        "month": 5,
+        "day": 15,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "0820a684-e374-4331-9e9d-68662aa7f9fa",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.06",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1990-06-02",
+        "water_year": 1990,
+        "year": 1990,
+        "month": 6,
+        "day": 2,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": [
+          "NOTMAXGH"
+        ]
+      },
+      "id": "0b51e2ef-1dab-44f3-85ff-7873f6770494",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.00",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1995-06-21",
+        "water_year": 1995,
+        "year": 1995,
+        "month": 6,
+        "day": 21,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "0bdb6dca-9d16-4904-a543-bda0d404330d",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.49",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2005-01-06",
+        "water_year": 2005,
+        "year": 2005,
+        "month": 1,
+        "day": 6,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": [
+          "BACKWATER",
+          "GHNOTASSCPKQ"
+        ]
+      },
+      "id": "0f4d4282-7624-42c7-af84-90ad5ed4a912",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.42",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1991-05-22",
+        "water_year": 1991,
+        "year": 1991,
+        "month": 5,
+        "day": 22,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "1033c603-0524-48bc-b893-597806420227",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.52",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1977-05-12",
+        "water_year": 1977,
+        "year": 1977,
+        "month": 5,
+        "day": 12,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "1281c6d9-8420-4ae0-93dd-d7a0f83b863d",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.95",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2022-06-16",
+        "water_year": 2022,
+        "year": 2022,
+        "month": 6,
+        "day": 16,
+        "time_of_day": "03:00:00+00:00",
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "167a4f46-d333-4eee-89b8-e130b654a20a",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.84",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1937-06-08",
+        "water_year": 1937,
+        "year": 1937,
+        "month": 6,
+        "day": 8,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "17da4023-569b-4054-863b-d49441edee77",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.27",
+        "last_modified": "2026-08-18T21:00:30.218862+00:00",
+        "time": "2025-05-19",
+        "water_year": 2025,
+        "year": 2025,
+        "month": 5,
+        "day": 19,
+        "time_of_day": "01:45:00+00:00",
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "1e300877-1e30-4395-bb60-4e4c359e4f8c",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.81",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1931-05-19",
+        "water_year": 1931,
+        "year": 1931,
+        "month": 5,
+        "day": 19,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "20e7b1ad-44e5-4ac1-b603-46cdaf6e7d69",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.45",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1950-06-26",
+        "water_year": 1950,
+        "year": 1950,
+        "month": 6,
+        "day": 26,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "2c15596e-3769-43fa-bfb9-3e4ca2f94a0b",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "9.36",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2004-03-01",
+        "water_year": 2004,
+        "year": 2004,
+        "month": 3,
+        "day": 1,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": [
+          "BACKWATER",
+          "GHNOTASSCPKQ"
+        ]
+      },
+      "id": "2c95776f-370b-4264-a4bc-04a49daa636f",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.35",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1987-05-13",
+        "water_year": 1987,
+        "year": 1987,
+        "month": 5,
+        "day": 13,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "336a8107-d721-411b-a538-447f670f00fc",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.55",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1978-06-11",
+        "water_year": 1978,
+        "year": 1978,
+        "month": 6,
+        "day": 11,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "342c5048-0bf5-400c-a4ea-e663c617f629",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.20",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2006-06-17",
+        "water_year": 2006,
+        "year": 2006,
+        "month": 6,
+        "day": 17,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "35ee7d62-e658-4124-8f29-c48c56c6c904",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.82",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1973-05-26",
+        "water_year": 1973,
+        "year": 1973,
+        "month": 5,
+        "day": 26,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "37b7d45e-e72d-4c85-9c70-442c2fee48cf",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.74",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2002-06-08",
+        "water_year": 2002,
+        "year": 2002,
+        "month": 6,
+        "day": 8,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "3a79d454-6ba0-4707-a1a1-a16260a7e70b",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.60",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1992-05-11",
+        "water_year": 1992,
+        "year": 1992,
+        "month": 5,
+        "day": 11,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "41cebd56-1fc1-4cdb-ace6-04f5cad7e72a",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.11",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1980-06-03",
+        "water_year": 1980,
+        "year": 1980,
+        "month": 6,
+        "day": 3,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "4216b530-55ec-432e-8009-e323a630ac23",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.91",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1974-06-24",
+        "water_year": 1974,
+        "year": 1974,
+        "month": 6,
+        "day": 24,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "4430e2c8-4133-4475-befc-763884fb6163",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.55",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1934-05-01",
+        "water_year": 1934,
+        "year": 1934,
+        "month": 5,
+        "day": 1,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "449cf8c6-6538-4be4-9629-d10e9e7bd48a",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.25",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1945-06-06",
+        "water_year": 1945,
+        "year": 1945,
+        "month": 6,
+        "day": 6,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "456376f7-6404-40a4-86cd-ef8c372a6c7b",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.15",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2003-06-10",
+        "water_year": 2003,
+        "year": 2003,
+        "month": 6,
+        "day": 10,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "4b7704f6-b131-429a-86d7-05f69af6718f",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.01",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1933-06-18",
+        "water_year": 1933,
+        "year": 1933,
+        "month": 6,
+        "day": 18,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "4ced07d8-f9cf-4fc1-b51d-f30356d4112a",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.10",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1986-06-04",
+        "water_year": 1986,
+        "year": 1986,
+        "month": 6,
+        "day": 4,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "599a849c-8908-4349-8f0a-9d790adf89ae",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.58",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1982-06-22",
+        "water_year": 1982,
+        "year": 1982,
+        "month": 6,
+        "day": 22,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "5c406ff7-3638-4145-b2d8-86d75e0bf0db",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.73",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1940-05-26",
+        "water_year": 1940,
+        "year": 1940,
+        "month": 5,
+        "day": 26,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "5d2e0094-7ddd-4b87-909e-3ead15974c8d",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.85",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2004-05-11",
+        "water_year": 2004,
+        "year": 2004,
+        "month": 5,
+        "day": 11,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": [
+          "NOTMAXGH"
+        ]
+      },
+      "id": "5ed33ba2-6c42-4da7-a532-ba217832e7ed",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.84",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1994-05-16",
+        "water_year": 1994,
+        "year": 1994,
+        "month": 5,
+        "day": 16,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "6105b699-791f-47e3-83b4-3077e05d8f49",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.46",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1997-06-06",
+        "water_year": 1997,
+        "year": 1997,
+        "month": 6,
+        "day": 6,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "62dc3a4f-269a-43e3-a250-62580b70061c",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.39",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1998-05-28",
+        "water_year": 1998,
+        "year": 1998,
+        "month": 5,
+        "day": 28,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "646bc8d6-bc65-4a58-82a8-886f0a73d7ab",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.18",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1938-05-31",
+        "water_year": 1938,
+        "year": 1938,
+        "month": 5,
+        "day": 31,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "66263cea-eb02-4941-97d9-32c42e37401f",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.43",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1944-05-20",
+        "water_year": 1944,
+        "year": 1944,
+        "month": 5,
+        "day": 20,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "6820f7ad-eafe-44cf-9092-a68fa70ad0b4",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.53",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1993-05-23",
+        "water_year": 1993,
+        "year": 1993,
+        "month": 5,
+        "day": 23,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "69e6dc2a-89b5-4008-93a6-1b696d481f7b",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.98",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1942-06-06",
+        "water_year": 1942,
+        "year": 1942,
+        "month": 6,
+        "day": 6,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "6a43b79f-0167-48a6-bd1e-7bb4080cfeef",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.18",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1943-06-23",
+        "water_year": 1943,
+        "year": 1943,
+        "month": 6,
+        "day": 23,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "7127410a-0cb2-4444-a0db-0226cef5fa8f",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.41",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1948-05-30",
+        "water_year": 1948,
+        "year": 1948,
+        "month": 5,
+        "day": 30,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "71f7e363-e608-4f11-9bdc-078ff56a3c55",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.22",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1939-05-20",
+        "water_year": 1939,
+        "year": 1939,
+        "month": 5,
+        "day": 20,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "73d7e69e-ffd1-4aa0-b851-42c0879adec9",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.85",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1979-02-15",
+        "water_year": 1979,
+        "year": 1979,
+        "month": 2,
+        "day": 15,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": [
+          "BACKWATER",
+          "GHNOTASSCPKQ"
+        ]
+      },
+      "id": "752eb604-3310-469d-abb8-97a2d262686e",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.55",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1981-05-28",
+        "water_year": 1981,
+        "year": 1981,
+        "month": 5,
+        "day": 28,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "78821029-b708-4300-b36c-eaf36b653782",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.26",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1984-06-22",
+        "water_year": 1984,
+        "year": 1984,
+        "month": 6,
+        "day": 22,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "81be5d3b-7b80-4426-9391-daadd1769a7c",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.62",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2021-05-27",
+        "water_year": 2021,
+        "year": 2021,
+        "month": 5,
+        "day": 27,
+        "time_of_day": "09:15:00+00:00",
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "83829f50-b123-4555-8fdd-2d57127676ff",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.23",
+        "last_modified": "2026-08-18T21:00:30.218862+00:00",
+        "time": "2024-05-26",
+        "water_year": 2024,
+        "year": 2024,
+        "month": 5,
+        "day": 26,
+        "time_of_day": "02:45:00+00:00",
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "8a10ef39-9ca1-47c1-ad7e-c5308b181110",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.39",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2001-05-30",
+        "water_year": 2001,
+        "year": 2001,
+        "month": 5,
+        "day": 30,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "904f24b7-6703-4168-a602-f5050c469b28",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.53",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1975-06-16",
+        "water_year": 1975,
+        "year": 1975,
+        "month": 6,
+        "day": 16,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "950449f2-fddb-4e54-b5a6-05ad94e98728",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "2.60",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1941-05-06",
+        "water_year": 1941,
+        "year": 1941,
+        "month": 5,
+        "day": 6,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "9a9a144c-fc94-43d7-bc4a-975d89e499c5",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.17",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2023-05-19",
+        "water_year": 2023,
+        "year": 2023,
+        "month": 5,
+        "day": 19,
+        "time_of_day": "05:15:00+00:00",
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "9be1e323-7c6d-48b6-b726-6a6c14c5436f",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.40",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1999-06-03",
+        "water_year": 1999,
+        "year": 1999,
+        "month": 6,
+        "day": 3,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "a31c6be8-6d2a-4265-8655-1b9b3f12b550",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.25",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1936-05-17",
+        "water_year": 1936,
+        "year": 1936,
+        "month": 5,
+        "day": 17,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "ad44fec4-5474-491b-a4f6-b6f8516b7074",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.13",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2020-06-02",
+        "water_year": 2020,
+        "year": 2020,
+        "month": 6,
+        "day": 2,
+        "time_of_day": "22:15:00+00:00",
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "b07ff8bf-2bb6-4221-87d6-fe3ea14abd23",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.94",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1946-06-01",
+        "water_year": 1946,
+        "year": 1946,
+        "month": 6,
+        "day": 1,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "b31d63ff-68d7-4bdb-b798-1574466acf43",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.55",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1979-05-28",
+        "water_year": 1979,
+        "year": 1979,
+        "month": 5,
+        "day": 28,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": [
+          "NOTMAXGH"
+        ]
+      },
+      "id": "b41d0646-8e9c-4d53-9a42-f1005373e6e4",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.51",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1983-06-04",
+        "water_year": 1983,
+        "year": 1983,
+        "month": 6,
+        "day": 4,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "ba273c75-cbdd-40ae-bdaa-87fde1b4c785",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.17",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2000-05-28",
+        "water_year": 2000,
+        "year": 2000,
+        "month": 5,
+        "day": 28,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "bc118072-558f-4c9f-be3c-9fec0a807015",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.17",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1947-05-12",
+        "water_year": 1947,
+        "year": 1947,
+        "month": 5,
+        "day": 12,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "bf0d0867-030a-4e34-9369-e430d3c4f865",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.68",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1964-06-09",
+        "water_year": 1964,
+        "year": 1964,
+        "month": 6,
+        "day": 9,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "c6883318-4562-4662-ba68-70d233893e0d",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.44",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1985-05-30",
+        "water_year": 1985,
+        "year": 1985,
+        "month": 5,
+        "day": 30,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "cab82435-f9b3-42f6-aa92-b545bd017b59",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.49",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1989-05-12",
+        "water_year": 1989,
+        "year": 1989,
+        "month": 5,
+        "day": 12,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "ce77676b-f8b8-4df8-8eac-3b859c1c6dab",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.76",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1949-05-18",
+        "water_year": 1949,
+        "year": 1949,
+        "month": 5,
+        "day": 18,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "d11f6186-9c98-47b6-a80e-1d39905014ec",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.36",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1935-06-16",
+        "water_year": 1935,
+        "year": 1935,
+        "month": 6,
+        "day": 16,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "eafa5d66-9e92-4aa0-af6a-570953ff9b44",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "3.37",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "2005-06-08",
+        "water_year": 2005,
+        "year": 2005,
+        "month": 6,
+        "day": 8,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": [
+          "NOTMAXGH"
+        ]
+      },
+      "id": "f1443227-59cd-47b0-91c6-8d3ce39abfa8",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "time_series_id": "f1bf44738da949dc9aa72be9a59c644d",
+        "monitoring_location_id": "USGS-12366000",
+        "parameter_code": "00065",
+        "unit_of_measure": "ft",
+        "value": "4.26",
+        "last_modified": "2026-05-06T17:46:23.162688+00:00",
+        "time": "1932-06-03",
+        "water_year": 1932,
+        "year": 1932,
+        "month": 6,
+        "day": 3,
+        "time_of_day": null,
+        "peak_since": null,
+        "qualifier": null
+      },
+      "id": "ff871f6b-07f1-4058-8e80-352f6a551545",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.278594444444,
+          48.3201861111111
+        ]
+      }
+    }
+  ],
+  "numberReturned": 65,
+  "links": [
+    {
+      "type": "application/geo+json",
+      "rel": "self",
+      "title": "This document as GeoJSON",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/peaks/items?f=json&monitoring_location_id=USGS-12366000&parameter_code=00065&limit=1000"
+    },
+    {
+      "rel": "alternate",
+      "type": "application/ld+json",
+      "title": "This document as RDF (JSON-LD)",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/peaks/items?f=jsonld&monitoring_location_id=USGS-12366000&parameter_code=00065&limit=1000"
+    },
+    {
+      "type": "text/html",
+      "rel": "alternate",
+      "title": "This document as HTML",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/peaks/items?f=html&monitoring_location_id=USGS-12366000&parameter_code=00065&limit=1000"
+    },
+    {
+      "type": "text/csv; charset=utf-8",
+      "rel": "alternate",
+      "title": "This document as CSV",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/peaks/items?f=csv&monitoring_location_id=USGS-12366000&parameter_code=00065&limit=1000"
+    },
+    {
+      "type": "application/json",
+      "title": "Peaks",
+      "rel": "collection",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/peaks"
+    }
+  ],
+  "timeStamp": "2026-10-19T06:58:20.009534Z"
+}

@@ -1,0 +1,113 @@
+[01:59:31] copy B5 store
+[01:59:39] extract B3 a/ r/ b/ counts.json
+[01:59:45] merge index.json and manifest.json
+added manifest entries 21757 missing on disk 0 [] unlisted on disk 0 []
+index keys ['format', 'built_at', 'as_of', 'window', 'd0', 'grid', 'state', 'cells_in_state', 'floor_tenths', 'floor_in', 'days_expected', 'days_present', 'missing_days', 'events', 'shards', 'bytes', 'tiles', 'source', 'copy_check', 'joins', 'climate', 'stations', 'gauges', 'snow', 'addresses', 'roads', 'buildings']
+manifest files 45643 Counter({'a': 11714, 'j': 9196, 'b': 5615, 't': 4597, 'tl': 4597, 'c': 4569, 'r': 4427, 'sd': 571, 'z': 135, 'g': 104, 's': 60, 'k': 56, 'index.json': 1, 'counts.json': 1})
+[01:59:45] sizes
+496331217	/home/user/hail-b5/out/combined/store
+45644
+a 11714 files 49252605 bytes
+b 5615 files 196302000 bytes
+c 4569 files 35149062 bytes
+g 104 files 285713 bytes
+j 9196 files 87628936 bytes
+k 56 files 13689 bytes
+r 4427 files 69632279 bytes
+s 60 files 34913 bytes
+sd 571 files 3071175 bytes
+t 4597 files 32022304 bytes
+tl 4597 files 13667217 bytes
+z 135 files 1943955 bytes
+[01:59:46] verify addresses (from wt-b3)
+{
+ "ok": false,
+ "checks": [
+  {
+   "name": "manifest hashes and counts",
+   "ok": false,
+   "detail": "the history file hail/index.json does not match the manifest"
+  }
+ ],
+ "counts": {}
+}
+exit 1
+[01:59:48] verify streets (from wt-b3)
+ ],
+ "counts": {
+  "shards": 4427,
+  "lines_in_shards": 563102,
+  "shard_bytes": 69632279,
+  "largest_shard": 148991,
+  "names": 54294,
+  "simplify_gate_m": 2.0,
+  "post_rounding_max_m_measured": 2.48
+ }
+}
+exit 0
+[01:59:51] verify buildings (from wt-b3)
+{
+ "ok": false,
+ "checks": [
+  {
+   "name": "manifest hashes and counts",
+   "ok": false,
+   "detail": "the history file hail/index.json does not match the manifest"
+  }
+ ],
+ "counts": {}
+}
+exit 1
+[01:59:53] verify hail (from wt-b5)
+usage: python -m website.hail [-h] {build,verify,compare,fixture,fetch} ...
+python -m website.hail: error: unrecognized arguments: --store
+exit 2
+[01:59:53] verify joins (from wt-b5)
+usage: python -m website.joins [-h] {build,verify,compare,fixture} ...
+python -m website.joins: error: unrecognized arguments: --store
+exit 2
+[01:59:54] verify climate (from wt-b5)
+usage: python -m website.climate verify [-h] --store STORE --cache CACHE
+                                        [--independent]
+python -m website.climate verify: error: the following arguments are required: --cache
+exit 2
+[01:59:54] verify stations (from wt-b5)
+  "havre: PRCP 10 of 10, SNOW 10 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "helena: PRCP 10 of 10, SNOW 8 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "kalispell: PRCP 5 of 10, SNOW 7 of 10, SNWD 6 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "lewistown: PRCP 10 of 10, SNOW 2 of 10, SNWD 8 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "livingston: PRCP 10 of 10, SNOW 3 of 10, SNWD 10 of 10, TMAX 9 of 10, TMIN 8 of 10",
+  "miles-city: PRCP 7 of 10, SNOW 5 of 5, SNWD 5 of 5, TMAX 10 of 10, TMIN 10 of 10",
+  "missoula: PRCP 5 of 10, SNOW 10 of 10, SNWD 10 of 10, TMAX 10 of 10, TMIN 10 of 10",
+  "sidney: PRCP 7 of 10, SNOW 10 of 10, SNWD 9 of 10, TMAX 5 of 10, TMIN 5 of 10",
+  "west-yellowstone: PRCP 6 of 10, SNOW 1 of 10, SNWD 6 of 10, TMAX 7 of 10, TMIN 6 of 10"
+ ]
+}
+exit 1
+[01:59:55] verify gauges (from wt-b5)
+  "peaks_failed": 0,
+  "pool": 192,
+  "pool_mt": 102,
+  "pool_out_of_state": 90,
+  "pool_usgs_numbers": 174,
+  "requests": 0,
+  "scope": 108,
+  "scope_usgs_numbers": 104
+ },
+ "ok": true
+}
+exit 0
+[01:59:55] verify snowgrid (from wt-b5)
+  },
+  {
+   "grid_in": 36.42,
+   "station": "USW00024033",
+   "station_in": 40.91,
+   "wy": 2026
+  }
+ ],
+ "shown": false,
+ "state": "unavailable"
+}
+exit 0
+[01:59:56] done

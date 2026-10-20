@@ -1,0 +1,523 @@
+{
+ "checker": "B5 part B1 third re-check (read-only): gates B5-5, B5-10, B5-11 (Python half), B5-14 (Python half), B5-15, B5-16, B5-17 and B5-18 (local clauses); every second-list item; measurements; open items for part B2",
+ "branch": "claude/hail-b5",
+ "worktree": {
+  "path": "/home/user/wt/wt-b5",
+  "head": "26c737a WIP (local safety): B5 part B1 completion (D31 to D43); on dcb7e93, de0793c, fa33c8d; base db84d76",
+  "status_short": "13 modified, 0 untracked, 0 staged: docs/DECISIONS.md, docs/DESIGN.md, docs/ROADMAP.md, research/hail-history/validation-evidence/b5-verification.json, tests/test_joins.py, tests/test_site.py, tests/test_summary.py, website/build.py, website/joins.py, website/snowgrid.py, website/sources.py, website/summary.py, website/templates/about.html",
+  "diff_stat_db84d76": "44 files changed, 20222 insertions(+), 657 deletions(-)",
+  "changed_by_checker": false,
+  "committed_or_staged_by_checker": false,
+  "note": "Git commands were read-only (status, log, diff, grep, archive). Builds and tests ran in copies without .git. The worktree status is the same before and after this check."
+ },
+ "run_finished_utc": "2026-10-20 02:06 UTC (approx.)",
+ "scratch": "/home/user/hail-b5/out/recheck-b1c2/ keeps logs/ and probes/ (text only). Deleted when checked: the worktree copy (no .git), the store copies (store-verify, store-fail, store-time), the db84d76 archive copy, and all seven builds (flag-off from the copy and from db84d76, the hail-history build, two failure-injection builds, a repeat hail-history build, a second flag-off build).",
+ "result_summary": "FAIL. Unit suite: 10 of 1264 tests fail; 7 are the allowed browser-against-module subtests and 3 are not allowed. Gates B5-5 (HW.A count 276 against 277) and B5-10 fail; B5-11 and B5-16 are partial; B5-14, B5-15, B5-17 and B5-18 (local clauses) pass. D44 is applied (joins verify 48 of 48, 0 unplaced). D36 (the town-page gust list from the town point) is not done, and the test that checks it fails. The verification record still carries the pre-D44 numbers.",
+ "gate_status": {
+  "B5-5": "fail",
+  "B5-10": "fail",
+  "B5-11": "partial (Python half)",
+  "B5-14": "pass (Python half; one gap noted)",
+  "B5-15": "pass",
+  "B5-16": "partial",
+  "B5-17": "pass",
+  "B5-18": "pass (local clauses; sheet smoke, live preview and off-site requests are part B2)"
+ },
+ "unit_tests": {
+  "command": "PYTHONDONTWRITEBYTECODE=1 /home/user/hail-b1/venv/bin/python -m unittest discover -s tests, in a copy of the worktree without .git (log: logs/unittest.log)",
+  "tail": [
+   "Ran 1264 tests in 255.249s",
+   "FAILED (failures=10)",
+   "rc=1"
+  ],
+  "errors": 0,
+  "failing": [
+   "tests/test_site.py HailJoinedRecords.test_a_fire_weather_zone_file_that_did_not_load_keeps_the_public_products (browser text against module text; ALLOWED)",
+   "tests/test_site.py HailJoinedRecords.test_a_part_that_did_not_load_reads_the_same_on_both_surfaces (browser against module; ALLOWED)",
+   "tests/test_site.py HailJoinedRecords.test_a_station_file_that_did_not_load_says_so_and_gives_no_count (browser against module; ALLOWED)",
+   "tests/test_site.py HailJoinedRecords.test_a_zone_file_that_did_not_load_keeps_the_point_records_and_says_so [missing] (browser against module; ALLOWED)",
+   "tests/test_site.py HailJoinedRecords.test_a_zone_file_that_did_not_load_keeps_the_point_records_and_says_so [not JSON] (browser against module; ALLOWED)",
+   "tests/test_site.py HailJoinedRecords.test_a_zone_file_that_did_not_load_keeps_the_point_records_and_says_so [records that are not a list] (browser against module; ALLOWED)",
+   "tests/test_site.py HailJoinedRecords.test_the_browser_joins_say_what_the_module_says_for_three_cells (browser against module; ALLOWED)",
+   "tests/test_site.py HailJoinedRecords.test_the_billings_town_page_joins_sit_in_their_sections_newest_first (NOT ALLOWED: Python town page; expects 'Station: Jun 16, 2025: 50 kt (58 mph) at Billings/Logan Intl, about 2.6 miles away', the page prints 'about 2.3 miles away' (cell centre); D36)",
+   "tests/test_snowgrid.py UrlAndWordsTests.test_no_forbidden_term_in_any_snow_word (NOT ALLOWED: WORDS['unit_failed'] ends 'This is not an all-clear.', which this test's FORBIDDEN pattern matches; the test predates D41)",
+   "tests/test_snowgrid.py UrlAndWordsTests.test_the_unit_sentence_is_the_plain_sentence_with_no_regression_word (NOT ALLOWED: exact-text assertion lacks the D41 all-clear sentence that the code now adds)"
+  ],
+  "allowed_failures": 7,
+  "not_allowed_failures": 3,
+  "previous_check": "1235 tests, 8 failures (the 7 browser subtests and the Billings test)",
+  "result": "FAIL"
+ },
+ "selftest_payload": {
+  "command": "python desktop/launcher.py --selftest payload (worktree copy, venv python)",
+  "rc": 0,
+  "output": "PASS  payload 1.0.0",
+  "result": "pass"
+ },
+ "flag_off_identity": {
+  "command": "python -m website.build --out <dir> --sample --now 2026-10-19T12:00:00Z, from the worktree copy and from git archive db84d76",
+  "files": {
+   "worktree_copy": 94,
+   "db84d76": 94
+  },
+  "diff_rq": "empty, rc 0 (identical)",
+  "stderr_bytes": 0,
+  "result": "pass (B5-18 flag-off clause)"
+ },
+ "hail_history_builds": {
+  "command": "python -m website.build --out <dir> --sample --hail-history --hail-store <copy of /home/user/hail-b5/out/b1/store> --now 2026-10-19T12:00:00Z",
+  "rc": 0,
+  "stderr_bytes": 0,
+  "files": 19384,
+  "bytes": 169041787,
+  "seconds_wall": 16.5,
+  "repeat_build_from_same_store": "byte-identical (diff -rq empty)",
+  "flag_off_vs_hail_history": "24 entries: 23 files differ (about.html, data/map.json, data/state.json, map.html, the 17 town pages, and index.html and reports.html, whose only change is one 'Loaded:' source line that gains 'Hail history (radar estimates)') and hail/ is added",
+  "result": "pass (local clauses of B5-18)"
+ },
+ "smoke_pages": {
+  "command": "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python tools/smoke_pages.py <hail-history build> (run from the worktree copy)",
+  "tail": [
+   "Page width check passed: every page fits the screen at 288, 320, 375, 390, 768, 1280, 1440 px, light and dark.",
+   "Five-season table check passed on town pages (no sideways scroll; cards below 900 px): 288, 320, 375, 390, 640, 768, 899, 900, 1280, 1440 px: 17 pages each.",
+   "rc=0"
+  ],
+  "fail_or_error_lines": 0,
+  "scope": "every page the smoke opens at the widths listed; the sheet (map.html) checks at 390 and 1280 px are part B2",
+  "result": "pass (B5-18 smoke_pages clause)"
+ },
+ "joins_verify": {
+  "command": "python -m website.joins verify <copy of /home/user/hail-b5/out/b1/store> --cache /home/user/hail-b5/cache/joins (index joins built_at 2026-10-20T01:24:00Z; log: logs/joins-verify.json)",
+  "rc": 0,
+  "ok": true,
+  "checks": {
+   "total": 48,
+   "passing": 48,
+   "failing": 0
+  },
+  "d44_placement_table": {
+   "groups": 15764,
+   "current": 785,
+   "mapped": 3327,
+   "iem_set": 11580,
+   "changeover_week": 72,
+   "unplaced": 0,
+   "expected_unplaced": 0,
+   "simplified_outline": 1279
+  },
+  "d44_iem_sets": "seven snapshots with 103, 103, 103, 103, 83, 83, 83 zones; each matches its recorded SHA-256; the 20 zones removed at the switch are the 20 the placement names; zones before the switch: 21 codes",
+  "d30_tile_events": "4,597 tile event files; 0 referenced events missing; 0 unreferenced; largest 22,933 bytes gzip (budget 100,000; gzip -9 here 22,893); largest raw 222,343 bytes (r0065_c0169)",
+  "d38_towns_file": "hail/j/towns.json: 17 towns, 469 events, 29,467 bytes; 0 town events outside their cell covers; 12 cover-only cases; 0 towns missing",
+  "d11_town_point": "17 towns; 3,449 events; 707 pairs; 4 disagreements listed (centre inside, point outside)",
+  "d15_hit_and_miss": "737 rows; Lewistown 2.50 in and Petrolia Lake 3.50 in present; none before 2021-10-17",
+  "d8_periods": "D8 named period cases: the verify check passes (its detail prints MTZ004, MTZ302 and MTZ320 as ok)",
+  "reported_not_failed": [
+   "NCEI zone names against the 2026 names: 83 disagree after normalising (e.g. MTZ060 'Little ROCKY mountains' against 'Southwest Phillips')"
+  ],
+  "result": "pass (48 of 48)"
+ },
+ "probes": {
+  "method": "Town pages converted to text with a scratch HTML parser (probes/totext.py); summary.describe_summary on store copies at the cells named; joins and summary distances computed with the repo's own functions and with haversine.",
+  "red_lodge": {
+   "cells": "(983, 2074) is the brief's cell (its centre is 0.30 mi from NCEI record 26); (981, 2075) is the cell of the town point 45.1877 N, 109.2452 W (record 1.22 mi away; the town point 1.40 mi)",
+   "record": "events.json records[26]: 2022-06-10 (day index 891 from 2020-01-01), 45.1677 N, 109.2503 W, flood, RED LODGE, cause 'Heavy Rain / Snow Melt'; verify b5.june_2022 reads it at 2022-06-10T07:00Z, 0.3 mi",
+   "records_row": "'Flood and flash flood records within 5 miles' (kind 'Record (NCEI)'): 2021-22 value 1 ('1 flood or flash flood record', 108 days missing); flooding lead 'Record (NCEI): 2 flood or flash flood records within 5 miles in these five years' at cell (983, 2074)",
+   "limit": "the cell summary prints the count only; the record's date and distance are not printed (town pages print each record with date, cause and distance); Red Lodge is not a town page",
+   "result": "pass at count level (D48); date and distance not rendered for non-town cells"
+  },
+  "billings_gust_list": {
+   "town_point": [
+    45.7833,
+    -108.5007
+   ],
+   "station": "Billings/Logan Intl, hail/s/BIL.json at 45.8069, -108.5422",
+   "miles_from_town_point": 2.58,
+   "miles_from_cell_centre_45.785_-108.505": 2.35,
+   "miles_from_tile_centre_45.75_-108.55": 3.95,
+   "page_text": "'Gust station: Billings/Logan Intl, 2.3 miles from this spot (the nearer of this tile's two gust stations)' and 'about 2.3 miles away' on the gust lines; Laurel 13.6 miles",
+   "tile_list": "hail/tl/r0092_c0214.json: centre 45.75, -108.55; cap 6; Billings/Logan Intl 4.0 mi from that centre",
+   "result": "FAIL (D36): measured from the cell centre and picked from the tile-centre list"
+  },
+  "five_season_gust_cells": {
+   "peak_gust_row": "17 of 17 pages: the five-season cell names the station ('29 days at Billings/Logan Intl', '15 days at Bozeman/Gallatin') or reads 'Data unavailable' with a five-season reason line",
+   "strongest_gust_row": "17 of 17 pages: the five-season cell names the station or reads 'Data unavailable' with a reason; the season cells name no station (65 of 85)",
+   "result": "pass for the five-season cells; season cells open (B5-16)"
+  },
+  "ice_dam_kind_word": "present on 17 of 17 pages; leads with 'Station reading:' on 13 pages; on Glasgow, Glendive, Kalispell and Sidney the kind is inside the label's parenthesis ('days, station reading; a measured pattern, not ice dams')",
+  "all_clear_check": {
+   "town_history_sentence_lines": "207 sentence lines with an unavailable, partial or held marker checked across the town pages and About: 199 end with the sentence. The 8 that do not are 1 live-block line on Glasgow (town.html:71; see failed_checks) and 7 About descriptive paragraphs that describe sources (not result lines). 109 short table cells (e.g. 'Data unavailable116 days missing') are excluded because each has a detail line below its table that ends with the sentence.",
+   "live_block_miss": "Glasgow 'Observed now' block: 'No reading from this station in this update (not published (HTTP 404)).' has no all-clear (website/templates/town.html:71, unchanged since db84d76; not B5 history text)",
+   "about_descriptions": "About has 7 descriptive paragraphs that name missing or unpublished sources (e.g. the 2020-21 NOHRSC file); they describe sources and are not result lines"
+  },
+  "only_one_station_lines": "Anaconda, Butte and Miles City (snowfall; snow depth on Miles City): each ends 'This is not an all-clear.'",
+  "iem_ugcs_row": "website/sources.py:460 CONTRACTS 'iem_ugcs' ('Montana public forecast zones by date (Iowa State IEM ugcs service: simplified outlines)'); About lines 137 to 138 (the IEM terms: 'free to use for any lawful purpose', as-is, attribution requested) and 230 to 233 (requests, the 103 and 83 zone sets, the simplified outlines and the placement rule)",
+  "snowgrid_lines": "17 of 17 pages carry 'The NOAA National Snow Analysis was checked against station season totals and left out: its amounts did not match the station totals closely enough to show. This is not an all-clear.'; no page prints the regression slope; About (line 221) gives the slope 0.664 outside 0.85 to 1.15 as the method; the unit sentence WORDS['unit_failed'] is not printed on pages",
+  "held_lines": "Lightning, UV and sunlight, roof surface temperature and ponding carry reasons and the all-clear on 17 of 17 pages; the radar sentence is on 17 of 17",
+  "roof_ice_dam_failure_state": "D16 path (stations block 'unavailable'): the line reads 'Station readings could not be loaded in this update; that is not the same as no station readings. This is not an all-clear.' Files missing under a 'loaded' block: 'no season has a usable value' (see B5-14)",
+  "r20_title": "'freeze-thaw damage to roofs' appears once, in the About references list (About line 97, 'R20, not quoted'); 0 hits on town pages"
+ },
+ "gates": [
+  {
+   "gate": "B5-5",
+   "part": "product counts equal the research's window counts with zero difference; June 2022 (E01) products, NCEI record and Billings gauge peak",
+   "status": "fail",
+   "evidence": "Window counts (joins index vtec_counts; verify b5.research_window_counts and b5.store_window_counts): 16 of the 17 source-4 products equal the research count (FL.W 43, FA.W 37, FA.Y 548, FL.A 35, FL.Y 10, SQ.W 78, WW.Y 865, WS.A 226, HT.Y 58, EH.W 4, EH.A 3, FR.Y 14, FZ.W 4, DU.Y 3, county FA.A 18 and FF.A 2). HW.A is 276 against 277: delta -1 (verify reports it in store_window_counts; no check fails on it; the record does not explain it). Two other keys differ by one and are not in source 4: HW.W 338 against 339 and FW.W 170 against 169. June 2022 passes (verify b5.june_2022; D24): Red Lodge FA.W 2022-06-12 05:00 to 19:15Z; Gardiner FL.W 2022-06-13 12:00Z; Billings FL.W 2022-06-14 05:41Z and FL.A 2022-06-14 06:00Z; NCEI flood at Red Lodge 2022-06-10 07:00Z, 0.3 mi; no NCEI flood at Gardiner or Billings. Billings gauge: USGS 06214500 (Yellowstone River at Billings, hail/g/06214500.json) water-year 2022 peak 2022-06-15 = 1637 hundredths of a foot = 16.37 ft.",
+   "findings": [
+    "HW.A window count is 276 against the research's 277 (one event); unexplained in the record"
+   ]
+  },
+  {
+   "gate": "B5-10",
+   "part": "Python half: forbidden-term test covers templates and the six sheet strings; 'structure' only in proper names; 'damage' only in allowed contexts; four Data unavailable lines with reasons; radar sentence",
+   "status": "fail",
+   "evidence": "Pass: tests/words_rules.py (residue, then forbidden_words, then has_no_hail) finds no forbidden word in the 349 WORDS template strings of summary.py, joins.py, climate.py, stations.py, snowgrid.py, gauges.py, build.py and sources.py; the four held lines carry reasons and the all-clear on 17 of 17 pages; the radar sentence is on 17 of 17; 'structure' appears once on the Glendive page, inside a quoted NCEI remark (D46 allows it); 'damage' in About appears in the R20 citation (D46 allows it) and in the footer sentence (finding 3); the three 'Only one station' partial lines now end with the all-clear. Fail: (1) About keeps '-3 (no coverage)' from the B2 MESH row (website/sources.py:207, rendered on About line 201); D41 says the stem leaves About and D45 allows only 'radar coverage'. (2) tests/test_snowgrid.py test_no_forbidden_term_in_any_snow_word fails on WORDS['unit_failed'], which ends with the required 'This is not an all-clear.' (snowgrid.py:135 to 136). (3) The site footer 'Weather information only. It does not confirm roof damage ...' (website/templates/base.html:45, unchanged since db84d76) appears on every page and on About (line 259); D13 allows 'damage' only as a source type word, inside a quotation or as 'NWS damage threat tag'. (4) About radar line 'a blank area is not proof of dry weather' (about.html; 'dry' is on the words module's list; the line was edited in B5).",
+   "findings": [
+    "About keeps '(no coverage)' (sources.py:207; D41, D45)",
+    "snowgrid words test fails on the required all-clear sentence (test predates D41)",
+    "site footer 'does not confirm roof damage' on every page (base.html:45; pre-existing; D13 literal)",
+    "About radar line 'not proof of dry weather' (words-module stem 'dry')"
+   ]
+  },
+  {
+   "gate": "B5-11",
+   "part": "Python half: every cell has a unit and a kind word; no sentence needs decoding",
+   "status": "partial",
+   "evidence": "Kind words: 476 five-season table row labels on 17 pages, 0 without a kind word. Units: every value carries a unit, a count, 'No ...' or 'Data unavailable' (17 of 17 by the prior check; spot-checked here, including the 34 grid temperature rows, which carry 'Grid estimate' and a date on every value). Two named 'days missing' counts on 14 lines name each element (e.g. 'snowfall: 3 days missing; deepest snow: 12 days missing'), which D47 allows. Ice-dam line: kind word on all 17 pages, but on Glasgow, Glendive, Kalispell and Sidney it is only inside the label's parenthesis, not leading the line as on the other 13 pages (summary.py:2109 to 2110). Zone zero lines are now plain counts of placed products (0 unplaced after D44); the caveat path is inert and tested (tests/test_summary.py:681 to 690).",
+   "findings": [
+    "ice-dam line does not lead with its kind label on Glasgow, Glendive, Kalispell and Sidney"
+   ]
+  },
+  {
+   "gate": "B5-14",
+   "part": "Python half: each source failure marks its part unavailable (D16) and the rest builds",
+   "status": "pass",
+   "evidence": "Injected failure in a copy of the B1 store: hail/g/ and hail/sd/ removed with their 675 manifest entries; the stations and gauges index blocks set to state 'unavailable' with a problem sentence; the manifest entry for hail/index.json updated to its new size and SHA-256 (the first try without that update made the whole history refuse, as the manifest check should). Build: rc 0, stderr 0 bytes, 17 town pages. Failure lines read as D20 requires: station rows 'Station readings could not be loaded in this update; that is not the same as no station readings. This is not an all-clear.'; river gauge 'River gauge: The river gauge line could not be loaded in this update; that is not the same as no river flood record. This is not an all-clear.'; the roof ice-dam line carries the station sentence; no page prints 'No gauge within 10 miles' or 'no station has enough reports' (D32). The rest of each page builds. Browser half: part B2.",
+   "findings": [
+    "gap: when station files are missing but the index still says 'loaded', the roof ice-dam line reads 'Data unavailable for the five seasons: no season has a usable value, so no five-season figure is shown.' instead of the D20 reason (summary.py _dl_cells reads the missing files as empty seasons; the build does not check them)"
+   ]
+  },
+  {
+   "gate": "B5-15",
+   "part": "polygon rule D11: cell-cover counts before and after per product; town point check for the 17 towns lists every disagreement; null-geometry block test",
+   "status": "pass",
+   "evidence": "Cover counts (verify cover; centre rule before, touch rule after; centre_not_touched 0 for every product): FA.W 49,761 to 53,082 (+3,321); FA.Y 1,525,719 to 1,589,515 (+63,796); FF.W 124,672 to 136,322 (+11,650); FL.A 21,824 to 24,927 (+3,103); FL.W 28,921 to 32,550 (+3,629); FL.Y 6,711 to 7,559 (+848); SQ.W 209,618 to 221,132 (+11,514); SV.W 7,672,590 to 7,982,602 (+310,012); TO.W 23,958 to 25,755 (+1,797). Town point check: 17 towns, 3,449 events, 707 pairs; 4 disagreements listed, each centre-inside and point-outside: Belgrade SV.W 2023-08-30 03:01Z (cell 921,1882); Helena SV.W 2024-08-19 23:51Z and 2025-07-28 20:39Z (cell 841,1796); Kalispell SQ.W 2022-02-01 23:58Z (cell 680,1568). Null geometry: polygon_nulls joined 0, no_outline 0, unjoined 0 on the store; tests/test_joins.py:2400 (test_new_polygons_of_any_product_are_events_and_outline_less_ones_are_nulls) passes in the suite run.",
+   "findings": []
+  },
+  {
+   "gate": "B5-16",
+   "part": "temperature extremes and station rows: highest and lowest rows carry dates and the grid kind word; station rows name the station; no row mixes sources",
+   "status": "partial",
+   "evidence": "Pass: 34 grid temperature rows carry 'Grid estimate' and a date on every value; station temperature rows name the station in each season cell; the five-season snowfall rule holds (Billings 'Data unavailable' with the reason, two stations; Glendive 130.6 in, one station); both five-season gust cells on all 17 pages name the station or read 'Data unavailable' with a five-season reason line. Fail: 65 of the 85 season cells of the 'Strongest gust at that station' row name no station (only the five-season cell does; e.g. Billings '61 kt (70 mph) on Nov 16, 2021'); the Glendive roof line 'Station reading: 130.6 in of snowfall in the five seasons (the station named in each season).' names no station for the total.",
+   "findings": [
+    "65 of 85 strongest-gust season cells name no station",
+    "the roof snowfall total line names no station (Glendive)"
+   ]
+  },
+  {
+   "gate": "B5-17",
+   "part": "hit-and-miss table (D15) and its About summary in words",
+   "status": "pass",
+   "evidence": "verify b5.hit_and_miss: 737 reports; 464 hits; 273 misses; misses under by up to 3.01 in (median 0.88 in). Lewistown 2.50 in at 2025-06-15 22:48Z is a row (report 2.5, MESH 0.0, miss); Petrolia Lake 3.50 in at 2025-06-16 01:01Z is a row (MESH 0.48, under by 3.01); no report before 2021-10-17; Glendive 4.00 in on 2021-06-08 is a research case outside the window, not a row. About line 76: 'NWS hail reports of one inch or more were checked against the radar estimate and the radar signatures near each report, for the same day. The radar missed many of them.' No numbers.",
+   "findings": []
+  },
+  {
+   "gate": "B5-18",
+   "part": "local clauses: flag-off and --hail-history builds unchanged; smoke_pages; Chromium smoke at 390 and 1280 px and the live preview and zero off-site requests are part B2",
+   "status": "pass (local clauses)",
+   "evidence": "Flag-off identity: 94 files in the worktree copy and in db84d76; diff -rq empty; stderr 0. Hail-history build: rc 0, stderr 0, 19,384 files, 169,041,787 bytes, 16.5 s wall; a repeat build from the same store is byte-identical; against the flag-off build 23 files differ (the expected history pages, map and map data, and the 'Loaded:' source line on index.html and reports.html) and hail/ is added. smoke_pages.py: rc 0, no fail or error lines; the page width check passed at 288, 320, 375, 390, 768, 1280 and 1440 px in light and dark; the five-season table check passed on 17 town pages at 288, 320, 375, 390, 640, 768, 899, 900, 1280 and 1440 px. Not run here (part B2): the sheet smoke (map.html) at 390 and 1280 px, the live preview build, and the zero off-site request check.",
+   "findings": []
+  }
+ ],
+ "second_list": [
+  {
+   "item": "D44 applied in joins.py (IEM zone sets by date from the cached snapshots; changeover week counted; simplified-outline note; iem_ugcs CONTRACTS row; About credit; verify's placement table expected 0 unplaced; any remainder under D31's words)",
+   "status": "done",
+   "evidence": "joins verify 48 of 48; placement table groups 15,764 = current 785 + mapped 3,327 + IEM set 11,580 + changeover week 72 + unplaced 0; seven IEM snapshots match their SHA-256; sources.py:460 iem_ugcs row; About lines 137 to 138 and 230 to 233 credit IEM with its terms; 230 record lines carry '(placed with a simplified zone outline)'. No product remains unplaced, so D31's words are not shown."
+  },
+  {
+   "item": "D48: NCEI flood and flash flood records within 5 miles as their own row; the Red Lodge 2022-06-10 record in the row and in the flooding section (gate 5)",
+   "status": "done at count level (limit noted)",
+   "evidence": "The row 'Flood and flash flood records within 5 miles' (kind 'Record (NCEI)') is on all 17 town pages. Red Lodge cell (983, 2074): 2021-22 value 1; flooding lead 'Record (NCEI): 2 flood or flash flood records within 5 miles in these five years'. Limit: the cell summary prints the count without the record's date or distance (town pages print each record with date and distance)."
+  },
+  {
+   "item": "D36: the town-page station-gust list picks and measures from the town point (joins.py around line 2123)",
+   "status": "not done",
+   "evidence": "The Billings page gives 'Gust station: Billings/Logan Intl, 2.3 miles from this spot' and 'about 2.3 miles away' on its gust lines: the cell-centre distance (2.35 mi). From the town point it is 2.58 mi (the test's 2.6). Causes: summary.py _Spot takes the cell centre as its lat/lon on town pages too (summary.py:844 to 855) and gust_station() picks from the tile's two-station list and measures from the spot (summary.py:1011 to 1024); that list is built from the tile centre (joins.py:2284); build.py:639 calls describe_joins without a spot, so joins falls back to the cell centre (joins.py:3789)."
+  },
+  {
+   "item": "The five-season gust cells name their station or read 'Data unavailable' with the reason",
+   "status": "done",
+   "evidence": "17 of 17 pages for both gust rows (see probes.five_season_gust_cells). The season cells of the strongest-gust row name no station (65 of 85; B5-16)."
+  },
+  {
+   "item": "The ice-dam line's kind word on every page",
+   "status": "done (leading label differs on four pages)",
+   "evidence": "Kind word present on 17 of 17 pages. On Glasgow, Glendive, Kalispell and Sidney it is inside the label's parenthesis, lower case ('days, station reading; a measured pattern, not ice dams'), not the leading 'Station reading:' used on the other 13 pages."
+  },
+  {
+   "item": "The roof snow line's failure state carries the D20 reason",
+   "status": "done on the D16 path; gap on the missing-file path",
+   "evidence": "With the stations block unavailable, the roof line reads 'Station readings could not be loaded in this update; that is not the same as no station readings. This is not an all-clear.' (Billings and Glendive). With the station files missing under a loaded index it reads 'no season has a usable value' (B5-14 finding)."
+  },
+  {
+   "item": "The 'Only one station' partial lines' all-clear",
+   "status": "done",
+   "evidence": "Anaconda and Butte (snowfall), Miles City (snowfall and snow depth) end with 'This is not an all-clear.' (4 lines, 0 without)."
+  },
+  {
+   "item": "The R20 title out of the roof line (D46)",
+   "status": "done",
+   "evidence": "'freeze-thaw damage to roofs' appears once, in the About references list ('R20, not quoted', About line 97); 0 hits on town pages."
+  },
+  {
+   "item": "test_the_billings_town_page_joins_sit_in_their_sections_newest_first brought to the s/ v3 fixture (one gust day)",
+   "status": "not done (fixture done; the test still fails on D36)",
+   "evidence": "website/data/hail-fixture/hail/s/BIL.json is 'hail-station-v3' with one gust day ([1993, 58 mph, 50 kt, 0]) and the page shows the Jun 16, 2025 line. The test fails only on the distance: it expects 'about 2.6 miles away' (town point, D36); the page prints 'about 2.3 miles away' (cell centre)."
+  },
+  {
+   "item": "The unplaced-caveat on zone rows for seasons with unplaced products after D44",
+   "status": "done (inert)",
+   "evidence": "0 unplaced zone products after D44 (verify), so no page prints the caveat; zero lines are counts of placed products. The caveat path is tested: tests/test_summary.py:681 to 690 and tests/test_joins.py:1421."
+  },
+  {
+   "item": "The record's gates and the docs brought to the numbers",
+   "status": "partial",
+   "evidence": "Done: docs/DECISIONS.md D44 to D48 (lines 868 to 872); docs/ROADMAP.md budget line (j/ 87,628,936 bytes; hail/ 177,677,748 bytes), matching the current store. Not done: research/hail-history/validation-evidence/b5-verification.json still states 1,230 unplaced groups ('zone_products_unplaced': 1230 at line 321; 'unplaced_groups': 1230 at line 441; the open item at line 566), 'zone_placed_by_code_alone': 10422 (line 340), and the budgets 86,276,949 and 176,293,267 bytes (lines 92, 571, 688). This check's results are not yet recorded."
+  },
+  {
+   "item": "The seven browser-against-module tests left to part B2 and named in the record",
+   "status": "done",
+   "evidence": "The record names the seven entries (research/hail-history/validation-evidence/b5-verification.json lines 733 to 738: 'they stay red until part B2') and docs/ROADMAP.md:61 names them. The unit log shows exactly these seven subtests failing as browser-against-module."
+  }
+ ],
+ "measurements": {
+  "unit_tests": {
+   "ran": 1264,
+   "seconds": 255.2,
+   "failures": 10,
+   "errors": 0,
+   "rc": 1
+  },
+  "store_b1_sizes_current": {
+   "c": {
+    "files": 4569,
+    "bytes": 35149062
+   },
+   "t": {
+    "files": 4597,
+    "bytes": 32022304
+   },
+   "tl": {
+    "files": 4597,
+    "bytes": 13667217
+   },
+   "sd": {
+    "files": 571,
+    "bytes": 3071175
+   },
+   "g": {
+    "files": 104,
+    "bytes": 285713
+   },
+   "k": {
+    "files": 56,
+    "bytes": 13689
+   },
+   "s": {
+    "files": 60,
+    "bytes": 34913
+   },
+   "z": {
+    "files": 135,
+    "bytes": 1943955
+   },
+   "j": {
+    "files": 9196,
+    "bytes": 87628936,
+    "note": "includes j/e"
+   },
+   "j_e": {
+    "files": 4597,
+    "bytes": 63082924
+   },
+   "hail_total": {
+    "files": 23887,
+    "bytes": 177677748
+   },
+   "events_json": {
+    "bytes": 6083996
+   },
+   "index_json": {
+    "bytes": 643277
+   },
+   "manifest_json": {
+    "bytes": 3217507
+   },
+   "n": "absent (unit check fails; no snow grid)",
+   "note": "the prior check recorded j/ 86,276,949 and hail/ 176,293,267 bytes; these are the current figures on the store built 2026-10-20 01:24 UTC"
+  },
+  "map_json": {
+   "raw_bytes": 134579,
+   "gzip9_bytes": 26244
+  },
+  "products_window": {
+   "FL.W": 43,
+   "FA.W": 37,
+   "FA.Y": 548,
+   "FL.A": 35,
+   "FL.Y": 10,
+   "SQ.W": 78,
+   "WW.Y": 865,
+   "WS.A": 226,
+   "HW.A": "276 (research 277)",
+   "HT.Y": 58,
+   "EH.W": 4,
+   "EH.A": 3,
+   "FR.Y": 14,
+   "FZ.W": 4,
+   "DU.Y": 3,
+   "FA.A_county": 18,
+   "FF.A_county": 2
+  },
+  "hit_and_miss": {
+   "reports": 737,
+   "hits": 464,
+   "misses": 273,
+   "misses_under_by_max_in": 3.01,
+   "misses_under_by_median_in": 0.88
+  },
+  "gusts": {
+   "dropped": [
+    {
+     "station": "LWT",
+     "date": "2023-03-13",
+     "kt": 182.5
+    },
+    {
+     "station": "DLN",
+     "date": "2023-11-30",
+     "kt": 165.1
+    },
+    {
+     "station": "SDY",
+     "date": "2023-08-06",
+     "kt": 255.0
+    }
+   ],
+   "flagged_for_check": [
+    {
+     "station": "HVR",
+     "date": "2025-02-20",
+     "kt": 105.1
+    },
+    {
+     "station": "MSO",
+     "date": "2025-05-09",
+     "kt": 86.0
+    }
+   ]
+  },
+  "builds": {
+   "flag_off_worktree_seconds": 7.5,
+   "flag_off_files": 94,
+   "hail_history_files": 19384,
+   "hail_history_bytes": 169041787,
+   "hail_history_seconds": 16.5
+  },
+  "daily_job": "not measured: no daily pulls were run; the 25-minute budget (B5-12) and the joins timing are not confirmed here",
+  "browser_390px": "not run (part B2)",
+  "forbidden_term_grep": {
+   "method": "tests/words_rules.py residue and forbidden_words; added lines of website/*.py and website/templates (string literals only, identifiers and comments skipped); built town-page history text; About text",
+   "word_templates": "349 strings, 0 hits after exemptions",
+   "added_user_text": "1 hit: about.html radar line 'not proof of dry weather' (B5 edited the line); quoted hits are allowed (IEM and NWS disclaimers, NCEI remark, the NWS damage threat tag label)",
+   "town_history_text": "0 hits in the history blocks except the site footer sentence (base.html:45, pre-existing)",
+   "about_hits": "20 lines with module-stem hits after exemptions: '(no coverage)' (sources.py:207; fail, D41); 'does not confirm roof damage' (About line 259; the footer text); 'claim' (the NWS terms, not quoted); 'probability' (the PROB field definition); 'dry' (radar line); older B0 and B2 text with stems 'chance', 'clears', 'safe', 'fails', 'replaced' and the source title 'Snow Load Safety Guide' (citation)",
+   "allowances": "D45 'radar coverage' allowed (About line 185); D46 R20 title in the About references list allowed; D13 quotation allowance for 'structure' (Glendive remark) and 'warranty' (IEM disclaimer)"
+  },
+  "banned_names": {
+   "list": "not in the repository (docs/ROADMAP.md:64 and b5-verification.json:464 say the owner confirms it); no official count is possible",
+   "em_dash_added_lines": 0,
+   "em_dash_method": "U+2014 counted over the 20,222 added lines of git diff db84d76 (en dash U+2013: 0)",
+   "proxy_model_vendor_terms": {
+    "terms": [
+     "Claude",
+     "Anthropic",
+     "ChatGPT",
+     "OpenAI",
+     "GPT",
+     "Gemini",
+     "Llama",
+     "Mistral",
+     "Copilot",
+     "Codex",
+     "Opus",
+     "Sonnet",
+     "Haiku"
+    ],
+    "hits": 0
+   },
+   "claude_hail_b5_branch_name_in_added_lines": 5,
+   "note": "D43 allows the branch name in docs; AGENTS.md has no exception for it (DECISIONS.md:867)"
+  }
+ },
+ "open_items_part_b2": [
+  "Switch map.js to the B1 Python words (warnings rows, the unavailable and partial sentences, held rows, gust and station rows); clear the seven browser-against-module subtests in tests/test_site.py HailJoinedRecords; remove the old WORDS_JOINS keys only after the switch.",
+  "Sheet smoke (tools/smoke_map.py) at 390 and 1280 px: the summary table inside the first screen; every cell with a unit and a kind word; the exact Python words on three cells (Billings, Benchland cell 792,1998, gate cell 797,1986); the fetch list per tap; the phone view at zoom 15 with every layer on under 650 KB gzip (map.json is 26,244 bytes gzip, the rest not measured here); zero off-site requests.",
+  "Per-tap tile files: hail/j/e/<tile>.json (4,597 files; largest 22,933 bytes gzip against 100,000) and hail/tl/<tile>.json; the browser never fetches j/events.json (6,083,996 bytes raw).",
+  "Sheet station picks at the clicked cell centre from the tl/ candidate lists (up to six passing per element, D36); the same town-point rule as the Python fix below.",
+  "Sheet gust rows and unavailable lines say what Python says (D37, D32): a zero only at 95 percent coverage; 'Data unavailable' with the days missing otherwise.",
+  "Sheet counts cell covers with 'covered this cell or part of it'; town pages count from hail/j/towns.json with 'covered this spot' (D38; done on the town pages).",
+  "Browser gauge lines: no second 'River gauge:' prefix (F8); the D20 sentence for every failed part (D16).",
+  "Table at 390 px: the first-screen check on the sheet (B5-11 browser half).",
+  "Combined store (B1, B3 and B4 merged as the plan's step 2): every module's verify passes on it; then the live preview on the branch and the zero off-site request check (B5-18 browser half).",
+  "Docs: restate the budgets (D42) to the measured sizes with the reason; bring research/hail-history/validation-evidence/b5-verification.json to the current numbers (1,230 unplaced becomes 0; 10,422; the j/ and hail/ bytes) and record this check's results and the HW.A difference.",
+  "Daily job end-to-end timing with the network pulls (B5-12); the joins step's 50-minute backstop against 1.5 times the measured time (D42; hail-store.yml:146)."
+ ],
+ "python_defects_before_or_with_part_b2": [
+  "D36: pass the town point as the spot for town pages (build.py:639 calls describe_joins without spot; joins.py:3789 falls back to the cell centre) and make _Spot.gust_station measure from the town point and pick from the candidate list at that point (summary.py:844 to 855, 1011 to 1024; joins.py:2284). The Billings test then expects 2.6 miles.",
+  "Remove '-3 (no coverage)' from the About MESH row: website/sources.py:207 (D41, D45).",
+  "tests/test_snowgrid.py: the two UrlAndWordsTests fail on the required all-clear sentence and the exact text of WORDS['unit_failed'] (snowgrid.py:135 to 136); update the tests to the D41 wording and keep the forbidden-term check on the rest of the sentence.",
+  "The site footer sentence 'It does not confirm roof damage' (website/templates/base.html:45, pre-existing) and its copy on About (line 259): reword under D13, or the owner rules it allowed.",
+  "About radar line 'not proof of dry weather' (website/templates/about.html): reword if 'dry' is to be kept off About (the words module lists it).",
+  "Glasgow live block 'No reading from this station in this update (not published (HTTP 404)).' (website/templates/town.html:71, pre-existing): add the all-clear sentence.",
+  "HW.A window count 276 against the research's 277: explain it (for example the D17 seen-set) or fix it, and record it.",
+  "Strongest-gust season cells: name the station in each cell (65 of 85 do not) (B5-16).",
+  "Roof snowfall total line (Glendive and any page with one station): name the station (B5-16).",
+  "Ice-dam line on Glasgow, Glendive, Kalispell and Sidney: lead with 'Station reading:' as on the other pages (B5-11).",
+  "Roof ice-dam line when station files are missing under a loaded index: check the files and give the D20 reason (summary.py _dl_cells; D16, D32).",
+  "D48 on non-town cells: print the record's date and distance, or say that the record is counted only (optional)."
+ ],
+ "decisions_for_owner_or_supervisor": [
+  "The site footer sentence 'It does not confirm roof damage' is on every page, unchanged since db84d76; D13 allows 'damage' only in listed contexts. Keep it as a site-wide disclaimer (owner ruling) or reword it.",
+  "The banned-name list (no model or vendor names) is not in the repository; the owner must supply it before a banned-name count can be made. The proxy count of model and vendor names over the added lines is 0.",
+  "The 'claude/hail-b5' branch name appears in 5 added lines in docs; D43 allows it, but AGENTS.md has no exception.",
+  "Budgets (ROADMAP O12, D42): j/ 87,628,936 bytes against 40 MB and hail/ 177,677,748 bytes against 60 MB; accept the measured sizes or cut them.",
+  "Whether the words module's stems (dry, chance, clears, safe, fails, replaced, claim, probability) apply to the About page's older B0 and B2 text; the B5 history text passes.",
+  "HW.A: whether a one-event difference from the research count is acceptable once explained, or whether the store must match the research."
+ ],
+ "failed_checks": [
+  "unit suite: tests/test_site.py HailJoinedRecords.test_the_billings_town_page_joins_sit_in_their_sections_newest_first (not allowed; D36 distance 2.3 against 2.6 mi)",
+  "unit suite: tests/test_snowgrid.py UrlAndWordsTests.test_no_forbidden_term_in_any_snow_word (not allowed; required all-clear sentence)",
+  "unit suite: tests/test_snowgrid.py UrlAndWordsTests.test_the_unit_sentence_is_the_plain_sentence_with_no_regression_word (not allowed; exact text lacks the all-clear)",
+  "unit suite (allowed, still red until part B2): HailJoinedRecords browser-against-module subtests: test_a_fire_weather_zone_file_that_did_not_load_keeps_the_public_products; test_a_part_that_did_not_load_reads_the_same_on_both_surfaces; test_a_station_file_that_did_not_load_says_so_and_gives_no_count; test_a_zone_file_that_did_not_load_keeps_the_point_records_and_says_so [missing], [not JSON], [records that are not a list]; test_the_browser_joins_say_what_the_module_says_for_three_cells",
+  "B5-5: HW.A window count 276 against the research's 277 (delta -1; zero difference required)",
+  "B5-10: About keeps '-3 (no coverage)' from website/sources.py:207 (D41 and D45)",
+  "B5-10: site footer sentence with 'damage' (website/templates/base.html:45) on every page (D13 literal; pre-existing; owner ruling)",
+  "B5-10: About radar line 'not proof of dry weather' (website/templates/about.html; words-module stem)",
+  "B5-10: the snowgrid words test failure (listed above) keeps the forbidden-term test from passing",
+  "B5-11: ice-dam line does not lead with its kind label on Glasgow, Glendive, Kalispell and Sidney (partial)",
+  "B5-16: 65 of 85 'Strongest gust at that station' season cells name no station (partial)",
+  "B5-16: the Glendive roof snowfall total line names no station (partial)",
+  "D36: the town-page station-gust list is measured from the cell centre (2.3 mi) and picked from the tile-centre list, not from the town point (2.6 mi)",
+  "Second list: the record and docs are not brought to the numbers (research/hail-history/validation-evidence/b5-verification.json still shows 1,230 unplaced and the old budgets)",
+  "All-clear on every unavailable line (built pages): Glasgow 'Observed now' line 'No reading from this station in this update (not published (HTTP 404)).' has no all-clear (website/templates/town.html:71; pre-existing live-block code, not B5 history text)"
+ ],
+ "notes": [
+  "Earlier re-check items now fixed: the all-clear on the three 'Only one station' partial lines (Anaconda, Butte, Miles City); 'structure' in the Glendive remark is allowed by D46; the R20 title is only in the About citation list; the ice-dam line carries its kind word on every page (form differs on four); the 14 'days missing' lines name each element (D47); the 25th row 'Flood and flash flood watches for the county' (County product) is on the Billings page.",
+  "Judgement: a missing station file under a loaded index is not caught by the build (B5-14 gap). The index-state path is the one a failed job writes, and it passes.",
+  "Judgement: D48 is met at count level on the cell summary; the record's date and distance print on town pages.",
+  "The joins verify reports 83 NCEI zone-name disagreements against the 2026 names (MTZ060 'Little ROCKY mountains' against 'Southwest Phillips' and others); reported, not failed.",
+  "Probes ran on store copies: Red Lodge (cells 983,2074 and 981,2075) and Billings (cell 921,2149; town point 45.7833, -108.5007) through summary.describe_summary and the repo's distance functions.",
+  "The unit count rose from 1235 to 1264 and the failures from 8 to 10: the two snowgrid tests are new (D41 all-clear wording); the Billings test (D36) already failed in the prior check."
+ ]
+}

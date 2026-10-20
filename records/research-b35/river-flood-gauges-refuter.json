@@ -1,0 +1,783 @@
+{
+ "slug": "river-flood-gauges",
+ "record_checked": "/home/user/wt/research-b35/river-flood-gauges.json",
+ "checked_utc": "2026-10-19",
+ "method": "Live requests re-run for the five primary checks and two supplementary checks (same URLs as the worker where the manifest gave them). Content checked, not only HTTP status (quotes matched against page text; counts recomputed; sizes compared with the worker's). Parsing with /home/user/hail-b1/venv/bin/python -I. Downloads kept under 3 MB each and deleted after the record was written; scripts and small result files kept.",
+ "primary_checks": [
+  {
+   "id": "P1",
+   "name": "Billings 15-minute gage height WY2021-2025 and June 2022 (flood days, window, daily statistics)",
+   "result": "confirmed with corrections (42.5 h; day convention)"
+  },
+  {
+   "id": "P2",
+   "name": "USGS annual peaks: Billings, 99-gauge batch, v1 table, inventory, replacement API",
+   "result": "corrected (duplicate USGS series; median; URL filter; source count)"
+  },
+  {
+   "id": "P3",
+   "name": "Quoted notices and terms against live pages",
+   "result": "quotes confirmed; legal basis corrected (NWS allowance; USGS carve-out)"
+  },
+  {
+   "id": "P4",
+   "name": "NWPS BILM8 detail, observed window, crest comparison, API root",
+   "result": "confirmed; one step-gap correction; crest scope note"
+  },
+  {
+   "id": "P5",
+   "name": "NWPS pool, categories, coverage, towns and Benchland recount from 642 live detail records",
+   "result": "confirmed (all counts reproduce); wording correction"
+  },
+  {
+   "id": "S1",
+   "name": "Supplementary: IEM June 2022 CSV and 14 NWS text products",
+   "result": "counts confirmed; Livingston polygon claim refuted; block-count correction"
+  },
+  {
+   "id": "S2",
+   "name": "Supplementary: worker byte accounting and fetch reliability",
+   "result": "37,245,565 bytes and 811 requests confirmed; per-gauge size range corrected"
+  }
+ ],
+ "counts_by_result": {
+  "confirmed": 82,
+  "corrected": 13,
+  "unverified": 3,
+  "refuted": 1
+ },
+ "checks": [
+  {
+   "id": "P1-01",
+   "claim": "WY2022 is the only water year in 2021-2025 at or above flood stage (13.5 ft)",
+   "result": "confirmed",
+   "detail": "Live IV re-fetch (same URLs as the worker): local-day daily mean and peak reach 13.5 ft only in WY2022. Max stage: WY2021 10.31, WY2023 10.32, WY2024 11.5, WY2025 10.56.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-02",
+   "claim": "Flood days per water year: WY2021 0, WY2022 2, WY2023-2025 0; no peak-only days",
+   "result": "confirmed",
+   "detail": "Counts on local MST7MDT calendar days match exactly (daily mean and daily peak rules agree; days_peak_only = 0 in every year).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-03",
+   "claim": "The two flood days are 2022-06-14 and 2022-06-15",
+   "result": "confirmed",
+   "detail": "True under the record's stated local-day rule. On UTC days 2022-06-16 also has a peak of 13.5 ft or more (00:00-03:30Z), giving three days. The record should state the day convention.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-04",
+   "claim": "Values per water year and missing intervals (WY2021 26, WY2022 253, WY2023 666, WY2024 1, WY2025 1)",
+   "result": "confirmed",
+   "detail": "Values 35,014 / 34,787 / 34,374 / 35,135 / 35,039 against 35,040 expected (35,136 in WY2024). Each file's byte count matches the record exactly (2,768,776; 2,751,621; 2,718,175; 2,778,836; 2,770,905).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json; fetch-log.tsv"
+  },
+  {
+   "id": "P1-05",
+   "claim": "No values on 2022-07-14 and 2023-08-02",
+   "result": "confirmed",
+   "detail": "Zero local-day values on both dates; neighbouring days have values.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-06",
+   "claim": "Max stage per water year and day (10.31 on 2021-06-07; 16.37 on 2022-06-15; 10.32 on 2022-12-11; 11.5 on 2024-06-11; 10.56 on 2025-06-03)",
+   "result": "confirmed",
+   "detail": "All five maxima and days reproduce.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-07",
+   "claim": "WY2025 has 20,205 provisional values among 35,039",
+   "result": "confirmed",
+   "detail": "Qualifiers: A 14,834 and P 20,205.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-08",
+   "claim": "170 fifteen-minute readings at or above 13.5 ft in June 2022",
+   "result": "confirmed",
+   "detail": "Count is exactly 170.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-09",
+   "claim": "First reading at or above 13.5 ft at 2022-06-14 07:15 UTC; last at 2022-06-16 03:30 UTC",
+   "result": "confirmed",
+   "detail": "That is 01:15 MDT on 06-14 and 21:30 MDT on 06-15 (local), as the record's dates imply.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-10",
+   "claim": "About 42.5 hours above flood stage (from 2022-06-14 07:15 UTC to 2022-06-16 03:30 UTC)",
+   "result": "corrected",
+   "detail": "42.5 h is 170 readings x 15 min, not a measured duration. The first and last readings are 44.25 h apart (178 slots); inside that span there are 2 readings below 13.5 ft and 6 unreported slots.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-11",
+   "claim": "Peak 16.37 ft at 15:30 UTC (09:30 MDT) on 2022-06-15",
+   "result": "confirmed",
+   "detail": "Peak reproduces; continuous 00065 from the new API also gives 16.37 ft at 15:30Z (Approved).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json; /home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P1-12",
+   "claim": "Daily mean and peak: 06-13 12.51 / 13.36 (23:45); 06-14 14.50 / 15.79 (23:00); 06-15 15.42 / 16.37 (09:30)",
+   "result": "confirmed",
+   "detail": "Recomputed from live IV on local days; all values match.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-13",
+   "claim": "Daily-mean discharge 74,600 ft3/s on 2022-06-15; instantaneous peak 83,600 ft3/s; mean about 11% below peak",
+   "result": "confirmed",
+   "detail": "Legacy dv 00060 gives 74,600 for 06-15. Live IV 00060 maximum is 83,600 at 2022-06-15 09:30 MDT. Difference is 10.8%.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-14",
+   "claim": "Legacy dv returns 00060 only: 1,826 daily values, 138,326 bytes; a 00065-only daily request returns no series (1,150 bytes)",
+   "result": "confirmed",
+   "detail": "Bytes match exactly. The 00065 request returns zero gage-height rows; 1,826 discharge rows over 2020-10-01 to 2025-09-30.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json; fetch-log.tsv"
+  },
+  {
+   "id": "P1-15",
+   "claim": "Discharge qualifiers A 1,143; A,e 472; P 211",
+   "result": "confirmed",
+   "detail": "Occurrences reproduce (A 1,615 = 1,143 + 472 rows; e 472; P 211).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P1-16",
+   "claim": "noDataValue -999999.0; no sentinel values found",
+   "result": "unverified",
+   "detail": "The noDataValue field was not re-read. The legacy 00060 window has 1,826 rows, so there are no missing days in that window.",
+   "evidence": ""
+  },
+  {
+   "id": "P1-17",
+   "claim": "The five IV water-year files total 13,788,313 bytes",
+   "result": "confirmed",
+   "detail": "Sum of the five exact sizes equals 13,788,313.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P1-18",
+   "claim": "Mismatch: daily-mean and peak rules flag the same days; peak 1.29 ft above mean on 06-14 and 0.95 ft on 06-15",
+   "result": "confirmed",
+   "detail": "15.79 - 14.50 = 1.29; 16.37 - 15.42 = 0.95.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P2-01",
+   "claim": "Annual-peak URL in the record returns 64 gage-height rows",
+   "result": "corrected",
+   "detail": "The URL in the record has no parameter_code filter. It returns 163 rows: 99 discharge (00060) and 64 gage height (00065). The 64 appears only after filtering to parameter_code=00065.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/peaks_recheck.json"
+  },
+  {
+   "id": "P2-02",
+   "claim": "64 water-year peaks, WY1963-2024; WY2025 absent; duplicate WY1987 and WY2023 rows",
+   "result": "confirmed",
+   "detail": "Years 1963-2024 (62 distinct years); duplicates WY1987 and WY2023 with the qualifiers the record gives; no WY2025 row.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/peaks_recheck.json"
+  },
+  {
+   "id": "P2-03",
+   "claim": "Peaks at or above 13.5 ft: 1974 14.6; 1996 13.73; 1997 15.0; 2011 14.37; 2022 16.37",
+   "result": "confirmed",
+   "detail": "Exactly these five rows.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/peaks_recheck.json"
+  },
+  {
+   "id": "P2-04",
+   "claim": "Peak endpoint response is 119,757 bytes",
+   "result": "confirmed",
+   "detail": "Exact size.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P2-05",
+   "claim": "NWPS historic crests match the USGS annual peaks",
+   "result": "corrected",
+   "detail": "Top eight crests and all values at or above 13.5 ft match to 0.01 ft. The full 64-row lists differ in four rows: NWPS-only 1944 (12.5 ft) and 1956 (11.07 ft), both before the USGS series starts in 1963; USGS-only WY1987 (7.01 ft) and WY2023 (10.32 ft, dated 2022-12-12).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/peaks_recheck.json"
+  },
+  {
+   "id": "P2-06",
+   "claim": "Billings flood stage 13.5 ft is confirmed by three sources, including the USGS-linked annual peak list",
+   "result": "corrected",
+   "detail": "Two sources only: NWPS categories and the NWS text 'Flood stage is 13.5 feet.' The USGS peak records carry no flood-stage field.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_recheck.json"
+  },
+  {
+   "id": "P2-07",
+   "claim": "98 of 99 Montana flood-stage gauges with a USGS number have an annual peak series",
+   "result": "corrected",
+   "detail": "At gauge level, 98 of 99 have rows (GLWM8 has none). The 99 LIDs match the worker's list exactly. But CBMM8 and CLRM8 both use USGS 06185110, so there are 97 distinct USGS series.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/v1_table_match.json"
+  },
+  {
+   "id": "P2-08",
+   "claim": "Earliest water year 1894",
+   "result": "confirmed",
+   "detail": "Earliest water year across the 98 series with rows is 1894.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/peaks_recheck.json"
+  },
+  {
+   "id": "P2-09",
+   "claim": "Median 72 years per gauge",
+   "result": "corrected",
+   "detail": "Median is 66 distinct water years per gauge (71.5 peak rows; median span first-to-last 78 years). The 72 appears to be the peak-row median rounded.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/peaks_recheck.json"
+  },
+  {
+   "id": "P2-10",
+   "claim": "v1 table: 98 gauges, 7,116 rows, 207,359 bytes raw, 54,253 bytes gzipped",
+   "result": "corrected",
+   "detail": "Rows (7,116) and raw bytes (207,359) reproduce, and gzip level 9 gives 54,253 (level 6 gives 55,914). But the table repeats one series: CBMM8 and CLRM8 each carry the same 32 rows. Distinct rows 7,084 across 97 USGS series; the duplicate entry is about 1.0-1.2 KB raw.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/v1_table_match.json"
+  },
+  {
+   "id": "P2-11",
+   "claim": "The v1 table matches the live series row for row, and its flood categories match NWPS",
+   "result": "confirmed",
+   "detail": "98 of 98 gauge entries match the live peaks row for row; flood_ft matches the saved NWPS categories for 98 of 98.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/v1_table_match.json"
+  },
+  {
+   "id": "P2-12",
+   "claim": "Latest annual-peak water year across the series is 2025",
+   "result": "confirmed",
+   "detail": "57 of the 98 series have WY2025 rows.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/peaks_recheck.json"
+  },
+  {
+   "id": "P2-13",
+   "claim": "Neither USGS service carries a daily gage-height (00065) series for Billings",
+   "result": "confirmed",
+   "detail": "Legacy dv 00065-only request is empty (1,150 bytes). New-API daily 00065 for WY2021-2025 returns 0 features (1,639 bytes).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P2-14",
+   "claim": "No Montana flood-stage gauge with a USGS number has a daily 00065 series",
+   "result": "confirmed",
+   "detail": "The Montana dv 00065 site list has 9 sites; none is among the 98 flood-stage USGS site numbers.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P2-15",
+   "claim": "Montana inventory: 9 dv 00065 sites, 268 iv 00065 sites, 898 dv 00060 sites",
+   "result": "confirmed",
+   "detail": "Counts are 9, 268 and 898.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P2-16",
+   "claim": "91 of the 99 flood-stage gauges have instantaneous 00065",
+   "result": "confirmed",
+   "detail": "91 of 99 at gauge level (LID).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P2-17",
+   "claim": "New API time-series metadata: instantaneous 00011 from 2007-10-01 to 2026-10-18; water-year peak 1963-06-16 to 2024-06-12",
+   "result": "confirmed",
+   "detail": "Both series reproduce; no daily 00065 series in the metadata.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P2-18",
+   "claim": "api.waterdata returns the same June 2022 daily discharge (6 values) as the legacy service",
+   "result": "confirmed",
+   "detail": "All six match: 06-12 44,400; 06-13 53,800; 06-14 68,700; 06-15 74,600; 06-16 41,100; 06-17 34,300.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "P2-19",
+   "claim": "109 anonymous api.waterdata requests returned 200 with no 429",
+   "result": "confirmed",
+   "detail": "In this check, 105 of 105 requests returned 200 and no 429 was seen. The worker's 109 was not re-run.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P2-20",
+   "claim": "WaterServices banner: decommissioned 22 Feb 2027; slowed from January 2027; migrate to api.waterdata.usgs.gov",
+   "result": "confirmed",
+   "detail": "Banner text reproduces (the record adds a period the page lacks after 2027).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P2-21",
+   "claim": "Blog schedule: 2 s delay 2026-11-16; 10 s 2027-01-11; 30 s 2027-01-25; redirect ~24 h 2027-01-27; 60 s 2027-02-01; redirect ~48 h 2027-02-15; shutdown 2027-02-22; 'before November 16th, 2026' quote",
+   "result": "confirmed",
+   "detail": "All dates and the quote match the blog page.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-01",
+   "claim": "NWS disclaimer: three-condition public-domain sentence (claim as own; implied endorsement; modified content presented as official)",
+   "result": "confirmed",
+   "detail": "Verbatim on weather.gov/disclaimer.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-02",
+   "claim": "NWS name and visual identifier are trademark-protected",
+   "result": "corrected",
+   "detail": "True, but the same page says the name and identifier may identify unaltered NWS content or links, and that permission is not needed to display unaltered NWS products that include them. The record omits this allowance.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-03",
+   "claim": "USGS-authored data are in the public domain",
+   "result": "confirmed",
+   "detail": "The copyrights page says USGS-authored data are in the U.S. Public Domain, but not all site content is: some non-USGS photographs and graphics are used with permission and must be licensed. The record should carry this carve-out.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-04",
+   "claim": "USGS asks for credit",
+   "result": "confirmed",
+   "detail": "The crediting page says: 'we ask that proper credit be given'.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-05",
+   "claim": "USGS API footer: public-domain statement; copyrighted items need permission",
+   "result": "confirmed",
+   "detail": "Footer: 'for the most part, is in the public domain ... Permission to reproduce copyrighted items must be secured from the copyright owner.'",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-06",
+   "claim": "IEM disclaimer: 'The materials found on this website are in the public domain ...'",
+   "result": "confirmed",
+   "detail": "Verbatim.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-07",
+   "claim": "IEM footer: 'All rights reserved' (terms conflict)",
+   "result": "confirmed",
+   "detail": "Footer reads 'Legal Copyright (c) 2001-2026 Iowa State University ... All rights reserved.' on the home page and the disclaimer page.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-08",
+   "claim": "NWPS API guide: no historical data other than crest and low-water history; the API makes available ... crest history ... flood category levels",
+   "result": "confirmed",
+   "detail": "Both quotes verbatim on water.noaa.gov/about/api.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-09",
+   "claim": "17 U.S.C. 105(a) quotation",
+   "result": "confirmed",
+   "detail": "Verbatim on copyright.gov title 17 chapter 1.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-10",
+   "claim": "NOAA-level terms pages returned HTTP 403; NOAA public-domain statement unverified",
+   "result": "confirmed",
+   "detail": "Three NOAA pages returned 403 (919 bytes each) again today. The NOAA-level statement remains unverified.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-11",
+   "claim": "No NWPS reuse terms in the swagger info block or the home page",
+   "result": "confirmed",
+   "detail": "Swagger info has title, description, version and contact only. The home page has no matches for licence, terms, disclaimer, copyright or reuse.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/terms_quote_check.json"
+  },
+  {
+   "id": "P3-12",
+   "claim": "The summary's terms array (verbatim quotes) is part of the record",
+   "result": "corrected",
+   "detail": "The record file has no terms array. Its legal section paraphrases most sources; verbatim text exists only for some quotes.",
+   "evidence": "/home/user/wt/research-b35/river-flood-gauges.json"
+  },
+  {
+   "id": "P3-13",
+   "claim": "Decision 7 'Follow the laws' quoted in the B2 and B3 briefs",
+   "result": "confirmed",
+   "detail": "Listed as item 7 in the B2 brief; DECISIONS.md copies exist in wt-b2, wt-b3 and wt-b4.",
+   "evidence": "/home/user/wt/briefs/hail-b2-brief.md (line 4)"
+  },
+  {
+   "id": "P3-14",
+   "claim": "Per-address lines wait behind the counsel gate (research README section 8.3, OW-H7)",
+   "result": "confirmed",
+   "detail": "README section 8.3 'Privacy and legal questions' exists; the OW-H2 row ties per-address output to 8.3 and OW-H7; OW-H7 itself is in section 9.",
+   "evidence": "/home/user/wt/wt-hail/research/hail-history/README.md"
+  },
+  {
+   "id": "P3-15",
+   "claim": "Benchland centre 47.075 N, 110.015 W from the B2 brief",
+   "result": "unverified",
+   "detail": "The B2 brief uses this centre (line 110). Not checked against a gazetteer.",
+   "evidence": "/home/user/wt/briefs/hail-b2-brief.md (line 110)"
+  },
+  {
+   "id": "P4-01",
+   "claim": "BILM8: name, usgsId 06214500, coordinates 45.8001194 / -108.4680306, WFO BYZ, time zone MST7MDT",
+   "result": "confirmed",
+   "detail": "All fields reproduce from the live detail record.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P4-02",
+   "claim": "Flood categories for BILM8: action 12.5, minor 13.5, moderate 14.5, major 15 ft; flow thresholds not defined (-9999)",
+   "result": "confirmed",
+   "detail": "Exact.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P4-03",
+   "claim": "BILM8 detail response 29,792 bytes",
+   "result": "confirmed",
+   "detail": "Exact size.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P4-04",
+   "claim": "Observed history: 2,779 points, about 30 days, start and end parameters ignored",
+   "result": "confirmed",
+   "detail": "Span 29.98 days. A 2022 probe is byte-identical to the unparameterised request (same sha256 prefix). The window rolls: today it runs 2026-09-19T03:30Z to 2026-10-19T03:00Z, one hour later than the record's endpoints.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P4-05",
+   "claim": "Observed steps: 15 minutes for 2,759 of 2,778 steps; the rest are 30 to 75 minutes",
+   "result": "corrected",
+   "detail": "The other 19 steps run from 30 to 315 minutes (gaps of 120, 135, 255 and 315 minutes occur).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P4-06",
+   "claim": "observed_stage_now 2.94 ft, no_flooding",
+   "result": "confirmed",
+   "detail": "2.94 ft and floodCategory no_flooding at 2026-10-19T03:00Z.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P4-07",
+   "claim": "Preliminary codes R and O are not defined in the swagger spec",
+   "result": "confirmed",
+   "detail": "The swagger types 'preliminary' as a bare string with no enum or description. R and O appear in the crest data.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P4-08",
+   "claim": "NWPS root returns 503 with 'Endpoint not found'",
+   "result": "confirmed",
+   "detail": "503 with a JSON body (code 5, 'Endpoint not found'); the header says text/plain.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P4-09",
+   "claim": "BILM8 has 64 historic crests",
+   "result": "confirmed",
+   "detail": "64 historic and 64 recent crest entries.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "P5-01",
+   "claim": "NWPS lists 277 Montana gauges (642 in the wide box)",
+   "result": "confirmed",
+   "detail": "Wide-box list: 642 gauges; states MT 277, ID 152, WY 99, SD 73, WA 16, OR 16, ND 9. All 642 detail records fetched.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-02",
+   "claim": "Tight box 263 Montana gauges; 14 more on the Canadian border (lat 49.01-49.45)",
+   "result": "confirmed",
+   "detail": "263 in the tight box; 14 outside, latitudes 49.011 to 49.450.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-03",
+   "claim": "Montana category groups: 57 all four; 102 minor defined; 45 partial with minor; 19 partial without minor; 156 no values",
+   "result": "confirmed",
+   "detail": "Exact.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-04",
+   "claim": "211 Montana gauges have a USGS number; 18 out of service; observed status 119 not_defined, 106 no_flooding, 34 obs_not_current, 18 out_of_service",
+   "result": "confirmed",
+   "detail": "Exact.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-05",
+   "claim": "32 elevation-scale gauges in the wide box; 13 with a minor stage, all in ID, SD or WY; none in Montana",
+   "result": "confirmed",
+   "detail": "ID 2, SD 9, WY 2.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-06",
+   "claim": "Nearest elevation-scale gauge to a Montana grid point is HOPI1 at 13.7 miles; HOPI1 minor 2,063.5 ft",
+   "result": "confirmed",
+   "detail": "13.7 mi; minor 2,063.5 ft.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-07",
+   "claim": "Join pool: 271 gauges, 102 of them in Montana",
+   "result": "confirmed",
+   "detail": "Exact.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-08",
+   "claim": "Montana grid: 18,022 points (0.05 degree) inside the outline",
+   "result": "confirmed",
+   "detail": "Exact. The 212-point outline passes eight inside/outside tests and has an area of about 147,100 sq mi.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-09",
+   "claim": "Share of Montana land within 1, 2, 5, 10, 25 and 50 miles of a flood-stage gauge: 0.2, 0.8, 4.8, 17.3, 69.6, 99.6 percent",
+   "result": "corrected",
+   "detail": "All six values reproduce. The figure is a share of grid points, not land. Weighting by cos(latitude) gives 17.3 percent at 10 miles as well, so the number stands; the wording should change.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-10",
+   "claim": "Any-gauge shares 0.6, 2.1, 11.4, 35.4, 88.3, 100 percent; median 19.1 mi; p90 33.9 mi; max 56.0 mi",
+   "result": "confirmed",
+   "detail": "All reproduce.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-11",
+   "claim": "12 of 14 towns within 10 miles of a flood-stage gauge; Lewistown 48.0 mi and West Yellowstone 34.6 mi are outside",
+   "result": "confirmed",
+   "detail": "All 14 per-town distances and gauge IDs reproduce, e.g. Billings 2.0 (BILM8), Glendive 0.3 (GLNM8), Great Falls 6.4 (ULMM8).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-12",
+   "claim": "Great Falls: nearest gauge (RDZM8, 0.3 mi) has no flood stage",
+   "result": "confirmed",
+   "detail": "The nearest gauge of any kind is RDZM8 at 0.3 mi with no categories. Line wording must say 'nearest gauge with a flood stage', not 'nearest gauge'.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-13",
+   "claim": "Billings centre is 2.0 miles from BILM8; next flood-stage gauge EDGM8 is 27.5 miles away",
+   "result": "confirmed",
+   "detail": "1.96 mi; EDGM8 at 27.5 mi.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-14",
+   "claim": "Benchland: nearest any gauge JRUM8 at 13.6 mi (no categories); nearest flood-stage BTCM8 at 44.1 mi (6.5 ft); none within 10 miles",
+   "result": "confirmed",
+   "detail": "Reproduces for the centre 47.075 N, 110.015 W.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "P5-15",
+   "claim": "Three Montana flood-stage gauges have no USGS number: ULLM8, KELM8, COTM8",
+   "result": "confirmed",
+   "detail": "Exact.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  },
+  {
+   "id": "S1-01",
+   "claim": "IEM June 2022 FL.W CSV has 37 rows: 17 polygon (P, NEW) and 20 county (C)",
+   "result": "confirmed",
+   "detail": "37 rows; 17 P; 20 C.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_recheck.json"
+  },
+  {
+   "id": "S1-02",
+   "claim": "17 events: BYZ 9 (ETN 1-9), MSO 6 (ETN 3-8), TFX 2 (ETN 1-2)",
+   "result": "confirmed",
+   "detail": "Event numbers reproduce.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_recheck.json"
+  },
+  {
+   "id": "S1-03",
+   "claim": "14 products: BYZ 7, MSO 6, TFX 1",
+   "result": "confirmed",
+   "detail": "Exact.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_recheck.json"
+  },
+  {
+   "id": "S1-04",
+   "claim": "UGC is blank on all 17 NEW polygon rows; county codes appear only on C rows",
+   "result": "confirmed",
+   "detail": "17 blank P rows; 20 C rows carry UGC.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_recheck.json"
+  },
+  {
+   "id": "S1-05",
+   "claim": "4 of 17 polygon rows end before they begin",
+   "result": "confirmed",
+   "detail": "Exactly 4.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_recheck.json"
+  },
+  {
+   "id": "S1-06",
+   "claim": "HVTEC cause: RS on 15 product-gauge entries, ER on 3",
+   "result": "confirmed",
+   "detail": "15 RS and 3 ER. (FRYM8 uses severity 'U', which a first pass missed.)",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_recheck.json"
+  },
+  {
+   "id": "S1-07",
+   "claim": "Event 7 (BILM8): CSV issue time equals VTEC begin 2022-06-14 05:41; product issued 2022-06-13 16:45 UTC",
+   "result": "confirmed",
+   "detail": "Exact.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_recheck.json"
+  },
+  {
+   "id": "S1-08",
+   "claim": "Billings product: VTEC /O.NEW.KBYZ.FL.W.0007; HVTEC BILM8 RS; UGC MTC095 and MTC111; text 'Flood stage is 13.5 feet.'",
+   "result": "confirmed",
+   "detail": "All four reproduce.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_ugc_fixed.json"
+  },
+  {
+   "id": "S1-09",
+   "claim": "Warning began 1 h 34 min before the first reading at flood stage and ended 1 h 31 min after the last",
+   "result": "confirmed",
+   "detail": "94 and 91 minutes.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/billings_recheck.json"
+  },
+  {
+   "id": "S1-10",
+   "claim": "14 text products total 36,927 bytes (1,643 to 5,399 each)",
+   "result": "confirmed",
+   "detail": "Sum 36,927; range matches.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "S1-11",
+   "claim": "Every NEW product carries UGC codes and a LAT...LON polygon",
+   "result": "confirmed",
+   "detail": "All 14 products have both.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_ugc_fixed.json"
+  },
+  {
+   "id": "S1-12",
+   "claim": "UGC codes per product (1 to 3) as listed",
+   "result": "confirmed",
+   "detail": "All 14 lists match after parsing dash-separated suffixes (e.g. MTC009-067-097).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_ugc_fixed.json"
+  },
+  {
+   "id": "S1-13",
+   "claim": "Polygons have 5 to 20 points",
+   "result": "corrected",
+   "detail": "Each LAT...LON block has 4 to 20 vertices (202206120845-KBYZ has blocks of 6, 6 and 4). The record's per-product counts are first-block only.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_ugc_fixed.json"
+  },
+  {
+   "id": "S1-14",
+   "claim": "Billings, Miles City and Missoula lie inside a NEW polygon",
+   "result": "confirmed",
+   "detail": "Inside these NEW polygons (first block in each case).",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_recheck.json"
+  },
+  {
+   "id": "S1-15",
+   "claim": "The other 11 towns lie inside no NEW polygon",
+   "result": "refuted",
+   "detail": "Livingston lies inside a second polygon block of 202206120845-KBYZ and of 202206121722-KBYZ, both NEW. Testing only the first LAT...LON block per product reproduces the record exactly, which points to the worker's poly_test.py (re.search takes the first match). Testing all blocks: Billings, Livingston, Miles City and Missoula are inside; 10 towns are inside none. Livingston also lies in Park County (MTC067), which both products name.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/iem_ugc_fixed.json"
+  },
+  {
+   "id": "S1-16",
+   "claim": "IEM CSV with limitps=0 is 392,218 bytes",
+   "result": "unverified",
+   "detail": "Only the limitps=1 file (7,797 bytes, matches) was re-fetched.",
+   "evidence": ""
+  },
+  {
+   "id": "S2-01",
+   "claim": "Raw downloads for the study totalled 37,245,565 bytes over 811 requests",
+   "result": "confirmed",
+   "detail": "The worker's manifest size column sums to 37,245,565 over 811 request rows (812 lines including the header).",
+   "evidence": "/home/user/wt/research-b35/scratch-river-flood-gauges/manifest.tsv"
+  },
+  {
+   "id": "S2-02",
+   "claim": "About 2.75 MB raw JSON per gauge per water year; about 1.36 GB for 99 gauges over five water years",
+   "result": "corrected",
+   "detail": "Three gauges tested for WY2022: Billings 2.75 MB, LIVM8 2.74 MB, GLNM8 2.40 MB. Across 99 gauges and five years that is about 1.2 to 1.4 GB, not a single figure.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "S2-03",
+   "claim": "All 642 NWPS detail requests return HTTP 200",
+   "result": "confirmed",
+   "detail": "All 642 succeed on retry. Ten failed with TLS errors (curl 35) under three parallel connections and succeeded when retried one at a time.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "S2-04",
+   "claim": "Furthermore: 'api.waterdata answered every anonymous request tested'",
+   "result": "confirmed",
+   "detail": "105 of 105 requests in this check returned 200.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+  },
+  {
+   "id": "S2-05",
+   "claim": "Benchland / joins: towns and gauge rules as stated",
+   "result": "confirmed",
+   "detail": "Join rule (nearest flood-stage gauge within 10 miles; no gauge line otherwise) reproduces for all 14 towns; see P5-11 and P5-12 for wording.",
+   "evidence": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/pool_coverage_recheck.json"
+  }
+ ],
+ "refuted": [
+  "S1-15: The other 11 towns lie inside no NEW polygon"
+ ],
+ "corrections": [
+  "P1-10: Replace 'about 42.5 hours above flood stage' with '170 readings at or above 13.5 ft (42.5 h at 15-minute spacing); the first and last of them are 44.25 h apart, with 2 readings below 13.5 ft and 6 unreported slots inside'.",
+  "P1-03: State the day convention. Local MST7MDT days give 2 flood days (2022-06-14, 2022-06-15). UTC days give 3 (adds 2022-06-16).",
+  "P2-01: The annual-peak URL must include parameter_code=00065; without it the response has 163 rows (99 discharge, 64 gage height).",
+  "P2-07 and P2-10: The v1 table repeats one series. CBMM8 and CLRM8 both use USGS 06185110 with identical 32-row series. Key the table by USGS number: 97 distinct series, 7,084 distinct rows, about 1.0-1.2 KB less raw. '98 of 99' holds at gauge level only.",
+  "P2-09: 'Median 72 years' should read 'median 66 water years (71.5 peak rows)'.",
+  "P2-06: Billings flood stage has two confirming sources (NWPS categories and the NWS text), not three.",
+  "P2-05: The NWPS historic and USGS annual lists agree on the top eight and on all values at or above 13.5 ft, but not row for row: NWPS has pre-1963 crests (1944, 1956) and USGS has WY1987 7.01 ft and WY2023 10.32 ft that NWPS lacks.",
+  "P4-05: Observed-history gaps are 30 to 315 minutes (19 steps), not 30 to 75 minutes.",
+  "P4-04: The observed window rolls hourly. The record's endpoints were correct at its fetch time; cite the window as about 30 days, not fixed endpoints.",
+  "S1-15 and S1-13: Official-warning matching must test every LAT...LON block. Livingston is inside a second block of 202206120845-KBYZ and of 202206121722-KBYZ. The record's 'other 11 towns inside none' is false; 10 towns are inside none. Polygon vertex counts are 4 to 20 per block.",
+  "P5-12 and line wording: 'nearest gauge' must read 'nearest gauge with a flood stage' (Great Falls: RDZM8 at 0.3 mi has no flood stage).",
+  "P5-09: 'Montana land' should read 'share of 0.05-degree grid points inside the Montana outline'. Area weighting gives the same 17.3 percent at 10 miles.",
+  "P3-02: Add the NWS allowance: the name and visual identifier may identify unaltered NWS content and links, and permission is not required to display unaltered NWS products. Keep the endorsement and altered-content limits.",
+  "P3-03: Add the USGS carve-out: not all site content is public domain (non-USGS photographs and graphics need permission).",
+  "P3-12: The summary's verbatim terms array is not in the record file. Add the quotes to the file.",
+  "S2-02: Replace the single 2.75 MB per gauge-year figure with a range (2.40 to 2.78 MB across three gauges tested) and about 1.2 to 1.4 GB for 99 gauges over five years.",
+  "S2-03 (operational): Retry NWPS requests on TLS errors; 10 of 642 failed under three parallel connections in this check.",
+  "P1-16 and S1-16: Re-read the noDataValue field and the IEM limitps=0 file size before relying on them."
+ ],
+ "unverified": [
+  "P1-16: noDataValue -999999.0; no sentinel values found",
+  "P3-15: Benchland centre 47.075 N, 110.015 W from the B2 brief",
+  "S1-16: IEM CSV with limitps=0 is 392,218 bytes"
+ ],
+ "terms_check": "Verbatim check of the quoted sentences against the live pages (weather.gov/disclaimer; waterservices.usgs.gov; the USGS degradation blog; usgs.gov copyrights and crediting pages; api.waterdata.usgs.gov docs footer; IEM disclaimer and home-page footer; water.noaa.gov/about/api; copyright.gov title 17 chapter 1; NWPS swagger info; NWPS home page). Every quoted sentence matches, except that the USGS banner's first sentence lacks the period the record adds. Paraphrases are right in substance but omit: the NWS allowance for unaltered content and name use; the USGS carve-out for non-public-domain site content; and the terms array named in the summary is not in the record file. NOAA-level pages still return 403, so the NOAA statement stays unverified. IEM's conflict stands (public-domain disclaimer; 'All rights reserved' footer on both pages).",
+ "recommendation_stands": true,
+ "recommendation_note": "Stands with conditions. The decision holds: IN for a narrow v1 line (NWS flood categories plus USGS annual peak stage per water year, for the nearest flood-stage gauge within 10 miles, from api.waterdata and NWPS), and OUT for daily flood-day counts and 15-minute histories (no daily gage-height series exists for Montana flood-stage gauges, and the 15-minute record only supports a count derived from 15-minute values). The live data reproduce the counts that matter: 277 Montana gauges, 102 with flood stage, 57 with all four categories, 99 flood-stage gauges with a USGS number, the 17.3 percent 10-mile coverage, 12 of 14 towns, the Billings peak and the 2022 flood-day count. The USGS replacement API returns the same values, and the decommission timeline is confirmed. It should not ship as written. Before a build: (1) key the v1 table by USGS number (97 series, 7,084 rows; CBMM8 and CLRM8 duplicate 06185110); (2) make the official-warning polygon test cover every LAT...LON block (Livingston is inside two June 2022 NEW polygons, so the record's '11 towns inside none' is refuted); (3) correct the stated numbers: 42.5 hours, the 72-year median, the 30-75 minute step gaps, the 5-20 point range, the Billings 'three sources', and the annual-peak URL without its parameter filter; (4) add the NWS allowance and the USGS carve-out to the legal basis and keep the per-address gate. None of these changes the IN/OUT call or the 10-mile scope.",
+ "download_bytes_total": 38075770,
+ "download_requests_logged": 806,
+ "downloads_deleted": true,
+ "kept": {
+  "scripts": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/scripts/",
+  "results": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/",
+  "fetch_log": "/home/user/wt/research-b35/scratch-refute-river-flood-gauges/results/fetch-log.tsv"
+ }
+}

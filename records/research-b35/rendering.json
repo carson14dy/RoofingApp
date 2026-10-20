@@ -1,0 +1,4855 @@
+{
+ "slug": "rendering",
+ "question": "How to draw every street and every building footprint in a static site with Leaflet and hand-written canvas code (the site vendors Leaflet 1.9.4 and forbids map frameworks and CDNs): measured rendering cost, per-tile JSON size model, zoom thresholds, street-name labels on canvas, USGS raster as the street source, and the field-sheet look.",
+ "as_of": "2026-10-19",
+ "checked_at_utc": "2026-10-19T04:51:32Z",
+ "scope_note": "Measurements on one 4-vCPU Xeon VM with headless Chromium 141 and software raster; no GPU canvas. Device numbers are not measured.",
+ "bottom_line": "Draw the streets, footprints and house dots on a few hand-written canvas layers that load by shard and cull to the view; do not give Leaflet one object per feature: each path object costs about 1.6 KB of heap here (40 MB for 25,000 paths) and Leaflet re-projects all of them on every zoom (0.3 s at 1x and 1.1 s at 2x of zoom update). The drawing itself is about as fast in Leaflet's canvas as in a raw canvas. On this 4-vCPU VM with software canvas, a redraw of the real Billings tile takes about 11 to 27 ms (measured at zooms 15 and 16; zoom 17 was not run on the real tile); the all-visible synthetic worst case (about 20,000 paths and 3,000 labels) takes 1.3 to 3 s per redraw, so the view must hold few features. Thresholds: arterials from zoom 13, local streets and house dots from 15, footprint fills from 16, names from 16 (one per name per shard, fit and collision tested, angles quantised to 5 degrees, at most 300 labels per view with the halo). Shards: cap by bytes (150 KB for streets, 250 KB for footprints) and by rows for addresses (2,500 rows, under 175 KB); the store tile is 165 KB of streets, 4.5 MB of footprints and 2.2 MB of addresses before splitting. The B3 zoom 13 address dots fetch 4.2 MB per Billings view: propose zoom 15 for dots, which is an owner decision.",
+ "recommendation": {
+  "summary": "see bottom_line and measurements.recommendation_detail",
+  "thresholds": [
+   {
+    "layer": "arterial streets (S1100, S1200)",
+    "from_zoom": 13,
+    "why": "the classes are 22 features and 6.8 KB per store tile; at zoom 13 an arterial is 1.1 px wide; arterial-only viewport at zoom 13 is 30 KB against 634 KB for every vehicular class"
+   },
+   {
+    "layer": "local streets (S1400 and the other D16 classes)",
+    "from_zoom": 15,
+    "why": "an 8 m street is 1.2 px at zoom 14 (faint) and 2.4 px at zoom 15; the zoom 15 viewport holds 1,659 features in 219 KB at the 0.1-degree shard size, 78 KB at 0.05 degree"
+   },
+   {
+    "layer": "one dot per house (footprint centroid; the clickable point)",
+    "from_zoom": 15,
+    "why": "centroid-only dots are about 22 bytes each: 5,807 dots (127 KB) in the zoom 15 viewport, against 915 KB of rings for the same footprints"
+   },
+   {
+    "layer": "footprint fill with hairline",
+    "from_zoom": 16,
+    "why": "a 10 m house is 6.0 px at zoom 16 (a shape, small); at zoom 15 it is 3.0 px (a dot); the zoom 16 viewport has 1,080 footprints in 195 KB of rings"
+   },
+   {
+    "layer": "footprint outline emphasis",
+    "from_zoom": 17,
+    "why": "a 10 m house is 12.0 px at zoom 17; the zoom 17 viewport has 190 footprints in 43 KB of rings"
+   },
+   {
+    "layer": "street names (one per distinct name per shard)",
+    "from_zoom": 16,
+    "why": "at zoom 16, 706 of 888 names in the store tile have a longest piece long enough for the name; 93 percent at zoom 17 (826 of 888)"
+   },
+   {
+    "layer": "house-address dots (B3)",
+    "from_zoom": 15,
+    "why": "owner decision needed: the zoom 13 gate in the B3 brief fetches 64 address shards and 4.18 MB of JSON (65,057 rows) for one 1280x800 Billings view; zoom 15 fetches 10 shards and 0.79 MB (12,239 rows); at zoom 13 use a count layer instead"
+   }
+  ],
+  "shard_sizes": [
+   {
+    "layer": "streets",
+    "store_tile_raw_bytes": 165392,
+    "store_tile_gzip_bytes": 39227,
+    "subtiles_0.05_max_bytes": 70992,
+    "subtiles_0.025_max_bytes": 22510,
+    "proposal": "byte cap of 150,000 raw bytes per shard; split the store tile into 0.05-degree cells (23 KB to 71 KB each here); arterials as their own shard"
+   },
+   {
+    "layer": "footprints",
+    "store_tile_raw_bytes": 4539221,
+    "subtiles_0.05_max_bytes": 2097348,
+    "subtiles_0.025_max_bytes": 690725,
+    "proposal": "byte cap of 250,000 raw bytes (about 1,600 footprints); the 2,500-feature rule gives 52 statewide shards over 300 KB (largest 464 KB); the byte cap gives 5,143 shards, largest 249 KB, 135.8 MB raw in all"
+   },
+   {
+    "layer": "address dots (B3)",
+    "store_tile_raw_bytes": 2161010,
+    "store_tile_gzip_bytes": 323967,
+    "subtiles_0.025_max_bytes": 318482,
+    "proposal": "keep the 2,500-row rule (4,212 shards statewide, the same count as the B3 pre-check; largest 172 KB; 43.1 MB raw in all)"
+   }
+  ],
+  "draw_order": [
+   "1 basemap (the existing vector base or the USGS imagery, unchanged)",
+   "2 footprint fills with a 0.5 px hairline (from zoom 16; token --bldg-fill at 45 percent light, 60 percent dark)",
+   "3 local streets at 1.0 to 1.4 px, then arterials at 2.4 px (one canvas layer per class, batches of about 200 paths)",
+   "4 radar or model picture (existing overlay, 72 percent)",
+   "5 hazard fills at 12 percent and 2 px strokes (existing); watch and advisory strokes get a 1 px paper casing (contrast 3.2:1 and 3.3:1 over a footprint fill in light mode)",
+   "6 storm reports (existing)",
+   "7 house dots, clickable, above the hazards (from zoom 15)",
+   "8 street names last, 12 px, name colour with a paper halo, no pointer events"
+  ],
+  "label_rule": {
+   "candidates": "one candidate per distinct FULLNAME per shard, on the middle vertex of that name's longest piece in the shard; blank names get none",
+   "fit_test": "keep the name only if its longest piece is at least the measured label width plus 10 px at that zoom (79 percent of names at zoom 16; 93 percent at zoom 17)",
+   "collision": "greedy placement on a 64 px grid with each rotated label's bounding box; arterials first, then longer pieces; a label may not overlap another label or a house dot",
+   "measured_kept": {
+    "zoom_16_distinct_888": 612,
+    "zoom_17_distinct_888": 754,
+    "placement_ms_median": {
+     "zoom_16": 1.3,
+     "zoom_17": 1.9
+    }
+   },
+   "angle": "quantise label angles to 5 degrees: 300 labels with halo took 7 to 13 ms quantised against 145 to 165 ms unquantised (two runs)",
+   "cap": "at most 300 labels per view while the halo is a stroke (quantised: 300 labels with halo 7 to 13 ms; 1,000 labels with halo 340 to 425 ms; 1,000 labels without halo 11 to 13 ms; the offset-fill halo was not cheaper)"
+  },
+  "drawing": "one canvas layer per class, not one Leaflet object per feature; load the shards the viewport touches; cull by shard and by feature bounds; project each vertex to world pixels once per zoom and treat pan as an offset; redraw on moveend and zoomend only, never during a drag; stroke per feature (measured; batching all features into one path was slower), never one path for all features; keep feature data in typed arrays (about 0.2 KB per feature against about 1.6 KB per path as Leaflet objects)",
+  "measure_in_build": [
+   "shard bytes per layer and per cell size: raw, gzip level 6 and the size Pages serves; largest shard; shard count; statewide totals (this record gives the first numbers)",
+   "fetch count and bytes per 1280x800 and 390x844 viewport at zooms 13, 15 and 17, at several centres (Billings, Benchland, a town on the Yellowstone), not one centre",
+   "redraw time (update, draw, flush) for the real grid tile at zooms 15, 16 and 17, with the CPU slowed 4 times to approximate a phone, and on one real phone if available",
+   "label count after the fit and collision tests per view, and the draw time of those labels with and without halo",
+   "V8 heap and typed-array bytes per feature for the shard layout; canvas bytes per layer",
+   "the canvas acceleration status of the target browsers (this VM: 2D canvas software only)",
+   "gate for the zoom thresholds: a visual check of the real tile at zooms 15, 16 and 17 on a 390 px and a 1280 px screen, light and dark"
+  ]
+ },
+ "measurements": {
+  "streets_grid_tile": {
+   "features": 1372,
+   "pieces": 1376,
+   "vertices_after_dp_2m": 6198,
+   "coords_bytes_minimal_2m": 137044,
+   "coords_bytes_fixed5_2m": 139109,
+   "attr_bytes_names_classes": 28278,
+   "shard_bytes_2m_minimal_with_attrs": 165392,
+   "shard_bytes_gzip6": 39227,
+   "blank_name_share": 0.094,
+   "distinct_names": 888,
+   "length_m_clipped": 675738.9
+  },
+  "streets_grid_tile_by_class": {
+   "arterial_S1100_S1200": {
+    "features": 22,
+    "shard_bytes_2m_minimal_with_attrs": 6773,
+    "shard_bytes_gzip6": 1165,
+    "distinct_names": 11
+   },
+   "local_S1400": {
+    "features": 1266,
+    "shard_bytes_2m_minimal_with_attrs": 147166,
+    "shard_bytes_gzip6": 34585,
+    "distinct_names": 877
+   },
+   "other_S1500_S1630_S1640_S1730_S1740": {
+    "features": 84,
+    "shard_bytes_2m_minimal_with_attrs": 11601,
+    "shard_bytes_gzip6": 2734,
+    "distinct_names": 4
+   }
+  },
+  "streets_grid_subtiles_0.05_bytes": [
+   25284,
+   22539,
+   70992,
+   51387
+  ],
+  "streets_grid_subtiles_0.025_bytes_max": 22510,
+  "streets_grid_subtiles_0.025_bytes_sum": 180126,
+  "streets_worker_off_grid_tile_2026": {
+   "features": 1338,
+   "pieces": 1339,
+   "distinct_names": 954,
+   "blank_name_share": 0.0979,
+   "coords_bytes_minimal_2m": 146311,
+   "coords_bytes_fixed5_2m": 148077,
+   "shard_bytes_2m_minimal_with_attrs": 173847,
+   "shard_bytes_gzip6": 42328,
+   "length_m_clipped": 667876.5
+  },
+  "streets_viewport": {
+   "13": {
+    "0.1": {
+     "cells": 8,
+     "bytes_all_vehicular": 633798,
+     "bytes_arterial_only": 30145,
+     "bytes_max_cell": 165392,
+     "features_sum": 4395
+    },
+    "0.05": {
+     "cells": 18,
+     "bytes_all_vehicular": 513463,
+     "bytes_arterial_only": 25963,
+     "bytes_max_cell": 70992,
+     "features_sum": 3792
+    },
+    "0.025": {
+     "cells": 50,
+     "bytes_all_vehicular": 449791,
+     "bytes_arterial_only": 28972,
+     "bytes_max_cell": 26383,
+     "features_sum": 3641
+    }
+   },
+   "15": {
+    "0.1": {
+     "cells": 2,
+     "bytes_all_vehicular": 218784,
+     "bytes_arterial_only": 13801,
+     "bytes_max_cell": 165392,
+     "features_sum": 1659
+    },
+    "0.05": {
+     "cells": 2,
+     "bytes_all_vehicular": 77674,
+     "bytes_arterial_only": 11570,
+     "bytes_max_cell": 51387,
+     "features_sum": 679
+    },
+    "0.025": {
+     "cells": 6,
+     "bytes_all_vehicular": 73720,
+     "bytes_arterial_only": 10458,
+     "bytes_max_cell": 15116,
+     "features_sum": 719
+    }
+   },
+   "17": {
+    "0.1": {
+     "cells": 2,
+     "bytes_all_vehicular": 218784,
+     "bytes_arterial_only": 13801,
+     "bytes_max_cell": 165392,
+     "features_sum": 1659
+    },
+    "0.05": {
+     "cells": 2,
+     "bytes_all_vehicular": 77674,
+     "bytes_arterial_only": 11570,
+     "bytes_max_cell": 51387,
+     "features_sum": 679
+    },
+    "0.025": {
+     "cells": 2,
+     "bytes_all_vehicular": 21845,
+     "bytes_arterial_only": 4858,
+     "bytes_max_cell": 13227,
+     "features_sum": 212
+    }
+   }
+  },
+  "footprints_grid_tile": {
+   "footprints": 28308,
+   "bytes_before_5dp": 4539221,
+   "bytes_dp05": 4535970,
+   "bytes_max_feature": 3487,
+   "bytes_per_footprint": 160.4
+  },
+  "footprints_grid_subtiles_0.05": [
+   {
+    "footprints": 1596,
+    "bytes": 262654
+   },
+   {
+    "footprints": 1274,
+    "bytes": 197049
+   },
+   {
+    "footprints": 11818,
+    "bytes": 1982170
+   },
+   {
+    "footprints": 13620,
+    "bytes": 2097348
+   }
+  ],
+  "footprints_grid_subtiles_0.025": {
+   "bytes_max": 690725,
+   "footprints_max": 4329,
+   "bytes_sum": 4539221
+  },
+  "footprints_worker_billings_box_0.01deg": {
+   "box_lon_lat": [
+    -108.51,
+    45.78,
+    -108.5,
+    45.79
+   ],
+   "footprints": 282,
+   "bytes_before_5dp": 52902,
+   "bytes_dp05": 52814,
+   "bytes_max_feature": 1719
+  },
+  "addresses_counts": {
+   "shp_points": 674715,
+   "dbf_records": 674715,
+   "left_out_no_street": 4212,
+   "merged_duplicates": 6741,
+   "rows_kept": 663762,
+   "mean_row_bytes": 64.57
+  },
+  "addresses_grid_tile": {
+   "rows": 33784,
+   "bytes_rows_plus_header": 2161010,
+   "bytes_max_row": 100
+  },
+  "addresses_grid_subtiles_0.05": [
+   {
+    "rows": 2605,
+    "bytes": 171376
+   },
+   {
+    "rows": 1275,
+    "bytes": 81656
+   },
+   {
+    "rows": 13975,
+    "bytes": 893557
+   },
+   {
+    "rows": 15929,
+    "bytes": 1014601
+   }
+  ],
+  "addresses_grid_subtiles_0.025": {
+   "bytes_max": 318482,
+   "rows_max": 4997,
+   "bytes_sum": 2161910
+  },
+  "addresses_gzip_grid_tile": {
+   "grid_tile_0.1": {
+    "raw_bytes": 2161134,
+    "gzip6_bytes": 323967,
+    "rows": 33786
+   },
+   "subtiles_0.05": [
+    {
+     "lat0": 45.7,
+     "lon0": -108.6,
+     "raw_bytes": 171386,
+     "gzip6_bytes": 24162,
+     "rows": 2605
+    },
+    {
+     "lat0": 45.7,
+     "lon0": -108.55,
+     "raw_bytes": 81666,
+     "gzip6_bytes": 12764,
+     "rows": 1275
+    },
+    {
+     "lat0": 45.75,
+     "lon0": -108.6,
+     "raw_bytes": 893337,
+     "gzip6_bytes": 133573,
+     "rows": 13971
+    },
+    {
+     "lat0": 45.75,
+     "lon0": -108.55,
+     "raw_bytes": 1014612,
+     "gzip6_bytes": 146335,
+     "rows": 15929
+    }
+   ],
+   "subtiles_0.025_max": {
+    "raw_bytes": 318492,
+    "gzip6_bytes": 42466,
+    "rows": 4842
+   },
+   "rows_in_grid_tile": 33786,
+   "method": "DBF streamed once; grid tile [45.7,45.8]x[-108.6,-108.5]; duplicates merged; no-street rows left out",
+   "subtiles_0.025_sum_raw": 2162081,
+   "gzip_ratio_grid_tile": 0.1499,
+   "seconds": 7.3
+  },
+  "viewport_shards": {
+   "13": {
+    "addresses_quadtree": {
+     "shards": 64,
+     "rows_or_features": 65057,
+     "bytes": 4175019,
+     "bytes_max_shard": 152741
+    },
+    "footprints_quadtree": {
+     "shards": 57,
+     "rows_or_features": 56548,
+     "bytes": 9266108,
+     "bytes_max_shard": 463813
+    },
+    "addresses_uniform": {
+     "0.1": {
+      "cells": 8,
+      "nonempty_cells": 8,
+      "rows_or_features": 73365,
+      "bytes_sum": 4723243,
+      "bytes_max_cell": 2161412
+     },
+     "0.05": {
+      "cells": 18,
+      "nonempty_cells": 18,
+      "rows_or_features": 66337,
+      "bytes_sum": 4269397,
+      "bytes_max_cell": 1014827
+     },
+     "0.025": {
+      "cells": 50,
+      "nonempty_cells": 49,
+      "rows_or_features": 60549,
+      "bytes_sum": 3883832,
+      "bytes_max_cell": 318111
+     }
+    },
+    "footprints_uniform": {
+     "0.1": {
+      "cells": 8,
+      "nonempty_cells": 8,
+      "rows_or_features": 65369,
+      "bytes_sum": 10743977,
+      "bytes_max_cell": 4539281
+     },
+     "0.05": {
+      "cells": 18,
+      "nonempty_cells": 18,
+      "rows_or_features": 56605,
+      "bytes_sum": 9280725,
+      "bytes_max_cell": 2097408
+     },
+     "0.025": {
+      "cells": 50,
+      "nonempty_cells": 49,
+      "rows_or_features": 51892,
+      "bytes_sum": 8454930,
+      "bytes_max_cell": 690785
+     }
+    }
+   },
+   "15": {
+    "addresses_quadtree": {
+     "shards": 10,
+     "rows_or_features": 12239,
+     "bytes": 788815,
+     "bytes_max_shard": 135811
+    },
+    "footprints_quadtree": {
+     "shards": 10,
+     "rows_or_features": 10021,
+     "bytes": 1552192,
+     "bytes_max_shard": 311880
+    },
+    "addresses_uniform": {
+     "0.1": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 36811,
+      "bytes_sum": 2357876,
+      "bytes_max_cell": 2161412
+     },
+     "0.05": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 17997,
+      "bytes_sum": 1150638,
+      "bytes_max_cell": 1014827
+     },
+     "0.025": {
+      "cells": 6,
+      "nonempty_cells": 6,
+      "rows_or_features": 17770,
+      "bytes_sum": 1136256,
+      "bytes_max_cell": 318111
+     }
+    },
+    "footprints_uniform": {
+     "0.1": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 31539,
+      "bytes_sum": 5051738,
+      "bytes_max_cell": 4539281
+     },
+     "0.05": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 15573,
+      "bytes_sum": 2409288,
+      "bytes_max_cell": 2097408
+     },
+     "0.025": {
+      "cells": 6,
+      "nonempty_cells": 6,
+      "rows_or_features": 15277,
+      "bytes_sum": 2367418,
+      "bytes_max_cell": 690785
+     }
+    }
+   },
+   "17": {
+    "addresses_quadtree": {
+     "shards": 2,
+     "rows_or_features": 3458,
+     "bytes": 229885,
+     "bytes_max_shard": 135811
+    },
+    "footprints_quadtree": {
+     "shards": 2,
+     "rows_or_features": 2483,
+     "bytes": 410707,
+     "bytes_max_shard": 311880
+    },
+    "addresses_uniform": {
+     "0.1": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 36811,
+      "bytes_sum": 2357876,
+      "bytes_max_cell": 2161412
+     },
+     "0.05": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 17997,
+      "bytes_sum": 1150638,
+      "bytes_max_cell": 1014827
+     },
+     "0.025": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 5979,
+      "bytes_sum": 394491,
+      "bytes_max_cell": 318111
+     }
+    },
+    "footprints_uniform": {
+     "0.1": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 31539,
+      "bytes_sum": 5051738,
+      "bytes_max_cell": 4539281
+     },
+     "0.05": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 15573,
+      "bytes_sum": 2409288,
+      "bytes_max_cell": 2097408
+     },
+     "0.025": {
+      "cells": 2,
+      "nonempty_cells": 2,
+      "rows_or_features": 4070,
+      "bytes_sum": 660904,
+      "bytes_max_cell": 503786
+     }
+    }
+   }
+  },
+  "zoom_table": [
+   {
+    "zoom": 11,
+    "metres_per_px": 53.0976,
+    "px_per_10m_house": 0.19,
+    "px_per_6m_lane": 0.11,
+    "px_per_8m_street": 0.15,
+    "px_per_15m_arterial": 0.28,
+    "px_per_100m_block": 1.9,
+    "px_per_50m_block": 0.9,
+    "px_per_1km": 18.8
+   },
+   {
+    "zoom": 12,
+    "metres_per_px": 26.5488,
+    "px_per_10m_house": 0.38,
+    "px_per_6m_lane": 0.23,
+    "px_per_8m_street": 0.3,
+    "px_per_15m_arterial": 0.56,
+    "px_per_100m_block": 3.8,
+    "px_per_50m_block": 1.9,
+    "px_per_1km": 37.7
+   },
+   {
+    "zoom": 13,
+    "metres_per_px": 13.2744,
+    "px_per_10m_house": 0.75,
+    "px_per_6m_lane": 0.45,
+    "px_per_8m_street": 0.6,
+    "px_per_15m_arterial": 1.13,
+    "px_per_100m_block": 7.5,
+    "px_per_50m_block": 3.8,
+    "px_per_1km": 75.3
+   },
+   {
+    "zoom": 14,
+    "metres_per_px": 6.6372,
+    "px_per_10m_house": 1.51,
+    "px_per_6m_lane": 0.9,
+    "px_per_8m_street": 1.21,
+    "px_per_15m_arterial": 2.26,
+    "px_per_100m_block": 15.1,
+    "px_per_50m_block": 7.5,
+    "px_per_1km": 150.7
+   },
+   {
+    "zoom": 15,
+    "metres_per_px": 3.3186,
+    "px_per_10m_house": 3.01,
+    "px_per_6m_lane": 1.81,
+    "px_per_8m_street": 2.41,
+    "px_per_15m_arterial": 4.52,
+    "px_per_100m_block": 30.1,
+    "px_per_50m_block": 15.1,
+    "px_per_1km": 301.3
+   },
+   {
+    "zoom": 16,
+    "metres_per_px": 1.6593,
+    "px_per_10m_house": 6.03,
+    "px_per_6m_lane": 3.62,
+    "px_per_8m_street": 4.82,
+    "px_per_15m_arterial": 9.04,
+    "px_per_100m_block": 60.3,
+    "px_per_50m_block": 30.1,
+    "px_per_1km": 602.7
+   },
+   {
+    "zoom": 17,
+    "metres_per_px": 0.8297,
+    "px_per_10m_house": 12.05,
+    "px_per_6m_lane": 7.23,
+    "px_per_8m_street": 9.64,
+    "px_per_15m_arterial": 18.08,
+    "px_per_100m_block": 120.5,
+    "px_per_50m_block": 60.3,
+    "px_per_1km": 1205.3
+   },
+   {
+    "zoom": 18,
+    "metres_per_px": 0.4148,
+    "px_per_10m_house": 24.11,
+    "px_per_6m_lane": 14.46,
+    "px_per_8m_street": 19.29,
+    "px_per_15m_arterial": 36.16,
+    "px_per_100m_block": 241.1,
+    "px_per_50m_block": 120.5,
+    "px_per_1km": 2410.7
+   }
+  ],
+  "dot_payload_viewport": {
+   "15": {
+    "footprints_in_viewport": 5807,
+    "centroid_dot_bytes_json": 126552,
+    "ring_bytes_before_5dp": 914717,
+    "bytes_per_dot": 21.8
+   },
+   "16": {
+    "footprints_in_viewport": 1080,
+    "centroid_dot_bytes_json": 23599,
+    "ring_bytes_before_5dp": 195494,
+    "bytes_per_dot": 21.8
+   },
+   "17": {
+    "footprints_in_viewport": 190,
+    "centroid_dot_bytes_json": 4199,
+    "ring_bytes_before_5dp": 42687,
+    "bytes_per_dot": 21.8
+   }
+  },
+  "contrast": {
+   "light": {
+    "street_local_on_land": 2.45,
+    "street_arterial_on_land": 4.86,
+    "street_now_token_on_land": 1.21,
+    "footprint_fill_45pct_hex": "#e2e5e9",
+    "footprint_fill_on_land": 1.21,
+    "footprint_hairline_grey4_on_land": 2.45,
+    "name_grey1_on_land": 10.87,
+    "name_grey2_on_land": 4.86,
+    "name_grey2_on_footprint_fill": 4.01,
+    "hazard_red_stroke_on_footprint_fill": 4.67,
+    "hazard_red_stroke_on_land": 5.66,
+    "hazard_12pct_over_footprint_hex": "#deced2",
+    "hazard_12pct_over_footprint_vs_name_grey1": 7.49,
+    "amber_watch_stroke_on_footprint_fill": 3.32,
+    "gold_advisory_stroke_on_footprint_fill": 3.21,
+    "steel_statement_stroke_on_footprint_fill": 5.35
+   },
+   "dark": {
+    "street_local_on_land": 2.96,
+    "street_arterial_on_land": 5.53,
+    "street_now_token_on_land": 1.26,
+    "footprint_fill_45pct_hex": "#292f37",
+    "footprint_fill_on_land": 1.24,
+    "footprint_hairline_grey4_on_land": 2.96,
+    "name_grey1_on_land": 10.75,
+    "name_grey2_on_land": 5.53,
+    "name_grey2_on_footprint_fill": 4.46,
+    "hazard_red_stroke_on_footprint_fill": 4.86,
+    "hazard_red_stroke_on_land": 6.03,
+    "hazard_12pct_over_footprint_hex": "#43363d",
+    "hazard_12pct_over_footprint_vs_name_grey1": 7.36,
+    "amber_watch_stroke_on_footprint_fill": 7.09,
+    "gold_advisory_stroke_on_footprint_fill": 8.51,
+    "steel_statement_stroke_on_footprint_fill": 6.53
+   },
+   "note": "street and footprint colours are proposals built from existing tokens (map.css lines 7-30, 100-115); the hazard stroke colours are the chip colours of each mode (map.css --hz-*, --chip-*)."
+  },
+  "look_gpu": {
+   "gpu_feature_status": {
+    "2d_canvas": "unavailable_software",
+    "direct_rendering_display_compositor": "disabled_off_ok",
+    "gpu_compositing": "disabled_software",
+    "multiple_raster_threads": "enabled_on",
+    "opengl": "disabled_off",
+    "rasterization": "disabled_software",
+    "raw_draw": "disabled_off_ok",
+    "skia_graphite": "disabled_off",
+    "trees_in_viz": "disabled_off",
+    "video_decode": "disabled_software",
+    "video_encode": "disabled_software",
+    "vulkan": "disabled_off",
+    "webgl": "unavailable_software",
+    "webgl2": "unavailable_software",
+    "webgpu": "disabled_off",
+    "webnn": "unavailable_software"
+   },
+   "gpu_driver": "",
+   "gpu_devices": [
+    {
+     "vendor": "Google Inc. (Google)",
+     "device": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver-5.0.0)"
+    }
+   ],
+   "gpu_aux": {
+    "amdSwitchable": false,
+    "canSupportThreadedTextureMailbox": false,
+    "directRenderingVersion": "",
+    "displayType": "ANGLE_SWIFTSHADER",
+    "glExtensions": "GL_AMD_performance_monitor GL_ANGLE_base_vertex_base_instance_shader_builtin GL_ANGLE_blob_cache GL_ANGLE_client_arrays GL_ANGLE_compressed_texture_etc GL_ANGLE_depth_texture GL_ANGLE_framebuffer_blit GL_ANGLE_framebuffer_multisample GL_ANGLE_get_image GL_ANGLE_get_serialized_context_string GL_ANGLE_get_tex_level_parameter GL_ANGLE_instanced_arrays GL_ANGLE_memory_object_flags GL_ANGLE_memory_size GL_ANGLE_multi_draw GL_ANGLE_pack_reverse_row_order GL_ANGLE_polygon_mode GL_ANGLE_program_binary_readiness_query GL_ANGLE_program_cache_control GL_ANGLE_read_only_depth_stencil_feedback_loops GL_ANGLE_relaxed_vertex_attribute_type GL_ANGLE_request_extension GL_ANGLE_rgbx_internal_format GL_ANGLE_robust_client_memory GL_ANGLE_robust_fragment_shader_output GL_ANGLE_robust_resource_initialization GL_ANGLE_texture_compression_dxt3 GL_ANGLE_texture_compression_dxt5 GL_ANGLE_texture_usage GL_ANGLE_translated_shader_source GL_ANGLE_vulkan_image GL_APPLE_clip_distance GL_ARM_rgba8 GL_ARM_shader_framebuffer_fetch GL_ARM_shader_framebuffer_fetch_depth_stencil GL_CHROMIUM_bind_generates_resource GL_CHROMIUM_bind_uniform_location GL_CHROMIUM_color_buffer_float_rgb GL_CHROMIUM_color_buffer_float_rgba GL_CHROMIUM_copy_compressed_texture GL_CHROMIUM_copy_texture GL_CHROMIUM_lose_context GL_EXT_EGL_image_external_wrap_modes GL_EXT_base_instance GL_EXT_blend_minmax GL_EXT_buffer_storage GL_EXT_clear_texture GL_EXT_clip_control GL_EXT_color_buffer_half_float GL_EXT_compressed_ETC1_RGB8_sub_texture GL_EXT_copy_image GL_EXT_debug_label GL_EXT_debug_marker GL_EXT_depth_clamp GL_EXT_discard_framebuffer GL_EXT_disjoint_timer_query GL_EXT_draw_buffers GL_EXT_draw_elements_base_vertex GL_EXT_float_blend GL_EXT_frag_depth GL_EXT_instanced_arrays GL_EXT_map_buffer_range GL_EXT_memory_object GL_EXT_memory_object_fd GL_EXT_occlusion_query_boolean GL_EXT_polygon_offset_clamp GL_EXT_read_format_bgra GL_EXT_robustness GL_EXT_sRGB GL_EXT_sRGB_write_control GL_EXT_semaphore GL_EXT_semaphore_fd GL_EXT_separate_shader_objects GL_EXT_shader_framebuffer_fetch GL_EXT_shader_framebuffer_fetch_non_coherent GL_EXT_shader_non_constant_global_initializers GL_EXT_shader_texture_lod GL_EXT_shadow_samplers GL_EXT_texture_border_clamp GL_EXT_texture_compression_bptc GL_EXT_texture_compression_dxt1 GL_EXT_texture_compression_rgtc GL_EXT_texture_compression_s3tc_srgb GL_EXT_texture_filter_anisotropic GL_EXT_texture_format_BGRA8888 GL_EXT_texture_mirror_clamp_to_edge GL_EXT_texture_rg GL_EXT_texture_sRGB_decode GL_EXT_texture_storage GL_EXT_texture_type_2_10_10_10_REV GL_EXT_unpack_subimage GL_KHR_blend_equation_advanced GL_KHR_debug GL_KHR_robust_buffer_access_behavior GL_KHR_robustness GL_KHR_texture_compression_astc_ldr GL_NV_depth_buffer_float2 GL_NV_fence GL_NV_framebuffer_blit GL_NV_pack_subimage GL_NV_pixel_buffer_object GL_NV_polygon_mode GL_NV_read_depth GL_NV_read_depth_stencil GL_NV_read_stencil GL_OES_EGL_image GL_OES_EGL_image_external GL_OES_EGL_sync GL_OES_compressed_EAC_R11_signed_texture GL_OES_compressed_EAC_R11_unsigned_texture GL_OES_compressed_EAC_RG11_signed_texture GL_OES_compressed_EAC_RG11_unsigned_texture GL_OES_compressed_ETC1_RGB8_texture GL_OES_compressed_ETC2_RGB8_texture GL_OES_compressed_ETC2_RGBA8_texture GL_OES_compressed_ETC2_punchthroughA_RGBA8_texture GL_OES_compressed_ETC2_punchthroughA_sRGB8_alpha_texture GL_OES_compressed_ETC2_sRGB8_alpha8_texture GL_OES_compressed_ETC2_sRGB8_texture GL_OES_copy_image GL_OES_depth24 GL_OES_depth32 GL_OES_depth_texture GL_OES_depth_texture_cube_map GL_OES_draw_elements_base_vertex GL_OES_element_index_uint GL_OES_fbo_render_mipmap GL_OES_get_program_binary GL_OES_mapbuffer GL_OES_packed_depth_stencil GL_OES_required_internalformat GL_OES_rgb8_rgba8 GL_OES_sample_shading GL_OES_standard_derivatives GL_OES_surfaceless_context GL_OES_texture_3D GL_OES_texture_border_clamp GL_OES_texture_float GL_OES_texture_float_linear GL_OES_texture_half_float GL_OES_texture_half_float_linear GL_OES_texture_npot GL_OES_vertex_array_object GL_OES_vertex_half_float ",
+    "glImplementationParts": "(gl=egl-angle,angle=swiftshader)",
+    "glRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver-5.0.0)",
+    "glResetNotificationStrategy": 33362,
+    "glVendor": "Google Inc. (Google)",
+    "glVersion": "OpenGL ES 2.0.0 (ANGLE 2.1.1 git hash: bb55ea10fcef)",
+    "glWsExtensions": "EGL_EXT_create_context_robustness EGL_ANGLE_surface_orientation EGL_KHR_create_context EGL_KHR_image EGL_KHR_image_base EGL_EXT_image_gl_colorspace EGL_KHR_gl_colorspace EGL_KHR_gl_texture_2D_image EGL_KHR_gl_texture_cubemap_image EGL_KHR_gl_renderbuffer_image EGL_KHR_get_all_proc_addresses EGL_KHR_fence_sync EGL_KHR_wait_sync EGL_ANGLE_create_context_webgl_compatibility EGL_CHROMIUM_create_context_bind_generates_resource EGL_KHR_swap_buffers_with_damage EGL_EXT_pixel_format_float EGL_KHR_surfaceless_context EGL_ANGLE_display_texture_share_group EGL_ANGLE_display_semaphore_share_group EGL_ANGLE_create_context_client_arrays EGL_ANGLE_program_cache_control EGL_ANGLE_robust_resource_initialization EGL_ANGLE_create_context_extensions_enabled EGL_ANDROID_blob_cache EGL_ANDROID_recordable EGL_ANGLE_create_context_backwards_compatible EGL_KHR_no_config_context EGL_IMG_context_priority EGL_KHR_create_context_no_error EGL_KHR_reusable_sync EGL_EXT_buffer_age EGL_ANGLE_create_surface_swap_interval EGL_ANGLE_vulkan_image EGL_KHR_partial_update EGL_ANGLE_global_fence_sync EGL_ANGLE_memory_usage_report ",
+    "glWsVendor": "Google Inc. (Google)",
+    "glWsVersion": "1.5 (ANGLE 2.1.1 git hash: bb55ea10fcef)",
+    "hardwareSupportsVulkan": false,
+    "inProcessGpu": false,
+    "initializationTime": 0.023199,
+    "isAsan": false,
+    "isClangCoverage": false,
+    "jpegDecodeAcceleratorSupported": false,
+    "maxMsaaSamples": "4",
+    "optimus": false,
+    "passthroughCmdDecoder": true,
+    "pixelShaderVersion": "1.00",
+    "processCrashCount": 0,
+    "sandboxed": false,
+    "skiaBackendType": "GaneshGL",
+    "subpixelFontRendering": true,
+    "targetCpuBits": 64,
+    "vertexShaderVersion": "1.00",
+    "visibilityCallbackCallCount": 0
+   },
+   "light_desktop": {
+    "png": "/home/user/wt/research-b35/scratch-rendering/out/look_light_desktop.png",
+    "placed_labels": "17",
+    "names_considered": "888",
+    "footprints_drawn": "293",
+    "page_errors": []
+   },
+   "light_phone": {
+    "png": "/home/user/wt/research-b35/scratch-rendering/out/look_light_phone.png",
+    "placed_labels": "4",
+    "names_considered": "888",
+    "footprints_drawn": "293",
+    "page_errors": []
+   },
+   "dark_desktop": {
+    "png": "/home/user/wt/research-b35/scratch-rendering/out/look_dark_desktop.png",
+    "placed_labels": "17",
+    "names_considered": "888",
+    "footprints_drawn": "293",
+    "page_errors": []
+   },
+   "dark_phone": {
+    "png": "/home/user/wt/research-b35/scratch-rendering/out/look_dark_phone.png",
+    "placed_labels": "4",
+    "names_considered": "888",
+    "footprints_drawn": "293",
+    "page_errors": []
+   }
+  },
+  "bench_summary": [
+   {
+    "variant": "leaflet",
+    "scenario": "view",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": null,
+    "halo": true,
+    "runs": 3,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 1997.85,
+     "min": 1976.4,
+     "max": 2011.4,
+     "per_run": [
+      2011.4,
+      1976.4,
+      1997.85
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 49.4,
+     "min": 48.65,
+     "max": 50.25,
+     "per_run": [
+      48.65,
+      49.4,
+      50.25
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 417.55,
+     "min": 414.15,
+     "max": 426.4,
+     "per_run": [
+      414.15,
+      417.55,
+      426.4
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 1497.8,
+     "min": 1495.9,
+     "max": 1538.3,
+     "per_run": [
+      1495.9,
+      1497.8,
+      1538.3
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 2102.9,
+     "min": 2084.0,
+     "max": 2113.2,
+     "per_run": [
+      2113.2,
+      2084.0,
+      2102.9
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 1531.8,
+     "min": 1491.3,
+     "max": 1732.3,
+     "per_run": [
+      1531.8,
+      1732.3,
+      1491.3
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 322.35,
+     "min": 299.25,
+     "max": 346.9,
+     "per_run": [
+      322.35,
+      346.9,
+      299.25
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 211.65,
+     "min": 209.05,
+     "max": 223.65,
+     "per_run": [
+      209.05,
+      223.65,
+      211.65
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 1006.1,
+     "min": 959.8,
+     "max": 1045.3,
+     "per_run": [
+      1006.1,
+      1045.3,
+      959.8
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 396.2,
+     "min": 374.5,
+     "max": 558.2,
+     "per_run": [
+      396.2,
+      374.5,
+      558.2
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 1986.7,
+     "min": 1867.7,
+     "max": 2424.6,
+     "per_run": [
+      1867.7,
+      1986.7,
+      2424.6
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 39866408,
+     "min": 39863944,
+     "max": 39884740,
+     "per_run": [
+      39863944,
+      39866408,
+      39884740
+     ]
+    },
+    "canvas_bytes": [
+     11796480,
+     11796480,
+     11796480
+    ],
+    "visible_after_last": null,
+    "labels_drawn_after_last": 2999,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "view",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": false,
+    "halo": true,
+    "runs": 3,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 3035.3,
+     "min": 2911.7,
+     "max": 3087.85,
+     "per_run": [
+      2911.7,
+      3035.3,
+      3087.85
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.1,
+     "min": 0.1,
+     "max": 0.15,
+     "per_run": [
+      0.1,
+      0.15,
+      0.1
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 440.35,
+     "min": 426.9,
+     "max": 454.45,
+     "per_run": [
+      440.35,
+      454.45,
+      426.9
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 2588.5,
+     "min": 2468.05,
+     "max": 2664.1,
+     "per_run": [
+      2468.05,
+      2588.5,
+      2664.1
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 3300.6,
+     "min": 3183.7,
+     "max": 3385.2,
+     "per_run": [
+      3385.2,
+      3300.6,
+      3183.7
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 1866.25,
+     "min": 1829.35,
+     "max": 1984.9,
+     "per_run": [
+      1829.35,
+      1984.9,
+      1866.25
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 10.5,
+     "min": 10.3,
+     "max": 10.8,
+     "per_run": [
+      10.5,
+      10.8,
+      10.3
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 258.55,
+     "min": 246.7,
+     "max": 279.75,
+     "per_run": [
+      258.55,
+      279.75,
+      246.7
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 1619.65,
+     "min": 1570.4,
+     "max": 1720.6,
+     "per_run": [
+      1570.4,
+      1720.6,
+      1619.65
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 536.9,
+     "min": 504.5,
+     "max": 704.6,
+     "per_run": [
+      536.9,
+      504.5,
+      704.6
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 2424.4,
+     "min": 2421.4,
+     "max": 2441.2,
+     "per_run": [
+      2421.4,
+      2424.4,
+      2441.2
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 112592,
+     "min": 112584,
+     "max": 112596,
+     "per_run": [
+      112592,
+      112596,
+      112584
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": {
+     "polylines": 19868,
+     "polygons": 4938
+    },
+    "labels_drawn_after_last": 2999,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "view",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": true,
+    "halo": true,
+    "runs": 3,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 1908.3,
+     "min": 1864.6,
+     "max": 1981.0,
+     "per_run": [
+      1981.0,
+      1908.3,
+      1864.6
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.1,
+     "min": 0.1,
+     "max": 0.1,
+     "per_run": [
+      0.1,
+      0.1,
+      0.1
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 401.05,
+     "min": 388.95,
+     "max": 405.7,
+     "per_run": [
+      401.05,
+      405.7,
+      388.95
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 1486.2,
+     "min": 1485.35,
+     "max": 1536.35,
+     "per_run": [
+      1536.35,
+      1486.2,
+      1485.35
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 2049.7,
+     "min": 2011.4,
+     "max": 2303.4,
+     "per_run": [
+      2303.4,
+      2011.4,
+      2049.7
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 1267.35,
+     "min": 1265.55,
+     "max": 1313.65,
+     "per_run": [
+      1313.65,
+      1267.35,
+      1265.55
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 10.65,
+     "min": 10.5,
+     "max": 12.5,
+     "per_run": [
+      12.5,
+      10.65,
+      10.5
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 217.75,
+     "min": 210.95,
+     "max": 231.95,
+     "per_run": [
+      231.95,
+      217.75,
+      210.95
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 1058.05,
+     "min": 1033.95,
+     "max": 1063.35,
+     "per_run": [
+      1063.35,
+      1058.05,
+      1033.95
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 462.2,
+     "min": 436.9,
+     "max": 629.3,
+     "per_run": [
+      436.9,
+      629.3,
+      462.2
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 1572.1,
+     "min": 1394.2,
+     "max": 1598.5,
+     "per_run": [
+      1598.5,
+      1394.2,
+      1572.1
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 112700,
+     "min": 112592,
+     "max": 112816,
+     "per_run": [
+      112592,
+      112700,
+      112816
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": {
+     "polylines": 19868,
+     "polygons": 4938
+    },
+    "labels_drawn_after_last": 2999,
+    "page_errors": []
+   },
+   {
+    "variant": "leaflet",
+    "scenario": "view",
+    "scale": 1,
+    "labels_on": false,
+    "paths_on": true,
+    "stroke_per_path": null,
+    "halo": true,
+    "runs": 3,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 483.3,
+     "min": 476.95,
+     "max": 488.1,
+     "per_run": [
+      488.1,
+      476.95,
+      483.3
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 46.95,
+     "min": 44.7,
+     "max": 47.8,
+     "per_run": [
+      44.7,
+      47.8,
+      46.95
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 410.65,
+     "min": 404.4,
+     "max": 410.85,
+     "per_run": [
+      410.65,
+      404.4,
+      410.85
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 19.05,
+     "min": 18.2,
+     "max": 19.2,
+     "per_run": [
+      19.05,
+      18.2,
+      19.2
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 523.6,
+     "min": 520.4,
+     "max": 536.8,
+     "per_run": [
+      536.8,
+      523.6,
+      520.4
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 599.95,
+     "min": 553.5,
+     "max": 604.6,
+     "per_run": [
+      599.95,
+      553.5,
+      604.6
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 305.2,
+     "min": 246.85,
+     "max": 319.0,
+     "per_run": [
+      305.2,
+      246.85,
+      319.0
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 206.55,
+     "min": 199.95,
+     "max": 210.25,
+     "per_run": [
+      206.55,
+      199.95,
+      210.25
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 81.8,
+     "min": 76.9,
+     "max": 86.15,
+     "per_run": [
+      81.8,
+      76.9,
+      86.15
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 372.7,
+     "min": 309.6,
+     "max": 423.5,
+     "per_run": [
+      423.5,
+      309.6,
+      372.7
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 424.2,
+     "min": 407.7,
+     "max": 490.9,
+     "per_run": [
+      490.9,
+      407.7,
+      424.2
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 39867320,
+     "min": 39864764,
+     "max": 39872356,
+     "per_run": [
+      39864764,
+      39867320,
+      39872356
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": null,
+    "labels_drawn_after_last": null,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "view",
+    "scale": 1,
+    "labels_on": false,
+    "paths_on": true,
+    "stroke_per_path": false,
+    "halo": true,
+    "runs": 3,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 1213.4,
+     "min": 1177.25,
+     "max": 1261.65,
+     "per_run": [
+      1261.65,
+      1177.25,
+      1213.4
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.1,
+     "min": 0.1,
+     "max": 0.1,
+     "per_run": [
+      0.1,
+      0.1,
+      0.1
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 243.8,
+     "min": 241.75,
+     "max": 258.3,
+     "per_run": [
+      258.3,
+      241.75,
+      243.8
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 967.95,
+     "min": 929.65,
+     "max": 1000.55,
+     "per_run": [
+      1000.55,
+      929.65,
+      967.95
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 1288.5,
+     "min": 1245.4,
+     "max": 1326.3,
+     "per_run": [
+      1326.3,
+      1245.4,
+      1288.5
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 819.35,
+     "min": 788.0,
+     "max": 841.5,
+     "per_run": [
+      841.5,
+      788.0,
+      819.35
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 9.9,
+     "min": 9.05,
+     "max": 10.3,
+     "per_run": [
+      10.3,
+      9.05,
+      9.9
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 155.5,
+     "min": 142.65,
+     "max": 160.4,
+     "per_run": [
+      160.4,
+      142.65,
+      155.5
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 651.05,
+     "min": 634.5,
+     "max": 672.1,
+     "per_run": [
+      672.1,
+      634.5,
+      651.05
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 317.4,
+     "min": 294,
+     "max": 404.8,
+     "per_run": [
+      404.8,
+      294,
+      317.4
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 979.8,
+     "min": 942.3,
+     "max": 1206.3,
+     "per_run": [
+      1206.3,
+      942.3,
+      979.8
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 108180,
+     "min": 108180,
+     "max": 108368,
+     "per_run": [
+      108180,
+      108180,
+      108368
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": {
+     "polylines": 19868,
+     "polygons": 4938
+    },
+    "labels_drawn_after_last": null,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "view",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": false,
+    "stroke_per_path": false,
+    "halo": true,
+    "runs": 3,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 1521.7,
+     "min": 1496.55,
+     "max": 1717.7,
+     "per_run": [
+      1496.55,
+      1521.7,
+      1717.7
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.15,
+     "min": 0.1,
+     "max": 0.15,
+     "per_run": [
+      0.15,
+      0.1,
+      0.15
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 18.9,
+     "min": 17.4,
+     "max": 23.2,
+     "per_run": [
+      17.4,
+      18.9,
+      23.2
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 1501.8,
+     "min": 1481.55,
+     "max": 1692.05,
+     "per_run": [
+      1481.55,
+      1501.8,
+      1692.05
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 1684.6,
+     "min": 1668.7,
+     "max": 1822.8,
+     "per_run": [
+      1668.7,
+      1684.6,
+      1822.8
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 929.7,
+     "min": 915.5,
+     "max": 966.7,
+     "per_run": [
+      966.7,
+      929.7,
+      915.5
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 1.45,
+     "min": 1.4,
+     "max": 1.45,
+     "per_run": [
+      1.4,
+      1.45,
+      1.45
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 13.45,
+     "min": 11.4,
+     "max": 15.2,
+     "per_run": [
+      13.45,
+      11.4,
+      15.2
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 915.8,
+     "min": 900.1,
+     "max": 952.9,
+     "per_run": [
+      952.9,
+      915.8,
+      900.1
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 51.5,
+     "min": 44.7,
+     "max": 60.9,
+     "per_run": [
+      60.9,
+      44.7,
+      51.5
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 1531.8,
+     "min": 1465.4,
+     "max": 1590.2,
+     "per_run": [
+      1465.4,
+      1531.8,
+      1590.2
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 75132,
+     "min": 75128,
+     "max": 75164,
+     "per_run": [
+      75128,
+      75132,
+      75164
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": null,
+    "labels_drawn_after_last": 2999,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "view",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": false,
+    "stroke_per_path": false,
+    "halo": false,
+    "runs": 3,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 406.95,
+     "min": 405.0,
+     "max": 473.8,
+     "per_run": [
+      405.0,
+      473.8,
+      406.95
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.1,
+     "min": 0.1,
+     "max": 0.1,
+     "per_run": [
+      0.1,
+      0.1,
+      0.1
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 14.1,
+     "min": 12.25,
+     "max": 16.45,
+     "per_run": [
+      14.1,
+      16.45,
+      12.25
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 395.45,
+     "min": 390.0,
+     "max": 453.4,
+     "per_run": [
+      390.0,
+      453.4,
+      395.45
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 552.3,
+     "min": 492.3,
+     "max": 774.4,
+     "per_run": [
+      552.3,
+      774.4,
+      492.3
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 302.1,
+     "min": 291.7,
+     "max": 318.05,
+     "per_run": [
+      291.7,
+      318.05,
+      302.1
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 1.45,
+     "min": 1.4,
+     "max": 1.5,
+     "per_run": [
+      1.5,
+      1.4,
+      1.45
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 13.0,
+     "min": 11.5,
+     "max": 16.05,
+     "per_run": [
+      16.05,
+      11.5,
+      13.0
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 281.5,
+     "min": 277.0,
+     "max": 306.7,
+     "per_run": [
+      277.0,
+      306.7,
+      281.5
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 42.3,
+     "min": 37.9,
+     "max": 71.6,
+     "per_run": [
+      42.3,
+      71.6,
+      37.9
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 411.7,
+     "min": 384,
+     "max": 428.6,
+     "per_run": [
+      384,
+      411.7,
+      428.6
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 74888,
+     "min": 74800,
+     "max": 74924,
+     "per_run": [
+      74888,
+      74800,
+      74924
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": null,
+    "labels_drawn_after_last": 2999,
+    "page_errors": []
+   },
+   {
+    "variant": "leaflet",
+    "scenario": "view",
+    "scale": 2,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": null,
+    "halo": true,
+    "runs": 3,
+    "polylines": 40000,
+    "polygons": 10000,
+    "labels": 6000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 4777.65,
+     "min": 4536.15,
+     "max": 5407.2,
+     "per_run": [
+      5407.2,
+      4536.15,
+      4777.65
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 153.9,
+     "min": 142.65,
+     "max": 194.4,
+     "per_run": [
+      153.9,
+      194.4,
+      142.65
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 1042.3,
+     "min": 964.05,
+     "max": 1172.0,
+     "per_run": [
+      1172.0,
+      1042.3,
+      964.05
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 3615.05,
+     "min": 3297.75,
+     "max": 3962.25,
+     "per_run": [
+      3962.25,
+      3297.75,
+      3615.05
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 5664.5,
+     "min": 5486.2,
+     "max": 6138.8,
+     "per_run": [
+      5664.5,
+      6138.8,
+      5486.2
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 4596.6,
+     "min": 3755.6,
+     "max": 5081.65,
+     "per_run": [
+      4596.6,
+      3755.6,
+      5081.65
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 1126.65,
+     "min": 843.65,
+     "max": 1375.85,
+     "per_run": [
+      1126.65,
+      843.65,
+      1375.85
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 517.15,
+     "min": 508.35,
+     "max": 677.3,
+     "per_run": [
+      517.15,
+      508.35,
+      677.3
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 2471.8,
+     "min": 2290.3,
+     "max": 2978.75,
+     "per_run": [
+      2471.8,
+      2290.3,
+      2978.75
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 1448.2,
+     "min": 1261.9,
+     "max": 1983.3,
+     "per_run": [
+      1448.2,
+      1261.9,
+      1983.3
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 4807.6,
+     "min": 4386.3,
+     "max": 5711.7,
+     "per_run": [
+      4386.3,
+      4807.6,
+      5711.7
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 79222500,
+     "min": 79195016,
+     "max": 79227560,
+     "per_run": [
+      79222500,
+      79227560,
+      79195016
+     ]
+    },
+    "canvas_bytes": [
+     11796480,
+     11796480,
+     11796480
+    ],
+    "visible_after_last": null,
+    "labels_drawn_after_last": 5993,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "view",
+    "scale": 2,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": false,
+    "halo": true,
+    "runs": 3,
+    "polylines": 40000,
+    "polygons": 10000,
+    "labels": 6000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 11927.0,
+     "min": 6757.6,
+     "max": 13977.6,
+     "per_run": [
+      13977.6,
+      11927.0,
+      6757.6
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.2,
+     "min": 0.1,
+     "max": 0.2,
+     "per_run": [
+      0.2,
+      0.2,
+      0.1
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 3008.45,
+     "min": 1895.35,
+     "max": 3806.35,
+     "per_run": [
+      3806.35,
+      3008.45,
+      1895.35
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 9021.4,
+     "min": 4912.95,
+     "max": 10792.5,
+     "per_run": [
+      10792.5,
+      9021.4,
+      4912.95
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 14241.2,
+     "min": 10518.6,
+     "max": 15395.4,
+     "per_run": [
+      15395.4,
+      14241.2,
+      10518.6
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 5732.6,
+     "min": 4243.0,
+     "max": 11027.6,
+     "per_run": [
+      11027.6,
+      5732.6,
+      4243.0
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 31.7,
+     "min": 24.1,
+     "max": 68.55,
+     "per_run": [
+      68.55,
+      31.7,
+      24.1
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 1358.4,
+     "min": 978.75,
+     "max": 2220.9,
+     "per_run": [
+      2220.9,
+      1358.4,
+      978.75
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 4347.45,
+     "min": 3250.7,
+     "max": 8639.8,
+     "per_run": [
+      8639.8,
+      4347.45,
+      3250.7
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 3389,
+     "min": 2596.4,
+     "max": 3894.1,
+     "per_run": [
+      3389,
+      3894.1,
+      2596.4
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 10022.7,
+     "min": 5279.8,
+     "max": 10942.6,
+     "per_run": [
+      10022.7,
+      10942.6,
+      5279.8
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 124556,
+     "min": 124488,
+     "max": 124860,
+     "per_run": [
+      124860,
+      124488,
+      124556
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": {
+     "polylines": 39721,
+     "polygons": 9896
+    },
+    "labels_drawn_after_last": 5993,
+    "page_errors": []
+   },
+   {
+    "variant": "leaflet",
+    "scenario": "tile",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": null,
+    "halo": true,
+    "runs": 3,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 250.0,
+     "min": 246.2,
+     "max": 265.55,
+     "per_run": [
+      250.0,
+      265.55,
+      246.2
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 21.15,
+     "min": 18.75,
+     "max": 22.95,
+     "per_run": [
+      21.15,
+      18.75,
+      22.95
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 13.1,
+     "min": 13.0,
+     "max": 13.5,
+     "per_run": [
+      13.5,
+      13.1,
+      13.0
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 214.65,
+     "min": 212.0,
+     "max": 228.45,
+     "per_run": [
+      212.0,
+      228.45,
+      214.65
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 302.9,
+     "min": 269.4,
+     "max": 342.3,
+     "per_run": [
+      269.4,
+      342.3,
+      302.9
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 535.0,
+     "min": 514.0,
+     "max": 570.25,
+     "per_run": [
+      514.0,
+      535.0,
+      570.25
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 349.05,
+     "min": 325.75,
+     "max": 377.6,
+     "per_run": [
+      325.75,
+      349.05,
+      377.6
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 13.3,
+     "min": 12.5,
+     "max": 15.05,
+     "per_run": [
+      15.05,
+      12.5,
+      13.3
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 162.45,
+     "min": 155.3,
+     "max": 171.1,
+     "per_run": [
+      155.3,
+      171.1,
+      162.45
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 584.2,
+     "min": 375,
+     "max": 671.4,
+     "per_run": [
+      375,
+      671.4,
+      584.2
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 362.4,
+     "min": 284.5,
+     "max": 362.8,
+     "per_run": [
+      284.5,
+      362.8,
+      362.4
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 35395320,
+     "min": 35392044,
+     "max": 35401732,
+     "per_run": [
+      35392044,
+      35395320,
+      35401732
+     ]
+    },
+    "canvas_bytes": [
+     11796480,
+     11796480,
+     11796480
+    ],
+    "visible_after_last": null,
+    "labels_drawn_after_last": 388,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "tile",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": false,
+    "halo": true,
+    "runs": 3,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 248.35,
+     "min": 243.2,
+     "max": 252.3,
+     "per_run": [
+      248.35,
+      252.3,
+      243.2
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.1,
+     "min": 0.1,
+     "max": 0.1,
+     "per_run": [
+      0.1,
+      0.1,
+      0.1
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 10.05,
+     "min": 9.75,
+     "max": 10.9,
+     "per_run": [
+      9.75,
+      10.05,
+      10.9
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 236.05,
+     "min": 231.5,
+     "max": 242.8,
+     "per_run": [
+      236.05,
+      242.8,
+      231.5
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 300.4,
+     "min": 291.3,
+     "max": 304.6,
+     "per_run": [
+      291.3,
+      304.6,
+      300.4
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 218.0,
+     "min": 207.1,
+     "max": 229.9,
+     "per_run": [
+      207.1,
+      218.0,
+      229.9
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 12.0,
+     "min": 11.8,
+     "max": 12.0,
+     "per_run": [
+      11.8,
+      12.0,
+      12.0
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 20.9,
+     "min": 20.9,
+     "max": 21.7,
+     "per_run": [
+      21.7,
+      20.9,
+      20.9
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 166.2,
+     "min": 158.35,
+     "max": 174.15,
+     "per_run": [
+      166.2,
+      174.15,
+      158.35
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 86.7,
+     "min": 82,
+     "max": 129.6,
+     "per_run": [
+      82,
+      129.6,
+      86.7
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 253,
+     "min": 238.2,
+     "max": 332.8,
+     "per_run": [
+      253,
+      332.8,
+      238.2
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 113972,
+     "min": 113452,
+     "max": 114068,
+     "per_run": [
+      113452,
+      113972,
+      114068
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": {
+     "polylines": 2351,
+     "polygons": 542
+    },
+    "labels_drawn_after_last": 388,
+    "page_errors": []
+   },
+   {
+    "variant": "leaflet",
+    "scenario": "real",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": null,
+    "halo": true,
+    "runs": 3,
+    "polylines": 1376,
+    "polygons": 0,
+    "labels": 888,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 14.95,
+     "min": 14.55,
+     "max": 17.95,
+     "per_run": [
+      14.55,
+      14.95,
+      17.95
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 1.35,
+     "min": 0.95,
+     "max": 1.4,
+     "per_run": [
+      1.35,
+      0.95,
+      1.4
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 1.75,
+     "min": 1.7,
+     "max": 2.3,
+     "per_run": [
+      1.7,
+      1.75,
+      2.3
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 12.35,
+     "min": 11.55,
+     "max": 13.9,
+     "per_run": [
+      11.55,
+      12.35,
+      13.9
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 20.7,
+     "min": 18.7,
+     "max": 22.5,
+     "per_run": [
+      20.7,
+      18.7,
+      22.5
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 22.15,
+     "min": 20.4,
+     "max": 27.5,
+     "per_run": [
+      27.5,
+      20.4,
+      22.15
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 9.25,
+     "min": 8.65,
+     "max": 11.1,
+     "per_run": [
+      11.1,
+      8.65,
+      9.25
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 1.9,
+     "min": 1.7,
+     "max": 2.3,
+     "per_run": [
+      1.9,
+      1.7,
+      2.3
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 11.7,
+     "min": 10.7,
+     "max": 13.85,
+     "per_run": [
+      13.85,
+      10.7,
+      11.7
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 79.8,
+     "min": 76.4,
+     "max": 124.5,
+     "per_run": [
+      124.5,
+      76.4,
+      79.8
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 81.3,
+     "min": 73.1,
+     "max": 124.9,
+     "per_run": [
+      124.9,
+      81.3,
+      73.1
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 2038520,
+     "min": 2037928,
+     "max": 2039824,
+     "per_run": [
+      2039824,
+      2038520,
+      2037928
+     ]
+    },
+    "canvas_bytes": [
+     11796480,
+     11796480,
+     11796480
+    ],
+    "visible_after_last": null,
+    "labels_drawn_after_last": 145,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "real",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": false,
+    "halo": true,
+    "runs": 3,
+    "polylines": 1376,
+    "polygons": 0,
+    "labels": 888,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 11.15,
+     "min": 10.55,
+     "max": 13.4,
+     "per_run": [
+      13.4,
+      11.15,
+      10.55
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.1,
+     "min": 0.1,
+     "max": 0.1,
+     "per_run": [
+      0.1,
+      0.1,
+      0.1
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 1.4,
+     "min": 1.4,
+     "max": 1.95,
+     "per_run": [
+      1.95,
+      1.4,
+      1.4
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 9.4,
+     "min": 9.05,
+     "max": 11.1,
+     "per_run": [
+      11.1,
+      9.4,
+      9.05
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 12.7,
+     "min": 12.4,
+     "max": 19.3,
+     "per_run": [
+      19.3,
+      12.7,
+      12.4
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 12.0,
+     "min": 11.3,
+     "max": 13.4,
+     "per_run": [
+      13.4,
+      12.0,
+      11.3
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 0.8,
+     "min": 0.75,
+     "max": 0.85,
+     "per_run": [
+      0.85,
+      0.8,
+      0.75
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 1.8,
+     "min": 1.65,
+     "max": 2.05,
+     "per_run": [
+      2.05,
+      1.8,
+      1.65
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 9.35,
+     "min": 8.85,
+     "max": 10.65,
+     "per_run": [
+      10.65,
+      9.35,
+      8.85
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 24.4,
+     "min": 22.9,
+     "max": 39.4,
+     "per_run": [
+      39.4,
+      22.9,
+      24.4
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 68.6,
+     "min": 64,
+     "max": 94.8,
+     "per_run": [
+      94.8,
+      64,
+      68.6
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 99528,
+     "min": 98328,
+     "max": 99556,
+     "per_run": [
+      98328,
+      99528,
+      99556
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": {
+     "polylines": 234,
+     "polygons": 0
+    },
+    "labels_drawn_after_last": 145,
+    "page_errors": []
+   },
+   {
+    "variant": "svg",
+    "scenario": "view",
+    "scale": 1,
+    "labels_on": false,
+    "paths_on": true,
+    "stroke_per_path": null,
+    "halo": true,
+    "runs": 1,
+    "polylines": 20000,
+    "polygons": 5000,
+    "labels": 3000,
+    "seeds": [
+     1
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 300.1,
+     "min": 300.1,
+     "max": 300.1,
+     "per_run": [
+      300.1
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 297.9,
+     "min": 297.9,
+     "max": 297.9,
+     "per_run": [
+      297.9
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 0,
+     "min": 0,
+     "max": 0,
+     "per_run": [
+      0
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 2.2,
+     "min": 2.2,
+     "max": 2.2,
+     "per_run": [
+      2.2
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 338.2,
+     "min": 338.2,
+     "max": 338.2,
+     "per_run": [
+      338.2
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 855.3,
+     "min": 855.3,
+     "max": 855.3,
+     "per_run": [
+      855.3
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 853.5,
+     "min": 853.5,
+     "max": 853.5,
+     "per_run": [
+      853.5
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 0.0,
+     "min": 0.0,
+     "max": 0.0,
+     "per_run": [
+      0.0
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 1.8,
+     "min": 1.8,
+     "max": 1.8,
+     "per_run": [
+      1.8
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 653.7,
+     "min": 653.7,
+     "max": 653.7,
+     "per_run": [
+      653.7
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 429.3,
+     "min": 429.3,
+     "max": 429.3,
+     "per_run": [
+      429.3
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 40571476,
+     "min": 40571476,
+     "max": 40571476,
+     "per_run": [
+      40571476
+     ]
+    },
+    "canvas_bytes": [
+     0
+    ],
+    "visible_after_last": null,
+    "labels_drawn_after_last": null,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "view",
+    "scale": 2,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": true,
+    "halo": true,
+    "runs": 1,
+    "polylines": 40000,
+    "polygons": 10000,
+    "labels": 6000,
+    "seeds": [
+     1
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 4005.5,
+     "min": 4005.5,
+     "max": 4005.5,
+     "per_run": [
+      4005.5
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.1,
+     "min": 0.1,
+     "max": 0.1,
+     "per_run": [
+      0.1
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 983.75,
+     "min": 983.75,
+     "max": 983.75,
+     "per_run": [
+      983.75
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 2969.0,
+     "min": 2969.0,
+     "max": 2969.0,
+     "per_run": [
+      2969.0
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 4228.2,
+     "min": 4228.2,
+     "max": 4228.2,
+     "per_run": [
+      4228.2
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 2508.7,
+     "min": 2508.7,
+     "max": 2508.7,
+     "per_run": [
+      2508.7
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 25.05,
+     "min": 25.05,
+     "max": 25.05,
+     "per_run": [
+      25.05
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 1079.25,
+     "min": 1079.25,
+     "max": 1079.25,
+     "per_run": [
+      1079.25
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 1403.15,
+     "min": 1403.15,
+     "max": 1403.15,
+     "per_run": [
+      1403.15
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 1053.3,
+     "min": 1053.3,
+     "max": 1053.3,
+     "per_run": [
+      1053.3
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 3149.3,
+     "min": 3149.3,
+     "max": 3149.3,
+     "per_run": [
+      3149.3
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 124656,
+     "min": 124656,
+     "max": 124656,
+     "per_run": [
+      124656
+     ]
+    },
+    "canvas_bytes": [
+     5898240
+    ],
+    "visible_after_last": {
+     "polylines": 39721,
+     "polygons": 9896
+    },
+    "labels_drawn_after_last": 5993,
+    "page_errors": []
+   },
+   {
+    "variant": "raw",
+    "scenario": "real",
+    "scale": 1,
+    "labels_on": true,
+    "paths_on": true,
+    "stroke_per_path": true,
+    "halo": true,
+    "runs": 3,
+    "polylines": 1376,
+    "polygons": 0,
+    "labels": 888,
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "pan_total_ms": {
+     "median_of_runs": 12.8,
+     "min": 10.95,
+     "max": 13.1,
+     "per_run": [
+      10.95,
+      13.1,
+      12.8
+     ]
+    },
+    "pan_update_ms": {
+     "median_of_runs": 0.1,
+     "min": 0.1,
+     "max": 0.1,
+     "per_run": [
+      0.1,
+      0.1,
+      0.1
+     ]
+    },
+    "pan_draw_sync_ms": {
+     "median_of_runs": 1.55,
+     "min": 1.4,
+     "max": 1.55,
+     "per_run": [
+      1.4,
+      1.55,
+      1.55
+     ]
+    },
+    "pan_flush_ms": {
+     "median_of_runs": 11.1,
+     "min": 9.55,
+     "max": 11.35,
+     "per_run": [
+      9.55,
+      11.35,
+      11.1
+     ]
+    },
+    "pan_p90_total_ms": {
+     "median_of_runs": 16.1,
+     "min": 12.1,
+     "max": 17.8,
+     "per_run": [
+      12.1,
+      17.8,
+      16.1
+     ]
+    },
+    "zoom_total_ms": {
+     "median_of_runs": 16.9,
+     "min": 12.0,
+     "max": 19.0,
+     "per_run": [
+      12.0,
+      19.0,
+      16.9
+     ]
+    },
+    "zoom_update_ms": {
+     "median_of_runs": 1.25,
+     "min": 0.7,
+     "max": 1.3,
+     "per_run": [
+      0.7,
+      1.3,
+      1.25
+     ]
+    },
+    "zoom_draw_sync_ms": {
+     "median_of_runs": 2.35,
+     "min": 1.6,
+     "max": 2.9,
+     "per_run": [
+      1.6,
+      2.9,
+      2.35
+     ]
+    },
+    "zoom_flush_ms": {
+     "median_of_runs": 13.2,
+     "min": 9.65,
+     "max": 14.75,
+     "per_run": [
+      9.65,
+      14.75,
+      13.2
+     ]
+    },
+    "create_ms": {
+     "median_of_runs": 23.9,
+     "min": 20.7,
+     "max": 29.7,
+     "per_run": [
+      20.7,
+      23.9,
+      29.7
+     ]
+    },
+    "first_draw_ms": {
+     "median_of_runs": 75.7,
+     "min": 67.4,
+     "max": 89,
+     "per_run": [
+      67.4,
+      89,
+      75.7
+     ]
+    },
+    "heap_delta_build_bytes": {
+     "median_of_runs": 98056,
+     "min": 97888,
+     "max": 98088,
+     "per_run": [
+      98056,
+      98088,
+      97888
+     ]
+    },
+    "canvas_bytes": [
+     5898240,
+     5898240,
+     5898240
+    ],
+    "visible_after_last": {
+     "polylines": 234,
+     "polygons": 0
+    },
+    "labels_drawn_after_last": 145,
+    "page_errors": []
+   }
+  ],
+  "bench_place": {
+   "z16_target0_fitfirst0": {
+    "runs": [
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 888,
+      "kept": 724,
+      "dropped": 164,
+      "place_ms": 5.900000000372529,
+      "draw_kept_ms": 15.100000001490116,
+      "draw_all_ms": 5.799999998882413,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 888,
+      "kept": 724,
+      "dropped": 164,
+      "place_ms": 1.900000000372529,
+      "draw_kept_ms": 11.5,
+      "draw_all_ms": 4.400000000372529,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 888,
+      "kept": 724,
+      "dropped": 164,
+      "place_ms": 1.199999999254942,
+      "draw_kept_ms": 13.599999999627471,
+      "draw_all_ms": 7.599999999627471,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 1.9,
+    "draw_kept_ms_median": 13.6,
+    "draw_all_ms_median": 5.8
+   },
+   "z16_target1000_fitfirst0": {
+    "runs": [
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 724,
+      "dropped": 276,
+      "place_ms": 3.800000000745058,
+      "draw_kept_ms": 13.400000000372529,
+      "draw_all_ms": 6.199999999254942,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 724,
+      "dropped": 276,
+      "place_ms": 2.700000001117587,
+      "draw_kept_ms": 12.300000000745058,
+      "draw_all_ms": 7.299999998882413,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 725,
+      "dropped": 275,
+      "place_ms": 1.300000000745058,
+      "draw_kept_ms": 11.199999999254942,
+      "draw_all_ms": 4.900000000372529,
+      "kept_by_class": [
+       1,
+       6,
+       715,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 2.7,
+    "draw_kept_ms_median": 12.3,
+    "draw_all_ms_median": 6.2
+   },
+   "z17_target0_fitfirst0": {
+    "runs": [
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 888,
+      "kept": 803,
+      "dropped": 85,
+      "place_ms": 1.900000000372529,
+      "draw_kept_ms": 13.599999999627471,
+      "draw_all_ms": 3.700000001117587,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 888,
+      "kept": 803,
+      "dropped": 85,
+      "place_ms": 2.799999998882413,
+      "draw_kept_ms": 11.199999999254942,
+      "draw_all_ms": 3.800000000745058,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 888,
+      "kept": 803,
+      "dropped": 85,
+      "place_ms": 4.399999998509884,
+      "draw_kept_ms": 11.899999998509884,
+      "draw_all_ms": 3.800000000745058,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 2.8,
+    "draw_kept_ms_median": 11.9,
+    "draw_all_ms_median": 3.8
+   },
+   "z17_target1000_fitfirst0": {
+    "runs": [
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 803,
+      "dropped": 197,
+      "place_ms": 1.699999999254942,
+      "draw_kept_ms": 11.899999998509884,
+      "draw_all_ms": 6,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 803,
+      "dropped": 197,
+      "place_ms": 3.699999999254942,
+      "draw_kept_ms": 14.699999999254942,
+      "draw_all_ms": 5.200000001117587,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 803,
+      "dropped": 197,
+      "place_ms": 2.099999999627471,
+      "draw_kept_ms": 10.799999998882413,
+      "draw_all_ms": 4.900000000372529,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 2.1,
+    "draw_kept_ms_median": 11.9,
+    "draw_all_ms_median": 5.2
+   },
+   "z16_target0_fitfirst1": {
+    "runs": [
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 706,
+      "kept": 612,
+      "dropped": 94,
+      "place_ms": 1.699999999254942,
+      "draw_kept_ms": 9.400000000372529,
+      "draw_all_ms": 2.899999998509884,
+      "kept_by_class": [
+       1,
+       6,
+       602,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 706,
+      "kept": 612,
+      "dropped": 94,
+      "place_ms": 1.299999998882413,
+      "draw_kept_ms": 10.099999999627471,
+      "draw_all_ms": 3.5,
+      "kept_by_class": [
+       1,
+       6,
+       602,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 706,
+      "kept": 612,
+      "dropped": 94,
+      "place_ms": 1,
+      "draw_kept_ms": 10.099999999627471,
+      "draw_all_ms": 3.199999999254942,
+      "kept_by_class": [
+       1,
+       6,
+       602,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 1.3,
+    "draw_kept_ms_median": 10.1,
+    "draw_all_ms_median": 3.2
+   },
+   "z16_target1000_fitfirst1": {
+    "runs": [
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 646,
+      "dropped": 354,
+      "place_ms": 2.400000000372529,
+      "draw_kept_ms": 8.900000000372529,
+      "draw_all_ms": 4.199999999254942,
+      "kept_by_class": [
+       1,
+       6,
+       636,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 650,
+      "dropped": 350,
+      "place_ms": 1.199999999254942,
+      "draw_kept_ms": 9.5,
+      "draw_all_ms": 3.900000000372529,
+      "kept_by_class": [
+       1,
+       6,
+       640,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 647,
+      "dropped": 353,
+      "place_ms": 1.5,
+      "draw_kept_ms": 8.699999999254942,
+      "draw_all_ms": 3.599999999627471,
+      "kept_by_class": [
+       1,
+       6,
+       637,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 1.5,
+    "draw_kept_ms_median": 8.9,
+    "draw_all_ms_median": 3.9
+   },
+   "z17_target0_fitfirst1": {
+    "runs": [
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 826,
+      "kept": 754,
+      "dropped": 72,
+      "place_ms": 1.699999999254942,
+      "draw_kept_ms": 9.199999999254942,
+      "draw_all_ms": 3.5,
+      "kept_by_class": [
+       1,
+       7,
+       743,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 826,
+      "kept": 754,
+      "dropped": 72,
+      "place_ms": 1.900000000372529,
+      "draw_kept_ms": 9.599999999627471,
+      "draw_all_ms": 3.400000000372529,
+      "kept_by_class": [
+       1,
+       7,
+       743,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 826,
+      "kept": 754,
+      "dropped": 72,
+      "place_ms": 2.200000001117587,
+      "draw_kept_ms": 10.5,
+      "draw_all_ms": 3.299999998882413,
+      "kept_by_class": [
+       1,
+       7,
+       743,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 1.9,
+    "draw_kept_ms_median": 9.6,
+    "draw_all_ms_median": 3.4
+   },
+   "z17_target1000_fitfirst1": {
+    "runs": [
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 762,
+      "dropped": 238,
+      "place_ms": 1.699999999254942,
+      "draw_kept_ms": 9.900000000372529,
+      "draw_all_ms": 4.400000000372529,
+      "kept_by_class": [
+       1,
+       7,
+       751,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 759,
+      "dropped": 241,
+      "place_ms": 2.900000000372529,
+      "draw_kept_ms": 16.40000000037253,
+      "draw_all_ms": 7.099999999627471,
+      "kept_by_class": [
+       1,
+       7,
+       748,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 766,
+      "dropped": 234,
+      "place_ms": 3.5,
+      "draw_kept_ms": 10.199999999254942,
+      "draw_all_ms": 3.5,
+      "kept_by_class": [
+       1,
+       7,
+       755,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 2.9,
+    "draw_kept_ms_median": 10.2,
+    "draw_all_ms_median": 4.4
+   }
+  },
+  "bench_runs": {
+   "main_matrix_file": "out/bench_main.json (36 configurations, one fresh browser each)",
+   "follow_up_files": [
+    "out/bench_extra.json",
+    "out/bench_real3.json",
+    "out/bench_mem.json",
+    "out/bench_draw.json",
+    "out/bench_place.json"
+   ]
+  },
+  "bench_memory_build_only": [
+   {
+    "variant": "leaflet",
+    "scenario": "view",
+    "scale": 1,
+    "typed_array_bytes": 2788008,
+    "v8_heap_delta_bytes": 39858888,
+    "canvas_bytes": 11796480,
+    "features": [
+     20000,
+     5000,
+     3000
+    ]
+   },
+   {
+    "variant": "leaflet",
+    "scenario": "view",
+    "scale": 2,
+    "typed_array_bytes": 5576008,
+    "v8_heap_delta_bytes": 79211868,
+    "canvas_bytes": 11796480,
+    "features": [
+     40000,
+     10000,
+     6000
+    ]
+   },
+   {
+    "variant": "raw",
+    "scenario": "view",
+    "scale": 1,
+    "typed_array_bytes": 6148008,
+    "v8_heap_delta_bytes": 114396,
+    "canvas_bytes": 5898240,
+    "features": [
+     20000,
+     5000,
+     3000
+    ]
+   },
+   {
+    "variant": "raw",
+    "scenario": "view",
+    "scale": 2,
+    "typed_array_bytes": 12296008,
+    "v8_heap_delta_bytes": 126648,
+    "canvas_bytes": 5898240,
+    "features": [
+     40000,
+     10000,
+     6000
+    ]
+   },
+   {
+    "variant": "leaflet",
+    "scenario": "real",
+    "scale": 1,
+    "typed_array_bytes": 138024,
+    "v8_heap_delta_bytes": 2041752,
+    "canvas_bytes": 11796480,
+    "features": [
+     1376,
+     0,
+     888
+    ]
+   },
+   {
+    "variant": "raw",
+    "scenario": "real",
+    "scale": 1,
+    "typed_array_bytes": 281224,
+    "v8_heap_delta_bytes": 99968,
+    "canvas_bytes": 5898240,
+    "features": [
+     1376,
+     0,
+     888
+    ]
+   }
+  ],
+  "bench_label_draw_on_screen_1280x800": {
+   "labels50_halo1_quant0deg": {
+    "median_ms_of_runs": 2.8,
+    "runs_ms": [
+     2.8,
+     2.9,
+     2.1
+    ]
+   },
+   "labels50_halo1_quant5deg": {
+    "median_ms_of_runs": 2.1,
+    "runs_ms": [
+     2.2,
+     2,
+     2.1
+    ]
+   },
+   "labels50_halo0_quant0deg": {
+    "median_ms_of_runs": 2.2,
+    "runs_ms": [
+     1.5,
+     2.2,
+     2.4
+    ]
+   },
+   "labels50_halo0_quant5deg": {
+    "median_ms_of_runs": 2.1,
+    "runs_ms": [
+     2.1,
+     2.2,
+     1.2
+    ]
+   },
+   "labels100_halo1_quant0deg": {
+    "median_ms_of_runs": 2.7,
+    "runs_ms": [
+     2.8,
+     2.7,
+     2.7
+    ]
+   },
+   "labels100_halo1_quant5deg": {
+    "median_ms_of_runs": 2.9,
+    "runs_ms": [
+     2.9,
+     6.7,
+     2.9
+    ]
+   },
+   "labels100_halo0_quant0deg": {
+    "median_ms_of_runs": 2.1,
+    "runs_ms": [
+     2.1,
+     1.9,
+     3.6
+    ]
+   },
+   "labels100_halo0_quant5deg": {
+    "median_ms_of_runs": 2.2,
+    "runs_ms": [
+     2.2,
+     2.6,
+     2.1
+    ]
+   },
+   "labels200_halo1_quant0deg": {
+    "median_ms_of_runs": 8.1,
+    "runs_ms": [
+     6.1,
+     8.1,
+     8.2
+    ]
+   },
+   "labels200_halo1_quant5deg": {
+    "median_ms_of_runs": 7.7,
+    "runs_ms": [
+     8.3,
+     7.3,
+     7.7
+    ]
+   },
+   "labels200_halo0_quant0deg": {
+    "median_ms_of_runs": 4.6,
+    "runs_ms": [
+     4.9,
+     4.6,
+     3.9
+    ]
+   },
+   "labels200_halo0_quant5deg": {
+    "median_ms_of_runs": 3.5,
+    "runs_ms": [
+     3.5,
+     3.8,
+     3.5
+    ]
+   },
+   "labels300_halo1_quant0deg": {
+    "median_ms_of_runs": 164.9,
+    "runs_ms": [
+     151.2,
+     164.9,
+     176.4
+    ]
+   },
+   "labels300_halo1_quant5deg": {
+    "median_ms_of_runs": 13.2,
+    "runs_ms": [
+     7,
+     13.2,
+     14.6
+    ]
+   },
+   "labels300_halo0_quant0deg": {
+    "median_ms_of_runs": 8.5,
+    "runs_ms": [
+     9.2,
+     8.5,
+     6.6
+    ]
+   },
+   "labels300_halo0_quant5deg": {
+    "median_ms_of_runs": 4.6,
+    "runs_ms": [
+     4.2,
+     5.7,
+     4.6
+    ]
+   },
+   "labels1000_halo1_quant0deg": {
+    "median_ms_of_runs": 495.3,
+    "runs_ms": [
+     503.2,
+     449.9,
+     495.3
+    ]
+   },
+   "labels1000_halo1_quant5deg": {
+    "median_ms_of_runs": 396.4,
+    "runs_ms": [
+     396.4,
+     424.8,
+     343.4
+    ]
+   },
+   "labels1000_halo0_quant0deg": {
+    "median_ms_of_runs": 118.1,
+    "runs_ms": [
+     118.1,
+     151.5,
+     108.5
+    ]
+   },
+   "labels1000_halo0_quant5deg": {
+    "median_ms_of_runs": 12.5,
+    "runs_ms": [
+     12.6,
+     12,
+     12.5
+    ]
+   },
+   "labels300_halo_offsetfills_quant5deg": {
+    "median_ms_of_runs": 69.7,
+    "runs_ms": [
+     69.7,
+     73.2,
+     63.2
+    ]
+   },
+   "labels1000_halo_offsetfills_quant5deg": {
+    "median_ms_of_runs": 362.8,
+    "runs_ms": [
+     323.6,
+     363.3,
+     362.8
+    ]
+   }
+  },
+  "bench_place_real_tile": {
+   "z16_target0_fitfirst0": {
+    "runs": [
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 888,
+      "kept": 724,
+      "dropped": 164,
+      "place_ms": 5.900000000372529,
+      "draw_kept_ms": 15.100000001490116,
+      "draw_all_ms": 5.799999998882413,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 888,
+      "kept": 724,
+      "dropped": 164,
+      "place_ms": 1.900000000372529,
+      "draw_kept_ms": 11.5,
+      "draw_all_ms": 4.400000000372529,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 888,
+      "kept": 724,
+      "dropped": 164,
+      "place_ms": 1.199999999254942,
+      "draw_kept_ms": 13.599999999627471,
+      "draw_all_ms": 7.599999999627471,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 1.9,
+    "draw_kept_ms_median": 13.6,
+    "draw_all_ms_median": 5.8
+   },
+   "z16_target1000_fitfirst0": {
+    "runs": [
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 724,
+      "dropped": 276,
+      "place_ms": 3.800000000745058,
+      "draw_kept_ms": 13.400000000372529,
+      "draw_all_ms": 6.199999999254942,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 724,
+      "dropped": 276,
+      "place_ms": 2.700000001117587,
+      "draw_kept_ms": 12.300000000745058,
+      "draw_all_ms": 7.299999998882413,
+      "kept_by_class": [
+       1,
+       6,
+       714,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 725,
+      "dropped": 275,
+      "place_ms": 1.300000000745058,
+      "draw_kept_ms": 11.199999999254942,
+      "draw_all_ms": 4.900000000372529,
+      "kept_by_class": [
+       1,
+       6,
+       715,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 2.7,
+    "draw_kept_ms_median": 12.3,
+    "draw_all_ms_median": 6.2
+   },
+   "z17_target0_fitfirst0": {
+    "runs": [
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 888,
+      "kept": 803,
+      "dropped": 85,
+      "place_ms": 1.900000000372529,
+      "draw_kept_ms": 13.599999999627471,
+      "draw_all_ms": 3.700000001117587,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 888,
+      "kept": 803,
+      "dropped": 85,
+      "place_ms": 2.799999998882413,
+      "draw_kept_ms": 11.199999999254942,
+      "draw_all_ms": 3.800000000745058,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 888,
+      "kept": 803,
+      "dropped": 85,
+      "place_ms": 4.399999998509884,
+      "draw_kept_ms": 11.899999998509884,
+      "draw_all_ms": 3.800000000745058,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 2.8,
+    "draw_kept_ms_median": 11.9,
+    "draw_all_ms_median": 3.8
+   },
+   "z17_target1000_fitfirst0": {
+    "runs": [
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 803,
+      "dropped": 197,
+      "place_ms": 1.699999999254942,
+      "draw_kept_ms": 11.899999998509884,
+      "draw_all_ms": 6,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 803,
+      "dropped": 197,
+      "place_ms": 3.699999999254942,
+      "draw_kept_ms": 14.699999999254942,
+      "draw_all_ms": 5.200000001117587,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 803,
+      "dropped": 197,
+      "place_ms": 2.099999999627471,
+      "draw_kept_ms": 10.799999998882413,
+      "draw_all_ms": 4.900000000372529,
+      "kept_by_class": [
+       1,
+       7,
+       792,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 2.1,
+    "draw_kept_ms_median": 11.9,
+    "draw_all_ms_median": 5.2
+   },
+   "z16_target0_fitfirst1": {
+    "runs": [
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 706,
+      "kept": 612,
+      "dropped": 94,
+      "place_ms": 1.699999999254942,
+      "draw_kept_ms": 9.400000000372529,
+      "draw_all_ms": 2.899999998509884,
+      "kept_by_class": [
+       1,
+       6,
+       602,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 706,
+      "kept": 612,
+      "dropped": 94,
+      "place_ms": 1.299999998882413,
+      "draw_kept_ms": 10.099999999627471,
+      "draw_all_ms": 3.5,
+      "kept_by_class": [
+       1,
+       6,
+       602,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 706,
+      "kept": 612,
+      "dropped": 94,
+      "place_ms": 1,
+      "draw_kept_ms": 10.099999999627471,
+      "draw_all_ms": 3.199999999254942,
+      "kept_by_class": [
+       1,
+       6,
+       602,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 1.3,
+    "draw_kept_ms_median": 10.1,
+    "draw_all_ms_median": 3.2
+   },
+   "z16_target1000_fitfirst1": {
+    "runs": [
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 646,
+      "dropped": 354,
+      "place_ms": 2.400000000372529,
+      "draw_kept_ms": 8.900000000372529,
+      "draw_all_ms": 4.199999999254942,
+      "kept_by_class": [
+       1,
+       6,
+       636,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 650,
+      "dropped": 350,
+      "place_ms": 1.199999999254942,
+      "draw_kept_ms": 9.5,
+      "draw_all_ms": 3.900000000372529,
+      "kept_by_class": [
+       1,
+       6,
+       640,
+       3
+      ]
+     },
+     {
+      "zoom": 16,
+      "distinct_names": 888,
+      "fit_longest_piece": 706,
+      "candidates": 1000,
+      "kept": 647,
+      "dropped": 353,
+      "place_ms": 1.5,
+      "draw_kept_ms": 8.699999999254942,
+      "draw_all_ms": 3.599999999627471,
+      "kept_by_class": [
+       1,
+       6,
+       637,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 1.5,
+    "draw_kept_ms_median": 8.9,
+    "draw_all_ms_median": 3.9
+   },
+   "z17_target0_fitfirst1": {
+    "runs": [
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 826,
+      "kept": 754,
+      "dropped": 72,
+      "place_ms": 1.699999999254942,
+      "draw_kept_ms": 9.199999999254942,
+      "draw_all_ms": 3.5,
+      "kept_by_class": [
+       1,
+       7,
+       743,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 826,
+      "kept": 754,
+      "dropped": 72,
+      "place_ms": 1.900000000372529,
+      "draw_kept_ms": 9.599999999627471,
+      "draw_all_ms": 3.400000000372529,
+      "kept_by_class": [
+       1,
+       7,
+       743,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 826,
+      "kept": 754,
+      "dropped": 72,
+      "place_ms": 2.200000001117587,
+      "draw_kept_ms": 10.5,
+      "draw_all_ms": 3.299999998882413,
+      "kept_by_class": [
+       1,
+       7,
+       743,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 1.9,
+    "draw_kept_ms_median": 9.6,
+    "draw_all_ms_median": 3.4
+   },
+   "z17_target1000_fitfirst1": {
+    "runs": [
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 762,
+      "dropped": 238,
+      "place_ms": 1.699999999254942,
+      "draw_kept_ms": 9.900000000372529,
+      "draw_all_ms": 4.400000000372529,
+      "kept_by_class": [
+       1,
+       7,
+       751,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 759,
+      "dropped": 241,
+      "place_ms": 2.900000000372529,
+      "draw_kept_ms": 16.40000000037253,
+      "draw_all_ms": 7.099999999627471,
+      "kept_by_class": [
+       1,
+       7,
+       748,
+       3
+      ]
+     },
+     {
+      "zoom": 17,
+      "distinct_names": 888,
+      "fit_longest_piece": 826,
+      "candidates": 1000,
+      "kept": 766,
+      "dropped": 234,
+      "place_ms": 3.5,
+      "draw_kept_ms": 10.199999999254942,
+      "draw_all_ms": 3.5,
+      "kept_by_class": [
+       1,
+       7,
+       755,
+       3
+      ]
+     }
+    ],
+    "place_ms_median": 2.9,
+    "draw_kept_ms_median": 10.2,
+    "draw_all_ms_median": 4.4
+   }
+  },
+  "statewide_shards": {
+   "method": "quadtree on the 0.1-degree store grid; split into quarters while over the limit; depth cap 6; byte header 60",
+   "addresses_rows_2500": {
+    "tiles_with_data": 3816,
+    "shards": 4212,
+    "total_bytes_raw": 43110037,
+    "bytes_median": 927,
+    "bytes_p99": 122950,
+    "bytes_max": 171683,
+    "rows_per_shard_median": 14,
+    "rows_per_shard_max": 2498,
+    "shards_over_300000_bytes": 0,
+    "shards_over_250000_bytes": 0
+   },
+   "footprints_features_2500": {
+    "tiles_with_data": 4452,
+    "shards": 4836,
+    "total_bytes_raw": 135806532,
+    "bytes_median": 6788,
+    "bytes_p99": 305026,
+    "bytes_max": 463813,
+    "rows_per_shard_median": 50,
+    "rows_per_shard_max": 2496,
+    "shards_over_300000_bytes": 52,
+    "shards_over_250000_bytes": 96
+   },
+   "footprints_bytes_250000": {
+    "tiles_with_data": 4452,
+    "shards": 5143,
+    "total_bytes_raw": 135824952,
+    "bytes_median": 7564,
+    "bytes_p99": 215648,
+    "bytes_max": 249444,
+    "rows_per_shard_median": 54,
+    "rows_per_shard_max": 1961,
+    "shards_over_300000_bytes": 0,
+    "shards_over_250000_bytes": 0
+   },
+   "seconds": 1.8
+  },
+  "gpu": {
+   "gpu_feature_status": {
+    "2d_canvas": "unavailable_software",
+    "direct_rendering_display_compositor": "disabled_off_ok",
+    "gpu_compositing": "disabled_software",
+    "multiple_raster_threads": "enabled_on",
+    "opengl": "disabled_off",
+    "rasterization": "disabled_software",
+    "raw_draw": "disabled_off_ok",
+    "skia_graphite": "disabled_off",
+    "trees_in_viz": "disabled_off",
+    "video_decode": "disabled_software",
+    "video_encode": "disabled_software",
+    "vulkan": "disabled_off",
+    "webgl": "unavailable_software",
+    "webgl2": "unavailable_software",
+    "webgpu": "disabled_off",
+    "webnn": "unavailable_software"
+   },
+   "gpu_devices": [
+    {
+     "vendor": "Google Inc. (Google)",
+     "device": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver-5.0.0)"
+    }
+   ]
+  },
+  "recommendation_detail": {
+   "thresholds": [
+    {
+     "layer": "arterial streets (S1100, S1200)",
+     "from_zoom": 13,
+     "why": "the classes are 22 features and 6.8 KB per store tile; at zoom 13 an arterial is 1.1 px wide; arterial-only viewport at zoom 13 is 30 KB against 634 KB for every vehicular class"
+    },
+    {
+     "layer": "local streets (S1400 and the other D16 classes)",
+     "from_zoom": 15,
+     "why": "an 8 m street is 1.2 px at zoom 14 (faint) and 2.4 px at zoom 15; the zoom 15 viewport holds 1,659 features in 219 KB at the 0.1-degree shard size, 78 KB at 0.05 degree"
+    },
+    {
+     "layer": "one dot per house (footprint centroid; the clickable point)",
+     "from_zoom": 15,
+     "why": "centroid-only dots are about 22 bytes each: 5,807 dots (127 KB) in the zoom 15 viewport, against 915 KB of rings for the same footprints"
+    },
+    {
+     "layer": "footprint fill with hairline",
+     "from_zoom": 16,
+     "why": "a 10 m house is 6.0 px at zoom 16 (a shape, small); at zoom 15 it is 3.0 px (a dot); the zoom 16 viewport has 1,080 footprints in 195 KB of rings"
+    },
+    {
+     "layer": "footprint outline emphasis",
+     "from_zoom": 17,
+     "why": "a 10 m house is 12.0 px at zoom 17; the zoom 17 viewport has 190 footprints in 43 KB of rings"
+    },
+    {
+     "layer": "street names (one per distinct name per shard)",
+     "from_zoom": 16,
+     "why": "at zoom 16, 706 of 888 names in the store tile have a longest piece long enough for the name; 93 percent at zoom 17 (826 of 888)"
+    },
+    {
+     "layer": "house-address dots (B3)",
+     "from_zoom": 15,
+     "why": "owner decision needed: the zoom 13 gate in the B3 brief fetches 64 address shards and 4.18 MB of JSON (65,057 rows) for one 1280x800 Billings view; zoom 15 fetches 10 shards and 0.79 MB (12,239 rows); at zoom 13 use a count layer instead"
+    }
+   ],
+   "shard_sizes": [
+    {
+     "layer": "streets",
+     "store_tile_raw_bytes": 165392,
+     "store_tile_gzip_bytes": 39227,
+     "subtiles_0.05_max_bytes": 70992,
+     "subtiles_0.025_max_bytes": 22510,
+     "proposal": "byte cap of 150,000 raw bytes per shard; split the store tile into 0.05-degree cells (23 KB to 71 KB each here); arterials as their own shard"
+    },
+    {
+     "layer": "footprints",
+     "store_tile_raw_bytes": 4539221,
+     "subtiles_0.05_max_bytes": 2097348,
+     "subtiles_0.025_max_bytes": 690725,
+     "proposal": "byte cap of 250,000 raw bytes (about 1,600 footprints); the 2,500-feature rule gives 52 statewide shards over 300 KB (largest 464 KB); the byte cap gives 5,143 shards, largest 249 KB, 135.8 MB raw in all"
+    },
+    {
+     "layer": "address dots (B3)",
+     "store_tile_raw_bytes": 2161010,
+     "store_tile_gzip_bytes": 323967,
+     "subtiles_0.025_max_bytes": 318482,
+     "proposal": "keep the 2,500-row rule (4,212 shards statewide, the same count as the B3 pre-check; largest 172 KB; 43.1 MB raw in all)"
+    }
+   ],
+   "draw_order": [
+    "1 basemap (the existing vector base or the USGS imagery, unchanged)",
+    "2 footprint fills with a 0.5 px hairline (from zoom 16; token --bldg-fill at 45 percent light, 60 percent dark)",
+    "3 local streets at 1.0 to 1.4 px, then arterials at 2.4 px (one canvas layer per class, batches of about 200 paths)",
+    "4 radar or model picture (existing overlay, 72 percent)",
+    "5 hazard fills at 12 percent and 2 px strokes (existing); watch and advisory strokes get a 1 px paper casing (contrast 3.2:1 and 3.3:1 over a footprint fill in light mode)",
+    "6 storm reports (existing)",
+    "7 house dots, clickable, above the hazards (from zoom 15)",
+    "8 street names last, 12 px, name colour with a paper halo, no pointer events"
+   ],
+   "label_rule": {
+    "candidates": "one candidate per distinct FULLNAME per shard, on the middle vertex of that name's longest piece in the shard; blank names get none",
+    "fit_test": "keep the name only if its longest piece is at least the measured label width plus 10 px at that zoom (79 percent of names at zoom 16; 93 percent at zoom 17)",
+    "collision": "greedy placement on a 64 px grid with each rotated label's bounding box; arterials first, then longer pieces; a label may not overlap another label or a house dot",
+    "measured_kept": {
+     "zoom_16_distinct_888": 612,
+     "zoom_17_distinct_888": 754,
+     "placement_ms_median": {
+      "zoom_16": 1.3,
+      "zoom_17": 1.9
+     }
+    },
+    "angle": "quantise label angles to 5 degrees: 300 labels with halo took 7 to 13 ms quantised against 145 to 165 ms unquantised (two runs)",
+    "cap": "at most 300 labels per view while the halo is a stroke (quantised: 300 labels with halo 7 to 13 ms; 1,000 labels with halo 340 to 425 ms; 1,000 labels without halo 11 to 13 ms; the offset-fill halo was not cheaper)"
+   },
+   "drawing": "one canvas layer per class, not one Leaflet object per feature; load the shards the viewport touches; cull by shard and by feature bounds; project each vertex to world pixels once per zoom and treat pan as an offset; redraw on moveend and zoomend only, never during a drag; stroke per feature (measured; batching all features into one path was slower), never one path for all features; keep feature data in typed arrays (about 0.2 KB per feature against about 1.6 KB per path as Leaflet objects)",
+   "measure_in_build": [
+    "shard bytes per layer and per cell size: raw, gzip level 6 and the size Pages serves; largest shard; shard count; statewide totals (this record gives the first numbers)",
+    "fetch count and bytes per 1280x800 and 390x844 viewport at zooms 13, 15 and 17, at several centres (Billings, Benchland, a town on the Yellowstone), not one centre",
+    "redraw time (update, draw, flush) for the real grid tile at zooms 15, 16 and 17, with the CPU slowed 4 times to approximate a phone, and on one real phone if available",
+    "label count after the fit and collision tests per view, and the draw time of those labels with and without halo",
+    "V8 heap and typed-array bytes per feature for the shard layout; canvas bytes per layer",
+    "the canvas acceleration status of the target browsers (this VM: 2D canvas software only)",
+    "gate for the zoom thresholds: a visual check of the real tile at zooms 15, 16 and 17 on a 390 px and a 1280 px screen, light and dark"
+   ]
+  }
+ },
+ "downloads": [
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/tiger2026_30111/tl_2026_30111_roads.zip",
+   "bytes": 2000809,
+   "note": "TIGER/Line 2026 Yellowstone County roads zip, live (HTTP 200)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSTopo.meta.json",
+   "bytes": 7005,
+   "note": "USGSTopo service metadata JSON (HTTP 200)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSImageryTopo.meta.json",
+   "bytes": 8114,
+   "note": "USGSImageryTopo service metadata JSON (HTTP 200)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSTopo_z15.jpg",
+   "bytes": 28842,
+   "note": "USGSTopo tile z15 row 11685 col 6507 (contains the point), HTTP 200"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSImageryTopo_z15.jpg",
+   "bytes": 40544,
+   "note": "USGSImageryTopo tile z15 row 11685 col 6507, HTTP 200"
+  },
+  {
+   "path": "(deleted) USGSTopo z15 row 11686 col 6507",
+   "bytes": 27463,
+   "note": "first request used row 11686 by mistake (HTTP 200); deleted after the correct row was fetched"
+  },
+  {
+   "path": "(deleted) USGSImageryTopo z15 row 11686 col 6507",
+   "bytes": 38817,
+   "note": "first request used row 11686 by mistake (HTTP 200); deleted after the correct row was fetched"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSTopo_z16.jpg",
+   "bytes": 17223,
+   "note": "USGSTopo tile z16 row 23371 col 13014: the neighbour to the west (column off by one), HTTP 200; described, not used for measurement"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSImageryTopo_z16.jpg",
+   "bytes": 37331,
+   "note": "USGSImageryTopo tile z16 row 23371 col 13014: the neighbour to the west, HTTP 200"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSTopo_z16_containing.jpg",
+   "bytes": 20655,
+   "note": "USGSTopo tile z16 row 23371 col 13015 (contains the point), HTTP 200"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSImageryTopo_z16_containing.jpg",
+   "bytes": 36856,
+   "note": "USGSImageryTopo tile z16 row 23371 col 13015 (contains the point), HTTP 200"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSTopo_z17.jpg",
+   "bytes": 572,
+   "note": "USGSTopo tile z17 row 46743 col 26030: HTTP 404 (Error: Not Found)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/USGSImageryTopo_z17.jpg",
+   "bytes": 572,
+   "note": "USGSImageryTopo tile z17 row 46743 col 26030: HTTP 404 (Error: Not Found)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/terms_faqs_what-are-terms-uselicensing-map-services-and-data-national-map.html",
+   "bytes": 919,
+   "note": "USGS policy page, HTTP 403 to a scripted request (body saved)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/terms_information-policies-and-instructions_copyrights-and-credits.html",
+   "bytes": 919,
+   "note": "USGS policy page, HTTP 403 to a scripted request (body saved)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/usgs/terms_information-policies-and-instructions_usgs-visual-identity-system-guidance.html",
+   "bytes": 919,
+   "note": "USGS policy page, HTTP 403 to a scripted request (body saved)"
+  },
+  {
+   "path": "/home/user/wt/research-b35/scratch-rendering/downloads/fema/billings_box_geometry.geojson",
+   "bytes": 77643,
+   "note": "FEMA USA Structures hosted layer, geometry only, 0.01-degree box, HTTP 200"
+  },
+  {
+   "path": "https://pages.github.com/ response (not saved)",
+   "bytes": 3844,
+   "note": "HTTP 200, content-encoding gzip (curl size_download)"
+  }
+ ],
+ "download_bytes_total": 2349047,
+ "urls_checked": [
+  {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30111_roads.zip",
+   "http_status": "200",
+   "bytes": 2000809,
+   "content_check": "zip opens and testzip() is None; members tl_2026_30111_roads.shp 3092268 B, .dbf 876975 B, .shx 54476 B, .prj 165 B, .shp.iso.xml 50151 B; 6797 records, 6565 vehicular (D16 classes)"
+  },
+  {
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer?f=pjson",
+   "http_status": "200",
+   "bytes": 7005,
+   "content_check": "JSON; copyrightText present; maxScale 9027.977411 (LOD 16 scale); tile size 256; capabilities Map,Query,Data"
+  },
+  {
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer?f=pjson",
+   "http_status": "200",
+   "bytes": 8114,
+   "content_check": "JSON; copyrightText present; maxScale 9027.977411 (LOD 16 scale); tile size 256"
+  },
+  {
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/15/11685/6507",
+   "http_status": "200",
+   "bytes": 28842,
+   "content_check": "JPEG 256 px; streets with names (N 26th, N 25th, N 28th, 7th and 6th Ave N), building footprints as light grey-blue fills, Hwy 3 shield, courthouse and city hall labels; file USGSTopo_z15.jpg (image contains the point)"
+  },
+  {
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/16/23371/13015",
+   "http_status": "200",
+   "bytes": 20655,
+   "content_check": "JPEG 256 px containing 401 N 27th; footprints as light fills, highways in red, Yellowstone County Courthouse and Billings City Hall labels, few street names"
+  },
+  {
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/16/23371/13014",
+   "http_status": "200",
+   "bytes": 17223,
+   "content_check": "JPEG 256 px, the neighbour tile to the west (fetched with a wrong column); street names N 27th, N 28th, N 30th, 6th Ave N and footprints as light fills"
+  },
+  {
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/17/46743/26030",
+   "http_status": "404",
+   "bytes": 572,
+   "content_check": "Error: Not Found (text/html); the service has no tiles below its LOD 16 maximum scale"
+  },
+  {
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/11685/6507",
+   "http_status": "200",
+   "bytes": 40544,
+   "content_check": "JPEG 256 px aerial photograph with faint road names and roofs visible"
+  },
+  {
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/23371/13015",
+   "http_status": "200",
+   "bytes": 36856,
+   "content_check": "JPEG 256 px containing 401 N 27th; aerial photograph of a dense block with roof shapes, parking lots and grey street lines; no street names in this tile"
+  },
+  {
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/17/46743/26030",
+   "http_status": "404",
+   "bytes": 572,
+   "content_check": "Error: Not Found (text/html); no z17 tiles"
+  },
+  {
+   "url": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+   "http_status": "403",
+   "bytes": 919,
+   "content_check": "refused to the scripted request (HTTP 403); not fetched further; not bypassed"
+  },
+  {
+   "url": "https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map",
+   "http_status": "403",
+   "bytes": 919,
+   "content_check": "refused to the scripted request (HTTP 403); the FAQ quote used in the terms list comes from research/globe/validation-evidence/base-imagery.json, not from this run"
+  },
+  {
+   "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer/0/query (envelope -108.51,45.78,-108.50,45.79; outFields=OBJECTID; geometryPrecision=5; f=geojson)",
+   "http_status": "200",
+   "bytes": 77643,
+   "content_check": "GeoJSON FeatureCollection, 293 features (292 Polygon, 1 MultiPolygon), properties OBJECTID only; used for the look test only"
+  },
+  {
+   "url": "https://pages.github.com/ (Accept-Encoding: gzip)",
+   "http_status": "200",
+   "bytes": 3844,
+   "content_check": "response header content-encoding: gzip (HTML); server GitHub.com"
+  },
+  {
+   "url": "https://www.usgs.gov/information-policies-and-instructions/usgs-visual-identity-system-guidance",
+   "http_status": "403",
+   "bytes": 919,
+   "content_check": "refused to the scripted request (HTTP 403); not used"
+  }
+ ],
+ "terms": [
+  {
+   "source": "U.S. Census Bureau, TIGER/Line Shapefile metadata inside tl_2026_30111_roads.zip (tl_2026_30111_roads.shp.iso.xml)",
+   "url": "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30111_roads.zip",
+   "quote": "Access constraints: None Use Constraints: The TIGER/Line Shapefile products are not copyrighted however TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source.",
+   "reading": "Use is free in a product with acknowledgement to the Census Bureau; the names TIGER/Line and Census TIGER are registered trademarks and should not be used as product names. Read from the live zip this run."
+  },
+  {
+   "source": "USGS National Map, USGSTopo MapServer copyrightText (live service metadata)",
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer?f=pjson",
+   "quote": "USGS The National Map: National Boundaries Dataset, 3DEP Elevation Program, Geographic Names Information System, National Hydrography Dataset, National Land Cover Database, National Structures Dataset, and National Transportation Dataset; USGS Global Ecosystems; U.S. Census Bureau TIGER/Line data; USFS Road data; Natural Earth Data; U.S. Department of State HIU; NOAA National Centers for Environmental Information. Data refreshed September 4, 2026-v1.2",
+   "reading": "The service states its own credit line; it lists the National Structures Dataset (building footprints) and TIGER/Line as inputs. The line is the attribution to show with the tiles."
+  },
+  {
+   "source": "USGS National Map, USGSTopo MapServer serviceDescription (live service metadata)",
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer?f=pjson",
+   "quote": "USGS Topo is a tile cache base map service that combines the most current data in The National Map (TNM), and other public-domain data, into a multi-scale topographic reference map.",
+   "reading": "The service describes its inputs as public-domain data in part; this is a description, not a licence grant."
+  },
+  {
+   "source": "USGS National Map, USGSImageryTopo MapServer copyrightText (live service metadata)",
+   "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer?f=pjson",
+   "quote": "USGS The National Map: Orthoimagery and US Topo. Data refreshed April, 2026.v1.2.",
+   "reading": "Credit line for the imagery service; the same attribution pattern as the Topo service."
+  },
+  {
+   "source": "USGS National Map FAQ, quoted in research/globe/validation-evidence/base-imagery.json (earlier research evidence, not re-fetched in this run: the FAQ page returned HTTP 403 to a scripted request)",
+   "url": "https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map",
+   "quote": "Map services and data downloaded from The National Map are free and in the public domain.",
+   "reading": "Public-domain statement as recorded earlier; the same evidence file quotes the sentence that follows: \"There are no restrictions; however, we request that the following acknowledgment statement of the originating agency be included in products and data derived from our map services when citing, copying, or reprinting:\". Re-check in a browser before shipping."
+  },
+  {
+   "source": "FEMA and ORNL USA Structures hosted layer (metadata quoted by the footprints worker; not re-fetched here)",
+   "url": "https://www.arcgis.com/sharing/rest/content/items/0ec8512ad21e4bb987d7e848d14e7e24?f=json",
+   "quote": "licenseInfo CC BY 4.0 (quoted in research-b35/footprints.json urls_checked; the file metadata states no constraints per the footprints worker)",
+   "reading": "Licence of the footprint file is open: the footprints worker records the conflict and asks FEMA for a written statement. Not decided by this record."
+  }
+ ],
+ "facts": [
+  {
+   "claim": "Store grid tile holding 401 N 27th Street",
+   "value": "row 921 col 2149 -> tile r0092_c0214 = 45.7 to 45.8 N, 108.6 to 108.5 W (edges on multiples of 0.1 degree)",
+   "evidence": "wt-b2/website/hail.py cell_for, TILE = 10, CELL_DEG = 0.01; computed in the shell (store grid rule)"
+  },
+  {
+   "claim": "Streets worker off-grid tile is not the store tile",
+   "value": "the worker used 45.75 to 45.85 N, 108.55 to 108.45 W (centre 45.8, -108.5); both tiles contain the point; this record uses the store tile and reproduces the worker tile",
+   "evidence": "research-b35/streets.json tile_sizes_per_0.1deg_tile; scratch-rendering/out/streets_tiles.json worker_off_grid_tile_2026"
+  },
+  {
+   "claim": "Streets, store tile (TIGER/Line 2026 vehicular classes, clipped, 2 m Douglas-Peucker, names and classes in the shard)",
+   "value": "1372 features, 6198 vertices, 165392 bytes raw, 39227 bytes gzip level 6 (23.7 percent), 888 distinct names, 9.4 percent unnamed",
+   "evidence": "scratch-rendering/out/streets_tiles.json grid_tile_all_vehicular (scripts/streets_tiles.py)"
+  },
+  {
+   "claim": "Streets, store tile by class",
+   "value": "arterial S1100 and S1200: 22 features, 6773 bytes; local S1400: 1266 features, 147166 bytes; other classes: 84 features, 11601 bytes",
+   "evidence": "scratch-rendering/out/streets_tiles.json grid_tile_by_class"
+  },
+  {
+   "claim": "Streets worker tile reproduced (off-grid tile, TIGER 2026)",
+   "value": "1338 vehicular features, 1339 pieces, 954 distinct names, coordinates 146311 bytes minimal text at 2 m, 173847 bytes with names; the worker's 2025 figure for this tile is 148,101 bytes of coordinates at 2 m",
+   "evidence": "scratch-rendering/out/streets_tiles.json; research-b35/streets.json facts (Billings 0.1 degree tile)"
+  },
+  {
+   "claim": "Footprints, store tile (FEMA/ORNL USA Structures, 2026-09-13 file, nested-array JSON at 5 decimals)",
+   "value": "28308 footprints, 4539221 bytes (160.4 bytes per footprint), largest footprint 3487 bytes",
+   "evidence": "scratch-rendering/out/points_tiles.json footprints_grid_tile (scripts/points_tiles.py, per-feature bytes from research-b35/scratch-footprints/statewide_feature_bytes.npz)"
+  },
+  {
+   "claim": "Footprints, 0.05 degree sub-tiles of the store tile",
+   "value": "bytes [262654, 197049, 1982170, 2097348]",
+   "evidence": "scratch-rendering/out/points_tiles.json footprints_grid_subtiles_0.05"
+  },
+  {
+   "claim": "Footprints, 0.025 degree sub-tiles of the store tile",
+   "value": "largest 690725 bytes with 4329 footprints; sum 4539221 bytes",
+   "evidence": "scratch-rendering/out/points_tiles.json footprints_grid_subtiles_0.025"
+  },
+  {
+   "claim": "Footprint shard bytes per footprint (check against the footprints worker)",
+   "value": "footprints worker box (0.01 degree, 282 centroids): 52902 bytes, 187.6 bytes per footprint; the FEMA box sample (293 structures, geometry from the live query): 44722 bytes raw, 9009 bytes gzip level 6, 152.6 bytes per footprint",
+   "evidence": "scratch-footprints statewide arrays (this run); scratch-rendering/downloads/fema/billings_box_geometry.geojson (live)"
+  },
+  {
+   "claim": "Addresses, store tile (MSL Structures and Addresses Framework point file, cached zip; B3 row format)",
+   "value": "33784 rows, 2161010 bytes, mean row 64.57 bytes statewide; left out with no street 4212 (B3 pre-check 4,212), duplicates merged 6741 (pre-check 6,740), rows kept 663762 (pre-check 663,763)",
+   "evidence": "scratch-rendering/out/points_tiles.json addresses_counts and addresses_grid_tile; B3 pre-check in hail-b3-brief.md"
+  },
+  {
+   "claim": "Addresses, store tile gzip",
+   "value": "2161134 bytes raw for 33786 rows (this check keeps rows by unrounded bounds; the count above, 33784 rows, uses rounded coordinates), 323967 bytes gzip level 6 (ratio 0.1499); the largest 0.025-degree sub-tile is 318492 bytes raw and 42466 bytes gzip",
+   "evidence": "scratch-rendering/out/address_gzip.json (scripts/address_gzip.py; no address text written to any file)"
+  },
+  {
+   "claim": "Fetch count, 1280x800 viewport centred on 401 N 27th, zoom 13",
+   "value": "streets 0.1 cells 8 (633798 bytes; arterial only 30145 bytes); addresses quadtree 64 shards (4175019 bytes, largest 152741)",
+   "evidence": "scratch-rendering/out/streets_tiles.json viewport; points_tiles.json viewport 13"
+  },
+  {
+   "claim": "Fetch count, viewport, zoom 15",
+   "value": "streets 0.1 cells 2 (218784 bytes); 0.05 cells 2 (77674 bytes); 0.025 cells 6 (73720 bytes); addresses quadtree 10 shards (788815 bytes); footprints quadtree 10 shards (1552192 bytes, largest 311880)",
+   "evidence": "scratch-rendering/out/streets_tiles.json and points_tiles.json viewport 15"
+  },
+  {
+   "claim": "Fetch count, viewport, zoom 17",
+   "value": "streets 0.1 cells 2 (218784 bytes); 0.025 cells 2 (21845 bytes); addresses quadtree 2 shards (229885 bytes); footprints quadtree 2 shards (410707 bytes)",
+   "evidence": "scratch-rendering/out/streets_tiles.json and points_tiles.json viewport 17"
+  },
+  {
+   "claim": "Centroid-only dots for the viewport (footprint centroids, 5 decimals, about 22 bytes each)",
+   "value": "zoom 15: 5807 dots, 126552 bytes, against 914717 bytes of rings; zoom 16: 1080 dots, 23599 bytes, against 195494; zoom 17: 190 dots, 4199 bytes, against 42687",
+   "evidence": "scratch-rendering/out/dot_payload.json (scripts/dot_payload.py)"
+  },
+  {
+   "claim": "Pixels per feature (Leaflet CRS EPSG:3857, 256 px tiles, 46 N)",
+   "value": "zoom 13: 0.75 px per 10 m house, 1.13 px per 15 m arterial; zoom 14: 1.51 and 2.26; zoom 15: 3.01 and 4.52 (a 6 m lane 1.81, an 8 m street 2.41); zoom 16: 6.03 and 9.04 (house 6.0 px); zoom 17: 12.05 and 18.08 (house 12.0 px); zoom 18: 24.11 and 36.16",
+   "evidence": "scratch-rendering/out/zoom_table.json (scripts/zoom_table.py)"
+  },
+  {
+   "claim": "Footprint visibility by zoom",
+   "value": "10 m house: 3.0 px at zoom 15 (a dot), 6.0 px at 16 (a small shape), 12.0 px at 17 (a shape with an outline)",
+   "evidence": "scratch-rendering/out/zoom_table.json"
+  },
+  {
+   "claim": "USGSTopo maximum detail",
+   "value": "maxScale 9027.977411 is the LOD 16 scale; z17 tiles return HTTP 404 on both USGS services; the metadata lists LODs to 23 but the layer is not served beyond LOD 16",
+   "evidence": "USGSTopo.meta.json and USGSImageryTopo.meta.json (live); tile fetches at z17"
+  },
+  {
+   "claim": "USGS tile content at Billings",
+   "value": "zoom 15 Topo: streets with names, light grey-blue building fills, highway shields, the courthouse and city hall labels; zoom 16 Topo (containing tile): building fills, highway lines in red, the courthouse and city hall labels, few street names; zoom 15 Imagery: aerial photographs with faint road names and roofs; zoom 16 Imagery (containing tile): roof shapes and parking lots, no names",
+   "evidence": "downloads/usgs (viewed as images in this run)"
+  },
+  {
+   "claim": "Look test, visual check (light and dark, 1280x800 and 390x844)",
+   "value": "streets legible as two grey weights, footprint fills and hairlines readable, centroid dots crisp, names legible with a paper or dark halo, the 12 percent hazard fills tint footprints and streets without hiding them; the two hazard polygons are sample shapes drawn for the test; one screen each, zoom 16 on the real Billings streets and 293 real footprints",
+   "evidence": "scratch-rendering/look (index.html, look.js); screenshots scratch-rendering/out/look_light_desktop.png, look_dark_desktop.png, look_light_phone.png, look_dark_phone.png"
+  },
+  {
+   "claim": "Contrast, light map (proposed tokens)",
+   "value": "street local #9aa3ad on land #fafafa 2.45:1; arterial #6e6e73 4.86:1; existing road token #e2e5e9 1.21:1; footprint fill #c5ccd4 at 45 percent 1.21:1; name #3a3a3c 10.87:1; name #6e6e73 on a footprint fill 4.01:1; warning red stroke on a footprint fill 4.67:1; watch amber stroke on a footprint fill 3.32:1; advisory gold stroke on a footprint fill 3.21:1",
+   "evidence": "scratch-rendering/out/contrast.json (scripts/contrast.py; tokens from website/static/map/map.css)"
+  },
+  {
+   "claim": "Contrast, dark map (proposed tokens)",
+   "value": "street local #5f6873 on land #1b1e22 2.96:1; arterial #8e959e 5.53:1; footprint fill #3b4350 at 60 percent 1.24:1; name #c9d0d8 10.75:1; warning stroke #ff6b6b on a footprint fill 4.86:1; watch #ffa94d 7.09:1; advisory #f2c94c 8.51:1",
+   "evidence": "scratch-rendering/out/contrast.json"
+  },
+  {
+   "claim": "GitHub serves text compressed",
+   "value": "pages.github.com answers with content-encoding gzip to an Accept-Encoding gzip request (HTML). Compression of JSON on the site host is assumed to match, not verified on the site itself",
+   "evidence": "curl -sS -o /dev/null -D - -H \"Accept-Encoding: gzip\" https://pages.github.com/ (this run)"
+  },
+  {
+   "claim": "Browser and machine for the benchmark",
+   "value": "Chromium 141.0.7390.37 headless (executable /opt/pw-browsers/chromium, chromium-1194 build), Playwright 1.64.0, 4 vCPU Intel Xeon 2.80 GHz, 16 GB RAM, device scale factor 1, viewport 1280x800; Leaflet 1.9.4 from website/static/leaflet (147,552 bytes)",
+   "evidence": "uname, /proc/cpuinfo, free -m, chromium --version (this run)"
+  }
+ ],
+ "environment": {
+  "machine": "Intel Xeon 2.80 GHz, 4 vCPU, 16 GB RAM (free -m: 16093 MB total), Linux 6.18",
+  "browser": "Chromium 141.0.7390.37 (headless; Playwright executable /opt/pw-browsers/chromium, the chromium-1194 build); Playwright 1.64.0 in the venv",
+  "canvas": "device scale factor 1, viewport 1280x800; CDP SystemInfo: 2d_canvas unavailable_software, gpu_compositing disabled_software, rasterization disabled_software, webgl unavailable_software (SwiftShader device)",
+  "leaflet": "Leaflet 1.9.4 (copied from website/static/leaflet/leaflet.js, 147,552 bytes); L.canvas padding 0.1 for the canvas variant",
+  "python": "venv /home/user/hail-b1/venv/bin/python 3.13.16 in isolated mode (-I): numpy 2.5.3, pyshp 3.1.6, pyproj 3.8.0, pillow 12.3.0, h5py 3.16.0, playwright 1.64.0",
+  "timing": "performance.now around each Leaflet call; a frame is update (synchronous layer updates), draw (every logged redraw), and flush (getImageData on every canvas, which forces rasterisation); the deferred redraw is awaited to the next animation frame",
+  "memory": "V8 heap from CDP HeapProfiler.collectGarbage and Runtime.getHeapUsage; typed-array bytes summed in the page; canvas bytes = width x height x 4"
+ },
+ "commands": [
+  "curl -sS -o downloads/tiger2026_30111/tl_2026_30111_roads.zip -w \"%{http_code} %{size_download}\" https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30111_roads.zip",
+  "cd out && /home/user/hail-b1/venv/bin/python -I scripts/streets_tiles.py   (streets per tile, viewport cells, class split, worker tile reproduction, Billings grid roads)",
+  "cd out && /home/user/hail-b1/venv/bin/python -I scripts/points_tiles.py   (footprint per-tile bytes, DBF streaming of addresses, viewport quadtree and uniform fetch counts)",
+  "cd out && /home/user/hail-b1/venv/bin/python -I scripts/zoom_table.py   (metres per pixel and feature pixels, zooms 11 to 18 at 46 N)",
+  "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python -I scripts/bench_run.py main out/bench_main.json   (36 configurations: view 1x, 2x, tile, real; labels, paths, halo, stroke batching, SVG control)",
+  "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python -I scripts/bench_run.py extra out/bench_extra.json   (per-path raw at 2x; per-path raw on the real tile)",
+  "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python -I scripts/bench_run.py real3 out/bench_real3.json   (two more real-tile runs for Leaflet and batched raw)",
+  "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python -I scripts/bench_run.py mem out/bench_mem.json   (build-only memory: heap, typed-array bytes, canvas bytes)",
+  "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python -I scripts/bench_run.py place out/bench_place.json   (label placement on the real tile at zooms 16 and 17, with and without the fit-first rule)",
+  "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python -I scripts/bench_run.py draw out/bench_draw.json   (on-screen label draw cost at 50 to 1,000 labels: halo, angle quantisation, offset-fill halo)",
+  "/home/user/hail-b1/venv/bin/python -I scripts/bench_summary.py   (groups the runs by configuration; medians and ranges of the three runs)",
+  "curl -sS -o downloads/usgs/USGSTopo.meta.json \"https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer?f=pjson\" (and USGSImageryTopo)",
+  "curl -sS -o downloads/usgs/USGSTopo_z15.jpg -w \"%{http_code} %{size_download}\" https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/15/11685/6507 (same pattern for z16 at 23371/13015 and the imagery service; z17 at 46743/26030 returned 404)",
+  "curl -sS -G \"https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/USA_Structures_View/FeatureServer/0/query\" --data-urlencode \"geometry=-108.51,45.78,-108.50,45.79\" --data-urlencode \"geometryType=esriGeometryEnvelope\" --data-urlencode \"inSR=4326\" --data-urlencode \"spatialRel=esriSpatialRelIntersects\" --data-urlencode \"outFields=OBJECTID\" --data-urlencode \"returnGeometry=true\" --data-urlencode \"outSR=4326\" --data-urlencode \"geometryPrecision=5\" --data-urlencode \"f=geojson\" -o downloads/fema/billings_box_geometry.geojson",
+  "/home/user/hail-b1/venv/bin/python -I scripts/contrast.py   (WCAG ratios for the proposed colours, from the map.css tokens)",
+  "/home/user/hail-b1/venv/bin/python -I scripts/dot_payload.py   (centroid-only dot bytes against ring bytes in the viewport)",
+  "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python -I scripts/look_and_gpu.py   (look screenshots light and dark; CDP browser SystemInfo.getInfo for the GPU status)",
+  "/home/user/hail-b1/venv/bin/python -I scripts/address_gzip.py   (address shard gzip for the store tile and its 0.025-degree sub-tiles; reads the cached zip, writes counts and bytes only)",
+  "/home/user/hail-b1/venv/bin/python -I scripts/statewide_shards.py   (statewide quadtree counts and sizes for addresses and footprints under the two rules)",
+  "curl -sS -o /dev/null -D - -H \"Accept-Encoding: gzip\" -w \"%{http_code} %{size_download}\" https://pages.github.com/   (content-encoding header)",
+  "ZIP read only: /home/user/hail-b3/cache/structures/StructuresFramework_shp.zip (65,788,772 bytes; not downloaded again); footprint arrays read only: /home/user/wt/research-b35/scratch-footprints/statewide_feature_bytes.npz"
+ ],
+ "open_questions": [
+  "Owner decision: the B3 brief shows address dots from zoom 13. One Billings viewport at zoom 13 holds 65,057 addresses in 64 shards (4.18 MB raw). This record proposes zoom 15 for dots and a count layer at 13. Not decided here.",
+  "Footprint licence: the FEMA and ORNL file metadata states no constraints; the hosted item states CC BY 4.0; the footprints worker asks FEMA for written confirmation. The look test drew a 293-structure sample for the look only and published nothing. Counsel and FEMA still to answer.",
+  "USGS terms: the two USGS policy pages returned HTTP 403 to a scripted request in this run and were not bypassed. The public-domain quote comes from earlier research evidence (research/globe/validation-evidence/base-imagery.json). Re-check in a browser before the site names USGS as a source for streets or footprints.",
+  "USGS maximum detail: both services return HTTP 404 at zoom 17 (the metadata gives 1:9,028 as the maximum scale). The imagery base and any layer that relies on it stop at zoom 16 unless another source is used.",
+  "TIGER vintage and grid: this record uses TIGER/Line 2026 (D16) on the store grid tile r0092_c0214. The streets worker used TIGER 2025 on an off-grid tile (45.75 to 45.85 N, 108.55 to 108.45 W). Their figures reproduce within about 1 percent on the 2026 file; re-measure on the store grid in the build.",
+  "Device speed: every timing is one 4-vCPU VM with software 2D canvas. A phone will be slower and may behave differently. No CPU slowdown run was made and no phone was measured; both belong in the build measurements.",
+  "Zoom 17 on the real tile was not timed: the real-tile runs alternate zooms 15 and 16. The zoom 17 counts and bytes come from the file-based model, not from a draw test.",
+  "Per-path raw at twice the count has one run (4.0 s pan); the SVG control has one run and times only the synchronous update (paint is not included). The batched raw layer was measured at three runs at each count.",
+  "Footprint draw cost uses synthetic 8-vertex polygons; the real footprint geometry (293 structures) was used for the look test only. A real-geometry draw test on the full tile needs the footprint geometry for the tile (not downloaded here).",
+  "The rural sample (Benchland) was not measured for shard bytes in this record; the footprints worker recorded 28 footprints and 2 address points in its 0.01-degree box.",
+  "GitHub Pages limits: measured statewide shard files are 4,212 address shards and 5,143 footprint shards (byte cap), plus the street shards, which were not counted. Measured raw bytes are 135.8 MB for footprints and 43.1 MB for addresses; streets are the streets worker's estimate of about 69 MB of coordinates. At the observed gzip ratios the total would be roughly 50 MB on the wire, an estimate. The published Pages size and file-count limits were not checked in this run.",
+  "The street tile byte counts include names and classes in one array per shard; a name table would reduce repeated names. Not measured here.",
+  "Label widths were not stored per name; the fit test used the browser measureText result inside each run. A per-name width table would let the build precompute the fit test."
+ ],
+ "scripts": [
+  "/home/user/wt/research-b35/scratch-rendering/scripts/address_gzip.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/assemble_record.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/bench_run.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/bench_summary.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/contrast.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/dot_payload.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/geom.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/look_and_gpu.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/points_tiles.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/statewide_shards.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/streets_tiles.py",
+  "/home/user/wt/research-b35/scratch-rendering/scripts/zoom_table.py",
+  "/home/user/wt/research-b35/scratch-rendering/bench/bench.js",
+  "/home/user/wt/research-b35/scratch-rendering/bench/index.html",
+  "/home/user/wt/research-b35/scratch-rendering/look/look.js",
+  "/home/user/wt/research-b35/scratch-rendering/look/index.html"
+ ]
+}

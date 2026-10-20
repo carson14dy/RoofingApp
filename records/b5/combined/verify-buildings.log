@@ -1,0 +1,66 @@
+{
+ "ok": true,
+ "checks": [
+  {
+   "name": "manifest hashes and counts",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "buildings state",
+   "ok": true,
+   "detail": "state loaded"
+  },
+  {
+   "name": "every outline shard parses, has its name, bounds, rings and count, and stays within the limit",
+   "ok": true,
+   "detail": "5615 shards"
+  },
+  {
+   "name": "the outline total equals the index",
+   "ok": true,
+   "detail": "918052 in the shards, 918052 in the index"
+  },
+  {
+   "name": "the depths match the index",
+   "ok": true,
+   "detail": "{0: 4314, 1: 418, 2: 415, 3: 372, 4: 96}"
+  },
+  {
+   "name": "the split map names the outline shards of each split tile",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "counts.json sums to the footprint total and matches each tile",
+   "ok": true,
+   "detail": "918052 in counts.json"
+  },
+  {
+   "name": "the address shards hold the unmatched rows only, each once",
+   "ok": true,
+   "detail": "105403 rows in a/"
+  },
+  {
+   "name": "matched rows plus unmatched rows equal the address rows once each",
+   "ok": true,
+   "detail": "558356 matched + 105403 unmatched, 663759 rows"
+  },
+  {
+   "name": "every matched line is an address row of the list",
+   "ok": true,
+   "detail": "0 lines not in the list"
+  },
+  {
+   "name": "every unmatched row is an address row of the list",
+   "ok": true,
+   "detail": "105403 unmatched rows"
+  }
+ ],
+ "counts": {
+  "shards": 5615,
+  "footprints": 918052,
+  "matched_rows": 558356,
+  "unmatched_rows": 105403
+ }
+}

@@ -1,0 +1,252 @@
+{
+  "slug": "snow-stations",
+  "method": "Live downloads, each in its own folder under /home/user/wt/research-b35/scratch-refute-snow-stations/downloads (GET bodies only; about 2,000 HEAD header requests excluded from the byte total). Parsing with /home/user/hail-b1/venv/bin/python -I; scripts in scratch-refute-snow-stations/scripts; outputs in scratch-refute-snow-stations/outputs. The worker's file and folders were read, never edited. A copy of the worker's union_ids.txt was made into my outputs folder.",
+  "checks": [
+    {
+      "claim": "Montana station counts in ghcnd-stations.txt: 133,039 rows; 1,325 MT rows; COOP 702, CoCoRaHS 394, RAWS 109, SNOTEL 90, WBAN 30; 0 short lines",
+      "result": "confirmed",
+      "detail": "Re-downloaded ghcnd-stations.txt (11,441,354 bytes, HTTP 200). Recounted by state code and by the network letter in ID position 3. Same counts. Output: outputs/counts.json."
+    },
+    {
+      "claim": "Inventory file: 791,224 rows covering 132,892 station IDs",
+      "result": "confirmed",
+      "detail": "Re-downloaded ghcnd-inventory.txt (36,396,304 bytes). Row and ID counts identical."
+    },
+    {
+      "claim": "481 Montana stations with a 2025 core-element record (LASTYEAR >= 2025 for PRCP, SNOW, SNWD, TMAX or TMIN): COOP 191, CoCoRaHS 176, SNOTEL 89, WBAN 25; RAWS 0",
+      "result": "confirmed",
+      "detail": "Recomputed from the inventory; ID list in outputs/mt_2025_ids.txt. LASTYEAR is the last year of unflagged data, not the last report date."
+    },
+    {
+      "claim": "Inventory ranges for Montana covering 2020-2025 (FIRSTYEAR <= 2020, LASTYEAR >= 2025): SNOW 288, SNWD 338, PRCP 417, TMAX 263, TMIN 263; LASTYEAR >= 2025 alone: SNOW 344, SNWD 376, PRCP 475, TMAX 263, TMIN 263",
+      "result": "confirmed",
+      "detail": "Same counts recomputed. They are ranges, not day counts, as the record says."
+    },
+    {
+      "claim": "Stations with a 2025 record within 40 miles of the sample points: Billings (45.7836 N, 108.5047 W) 29; Benchland (47.08 N, 110.02 W) 13",
+      "result": "confirmed",
+      "detail": "Great-circle distance, 3,958.8-mile radius, on ghcnd-stations.txt coordinates. Of any status, 72 MT stations are within 40 miles of Billings and 46 of Benchland."
+    },
+    {
+      "claim": "Nearest-station distances: Billings WTP USC00240802 1.40 mi; Billings Logan USW00024033 2.58 mi; US1MTYS0041 3.38 mi; US1MTYS0046 3.59 mi. Benchland: Stanford USC00247864 10.90 mi; Lewistown 42 WSW USW00004140 18.53 mi; Buffalo 1.7 E US1MTFG0003 20.9 mi; Lewistown 11 SSE USC00244978 31.1 mi; Crystal Lake USS0009C01S 31.31 mi",
+      "result": "confirmed",
+      "detail": "Recomputed 1.40, 2.58, 3.38, 3.59; 10.90, 18.53, 20.90, 31.11 (record says 31.10, rounding), 31.31."
+    },
+    {
+      "claim": "45 stations within 40 miles of either sample point, 33,682,230 bytes (33.7 MB) of .dly files",
+      "result": "corrected",
+      "detail": "The 33,682,230-byte total is right for the 45 files on the worker's list (HEAD sum). But only 42 of them are within 40 miles of either point with a 2025 record. Those 42 total 27,734,670 bytes (27.7 MB). The other three are USW00024143 Great Falls AP (4,705,560 bytes), USS0010C22S (629,100 bytes) and USS0010C23S (612,900 bytes), none within 40 miles of either point. volume-and-job-budget.json line 5 repeats the 45-station, 33.7 MB figure."
+    },
+    {
+      "claim": "S3 by-station csv total for the 481 Montana files: 1,372,239,465 bytes (COOP 869,291,721; CoCoRaHS 41,122,066; SNOTEL 285,697,597; WBAN 176,128,081)",
+      "result": "confirmed",
+      "detail": "HEAD on all 481 csv URLs, all HTTP 200. Content-Length sums match exactly, in total and per network."
+    },
+    {
+      "claim": "NCEI .dly total for the 481 Montana files: 392,170,950 bytes (COOP 240,012,180; CoCoRaHS 16,858,260; SNOTEL 77,511,870; WBAN 57,788,640)",
+      "result": "confirmed",
+      "detail": "HEAD on all 481 NCEI .dly URLs, all HTTP 200. Sums match exactly, in total and per network."
+    },
+    {
+      "claim": "S3 csv.gz total for the 481 files: 148,485,655 bytes",
+      "result": "unverified",
+      "detail": "Not re-fetched. The worker's own raw HEAD table (sizes_multi_raw.tsv, csv.gz column) sums to 148,485,655 over 481 rows, consistent with the record."
+    },
+    {
+      "claim": "Worker's per-file raw sizes for the 481 csv and .dly files",
+      "result": "confirmed",
+      "detail": "Zero mismatches against live HEAD Content-Lengths for every file."
+    },
+    {
+      "claim": "SNODAS five-year estimate of about 21.8 GB (1,826 daily tars at 11.94 MB mean) and a 300 MB budget",
+      "result": "unverified",
+      "detail": "The arithmetic is consistent (1,826 x 11.94 MB = 21.8 GB). The 20-date tar sample was not re-run. The 300 MB budget was not found in volume-and-job-budget.json; its 300 matches are KB caps. Source unconfirmed."
+    },
+    {
+      "claim": "114 Montana S3 csv files (all 89 SNOTEL and all 25 WBAN) have Last-Modified 9 Feb 2025; the 367 COOP and CoCoRaHS files are Last-Modified 19 Oct 2026",
+      "result": "confirmed",
+      "detail": "Live HEAD on all 481: exactly 114 files dated 09 Feb 2025, all SNOTEL or WBAN; 191 COOP and 176 CoCoRaHS dated 19 Oct 2026. COOP and CoCoRaHS content end dates were not re-run."
+    },
+    {
+      "claim": "All 481 NCEI .dly files are Last-Modified 18 Oct 2026",
+      "result": "confirmed",
+      "detail": "Live HEAD: 481 of 481 dated 18 Oct 2026."
+    },
+    {
+      "claim": "S3 csv content for Billings Logan, Great Falls AP and Crystal Lake ends 2025-02-06",
+      "result": "confirmed",
+      "detail": "Billings Logan csv (393,178 rows) and Crystal Lake csv parsed: last valid date for every element is 2025-02-06; no -9999 values. Great Falls AP was not re-run."
+    },
+    {
+      "claim": "NCEI .dly last values: Billings Logan 2026-10-16 for all five elements, 289 days reported in 2026; Crystal Lake SNWD, TMAX, TMIN 2026-10-16, PRCP 2026-10-14, no SNOW",
+      "result": "confirmed",
+      "detail": "Parsed USW00024033.dly (17,131 lines) and USS0009C01S.dly (3,395 lines). Billings 2026 reported days: SNOW, PRCP, TMAX, TMIN 289; SNWD 288."
+    },
+    {
+      "claim": "Billings Logan 2024-25 season snowfall (1 Jul 2024 to 30 Jun 2025) from the .dly: 1,633 mm (64.3 in), 365 of 365 days; monthly Nov 100, Dec 58, Jan 282, Feb 782, Mar 185, Apr 226 mm",
+      "result": "confirmed",
+      "detail": "Recomputed: 1,633 mm (64.29 in), 365 reported and unflagged days, 34 positive and 331 zero. Monthly values identical."
+    },
+    {
+      "claim": "Same window from the S3 csv: 685 mm (27.0 in) on 221 days, ending 2025-02-06",
+      "result": "confirmed",
+      "detail": "Recomputed: 685 mm (26.97 in), 221 unflagged days, last date 2025-02-06. The csv ends before the 7 Feb (173 mm) and 16-17 Feb storms, which is why it reads low."
+    },
+    {
+      "claim": "Billings Logan record snowfall days in Feb 2025: 3.8 in Feb 2, 5.1 Feb 3, 6.8 Feb 7, 4.6 Feb 16, 5.4 Feb 17",
+      "result": "confirmed",
+      "detail": "Independent source: NWS Billings 2025 Weather in Review, record snowfall table (https://www.weather.gov/media/byz/2025WeatherReview.pdf). The .dly gives 97, 130, 173, 117 and 137 mm = 3.82, 5.12, 6.81, 4.61 and 5.39 in. All five match. The Billings WFO COOP station (USC00240801) gives 4.09, 3.58, 6.89, 4.02 and 5.31 in, so the NWS table tracks the airport record."
+    },
+    {
+      "claim": "Billings Logan February 2025 total 782 mm (30.8 in)",
+      "result": "unverified",
+      "detail": "The NWS review gives 'Billings 30.7 in' for February 2-19 with no site label. The airport .dly gives 782 mm (30.8 in) for February 2-19, and the same total for all of February. Billings WFO COOP gives 684 mm (26.9 in). The review gives no monthly total, so the match is consistent but not exact."
+    },
+    {
+      "claim": "Billings Logan 2024-25 season total of 64.3 in is a correct full-season figure",
+      "result": "unverified",
+      "detail": "The data are internally consistent, but the NWS review covers calendar 2025 and gives no full-season snowfall total. The record's open question on NWS checks stands."
+    },
+    {
+      "claim": "Billings Logan 2025 precipitation 464.9 mm (18.3 in) on 365 unflagged days; csv 38.9 mm on 37 days",
+      "result": "confirmed",
+      "detail": "Recomputed from both files."
+    },
+    {
+      "claim": "Billings Logan snow-depth maximum 460 mm (18.1 in) on 2025-02-18; record TMAX 41.7 C on 2021-07-19; record TMIN -32.1 C on 2024-01-13",
+      "result": "confirmed",
+      "detail": "Recomputed from the .dly. The csv gives the same temperature records."
+    },
+    {
+      "claim": "Billings csv vs .dly, 2020-01-01 to 2025-02-06, five core elements: 9,320 keys, 9,179 identical in all fields, 141 differ",
+      "result": "confirmed",
+      "detail": "9,179 identical in value and every flag; 9 value differences; no keys missing from either file."
+    },
+    {
+      "claim": "Crystal Lake csv vs .dly, same window: 7,444 keys; 3,774 identical; 3,670 differ. TMIN differs on 1,848 days (mean NCEI minus S3 -1.2 C), TMAX on 1,815 (mean -0.3 C), PRCP on 7",
+      "result": "confirmed",
+      "detail": "Recomputed per element: TMIN 1,848, TMAX 1,815, PRCP 7; mean differences -11.97 tenths C (TMIN) and -2.82 tenths C (TMAX). The earliest five PRCP differences are dated 27 Jan to 3 Feb 2025. Output: outputs/crystal_csv_dly_diffs.json."
+    },
+    {
+      "claim": "Crystal Lake only-in-.dly keys: 5",
+      "result": "corrected",
+      "detail": "Twelve keys are in the .dly but not the csv. Five carry reported values (PRCP 2, SNWD 3); seven are -9999 placeholders (PRCP 2, SNWD 1, TMAX 2, TMIN 2). The record's 5 is right only if placeholders are excluded, and it should say so. The total is 12."
+    },
+    {
+      "claim": "Crystal Lake snow: no SNOW element; 2024-25 depth maximum 1,651 mm (65.0 in) on 2025-01-24; 2020-2025 maximum 1,803 mm (71.0 in) on 2023-04-20",
+      "result": "confirmed",
+      "detail": "No SNOW values in the .dly or csv. 1,803 mm is 70.98 in, which rounds to 71.0."
+    },
+    {
+      "claim": "Crystal Lake temperature records: .dly TMAX 34.1 C (2024-07-24) and TMIN -41.9 C (2024-01-12); csv 33.0 C and -42.0 C",
+      "result": "confirmed",
+      "detail": "Recomputed from both files."
+    },
+    {
+      "claim": "Crystal Lake 2025 precipitation 1,217.4 mm (47.93 in), 365 days reported (364 unflagged); csv 251.2 mm on 35 days reported (34 unflagged)",
+      "result": "confirmed",
+      "detail": "Recomputed from both files."
+    },
+    {
+      "claim": "Billings Logan coverage 2020-2025 (2,192 days): SNOW, PRCP, TMAX, TMIN 100%; SNWD 2,191 days",
+      "result": "confirmed",
+      "detail": "Recomputed from the .dly. The one missing SNWD day is in 2025, consistent with the record's 99.7 percent for 2025."
+    },
+    {
+      "claim": "Rule-test coverage, Billings WTP USC00240802 (unflagged, 2,192 days): SNOW 98.1%, SNWD 98.4%, PRCP 99.2%, TMAX 97.2%, TMIN 97.4%",
+      "result": "confirmed",
+      "detail": "Recomputed from the .dly (2,128,410 bytes): 98.08, 98.36, 99.18, 97.17, 97.40 percent. Billings Logan passes all five (100 percent except SNWD 99.95 percent), so the Billings pair holds."
+    },
+    {
+      "claim": "Rule-test coverage, Stanford USC00247864: SNOW 79.9% (misses the 80% rule), SNWD 81.9%, PRCP 96.3%, TMAX 96.6%, TMIN 96.5%",
+      "result": "confirmed",
+      "detail": "Recomputed from the .dly (1,295,460 bytes): SNOW 1,752 of 2,192 = 79.93% (misses by 0.07 points); SNWD 81.93%; PRCP 96.30%; TMAX 96.58%; TMIN 96.53%."
+    },
+    {
+      "claim": "Rule-test coverage, Buffalo 1.7 E US1MTFG0003: SNOW 81.7% passes; PRCP 95.5%; SNWD fails",
+      "result": "confirmed",
+      "detail": "Recomputed from the .dly (142,560 bytes): SNOW 81.71%, PRCP 95.48%, SNWD 1 day (0.05%)."
+    },
+    {
+      "claim": "Passing counts across all candidates: Billings SNOW 12, SNWD 10, PRCP 20, TMAX 8, TMIN 8 of 29; Benchland SNOW 3, SNWD 6, PRCP 11, TMAX 9, TMIN 9 of 13",
+      "result": "unverified",
+      "detail": "Not re-run for every candidate (that needs all 42 .dly files). Only the named stations above were re-run."
+    },
+    {
+      "claim": "All 16 quotes in the record's terms list appear verbatim on their live sources",
+      "result": "confirmed",
+      "detail": "After HTML stripping and quote and entity normalisation: AWS registry 3 of 3 (including the 'license , which' spacing); NCEI product page 3 of 3; readme.txt 6 of 6; readme-by_station 1 of 1; status-by_station 1 of 1; NSIDC G02158 2 of 2 (after following the redirect). Output: outputs/terms_check.json."
+    },
+    {
+      "claim": "NCEI product page: banner 'Current Impact: Intermittent degraded order fulfillment services'; NCEI moving data to the cloud; 'About half the stations only report precipitation'",
+      "result": "confirmed",
+      "detail": "All three phrases are on the live page (https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily)."
+    },
+    {
+      "claim": "status-by_station dated April 25, 2021 with a critical system failure notice; status.txt 'Version 3.35 is released' dated October 1, 2026; ghcnd-version 3.35-upd-2026101717",
+      "result": "confirmed",
+      "detail": "All three confirmed in the downloaded files."
+    },
+    {
+      "claim": "Licence: the AWS page's CC0 1.0 sentence covers NODD (S3) data; the NCEI product page carries no licence text",
+      "result": "confirmed",
+      "detail": "AWS page: 'NOAA data disseminated through NODD is made available under the Creative Commons 1.0 Universal Public Domain Dedication (CC0-1.0) license...'. NCEI product page: no hits for 'licen', 'Creative Commons' or 'public domain'. NOAA disclaimer page (https://www.noaa.gov/disclaimer): no public-domain or reuse wording."
+    },
+    {
+      "claim": "The recommendation's licence basis for the NCEI .dly source: 'CC0 licence per the AWS page'",
+      "result": "corrected",
+      "detail": "The AWS sentence covers the NODD copy only. The primary basis for NOAA and federal-agency data is NCEI policy NCEI-PD-10-2-02 section 4(a) (live PDF, https://www.ncei.noaa.gov/sites/default/files/2023-12/NCEI%20PD-10-2-02%20-%20Open%20Data%20Policy%20Signed.pdf): 'These data are in the public domain in the United States. To serve our international partners and customers, NCEI will work to ensure a Creative Commons CC0 license is applied.' Section 4(c) covers non-federal data. The record cites neither."
+    },
+    {
+      "claim": "CoCoRaHS records (176 of the 481 files, source flag N) fall under the same CC0 basis",
+      "result": "corrected",
+      "detail": "The CoCoRaHS Data Usage Policy (live, https://www.cocorahs.org/Content.aspx?page=datausagepolicy) says: 'Unless otherwise noted, all CoCoRaHS content and data are released under a Creative Commons Attribution 3.0 License' and asks users to acknowledge the source. The help page's CC BY 4.0 line covers website content only. CoCoRaHS data are therefore CC BY 3.0 with attribution, not CC0. The contract row's licence field needs a per-network split."
+    },
+    {
+      "claim": "COOP, SNOTEL and WBAN records (NOAA or federal-agency produced) are public domain in the United States",
+      "result": "unverified",
+      "detail": "The NCEI section 4(a) wording supports it by producer (COOP and WBAN are NWS programs; SNOTEL is NRCS). Each network's producer and licence statement was not checked individually."
+    },
+    {
+      "claim": "Recommendation 1: read NCEI .dly for all Montana stations; never use S3 by-station files for SNOTEL or WBAN",
+      "result": "confirmed",
+      "detail": "The central claim holds: the 114 S3 SNOTEL and WBAN files are stale (dated 9 Feb 2025, ending 6 Feb 2025 where content was checked), and the NCEI copies are current."
+    },
+    {
+      "claim": "Recommendation 1 also: S3 csv.gz may be used for COOP and CoCoRaHS after a check against the .dly; Billings airport csv.gz equals its csv",
+      "result": "unverified",
+      "detail": "Not re-run. The worker's csv.gz versus .dly check for COOP and CoCoRaHS remains open, as the record says."
+    },
+    {
+      "claim": "Billings WFO COOP USC00240801 TMAX 43.9 C on 2021-07-19 is a record (S-flag 7)",
+      "result": "unverified",
+      "detail": "Flagged by the worker as unconfirmed and not re-run. The file was downloaded (564,030 bytes) and could be checked against the NWS record."
+    }
+  ],
+  "corrections": [
+    "Station set: 42 stations are within 40 miles of either sample point with a 2025 record (27,734,670 bytes, 27.7 MB). The 33,682,230-byte, 33.7 MB total covers 45 files, three of which are outside 40 miles (USW00024143, USS0010C22S, USS0010C23S). Correct the recommendation and the same figure in volume-and-job-budget.json line 5.",
+    "Licence basis: replace 'CC0 licence per the AWS page' with a per-network statement. COOP, SNOTEL and WBAN records are NOAA or federal-agency produced and fall under NCEI-PD-10-2-02 section 4(a): public domain in the United States, with CC0 applied on NODD. CoCoRaHS records (176 files) are CC BY 3.0 under the CoCoRaHS Data Usage Policy, which asks users to acknowledge the source. Cite NCEI-PD-10-2-02 in the contract row and the About text. The NCEI product page carries no licence.",
+    "Crystal Lake only-in-.dly keys: 12 in total, of which 5 carry reported values and 7 are -9999 placeholders. Label the figure.",
+    "Billings February 2025: the NWS 2025 review's record snowfall days match the airport .dly to 0.1 in and give 30.7 in for Billings for February 2-19 (airport 30.8 in). Cite the NWS review for the daily values. It gives no season total, so keep the 64.3 in season figure marked as not checked against NWS.",
+    "SNODAS 300 MB budget: source not located in volume-and-job-budget.json. Cite it or remove it.",
+    "Still open, not re-run: the COOP and CoCoRaHS csv.gz versus .dly check, the Billings WFO 43.9 C record, and passing counts for all 29 and 13 candidates."
+  ],
+  "terms_check": "All 16 quoted terms appear verbatim on their live sources: AWS registry 3, NCEI product page 3, readme.txt 6, readme-by_station 1, status-by_station 1, NSIDC G02158 2 (after following a redirect). Licence: the AWS CC0 sentence describes the NODD copy only, and the NCEI product page has no licence wording. The licence basis for NOAA and federal records is NCEI-PD-10-2-02 section 4(a), which I read live: NOAA and federal environmental data 'are in the public domain in the United States', and NCEI will work to apply CC0. For CoCoRaHS (non-federal, section 4(c)), the live CoCoRaHS Data Usage Policy says its data are released under CC BY 3.0 and asks users to acknowledge the source. So the record's CC0 statement is right for COOP, SNOTEL and WBAN and wrong for CoCoRaHS.",
+  "recommendation_stands": true,
+  "recommendation_note": "Stands on the source choice, with corrections. Evidence: all 114 Montana S3 by-station csv files for SNOTEL (89) and WBAN (25) are dated 9 Feb 2025, and the two checked for content end on 6 Feb 2025; all 481 NCEI .dly files are dated 18 Oct 2026 and end 14 to 16 Oct 2026. The station-rule distances and coverage shares reproduce, including the Stanford snow knife-edge (79.9 percent). Corrections needed before the record is used: (1) 42 stations and 27.7 MB within 40 miles with a 2025 record, not 45 and 33.7 MB; (2) the licence basis is per network: NCEI-PD-10-2-02 section 4(a) for NOAA and federal records, and CoCoRaHS's own CC BY 3.0 data terms, with attribution, for the 176 CoCoRaHS files; (3) label the Crystal Lake only-in-.dly count (12 keys, 5 with values). Still unverified: the full-season 64.3 in total against NWS, the COOP and CoCoRaHS csv.gz check, and the source of the 300 MB budget. None of these changes which source to read.",
+  "download_bytes_total": 77409921,
+  "artifacts": [
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/counts.json",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/heads_summary.json",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/head_s3_csv_481.tsv",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/head_ncei_dly_481.tsv",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/head_ncei_dly_worker45.tsv",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/sample_usw00024033.json",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/sample_uss0009c01s.json",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/rule_check.json",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/crystal_csv_dly_diffs.json",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/terms_check.json",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/nws_byz_2025_review.txt",
+    "/home/user/wt/research-b35/scratch-refute-snow-stations/outputs/ncei_pd_10_2_02.txt"
+  ]
+}
