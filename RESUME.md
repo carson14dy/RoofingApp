@@ -16,7 +16,7 @@ small; no AI-vendor, model or product names in repository files; no em-dashes; s
 | B3 | `claude/hail-b3` = 1e32779, PR 16 (base B2) | green (the preview was re-run once after the branch's store job published, see PR comment), waiting on Carson |
 | B4 | `claude/hail-b4` = 9693997, PR 15 (base B2) | green, waiting on Carson |
 | research | `claude/hail-history`, PR 12 | waiting on Carson |
-| B5 | pushed as `origin/session/hail-b5-wip` (local name `claude/hail-b5`; base db84d76) | part A and part B1 done; the merge of B3 resolved and committed (the tip); B4 not merged; part B2 not started. Pushed under `session/` on purpose: a `claude/**` push runs the preview and the store job, and the half-merged job would overwrite the shared release asset |
+| B5 | pushed as `origin/session/hail-b5-wip` = ad4962b (local name `claude/hail-b5`; base db84d76; WIP commits fa33c8d, de0793c, dcb7e93, 26c737a, ea8f325, then the merge commit) | part A and part B1 done; the merge of B3 resolved, reviewed (three supersessions ruled, no loss; see the supervisor log of 03:12) and committed as the tip; B4 not merged; part B2 not started. Pushed under `session/` on purpose: a `claude/**` push runs the preview and the store job, and the half-merged job would overwrite the shared release asset |
 | this state | `origin/session/hail-2026-10-20` (orphan branch; delete it when the programme ends) | briefs, logs, records, scripts, small caches, this guide |
 | the published store | the `hail-store` release asset `hail-store.tar.gz` (72 MB packed, 31,129 files): B1 `t/`, B2 `j/` v1, `z/`, `s/`, B3 `a/`, `r/`, `b/`, `counts.json`; published by the B3 branch job on 2026-10-20 02:22 UTC; only branch pushes touch it (no store job is on main) | |
 
@@ -56,7 +56,7 @@ scripts expect; keep them.
    commands and the `--cache` arguments). D50 in the brief records the expected figures (496,331,217 bytes, 45,644 files).
 
 ## Next steps (task 28, then the rest of 26)
-1. The B3 merge review: the merge agent's report is `wt-b5-merge/merge-b3-journal.jsonl` (the resolver's "decisions
+1. The B3 merge review is done (verdict and rulings in the supervisor log, 03:12; the fixture is regenerated with `python -m website.hail fixture --out D --addresses-from <combined store>` then `python -m website.joins fixture --out D --from-store <store>`, not the positional form D51 names). The merge agent's report is `wt-b5-merge/merge-b3-journal.jsonl` (the resolver's "decisions
    for you to confirm" were accepted: the county key rename `census_tiger_counties`, the `iem_lsr` assertion, the
    fixture budget 62 KB (D54), the `joins.fixture` D44 fix, the roadmap B4 wording). The read-only review's verdict is
    in the supervisor log's last lines if it finished before the pause; otherwise run `scripts/hail-b5-merge.js` with
