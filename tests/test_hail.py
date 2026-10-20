@@ -612,13 +612,26 @@ class ReaderTests(unittest.TestCase):
 
     def test_manifest_passes_on_the_fixture(self):
         # the B2 layout: B1's shards and index, and the joins' j/, s/ and z/ files (the fire zone files of the sample's
-        # tiles included). A manifest does not list itself, so hail/manifest.json is not in this list.
+        # tiles included). The address files under hail/a/ (D18) are checked by their own test. A manifest does not
+        # list itself, so hail/manifest.json is not in this list.
         manifest = h.check_manifest(FIXTURE)
-        self.assertEqual(sorted(manifest["files"]), [
+        self.assertEqual([name for name in sorted(manifest["files"]) if not name.startswith("hail/a/")], [
             "hail/index.json", "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
             "hail/j/r0092_c0214.json", "hail/s/1LM.json", "hail/s/6S8.json", "hail/s/BIL.json", "hail/s/LWT.json",
             "hail/t/r0079_c0198.json", "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json",
             "hail/z/MTZ235.json", "hail/z/MTZ313.json", "hail/z/fire-MTZ117.json", "hail/z/fire-MTZ128.json"])
+
+    def test_the_address_files_are_listed_in_the_manifest_and_the_index_carries_their_block(self):
+        # D18: hail/a/ holds JSON files only, each one is listed in the manifest, and the index's addresses block is
+        # the loaded SAMPLE of the address part, with its byte count equal to the files'
+        on_disk = sorted(p.relative_to(FIXTURE).as_posix() for p in (FIXTURE / "hail" / "a").rglob("*") if p.is_file())
+        self.assertTrue(on_disk)
+        self.assertTrue(all(name.endswith(".json") for name in on_disk), on_disk)
+        manifest = h.check_manifest(FIXTURE)
+        self.assertEqual(sorted(name for name in manifest["files"] if name.startswith("hail/a/")), on_disk)
+        block = json.loads((FIXTURE / "hail" / "index.json").read_text(encoding="utf-8"))["addresses"]
+        self.assertEqual((block["state"], block["sample"]), ("loaded", True))
+        self.assertEqual(block["bytes"]["a"], sum((FIXTURE / name).stat().st_size for name in on_disk))
 
     def test_manifest_catches_a_changed_shard(self):
         dest = self.copy_fixture()
@@ -740,14 +753,17 @@ class ReaderTests(unittest.TestCase):
 
 
 class FixtureTests(unittest.TestCase):
-    def test_fixture_is_under_50_kb_and_holds_only_the_store_and_joins_files(self):
-        files = sorted(p.relative_to(FIXTURE).as_posix() for p in FIXTURE.rglob("*") if p.is_file())
+    def test_fixture_without_the_address_files_is_under_50_kb_and_holds_only_the_store_and_joins(self):
+        # D10 and D18: the store and joins files have their own budget; the address files under hail/a/ are checked by
+        # test_the_address_files_are_listed_in_the_manifest_and_the_index_carries_their_block and tests/test_joins.py
+        files = sorted(p.relative_to(FIXTURE).as_posix() for p in FIXTURE.rglob("*")
+                       if p.is_file() and not p.relative_to(FIXTURE).as_posix().startswith("hail/a/"))
         self.assertEqual(files, [
             "hail/index.json", "hail/j/events.json", "hail/j/r0079_c0198.json", "hail/j/r0079_c0199.json",
             "hail/j/r0092_c0214.json", "hail/manifest.json", "hail/s/1LM.json", "hail/s/6S8.json", "hail/s/BIL.json",
             "hail/s/LWT.json", "hail/t/r0079_c0198.json", "hail/t/r0079_c0199.json", "hail/t/r0092_c0214.json",
             "hail/z/MTZ235.json", "hail/z/MTZ313.json", "hail/z/fire-MTZ117.json", "hail/z/fire-MTZ128.json"])
-        total = sum(p.stat().st_size for p in FIXTURE.rglob("*") if p.is_file())
+        total = sum((FIXTURE / name).stat().st_size for name in files)
         self.assertLess(total, 50_000)
 
     def test_fixture_is_the_current_output_of_fixture_store(self):
@@ -763,6 +779,7 @@ class FixtureTests(unittest.TestCase):
             generated = json.loads((tmp / "hail" / "index.json").read_text(encoding="utf-8"))
             committed = json.loads((FIXTURE / "hail" / "index.json").read_text(encoding="utf-8"))
             committed.pop("joins")
+            committed.pop("addresses", None)        # the address part is not the B1 writer's (D18)
             self.assertEqual(committed, generated)
             generated = json.loads((tmp / "hail" / "manifest.json").read_text(encoding="utf-8"))
             committed = json.loads((FIXTURE / "hail" / "manifest.json").read_text(encoding="utf-8"))
@@ -770,6 +787,48 @@ class FixtureTests(unittest.TestCase):
             for doc in (generated, committed):      # the index's own entry hashes the index with its joins block
                 doc["files"] = {k: v for k, v in doc["files"].items() if k.startswith("hail/t/")}
             self.assertEqual(committed, generated)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_fixture_store_keeps_the_address_files_of_an_earlier_write(self):
+        # D18: a B1 rewrite (joins.fixture makes one) keeps hail/a/ and the index's addresses block, and the manifest
+        # still matches the folder
+        tmp = Path(tempfile.mkdtemp(prefix="hail-fixture-keep-"))
+        try:
+            shutil.copytree(FIXTURE / "hail", tmp / "hail")
+            before = {p.relative_to(tmp).as_posix(): p.read_bytes()
+                      for p in (tmp / "hail" / "a").rglob("*") if p.is_file()}
+            self.assertTrue(before)
+            h.fixture_store(tmp)
+            after = {p.relative_to(tmp).as_posix(): p.read_bytes()
+                     for p in (tmp / "hail" / "a").rglob("*") if p.is_file()}
+            self.assertEqual(after, before)
+            index = json.loads((tmp / "hail" / "index.json").read_text(encoding="utf-8"))
+            committed = json.loads((FIXTURE / "hail" / "index.json").read_text(encoding="utf-8"))
+            self.assertEqual(index["addresses"], committed["addresses"])
+            h.check_manifest(tmp)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_fixture_store_hands_a_real_store_to_the_address_writer(self):
+        # D18: with addresses_from, the fixture path calls the address writer with the folder and the real store
+        tmp = Path(tempfile.mkdtemp(prefix="hail-fixture-addr-"))
+        try:
+            with mock.patch("website.addresses.fixture") as writer:
+                index = h.fixture_store(tmp, addresses_from="real-store")
+            writer.assert_called_once_with(tmp, "real-store")
+            self.assertEqual(index["events"], 1575)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_a_failed_address_write_is_a_store_error_with_its_reason(self):
+        from website import addresses as A
+        tmp = Path(tempfile.mkdtemp(prefix="hail-fixture-addr-fail-"))
+        try:
+            with mock.patch("website.addresses.fixture", side_effect=A.AddressesError("no real rows")):
+                with self.assertRaises(h.HailStoreError) as ctx:
+                    h.fixture_store(tmp, addresses_from="real-store")
+            self.assertIn("no real rows", str(ctx.exception))
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -861,7 +920,7 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(params["cell_events"], ["store_dir", "lat", "lon", "index"])
         self.assertEqual(params["describe"], ["index", "events", "now", "sample"])
         self.assertEqual(params["map_data"], ["index", "sample"])
-        self.assertEqual(params["fixture_store"], ["dest_dir"])
+        self.assertEqual(params["fixture_store"], ["dest_dir", "addresses_from"])
         self.assertEqual(params["load_store"], ["path", "dest_dir"])
         self.assertEqual(inspect.signature(h.describe).parameters["sample"].default, False)
 
@@ -881,6 +940,16 @@ class CommandLineTests(unittest.TestCase):
             self.assertEqual(json.loads(out)["events"], 1575)
             self.assertTrue((tmp / "hail" / "index.json").is_file())
             self.assertTrue((tmp / "hail" / "manifest.json").is_file())
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_fixture_command_takes_addresses_from(self):
+        tmp = Path(tempfile.mkdtemp(prefix="hail-cli-addr-"))
+        try:
+            with mock.patch("website.addresses.fixture") as writer:
+                code, _out, _err = self.run_cli(["fixture", "--out", str(tmp), "--addresses-from", "real-store"])
+            self.assertEqual(code, 0)
+            writer.assert_called_once_with(tmp, "real-store")
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -1782,6 +1851,29 @@ class FetchAndLoadTests(unittest.TestCase):
             h.fetch_store(self.getter(self.make_tar(members)), dest)
         self.assertEqual(str(ctx.exception), "the history manifest lists a file outside hail/: ../outside.json")
         self.assertFalse((dest / "hail").exists())
+
+    def test_the_unpack_limits_hold_the_measured_b3_store(self):
+        # A guard on the constants, not a 373 MB archive: the store measured 372,739,036 bytes in 31,129 files.
+        self.assertGreater(h.MAX_UNPACK_BYTES, 372_739_036)
+        self.assertGreater(h.MAX_UNPACK_FILES, 31_129)
+
+    def test_an_archive_at_the_file_limit_unpacks_and_one_over_it_is_refused(self):
+        members = {f"hail/x/{i:05d}.json": b"1" for i in range(10)}
+        stage = self.tmp / "stage"
+        stage.mkdir()
+        with mock.patch.object(h, "MAX_UNPACK_FILES", 10):
+            h._unpack_hail(self.make_tar(members), stage)
+            self.assertEqual(len(list((stage / "hail" / "x").iterdir())), 10)
+            members["hail/x/extra.json"] = b"1"
+            with self.assertRaises(h.HailStoreError) as ctx:
+                h._unpack_hail(self.make_tar(members), self.tmp / "over")
+        self.assertEqual(str(ctx.exception), "the history archive is larger than the limits allow")
+
+    def test_an_archive_over_the_byte_limit_is_refused(self):
+        with mock.patch.object(h, "MAX_UNPACK_BYTES", 1000):
+            with self.assertRaises(h.HailStoreError) as ctx:
+                h._unpack_hail(self.make_tar({"hail/x/big.json": b"1" * 2000}), self.tmp / "stage")
+        self.assertEqual(str(ctx.exception), "the history archive is larger than the limits allow")
 
     def test_load_store_takes_a_directory_or_a_tar(self):
         self.assertEqual(h.load_store(FIXTURE), FIXTURE)

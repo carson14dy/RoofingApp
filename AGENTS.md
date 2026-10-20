@@ -32,15 +32,18 @@ website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · g
            hail.py (hail history: grid, size words, store readers, daily build; --hail-history) · hail_fixture_data.py (the
            SAMPLE store's events) · data/hail-fixture/ (the SAMPLE store) · joins.py (the hail history joins, B2, D35:
            reports, official records, radar detections, warnings, zone products and red flag warnings by fire weather
-           zone, station gusts; pyshp imported lazily)
+           zone, station gusts; pyshp imported lazily) · addresses.py (B3, D36: the State Library address points as
+           dots, the search index and its verify; pyproj imported lazily; the job only) · streets.py (B3, D25, D33: the
+           State Library roads, the Census fallback, the street shards; pyproj lazily) · buildings.py (B3, D14, D15, D32,
+           D34: the FEMA and ORNL building outlines, one dot each, the address join; pyogrio imported lazily)
 tools/     build_basemap.py (rebuilds static/map/basemap.json from Natural Earth + Census; by hand)
 .github/workflows/website.yml   build every 10 min from main → GitHub Pages; branch pushes = live check
-.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, join its sources (website/joins.py), verify both, publish the release asset (D34, D35)
+.github/workflows/hail-store.yml   daily 12:43 UTC: build the hail store, join its sources (website/joins.py), build the address, street and outline steps (B3, D36; each non-fatal), verify, publish the release asset (D34, D35, D36)
 payload/   the parked app — updates itself. app.py (routes) · weather.py (feeds, evidence, alert matching,
            rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
 desktop/   the shell — changes only with a new installer. launcher.py (window, local server,
            notifications, recovery page) · updater.py (GitHub updates, self-test, rollback)
-tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
+tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py, test_addresses.py, test_streets.py, test_buildings.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
            update channel vs fake GitHub
 build.py   PyInstaller build      ship.py   test → bump version → commit → push
 ```
@@ -52,6 +55,12 @@ python -m website.build --out _site --sample             # labelled sample data,
 python -m website.build --out _site --hail-history       # the five-year hail history; off by default (D34)
 python -m website.joins build --store store --cache joins-cache   # the hail joins (D35); needs pyshp
 python -m website.joins verify store                     # check the hail joins
+python -m website.build --out _site --sample --hail-history --hail-addresses   # the address dots, streets and outlines (D36); off by default
+python -m website.build --out _site --sample --hail-history --hail-addresses --address-text off   # the same with no address text (D35)
+pip install pyproj~=3.8 pyogrio~=0.13                   # the job's address, street and outline steps only (compatible releases)
+python -m website.addresses build --store store --cache structures   # the address points (job); verify with: python -m website.addresses verify store
+python -m website.streets build --store store --cache roads --roads-source msl   # the streets (job); --roads-source tiger is the fallback
+python -m website.buildings build --store store --cache structures-fema --counties-cache counties   # the outlines and their dots (job)
 python -m website.build --out _site --require-live       # live data; exit 1 if any source failed
 python -m http.server -d _site 8000                      # then open http://localhost:8000
 pip install -r requirements.txt                          # the parked desktop app
@@ -63,7 +72,7 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
 
 ## Hard rules
 1. **Shipping.** Website: merging to `main` publishes. Keep `main` green; push to a branch first
-   (the Website workflow builds branch pushes against live data) and check the pages in a browser.
+   (the Website workflow builds branch pushes against live data) and check the pages in a browser. The hail flags `--hail-history` and `--hail-addresses` stay off on `main` until the owner approves their terms and counsel answers them (D34, D36).
    Parked app: users get a change only when `payload/manifest.json` `version` increases on `main`;
    don't bump it unless the owner asked to ship; never lower it; use `ship.py`.
 2. **Payload contract (SHELL_API 1).** The shell imports `payload/` as a package: `app.py` exposes
@@ -105,6 +114,7 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
 - Store UTC. Show a job's NWS time zone (or the company zone). SPC dates follow 12:00–11:59 UTC
   reporting days. Hail sizes in SPC CSVs are hundredths of an inch; `UNK` wind stays unknown.
 - Hail history sizes (D34): to the hundredth of an inch, rounded down, with the millimetres exact beside them; the classes use the exact tenths.
+- Building words (D34, D36): a dot is a building outline, never a house. Site words never say house, home, residence or dwelling. Owner and parcel appear only in the About sentence "Owner names and parcel identifiers are never read, stored or shown." (D8, gate B3-5) and in the Parcel placement phrase "at the parcel" (D32). "structure" appears only inside the two proper names. A dot's placement is said where the file did not place it on the building (D32).
 - Hail history kinds (D35): every section names its kind, and every row starts with its kind label (D3: "Report:", "Record:", "Detection:", "Warning:", "Zone product:", "Station:"); a report is not an inspection; a detection is not hail on the ground; a warning's tags are the forecast threat; a zone product covers its whole zone; a station reading is at the station; NCEI times are MST-7 local, shown as Montana time; "damage" appears only as the NWS damage threat tag, in a quoted remark or as a source's type word (D4).
 - Add or update tests with every behavior change.
 

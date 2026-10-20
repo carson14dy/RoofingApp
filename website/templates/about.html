@@ -66,6 +66,34 @@
     other sources, and the sheet says to which date; SWDI's inventory is not complete; the wind unit of the local
     storm reports is inferred; and warning tags are the forecast threat at issue time, not what fell.</p>
 {% endif %}
+{% if hail_addresses and b3 %}
+  <h2 id="addresses">Addresses, streets and building outlines</h2>
+  <p>{{ b3.about.addresses.source }}</p>
+  {% if b3.about.addresses_ok %}
+  <p>{{ b3.about.addresses.access }} {{ b3.about.addresses.use }}</p>
+  <p>{{ b3.about.addresses.purpose }}</p>
+  <p>{{ b3.about.addresses.fields }} {{ b3.about.addresses.exclusion }} {{ b3.about.addresses.persons }}</p>
+  <p>{{ b3.about.addresses.coverage }}</p>
+  {% else %}
+  <p>{{ b3.unavailable.addresses }} {{ b3.about.addresses.exclusion }} {{ b3.about.addresses.persons }}</p>
+  {% endif %}
+  {% if address_text == 'on' %}
+  <p>{{ b3.about.addresses.privacy }}</p>
+  {% endif %}
+  {% if b3.about.roads_ok %}
+  <p>{{ b3.about.roads.attribution }}</p>
+  <p>{{ b3.about.roads.caveat }}</p>
+  {% else %}
+  <p>{{ b3.unavailable.roads }}</p>
+  {% endif %}
+  {% if b3.about.outlines_ok %}
+  <p>{{ b3.about.outlines.source }} {{ b3.about.outlines.caveat }}</p>
+  <p>{{ b3.about.outlines.dot }}</p>
+  {% if b3.about.counties %}<p>{{ b3.about.counties }}</p>{% endif %}
+  {% else %}
+  <p>{{ b3.unavailable.outlines }} {{ b3.about.outlines.caveat }}</p>
+  {% endif %}
+{% endif %}
   <h2>Base map imagery</h2>
   <p>The map's base is a white map of public outlines. In the Layers menu you can switch it to aerial imagery with roads and
     names from USGS, The National Map. USGS says its map services are free and in the public domain. Its topographic maps

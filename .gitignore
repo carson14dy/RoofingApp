@@ -8,3 +8,13 @@ dist/
 *.zip
 .DS_Store
 _site/
+# local caches and products of the hail store job and the command line (B3R-06): never committed
+address-cache/
+structures/
+hail-cache/
+joins-cache/
+store/
+hail-store.tar.gz
+roads/
+counties/
+structures-fema/

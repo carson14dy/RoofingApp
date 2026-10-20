@@ -37,6 +37,18 @@ must match the module row for row, lead for lead and sentence for sentence; a sa
 station file that fails shows its unavailable sentence (check_station_unavailable); and a zone file that fails leaves
 the zone section with its unavailable sentence and the records section with its rows and the partial sentence
 (check_zone_unavailable, D27).
+On a --hail-addresses build (run with --addresses) the address dots, the streets and the building outlines (B3, D30)
+are checked by check_addresses: at zoom 12 nothing of them is fetched or drawn over Billings; at 13 the arterials and
+the count bubbles show and no outline is fetched; at 15 the local streets, one dot per outline and the unmatched
+address dots show, with no street names; at 16 the fills and the street names show; a 390 px view at zoom 15 fetches
+under 650 KB gzip; each redraw at 15 and 16 takes under 30 ms; a pan across Billings makes fewer than 20 requests.
+A tap on an outline's dot opens the sheet with its address line on top (or the no-address sentence), and a tap on an
+unmatched dot shows its address line and how it was placed. The attribution lines are on the first screen at 390 px.
+The Find an address search is tried with "401 N 27th St Billings", "27th Billings", "Colony Rd Roundup" and "qwzx 99",
+and no typed text appears in any request URL. On the --address-text off build (D35) there is no form and no search
+file, and no sheet shows address text. --shots saves the pictures at 390x844 and 1280x800 on both base maps. The
+hook these checks read is window.hailMapTest (map.js, test only).
+
 Every browser context counts the requests that leave this server, and that count must be zero, except for
 the imagery host in the contexts that have switched to Imagery. Exits 1 with the reasons if anything fails.
 The Website workflow runs it on branch pushes; locally set PW_CHROMIUM to a Chromium executable if
@@ -47,6 +59,7 @@ from __future__ import annotations
 import argparse
 import copy
 import functools
+import gzip
 import http.server
 import json
 import math
@@ -101,7 +114,7 @@ class Counted:
         return getattr(self._browser, name)
 
 
-def check(root: Path, shots: Path | None = None) -> list[str]:
+def check(root: Path, shots: Path | None = None, addresses: bool = False) -> list[str]:
     from playwright.sync_api import sync_playwright
 
     problems: list[str] = []
@@ -198,6 +211,8 @@ def check(root: Path, shots: Path | None = None) -> list[str]:
                       if "hail" in data else ("check_no_hail", lambda: check_no_hail(browser, base, data)))
             if "hail" in data and data["hail"].get("joins"):
                 extras += (("check_joins", lambda: check_joins(browser, base, root, data, shots)),)
+            if addresses:
+                extras += (("check_addresses", lambda: check_addresses(browser, base, root, data, shots)),)
             for name, extra in extras:
                 try:
                     problems += extra()
@@ -789,6 +804,13 @@ def check_imagery_switch(browser, base, data, shots) -> list[str]:
         zoom_to_max(page)
         z = map_zoom(page, data)
         want = data["view"]["max_zoom"]
+        # the B3 layers raise the map's maximum to the highest zoom they ask for (map.js b3Zoom, b3TopZoom): the outlines'
+        # emphasis zoom, and the address search's zoom (D47) on an address-only build
+        hail = data.get("hail", {})
+        if hail.get("buildings", {}).get("state") == "loaded":
+            want = max(want, hail["buildings"]["zoom"]["emphasis"])
+        if hail.get("addresses", {}).get("state") in ("loaded", "sample"):
+            want = max(want, hail["addresses"]["zoom"]["choose"])
         if z is None or abs(z - want) > 0.05:
             problems.append(f"imagery: after switching back the map zooms to {zoom_words(z)}, "
                             f"not the white map's maximum {want}")
@@ -1786,13 +1808,451 @@ def check_cross_day_end(browser, base: str, root: Path, data: dict) -> list[str]
     return problems
 
 
+# ---------------------------------------------------------------- the address, street and outline layers (B3)
+
+# The browser's test hook (map.js, window.hailMapTest; test only, documented there): shards(), dots() -> {buildings,
+# addresses} drawn by the last redraw, labels(), counts(), lines() (road lines drawn), fetches() (URLs requested since
+# reset()), draws() (redraw times in ms since reset()), reset(), view(lat, lon, zoom), pan(dx, dy), zoom(), hits(),
+# state() -> {roads, bld, adr, zoom, textOn, searchOn, tap, minZoom, maxZoom, ...}.
+B3_BILLINGS = (45.7857, -108.5071)       # the centre of the Billings view the checks use (401 North 27th Street)
+B3_STREET = {"line": "401 North 27th Street", "city": "Billings", "zip": "59101", "at": (45.78566, -108.50717)}
+B3_ROUNDUP = {"line": "500 Colony Road", "city": "Roundup", "zip": "59072", "at": (46.71750, -108.50031)}
+ADDRESS_GATE_ZOOM = 15                   # the zoom at which the dots, the local streets and the budget are measured
+# bytes of gzip: 650 KiB (650 * 1024). The brief says "650 KB"; the unit is for the supervisor to confirm. The budget is
+# asserted on the B3 files plus the shell (the page without the precipitation frames, which predate B3). The precipitation
+# layer is listed apart on the note line, which splits the whole page by part (D30, D48).
+ADDRESS_FETCH_BUDGET_GZIP = 650 * 1024
+# The map's line for the address list (build.py, D44). The smoke's own expectation, so a map.json without the line fails
+# here (R-03, R-13); the line is checked on the rendered page, like the others.
+ADDRESS_ATTRIBUTION_START = "Addresses: Montana State Library"
+ADDRESS_DRAW_MS = 30                     # milliseconds per redraw at zoom 15 and 16 (D30)
+PAN_FETCH_LIMIT = 20                     # fetches across a pan over Billings at zoom 15 (D30)
+B3_SEARCHES = (("401 N 27th St Billings", "rows", B3_STREET["line"] + ", " + B3_STREET["city"] + " " + B3_STREET["zip"], "Billings"),
+               ("27th Billings", "list", None, "Billings"),
+               ("Colony Rd Roundup", "rows", B3_ROUNDUP["line"] + ", " + B3_ROUNDUP["city"] + " " + B3_ROUNDUP["zip"], "Roundup"),
+               ("qwzx 99", "none", None, "Billings"))
+READY = "() => !!(window.hailMapTest && window.hailMapTest.state)"
+ADDRESS_LIKE = re.compile(r"\b\d{1,5} (?:[NSEW]|North|South|East|West) ?\w+ (?:Street|Road|Avenue|Drive|Lane|Court|"
+                          r"Highway|Boulevard|Way|Trail|Loop|Circle|Place|Parkway|Terrace|Square)\b", re.I)
+
+
+def b3_kind(url: str) -> str:
+    """Which B3 file a request is for: road, outline, address, search, count, or other (not a B3 file). The browser asks
+    with paths relative to the page, so the path is read with a leading slash either way."""
+    path = "/" + urlsplit(url).path.lstrip("/")
+    if "/hail/r/" in path:
+        return "road"
+    if "/hail/b/" in path:
+        return "outline"
+    if "/hail/a/idx/" in path:
+        return "search"
+    if "/hail/a/" in path:
+        return "address"
+    if path.endswith("/hail/counts.json"):
+        return "count"
+    return "other"
+
+
+def response_part(url: str) -> str:
+    """Which part of the page a response belongs to, for the budget's split: the B3 files (b3_kind), the precipitation
+    frames (map/frames/) or the shell and data (the page, its scripts and styles, the map data and the basemap)."""
+    if b3_kind(url) != "other":
+        return "B3 files"
+    if "/map/frames/" in "/" + urlsplit(url).path.lstrip("/"):
+        return "precipitation frames"
+    return "shell and data"
+
+
+def b3_open(browser, base: str, width: int, height: int, allow: tuple = (), listen=None):
+    """A new page on the map with the hook ready. Returns (context, page); a page with no hook fails here. allow: the
+    URL prefixes this page may request without counting (the imagery host, after a switch to Imagery). listen: called
+    with every response, from before the first request, so a budget counts the whole load."""
+    ctx = browser.new_context(allow=allow, viewport={"width": width, "height": height})
+    page = ctx.new_page()
+    if listen is not None:
+        page.on("response", listen)
+    page.goto(base + "map.html", wait_until="load")
+    page.wait_for_function(READY, timeout=15000)
+    return ctx, page
+
+
+def b3_view(page, lat: float, lon: float, zoom: float, settle_ms: int = 1500) -> dict:
+    """Reset the hook, move the map to a view, wait for the redraw, and return what the hook reports for it."""
+    page.evaluate("([la, lo, z]) => { window.hailMapTest.reset(); window.hailMapTest.view(la, lo, z); }", [lat, lon, zoom])
+    page.wait_for_timeout(settle_ms)
+    return page.evaluate("""() => { const h = window.hailMapTest; const d = h.dots();
+        return {fetched: h.fetches(), buildings: d.buildings, addresses: d.addresses, labels: h.labels(),
+                counts: h.counts(), lines: h.lines(), draws: h.draws(), zoom: h.zoom()}; }""")
+
+
+def b3_kinds(urls) -> set[str]:
+    return {b3_kind(url) for url in urls} - {"other"}
+
+
+def b3_records(root: Path, lat: float, lon: float) -> tuple[list, list, list]:
+    """The records the site's own shard files hold for the B1 tile of a point: outlines with address lines, outlines
+    with none, and unmatched address rows. Read from the built files, so the taps aim at real records."""
+    from website import hail as hs
+    row, col = hs.cell_for(lat, lon)
+    tile = hs.tile_name(row // hs.TILE, col // hs.TILE)
+    outlines, bare, rows = [], [], []
+    for path in sorted((root / "hail" / "b").glob(f"{tile}*.json")):
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        for entry in doc.get("a", []):
+            if "l" in entry:
+                zs = entry.get("z") or [None] * len(entry["l"])
+                common = doc.get("c") or ["", ""]
+                lines = [{"line": line, "city": (z or common)[0], "zip": (z or common)[1]} for line, z in zip(entry["l"], zs)]
+                outlines.append({"lat": entry["p"][1], "lon": entry["p"][0], "lines": lines})
+            else:
+                bare.append({"lat": entry["p"][1], "lon": entry["p"][0]})
+    for path in sorted((root / "hail" / "a").glob(f"{tile}*.json")):
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        for row_ in doc.get("a", []):
+            if row_[5] != "S" and row_[2]:
+                rows.append({"lon": row_[0], "lat": row_[1], "lines": [{"line": row_[2], "city": row_[3], "zip": row_[4]}],
+                             "letter": row_[5]})
+    return outlines, bare, rows
+
+
+def tap_centre(page, lat: float, lon: float) -> None:
+    """Centre the map on a point and tap the middle of the map: the dot at that point is the nearest one (D7)."""
+    page.evaluate("([la, lo]) => window.hailMapTest.view(la, lo, 17)", [lat, lon])
+    page.wait_for_timeout(1300)
+    box = page.locator("#map").bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.wait_for_timeout(1500)
+
+
+def sheet_text(page) -> str:
+    return page.evaluate("() => { const s = document.getElementById('sheet'); return s && !s.hidden ? s.innerText : ''; }")
+
+
+def close_sheet(page) -> None:
+    if page.locator("#sheet-close").count() and page.locator("#sheet:not([hidden])").count():
+        page.click("#sheet-close")
+    page.wait_for_timeout(300)
+
+
+def check_zoom_rules(browser, base: str, data: dict) -> list[str]:
+    """The zoom rules over Billings (D27, D30): nothing B3 at 12; the arterials and the count bubbles at 13 with no
+    outline file fetched; the local streets, the outline dots and the unmatched address dots at 15, with no street names;
+    the street names at 16; each redraw at 15 and 16 under the draw budget. A layer the build did not load is not checked."""
+    problems: list[str] = []
+    roads_ok = data["hail"]["roads"].get("state") == "loaded"
+    outlines_ok = data["hail"]["buildings"].get("state") == "loaded"
+    addr_ok = data["hail"]["addresses"].get("state") in ("loaded", "sample")
+    ctx, page = b3_open(browser, base, 1280, 800)
+    rows = {}
+    lat, lon = B3_BILLINGS
+    for zoom in (12, 13, 15, 16):
+        state = b3_view(page, lat, lon, zoom)
+        kinds = sorted(b3_kinds(state["fetched"]))
+        if zoom in (15, 16):
+            # seven more redraws of the same view (the hook's redraws: a 1 px pan and a draw each), so the budget
+            # is checked on several draws, not on the one the view made
+            state["draws"] = page.evaluate("() => window.hailMapTest.redraws(7)")
+        ordered = sorted(state["draws"])
+        rows[zoom] = {"fetched": kinds, "arterial_lines": state["lines"], "outline_dots": state["buildings"],
+                      "address_dots": state["addresses"], "counts": state["counts"], "names": state["labels"],
+                      "draw_ms": {"n": len(ordered), "min": round(ordered[0], 1), "median": round(ordered[len(ordered) // 2], 1),
+                                  "max": round(ordered[-1], 1)} if ordered else None}
+        if zoom == 12 and (kinds or state["lines"] or state["buildings"] or state["addresses"] or state["counts"]):
+            problems.append(f"zoom 12 over Billings fetched {kinds} and drew B3 features; nothing B3 shows at 12 (D27)")
+        if zoom == 13:
+            if any("/hail/b/" in url for url in state["fetched"]):
+                problems.append("zoom 13 fetched an outline shard; outlines start at zoom 15 (D27)")
+            if state["buildings"] or state["addresses"]:
+                problems.append("zoom 13 drew outline or address dots; they start at zoom 15 (D27)")
+            if roads_ok and not state["lines"]:
+                problems.append("zoom 13 drew no arterial roads over Billings")
+            if outlines_ok and not state["counts"]:
+                problems.append("zoom 13 drew no count bubbles over Billings")
+        if zoom == 15:
+            if roads_ok and not state["lines"]:
+                problems.append("zoom 15 drew no local streets over Billings")
+            if outlines_ok and not state["buildings"]:
+                problems.append("zoom 15 drew no building outline dots over Billings")
+            if addr_ok and not state["addresses"]:
+                problems.append("zoom 15 drew no unmatched address dots over Billings")
+            if state["labels"]:
+                problems.append(f"zoom 15 drew {state['labels']} street names; names start at zoom 16 (D27)")
+        if zoom == 16:
+            if roads_ok and not state["labels"]:
+                problems.append("zoom 16 drew no street names over Billings")
+        if zoom in (15, 16) and state["draws"] and max(state["draws"]) >= ADDRESS_DRAW_MS:
+            problems.append(f"a redraw at zoom {zoom} took {max(state['draws']):.1f} ms (budget {ADDRESS_DRAW_MS})")
+    ctx.close()
+    problems.append(f"note: zoom rules over Billings: {rows}")
+    return problems
+
+
+def check_budget_and_pan(browser, base: str) -> list[str]:
+    """A 390 px phone view of Billings at zoom 15 fetches under the gzip budget (D30), counted on the B3 files (the note
+    gives the whole page split by part), and a pan across Billings at zoom 15 makes fewer than PAN_FETCH_LIMIT requests,
+    all to this site, with every redraw under the draw budget."""
+    problems: list[str] = []
+    lat, lon = B3_BILLINGS
+    seen: list = []
+    ctx, page = b3_open(browser, base, 390, 844, listen=lambda r: seen.append(r))    # every response, from the first request
+    b3_view(page, lat, lon, ADDRESS_GATE_ZOOM, settle_ms=2500)
+    sizes = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0}
+    counts = {"shell and data": 0, "precipitation frames": 0, "B3 files": 0}
+    unread = 0
+    for response in seen:
+        part = response_part(response.url)
+        try:
+            size = len(gzip.compress(response.body(), 6))
+        except Exception:                                                  # noqa: BLE001 - reported below
+            unread += 1
+            continue
+        sizes[part] += size
+        counts[part] += 1
+    total = sum(sizes.values())
+    if unread:
+        problems.append(f"{unread} responses could not be read to measure them")
+    b3_and_shell = sizes["B3 files"] + sizes["shell and data"]          # the budget's scope (D30, D48)
+    if b3_and_shell >= ADDRESS_FETCH_BUDGET_GZIP:
+        problems.append(f"the B3 files and the shell of a 390 px Billings view at zoom {ADDRESS_GATE_ZOOM} fetched "
+                        f"{b3_and_shell} bytes gzip; the budget is {ADDRESS_FETCH_BUDGET_GZIP}")
+    problems.append(f"note: 390 px Billings view at zoom {ADDRESS_GATE_ZOOM}: the B3 files plus the shell {b3_and_shell} bytes "
+                    f"gzip against the budget of {ADDRESS_FETCH_BUDGET_GZIP} (B3 files {sizes['B3 files']} in "
+                    f"{counts['B3 files']} files; shell and data {sizes['shell and data']} in {counts['shell and data']} "
+                    f"files); the precipitation frames {sizes['precipitation frames']} bytes gzip in "
+                    f"{counts['precipitation frames']} files, a layer that predates B3, listed apart (page total {total})")
+    ctx.close()
+
+    ctx, page = b3_open(browser, base, 1280, 800)
+    b3_view(page, lat, lon, ADDRESS_GATE_ZOOM)
+    page.evaluate("() => window.hailMapTest.reset()")
+    for dx, dy in ((300, 0), (300, 0), (-300, 300), (-300, 0), (0, -300), (600, 0)):
+        page.evaluate("([x, y]) => window.hailMapTest.pan(x, y)", [dx, dy])
+        page.wait_for_timeout(1200)
+    urls = page.evaluate("() => window.hailMapTest.fetches()")
+    draws = page.evaluate("() => window.hailMapTest.draws()")
+    if any(url.startswith(("http://", "https://")) and not url.startswith(base) for url in urls):
+        problems.append("the pan asked for a B3 file from another site")
+    if len(urls) >= PAN_FETCH_LIMIT:
+        problems.append(f"a pan across Billings at zoom {ADDRESS_GATE_ZOOM} made {len(urls)} requests; the limit is "
+                        f"{PAN_FETCH_LIMIT}")
+    if draws and max(draws) >= ADDRESS_DRAW_MS:
+        problems.append(f"a redraw while panning took {max(draws):.1f} ms (budget {ADDRESS_DRAW_MS})")
+    problems.append(f"note: pan across Billings at zoom {ADDRESS_GATE_ZOOM}: {len(urls)} requests "
+                    f"({', '.join(urlsplit(u).path.split('/hail/')[-1] for u in urls)}); redraws ms "
+                    f"{[round(ms, 1) for ms in draws]}")
+    ctx.close()
+    return problems
+
+
+def check_taps(browser, base: str, root: Path, data: dict, off: bool) -> list[str]:
+    """A tap on an outline's dot opens the hail sheet with its address line on top (or, for an outline with no address,
+    the no-address sentence and no address line), and the hail history under it. A tap on an unmatched address dot shows
+    its address line and its placement sentence. In the off mode no address text shows, and the dots still open."""
+    problems: list[str] = []
+    words = data["hail"]["buildings"]["templates"]
+    placed = data["hail"]["addresses"]["templates"]["placed_how"]
+    outlines, bare, rows = b3_records(root, B3_BILLINGS[0], B3_BILLINGS[1])
+    ctx, page = b3_open(browser, base, 1280, 800)
+    # the outline taps need the outline layer: a build without it has no outline records to tap, which is not a failure
+    # (as in check_zoom_rules, a layer the build did not load is not checked); its note says so
+    outlines_loaded = data["hail"]["buildings"].get("state") == "loaded"
+    if not outlines_loaded:
+        problems.append("note: the outline taps are not checked: this build did not load the building outlines")
+    if off:
+        target = (outlines + bare)[:1]
+        if not target and outlines_loaded:
+            problems.append("off mode: no outline in the Billings tile to tap")
+        for dot in target:
+            tap_centre(page, dot["lat"], dot["lon"])
+            text = sheet_text(page)
+            if ADDRESS_LIKE.search(text):
+                problems.append("off mode: a dot's sheet shows an address line")
+            if "hail" not in text.lower():
+                problems.append("off mode: a dot's sheet has no hail history")
+            close_sheet(page)
+        ctx.close()
+        return problems
+    if not outlines and outlines_loaded:
+        problems.append("no outline with an address is in the Billings tile's shard files")
+    if outlines:
+        dot = outlines[0]
+        tap_centre(page, dot["lat"], dot["lon"])
+        text = sheet_text(page)
+        first = dot["lines"][0]
+        line = f"{first['line']}, {first['city']} {first['zip']}"
+        if line not in "\n".join(text.split("\n")[:4]):
+            problems.append(f"an outline's sheet does not show its address line {line!r} on top")
+        if "hail" not in text.lower():
+            problems.append("an outline's sheet has no hail history under it")
+        close_sheet(page)
+    if bare:
+        dot = bare[0]
+        tap_centre(page, dot["lat"], dot["lon"])
+        text = sheet_text(page)
+        if words["no_address"] not in text:
+            problems.append("an outline with no address does not say so in words")
+        if ADDRESS_LIKE.search(text):
+            problems.append("an outline with no address shows an address line")
+        close_sheet(page)
+    if rows:
+        dot = rows[0]
+        tap_centre(page, dot["lat"], dot["lon"])
+        text = sheet_text(page)
+        first = dot["lines"][0]
+        line = f"{first['line']}, {first['city']} {first['zip']}"
+        if line not in "\n".join(text.split("\n")[:4]):
+            problems.append(f"an unmatched address dot's sheet does not show its address line {line!r} on top")
+        how = placed.get(dot["letter"], "")
+        if how and words["placed"].format(how=how) not in text:
+            problems.append("an unmatched address dot's sheet does not say how the point was placed")
+        close_sheet(page)
+    ctx.close()
+    return problems
+
+
+def check_attribution(browser, base: str, data: dict) -> list[str]:
+    """The address, roads and outline lines are on the first screen at 390 px (D29, D44): in the map's key list or in the
+    Leaflet attribution control. The lines map.json names are checked, and the address line is expected whenever the
+    address list loaded (the smoke's own expectation, ADDRESS_ATTRIBUTION_START, not map.json's list: R-13). The line each
+    source takes is reported."""
+    problems: list[str] = []
+    lines = list(data["hail"].get("attribution") or [])
+    if data["hail"]["addresses"].get("state") in ("loaded", "sample") and \
+            not any(line.startswith(ADDRESS_ATTRIBUTION_START) for line in lines):
+        problems.append(f"map.json's attribution lists no address line ({ADDRESS_ATTRIBUTION_START!r} is expected)")
+    if data["hail"]["addresses"].get("state") in ("loaded", "sample"):
+        lines.append(ADDRESS_ATTRIBUTION_START)
+    ctx, page = b3_open(browser, base, 390, 844)
+    page.wait_for_timeout(800)
+    where = page.evaluate("""() => { const out = {};
+        const rendered = el => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+        out.keys = [...document.querySelectorAll('#legend-keys .key-line')].map(li => ({text: li.innerText,
+            box: li.getBoundingClientRect().toJSON(), shown: rendered(li), where: 'the key list'}));
+        out.credits = [...document.querySelectorAll('#legend-note .legend-credit')].map(s => ({text: s.textContent,
+            box: s.getBoundingClientRect().toJSON(), shown: rendered(s), where: 'the legend note'}));
+        const a = document.querySelector('.leaflet-control-attribution');
+        out.control = a ? {text: a.innerText, box: a.getBoundingClientRect().toJSON(), shown: rendered(a),
+            where: 'the Leaflet attribution control'} : null;
+        out.view = {w: innerWidth, h: innerHeight}; return out; }""")
+    for line in lines:
+        found = [item for item in where["keys"] + where["credits"] if line[:40] in item["text"]]
+        in_control = where["control"] is not None and line[:40] in where["control"]["text"]
+        if not found and not in_control:
+            problems.append(f"the map does not carry the attribution line {line[:40]!r} (key list, legend note or attribution control)")
+            continue
+        holder = found[0] if found else where["control"]
+        box = holder["box"]
+        if not holder["shown"] or box["x"] < 0 or box["x"] + box["width"] > where["view"]["w"] or box["y"] < 0 \
+                or box["y"] + box["height"] > where["view"]["h"]:
+            problems.append(f"the attribution line {line[:40]!r} is not on the first screen at 390 px "
+                            f"(it is in {holder['where']}, which is not shown there)")
+        problems.append(f"note: attribution line {line[:40]!r} is in " + holder["where"])
+    ctx.close()
+    return problems
+
+
+def check_search(browser, base: str, root: Path, data: dict) -> list[str]:
+    """The typed-address search (D6): the four searches of the brief, the rows or the list, the chosen row's zoom and
+    sheet, the no-match sentence, and no typed text in any request URL. A search whose city the build's index does not
+    hold (a sample build holds four cities) is not run and is named in a note."""
+    problems: list[str] = []
+    templates = data["hail"]["addresses"]["templates"]
+    cities = json.loads((root / "hail" / "a" / "idx" / "cities.json").read_text(encoding="utf-8"))["cities"]
+    ctx, page = b3_open(browser, base, 1280, 800)
+    urls: list[str] = []
+    page.on("request", lambda r: urls.append(r.url))
+    results = {}
+    skipped = []
+    for typed, want, expect, city in B3_SEARCHES:
+        if city not in cities:
+            skipped.append(typed)
+            continue
+        page.fill("#address-input", typed)
+        page.press("#address-input", "Enter")
+        page.wait_for_timeout(1500)
+        items = page.locator("#address-results li").all_inner_texts()
+        status = page.locator("#address-status").inner_text() if page.locator("#address-status").count() else ""
+        results[typed] = len(items)
+        if want == "rows" and not any(expect in item for item in items):
+            problems.append(f"search {typed!r} did not list {expect!r} (listed {items[:3]})")
+        if want == "list" and len(items) < 2:
+            problems.append(f"search {typed!r} listed {len(items)} row(s); a street name alone lists several")
+        if want == "none" and (items or templates["search_none"] not in status):
+            problems.append(f"search {typed!r} did not give the no-match sentence")
+        if want == "rows" and any(expect in item for item in items):
+            page.locator("#address-results li button.find-row", has_text=expect).first.click()
+            page.wait_for_timeout(1800)
+            if expect.split(",")[0] not in "\n".join(sheet_text(page).split("\n")[:4]):
+                problems.append(f"choosing {expect!r} did not open its sheet with the address on top")
+            if page.evaluate("() => window.hailMapTest.zoom()") < 17:
+                problems.append(f"choosing {expect!r} did not zoom to the address (zoom 17)")
+            close_sheet(page)
+        page.fill("#address-input", "")
+    if skipped:
+        problems.append(f"note: searches not run (their city is not in this build's index): {skipped}")
+    for typed, _, _, _ in B3_SEARCHES:
+        for needle in (typed, typed.replace(" ", "%20"), typed.replace(" ", "+")):
+            if any(needle in url for url in urls):
+                problems.append(f"the typed text {typed!r} appears in a request URL")
+                break
+    problems.append(f"note: search results listed: {results}")
+    ctx.close()
+    return problems
+
+
+def check_address_text_off(browser, base: str) -> list[str]:
+    """The off build (D35): no form, no search file requested, and the browser says it holds no address text."""
+    problems: list[str] = []
+    ctx, page = b3_open(browser, base, 1280, 800)
+    if page.locator("#address-input").count():
+        problems.append("off mode: the Find an address box is on the page")
+    state = page.evaluate("() => window.hailMapTest.state()")
+    if state["textOn"] or state["searchOn"]:
+        problems.append("off mode: the browser reports address text or a search on")
+    b3_view(page, B3_BILLINGS[0], B3_BILLINGS[1], 16, settle_ms=2000)
+    urls = page.evaluate("() => window.hailMapTest.fetches()")
+    if any(b3_kind(url) == "search" for url in urls):
+        problems.append("off mode: a search file was requested")
+    ctx.close()
+    return problems
+
+
+def check_addresses(browser, base: str, root: Path, data: dict, shots: Path | None) -> list[str]:
+    """The B3 layers on a --hail-addresses build (D30, D35): the zoom rules and the draw budget, the fetch budget and the
+    pan, the taps, the attribution on the first screen, the search (or, in the off mode, no search), and the screenshots
+    at 390x844 and 1280x800 on the white map and on Imagery."""
+    h = data.get("hail", {})
+    for key in ("addresses", "roads", "buildings"):
+        if key not in h:
+            return [f"the build has no {key} layer: build with --hail-addresses"]
+    if h["addresses"].get("state") not in ("loaded", "sample"):
+        return [f"the address list is {h['addresses'].get('state')}: {h['addresses'].get('problem')}"]
+    off = h["addresses"].get("text") == "off"
+    problems = check_zoom_rules(browser, base, data)
+    problems += check_budget_and_pan(browser, base)
+    problems += check_taps(browser, base, root, data, off)
+    problems += check_attribution(browser, base, data)
+    problems += check_address_text_off(browser, base) if off else check_search(browser, base, root, data)
+    for width, height in ((390, 844), (1280, 800)):
+        for name in ("map", "imagery"):
+            ctx, page = b3_open(browser, base, width, height, allow=(f"https://{IMAGERY_HOST}/",) if name == "imagery" else ())
+            if name == "imagery":
+                base_choice(page, "imagery")
+            b3_view(page, B3_BILLINGS[0], B3_BILLINGS[1], ADDRESS_GATE_ZOOM, settle_ms=2000)
+            snap(page, shots, f"b3-{'notext-' if off else ''}{name}-{width}x{height}.png")
+            ctx.close()
+    return problems
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Check the built Montana map in Chromium (AGENTS.md rule 8)")
     ap.add_argument("root", nargs="?", default="_site", type=Path, help="the built site (default: _site)")
     ap.add_argument("--shots", type=Path, metavar="DIR",
                     help="also save pictures for the record: the desktop and phone, both base maps")
+    ap.add_argument("--addresses", action="store_true",
+                    help="also check the address dots, streets and building outlines (a --hail-addresses build)")
     a = ap.parse_args(argv)
-    problems = check(a.root, a.shots)
+    problems = check(a.root, a.shots, addresses=a.addresses)
     notes = [p[len(NOTE):] for p in problems if p.startswith(NOTE)]
     failures = [p for p in problems if not p.startswith(NOTE)]
     for n in notes:

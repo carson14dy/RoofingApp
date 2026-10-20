@@ -30,7 +30,9 @@ shard's state list holds the in-tile keys of its Montana cells, so the store alo
 The index's tiles list names the shards.
 
 Command line (run from the repository root):
-    python -m website.hail fixture [--out DIR]                  write the SAMPLE store (no network)
+    python -m website.hail fixture [--out DIR] [--addresses-from STORE]
+                                                                write the SAMPLE store (no network); with
+                                                                --addresses-from, its address files too (D18)
     python -m website.hail build [--out store] [--cache DIR]    build the store from the NOAA archive
     python -m website.hail verify STORE                         check a built store
     python -m website.hail compare --store DIR --prototype DIR  compare with the prototype's store
@@ -570,16 +572,41 @@ def _shard_bytes(tile_row: int, tile_col: int, state: list, cells: dict) -> byte
                      "u": "tenths of a mm", "state": state, "cells": cells})
 
 
-def fixture_store(dest_dir) -> dict:
+ADDRESSES_KEY = "addresses"     # the index block of the address part (addresses.INDEX_KEY, D18)
+
+
+def _kept_address_part(root: Path) -> tuple:
+    """The address part of an earlier write under root (D18): the index's addresses block and every file under
+    hail/a/, as (block, [(store-relative path, bytes)]). (None, []) when the index has no such block."""
+    try:
+        earlier = json.loads((root / "hail" / "index.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None, []
+    block = earlier.get(ADDRESSES_KEY) if isinstance(earlier, dict) else None
+    if not isinstance(block, dict):
+        return None, []
+    files = []
+    base = root / "hail" / "a"
+    if base.is_dir():
+        for path in sorted(base.rglob("*")):
+            if path.is_file():
+                files.append((path.relative_to(root).as_posix(), path.read_bytes()))
+    return block, files
+
+
+def fixture_store(dest_dir, addresses_from=None) -> dict:
     """Write the SAMPLE store (three tiles, labelled sample) under dest_dir/hail/ and return its index.
 
     The tiles are the ones hail_fixture_data.SAMPLE_EVENTS names. Each shard's state list comes from the Montana mask,
     so the sample answers the outside words, the no-estimate words and the rows as the store does. The index lists only
     these tiles, so every other point reads as outside in a sample build (the sheet and the tables say SAMPLE).
-    Deterministic: the same call writes the same bytes. It replaces any earlier dest_dir/hail/."""
+    Deterministic: the same call writes the same bytes. It replaces the B1 files under dest_dir/hail/ and keeps the
+    address part of an earlier write (hail/a/ and the index's addresses block, D18), so the joins' rewrite never drops
+    it. With addresses_from (a built store with real address files), the address writer writes that part instead."""
     from . import hail_fixture_data     # the SAMPLE events, imported here only: a normal build never loads them
     root = Path(dest_dir)
     hail = root / "hail"
+    kept_block, kept_files = (None, []) if addresses_from is not None else _kept_address_part(root)
     if hail.exists():
         shutil.rmtree(hail)
     cells_by_tile: dict[tuple[int, int], dict[int, list]] = {}
@@ -626,9 +653,14 @@ def fixture_store(dest_dir) -> dict:
                        "partial": []},
         "sample": True,
     }
+    if kept_block is not None:
+        index[ADDRESSES_KEY] = kept_block
     index_bytes = _pretty(index)
     (hail / "index.json").write_bytes(index_bytes)
-    files = [("hail/index.json", index_bytes)] + shards
+    for rel, data in kept_files:
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_bytes(data)
+    files = [("hail/index.json", index_bytes)] + shards + kept_files
     manifest = {
         "format": MANIFEST_FORMAT,
         "as_of": index["as_of"],
@@ -639,6 +671,13 @@ def fixture_store(dest_dir) -> dict:
                   for rel, data in files},
     }
     (hail / "manifest.json").write_bytes(_pretty(manifest))
+    if addresses_from is not None:
+        from . import addresses     # the address writer (D18): it replaces hail/a/ and the addresses block
+        try:
+            addresses.fixture(root, addresses_from)
+        except addresses.AddressesError as exc:
+            raise HailStoreError(f"the fixture's address files were not written: {exc}") from exc
+        return load_index(root)
     return index
 
 
@@ -747,8 +786,12 @@ FRAME_LAT_E3 = (43000, 50500)                 # the prototype's decode box, in t
 FRAME_LON_E3 = (-118500, -101000)
 MIN_FRAMES = 700                              # a re-derived day needs this many of its 720 two-minute frames
 MAX_MISSING_DAYS = 20                         # a build with more gaps than this is refused (a bad listing, say)
-MAX_UNPACK_BYTES = 300 * 1024 * 1024
-MAX_UNPACK_FILES = 20000
+# The limits an unpacked release may reach (D42). The B3 store (the address, outline and road files under hail/) is
+# 372,880,597 bytes in 31,129 files (the fresh job store, measured at the site re-check on 2026-10-19), and the earlier
+# 300 MiB and 20,000-file limits refused it. These leave about 2.2 times the bytes and about 1.9 times the files; the
+# bulk files stay in the store until the data-site decision (D31).
+MAX_UNPACK_BYTES = 800 * 1024 * 1024
+MAX_UNPACK_FILES = 60000
 EPOCH = date(1970, 1, 1)
 STAMP_NAME = re.compile(r"MRMS_" + re.escape(PRODUCT) + r"_(\d{8})-120000\.grib2\.gz")
 FRAME_NAME = re.compile(r"MRMS_" + re.escape(FRAME_PRODUCT) + r"_(\d{8})-(\d{6})\.grib2\.gz")
@@ -1951,6 +1994,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--python", help="an interpreter that has pyarrow, to read the prototype (default: this one)")
     p = sub.add_parser("fixture", help="write the SAMPLE store (no network)")
     p.add_argument("--out", default=str(FIXTURE_DIR), help=f"directory to write (default: {FIXTURE_DIR})")
+    p.add_argument("--addresses-from", metavar="STORE", default=None,
+                   help="a built store with real address files: its address files are written into the fixture (D18)")
     p = sub.add_parser("fetch", help="download and unpack the release store")
     p.add_argument("--out", default="store", help="directory to unpack into (default: store)")
     p.add_argument("--url", default=STORE_URL)
@@ -1967,7 +2012,7 @@ def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.command == "fixture":
-            index = fixture_store(args.out)
+            index = fixture_store(args.out, addresses_from=args.addresses_from)
             print(json.dumps({"out": str(Path(args.out).resolve()), "events": index["events"],
                               "shards": index["shards"], "as_of": index["as_of"]}))
         elif args.command == "build":
