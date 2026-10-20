@@ -79,7 +79,7 @@
   <h3>Roof references</h3>
   <p>The roof lines quote public statements in their own words. Each line says it is a reference, not a finding about any
     roof, weather event or address.</p>
-  <ul>{% for r in ah.refs %}<li><a href="{{ r.url }}">{{ r.source }}</a>: "{{ r.quote }}"</li>{% endfor %}</ul>
+  <ul>{% for r in ah.refs %}<li><a href="{{ r.url }}">{{ r.source }}</a>: "{{ r.quote }}"</li>{% endfor %}{% for c in ah.citations %}<li>{{ c.source }} ({{ c.id }}, not quoted): {{ c.why }}.</li>{% endfor %}</ul>
   <p>{{ ah.not_quoted }}</p>
   <p>Known gaps: NCEI's database runs behind the other sources, and the page says to which date. The wind unit of the local
     storm reports is inferred. Warning tags are the forecast threat at issue time, not what fell. Iowa State's inventory of

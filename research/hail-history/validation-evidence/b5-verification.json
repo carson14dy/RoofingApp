@@ -1,6 +1,6 @@
 {
   "record": "B5 verification: the past weather of every location (the climate grid, station readings, the NOHRSC snow analysis, river gauges, the zone and county products, the hail hit-and-miss record) (D38)",
-  "status": "part A gates settled; part B1 re-checked 2026-10-19 (the checker's record, /home/user/hail-b5/out/b5b1-recheck.json); the B1 completion of 2026-10-20 changed this part's files and rebuilt the joins, stations and gauges parts offline (/home/user/hail-b5/out/b1/store-ready.json). B5-10 and B5-11 are fixed pending re-check for this part's files, with the items in other owners' files named; B5-18's flag-off clause is fixed pending re-check; B5-16 is open with its owner; part B2 (the browser) and the final builds are pending",
+  "status": "part A gates settled; part B1 re-checked 2026-10-19 (the checker's record, /home/user/hail-b5/out/b5b1-recheck.json); the B1 completion of 2026-10-20 changed this part's files and rebuilt the joins, stations and gauges parts offline (/home/user/hail-b5/out/b1/store-ready.json). B5-10 and B5-11 are fixed pending re-check for this part's files, with the items in other owners' files named; B5-18's flag-off clause is fixed pending re-check; B5-16 is open with its owner; part B2 (the browser) and the final builds are pending Second round (2026-10-20, 01:25 UTC): the summary, site and docs items of D44 to D48 are in code and tested, with the open items in second_round.",
   "verdict": "Not a supervisor gate yet. Gates B5-1 to B5-9 and B5-15 pass on the part A records and the re-check; B5-14 and B5-17 pass in Python; B5-10, B5-11 and the flag-off clause of B5-18 are fixed pending re-check; B5-12 and B5-13 are partial; B5-16 is open with its owner; the browser halves and the live preview are part B2. The supervisor decides the open items in this record.",
   "written_by": "docs and job builder (part B1), 2026-10-19: the original record, quoting the part A completion and the products store record. B1 completion (products, stations, gauges and docs fixer), 2026-10-20: the re-check numbers from /home/user/hail-b5/out/b5b1-recheck.json (run finished 2026-10-19T23:33:00Z) and the store numbers from /home/user/hail-b5/out/b1/store-ready.json (rebuilt 2026-10-20T00:15:32Z, offline, procs 2); the joins verify timed again on 2026-10-20 (13.9 s wall time).",
   "branch": "claude/hail-b5",
@@ -70,8 +70,8 @@
     {
       "id": "B5-10",
       "gate": "Words: the forbidden-term test covers every template and the six sheet strings; \"structure\" only in proper names; \"damage\" only in the allowed contexts; the four Data unavailable lines present with reasons; the radar sentence present.",
-      "status": "fixed pending re-check (this part's files); open in snowgrid.py",
-      "evidence": "Re-check 2026-10-19: fail on the all-clear rule (F6) and on 'coverage' in about.html (F11b). Fixed in the working tree on 2026-10-20: the unavailable, partial and unplaced lines of the joins, stations, gauges and climate word tables end with 'This is not an all-clear.'; in summary.py the held lines (summary.py:380 to 391) and the zone line (summary.py:204) carry it, and the zone-reconfigured lines (summary.py:219 to 221) do too; the 'pass the coverage rule' wording is gone from about.html. Open: snowgrid.py:137 and :139 have no all-clear sentence (F6d), a file this part does not own. The four Data unavailable lines and the radar sentence were present on the re-check; not re-read in a page.",
+      "status": "second round: fixed in code and tested in the second round (R20's title only in the About citations; the one-station all-clear; NOAA's radar coverage allowed; the snow unit sentences end with the all-clear); still open in files this part does not own: sources.py's hail store row ('-3 (no coverage)'), tests/words_rules.py's bare stem, and tests/test_snowgrid.py (its word test flags the required all-clear sentence; its exact expectation pins the old unit sentence)",
+      "evidence": "Re-check 2026-10-19: fail on the all-clear rule (F6) and on 'coverage' in about.html (F11b). Fixed in the working tree on 2026-10-20: the unavailable, partial and unplaced lines of the joins, stations, gauges and climate word tables end with 'This is not an all-clear.'; in summary.py the held lines (summary.py:380 to 391) and the zone line (summary.py:204) carry it, and the zone-reconfigured lines (summary.py:219 to 221) do too; the 'pass the coverage rule' wording is gone from about.html. Open: snowgrid.py:137 and :139 have no all-clear sentence (F6d), a file this part does not own. The four Data unavailable lines and the radar sentence were present on the re-check; not re-read in a page. Second round (2026-10-20): fixed in code and tested in the second round (R20's title only in the About citations; the one-station all-clear; NOAA's radar coverage allowed; the snow unit sentences end with the all-clear); still open in files this part does not own: sources.py's hail store row ('-3 (no coverage)'), tests/words_rules.py's bare stem, and tests/test_snowgrid.py (its word test flags the required all-clear sentence; its exact expectation pins the old unit sentence).",
       "findings": [
         "F6d"
       ]
@@ -79,8 +79,8 @@
     {
       "id": "B5-11",
       "gate": "Readability: a reviewer reads the summary table for three places (the gate cell, Benchland, Billings): every cell has a unit and a kind word, no sentence needs decoding, the table is within the first screen at 390 px.",
-      "status": "fixed pending re-check (this part's files); summary.py F7 and F9 not re-checked in a page",
-      "evidence": "Re-check 2026-10-19: every row head has a kind word on 17 of 17 tables; the Python half failed on F4, F5, F7, F8 and F9. Fixed in the working tree on 2026-10-20: F4 (the B5 warning row, joins.py:431, formatted by _warning_text at joins.py:3735; the label is Warning, Watch or Advisory by significance, joins.py:173; FA.A is named 'Areal flood watch', joins.py:240); F8 (gauges.py:99: the words carry no 'River gauge:' prefix); F12 (joins.py:240). In summary.py, F5 is fixed (summary.py:228 is the brief's no-report sentence; summary.py:337 to 338 carry 'A missing report is not a finding that nothing happened'). Not re-checked: F7 (a comment at summary.py:89 says the held row's unit carries its reason) and F9 (duplicate 'N days missing'). The 390 px first-screen check is part B2.",
+      "status": "second round: fixed in code and tested in the second round (the ice-dam kind word in every state; the roof snow and gust reasons; the five-season gust cells name the station; the ice-storm zero follows the winter storm family's unplaced products); the 390 px first-screen check of the sheet is part B2",
+      "evidence": "Re-check 2026-10-19: every row head has a kind word on 17 of 17 tables; the Python half failed on F4, F5, F7, F8 and F9. Fixed in the working tree on 2026-10-20: F4 (the B5 warning row, joins.py:431, formatted by _warning_text at joins.py:3735; the label is Warning, Watch or Advisory by significance, joins.py:173; FA.A is named 'Areal flood watch', joins.py:240); F8 (gauges.py:99: the words carry no 'River gauge:' prefix); F12 (joins.py:240). In summary.py, F5 is fixed (summary.py:228 is the brief's no-report sentence; summary.py:337 to 338 carry 'A missing report is not a finding that nothing happened'). Not re-checked: F7 (a comment at summary.py:89 says the held row's unit carries its reason) and F9 (duplicate 'N days missing'). The 390 px first-screen check is part B2. Second round (2026-10-20): fixed in code and tested in the second round (the ice-dam kind word in every state; the roof snow and gust reasons; the five-season gust cells name the station; the ice-storm zero follows the winter storm family's unplaced products); the 390 px first-screen check of the sheet is part B2.",
       "findings": [
         "F7",
         "F9"
@@ -89,8 +89,8 @@
     {
       "id": "B5-12",
       "gate": "Budget: the daily job runs end to end locally in under 25 minutes; the measured sizes recorded; the phone view at zoom 15 stays under 650 KB gzip.",
-      "status": "partial (not confirmed)",
-      "evidence": "Offline steps measured on 2026-10-20 (store-ready.json, products_rebuild_2026_10_20): joins build 277 s, stations build 29.5 s, gauges build 1.5 s, joins verify 13.9 s (wall time); the re-check's climate build 11 s and NOHRSC build 1 s. The B1 store build is 612 s on CI (the brief). The daily pulls (the station refresh, NWPS, the preliminary climate, NOHRSC and the products pulls) were not run here, so the end-to-end time with downloads is not measured. Budget as written: one 40-minute clock for the B5 steps; the join step has a 50-minute timeout over its own 35-minute deadline; the job cap is 60 minutes; the monthly job runs on its own clock (hail-store.yml, D42).",
+      "status": "partial (not confirmed): the store-job timing is not measured in the second round; the measured sizes on the store copy are j/ 86,276,949 bytes raw in 9,196 files and hail/ 176,293,267 bytes in 23,867 files, before the products part's rebuild",
+      "evidence": "Offline steps measured on 2026-10-20 (store-ready.json, products_rebuild_2026_10_20): joins build 277 s, stations build 29.5 s, gauges build 1.5 s, joins verify 13.9 s (wall time); the re-check's climate build 11 s and NOHRSC build 1 s. The B1 store build is 612 s on CI (the brief). The daily pulls (the station refresh, NWPS, the preliminary climate, NOHRSC and the products pulls) were not run here, so the end-to-end time with downloads is not measured. Budget as written: one 40-minute clock for the B5 steps; the join step has a 50-minute timeout over its own 35-minute deadline; the job cap is 60 minutes; the monthly job runs on its own clock (hail-store.yml, D42). Second round (2026-10-20): partial (not confirmed): the store-job timing is not measured in the second round; the measured sizes on the store copy are j/ 86,276,949 bytes raw in 9,196 files and hail/ 176,293,267 bytes in 23,867 files, before the products part's rebuild.",
       "findings": []
     },
     {
@@ -103,8 +103,8 @@
     {
       "id": "B5-14",
       "gate": "Failure: each source's failure marks its part unavailable (D16), in Python and in the browser, and the rest builds.",
-      "status": "partial: the Python half passes on the re-check (2026-10-19); the browser half is part B2",
-      "evidence": "Re-check 2026-10-19 (Python half): with the gauges and stations blocks removed from a scratch copy, the build finished with rc 0 and 17 pages; the D20 sentence with 'This is not an all-clear.' shows for stations and gauges (their unavailable words carry it). The snow block's words (snowgrid.py:137 and :139) have no all-clear sentence (F6d), for the snow owner. Part A (completion, B5-14): fake responses on the gauges, snow and stations builds raised no exception in 12 calls. Browser half: part B2, not run.",
+      "status": "second round: the roof snow line gives the D20 reason in the failure state (test_summary, stations_unavailable); the Python half is the same as before; the browser half is part B2",
+      "evidence": "Re-check 2026-10-19 (Python half): with the gauges and stations blocks removed from a scratch copy, the build finished with rc 0 and 17 pages; the D20 sentence with 'This is not an all-clear.' shows for stations and gauges (their unavailable words carry it). The snow block's words (snowgrid.py:137 and :139) have no all-clear sentence (F6d), for the snow owner. Part A (completion, B5-14): fake responses on the gauges, snow and stations builds raised no exception in 12 calls. Browser half: part B2, not run. Second round (2026-10-20): second round: the roof snow line gives the D20 reason in the failure state (test_summary, stations_unavailable); the Python half is the same as before; the browser half is part B2.",
       "findings": [
         "F6d"
       ]
@@ -119,8 +119,8 @@
     {
       "id": "B5-16",
       "gate": "Temperature extremes: the season highest-high and lowest-low rows carry dates and the grid kind word; the town pages' station rows carry the station's name; no row mixes sources.",
-      "status": "open (owner: the summary builder; F10)",
-      "evidence": "Re-check 2026-10-19: grid rows carry 'Grid estimate' and dates on all 17 towns; station rows name their station in 167 of 167 cells. Fails 'no row mixes sources' for the five-season snowfall cell: Billings shows two stations in one number ('185.0 in; two stations: BILLINGS WTP 2021-22 to 2024-25, BILLINGS INTL AP 2025-26'), and Benchland's five-season cell names no station. Not fixed on 2026-10-20: summary.py:1598 still takes the station sum for that cell. F10 asks for a decision (show the five-season total only when one station supplies all five seasons, or say so).",
+      "status": "partial in the second round: the five-season gust cells name their station (test_summary; the built Billings page shows '29 days at Billings/Logan Intl' and '69 kt (79 mph) on Dec 17, 2025 at Billings/Logan Intl'); the temperature rows are unchanged in this round (F10 stays with the summary builder)",
+      "evidence": "Re-check 2026-10-19: grid rows carry 'Grid estimate' and dates on all 17 towns; station rows name their station in 167 of 167 cells. Fails 'no row mixes sources' for the five-season snowfall cell: Billings shows two stations in one number ('185.0 in; two stations: BILLINGS WTP 2021-22 to 2024-25, BILLINGS INTL AP 2025-26'), and Benchland's five-season cell names no station. Not fixed on 2026-10-20: summary.py:1598 still takes the station sum for that cell. F10 asks for a decision (show the five-season total only when one station supplies all five seasons, or say so). Second round (2026-10-20): partial in the second round: the five-season gust cells name their station (test_summary; the built Billings page shows '29 days at Billings/Logan Intl' and '69 kt (79 mph) on Dec 17, 2025 at Billings/Logan Intl'); the temperature rows are unchanged in this round (F10 stays with the summary builder).",
       "findings": [
         "F10"
       ]
@@ -722,5 +722,111 @@
       "status": "resolved by the supervisor's amendment",
       "why": "The climate cell function's 1/48-degree integer units under the same half-open rule."
     }
-  ]
+  ],
+  "second_round": {
+    "date": "2026-10-20, 01:40 UTC (the summary, site and docs fixer; D44 to D48, the router fix, and the rebuilt-store checks)",
+    "scope": "website/summary.py, website/build.py, website/templates/about.html, website/snowgrid.py (the two unit sentences), tests/test_summary.py, tests/test_site.py (not the seven HailJoinedRecords browser tests), docs/DECISIONS.md, docs/DESIGN.md, docs/ROADMAP.md and this record. The products part's files (joins.py, sources.py, stations.py, gauges.py) are not edited here.",
+    "unit_tests": {
+      "command": "PYTHONDONTWRITEBYTECODE=1 /home/user/hail-b1/venv/bin/python -m unittest discover -s tests (run 6: the full suite, in a snapshot of the worktree without .git taken at 01:30:59 UTC; website/joins.py sha256 548f7a7e3e77673b as of 01:30:13 UTC)",
+      "run": "Ran 1264 tests in 253.077s FAILED (failures=10); rc=1 (run 6)",
+      "red_expected": [
+        "tests/test_site.py HailJoinedRecords: test_a_fire_weather_zone_file_that_did_not_load_keeps_the_public_products",
+        "test_a_part_that_did_not_load_reads_the_same_on_both_surfaces",
+        "test_a_station_file_that_did_not_load_says_so_and_gives_no_count",
+        "test_a_zone_file_that_did_not_load_keeps_the_point_records_and_says_so (three subtests: missing, not JSON, records not a list)",
+        "test_the_browser_joins_say_what_the_module_says_for_three_cells",
+        "(seven browser-against-module entries; they stay red until part B2 switches map.js to the Python words)"
+      ],
+      "red_other": [
+        "test_the_billings_town_page_joins_sit_in_their_sections_newest_first: in run 6 the wind section of the test's joined store reads 'Station reading: Data unavailable for the days with a gust of 50 kt or more at the nearest station; Report: Data unavailable' and has no Station line. Run 5 reached the distance check instead (the page then printed 1.2 miles). The same failure happens with the pre-D44 joins.py (products-fixer-r2/joins.before-d44.py, copied into a bisect snapshot), so the D44 joins change alone is not the cause. The real rebuilt store's Billings page is not affected: its wind section reads 29 days at Billings/Logan Intl and 167 wind reports within 5 miles. Not resolved here; the station reader or the test's fixture needs the products part's or the test owner's check."
+      ],
+      "in_full_run": "tests.test_snowgrid: the same two failures as snowgrid_tests (their owner's file). The section router test (test_the_section_router_sends_each_joined_row_to_one_section, with the watch and advisory cases) passes.",
+      "earlier_runs": "run 1 (before the second-round edits): 265 tests, 15 failing entries; run 4: 272 tests (test_summary and test_site only), 9; run 5: 272 tests, 8 (the list above, without the Billings wind cause)."
+    },
+    "snowgrid_tests": {
+      "command": "PYTHONDONTWRITEBYTECODE=1 /home/user/hail-b1/venv/bin/python -m unittest tests.test_snowgrid (run 5); the same two tests fail in the full run 6",
+      "run": "Ran 50 tests in 13.123s; FAILED (failures=2); rc=1",
+      "failing": [
+        "tests/test_snowgrid.py test_no_forbidden_term_in_any_snow_word (the required sentence 'This is not an all-clear.' is in unit_failed and unit_unchecked, and the test's forbidden list has no exemption for it)",
+        "tests/test_snowgrid.py test_the_unit_sentence_is_the_plain_sentence_with_no_regression_word (its exact expected text for unit_failed lacks the all-clear sentence)"
+      ],
+      "owner": "tests/test_snowgrid.py is not this part's file; its owner makes the two changes"
+    },
+    "flag_off_identity": {
+      "command": "python -m website.build --out <dir> --sample --now 2026-10-19T12:00:00Z, in the snapshot (01:30:59 UTC) and in git archive db84d76 (run with python -P and PYTHONPATH set to each tree)",
+      "files": {
+        "snapshot": 94,
+        "db84d76": 94
+      },
+      "diff_rq": "empty (rc 0), run 6 at 01:33 to 01:36 UTC; the router change is reached only with --hail-history, so the flag-off build does not run it",
+      "note": "The first check (before the products part's last sources.py and joins.py edits) found the iem_ugcs row in every build's About table; build.py gates it with the other B5 rows, and the run-6 diff is empty."
+    },
+    "hail_history_build": {
+      "command": "python -m website.build --out <dir> --sample --hail-history --hail-store <copy of /home/user/hail-b5/out/b1/store> --now 2026-10-19T12:00:00Z (run from the snapshot with PYTHONPATH set and python -P)",
+      "rc": 0,
+      "files": 19384,
+      "bytes": 169040960,
+      "store": "the store as the products part rebuilt it (rebuilt_utc 2026-10-20T01:24:00Z; store-ready.json 01:28:10 UTC), copied once; the build and the copy were deleted after the checks",
+      "earlier_run": "before the products rebuild: rc 0, 19364 files, 167658980 bytes"
+    },
+    "smoke_pages": {
+      "command": "PW_CHROMIUM=/opt/pw-browsers/chromium /home/user/hail-b1/venv/bin/python tools/smoke_pages.py <hail-history build> (run 6)",
+      "tail": [
+        "Page width check passed: every page fits the screen at 288, 320, 375, 390, 768, 1280, 1440 px, light and dark.",
+        "Five-season table check passed on town pages (no sideways scroll; cards below 900 px): 288 px: 17 pages, 320 px: 17 pages, 375 px: 17 pages, 390 px: 17 pages, 640 px: 17 pages, 768 px: 17 pages, 899 px: 17 pages, 900 px: 17 pages, 1280 px: 17 pages, 1440 px: 17 pages."
+      ],
+      "fail_or_error_lines": 0,
+      "rc": 0
+    },
+    "table_probes": {
+      "method": "probe/tables.py: describe_summary on the rebuilt store copy for the Red Lodge cell (983, 2074) and the Benchland cell (792, 1998), which are not town pages, and for the Billings town point (cell 921, 2149); the Billings page table read from the built HTML (run 6)",
+      "red_lodge": {
+        "flood_and_flash_flood_records_row": "2021-22: 1 (108 days missing); 2022-23: 1; five seasons: 2",
+        "flooding_lead": "Record (NCEI): 2 flood or flash flood records within 5 miles in these five years (read on the earlier store; the probe prints rows, not leads)",
+        "gust_rows": "No station within 40 miles has gust records for this tile (the tile list holds none)",
+        "snowfall": "680.8 in at RED LODGE in the five seasons (1 day missing)",
+        "zone_rows": "placed counts: high wind watches and warnings 23 in the five seasons (3, 2, 2, 2, 14); winter storm and ice storm warnings 19 (4, 5, 5, 5, 0); no unplaced statement"
+      },
+      "benchland": {
+        "flood_and_flash_flood_records_row": "No NOAA Storm Events record of flood or flash flood within 5 miles in these five years (records are not a complete list)",
+        "gust_rows": "26 days at Lewistown Municipal in the five seasons; strongest 71 kt (82 mph) on Mar 12, 2026 at Lewistown Municipal",
+        "snowfall": "191.9 in at HARLOWTON 11NW (4 days missing)"
+      },
+      "billings": {
+        "flood_and_flash_flood_records_row": "2021-22: none (the records sentence, 108 days missing); 2022-23: 3; five seasons: 4",
+        "flooding_lead": "Record (NCEI): 4 flood or flash flood records within 5 miles in these five years; Warning: 4 flood or flash flood warnings covered this spot, in these five years (read from the built page)",
+        "gust_days_five": "29 days at Billings/Logan Intl",
+        "gust_max_five": "69 kt (79 mph) on Dec 17, 2025 at Billings/Logan Intl",
+        "table_rows": "26 rows in the built page table; the 25th is the county flood and flash flood watches row (D41) and the 26th the lightning, UV and sunlight row (Data unavailable)"
+      }
+    },
+    "zone_placement": {
+      "status": "landed: the products part rebuilt the store on 2026-10-20 (rebuilt_utc 01:24:00 UTC; store-ready.json 01:28:10 UTC; verify-d44b.json ok, 48 checks)",
+      "table": {
+        "groups": 15764,
+        "current": 785,
+        "mapped": 3327,
+        "iem_set": 11580,
+        "changeover_week": 72,
+        "unplaced": 0,
+        "expected_unplaced": 0,
+        "simplified_outline": 1279
+      },
+      "iem_sets": "7 cached snapshots, each matching its SHA-256: 103 zones through 2022-09-13 12:00 UTC (4 snapshots), 83 zones from 2022-09-13 18:00 UTC (3 snapshots); 20 zones removed at the switch",
+      "not_done_here": "the D44 'placed with a simplified zone outline' statement is in the products part's zone sections (joins); the five-season table's zone rows do not carry it. A coverage line cannot take it without the all-clear sentence that a flag adds, so it waits for the products part's placement data"
+    },
+    "decisions_taken_here": [
+      "MTZ301 to MTZ330 are not reconfigured. The IEM zone sets (D44) hold them at the switch, and the reconfiguration the research dates to 2022-09-07 removed MTZ008 to MTZ015 and MTZ044 to MTZ055 and reshaped MTZ060. The summary's reconfigured gate, its partial and not-covered statements and the reconfigured notes were removed (summary.py); the zone tests say so.",
+      "A zero in a season with no unplaced product is a count of the placed products. A zero in a season with unplaced products is Data unavailable (D31), unchanged.",
+      "The section router takes the Watch and Advisory labels (build.py `_KIND_LABEL`, `_section_of`). A watch, advisory or warning row takes its product from the words between the span's colon and ', office, covered'; the older 'in effect:' form is still read. The router test has watch and advisory cases. The town pages on the rebuilt store carry no Watch or Advisory label, so the change is tested, not yet visible on a page."
+    ],
+    "open_items": [
+      "The Billings town page test (test_the_billings_town_page_joins_sit_in_their_sections_newest_first) fails on the wind section's station rows in the test's joined store (see unit_tests.red_other). Not resolved in this round; it needs the products part or the test owner.",
+      "sources.py's hail store row still reads '-3 (no coverage)' (D45): it needs '-3 (no radar coverage)' from the sources owner.",
+      "tests/words_rules.py still lists the bare coverage stem (D45); its owner changes it to (?<!radar )coverage.",
+      "tests/test_snowgrid.py: two changes (see snowgrid_tests).",
+      "The five-season table's zone rows do not carry the D44 simplified-outline statement (see zone_placement).",
+      "The browser's joined popup (part B2, not built) still uses the B2 template for warnings (WORDS_JOINS warnings_row), so the seven HailJoinedRecords browser tests stay red until it switches."
+    ]
+  }
 }

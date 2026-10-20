@@ -61,15 +61,18 @@ or before the begin: "cancelled at", D26, D31), else the latest expiry of its ro
 recorded", D6). A tie in product time reads cancelled. The window takes a period by its begin. VTEC events (the key
 without the zone; the earliest NEW or CON issue, else the earliest issue) are counted separately in vtec_counts.
 
-Zone editions (D16, D27): the NWS GIS page links two public zone editions, z_18mr25.zip (effective 18 March 2025) and
-z_16ap26.zip (effective 16 April 2026); each date is the day and month in its file name. The NWS change history names
-six older editions for 2021 to 2024 (ZONE_EDITION_ARCHIVE). Each is requested on every build, and on 2026-10-19 each
-returned HTTP 404 at the NWS address, so the index records it as not published. A product takes the zone code of the
-edition in force on its issue day when that edition is published (placed "mapped" or "current"). A product issued
-while an unpublished edition was in force keeps its zone code and is checked against the current edition ("kept"):
-that is the approximation the zone words say. A code no current zone holds is counted as unplaced (D11) with its
-reason (not_in_current, retired_zone or edition_unpublished); zone_placement and zone_unplaced_rows in the index hold
-the counts per product and edition, and every unplaced zone group with its code and day.
+Zone sets (D16, D27, D44): the NWS GIS page links two public zone editions, z_18mr25.zip (effective 18 March 2025) and
+z_16ap26.zip (effective 16 April 2026); each date is the day and month in its file name. The NWS change history names six
+older editions for 2021 to 2024 (ZONE_EDITION_ARCHIVE). Each is requested on every build, and on 2026-10-19 each returned
+HTTP 404 at the NWS address, so the index records it as not published. For the years before 18 March 2025, D44 places every
+zone product by the Montana public zone set that IEM's ugcs service gives for the product's issue time: 103 zones through
+2022-09-13 12:00Z and 83 from 2022-09-13 18:00Z (seven dated snapshots, cached and checksummed in the index as iem_sets). A
+product issued from 2022-09-07 to 2022-09-13 18:00Z is placed by the set that holds its code and counted as placed in the
+changeover week. The 83 current zones keep the NWS outlines; the 20 zones removed on 13 September 2022 (MTZ008 to MTZ015 and
+MTZ044 to MTZ055) and MTZ060 before that change use the IEM's simplified outlines, and their rows say so. A code the set in
+force does not hold is counted as unplaced, with its reason (not_in_iem_set, set_unread, or not_in_current, retired_zone and
+edition_unread for the NWS editions); zone_placement_table, zone_placement, zone_unplaced_rows, iem_sets and zones_before in
+the index hold the counts, the checksums and the cell membership the removed zones take before the switch.
 
 Requests (B5): each IEM watchwarn request (polygon shapefiles and zone CSVs, and the polygon CSVs for the county twins)
 runs from 1 December of the year before to 31 January of the year after, and the copies of a row that two years' files
@@ -231,6 +234,8 @@ NCEI_WIND_TYPES = ("Thunderstorm Wind", "High Wind", "Strong Wind")
 # D19: the type codes that carry a unit (a magnitude is shown only for these); every other code is typed (type word only).
 NCEI_UNIT_CODES = frozenset(t.lower() for t in ("Hail",) + NCEI_WIND_TYPES)   # B5: not the new point types
 UNIT_CODES = frozenset(LSR_UNITS) | NCEI_UNIT_CODES
+# D48: the NCEI point types that are flood records (the records row "Flood and flash flood records within 5 miles")
+FLOOD_RECORD_CODES = ("flood", "flash flood")
 SWDI_HEADER = ("ZTIME", "WSR_ID", "CELL_ID", "PROB", "SEVPROB", "MAXSIZE", "LAT", "LON")
 COMPASS = ("N", "NE", "E", "SE", "S", "SW", "W", "NW")
 PRODUCT_NAMES = {
@@ -322,10 +327,21 @@ EDITION_DATE = date(2026, 4, 16)    # the effective date of the newest public zo
 # (z_08se21.*)" and so on), oldest first. The GIS page links two editions, z_18mr25.zip (effective 18 March 2025) and
 # z_16ap26.zip (16 April 2026). The six older names are requested on every build; on 2026-10-19 each returned HTTP 404
 # at the NWS address, so the index records them as not published. A product issued while an unpublished edition was in
-# force keeps its zone code, checked against the current edition (zone_placement and zone_placed_by_code_alone in the
-# index).
+# force is placed by the IEM zone set in force at its issue time (D44; zone_placement_table and iem_sets in the index).
 ZONE_EDITION_ARCHIVE = ("z_08se21.zip", "z_22mr22.zip", "z_07se22.zip", "z_13se22.zip", "z_08mr23.zip", "z_05mr24.zip")
 ZONE_CHANGE_LOG_URL = "https://www.weather.gov/source/gis/Shapefiles/WSOM/zone_ch_log.txt"
+# D44 (B5 part B1 completion): the Montana public zone set by date, from IEM's ugcs service ("free to use for any lawful
+# purpose", as-is; simplified outlines). The set is 103 zones through 2022-09-13 12:00Z and 83 from 2022-09-13 18:00Z. The
+# seven snapshots below are the ones the placement reads; the cache keeps each as iem-ugcs/valid-<time>/MT.geojson, and the
+# index records its size and SHA-256. The NWS change log dates the change 7 September 2022: the products issued from then to
+# 13 September 18:00Z are the changeover week.
+IEM_UGCS_URL = "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid={valid}"
+IEM_UGCS_VALID = ("2021-09-15T12:00:00Z", "2022-06-01T12:00:00Z", "2022-09-10T12:00:00Z", "2022-09-13T12:00:00Z",
+                  "2022-09-13T18:00:00Z", "2023-06-01T12:00:00Z", "2025-03-18T12:00:00Z")
+IEM_CHANGEOVER_START = datetime(2022, 9, 7, tzinfo=timezone.utc)   # the NWS change log's date for the Montana zones (SCN 22-61)
+IEM_SWITCH = datetime(2022, 9, 13, 18, 0, tzinfo=timezone.utc)     # the first set of 83 zones; the 103 set holds to 12:00Z
+IEM_REMOVED_ZONES = tuple(f"MTZ{n:03d}" for n in list(range(8, 16)) + list(range(44, 56)))   # the 20 zones removed at the switch
+IEM_OUTLINE_ZONES = IEM_REMOVED_ZONES + ("MTZ060",)   # placed with the IEM outline before the switch (its geometry changed)
 JOINS_DEADLINE_S = 35 * 60          # the joins' own limit from the start of the build (the job has 60 minutes; D34, D35)
 NWS_FIRE_URL = "https://www.weather.gov/gis/FireZones"      # the fire weather zone editions (D7)
 
@@ -387,10 +403,11 @@ WORDS_JOINS = {
     "records_zone_row": "Record: {date} {time}: {type}, {magnitude}{qualifier}, {source}, across zone {zone}",
     "records_zone_row_typed": "Record: {date} {time}: {type}{qualifier}, {source}, across zone {zone}",
     "records_unplaced_one": ("1 official zone record in Montana in these five years could not be placed on a zone; its "
-                             "zone code is not in the public zone editions the NWS publishes. This is not an all-clear."),
+                             "zone code is not in the zone set in force when it was issued (the IEM zone sets, About). "
+                             "This is not an all-clear."),
     "records_unplaced_many": ("{n} official zone records in Montana in these five years could not be placed on a zone; "
-                              "their zone codes are not in the public zone editions the NWS publishes. This is not an "
-                              "all-clear."),
+                              "their zone codes are not in the zone set in force when they were issued (the IEM zone "
+                              "sets, About). This is not an all-clear."),
     # radar detections
     "detections_heading": "Radar hail detections within 2 miles",
     "detections_what": ("A detection is the radar algorithm's hail signature for a storm cell, not hail on the "
@@ -460,18 +477,39 @@ WORDS_JOINS = {
     "zones_upgraded": ", upgraded",                # D31: an upgrade ends the lower product at its upgrade time
     "zones_upgraded_at": "upgraded at {time}",     # D31: an upgrade time at or before the begin, as D26
     "zones_no_zone": "The forecast zone for this cell could not be determined. This is not an all-clear.",
-    "zones_unplaced_one": ("1 zone product in Montana in these five years could not be placed on a zone; its zone code "
-                           "is not in the public zone editions the NWS publishes. This is not an all-clear."),
-    "zones_unplaced_many": ("{n} zone products in Montana in these five years could not be placed on a zone; their "
-                            "zone codes are not in the public zone editions the NWS publishes. This is not an all-clear."),
-    # D27: a product issued while an edition the NWS does not publish was in force keeps its zone code, checked
-    # against the current edition; the zone sections say how many (zone_placed_by_code_alone in the index)
-    "zones_kept_one": ("1 zone product in Montana was placed by its zone code alone, because the NWS does not publish "
-                       "the zone edition in force when it was issued."),
-    "zones_kept_many": ("{n} zone products in Montana were placed by their zone codes alone, because the NWS does not "
-                        "publish the zone edition in force when they were issued."),
-    "zones_kept_note": ("Products issued before {date} are placed by their zone codes alone, because the NWS does not "
-                        "publish the zone editions in force then."),
+    "zones_unplaced_one": ("1 zone product in Montana in these five years could not be placed on a zone: its zone code is "
+                           "not in the zone set in force when it was issued (the IEM zone sets, About). This is not an all-clear."),
+    "zones_unplaced_many": ("{n} zone products in Montana in these five years could not be placed on a zone: their zone "
+                            "codes are not in the zone set in force when they were issued (the IEM zone sets, About). This is "
+                            "not an all-clear."),
+    # D44: a zone product placed with an IEM outline (the 20 zones removed on 13 September 2022 and MTZ060 before that change)
+    # carries its note; the words of the changeover week and of the zones before the switch
+    "zones_simplified": "placed with a simplified zone outline",
+    "zones_simplified_suffix": " (placed with a simplified zone outline)",
+    "zones_row_simplified": "Zone product: {product}, zone {zone_name} ({zone}), {note}: {events}",
+    "zones_before_line_one": ("1 product for zone {zone_name} ({zone}) was issued before 13 September 2022, when that zone "
+                              "changed. It is listed above and is placed with a simplified zone outline."),
+    "zones_before_line_many": ("{n} products for zone {zone_name} ({zone}) were issued before 13 September 2022, when that "
+                               "zone changed. They are listed above and are placed with a simplified zone outline."),
+    # D48: NCEI flood and flash flood records within 5 miles, their own row (the summary reads the label and the kind)
+    "flood_records_label": "Flood and flash flood records within 5 miles",
+    "flood_records_kind": "Record (NCEI)",
+    "flood_records_none": ("No NCEI flood or flash flood record within 5 miles in these five years. NCEI records are not a "
+                           "complete record of floods."),
+    "flood_records_line_one": ("1 of these is an NCEI flood or flash flood record within 5 miles; NCEI's cause is shown as "
+                               "it is written."),
+    "flood_records_line_many": ("{n} of these are NCEI flood or flash flood records within 5 miles; NCEI's cause is shown as "
+                                "it is written."),
+    # D44: the About credit for the IEM zone sets (quoted in part; the IEM's own words, with the footer's rights line)
+    "about_iem_zones": ("The zone sets before 18 March 2025 and the zone outlines before 13 September 2022 come from Iowa State "
+                        "University's Iowa Environmental Mesonet (IEM), from its ugcs service, which gives the public zone set "
+                        "valid at a date. The IEM API disclaimer reads: \"All of these services are provided as-is and without "
+                        "warranty. You are free to use these services for any lawful purpose\" (quoted in part). Its OpenAPI "
+                        "description reads: \"This service is free to use for most any legal purpose.\" The IEM site footer reads "
+                        "\"All rights reserved.\" The outlines of the 20 zones removed on 13 September 2022 and of MTZ060 before "
+                        "that change are the IEM's simplified outlines, and their rows say so. The 83 zones in force since then "
+                        "keep the NWS outlines. A product issued from 7 to 13 September 2022 is placed by the zone set that holds "
+                        "its code, and is counted as placed in the changeover week."),
     "zones_fire_unavailable": ("Red flag warnings are not listed (fire weather zones were not available). "
                                "This is not an all-clear."),
     "zones_fire_none": "The fire weather zone for this cell could not be determined. This is not an all-clear.",
@@ -1261,6 +1299,54 @@ def parse_zone_map(data: bytes) -> list[dict]:
     return out
 
 
+def _iem_date(stamp: str) -> datetime:
+    """The UTC instant of an IEM_UGCS_VALID stamp (YYYY-MM-DDTHH:MM:SSZ)."""
+    return datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+
+def parse_iem_ugcs(data: bytes) -> list[dict]:
+    """One IEM ugcs snapshot for Montana (D44): its MTZ zones as [{"zone", "name", "rings"}], sorted by code. The file is a
+    GeoJSON FeatureCollection whose features carry ugc, name and state, with a Polygon or a MultiPolygon. Raises JoinsError
+    when the file is not that, a zone has no outline, a code repeats, or fewer than 10 zones are read (the refusal the NWS
+    zone map gets too)."""
+    try:
+        doc = json.loads(_text(data))
+    except ValueError:
+        raise JoinsError(WORDS_JOINS["reason_format"]) from None
+    if not isinstance(doc, dict) or doc.get("type") != "FeatureCollection" or not isinstance(doc.get("features"), list):
+        raise JoinsError(WORDS_JOINS["reason_format"])
+    out, seen = [], set()
+    try:
+        for feat in doc["features"]:
+            props = feat.get("properties") if isinstance(feat, dict) else None
+            if not isinstance(props, dict) or not str(props.get("ugc", "")).startswith("MTZ"):
+                continue
+            geom = feat.get("geometry") or {}
+            if geom.get("type") == "MultiPolygon":
+                polys = geom.get("coordinates") or []
+            elif geom.get("type") == "Polygon":
+                polys = [geom.get("coordinates")]
+            else:
+                raise JoinsError(WORDS_JOINS["reason_zone_map"])
+            rings = []
+            for poly in polys:
+                for ring in poly or []:
+                    pts = [(float(p[0]), float(p[1])) for p in ring]
+                    if len(pts) >= 3:
+                        rings.append(pts)
+            code = str(props["ugc"])
+            if not rings or code in seen:
+                raise JoinsError(WORDS_JOINS["reason_zone_map"])
+            seen.add(code)
+            out.append({"zone": code, "name": " ".join(str(props.get("name", "")).split()), "rings": rings})
+    except (TypeError, ValueError, IndexError, KeyError, AttributeError):
+        raise JoinsError(WORDS_JOINS["reason_format"]) from None
+    if len(out) < 10:
+        raise JoinsError(WORDS_JOINS["reason_zone_map"])
+    out.sort(key=lambda z: z["zone"])
+    return out
+
+
 NWS_MONTHS = {"ja": 1, "fe": 2, "mr": 3, "ap": 4, "my": 5, "jn": 6, "jl": 7, "ag": 8, "se": 9, "oc": 10,
               "no": 11, "de": 12}
 
@@ -1584,6 +1670,10 @@ class Context:
         self.zone_products_unplaced = 0               # distinct in-window products no zone holds (D11)
         self.zone_placement: dict = {}                # D27: product -> edition file -> how placed -> zone groups
         self.zone_unplaced_rows: list = []            # D27: [product, code, day, edition, reason] per unplaced group
+        self.iem_sets: list[dict] = []                # D44: the IEM zone sets by date (_iem_sets), oldest first
+        self.iem_outline: list[dict] = []             # D44: the removed zones and MTZ060 as the set before the switch draws them
+        self.zone_simplified = 0                      # D44: zone products placed with an IEM outline
+        self.zone_before_cells: dict = {}             # D44: the cells each removed zone (or MTZ060) claims before the switch
         self.zone_products_renumbered = 0             # products placed under a code their edition renamed (D16)
         self.zone_products_fire_missing = 0           # red flag products when the fire zones did not load (D7)
         self.zone_records_renumbered = 0              # NCEI zone rows placed under a renamed code (D16)
@@ -1699,6 +1789,10 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
     for name in edition_names:          # every linked edition is read (D16); a file name is its own cache key
         add(("zone_map", name), lambda n=name: fetcher.get(
             "zone_map", NWS_BASE_URL + n, f"nws/{n}", check=_checker(parse_zone_map)))
+    for stamp in IEM_UGCS_VALID:        # D44: the IEM zone sets by date (historical snapshots: cached, not re-pulled)
+        add(("iem_ugcs", stamp), lambda s=stamp: fetcher.get(
+            "iem_ugcs", IEM_UGCS_URL.format(valid=s), f"iem-ugcs/valid-{s}/MT.geojson",
+            check=_checker(parse_iem_ugcs)))
     if fire_name is not None:
         add(("fire_map", fire_name), lambda n=fire_name: fetcher.get(
             "fire_zone_map", NWS_BASE_URL + n, f"nws/{n}", check=_checker(parse_zone_map)))
@@ -1816,6 +1910,7 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
         else:
             ctx.zone_map = current["zones"]
     _edition_maps(ctx)
+    _iem_sets(ctx, by_tag)              # D44: the IEM zone sets by date, from their snapshots
     if fire_name is None:
         ctx.fire_reason = fire_why or WORDS_JOINS["reason_zone_map"]
     else:
@@ -1844,6 +1939,8 @@ def _collect(fetcher: Fetcher, index: dict, today: date) -> Context:
         if failed and len(failed) >= max(1, ctx.part_total[part]):
             ctx.part_all_failed[part] = True
     _dedupe_polygons(ctx)
+    if ctx.part_all_failed.get("zones"):       # D44: without the NWS zone part there are no removed-zone files either
+        ctx.iem_outline = []
     return ctx
 
 
@@ -2003,6 +2100,61 @@ def _station_near(stations: list[dict], lat: float, lon: float) -> list[dict]:
     return out
 
 
+def _station_candidates(stations: list[dict], bounds: tuple) -> list[dict]:
+    """D36: the stations a tile's file lists for the spot picks: every station within STATION_MILES of the tile's farthest
+    corner distance beyond its centre (bounds is the tile's (south, north, west, east)), nearest the centre first, with id,
+    name and position. Any point of the tile is within that corner distance of the centre, so the two nearest to any point
+    of the tile that lie within STATION_MILES of it are in this list. The tile's own "stations" list stays the two nearest
+    from the centre (the browser's list)."""
+    if not stations:
+        return []
+    south, north, west, east = bounds
+    lat, lon = (south + north) / 2, (west + east) / 2
+    radius = max(haversine_km(lat, lon, la, lo) for la, lo in ((south, west), (south, east), (north, west), (north, east)))
+    np = _np()
+    dist = haversine_km(lat, lon, np.array([s["lat"] for s in stations]), np.array([s["lon"] for s in stations]))
+    order = sorted(range(len(stations)), key=lambda i: (float(dist[i]), stations[i]["id"]))
+    limit_km = STATION_MILES * MILE_KM + radius
+    return [{"id": stations[i]["id"], "name": stations[i]["name"], "lat": stations[i]["lat"], "lon": stations[i]["lon"]}
+            for i in order if float(dist[i]) <= limit_km]
+
+
+def station_picks(tile_doc: dict, lat: float, lon: float) -> list[dict]:
+    """D36: the two nearest gust stations within STATION_MILES of (lat, lon), nearest first, with their miles from that point
+    (the town point on a town page, the cell centre on the sheet). Read from the tile's candidates when the file has them,
+    else from its two-station list (a file from before D36)."""
+    cands = tile_doc["station_candidates"] if "station_candidates" in tile_doc else tile_doc.get("stations", [])
+    return _station_near(cands, lat, lon)
+
+
+def zone_before_for_key(tile_doc: dict, key: int) -> str | None:
+    """D44: the removed zone (or MTZ060) that claimed this cell before the switch, from the tile's zones_before map; None
+    when no removed zone claims it."""
+    return _zone_for_key(tile_doc, key, "zones_before")
+
+
+def _before_names(ctx: Context) -> dict:
+    """D44: the names of the zones the IEM set before the switch draws and the current set does not hold (the removed zones),
+    {code: name}; MTZ060 is a current zone and is not listed here."""
+    current = {z["zone"] for z in ctx.zone_map}
+    return {z["zone"]: z["name"] for z in ctx.iem_outline if z["zone"] not in current}
+
+
+def _placement_table(ctx: Context) -> dict:
+    """D44: the zone products of the window by the way each was placed, and the unplaced count with its expected value. A
+    product is one zone group (VTEC event) whose first issue is in the window; changeover counts the products issued from
+    7 September 2022 to 13 September 18:00Z, placed by the set that holds their code."""
+    hows = collections.Counter()
+    for cells in ctx.zone_placement.values():
+        for counts in cells.values():
+            for how, n in counts.items():
+                hows[how] += n
+    unplaced = len(ctx.zone_unplaced_rows)
+    return {"groups": sum(hows.values()) + unplaced, "current": hows["current"], "mapped": hows["mapped"],
+            "iem_set": hows["iem"], "changeover_week": hows["changeover"], "unplaced": unplaced,
+            "expected_unplaced": 0, "simplified_outline": ctx.zone_simplified}
+
+
 def _report_entry(row: dict, utc: datetime, record: bool) -> list:
     """A row of the events table, in the shape the index names (shapes): a report carries its type word (kind, B5) as
     the twelfth field; a record carries its magnitude in mph and knots and its FLOOD_CAUSE as written (B5) as the
@@ -2100,6 +2252,15 @@ def _joins_for_tile(tile: dict, ctx: Context, prep: dict, stats: dict | None = N
             by_zone.setdefault(code, []).append(key)
     doc["zones"] = {code: sorted(keys) for code, keys in sorted(by_zone.items())}
 
+    by_before: dict[str, list[int]] = {}           # D44: the removed zones (and MTZ060) before the switch
+    before_by_cell = prep.get("zone_before_by_cell", {})
+    for key in tile["keys"]:
+        row, col = 10 * tile["r"] + key // 10, 10 * tile["c"] + key % 10
+        code = before_by_cell.get((row, col))
+        if code:
+            by_before.setdefault(code, []).append(key)
+    doc["zones_before"] = {code: sorted(keys) for code, keys in sorted(by_before.items())}
+
     by_fire: dict[str, list[int]] = {}
     fire_by_cell = prep.get("fire_by_cell", {})
     for key in tile["keys"]:
@@ -2120,7 +2281,8 @@ def _joins_for_tile(tile: dict, ctx: Context, prep: dict, stats: dict | None = N
 
     lat_c = (south + north) / 2
     lon_c = (west + east) / 2
-    doc["stations"] = _station_near(ctx.stations, lat_c, lon_c)
+    doc["stations"] = _station_near(ctx.stations, lat_c, lon_c)       # the two nearest from the centre (the browser's)
+    doc["station_candidates"] = _station_candidates(ctx.stations, (south, north, west, east))     # D36
     return doc
 
 
@@ -2274,6 +2436,8 @@ def _prep(ctx: Context, tiles: list[dict]) -> dict:
     prep["cells_by_tile"] = by_tile
     prep["cells"] = cells
     prep["zone_by_cell"] = assign_zones(cells, ctx.zone_map)
+    # D44: the cells each removed zone (and MTZ060, by its IEM outline) claims before the switch, like the zones path
+    prep["zone_before_by_cell"] = assign_zones(cells, ctx.iem_outline) if ctx.iem_outline else {}
     prep["fire_by_cell"] = assign_zones(cells, ctx.fire_map, near_km=0.0) if ctx.fire_map else {}
     # B5 (source 4): the county of every Montana cell, by its centre; a cell no county polygon holds (the Census outline
     # and the state's outline differ along the border) takes the nearest county edge within ZONE_NEAR_KM, as a zone does
@@ -2340,6 +2504,29 @@ def _map_edition(old: list[dict], current: list[dict]) -> tuple[dict, dict]:
     return mapping, {"same_codes": same, "renamed": renamed, "geometry_max_diff_deg": worst}
 
 
+def _iem_sets(ctx: Context, by_tag: dict) -> None:
+    """Fill ctx.iem_sets (D44): one record per snapshot in IEM_UGCS_VALID, oldest first, with the zones it holds (None when
+    it did not load, with the reason), its codes, its size and its SHA-256. A snapshot that did not load makes the zones part
+    partial, and the products its set would place are counted as unplaced. ctx.iem_outline takes the zones the set before
+    the switch draws for the removed zones and MTZ060 (their IEM outlines)."""
+    for stamp in IEM_UGCS_VALID:
+        result = by_tag[("iem_ugcs", stamp)]
+        zones, why = _take(result, parse_iem_ugcs)
+        data = result.data if result.ok else None
+        snap = {"valid": stamp, "date": _iem_date(stamp), "file": f"iem-ugcs/valid-{stamp}/MT.geojson", "zones": zones,
+                "why": why, "bytes": None if data is None else len(data),
+                "sha256": None if data is None else hashlib.sha256(data).hexdigest(), "codes": set()}
+        if zones is not None:
+            snap["codes"] = {z["zone"] for z in zones}
+        ctx.iem_sets.append(snap)
+        if zones is None:
+            ctx.part_failures["zones"].append(f"zone set valid {stamp[:16].replace('T', ' ')}Z")
+            ctx.part_reason.setdefault("zones", why or WORDS_JOINS["reason_no_answer"])
+    before = [s for s in ctx.iem_sets if s["zones"] is not None and s["date"] < IEM_SWITCH]
+    if before:
+        ctx.iem_outline = [z for z in before[-1]["zones"] if z["zone"] in IEM_OUTLINE_ZONES]
+
+
 def _edition_maps(ctx: Context) -> None:
     """Fill ctx.zone_edition_maps and ctx.zone_edition_report from ctx.zone_editions (D16). The current edition is the
     last one. Each older edition that loaded is compared with it; one that did not load keeps its codes as they are,
@@ -2372,50 +2559,89 @@ def _edition_in_force(editions: list[dict], day: date) -> dict | None:
     return chosen
 
 
-def _place(ctx: Context, names: set, code: str, issued: datetime) -> tuple:
-    """(current zone or None, the edition in force or None, how) for a zone code filed by a product issued at issued
-    (D16, D27). The edition in force is the newest whose effective date is on or before the issue day (Montana time); a
-    day before every edition takes the oldest. How it places: "current" (the current edition is in force, or none is
-    known), "mapped" (the edition in force was read: its code maps to a current zone, or to none) or "kept" (the
-    edition in force is not published, so its code is kept as it is and checked against the current edition: the
-    approximation the zone words say)."""
+def _iem_in_force(ctx: Context, when: datetime) -> dict | None:
+    """The IEM zone set in force at when (D44): the newest snapshot valid at or before it (of all the snapshots, loaded or
+    not, so a set that failed is never replaced by an older one); a time before the first takes the first. None when
+    there are no snapshots."""
+    if not ctx.iem_sets:
+        return None
+    chosen = ctx.iem_sets[0]
+    for snap in ctx.iem_sets:
+        if snap["date"] <= when:
+            chosen = snap
+    return chosen
+
+
+def _place_iem(ctx: Context, names: set, code: str, issued: datetime) -> dict:
+    """D44: the placement of a zone code filed by a product issued while an IEM zone set is the one in force. The set in
+    force at the issue time must hold the code. The outline is the IEM's (simplified) for the 20 zones removed on 13
+    September 2022 and for MTZ060 before the switch; every other zone keeps the NWS outline of the current edition (names).
+    A product from 7 September 2022 to 13 September 18:00Z is placed by the set that holds its code and counted as
+    "changeover" (the set in force is the 103 set until 12:00Z, and it holds every code of the 83 set)."""
+    snap = _iem_in_force(ctx, issued)
+    how = "changeover" if IEM_CHANGEOVER_START <= issued <= IEM_SWITCH else "iem"
+    if snap is None or snap["zones"] is None:
+        return {"zone": None, "set": None if snap is None else snap["valid"], "how": how, "outline": None,
+                "reason": "set_unread"}
+    if code not in snap["codes"]:
+        return {"zone": None, "set": snap["valid"], "how": how, "outline": None, "reason": "not_in_iem_set"}
+    if code in IEM_OUTLINE_ZONES and issued < IEM_SWITCH:
+        return {"zone": code, "set": snap["valid"], "how": how, "outline": "iem", "reason": None}
+    if code not in names:
+        return {"zone": None, "set": snap["valid"], "how": how, "outline": None, "reason": "not_in_current"}
+    return {"zone": code, "set": snap["valid"], "how": how, "outline": "nws", "reason": None}
+
+
+def _place(ctx: Context, names: set, code: str, issued: datetime) -> dict:
+    """The placement of a zone code filed by a product issued at issued (D16, D27, D44). The edition in force on the issue
+    day (Montana time) decides. The current edition places the code by name ("current"). A linked older edition that was
+    read maps its code to a current zone ("mapped"). An archived edition the NWS does not publish is replaced by the IEM
+    zone set in force (_place_iem). Any other edition that did not load leaves its products unplaced ("edition_unread").
+    Returns {"zone", "set" (the edition file or the set's stamp), "how", "outline" ("nws" or "iem"), "reason"}; zone is None
+    when the product is unplaced, and reason says why."""
     edition = _edition_in_force(ctx.zone_editions, _local(issued).date())
     if edition is None or not ctx.zone_editions or edition is ctx.zone_editions[-1]:
-        how, mapped = "current", code
-    else:
+        zone = code if code in names else None
+        return {"zone": zone, "set": ctx.zone_editions[-1]["file"] if ctx.zone_editions else None, "how": "current",
+                "outline": "nws" if zone else None, "reason": None if zone else "not_in_current"}
+    if edition["zones"] is not None:
         mapping = ctx.zone_edition_maps.get(edition["file"])
         if mapping is None:
-            how, mapped = "kept", code
-        else:
-            how, mapped = "mapped", mapping.get(code)
-    return (mapped if mapped in names else None), edition, how
+            return {"zone": None, "set": edition["file"], "how": "mapped", "outline": None, "reason": "edition_unread"}
+        mapped = mapping.get(code)
+        zone = mapped if mapped in names else None
+        return {"zone": zone, "set": edition["file"], "how": "mapped", "outline": "nws" if zone else None,
+                "reason": None if zone else "retired_zone"}
+    if edition["file"] in ZONE_EDITION_ARCHIVE:
+        return _place_iem(ctx, names, code, issued)
+    return {"zone": None, "set": edition["file"], "how": "mapped", "outline": None, "reason": "edition_unread"}
 
 
 def _place_code(ctx: Context, names: set, code: str, issued: datetime) -> str | None:
-    """The current zone a row filed under code places on, given when it was issued (D16; see _place). None when the
-    current edition holds no zone for it."""
-    return _place(ctx, names, code, issued)[0]
+    """The current zone a row filed under code places on, given when it was issued (D16, D44; see _place). None when no
+    zone holds it."""
+    return _place(ctx, names, code, issued)["zone"]
 
 
-def _note_placed(ctx: Context, product: str, edition: dict | None, how: str) -> None:
-    """D27: one zone product (a VTEC group whose first issue is in the window) placed, counted per product, per edition
-    in force and per way it was placed (the index's zone_placement)."""
+def _note_placed(ctx: Context, product: str, placement: dict) -> None:
+    """D27, D44: one zone product (a VTEC group whose first issue is in the window) placed, counted per product, per set or
+    edition in force and per way it was placed (the index's zone_placement). A product placed with an IEM outline is
+    counted in zone_simplified."""
     cells = ctx.zone_placement.setdefault(product, {})
-    counts = cells.setdefault("none" if edition is None else edition["file"], {})
-    counts[how] = counts.get(how, 0) + 1
+    counts = cells.setdefault("none" if placement["set"] is None else str(placement["set"]), {})
+    counts[placement["how"]] = counts.get(placement["how"], 0) + 1
+    if placement["outline"] == "iem":
+        ctx.zone_simplified += 1
 
 
-# D27: why a zone product stays off the zones, by the way it was placed
-ZONE_UNPLACED_REASONS = {"current": "not_in_current", "mapped": "retired_zone", "kept": "edition_unpublished"}
-
-
-def _note_unplaced(ctx: Context, product: str, code: str, issued: datetime, edition: dict | None, how: str) -> None:
-    """D27: one zone product that stays unplaced, with its zone code, its issue day (Montana time), the edition in force
-    and the reason: not_in_current (the current edition has no such zone), retired_zone (the edition in force maps the
-    code to no current zone) or edition_unpublished (the edition in force is not published, so the code cannot be
-    checked)."""
+def _note_unplaced(ctx: Context, product: str, code: str, issued: datetime, placement: dict) -> None:
+    """D27, D44: one zone product that stays unplaced, with its zone code, its issue day (Montana time), the set or edition
+    in force and the reason: not_in_current (the current edition has no such zone), retired_zone (the edition in force maps
+    the code to no current zone), edition_unread (an edition that did not load), not_in_iem_set (the IEM zone set in force
+    does not hold the code) or set_unread (that IEM set did not load)."""
     ctx.zone_unplaced_rows.append([product, code, _local(issued).date().isoformat(),
-                                   "none" if edition is None else edition["file"], ZONE_UNPLACED_REASONS[how]])
+                                   "none" if placement["set"] is None else str(placement["set"]),
+                                   placement["reason"]])
 
 
 def periods(rows: list[dict]) -> list[dict]:
@@ -2537,15 +2763,16 @@ def _zone_events(ctx: Context, start: datetime, end: datetime) -> dict:
                     continue
                 target, zone_code = fire, code
             else:
-                zone_code, edition, how = _place(ctx, zone_names, code, first_issue)
+                placement = _place(ctx, zone_names, code, first_issue)
+                zone_code = placement["zone"]
                 in_window = start <= first_issue < end
                 if zone_code is None:
                     if in_window:
                         unplaced.add(gkey)
-                        _note_unplaced(ctx, f"{phen}.{sig}", code, first_issue, edition, how)
+                        _note_unplaced(ctx, f"{phen}.{sig}", code, first_issue, placement)
                     continue
                 if in_window:
-                    _note_placed(ctx, f"{phen}.{sig}", edition, how)
+                    _note_placed(ctx, f"{phen}.{sig}", placement)
                 if zone_code != code:
                     renumbered += 1
                 target = out
@@ -2750,6 +2977,7 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
     log(f"joins: zones assigned to {len(prep['zone_by_cell'])} of {len(prep['cells'])} Montana cells; "
         f"counties to {len(prep['county_by_cell'])}")
 
+    ctx.zone_before_cells = dict(collections.Counter(prep["zone_before_by_cell"].values()))
     report_table = []
     for i, row in enumerate(ctx.lsr):
         row["ref"] = i
@@ -2820,6 +3048,12 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
                    "events": zone_events.get(zone["zone"], []), "records": zone_records.get(zone["zone"], [])}
             data = _compact(doc)
             (hail_dir / "z" / f"{zone['zone']}.json").write_bytes(data)
+            z_bytes += len(data)
+        for code, name in sorted(_before_names(ctx).items()):      # D44: the removed zones get their own files
+            doc = {"f": ZONE_FORMAT, "zone": code, "name": name, "events": zone_events.get(code, []),
+                   "records": zone_records.get(code, [])}
+            data = _compact(doc)
+            (hail_dir / "z" / f"{code}.json").write_bytes(data)
             z_bytes += len(data)
         for zone in ctx.fire_map or []:
             doc = {"f": ZONE_FORMAT, "kind": "fire", "zone": zone["zone"], "name": zone["name"],
@@ -2998,8 +3232,13 @@ def _index_block(ctx, index, tiles, zone_list, station_index, totals, bytes_by, 
         "zone_products_unplaced": ctx.zone_products_unplaced,
         "zone_placement": {p: {e: dict(sorted(h.items())) for e, h in sorted(cells.items())}
                            for p, cells in sorted(ctx.zone_placement.items())},
-        "zone_placed_by_code_alone": sum(h.get("kept", 0) for cells in ctx.zone_placement.values()
-                                         for h in cells.values()),
+        "zone_placement_table": _placement_table(ctx),
+        "iem_sets": [{"valid": s["valid"], "file": s["file"], "bytes": s["bytes"], "sha256": s["sha256"],
+                      "zones": None if s["zones"] is None else len(s["zones"]),
+                      "state": "loaded" if s["zones"] is not None else "unavailable", "reason": s["why"]}
+                     for s in ctx.iem_sets],
+        "zones_before": {"codes": sorted(z["zone"] for z in ctx.iem_outline),
+                         "cells": {code: n for code, n in sorted(ctx.zone_before_cells.items())}},
         "zone_unplaced_rows": sorted(ctx.zone_unplaced_rows, key=lambda r: (r[0], r[2], r[1], r[3])),
         "zone_products_renumbered": ctx.zone_products_renumbered,
         "zone_editions": ctx.zone_edition_report,
@@ -3011,7 +3250,8 @@ def _index_block(ctx, index, tiles, zone_list, station_index, totals, bytes_by, 
         "zone_can_midnight_rows": ctx.zone_can_midnight,
         "zones": len(zone_list),
         "zone_list": zone_list,
-        "zone_names": {z["zone"]: z["name"] for z in ctx.zone_map},
+        "zone_list_before": sorted(_before_names(ctx)),
+        "zone_names": {**_before_names(ctx), **{z["zone"]: z["name"] for z in ctx.zone_map}},
         "fire_zones": {"state": "unavailable" if ctx.fire_map is None else "loaded",
                        "reason": None if ctx.fire_map is not None else ctx.fire_reason,
                        "zones": len(fire_list), "events": sum(len(v) for v in ctx.fire_events.values())},
@@ -3231,7 +3471,7 @@ def _zone_for_key(tile_doc: dict, key: int, field: str = "zones") -> str | None:
 
 
 def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, now=None, sample: bool = False,
-                   store_dir=None, events: dict | None = None) -> dict:
+                   store_dir=None, events: dict | None = None, spot: tuple | None = None) -> dict:
     """The six sections for one cell, filled in Python (the town pages; the browser fills the same templates).
 
     tile_doc is the cell's j/ file as read. The events table (hail/j/events.json) holds the report, record and
@@ -3257,6 +3497,7 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
         events = _read_events(store_dir)
     types = block.get("types", {})
     zone = _zone_for_key(tile_doc, key)
+    zone_before = zone_before_for_key(tile_doc, key)
     fire = _zone_for_key(tile_doc, key, "fire")
     county = _zone_for_key(tile_doc, key, "counties")
     fire_state = block.get("fire_zones", {}).get("state", "unavailable")
@@ -3314,6 +3555,15 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
                 zone_lost = str(exc)
         for r in zdoc.get("records", []):
             rows.append((utc_from_row(r[0], r[1]), r, None, zone))
+        if zone_before and zone_before != zone and store_dir:      # D44: the removed zone's records before the switch
+            try:
+                bdoc = _read_part_file(store_dir, f"z/{zone_before}.json", ZONE_FORMAT)
+            except JoinsError as exc:
+                zone_lost, bdoc = str(exc), {}
+            for r in bdoc.get("records", []):
+                when = utc_from_row(r[0], r[1])
+                if when < IEM_SWITCH:
+                    rows.append((when, r, None, zone_before))
         rows.sort(key=lambda x: x[0], reverse=True)
         sec["lead"] = _records_lead(len(rows), newest_ncei, ftn, w)
         for utc, r, dist, zone_code in rows:
@@ -3321,7 +3571,13 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
                 text = _record_text(utc, r, dist, centre_lat, centre_lon, r[2], r[3], w)
             else:
                 text = _zone_record_text(utc, r, zone_code, w)
+                if zone_code in IEM_OUTLINE_ZONES and utc < IEM_SWITCH:
+                    text += w["zones_simplified_suffix"]
             sec["rows"].append({"text": text, "remark": None, "utc": iso_utc(utc)})
+        flood_n = sum(1 for _utc, r, _dist, zc in rows if zc is None and r[4] in FLOOD_RECORD_CODES)     # D48
+        if flood_n:
+            sec["lines"].append(w["flood_records_line_one" if flood_n == 1 else "flood_records_line_many"]
+                                .format(n=flood_n))
         unplaced = block.get("ncei_zone_rows_unmatched", 0)
         if unplaced:
             sec["lines"].append(w["records_unplaced_one" if unplaced == 1 else "records_unplaced_many"].format(
@@ -3402,6 +3658,7 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
         # its begin (null: start not recorded), the time it is windowed and ordered by, and its end (null: not recorded).
         public_items, red_items, county_items = [], [], []
         zone_lost = fire_lost = county_lost = None     # D27: a zone or county file that did not load (its reason)
+        before_items = []                              # D44: the removed zone's products before the switch
         if zone and store_dir:
             try:
                 zdoc = _read_part_file(store_dir, f"z/{zone}.json", ZONE_FORMAT)
@@ -3411,7 +3668,20 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
                 begin, end_at = _zone_span(ev)
                 when = _zone_when(begin, end_at)
                 if when is not None and start <= when.date() <= end:
-                    public_items.append((begin, end_at, ev.get("st"), ev))
+                    if zone in IEM_OUTLINE_ZONES and when < IEM_SWITCH:     # D44: MTZ060 before the switch, IEM outline
+                        before_items.append((begin, end_at, ev.get("st"), ev, zone))
+                    else:
+                        public_items.append((begin, end_at, ev.get("st"), ev))
+        if zone_before and zone_before != zone and store_dir:
+            try:
+                bzdoc = _read_part_file(store_dir, f"z/{zone_before}.json", ZONE_FORMAT)
+            except JoinsError as exc:
+                zone_lost, bzdoc = str(exc), {}
+            for ev in bzdoc.get("events", []):
+                begin, end_at = _zone_span(ev)
+                when = _zone_when(begin, end_at)
+                if when is not None and start <= when.date() <= end and when < IEM_SWITCH:
+                    before_items.append((begin, end_at, ev.get("st"), ev, zone_before))
         if fire and store_dir:
             try:
                 fdoc = _read_part_file(store_dir, f"z/fire-{fire}.json", ZONE_FORMAT)
@@ -3435,11 +3705,18 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
                 when = _zone_when(begin, end_at)
                 if when is not None and start <= when.date() <= end:
                     county_items.append((begin, end_at, ev.get("st"), ev))
-        sec["lead"] = w["zones_no_zone"] if not zone else _zone_lead(len(public_items), zone_name, zone, ftn, w)
+        sec["lead"] = (w["zones_no_zone"] if not zone else
+                       _zone_lead(len(public_items) + sum(1 for x in before_items if x[4] == zone), zone_name, zone, ftn, w))
         grouped: dict[str, list] = {}
         for begin, end_at, st, ev in public_items:
             name = PRODUCT_NAMES.get(f"{ev['k']}.{ev['s']}", f"{ev['k']}.{ev['s']}")
             grouped.setdefault(name, []).append((begin, end_at, st))
+        before_grouped: dict[tuple, list] = {}
+        before_codes: dict[str, int] = {}
+        for begin, end_at, st, ev, bcode in before_items:
+            name = PRODUCT_NAMES.get(f"{ev['k']}.{ev['s']}", f"{ev['k']}.{ev['s']}")
+            before_grouped.setdefault((name, bcode), []).append((begin, end_at, st))
+            before_codes[bcode] = before_codes.get(bcode, 0) + 1
         for begin, end_at, st, ev in red_items:
             name = PRODUCT_NAMES.get(f"{ev['k']}.{ev['s']}", f"{ev['k']}.{ev['s']}")
             name = w["fire_product"].format(product=name, zone_name=fire_zone_name, zone=fire)
@@ -3449,17 +3726,24 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
             events_text = "; ".join(_zone_event_text(b, e, st, w) for b, e, st in items)
             sec["rows"].append({"text": w["zones_row"].format(product=name, events=events_text), "remark": None,
                                 "utc": None})
+        for key in sorted(before_grouped, key=lambda k: min(_zone_when(x[0], x[1]) for x in before_grouped[k]),
+                          reverse=True):
+            name, bcode = key
+            items = sorted(before_grouped[key], key=lambda x: _zone_when(x[0], x[1]))
+            events_text = "; ".join(_zone_event_text(b, e, st, w) for b, e, st in items)
+            bname = block.get("zone_names", {}).get(bcode, bcode)
+            sec["rows"].append({"text": w["zones_row_simplified"].format(product=name, zone_name=bname, zone=bcode,
+                                                                         note=w["zones_simplified"],
+                                                                         events=events_text),
+                                "remark": None, "utc": None})
+        for bcode, n in sorted(before_codes.items()):
+            bname = block.get("zone_names", {}).get(bcode, bcode)
+            key_name = "zones_before_line_one" if n == 1 else "zones_before_line_many"
+            sec["lines"].append(w[key_name].format(n=n, zone_name=bname, zone=bcode))
         unplaced = block.get("zone_products_unplaced", 0)
         if unplaced:
             sec["lines"].append(w["zones_unplaced_one" if unplaced == 1 else "zones_unplaced_many"].format(
                 n=f"{unplaced:,}"))
-        kept = block.get("zone_placed_by_code_alone", 0)     # D27: placed by code alone (no published edition in force)
-        if kept:
-            sec["lines"].append(w["zones_kept_one" if kept == 1 else "zones_kept_many"].format(n=f"{kept:,}"))
-            published = [ed for ed in block.get("zone_editions", []) if ed.get("read")]
-            if published:
-                sec["lines"].append(w["zones_kept_note"].format(
-                    date=fmt_day(date.fromisoformat(published[0]["effective"]))))
         if county:
             if block.get("counties", {}).get("state") != "loaded" or county_lost:
                 sec["lines"].append(w["county_unavailable"])
@@ -3502,7 +3786,7 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
     if parts.get("stations") == "unavailable":
         sec["unavailable"] = _unavailable_text("stations", reasons.get("stations"))
     else:
-        stations = tile_doc.get("stations", [])
+        stations = station_picks(tile_doc, *(spot or (centre_lat, centre_lon)))     # D36: picked from the spot
         station_lost = None                  # D27: a station file that did not load (its reason, or None)
         if not stations:
             sec["lead"] = w["stations_none_near"].format(miles=int(STATION_MILES))
@@ -3682,17 +3966,19 @@ def _report_text(utc, r, dist, clat, clon, lat, lon, w, types=None) -> str:
 
 def _record_text(utc, r, dist, clat, clon, lat, lon, w) -> str:
     """A record row (D3, D9, D19): the magnitude only when its type carries a unit; any other type is typed (its type
-    word and qualifier, no number and no "no size given"). The B2 templates the browser fills, so the sheet and the town
-    page say the same words; NCEI's cause (r[13]) is kept in the events table and joins the row when part B switches
-    map.js to WORDS_JOINS["records_row_b5"]."""
+    word and qualifier, no number and no "no size given"). NCEI's cause as written (r[13], the FLOOD_CAUSE field of a flood
+    record; B5 source 5) joins the row when the record has one, in the WORDS_JOINS "_b5" templates. The browser's records
+    rows take the same templates when part B2 switches map.js (the sheet and the town page then say the same words)."""
     miles, bearing = _place_bits(lat, lon, clat, clon, w)
+    cause = " ".join(str(r[13]).split()) if len(r) > 13 and r[13] else ""
     base = dict(date=fmt_day(_local(utc).date()), time=fmt_clock(utc), type=r[4],
-                qualifier=_qualifier(r[7], w), source=r[8], miles=miles)
+                qualifier=_qualifier(r[7], w), source=r[8], miles=miles,
+                cause=w["records_cause"].format(cause=cause) if cause else "")
     if r[4] in UNIT_CODES:
         base["magnitude"] = _magnitude(r[5], r[6], w, mph=r[11], kt=r[12])
-        key = "records_row_here" if bearing is None else "records_row"
+        key = "records_row_here_b5" if bearing is None else "records_row_b5"
     else:
-        key = "records_row_here_typed" if bearing is None else "records_row_typed"
+        key = "records_row_here_typed_b5" if bearing is None else "records_row_typed_b5"
     if bearing is not None:
         base["bearing"] = bearing
     return w[key].format(**base)
@@ -3793,7 +4079,8 @@ def _name_disagreements(root: Path, block: dict) -> tuple[int, list]:
     """The NCEI zone-row names that disagree with the 2026 name of their code, after _norm_zone_name. Reported by
     verify, not failed: the names are the archive's own (data-3)."""
     count, examples = 0, []
-    names = block.get("zone_names", {})
+    current = set(block.get("zone_list", []))
+    names = {z: n for z, n in block.get("zone_names", {}).items() if z in current}     # the 2026 names (D44: not the removed zones)
     for zone in sorted(names):
         zdoc = _read_z(root, zone) or {}
         want = _norm_zone_name(names[zone])
@@ -4152,9 +4439,10 @@ def verify(store_dir, cache_dir=None) -> dict:
     check("every tile has a j/ file", len(tile_files) == len(tiles) and all(
         (root / "hail" / "j" / f"{t}.json").is_file() for t in tiles), f"{len(tile_files)} files, {len(tiles)} tiles")
     zone_names = set(block.get("zone_list", []))
+    before_names = set(block.get("zones_before", {}).get("codes", []))     # D44: the 21 codes the tiles may name
     fire_names = set(block.get("fire_zone_list", []))
     county_names = set(block.get("counties", {}).get("names", {}))
-    bad_ints = bad_refs = bad_cover = bad_zone = bad_fire = bad_county = 0
+    bad_ints = bad_refs = bad_cover = bad_zone = bad_fire = bad_county = bad_before = 0
     if events is not None:
         for kind in ("reports", "records"):
             for row in events[kind]:
@@ -4195,6 +4483,9 @@ def verify(store_dir, cache_dir=None) -> dict:
         for code, keys in doc.get("zones", {}).items():
             if code not in zone_names or not all(isinstance(k, int) and 0 <= k < 100 for k in keys):
                 bad_zone += 1
+        for code, keys in doc.get("zones_before", {}).items():         # D44
+            if code not in before_names or not all(isinstance(k, int) and 0 <= k < 100 for k in keys):
+                bad_before += 1
         for code, keys in doc.get("fire", {}).items():
             if code not in fire_names or not all(isinstance(k, int) and 0 <= k < 100 for k in keys):
                 bad_fire += 1
@@ -4244,6 +4535,8 @@ def verify(store_dir, cache_dir=None) -> dict:
           str(block.get("events_tiles", {}).get("count")))
     check("warning covers are 25 hex digits", bad_cover == 0, f"{bad_cover} bad")
     check("zone codes are current zones and keys are cells", bad_zone == 0, f"{bad_zone} bad")
+    check("zones before the switch: the codes are the removed zones and MTZ060, keys are cells (D44)",
+          bad_before == 0, f"{bad_before} bad")
     check("fire zone codes are current fire zones and keys are cells", bad_fire == 0, f"{bad_fire} bad")
     check("county codes are the Montana counties and keys are cells", bad_county == 0, f"{bad_county} bad")
     for zone in sorted(zone_names):
@@ -4291,6 +4584,73 @@ def verify(store_dir, cache_dir=None) -> dict:
           span_bad == 0, f"{span_bad} bad; {ends_recorded} events with an end; {stopped_no_end} cancelled or upgraded "
           "without one")
     # D16 and F-05: each older zone edition the page links is read and compared; reported, not failed.
+    table = block.get("zone_placement_table")
+    if table is not None:
+        check("zone placement: the table adds up (current, mapped, IEM set, changeover week and unplaced make the groups)",
+              table["current"] + table["mapped"] + table["iem_set"] + table["changeover_week"] + table["unplaced"]
+              == table["groups"], str(table))
+        if all(s.get("state") == "loaded" for s in (block.get("iem_sets") or [])) and table["unplaced"] == 0:
+            check("zone placement: every zone product in the window is placed (expected 0 unplaced, D44)",
+                  table["unplaced"] == table["expected_unplaced"]
+                  and len(block.get("zone_unplaced_rows", [])) == table["unplaced"],
+                  f"{table['unplaced']} unplaced of {table['groups']} groups; expected {table['expected_unplaced']}")
+        elif table["unplaced"] == 0:
+            check("zone placement: every zone product in the window is placed (expected 0 unplaced, D44)",
+                  len(block.get("zone_unplaced_rows", [])) == 0, f"{table['groups']} groups placed")
+        else:
+            skip("zone placement: every zone product in the window is placed (expected 0 unplaced, D44)",
+                 f"{table['unplaced']} groups unplaced, and a zone set or edition did not load (reported, not failed)")
+    iem = block.get("iem_sets")
+    if iem is not None:
+        loaded_all = all(s.get("state") == "loaded" for s in iem)
+        reason = "a zone set did not load: " + ", ".join(s["valid"] for s in iem if s.get("state") != "loaded")
+        counts = [s.get("zones") for s in iem]
+        if loaded_all:
+            check("IEM zone sets: seven snapshots, 103 zones through 2022-09-13 12:00Z and 83 from 18:00Z (D44)",
+                  counts == [103, 103, 103, 103, 83, 83, 83], str(counts))
+        else:
+            skip("IEM zone sets: seven snapshots, 103 zones through 2022-09-13 12:00Z and 83 from 18:00Z (D44)", reason)
+        if cache_dir is None:
+            skip("IEM zone sets: each cached snapshot matches its SHA-256 (D44)", "no joins cache was given")
+        else:
+            bad, blobs = [], {}
+            for s in iem:
+                if s.get("state") != "loaded":
+                    continue
+                path = Path(cache_dir) / s["file"]
+                data = path.read_bytes() if path.is_file() else None
+                blobs[s["valid"]] = data
+                if data is None or s.get("sha256") != hashlib.sha256(data).hexdigest():
+                    bad.append(s["valid"])
+            if blobs:
+                check("IEM zone sets: each cached snapshot matches its recorded SHA-256 (D44)", not bad,
+                      ", ".join(bad) or f"{len(blobs)} snapshots match")
+            else:
+                skip("IEM zone sets: each cached snapshot matches its recorded SHA-256 (D44)", reason)
+            if {"2022-09-13T12:00:00Z", "2022-09-13T18:00:00Z"} <= {k for k, v in blobs.items() if v is not None}:
+                try:
+                    before_set = {z["zone"] for z in parse_iem_ugcs(blobs["2022-09-13T12:00:00Z"])}
+                    after_set = {z["zone"] for z in parse_iem_ugcs(blobs["2022-09-13T18:00:00Z"])}
+                    removed = sorted(before_set - after_set)
+                    check("IEM zone sets: the zones removed at the switch are the 20 the placement names (D44)",
+                          tuple(removed) == IEM_REMOVED_ZONES and after_set < before_set,
+                          f"{len(removed)} removed; {len(before_set)} before, {len(after_set)} after")
+                except JoinsError as exc:
+                    check("IEM zone sets: the zones removed at the switch are the 20 the placement names (D44)",
+                          False, f"a snapshot did not read: {exc}")
+            else:
+                skip("IEM zone sets: the zones removed at the switch are the 20 the placement names (D44)", reason)
+    zb = block.get("zones_before")
+    if zb is not None:
+        if iem is not None and all(s.get("state") == "loaded" for s in iem) and block["parts"].get("zones") != "unavailable":
+            check("zones before the switch: the 21 codes are the 20 removed zones and MTZ060 (D44)",
+                  sorted(zb.get("codes", [])) == sorted(IEM_OUTLINE_ZONES), str(zb.get("codes")))
+        else:
+            skip("zones before the switch: the 21 codes are the 20 removed zones and MTZ060 (D44)",
+                 "a zone set did not load")
+        missing_before = [z for z in block.get("zone_list_before", []) if not (root / "hail" / "z" / f"{z}.json").is_file()]
+        check("zones before the switch: every removed zone has its z/ file (D44)", not missing_before,
+              ", ".join(missing_before) or f"{len(block.get('zone_list_before', []))} files")
     editions = block.get("zone_editions", [])
     compared = [e for e in editions if e.get("read") and not e.get("current") and "geometry_max_diff_deg" in e]
     check("zone editions: every linked edition is listed with its date (reported, not failed)", True,

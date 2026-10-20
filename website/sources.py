@@ -302,8 +302,9 @@ CONTRACTS = {
                    "the zone code of the public zone edition in force at its issue time. The NWS publishes two "
                    "editions: z_18mr25.zip (effective 18 March 2025) and z_16ap26.zip (effective 16 April 2026). The "
                    "six older editions named in the NWS change history were requested and are not published (HTTP 404 "
-                   "when checked on 2026-10-19), so a product issued before 18 March 2025 keeps its zone code and is "
-                   "checked against the current edition.",
+                   "when checked on 2026-10-19), so a product issued before 18 March 2025 is placed by the Iowa State zone "
+                   "set in force at its issue time (the iem_ugcs row; D44), and a product of 7 to 13 September 2022 by the "
+                   "set that holds its code.",
         "units": "Begin and end times are UTC, shown in Montana time. The product is named in words, for example 'High wind "
                  "warning'. No measurement is given: the product covered the whole zone.",
         "timing": "Each row has its issue and expiry times and a status (NEW, CON, EXT, EXA, EXB, UPG, EXP or CAN). A zone "
@@ -455,6 +456,30 @@ CONTRACTS = {
                    "forecast threat at issue time, not what fell. A warning extended after issue shows at its issue polygon, "
                    "because follow-up polygons are not used. A product the build cannot place on a zone is counted, and the page "
                    "says how many in Montana.",
+    },
+    "iem_ugcs": {
+        "name": "Montana public forecast zones by date (Iowa State IEM ugcs service: simplified outlines)",
+        "request": "mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=<UTC>, for seven dates: 2021-09-15, "
+                   "2022-06-01, 2022-09-10 and 2022-09-13 12:00Z (103 Montana zones), and 2022-09-13 18:00Z, 2023-06-01 and "
+                   "2025-03-18 (83 zones). Each answer is a GeoJSON FeatureCollection; its MTZ features give the zone code, "
+                   "name and outline. Terms, quoted from the IEM pages read: the API disclaimer says \"All of these services "
+                   "are provided as-is and without warranty. You are free to use these services for any lawful purpose "
+                   "(including commercial ...)\", and the OpenAPI description says \"This service is free to use for most any "
+                   "legal purpose.\" The IEM site footer reads \"All rights reserved.\" The words \"public domain\" and "
+                   "\"attribution appreciated\" were not found on the pages read, so the About page does not say them.",
+        "units": "Zone codes (MTZ and a number) and names as the snapshot gives them. Outlines are decimal degrees of longitude "
+                 "and latitude, simplified by the IEM. Counts are zones.",
+        "timing": "A snapshot is the zone set valid at the time asked. The 103 zones hold through 12:00Z on 13 September 2022 "
+                  "and the 83 zones from 18:00Z that day. The NWS change log dates the change 7 September 2022, so the switch "
+                  "date lies between 12:00Z and 18:00Z on 13 September; products issued from 7 September to 18:00Z on 13 "
+                  "September are placed by the set that holds their code. The snapshots are historical: they are cached once "
+                  "and not re-pulled.",
+        "missing": "A zone that a snapshot does not hold is not in that zone set, so a product under its code is counted as "
+                   "unplaced and never placed on a neighbouring zone. A snapshot that does not parse, has a zone with no "
+                   "outline, or repeats a code is refused, and the products its set would place are counted as unplaced. The "
+                   "outlines are simplified: the 20 zones removed on 13 September 2022 (MTZ008 to MTZ015 and MTZ044 to MTZ055) "
+                   "and MTZ060 before that change use these outlines, and their rows say so. The 83 zones in force since then "
+                   "keep the NWS outlines; the IEM outlines of those 83 zones lie within 0.014 degrees of the NWS file.",
     },
     "iem_lsr": {
         "name": "NWS local storm reports (Iowa State archive, the types the history reads)",

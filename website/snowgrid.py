@@ -133,9 +133,9 @@ WORDS = {
                  "miles away. An analysis, not a measurement at this address."),
     "no_value": ("Analysis: no value for the {water_year} water year at this cell. That is not the same as no snow."),
     "unit_failed": ("Analysis: not shown. Its amounts did not match measured snowfall closely enough to be sure they "
-                    "are in inches. Station readings are shown instead."),
+                    "are in inches. Station readings are shown instead. This is not an all-clear."),
     "unit_unchecked": ("Analysis: not shown. Its units could not be checked against station snowfall, so it is not "
-                       "shown. Station readings are shown instead."),
+                       "shown. Station readings are shown instead. This is not an all-clear."),
     "unavailable": "{Part} could not be loaded in this update; that is not the same as no {one}.",
     "what": ("The National Snow Analysis is NOAA's gridded estimate of season snowfall, one cell about 3 to 4 km across, "
              "built from station observations and other inputs. An analysis, not a measurement at this address."),

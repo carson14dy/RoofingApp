@@ -494,7 +494,7 @@ class JoinRuleTests(unittest.TestCase):
             doc = _cell_doc(stations=[{"id": "LWT", "name": "Lewistown", "lat": 47.06, "lon": -109.4, "miles": 12.3}])
             out = self._describe(doc, store_dir=root)
             sec = self._section(out["sections"], "stations")
-            self.assertEqual(sec["rows"][0]["text"], "Station: Jun 16, 2025: 50 kt (58 mph) at Lewistown, about 12.3 "
+            self.assertEqual(sec["rows"][0]["text"], "Station: Jun 16, 2025: 50 kt (58 mph) at Lewistown, about 34.7 "
                                                  "miles away")
             self.assertIn("3 readings of 130 kt or more were left out as implausible.", sec["lines"])
             self.assertIn("A station reading is at the airport, not at this address.", sec["what"])
@@ -660,6 +660,58 @@ class FakeFetcher(J.Fetcher):
         return data, 200, None
 
 
+def _iem_zone_codes(after_switch: bool) -> list:
+    """The synthetic Montana zone codes of one IEM snapshot (D44): the 83 current codes, and with the 20 zones removed on
+    13 September 2022 the 103 codes the set held before it. The codes are the real ones, the geometry is not."""
+    current = ([f"MTZ{n:03d}" for n in list(range(1, 8)) + list(range(16, 44)) + list(range(56, 64)) + list(range(64, 74))]
+               + [f"MTZ{n:03d}" for n in range(301, 331)])
+    return current if after_switch else sorted(current + list(J.IEM_REMOVED_ZONES))
+
+
+def _iem_geojson(codes, extra_county: bool = True) -> bytes:
+    """A GeoJSON snapshot of the codes: one small square per zone, placed on a grid (the test geometry), and a county
+    feature the reader must skip."""
+    feats = []
+    for i, code in enumerate(codes):
+        x0 = -114.0 + (i % 20) * 0.5
+        y0 = 44.5 + (i // 20) * 0.4
+        ring = [[x0, y0], [x0 + 0.4, y0], [x0 + 0.4, y0 + 0.3], [x0, y0 + 0.3], [x0, y0]]
+        feats.append({"type": "Feature", "properties": {"ugc": code, "name": f"Test zone {code}", "state": "MT",
+                                                       "wfo": "TFX"},
+                      "geometry": {"type": "Polygon", "coordinates": [ring]}})
+    if extra_county:
+        feats.append({"type": "Feature", "properties": {"ugc": "MTC001", "name": "Beaverhead", "state": "MT"},
+                      "geometry": {"type": "Polygon", "coordinates": [[[-113, 45], [-112, 45], [-112, 46], [-113, 45]]]}})
+    return json.dumps({"type": "FeatureCollection", "features": feats}).encode("utf-8")
+
+
+def _iem_snap(stamp: str, codes) -> dict:
+    """One IEM snapshot as the build holds it after _iem_sets (its zones read from the synthetic file)."""
+    zones = J.parse_iem_ugcs(_iem_geojson(codes))
+    return {"valid": stamp, "date": J._iem_date(stamp), "file": f"iem-ugcs/valid-{stamp}/MT.geojson", "zones": zones,
+            "why": None, "bytes": 1, "sha256": "0" * 64, "codes": {z["zone"] for z in zones}}
+
+
+def _placement_ctx() -> "J.Context":
+    """A context with the seven IEM snapshots, the current zones (83), the archived editions the NWS does not publish and
+    the two linked editions, as _collect leaves them when every request loads (D44)."""
+    ctx = J.Context()
+    ctx.zone_map = J.parse_iem_ugcs(_iem_geojson(_iem_zone_codes(True), extra_county=False))
+    ctx.iem_sets = [_iem_snap("2021-09-15T12:00:00Z", _iem_zone_codes(False)),
+                    _iem_snap("2022-06-01T12:00:00Z", _iem_zone_codes(False)),
+                    _iem_snap("2022-09-10T12:00:00Z", _iem_zone_codes(False)),
+                    _iem_snap("2022-09-13T12:00:00Z", _iem_zone_codes(False)),
+                    _iem_snap("2022-09-13T18:00:00Z", _iem_zone_codes(True)),
+                    _iem_snap("2023-06-01T12:00:00Z", _iem_zone_codes(True)),
+                    _iem_snap("2025-03-18T12:00:00Z", _iem_zone_codes(True))]
+    before = [s for s in ctx.iem_sets if s["zones"] is not None and s["date"] < J.IEM_SWITCH]
+    ctx.iem_outline = [z for z in before[-1]["zones"] if z["zone"] in J.IEM_OUTLINE_ZONES]
+    ctx.zone_editions = [edition(name, None) for name in J.ZONE_EDITION_ARCHIVE] + [
+        edition("z_18mr25.zip", ctx.zone_map), edition("z_16ap26.zip", ctx.zone_map)]
+    J._edition_maps(ctx)
+    return ctx
+
+
 def canned(url, params):
     if url == J.NWS_GIS_URL:
         return b'<a href="/source/gis/Shapefiles/WSOM/z_16ap26.zip">z</a>'
@@ -699,6 +751,9 @@ def canned(url, params):
             return (b"ZTIME,WSR_ID,CELL_ID,PROB,SEVPROB,MAXSIZE,LAT,LON\n"
                     b"2025-06-15T20:10:00Z,KTFX,A1,100,40,1.75,47.08,-110.02\ncount,1\n")
         return b"ZTIME,WSR_ID,CELL_ID,PROB,SEVPROB,MAXSIZE,LAT,LON\ncount,0\n"
+    if url.startswith("https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson"):      # D44: the IEM zone sets by date
+        valid = re.search(r"valid=([^&]+)", url).group(1)
+        return _iem_geojson(_iem_zone_codes(after_switch=valid >= "2022-09-13T18:00:00Z"))
     if url == J.WW_URL and params.get("accept") == "shapefile":
         return b"not a zip file"
     if url == J.WW_URL and params.get("accept") == "csv":
@@ -1316,14 +1371,14 @@ class ZoneEditionTests(unittest.TestCase):
         self.assertEqual(ctx.zone_products_unplaced, 1)
         self.assertIsNone(ctx.zone_edition_report[0]["renamed"]["MTZ080"])
 
-    def test_an_edition_that_did_not_load_keeps_its_codes_and_the_index_says_so(self):
+    def test_an_edition_the_nws_links_that_did_not_load_leaves_its_products_unplaced_and_the_index_says_so(self):
         rows = [zone_row("MTZ313", "HW", "NEW", utc(2025, 6, 1, 12), utc(2025, 6, 1, 18), eventid="40")]
         ctx = self._ctx(rows, [edition(self.OLD, None, why="the source did not answer"), edition(self.NEW, [ZONE_313])],
                         zone_map=[ZONE_313])
         out = J._zone_events(ctx, *WINDOW)
-        self.assertEqual([e["b"] for e in out["MTZ313"]], ["2025-06-01T12:00Z"])
-        self.assertEqual(ctx.zone_edition_report[0], {"file": self.OLD, "effective": "2025-03-18", "current": False,
-                                                      "read": False, "reason": "the source did not answer"})
+        self.assertEqual(out, {})
+        self.assertEqual(ctx.zone_products_unplaced, 1)
+        self.assertEqual(ctx.zone_unplaced_rows, [["HW.W", "MTZ313", "2025-06-01", self.OLD, "edition_unread"]])
 
     def test_ncei_zone_rows_follow_the_same_editions_and_unmatched_rows_are_counted(self):
         def ncei(zone, when):
@@ -1363,8 +1418,9 @@ class ZoneEditionTests(unittest.TestCase):
                                         "Oct 16, 2026.")
         self.assertEqual(zones["fire_lead"], "2 red flag warnings for fire weather zone Central and Eastern Lewis and "
                                              "Clark (MTZ117) between Oct 17, 2021 and Oct 16, 2026.")
-        self.assertIn("3 zone products in Montana in these five years could not be placed on a zone; their zone codes "
-                      "are not in the public zone editions the NWS publishes. This is not an all-clear.", zones["lines"])
+        self.assertIn("3 zone products in Montana in these five years could not be placed on a zone: their zone codes "
+                      "are not in the zone set in force when they were issued (the IEM zone sets, About). This is not an "
+                      "all-clear.", zones["lines"])
         self.assertEqual(len(zones["rows"]), 2)
         for text in [zones["lead"], zones["fire_lead"]]:
             check_words(self, text)
@@ -2471,9 +2527,9 @@ class NcePointTypeTests(unittest.TestCase):
         r = [0, 1300, 47.0, -110.0, "flood", "", "", "", "PUBLIC", "BENCHLAND", "", None, None,
              "Heavy Rain / Snow Melt"]
         text = J._record_text(utc(2025, 6, 15, 13), r, 1.0, 47.0, -110.0, 47.0, -110.0, J.WORDS_JOINS)
-        self.assertIn("Record: Jun 15, 2025 7:00 am MDT: flood, PUBLIC, 0.0 mi", text)
+        self.assertIn("Record: Jun 15, 2025 7:00 am MDT: flood, NCEI cause as written: Heavy Rain / Snow Melt, PUBLIC, "
+                      "0.0 mi", text)
         self.assertNotIn("no size given", text)
-        self.assertNotIn("cause", text)              # the B2 row the browser fills; the cause waits for part B
         check_words(self, text)
 
     def test_the_b5_record_row_shows_the_cause_as_written(self):
@@ -2657,10 +2713,10 @@ class B5SheetTests(unittest.TestCase):
 
     def test_a_flagged_station_reading_carries_the_flag_words(self):
         day = hail.day_index(date(2025, 2, 20))
-        self._write("s/HVR.json", {"f": J.STATION_FORMAT, "id": "HVR", "name": "Havre", "lat": 48.54, "lon": -109.76,
+        self._write("s/HVR.json", {"f": J.STATION_FORMAT, "id": "HVR", "name": "Havre", "lat": 47.05, "lon": -110.12,
                                    "days": [[day, 121, 105, 1]], "dropped": 0})
         index = _index()
-        doc = _cell_doc(stations=[{"id": "HVR", "name": "Havre", "lat": 48.54, "lon": -109.76, "miles": 5.0}])
+        doc = _cell_doc(stations=[{"id": "HVR", "name": "Havre", "lat": 47.05, "lon": -110.12, "miles": 5.0}])
         out = J.describe_joins(index, doc, *GATE, store_dir=self.root)
         sec = next(s for s in out["sections"] if s["id"] == "stations")
         self.assertEqual(len(sec["rows"]), 1)
@@ -3111,52 +3167,56 @@ class B5PartB1Tests(unittest.TestCase):
         self.assertEqual(J.zone_name_date("z_16ap26.zip"), date(2026, 4, 16))
         self.assertIn("zone_ch_log.txt", J.ZONE_CHANGE_LOG_URL)
 
-    def test_a_product_under_an_unpublished_edition_keeps_its_code_and_one_under_a_read_edition_is_mapped(self):
-        """D27: the edition in force decides the placement. An edition the NWS does not publish keeps the code (kept);
-        a read edition maps it (mapped), and a code no current zone holds is unplaced with its reason."""
-        current = [{"zone": "MTZ313", "name": "Judith Basin County", "rings": [[(0, 0), (1, 0), (1, 1), (0, 0)]]}]
-        ctx = J.Context()
-        ctx.zone_editions = [
-            {"file": "z_08se21.zip", "date": date(2021, 9, 8), "zones": None, "why": "not published"},
-            {"file": "z_18mr25.zip", "date": date(2025, 3, 18),
-             "zones": [{"zone": "MTZ010", "name": "Old", "rings": []},
-                       {"zone": "MTZ313", "name": "Judith", "rings": []}],
-             "why": None},
-            {"file": "z_16ap26.zip", "date": date(2026, 4, 16), "zones": current, "why": None},
-        ]
-        ctx.zone_edition_maps = {"z_18mr25.zip": {"MTZ010": None, "MTZ313": "MTZ313"}}
-        names = {"MTZ313"}
-        zone, edition, how = J._place(ctx, names, "MTZ313", utc(2022, 3, 1, 12))
-        self.assertEqual((zone, edition["file"], how), ("MTZ313", "z_08se21.zip", "kept"))
-        zone, edition, how = J._place(ctx, names, "MTZ010", utc(2022, 3, 1, 12))
-        self.assertEqual((zone, how), (None, "kept"))
-        zone, edition, how = J._place(ctx, names, "MTZ010", utc(2025, 6, 1, 12))
-        self.assertEqual((zone, edition["file"], how), (None, "z_18mr25.zip", "mapped"))
-        zone, edition, how = J._place(ctx, names, "MTZ313", utc(2026, 5, 1, 12))
-        self.assertEqual((zone, edition["file"], how), ("MTZ313", "z_16ap26.zip", "current"))
-        self.assertEqual(J.ZONE_UNPLACED_REASONS, {"current": "not_in_current", "mapped": "retired_zone",
-                                                   "kept": "edition_unpublished"})
+    def test_a_product_under_an_edition_the_nws_does_not_publish_is_placed_by_the_iem_set_in_force(self):
+        """D44: the edition in force decides the placement. An archived edition the NWS does not publish gives way to the IEM
+        zone set in force at the issue time; a read older edition maps its code ("mapped"); the current edition places the
+        code by name ("current"); a code no zone holds is unplaced with its reason."""
+        ctx = _placement_ctx()
+        names = {z["zone"] for z in ctx.zone_map}
+        p = J._place(ctx, names, "MTZ001", utc(2021, 12, 1, 12))
+        self.assertEqual((p["zone"], p["set"], p["how"], p["outline"]), ("MTZ001", "2021-09-15T12:00:00Z", "iem", "nws"))
+        p = J._place(ctx, names, "MTZ008", utc(2022, 3, 1, 12))
+        self.assertEqual((p["zone"], p["how"], p["outline"], p["reason"]), ("MTZ008", "iem", "iem", None))
+        p = J._place(ctx, names, "MTZ008", utc(2025, 6, 1, 12))
+        self.assertEqual((p["zone"], p["set"], p["how"], p["reason"]), (None, "z_18mr25.zip", "mapped", "retired_zone"))
+        p = J._place(ctx, names, "MTZ301", utc(2026, 5, 1, 12))
+        self.assertEqual((p["zone"], p["set"], p["how"]), ("MTZ301", "z_16ap26.zip", "current"))
+        self.assertEqual(J._place(ctx, names, "MTZ301", utc(2022, 11, 1, 12))["zone"], "MTZ301")
 
-    def test_a_zone_group_placed_or_left_off_is_counted_per_product_edition_and_way(self):
+    def test_a_zone_group_is_counted_per_product_set_and_way_with_the_outline_it_took(self):
         ctx = J.Context()
-        edition = {"file": "z_16ap26.zip", "date": date(2026, 4, 16), "zones": None, "why": None}
-        J._note_placed(ctx, "WW.Y", edition, "current")
-        J._note_placed(ctx, "WW.Y", edition, "current")
-        J._note_placed(ctx, "WW.Y", None, "kept")
-        J._note_unplaced(ctx, "WW.Y", "MTZ010", utc(2022, 3, 1, 12), {"file": "z_18mr25.zip"}, "mapped")
-        self.assertEqual(ctx.zone_placement, {"WW.Y": {"z_16ap26.zip": {"current": 2}, "none": {"kept": 1}}})
-        self.assertEqual(ctx.zone_unplaced_rows, [["WW.Y", "MTZ010", "2022-03-01", "z_18mr25.zip", "retired_zone"]])
+        J._note_placed(ctx, "WW.Y", {"zone": "MTZ008", "set": "2021-09-15T12:00:00Z", "how": "iem", "outline": "iem",
+                                     "reason": None})
+        J._note_placed(ctx, "WW.Y", {"zone": "MTZ001", "set": "2022-09-13T12:00:00Z", "how": "changeover",
+                                     "outline": "nws", "reason": None})
+        J._note_placed(ctx, "WW.Y", {"zone": "MTZ301", "set": "z_16ap26.zip", "how": "current", "outline": "nws",
+                                     "reason": None})
+        J._note_unplaced(ctx, "WW.Y", "MTZ010", utc(2022, 9, 14, 12),
+                         {"zone": None, "set": "2022-09-13T18:00:00Z", "how": "iem", "outline": None,
+                          "reason": "not_in_iem_set"})
+        self.assertEqual(ctx.zone_placement, {"WW.Y": {"2021-09-15T12:00:00Z": {"iem": 1},
+                                                       "2022-09-13T12:00:00Z": {"changeover": 1},
+                                                       "z_16ap26.zip": {"current": 1}}})
+        self.assertEqual(ctx.zone_simplified, 1)
+        self.assertEqual(ctx.zone_unplaced_rows, [["WW.Y", "MTZ010", "2022-09-14", "2022-09-13T18:00:00Z",
+                                                   "not_in_iem_set"]])
+        self.assertEqual(J._placement_table(ctx), {"groups": 4, "current": 1, "mapped": 0, "iem_set": 1,
+                                                   "changeover_week": 1, "unplaced": 1, "expected_unplaced": 0,
+                                                   "simplified_outline": 1})
 
-    def test_the_zone_words_say_in_these_five_years_and_name_the_products_placed_by_code_alone(self):
+    def test_the_zone_words_say_in_these_five_years_and_the_zone_set_in_force(self):
         for key in ("zones_unplaced_one", "zones_unplaced_many", "records_unplaced_one", "records_unplaced_many"):
             text = J.WORDS_JOINS[key]
             self.assertIn("in these five years", text, key)
             self.assertNotIn("in the window", text, key)
             self.assertNotIn("page links", text, key)
-            self.assertIn("publishes", text, key)
             check_words(self, text.format(n=2))
-        for key in ("zones_kept_one", "zones_kept_many", "zones_kept_note"):
-            check_words(self, J.WORDS_JOINS[key].format(n=2, date="18 March 2025"))
+        self.assertIn("zone set in force", J.WORDS_JOINS["zones_unplaced_one"])
+        self.assertNotIn("zones_kept_one", J.WORDS_JOINS)
+        check_words(self, J.WORDS_JOINS["zones_before_line_one"].format(n=1, zone_name="Beaverhead", zone="MTZ008"))
+        check_words(self, J.WORDS_JOINS["zones_before_line_many"].format(n=3, zone_name="Beaverhead", zone="MTZ008"))
+        check_words(self, J.WORDS_JOINS["about_iem_zones"])
+        self.assertIn("You are free to use these services for any lawful purpose", J.WORDS_JOINS["about_iem_zones"])
         self.assertIn("does not publish", J.WORDS_JOINS["reason_not_published"])
         self.assertIn("HTTP 404", J.WORDS_JOINS["reason_not_published"])
 
@@ -3324,6 +3384,321 @@ class TownsFileAndGustPeriodsTests(unittest.TestCase):
         checked = J.station_periods_check(self.tmp, index)
         self.assertEqual((checked["files"], checked["bad"]), (2, 1))
         self.assertEqual(checked["examples"], ["BAD 2023-24"])
+
+
+class IemZoneSetTests(unittest.TestCase):
+    """D44: the Montana zone sets by date from IEM's snapshots, read from synthetic snapshots (no network): the reader,
+    the set in force, the placement by issue time, the outlines, the changeover week and the cells the removed zones take."""
+
+    def test_a_snapshot_reads_its_mtz_zones_sorted_with_their_rings_and_skips_the_counties(self):
+        zones = J.parse_iem_ugcs(_iem_geojson(_iem_zone_codes(False)))
+        self.assertEqual(len(zones), 103)
+        self.assertEqual([z["zone"] for z in zones], sorted(z["zone"] for z in zones))
+        self.assertTrue(all(z["rings"] and len(z["rings"][0]) >= 3 for z in zones))
+        self.assertNotIn("MTC001", {z["zone"] for z in zones})
+        doc = json.loads(_iem_geojson(_iem_zone_codes(True)).decode("utf-8"))
+        doc["features"][0]["geometry"] = {"type": "MultiPolygon", "coordinates": [
+            [[[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 0.0]]], [[[5.0, 5.0], [6.0, 5.0], [6.0, 6.0], [5.0, 5.0]]]]}
+        first = J.parse_iem_ugcs(json.dumps(doc).encode("utf-8"))[0]
+        self.assertEqual(len(first["rings"]), 2)
+
+    def test_a_snapshot_that_is_not_a_zone_set_is_refused(self):
+        good = json.loads(_iem_geojson(_iem_zone_codes(True)).decode("utf-8"))
+        no_outline = json.loads(json.dumps(good))
+        no_outline["features"][0]["geometry"] = None
+        repeated = json.loads(json.dumps(good))
+        repeated["features"][1]["properties"]["ugc"] = repeated["features"][0]["properties"]["ugc"]
+        few = dict(good, features=good["features"][:3])
+        cases = {"not json": b"<html>", "not a collection": json.dumps({"type": "Feature"}).encode("utf-8"),
+                 "no outline": json.dumps(no_outline).encode("utf-8"), "repeated code": json.dumps(repeated).encode("utf-8"),
+                 "too few zones": json.dumps(few).encode("utf-8")}
+        for name, data in cases.items():
+            with self.assertRaises(J.JoinsError, msg=name):
+                J.parse_iem_ugcs(data)
+
+    def test_the_snapshot_date_reads_its_stamp_in_utc(self):
+        self.assertEqual(J._iem_date("2022-09-13T12:00:00Z"), utc(2022, 9, 13, 12))
+
+    def test_the_set_in_force_is_the_newest_snapshot_at_or_before_the_time(self):
+        ctx = _placement_ctx()
+        self.assertEqual(J._iem_in_force(ctx, utc(2021, 10, 17))["valid"], "2021-09-15T12:00:00Z")
+        self.assertEqual(J._iem_in_force(ctx, utc(2022, 9, 13, 12))["valid"], "2022-09-13T12:00:00Z")
+        self.assertEqual(J._iem_in_force(ctx, utc(2022, 9, 13, 17, 59))["valid"], "2022-09-13T12:00:00Z")
+        self.assertEqual(J._iem_in_force(ctx, utc(2022, 9, 13, 18))["valid"], "2022-09-13T18:00:00Z")
+        self.assertEqual(J._iem_in_force(ctx, utc(2030, 1, 1))["valid"], "2025-03-18T12:00:00Z")
+        self.assertEqual(J._iem_in_force(ctx, utc(2000, 1, 1))["valid"], "2021-09-15T12:00:00Z")
+        self.assertIsNone(J._iem_in_force(J.Context(), utc(2022, 1, 1)))
+
+    def test_a_removed_zone_before_the_switch_is_placed_with_its_iem_outline(self):
+        ctx = _placement_ctx()
+        names = {z["zone"] for z in ctx.zone_map}
+        for when, set_stamp in ((utc(2022, 3, 1, 12), "2021-09-15T12:00:00Z"), (utc(2022, 6, 15, 12), "2022-06-01T12:00:00Z"),
+                                (utc(2022, 9, 7, 10), "2022-06-01T12:00:00Z")):
+            p = J._place(ctx, names, "MTZ008", when)
+            self.assertEqual((p["zone"], p["set"], p["outline"], p["reason"]), ("MTZ008", set_stamp, "iem", None), when)
+        self.assertEqual(J._place(ctx, names, "MTZ008", utc(2022, 3, 1, 12))["how"], "iem")
+        self.assertEqual(J._place(ctx, names, "MTZ008", utc(2022, 9, 7, 10))["how"], "changeover")
+
+    def test_the_changeover_week_is_placed_by_the_set_that_holds_the_code(self):
+        ctx = _placement_ctx()
+        names = {z["zone"] for z in ctx.zone_map}
+        p = J._place(ctx, names, "MTZ060", utc(2022, 9, 12, 20))
+        self.assertEqual((p["zone"], p["how"], p["outline"]), ("MTZ060", "changeover", "iem"))
+        p = J._place(ctx, names, "MTZ001", utc(2022, 9, 8, 12))
+        self.assertEqual((p["zone"], p["how"], p["outline"]), ("MTZ001", "changeover", "nws"))
+
+    def test_a_removed_zone_after_the_switch_is_unplaced_as_not_in_the_iem_set(self):
+        ctx = _placement_ctx()
+        names = {z["zone"] for z in ctx.zone_map}
+        p = J._place(ctx, names, "MTZ008", utc(2022, 9, 14, 12))
+        self.assertEqual((p["zone"], p["set"], p["reason"]), (None, "2022-09-13T18:00:00Z", "not_in_iem_set"))
+
+    def test_mtz060_uses_the_iem_outline_before_the_switch_and_the_nws_outline_after_it(self):
+        ctx = _placement_ctx()
+        names = {z["zone"] for z in ctx.zone_map}
+        p = J._place(ctx, names, "MTZ060", utc(2022, 6, 1, 12))
+        self.assertEqual((p["zone"], p["outline"], p["how"]), ("MTZ060", "iem", "iem"))
+        p = J._place(ctx, names, "MTZ060", utc(2023, 1, 1, 12))
+        self.assertEqual((p["zone"], p["outline"], p["how"]), ("MTZ060", "nws", "iem"))
+
+    def test_a_zone_of_the_current_set_before_the_switch_keeps_the_nws_outline(self):
+        ctx = _placement_ctx()
+        p = J._place(ctx, {z["zone"] for z in ctx.zone_map}, "MTZ001", utc(2021, 12, 1, 12))
+        self.assertEqual((p["outline"], p["how"]), ("nws", "iem"))
+
+    def test_a_set_that_did_not_load_or_is_missing_leaves_its_products_unplaced_with_the_reason(self):
+        ctx = _placement_ctx()
+        names = {z["zone"] for z in ctx.zone_map}
+        ctx.iem_sets[1]["zones"], ctx.iem_sets[1]["codes"] = None, set()
+        p = J._place(ctx, names, "MTZ008", utc(2022, 6, 15, 12))
+        self.assertEqual((p["zone"], p["reason"]), (None, "set_unread"))
+        ctx.iem_sets = []
+        p = J._place(ctx, names, "MTZ008", utc(2022, 3, 1, 12))
+        self.assertEqual((p["zone"], p["reason"]), (None, "set_unread"))
+
+    def test_a_linked_edition_that_did_not_load_leaves_its_products_unplaced(self):
+        ctx = _placement_ctx()
+        ctx.zone_editions[6]["zones"] = None                      # z_18mr25.zip, linked by the NWS page, did not load
+        J._edition_maps(ctx)
+        p = J._place(ctx, {z["zone"] for z in ctx.zone_map}, "MTZ313", utc(2025, 6, 1, 12))
+        self.assertEqual((p["zone"], p["set"], p["reason"]), (None, "z_18mr25.zip", "edition_unread"))
+
+    def test_zone_events_place_the_removed_zone_products_and_the_table_counts_them(self):
+        ctx = _placement_ctx()
+        ctx.zone_rows = [zone_row("MTZ008", "HW", "NEW", utc(2022, 3, 1, 12), utc(2022, 3, 1, 18), eventid="50"),
+                         zone_row("MTZ008", "HW", "NEW", utc(2022, 9, 14, 12), utc(2022, 9, 14, 18), eventid="51"),
+                         zone_row("MTZ001", "HW", "NEW", utc(2022, 9, 8, 12), utc(2022, 9, 8, 18), eventid="52")]
+        out = J._zone_events(ctx, *WINDOW)
+        self.assertEqual([e["b"] for e in out["MTZ008"]], ["2022-03-01T12:00Z"])
+        self.assertEqual([e["b"] for e in out["MTZ001"]], ["2022-09-08T12:00Z"])
+        self.assertEqual(J._placement_table(ctx), {"groups": 3, "current": 0, "mapped": 0, "iem_set": 1,
+                                                   "changeover_week": 1, "unplaced": 1, "expected_unplaced": 0,
+                                                   "simplified_outline": 1})
+        self.assertEqual(ctx.zone_unplaced_rows, [["HW.W", "MTZ008", "2022-09-14", "2022-09-13T18:00:00Z",
+                                                   "not_in_iem_set"]])
+
+    def test_cells_inside_a_removed_zone_take_it_before_the_switch_and_no_other_cell_does(self):
+        ctx = _placement_ctx()
+        removed = next(z for z in ctx.iem_outline if z["zone"] == "MTZ008")
+        pts = removed["rings"][0]
+        lon = sum(p[0] for p in pts) / len(pts)
+        lat = sum(p[1] for p in pts) / len(pts)
+        claimed = J.assign_zones([(1, 1, lat, lon)], ctx.iem_outline)
+        self.assertEqual(claimed, {(1, 1): "MTZ008"})
+        self.assertEqual(J.assign_zones([(2, 2, 40.0, -100.0)], ctx.iem_outline), {})     # outside every outline
+
+
+class ZoneBeforeSwitchReadTests(unittest.TestCase):
+    """D44 (the reader): a cell in a removed zone's outline shows that zone's products issued before the switch, with the
+    note that the zone is placed with a simplified outline; the zone's later products are not read for it."""
+
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp(prefix="joins-test-before-"))
+        self.addCleanup(shutil.rmtree, self.root, True)
+        (self.root / "hail" / "z").mkdir(parents=True)
+        (self.root / "hail" / "z" / "MTZ313.json").write_text(json.dumps(
+            {"f": J.ZONE_FORMAT, "zone": "MTZ313", "name": "Judith Basin County", "records": [], "events": []}))
+        (self.root / "hail" / "z" / "MTZ008.json").write_text(json.dumps(
+            {"f": J.ZONE_FORMAT, "zone": "MTZ008", "name": "Beaverhead", "records": [], "events": [
+                {"k": "HW", "s": "W", "b": "2022-03-01T12:00Z", "e": "2022-03-01T18:00Z", "o": "TFX"},
+                {"k": "HW", "s": "W", "b": "2022-09-14T12:00Z", "e": "2022-09-14T18:00Z", "o": "TFX"}]}))
+
+    def test_the_zone_section_adds_the_removed_zone_products_before_the_switch_with_their_note(self):
+        index = _index()
+        index["joins"]["zone_names"] = {"MTZ313": "Judith Basin County", "MTZ008": "Beaverhead"}
+        doc = _cell_doc(zones={"MTZ313": [GATE_KEY]}, zones_before={"MTZ008": [GATE_KEY]})
+        out = J.describe_joins(index, doc, *GATE, store_dir=self.root)
+        zones = next(s for s in out["sections"] if s["id"] == "zones")
+        self.assertEqual(len(zones["rows"]), 1, zones["rows"])
+        text = zones["rows"][0]["text"]
+        self.assertIn("Mar 1, 2022", text)
+        self.assertNotIn("Sep 14, 2022", text)
+        self.assertIn("zone Beaverhead (MTZ008), placed with a simplified zone outline", text)
+        self.assertIn("1 product for zone Beaverhead (MTZ008) was issued before 13 September 2022", " ".join(zones["lines"]))
+        check_words(self, text)
+
+    def test_a_pre_switch_product_of_mtz060_carries_the_note_on_its_own_zone(self):
+        (self.root / "hail" / "z" / "MTZ060.json").write_text(json.dumps(
+            {"f": J.ZONE_FORMAT, "zone": "MTZ060", "name": "Southwest Phillips", "records": [], "events": [
+                {"k": "HW", "s": "W", "b": "2022-03-01T12:00Z", "e": "2022-03-01T18:00Z", "o": "TFX"},
+                {"k": "HW", "s": "W", "b": "2023-01-10T12:00Z", "e": "2023-01-10T18:00Z", "o": "TFX"}]}))
+        index = _index()
+        index["joins"]["zone_names"] = {"MTZ060": "Southwest Phillips"}
+        out = J.describe_joins(index, _cell_doc(zones={"MTZ060": [GATE_KEY]}), *GATE, store_dir=self.root)
+        zones = next(s for s in out["sections"] if s["id"] == "zones")
+        texts = [r["text"] for r in zones["rows"]]
+        self.assertEqual(len(texts), 2, texts)
+        simplified = [t for t in texts if "placed with a simplified zone outline" in t]
+        self.assertEqual(len(simplified), 1, texts)
+        self.assertIn("Mar 1, 2022", simplified[0])
+        self.assertNotIn("Jan 10, 2023", simplified[0])
+        self.assertTrue(zones["lead"].startswith("2 products for zone Southwest Phillips (MTZ060)"), zones["lead"])
+        check_words(self, simplified[0])
+
+    def test_a_cell_outside_the_removed_zone_reads_only_its_current_zone(self):
+        index = _index()
+        doc = _cell_doc(zones={"MTZ313": [GATE_KEY]})
+        out = J.describe_joins(index, doc, *GATE, store_dir=self.root)
+        zones = next(s for s in out["sections"] if s["id"] == "zones")
+        self.assertEqual(zones["rows"], [])
+
+
+class StationPickFromSpotTests(unittest.TestCase):
+    """D36: the gust stations of a cell or a town are picked from its own point. A tile's candidates hold every station that
+    could be one of the two nearest to any point of the tile."""
+
+    def test_the_candidates_hold_the_two_nearest_stations_to_any_point_of_the_tile(self):
+        bounds = (47.0, 47.1, -110.2, -110.0)
+        rng = random.Random(7)
+        stations = [{"id": f"S{i:02d}", "name": f"Station {i}", "lat": 46.0 + rng.random() * 2.0,
+                     "lon": -111.5 + rng.random() * 3.0} for i in range(60)]
+        cands = {c["id"] for c in J._station_candidates(stations, bounds)}
+        self.assertLess(len(cands), len(stations))
+        for _ in range(200):
+            lat = bounds[0] + rng.random() * (bounds[1] - bounds[0])
+            lon = bounds[2] + rng.random() * (bounds[3] - bounds[2])
+            near = sorted((J.haversine_km(lat, lon, s["lat"], s["lon"]) / J.MILE_KM, s["id"]) for s in stations)
+            picks = [sid for miles, sid in near[:2] if miles <= J.STATION_MILES]
+            self.assertTrue(set(picks) <= cands, (lat, lon, picks))
+
+    def test_a_town_point_picks_its_own_two_nearest_stations_and_gives_the_miles_from_it(self):
+        root = Path(tempfile.mkdtemp(prefix="joins-test-spot-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "hail" / "s").mkdir(parents=True)
+        day = hail.day_index(date(2025, 6, 15))
+        stations = [{"id": "NEARTOWN", "name": "Near the town", "lat": 47.20, "lon": -110.05},
+                    {"id": "CENTRE", "name": "At the centre", "lat": 47.02, "lon": -110.13},
+                    {"id": "FAR", "name": "Far", "lat": 47.60, "lon": -110.60}]
+        for st in stations:
+            (root / "hail" / "s" / f"{st['id']}.json").write_text(json.dumps(
+                {"f": J.STATION_FORMAT, "id": st["id"], "name": st["name"], "lat": st["lat"], "lon": st["lon"],
+                 "days": [[day, 58, 50]], "dropped": 0}))
+        doc = _cell_doc(stations=[{"id": "CENTRE", "name": "At the centre", "lat": 47.02, "lon": -110.13, "miles": 0.5}],
+                        station_candidates=stations)
+        town = (47.19, -110.04)
+        out = J.describe_joins(_index(), doc, *GATE, store_dir=root, spot=town)
+        sec = next(s for s in out["sections"] if s["id"] == "stations")
+        names = sorted(row["text"].split(" at ")[1].split(",")[0] for row in sec["rows"])
+        self.assertEqual(names, ["At the centre", "Near the town"])       # the two nearest the town point; Far is third
+        miles = J.haversine_km(town[0], town[1], 47.20, -110.05) / J.MILE_KM
+        self.assertTrue(any(f"about {miles:.1f} miles away" in row["text"] for row in sec["rows"]))
+        out = J.describe_joins(_index(), doc, *GATE, store_dir=root)
+        sec = next(s for s in out["sections"] if s["id"] == "stations")
+        self.assertEqual(sorted(row["text"].split(" at ")[1].split(",")[0] for row in sec["rows"]),
+                         ["At the centre", "Near the town"])
+
+    def test_a_tile_file_from_before_d36_still_picks_from_its_two_station_list(self):
+        self.assertEqual([s["id"] for s in J.station_picks({"stations": [
+            {"id": "A", "name": "A", "lat": 47.02, "lon": -110.13}]}, 47.0, -110.1)], ["A"])
+
+
+class FloodRecordRowTests(unittest.TestCase):
+    """D48: NCEI flood and flash flood records within five miles are their own row (the words the summary reads). The
+    Red Lodge record of 10 June 2022 (event 1039252) is 0.3 miles from its cell's centre."""
+
+    RED_LODGE = [891, 700, 45.1677, -109.2503, "flood", "", "", "", "Emergency manager", "RED LODGE", "", None, None,
+                 "Heavy Rain / Snow Melt"]
+    FLASH = [1271, 30, 45.1, -109.26, "flash flood", "", "", "", "Emergency manager", "RED LODGE ARPT", "", None, None,
+             "Heavy Rain"]
+
+    def test_the_red_lodge_flood_record_is_its_own_count_at_three_tenths_of_a_mile(self):
+        doc, events = store_form({"records": [self.RED_LODGE, self.FLASH]})
+        out = J.describe_joins(_index(), doc, 983, 2074, events=events)
+        sec = next(s for s in out["sections"] if s["id"] == "records")
+        texts = [row["text"] for row in sec["rows"]]
+        red = [t for t in texts if "flood" in t and "0.3 mi" in t]
+        self.assertEqual(len(red), 1, texts)
+        self.assertIn("0.3 mi", red[0])
+        self.assertIn(J.WORDS_JOINS["flood_records_line_many"].format(n=2), sec["lines"])
+        self.assertEqual(J.WORDS_JOINS["flood_records_label"], "Flood and flash flood records within 5 miles")
+        self.assertEqual(J.WORDS_JOINS["flood_records_kind"], "Record (NCEI)")
+        self.assertEqual(J.FLOOD_RECORD_CODES, ("flood", "flash flood"))
+        for key in ("flood_records_line_one", "flood_records_line_many", "flood_records_none", "flood_records_label"):
+            check_words(self, J.WORDS_JOINS[key].format(n=2))
+
+    def test_a_record_outside_five_miles_is_not_in_the_flood_count(self):
+        far = [891, 700, 45.5, -109.0, "flood", "", "", "", "Emergency manager", "FAR", "", None, None, ""]
+        doc, events = store_form({"records": [far]})
+        out = J.describe_joins(_index(), doc, 983, 2074, events=events)
+        sec = next(s for s in out["sections"] if s["id"] == "records")
+        self.assertEqual(sec["rows"], [])
+        self.assertFalse(any("flood or flash flood records" in line for line in sec["lines"]))
+
+
+def _zone_zip_bytes(codes) -> bytes:
+    """A zone edition as the NWS zip holds it (D16): a shapefile of the codes, one square each, with STATE, ZONE, NAME and
+    STATE_ZONE, in a zip the reader opens (pyshp, as ShapefileTests uses)."""
+    import shapefile
+    tmp = Path(tempfile.mkdtemp(prefix="joins-test-zip-"))
+    try:
+        base = tmp / "z_16ap26"
+        writer = shapefile.Writer(str(base), shapeType=shapefile.POLYGON)
+        writer.field("STATE", "C", size=2)
+        writer.field("ZONE", "C", size=3)
+        writer.field("NAME", "C", size=40)
+        writer.field("STATE_ZONE", "C", size=5)
+        for i, code in enumerate(codes):
+            x0 = -114.0 + (i % 20) * 0.5
+            y0 = 44.5 + (i // 20) * 0.4
+            writer.poly([[[x0, y0], [x0 + 0.4, y0], [x0 + 0.4, y0 + 0.3], [x0, y0 + 0.3], [x0, y0]]])
+            writer.record("MT", code[3:], f"Test zone {code}", code)
+        writer.close()
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            for ext in (".shp", ".dbf", ".shx"):
+                zf.write(str(base) + ext, base.name + ext)
+        return buf.getvalue()
+    finally:
+        shutil.rmtree(tmp)
+
+
+class PlacementTableBuildTests(unittest.TestCase):
+    """D44 on a built store: the index's table, the snapshots, and the z/ files of the removed zones."""
+
+    def test_the_index_names_the_table_the_snapshots_and_the_removed_zones_files(self):
+        tmp = Path(tempfile.mkdtemp(prefix="joins-test-d44-"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        store = tmp / "store"
+        hail.fixture_store(store)
+        def responder(url, params):
+            if url == J.NWS_BASE_URL + "z_16ap26.zip":
+                return _zone_zip_bytes(_iem_zone_codes(True))
+            return canned(url, params)
+        fetcher = FakeFetcher(tmp / "cache", store / "ledger" / "joins.jsonl", responder)
+        block = J.build(store, tmp / "cache", procs=1, today=date(2026, 10, 18), fetcher=fetcher, log=lambda text: None)
+        self.assertEqual(block["parts"]["zones"], "loaded")
+        self.assertEqual([s["zones"] for s in block["iem_sets"]], [103, 103, 103, 103, 83, 83, 83])
+        self.assertTrue(all(s["state"] == "loaded" and s["sha256"] for s in block["iem_sets"]))
+        self.assertEqual(block["zone_placement_table"]["unplaced"], 0)
+        self.assertEqual(block["zones_before"]["codes"], sorted(J.IEM_OUTLINE_ZONES))
+        for code in J.IEM_REMOVED_ZONES:
+            self.assertTrue((store / "hail" / "z" / f"{code}.json").is_file(), code)
+        result = J.verify(store, tmp / "cache")
+        d44 = [c for c in result["checks"] if c["name"].startswith((
+            "zone placement", "IEM zone sets", "zones before the switch"))]
+        self.assertGreaterEqual(len(d44), 5, [c["name"] for c in result["checks"]])
+        self.assertEqual([c["name"] for c in d44 if not c["ok"]], [], d44)     # the gate and period checks need real geometry
+
 
 
 if __name__ == "__main__":

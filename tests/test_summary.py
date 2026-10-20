@@ -149,13 +149,16 @@ def store_fixture(root: Path, *, variant: str = "full") -> dict:
     det = [[day_index(date(2025, 6, 15)), 2100, 45.79, -108.50, 175], [day_index(date(2024, 7, 8)), 1900, 45.90, -108.20, 120],
            [day_index(date(2025, 6, 15)), 2000, 45.80, -108.49, 130]]          # a second row on the same SPC day
     stations_near = [{"id": "BIL", "name": "Billings Logan", "lat": 45.8077, "lon": -108.5429, "miles": 4.1}]
+    # D48: the NCEI records of the cell: one flood record about 2.2 miles from the spot (the flood_record variant only)
+    recs = [[day_index(date(2022, 6, 10)), 1800, 45.76, -108.53, "flood", "", "", "", "Public", "Billings", "", None, None,
+             "Heavy Rain / Snow Melt"]] if variant == "flood_record" else []
     joins_tile = {"f": joins.FORMAT, "r": ROW // hail.TILE, "c": COL // hail.TILE, "d0": hail.D0.isoformat(),
-                  "reports": rep_refs, "records": [], "detections": det, "warnings": tile_warnings,
+                  "reports": rep_refs, "records": list(range(len(recs))), "detections": det, "warnings": tile_warnings,
                   "zones": {"MTZ313": [key, 20, 21]}, "fire": {}, "counties": {"MTC111": [key]},
                   "stations": stations_near}
     write_json(hdir / "j" / f"{tile}.json", joins_tile)
     write_json(hdir / "j" / joins.EVENTS_NAME, {"f": joins.EVENTS_FORMAT, "d0": hail.D0.isoformat(), "reports": rep,
-                                                "records": [], "warnings": warn})
+                                                "records": recs, "warnings": warn})
     zone_events = [
         {"k": "HW", "s": "W", "b": "2024-01-18T12:00Z", "e": "2024-01-18T23:00Z", "o": "BYZ"},
         {"k": "HW", "s": "A", "b": "2025-03-02T18:00Z", "e": "2025-03-03T06:00Z", "o": "BYZ"},
@@ -347,7 +350,7 @@ class SummaryTests(unittest.TestCase):
     def test_rows_in_brief_order_and_kinds(self):
         keys = [r["key"] for r in self.result["table"]["rows"]]
         self.assertEqual(keys, SHEET_ROWS)
-        self.assertEqual(len(keys), 23)
+        self.assertEqual(len(keys), 24)                # the 23 rows of the brief and the NCEI flood records row (D48)
         kinds = {k["word"] for k in S.KIND_WORDS}
         for row in self.result["table"]["rows"]:
             self.assertIn(row["kind"], kinds, row["key"])
@@ -550,7 +553,7 @@ class SummaryVariantTests(unittest.TestCase):
             keys = [r["key"] for r in result["table"]["rows"]]
             self.assertIn("tmax_station", keys)
             self.assertIn("tmin_station", keys)
-            self.assertEqual(len(keys), 25)
+            self.assertEqual(len(keys), 26)                # the sheet's 24 rows and the two town station rows (D48 adds one)
             gauge = " ".join(result["town"]["gauge"])
             self.assertIn("River flood record at the Yellowstone River at Billings gauge, 1.8 miles away; it does not say "
                           "water reached this address.", gauge)
@@ -645,7 +648,10 @@ class FailureVariantTests(unittest.TestCase):
         self.assertEqual(result["state"], "partial")
         lines = {x["id"]: x for g in result["roof"]["groups"] for x in g["lines"]}
         self.assertIsNone(lines["temperature_extremes"]["value"])
-        self.assertIn("Data unavailable", lines["temperature_extremes"]["text"])
+        # the roof line carries the part's own D20 sentence, which says the reason (D16, D20), not the bare word
+        self.assertIn("Temperature could not be loaded in this update; that is not the same as no temperature.",
+                      lines["temperature_extremes"]["text"])
+        self.assertTrue(lines["temperature_extremes"]["text"].endswith("This is not an all-clear."))
 
     def test_no_land_cell_says_no_land_value_not_zero(self):
         result, rows = self._rows("no_land")
@@ -675,10 +681,12 @@ class FailureVariantTests(unittest.TestCase):
                          "Data unavailable: some products could not be placed to a zone. This is not an all-clear.")
         self.assertIn("Montana: 2 high wind products issued Dec 11, 2021 to Jan 2, 2022 could not be placed to a zone",
                       rows["hw_zone"]["coverage"][0])
-        self.assertTrue(rows["hw_zone"]["coverage"][0].endswith("(NWS change log). This is not an all-clear."),
+        self.assertTrue(rows["hw_zone"]["coverage"][0].endswith("could not be placed to a zone. This is not an all-clear."),
                         rows["hw_zone"]["coverage"][0])
-        self.assertIn("Montana: 1 high wind product issued Jul 18, 2022 could not be placed to a zone; Partial: 68 days",
+        self.assertIn("Montana: 1 high wind product issued Jul 18, 2022 could not be placed to a zone",
                       rows["hw_zone"]["coverage"][1])
+        self.assertNotIn("Partial", rows["hw_zone"]["coverage"][1])          # no reconfiguration partial (D44)
+        self.assertTrue(rows["hw_zone"]["coverage"][1].endswith("This is not an all-clear."), rows["hw_zone"]["coverage"][1])
         self.assertIn("Montana: 1 high wind product issued Oct 1, 2024 could not be placed to a zone.",
                       rows["hw_zone"]["coverage"][3])
         self.assertIsNone(rows["hw_zone"]["coverage"][2])             # 2023-24 has no unplaced product: no statement
@@ -696,12 +704,12 @@ class FailureVariantTests(unittest.TestCase):
         self.assertEqual(rows["ice_warn"]["values"][0], None)
         self.assertEqual(rows["ice_warn"]["values"][1], 0)
         self.assertEqual(rows["ice_warn"]["values"][2], 2)
-        self.assertIn("Montana: 1 winter storm product issued Dec 20, 2021 could not be placed to a zone; Not covered",
+        self.assertIn("Montana: 1 winter storm product issued Dec 20, 2021 could not be placed to a zone",
                       rows["ice_warn"]["coverage"][0])
+        self.assertTrue(rows["ice_warn"]["coverage"][0].endswith("This is not an all-clear."))
         # heat advisories: unplaced in 2022-23, so the roof's heat line keeps its statement
         heat = [x for g in result["roof"]["groups"] for x in g["lines"] if x["id"] == "heat_reports_warnings"][0]
-        self.assertIn("Montana: 1 heat advisory product issued Aug 4, 2022 could not be placed to a zone; Partial",
-                      heat["coverage"])
+        self.assertIn("Montana: 1 heat advisory product issued Aug 4, 2022 could not be placed to a zone", heat["coverage"])
         # the heat and flooding sections carry the same Montana statements
         sections = {s["id"]: s for s in result["sections"]}
         self.assertIn("1 heat advisory product in 2022-23", " ".join(sections["heat"]["notes"]))
@@ -997,22 +1005,19 @@ class GustTests(unittest.TestCase):
 
 
 class ZoneTests(unittest.TestCase):
-    """Zone products: the reconfigured zones (MTZ301 to MTZ330) and the statements for products that could not be placed."""
+    """Zone products: the statements for products that could not be placed; no zone is called reconfigured (D44)."""
 
-    def test_a_reconfigured_zone_is_partial_before_the_change_in_2022_23(self):
+    def test_a_zone_in_both_iem_sets_carries_no_reconfiguration_claim(self):
+        # MTZ313 is in the 103-zone and the 83-zone sets (D44): no statement says it was reconfigured, and a zero with no
+        # unplaced product in its season is a count (0 in 2021-22 and 2022-23), not Data unavailable
         root, _ = build_store("full")
         try:
             result = S.describe_summary(root, ROW, COL, None)
             rows = {r["key"]: r for r in result["table"]["rows"]}
-            # MTZ313 (Benchland's zone) is one of MTZ301 to MTZ330: 68 days before Sep 7, 2022 are not covered
-            self.assertIn("Partial: 68 days before Sep 7, 2022 not covered; this zone was reconfigured on Sep 7, 2022 "
-                          "(NWS change log).", rows["hw_zone"]["coverage"][1])
-            self.assertIn("This zone was reconfigured on Sep 7, 2022 (NWS change log).", " ".join(rows["hw_zone"]["notes"]))
-            self.assertIn("before Dec 10, 2023", " ".join(rows["hw_zone"]["notes"]))
-            # 2021-22 has no product in the data before the change, so its zero is unknown, not a count of nothing
-            self.assertIsNone(rows["hw_zone"]["values"][0])
-            self.assertIn("Not covered: products before Sep 7, 2022 are not in the data",
-                          rows["hw_zone"]["coverage"][0])
+            text = json.dumps(result)
+            self.assertNotIn("reconfigured", text)
+            self.assertNotIn("not covered", text)
+            self.assertEqual(rows["hw_zone"]["values"][:2], [0, 0])
         finally:
             shutil.rmtree(root, ignore_errors=True)
 
@@ -1293,6 +1298,99 @@ class ReviewFixTests(unittest.TestCase):
             for cov in rows[key]["coverage"]:
                 if cov:
                     self.assertEqual(cov.count("days missing"), 1, cov)
+
+
+class RoundTwoWordsTests(unittest.TestCase):
+    """The second round's rulings (B5 D45 to D48 and the second completion list): the NCEI flood records as their own row,
+    the R20 title only in the About citations, the all-clear on the one-station line, the five-season gust cells that name
+    their station, and the roof lines' kind words and reasons in every state."""
+
+    def _summary(self, variant: str = "full") -> dict:
+        root, _ = build_store(variant)
+        self.addCleanup(shutil.rmtree, root, True)
+        return S.describe_summary(root, ROW, COL, None)
+
+    @staticmethod
+    def _rows(result: dict) -> dict:
+        return {r["key"]: r for r in result["table"]["rows"]}
+
+    @staticmethod
+    def _lines(result: dict) -> dict:
+        return {x["id"]: x for g in result["roof"]["groups"] for x in g["lines"]}
+
+    def test_the_r20_title_is_only_in_the_about_citations(self):                  # D46
+        text = S.not_quoted_text()
+        self.assertNotIn("freeze-thaw damage", text)
+        self.assertIn("R20 (its title is in the references list above)", text)
+        self.assertEqual([c["id"] for c in S.citations()], ["R20"])
+        self.assertEqual(S.citations()[0]["source"], "freeze-thaw damage to roofs")
+        result = self._summary("full")
+        words = " ".join((x["text"] or "") for x in self._lines(result).values())
+        words += " ".join(ref["text"] for g in result["roof"]["groups"] for ref in g["references"])
+        self.assertNotIn("freeze-thaw damage", words)
+
+    def test_the_flood_records_are_their_own_row_and_lead_the_flooding_section(self):  # D48
+        result = self._summary("flood_record")
+        rows = self._rows(result)
+        record = rows["flood_record_n"]
+        self.assertEqual(record["kind"], S.KIND_RECORD)
+        self.assertEqual(record["unit"], "count")
+        self.assertEqual(record["values"][0], 1)                       # 2021-22: the June 10, 2022 flood record
+        self.assertEqual(record["texts"][0], "1 flood or flash flood record")
+        self.assertNotIn("Record (NCEI)", rows["flood_report_n"]["texts"][0])     # the report row carries no record
+        flooding = [s for s in result["sections"] if s["id"] == "flooding"][0]
+        self.assertIn("Record (NCEI): 1 flood or flash flood record within 5 miles in these five years", flooding["lead"])
+
+    def test_a_zero_flood_record_count_reads_as_the_no_record_sentence(self):    # D48, D41
+        rows = self._rows(self._summary("full"))
+        self.assertEqual(rows["flood_record_n"]["texts"][0],
+                         "No NOAA Storm Events record of flood or flash flood within 5 miles in 2021-22 "
+                         "(records are not a complete list).")
+        self.assertEqual(rows["flood_record_n"]["five_text"],
+                         "No NOAA Storm Events record of flood or flash flood within 5 miles in these five years "
+                         "(records are not a complete list).")
+
+    def test_the_one_station_partial_line_ends_with_the_all_clear(self):         # D47
+        rows = self._rows(self._summary("one_station"))
+        notes = [n for key in ("snow", "snow_depth") for n in rows[key]["notes"] if n.startswith("Only one station")]
+        self.assertTrue(notes, "the one_station variant should give the one-station line")
+        for note in notes:
+            self.assertTrue(note.endswith("This is not an all-clear."), note)
+
+    def test_the_five_season_gust_cells_name_their_station(self):                # B5-16, D41
+        # the fixture's 2021-22 gust record is short (257 of 365 days), so its five-season cell says why; with every season
+        # complete (set in the store file here) the five-season cells name the station and the flagged peak keeps its flag
+        short = self._rows(self._summary("full"))["gust_days"]
+        self.assertIsNone(short["five"])
+        self.assertEqual(short["five_text"], "Data unavailable")
+        self.assertTrue(short["five_note"].startswith("Data unavailable for the five seasons"), short["five_note"])
+        root, _ = build_store("full")
+        self.addCleanup(shutil.rmtree, root, True)
+        station = root / "hail" / "s" / "BIL.json"
+        doc = json.loads(station.read_text(encoding="utf-8"))
+        for per in doc["periods"]["season"].values():
+            per["ok"] = per["n"]
+        station.write_text(json.dumps(doc), encoding="utf-8")
+        rows = self._rows(S.describe_summary(root, ROW, COL, None))
+        days, peak = rows["gust_days"], rows["gust_max"]
+        self.assertEqual(days["five"], 3)                       # 2022-07-01, 2025-02-20 and 2025-06-15 at 50 kt or more
+        self.assertEqual(days["five_text"], "3 days at Billings Logan")
+        self.assertEqual(peak["five_text"], "105 kt (121 mph) on Feb 20, 2025 at Billings Logan, flagged for check")
+
+    def test_the_ice_dam_line_carries_its_kind_word_in_every_state(self):        # D41
+        full = self._lines(self._summary("full"))["ice_dam_weather_days"]["text"]
+        self.assertTrue(full.startswith("Station reading: "), full)
+        for variant in ("stations_unavailable",):
+            text = self._lines(self._summary(variant))["ice_dam_weather_days"]["text"]
+            self.assertIn("(days, station reading; a measured pattern, not ice dams)", text, variant)
+            self.assertTrue(text.endswith("This is not an all-clear."), text)
+
+    def test_the_roof_snow_lines_give_the_reason_when_the_stations_did_not_load(self):  # D16, D20
+        lines = self._lines(self._summary("stations_unavailable"))
+        for key in ("snowfall_season", "snow_depth"):
+            self.assertIn("Station readings could not be loaded in this update; that is not the same as no station readings.",
+                          lines[key]["text"], key)
+            self.assertTrue(lines[key]["text"].endswith("This is not an all-clear."), key)
 
 
 if __name__ == "__main__":

@@ -359,7 +359,8 @@ class Contracts(unittest.TestCase):
                                               "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons",
                                               "nws_zone_products", "asos_daily_gusts", "nclimgrid_daily",
                                               "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_lsr",
-                                              "nwps_gauges", "usgs_water_api", "census_counties", "roof_references"})
+                                              "nwps_gauges", "usgs_water_api", "census_counties", "roof_references",
+                                              "iem_ugcs"})
         for key, c in src.CONTRACTS.items():
             # a row a B5 row replaces names it (superseded_by); every other row has the five fields only
             self.assertTrue({"name", "request", "units", "timing", "missing"} <= set(c) <= {"name", "request", "units",
@@ -963,7 +964,8 @@ class StormLayers(unittest.TestCase):
     reason, in the Map's List, in the same words in the noscript panel (a browser with JavaScript off) and on
     its town page, and each value names its source and time. Sample data only, so nothing here is live."""
 
-    FORBIDDEN = re.compile(r"\bdry\b|\bno hail\b|(?<!-)\bclear\b|no radar coverage", re.IGNORECASE)
+    # D45: NOAA's "radar coverage" is allowed; any other "coverage" is the D13 stem
+    FORBIDDEN = re.compile(r"\bdry\b|\bno hail\b|(?<!-)\bclear\b|(?<!radar )\bcoverage\b", re.IGNORECASE)
     STORM_WORDS = ("echo top", "radar echo", "mrms reflectivity levels", "storm-list", "storm.js", "data-storm")
 
     @classmethod
@@ -2015,8 +2017,6 @@ def write_joined_store(dest: Path) -> Path:
     hail = dest / "hail"
     shutil.copytree(hs.FIXTURE_DIR / "hail", hail)
     day = (date(2025, 6, 15) - hs.D0).days
-    prev = (date(2025, 6, 14) - hs.D0).days
-    later = (date(2025, 6, 17) - hs.D0).days
 
     def cover(keys):
         value = 0
@@ -2039,7 +2039,7 @@ def write_joined_store(dest: Path) -> Path:
                record(day, 2000, 47.00, -110.10, "thunderstorm wind", "56", "kt", "MG", "Mesonet", "Test", "", 64, 56)]
     warnings = [{"k": "SV", "s": "W", "b": "2025-06-15T20:33Z", "e": "2025-06-15T21:00Z", "o": "TFX",
                  "tags": {"hail_in": 1.0, "wind_mph": 50.0, "damage": "", "tornado": ""}}]
-    bil = {"id": "BIL", "name": "Billings Logan", "lat": 45.8072, "lon": -108.5429, "miles": 30.2}
+    bil = {"id": "BIL", "name": "Billings/Logan Intl", "lat": 45.8069, "lon": -108.5422, "miles": 30.2}   # the fixture's station
     tiles = {
         "r0079_c0198": {   # the gate cell's tile (797, 1986): key 76, the zone MTZ048
             "reports": [0, 1], "records": [0, 1], "warnings": [[0, cover([76])]],
@@ -2072,10 +2072,8 @@ def write_joined_store(dest: Path) -> Path:
             "Forest Areas", "events": [{"k": "FW", "s": "W", "b": "2025-06-15T16:00Z", "e": "2025-06-15T23:00Z", "o": "TFX"},
                                        {"k": "FW", "s": "W", "b": "2025-06-14T15:00Z", "e": None, "o": "TFX"}]}
     (hail / "z" / "fire-MTZ117.json").write_text(json.dumps(fire, separators=(",", ":")), encoding="utf-8")
-    (hail / "s").mkdir(exist_ok=True)
-    station = {"f": "hail-station-v2", "id": "BIL", "name": "Billings Logan", "lat": 45.8072, "lon": -108.5429,
-               "days": [[day, 58, 50, 0], [prev, 69, 60, 0], [later, 40, 35, 0]], "dropped": 1}
-    (hail / "s" / "BIL.json").write_text(json.dumps(station, separators=(",", ":")), encoding="utf-8")
+    # the Billings gust file is the B1 fixture's own hail-station-v3 file, copied with the folder above: one gust day
+    # (2025-06-16, 50 kt, 58 mph), so the Billings page has one station line
     index = json.loads((hail / "index.json").read_text(encoding="utf-8"))
     index["joins"] = {
         "built_at": "2026-10-18T12:00:00Z", "lsr_rows": 4, "ncei_rows": 2, "ncei_newest_event": "2026-06-30",
@@ -2246,11 +2244,19 @@ class HailJoinedRecords(unittest.TestCase):
             self.assertNotIn(key, j["words"])
 
     def test_the_billings_town_page_joins_sit_in_their_sections_newest_first(self):
-        town = page(self.site, "town/billings.html")
-        wind = town[town.index('id="sec-wind"'):town.index('id="sec-storms"')]     # the station rows are the wind section's
-        self.assertIn("Station: Jun 15, 2025: 50 kt (58 mph) at Billings Logan, about 1.2 miles away", visible(wind))
-        self.assertIn("Station: Jun 14, 2025: 60 kt (69 mph) at Billings Logan, about 1.2 miles away", visible(wind))
-        self.assertLess(wind.index("Jun 15, 2025: 50 kt"), wind.index("Jun 14, 2025: 60 kt"))    # newest first
+        # the s/ v3 fixture holds one gust day, so the page has one station line: its words come from the fixture (the day
+        # index, the knots and miles per hour, the station's own name) and its distance is from the town point (D36)
+        from website import hail as hs, joins as jn
+        fixture = json.loads((hs.FIXTURE_DIR / "hail" / "s" / "BIL.json").read_text(encoding="utf-8"))
+        (index, mph, kt, _flag), = fixture["days"]
+        town = next(t for t in json.loads(jn.TOWNS_FILE.read_text(encoding="utf-8")) if t["slug"] == "billings")
+        miles = jn.haversine_km(town["lat"], town["lon"], fixture["lat"], fixture["lon"]) / jn.MILE_KM
+        line = (f"Station: {hs.fmt_date(hs.day_of_index(index))}: {kt} kt ({mph} mph) at {fixture['name']}, "
+                f"about {miles:.1f} miles away")
+        town_page = page(self.site, "town/billings.html")
+        wind = town_page[town_page.index('id="sec-wind"'):town_page.index('id="sec-storms"')]     # the station rows are the wind section's
+        self.assertEqual(visible(wind).count("Station: "), len(fixture["days"]))
+        self.assertIn(line, visible(wind))
         from website import summary as sm
         self.assertIn(jesc(sm.WORDS_INDICATORS["what_station"]), wind)                        # the kind's own sentence
 
@@ -2651,8 +2657,8 @@ class FiveSeasonHistory(unittest.TestCase):
 
     NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
     SECTIONS = ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made")
-    B5_KEYS = ("nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_lsr", "nwps_gauges",
-               "usgs_water_api", "census_counties", "roof_references")
+    B5_KEYS = ("nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_ugcs", "iem_lsr",
+               "nwps_gauges", "usgs_water_api", "census_counties", "roof_references")
 
     @classmethod
     def setUpClass(cls):
@@ -2709,6 +2715,9 @@ class FiveSeasonHistory(unittest.TestCase):
         self.assertIn("Observations courtesy of U.S. Geological Survey", about)
         self.assertIn("These data are in the public domain in the United States.", about)
         self.assertIn("Five roof references are not quoted: R2 (NWS glossary, severe thunderstorm)", about)
+        self.assertIn("R20 (its title is in the references list above)", about)          # D46: the title is a citation
+        self.assertIn("freeze-thaw damage to roofs (R20, not quoted): it is a secondary source", about)
+        self.assertIn("Iowa State IEM zone outlines (the Montana public forecast zones by date)", about)   # D44
         self.assertNotIn("coverage rule", about)                          # D13: the stem leaves About
         self.assertIn("enough-days rule", about)
         self.assertIn("The history sits below the town's forecast", about)
@@ -2726,7 +2735,7 @@ class FiveSeasonHistory(unittest.TestCase):
         for head in heads:
             kind = re.search(r'<span class="kind">([^<]*)</span>', head)
             self.assertIsNotNone(kind, head)
-            self.assertRegex(kind.group(1), r"^(Radar estimate|Radar detection|Report|Official record|Warning|Zone product|"
+            self.assertRegex(kind.group(1), r"^(Radar estimate|Radar detection|Report|Record|Official record|Warning|Zone product|"
                                             r"County product|Station reading|Grid estimate|Reference|Data unavailable)")
             self.assertRegex(kind.group(1), r"(inches|days|degrees Fahrenheit|count|knots|record)")   # the held row: its reason
 
@@ -2878,11 +2887,22 @@ class FiveSeasonHistory(unittest.TestCase):
             "Zone product: High wind warning: Jun 15, 2025 2:00 pm MDT to 4:00 pm MDT": "wind",
             "Zone product: Winter storm warning: Jun 15, 2025": "ice",
             "Zone product: Red flag warning, fire weather zone Yellowstone (MTZ001): Jun 15, 2025": "storms",
+            # B5 D41: a watch and an advisory keep their kind label and route by the product's name, not by the tags
+            "Watch: Jun 15, 2025 8:00 pm to 9:00 pm: flood watch, BYZ, covered this cell or part of it; tags: none stated":
+                "flooding",
+            "Advisory: Jan 10, 2025 12:00 am MST to Jan 11, 2025 1:00 am MST: areal flood advisory, TFX, covered this cell or "
+            "part of it; tags: none stated": "flooding",
+            "Advisory: Jan 10, 2025 12:00 am MST to Jan 11, 2025 1:00 am MST: winter weather advisory, TFX, covered this cell "
+            "or part of it; tags: wind 45 mph": "ice",
+            "Warning: Jun 15, 2025 8:00 pm to 9:00 pm: severe thunderstorm warning, BYZ, covered this cell or part of it; "
+            "tags: hail 1.75 in": "storms",
         }
         for text, want in cases.items():
             label, body = site._split_kind(text)
             self.assertEqual(site._section_of(label, body), want, text)
         self.assertEqual(site._split_kind("no label here"), ("", "no label here"))
+        self.assertEqual(site._split_kind("Watch: a")[0], "Watch")
+        self.assertEqual(site._split_kind("Advisory: a")[0], "Advisory")
 
     def test_an_unavailable_summary_gives_its_words_and_no_sections(self):
         from website import joins as jn

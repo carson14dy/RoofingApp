@@ -30,7 +30,7 @@ of n; a file without those counts shows Data unavailable for every gust figure (
 
 Zone products (B5 D27): the index's zone_unplaced_rows say which products could not be placed. Their Montana counts mark the
 season cells of the same family (a zero there is Data unavailable; a count keeps its value, with the statement); the
-reconfigured zones MTZ301 to MTZ330 are partial before September 7, 2022 (the NWS change log).
+the IEM zone sets (D44) place the other products, and no zone is called reconfigured: MTZ301 to MTZ330 are in both sets.
 
 Thresholds (D1, D19; climate.THRESHOLDS): a 90 F day is a high of 32.15 C or more, rounded to the hundredth, shown as 32.2 C
 and 90 F. A freeze-thaw day has a high above 32 F and a low below 32 F. Wind reports are the LSR codes G, D, N, A, O and M
@@ -155,6 +155,9 @@ ROWS = (
      "source": "B5"},
     {"key": "flood_report_n", "label": "Flood and flash flood reports within 5 miles", "kind": "Report",
      "unit": "count", "source": "B2"},
+    # D48: the NCEI flood and flash flood records within 5 miles are a row of their own, never folded into the reports
+    {"key": "flood_record_n", "label": "Flood and flash flood records within 5 miles", "kind": KIND_RECORD,
+     "unit": "count", "source": "B5"},
     {"key": "flood_warn", "label": "Flood and flash flood warnings", "kind": KIND_WARNING, "unit": "count",
      "source": "B2"},
     {"key": "county_watch", "label": "Flood and flash flood watches for the county", "kind": "County product",
@@ -196,6 +199,7 @@ WORDS_SUMMARY = {
     "gust_flagged": "{kt} kt ({mph} mph) on {date}, flagged for check",
     "station_days_one": "1 day at {station}",
     "station_days": "{n} days at {station}",
+    "gust_five_at": "{text} at {station}",
     "snow_at": "{inches} in at {station}",
     "snow_depth_at": "{inches} in on {date} at {station}",
     "temp_at": "{f} F on {date} at {station}",
@@ -216,16 +220,9 @@ WORDS_SUMMARY = {
                            "zone maps this build reads. This build cannot say how many were this zone's. This is not an "
                            "all-clear."),
     "zone_flag": "Montana: {n} {noun} issued {when} could not be placed to a zone",
-    "zone_reconfigured": ("This zone was reconfigured on {date} (NWS change log). This build has no placed product for it "
-                          "before {first}, and its earlier products are not in the data. This is not an all-clear."),
-    "zone_reconfigured_none": ("This zone was reconfigured on {date} (NWS change log). This build has no placed product for "
-                               "it, and its earlier products are not in the data. This is not an all-clear."),
-    # coverage statements of a zone's season cell: the cell's line adds the all-clear sentence (_cover)
-    "zone_before_change": "Partial: {n} days before {date} not covered; this zone was reconfigured on {date} (NWS change log)",
-    "zone_before_change_all": ("Not covered: products before {date} are not in the data; this zone was reconfigured on {date} "
-                               "(NWS change log)"),
     # a report count of zero (D5, B5 Words): the sentence names the type and the period, and says what a missing report is
     "no_report": "No NWS local storm report of {type} within 5 miles in {when}; reports are not a complete record.",
+    "no_record": "No NOAA Storm Events record of {type} within 5 miles in {when} (records are not a complete list).",
     "none_gust": "No day at 50 kt or more",
     "gust_floor_note": ("Only days with a gust of 50 kt or more are kept from each station's record, so a season with no such "
                         "day shows no value rather than a lower gust."),
@@ -303,7 +300,7 @@ WORDS_SUMMARY = {
                         "This is not an all-clear."),
     "lead_snow_none": ("Station reading: no five-season snowfall total is shown; each season names its station. The deepest "
                        "snow on the ground {depth}. This is not an all-clear."),
-    "lead_flood": "{report}; Warning: {flood_w} {covered}, in these five years.",
+    "lead_flood": "{report}; {record}; Warning: {flood_w} {covered}, in these five years.",
     "lead_ice": "Zone product: {ice}; {report}.",
     "lead_heat": "Grid estimate: {hot} with a high of 90 F or more in these five seasons; {report}.",
     "lead_missing": "{n} days missing in these five seasons, the most in any row of this section.",
@@ -456,11 +453,27 @@ REFERENCE_NOT_QUOTED = {
 }
 
 
+# D46: a source title that carries a D13 word ("damage" in R20's title) appears only in the About references list, as a
+# citation (citations() below); the sentence that names the references the sheet does not quote names R20 by its number.
+TITLE_IN_LIST_ONLY = ("R20",)
+
+
 def not_quoted_text() -> str:
-    """The sentence that names the references the sheet does not quote, and why (R2, R9, R13, R17, R20)."""
-    parts = [f"{rid} ({src}): {why}" for rid, (src, why) in REFERENCE_NOT_QUOTED.items()]
+    """The sentence that names the references the sheet does not quote, and why (R2, R9, R13, R17, R20). A title in
+    TITLE_IN_LIST_ONLY is not repeated here (D46): the About references list carries it."""
+    parts = []
+    for rid, (src, why) in REFERENCE_NOT_QUOTED.items():
+        name = f"{rid} (its title is in the references list above)" if rid in TITLE_IN_LIST_ONLY else f"{rid} ({src})"
+        parts.append(f"{name}: {why}")
     return ("Five roof references are not quoted: " + "; ".join(parts) + ". The record keeps them, and none says what a "
             "roof needs.")
+
+
+def citations() -> list[dict]:
+    """The references whose titles appear only in the About references list (D46), each as a citation: its number, its
+    title as the record gives it, and the reason the sheet does not quote it."""
+    return [{"id": rid, "source": REFERENCE_NOT_QUOTED[rid][0], "why": REFERENCE_NOT_QUOTED[rid][1]}
+            for rid in TITLE_IN_LIST_ONLY]
 
 
 GROUPS = (("thresholds", "Thresholds"), ("snow_and_ice", "Snow and ice"), ("wind_and_hail", "Wind and hail"),
@@ -641,6 +654,7 @@ NOUNS = {
     "freezing_rain_n": ("freezing rain report", "freezing rain reports"),
     "rain_n": ("rain report", "rain reports"),
     "flood_report_n": ("flood or flash flood report", "flood or flash flood reports"),
+    "flood_record_n": ("flood or flash flood record", "flood or flash flood records"),
     "flood_warn": ("flood or flash flood warning", "flood or flash flood warnings"),
     "hw_zone": ("high wind watch or warning", "high wind watches and warnings"),
     "ice_warn": ("winter storm or ice storm warning", "winter storm and ice storm warnings"),
@@ -661,6 +675,8 @@ NOUNS = {
 REPORT_TYPES = {"hail_n": "hail", "hail_max": "hail", "wind_n": "wind", "freezing_rain_n": "freezing rain",
                 "flood_report_n": "flood or flash flood", "rain_n": "rain", "rain_reports": "rain",
                 "tornado": "tornado, funnel cloud or landspout", "xheat": "extreme heat"}
+# the NCEI record keys (D48) and the type each names in its no-record sentence (a zero count reads as that sentence)
+RECORD_TYPES = {"flood_record_n": "flood or flash flood"}
 
 
 def _no_report(key: str, when: str) -> str:
@@ -673,6 +689,8 @@ def _count_text(key: str, n: int, when: str = "these five years") -> str:
     report count reads as the no-report sentence for the period (D41), never as "0 hail reports"."""
     if key in REPORT_TYPES and n == 0:
         return _no_report(key, when)
+    if key in RECORD_TYPES and n == 0:
+        return WORDS_SUMMARY["no_record"].format(type=RECORD_TYPES[key], when=when)
     if key in NOUNS:
         one, many = NOUNS[key]
         return f"{n} {one if n == 1 else many}"
@@ -1351,6 +1369,11 @@ def _count_cells(spot: _Spot, days: list[date], key: str) -> list[dict]:
     return cells
 
 
+def _days_at(n: int, station: str) -> str:
+    """A gust-day count with its station: "29 days at BILLINGS LOGAN INTL AP", "1 day at ..." (B5-16, D41)."""
+    return (WORDS_SUMMARY["station_days_one"] if n == 1 else WORDS_SUMMARY["station_days"]).format(n=n, station=station)
+
+
 def _gust_rows(spot: _Spot, tile: dict) -> tuple[dict, dict]:
     """The gust rows (B2's station gust records, IEM daily gusts): the days at 50 kt or more and the strongest gust, at the
     nearer of the tile's two gust stations. A season shows its figures only when at least 95 percent of its days have a
@@ -1415,7 +1438,7 @@ def _gust_rows(spot: _Spot, tile: dict) -> tuple[dict, dict]:
             if stations.season_of(day) == label:
                 members.append((day, int(item[1]), int(item[2]), int(item[3]) if len(item) > 3 else 0))
         n = len(members)
-        text = (WORDS_SUMMARY["station_days_one"] if n == 1 else WORDS_SUMMARY["station_days"]).format(n=n, station=name)
+        text = _days_at(n, name)
         cells_days.append(_cell(value=n, text=text, valid=ok, missing=missing, station=name, miles=miles_text,
                                 sid=st["id"]))
         if members:
@@ -1427,8 +1450,13 @@ def _gust_rows(spot: _Spot, tile: dict) -> tuple[dict, dict]:
         else:
             cells_max.append(_cell(value=None, text=WORDS_SUMMARY["none_gust"], valid=ok, missing=missing, station=name,
                                    miles=miles_text, sid=st["id"]))
-    five_days = _five(cells_days, "sum", lambda v: _count_text("days", v), "gust record", "")
+    # the five-season gust figures name their station too (B5-16, D41): one station gives every season of the record
+    five_days = _five(cells_days, "sum", lambda v: _days_at(v, name), "gust record", "")
     five_max = _five(cells_max, "max", None, "gust record", WORDS_SUMMARY["none_gust"])
+    if five_max["value"] is not None:
+        # the station goes before a flag's words, so the flag still closes the cell (D12)
+        head, flagged, tail = five_max["text"].partition(", flagged for check")
+        five_max = dict(five_max, text=WORDS_SUMMARY["gust_five_at"].format(text=head, station=name) + flagged + tail)
     return (_row(_spec("gust_days"), cells_days, five_days, [note, WORDS_SUMMARY["gust_coverage_note"]]),
             _row(_spec("gust_max"), cells_max, five_max, [note, WORDS_SUMMARY["gust_floor_note"]]))
 
@@ -1573,7 +1601,8 @@ def _station_row(spot: _Spot, key: str, element: str, combine: str) -> dict:
                 station=st["name"], miles=f"{st['miles']:.1f}"))
             if st.get("net") == "SNOTEL":
                 notes.append(WORDS_SUMMARY["snotel_station"].format(station=st["name"]))
-        notes.extend(stations.station_words(res, element))
+        # the one-station line is partial, so it ends with the all-clear sentence (D41, D47); the none line does not
+        notes.extend(_clear(w) if res.get("state") == "one" else w for w in stations.station_words(res, element))
     else:
         notes.append(none["text"].format(season="the five seasons") if none["kind"] == "failed" else none["text"])
     for label, cell in zip(FIVE, cells):
@@ -1664,8 +1693,8 @@ UNPLACED_FAMILIES = (
     ("flood_watch", ("FA.A",), "flood watch"),              # FA.A is the areal flood watch (D41)
     ("flash_flood_watch", ("FF.A",), "flash flood watch"),
 )
-RECONFIGURED = range(301, 331)        # the zones MTZ301 to MTZ330 (the NWS change log: reconfigured on RECONFIG_DAY)
-RECONFIG_DAY = date(2022, 9, 7)
+# D44: the IEM zone sets place every zone product, and the zones MTZ301 to MTZ330 are in both sets (no change at the switch).
+# The zones removed at the switch (MTZ008 to MTZ015 and MTZ044 to MTZ055) and MTZ060's reshaped outline are the only changes.
 
 
 def _family_noun(key: str) -> str:
@@ -1677,12 +1706,6 @@ def _family_noun(key: str) -> str:
 
 def _product_words(noun: str, n: int) -> str:
     return f"{noun} product" if n == 1 else f"{noun} products"
-
-
-def _zone_number(code: str | None) -> int | None:
-    if code and code.startswith("MTZ") and code[3:].isdigit():
-        return int(code[3:])
-    return None
 
 
 def _when(rec: dict) -> str:
@@ -1704,43 +1727,21 @@ def _zone_flag(spot: _Spot, family: str | None, label: str) -> str | None:
                                              when=_when(rec))
 
 
-def _change_text(number: int | None, label: str) -> tuple[str, bool] | None:
-    """For a reconfigured zone (MTZ301 to MTZ330): the coverage text of a season that the change shortens, and whether a
-    zero in it is unknown. A season wholly before RECONFIG_DAY has no products in the data (a zero is unknown); 2022-23 is
-    partial before the change day (from the NWS change log; inferred, as the store holds no older zone edition)."""
-    if number not in RECONFIGURED:
-        return None
-    start, end = season_bounds(label)
-    if start >= RECONFIG_DAY:
-        return None
-    if end < RECONFIG_DAY:
-        return WORDS_SUMMARY["zone_before_change_all"].format(date=_fmt_date(RECONFIG_DAY)), True
-    return WORDS_SUMMARY["zone_before_change"].format(n=(RECONFIG_DAY - start).days, date=_fmt_date(RECONFIG_DAY)), False
-
-
 def _zone_cells(spot: _Spot, tile: dict, days: list, key: str, family: str | None) -> list[dict]:
     """The season cells of a zone-coded count (its own products, _count_cells). Montana's unplaced products of the family
     mark the seasons they fall in: a zero there is Data unavailable, and a count keeps its value with the statement on its
-    coverage line. The reconfigured zones (MTZ301 to MTZ330) mark the seasons before the change (B5 D27)."""
+    coverage line (B5 D27). A zero with no unplaced product in its season is a count of the placed products (D44)."""
     cells = _count_cells(spot, days, key)
-    number = _zone_number(joins._zone_for_key(tile, spot.key, "zones"))
     out = []
     for label, cell in zip(FIVE, cells):
-        flags = []
         flagged = _zone_flag(spot, family, label)
-        if flagged:
-            flags.append(flagged)
-        change = _change_text(number, label)
-        if change:
-            flags.append(change[0])
-        if cell["value"] == 0 and (flagged or (change and change[1])):
-            out.append(_cell(text=WORDS_SUMMARY["zero_unknown"], valid=0, missing=cell["missing"],
-                             flag="; ".join(flags) or None))
+        if cell["value"] == 0 and flagged:
+            out.append(_cell(text=WORDS_SUMMARY["zero_unknown"], valid=0, missing=cell["missing"], flag=flagged))
             continue
-        if flags:
+        if flagged:
             cell = dict(cell)
-            cell["flag"] = "; ".join(flags)
-            cell["coverage"] = _cover(cell["missing"], cell["flag"])
+            cell["flag"] = flagged
+            cell["coverage"] = _cover(cell["missing"], flagged)
         out.append(cell)
     return out
 
@@ -1759,16 +1760,6 @@ def _unplaced_note(spot: _Spot, families: tuple) -> str | None:
         return None
     listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
     return WORDS_SUMMARY["zone_unplaced_note"].format(parts=listed)
-
-
-def _reconfigured_note(spot: _Spot, tile: dict) -> str | None:
-    """The per-zone line for MTZ301 to MTZ330: the change day and the first placed product (no older product is in the data)."""
-    if _zone_number(joins._zone_for_key(tile, spot.key, "zones")) not in RECONFIGURED:
-        return None
-    first = spot.zone_first(tile)
-    if first is None:
-        return WORDS_SUMMARY["zone_reconfigured_none"].format(date=_fmt_date(RECONFIG_DAY))
-    return WORDS_SUMMARY["zone_reconfigured"].format(date=_fmt_date(RECONFIG_DAY), first=_fmt_date(first))
 
 
 def _automated_sentence(n: int, kind: str) -> str:
@@ -1793,7 +1784,7 @@ def _zone_rows(spot: _Spot, tile: dict | None) -> dict:
         sentence = _joins_unavailable("zones", reason)
         return {key: _unavailable_row(_spec(key), sentence) for key in ("hw_zone", "ice_warn")}
     partial_note = _joins_unavailable("zones", reason, periods) if state == "partial" else None
-    shared = [n for n in (partial_note, _reconfigured_note(spot, tile)) if n]
+    shared = [n for n in (partial_note,) if n]
     out = {}
     for key, kinds, sigs, family in (("hw_zone", ("HW",), ("W", "A"), "high_wind"),
                                      ("ice_warn", ("WS", "IS"), ("W",), "winter_storm")):
@@ -1871,6 +1862,27 @@ def _held_row() -> dict:
 
 
 # ---------------------------------------------------------------- the reports (B2 LSR, B5 records) and the partial season
+
+# the NCEI Storm Events types the flood records row counts (D48): county-coded point records, Montana time
+FLOOD_RECORD_TYPES = ("flood", "flash flood")
+
+
+def _records_row(spot: _Spot, events: dict | None, tile: dict | None) -> dict:
+    """D48: the NCEI flood and flash flood records within 5 miles (county-coded points), a row of its own and never folded
+    into the report row. A part that did not load says so with its D20 sentence (D16); no record is said only from a
+    loaded part."""
+    spec = _spec("flood_record_n")
+    state, reason, periods = spot.joins_part("records")
+    if state == "unavailable" or events is None or tile is None:
+        why = (joins.WORDS_JOINS["reason_events"] if events is None else
+               joins.WORDS_JOINS["reason_no_answer"] if tile is None else reason)
+        return _unavailable_row(spec, _joins_unavailable("records", why))
+    note = _joins_unavailable("records", reason, periods) if state == "partial" else None
+    days = [r["day"] for r in spot.records_within(events) if r["code"] in FLOOD_RECORD_TYPES]
+    cells = _count_cells(spot, days, "flood_record_n")
+    five = _five(cells, "sum", lambda v: _count_text("flood_record_n", v), "record archive", "")
+    return _row(spec, cells, five, [note] if note else [])
+
 
 def _reports_rows(spot: _Spot, events: dict | None) -> dict:
     """The report rows: hail (largest and count), wind, freezing rain and flood (B2 LSR, within 5 miles). The hail and wind
@@ -1976,6 +1988,14 @@ def _gust_why(rows: dict) -> str | None:
     return next((n for n in row.get("notes") or [] if n.startswith("Data unavailable")), None) or row.get("five_note")
 
 
+def _row_why(row: dict | None) -> str | None:
+    """Why a roof line has no figure (D16, D20): the row's own sentence that carries the all-clear (a part's D20 sentence or
+    a season's reason), else the row's five-season note, else None. The line then says the reason, not the bare word."""
+    if not row:
+        return None
+    return next((n for n in row.get("notes") or [] if ALL_CLEAR in n), None) or row.get("five_note")
+
+
 def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
     """The roof section: the 23 indicator lines under the five headings (each with its kind word and its five-season
     count or measurement, from the same records as the table), the reference lines (quotes from the public sources the
@@ -2023,7 +2043,8 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
     big_t = rv("radar_max")[1]
     lines["hail_size_days"] = _line(
         "hail_size_days", "Hail of 1 inch or more (days, radar estimate)", "Radar estimate", "days", n1,
-        L["hail_size_days"].format(count=_count_text("days", n1), largest=big_t) if n1 is not None else None, t1, c1)
+        L["hail_size_days"].format(count=_count_text("days", n1), largest=big_t) if n1 is not None else None,
+        _row_why(rows.get("radar_1in")) or t1, c1)
     lines["hail_reports"] = counted("hail_reports", "Hail reports within 5 miles (count)", "Report", "count", "hail_n",
                                     "hail_n", "Report: {count} within 5 miles in these five years")
     if lines["hail_reports"]["value"]:                 # a count above zero names the largest hail reported (a zero reads so)
@@ -2072,19 +2093,21 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
             "temperature_extremes", "Highest high and lowest low (F, with date)", "Grid estimate", "F", tx["five"],
             L["temperature_extremes"].format(hi=tx["five_text"], lo=tn["five_text"]))
     else:
-        why = (tx or {}).get("five_text") or (tn or {}).get("five_text")
+        why = _row_why(tx) or _row_why(tn) or (tx or {}).get("five_text") or (tn or {}).get("five_text")
         lines["temperature_extremes"] = _line("temperature_extremes", "Highest high and lowest low (F, with date)",
                                               "Grid estimate", "F", None, None, why)
     ns, ts, cs = rv("snow")
     lines["snowfall_season"] = _line(
         "snowfall_season", "Snowfall, July to June (inches, station reading)", "Station reading", "in", ns,
         L["snowfall_season"].format(total=WORDS_SUMMARY["in_plain"].format(inches=stations.fmt_in(ns)))
-        if ns is not None else None, ts, cs)
+        if ns is not None else None, _row_why(rows.get("snow")) or ts, cs)
     nd, td, cd = rv("snow_depth")
     lines["snow_depth"] = _line(
         "snow_depth", "Deepest snow on the ground (inches, station reading)", "Station reading", "in", nd,
-        L["snow_depth"].format(largest=td) if nd is not None else None, td, cd)
-    dl_label = "Days with 1 inch or more on the ground and a low below 32 F (measured pattern, not ice dams)"
+        L["snow_depth"].format(largest=td) if nd is not None else None, _row_why(rows.get("snow_depth")) or td, cd)
+    # the kind word sits in the label, so the line carries it in every state, the unavailable ones too (D41)
+    dl_label = ("Days with 1 inch or more on the ground and a low below 32 F (days, station reading; a measured pattern, "
+                "not ice dams)")
     if isinstance(dl_cells, str):                         # the stations did not load: the D20 sentence
         lines["ice_dam_weather_days"] = _line("ice_dam_weather_days", dl_label, "Station reading", "days", None, None, dl_cells)
     elif isinstance(dl_cells, dict):                      # no station gives a figure (D32): its words, for the five seasons
@@ -2109,11 +2132,12 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
     npr, tpr, cpr = rv("precip")
     lines["precipitation_year"] = _line(
         "precipitation_year", "Precipitation (inches, grid estimate)", "Grid estimate", "in", npr,
-        L["precipitation_year"].format(total=tpr) if npr is not None else None, tpr, cpr)
+        L["precipitation_year"].format(total=tpr) if npr is not None else None, _row_why(rows.get("precip")) or tpr, cpr)
     npm, tpm, cpm = rv("precip_max")
     lines["largest_one_day_rain"] = _line(
         "largest_one_day_rain", "Largest one-day precipitation (inches, grid estimate)", "Grid estimate", "in", npm,
-        L["largest_one_day_rain"].format(largest=tpm) if npm is not None else None, tpm, cpm)
+        L["largest_one_day_rain"].format(largest=tpm) if npm is not None else None, _row_why(rows.get("precip_max")) or tpm,
+        cpm)
     lines["rain_reports"] = from_cells("rain_reports", "Rain reports within 5 miles (count)", "Report", "count",
                                        "rain_reports", "rain_n", L["rain_reports"])
     nfl, tfl, cfl = rv("flood_report_n")
@@ -2219,7 +2243,9 @@ def _extra(spot: _Spot, events: dict | None, tile: dict | None, lsr: list[dict] 
 
     out["heat_advisory"] = zone_cells(("HT",), ("Y",), "heat_advisory", "heat_advisory")
     out["excessive_heat"] = zone_cells(("EH",), ("W",), "excessive_heat", None)
-    out["ice_storm"] = zone_cells(("IS",), ("W",), "ice_storm", None)
+    # an ice storm warning may sit in a winter storm product that could not be placed (D31): the winter storm family's
+    # caveat goes on the zero (its own count is the same family in the zone rows)
+    out["ice_storm"] = zone_cells(("IS",), ("W",), "ice_storm", "winter_storm")
     out["winter_storm"] = zone_cells(("WS",), ("W",), "winter_storm", "winter_storm")
     return out
 
@@ -2283,6 +2309,17 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
         auto = auto_clause(auto_key) if auto_key else ""
         return _report_clause(noun, n, "these five years", f"{_count_text(noun, n)} within 5 miles{tail}{auto}")
 
+    def record(key: str, noun: str) -> str:
+        """The record clause of the flooding lead (D48): the five-season count of NCEI records with its kind word; for a
+        zero count the no-record sentence without its full stop, as a report clause is; Data unavailable when the count
+        did not load."""
+        n = five_n(key) if key in rows else extra_n(key)
+        if n is None:
+            return f"{KIND_RECORD}: {W['cell_unavailable']}"
+        if n == 0:
+            return f"{KIND_RECORD}: {_count_text(noun, n)[:-1]}"
+        return f"{KIND_RECORD}: {_count_text(noun, n)} within 5 miles in these five years"
+
     def finish(text: str, keys: tuple) -> str:
         """A lead: one full stop, the all-clear sentence when a part did not load or only some seasons are shown (D41), and
         the days missing among its rows once (D33): the most days missing in any row it reads."""
@@ -2328,8 +2365,9 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
                        ("precip", "precip_max")),
         "snow": finish(snow_text, ("snow", "snow_depth")),
         "flooding": finish(W["lead_flood"].format(report=report("flood_report_n", "flood_report_n"),
+                                                  record=record("flood_record_n", "flood_record_n"),
                                                   flood_w=count_text("flood_warn", "flood_warn"), covered=covered),
-                           ("flood_report_n", "flood_warn")),
+                           ("flood_report_n", "flood_record_n", "flood_warn")),
         "ice": finish(W["lead_ice"].format(report=report("freezing_rain_n", "freezing_rain_n"),
                                            ice=count_text("ice_warn", "ice_warn")),
                       ("freezing_rain_n", "ice_warn")),
@@ -2472,6 +2510,8 @@ def describe_summary(store, row: int, col: int, now, town=None) -> dict:
             part=joins.WORDS_JOINS["part_reports"], one=joins.WORDS_JOINS["one_reports"])))
             for k in ("hail_max", "hail_n", "wind_n", "freezing_rain_n", "flood_report_n")}
     rows.update(reports)
+    rows["flood_record_n"] = guard("records", lambda: _records_row(spot, events, tile)) or _unavailable_row(
+        _spec("flood_record_n"), _joins_unavailable("records", joins.WORDS_JOINS["reason_no_answer"]))
     gstate, greason, gperiods = spot.joins_part("stations")
     if gstate == "unavailable" or tile is None:
         sentence = _joins_unavailable("stations", greason if tile is not None else joins.WORDS_JOINS["reason_no_answer"])

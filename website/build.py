@@ -467,8 +467,8 @@ HAIL_LABEL = "Hail history (radar estimates)"        # the status line's name
 JOIN_CONTRACTS = ("lsr", "ncei_storm_events", "swdi_nx3hail", "nws_warnings_polygons", "nws_zone_products",
                   "asos_daily_gusts")
 # the B5 feeds (sources.py rows, B5 brief): on the About page only in a --hail-history build
-B5_CONTRACTS = ("nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_lsr", "nwps_gauges",
-                "usgs_water_api", "census_counties", "roof_references")
+B5_CONTRACTS = ("nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_ugcs", "iem_lsr",
+                "nwps_gauges", "usgs_water_api", "census_counties", "roof_references")   # the order of sources.py's rows
 HAIL_CONTRACTS = ("hail_history",) + JOIN_CONTRACTS + B5_CONTRACTS  # on the About page only in a --hail-history build
 # Words map.js fills that hail.WORDS doesn't hold: a shard that didn't load (the unavailable line's problem)
 HAIL_SITE_WORDS = {"fetch_failed": "the history for this spot didn't load in this update"}
@@ -686,7 +686,7 @@ HISTORY_WORDS = {
 }
 HISTORY_SECTIONS = ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made")
 # the kind label a joins row starts with (B2 D3); the rest of the row is the joins' own words
-_KIND_LABEL = re.compile(r"^(Report|Record|Detection|Warning|Zone product|County product|Station): (.*)$", re.S)
+_KIND_LABEL = re.compile(r"^(Report|Record|Detection|Warning|Watch|Advisory|Zone product|County product|Station): (.*)$", re.S)
 # the sections a joins row can go to, by its type or product words (the first rule that matches decides; a row no rule
 # matches is a storm or warning row, so no joined row is dropped)
 _SECTION_RULES = (
@@ -708,13 +708,15 @@ def _split_kind(text: str) -> tuple[str, str]:
 
 def _section_of(label: str, body: str) -> str:
     """The section a joined row belongs to, from its kind and its type or product words (B5): a station row is wind, a
-    detection is hail, a warning or zone row takes its product's name, and a report or record takes its type word."""
+    detection is hail, a warning, watch, advisory or zone row takes its product's name, and a report or record takes its type word."""
     if label == "Station":
         return "wind"
     if label == "Detection":
         return "hail"
-    if label == "Warning":
-        m = re.search(r"in effect: ([^,;]+)", body)
+    if label in ("Warning", "Watch", "Advisory"):
+        # the product's name only: a B5 row reads "...: flood watch, TFX, covered this cell or part of it; tags: ...", so
+        # the tags (hail, wind) never move a warning, watch or advisory to another section (D41)
+        m = re.search(r"in effect: ([^,;]+)", body) or re.search(r": ([^:,;]+), [A-Z0-9]{2,4}, covered", body)
         words = m.group(1) if m else body
     elif label in ("Zone product", "County product"):
         words = re.split(r", fire weather zone|:", body, maxsplit=1)[0]
@@ -978,7 +980,7 @@ def history_view(s: dict, jv: dict, radar: dict, town: dict, now, through: str |
     for sec_id, keys in (("hail", ("radar_max", "radar_1in", "hail_max", "hail_n")), ("wind", ("gust_days", "gust_max", "wind_n", "hw_zone")),
                          ("storms", ("hail_warnings", "flood_warn")), ("temperature", ("tmax", "tmin")),
                          ("rain", ("precip", "precip_max")), ("snow", ("snow", "snow_depth")),
-                         ("flooding", ("flood_report_n", "flood_warn", "county_watch")),
+                         ("flooding", ("flood_report_n", "flood_record_n", "flood_warn", "county_watch")),
                          ("ice", ("freezing_rain_n", "ice_warn", "freeze_thaw")), ("heat", ("hot90",))):
         for key in keys:
             for note in (rows.get(key) or {}).get("notes", []):
@@ -1036,6 +1038,12 @@ def about_terms() -> list[dict]:
             "\"The information on National Weather Service Web servers and Web sites is in the public domain, unless "
             "specifically annotated otherwise, and may be used freely by the public.\" \"You also cannot present information "
             "of your own in a way that makes it appear to be official government information.\""]},
+        {"source": "Iowa State IEM zone outlines (the Montana public forecast zones by date)", "terms": [
+            "The IEM API disclaimer reads: \"All of these services are provided as-is and without warranty. You are free to "
+            "use these services for any lawful purpose\" (quoted in part). The outlines of the 20 zones removed on 13 "
+            "September 2022 (MTZ008 to MTZ015 and MTZ044 to MTZ055) and of MTZ060 before that change are the IEM's simplified "
+            "geometry; the 83 zones in force since then keep the NWS outlines. A product issued in the changeover week, 7 to "
+            "13 September 2022, is placed by the zone set that holds its code."]},
         {"source": "NOAA NCEI Storm Events (point and zone records)", "terms": [
             "The use terms of this copy were not read in this build, so they are not quoted."]},
         {"source": "NWS National Water Prediction Service and USGS (river gauges)", "terms": [
@@ -1054,7 +1062,7 @@ def about_hail_context() -> dict:
             for rid, ref in sorted(sm.REFERENCE_LINES.items(), key=lambda kv: int(kv[0][1:]))]
     return {"analysis": sm.WORDS_SUMMARY["analysis_held"], "hit_miss": jn.WORDS_JOINS["about_hit_miss"],
             "census": src.CENSUS_TERMS, "refs": refs, "held": sm.WORDS_INDICATORS["held"],
-            "terms": about_terms(), "not_quoted": sm.not_quoted_text()}
+            "terms": about_terms(), "not_quoted": sm.not_quoted_text(), "citations": sm.citations()}
 
 
 def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | None = None,
