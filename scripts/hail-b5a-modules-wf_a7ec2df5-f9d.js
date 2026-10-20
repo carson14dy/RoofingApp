@@ -9,6 +9,7 @@ export const meta = {
     { title: 'Recheck', detail: 'tests, builds, record' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const WT = '/home/user/wt/wt-b5'
 const BASE = 'db84d76'
@@ -50,21 +51,21 @@ const REVIEWERS = [
 
 phase('Build')
 const built = await parallel([
-  () => agent(CLIMATE, { label: 'build:climate', phase: 'Build', model: 'haiku' }),
-  () => agent(SNOW, { label: 'build:snow-stations-gauges', phase: 'Build', model: 'haiku' }),
-  () => agent(PRODUCTS, { label: 'build:products', phase: 'Build', model: 'haiku' }),
+  () => agent(CLIMATE, { label: 'build:climate', phase: 'Build', model: WORKER }),
+  () => agent(SNOW, { label: 'build:snow-stations-gauges', phase: 'Build', model: WORKER }),
+  () => agent(PRODUCTS, { label: 'build:products', phase: 'Build', model: WORKER }),
 ])
 log(`builders done: climate ${built[0] ? 'ok' : 'none'}, snow ${built[1] ? 'ok' : 'none'}, products ${built[2] ? 'ok' : 'none'}`)
 
 phase('Review')
-const reviews = await parallel(REVIEWERS.map(r => () => agent(r.prompt, { label: `review:${r.key}`, phase: 'Review', model: 'haiku', schema: FINDINGS })))
+const reviews = await parallel(REVIEWERS.map(r => () => agent(r.prompt, { label: `review:${r.key}`, phase: 'Review', model: WORKER, schema: FINDINGS })))
 const findings = []
 reviews.forEach((rv, i) => { if (rv && rv.findings) rv.findings.forEach(f => findings.push({ ...f, id: `${REVIEWERS[i].key}-${f.id}`, lens: REVIEWERS[i].key })) })
 log(`findings: ${findings.length} (${reviews.map((rv, i) => `${REVIEWERS[i].key}: ${rv ? rv.findings.length : 'none'}`).join(', ')})`)
 
 phase('Verify')
 const SKEPTIC = `Skeptic in ${WT} (branch claude/hail-b5; read-only; scratch only under ${OUT}/skeptic-<id>/; never edit, stage, commit or push; never delete outside your folder). Read the parts of ${BRIEF} the finding touches (rules D1 to D16, the store files, the words, the gates). A finding is a defect if the code, the stores or the words behave as the finding says and that behaviour breaks a rule of the brief, a repository rule (AGENTS.md: evidence honesty, feed contracts, Python first, tests with every behaviour change, plain wording) or the north star (a line without its unit or kind word; a sentence that needs decoding). Reproduce it yourself (run the code, read the store file, count). Set defect_real true when the defect exists, even if the finding's framing, severity or fix is wrong; set refuted true only when the behaviour does not occur or is allowed by the brief or a decision you cite. Judge the fix: fix_ok, or an adjusted_fix. Default to defect_real=false and refuted=true only when you reproduced the absence of the defect.`
-const verdicts = await pipeline(findings, f => agent(`${SKEPTIC}\n\nFinding ${f.id} (${f.lens}; ${f.severity}): ${f.file}:${f.line}. Claim: ${f.claim}. Evidence: ${f.evidence}. Proposed fix: ${f.fix}`, { label: `skeptic:${f.id}`, phase: 'Verify', model: 'haiku', schema: VERDICT }).then(v => ({ f, v })))
+const verdicts = await pipeline(findings, f => agent(`${SKEPTIC}\n\nFinding ${f.id} (${f.lens}; ${f.severity}): ${f.file}:${f.line}. Claim: ${f.claim}. Evidence: ${f.evidence}. Proposed fix: ${f.fix}`, { label: `skeptic:${f.id}`, phase: 'Verify', model: WORKER, schema: VERDICT }).then(v => ({ f, v })))
 const kept = verdicts.filter(Boolean).filter(x => x.v && x.v.defect_real && !x.v.refuted)
 const refuted = verdicts.filter(Boolean).filter(x => x.v && !(x.v.defect_real && !x.v.refuted))
 log(`confirmed ${kept.length} (blocking ${kept.filter(x => x.v.severity === 'blocking').length}), refuted ${refuted.length}`)
@@ -80,10 +81,10 @@ const byOwner = {}
 kept.forEach(x => { const o = ownerOf(x.f.file); (byOwner[o] = byOwner[o] || []).push(x) })
 log(`fix lists: ${Object.entries(byOwner).map(([k, v]) => `${k} ${v.length}`).join(', ')}`)
 const FIXER = (owner, items) => `${COMMON}\n\nYou are the ${owner} fixer; you own ${OWN[owner].join(', ')} (and the stores under ${OUT}/${owner}/store). Apply these confirmed findings exactly (the skeptic's adjusted fix wins where given; a finding that contradicts a brief rule is skipped with the rule cited), add or update a test for each, run ${VENV} -m unittest discover -s tests -p "test_*.py" (quote the tail), rebuild your store into ${OUT}/${owner}/store2 and rerun verify. Findings:\n${items.map(x => `- ${x.f.id} [${x.v.severity}] ${x.f.file}:${x.f.line}: ${x.f.claim}. Fix: ${x.v.adjusted_fix || x.f.fix}`).join('\n')}\n\nReport each finding as applied, already fixed or skipped with the reason.`
-const fixes = await parallel(Object.keys(byOwner).filter(k => k !== 'supervisor').map(k => () => agent(FIXER(k, byOwner[k]), { label: `fix:${k}`, phase: 'Fix', model: 'haiku' })))
+const fixes = await parallel(Object.keys(byOwner).filter(k => k !== 'supervisor').map(k => () => agent(FIXER(k, byOwner[k]), { label: `fix:${k}`, phase: 'Fix', model: WORKER })))
 
 phase('Recheck')
-const recheck = await agent(`Read-only checker in ${WT} (branch claude/hail-b5, based on ${BASE}). Read ${BRIEF} in full. Scratch only under ${OUT}/recheck/ which you create; never edit, stage, commit or push; never delete outside your folder. Run and quote: ${VENV} -m unittest discover -s tests (tail; all must pass); python desktop/launcher.py --selftest payload; each module's build into ${OUT}/recheck/<module>/store from the caches (climate from the cached aggregates; snow, stations and gauges; products with --procs 2), then verify and compare for each; a second build byte-identical per store (gate B5-13); your own probes: the Billings and Benchland c/ records (the extremes with dates), the D7 regression result and the display decision, the station picks at Billings and Benchland with every station's share, the gauge table's Billings 2022 peak, the window counts of the new products against the brief's source 4 and the research, the polygon-rule counts and the town point disagreement list, the Glentana point and the Hays exclusion, the gusts rule, the hit-and-miss table; git -C ${WT} status --short and diff --stat ${BASE}; em-dash and banned-name counts over added lines; the forbidden-term grep over the new words; the decision 7 and D4 audits. Write ${OUT}/b5a-recheck.json with gates B5-1 to B5-9 and B5-13 to B5-17 (status, evidence), the measurements (times, bytes, counts, per-click gzip sizes), the contract facts gathered from the three module docstrings for part B, and the open items. Return that JSON as text and name every check that failed.`, { label: 'recheck', phase: 'Recheck', model: 'haiku' })
+const recheck = await agent(`Read-only checker in ${WT} (branch claude/hail-b5, based on ${BASE}). Read ${BRIEF} in full. Scratch only under ${OUT}/recheck/ which you create; never edit, stage, commit or push; never delete outside your folder. Run and quote: ${VENV} -m unittest discover -s tests (tail; all must pass); python desktop/launcher.py --selftest payload; each module's build into ${OUT}/recheck/<module>/store from the caches (climate from the cached aggregates; snow, stations and gauges; products with --procs 2), then verify and compare for each; a second build byte-identical per store (gate B5-13); your own probes: the Billings and Benchland c/ records (the extremes with dates), the D7 regression result and the display decision, the station picks at Billings and Benchland with every station's share, the gauge table's Billings 2022 peak, the window counts of the new products against the brief's source 4 and the research, the polygon-rule counts and the town point disagreement list, the Glentana point and the Hays exclusion, the gusts rule, the hit-and-miss table; git -C ${WT} status --short and diff --stat ${BASE}; em-dash and banned-name counts over added lines; the forbidden-term grep over the new words; the decision 7 and D4 audits. Write ${OUT}/b5a-recheck.json with gates B5-1 to B5-9 and B5-13 to B5-17 (status, evidence), the measurements (times, bytes, counts, per-click gzip sizes), the contract facts gathered from the three module docstrings for part B, and the open items. Return that JSON as text and name every check that failed.`, { label: 'recheck', phase: 'Recheck', model: WORKER })
 
 return {
   climateR: (built[0] || '').slice(0, 4000), snowR: (built[1] || '').slice(0, 4000), productsR: (built[2] || '').slice(0, 4000),

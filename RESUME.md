@@ -1,9 +1,9 @@
 # Resume guide: the hail history programme, paused 2026-10-20 (about 03:15 UTC)
 
 Read this first, then `briefs/hail-b5-brief.md` (the product, the rulings D1 to D58, the part B2 build list and the
-merge rules D49 to D51) and the tail of `supervisor-log.md`. Carson's standing instructions: Haiku workers in parallel
+merge rules D49 to D51) and the tail of `supervisor-log.md`. Carson's standing instructions: the worker model workers in parallel
 workflows (builders, read-only reviewers, two skeptics per finding with `defect_real && !refuted`, fixers, a re-check),
-Fable supervising every output against the product north star (one map; one sheet per place that leads with a plain
+the supervisor model supervising every output against the product north star (one map; one sheet per place that leads with a plain
 summary; a fixed section order; every number with its unit and kind word; nothing to decode); PRs stacked and
 small; no AI-vendor, model or product names in repository files; no em-dashes; sentence case.
 
@@ -80,7 +80,7 @@ scripts expect; keep them.
    0.664); the counsel list of 18 items (MSL "for no other purpose", MCA 2-6-1017, the FEMA licence).
 
 ## Harness facts learned (so Friday does not relearn them)
-- 4 CPUs: 2 agents per workflow; several workflows side by side; Haiku workers (`model: 'haiku'`), Fable supervises.
+- 4 CPUs: 2 agents per workflow; several workflows side by side; the worker model workers (`model: WORKER`), the supervisor model supervises.
 - Scripts are plain JS; a backtick inside a template literal breaks parsing (use quotes); check with `node --check`
   after wrapping the body in `async function __w(){...}`.
 - The writable disk allowance is about 40 GB and fills fast: archive small evidence (<1 MB JSON, MD, LOG; never store
@@ -93,3 +93,6 @@ scripts expect; keep them.
 - `gh` has no valid token in these sessions; use the GitHub MCP tools (actions_get, actions_run_trigger,
   pull_request_read, add_issue_comment) and git over the ssh helper; the public REST API works without a token for
   run status.
+
+## Model names
+The worker and supervisor model names are not written in repository files (a repo rule). The scripts read the worker alias from `args.worker` at launch (pass `{"worker": "<alias>", ...}`); Carson names the worker and supervisor in chat (the small fast tier does the work; the session's own model supervises).

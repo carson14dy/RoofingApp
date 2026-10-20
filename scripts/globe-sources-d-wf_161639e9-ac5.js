@@ -6,6 +6,7 @@ export const meta = {
     { title: 'Refute', detail: 'independent re-check of each report' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const SCRATCH = '/tmp/claude-0/-home-user-RoofingApp/7638440a-a008-5ef8-a289-86be0a23e7a7/scratchpad'
 const EVID = '/home/user/RoofingApp/research/globe/validation-evidence/'
@@ -113,7 +114,7 @@ function refutePrompt(it, res) {
 
 log('Wave 1D: design references, Montana street-zoom sources, labels over imagery - each report then refuted')
 const results = await pipeline(ITEMS,
-  it => agent(researchPrompt(it), { label: 'verify:' + it.slug, phase: 'Verify', model: 'haiku', schema: SRC }),
-  (res, it) => res ? agent(refutePrompt(it, res), { label: 'refute:' + it.slug, phase: 'Refute', model: 'haiku', schema: REV }) : null,
+  it => agent(researchPrompt(it), { label: 'verify:' + it.slug, phase: 'Verify', model: WORKER, schema: SRC }),
+  (res, it) => res ? agent(refutePrompt(it, res), { label: 'refute:' + it.slug, phase: 'Refute', model: WORKER, schema: REV }) : null,
 )
 return { slugs: ITEMS.map(i => i.slug), reviews: results }

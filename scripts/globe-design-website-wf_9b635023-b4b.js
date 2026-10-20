@@ -7,6 +7,7 @@ export const meta = {
     { title: 'Synthesise', detail: 'website synthesis' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const REPO = '/home/user/RoofingApp'
 const EVID = REPO + '/research/globe/validation-evidence/'
@@ -80,11 +81,11 @@ const SYNTH = (judges) => CTX + `\n\n# Task — website synthesis (slug: design-
 
 log('Design D (website) and W19 rights matrix in parallel')
 const [dD, w19] = await parallel([
-  () => agent(CTX + '\n\n' + DESIGN_D, { label: 'design:D-website', phase: 'Design D + W19', model: 'haiku', schema: DESIGN_SCHEMA }),
-  () => agent(CTX + '\n\n' + W19, { label: 'analyse:rights-matrix', phase: 'Design D + W19', model: 'haiku', schema: ANALYSIS_SCHEMA }),
+  () => agent(CTX + '\n\n' + DESIGN_D, { label: 'design:D-website', phase: 'Design D + W19', model: WORKER, schema: DESIGN_SCHEMA }),
+  () => agent(CTX + '\n\n' + W19, { label: 'analyse:rights-matrix', phase: 'Design D + W19', model: WORKER, schema: ANALYSIS_SCHEMA }),
 ])
 log('Re-judging A-D with the website as the ruling architecture')
-const judges = await parallel(LENSES.map(l => () => agent(judgePrompt(l, dD), { label: 'judge2:' + l.slug, phase: 'Re-judge', model: 'haiku', schema: JUDGE_SCHEMA })))
+const judges = await parallel(LENSES.map(l => () => agent(judgePrompt(l, dD), { label: 'judge2:' + l.slug, phase: 'Re-judge', model: WORKER, schema: JUDGE_SCHEMA })))
 log('Website synthesis')
-const synthesis = await agent(SYNTH(judges), { label: 'synthesis-website', phase: 'Synthesise', model: 'haiku', schema: ANALYSIS_SCHEMA })
+const synthesis = await agent(SYNTH(judges), { label: 'synthesis-website', phase: 'Synthesise', model: WORKER, schema: ANALYSIS_SCHEMA })
 return { dD, w19, judges, synthesis }

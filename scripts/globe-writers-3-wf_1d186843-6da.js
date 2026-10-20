@@ -7,6 +7,7 @@ export const meta = {
     { title: 'Critic', detail: 'completeness, rules, numbers, links; small fixes applied' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const REPO = '/home/user/RoofingApp'
 const EVID = REPO + '/research/globe/validation-evidence/'
@@ -42,7 +43,7 @@ Your job is to find what is wrong, missing or inconsistent, and fix the small th
 Fix small faults directly in the README (wording, a number, a link, a missing row). For anything larger, do not rewrite: list it. Then run: cd ${REPO} && python -m unittest discover -s tests 2>&1 | tail -1 (expect OK). Write ${EVID}critic-report.json (at most 20 KB): {"checked_at_utc", "fixed": [{"where", "what"}], "not_fixed": [{"where", "what", "why"}], "numbers_checked": [{"number", "section", "evidence_file", "result"}], "rule_findings": [...], "completeness_findings": [...], "readme_lines", "readme_bytes", "links_broken": [...], "tables_malformed": [...]} and return its summary as your final text.`
 
 log('Final writing pass: section 11, then assembly, then the critic')
-const c = await agent(C, { label: 'write:11-prototype', phase: 'Prototype section', model: 'haiku' })
-const a = await agent(ASSEMBLE, { label: 'assemble:README', phase: 'Assemble', model: 'haiku' })
-const k = await agent(CRITIC, { label: 'critic', phase: 'Critic', model: 'haiku' })
+const c = await agent(C, { label: 'write:11-prototype', phase: 'Prototype section', model: WORKER })
+const a = await agent(ASSEMBLE, { label: 'assemble:README', phase: 'Assemble', model: WORKER })
+const k = await agent(CRITIC, { label: 'critic', phase: 'Critic', model: WORKER })
 return { section11: c, assembly: a, critic: k }

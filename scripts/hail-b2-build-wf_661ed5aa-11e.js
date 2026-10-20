@@ -9,6 +9,7 @@ export const meta = {
     { title: 'Recheck', detail: 'tests, builds, smoke, record' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const WT = '/home/user/wt/wt-b2'
 const BRIEF = '/home/user/wt/briefs/hail-b2-brief.md'
@@ -71,9 +72,9 @@ function ownerOf(file) {
 
 phase('Build')
 const builds = await parallel([
-  () => agent(JOINS, { label: 'build:joins', phase: 'Build', model: 'haiku' }),
-  () => agent(SITE, { label: 'build:site', phase: 'Build', model: 'haiku' }),
-  () => agent(DOCS, { label: 'build:docs', phase: 'Build', model: 'haiku' }),
+  () => agent(JOINS, { label: 'build:joins', phase: 'Build', model: WORKER }),
+  () => agent(SITE, { label: 'build:site', phase: 'Build', model: WORKER }),
+  () => agent(DOCS, { label: 'build:docs', phase: 'Build', model: WORKER }),
 ])
 const [joinsR, siteR, docsR] = builds
 log(`builders done: joins ${joinsR ? 'ok' : 'null'}, site ${siteR ? 'ok' : 'null'}, docs ${docsR ? 'ok' : 'null'}`)
@@ -81,14 +82,14 @@ log(`builders done: joins ${joinsR ? 'ok' : 'null'}, site ${siteR ? 'ok' : 'null
 phase('Review')
 const reviews = await pipeline(
   REVIEWERS,
-  (r) => agent(`${r.prompt}\n\nBuilder reports for context (claims to check, not facts):\nJOINS: ${(joinsR || 'none').slice(0, 7000)}\nSITE: ${(siteR || 'none').slice(0, 6000)}\nDOCS: ${(docsR || 'none').slice(0, 3000)}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: 'haiku' }),
+  (r) => agent(`${r.prompt}\n\nBuilder reports for context (claims to check, not facts):\nJOINS: ${(joinsR || 'none').slice(0, 7000)}\nSITE: ${(siteR || 'none').slice(0, 6000)}\nDOCS: ${(docsR || 'none').slice(0, 3000)}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: WORKER }),
   async (result, r) => {
     if (!result) return { key: r.key, findings: [], measurements: {}, gates: [], summary: 'reviewer returned nothing' }
     const fs = result.findings.map((f, i) => ({ ...f, id: `${r.key}-${i + 1}` }))
     log(`${r.key}: ${fs.length} findings`)
     const verdicts = await parallel(fs.map((f) => () =>
       agent(`You are a skeptic checking one review finding in ${WT} (read-only; never edit, stage, commit or push; scratch only under ${OUT}/skeptic-${f.id}/ which you create; never delete anything outside it). The finding:\n${JSON.stringify(f, null, 1)}\n\nOpen the file at the line, reproduce the observation yourself, and read ${BRIEF} for the contract. The finding stands only if the defect is real, matters to the gates or the repository rules (AGENTS.md), and the proposed fix is correct and minimal and introduces nothing unsupported (no new number, no em-dash, no model or AI-product name, no new pip package for the site build, no scope widening, no contradiction of the brief). If the defect is real but the fix is wrong or too broad, set fix_ok false and give an adjusted_fix. Default to refuted=true when uncertain.`,
-        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: 'haiku' })
+        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: WORKER })
         .then((v) => (v ? { ...f, verdict: v } : null))))
     return { key: r.key, findings: verdicts.filter(Boolean), measurements: result.measurements, gates: result.gates, summary: result.summary }
   },
@@ -103,10 +104,10 @@ phase('Fix')
 const groups = ['joins', 'site', 'docs'].map((k) => ({ k, items: confirmed.filter((f) => f.owner === k) })).filter((g) => g.items.length)
 const fixReports = await parallel(groups.map((g) => () =>
   agent(`${COMMON}\n\n${FIX_DECISIONS}\n\nYou are the fixer for the ${g.k} files; you own exactly: ${OWNERSHIP[g.k].join(', ')}. Apply these confirmed findings with exact, minimal edits that keep every public name and the brief's contract. Skip and report any finding naming a file you do not own. After editing run python -m unittest tests.test_joins tests.test_site (and the full suite if you changed joins.py or build.py); if a fix changes the j/, z/ or s/ format or the joins, rebuild ${OUT}/joins/store from ${STORE_DIR} with the cache at ${OUT}/joins/cache and re-tar ${OUT}/joins/hail-store.tar.gz, and say so. Report applied ids, skipped ids with reasons, and the test tail.\n\nFINDINGS:\n${JSON.stringify(g.items, null, 1)}`,
-    { label: `fix:${g.k}`, phase: 'Fix', model: 'haiku' })))
+    { label: `fix:${g.k}`, phase: 'Fix', model: WORKER })))
 
 phase('Recheck')
 const recheck = await agent(`${REVIEW_COMMON} ${FIX_DECISIONS} You are the final checker. Gate B2-1 reads per decision D1 (two cells). Run and quote: ${VENV} -m unittest discover -s tests (tail); python desktop/launcher.py --selftest payload; builds from a copy of the worktree (cp -r without .git into ${OUT}/recheck/src): --sample --now 2026-10-18T12:00:00Z into ${OUT}/recheck/off, --hail-history --sample into ${OUT}/recheck/sample, --hail-history --sample --hail-store ${OUT}/joins/hail-store.tar.gz into ${OUT}/recheck/real; PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_map.py on each (--shots on the real one) and tools/smoke_pages.py on the real one; du -sb of hail/j, hail/z, hail/s in the real build and of each _site; the largest j/ file; python -m website.joins verify and compare on ${OUT}/joins/store; git -C ${WT} status --short and diff --stat 7aec754; em-dash and banned-name counts over added lines; a grep of the built real pages for an unfilled brace inside hail sections; the decision 7 audit. Then update research/hail-history/validation-evidence/b2-verification.json in ${WT} (the one file you may edit): each gate's status and evidence from what you measured, measurements, and the confirmed findings applied and refuted ones (ids, one line each) under notes. Return the gate table and measurements as JSON text.`,
-  { label: 'recheck', phase: 'Recheck', model: 'haiku' })
+  { label: 'recheck', phase: 'Recheck', model: WORKER })
 
 return { joinsR: (joinsR || '').slice(0, 8000), siteR: (siteR || '').slice(0, 6000), docsR: (docsR || '').slice(0, 3000), reviews: reviews.map((r) => ({ key: r.key, summary: r.summary, gates: r.gates, measurements: r.measurements })), confirmed, refuted, fixReports, recheck }

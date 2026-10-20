@@ -6,6 +6,7 @@ export const meta = {
     { title: 'Refute', detail: 'one refuter per researcher' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 const DIR = '/home/user/wt/research-b35'
 const VENV = '/home/user/hail-b1/venv/bin/python'
 const RESEARCH = '/home/user/wt/wt-hail/research/hail-history'
@@ -21,12 +22,12 @@ const RESEARCHERS = [
 phase('Research')
 const results = await pipeline(
   RESEARCHERS,
-  (r) => agent(r.prompt, { label: `research:${r.slug}`, phase: 'Research', schema: RESEARCH_SCHEMA, model: 'haiku' }),
+  (r) => agent(r.prompt, { label: `research:${r.slug}`, phase: 'Research', schema: RESEARCH_SCHEMA, model: WORKER }),
   (res, r) => {
     if (!res) return { slug: r.slug, research: null, verdict: null }
     log(`${r.slug}: ${res.facts.length} facts, ${Math.round(res.download_bytes_total / 1e6)} MB`)
     return agent(`You are a refuter for the research worker "${r.slug}" (same rules as the worker: live requests, content checked, downloads under 60 MB into ${DIR}/scratch-refute-${r.slug}/downloads/, deleted when done; scripts kept apart; read with ${VENV} -I; never edit outside ${DIR}; never edit the worker's file). Read ${res.record_file} in full and the summary below. Re-run the five most consequential checks yourself (counts, sizes, a sample's content, the terms quotes against the live page, the recommendation's legal basis) and try to refute each; mark each claim confirmed, refuted, corrected (give the right value) or unverified. Say whether the recommendation stands and why. Write your record to ${DIR}/${r.slug}-refuter.json.\n\nWORKER SUMMARY:\n${JSON.stringify({ bottom_line: res.bottom_line, recommendation: res.recommendation, facts: res.facts.slice(0, 40), terms: res.terms, measurements: res.measurements, open_questions: res.open_questions }, null, 1).slice(0, 14000)}`,
-      { label: `refute:${r.slug}`, phase: 'Refute', schema: VERDICT_SCHEMA, model: 'haiku' }).then((v) => ({ slug: r.slug, research: res, verdict: v }))
+      { label: `refute:${r.slug}`, phase: 'Refute', schema: VERDICT_SCHEMA, model: WORKER }).then((v) => ({ slug: r.slug, research: res, verdict: v }))
   },
 )
 return results.filter(Boolean).map((g) => ({ slug: g.slug, bottom_line: g.research && g.research.bottom_line, recommendation: g.research && g.research.recommendation, refuter_stands: g.verdict && g.verdict.recommendation_stands, refuter_note: g.verdict && g.verdict.recommendation_note, corrections: g.verdict && g.verdict.corrections, open_questions: g.research && g.research.open_questions }))

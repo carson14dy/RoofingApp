@@ -3,6 +3,7 @@ export const meta = {
   description: 'Rewrite the plan sections 1-7 for the website and write the architecture, open-questions and shared-prerequisites sections as fragments',
   phases: [{ title: 'Write', detail: 'plan writer and architecture writer in parallel' }],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const REPO = '/home/user/RoofingApp'
 const EVID = REPO + '/research/globe/validation-evidence/'
@@ -36,7 +37,7 @@ Map the product critic's "fix the flat map first" items (plan-critique-product.j
 
 log('Writers-2: plan sections 1-7 and architecture/questions/prerequisites in parallel')
 const out = await parallel([
-  () => agent(CTX + '\n\n' + A, { label: 'write:01-plan', phase: 'Write', model: 'haiku' }),
-  () => agent(CTX + '\n\n' + B, { label: 'write:09b-14-15', phase: 'Write', model: 'haiku' }),
+  () => agent(CTX + '\n\n' + A, { label: 'write:01-plan', phase: 'Write', model: WORKER }),
+  () => agent(CTX + '\n\n' + B, { label: 'write:09b-14-15', phase: 'Write', model: WORKER }),
 ])
 return { fragments: out }

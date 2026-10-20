@@ -7,6 +7,7 @@ export const meta = {
     { title: 'Integrate', detail: 'run every test, size and hygiene checks' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const REPO = '/home/user/RoofingApp'
 const PROTO = REPO + '/research/globe/prototype'
@@ -104,9 +105,9 @@ Do, from ${REPO}:
 
 log('Wave 2a: building the globe prototype (P1 page, P2 MRMS volume, P3 GOES cloud height in parallel)')
 const built = await parallel([
-  () => agent(CTX + '\n\n' + P1, { label: 'build:globe-page', phase: 'Build', model: 'haiku', schema: PROTO_SCHEMA }),
-  () => agent(CTX + '\n\n' + P2, { label: 'build:mrms-volume', phase: 'Build', model: 'haiku', schema: PROTO_SCHEMA }),
-  () => agent(CTX + '\n\n' + P3, { label: 'build:goes-cloud-height', phase: 'Build', model: 'haiku', schema: PROTO_SCHEMA }),
+  () => agent(CTX + '\n\n' + P1, { label: 'build:globe-page', phase: 'Build', model: WORKER, schema: PROTO_SCHEMA }),
+  () => agent(CTX + '\n\n' + P2, { label: 'build:mrms-volume', phase: 'Build', model: WORKER, schema: PROTO_SCHEMA }),
+  () => agent(CTX + '\n\n' + P3, { label: 'build:goes-cloud-height', phase: 'Build', model: WORKER, schema: PROTO_SCHEMA }),
 ])
 const [p1, p2, p3] = built
 if (!p1 || !p2) {
@@ -115,8 +116,8 @@ if (!p1 || !p2) {
 let p4 = null
 if (p1 && p2) {
   log('Wave 2a: adding the 3D storms layer to the globe page')
-  p4 = await agent(CTX + '\n\n' + P4(p1, p2), { label: 'build:volume-layer', phase: 'Volume layer', model: 'haiku', schema: PROTO_SCHEMA })
+  p4 = await agent(CTX + '\n\n' + P4(p1, p2), { label: 'build:volume-layer', phase: 'Volume layer', model: WORKER, schema: PROTO_SCHEMA })
 }
 log('Wave 2a: integration run (all tests, sizes, hygiene)')
-const p5 = await agent(CTX + '\n\n' + P5({ p1, p2, p3, p4 }), { label: 'integrate', phase: 'Integrate', model: 'haiku', schema: PROTO_SCHEMA })
+const p5 = await agent(CTX + '\n\n' + P5({ p1, p2, p3, p4 }), { label: 'integrate', phase: 'Integrate', model: WORKER, schema: PROTO_SCHEMA })
 return { p1, p2, p3, p4, p5 }

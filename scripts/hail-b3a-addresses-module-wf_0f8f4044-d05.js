@@ -9,6 +9,7 @@ export const meta = {
     { title: 'Recheck', detail: 'tests, real build, measurements' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 const WT = '/home/user/wt/wt-b3'
 const BASE = '35f1233'
 const BRIEF = '/home/user/wt/briefs/hail-b3-brief.md'
@@ -42,22 +43,22 @@ const OWN = ['website/addresses.py', 'tests/test_addresses.py', '.github/workflo
 
 phase('Build')
 const [moduleR, testsR] = await parallel([
-  () => agent(MODULE, { label: 'build:module', phase: 'Build', model: 'haiku' }),
-  () => agent(TESTS, { label: 'build:tests-fixture-job', phase: 'Build', model: 'haiku' }),
+  () => agent(MODULE, { label: 'build:module', phase: 'Build', model: WORKER }),
+  () => agent(TESTS, { label: 'build:tests-fixture-job', phase: 'Build', model: WORKER }),
 ])
 log(`builders done: module ${moduleR ? 'ok' : 'null'}, tests ${testsR ? 'ok' : 'null'}`)
 
 phase('Review')
 const reviews = await pipeline(
   REVIEWERS,
-  (r) => agent(`${r.prompt}\n\nBuilder reports for context (claims to check, not facts):\nMODULE: ${(moduleR || 'none').slice(0, 7000)}\nTESTS: ${(testsR || 'none').slice(0, 5000)}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: 'haiku' }),
+  (r) => agent(`${r.prompt}\n\nBuilder reports for context (claims to check, not facts):\nMODULE: ${(moduleR || 'none').slice(0, 7000)}\nTESTS: ${(testsR || 'none').slice(0, 5000)}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: WORKER }),
   async (result, r) => {
     if (!result) return { key: r.key, findings: [], measurements: {}, gates: [], summary: 'reviewer returned nothing' }
     const fs = result.findings.map((f, i) => ({ ...f, id: `${r.key}-${i + 1}` }))
     log(`${r.key}: ${fs.length} findings`)
     const verdicts = await parallel(fs.map((f) => () =>
       agent(`You are a skeptic checking one review finding in ${WT} (read-only; never edit, stage, commit or push; scratch only under ${OUT}/skeptic-${f.id}/ which you create). The finding:\n${JSON.stringify(f, null, 1)}\n\nOpen the file at the line, reproduce the observation yourself, and read ${BRIEF} (decisions D1 to D12). The finding stands only if the defect is real, matters to gates B3-1 or B3-8 or the repository rules (AGENTS.md), and the proposed fix is correct and minimal and introduces nothing unsupported (no new number, no em-dash, no model or AI-product name, no new pip package for the site build, no owner or parcel field, no contradiction of the brief's decisions). If the defect is real but the fix is wrong or too broad, set fix_ok false and give an adjusted_fix. Default to refuted=true when uncertain.`,
-        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: 'haiku' }).then((v) => (v ? { ...f, verdict: v } : null))))
+        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: WORKER }).then((v) => (v ? { ...f, verdict: v } : null))))
     return { key: r.key, findings: verdicts.filter(Boolean), measurements: result.measurements, gates: result.gates, summary: result.summary }
   },
 )
@@ -67,9 +68,9 @@ const refuted = all.filter((f) => f.verdict.refuted).map((f) => ({ id: f.id, fil
 log(`confirmed ${confirmed.length} (blocking ${confirmed.filter((f) => f.severity === 'blocking').length}), refuted ${refuted.length}`)
 
 phase('Fix')
-const fixR = confirmed.length ? await agent(`${COMMON}\n\nYou are the fixer; you own exactly: ${OWN.join(', ')}. Apply these confirmed findings with exact, minimal edits that keep every public name and the brief's contract (decisions D1 to D12 decide any choice; a finding that contradicts one is skipped with the decision cited). Skip and report any finding naming another file. After editing run ${VENV} -m unittest tests.test_addresses tests.test_hail tests.test_joins; if a fix changes the a/ formats, the index or the rows, rebuild ${OUT}/module/store from ${STORE_TAR} and ${ZIP} and re-tar ${OUT}/module/hail-store.tar.gz, and say so. Report applied ids, skipped ids with reasons, and the test tail.\n\nFINDINGS:\n${JSON.stringify(confirmed, null, 1)}`, { label: 'fix', phase: 'Fix', model: 'haiku' }) : 'no confirmed findings'
+const fixR = confirmed.length ? await agent(`${COMMON}\n\nYou are the fixer; you own exactly: ${OWN.join(', ')}. Apply these confirmed findings with exact, minimal edits that keep every public name and the brief's contract (decisions D1 to D12 decide any choice; a finding that contradicts one is skipped with the decision cited). Skip and report any finding naming another file. After editing run ${VENV} -m unittest tests.test_addresses tests.test_hail tests.test_joins; if a fix changes the a/ formats, the index or the rows, rebuild ${OUT}/module/store from ${STORE_TAR} and ${ZIP} and re-tar ${OUT}/module/hail-store.tar.gz, and say so. Report applied ids, skipped ids with reasons, and the test tail.\n\nFINDINGS:\n${JSON.stringify(confirmed, null, 1)}`, { label: 'fix', phase: 'Fix', model: WORKER }) : 'no confirmed findings'
 
 phase('Recheck')
-const recheck = await agent(`${REVIEW_COMMON} You are the final checker of this data-module run. Run and quote: ${VENV} -m unittest discover -s tests (tail); python desktop/launcher.py --selftest payload; ${VENV} -m website.addresses verify on ${OUT}/module/store (rebuild it first from ${STORE_TAR} and ${ZIP} into ${OUT}/recheck/store if the fixer said formats changed, and compare); index.json "addresses" counts against the pre-check (points 674,715; left out 4,212; merged 6,740; rows 663,763; shards 4,212; about 43.5 MB; largest about 174 KB) with differences explained; du -sb of hail/a and hail/a/idx; the largest shard and letter file; the tar size; the fixture bytes; git -C ${WT} status --short and diff --stat ${BASE}; em-dash and banned-name counts over added lines; the decision 7 audit; the allow-list grep. Write ${OUT}/b3a-recheck.json with gates B3-1 and B3-8 (status, evidence), the measurements, and the applied and refuted findings (ids, one line each). Return that JSON as text.`, { label: 'recheck', phase: 'Recheck', model: 'haiku' })
+const recheck = await agent(`${REVIEW_COMMON} You are the final checker of this data-module run. Run and quote: ${VENV} -m unittest discover -s tests (tail); python desktop/launcher.py --selftest payload; ${VENV} -m website.addresses verify on ${OUT}/module/store (rebuild it first from ${STORE_TAR} and ${ZIP} into ${OUT}/recheck/store if the fixer said formats changed, and compare); index.json "addresses" counts against the pre-check (points 674,715; left out 4,212; merged 6,740; rows 663,763; shards 4,212; about 43.5 MB; largest about 174 KB) with differences explained; du -sb of hail/a and hail/a/idx; the largest shard and letter file; the tar size; the fixture bytes; git -C ${WT} status --short and diff --stat ${BASE}; em-dash and banned-name counts over added lines; the decision 7 audit; the allow-list grep. Write ${OUT}/b3a-recheck.json with gates B3-1 and B3-8 (status, evidence), the measurements, and the applied and refuted findings (ids, one line each). Return that JSON as text.`, { label: 'recheck', phase: 'Recheck', model: WORKER })
 
 return { moduleR: (moduleR || '').slice(0, 8000), testsR: (testsR || '').slice(0, 5000), reviews: reviews.map((r) => ({ key: r.key, summary: r.summary, gates: r.gates, measurements: r.measurements })), confirmed, refuted, fixR, recheck }

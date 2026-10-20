@@ -8,6 +8,7 @@ export const meta = {
     { title: 'Critic', detail: 'what is missing' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const DIR = '/home/user/wt/research-b35'
 const VENV = '/home/user/hail-b1/venv/bin/python'
@@ -61,22 +62,22 @@ const VERDICT_SCHEMA = {
 phase('Research')
 const results = await pipeline(
   RESEARCHERS,
-  (r) => agent(r.prompt, { label: `research:${r.slug}`, phase: 'Research', schema: RESEARCH_SCHEMA, model: 'haiku' }),
+  (r) => agent(r.prompt, { label: `research:${r.slug}`, phase: 'Research', schema: RESEARCH_SCHEMA, model: WORKER }),
   (res, r) => {
     if (!res) return { slug: r.slug, research: null, verdict: null }
     log(`${r.slug}: ${res.facts.length} facts, ${res.terms.length} terms, ${Math.round(res.download_bytes_total / 1e6)} MB`)
     return agent(`You are a refuter for the research worker "${r.slug}" (same rules as the worker: live requests, content checked, downloads under 150 MB into ${DIR}/scratch-refute-${r.slug}/downloads/, scripts kept apart, read with ${VENV} -I, never edit outside ${DIR}, never edit the worker's file). Read ${res.record_file} in full and the summary below. Re-run the five most consequential checks yourself (counts, sizes, a sample's content, the terms quotes against the live page, the recommendation's legal basis), and try to refute each; mark each claim confirmed, refuted, corrected (give the right value) or unverified. Say whether the recommendation stands and why. Write your record to ${DIR}/${r.slug}-refuter.json.\n\nWORKER SUMMARY:\n${JSON.stringify({ bottom_line: res.bottom_line, recommendation: res.recommendation, facts: res.facts.slice(0, 40), terms: res.terms, measurements: res.measurements, open_questions: res.open_questions }, null, 1).slice(0, 14000)}`,
-      { label: `refute:${r.slug}`, phase: 'Refute', schema: VERDICT_SCHEMA, model: 'haiku' }).then((v) => ({ slug: r.slug, research: res, verdict: v }))
+      { label: `refute:${r.slug}`, phase: 'Refute', schema: VERDICT_SCHEMA, model: WORKER }).then((v) => ({ slug: r.slug, research: res, verdict: v }))
   },
 )
 
 phase('Synthesize')
 const good = results.filter(Boolean)
 const synthesis = await agent(`You are the synthesis writer. Read every worker record and refuter record under ${DIR}/ (the JSON files), ${BRIEFS}/hail-b3-brief.md, ${BRIEFS}/hail-b4-brief.md and ${BRIEFS}/hail-b2-brief.md (data layout and words), and AGENTS.md rule 5. Write ${DIR}/synthesis.md with: (1) a decision table, one row per need (streets, footprints, dot placement, temperature highs and lows, rain by year, snow by year, flooding, ice and winter, heat, wind additions, roof indicators): the recommended source, its legal basis with the quoted terms sentence, the Montana size and the per-tile bytes, the cadence and lag, what the refuter corrected, and the open question if any; (2) a draft section "B3 additions: streets, footprints and the dot per house" for the B3 brief: data modules, file layouts under hail/ (name them), zoom thresholds and shard sizes from the rendering figures, the join of address points to footprints (inside, within 15 m, unmatched; a footprint with no address gets a dot that opens the cell history with "no address on file for this building"), the words, the gates with numbers; (3) a draft brief "B5: the past-weather history per location" covering the temperature and rain grid summaries (the backfill once then monthly design, per-cell summary layout, the store files), station snow and the station rule, the flood, ice, heat and wind product additions to B2's machinery (phenomenon by path), the roof-indicator section with its templates and kind words, the sheet and town page layout, the daily job's steps and budget, the contract rows, the gates; (4) counsel items for the owner (ODbL if chosen, the FEMA flood zone question, the state library terms); (5) every number cited with the record file it came from. Plain wording, sentence case, no em-dashes, no model or AI-vendor names. Return the text of synthesis.md.\n\nWORKER AND REFUTER SUMMARIES:\n${JSON.stringify(good.map((g) => ({ slug: g.slug, bottom_line: g.research && g.research.bottom_line, recommendation: g.research && g.research.recommendation, measurements: g.research && g.research.measurements, open_questions: g.research && g.research.open_questions, refuter: g.verdict && { stands: g.verdict.recommendation_stands, note: g.verdict.recommendation_note, corrections: g.verdict.corrections } })), null, 1).slice(0, 30000)}`,
-  { label: 'synthesis', phase: 'Synthesize', model: 'haiku' })
+  { label: 'synthesis', phase: 'Synthesize', model: WORKER })
 
 phase('Critic')
 const critic = await agent(`You are the completeness critic. Read ${DIR}/synthesis.md and the records under ${DIR}/. The owner asked for: every street in Montana when zoomed in; an accurate shape of each house; a dot to click on each house; and for each location the past weather: hail size, wind, storm history, temperature highs and lows, snow amounts by year, rain by year, any flooding, and weather that matters for a roof. List what the synthesis leaves unanswered or unverified against that ask and against AGENTS.md rules 5 to 9 (evidence honesty, feed contracts, content checks, no "best" claims): a source not checked live, a licence not quoted, a size not measured, a join rule without a number, a claim that would state damage or an all-clear, a legal question left implicit, a rendering limit untested. For each gap say which record should answer it and the exact check to run. Return a numbered list, most consequential first, and write it to ${DIR}/critic.md.`,
-  { label: 'critic', phase: 'Critic', model: 'haiku' })
+  { label: 'critic', phase: 'Critic', model: WORKER })
 
 return { summaries: good.map((g) => ({ slug: g.slug, bottom_line: g.research && g.research.bottom_line, recommendation: g.research && g.research.recommendation, refuter_stands: g.verdict && g.verdict.recommendation_stands, refuter_note: g.verdict && g.verdict.recommendation_note, corrections: g.verdict && g.verdict.corrections, open_questions: g.research && g.research.open_questions })), synthesis: (synthesis || '').slice(0, 20000), critic: (critic || '').slice(0, 8000) }

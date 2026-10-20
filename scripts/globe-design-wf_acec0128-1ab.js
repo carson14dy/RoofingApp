@@ -7,6 +7,7 @@ export const meta = {
     { title: 'Synthesise', detail: 'one design section from the winner plus grafts' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const REPO = '/home/user/RoofingApp'
 const EVID = REPO + '/research/globe/validation-evidence/'
@@ -98,15 +99,15 @@ const SYNTH = (judges, designs) => CTX + `\n\n# Task W13 — synthesise the desi
 
 log('Wave 2b: rendering + pipeline analyses and three designers in parallel')
 const [w11, w12, dA, dB, dC] = await parallel([
-  () => agent(CTX + '\n\n' + W11, { label: 'analyse:rendering', phase: 'Analyse and design', model: 'haiku', schema: ANALYSIS_SCHEMA }),
-  () => agent(CTX + '\n\n' + W12, { label: 'analyse:pipeline', phase: 'Analyse and design', model: 'haiku', schema: ANALYSIS_SCHEMA }),
-  () => agent(designPrompt(DESIGNERS[0]), { label: 'design:A', phase: 'Analyse and design', model: 'haiku', schema: DESIGN_SCHEMA }),
-  () => agent(designPrompt(DESIGNERS[1]), { label: 'design:B', phase: 'Analyse and design', model: 'haiku', schema: DESIGN_SCHEMA }),
-  () => agent(designPrompt(DESIGNERS[2]), { label: 'design:C', phase: 'Analyse and design', model: 'haiku', schema: DESIGN_SCHEMA }),
+  () => agent(CTX + '\n\n' + W11, { label: 'analyse:rendering', phase: 'Analyse and design', model: WORKER, schema: ANALYSIS_SCHEMA }),
+  () => agent(CTX + '\n\n' + W12, { label: 'analyse:pipeline', phase: 'Analyse and design', model: WORKER, schema: ANALYSIS_SCHEMA }),
+  () => agent(designPrompt(DESIGNERS[0]), { label: 'design:A', phase: 'Analyse and design', model: WORKER, schema: DESIGN_SCHEMA }),
+  () => agent(designPrompt(DESIGNERS[1]), { label: 'design:B', phase: 'Analyse and design', model: WORKER, schema: DESIGN_SCHEMA }),
+  () => agent(designPrompt(DESIGNERS[2]), { label: 'design:C', phase: 'Analyse and design', model: WORKER, schema: DESIGN_SCHEMA }),
 ])
 const designs = [dA, dB, dC]
 log('Wave 2b: three judges scoring all designs')
-const judges = await parallel(LENSES.map(l => () => agent(judgePrompt(l, designs), { label: 'judge:' + l.slug, phase: 'Judge', model: 'haiku', schema: JUDGE_SCHEMA })))
+const judges = await parallel(LENSES.map(l => () => agent(judgePrompt(l, designs), { label: 'judge:' + l.slug, phase: 'Judge', model: WORKER, schema: JUDGE_SCHEMA })))
 log('Wave 2b: synthesis')
-const synthesis = await agent(SYNTH(judges, designs), { label: 'synthesis', phase: 'Synthesise', model: 'haiku', schema: ANALYSIS_SCHEMA })
+const synthesis = await agent(SYNTH(judges, designs), { label: 'synthesis', phase: 'Synthesise', model: WORKER, schema: ANALYSIS_SCHEMA })
 return { w11, w12, designs, judges, synthesis }

@@ -9,6 +9,7 @@ export const meta = {
     { title: 'Recheck', detail: 'tests, builds, smoke, record' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const WT = '/home/user/wt/wt-b3'
 const BASE = '7b14b2d'
@@ -78,12 +79,12 @@ function ownerOf(file) {
 
 phase('Build')
 const builds = await parallel([
-  () => agent(MODULE, { label: 'build:address-module-fixer', phase: 'Build', model: 'haiku' }),
-  () => agent(STREETS, { label: 'build:streets', phase: 'Build', model: 'haiku' }),
-  () => agent(BUILDINGS, { label: 'build:buildings', phase: 'Build', model: 'haiku' }),
-  () => agent(SITE, { label: 'build:site', phase: 'Build', model: 'haiku' }),
-  () => agent(BROWSER, { label: 'build:browser', phase: 'Build', model: 'haiku' }),
-  () => agent(DOCS, { label: 'build:docs', phase: 'Build', model: 'haiku' }),
+  () => agent(MODULE, { label: 'build:address-module-fixer', phase: 'Build', model: WORKER }),
+  () => agent(STREETS, { label: 'build:streets', phase: 'Build', model: WORKER }),
+  () => agent(BUILDINGS, { label: 'build:buildings', phase: 'Build', model: WORKER }),
+  () => agent(SITE, { label: 'build:site', phase: 'Build', model: WORKER }),
+  () => agent(BROWSER, { label: 'build:browser', phase: 'Build', model: WORKER }),
+  () => agent(DOCS, { label: 'build:docs', phase: 'Build', model: WORKER }),
 ])
 const [moduleR, streetsR, buildingsR, siteR, browserR, docsR] = builds
 log(`builders done: ${builds.map((b) => (b ? 'ok' : 'null')).join(', ')}`)
@@ -92,14 +93,14 @@ phase('Review')
 const reports = `Builder reports for context (claims to check, not facts):\nSTREETS: ${(streetsR || 'none').slice(0, 5000)}\nBUILDINGS: ${(buildingsR || 'none').slice(0, 5000)}\nSITE: ${(siteR || 'none').slice(0, 4000)}\nBROWSER: ${(browserR || 'none').slice(0, 4000)}\nDOCS: ${(docsR || 'none').slice(0, 2000)}`
 const reviews = await pipeline(
   REVIEWERS,
-  (r) => agent(`${r.prompt}\n\n${reports}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: 'haiku' }),
+  (r) => agent(`${r.prompt}\n\n${reports}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: WORKER }),
   async (result, r) => {
     if (!result) return { key: r.key, findings: [], measurements: {}, gates: [], summary: 'reviewer returned nothing' }
     const fs = result.findings.map((f, i) => ({ ...f, id: `${r.key}-${i + 1}` }))
     log(`${r.key}: ${fs.length} findings`)
     const verdicts = await parallel(fs.map((f) => () =>
       agent(`You are a skeptic checking one review finding in ${WT} (read-only; never edit, stage, commit or push; scratch only under ${OUT}/skeptic-${f.id}/ which you create). The finding:\n${JSON.stringify(f, null, 1)}\n\nOpen the file at the line, reproduce the observation yourself, and read ${BRIEF} for the contract and its decisions D1 to D24. Answer two questions apart. defect_real: is the defect real (you reproduced it), whatever the reviewer's severity or framing? refuted: should it be dropped from the fix list? A real defect is never refuted for a wrong severity or a wrong fix: set defect_real true, refuted false, give the right severity and, when the proposed fix is wrong or too broad, fix_ok false with an adjusted_fix. Refute only a defect that is not real, does not matter to the gates or the repository rules (AGENTS.md), or contradicts a brief decision. A kept fix must be correct and minimal and introduce nothing unsupported (no new number, no em-dash, no model or AI-product name, no new pip package for the site build, no owner or parcel or occupancy field, no contradiction of the brief's decisions). When you cannot reproduce the defect after a real attempt, set defect_real false and refuted true and say what you tried.`,
-        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: 'haiku' }).then((v) => (v ? { ...f, verdict: v } : null))))
+        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: WORKER }).then((v) => (v ? { ...f, verdict: v } : null))))
     return { key: r.key, findings: verdicts.filter(Boolean), measurements: result.measurements, gates: result.gates, summary: result.summary }
   },
 )
@@ -112,10 +113,10 @@ phase('Fix')
 const groups = ['addresses', 'streets', 'buildings', 'site', 'browser', 'docs'].map((k) => ({ k, items: confirmed.filter((f) => f.owner === k) })).filter((g) => g.items.length)
 const fixReports = await parallel(groups.map((g) => () =>
   agent(`${COMMON}\n\n${FIX_DECISIONS}\n\nYou are the fixer for the ${g.k} files; you own exactly: ${OWNERSHIP[g.k].join(', ')}. Apply these confirmed findings with exact, minimal edits that keep every public name and the brief's contract. Skip and report any finding naming a file you do not own, so the supervisor can route it. After editing run ${VENV} -m unittest tests.test_streets tests.test_buildings tests.test_addresses tests.test_site (and the full suite if you changed build.py, hail.py or a module's formats); if a fix changes a shard format, the index or the join, rebuild the store you own from ${STORE_TAR} and the cached sources and re-tar it, and say so. Report applied ids, skipped ids with reasons, and the test tail.\n\nFINDINGS:\n${JSON.stringify(g.items, null, 1)}`,
-    { label: `fix:${g.k}`, phase: 'Fix', model: 'haiku' })))
+    { label: `fix:${g.k}`, phase: 'Fix', model: WORKER })))
 
 phase('Recheck')
 const recheck = await agent(`${REVIEW_COMMON} ${FIX_DECISIONS} You are the final checker. Run and quote: ${VENV} -m unittest discover -s tests (tail); python desktop/launcher.py --selftest payload; builds from a copy of the worktree (cp -r without .git into ${OUT}/recheck/src): flag-off --sample --now 2026-10-19T12:00:00Z into ${OUT}/recheck/off; --hail-history --sample into ${OUT}/recheck/history; --hail-history --hail-addresses --sample into ${OUT}/recheck/sample; --hail-history --hail-addresses --sample --hail-store ${OUT}/buildings/hail-store.tar.gz (or the newest re-tarred store a fixer named) into ${OUT}/recheck/real; the base ${BASE} (git archive) flag-off and --hail-history --sample builds for the identity diffs (diff -rq; only map.js, map.css, style.css and ?v= lines may differ); PW_CHROMIUM=/opt/pw-browsers/chromium ${VENV} tools/smoke_map.py on each build (--addresses --shots on the real one) and tools/smoke_pages.py on the real one; du -sb of hail/a, hail/r, hail/b and their idx in the real build and of each _site; the largest shards; the verify commands of the three modules on their stores; the index counts against the brief (addresses per D22; roads and buildings per the builders' reports and the research figures) with differences explained; git -C ${WT} status --short and diff --stat ${BASE}; em-dash and banned-name counts over added lines; the forbidden-word grep of the built pages and map.json (owner, resident, tenant, occupant, parcel, residential, commercial, occupancy outside the quoted terms and the About exclusion sentence); the law citation grep; the decision 7 audit. Then update research/hail-history/validation-evidence/b3-verification.json in ${WT} (the one file you may edit): gates B3-1 to B3-8 with status and evidence, the measurements, and the confirmed findings applied and the refuted ones (ids, one line each) under notes. Return the gate table and measurements as JSON text and name every check that failed.`,
-  { label: 'recheck', phase: 'Recheck', model: 'haiku' })
+  { label: 'recheck', phase: 'Recheck', model: WORKER })
 
 return { builders: builds.map((b) => (b || '').slice(0, 5000)), reviews: reviews.map((r) => ({ key: r.key, summary: r.summary, gates: r.gates, measurements: r.measurements })), confirmed, refuted, fixReports, recheck }

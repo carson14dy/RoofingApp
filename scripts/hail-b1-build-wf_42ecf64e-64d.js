@@ -10,6 +10,7 @@ export const meta = {
     { title: 'Recheck', detail: 'tests, builds, smoke, measurements' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const S = '/tmp/claude-0/-home-user-RoofingApp/7638440a-a008-5ef8-a289-86be0a23e7a7/scratchpad'
 const WT = `${S}/wt-hail-b1`
@@ -93,14 +94,14 @@ function ownerOf(file) {
 }
 
 phase('Skeleton')
-const skeleton = await agent(SKELETON, { label: 'skeleton', phase: 'Skeleton', model: 'haiku' })
+const skeleton = await agent(SKELETON, { label: 'skeleton', phase: 'Skeleton', model: WORKER })
 log(`skeleton done: ${(skeleton || '').slice(0, 200)}`)
 
 phase('Build')
 const builds = await parallel([
-  () => agent(`${STORE}\n\nThe skeleton builder reported:\n${skeleton}`, { label: 'build:store', phase: 'Build', model: 'haiku' }),
-  () => agent(`${SITE}\n\nThe skeleton builder reported:\n${skeleton}`, { label: 'build:site', phase: 'Build', model: 'haiku' }),
-  () => agent(DOCS, { label: 'build:docs', phase: 'Build', model: 'haiku' }),
+  () => agent(`${STORE}\n\nThe skeleton builder reported:\n${skeleton}`, { label: 'build:store', phase: 'Build', model: WORKER }),
+  () => agent(`${SITE}\n\nThe skeleton builder reported:\n${skeleton}`, { label: 'build:site', phase: 'Build', model: WORKER }),
+  () => agent(DOCS, { label: 'build:docs', phase: 'Build', model: WORKER }),
 ])
 const [storeReport, siteReport, docsReport] = builds
 log(`builders done: store ${storeReport ? 'ok' : 'null'}, site ${siteReport ? 'ok' : 'null'}, docs ${docsReport ? 'ok' : 'null'}`)
@@ -108,14 +109,14 @@ log(`builders done: store ${storeReport ? 'ok' : 'null'}, site ${siteReport ? 'o
 phase('Review')
 const reviews = await pipeline(
   REVIEWERS,
-  (r) => agent(`${r.prompt}\n\nBuilder reports for context (claims to check, not facts):\nSTORE: ${(storeReport || 'none').slice(0, 6000)}\nSITE: ${(siteReport || 'none').slice(0, 6000)}\nDOCS: ${(docsReport || 'none').slice(0, 3000)}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: 'haiku' }),
+  (r) => agent(`${r.prompt}\n\nBuilder reports for context (claims to check, not facts):\nSTORE: ${(storeReport || 'none').slice(0, 6000)}\nSITE: ${(siteReport || 'none').slice(0, 6000)}\nDOCS: ${(docsReport || 'none').slice(0, 3000)}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: WORKER }),
   async (result, r) => {
     if (!result) return { key: r.key, findings: [], measurements: {}, gates: [], summary: 'reviewer returned nothing' }
     const fs = result.findings.map((f, i) => ({ ...f, id: `${r.key}-${i + 1}` }))
     log(`${r.key}: ${fs.length} findings`)
     const verdicts = await parallel(fs.map((f) => () =>
       agent(`You are a skeptic checking one review finding in ${WT} (read-only; never edit, stage, commit or push). The finding:\n${JSON.stringify(f, null, 1)}\n\nOpen the file at the line, run the command or reproduce the observation yourself, and read ${BRIEF} for the contract. The finding stands only if the defect is real, matters to the brief's gates or the repository's rules (AGENTS.md), and the proposed fix is correct and minimal and introduces nothing unsupported (no new number, no em-dash, no model or AI-product name, no new pip package, no widening of scope). If the defect is real but the fix is wrong or too broad, set fix_ok false and give an adjusted_fix. Default to refuted=true when uncertain.`,
-        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: 'haiku' })
+        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: WORKER })
         .then((v) => (v ? { ...f, verdict: v } : null))))
     return { key: r.key, findings: verdicts.filter(Boolean), measurements: result.measurements, gates: result.gates, summary: result.summary }
   },
@@ -133,10 +134,10 @@ phase('Fix')
 const groups = ['store', 'site', 'docs'].map((k) => ({ k, items: confirmed.filter((f) => f.owner === k) })).filter((g) => g.items.length)
 const fixReports = await parallel(groups.map((g) => () =>
   agent(`${COMMON}\n\nYou are the fixer for the ${g.k} files; you own exactly: ${OWNERSHIP[g.k].join(', ')}. Apply these confirmed review findings (exact, minimal edits; keep every public name; keep the contract in the brief). If a finding in your list names a file you do not own, skip it and say so. After editing, run python -m unittest tests.test_hail tests.test_site (and the full suite if you changed hail.py or build.py) and make it pass; if a fix changes the store format, regenerate ${OUT}/store/store and the tar with the same commands the store builder used and say so. Report applied ids, skipped ids with reasons, and the test tail.\n\nFINDINGS:\n${JSON.stringify(g.items, null, 1)}`,
-    { label: `fix:${g.k}`, phase: 'Fix', model: 'haiku' })))
+    { label: `fix:${g.k}`, phase: 'Fix', model: WORKER })))
 
 phase('Recheck')
 const recheck = await agent(`${REVIEW_COMMON} You are the final checker after the fixes. Run and quote: python -m unittest discover -s tests (tail); python desktop/launcher.py --selftest payload; python -m website.build --out ${OUT}/recheck/off --sample --now 2026-10-18T12:00:00Z; --hail-history --sample into ${OUT}/recheck/sample; --hail-history --sample --hail-store ${OUT}/store/hail-store.tar.gz into ${OUT}/recheck/real; PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_map.py on each of the three builds (--shots on the real one) and tools/smoke_pages.py on the real one; du -sb of hail/ in the real build and of each _site; the largest shard; python -m website.hail verify ${OUT}/store/store and compare; git -C ${WT} status --short and diff --stat against 825d6c7; em-dash and banned-name counts over added lines; grep the built real pages for an unfilled "{" placeholder inside hail sections. Then update research/hail-history/validation-evidence/b1-verification.json in ${WT} (this is the one file you may edit): set each gate's status and evidence from what you measured, fill measurements, and list the confirmed findings applied and the refuted ones (ids and one line each) under notes. Return the gate table and measurements as JSON text.`,
-  { label: 'recheck', phase: 'Recheck', model: 'haiku' })
+  { label: 'recheck', phase: 'Recheck', model: WORKER })
 
 return { skeleton: (skeleton || '').slice(0, 3000), storeReport: (storeReport || '').slice(0, 6000), siteReport: (siteReport || '').slice(0, 6000), docsReport: (docsReport || '').slice(0, 3000), reviews: reviews.map((r) => ({ key: r.key, summary: r.summary, gates: r.gates, measurements: r.measurements })), confirmed, refuted, fixReports, recheck }

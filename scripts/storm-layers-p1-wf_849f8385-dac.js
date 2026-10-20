@@ -7,6 +7,7 @@ export const meta = {
     { title: 'Fix and verify', detail: 'apply the review; offline tests, sample build, live build with the flag' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const REPO = '/home/user/RoofingApp'
 const EVID = REPO + '/research/globe/validation-evidence/'
@@ -51,12 +52,12 @@ Apply every "blocking" and "should_fix" item (and nits that are cheap). Then run
 
 log('Staged route: recording the decision, measuring P0 gates, building P1 in parallel')
 const [rec, p0, p1] = await parallel([
-  () => agent(CTX + '\n\n' + RECORD, { label: 'record-decision', phase: 'Decision + P0 + P1 build', model: 'haiku' }),
-  () => agent(CTX + '\n\n' + P0, { label: 'p0-gates', phase: 'Decision + P0 + P1 build', model: 'haiku' }),
-  () => agent(CTX + '\n\n' + P1, { label: 'p1-implement', phase: 'Decision + P0 + P1 build', model: 'haiku' }),
+  () => agent(CTX + '\n\n' + RECORD, { label: 'record-decision', phase: 'Decision + P0 + P1 build', model: WORKER }),
+  () => agent(CTX + '\n\n' + P0, { label: 'p0-gates', phase: 'Decision + P0 + P1 build', model: WORKER }),
+  () => agent(CTX + '\n\n' + P1, { label: 'p1-implement', phase: 'Decision + P0 + P1 build', model: WORKER }),
 ])
 log('Reviewing the P1 diff')
-const review = await agent(CTX + '\n\n' + REVIEW(p1), { label: 'p1-review', phase: 'Review', model: 'haiku' })
+const review = await agent(CTX + '\n\n' + REVIEW(p1), { label: 'p1-review', phase: 'Review', model: WORKER })
 log('Applying the review and verifying')
-const fix = await agent(CTX + '\n\n' + FIX(review), { label: 'p1-fix-verify', phase: 'Fix and verify', model: 'haiku' })
+const fix = await agent(CTX + '\n\n' + FIX(review), { label: 'p1-fix-verify', phase: 'Fix and verify', model: WORKER })
 return { rec, p0, p1, review, fix }

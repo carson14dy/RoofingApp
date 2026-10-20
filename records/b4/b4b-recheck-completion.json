@@ -137,7 +137,7 @@
   {
    "check": "banned-name counts on added lines",
    "result": "pass",
-   "quote": "Interpreted as trademark and product names the briefs forbid or the repo's forbidden terms (no written banned-name list was found). Trademark and brand names (TIGER, Census TIGER, Apple, Dark Sky, Google, Esri, Claude, Haiku, Anthropic, ChatGPT, Codex, OpenAI, Carson): 0 in website/, tools/; 10 'claude' in docs and tests, all branch names (claude/hail-b4). Forbidden terms (damage, dry, clear, insurance, eligible, confirmed, customers, guaranteed, approved, best, measured, 'observed hail', 'no hail'): 86 raw hits, 67 after excluding 'all-clear' and JavaScript identifiers; every hit on a shipped word line is negated ('not observed hail and not damage', 'not the same as no hail', 'not an all-clear'); 0 unnegated."
+   "quote": "Interpreted as trademark and product names the briefs forbid or the repo's forbidden terms (no written banned-name list was found). Trademark and brand names (TIGER, Census TIGER, Apple, Dark Sky, Google, Esri, Claude, the worker model, Anthropic, ChatGPT, Codex, OpenAI, Carson): 0 in website/, tools/; 10 'claude' in docs and tests, all branch names (claude/hail-b4). Forbidden terms (damage, dry, clear, insurance, eligible, confirmed, customers, guaranteed, approved, best, measured, 'observed hail', 'no hail'): 86 raw hits, 67 after excluding 'all-clear' and JavaScript identifiers; every hit on a shipped word line is negated ('not observed hail and not damage', 'not the same as no hail', 'not an all-clear'); 0 unnegated."
   },
   {
    "check": "map.js literal scan (added lines)",

@@ -2,10 +2,11 @@ export const meta = {
   name: 'hail-history-research-wave1',
   description: 'Verify the sources for a 5-year Montana hail and wind history: ten workstreams, each researched then refuted',
   phases: [
-    { title: 'Research', detail: 'ten researchers, live requests and content checks', model: 'haiku' },
-    { title: 'Refute', detail: 'one refuter per workstream re-runs the key requests', model: 'haiku' },
+    { title: 'Research', detail: 'ten researchers, live requests and content checks', model: WORKER },
+    { title: 'Refute', detail: 'one refuter per workstream re-runs the key requests', model: WORKER },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const BRIEF = '/tmp/claude-0/-home-user-RoofingApp/7638440a-a008-5ef8-a289-86be0a23e7a7/scratchpad/hail-brief.md'
 const WT = '/tmp/claude-0/-home-user-RoofingApp/7638440a-a008-5ef8-a289-86be0a23e7a7/scratchpad/wt-hail'
@@ -38,10 +39,10 @@ const results = await pipeline(
   WS,
   ([id, slug]) => agent(`${COMMON(id, slug)}
 
-ROLE: RESEARCHER. Answer every question the brief lists for ${id}. Write the JSON with "review" left as an empty object. Prefer primary sources (the agency's own pages, bucket listings, the files themselves) over summaries. For anything you could not verify, say so in limits or open_questions instead of guessing.`, { label: `research:${id}`, phase: 'Research', model: 'haiku', schema: SCHEMA }),
+ROLE: RESEARCHER. Answer every question the brief lists for ${id}. Write the JSON with "review" left as an empty object. Prefer primary sources (the agency's own pages, bucket listings, the files themselves) over summaries. For anything you could not verify, say so in limits or open_questions instead of guessing.`, { label: `research:${id}`, phase: 'Research', model: WORKER, schema: SCHEMA }),
   (r, [id, slug]) => agent(`${COMMON(id, slug)}
 
-ROLE: REFUTER. A researcher wrote ${OUT}/${slug}.json (their summary: ${JSON.stringify(r)}). Read it, then try to refute every fact: re-run the key requests yourself (fresh downloads of the small files; re-list the buckets; re-read the terms pages), recompute the numbers, and look for what the researcher missed from the brief's questions. Edit the JSON in place: a wrong fact gets "verified": false and "refuted_by"; a corrected value replaces the old one with "corrected_from"; add missing facts; fill "review" (checked_at_utc, scope, refuted_claims, corrections, confirmed, unverified, reviewer_checks with URL and content_check). Keep the file valid JSON and under 60 KB. Return the structured summary describing the file after your pass.`, { label: `refute:${id}`, phase: 'Refute', model: 'haiku', schema: SCHEMA }),
+ROLE: REFUTER. A researcher wrote ${OUT}/${slug}.json (their summary: ${JSON.stringify(r)}). Read it, then try to refute every fact: re-run the key requests yourself (fresh downloads of the small files; re-list the buckets; re-read the terms pages), recompute the numbers, and look for what the researcher missed from the brief's questions. Edit the JSON in place: a wrong fact gets "verified": false and "refuted_by"; a corrected value replaces the old one with "corrected_from"; add missing facts; fill "review" (checked_at_utc, scope, refuted_claims, corrections, confirmed, unverified, reviewer_checks with URL and content_check). Keep the file valid JSON and under 60 KB. Return the structured summary describing the file after your pass.`, { label: `refute:${id}`, phase: 'Refute', model: WORKER, schema: SCHEMA }),
 )
 const done = results.filter(Boolean)
 log(`Wave 1 done: ${done.length} of ${WS.length} workstreams have a refuted evidence file`)

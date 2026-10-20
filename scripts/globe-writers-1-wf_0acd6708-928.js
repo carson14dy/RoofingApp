@@ -3,6 +3,7 @@ export const meta = {
   description: 'Write the evidence-only README sections as fragments: verified sources + street-zoom/design references, rendering options, pipeline/cost + predeclared evaluation',
   phases: [{ title: 'Write fragments', detail: 'three section writers in parallel' }],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const REPO = '/home/user/RoofingApp'
 const EVID = REPO + '/research/globe/validation-evidence/'
@@ -36,8 +37,8 @@ From evaluation-predeclared.json: purpose (fidelity of the rendering to its sour
 
 log('Writing evidence-only README fragments: sources+street zoom, rendering, pipeline+evaluation')
 const out = await parallel([
-  () => agent(CTX + '\n\n' + S8, { label: 'write:08-sources', phase: 'Write fragments', model: 'haiku' }),
-  () => agent(CTX + '\n\n' + S9, { label: 'write:09a-rendering', phase: 'Write fragments', model: 'haiku' }),
-  () => agent(CTX + '\n\n' + S10, { label: 'write:10-pipeline', phase: 'Write fragments', model: 'haiku' }),
+  () => agent(CTX + '\n\n' + S8, { label: 'write:08-sources', phase: 'Write fragments', model: WORKER }),
+  () => agent(CTX + '\n\n' + S9, { label: 'write:09a-rendering', phase: 'Write fragments', model: WORKER }),
+  () => agent(CTX + '\n\n' + S10, { label: 'write:10-pipeline', phase: 'Write fragments', model: WORKER }),
 ])
 return { fragments: out }

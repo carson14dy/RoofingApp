@@ -8,6 +8,7 @@ export const meta = {
     { title: 'Check', detail: 'links, dashes, names, numbers' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 
 const WT = '/tmp/claude-0/-home-user-RoofingApp/7638440a-a008-5ef8-a289-86be0a23e7a7/scratchpad/wt-hail'
 const README = `${WT}/research/hail-history/README.md`
@@ -71,14 +72,14 @@ const LENSES = [
 phase('Refute')
 const perLens = await pipeline(
   LENSES,
-  (lens) => agent(lens.prompt, { label: `refute:${lens.key}`, phase: 'Refute', schema: FINDINGS, model: 'haiku' }),
+  (lens) => agent(lens.prompt, { label: `refute:${lens.key}`, phase: 'Refute', schema: FINDINGS, model: WORKER }),
   async (result, lens) => {
     if (!result) return []
     const fs = result.findings.map((f, i) => ({ ...f, id: `${lens.key}-${i + 1}` }))
     log(`${lens.key}: ${fs.length} findings`)
     const verdicts = await parallel(fs.map((f) => () =>
       agent(`You are a skeptic. Another reviewer claims this problem in ${README}:\n${JSON.stringify(f, null, 1)}\n\nTry to REFUTE it: open the README at that line (grep for the quote), open the evidence it names under ${EV} (and, when the owner's words matter, use this verbatim text: ${OWNER}). The finding stands only if the quote exists once in the README as written, the problem is real against the evidence or the owner's text, and the proposed fix is correct and introduces nothing unsupported (no new number, no new claim, no em-dash, no model or AI-product name). If the problem is real but the fix is wrong, say fix_ok false and give an adjusted_fix that is correct, or leave it empty when none is possible. Default to refuted=true when uncertain. Read-only: edit nothing. ${RULES}`,
-        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: 'haiku' })
+        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: WORKER })
         .then((v) => (v ? { ...f, verdict: v } : null))))
     return verdicts.filter(Boolean)
   },
@@ -99,7 +100,7 @@ const SUPERVISOR_EDITS = `Supervisor edits (apply these as well, exact-match rep
 (c) Nowhere else change meaning.`
 const fixReport = await agent(
   `Apply these confirmed review findings to ${README} with exact-match replacements (each "quote" occurs once; replace it with "fix"; an empty fix deletes the quote). Do not apply anything else from the list of refuted findings. After the findings, apply the supervisor edits. Then re-run: em-dash and en-dash count (must be 0), the banned-name grep (only the branch name on line 3 may match), and the relative-link check (0 unresolved). Do not touch any other file; do not stage, commit or push. Return JSON with applied (ids), skipped (id and why, for any quote that does not occur exactly once or any fix that would add an unsupported claim), and the three check results.\n\nCONFIRMED FINDINGS:\n${JSON.stringify(confirmed, null, 1)}\n\n${SUPERVISOR_EDITS}\n\nNo model, AI-vendor or AI-product names; no em-dashes; plain wording.`,
-  { label: 'fix', phase: 'Fix', model: 'haiku', schema: {
+  { label: 'fix', phase: 'Fix', model: WORKER, schema: {
     type: 'object',
     properties: {
       applied: { type: 'array', items: { type: 'string' } },
@@ -113,7 +114,7 @@ const fixReport = await agent(
 phase('Check')
 const check = await agent(
   `Final read-only check of ${README} after edits. Run with shell commands and report: (1) em-dash and en-dash count; (2) case-insensitive hits of Claude, Anthropic, Codex, ChatGPT, OpenAI, Copilot, Gemini, Haiku, Opus, Sonnet with line numbers (the branch name on line 3 is allowed); (3) relative markdown links whose target does not exist under ${WT}/research/hail-history; (4) grep for "has started" and "not yet in this repository" (both must be absent); (5) grep for "mm assumed" and "units are unverified" and "codes are unverified" and list the lines with the 8 words around each so the supervisor can see whether each is a dated record or a superseded recommendation (allowed) or a current claim (not allowed); (6) the line count. Edit nothing.`,
-  { label: 'check', phase: 'Check', model: 'haiku', schema: {
+  { label: 'check', phase: 'Check', model: WORKER, schema: {
     type: 'object',
     properties: {
       emdashes: { type: 'integer' }, banned: { type: 'array', items: { type: 'string' } }, unresolved_links: { type: 'array', items: { type: 'string' } },

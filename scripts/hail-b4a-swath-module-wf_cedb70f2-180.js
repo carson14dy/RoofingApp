@@ -9,6 +9,7 @@ export const meta = {
     { title: 'Recheck', detail: 'tests, live run, measurements' },
   ],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 const WT = '/home/user/wt/wt-b4'
 const BASE = '35f1233'
 const BRIEF = '/home/user/wt/briefs/hail-b4-brief.md'
@@ -42,22 +43,22 @@ function ownerOf(file) { for (const [k, ps] of Object.entries(OWNERSHIP)) if (ps
 
 phase('Build')
 const [swathR, followR] = await parallel([
-  () => agent(SWATH, { label: 'build:swath', phase: 'Build', model: 'haiku' }),
-  () => agent(FOLLOWUPS, { label: 'build:followups', phase: 'Build', model: 'haiku' }),
+  () => agent(SWATH, { label: 'build:swath', phase: 'Build', model: WORKER }),
+  () => agent(FOLLOWUPS, { label: 'build:followups', phase: 'Build', model: WORKER }),
 ])
 log(`builders done: swath ${swathR ? 'ok' : 'null'}, followups ${followR ? 'ok' : 'null'}`)
 
 phase('Review')
 const reviews = await pipeline(
   REVIEWERS,
-  (r) => agent(`${r.prompt}\n\nBuilder reports for context (claims to check, not facts):\nSWATH: ${(swathR || 'none').slice(0, 7000)}\nFOLLOWUPS: ${(followR || 'none').slice(0, 4000)}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: 'haiku' }),
+  (r) => agent(`${r.prompt}\n\nBuilder reports for context (claims to check, not facts):\nSWATH: ${(swathR || 'none').slice(0, 7000)}\nFOLLOWUPS: ${(followR || 'none').slice(0, 4000)}`, { label: `review:${r.key}`, phase: 'Review', schema: FINDINGS, model: WORKER }),
   async (result, r) => {
     if (!result) return { key: r.key, findings: [], measurements: {}, gates: [], summary: 'reviewer returned nothing' }
     const fs = result.findings.map((f, i) => ({ ...f, id: `${r.key}-${i + 1}` }))
     log(`${r.key}: ${fs.length} findings`)
     const verdicts = await parallel(fs.map((f) => () =>
       agent(`You are a skeptic checking one review finding in ${WT} (read-only; never edit, stage, commit or push; scratch only under ${OUT}/skeptic-${f.id}/ which you create). The finding:\n${JSON.stringify(f, null, 1)}\n\nOpen the file at the line, reproduce the observation yourself, and read ${BRIEF} (decisions D1 to D6, follow-ups F1 and F2). The finding stands only if the defect is real, matters to gates B4-1 to B4-5, the follow-ups or the repository rules (AGENTS.md), and the proposed fix is correct and minimal and introduces nothing unsupported (no new number, no em-dash, no model or AI-product name, no new pip package, no contradiction of the brief's decisions). If the defect is real but the fix is wrong or too broad, set fix_ok false and give an adjusted_fix. Default to refuted=true when uncertain.`,
-        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: 'haiku' }).then((v) => (v ? { ...f, verdict: v } : null))))
+        { label: `verify:${f.id}`, phase: 'Verify', schema: VERDICT, model: WORKER }).then((v) => (v ? { ...f, verdict: v } : null))))
     return { key: r.key, findings: verdicts.filter(Boolean), measurements: result.measurements, gates: result.gates, summary: result.summary }
   },
 )
@@ -68,9 +69,9 @@ log(`confirmed ${confirmed.length} (blocking ${confirmed.filter((f) => f.severit
 
 phase('Fix')
 const groups = ['swath', 'followups'].map((k) => ({ k, items: confirmed.filter((f) => f.owner === k) })).filter((g) => g.items.length)
-const fixReports = await parallel(groups.map((g) => () => agent(`${COMMON}\n\nYou are the fixer for the ${g.k} files; you own exactly: ${OWNERSHIP[g.k].join(', ')}. Apply these confirmed findings with exact, minimal edits that keep every public name and the brief's contract (decisions D1 to D6 decide any choice; a finding that contradicts one is skipped with the decision cited). Skip and report any finding naming a file you do not own. After editing run ${VENV} -m unittest tests.test_swath tests.test_gridded tests.test_storm tests.test_site. Report applied ids, skipped ids with reasons, and the test tail.\n\nFINDINGS:\n${JSON.stringify(g.items, null, 1)}`, { label: `fix:${g.k}`, phase: 'Fix', model: 'haiku' })))
+const fixReports = await parallel(groups.map((g) => () => agent(`${COMMON}\n\nYou are the fixer for the ${g.k} files; you own exactly: ${OWNERSHIP[g.k].join(', ')}. Apply these confirmed findings with exact, minimal edits that keep every public name and the brief's contract (decisions D1 to D6 decide any choice; a finding that contradicts one is skipped with the decision cited). Skip and report any finding naming a file you do not own. After editing run ${VENV} -m unittest tests.test_swath tests.test_gridded tests.test_storm tests.test_site. Report applied ids, skipped ids with reasons, and the test tail.\n\nFINDINGS:\n${JSON.stringify(g.items, null, 1)}`, { label: `fix:${g.k}`, phase: 'Fix', model: WORKER })))
 
 phase('Recheck')
-const recheck = await agent(`${REVIEW_COMMON} You are the final checker of this data-module run. Run and quote: ${VENV} -m unittest discover -s tests (tail); python desktop/launcher.py --selftest payload; the module's live path now into ${OUT}/recheck/live (list, download, decode both products; the header fields and valid times; PNG bytes; live file count and bytes); the round trip at 1,000 pixels per layer with your own decode (0 mismatches expected); the sample frames through the STYLE; git -C ${WT} status --short and diff --stat ${BASE}; em-dash and banned-name counts over added lines; the decision 7 audit; the F1 wording (quote the four places) and the F2 grep. Write ${OUT}/b4a-recheck.json with gates B4-1 to B4-5 (status, evidence), the measurements, F1 and F2 status, and the applied and refuted findings (ids, one line each). Return that JSON as text.`, { label: 'recheck', phase: 'Recheck', model: 'haiku' })
+const recheck = await agent(`${REVIEW_COMMON} You are the final checker of this data-module run. Run and quote: ${VENV} -m unittest discover -s tests (tail); python desktop/launcher.py --selftest payload; the module's live path now into ${OUT}/recheck/live (list, download, decode both products; the header fields and valid times; PNG bytes; live file count and bytes); the round trip at 1,000 pixels per layer with your own decode (0 mismatches expected); the sample frames through the STYLE; git -C ${WT} status --short and diff --stat ${BASE}; em-dash and banned-name counts over added lines; the decision 7 audit; the F1 wording (quote the four places) and the F2 grep. Write ${OUT}/b4a-recheck.json with gates B4-1 to B4-5 (status, evidence), the measurements, F1 and F2 status, and the applied and refuted findings (ids, one line each). Return that JSON as text.`, { label: 'recheck', phase: 'Recheck', model: WORKER })
 
 return { swathR: (swathR || '').slice(0, 8000), followR: (followR || '').slice(0, 4000), reviews: reviews.map((r) => ({ key: r.key, summary: r.summary, gates: r.gates, measurements: r.measurements })), confirmed, refuted, fixReports, recheck }

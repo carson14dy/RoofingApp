@@ -3,6 +3,7 @@ export const meta = {
   description: 'B2 round five: the four recheck4 leftovers (town page overflow at 288 and 320 px, the measured figures into the docs placeholders, the cancellation-only group figure, one docstring) by three fixers in parallel',
   phases: [{ title: 'Fix', detail: 'site CSS break point; docs figures; joins docstring' }],
 }
+const WORKER = (typeof args !== 'undefined' && args && args.worker) || undefined  // the worker model alias, passed in args at launch
 const WT = '/home/user/wt/wt-b2'
 const BRIEF = '/home/user/wt/briefs/hail-b2-brief.md'
 const OUT = '/home/user/hail-b2/out2'
@@ -13,8 +14,8 @@ const DOCS = `${COMMON}\n\nYou are the docs fixer; you own docs/DECISIONS.md, do
 const JOINS = `${COMMON}\n\nYou are the joins fixer; you own website/joins.py and tests/test_joins.py. Round-5 item 4: at website/joins.py line about 1888 the docstring says "110 public groups with a NEW row"; the measured figure is 110 zone groups with a NEW row, 69 public and 41 fire weather, so write that. Also read the _zone_events docstring once more for D30 and D31 consistency (the key includes the office; the known limit names its four cases as the brief's D33 lists them) and fix any sentence that disagrees. No behaviour change. Run ${VENV} -m unittest tests.test_joins (tail). When done, also write the file ${OUT}/r5-site/joins_done.txt with one line.`
 phase('Fix')
 const fixes = await parallel([
-  () => agent(SITE, { label: 'fix5:site', phase: 'Fix', model: 'haiku' }).then((r) => { log('site fixer done'); return r }),
-  () => agent(DOCS, { label: 'fix5:docs', phase: 'Fix', model: 'haiku' }),
-  () => agent(JOINS, { label: 'fix5:joins', phase: 'Fix', model: 'haiku' }),
+  () => agent(SITE, { label: 'fix5:site', phase: 'Fix', model: WORKER }).then((r) => { log('site fixer done'); return r }),
+  () => agent(DOCS, { label: 'fix5:docs', phase: 'Fix', model: WORKER }),
+  () => agent(JOINS, { label: 'fix5:joins', phase: 'Fix', model: WORKER }),
 ])
 return { fixes: fixes.map((f) => (f || '').slice(0, 5000)) }
