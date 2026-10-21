@@ -8,7 +8,7 @@ Montana Hail Watch (D26), weather for a Montana roofing company (owner: Carson, 
 **The product is a website (D27):** official NWS alerts, an interactive radar, forecast and warning
 map in the style of Apple Weather (D28), a 12-hour card and a 24-hour/7-day page per town, and SPC
 storm reports. Python builds it into static pages;
-GitHub Actions rebuilds it every 10 minutes from `main` and publishes it with GitHub Pages, so
+GitHub Actions is asked to rebuild it every 10 minutes from `main` (and builds on every push to `main`) and publishes it with GitHub Pages, so
 **anything merged to `main` is live within about 10 minutes**.
 The earlier desktop app (`payload/`, `desktop/`) is **parked**: unchanged and still tested, not
 shipped. Its rules below (1–3) apply only if work on it resumes.
@@ -47,7 +47,7 @@ build.py   PyInstaller build      ship.py   test → bump version → commit →
 ```bash
 pip install requests jinja2 pillow numpy pygrib h5py tzdata     # enough for the website
 python -m website.build --out _site --sample             # labelled sample data, no network
-python -m website.build --out _site --hail-history       # the five-year hail history; off by default (D34)
+python -m website.build --out _site --hail-history       # the five-year hail history (D34; on main at the owner's decision of 2026-10-21)
 python -m website.build --out _site --require-live       # live data; exit 1 if any source failed
 python -m http.server -d _site 8000                      # then open http://localhost:8000
 pip install -r requirements.txt                          # the parked desktop app

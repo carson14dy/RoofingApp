@@ -7,7 +7,7 @@
     python -m website.build --out _site --hail-history  # also the five-year hail history (website/hail.py)
     python -m website.build --out _site --sample --hail-history --hail-store store.tar.gz  # a local store, not the download
 
-GitHub Actions runs the live build every 10 minutes and publishes the folder with GitHub Pages
+GitHub Actions runs the live build on a schedule set to every 10 minutes and publishes the folder with GitHub Pages
 (.github/workflows/website.yml). Every page says when its data was fetched; nothing on a page is
 newer than that time.
 """
@@ -254,7 +254,12 @@ class Collector:
             block["tiles"] = tiles                  # the browser's outside test: a tile not listed has no Montana cell
             detail = (f"{index['events']:,} events in {index['shards']} shard files, {index['days_present']} of "
                       f"{index['days_expected']} days, as of {index['as_of']}")
-            self.note("hail_history", HAIL_LABEL, True, ("SAMPLE store: " if sampled else "") + detail)
+            if index.get("asset"):                  # the release asset the download took (the branch's, else main's)
+                detail += f", from {index['asset']}"
+            stale = not sampled and hs.is_stale(index["as_of"], self.now)    # a real store older than STALE_DAYS
+            if stale:                               # the pages carry it with the stale line; the source counts as failed
+                detail += f" (stale: more than {hs.STALE_DAYS} days old, the daily job has not published)"
+            self.note("hail_history", HAIL_LABEL, not stale, ("SAMPLE store: " if sampled else "") + detail)
         except (hs.HailStoreError, OSError, ValueError, KeyError, TypeError) as e:
             problem = str(e) if isinstance(e, hs.HailStoreError) else f"the history files couldn't be read ({type(e).__name__})"
             self.note("hail_history", HAIL_LABEL, False, problem)
@@ -486,7 +491,8 @@ def hail_store(out: Path, store: str | None, sample: bool, fetch) -> dict:
         hs.check_manifest(hs.FIXTURE_DIR)
         return _copy_hail(hs.FIXTURE_DIR, out, index)
     with tempfile.TemporaryDirectory(prefix="hail-store-") as tmp:
-        index = hs.fetch_store(fetch.binary, tmp, hs.STORE_URL)
+        index, url = hs.fetch_store_any(fetch.binary, tmp, hs.store_urls())   # the branch's asset, else main's
+        index = dict(index, asset=url.rsplit("/", 1)[-1])
         return _copy_hail(Path(tmp), out, index)
 
 

@@ -89,7 +89,30 @@ UNITS_TABLE = "UserTable_MRMS_v12.2 (MESH mm; -1 missing; -3 no coverage)"
 SPC_DAY_RULE = "the file stamped D+1 at 12:00 UTC holds SPC report day D (12:00 UTC D to 11:59 UTC D+1)"
 SHARD_TEMPLATE = "hail/t/r{r}_c{c}.json"   # {r} and {c} are row//10 and col//10, four digits each
 REPO = os.environ.get("GITHUB_REPOSITORY") or "carson14dy/RoofingApp"
-STORE_URL = f"https://github.com/{REPO}/releases/download/hail-store/hail-store.tar.gz"
+STORE_ASSET_DEFAULT = "hail-store-main.tar.gz"     # main's asset; a branch build reads its own (HAIL_STORE_ASSET)
+
+
+def store_url(asset: str | None = None) -> str:
+    """The release asset the site build downloads. The daily job names the asset after the branch whose job
+    publishes it (hail-store-<branch>.tar.gz, slashes as dashes; main's is hail-store-main.tar.gz), and each build
+    reads its own branch's asset (the HAIL_STORE_ASSET variable, set by the website workflow), so a branch job
+    never touches what main reads."""
+    name = asset or os.environ.get("HAIL_STORE_ASSET") or STORE_ASSET_DEFAULT
+    return f"https://github.com/{REPO}/releases/download/hail-store/{name}"
+
+
+STORE_URL = store_url()
+
+
+def store_urls() -> list[str]:
+    """The release assets a build tries in order: its own branch's (HAIL_STORE_ASSET, which the website workflow sets
+    to hail-store-<branch>.tar.gz), then main's. A branch whose store job never ran has no asset of its own and reads
+    main's, as every branch did before the assets were named; a branch that changed the store code publishes its own
+    asset, which comes first. On main the list is main's asset alone."""
+    own = os.environ.get("HAIL_STORE_ASSET")
+    names = [own] if own and own != STORE_ASSET_DEFAULT else []
+    names.append(STORE_ASSET_DEFAULT)
+    return [store_url(n) for n in names]
 BENCHLAND = (47.08, -110.02)            # the Benchland point (Montana): the sample's town point, on a cell edge
 # The check cell (owner decision 3, 2026-10-18). The point above lies on a cell edge and its own cell holds 185
 # tenths (0.72 in) on GATE_DAY. The nearest cell that holds GATE_TENTHS on GATE_DAY is the one centred on
@@ -163,7 +186,7 @@ WORDS = {
     "unavailable": "Hail history is unavailable: {problem}. This is not the same as no hail.",
     "source": ("Source: NOAA MRMS MESH 24-hour maximum, 12:00 UTC files, NOAA Open Data on AWS. History as of "
                "{as_of}. The newest day is added by a job that starts at 12:43 UTC and shows here on the next "
-               "rebuild, usually within the hour."),
+               "rebuild."),
     "sample": "SAMPLE data",
     "stale": "The newest day in this history is {as_of}; newer days have not been added yet.",
     "loading": "Loading the hail history for this spot",
@@ -300,6 +323,14 @@ def _window_dates(index: dict) -> tuple[date, date]:
     return date.fromisoformat(first), date.fromisoformat(last)
 
 
+def is_stale(as_of, now) -> bool:
+    """True when the store's last day is more than STALE_DAYS before now's UTC day: the pages show the stale line
+    and the build counts the store as a failed source (--require-live then fails). as_of is a date or an ISO day."""
+    day = date.fromisoformat(as_of) if isinstance(as_of, str) else as_of
+    today = _utc_day(now)
+    return today is not None and (today - day).days > STALE_DAYS
+
+
 def _utc_day(now) -> date | None:
     if now is None:
         return None
@@ -371,8 +402,7 @@ def describe(index: dict, events, now, sample: bool = False) -> dict:
     if missing:
         out["missing"] = WORDS["missing"].format_map({"list": ", ".join(fmt_date(d) for d in missing)})
 
-    today = _utc_day(now)
-    if today is not None and (today - as_of).days > STALE_DAYS:
+    if not sample and is_stale(as_of, now):       # the SAMPLE fixture's as_of is fixed: never stale
         out["stale"] = WORDS["stale"].format_map({"as_of": fmt_date(as_of)})
 
     out["source"] = WORDS["source"].format_map({"as_of": fmt_date(as_of)})
@@ -717,6 +747,27 @@ def fetch_store(get, dest_dir, url: str = STORE_URL) -> dict:
         raise HailStoreError("the history download is not bytes")
     _install_store(bytes(data), Path(dest_dir))
     return load_index(dest_dir)
+
+
+def fetch_store_any(get, dest_dir, urls) -> tuple[dict, str]:
+    """fetch_store over the assets in order (store_urls): the first whose download answers is unpacked and checked,
+    and its URL is returned with the index. Only an asset that is not published (HTTP 404) is passed over for the
+    next one; any other failure raises at once, so a branch's own asset that is down is never replaced by main's
+    without a word, and an archive that downloads but does not check out raises too. Raises HailStoreError naming
+    the failed downloads."""
+    failures = []
+    for n, url in enumerate(urls):
+        data, error = get(url, headers=None)
+        if data is None:
+            failures.append(f"{url.rsplit('/', 1)[-1]}: {error or 'no data'}")
+            if n + 1 < len(urls) and "(HTTP 404)" in (error or ""):
+                continue                        # the branch has no asset of its own: read the next one
+            raise HailStoreError("the history download failed: " + "; ".join(failures))
+        if not isinstance(data, (bytes, bytearray)):
+            raise HailStoreError("the history download is not bytes")
+        _install_store(bytes(data), Path(dest_dir))
+        return load_index(dest_dir), url
+    raise HailStoreError("the history download failed: " + "; ".join(failures))
 
 
 def load_store(path, dest_dir=None) -> Path:

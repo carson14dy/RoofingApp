@@ -10,14 +10,16 @@ import contextlib
 import hashlib
 import io
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 import urllib.parse
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone, time
 from pathlib import Path
 from unittest import mock
 
@@ -1432,8 +1434,7 @@ class HailHistory(unittest.TestCase):
                     "5 am in winter (the SPC reporting day).")
     CELL_SENTENCE = ("the largest hail over this cell, about 0.7 miles north to south and 0.5 miles east to west, during "
                      "the day")
-    NEXT_DAY_SENTENCE = ("The newest day is added by a job that starts at 12:43 UTC and shows here on the next rebuild, "
-                         "usually within the hour.")
+    NEXT_DAY_SENTENCE = ("The newest day is added by a job that starts at 12:43 UTC and shows here on the next rebuild.")
     DISPLAY_SENTENCE = "Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact"
 
     @classmethod
@@ -1831,13 +1832,158 @@ class HailHistory(unittest.TestCase):
     def test_the_workflow_passes_the_flag_to_branch_previews_and_runs_its_tests(self):
         text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
         args = [line for line in text.splitlines() if "args+=(" in line and "--hail-history" in line]
-        self.assertEqual(len(args), 1)
+        self.assertEqual(len(args), 2)
         self.assertIn('if [ "$GITHUB_REF" != "refs/heads/main" ]', args[0])
         self.assertIn("--require-live --storm-layers --hail-history", args[0])
+        # main passes the flag on its own (at the owner's decision of 2026-10-21) and never --require-live: a failed
+        # store download leaves the pages saying the history is unavailable while the rest of the site publishes.
+        self.assertIn('if [ "$GITHUB_REF" = "refs/heads/main" ]', args[1])
+        self.assertIn("args+=(--hail-history)", args[1])
+        self.assertNotIn("--require-live", args[1])
+        # every build reads its own branch's asset, named as the store job names it
+        self.assertIn('export HAIL_STORE_ASSET="hail-store-$(echo "$GITHUB_REF_NAME" | tr \'/\' \'-\').tar.gz"', text)
+        # every build waits for the same commit's store job before it reads the asset; the listing needs the actions
+        # scope, and the wait is bounded (the job's timeout covers it)
+        wait = text[text.index("Wait for this branch's hail history store job"):text.index("- name: Build from live data")]
+        self.assertIn("if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'\n", wait)
+        self.assertIn('--workflow hail-store.yml --branch "$GITHUB_REF_NAME" --limit 1', wait)
+        self.assertIn("      actions: read", text)
+        build_job = text[text.index("\n  build:\n"):text.index("\n  deploy:\n")]
+        # a branch preview may wait up to 60 minutes for its store job; main never waits and keeps its 15
+        self.assertIn("timeout-minutes: ${{ github.ref == 'refs/heads/main' && 15 || 75 }}", build_job)
+        self.assertIn('print("\\nHail history (--hail-history):")', text)   # the summary names main's build too
         unit = [line for line in text.splitlines() if "python -m unittest" in line]
         self.assertEqual(len(unit), 1)
         self.assertIn("tests.test_hail", unit[0])
         self.assertIn('"tests/test_hail.py"', text)
+
+    def test_the_wait_step_waits_for_a_running_store_job_and_fails_a_branch_on_a_bad_one(self):
+        """The step's own shell runs under bash as GitHub runs a step with no shell key (bash -e), with a stub gh
+        and a no-op sleep: no job for the commit; a job that is running and then succeeds; a job that failed (fatal
+        on a branch, not on main); a listing error (the same); a job still running at the end of the loop (the
+        same)."""
+        text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
+        step = text[text.index("Wait for this branch's hail history store job"):text.index("- name: Build from live data")]
+        script = textwrap.dedent(step[step.index("run: |") + len("run: |"):])
+        work = Path(tempfile.mkdtemp(prefix="hailwatch-wait-"))
+        self.addCleanup(shutil.rmtree, work, True)
+        stub = work / "bin"
+        stub.mkdir()
+        (stub / "sleep").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        (stub / "gh").write_text(
+            '#!/bin/sh\n'
+            'n=$(cat "$WAIT_TEST_COUNT" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "$WAIT_TEST_COUNT"\n'
+            'case "$WAIT_TEST_CASE" in\n'
+            '  none) echo "null null null";;\n'
+            '  runs-then-ok) if [ $n -lt 3 ]; then echo "queued null abc"; else echo "completed success abc"; fi;;\n'
+            '  failed-this) echo "completed failure abc";;\n'
+            '  failed-earlier) echo "completed failure older";;\n'
+            '  error) echo "HTTP 403: Resource not accessible by integration" >&2; exit 1;;\n'
+            '  forever) echo "in_progress null abc";;\n'
+            'esac\n', encoding="utf-8")
+        for name in ("sleep", "gh"):
+            (stub / name).chmod(0o755)
+
+        def run(case, ref):
+            count = work / f"count-{case}-{ref.replace('/', '-')}"
+            env = dict(os.environ, PATH=f"{stub}:{os.environ.get('PATH', '')}", GITHUB_REF=ref, GITHUB_SHA="abc",
+                       GITHUB_REF_NAME=ref.replace("refs/heads/", ""), WAIT_TEST_CASE=case, WAIT_TEST_COUNT=str(count))
+            p = subprocess.run(["bash", "-e", "-c", script], env=env, capture_output=True, text=True)
+            calls = int(count.read_text(encoding="utf-8")) if count.exists() else 0
+            return p.returncode, (p.stdout.strip().splitlines() or [""])[-1], calls
+
+        branch = "refs/heads/claude/x"
+        self.assertEqual(run("none", branch), (0, "No store job on this branch; the build reads the asset already published.", 1))
+        self.assertEqual(run("runs-then-ok", branch), (0, "The store job succeeded, after 3 checks.", 3))
+        self.assertEqual(run("failed-this", branch)[:2], (1, "The store job for this commit ended as failure. Read its log in the Actions tab."))
+        self.assertEqual(run("failed-earlier", branch)[:2],
+                         (0, "The branch's last store job ended as failure (an earlier commit); the build reads the asset already published."))
+        self.assertEqual(run("error", branch)[:2], (1, "The store job's state could not be read. Check the gh output above and the build job's actions: read scope."))
+        still = "The store job is still running after 60 minutes. Read its log in the Actions tab, then re-run this build."
+        self.assertEqual(run("forever", branch), (1, still, 60))
+
+    def test_the_job_and_the_build_name_the_asset_the_same_way_for_every_branch(self):
+        """The store job's asset step and the build's export use one formula: run both under bash for main and for
+        a branch with a slash, and compare them with each other and with the reader's default for main."""
+        from website import hail as hs
+        job = (ROOT / ".github" / "workflows" / "hail-store.yml").read_text(encoding="utf-8")
+        site_wf = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
+        job_line = [line for line in job.splitlines() if 'echo "name=hail-store-' in line][0].strip().split("run: ", 1)[1]
+        site_line = [line for line in site_wf.splitlines() if "export HAIL_STORE_ASSET=" in line][0].strip()
+        for ref, want in (("main", "hail-store-main.tar.gz"), ("claude/hail-b1", "hail-store-claude-hail-b1.tar.gz")):
+            env = dict(os.environ, GITHUB_REF_NAME=ref, GITHUB_OUTPUT="/dev/stdout")
+            from_job = subprocess.run(["bash", "-e", "-c", job_line], env=env, capture_output=True, text=True).stdout.strip()
+            from_site = subprocess.run(["bash", "-e", "-c", site_line + '; echo "$HAIL_STORE_ASSET"'], env=env,
+                                       capture_output=True, text=True).stdout.strip()
+            self.assertEqual(from_job, "name=" + want)
+            self.assertEqual(from_site, want)
+        self.assertEqual(hs.STORE_ASSET_DEFAULT, "hail-store-main.tar.gz")
+
+    def test_the_download_takes_the_branch_asset_and_falls_back_to_main(self):
+        """site.hail_store with the build's fetcher: the branch's asset first (HAIL_STORE_ASSET), then main's when the
+        branch has none; the index records which one it took."""
+        from website import hail as hs
+        import tarfile
+        work = Path(tempfile.mkdtemp(prefix="hailwatch-fallback-"))
+        self.addCleanup(shutil.rmtree, work, True)
+        hs.fixture_store(work / "src")
+        archive = work / "store.tar.gz"
+        with tarfile.open(archive, "w:gz") as tar:
+            tar.add(work / "src" / "hail", arcname="hail")
+        data = archive.read_bytes()
+        asked = []
+
+        class Fetcher:
+            def binary(self, url, headers=None):
+                asked.append(url.rsplit("/", 1)[-1])
+                return (None, "not published (HTTP 404)") if "claude-x" in url else (data, None)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-fallback-out-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with mock.patch.dict(os.environ, {"HAIL_STORE_ASSET": "hail-store-claude-x.tar.gz"}):
+            index = site.hail_store(out, None, False, Fetcher())
+        self.assertEqual(asked, ["hail-store-claude-x.tar.gz", "hail-store-main.tar.gz"])
+        self.assertEqual(index["asset"], "hail-store-main.tar.gz")
+        self.assertTrue((out / "hail" / "index.json").is_file())
+        # the build's status line names the asset it took
+        out2 = Path(tempfile.mkdtemp(prefix="hailwatch-fallback-status-"))
+        self.addCleanup(shutil.rmtree, out2, True)
+        c = site.Collector(Fetcher(), self.HAIL_NOW)
+        with mock.patch.dict(os.environ, {"HAIL_STORE_ASSET": "hail-store-claude-x.tar.gz"}):
+            c.hail(out2, False, None, [])
+        self.assertTrue(c.status["hail_history"]["ok"], c.status["hail_history"])
+        self.assertIn(", from hail-store-main.tar.gz", c.status["hail_history"]["detail"])
+
+    def test_the_hail_contract_row_states_the_asset_the_wait_and_the_stale_rule(self):
+        from website import hail as hs
+        row = src.CONTRACTS["hail_history"]
+        self.assertIn("hail-store-main.tar.gz", row["request"])
+        self.assertIn("its own branch's store", row["request"])
+        self.assertIn("waits for the store job of its own commit", row["timing"])
+        self.assertEqual(hs.STALE_DAYS, 3)
+        self.assertIn("more than three days old is a failed source", row["timing"])
+        self.assertNotIn("within the hour", row["timing"])
+
+    def test_a_stale_store_is_a_failed_source_but_the_sample_never_is(self):
+        """A real store whose last day is more than STALE_DAYS old still builds the pages (with the stale line) but
+        counts as a failed source, so --require-live reports it; the SAMPLE fixture is exempt."""
+        from website import hail as hs
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-store-stale-"))
+        self.addCleanup(shutil.rmtree, store, True)
+        hs.fixture_store(store)
+        as_of = date.fromisoformat(json.loads((store / "hail" / "index.json").read_text(encoding="utf-8"))["as_of"])
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-stale-out-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        late = datetime.combine(as_of + timedelta(days=hs.STALE_DAYS + 1), time(13, 0), tzinfo=timezone.utc)
+        result = site.build(out, None, late, sample=True, hail_history=True, hail_store_path=str(store))
+        status = result["status"]["hail_history"]
+        self.assertFalse(status["ok"])
+        self.assertIn("stale", status["detail"])
+        self.assertEqual(json.loads(page(out, "data/map.json"))["hail"]["state"], "loaded")
+        self.assertIn(hs.WORDS["stale"].format_map({"as_of": hs.fmt_date(as_of)}), page(out, "town/billings.html"))
+        fresh = datetime.combine(as_of + timedelta(days=hs.STALE_DAYS), time(13, 0), tzinfo=timezone.utc)
+        self.assertTrue(site.build(out, None, fresh, sample=True, hail_history=True,
+                                   hail_store_path=str(store))["status"]["hail_history"]["ok"])
+        self.assertTrue(site.build(out, None, late, sample=True, hail_history=True)["status"]["hail_history"]["ok"])
 
     def test_the_smoke_test_has_the_hail_checks(self):
         smoke = smoke_map()

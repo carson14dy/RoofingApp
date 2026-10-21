@@ -4,7 +4,7 @@ Weather for a Montana roofing company: **Montana Hail Watch**.
 
 **The product is a website** (decision D27, 2026-10-14). It shows official NWS warnings, a radar
 and warning map, the next 12 hours for 17 Montana towns, a 24-hour and 7-day page per town, and
-three days of SPC hail and wind reports. With a build flag that stays off on `main` until the owner approves it, it also shows a five-year history of radar-estimated hail for any spot in Montana (D34). GitHub rebuilds it every 10 minutes from public data and
+three days of SPC hail and wind reports. It also shows a five-year history of radar-estimated hail for any spot in Montana (D34; public at the owner's decision of 2026-10-21). GitHub is asked to rebuild it every 10 minutes from public data (its schedule ran 6 times in the 24 hours to 2026-10-21 23:00 UTC; the timer decision is open in the roadmap) and
 publishes it with GitHub Pages at **https://carson14dy.github.io/RoofingApp/** once Pages is
 turned on. Nothing to install: open it on any phone or computer.
 
@@ -38,7 +38,7 @@ The parked desktop app
 1. On GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 2. Merge the branch with the website into `main`.
 3. Open **Actions → Website**. The run after the merge publishes the site; its summary lists each
-   source and what it returned. After that it runs every 10 minutes on its own.
+   source and what it returned. After that it runs on a schedule set to every 10 minutes (GitHub ran it 6 times in the 24 hours to 2026-10-21 23:00 UTC; the timer decision is open in the roadmap).
 4. Open https://carson14dy.github.io/RoofingApp/ on your phone. Add it to the home screen if you
    like: it gets the Montana Hail Watch icon.
 
@@ -54,7 +54,7 @@ Website** and re-enable it. Every page says how old it is, so a stalled site is 
 | Map | A full-screen map of Montana in the style of Apple Weather's: press play to run the past hour of radar into the next 12 hours of forecast, switch to temperature or wind gusts, see warning outlines and storm reports, tap a town for its NWS forecast, or find your own location | NOAA MRMS radar estimate, NOAA HRRR model, NWS, SPC |
 | Town (17) | Alerts at that town, what the three nearest weather stations measured (with each reading's age), the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
 | Storm reports | Hail and wind reports in and near Montana for the last three reporting days, on a map and in tables | SPC |
-| Hail history (build flag `--hail-history`, off on `main`) | On the Map, tap or click a spot for its five-year history of NOAA radar-estimated hail: each day at 0.25 in or more, in inches and millimetres, with its SPC day. Each town page has the same table. An estimate is not a measurement or an inspection | NOAA MRMS radar estimate (MESH) |
+| Hail history (build flag `--hail-history`, on `main` at the owner's decision of 2026-10-21) | On the Map, tap or click a spot for its five-year history of NOAA radar-estimated hail: each day at 0.25 in or more, in inches and millimetres, with its SPC day. Each town page has the same table. An estimate is not a measurement or an inspection | NOAA MRMS radar estimate (MESH) |
 | About | What each part is, the flag limits, what happens when something fails, the data sources in detail | — |
 
 Towns: every Montana city over 8,000 in the 2020 census, plus Sidney and four smaller towns
@@ -80,18 +80,18 @@ chance of rain or snow, under 40 °F or over 95 °F (`website/sources.py`, `LIMI
 
 ## How it updates
 
-`.github/workflows/website.yml` runs on GitHub every 10 minutes:
+`.github/workflows/website.yml` runs on GitHub on a schedule set to every 10 minutes, and on every push to `main` that touches the site:
 1. It runs the website tests.
 2. It fetches NWS alerts and forecasts and SPC reports. For the map it downloads the past hour of
    NOAA radar (MRMS) and the newest HRRR model run, and draws them as picture frames.
 3. It builds the pages and publishes them.
 
-GitHub sometimes starts scheduled runs late, so a page can be 10–20 minutes behind NWS. Each page
+GitHub sometimes starts scheduled runs late, so a page can be 10 to 20 minutes behind NWS when the schedule runs, and hours when GitHub delays it. Each page
 links weather.gov for the latest. Pushes to `claude/**` and `codex/**` branches run the same build
 against live data as a check. That run fails if any source failed, and its pages can be
 downloaded from the run.
 
-With `--hail-history` (off on `main`), a daily job, `.github/workflows/hail-store.yml`, runs at 12:43 UTC. It rebuilds the whole trailing five years of NOAA's radar archive each day (a full rebuild, not an append), verifies the result and publishes it as one release asset, which the 10-minute build downloads.
+With `--hail-history` (on `main` at the owner's decision of 2026-10-21), a daily job, `.github/workflows/hail-store.yml`, runs at 12:43 UTC. It rebuilds the whole trailing five years of NOAA's radar archive each day (a full rebuild, not an append), verifies the result and publishes it as a release asset named after the branch (`hail-store-main.tar.gz` for `main`; slashes as dashes), which the 10-minute build downloads: each build reads its own branch's asset (`HAIL_STORE_ASSET`), so a branch job never touches what `main` reads, and every build waits for the same commit's store job before it reads the asset.
 
 ## Build it on your computer
 
@@ -100,7 +100,7 @@ Needs Python 3.10+.
 pip install requests jinja2 pillow numpy pygrib h5py tzdata
 python -m website.build --out _site --sample   # invented sample data, labelled on every page
 python -m website.build --out _site            # live data
-python -m website.build --out _site --sample --hail-history   # the hail history with labelled sample data (off by default)
+python -m website.build --out _site --sample --hail-history   # the hail history with labelled sample data
 python -m website.hail build --out store --cache hail-cache  # the daily store from NOAA's archive; a cold cache works
 python -m website.hail verify store                          # check a built store
 python -m website.build --out _site --hail-history --hail-store hail-store.tar.gz   # a local store instead of the download
@@ -361,7 +361,7 @@ processing job, NCEI history, release-gate load tests at regional scale.
 
 ```bash
 python desktop/launcher.py --selftest payload   # what installed apps run before accepting an update
-python -m unittest discover -s tests -v          # 44 tests, offline, ~5 s
+python -m unittest discover -s tests -v          # about 600 tests, offline, about 2 minutes
 ```
 
 - `tests/test_weather.py` — handoff acceptance checks, alert geography, outlook rules, targeting, exports, wording.

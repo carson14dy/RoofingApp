@@ -644,7 +644,7 @@ delayed during periods of high loads", that "High load times include the start o
 "some queued jobs may be dropped". The schedule becomes 7, 17, 27, 37, 47 and 57 minutes past the hour:
 still six rebuilds an hour, but not on the hour. The cause of the gaps has not been diagnosed, so this is
 an experiment, not a fix. The measurement is the count of scheduled starts in the 24 hours after the change
-reaches `main` (144 is the every-10-minutes figure), to compare with the four runs above.
+reaches `main` (144 is the every-10-minutes figure), to compare with the four runs above. Measured 2026-10-21 (the 24-hour count this entry asked for): GitHub ran the scheduled rebuild 6 times in the 24 hours to 23:00 UTC (Website runs 86 to 93; gaps 2 h 21 min to 5 h 01 min), against 4 runs in the 13 hours before the offset. The offset did not bring the cadence near every 10 minutes; the timer decision (an external trigger) stays open in the roadmap.
 
 *Why:* GitHub's own advice for delayed schedules is to "schedule your workflow to run at a different time of
 the hour". The change is one line and easy to undo, so the measured count can decide whether it stays.
@@ -680,7 +680,7 @@ What they settle:
   The gate is that a cold-cache and a warm-cache build give byte-identical
   shards (B1-6), so the cache only saves downloads. The 12:00 UTC file is published about 12:08 UTC (measured in
   `hosting-and-architecture.json` on the hail-history research branch). The newest day is added by a job that starts
-  at 12:43 UTC and shows here on the next rebuild, usually within the hour. The schedule offset is the consistency fix
+  at 12:43 UTC and shows here on the next rebuild. The schedule offset is the consistency fix
   for the builds, which leave the top of the hour as the job does (D33).
 - *Units and codes (5).* NOAA's MRMS GRIB2 user table settles them (its evidence is
   `research/hail-history/validation-evidence/mrms-grib2-tables/` on the `claude/hail-history` research branch).
@@ -730,9 +730,31 @@ What they settle:
   prototype and every re-derived day equals the frame maximum the builder recorded; it prints the partial list.
   `verify` does not fail on partial days. The index's `copy_check` keeps `coverage`, `partial`, `frames`, `rederived`,
   `days_differed`, `days_checked` and `skipped`. The partial list and the compare counts are measured in the re-check.
-- *Off on main (7).* `--hail-history` is off by default. Branch previews pass it, as they pass `--storm-layers`;
-  `main` does not. It stays off until Carson says the About text is right and counsel confirms the items that
-  decision 7 covers: the MSL clause "for no other purpose", MCA 2-6-1017, and the GitHub Actions and Pages terms.
+- *On main at the owner's decision of 2026-10-21 (7).* `--hail-history` was off by default until then: branch
+  previews passed it, as they pass `--storm-layers`, and `main` did not, pending Carson's reading of the About text
+  and counsel's confirmation of the items decision 7 covers (the MSL clause "for no other purpose", MCA 2-6-1017,
+  and the GitHub Actions and Pages terms). On 2026-10-21 Carson turned the hail history on for the public site with
+  the About text as written; `main` now passes `--hail-history`, never `--require-live`, so a failed store download
+  leaves the pages saying the history is unavailable (never an all-clear) and the rest of the site still publishes.
+  The MSL clause and MCA 2-6-1017 concern the address stage (B3) and still gate its flag, `--hail-addresses`; the GitHub terms item
+  stays open for counsel, as it has been since the site went on Pages (D27). The store asset is named after the
+  branch whose job publishes it (`hail-store-main.tar.gz` for `main`; slashes as dashes), and each build reads its
+  own branch's asset, so a branch job never touches what `main` reads: B1's reader refuses an archive over 20,000
+  files or 300 MiB, and the later stages' branch jobs had published a bigger store under the old shared name
+  `hail-store.tar.gz`, which held the address stage's data while that stage's gates are open; any store job that
+  finds that asset removes it (the B2 to B4 previews that read it stay as recorded and are not re-run), and a branch
+  with no asset of its own reads `main`'s (a branch asset that is down is never replaced by `main`'s without a word:
+  only a missing one is). A branch preview waits for the branch's latest store
+  run before it reads the asset, up to the store job's own cap, and fails when the run for its commit did not
+  succeed, could not be listed or is still running; `main` never waits, because its job replaces the asset in one
+  step (the new file goes up under a temporary name and takes the asset's name once it is complete), and its first
+  builds after the merge say the history is unavailable until its first store job publishes (about 11 minutes). A real store older than three days counts as a failed source, so `--require-live`
+  reports it: a branch's asset is refreshed only by that branch's store job (a push that touches the store code, or
+  the job dispatched on the branch), so a long-lived branch preview fails three days after its last store run until
+  the job runs again. The hail pages' failure words are their own sentence ("Hail history is unavailable: ... This
+  is not the same as no hail.", `docs/DESIGN.md` section 9): a variant of rule 5's "Data unavailable" that the
+  supervisor accepted for this feature because it names the missing input and is not an all-clear; Carson may ask
+  for the rule's label.
 - *Known limits, recorded.* (a) The research record measured the 12:00 UTC file's upload 496 to 3,623 seconds after
   its stamp (`evaluation-and-wording.json`, fact 61, research branch). On some days the 12:43 UTC job reads before the
   file is up. In that run the window ends one day earlier, and the next daily run includes the day. The research had
@@ -743,18 +765,20 @@ What they settle:
 - *Labels.* The globe research's proposed decision labels (`research/globe/README.md` section 9b, from D31) are
   proposals, not entries in this log. The D34 that D30 cites for the satellite freshness limits is one of those
   proposals. This entry is the D34 in the log.
-- *Built on `claude/hail-b1`, not merged.* `website/hail.py` (the grid, size classes and words, store readers, the
+- *Built on `claude/hail-b1`; merged at the owner's decision of 2026-10-21.* `website/hail.py` (the grid, size classes and words, store readers, the
   SAMPLE fixture, the full daily build and verify); `website/build.py`, the templates and `website/sources.py`
   (`--hail-history`, `--hail-store`, the town tables, the About paragraph, the contract row);
   `website/static/map/map.js` (the click, the outside rule, one shard fetch and the sheet, documented in its header);
   `.github/workflows/hail-store.yml` (installs unpinned, as the site build does); the tests and the docs. The words
   are in `docs/DESIGN.md` section 9. The gates and their results are in
-  `research/hail-history/validation-evidence/b1-verification.json`, pending the re-check.
+  `research/hail-history/validation-evidence/b1-verification.json`: the final check of 2026-10-18 and the go-live
+  block of 2026-10-21.
 
 *Why:* the owner's seven decisions change what the site is for: a public history at any spot, five years, no owner
 names, and the laws. The next agent needs them word for word before B2 and B3 are built. The radar estimate ships
-first because its units are now verified and its source is one NOAA file a day. The flag keeps the history off
-the public site until the owner has read the About text and counsel has read the terms.
+first because its units are now verified and its source is one NOAA file a day. The flag kept the history off
+the public site until the owner had read the About text; he turned it on at his decision of 2026-10-21, with the
+terms items recorded for counsel.
 
 ## Gotchas found the hard way
 - An absolutely positioned element escapes a scroll box that isn't its containing block: the
