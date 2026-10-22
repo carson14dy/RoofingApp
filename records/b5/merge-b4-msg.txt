@@ -1,0 +1,6 @@
+Merge claude/hail-b4 into claude/hail-b5 (the live hail swath layers join the B3 streets and dots and the B5 history; D51)
+
+Every behaviour of both sides is kept: build.py runs the swath step after the store copy (the manifest check refuses unlisted files under hail/), the sheet opens with the B3 address lines, then the B4 live line, then the history; website.yml runs B3's, B4's and B5's test modules; the decisions log carries D36, D37 and D38 in order with the cross-references rewritten; the design sections 10, 11 and 12 and the roadmap's single "Built, not merged" section with one row per stage; AGENTS.md and README.md take the union. The echo-top sentence and the storm contract row read "code -999 means outside radar coverage" (D45: a bare "coverage" is a D13 stem and "no radar coverage" is barred by the storm words test; "outside radar coverage" keeps NOAA's meaning and passes both). Full suite 1,712 tests with the ten expected failures (the seven browser-against-module tests part B2 clears and the three D56 items); self-test, sample build and a live build with the combined store and every flag pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01D7npHSU4NQFAmdz8Ep5sV7

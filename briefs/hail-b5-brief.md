@@ -653,3 +653,19 @@ smoke_pages pass in Chromium at 390 and 1280 px; the three-cell comparison exact
 budget measured; zero off-site requests; the words rules (tests/words_rules.py) over every WORDS string and the
 built pages; the D13 greps; no em-dash and no banned name in added lines; the decision 7 audit (no owner, parcel,
 place-type or building-use field read, stored or shown); the docs' numbers equal the measured ones.
+
+- D59 **The store asset is named after the branch (from the B1 go-live, 2026-10-21).** When `main` is merged into
+  `claude/hail-b5`, the merged job and build take B1's scheme: the job publishes `hail-store-<branch>.tar.gz` (slashes
+  as dashes; `main`'s is `hail-store-main.tar.gz`), the build reads its own branch's asset through `HAIL_STORE_ASSET`,
+  every build waits for the same commit's store job (the website job has `actions: read`; on `main` the wait only
+  waits; a branch preview fails when its job did not succeed), and a store older than three days is a failed source.
+  The old shared name `hail-store.tar.gz` is removed by `main`'s job (it held the address stage's data); the B2, B3
+  and B4 previews that read it stay as recorded and are not re-run.
+
+- D60 **Part B2 runs on the merged tree cbf5a12 (B3 and B4 merged into B5).** The smoke and CI owner does not build the
+  D49 wait step: the B1 go-live on `main` (D59) carries the branch-preview wait, the branch-named asset, the one-step
+  asset replacement, the stale rule and the scope; they reach this branch when `main` is merged in, before the push.
+  The storm wording is "code -999 means outside radar coverage" (D45; "no radar coverage" is barred by the storm words
+  test and a bare "coverage" by the D13 stem rule); the About rows that still say "no coverage" (the hail_swath row
+  and the MESH row) take "no radar coverage" or "outside radar coverage" under D53. The sheet's order is the B3
+  address block, then the B4 live line, then the history (the live line leads only when there is no address block).

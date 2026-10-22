@@ -1,0 +1,6 @@
+Merge claude/hail-b3 into claude/hail-b5 (the B3 streets, outlines, dots and address search join the B5 history; D51)
+
+Every behaviour of both sides is kept: build.py carries the flags, map.json blocks and status rows of both; hail-store.yml is B5's two jobs with the B3 steps after the B5 steps (daily timeout 150, D50); website.yml takes the B3 flags and the B5 test modules; the fixture is regenerated from the merged fixture writers (B3's address files and B5's parts; the budget restated to 62 KB, D54); the decisions log carries D36 then D38 with the cross-references rewritten; the roadmap has one "Built, not merged" section with one row per stage; AGENTS.md and README.md take the union. B5's county row is renamed census_tiger_counties beside B3's census_counties; joins.fixture now writes the D44 zone keys. Full suite 1,589 tests with the ten expected failures (the seven browser-against-module tests part B2 clears and the three D56 items); self-test, sample build and a live build with the combined store and every flag pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01D7npHSU4NQFAmdz8Ep5sV7

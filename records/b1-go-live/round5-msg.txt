@@ -1,0 +1,6 @@
+Hail history B1 go-live, round 4 of review: the old asset steps aside and gets its name back if the rename fails, a missing upload says so, a failed download reads plainly on the pages
+
+The publish step moves the old asset to a .old name, gives the new file the name and removes the old one last; when the new file cannot take the name the old asset gets it back, so the name is never left missing, and a .old left by an earlier failed run is removed first. A listing that lacks the uploaded file fails the step with a message. The pages say "the history store could not be downloaded in this update" while the build log keeps the file name and the HTTP code. The wait step's comment says exactly when it fails (the branch's latest run is this commit's and did not succeed). Tests cover the rename sequence and its restore, the missing upload, the stale .old and the plain words; 600 tests.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01D7npHSU4NQFAmdz8Ep5sV7

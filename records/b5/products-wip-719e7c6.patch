@@ -1,0 +1,669 @@
+diff --git a/tests/test_joins.py b/tests/test_joins.py
+index d661348..1b11f64 100644
+--- a/tests/test_joins.py
++++ b/tests/test_joins.py
+@@ -3705,6 +3705,145 @@ class PlacementTableBuildTests(unittest.TestCase):
+         self.assertEqual([c["name"] for c in d44 if not c["ok"]], [], d44)     # the gate and period checks need real geometry
+ 
+ 
++class EdgeWindowTests(unittest.TestCase):
++    """D55: the store window (the 1,826 SPC days ending on as_of) and the research window (calendar days) count an event
++    as they begin it; an event at one window's edge only is named with its first row, and every difference between the two
++    counts must be the named edges, or verify says so."""
++
++    STORE = ["2021-10-17T12:00Z", "2026-10-17T12:00Z"]
++
++    def block(self, store, research, edges):
++        return {"vtec_store_window": self.STORE, "vtec_counts": store, "vtec_counts_research": research,
++                "vtec_window_edges": edges}
++
++    def test_the_research_window_and_the_store_window_differ_by_the_named_edge_and_nothing_else(self):
++        edge = {"product": "HW.A", "level": "zone", "wfo": "TFX", "eventid": "30", "vtec_year": "2026",
++                "begin": "2026-10-17T15:00Z", "in_store_window": False, "in_research_window": True,
++                "first_status": "UPG", "first_issue": "2026-10-17T15:00Z", "product_time": "2026-10-15T04:45Z",
++                "expire": "2026-10-16T18:23Z", "codes": ["MTZ301"], "rows": 5}
++        block = self.block({"HW.A": {"zone": 276, "county": 0, "window": 276}},
++                           {"HW.A": {"zone": 277, "county": 0, "window": 277}}, [edge])
++        got = J._window_edge_check(block)
++        self.assertEqual(got["unexplained"], [])
++        self.assertEqual([(r["product"], r["difference"], r["named"]) for r in got["differences"]], [("HW.A", -1, -1)])
++        self.assertEqual(got["edges"], 1)
++        self.assertIn("counted in the research window only", got["sentences"][0])
++        self.assertIn("begins 17 October 2026 at 15:00 UTC", got["sentences"][0])
++        self.assertIn("its first archived row is UPG issued 17 October 2026 at 15:00 UTC", got["sentences"][0])
++        self.assertIn("No store rule drops it", got["sentences"][0])
++
++    def test_a_difference_with_no_named_edge_is_unexplained(self):
++        block = self.block({"HW.W": {"zone": 338, "county": 0, "window": 338}},
++                           {"HW.W": {"zone": 339, "county": 0, "window": 339}}, [])
++        got = J._window_edge_check(block)
++        self.assertEqual([(r["product"], r["level"], r["difference"], r["named"]) for r in got["unexplained"]],
++                         [("HW.W", "zone", -1, 0)])
++
++    def test_an_edge_on_the_store_side_is_counted_plus_one_and_the_polygon_level_is_checked(self):
++        edge = {"product": "FW.W", "level": "zone", "wfo": "TFX", "eventid": "19", "vtec_year": "2021",
++                "begin": "2021-10-17T18:00Z", "in_store_window": True, "in_research_window": False,
++                "first_status": "EXP", "first_issue": "2021-10-17T18:00Z", "product_time": "2021-10-16T20:37Z",
++                "expire": "2021-10-18T00:00Z", "codes": ["MTZ112"], "rows": 4}
++        poly = {"product": "SQ.W", "level": "polygon", "wfo": "MSO", "eventid": "5", "vtec_year": "2021",
++                "begin": "2021-10-18T01:00Z", "in_store_window": True, "in_research_window": False,
++                "first_status": "NEW", "first_issue": "2021-10-18T01:00Z", "product_time": None, "expire": None,
++                "codes": [], "rows": 1}
++        block = self.block({"FW.W": {"zone": 170, "county": 0, "window": 170},
++                            "SQ.W": {"polygon": 1, "window": 1}},
++                           {"FW.W": {"zone": 169, "county": 0, "window": 169}}, [edge, poly])
++        got = J._window_edge_check(block)
++        self.assertEqual(got["unexplained"], [])
++        self.assertEqual(sorted((r["product"], r["level"], r["difference"]) for r in got["differences"]),
++                         [("FW.W", "zone", 1), ("SQ.W", "polygon", 1)])
++        self.assertIn("counted in the store window only", got["sentences"][0])
++
++    def test_the_edge_records_carry_the_first_row_and_the_polygon_fields(self):
++        t = lambda h: datetime(2026, 10, 17, h, tzinfo=timezone.utc)      # noqa: E731
++        first = {"issue": t(15), "status": "UPG", "prod": datetime(2026, 10, 15, 4, 45, tzinfo=timezone.utc),
++                 "expire": datetime(2026, 10, 16, 18, 23, tzinfo=timezone.utc)}
++        item = {"issues": [t(15)], "new": [], "level": {"zone"}, "first": first, "codes": {"MTZ302", "MTZ301"}}
++        edge = J._vtec_edge("HW.A", ("HW", "A", "TFX", "30", "2026"), item, t(15), False, True)
++        self.assertEqual((edge["product"], edge["level"], edge["wfo"], edge["eventid"], edge["vtec_year"]),
++                         ("HW.A", "zone", "TFX", "30", "2026"))
++        self.assertEqual((edge["begin"], edge["first_status"], edge["product_time"], edge["expire"]),
++                         ("2026-10-17T15:00Z", "UPG", "2026-10-15T04:45Z", "2026-10-16T18:23Z"))
++        self.assertEqual(edge["codes"], ["MTZ301", "MTZ302"])
++        poly = {"k": "FL", "s": "W", "o": "MSO", "eventid": "9", "vtec_year": "2026", "b": t(12), "e": None}
++        pe = J._polygon_edge(poly, True, False)
++        self.assertEqual((pe["product"], pe["level"], pe["first_status"], pe["expire"]), ("FL.W", "polygon", "NEW", None))
++        self.assertEqual(pe["begin"], "2026-10-17T12:00Z")
++
++    def test_the_utc_words_and_the_research_table(self):
++        self.assertEqual(J._utc_words("2026-10-17T15:00Z"), "17 October 2026 at 15:00 UTC")
++        self.assertEqual(J._utc_words("2021-10-19T00:00Z"), "19 October 2021 at 00:00 UTC")
++        # D55: the research's own counts, with HW.W from the research record and FW.W from the B5 recheck (its recount is 169)
++        self.assertEqual((J.RESEARCH_B5["HW.A"], J.RESEARCH_B5["HW.W"], J.RESEARCH_B5["FW.W"]), (277, 339, 169))
++        self.assertEqual((J.RESEARCH_START.date().isoformat(), J.RESEARCH_END.date().isoformat()),
++                         ("2021-10-19", "2026-10-19"))
++
++
++class FixtureStationTests(unittest.TestCase):
++    """D56: the sample store carries the station reader's part, cut from the real build: the tile lists of the sample tiles
++    (the candidates the point picks read), the summaries of the stations they name (a station without a summary file is
++    left out), and the index's stations block cut to those stations, marked as a sample. Without that block the summary
++    reads every station row as "could not be loaded" while the joins part of the same page reads the gusts."""
++
++    @staticmethod
++    def entry(sid, name, lat, lon):
++        return {"id": sid, "name": name, "lat": lat, "lon": lon, "miles": 1.0, "ok": 2000, "of": 2192, "share": 0.91}
++
++    def write_source(self, src: Path):
++        (src / "hail" / "tl").mkdir(parents=True)
++        (src / "hail" / "sd").mkdir(parents=True)
++        tile = {"f": "hail-stn-tiles-v1", "elements": {"SNOW": {
++            "passing": [self.entry("USC00000A01", "ALPHA", 45.7836, -108.5047),
++                        self.entry("USC00000A02", "BETA", 45.9, -108.2)],
++            "unread": [{"id": "USC00000A03", "name": "GAMMA", "lat": None, "lon": None, "reason": "its file did not load"}],
++            "capped": False}}}
++        (src / "hail" / "tl" / "T1.json").write_text(json.dumps(tile), encoding="utf-8")
++        (src / "hail" / "sd" / "USC00000A01.json").write_text("{}", encoding="utf-8")     # BETA has no summary file
++        return {"stations": {"as_of": "2026-10-16", "rule": {"radius_miles": 40.0}, "sources": {"ghcn": "x"},
++                             "stations": {"USC00000A01": {"name": "ALPHA", "lat": 45.7836, "lon": -108.5047, "net": "COOP"},
++                                          "USC00000A02": {"name": "BETA", "lat": 45.9, "lon": -108.2, "net": "COOP"}}}}
++
++    def test_the_sample_keeps_the_named_stations_that_have_a_summary_file(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            src = Path(tmp)
++            real = self.write_source(src)
++            block, lists, ids = J._station_sample(src, real, ["T1", "T2"], ["USC00000G9"])
++            self.assertEqual(ids, ["USC00000A01"])                      # BETA and GAMMA have no summary file: left out
++            self.assertEqual(sorted(block["stations"]), ["USC00000A01"])
++            self.assertEqual(sorted(lists), ["T1"])                     # T2 has no list file, so none is written
++            self.assertEqual((block["state"], block["sample"], block["as_of"]), ("loaded", True, "2026-10-16"))
++            self.assertEqual(block["counts"], {"sample_tiles": 1, "sample_stations": 1})
++            self.assertEqual(block["chosen_station_ids"], ["USC00000A01"])
++            self.assertEqual(block["tile_lists"]["files"], 1)
++            self.assertEqual(block["tile_lists"]["unread"], 1)
++            self.assertEqual(block["tile_lists"]["cap"], 6)
++
++    def test_the_sample_answers_the_point_picks_from_its_own_tile_list(self):
++        # the shared rule (stations.tile_list_picks) reads the cut tile list and the cut block's net at the point
++        from website import stations as stn
++        with tempfile.TemporaryDirectory() as tmp:
++            src = Path(tmp)
++            real = self.write_source(src)
++            block, lists, _ids = J._station_sample(src, real, ["T1"], [])
++            got = stn.tile_list_picks(lists["T1"]["elements"]["SNOW"], 45.7836, -108.5047, light=block["stations"])
++            self.assertEqual([p["id"] for p in got["picks"]], ["USC00000A01", "USC00000A02"])
++            self.assertEqual((got["picks"][0]["net"], got["picks"][0]["miles"]), ("COOP", 0.0))
++            self.assertEqual(got["state"], "two")
++            self.assertEqual([u["name"] for u in got["unread"]], ["GAMMA"])     # no position: named, never skipped (D32)
++
++    def test_a_source_without_a_stations_block_says_so(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            src = Path(tmp)
++            self.write_source(src)
++            block, _lists, ids = J._station_sample(src, {}, ["T1"], [])
++            self.assertEqual(block["state"], "unavailable")
++            self.assertEqual(block["problem"], "the build the sample is cut from has no stations block")
++            self.assertEqual(block["stations"], {})
++            self.assertEqual(ids, [])                                    # no summary is named without the block's stations
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
+diff --git a/tests/test_snowgrid.py b/tests/test_snowgrid.py
+index dd1ff50..e631c0b 100644
+--- a/tests/test_snowgrid.py
++++ b/tests/test_snowgrid.py
+@@ -8,6 +8,7 @@ from __future__ import annotations
+ import functools
+ import json
+ import re
++import sys
+ import tempfile
+ import time
+ import unittest
+@@ -24,6 +25,9 @@ from website import hail
+ from website import snowgrid as G
+ from website import stations as S
+ 
++sys.path.insert(0, str(Path(__file__).resolve().parent))   # tests/ (words_rules: the one forbidden list, D41 and D56)
++import words_rules as W  # noqa: E402
++
+ FORBIDDEN = re.compile(r"\b(damag\w*|dry|clear\w*|insurance|eligib\w*|confirm\w*|coverage|risk|probab\w*|claim\w*|"
+                        r"loss\w*|all-clear|structure|warrant\w*)\b|\bno hail\b", re.IGNORECASE)
+ LM = "Mon, 05 Oct 2026 14:33:16 GMT"           # the Last-Modified of the 2025-26 file, read live on 2026-10-19
+@@ -665,9 +669,11 @@ class UrlAndWordsTests(unittest.TestCase):
+             self.assertNotIn("<", value)
+ 
+     def test_no_forbidden_term_in_any_snow_word(self):
++        # D41 and D56: the one list in words_rules; its residue rule strips "This is not an all-clear." (the required end
++        # of every unavailable, partial and held line) before the forbidden check, and nothing else
+         for key, text in G.WORDS.items():
+             if isinstance(text, str):
+-                self.assertIsNone(FORBIDDEN.search(text), f"{key}: {text}")
++                W.assert_clean(self, text, key)
+ 
+     def test_analysis_words_are_the_brief_words(self):
+         text = G.WORDS["analysis"].format(inches=S.fmt_in(3385), water_year="2025-26 (October 2025 to September 2026)",
+@@ -678,9 +684,13 @@ class UrlAndWordsTests(unittest.TestCase):
+ 
+     def test_the_unit_sentence_is_the_plain_sentence_with_no_regression_word(self):
+         # the reader is not asked to decode a regression slope
++        # D41: the line ends with the required sentence, which the forbidden scan allows (words_rules.residue)
+         self.assertEqual(G.WORDS["unit_failed"], "Analysis: not shown. Its amounts did not match measured snowfall "
+                                                  "closely enough to be sure they are in inches. Station readings are "
+-                                                 "shown instead.")
++                                                 "shown instead. This is not an all-clear.")
++        self.assertEqual(W.residue(G.WORDS["unit_failed"]).split(), "Analysis: not shown. Its amounts did not match measured "
++                                                                    "snowfall closely enough to be sure they are in inches. "
++                                                                    "Station readings are shown instead.".split())
+         self.assertNotIn("slope", G.WORDS["unit_failed"].lower())
+         self.assertNotIn("regression", G.WORDS["unit_unchecked"].lower())
+ 
+diff --git a/tests/test_stations.py b/tests/test_stations.py
+index 9845dfd..e4c4080 100644
+--- a/tests/test_stations.py
++++ b/tests/test_stations.py
+@@ -942,3 +942,97 @@ class TileListTests(unittest.TestCase):
+         counted = S._partial_problem([], [{"source": "stations", "reason": "x"}, {"source": "daily", "station": "Z"}])
+         self.assertEqual(counted, "Some station files could not be loaded in this update (2 files); that is not the same as "
+                                   "no station reading. This is not an all-clear.")
++
++
++class PointPicksTests(unittest.TestCase):
++    """D36, the shared rule for the picks at a point (stations.tile_list_picks; the browser is to run the same rule): the two
++    nearest passing stations of one element's tile list to the point, the unread candidates nearer than the second pick
++    named (D32), and a capped list that cannot answer. The Billings case is the gate's: from the Billings gate point the
++    SNOW list of the Billings tile names WTP (1.4 miles) and the airport (2.6 miles); the positions are the store's own."""
++
++    GATE = (45.7836, -108.5047)                  # the Billings gate point (stations.GATE_POINTS["billings"])
++    MILE_DEG = 1.0 / 69.09                       # one mile of latitude, near these latitudes (the rule is haversine)
++
++    @staticmethod
++    def entry(sid, name, lat, lon):
++        return {"id": sid, "name": name, "lat": lat, "lon": lon, "miles": 0.0, "ok": 2000, "of": 2192, "share": 0.91}
++
++    def north(self, miles, lon=-110.0):
++        return (47.0 + miles * self.MILE_DEG, lon)
++
++    def test_the_billings_gate_names_the_cooperative_site_and_the_airport(self):
++        block = {"capped": True, "unread": [], "passing": [
++            self.entry("USC00240801", "BILLINGS WFO", 45.7503, -108.5697),
++            self.entry("USC00240802", "BILLINGS WTP", 45.7717, -108.4811),
++            self.entry("USW00024033", "BILLINGS INTL AP", 45.8072, -108.5461),
++            self.entry("US1MTYS0014", "BILLINGS 4.5 NE", 45.8323, -108.444)]}
++        got = S.tile_list_picks(block, *self.GATE, light={"USC00240802": {"net": "COOP"}, "USW00024033": {"net": "ASOS"}})
++        self.assertEqual(got["state"], "two")
++        self.assertEqual([(p["id"], p["name"], p["net"], p["miles"]) for p in got["picks"]],
++                         [("USC00240802", "BILLINGS WTP", "COOP", 1.4), ("USW00024033", "BILLINGS INTL AP", "ASOS", 2.6)])
++        self.assertEqual(got["unread"], [])
++        self.assertFalse(got["incomplete"])
++
++    def test_the_two_nearest_passing_stations_come_first_and_ties_go_by_id(self):
++        block = {"capped": False, "unread": [], "passing": [
++            self.entry("USC00000003", "FAR", *self.north(9.0)),
++            self.entry("USC00000002", "TIE B", *self.north(3.0)),
++            self.entry("USC00000001", "TIE A", *self.north(3.0)),
++            self.entry("USC00000004", "NEAR", *self.north(1.0))]}
++        got = S.tile_list_picks(block, 47.0, -110.0)
++        self.assertEqual([p["id"] for p in got["picks"]], ["USC00000004", "USC00000001"])   # nearest, then the tie by id
++        self.assertEqual(got["state"], "two")
++        self.assertEqual(got["candidates"], 4)
++
++    def test_a_passing_station_beyond_the_radius_is_not_a_pick(self):
++        block = {"capped": False, "unread": [], "passing": [self.entry("USC00000005", "FAR", *self.north(45.0))]}
++        got = S.tile_list_picks(block, 47.0, -110.0)
++        self.assertEqual(got["picks"], [])
++        self.assertEqual(got["state"], "none")                  # no passing station within 40 miles, nothing unread
++        self.assertEqual(got["candidates"], 0)
++
++    def test_one_pick_is_state_one_and_the_radius_bounds_the_pick_list(self):
++        block = {"capped": False, "unread": [], "passing": [self.entry("USC00000006", "ONLY", *self.north(12.0)),
++                                                            self.entry("USC00000007", "OUT", *self.north(41.0))]}
++        got = S.tile_list_picks(block, 47.0, -110.0)
++        self.assertEqual(got["state"], "one")
++        self.assertEqual([p["id"] for p in got["picks"]], ["USC00000006"])
++
++    def test_an_unread_candidate_nearer_than_the_second_pick_is_named_and_a_farther_one_is_not(self):
++        block = {"capped": False, "passing": [self.entry("USC00000010", "P1", *self.north(1.0)),
++                                              self.entry("USC00000011", "P2", *self.north(5.0))],
++                 "unread": [{"id": "USC00000012", "name": "NEAR UNREAD", "lat": 47.0 + 2.0 * self.MILE_DEG,
++                             "lon": -110.0, "reason": "its file did not load"},
++                            {"id": "USC00000013", "name": "FAR UNREAD", "lat": 47.0 + 30.0 * self.MILE_DEG,
++                             "lon": -110.0, "reason": "its file did not load"}]}
++        got = S.tile_list_picks(block, 47.0, -110.0)
++        self.assertEqual([p["id"] for p in got["picks"]], ["USC00000010", "USC00000011"])
++        self.assertEqual([u["name"] for u in got["unread"]], ["NEAR UNREAD"])        # named (D32), never skipped
++        self.assertEqual(got["unread"][0]["reason"], "its file did not load")
++        self.assertTrue(got["incomplete"])
++        self.assertEqual(got["state"], "two")
++
++    def test_an_unread_candidate_without_a_position_is_always_named(self):
++        block = {"capped": False, "passing": [], "unread": [{"id": "USC00000020", "name": "NO POSITION", "lat": None,
++                                                             "lon": None, "reason": "the file did not load"}]}
++        got = S.tile_list_picks(block, 47.0, -110.0)
++        self.assertEqual(got["state"], "unavailable")          # no pick and an unread candidate: never "none"
++        self.assertEqual([(u["name"], u["miles"]) for u in got["unread"]], [("NO POSITION", None)])
++
++    def test_a_capped_list_with_fewer_than_two_stations_in_the_radius_cannot_answer(self):
++        block = {"capped": True, "unread": [], "passing": [self.entry("USC00000030", "IN", *self.north(4.0)),
++                                                           self.entry("USC00000031", "OUT", *self.north(50.0))]}
++        self.assertIsNone(S.tile_list_picks(block, 47.0, -110.0))   # a station the list does not hold might be nearer
++
++    def test_a_capped_list_with_two_stations_in_the_radius_answers(self):
++        block = {"capped": True, "unread": [], "passing": [self.entry("USC00000040", "A", *self.north(4.0)),
++                                                           self.entry("USC00000041", "B", *self.north(8.0)),
++                                                           self.entry("USC00000042", "C", *self.north(50.0))]}
++        got = S.tile_list_picks(block, 47.0, -110.0)
++        self.assertEqual([p["id"] for p in got["picks"]], ["USC00000040", "USC00000041"])
++
++    def test_no_block_cannot_answer_and_an_empty_block_says_none(self):
++        self.assertIsNone(S.tile_list_picks(None, 47.0, -110.0))            # the file or the element is not in the store
++        self.assertIsNone(S.tile_list_picks({}, 47.0, -110.0))
++        empty = S.tile_list_picks({"capped": False, "passing": [], "unread": []}, 47.0, -110.0)
++        self.assertEqual((empty["state"], empty["picks"]), ("none", []))
+diff --git a/website/joins.py b/website/joins.py
+index cdd9dea..6751709 100644
+--- a/website/joins.py
++++ b/website/joins.py
+@@ -161,6 +161,7 @@ from pathlib import Path, PurePosixPath
+ from zoneinfo import ZoneInfo
+ 
+ from . import hail
++from . import stations as stn                 # D56: the tile lists' format and cap, the fixture's station part
+ 
+ FORMAT = "hail-joins-v2"            # j/ files (B5: the touch rule D11, the counties map, a report's type word)
+ ZONE_FORMAT = "hail-zone-v1"        # z/ files (B5: one event per period, D8; the shape is B2's)
+@@ -1695,6 +1696,7 @@ class Context:
+         self.vtec_counts: dict[str, dict] = {}        # product -> {"zone", "county", "polygon", "window"} (VTEC events)
+         self.zone_periods = 0                         # the spans (periods) kept in the window, zone and county
+         self.vtec_counts_research: dict[str, dict] = {}   # the same counts over the research window (every row read)
++        self.vtec_edges: list[dict] = []              # D55: each event the two windows count differently, named
+ 
+ 
+ def _take(result: Result, parser):
+@@ -2715,23 +2717,30 @@ def _zone_events(ctx: Context, start: datetime, end: datetime) -> dict:
+         if level == "zone":
+             zone_keys.add(ekey)
+         groups.setdefault((level, code) + ekey, []).append(row)
+-        item = vtec.setdefault(ekey, {"issues": [], "new": [], "level": set()})
++        item = vtec.setdefault(ekey, {"issues": [], "new": [], "level": set(), "first": None, "codes": set()})
+         item["issues"].append(row["issue"])
+         if row["status"] in ("NEW", "CON"):
+             item["new"].append(row["issue"])
+         item["level"].add(level)
++        item["codes"].add(code)
++        if item["first"] is None or row["issue"] < item["first"]["issue"]:
++            item["first"] = row                      # D55: the first archived row, named when the two windows differ
+         if row["status"] == "CAN" and start <= row["issue"] < end and (row["issue"].hour, row["issue"].minute) == (0, 0):
+             ctx.zone_can_midnight += 1
+     counts: dict[str, dict] = {}
+     research: dict[str, dict] = {}
++    edges: list[dict] = []
+     for ekey, item in vtec.items():
+         begin = min(item["new"]) if item["new"] else min(item["issues"])
+         name = f"{ekey[0]}.{ekey[1]}"
+-        if RESEARCH_START <= begin < RESEARCH_END:        # the research's own window, from every row read
++        in_store, in_research = start <= begin < end, RESEARCH_START <= begin < RESEARCH_END
++        if in_research:                                   # the research's own window, from every row read
+             row = research.setdefault(name, {"zone": 0, "county": 0, "window": 0})
+             row["window"] += 1
+             row["zone" if "zone" in item["level"] else "county"] += 1
+-        if not (start <= begin < end):
++        if in_store != in_research:                       # D55: an event at the edge of one window only, named
++            edges.append(_vtec_edge(name, ekey, item, begin, in_store, in_research))
++        if not in_store:
+             continue
+         row = counts.setdefault(name, {"zone": 0, "county": 0, "window": 0})
+         row["window"] += 1
+@@ -2741,6 +2750,7 @@ def _zone_events(ctx: Context, start: datetime, end: datetime) -> dict:
+             row["county"] += 1
+     ctx.vtec_counts = counts
+     ctx.vtec_counts_research = research
++    ctx.vtec_edges = edges
+     out: dict[str, list] = {}
+     fire: dict[str, list] = {}
+     county: dict[str, list] = {}
+@@ -2970,6 +2980,9 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
+                                                       {"zone": 0, "county": 0, "polygon": 0, "window": 0})
+             row["polygon"] += 1
+             row["window"] += 1
++        in_store, in_research = start <= event["b"] < end, RESEARCH_START <= event["b"] < RESEARCH_END
++        if in_store != in_research:                  # D55: a polygon event at the edge of one window only, named
++            ctx.vtec_edges.append(_polygon_edge(event, in_store, in_research))
+     _join_nulls(ctx, start, end)
+     towns = json.loads(TOWNS_FILE.read_text(encoding="utf-8"))
+     town_check = town_checks(ctx, towns) if ctx.ww_all else {"towns": [], "events_checked": 0, "pairs_tested": 0,
+@@ -3120,6 +3133,9 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
+         block["counties"]["cells_by_nearest_edge"] = prep["county_nearest"]
+         block["vtec_counts_research"] = {k: dict(v) for k, v in sorted(ctx.vtec_counts_research.items())}
+         block["research_window"] = [RESEARCH_START.date().isoformat(), RESEARCH_END.date().isoformat()]
++        block["vtec_store_window"] = [iso_utc(start), iso_utc(end)]          # D55: the store window's UTC instants
++        block["vtec_window_edges"] = sorted(ctx.vtec_edges, key=lambda e: (e["product"], e["begin"], e["wfo"] or "",
++                                                                             e["eventid"] or ""))     # D55
+         block["events_tiles"] = _events_tiles_block(events_tiles["entries"], events_tiles["referenced"])
+         block["towns_file"] = _towns_file_block(towns_doc, len(towns_bytes))
+         new_index = dict(index)
+@@ -3294,7 +3310,9 @@ def _index_block(ctx, index, tiles, zone_list, station_index, totals, bytes_by,
+         "sources": {src: dict(row, **({"served_from_cache_since": fetcher.served_since[src]}
+                                       if src in fetcher.served_since else {}))
+                     for src, row in fetcher.stats.items()},
+-        "failures": fetcher.failures[:50],
++        # sorted: the fetches run concurrently, so the order the failures arrive in is not the build's order (two offline
++        # builds from one cache must be byte-identical)
++        "failures": sorted(fetcher.failures, key=lambda f: (f["source"], f["url"]))[:50],
+         "failure_count": len(fetcher.failures),
+     }
+ 
+@@ -4099,6 +4117,11 @@ RESEARCH_B5 = {                       # source 4: the window counts the research
+     "FL.W": 43, "FA.W": 37, "FA.Y": 548, "FL.A": 35, "FL.Y": 10, "SQ.W": 78,              # county ones by key)
+     "WW.Y": 865, "WS.A": 226, "HW.A": 277, "HT.Y": 58, "EH.W": 4, "EH.A": 3, "FR.Y": 14, "FZ.W": 4, "DU.Y": 3,
+     "FF.A": 20,
++    # D55: HW.W 339 is the research's count (the research record's flood-ice-heat-products table, iem_watchwarn_table). FW.W
++    # 169 is not a row of the research record: it is the B5 recheck's figure, and the research's own rule (the research
++    # window, the earliest issue as the begin) recounts it as 169 from the rows the cache holds. This table checks the
++    # recount, and verify names each edge event that the two windows split.
++    "HW.W": 339, "FW.W": 169,
+ }
+ RESEARCH_B5_COUNTY = {"FA.A": 18, "FF.A": 2}             # county-only events in the window
+ # rules-F26: the HW.A window note the compare step records. HW.A has no NEW rows (its rows are CON, UPG, CAN and EXT), so
+@@ -4330,6 +4353,81 @@ def _research_compare(block: dict, research: bool = True) -> list:
+     return rows
+ 
+ 
++def _vtec_edge(name: str, ekey: tuple, item: dict, begin: datetime, in_store: bool, in_research: bool) -> dict:
++    """D55: one zone-path event that the store window and the research window count differently: its product, office,
++    VTEC event number and year, the begin the count uses (the earliest NEW or CON issue, else the earliest issue), the
++    first archived row (its status, issue, product time and expiry) and the zone codes it covers."""
++    first = item["first"]
++    return {"product": name, "level": "zone" if "zone" in item["level"] else "county", "wfo": ekey[2],
++            "eventid": ekey[3], "vtec_year": ekey[4], "begin": iso_utc(begin), "in_store_window": in_store,
++            "in_research_window": in_research, "first_status": first["status"], "first_issue": iso_utc(first["issue"]),
++            "product_time": iso_utc(first["prod"]), "expire": iso_utc(first["expire"]), "codes": sorted(item["codes"]),
++            "rows": len(item["issues"])}
++
++
++def _polygon_edge(event: dict, in_store: bool, in_research: bool) -> dict:
++    """D55: one polygon event (a NEW polygon) that the store window and the research window count differently."""
++    return {"product": f"{event['k']}.{event['s']}", "level": "polygon", "wfo": event.get("o"),
++            "eventid": event.get("eventid"), "vtec_year": event.get("vtec_year"), "begin": iso_utc(event["b"]),
++            "in_store_window": in_store, "in_research_window": in_research, "first_status": "NEW",
++            "first_issue": iso_utc(event["b"]), "product_time": None,
++            "expire": None if event.get("e") is None else iso_utc(event["e"]), "codes": [], "rows": 1}
++
++
++def _utc_words(iso: str) -> str:
++    """'2026-10-17T15:00Z' as '17 October 2026 at 15:00 UTC' (the words verify prints)."""
++    return datetime.strptime(iso, "%Y-%m-%dT%H:%MZ").strftime("%-d %B %Y at %H:%M UTC")
++
++
++def _edge_sentence(edge: dict, store_window: list) -> str:
++    """D55: the plain sentence verify prints for one edge event: its product, office and event number, its first archived
++    row, the window that counts it, and why the other window does not."""
++    first = (f"its first archived row is {edge['first_status']} issued {_utc_words(edge['first_issue'])}"
++             + ("" if edge["product_time"] is None else f" (product time {_utc_words(edge['product_time'])})"))
++    research = (f"{RESEARCH_START:%-d %B %Y} at 00:00 UTC to {RESEARCH_END:%-d %B %Y} at 00:00 UTC")
++    store = f"{_utc_words(store_window[0])} to {_utc_words(store_window[1])}" if len(store_window) == 2 else "unknown"
++    if edge["in_store_window"]:
++        window = "the store window only"
++        why = f"it begins outside the research window, which runs from {research}"
++    else:
++        window = "the research window only"
++        why = f"it begins outside the store window, which runs from {store}"
++    return (f"{edge['product']} {edge['wfo']} event {edge['eventid']} ({edge['vtec_year']}) begins "
++            f"{_utc_words(edge['begin'])}, so it is counted in {window}: {first}; {why}. No store rule drops it; the "
++            f"window edge alone decides which window counts it.")
++
++
++def _window_edge_check(block: dict) -> dict:
++    """D55: the store window's counts less the research window's counts, product by product and level by level, must equal
++    the edge events the two windows split (+1 for each the store window counts and the research window does not, -1 for
++    each the research window counts and the store window does not). Returns the windows, the named edges with their
++    sentences, the differences, and any difference the edges do not explain (unexplained: empty when every difference is
++    named)."""
++    store_window = block.get("vtec_store_window") or []
++    edges = block.get("vtec_window_edges", [])
++    vs, vr = block.get("vtec_counts", {}), block.get("vtec_counts_research", {})
++    rows, unexplained = [], []
++    for name in sorted(set(vs) | set(vr) | {e["product"] for e in edges}):
++        for level in ("zone", "county", "polygon"):
++            s = vs.get(name, {}).get(level, 0)
++            r = vr.get(name, {}).get(level, 0)
++            named = sum((1 if e["in_store_window"] else 0) - (1 if e["in_research_window"] else 0)
++                        for e in edges if e["product"] == name and e["level"] == level)
++            if s == r and named == 0:
++                continue
++            row = {"product": name, "level": level, "store_window": s, "research_window": r, "difference": s - r,
++                   "named": named}
++            rows.append(row)
++            if s - r != named:
++                unexplained.append(row)
++    return {"store_window": store_window, "research_window": [RESEARCH_START.date().isoformat(),
++                                                              RESEARCH_END.date().isoformat()],
++            "sentences": [_edge_sentence(e, store_window) for e in edges], "edges": len(edges),
++            "differences": rows, "unexplained": unexplained,
++            "note": ("The store window is the 1,826 SPC days ending on the store's as-of date (B1, D3); the research window "
++                     "is calendar days (UTC), so the two differ by the days at their ends. Both are shown.")}
++
++
+ def _cover_counts_check(block: dict) -> dict:
+     cc = block.get("cover_counts", {})
+     bad = {k: v["centre_not_touched"] for k, v in cc.items() if v.get("centre_not_touched")}
+@@ -4804,6 +4902,23 @@ def _verify_b5(root: Path, index: dict, events: dict, block: dict, check, cache_
+     b5["vtec_counts"] = block.get("vtec_counts", {})
+     b5["research_window_counts"] = _research_compare(block, research=True)
+     b5["store_window_counts"] = _research_compare(block, research=False)
++    # D55: the research window reproduces the research counts, and each store-window difference is a named edge event
++    b5["vtec_window_edges"] = _window_edge_check(block)
++    if block.get("vtec_counts_research"):
++        off = [r for r in b5["research_window_counts"] if r["delta"] != 0]
++        check("D55: the research window's counts equal the research's counts, product by product (zero difference)",
++              bool(b5["research_window_counts"]) and not off,
++              "; ".join(f"{r['product']} {r['ours_window_vtec_events']} against {r['research_window']}" for r in off)
++              or f"{len(b5['research_window_counts'])} products, zero difference")
++        edge_check = b5["vtec_window_edges"]
++        check("D55: every difference between the store window and the research window is a named event at a window edge",
++              not edge_check["unexplained"],
++              " ".join(edge_check["sentences"]) if edge_check["sentences"] else "no event falls in only one window")
++    else:
++        skip("D55: the research window's counts equal the research's counts",
++             "this store holds no VTEC counts (it was built before the B5 counts)")
++        skip("D55: every difference between the store window and the research window is named",
++             "this store holds no VTEC counts (it was built before the B5 counts)")
+     b5["zone_periods"] = block.get("zone_periods")
+     b5["periods"] = guarded("period cases", lambda: _periods_check(root), [])
+     present = [p for p in b5["periods"] if p["zone"] in set(block.get("zone_list", []))]
+@@ -4999,6 +5114,43 @@ def compare(store_dir) -> dict:
+ FIXTURE_DAYS = ("2025-06-14", "2025-06-15", "2025-06-16")
+ 
+ 
++def _station_sample(src: Path, real_index: dict, tiles, gust_ids) -> tuple[dict, dict, list]:
++    """D56: the station reader's part of the sample store. The tile lists (hail/tl) of the sample tiles are the candidates the
++    summary's point picks read; the station summaries (hail/sd) are those of every station a list names and of the gust
++    stations the sample names (a station whose summary the build lacks is left out); the index's stations block is cut to
++    those stations, with the real block's state, rule, as-of date and sources, and says it is a sample. Without this block
++    the summary reads every station row as "could not be loaded" while the joins part of the same page reads the gusts.
++    Returns (the stations block, {tile name: tile list document}, the station ids whose summary file is copied)."""
++    real = real_index.get("stations") or {}
++    lists: dict = {}
++    named = set(gust_ids)
++    for name in sorted(tiles):
++        path = src / "hail" / "tl" / f"{name}.json"
++        if not path.is_file():
++            continue
++        doc = json.loads(path.read_text(encoding="utf-8"))
++        lists[name] = doc
++        for part in doc.get("elements", {}).values():
++            named.update(e["id"] for e in part.get("passing", []))
++            named.update(e["id"] for e in part.get("unread", []))
++    ids = sorted(sid for sid in named if (src / "hail" / "sd" / f"{sid}.json").is_file()) if real else []
++    rows = {sid: real["stations"][sid] for sid in ids if sid in real.get("stations", {})}
++    parts = [part for doc in lists.values() for part in doc.get("elements", {}).values()]
++    block = {"state": "loaded" if real else "unavailable",       # a source with no stations block says so, never loaded
++             "problem": None if real else "the build the sample is cut from has no stations block",
++             "detail": None, "as_of": real.get("as_of"),
++             "rule": real.get("rule", {}), "sources": real.get("sources", {}), "sample": True,
++             "counts": {"sample_tiles": len(lists), "sample_stations": len(rows)},
++             "refresh": {"mode": "none", "ids": 0, "unchanged": 0}, "failures": [], "failed_station_ids": [],
++             "malformed": 0, "unchanged_station_ids": [], "stations": rows,
++             "chosen_station_ids": sorted(rows), "rule_station_ids": sorted(rows),
++             "tile_lists": {"format": stn.TILE_LIST_FORMAT, "cap": stn.TILE_LIST_CAP, "miles": stn.RADIUS_MILES,
++                            "files": len(lists), "capped": sum(1 for p in parts if p.get("capped")),
++                            "longest": max((len(p.get("passing", [])) for p in parts), default=0),
++                            "unread": sum(len(p.get("unread", [])) for p in parts)}}
++    return block, lists, ids
++
++
+ def fixture(out_dir, from_store) -> dict:
+     """Write the SAMPLE joins for the fixture store (website/data/hail-fixture): the three fixture tiles' files, the
+     events they refer to, and the zone and station files they name, cut to FIXTURE_DAYS, from a real joins build
+@@ -5006,7 +5158,8 @@ def fixture(out_dir, from_store) -> dict:
+     out = Path(out_dir)
+     hail.fixture_store(out)
+     src = Path(from_store)
+-    real_block = load_joins_index(src)[INDEX_KEY]
++    real_index = load_joins_index(src)
++    real_block = real_index[INDEX_KEY]
+     real_events = _read_events(src)
+     if real_events is None:
+         raise JoinsError("the real build has no events table")
+@@ -5096,6 +5249,15 @@ def fixture(out_dir, from_store) -> dict:
+         doc = json.loads((src / "hail" / "s" / f"{sid}.json").read_text(encoding="utf-8"))
+         doc["days"] = [d for d in doc["days"] if hail.day_of_index(d[0]) in days]
+         (hail_out / "s" / f"{sid}.json").write_bytes(_compact(doc))
++    # D56: the station reader's part (the tile lists the summary's point picks read, the summaries of the stations they
++    # name, and the index's stations block cut to them), so the sample's station rows read as the build's do
++    station_block, tile_lists, sd_ids = _station_sample(src, real_index, sample_tiles, station_list)
++    for name, doc in sorted(tile_lists.items()):
++        (hail_out / "tl").mkdir(parents=True, exist_ok=True)
++        (hail_out / "tl" / f"{name}.json").write_bytes(_compact(doc))
++    for sid in sd_ids:
++        (hail_out / "sd").mkdir(parents=True, exist_ok=True)
++        (hail_out / "sd" / f"{sid}.json").write_bytes((src / "hail" / "sd" / f"{sid}.json").read_bytes())
+     events_counts = {k: len(v) for k, v in new_events.items()}
+     block = {
+         "format": FORMAT, "events_format": EVENTS_FORMAT,
+@@ -5134,12 +5296,12 @@ def fixture(out_dir, from_store) -> dict:
+         e_entries.append((path.name, len(raw), len(gzip.compress(raw, compresslevel=9, mtime=0))))
+     block["events_tiles"] = _events_tiles_block(e_entries, ref_counts)
+     block["towns_file"] = _towns_file_block(towns_doc, len(towns_bytes))
+-    index_bytes = _pretty(dict(sample, **{INDEX_KEY: block}))
++    index_bytes = _pretty(dict(sample, **{INDEX_KEY: block, "stations": station_block}))
+     (hail_out / "index.json").write_bytes(index_bytes)
+     manifest = json.loads((hail_out / "manifest.json").read_text(encoding="utf-8"))
+     files = {rel: meta for rel, meta in manifest["files"].items()
+-             if not rel.startswith(("hail/j/", "hail/z/", "hail/s/", "hail/k/"))}
+-    for sub in ("j", "z", "s", "k"):
++             if not rel.startswith(("hail/j/", "hail/z/", "hail/s/", "hail/k/", "hail/tl/", "hail/sd/"))}
++    for sub in ("j", "z", "s", "k", "tl", "sd"):
+         for path in sorted((hail_out / sub).rglob("*.json")):
+             data = path.read_bytes()
+             files[path.relative_to(out).as_posix()] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+diff --git a/website/sources.py b/website/sources.py
+index b5e74af..97b6e0b 100644
+--- a/website/sources.py
++++ b/website/sources.py
+@@ -204,7 +204,7 @@ CONTRACTS = {
+                   "5 am in winter (the SPC reporting day). The day is held by the file stamped the day after at "
+                   "12:00 UTC, posted about 12:08 UTC. The newest day is added by a job that starts at 12:43 UTC and "
+                   "shows here on the next rebuild, usually within the hour. Each page shows the store's as-of date.",
+-        "missing": "-1 (missing) and -3 (no coverage) are never stored. A cell with no stored value on a day is no radar "
++        "missing": "-1 (missing) and -3 (no radar coverage) are never stored. A cell with no stored value on a day is no radar "
+                    "estimate, never 'no hail'. A day with no file is listed on the page and not counted, and a day that "
+                    "fails stays missing. An estimate is not a measurement at the ground and not an inspection.",
+     },
+diff --git a/website/stations.py b/website/stations.py
+index f0b6a9f..564a42c 100644
+--- a/website/stations.py
++++ b/website/stations.py
+@@ -661,6 +661,52 @@ def point_rule(light: dict, lat: float, lon: float, element: str, as_of: date) -
+     return choose(ordered_candidates(base, inventory, element), light, element, as_of, failed=unread_of(light))
+ 
+ 
++def tile_list_picks(block: dict | None, lat: float, lon: float, light: dict | None = None,
++                    radius_miles: float = RADIUS_MILES) -> dict | None:
++    """D36, the shared rule for the picks at a point: the two nearest passing stations of one element's tile list to the
++    point (the cell centre on the sheet, the town point on a town page). This is the Python side of the rule; the sheet's
++    browser is to run the same rule on the same tile files (hail/tl/<tile>.json) in part B2, and the summary's
++    chosen_from_tile_list gives the same picks (checked on the combined store's tile lists: no difference).
++
++    block is the tile list's block for the element: "passing" (up to TILE_LIST_CAP stations that pass the coverage and
++    currency test, nearest the tile centre first, each with id, name, lat, lon, miles and share), "unread" (candidates whose
++    file did not load, with their position when known) and "capped" (the list stopped at the cap). The rule: the passing
++    entries within radius_miles of the point, nearest first (ties by id); the first two are the picks. An unread candidate
++    nearer than the second pick (any unread candidate when there are fewer than two picks, or no position) is named as
++    failed and never skipped (D32). When the list is capped and fewer than two passing entries lie within radius_miles, the
++    list cannot answer (a station it does not hold might be nearer), and the result is None.
++
++    light is the stations block's entries by id; it supplies each pick's net type (COOP, CoCoRaHS, ...). Returns {"state":
++    "two" | "one" | "unavailable" | "none", "picks": [{"id", "name", "net", "miles"}], "unread": [{"id", "name", "miles",
++    "reason"}], "candidates": n, "incomplete": bool} with miles rounded to a tenth. "unavailable": no pick and an unread
++    candidate; "none": no passing station within the radius."""
++    if not block:
++        return None
++    rows = []
++    for entry in block.get("passing", []):
++        miles = haversine_miles(lat, lon, entry["lat"], entry["lon"])
++        if miles <= radius_miles:
++            rows.append((miles, entry))
++    rows.sort(key=lambda r: (r[0], r[1]["id"]))
++    if block.get("capped") and len(rows) < 2:
++        return None
++    picks = rows[:2]
++    cut = picks[-1][0] if len(picks) == 2 else radius_miles
++    unread = []
++    for entry in block.get("unread", []):
++        miles = haversine_miles(lat, lon, entry["lat"], entry["lon"]) if entry.get("lat") is not None else None
++        if miles is None or miles <= cut:
++            unread.append({"id": entry["id"], "name": entry.get("name") or entry["id"],
++                           "miles": None if miles is None else round(miles, 1), "reason": entry.get("reason")})
++    out = []
++    for miles, entry in picks:
++        row = (light or {}).get(entry["id"]) or {}
++        out.append({"id": entry["id"], "name": entry.get("name") or row.get("name", entry["id"]),
++                    "net": row.get("net"), "miles": round(miles, 1)})
++    state = "two" if len(out) == 2 else "one" if out else ("unavailable" if unread else "none")
++    return {"state": state, "picks": out, "unread": unread, "candidates": len(rows), "incomplete": bool(unread)}
++
++
+ UNREAD_NAMES_SHOWN = 3       # the nearest unread stations named in a sentence; the rest are counted
+ 
+ 
