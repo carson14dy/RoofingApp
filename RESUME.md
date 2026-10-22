@@ -59,11 +59,10 @@ job's `a/`, `r/`, `b/` (the B3 job tarball is gone from the release; rebuild the
 local `/home/user/hail-b5/out/combined/store` if the container survived).
 
 ## Next steps, in order
-1. **B1's public pages.** Check `https://carson14dy.github.io/RoofingApp/data/map.json` has `hail.state == "loaded"`
-   and run `tools/live_check.py` (saved here) in Chromium: the sheet at `map.html?at=47.08,-110.02` and a town page's
-   "Hail history, five years" table. If the pages still say the history is unavailable, main's store job has not
-   published, or no build ran since: dispatch `website.yml` on `main` (actions_run_trigger run_workflow) and check
-   again. Record the result in the supervisor log (the B1 record's `to_check_after_the_merge`).
+1. **B1's public pages: done at 00:39 UTC on 2026-10-22.** `hail-store-main.tar.gz` was published at 00:36 UTC, `website.yml`
+   was dispatched on `main`, and `tools/live_check.py` in Chromium found map.json's hail block loaded, the Billings
+   town page's table and the Benchland sheet (10 days) at 390 and 1280 px with no off-site request. Nothing is left
+   on B1; the daily job runs at 12:43 UTC from `main`.
 2. **Part B2 on B5** (`briefs/hail-b5-brief.md`, "Part B2 build list" and D59, D60): apply the products WIP onto
    `claude/hail-b5` first (it is the finished builder state; let a fixer answer the reviewer's findings from the
    journal), then run `scripts/hail-b5b2-build.js` with `{"owners": ["browser", "site"], "worker": "<alias>"}` and
