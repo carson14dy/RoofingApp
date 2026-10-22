@@ -86,20 +86,29 @@ jobs:
           fi
           # The new file goes up under a temporary name and takes the asset's name only once it is complete, so a
           # failed or interrupted upload leaves the last published asset in place, and a build never finds the name
-          # missing for longer than the two API calls below.
+          # missing for longer than the moment between the two renames below.
           gh release upload hail-store "$ASSET.new" --clobber
           assets=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/hail-store" --jq '.assets[] | "\(.id) \(.name)"')
-          old_id=""; new_id=""; shared_id=""
+          old_id=""; new_id=""; stale_id=""; shared_id=""
           while read -r id name; do
             case "$name" in
               "$ASSET") old_id=$id;;
               "$ASSET.new") new_id=$id;;
+              "$ASSET.old") stale_id=$id;;
               hail-store.tar.gz) shared_id=$id;;
             esac
           done <<< "$assets"
-          test -n "$new_id"
+          if [ -z "$new_id" ]; then echo "The uploaded file $ASSET.new is not in the release's asset list; nothing was replaced." >&2; exit 1; fi
+          # The old asset steps aside, the new one takes the name, and the old one is removed last. If the new one
+          # cannot take the name, the old one gets it back, so the name is never left missing. A .old left by an
+          # earlier failed run is removed first.
+          if [ -n "$stale_id" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$stale_id"; fi
+          if [ -n "$old_id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$old_id" -f name="$ASSET.old" > /dev/null; fi
+          if ! gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new_id" -f name="$ASSET" > /dev/null; then
+            if [ -n "$old_id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$old_id" -f name="$ASSET" > /dev/null; fi
+            echo "The new file could not take the name $ASSET; the previous asset keeps it." >&2; exit 1
+          fi
           if [ -n "$old_id" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$old_id"; fi
-          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new_id" -f name="$ASSET" > /dev/null
           echo "Published $ASSET."
           # The earlier branch jobs published under one shared name, hail-store.tar.gz, and the last of them held a
           # later stage's data (the address points) while that stage's gates are open. Any job that finds it removes

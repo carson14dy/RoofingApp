@@ -770,6 +770,14 @@ def fetch_store_any(get, dest_dir, urls) -> tuple[dict, str]:
     raise HailStoreError("the history download failed: " + "; ".join(failures))
 
 
+def plain_problem(problem: str) -> str:
+    """The page's words for a store problem. A download failure names files and HTTP codes for the build log; the
+    page says what happened in plain words. Every other problem is already a plain sentence."""
+    if problem.startswith("the history download failed"):
+        return "the history store could not be downloaded in this update"
+    return problem
+
+
 def load_store(path, dest_dir=None) -> Path:
     """The directory that holds a verified hail/ tree, from a store directory or a release tar.gz (--hail-store).
 

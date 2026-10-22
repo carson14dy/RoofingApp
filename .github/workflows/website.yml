@@ -103,10 +103,11 @@ jobs:
           # preview reads whatever asset is published when its build starts. So wait for the branch's latest store
           # run (this commit's, or an earlier commit's still going), for up to 60 minutes, the store job's own cap
           # (the B1 job ran 10.7 minutes on 2026-10-18; the B3-stage job 35.6 minutes on 2026-10-20; a later stage
-          # raises this bound, the job cap and the timeout above together). A run for this commit that did not
-          # succeed, a listing that fails or a run still going at the end fails this step; a run for an earlier
-          # commit that did not succeed leaves the asset as it was, and the build's own rules (the fallback to
-          # main's asset, the stale rule) decide. main never waits: its store job replaces the asset in one step.
+          # raises this bound, the job cap and the timeout above together). When that latest run is this commit's
+          # and did not succeed, or the listing fails, or the run is still going at the end, this step fails; when
+          # the latest run is an earlier commit's and did not succeed, the asset stays as it was and the build's own
+          # rules (the fallback to main's asset, the stale rule) decide. main never waits: its store job replaces
+          # the asset in one step.
           i=0
           while :; do
             i=$((i + 1))

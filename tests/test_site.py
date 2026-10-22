@@ -1963,6 +1963,25 @@ class HailHistory(unittest.TestCase):
         self.assertIn("more than three days old is a failed source", row["timing"])
         self.assertNotIn("within the hour", row["timing"])
 
+    def test_a_failed_download_reads_plainly_on_the_pages_and_in_full_in_the_log(self):
+        """The build log keeps the file name and the HTTP code; the pages say the store could not be downloaded."""
+        from website import hail as hs
+
+        class Fetcher:
+            def binary(self, url, headers=None):
+                return (None, "not published (HTTP 404)")
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-404-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        c = site.Collector(Fetcher(), self.HAIL_NOW)
+        block = c.hail(out, False, None, [{"name": "Billings", "lat": 45.78, "lon": -108.5}])
+        status = c.status["hail_history"]
+        self.assertFalse(status["ok"])
+        self.assertIn("hail-store-main.tar.gz: not published (HTTP 404)", status["detail"])
+        self.assertEqual(block["state"], "unavailable")
+        self.assertIn("could not be downloaded", json.dumps(block))
+        self.assertNotIn("HTTP", json.dumps(block))
+        self.assertEqual(hs.plain_problem("the history store file x.tar.gz is missing"), "the history store file x.tar.gz is missing")
+
     def test_a_stale_store_is_a_failed_source_but_the_sample_never_is(self):
         """A real store whose last day is more than STALE_DAYS old still builds the pages (with the stale line) but
         counts as a failed source, so --require-live reports it; the SAMPLE fixture is exempt."""

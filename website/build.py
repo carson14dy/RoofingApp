@@ -262,9 +262,10 @@ class Collector:
             self.note("hail_history", HAIL_LABEL, not stale, ("SAMPLE store: " if sampled else "") + detail)
         except (hs.HailStoreError, OSError, ValueError, KeyError, TypeError) as e:
             problem = str(e) if isinstance(e, hs.HailStoreError) else f"the history files couldn't be read ({type(e).__name__})"
-            self.note("hail_history", HAIL_LABEL, False, problem)
-            words = [hs.describe_unavailable(problem) for _ in towns]
-            block = hs.map_data_unavailable(problem)
+            self.note("hail_history", HAIL_LABEL, False, problem)       # the log keeps the technical detail
+            shown = hs.plain_problem(problem)                             # the pages say it in plain words
+            words = [hs.describe_unavailable(shown) for _ in towns]
+            block = hs.map_data_unavailable(shown)
             block["tiles"] = []                     # no store, so no tile is known: the map says unavailable, not outside
         for t, w in zip(towns, words):
             t["hail"] = w

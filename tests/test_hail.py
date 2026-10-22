@@ -1680,8 +1680,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('run: tar czf "$ASSET.new" -C store hail', text)
         self.assertIn('gh release upload hail-store "$ASSET.new" --clobber', text)
         self.assertIn('gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new_id" -f name="$ASSET"', text)
+        self.assertIn('-f name="$ASSET.old"', text)
         self.assertIn('              hail-store.tar.gz) shared_id=$id;;\n', text)
-        self.assertIn('          done <<< "$assets"\n          test -n "$new_id"\n', text)
+        self.assertIn('          done <<< "$assets"\n          if [ -z "$new_id" ]; then echo "The uploaded file $ASSET.new is not in the release\'s asset list; nothing was replaced." >&2; exit 1; fi\n', text)
         self.assertNotIn("|| true", text[text.index("name: Publish the release asset"):])
         self.assertIn("gh release edit hail-store --notes", text)
         self.assertEqual(text.count("ASSET: ${{ steps.asset.outputs.name }}"), 2)
@@ -1760,10 +1761,11 @@ class FetchAndLoadTests(unittest.TestCase):
         self.assertIn("hail-store-main.tar.gz: not published (HTTP 404)", str(cm.exception))
 
     def test_the_publish_step_replaces_the_asset_in_one_step_and_removes_the_shared_name_loudly(self):
-        """The publish step's own shell under bash -e with a stub gh (real awk): with an old asset and the shared
-        name present it uploads the .new file, deletes the old asset, renames the new one and removes the shared
-        name; with neither present it only renames; a failed listing or a failed removal fails the step; a failed
-        upload stops before any deletion."""
+        """The publish step's own shell under bash -e with a stub gh: with an old asset and the shared name present
+        it uploads the .new file, moves the old asset aside, gives the new one the name, removes the old one and the
+        shared name; with neither present it only renames; when the new one cannot take the name the old one gets it
+        back and the step fails; a missing .new, a failed listing or a failed removal fails the step; a failed
+        upload stops before any change; a .old left by an earlier run is removed first."""
         import textwrap
         text = (ROOT / ".github" / "workflows" / "hail-store.yml").read_text(encoding="utf-8")
         step = text[text.index("- name: Publish the release asset"):]
@@ -1787,6 +1789,10 @@ class FetchAndLoadTests(unittest.TestCase):
             '  neither:*"releases/tags/hail-store"*) printf "12 hail-store-main.tar.gz.new\\n";;\n'
             '  removal_fails:*"releases/tags/hail-store"*) printf "12 hail-store-main.tar.gz.new\\n13 hail-store.tar.gz\\n";;\n'
             '  removal_fails:*"DELETE repos/x/y/releases/assets/13"*) echo "HTTP 500" >&2; exit 1;;\n'
+            '  patch_fails:*"releases/tags/hail-store"*) printf "11 hail-store-main.tar.gz\\n12 hail-store-main.tar.gz.new\\n";;\n'
+            '  patch_fails:*"assets/12 -f name=hail-store-main.tar.gz"*) echo "HTTP 500" >&2; exit 1;;\n'
+            '  no_new:*"releases/tags/hail-store"*) printf "11 hail-store-main.tar.gz\\n";;\n'
+            '  stale_old:*"releases/tags/hail-store"*) printf "11 hail-store-main.tar.gz\\n12 hail-store-main.tar.gz.new\\n14 hail-store-main.tar.gz.old\\n";;\n'
             '  *"-X DELETE"*) exit 0;;\n'
             '  *"-X PATCH"*) exit 0;;\n'
             '  *) echo "unexpected gh call: $*" >&2; exit 9;;\n'
@@ -1804,17 +1810,30 @@ class FetchAndLoadTests(unittest.TestCase):
         code, out, calls = run("both")
         self.assertEqual(code, 0, out)
         self.assertIn("gh release upload hail-store hail-store-main.tar.gz.new --clobber", calls)
-        self.assertIn("gh api -X DELETE repos/x/y/releases/assets/11", calls)
+        aside = "gh api -X PATCH repos/x/y/releases/assets/11 -f name=hail-store-main.tar.gz.old"
         rename = "gh api -X PATCH repos/x/y/releases/assets/12 -f name=hail-store-main.tar.gz"
-        self.assertIn(rename, calls)
-        self.assertIn("gh api -X DELETE repos/x/y/releases/assets/13", calls)
-        self.assertLess(calls.index("gh api -X DELETE repos/x/y/releases/assets/11"), calls.index(rename))
+        remove_old = "gh api -X DELETE repos/x/y/releases/assets/11"
+        for call in (aside, rename, remove_old, "gh api -X DELETE repos/x/y/releases/assets/13"):
+            self.assertIn(call, calls)
+        self.assertLess(calls.index(aside), calls.index(rename))
+        self.assertLess(calls.index(rename), calls.index(remove_old))
         self.assertIn("Published hail-store-main.tar.gz.", out)
         self.assertIn("Removed the shared-name asset hail-store.tar.gz.", out)
         code, out, calls = run("neither")
         self.assertEqual(code, 0, out)
         self.assertEqual([c for c in calls if "DELETE" in c], [])
+        self.assertEqual([c for c in calls if "PATCH" in c], [rename])
         self.assertIn("No shared-name asset to remove.", out)
+        code, out, calls = run("patch_fails")            # the old asset gets its name back; nothing is deleted
+        self.assertEqual(code, 1)
+        self.assertEqual(calls[-1], "gh api -X PATCH repos/x/y/releases/assets/11 -f name=hail-store-main.tar.gz")
+        self.assertEqual([c for c in calls if "DELETE" in c], [])
+        code, out, calls = run("no_new")
+        self.assertEqual(code, 1)
+        self.assertEqual([c for c in calls if "DELETE" in c or "PATCH" in c], [])
+        code, out, calls = run("stale_old")              # a leftover .old goes first
+        self.assertEqual(code, 0, out)
+        self.assertLess(calls.index("gh api -X DELETE repos/x/y/releases/assets/14"), calls.index(aside))
         code, out, calls = run("listing_fails")
         self.assertEqual(code, 1)
         self.assertEqual([c for c in calls if "DELETE" in c or "PATCH" in c], [])
