@@ -8,6 +8,7 @@ from __future__ import annotations
 import functools
 import json
 import re
+import sys
 import tempfile
 import time
 import unittest
@@ -23,6 +24,9 @@ from PIL.TiffImagePlugin import ImageFileDirectory_v2
 from website import hail
 from website import snowgrid as G
 from website import stations as S
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # tests/ (words_rules: the one forbidden list, D41 and D56)
+import words_rules as W  # noqa: E402
 
 FORBIDDEN = re.compile(r"\b(damag\w*|dry|clear\w*|insurance|eligib\w*|confirm\w*|coverage|risk|probab\w*|claim\w*|"
                        r"loss\w*|all-clear|structure|warrant\w*)\b|\bno hail\b", re.IGNORECASE)
@@ -665,9 +669,11 @@ class UrlAndWordsTests(unittest.TestCase):
             self.assertNotIn("<", value)
 
     def test_no_forbidden_term_in_any_snow_word(self):
+        # D41 and D56: the one list in words_rules; its residue rule strips "This is not an all-clear." (the required end
+        # of every unavailable, partial and held line) before the forbidden check, and nothing else
         for key, text in G.WORDS.items():
             if isinstance(text, str):
-                self.assertIsNone(FORBIDDEN.search(text), f"{key}: {text}")
+                W.assert_clean(self, text, key)
 
     def test_analysis_words_are_the_brief_words(self):
         text = G.WORDS["analysis"].format(inches=S.fmt_in(3385), water_year="2025-26 (October 2025 to September 2026)",
@@ -678,9 +684,13 @@ class UrlAndWordsTests(unittest.TestCase):
 
     def test_the_unit_sentence_is_the_plain_sentence_with_no_regression_word(self):
         # the reader is not asked to decode a regression slope
+        # D41: the line ends with the required sentence, which the forbidden scan allows (words_rules.residue)
         self.assertEqual(G.WORDS["unit_failed"], "Analysis: not shown. Its amounts did not match measured snowfall "
                                                  "closely enough to be sure they are in inches. Station readings are "
-                                                 "shown instead.")
+                                                 "shown instead. This is not an all-clear.")
+        self.assertEqual(W.residue(G.WORDS["unit_failed"]).split(), "Analysis: not shown. Its amounts did not match measured "
+                                                                    "snowfall closely enough to be sure they are in inches. "
+                                                                    "Station readings are shown instead.".split())
         self.assertNotIn("slope", G.WORDS["unit_failed"].lower())
         self.assertNotIn("regression", G.WORDS["unit_unchecked"].lower())
 

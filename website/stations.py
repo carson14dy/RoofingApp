@@ -661,6 +661,52 @@ def point_rule(light: dict, lat: float, lon: float, element: str, as_of: date) -
     return choose(ordered_candidates(base, inventory, element), light, element, as_of, failed=unread_of(light))
 
 
+def tile_list_picks(block: dict | None, lat: float, lon: float, light: dict | None = None,
+                    radius_miles: float = RADIUS_MILES) -> dict | None:
+    """D36, the shared rule for the picks at a point: the two nearest passing stations of one element's tile list to the
+    point (the cell centre on the sheet, the town point on a town page). This is the Python side of the rule; the sheet's
+    browser is to run the same rule on the same tile files (hail/tl/<tile>.json) in part B2, and the summary's
+    chosen_from_tile_list gives the same picks (checked on the combined store's tile lists: no difference).
+
+    block is the tile list's block for the element: "passing" (up to TILE_LIST_CAP stations that pass the coverage and
+    currency test, nearest the tile centre first, each with id, name, lat, lon, miles and share), "unread" (candidates whose
+    file did not load, with their position when known) and "capped" (the list stopped at the cap). The rule: the passing
+    entries within radius_miles of the point, nearest first (ties by id); the first two are the picks. An unread candidate
+    nearer than the second pick (any unread candidate when there are fewer than two picks, or no position) is named as
+    failed and never skipped (D32). When the list is capped and fewer than two passing entries lie within radius_miles, the
+    list cannot answer (a station it does not hold might be nearer), and the result is None.
+
+    light is the stations block's entries by id; it supplies each pick's net type (COOP, CoCoRaHS, ...). Returns {"state":
+    "two" | "one" | "unavailable" | "none", "picks": [{"id", "name", "net", "miles"}], "unread": [{"id", "name", "miles",
+    "reason"}], "candidates": n, "incomplete": bool} with miles rounded to a tenth. "unavailable": no pick and an unread
+    candidate; "none": no passing station within the radius."""
+    if not block:
+        return None
+    rows = []
+    for entry in block.get("passing", []):
+        miles = haversine_miles(lat, lon, entry["lat"], entry["lon"])
+        if miles <= radius_miles:
+            rows.append((miles, entry))
+    rows.sort(key=lambda r: (r[0], r[1]["id"]))
+    if block.get("capped") and len(rows) < 2:
+        return None
+    picks = rows[:2]
+    cut = picks[-1][0] if len(picks) == 2 else radius_miles
+    unread = []
+    for entry in block.get("unread", []):
+        miles = haversine_miles(lat, lon, entry["lat"], entry["lon"]) if entry.get("lat") is not None else None
+        if miles is None or miles <= cut:
+            unread.append({"id": entry["id"], "name": entry.get("name") or entry["id"],
+                           "miles": None if miles is None else round(miles, 1), "reason": entry.get("reason")})
+    out = []
+    for miles, entry in picks:
+        row = (light or {}).get(entry["id"]) or {}
+        out.append({"id": entry["id"], "name": entry.get("name") or row.get("name", entry["id"]),
+                    "net": row.get("net"), "miles": round(miles, 1)})
+    state = "two" if len(out) == 2 else "one" if out else ("unavailable" if unread else "none")
+    return {"state": state, "picks": out, "unread": unread, "candidates": len(rows), "incomplete": bool(unread)}
+
+
 UNREAD_NAMES_SHOWN = 3       # the nearest unread stations named in a sentence; the rest are counted
 
 

@@ -3705,6 +3705,145 @@ class PlacementTableBuildTests(unittest.TestCase):
         self.assertEqual([c["name"] for c in d44 if not c["ok"]], [], d44)     # the gate and period checks need real geometry
 
 
+class EdgeWindowTests(unittest.TestCase):
+    """D55: the store window (the 1,826 SPC days ending on as_of) and the research window (calendar days) count an event
+    as they begin it; an event at one window's edge only is named with its first row, and every difference between the two
+    counts must be the named edges, or verify says so."""
+
+    STORE = ["2021-10-17T12:00Z", "2026-10-17T12:00Z"]
+
+    def block(self, store, research, edges):
+        return {"vtec_store_window": self.STORE, "vtec_counts": store, "vtec_counts_research": research,
+                "vtec_window_edges": edges}
+
+    def test_the_research_window_and_the_store_window_differ_by_the_named_edge_and_nothing_else(self):
+        edge = {"product": "HW.A", "level": "zone", "wfo": "TFX", "eventid": "30", "vtec_year": "2026",
+                "begin": "2026-10-17T15:00Z", "in_store_window": False, "in_research_window": True,
+                "first_status": "UPG", "first_issue": "2026-10-17T15:00Z", "product_time": "2026-10-15T04:45Z",
+                "expire": "2026-10-16T18:23Z", "codes": ["MTZ301"], "rows": 5}
+        block = self.block({"HW.A": {"zone": 276, "county": 0, "window": 276}},
+                           {"HW.A": {"zone": 277, "county": 0, "window": 277}}, [edge])
+        got = J._window_edge_check(block)
+        self.assertEqual(got["unexplained"], [])
+        self.assertEqual([(r["product"], r["difference"], r["named"]) for r in got["differences"]], [("HW.A", -1, -1)])
+        self.assertEqual(got["edges"], 1)
+        self.assertIn("counted in the research window only", got["sentences"][0])
+        self.assertIn("begins 17 October 2026 at 15:00 UTC", got["sentences"][0])
+        self.assertIn("its first archived row is UPG issued 17 October 2026 at 15:00 UTC", got["sentences"][0])
+        self.assertIn("No store rule drops it", got["sentences"][0])
+
+    def test_a_difference_with_no_named_edge_is_unexplained(self):
+        block = self.block({"HW.W": {"zone": 338, "county": 0, "window": 338}},
+                           {"HW.W": {"zone": 339, "county": 0, "window": 339}}, [])
+        got = J._window_edge_check(block)
+        self.assertEqual([(r["product"], r["level"], r["difference"], r["named"]) for r in got["unexplained"]],
+                         [("HW.W", "zone", -1, 0)])
+
+    def test_an_edge_on_the_store_side_is_counted_plus_one_and_the_polygon_level_is_checked(self):
+        edge = {"product": "FW.W", "level": "zone", "wfo": "TFX", "eventid": "19", "vtec_year": "2021",
+                "begin": "2021-10-17T18:00Z", "in_store_window": True, "in_research_window": False,
+                "first_status": "EXP", "first_issue": "2021-10-17T18:00Z", "product_time": "2021-10-16T20:37Z",
+                "expire": "2021-10-18T00:00Z", "codes": ["MTZ112"], "rows": 4}
+        poly = {"product": "SQ.W", "level": "polygon", "wfo": "MSO", "eventid": "5", "vtec_year": "2021",
+                "begin": "2021-10-18T01:00Z", "in_store_window": True, "in_research_window": False,
+                "first_status": "NEW", "first_issue": "2021-10-18T01:00Z", "product_time": None, "expire": None,
+                "codes": [], "rows": 1}
+        block = self.block({"FW.W": {"zone": 170, "county": 0, "window": 170},
+                            "SQ.W": {"polygon": 1, "window": 1}},
+                           {"FW.W": {"zone": 169, "county": 0, "window": 169}}, [edge, poly])
+        got = J._window_edge_check(block)
+        self.assertEqual(got["unexplained"], [])
+        self.assertEqual(sorted((r["product"], r["level"], r["difference"]) for r in got["differences"]),
+                         [("FW.W", "zone", 1), ("SQ.W", "polygon", 1)])
+        self.assertIn("counted in the store window only", got["sentences"][0])
+
+    def test_the_edge_records_carry_the_first_row_and_the_polygon_fields(self):
+        t = lambda h: datetime(2026, 10, 17, h, tzinfo=timezone.utc)      # noqa: E731
+        first = {"issue": t(15), "status": "UPG", "prod": datetime(2026, 10, 15, 4, 45, tzinfo=timezone.utc),
+                 "expire": datetime(2026, 10, 16, 18, 23, tzinfo=timezone.utc)}
+        item = {"issues": [t(15)], "new": [], "level": {"zone"}, "first": first, "codes": {"MTZ302", "MTZ301"}}
+        edge = J._vtec_edge("HW.A", ("HW", "A", "TFX", "30", "2026"), item, t(15), False, True)
+        self.assertEqual((edge["product"], edge["level"], edge["wfo"], edge["eventid"], edge["vtec_year"]),
+                         ("HW.A", "zone", "TFX", "30", "2026"))
+        self.assertEqual((edge["begin"], edge["first_status"], edge["product_time"], edge["expire"]),
+                         ("2026-10-17T15:00Z", "UPG", "2026-10-15T04:45Z", "2026-10-16T18:23Z"))
+        self.assertEqual(edge["codes"], ["MTZ301", "MTZ302"])
+        poly = {"k": "FL", "s": "W", "o": "MSO", "eventid": "9", "vtec_year": "2026", "b": t(12), "e": None}
+        pe = J._polygon_edge(poly, True, False)
+        self.assertEqual((pe["product"], pe["level"], pe["first_status"], pe["expire"]), ("FL.W", "polygon", "NEW", None))
+        self.assertEqual(pe["begin"], "2026-10-17T12:00Z")
+
+    def test_the_utc_words_and_the_research_table(self):
+        self.assertEqual(J._utc_words("2026-10-17T15:00Z"), "17 October 2026 at 15:00 UTC")
+        self.assertEqual(J._utc_words("2021-10-19T00:00Z"), "19 October 2021 at 00:00 UTC")
+        # D55: the research's own counts, with HW.W from the research record and FW.W from the B5 recheck (its recount is 169)
+        self.assertEqual((J.RESEARCH_B5["HW.A"], J.RESEARCH_B5["HW.W"], J.RESEARCH_B5["FW.W"]), (277, 339, 169))
+        self.assertEqual((J.RESEARCH_START.date().isoformat(), J.RESEARCH_END.date().isoformat()),
+                         ("2021-10-19", "2026-10-19"))
+
+
+class FixtureStationTests(unittest.TestCase):
+    """D56: the sample store carries the station reader's part, cut from the real build: the tile lists of the sample tiles
+    (the candidates the point picks read), the summaries of the stations they name (a station without a summary file is
+    left out), and the index's stations block cut to those stations, marked as a sample. Without that block the summary
+    reads every station row as "could not be loaded" while the joins part of the same page reads the gusts."""
+
+    @staticmethod
+    def entry(sid, name, lat, lon):
+        return {"id": sid, "name": name, "lat": lat, "lon": lon, "miles": 1.0, "ok": 2000, "of": 2192, "share": 0.91}
+
+    def write_source(self, src: Path):
+        (src / "hail" / "tl").mkdir(parents=True)
+        (src / "hail" / "sd").mkdir(parents=True)
+        tile = {"f": "hail-stn-tiles-v1", "elements": {"SNOW": {
+            "passing": [self.entry("USC00000A01", "ALPHA", 45.7836, -108.5047),
+                        self.entry("USC00000A02", "BETA", 45.9, -108.2)],
+            "unread": [{"id": "USC00000A03", "name": "GAMMA", "lat": None, "lon": None, "reason": "its file did not load"}],
+            "capped": False}}}
+        (src / "hail" / "tl" / "T1.json").write_text(json.dumps(tile), encoding="utf-8")
+        (src / "hail" / "sd" / "USC00000A01.json").write_text("{}", encoding="utf-8")     # BETA has no summary file
+        return {"stations": {"as_of": "2026-10-16", "rule": {"radius_miles": 40.0}, "sources": {"ghcn": "x"},
+                             "stations": {"USC00000A01": {"name": "ALPHA", "lat": 45.7836, "lon": -108.5047, "net": "COOP"},
+                                          "USC00000A02": {"name": "BETA", "lat": 45.9, "lon": -108.2, "net": "COOP"}}}}
+
+    def test_the_sample_keeps_the_named_stations_that_have_a_summary_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp)
+            real = self.write_source(src)
+            block, lists, ids = J._station_sample(src, real, ["T1", "T2"], ["USC00000G9"])
+            self.assertEqual(ids, ["USC00000A01"])                      # BETA and GAMMA have no summary file: left out
+            self.assertEqual(sorted(block["stations"]), ["USC00000A01"])
+            self.assertEqual(sorted(lists), ["T1"])                     # T2 has no list file, so none is written
+            self.assertEqual((block["state"], block["sample"], block["as_of"]), ("loaded", True, "2026-10-16"))
+            self.assertEqual(block["counts"], {"sample_tiles": 1, "sample_stations": 1})
+            self.assertEqual(block["chosen_station_ids"], ["USC00000A01"])
+            self.assertEqual(block["tile_lists"]["files"], 1)
+            self.assertEqual(block["tile_lists"]["unread"], 1)
+            self.assertEqual(block["tile_lists"]["cap"], 6)
+
+    def test_the_sample_answers_the_point_picks_from_its_own_tile_list(self):
+        # the shared rule (stations.tile_list_picks) reads the cut tile list and the cut block's net at the point
+        from website import stations as stn
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp)
+            real = self.write_source(src)
+            block, lists, _ids = J._station_sample(src, real, ["T1"], [])
+            got = stn.tile_list_picks(lists["T1"]["elements"]["SNOW"], 45.7836, -108.5047, light=block["stations"])
+            self.assertEqual([p["id"] for p in got["picks"]], ["USC00000A01", "USC00000A02"])
+            self.assertEqual((got["picks"][0]["net"], got["picks"][0]["miles"]), ("COOP", 0.0))
+            self.assertEqual(got["state"], "two")
+            self.assertEqual([u["name"] for u in got["unread"]], ["GAMMA"])     # no position: named, never skipped (D32)
+
+    def test_a_source_without_a_stations_block_says_so(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp)
+            self.write_source(src)
+            block, _lists, ids = J._station_sample(src, {}, ["T1"], [])
+            self.assertEqual(block["state"], "unavailable")
+            self.assertEqual(block["problem"], "the build the sample is cut from has no stations block")
+            self.assertEqual(block["stations"], {})
+            self.assertEqual(ids, [])                                    # no summary is named without the block's stations
+
 
 if __name__ == "__main__":
     unittest.main()
