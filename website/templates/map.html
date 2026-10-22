@@ -67,14 +67,15 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
       <p class="banner banner-sample" role="note"><strong>Sample data.</strong> Everything here is invented to review the layout. It is not weather.</p>
       {% endif %}
       {% set problems = [] %}
-      {% for key in ['alerts', 'radar', 'forecast', 'forecasts', 'storm', 'satellite', 'hail_history'] %}{% if status[key] and not status[key].ok %}{% set _ = problems.append(key) %}{% endif %}{% endfor %}
-      {% set names = {'alerts': 'NWS alerts', 'radar': 'radar', 'forecast': 'model forecast', 'forecasts': 'NWS town forecasts', 'storm': 'radar echo tops', 'satellite': 'satellite picture', 'hail_history': 'hail history'} %}
+      {% for key in ['alerts', 'radar', 'forecast', 'forecasts', 'storm', 'satellite', 'hail_swath', 'hail_history'] %}{% if status[key] and not status[key].ok %}{% set _ = problems.append(key) %}{% endif %}{% endfor %}
+      {% set names = {'alerts': 'NWS alerts', 'radar': 'radar', 'forecast': 'model forecast', 'forecasts': 'NWS town forecasts', 'storm': 'radar echo tops', 'satellite': 'satellite picture', 'hail_swath': 'hail swath', 'hail_history': 'hail history'} %}
       {% macro problem_line(key) %}{% set s = status[key] %}
         {%- if key == 'alerts' %}<strong>NWS alerts didn't load</strong> at {{ s.when|t }} ({{ s.detail }}). Warnings may be missing.<span class="last-known"></span>
         {%- elif key == 'radar' %}<strong>Radar problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'forecast' %}<strong>Model forecast problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'storm' %}<strong>Radar echo tops problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'satellite' %}<strong>Satellite picture problem</strong> at {{ s.when|t }}: {{ s.detail }}.
+        {%- elif key == 'hail_swath' %}<strong>Hail swath problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'hail_history' %}<strong>Hail history didn't load</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- else %}<strong>NWS town forecasts</strong> loaded for {{ s.detail }}. A town without one shows a dash.{% endif %}
       {%- endmacro %}
@@ -133,7 +134,8 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
               <ol class="legend-stops" id="legend-stops"></ol>
             </div>
             <p class="legend-note" id="legend-note"></p>
-            <ul class="legend-keys" id="legend-keys"></ul>
+{% if storm_layers %}            <p class="legend-uncoloured" id="legend-uncoloured"></p>
+{% endif %}            <ul class="legend-keys" id="legend-keys"></ul>
 {% if hail_history %}            <p class="legend-tap">Tap or click the map for the five-year hail history at that spot</p>
 {% endif %}          </div>
           <a class="mapdata" href="{{ root }}about.html#sources">Map data</a>
@@ -157,6 +159,8 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
             <label class="choice"><input type="radio" name="layer" value="temp"><span class="swatch sw-temp" aria-hidden="true"></span><span class="choice-text">Temperature</span></label>
             <label class="choice"><input type="radio" name="layer" value="wind"><span class="swatch sw-wind" aria-hidden="true"></span><span class="choice-text">Wind gusts</span></label>
 {% if storm_layers %}            <label class="choice"><input type="radio" name="layer" value="satellite"><span class="swatch sw-satellite" aria-hidden="true"></span><span class="choice-text">Satellite</span></label>
+            <label class="choice"><input type="radio" name="layer" value="hail_60"><span class="swatch sw-hail_60" aria-hidden="true"></span><span class="choice-text">Hail, last hour</span></label>
+            <label class="choice"><input type="radio" name="layer" value="hail_1440"><span class="swatch sw-hail_1440" aria-hidden="true"></span><span class="choice-text">Hail, last 24 hours</span></label>
 {% endif %}          </fieldset>
           <fieldset class="choices base-choices">
             <legend>Base map</legend>
@@ -261,6 +265,11 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
 {% if storm_layers %}
       <h3>Satellite picture</h3>
       <p>{{ satellite_text }}</p>
+      <h3>{{ swath_site.list_heading }}</h3>
+      {% if sample %}<p class="sample-tag">{{ swath_site.sample_credit }}</p>
+      {% endif %}{% for layer in swath_text %}<h4>{{ layer.title }}</h4>
+      {% for line in layer.lines %}<p>{{ line }}</p>
+      {% endfor %}{% endfor %}
       <h3>Radar echo tops</h3>
       <p>NOAA radar estimate (MRMS), 11 heights from 500 to 15,000 m above sea level. Each echo top is in metres above sea level: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data. "At least" means some heights above it had no radar value. Not observed hail or damage.</p>
       <ul>
@@ -274,6 +283,13 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
     <section class="storm-sec" data-storm="satellite" aria-labelledby="sat-list-h">
       <h3 id="sat-list-h">Satellite picture</h3>
       <p>{{ satellite_text }}</p>
+    </section>
+    <section class="storm-sec" data-storm="hail" aria-labelledby="hail-swath-list-h">
+      <h3 id="hail-swath-list-h">{{ swath_site.list_heading }}</h3>
+      {% if sample %}<p class="sample-tag">{{ swath_site.sample_credit }}</p>
+      {% endif %}{% for layer in swath_text %}<h4>{{ layer.title }}</h4>
+      {% for line in layer.lines %}<p>{{ line }}</p>
+      {% endfor %}{% endfor %}
     </section>
     <section class="storm-sec" data-storm="list" aria-labelledby="storm-list-h">
       <h3 id="storm-list-h">Radar echo tops</h3>

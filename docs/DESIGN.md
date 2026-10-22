@@ -688,9 +688,95 @@ Gate examples (the brief's gate B3-4): "401 N 27th St Billings" (an address that
 
 **Checks.** The gates for this section are B3-2 to B3-7 (`DECISIONS.md` D36) and the synthesis gates 9 to 18 (D30). The re-check of the site build passed 14 of 18 gates. B3-5, B3-7, B3-10 and B3-18 are fixed in the completion pass (D43 to D46), and their re-check is pending. The results are in `research/hail-history/validation-evidence/b3-verification.json`.
 
+## 11. Live hail swath layers (2026-10-19, behind `--storm-layers`, `DECISIONS.md` D37)
+
+**Frame.** Two Map layers show NOAA's radar estimate of the largest hail over each 0.01-degree cell in the last hour and in the last 24 hours. They answer one question on the map: where radar estimated hail in the last hour or the last 24 hours, and how big. As in the B1 history, they are an estimate, not observed hail and not damage, and every colour and number says so beside it. They sit behind `--storm-layers` with the satellite picture, so they reach branch previews only, not `main`.
+
+**Users and moments.** A crew lead checking the last hour along a route before a job; the owner reading the last 24 hours before a call; anyone who wants the size in inches with the coin or ball it matches.
+
+**Principles specific to the swath layers.**
+1. *A radar estimate, drawn as one.* The legend note and the List say that it is an estimate, "not observed hail and not damage"; the sheet's line says "radar estimate".
+2. *Uncoloured is not "no hail".* Uncoloured means no estimate of 0.25 in or more, or no value. The legend says so in one sentence, and a clicked cell's line says "No radar hail estimate of 0.25 in or more", never "no hail".
+3. *A class word beside every colour.* Six classes; each key shows its word and its inch range.
+4. *Missing is hatched, never a clear sky.* Only no-coverage cells are hatched, with their own key. A stale or unavailable layer says so in words and ends "This is not an all-clear."
+5. *Python writes the words; the browser fills them.* Every sentence, size, class word and threshold comes from `WORDS_SWATH` in `website/swath.py` and `hail.CLASSES` in `website/hail.py`. `map.js` holds none of them; its header lists its duties.
+
+**The two layers.** With `--storm-layers`, the Layers menu lists "Hail, last hour" and "Hail, last 24 hours" under the weather layers. Each is one picture, as the satellite is: no playback and no scrub. It sits on the same image box as the radar frames (43 to 50.5° N and 118.5 to 101° W), so the Montana outline and the town bubbles draw over it as they do over the other layers.
+
+**Colours and classes.** The legend lists the classes top first. Each band of colour is one class, with no blend between bands. Sizes are shown to the hundredth of an inch, rounded down, as B1 shows them (`hail.inches`).
+| Class word (B1) | Size shown | Colour and band (mm) | Severe tag |
+|---|---|---|---|
+| baseball or larger | 2.75 in or more | deep violet `#4b1c8c` (69.9 to 110.0 mm) | yes |
+| hen egg to tennis ball | 2.00 to 2.74 in | purple `#9b1fa3` (50.8 to 69.8 mm) | yes |
+| ping-pong ball to golf ball | 1.50 to 1.99 in | red `#d1283b` (38.1 to 50.7 mm) | yes |
+| quarter to half dollar | 1.00 to 1.49 in | orange `#e8600f` (25.4 to 38.0 mm) | yes |
+| penny to nickel | 0.75 to 0.99 in | amber `#f5a524` (19.1 to 25.3 mm) | no |
+| pea to mothball | 0.25 to 0.74 in | yellow `#f9d65c` (6.4 to 19.0 mm) | no |
+
+The fill is 80 to 92 percent opaque, rising with the class, so the basemap shows through the small sizes. The legend note is "Radar estimate of the largest hail in the last {window}, in inches (NOAA MRMS MESH). An estimate, not observed hail and not damage.", with "hour" or "24 hours" for the window, followed by the uncoloured sentence below. A sample build's note begins "Sample: invented field, not NOAA MRMS MESH." Each legend entry's label is its size and class word, such as "2.75 in, baseball or larger"; its range reads "2.75 in or more" for the top class and "0.25 to 0.74 in" for the bottom one.
+
+**Hatch and uncoloured.** A no-coverage cell (-3) is hatched in the map's grey hatch. Its legend key reads "No radar coverage", with the note "Hatched areas have no radar coverage."; its List line reads "Hatched: no radar coverage." An uncoloured cell (-1, or a value under 0.25 in) has no hatch. The key for it reads "Uncoloured: no radar hail estimate of 0.25 in or more in the last {window}, or no value; NOAA's data does not tell the two apart.", with "hour" or "24 hours" for the window. The product holds no zero values, so most of the picture is uncoloured on a quiet day. Uncoloured means no estimate. It is not no hail.
+
+**Freshness.** The layer's age runs from its valid time (the end of its window).
+| Layer | Fresh | Stale | Unavailable |
+|---|---|---|---|
+| Last hour | up to 20 minutes after the valid time | 20 to 60 minutes | over 60 minutes, or no file |
+| Last 24 hours | up to 60 minutes | 60 to 120 minutes | over 120 minutes, or no file |
+
+A stale picture stays on the map, and its line gives the age and ends "This is not an all-clear." An unavailable layer has no picture: its line reads "{title} is unavailable: {problem}. This is not an all-clear." The problem is in plain words, such as "the newest file is 61 min old, more than 60 min" (the age rounds up, so 60 minutes and 30 seconds reads 61). A file stamped more than 5 minutes after the build's clock is unavailable, "newer than this build's time". The browser works the state out again when a layer is switched on, and every minute while it is on (see the browser duties below).
+
+**The List block.** For each layer, the List and the no-JavaScript panel show these lines in this order. The words come from `describe()` in `website/swath.py`; the braces are filled by Python.
+1. The state line: "Valid {valid}, {age} min ago." when fresh; when stale, "Valid {valid}, {age} min ago. That is more than {limit} minutes old, so it may be out of date. This is not an all-clear."; when unavailable, the unavailable line above.
+2. "As of the build at {time}." The panel does not update, so it says when it was made (D7).
+3. The lead: "Largest radar estimate in Montana: {in} in ({mm} mm), {class}. It is at {where}, {miles} miles from {town}." The town and the miles appear only for a cell inside Montana; when no town is found the line reads "Largest radar estimate in Montana: {in} in ({mm} mm), {class}. It is at {where}." With no value inside Montana, the lead is "No cell in Montana has a radar hail estimate of 0.25 in or more in the last {window}. That is not the same as no hail." Montana is named first (D15, below).
+4. "Unusually large for a radar estimate; treat with care." when the largest value inside Montana is 4.00 in or more, directly after the lead.
+5. "Cells with a radar estimate of 0.25 in or more in Montana: {n}." (the count of Montana cells at or above the floor). There is no count for the whole area (D19).
+6. When the largest value in this map's area is larger than the largest value inside Montana, "The largest value in this map's area, {in} in, is outside Montana." That sentence is followed by "Unusually large for a radar estimate; treat with care." when that value is 4.00 in or more.
+7. The uncoloured sentence.
+8. "Hatched: no radar coverage." when the layer has no-coverage cells.
+9. "MESH (maximum estimated size of hail) is a radar estimate at the grid cell, about 0.7 miles north to south and 0.5 miles east to west. It is not a measurement at the ground, not observed hail and not damage."
+10. "Source: NOAA MRMS MESH, {folder}, CONUS grid, NOAA Open Data on AWS. Valid {valid}." In a sample build the source line reads "SAMPLE: invented radar estimate, not NOAA data." and the state line begins "SAMPLE: invented field, valid {valid}."
+
+**Montana first (D15, D19, D21).** The picture box reaches past the state's edges into Canada and the neighbouring states, so every count and largest value in the List is Montana's. The lead gives the largest value inside Montana's outline (the B1 grid's Montana mask), with its cell centre, nearest town and miles; the count of Montana cells at or above 0.25 in follows it. The nearest-town line is never worked out for a cell outside Montana. Only one sentence reads past the state's edges: when the largest value in this map's area is larger than the largest value inside Montana, "The largest value in this map's area, {in} in, is outside Montana." The picture itself is unchanged; whether it should stop at the state line is an open question (`docs/ROADMAP.md`).
+
+**The sheet's line.** In a build that also has `--hail-history`, because the hail sheet exists only with it, a clicked cell gains one line when a hail layer is on and the cell lies in this map's area. The line names the window. The states follow the layer's state.
+| State | When | Line |
+|---|---|---|
+| Value | The layer is fresh or stale, and the cell's tile file lists a value at or above 0.25 in | "In the last {window}: {in} in ({mm} mm), {class}, the largest radar estimate for the period ending {valid}." At 4.00 in or more, "Unusually large for a radar estimate; treat with care." follows. |
+| No estimate | Fresh or stale, and the cell has no value in its tile file, or the tile has no file | "No radar hail estimate of 0.25 in or more in the last {window} here (as of {valid})." |
+| No coverage | Fresh or stale, and the tile lists the cell as no coverage | "No radar coverage at this point in the product." |
+| Stale | The layer is stale | The line above, then "This is not an all-clear." |
+| Unavailable | The layer is unavailable | The layer's own line only, "{title} is unavailable: {problem}. This is not an all-clear." No value is read from the tile. |
+| Loading | The clicked cell's tile file has not arrived yet | "Loading the live radar estimate for this spot." |
+| Could not load | A tile fetch fails, other than with a 404 | "The live radar estimate for this spot could not be loaded. This is not an all-clear." It is never an estimate and never a console error. |
+| Sample | A `--sample` build | "SAMPLE: invented values, not NOAA data." before the line. |
+
+**Missing tiles (D16).** A layer with no tile file has no folder, so a fetch for a tile with nothing to show returns 404. A 404 is the no-estimate line while the layer is fresh or stale, and the unavailable line otherwise. The browser fetches each tile file once per page and keeps it; the stamp in the file's path keeps a newer frame's file apart from it.
+
+**Page status line.** The build's status record has one part per layer, in plain words, joined with a semicolon: "{title}: valid {valid}, {age} min ago" when fresh, "{title}: valid {valid}, {age} min ago. That is more than {limit} minutes old, so it may be out of date" when stale (the limit is the layer's fresh minutes, 20 or 60), and "{title}: {problem}" when unavailable. The page's problem banner, "Hail swath problem", appears when a layer is not fresh. The banner ends "This is not an all-clear.", as every problem banner does, so a stale or unavailable layer's banner carries the sentence (D6). The sentence is the status record's words, printed once after the parts: the freshness line, the banner and state.json each carry it once (B4 rules-12). The List and the sheet carry it in their own lines.
+
+**Data contract additions** (with `--storm-layers` only):
+- `data/map.json["hail_60"]` and `["hail_1440"]`: `title`, `unit` ("in"), `window` (60 or 1440), `window_word` ("hour" or "24 hours"), `product`, `label` ("Hail swath (radar estimate)"), `legend_note` (the window's sentence, then the uncoloured sentence), `legend` (six entries: `label`, the size and class word, such as "2.75 in, baseball or larger"; `range`; `value`; `color`; `alpha`; `pos`; `severe`), `gradient`, `state` (fresh, stale or unavailable), `ok`, `state_line`, `problem`, `valid` (UTC), `valid_text`, `age_min` (at the build), `fresh_min` (20 or 60), `stale_min` (60 or 120), `sample`, `frames` (one frame: `time`, `kind` "hail_swath", `src`, `source`, `nodata`), `modes`, `now_index`, `bounds`, `live` (`pattern`, `tile_cells` 10, `tile_name`, `format` "hail-live-v1", `floor_tenths` 64, `floor_in` 0.25, `tenths_per_inch` 254, `large_note_tenths` 1016) and `words` (every template, with its braces).
+- The pictures: `map/frames/hail-60-<stamp>.png` and `map/frames/hail-1440-<stamp>.png`, where the stamp is the valid time in UTC as `YYYYMMDDHHMM`.
+- The tile files: `hail/live/<window>/<stamp>/<tile>.json` (format `hail-live-v1`), for each tile with a value at or above 0.25 in or a no-coverage cell. `{"f": "hail-live-v1", "window": 60, "valid": "2026-10-19T06:54:00Z", "cells": [[row, col, tenths], ...], "nocov": [[row, col], ...]}`, with `nocov` only when the tile has a no-coverage cell and `"sample": true` only in a sample build. `cells` is sorted by row and then column, and holds only the cells at or above the floor. A build writes only its own stamp's folder.
+- The About page, in `--storm-layers` builds only: a bullet, "Hail swath (radar estimate)", in the "What each part is" list beside the satellite picture, and one row in the sources table, from the `hail_swath` contract in `website/sources.py`.
+
+**Browser duties (`map.js`).** The browser places the pictures, fills the words and works out the age. It does not decide what a value means.
+- It shows each hail layer as one picture, as the satellite is, with the legend, the title and the words from `data/map.json`. An unavailable layer shows no picture. Its timeline line gives its unavailable words, or, when the build drew no picture at all, "No picture in this update."
+- When a hail layer is switched on, and every minute while it is on, it works out the state from the frame's valid time, the viewer's clock, `fresh_min` and `stale_min`, and fills the build's templates with the age (D7). The age is rounded down in the line and up in the unavailable problem, as the build rounds it; a clock behind the valid time reads as age zero. The timeline's line shows this state. The build's own state is only the first words the page shows, and the no-JavaScript panel's words, which carry "As of the build at".
+- For a clicked cell inside the picture's box, while the layer is not unavailable, it finds the tile from the cell's row and column (ten cells a side) and fetches its file from the layer's `live.pattern`, which carries the stamp in the path (`hail/live/<window>/<stamp>/<tile>.json`). A click reads the clicked cell's tile file at most once; the file is kept for the page, so a second click on the same tile reads the copy it has. The cell's exact tenths come from the file, and the build's template fills the words. The tile file is read only after the store's shard has put the cell in Montana: a cell the shard puts outside Montana makes one request, for the shard, and no live file (F-9). The live line is the first line of the hail sheet's body.
+- A 404 is "no estimate" while the layer is fresh or stale. Any other failure shows the build's "could not be loaded" sentence, and the next click asks again. A click outside the box gets the build's outside words with no request. No console error is raised for either.
+- It holds no threshold, unit, class, word or window length of its own. The tests read `map.js` for them.
+
+**Browser checks (`tools/smoke_map.py`).** In Chromium at 390 and 1280 px, the hail checks pick each layer from the Layers menu and read its legend title, its class words, its colour bar, its note with the uncoloured sentence and its state line. The picture gate is D17's rule for these sparse layers, not the 2 percent rule of the dense radar and satellite pictures: the page opens at a cell that the live file lists with a value at or above 0.25 in, the map is zoomed to 10 or closer on that spot, and the picture must change at least 16 pixels in a box of 160 screen pixels around the spot, with the picture hidden in both captures as the control. The changed-pixel count is recorded as a note for each size. When no cell in the box reaches 0.25 in, the note reads "no values in the box: pixel gate not applicable". They move the page's clock on, with its timers held, to see the fresh, stale and unavailable states, the line being checked once a minute (D7). They read the List's lines and, in a `--hail-history` build, the sheet's live line at a value, at a no-estimate tile and at a tile with no file, where a second click reads no new file, and a point the shard puts outside Montana reads its shard alone. No request may leave the site.
+
+**Measured sizes (2026-10-19, module re-checks).** Live pictures are 2,989 to 3,045 bytes (about 3 KB on a quiet day); the sample pictures are 4,288 and 4,753 bytes. Live tile files are 89 to 180 bytes each: the hour layer's two tiles came to 279 bytes, and the 24-hour layer's five to 656 bytes. A sample tile holding only no-coverage cells is 1,198 bytes (hour) or 1,200 bytes (24 hours), with 175 of each in the sample. Live downloads were 34,299 to 34,328 bytes (hour) and 108,517 to 109,454 bytes (24 hours).
+
+**Status (2026-10-19, close-out).** The site side and its completion pass are in the branch's commit on `claude/hail-b4`. The full suite (895 tests) and the self-test pass. The Chromium smoke (`tools/smoke_map.py`) passes under the D17 rule on a live build (the 24-hour layer changes 2,815 pixels in a box of 160 screen pixels around a listed cell at zoom 11; the hour layer had no value in the box, so its gate is the note) and on a sample build with the real store (14,074 and 14,010 pixels), with the picture hidden in both captures as the control; `smoke_pages` passes at 288 to 1,440 px, light and dark; the Chromium probes of the freshness edges, the 404 and could-not-be-loaded paths, the one-request rule and the Montana-only words pass (the completion re-check of 2026-10-19 15:58 UTC). The default build (no flags) differs from its base commit only in `map.js`, `map.css` and two `?v=` lines in `map.html`; the manifest test in `tests/test_site.py` checks the rest. The branch's live preview build runs on the push. The gates are B4-1 to B4-7 in `research/globe/validation-evidence/p3-verification.json`.
+
 ## 12. The past weather of every location (B5, 2026-10-19, behind `--hail-history`)
 
-Section 10 (B3) sits above this section, and section 11 arrives with the B4 branch; this section is B5's (`DECISIONS.md` D38).
+Sections 10 (B3) and 11 (B4) sit above this section; this section is B5's (`DECISIONS.md` D38).
 
 **Frame.** The owner's request is quoted once, in D38. A sheet, and each town page, answers one question for one place: what the weather there did over five seasons, in every kind of record, with its unit. On the sheet the place's summary table leads, under the address line and one plain sentence. On a town page the history follows the forecast (D39), and its summary table leads the history. The details follow under headings in one fixed order. Each row is one kind of record. Nothing in the section is a finding about a roof, an address or a claim.
 

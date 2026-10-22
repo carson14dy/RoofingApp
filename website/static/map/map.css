@@ -31,6 +31,7 @@
   --place-dot: var(--m-grey-1);
   --halo: var(--m-white);
   --hatch: rgba(142, 142, 147, 0.20);
+  --hatch-gap: rgba(142, 142, 147, 0.35);   /* the pictures' no-coverage stripes (gridded.HATCH); the picture does not change with the theme */
   --hatch-out: rgba(142, 142, 147, 0.18);   /* outside the pictures' box: faint hairlines (map.html #hatch), like the reference */
 
   /* glass and ink */
@@ -136,6 +137,7 @@
     --place-dot: #c9ccd1;
     --halo: #121417;
     --hatch: rgba(142, 142, 147, 0.16);
+    --hatch-gap: rgba(142, 142, 147, 0.35);   /* the same stripes in the dark theme: the picture is the same */
     --hatch-out: rgba(174, 174, 178, 0.10);   /* about the light mode's weight (1.16:1 on the land) */
 
     --glass: rgba(28, 28, 30, 0.72);
@@ -313,13 +315,17 @@ a { color: inherit; }
 }
 .legend-note { margin-top: 2px; font-size: 11.5px; line-height: 1.3; color: var(--ink-2); }
 .legend-note:empty { display: none; }
+.legend-uncoloured { margin-top: 3px; font-size: 11.5px; line-height: 1.3; color: var(--ink-2); }
+.legend-uncoloured:empty { display: none; }
 .legend-keys { display: grid; gap: 4px; margin-top: 8px; font-size: 11.5px; line-height: 1.25; color: var(--ink-2); }
 .legend-keys:empty { display: none; }
 .legend-keys li { display: flex; align-items: center; gap: 6px; }
 .key { flex: none; width: 14px; height: 14px; border-radius: 4px; }
 .key-bubble { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 1px var(--bubble-ring); }
-.key-hatch { background: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 5px); border: 1px solid var(--hairline); }
-.key-hatch-out { background: repeating-linear-gradient(45deg, var(--hatch) 0 1px, transparent 1px 4px); border: 1px solid var(--hairline); }
+/* the keys' stripes run "/" like the pictures' hatch (gridded.hatch_mask: constant along x + y) and the band's pattern
+   (map.html #hatch: rotate(45) on vertical lines); -45deg draws that (45deg draws "\" and would mirror them) */
+.key-hatch { background: repeating-linear-gradient(-45deg, var(--hatch-gap) 0 1px, transparent 1px 5px); border: 1px solid var(--hairline); }
+.key-hatch-out { background: repeating-linear-gradient(-45deg, var(--hatch-out) 0 1px, transparent 1px 6px); border: 1px solid var(--hairline); }
 .key-ring { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--over); width: 12px; height: 12px; margin: 1px; }
 .key-here { border-radius: 50%; background: var(--bubble); box-shadow: 0 0 0 2px var(--loc); width: 12px; height: 12px; margin: 1px; }
 /* alerts with no outline: the row is a button to the List, marked with the List button's lines */
@@ -527,7 +533,7 @@ a { color: inherit; }
 .legend-2col .legend { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px;
   max-width: calc(100vw - var(--safe-l) - var(--safe-r) - 2 * var(--edge) - var(--btn) - 2 * var(--gap)); }
 .legend-2col .legend { padding-top: 8px; padding-bottom: 8px; }
-.legend-2col .legend-head, .legend-2col .legend-note { grid-column: 1 / -1; }
+.legend-2col .legend-head, .legend-2col .legend-note, .legend-2col .legend-uncoloured { grid-column: 1 / -1; }
 .legend-2col .legend-scale { width: var(--scale-w, 96px); margin: 10px 0 6px; }
 .legend-2col .legend-keys { grid-column: 2; grid-row: 2; align-self: start; margin-top: 10px; gap: 2px; }
 /* "Map data" moves up into the title row, left of the (i) button: 38 px more for Montana */
@@ -540,6 +546,10 @@ a { color: inherit; }
   .legend-info { display: grid; place-items: center; }
   .legend:not(.show-note) .legend-note { display: none; }
 }
+/* hail layers (B4): the kind sentence and the uncoloured sentence are the legend's own words, so they stay in view on
+   phones and short screens; the (i) button does not hide them. The folded landscape state below keeps them behind (i).
+   .legend-uncoloured is outside the two rules above, so it is always in view when it has text. */
+.legend.swath-words .legend-note:not(:empty) { display: block; }
 
 /* short landscape screens: the legend is a column on the left (it scrolls if all its keys can't
    fit) and the timeline starts right of it instead of covering it, and stops short of the
@@ -567,6 +577,8 @@ a { color: inherit; }
   html:not(.is-card) .corner-left { flex-direction: row; align-items: flex-start; }
   html:not(.is-card) .legend:not(.show-note) .legend-scale,
   html:not(.is-card) .legend:not(.show-note) .legend-keys { display: none !important; }
+  html:not(.is-card) .legend:not(.show-note) .legend-note,
+  html:not(.is-card) .legend:not(.show-note) .legend-uncoloured { display: none !important; }
   html:not(.is-card) .legend:not(.show-note) .legend-head { padding-bottom: 0; border-bottom: 0; }
   html:not(.is-card) .legend:not(.show-note) + .mapdata { display: none; }
   html:not(.is-card) .top:has(.legend.show-note) { z-index: 25; }
@@ -851,3 +863,6 @@ a { color: inherit; }
 @media print {
   .top .corner-right, .timeline, .popover { display: none !important; }
 }
+
+/* the List's lines: a gap between the paragraphs of one section (B4 live-12; map.css resets p margins to 0, and the map page does not load style.css, so the token is not there) */
+.storm-sec p + p { margin-top: 8px; }

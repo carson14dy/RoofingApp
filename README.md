@@ -127,7 +127,7 @@ python -m website.stations build --store store --cache b5-cache --scope daily   
 python -m website.snowgrid build --store store --cache b5-cache --offline       # NOHRSC snow analysis; the unit check decides whether it shows
 python -m website.gauges build --store store --cache b5-cache                   # NWS flood stages and USGS peaks, within 10 miles
 python -m http.server -d _site 8000            # open http://localhost:8000
-python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_addresses tests.test_streets tests.test_buildings tests.test_climate tests.test_stations tests.test_snowgrid tests.test_gauges tests.test_summary tests.test_website_workflow   # website tests, offline, seconds
+python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_addresses tests.test_streets tests.test_buildings tests.test_swath tests.test_climate tests.test_stations tests.test_snowgrid tests.test_gauges tests.test_summary tests.test_website_workflow   # website tests, offline, seconds
 python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
 python tools/smoke_pages.py _site              # no page wider than the screen, 288–1440 px
 ```
@@ -138,6 +138,7 @@ website/sources.py     NWS and SPC requests, parsers, flag limits, feed contract
 website/gridded.py     NOAA radar (MRMS) and HRRR model grids → map picture frames
 website/storm.py       NOAA radar echo tops for each town (behind --storm-layers, text only)
 website/satellite.py   NOAA GOES band 13 satellite picture → one map frame (behind --storm-layers)
+website/swath.py        NOAA MRMS hail swath, last hour and last 24 hours → two map layers and per-tile live files (behind --storm-layers; a radar estimate, not observed hail)
 website/hail.py        the hail history (behind --hail-history): grid, size classes and words, store readers, daily build
 website/joins.py       the hail history joins (behind --hail-history): reports, official records, radar detections, warnings, zone products, station gusts; B5 adds the county path, the period rule and the per-tile event files
 website/addresses.py   the address points (behind --hail-addresses): the State Library file read as a stream, the dots, the search index, verify (job only; pyproj)
@@ -162,7 +163,8 @@ tests/                 test_site.py (pages, failures), test_gridded.py (radar an
                        test_satellite.py (the GOES satellite picture), test_hail.py (the hail history store),
                        test_joins.py (the hail history joins),
                        test_addresses.py (the address dots and search), test_streets.py (the street lines),
-                       test_buildings.py (the outlines and the join), test_climate.py (the grid), test_stations.py
+                       test_buildings.py (the outlines and the join), test_swath.py (the MRMS hail swath layers),
+                       test_climate.py (the grid), test_stations.py
                        (the station rule), test_snowgrid.py (the snow analysis), test_gauges.py (river gauges),
                        test_summary.py (the summary table and its words),
                        test_website_workflow.py
