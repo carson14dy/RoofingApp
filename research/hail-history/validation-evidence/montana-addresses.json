@@ -1,0 +1,326 @@
+{
+ "workstream": "W6",
+ "slug": "montana-addresses",
+ "checked_at_utc": "2026-10-17T20:50:24Z",
+ "bottom_line": "No source checked here is verified to list every house in Montana. The closest statewide list is the MSL Structures and Addresses Framework: 674,715 points, 493,975 coded as residences, against 514,803 housing units in the 2020 census (state ratio 0.96). County ratios run from 0.48 to 1.36, and a live count reproduces them. The MSL parcel file covers 'most of Montana' (920,986 records; situs filled on 56.5%). Microsoft footprints give 773,199 Montana buildings with no address fields. No Montana-only NAD count was obtained (state filters fail; a bounding box gives 662,158, including parts of Idaho and Wyoming). OpenAddresses lists two Montana sources, both on MSL files or a City of Helena service.",
+ "urls_checked": [
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/","http_status":"200","bytes":1668,"content_check":"Index of MSDI folders; AddressStructures, Cadastral and AdministrativeBoundaries listed with dates"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/","http_status":"200","bytes":1311,"content_check":"Lists MontanaCadastral_GDB.zip (867,382,653 B) and MontanaCadastral_SHP.zip (1,040,691,781 B) and folders"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/","http_status":"200","bytes":6780,"content_check":"Lists 56 county folders, Statewide folder and MontanaCadastral_ParcelMetadata.xml (35,131 B)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/Statewide/","http_status":"200","bytes":1340,"content_check":"Lists MTParcels_GDB.zip, MTParcels_SHP.zip, StatewideCama.zip, MonthlyCadastralUpdateMap.pdf, MontanaTownshipCodes.xlsx"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/{county}/ (56 folders)","http_status":"200","bytes":42103,"requests":57,"content_check":"Each folder lists <County>_GDB.zip, <County>_SHP.zip and the metadata XML; sizes parsed"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/MontanaCadastral_ParcelMetadata.xml","http_status":"200","bytes":35131,"content_check":"FGDC-style XML parsed: 42 attributes; abstract, useconst and distliab read (quotes in terms)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/Statewide/MTParcels_SHP.zip","http_status":"200,206","bytes":112222503,"content_check":"HEAD Content-Length 518,095,964; central directory read (10 members); Montana_Parcels.dbf streamed in full: 920,986 records (DBF header agrees)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/Statewide/MTParcels_GDB.zip","http_status":"200,206","bytes":267810,"content_check":"HEAD Content-Length 249,250,816; central directory read (63 members; file geodatabase; not decoded)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/Statewide/StatewideCama.zip","http_status":"200,206","bytes":268270,"content_check":"HEAD Content-Length 80,238,862; central directory read (50 members; file geodatabase tables; not decoded)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/MontanaCadastral_SHP.zip","http_status":"200,206","bytes":270384,"content_check":"HEAD Content-Length 1,040,691,781; central directory read (100 members; OWNERPARCEL.dbf has the same size as Montana_Parcels.dbf)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/MontanaCadastral_GDB.zip","http_status":"200","bytes":0,"content_check":"HEAD Content-Length 867,382,653 (not downloaded)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/Petroleum/Petroleum_SHP.zip","http_status":"200","bytes":1164736,"content_check":"Zip members read with CRC check; Petroleum_Parcels.dbf parsed: 4,523 records, 43 fields; counts only"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/Wibaux/Wibaux_SHP.zip","http_status":"200","bytes":553273,"content_check":"Smallest county SHP (553,273 B). Zip members read with CRC check; Wibaux_Parcels.dbf parsed: 2,238 records, 43 fields; counts only"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/Petroleum/Petroleum_GDB.zip","http_status":"200","bytes":0,"content_check":"HEAD Content-Length 971,362 (not downloaded)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/","http_status":"200","bytes":667,"content_check":"Lists StructuresFramework_gdb.zip, StructuresFramework_shp.zip and Archive folder"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip","http_status":"200,206","bytes":108612541,"content_check":"HEAD Content-Length 65,788,772; central directory (11 members); _ReadMe.txt, metadata XML, .prj, SSAP_Metadata.dbf extracted; SiteStructureAddressPoint.dbf streamed in full (674,715 records); the same member was streamed a second time for the parcel join"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_gdb.zip","http_status":"200,206","bytes":268484,"content_check":"HEAD Content-Length 61,058,458; central directory read (68 members; file geodatabase; not decoded)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/Archive/","http_status":"200","bytes":2300,"content_check":"Lists 13 archived framework zips dated 2012-12-31 to 2024-12-31 (62,252,489 B to 182,352,314 B)","corrected_from":"82,600,825 B to 182,352,314 B (minimum wrong)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/ORION_SQLDatabases/","http_status":"200","bytes":8007,"content_check":"Lists COUNTY1.ZIP to COUNTY56.ZIP and STATE-WIDE.ZIP (1,695,497,876 B); sizes only, not downloaded"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/ORION_SQLDatabases/ChangeLog.txt","http_status":"200","bytes":2995,"content_check":"2,995 B; read; refers to the Res table (residential type)"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Documentation/","http_status":"200","bytes":729,"content_check":"Lists Orion CAMA Documentation, SQL_QueryScripts, SQLExpressDocumentation"},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AdministrativeBoundaries/","http_status":"200","bytes":9344,"content_check":"Listing read (9,344 B); county and state boundary zips present"},
+  {"url":"https://www2.census.gov/programs-surveys/decennial/2020/data/01-Redistricting_File--PL_94-171/Montana/","http_status":"200","bytes":14822,"content_check":"Listing lists mt2020.pl.zip (9,835,205 B)"},
+  {"url":"https://www2.census.gov/programs-surveys/decennial/2020/data/01-Redistricting_File--PL_94-171/Montana/mt2020.pl.zip","http_status":"200","bytes":9835205,"content_check":"Zip test passed; members mtgeo2020.pl, mt000012020.pl, mt000022020.pl, mt000032020.pl; state housing-unit row read"},
+  {"url":"https://api.census.gov/data/2020/dec/pl?get=NAME,H1_001N,P1_001N&for=state:30","http_status":"200","bytes":8531,"content_check":"HTTP 200 but an HTML 'Missing Key' page (final URL api.census.gov/data/missing_key.html); no data returned"},
+  {"url":"https://api.census.gov/data/2020/dec/pl/variables/H1_001N.json","http_status":"200","bytes":165,"content_check":"JSON: name H1_001N, label '!!Total:', concept 'OCCUPANCY STATUS', group H1"},
+  {"url":"https://www.census.gov/data/developers/about/terms-of-service.html","http_status":"200","bytes":302319,"content_check":"Census API terms of service read; notice wording quoted in terms"},
+  {"url":"https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/index","http_status":"200","bytes":28523,"content_check":"Read: 'routinely updated statewide database'; download and map-service links"},
+  {"url":"https://msl.mt.gov/geoinfo/msdi/cadastral/index","http_status":"200","bytes":33541,"content_check":"Read: 'provided monthly for each Montana county'; download link to the ftpgeoinfo Parcels folder"},
+  {"url":"https://geoinfo.msl.mt.gov/","http_status":"200","bytes":79594,"content_check":"Redirects to https://msl.mt.gov/geoinfo/; home page read for links"},
+  {"url":"https://gisservice.mt.gov/arcgis/rest/services/msdi_structures_addresses_map_v1/MapServer?f=pjson","http_status":"200","bytes":6983,"content_check":"JSON: mapName 'Montana Structures and Addresses Framework'; copyrightText 'Montana State Library'; layer 0 is a point layer"},
+  {"url":"https://gisservice.mt.gov/arcgis/rest/services/msdi_structures_addresses_map_v1/MapServer/0/query?where=1%3D1&returnCountOnly=true&f=json","http_status":"200","bytes":16,"content_check":"JSON count 674,469 (query time about 20:40 UTC)"},
+  {"url":"https://gisservice.mt.gov/arcgis/rest/services/msdi_structures_addresses_map_v1/MapServer/1/query?where=1%3D1&returnCountOnly=true&f=json","http_status":"200","bytes":63,"content_check":"HTTP 200 with error code 404 'Layer not found'"},
+  {"url":"https://gisservice.mt.gov/arcgis/rest/services/msdi_cadastral_map_v1/MapServer/1/query?where=1%3D1&returnCountOnly=true&f=json","http_status":"200","bytes":16,"content_check":"JSON count 921,301 (query time about 20:40 UTC)"},
+  {"url":"https://gisservice.mt.gov/arcgis/rest/services/msdi_address_locator_geocode_v1/GeocodeServer?f=pjson","http_status":"200","bytes":300000,"content_check":"JSON currentVersion 11.5; read to the 300,000 B cap only (for W7)"},
+  {"url":"https://catalog.data.gov/dataset/national-address-database-nad","http_status":"200","bytes":157268,"content_check":"JSON-LD in the HTML page: license CC0 1.0 URL; publisher US Department of Transportation; datePublished 2017-08-10; dateModified 2026-07-01. One 157,268 B page (logged 314,536 B was two fetches).","corrected_from":314536},
+  {"url":"https://www.transportation.gov/gis/national-address-database","http_status":"403","bytes":417,"content_check":"HTTP 403 'Access Denied' (HTML); not read"},
+  {"url":"https://www.transportation.gov/gis/national-address-database/national-address-database-nad-public-release","http_status":"403","bytes":486,"content_check":"HTTP 403 'Access Denied'; not read"},
+  {"url":"https://www.transportation.gov/gis/national-address-database/national-address-database-nad","http_status":"403","bytes":463,"content_check":"HTTP 403 'Access Denied'; not read"},
+  {"url":"https://www.transportation.gov/gis/nad","http_status":"403","bytes":387,"content_check":"HTTP 403 'Access Denied'; not read"},
+  {"url":"https://data.transportation.gov/download/fc2s-wawr/application%2Fx-zip-compressed","http_status":"200","bytes":0,"content_check":"HEAD redirects to the files URL; the Content-Length it reports (0) is not used"},
+  {"url":"https://data.transportation.gov/api/views/fc2s-wawr/files/596a301b-d548-4589-8c63-6b6a8dc34f30?filename=TXT.zip","http_status":"206","bytes":524507,"content_check":"Range total 8,477,543,836 B; zip64 central directory read: TXT/NAD_r24.txt (uncompressed 42,111,724,256 B, method 9) and NationalAddressDatabaseMetadata.xml; no member streamed"},
+  {"url":"https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Address_Points_from_National_Address_Database_view/FeatureServer?f=pjson","http_status":"200","bytes":4097,"content_check":"JSON currentVersion 12; capabilities Query"},
+  {"url":"https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Address_Points_from_National_Address_Database_view/FeatureServer/0?f=pjson","http_status":"200","bytes":2280440,"content_check":"JSON layer 0: 60 fields incl. State, County, Zip_Code, Parcel_ID; copyrightText lists 'Montana State Library'"},
+  {"url":"https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Address_Points_from_National_Address_Database_view/FeatureServer/0/query (12 requests)","http_status":"200","bytes":3737,"requests":12,"content_check":"where=1=1 count 97,928,946; State, County and Zip_Code filters and an envelope count returned HTTP 200 with error code 400"},
+  {"url":"https://minedbuildings.z5.web.core.windows.net/legacy/usbuildings-v2/Montana.geojson.zip","http_status":"200","bytes":26578292,"content_check":"Zip test passed; Montana.geojson 210,192,210 B inflated; 773,199 Polygon features counted; coordinate bounding box read"},
+  {"url":"https://minedbuildings.z5.web.core.windows.net/legacy/usbuildings-v2/Montana.zip","http_status":"404","bytes":0,"content_check":"HTTP 404 (pattern not used; README links use Montana.geojson.zip)"},
+  {"url":"https://usbuildingdata.blob.core.windows.net/usbuildings-v2/Montana.zip","http_status":"409","bytes":0,"content_check":"HTTP 409 (rejected; not used)"},
+  {"url":"https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md","http_status":"200","bytes":13784,"content_check":"Read: ODbL licence; 129,591,852 footprints; Montana row 773,199 buildings, 200.45 MiB; CRS EPSG: 4326"},
+  {"url":"https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/LICENSE.md","http_status":"404","bytes":14,"content_check":"HTTP 404; licence stated in README instead"},
+  {"url":"https://sites.research.google/open-buildings/","http_status":"200","bytes":107645,"content_check":"Redirects to https://sites.research.google/gr/open-buildings/; coverage, licence and country list read"},
+  {"url":"https://raw.githubusercontent.com/openaddresses/openaddresses/master/README.md","http_status":"200","bytes":5259,"content_check":"Read: licence section (pipeline output not relicensed; source JSON CC0 1.0)"},
+  {"url":"https://raw.githubusercontent.com/openaddresses/openaddresses/master/sources/us/mt.json","http_status":"404","bytes":14,"content_check":"HTTP 404 (no Montana source file at this path)"},
+  {"url":"https://github.com/openaddresses/openaddresses/tree/master/sources/us/mt","http_status":"403","bytes":378,"content_check":"HTTP 403; body: 'GitHub access to this repository is not enabled for this session'"},
+  {"url":"https://api.github.com/repos/openaddresses/openaddresses/contents/sources/us/mt","http_status":"403","bytes":378,"content_check":"HTTP 403; same message as above"},
+  {"url":"https://batch.openaddresses.io/data","http_status":"200","bytes":1171,"content_check":"JavaScript shell (1,171 B); no source list parsed"},
+  {"url":"https://nad.geo.census.gov/","http_status":"no response","bytes":0,"content_check":"No HTTP response (connection error); not used"}
+ ],
+ "facts": [
+  {"claim":"Statewide cadastral files on the MSL server","value":"MontanaCadastral_SHP.zip 1,040,691,781 B; MontanaCadastral_GDB.zip 867,382,653 B; MTParcels_SHP.zip 518,095,964 B; MTParcels_GDB.zip 249,250,816 B; StatewideCama.zip 80,238,862 B; MonthlyCadastralUpdateMap.pdf 777,425 B","evidence":"Folder listings of Cadastral/ and Cadastral/Parcels/Statewide/ (HTTP 200); HEAD Content-Length on each archive","verified":true},
+  {"claim":"Per-county parcel zips (56 counties)","value":"SHP per county from 553,273 B (Wibaux) to 251,509,408 B (Yellowstone; Missoula 26,550,126 B is second); GDB from 512,044 B (Wibaux) to 45,236,288 B (Yellowstone)","evidence":"56 county folder listings parsed; each county folder also holds the same 35,131 B metadata XML","verified":true},
+  {"claim":"Statewide parcel records (file)","value":"920,986 records in Montana_Parcels.dbf (DBF header agrees); 920,986 active, 0 deleted; 887,495 non-blank PARCELID, all unique; 33,491 blank PARCELID; 56 county names","evidence":"Full streamed read of Montana_Parcels/Montana_Parcels.dbf (111,038,561 B compressed; 1,645,803,392 B inflated) from MTParcels_SHP.zip; counts only","verified":true},
+  {"claim":"Statewide parcel shapefile extent and index","value":"Polygon type; .shp header bbox in NAD83(2011) / Montana (metres) x 111,848.3 to 1,030,197.8, y 17,695.3 to 547,983.3; .shx implies 920,986 records","evidence":"Range reads of .shp and .shx headers in MTParcels_SHP.zip","verified":true},
+  {"claim":"Parcel fields in the statewide DBF","value":"43 DBF fields including PARCELID, COUNTYCD, CountyName, GISAcres, TaxYear, PropertyID, LegalDescr, Subdivisio, AddressLin (situs line 1, C104), AddressL_1 (situs line 2, C27), CityStateZ (situs city, state and ZIP, C55), PropType, TotalValue; owner field names include OwnerName (C167), OwnerAddre, OwnerAdd_1, OwnerAdd_2, OwnerCity, OwnerState, OwnerZipCo, DbaName, CareOfTaxp","evidence":"DBF header read (field names only; DBF names are truncated to 10 characters); metadata XML lists the full names (AddressLine1, AddressLine2, CityStateZip, OwnerName)","verified":true},
+  {"claim":"Situs address fill in the statewide parcel file","value":"AddressLine1 non-blank on 520,776 of 920,986 records (56.5%); CityStateZip non-blank on 509,850 (55.4%); lowest counties Carter 4.4%, Garfield 7.8%, Petroleum 10.0%; highest Yellowstone 87.7%, Gallatin 83.7%","evidence":"Counts from the full DBF stream grouped by CountyName (no values stored). Refuter: live per-county counts reproduce these percentages.","verified":true,"corrected_from":"highest Gallatin 83.7%, Yellowstone 87.7%"},
+  {"claim":"Petroleum County parcels (one county, full file)","value":"Petroleum_SHP.zip 1,164,736 B; 4,523 records; PARCELID non-blank 4,495; AddressLine1 non-blank 452 (10.0%); CityStateZip non-blank 447","evidence":"Petroleum_SHP.zip downloaded (HTTP 200); DBF parsed locally with python -I; counts only","verified":true},
+  {"claim":"Wibaux County parcels (smallest county SHP, used as the one-county proof)","value":"Wibaux_SHP.zip 553,273 B (sha256 fdb1283d55334bdb...); DBF 4,000,716 B; 2,238 records; 43 fields with the same names as the statewide file; PARCELID non-blank 2,216 (all unique); AddressLine1 non-blank 585 (26.1%); CityStateZip non-blank 420; CountyName 'Wibaux' on every record","evidence":"Wibaux_SHP.zip downloaded from .../Cadastral/Parcels/Wibaux/ (HTTP 200); DBF parsed locally; owner values not recorded","verified":true},
+  {"claim":"Live cadastral service count","value":"921,301 features in msdi_cadastral_map_v1 MapServer layer 1 (returnCountOnly)","evidence":"https://gisservice.mt.gov/arcgis/rest/services/msdi_cadastral_map_v1/MapServer/1/query?where=1=1&returnCountOnly=true&f=json returned {\"count\":921301}","verified":true},
+  {"claim":"Parcel coverage statement (metadata)","value":"\"The Montana Cadastral Framework shows the taxable parcels and tax-exempt parcels for most of Montana.\"","evidence":"Metadata abstract in MontanaCadastral_ParcelMetadata.xml (pubdate 20261006)","verified":true},
+  {"claim":"County maintenance of parcel data (metadata)","value":"\"except for Ravalli, Silver Bow, Missoula, Flathead and Yellowstone counties that are maintained by the individual counties.\" The Department of Revenue maintains the other counties; MSL integrates both","evidence":"Metadata abstract quote","verified":true},
+  {"claim":"Parcel update cadence","value":"MSL cadastral page: \"Cadastral data are provided monthly for each Montana county in file geodatabase and shapefile data formats.\" Metadata: status update 'Continually', progress 'In work'","evidence":"https://msl.mt.gov/geoinfo/msdi/cadastral/index (HTTP 200, 33,541 B); metadata XML","verified":true},
+  {"claim":"Owner fields exist in the statewide parcel files; no public version without them found","value":"Montana_Parcels.dbf, the OWNERPARCEL.dbf member of MontanaCadastral_SHP.zip (same size) and the Petroleum and Wibaux county DBFs carry owner field names; no owner-free statewide file appears in the Parcels and Statewide listings","evidence":"DBF headers and member sizes; Parcels/ and Statewide/ listings","verified":true},
+  {"claim":"Structures and addresses framework files","value":"StructuresFramework_shp.zip 65,788,772 B; StructuresFramework_gdb.zip 61,058,458 B; archived zips 2012-12-31 to 2024-12-31 from 62,252,489 B to 182,352,314 B (13 files)","evidence":"Folder listings (HTTP 200) and HEAD requests","verified":true},
+  {"claim":"Address and structure point count (file)","value":"674,715 points in SiteStructureAddressPoint (shape type 1, Point); .shx count 674,715; DBF header count 674,715; 0 deleted; all records streamed","evidence":"Range reads of .shx and .shp headers; full DBF stream (52,943,628 B compressed; 1,905,396,826 B inflated) with records_match_header true","verified":true},
+  {"claim":"Live address point count (service)","value":"674,469 points in msdi_structures_addresses_map_v1 MapServer layer 0 (returnCountOnly); file count 674,715","evidence":"https://gisservice.mt.gov/arcgis/rest/services/msdi_structures_addresses_map_v1/MapServer/0/query?where=1=1&returnCountOnly=true&f=json returned {\"count\":674469}","verified":true},
+  {"claim":"Address point fields (DBF, 51 fields)","value":"County, Inc_Muni, AddNum_Pre, Add_Number, AddNum_Suf, St_PreDir, St_PreTyp, St_Name, St_PosTyp, Post_Comm, Post_Code, Building, Floor, Unit, Room, Place_Type, Placement, MT_PlcType, ParcelID, LocalID, NGUID, Latitude, Longitude, Elevation, DatasetTyp, GlobalID and others","evidence":"DBF header read by range request","verified":true},
+  {"claim":"Latitude and Longitude columns are zero","value":"Latitude and Longitude hold 0.0 in every record (min and max 0.0); positions exist only in the shapefile geometry (NAD83(2011) / Montana, metres) per the .prj","evidence":"Min and max of numeric fields from the full DBF stream; .prj read (NAD_1983_2011_StatePlane_Montana_FIPS_2500). Live layer: 0 non-zero Latitude; file not re-run.","verified":true},
+  {"claim":"Address point extent in lon and lat (bbox corners)","value":"Framework metadata geographic bounding box: westbc -116.069651, eastbc -103.877146, southbc 44.502951, northbc 49.127796 (dataset extent).","evidence":"sf-shp-metadata.xml (stored copy, read by the refuter)","verified":true,"corrected_from":"projected-corner conversion SW -115.61563, 44.35499; NE -103.65951, 49.00433"},
+  {"claim":"Place type coding","value":"Place_Type 'residence' 493,969 and 'Residential' 6: 493,975 residence-coded points (73.2%); 'unknown' 78,916; 'other' 48,873; 'store' 13,614; blank 8,738","evidence":"Frequencies over all active records of SiteStructureAddressPoint.dbf. Listed categories sum to 644,116 of 674,715; see the new Place_Type fact.","verified":true},
+  {"claim":"Structure type codes (MT_PlcType) with metadata labels","value":"101 'Dwelling, single-family' 314,150 points; 100 'Building (generic)' 114,000; 1 'Structure (abstract)' 88,577; 102 'Dwelling, multi-family' 43,251; 2 'No structure present' 27,322; 107 'Mobile home' 20,409; 106 'Cabin / guest house' and 103 'Institutional residence / dorm / barrack' also in the domain; 89 distinct codes in use","evidence":"Frequencies from the DBF; domain labels from edom entries of MT_PlcType in StructuresFramework_metadata.xml. Live: 88 non-blank codes.","verified":true},
+  {"claim":"County and state labels in the address points","value":"County field: all 56 Montana counties present; labels 'Idaho County' and 'Shoshone County' also appear (Idaho); State field MT 674,712, ID 2, ND 1","evidence":"Frequencies from the DBF (counts only)","verified":true},
+  {"claim":"Source load dates by county (SSAP_Metadata.dbf)","value":"80 load records; county address loads dated from 2016-12-30 (Musselshell County addresses, pointsm.shp) to 2026-09-09 (Lewis and Clark County addresses); several are combined loads (for example Fallon/Carter/Wibaux and Custer/Garfield/Prairie)","evidence":"SSAP_Metadata.dbf (86,770 B) extracted from StructuresFramework_shp.zip (ProcessDat and DatasetNam fields)","verified":true},
+  {"claim":"Parcel join from address points to statewide parcels","value":"654,152 of 674,715 points (97.0%) have a non-blank ParcelID; 635,008 of those (97.1%) match a PARCELID in the statewide parcel file; 483,759 residence-coded points match","evidence":"Second streamed pass over SiteStructureAddressPoint.dbf against the PARCELID list from the parcel pass (counts only)","verified":true},
+  {"claim":"Residence-coded address points against 2020 census housing units, by county","value":"State 493,975 residence points vs 514,803 housing units (ratio 0.960). Counties below 0.9: 24 (lowest Glacier County 0.477: 2,550 points vs 5,342 units; Roosevelt County 0.528; Big Horn County 0.569). Within 0.9 to 1.1: 18. Above 1.1: 14 (highest Sanders County 1.356: 9,221 vs 6,800)","evidence":"Residence counts per County label (SSAP pass) divided by the census housing-unit column (next fact); not a dwelling count, and residence coding is the only filter","verified":true},
+  {"claim":"2020 census housing units, Montana (state and county sum)","value":"514,803 total housing units; 447,812 occupied; 66,991 vacant; the 56 county rows sum to 514,803","evidence":"mt2020.pl.zip (9,835,205 B; HTTP 200; www2.census.gov). State and county rows of mt000022020.pl, column 145 after LOGRECNO (index 144); checked: total = occupied + vacant on all 57 rows = True","verified":true},
+  {"claim":"Identity of that column as H1_001N (total housing units)","value":"Confirmed by API labels: H1_001N '!!Total:', H1_002N '!!Total:!!Occupied', H1_003N '!!Total:!!Vacant' (group H1). Geo header index 91 = 514,803; county sums and segment 2 index 144 match on all 57 rows.","evidence":"https://api.census.gov/data/2020/dec/pl/variables/H1_001N.json (HTTP 200, 165 B). Refuter re-download 2026-10-17.","verified":true,"corrected_from":"Inferred, not confirmed (value rule; PL layout not read)"},
+  {"claim":"State population value in the same release file","value":"1,084,225 (first value after LOGRECNO for the state row in mt000012020.pl)","evidence":"mt000012020.pl state row (LOGRECNO 0000001)","verified":true},
+  {"claim":"Census API keyless requests","value":"A keyless request returned an HTML 'Missing Key' page (HTTP 200, final URL api.census.gov/data/missing_key.html). No key was requested, because signing up would send the owner's email address to a third party","evidence":"Request to api.census.gov (8,531 B HTML)","verified":true},
+  {"claim":"Census API terms (notice wording)","value":"\"This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.\"; \"You may use the Census Bureau API to develop a service or service to search, display, analyze, retrieve, view and otherwise \"get\" information from Census Bureau data.\"","evidence":"https://www.census.gov/data/developers/about/terms-of-service.html (HTTP 200, 302,319 B). These terms cover the API, not the static PL files","verified":true},
+  {"claim":"Microsoft Building Footprints for Montana (file)","value":"773,199 Polygon features (token count; no MultiPolygon tokens); zip 26,578,292 B; Montana.geojson 210,192,210 B inflated; 90,689 features (11.7%) carry a non-blank capture_dates_range; coordinate bbox lon -116.05575 to -104.03416, lat 44.44472 to 49.00501","evidence":"Full scan of the Montana.geojson member of https://minedbuildings.z5.web.core.windows.net/legacy/usbuildings-v2/Montana.geojson.zip (HTTP 200). Full scan confirms the count, 90,689 dated (11.73%) and the bbox.","verified":true},
+  {"claim":"Microsoft footprints carry no address fields","value":"Full scan (refuter) of the stored copy: 773,199 Polygon features; property keys only 'release' and 'capture_dates_range' (773,199 each).","evidence":"Stored Montana.geojson.zip, local full scan (no network)","verified":true,"corrected_from":"first feature checked; the other features not checked"},
+  {"claim":"Microsoft footprints licence and CRS (README)","value":"\"This data is licensed by Microsoft under the Open Data Commons Open Database License (ODbL).\" \"This data is freely available for download and use.\" CRS: EPSG: 4326. README table: Montana 773,199 buildings, 200.45 MiB unzipped","evidence":"https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md (HTTP 200, 13,784 B decoded)","verified":true},
+  {"claim":"Google Open Buildings v3: United States coverage","value":"Coverage statement: \"covering Africa, South Asia, South-East Asia, Latin America and the Caribbean\". The country list has no United States of America, USA or Montana entry (only 'VIR United States Virgin Islands'); United States present: False","evidence":"https://sites.research.google/open-buildings/ (redirect to /gr/open-buildings/; HTTP 200, 107,645 B). The page says the list is 'subject to change'","verified":true},
+  {"claim":"Google Open Buildings v3 licence and size","value":"\"Creative Commons Attribution (CC BY-4.0) license\" and \"Open Data Commons Open Database License (ODbL) v1.0 license\"; \"As the user, you can pick which of the two licenses you prefer and use the data under the terms of that license.\" Polygon data 178 GB total; points 48 GB total","evidence":"Same page","verified":true},
+  {"claim":"OpenAddresses licence (repository README)","value":"\"The data produced by the OpenAddresses processing pipeline (available on batch.openaddresses.io) is not relicensed from the original sources. Individual sources will have their own licenses.\" Source JSON in the repository is CC0 1.0","evidence":"https://raw.githubusercontent.com/openaddresses/openaddresses/master/README.md (HTTP 200, 5,259 B); markdown link markup removed from the quote","verified":true},
+  {"claim":"OpenAddresses Montana sources and their licences","value":"Not listed in this run. The repository API returned HTTP 403 ('GitHub access to this repository is not enabled for this session') and the raw path sources/us/mt.json returned 404","evidence":"https://api.github.com/repos/openaddresses/openaddresses/contents/sources/us/mt (HTTP 403); https://raw.githubusercontent.com/openaddresses/openaddresses/master/sources/us/mt.json (HTTP 404)","verified":false,"refuted_by":"Sources exist: sources/us/mt/statewide.json and helena.json (sparse git read, HEAD 62b67d77). Neither has a licence key."},
+  {"claim":"NAD national text file","value":"TXT.zip 8,477,543,836 B; member TXT/NAD_r24.txt (compressed 8,477,533,188 B; uncompressed 42,111,724,256 B; compression method 9, Deflate64); metadata XML member 10,258 B compressed","evidence":"Range read of the zip64 end record and central directory (HTTP 206) at data.transportation.gov/api/views/fc2s-wawr/files/...?filename=TXT.zip","verified":true},
+  {"claim":"NAD address points service (national)","value":"Count of all points in the view: 97,928,946. Filters on State, County and Zip_Code and an envelope count returned HTTP 200 with error code 400 'Unable to perform query', so a Montana count was not obtained","evidence":"https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Address_Points_from_National_Address_Database_view/FeatureServer/0/query requests (12, HTTP 200 each)","verified":false,"refuted_by":"Envelope inSR 4326 (lon -116.06 to -103.99, lat 44.35 to 49.01) returned 662,158 in 4.5 s (refuter; includes Idaho and Wyoming). State, County and Zip_Code failures stand."},
+  {"claim":"NAD licence (data.gov catalog)","value":"license https://creativecommons.org/publicdomain/zero/1.0/; publisher US Department of Transportation; datePublished 2017-08-10; dateModified 2026-07-01","evidence":"https://catalog.data.gov/dataset/national-address-database-nad (HTTP 200, JSON-LD)","verified":true},
+  {"claim":"NAD copyright text names Montana","value":"Copyright text: \"Acknowledgment of the Department of Transportation (DOT), the U.S. Census Bureau, Geography Division, and the following partners: ...\" The partner list includes 'Montana State Library'","evidence":"copyrightText of layer 0 of the NAD address points view (2,774 characters)","verified":true},
+  {"claim":"USDOT NAD disclaimer and download pages","value":"Four transportation.gov NAD URLs returned HTTP 403 'Access Denied'; the official disclaimer was not read","evidence":"transportation.gov requests (HTTP 403)","verified":true},
+  {"claim":"MSL address locator service exists","value":"msdi_address_locator_geocode_v1 GeocodeServer, currentVersion 11.5; read only to a 300,000 B cap","evidence":"https://gisservice.mt.gov/arcgis/rest/services/msdi_address_locator_geocode_v1/GeocodeServer?f=pjson (HTTP 200)","verified":true},
+  {"claim":"ORION CAMA database downloads (structure and not decoded)","value":"COUNTY1.ZIP to COUNTY56.ZIP (smallest COUNTY33.ZIP 3,825,307 B; largest COUNTY3.ZIP 157,056,129 B) and STATE-WIDE.ZIP 1,695,497,876 B; Microsoft SQL Server databases; ChangeLog refers to 'Res table' residential type values","evidence":"ORION_SQLDatabases listing (HTTP 200, 8,007 B) and ChangeLog.txt (HTTP 200, 2,995 B); databases not downloaded","verified":true},
+  {"claim":"Parcel and structures folder dates","value":"County and statewide parcel files dated 10/6/2026 (all 56 counties); ORION_SQLDatabases 10/16/2026; AddressStructures 9/30/2026.","evidence":"Folder listings re-read by the refuter (HTTP 200).","verified":true},
+  {"claim":"Structures release cadence (README)","value":"'exported monthly, around the end of the month (the exact date varies)'; current export 20260930.","evidence":"README in StructuresFramework_shp.zip (researcher's stored copy).","verified":true},
+  {"claim":"Place_Type categories not itemised","value":"Domain: Registry of Location Types, RFC 4589 (no coded list). Live: residence 493,957; Residential 6; unknown 78,898; other 48,708; store 13,567; blank 8,738; 29 more values hold 30,595 points.","evidence":"Metadata stored copy; live group count (refuter). RFC 4589 not opened.","verified":true},
+  {"claim":"MT_PlcType dwelling and non-dwelling labels","value":"Dwelling: 101 single-family (live 314,143), 102 multi-family (43,249), 103 institutional residence, 106 cabin, 107 mobile home (20,406). Non-dwelling: 1100 Commercial site (20,783), 1107 Office building (5,721), 104 Storage (6,544), 105 Garage (67).","evidence":"Metadata edom list (stored copy); live group count (refuter).","verified":true},
+  {"claim":"Residence ratios reproduced from the live layer","value":"24 counties below 0.9, 18 at 0.9 to 1.1, 14 above 1.1. Glacier 2,550 (0.477); Roosevelt 2,146 (0.528); Big Horn 2,573 (0.569); Sanders 9,221 (1.356).","evidence":"Live group count by County and Place_Type (refuter) over the census housing-unit column.","verified":true},
+  {"claim":"Load records for the three lowest-ratio counties","value":"Glacier 2023-01-19 plus two Blackfeet reservation loads (2019-06-11); Roosevelt 2026-04-09 (no Fort Peck load by name); Big Horn 2026-07-31 plus Northern Cheyenne reservation (2020-03-23). A missing load is not the simple explanation.","evidence":"SSAP_Metadata.dbf stored copy (80 records; 2016-12-30 to 2026-09-09).","verified":true},
+  {"claim":"NAD envelope and polygon queries (refuter)","value":"Envelope inSR 4326: 662,158 in 4.5 s (includes Idaho and Wyoming). Montana-boundary polygon (26,153 vertices): error 400 after 56 s; RESIDENTIAL polygon count 0 (not used).","evidence":"NAD view layer 0 (refuter request log).","verified":true},
+  {"claim":"OpenAddresses Montana source contents","value":"statewide.json: MSL Structures zip (addresses), MSL cadastral zip (parcels, pid PARCELID), MSL lidar building zip (buildings), MSL transportation service (centerlines). helena.json: City of Helena Addresses layer. No licence key in either.","evidence":"Sparse git read, HEAD 62b67d77 (commit 2026-10-14).","verified":true},
+  {"claim":"MSL lidar building footprints (not in the researcher's list)","value":"LidarBuildingFootprints_AllProjects.zip, 42,546,970 B, dated 11/13/2024 (Elevation/Lidar). Coverage and terms not read.","evidence":"Folder listing (HTTP 200); Content-Range total (HTTP 206). Not downloaded.","verified":true},
+  {"claim":"NG9-1-1 wording source","value":"'complies with the NENA Standard for NG9-1-1 GIS Data Model' is in the framework metadata, not on the MSL page.","evidence":"Metadata stored copy; MSL structures page (HTTP 200).","verified":true}
+ ],
+ "terms": {
+  "msl_parcels": {
+   "urls": [
+    "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/MontanaCadastral_ParcelMetadata.xml",
+    "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/"
+   ],
+   "licence_grant": "None found in the metadata or listings. No licence identifier is given.",
+   "commercial_use": "Not addressed in the quoted text. No commercial-use prohibition or grant was found.",
+   "redistribution": "Not addressed as a grant. The quoted text restricts use of distribution (mailing) lists made from public-agency lists.",
+   "quotes": [
+    "State law (Montana Code Annotated 2-6-1017) prohibits public agencies from distributing or selling a distribution list without first securing the permission of those on the list; and prohibits a list of persons prepared by a public agency from being used as a distribution list without first securing the permission of those on the list except by that agency. State law does not prevent an individual from compiling a distribution list by examination of records that are otherwise open to public inspection. These data do not constitute a legal survey. Inaccuracies exist with both the parcel boundaries and the attribute data; when seeking the definitive description of real property, consult the deed recorded at the local county courthouse. The Montana State Library provides this product/service for informational purposes only.",
+    "State law ( Montana Code Annotated 2-6-109 (1)(a) ) explicitly prohibits State agencies from selling or distributing a list of persons to be used as a mailing list without first securing the permission of those on the list. State law ( MCA 2-6-109 (1)(b) ) also explicitly prohibits anyone from using a list of persons prepared by a state agency as a mailing list without first securing the permission of those on the list. \"A person violating the provisions of subsection (1)(b) is guilty of a misdemeanor."
+   ]
+  },
+  "msl_structures_addresses": {
+   "urls": [
+    "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip (member StructuresFramework_metadata.xml)",
+    "https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/index"
+   ],
+   "licence_grant": "None found. The access constraint field reads as follows.",
+   "commercial_use": "Not addressed. The 'for no other purpose' clause below limits purpose; its meaning for commercial use is unverified.",
+   "redistribution": "Not addressed.",
+   "quotes": [
+    "None. All data contained in the Framework are publicly available and non-sensitive.",
+    "The Library makes these data and services available as a convenience to the public, and for no other purpose.",
+    "The Library reserves the right to change or revise published data and/or services at any time."
+   ],
+   "other_quotes": [
+    "The Structures and Addresses Framework is a routinely updated statewide database of addresses and selected theme-specific structure point data (e.g., schools, airports, fire stations, etc.)."
+   ]
+  },
+  "msl_cadastral_page": {
+   "urls": [
+    "https://msl.mt.gov/geoinfo/msdi/cadastral/index"
+   ],
+   "quotes": [
+    "Cadastral data are provided monthly for each Montana county in file geodatabase and shapefile data formats."
+   ]
+  },
+  "nad": {
+   "urls": [
+    "https://catalog.data.gov/dataset/national-address-database-nad",
+    "https://www.transportation.gov/gis/national-address-database/national-address-database-nad-disclaimer (not read: HTTP 403)"
+   ],
+   "quotes": [
+    "license: https://creativecommons.org/publicdomain/zero/1.0/"
+   ],
+   "licence_statement": "CC0 1.0 per the data.gov catalog JSON-LD; the official USDOT disclaimer was not read."
+  },
+  "nad_service_copyright": {
+   "urls": [
+    "https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Address_Points_from_National_Address_Database_view/FeatureServer/0?f=pjson"
+   ],
+   "quotes": [
+    "Acknowledgment of the Department of Transportation (DOT), the U.S. Census Bureau, Geography Division, and the following partners: (partner list includes 'Montana State Library')"
+   ]
+  },
+  "microsoft_footprints": {
+   "urls": [
+    "https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md"
+   ],
+   "quotes": [
+    "This data is licensed by Microsoft under the Open Data Commons Open Database License (ODbL).",
+    "This data is freely available for download and use."
+   ],
+   "note": "The README link markup for the ODbL link was removed in the quote."
+  },
+  "google_open_buildings": {
+   "urls": [
+    "https://sites.research.google/open-buildings/"
+   ],
+   "quotes": [
+    "Creative Commons Attribution (CC BY-4.0) license",
+    "Open Data Commons Open Database License (ODbL) v1.0 license",
+    "As the user, you can pick which of the two licenses you prefer and use the data under the terms of that license."
+   ]
+  },
+  "openaddresses": {
+   "urls": [
+    "https://raw.githubusercontent.com/openaddresses/openaddresses/master/README.md"
+   ],
+   "quotes": [
+    "The data produced by the OpenAddresses processing pipeline (available on batch.openaddresses.io) is not relicensed from the original sources. Individual sources will have their own licenses."
+   ]
+  },
+  "census_api": {
+   "urls": [
+    "https://www.census.gov/data/developers/about/terms-of-service.html"
+   ],
+   "quotes": [
+    "This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.",
+    "You may use the Census Bureau API to develop a service or service to search, display, analyze, retrieve, view and otherwise \"get\" information from Census Bureau data."
+   ]
+  },
+  "census_static_pl": {
+   "urls": [
+    "https://www2.census.gov/programs-surveys/decennial/2020/data/01-Redistricting_File--PL_94-171/Montana/"
+   ],
+   "status": "Terms of the static files not read in this run."
+  }
+ },
+ "limits": [
+  "Downloads: 264,186,159 bytes logged across 213 requests (cap 300,000,000 B). The address-point member was streamed twice (once for counts, once for the parcel join), which accounts for about 53 MB.",
+  "Not downloaded, sizes only: MontanaCadastral_SHP.zip 1,040,691,781 B; MontanaCadastral_GDB.zip 867,382,653 B; MTParcels_GDB.zip 249,250,816 B; Yellowstone_SHP.zip 251,509,408 B; Yellowstone_GDB.zip 45,236,288 B; StructuresFramework_gdb.zip 61,058,458 B (central directory only); StatewideCama.zip 80,238,862 B (central directory only); NAD TXT.zip 8,477,543,836 B (central directory only); ORION COUNTY*.ZIP and STATE-WIDE.ZIP (1,695,497,876 B); the 13 archived framework zips.",
+  "Not decoded: ESRI file geodatabase tables (StatewideCama, StructuresFramework GDB), Microsoft SQL Server ORION databases, and the NAD Deflate64 text member (no Deflate64 decoder used).",
+  "Owner names and owner mailing fields were never read into the output. Parcel values were used only as counts (blank or non-blank, grouped by county).",
+  "No source checked is verified to list every house in Montana. The MSL address points and the parcel file are federated and uneven; counties differ in load date and completeness.",
+  "The 2020 census housing-unit column was first found by a value rule; the refuter confirmed the H1_001N to H1_003N labels through the API. The PL layout document was not read.",
+  "Montana NAD count not obtained: State, County and Zip_Code filters return error 400 after about 55 s; the envelope (inSR 4326) gives 662,158 including Idaho and Wyoming; polygon queries failed or returned 0. NAD text not streamed.",
+  "OpenAddresses Montana sources were listed by the refuter from a sparse git read; the GitHub API path still returns 403.",
+  "USDOT transportation.gov pages returned HTTP 403 'Access Denied' from this environment (four URLs); the NAD disclaimer and download pages were not read.",
+  "County portals: one web search returned only commercial reseller pages and no county-owned page. No county portal was opened, so county terms are unverified. The five counties that maintain their own parcels (Ravalli, Silver Bow, Missoula, Flathead, Yellowstone) are named in the MSL metadata only.",
+  "The census API terms were read; the terms of the static census files were not. Census API requests need a key (not requested).",
+  "Live counts differ from the files: structures service 674,469 vs file 674,715; parcel service 921,301 vs file 920,986. Query time about 20:40 UTC on 2026-10-17.",
+  "Duplicate and blank checks: 673,332 unique NGUID values of 674,715 points (1,383 duplicates); 33,491 parcel records have a blank PARCELID.",
+  "Microsoft footprints: 88.3% of features have a blank capture_dates_range, so their vintage is unknown for most of the state.",
+  "Residence coding uses Place_Type only; it is not a dwelling count and it is not checked against a field survey. Ratios to housing units are indicators, not coverage proofs.",
+  "Coordinates in the address points come only from the shapefile geometry (NAD83(2011) / Montana, metres); the Latitude and Longitude columns are zero.",
+  "The 'live' service counts were read once; they are not a verified time series."
+ ],
+ "open_questions": [
+  "Load records exist for Glacier, Roosevelt and Big Horn, plus separate Blackfeet and Northern Cheyenne loads. What explains the low ratios: coverage inside each load, vacant or seasonal housing, or Fort Peck (no separate load found by name)?",
+  "What is the Montana-only NAD count? State, County and Zip_Code filters fail and polygon queries failed; the Montana box gives 662,158 (includes Idaho and Wyoming). Needs a working filter or a Deflate64 reader for the 8.48 GB national text file.",
+  "Do the 1,383 duplicate NGUID values and the 2.9% unmatched ParcelIDs (19,144 points) need a dedupe rule before any join?",
+  "Does the ORION Res table (residential improvements per parcel) give a dwelling count per parcel? It needs an SQL Server or file geodatabase reader; the tables are not decoded.",
+  "Commercial use and redistribution: the MSL metadata gives no licence grant. The quoted MCA 2-6-109 and 2-6-1017 text restricts mailing lists. Counsel or the MSL must state whether owner-bearing parcel data may be published or used commercially.",
+  "Terms for the five county-maintained parcel sets (Ravalli, Silver Bow, Missoula, Flathead, Yellowstone) are not read.",
+  "OpenAddresses Montana sources are listed (statewide.json, helena.json) with no licence key. The statewide source is built on MSL files, so MSL terms are the likely constraint; not checked.",
+  "Terms for the static census files were not read (only the API terms).",
+  "Is the MSL parcel file (MTParcels) the same data as the county files? Counts were not reconciled county by county (the statewide total is 920,986; the live layer shows 921,301).",
+  "Does the statewide address file carry the structure points the hail product needs (MT_PlcType codes for dwellings: 101, 102, 106, 107), and how are multi-unit parcels counted?",
+  "Which 'every house' source should W9 treat as the base table: the structures framework points (674,715), the parcels (920,986), or a census-controlled blend?"
+ ],
+ "programs": [
+  {"name":"Montana Cadastral Framework (MSL parcels)","kind":"data","what_it_gives":"Statewide tax parcels (920,986 records; 'most of Montana'), PARCELID, county, situs address lines, legal description, acreage, values and owner name and mailing fields (names not recorded here). Per-county zips and a statewide zip.","cost_or_licence":"No fee shown on the download pages. Use constraints quoted in terms (MCA 2-6-109 and 2-6-1017 mailing-list limits; disclaimer). No licence grant found.","verified_from":["https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/","https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Cadastral/Parcels/MontanaCadastral_ParcelMetadata.xml","https://msl.mt.gov/geoinfo/msdi/cadastral/index"]},
+  {"name":"Montana Structures and Addresses Framework (MSL)","kind":"data","what_it_gives":"674,715 structure and address points statewide (street fields, Post_Code, Place_Type, MT_PlcType, ParcelID); county loads from 2016 to 2026; NENA NG9-1-1 GIS Data Model (metadata).","cost_or_licence":"No fee stated on the MSL page. Access constraint: 'None. All data contained in the Framework are publicly available and non-sensitive.' Use constraint: 'for no other purpose'. No licence grant found.","verified_from":["https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/","https://msl.mt.gov/geoinfo/msdi/structures_and_addresses/index"],"corrected_from":"cost: 'Free download.'; what: 'NG9-1-1 data model.'"},
+  {"name":"MSL structures and addresses map service (REST)","kind":"service","what_it_gives":"Live point layer (count 674,469 on the query date); map and query endpoints.","cost_or_licence":"Copyright text 'Montana State Library'. Other terms not read.","verified_from":["https://gisservice.mt.gov/arcgis/rest/services/msdi_structures_addresses_map_v1/MapServer?f=pjson"]},
+  {"name":"MSL cadastral map service (REST, layer 1)","kind":"service","what_it_gives":"Live parcel polygons (count 921,301 on the query date).","cost_or_licence":"Not read.","verified_from":["https://gisservice.mt.gov/arcgis/rest/services/msdi_cadastral_map_v1/MapServer/1/query?where=1=1&returnCountOnly=true&f=json"]},
+  {"name":"MSL address locator (GeocodeServer)","kind":"service","what_it_gives":"Address-to-point geocoding (currentVersion 11.5). Relevant to W7.","cost_or_licence":"Not read.","verified_from":["https://gisservice.mt.gov/arcgis/rest/services/msdi_address_locator_geocode_v1/GeocodeServer?f=pjson"]},
+  {"name":"National Address Database (USDOT NAD)","kind":"data","what_it_gives":"National address points (97,928,946 in the view); national text file 8.48 GB compressed (NAD_r24.txt); file geodatabase also published. Montana count not obtained.","cost_or_licence":"CC0 1.0 per data.gov catalog JSON-LD. Official USDOT disclaimer not read (HTTP 403).","verified_from":["https://catalog.data.gov/dataset/national-address-database-nad","https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Address_Points_from_National_Address_Database_view/FeatureServer/0?f=pjson"]},
+  {"name":"NAD address points view (REST)","kind":"service","what_it_gives":"Queryable NAD points; count with where=1=1 works; State, County and Zip_Code filters failed in this run.","cost_or_licence":"Copyright text lists partners including 'Montana State Library'. Other terms not read.","verified_from":["https://services.arcgis.com/xOi1kZaI0eWDREZv/ArcGIS/rest/services/Address_Points_from_National_Address_Database_view/FeatureServer/0/query (12 requests)"]},
+  {"name":"Microsoft Building Footprints (US)","kind":"data","what_it_gives":"Montana building polygons: 773,199 features (no addresses). Coordinates in EPSG:4326.","cost_or_licence":"ODbL, per the README ('freely available for download and use').","verified_from":["https://raw.githubusercontent.com/microsoft/USBuildingFootprints/master/README.md","https://minedbuildings.z5.web.core.windows.net/legacy/usbuildings-v2/Montana.geojson.zip"]},
+  {"name":"Google Open Buildings v3","kind":"data","what_it_gives":"Building polygons and points for the listed countries (Africa, South Asia, South-East Asia, Latin America and the Caribbean). The United States is not in the listed countries.","cost_or_licence":"CC BY 4.0 or ODbL v1.0 (user may pick either), per the page.","verified_from":["https://sites.research.google/open-buildings/"]},
+  {"name":"OpenAddresses","kind":"data","what_it_gives":"Aggregated address points. Montana: statewide.json (MSL files) and helena.json (City of Helena); no licence key in either.","cost_or_licence":"Pipeline output not relicensed; each source has its own licence; source JSON CC0 1.0.","verified_from":["https://raw.githubusercontent.com/openaddresses/openaddresses/master/README.md","https://github.com/openaddresses/openaddresses (sparse read, refuter)"],"corrected_from":"Montana source list not read in this run."},
+  {"name":"US Census 2020 PL 94-171 (Montana file)","kind":"data","what_it_gives":"State and county housing units (514,803 total) and population (1,084,225) from static files; the housing-unit column is inferred (see facts).","cost_or_licence":"Static file terms not read. The API terms (separate) say the product is not endorsed or certified by the Census Bureau when used.","verified_from":["https://www2.census.gov/programs-surveys/decennial/2020/data/01-Redistricting_File--PL_94-171/Montana/mt2020.pl.zip"]},
+  {"name":"Census Data API","kind":"service","what_it_gives":"API for Census tables; keyless requests return a 'Missing Key' page in this run.","cost_or_licence":"Key required; signup page not opened. API terms read.","verified_from":["https://www.census.gov/data/developers/about/terms-of-service.html","https://api.census.gov/data/2020/dec/pl?get=NAME,H1_001N,P1_001N&for=state:30"]},
+  {"name":"pyproj 3.8.0 (coordinate transforms)","kind":"software","what_it_gives":"Converts the .prj state-plane coordinates (NAD83(2011) / Montana, metres) to longitude and latitude.","cost_or_licence":"Open-source package; its licence was not read in this run.","verified_from":["python -I import check in this session (pyproj 3.8.0)"]},
+  {"name":"MSL lidar building footprints (LidarBuildingFootprints_AllProjects.zip)","kind":"data","what_it_gives":"Building footprints from MSL lidar projects; 42,546,970 B zip dated 11/13/2024. Coverage not measured.","cost_or_licence":"Not read.","verified_from":["https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Elevation/Lidar/"]},
+  {"name":"City of Helena address map service","kind":"service","what_it_gives":"City address points (count 45,080 on 2026-10-17, refuter). Municipal, not statewide.","cost_or_licence":"Not read.","verified_from":["https://helenamontanamaps.org/arcgisadp/rest/services/Addresses/MapServer/0"]}
+ ],
+ "review": {
+  "checked_at_utc": "2026-10-17T22:50:32Z",
+  "scope": "Refuter pass 2026-10-17: re-listed folders; re-downloaded two county SHP zips and the census PL zip; re-queried MSL and NAD services; re-read terms pages; range-read zip totals; sparse git read of openaddresses sources/us/mt; local scan of the stored Microsoft zip; read stored structures metadata, README and SSAP DBF. Not re-run: statewide parcel DBF, structures point DBF, NAD text.",
+  "refuted_claims": [
+   "NAD envelope 'error 400' refuted for inSR 4326 (662,158 in 4.5 s).",
+   "OpenAddresses 'Montana sources not listed' refuted (statewide.json, helena.json).",
+   "Archive minimum 82,600,825 B wrong (62,252,489 B); data.gov 314,536 B is two fetches.",
+   "Structures bbox corners presented as an extent; metadata bounding box differs.",
+   "Situs order: Yellowstone 87.7% is highest, not Gallatin.",
+   "'Free download' (MSL structures) not on the page; NG9-1-1 wording is in the metadata."
+  ],
+  "corrections": [
+   "urls_checked: archive size range and data.gov bytes (corrected_from kept).",
+   "Address point extent replaced by the metadata bounding box.",
+   "H1_001N identity confirmed by API labels; 'inferred' wording withdrawn.",
+   "Microsoft address fields: full scan replaces the first-feature check.",
+   "Place_Type: 29 further values (30,595 points) added; duplicate other_quotes removed.",
+   "Program names (map-service wording changed to REST), census and NAD limits and open questions updated."
+  ],
+  "confirmed": [
+   "MSDI listing sizes; 56 county folders; statewide zip sizes; Wibaux and Petroleum counts and fields.",
+   "Parcel metadata pubdate 20261006, In work, Continually, 42 attributes; MCA 2-6-1017 and 2-6-109 text verbatim.",
+   "MSL 'provided monthly', 'routinely updated' and structures access-constraint quotes verbatim.",
+   "Live counts: structures 674,469; cadastral 921,301; NAD 97,928,946; live situs fill and residence ratios match.",
+   "Census 514,803 = 447,812 + 66,991; county sums; population 1,084,225; Missing Key page; census terms quotes.",
+   "Microsoft full scan: 773,199 features, only release and capture_dates_range; 11.73% dated.",
+   "Google: no United States entry; quotes; 178 GB and 48 GB. OpenAddresses README quote and CC0 sources.",
+   "data.gov CC0 and dates; NAD copyright names Montana State Library; transportation.gov 403s; SSAP 80 records."
+  ],
+  "unverified": [
+   "Statewide parcel DBF counts (920,986 etc.) and parcel extent: not re-run (aborted probe).",
+   "Structures point DBF counts, 635,008 matches, 1,383 duplicate NGUID, Latitude 0.0: not re-run.",
+   "'89 distinct MT_PlcType codes' (live: 88 non-blank plus blank).",
+   "Montana-only NAD count; NAD text member method 9.",
+   "Census PL terms; ORION Res table; county portals; five county-maintained terms; lidar and Helena terms; OpenAddresses licence effect; OpenStreetMap, Overture and USGS not checked."
+  ],
+  "reviewer_checks": [
+   {"url":"MSL MSDI listings (9 folders) and 56 county folders","status":200,"bytes":73505,"content_check":"sizes re-parsed; archive minimum 62,252,489 B; SHP max Yellowstone 251,509,408 B; metadata 35,131 B in 56 of 56"},
+   {"url":"Content-Range probes: NAD TXT.zip; MTParcels_SHP.zip; StructuresFramework_shp.zip; Montana.geojson.zip; lidar zip","status":206,"bytes":5,"content_check":"totals 8,477,543,836; 518,095,964; 65,788,772; 26,578,292; 42,546,970 B"},
+   {"url":"Parcels/Wibaux/Wibaux_SHP.zip; Parcels/Petroleum/Petroleum_SHP.zip","status":200,"bytes":1718009,"content_check":"Wibaux sha256 fdb1283d55334bdb, 2,238 records, PARCELID 2,216; Petroleum 4,523 records, AddressLin 452"},
+   {"url":"MontanaCadastral_ParcelMetadata.xml; msl.mt.gov cadastral and structures index pages","status":200,"bytes":97195,"content_check":"pubdate 20261006; 42 attributes; quotes verbatim; no fee text"},
+   {"url":"MSL structures and cadastral MapServer queries (root, counts, groups, Latitude, ParcelID, AddressLine1)","status":200,"bytes":93503,"content_check":"mapName; counts 674,469 and 921,301; 35 Place_Type and 89 MT_PlcType groups incl blank; AddressLine1 520,702"},
+   {"url":"NAD view FeatureServer/0 (count, filters, envelope, polygon); FeatureServer root; layer 0 head","status":"200/206","bytes":170629,"content_check":"count 97,928,946; filters error 400 after about 55 s; envelope 662,158; copyrightText 2,774 characters"},
+   {"url":"Helena Addresses/0 count; MSL GeocodeServer root","status":200,"bytes":543814,"content_check":"count 45,080; currentVersion 11.5 (Range header ignored)"},
+   {"url":"mt2020.pl.zip; census API H1 group, keyless request and terms","status":200,"bytes":10148439,"content_check":"sha256 e01288ce3ae37ae7; geo index 91 and segment index 144 = 514,803; labels H1_001N to H1_003N; Missing Key; terms quotes verbatim"},
+   {"url":"data.gov NAD catalog; four transportation.gov NAD URLs","status":"200/403","bytes":159021,"content_check":"CC0 URL; dates; publisher; 403 pages"},
+   {"url":"Microsoft README and LICENSE; stored Montana.geojson.zip (local scan)","status":"200/404/local","bytes":13798,"content_check":"ODbL quote; 773,199 features; keys release and capture_dates_range only"},
+   {"url":"Google Open Buildings page; OpenAddresses README, sources/us/mt.json, GitHub API folder","status":"200/404/403","bytes":113296,"content_check":"no United States entry; 178 GB and 48 GB; README quote; raw mt.json 404; API 403"},
+   {"url":"git clone --depth 1 --filter=blob:none --sparse (sources/us/mt)","status":"exit 0","bytes":724000,"content_check":"HEAD 62b67d77; statewide.json 5,160 B; helena.json 1,143 B; no licence key (.git size approximate)"},
+   {"url":"MSL Elevation/Lidar listing; MontanaStateBoundary_shp.zip","status":200,"bytes":277326,"content_check":"lidar zip 42,546,970 B; boundary one polygon, 26,153 vertices"},
+   {"url":"MTParcels_SHP.zip range read (aborted)","status":206,"bytes":46175426,"content_check":"ABORTED (unbounded member read); no counts used; I/O counter approximate"}
+  ],
+  "download_budget": "Refuter logged 14,199,567 B (124 requests) + about 46 MB from the aborted probe + about 0.7 MB git = about 61 MB. Researcher 264,186,159 B. Combined about 325 MB, over the 300 MB cap by about 25 MB. No downloads after the abort."
+ },
+ "reviewed_at_utc": "2026-10-17T22:50:32Z"
+}

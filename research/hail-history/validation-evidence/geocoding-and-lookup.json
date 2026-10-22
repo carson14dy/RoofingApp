@@ -1,0 +1,324 @@
+{
+ "workstream": "W7",
+ "slug": "geocoding-and-lookup",
+ "checked_at_utc": "2026-10-17T21:00:10Z",
+ "urls_checked": [
+  {"url":"https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html","http_status":200,"bytes":46478,"content_check":"Census Geocoder API document (last updated 02/2026): batch limit 10,000 records per file; batch format; address-range interpolation; benchmark and vintage rules; no cost or rate-limit sentence found."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/benchmarks?format=json","http_status":200,"bytes":547,"content_check":"Four benchmarks; Public_AR_Current id 4 is the default."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/vintages?format=json","http_status":400,"bytes":57,"content_check":"HTTP 400 'Benchmark must be specified'; the working form adds benchmark=4 (see next vintage entry)."},
+  {"url":"https://www.census.gov/data/developers/about/terms-of-service.html","http_status":200,"bytes":302319,"content_check":"Census Bureau Data API terms: attribution sentence, Right to Limit clause, no-warranty clause. The page covers the Data API."},
+  {"url":"https://operations.osmfoundation.org/policies/nominatim/","http_status":200,"bytes":8409,"content_check":"Nominatim usage policy: 1 request per second; identify the application; no auto-complete; cache results; no personal data; ODbL attribution."},
+  {"url":"https://nominatim.org/release-docs/latest/api/Overview/","http_status":200,"bytes":31692,"content_check":"Nominatim API overview (release docs) read for usage terms; no licence sentence in the text."},
+  {"url":"https://raw.githubusercontent.com/komoot/photon/master/README.md","http_status":200,"bytes":6335,"content_check":"Apache-2.0 licence; demo-server sentence; planet database about 95 GB; 64 GB RAM recommended; OpenSearch 3.x needed for an external database."},
+  {"url":"https://raw.githubusercontent.com/pelias/pelias/master/README.md","http_status":200,"bytes":17078,"content_check":"MIT licence; Elasticsearch 7 and 8 supported; OpenAddresses, OSM and Who's on First importers; Docker set-up default Portland, Oregon."},
+  {"url":"https://download.geofabrik.de/north-america/us/montana.html","http_status":0,"bytes":0,"content_check":"No response: curl exit 35 (connection reset) through the proxy relay on each attempt."},
+  {"url":"https://www2.census.gov/geo/tiger/TIGER2025/ADDR/","http_status":200,"bytes":750265,"content_check":"Directory listing: 56 Montana county ADDR zips (tl_2025_30001 to tl_2025_30111) dated 2025-09-22; listed sizes sum to about 3.86 MB."},
+  {"url":"https://www.openstreetmap.org/copyright","http_status":200,"bytes":21314,"content_check":"ODbL attribution and credit wording: Open Data Commons Open Database License (ODbL) by the OpenStreetMap Foundation (OSMF); provide credit by displaying the attribution notice."},
+  {"url":"https://photon.komoot.io/api/?q=Wibaux%2C%20Montana&limit=1","http_status":200,"bytes":413,"content_check":"One request: GeoJSON FeatureCollection, Wibaux County at -104.2215171, 46.910018."},
+  {"url":"https://download1.graphhopper.com/public/","http_status":200,"bytes":19631,"content_check":"Listing of Photon dumps: planet, master, release and latest names; no US-only or Montana file."},
+  {"url":"https://www2.census.gov/geo/tiger/TIGER2025/ADDR/tl_2025_30109_addr.zip","http_status":200,"bytes":14347,"content_check":"tl_2025_30109_addr.dbf: 507 records; fields TLID, FROMHN, TOHN, SIDE, ZIP, PLUS4, FROMTYP, TOTYP, ARID, MTFCC; no street name field."},
+  {"url":"https://www2.census.gov/geo/tiger/TIGER2025/ADDR/tl_2025_30069_addr.zip","http_status":200,"bytes":10955,"content_check":"tl_2025_30069_addr.dbf: 229 records; same fields; no street name field."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/vintages?benchmark=4&format=json","http_status":200,"bytes":2057,"content_check":"12 vintages; Current_Current first; Census2020_Current and ACS2026_Current included."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=651+Carlyle+Rd%2C+Wibaux%2C+MT+59353&benchmark=Public_AR_Current&format=jsonp&callback=test","http_status":200,"bytes":651,"content_check":"JSONP wrapper /**/test({...}) around a one-line result with matchType and tigerLineId."},
+  {"url":"https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits","http_status":200,"bytes":88734,"content_check":"Pages limits: 1 GB published site; soft 100 GB per month bandwidth; soft 10-builds-per-hour limit does not apply to custom Actions workflows."},
+  {"url":"https://www.census.gov/privacy/","http_status":200,"bytes":330102,"content_check":"Privacy page: no geocoder-specific retention or address-handling sentence; 'retention' appears only in a site-index line."},
+  {"url":"https://raw.githubusercontent.com/osm-search/Nominatim/master/README.md","http_status":200,"bytes":3112,"content_check":"Licence lines: Python GPL 3 or later; Lua configuration Apache 2.0; other files GPLv2."},
+  {"url":"https://www2.census.gov/geo/tiger/TIGER2025/EDGES/tl_2025_30109_edges.zip","http_status":200,"bytes":1370038,"content_check":"EDGES file: street names (FULLNAME) keyed by TLID; 1,319 edges with a name."},
+  {"url":"https://www2.census.gov/geo/tiger/TIGER2025/EDGES/tl_2025_30069_edges.zip","http_status":200,"bytes":2489594,"content_check":"EDGES file: 1,600 edges with a name."},
+  {"url":"https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html","http_status":200,"bytes":349893,"content_check":"TIGER/Line product page; text search for public domain, restrictions and licence found no licence sentence."},
+  {"url":"https://www.census.gov/about/policies/copyright.html","http_status":404,"bytes":26711,"content_check":"HTTP 404; no licence text at this URL."},
+  {"url":"https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream","http_status":200,"bytes":148443,"content_check":"Example new DecompressionStream('gzip'); other format names not found in the text read."},
+  {"url":"https://raw.githubusercontent.com/opensearch-project/OpenSearch/main/README.md","http_status":200,"bytes":3044,"content_check":"Licence line: Apache v2.0."},
+  {"url":"https://api.census.gov/data/2020/dec/pl?get=NAME,H1_001N&for=state:30","http_status":200,"bytes":8531,"content_check":"HTML 'Missing Key' page; no data returned."},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/","http_status":200,"bytes":667,"content_check":"Directory: StructuresFramework_shp.zip 65,788,772 bytes (9/30/2026 9:23 AM); StructuresFramework_gdb.zip 61,058,458 bytes (9:24 AM)."},
+  {"url":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip","http_status":200,"bytes":65788772,"content_check":"Zip read locally: CRC check passes; SiteStructureAddressPoint.dbf 674,715 records; .shp 674,715 point records (shape type 1)."},
+  {"url":"https://www2.census.gov/geo/tiger/TIGER2025/ADDR/tl_2025_30067_addr.zip","http_status":200,"bytes":63924,"content_check":"Park County ADDR file read by the join: 3,939 records."},
+  {"url":"https://www2.census.gov/geo/tiger/TIGER2025/EDGES/tl_2025_30067_edges.zip","http_status":200,"bytes":5327679,"content_check":"EDGES file read for the Park join (street names keyed by TLID)."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/addressbatch [parcel situs test, Wibaux, 562 rows]","http_status":200,"bytes":69162,"content_check":"562 rows in, 562 out: Match 443, Tie 57, No_Match 62."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/addressbatch [parcel situs test, Petroleum, 397 rows]","http_status":200,"bytes":44793,"content_check":"397 rows in, 397 out: Match 229, Tie 1, No_Match 167."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/addressbatch [re-run, Wibaux parcel batch]","http_status":200,"bytes":69162,"content_check":"All 562 rows identical to the first run (same id, input, status and fields)."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/addressbatch [file named without .csv]","http_status":400,"bytes":610,"content_check":"'Malformed input file or file not of type .CSV, .TXT, .DAT, .XLS, or .XLSX' (saved ssap/chunks/noext_result.txt)."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/addressbatch [single 735-row file, Wibaux structure points]","http_status":0,"bytes":0,"content_check":"No response within 3 min 18 s; the process was stopped by this workstream. The same rows went through as 200-row chunks."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/addressbatch [100-row test, Wibaux]","http_status":200,"bytes":12744,"content_check":"100 rows in, 100 out, 2.1 s."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/addressbatch [structure-point chunks: Wibaux 4 x 200 rows, Petroleum 3 x 200, Park 56 x 200]","http_status":200,"bytes":1836915,"content_check":"Every chunk returned one row per input row (checked by line count): Wibaux 735, Petroleum 461, Park 11,101. Bytes = sum of result files."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=1600+Pennsylvania+Ave+NW%2C+Washington%2C+DC&benchmark=Public_AR_Current&format=json [Origin: https://example.github.io]","http_status":200,"bytes":674,"content_check":"Bytes = Content-Length in the headers (body not kept). No Access-Control-Allow-Origin header; Vary: Origin (census_cors_headers.txt)."},
+  {"url":"https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=115+Wibaux+Street+South%2C+Wibaux%2C+MT+59353&benchmark=Public_AR_Current&format=json [timing]","http_status":200,"bytes":650,"content_check":"0.45 s total time; one-line JSON result."},
+  {"url":"https://nominatim.openstreetmap.org/search?q=Wibaux%2C+Montana&format=json&limit=1 [Origin header, one request]","http_status":200,"bytes":457,"content_check":"access-control-allow-origin: * on GET; JSON list with licence string Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright (nominatim_headers.txt)."},
+  {"url":"https://download1.graphhopper.com/public/photon-db-latest.tar.bz2 [HEAD]","http_status":200,"bytes":101487514668,"content_check":"HEAD only (no body): Content-Length 101,487,514,668; Last-Modified Sun, 20 Jul 2025 21:34:55 GMT."},
+  {"url":"https://download1.graphhopper.com/public/photon-db-planet-1.0-latest.tar.bz2 [HEAD]","http_status":200,"bytes":63172802723,"content_check":"HEAD only (no body): Content-Length 63,172,802,723; Last-Modified Tue, 13 Oct 2026 07:04:37 GMT."},
+  {"url":"https://download.openstreetmap.fr/extracts/north-america/us/montana.osm.pbf [HEAD]","http_status":404,"bytes":0,"content_check":"HTTP 404 Not Found: no Montana OSM extract at this path."},
+  {"url":"https://download.geofabrik.de/north-america/us/montana-latest.osm.pbf [HEAD]","http_status":0,"bytes":0,"content_check":"curl exit 35 (connection reset by peer); the proxy relay log names download.geofabrik.de:443 as the closed tunnel."},
+  {"url":"https://carson14dy.github.io/RoofingApp/ [HEAD, Accept-Encoding: gzip]","http_status":200,"bytes":4102,"content_check":"content-encoding gzip; content-length 4,102 (compressed); cache-control max-age=600. Headers only."},
+  {"url":"https://carson14dy.github.io/RoofingApp/static/style.css [HEAD, Accept-Encoding: gzip]","http_status":200,"bytes":0,"content_check":"content-type text/css; content-encoding gzip. Headers only; no length shown."}
+ ],
+ "facts": [
+  {"claim":"Census batch form: CSV, TXT, DAT, XLS or XLSX file; columns Unique ID, Street address, City, State, ZIP.","value":"Unique ID and Street address are required; a missing component keeps its delimiter with a null value.","evidence":"https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html, Batch Geocoding section","verified":true,"corrected_from":"Census batch form: one file per request, CSV, TXT, DAT, XLS or XLSX; columns Unique ID, Street address, City, State, ZIP.","refuted_by":"'One file per request' is an inference; the document says the file 'needs to be included as part of the HTTP request'."},
+  {"claim":"Batch limit per file.","value":"There is currently an upper limit of 10,000 records per batch file.","evidence":"https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html, Batch Geocoding (also GeoLookup batch)","verified":true},
+  {"claim":"Files whose name lacks an accepted extension are refused.","value":"HTTP 400, 610 bytes: 'Malformed input file or file not of type .CSV, .TXT, .DAT, .XLS, or .XLSX'.","evidence":"POST addressbatch with a 5-row file named without .csv (ssap/chunks/noext_result.txt)","verified":true},
+  {"claim":"Engine logic: a structure address is required; the coordinate is interpolated along an address range.","value":"'The current Geocoding Services engine requires a structure address be provided. The resulting latitude/longitude is calculated along an address range.'","evidence":"https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html, Geocoding Definition","verified":true},
+  {"claim":"Coverage: US, Puerto Rico and US Island Areas only.","value":"'The Census Geocoder only geocodes addresses that are within the United States, Puerto Rico, and the U.S. Island Areas.'","evidence":"https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html (Audience) and https://geocoding.geo.census.gov/geocoder/ (home page)","verified":true},
+  {"claim":"Benchmarks.","value":"Public_AR_Current (id 4, default); Public_AR_ACS2026 (id 8); Public_AR_LUCA (id 11, default flag true); Public_AR_Census2020 (id 2020).","evidence":"https://geocoding.geo.census.gov/geocoder/benchmarks?format=json (547 bytes)","verified":true},
+  {"claim":"Vintages for benchmark 4.","value":"12 vintages, Current_Current first; Census2020_Current and ACS2026_Current among them.","evidence":"https://geocoding.geo.census.gov/geocoder/vintages?benchmark=4&format=json (2,057 bytes)","verified":true},
+  {"claim":"Which TIGER release Public_AR_Current uses.","value":"Not verified. The vintage list names Current_Current, not a TIGER year. TIGER2026 is now published (see the TIGER2026 fact).","evidence":"census_vintages_bench4.json","verified":false},
+  {"claim":"Browser access: no CORS header on the JSON one-line response.","value":"Origin https://example.github.io: HTTP 200, Content-Length 674, Vary: Origin, no Access-Control-Allow-Origin. The API document: 'At this time the geocoder does not support CORS requests ...' (JSONP paragraph).","evidence":"https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=1600+Pennsylvania+Ave+NW%2C+Washington%2C+DC&benchmark=Public_AR_Current&format=json (census_cors_headers.txt)","verified":true},
+  {"claim":"JSONP is available, so a script tag from another host could read the result; still an off-site request.","value":"format=jsonp&callback=test: HTTP 200, 651 bytes, test({...}) with matchType and tigerLineId.","evidence":"https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?...&format=jsonp&callback=test (census_jsonp_check.js); https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html (JSONP paragraph)","verified":true},
+  {"claim":"Single-line response time (one sample).","value":"0.26 s (refuter, 650 bytes) and 0.45 s (researcher); single samples.","evidence":"curl time_total, onelineaddress for 115 Wibaux Street South, Wibaux, MT 59353","verified":true,"corrected_from":"0.45 s, HTTP 200, 650 bytes."},
+  {"claim":"Batch time and size (parcel test).","value":"562 rows: 8.5 s, 69,162 bytes out. 397 rows: 3.9 s, 44,793 bytes out.","evidence":"fetch-log.tsv 20:41:01 and 20:41:05","verified":true},
+  {"claim":"Batch upload size in practice.","value":"One 735-row file (32,003 bytes) got no response in 3 min 18 s and was stopped. 200-row chunks returned in 0.4 to 3.2 s each (median 1.6 s), with one output row per input row.","evidence":"this workstream: fetch-log.tsv chunk entries; ssap/chunks/","verified":true},
+  {"claim":"Batch reproducibility.","value":"Re-running the 562-row Wibaux parcel batch gave identical rows for all 562 inputs. Refuter: 200 of 200 rows identical (first 200 structure-point rows, Wibaux).","evidence":"census_batch_wibaux_result.csv vs census_batch_wibaux_rerun.csv","verified":true},
+  {"claim":"Census Data API terms: limits and blocking (applies to the Data API; Geocoder terms not found).","value":"'Your use of the API may be subject to certain limitations on access, calls, or use as set forth within this Agreement or otherwise provided by the Census Bureau.' 'If the Census Bureau reasonably believes that you have attempted to exceed or circumvent these limits, your ability to use the API may be temporarily or permanently blocked.'","evidence":"https://www.census.gov/data/developers/about/terms-of-service.html (302,319 bytes), Right to Limit","verified":true},
+  {"claim":"Census Data API terms: attribution sentence (whether it applies to the Geocoder is not stated).","value":"'This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.'","evidence":"https://www.census.gov/data/developers/about/terms-of-service.html, Attribution","verified":true},
+  {"claim":"Cost, key and rate limit for the Geocoder.","value":"No cost, key or rate statement found in the Geocoder API document or home page (text search for free, cost, key, rate, quota, fee). Batch files capped at 10,000 rows.","evidence":"https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html; census_geocoder_home.txt","verified":true},
+  {"claim":"Geocoder-specific privacy or retention statement.","value":"None found (refuter re-read at the redirect target, 330,231 bytes; no 'geocod' hit).","evidence":"census_privacy.txt","verified":true},
+  {"claim":"Census contact for geocoding questions.","value":"geo.geocoding.services@census.gov","evidence":"https://geocoding.geo.census.gov/geocoder/ (home page)","verified":true},
+  {"claim":"Reference set: Montana State Library structure points (SiteStructureAddressPoint).","value":"674,715 points: DBF header count equals records read, 0 deleted; 674,715 point records in the .shp. Coordinates come from the shapefile: the DBF Latitude and Longitude columns read 0.0 in W6's stats. Refuter: 674,715 DBF and point records; DBF Longitude and Latitude zero-filled in every record.","evidence":"StructuresFramework_shp.zip (ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/); ssap_county_summary.json; W6 montana-addresses/ssap-dbf-stats.json (min_max_numeric)","verified":true},
+  {"claim":"Placement codes in the reference data.","value":"Metadata: six codes. Data (674,715 records): Structure 629,489; Property Access 13,496; Unknown 11,040; Geocoding 9,863; PropertyAccess 8,133; Site 1,998; blank 390; Parcel 306.","evidence":"StructuresFramework_metadata.xml (zip member, read locally)","verified":true,"corrected_from":"Geocoding, Parcel, Property Access, Site, Structure, Unknown.","refuted_by":"The data also hold PropertyAccess and blank values."},
+  {"claim":"Wibaux County reference set.","value":"801 points; 63 with a unit; 735 batch rows (non-unit, with street, ZIP); Placement Structure 800, Property Access 1.","evidence":"ssap_county_summary.json; ssap_wibaux.csv; batch_wibaux_1.csv","verified":true},
+  {"claim":"Petroleum County reference set.","value":"482 points; 17 with a unit; 461 batch rows; Placement Structure 465, Geocoding 1, Unknown 16.","evidence":"ssap_county_summary.json; batch_petroleum_1.csv","verified":true},
+  {"claim":"Park County reference set.","value":"12,948 points (same count as W6 read of the file); 1,808 with a unit; 11,101 batch rows; Placement Structure 12,948.","evidence":"ssap_county_summary.json; W6 ssap-dbf-stats.json frequencies (County: Park County 12948)","verified":true},
+  {"claim":"Wibaux (structure points): Census outcome.","value":"Match 605 (82.3%), Tie 13 (1.8%), No_Match 117 (15.9%) of 735. Among the 605 matches: Exact 545, Non_Exact 60.","evidence":"ssap_score_wibaux.json; census_wibaux_all.csv (4 chunks)","verified":true},
+  {"claim":"Wibaux (structure points): distance from the Census point to the structure point (matches only).","value":"Median 60.6 m; 75th 315.3 m; 90th 1,105 m; 95th 1,700 m. Within 25 m 16.5%, 50 m 42.3%, 100 m 63.5%, 250 m 70.7%, 500 m 81.2%, 1 km 88.6%. 4 matches lie more than 5 km away.","evidence":"ssap_score_wibaux.json","verified":true},
+  {"claim":"Petroleum (structure points): Census outcome.","value":"Match 281 (61.0%), No_Match 180 (39.0%) of 461; no Tie rows. Among the 281 matches: Exact 115, Non_Exact 166.","evidence":"ssap_score_petroleum.json; census_petroleum_all.csv (3 chunks)","verified":true},
+  {"claim":"Petroleum (structure points): distance.","value":"Median 84.0 m; 75th 406.6 m; 90th 886 m; 95th 1,199 m. Within 50 m 33.1%, 100 m 56.6%, 250 m 66.9%, 1 km 92.5%. 1 match lies more than 5 km away.","evidence":"ssap_score_petroleum.json","verified":true},
+  {"claim":"Park (structure points): Census outcome.","value":"Match 9,754 (87.9%), Tie 30 (0.3%), No_Match 1,317 (11.9%) of 11,101. Among the 9,754 matches: Exact 8,255, Non_Exact 1,499.","evidence":"ssap_score_park.json; census_park_all.csv (56 chunks, row counts checked)","verified":true},
+  {"claim":"Park (structure points): distance.","value":"Median 74.5 m; 75th 230.6 m; 90th 568 m; 95th 969 m. Within 25 m 14.1%, 50 m 34.7%, 100 m 58.3%, 250 m 76.7%, 500 m 88.2%, 1 km 95.2%. 116 matches lie more than 5 km away; 2 lie outside the county point box.","evidence":"ssap_score_park.json","verified":true},
+  {"claim":"TIGER classification of Census no-matches (approximate join; a \"street not found\" result is an upper bound, not proof of absence).","value":"Wibaux 117: street name not found 55; street and number present but number outside all TIGER ranges 41; street and number present, ZIP agrees 17; ZIP differs or absent 4. Petroleum 180: 103, 48, 25, 4. Park 1,317: 795, 207, 207, 108. TIGER2026 Park: 795/202/204/116; Wibaux and Petroleum unchanged.","evidence":"tiger_join2.py run on TIGER2025 ADDR and EDGES for FIPS 30109, 30069 and 30067 (directionals dropped; suffixes mapped)","verified":true},
+  {"claim":"Parcel-centroid test (secondary cross-check only).","value":"Wibaux parcel situs lines with a number (562): Match 443, Tie 57, No_Match 62; Petroleum (397): Match 229, Tie 1, No_Match 167. Median distance to the parcel centroid: 64.2 m (Wibaux) and 130.6 m (Petroleum).","evidence":"census_batch_wibaux_result.csv; census_batch_petroleum_result.csv; census_score_wibaux.json; census_score_petroleum.json (parcel centroids from the W6 parcel layers, converted from NAD83(2011) Montana State Plane)","verified":true},
+  {"claim":"Parcel centroids are a weak house reference on large parcels.","value":"Wibaux matches on parcels of 2 acres or less (281): median 43.1 m; parcels over 2 acres (162): median 860.4 m. Petroleum: 77.5 m (166) and 659.0 m (63).","evidence":"census_score_wibaux.json; census_score_petroleum.json","verified":true},
+  {"claim":"Rows without a city or ZIP can match elsewhere (parcel test, Wibaux).","value":"Rows without city or ZIP (105 matches): median 879.5 m and 90th percentile 9,123 m from the centroid. Across all 443 Wibaux parcel matches, 8 lie outside the parcel box and 14 lie more than 5 km from the centroid.","evidence":"census_score_wibaux.json (counts of matches with coordinates)","verified":true},
+  {"claim":"Parcel layers carry a situs address for only part of each county.","value":"Wibaux: 585 of 2,238 parcel records have an address line (26.1%), 562 start with a house number. Petroleum: 452 of 4,523 (10.0%), 397 with a number.","evidence":"parcels_wibaux.csv and parcels_petroleum.csv (from W6 downloads wibaux-Wibaux_SHP.zip and petroleum-Petroleum_SHP.zip; owner fields not read)","verified":true},
+  {"claim":"TIGER2025 address-range files for Montana.","value":"56 county ADDR zips (tl_2025_30001 to tl_2025_30111); listed sizes sum to about 3.86 MB (shown in whole KB).","evidence":"https://www2.census.gov/geo/tiger/TIGER2025/ADDR/ (750,265-byte listing)","verified":true},
+  {"claim":"ADDR files hold no street names; EDGES files do.","value":"ADDR fields: TLID, FROMHN, TOHN, SIDE, ZIP, PLUS4, FROMTYP, TOTYP, ARID, MTFCC. Wibaux ADDR 14,347 bytes (507 records); Petroleum 10,955 bytes (229); Park 63,924 bytes (3,939). EDGES: Wibaux 1,370,038 bytes; Petroleum 2,489,594 bytes; Park 5,327,679 bytes.","evidence":"tl_2025_30109/30069/30067_addr.zip and _edges.zip (HTTP 200)","verified":true},
+  {"claim":"Nominatim usage: request rate.","value":"'No heavy uses (an absolute maximum of 1 request per second).'","evidence":"https://operations.osmfoundation.org/policies/nominatim/, Requirements","verified":true},
+  {"claim":"Nominatim usage: identification.","value":"'Provide a valid HTTP Referer or User-Agent identifying the application (stock User-Agents as set by http libraries will not do).'","evidence":"same URL, Requirements","verified":true},
+  {"claim":"Nominatim usage: no auto-complete.","value":"'Auto-complete search This is not yet supported by Nominatim and you must not implement such a service on the client side using the API.'","evidence":"same URL, Unacceptable Use","verified":true},
+  {"claim":"Nominatim usage: end-user searches, volume and bulk.","value":"'Use that is directly triggered by the end-user (for example, user searches for something) is ok, provided that your number of users is moderate.' 'Note: periodic requests from apps are considered bulk geocoding and as such are strongly discouraged. It may be okay if your app has very few users and applies appropriate caching of results.' 'Note that the usage limits above apply per website/application : the sum of traffic by all your users should not exceed the limits.' Scripts running longer than a day, or at regular intervals: 4 requests per minute.","evidence":"same URL, Websites and Apps; Bulk Geocoding","verified":true,"corrected_from":"Periodic app requests are 'considered bulk geocoding and as such are strongly discouraged.'","refuted_by":"The quote paraphrased the sentence and left out the caveat and the all-users limit."},
+  {"claim":"Nominatim usage: caching and personal data.","value":"'Results must be cached on your side. Clients sending repeatedly the same query may be classified as faulty and blocked.' 'Please do not submit personal data or other confidential material to any of our services.'","evidence":"same URL, Bulk Geocoding; Privacy","verified":true},
+  {"claim":"Nominatim browser access.","value":"A GET with an Origin header returned access-control-allow-origin: * (HTTP 200, 457 bytes).","evidence":"https://nominatim.openstreetmap.org/search?q=Wibaux%2C+Montana&format=json&limit=1 (nominatim_headers.txt)","verified":true},
+  {"claim":"Nominatim software licence.","value":"'The Python source code is available under a GPL license version 3 or later.' 'The Lua configuration files for osm2pgsql are released under the Apache License, Version 2.0. All other files are under a GPLv2 license.'","evidence":"https://raw.githubusercontent.com/osm-search/Nominatim/master/README.md, License","verified":true},
+  {"claim":"Photon licence and stack.","value":"Apache License, Version 2.0; built on OpenSearch; an external database needs OpenSearch 3.x. Java 21 or later.","evidence":"https://raw.githubusercontent.com/komoot/photon/master/README.md, lines 6, 46 and 157-159","verified":true},
+  {"claim":"Photon planet database size and hardware.","value":"'A planet-wide database requires about 95GB disk space (as of 2026, grows by about 10% a year).' 'At least 64GB RAM are recommended for smooth operations, more, if the server takes significant load.'","evidence":"photon README lines 48 to 51","verified":true},
+  {"claim":"Photon dump sizes (HEAD, no download).","value":"photon-db-planet-1.0-latest.tar.bz2: Content-Length 63,172,802,723 bytes (Last-Modified 2026-10-13). photon-db-latest.tar.bz2: Content-Length 101,487,514,668 bytes (Last-Modified 2025-07-20). The 101 GB latest name is dated 2025-07-20 and is not planet-named; the listing also shows planet master dumps dated 2026-09-27, 2026-10-04 and 2026-10-11. 'photon-db-latest' (101 GB, 2025-07-20) is not planet-named.","evidence":"https://download1.graphhopper.com/public/ (listing) and the two HEAD requests","verified":true},
+  {"claim":"No country-level or Montana Photon dump in the listing.","value":"Dump names are planet, master, release and latest files; no US-only or Montana-only name found.","evidence":"graphhopper listing text search for us, usa, montana, north","verified":true},
+  {"claim":"Photon demo server use.","value":"'You are welcome to use the API for your project as long as the number of requests stay in a reasonable limit. Extensive usage will be throttled or completely banned.'","evidence":"photon README lines 26 to 31","verified":true},
+  {"claim":"Photon public API sample.","value":"One request (q=Wibaux, Montana): HTTP 200, 413 bytes; returns Wibaux County at -104.2215171, 46.910018.","evidence":"https://photon.komoot.io/api/?q=Wibaux%2C%20Montana&limit=1","verified":true},
+  {"claim":"Pelias licence and stack.","value":"'Completely open-source and MIT licensed'; 'Currently versions 7 and 8 are supported' (Elasticsearch); importers for OpenAddresses, OSM and Who's on First; Docker set-up for a small area (default Portland, Oregon).","evidence":"https://raw.githubusercontent.com/pelias/pelias/master/README.md, lines 43, 76-77, 85, 202","verified":true},
+  {"claim":"OpenSearch licence.","value":"'This project is licensed under the [Apache v2.0 License](LICENSE.txt).'","evidence":"https://raw.githubusercontent.com/opensearch-project/OpenSearch/main/README.md, line 47","verified":true},
+  {"claim":"OSM data licence and attribution.","value":"'Open Data Commons Open Database License (ODbL) by the OpenStreetMap Foundation (OSMF).' 'Provide credit to OpenStreetMap by displaying our attribution notice.'","evidence":"https://www.openstreetmap.org/copyright (21,314 bytes)","verified":true},
+  {"claim":"Montana OSM extract size.","value":"Not verified. Geofabrik closed the connection on every attempt (curl exit 35); openstreetmap.fr returned 404 for montana.osm.pbf. Retry 2026-10-17: Geofabrik curl exit 35; openstreetmap.fr 404.","evidence":"fetch-log.tsv; HEAD requests","verified":false},
+  {"claim":"Site rule in AGENTS.md (rule 4).","value":"'Third-party code (Leaflet) and fonts are served by the site, not a CDN.'","evidence":"<scratchpad>/wt-hail/AGENTS.md lines 71 to 72","verified":true},
+  {"claim":"Site-files-only rule as written in DECISIONS.","value":"'the site-files-only browser rule, which rules out streamed worldwide imagery'","evidence":"wt-hail/docs/DECISIONS.md line 492 (D30 text)","verified":true},
+  {"claim":"Automated check for off-site references (Map page only).","value":"test_map_page_loads_only_files_from_this_site asserts that map.html has no script, link or img tag with an external src or href (regex <(script|link|img)[^>]+(src|href)=\"(https?:)?//\"). It does not scan JavaScript fetch calls.","evidence":"wt-hail/tests/test_site.py lines 462 and 467","verified":true},
+  {"claim":"D32 has two different proposals in the worktree.","value":"Globe README row D32 is 'Storm layers off by default'; the imagery brief says the USGS imagery exception 'is recorded as a decision (D32)'. docs/DECISIONS.md has no D32 entry at this HEAD.","evidence":"wt-hail/research/globe/README.md lines 53, 192, 542; scratchpad imagery-brief.md lines 7 to 8; grep of docs/DECISIONS.md","verified":true},
+  {"claim":"The one named off-site host proposed for imagery.","value":"basemap.nationalmap.gov (USGSImageryTopo tiles), opt-in only; the exception is pending D32.","evidence":"scratchpad imagery-brief.md lines 7 and 11","verified":true},
+  {"claim":"Index layouts compared.","value":"V1 JSON rows, 6-decimal floats; V2 JSON rows, integer coordinates (1e-5 degree); V3 front-coded sorted keys (a flat trie) with base-36 delta coordinates; V4 binary front-coded with varint deltas and zlib. All sharded by ZIP.","evidence":"index_sizes.py (this workstream); parameters in index_size_test.json","verified":true},
+  {"claim":"Index test on parcel situs lines.","value":"959 numbered addresses (Wibaux 562, Petroleum 397) in 7 ZIP shards. Bytes per address: V1 12.35, V2 11.03, V3 9.68, V4 9.77. Total for 500,000 addresses: V1 6,175,182; V2 5,515,641; V3 4,840,980; V4 4,886,861 bytes.","evidence":"index_size_test.json","verified":true},
+  {"claim":"Index test on structure points (Park County).","value":"11,101 non-unit addresses in 11 ZIP shards (largest 7,471). Bytes per address: V1 11.32, V2 10.03, V3 8.31, V4 8.21. Total for 500,000 addresses: V1 5,659,760; V2 5,013,107; V3 4,153,320; V4 4,104,855 bytes.","evidence":"ssap/index_size_ssap_park.json (index_input_park.csv from ssap_park.csv)","verified":true},
+  {"claim":"Largest Park ZIP shard, with city, front-coded (V3).","value":"7,471 addresses; 60,565 bytes gzip; 8.11 bytes per address.","evidence":"shard_check.txt (this workstream)","verified":true},
+  {"claim":"Estimated largest shard statewide (extrapolation).","value":"About 232,000 bytes gzip for 28,665 non-unit addresses in ZIP 59901 at 8.11 bytes each (estimate; not measured).","evidence":"shard_check.txt; W6 ssap-dbf-stats.json frequencies Post_Code 59901: 36540","verified":false,"corrected_from":"About 296,218 bytes gzip for 36,540 addresses (including unit rows) at 8.11 bytes per address. Not measured.","refuted_by":"The index holds no unit rows."},
+  {"claim":"GitHub Pages compresses text on the wire (headers only).","value":"Refuter HEAD 2026-10-17: root gzip, content-length 4,354; style.css gzip, 4,902.","evidence":"https://carson14dy.github.io/RoofingApp/ and .../static/style.css (HEAD)","verified":true,"corrected_from":"Root page: content-encoding gzip, content-length 4,102 bytes. style.css: content-encoding gzip.","refuted_by":"The length changes with each build."},
+  {"claim":"Browser gzip decompression API (example only).","value":"MDN example: new DecompressionStream(\"gzip\"). Other format names not found in the text read.","evidence":"https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream (148,443 bytes)","verified":true},
+  {"claim":"GitHub Pages limits.","value":"'Published GitHub Pages sites may be no larger than 1 GB.' 'GitHub Pages sites have a soft bandwidth limit of 100 GB per month.' The soft limit of 10 builds per hour 'does not apply if you build and publish your site with a custom GitHub Actions workflow.'","evidence":"https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits (88,734 bytes)","verified":true},
+  {"claim":"Statewide structure-point counts (W6 read of the same zip).","value":"674,715 records; 673,332 unique NGUID; 497,316 unique non-blank ParcelID; 671,112 non-empty Post_Code.","evidence":"montana-addresses/ssap-dbf-stats.json (header, unique_NGUID, unique_nonblank_ParcelID, nonempty_counts)","verified":true},
+  {"claim":"W6 frequency tables keep only the top 200 values.","value":"frequencies use most_common(200), so 'distinct 200' for Post_Code is a cap, not the ZIP count.","evidence":"w6-scripts/dbf_stream_stats.py line 153","verified":true},
+  {"claim":"Montana housing units (W6 derived file): not verified.","value":"W6's 1,084,225 is the 2020 Montana population, not housing; 45,199 and 1,039,026 are group-quarters and household population. H1 candidate: 514,803 (see the H1 fact).","evidence":"montana-addresses/census-h1-derived.json; https://api.census.gov/data/2020/dec/pl?get=NAME,H1_001N&for=state:30","verified":false,"corrected_from":"census-h1-derived.json reports a state total of 1,084,225 (occupied 45,199; vacant 1,039,026). The Census API request for H1_001N returned an HTML Missing Key page (8,531 bytes), so no count was verified here.","refuted_by":"PL 94-171: 1,084,225 is P1_001N; the triple is group quarters plus household population."},
+  {"claim":"Export date and cadence of the structure-point file.","value":"Exported from the Montana State Library geodatabase on 20260930; 'The Structures Framework downloads are exported monthly, around the end of the month (the exact date varies).'","evidence":"_ReadMe.txt inside StructuresFramework_shp.zip","verified":true},
+  {"claim":"Disclaimer in the structure-point metadata.","value":"'...nor is it suitable for legal, engineering, or surveying purposes.' '...does not represent or warrant its accuracy, adequacy, or completeness.'","evidence":"StructuresFramework_metadata.xml inside the zip","verified":true},
+  {"claim":"Parcel metadata: distribution-list restriction.","value":"'State law (Montana Code Annotated 2-6-1017) prohibits public agencies from distributing or selling a distribution list without first securing the permission of those on the list;' 'These data do not constitute a legal survey.'","evidence":"montana-addresses/msdi-parcel-metadata.xml (about line 118)","verified":true},
+  {"claim":"Coordinate system of the structure-point file.","value":"NAD_1983_2011_StatePlane_Montana_FIPS_2500 (Lambert Conformal Conic, metres); converted to WGS84 with pyproj.","evidence":"SiteStructureAddressPoint.prj inside the zip","verified":true},
+  {"claim":"Batch time for 500,000 rows (extrapolated).","value":"At the parcel run rate (562 rows in 8.5 s), 500,000 rows would take about 2.1 hours of request time. Not measured at that size; the stalled 735-row upload shows the rate can vary.","evidence":"fetch-log.tsv 20:41:01; this workstream","verified":false},
+  {"claim":"TIGER2026 address-range files are published.","value":"TIGER2026/ listed 2026-10-06; 56 Montana ADDR zips (listed sum 3,911,680 bytes; TIGER2025 3,857,408).","evidence":"https://www2.census.gov/geo/tiger/TIGER2026/ADDR/ (refuter listing parse)","verified":true},
+  {"claim":"TIGER2026 against TIGER2025 (Wibaux, Petroleum, Park).","value":"ADDR records 508/230/3,920 vs 507/229/3,939 (Park); named EDGES 1,289/1,536/8,829 vs 1,319/1,600/9,132. No-match split: Park 795/207/207/108 (2025) vs 795/202/204/116 (2026); Wibaux and Petroleum unchanged.","evidence":"tiger_join2.py on refuter TIGER2025 and TIGER2026 files; same batch and Census results","verified":true},
+  {"claim":"Structure and Property Access definitions in the metadata.","value":"Structure: 'an address associated with a structure'. Property Access: 'based on the location of the primary access to a given property'. FGDC metadata has no access or use constraint tags.","evidence":"StructuresFramework_metadata.xml in StructuresFramework_shp.zip (refuter re-read)","verified":true},
+  {"claim":"Statewide unit rows and ZIP coverage in the structure points.","value":"Unit non-blank in 87,431 of 674,715 records (92,266 with any of Unit, Building, Floor, Room or Seat). Post_Code: 404 distinct values (the W6 table keeps 200).","evidence":"SiteStructureAddressPoint.dbf in StructuresFramework_shp.zip (refuter streamed count)","verified":true},
+  {"claim":"Montana 2020 total population in the PL 94-171 file.","value":"1,084,225 (P1_001N), first data cell of the state record in mt000012020.pl.","evidence":"https://www2.census.gov/programs-surveys/decennial/2020/data/01-Redistricting_File--PL_94-171/Montana/mt2020.pl.zip (9,835,205 bytes; testzip OK)","verified":true},
+  {"claim":"Montana 2020 housing units (H1) candidate from the same file.","value":"Total 514,803; occupied 447,812; vacant 66,991 (last three cells of the state record in mt000022020.pl). Sums check; layout not confirmed.","evidence":"same zip (refuter parse); confirm against the PL 94-171 technical documentation","verified":false},
+  {"claim":"Three options for a visitor's address lookup (summary).","value":"A. Index as site files: 8.2 to 12.4 bytes per address; about 4.1 to 6.2 MB gzip per 500,000 addresses. B. Census Geocoder: off-site JSONP call; 10,000 rows per batch file; no cost or key text; owner decision under the site rule. C. Self-hosted Photon (Java 21+; 63 GB dump; about 95 GB disk; 64 GB RAM) or Pelias (MIT; Elasticsearch 7 or 8): a server, not static.","evidence":"facts and terms above (refuter summary)","verified":true},
+  {"claim":"GitHub file-size and deployment limits.","value":"Files over 50 MiB warn; files over 100 MiB are blocked (Git LFS needed). Pages deployments time out after 10 minutes.","evidence":"docs.github.com managing-large-files and github-pages-limits (refuter re-read)","verified":true}
+ ],
+ "terms": {
+  "census_geocoder": {
+   "url": "https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html",
+   "quotes": [
+    "'There is currently an upper limit of 10,000 records per batch file.'",
+    "'The Census Geocoder only geocodes addresses that are within the United States, Puerto Rico, and the U.S. Island Areas.'",
+    "'If you have any questions or would like to discuss your results, please contact us at geo.geocoding.services@census.gov.' (home page https://geocoding.geo.census.gov/geocoder/)"
+   ],
+   "licence_or_cost": "No cost, key or rate statement found in the Geocoder pages read. Geocoder-specific terms were not found; the Census Bureau Data API terms are the only terms page read.",
+   "privacy": "No geocoder-specific retention statement found on https://www.census.gov/privacy/."
+  },
+  "census_data_api_terms": {
+   "url": "https://www.census.gov/data/developers/about/terms-of-service.html",
+   "quotes": [
+    "\"This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.\"",
+    "'Your use of the API may be subject to certain limitations on access, calls, or use as set forth within this Agreement or otherwise provided by the Census Bureau.'",
+    "'The API is provided \"as is\" and on an \"as-available\" basis.'"
+   ]
+  },
+  "nominatim": {
+   "url": "https://operations.osmfoundation.org/policies/nominatim/",
+   "quotes": [
+    "'No heavy uses (an absolute maximum of 1 request per second).'",
+    "'Provide a valid HTTP Referer or User-Agent identifying the application (stock User-Agents as set by http libraries will not do).'",
+    "'Auto-complete search This is not yet supported by Nominatim and you must not implement such a service on the client side using the API.'",
+    "'Results must be cached on your side.'",
+    "'Please do not submit personal data or other confidential material to any of our services.'",
+    "'Use of any OSMF provided service is further governed by the OSMF Terms of Use.'",
+    "'Note that the usage limits above apply per website/application : the sum of traffic by all your users should not exceed the limits.'"
+   ],
+   "licence_or_cost": "Usage policy governs the public service; data under ODbL 1.0 with attribution."
+  },
+  "photon": {
+   "url": "https://raw.githubusercontent.com/komoot/photon/master/README.md",
+   "quotes": [
+    "\"photon is open source and licensed under Apache License, Version 2.0\"",
+    "'You are welcome to use the API for your project as long as the number of requests stay in a reasonable limit. Extensive usage will be throttled or completely banned.'"
+   ],
+   "licence_or_cost": "Apache License, Version 2.0 (software)."
+  },
+  "pelias": {
+   "url": "https://raw.githubusercontent.com/pelias/pelias/master/README.md",
+   "quotes": [
+    "'Completely open-source and MIT licensed'"
+   ],
+   "licence_or_cost": "MIT (software)."
+  },
+  "opensearch": {
+   "url": "https://raw.githubusercontent.com/opensearch-project/OpenSearch/main/README.md",
+   "quotes": [
+    "'This project is licensed under the [Apache v2.0 License](LICENSE.txt).'"
+   ],
+   "licence_or_cost": "Apache v2.0 (software)."
+  },
+  "osm_data": {
+   "url": "https://www.openstreetmap.org/copyright",
+   "quotes": [
+    "'Open Data Commons Open Database License (ODbL) by the OpenStreetMap Foundation (OSMF).'",
+    "'Provide credit to OpenStreetMap by displaying our attribution notice.'",
+    "Response licence string: \"Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright\" (nominatim_wibaux_test.json)"
+   ],
+   "licence_or_cost": "ODbL 1.0 with attribution and share-alike."
+  },
+  "tiger_line": {
+   "url": "https://www2.census.gov/geo/tiger/TIGER2025/ADDR/",
+   "quotes": [],
+   "licence_or_cost": "Not verified: the Census copyright page returned 404 and the TIGER product page has no licence sentence found by text search."
+  },
+  "montana_structures": {
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/",
+   "quotes": [
+    "'...nor is it suitable for legal, engineering, or surveying purposes.'",
+    "'...does not represent or warrant its accuracy, adequacy, or completeness.'",
+    "Contact: Montana State Library, Geographic Information, 406-444-5354, geoinfo@mt.gov (_ReadMe.txt)"
+   ],
+   "licence_or_cost": "No licence sentence found in the ReadMe or metadata read; disclaimers quoted above."
+  },
+  "msdi_parcels": {
+   "url": "montana-addresses/msdi-parcel-metadata.xml (W6 download)",
+   "quotes": [
+    "'State law (Montana Code Annotated 2-6-1017) prohibits public agencies from distributing or selling a distribution list without first securing the permission of those on the list;'",
+    "'State law does not prevent an individual from compiling a distribution list by examination of records that are otherwise open to public inspection.'"
+   ],
+   "licence_or_cost": "Parcel data terms are W6 scope; owner and mailing fields are not used by this workstream."
+  },
+  "github_pages": {
+   "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits",
+   "quotes": [
+    "'Published GitHub Pages sites may be no larger than 1 GB.'",
+    "'GitHub Pages sites have a soft bandwidth limit of 100 GB per month.'"
+   ],
+   "licence_or_cost": "Free hosting with the limits above."
+  }
+ },
+ "limits": [
+  "Accuracy numbers cover three counties (Wibaux, Petroleum, Park) on one run dated 2026-10-17. They are not a statewide rate.",
+  "The reference is the Montana State Library structure point. Its metadata disclaims accuracy; the tested points are almost all Placement Structure, but the metadata read does not say where the point sits relative to the house.",
+  "Unit-level rows (63 Wibaux, 17 Petroleum, 1,808 Park) and non-unit rows without a street name or ZIP (3 Wibaux, 4 Petroleum, 39 Park) were not sent. The results describe street-level addresses only.",
+  "The parcel-centroid test is a cross-check only: centroids overstate error on parcels over 2 acres.",
+  "The TIGER classification uses simple name normalisation (directionals dropped, suffixes mapped). A street-not-found result is an upper bound.",
+  "Batch uploads: one 735-row file got no response in 3 min 18 s and was stopped. Chunks of 200 rows with a .csv name returned normally. A file without a .csv name returns HTTP 400.",
+  "CORS result is one request with one sample Origin (https://example.github.io). JSONP is documented but was not tested from a browser page.",
+  "Only the Census Data API terms page was read for Census terms; no Geocoder-specific terms were found in the pages read.",
+  "Nominatim: one search request, as the policy forbids systematic queries; its accuracy was not tested.",
+  "Photon: one public API request. No self-hosted Photon or Pelias build was made. The Montana OSM extract size is unknown (Geofabrik unreachable; openstreetmap.fr returned 404).",
+  "Index sizes: 959 parcel addresses (two counties) and 11,101 structure-point addresses (one county). The 500,000 figure assumes similar bytes per address. Larger shards compress somewhat better; real lists have more variety (units, suffixes). Sizes are gzip or zlib at level 9, not measured in a browser.",
+  "The GitHub Pages check used HEAD requests on the root and one CSS file. No JSON was served from Pages in this workstream.",
+  "W6 frequency tables are capped at 200 values. W6 derived housing-unit total is not reconciled here.",
+  "The Census benchmark Public_AR_Current may use a TIGER release other than the 2025 files used in the join.",
+  "Downloads: about 79.3 MB transferred (the structure-point zip is 65.8 MB, fetched whole), against the 300 MB cap; wall time well inside the 90-minute cap.",
+  "Skipped: StructuresFramework_gdb.zip (61,058,458 bytes); TIGER files for the other 53 counties; Geofabrik and the Montana OSM extract; Pelias and Photon builds; Nominatim accuracy sampling; the Census Data API (needs a key, not supplied).",
+  "Refuter pass: about 97 MB downloaded (cap 300 MB); TIGER2026 changes the Park no-match split."
+ ],
+ "open_questions": [
+  "Which TIGER release backs Public_AR_Current? TIGER2026 is published and changes the Park split; re-run the join once the Current release is known.",
+  "Do Census terms for the Geocoder (not found in the pages read) allow a production site, or a server proxy on a visitor's behalf, to batch or query addresses? Is there a request ceiling?",
+  "A visitor who types an address sends it off-site if a Census or Nominatim call is made. Nominatim asks users not to submit personal data. What privacy line is needed?",
+  "Does the site-files-only rule allow one named off-site geocoder host? That needs an owner decision and a new decision number.",
+  "Which D number applies? The globe README uses D32 for storm layers; the imagery brief uses D32 for the USGS imagery exception.",
+  "How large is a Montana-only OSM extract (Geofabrik unreachable from this session)? Needed to size a self-hosted Photon or Pelias.",
+  "Should the index hold structure points (674,715 statewide per W6, including units) or parcel-linked addresses (497,316 unique ParcelID per W6)?",
+  "Montana 2020 housing units: H1 candidate 514,803 from the PL 94-171 file (layout to confirm). The W6 figure 1,084,225 is the population total.",
+  "The metadata does not say where a structure point sits relative to the house. A ground check on a few known addresses would settle the house-point accuracy claim.",
+  "A proper street-name match (full names with types and aliases) would split the No_Match counts more tightly than this normalisation.",
+  "Browser support for DecompressionStream formats beyond gzip is unverified; gzip is the verified one.",
+  "Does GitHub Pages serve .json or .gz index shards with gzip on the wire? Only HTML and CSS were checked."
+ ],
+ "programs": [
+  {"name":"U.S. Census Geocoder (single-line and batch)","kind":"service","what_it_gives":"Address to latitude and longitude, interpolated on TIGER address ranges; batch up to 10,000 rows per file; benchmark Public_AR_Current. Tested: 82.3% matched on Wibaux structure points, 61.0% Petroleum, 87.9% Park.","cost_or_licence":"No cost or key stated in the pages read; batch cap 10,000 rows per file; Data API terms quoted; not endorsed attribution wording in those terms; CORS absent for JSON (JSONP documented).","verified_from":"https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html"},
+  {"name":"Nominatim public API","kind":"service","what_it_gives":"OpenStreetMap place and address search (JSON), with CORS allowed for GET.","cost_or_licence":"Usage policy: end-user searches at moderate volume; 1 request per second for all users of the site; no auto-complete; cache results; no bulk. Governed by the policy, not a fee.","verified_from":"https://operations.osmfoundation.org/policies/nominatim/"},
+  {"name":"Photon (self-hosted geocoder)","kind":"software","what_it_gives":"OSM-based geocoding and reverse search built on OpenSearch; dumps from the dump server.","cost_or_licence":"Apache-2.0. Java 21 or later. Planet database about 95 GB disk and at least 64 GB RAM recommended (README). Planet dump 63,172,802,723 bytes (HEAD).","verified_from":"https://raw.githubusercontent.com/komoot/photon/master/README.md; HEAD on download1.graphhopper.com"},
+  {"name":"Pelias (self-hosted geocoder)","kind":"software","what_it_gives":"Modular geocoder on Elasticsearch 7 or 8; imports OpenAddresses, OSM and Who's on First; Docker set-up for a small area.","cost_or_licence":"MIT. Hardware and Montana data size not measured.","verified_from":"https://raw.githubusercontent.com/pelias/pelias/master/README.md"},
+  {"name":"OpenSearch","kind":"software","what_it_gives":"Search engine needed for an external Photon database (OpenSearch 3.x).","cost_or_licence":"Apache v2.0.","verified_from":"https://raw.githubusercontent.com/opensearch-project/OpenSearch/main/README.md"},
+  {"name":"Option A: precomputed address index as site files (this workstream's build, not a third-party program)","kind":"data","what_it_gives":"Client-side lookup from ZIP shards on the same site; no off-site request. Measured: 8.2 to 12.4 bytes per address across layouts and the two tests; about 4.1 to 6.2 MB gzip per 500,000 addresses (see facts); largest statewide ZIP shard about 232 KB (estimate, non-unit rows). Limits: only addresses in the index; unknown addresses must show as not in the index, never as an all-clear.","cost_or_licence":"Source terms apply: Montana State Library structure points (disclaimers quoted); TIGER licence not verified; OSM data (ODbL) if used. Owner and mailing fields excluded.","verified_from":"index_size_test.json; index_size_ssap_park.json; shard_check.txt"},
+  {"name":"OpenStreetMap data","kind":"data","what_it_gives":"Address and place data used by Nominatim and Photon.","cost_or_licence":"ODbL 1.0; attribution and share-alike.","verified_from":"https://www.openstreetmap.org/copyright"},
+  {"name":"Census TIGER/Line address ranges and EDGES","kind":"data","what_it_gives":"Address ranges (FROMHN, TOHN, ZIP) and street names by TLID; used by the Census Geocoder for interpolation. Montana county files about 3.86 MB (TIGER2025) and 3.91 MB (TIGER2026), listed.","cost_or_licence":"Licence not verified in pages read.","verified_from":"https://www2.census.gov/geo/tiger/TIGER2025/ADDR/"},
+  {"name":"Montana State Library Structures Framework (site address points)","kind":"data","what_it_gives":"674,715 statewide site address points with placement codes; coordinates from the shapefile (DBF coordinates are zero); monthly export.","cost_or_licence":"Free download from the Montana State Library FTP; disclaimers quoted; contact geoinfo@mt.gov. No licence sentence found.","verified_from":"https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/"},
+  {"name":"GitHub Pages (static site hosting)","kind":"service","what_it_gives":"Hosts the site files and any index shards; gzip on the wire for HTML and CSS (headers checked).","cost_or_licence":"Published site 1 GB maximum; soft bandwidth 100 GB per month; deployments time out after 10 minutes; files over 100 MiB blocked; 10-builds-per-hour soft limit not for custom Actions builds.","verified_from":"https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits"},
+  {"name":"Browser DecompressionStream (web platform API)","kind":"software","what_it_gives":"In-browser gzip decompression of a fetched shard (MDN example uses \"gzip\").","cost_or_licence":"Web platform API; formats beyond gzip not verified.","verified_from":"https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream"}
+ ],
+ "review": {
+  "checked_at_utc": "2026-10-17T22:53:05Z",
+  "scope": "2026-10-17 refuter pass, about 22:34 to 22:56 UTC. Re-fetched Census geocoder, terms, privacy and TIGER pages; TIGER2025 and TIGER2026 Montana ADDR and EDGES for Wibaux, Petroleum and Park; the structure-point zip (byte-identical to the researcher copy); the 2020 PL 94-171 Montana zip; Nominatim, Photon, Pelias, OpenSearch, OSM, GitHub, MDN and Geofabrik. Recounted the DBF; re-ran the distance scorer, TIGER join and index script. About 97 MB downloaded. Scripts: <scratchpad>/hail-scripts/w7-refute.",
+  "refuted_claims": [
+   "W6 housing total 1,084,225 is the 2020 population, not housing units; verified false.",
+   "Largest statewide ZIP shard of 296 KB counts unit rows; the non-unit estimate is about 232 KB; verified false.",
+   "The six-code placement list omits PropertyAccess and blank values in the data; corrected.",
+   "The Nominatim periodic-request quote paraphrases the policy and drops the caveat and the all-users limit; corrected.",
+   "Park no-match split 795/207/207/108 holds for TIGER2025 only; TIGER2026 gives 795/202/204/116."
+  ],
+  "corrections": [
+   "Single-line time: refuter 0.26 s against the researcher's 0.45 s.",
+   "Census privacy URL is now a 302 to /about/policies/privacy.html; content holds.",
+   "Missing Key page is reached through a 302 with X-DataWebAPI-KeyError: 1; claim holds.",
+   "Benchmarks: isDefault is true for ids 4 and 11.",
+   "'One file per request' is an inference from the API document.",
+   "Photon 'latest' dump is not planet-named; Java 21 or later is required.",
+   "Pages root Content-Length is 4,354 bytes today (researcher 4,102).",
+   "Geofabrik reset confirmed; proxy shows mid-transfer cut-offs, not a 403 or 407 denial."
+  ],
+  "confirmed": [
+   "Census API document: 10,000 per batch file; structure address; coverage; no cost, key or rate text; JSONP only. Benchmarks, 12 vintages, 400 without benchmark.",
+   "Census terms quotes; copyright pages 404; TIGER page without licence sentence; CORS absent; 200-row batch rerun identical (200 of 200).",
+   "Structure points: 674,715 records; 673,332 NGUID; 497,316 ParcelID; 671,112 Post_Code; county counts; DBF coordinates zero-filled.",
+   "Census outcomes and distance percentiles reproduce at full precision; index script reproduces both tests; TIGER2025 counts and No_Match splits.",
+   "Nominatim, Photon, Pelias, OpenSearch, OSM, GitHub and MDN quotes and sizes; MSL zip identical with CRC OK."
+  ],
+  "unverified": [
+   "Montana OSM extract size (Geofabrik reset on every try; openstreetmap.fr 404).",
+   "The TIGER year behind Current_Current (no year in the benchmark or vintage data).",
+   "Geocoder-specific terms (none in the pages read) and any request ceiling.",
+   "H1 layout (position and sums only); parcel-centroid distances; house-level accuracy.",
+   "DecompressionStream formats beyond gzip; the 735-row batch stall (not re-run); 500,000-row batch time."
+  ],
+  "reviewer_checks": [
+   {"url":"Census geocoder API document, benchmarks, vintages, home","content_check":"200; 10,000 limit; no cost or key text; isDefault true for ids 4 and 11; 12 vintages."},
+   {"url":"Census onelineaddress (Origin; JSONP) and addressbatch (200 rows; no extension)","content_check":"No ACAO; JSONP 651 B; 650 B result; batch 200 of 200 identical in 1.72 s; no extension 400 610 B."},
+   {"url":"Census Data API terms, privacy (302), copyright (404), TIGER product page, api.census.gov H1 query","content_check":"Right to Limit quotes; privacy 330,231 B, no geocod hit; H1 302 with X-DataWebAPI-KeyError: 1."},
+   {"url":"www2.census.gov TIGER2025 and TIGER2026 ADDR and EDGES (30109, 30069, 30067)","content_check":"Sizes and counts as in the facts; 56 zips per year; TIGER2026 Park join 795/202/204/116."},
+   {"url":"ftpgeoinfo.msl.mt.gov StructuresFramework_shp.zip (65,788,772 B)","content_check":"cmp identical; sha256 7bc7a0fea8a190c0a8cbec2bf4f0facee357bb31314dc6884da07ac94671afba; CRC OK; 674,715 records."},
+   {"url":"www2.census.gov PL 94-171 Montana mt2020.pl.zip (9,835,205 B)","content_check":"testzip OK; state cell 1 = 1,084,225; 45,199 + 1,039,026; 514,803 = 447,812 + 66,991."},
+   {"url":"Nominatim policy and search (Origin); Photon README, API and HEAD; Pelias, OpenSearch, Nominatim READMEs; OSM copyright","content_check":"Quotes and sizes as in the facts; ACAO * on GET; Photon Content-Length 63,172,802,723 and 101,487,514,668."},
+   {"url":"Geofabrik montana.html, pbf and md5; openstreetmap.fr; GitHub docs; MDN; carson14dy.github.io HEAD; worktree files","content_check":"Geofabrik curl 35; openstreetmap.fr 404; limit and gzip quotes; root gzip 4,354 B; worktree quotes match."}
+  ]
+ }
+}
