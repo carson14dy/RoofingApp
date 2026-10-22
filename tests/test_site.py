@@ -10,13 +10,16 @@ import contextlib
 import hashlib
 import io
 import json
+import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 import urllib.parse
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone, time
 from pathlib import Path
 from unittest import mock
 
@@ -353,7 +356,7 @@ class Contracts(unittest.TestCase):
     def test_every_feed_the_build_uses_is_described(self):
         self.assertEqual(set(src.CONTRACTS), {"alerts", "points", "hourly", "gusts", "daily", "stations",
                                               "observations", "reports", "radar", "forecast_model", "storm_levels",
-                                              "satellite", "basemap", "imagery"})
+                                              "satellite", "basemap", "imagery", "hail_history"})
         for key, c in src.CONTRACTS.items():
             self.assertEqual(set(c), {"name", "request", "units", "timing", "missing"}, key)
             self.assertTrue(all(isinstance(v, str) and v.strip() for v in c.values()), key)
@@ -565,9 +568,9 @@ class SampleBuild(unittest.TestCase):
     def test_about_page_lists_every_source(self):
         html = page(self.out, "about.html")
         for key, c in src.CONTRACTS.items():
-            if key not in site.STORM_CONTRACTS:     # listed only in a --storm-layers build (StormLayers)
+            if key not in site.STORM_CONTRACTS and key not in site.HAIL_CONTRACTS:   # flag-gated: StormLayers, HailHistory
                 self.assertIn(c["name"], html)
-        for key in site.STORM_CONTRACTS:
+        for key in site.STORM_CONTRACTS + site.HAIL_CONTRACTS:
             self.assertNotIn(src.CONTRACTS[key]["name"], html)
 
     def test_reports_page_shows_sizes_in_inches_and_unknown_wind(self):
@@ -1411,6 +1414,601 @@ class MapLabels(unittest.TestCase):
         self.assertIn("function townMinZoom(t)", js)
         self.assertIn("zoomCls(townMinZoom(t))", js)
         self.assertGreaterEqual(js.count("townMinZoom(t)"), 5)     # the definition's use, and the four places
+
+
+class HailHistory(unittest.TestCase):
+    """The five-year hail history (--hail-history; website/hail.py) behind a flag. Off by default: no hail key, files
+    or section, and no hail words on the pages. On with --sample: the labelled SAMPLE store on the Map's sheet data,
+    the town sections and the About paragraph. A store that doesn't load is a failed source, and the pages still
+    build (--require-live then fails). The map script is checked for literals it must not hold (the store's words
+    and units live in data/map.json and website/hail.py), for the size rule run in node when node is installed, and
+    for the tile list and state lists the browser reads."""
+
+    HAIL_NOW = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
+    HAIL_PAGE_WORDS = ("Hail history, five years", "<h2>Hail history</h2>", 'id="hail-sheet"', 'id="hail-list"',
+                       "legend-tap", "data-hail", "Tap or click the map for the five-year hail history")
+    # the words that must not appear unless a sentence says "not the same as no hail" or "'no hail'" (the negation)
+    FORBIDDEN = re.compile(r"\bdamag\w*|\bdry\b|\bclear\b|\binsurance\b|\beligib\w*|\bconfirm\w*|\bno hail\b", re.I)
+    # the sentences the contract row, the About page, DESIGN and D34 share (decision 14), and the display rule (decision 10)
+    DAY_SENTENCE = ("A day runs from 12:00 UTC to 12:00 UTC the next day: 6 am to 6 am Mountain daylight time, 5 am to "
+                    "5 am in winter (the SPC reporting day).")
+    CELL_SENTENCE = ("the largest hail over this cell, about 0.7 miles north to south and 0.5 miles east to west, during "
+                     "the day")
+    NEXT_DAY_SENTENCE = ("The newest day is added by a job that starts at 12:43 UTC and shows here on the next rebuild.")
+    DISPLAY_SENTENCE = "Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.off = Path(tempfile.mkdtemp(prefix="hailwatch-hail-off-"))
+        cls.on = Path(tempfile.mkdtemp(prefix="hailwatch-hail-on-"))
+        cls.addClassCleanup(shutil.rmtree, cls.off, True)
+        cls.addClassCleanup(shutil.rmtree, cls.on, True)
+        cls.off_result = site.build(cls.off, None, cls.HAIL_NOW, sample=True)
+        cls.on_result = site.build(cls.on, None, cls.HAIL_NOW, sample=True, hail_history=True)
+
+    def test_flag_off_has_no_hail_key_files_or_section(self):
+        m = json.loads(page(self.off, "data/map.json"))
+        self.assertNotIn("hail", m)
+        self.assertFalse((self.off / "hail").exists())
+        self.assertNotIn("hail_history", self.off_result["status"])
+        self.assertNotIn("hail", self.off_result["content"])
+        self.assertNotIn("hail_history", json.loads(page(self.off, "data/state.json"))["status"])
+        for path in sorted(self.off.rglob("*.html")):
+            for words in self.HAIL_PAGE_WORDS:
+                self.assertNotIn(words, path.read_text(encoding="utf-8"), f"{words!r} in {path.name}")
+        self.assertNotIn("Hail history (radar estimates)", page(self.off, "index.html"))
+
+    def test_flag_on_writes_the_store_and_its_map_block(self):
+        from website import hail as hs
+        fixture = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
+        self.assertTrue((self.on / "hail" / "index.json").is_file())
+        self.assertTrue((self.on / "hail" / "manifest.json").is_file())
+        self.assertEqual(sorted(p.name for p in (self.on / "hail" / "t").iterdir()),
+                         sorted(f"{name}.json" for name in fixture["tiles"]))
+        status = self.on_result["status"]["hail_history"]
+        self.assertTrue(status["ok"])
+        self.assertTrue(status["detail"].startswith(
+            f"SAMPLE store: {fixture['events']:,} events in {fixture['shards']} shard files"), status["detail"])
+        h = json.loads(page(self.on, "data/map.json"))["hail"]
+        self.assertEqual(h["state"], "sample")
+        self.assertEqual((h["as_of"], h["window"][0], h["d0"]), (fixture["as_of"], fixture["window"][0], "2020-01-01"))
+        self.assertEqual(h["tiles"], fixture["tiles"])                  # the browser's outside test reads this list
+        self.assertEqual(h["shard"], "hail/t/r{r}_c{c}.json")
+        self.assertEqual((h["tenths_per_inch"], h["tenths_per_mm"], h["floor_tenths"]), (254, 10, 64))
+        self.assertEqual((h["stale_days"], h["at_zoom"]), (3, 9))
+        self.assertEqual(h["grid"]["rows"], 3500)
+        self.assertEqual(len(h["classes"]), 6)
+        self.assertNotIn("display_caps", h)                             # decision 10: no caps table
+        for key in ("title", "lead_many", "lead_one", "lead_none", "lead_none_one", "lead_none_plain", "row",
+                    "severe_tag", "large_note", "class_counts_title", "class_count_one", "class_count_many",
+                    "what_this_is", "missing", "outside", "unavailable", "source", "sample", "stale", "loading",
+                    "fetch_failed"):
+            self.assertIn(key, h["words"])
+        self.assertEqual(h["words"]["sample"], "SAMPLE data")
+
+    def test_every_listed_tile_has_a_shard_in_the_state_format(self):
+        h = json.loads(page(self.on, "data/map.json"))["hail"]
+        names = h["tiles"]
+        self.assertEqual(names, sorted(set(names)))
+        self.assertTrue(names)
+        for name in names:
+            self.assertRegex(name, r"^r\d{4}_c\d{4}$")
+            shard = json.loads((self.on / "hail" / "t" / f"{name}.json").read_text(encoding="utf-8"))
+            self.assertEqual((shard["f"], shard["u"], shard["d0"]), ("hail-cells-v1", "tenths of a mm", "2020-01-01"))
+            self.assertEqual(f"r{shard['r']:04d}_c{shard['c']:04d}", name)
+            state = shard["state"]
+            self.assertEqual(state, sorted(set(state)))                 # the Montana keys of the tile, sorted
+            self.assertTrue(all(isinstance(k, int) and 0 <= k <= 99 for k in state))
+            self.assertTrue({int(k) for k in shard["cells"]} <= set(state))   # cells holds only Montana keys
+            for key, rows in shard["cells"].items():
+                self.assertTrue(rows, key)                              # a key is in cells only with events
+                self.assertEqual(rows, sorted(rows))
+                for day, tenths in rows:
+                    self.assertTrue(isinstance(day, int) and isinstance(tenths, int))
+
+    def test_a_listed_tile_without_its_shard_file_is_a_failed_store(self):
+        from website import hail as hs
+        index = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-tiles-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        (out / "hail" / "t").mkdir(parents=True)
+        first, rest = index["tiles"][0], index["tiles"][1:]
+        for name in rest:
+            shutil.copy(hs.FIXTURE_DIR / "hail" / "t" / f"{name}.json", out / "hail" / "t" / f"{name}.json")
+        with self.assertRaises(hs.HailStoreError) as cm:
+            site.hail_tiles(index, out)
+        self.assertIn(first, str(cm.exception))
+        shutil.copy(hs.FIXTURE_DIR / "hail" / "t" / f"{first}.json", out / "hail" / "t" / f"{first}.json")
+        self.assertEqual(site.hail_tiles(index, out), index["tiles"])
+        with self.assertRaises(hs.HailStoreError):                      # not sorted
+            site.hail_tiles({"tiles": ["r0092_c0214", "r0079_c0199"]}, out)
+        with self.assertRaises(hs.HailStoreError):                      # not the name format
+            site.hail_tiles({"tiles": ["r79_c199"]}, out)
+        with self.assertRaises(hs.HailStoreError):                      # no list at all
+            site.hail_tiles({}, out)
+
+    def test_sample_words_show_in_the_town_section_and_the_about_paragraph(self):
+        from website import hail as hs            # the source line's words are hail.WORDS; the page must carry them
+        fixture = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
+        town = page(self.on, "town/billings.html")
+        self.assertIn("Hail history, five years", town)
+        self.assertIn("SAMPLE data", town)
+        self.assertIn("4 days with a radar-estimated hail size of 0.25 in or more between Oct 16, 2021 and "
+                      "Oct 15, 2026. Largest: 0.62 in (16.0 mm) on Jul 24, 2022.", town)     # 160 tenths: 0.62, not 0.63
+        self.assertIn("<th scope=\"row\">Jul 24, 2022</th>", town)
+        self.assertIn("<td class=\"n\">16.0</td>", town)
+        self.assertIn("<td>pea to mothball</td>", town)
+        self.assertIn("Days with no data, not counted: Jun 8, 2022.", town)
+        self.assertIn(hs.WORDS["source"].format(as_of=hs.fmt_date(date.fromisoformat(fixture["as_of"]))), town)
+        about = " ".join(page(self.on, "about.html").split())      # the template wraps the sentences across lines
+        self.assertIn("<h2>Hail history</h2>", page(self.on, "about.html"))
+        self.assertIn("An estimate is not a measurement at the ground and not an inspection.", about)
+        self.assertIn("(6.35 mm)", about)
+        self.assertIn("12:43 UTC", about)
+        self.assertIn(src.CONTRACTS["hail_history"]["name"], about)
+        for sentence in (self.DAY_SENTENCE, self.CELL_SENTENCE, self.NEXT_DAY_SENTENCE, self.DISPLAY_SENTENCE):
+            self.assertIn(sentence, about)                              # decision 14: the same sentences as the contract
+        self.assertNotIn("to a tenth", about)                           # decision 10: no tenths display left
+
+    def test_no_town_page_prints_none_and_a_town_outside_the_sample_says_so(self):
+        from website import hail as hs
+        pages = sorted((self.on / "town").glob("*.html"))
+        self.assertTrue(pages)
+        for path in pages:                                   # a missing sentence must never print as None
+            self.assertNotIn(">None<", path.read_text(encoding="utf-8"), path.name)
+        self.assertEqual(page(self.on, "town/helena.html").count(hs.WORDS["sample_outside"]), 1)   # Helena: not in the sample
+        missoula = page(self.on, "town/missoula.html")       # Missoula's tile is not in the sample store
+        self.assertEqual(missoula.count(hs.WORDS["sample_outside"]), 1)
+        self.assertNotIn(hs.WORDS["sample_outside"], page(self.on, "town/billings.html"))
+        self.assertNotIn("Hail history is unavailable", missoula)
+
+    def test_the_build_log_has_a_hail_line_for_every_town(self):
+        from website import hail as hs
+        hail = self.on_result["content"]["hail"]
+        self.assertTrue(hail)
+        for name, line in hail.items():                      # the outside line counts too: no null in the log
+            self.assertIsInstance(line, str, name)
+        self.assertEqual(hail["Helena"], hs.WORDS["sample_outside"])
+        self.assertTrue(hail["Billings"].startswith("4 days with"))
+
+    def test_a_build_on_the_fixture_as_a_store_file_prints_no_none_either(self):
+        from website import hail as hs
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-hail-file-"))
+        self.addCleanup(shutil.rmtree, out, True)            # only the folder this test made
+        result = site.build(out, None, self.HAIL_NOW, sample=True, hail_history=True, hail_store_path=str(hs.FIXTURE_DIR))
+        self.assertTrue(result["status"]["hail_history"]["ok"])
+        for path in sorted((out / "town").glob("*.html")):
+            self.assertNotIn(">None<", path.read_text(encoding="utf-8"), path.name)
+        self.assertIn("Hail history, five years", page(out, "town/billings.html"))
+
+    def test_the_contract_row_carries_the_same_sentences(self):
+        row = src.CONTRACTS["hail_history"]
+        self.assertIn(self.DISPLAY_SENTENCE, row["units"])
+        self.assertIn(self.CELL_SENTENCE, row["units"])
+        self.assertIn(self.DAY_SENTENCE, row["timing"])
+        self.assertIn(self.NEXT_DAY_SENTENCE, row["timing"])
+        self.assertNotIn("to a tenth", " ".join(row.values()))
+        self.assertNotIn("0.01-degree", " ".join(row.values()))
+
+    def test_the_contract_row_says_what_happens_when_iowa_state_does_not_answer(self):
+        request = " ".join(src.CONTRACTS["hail_history"]["request"].split())
+        self.assertIn("the day is rebuilt as the maximum of its two-minute frames. Where Iowa State's copy does not answer, "
+                      "the NOAA copy is used alone and the store's index counts those days as skipped.", request)
+
+    def test_the_gate_cell_and_benchland_show_the_decided_sizes(self):
+        from website import hail as hs
+        index = hs.load_index(hs.FIXTURE_DIR)
+        gate = hs.describe(index, hs.cell_events(hs.FIXTURE_DIR, 47.025, -110.135), self.HAIL_NOW, sample=True)
+        row = [r for r in gate["rows"] if r["iso"] == "2025-06-15"]
+        self.assertEqual(len(row), 1)
+        self.assertEqual((row[0]["in"], row[0]["mm"]), ("2.01", "51.3"))
+        self.assertIn("Jun 15, 2025: 2.01 in (51.3 mm)", row[0]["text"])          # the gate: row 797, col 1986
+        bench = hs.describe(index, hs.cell_events(hs.FIXTURE_DIR, 47.075, -110.015), self.HAIL_NOW, sample=True)
+        row = [r for r in bench["rows"] if r["iso"] == "2025-06-15"]
+        self.assertEqual(len(row), 1)
+        self.assertIn("Jun 15, 2025: 0.72 in (18.5 mm)", row[0]["text"])          # Benchland's own cell: 185 tenths
+
+    def test_the_contract_row_appears_only_with_the_flag(self):
+        self.assertIn(src.CONTRACTS["hail_history"]["name"], page(self.on, "about.html"))
+        self.assertNotIn(src.CONTRACTS["hail_history"]["name"], page(self.off, "about.html"))
+        self.assertIn("hail_history", site.HAIL_CONTRACTS)
+
+    def test_the_map_page_has_the_legend_line_the_sheet_templates_and_the_noscript_words(self):
+        on, off = page(self.on, "map.html"), page(self.off, "map.html")
+        self.assertIn('<p class="legend-tap">Tap or click the map for the five-year hail history at that spot</p>', on)
+        self.assertIn('<template id="hail-sheet">', on)
+        self.assertIn('<template id="hail-list">', on)
+        self.assertIn("Each town's page has its five-year hail history", on)
+        self.assertIn("Hail history didn't load", (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8"))
+        self.assertNotIn("legend-tap", off)
+        self.assertNotIn("hail-sheet", off)
+        self.assertNotIn("Each town's page has its five-year hail history", off)
+        self.assertIn("Hail history (radar estimates)", page(self.on, "index.html"))
+
+    def test_the_hail_styles_are_on_the_map_page_only_with_the_flag(self):
+        # The sheet's and the legend's rules are a style block that only a --hail-history build writes. The shared
+        # map.css is the same file in every build, so the default build's static files are the ones it was before.
+        source_css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        self.assertNotIn(".sheet-body .hail-days", source_css)
+        self.assertNotIn(".legend-tap", source_css)
+        self.assertEqual((self.off / "static" / "map" / "map.css").read_bytes(),
+                         (ROOT / "website" / "static" / "map" / "map.css").read_bytes())
+        on, off = page(self.on, "map.html"), page(self.off, "map.html")
+        self.assertIn(".sheet-body .hail-days:not([hidden])", on)
+        self.assertIn(".legend-2col .legend-tap", on)
+        self.assertNotIn("hail-days", off)
+        self.assertNotIn(".legend-tap", off)
+
+    def test_the_about_page_says_a_day_with_no_radar_estimate_is_not_no_hail(self):
+        about = " ".join(page(self.on, "about.html").split())      # the template wraps the sentence across two lines
+        self.assertIn("A day with no radar estimate is not the same as no hail: radar misses some hail, and a day with "
+                      "no file is listed and not counted.", about)
+        self.assertNotIn("No radar estimate on a day", about)
+        self.assertNotIn("A day with no radar estimate", page(self.off, "about.html"))
+
+    def test_the_about_page_puts_days_not_listed_after_the_estimate_sentence(self):
+        about = " ".join(page(self.on, "about.html").split())
+        sentence = "Days not listed have no radar estimate of 0.25 in or more; that is not the same as no hail."
+        self.assertIn(sentence, about)
+        estimate = about.index("An estimate is not a measurement at the ground and not an inspection.")
+        self.assertLess(estimate, about.index(sentence))
+        self.assertLess(about.index(sentence), about.index("The newest day is added by a job"))
+        self.assertNotIn("Days not listed", page(self.off, "about.html"))
+
+    def test_map_script_holds_no_threshold_unit_class_word_or_sentence(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        for literal in ("25.4", "254", "6.35"):
+            self.assertNotIn(literal, js)
+        for name in ("display_caps", "display_hundredths", "hailHundredths"):   # decision 10: the caps are gone
+            self.assertNotIn(name, js)
+        self.assertIn("Math.floor(t * 100 / h.tenths_per_inch) / 100", js)     # the floor rule, from the data's divisor
+        from website import hail as hs
+        strings = [c["word"] for c in hs.CLASSES] + list(hs.WORDS.values()) + list(site.HAIL_SITE_WORDS.values())
+        for text in strings:
+            if "{" not in text:                       # templates are checked as their fixed text below
+                self.assertNotIn(text, js, text)
+            else:
+                for part in re.split(r"\{\w+\}", text):
+                    if len(part) > 25:                # a long run of a template's own words
+                        self.assertNotIn(part, js, part)
+
+    def test_the_map_script_rounds_sizes_down_to_the_hundredth(self):
+        node = shutil.which("node")
+        if node is None:
+            self.skipTest("node is not installed; tools/smoke_map.py checks the same sizes in Chromium")
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        parts = []
+        for name in ("hailInches", "hailMm"):
+            match = re.search(r"^  function %s\(h, t\) \{.*\}$" % name, js, re.M)
+            self.assertIsNotNone(match, name)
+            parts.append(match.group(0))
+        script = "\n".join(parts) + (
+            "\nconst h = { tenths_per_inch: 254, tenths_per_mm: 10 };"
+            "\nconst cases = [513, 185, 253, 190, 1015, 254, 1016, 64];"
+            "\nconsole.log(JSON.stringify(cases.map(t => [hailInches(h, t), hailMm(h, t)])));")
+        out = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=60, check=True)
+        self.assertEqual(json.loads(out.stdout), [["2.01", "51.3"], ["0.72", "18.5"], ["0.99", "25.3"], ["0.74", "19.0"],
+                                                  ["3.99", "101.5"], ["1.00", "25.4"], ["4.00", "101.6"], ["0.25", "6.4"]])
+
+    def test_the_hail_part_of_the_map_script_reads_no_polygon_and_no_basemap(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        section = js[js.index("hail history at a spot (--hail-history builds)"):js.index("card mode (inside other pages)")]
+        for word in ("basemap", "polygon", "geometry"):
+            self.assertNotIn(word, section.lower())
+
+    def test_the_map_script_gives_a_sample_build_its_own_outside_words(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        open_hail = js[js.index("function openHail("):js.index("function onHailClick(")]
+        self.assertIn('var outside = h.state === "sample" ? h.words.sample_outside : h.words.outside;', open_hail)
+        self.assertEqual(open_hail.count('hailShow(h, "outside", outside)'), 2)   # a tile the list lacks; a key outside the state
+        self.assertIn('if (!cell) return hailShow(h, "outside", h.words.outside);', open_hail)   # off the grid: outside for certain
+
+    def test_the_sheet_labels_every_state_of_a_sample_build(self):
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        show = js[js.index("function hailShow("):js.index("function openHail(")]
+        self.assertIn('if (h.state === "sample") {', show)
+        self.assertIn('tag.className = "sample-tag";', show)
+        self.assertIn("tag.textContent = h.words.sample;", show)
+
+    def test_every_placeholder_is_filled_by_the_map_script(self):
+        from website import hail as hs
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        section = js[js.index("hail history at a spot (--hail-history builds)"):js.index("card mode (inside other pages)")]
+        names = set()
+        for text in list(hs.WORDS.values()) + list(site.HAIL_SITE_WORDS.values()):
+            names |= set(re.findall(r"\{(\w+)\}", text))
+        self.assertTrue(names)
+        for name in sorted(names):
+            self.assertRegex(section, r"[\"']?\b%s\b[\"']?\s*:" % re.escape(name), f"{{{name}}} is not filled")
+
+    def test_the_new_words_say_no_forbidden_term_and_no_dash(self):
+        from website import hail as hs
+        texts = list(hs.WORDS.values()) + list(site.HAIL_SITE_WORDS.values()) + list(
+            src.CONTRACTS["hail_history"].values())
+        for text in texts:
+            self.assertNotIn("\u2014", text)        # no em dash
+            self.assertNotIn("\u2013", text)        # no en dash
+            rest = text.replace("not the same as no hail", "").replace("'no hail'", "")
+            self.assertIsNone(self.FORBIDDEN.search(rest), text)
+
+    def test_the_build_flag_adds_only_the_hail_key_to_map_data(self):
+        off = set(json.loads(page(self.off, "data/map.json")))
+        on = set(json.loads(page(self.on, "data/map.json")))
+        self.assertEqual(on - off, {"hail"})
+        self.assertEqual(off - on, set())
+
+    def test_a_store_that_does_not_load_marks_the_source_failed_and_the_pages_still_build(self):
+        missing_dir = Path(tempfile.mkdtemp(prefix="hailwatch-missing-"))
+        self.addCleanup(shutil.rmtree, missing_dir, True)      # only the folder this test made
+        missing = missing_dir / "store.tar.gz"                 # not there
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-hail-bad-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, FailingFetcher(), self.HAIL_NOW, hail_history=True, hail_store_path=str(missing))
+        status = result["status"]["hail_history"]
+        self.assertFalse(status["ok"])
+        self.assertIn("missing", status["detail"])
+        h = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(h["state"], "unavailable")
+        self.assertEqual(h["tiles"], [])                       # no tile is known: the map says unavailable, not outside
+        self.assertIn("missing", h["problem"])
+        self.assertFalse((out / "hail").exists())
+        self.assertIn("Hail history is unavailable: the history store file store.tar.gz is missing.",
+                      page(out, "town/billings.html"))
+        self.assertTrue((out / "index.html").is_file())
+        self.assertIn("Hail history (radar estimates)", page(out, "index.html"))
+        self.assertIn("Hail history didn't load", page(out, "map.html"))     # the banner says it, with no all-clear
+        self.assertIn("This is not an all-clear.", page(out, "map.html"))
+
+    def test_require_live_fails_on_a_failed_store_and_the_default_build_passes(self):
+        missing_dir = Path(tempfile.mkdtemp(prefix="hailwatch-missing-"))
+        self.addCleanup(shutil.rmtree, missing_dir, True)
+        missing = missing_dir / "store.tar.gz"
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-hail-main-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        argv = ["--out", str(out), "--sample", "--now", "2026-10-18T12:00:00Z", "--hail-history",
+                "--hail-store", str(missing)]
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(site.main(argv + ["--require-live"]), 1)
+        self.assertIn("Sources that failed or were stale: hail_history", err.getvalue())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(site.main(argv), 0)
+        self.assertTrue((out / "town" / "billings.html").is_file())
+
+    def test_hail_store_needs_the_flag(self):
+        with contextlib.redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit) as cm:
+            site.main(["--out", "unused", "--sample", "--hail-store", "x.tar.gz"])
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--hail-store needs --hail-history", err.getvalue())
+
+    def test_a_local_store_folder_is_copied_after_its_manifest_checks_out(self):
+        from website import hail as hs
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-store-dir-"))
+        self.addCleanup(shutil.rmtree, store, True)
+        hs.fixture_store(store)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-hail-dir-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, None, self.HAIL_NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        self.assertTrue(result["status"]["hail_history"]["ok"])
+        self.assertFalse(result["status"]["hail_history"]["detail"].startswith("SAMPLE"))
+        h = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(h["state"], "loaded")          # a store file is real data: no SAMPLE label on it
+        self.assertEqual(h["tiles"], json.loads((store / "hail" / "index.json").read_text(encoding="utf-8"))["tiles"])
+        self.assertNotIn("SAMPLE data", page(out, "town/billings.html"))
+        self.assertIn("4 days with a radar-estimated hail size", page(out, "town/billings.html"))
+        self.assertEqual((out / "hail" / "t" / "r0079_c0199.json").read_bytes(),
+                         (store / "hail" / "t" / "r0079_c0199.json").read_bytes())
+
+    def test_a_store_whose_file_differs_from_its_manifest_is_not_copied(self):
+        from website import hail as hs
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-store-bad-"))
+        self.addCleanup(shutil.rmtree, store, True)
+        hs.fixture_store(store)
+        shard = store / "hail" / "t" / "r0079_c0199.json"
+        shard.write_bytes(shard.read_bytes() + b"\n")          # one byte more: the manifest's hash no longer matches
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-hail-tamper-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, None, self.HAIL_NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        status = result["status"]["hail_history"]
+        self.assertFalse(status["ok"])
+        self.assertIn("does not match the manifest", status["detail"])
+        self.assertFalse((out / "hail").exists())
+
+    def test_a_store_archive_is_unpacked_and_checked_before_it_is_copied(self):
+        from website import hail as hs
+        import tarfile
+        work = Path(tempfile.mkdtemp(prefix="hailwatch-archive-"))
+        self.addCleanup(shutil.rmtree, work, True)
+        hs.fixture_store(work / "src")
+        archive = work / "hail-store.tar.gz"
+        with tarfile.open(archive, "w:gz") as tar:
+            tar.add(work / "src" / "hail", arcname="hail")
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-archive-out-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, None, self.HAIL_NOW, sample=True, hail_history=True, hail_store_path=str(archive))
+        self.assertTrue(result["status"]["hail_history"]["ok"], result["status"]["hail_history"])
+        self.assertEqual((out / "hail" / "index.json").read_bytes(), (work / "src" / "hail" / "index.json").read_bytes())
+        self.assertEqual(json.loads(page(out, "data/map.json"))["hail"]["state"], "loaded")
+
+    def test_the_workflow_passes_the_flag_to_branch_previews_and_runs_its_tests(self):
+        text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
+        args = [line for line in text.splitlines() if "args+=(" in line and "--hail-history" in line]
+        self.assertEqual(len(args), 2)
+        self.assertIn('if [ "$GITHUB_REF" != "refs/heads/main" ]', args[0])
+        self.assertIn("--require-live --storm-layers --hail-history", args[0])
+        # main passes the flag on its own (at the owner's decision of 2026-10-21) and never --require-live: a failed
+        # store download leaves the pages saying the history is unavailable while the rest of the site publishes.
+        self.assertIn('if [ "$GITHUB_REF" = "refs/heads/main" ]', args[1])
+        self.assertIn("args+=(--hail-history)", args[1])
+        self.assertNotIn("--require-live", args[1])
+        # every build reads its own branch's asset, named as the store job names it
+        self.assertIn('export HAIL_STORE_ASSET="hail-store-$(echo "$GITHUB_REF_NAME" | tr \'/\' \'-\').tar.gz"', text)
+        # every build waits for the same commit's store job before it reads the asset; the listing needs the actions
+        # scope, and the wait is bounded (the job's timeout covers it)
+        wait = text[text.index("Wait for this branch's hail history store job"):text.index("- name: Build from live data")]
+        self.assertIn("if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'\n", wait)
+        self.assertIn('--workflow hail-store.yml --branch "$GITHUB_REF_NAME" --limit 1', wait)
+        self.assertIn("      actions: read", text)
+        build_job = text[text.index("\n  build:\n"):text.index("\n  deploy:\n")]
+        # a branch preview may wait up to 60 minutes for its store job; main never waits and keeps its 15
+        self.assertIn("timeout-minutes: ${{ github.ref == 'refs/heads/main' && 15 || 75 }}", build_job)
+        self.assertIn('print("\\nHail history (--hail-history):")', text)   # the summary names main's build too
+        unit = [line for line in text.splitlines() if "python -m unittest" in line]
+        self.assertEqual(len(unit), 1)
+        self.assertIn("tests.test_hail", unit[0])
+        self.assertIn('"tests/test_hail.py"', text)
+
+    def test_the_wait_step_waits_for_a_running_store_job_and_fails_a_branch_on_a_bad_one(self):
+        """The step's own shell runs under bash as GitHub runs a step with no shell key (bash -e), with a stub gh
+        and a no-op sleep: no job for the commit; a job that is running and then succeeds; a job that failed (fatal
+        on a branch, not on main); a listing error (the same); a job still running at the end of the loop (the
+        same)."""
+        text = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
+        step = text[text.index("Wait for this branch's hail history store job"):text.index("- name: Build from live data")]
+        script = textwrap.dedent(step[step.index("run: |") + len("run: |"):])
+        work = Path(tempfile.mkdtemp(prefix="hailwatch-wait-"))
+        self.addCleanup(shutil.rmtree, work, True)
+        stub = work / "bin"
+        stub.mkdir()
+        (stub / "sleep").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        (stub / "gh").write_text(
+            '#!/bin/sh\n'
+            'n=$(cat "$WAIT_TEST_COUNT" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "$WAIT_TEST_COUNT"\n'
+            'case "$WAIT_TEST_CASE" in\n'
+            '  none) echo "null null null";;\n'
+            '  runs-then-ok) if [ $n -lt 3 ]; then echo "queued null abc"; else echo "completed success abc"; fi;;\n'
+            '  failed-this) echo "completed failure abc";;\n'
+            '  failed-earlier) echo "completed failure older";;\n'
+            '  error) echo "HTTP 403: Resource not accessible by integration" >&2; exit 1;;\n'
+            '  forever) echo "in_progress null abc";;\n'
+            'esac\n', encoding="utf-8")
+        for name in ("sleep", "gh"):
+            (stub / name).chmod(0o755)
+
+        def run(case, ref):
+            count = work / f"count-{case}-{ref.replace('/', '-')}"
+            env = dict(os.environ, PATH=f"{stub}:{os.environ.get('PATH', '')}", GITHUB_REF=ref, GITHUB_SHA="abc",
+                       GITHUB_REF_NAME=ref.replace("refs/heads/", ""), WAIT_TEST_CASE=case, WAIT_TEST_COUNT=str(count))
+            p = subprocess.run(["bash", "-e", "-c", script], env=env, capture_output=True, text=True)
+            calls = int(count.read_text(encoding="utf-8")) if count.exists() else 0
+            return p.returncode, (p.stdout.strip().splitlines() or [""])[-1], calls
+
+        branch = "refs/heads/claude/x"
+        self.assertEqual(run("none", branch), (0, "No store job on this branch; the build reads the asset already published.", 1))
+        self.assertEqual(run("runs-then-ok", branch), (0, "The store job succeeded, after 3 checks.", 3))
+        self.assertEqual(run("failed-this", branch)[:2], (1, "The store job for this commit ended as failure. Read its log in the Actions tab."))
+        self.assertEqual(run("failed-earlier", branch)[:2],
+                         (0, "The branch's last store job ended as failure (an earlier commit); the build reads the asset already published."))
+        self.assertEqual(run("error", branch)[:2], (1, "The store job's state could not be read. Check the gh output above and the build job's actions: read scope."))
+        still = "The store job is still running after 60 minutes. Read its log in the Actions tab, then re-run this build."
+        self.assertEqual(run("forever", branch), (1, still, 60))
+
+    def test_the_job_and_the_build_name_the_asset_the_same_way_for_every_branch(self):
+        """The store job's asset step and the build's export use one formula: run both under bash for main and for
+        a branch with a slash, and compare them with each other and with the reader's default for main."""
+        from website import hail as hs
+        job = (ROOT / ".github" / "workflows" / "hail-store.yml").read_text(encoding="utf-8")
+        site_wf = (ROOT / ".github" / "workflows" / "website.yml").read_text(encoding="utf-8")
+        job_line = [line for line in job.splitlines() if 'echo "name=hail-store-' in line][0].strip().split("run: ", 1)[1]
+        site_line = [line for line in site_wf.splitlines() if "export HAIL_STORE_ASSET=" in line][0].strip()
+        for ref, want in (("main", "hail-store-main.tar.gz"), ("claude/hail-b1", "hail-store-claude-hail-b1.tar.gz")):
+            env = dict(os.environ, GITHUB_REF_NAME=ref, GITHUB_OUTPUT="/dev/stdout")
+            from_job = subprocess.run(["bash", "-e", "-c", job_line], env=env, capture_output=True, text=True).stdout.strip()
+            from_site = subprocess.run(["bash", "-e", "-c", site_line + '; echo "$HAIL_STORE_ASSET"'], env=env,
+                                       capture_output=True, text=True).stdout.strip()
+            self.assertEqual(from_job, "name=" + want)
+            self.assertEqual(from_site, want)
+        self.assertEqual(hs.STORE_ASSET_DEFAULT, "hail-store-main.tar.gz")
+
+    def test_the_download_takes_the_branch_asset_and_falls_back_to_main(self):
+        """site.hail_store with the build's fetcher: the branch's asset first (HAIL_STORE_ASSET), then main's when the
+        branch has none; the index records which one it took."""
+        from website import hail as hs
+        import tarfile
+        work = Path(tempfile.mkdtemp(prefix="hailwatch-fallback-"))
+        self.addCleanup(shutil.rmtree, work, True)
+        hs.fixture_store(work / "src")
+        archive = work / "store.tar.gz"
+        with tarfile.open(archive, "w:gz") as tar:
+            tar.add(work / "src" / "hail", arcname="hail")
+        data = archive.read_bytes()
+        asked = []
+
+        class Fetcher:
+            def binary(self, url, headers=None):
+                asked.append(url.rsplit("/", 1)[-1])
+                return (None, "not published (HTTP 404)") if "claude-x" in url else (data, None)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-fallback-out-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        with mock.patch.dict(os.environ, {"HAIL_STORE_ASSET": "hail-store-claude-x.tar.gz"}):
+            index = site.hail_store(out, None, False, Fetcher())
+        self.assertEqual(asked, ["hail-store-claude-x.tar.gz", "hail-store-main.tar.gz"])
+        self.assertEqual(index["asset"], "hail-store-main.tar.gz")
+        self.assertTrue((out / "hail" / "index.json").is_file())
+        # the build's status line names the asset it took
+        out2 = Path(tempfile.mkdtemp(prefix="hailwatch-fallback-status-"))
+        self.addCleanup(shutil.rmtree, out2, True)
+        c = site.Collector(Fetcher(), self.HAIL_NOW)
+        with mock.patch.dict(os.environ, {"HAIL_STORE_ASSET": "hail-store-claude-x.tar.gz"}):
+            c.hail(out2, False, None, [])
+        self.assertTrue(c.status["hail_history"]["ok"], c.status["hail_history"])
+        self.assertIn(", from hail-store-main.tar.gz", c.status["hail_history"]["detail"])
+
+    def test_the_hail_contract_row_states_the_asset_the_wait_and_the_stale_rule(self):
+        from website import hail as hs
+        row = src.CONTRACTS["hail_history"]
+        self.assertIn("hail-store-main.tar.gz", row["request"])
+        self.assertIn("its own branch's store", row["request"])
+        self.assertIn("waits for the store job of its own commit", row["timing"])
+        self.assertEqual(hs.STALE_DAYS, 3)
+        self.assertIn("more than three days old is a failed source", row["timing"])
+        self.assertNotIn("within the hour", row["timing"])
+
+    def test_a_failed_download_reads_plainly_on_the_pages_and_in_full_in_the_log(self):
+        """The build log keeps the file name and the HTTP code; the pages say the store could not be downloaded."""
+        from website import hail as hs
+
+        class Fetcher:
+            def binary(self, url, headers=None):
+                return (None, "not published (HTTP 404)")
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-404-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        c = site.Collector(Fetcher(), self.HAIL_NOW)
+        block = c.hail(out, False, None, [{"name": "Billings", "lat": 45.78, "lon": -108.5}])
+        status = c.status["hail_history"]
+        self.assertFalse(status["ok"])
+        self.assertIn("hail-store-main.tar.gz: not published (HTTP 404)", status["detail"])
+        self.assertEqual(block["state"], "unavailable")
+        self.assertIn("could not be downloaded", json.dumps(block))
+        self.assertNotIn("HTTP", json.dumps(block))
+        self.assertEqual(hs.plain_problem("the history store file x.tar.gz is missing"), "the history store file x.tar.gz is missing")
+
+    def test_a_stale_store_is_a_failed_source_but_the_sample_never_is(self):
+        """A real store whose last day is more than STALE_DAYS old still builds the pages (with the stale line) but
+        counts as a failed source, so --require-live reports it; the SAMPLE fixture is exempt."""
+        from website import hail as hs
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-store-stale-"))
+        self.addCleanup(shutil.rmtree, store, True)
+        hs.fixture_store(store)
+        as_of = date.fromisoformat(json.loads((store / "hail" / "index.json").read_text(encoding="utf-8"))["as_of"])
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-stale-out-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        late = datetime.combine(as_of + timedelta(days=hs.STALE_DAYS + 1), time(13, 0), tzinfo=timezone.utc)
+        result = site.build(out, None, late, sample=True, hail_history=True, hail_store_path=str(store))
+        status = result["status"]["hail_history"]
+        self.assertFalse(status["ok"])
+        self.assertIn("stale", status["detail"])
+        self.assertEqual(json.loads(page(out, "data/map.json"))["hail"]["state"], "loaded")
+        self.assertIn(hs.WORDS["stale"].format_map({"as_of": hs.fmt_date(as_of)}), page(out, "town/billings.html"))
+        fresh = datetime.combine(as_of + timedelta(days=hs.STALE_DAYS), time(13, 0), tzinfo=timezone.utc)
+        self.assertTrue(site.build(out, None, fresh, sample=True, hail_history=True,
+                                   hail_store_path=str(store))["status"]["hail_history"]["ok"])
+        self.assertTrue(site.build(out, None, late, sample=True, hail_history=True)["status"]["hail_history"]["ok"])
+
+    def test_the_smoke_test_has_the_hail_checks(self):
+        smoke = smoke_map()
+        for name in ("check_hail", "check_no_hail", "no_estimate_spot", "outside_spot"):
+            self.assertTrue(callable(getattr(smoke, name, None)), name)
+        self.assertEqual(smoke.HAIL_GATE, (47.025, -110.135))       # the centre of cell (797, 1986) (decision 15)
 
 
 if __name__ == "__main__":

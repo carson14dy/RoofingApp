@@ -4,8 +4,10 @@
     python -m website.build --out _site --sample        # labelled sample data, no network
     python -m website.build --out _site --require-live  # fail if any source failed (preview checks)
     python -m website.build --out _site --storm-layers  # also NOAA radar echo tops (text) and the GOES satellite picture
+    python -m website.build --out _site --hail-history  # also the five-year hail history (website/hail.py)
+    python -m website.build --out _site --sample --hail-history --hail-store store.tar.gz  # a local store, not the download
 
-GitHub Actions runs the live build every 10 minutes and publishes the folder with GitHub Pages
+GitHub Actions runs the live build on a schedule set to every 10 minutes and publishes the folder with GitHub Pages
 (.github/workflows/website.yml). Every page says when its data was fetched; nothing on a page is
 newer than that time.
 """
@@ -14,14 +16,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import sys
+import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from . import hail as hs
 from . import sources as src
 
 HERE = Path(__file__).resolve().parent
@@ -234,6 +239,42 @@ class Collector:
         self.note("satellite", sat.LABEL, bool(st.get("ok")), st.get("detail") or "not built")
         return layer
 
+    def hail(self, out_dir: Path, sample: bool, store: str | None, towns: list) -> dict:
+        """The five-year hail history (website/hail.py; --hail-history only). The store's hail/ files are copied
+        into the site, and each town gets its words (town["hail"]). One status line, like the others: a store
+        that doesn't load is a failed source, the pages say so in words, and the build goes on (--require-live
+        then fails). Returns the map.json block. The copy is made only after the store's manifest checks out."""
+        sampled = sample and store is None          # the SAMPLE fixture only; a --hail-store file is real data
+        try:
+            index = hail_store(out_dir, store, sample, self.f)
+            tiles = hail_tiles(index, out_dir)
+            cells = [hs.cell_events(out_dir, t["lat"], t["lon"]) for t in towns]
+            words = [hs.describe(index, events, self.now, sample=sampled) for events in cells]
+            block = hs.map_data(index, sample=sampled)
+            block["tiles"] = tiles                  # the browser's outside test: a tile not listed has no Montana cell
+            detail = (f"{index['events']:,} events in {index['shards']} shard files, {index['days_present']} of "
+                      f"{index['days_expected']} days, as of {index['as_of']}")
+            if index.get("asset"):                  # the release asset the download took (the branch's, else main's)
+                detail += f", from {index['asset']}"
+            stale = not sampled and hs.is_stale(index["as_of"], self.now)    # a real store older than STALE_DAYS
+            if stale:                               # the pages carry it with the stale line; the source counts as failed
+                detail += f" (stale: more than {hs.STALE_DAYS} days old, the daily job has not published)"
+            self.note("hail_history", HAIL_LABEL, not stale, ("SAMPLE store: " if sampled else "") + detail)
+        except (hs.HailStoreError, OSError, ValueError, KeyError, TypeError) as e:
+            problem = str(e) if isinstance(e, hs.HailStoreError) else f"the history files couldn't be read ({type(e).__name__})"
+            self.note("hail_history", HAIL_LABEL, False, problem)       # the log keeps the technical detail
+            shown = hs.plain_problem(problem)                             # the pages say it in plain words
+            words = [hs.describe_unavailable(shown) for _ in towns]
+            block = hs.map_data_unavailable(shown)
+            block["tiles"] = []                     # no store, so no tile is known: the map says unavailable, not outside
+        for t, w in zip(towns, words):
+            t["hail"] = w
+        block["words"].update(HAIL_SITE_WORDS)
+        block["stale_days"] = HAIL_STALE_DAYS
+        block["at_zoom"] = HAIL_AT_ZOOM
+        block["tenths_per_mm"] = HAIL_TENTHS_PER_MM
+        return block
+
 
 # ---------------------------------------------------------------- map page data
 
@@ -252,9 +293,10 @@ IMAGERY = {
 
 
 def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dict, reports: dict,
-             status: dict) -> dict:
+             status: dict, hail: dict | None = None) -> dict:
     """Everything the map page draws, as one JSON document (data/map.json). The contract is in
-    docs/DESIGN.md ("Interactive map"); website/static/map/map.js reads it."""
+    docs/DESIGN.md ("Interactive map"); website/static/map/map.js reads it. The "hail" block is there only in a
+    --hail-history build (Collector.hail): no key otherwise."""
     from . import gridded
     radar_times = [f["time"] for f in (layers.get("precip") or {}).get("frames", []) if f.get("kind") == "radar"]
     first, last = now - timedelta(hours=1, minutes=10), now + timedelta(hours=14)
@@ -281,6 +323,7 @@ def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dic
         "alerts": {"ok": alerts["ok"], "checked": alerts["checked"], "last_known": alerts.get("last_known"),
                    "items": alerts["items"]},
         "reports": reports["items"],
+        **({"hail": hail} if hail is not None else {}),
     }
 
 
@@ -407,6 +450,15 @@ STORM_JS = "map/storm.js"   # places the storm text in the Map's List and town s
 # Feeds listed on the About page only in a --storm-layers build (their words and layers ship with the flag)
 STORM_CONTRACTS = ("storm_levels", "satellite")
 
+# The five-year hail history (--hail-history only; website/hail.py holds the words and the store format)
+HAIL_LABEL = "Hail history (radar estimates)"        # the status line's name
+HAIL_CONTRACTS = ("hail_history",)                    # on the About page only in a --hail-history build
+# Words map.js fills that hail.WORDS doesn't hold: a shard that didn't load (the unavailable line's problem)
+HAIL_SITE_WORDS = {"fetch_failed": "the history for this spot didn't load in this update"}
+HAIL_STALE_DAYS = hs.STALE_DAYS    # map.js: an as_of older than this (in days) shows the stale line
+HAIL_AT_ZOOM = 9                   # map.js: ?at=lat,lon opens at this zoom, or the current one if it is higher
+HAIL_TENTHS_PER_MM = 10            # map.js: the store's tenths of a millimetre, for the millimetre text
+
 
 def asset_versions(static: Path, names=VERSIONED) -> dict:
     """Short content hash per versioned static file, for the pages' ?v= query."""
@@ -423,8 +475,55 @@ def _unbuilt_static(storm_layers: bool):
     return ignore
 
 
+def hail_store(out: Path, store: str | None, sample: bool, fetch) -> dict:
+    """Copy the hail store's hail/ files into out/hail/ and return the store's index. Where the store comes from:
+    --hail-store (a folder or a hail-store.tar.gz), else the SAMPLE fixture with --sample, else the release
+    download (hail.fetch_store through the build's fetcher). Raises hail.HailStoreError with the problem in plain
+    words. The copy is made only after the manifest has checked out."""
+    if store is not None:
+        path = Path(store)
+        if not path.exists():
+            raise hs.HailStoreError(f"the history store file {path.name} is missing")
+        with tempfile.TemporaryDirectory(prefix="hail-store-") as tmp:
+            root = hs.load_store(path, tmp)          # a folder is checked in place; an archive is unpacked into tmp
+            return _copy_hail(root, out, hs.load_index(root))
+    if sample:
+        index = hs.load_index(hs.FIXTURE_DIR)
+        hs.check_manifest(hs.FIXTURE_DIR)
+        return _copy_hail(hs.FIXTURE_DIR, out, index)
+    with tempfile.TemporaryDirectory(prefix="hail-store-") as tmp:
+        index, url = hs.fetch_store_any(fetch.binary, tmp, hs.store_urls())   # the branch's asset, else main's
+        index = dict(index, asset=url.rsplit("/", 1)[-1])
+        return _copy_hail(Path(tmp), out, index)
+
+
+def _copy_hail(root: Path, out: Path, index: dict) -> dict:
+    """Copy root/hail/ into the site as out/hail/ (the shards the map and the town pages read)."""
+    shutil.copytree(root / "hail", out / "hail")
+    return index
+
+
+TILE_NAME = re.compile(r"r\d{4}_c\d{4}")
+
+
+def hail_tiles(index: dict, out: Path) -> list[str]:
+    """The tile names the store holds (hail/index.json "tiles"), sorted and unique. The browser's outside test reads
+    this list (map.json hail.tiles), so every name must have its shard file under out/hail/t/: a name without one is
+    a broken store, a failed source, never a tile with no Montana cell. Raises hail.HailStoreError."""
+    tiles = index.get("tiles")
+    if not isinstance(tiles, list) or not all(isinstance(t, str) and TILE_NAME.fullmatch(t) for t in tiles):
+        raise hs.HailStoreError("the history index has no list of tile names")
+    if tiles != sorted(set(tiles)):
+        raise hs.HailStoreError("the history tile names are not sorted and unique")
+    for name in tiles:
+        if not (out / "hail" / "t" / f"{name}.json").is_file():
+            raise hs.HailStoreError(f"the history has no shard file for tile {name}")
+    return tiles
+
+
 def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | None = None,
-          sample: bool = False, storm_layers: bool = False) -> dict:
+          sample: bool = False, storm_layers: bool = False, hail_history: bool = False,
+          hail_store_path: str | None = None) -> dict:
     if out.exists():
         shutil.rmtree(out)
     (out / "town").mkdir(parents=True)
@@ -449,13 +548,16 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
         storms = c.storm(towns, sample)
         for t in towns:
             t["storm"] = storms[t["slug"]]
+    hail_block = c.hail(out, sample, hail_store_path, towns) if hail_history else None
 
     base = {"built": now, "built_ms": int(now.timestamp() * 1000),
             "asset_v": asset_versions(out / "static", VERSIONED + ((STORM_JS,) if storm_layers else ())),
             "status": c.status, "sample": sample, "storm_layers": storm_layers, "satellite_text": satellite_text,
+            "hail_history": hail_history, "hail_words": hs.WORDS if hail_history else None,
             "limits": src.LIMITS, "imagery": IMAGERY, "offices": OFFICES,
             "towns_nav": [(t["slug"], t["name"]) for t in TOWNS],
-            "contracts": {k: v for k, v in src.CONTRACTS.items() if storm_layers or k not in STORM_CONTRACTS},
+            "contracts": {k: v for k, v in src.CONTRACTS.items()
+                          if (storm_layers or k not in STORM_CONTRACTS) and (hail_history or k not in HAIL_CONTRACTS)},
             "fresh_min": src.FRESH_MINUTES, "qc_words": src.QC_WORDS,
             "qc_rejected": src.QC_REJECTED}
     e = env()
@@ -474,7 +576,8 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
         (out / "town" / f"{t['slug']}.html").write_text(html, encoding="utf-8")
 
     (out / "data" / "map.json").write_text(
-        json.dumps(map_data(now, sample, layers, towns, alerts, reports, c.status), separators=(",", ":")),
+        json.dumps(map_data(now, sample, layers, towns, alerts, reports, c.status, hail=hail_block),
+                   separators=(",", ":")),
         encoding="utf-8")
     state = {"built": src._iso(now), "sample": sample, "status": c.status,
              "alerts": {k: v for k, v in alerts.items() if k not in ("error", "from_towns")},
@@ -487,13 +590,17 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
                                       for s in t["obs"]["stations"]] for t in towns if t["obs"]["stations"]}}
     (out / "data" / "state.json").write_text(json.dumps(state, indent=1), encoding="utf-8")
     (out / ".nojekyll").write_text("", encoding="utf-8")
+    content = content_sample(alerts, towns, reports, satellite_text)
+    if hail_history:                         # --hail-history only: each town's hail line, for the build log
+        content["hail"] = {t["name"]: t["hail"]["lead"] or t["hail"]["unavailable"] or t["hail"]["outside"]
+                           for t in towns}
     return {"status": c.status, "alerts": len(alerts["items"]),
             "alerts_null_geometry": sum(1 for a in alerts["items"] if not a["geometry"]),
             "towns_with_forecast": sum(1 for t in towns if t["hours"]),
             "towns_with_gusts": sum(1 for t in towns if t["summary"]["gusts_known"]),
             "towns_with_readings": sum(1 for t in towns if t["obs"]["now"]),
             "reports": len(reports["items"]), "map": map_summary(layers),
-            "content": content_sample(alerts, towns, reports, satellite_text)}
+            "content": content}
 
 
 def map_summary(layers: dict) -> dict:
@@ -556,13 +663,21 @@ def main(argv=None) -> int:
     ap.add_argument("--storm-layers", action="store_true",
                     help="also read NOAA radar echo tops for each town (text only) and the GOES satellite "
                          "picture for the map; off by default")
+    ap.add_argument("--hail-history", action="store_true",
+                    help="also the five-year hail history: the store's files, a cell history on the map and a "
+                         "section on each town page; off by default")
+    ap.add_argument("--hail-store", metavar="PATH",
+                    help="with --hail-history: a folder or hail-store.tar.gz holding hail/, used instead of the "
+                         "download (local checks and the daily job's file)")
     ap.add_argument("--now", help="build time (ISO, UTC); default: now")
     a = ap.parse_args(argv)
+    if a.hail_store and not a.hail_history:
+        ap.error("--hail-store needs --hail-history")
     now = src.parse_iso(a.now) if a.now else datetime.now(UTC).replace(microsecond=0)
     out = Path(a.out)
     result = build(out, None if a.sample else src.Fetcher(), now,
                    None if a.sample else load_previous(a.previous), sample=a.sample,
-                   storm_layers=a.storm_layers)
+                   storm_layers=a.storm_layers, hail_history=a.hail_history, hail_store_path=a.hail_store)
     print(json.dumps(result, indent=1, default=str))
     failed = [k for k, v in result["status"].items() if not v["ok"]]
     if a.require_live and failed:

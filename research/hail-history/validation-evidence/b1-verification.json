@@ -1,0 +1,683 @@
+{
+  "round1_checked_at_utc": "2026-10-18T09:05Z",
+  "docs_round2_utc": "2026-10-18T09:56Z",
+  "final_check_utc": "2026-10-18T13:14Z",
+  "branch": "claude/hail-b1",
+  "base_commit": "825d6c7",
+  "head_commit": "2390cc3 (WIP). The figures are for the working tree: 20 modified tracked files and 1 untracked file (website/data/hail-fixture/hail/t/r0079_c0198.json). Against 825d6c7: 22 files, 6403 insertions, 26 deletions.",
+  "verdict": "Ready, merged at the owner's decision of 2026-10-21. F1 is fixed: the website workflow installs pyarrow for the tests, and the suite runs with no skip (600 tests on the go-live tree of 2026-10-21). Measured and passing: B1-1, B1-2, B1-3, B1-5, B1-6, B1-7 and B1-8; B1-4 is deferred to B2. Non-blocking, as recorded: F2 (rebuild the measurement store with the default end), F3 (fixture completeness under decision 3), F4 (run the daily job once before a branch preview; now the build waits for the same commit's store job), F5 and F6 (rulings), F7 (run the suite on Python 3.12).",
+  "gates": [
+    {
+      "id": "B1-1",
+      "gate": "The flag-off build may differ from the base build 825d6c7 only in the shared static assets map.js and map.css and in their ?v= hashes inside pages; the sheet markup in map.html is gated on the flag; no other byte differs.",
+      "status": "pass",
+      "evidence": "Final check: the flag-off build of the working tree and the base build (both --sample --now 2026-10-18T12:00:00Z) have 91 files each. diff -rq shows two differing files only: static/map/map.js (120,096 to 138,035 bytes, +17,939) and map.html (one line, map.js?v=df8138b45567 to ?v=fc8f752d9e8d, same length). map.css is identical (47,768 bytes); the other 89 files are byte-identical. The flag-off map.html has no hail markup (its one 'hail' match is the page title in both builds).",
+      "round1_status": "pass",
+      "round1_evidence": "Round 1 flag-off check (before decision 5 and decision 10 changes): differed in map.js and one map.html line; map.css identical.",
+      "round1_gate": "Round 1 gate text: the same as the gate above."
+    },
+    {
+      "id": "B1-2",
+      "gate": "The flag-on site at most 60 MB larger than the flag-off site",
+      "status": "pass",
+      "evidence": "Final check: flag-on real build (--hail-history --sample --hail-store out2/store/hail-store.tar.gz) 35,196,800 B in 4,690 files, minus flag-off 2,355,126 B in 91 files = 32,841,674 B, under 60 MB. hail/ = 32,719,677 B in 4,599 files: 4,597 shards, index.json 80,085 B, manifest.json 617,288 B; shard bytes sum to 32,022,304 (equal to the index bytes field). Largest shard 22,374 B (hail/t/r0097_c0258.json). map.json 116,077 B (flag-off 47,906 B); its tiles list is 64,359 B. Published hail/ re-verified with website.hail verify: ok.",
+      "round1_status": "pass",
+      "round1_evidence": "Round 1: flag-on minus flag-off 31,329,085 B (before the decision 11 state lists and the tiles list)."
+    },
+    {
+      "id": "B1-3",
+      "gate": "the centre of the cell nearest Benchland that holds 513 tenths on SPC day 2025-06-15 (row 797, col 1986) shows 2.01 in (51.3 mm) on Jun 15, 2025; Benchland's own cell (792, 1998) shows 0.72 in (18.5 mm)",
+      "status": "pass",
+      "evidence": "Final check (Chromium, real build, smoke_map check_hail at 1280x800 and 390x844, exit 0): the gate cell's row shows 'Jun 15, 2025: 2.01 in (51.3 mm), hen egg to tennis ball, severe size'; the sheet lead for the gate cell reads 'Largest: 2.01 in (51.3 mm) on Jun 15, 2025'. Benchland's own cell (792, 1998) is asserted at 0.72 in (18.5 mm) by the same check. Independent search over every shard for SPC day 2025-06-15: five cells hold 513 tenths in the state; the nearest to Benchland (47.08 N, 110.02 W) is row 797, col 1986 at 10.64 km; the next is row 742, col 1918 at 81.36 km. Benchland's own cell holds 185 tenths (0.72 in) and its centre is 0.67 km from the point. Screenshots: out2/recheck/shots-real/hail-sheet-gate-390.png and hail-sheet-gate-1280.png.",
+      "round1_status": "pass",
+      "round1_evidence": "Round 1 browser checks of the gate cell and Benchland's cell passed under the superseded display rule (the values are not repeated here; decision 10 replaces them)."
+    },
+    {
+      "id": "B1-4",
+      "gate": "The SPC report of 1.75 in that day within 5 miles of the Benchland click point (deferred until B2 lands).",
+      "status": "deferred",
+      "evidence": "Needs the NWS and SPC report join from B2. Not measured on this branch."
+    },
+    {
+      "id": "B1-5",
+      "gate": "The store equals the prototype's on every cell: compare passes when every overlapping day that was not re-derived has 0 mismatches and the mask is the same, and every re-derived day equals the frame maximum the builder recorded; compare prints the partial list (copy_check.partial); verify does not fail on partial days.",
+      "status": "pass",
+      "evidence": "Final check: compare (venv interpreter, which has pyarrow) of out2/store/store (built 12:42:28 UTC, as_of 2026-10-16) against store/h1-mesh: passed=True. Overlapping days 1824; mask equal=True; matched cells 2636407; only in store 201; only in prototype 921; value differs 1915. Mismatches on days that were not re-derived: 0; on the re-derived days (reported apart): 3037. Re-derived days 2025-06-25, 2025-06-26, 2026-05-25, 2026-09-10: their store values differ from the record's frame maximum in 0 cells; records missing: []. Partial days printed by compare: [{\"day\": \"2025-06-25\", \"frames\": 717, \"expected\": 720}].",
+      "round1_status": "fail",
+      "round1_evidence": "Round 1: failed because the partial day 2025-06-25 (717 of 720 frames) was counted as complete and the gate treated re-derived days as failures. Superseded by decision 12."
+    },
+    {
+      "id": "B1-6",
+      "gate": "the daily job is a full rebuild: a cold-cache and a warm-cache build give byte-identical shards, and the newest day re-decodes with 0 mismatches",
+      "status": "pass",
+      "evidence": "Final check: a cold-cache build (empty cache: 1821 downloads, 539.8 s) and a warm-cache build (same code and default window, reusing the cold cache: 0 downloads, 244.6 s) give byte-identical shards: 4597 of 4597 shard files equal, and the sha256 digest of the concatenated shards is 1cf3212d288baac0 in both. index.json differs only in built_at, so its manifest entry differs only by that. Both verify ok (as_of 2026-10-17, 2,638,544 events). The newest day, SPC 2026-10-17 (file stamped 2026-10-18 12:00 UTC, posted 12:08:17 UTC), re-decodes directly with pygrib: 7 cells at or above the floor, 7 stored, 0 mismatches (cold store, identical to the warm store). SPC 2026-10-16 (file 2026-10-17) on the 12:42 store: 14 decoded, 14 stored, 0 mismatches.",
+      "round1_status": "partial",
+      "round1_evidence": "Round 1: independent decode of earlier days matched; no append code existed; no cold-cache versus warm-cache build was run."
+    },
+    {
+      "id": "B1-7",
+      "gate": "Smoke test in Chromium at 390 and 1280 px.",
+      "status": "pass",
+      "evidence": "Final check: tools/smoke_map.py exit 0 on the off, sample and real builds (real with --shots: 10 PNG files in out2/recheck/shots-real). The sample run printed one note: no listed tile has a cell outside Montana, so the outside-after-fetch check did not run (the real run printed no note). tools/smoke_pages.py exit 0 on the real build: every page fits at 288, 320, 375, 768 and 1440 px, light and dark. check_hail runs at 1280x800 and 390x844.",
+      "round1_status": "pass",
+      "round1_evidence": "Round 1 smoke runs passed on the off, sample and real builds."
+    },
+    {
+      "id": "B1-8",
+      "gate": "Zero off-site requests in the default state.",
+      "status": "pass",
+      "evidence": "Final check: smoke_map exit 0 on the off, sample and real builds; it counts every request that leaves the local server in each browser context and requires zero, except the imagery host after a switch to Imagery. The outside points (Colorado, Wyoming, Idaho, Canada) ask for no shard and no other host.",
+      "round1_status": "pass",
+      "round1_evidence": "Round 1: default map page load made no request to another origin."
+    }
+  ],
+  "recheck": {
+    "status": "measured in the final check on out2/recheck builds of the working tree, with decisions 10 to 15 applied. Values are measurements unless labelled as arithmetic or as a ruling.",
+    "display_rule": {
+      "rule": "sizes show to the hundredth of an inch, rounded down, with the millimetres exact (decision 10)",
+      "expected_by_rule_arithmetic": {
+        "513": "2.01 in (51.3 mm)",
+        "185": "0.72 in (18.5 mm)",
+        "253": "0.99 in (25.3 mm)",
+        "190": "0.74 in (19.0 mm)",
+        "1015": "3.99 in (101.5 mm)"
+      },
+      "measured_builder_inches": {
+        "513": "2.01",
+        "185": "0.72",
+        "253": "0.99",
+        "190": "0.74",
+        "1015": "3.99"
+      },
+      "measured_browser_map_js_under_node": "unit test test_the_map_script_rounds_sizes_down_to_the_hundredth runs map.js hailInches and hailMm under node (not skipped): 513 -> 2.01/51.3, 185 -> 0.72/18.5, 253 -> 0.99/25.3, 190 -> 0.74/19.0, 1015 -> 3.99/101.5, 254 -> 1.00/25.4, 1016 -> 4.00/101.6, 64 -> 0.25/6.4",
+      "rendered_in_browser": "smoke_map check_hail on the real build at 1280x800 and 390x844 (exit 0): the gate row and the gate sheet lead read 2.01 in (51.3 mm); Benchland's centre reads 0.72 in (18.5 mm)"
+    },
+    "outside_rule": {
+      "tiles_list_bytes_in_map_json": 64359,
+      "tiles_list_bytes_with_key": 64367,
+      "tiles_count": 4597,
+      "tiles_count_expected_about": 4600,
+      "montana_cells": 450765,
+      "montana_tiles_without_shard": 0,
+      "shard_state_mismatches_against_mask": 0,
+      "shard_non_integer_entries": 0,
+      "points": {
+        "Wyoming (43.5, -108.0)": "outside words and zero shard requests: smoke_map real passed (check_hail HAIL_OUTSIDE)",
+        "Idaho (44.6, -115.0)": "outside words and zero shard requests: smoke_map real passed",
+        "Canada (49.5, -110.0)": "outside words and zero shard requests: smoke_map real passed",
+        "Colorado (40.0, -105.0)": "outside words and zero shard requests: smoke_map real passed"
+      },
+      "in_state_cell_with_no_events": "no-estimate words after one shard request: smoke_map real passed, no note issued; the sample build's only note is that its outside-after-fetch check has no outside cell in its three tiles"
+    },
+    "copy_check": {
+      "store_12_42_as_of_2026_10_16": {
+        "days_checked": 1586,
+        "days_differed": [
+          "2025-06-25",
+          "2025-06-26",
+          "2026-05-25",
+          "2026-09-10"
+        ],
+        "rederived": [
+          "2025-06-25",
+          "2025-06-26",
+          "2026-05-25",
+          "2026-09-10"
+        ],
+        "partial": [
+          {
+            "day": "2025-06-25",
+            "frames": 717,
+            "expected": 720
+          }
+        ],
+        "skipped": "IEM has no copy of 239 days (HTTP 404), from 2021-10-17 to 2022-06-13; those days use the bucket copy",
+        "frames": {
+          "2025-06-25": 721,
+          "2026-05-25": 735,
+          "2025-06-26": 720,
+          "2026-09-10": 720
+        }
+      },
+      "store_cold_default_end_as_of_2026_10_17": {
+        "days_checked": 1587,
+        "days_differed": [
+          "2025-06-25",
+          "2025-06-26",
+          "2026-05-25",
+          "2026-09-10"
+        ],
+        "rederived": [
+          "2025-06-25",
+          "2025-06-26",
+          "2026-05-25",
+          "2026-09-10"
+        ],
+        "partial": [
+          {
+            "day": "2025-06-25",
+            "frames": 717,
+            "expected": 720
+          }
+        ],
+        "skipped": "IEM has no copy of 238 days (HTTP 404), from 2021-10-18 to 2022-06-13; those days use the bucket copy"
+      }
+    },
+    "compare": {
+      "store": "out2/store/store (12:42 build)",
+      "prototype": "store/h1-mesh",
+      "passed": true,
+      "mask_equal": true,
+      "overlap_days": 1824,
+      "matched": 2636407,
+      "only_in_store": 201,
+      "only_in_prototype": 921,
+      "value_differs": 1915,
+      "mismatches_on_days_not_rederived": 0,
+      "mismatches_on_rederived_days": 3037,
+      "mismatches_by_day": {
+        "2025-06-25": 3033,
+        "2026-05-25": 4
+      },
+      "rederived_days_equal_frame_maximum": {
+        "records_missing": [],
+        "record_mismatches": 0
+      },
+      "partial_list_printed": [
+        {
+          "day": "2025-06-25",
+          "frames": 717,
+          "expected": 720
+        }
+      ],
+      "events_in_overlap": {
+        "store": 2638523,
+        "prototype": 2639243
+      }
+    },
+    "verify": {
+      "store_12_42": {
+        "ok": true,
+        "as_of": "2026-10-16",
+        "events": 2638537,
+        "shards": 4597,
+        "tiles": 4597,
+        "state_cells": 450765,
+        "bytes": 32022304,
+        "benchland": 513
+      },
+      "store_cold": {
+        "ok": true,
+        "as_of": "2026-10-17",
+        "events": 2638544,
+        "shards": 4597,
+        "bytes": 32022379
+      },
+      "store_warm": {
+        "ok": true,
+        "as_of": "2026-10-17",
+        "events": 2638544,
+        "shards": 4597,
+        "bytes": 32022379
+      },
+      "published_hail_inside_real_build": {
+        "ok": true,
+        "as_of": "2026-10-16",
+        "shards": 4597,
+        "bytes": 32022304
+      }
+    },
+    "size_budget": {
+      "budget_bytes": 60000000,
+      "site_bytes": {
+        "real_flag_on": 35196800,
+        "off_flag_off": 2355126,
+        "base_825d6c7_flag_off": 2337187,
+        "sample_flag_on": 2389425
+      },
+      "flag_on_minus_flag_off_bytes": 32841674,
+      "hail_dir_bytes": 32719677,
+      "hail_dir_files": 4599,
+      "shard_files": 4597,
+      "shard_bytes_sum": 32022304,
+      "index_json_bytes": 80085,
+      "manifest_json_bytes": 617288,
+      "largest_shard": "hail/t/r0097_c0258.json, 22374 bytes",
+      "map_json_bytes_flag_on": 116077,
+      "map_json_bytes_flag_off": 47906,
+      "tiles_list_bytes": 64359
+    },
+    "flag_off_build": "measured (B1-1): 91 files in each of base 825d6c7 and the working tree (flag off). diff -rq: static/map/map.js (120,096 -> 138,035 bytes, +17,939) and map.html (one line, map.js?v=df8138b45567 -> ?v=fc8f752d9e8d). map.css identical (47,768 bytes). The site total grows by exactly the map.js difference, 17,939 bytes.",
+    "daily_job": {
+      "cold_cache_vs_warm_cache_shards": "byte-identical: 4597 of 4597 shard files; index.json differs only in built_at. Cold build: 1821 downloads, 539.8 s; warm build: 0 downloads, 244.6 s.",
+      "newest_day_redecode_mismatches": {
+        "SPC 2026-10-17 (file 20261018), cold store": {
+          "decoded_at_or_above_floor": 7,
+          "stored": 7,
+          "mismatches": 0
+        },
+        "SPC 2026-10-16 (file 20261017), store 12:42": {
+          "decoded_at_or_above_floor": 14,
+          "stored": 14,
+          "mismatches": 0
+        }
+      },
+      "cold_store_vs_12_42_store_event_level": "0 changed values; 7 events only in the cold store, all on 2026-10-17"
+    },
+    "benchland_gate": {
+      "gate_cell_centre": "row 797, col 1986 (47.025, -110.135): 2.01 in (51.3 mm) on Jun 15, 2025 (store 513 tenths)",
+      "benchland_own_cell": "row 792, col 1998 (centre 47.075, -110.015): 0.72 in (18.5 mm) (store 185 tenths)",
+      "independent_search": "five cells hold 513 tenths on 2025-06-15 in the state; nearest to Benchland (47.08, -110.02) is row 797, col 1986 at 10.64 km; next row 742, col 1918 at 81.36 km",
+      "browser": "measured at 1280x800 and 390x844 (smoke_map check_hail, real build, exit 0); screenshots out2/recheck/shots-real/hail-sheet-gate-390.png and hail-sheet-gate-1280.png"
+    },
+    "smoke": {
+      "smoke_map_off": "exit 0 (passed)",
+      "smoke_map_sample": "exit 0 (passed; note: outside-after-fetch check had no outside cell in its three tiles)",
+      "smoke_map_real": "exit 0 (passed, no note), with --shots: 10 PNG files",
+      "smoke_pages_real": "exit 0: every page fits at 288, 320, 375, 768 and 1440 px, light and dark"
+    },
+    "tests": {
+      "unittest_default_python": "Ran 585 tests in 105.686s; OK (skipped=4); the four skipped are the CompareTests (no pyarrow)",
+      "unittest_venv_python": "Ran 585 tests in 104.541s; OK; no skips",
+      "launcher_selftest_payload": "PASS payload 1.0.0; exit 0"
+    },
+    "decision_16": {
+      "rmtree_calls": 37,
+      "unlink_calls": 3,
+      "os_remove_calls": 0,
+      "rm_rf": 0,
+      "result": "pass: every call acts on a folder that the test made with mkdtemp or TemporaryDirectory, or on a copy the test made (test_site.py 23 rmtree; test_hail.py 12 rmtree and 3 unlink; test_updates.py 1 rmtree; test_weather.py 1 rmtree)"
+    },
+    "fixture": {
+      "bytes": 3639,
+      "events": 57,
+      "real_events_for_same_tiles_and_days": 1575,
+      "state_lists_equal_store": true,
+      "values_equal_store": true,
+      "note": "completeness is F3"
+    },
+    "git": {
+      "head": "2390cc3",
+      "status_lines": 21,
+      "modified_tracked": 20,
+      "untracked": 1,
+      "diff_vs_base_825d6c7": "22 files, 6403 insertions, 26 deletions (measured after this record was written)"
+    },
+    "text_checks": {
+      "em_dash_added_lines": 0,
+      "en_dash_added_lines": 0,
+      "forbidden_terms_in_hail_text": 0,
+      "unfilled_braces_in_hail_text": 0,
+      "sample_label_in_real_hail_text": 0,
+      "decision_14_sentences": "present in 14 town hail blocks, the About hail text, map.json, DESIGN.md, DECISIONS.md D34 and the sources.py contract row"
+    },
+    "python_3_12": "ast.parse ok for hail.py, build.py and sources.py; the suite and a store build were not run on 3.12 (F7)"
+  },
+  "notes": [
+    "Final check scope: read-only review of the working tree of the B1 branch (HEAD 2390cc3 WIP plus 20 modified tracked files and 1 untracked file, measured before this record was rewritten). The only file edited is this record. Builds, logs and scratch are under out2/recheck: src is a copy with .git excluded; base is git archive of 825d6c7; the cold and warm store builds use their own cache folders.",
+    "F1 (BLOCKING, fix before merge): the four CompareTests in tests/test_hail.py (line 1332, skipUnless has_pyarrow) are skipped in the default interpreter (unittest: OK (skipped=4)), and the website workflow installs no pyarrow (.github/workflows/website.yml line 83: requests jinja2 pillow numpy pygrib h5py), so the B1-5 compare-gate tests never run in CI. With the venv interpreter (which has pyarrow) the four run and pass, and the full suite runs 585 tests with no skips (Ran 585 tests in 104.541s, OK). Fix: add pyarrow to the install line at .github/workflows/website.yml:83.",
+    "F2 (non-blocking, provenance): the store used for the real build (out2/store/store, built 12:42:28 UTC) has as_of 2026-10-16 (ledger/run.json window; fetch ledger ends at stamp 20261017). The bucket lists CONUS/MESH_Max_1440min_00.50/20261018/MRMS_MESH_Max_1440min_00.50_20261018-120000.grib2.gz (LastModified 2026-10-18T12:08:17Z) and the builder's default end now gives 2026-10-17; run.json does not record the requested end. Fix: rebuild the measurement store with the defaults (a default-end build in this check gives as_of 2026-10-17) and write the requested end into run.json.",
+    "F3 (non-blocking, decision 3; C6 still open): website/hail.py SAMPLE_EVENTS lists selected cells per day, so on the fixture's own days the fixture holds 57 events where the real store holds 1,575 for the same three tiles and days (r0079_c0198: 11 vs 621; r0079_c0199: 39 vs 792; r0092_c0214: 7 vs 162). Every stored value is real (0 mismatches) and the state lists equal the store's. Fix: generate SAMPLE_EVENTS from every real event of the three tiles on the listed days (about 1,575 entries, a few kilobytes, far under 50 KB), or record a supervisor ruling that the sample is a partial illustration.",
+    "F4 (non-blocking, operational; C7 still open): website.yml lines 97-98 pass --hail-history with --require-live to every non-main build, and the hail-store release asset does not exist until hail-store.yml has run once, so branch builds fail until then. Fix: run hail-store.yml once (workflow_dispatch), confirm the release asset, then push the branch.",
+    "F5 (supervisor ruling; C10 still open): added lines name a branch with the agent prefix in docs/DECISIONS.md (two lines), docs/ROADMAP.md (one line) and this record; the base already uses the same prefix in README.md, docs/DECISIONS.md and docs/ROADMAP.md. Not changed. Ruling needed: whether branch names fall under the rule on AI-product names in repo files.",
+    "F6 (supervisor ruling; round 3 docs note): brief product item 2 asks for the popup sentence 'No radar estimate on other days is not no hail' (quoted with the brief's quote marks); map.json words (lead_none and related) and the what-this-is words do not carry it, and the brief's Words section has different text. Ruling needed; no code change until ruled.",
+    "F7 (not verified; C8 still open): /usr/bin/python3.12 parses website/hail.py, website/build.py and website/sources.py (ast.parse ok). No Python 3.12 interpreter here has numpy, pygrib or pyarrow, so the unit suite and a store build were not run on 3.12. Fix: run the unit suite and one store build on 3.12 in CI and compare the shard sha256 values with the 3.13 build.",
+    "Applied (verified in this check): C1 outside rule (decision 11): map.js openHail checks off-grid (line 2422), then an unlisted tile with no fetch (2424), then a key missing from the shard's state list after one fetch (2431); smoke_map real passed the Colorado, Wyoming, Idaho and Canada outside checks with zero shard requests.",
+    "Applied: C2 partial day (decision 12): copy_check.partial lists 2025-06-25 (717 of 720 frames), stored as the frame maximum; verify exit 0 with the partial listed; compare prints the partial list.",
+    "Applied: C3 carry-forward withdrawn (decision 15): no append code, no hail-seed file and no Actions cache step in the website workflow; the daily job is a full rebuild (.github/workflows/hail-store.yml).",
+    "Applied: C4 units text (sources.py hail_history units row) now gives two decimals rounded down with 513 tenths as 2.01 in, 51.3 mm. C5: docs no longer say 'every value is invented' or 'after 12:45 UTC'; neither phrase is in the hail text of the built pages. C9: smoke_map check_hail requires the outside words for Colorado, Wyoming, Idaho and Canada.",
+    "Applied: A1 display rule (decision 10): inches() and map.js hailInches floor to two decimals; the caps tables are gone (display_caps and display_hundredths: 0 matches). A4 ?at= dropped on close (map.js line 1944), A5 town bubble guard (onHailClick), A6 verify rejects non-integers (hail.py line 1720), A8 and A9 flag-off difference and gated markup (B1-1), A10 off-grid outside (map.js line 2422), A11 stale and loading words (map.json words): code-verified; A4 and A5 were not clicked in Chromium.",
+    "Applied: A7 test deletions: decision 16 audit passes (see recheck.decision_16).",
+    "Refuted RF1: em-dashes or en-dashes in added lines: 0 U+2014 and 0 U+2013 in the 6404 added lines of the diff against 825d6c7 (including the untracked shard and this record).",
+    "Refuted RF2: tests delete outside their own folders: 37 rmtree and 3 unlink calls in tests/ (test_site 23 rmtree; test_hail 12 rmtree and 3 unlink; test_updates 1; test_weather 1); each acts on a mkdtemp folder or on a copy the test made. No os.remove and no rm -rf.",
+    "Refuted RF3: the Benchland gate cell is not the nearest 513-tenths cell: an independent search over every shard gives five cells on 2025-06-15 and row 797, col 1986 at 10.64 km as the nearest (the next is 81.36 km).",
+    "Refuted RF4: tiles or state lists are wrong: the 4,597 tiles that hold Montana cells each have a shard, 0 state-list mismatches against the mask, 0 non-integer entries; the index tiles list equals the expected names.",
+    "Refuted RF5: the fixture's values are not real: all 57 fixture events equal the store's values (0 mismatches); F3 is about completeness only.",
+    "Refuted RF6: the newest day does not re-decode: SPC 2026-10-16 (file 20261017) decodes 14 cells at or above the floor, 14 stored, 0 mismatches; SPC 2026-10-17 (file 20261018) decodes 7, 7 stored, 0 mismatches (cold store).",
+    "Refuted RF7: the flag-off build differs in more than map.js and one map.html line: diff -rq shows only those two files; map.css and the 89 other files are byte-identical.",
+    "Refuted RF8: forbidden terms or unfilled braces in the hail text: none in the 14 town hail blocks or the About hail text. The 'clear' hits are in the alerts and weather blocks outside the hail section; 'no hail' and 'dry' occur only in negations or in base text; map.json word templates carry braces by design and are filled in the browser.",
+    "Refuted RF9: a SAMPLE label on real hail text: none in the real build's hail blocks; the page-level sample banner comes from the --sample flag for the other feeds.",
+    "Refuted RF10: pins in the daily job or the tests (decision 13): none; hail-store.yml uses pip install numpy pygrib requests.",
+    "Refuted RF11: the daily job needs packages it does not install: hail.py imports only the standard library at module level; numpy, pygrib and requests are imported lazily.",
+    "Refuted RF12: the tests write into the source tree: after the full unit run the copy equals the worktree (only .git excluded).",
+    "Refuted RF13: a failed tile fetch is cached for the page's life: hailTile deletes the rejected promise, so the next click asks again.",
+    "Refuted RF14: the daily job passes an explicit end: hail-store.yml runs build without --end.",
+    "Refuted RF15: the Colorado check accepts either outside or no-estimate words (C9): check_hail requires the outside words and no request.",
+    "Refuted RF16: the cold build and the earlier 12:42 build disagree: an event-level comparison gives 0 changed values, and 7 events exist only in the cold store, all on 2026-10-17. The byte-level cold versus warm comparison is in B1-6 and agrees.",
+    "Not checked: B1-4 (B2 join), the B2 and B3 gates, a Chromium click on a town bubble (decision 8; code only), the cold versus warm result on Python 3.12 (F7), the NOAA publication timing risk beyond the documented 12:43 UTC start (D34 known limits).",
+    "Path notes: the scratch paths named in the brief for the prototype and the venv do not exist here; the prototype is /home/user/hail-b1/store/h1-mesh and the venv is /home/user/hail-b1/venv (both used).",
+    "Finishing pass, 2026-10-18: items 1 to 6 of the finishing brief were applied in the working tree on top of e3b6bf0 (HEAD at the start of this pass). The Website install step now adds pyarrow (the F1 fix; not yet run in CI). website/hail.py adds the day-not-listed sentence to what_this_is, writes requested_end to ledger/run.json, and builds SAMPLE_EVENTS from every real event of each fixture tile on the SPC days that tile lists: 1,575 events in 290 cells, taken from the real store (the F3 fix). The fixture was regenerated with python -m website.hail fixture: 1,575 events in 3 shards, shard bytes 19,912, 21,758 bytes on disk with index.json and manifest.json. The three tests that assumed an in-state cell had no events now use a Billings cell (45.755, -108.575) and the first empty Billings key. The DESIGN.md and DECISIONS.md D34 wording follows items 2, 5 and 6. The copy-check sentence for the store as of 2026-10-16 already reads as the finishing brief asks; the store as of 2026-10-17 keeps its own count (238 days from 2021-10-18). recheck.fixture (57 events, 3,639 bytes) was measured before this pass and is kept as the record of that measurement. Follow-up: SAMPLE_EVENTS moved out of website/hail.py into website/hail_fixture_data.py (imported inside fixture_store()); the fixture files are byte-identical, and the About page gained the days-not-listed sentence."
+  ],
+  "round1": {
+    "verdict": "not ready: B1-5 fails and supervisor decision 2 is not built (C1, C2); B1-6 needs a scope decision on the carry-forward (C3)",
+    "measurements": {
+      "tree": {
+        "head": "4bd8e57 (WIP commit)",
+        "base": "825d6c7",
+        "diff_vs_base": "22 files, 4,837 insertions, 26 deletions",
+        "uncommitted_modified_tracked": 18,
+        "untracked": 0,
+        "fingerprint_before_and_after_review": "unchanged (sha256 of git diff 825d6c7 and of git status)"
+      },
+      "tests": {
+        "unittest_discover": "Ran 536 tests in 112.046s; OK (skipped=2); exit 0",
+        "launcher_selftest_payload": "PASS payload 1.0.0; exit 0",
+        "python": "3.13.16 (CI pins 3.12; see C8)"
+      },
+      "builds": {
+        "off_bytes": 2351540,
+        "sample_bytes": 2379019,
+        "real_bytes": 33680625,
+        "base_off_bytes": 2337187,
+        "flag_on_minus_flag_off_bytes": 31329085,
+        "hail_dir_real": {
+          "files": 4597,
+          "bytes": 31287983
+        },
+        "hail_dir_sample": {
+          "files": 4,
+          "bytes": 1958
+        },
+        "shards": 4595,
+        "shard_bytes": 30669246,
+        "largest_shard": {
+          "path": "hail/t/r0097_c0258.json",
+          "bytes": 22074
+        },
+        "map_js_bytes": {
+          "base": 120096,
+          "now": 134449
+        },
+        "map_css_bytes": 47768
+      },
+      "store": {
+        "as_of": "2026-10-16",
+        "window": [
+          "2021-10-17",
+          "2026-10-16"
+        ],
+        "window_days": 1826,
+        "days_present": 1825,
+        "missing_days": [
+          "2022-06-08"
+        ],
+        "events": 2638537,
+        "montana_cells": 450765,
+        "copy_check": {
+          "days_checked": 1586,
+          "days_differed": [
+            "2025-06-25",
+            "2025-06-26",
+            "2026-05-25",
+            "2026-09-10"
+          ],
+          "rederived": [
+            "2025-06-25",
+            "2025-06-26",
+            "2026-05-25",
+            "2026-09-10"
+          ],
+          "skipped": "IEM did not answer for 239 days, 2021-10-17 to 2022-06-13"
+        }
+      },
+      "montana_tiles": {
+        "tiles_holding_a_montana_cell": 4597,
+        "shards_on_disk": 4595,
+        "tiles_without_shard": [
+          {
+            "tile": "r0099_c0164",
+            "montana_cells": 2
+          },
+          {
+            "tile": "r0100_c0193",
+            "montana_cells": 10
+          }
+        ],
+        "tile_name_list_json_bytes": 68955,
+        "tile_grid": "350 x 700 tiles; bitset 30,625 bytes raw"
+      },
+      "verify": {
+        "exit": 0,
+        "benchland": {
+          "cell": [
+            797,
+            1986
+          ],
+          "spc_day": "2025-06-15",
+          "tenths": 513,
+          "mm": "51.3",
+          "checked": true,
+          "matches_gate_expectation": true
+        }
+      },
+      "compare": {
+        "exit": 1,
+        "overlap_days": 1824,
+        "store_days_not_in_prototype": 2,
+        "prototype_days_not_in_window": 368,
+        "mask_equal": true,
+        "events_in_overlap": {
+          "store": 2638523,
+          "prototype": 2639243
+        },
+        "matched": 2636407,
+        "only_in_store": 201,
+        "only_in_prototype": 921,
+        "value_differs": 1915,
+        "mismatches": 3037,
+        "mismatches_on_rederived_days": 3037,
+        "mismatches_on_other_days": 0,
+        "days_with_mismatches": {
+          "2025-06-25": 3033,
+          "2026-05-25": 4
+        },
+        "rederived_days_short_of_full_day": [
+          "2025-06-25"
+        ],
+        "passed": false
+      },
+      "frame_max_check_builder_npy": [
+        {
+          "day": "2025-06-25",
+          "frames_listed": 721,
+          "distinct_slots": 717,
+          "store_events": 6499,
+          "mismatches": 0
+        },
+        {
+          "day": "2025-06-26",
+          "frames_listed": 720,
+          "distinct_slots": 720,
+          "store_events": 12017,
+          "mismatches": 0
+        },
+        {
+          "day": "2026-05-25",
+          "frames_listed": 735,
+          "distinct_slots": 720,
+          "store_events": 309,
+          "mismatches": 0
+        },
+        {
+          "day": "2026-09-10",
+          "frames_listed": 720,
+          "distinct_slots": 720,
+          "store_events": 16,
+          "mismatches": 0
+        }
+      ],
+      "redecode_pygrib": [
+        {
+          "day": "2026-10-16",
+          "file": "MRMS_MESH_Max_1440min_00.50_20261017-120000.grib2.gz",
+          "decoded": 14,
+          "stored": 14,
+          "mismatches": 0
+        },
+        {
+          "day": "2025-06-15",
+          "file": "MRMS_MESH_Max_1440min_00.50_20250616-120000.grib2.gz",
+          "decoded": 56849,
+          "stored": 56849,
+          "mismatches": 0
+        },
+        {
+          "day": "2026-10-15",
+          "file": "MRMS_MESH_Max_1440min_00.50_20261016-120000.grib2.gz",
+          "decoded": 13,
+          "stored": 13,
+          "mismatches": 0
+        }
+      ],
+      "benchland_513_search": {
+        "day": "2025-06-15",
+        "cells_with_513": 5,
+        "nearest": {
+          "row": 797,
+          "col": 1986,
+          "km": 10.64,
+          "centre": [
+            47.025,
+            -110.135
+          ]
+        },
+        "next_km": 81.36,
+        "benchland_cell_792_1998_tenths": 185
+      },
+      "browser_real_build": {
+        "widths": [
+          "1280x800",
+          "390x844"
+        ],
+        "default_requests": 34,
+        "default_off_site": 0,
+        "legend_line": 1,
+        "gate_arrival_round1display": true,
+        "benchland_arrival_round1display": true,
+        "gate_click_cell": [
+          797,
+          1986
+        ],
+        "gate_click_round1display": true,
+        "benchland_click_cell": [
+          792,
+          1998
+        ],
+        "benchland_click_round1display": true,
+        "escape_drops_at": true,
+        "billings_click_opens": "town card (title Billings), no hail sheet",
+        "colorado_47_no_estimate_words_and_tile_fetch": "r0150_c0250.json (fail, C1)",
+        "wyoming_fetch": "r0115_c0220.json (fail, C1)",
+        "canada_in_grid_box_fetch": "r0050_c0200.json (fail, C1)",
+        "off_grid_95_-110": "outside words, 0 tile requests",
+        "NaN_or_undefined_text": 0,
+        "unfilled_placeholders_in_hail_sections": 0
+      },
+      "smoke": {
+        "smoke_map_off_exit": 0,
+        "smoke_map_sample_exit": 0,
+        "smoke_map_real_exit": 0,
+        "smoke_map_real_shots_exit": 0,
+        "smoke_pages_real_exit": 0
+      },
+      "text_checks": {
+        "em_dash_added_lines": 0,
+        "en_dash_added_lines": 0,
+        "added_lines": 4713,
+        "banned_model_or_vendor_names_added_lines": 2,
+        "banned_name_hits": "claude/hail-b1 branch name in docs/ROADMAP.md:38 and one docs line; base already has claude/ branch names in README.md:1, docs/DECISIONS.md:1, docs/ROADMAP.md:2",
+        "visible_forbidden_terms": "none; every visible 'no hail' is in a negation sentence"
+      },
+      "fixture": {
+        "bytes": 1958,
+        "files": 4,
+        "tiles": {
+          "r0079_c0199": {
+            "cells": 4,
+            "days": [
+              1632,
+              1992,
+              2440
+            ],
+            "value_mismatches_vs_store": 0,
+            "store_events_on_those_days_absent": 282
+          },
+          "r0092_c0214": {
+            "cells": 1,
+            "days": [
+              935,
+              1635,
+              1992,
+              2035
+            ],
+            "value_mismatches_vs_store": 0,
+            "store_events_on_those_days_absent": 151
+          }
+        }
+      },
+      "display_rounding_measured": {
+        "513": "[round 1 display] (51.3 mm), hen egg to tennis ball, severe",
+        "185": "[round 1 display] (18.5 mm), pea to mothball",
+        "190": "0.74 in (19.0 mm), pea to mothball (exact 0.748)",
+        "191": "0.75 in, penny to nickel",
+        "253": "0.99 in (25.3 mm), penny to nickel",
+        "254": "1.00 in, quarter to half dollar, severe",
+        "507": "1.99 in, ping-pong ball to golf ball",
+        "698": "2.74 in, hen egg to tennis ball",
+        "699": "2.75 in, baseball or larger",
+        "1015": "3.99 in (101.5 mm), no note",
+        "1016": "4.00 in (101.6 mm), note"
+      },
+      "supervisor_decisions": {
+        "1_two_decimals": "built (pass)",
+        "2_outside_by_store": "NOT built (C1, fail)",
+        "3_benchland_gate_and_fixture": "gate built and passes (B1-3); fixture values real but incomplete on included days (C6, partial)",
+        "4_at_dropped_on_close": "built (pass)",
+        "5_flag_off_gate": "built (pass)",
+        "6_compare_rule": "partial: frame-max check passes, compare fails on 2025-06-25 (C2)",
+        "7_tests_never_delete_above_own_folder": "built (pass; every rmtree target is a mkdtemp folder the test made)",
+        "8_town_bubble_covers_cell": "built (pass)",
+        "9_verify_integers": "built (pass)"
+      }
+    }
+  },
+  "notes_round_history": [
+    "Round 2 (docs fixer, 2026-10-18): docs/DECISIONS.md D34, docs/DESIGN.md section 9, docs/ROADMAP.md (the B1 row and the measurements line), README.md (the daily job line) and AGENTS.md (a convention line) now carry supervisor decisions 10 to 15. The round 1 verdict, measurements and findings are kept below and under round1; they describe the round 1 build, not the round 2 one.",
+    "Round 2, decision 10: sizes show to the hundredth of an inch, rounded down, with the millimetres exact. 513 tenths is 2.01 in (51.3 mm) and 185 is 0.72 in (18.5 mm), so the round 1 figures [round 1 display] and [round 1 display] are superseded. No caps table.",
+    "Round 2, decision 11 (findings C1 and C5): the outside rule is the store's tile list and each shard's state list, not the grid box; every Montana tile gets a shard; the bitset option in the C1 fix below is not used, because the list is decided. The DESIGN words now follow the decided sentences, the unavailable line and the next-day line.",
+    "Round 2, decision 12 (finding C2): a re-derived day with fewer than 720 two-minute slots is listed in copy_check.partial and stored as the frame maximum, as the decision says. The C2 fix below (drop the day, list it as missing) is superseded. compare passes on the frame-maximum rule; verify does not fail on partial days.",
+    "Round 2, decision 15 (finding C3): the carry-forward append is withdrawn and the daily job is a full rebuild. The decisions do not say whether the committed seed and the Actions cache restore are withdrawn too; the supervisor to confirm.",
+    "Round 2 statuses: B1-1, B1-2, B1-3, B1-5, B1-6, B1-7 and B1-8 are pending the re-check, with the round 1 status kept as round1_status. B1-2, B1-7 and B1-8 are pending as well because round 1 measured them on the build the round 2 decisions change. B1-4 stays deferred until B2.",
+    "Round 2, other findings: C4 is addressed in the code (website/sources.py now gives 513 tenths as 2.01 in, 51.3 mm). C6 to C9 stay open for the code fixers and the re-check. C10: the claude/hail-b1 branch name is allowed by the rule that excepts branch names.",
+    "Scope: working tree of claude/hail-b1 (HEAD 4bd8e57 WIP plus 18 modified tracked files, no untracked). Review was read-only except this file. Builds and logs: hail-b1-out/recheck and hail-b1-out/final-check.",
+    "Verdict: not ready to merge. Blocking: C1 (supervisor decision 2 not built), C2 (partial day 2025-06-25 stored as complete; compare fails), C3 (carry-forward, seed and append not built, unless the supervisor records a scope change).",
+    "Confirmed and applied (verified this round): A1 two-decimal sizes with class caps (website/hail.py display_hundredths, lines 264-274; browser shows [round 1 display] and [round 1 display]); A2 gate point per decision 3 (B1-3 passes in the browser at both widths); A3 fixture values are real (0 mismatches against the store); A4 ?at= dropped on close (decision 4); A5 town bubble opens the town card (decision 8); A6 verify rejects non-integers (decision 9); A7 tests delete only their own mkdtemp folders (decision 7); A8 flag-off build differs only in map.js and one ?v= hash (decision 5); A9 legend line, noscript paragraph and sheet markup gated on the flag; A10 off-grid points get the outside words with no fetch (the Montana-state rule is still missing, C1); A11 stale and loading lines present in WORDS.",
+    "Confirmed, not applied, BLOCKING. C1: Montana state rule (decision 2) not built. website/static/map/map.js:2388 decides outside by the grid box only (hailCell), and line 2393 fetches the tile; map.js:22 says 'Outside the grid'. No tile list in hail/index.json or data/map.json; no 'state' key in shards (website/hail.py:584-585 and 1350-1351). Browser: Colorado (40, -105), Wyoming (43.5, -108) and Canada in the box (50, -110) show the no-estimate words and fetch r0150_c0250, r0115_c0220, r0050_c0200. Fix: write zero-event shards for the two missing Montana tiles (r0099_c0164, r0100_c0193); add 'state' (sorted in-tile keys of Montana cells) to every shard, including the fixture; add 'tiles' as a row-major bitset over the 350 by 700 tile grid to index.json and map.json (the name list is 68,955 bytes, over the 60 KB limit in decision 2); in map.js openHail, no bit or key not in state gives the outside words with no fetch, an empty state list gives the no-estimate words; correct map.js:22; add a test that every Montana tile has a shard and that state lists equal the mask.",
+    "Confirmed, not applied, BLOCKING. C2: partial re-derived day stored as complete. website/hail.py:736 MIN_FRAMES = 700 accepts 2025-06-25 with 717 of 720 slots (copy_check.coverage: listed 721, near-duplicate pairs 4, distinct 717, largest gap 267 s); lines 1442-1444 only log 'is partial' and the day stays in rederived and in the store; compare (line 1764) reports passed false and rederived_days_short_of_full_day ['2025-06-25']. Fix: require SLOTS_PER_DAY distinct slots for a re-derived day (MIN_FRAMES to 720 distinct), and treat a short day as failed: drop its events and list it in missing_days (verify forbids shard data on a missing day); make compare exclude missing days from both sides, otherwise the prototype's events on that day count as mismatches; rebuild, then verify and compare (expect passed true). The decode is right (builder frame-max equals the store), so this is completeness only.",
+    "Confirmed, not applied, BLOCKING unless the supervisor records a scope change. C3: carry-forward not built. Brief B1 scope and product items 1 and 6 name an Actions-cache restore, a committed seed (website/data/hail-seed.tar.zst, absent) and a daily append in the 10-minute build; website/hail.py has no seed, carry or append path; website.yml has no store cache step; hail-store.yml runs a full rebuild as the B1 interface spec describes. Fix: build it, or have the supervisor record in docs/DECISIONS.md and docs/ROADMAP.md that the daily full rebuild replaces it, and change the B1-6 wording.",
+    "Confirmed, not applied, non-blocking. C4: website/sources.py:191 still says 'Shown in inches to a tenth ... (2.0 in, 51.3 mm)'. Fix: 'Shown in inches to two decimal places with the millimetres beside them ([round 1 display] in, 51.3 mm)'.",
+    "Confirmed, not applied, non-blocking. C5 (docs): docs/DESIGN.md:452 says 'every value is invented' (the fixture is real now); docs/DESIGN.md:454 quotes 'the next day is expected after 12:45 UTC' but website/hail.py WORDS['source'] now says 'a newer day is added by the daily job and can wait for the next run'; website/templates/about.html:33-34 says a day runs 12:00 UTC to 12:00 UTC while WORDS['what_this_is'] says 12:00 UTC to 11:59 UTC; docs/ROADMAP.md:38 statuses are stale (B1-3 'fails until decision 1 is built', B1-5 'partial', B1-6 'not checked'). Fix: align all four with the code and this record.",
+    "Confirmed, not applied, non-blocking. C6: fixture completeness (decision 3). website/data/hail-fixture/hail/t/r0079_c0199.json holds 4 cells and r0092_c0214.json 1 cell; on the included days the store has 282 and 151 more events in those tiles. Values present are real (0 mismatches). Fix: write each included tile's full events for its included days, plus the state lists from C1.",
+    "Confirmed, not applied, non-blocking (operational). C7: website.yml now passes --hail-history with --require-live to every non-main build, which downloads the hail-store release asset. The asset does not exist until hail-store.yml has run once, so branch builds fail until then. Fix: run the workflow once (workflow_dispatch) and confirm the asset before pushing a branch.",
+    "Open, not verified, non-blocking. C8: CI runs Python 3.12 (hail-store.yml and website.yml). The store was built and verified on 3.13.16 in /home/user/hail-b1/venv (numpy 2.5.3, pygrib 2.1.8, requests 2.34.2, pyarrow 26.0.0). /usr/bin/python3.12 has no numpy, pygrib or pyarrow here. Fix: run the tests and a store build on 3.12 in CI and compare shard sha256 values with the 3.13 build; record the result.",
+    "Confirmed, informational. C9: the smoke test's Colorado check (tools/smoke_map.py:1142) accepts either outside or no-estimate words, which hides C1; it must require the outside words and no tile request. Also smoke_map.py's gate constants are the store's own cell (HAIL_CELL_CENTRE), not the decision 3 gate cell; add the [round 1 display] in check.",
+    "Informational, supervisor to rule. C10: 'claude/hail-b1' appears in docs/ROADMAP.md:38 and one docs line; the base already uses claude/ branch names in README.md:1, docs/DECISIONS.md:1 and docs/ROADMAP.md:2. Not changed.",
+    "Refuted (one line each): R1 no em-dashes or en-dashes in 4,713 added lines. R2 no forbidden term in visible text; the matches are docstrings and comments, and every visible 'no hail' is in a negation. R3 the map.js literal-ban test exists (tests/test_site.py 1501-1513) and passes. R4 every test rmtree target is a mkdtemp folder the test made (tests/test_hail.py and tests/test_site.py). R5 production rmtree only touches root/hail (hail.py:575), a mkdtemp stage (647-650) and the frames folder (1281). R6 the release unpacker refuses traversal, links and duplicates (hail.py:653-670). R7 no NaN: tenths_per_mm is in map.json (build.py:265) and no NaN or undefined text in the browser output. R8 no unfilled placeholders in 14 town hail sections, the map templates or the About hail section. R9 no SAMPLE label in the real build's hail sections (correct: real data); the sample town page carries SAMPLE data. R10 the gate cell is the nearest 513 cell to Benchland (10.64 km; next 81.36 km). R11 the four re-derived days equal the builder's frame maximum (0 mismatches); the open issue is completeness (C2). R12 the units are verified: research branch claude/hail-history, research/hail-history/validation-evidence/mrms-grib2-tables/mrms-grib2-tables.json gives MESH and MESHMax in mm, -1 missing, -3 no coverage, MergedReflectivityQC -99 and -999, and versions 12.0 to 12.2 agree. R13 the flag-off build differs only in map.js and the map.html ?v= line (map.css identical). R14 flag-on adds 31.33 MB, under 60 MB. R15 smoke_map and smoke_pages pass at 390 and 1280 px. R16 zero off-site requests in the default state. R17 the 3,037 compare mismatches are all on the two re-derived days; none on other days. R18 'about 0.7 by 0.5 miles' matches the B1 interface spec (the product section's 0.6 by 0.8 is superseded). R19 no 4.00 in hold-out; the spec's note at 4.00 in and above is built (hail.py NOTE_TENTHS 1016). R20 the 0.25 in floor and the class edges match the spec's classes on exact tenths; 190 to 0.74 in and 253 to 0.99 in are capped inside their classes.",
+    "Not checked: the Python 3.12 run (C8); the B2 report join and the 1.75 in SPC report (B1-4); B2 and B3 gates. Timing risk, not measured on B1: a 12:00 UTC file can arrive 496 to 3,623 s after its stamp (research note), so a late file leaves that run's day missing; measure on the first runs.",
+    "Path notes: the brief's scratchpad paths for the prototype (hail-store/h1-mesh) and the venv (hail-venv) do not exist; the prototype is /home/user/hail-b1/store/h1-mesh and the venv is /home/user/hail-b1/venv. The docs cite research files that exist only on claude/hail-history, not on this branch.",
+    "Carried forward: the globe research's proposed decision labels (research/globe/README.md section 9b, D31) clash with this log's numbers; rename in the docs follow-up (ROADMAP item 21).",
+    "Carried forward: docs/DECISIONS.md D34 quotes the owner's seven decisions with single spaces; the original message has two spaces after decisions 1 and 4. Not checkable in this session (the original message is not here).",
+    "Round 3 (docs fixer, 2026-10-18): gates[0] (B1-1) now carries decision 5's sentence with the base commit (review findings rules-4 and words-6). docs/DESIGN.md: the 'Beside every number' sentence of the frame and the 'What this is' and 'Source' rows now say loaded sheets and loaded town tables, and the tile example is r0079_c0199 (row 792 is in tile 79). docs/DECISIONS.md D34: 'Every sheet and table' now says loaded sheets and loaded town tables, the 'round 1 build' note is gone from the copy check bullet, and known limit (c) says Montana membership is decided by the centre of the cell. For the supervisor, not applied: the ruling on brief product item 2 (the sentence 'No radar estimate on other days is not 'no hail'' on loaded sheets, review rules-2). Until it is ruled, D34's sentence that no estimate is not 'no hail' and DESIGN principle 2 describe the recommended ruling, and the code does not show that sentence yet. Also not applied: DESIGN's SAMPLE row stays as the brief wrote it (review words-7 option a); the label needs the openHail change, because today it sits in the sheet body in every state, not on the title."
+  ],
+  "go_live_2026_10_21": {
+    "decision": "Carson chose to merge B1 and turn the hail history on for the public site, with the About text as written (D34, amended).",
+    "main_build": "--hail-history without --require-live: a failed store download leaves the pages saying the history is unavailable and the rest of the site publishes.",
+    "asset": "named after the branch whose job publishes it (hail-store-main.tar.gz for main; slashes as dashes), one store run per branch at a time; the new file goes up under a temporary name, the old asset steps aside, the new one takes the name and the old one is removed last; if the new one cannot take the name the old one gets it back; each build reads its own branch's asset through HAIL_STORE_ASSET and falls back to main's only when its own is not published (HTTP 404); any job that finds the earlier shared-name asset hail-store.tar.gz (which the later stages' branch jobs had written with the address stage's data) removes it, and a failed listing or removal fails the job.",
+    "wait": "a branch preview waits up to 60 minutes (the store job's cap) for the branch's latest store run (the actions: read scope); it fails when the run for its commit did not succeed, could not be listed or is still running; main never waits; tested under bash with a stub gh; the build job's timeout is 75 minutes on a branch and 15 on main.",
+    "stale": "a real store older than STALE_DAYS (3) counts as a failed source (the pages keep the stale line); the SAMPLE fixture is exempt; tested.",
+    "checked_before_the_push": "the suite (600 tests, no skip), the self-test and a flagged sample build on the go-live tree; three review rounds with two lenses each, then a final CI-lens review.",
+    "to_check_after_the_merge": "the branch's store job and preview; main's first flagged build; the public pages in Chromium (the Map's tap-anywhere sheet at the Benchland point and a town page's table). Results go in the session's record, not in this file.",
+    "pages": "a failed download reads on the pages as 'the history store could not be downloaded in this update' (the build log keeps the file name and the HTTP code); the branch job and preview of 2026-10-22 00:00 UTC ran the publish step and the wait on the runner (the asset renamed in place, the shared asset removed, the preview waited 5 minutes and built from the fresh asset)."
+  },
+  "head_commit_note": "The gates were measured on the B1 tree of 2026-10-18 (the WIP commit named in head_commit, squashed into the branch's commits). The go-live changes of 2026-10-21 (go_live_2026_10_21) touch the workflows, the reader's asset name and the stale rule, the build's status line, the tests and the docs, not the store or the pages' words."
+}

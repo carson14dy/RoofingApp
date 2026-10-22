@@ -32,6 +32,13 @@ order.
 | Design | Light "field sheet" look with dark mode, self-hosted fonts and Leaflet, contrast ≥ 5.86:1, collision-free map labels, 288–1440 px without sideways scroll, checked on every branch push (`docs/DESIGN.md`) | Phone Now page is long (P2) |
 | Tests | 179 website tests (64 pages, map data and station readings, 69 radar and model frames, 41 base map and label layout, 5 Pages publication planning); a Chromium page-width check of every page at 288–1440 px on every branch push alongside the app's tests; a Chromium smoke test of the built map on every branch push (frames, base map, bubbles, play, layers, menu taps, legend, card and its caption) | — |
 
+## Hail history behind `--hail-history` (D34): B1 on `main` at the owner's decision of 2026-10-21, the next stages built on branches
+| Area | What works | Limits |
+|---|---|---|
+| B1 store and click-anywhere history (merged at the owner's decision of 2026-10-21; public on `main`) | The trailing 1,826 SPC days of NOAA's MRMS MESH radar estimate as site files (`hail/`), rebuilt in full each day by `hail-store.yml` and read by the 10-minute build; a click or tap on the Map page opens a spot's day list (sizes to the hundredth of an inch, rounded down, with mm exact; the NWS size words; the SPC day); the outside rule is the store's own tile and state lists; town pages carry the same table; About explains it | Radar estimates, not measurements or inspections; public on `main` at the owner's decision of 2026-10-21 (the About text as written; the GitHub terms item open for counsel; the MSL and MCA items gate the address stage); a late 12:00 UTC file makes that run's window end one day earlier; the Benchland 1.75 in report waits for B2; the B1 gates are measured in `research/hail-history/validation-evidence/b1-verification.json` (B1-1 to B1-3 and B1-5 to B1-8 pass; B1-4 is deferred to B2; the go-live block of 2026-10-21), and B1-4 waits for B2 |
+
+Measured for the daily job (`hail-store.yml`) in the record: the run time (10.7 minutes on the runner on 2026-10-18; the cold-cache build 539.8 s and the warm-cache build 244.6 s locally, 4,597 of 4,597 shard files equal, B1-6), the bytes of `hail/` and of the `tiles` list, the largest shard, the copy-check results (rederived, partial, skipped) and the days missing. Measured on 2026-10-21: GitHub ran the scheduled site rebuild 6 times in the 24 hours to 23:00 UTC (runs 86 to 93 of the Website workflow; gaps of 2 h 21 min to 5 h 01 min), not every 10 minutes; the timer decision (an external 10-minute trigger) is open below.
+
 ## Next, in priority order
 1. **Go live.** Done in part, 2026-10-16: PR #3 merged; its first deployment (run 38933159167)
    failed with Pages disabled; the publication repair (PR #4) now rejects failed or invalid Pages
@@ -91,7 +98,7 @@ order.
     band 13 picture as a Map layer: website/satellite.py, tests/test_satellite.py) and waits for review
     and a small pull request. The clear-night reading of -99/-999 needs Carson's ruling first, and no
     GOES layer reaches users until counsel has read D-G10 and D-G11.
-17. **Imagery base map (D32, opt-in).** Built on its own branch, not merged: a Base map switch in the Layers
+17. **Imagery base map (D32, opt-in).** Merged 2026-10-18 (PR 11): a Base map switch in the Layers
    menu, from white (the default) to USGS ImageryTopo aerial imagery with roads and names. Its tiles are requested
    only while Imagery is on (after the switch, or on a link that starts on it); the one exception to the site-files
    rule. Checked on 2026-10-18: the unit tests, the sample builds, the browser check (`tools/smoke_map.py`, real
@@ -103,6 +110,9 @@ order.
    row carries the privacy words; a failed tile says so in the credit row; a link that opens on Imagery loads the
    tiles as the page opens; the About page quotes USGS's requested acknowledgment; the landscape menu scroll is
    accepted.
+18. **Hail B2, joins (D34).** NWS reports, NCEI, SWDI signatures, warnings and station gusts in each popup, each row with its kind word; Benchland matches the research.
+19. **Hail B3, addresses and search (D34): the legal go-live gate.** Dots from zoom 13 for the 674,715 MSL points, search and About terms; the flag waits for counsel on D34's items.
+20. **Hail B4, live swaths (D34).** MESH 30 to 1440 minute swath layers on the Map behind `--storm-layers`, after B1 to B3 (the globe plan's P3).
 
 ## Independent review priorities, for the website
 | Priority | Item | Status |
