@@ -55,19 +55,19 @@ CONTRACTS = {
         "units": "Times in ISO 8601 with an offset, shown in Montana time. Area as an outline, or none.",
         "timing": "Fetched at every build (about every 10 minutes).",
         "missing": "No readable list means the check failed: the last verified list stays up with its time. "
-                   "An alert without an outline is listed with a note. Test messages and replaced updates are left out.",
+                   "An alert without an outline is listed with a note. Test messages and updates that a later message has changed are left out.",
     },
     "points": {
         "name": "NWS forecast grid lookup",
         "request": "api.weather.gov/points/lat,lon",
         "units": "Links to the forecasts for the 2.5 km grid square, the NWS office and time zone.",
-        "timing": "Every build; the last good lookup is reused if it fails.",
+        "timing": "Every build; if a lookup does not work, the last good lookup is reused.",
         "missing": "No links means that town's forecast is unavailable.",
     },
     "hourly": {
         "name": "NWS hourly forecast",
         "request": "the point's forecastHourly link",
-        "units": "°F (°C converted). Wind \"10 mph\" or \"10 to 15 mph\" (the higher number used). Chance of rain or snow in %.",
+        "units": "°F (°C converted). Wind \"10 mph\" or \"10 to 15 mph\" (the higher number used). Rain or snow percent, as the forecast gives it.",
         "timing": "NWS updates it about hourly; the issue time is shown on the town page.",
         "missing": "A missing value shows as a dash. It never raises a flag and never passes one.",
     },
@@ -81,16 +81,16 @@ CONTRACTS = {
     "daily": {
         "name": "NWS 7-day forecast",
         "request": "the point's forecast link",
-        "units": "12-hour periods paired into days: high, low, sky, wind and the higher chance of rain or snow.",
+        "units": "12-hour periods paired into days: high, low, sky, wind and the higher rain or snow percent.",
         "timing": "NWS updates it several times a day.",
         "missing": "A missing high or low shows as a dash.",
     },
     "stations": {
         "name": "NWS observation stations",
         "request": "the point's observationStations link: the stations NWS lists for the town's 2.5 km grid square",
-        "units": "Station id, name, position and elevation in metres (shown in feet). The distance from the "
-                 "town is worked out here, in miles; the nearest three are read.",
-        "timing": "Every build; the last good list is reused if it fails.",
+        "units": "Station id, name, position and elevation in metres (shown in feet). The distance from this "
+                 "spot is worked out here, in miles; the nearest three are read.",
+        "timing": "Every build; if a list does not load, the last good list is reused.",
         "missing": "Never filtered by state: the nearest stations can be in Wyoming, Idaho or the Dakotas. "
                    "No list means no readings for that town, and the town page says so.",
     },
@@ -111,7 +111,7 @@ CONTRACTS = {
         "units": "Hail size in hundredths of an inch (175 = 1.75 in). Wind in mph. Times HHMM UTC; "
                  "a reporting day runs 12:00 to 11:59 UTC (6 am to 5:59 am MDT).",
         "timing": "Preliminary; today's files appear once there are reports. Three days are shown.",
-        "missing": "\"UNK\" wind stays unknown. A file that fails is listed as a problem; no report is not \"no hail\".",
+        "missing": "\"UNK\" wind stays unknown. A file that does not pass its check is listed as a problem; no report is not \"no hail\".",
     },
     "radar": {
         "name": "NOAA radar estimate (MRMS)",
@@ -119,7 +119,7 @@ CONTRACTS = {
         "units": "Precipitation rate in mm/h as liquid water, shown in in/h. A 0.01° latitude-longitude grid; "
                  "the map uses one frame every 10 minutes for the past hour.",
         "timing": "NOAA publishes a new grid every 2 minutes; a newest frame older than 30 minutes is reported as stale.",
-        "missing": "Negative values mean no radar coverage: those areas are hatched, never drawn as dry. "
+        "missing": "Negative values mean no radar coverage: those areas are hatched, never drawn as a zero reading. "
                    "If the files don't load, the map says so and shows no radar.",
     },
     "forecast_model": {
@@ -148,12 +148,12 @@ CONTRACTS = {
         "missing": "-99 and -999 mean no radar value: -99 is missing and -999 is outside radar coverage (NOAA's MRMS GRIB2 "
                    "user table, versions 12.0 to 12.2). They are never a value, never 0. "
                    "Heights below the town's ground height are counted and not used. A town whose NWS grid height "
-                   "didn't load gets 'Echo top not available', never a value. No echo at 35 dBZ is not an all-clear. "
+                   "didn't load gets 'Echo top not available', never a value. No echo at 35 dBZ does not rule out hail. "
                    "A radar estimate, not observed hail or damage.",
     },
     "satellite": {
         "name": "NOAA GOES satellite picture (band 13, observation)",
-        "request": "noaa-goes19.s3.amazonaws.com (GOES-East; GOES-West noaa-goes18 if East fails or has no scan in "
+        "request": "noaa-goes19.s3.amazonaws.com (GOES-East; GOES-West noaa-goes18 if East is unavailable or has no scan in "
                    "the last hour), ABI-L2-CMIPC band 13: one NetCDF file per 5-minute CONUS scan; the newest scan "
                    "of the current or previous UTC hour",
         "units": "Infrared brightness temperature in kelvin at 2 km (nadir), drawn as one picture on the map's image box. "
@@ -163,8 +163,8 @@ CONTRACTS = {
         "timing": "A new scan every 5 minutes, on the bucket about 30 s after the scan ends. A newest scan older than "
                   "20 minutes is reported as stale; none within 60 minutes: no picture",
         "missing": "Fill values, raw values outside the file's valid range, quality flags other than 0 and cells outside "
-                   "the satellite's grid are hatched as no satellite data, never drawn as clear sky. If the file doesn't "
-                   "load, the map says so and shows no satellite picture. Not an all-clear.",
+                   "the satellite's grid are hatched as no satellite data, never drawn as cloud-free sky. If the file doesn't "
+                   "load, the map says so and shows no satellite picture. This is not an all-clear.",
     },
     # --storm-layers builds only (build.py STORM_CONTRACTS): the live hail swath layers (B4)
     "hail_swath": {
@@ -172,7 +172,7 @@ CONTRACTS = {
         "request": "noaa-mrms-pds.s3.amazonaws.com, CONUS/MESH_Max_60min_00.50 (GRIB2 parameter 30, a file every 2 minutes) and CONUS/MESH_Max_1440min_00.50 (parameter 34, a file every 30 minutes). Each build lists today's folder (yesterday's when today's is empty, just after 00:00 UTC), takes the newest file of each product and downloads it once (a gzipped GRIB2 file). The grid is regular latitude and longitude, 7,000 by 3,500 cells of 0.01 degree, from 54.995 degrees north, 230.005 degrees east (stored 0 to 360) to 20.005 degrees north, 299.995 degrees east.",
         "units": "Millimetres (NOAA's GRIB2 user table, UserTable_MRMS_v12.2: MESH (maximum estimated size of hail) and its maxima), stored in tenths of a millimetre. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact (513 tenths: 2.01 in, 51.3 mm). Size classes start at 0.25 in (64 tenths), 0.75 in (191), 1.00 in (254), 1.50 in (381), 2.00 in (508) and 2.75 in (699). A radar estimate of the largest hail over each 0.01 degree cell, about 0.7 miles north to south and 0.5 miles east to west, in the last hour or the last 24 hours.",
         "timing": "The hour file is new every 2 minutes: fresh within 20 minutes of its valid time, stale to 60 minutes, then unavailable. The 24-hour file is new every 30 minutes: fresh within 60 minutes, stale to 120 minutes, then unavailable. The valid time is the header's date and time in UTC and must equal the file name's time. The valid time is the end of the window. The window comes from the parameter number (30 is 60 minutes, 34 is 1,440 minutes) and must match the folder. A stale picture is drawn and says so.",
-        "missing": "-1 is missing and -3 is no radar coverage in NOAA's table; neither is stored as a value or as 0. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart. Cells under 0.25 in (64 tenths) are not drawn and not written to the live files. A cell with no radar coverage is hatched, and its tile's live file lists it as no radar coverage. A file that is missing, unreadable, or does not match its time or window, and a request that fails, make the layer unavailable with its reason and no picture. This is not an all-clear. An estimate, not observed hail and not damage.",
+        "missing": "-1 is missing and -3 is no radar coverage in NOAA's table; neither is stored as a value or as 0. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart. Cells under 0.25 in (64 tenths) are not drawn and not written to the live files. A cell with no radar coverage is hatched, and its tile's live file lists it as no radar coverage. A file that is missing, unreadable, or does not match its time or window, and a request that does not work, make the layer unavailable with its reason and no picture. This is not an all-clear. An estimate, not observed hail and not an inspection.",
     },
     "basemap": {
         "name": "Map outlines and names",
@@ -214,8 +214,9 @@ CONTRACTS = {
                   "12:00 UTC, posted about 12:08 UTC. The newest day is added by a job that starts at 12:43 UTC and "
                   "shows here on the next rebuild, usually within the hour. Each page shows the store's as-of date.",
         "missing": "-1 (missing) and -3 (no radar coverage) are never stored. A cell with no stored value on a day is no radar "
-                   "estimate, never 'no hail'. A day with no file is listed on the page and not counted, and a day that "
-                   "fails stays missing. An estimate is not a measurement at the ground and not an inspection.",
+                   "estimate, and it never means that hail did not fall. A day with no file, or a file that does not pass "
+                   "its check, is listed on the page and not counted, and it stays missing. An estimate is not a measurement "
+                   "at the ground and not an inspection.",
     },
     # --hail-addresses builds only (build.py B3_ROWS and ROAD_ROWS): the address points, the road source built and the
     # building outlines of the B3 layers. The words are in website/addresses.py, streets.py and buildings.py (D8, D13,
@@ -377,8 +378,8 @@ CONTRACTS = {
         "request": "ncei.noaa.gov/swdiws/csv/nx3hail/<start>:<end>?bbox=-116.05,44.36,-104.04,49.00, one request per month "
                    "(start inclusive, end exclusive). Exact duplicate rows are dropped, and the three footer lines (summary, "
                    "count and time) are not rows. Detections within 2 miles of a cell's centre are joined, grouped by SPC day.",
-        "units": "MAXSIZE in inches, in steps of a quarter inch. PROB is the probability of hail in percent; this filtered "
-                 "product keeps PROB 100 with a maximum size above zero. A signature is the radar algorithm's detection for a "
+        "units": "MAXSIZE in inches, in steps of a quarter inch. NOAA defines PROB as \"the probability of hail in percent\"; "
+                 "this filtered product keeps PROB 100 with a maximum size above zero. A signature is the radar algorithm's detection for a "
                  "storm cell, not hail on the ground.",
         "timing": "Each detection is dated to the second, in UTC. The archive's inventory lagged the data by a median of "
                   "0.75 day from 1 September to 14 October 2026, but by 19.5 days (June 2025) and 64.4 days (February "
@@ -512,7 +513,7 @@ CONTRACTS = {
         "timing": "The 2025-26 file is checked with one request each run and fetched again when its Last-Modified time changes "
                   "(on 2026-10-19: Mon, 05 Oct 2026 14:33:16 GMT). The other files are not checked again after their fetch.",
         "missing": "Values below -9000 are no data (the file uses -99999). A negative value is missing, not zero. A water year "
-                   "whose download fails is named as missing and the rest of the block builds. The analysis was checked against "
+                   "whose download does not pass its check is named as missing and the rest of the block builds. The analysis was checked against "
                    "station season totals and left out in this build: its amounts did not match the station totals closely "
                    "enough to show, and the About page says so.",
     },
@@ -534,7 +535,7 @@ CONTRACTS = {
         "units": "SNOW and SNWD in millimetres (shown in inches; a 1-inch snow depth is 25 mm or more). PRCP in tenths of a "
                  "millimetre (shown in inches). TMAX and TMIN in tenths of a degree Celsius (shown in degrees Fahrenheit; a 90 F "
                  "day is a high of 32.2 C or more). A season shows only when at least 95 percent of its days have the element.",
-        "timing": "Real-time values are replaced by archive values about 45 to 60 days after the end of a month (NCEI: "
+        "timing": "The archive values take the place of the preliminary real-time values about 45 to 60 days after the end of a month (NCEI: "
                   "\"Generally, real-time replacement of updated data streams are replaced by archive-ready data sources 45 to 60 "
                   "days after the end of a month.\"). Each station shows its newest report date. The daily job refreshes the "
                   "list, the inventory and the files of the chosen stations whose Last-Modified time changed; the monthly job "

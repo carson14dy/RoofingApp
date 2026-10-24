@@ -32,7 +32,7 @@ Source (the research record snow-alternatives.json and its refuter; the terms we
 The cell rule (D4): cell_for() is the snow grid's own lookup, with the hail grid's half-open rule. A point on the north
 edge of a cell or on its west edge goes to that cell (a point on an edge goes to the cell to the south or the east), in
 exact decimal arithmetic in thousandths of a degree. Benchland's point (47.08 N, 110.02 W) is row 198, column 399, and
-Billings (45.7836 N, 108.5047 W) is row 230, column 437. Every hail cell's lookup goes through website.hail.cell_for.
+Billings (45.7833 N, 108.5007 W, the town point in towns.json, D80(a)) is row 230, column 437. Every hail cell's lookup goes through website.hail.cell_for.
 The tile that holds a snow cell is the hail tile of the snow cell's centre, through website.hail.cell_for.
 
 Montana box: the cells whose centres lie within 44.36 to 49.00 N and 116.08 to 104.04 W are rows 150 to 265 and
@@ -100,7 +100,7 @@ RESEARCH_VALUES = {
     "billings": {"cell": (230, 437), "wy": {2025: 50.29, 2026: 33.85}},
     "benchland": {"cell": (198, 399), "wy": {2025: 87.17, 2026: 94.05}},
 }
-SAMPLE_POINTS = {"billings": (45.7836, -108.5047), "benchland": (47.08, -110.02)}
+SAMPLE_POINTS = {"billings": (45.7833, -108.5007), "benchland": (47.08, -110.02)}     # Billings: towns.json (D80(a))
 # The NWS disclaimer, verbatim from https://www.weather.gov/disclaimer (read live 2026-10-19). Quoted, so the words
 # scan (tests/words_rules.py) and the snow word test read it as the source's own wording, not as a site's words.
 PUBLIC_DOMAIN_TEXT = ("The information on National Weather Service (NWS) Web pages are in the public domain, unless "
@@ -666,7 +666,7 @@ def verify(store: Path, cache: Path | None = None) -> dict:
     if not isinstance(block, dict):
         return {"ok": False, "checks": checks}
     check("cell_for: Benchland point is row 198, column 399", cell_for(47.08, -110.02) == (198, 399))
-    check("cell_for: Billings point is row 230, column 437", cell_for(45.7836, -108.5047) == (230, 437))
+    check("cell_for: Billings point is row 230, column 437", cell_for(45.7833, -108.5007) == (230, 437))
     check("cell_for: the north edge of row 198 is row 198 and the east edge of column 399 is column 400",
           cell_for(47.08, -110.0) == (198, 400) and cell_for(47.08, -110.04) == (198, 399))
     boxes = box_cells()

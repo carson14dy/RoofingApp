@@ -6,6 +6,7 @@ or small fake fetchers that fail on purpose. The live sources are checked separa
 website workflow (`python -m website.build --require-live` on branch pushes).
 """
 
+import atexit
 import contextlib
 import hashlib
 import html
@@ -28,6 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from website import build as site  # noqa: E402
 from website import gridded as g  # noqa: E402
+from website import hail as hs  # noqa: E402
 from website import sources as src  # noqa: E402
 from website.sample import SampleFetcher  # noqa: E402
 
@@ -390,8 +392,8 @@ class Contracts(unittest.TestCase):
         self.assertIn("20 to 33 km", c["units"])
         self.assertIn("20 minutes", c["timing"])
         self.assertIn("60 minutes", c["timing"])
-        self.assertIn("never drawn as clear sky", c["missing"])
-        self.assertIn("Not an all-clear", c["missing"])
+        self.assertIn("never drawn as cloud-free sky", c["missing"])                  # D86(b): "clear" is the all-clear stem
+        self.assertIn("This is not an all-clear.", c["missing"])
 
 
 class Formatting(unittest.TestCase):
@@ -439,6 +441,7 @@ class SampleWith(SampleFetcher):
 
 def build_with(fetch, previous=None):
     out = Path(tempfile.mkdtemp(prefix="hailwatch-site-"))
+    atexit.register(shutil.rmtree, out, True)       # the run removes its own builds when it ends
     result = site.build(out, fetch, NOW, previous)
     return out, result
 
@@ -451,6 +454,7 @@ class SampleBuild(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-sample-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
         cls.result = site.build(cls.out, None, NOW, sample=True)
 
     def test_every_file_is_there(self):
@@ -606,6 +610,7 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("Reporting day starting Wed Oct 14 at 6 am MDT", page(self.out, "reports.html"))
         winter = datetime(2026, 12, 10, 18, 0, tzinfo=UTC)
         out = Path(tempfile.mkdtemp(prefix="hailwatch-winter-"))
+        self.addCleanup(shutil.rmtree, out, True)
         site.build(out, SampleWith(winter), winter)
         html = page(out, "reports.html")
         self.assertIn("Reporting day starting Thu Dec 10 at 5 am MST", html)      # 12:00 UTC in winter
@@ -724,6 +729,7 @@ class FailureHonesty(unittest.TestCase):
 
     def test_everything_down_still_builds_and_says_so(self):
         out = Path(tempfile.mkdtemp(prefix="hailwatch-down-"))
+        self.addCleanup(shutil.rmtree, out, True)
         with mock.patch.object(site.src, "Fetcher", lambda *a, **k: FailingFetcher()), \
                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             code = site.main(["--out", str(out), "--require-live", "--now", "2026-10-14T15:00:00Z"])
@@ -1647,12 +1653,10 @@ class HailHistory(unittest.TestCase):
         # The sheet's and the legend's rules are a style block that only a --hail-history build writes. The shared
         # map.css is the same file in every build, so the default build's static files are the ones it was before.
         source_css = (ROOT / "website" / "static" / "map" / "map.css").read_text(encoding="utf-8")
-        self.assertNotIn(".sheet-body .hail-days", source_css)
         self.assertNotIn(".legend-tap", source_css)
         self.assertEqual((self.off / "static" / "map" / "map.css").read_bytes(),
                          (ROOT / "website" / "static" / "map" / "map.css").read_bytes())
         on, off = page(self.on, "map.html"), page(self.off, "map.html")
-        self.assertIn(".sheet-body .hail-days:not([hidden])", on)
         self.assertIn(".legend-2col .legend-tap", on)
         self.assertNotIn("hail-days", off)
         self.assertNotIn(".legend-tap", off)
@@ -1679,7 +1683,10 @@ class HailHistory(unittest.TestCase):
             self.assertNotIn(literal, js)
         for name in ("display_caps", "display_hundredths", "hailHundredths"):   # decision 10: the caps are gone
             self.assertNotIn(name, js)
-        self.assertIn("Math.floor(t * 100 / h.tenths_per_inch) / 100", js)     # the floor rule, from the data's divisor
+        inches = next(line for line in js.splitlines() if line.startswith("  function hailInches(h, t) {"))
+        self.assertNotRegex(inches, r"\b(?:100|2)\b")        # no literal scale or decimals: the block gives them (D87(d), D87(r))
+        self.assertIn("U.scale", inches)                     # read from summary.units.in, the build's own unit spec
+        self.assertIn("U.decimals", inches)
         from website import hail as hs
         strings = [c["word"] for c in hs.CLASSES] + list(hs.WORDS.values()) + list(site.HAIL_SITE_WORDS.values())
         for text in strings:
@@ -1696,17 +1703,23 @@ class HailHistory(unittest.TestCase):
             self.skipTest("node is not installed; tools/smoke_map.py checks the same sizes in Chromium")
         js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
         parts = []
-        for name in ("hailInches", "hailMm"):
-            match = re.search(r"^  function %s\(h, t\) \{.*\}$" % name, js, re.M)
-            self.assertIsNotNone(match, name)
+        for signature in (r"own\(obj, key\)", r"missingKey\(key\)", r"hailInches\(h, t\)", r"hailMm\(h, t\)"):
+            match = re.search(r"^  function %s \{.*\}$" % signature, js, re.M)     # one line each, as map.js writes them
+            self.assertIsNotNone(match, signature)
             parts.append(match.group(0))
         script = "\n".join(parts) + (
-            "\nconst h = { tenths_per_inch: 254, tenths_per_mm: 10 };"
+            "\nconst h = { tenths_per_inch: 254, tenths_per_mm: 10, summary: { units: { in: { scale: 100, decimals: 2 } } } };"
             "\nconst cases = [513, 185, 253, 190, 1015, 254, 1016, 64];"
-            "\nconsole.log(JSON.stringify(cases.map(t => [hailInches(h, t), hailMm(h, t)])));")
+            "\nconst tenths = { tenths_per_inch: 254, tenths_per_mm: 10, summary: { units: { in: { scale: 10, decimals: 1 } } } };"
+            "\nconst bare = { tenths_per_inch: 254, tenths_per_mm: 10, summary: {} };"
+            "\nconsole.log(JSON.stringify([cases.map(t => [hailInches(h, t), hailMm(h, t)]), hailInches(tenths, 513),"
+            " hailInches(bare, 513)]));")
         out = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=60, check=True)
-        self.assertEqual(json.loads(out.stdout), [["2.01", "51.3"], ["0.72", "18.5"], ["0.99", "25.3"], ["0.74", "19.0"],
-                                                  ["3.99", "101.5"], ["1.00", "25.4"], ["4.00", "101.6"], ["0.25", "6.4"]])
+        rows, read_from_block, without_block = json.loads(out.stdout)
+        self.assertEqual(rows, [["2.01", "51.3"], ["0.72", "18.5"], ["0.99", "25.3"], ["0.74", "19.0"],
+                                ["3.99", "101.5"], ["1.00", "25.4"], ["4.00", "101.6"], ["0.25", "6.4"]])
+        self.assertEqual(read_from_block, "2.0")          # the scale and the decimals come from the block: 513 at scale 10 (D87(r))
+        self.assertEqual(without_block, "[missing words key: summary.units.in.scale]")   # no block, no guess (D16)
 
     def test_the_hail_part_of_the_map_script_reads_no_polygon_and_no_basemap(self):
         js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
@@ -1728,11 +1741,14 @@ class HailHistory(unittest.TestCase):
         self.assertIn('tag.className = "sample-tag";', show)
         self.assertIn("tag.textContent = h.words.sample;", show)
 
-    def test_the_sheet_shows_the_radar_days_before_the_joins(self):
+    def test_the_sheet_shows_the_radar_days_before_the_joins(self):                                        # D81(e): round 2's order
         js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
         open_hail = js[js.index("function openHail("):js.index("function onHailClick(")]
-        self.assertIn('hailShow(h, "loaded", text, null);', open_hail)
-        self.assertIn('joinRender(el.sheetBody.querySelector(\'[data-hail="joins"]\'), joins);', open_hail)
+        radar = open_hail.index('hailShow(h, "loaded", text, null);')          # the radar text first; the table and sections follow
+        table = open_hail.index("sumRender(el.sheetBody.querySelector('[data-hail=\"summary\"]'), res);")
+        sections = open_hail.index("histRender(slot, histModel(h, cell, both[0], both[1], text));")
+        self.assertLess(radar, table)
+        self.assertLess(table, sections)
         self.assertNotIn('hailShow(h, "loaded", text, joins)', open_hail)
 
     def test_a_warning_row_gives_the_end_date_only_on_a_later_montana_day(self):
@@ -1949,16 +1965,14 @@ class HailJoins(unittest.TestCase):
         self.assertFalse((self.off / "hail").exists())
         self.assertNotIn("hail", json.loads(page(self.off, "data/map.json")))
 
-    def test_the_sheet_has_the_template_slots_for_the_six_sections(self):
+    def test_the_sheet_has_the_template_slots_for_the_table_and_the_sections(self):                          # D81(e): round 2's slots
         on = page(self.on, "map.html")
-        self.assertIn('<template id="hail-join-sec">', on)
-        self.assertIn('<div data-hail="joins"></div>', on)
-        for slot in ("heading", "sample", "lead", "fire-lead", "rows", "more", "more-summary", "more-rows", "what", "note",
-                     "unavailable"):
-            self.assertIn(f'data-join="{slot}"', on, slot)
+        self.assertIn('<template id="hail-sheet">', on)
+        for slot in ('data-hail="sample"', 'data-hail="summary"', 'data-hail="stale"', 'data-hail="sections"'):
+            self.assertIn(slot, on, slot)
         off = page(self.off, "map.html")
-        self.assertNotIn("hail-join-sec", off)
-        self.assertNotIn('data-hail="joins"', off)
+        self.assertNotIn('id="hail-sheet"', off)
+        self.assertNotIn('data-hail="sections"', off)
 
 
     # the browser's joined-records block (map.js, from "joined records at a spot" to the card mode): code only, no comments
@@ -3156,7 +3170,10 @@ class HailAddresses(unittest.TestCase):
                      "check_search", "check_address_text_off"):
             self.assertTrue(callable(getattr(smoke, name, None)), name)
         self.assertEqual(smoke.ADDRESS_GATE_ZOOM, 15)                 # the zoom of the gate and the budget (D30)
+        # the B3 check (the B3 files and the shell) keeps its own 650 KiB; the whole phone view's budget is the restated 700,000 bytes
+        # gzip (D82(b)): build.PHONE_GZIP_BUDGET, written to map.json as hail.budget.phone_gzip_bytes (pinned in the budget test)
         self.assertEqual(smoke.ADDRESS_FETCH_BUDGET_GZIP, 650 * 1024)
+        self.assertEqual(site.PHONE_GZIP_BUDGET, 700_000)
         self.assertEqual(smoke.ADDRESS_DRAW_MS, 30)
         self.assertEqual(smoke.PAN_FETCH_LIMIT, 20)
         self.assertEqual(smoke.B3_BILLINGS, (45.7857, -108.5071))     # 401 North 27th Street, Billings
@@ -3171,7 +3188,7 @@ class B3Completion(unittest.TestCase):
         from website import hail as hs
         self.assertEqual(hs.MAX_UNPACK_BYTES, 800 * 1024 * 1024)               # D42
         self.assertEqual(hs.MAX_UNPACK_FILES, 60000)
-        # the B3 store as measured at the site re-check: 372,880,597 bytes in 31,129 files under hail/ (the fresh job store)
+        # the B3 store's measured size is recorded with the job (b5-verification.json); the limits are the constants above
         self.assertLess(372880597, hs.MAX_UNPACK_BYTES)
         self.assertLess(31129, hs.MAX_UNPACK_FILES)
 
@@ -3527,7 +3544,7 @@ class HailSwathLayers(unittest.TestCase):
         c = src.CONTRACTS["hail_swath"]
         self.assertIn("<strong>Hail swath (radar estimate)</strong> is NOAA's MRMS MESH (maximum estimated size of hail), "
                       "a radar estimate", about)
-        self.assertIn("not observed hail and not damage", about)
+        self.assertIn("not observed hail and not an inspection", about)     # the About wording (words owner, D41, D86)
         self.assertIn(self.phrase(c["name"]), about)
         self.assertIn("This is not an all-clear.", about)
         self.assertNotIn("Hail swath", page(self.off, "about.html"))
@@ -3977,6 +3994,13 @@ class FiveSeasonHistory(unittest.TestCase):
         self.assertLess(town.index('href="#history"'), town.index('id="alerts-h"'))
         self.assertEqual(town.count("River gauge: River gauge"), 0)       # D41: one label a line
 
+    def test_the_cell_sentence_gives_the_radar_cell_and_the_grid_cell_their_own_sizes(self):          # the round-1 check's fix
+        text = html.unescape(self.town)                       # the page escapes the apostrophe in "town's"
+        self.assertIn("The radar rows are for the radar cell at the town's centre, about 0.7 miles north to south and 0.5 miles "
+                      "east to west.", text)
+        self.assertIn("The grid rows are for the grid cell there, about 4.6 km north to south and about 3 km east to west.", text)
+        self.assertNotIn("The grid and radar rows are for that cell", text)
+
     def test_every_row_names_its_kind_word_and_its_unit(self):
         heads = re.findall(r'<th scope="row" class="row-head">(.*?)</th>', self.section, re.S)
         self.assertGreaterEqual(len(heads), 20)
@@ -4183,11 +4207,28 @@ def ice_line_text(town_page: str) -> str:
     return html.unescape(found[0])
 
 
+HISTORY_MAP_GATE = 163_840      # map.json with the history flag, raw bytes: 160 KB (D82(a), restating D66's 140 KB). The gate is
+                                # the budget; the figures measured on the combined store are in
+                                # research/hail-history/validation-evidence/b5-verification.json (every flag, B3 included, is
+                                # recorded there beside it, not gated: D66).
+
+
+def map_json_bytes(out: Path) -> int:
+    """The raw size of the built map.json: the whole file, every block the history flag writes (the joins block too). A gate
+    never measures a part of the file (D82(a)); the every-flag file, B3's tile sets included, is recorded beside the gate (D66)."""
+    return len((out / "data" / "map.json").read_bytes())
+
+
+def site_summary():
+    from website import summary
+    return summary
+
+
 class MapBlocksForTheBrowser(unittest.TestCase):
     """The map.json blocks the browser fills (B5 part B2, site side; D29, D40, D42, D57): the words, the thresholds, the fixed
-    orders, the file paths and the budgets are in the blocks, and map.json stays under 140 KB raw. Nothing here is real data:
-    the sample build reads the committed fixture. HAIL_PARITY_STORE (a built store, the combined store) runs the same
-    checks on the real store: the size, and the ice-dam line on each of the 17 town pages (D57)."""
+    orders, the file paths and the budgets are in the blocks, and the whole map.json with the history flag stays under 160 KB
+    raw (D82(a)). Nothing here is real data: the sample build reads the committed fixture. HAIL_PARITY_STORE (a built store,
+    the combined store) runs the same checks on the real store: the size, and the ice-dam line on each of the 17 town pages."""
 
     NOW = datetime(2026, 10, 24, 12, 0, tzinfo=UTC)
     SECTIONS = ["hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made"]
@@ -4217,28 +4258,781 @@ class MapBlocksForTheBrowser(unittest.TestCase):
         self.assertEqual(j["events_tiles"], "hail/j/e/{tile}.json")              # D30: the browser fetches this, never events.json
         self.assertEqual(j["shards"]["s"], "hail/s/{station}.json")
 
-    def test_the_budget_block_holds_the_phone_view_and_the_per_tile_file(self):
-        self.assertEqual(self.hail_block()["budget"], {"phone_gzip_bytes": 650 * 1024, "tile_events_gzip_bytes": 100_000})
+    def test_the_budget_block_holds_the_phone_view_and_the_per_tile_file(self):                  # D66, D82(b): 700,000 bytes gzip
+        from website import joins as jn
+        self.assertEqual(self.hail_block()["budget"], {"phone_gzip_bytes": site.PHONE_GZIP_BUDGET,
+                                                       "tile_events_gzip_bytes": jn.TILE_EVENTS_BUDGET_GZIP})
+        self.assertEqual(site.PHONE_GZIP_BUDGET, 700_000)                 # D82(b): restated with its reason, no cut
+        self.assertEqual(jn.TILE_EVENTS_BUDGET_GZIP, 100_000)
 
-    def test_map_json_stays_under_140_kb_raw(self):
-        self.assertLess(len((self.out / "data" / "map.json").read_bytes()), 140_000)
+    def test_map_json_with_the_history_flag_stays_under_160_kb_raw_with_the_new_keys(self):   # D82(a): the whole file
+        size = map_json_bytes(self.out)
+        self.assertLess(size, HISTORY_MAP_GATE, size)
+
+    def test_the_new_keys_the_browser_reads_are_in_the_blocks(self):                       # D68, D71, D79(a), the sections' data
+        h = self.hail_block()
+        summary = h["summary"]
+        names = h["county"]["names"]
+        self.assertEqual(h["county"]["short_names"], {code: name.replace(" County", "") for code, name in names.items()})
+        words = h["stations"]["words"]
+        self.assertEqual({k: words[k] for k in ("station_status_failed", "station_status_not_read",
+                                                "station_status_not_read_many", "station_status_both")},
+                         {"station_status_failed": "did not load", "station_status_not_read": "is not read",
+                          "station_status_not_read_many": "are not read", "station_status_both": "could not be read"})
+        self.assertIn("A station's position comes from its source. Two sources can place one airport a few hundred yards apart, "
+                      "so two rows may give slightly different distances to the same airport.", summary["how_made"])     # D80(c)
+        self.assertEqual(summary["section_kinds"], site_summary().SECTION_KINDS)
+        self.assertEqual(len(summary["indicators"]["roof_lines"]), 23)
+        self.assertEqual(summary["indicators"]["roof_lines"]["hail_warnings"]["label"],
+                         "Severe thunderstorm warnings {covered} (count)")
+        self.assertEqual(summary["codes"]["polygon"]["sv"], ["SV"])
+        self.assertEqual(summary["codes"]["depth_pair"], "DL")
+        self.assertEqual(summary["rule"]["report_miles"], 5.0)
+        self.assertEqual(set(summary["indicators"]["held_names"]), {"ponding", "roof_surface_temperature", "fema_flood_zones",
+                                                                     "lightning", "uv_and_sun", "ground_snow_load", "snotel"})
 
     def test_the_ice_dam_line_on_the_billings_page_leads_with_station_reading(self):      # D57
         self.assertTrue(ice_line_text(page(self.out, "town/billings.html")).startswith("Station reading: "))
 
-    def test_with_the_real_store_every_town_page_leads_with_station_reading_and_map_json_is_under_140_kb(self):   # D57, B5-12
+    def test_with_the_real_store_every_town_page_leads_with_station_reading_and_map_json_is_under_160_kb(self):   # D57, D82(a)
         store = os.environ.get("HAIL_PARITY_STORE")
         if not store:
             self.skipTest("set HAIL_PARITY_STORE to a built store (the combined store) to check the 17 town pages")
         out = Path(tempfile.mkdtemp(prefix="hailwatch-b2-real-"))
         self.addCleanup(shutil.rmtree, out, True)
         site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=store)
-        self.assertLess(len((out / "data" / "map.json").read_bytes()), 140_000)
+        self.assertLess(map_json_bytes(out), HISTORY_MAP_GATE, map_json_bytes(out))
         towns = json.loads((ROOT / "website" / "towns.json").read_text(encoding="utf-8"))
         for town in towns:
             with self.subTest(town["slug"]):
                 self.assertTrue(ice_line_text(page(out, f"town/{town['slug']}.html")).startswith("Station reading: "))
 
 
+# ---------------------------------------------------------------- the five-season table and sections in the browser (B5)
+
+SUM_BLOCK_START = "  var SUM_SEASONS"              # the browser's summary block in map.js (B5, the sheet's table and sections)
+SUM_BLOCK_END = "  // B3 layers: begin"
+# the top-level vars and functions outside the block that the block calls (the hail and join readers and the words helpers);
+# a name that moves or is renamed fails the run with a ReferenceError that names it
+SUM_VARS = ("MIN", "dtfUtcDay", "HAIL_DAY_MS", "HAIL_MICRO", "JROW", "JDET", "JDAY", "JZONE_STOP", "JOIN_PARTS", "KIND_WORD", "FALLBACK_VIEW",
+            "BLANK")
+SUM_HELPERS = ("fill", "own", "missingKey", "hailTile", "hailTileName", "hailShardUrl", "hailCentre", "hailKey", "hailDate",
+               "hailIso", "hailDays", "hailFailure", "joinEvents", "joinFile", "joinZoneOf", "joinPicks", "joinUnavailable",
+               "joinWarningText", "joinClock", "joinCompass", "joinCovers", "joinDay", "joinEnd", "joinInstant", "joinMiles",
+               "joinReason", "joinRecordText", "joinReportText", "joinSpcIso", "joinZoneRecordText", "joinZoneSpan", "hailCell",
+               "hailPoint", "hailInState", "hailMm", "hailInches", "hailClass", "stWord", "pad4", "has", "hailText",
+               "thousands")
+# node runs the sheet's table (sumTable) and, in mode "sheet", renders it (sumRender) into a stand-in for the page's elements,
+# which keep their text and children, so a test reads every line the sheet shows. Only fetch is stubbed (the built site's files).
+NODE_SUMMARY_SCRIPT = r"""
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+let raw = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => { raw += chunk; });
+process.stdin.on("end", () => {
+  const input = JSON.parse(raw);
+  const fetchFile = (url) => new Promise((resolve) => {
+    fs.readFile(path.join(input.site, url), "utf8", (err, text) => resolve(err ? { ok: false, status: 404 }
+      : { ok: true, status: 200, json: () => new Promise((ok) => ok(JSON.parse(text))) }));
+  });
+  class El {
+    constructor(tag) { this.tag = tag; this.children = []; this.text = ""; this.hidden = false; this.className = ""; }
+    appendChild(c) { this.children.push(c); return c; }
+    insertRow() { const r = new El("tr"); this.children.push(r); return r; }
+    insertCell() { const c = new El("td"); this.children.push(c); return c; }
+    createTHead() { const t = new El("thead"); this.children.push(t); return t; }
+    createTBody() { const t = new El("tbody"); this.children.push(t); return t; }
+    setAttribute() {}
+    get textContent() { return this.text; }
+    set textContent(v) { this.text = String(v); }
+    get classList() { return { add() {}, remove() {}, toggle() {}, contains() { return false; } }; }
+    querySelector() { return null; }
+    closest() { return null; }
+    remove() {}
+  }
+  const texts = (node, out) => { if (node.text) out.push(node.text); node.children.forEach((c) => texts(c, out)); return out; };
+  const document = { createElement: (tag) => new El(tag), createTextNode: (t) => { const e = new El("#text"); e.text = String(t); return e; },
+    getElementById: () => null };
+  const ctx = vm.createContext({ Intl: Intl, Date: Date, Math: Math, JSON: JSON, Promise: Promise, Set: Set, Object: Object,
+    Array: Array, String: String, Number: Number, Error: Error, isFinite: isFinite, RegExp: RegExp, fetch: fetchFile,
+    data: { tz: input.tz }, hailTiles: {}, document: document, window: { console: console }, console: console,
+    texts: texts });
+  vm.runInContext(input.code, ctx);
+  vm.runInContext("this.run = (h, cell) => sumTable(h, cell).then((r) => {" +
+    " const out = { rows: r.rows, partial: r.partial };" +
+    " if (" + (input.mode === "sheet" ? "true" : "false") + ") { const slot = document.createElement('div');" +
+    " sumRender(slot, r); out.sheet = texts(slot, []); } return out; });", ctx);
+  ctx.run(input.h, input.cell).then((out) => process.stdout.write(JSON.stringify(out)),
+    (err) => { process.stderr.write(String((err && err.stack) || err)); process.exit(1); });
+});
+"""
+
+
+def js_var(js: str, name: str) -> str:
+    """One top-level var of map.js ("  var NAME = ..."): its line, or its lines up to the one that closes the value."""
+    lines = js.split("\n")
+    first = next(n for n, line in enumerate(lines) if line.startswith(f"  var {name} "))
+    text, n = lines[first], first
+    while True:
+        code = re.sub(r"\s//[^\"']*$", "", text).rstrip()
+        if code.endswith(";") and text.count("{") + text.count("[") <= text.count("}") + text.count("]"):
+            return "\n".join(lines[first:n + 1])
+        n += 1
+        text = lines[n]
+
+
+def browser_summary_code(js: str) -> str:
+    """The part of map.js the sheet's five-season table runs on: the vars and helpers the block calls, then the block from its
+    first line to the roads and addresses block (B3). Nothing else of the page is run."""
+    start = js.index(SUM_BLOCK_START)
+    end = js.index(SUM_BLOCK_END)
+    start = js.rindex("\n", 0, start) + 1
+    end = js.rindex("\n", 0, end) + 1
+    return "\n".join([js_var(js, name) for name in SUM_VARS] + [js_function(js, name) for name in SUM_HELPERS]
+                     + [js[start:end]])
+
+
+def node_summary(site: Path, h: dict, cell: dict, mode: str = "table") -> dict:
+    """The browser's table at a cell (sumTable under node; mode "sheet" also renders it, as the sheet shows it): the rows by key,
+    the partial line and, in sheet mode, every text the rendered sheet holds."""
+    js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+    payload = {"code": browser_summary_code(js), "site": str(site), "h": h, "cell": cell, "tz": "America/Denver", "mode": mode}
+    done = subprocess.run([shutil.which("node"), "-e", NODE_SUMMARY_SCRIPT], input=json.dumps(payload),
+                          capture_output=True, text=True, timeout=180)
+    if done.returncode:
+        raise AssertionError(f"the browser's five-season table did not run under node: {done.stderr[-900:]}")
+    return json.loads(done.stdout)
+
+
+def block_literals(js: str) -> list[str]:
+    """The string literals of the browser's summary block (double or single quoted), without their quotes. The comments
+    are taken out first, so an apostrophe in a comment starts no literal."""
+    start = js.index(SUM_BLOCK_START)
+    end = js.index(SUM_BLOCK_END)
+    code = re.sub(r"/\*.*?\*/", "", js[start:end], flags=re.S)           # the JSDoc comments first
+    code = re.sub(r"//[^\n]*", "", code)
+    code = re.sub(r"console\.\w+\([^;]*\);", "", code)                  # developer log lines are not sheet text
+    found = re.findall(r'"((?:[^"\\\n]|\\.)*)"|\'((?:[^\'\\\n]|\\.)*)\'', code)
+    return [a or b for a, b in found]
+
+
+class SheetFiveSeasonsInTheBrowser(unittest.TestCase):
+    """The browser's five-season table on the sheet (B5, the browser's round 1 and round 2): it runs map.js's summary code under
+    node on the synthetic store's built site (the fixture), and checks what the sheet shows against the module's rows. The
+    rules: a missing words key shows a placeholder and never stops the table (R1, R2); every note of a row is on the sheet
+    (R4); a records failure keeps its row's label and kind (R5); a zone product that could not be placed is said in its season
+    (R14); the block holds no sheet sentence as a literal (R6)."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    CELL = {"row": 921, "col": 2149}                    # the B1 cell of Billings (the town point is 45.7833 N, 108.5007 W)
+
+    @classmethod
+    def setUpClass(cls):
+        # the committed sample fixture (website/data/hail-fixture): its Billings tile holds the per-tile event files the browser
+        # reads (hail/j/e), which the synthetic store of tests/test_summary.py does not
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-sheet-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, cls.NOW, sample=True, hail_history=True)
+        cls.h = json.loads(page(cls.out, "data/map.json"))["hail"]
+
+    def copy_h(self) -> dict:
+        """A copy of the built block. The fixture has no climate grid (its climate part is unavailable), so the copy takes a
+        stand-in grid far outside Montana: the cell is then outside the grid and the climate rows say so, and the table's
+        other rows are the ones under test. test_a_store_without_the_climate_grid_still_builds_the_table uses the block as built."""
+        h = json.loads(json.dumps(self.h))
+        if h["climate"].get("grid") is None:
+            h["climate"]["grid"] = {"rows": 1, "cols": 1, "per_degree": 24, "lat0": 0.0, "lon0": 0.0, "units_per_degree": 48,
+                                    "lat_centre_units": [0, 0], "lon_centre_units": [0, 0], "lat_edge_units": 0,
+                                    "lon_edge_units": 0, "rule": "lat (south edge, north edge], lon [west edge, east edge)"}
+        return h
+
+    def test_a_store_without_the_climate_grid_still_builds_the_table(self):                                    # D16
+        out = node_summary(self.out, json.loads(json.dumps(self.h)), self.CELL)
+        self.assertEqual(len(out["rows"]), 24)                  # the climate part says its own words, the rest of the table builds
+
+    def test_the_table_builds_with_placeholders_when_report_types_nouns_or_table_problem_are_missing(self):   # R1, R2
+        h = self.copy_h()
+        del h["summary"]["report_types"]
+        del h["summary"]["nouns"]
+        del h["summary"]["words"]["table_problem"]
+        out = node_summary(self.out, h, self.CELL)
+        self.assertEqual(len(out["rows"]), 24)
+        text = json.dumps(out)
+        self.assertIn("[missing words key: report_types]", text)
+        self.assertIn("[missing words key: nouns]", text)
+        # a part that throws is said with the table_problem words; a missing key there is a placeholder, not a crash
+        h = self.copy_h()
+        del h["joins"]["words"]
+        del h["summary"]["words"]["table_problem"]
+        out = node_summary(self.out, h, self.CELL)
+        self.assertEqual(len(out["rows"]), 24)
+        self.assertIn("[missing words key: table_problem]", json.dumps(out))
+
+    def test_every_row_note_is_on_the_sheet(self):                                                              # R4
+        out = node_summary(self.out, self.h, self.CELL, mode="sheet")
+        sheet = out["sheet"]
+        notes = [n for row in out["rows"].values() for n in row["notes"]]
+        self.assertGreater(len(notes), 5)
+        missing = [n for n in notes if not any(n in text for text in sheet)]
+        self.assertEqual(missing, [], missing[:3])
+
+    def test_every_row_note_is_on_the_sheet_with_an_unread_candidate_and_a_rejected_one(self):               # R4, (3b), D32, D62, D69
+        """The unread line (a Canadian station, not read, nearer than the second pick, so the snowfall row names it) and the
+        rejected line (a station that fails the rule, named with its share) are row notes, and the sheet shows them. A copy of
+        the built site gets the unread candidate on the fixture's Billings tile; the rejected line is the fixture's own."""
+        from website import hail as hs
+        from website import stations as st
+        copy = Path(tempfile.mkdtemp(prefix="hailwatch-unread-"))
+        self.addCleanup(shutil.rmtree, copy, True)
+        shutil.copytree(self.out, copy / "site")
+        tile = hs.tile_name(self.CELL["row"] // hs.TILE, self.CELL["col"] // hs.TILE)
+        path = copy / "site" / "hail" / "tl" / f"{tile}.json"
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        snow = doc["elements"]["SNOW"]
+        snow["unread"] = list(snow["unread"]) + [{"id": "CA000000001", "name": "Milk River", "lat": 45.80, "lon": -108.50,
+                                                 "reason": st.CANADA_REASON}]
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        out = node_summary(copy / "site", self.h, self.CELL, mode="sheet")
+        notes = [n for row in out["rows"].values() for n in row["notes"]]
+        self.assertTrue(any("Milk River is not read (in Canada; the terms for its data are under review)" in n for n in notes),
+                        notes[:3])
+        self.assertTrue(any(" is not used: " in n for n in notes), notes[:3])
+        missing = [n for n in notes if not any(n in text for text in out["sheet"])]
+        self.assertEqual(missing, [], missing[:3])
+
+    def test_with_the_real_store_every_row_note_reaches_the_sheet_at_four_cells(self):                      # R4, (3b), D62
+        """On the combined store every row note of four cells is on the sheet: the gate cell 797,1986, Benchland 792,1998,
+        Billings 921,2149, and cell 602,1396, whose snowfall row names the unread Canadian station Lister."""
+        store = os.environ.get("HAIL_PARITY_STORE")
+        if not store:
+            self.skipTest("set HAIL_PARITY_STORE to a built store (the combined store) to check the sheet at the real cells")
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-sheet-real-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=store)
+        h = json.loads(page(out, "data/map.json"))["hail"]
+        for row, col in ((921, 2149), (792, 1998), (797, 1986), (602, 1396)):
+            with self.subTest(cell=f"{row},{col}"):
+                sheet = node_summary(out, h, {"row": row, "col": col}, mode="sheet")
+                notes = [n for r in sheet["rows"].values() for n in r["notes"]]
+                missing = [n for n in notes if not any(n in text for text in sheet["sheet"])]
+                self.assertEqual(missing, [], missing[:3])
+                if (row, col) == (602, 1396):
+                    self.assertTrue(any("Lister is not read" in n for n in notes), "the unread line at 602,1396")
+
+    def test_a_zone_product_that_could_not_be_placed_is_said_in_its_season_cell(self):                         # R14
+        h = self.copy_h()
+        h["joins"]["zone_unplaced_rows"] = [["HW.W", "MTZ235", "2025-07-18", "2025-07", "the zone code is not in the zone maps"]]
+        row = node_summary(self.out, h, self.CELL)["rows"]["hw_zone"]
+        season_2025_26 = " ".join([row["coverage"][4] or "", row["texts"][4] or ""] + row["notes"])
+        self.assertIn("could not be placed to a zone", season_2025_26)
+        self.assertNotIn("could not be placed to a zone", " ".join([row["coverage"][0] or ""]))
+
+    def test_a_records_failure_keeps_the_row_label_and_kind(self):                                              # R5
+        h = self.copy_h()
+        h["joins"]["parts"]["records"] = "unavailable"
+        row = node_summary(self.out, h, self.CELL)["rows"]["flood_record_n"]
+        self.assertEqual(row["label"], "Flood and flash flood records within 5 miles")
+        self.assertEqual(row["kind"], "Record (NCEI)")
+        self.assertTrue(any("This is not an all-clear." in n for n in row["notes"]), row["notes"])
+
+    def test_no_sheet_sentence_is_a_string_literal_in_the_summary_block(self):                                  # R6, (e)
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        # a sentence is three words or more; the two-word LSR kinds (freezing rain, flash flood) are the data's own words
+        kinds = {"freezing rain", "flash flood", "funnel cloud", "extreme heat"}
+        sentences = [lit for lit in block_literals(js) if len(lit.split()) >= 3 or (len(lit.split()) == 2 and lit not in kinds
+                                                                                       and lit.islower() and " " in lit
+                                                                                       and not lit.startswith(".")
+                                                                                       and not re.search(r"[-_.]", lit))]
+        self.assertEqual(sentences, [], sentences[:5])
+
+
+# ---------------------------------------------------------------- the whole sheet in the browser against the module (B5 round 3)
+
+# node runs the sheet as the page runs it: the table (sumTable and sumRender), the joined records (joinSections), the B1 radar
+# text (hailText) and the eleven sections (histModel and histRender). Each element keeps its text, its children and its
+# attributes, so the test reads every line the sheet holds, the rows behind "Show all" included. Only fetch is stubbed.
+NODE_SHEET_SCRIPT = r"""
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+let raw = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => { raw += chunk; });
+process.stdin.on("end", () => {
+  const input = JSON.parse(raw);
+  const fetchFile = (url) => new Promise((resolve) => {
+    fs.readFile(path.join(input.site, url), "utf8", (err, text) => resolve(err ? { ok: false, status: 404 }
+      : { ok: true, status: 200, json: () => new Promise((ok) => ok(JSON.parse(text))) }));
+  });
+  class El {
+    constructor(tag) { this.tag = tag; this.children = []; this.text = ""; this.attrs = {}; this.hidden = false; this.className = ""; }
+    appendChild(c) { this.children.push(c); return c; }
+    insertRow() { const r = new El("tr"); this.children.push(r); return r; }
+    insertCell() { const c = new El("td"); this.children.push(c); return c; }
+    createTHead() { const t = new El("thead"); this.children.push(t); return t; }
+    createTBody() { const t = new El("tbody"); this.children.push(t); return t; }
+    setAttribute(k, v) { this.attrs[k] = String(v); }
+    getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attrs, k) ? this.attrs[k] : null; }
+    get textContent() { return this.text; }
+    set textContent(v) { this.text = String(v); }
+    get classList() { return { add() {}, remove() {}, toggle() {}, contains() { return false; } }; }
+    querySelector() { return null; }
+    closest() { return null; }
+    remove() {}
+  }
+  const document = { createElement: (tag) => new El(tag), createTextNode: (t) => { const e = new El("#text"); e.text = String(t); return e; },
+    getElementById: () => null };
+  const ctx = vm.createContext({ Intl: Intl, Date: Date, Math: Math, JSON: JSON, Promise: Promise, Set: Set, Object: Object,
+    Array: Array, String: String, Number: Number, Error: Error, isFinite: isFinite, RegExp: RegExp, fetch: fetchFile,
+    data: { tz: input.tz }, hailTiles: {}, document: document, window: { console: console }, console: console });
+  vm.runInContext(input.code, ctx);
+  vm.runInContext(`
+    this.texts = (node, out) => { if (node.text) out.push(node.text); node.children.forEach((c) => texts(c, out)); return out; };
+    this.sectionTexts = (root) => {
+      const found = {};
+      const walk = (node, current) => {
+        const id = node.getAttribute("data-section");
+        const here = id !== null ? id : current;
+        if (node.text && here !== null) (found[here] = found[here] || []).push(node.text);
+        node.children.forEach((c) => walk(c, here));
+      };
+      walk(root, null);
+      return found;
+    };
+    this.runCell = async (h, cell) => {
+      const table = await sumTable(h, cell);
+      const joins = await joinSections(h, cell);
+      const doc = await hailTile(hailShardUrl(h, cell));
+      const radar = hailText(h, cell, doc);
+      const model = histModel(h, cell, table, joins, radar);
+      const tableSlot = document.createElement("div");
+      sumRender(tableSlot, table);
+      const sectionSlot = document.createElement("div");
+      histRender(sectionSlot, model);
+      return { table: { rows: table.rows, partial: table.partial }, model: model, radar: radar,
+        tableTexts: texts(tableSlot, []), sectionTexts: sectionTexts(sectionSlot) };
+    };`, ctx);
+  ctx.runCell(input.h, input.cell).then((out) => process.stdout.write(JSON.stringify(out)),
+    (err) => { process.stderr.write(String((err && err.stack) || err)); process.exit(1); });
+});
+"""
+
+# the browser's share rounding (sumSharePct, under node) over the shares the station rule can see: round(k / 2192, 4)
+NODE_SHARE_SCRIPT = r"""
+const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
+const ctx = require("vm").createContext({ Math: Math, Number: Number, String: String, Object: Object, Array: Array, RegExp: RegExp });
+require("vm").runInContext(input.code + "\nthis.pct = (S, xs) => xs.map(function (x) { return sumSharePct(S, x); });", ctx);
+process.stdout.write(JSON.stringify(ctx.pct(input.S, input.shares)));
+"""
+
+# the browser's season rule (D83(b), D87(d)): the 95 percent share of a season's days, the season label of a day and the
+# bounds of a label, called with the summary block the build wrote (the signature may take S first; the script adapts)
+NODE_SEASON_SCRIPT = r"""
+const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
+const ctx = require("vm").createContext({ Math: Math, Number: Number, String: String, Object: Object, Array: Array,
+  RegExp: RegExp, Date: Date, Error: Error, JSON: JSON });
+require("vm").runInContext(input.code + "\nthis.season = {"
+  + " rule: function (S) { return sumSeasonRule(S); },"
+  + " label: function (S, iso) { return sumSeasonOf.length === 2 ? sumSeasonOf(S, iso) : sumSeasonOf(iso); },"
+  + " bounds: function (S, label) { return sumBounds.length === 2 ? sumBounds(S, label) : sumBounds(label); },"
+  + " iso: function (n) { return sumIsoOf(n); } };", ctx);
+const S = input.S;
+const share = ctx.season.rule(S);
+const full = [];
+for (const total of input.totals) {
+  for (let valid = 0; valid <= 366; valid++) full.push([total, valid, valid * share.scale >= total * share.share]);
+}
+const bounds = input.labels.map(function (label) {
+  const b = ctx.season.bounds(S, label);
+  return [label, ctx.season.iso(b.start), ctx.season.iso(b.end)];
+});
+const labels = input.days.map(function (iso) { return [iso, ctx.season.label(S, iso)]; });
+process.stdout.write(JSON.stringify({ share: share, full: full, bounds: bounds, labels: labels }));
+"""
+
+# the four exact ties of the share rule (k / 2192 is a sixteenth: its percent ends in .x5): half to even, as Python's round()
+SHARE_TIES = {137: "6.2", 685: "31.2", 1233: "56.2", 1781: "81.2"}
+
+# the five cells the brief names for the browser against the module: Billings, Benchland, the gate, and two more
+FIVE_CELLS = ((921, 2149), (792, 1998), (797, 1986), (753, 2230), (920, 1899))
+
+# every key of the summary block that map.js reads, by the form the read takes (round 3: the summary contract)
+def summary_reads(js: str) -> dict:
+    words = set(re.findall(r'sumWord\(\s*[\w.]+\s*,\s*"([^"]+)"', js))
+    paths = {p for p in re.findall(r'sdGet\(\s*\w+\s*,\s*"([^"]+)"', js) + re.findall(r'sdList\(\s*\w+\s*,\s*"([^"]+)"', js)
+             if not p.endswith(".")}
+    rule = set(re.findall(r"\bS\.rule\.(\w+)", js)) | set(re.findall(r'own\(\s*S\.rule,\s*"(\w+)"', js))
+    indicators = set(re.findall(r"S\.indicators\.words\.(\w+)", js)) | set(re.findall(r'own\(\s*S\.indicators\.words,\s*"(\w+)"', js))
+    top = set(re.findall(r"\bS\.(\w+)", js)) - {"rule", "words", "indicators", "unplaced", "canada"}
+    # the block's own reads by its object name (h.summary.partial, hd.summary.words, own(h.summary, "tile_list")), R1-F6
+    direct = set(re.findall(r"\bh[d]?\.summary\.(\w+)", js)) | set(re.findall(r'own\(\s*h[d]?\.summary,\s*"(\w+)"', js))
+    return {"words": words, "paths": paths, "rule": rule, "indicators": indicators, "top": top | direct}
+
+
+def node_sheet(site: Path, h: dict, cell: dict) -> dict:
+    """The sheet's table and sections for a cell as the browser's code writes them (under node), with h the map.json hail
+    block the page reads and site the built folder its fetches read."""
+    js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+    payload = {"code": browser_join_code(js) + "\n" + browser_summary_code(js), "site": str(site), "h": h, "cell": cell,
+               "tz": "America/Denver"}
+    done = subprocess.run([shutil.which("node"), "-e", NODE_SHEET_SCRIPT], input=json.dumps(payload), capture_output=True,
+                          text=True, timeout=300)
+    if done.returncode:
+        raise AssertionError(f"the browser's sheet did not run under node: {done.stderr[-900:]}")
+    return json.loads(done.stdout)
+
+
+def module_sheet(site: Path, cell: tuple[int, int], now) -> dict:
+    """The sheet for a cell as the module writes it: the summary (table, sections' leads, roof), the B1 radar words, and the
+    rows and notes of the eleven sections (build.history_sections) with the joined records of the cell (describe_joins)."""
+    from website import build as bd, hail as hs, joins as jn, summary as sm
+    row, col = cell
+    index = hs.load_index(site)
+    lat, lon = hs.cell_centre(row, col)
+    radar = hs.describe(index, hs.cell_events(site, lat, lon), now, sample=False)
+    summary = sm.describe_summary(site, row, col, now, town=None)
+    tile = json.loads((site / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json").read_text(encoding="utf-8"))
+    words = jn.describe_joins(index, tile, row, col, now, sample=False, store_dir=site, events=jn._read_events(site), spot=None)
+    jv = {"sections": [bd.join_view(sec) for sec in words["sections"]]}
+    through = (index.get("climate") or {}).get("through")
+    built = bd.history_sections(summary, jv, radar, town_page=False, through=through)
+    return {"summary": summary, "radar": radar, "built": built}
+
+
+def section_rows(rows: list[dict]) -> list[list[str]]:
+    """The label, text and note of each row, in the form both sides are compared in."""
+    return [[r.get("label", ""), r["text"], r.get("note", "") or ""] for r in rows]
+
+
+class SheetAgreesWithTheModule(unittest.TestCase):
+    """The sheet in the browser against the module at the five cells (B5 round 3, D82(d), D83): the table, every row note,
+    each section's lead, kind, rows and notes, and the roof lines, from the same data. The rows behind "Show all" are in
+    the rendered sheet too (D83(a)). The fixture is the committed sample; the adopted store is HAIL_PARITY_STORE."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+
+    @classmethod
+    def setUpClass(cls):
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node is not installed; tools/smoke_map.py checks the same sheet in Chromium")
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-agree-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, cls.NOW, sample=True, hail_history=True)
+        cls.h = json.loads(page(cls.out, "data/map.json"))["hail"]
+
+    def cell_differences(self, folder: Path, h: dict, cell: tuple[int, int]) -> list[str]:
+        """One cell: the browser's table, sections and radar against the module's, row by row. Every difference is collected
+        and reported together (with its place), so one run shows the whole list the browser has to mirror."""
+        row, col = cell
+        mod = module_sheet(folder, cell, self.NOW)
+        browser = node_sheet(folder, h, {"row": row, "col": col})
+        summary = mod["summary"]
+        if summary.get("state") not in ("loaded", "partial"):      # partial: the fixture has no climate grid (a stated part)
+            self.skipTest(f"cell {row},{col} is outside the built store ({summary.get('state')})")
+        diffs: list[str] = []
+
+        def check(where: str, got, want) -> None:
+            if got != want:
+                diffs.append(f"{where}: browser {json.dumps(got, ensure_ascii=False)[:220]} != module "
+                             f"{json.dumps(want, ensure_ascii=False)[:220]}")
+
+        # the table: every row's cells, five-season figure, coverage and notes
+        module_rows = {r["key"]: r for r in summary["table"]["rows"]}
+        check("table rows", sorted(browser["table"]["rows"]), sorted(module_rows))
+        for key, mrow in module_rows.items():
+            brow = browser["table"]["rows"].get(key, {})
+            for field in ("texts", "coverage", "values", "five", "five_text", "five_coverage", "five_missing", "notes"):
+                check(f"table {key}.{field}", brow.get(field), mrow[field])
+        check("radar lead", browser["radar"].get("lead"), mod["radar"].get("lead"))
+        # the sections: heading, lead, kind, rows (behind Show all too) and notes, in the brief's order
+        built = mod["built"]
+        by_id = {sec["id"]: sec for sec in browser["model"]["sections"]}
+        check("section order", [sec["id"] for sec in browser["model"]["sections"]], sm_sections())
+        for sec in summary["sections"]:
+            sid = sec["id"]
+            got = by_id.get(sid, {})
+            check(f"{sid} heading", got.get("heading"), sec["heading"])
+            check(f"{sid} lead", got.get("lead"), sec["lead"])
+            check(f"{sid} kind", got.get("kind"), sec["kind"])
+            check(f"{sid} rows", section_rows(got.get("rows", [])), section_rows(built["rows"][sid]))
+            if sid != "roof":
+                check(f"{sid} notes", got.get("notes"), built["notes"][sid])
+            rendered = browser["sectionTexts"].get(sid, [])
+            for text in [r["text"] for r in got.get("rows", [])] + list(got.get("notes", [])):
+                if text not in rendered:
+                    diffs.append(f"{sid}: a text is not in the rendered sheet: {text[:120]}")
+        module_lines = [(ln["label"], ln["text"], ln["kind"]) for g in summary["roof"]["groups"] for ln in g["lines"]]
+        browser_lines = [(ln["label"], ln["text"], ln["kind"]) for g in by_id.get("roof", {}).get("groups") or []
+                         for ln in g["lines"]]
+        check("roof lines", browser_lines, module_lines)
+        check("roof how made", by_id.get("roof", {}).get("notes"), summary["roof"]["how_made"])
+        # nothing the sheet shows is a placeholder (the words the sheet asks for are in the summary block)
+        everything = browser["tableTexts"] + [t for texts_ in browser["sectionTexts"].values() for t in texts_]
+        diffs += [f"placeholder on the sheet: {t[:120]}" for t in everything if "[missing" in t]
+        return diffs
+
+    def compare_cell(self, folder: Path, h: dict, cell: tuple[int, int]) -> None:
+        diffs = self.cell_differences(folder, h, cell)
+        self.assertEqual(diffs, [], f"cell {cell[0]},{cell[1]}: {len(diffs)} difference(s), the browser against the module")
+
+    def test_the_five_cells_agree_on_the_fixture(self):                                                       # D82(d), D83, R1-F2
+        """The committed sample holds the joined records of three tiles only (hail/j). A cell whose tile the sample lacks is a
+        skipped subtest that names the cell, never a silent continue; the present set is asserted, and the adopted store test
+        below compares all five."""
+        present = [cell for cell in FIVE_CELLS
+                   if (self.out / "hail" / "j" / f"{hs.tile_name(cell[0] // hs.TILE, cell[1] // hs.TILE)}.json").exists()]
+        compared = []
+        for cell in FIVE_CELLS:
+            with self.subTest(cell=cell):
+                if cell not in present:
+                    self.skipTest(f"the fixture holds no joined tile for the cell {cell[0]},{cell[1]} (only the adopted store does)")
+                self.compare_cell(self.out, self.h, cell)
+                compared.append(cell)
+        self.assertEqual(sorted(present), sorted(FIVE_CELLS[:3]), "the sample's present tiles")
+        self.assertEqual(sorted(compared), sorted(present))
+
+    def test_the_rendered_sheet_holds_every_row_behind_show_all(self):                                       # D83(a)
+        mod = module_sheet(self.out, FIVE_CELLS[0], self.NOW)
+        browser = node_sheet(self.out, self.h, {"row": FIVE_CELLS[0][0], "col": FIVE_CELLS[0][1]})
+        for sec in browser["model"]["sections"]:
+            rendered = browser["sectionTexts"].get(sec["id"], [])
+            for r in sec["rows"]:
+                self.assertIn(r["text"], rendered)
+        self.assertGreaterEqual(max(len(s["rows"]) for s in browser["model"]["sections"]), 1)
+        self.assertEqual(browser["model"]["showFirst"], self.h["joins"]["show_first"])
+        self.assertTrue(mod["built"]["rows"])
+
+    @unittest.skipUnless(os.environ.get("HAIL_PARITY_STORE"), "set HAIL_PARITY_STORE to the adopted combined store")
+    def test_the_five_cells_agree_on_the_adopted_store(self):                                                 # D82(d), D83, D64
+        folder = Path(tempfile.mkdtemp(prefix="hailwatch-agree-real-"))
+        self.addCleanup(shutil.rmtree, folder, True)
+        site.build(folder, None, self.NOW, sample=True, hail_history=True,
+                   hail_store_path=os.environ["HAIL_PARITY_STORE"])
+        h = json.loads(page(folder, "data/map.json"))["hail"]
+        for cell in FIVE_CELLS:
+            with self.subTest(cell=cell):
+                self.compare_cell(folder, h, cell)
+
+
+def sm_sections() -> list[str]:
+    """The eleven section ids in the brief's order (summary.WORDS_SUMMARY section_titles; Hail first, How this was made last)."""
+    from website import summary as sm
+    return list(sm.WORDS_SUMMARY["section_titles"])
+
+
+class SummaryReadsReader(unittest.TestCase):
+    """The every-key test reads the summary keys map.js uses (R1-F6): the reads of the S copy, of h.summary and hd.summary
+    read directly, and through own(...), sdGet and sumWord (D83, D87(h)). A key read in any of these forms is seen, so a key
+    the build does not write fails the every-key test whichever form the browser uses."""
+
+    def test_each_form_map_js_uses_is_seen(self):
+        js = (
+            'var a = h.summary.seasons; var b = hd.summary.words; var c = own(h.summary, "tile_list");\n'
+            'var d = S.partial; var e = sumWord(h.summary, "table_problem"); var f = S.rule.season_min;\n'
+            'var g = own(S.indicators.words, "held"); var k = sdGet(S, "roof.reference_line");\n'
+        )
+        reads = summary_reads(js)
+        for key in ("seasons", "words", "tile_list", "partial"):
+            self.assertIn(key, reads["top"])
+        self.assertIn("table_problem", reads["words"])
+        self.assertIn("season_min", reads["rule"])
+        self.assertIn("held", reads["indicators"])
+        self.assertIn("roof.reference_line", reads["paths"])
+
+    def test_a_key_the_block_lacks_is_reported_by_the_reader(self):
+        self.assertIn("not_written_key", summary_reads('var x = h.summary.not_written_key;')["top"])
+
+
+class SummaryContract(unittest.TestCase):
+    """The summary block the browser reads: every key map.js reads is written by the build (round 3, F1, D83), the share
+    rounding matches Python at every share the station rule can see (D82, D83(b)), and the sheet's joined code holds no
+    literal fallback for the rows it shows first (D83(a))."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-contract-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, datetime(2026, 10, 19, 12, 0, tzinfo=UTC), sample=True, hail_history=True)
+        cls.h = json.loads(page(cls.out, "data/map.json"))["hail"]
+        cls.js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+
+    def test_every_summary_key_the_browser_reads_is_in_the_block(self):                                      # F1, D83
+        d = self.h["summary"]
+        reads = summary_reads(self.js)
+        self.assertEqual(sorted(reads["words"] - set(d["words"])), [], "summary.words keys the build does not write")
+        self.assertEqual(sorted(reads["rule"] - set(d["rule"])), [], "summary.rule keys the build does not write")
+        self.assertEqual(sorted(reads["indicators"] - set(d["indicators"]["words"])), [], "summary.indicators.words keys")
+        self.assertEqual(sorted(reads["top"] - set(d)), [], "summary keys the build does not write")
+        sd = d["section_data"]
+        for path in sorted(reads["paths"]):
+            cur = sd
+            for part in path.split("."):
+                self.assertIsInstance(cur, dict, f"section_data.{path}")
+                self.assertIn(part, cur, f"section_data.{path} is not written")
+                cur = cur[part]
+        self.assertEqual(len(sd["roof"]["lines"]), 23)
+        for line in sd["roof"]["lines"].values():
+            self.assertTrue(line["label"] and line["kind"] and "noun" in line)
+            self.assertTrue(line["noun"] is None or line["noun"] in d["nouns"], line)
+
+    def test_the_section_data_is_the_contract_the_browser_round_two_wrote(self):                             # F1, D83
+        sd = self.h["summary"]["section_data"]
+        self.assertEqual(sd["kind"], {"radar": "Radar estimate", "report": "Report", "record": "Record (NCEI)",
+                                      "reference": "Reference", "unavailable": "Data unavailable"})
+        self.assertEqual(sd["row_labels"], ["Report", "Record", "Detection", "Warning", "Watch", "Advisory", "Zone product",
+                                            "County product", "Station"])
+        self.assertEqual(sd["rules"]["by_label"], {"Station": "wind", "Detection": "hail"})
+        self.assertEqual([r[0] for r in sd["rules"]["rules"]], ["ice", "heat", "flooding", "snow", "hail", "rain", "wind"])
+        self.assertEqual(sd["rules"]["default"], "storms")
+        self.assertEqual(sd["partial_marker"], "not counting")
+        self.assertEqual(sd["words"]["span_to"], "to")
+        self.assertEqual(sd["words"]["report_near"], "{count} within 5 miles{tail}")
+        self.assertEqual(sd["words"]["county_word"], "County")
+        self.assertEqual(sd["roof"]["partial_keys"], ["heat_advisory", "excessive_heat", "ice_storm", "winter_storm"])
+        self.assertEqual(sd["roof"]["reference_line"], "{source}: “{quote}”")
+        self.assertEqual(sd["section_keys"]["hail"], ["radar_max", "radar_1in", "hail_max", "hail_n"])
+        self.assertEqual(sd["extra_notes"], {"snow": ["analysis_held"]})
+        self.assertEqual(sd["season_rows"][0], {"section": "temperature", "kind": "Grid estimate", "keys": ["tmax", "tmin"],
+                                                "names": ["highest", "lowest"]})
+        self.assertEqual(sd["roof"]["lines"]["hail_size_days"]["noun"], "days")
+        self.assertEqual(sd["roof"]["extra"]["hail_warnings"], {"polygon": ["SV"], "sig": "W", "noun": "sv"})
+        self.assertEqual(sd["roof"]["extra"]["heat_advisory"]["sig"], ["Y"])
+        self.assertEqual(sd["kind_what"]["Warning"], self.h["summary"]["indicators"]["words"]["what_warnings"])
+
+    def test_the_rule_percent_is_the_three_values(self):                                                      # D82(c), D83(b)
+        self.assertEqual(self.h["summary"]["rule"]["percent"], {"scale": 100, "decimals": 1, "step": 0.1})
+
+    def test_the_day_noun_and_the_show_first_count_are_written(self):                                         # D83(a), D83(b)
+        self.assertEqual(self.h["summary"]["nouns"]["days"], ["day", "days"])
+        self.assertEqual(self.h["joins"]["show_first"], 10)
+        self.assertEqual(self.h["summary"]["rule"]["season_min"], 0.95)
+        self.assertEqual(self.h["summary"]["units"]["in"]["scale"], 100)
+
+    def test_the_station_words_the_browser_reads_are_in_the_stations_block(self):                            # F8, D71
+        words = set(re.findall(r"stWord\(\s*[\w.]+\s*,\s*\"([^\"]+)\"", self.js))
+        self.assertEqual(sorted(words - set(self.h["stations"]["words"])), [])
+
+    def test_the_browser_rounds_each_share_as_python_does_at_every_share(self):                              # D82, D83(b)
+        from website import summary as sm
+        rule = self.h["summary"]["rule"]
+        shares = [round(k / 2192, 4) for k in range(0, 2193)]
+        payload = {"code": "\n".join(js_function(self.js, name) for name in ("sumPercent", "sumRoundEven", "sumSharePct",
+                                                                             "missingKey", "has", "own")),
+                   "S": {"rule": {"cover_min": rule["cover_min"], "percent": rule["percent"]}}, "shares": shares}
+        done = subprocess.run([shutil.which("node"), "-e", NODE_SHARE_SCRIPT], input=json.dumps(payload),
+                              capture_output=True, text=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr[-600:])
+        browser = json.loads(done.stdout)
+        python = [sm._share_text(share) for share in shares]
+        differing = [(k, python[k], browser[k]) for k in range(len(shares)) if python[k] != browser[k]]
+        self.assertEqual(differing, [], differing[:5])
+        for k, digits in SHARE_TIES.items():                          # the exact ties: 137, 685, 1233 and 1781 of 2,192
+            with self.subTest(k=k):
+                self.assertEqual(python[k], digits)
+                self.assertEqual(browser[k], digits)
+
+    def test_the_browser_season_rule_is_pythons_at_every_day_count_and_the_bounds(self):                    # D83(b), D87(d), F-09
+        from website import summary as sm
+        from website import stations
+        rule = self.h["summary"]["rule"]
+        first, last = date(2020, 6, 25), date(2027, 7, 5)
+        days = [(first + timedelta(days=k)).isoformat() for k in range((last - first).days + 1)]
+        labels = list(sm.FIVE) + [sm.PARTIAL]
+        payload = {"code": "\n".join([js_var(self.js, "HAIL_DAY_MS")] + [js_function(self.js, name) for name in (
+                       "own", "has", "sumPercent", "sumSeasonRule", "sumSeasonOf", "sumBounds", "sumDayNum", "sumIsoOf")]),
+                   "S": {"rule": rule}, "totals": [365, 366], "labels": labels, "days": days}
+        done = subprocess.run([shutil.which("node"), "-e", NODE_SEASON_SCRIPT], input=json.dumps(payload),
+                              capture_output=True, text=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr[-600:])
+        browser = json.loads(done.stdout)
+        python_share = int(round(sm.SEASON_SHARE * 100))
+        self.assertEqual(browser["share"], {"scale": 100, "share": python_share})
+        python_full = [[total, valid, valid * 100 >= total * python_share] for total in (365, 366) for valid in range(367)]
+        self.assertEqual(browser["full"], python_full, "the 95 percent rule at every day count 0 to 366")
+        for label, start, end in browser["bounds"]:
+            with self.subTest(label=label):
+                self.assertEqual((start, end), tuple(d.isoformat() for d in sm.season_bounds(label)))
+        differing = []
+        for iso, label in browser["labels"]:
+            want = stations.season_of(date.fromisoformat(iso))
+            if want is not None and label != want:
+                differing.append((iso, label, want))
+        self.assertEqual(differing, [], differing[:5])
+
+    def test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json(self):                    # D87(d), F-08, F-12
+        season = js_function(self.js, "sumSeasonOf") + js_function(self.js, "sumBounds")
+        for literal in ('"-07-01"', '"-06-30"', "m >= 7", "07-01", "06-30"):
+            self.assertNotIn(literal, season, "the season bounds are map.json's (summary.rule.season), not literals")
+        inches = js_function(self.js, "hailInches")
+        self.assertNotIn("100", inches, "hailInches reads summary.units.in.scale from map.json, not the literal 100")
+        self.assertIn("scale", inches)
+
+    def test_each_joined_line_feeds_the_section_its_part_names(self):                                        # D82(d)
+        from website import build as bd
+        from website import joins as jn
+        county = jn.WORDS_JOINS["county_lead_none"].format(county_name="Yellowstone", start="1 Jan 2021", end="31 Dec 2025")
+        self.assertEqual(bd._line_part(county, "zones"), "county")
+        self.assertEqual(bd._line_part(jn.WORDS_JOINS["county_unavailable"], "zones"), "county")
+        self.assertEqual(bd._line_part(jn.WORDS_JOINS["zones_fire_none"], "zones"), "fire")
+        self.assertEqual(bd._line_part(jn.WORDS_JOINS["zones_before_line_one"].format(n=1, zone_name="X", zone="MTZ001"), "zones"),
+                         "zones")
+        self.assertEqual(bd._line_part("The newest warning in this build starts on Sep 19, 2026.", "warnings"), "warnings")
+        self.assertEqual(bd.JOIN_PART_SECTIONS["county"], "flooding")
+        self.assertEqual(bd.JOIN_PART_SECTIONS["fire"], "storms")
+
+    def test_the_sheet_code_holds_no_literal_fallback_for_the_rows_it_shows_first(self):                     # D83(a), (e)
+        self.assertNotIn("|| 10", self.js)
+        self.assertNotIn("showFirst: 10", self.js)
+
+    def test_a_sheet_line_with_no_value_is_never_a_placeholder_on_the_fixture(self):                         # (d)
+        browser = node_sheet(self.out, self.h, {"row": FIVE_CELLS[0][0], "col": FIVE_CELLS[0][1]})
+        everything = browser["tableTexts"] + [t for texts_ in browser["sectionTexts"].values() for t in texts_]
+        self.assertTrue(everything)
+        self.assertEqual([t for t in everything if "[missing" in t], [])
+
+    def test_the_billings_page_carries_each_joined_line_under_the_section_it_feeds(self):                     # D82(d)
+        page_html = page(self.out, "town/billings.html")
+        hail_sec = re.search(r'<section class="hist-sec[^"]*" id="sec-hail".*?</section>', page_html, re.S).group(0)
+        storms = re.search(r'<section class="hist-sec[^"]*" id="sec-storms".*?</section>', page_html, re.S).group(0)
+        flooding = re.search(r'<section class="hist-sec[^"]*" id="sec-flooding".*?</section>', page_html, re.S).group(0)
+        wind = re.search(r'<section class="hist-sec[^"]*" id="sec-wind".*?</section>', page_html, re.S).group(0)
+        text = {"hail": " ".join(html_text(hail_sec).split()), "storms": " ".join(html_text(storms).split()),
+                "flooding": " ".join(html_text(flooding).split()), "wind": " ".join(html_text(wind).split())}
+        self.assertIn("The newest detection in this build is from", text["hail"])          # the freshness line of detections
+        self.assertIn("The newest warning in this build starts on", text["storms"])        # the freshness line of warnings
+        self.assertIn("County products could not be loaded in this update", text["flooding"])   # the county line (its own part)
+        self.assertNotIn("County products could not be loaded", text["storms"])
+
+    def test_the_real_store_names_are_the_display_names_the_store_gives(self):                               # D78(c), round 3
+        store = os.environ.get("HAIL_PARITY_STORE")
+        if not store:
+            self.skipTest("set HAIL_PARITY_STORE to the adopted combined store")
+        folder = Path(tempfile.mkdtemp(prefix="hailwatch-names-"))
+        self.addCleanup(shutil.rmtree, folder, True)
+        site.build(folder, None, datetime(2026, 10, 19, 12, 0, tzinfo=UTC), sample=True, hail_history=True,
+                   hail_store_path=store)
+        h = json.loads(page(folder, "data/map.json"))["hail"]
+        benchland = node_sheet(folder, h, {"row": 792, "col": 1998})
+        snow = benchland["table"]["rows"]["snow"]
+        text = " ".join(snow["texts"] + snow["notes"] + [t for texts_ in benchland["sectionTexts"].values() for t in texts_])
+        self.assertIn("Buffalo 1.7 E", text)
+        self.assertIn("Harlowton 11NW", text)
+        for upper in ("BUFFALO", "HARLOWTON", "BILLINGS WTP"):
+            self.assertNotIn(upper, text)
+        billings = node_sheet(folder, h, {"row": 921, "col": 2149})
+        text = " ".join(billings["table"]["rows"]["snow"]["texts"] + billings["table"]["rows"]["snow"]["notes"])
+        self.assertIn("Billings WTP", text)
+        self.assertNotIn("BILLINGS WTP", text)
+
+
+def html_text(fragment: str) -> str:
+    """The visible text of an HTML fragment: its tags removed and its entities read."""
+    import html as html_lib
+    return html_lib.unescape(re.sub(r"<[^>]+>", " ", fragment))
+
+
 if __name__ == "__main__":
     unittest.main()
+

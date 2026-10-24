@@ -217,8 +217,9 @@ WORDS_ADDRESSES = {
     "address_line": "{line}, {city} {zip}",
     "address_line_no_zip": "{line}, {city}",
     "same_point": "{n} addresses at this point",
+    # D41: every unavailable line ends with the required sentence (the history's unavailable lines do the same)
     "unavailable": ("Montana's address list could not be loaded in this update; that is not the same as no "
-                    "addresses."),
+                    "addresses. This is not an all-clear."),
     "sample": "SAMPLE data",
     "about_title": "Addresses",
     "about_source": ("Source: Montana State Library Structures and Addresses Framework, file dated {pubdate}, "
@@ -236,7 +237,7 @@ WORDS_ADDRESSES = {
     "about_coverage": "The list is of addresses, not of buildings, and its completeness varies from county to county.",
     "about_privacy": "What you type stays in your browser.",
     # D23: an address tile with no B1 shard is outside the hail grid; the dot says so and never says "no hail".
-    "outside_grid": "This point is outside the hail grid's Montana outline; no hail history is kept here.",
+    "outside_grid": "This point is outside the hail grid's Montana outline; the history does not cover it.",
     # D32: a point that is not a Structure point says how it was placed ({how} is in PLACEMENT_HOW).
     "placed": "This address point was placed {how}, not on the building.",
     # D29 and D34: the building outline words for a building-outline dot (the site's templates fill the braces).

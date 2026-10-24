@@ -448,6 +448,7 @@ class SmokeHelpers(unittest.TestCase):
 
         patches = dict(hail_open=first_page_fails, sheet_settled=lambda page, loading, seconds=15: "the sheet",
                        summary_read=lambda page: {"present": True}, first_screen_problems=lambda label, got: [],
+                       sheet_read=lambda page, ids: {"summary": None, "sections": None},
                        snap=lambda page, shots, name: None, b3_open=fake_b3_open,
                        tap_centre=lambda page, lat, lon: None)
         data = {"hail": {"words": {"loading": "Loading the history"}}}
@@ -461,7 +462,7 @@ class SmokeHelpers(unittest.TestCase):
         table's position and the tap's files are checked, with no words to compare."""
         calls = []
 
-        def spot(browser, base, data, label, cell, want, size_name, size, shots, limit):
+        def spot(browser, base, data, label, cell, want, size_name, size, shots, limit, expected=None):
             calls.append((label, size_name, want, limit))
             return []
 
@@ -478,7 +479,7 @@ class SmokeHelpers(unittest.TestCase):
     def test_a_build_without_a_tap_budget_is_named_once(self):
         calls = []
 
-        def spot(browser, base, data, label, cell, want, size_name, size, shots, limit):
+        def spot(browser, base, data, label, cell, want, size_name, size, shots, limit, expected=None):
             calls.append(limit)
             return []
 
@@ -553,3 +554,175 @@ class SiteCopy(unittest.TestCase):
         with self.assertRaises(self.hs.HailStoreError) as caught:
             self.hs.load_store(self.site)
         self.assertIn("hail/stray.json", str(caught.exception))
+
+
+
+class SheetReader(unittest.TestCase):
+    """The round-2 sheet (B5 part B2; D75, D82, D83): the browser smoke's reader and comparisons, tested on synthetic sheets
+    shaped as the page's [data-hail='summary'] and [data-hail='sections'] slots hold them. The browser itself is checked by
+    tools/smoke_map.py in Chromium; these tests keep its comparisons honest without one."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.smoke = import_tool("smoke_map")
+        cls.ids = ["hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made"]
+
+    def data(self, sample=False, show_first=2, joins_state="loaded"):
+        """A map.json block with the eleven section ids, the joins words and the show-first rule the build writes."""
+        words = {"show_all": "Show all {n} rows", "sample": "SAMPLE data"}
+        return {"hail": {"summary": {"sections": list(self.ids)},
+                         "joins": {"state": "sample" if sample else joins_state, "show_first": show_first, "words": words}}}
+
+    @staticmethod
+    def hail_row(words, remark=""):
+        """A report of hail: its kind label, the time and its words (build.py's _section_of reads them as hail), its remark."""
+        return ("Report", f"Jun 14, 2025 11:45 pm MDT: {words}", remark)
+
+    def item(self, sid, rows=(), more=(), notes=(), lead="A lead.", heading=None, groups=(), kinds=True):
+        """One section as the reader reads it: its shown rows, its rows behind 'Show all', its notes and its roof groups. The
+        sentence of each kind among its rows comes first in its notes (summary.kind_what), as the browser writes them."""
+        def row(label, words, note=""):
+            return {"label": label, "text": words, "note": note}
+        shown = [row(*r) for r in rows]
+        behind = [row(*r) for r in more]
+        what = self.smoke.summary_module().kind_what(town=False)
+        kind_notes = [what[k] for k in dict.fromkeys(r[0] for r in list(rows) + list(more)) if k in what] if kinds else []
+        notes = kind_notes + list(notes)
+        text_parts = [heading or sid.title(), lead] + [r[1] for r in rows] + [r[1] for r in more] + list(notes)
+        return {"id": sid, "heading": heading or sid.title(), "sample": None, "lead": lead, "rows": shown,
+                "more": ({"summary": f"Show all {len(shown) + len(behind)} rows", "rows": behind} if behind else None),
+                "groups": list(groups), "notes": list(notes), "text": " ".join(text_parts)}
+
+    def sheet(self, items, notices=()):
+        text = " ".join([i["text"] for i in items] + list(notices))
+        return {"summary": {"notes": []}, "sections": {"hidden": False, "notices": list(notices), "text": text, "items": items}}
+
+    def expected(self, rows):
+        """describe_joins' cell: one reports part with these (label, words, remark) rows."""
+        return {"sections": [{"id": "reports", "lines": [], "unavailable": None,
+                              "rows": [{"text": f"{label}: {words}", "remark": remark} for label, words, remark in rows]}]}
+
+    def test_the_reader_takes_the_round_two_slots_and_every_row_text_not_inner_text(self):
+        js = self.smoke.SHEET_READ
+        self.assertIn('[data-hail="summary"]', js)
+        self.assertIn('[data-hail="sections"]', js)
+        self.assertIn("details.hist-more", js)                 # the rows behind 'Show all' are read from the closed details
+        self.assertIn("textContent", js)
+        self.assertNotIn("innerText", js)                      # D83(a): innerText would leave those rows out
+
+    def test_the_eleven_sections_must_come_in_their_fixed_order(self):
+        items = [self.item(sid) for sid in self.ids]
+        self.assertEqual(self.smoke.sheet_order_problems("gate", self.sheet(items), self.ids), [])
+        swapped = [items[1], items[0]] + items[2:]
+        problems = self.smoke.sheet_order_problems("gate", self.sheet(swapped), self.ids)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("the fixed order is", problems[0])
+        hidden = self.smoke.sheet_order_problems("gate", {"sections": {"hidden": True}}, self.ids)
+        self.assertTrue(hidden[0].endswith("are hidden"), hidden)
+
+    def test_a_joined_row_behind_show_all_is_compared_as_well(self):
+        rows = [self.hail_row("hail, 1.00 in", "Remark: a"), self.hail_row("hail, 1.75 in", "Remark: b")]
+        behind = [self.hail_row("hail, 0.75 in", "")]
+        expected = self.expected(rows + behind)
+        items = [self.item(sid, rows=rows, more=behind) if sid == "hail" else self.item(sid) for sid in self.ids]
+        self.assertEqual(self.smoke.joined_problems("gate", self.sheet(items), expected, self.data()), [])
+        without = [self.item(sid, rows=rows) if sid == "hail" else self.item(sid) for sid in self.ids]
+        problems = self.smoke.joined_problems("gate", self.sheet(without), expected, self.data())
+        self.assertTrue(any("joined rows differ at row 3" in p for p in problems), problems)
+
+    def test_show_all_follows_the_rule_and_the_words_map_json_gives(self):
+        rows = [self.hail_row("hail, 1.00 in"), self.hail_row("hail, 1.10 in")]
+        behind = [self.hail_row("hail, 1.20 in"), self.hail_row("hail, 1.30 in")]
+        expected = self.expected(rows + behind)
+        items = [self.item(sid, rows=rows, more=behind) if sid == "hail" else self.item(sid) for sid in self.ids]
+        self.assertEqual(self.smoke.joined_problems("gate", self.sheet(items), expected, self.data()), [])
+        wrong = [dict(i) for i in items]
+        wrong[0] = dict(items[0], more=dict(items[0]["more"], summary="Show all 9 rows"))
+        self.assertTrue(any("reads 'Show all 9 rows'" in p for p in self.smoke.joined_problems(
+            "gate", self.sheet(wrong), expected, self.data())))
+        unshown = [self.item(sid, rows=rows + behind) if sid == "hail" else self.item(sid) for sid in self.ids]
+        self.assertTrue(any("shows 4 rows before 'Show all', the rule is 2 of 4" in p for p in self.smoke.joined_problems(
+            "gate", self.sheet(unshown), expected, self.data())))
+
+    def test_a_line_and_an_unavailable_sentence_of_the_cell_must_be_on_the_sheet(self):
+        expected = {"sections": [{"id": "stations", "rows": [], "lines": ["1 reading of 130 kt or more was left out."],
+                                  "unavailable": "Station data could not be loaded. This is not an all-clear."}]}
+        items = [self.item(sid) for sid in self.ids]
+        problems = self.smoke.joined_problems("gate", self.sheet(items), expected, self.data())
+        self.assertTrue(any("lacks the line" in p for p in problems), problems)
+        self.assertTrue(any("unavailable sentence" in p for p in problems), problems)
+        notices = ["Station data could not be loaded. This is not an all-clear."]
+        ok = [self.item(sid, notes=["1 reading of 130 kt or more was left out."]) if sid == "wind" else self.item(sid)
+              for sid in self.ids]
+        self.assertEqual(self.smoke.joined_problems("gate", self.sheet(ok, notices), expected, self.data()), [])
+
+    def test_a_section_shows_the_kind_sentence_of_each_kind_among_its_rows(self):
+        what = self.smoke.summary_module().kind_what(town=False)["Report"]
+        rows = [self.hail_row("hail, 1.00 in")]
+        expected = self.expected(rows)
+        bare = [self.item(sid, rows=rows, kinds=False) if sid == "hail" else self.item(sid) for sid in self.ids]
+        self.assertTrue(any("lacks the sentence for Report" in p for p in self.smoke.joined_problems(
+            "gate", self.sheet(bare), expected, self.data())))
+        with_what = [self.item(sid, rows=rows) if sid == "hail" else self.item(sid) for sid in self.ids]
+        self.assertIn(what, with_what[0]["notes"])
+        self.assertEqual(self.smoke.joined_problems("gate", self.sheet(with_what), expected, self.data()), [])
+
+    def test_the_sections_match_describe_summary_for_the_same_cell(self):
+        want = {"sections": [{"id": sid, "heading": sid.title(), "lead": "A lead.", "notes": ["A note."] if sid == "wind" else []}
+                             for sid in self.ids],
+                "table": {"rows": [{"key": "gust_max", "label": "Strongest gust", "notes": ["A table note."]}]},
+                "how_made": ["Source: one.", "Source: two."],
+                "roof": {"how_made": ["Roof line note."], "groups": [{
+                    "name": "Thresholds", "lines": [{"text": "Days of hail: 3."}],
+                    "references": [{"kind": "Reference", "text": "NWS: quote."}], "held": [{"text": "Lightning: Data unavailable."}]}]}}
+        roof_item = self.item("roof", notes=["Roof line note."], groups=[{
+            "name": "Thresholds", "lines": ["Days of hail: 3."], "refs": ["Reference: NWS: quote."],
+            "held": ["Lightning: Data unavailable."]}])
+        made = self.item("made", notes=["Source: one.", "Source: two."])
+        items = [self.item(sid, notes=["A note.", "A table note."] if sid == "wind" else ()) for sid in self.ids[:9]]
+        items += [roof_item, made]
+        sheet = self.sheet(items)
+        sheet["summary"] = {"notes": ["A table note."]}
+        self.assertEqual(self.smoke.sections_problems("gate", want, sheet, self.ids), [])
+        self.assertEqual(self.smoke.table_notes_problems("gate", want, sheet["summary"]), [])
+        bad_items = [dict(i) for i in items]
+        bad_items[1] = dict(items[1], heading="Wind speeds", lead="Another lead.")
+        bad_items[9] = dict(roof_item, groups=[dict(roof_item["groups"][0], lines=["Days of hail: 4."])])
+        problems = self.smoke.sections_problems("gate", want, self.sheet(bad_items), self.ids)
+        self.assertTrue(any("heading on the sheet is 'Wind speeds'" in p for p in problems), problems)
+        self.assertTrue(any("lead on the sheet" in p for p in problems), problems)
+        self.assertTrue(any("roof group 'Thresholds' shows its lines differently at line 1" in p for p in problems), problems)
+        missing_note = self.smoke.table_notes_problems("gate", want, {"notes": []})
+        self.assertEqual(missing_note, ["gate: the table's notes lack 'A table note.' (Strongest gust)"])
+
+    def test_the_sample_word_is_on_each_of_the_eleven_sections_of_a_sample_build_only(self):
+        sample_data = self.data(sample=True)
+        store_data = self.data(sample=False)
+        sheet = {"sections": {"items": [{"id": sid, "text": "SAMPLE data " + sid} for sid in self.ids]}}
+        self.assertEqual(self.smoke.check_sample_labels(sheet, sample_data, "gate"), [])
+        missing = {"sections": {"items": [{"id": sid, "text": "SAMPLE data"} for sid in self.ids[:-1]]}}
+        self.assertTrue(any("the made section is missing" in p for p in self.smoke.check_sample_labels(
+            missing, sample_data, "gate")))
+        unlabelled = {"sections": {"items": [{"id": sid, "text": "" if sid == "heat" else "SAMPLE data"} for sid in self.ids]}}
+        self.assertEqual(self.smoke.check_sample_labels(unlabelled, sample_data, "gate"),
+                         ["gate: the heat section of a sample build does not say 'SAMPLE data'"])
+        says = {"sections": {"items": [{"id": sid, "text": "SAMPLE data" if sid == "rain" else "x"} for sid in self.ids]}}
+        self.assertEqual(self.smoke.check_sample_labels(says, store_data, "gate"),
+                         ["gate: the rain section of a store build says 'SAMPLE data'"])
+
+    def test_the_history_run_needs_the_address_layer_and_fails_with_one_readable_line(self):
+        full = {"hail": {"addresses": {}, "roads": {}, "buildings": {}, "summary": {}}}
+        self.assertIsNone(self.smoke.history_problem(full))
+        no_addresses = {"hail": {"summary": {}}}
+        message = self.smoke.history_problem(no_addresses)
+        self.assertIn("the build has no address layer", message)
+        self.assertIn("--hail-addresses", message)
+        self.assertIn("addresses, roads, buildings", message)
+        self.assertEqual(self.smoke.history_problem({"layers": {}}), "the build has no five-season history (no hail data in "
+                         "map.json): build with --hail-history")
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            site = Path(tmp)
+            (site / "data").mkdir()
+            (site / "data" / "map.json").write_text(json.dumps(no_addresses), encoding="utf-8")
+            self.assertEqual(self.smoke.check(site, history=True), [message])     # one line; no browser is started for it

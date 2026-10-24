@@ -15,23 +15,9 @@
 <link rel="stylesheet" href="{{ root }}static/map/map.css?v={{ asset_v['map/map.css'] }}">
 {% if hail_history %}<style>
 /* ---------------------------------------------------------------- hail history at a spot (--hail-history builds) */
-/* the sheet's day list: one card per day, on the sheet's figure colour; a list the script hid stays hidden (:not) */
-.sheet-body .hail-days:not([hidden]) { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.sheet-body .hail-days li { padding: 10px 12px; border-radius: 14px; background: var(--fill-ctl); line-height: 1.35;
-  font-variant-numeric: tabular-nums; }
-.sheet-body .hail-classes { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 14px; }
 /* the legend's line under the keys (map.html); full width in the two-column legend (portrait phones) */
 .legend-tap { margin: 8px 0 0; font-size: 11.5px; line-height: 1.3; color: var(--ink-2); }
 .legend-2col .legend-tap { grid-column: 1 / -1; margin: 0; line-height: 1.2; }   /* keeps the phone legend within its height */
-/* the six joined sections under the radar estimate (B2): one list per section, and a details element for the rest */
-/* as on the town page: a long name in a join section breaks inside the word, so the sheet does not scroll sideways */
-.sheet-body .joins-sec { margin-top: 22px; overflow-wrap: anywhere; }
-.sheet-body .joins-sec h3 { margin: 0 0 6px; }
-.sheet-body .joins-rows:not([hidden]) { margin: 8px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.4;
-  font-variant-numeric: tabular-nums; }
-.sheet-body .joins-rows li { margin: 0 0 8px; }
-.sheet-body .joins-rows small { display: block; color: var(--ink-2); }
-.sheet-body .joins-more summary { cursor: pointer; margin: 8px 0 0; color: var(--ink-2); font-size: 14px; }
 </style>{% endif %}
 <script>
 /* Card mode (?card=1, the map inside the Now and Storm reports pages) is known only from the
@@ -306,31 +292,8 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
   <template id="hail-sheet">
     <p class="sample-tag" data-hail="sample" hidden></p>
     <div class="sum" data-hail="summary" hidden></div>
-    <p class="sub" data-hail="lead"></p>
-    <h3 data-hail="counts-title" hidden></h3>
-    <ul class="hail-classes" data-hail="counts" hidden></ul>
-    <ul class="hail-days" data-hail="days"></ul>
-    <p class="muted" data-hail="what"></p>
     <p class="warn" data-hail="stale" hidden></p>
-    <p class="muted" data-hail="missing" hidden></p>
-    <p class="muted" data-hail="source"></p>
-    <div data-hail="joins"></div>
-  </template>
-  <template id="hail-join-sec">
-    <section class="joins-sec" hidden>
-      <h3 data-join="heading"></h3>
-      <p class="sample-tag" data-join="sample" hidden></p>
-      <p class="warn" data-join="unavailable" hidden></p>
-      <p class="sub" data-join="lead"></p>
-      <p class="sub" data-join="fire-lead" hidden></p>
-      <ol class="joins-rows" data-join="rows" hidden></ol>
-      <details class="joins-more" data-join="more" hidden>
-        <summary data-join="more-summary"></summary>
-        <ol class="joins-rows" data-join="more-rows"></ol>
-      </details>
-      <p class="muted" data-join="what"></p>
-      <p class="muted" data-join="note" hidden></p>
-    </section>
+    <div class="hist" data-hail="sections" hidden></div>
   </template>
   <template id="hail-list">
     <section class="hail-sec" aria-labelledby="hail-list-h">

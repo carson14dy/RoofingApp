@@ -150,8 +150,10 @@ WORDS_BUILDINGS = {
     "placed": "This address point was placed {how}, not on the building.",
     "count_bubble": "{n} buildings",
     "count_one": "1 building",
-    "unavailable": "Building outlines could not be loaded in this update; that is not the same as no buildings.",
-    "outside_grid": "This point is outside the hail grid's Montana outline; no hail history is kept here.",
+    # D41: every unavailable line ends with the required sentence
+    "unavailable": ("Building outlines could not be loaded in this update; that is not the same as no buildings. "
+                    "This is not an all-clear."),
+    "outside_grid": "This point is outside the hail grid's Montana outline; the history does not cover it.",
     "about_title": "Building outlines",
     # D45 (R-06): the outline caveat is said once, in about_caveat
     "about_source": "Building outlines: USA Structures, Oak Ridge National Laboratory and FEMA (file dated {file_date}).",

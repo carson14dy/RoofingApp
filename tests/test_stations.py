@@ -3,6 +3,7 @@ the station rule (D5) and its words, the periods, and an offline build with a fa
 real files are checked by `python -m website.stations verify`."""
 from __future__ import annotations
 
+import gzip
 import json
 import math
 import random
@@ -85,7 +86,8 @@ class ReaderTests(unittest.TestCase):
                           station_line("CAN03031402", 49.1, -111.5, "AB", "CARWAY")])
         stations = S.parse_station_list(text, (44.0, 49.6, -117.0, -103.0))
         self.assertEqual(sorted(stations), ["CAN03031402", "USC00240802", "USS0014C05S"])
-        self.assertEqual(stations["USC00240802"]["name"], "BILLINGS WTP")
+        self.assertEqual(stations["USC00240802"]["name"], "Billings WTP")           # D78(c): the display form
+        self.assertEqual(stations["USC00240802"]["ghcn_name"], "BILLINGS WTP")      # the GHCN name, kept beside it
         self.assertEqual(stations["USC00240802"]["net"], "COOP")
         self.assertEqual((stations["USC00240802"]["state"], stations["USS0014C05S"]["state"]), ("MT", "ID"))
         self.assertAlmostEqual(stations["USC00240802"]["lon"], -108.4811)
@@ -184,9 +186,9 @@ class RuleTests(unittest.TestCase):
 
     def test_one_and_none_sentences(self):
         one = S.choose([(3.0, "A")], {"A": summary("A", 2000)}, "SNOW", AS_OF)
-        self.assertEqual(S.station_words(one, "SNOW"), [
-            "Only one station within 40 miles has enough reports for snowfall from 2020 to 2025: A. Stations that did "
-            "not pass are not shown."])
+        # D78(c) and D69: the one-station sentence names the station and no longer says the others are not shown (D69 names them)
+        self.assertEqual(S.station_words(one, "SNOW"),
+                         ["Only one station within 40 miles has enough reports for snowfall from 2020 to 2025: A."])
         none = S.choose([(3.0, "A")], {"A": summary("A", 100)}, "SNOW", AS_OF)
         self.assertEqual(S.station_words(none, "SNOW"),
                          ["No station within 40 miles has enough reports for snowfall from 2020 to 2025."])
@@ -286,6 +288,11 @@ class RuleTests(unittest.TestCase):
         for key, text in S.WORDS.items():
             self.assertIsNone(FORBIDDEN.search(W.residue(text)), f"{key}: {text}")
 
+    def test_a_station_word_with_no_reader_is_removed(self):
+        # build.py exports every WORDS key into map.json's words block; the not_shown sentence had no reader in the page
+        # or the Python, so it is not kept (a word the page never prints is dead text in the page's data)
+        self.assertNotIn("not_shown", S.WORDS)
+
     def test_the_unavailable_lines_end_with_the_negation(self):
         # every unavailable or unread line ends with the required sentence (D13, D20); data_unavailable is the season
         # line that the supervisor decides (rules-13 item 5b), so it is not in this list
@@ -293,6 +300,99 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(checked, ["unavailable", "unread_block", "unread_element", "unread_named", "unread_partial"])
         for key in checked:
             self.assertTrue(S.WORDS[key].endswith("This is not an all-clear."), key)
+
+
+class DisplayNameTests(unittest.TestCase):
+    """D78(c) and D84(b): one display rule, written once in Python (stations.display_name): each capitalised word is
+    title-cased, except the digits, the one-letter words, the compass and distance tokens and the initialisms and codes
+    the names keep in capitals (NAME_CAPITALS); an abbreviation of a word is title-cased like a word; a word already in
+    mixed case stays as it is. The GHCN name stays beside it (ghcn_name)."""
+
+    def test_the_names_the_brief_gives(self):
+        for raw, want in [("BILLINGS WTP", "Billings WTP"), ("HARLOWTON 11NW", "Harlowton 11NW"), ("W GLACIER", "W Glacier"),
+                          ("BUFFALO 1.7 E", "Buffalo 1.7 E"), ("WINNETT 6NNE", "Winnett 6NNE"),
+                          ("LEWISTOWN 11 SSE", "Lewistown 11 SSE"), ("TIBER DAM 3.3 SE", "Tiber Dam 3.3 SE"),
+                          ("POWELL 3.9 ENE", "Powell 3.9 ENE"), ("WORDEN 2.5 W", "Worden 2.5 W"),
+                          ("CODY 2.9 ESE", "Cody 2.9 ESE")]:
+            with self.subTest(raw):
+                self.assertEqual(S.display_name(raw), want)
+
+    def test_initialisms_and_codes_keep_their_capitals(self):
+        for raw, want in [("SULA 2 SE (SULA RS)", "Sula 2 SE (Sula RS)"), ("HAVRE AP ASOS", "Havre AP ASOS"),
+                          ("BUTTE BERT MOONEY AP", "Butte Bert Mooney AP"), ("MALMSTROM AFB", "Malmstrom AFB"),
+                          ("COEUR D ALENE AP", "Coeur D Alene AP"), ("BILLINGS WFO", "Billings WFO"),
+                          ("GLASGOW WFO", "Glasgow WFO"), ("YELLOWSTONE NP E ENT", "Yellowstone NP E Ent"),
+                          ("CORONACH SPC", "Coronach SPC"), ("CRESTON WPCC", "Creston WPCC"),
+                          ("IML - AIR SCI", "IML - Air Sci"), ("SKQ DAM", "SKQ Dam"), ("ONTARIO KSRV", "Ontario KSRV"),
+                          ("THOMPSON FALLS PH", "Thompson Falls PH"), ("ONEFOUR CDA", "Onefour CDA")]:
+            with self.subTest(raw):
+                self.assertEqual(S.display_name(raw), want)
+
+    def test_word_abbreviations_are_title_cased_like_words(self):
+        """D84(b): an abbreviation of a word is title-cased like a word, so INTL is Intl and EXP is Exp."""
+        for raw, want in [("MOCCASIN EXP STN", "Moccasin Exp Stn"), ("BILLINGS INTL AP", "Billings Intl AP"),
+                          ("FT PECK PWR PLT", "Ft Peck Pwr Plt"), ("POWELL FLD STN", "Powell Fld Stn"),
+                          ("SNAKE RVR", "Snake Rvr"), ("ST REGIS-CLARK FK", "St Regis-Clark Fk"),
+                          ("DEVILS TWR", "Devils Twr"), ("BOZEMAN MONTANA STATE UNIV", "Bozeman Montana State Univ"),
+                          ("MISSOULA INTL AP", "Missoula Intl AP"), ("SIDNEY RICHLAND MUNI AP", "Sidney Richland Muni AP"),
+                          ("WESTERN AG RSCH CTR", "Western Ag Rsch Ctr"), ("LOWER CRAZY WOMAN CRK", "Lower Crazy Woman Crk"),
+                          ("MONTANA TECH (BUTTE SCH OF MIN", "Montana Tech (Butte Sch of Min"), ("ELK LK", "Elk Lk"),
+                          ("SOUTH MTN", "South Mtn"), ("BIG HORN CO AP", "Big Horn Co AP"), ("CARTER RCH", "Carter Rch"),
+                          ("MUD LAKE PUMPING STN", "Mud Lake Pumping Stn"), ("UPPER COLUMBIA STN LAB", "Upper Columbia Stn Lab"),
+                          ("EASTEND CYPRESS (AUT)", "Eastend Cypress (Aut)"), ("ROCKGLEN (AUT)", "Rockglen (Aut)")]:
+            with self.subTest(raw):
+                self.assertEqual(S.display_name(raw), want)
+
+    def test_the_name_sets_are_upper_case_and_no_word_abbreviation_is_listed_as_a_capital(self):
+        self.assertTrue(all(code == code.upper() and code.isalpha() for code in S.NAME_CAPITALS))
+        for word in ("INTL", "EXP", "STN", "CRK", "FK", "RVR", "FLD", "PWR", "MUNI", "PLT", "UNIV", "SCH", "SCI",
+                     "CTR", "TWR", "RSCH", "AG", "MIN", "ENT", "FT", "ST", "MT", "CO", "RCH", "LK", "MTN", "AUT"):
+            with self.subTest(word):
+                self.assertNotIn(word, S.NAME_CAPITALS)
+        for code in ("AP", "ASOS", "NWS", "RS", "NP", "WTP", "WFO", "AFB", "SPC", "FAA", "USGS", "SNOTEL", "SKQ", "IML",
+                     "PH", "CDA"):
+            with self.subTest(code):
+                self.assertIn(code, S.NAME_CAPITALS)
+
+    def test_a_token_with_a_digit_keeps_its_number_and_its_compass_token(self):
+        """D84(b): a number keeps its digits, and a compass or distance token after it keeps its case ("11NW", "2WNW",
+        "1.7 E"); any other letters in such a token abbreviate a word and are title-cased like one ("16ST" is "16St")."""
+        for raw, want in [("GREAT FALLS 16ST", "Great Falls 16St"), ("HARLOWTON 11NW", "Harlowton 11NW"),
+                          ("BIG SKY 2WNW", "Big Sky 2WNW"), ("CHINOOK 35SE", "Chinook 35SE"),
+                          ("DUNKIRK 19NNE", "Dunkirk 19NNE"), ("BUFFALO 1.7 E", "Buffalo 1.7 E"), ("16ST", "16St"),
+                          ("#2", "#2"), ("1.7", "1.7")]:
+            with self.subTest(raw):
+                self.assertEqual(S.display_name(raw), want)
+                self.assertEqual(S.display_name(want), want)
+
+    def test_mixed_case_stays_and_the_small_words_stay_lower_case(self):
+        for raw, want in [("Hawkins Lake", "Hawkins Lake"), ("Sylvan Road", "Sylvan Road"), ("PORT OF MORGAN", "Port of Morgan"),
+                          ("COEUR D'ALENE", "Coeur D'Alene"), ("KLEIN 0.6 S (CLOSED)", "Klein 0.6 S (Closed)"),
+                          ("ST. MARY 1 SSW", "St. Mary 1 SSW"), ("STORY 2.1 W", "Story 2.1 W"), ("ENNIS 1.1 ENE", "Ennis 1.1 ENE"),
+                          ("#2", "#2"), ("", "")]:
+            with self.subTest(raw):
+                self.assertEqual(S.display_name(raw), want)
+
+    def test_the_display_name_is_stable_and_keeps_single_spaces(self):
+        for raw in ("BILLINGS  WTP", "PORT OF MORGAN", "KLEIN 0.6 S (CLOSED)", "Hawkins Lake", "WINNETT 6NNE"):
+            once = S.display_name(raw)
+            self.assertEqual(S.display_name(once), once, raw)
+            self.assertNotIn("  ", once)
+
+    def test_the_parser_writes_the_display_name_and_keeps_the_ghcn_name_beside_it(self):
+        text = "\n".join([station_line("USC00243947", 46.5786, -109.9478, "MT", "HARLOWTON 11NW"),
+                          station_line("USS0015A03S", 48.97, -115.95, "MT", "Hawkins Lake")])
+        stations = S.parse_station_list(text, (40.0, 50.0, -120.0, -100.0))
+        self.assertEqual((stations["USC00243947"]["name"], stations["USC00243947"]["ghcn_name"]),
+                         ("Harlowton 11NW", "HARLOWTON 11NW"))
+        self.assertEqual((stations["USS0015A03S"]["name"], stations["USS0015A03S"]["ghcn_name"]),
+                         ("Hawkins Lake", "Hawkins Lake"))
+
+    def test_the_summary_carries_the_display_name_and_the_ghcn_name(self):
+        meta = {"id": "USC00243947", "name": "Harlowton 11NW", "ghcn_name": "HARLOWTON 11NW", "lat": 46.5786, "lon": -109.9478,
+                "elev": 1510.0, "net": "COOP"}
+        sd = S.summarize(meta, {"obs": {}}, date(2026, 10, 16))
+        self.assertEqual((sd["name"], sd["ghcn_name"]), ("Harlowton 11NW", "HARLOWTON 11NW"))
 
 
 class OfflineBuildTests(unittest.TestCase):
@@ -338,6 +438,11 @@ class OfflineBuildTests(unittest.TestCase):
         self.assertEqual(first["state"], "partial")
         block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]
         self.assertTrue(any(f.get("station") == "USC00000002" for f in block["failures"]))
+        # D78(c): the stations block carries the display name and the GHCN name beside it, loaded or not
+        self.assertEqual((block["stations"]["USC00000001"]["name"], block["stations"]["USC00000001"]["ghcn_name"]),
+                         ("Good", "GOOD"))
+        self.assertEqual((block["stations"]["USC00000002"]["name"], block["stations"]["USC00000002"]["ghcn_name"]),
+                         ("Missing", "MISSING"))
         self.assertTrue((self.store / "hail" / "sd" / "USC00000001.json").is_file())
         self.assertFalse((self.store / "hail" / "sd" / "USC00000002.json").exists())
         manifest = json.loads((self.store / "hail" / "manifest.json").read_text(encoding="utf-8"))
@@ -372,7 +477,8 @@ class OfflineBuildTests(unittest.TestCase):
         self.assertFalse((self.store / "hail" / "sd" / "USC00000002.json").exists())
         # D28: the partial sentence is the problem, and the technical reason sits beside it as the detail
         # D32: the problem line names the candidate whose file failed, with its id (the D20 sentence)
-        self.assertEqual(block["problem"], "Station readings could not be loaded in this update for MISSING (USC00000002); "
+        self.assertEqual((entry["name"], entry["ghcn_name"]), ("Missing", "MISSING"))         # D78(c)
+        self.assertEqual(block["problem"], "Station readings could not be loaded in this update for Missing (USC00000002); "
                                            "that is not the same as no station reading. This is not an all-clear.")
         self.assertIn("USC00000002", block["detail"])
         # the town row: Lewistown's nearest-first walk meets the failed file, so the row is incomplete and names it
@@ -881,14 +987,14 @@ class TileListTests(unittest.TestCase):
         self.assertEqual([p["id"] for p in snow["passing"]], [f"USC0000{n:04d}" for n in range(101, 109)])   # all eight
         self.assertFalse(snow["capped"])
         self.assertEqual([u["id"] for u in snow["unread"]], ["USC00000150"])
-        self.assertEqual(snow["unread"][0]["name"], "BROKEN")
+        self.assertEqual((snow["unread"][0]["name"], snow["unread"][0]["ghcn_name"]), ("Broken", "BROKEN"))     # D78(c)
         self.assertIsNotNone(snow["unread"][0]["lat"])
         miles = [p["miles"] for p in snow["passing"]]
         self.assertEqual(miles, sorted(miles))
         for p in snow["passing"]:
             self.assertEqual(p["of"], 2192)
             self.assertGreaterEqual(p["share"], 0.8)
-            self.assertEqual(set(p), {"id", "name", "lat", "lon", "miles", "ok", "of", "share"})
+            self.assertEqual(set(p), {"id", "name", "ghcn_name", "lat", "lon", "miles", "ok", "of", "share"})
         self.assertEqual(doc["elements"]["TMAX"], {"centre": [47.05, -110.05], "margin_miles": S.tile_margin_miles(79, 199),
                                                    "passing": [], "rejected": [], "unread": [], "capped": False})   # no TMAX candidate
         self.assertEqual(snow["rejected"], [])                                  # all eight pass: nothing is rejected (D69)
@@ -898,7 +1004,7 @@ class TileListTests(unittest.TestCase):
         self.assertEqual(block["tile_lists"]["margin_miles_max"], S.tile_margin_miles(79, 199))
         self.assertEqual(block["tile_lists"]["format"], "hail-stn-tiles-v1")
         # D32: the problem line names the failed candidate, with its name and id, and no absence claim
-        self.assertEqual(block["problem"], "Station readings could not be loaded in this update for BROKEN (USC00000150); "
+        self.assertEqual(block["problem"], "Station readings could not be loaded in this update for Broken (USC00000150); "
                                            "that is not the same as no station reading. This is not an all-clear.")
         manifest = json.loads((self.store / "hail" / "manifest.json").read_text(encoding="utf-8"))
         data = (self.store / "hail" / "tl" / f"{self.TILE}.json").read_bytes()
@@ -909,6 +1015,17 @@ class TileListTests(unittest.TestCase):
         first = (self.store / "hail" / "tl" / f"{self.TILE}.json").read_bytes()
         S.build(self.store, self.cache, offline=True, procs=1)
         self.assertEqual((self.store / "hail" / "tl" / f"{self.TILE}.json").read_bytes(), first)
+
+    def test_every_tile_list_file_is_under_the_gzip_budget(self):
+        """D61 and D66: every tile list file of a build is under TILE_LIST_BUDGET_GZIP bytes gzip (100,000), the per-tile
+        budget that stations verify measures the real store against (its largest list is recorded)."""
+        S.build(self.store, self.cache, offline=True, procs=1)
+        files = sorted((self.store / "hail" / "tl").glob("*.json"))
+        self.assertTrue(files)
+        for path in files:
+            with self.subTest(path.name):
+                self.assertLess(len(gzip.compress(path.read_bytes(), 9, mtime=0)), S.TILE_LIST_BUDGET_GZIP)
+        self.assertEqual(S.TILE_LIST_BUDGET_GZIP, 100_000)
 
     def test_verify_records_the_two_picks_at_the_benchland_point_from_this_tile(self):
         S.build(self.store, self.cache, offline=True, procs=1)
@@ -924,6 +1041,8 @@ class TileListTests(unittest.TestCase):
         self.assertEqual(parity["points"], 9 * len(S.CORE))                 # the centre, four cell corners, four routed corners
         self.assertEqual((parity["tile_files"]["files"], parity["tile_files"]["longest_list"]), (1, 8))   # D61: recorded
         self.assertGreater(parity["tile_files"]["largest_gzip"], 0)
+        self.assertLess(parity["tile_files"]["largest_gzip"], S.TILE_LIST_BUDGET_GZIP)      # D61, D66: 100,000 bytes gzip
+        self.assertEqual(parity["tile_files"]["budget_gzip"], 100_000)
         snow = picks["benchland"]["SNOW"]
         self.assertEqual(len(snow["picks"]), 2)
         self.assertTrue(set(snow["picks"]) <= {f"USC0000{n:04d}" for n in range(101, 107)})
@@ -975,9 +1094,10 @@ class PointPicksTests(unittest.TestCase):
     """D36, the shared rule for the picks at a point (stations.tile_list_picks; the browser is to run the same rule): the two
     nearest passing stations of one element's tile list to the point, the unread candidates nearer than the second pick
     named (D32), and a capped list that cannot answer. The Billings case is the gate's: from the Billings gate point the
-    SNOW list of the Billings tile names WTP (1.4 miles) and the airport (2.6 miles); the positions are the store's own."""
+    SNOW list of the Billings tile names WTP and the airport; the positions are the store's own, and the miles are the
+    code's (haversine_miles from the gate point, D80(a)), never typed here."""
 
-    GATE = (45.7836, -108.5047)                  # the Billings gate point (stations.GATE_POINTS["billings"])
+    GATE = S.GATE_POINTS["billings"]             # the Billings gate point (D80(a): towns.json's Billings point)
     FRAME = {"centre": [47.0, -110.0], "margin_miles": 4.3}     # the test points are this centre (D72: a list carries both)
 
     def gate_frame(self) -> dict:
@@ -997,16 +1117,25 @@ class PointPicksTests(unittest.TestCase):
 
     def test_the_billings_gate_names_the_cooperative_site_and_the_airport(self):
         block = {**self.gate_frame(), "capped": True, "unread": [], "passing": [
-            self.entry("USC00240801", "BILLINGS WFO", 45.7503, -108.5697),
-            self.entry("USC00240802", "BILLINGS WTP", 45.7717, -108.4811),
-            self.entry("USW00024033", "BILLINGS INTL AP", 45.8072, -108.5461),
-            self.entry("US1MTYS0014", "BILLINGS 4.5 NE", 45.8323, -108.444)]}
+            self.entry("USC00240801", "Billings WFO", 45.7503, -108.5697),
+            self.entry("USC00240802", "Billings WTP", 45.7717, -108.4811),
+            self.entry("USW00024033", "Billings Intl AP", 45.8072, -108.5461),
+            self.entry("US1MTYS0014", "Billings 4.5 NE", 45.8323, -108.444)]}
         got = S.tile_list_picks(block, *self.GATE, light={"USC00240802": {"net": "COOP"}, "USW00024033": {"net": "WBAN"}})
         self.assertEqual(got["state"], "two")
+        # the expected miles are the code's own distances from the gate point, rounded as the rule rounds them (a tenth)
+        wtp = round(S.haversine_miles(*self.GATE, 45.7717, -108.4811), 1)
+        airport = round(S.haversine_miles(*self.GATE, 45.8072, -108.5461), 1)
         self.assertEqual([(p["id"], p["name"], p["net"], p["miles"]) for p in got["picks"]],
-                         [("USC00240802", "BILLINGS WTP", "COOP", 1.4), ("USW00024033", "BILLINGS INTL AP", "WBAN", 2.6)])
+                         [("USC00240802", "Billings WTP", "COOP", wtp), ("USW00024033", "Billings Intl AP", "WBAN", airport)])
         self.assertEqual(got["unread"], [])
         self.assertFalse(got["incomplete"])
+
+    def test_the_billings_gate_point_is_the_billings_town_point(self):
+        """D80(a): stations.GATE_POINTS['billings'] is towns.json's Billings point, read from the file (not typed here)."""
+        import json as _json
+        town = next(t for t in _json.loads(S.TOWNS_FILE.read_text(encoding="utf-8")) if t["slug"] == "billings")
+        self.assertEqual(S.GATE_POINTS["billings"], (float(town["lat"]), float(town["lon"])))
 
     def test_the_two_nearest_passing_stations_come_first_and_ties_go_by_id(self):
         block = {**self.FRAME, "capped": False, "unread": [], "passing": [
@@ -1208,8 +1337,8 @@ class RejectedBuildTests(unittest.TestCase):
             ("USC00000203", 47.08, -110.02, "NEW SNOW", {"SNOW": (2000, 2026)}, None)])
         S.build(self.store, self.cache, offline=True, procs=1)
         doc = json.loads((self.store / "hail" / "tl" / f"{self.TILE}.json").read_text(encoding="utf-8"))
-        self.assertEqual([u["name"] for u in doc["elements"]["SNOW"]["unread"]], ["NEW SNOW"])     # OLD SNOW ended in 2019
-        self.assertEqual([u["name"] for u in doc["elements"]["TMAX"]["unread"]], ["OLD SNOW"])     # but it reports TMAX
+        self.assertEqual([u["name"] for u in doc["elements"]["SNOW"]["unread"]], ["New Snow"])     # OLD SNOW ended in 2019
+        self.assertEqual([u["name"] for u in doc["elements"]["TMAX"]["unread"]], ["Old Snow"])     # but it reports TMAX
         block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]["stations"]
         self.assertEqual(block["USC00000202"]["cover"], {"TMAX": None})                             # D74: the walk's elements
         self.assertEqual(block["USC00000203"]["cover"], {"SNOW": None})
@@ -1235,12 +1364,14 @@ class RejectedBuildTests(unittest.TestCase):
         self.assertEqual(index["stations"]["counts"]["daily_reach_files"], len(daily) - 1)
         doc = json.loads((self.store / "hail" / "tl" / f"{self.TILE}.json").read_text(encoding="utf-8"))
         snow = doc["elements"]["SNOW"]
-        self.assertEqual([p["name"] for p in snow["passing"]], ["CURRENT"])
+        self.assertEqual([p["name"] for p in snow["passing"]], ["Current"])
         rejected = {r["name"]: r for r in snow["rejected"]}                  # D69: the candidates that fail the rule
-        self.assertEqual(sorted(rejected), ["LOW COVERAGE", "NOT CURRENT"])
-        self.assertFalse(rejected["NOT CURRENT"]["current"])
-        self.assertEqual(rejected["NOT CURRENT"]["newest"], 20260728)
-        self.assertEqual(rejected["LOW COVERAGE"]["share"], round(672 / 2192, 4))
+        self.assertEqual(sorted(rejected), ["Low Coverage", "Not Current"])
+        self.assertEqual((rejected["Not Current"]["ghcn_name"], rejected["Low Coverage"]["ghcn_name"]),
+                         ("NOT CURRENT", "LOW COVERAGE"))                    # the GHCN names, kept beside the display names
+        self.assertFalse(rejected["Not Current"]["current"])
+        self.assertEqual(rejected["Not Current"]["newest"], 20260728)
+        self.assertEqual(rejected["Low Coverage"]["share"], round(672 / 2192, 4))
         self.assertEqual(index["stations"]["tile_lists"]["rejected"], 2)
         checks = []
         S._verify_tile_lists(self.store, index, index["stations"],
@@ -1393,7 +1524,7 @@ class PoolTests(unittest.TestCase):
         rule = S.point_rule(light, *self.CENTRE, "SNOW", AS_OF)
         self.assertEqual([u["id"] for u in rule["unread"]], ["CAN00000001"])     # the one rule agrees (D63)
         words = " ".join(S.station_words(rule, "SNOW"))
-        self.assertIn("CARWAY NEAR is not read (in Canada; the terms for its data are under review)", words)
+        self.assertIn("Carway Near is not read (in Canada; the terms for its data are under review)", words)     # D78(c)
         self.assertIn("so the two nearest stations that pass are not known for snowfall", words)
         self.assertTrue(words.endswith("This is not an all-clear."))
         self.assertNotIn("did not load", words)

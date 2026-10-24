@@ -102,7 +102,7 @@ class PoolTests(unittest.TestCase):
         # the nearest rule knows the failed gauge from the list; it is not silently skipped
         failed = [{"lid": "BILM8", "name": "Yellowstone River at Billings", "lat": 45.8001, "lon": -108.468,
                    "state": "MT"}]
-        line = Gs.nearest_listed([], failed, 45.7836, -108.5007)
+        line = Gs.nearest_listed([], failed, 45.7833, -108.5007)
         self.assertTrue(line["unavailable"])
         self.assertEqual(line["lid"], "BILM8")
         self.assertEqual(line["name"], "Yellowstone River at Billings")

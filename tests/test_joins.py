@@ -896,13 +896,36 @@ class FixtureTests(unittest.TestCase):
         self.assertTrue(result["ok"], result["checks"])
         # D10, D18, D54, D64 and D74: the store and joins files have a 480 KB budget. D64 restated it from 62 KB when the sample
         # gained the station part, and D74 from 320 KB: the sample names the rejected candidates of its tile lists (D69), so
-        # their summaries are cut in too (67 summaries where there were 33). Measured on the regenerated fixture: 471,538
-        # bytes outside hail/a/ (305,024 before D74). The address files under hail/a/ keep their 50 KB budget
+        # their summaries are cut in too (67 summaries where there were 33). D78(c) adds the GHCN name beside each display name
+        # (ghcn_name in the summaries, the tile lists and the stations block): measured on the regenerated fixture, 485,066
+        # bytes outside hail/a/ (471,538 before the display names; 305,024 before D74). The address files under hail/a/ keep
+        # their 50 KB budget
         store_bytes = sum(p.stat().st_size for p in FIXTURE.rglob("*") if p.is_file()
                           and not p.relative_to(FIXTURE).as_posix().startswith("hail/a/"))
         address_bytes = sum(p.stat().st_size for p in (FIXTURE / "hail" / "a").rglob("*") if p.is_file())
         self.assertLess(store_bytes, 480 * 1024, store_bytes)
         self.assertLess(address_bytes, 50 * 1024, address_bytes)
+
+    def test_the_committed_fixture_names_are_the_display_names_with_the_ghcn_name_beside_them(self):
+        """D78(c): the fixture's tile lists, station summaries and stations block carry each station's display name (the rule
+        stations.display_name) and the GHCN name beside it, so the browser and the words show the name as given."""
+        from website import stations as stn
+        root = FIXTURE / "hail"
+        checked = 0
+        for path in sorted((root / "tl").glob("*.json")):
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            for res in doc["elements"].values():
+                for key in ("passing", "unread", "rejected"):
+                    for entry in res.get(key, []):
+                        checked += 1
+                        self.assertEqual(entry["name"], stn.display_name(entry["ghcn_name"]), (path.name, entry["id"]))
+        self.assertGreater(checked, 0)
+        for path in sorted((root / "sd").glob("*.json")):
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(doc["name"], stn.display_name(doc["ghcn_name"]), path.name)
+        block = json.loads((root / "index.json").read_text(encoding="utf-8"))["stations"]["stations"]
+        for sid, row in block.items():
+            self.assertEqual(row["name"], stn.display_name(row["ghcn_name"]), sid)
 
     @staticmethod
     def _edit_zone_file(root: Path, rel: str, events: list) -> None:
@@ -2264,7 +2287,7 @@ class CollectionLabelTests(unittest.TestCase):
         for key, label in (("reports_row", "Report: "), ("reports_row_here", "Report: "),
                            ("records_row", "Record: "), ("records_row_here", "Record: "),
                            ("records_zone_row", "Record: "), ("detections_row_one", "Detection: "),
-                           ("detections_row_many", "Detection: "), ("warnings_row", "Warning: "),
+                           ("detections_row_many", "Detection: "),
                            ("zones_row", "Zone product: "), ("county_row", "County product: "),
                            ("stations_row", "Station: ")):
             self.assertTrue(J.WORDS_JOINS[key].startswith(label), key)
@@ -2638,8 +2661,9 @@ class WordsB5Tests(unittest.TestCase):
         samples = [J.WORDS_JOINS["warnings_row_b5"].format(label="Warning", date="Jun 15, 2025",
                                                            span="1:00 pm MDT to 2:00 pm MDT",
                                                            product="flood warning", office="TFX", tags="none stated"),
-                   J.WORDS_JOINS["warnings_row"].format(date="Jun 15, 2025", begin="1:00 pm MDT", end="2:00 pm MDT",
-                                                        kind="Flash flood", office="TFX", tags="none stated"),
+                   J.WORDS_JOINS["warnings_row_point"].format(label="Warning", date="Jun 15, 2025",
+                                                              span="1:00 pm MDT to 2:00 pm MDT", product="flash flood warning",
+                                                              office="TFX", tags="none stated"),
                    J.WORDS_JOINS["warnings_span_none"].format(begin="1:00 pm MDT"),
                    J.WORDS_JOINS["county_row"].format(product="Flood watch", county_name="Judith Basin",
                                                       events="x"),
@@ -2655,13 +2679,16 @@ class WordsB5Tests(unittest.TestCase):
         self.assertIn("covered this cell or part of it", J.WORDS_JOINS["warnings_what"])
 
     def test_the_browser_row_templates_keep_the_placeholders_the_browser_fills(self):
-        """WORDS_JOINS keeps the B2 template keys exactly as db84d76 writes them: the browser (map.js, unchanged until part
-        B) fills these placeholders and no others. The B5 rows sit beside them under their own keys."""
+        """The record templates keep the B2 keys as db84d76 writes them: the browser fills these placeholders and no others.
+        The warning rows are the B5 keys (D79(d): the B2 "warnings_row" is removed); the sheet and the town page fill the
+        same placeholders in warnings_row_b5 and its _point twin."""
         from string import Formatter
         fields = {key: {field for _lit, field, _spec, _conv in Formatter().parse(J.WORDS_JOINS[key]) if field}
-                  for key in ("warnings_row", "records_row", "records_row_here", "records_row_typed",
+                  for key in ("warnings_row_b5", "warnings_row_point", "records_row", "records_row_here", "records_row_typed",
                               "records_row_here_typed")}
-        self.assertEqual(fields["warnings_row"], {"date", "begin", "end", "kind", "office", "tags"})
+        self.assertEqual(fields["warnings_row_b5"], {"label", "date", "span", "product", "office", "tags"})
+        self.assertEqual(fields["warnings_row_point"], fields["warnings_row_b5"])
+        self.assertNotIn("warnings_row", J.WORDS_JOINS)
         self.assertEqual(fields["records_row"], {"date", "time", "type", "magnitude", "qualifier", "source", "miles",
                                                  "bearing"})
         self.assertEqual(fields["records_row_here_typed"], {"date", "time", "type", "qualifier", "source", "miles"})
@@ -3791,6 +3818,29 @@ class TownPointWarningTests(unittest.TestCase):
         for text in [town["heading"], town["lead"], neither["lead"], unknown["lead"], *unknown["lines"]]:
             self.assertNotIn("cell or part of it", text)
 
+    def test_the_no_outline_clause_names_the_cell_on_the_sheet_and_the_spot_on_a_town_page_for_one_and_for_many(self):
+        """D80(d): the no-outline clause has the cell words on the sheet and its _point twin with the spot words on a town
+        page, for one warning and for several. The sentence is the same in both except for the place it names."""
+        self.write_towns({"edge": self.town(self.TOWN, [0]), "inner": self.town(self.OTHER, [])})
+        self.index["joins"]["warnings_no_outline"] = 2
+        sheet = self.section([])
+        town = self.section([], spot=self.TOWN)
+        self.assertIn("2 warnings in these five years have no outline on file, so they cannot be matched to this cell or "
+                      "part of it." + AC, sheet["lines"])
+        self.assertIn("2 warnings in these five years have no outline on file, so they cannot be matched to this spot."
+                      + AC, town["lines"])
+        self.index["joins"]["warnings_no_outline"] = 1
+        one = self.section([], spot=self.TOWN)
+        self.assertIn("1 warning in these five years has no outline on file, so it cannot be matched to this spot." + AC,
+                      one["lines"])
+        for text in sheet["lines"]:
+            self.assertNotIn("this spot", text)
+        for text in [*town["lines"], *one["lines"]]:
+            self.assertNotIn("cell or part of it", text)
+        self.assertEqual(J.WORDS_JOINS["warnings_no_outline_many_point"].format(n=2),
+                         "2 warnings in these five years have no outline on file, so they cannot be matched to this spot."
+                         + AC)
+
     def test_each_warning_word_the_sheet_reads_names_the_cell_and_each_point_twin_names_the_spot(self):
         """F1, F4: the keys the browser reads for the sheet (the heading and the count notes, map.js) name the cell
         cover, and each "_point" twin names the spot. A twin takes the same fields, so one .format call fills either."""
@@ -3887,7 +3937,7 @@ def _zone_zip_bytes(codes) -> bytes:
         writer.field("STATE", "C", size=2)
         writer.field("ZONE", "C", size=3)
         writer.field("NAME", "C", size=40)
-        writer.field("STATE_ZONE", "C", size=5)
+        writer.field("STATE_ZONE", "C", size=6)              # MTZ002 is six characters (pyshp would truncate it to MTZ00)
         for i, code in enumerate(codes):
             x0 = -114.0 + (i % 20) * 0.5
             y0 = 44.5 + (i // 20) * 0.4
@@ -4023,6 +4073,30 @@ class ContractStemTests(unittest.TestCase):
         self.assertIn("-3 is no radar coverage in NOAA's table", sources.CONTRACTS["hail_swath"]["missing"])
         self.assertIn("its completeness varies from county to county", sources.CONTRACTS["msl_addresses"]["missing"])
 
+    def test_the_swdi_row_quotes_noaas_definition_of_prob(self):
+        """D78(a) and D81(d): the SWDI row keeps NOAA's own definition of PROB, as a quotation (D13 allows a quoted source
+        definition, and the words rule sets quoted wording aside before its scan)."""
+        from website import sources
+        units = sources.CONTRACTS["swdi_nx3hail"]["units"]
+        self.assertIn('NOAA defines PROB as "the probability of hail in percent"', units)
+
+    def test_the_about_visible_contract_fields_pass_the_words_rules(self):
+        """D85: the About-visible fields of every contract row (name, request, units, timing, cadence, missing and terms)
+        follow tests/words_rules.py. Set aside before the scan: NOAA's "radar coverage" (D45, the phrase the test above
+        allows) and the State Library's address file name and product name (proper names, as the B3 exemptions in
+        tests/test_site.py name them). Quoted wording is set aside by words_rules itself."""
+        from website import sources
+        proper = ("StructuresFramework_shp.zip", "Structures and Addresses Framework")
+        for key, row in sources.CONTRACTS.items():
+            for field in ("name", "request", "units", "timing", "cadence", "missing", "terms"):
+                text = row.get(field)
+                if not isinstance(text, str):
+                    continue
+                text = re.sub(r"radar coverage", " ", text, flags=re.IGNORECASE)
+                for name in proper:
+                    text = text.replace(name, " ")
+                W.assert_clean(self, text, f"{key}.{field}")
+
 
 class FixtureStationTests(unittest.TestCase):
     """D56: the sample store carries the station reader's part, cut from the real build: the tile lists of the sample tiles
@@ -4037,16 +4111,17 @@ class FixtureStationTests(unittest.TestCase):
     def write_source(self, src: Path):
         (src / "hail" / "tl").mkdir(parents=True)
         (src / "hail" / "sd").mkdir(parents=True)
-        tile = {"f": "hail-stn-tiles-v1", "miles": 40.0, "margin_miles": 3.8, "centre": [45.7836, -108.5047],
-                "elements": {"SNOW": {"centre": [45.7836, -108.5047], "margin_miles": 3.8, "rejected": [],
-            "passing": [self.entry("USC00000A01", "ALPHA", 45.7836, -108.5047),
+        # the tile centre and ALPHA sit at towns.json's Billings point, the one Billings point the tests use (D80(a))
+        tile = {"f": "hail-stn-tiles-v1", "miles": 40.0, "margin_miles": 3.8, "centre": [45.7833, -108.5007],
+                "elements": {"SNOW": {"centre": [45.7833, -108.5007], "margin_miles": 3.8, "rejected": [],
+            "passing": [self.entry("USC00000A01", "ALPHA", 45.7833, -108.5007),
                         self.entry("USC00000A02", "BETA", 45.9, -108.2)],
             "unread": [{"id": "USC00000A03", "name": "GAMMA", "lat": None, "lon": None, "reason": "its file did not load"}],
             "capped": False}}}
         (src / "hail" / "tl" / "T1.json").write_text(json.dumps(tile), encoding="utf-8")
         (src / "hail" / "sd" / "USC00000A01.json").write_text("{}", encoding="utf-8")     # BETA has no summary file
         return {"stations": {"as_of": "2026-10-16", "rule": {"radius_miles": 40.0}, "sources": {"ghcn": "x"},
-                             "stations": {"USC00000A01": {"name": "ALPHA", "lat": 45.7836, "lon": -108.5047, "net": "COOP"},
+                             "stations": {"USC00000A01": {"name": "ALPHA", "lat": 45.7833, "lon": -108.5007, "net": "COOP"},
                                           "USC00000A02": {"name": "BETA", "lat": 45.9, "lon": -108.2, "net": "COOP"}}}}
 
     def test_the_sample_keeps_a_row_for_every_named_station_and_a_summary_file_where_one_exists(self):
@@ -4072,7 +4147,7 @@ class FixtureStationTests(unittest.TestCase):
             src = Path(tmp)
             real = self.write_source(src)
             block, lists, _ids = J._station_sample(src, real, ["T1"], [])
-            got = stn.tile_list_picks(lists["T1"]["elements"]["SNOW"], 45.7836, -108.5047, light=block["stations"])
+            got = stn.tile_list_picks(lists["T1"]["elements"]["SNOW"], 45.7833, -108.5007, light=block["stations"])
             self.assertEqual([p["id"] for p in got["picks"]], ["USC00000A01", "USC00000A02"])
             self.assertEqual((got["picks"][0]["net"], got["picks"][0]["miles"]), ("COOP", 0.0))
             self.assertEqual(got["state"], "two")

@@ -168,8 +168,18 @@ class SnowTestCase(unittest.TestCase):
 class CellTests(unittest.TestCase):
     def test_gate_points_and_the_research_cells(self):
         self.assertEqual(G.cell_for(47.08, -110.02), (198, 399))       # Benchland's point, on the north edge
-        self.assertEqual(G.cell_for(45.7836, -108.5047), (230, 437))   # Billings
+        self.assertEqual(G.cell_for(*S.GATE_POINTS["billings"]), (230, 437))   # Billings (D80(a): the town point)
         self.assertEqual(G.cell_for(47.075, -110.015), (198, 399))     # Benchland's own cell centre
+
+    def test_the_billings_point_is_the_towns_json_point_everywhere(self):
+        """D80(a): one Billings point, towns.json's, in the station gate, the snow grid's sample and its self-check."""
+        towns = json.loads(S.TOWNS_FILE.read_text(encoding="utf-8"))
+        billings = next(t for t in towns if t["slug"] == "billings")
+        point = (billings["lat"], billings["lon"])
+        self.assertEqual(point, (45.7833, -108.5007))
+        self.assertEqual(S.GATE_POINTS["billings"], point)
+        self.assertEqual(G.SAMPLE_POINTS["billings"], point)
+        self.assertEqual(G.cell_for(*point), (230, 437))
 
     def test_edges_go_south_and_east(self):
         self.assertEqual(G.cell_for(47.04, -110.0), (199, 400))        # the south edge of row 198, the east edge of 399

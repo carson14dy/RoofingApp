@@ -55,11 +55,17 @@ is said only on a loaded block with no failed candidate; a gauge line reads "non
 count reads as the no-report sentence. Every unavailable, partial and held line ends with "This is not an all-clear."
 (_clear); a section lead names the most days missing among its rows; a town page counts its polygon warnings at the town
 point from hail/j/towns.json when that file is in the store ("covered this spot"), else at the cell ("covered this cell
-or part of it").
+or part of it"). On a town page the storm and flood counts name the five seasons and the partial season (2026-27 so far) apart,
+with the partial season's own days (D79(b)); the sheet's leads keep their own wording.
+
+Rules the browser reads (D83(b), D87(d)): summary.rule holds the share a season needs (season_min, 0.95, with percent: scale
+100, decimals 1, step 0.1), the season's bounds (season: start_month 7, start_day 1, end_month 6, end_day 30; SEASON_RULE),
+and the unit scales (units: the scale of each unit, "in" at 100 hundredths). No literal in map.js holds one of them.
 """
 from __future__ import annotations
 
 import json
+import re
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
@@ -80,14 +86,18 @@ STALE_DAYS = 3                                    # the newest radar day older t
 
 # ---------------------------------------------------------------- units and row order
 
+STATION_IN_DECIMALS = 1                       # a station's inches have one decimal (stations.fmt_in, D57)
+
 UNIT_SPEC = {
-    "in": {"scale": 100, "decimals": 2, "word": "inches", "note": "stored as hundredths of an inch"},
+    # station_decimals: a station's inches are written with one decimal (stations.fmt_in; the browser's station text reads it)
+    "in": {"scale": 100, "decimals": 2, "station_decimals": STATION_IN_DECIMALS, "word": "inches",
+           "note": "stored as hundredths of an inch"},
     "F": {"scale": 10, "decimals": 1, "word": "degrees Fahrenheit", "note": "stored as tenths of a degree F"},
     "days": {"scale": 1, "decimals": 0, "word": "days", "note": "whole days"},
     "count": {"scale": 1, "decimals": 0, "word": "count", "note": "whole reports, warnings or products"},
     "kt": {"scale": 1, "decimals": 0, "word": "knots", "note": "whole knots; the mph beside it is whole miles per hour"},
     # the held row's unit slot carries its reason, never "none" (D41): no free public record was used for these items
-    "reason": {"scale": 1, "decimals": 0, "word": "no free public record was used in this history",
+    "reason": {"scale": 1, "decimals": 0, "word": "no free public record was used in this history. This is not an all-clear.",
                "note": "the held items: the unit slot carries their reason"},
 }
 
@@ -115,6 +125,78 @@ def _tidy(text: str) -> str:
 KIND_RECORD = joins.WORDS_JOINS["kind_record"]                # "Record (NCEI)": the brief's kind word for NCEI records
 KIND_WARNING = "Warning (NWS polygon, relayed by IEM)"        # the brief's kind word for a polygon warning
 AUTO_SOURCES = ("Mesonet", "ASOS", "AWOS")                    # IEM SOURCE values of automated station reports (every wind count)
+
+# ---------------------------------------------------------------- the words and rules the browser reads (section_data, D83)
+# map_data_summary writes these into summary.section_data. build.history_view (the town page) and build's section rules read
+# the same constants, so the sheet's sections and the town page's are cut by one rule and worded from one list (D29, D41).
+KIND_RADAR = "Radar estimate"                         # the kind words of the rows and sections
+KIND_REPORT = "Report"
+KIND_REFERENCE = "Reference"
+KIND_UNAVAILABLE = "Data unavailable"
+PARTIAL_MARKER = "not counting"                       # a total of some seasons only says so (D41, D79(b)); the browser tests for it
+SPAN_TO = "to"                                        # the word between the ends of a span of seasons
+REPORT_NEAR = "{count} within 5 miles{tail}"          # a report count's words; the period's tail follows (D41)
+TAIL_FIVE_ROOF = " in these five years"               # the period tail of a roof line
+TAIL_FIVE_COMMA = ", in these five years"             # the same, after a comma (the hail lead)
+NEAREST_STATION = "the nearest station"               # a station's name when no gust station is named (D57)
+NO_MILES = "?"                                        # a distance that is not known
+ROOF_PART = "The roof lines"                          # the roof section's name in its sentences: sentence case and lower case
+ROOF_PART_LOWER = "roof lines"
+COUNTY_WORD = "County"                                # a county's name ends with this word (the page adds it when it is missing)
+REFERENCE_LINE = "{source}: “{quote}”"      # a roof reference line: its source, then its quotation
+PERCENT = {"scale": 100, "decimals": 1, "step": 0.1}  # a share shown as a percent: the scale, the decimals and the step (D82(c))
+# the July to June season's first and last day (D87(d)): written once into map.json as summary.rule.season, which the browser
+# reads; season_bounds() below follows it, and stations.season_of gives the label of a day on the same July 1 boundary (a test
+# checks the two agree on every day of the five seasons and the partial one)
+SEASON_RULE = {"start_month": 7, "start_day": 1, "end_month": 6, "end_day": 30}
+ROW_LABELS = ("Report", "Record", "Detection", "Warning", "Watch", "Advisory", "Zone product", "County product", "Station")
+PRODUCT_LABELS = ("Warning", "Watch", "Advisory")     # the rows whose words name a product (D41)
+ZONE_LABELS = ("Zone product", "County product")       # the rows whose words name a zone or county product
+ROW_SECTION = {"Station": "wind", "Detection": "hail"}  # a row's section from its label alone (the label rules come first)
+PRODUCT_PATTERNS = (r"in effect: ([^,;]+)", r": ([^:,;]+), [A-Z0-9]{2,4}, covered")
+ZONE_SPLIT = r", fire weather zone|:"
+TIME_PATTERN = r"\d{1,2}:\d{2} ?[ap]m(?: [A-Z]{2,4})?: (.*)$"
+ROW_SPLIT = r", | \("
+# the section a row's words go to: the first rule that matches decides, and a row no rule matches is storms (no row is dropped)
+SECTION_RULES = (
+    ("ice", r"\b(freezing|sleet|ice|winter|blizzard|wind chill|extreme cold|frost|freeze|cold)\b"),
+    ("heat", r"\bheat\b"),
+    ("flooding", r"\b(flood|flash|debris)\b"),
+    ("snow", r"\bsnow"),
+    ("hail", r"\bhail\b"),
+    ("rain", r"\b(rain|drought)\b"),
+    ("wind", r"\b(winds?|wnd|gusts?|dust)\b"),
+)
+SECTION_DEFAULT = "storms"
+KIND_LABEL = re.compile(r"^(" + "|".join(ROW_LABELS) + r"): (.*)$", re.S)     # a joined row's kind label (B2 D3)
+# the per-season rows of the joined sections: one row per season, from the table's own words for these keys (build.history_view)
+SEASON_ROWS = (
+    ("temperature", "Grid estimate", ("tmax", "tmin"), ("highest", "lowest")),
+    ("temperature", "Station reading", ("tmax_station", "tmin_station"), ("highest", "lowest")),
+    ("rain", "Grid estimate", ("precip", "precip_max"), ("precipitation", "largest one day")),
+    ("snow", "Station reading", ("snow", "snow_depth"), ("snowfall", "deepest snow")),
+    ("ice", "Grid estimate", ("freeze_thaw", "frost32"), ("freeze-thaw", "low below 32 F")),
+    ("heat", "Grid estimate", ("hot90",), ("high of 90 F or more",)),
+)
+# the table rows whose notes each section shows, in the order the page shows them (build.history_view)
+SECTION_KEYS = {
+    "hail": ("radar_max", "radar_1in", "hail_max", "hail_n"),
+    "wind": ("gust_days", "gust_max", "wind_n", "hw_zone"),
+    "storms": ("hail_warnings", "flood_warn"),
+    "temperature": ("tmax", "tmin"),
+    "rain": ("precip", "precip_max"),
+    "snow": ("snow", "snow_depth"),
+    "flooding": ("flood_report_n", "flood_record_n", "flood_warn", "county_watch"),
+    "ice": ("freezing_rain_n", "ice_warn", "freeze_thaw"),
+    "heat": ("hot90",),
+}
+# the words a section shows after its rows (keys of WORDS_SUMMARY): the snow analysis was checked and left out (D23)
+EXTRA_NOTES = {"snow": ("analysis_held",)}
+# the section each joined part's lines are notes of (D82(d)): the freshness lines of detections and warnings, the NCEI flood
+# cause line and the unplaced records, the zone-switch and unplaced lines, the county product lines (their own part, flooding),
+# the fire-zone lines (their own part, storms), and the station flag and implausible-count lines (wind)
+PART_SECTIONS = {"detections": "hail", "warnings": "storms", "records": "flooding", "zones": "storms", "stations": "wind",
+                 "county": "flooding", "fire": "storms"}
 
 # The row order of the table. "town_only" rows are the two station rows a town page adds (D20 of the town brief).
 ROWS = (
@@ -182,6 +264,23 @@ KIND_WORDS = (
     {"word": "Data unavailable", "means": "The source does not cover this place, this element or this time, or did not load. It is never shown as zero."},
 )
 
+def _station_status_words() -> dict:
+    """The four verbs of the candidate stations that were not read (D32, D62, D79): "did not load", "is not read", "are not
+    read" and "could not be read". They come from stations.py's own function, so the words are written once there. The
+    summary's sentences and the browser read these keys (summary.words); the rule's lines read the same strings from
+    hail.stations.words (build.py stations_map_block)."""
+    failed = {"reason": "a file that did not load"}
+    canada = {"reason": stations.CANADA_REASON}
+    return {
+        "station_status_failed": stations._unread_status([failed]),
+        "station_status_not_read": stations._unread_status([canada]),
+        "station_status_not_read_many": stations._unread_status([canada, canada]),
+        "station_status_both": stations._unread_status([failed, canada]),
+    }
+
+
+STATUS_WORDS = _station_status_words()
+
 # ---------------------------------------------------------------- sheet words (templates: braces are filled in Python;
 # the browser fills the same strings)
 
@@ -233,11 +332,8 @@ WORDS_SUMMARY = {
     # D32: a station whose record did not load is named as failed (never skipped for a farther one, never "no station")
     "station_failed": ("Data unavailable for {season}: {names} {status}{reason}; that is not the same as no {element} "
                        "reading. This is not an all-clear."),
-    # the verbs (D32, D62): a file that did not load, or a Canadian station that is not read (stations.py words the same two)
-    "station_status_failed": "could not be loaded in this update",
-    "station_status_not_read": "is not read in this build",
-    "station_status_not_read_many": "are not read in this build",
-    "station_status_both": "could not be loaded or read in this build",
+    # the verbs (D32, D62): a file that did not load, or a Canadian station that is not read (stations.py's own words)
+    **STATUS_WORDS,
     "gust_failed": ("Data unavailable: {names} could not be loaded in this update{reason}; that is not the same as no gust "
                     "record. This is not an all-clear."),
     "station_short": ("Data unavailable for {season}: {station} has {k} of {d} days with a {element} value, so this season is "
@@ -272,12 +368,13 @@ WORDS_SUMMARY = {
     "table_problem": "the summary table could not be built",
     "temperature_part": "Temperature",
     "temperature_part_lower": "temperature",
+    "rain_part": "Rain",                                    # the precipitation rows' part (D41): the grid is unavailable
+    "rain_part_lower": "rain",
     "unplaced_part": "{n} {products} in {season}",
     "unread_more": "{names} and {n} more {stations}",
     "when_span": "{first} to {last}",
     "newest_unknown": "an unknown date",
-    "place_spot": "this spot",
-    "place_town": "the town",
+    "place_spot": "this spot",                                      # D80(b): "from this spot" on every page (the town point on a town)
     # D69 (F6): a station the rule does not use, named nearer than the second pick, with its reason (the share to one decimal)
     "station_rejected": ("{station}, {miles} miles from {place}, is not used: {pct} percent of the days 2020 to 2025 have a "
                          "value for {element}; the rule needs at least {need} percent."),
@@ -291,6 +388,8 @@ WORDS_SUMMARY = {
     "ice_five_split": ("Data unavailable for the five seasons: the seasons come from more than one station ({runs}), so no "
                        "five-season count is shown. This is not an all-clear."),
     "cell_unavailable": "Data unavailable",
+    "radar_season_short": ("Data unavailable for {season}: the radar record has {k} of {d} days, so no figure is shown for this "
+                           "season; a missing day is not zero. This is not an all-clear."),
     "season_unavailable": ("Data unavailable for {season}: no day of this season is in the {source}. This is not an "
                            "all-clear."),
     "five_unavailable": ("Data unavailable for the five seasons: {season} {verb} no usable value, so no five-season figure "
@@ -306,12 +405,11 @@ WORDS_SUMMARY = {
     "record_failed_passed": ("{station}'s record for {season} could not be loaded in this update, so {chosen} is shown; that is "
                              "not the same as no {element} reading. This is not an all-clear."),
     "station_none": "No station within 40 miles has enough reports for {element} from 2020 to 2025.",
-    "station_rule_town": ("Stations: the two nearest that have enough days with the element, measured from the town point. A "
+    "station_rule_town": ("Stations: the two nearest that have enough days with the element, measured from this spot. A "
                           "station value shows only when 95 percent of its season's days have the element."),
     "station_rule_spot": ("Stations: the two nearest from this spot that have enough days with the element. Distances are "
                           "from this spot."),
     "station_named": "{station}, {miles} miles from this spot",
-    "station_named_town": "{station}, {miles} miles from the town",
     "gust_station": "Gust station: {station}, {miles} miles from this spot (the nearest gust station to this spot).",
     "gust_none": "No station within 40 miles has gust records for this spot.",
     "window_radar": ("Radar history: {first} to {last}, 1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}. "
@@ -332,11 +430,22 @@ WORDS_SUMMARY = {
     "partial_grid_unavailable": ("Data unavailable for {season}: part of this season has no valid grid value, so its highest, "
                                  "lowest and precipitation totals are not shown. This is not an all-clear."),
     "partial_missing": "{n} days missing",
+    # D79(b): a town page names the five-season count and the partial season's count apart ("19 in the five seasons; 2 more
+    # in 2026-27 so far"); the sheet keeps its own leads. The town lines are these templates; _town_five builds the clauses.
+    "partial_more": "{n} more in {season} so far",
+    "partial_no_more": "no more in {season} so far",
+    "town_zone": "Zone product: {count}",
+    "town_warning": "Warning: {count}",
+    "town_report": "Report: {count}",
+    "town_record": "{kind}: {count}",
     "stale": "The newest radar day in this history is {as_of}; newer days have not been added yet. This is not an all-clear.",
     "unavailable_part": "{part} could not be loaded in this update; that is not the same as no {part_lower}. This is not an all-clear.",
     # the section leads (D33, D41): each names its kind words; a report clause is "Report: ..." or, for zero reports, the
     # no-report sentence (the clause without its full stop); a lead whose rows miss days ends with the lead_missing sentence
     "lead_hail": "Radar estimate: {radar} with hail of 1 inch or more; {report}.",
+    # the five-season count of the 1-inch days is Data unavailable (a season below 95 percent with no day, D82(c))
+    "lead_hail_unavailable": ("Radar estimate: Data unavailable for the days with hail of 1 inch or more in these five years; "
+                              "{report}."),
     "lead_wind": "Station reading: {gust} with a gust of 50 kt or more at {station}; {report}.",
     "lead_wind_unavailable": ("Station reading: Data unavailable for the days with a gust of 50 kt or more at {station}; "
                               "{report}. This is not an all-clear."),
@@ -392,7 +501,8 @@ WORDS_INDICATORS = {
     "what_station": "A station reading is at a named airport or cooperative site, with its distance. It is not a reading at this address.",
     "what_grid": ("A grid estimate is a gridded analysis of station observations for a cell about 4.6 km across (NOAA "
                   "nClimGrid-Daily). It is not a reading at this address."),
-    "indicator_unavailable": "{label}. {why}",
+    # the kind word leads an unavailable line too (D41, D57, D82(d)): "Station reading: {label}. {why}", the label naming the measure
+    "indicator_unavailable": "{kind}: {label}. {why}",
     "lines": {
         "hail_size_days": ("Radar estimate: {count} with hail of 1 inch or more in these five years; the largest radar "
                            "estimate was {largest}."),
@@ -425,23 +535,24 @@ WORDS_INDICATORS = {
         "largest_one_day_rain": "Grid estimate: largest one-day precipitation {largest} in these five seasons.",
         "rain_reports": "Report: {count} within 5 miles in these five years.",
         "flood_reports_warnings": "{report}; Warning: {count_w} {covered}.",
-        "heat_reports_warnings": ("Zone product: {count_h} and {count_e} for the zone; {report}; counts for these five years."),
-        "heat_reports_warnings_partial": ("Zone product: {count_h}; {count_e} for the zone; {report}; counts for these five "
-                                          "years."),
+        "heat_reports_warnings": "Zone product: {count_h} and {count_e} for the zone; {report}.",
+        "heat_reports_warnings_partial": "Zone product: {count_h}; {count_e} for the zone; {report}.",
     },
+    # the held lines lead with their kind word, once (D41, D82, D87(a)): "Data unavailable: {label}. {why} This is not an all-clear."
     "held": {
-        "ponding": "Roof ponding: Data unavailable. No public weather record shows water on a roof. This is not an all-clear.",
-        "lightning": ("Lightning: Data unavailable. The national lightning network is commercial, and no free record of "
+        "ponding": ("Data unavailable: Roof ponding. No public weather record shows water on a roof. This is not an "
+                    "all-clear."),
+        "lightning": ("Data unavailable: Lightning. The national lightning network is commercial, and no free record of "
                       "lightning at this spot was used. This is not an all-clear."),
-        "uv_and_sun": ("UV and sunlight: Data unavailable. No public UV or sunlight record for this spot was used in this "
+        "uv_and_sun": ("Data unavailable: UV and sunlight. No public UV or sunlight record for this spot was used in this "
                        "history. This is not an all-clear."),
-        "roof_surface_temperature": ("Roof surface temperature: Data unavailable at this spot. Published roof temperatures "
+        "roof_surface_temperature": ("Data unavailable: Roof surface temperature at this spot. Published roof temperatures "
                                      "come from test roofs, not from weather stations. This is not an all-clear."),
-        "fema_flood_zones": ("Flood zones (FEMA): Data unavailable. A FEMA flood zone is a regulatory map designation, not a "
+        "fema_flood_zones": ("Data unavailable: Flood zones (FEMA). A FEMA flood zone is a regulatory map designation, not a "
                              "weather record, so it is not shown in this history. This is not an all-clear."),
-        "ground_snow_load": ("Ground snow load: Data unavailable. A design map value is not a measurement of snow on the "
+        "ground_snow_load": ("Data unavailable: Ground snow load. A design map value is not a measurement of snow on the "
                              "ground at this spot, so it is not shown. This is not an all-clear."),
-        "snotel": ("SNOTEL: Data unavailable. The NRCS SNOTEL service is not used in this history; the station records in "
+        "snotel": ("Data unavailable: SNOTEL. The NRCS SNOTEL service is not used in this history; the station records in "
                    "the GHCN files are the only station readings used. This is not an all-clear."),
     },
     "refs": {
@@ -555,6 +666,91 @@ HELD_GROUPS = {"heat_and_rain": ("ponding", "roof_surface_temperature", "fema_fl
 ZONE_EXTRA = {"heat_advisory": "heat_advisory", "excessive_heat": "excessive_heat", "ice_storm": "ice_storm",
               "winter_storm": "winter_storm"}
 
+# The codes the counts read: the LSR codes and kinds, the joins' product codes and significance letters, and the station
+# period key of the snow-depth pair (D40). map.json summary.codes carries them, so the browser counts the same records.
+CODES = {
+    "hail_lsr": "H",                                                       # the LSR code of a hail report
+    "freezing_rain_kind": "freezing rain",                                 # the LSR kind word
+    "rain_kind": "rain",
+    "extreme_heat_kind": "extreme heat",
+    "flood_kinds": ("flood", "flash flood"),                               # LSR kinds of a flood report; NCEI flood records
+    "tornado_kinds": ("tornado", "funnel cloud", "landspout"),             # LSR kinds of a tornado, funnel cloud or landspout
+    "tornado_record_kinds": ("tornado", "funnel cloud"),                   # NCEI codes of a tornado or funnel cloud record
+    "polygon": {"sv": ("SV",), "to": ("TO",), "flood": ("FF", "FL", "FA")},   # warning products (significance W)
+    "county": {"kinds": ("FA", "FF"), "sig": "A"},                         # county-only watches: FA.A and FF.A
+    "zone": {"hw": ("HW",), "ht": ("HT",), "eh": ("EH",), "is": ("IS",), "ws": ("WS",)},
+    "warning": "W", "watch": "A", "heat_advisory": "Y",                    # significance letters
+    "depth_pair": "DL",                                                    # days with 1 inch or more on the ground, low below 32 F
+}
+
+# The kind word each section's lead opens with (map.json summary.section_kinds).
+SECTION_KINDS = {"hail": "Radar estimate", "wind": "Station reading", "storms": "Zone product", "temperature": "Grid estimate",
+                 "rain": "Grid estimate", "snow": "Station reading", "flooding": "Report", "ice": "Report", "heat": "Grid estimate",
+                 "roof": "Reference", "made": "Reference"}
+
+# The 23 roof indicator lines: id -> (label, kind word, unit). The hail warnings label takes the covered words ({covered}).
+# The ice-dam line carries its measured-pattern label (D41, D57). map.json summary.indicators.roof_lines is this table.
+ROOF_LINES = {
+    "hail_size_days": ("Hail of 1 inch or more (days)", "Radar estimate", "days"),
+    "hail_reports": ("Hail reports within 5 miles (count)", "Report", "count"),
+    "hail_signatures": ("Radar detections within 2 miles (days)", "Radar detection", "days"),
+    "hail_warnings": ("Severe thunderstorm warnings {covered} (count)", KIND_WARNING, "count"),
+    "wind_gust_days": ("Peak gust of 50 knots (58 mph) or more (days)", "Station reading", "days"),
+    "wind_reports": ("Wind reports within 5 miles (count)", "Report", "count"),
+    "wind_zone_warnings": ("High wind watches and warnings for the zone (count)", "Zone product", "count"),
+    "tornado_funnel": ("Tornado, funnel cloud and landspout reports (count)", "Report", "count"),
+    "freeze_thaw_days": ("Freeze-thaw days", "Grid estimate", "days"),
+    "days_low_below_32": ("Days with a low below 32 F", "Grid estimate", "days"),
+    "days_high_90": ("Days with a high of 90 F or more", "Grid estimate", "days"),
+    "temperature_extremes": ("Highest high and lowest low (F, with date)", "Grid estimate", "F"),
+    "snowfall_season": ("Snowfall, July to June (inches)", "Station reading", "in"),
+    "snow_depth": ("Deepest snow on the ground (inches)", "Station reading", "in"),
+    "ice_dam_weather_days": ("Days with 1 inch or more on the ground and a low below 32 F (days; a measured pattern, not ice "
+                             "dams)", "Station reading", "days"),
+    "freezing_rain_reports": ("Freezing rain reports within 5 miles (count)", "Report", "count"),
+    "ice_storm_warnings": ("Ice storm warnings for the zone (count)", "Zone product", "count"),
+    "winter_storm_warnings": ("Winter storm warnings for the zone (count)", "Zone product", "count"),
+    "precipitation_year": ("Precipitation (inches)", "Grid estimate", "in"),
+    "largest_one_day_rain": ("Largest one-day precipitation (inches)", "Grid estimate", "in"),
+    "rain_reports": ("Rain reports within 5 miles (count)", "Report", "count"),
+    "flood_reports_warnings": ("Flood and flash flood reports and warnings (count)", "Report", "count"),
+    "heat_reports_warnings": ("Heat advisories, excessive heat warnings and extreme heat reports (count)", "Zone product", "count"),
+}
+
+# the held roof items' labels: each held line leads with "Data unavailable: {label}. " (D88(b)), so the label is the name its
+# text carries (the text is WORDS_INDICATORS["held"]; the browser reads these names as roof.held_names)
+HELD_NAMES = {"ponding": "Roof ponding", "roof_surface_temperature": "Roof surface temperature at this spot",
+              "fema_flood_zones": "Flood zones (FEMA)", "lightning": "Lightning", "uv_and_sun": "UV and sunlight",
+              "ground_snow_load": "Ground snow load", "snotel": "SNOTEL"}
+
+# the noun each roof line counts with (a NOUNS key; None for a line that is not a count), as the browser reads it (D83)
+ROOF_NOUNS = {"hail_size_days": "days", "hail_reports": "hail_n", "hail_signatures": "signature", "hail_warnings": "sv",
+              "wind_gust_days": "days", "wind_reports": "wind_n", "wind_zone_warnings": "hw_zone", "tornado_funnel": None,
+              "freeze_thaw_days": "freeze", "days_low_below_32": "days", "days_high_90": "days", "temperature_extremes": None,
+              "snowfall_season": None, "snow_depth": None, "ice_dam_weather_days": "days", "freezing_rain_reports": "freezing_rain_n",
+              "ice_storm_warnings": "ice_storm", "winter_storm_warnings": "winter_storm", "precipitation_year": None,
+              "largest_one_day_rain": None, "rain_reports": "rain_n", "flood_reports_warnings": None,
+              "heat_reports_warnings": None}
+
+
+def roof_extra() -> dict:
+    """The roof counts the browser makes from the tile files: the warning products and their significance letters, the zone
+    products and their families, and the report kinds and their nouns. The same codes CODES holds, which _extra reads."""
+    return {
+        "hail_warnings": {"polygon": list(CODES["polygon"]["sv"]), "sig": CODES["warning"], "noun": "sv"},
+        "tornado_warnings": {"polygon": list(CODES["polygon"]["to"]), "sig": CODES["warning"], "noun": "tornado"},
+        "records_tornado": {"records": list(CODES["tornado_record_kinds"]), "noun": "tornado_nc"},
+        "tornado_reports": {"reports": list(CODES["tornado_kinds"]), "noun": "tornado"},
+        "rain_reports": {"reports": [CODES["rain_kind"]], "noun": "rain_n"},
+        "extreme_heat": {"reports": [CODES["extreme_heat_kind"]], "noun": "xheat"},
+        "heat_advisory": {"zone": list(CODES["zone"]["ht"]), "sig": [CODES["heat_advisory"]], "noun": "heat_advisory",
+                          "family": "heat_advisory"},
+        "excessive_heat": {"zone": list(CODES["zone"]["eh"]), "sig": [CODES["warning"]], "noun": "excessive_heat", "family": None},
+        "ice_storm": {"zone": list(CODES["zone"]["is"]), "sig": [CODES["warning"]], "noun": "ice_storm", "family": "winter_storm"},
+        "winter_storm": {"zone": list(CODES["zone"]["ws"]), "sig": [CODES["warning"]], "noun": "winter_storm",
+                         "family": "winter_storm"},
+    }
+
 # D13: the forbidden terms live in tests/words_rules.py, the one list every word test uses. "damage" is allowed only as a
 # source type word, in quoted wording, or as "NWS damage threat tag"; "structure" only in proper names.
 
@@ -610,8 +806,10 @@ def _read_json(path: Path):
 
 
 def season_bounds(label: str) -> tuple[date, date]:
+    """The first and last day of a season label ("2021-22"): SEASON_RULE's July 1 and June 30 (D87(d))."""
     y = int(label[:4])
-    return date(y, 7, 1), date(y + 1, 6, 30)
+    return (date(y, SEASON_RULE["start_month"], SEASON_RULE["start_day"]),
+            date(y + 1, SEASON_RULE["end_month"], SEASON_RULE["end_day"]))
 
 
 def window_store(label: str, first: date, last: date) -> tuple[int, int]:
@@ -736,6 +934,7 @@ NOUNS = {
     "tor_warn": ("tornado warning", "tornado warnings"),
     "signature": ("day with a hail signature", "days with a hail signature"),
     "freeze": ("freeze-thaw day", "freeze-thaw days"),
+    "days": ("day", "days"),
 }
 
 
@@ -752,6 +951,12 @@ def _no_report(key: str, when: str) -> str:
     return WORDS_SUMMARY["no_report"].format(type=REPORT_TYPES[key], when=when)
 
 
+def _thousands(n: int) -> str:
+    """A count with its thousands separator, "1,826", as the section leads already write it (F8). The count and coverage
+    words use this form too, so "1,020 days" and "1,020 days missing" read alike on the sheet and the town page."""
+    return f"{int(n):,}"
+
+
 def _count_text(key: str, n: int, when: str = "these five years") -> str:
     """The words for a count: "1 hail report", "3 hail reports", "2 days" (the row's kind word is shown beside it). A zero
     report count reads as the no-report sentence for the period (D41), never as "0 hail reports"."""
@@ -761,8 +966,8 @@ def _count_text(key: str, n: int, when: str = "these five years") -> str:
         return WORDS_SUMMARY["no_record"].format(type=RECORD_TYPES[key], when=when)
     if key in NOUNS:
         one, many = NOUNS[key]
-        return f"{n} {one if n == 1 else many}"
-    return f"{n} {'day' if n == 1 else 'days'}"
+        return f"{_thousands(n)} {one if n == 1 else many}"
+    return f"{_thousands(n)} {'day' if n == 1 else 'days'}"
 
 
 def _report_clause(key: str, n: int, when: str, nonzero: str) -> str:
@@ -789,7 +994,7 @@ def _fmt_f_on(tenths_f: int, date_: int | None) -> str:
 
 def _missing_text(n: int) -> str:
     """The coverage line for missing days: "1 day missing", "108 days missing"."""
-    return WORDS_SUMMARY["coverage_one"] if n == 1 else WORDS_SUMMARY["coverage"].format(n=n)
+    return WORDS_SUMMARY["coverage_one"] if n == 1 else WORDS_SUMMARY["coverage"].format(n=_thousands(n))
 
 
 def _cover(missing: int, flag: str | None = None) -> str | None:
@@ -866,7 +1071,8 @@ def _five(cells: list[dict], combine: str, fmt, source: str, none_text: str) -> 
 
 def _row(spec: dict, cells: list[dict], five: dict, notes: list[str]) -> dict:
     """A table row as a plain dict (the module docstring lists its keys). stations names each season's station; five_note
-    is the five-season figure's own sentence (or None); automated (wind and hail reports) is set by the report rows."""
+    is the five-season figure's own sentence (or None); automated (wind and hail reports) is set by the report rows; partial
+    is the partial season's count and its valid days (D79(b)), set by the rows that count storms and floods, else None."""
     unit = UNIT_SPEC[spec["unit"]]
     out = {"key": spec["key"], "label": spec["label"], "kind": spec["kind"], "unit": spec["unit"],
            "scale": unit["scale"], "decimals": spec.get("decimals", unit["decimals"]), "source": spec["source"],
@@ -877,7 +1083,7 @@ def _row(spec: dict, cells: list[dict], five: dict, notes: list[str]) -> dict:
            "five": five["value"], "five_date": five["date"], "five_text": five["text"],
            "five_coverage": five["coverage"], "five_note": five.get("note"), "notes": [n for n in notes if n],
            # the days missing over the five seasons (the lead's count, D33); 0 when the row has no figure to miss
-           "five_missing": sum(c["missing"] for c in cells)}
+           "five_missing": sum(c["missing"] for c in cells), "partial": None}
     if five.get("note"):
         out["notes"].append(five["note"])
     return out
@@ -1312,23 +1518,32 @@ def element_key(element: str) -> str:
 # ---------------------------------------------------------------- the radar (B1) and the reports (B2)
 
 def _radar_rows(spot: _Spot, days: list[tuple[date, int]]) -> tuple[dict, dict]:
-    """The radar rows: the largest estimate with its date, and the days at 1 inch or more (B1, radar estimate)."""
+    """The radar rows: the largest estimate with its date, and the days at 1 inch or more (B1, radar estimate). A season shows
+    its figures over the days present, with its coverage line (D5, D33). A zero count and the "No radar estimate" sentence show
+    only at 95 percent coverage; a season below that with no figure says Data unavailable and names its days (D37, D82(c)).
+    A five-season figure that a season below 95 percent leaves without a value is Data unavailable, with the seasons named."""
     by_season: dict[str, dict[date, int]] = {lab: {} for lab in FIVE}
     for day, tenths in days:
         label = stations.season_of(day)
         if label in by_season and spot.in_window(day):
             by_season[label][day] = max(by_season[label].get(day, 0), tenths)
+    share = int(round(SEASON_SHARE * 100))
+    unavailable = WORDS_SUMMARY["cell_unavailable"]
     cells_max, cells_one = [], []
     season_notes: list[str] = []
+    short_max: list[str] = []       # the seasons whose largest estimate is not shown (no figure, under 95 percent coverage)
     for label in FIVE:
         total, store, valid = spot.season_cover(label, spot.missing)
         missing = total - valid
         if valid <= 0:
             text = WORDS_SUMMARY["season_unavailable"].format(season=label, source=WORDS_SUMMARY["source_radar_history"])
-            cells_max.append(_unavailable_cell(WORDS_SUMMARY["cell_unavailable"]))
-            cells_one.append(_unavailable_cell(WORDS_SUMMARY["cell_unavailable"]))
+            cells_max.append(_unavailable_cell(unavailable))
+            cells_one.append(_unavailable_cell(unavailable))
             season_notes.append(text)
+            short_max.append(label)
             continue
+        full = valid * 100 >= total * share                       # D37: 95 percent of the season's days have a value
+        short = WORDS_SUMMARY["radar_season_short"].format(season=label, k=_thousands(valid), d=_thousands(total))
         vals = by_season[label]
         big = [(t, d) for d, t in vals.items() if t >= FLOOR_TENTHS]
         if big:
@@ -1336,11 +1551,20 @@ def _radar_rows(spot: _Spot, days: list[tuple[date, int]]) -> tuple[dict, dict]:
             hund = _hundredths_of_tenths_mm(tenths)
             cells_max.append(_cell(value=hund, text=_fmt_in_on(hund, _yyyymmdd(day)), date_=_yyyymmdd(day),
                                    valid=valid, missing=missing))
-        else:
+        elif full:
             cells_max.append(_cell(value=None, text=WORDS_SUMMARY["none_radar"], valid=valid, missing=missing))
+        else:
+            cells_max.append(_cell(value=None, text=short, valid=valid, missing=missing))
+            short_max.append(label)
         n_one = sum(1 for t in vals.values() if t >= ONE_INCH_TENTHS)
-        cells_one.append(_cell(value=n_one, text=_count_text("days", n_one), valid=valid, missing=missing))
-    five_max = _five(cells_max, "max", None, WORDS_SUMMARY["source_radar_history"], WORDS_SUMMARY["none_radar"])
+        if n_one or full:
+            cells_one.append(_cell(value=n_one, text=_count_text("days", n_one), valid=valid, missing=missing))
+        else:
+            cells_one.append(_cell(value=None, text=short, valid=valid, missing=missing))
+    five_max = _five(cells_max, "max", None, WORDS_SUMMARY["source_radar_history"],
+                     unavailable if short_max else WORDS_SUMMARY["none_radar"])
+    if five_max["value"] is None and short_max:
+        five_max["note"] = _five_unavailable_text(short_max)
     five_one = _five(cells_one, "sum", lambda v: _count_text("days", v), WORDS_SUMMARY["source_radar_history"], "")
     class_note = _class_note(by_season)
     notes = season_notes + [WORDS_SUMMARY["window_radar"].format(first=_fmt_date(spot.first), last=_fmt_date(spot.last),
@@ -1427,7 +1651,8 @@ def _count_cells(spot: _Spot, days: list[date], key: str) -> list[dict]:
 
 def _days_at(n: int, station: str) -> str:
     """A gust-day count with its station: "29 days at BILLINGS LOGAN INTL AP", "1 day at ..." (B5-16, D41)."""
-    return (WORDS_SUMMARY["station_days_one"] if n == 1 else WORDS_SUMMARY["station_days"]).format(n=n, station=station)
+    word = WORDS_SUMMARY["station_days_one"] if n == 1 else WORDS_SUMMARY["station_days"]
+    return word.format(n=_thousands(n), station=station)
 
 
 def _gust_rows(spot: _Spot, tile: dict) -> tuple[dict, dict]:
@@ -1544,16 +1769,25 @@ def _clim_cells(label: str, r: list) -> dict:
     return out
 
 
+def _climate_unavailable_rows() -> dict:
+    """The grid rows when the grid is unavailable: each row names its own part (temperature or rain, D41), so a precipitation row
+    never reads as a temperature failure."""
+    out = {}
+    for key in CLIMATE_KEYS:
+        temp = key in TEMP_KEYS
+        part = WORDS_SUMMARY["temperature_part" if temp else "rain_part"]
+        lower = WORDS_SUMMARY["temperature_part_lower" if temp else "rain_part_lower"]
+        out[key] = _unavailable_row(_spec(key), climate.WORDS_CLIMATE["unavailable"].format(part=part, part_lower=lower))
+    return out
+
+
 def _climate_part(spot: _Spot) -> dict:
     """The grid rows: highest and lowest temperature with dates, the day counts, precipitation and the largest one-day
     precipitation. Five seasons: each season's cells and the five-season figure from them."""
     status, rec = spot.climate_cell()
     out = {}
     if status == "unavailable":
-        for key in CLIMATE_KEYS:
-            part = "Temperature" if key in TEMP_KEYS else "Rain"
-            out[key] = _unavailable_row(_spec(key), climate.WORDS_CLIMATE["unavailable"].format(part=part, part_lower=part.lower()))
-        return out
+        return _climate_unavailable_rows()
     if status != "ok":
         sentence = climate.WORDS_CLIMATE["no_land"] if status == "no_land" else climate.WORDS_CLIMATE["not_in_store"]
         for key in CLIMATE_KEYS:
@@ -1620,7 +1854,7 @@ def _station_runs(cells: list[dict]) -> str:
             runs.append([name, k, k])
     parts = []
     for name, first, last in runs:
-        span = FIVE[first] if first == last else f"{FIVE[first]} to {FIVE[last]}"
+        span = FIVE[first] if first == last else f"{FIVE[first]} {SPAN_TO} {FIVE[last]}"
         parts.append(f"{name} {span}")
     return ", ".join(parts)
 
@@ -1638,8 +1872,9 @@ def _share_text(share: float) -> str:
 def _rejected_notes(spot: _Spot, res: dict, element: str) -> list[str]:
     """D69 (F6): the stations that fail the rule and lie nearer than the second pick are named, with the reason they are not
     used (their share of the days, or the date of their newest value); the farther ones are counted in one clause. The
-    distance is from the station point, as the chosen stations' lines give it."""
-    place = WORDS_SUMMARY["place_town" if spot.town else "place_spot"]
+    distance is from the station point, as the chosen stations' lines give it. The words say "from this spot" on every page
+    (D80(b)); on a town page the spot is the town point."""
+    place = WORDS_SUMMARY["place_spot"]
     name = stations.element_name(element)
     need = f"{stations.COVER_MIN * 100:.0f}"
     out = []
@@ -1689,7 +1924,7 @@ def _station_row(spot: _Spot, key: str, element: str, combine: str) -> dict:
     if chosen:
         notes.append(WORDS_SUMMARY["station_rule_town" if spot.town else "station_rule_spot"])
         for st in chosen:
-            notes.append(WORDS_SUMMARY["station_named_town" if spot.town else "station_named"].format(
+            notes.append(WORDS_SUMMARY["station_named"].format(
                 station=st["name"], miles=f"{st['miles']:.1f}"))
             if st.get("net") == "SNOTEL":
                 notes.append(WORDS_SUMMARY["snotel_station"].format(station=st["name"]))
@@ -1743,12 +1978,12 @@ def _dl_cells(spot: _Spot):
             continue
         doc = spot.station_file(cell["sid"])
         period = ((doc or {}).get("periods") or {}).get("season", {}).get(label) or {}
-        pair = period.get("DL")
+        pair = period.get(CODES["depth_pair"])
         if not pair:
             cells.append(_unavailable_cell(WORDS_SUMMARY["cell_unavailable"]))
             continue
         n = int(pair["n"])
-        text = WORDS_SUMMARY["station_days_one" if n == 1 else "station_days"].format(n=n, station=cell["station"])
+        text = WORDS_SUMMARY["station_days_one" if n == 1 else "station_days"].format(n=_thousands(n), station=cell["station"])
         cells.append(_cell(value=n, text=text, valid=cell["valid"], missing=cell["missing"],
                            station=cell["station"], miles=cell["miles"], sid=cell["sid"]))
     return cells
@@ -1881,8 +2116,9 @@ def _zone_rows(spot: _Spot, tile: dict | None) -> dict:
     partial_note = _joins_unavailable("zones", reason, periods) if state == "partial" else None
     shared = [n for n in (partial_note,) if n]
     out = {}
-    for key, kinds, sigs, family in (("hw_zone", ("HW",), ("W", "A"), "high_wind"),
-                                     ("ice_warn", ("WS", "IS"), ("W",), "winter_storm")):
+    warning, watch = CODES["warning"], CODES["watch"]
+    for key, kinds, sigs, family in (("hw_zone", CODES["zone"]["hw"], (warning, watch), "high_wind"),
+                                     ("ice_warn", CODES["zone"]["ws"] + CODES["zone"]["is"], (warning,), "winter_storm")):
         days = spot.zone_events(tile, kinds, sigs)
         if days is None:
             out[key] = _unavailable_row(_spec(key), _joins_unavailable("zones", "the zone file did not load"))
@@ -1893,6 +2129,7 @@ def _zone_rows(spot: _Spot, tile: dict | None) -> dict:
             five = _partial_five(cells, key) or five
         notes = shared + [n for n in (_unplaced_note(spot, (family,)),) if n]
         out[key] = _row(_spec(key), cells, five, notes)
+        out[key]["partial"] = _partial_of(spot, days)
     return out
 
 
@@ -1903,28 +2140,84 @@ def _warning_rows(spot: _Spot, events: dict | None) -> dict:
     if state == "unavailable" or events is None:
         return {"flood_warn": _unavailable_row(_spec("flood_warn"), _joins_unavailable("warnings", reason))}
     note = _joins_unavailable("warnings", reason, periods) if state == "partial" else None
-    cells = _polygon_cells(spot, events, ("FF", "FL", "FA"), "W", "flood_warn")
-    if isinstance(cells, str):                    # the town's warnings did not load (D38): its words, not a count
-        return {"flood_warn": _unavailable_row(_spec("flood_warn"), cells)}
+    days = _polygon_days(spot, events, CODES["polygon"]["flood"], CODES["warning"])
+    if isinstance(days, str):                     # the town's warnings did not load (D38): its words, not a count
+        return {"flood_warn": _unavailable_row(_spec("flood_warn"), days)}
+    cells = _count_cells(spot, days, "flood_warn")
     five = _five(cells, "sum", lambda v: _count_text("flood_warn", v), "warning archive", "")
     notes = [note] if note else []
     if spot.town_polygons:                        # counted at the town point (D38): say so on the row
         notes.append(WORDS_SUMMARY["town_warnings_note"])
     if spot.town_note:
         notes.append(WORDS_SUMMARY["town_warnings_partial"].format(reason=spot.town_note))
-    return {"flood_warn": _row(_spec("flood_warn"), cells, five, notes)}
+    row = _row(_spec("flood_warn"), cells, five, notes)
+    row["partial"] = _partial_of(spot, days)
+    return {"flood_warn": row}
 
 
-def _polygon_cells(spot: _Spot, events: dict, kinds: tuple, sig: str, noun: str):
-    """The season cells of a polygon count (D11, D38): at a town page, the town point's count from hail/j/towns.json when the
-    store has it; otherwise the cell covers. A string when the town's warnings did not load (the words, not a count)."""
+def _partial_of(spot: _Spot, days: list[date]) -> dict:
+    """The partial season's count of these days (D20, D79(b)): the days of 2026-27 inside the window, the store's valid days of
+    the season (its days in the window less the missing ones) and the days missing. A store with no day of the season has
+    valid 0, and the town line says so with the D20 sentence."""
+    store = spot.season_cover(PARTIAL)[1]
+    missing = sum(1 for d in spot.missing if stations.season_of(d) == PARTIAL and spot.in_window(d))
+    n = sum(1 for d in days if stations.season_of(d) == PARTIAL and spot.in_window(d))
+    return {"n": n, "valid": max(0, store - missing), "missing": missing}
+
+
+def _town_five_text(key: str, n: int, tail: str = "") -> str:
+    """The five-season words of a count on a town page, with no full stop (D79(b)): "19 severe thunderstorm warnings covered
+    this spot in the five seasons". A zero report or record count reads as its no-report sentence without the full stop
+    (D41), so the partial clause can follow it."""
+    five = WORDS_SUMMARY["five_seasons"]
+    if key in REPORT_TYPES and n == 0:
+        return _no_report(key, five)[:-1]
+    if key in RECORD_TYPES and n == 0:
+        return WORDS_SUMMARY["no_record"].format(type=RECORD_TYPES[key], when=five)[:-1]
+    words = _count_text(key, n)
+    return f"{words} {tail} in {five}" if tail else f"{words} in {five}"
+
+
+def _town_five(text_five: str, partial: dict | None) -> str:
+    """D79(b): the five-season words and the partial season's count, named apart, with no full stop: "19 in the five seasons;
+    2 more in 2026-27 so far". A partial season with no valid day keeps its count and its missing days (F6), then gives the
+    D20 sentence; no zero is claimed for it, since its days are not in the data. The missing days are named once (D33). A
+    count that names the partial season ends with the all-clear sentence (D41, D87(b)); the no-day case says so already."""
+    if partial is None:
+        return text_five
+    if partial["valid"] <= 0:
+        parts = [text_five]
+        if partial["n"]:
+            parts.append(WORDS_SUMMARY["partial_more"].format(n=partial["n"], season=PARTIAL))
+        if partial["missing"]:
+            parts.append(f"{_missing_text(partial['missing'])} in {PARTIAL}")
+        return "; ".join(parts) + ". " + WORDS_SUMMARY["partial_none"].format(season=PARTIAL)
+    n = partial["n"]
+    more = (WORDS_SUMMARY["partial_more"].format(n=n, season=PARTIAL) if n
+            else WORDS_SUMMARY["partial_no_more"].format(season=PARTIAL))
+    if partial["missing"]:
+        more += f"; {_missing_text(partial['missing'])} in {PARTIAL}"
+    # a count sentence that names the partial season ends with the all-clear sentence, as the sheet's partial line does (D41, D87(b))
+    return f"{text_five}; {more}. {ALL_CLEAR}"
+
+
+def _polygon_days(spot: _Spot, events: dict, kinds: tuple, sig: str):
+    """The begin days (Montana time) of a polygon product's warnings for the spot: the town point's on a town page (D38,
+    hail/j/towns.json), else the cell covers. A string when the town's warnings did not load: the words, not a count."""
     try:
         days = spot.town_polygon_days(kinds, sig)
     except SummaryError as exc:
         return _joins_unavailable("warnings", str(exc))
     if days is None:
         days = spot.polygons_covering(events, kinds, sig)
-    return _count_cells(spot, days, noun)
+    return days
+
+
+def _polygon_cells(spot: _Spot, events: dict, kinds: tuple, sig: str, noun: str):
+    """The season cells of a polygon count (D11, D38): at a town page, the town point's count from hail/j/towns.json when the
+    store has it; otherwise the cell covers. A string when the town's warnings did not load (the words, not a count)."""
+    days = _polygon_days(spot, events, kinds, sig)
+    return days if isinstance(days, str) else _count_cells(spot, days, noun)
 
 
 def _county_rows(spot: _Spot, tile: dict | None) -> dict:
@@ -1943,7 +2236,8 @@ def _county_rows(spot: _Spot, tile: dict | None) -> dict:
     five = _five(cells, "sum", lambda v: _count_text("county_watch", v), "county archive", "")
     county = (block.get("names") or {}).get(code, code)
     return {"county_watch": _row(_spec("county_watch"), cells, five,
-                                 [WORDS_SUMMARY["county_note"].format(county=county if county.endswith(" County") else f"{county} County")])}
+                                 [WORDS_SUMMARY["county_note"].format(county=county if county.endswith(f" {COUNTY_WORD}")
+                                                                      else f"{county} {COUNTY_WORD}")])}
 
 
 def _held_row() -> dict:
@@ -1965,7 +2259,7 @@ FLOOD_RECORD_TYPES = ("flood", "flash flood")
 def _records_row(spot: _Spot, events: dict | None, tile: dict | None) -> dict:
     """D48: the NCEI flood and flash flood records within 5 miles (county-coded points), a row of its own and never folded
     into the report row. A part that did not load says so with its D20 sentence (D16); no record is said only from a
-    loaded part."""
+    loaded part. The partial season's count is on the row (D79(b))."""
     spec = _spec("flood_record_n")
     state, reason, periods = spot.joins_part("records")
     if state == "unavailable" or events is None or tile is None:
@@ -1976,13 +2270,15 @@ def _records_row(spot: _Spot, events: dict | None, tile: dict | None) -> dict:
     days = [r["day"] for r in spot.records_within(events) if r["code"] in FLOOD_RECORD_TYPES]
     cells = _count_cells(spot, days, "flood_record_n")
     five = _five(cells, "sum", lambda v: _count_text("flood_record_n", v), "record archive", "")
-    return _row(spec, cells, five, [note] if note else [])
+    row = _row(spec, cells, five, [note] if note else [])
+    row["partial"] = _partial_of(spot, days)
+    return row
 
 
 def _reports_rows(spot: _Spot, events: dict | None) -> dict:
     """The report rows: hail (largest and count), wind, freezing rain and flood (B2 LSR, within 5 miles). The hail and wind
     counts carry how many of their reports are automated station reports (IEM SOURCE Mesonet, ASOS or AWOS; the row's
-    automated key), and say so in a note."""
+    automated key), and say so in a note. The flood count carries its partial season (D79(b))."""
     state, reason, periods = spot.joins_part("reports")
     keys = ("hail_max", "hail_n", "wind_n", "freezing_rain_n", "flood_report_n")
     if state == "unavailable" or events is None:
@@ -1995,7 +2291,7 @@ def _reports_rows(spot: _Spot, events: dict | None) -> dict:
     five_max = _five(cells["hail_max"], "max", None, "report archive", _no_report("hail_max", "these five years"))
     out["hail_max"] = _row(_spec("hail_max"), cells["hail_max"], five_max, [note] if note else [])
     in_five = lambda r: stations.season_of(r["day"]) in FIVE and spot.in_window(r["day"])
-    for key, pick, kind in (("hail_n", lambda r: r["code"] == "H", "hail reports"),
+    for key, pick, kind in (("hail_n", lambda r: r["code"] == CODES["hail_lsr"], "hail reports"),
                             ("wind_n", lambda r: r["code"] in WIND_CODES, "wind reports")):
         automated = sum(1 for r in lsr if pick(r) and in_five(r) and r.get("src") in AUTO_SOURCES)
         extra_notes = [note] if note else []
@@ -2007,6 +2303,7 @@ def _reports_rows(spot: _Spot, events: dict | None) -> dict:
     for key in ("freezing_rain_n", "flood_report_n"):
         five = _five(cells[key], "sum", lambda v, key=key: _count_text(key, v), "report archive", "")
         out[key] = _row(_spec(key), cells[key], five, [note] if note else [])
+    out["flood_report_n"]["partial"] = _partial_of(spot, [r["day"] for r in lsr if r["kind"] in CODES["flood_kinds"]])
     return out
 
 
@@ -2027,7 +2324,7 @@ def _partial_grid(climate_rec, through: str) -> str:
         frost=row["below32"]["value"], frost_days=WORDS_SUMMARY["day_noun" if row["below32"]["value"] == 1 else "days_noun"],
         total=row["rain"]["value"], rain_max=row["rain_max"]["value"], rain_max_date=row["rain_max"]["date"])
     if row["missing"]:
-        text += " " + WORDS_SUMMARY["partial_missing"].format(n=row["missing"]) + "."
+        text += " " + WORDS_SUMMARY["partial_missing"].format(n=_thousands(row["missing"])) + "."
     return text
 
 
@@ -2068,10 +2365,11 @@ def _partial(spot: _Spot, climate_rec, through, lsr, radar_days) -> str:
 
 def _line(ind: str, label: str, kind: str, unit: str, value, text, why=None, coverage=None) -> dict:
     """One roof indicator line: its label, kind word, unit and scale (the store's integer unit), the five-season value (an
-    integer or None) and its words. A line with no value says Data unavailable beside its label, with the reason."""
+    integer or None) and its words. A line with no value leads with its kind word, then its label and the reason (F2)."""
     if value is None or text is None:
-        text = _clear(WORDS_INDICATORS["indicator_unavailable"].format(label=label, why=why or WORDS_SUMMARY["cell_unavailable"]))
-    elif "not counting" in text:                  # a total of some seasons only is partial, and its line says so (D41)
+        text = _clear(WORDS_INDICATORS["indicator_unavailable"].format(kind=kind, label=label,
+                                                                    why=why or WORDS_SUMMARY["cell_unavailable"]))
+    elif PARTIAL_MARKER in text:                  # a total of some seasons only is partial, and its line says so (D41)
         text = _clear(text)
     return {"id": ind, "label": label, "kind": kind, "unit": unit, "scale": UNIT_SPEC[unit]["scale"],
             "value": None if value is None else int(value), "text": text, "coverage": coverage}
@@ -2092,10 +2390,15 @@ def _row_why(row: dict | None) -> str | None:
 
 
 def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
-    """The roof section: the 23 indicator lines under the five headings (each with its kind word and its five-season
-    count or measurement, from the same records as the table), the reference lines (quotes from the public sources the
-    roof record names, one per stressor) and the held lines (D14, and the two items the record marks not shown)."""
+    """The roof section: the 23 indicator lines under the five headings (each with its kind word and its five-season count
+    or measurement, from the same records as the table), the reference lines (quotes from the public sources the roof record
+    names, one per stressor) and the held lines (D14, and the two items the record marks not shown). The label, kind word and
+    unit of each line come from ROOF_LINES. On a town page the storm and flood lines name the five-season count and the
+    partial season's count apart (D79(b))."""
     L = WORDS_INDICATORS["lines"]
+    W = WORDS_SUMMARY
+    town = spot.town is not None
+    covered = spot.covered_words()
     lines = {}
 
     def rv(key):
@@ -2110,13 +2413,28 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
             return {"value": None, "note": cells, "coverage": None}
         return None if cells is None else _extra_five(cells, key)
 
-    def from_cells(ind, label, kind, unit, key, noun, template, **more):
+    def spec(ind):
+        label, kind, unit = ROOF_LINES[ind]
+        return label.format(covered=covered), kind, unit
+
+    def partial_row(key):
+        return (rows.get(key) or {}).get("partial") if town else None
+
+    def partial_extra(key):
+        return (extra.get("partial") or {}).get(key) if town else None
+
+    def town_count(template: str, key: str, n: int, partial, tail: str = "") -> str:
+        """D79(b): a storm or flood line on a town page, the five-season count and the partial season's named apart."""
+        return _tidy(template.format(count=_town_five(_town_five_text(key, n, tail), partial)))
+
+    def from_cells(ind, key, noun, template, **more):
+        label, kind, unit = spec(ind)
         f = ext(key)
         if f is None:
             return _line(ind, label, kind, unit, None, None, WORDS_SUMMARY["cell_unavailable"])
         if f["value"] is None:
             return _line(ind, label, kind, unit, None, None, f.get("note"), f.get("coverage"))
-        if f.get("text") and "not counting" in f["text"]:
+        if f.get("text") and PARTIAL_MARKER in f["text"]:
             text = _tidy(f"{kind}: {f['text']}")
         elif noun in REPORT_TYPES and f["value"] == 0:
             text = f"{kind}: {_no_report(noun, 'these five years')}"        # a zero report count (D41)
@@ -2124,49 +2442,53 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
             text = template.format(count=_count_text(noun, f["value"]), **more)
         return _line(ind, label, kind, unit, f["value"], text, None, f.get("coverage"))
 
-    def counted(ind, label, kind, unit, key, noun, template, **more):
+    def counted(ind, key, noun, template, **more):
+        label, kind, unit = spec(ind)
         n, t, c = rv(key)
         if n is not None and noun in REPORT_TYPES and n == 0:
             text = f"{kind}: {_no_report(noun, 'these five years')}"            # a zero report count (D41)
         else:
             text = template.format(count=_count_text(noun, n), **more) if n is not None else None
-        if n is not None and t and "not counting" in t:
+        if n is not None and t and PARTIAL_MARKER in t:
             text = _tidy(f"{kind}: {t}")
         return _line(ind, label, kind, unit, n, text, t, c)
 
     n1, t1, c1 = rv("radar_1in")
     big_t = rv("radar_max")[1]
+    label, kind, unit = spec("hail_size_days")
     lines["hail_size_days"] = _line(
-        "hail_size_days", "Hail of 1 inch or more (days, radar estimate)", "Radar estimate", "days", n1,
+        "hail_size_days", label, kind, unit, n1,
         L["hail_size_days"].format(count=_count_text("days", n1), largest=big_t) if n1 is not None else None,
         _row_why(rows.get("radar_1in")) or t1, c1)
-    lines["hail_reports"] = counted("hail_reports", "Hail reports within 5 miles (count)", "Report", "count", "hail_n",
-                                    "hail_n", "Report: {count} within 5 miles in these five years")
+    lines["hail_reports"] = counted("hail_reports", "hail_n", "hail_n", "Report: {count} within 5 miles in these five years")
     if lines["hail_reports"]["value"]:                 # a count above zero names the largest hail reported (a zero reads so)
         lines["hail_reports"]["text"] = L["hail_reports"].format(count=_count_text("hail_n", lines["hail_reports"]["value"]),
                                                                  largest=rv("hail_max")[1])
-    lines["hail_signatures"] = from_cells("hail_signatures", "Radar detections within 2 miles (days)", "Radar detection",
-                                          "days", "hail_signatures", "signature", L["hail_signatures"])
-    covered = spot.covered_words()                     # D38: "covered this spot" on a town page, else the cell's words
-    lines["hail_warnings"] = from_cells("hail_warnings", f"Severe thunderstorm warnings {covered} (count)",
-                                        KIND_WARNING, "count", "hail_warnings", "sv", L["hail_warnings"], covered=covered)
-    gust = spot.gust or {"name": "the nearest station", "miles": "?"}
+    lines["hail_signatures"] = from_cells("hail_signatures", "hail_signatures", "signature", L["hail_signatures"])
+    lines["hail_warnings"] = from_cells("hail_warnings", "hail_warnings", "sv", L["hail_warnings"], covered=covered)
+    if town and lines["hail_warnings"]["value"] is not None and PARTIAL_MARKER not in (ext("hail_warnings") or {}).get("text", ""):
+        lines["hail_warnings"]["text"] = town_count(W["town_warning"], "sv", lines["hail_warnings"]["value"],
+                                                    partial_extra("hail_warnings"), covered)
+    gust = spot.gust or {"name": NEAREST_STATION, "miles": NO_MILES}
     ng, tg, cg = rv("gust_days")
+    label, kind, unit = spec("wind_gust_days")
     lines["wind_gust_days"] = _line(
-        "wind_gust_days", "Peak gust of 50 knots (58 mph) or more (days, station reading)", "Station reading", "days", ng,
+        "wind_gust_days", label, kind, unit, ng,
         L["wind_gust_days"].format(count=_count_text("days", ng), station=gust["name"], miles=gust["miles"])
         if ng is not None else None, _gust_why(rows) or tg, cg)
     wind_auto = int((rows.get("wind_n") or {}).get("automated") or 0)
     auto_text = (WORDS_SUMMARY["auto_roof_one"] if wind_auto == 1
                  else WORDS_SUMMARY["auto_roof_many"].format(n=wind_auto) if wind_auto > 1 else "")
-    lines["wind_reports"] = counted("wind_reports", "Wind reports within 5 miles (count)", "Report", "count", "wind_n",
-                                    "wind_n", L["wind_reports"], auto=auto_text)
-    lines["wind_zone_warnings"] = counted("wind_zone_warnings", "High wind watches and warnings for the zone (count)",
-                                          "Zone product", "count", "hw_zone", "hw_zone", L["wind_zone_warnings"])
+    lines["wind_reports"] = counted("wind_reports", "wind_n", "wind_n", L["wind_reports"], auto=auto_text)
+    lines["wind_zone_warnings"] = counted("wind_zone_warnings", "hw_zone", "hw_zone", L["wind_zone_warnings"])
+    if town and lines["wind_zone_warnings"]["value"] is not None:
+        lines["wind_zone_warnings"]["text"] = town_count(W["town_zone"], "hw_zone", lines["wind_zone_warnings"]["value"],
+                                                         partial_row("hw_zone"), "for the zone")
     tf = [ext("tornado_reports"), ext("records_tornado"), ext("tornado_warnings")]
     if all(f is not None and f["value"] is not None for f in tf):
+        label, kind, unit = spec("tornado_funnel")
         lines["tornado_funnel"] = _line(
-            "tornado_funnel", "Tornado, funnel cloud and landspout reports (count)", "Report", "count", tf[0]["value"],
+            "tornado_funnel", label, kind, unit, tf[0]["value"],
             L["tornado_funnel"].format(report=_report_clause("tornado", tf[0]["value"], "these five years",
                                                              f"{_count_text('tornado', tf[0]['value'])} within 5 miles "
                                                              "in these five years"),
@@ -2174,40 +2496,39 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
                                        count_w=_count_text("tor_warn", tf[2]["value"]), covered=covered))
     else:
         why = next((f["note"] for f in tf if f and f.get("note")), None)
-        lines["tornado_funnel"] = _line("tornado_funnel", "Tornado, funnel cloud and landspout reports (count)", "Report",
-                                        "count", None, None, why)
-    lines["freeze_thaw_days"] = counted("freeze_thaw_days", "Freeze-thaw days", "Grid estimate", "days", "freeze_thaw",
-                                        "freeze", L["freeze_thaw_days"])
-    lines["days_low_below_32"] = counted("days_low_below_32", "Days with a low below 32 F", "Grid estimate", "days",
-                                         "frost32", "days", L["days_low_below_32"])
-    lines["days_high_90"] = counted("days_high_90", "Days with a high of 90 F or more", "Grid estimate", "days", "hot90",
-                                    "days", L["days_high_90"])
+        label, kind, unit = spec("tornado_funnel")
+        lines["tornado_funnel"] = _line("tornado_funnel", label, kind, unit, None, None, why)
+    lines["freeze_thaw_days"] = counted("freeze_thaw_days", "freeze_thaw", "freeze", L["freeze_thaw_days"])
+    lines["days_low_below_32"] = counted("days_low_below_32", "frost32", "days", L["days_low_below_32"])
+    lines["days_high_90"] = counted("days_high_90", "hot90", "days", L["days_high_90"])
     tx, tn = rows.get("tmax"), rows.get("tmin")
+    label, kind, unit = spec("temperature_extremes")
     if tx and tn and tx["five"] is not None and tn["five"] is not None:
         lines["temperature_extremes"] = _line(
-            "temperature_extremes", "Highest high and lowest low (F, with date)", "Grid estimate", "F", tx["five"],
+            "temperature_extremes", label, kind, unit, tx["five"],
             L["temperature_extremes"].format(hi=tx["five_text"], lo=tn["five_text"]))
     else:
         why = _row_why(tx) or _row_why(tn) or (tx or {}).get("five_text") or (tn or {}).get("five_text")
-        lines["temperature_extremes"] = _line("temperature_extremes", "Highest high and lowest low (F, with date)",
-                                              "Grid estimate", "F", None, None, why)
+        lines["temperature_extremes"] = _line("temperature_extremes", label, kind, unit, None, None, why)
     ns, ts, cs = rv("snow")
     # D57: a five-season total exists only when one station gives every season, so the first station named is the one
     snow_station = next((s for s in (rows.get("snow") or {}).get("stations") or [] if s), None)
+    label, kind, unit = spec("snowfall_season")
     lines["snowfall_season"] = _line(
-        "snowfall_season", "Snowfall, July to June (inches, station reading)", "Station reading", "in", ns,
+        "snowfall_season", label, kind, unit, ns,
         L["snowfall_season"].format(total=WORDS_SUMMARY["in_plain"].format(inches=stations.fmt_in(ns)), station=snow_station)
         if ns is not None and snow_station else None, _row_why(rows.get("snow")) or ts, cs)
     nd, td, cd = rv("snow_depth")
+    label, kind, unit = spec("snow_depth")
     lines["snow_depth"] = _line(
-        "snow_depth", "Deepest snow on the ground (inches, station reading)", "Station reading", "in", nd,
+        "snow_depth", label, kind, unit, nd,
         L["snow_depth"].format(largest=td) if nd is not None else None, _row_why(rows.get("snow_depth")) or td, cd)
     # the kind word leads the line in every state, the unavailable ones too (D41, D57): "Station reading:" comes first
-    dl_label = ("Days with 1 inch or more on the ground and a low below 32 F (days; a measured pattern, not ice dams)")
+    dl_label, dl_kind, dl_unit = spec("ice_dam_weather_days")
 
     def ice_line(why, coverage=None):
         """The ice-dam line with no figure: "Station reading: {label}. {reason}", the reason ending with the all-clear."""
-        line = _line("ice_dam_weather_days", dl_label, "Station reading", "days", None, None, why, coverage)
+        line = _line("ice_dam_weather_days", dl_label, dl_kind, dl_unit, None, None, why, coverage)
         line["text"] = _clear(L["ice_dam_unavailable"].format(
             label=dl_label, why=why or WORDS_SUMMARY["cell_unavailable"]))
         return line
@@ -2228,43 +2549,49 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
             dl = {"value": None, "date": None, "text": None, "coverage": dl.get("coverage"), "note": note}
         if dl["value"] is not None:
             lines["ice_dam_weather_days"] = _line(
-                "ice_dam_weather_days", dl_label, "Station reading", "days", dl["value"],
+                "ice_dam_weather_days", dl_label, dl_kind, dl_unit, dl["value"],
                 L["ice_dam_weather_days"].format(count=_count_text("days", dl["value"]), station=names[0]),
                 dl.get("note"), dl.get("coverage"))
         else:
             lines["ice_dam_weather_days"] = ice_line(dl.get("note"), dl.get("coverage"))
     else:                                                 # the count did not build (F1): the D20 sentence, no no-station claim
         lines["ice_dam_weather_days"] = ice_line(station_part)
-    lines["freezing_rain_reports"] = counted("freezing_rain_reports", "Freezing rain reports within 5 miles (count)", "Report",
-                                             "count", "freezing_rain_n", "freezing_rain_n", L["freezing_rain_reports"])
-    lines["ice_storm_warnings"] = from_cells("ice_storm_warnings", "Ice storm warnings for the zone (count)", "Zone product",
-                                             "count", "ice_storm", "ice_storm", L["ice_storm_warnings"])
-    lines["winter_storm_warnings"] = from_cells("winter_storm_warnings", "Winter storm warnings for the zone (count)",
-                                                "Zone product", "count", "winter_storm", "winter_storm",
+    lines["freezing_rain_reports"] = counted("freezing_rain_reports", "freezing_rain_n", "freezing_rain_n",
+                                             L["freezing_rain_reports"])
+    lines["ice_storm_warnings"] = from_cells("ice_storm_warnings", "ice_storm", "ice_storm", L["ice_storm_warnings"])
+    lines["winter_storm_warnings"] = from_cells("winter_storm_warnings", "winter_storm", "winter_storm",
                                                 L["winter_storm_warnings"])
     npr, tpr, cpr = rv("precip")
+    label, kind, unit = spec("precipitation_year")
     lines["precipitation_year"] = _line(
-        "precipitation_year", "Precipitation (inches, grid estimate)", "Grid estimate", "in", npr,
+        "precipitation_year", label, kind, unit, npr,
         L["precipitation_year"].format(total=tpr) if npr is not None else None, _row_why(rows.get("precip")) or tpr, cpr)
     npm, tpm, cpm = rv("precip_max")
+    label, kind, unit = spec("largest_one_day_rain")
     lines["largest_one_day_rain"] = _line(
-        "largest_one_day_rain", "Largest one-day precipitation (inches, grid estimate)", "Grid estimate", "in", npm,
+        "largest_one_day_rain", label, kind, unit, npm,
         L["largest_one_day_rain"].format(largest=tpm) if npm is not None else None, _row_why(rows.get("precip_max")) or tpm,
         cpm)
-    lines["rain_reports"] = from_cells("rain_reports", "Rain reports within 5 miles (count)", "Report", "count",
-                                       "rain_reports", "rain_n", L["rain_reports"])
+    lines["rain_reports"] = from_cells("rain_reports", "rain_reports", "rain_n", L["rain_reports"])
     nfl, tfl, cfl = rv("flood_report_n")
     nfw, tfw, cfw = rv("flood_warn")
-    lines["flood_reports_warnings"] = _line(
-        "flood_reports_warnings", "Flood and flash flood reports and warnings (count)", "Report", "count", nfl,
-        L["flood_reports_warnings"].format(
-            report=_report_clause("flood_report_n", nfl, "these five years",
-                                  f"{_count_text('flood_report_n', nfl)} within 5 miles in these five years"),
-            count_w=_count_text("flood_warn", nfw), covered=covered)
-        if nfl is not None and nfw is not None else None, tfl or tfw, cfl)
+    label, kind, unit = spec("flood_reports_warnings")
+    flood_text = None
+    if nfl is not None and nfw is not None:
+        if town:
+            report_t = _town_five(_town_five_text("flood_report_n", nfl, "within 5 miles"), partial_row("flood_report_n"))
+            flood_text = (_tidy(W["town_report"].format(count=report_t)) + " "
+                          + town_count(W["town_warning"], "flood_warn", nfw, partial_row("flood_warn"), covered))
+        else:
+            flood_text = L["flood_reports_warnings"].format(
+                report=_report_clause("flood_report_n", nfl, "these five years",
+                                      f"{_count_text('flood_report_n', nfl)} within 5 miles in these five years"),
+                count_w=_count_text("flood_warn", nfw), covered=covered)
+    lines["flood_reports_warnings"] = _line("flood_reports_warnings", label, kind, unit, nfl, flood_text, tfl or tfw, cfl)
     heat = [ext("heat_advisory"), ext("excessive_heat"), ext("extreme_heat")]
+    label, kind, unit = spec("heat_reports_warnings")
     if all(h is not None and h["value"] is not None for h in heat):
-        partial_h = "not counting" in (heat[0].get("text") or "")
+        partial_h = PARTIAL_MARKER in (heat[0].get("text") or "")
         x_report = _report_clause("xheat", heat[2]["value"], "these five years",
                                   f"{_count_text('xheat', heat[2]['value'])} within 5 miles in these five years")
         heat_text = (L["heat_reports_warnings_partial"].format(count_h=heat[0]["text"],
@@ -2275,29 +2602,22 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
                                                        count_e=_count_text("excessive_heat", heat[1]["value"]),
                                                        report=x_report))
         lines["heat_reports_warnings"] = _line(
-            "heat_reports_warnings", "Heat advisories, excessive heat warnings and extreme heat reports (count)",
-            "Zone product", "count", heat[0]["value"], heat_text, None, heat[0].get("coverage"))
+            "heat_reports_warnings", label, kind, unit, heat[0]["value"], heat_text, None, heat[0].get("coverage"))
     else:
         why = next((h["note"] for h in heat if h and h.get("note")), None)
-        lines["heat_reports_warnings"] = _line(
-            "heat_reports_warnings", "Heat advisories, excessive heat warnings and extreme heat reports (count)",
-            "Zone product", "count", None, None, why)
+        lines["heat_reports_warnings"] = _line("heat_reports_warnings", label, kind, unit, None, None, why)
     held = WORDS_INDICATORS["held"]
-    held_names = {"ponding": "Water ponding on a roof", "roof_surface_temperature": "Roof surface temperature at this spot",
-                  "fema_flood_zones": "Flood zones (FEMA)", "lightning": "Lightning", "uv_and_sun": "UV and sunlight",
-                  "ground_snow_load": "Ground snow load (design map value)",
-                  "snotel": "Snow water equivalent at a SNOTEL site"}
     groups = []
     for gkey, gname in GROUPS:
         refs = []
         for rid in WORDS_INDICATORS["refs"].get(gkey, ()):
             ref = REFERENCE_LINES[rid]
-            refs.append({"id": rid, "kind": "Reference", "source": ref["source"], "url": ref["url"],
-                         "text": f"{ref['source']}: “{ref['quote']}”"})
+            refs.append({"id": rid, "kind": KIND_REFERENCE, "source": ref["source"], "url": ref["url"],
+                         "text": REFERENCE_LINE.format(source=ref["source"], quote=ref["quote"])})
         groups.append({"key": gkey, "name": gname,
                        "lines": [lines[i] for i in INDICATOR_GROUPS.get(gkey, ())],
                        "references": refs,
-                       "held": [{"id": h, "kind": "Data unavailable", "label": held_names[h], "text": held[h]}
+                       "held": [{"id": h, "kind": KIND_UNAVAILABLE, "label": HELD_NAMES[h], "text": held[h]}
                                 for h in HELD_GROUPS.get(gkey, ())]})
     return {"title": WORDS_SUMMARY["section_titles"]["roof"], "lead": WORDS_INDICATORS["section_lead"],
             "kind_key": WORDS_INDICATORS["kind_key"], "groups": groups,
@@ -2307,8 +2627,9 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
 
 def _extra(spot: _Spot, events: dict | None, tile: dict | None, lsr: list[dict] | None) -> dict:
     """The roof counts the table does not carry, as season cells. A count whose part did not load is that part's own
-    sentence instead (D16): never a count of nothing."""
-    out = {}
+    sentence instead (D16): never a count of nothing. The partial season's counts of the warnings (D79(b)) are under
+    "partial"; a count that did not load has none."""
+    out = {"partial": {}}
     tile = tile or {}
     lsr = lsr or []
 
@@ -2326,6 +2647,20 @@ def _extra(spot: _Spot, events: dict | None, tile: dict | None, lsr: list[dict] 
         msg = blocked(part)
         out[key] = msg if msg else make()
 
+    def polygon(key: str, kinds: tuple, noun: str, partial: bool) -> None:
+        """A polygon warning count (D11, D38), with its partial season's count when the count builds (D79(b))."""
+        msg = blocked("warnings")
+        if msg:
+            out[key] = msg
+            return
+        days = _polygon_days(spot, events, kinds, CODES["warning"])
+        if isinstance(days, str):
+            out[key] = days
+            return
+        out[key] = _count_cells(spot, days, noun)
+        if partial:
+            out["partial"][key] = _partial_of(spot, days)
+
     def detection_days() -> list:
         """The SPC report days of the hail signatures within 2 miles; a day counts once, however many rows it has."""
         return sorted({joins.spc_day(joins.utc_from_row(d_, t_))
@@ -2333,17 +2668,17 @@ def _extra(spot: _Spot, events: dict | None, tile: dict | None, lsr: list[dict] 
                        if joins.haversine_km(spot.lat, spot.lon, lat, lon) / joins.MILE_KM <= joins.DETECT_MILES})
 
     put("hail_signatures", "detections", lambda: _count_cells(spot, detection_days(), "days"))
-    put("hail_warnings", "warnings", lambda: _polygon_cells(spot, events, ("SV",), "W", "sv"))
-    put("tornado_warnings", "warnings", lambda: _polygon_cells(spot, events, ("TO",), "W", "tornado"))
+    polygon("hail_warnings", CODES["polygon"]["sv"], "sv", partial=True)
+    polygon("tornado_warnings", CODES["polygon"]["to"], "tornado", partial=False)
     put("records_tornado", "records",
         lambda: _count_cells(spot, [r["day"] for r in spot.records_within(events)
-                                    if r["code"] in ("tornado", "funnel cloud")], "tornado_nc"))
+                                    if r["code"] in CODES["tornado_record_kinds"]], "tornado_nc"))
     put("tornado_reports", "reports",
-        lambda: _count_cells(spot, [r["day"] for r in lsr if r["kind"] in ("tornado", "funnel cloud", "landspout")],
-                             "tornado"))
-    put("rain_reports", "reports", lambda: _count_cells(spot, [r["day"] for r in lsr if r["kind"] == "rain"], "rain_n"))
+        lambda: _count_cells(spot, [r["day"] for r in lsr if r["kind"] in CODES["tornado_kinds"]], "tornado"))
+    put("rain_reports", "reports",
+        lambda: _count_cells(spot, [r["day"] for r in lsr if r["kind"] == CODES["rain_kind"]], "rain_n"))
     put("extreme_heat", "reports",
-        lambda: _count_cells(spot, [r["day"] for r in lsr if r["kind"] == "extreme heat"], "xheat"))
+        lambda: _count_cells(spot, [r["day"] for r in lsr if r["kind"] == CODES["extreme_heat_kind"]], "xheat"))
 
     def zone_cells(kinds: tuple, sigs: tuple, noun: str, family: str | None):
         msg = blocked("zones")
@@ -2354,21 +2689,23 @@ def _extra(spot: _Spot, events: dict | None, tile: dict | None, lsr: list[dict] 
             return _joins_unavailable("zones", "the zone file did not load")
         return _zone_cells(spot, tile, days, noun, family)
 
-    out["heat_advisory"] = zone_cells(("HT",), ("Y",), "heat_advisory", "heat_advisory")
-    out["excessive_heat"] = zone_cells(("EH",), ("W",), "excessive_heat", None)
+    warning = CODES["warning"]
+    out["heat_advisory"] = zone_cells(CODES["zone"]["ht"], (CODES["heat_advisory"],), "heat_advisory", "heat_advisory")
+    out["excessive_heat"] = zone_cells(CODES["zone"]["eh"], (warning,), "excessive_heat", None)
     # an ice storm warning may sit in a winter storm product that could not be placed (D31): the winter storm family's
     # caveat goes on the zero (its own count is the same family in the zone rows)
-    out["ice_storm"] = zone_cells(("IS",), ("W",), "ice_storm", "winter_storm")
-    out["winter_storm"] = zone_cells(("WS",), ("W",), "winter_storm", "winter_storm")
+    out["ice_storm"] = zone_cells(CODES["zone"]["is"], (warning,), "ice_storm", "winter_storm")
+    out["winter_storm"] = zone_cells(CODES["zone"]["ws"], (warning,), "winter_storm", "winter_storm")
     return out
 
 
 def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, section_notes=None,
-              covered: str | None = None) -> list[dict]:
+              covered: str | None = None, town: bool = False) -> list[dict]:
     """The eleven sections in the brief's order: a heading, one lead sentence with its kind word (the five-season figures
     of the table and the roof lines), and the sentence's kind. The rows under each heading are built by the page from the
     same records. On a town page the flooding section also carries the river gauge lines (D6); the heat and flooding
-    sections carry the Montana statement of zone products that could not be placed (section_notes; B5 D27)."""
+    sections carry the Montana statement of zone products that could not be placed (section_notes; B5 D27). On a town page
+    the storms and the flooding leads name the five-season count and the partial season's count apart (D79(b))."""
     W = WORDS_SUMMARY
     T = W["section_titles"]
     covered = covered or W["covered"]
@@ -2383,7 +2720,7 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
         row = rows.get(key)
         if row is None or row.get("five") is None:
             return WORDS_SUMMARY["cell_unavailable"]
-        if "not counting" in (row.get("five_text") or ""):
+        if PARTIAL_MARKER in (row.get("five_text") or ""):
             return row["five_text"]
         return _count_text(noun, row["five"])
 
@@ -2394,7 +2731,7 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
         five = _extra_five(cells, key)
         if five is None or five["value"] is None:
             return WORDS_SUMMARY["cell_unavailable"]
-        if "not counting" in five["text"]:
+        if PARTIAL_MARKER in five["text"]:
             return five["text"]
         return _count_text(noun, five["value"])
 
@@ -2413,6 +2750,19 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
         f = _extra_five(cells, key)
         return None if f is None else f["value"]
 
+    def partial_row(key: str):
+        """D79(b): a table row's partial season (its count and valid days), on a town page only."""
+        return (rows.get(key) or {}).get("partial") if town else None
+
+    def partial_extra(key: str):
+        return ((extra.get("partial") or {}).get(key)) if town else None
+
+    def town_count(key: str, n, partial, tail: str = "") -> str:
+        """One storm or flood count on a town page: the five-season words and the partial season's, or the unavailable words."""
+        if n is None:
+            return W["cell_unavailable"]
+        return _town_five(_town_five_text(key, n, tail), partial)
+
     def report(key: str, noun: str, auto_key: str | None = None, tail: str = "") -> str:
         """The report clause of a lead: the five-season count (with its automated part), or the no-report sentence when
         the count is zero (D41); Data unavailable when the count did not load."""
@@ -2420,7 +2770,7 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
         if n is None:
             return "Report: " + W["cell_unavailable"]
         auto = auto_clause(auto_key) if auto_key else ""
-        return _report_clause(noun, n, "these five years", f"{_count_text(noun, n)} within 5 miles{tail}{auto}")
+        return _report_clause(noun, n, "these five years", REPORT_NEAR.format(count=_count_text(noun, n), tail=tail) + auto)
 
     def record(key: str, noun: str) -> str:
         """The record clause of the flooding lead (D48): the five-season count of NCEI records with its kind word; for a
@@ -2436,7 +2786,7 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
     def finish(text: str, keys: tuple) -> str:
         """A lead: one full stop, the all-clear sentence when a part did not load or only some seasons are shown (D41), and
         the days missing among its rows once (D33): the most days missing in any row it reads."""
-        partial = ALL_CLEAR in text or W["cell_unavailable"] in text or "not counting" in text
+        partial = ALL_CLEAR in text or W["cell_unavailable"] in text or PARTIAL_MARKER in text
         body = _tidy(_without_clear(text).replace(".;", ";"))
         missing = 0
         for k in keys:
@@ -2448,7 +2798,7 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
             body = f"{body} {W['lead_missing'].format(n=f'{missing:,}')}"
         return _clear(body) if partial else body                 # the all-clear sentence closes the line (D41)
 
-    station_name = (gust or {}).get("name", "the nearest station")
+    station_name = (gust or {}).get("name", NEAREST_STATION)
     if (rows.get("gust_days") or {}).get("five") is None:
         wind_lead = W["lead_wind_unavailable"].format(station=station_name, report=report("wind_n", "wind_n", "wind_n"))
     else:
@@ -2465,23 +2815,41 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
     else:
         snow_text = W["lead_snow_none"].format(depth=five_text("snow_depth"))
 
+    if town:
+        storms_text = " ".join([
+            _tidy(W["town_zone"].format(count=town_count("hw_zone", five_n("hw_zone"), partial_row("hw_zone")))),
+            _tidy(W["town_warning"].format(count=town_count("sv", extra_n("hail_warnings"), partial_extra("hail_warnings"),
+                                                            covered)))])
+        flood_text = " ".join([
+            _tidy(W["town_report"].format(count=town_count("flood_report_n", five_n("flood_report_n"),
+                                                          partial_row("flood_report_n"), "within 5 miles"))),
+            _tidy(W["town_record"].format(kind=KIND_RECORD, count=town_count(
+                "flood_record_n", five_n("flood_record_n") if "flood_record_n" in rows else extra_n("flood_record_n"),
+                partial_row("flood_record_n"), "within 5 miles"))),
+            _tidy(W["town_warning"].format(count=town_count("flood_warn", five_n("flood_warn"), partial_row("flood_warn"),
+                                                            covered)))])
+    else:
+        storms_text = W["lead_storms"].format(hw=count_text("hw_zone", "hw_zone"),
+                                              sv=extra_count("sv", "hail_warnings"), covered=covered)
+        flood_text = W["lead_flood"].format(report=report("flood_report_n", "flood_report_n"),
+                                            record=record("flood_record_n", "flood_record_n"),
+                                            flood_w=count_text("flood_warn", "flood_warn"), covered=covered)
+
+    hail_report = report("hail_n", "hail_n", tail=TAIL_FIVE_COMMA)
+    if (rows.get("radar_1in") or {}).get("five") is None:       # the five-season count is Data unavailable (D82(c))
+        hail_lead = W["lead_hail_unavailable"].format(report=hail_report)
+    else:
+        hail_lead = W["lead_hail"].format(radar=count_text("days", "radar_1in"), report=hail_report)
     leads = {
-        "hail": finish(W["lead_hail"].format(radar=count_text("days", "radar_1in"),
-                                             report=report("hail_n", "hail_n", tail=", in these five years")),
-                       ("radar_1in", "hail_n")),
+        "hail": finish(hail_lead, ("radar_1in", "hail_n")),
         "wind": finish(wind_lead, ("gust_days", "wind_n")),
-        "storms": finish(W["lead_storms"].format(hw=count_text("hw_zone", "hw_zone"),
-                                                 sv=extra_count("sv", "hail_warnings"), covered=covered),
-                         ("hw_zone", "hail_warnings")),
+        "storms": finish(storms_text, ("hw_zone", "hail_warnings")),
         "temperature": finish(W["lead_temperature"].format(tmax=five_text("tmax"), tmin=five_text("tmin")),
                               ("tmax", "tmin")),
         "rain": finish(W["lead_rain"].format(precip=five_text("precip"), pmax=five_text("precip_max")),
                        ("precip", "precip_max")),
         "snow": finish(snow_text, ("snow", "snow_depth")),
-        "flooding": finish(W["lead_flood"].format(report=report("flood_report_n", "flood_report_n"),
-                                                  record=record("flood_record_n", "flood_record_n"),
-                                                  flood_w=count_text("flood_warn", "flood_warn"), covered=covered),
-                           ("flood_report_n", "flood_record_n", "flood_warn")),
+        "flooding": finish(flood_text, ("flood_report_n", "flood_record_n", "flood_warn")),
         "ice": finish(W["lead_ice"].format(report=report("freezing_rain_n", "freezing_rain_n"),
                                            ice=count_text("ice_warn", "ice_warn")),
                       ("freezing_rain_n", "ice_warn")),
@@ -2491,13 +2859,10 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
         "roof": (roof or {}).get("unavailable") or W["lead_roof"],
         "made": W["lead_made"],
     }
-    kinds = {"hail": "Radar estimate", "wind": "Station reading", "storms": "Zone product",
-             "temperature": "Grid estimate", "rain": "Grid estimate", "snow": "Station reading", "flooding": "Report",
-             "ice": "Report", "heat": "Grid estimate", "roof": "Reference", "made": "Reference"}
     notes = section_notes or {}
     out = []
     for sid in ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made"):
-        entry = {"id": sid, "heading": T[sid], "lead": leads[sid], "kind": kinds[sid]}
+        entry = {"id": sid, "heading": T[sid], "lead": leads[sid], "kind": SECTION_KINDS[sid]}
         if sid == "flooding" and gauge_lines:
             entry["lines"] = list(gauge_lines)
         if notes.get(sid):
@@ -2518,6 +2883,8 @@ def _how_made() -> list[str]:
         "Gusts: IEM daily summaries of the airport stations. Gusts of 130 kt or more are dropped and counted as implausible; two readings are flagged for check, and the flag shows with them.",
         "Stations: NOAA GHCN-Daily from NCEI, public domain in the United States under NCEI-PD-10-2-02, section 4(a). CoCoRaHS records are released under CC BY 3.0 and ask for acknowledgement. A station value shows only when 95 percent of its season's days have the element; a missing day is never zero.",
         "Station rule: the candidates are stations in Montana and the neighbouring states within 40 miles; Canadian stations within 40 miles are named as not read and never count as passing. A station is current for an element when it reported that element within 30 days of the newest date; at least 80 percent of the days 2020 to 2025 have an unflagged value; the two nearest that pass.",
+        # D79(a), D80(c): a station's position comes from its source; two sources can place one airport a few hundred yards apart
+        "A station's position comes from its source. Two sources can place one airport a few hundred yards apart, so two rows may give slightly different distances to the same airport.",
         "Gauges: NWS flood stages (National Water Prediction Service) and USGS annual peaks. Observations courtesy of U.S. Geological Survey. The nearest gauge with a flood stage within 10 miles; it does not say water reached this address.",
         "Counties: US Census Bureau TIGER/Line 2026 county boundaries. “The TIGER/Line shapefile products are not copyrighted; however, TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source.”",
         _size_legend(),
@@ -2650,8 +3017,7 @@ def describe_summary(store, row: int, col: int, now, town=None) -> dict:
                 {"county_watch": _unavailable_row(_spec("county_watch"), joins.WORDS_JOINS["county_unavailable"])})
     climate_rows = guard("grid", lambda: _climate_part(spot))
     if climate_rows is None:
-        climate_rows = {k: _unavailable_row(_spec(k), climate.WORDS_CLIMATE["unavailable"].format(part=WORDS_SUMMARY["temperature_part"], part_lower=WORDS_SUMMARY["temperature_part_lower"]))
-                        for k in CLIMATE_KEYS}
+        climate_rows = _climate_unavailable_rows()
     rows.update(climate_rows)
     station_rows = guard("stations", lambda: _station_part(spot))
     if station_rows is None:
@@ -2681,7 +3047,7 @@ def describe_summary(store, row: int, col: int, now, town=None) -> dict:
     if roof is None:                                      # F10: the roof section says what did not load (D16, D20)
         roof = {"title": WORDS_SUMMARY["section_titles"]["roof"], "lead": WORDS_INDICATORS["section_lead"],
                 "kind_key": WORDS_INDICATORS["kind_key"], "groups": [], "how_made": [], "lines": 0,
-                "unavailable": WORDS_SUMMARY["unavailable_part"].format(part="The roof lines", part_lower="roof lines")}
+                "unavailable": WORDS_SUMMARY["unavailable_part"].format(part=ROOF_PART, part_lower=ROOF_PART_LOWER)}
         problems.append("roof: the roof lines could not be built")
 
     # the table, in the brief's order (the town rows only on a town page)
@@ -2710,7 +3076,8 @@ def describe_summary(store, row: int, col: int, now, town=None) -> dict:
     # the partial line is partial, so it ends with the all-clear sentence (D41)
     partial = {"label": PARTIAL, "text": _clear(partial_text or WORDS_SUMMARY["partial_none"].format(season=PARTIAL))}
     table = {"columns": list(COLUMNS), "rows": table_rows, "partial": partial, "held": WORDS_INDICATORS["held"]["lightning"]}
-    sections = _sections(rows, roof, extra, gauge_lines, spot.gust, _section_notes(spot), covered=spot.covered_words())
+    sections = _sections(rows, roof, extra, gauge_lines, spot.gust, _section_notes(spot), covered=spot.covered_words(),
+                         town=bool(town_doc))
     stale = None
     if now is not None and index.get("as_of"):
         today = now.date() if isinstance(now, datetime) else now
@@ -2721,9 +3088,56 @@ def describe_summary(store, row: int, col: int, now, town=None) -> dict:
     return _result(state, "; ".join(problems) if problems else None, place, index, table, roof, sections, town_block, stale)
 
 
+def kind_what(town: bool = False) -> dict:
+    """The sentence each kind of record opens with on its section, keyed by the row label the section shows: the words the
+    modules hold (hail.WORDS, WORDS_INDICATORS, joins.WORDS_JOINS). A town page's warnings are counted at the town point (D38),
+    so its "Warning" sentence says so (D71, F4). build.history_view and the browser's sections read the same words."""
+    return {KIND_RADAR: hail.WORDS["what_this_is"], "Report": WORDS_INDICATORS["what_reports"],
+            "Record": joins.WORDS_JOINS["records_what"], "Detection": joins.WORDS_JOINS["detections_what"],
+            "Warning": WORDS_INDICATORS["what_warnings_town" if town else "what_warnings"],
+            "Zone product": joins.WORDS_JOINS["zones_what"], "County product": joins.WORDS_JOINS["county_what"],
+            "Station": WORDS_INDICATORS["what_station"], "Station reading": WORDS_INDICATORS["what_station"],
+            "Grid estimate": WORDS_INDICATORS["what_grid"]}
+
+
+def _roof_line_specs() -> dict:
+    """The 23 roof lines as the browser reads them: the label (with its variables), the kind word and the noun."""
+    return {ind: {"label": label, "kind": kind, "noun": ROOF_NOUNS[ind]} for ind, (label, kind, _unit) in ROOF_LINES.items()}
+
+
+def _section_data() -> dict:
+    """summary.section_data: the words, rules and tables the browser reads for the sheet's joined sections, the roof section and
+    the table's notes (D29, D41: map.js carries no sentence, unit, rule or constant of its own). Every value is one that the
+    Python section and town-page builders use, so the two cut the same rows the same way."""
+    return {
+        "kind": {"radar": KIND_RADAR, "report": KIND_REPORT, "record": KIND_RECORD, "reference": KIND_REFERENCE,
+                 "unavailable": KIND_UNAVAILABLE},
+        "kinds": dict(SECTION_KINDS),
+        "kind_what": kind_what(town=False),
+        "row_labels": list(ROW_LABELS),
+        "rules": {"by_label": dict(ROW_SECTION), "product_labels": list(PRODUCT_LABELS),
+                  "product_patterns": list(PRODUCT_PATTERNS), "zone_labels": list(ZONE_LABELS), "zone_split": ZONE_SPLIT,
+                  "time_pattern": TIME_PATTERN, "split": ROW_SPLIT, "rules": [[sid, pat] for sid, pat in SECTION_RULES],
+                  "default": SECTION_DEFAULT},
+        "season_rows": [{"section": sid, "kind": kind, "keys": list(keys), "names": list(names)}
+                        for sid, kind, keys, names in SEASON_ROWS],
+        "section_keys": {sid: list(keys) for sid, keys in SECTION_KEYS.items()},
+        "extra_notes": {sid: list(keys) for sid, keys in EXTRA_NOTES.items()},
+        "part_sections": dict(PART_SECTIONS),
+        "partial_marker": PARTIAL_MARKER,
+        "words": {"span_to": SPAN_TO, "report_near": REPORT_NEAR, "tail_five_roof": TAIL_FIVE_ROOF,
+                  "tail_five_comma": TAIL_FIVE_COMMA, "nearest_station": NEAREST_STATION, "no_miles": NO_MILES,
+                  "roof_part": ROOF_PART, "roof_part_lower": ROOF_PART_LOWER, "county_word": COUNTY_WORD},
+        "roof": {"lines": _roof_line_specs(), "extra": roof_extra(), "held_names": dict(HELD_NAMES),
+                 "reference_line": REFERENCE_LINE, "partial_keys": list(ZONE_EXTRA)},
+    }
+
+
 def map_data_summary(index: dict | None) -> dict:
     """The summary's words, row order, kind words and units for the browser (part B2 fills them). The templates are the
-    same strings Python uses; the browser divides each integer by the row's scale and shows it to its decimals."""
+    same strings Python uses; the browser divides each integer by the row's scale and shows it to its decimals. The section
+    kinds, the roof lines, the held names, the codes the counts read and the rule's distances are here too (D40: the browser
+    recomputes the counts from the tile files, so no block lists per-cell results)."""
     loaded = isinstance(index, dict) and bool(index.get("window"))
     return {
         "format": FORMAT,
@@ -2741,22 +3155,32 @@ def map_data_summary(index: dict | None) -> dict:
         "indicators": {"words": WORDS_INDICATORS, "groups": [list(g) for g in GROUPS],
                        "indicator_groups": {k: list(v) for k, v in INDICATOR_GROUPS.items()},
                        "held_groups": {k: list(v) for k, v in HELD_GROUPS.items()},
-                       "references": REFERENCE_LINES},
+                       "references": REFERENCE_LINES,
+                       "roof_lines": {key: {"label": label, "kind": kind, "unit": unit}
+                                      for key, (label, kind, unit) in ROOF_LINES.items()},
+                       "held_names": dict(HELD_NAMES)},
         "thresholds": climate.THRESHOLDS,
         "rule": {"radius_miles": TOWN_RADIUS, "fresh_days": stations.FRESH_DAYS, "cover_min": stations.COVER_MIN,
                  "unread_names_shown": stations.UNREAD_NAMES_SHOWN,
-                 "season_min": SEASON_SHARE, "gust_kt": GUST_KT, "one_inch_tenths": ONE_INCH_TENTHS,
-                 "floor_tenths": FLOOR_TENTHS, "wind_codes": list(WIND_CODES)},
+                 "season_min": SEASON_SHARE, "season": dict(SEASON_RULE), "percent": dict(PERCENT), "gust_kt": GUST_KT,
+                 "one_inch_tenths": ONE_INCH_TENTHS,
+                 "floor_tenths": FLOOR_TENTHS, "wind_codes": list(WIND_CODES),
+                 "report_miles": joins.REPORT_MILES, "detect_miles": joins.DETECT_MILES, "mile_km": joins.MILE_KM},
         # the fixed order of the sections (Hail first, How this was made last) and the file the station picks read (D36)
         "sections": list(WORDS_SUMMARY["section_titles"]),
+        "section_kinds": dict(SECTION_KINDS),
+        "how_made": _how_made(),
         "tile_list": "hail/tl/{tile}.json",
         "tile_list_format": TILE_LIST_FORMAT,
         "nouns": {key: list(pair) for key, pair in NOUNS.items()},
         "report_types": dict(REPORT_TYPES),
         "record_types": dict(RECORD_TYPES),
         "auto_sources": list(AUTO_SOURCES),
+        "codes": CODES,
+        "zone_extra": dict(ZONE_EXTRA),
         "element_names": {element: stations.element_name(element) for element in stations.CORE},
         "family_nouns": {fam: noun for fam, _products, noun in UNPLACED_FAMILIES},
         "unplaced_products": {product: fam for fam, products, _noun in UNPLACED_FAMILIES for product in products},
         "conv": STATION_UNIT_CONV,
+        "section_data": _section_data(),
     }

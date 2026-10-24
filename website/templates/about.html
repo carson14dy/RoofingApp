@@ -22,11 +22,11 @@
       not measurements at a roof.</li>
     <li><strong>Storm reports</strong> are preliminary hail and wind reports gathered by the Storm Prediction Center. Hail sizes are as
       reported; a report is a point, not the edge of a storm.</li>
-    {% if storm_layers %}<li><strong>Radar echo tops</strong> are NOAA's radar estimate (MRMS) for each town: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data, in metres above sea level ("at least" when heights above it had no radar value). The 11 heights run from 500 to 15,000 m above sea level. They are not observed hail or damage, and no echo is not an all-clear.</li>
+    {% if storm_layers %}<li><strong>Radar echo tops</strong> are NOAA's radar estimate (MRMS) for each town: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data, in metres above sea level ("at least" when heights above it had no radar value). The 11 heights run from 500 to 15,000 m above sea level. They are not observed hail or harm to a roof, and no echo at 35 dBZ does not rule out hail.</li>
     {% endif %}
-    {% if storm_layers %}<li><strong>Satellite picture</strong> is NOAA's GOES infrared picture (band 13, 10.3 µm) of the newest 5-minute scan over the map's area, in kelvin. It is an observation of the infrared brightness temperature of the cloud tops and of the ground where there is no cloud. It is not a height and not a hail signal. GOES-East is read first; GOES-West is used when GOES-East fails or has no scan in the last hour. An uncorrected cloud top is drawn away from the satellite (north-west for GOES-East, north-east for GOES-West), about 3 to 4 km for a 2 km top and 20 to 33 km for a 12 to 15 km top. Missing pixels are hatched, never drawn as clear sky. Areas warmer than 300 K are left uncoloured, and missing areas show hatch lines; uncoloured is not a statement about the weather.</li>
+    {% if storm_layers %}<li><strong>Satellite picture</strong> is NOAA's GOES infrared picture (band 13, 10.3 µm) of the newest 5-minute scan over the map's area, in kelvin. It is an observation of the infrared brightness temperature of the cloud tops and of the ground where there is no cloud. It is not a height and not a hail signal. GOES-East is read first; GOES-West is used when GOES-East is unavailable or has no scan in the last hour. An uncorrected cloud top is drawn away from the satellite (north-west for GOES-East, north-east for GOES-West), about 3 to 4 km for a 2 km top and 20 to 33 km for a 12 to 15 km top. Missing pixels are hatched, never drawn as cloud-free sky. Areas warmer than 300 K are left uncoloured, and missing areas show hatch lines; uncoloured is not a statement about the weather.</li>
     {% endif %}
-    {% if storm_layers %}<li><strong>Hail swath (radar estimate)</strong> is NOAA's MRMS MESH (maximum estimated size of hail), a radar estimate of the largest hail over each 0.01-degree cell, about 0.7 miles north to south and 0.5 miles east to west, in the last hour and in the last 24 hours. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart, so uncoloured is not the same as no hail. Hatched cells have no radar coverage. It is an estimate, not observed hail and not damage. The map works out how old each picture is when you look at it, and an old or missing picture says "This is not an all-clear."</li>
+    {% if storm_layers %}<li><strong>Hail swath (radar estimate)</strong> is NOAA's MRMS MESH (maximum estimated size of hail), a radar estimate of the largest hail over each 0.01-degree cell, about 0.7 miles north to south and 0.5 miles east to west, in the last hour and in the last 24 hours. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart, so uncoloured is not the same as no hail. Hatched cells have no radar coverage. It is an estimate, not observed hail and not an inspection. The map works out how old each picture is when you look at it, and an old or missing picture says "This is not an all-clear."</li>
     {% endif %}
   </ul>
 
@@ -129,11 +129,11 @@
 
   <h2>Flags</h2>
   <p>An hour is flagged for gusts of {{ limits.gust_mph }}&nbsp;mph or more, sustained wind of {{ limits.wind_mph }}&nbsp;mph or more, a
-    {{ limits.pop_pct }}% or higher chance of rain or snow, or a temperature under {{ limits.cold_f }}&nbsp;°F or over {{ limits.hot_f }}&nbsp;°F.
-    These are placeholders until the company sets limits for its roof systems. A missing value never raises a flag and never clears one.
-    An hour without a flag is not a promise that work is safe.</p>
+    rain or snow percent of {{ limits.pop_pct }}% or higher, or a temperature under {{ limits.cold_f }}&nbsp;°F or over {{ limits.hot_f }}&nbsp;°F.
+    These are placeholders until the company sets limits for its roof systems. A missing value never raises a flag and never removes one.
+    An hour without a flag is not a promise that work can go ahead.</p>
 
-  <h2>When something fails</h2>
+  <h2>When something goes wrong</h2>
   <p>If a source doesn't answer, the page says so and shows a dash instead of a number. If the alert list can't be refreshed, the
     last list that was checked stays on the page with its time. The line under the header lists each source and whether it loaded.
     If a page is more than 25 minutes old, it says so.</p>

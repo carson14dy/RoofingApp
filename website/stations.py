@@ -104,6 +104,12 @@ the town pages and the browser run (D63); verify checks it against point_rule an
 its four cell corners and its four routed corners. verify also records the two picks at the Billings and Benchland
 points for every element (tile_picks).
 
+Names (D78(c)): each station has one display name, written as "name" wherever a station is written (the sd summaries, the
+stations block, every tile list entry: passing, unread and rejected), and the GHCN name beside it as "ghcn_name". The
+display name is display_name(ghcn_name), decided once here (title case; the direction and distance tokens, the one-letter
+words, the digits and the initialisms and codes keep their case; an abbreviation of a word is title-cased like a word). The words modules print "name" as given and never re-case it.
+The gust rows (IEM) keep the names their source gives.
+
 Command line (run from the repository root):
     python -m website.stations build --store DIR --cache DIR [--procs 4] [--offline] [--scope daily|monthly]
                                     [--refresh all|none] [--refresh-ids FILE] [--deadline-at EPOCH]
@@ -118,6 +124,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 import tempfile
 import threading
@@ -161,13 +168,15 @@ MAX_ROWS_PER_FILE = 2_000_000
 TOWNS_FILE = Path(__file__).resolve().parent / "towns.json"
 TILE_LIST_PREFIX = "hail/tl/"        # D36: the tile lists, one file per B1 tile (the folder is rebuilt whole)
 TILE_LIST_FORMAT = "hail-stn-tiles-v1"    # hail/tl/<tile>.json; "capped" is false in every list written since D61
+TILE_LIST_BUDGET_GZIP = 100_000      # D61, D66: every tile list file is under this many bytes gzip (the per-tile budget)
 CANADA_PREFIX = "CA"                 # D62: a GHCN identifier beginning CA is a Canadian station, a candidate not read
 CANADA_REASON = "in Canada; the terms for its data are under review"    # D62: the reason its unread entries carry
 POOL_PAD_MILES = 1.0                 # D62: the pool box is wider than the largest radius by this much (a safety margin)
 LAT_MILES_FLOOR = 68.0               # miles per degree of latitude, rounded down from 69.09: a bound, never a distance
-# Gate points (B5 gates B5-3 and B5-9): Billings as the research measured it, and Benchland's point (47.08, 110.02). The
-# Benchland cell centre (47.075, 110.015) is checked too, in verify, and reported.
-GATE_POINTS = {"billings": (45.7836, -108.5047), "benchland": (47.08, -110.02)}
+# Gate points (B5 gates B5-3 and B5-9). Billings is the town point in towns.json (D80(a): the one Billings point, which the
+# town page and the gate use; verify checks it against towns.json). Benchland's point is (47.08, -110.02). The Benchland cell
+# centre (47.075, -110.015) is checked too, in verify, and reported.
+GATE_POINTS = {"billings": (45.7833, -108.5007), "benchland": (47.08, -110.02)}
 
 
 class StationsError(Exception):
@@ -188,8 +197,7 @@ WORDS = {
     "snotel": "{station} is a SNOTEL site. It reports snow depth, not snowfall.",
     "stale": "The newest report from {station} is dated {date}.",
     "none": "No station within 40 miles has enough reports for {element} from 2020 to 2025.",
-    "two_of_one": ("Only one station within 40 miles has enough reports for {element} from 2020 to 2025: {station}. "
-                   "Stations that did not pass are not shown."),
+    "two_of_one": "Only one station within 40 miles has enough reports for {element} from 2020 to 2025: {station}.",
     # D28 (B5 part B1): the D20 sentence the unavailable block carries in "problem"; the technical reason is "detail"
     "unavailable": ("Station readings could not be loaded in this update; that is not the same as no station reading. "
                     "This is not an all-clear."),
@@ -208,8 +216,72 @@ WORDS = {
     "share": "{station}: {k} of {d} days ({share} percent) with a {element} value.",
     "lead": ("Station readings come from the two nearest stations within 40 miles that have enough reports; a reading "
              "is at the station, not at this address."),
-    "not_shown": "{element} for {season} is not shown at {station}: {k} of {d} days have a value, under 95 percent.",
 }
+
+
+# ---------------------------------------------------------------- station names (D78(c))
+
+# GHCN writes most names in capitals ("HARLOWTON 11NW", "MOCCASIN EXP STN") and a few in mixed case ("Hawkins Lake"). The
+# product shows one form, decided here once and written into the files: name (the display form) and ghcn_name (the GHCN
+# name, kept beside it). Every capitalised word is title-cased ("Harlowton", "Moccasin", "Lake") except these, which keep
+# the case they have: a number ("1.7", "#2"); a compass or distance token after a number ("11NW", "2WNW", "1.7 E": the
+# compass letters keep their case); a one-letter word ("W Glacier", "Buffalo 1.7 E"); an initialism or a code from
+# NAME_CAPITALS ("WTP", "AP", "RS", "NP", "ASOS", "PH", "SKQ"); and a word already in mixed case ("Hawkins Lake" and
+# "McDonald" stay as they are). An abbreviation of a word is title-cased like a word (D84(b)): "INTL" is "Intl", "EXP" is
+# "Exp", "STN" is "Stn", "CRK" is "Crk", "MT" is "Mt", "CO" is "Co", "AUT" is "Aut", and "ST" after a number is "St"
+# ("GREAT FALLS 16ST" is "Great Falls 16St"). "OF", "AND" and "THE" stay lower case inside a name ("Port of Morgan").
+# Punctuation stays where it is: "(Closed)", "St.", "D'Alene".
+COMPASS_TOKENS = frozenset({"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW",
+                            "NNW"})
+# D84(b): the capitals a name keeps. Initialisms (the decision's list: AP, ASOS, NWS, RS, NP, WTP, WFO, AFB, SPC, FAA,
+# USGS, SNOTEL, and the others the box's names write in initials: AFS, AGCM, AGDM, BYU, CDA, EPF, HQ, NMEM, PH, SCS, WB,
+# WPCC, BFA, HWOS) keep their capitals. So do the identifiers that are not words and that the source does not spell out
+# (BRBC, FTS, IML, KRXK, KSRV, KTNY, MSR, OASS, PAR, SKQ, SS): title-casing an identifier gives another identifier ("KSRV"
+# would read "Ksrv"). AUT is not listed: it abbreviates "automatic" (the station type in Canadian names), so it is
+# title-cased like a word. Abbreviations of words are not listed here, so they are title-cased like any word: INTL, EXP,
+# STN, CRK, CTR, ENT, FK, FLD, MIN, MUNI, PLT, PWR, RSCH, RVR, SCH, SCI, TWR, UNIV, AG, RCH, LK, MTN, MT, CO, ST, FT, AUT.
+NAME_CAPITALS = frozenset({
+    "AFB", "AFS", "AGCM", "AGDM", "AP", "ASOS", "BFA", "BYU", "CDA", "EPF", "FAA", "HQ", "HWOS", "NMEM", "NP", "NWS", "PH",
+    "RS", "SCS", "SNOTEL", "SPC", "USGS", "WB", "WFO", "WPCC", "WTP",
+    "BRBC", "FTS", "IML", "KRXK", "KSRV", "KTNY", "MSR", "OASS", "PAR", "SKQ", "SS"})
+NAME_LOWER_WORDS = frozenset({"OF", "AND", "THE"})
+
+
+def _title_run(match: re.Match) -> str:
+    run = match.group(0)
+    return run if len(run) == 1 else run[0].upper() + run[1:].lower()
+
+
+def _digit_run(match: re.Match) -> str:
+    """A letter run in a word that has a digit: a compass token or a capital from NAME_CAPITALS keeps its case ("11NW",
+    "2WNW"); any other run is an abbreviation of a word and is title-cased like one ("16ST" is "16St", D84(b))."""
+    run = match.group(0)
+    if run.upper() in COMPASS_TOKENS or run.upper() in NAME_CAPITALS:
+        return run
+    return _title_run(match)
+
+
+def display_name(ghcn_name: str) -> str:
+    """The display form of a GHCN station name (D78(c)), by the rule above. The words are the name's own, separated by one
+    space; a word with fewer than two letters (a number, a one-letter word) and a word already in mixed case keep their
+    form. Pure: the same name always gives the same display name, and display_name(display_name(x)) == display_name(x)."""
+    out = []
+    for position, word in enumerate(ghcn_name.split()):
+        letters = [ch for ch in word if ch.isalpha()]
+        mixed = any(ch.islower() for ch in letters) and any(ch.isupper() for ch in letters)
+        if len(letters) < 2 or mixed:
+            out.append(word)                                  # a number, a one-letter word, or the source's own mixed case
+        elif any(ch.isdigit() for ch in word):
+            out.append(re.sub(r"[A-Za-z]+", _digit_run, word))  # "11NW" keeps NW; "16ST" is "16St" (D84(b))
+        else:
+            core = "".join(letters).upper()
+            if core in COMPASS_TOKENS or core in NAME_CAPITALS:
+                out.append(word.upper())
+            elif core in NAME_LOWER_WORDS and position > 0:
+                out.append(word.lower())
+            else:
+                out.append(re.sub(r"[A-Za-z]+", _title_run, word))
+    return " ".join(out)
 
 
 # ---------------------------------------------------------------- dates, periods and grid helpers
@@ -374,8 +446,9 @@ def pool_box(points, radius_miles: float) -> tuple[float, float, float, float]:
 
 
 def parse_station_list(text: str, box: tuple[float, float, float, float]) -> dict[str, dict]:
-    """ghcnd-stations.txt: the stations inside box as {id: {id, lat, lon, elev, name, net, state}} (fixed columns of the
-    GHCN readme: ID 1-11, LATITUDE 13-20, LONGITUDE 22-30, ELEVATION 32-37, STATE 39-40, NAME 42-71). box is (south, north,
+    """ghcnd-stations.txt: the stations inside box as {id: {id, lat, lon, elev, name, ghcn_name, net, state}}, where name is
+    the display form and ghcn_name the GHCN name (D78(c)). The columns are the GHCN readme's: ID 1-11, LATITUDE 13-20,
+    LONGITUDE 22-30, ELEVATION 32-37, STATE 39-40, NAME 42-71. box is (south, north,
     west, east) in degrees and is the pool (D62): the pool is kept by position, not by state. state is kept for the snow
     regression, which reads Montana stations only. A line whose position cannot be read is a StationsError, because a
     station that cannot be placed cannot be ruled out of the rule."""
@@ -392,7 +465,8 @@ def parse_station_list(text: str, box: tuple[float, float, float, float]) -> dic
         if not (south <= lat <= north and west <= lon <= east):
             continue
         sid = line[0:11]
-        out[sid] = {"id": sid, "lat": lat, "lon": lon, "elev": elev, "name": line[41:71].strip(),
+        ghcn = line[41:71].strip()
+        out[sid] = {"id": sid, "lat": lat, "lon": lon, "elev": elev, "name": display_name(ghcn), "ghcn_name": ghcn,
                     "net": NETWORK.get(sid[2:3], "other"), "state": line[38:40].strip()}
     return out
 
@@ -464,11 +538,12 @@ def parse_dly(data: bytes | str, station_id: str, first_year: int = 2020) -> dic
 # ---------------------------------------------------------------- the per-station summary
 
 def summarize(meta: dict, parsed: dict, as_of: date) -> dict:
-    """The hail/sd file content for one station (without the file's own envelope): its position, the newest unflagged
-    date per element, the 2020-2025 coverage counts, the current flag per element (D18), and every period's figures
-    (see the module doc).
+    """The hail/sd file content for one station (without the file's own envelope): its name (the display form) and the GHCN
+    name beside it (D78(c)), its position, the newest unflagged date per element, the 2020-2025 coverage counts, the current
+    flag per element (D18), and every period's figures (see the module doc).
 
     Pure: the same parsed file and as_of always give the same dict (the byte-identical gate depends on it)."""
+    ghcn_name = meta.get("ghcn_name", meta["name"])      # D78(c): the GHCN name; "name" is its display form
     obs = parsed["obs"]
     present = [e for e in CORE if obs.get(e)]
     newest: dict[str, int | None] = {e: None for e in CORE}
@@ -561,8 +636,8 @@ def summarize(meta: dict, parsed: dict, as_of: date) -> dict:
                 if element in rec:
                     rec[element] = _clean(rec[element])
     out = {
-        "f": FORMAT, "id": meta["id"], "name": meta["name"], "lat": meta["lat"], "lon": meta["lon"],
-        "elev": meta["elev"], "net": meta["net"], "as_of": as_of.isoformat(),
+        "f": FORMAT, "id": meta["id"], "name": display_name(ghcn_name), "ghcn_name": ghcn_name, "lat": meta["lat"],
+        "lon": meta["lon"], "elev": meta["elev"], "net": meta["net"], "as_of": as_of.isoformat(),
         "current": {e: bool(newest_current({e: newest[e]}, as_of)) for e in CORE},
         "newest": {e: date_int(date.fromordinal(newest[e])) if newest[e] is not None else None for e in CORE},
         "cover": {e: cover.get(e, 0) for e in present},
@@ -691,8 +766,9 @@ def _passing_list(candidates: list[tuple[float, str]], summaries: dict, element:
     candidate kept (no cap: the list holds every passing station of the tile's radius, so a point of the tile is answered
     from the list as the point rule answers it). A passing station is current for the element with at least COVER_MIN of
     COVER_DAYS (the rule's own test). A candidate that is not read (failed, or a Canadian station, D62) is listed in unread
-    with its name, position and reason, and the walk goes past it (D32: never silently). where maps an id to its
-    (lat, lon, name) for the unread entries. Returns {"passing": [...], "unread": [...], "rejected": [], "capped": False,
+    with its name (display and GHCN), position and reason, and the walk goes past it (D32: never silently). where maps an id to
+    its (lat, lon, name, ghcn_name) for the unread entries. Each passing entry carries "name" (the display form) and
+    "ghcn_name" (D78(c)). Returns {"passing": [...], "unread": [...], "rejected": [], "capped": False,
     "need": id or None}; need names a candidate with no summary yet, and the caller pulls it and walks again. collect fills
     rejected (rejected_of_tile, D69) once every file is read."""
     passing, unread = [], []
@@ -701,8 +777,9 @@ def _passing_list(candidates: list[tuple[float, str]], summaries: dict, element:
         entry = summaries.get(sid) or {}
         if sid in failed or entry.get("unread"):
             reason = failed[sid] if isinstance(failed, Mapping) and sid in failed else entry.get("reason")
-            lat, lon, name = where.get(sid, (None, None, None))
-            unread.append({"id": sid, "name": entry.get("name") or name or sid, "lat": lat, "lon": lon,
+            lat, lon, name, ghcn = where.get(sid, (None, None, None, None))
+            unread.append({"id": sid, "name": entry.get("name") or name or sid,
+                           "ghcn_name": entry.get("ghcn_name") or ghcn or sid, "lat": lat, "lon": lon,
                            "miles": round(miles, 1), "reason": reason})
             continue
         if sid not in summaries:
@@ -713,8 +790,8 @@ def _passing_list(candidates: list[tuple[float, str]], summaries: dict, element:
         ok = sd["cover"][element]
         share = ok / COVER_DAYS
         if bool(sd["current"].get(element)) and share >= COVER_MIN:
-            passing.append({"id": sid, "name": sd["name"], "lat": sd["lat"], "lon": sd["lon"],
-                            "miles": round(miles, 1), "ok": ok, "of": COVER_DAYS, "share": round(share, 4)})
+            passing.append({"id": sid, "name": sd["name"], "ghcn_name": sd.get("ghcn_name", sd["name"]), "lat": sd["lat"],
+                            "lon": sd["lon"], "miles": round(miles, 1), "ok": ok, "of": COVER_DAYS, "share": round(share, 4)})
     return {"passing": passing, "unread": unread, "rejected": [], "capped": False, "need": None}
 
 
@@ -732,8 +809,9 @@ def rejected_of_tile(base: list[tuple[float, str]], summaries: dict, element: st
         current = bool(sd["current"].get(element))
         if current and share >= COVER_MIN:
             continue
-        rows.append({"id": sid, "name": sd["name"], "lat": sd["lat"], "lon": sd["lon"], "miles": round(miles, 1), "ok": ok,
-                     "of": COVER_DAYS, "share": round(share, 4), "current": current, "newest": sd["newest"].get(element)})
+        rows.append({"id": sid, "name": sd["name"], "ghcn_name": sd.get("ghcn_name", sd["name"]), "lat": sd["lat"],
+                     "lon": sd["lon"], "miles": round(miles, 1), "ok": ok, "of": COVER_DAYS, "share": round(share, 4),
+                     "current": current, "newest": sd["newest"].get(element)})
     return rows
 
 
@@ -1282,7 +1360,7 @@ def collect(index: dict, cache: Path, *, offline: bool = False, refresh="none", 
     # D36, D61: the tile lists (every passing station within each tile's radius; no cap). The walk pulls the files they need,
     # and every file it reads joins the rule set (the daily refresh set) and the chosen set.
     tile_keys = [loc["key"] for loc in locs if loc["key"].startswith("tile:")]
-    where = {sid: (meta["lat"], meta["lon"], meta["name"]) for sid, meta in alive.items()}
+    where = {sid: (meta["lat"], meta["lon"], meta["name"], meta["ghcn_name"]) for sid, meta in alive.items()}
     while True:
         needs = set()
         tile_lists = {key: {element: _passing_list(candidates(key, element), summaries, element, as_of, fails_by_id, where)
@@ -1388,8 +1466,8 @@ def _tile_block(tl_files: dict, tile_lists: dict, margins: dict) -> dict:
 
 
 def _light(sd: dict) -> dict:
-    return {"name": sd["name"], "lat": sd["lat"], "lon": sd["lon"], "elev": sd["elev"], "net": sd["net"],
-            "current": sd["current"], "newest": sd["newest"], "cover": sd["cover"]}
+    return {"name": sd["name"], "ghcn_name": sd.get("ghcn_name", sd["name"]), "lat": sd["lat"], "lon": sd["lon"],
+            "elev": sd["elev"], "net": sd["net"], "current": sd["current"], "newest": sd["newest"], "cover": sd["cover"]}
 
 
 def _towns_block(results: dict, summaries: dict, locs: list[dict], as_of: date) -> dict:
@@ -1420,8 +1498,8 @@ def _unread_entries(got: dict) -> dict[str, dict]:
         if meta is None:
             continue
         elements = [e for e in sorted(got["walk_inv"].get(sid, {})) if _reports_now(got["inventory"], sid, e, current_min_year)]
-        out[sid] = {"name": meta["name"], "lat": meta["lat"], "lon": meta["lon"], "elev": meta["elev"],
-                    "net": meta["net"], "unread": True, "reason": got["fails_by_id"].get(sid),
+        out[sid] = {"name": meta["name"], "ghcn_name": meta["ghcn_name"], "lat": meta["lat"], "lon": meta["lon"],
+                    "elev": meta["elev"], "net": meta["net"], "unread": True, "reason": got["fails_by_id"].get(sid),
                     "cover": {element: None for element in elements}}
     return out
 
@@ -1637,6 +1715,17 @@ def verify(store: Path) -> dict:
             nonint += 1
     check("sd figures are integers and the format is hail-stn-v1", nonint == 0, f"{nonint} problems")
     stations_doc = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in files}
+    # D78(c): each name is the display form of its GHCN name, in the sd files and in the stations block
+    names_bad = sum(1 for doc in stations_doc.values() if doc.get("name") != display_name(doc.get("ghcn_name") or ""))
+    names_bad += sum(1 for row in block.get("stations", {}).values()
+                     if row.get("name") != display_name(row.get("ghcn_name") or ""))
+    check("station names are the display form of their GHCN names (D78(c)): sd files and stations block", names_bad == 0,
+          f"{names_bad} names differ")
+    # D80(a): the Billings gate point is the Billings town point in towns.json
+    town = next((t for t in json.loads(TOWNS_FILE.read_text(encoding="utf-8")) if t["slug"] == "billings"), None)
+    check("gate point billings is the Billings town point in towns.json (D80(a))",
+          town is not None and GATE_POINTS["billings"] == (float(town["lat"]), float(town["lon"])),
+          f"{GATE_POINTS['billings']} against {None if town is None else (town['lat'], town['lon'])}")
     # gate B5-3: Billings and Benchland
     rules = _verify_gates(block, stations_doc, check)
     # gate B5-9: the corrected roof series, reproduced under D1 from the Billings airport file (USW00024033); the
@@ -1740,6 +1829,7 @@ def _verify_tile_lists(store: Path, index: dict, block: dict, manifest: dict, ch
             bad += 1
     check("manifest lists each tile list with its bytes and SHA-256", bad == 0, f"{bad} mismatches")
     problems = 0
+    name_problems = 0
     stations_rows = block.get("stations", {})
     not_read = set(block.get("not_read_station_ids", []))
     failed = set(block.get("failed_station_ids", []))
@@ -1753,6 +1843,9 @@ def _verify_tile_lists(store: Path, index: dict, block: dict, manifest: dict, ch
         for element, res in doc.get("elements", {}).items():
             if res.get("centre") != doc.get("centre") or res.get("margin_miles") != margin:
                 problems += 1
+            for entry in (*res.get("passing", []), *res.get("unread", []), *res.get("rejected", [])):
+                if entry.get("name") != display_name(entry.get("ghcn_name") or ""):
+                    name_problems += 1
             passing = res.get("passing", [])
             if res.get("capped") is not False or [p["miles"] for p in passing] != sorted(p["miles"] for p in passing):
                 problems += 1
@@ -1775,6 +1868,8 @@ def _verify_tile_lists(store: Path, index: dict, block: dict, manifest: dict, ch
     check("tile lists: format, margin, uncapped, nearest first, passing entries current at 80 percent and within the radius, "
           "unread entries are candidates not read, rejected entries are read candidates that fail the rule", problems == 0,
           f"{problems} problems")
+    check("tile lists: every entry's name is the display form of its ghcn_name (D78(c))", name_problems == 0,
+          f"{name_problems} entries differ")
     daily = set(block.get("chosen_station_ids") or [])
     outside = sorted({p["id"] for doc in docs.values() for res in doc.get("elements", {}).values()
                       for p in res.get("passing", []) if p["id"] not in daily})
@@ -1786,7 +1881,7 @@ def _verify_tile_lists(store: Path, index: dict, block: dict, manifest: dict, ch
     raw = [p.read_bytes() for p in files]          # D61: the file sizes, the largest list and the time are recorded
     parity["tile_files"] = {
         "files": len(raw), "bytes": sum(len(r) for r in raw),
-        "largest_gzip": max((len(gzip.compress(r, 9, mtime=0)) for r in raw), default=0),
+        "largest_gzip": max((len(gzip.compress(r, 9, mtime=0)) for r in raw), default=0), "budget_gzip": TILE_LIST_BUDGET_GZIP,
         "longest_list": max((len(res.get("passing", [])) for doc in docs.values()
                              for res in doc.get("elements", {}).values()), default=0),
         "largest_rejected": max((len(res.get("rejected", [])) for doc in docs.values()

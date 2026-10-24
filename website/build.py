@@ -31,6 +31,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from . import addresses as ad
 from . import buildings as bd
 from . import hail as hs
+from . import summary as sm
 from . import sources as src
 from . import streets as st
 
@@ -679,6 +680,29 @@ JOIN_HAIL_UNIT = "in"         # the unit a hail magnitude is written in (joins.L
 JOIN_UNIT_WORDS = {"mph": "magnitude_mph", "kt": "magnitude_kt"}   # unit -> the words key that shows it
 JOIN_HEADS = {"reports": "Report", "records": "Record", "detections": "Detection", "warnings": "Warning",
               "zones": "Zone product", "stations": "Station"}     # the town tables' one column: the row labels of D3
+# the section each joined part's lines are notes of (D82(d)): the freshness lines of detections and warnings, the NCEI flood
+# cause line and the unplaced records, the zone-switch, unplaced and county (no county product) lines, the station flag and the
+# implausible-count line. A part with no line in describe_joins (reports) has no entry. The browser reads it from the joins block.
+JOIN_PART_SECTIONS = sm.PART_SECTIONS         # summary.py holds the map (section_data.part_sections reads it too)
+# the lines that belong to a part of their own although describe_joins writes them in another part's section (the county
+# product lines and the fire-zone lines sit in the zones section); each is matched by its words (joins.WORDS_JOINS)
+JOIN_OWN_LINES = {"county": ("county_unavailable", "county_lead_none", "county_lead_one", "county_lead_many"),
+                  "fire": ("zones_fire_unavailable", "zones_fire_none")}
+
+
+def _line_pattern(template: str) -> re.Pattern:
+    """A words template as a pattern: its values ({name}) match any text."""
+    return re.compile(re.sub(r"\\\{\w+\\\}", ".+?", re.escape(template)))
+
+
+def _line_part(text: str, part: str) -> str:
+    """The part a joined line feeds (D82(d)): its own part when its words are a county or fire-zone line, else its section's part."""
+    from . import joins as jn
+    for own, keys in JOIN_OWN_LINES.items():
+        for key in keys:
+            if _line_pattern(jn.WORDS_JOINS[key]).fullmatch(text):
+                return own
+    return part
 
 
 # the store's counts that the sheet's lines read (joins.describe_joins): the browser takes the same values from the block
@@ -694,7 +718,7 @@ def join_block(jn, index: dict, sample: bool) -> dict:
     store = index[jn.INDEX_KEY]
     block.update({"earth_radius_km": jn.EARTH_KM, "here_miles": JOIN_HERE_MILES, "spc_hours": JOIN_SPC_HOURS,
                   "hundredths_per_inch": JOIN_HUNDREDTHS, "hail_unit": JOIN_HAIL_UNIT,
-                  "unit_words": dict(JOIN_UNIT_WORDS), "show_first": JOIN_SHOW_FIRST,
+                  "unit_words": dict(JOIN_UNIT_WORDS), "show_first": JOIN_SHOW_FIRST, "part_sections": dict(JOIN_PART_SECTIONS),
                   "partial": dict(store.get("partial", {})), "zone_names": dict(store.get("zone_names", {})),
                   "counts": {key: int(store.get(key, 0)) for key in JOIN_COUNTS},
                   "fire_state": store.get("fire_zones", {}).get("state", "unavailable")})
@@ -738,8 +762,9 @@ def join_view(section: dict) -> dict:
     return {"key": section["id"], "head": JOIN_HEADS[section["id"]], "heading": section["heading"],
             "lead": section["lead"] or "", "fire_lead": section.get("fire_lead") or "", "rows": rows,
             "what": " ".join(x for x in (section["what"], section["source"]) if x),
-            "note": " ".join(section["lines"]), "unavailable": _clear_words(section["unavailable"] or ""),
-            "show_all": JOIN_SITE_WORDS["show_all"].format(n=len(rows))}
+            "lines": list(section["lines"]), "note": " ".join(section["lines"]),
+            "line_parts": [_line_part(line, section["id"]) for line in section["lines"]],
+            "unavailable": _clear_words(section["unavailable"] or ""), "show_all": JOIN_SITE_WORDS["show_all"].format(n=len(rows))}
 
 
 def join_view_unavailable(jn) -> dict:
@@ -1032,8 +1057,10 @@ HISTORY_WORDS = {
     "no_reason": "No reason was recorded for this value in this update.",
     "show_all": "Show all {n} rows",
     "town_title": "Five years of weather at {town}",
-    "cell": ("The table is for the grid cell at the town's centre, about 0.7 miles north to south and 0.5 miles east to west. "
-             "The grid and radar rows are for that cell; each station row names its station and its distance from the town."),
+    # the radar rows are for the radar cell (hail.CELL_DEG), the grid rows for the 1/24 degree grid cell (climate.py's words)
+    "cell": ("The radar rows are for the radar cell at the town's centre, about 0.7 miles north to south and 0.5 miles east "
+             "to west. The grid rows are for the grid cell there, about 4.6 km north to south and about 3 km east to west. "
+             "Each station row names its station and its distance from this spot."),
     "footnotes": "Data unavailable, with the reason",
     "table_caption": "Five seasons, July to June, at {town}: each row names its kind of record and its unit.",
     "gauge_label": "River gauge",
@@ -1041,19 +1068,13 @@ HISTORY_WORDS = {
     "times": "Times are Montana time, with the zone abbreviation (MDT or MST).",
 }
 HISTORY_SECTIONS = ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made")
-# the kind label a joins row starts with (B2 D3); the rest of the row is the joins' own words
-_KIND_LABEL = re.compile(r"^(Report|Record|Detection|Warning|Watch|Advisory|Zone product|County product|Station): (.*)$", re.S)
-# the sections a joins row can go to, by its type or product words (the first rule that matches decides; a row no rule
-# matches is a storm or warning row, so no joined row is dropped)
-_SECTION_RULES = (
-    ("ice", re.compile(r"\b(freezing|sleet|ice|winter|blizzard|wind chill|extreme cold|frost|freeze|cold)\b", re.I)),
-    ("heat", re.compile(r"\bheat\b", re.I)),
-    ("flooding", re.compile(r"\b(flood|flash|debris)\b", re.I)),
-    ("snow", re.compile(r"\bsnow", re.I)),
-    ("hail", re.compile(r"\bhail\b", re.I)),
-    ("rain", re.compile(r"\b(rain|drought)\b", re.I)),
-    ("wind", re.compile(r"\b(winds?|wnd|gusts?|dust)\b", re.I)),
-)
+# the kind label, the section rules and the words that cut a joined row are summary.py's (section_data reads the same ones)
+_KIND_LABEL = sm.KIND_LABEL
+_PRODUCT_PATTERNS = tuple(re.compile(p) for p in sm.PRODUCT_PATTERNS)
+_ZONE_SPLIT = re.compile(sm.ZONE_SPLIT)
+_TIME = re.compile(sm.TIME_PATTERN, re.I)
+_ROW_SPLIT = re.compile(sm.ROW_SPLIT)
+_SECTION_RULES = tuple((sid, re.compile(pattern, re.I)) for sid, pattern in sm.SECTION_RULES)
 
 
 def _split_kind(text: str) -> tuple[str, str]:
@@ -1064,25 +1085,24 @@ def _split_kind(text: str) -> tuple[str, str]:
 
 def _section_of(label: str, body: str) -> str:
     """The section a joined row belongs to, from its kind and its type or product words (B5): a station row is wind, a
-    detection is hail, a warning, watch, advisory or zone row takes its product's name, and a report or record takes its type word."""
-    if label == "Station":
-        return "wind"
-    if label == "Detection":
-        return "hail"
-    if label in ("Warning", "Watch", "Advisory"):
+    detection is hail, a warning, watch or advisory row takes its product's name, a zone or county product its name before
+    the comma, and a report or record its type word. The first rule that matches decides (summary.SECTION_RULES)."""
+    if label in sm.ROW_SECTION:
+        return sm.ROW_SECTION[label]
+    if label in sm.PRODUCT_LABELS:
         # the product's name only: a B5 row reads "...: flood watch, TFX, covered this cell or part of it; tags: ...", so
         # the tags (hail, wind) never move a warning, watch or advisory to another section (D41)
-        m = re.search(r"in effect: ([^,;]+)", body) or re.search(r": ([^:,;]+), [A-Z0-9]{2,4}, covered", body)
+        m = _PRODUCT_PATTERNS[0].search(body) or _PRODUCT_PATTERNS[1].search(body)
         words = m.group(1) if m else body
-    elif label in ("Zone product", "County product"):
-        words = re.split(r", fire weather zone|:", body, maxsplit=1)[0]
+    elif label in sm.ZONE_LABELS:
+        words = _ZONE_SPLIT.split(body, maxsplit=1)[0]
     else:
-        m = re.search(r"\d{1,2}:\d{2} ?[ap]m(?: [A-Z]{2,4})?: (.*)$", body, re.I)     # "5:16 pm MDT: tstm wnd gst, ..."
-        words = re.split(r", | \(", m.group(1) if m else body, maxsplit=1)[0]
-    for key, rule in _SECTION_RULES:
+        m = _TIME.search(body)                                                  # "5:16 pm MDT: tstm wnd gst, ..."
+        words = _ROW_SPLIT.split(m.group(1) if m else body, maxsplit=1)[0]
+    for sid, rule in _SECTION_RULES:
         if rule.search(words):
-            return key
-    return "storms"
+            return sid
+    return sm.SECTION_DEFAULT
 
 
 def snow_map_block(index: dict | None) -> dict:
@@ -1111,7 +1131,14 @@ def stations_map_block(index: dict | None) -> dict:
             "season_min": stations.SEASON_MIN, "cover_days": stations.COVER_DAYS, "tile": "hail/sd/{station}.json",
             "tile_list": "hail/tl/{tile}.json", "tile_list_format": stations.TILE_LIST_FORMAT,
             "canada_reason": stations.CANADA_REASON,
-            "words": dict(stations.WORDS)}
+            # the rule's words, and the four verbs of the candidates not read (stations.py's own words, D71 F8)
+            "words": {**stations.WORDS, **summary_status_words()}}
+
+
+def summary_status_words() -> dict:
+    """The station status verbs (summary.STATUS_WORDS: stations.py's own function, written once there), for the stations block."""
+    from . import summary
+    return dict(summary.STATUS_WORDS)
 
 
 def gauges_map_block(index: dict | None) -> dict:
@@ -1131,15 +1158,22 @@ def county_map_block(index: dict | None) -> dict:
     joins_block = index.get(jn.INDEX_KEY) if isinstance(index, dict) else None
     counties = (joins_block or {}).get("counties") if isinstance(joins_block, dict) else None
     counties = counties if isinstance(counties, dict) else {}
+    names = dict(counties.get("names") or {})
+    # the name without the word County, by the rule joins.py applies to a row's county (the browser's county line and the
+    # county products' note read this, so the page never adds a second County)
     return {"state": counties.get("state", "unavailable"),
             "problem": _clear_words(counties.get("reason") or (None if counties else "the county files are not in this store")),
-            "count": counties.get("count"), "names": dict(counties.get("names") or {}), "tile": "hail/k/{county}.json",
+            "count": counties.get("count"), "names": names,
+            "short_names": {code: name.replace(f" {sm.COUNTY_WORD}", "") for code, name in names.items()},
+            "tile": "hail/k/{county}.json",
             "words": {k: v for k, v in jn.WORDS_JOINS.items() if k.startswith("county_")}}
 
 
-# the phone view at zoom 15 with every layer on stays under this many gzip bytes (B5-12, D42): 650 KB, in the unit the smoke
-# test uses (tools/smoke_map.py ADDRESS_FETCH_BUDGET_GZIP); the browser reads it from map.json hail.budget
-PHONE_GZIP_BUDGET = 650 * 1024
+# the phone view at zoom 15 with every layer on stays under this many gzip bytes (B5-12, D42, D70, D82(b)): 700,000 bytes. It was
+# 650 KB (665,600 bytes) before the browser's sections landed; the sheet's words and sections now come from map.json, and B3's
+# tile membership sets are 80,186 bytes gzip (D66), so the budget is restated with that reason and no words or rows are cut.
+# The browser and the smoke read it from map.json hail.budget.
+PHONE_GZIP_BUDGET = 700_000
 
 
 def b5_map_blocks(index: dict | None) -> dict:
@@ -1282,16 +1316,62 @@ def _window_lines(s: dict, through: str | None) -> list[str]:
 
 
 def kind_what(town: bool = False) -> dict:
-    """The sentence each kind of record opens with on its section: the words the modules already hold (hail.WORDS,
-    summary.WORDS_INDICATORS, joins.WORDS_JOINS), keyed by the row label the section shows. A town page's warnings are
-    counted at the town point (D38), so its "Warning" sentence says so (D71, F4)."""
-    from . import joins as jn, summary as sm
-    W = sm.WORDS_INDICATORS
-    return {"Radar estimate": hs.WORDS["what_this_is"], "Report": W["what_reports"],
-            "Record": jn.WORDS_JOINS["records_what"], "Detection": jn.WORDS_JOINS["detections_what"],
-            "Warning": W["what_warnings_town" if town else "what_warnings"], "Zone product": jn.WORDS_JOINS["zones_what"],
-            "County product": jn.WORDS_JOINS["county_what"], "Station": W["what_station"],
-            "Station reading": W["what_station"], "Grid estimate": W["what_grid"]}
+    """The sentence each kind of record opens with on its section (summary.kind_what): the town page's warnings are counted
+    at the town point (D38, D71 F4), so its "Warning" sentence says so."""
+    return sm.kind_what(town)
+
+
+def history_sections(s: dict, jv: dict, radar: dict, *, town_page: bool, through: str | None) -> dict:
+    """The rows and the notes of the eleven sections, built one way for the sheet and the town page (B5 R11, D82(d)): the
+    per-season rows of the table, the radar days, each joined part's rows by their kind words, the river gauge lines (a town
+    page only), and each section's notes in this order: the words of its kinds, the radar's lead and class counts, the table's
+    notes, the words of the section, the joined lines of the part it feeds, then the radar's missing days and source. The
+    browser mirrors this order from section_data and the joins block (D29, D41)."""
+    from . import summary as sm
+    W, H = sm.WORDS_SUMMARY, HISTORY_WORDS
+    rows = {r["key"]: r for r in s["table"]["rows"]}
+
+    # the rows of each section: the grid and station rows (per season), the radar days and the joined rows by kind
+    bucket: dict[str, list[dict]] = {k: [] for k in HISTORY_SECTIONS}
+    for sid, kind, keys, names in sm.SEASON_ROWS:
+        bucket[sid] += _per_season(rows, kind, keys, names)
+    if radar.get("state") == "loaded":
+        bucket["hail"] += [{"label": sm.KIND_RADAR, "text": r["text"]} for r in radar.get("rows", [])]
+    for sec in jv.get("sections", []):
+        for row in sec.get("rows", []):
+            label, body = _split_kind(row["text"])
+            bucket[_section_of(label, body)].append({"label": label, "text": body, "note": row.get("note") or ""})
+    bucket["flooding"] = [{"label": H["gauge_label"], "text": line} for line in (s.get("town") or {}).get("gauge") or []] \
+        + bucket["flooding"]
+
+    notes: dict[str, list[str]] = {k: [] for k in bucket}
+    for sec_id, keys in sm.SECTION_KEYS.items():
+        for key in keys:
+            for note in (rows.get(key) or {}).get("notes", []):
+                if note not in notes[sec_id]:
+                    notes[sec_id].append(note)
+    for sec_id, word_keys in sm.EXTRA_NOTES.items():                # D23: the analysis was checked and left out
+        notes[sec_id] += [W[word] for word in word_keys]
+    for part in jv.get("sections", []):                              # D82(d): each part's lines, under the section it feeds
+        for line, line_part in zip(part.get("lines") or [], part.get("line_parts") or []):
+            target = JOIN_PART_SECTIONS.get(line_part)
+            if line and target in notes:
+                notes[target].append(line)
+    notes["made"] = list(s.get("how_made") or []) + _window_lines(s, through) + [H["times"]]
+    # each section opens with what its kinds of record are (the words each kind has, per section, once)
+    what = kind_what(town=town_page)
+    radar_head = ([radar["lead"]] if radar.get("lead") else []) \
+        + ([radar["class_title"]] + list(radar.get("class_lines") or []) if radar.get("class_lines") else [])
+    radar_tail = [radar[k] for k in ("missing", "source") if radar.get(k)]
+    for sid in HISTORY_SECTIONS:
+        kinds = list(dict.fromkeys(row["label"] for row in bucket[sid]))
+        first = [what[k] for k in kinds if k in what]
+        if sid == "hail":
+            first += radar_head
+            notes[sid] = first + notes[sid] + radar_tail
+        else:
+            notes[sid] = first + notes[sid]
+    return {"rows": bucket, "notes": notes}
 
 
 def history_view(s: dict, jv: dict, radar: dict, town: dict, now, through: str | None) -> dict:
@@ -1324,48 +1404,14 @@ def history_view(s: dict, jv: dict, radar: dict, town: dict, now, through: str |
     view["notices"] += [sec["unavailable"] for sec in jv.get("sections", []) if sec.get("unavailable")]
     if radar.get("unavailable"):
         view["notices"].append(_clear_words(radar["unavailable"]))
-    rows = {r["key"]: r for r in s["table"]["rows"]}
-
-    # the rows of each section: the grid and station rows (per season), the radar days and the joined rows by kind
-    bucket: dict[str, list[dict]] = {k: [] for k in HISTORY_SECTIONS}
-    bucket["temperature"] += _per_season(rows, "Grid estimate", ("tmax", "tmin"), ("highest", "lowest"))
-    bucket["temperature"] += _per_season(rows, "Station reading", ("tmax_station", "tmin_station"), ("highest", "lowest"))
-    bucket["rain"] += _per_season(rows, "Grid estimate", ("precip", "precip_max"), ("precipitation", "largest one day"))
-    bucket["snow"] += _per_season(rows, "Station reading", ("snow", "snow_depth"), ("snowfall", "deepest snow"))
-    bucket["ice"] += _per_season(rows, "Grid estimate", ("freeze_thaw", "frost32"), ("freeze-thaw", "low below 32 F"))
-    bucket["heat"] += _per_season(rows, "Grid estimate", ("hot90",), ("high of 90 F or more",))
-    if radar.get("state") == "loaded":
-        bucket["hail"] += [{"label": "Radar estimate", "text": r["text"]} for r in radar.get("rows", [])]
-    for sec in jv.get("sections", []):
-        for row in sec.get("rows", []):
-            label, body = _split_kind(row["text"])
-            bucket[_section_of(label, body)].append({"label": label, "text": body, "note": row.get("note") or ""})
-    bucket["flooding"] = [{"label": H["gauge_label"], "text": line} for line in (s.get("town") or {}).get("gauge") or []] \
-        + bucket["flooding"]
-
-    notes = {k: [] for k in bucket}
-    for sec_id, keys in (("hail", ("radar_max", "radar_1in", "hail_max", "hail_n")), ("wind", ("gust_days", "gust_max", "wind_n", "hw_zone")),
-                         ("storms", ("hail_warnings", "flood_warn")), ("temperature", ("tmax", "tmin")),
-                         ("rain", ("precip", "precip_max")), ("snow", ("snow", "snow_depth")),
-                         ("flooding", ("flood_report_n", "flood_record_n", "flood_warn", "county_watch")),
-                         ("ice", ("freezing_rain_n", "ice_warn", "freeze_thaw")), ("heat", ("hot90",))):
-        for key in keys:
-            for note in (rows.get(key) or {}).get("notes", []):
-                if note not in notes[sec_id]:
-                    notes[sec_id].append(note)
-    notes["snow"].append(W["analysis_held"])                    # D23: the analysis was checked and left out
-    notes["made"] = list(s.get("how_made") or []) + _window_lines(s, through) + [H["times"]]
-    # each section opens with what its kinds of record are (the words each kind has, per section, once)
-    what = kind_what(town=True)
-    for sid in HISTORY_SECTIONS:
-        kinds = list(dict.fromkeys(row["label"] for row in bucket[sid]))
-        notes[sid] = [what[k] for k in kinds if k in what] + notes[sid]
+    built = history_sections(s, jv, radar, town_page=True, through=through)
     entries = {sec["id"]: sec for sec in s.get("sections", [])}
     for sid in HISTORY_SECTIONS:
         entry = entries.get(sid, {"heading": W["section_titles"][sid], "lead": "", "kind": ""})
+        rows = built["rows"][sid]
         sec = {"id": sid, "heading": entry["heading"], "lead": entry["lead"], "kind": entry["kind"],
-               "rows": bucket[sid], "notes": notes[sid] if sid != "roof" else [],
-               "show_all": H["show_all"].format(n=len(bucket[sid]))}
+               "rows": rows, "notes": built["notes"][sid] if sid != "roof" else [],
+               "show_all": H["show_all"].format(n=len(rows))}
         if sid == "roof" and s.get("roof"):
             sec["groups"] = [{"name": g["name"], "lines": [{"label": ln["label"], "text": ln["text"], "kind": ln["kind"]}
                                                            for ln in g["lines"]],

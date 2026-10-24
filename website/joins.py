@@ -343,7 +343,7 @@ IEM_CHANGEOVER_START = datetime(2022, 9, 7, tzinfo=timezone.utc)   # the NWS cha
 IEM_SWITCH = datetime(2022, 9, 13, 18, 0, tzinfo=timezone.utc)     # the first set of 83 zones; the 103 set holds to 12:00Z
 IEM_REMOVED_ZONES = tuple(f"MTZ{n:03d}" for n in list(range(8, 16)) + list(range(44, 56)))   # the 20 zones removed at the switch
 IEM_OUTLINE_ZONES = IEM_REMOVED_ZONES + ("MTZ060",)   # placed with the IEM outline before the switch (its geometry changed)
-JOINS_DEADLINE_S = 35 * 60          # the joins' own limit from the start of the build (the job has 60 minutes; D34, D35)
+JOINS_DEADLINE_S = 35 * 60          # the joins' own limit from the start of the build (the job has 150 minutes; D34, D35)
 NWS_FIRE_URL = "https://www.weather.gov/gis/FireZones"      # the fire weather zone editions (D7)
 
 WORDS_JOINS = {
@@ -467,7 +467,6 @@ WORDS_JOINS = {
                                  "matched to this cell or part of it. This is not an all-clear."),
     "warnings_no_outline_many_point": ("{n} warnings in these five years have no outline on file, so they cannot "
                                        "be matched to this spot. This is not an all-clear."),
-    "warnings_row": "Warning: {date} {begin} to {end}, issuance polygon in effect: {kind}, {office}; tags: {tags}",
     "warnings_tags_none": "none stated",
     # D41 (B5 part B1): the label is the significance (Warning, Watch or Advisory) and the product gives the kind word
     "warnings_row_b5": "{label}: {date} {span}: {product}, {office}, covered this cell or part of it; tags: {tags}",

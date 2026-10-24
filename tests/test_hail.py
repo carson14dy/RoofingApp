@@ -782,8 +782,9 @@ class FixtureTests(unittest.TestCase):
     def test_fixture_without_the_address_files_is_under_480_kb_and_holds_only_the_store_and_joins(self):
         # D10, D18, D54, D64 and D74: the store and joins files have their own budget. D64 restated it from 62,000 bytes when
         # the sample gained the station part, and D74 from 320 KB: the sample names the rejected candidates of its tile lists
-        # (D69), so their summaries are cut in too (67 summaries where there were 33). Measured on the regenerated fixture:
-        # 471,538 bytes outside hail/a/ (305,024 before D74). The address files under hail/a/ are checked by
+        # (D69), so their summaries are cut in too (67 summaries where there were 33). D78(c) adds the GHCN name beside each
+        # display name: measured on the regenerated fixture, 485,066 bytes outside hail/a/ (471,538 before the display names;
+        # 305,024 before D74). The address files under hail/a/ are checked by
         # test_the_address_files_are_listed_in_the_manifest_and_the_index_carries_their_block and tests/test_joins.py
         files = sorted(p.relative_to(FIXTURE).as_posix() for p in FIXTURE.rglob("*")
                        if p.is_file() and not p.relative_to(FIXTURE).as_posix().startswith("hail/a/"))

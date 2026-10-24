@@ -32,6 +32,9 @@ from unittest import mock
 from website import addresses as A
 from website import hail
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # tests/ (words_rules: the one forbidden list, D81(c))
+import words_rules as W  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = ROOT / "website" / "data" / "hail-fixture"
 WORKFLOW = ROOT / ".github" / "workflows" / "hail-store.yml"
@@ -868,7 +871,7 @@ class WordsTests(unittest.TestCase):
 
     def test_the_coverage_words_are_the_sentence_of_d21_with_no_number(self):
         self.assertEqual(WORDS["about_coverage"],
-                         "The list is of addresses, not of buildings, and its coverage varies from county to county.")
+                         "The list is of addresses, not of buildings, and its completeness varies from county to county.")
         self.assertNotRegex(WORDS["about_coverage"], r"\d")
 
     def test_the_use_terms_join_the_two_quoted_sentences_with_the_marker(self):
@@ -916,10 +919,23 @@ class BuildingWordsTests(unittest.TestCase):
                                 text)
 
     def test_the_d23_outside_grid_sentence_is_exact_and_the_map_data_carries_it(self):
+        # D86(f): the wording says the history does not cover the point, and never "no hail"
         self.assertEqual(WORDS["outside_grid"],
-                         "This point is outside the hail grid's Montana outline; no hail history is kept here.")
+                         "This point is outside the hail grid's Montana outline; the history does not cover it.")
+        W.assert_clean(self, WORDS["outside_grid"], "outside_grid")
         block = A.map_data_addresses({"addresses": {"state": "unavailable", "reason": "r"}})
         self.assertEqual(block["templates"]["outside_grid"], WORDS["outside_grid"])
+
+    def test_the_about_words_pass_the_one_words_list(self):
+        # D85, D86(c) to (e): every About word of this module passes tests/words_rules.py; the State Library's name,
+        # the file's stated purpose and the metadata sentences are the exempt citations the list names
+        for key in ("about_source", "about_source_undated", "about_access", "about_use", "about_purpose",
+                    "about_exclusion", "about_fields", "about_persons", "about_coverage", "about_privacy"):
+            W.assert_clean(self, WORDS[key], key)
+        self.assertEqual(W.forbidden_words(A.PURPOSE_TEXT), [])
+        # D41: the unavailable line says why and ends with the required sentence
+        self.assertTrue(WORDS["unavailable"].endswith(" This is not an all-clear."))
+        self.assertIn("that is not the same as no addresses", WORDS["unavailable"])
 
     def test_the_d32_placed_sentence_and_the_placement_phrases_are_exact(self):
         self.assertEqual(WORDS["placed"], "This address point was placed {how}, not on the building.")
