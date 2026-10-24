@@ -1161,3 +1161,24 @@ blocking clause (D87(e)) and a dozen minor conflicts or ambiguities. Amendments:
   map.json gives them, map.js near line 5500). (u) Run 2 carries the smoke entry and two follow-up entries, site-2 and
   browser-2, for (c), (i), (l), (p), (r) and (s) and for whatever run 1's checks leave; a placeholder never ships: the
   re-check fails on any.
+
+## Supervisor rulings on the run-1 checks (2026-10-24 20:20 UTC; D89)
+The words fixer (20 of 24 items done; /home/user/hail-b5/out/b2r5/words/check.json) and the site fixer (17 of 19;
+/home/user/hail-b5/out/b2r5/site/check.json) finished; the open items wait on the browser fixer (map.js lines 2396 and
+3399 to 3408) and on files no fixer owned. Rulings:
+- D89 **Run-1 calls.** (a) NWS forecast and observation words are outside the words gate: the forecast card's "chance of
+  rain or snow" (index.html line 56, sources.py flags_for, map.js lines 2108 and 2117), the NWS text ("Clear", "Chance Rain
+  Showers") and the sample's NWS wording (sample.py) are the forecast product, not history text; D13 governs the history
+  words; the words scan excludes them; nothing changes there. (b) map.js line 175, "the file was incomplete or damaged",
+  reads "the file was incomplete or unreadable" (browser-2). (c) map.js line 2131's literal "That is not an all-clear."
+  in the no-alerts line predates B5 (the alerts feature); it joins the D87(c) follow-up and is unchanged now. (d) The B3
+  streets "unavailable" lines (streets.py lines 354 and 365) end with "This is not an all-clear." like addresses.py's and
+  buildings.py's (D41; the three lines sit together on About); words-2, with tests/test_streets.py. (e) D88(q) is
+  withdrawn: swath.py's WORDS_SWATH strings (lines 108, 110 and 143 to 144) read "not observed hail and not an inspection"
+  (the sources.py hail_swath row's form and About line 29's), the docstring line 11 follows, and no words_rules exemption
+  is added for it; tests/test_swath.py line 751 follows (words-2) and tests/test_site.py lines 3491 and 3615 follow
+  (site-2). (f) Run 2 is smoke, site-2, browser-2 and words-2 in parallel once run 1's browser fixer and the smoke
+  skeptics finish; ownership as D87(j) and D88(j), with words-2 owning website/swath.py, website/streets.py,
+  tests/test_swath.py, tests/test_streets.py and tests/words_rules.py. (g) The one full-suite failure of run 1
+  (tests.test_site SummaryContract.test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json) is the
+  site's new pin waiting on the browser fixer's map.js change; it is not a defect of the pin.

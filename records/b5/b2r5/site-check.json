@@ -1,0 +1,228 @@
+{
+ "owner": "fixer 2 (site)",
+ "worktree": "/home/user/wt/wt-b5",
+ "branch_head": "7d13c64 (uncommitted changes; nothing committed or pushed)",
+ "store": "/home/user/hail-b5/out/combined/store (read only)",
+ "files_owned": [
+  "website/build.py (no change needed this pass)",
+  "website/summary.py",
+  "tests/test_site.py",
+  "tests/test_summary.py",
+  "tests/test_joins.py (line 3940 only)"
+ ],
+ "items": [
+  {
+   "id": "1",
+   "item": "summary.section_data, rule.percent, rule.season, units, nouns.days, joins.show_first, every-key test (round-2 1d, browser F1)",
+   "status": "done",
+   "applied": [
+    "website/summary.py:151 SEASON_RULE; summary.py:3164 map_data_summary rule.season; tests/test_site.py:4653-4661 summary_reads also reads direct h.summary reads"
+   ],
+   "in_place_verified": [
+    "summary._section_data (kind, kinds, kind_what, row_labels, rules, season_rows, section_keys, extra_notes, part_sections, partial_marker, words, roof.lines x23, roof.extra, roof.held_names, roof.reference_line, roof.partial_keys) matches the contract file's keys; rule.percent {scale 100, decimals 1, step 0.1}; nouns.days ['day','days']; joins.show_first 10; units.in.scale 100"
+   ],
+   "evidence": "SummaryContract tests pass (test_every_summary_key_the_browser_reads_is_in_the_block, test_the_section_data_is_the_contract..., test_the_rule_percent..., test_the_day_noun...)."
+  },
+  {
+   "id": "2",
+   "item": "display names as the adopted store gives them (D78(c), D84(b))",
+   "status": "done",
+   "applied": [
+    "tests/test_summary.py:1303-1323, 1704-1742 mock names 'Billings Intl AP' and 'Moccasin Exp Stn' (were INTL AP / EXP STN)",
+    "tests/test_summary.py:1635-1662 real-store test checks the four names against the stations block (name with ghcn_name beside it) and the Benchland snow note"
+   ],
+   "in_place_verified": [
+    "summary.py and build.py never re-case a name (build.py:474 capitalises only a sentence's first letter)"
+   ],
+   "evidence": "Store: hail/tl/r0092_c0214.json and hail/index.json stations block: 'Billings Intl AP' (USW00024033, BILLINGS INTL AP), 'Moccasin Exp Stn' (USC00245761, MOCCASIN EXP STN), 'Lister' (CAN01144635, LISTER), 'Great Falls 16St' (USC00243749, GREAT FALLS 16ST). Built page: 'Billings Intl AP; lowest -24.'; Benchland note 'Moccasin Exp Stn, 3.2 miles from this spot, is not used'."
+  },
+  {
+   "id": "3",
+   "item": "D82(c) radar count row (D37 rule), the 0.25 in sentence only at 95 percent, radar maximum row over the days present with its coverage line (D87(i))",
+   "status": "done",
+   "applied": [],
+   "in_place_verified": [
+    "summary.py _radar_rows (lines ~1507-1562) already applies the 95 percent rule to zero counts and the 'No radar estimate' sentence, and shows the largest value over the days present"
+   ],
+   "evidence": "Adopted store, describe_summary at 921,2149 and 792,1998: 2021-22 largest cell 'Data unavailable for 2021-22: the radar record has 256 of 365 days ... This is not an all-clear.' with '109 days missing'; 1-inch cell the same; five-season 1-inch cell 'Data unavailable' with the season named; Billings five-season largest 0.62 in on Jul 24, 2022 with '109 days missing'. The store lists no radar day of 0.25 in or more in 2021-22 at these cells, so no largest value exists to show for that season. Hail lead: 'Radar estimate: Data unavailable for the days with hail of 1 inch or more in these five years; ...'."
+  },
+  {
+   "id": "4",
+   "item": "D86(b) satellite pin (browser F-06)",
+   "status": "done",
+   "applied": [
+    "tests/test_site.py:395 'never drawn as cloud-free sky'; :396 'This is not an all-clear.'"
+   ],
+   "evidence": "Contracts.test_the_satellite_feed_is_an_observation_with_its_limits passes (it was the one failure of the first run, tests/test_site.py baseline)."
+  },
+  {
+   "id": "5a",
+   "item": "drop the .hail-days assertion (browser owner)",
+   "status": "done",
+   "applied": [
+    "tests/test_site.py: removed assertNotIn('.sheet-body .hail-days', source_css) (was line 1656); the off-build assertNotIn('hail-days', off) is kept"
+   ],
+   "evidence": "No 'hail-days' remains in website/static/map/map.js, map.css or templates/map.html."
+  },
+  {
+   "id": "5b",
+   "item": "summary.rule.percent equals the three values",
+   "status": "done",
+   "applied": [],
+   "in_place_verified": [
+    "test_the_rule_percent_is_the_three_values passes"
+   ],
+   "evidence": "full suite"
+  },
+  {
+   "id": "5c",
+   "item": "share parity: browser sumSharePct over round(k/2192,4), k=0..2192, equals summary._share_text; ties 137, 685, 1233, 1781 named",
+   "status": "done",
+   "applied": [],
+   "in_place_verified": [
+    "test_the_browser_rounds_each_share_as_python_does_at_every_share passes"
+   ],
+   "evidence": "full suite"
+  },
+  {
+   "id": "5d",
+   "item": "fixture sheet check: no rendered line holds '[missing'",
+   "status": "done",
+   "applied": [],
+   "in_place_verified": [
+    "test_a_sheet_line_with_no_value_is_never_a_placeholder_on_the_fixture passes"
+   ],
+   "evidence": "full suite"
+  },
+  {
+   "id": "5e",
+   "item": "static check: no '|| 10' or 'showFirst: 10' in the joined sheet code",
+   "status": "done",
+   "applied": [],
+   "in_place_verified": [
+    "test_the_sheet_code_holds_no_literal_fallback_for_the_rows_it_shows_first passes against the current map.js"
+   ],
+   "evidence": "full suite"
+  },
+  {
+   "id": "5f",
+   "item": "pin near line 1687: hailInches reads summary.units.in.scale from map.json, not the literal 100 (D87(d), F-08)",
+   "status": "partial",
+   "applied": [
+    "tests/test_site.py:4932 test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json: hailInches body has no literal 100 and names 'scale'"
+   ],
+   "evidence": "Site side done: summary.units.in.scale is written (100). The new test FAILS on the current map.js (line 2396 still 't * 100 / ... / 100'), which the browser owner changes. Re-read map.js at 19:39 UTC: unchanged since 14:53."
+  },
+  {
+   "id": "5g",
+   "item": "pin near line 3165: the phone budget reads build.PHONE_GZIP_BUDGET (700,000) and map.json's hail.budget (D82(b), S-1)",
+   "status": "done",
+   "applied": [
+    "tests/test_site.py:3164-3167 site.PHONE_GZIP_BUDGET == 700_000 (the B3 650 KiB address check keeps its own constant)",
+    "tests/test_site.py:4252-4258 hail.budget equals site.PHONE_GZIP_BUDGET and joins.TILE_EVENTS_BUDGET_GZIP"
+   ],
+   "evidence": "both pass in the full suite"
+  },
+  {
+   "id": "5h",
+   "item": "season-rule parity (D83(b), D87(d), F-09): browser rule against Python at every day count 0-366 and the bounds; five-cell browser-vs-module comparison (fixture and adopted store)",
+   "status": "partial",
+   "applied": [
+    "tests/test_site.py:4614-4640 NODE_SEASON_SCRIPT; :4904 test_the_browser_season_rule_is_pythons_at_every_day_count_and_the_bounds (behaviour, passes)",
+    "tests/test_site.py:4932 static half (no literal bounds in sumSeasonOf/sumBounds): FAILS until the browser reads summary.rule.season"
+   ],
+   "in_place_verified": [
+    "SheetAgreesWithTheModule: test_the_five_cells_agree_on_the_fixture compares 921,2149; 792,1998; 797,1986 and names 753,2230 and 920,1899 as subTest skips; test_the_five_cells_agree_on_the_adopted_store compares all five (HAIL_PARITY_STORE)"
+   ],
+   "evidence": "Behaviour: 2 totals (365, 366) x 367 day counts equal Python's 95 percent rule (scale 100, share 95); six season bounds equal summary.season_bounds; labels for 2020-06-25..2027-07-05 equal stations.season_of where it has a label. Static half pending the browser (map.js 3399-3408)."
+  },
+  {
+   "id": "6",
+   "item": "D82(d): describe_joins section lines carried as notes of their section; test on the Billings page",
+   "status": "done",
+   "applied": [],
+   "in_place_verified": [
+    "build.py history_sections attaches the joined lines through JOIN_PART_SECTIONS (summary.PART_SECTIONS); tests test_each_joined_line_feeds_the_section_its_part_names and test_the_billings_page_carries_each_joined_line_under_the_section_it_feeds pass"
+   ],
+   "evidence": "Scratch build, town/billings.html: 'The newest detection in this build is from Sep 28, 2026.' (Hail section), 'The newest warning in this build starts on Sep 19, 2026.' (Storms), 'NCEI cause as written: Heavy Rain' records (Flooding), the Yellowstone County line, and the implausible-gust line (Wind)."
+  },
+  {
+   "id": "7",
+   "item": "D87(a), R1-F1, F-13: unavailable or held roof lines lead with the kind word and carry it once; the label's parenthetical keeps the unit word",
+   "status": "done",
+   "applied": [
+    "website/summary.py:694 hail_size_days '(days)'; :698 wind_gust_days '(days)'; :706 snowfall_season '(inches)'; :707 snow_depth '(inches)'; :713 precipitation_year '(inches)'; :714 largest_one_day_rain '(inches)'",
+    "website/summary.py:541-557 WORDS_INDICATORS['held'] texts lead with 'Data unavailable:' once",
+    "tests/test_summary.py:1114-1126 (kind word once, label has no kind-word parenthetical), :1128-1139 (wind_gust_days label; line text), :1138 test_a_held_line_leads_with_its_kind_word_once"
+   ],
+   "evidence": "Scratch build, Billings roof section: 'Radar estimate: Hail of 1 inch or more (days). Data unavailable for the five seasons: 2021-22 has no usable value, so no five-season figure is shown. This is not an all-clear.'; held: 'Data unavailable: Water ponding on a roof. No public weather record shows water on a roof. This is not an all-clear.'. The browser's histLine reads the same label (section_data.roof.lines) and held words, so its lines follow without a literal change."
+  },
+  {
+   "id": "8",
+   "item": "D87(b), R1-F8: a town-page count sentence naming a partial season ends 'This is not an all-clear.'",
+   "status": "done",
+   "applied": [
+    "website/summary.py:2200 _town_five appends ALL_CLEAR to the partial-season clause (the no-day case already ends with it)",
+    "tests/test_summary.py:1906-1925 pins updated"
+   ],
+   "evidence": "Scratch build: 'Warning: 19 severe thunderstorm warnings covered this spot in the five seasons; 2 more in 2026-27 so far. This is not an all-clear.' The storms lead ends with the sentence once."
+  },
+  {
+   "id": "9",
+   "item": "D87(d), F-12 (site side): season bounds written once into map.json as summary.rule.season, documented, tested",
+   "status": "done",
+   "applied": [
+    "website/summary.py:151 SEASON_RULE {start_month 7, start_day 1, end_month 6, end_day 30}; :807 season_bounds derives from it; :3164 rule.season; :61 docstring paragraph names the block",
+    "tests/test_summary.py:2148 SeasonRuleTests (block written and equal to the module rule; bounds agree with stations.season_of on every day; the docstring names the block)"
+   ],
+   "evidence": "SeasonRuleTests pass. The browser's literals (map.js 3400, 3407) remain until the browser owner reads summary.rule.season."
+  },
+  {
+   "id": "10",
+   "item": "D87(h): R1-F2, R1-F3, R1-F6, R1-F9, comments, R1-F10",
+   "status": "done",
+   "applied": [
+    "R1-F2: tests/test_site.py:4771-4790 per-cell subTest + skipTest naming the cell, present set asserted",
+    "R1-F3: tests/test_site.py:4201-4204 gate comment cites the budget and research/hail-history/validation-evidence/b5-verification.json (measured sizes removed); the B3 store-size comment near :3182 cites the record",
+    "R1-F6: tests/test_site.py:4653-4661 summary_reads follows direct h.summary reads",
+    "R1-F9: tests/test_joins.py:3940 STATE_ZONE size 5 to 6 (the writer that puts MTZ002 into the field is _zone_zip_bytes; line 601 is an in-memory test with no shapefile, so the anchor was off)",
+    "comments: tests/test_site.py:4420 and tests/test_summary.py:30 cite the Billings town point 45.7833 N (towns.json)",
+    "R1-F10: tests/test_summary.py:1635-1640 docstring: 108 days before the window (17 Oct 2021) and one missing day inside it"
+   ],
+   "evidence": "tests/test_joins.py run with -W default: 288 tests OK and no 'truncated' or PossibleDataLoss warning in the log; SheetAgreesWithTheModule and SummaryContract pass."
+  },
+  {
+   "id": "11",
+   "item": "round-2 site check leftovers in my files",
+   "status": "done",
+   "applied": [
+    "tests/test_site.py:3538 About swath pin now 'not observed hail and not an inspection' (the words owner's About wording; it failed in the first run)"
+   ],
+   "in_place_verified": [
+    "section_data (item 1); the sheet's partial line and the town partial line end with the all-clear; the held row's reason word ends with the all-clear (summary.py UNIT_SPEC 'reason'); 'NOAA defines PROB as' on About (sources.py row, products); test_addresses.py D74 line passes in the full suite (not edited by me)"
+   ],
+   "evidence": "full suite: 1930 tests, only my static pin fails"
+  },
+  {
+   "id": "12",
+   "item": "tests and scratch build",
+   "status": "done",
+   "applied": [],
+   "evidence": "see tests_tail and the scratch_build entry"
+  }
+ ],
+ "needed_from_others": [
+  "Browser owner (map.js:2396): hailInches still multiplies by the literal 100 and divides by 100; it must read summary.units.in.scale from map.json (F-08, D87(d)). Check: tests/test_site.py SummaryContract.test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json (inch part).",
+  "Browser owner (map.js:3399-3408): sumSeasonOf uses 'm >= 7' and sumBounds uses '-07-01' and '-06-30'; they must read summary.rule.season (start_month 7, start_day 1, end_month 6, end_day 30) (F-12, D87(d)). Check: the same test (season part). The behaviour test already passes on the current literals and must still pass after the change.",
+  "Browser owner: rerun the as-built check after this pass. The roof labels and held texts changed in summary.py (they come from section_data.roof.lines and indicators.words.held, so map.js needs no literal change for them)."
+ ],
+ "tests_tail": "test_summary (HAIL_PARITY_STORE set): Ran 147 tests, OK; without it: OK (skipped=3). test_joins: Ran 288 tests, OK (run with -W default; no truncation warning). test_site: one run before the last two edits: Ran 264 tests, FAILED (failures=1) = HailSwathLayers About pin (fixed, rerun OK); the full suite below includes the final test_site. Full suite (python -B -m unittest discover -s tests, HAIL_PARITY_STORE set): Ran 1930 tests in 513.106s; FAILED (failures=1, skipped=3). The one failure: tests.test_site.SummaryContract.test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json (my static pin, owner: browser: map.js:2396 and map.js:3399-3408). Skips: the two named fixture-cell subtests of SheetAgreesWithTheModule and one other test (not named in this non-verbose run).",
+ "scratch_build": {
+  "command": "python -B -m website.build --out /home/user/hail-b5/out/b2r5/site/build --sample --storm-layers --hail-history --hail-store /home/user/hail-b5/out/combined/store --hail-addresses --address-text on --now 2026-10-24T12:00:00Z",
+  "rc": 0,
+  "seconds": 29.7,
+  "read": "town/billings.html (Billings); Benchland (792,1998) has no town page (a grid point, not one of the 17 towns), so it was read through describe_summary on the same store",
+  "deleted": true,
+  "log": "/home/user/hail-b5/out/b2r5/site/build.log"
+ }
+}

@@ -1,0 +1,161 @@
+{
+ "owner": "fixer 1 (words)",
+ "worktree": "/home/user/wt/wt-b5",
+ "branch": "claude/hail-b5",
+ "snapshot_utc": "edits and final build 19:20 to 19:24Z; final full suite started 19:31Z; test_site final run 19:37Z",
+ "scope_files": [
+  "website/templates/about.html",
+  "website/addresses.py",
+  "website/buildings.py",
+  "tests/words_rules.py",
+  "tests/test_words_rules.py (new)",
+  "tests/test_addresses.py",
+  "website/sources.py (storm_levels row: checked, unchanged)",
+  "tests/test_storm.py (pin near line 571: holds, unchanged)"
+ ],
+ "items": [
+  {
+   "item": "(a) storm_levels 'missing' row keeps 'A radar estimate, not observed hail or damage.' (D78(b), D86(a)); the pin at tests/test_storm.py:571 holds",
+   "status": "DONE",
+   "evidence": "website/sources.py:152 unchanged (the row is the products owner's words; I did not edit it). tests/test_storm.py unchanged; tests.test_storm 44 tests OK. tests/words_rules.py EXEMPT lists this one sentence, citing D78(b) and D86(a)."
+  },
+  {
+   "item": "(a) tests.test_joins ContractStemTests.test_the_about_visible_contract_fields_pass_the_words_rules passes",
+   "status": "DONE",
+   "evidence": "All 185 About-visible contract fields of 37 rows scan clean with tests/words_rules.py alone (no set-asides). tests.test_joins.ContractStemTests: 3 tests OK; tests.test_joins: 288 tests OK."
+  },
+  {
+   "item": "(b) satellite row reads 'never drawn as cloud-free sky' (D86(b)); the satellite pin is the site owner's",
+   "status": "DONE",
+   "evidence": "website/sources.py:166 reads 'never drawn as cloud-free sky'. tests/test_site.py:395 now pins 'cloud-free sky' (site owner's change; that test is not in the current failure list). The About satellite line (about.html line 27) also reads 'cloud-free sky'."
+  },
+  {
+   "item": "(c) About line 25 (radar echo tops): 'They are not observed hail or damage, and no echo is not an all-clear.' -> 'They are not observed hail or harm to a roof, and no echo at 35 dBZ does not rule out hail.'",
+   "status": "DONE",
+   "evidence": "website/templates/about.html line 25. The second half mirrors the storm_levels row's 'No echo at 35 dBZ does not rule out hail.'. Built About page: 0 words-rule hits."
+  },
+  {
+   "item": "(c) About line 27 (satellite): 'GOES-East fails' -> 'GOES-East is unavailable'; 'never drawn as clear sky' -> 'never drawn as cloud-free sky'",
+   "status": "DONE",
+   "evidence": "website/templates/about.html line 27. The first change mirrors the satellite row's 'if East is unavailable'; the second is D86(b)."
+  },
+  {
+   "item": "(c) About line 29 (hail swath): 'It is an estimate, not observed hail and not damage.' -> 'It is an estimate, not observed hail and not an inspection.' (my call)",
+   "status": "DONE",
+   "evidence": "website/templates/about.html line 29. Same clause as the products owner's sources.py hail_swath row ('An estimate, not observed hail and not an inspection.'), which D85 allowed as a reword. Side effect: tests/test_site.py:3538 pinned the old clause; the site owner updated it in this round to 'not observed hail and not an inspection' (checked in the test_site run)."
+  },
+  {
+   "item": "(c) B3 terms block: the State Library name, the stated-purpose sentence, the file name and the msl row name follow words_rules",
+   "status": "DONE",
+   "evidence": "No page text changed. Exact-text allowances in tests/words_rules.py (D86(c), D86(e)): the proper name, its short form in the rows, 'StructuresFramework_shp.zip', and the PURPOSE_TEXT sentence. tests/test_words_rules.py checks each one is the module's own text. about_source, about_purpose and the other About words scan clean (test_addresses.test_the_about_words_pass_the_one_words_list)."
+  },
+  {
+   "item": "(c) swath.py 'It is an estimate, not observed hail and not damage.' (B4 sentence on the Map page): call = reword to 'not an inspection' (the sources.py row's form), not an exemption",
+   "status": "PARTIAL",
+   "evidence": "Call recorded here. website/swath.py is not mine, so the edit is listed under needed_from_others (lines 108, 110, 143-144). Until it lands the Map page keeps 2 hits and map.json keeps 6 sample-legend and 4 what_this_is hits (scan: /home/user/hail-b5/out/b2r5/words/scan/final-scan.txt)."
+  },
+  {
+   "item": "(c) every About sentence the words rules flag is reworded or exempt by exact text, with its ruling; the built About page has 0 hits",
+   "status": "DONE",
+   "evidence": "Built with --sample --hail-history --hail-addresses --storm-layers --now 2026-10-24T12:00:00Z (site-final, exit 0). The scan of about.html gives 0 hits. Per-line before and after: see the final report."
+  },
+  {
+   "item": "(c) About's Flags block (about.html lines 131-134) and the 'When something fails' heading (line 136) use the same swap rule (outside D86(c)'s two named blocks; D85 puts all of About in the gate; my call, reversible)",
+   "status": "DONE",
+   "evidence": "about.html: 'a 30% or higher chance of rain or snow' -> 'a rain or snow percent of 30% or higher'; 'never clears one' -> 'never removes one'; 'is not a promise that work is safe' -> 'is not a promise that work can go ahead'; heading 'When something fails' -> 'When something goes wrong'."
+  },
+  {
+   "item": "(d) words_rules exempts the quoted titles of the About references list, R9 'FEMA P-957, Snow Load Safety Guide' and R20 'freeze-thaw damage to roofs', nowhere else (D46, D86(d))",
+   "status": "DONE",
+   "evidence": "tests/words_rules.py EXEMPT (exact strings). tests/test_words_rules.py NameAndCitationTests.test_the_two_references_titles_pass_only_in_full: the bare words 'Snow Load Safety' and 'freeze-thaw damage' are still flagged."
+  },
+  {
+   "item": "(e) 'Montana State Library Structures and Addresses Framework' joins 'USA Structures' in the exemptions (D86(e); browser F-04)",
+   "status": "DONE",
+   "evidence": "tests/words_rules.py EXEMPT. Also exempted, as the same citation (my extension, disclosed in the report): the short name 'Structures and Addresses Framework' used by the rows and the attribution line, and the file name 'StructuresFramework_shp.zip' (tests/test_joins.py already sets both aside)."
+  },
+  {
+   "item": "(f) addresses.py outside-grid sentence (now line 240) and buildings.py line 156 read: 'This point is outside the hail grid's Montana outline; the history does not cover it.'",
+   "status": "DONE",
+   "evidence": "website/addresses.py:240 and website/buildings.py:156 changed. tests/test_addresses.py pin updated; the words check on the new sentence is in the same test. No other test pins the old sentence (grep over tests/ and website/)."
+  },
+  {
+   "item": "(f) any test that pins the old outside-grid sentence follows (tests/test_addresses.py; other owners' files listed)",
+   "status": "DONE",
+   "evidence": "tests/test_addresses.py test_the_d23_outside_grid_sentence_is_exact_and_the_map_data_carries_it. tests.test_addresses: 173 tests OK (1 skipped) after the change."
+  },
+  {
+   "item": "(g) D74: tests/test_addresses.py expects 'its completeness varies from county to county', matching addresses.py about_coverage",
+   "status": "DONE",
+   "evidence": "ALREADY IN PLACE when this pass started (the working tree diff of tests/test_addresses.py replaces 'coverage varies' with 'completeness varies'). tests/test_addresses.py:871 equals website/addresses.py:236; the test passes."
+  },
+  {
+   "item": "(h) build --sample --hail-history --hail-addresses --storm-layers --now 2026-10-24T12:00:00Z under /home/user/hail-b5/out/b2r5/words/ (one build at a time)",
+   "status": "DONE",
+   "evidence": "Builds: site-baseline (before my edits), site-after1, site-final (after all edits); each exit 0 in about 8 s. site-baseline and site-after1 deleted; site-final deleted after this check. Logs: build-baseline.log, build-after1.log, build-final.log."
+  },
+  {
+   "item": "(h) scan the built About page, Map page and town pages with tests/words_rules.py; report every remaining hit with its ruling",
+   "status": "PARTIAL",
+   "evidence": "scan_pages.py on site-final: about.html 0 hits; map.html 2 hits (swath.py 'not damage', needed_from_others); index.html 1 hit (flags 'chance', needed_from_others); 377 town-page hits and 104 raw map.json strings in total. The town-page hits are NWS forecast and observation words ('Clear', 'Chance Rain Showers', '40% chance of rain or snow') and SAMPLE data: outside the history words (D13 governs the history words; D52's reasoning); not changed; supervisor ruling needed. The raw map.json hits are swath legends (swath.py), roof-reference quotes that the page shows in curly quotation marks (D46), and URLs that are link targets, not visible text. Full grouped list: scan/final-summary.txt."
+  },
+  {
+   "item": "(h) new allowances are pinned by tests/test_words_rules.py (19 tests): each allowance's exact text, the nearby text that must still be flagged, and the source text each one cites",
+   "status": "DONE",
+   "evidence": "tests/test_words_rules.py (new file, mine). tests.test_words_rules: 19 tests OK after the last edit."
+  },
+  {
+   "item": "(h) the unavailable line of the address and outline layers ends 'This is not an all-clear.' (D41), matching the history's unavailable lines ('+ AC' in tests/test_joins.py)",
+   "status": "DONE",
+   "evidence": "website/addresses.py WORDS['unavailable'] and website/buildings.py WORDS_BUILDINGS['unavailable'] (both shown on About and in the browser legend). Pins: tests/test_addresses.py and tests/test_words_rules.py assert the ending. The roads line is in streets.py: needed_from_others."
+  },
+  {
+   "item": "(h) 'That is not an all-clear.' (the no-alerts line on town, map and index pages) passes the rule; the index page's sentence with a caveat ('That is not an all-clear: storms can form between updates.') passes too",
+   "status": "DONE",
+   "evidence": "tests/words_rules.py line 37 (the required-sentence pattern, with an optional full stop). 'That is not an all-clear: storms can form between updates.' scans clean; the bare second 'all-clear' in 'This is not an all-clear, and an all-clear is not given.' is still flagged (tests/test_summary.py:793 expects ['all-clear'] and gets it)."
+  },
+  {
+   "item": "Words tables: every WORDS string of addresses, buildings, streets, stations, joins, summary, hail, snowgrid, gauges and climate scans clean; swath.WORDS_SWATH has the 3 'not damage' strings",
+   "status": "PARTIAL",
+   "evidence": "0 hits in addresses (28 strings), buildings (17), streets (10), stations (17), joins (188), summary (150+40), hail (21), snowgrid (7), gauges (17), climate (48). swath.WORDS_SWATH: 3 hits (legend_note, sample_legend_note, what_this_is): needed_from_others."
+  },
+  {
+   "item": "Required: no em-dash and no banned name in the lines I added; no model, AI-vendor or product name",
+   "status": "DONE",
+   "evidence": "git diff of the owned files: 0 em-dashes and 0 en-dashes in added lines; the new file has none; no banned names."
+  },
+  {
+   "item": "Test runs: tests.test_storm, tests.test_addresses, tests.test_joins, tests.test_site, and the full suite (discover -s tests), named failures and owners",
+   "status": "PARTIAL",
+   "evidence": "My modules pass: test_storm 44 OK; test_addresses 173 OK (1 skipped); test_joins 288 OK; test_words_rules 19 OK. tests.test_site (final run): 266 tests, 1 failure, 6 skipped; the failure is test_site.SummaryContract.test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json (tests/test_site.py:4935; map.js line 3407 still has the '-07-01' and '-06-30' literals; browser owner, F-12). The About swath pin that my edit broke (test_site:3538) passes: the site owner updated it. Full suite (discover -s tests, final run): 1930 tests, 1 failure (the same browser test), 10 skipped. Interim runs: 1928 tests with 2 failures, one mine (fixed, item below) and the 3538 pin (since updated by the site owner)."
+  },
+  {
+   "item": "(h) interim regression I introduced and fixed: the required-sentence pattern without its full stop broke tests.test_snowgrid.UrlAndWordsTests.test_the_unit_sentence_is_the_plain_sentence_with_no_regression_word (a stray '.' token); the pattern now consumes an optional full stop",
+   "status": "DONE",
+   "evidence": "tests/words_rules.py line 37: \\b(?:This|That) is not an all-clear\\b\\.? . Re-run: tests.test_words_rules, tests.test_snowgrid, tests.test_stations, tests.test_gauges, tests.test_storm: 260 tests OK; the full suite re-run is the final run in tests_tail."
+  }
+ ],
+ "needed_from_others": [
+  "website/swath.py lines 108, 110, 143-144 (WORDS_SWATH legend_note, sample_legend_note, what_this_is; owner: B4 swath, not assigned this round): change 'not observed hail and not damage' to 'not observed hail and not an inspection' (the sources.py hail_swath row's form; D86(c)). Line 11 is a docstring and may keep its words. Clears: the 2 Map-page hits and the 6+4 map.json legend hits. Pins that follow: tests/test_swath.py:751 and tests/test_site.py:3491 (both assert 'not observed hail and not damage').",
+  "RESOLVED in this round by the site owner: tests/test_site.py:3538 now pins 'not observed hail and not an inspection', matching about.html line 29.",
+  "tests/test_site.py:4935 (SummaryContract.test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json; browser owner, F-12): website/static/map/map.js line 3407 still has the literals '-07-01' and '-06-30' (sumBounds). Move them to map.json's summary.rule.season, as the test asks. This is the one failure in the final full suite; not caused by the words work.",
+  "website/streets.py lines 354 and 365 (WORDS_STREETS msl and tiger 'unavailable'; owner: B3 streets, not assigned this round): append ' This is not an all-clear.' (D41), as addresses.py and buildings.py now do. The About page prints this line (build.py:936). No test pins the sentence.",
+  "website/templates/index.html line 56 (site owner): 'a {{ limits.pop_pct }}% or higher chance of rain or snow' -> 'a rain or snow percent of {{ limits.pop_pct }}% or higher', to match the About flag wording. No test pins it. Decision for the owner.",
+  "website/sources.py line 924 (flags_for; site or products owner): '{n}% chance of rain or snow' -> '{n}% rain or snow', matching the town summary line ('10% rain or snow'). Pinned by tests/test_site.py:142 (assertEqual on the chance wording), so the test changes with it. Decision for the owner; I did not change it.",
+  "website/static/map/map.js line 2108 ('Chance of rain or snow', stat label) and line 2117 ('chance of rain or snow', missing-data label) (browser owner): same decision as the two items above.",
+  "website/static/map/map.js line 175: 'the file was incomplete or damaged' (browser owner): D13 allows 'damage' only as a source type word, inside a quotation, or as the NWS tag. Suggest 'the file was incomplete or unreadable'. This is a real words-rule hit.",
+  "Supervisor ruling: are the NWS's own forecast and observation words ('Clear', 'Chance Rain Showers', 'night: clear', 'Read at ... SAMPLE Clear'; sample.py lines 103 and 176 supply the sample wording) inside the words gate? My reading: no, they are not history text (D13 governs the history words; D52's reasoning). They are the 377 town-page hits and the 104 raw map.json strings in final-scan.txt. No change made.",
+  "Observation for the browser owner (not a words-rule hit): website/static/map/map.js line 2131 has the literal sentence 'That is not an all-clear.' inside the no-alerts line; D29 asks for no literal sentences in map.js. Owner to decide whether it moves to the words in map.json.",
+  "Observation (not a hit): the roof-reference quotes (R5, R6, R7, R8, R11, R15) are shown in curly quotation marks on the town pages (D46 quotation rule) and the two URLs (R11, R16) are link targets, not visible text. No action."
+ ],
+ "tests_tail": "FAIL: test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json (test_site.SummaryContract.test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json)\n...\n\n----------------------------------------------------------------------\nRan 1930 tests in 394.580s\n\nFAILED (failures=1, skipped=10)\nexit=1",
+ "tests_by_module": {
+  "tests.test_storm": "Ran 44 tests in 0.150s OK",
+  "tests.test_addresses": "Ran 173 tests in 10.098s OK (skipped=1)",
+  "tests.test_joins": "Ran 288 tests in 11.733s OK",
+  "tests.test_joins.ContractStemTests": "Ran 3 tests OK",
+  "tests.test_site": "Ran 266 tests in 280.831s FAILED (failures=1, skipped=6); failure: SummaryContract.test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json (tests/test_site.py:4935; browser owner, map.js line 3407)",
+  "tests.test_words_rules": "Ran 19 tests OK",
+  "discover -s tests (final)": "Ran 1930 tests in 394.580s FAILED (failures=1, skipped=10); the same single failure as tests.test_site"
+ }
+}
