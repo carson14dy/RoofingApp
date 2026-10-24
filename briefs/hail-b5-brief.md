@@ -1246,3 +1246,24 @@ not list. Rulings:
   module list names tests.test_words_rules (D91(f)) with its pin, and site-3 re-runs the parity step's own run: script
   against a fresh every-flag build (_site) and quotes the tail: seven tests, OK, no skip. (d) The one-hour swath layer's
   pixel gate is measured by the live preview only (no live file offline); the smoke says so and does not fail on it.
+
+## Supervisor rulings on the re-check (2026-10-24 22:30 UTC; D93)
+The read-only re-check (/home/user/hail-b5/out/b5b2-recheck.json, worktree 8f87d30) passed the suite (1,966 tests, 0
+failures), the self-test, the sample and combined-store builds (history-flag map.json 162,374 bytes raw under 163,840;
+every flag 464,287), the Chromium smoke at both widths with the three cells exact, the phone view at 682,129 bytes gzip
+under 700,000, every tap file under 100,000, zero off-site requests, the parity step (7 tests, no skip), the words tables
+(734 strings, 0 forbidden) and the dash and name counts. It failed four checks. Rulings:
+- D93 **Re-check calls.** (a) The flag-off identity (D77, B5-18, BG3) covers the pages' text: the default build equals the
+  base's except the ruled lines (D53, D74, D85, D86(c), D88(d), D91(c)) and the static assets map.js and map.css with
+  their cache-busting hashes in map.html, because the browser code is one file for every build and the flags gate the
+  data it reads, not the script; tests/test_site.py's identity test, which names the on-purpose differences, is the gate;
+  a diff -rq of whole builds is not. (b) The town-page footnotes heading reads "Why a cell reads Data unavailable" (build.py
+  near line 1043; a heading, not a status line); each footnote keeps its reason and its all-clear sentence (D41); the
+  supervisor's one-line edit, done. (c) NWS forecast and observation words on the town pages outside the FORECAST tuple
+  (the hourly rows, the forecast sentences) are outside the gate under D89(a) as before; the tuple is for the scan of the
+  history words, not a second forbidden list; no change. (d) B5-11's reading that no sentence needs decoding is the
+  supervisor's: done on the merged tree's build and on the live preview, recorded in the verification record. (e) The
+  docs pass takes the re-check's mismatch list (checks.9_docs_numbers) and the missing D77 to D92 entries. (f) Order from
+  here: this edit committed as WIP; main merged (D59, D60, D88(a), D92; the merge script); the docs pass on the merged
+  tree; the full suite and the self-test; the squash onto the merge base with main; the push; the preview in Chromium; the
+  pull request on main superseding PRs 14, 15 and 16.

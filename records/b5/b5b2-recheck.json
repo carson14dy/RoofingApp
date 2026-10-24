@@ -1,0 +1,1082 @@
+{
+ "record": "B5 part B2 re-check (run 3). Read-only checker. Nothing edited, staged, committed or pushed in the worktree.",
+ "run_window_utc": "2026-10-24 22:00 to about 22:50",
+ "worktree": {
+  "path": "/home/user/wt/wt-b5",
+  "branch": "claude/hail-b5",
+  "head": "8f87d30",
+  "head_subject": "WIP (local safety): B5 part B2 completion run 2 and 2b (D87 to D92)",
+  "base": "db84d76",
+  "git_status_short": "",
+  "diff_stat_vs_db84d76": "194 files changed, 51,305 insertions(+), 1,395 deletions(-)"
+ },
+ "brief_read": "/home/user/wt/briefs/hail-b5-brief.md: Product section (lines 68-113), rules D1-D16, D17-D92 rulings, B2 build list (611-672), gates B5-1 to B5-18 (249-287), D87-D92 (1060-1248)",
+ "latest_owner_checks_used": {
+  "1_browser": "/home/user/hail-b5/out/b2r6/browser/check.json (2026-10-24 21:17; covers run-2 items D87-D90 only)",
+  "2_site": "/home/user/hail-b5/out/b2r7/site/check.json (21:57; covers D91-D92 only)",
+  "3_products": "/home/user/hail-b5/out/b2r4/products/check.json (18:47; 41 items: 35 done, 4 partial, 2 not done)",
+  "4_smoke_and_ci": "/home/user/hail-b5/out/b2r5/smoke/check.json (21:26)",
+  "5_docs": "no check file; /home/user/hail-b5/out/b2r5/items-docs.md is the draft list for the docs pass, which runs after this re-check",
+  "words_owner": "/home/user/hail-b5/out/b2r7/words/check.json (21:47; supporting)"
+ },
+ "failed_checks": [
+  "3 flag-off identity: the flag-off --sample build (worktree copy without .git) and the db84d76 archive build (same --now) differ in 5 files under diff -rq: about.html, map.html, reports.html, static/map/map.css, static/map/map.js. Not identical.",
+  "6 and B5-10 words: the town-page footnote heading 'Data unavailable, with the reason' (build.py line 1043, key footnotes) is printed on 17 of 17 town pages as an unavailable line that does not end with 'This is not an all-clear.'",
+  "9 docs numbers: stale or missing figures in README, ROADMAP, DESIGN, DECISIONS and b5-verification.json (list in checks.9_docs_numbers); D77 to D79 and D81 to D92 have no DECISIONS entries.",
+  "B5-18: fails on the flag-off identity (above); the live preview build on the branch was not run by this checker."
+ ],
+ "not_run_here": [
+  "the branch's live preview build in CI (B5-18); the swath hail_60 one-hour pixel gate (D92(d)) needs a live build with a one-hour value cell",
+  "the daily store job end to end (B5-12's 25-minute target): not timed by this checker",
+  "the reviewer's reading of the summary table (B5-11's 'no sentence needs decoding')"
+ ],
+ "checks": {
+  "1_unittest": {
+   "command": "/home/user/hail-b1/venv/bin/python -m unittest discover -s tests (in /home/user/wt/wt-b5; HAIL_PARITY_STORE unset)",
+   "result": "Ran 1966 tests in 372.744s; OK (skipped=10); exit 0; FAIL or ERROR lines: 0",
+   "failures_named": [],
+   "errors_named": [],
+   "skips": {
+    "HAIL_PARITY_STORE-gated (run by the CI parity step, which passes 7 of 7 here)": 7,
+    "two fixture-cell skips in tests.test_site SheetAgreesWithTheModule (skip by design without the parity store; per the site owner's check)": 2,
+    "tests.test_addresses.RealMetadataTests (ADDRESS_FRAMEWORK_ZIP unset)": 1
+   },
+   "log": "/home/user/hail-b5/out/recheck-b2/logs/unittest-discover.log"
+  },
+  "2_selftest": {
+   "command": "python desktop/launcher.py --selftest payload (from the scratch copy)",
+   "result": "PASS  payload 1.0.0; exit 0",
+   "log": "/home/user/hail-b5/out/recheck-b2/logs/selftest-payload.log"
+  },
+  "3_flag_off_identity": {
+   "builds": "scratch copy of HEAD without .git -> --sample --now 2026-10-24T12:00:00Z (6 s, exit 0, 94 files); git archive db84d76 -> same command (7 s, exit 0, 94 files)",
+   "diff_rq": "5 files differ: about.html; map.html; reports.html; static/map/map.css; static/map/map.js",
+   "about_html": "6 hunks: the radar line (D53, 'not proof of dry weather' -> 'not a statement about the weather'); older prose word swaps (D85, D86(c), D88(d)): 'chance of rain or snow' -> 'rain or snow percent', 'safe' -> 'can go ahead', 'fails' -> 'goes wrong' (heading) and 'does not work' in table rows, 'town' -> 'this spot' in the observation-stations row",
+   "reports_html": "3 hunks: the lead sentence and the two empty-day lines (the D91(c) sentences)",
+   "map_html": "2 lines: the ?v= cache-busting hashes of map.css and map.js (they follow the file changes)",
+   "map_css": "161 diff lines: B3/B4/B5 table and layer styles; not flag-gated",
+   "map_js": "4,246 diff lines: B3, B4 and B5 browser code; not flag-gated",
+   "ruling_gap": "D77 names only the two About lines and D74's address words as allowed; the About word swaps, the reports sentences, map.js and map.css are not named; the site identity test allows about.html and reports.html by file and pins base c860e23 (a B4 branch commit, not an ancestor of HEAD), not db84d76",
+   "log": "/home/user/hail-b5/out/recheck-b2/logs/diff-flagoff-vs-base.txt"
+  },
+  "3b_every_flag_sample": {
+   "command": "--sample --storm-layers --hail-history --hail-addresses --now 2026-10-24T12:00:00Z",
+   "result": "exit 0 in 7 s; 1,167 files; 4,835,219 bytes; data/map.json 190,452 bytes raw; NWS-hourly-only forecast words as in the flag-off build (181 hits, 0 other)"
+  },
+  "4_combined_store_builds": {
+   "store": "/home/user/hail-b5/out/combined/store (read only; immutable)",
+   "hist_only": {
+    "command": "/home/user/hail-b1/venv/bin/python -m website.build --out <scratch>/hist-only --hail-history --hail-store <store> (live sources)",
+    "exit": 0,
+    "seconds": 60,
+    "data_map_json_raw_bytes": 162374,
+    "gzip9_bytes": 33109,
+    "gate_bytes_D82a": 163840,
+    "headroom_bytes": 1466,
+    "site_files": 24215,
+    "site_bytes": 239692598,
+    "hail_files": 24121,
+    "hail_bytes": 233358993,
+    "sources_status": {
+     "alerts": "ok, 0 active",
+     "forecasts": "ok, 17 of 17 towns",
+     "observations": "ok, 17 of 17 towns",
+     "reports": "ok, 0 reports in 3 days",
+     "radar": "ok, 7 frames",
+     "forecast": "ok, run 2:00 pm",
+     "hail_history": "ok, 2,638,537 events in 4,597 shard files, 1,825 of 1,826 days, joined records loaded"
+    },
+    "store_blocks_loaded": {
+     "joins": "loaded",
+     "climate": "loaded",
+     "stations": "loaded",
+     "gauges": "loaded",
+     "snow": "unavailable (D23: the analysis does not match station totals; not shown, by design)"
+    },
+    "map_json_hail_blocks": [
+     "state",
+     "as_of",
+     "window",
+     "d0",
+     "missing_days",
+     "grid",
+     "shard",
+     "floor_tenths",
+     "floor_in",
+     "tenths_per_inch",
+     "large_note_tenths",
+     "classes",
+     "words",
+     "source",
+     "problem",
+     "tile_split",
+     "joins",
+     "climate",
+     "summary",
+     "snow",
+     "stations",
+     "gauges",
+     "county",
+     "budget",
+     "stale_days",
+     "at_zoom",
+     "tenths_per_mm"
+    ]
+   },
+   "every_flag_live": {
+    "command": "/home/user/hail-b1/venv/bin/python -m website.build --out <scratch>/site --hail-history --hail-store <store> --hail-addresses --storm-layers (live)",
+    "exit": 0,
+    "seconds": 77,
+    "data_map_json_raw_bytes": 464287,
+    "gzip9_bytes": 89226,
+    "site_files": 45991,
+    "site_bytes": 558788614,
+    "hail_files": 45893,
+    "hail_bytes": 552015084,
+    "sources_status": "all ok: alerts, forecasts, observations, reports, radar, forecast, satellite (GOES-East scan ended 4:03 pm), storm (11 heights), hail_history, address_list (663,759 rows, 4,211 shards), street_list (563,102 lines), outline_list (918,052 outlines), hail_swath (last hour and last 24 hours, valid)",
+    "map_json_extra_blocks": [
+     "addresses 65,675 raw",
+     "roads 65,607 raw",
+     "buildings 136,794 raw",
+     "attribution",
+     "draw"
+    ],
+    "warnings": "pygrib ECCODES dataTime messages on GRIB reads; exit 0"
+   },
+   "log": "/home/user/hail-b5/out/recheck-b2/logs/live-builds.txt"
+  },
+  "5_chromium_smoke": {
+   "env": "PW_CHROMIUM=/opt/pw-browsers/chromium",
+   "smoke_map": {
+    "command": "python tools/smoke_map.py <every-flag live site> --addresses --history",
+    "exit": 0,
+    "seconds": 254,
+    "result": "Map smoke test passed (the three cells' summary words inside the first screen; each tap file under the budget; no request to another site, imagery aside)"
+   },
+   "smoke_pages": {
+    "command": "python tools/smoke_pages.py <site> --history",
+    "exit": 0,
+    "seconds": 74,
+    "result": "every page fits at 288, 320, 375, 390, 768, 1280, 1440 px, light and dark; five-season table on 17 town pages at 10 widths"
+   },
+   "three_cells_exact": "PASS in smoke_map at both widths (Billings 921,2149; Benchland 792,1998; gate 797,1986): every row of every section compared with summary.describe_sheet (D88(p))",
+   "checker_describe_sheet": "summary.describe_sheet(store, row, col, now) on the adopted store, now = the map's built time: 24 table rows each with a kind and a unit; 144 value cells per cell; 'Data unavailable' value cells 10 / 9 / 21 (their footnotes carry the sentence); every status line of the sheet (notes, roof and held lines, the partial lines) ends with 'This is not an all-clear.'; the only status strings that do not end with it are table value cells and quoted NCEI remarks",
+   "table_position": {
+    "390x844": {
+     "table_top_px": 332,
+     "first_row_top_px": 332,
+     "scroll_width": 390,
+     "result": "inside the first screen; no sideways scroll"
+    },
+    "1280x800": {
+     "table_top_px": 147,
+     "first_row_top_px": 173,
+     "scroll_width": 1280,
+     "result": "inside the first screen; no sideways scroll"
+    }
+   },
+   "fetch_lists_per_tap": "every file in the Billings, Benchland and gate-cell tap lists is under 100,000 bytes gzip; largest B5 tap file j/e/r0092_c0214.json 18,052 B; largest of any kind b/r0092_c021500.json 40,074 B (a B3 outline, desktop Billings tap)",
+   "phone_view_zoom15": "682,129 bytes gzip against 700,000 (B3 files 267,789 in 18 files; shell and data 414,340 in 13 files; picture frames 2,096,080 listed apart, D70)",
+   "pan": "2 requests across Billings at zoom 15; redraws 4.6 to 8.6 ms",
+   "hail_60_gate": "not checked: this build has no live one-hour value cell (smoke note; D92(d))",
+   "hosts_all_requests": {
+    "method": "Playwright, 3 cells x 2 widths, opened by URL and one tap at the map centre, scratch site on 127.0.0.1",
+    "requests": 300,
+    "hosts": [
+     "127.0.0.1:<scratch port> (all 300 requests)"
+    ],
+    "off_site": 0,
+    "log": "/home/user/hail-b5/out/recheck-b2/logs/host-and-position.json"
+   },
+   "logs": [
+    "smoke-map.log",
+    "smoke-pages.log"
+   ]
+  },
+  "6_words": {
+   "wording_tables": {
+    "modules_imported": 17,
+    "worded_tables": 28,
+    "strings": 734,
+    "forbidden_after_exemptions": 0,
+    "no_hail_outside_allowed": 0,
+    "log": "/home/user/hail-b5/out/recheck-b2/logs/words-tables-scan.json"
+   },
+   "built_pages_live_every_flag": {
+    "files": 21,
+    "text_lines": 14245,
+    "forbidden_after_exemptions": 191,
+    "forbidden_breakdown": {
+     "nws_hourly_forecast_clear_rows": 111,
+     "nws_forecast_sentences_chance_likely_expected_clear": 80,
+     "history_text": 0
+    },
+    "no_hail_outside_allowed_sentence": 0,
+    "raw_stems_before_exemptions_examples": "damage 143, all-clear 555, chance 149 (forecast), clear 136 (forecast), exceeding 36, coverage 24, lost 20, confirm 20, likely 20, structure 2 (a quoted remark) and the State Library's purpose sentence, claim 2 (the NWS disclaimer), probability 1 (the quoted NOAA PROB definition), warranty 4 (quoted IEM and NCEI terms), damaged 2 and collapsed 2 (quoted remarks), no damage 1 (quoted remark)",
+    "all_raw_hits_classified": "inside quotation marks, quoted source definitions or terms, the NWS disclaimer, the State Library purpose, the R9 and R20 citations, the footer (D52), or the NWS forecast (D89(a))",
+    "log": "/home/user/hail-b5/out/recheck-b2/logs/words-pages-site-live.json"
+   },
+   "unavailable_held_partial_lines": {
+    "sheet_three_cells": "PASS: every status line ends with the sentence (see 5_chromium_smoke.checker_describe_sheet)",
+    "town_pages": "FAIL: the h3 'Data unavailable, with the reason' on 17 of 17 town pages (build.py line 1043) does not end with the sentence; the table cells 'Data unavailable' carry footnotes that do end with it",
+    "about_prose": "observation: B5 About sentences such as 'Building outlines could not be loaded in this update; that is not the same as no buildings. This is not an all-clear.' are followed by more prose in the same paragraph; the sentence itself ends correctly"
+   },
+   "required_strings": {
+    "four held or unavailable lines with reasons (lightning, UV and sunlight, roof surface temperature, ponding)": "present",
+    "radar sentence": "present ('Radar estimates can miss hail that people reported and can show hail that no one reported.')"
+   },
+   "111_F_claim": "none (the only matches are the street name '111 F Street' and road '111F')",
+   "pre_existing_outside_B5": [
+    "the NWS forecast cards and detailed sentences (D89(a); outside the history gate, but tests/words_rules.py FORECAST covers only the sample names)",
+    "'No links means that town's forecast is unavailable.' (About, pre-existing)",
+    "the 'withheld' quality-control line for the Livingston gust observation (observation text, pre-existing)"
+   ]
+  },
+  "7_d13_and_dashes": {
+   "added_lines_excluding_website_data": 48259,
+   "em_dash_U2014_lines": 0,
+   "en_dash_U2013_lines": 15,
+   "en_dash_note": "in docs (ROADMAP and DECISIONS research sections) and one test assertion (test_hail: assertNotIn('–', text)); none is an em-dash",
+   "banned_names": {
+    "list_used": "the names the rule covers, as a standard list (claude, anthropic, openai, chatgpt, gpt, codex, gemini, copilot, llm, llama, mistral, grok, deepseek, qwen, opus, sonnet, haiku, AI)",
+    "outside_branch_names": 0,
+    "branch_name_hits": "claude/... (23 lines) and codex/montana-weather-pilot (1 line): allowed by D43",
+    "false_positives": "'fullmatch' (16) and the gauge id 'BLLM8' (3)",
+    "owner_list_status": "the banned-name list is not in the repository (ROADMAP and DECISIONS say so); the owner confirms it"
+   },
+   "d13_stems_in_added_lines": "damag 95, claim 82, coverage 336, insur 19, eligib 16, probab 14, risk 17, warrant 15, all-clear 331 (mostly code, tests and comments); the built pages carry none outside the classified contexts (see 6_words)"
+  },
+  "8_decision7": {
+   "readers_checked": "addresses.py, streets.py, buildings.py, joins.py, stations.py, climate.py, gauges.py, snowgrid.py, summary.py, sources.py, hail.py, build.py",
+   "not_read": [
+    "ParcelID, LocalID, NGUID, GlobalID, Place_Type, MT_PlcType, LandmkName, Addtl_Desc, Addtl_Loc, GNIS_ID, Latitude, Longitude, DiscrpAgID (addresses.py FORBIDDEN_FIELDS)",
+    "Ownership, LocalID, GlobalID, NGUID, DiscrpAgID, ProcessID (streets.py LIBRARY_NEVER)",
+    "buildings.py reads geometry only (pyogrio columns=[]; the reader refuses any attribute field)"
+   ],
+   "read_and_shown_flag": "addresses.py reads the Placement field (placement class letter S, P, G, L, T, U) and shows the class text for non-Structure points, e.g. L = 'at the parcel' (PLACEMENT_HOW), on the map popup and in About. D81(b) accepted this as the placement method, not a parcel attribute. The supervisor should confirm the reading.",
+   "built_site": "no ParcelID, LocalID, Ownership, Place_Type or MT_PlcType strings in the built site; 'at the parcel' appears in about.html and data/map.json",
+   "class_counts_store": {
+    "S": 625283,
+    "P": 21623,
+    "G": 9863,
+    "L": 306,
+    "T": 1998,
+    "U": 11430
+   },
+   "result": "PASS for the named fields (owner, parcel identifier, place type, building use); FLAG for Placement"
+  },
+  "9_docs_numbers": {
+   "method": "figures in README, ROADMAP, DESIGN, DECISIONS (D38 and later), About and b5-verification.json compared with the measured values (store index, folder listings, gzip, build outputs, smoke and checker outputs)",
+   "mismatches": [
+    {
+     "where": "docs/ROADMAP.md:81 and :98; docs/DESIGN.md:871; docs/DECISIONS.md:951 (D54) and :963 (D76); research b5-verification.json:3, :641, :974",
+     "stated": "541,075,953 bytes in 45,878 files",
+     "measured": "552,012,463 bytes in 45,878 files (store as adopted; D84 rebuilt the tile lists, +10,885,004 bytes)"
+    },
+    {
+     "where": "docs/DECISIONS.md:951 (D54) and :963 (D76); docs/DESIGN.md:871",
+     "stated": "hail/tl 56,947,475 bytes raw",
+     "measured": "67,832,479 bytes in 4,597 files (D84)"
+    },
+    {
+     "where": "docs/DECISIONS.md:951 (D54); docs/DESIGN.md:871",
+     "stated": "hail/sd 4,373,407 bytes in 805 files",
+     "measured": "4,396,079 bytes in 805 files"
+    },
+    {
+     "where": "docs/ROADMAP.md:80; docs/DESIGN.md:871; docs/DECISIONS.md:963 (D76)",
+     "stated": "largest tile list 3,401 bytes gzip",
+     "measured": "3,817 bytes gzip (gzip -9; 3,907 at level 6), r0096_c0213.json"
+    },
+    {
+     "where": "docs/DESIGN.md:875; docs/ROADMAP.md:179; research b5-verification.json:135",
+     "stated": "phone view under the 650 KB gzip gate",
+     "measured": "gate restated to 700,000 bytes gzip (D82(b)); measured 682,129"
+    },
+    {
+     "where": "docs/DESIGN.md:882; docs/DECISIONS.md:957 (D66) and :960 (D70); b5-verification.json:1209",
+     "stated": "phone budget 665,600 bytes gzip",
+     "measured": "700,000 bytes gzip (D82(b)); measured 682,129 (the 665,600 gate is superseded)"
+    },
+    {
+     "where": "docs/DECISIONS.md:960 (D70); research b5-verification.json:651 and :1221",
+     "stated": "phone view 663,276 bytes, 'round-2 figure pending'",
+     "measured": "682,129 bytes gzip (checker, every flag); 682,102 (smoke, 21:26)"
+    },
+    {
+     "where": "docs/DECISIONS.md:957 (D66)",
+     "stated": "B5 blocks under the 140 KB gate",
+     "measured": "140 KB superseded by 163,840 bytes raw with the history flag (D82(a)); measured 162,374"
+    },
+    {
+     "where": "absent from the docs",
+     "stated": "no 163,840 gate and no measured map.json figures",
+     "measured": "history-flag map.json 162,374 bytes raw (headroom 1,466); every-flag 464,287 raw (checker) and 464,345 raw (round 3, D90)"
+    },
+    {
+     "where": "docs/DECISIONS.md:956 (D64)",
+     "stated": "fixture 471,538 bytes outside hail/a (budget 480 KB)",
+     "measured": "485,066 bytes in 94 files outside hail/a (limit 491,520 = 480 KiB; D84)"
+    },
+    {
+     "where": "docs/ROADMAP.md:88",
+     "stated": "full run 2026-10-24: 1,839 tests, 3 failures",
+     "measured": "1,966 tests, OK, skipped 10 (this run); the 1,839 figure is superseded"
+    },
+    {
+     "where": "docs/DESIGN.md:169",
+     "stated": "empty-day sentence 'No hail or wind reports in or near Montana for this day.'",
+     "measured": "'No reports of hail or wind in or near Montana for this day; that is not the same as no hail.' (D91(c))"
+    },
+    {
+     "where": "docs/DECISIONS.md (no entries)",
+     "stated": "D77 (one mention), D78, D79, D81 to D92 absent",
+     "measured": "rulings in the brief (D77 to D92); the D38 round bullets must carry them in order (items-docs.md item 1)"
+    },
+    {
+     "where": "docs/ROADMAP.md:98 and research b5-verification.json:223 (superseded block)",
+     "stated": "packed asset not yet measured",
+     "measured": "not measured by this checker; the branch run measures it (open)"
+    }
+   ],
+   "figures_that_match": [
+    "45,878 files",
+    "j/ 87,628,936 bytes in 9,196 files",
+    "j/e 63,082,924 bytes in 4,597 files; largest 22,933 B gzip",
+    "c 35,149,062 bytes in 4,569 files",
+    "g 285,713 bytes in 104 files; k 13,689 bytes in 56 files",
+    "a 49,252,605; b 196,302,000; r 69,632,279 (B3)",
+    "D44 table 785 + 3,327 + 11,580 + 72 = 15,764; 0 unplaced; 1,279 simplified outline",
+    "D55 edges (TFX 19 of 2021 store-only; TFX 30 and TFX 34 of 2026 research-only)",
+    "pool 2,778 (1,325 MT; 21 Canadian not read); 439 + 56 = 495 chosen files, 487,235,520 bytes; 700 rule files, 537,226,020 bytes; 805 summary files",
+    "tile lists 4,597 files; margin 4.248 miles; 2,298,500 cell answers; 206,865 parity points",
+    "Billings 1.2 and 2.7 miles; Harlowton 11NW (D65); Moccasin 3.6 miles from the Benchland point",
+    "the 100,000-byte tap budget; largest B5 tap file 18,052 B gzip in the smoke",
+    "B3 files a, b and r as stated in D54"
+   ],
+   "not_checked": "the four browser gate figures in b5-verification.json beyond the phone view and the tap files; AGENTS.md line by line"
+  },
+  "10_git": {
+   "git_status_short": "empty (clean)",
+   "diff_stat_vs_db84d76": "194 files changed, 51,305 insertions(+), 1,395 deletions(-)",
+   "ignored_entries_in_worktree": 5
+  }
+ },
+ "gates": {
+  "B5-10": {
+   "status": "fail",
+   "evidence": [
+    "tests/words_rules.py over 28 WORDS tables and 734 strings: 0 forbidden, 0 'no hail' (after the allowed exemptions)",
+    "built pages (21 files, live every-flag site): history text 0 forbidden after exemptions; 191 hits are NWS forecast wording (111 hourly 'Clear' rows, 80 forecast sentences) outside the history gate by D89(a), not covered by the FORECAST tuple",
+    "failure: the town-page heading 'Data unavailable, with the reason' (17 of 17 pages, build.py line 1043) is an unavailable line without 'This is not an all-clear.'",
+    "the sheet's status lines (describe_sheet, three cells) all end with the sentence; table value cells read 'Data unavailable' with footnotes that do",
+    "the four held or unavailable lines are present with reasons; the radar sentence is present; 'structure' and 'damage' occur only in allowed contexts"
+   ]
+  },
+  "B5-11": {
+   "status": "partial",
+   "evidence": [
+    "smoke: the three-cell comparison is exact at 390 and 1280 px; the table is inside the first screen (390x844: top 332 px; 1280x800: top 147 px); no sideways scroll",
+    "all 24 rows have a kind and a unit; all 144 value cells per cell carry a unit word or 'Data unavailable' with its footnote (Billings: three count cells 'N flood or flash flood records')",
+    "not done here: the reviewer's reading that no sentence needs decoding"
+   ]
+  },
+  "B5-12": {
+   "status": "partial",
+   "evidence": [
+    "phone view at zoom 15 with every layer on: 682,129 bytes gzip against 700,000 (D82(b)); pictures 2,096,080 listed apart (D70)",
+    "largest tap file 18,052 bytes gzip (B5) and 40,074 (B3 outline); all under 100,000",
+    "history-flag map.json 162,374 bytes raw under 163,840 (D82(a)); every-flag 464,287 raw / 89,226 gzip-9",
+    "not done here: the daily job end to end under 25 minutes (store build steps were measured by the owners: joins 218 s (index build_seconds), station refresh 86 s (D67))"
+   ]
+  },
+  "B5-14": {
+   "status": "pass",
+   "evidence": [
+    "smoke: a station file refused in its own browser context shows the station unavailable sentence with the other rows kept (check_station_unavailable); a zone file refused likewise (check_zone_unavailable); both pass",
+    "the build exits 0 with the snow analysis unavailable by design (D23); the suite has about 278 failure-named tests and passes",
+    "the sheet and the town pages print the D20-style sentences with the reason"
+   ]
+  },
+  "B5-16": {
+   "status": "pass",
+   "evidence": [
+    "Billings town page: 'Highest temperature' and 'Lowest temperature' rows are Grid estimate, degrees Fahrenheit, each season value with its date",
+    "'Highest temperature at the station' and 'Lowest temperature at the station' are Station reading, this town; each value names its station and date (Billings WTP, Billings Intl AP)",
+    "'Strongest gust at that station' and 'Deepest snow on the ground' name their stations; no row mixes two kinds"
+   ]
+  },
+  "B5-18": {
+   "status": "fail",
+   "evidence": [
+    "flag-off identity: 5 files differ from the db84d76 build (about.html, map.html, reports.html, map.css, map.js); the ruled parts are the D53 radar line, D85/D86(c)/D88(d) About word swaps, D91(c) reports sentences and the two cache-busting hashes; map.js and map.css (B3, B4 and B5 browser code, not flag-gated) are not named by any ruling",
+    "--hail-history-only build: built (exit 0; map.json 162,374 raw); 'unchanged' has no B1 baseline here, not run",
+    "Chromium smoke at 390 and 1280 px: pass (smoke_map exit 0); smoke_pages: pass (exit 0)",
+    "live preview build on the branch: not run by this checker (CI runs it on the branch push)",
+    "zero off-site requests: pass (smoke; host capture 300 requests, all to the local server)"
+   ]
+  }
+ },
+ "build_list_gates": [
+  {
+   "gate": "BG1 full suite passes (0 failures, venv python)",
+   "status": "pass",
+   "evidence": "1,966 tests, OK, skipped 10, exit 0"
+  },
+  {
+   "gate": "BG2 self-test passes",
+   "status": "pass",
+   "evidence": "PASS payload 1.0.0, exit 0"
+  },
+  {
+   "gate": "BG3 sample build; flag-off build identical to base",
+   "status": "fail",
+   "evidence": "both sample builds exit 0; identity fails on 5 files (see B5-18)"
+  },
+  {
+   "gate": "BG4 combined-store build with every flag",
+   "status": "pass",
+   "evidence": "exit 0, 77 s; every source status ok; map.json 464,287 raw"
+  },
+  {
+   "gate": "BG5 sheet smoke and smoke_pages in Chromium at 390 and 1280 px",
+   "status": "pass",
+   "evidence": "smoke_map exit 0 (254 s); smoke_pages exit 0 (74 s)"
+  },
+  {
+   "gate": "BG6 three-cell comparison exact",
+   "status": "pass",
+   "evidence": "smoke: exact at both widths; checker: the rows, units and kinds as stated in B5-11"
+  },
+  {
+   "gate": "BG7 fetch list and budget measured",
+   "status": "pass",
+   "evidence": "tap files under 100,000 bytes gzip (largest B5 18,052); phone view 682,129 under 700,000 (D82(b))"
+  },
+  {
+   "gate": "BG8 zero off-site requests",
+   "status": "pass",
+   "evidence": "smoke and host capture; hosts: local server only"
+  },
+  {
+   "gate": "BG9 words rules over every WORDS string and the built pages",
+   "status": "fail",
+   "evidence": "WORDS strings 0 of 734 flagged; built pages: history text 0; FAIL on the town-page footnote heading (17 pages); NWS forecast words (191 hits) outside the FORECAST tuple (D89(a) scope question)"
+  },
+  {
+   "gate": "BG10 D13 greps",
+   "status": "pass",
+   "evidence": "classified in checks.7 and checks.6; no unclassified history word on the built pages"
+  },
+  {
+   "gate": "BG11 no em-dash and no banned name in added lines",
+   "status": "pass",
+   "evidence": "0 em-dash lines; 0 banned names outside branch names (D43); 15 en-dash lines, none an em-dash"
+  },
+  {
+   "gate": "BG12 decision 7 audit",
+   "status": "pass with flag",
+   "evidence": "no owner, parcel identifier, place-type or building-use field read, stored or shown; the Placement class is read and its L text 'at the parcel' is shown (D81(b)) for the supervisor"
+  },
+  {
+   "gate": "BG13 docs' numbers equal the measured ones",
+   "status": "fail",
+   "evidence": "checks.9_docs_numbers lists 14 entries: 13 figure mismatches and the missing D77 to D92 entries (the 14th is an open item, the packed asset, not a mismatch)"
+  }
+ ],
+ "build_list_items": {
+  "owner_1_browser": [
+   {
+    "item": "Sheet opens with the B3 address lines, then the B4 live line when a hail layer is on, then the table, then the sections",
+    "status": "partial",
+    "evidence": "table and section order checked by the smoke; the live line is not checked in this build (no live one-hour value cell); the branch preview with --require-live checks it"
+   },
+   {
+    "item": "Five-season summary table of 23 to 25 rows in the Product order",
+    "status": "done",
+    "evidence": "24 rows at each cell; the smoke compares the row order"
+   },
+   {
+    "item": "Sections in the fixed order (eleven ids)",
+    "status": "done",
+    "evidence": "smoke asserts the sheet order equals summary.SECTION_ORDER; map.json summary.sections is the eleven ids in order (browser keeps reading summary.sections, D91(g))"
+   },
+   {
+    "item": "Table and sections from per-tile files (j/e, c, tl, sd, g, s, z, k, t); one fetch per file, cached; never j/events.json",
+    "status": "done",
+    "evidence": "fetch lists in the smoke; no j/events.json fetch"
+   },
+   {
+    "item": "Rules and words from map_data_summary; no literal sentence, unit, threshold or colour in map.js for B5 text",
+    "status": "done",
+    "evidence": "no B5 sheet sentence literal in map.js (grep); the remaining literals are pre-existing picture, map-data and forecast status lines that D87(c) and D89(c) defer to a ROADMAP follow-up; inch scale and season bounds read from map.json (browser check b2r6, D88(l))"
+   },
+   {
+    "item": "Station picks at the clicked cell centre from the tl candidates (up to six passing per element, D36)",
+    "status": "done",
+    "evidence": "smoke: station rows at the three cells compared exactly, opened by URL and by tap"
+   },
+   {
+    "item": "Gust rows and unavailable lines say what Python says (D37, D32)",
+    "status": "done",
+    "evidence": "smoke exact comparison; injected station and zone failures pass"
+   },
+   {
+    "item": "Cell covers read 'covered this cell or part of it' (D38)",
+    "status": "done",
+    "evidence": "287 occurrences in the three-cell sheet text; town pages read 'covered this spot' (7 on Billings)"
+   },
+   {
+    "item": "Flooding section lists each NCEI flood record with its date and distance (D57)",
+    "status": "done",
+    "evidence": "Billings flood and flash flood record rows with dates (3, 1 and 4 records by row); smoke exact"
+   },
+   {
+    "item": "Gauge lines carry one 'River gauge:' prefix (F8)",
+    "status": "done",
+    "evidence": "town pages: 17 pages with the prefix, no doubled prefix; the sheet carries no per-address gauge line (D6)"
+   },
+   {
+    "item": "Every failed part prints the D20 sentence (D16, D28)",
+    "status": "done",
+    "evidence": "smoke station-file and zone-file failure checks pass"
+   },
+   {
+    "item": "Old B2 words give way to the B1 Python words; the seven HailJoinedRecords browser-against-module tests pass",
+    "status": "done",
+    "evidence": "suite OK; the old warnings_row key is gone (products)"
+   },
+   {
+    "item": "map.css styles the table at 390 px (no sideways scroll; table inside the first screen below the address lines)",
+    "status": "done",
+    "evidence": "measured: scroll width 390 at 390 px; table top 332 px on an 844 px screen; smoke first-screen check passes"
+   },
+   {
+    "item": "Hand-written JavaScript documented inline as a browser-only need",
+    "status": "done",
+    "evidence": "per the owner's report; not re-read by this checker"
+   }
+  ],
+  "owner_2_site": [
+   {
+    "item": "map.json blocks the browser needs (words, thresholds, fixed orders, file paths, budgets); no block lists every tile (D40)",
+    "status": "partial",
+    "evidence": "B5 blocks conform; B3's membership sets (addresses.tiles, roads.tiles, buildings.tiles, buildings.split) list every tile (D66 accepts it; a compact encoding is a roadmap follow-up)"
+   },
+   {
+    "item": "map.json stays under 140 KB raw (build list)",
+    "status": "not met as written",
+    "evidence": "history flag 162,374 bytes raw; the gate is restated to 163,840 bytes (D66, D82(a)) and is met"
+   },
+   {
+    "item": "D56 build.py and summary.py halves: the town point is the spot for station picks and gust stations",
+    "status": "done",
+    "evidence": "town page distances are from the town point ('from this spot'); Billings from towns.json's point (WTP 1.2 mi, Intl AP 2.7 mi, D80(a))"
+   },
+   {
+    "item": "D57 flooding section lists each record with its date and distance",
+    "status": "done",
+    "evidence": "sheet and town pages"
+   },
+   {
+    "item": "The seven browser tests kept as the contract (HailJoinedRecords and the others)",
+    "status": "done",
+    "evidence": "suite OK; parity step 7 of 7 OK"
+   },
+   {
+    "item": "Site words: every unavailable, partial and held line ends with 'This is not an all-clear.' (D41)",
+    "status": "not done",
+    "evidence": "build.py line 1043 'footnotes' heading on 17 town pages"
+   },
+   {
+    "item": "D91(a) to D91(c), D92(a) to D92(c) (latest site check, b2r7)",
+    "status": "done",
+    "evidence": "smoke budget from map.json; SECTION_ORDER; partial lines from words; reports.html sentences; build.py line 638 allow_live=True; website.yml offline list names tests.test_words_rules and build job timeout 25; parity run 7 of 7 OK against the built site copy"
+   }
+  ],
+  "owner_3_products": [
+   {
+    "item": "D55: the three one-event differences (HW.A 276 vs 277; HW.W 338 vs 339; FW.W 170 vs 169) are window-edge events, recorded",
+    "status": "done",
+    "evidence": "store and research counts as stated; joins.vtec_window_edges lists TFX 19 (2021, store window only), TFX 30 and TFX 34 (2026, research window only)"
+   },
+   {
+    "item": "D56: the station-reader cause of run 6 is diagnosed and fixed, or recorded as no longer reproducing",
+    "status": "partial",
+    "evidence": "products check (18:47): the cause is recorded nowhere; the Billings town-page test passes; the docs pass should say it no longer reproduces"
+   },
+   {
+    "item": "D56: the snowgrid word tests use the D41 wording through tests/words_rules.py",
+    "status": "done",
+    "evidence": "suite OK"
+   },
+   {
+    "item": "D53: sources.py word swap (hail_swath 'missing' row; MESH row '-3 (no radar coverage)')",
+    "status": "done",
+    "evidence": "products check items; About radar line matches D53 in the built page"
+   },
+   {
+    "item": "D36: the candidate list at a point is one rule (stations.tile_list_picks) used by the sheet, the town pages and the gate points",
+    "status": "done",
+    "evidence": "products check: parity 0 of 2,298,500 cell answers; summary delegates"
+   },
+   {
+    "item": "D61: tile lists cover every cell of their tile (margin to the farthest corner; no per-element cap); budget 100,000 gzip",
+    "status": "done",
+    "evidence": "parity 0; largest tile list 3,817 B gzip; longest list 33"
+   },
+   {
+    "item": "D62: the pool is every GHCN station in reach by position; Canadian stations are candidates not read",
+    "status": "done",
+    "evidence": "pool 2,778 (MT 1,325; 21 Canadian, all CA-prefixed, not read)"
+   },
+   {
+    "item": "D63: one pick rule; parity at the 17 towns and the named cells",
+    "status": "done",
+    "evidence": "products check: 21 points, 105 element answers, 0 differences"
+   },
+   {
+    "item": "D64: the fixture equals a fresh regeneration; size within budget",
+    "status": "done",
+    "evidence": "94 files, 485,066 bytes outside hail/a (limit 491,520)"
+   },
+   {
+    "item": "D78(c) and D84(b): display names (title case; initialisms kept; INTL, EXP, STN title-cased)",
+    "status": "done (superseded)",
+    "evidence": "the products check had it partial at 18:47; the adopted store now carries 'Great Falls 16St', 'Eastend Cypress (Aut)', 'Rockglen (Aut)', 'Billings Intl AP', 'Moccasin Exp Stn' and 'Lister'"
+   },
+   {
+    "item": "D78(a): the SWDI units row quotes NOAA's PROB definition",
+    "status": "done",
+    "evidence": "About: 'NOAA defines PROB as \"the probability of hail in percent\"' (a quotation)"
+   },
+   {
+    "item": "D80(a): Billings point from towns.json (45.7833, -108.5007); D80(d) warning words for cell and spot",
+    "status": "done",
+    "evidence": "gate distances from the point; products check items"
+   },
+   {
+    "item": "D85: About-visible fields pass tests/words_rules.py",
+    "status": "done (superseded)",
+    "evidence": "the built About scan has 0 forbidden words; the products check had it partial at 18:47"
+   },
+   {
+    "item": "D86(a), (b): storm row and satellite row wording",
+    "status": "done",
+    "evidence": "storm row and 'cloud-free sky' on the built About"
+   },
+   {
+    "item": "D86(c), (d), (e): words exemptions for older About prose, the R9 and R20 titles and the State Library name",
+    "status": "done (superseded)",
+    "evidence": "tests/words_rules.py EXEMPT now holds the R9 and R20 citations and the State Library name; the products check had them not done at 18:47"
+   },
+   {
+    "item": "D86(f): the addresses.py outside-grid sentence",
+    "status": "done (superseded)",
+    "evidence": "built map.json and map.js: 'This point is outside the hail grid's Montana outline; the history does not cover it.'"
+   },
+   {
+    "item": "Words tables: every string of the joins and stations WORDS tables passes tests/words_rules.py",
+    "status": "done",
+    "evidence": "734 strings across 28 tables, 0 flagged (this run)"
+   },
+   {
+    "item": "D13 greps and no em-dashes or model names in the added lines of owned files",
+    "status": "done",
+    "evidence": "checks.7"
+   },
+   {
+    "item": "Decision 7 and D12: no owner, parcel, place-type or building-use field read, stored or shown",
+    "status": "done with flag",
+    "evidence": "checks.8; Placement flagged"
+   },
+   {
+    "item": "B5-13 (station part): two builds from the same cache are byte-identical",
+    "status": "done",
+    "evidence": "products check (not re-run here)"
+   },
+   {
+    "item": "Cache rule: no Canadian .dly file pulled or summarised",
+    "status": "done",
+    "evidence": "products check: 867 .dly files, 0 CA-prefixed; this run: all 700 rule and 495 chosen station files are in the cache"
+   },
+   {
+    "item": "D82(d): describe_joins keeps the cause, county-caveat, implausible-count and changeover lines",
+    "status": "partial",
+    "evidence": "products check: words present; freshness lines not re-checked"
+   }
+  ],
+  "owner_4_smoke_ci": [
+   {
+    "item": "Sheet smoke at 390 and 1280 px: table inside the first screen; every cell with a unit and a kind word; exact Python words on three cells; fetch list per tap under 100 KB gzip; phone view under the budget; zero off-site requests",
+    "status": "done",
+    "evidence": "smoke_map PASS at both widths (this run); measured figures in checks.5"
+   },
+   {
+    "item": "tools/smoke_pages.py on the same build, every width",
+    "status": "done",
+    "evidence": "PASS (exit 0)"
+   },
+   {
+    "item": "The D49 wait step for branch previews and its test",
+    "status": "not done on this branch",
+    "evidence": "website.yml has no 'gh run list' step; D60 says the wait comes with the merge of main"
+   },
+   {
+    "item": "Daily job timeout 150; joins backstop at 1.5 times the measured time (D42; 53 minutes per D75(d))",
+    "status": "done",
+    "evidence": "hail-store.yml timeout-minutes 150 (line 106); joins step backstop 53 (line 158)"
+   },
+   {
+    "item": "The smoke flags the preview passes (--addresses --history; smoke_pages --history)",
+    "status": "done",
+    "evidence": "website.yml lines 157 and 161"
+   },
+   {
+    "item": "Real-store parity step (D88(a)) runs after the build on branch pushes, fails without hail/tl, fails on skips",
+    "status": "done",
+    "evidence": "website.yml step present; the seven named tests pass against the built site copy: 'Ran 7 tests in 157.403s OK', 0 skipped"
+   },
+   {
+    "item": "The smoke's 2026-10-24 21:26 open items: parity step as written (4b), full suite error (6b)",
+    "status": "done (resolved after the smoke check)",
+    "evidence": "site-3 applied D92(a) (build.py line 638) and the pin at tests/test_site.py; the suite passes and the parity step passes in this run"
+   },
+   {
+    "item": "The one-hour swath (hail_60) pixel gate at both sizes",
+    "status": "partial",
+    "evidence": "not measured in this build (no value cell); the branch preview with --require-live measures it (D92(d))"
+   },
+   {
+    "item": "Build job timeout covers the added step (25 minutes)",
+    "status": "done",
+    "evidence": "website.yml line 55"
+   }
+  ],
+  "owner_5_docs": [
+   {
+    "item": "DECISIONS D38 entry: the round bullets carry D44 to D87 in order, each with its reason",
+    "status": "not done",
+    "evidence": "D44 to D76 present; D77, D78, D79 and D81 to D92 absent (D80 partial); the docs pass adds them"
+   },
+   {
+    "item": "D56: the run-6 cause, or that it no longer reproduces, is recorded",
+    "status": "not done",
+    "evidence": "no record in the docs"
+   },
+   {
+    "item": "DESIGN.md section 12 as built (summary table, eleven sections, names and order, phone budget 700,000, history gate 163,840, D83(a) Show all, D87(c) follow-up)",
+    "status": "partial",
+    "evidence": "section 12 exists (line 777); stale at lines 169, 871, 875 and 882 (see checks.9)"
+   },
+   {
+    "item": "ROADMAP: the B5 row names the branch and its PR superseding PRs 14, 15 and 16; no WIP hash; open items in order; budget line with measured store figures",
+    "status": "partial",
+    "evidence": "open-item list present; stale at lines 80, 81, 88, 98 and 179"
+   },
+   {
+    "item": "README and AGENTS command and layout lines (--hail-history, --hail-addresses, --storm-layers, --hail-store; the B5 modules)",
+    "status": "done (README); AGENTS not re-read",
+    "evidence": "README lines 107 to 115 and 145 to 167 carry the flags and the modules"
+   },
+   {
+    "item": "About: the D53 radar line; the D74 address words; the D62 Canadian clause; the D23 snow sentence; every row inside the words gate",
+    "status": "done",
+    "evidence": "built About: radar line, 'completeness varies from county to county', Canadian clause (2 mentions), snow analysis sentence (1), 0 forbidden words after exemptions"
+   },
+   {
+    "item": "b5-verification.json: valid JSON; one status and evidence line per gate; the figures; the flag-off clause; the file list",
+    "status": "partial",
+    "evidence": "valid JSON; stale at lines 3, 135, 641, 651, 974, 1209 and 1221 (checks.9)"
+   },
+   {
+    "item": "D54 and the D44 table, the D55 edges, the D61 and D62 figures, the budgets and the browser gates in the record",
+    "status": "partial",
+    "evidence": "D44 table and D55 edges present and correct; D61, D62 and the browser gates partly present; the 163,840 gate and the 700,000 budget not restated in the record"
+   },
+   {
+    "item": "The open items for Carson in one place",
+    "status": "partial",
+    "evidence": "ROADMAP holds the list; this record adds the items in open_items_for_owner"
+   }
+  ]
+ },
+ "measurements": {
+  "store": {
+   "path": "/home/user/hail-b5/out/combined/store/hail",
+   "apparent_bytes": 552012463,
+   "files": 45878,
+   "directories": 448,
+   "index_json_bytes": 1251710,
+   "manifest_json_bytes": 6190468,
+   "manifest_entries": 45877,
+   "counts_json_bytes": 76271,
+   "folders": {
+    "a": {
+     "files": 11714,
+     "bytes": 49252605
+    },
+    "b": {
+     "files": 5615,
+     "bytes": 196302000
+    },
+    "c": {
+     "files": 4569,
+     "bytes": 35149062
+    },
+    "g": {
+     "files": 104,
+     "bytes": 285713
+    },
+    "j": {
+     "files": 9196,
+     "bytes": 87628936,
+     "e_files": 4597,
+     "e_bytes": 63082924,
+     "e_largest_gzip9": 22933
+    },
+    "k": {
+     "files": 56,
+     "bytes": 13689
+    },
+    "r": {
+     "files": 4427,
+     "bytes": 69632279
+    },
+    "s": {
+     "files": 60,
+     "bytes": 34913
+    },
+    "sd": {
+     "files": 805,
+     "bytes": 4396079
+    },
+    "t": {
+     "files": 4597,
+     "bytes": 32022304
+    },
+    "tl": {
+     "files": 4597,
+     "bytes": 67832479,
+     "largest_gzip9": 3817,
+     "largest_gzip6": 3907
+    },
+    "z": {
+     "files": 135,
+     "bytes": 1943955
+    }
+   },
+   "b5_folders_c_sd_tl_t_j_k_g_s_z_bytes": 229307130,
+   "d42_hail_177677748_is_an_earlier_measure": true
+  },
+  "stations": {
+   "pool": 2778,
+   "pool_montana": 1325,
+   "pool_not_read_canadian": 21,
+   "pick_files": 439,
+   "daily_reach_files": 56,
+   "chosen_files": 495,
+   "chosen_bytes": 487235520,
+   "rule_files": 700,
+   "rule_bytes": 537226020,
+   "summary_files": 805,
+   "summary_bytes": 4396079,
+   "tile_lists_files": 4597,
+   "tile_lists_bytes": 67832479,
+   "tile_margin_max_miles": 4.248,
+   "tile_list_longest": 33,
+   "rejected_entries": 201004,
+   "gauge_pool": 192,
+   "gauge_mt": 102,
+   "gauge_out_of_state": 90
+  },
+  "joins": {
+   "zone_groups": 15764,
+   "current_785": 785,
+   "mapped_3327": 3327,
+   "iem_set_11580": 11580,
+   "changeover_week_72": 72,
+   "unplaced": 0,
+   "simplified_outline": 1279,
+   "build_seconds": 218.0,
+   "vtec_store_vs_research": {
+    "HW.A": [
+     276,
+     277
+    ],
+    "HW.W": [
+     338,
+     339
+    ],
+    "FW.W": [
+     170,
+     169
+    ]
+   }
+  },
+  "climate": {
+   "tiles": 4569,
+   "bytes": 35149062,
+   "through": "2026-10-15",
+   "months_loaded": 64
+  },
+  "addresses_placement_classes": {
+   "S": 625283,
+   "P": 21623,
+   "G": 9863,
+   "L": 306,
+   "T": 1998,
+   "U": 11430
+  },
+  "fixture": {
+   "files": 94,
+   "bytes_outside_hail_a": 485066,
+   "limit_bytes": 491520
+  },
+  "map_json": {
+   "history_flag_raw": 162374,
+   "history_flag_gzip9": 33109,
+   "history_gate_raw": 163840,
+   "history_headroom": 1466,
+   "every_flag_raw": 464287,
+   "every_flag_gzip9": 89226,
+   "every_flag_sample_raw": 190452
+  },
+  "builds": [
+   {
+    "name": "flagoff-new",
+    "flags": "--sample (no hail flag), --now 2026-10-24T12:00:00Z",
+    "exit": 0,
+    "seconds": 6,
+    "files": 94
+   },
+   {
+    "name": "flagoff-base (db84d76 archive)",
+    "flags": "--sample, same --now",
+    "exit": 0,
+    "seconds": 7,
+    "files": 94
+   },
+   {
+    "name": "sample-everyflag",
+    "flags": "--sample --storm-layers --hail-history --hail-addresses, same --now",
+    "exit": 0,
+    "seconds": 7,
+    "files": 1167,
+    "bytes": 4835219
+   },
+   {
+    "name": "hist-only",
+    "flags": "--hail-history --hail-store <store> (live)",
+    "exit": 0,
+    "seconds": 60,
+    "files": 24215,
+    "bytes": 239692598
+   },
+   {
+    "name": "every-flag live (the site for the smoke)",
+    "flags": "--hail-history --hail-store <store> --hail-addresses --storm-layers (live)",
+    "exit": 0,
+    "seconds": 77,
+    "files": 45991,
+    "bytes": 558788614
+   }
+  ],
+  "tests": {
+   "unittest_discover": {
+    "ran": 1966,
+    "skipped": 10,
+    "result": "OK",
+    "seconds": 372.744
+   },
+   "parity_step_7_tests": {
+    "ran": 7,
+    "skipped": 0,
+    "result": "OK",
+    "seconds": 157.403
+   },
+   "subset_modules_verbose": {
+    "ran": 1536,
+    "skipped": 4,
+    "result": "OK",
+    "seconds": 87.553
+   }
+  },
+  "selftest": {
+   "result": "PASS payload 1.0.0",
+   "exit": 0,
+   "seconds": 2
+  },
+  "smoke": {
+   "smoke_map_seconds": 254,
+   "smoke_pages_seconds": 74,
+   "phone_view_gzip": 682129,
+   "phone_budget_gzip": 700000,
+   "b3_files_gzip": 267789,
+   "shell_and_data_gzip": 414340,
+   "frames_listed_apart_gzip": 2096080,
+   "largest_b5_tap_gzip": {
+    "file": "j/e/r0092_c0214.json",
+    "bytes": 18052
+   },
+   "largest_tap_any_gzip": {
+    "file": "b/r0092_c021500.json",
+    "bytes": 40074
+   },
+   "per_file_budget_gzip": 100000,
+   "pan_requests_zoom15": 2
+  },
+  "host_capture": {
+   "requests": 300,
+   "hosts_off_site": 0,
+   "hosts": [
+    "127.0.0.1:<scratch port>"
+   ],
+   "opens_and_taps": 12
+  },
+  "table_positions": {
+   "390x844": {
+    "table_top": 332,
+    "first_row_top": 332
+   },
+   "1280x800": {
+    "table_top": 147,
+    "first_row_top": 173
+   }
+  },
+  "words": {
+   "wording_tables": 28,
+   "wording_strings": 734,
+   "live_pages": 21,
+   "live_text_lines": 14245,
+   "forbidden_history": 0,
+   "forbidden_nws_forecast": 191
+  },
+  "d13": {
+   "added_lines": 48259,
+   "em_dash_lines": 0,
+   "en_dash_lines": 15
+  },
+  "git": {
+   "status_short": "",
+   "diff_stat_vs_db84d76": "194 files changed, 51305 insertions(+), 1395 deletions(-)"
+  }
+ },
+ "open_items_for_owner": [
+  "Town-page footnote heading 'Data unavailable, with the reason' (build.py line 1043) on 17 of 17 pages: end it with 'This is not an all-clear.' or change it so it is not an unavailable line (D41). Blocks B5-10 and BG9.",
+  "Rule on the flag-off identity: map.js and map.css (B3, B4 and B5 browser code, not flag-gated) are not named by D77; the About word swaps (D85, D86(c), D88(d)) and the reports sentences (D91(c)) go on the allowance list. The site identity test pins base c860e23 (a B4 branch commit, not an ancestor of HEAD), not db84d76. Blocks B5-18 and BG3.",
+  "Live NWS forecast sentences (80 in the live build: chance, likely, expected, clear) are outside the history gate under D89(a), but tests/words_rules.py FORECAST covers only the sample's names. Decide whether a live-page scan should exempt the forecast block.",
+  "Decision 7: confirm that reading the State Library's Placement class (L 'at the parcel' shown in popups and About, D81(b)) is within owner decision 6.",
+  "The D49 branch-preview wait step is not on this branch (D60): the merge of main must bring it, with its test.",
+  "B5-12: the daily store job end to end under 25 minutes is not timed here; the branch run measures it. The packed release asset is not measured here.",
+  "B5-18: the live preview on the branch and the one-hour swath pixel gate (D92(d)) need a live branch build.",
+  "Docs pass: correct the figures in checks.9 (store 552,012,463 bytes; tile lists 67,832,479 bytes; largest tile list 3,817 gzip; sd 4,396,079 bytes; phone budget 700,000 and the measured 682,129; history gate 163,840 with 162,374 measured; every-flag map.json 464,287; fixture 485,066 bytes; suite 1,966 OK; DESIGN line 169 quote). Add DECISIONS entries for D77 to D79 and D81 to D92 in the D38 round bullets.",
+  "Words: the D56 run-6 cause is recorded nowhere; the record should say it no longer reproduces on the adopted store (the Billings town-page test passes).",
+  "website.yml's offline unittest run does not install pyshp (the module 'shapefile'), so the joins tests gated on it skip in the Website workflow; they run in the daily job. Consider adding pyshp to the offline install.",
+  "The banned-name list is not in the repository (ROADMAP and DECISIONS say the owner confirms it). This check used a standard list; the owner should confirm it.",
+  "ADDRESS_FRAMEWORK_ZIP is unset here, so tests.test_addresses.RealMetadataTests skips; the owner or counsel supplies the cached framework zip to check the quoted sentences.",
+  "Observation: About prose such as 'Building outlines could not be loaded in this update; that is not the same as no buildings. This is not an all-clear.' continues with more text in the same paragraph; the sentence is right, the paragraph is not a line that ends with it (owner's call)."
+ ],
+ "builds_deleted": "deleted after the checks: /home/user/hail-b5/out/recheck-b2/flagoff-new, flagoff-base, sample-everyflag, hist-only, site (all builds) and the scratch copies src and base (repository copies used as build inputs). Kept: the logs in /home/user/hail-b5/out/recheck-b2/logs/, the scripts in recheck-b2/scripts/, and this record.",
+ "logs_dir": "/home/user/hail-b5/out/recheck-b2/logs/"
+}
