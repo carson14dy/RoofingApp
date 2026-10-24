@@ -669,3 +669,67 @@ place-type or building-use field read, stored or shown); the docs' numbers equal
   test and a bare "coverage" by the D13 stem rule); the About rows that still say "no coverage" (the hail_swath row
   and the MESH row) take "no radar coverage" or "outside radar coverage" under D53. The sheet's order is the B3
   address block, then the B4 live line, then the history (the live line leads only when there is no address block).
+
+## Supervisor rulings on the products review (2026-10-24 01:40 UTC; D61 to D65; the review is records/b5/journals/wf_44a6add9-a8e.jsonl)
+The products owner's part B2 build (D53, D55, D56, D36; committed on claude/hail-b5 as bd3ae20) was reviewed (R1 to R14)
+and the skeptics judged R1 to R5 before the pause: R1, R3, R4 and R5 confirmed by both, R2 refuted by both as the cause
+of the Billings failure. The rulings:
+- D61 **The tile list covers every cell of its tile (R3).** `stations.collect` builds a tile's candidates within
+  RADIUS_MILES of the tile centre with no margin and caps each element's list at six, so a cell up to about 4.2 miles
+  from the centre can miss a station within 40 miles of it: on the combined store 26,478 of 2,298,500 cell-element
+  answers differ from the full rule (1.15 percent), 5,646 of them a false "No station within 40 miles" sentence
+  (snowfall 2.0 percent); the 17 towns and the two gate points are right. Rule: a tile's candidate radius is
+  RADIUS_MILES plus the distance from the tile centre to its farthest cell centre, computed per tile from the hail cell
+  geometry and recorded in the tile list block as `margin_miles`; the per-element cap is removed (the list holds every
+  passing station within that radius, nearest the centre first; `capped` stays in the format and is false for new
+  lists; `tile_list_picks` still answers None for a capped list from an older store). `tile_list_picks` at any cell
+  centre of the tile then equals `point_rule` at that cell: verify checks every tile's centre and four corner cells for
+  every element (zero differences) and records the largest list, the file sizes and the time (the per-tile budget stays
+  100 KB gzip). Named checks: cell 753,2230 snowfall names USC00248498 and USC00249048; cell 920,1899 precipitation
+  names USS0010D35S second. The browser (owner 1) runs the same rule on the same files and prints the D32 sentence,
+  never the "none" sentence, when a list cannot answer.
+- D62 **The station pool is every United States GHCN-Daily station within reach (R4).** `parse_station_list` keeps
+  Montana stations while D5, the sheet words and About say "within 40 miles"; 173 stations in Idaho, Wyoming, South
+  Dakota and North Dakota with a 2026 record lie within reach of Montana tiles, and at least 2,543 tile-element answers
+  at border tiles would read a false "No station" or "Only one station" (40 of the 173 tested; town picks do not change,
+  0 of 85). Rule: the pool is every GHCN-Daily station within the D61 radius of any Montana tile, filtered by position,
+  not by state; United States stations are read under the ghcn_daily row's terms; Canadian stations (identifiers
+  beginning CA) within reach are candidates "not read" (no pull, no summary) that the tile lists carry in the unread
+  part with the reason "in Canada; the terms for its data are under review", so the words name them when they lie
+  nearer than the second pick (D32) and never count them as passing; the counsel list gains item 19 (GHCN-Daily's note
+  on non-US data; the Environment and Climate Change Canada licence). The .dly files the review pulled
+  (/home/user/hail-b5/out/b2p/products/skeptic-r4/dly, 185 files; skeptic2-r4/dly, 40) seed the cache; the monthly step
+  pulls the union (D26) and the daily step the chosen stations only. "Montana stations" becomes "stations in Montana and
+  the neighbouring states" in stations.py, the ghcn_daily row, summary.py's How-this-was-made line (owner 2) and the docs
+  (owner 5); DECISIONS D25 ("station lists are never filtered by state") is consistent with the position filter.
+- D63 **One pick rule (R5).** `stations.tile_list_picks` is the rule; `summary._Spot.chosen_from_tile_list` delegates
+  to it (owner 2) with a parity test at the 17 towns and the cells 753,2230, 792,1998 and 797,1986 after D61; the
+  browser's JavaScript mirrors it with a comment naming the Python function (owner 1).
+- D64 **The sample fixture carries the station part (R2: refuted as the cause of the Billings failure; the gap
+  stands).** The committed fixture has no `hail/tl`, `hail/sd` or stations block, so the sample's station rows read
+  "could not be loaded" and the browser-against-module tests cannot exercise the picks. Rule: after D61 and D62
+  rebuild the tile lists, the fixture is regenerated with `python -m website.joins fixture --out <scratch copy of the
+  committed fixture> --from-store <store carrying the new tl/, sd/ and stations block>` and swapped into
+  `website/data/hail-fixture` by one rename; the 62 KB budget (tests/test_joins.py near line 897, tests/test_hail.py
+  near line 759) is restated to the measured size with the reason (the station part: the three tile lists and the
+  summaries of the stations they name; 228,154 bytes measured before D61); the file-list, manifest and fixture_store
+  equality tests of tests/test_hail.py follow the regenerated tree; tests/test_site.py's B2-only test (near line 4044)
+  builds its store by removing the B5 parts from a copy of the fixture (owner 2). The sample's station summaries are
+  real season summaries cut to the stations the lists name, marked `sample: true` in the block, like the three real
+  MESH days of the B1 fixture; the sample block's `problem` text carries the D20 sentence (R14). The store the fixture
+  is cut from is the candidate the supervisor adopts as the combined store (D50; the rebuilt joins index with the D55
+  edges and sorted failures, the new tl/ and sd/, the stations block, every module's verify passing).
+- D65 **The remainder of the products review.** R1 (build.py line 705 passes the town point as the spot; D56's
+  summary half: gust_station measures from the town point and picks from the candidates at that point) and R6 are
+  owner 2's; R7 (the About radar line, D53) and R8 go to the docs and record pass: gate B5-3 reads with the D18
+  replacement, the Benchland snowfall picks are Buffalo 1.7 E US1MTFG0003 (20.9 miles) and Harlowton 11NW USC00243947
+  (34.8 miles), because Lewistown 11 SSE USC00244978 has no snowfall report in the 30 days before the as-of date, and
+  verify records the replacement; R9: `write_joined_store` (tests/test_site.py) gives the gate tile a station within
+  40 miles of the gate cell and its joins index the format keys (owner 2), and the browser applies the radius
+  (owner 1); R10 to R13 are applied by the products fixer after checking the evidence (the FW.W 169 comment cites the
+  independent recount of the cached rows: 6 files, 262 events, 169 in the research window and 170 in the store window;
+  the test_snowgrid comment lists the EXEMPT allowances of tests/words_rules.py; the Billings unit test's net label is
+  WBAN; the tile_list_picks docstring says unread candidates are named within the radius). The store window (the
+  1,826 SPC days ending on the as-of date, 2026-10-16, while the cache holds events to 2026-10-18) and the D8 begin for
+  an event whose archived rows all close it stand; the three D55 edge events (HW.A TFX 30 of 2026 and HW.W TFX 34 of
+  2026 in the research window only; FW.W TFX 19 of 2021 in the store window only) are recorded by verify and the record.
