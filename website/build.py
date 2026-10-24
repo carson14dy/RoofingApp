@@ -1040,7 +1040,7 @@ HISTORY_WORDS = {
     "cell": ("The radar rows are for the radar cell at the town's centre, about 0.7 miles north to south and 0.5 miles east "
              "to west. The grid rows are for the grid cell there, about 4.6 km north to south and about 3 km east to west. "
              "Each station row names its station and its distance from this spot."),
-    "footnotes": "Data unavailable, with the reason",
+    "footnotes": "Why a cell reads Data unavailable",
     "table_caption": "Five seasons, July to June, at {town}: each row names its kind of record and its unit.",
     "gauge_label": sm.GAUGE_ROW,
     "reference_label": "Reference",
