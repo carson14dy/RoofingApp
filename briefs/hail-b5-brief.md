@@ -980,7 +980,7 @@ met by narrowing what it measures. Rulings:
   (c) A partial radar season never reads as zero: the row "Days with a radar hail estimate of 1 inch or more" follows
   D37's rule (a zero only at 95 percent coverage; otherwise "Data unavailable" with the days missing), the "No radar
   estimate of 0.25 in or more" sentence appears only at 95 percent coverage, and the "Largest radar hail estimate" row
-  shows the largest value over the days present with its coverage line (2021-22 has 109 days before the archive began);
+  shows the largest value over the days present with its coverage line (2021-22 has 109 days missing: 108 before the archive's first day, 17 Oct 2021, and one inside the window; corrected under D87(i));
   Python first (summary.py), the browser mirrors; B1's own day list on town pages is unchanged.
   (d) The sheet's joined sections keep every line describe_joins gives for the cell (the freshness lines, the NCEI
   flood cause line, the zone-switch line, the no-county-product line with its evidence caveat, the implausible-count
@@ -1056,3 +1056,47 @@ carries "Structures", and B3's outside-grid sentence says "no hail". Rulings:
   it." (website/addresses.py's words; the browser shows the words as given). These are the words owner's items in the
   completion round (files: website/templates/about.html, website/addresses.py's About and outside words,
   tests/words_rules.py, website/sources.py's storm_levels row, tests/test_storm.py and tests/test_site.py's two pins).
+
+## Supervisor rulings on the round-3 reviews (2026-10-24 19:05 UTC; D87)
+The round-3 reviewers found 10 (site), 14 (browser) and 6 (smoke) findings; the skeptics judged the site's ten and the
+browser's F-01 to F-11 (F-04, F-05, F-06 and F-08 to F-10 survive both; F-03, F-07 and F-11 refuted; F-12 to F-14 and the
+smoke's six still queued at the time of these rulings). The round-4 products names are adopted into the combined store
+(277 files, three names, D84(b)). Rulings:
+- D87 **Round-3 calls.** (a) An unavailable or held roof line carries its kind word once: the line leads with the kind word
+  (D82, site F2; R1-F1) and the label's parenthetical keeps its unit word and drops the kind word (F-13: "Station reading:
+  Peak gust of 50 knots (58 mph) or more (days). Data unavailable ..."); Python first (summary.py), the browser's histLine
+  mirrors, the town page shows the same line. (b) D41 covers the town page's count sentences: a count sentence that names a
+  partial season ends "This is not an all-clear." as the sheet's partial line does (R1-F8); the browser mirrors from the
+  same words. (c) The picture status lines in map.js ("No ... picture in this update. Not an all-clear.", "The ... picture
+  didn't load. Not an all-clear.", "Sample radar", the NOAA names; F-10) predate B5 and are live on main with the storm
+  layers; they move to map.json words in a follow-up recorded in ROADMAP (with the D41 sentence replacing "Not an
+  all-clear."); this PR does not widen into the storm-layer status code. (d) Every rule the browser applies comes from
+  map.json: the season bounds (1 July to 30 June) are written once by Python (summary.rule.season with start_month 7,
+  start_day 1, end_month 6, end_day 30, or an equivalent block the site owner names and documents) and read in place of the
+  literals near map.js lines 3400 and 3407 (F-12); the inch rounding scale is summary.units.in.scale, not the literal 100
+  (F-08, map.js near line 2396; the pin at tests/test_site.py near line 1687 follows); the season-rule parity test asked by
+  D83(b) exists (F-09) and covers the 95 percent rule at every day count and the bounds. (e) The real-store parity tests
+  (HAIL_PARITY_STORE) run in website.yml after the store download, beside the Chromium smoke, with the variable set to the
+  extracted store and only when that store carries the B5 folders (hail/tl present); the offline test step stays offline
+  (F-14). (f) The smoke's zoom_on_spot zooms to the level the check needs, read from map.json's layer rule (the swath layers'
+  minimum zoom), not a fixed count of wheel steps, and keeps the spot on screen clear of the panels; the phone swath checks
+  then report a result, never "not checked" (S-3; the timeline is the panel F-03 did not name). (g) The eleven section ids
+  are pinned: the smoke takes the order from website.summary's constant and asserts map.json's section order and the sheet
+  equal it (S-5); the three-cell comparison reads every row of every section, never a label list (S-4). (h) Test comments
+  carry no measured sizes; they cite the budget constant and b5-verification.json (R1-F3); the fixture five-cell test names
+  the cells the fixture lacks through subTest and skipTest with the present set asserted (R1-F2); the every-key test
+  follows both the S.-prefixed aliases and direct h.summary reads (R1-F6); the zone fixture's field is wide enough for
+  MTZ002 (R1-F9; tests/test_joins.py near line 601, one line, the site fixer's). (i) R1-F10 corrects D82(c) in place:
+  2021-22 has 109 days missing, 108 before the archive's first day (17 Oct 2021) and one inside the window. (j) The file
+  split for the completion fixers: words owns about.html, addresses.py and buildings.py (the About words and the
+  outside-grid sentence, F-04, F-05, D86(c) to (f)), tests/words_rules.py, sources.py (the storm row, D86(a)),
+  tests/test_storm.py (its pin) and tests/test_addresses.py (the D74 expectation and any outside-grid pin); site owns
+  build.py, summary.py, tests/test_site.py (every pin, the satellite pin near lines 395 to 396 included, D86(b), F-06),
+  tests/test_summary.py and tests/test_joins.py (line 601 only); browser owns map.js, map.css and map.html; smoke owns
+  tools/smoke_map.py, tools/smoke_pages.py, the two workflow files and their tests. A fixer never edits another's file; a
+  change needed there is listed under needed from others. (k) The words, site and browser fixers run now; the smoke fixer
+  runs once the smoke skeptics have finished (their verdicts are the record); the gate re-check runs once after all four.
+  The b2r4 products check's other leftovers go to the docs pass (the D56 cause line, the measured figures, the Benchland
+  SNOW second pick Harlowton 11NW, the file list with hail.py and snowgrid.py) and to the browser (sumTilePicks mirrors
+  stations.tile_list_picks as it stands: the rejected part, D69; None for a block without centre or margin_miles and for a
+  point beyond the margin, D72; the D32 sentence, never a "none" sentence).
