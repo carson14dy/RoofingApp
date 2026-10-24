@@ -1020,3 +1020,18 @@ two questions:
   SSE). If the products pass's check shows INTL, EXP or STN still in capitals, the fixer of the re-check round applies
   this rule, rebuilds the station part into the adopted store and regenerates the fixture; the summary and the browser
   show the names as given.
+
+## Supervisor rulings after the products completion pass (2026-10-24 16:00 UTC; D85)
+The products completion pass (18 agents) is complete: the display names are in the adopted store (826 stations, 805
+summary files, 0 names differ from the rule), the Billings gate reads from towns.json's point (WTP 1.2 miles, the airport
+2.7), warnings_row is gone, the fixture equals a fresh run (485,066 bytes outside hail/a), and the full suite passed in its
+final run (1,896 tests, 0 failures). Left: D84(b)'s abbreviations (INTL, EXP and STN still in capitals in 10 names), the
+second Billings point in snowgrid.py and one gauges test line (D80(a)), a test for the SWDI sentence and one for the
+tile-list budget, and a question on About's contract text.
+- D85 **About is inside the words gate.** The built About page and the About-visible fields of sources.CONTRACTS follow
+  tests/words_rules.py like every other page text: a test scans those fields; "fails" becomes "does not pass" or "is left
+  out" (the nohrsc_season_snowfall and hail_history rows), the ghcn_daily timing sentence says plainly when the archive
+  values replace the preliminary ones, and the hail_swath row's "not damage" clause stays as the allowed negative form
+  only if words_rules exempts it, else it is reworded without the stem. The products owner applies D84(b) and these in
+  one pass (a station rebuild into the adopted store, the fixture regenerated, the exact new names reported so the site's
+  test pins follow), then the store is marked immutable again.

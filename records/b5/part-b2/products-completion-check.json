@@ -1,0 +1,404 @@
+{
+ "items": [
+  {
+   "item": "D61: each tile's candidate radius is RADIUS_MILES plus the tile's margin_miles (distance to its farthest corner, D72); no per-element cap; capped is false in every list.",
+   "status": "done",
+   "evidence": "stations.py tile_margin_miles (line 395) and tile_list_picks (line 817); stations verify 37 of 37 pass, including 'tile lists: format, margin, uncapped, nearest first' with 0 problems and 4,597 tile files for 4,597 tiles; longest list 33, largest rejected part 50."
+  },
+  {
+   "item": "D61/D72: parity of tile_list_picks with point_rule at every tile centre, four cell corners and four routed corners, every element.",
+   "status": "done",
+   "evidence": "stations verify (logs/stations-verify.json): 206,865 points (9 spots x 5 elements x 4,597 tiles), 0 differences, 34.8 s."
+  },
+  {
+   "item": "D61: full-cell parity, every cell centre of every tile, every element (state, picks, unread, rejected, rejected_more).",
+   "status": "done",
+   "evidence": "Scratch sweep scripts/parity_all_cells.py on a full copy of /home/user/hail-b5/out/combined/store, two parts: 459,700 cells, 2,298,500 answers, 0 differences (logs/parity-all-part0.json and part1.json)."
+  },
+  {
+   "item": "D61 named checks: cell 753,2230 SNOW names USC00248498 and USC00249048; cell 920,1899 PRCP names USS0010D35S second.",
+   "status": "done",
+   "evidence": "tile_list_picks equals point_rule at both: 753,2230 SNOW Valentine 38.6 mi and Winnett 6NNE 39.3 mi; 920,1899 PRCP Sacajawea 6.3 mi and Brackett Creek 7.3 mi (USS0010D35S second) (logs/named-picks in scripts/named_picks.py output; logs/parity-named.json)."
+  },
+  {
+   "item": "D61/D72: tile list size, 100,000 bytes gzip per file, recorded by verify.",
+   "status": "done",
+   "evidence": "Largest tile list 3,804 bytes gzip; 4,597 files, 67,832,479 bytes raw (the D84 figure). The limit is met but no test asserts it: tests/test_stations.py only checks largest_gzip > 0 (line 985)."
+  },
+  {
+   "item": "D62: the pool is every GHCN-Daily station within reach, filtered by position not state; US stations read; Canadian (CA) stations not read.",
+   "status": "done",
+   "evidence": "parse_station_list keeps stations by box position (stations.py line 428); pool 2,778 with 1,325 in Montana; not_read_stations 21; the cache holds 867 US .dly files and 0 CA files."
+  },
+  {
+   "item": "D62: Canadian candidates are named 'in Canada; the terms for its data are under review' (CANADA_REASON) and never count as passing.",
+   "status": "done",
+   "evidence": "CANADA_REASON (stations.py line 172) is carried by unread entries; verify check 'failed or not-read candidates are listed, and none has an sd file' passes (21 and 21)."
+  },
+  {
+   "item": "D62/D74 wording: 'stations in Montana and the neighbouring states' in stations.py, the ghcn_daily row and the How-this-was-made sentence.",
+   "status": "done",
+   "evidence": "stations.py line 30; sources.py line 524 (ghcn_daily); summary.py line 2870. The DECISIONS and About text is owner 5's."
+  },
+  {
+   "item": "D63: one pick rule. stations.tile_list_picks is the rule; the summary delegates to it; parity at the 17 towns and cells 753,2230, 792,1998, 797,1986.",
+   "status": "done",
+   "evidence": "summary.py line 1331 calls stations.tile_list_picks; named parity over 17 towns and 4 cells: 21 points, 105 element answers, 0 differences (logs/parity-named.json). The browser's mirror is item 35."
+  },
+  {
+   "item": "D64: the fixture is regenerated from the adopted store with 'python -m website.joins fixture' and equals a fresh run.",
+   "status": "done",
+   "evidence": "Fixture command into a scratch copy of website/data/hail-fixture, then diff -r against the committed tree: no differences (logs/fixture-copy-diff.txt is empty). An empty output directory lacks hail/a/ (B3 addresses, not written by this command), as expected."
+  },
+  {
+   "item": "D64 budget: store files outside hail/a/ under 480 KiB; address files under hail/a/ under 50 KB.",
+   "status": "done",
+   "evidence": "485,066 bytes outside hail/a/ (limit 491,520); hail/a/ 50,601 bytes (limit 51,200); tests/test_joins.py budget test passes."
+  },
+  {
+   "item": "D64: the fixture tests of tests/test_hail.py (file lists, manifest, budget, fixture_store equality) follow the regenerated tree.",
+   "status": "done",
+   "evidence": "tests/test_hail.py: 190 of 190 pass (logs/test_hail.log)."
+  },
+  {
+   "item": "RV9, RV10, R2: the sample stations block carries every station the sample tile lists name, with its sd file; a fixture test ties tl/, sd/ and the stations block together.",
+   "status": "done",
+   "evidence": "Fixture: hail/tl 3 files, hail/sd 67 files, stations block with 67 rows, sample true, state loaded; test_joins FixtureStationTests pass."
+  },
+  {
+   "item": "R14 (D28): the sample stations block's problem text carries the D20 sentence, with the technical reason in detail.",
+   "status": "done",
+   "evidence": "joins.py _station_sample sets problem to stn.WORDS['unavailable'] (line 5218)."
+  },
+  {
+   "item": "R10 to R13 (D65): FW.W 169 comment cites the independent recount; test_snowgrid comment lists the EXEMPT allowances; the Billings unit test labels USW00024033 as WBAN; the tile_list_picks docstring names unread candidates within the radius.",
+   "status": "done",
+   "evidence": "joins.py lines 4195-4199; tests/test_snowgrid.py line 675; tests/test_stations.py line 1070; stations.py tile_list_picks docstring lines 819-844."
+  },
+  {
+   "item": "D68: a tile list without centre or margin_miles cannot answer in Python; the stations block answers through point_rule.",
+   "status": "done",
+   "evidence": "stations.py tile_list_picks returns None when centre or margin is missing (lines 845-851); summary.py line 1331 is the caller's path."
+  },
+  {
+   "item": "D68/D76: WORDS_JOINS['records_newest_unknown'] is 'an unknown date' and fills {newest} in the records lead.",
+   "status": "done",
+   "evidence": "joins.py line 389; used at line 3894; tests/test_joins.py asserts the key."
+  },
+  {
+   "item": "D68/D79(d): WORDS_JOINS['warnings_row'] is removed with its uses; no page reads it.",
+   "status": "done",
+   "evidence": "No warnings_row key in joins.py (only warnings_row_b5 and warnings_row_point); tests/test_joins.py line 2691 asserts it is absent; no reference in tests/test_site.py; map.js reads only the B5 keys."
+  },
+  {
+   "item": "D68: the browser reads no map.json key the build does not write (county_suffix dropped).",
+   "status": "done",
+   "evidence": "No county_suffix in any .py, .js or .html file of the repository (grep)."
+  },
+  {
+   "item": "D69 (data): tile lists carry a rejected part per element; tile_list_picks returns rejected and rejected_more; verify checks it.",
+   "status": "done",
+   "evidence": "stations.py rejected_of_tile (line 778), rejected_rule (line 917), tile_list_picks (line 817); verify check 'rejected entries are read candidates that fail the rule' passes; the parity sweep compares rejected names."
+  },
+  {
+   "item": "D69 (words): the station note names the rejected candidates in plain words, nearer than the second pick, with the rest counted.",
+   "status": "done",
+   "evidence": "Words are in summary.py (lines 371-377 and 1859-1880, site) and map.js (lines 4450-4466, browser). describe_summary at cell 792,1998 prints 'Moccasin EXP STN, 3.2 miles from this spot, is not used: 14.8 percent of the days 2020 to 2025 have a value for snowfall; the rule needs at least 80 percent.' The name form is item 42."
+  },
+  {
+   "item": "D71 F4: describe_joins for a town spot lists the town-point warning rows from hail/j/towns.json, worded 'covered this spot'.",
+   "status": "done",
+   "evidence": "joins.py lines 427-473 (point keys), 3663-3697 (spot choice), 4057 (town point test); 13 'covered this spot' assertions in tests/test_joins.py; verify 'D38' check passes (0 missing from the covers)."
+  },
+  {
+   "item": "D71: the county-unavailable line is appended once in describe_joins, with a test.",
+   "status": "done",
+   "evidence": "joins.py line 3803 is the only append (line 620 is the words entry)."
+  },
+  {
+   "item": "D71 F2: a failed station file reads through the status words; no station_failed format string remains.",
+   "status": "done",
+   "evidence": "grep finds no 'station_failed' in website/joins.py; test_joins and test_stations pass (286 and 107)."
+  },
+  {
+   "item": "D71/D79(d): the joins ledger stays at <store>/ledger/joins.jsonl, outside hail/ and outside the packed asset.",
+   "status": "done",
+   "evidence": "joins.py line 2989 writes root/ledger/joins.jsonl; .github/workflows/hail-store.yml 'Pack the store' runs tar czf hail-store.tar.gz -C store hail, so ledger/ is not packed."
+  },
+  {
+   "item": "D71: the fixture's joins block carries no D55 keys.",
+   "status": "done",
+   "evidence": "hail/index.json of website/data/hail-fixture has no 'vtec' keys (count 0)."
+  },
+  {
+   "item": "D55: the three one-event differences are window-edge events, explained and checked by verify; no store rule drops a product.",
+   "status": "done",
+   "evidence": "joins verify with cache: 'D55: the research window's counts equal the research's counts, product by product' (20 products, zero difference); store-window differences are FW.W +1 (TFX 19 of 2021, begins 17 Oct 2021 18:00 UTC), HW.A -1 and HW.W -1, each named and checked by the 'named event at a window edge' check."
+  },
+  {
+   "item": "D53/D74: sources.py hail_swath 'missing' reads '-1 is missing and -3 is no radar coverage in NOAA's table'; the address row reads 'its completeness varies from county to county'.",
+   "status": "done",
+   "evidence": "sources.py hail_swath missing text and msl_addresses missing text (line 247); tests/test_joins.py lines 4073-4074 assert both. about.html line 19 carries the D53 radar wording."
+  },
+  {
+   "item": "D78(a)/D81(d): the SWDI row reads 'NOAA defines PROB as the probability of hail in percent'.",
+   "status": "partial",
+   "evidence": "The sentence is in sources.py (swdi_nx3hail units). No test pins it: grep for 'NOAA defines PROB' in tests/ finds nothing. Add the assertion beside tests/test_joins.py line 4073."
+  },
+  {
+   "item": "D72: the tile margin is the distance from the tile centre to its farthest corner; tile_list_picks answers None for a point beyond it; the docstring says so.",
+   "status": "done",
+   "evidence": "stations.py tile_margin_miles (line 395), routed_corners (line 406), None beyond margin (lines 850-851), docstring lines 827-835; tests/test_stations.py passes (107 of 107)."
+  },
+  {
+   "item": "D72: verify adds the four routed corners of every tile to the parity sample.",
+   "status": "done",
+   "evidence": "Parity sample 206,865 = 9 spots x 5 elements x 4,597 tiles, 0 differences (stations verify)."
+  },
+  {
+   "item": "D73: the daily refresh set is the picks plus every loaded station in reach with at least 80 percent coverage for some element, current or not.",
+   "status": "done",
+   "evidence": "stations.py collect lines 1371-1377; index counts: chosen_files 495 = pick_files 439 + daily_reach_files 56 (487,235,520 bytes); verify 'the daily set holds every passing station of every tile list (D73)' passes."
+  },
+  {
+   "item": "D74 RV8: the current-year filter applies to every unread candidate, failed files as well as Canadian stations.",
+   "status": "done",
+   "evidence": "stations.py collect's candidates helper (line 1277): a failed candidate stays only when _reports_now(inventory, sid, element, current_min_year) holds (line 909); test_stations passes."
+  },
+  {
+   "item": "D75(a), products part: hail.load_store and check_manifest exclude hail/live/ (website/hail.py) with a test, so the CI smoke reads the site's own copy.",
+   "status": "done",
+   "evidence": "website/hail.py LIVE_PREFIX and allow_live (lines 512-547) and load_store (lines 769-778); tests/test_hail.py tests near lines 1945-1990 pass (190 of 190)."
+  },
+  {
+   "item": "D36: the candidate list at a point is one rule for the sheet, the town page and the browser.",
+   "status": "partial",
+   "evidence": "Python: stations.tile_list_picks is the one rule (summary.py line 1331). Browser: map.js sumTilePicks (line 4268) and sumChosenFromTiles (line 4321) do not apply the D72 test (no per-element centre and margin check; the file-level doc.margin_miles is read at line 4324; line 3877 reads tl.margin_miles). The mirror comment at line 4264 says 'line for line'. Owner 1."
+  },
+  {
+   "item": "D56: diagnosis of 'Station reading: Data unavailable' with no Station line (run 6, test_the_billings_town_page_joins_sit_in_their_sections_newest_first).",
+   "status": "partial",
+   "evidence": "The test passes in the second full run (1,896 tests OK). The record (research/hail-history/validation-evidence/b5-verification.json, line 820) still says 'Not resolved here', and no cause is written in docs/DECISIONS.md. The cause needs writing down, with evidence."
+  },
+  {
+   "item": "D80(a): one Billings point (towns.json) for stations.GATE_POINTS and gate B5-3; distances computed from that point.",
+   "status": "done",
+   "evidence": "GATE_POINTS billings is (45.7833, -108.5007), the towns.json point (line 178); verify 'gate point billings is the Billings town point in towns.json' passes; from the point: USC00240802 Billings WTP 1.24 mi, USW00024033 Billings INTL AP 2.74 mi; tests/test_stations.py lines 1075-1078 read towns.json. The docs still print 1.4 and 2.6 (owner 5)."
+  },
+  {
+   "item": "D80(d): the warnings no-outline clause uses the cell words on the sheet and the spot words on town pages.",
+   "status": "done",
+   "evidence": "joins.py lines 3666-3697 choose the _point keys when town_point is set; warnings_no_outline_many_point (line 468) and _one_point (line 464)."
+  },
+  {
+   "item": "D76: the daily reach follows D73; the rejected part draws on every loaded station, lapsed inventories included; the station note uses computed distances (Moccasin 3.6 mi from the Benchland point; 3.2 mi from cell 792,1998).",
+   "status": "done",
+   "evidence": "stations.py collect: loaded_base = within_radius(summaries, ...) feeds rejected_of_tile (lines 1371-1377 and the rejected pass); Moccasin (USC00245761) is named at 792,1998 with miles 3.2 from the cell centre, and haversine from the Benchland point gives 3.6."
+  },
+  {
+   "item": "D78(c): station display names are title case with the stated exceptions; the GHCN name is kept as ghcn_name; the display name is written into sd files, the stations block and every tile-list entry.",
+   "status": "partial",
+   "evidence": "Written and verified: verify 'station names are the display form of their GHCN names' (826 stations, 805 sd files, 0 differ) and 'tile lists: every entry's name is the display form' (0 differ). The exceptions do not yet follow D84(b): item 42."
+  },
+  {
+   "item": "D84(a): IEM gust names keep B2's title-case rule; no joins rebuild for names.",
+   "status": "done",
+   "evidence": "joins.py is changed this round only in the deadline comment (line 346) and the warnings_row removal; the gust names are unchanged, as ruled."
+  },
+  {
+   "item": "D84(b): abbreviations in station names. INTL, EXP and STN (and the other word abbreviations) are title-cased; initialisms keep capitals; the station part is rebuilt and the fixture regenerated.",
+   "status": "not done",
+   "evidence": "Adopted store names still carry INTL in 3 stations ('Billings INTL AP', 'Missoula INTL AP', 'Wolf Pt INTL AP'), EXP in 7 ('Moccasin EXP STN', 'Dubois EXP STN', 'Tetonia EXP STN', 'Huntley EXP STN', 'Sandpoint EXP STN', 'Bozeman 6 W EXP Farm', 'Williston EXP Farm') and STN in 8. In all, 31 distinct stations keep word abbreviations in capitals (CRK, FK, RVR, FLD, PWR, MUNI, PLT, UNIV, SCH, SCI, CTR, TWR, IML, RSCH, AG, MIN, ENT, SKQ). stations.py NAME_ABBREVIATIONS (line 234) keeps them upper-case; tests/test_stations.py lines 314-317 pin 'Moccasin EXP STN', 'Billings INTL AP' and 'Ft Peck PWR PLT'. The rule, the tests, a station-part rebuild and the fixture regeneration are needed."
+  },
+  {
+   "item": "Measured figures in the adopted store match the rulings: pool 2,778 (Montana 1,325; not read 21); daily set 495 (439 picks + 56 reach, 487,235,520 bytes); rule files 700 (537,226,020 bytes) plus 105 regression-only; summary files 805 (4,396,079 bytes); tile lists 4,597 (67,832,479 bytes).",
+   "status": "done",
+   "evidence": "Index stations counts block of /home/user/hail-b5/out/combined/store/hail/index.json (the scratch copy checked here, now deleted, matched it) and the file sizes on disk. The docs carry older figures (needed_from_others)."
+  },
+  {
+   "item": "B5-13 determinism, station files: two offline builds from the same cache give identical sd/ and tl/ files and the same stations block, equal to the adopted store.",
+   "status": "done",
+   "evidence": "stations build --offline twice (47 s and 50 s; scratch cache copy of /home/user/hail-b5/cache/ghcn): sd 805 and tl 4,597 files equal by SHA-256 across both builds and the adopted store; stations block equal (logs/determinism.log, logs/determinism-compare.txt)."
+  },
+  {
+   "item": "Owner tests: test_joins, test_stations, test_snowgrid and the fixture tests of test_hail pass on the current files.",
+   "status": "done",
+   "evidence": "test_joins 286 OK (12.0 s); test_stations 107 OK (1.8 s); test_snowgrid 50 OK (14.4 s); test_hail 190 OK (17.7 s). The owned files' last edits (15:18 UTC at the latest) are before these runs (15:28 UTC)."
+  },
+  {
+   "item": "Scope: owner-3 changes stay in the owned files and the D64 fixture tree; the checker changed no repository file and ran no git write command.",
+   "status": "done",
+   "evidence": "git status: the owned files (joins.py, stations.py, sources.py, tests/test_joins.py, tests/test_stations.py, tests/test_snowgrid.py, the test_hail.py fixture lines) and website/data/hail-fixture only; untracked files 0; all checker output is under /home/user/hail-b5/out/b2r3/products/final-check."
+  },
+  {
+   "item": "D12/D13 and decision 6 in products strings: no forbidden words, no 'no hail', damage only in allowed contexts.",
+   "status": "partial",
+   "evidence": "words_rules scan of the joins WORDS_JOINS and stations WORDS (214 strings): 0 forbidden after the exemptions (logs/words-scan.txt). Not covered by any test: the sources.py About rows. nohrsc_season_snowfall.missing and hail_history.missing say 'fails'; ghcn_daily.timing says 'replaced'; hail_swath says 'not damage' (kept by D78(b)); msl_addresses carries the proper name 'Structures'."
+  },
+  {
+   "item": "No em-dashes and no model, AI-vendor or AI-product names in added lines of the owned files.",
+   "status": "done",
+   "evidence": "248 added lines against HEAD in the owned files: 0 em-dashes, 0 en-dashes, 0 banned names (scan for claude, anthropic, openai, gpt, gemini, copilot, codex, haiku, sonnet, opus, mistral, llama, LLM, AI)."
+  },
+  {
+   "item": "Decision 7 audit: no owner, parcel, place-type or building-use field is read, stored or shown by owner-3 code.",
+   "status": "done",
+   "evidence": "No such field in joins.py, stations.py or sources.py code. The only mentions are sources.py lines 245-246 (owner names and parcel identifiers are never read, stored or shown) and stations.py line 28 (the owner's decision O8)."
+  }
+ ],
+ "gates": [
+  {
+   "gate": "Owner tests (test_joins, test_stations, test_snowgrid) and the test_hail fixture tests",
+   "status": "pass",
+   "evidence": "286, 107, 50 and 190 tests OK (logs/test_joins.log, test_stations.log, test_snowgrid.log, test_hail.log)."
+  },
+  {
+   "gate": "Full suite: python -m unittest discover -s tests with the venv python, 0 failures",
+   "status": "pass",
+   "evidence": "Second run, 15:40 to 15:47 UTC: Ran 1896 tests in 393.265 s, OK (skipped=8), no failures or errors (logs/full-suite-2.log). The first run (15:28 to 15:35, 1887 tests) had 3 errors, all in tests/test_website_workflow.py SmokeHelpers (summary_spot signature); the smoke owner fixed them: that module now runs 48 of 48 OK."
+  },
+  {
+   "gate": "Self-test: python desktop/launcher.py --selftest payload",
+   "status": "pass",
+   "evidence": "PASS  payload 1.0.0, exit 0 (logs/selftest.log)."
+  },
+  {
+   "gate": "Stations verify on the adopted store (scratch copy)",
+   "status": "pass",
+   "evidence": "37 of 37 checks pass; tile parity 206,865 points with 0 differences; 4,597 tile files, 67,832,479 bytes; largest 3,804 bytes gzip; longest list 33; largest rejected part 50 (logs/stations-verify.json)."
+  },
+  {
+   "gate": "Joins verify with the joins cache (--cache /home/user/hail-b5/cache/joins)",
+   "status": "pass",
+   "evidence": "50 of 50 checks pass, including the D44 SHA-256 check of 7 IEM zone snapshots, D55 (zero difference on 20 products), D8, D15, D12, gate 7 and the D11 town-point check (17 towns, 4 disagreements listed) (logs/joins-verify-cache.json). A run without --cache left the D44 hash check not run; it is run now."
+  },
+  {
+   "gate": "Snowgrid verify (B5-4, the products-side regression record)",
+   "status": "pass",
+   "evidence": "verify ok. D7 regression: slope 0.664164 over 682 station-seasons, correlation 0.81, RMS residual 17.67 in. The unit check fails, so the analysis is not shown (state unavailable; D23). The 2020-21 season is stated as missing upstream (index snow block)."
+  },
+  {
+   "gate": "D61 full-cell parity sweep (every cell centre, every element)",
+   "status": "pass",
+   "evidence": "459,700 cells, 2,298,500 answers, 0 differences, by element 0 for PRCP, SNOW, SNWD, TMAX and TMIN (logs/parity-all-part0.json and part1.json)."
+  },
+  {
+   "gate": "D63 named parity: 17 towns and cells 753,2230, 792,1998, 797,1986, 920,1899",
+   "status": "pass",
+   "evidence": "21 points, 105 element answers, 0 differences (logs/parity-named.json)."
+  },
+  {
+   "gate": "B5-3 stations (Billings, Benchland, Stanford, Crystal Lake; per-town five-season counts)",
+   "status": "pass",
+   "evidence": "Billings PRCP, SNOW, SNWD, TMAX, TMIN: USC00240802 (1.24 mi from the town point) and USW00024033 (2.74 mi). Benchland SNOW: US1MTFG0003 (20.9 mi) and USC00243947 (34.8 mi) under D18, because Lewistown 11 SSE has no SNOW report in the 30 days before the as-of date. Benchland SNWD: USC00247864 (10.9 mi) and USS0009C01S (31.3 mi). Stanford snow 79.9 percent is shown as not used. Per-town season counts are recorded for 17 towns."
+  },
+  {
+   "gate": "B5-5 product counts equal the research's window counts; June 2022 records (gate 5)",
+   "status": "pass",
+   "evidence": "Research window: zero difference for 20 products. Store window: FW.W +1, HW.A -1, HW.W -1, each a named window-edge event (D55). June 2022: Red Lodge FA.W 2022-06-12 and an NCEI flood record 0.3 mi away (2022-06-10); Gardiner FL.W 2022-06-13; Billings FL.W and FL.A 2022-06-14; no NCEI flood record at Gardiner or Billings. The Billings gauge peak (16.37 ft) belongs to owner 2 and was not re-run here."
+  },
+  {
+   "gate": "B5-6 period rule (D8): the four named zone cases and MTZ003 in the window",
+   "status": "pass",
+   "evidence": "MTZ004 WS 2024 event 1 (cancelled, then continued), MTZ302 HW 2022 event 38 (two periods), MTZ320 WS 2023 event 4 (cancelled, then expiry) and MTZ003 WS 2021 event 12 (in the window): all 8 periods ok."
+  },
+  {
+   "gate": "B5-7 NCEI points: Glentana found; the Hays case excluded",
+   "status": "pass",
+   "evidence": "Glentana (T04, 2022-07-18 23:47 UTC) is a record 0.41 mi from its point; the Hays tornado (2021-07-07) is outside the window and absent (no rows that day)."
+  },
+  {
+   "gate": "B5-8 gusts (D12)",
+   "status": "pass",
+   "evidence": "LWT 182.5 kt dropped and counted; HVR 105.1 kt and MSO 86.0 kt flagged; DLN 165.1 kt and SDY 255.0 kt also dropped at 130 kt or more (gusts block)."
+  },
+  {
+   "gate": "B5-15 polygon rule (D11): cell-cover counts per product, town-point disagreements for 17 towns, null-geometry block test",
+   "status": "pass",
+   "evidence": "Cover counts per product recorded (for example FA.W centre rule 49,761, touch rule 53,082; SV.W 7,672,590 and 7,982,602); every centre-rule cell is a touch-rule cell; the town-point check lists 4 disagreements (Belgrade SV.W 2023-08-30; Helena SV.W 2024-08-19 and 2025-07-28; Kalispell SQ.W 2022-02-01); polygon nulls 0; tests/test_joins.py lines 2425-2459 cover outline-less polygons as nulls."
+  },
+  {
+   "gate": "B5-17 hail hit-and-miss table (D15)",
+   "status": "pass",
+   "evidence": "737 reports: 464 hits, 273 misses; the median miss is 0.88 in under and the largest 3.01 in; Lewistown 2.50 in (2025-06-15) and Petrolia Lake 3.50 in are rows; Glendive 4.00 in (2021-06-08) is recorded as outside the window."
+  },
+  {
+   "gate": "B5-16 station names in the rows, no mixed sources (D84(b))",
+   "status": "partial",
+   "evidence": "Rows carry the station's name from the display rule and no row mixes sources, but the abbreviation rule of D84(b) is not applied (INTL, EXP, STN in capitals; item 42)."
+  },
+  {
+   "gate": "B5-13 determinism (c/, n/, sd/, g/, k/; products part is sd/ and tl/)",
+   "status": "partial",
+   "evidence": "The station part passes: two offline builds from the same cache give identical sd/ and tl/ (logs/determinism-compare.txt). c/, n/, g/ and k/ were not rebuilt in this check; their owners run that check."
+  },
+  {
+   "gate": "B5-14 failure (D16): a failed source marks its part unavailable and the rest builds",
+   "status": "pass",
+   "evidence": "Covered by tests that pass (test_stations 107, test_joins 286, test_snowgrid 50): unread and failed candidates (test_stations 210-244), the sample's problem sentence (joins 5218) and the D20 wording. Not re-run in a browser."
+  },
+  {
+   "gate": "D64 fixture: regeneration equals the committed tree; budgets (480 KiB outside hail/a; 50 KB under hail/a)",
+   "status": "pass",
+   "evidence": "diff -r empty against a fresh run into a scratch copy; 485,066 bytes outside hail/a (limit 491,520); hail/a 50,601 bytes (limit 51,200)."
+  },
+  {
+   "gate": "Tile-list budget: 100,000 bytes gzip per file",
+   "status": "pass",
+   "evidence": "Largest 3,804 bytes gzip. Not enforced by a test (tests/test_stations.py only checks largest_gzip > 0)."
+  },
+  {
+   "gate": "Words rules (tests/words_rules.py) over every products WORDS string",
+   "status": "pass",
+   "evidence": "214 strings in WORDS_JOINS and stations.WORDS: 0 forbidden after the exemptions (logs/words-scan.txt)."
+  },
+  {
+   "gate": "Words rules over the sources.py About rows and the built About page",
+   "status": "not run",
+   "evidence": "No test scans sources.CONTRACTS. The plain words listed in item 47 are not checked by any test. The built About page was not built here (site and smoke owners)."
+  },
+  {
+   "gate": "No em-dash and no banned names in added lines of owned files",
+   "status": "pass",
+   "evidence": "248 added lines: 0 em-dashes, 0 banned names."
+  },
+  {
+   "gate": "Decision 7 audit (no owner, parcel, place-type or building-use field read, stored or shown)",
+   "status": "pass",
+   "evidence": "No such field read by owner-3 code (item 49)."
+  },
+  {
+   "gate": "Docs' numbers equal the measured numbers (owner 5)",
+   "status": "fail",
+   "evidence": "Stale figures: the Billings distances 1.4 and 2.6 mi in docs/DECISIONS.md (the D56 and D68 open item) and research/hail-history/validation-evidence/b5-verification.json lines 38 and 1065 (measured 1.2 and 2.7 mi from the town point, D80(a)); tile lists 56,947,475 bytes and 3,401 gzip in docs/DECISIONS.md (about line 951), docs/ROADMAP.md (line 80), docs/DESIGN.md and the record (measured 67,832,479 bytes and 3,804 gzip, D84); the example station names will change under D84(b)."
+  },
+  {
+   "gate": "Combined store read-only (/home/user/hail-b5/out/combined/store)",
+   "status": "pass",
+   "evidence": "0 files newer than the marker made before the copy (15:29 UTC); every check ran on scratch copies; the copies are deleted after this check."
+  },
+  {
+   "gate": "Sample build, flag-off identity, combined-store build with every flag, sheet smoke, smoke_pages, three-cell words",
+   "status": "not run",
+   "evidence": "Owned by the site and smoke owners. A history-only build against the combined store was started by another owner during this check (website.build --hail-history); its result is not part of this check."
+  },
+  {
+   "gate": "B5-13 determinism for c/, n/, g/ and k/",
+   "status": "not run",
+   "evidence": "Owned by the climate, snowgrid, gauges and joins owners; not rebuilt here."
+  }
+ ],
+ "needed_from_others": [
+  "owner 1 (browser, website/static/map/map.js): sumTilePicks (line 4268) and sumChosenFromTiles (line 4321) must apply the D72 test as stations.tile_list_picks does: return null when the element's block has no centre or margin_miles, and when the point is farther than that element's margin_miles from its centre. Read the per-element margin, not the file-level doc.margin_miles (line 4324) and not tl.margin_miles (line 3877). When null, print the D32 sentence, never the 'none' sentence. The comment at line 4264 says 'line for line'; keep that true.",
+  "owner 3 (products), next pass, from this check: apply D84(b) in website/stations.py. Split NAME_ABBREVIATIONS (line 234): initialisms keep capitals (AP, ASOS, NWS, RS, NP, WTP, WFO, AFB, SPC, PH, FAA, USGS, SNOTEL); word abbreviations are title-cased (INTL->Intl, EXP->Exp, STN->Stn, CRK, FK, RVR, FLD, PWR, MUNI, PLT, UNIV, SCH, SCI, CTR, TWR, RSCH, AG, MIN, ENT). SKQ and IML are not words: decide and record the rule. Then update tests/test_stations.py lines 314-317 to the new forms ('Moccasin Exp Stn', 'Billings Intl AP', 'Ft Peck Pwr Plt').",
+  "owner 3 (products), with the D84(b) change: rebuild the station part into the adopted store with an offline stations build from the cache (the two-build check in this check was byte-identical), run stations verify on a copy, regenerate website/data/hail-fixture with 'python -m website.joins fixture --out <scratch copy of the committed fixture> --from-store <copy>' and swap it in by one rename, then update the fixture tests. Build on a copy of the combined store; do not write into /home/user/hail-b5/out/combined/store.",
+  "owner 2 (site, tests/test_summary.py lines 1293, 1300, 1306, 1313, 1681, 1693, 1697 and 1698): expectations pin 'Billings INTL AP' and 'Moccasin EXP STN' and the 'is not used' sentence. They change with D84(b) ('Billings Intl AP', 'Moccasin Exp Stn'); change them in the same pass.",
+  "owner 5 (docs): restate (a) the Billings distances from the town point, WTP 1.2 mi and Billings INTL AP 2.7 mi (D80(a)), in docs/DECISIONS.md (the D56 and D68 open item, about line 964) and research/hail-history/validation-evidence/b5-verification.json (lines 38 and 1065); (b) the tile-list figures, 67,832,479 bytes raw and 3,804 bytes gzip largest (D84), in docs/DECISIONS.md (about line 951), docs/ROADMAP.md (line 80), docs/DESIGN.md and the record; (c) pool 2,778 (Montana 1,325; not read 21), daily set 495 (439 + 56; 487,235,520 bytes), rule files 700 (537,226,020 bytes) plus 105 regression-only, summary files 805 (4,396,079 bytes); (d) the D81(a) counsel item 20 (GHCN-Daily non-US note and the Environment and Climate Change Canada licence); (e) the example names after D84(b).",
+  "owner 5 or supervisor: D56 diagnosis. research/hail-history/validation-evidence/b5-verification.json line 820 says 'Not resolved here'. Record the cause (the station reader or the test's fixture) with evidence, or record that the D64 and D68 changes removed it, with the test run that shows it.",
+  "supervisor: sources.py About rows (sources.CONTRACTS) are not scanned by any test. Decide whether the About page is inside the words gate. If it is: nohrsc_season_snowfall.missing and hail_history.missing ('fails'), ghcn_daily.timing ('replaced') need plain wording, and hail_swath's 'not damage' stands only if D78(b) is kept. Owner 3 would make the sources.py edits; owner 2 would add the scan.",
+  "owner 3 (products), next pass: add the test that pins the SWDI sentence 'NOAA defines PROB as the probability of hail in percent' (D81(d)) beside tests/test_joins.py line 4073. Add an assertion on the tile-list budget (100,000 bytes gzip) in tests/test_stations.py near line 985.",
+  "owner 2 (site) and owner 4 (smoke): the sample build, the flag-off identity (D77), the combined-store build with every flag, smoke_pages and the three-cell exact words are not run by products. The smoke's history-only build reads /home/user/hail-b5/out/combined/store with --hail-store; this check saw no write into that store.",
+  "owners of climate (c/), snowgrid (n/), gauges (g/) and joins (k/): B5-13 determinism. Each runs its two-builds-from-cache check; the station part passed here."
+ ],
+ "tests_tail": "test_joins: Ran 286 tests in 12.010s OK | test_stations: Ran 107 tests in 1.791s OK | test_snowgrid: Ran 50 tests in 14.432s OK | test_hail: Ran 190 tests in 17.716s OK | full suite (second run, 15:40 to 15:47 UTC): Ran 1896 tests in 393.265s OK (skipped=8) | self-test: PASS  payload 1.0.0 (exit 0) | first full run (15:28 to 15:35 UTC): Ran 1887 tests in 413.786s FAILED (errors=3, skipped=8); the 3 errors were in tests/test_website_workflow.py SmokeHelpers and that module now passes 48 of 48 OK. Path note: repo files named in the evidence (website/, tests/, docs/, research/, tools/, .github/) are under /home/user/wt/wt-b5/; logs/ and scripts/ are under /home/user/hail-b5/out/b2r3/products/final-check/; this file is /home/user/hail-b5/out/b2r3/products/check.json."
+}
