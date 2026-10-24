@@ -234,3 +234,6 @@ site-2: SECTION_ORDER, hail.summary.section_order, describe_sheet (one source), 
 
 ## 2026-10-24 21:40 UTC: smoke check; D92; run 2b
 Smoke fixer done: DOM reader, SECTION_ORDER checks, every-row comparison against describe_sheet, budgets from map.json, swath zoom and centring, the parity step; smoke passes on the adopted-store build at 390 and 1280 px; phone view 682,102 gzip. Parity step fails against the site copy until build.py _copy_hail checks its source with allow_live=True (D92(a)); site-3 takes it with the website.yml unittest list (D92(c)). Run 2b = site-3 and words-3 launched.
+
+## 2026-10-24 22:20 UTC: run 2b done; WIP; run 3 (the re-check) launched
+site-3: the smoke budget pin, the reports page words (D91(c)) with the flag-off identity test naming reports.html as an on-purpose difference, build.py _copy_hail allow_live=True with six SiteCopySource tests, website.yml offline list names tests.test_words_rules; the parity step run as written against a fresh every-flag build: 7 tests OK, no skip. words-3: ForecastWordsTests pins. Full suite 1,966 OK (skipped 3) with the store set. WIP commit pushed to session/hail-b5-wip. Run 3 = the read-only Recheck launched (writes /home/user/hail-b5/out/b5b2-recheck.json). Docs items 14 and 15 added.

@@ -1,0 +1,133 @@
+{
+  "owner": "fixer 1 (site-3, round b2r7: run 2b reconciliation)",
+  "worktree": "/home/user/wt/wt-b5",
+  "branch": "claude/hail-b5",
+  "base_for_diffs": "d083d45 (HEAD) and db84d76 (B5 base); uncommitted edits from runs 1 and 2 are in the tree",
+  "run_started": "2026-10-24 21:48 UTC (final test runs)",
+  "rulings": ["D91(a)", "D91(b)", "D91(c)", "D92(a)", "D92(b)", "D92(c)", "D91(f)"],
+  "files_owned": [
+    "tests/test_site.py",
+    "website/templates/reports.html",
+    "website/build.py (the _copy_hail source check only)",
+    ".github/workflows/website.yml",
+    "tests/test_website_workflow.py"
+  ],
+  "files_changed": [
+    "website/templates/reports.html (lines 7 and 57)",
+    "website/build.py (lines 636 to 638: the source check and its comment)",
+    ".github/workflows/website.yml (line 105: the offline unittest list)",
+    "tests/test_website_workflow.py (new class OfflineWordsRules, lines 130 to 141)",
+    "tests/test_site.py (lines 35 to 36: the words_rules import; reports tests 594 to 611; smoke budget pin 3179 to 3193; new class SiteCopySource 3199 to 3276; identity test allowances 3995 to 3998 and 4014 to 4023)"
+  ],
+  "items": [
+    {
+      "id": "D91(a)",
+      "item": "The pin near tests/test_site.py line 3176 follows the smoke's budget source (map.json hail.budget), not a module constant",
+      "status": "APPLIED",
+      "evidence": "tests/test_site.py HailAddresses.test_the_smoke_test_has_the_address_checks (line 3179): asserts the smoke has no ADDRESS_FETCH_BUDGET_GZIP attribute (line 3188); smoke.map_budget(data, 'phone_gzip_bytes') returns the value in hail.budget (a dict with 123456 gives 123456; site.PHONE_GZIP_BUDGET gives 700000) and None when the block is absent (lines 3189 to 3192); site.PHONE_GZIP_BUDGET == 700_000 kept. The stale 650 KiB comment is replaced. Passes in the targeted run and in both final runs."
+    },
+    {
+      "id": "D91(b)",
+      "item": "The pins that count the workflow's unittest lines (near test_site.py 1885, 3161, 3311) match the final website.yml",
+      "status": "ALREADY IN PLACE (verified against the file as landed; no edit needed)",
+      "evidence": "website.yml has two lines that match 'python -m unittest': the offline line (line 105) and the parity step's 'python -m unittest \\' (line 136). The pins are tests/test_site.py HailHistory.test_the_workflow_passes_the_flag_to_branch_previews_and_runs_its_tests (line 1889; unit[0] names tests.test_hail), HailAddresses.test_the_workflow_previews_pass_the_addresses_flag_and_the_tests_and_smoke_run (line 3166; unit[0] names tests.test_streets and tests.test_buildings) and B3Completion.test_the_workflow_installs_pyproj_and_pyogrio_as_compatible_releases_and_pins_nothing (line 3394; tests.test_addresses, test_streets, test_buildings). All pass. tests/test_website_workflow.py StormFlag and SatelliteReader select the offline line by 'python -m unittest tests.' and pass."
+    },
+    {
+      "id": "D91(c)",
+      "item": "website/templates/reports.html lines 7 and 57 reworded; the pin near test_site.py line 596 follows; words_rules passes on the built page",
+      "status": "APPLIED",
+      "evidence": "reports.html line 7: 'No report is not the same as no hail.' (was 'No report is not evidence that no hail fell.'). Line 57: 'No reports of hail or wind in or near Montana for this day; that is not the same as no hail.' (was 'No hail or wind reports in or near Montana for this day.'). tests/test_site.py SampleBuild.test_reports_page_shows_sizes_in_inches_and_unknown_wind (line 594) asserts both sentences and that every empty-day paragraph carries the new line; new SampleBuild.test_reports_page_text_passes_the_one_forbidden_list (line 603) runs words_rules.assert_clean over the visible text. Both pass. A mutation check (old lead restored in a scratch copy) fails both reports tests."
+    },
+    {
+      "id": "D91(c) words scan",
+      "item": "Build a --sample site and scan reports.html with words_rules.forbidden_words",
+      "status": "DONE",
+      "evidence": "Sample build (python -m website.build --out <scratch>/sample --sample; BUILD_EXIT=0, 6.3 s) before the edit: forbidden_words [] but has_no_hail True ('No report is not evidence that no hail fell.' and the old empty-day line). After the edit and a rebuild: forbidden_words [] and has_no_hail False; the sentences appear 3 times (lead and the two sample empty days). Every-flag build (item D92(c) below): forbidden_words [] and has_no_hail False; the new sentences appear 4 times (lead and three empty days). Scan script: /home/user/hail-b5/out/b2r7/site/scan/scan_reports.py."
+    },
+    {
+      "id": "D91(c) identity test (found by the full test_site run)",
+      "item": "The flag-off identity test (HailSwathLayers.test_the_default_build_matches_the_manifest_of_its_base_commit) must allow the reworded reports page, as D77 allows the About lines",
+      "status": "APPLIED (a failure after the template change, fixed)",
+      "evidence": "The first full test_site run after the template change failed this test: ['reports.html'] differed from base c860e23 (test_site.py line 4011 in that run). Fix: REPORTS_CHANGED = ('reports.html',) with REPORTS_SENTENCES (lines 3995 to 3998); the changed-files check excludes ABOUT_CHANGED and REPORTS_CHANGED (lines 4014 to 4016); the page must carry both sentences (lines 4021 to 4023). Re-run: passes in the final test_site run (275 tests, OK)."
+    },
+    {
+      "id": "item 4 (tests.test_site and the full suite)",
+      "item": "Run tests.test_site with HAIL_PARITY_STORE and the full suite; name every failure and its owner",
+      "status": "DONE: no failures in either final run",
+      "evidence": "tests.test_site with HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store (verbose): Ran 275 tests in 366.183s, OK (skipped=2). The two skips are by design: SheetAgreesWithTheModule.test_the_five_cells_agree_on_the_fixture for fixture cells 753,2230 and 920,1899, which the committed fixture has no joined tile for (D87(h)); the adopted store runs them in the parity step. Full suite (python -m unittest discover -s tests, HAIL_PARITY_STORE set): Ran 1966 tests in 462.639s, OK (skipped=3): the two above and tests/test_addresses.py RealMetadataTests.test_the_quoted_sentences_are_the_files_own_metadata (needs ADDRESS_FRAMEWORK_ZIP; environment-gated). An earlier test_site run (before the identity-test fix) had one failure: test_the_default_build_matches_the_manifest_of_its_base_commit (fixed, see above)."
+    },
+    {
+      "id": "D92(a)",
+      "item": "website/build.py _copy_hail checks its source with allow_live=True; the copy's own check stays strict; a test pins both (a source copy with a hail/live file passes; a copy with an unlisted file elsewhere fails)",
+      "status": "APPLIED",
+      "evidence": "website/build.py line 638: hs.check_manifest(root, allow_live=True), with a comment at lines 636 and 637 (D92(a), D75(a)). The copy's own check at line 667 (hs.check_manifest(out)) is unchanged and strict; the copy takes only the listed folders, so hail/live is never copied. Tests: tests/test_site.py class SiteCopySource (line 3199, six tests), all passing: a source with a hail/live file passes and the copy has no hail/live folder (3222); an unlisted file under hail/zz or hail/t still fails with 'the history has a file the manifest does not list' and creates no copy (3231); a link under hail/live is refused (3241); the source is checked with allow_live=True and the copy with allow_live=False (call recording, 3248); a copy that would carry an unlisted file fails its own strict check (3263). Mutation check in a scratch copy (source check strict again): the live-file test and the call-recording test fail with 'the history has a file the manifest does not list: hail/live/60/20261024T120000Z/MTC045.json'."
+    },
+    {
+      "id": "D92(b)",
+      "item": "The build job timeout stays at 25 minutes",
+      "status": "ALREADY IN PLACE",
+      "evidence": "website.yml line 55: timeout-minutes: 25, with the reason in lines 52 to 54. tests/test_website_workflow.py ParityStep.test_the_build_job_timeout_leaves_room_for_the_step passes (>= 25)."
+    },
+    {
+      "id": "D92(c) and D91(f) (offline list and its pin)",
+      "item": "website.yml's offline unittest module list names tests.test_words_rules; tests/test_website_workflow.py pins it",
+      "status": "APPLIED",
+      "evidence": "website.yml line 105: the offline line now includes tests.test_words_rules (before tests.test_hail_workflow). tests/test_website_workflow.py class OfflineWordsRules (line 130; test at line 137) asserts the offline line names the module once and that tests/test_words_rules.py exists. Passes. python -m unittest tests.test_words_rules: Ran 25 tests, OK. The offline list covers every website test module; the three test files it omits (test_alert_scenarios, test_updates, test_weather) belong to the parked app and were never run by the Website workflow."
+    },
+    {
+      "id": "D92(c) every-flag build and the parity step's own run",
+      "item": "Build a fresh every-flag site from the adopted store under /home/user/hail-b5/out/b2r7/site/, run the parity step's own run: script against it (HAIL_PARITY_STORE=_site), quote the tail (seven tests, OK, no skip), delete the build",
+      "status": "DONE (build deleted after the checks; logs kept)",
+      "evidence": "Build: python -m website.build --out /home/user/hail-b5/out/b2r7/site/_site --storm-layers --hail-history --hail-addresses --hail-store /home/user/hail-b5/out/combined/store --now 2026-10-24T12:00:00Z: BUILD_EXIT=0 (1 min 31 s); _site/hail/tl has 4,597 files. The build's hail_swath status is ok false ('the newest file is stamped Oct 24, 3:36 pm MDT, newer than this build's time'), because --now 12:00Z is earlier than the live swath files, so the site copy has no hail/live folder. The step script was extracted from website.yml by its name (env HAIL_PARITY_STORE=_site; bash -eo pipefail; run from a scratch folder holding _site, tests and website links; PATH with the project interpreter first). Run A (the build as is): tail 'Ran 7 tests in 122.623s / OK'; zero 'skipped=' in parity.log; step exit 0. Run B (the D92(a) case: one synthetic unlisted file added at _site/hail/live/60/20261024T120000Z/MTC045.json, then the same step): 'Ran 7 tests in 144.140s / OK'; exit 0. Logs: /home/user/hail-b5/out/b2r7/site/parity-run-A.log, parity-run-B.log, parity-run-A.out, parity-run-B.out. The build folder was removed after run B."
+    },
+    {
+      "id": "D92 and D91 checks of the words and the reports",
+      "item": "No em-dash and no model or AI-product name in the lines added to my files; the D13 greps",
+      "status": "DONE",
+      "evidence": "Added lines (against db84d76) in tests/test_site.py, tests/test_website_workflow.py, website/build.py, website/templates/reports.html and website.yml: 0 em-dashes. The only substring match for model or vendor names is 'fullmatch' (contains 'llm') in an older added line. The existing 'codex/' and 'claude/**' strings are branch names in the pre-existing workflow trigger and a test's branch name (D43)."
+    }
+  ],
+  "needed_from_others": [
+    {
+      "owner": "docs (owner 5)",
+      "file": "docs/DESIGN.md line 169",
+      "change": "The empty-day sentence is quoted as 'No hail or wind reports in or near Montana for this day.'. The page now says 'No reports of hail or wind in or near Montana for this day; that is not the same as no hail.' (D91(c)). Update the quote."
+    },
+    {
+      "owner": "supervisor (not in the brief)",
+      "file": ".github/workflows/website.yml on.push.paths",
+      "change": "The path filter does not list tests/words_rules.py or tests/test_words_rules.py, so a branch push that changes only the words rules does not start the Website workflow. Left unchanged; the supervisor decides whether to add both paths."
+    },
+    {
+      "owner": "live build (no owner)",
+      "file": "tools/smoke_map.py hail_60 (one-hour swath pixel gate)",
+      "change": "Measured only by a live preview build (D92(d)); this offline build records the swath as not loaded. Nothing to change here."
+    }
+  ],
+  "left_unchanged_on_purpose": [
+    "payload/weather.py line 1260, payload/templates/history.html lines 63 and 75, payload/templates/summary.html line 72 and tests/test_weather.py line 256 still use 'not evidence that no hail fell': the parked app, out of this round's scope."
+  ],
+  "incidents": [
+    "One scratch file was written to /tmp/x during a list comparison (sort > /tmp/x) and removed in the same command; the scratch folder under out/ was used for everything else."
+  ],
+  "tests_tail": {
+    "tests.test_site (HAIL_PARITY_STORE set; final, verbose)": "Ran 275 tests in 366.183s\n\nOK (skipped=2)",
+    "full suite: python -m unittest discover -s tests (HAIL_PARITY_STORE set; final)": "Ran 1966 tests in 462.639s\n\nOK (skipped=3)",
+    "tests.test_website_workflow + tests.test_hail_workflow": "Ran 86 tests in 0.724s\n\nOK",
+    "tests.test_words_rules": "Ran 25 tests in 0.108s\n\nOK",
+    "parity step's own run (run A, as built)": "Ran 7 tests in 122.623s\n\nOK",
+    "parity step's own run (run B, one unlisted hail/live file in the site copy)": "Ran 7 tests in 144.140s\n\nOK"
+  },
+  "commands": [
+    "python -m website.build --out <scratch>/sample --sample (BUILD_EXIT=0, 6.3 s); words_rules scan of reports.html before and after the edit",
+    "python -m website.build --out /home/user/hail-b5/out/b2r7/site/_site --storm-layers --hail-history --hail-addresses --hail-store /home/user/hail-b5/out/combined/store --now 2026-10-24T12:00:00Z (BUILD_EXIT=0, 1 min 31 s)",
+    "bash -eo pipefail <the step's run script> with HAIL_PARITY_STORE=_site (run A: Ran 7 tests in 122.623s OK; run B with a synthetic hail/live file: Ran 7 tests in 144.140s OK)",
+    "python -m unittest tests.test_site.SiteCopySource + the reports, smoke-budget and workflow pins (12 tests, OK, 39 s; before the identity-test fix)",
+    "mutation check in a scratch copy (source check strict; old reports lead): 2 errors and 2 failures, as expected",
+    "HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store python -m unittest tests.test_site (first run): Ran 275 tests in 376.924s FAILED (failures=1, skipped=2): the flag-off identity test, fixed",
+    "HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store python -m unittest -v tests.test_site (final): Ran 275 tests in 366.183s OK (skipped=2)",
+    "HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store python -m unittest discover -s tests (final): Ran 1966 tests in 462.639s OK (skipped=3)",
+    "python -m unittest tests.test_website_workflow tests.test_hail_workflow: Ran 86 tests in 0.724s OK",
+    "python -m unittest tests.test_words_rules: Ran 25 tests in 0.108s OK"
+  ]
+}

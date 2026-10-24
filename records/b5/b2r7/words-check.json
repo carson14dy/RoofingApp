@@ -1,0 +1,141 @@
+{
+ "owner": "fixer 2 (words-3)",
+ "worktree": "/home/user/wt/wt-b5",
+ "branch": "claude/hail-b5",
+ "snapshot_utc": "2026-10-24 21:47 UTC",
+ "scope_files": [
+  "tests/test_words_rules.py"
+ ],
+ "items": [
+  {
+   "item": "D91(d): ForecastWordsTests added to tests/test_words_rules.py (lines 91 to 137): the D89(a) FORECAST pins.",
+   "status": "DONE",
+   "evidence": "tests.test_words_rules: Ran 25 tests, OK (test_words_rules-final2.log); 19 before, 6 added."
+  },
+  {
+   "item": "Pass pins from words-2 check needed_from_others item 1: 'Clear', 'Clear.', 'Chance Rain Showers', 'chance rain showers', '40% chance of rain or snow', 'Chance of rain or snow'.",
+   "status": "DONE",
+   "evidence": "test_the_nws_condition_and_chance_wording_passes (line 96); W.assert_clean on each."
+  },
+  {
+   "item": "Pass pins: the observation line 'Read at ... SAMPLE Clear' (and '\u00b7 Clear' and the stale form).",
+   "status": "DONE",
+   "evidence": "test_the_observation_line_passes (line 102); the real sample town page prints 'Read at 5:48 am, 12 min ago \u00b7 SAMPLE Clear' and 'Read at 3:30 am, 2 h 30 min ago \u00b7 stale \u00b7 SAMPLE Clear'."
+  },
+  {
+   "item": "Pass pins: the day line 'Sunny \u00b7 10% rain or snow \u00b7 ... \u00b7 night: clear SAMPLE' (the bare string from the check, the same with the Sunday prefix, and the chance-rain-showers night line).",
+   "status": "DONE",
+   "evidence": "test_the_day_line_passes (line 108). The sample Billings page prints 'Sunny \u00b7 10% rain or snow \u00b7 wind 13 to 18 mph W \u00b7 night: clear' with 'SAMPLE. High near 62. Winds 13 to 18 mph.' (the pins use the check's 5 to 10 mph values; the shape is the same)."
+  },
+  {
+   "item": "Still-flagged pins (the check's list): 'Clear sky over the roof.', 'A clear view of the roof.', 'Clear Creek', 'Chance of hail this week.', 'Read at ... \u00b7 Clear sky over the roof', 'Sunny \u00b7 night: clear skies were seen.'.",
+   "status": "DONE",
+   "evidence": "test_the_same_words_in_history_text_are_still_flagged (line 121) and test_the_observation_and_day_lines_still_flag_history_words (line 132)."
+  },
+  {
+   "item": "Still-flagged pins for a chance of hail or damage in history text: 'Chance of hail or damage this week.' gives ['chance', 'damage']; 'Chance of hail or rain or snow.' gives ['chance'] (the phrase exemption is exact); 'Chance of rain or snow, and a risk of hail.' gives ['risk'].",
+   "status": "DONE",
+   "evidence": "lines 121 to 136 of tests/test_words_rules.py."
+  },
+  {
+   "item": "Boundary pins of the whole-field rule: bare 'clear' and 'Clear. High near 61.' stay flagged.",
+   "status": "DONE",
+   "evidence": "test_the_same_words_in_history_text_are_still_flagged (line 121)."
+  },
+  {
+   "item": "Source-text pin: the forecast wording is still in sources.py, index.html, map.js, town.html and sample.py (an edit that drops it fails the test).",
+   "status": "DONE",
+   "evidence": "test_the_nws_forecast_wording_is_in_the_files_that_show_it (line 182)."
+  },
+  {
+   "item": "Mutation check of the pins: four scratch copies of tests/words_rules.py with the FORECAST rule weakened.",
+   "status": "DONE",
+   "evidence": "no rule: 13 failing tests; night pattern without its lookahead: 1; any 'chance' exempt: 1; 'Clear' anywhere exempt: 2. Copies under the scratch folder only; the worktree was not written by the check."
+  },
+  {
+   "item": "Module header names D89(a).",
+   "status": "DONE",
+   "evidence": "line 2 of tests/test_words_rules.py."
+  },
+  {
+   "item": "tests/words_rules.py (words-2's file) not edited; no exemption added or widened.",
+   "status": "NOT NEEDED",
+   "evidence": "the words-2 FORECAST tuple passes every pin without change."
+  },
+  {
+   "item": "ASCII and banned-name rules for added lines: the middle dot and degree sign are written as \\u00b7 and \\u00b0 escapes (the first edit had literal glyphs, replaced).",
+   "status": "DONE",
+   "evidence": "0 non-ASCII characters in the file; 0 em or en dashes, 0 model, vendor or product names in added lines."
+  },
+  {
+   "item": "Sample build check of the pinned strings (one sample-only build, then deleted).",
+   "status": "DONE",
+   "evidence": "python -m website.build --out <scratch>/site --sample --now 2026-10-24T12:00:00Z: exit 0 (sample-build.log)."
+  }
+ ],
+ "observations": [
+  "Flattened page text: a scan that joins cells into one string flags the sample town pages' hourly 'Clear' cells (17 pages, 'clear' only) and an observation's 'SAMPLE Clear' when other text follows it on the same string. A block scan (cells and paragraphs as separate blocks, as words-2's scan_r6.py does) reports 0 (words-2 check.json). The one page-level scan in the suite (tests/test_site.py around lines 604 to 607, reports.html, visible text joined) has no hourly cells, so it passes. A future town-page scan written the flattened way would fail on those cells.",
+  "The FORECAST tuple covers the sample's NWS names only. Live NWS names are not covered (for example 'Mostly Clear'), and NWS detailed-forecast sentences (for example 'Mostly clear, with a low around 35.') are not exempt. No test reads a live page, so no test fails today."
+ ],
+ "needed_from_others": [
+  "tests/test_site.py HailSwathLayers.test_the_default_build_matches_the_manifest_of_its_base_commit (the one failure of the final run, if it still fails when read): website/templates/reports.html differs from the base build (base c860e23: these files differ from the base build); that is site-3's D91(c) wording edit, and the expected-difference list (D77 pattern) does not name the file. Owner: site (site-3).",
+  "tests/words_rules.py FORECAST (words-2's file): if live NWS names must pass, add their whole-field patterns there. Owner: words (words-2); a decision for the supervisor, not a failure today.",
+  "A future page-level words scan should work per cell or per block (observation 1). Owner: whoever writes that scan."
+ ],
+ "tests_by_module": {
+  "tests.test_words_rules (final, after the exact day-line pin)": "Ran 25 tests OK (test_words_rules-final2.log)",
+  "tests.test_joins (final)": "Ran 288 tests OK (test_joins-final.log)",
+  "before my edits (baseline, tests.test_words_rules + tests.test_joins)": "Ran 307 tests OK (baseline-words-joins.log)",
+  "full suite (discover -s tests, final)": "Ran 1966 tests in 355.497s; FAILED (failures=1, skipped=10); SUITE_EXIT=1"
+ },
+ "full_suite_failures": [
+  {
+   "kind": "FAIL",
+   "test": "test_the_default_build_matches_the_manifest_of_its_base_commit",
+   "owner": "site (site-3)"
+  }
+ ],
+ "full_suite_tail": "\n----------------------------------------------------------------------\nRan 1966 tests in 355.497s\n\nFAILED (failures=1, skipped=10)\nSUITE_EXIT=1",
+ "commands": [
+  {
+   "command": "python -m unittest tests.test_words_rules (baseline, before edits)",
+   "tail": "Ran 19 tests ... OK (baseline-words-joins.log: 307 with test_joins)"
+  },
+  {
+   "command": "python -m unittest -v tests.test_words_rules (after the pins)",
+   "tail": "Ran 25 tests ... OK"
+  },
+  {
+   "command": "python -m unittest tests.test_joins",
+   "tail": "Ran 288 tests in 8.2s ... OK"
+  },
+  {
+   "command": "python make_mutants.py (four scratch mutants; copies only)",
+   "tail": "no rule 13 failing, night without lookahead 1, any chance 1, Clear anywhere 2"
+  },
+  {
+   "command": "python -m website.build --out <scratch>/site --sample --now 2026-10-24T12:00:00Z",
+   "tail": "exit 0; site deleted after the check"
+  },
+  {
+   "command": "python -m unittest discover -s tests (final)",
+   "tail": "SUITE_EXIT=1"
+  }
+ ],
+ "scratch": {
+  "folder": "/home/user/hail-b5/out/b2r7/words/",
+  "kept": [
+   "logs",
+   "make_mutants.py",
+   "rewrite_class.py",
+   "shorten_line.py",
+   "add_pin.py",
+   "test_words_rules.diff",
+   "build_check.py"
+  ],
+  "deleted": [
+   "the sample site build",
+   "the mutant copies"
+  ]
+ }
+}
