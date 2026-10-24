@@ -222,3 +222,6 @@ The D87 audit (wf_75c2fb98-03f, two read-only agents; record b2r3/supervisor/d87
 
 ## 2026-10-24 20:20 UTC: run-1 words and site checks; D89
 Words: 20 of 24 done (swath.py, streets.py and forecast-word questions left). Site: 17 of 19 (the two partial items wait on map.js 2396 and 3399 to 3408). Full suite 1,930 tests, 1 failure (the site pin on the browser). D89(a) to (g) recorded: NWS forecast words outside the gate; map.js 175 unreadable; map.js 2131 deferred; streets unavailable lines take the D41 sentence; swath.py words to "not an inspection" (D88(q) withdrawn); run 2 = smoke, site-2, browser-2, words-2.
+
+## 2026-10-24 20:45 UTC: round-3 workflow stopped; D90
+wf_d8728e1a-b66 (hail-b5b2-round2.js) had fix and check stages after its skeptics: its fix:site ran 20:20 to 20:33 UTC after run 1 site fixer (consistent with D88(b); suite 1,933 OK; selftest PASS; map.json 162,347 raw history flag, headroom 1,493 bytes), and its fix:browser and fix:smoke started while run 1 fix:browser was editing map.js. Stopped at 20:40 UTC (TaskStop wqk6ify5s). Snapshots of map.js, smoke_map.py and summary.py under /home/user/hail-b5/out/b2r5/supervisor/. D90(a) to (e) recorded; browser-2 reconciles map.js; site-2 removes the em-dash at tests/test_site.py 403; docs items 9 to 11 added.

@@ -1182,3 +1182,24 @@ The words fixer (20 of 24 items done; /home/user/hail-b5/out/b2r5/words/check.js
   tests/test_swath.py, tests/test_streets.py and tests/words_rules.py. (g) The one full-suite failure of run 1
   (tests.test_site SummaryContract.test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json) is the
   site's new pin waiting on the browser fixer's map.js change; it is not a defect of the pin.
+
+## Supervisor rulings after stopping the round-3 workflow (2026-10-24 20:45 UTC; D90)
+The round-3 workflow (hail-b5b2-round2.js) carried fix and check stages after its skeptics. Its site fixer ran after
+run 1's site fixer (20:20 to 20:33 UTC; it read D88 and fixed R1-F1 as D88(b) says: held lines read "Data unavailable:
+{label}. {reason} This is not an all-clear."; full suite 1,933 tests OK with the store set; self-test PASS) and its browser
+and smoke fixers started while run 1's browser fixer was editing map.js. The supervisor stopped the workflow at 20:40
+UTC; the round-3 record (/home/user/hail-b5/out/b2r3/supervisor/round3-reviews-and-verdicts.json) holds every verdict
+and the site fixer's report. Rulings:
+- D90 **After round 3.** (a) D88(b) read as written by the round-3 site fixer: a held line's reason follows the lead as a
+  sentence ("Data unavailable: Roof ponding. No public weather record shows water on a roof. This is not an all-clear.");
+  no parentheses are added to held lines; the station line keeps its unit parenthetical without the kind word.
+  (b) Measured by the round-3 site fixer on the adopted store: map.json with the history flag 162,347 bytes raw (32,417
+  gzip); every flag 464,345 bytes raw (88,510 gzip); the headroom under the 163,840-byte gate is 1,493 bytes. The gate
+  stands (D82(a)); the docs record the figures and the headroom, and ROADMAP names the next growth of the history blocks
+  as a budget decision (a restated gate with its reason, or fewer words in map.json), never a silent breach.
+  (c) tests/test_site.py line 403 carries a pre-existing em-dash in a test string: site-2 removes it, changing the source
+  text it pins in the same way if it pins one (no em-dashes in repository files). (d) The browser-2 fixer reconciles
+  map.js: it reads run 1's browser check and the current file, keeps every change that follows D87 to D89, and reports
+  any edit it cannot attribute to an item (the stopped round-3 browser fixer may have left partial edits); node --check
+  and the HailHistory tests gate its final state. (e) Run 2 starts when run 1's browser fixer has finished; no other
+  workflow edits the worktree while run 2 runs.
