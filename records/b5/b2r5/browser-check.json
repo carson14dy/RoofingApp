@@ -1,0 +1,200 @@
+{
+ "brief": "B5 part B2 completion pass: browser fixer (fixer 3), D78-D83, D87, D88",
+ "worktree": "/home/user/wt/wt-b5",
+ "branch": "claude/hail-b5",
+ "owned_files": [
+  "website/static/map/map.js",
+  "website/static/map/map.css",
+  "website/templates/map.html"
+ ],
+ "map_js_sha256_prefix": "310467187e44f3af",
+ "store": "/home/user/hail-b5/out/combined/store (read only)",
+ "items": [
+  {
+   "id": "1",
+   "brief": "histLine kind word (D87(a); D88(b))",
+   "status": "in place",
+   "file": "website/static/map/map.js",
+   "line": "5061-5069",
+   "evidence": "An unavailable line leads with its kind word through indicator_unavailable (spec.kind); a line with a figure keeps the built text (summary._line). No change this round. The browser DOM equals describe_summary in all 26 compared cases (check_round4.json)."
+  },
+  {
+   "id": "2",
+   "brief": "Thousands separators (station days, counts)",
+   "status": "applied",
+   "file": "website/static/map/map.js",
+   "line": "5042 (histDlCells station days); also 4654, 4666, 4687, 5303 and coverage counts 3515-3544; helper at 2788",
+   "evidence": "Station-day counts are written through thousands(n). Compared text equals the built sheet in every compared case."
+  },
+  {
+   "id": "3",
+   "brief": "Season rule read from map.json (D83(b); D87(d); F-12)",
+   "status": "applied",
+   "file": "website/static/map/map.js",
+   "line": "3393-3417 (SUM_SEASONS, sumDayNum, sumIsoOf, sumSeasonOf, sumBounds); 3487-3493 (sumSeasonRule)",
+   "evidence": "Season bounds come from summary.rule.season (start_month 7, start_day 1, end_month 6, end_day 30); the 95 percent share from summary.rule.season_min times summary.rule.percent. No literal rule remains outside comments. season_parity_final.json: 2375 days, 0 season mismatches, 0 bound mismatches."
+  },
+  {
+   "id": "4",
+   "brief": "Unit scales read from summary.units (D87(d); F-08)",
+   "status": "applied",
+   "file": "website/static/map/map.js",
+   "line": "2397 (hailInches); 3471-3485 (unit decimals, scale, station decimals)",
+   "evidence": "hailInches floors with summary.units.in.scale and shows summary.units.in.decimals; the literal 100 is gone. The inch pin in tests/test_site.py now reads U.scale (a site file). season_parity_final.json: inches match the test expectation (true)."
+  },
+  {
+   "id": "5",
+   "brief": "F13 dead CSS removal",
+   "status": "in place",
+   "file": "website/static/map/map.css; website/templates/map.html",
+   "line": "none",
+   "evidence": "grep finds no .hail-days, .hail-classes or .joins-* rule in map.css and no matching slot in templates/map.html."
+  },
+  {
+   "id": "6",
+   "brief": "Station names as the store gives them (D78(c); D84(b))",
+   "status": "in place",
+   "file": "website/static/map/map.js",
+   "line": "4281-4335 (sumTilePicks: name = entry.name, else entry.id)",
+   "evidence": "Names are passed through, not rewritten. picks_parity_round4.json: 60 cases, 0 differences."
+  },
+  {
+   "id": "7",
+   "brief": "Joined-section lines as notes of their section (D82(d))",
+   "status": "in place",
+   "file": "website/static/map/map.js",
+   "line": "5401-5411 (lineNotes); 5440 (section notes)",
+   "evidence": "Joined lines are appended to their own section's notes. Section notes match the built sheet in every compared case."
+  },
+  {
+   "id": "8",
+   "brief": "sumTilePicks mirrors stations.tile_list_picks (D69; D72; D32)",
+   "status": "applied",
+   "file": "website/static/map/map.js",
+   "line": "4281-4335 (sumTilePicks); 4449 (sumRoundEven, Python round half-to-even)",
+   "evidence": "Rejected stations are kept (D69). Returns null when the block lacks centre or margin_miles and when the point is beyond the margin (D72); D32 sentence, never a none sentence. Miles rounded to one place as Python round. picks_parity_round4.json: 60 cases, 0 differences, margin edges included."
+  },
+  {
+   "id": "9",
+   "brief": "Partial-season count sentences end with the all-clear (D87(b); D41)",
+   "status": "in place",
+   "file": "website/static/map/map.js",
+   "line": "4722 (sumPartialRow); 3497 (sumClear); 5048 (sumUnavailablePart); 5066 (histLine partial line)",
+   "evidence": "Built text in ref_cells_round4.json ends 'Data unavailable for 2021-22: ... a missing day is not zero. This is not an all-clear.' Browser text matches the built text in every compared case."
+  },
+  {
+   "id": "10",
+   "brief": "Picture status sentences end with the D41 sentence (D87(c) as narrowed by D88(c))",
+   "status": "in place",
+   "file": "website/static/map/map.js",
+   "line": "3362-3363",
+   "evidence": "Both read '... This is not an all-clear.' The text was already in the file at 20:17:47 (grep in this session). This session has no write to map.js at 20:16:19; the writer is not identified (see notes)."
+  },
+  {
+   "id": "11",
+   "brief": "Picture status labels and words move to map.json (D87(c); F-10)",
+   "status": "deferred",
+   "file": "website/static/map/map.js",
+   "line": "3368 (labels); 1320 and 3362-3363 (sentences)",
+   "evidence": "Left as is per D87(c) and D88(c). The move to map.json words (SWATH_SITE_WORDS no_picture and a picture_failed key) is the ROADMAP follow-up; this PR does not widen into the storm-layer status code."
+  }
+ ],
+ "checks": {
+  "browser_round4": {
+   "log": "check_round4.log",
+   "json": "check_round4.json",
+   "widths_px": [
+    390,
+    1280
+   ],
+   "cells": {
+    "billings": "921,2149",
+    "benchland": "792,1998",
+    "gate": "797,1986",
+    "tile753": "753,2230",
+    "cell920": "920,1899",
+    "unread602": "602,1396",
+    "unread607": "607,1428"
+   },
+   "cases": 28,
+   "compared": 26,
+   "diffs": 0,
+   "offsite_requests": 0,
+   "errors": 0,
+   "skipped": [
+    "tap 390x844 cell920",
+    "tap 1280x800 cell920 (a warning polygon covers the cell; open by URL is compared)"
+   ],
+   "placeholder": "the checker fails any sheet text containing '[missing'; none found",
+   "fetch_per_tap": "fetch= and gz= per case in check_round4.log",
+   "scratch_build": "website.build --now 2026-10-24T12:00:00Z --storm-layers --hail-history --hail-addresses --hail-store /home/user/hail-b5/out/combined/store; deleted after the check"
+  },
+  "picks_parity": {
+   "file": "parity/picks_parity_round4.json",
+   "cases": 60,
+   "diffs": 0
+  },
+  "season_parity": {
+   "file": "parity/season_parity_final.json",
+   "days": 2375,
+   "season_mismatches": 0,
+   "bound_mismatches": 0
+  },
+  "subset_exact": {
+   "file": "logs-subset-exact-r4.log",
+   "command": "python -m unittest tests.test_site -k HailJoinedRecords -k HailHistory -k HailAddresses -k HailSwathLayers -k HailJoins -k SheetFiveSeasonsInTheBrowser",
+   "tail": [
+    "Ran 115 tests in 158.278s",
+    "OK (skipped=1)",
+    "SUBSET_EXIT=0"
+   ]
+  },
+  "full_suite": {
+   "file": "logs-full-final.log",
+   "command": "python -m unittest discover -s tests",
+   "tail": [
+    "Ran 1933 tests in 384.417s",
+    "OK (skipped=10)",
+    "FULL_EXIT=0"
+   ]
+  },
+  "full_suite_earlier": {
+   "file": "logs-full-r4.log",
+   "note": "started 20:24 on the same map.js; kept for the record",
+   "tail": [
+    "Ran 1933 tests in 354.406s",
+    "OK (skipped=10)",
+    "FULL_EXIT=0"
+   ]
+  }
+ },
+ "needed_from_others": [
+  {
+   "owner": "docs",
+   "file": "docs/ROADMAP.md",
+   "what": "Record the follow-up for the picture status sentences and labels (map.js 1320, 3362-3368): move them into map.json words (SWATH_SITE_WORDS no_picture and a picture_failed key) so the browser reads them from the build (D87(c), D88(c))."
+  },
+  {
+   "owner": "site",
+   "file": "tests/test_site.py",
+   "what": "None outstanding. The inch pin and the node harness now match the code; the named subset and the full suite pass on this tree."
+  },
+  {
+   "owner": "supervisor",
+   "what": "Confirm which writer put the D88(c) sentences into map.js at 20:16:19. No write of this session falls at that time; the text matches D88(c)."
+  }
+ ],
+ "tests_tail": [
+  "Ran 1933 tests in 384.417s",
+  "OK (skipped=10)",
+  "FULL_EXIT=0",
+  "Ran 115 tests in 158.278s",
+  "OK (skipped=1)",
+  "SUBSET_EXIT=0"
+ ],
+ "notes": [
+  "Round-2 named subset (logs-subset-exact-r2.log, 20:20) failed on two site pins: test_the_map_script_rounds_sizes_down_to_the_hundredth (ERROR: the node harness had no own or missingKey) and test_map_script_holds_no_threshold_unit_class_word_or_sentence (FAIL: the pin on the old literal). tests/test_site.py now reads U.scale and lists own and missingKey; both pass in logs-subset-exact-r4.log and logs-full-final.log.",
+  "map.js is unchanged since 20:16:19 (sha256 prefix 310467187e44f3af, identical to map.js.r4-snapshot.js, listed in snapshot-round4.sha256).",
+  "Not in scope, left as is: the alert-panel sentence at map.js 2131 reads 'That is not an all-clear.' (predates B5; D87 does not cover it). For the docs or site owner to decide."
+ ]
+}

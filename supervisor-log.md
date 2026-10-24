@@ -225,3 +225,6 @@ Words: 20 of 24 done (swath.py, streets.py and forecast-word questions left). Si
 
 ## 2026-10-24 20:45 UTC: round-3 workflow stopped; D90
 wf_d8728e1a-b66 (hail-b5b2-round2.js) had fix and check stages after its skeptics: its fix:site ran 20:20 to 20:33 UTC after run 1 site fixer (consistent with D88(b); suite 1,933 OK; selftest PASS; map.json 162,347 raw history flag, headroom 1,493 bytes), and its fix:browser and fix:smoke started while run 1 fix:browser was editing map.js. Stopped at 20:40 UTC (TaskStop wqk6ify5s). Snapshots of map.js, smoke_map.py and summary.py under /home/user/hail-b5/out/b2r5/supervisor/. D90(a) to (e) recorded; browser-2 reconciles map.js; site-2 removes the em-dash at tests/test_site.py 403; docs items 9 to 11 added.
+
+## 2026-10-24 20:58 UTC: run 1 complete; WIP d083d45; run 2 launched
+Run 1 (wf_0fb69837-1d4): words 20 of 24, site 17 of 19 (the rest landed with the browser), browser all items done or in place; full suite 1,933 OK on the final tree; Chromium check 0 diffs, 0 off-site requests, no placeholder. The map.js write at 20:16:19 was the stopped round-3 browser fixer applying D88(c). WIP safety commit d083d45 pushed to session/hail-b5-wip. Run 2 launched as two workflows (smoke + words-2; site-2 + browser-2), recheck false; checks to /home/user/hail-b5/out/b2r5/smoke/ and /home/user/hail-b5/out/b2r6/<owner>/.
