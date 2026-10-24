@@ -1,0 +1,174 @@
+{
+  "items": [
+    {
+      "item": "Sheet smoke at 390 and 1280 px: the five-season table inside the first screen below the address and live lines, nothing sideways, every row with its kind word and unit (tools/smoke_map.py check_summary, first_screen_problems, summary_problems).",
+      "status": "not done",
+      "evidence": "Code present. Run on the combined site (every flag; /home/user/hail-b5/out/b2/smoke/final-check/site-combined; logs/smoke-map-combined.log): 12 failures, all 'the sheet shows no five-season table' (Billings, 792,1998 and 797,1986; 390 and 1280 px; opened with ?at= and tapped). A probe of the same page shows 'Hail history is unavailable: the five-season table could not be built.' and 0 tables. The browser's table builder returns nothing, because map.js reads summary words that this build does not write (see needed_from_others 3), and hail/tl is missing from the site (needed_from_others 1). Nothing else in that run failed."
+    },
+    {
+      "item": "Three cells exact: Billings, Benchland cell 792,1998 and gate cell 797,1986 each read exactly the words of summary.describe_summary plus their coverage line and nothing else (D75(b); smoke_map.py cell_words, find_cell, summary_spots).",
+      "status": "not done",
+      "evidence": "Code present and exact. Not reached: no table renders on the combined site, nor on a patched copy with hail/tl copied in from the store and the words read with --store (logs/smoke-map-combined-tl-patched.log: the same 12 table failures)."
+    },
+    {
+      "item": "Every file a tap fetches is under map.json hail.budget.tile_events_gzip_bytes (100,000 bytes gzip), with the fetch list printed per tap (D66, D75(c); smoke_map.py map_budget, tap_problems).",
+      "status": "partial",
+      "evidence": "Budget present in map.json (100000). Fetch lists printed for all 12 taps (3 cells, opened and tapped, 2 sizes). Largest file in any list: b/r0092_c021500.json, 40,074 B gzip (both runs). On the combined site every hail/tl/*.json answers 404 (214 B), so each tap fails the 200 rule. With hail/tl copied in (patched copy) every tap answers 200 and every file is under budget (tl/r0092_c0214.json 632 B)."
+    },
+    {
+      "item": "Phone view at zoom 15 over Billings with every layer on under map.json hail.budget.phone_gzip_bytes (665,600 bytes gzip, the 650 KB gate), picture frames listed apart (D66, D70; smoke_map.py check_every_layer, layer_part).",
+      "status": "done",
+      "evidence": "Measured 661,416 bytes gzip with 6 layers on and 82 files: B3 files 267,789; shell and data 393,627; picture frames 2,313,675 listed apart. Margin 4,184 bytes, so any added browser bytes must be re-measured. Same figure in the combined and patched runs (logs/smoke-map-combined.log, logs/smoke-map-combined-tl-patched.log)."
+    },
+    {
+      "item": "Zero off-site requests in every context (smoke_map.py Counted, checked at the end of check()).",
+      "status": "done",
+      "evidence": "No 'request(s) went to other sites' line in either map smoke run (logs/smoke-map-combined.log, logs/smoke-map-combined-tl-patched.log). The check runs after every other check."
+    },
+    {
+      "item": "The smoke reads the built site's own hail/ copy with no --store in CI, and hail.load_store skips hail/live/ files (D75(a); website.yml smoke step; website/hail.py LIVE_PREFIX, check_manifest allow_live, load_store).",
+      "status": "done",
+      "evidence": "website.yml line 127 runs smoke_map.py _site --addresses --history with no --store. hail.py lines 512 to 547 and 772 to 778 (allow_live for a directory; an archive stays strict). tests/test_website_workflow.py SiteCopy (2 tests) pass. The combined smoke printed no 'cannot be read' line, so the site copy loaded."
+    },
+    {
+      "item": "CI smoke flags: smoke_map.py _site --addresses --history and smoke_pages.py _site --history (D75; the preview passes them).",
+      "status": "done",
+      "evidence": "website.yml lines 127 and 131 carry the flags. tests/test_website_workflow.py SmokeFlags (test_the_map_smoke_takes_the_history_and_address_flags_the_preview_passes, test_the_page_width_check_takes_history) pass. The same commands were run locally."
+    },
+    {
+      "item": "smoke_pages.py: no sideways scroll at 288 to 1440 px, light and dark, and the five-season table check on town pages with --history.",
+      "status": "done",
+      "evidence": "logs/smoke-pages-combined.log: 'Page width check passed' at 288, 320, 375, 390, 768, 1280 and 1440 px, light and dark; 'Five-season table check passed on town pages' for 17 pages at 10 widths; EXIT=0."
+    },
+    {
+      "item": "Daily store job timeout-minutes 150; monthly job 60 (hail-store.yml).",
+      "status": "done",
+      "evidence": "hail-store.yml line 106: store job timeout-minutes 150; line 694: monthly job timeout-minutes 60. tests/test_hail_workflow.py test_the_daily_job_is_capped_at_150_minutes_and_the_monthly_job_at_60 passes (owner-4 run: Ran 25 tests, OK)."
+    },
+    {
+      "item": "Joins backstop 53 minutes, 1.5 times the 35-minute JOINS_DEADLINE_S, and fatal (D42, D75(d)).",
+      "status": "done",
+      "evidence": "hail-store.yml line 158: join step timeout-minutes 53, with the comment that the step's own stop comes first. tests/test_hail_workflow.py test_the_join_is_fatal_and_its_timeout_is_above_the_joins_deadline passes."
+    },
+    {
+      "item": "D49 branch-preview wait step in website.yml (gh run list --commit, poll, ceiling, job timeout 15 plus ceiling) and its test.",
+      "status": "not done",
+      "evidence": "Not built by this owner, by D60: the D49 wait is carried by main's B1 go-live (D59) and reaches this branch when main merges in. website.yml has no 'gh run list' step (grep), and neither owner-4 test file tests it. Confirm at the main merge."
+    },
+    {
+      "item": "R15: a --history run without the address build fails readably (D72 smoke item).",
+      "status": "not done",
+      "evidence": "Not implemented. A --history run without --addresses on a history-only build (site-history-only, logs/build-history-only.log; logs/smoke-map-history-only-no-addresses.log) fails, but not readably: console 404s for hail/tl tiles, then 'a check could not run (check_summary): Page.wait_for_function: Timeout 15000ms exceeded' and the same for check_every_layer. No line names the missing --hail-addresses build. The readable message 'the build has no addresses layer: build with --hail-addresses' is printed only with --addresses (smoke_map.py check_addresses)."
+    },
+    {
+      "item": "D75(e) nits: the stale 60-minute comment gone; console errors name their URL; the smoke_pages usage line stands apart in its docstring; first-context errors reported once.",
+      "status": "done",
+      "evidence": "tests/test_hail_workflow.py asserts the '60-minute job cap' text is absent (line 147). Console errors name their URL (for example '(http://127.0.0.1:.../hail/tl/r0079_c0199.json)'). tests/test_website_workflow.py test_the_pages_check_usage_line_stands_apart_from_its_prose and test_an_error_on_the_first_context_is_reported_once pass."
+    },
+    {
+      "item": "pyyaml in the Install step; tests/test_hail_workflow.py in the website.yml path filter and in the offline unittest line.",
+      "status": "done",
+      "evidence": "website.yml line 38 (path filter), line 99 (pip install ... pyyaml), line 103 (tests.test_hail_workflow in the unittest line)."
+    },
+    {
+      "item": "Owner-4 test modules pass when run alone: tests/test_website_workflow.py and tests/test_hail_workflow.py.",
+      "status": "done",
+      "evidence": "logs/owner4-website-workflow.log: Ran 39 tests, OK. logs/owner4-hail-workflow.log: Ran 25 tests, OK."
+    },
+    {
+      "item": "Live preview on the branch with these flags (the Website workflow's branch build and smoke steps).",
+      "status": "not done",
+      "evidence": "Needs a branch push. This read-only check runs no git write commands, so no preview was run. The steps and flags are in website.yml for the supervisor's push."
+    }
+  ],
+  "gates": [
+    {
+      "gate": "Full suite passes with the venv python (0 failures).",
+      "status": "not done",
+      "evidence": "/home/user/hail-b1/venv/bin/python -m unittest discover -s tests: Ran 1809 tests in 364.075s; FAILED (failures=11, errors=1, skipped=3); log /home/user/hail-b5/out/b2/smoke/final-check/logs/unittest-full.log. Failing: test_site.HailJoinedRecords.test_a_station_file_that_did_not_load_says_so_and_gives_no_count (4 subtests); test_site.HailSwathLayers.test_the_default_build_matches_the_manifest_of_its_base_commit; test_summary.StationPicksAndNames (one ERROR and two FAIL subtests in test_the_summary_picks_are_the_rule_and_the_tile_list_is_the_one_rule, and test_a_canadian_candidate_is_said_not_read_and_never_failed_or_passing); test_summary.ReviewFixTests (2 FAIL); test_addresses.WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number. None is in the owner-4 test files."
+    },
+    {
+      "gate": "Self-test passes: python desktop/launcher.py --selftest payload.",
+      "status": "done",
+      "evidence": "logs/selftest-payload.log: 'PASS  payload 1.0.0', exit 0."
+    },
+    {
+      "gate": "Combined-store build with every flag (--require-live --storm-layers --hail-history --hail-addresses --hail-store /home/user/hail-b5/out/combined/store).",
+      "status": "partial",
+      "evidence": "Exit 0 in 1 min 38 s; site 563 MB (logs/build-combined.log). Summary and addresses loaded; layers hail_60, hail_1440 and satellite present; map.json budgets phone 665,600 and tile 100,000. Partial because the site has no hail/tl folder: the store has 4,597 tl files (19 MB) and build.py HAIL_FOLDERS_B5 is ('c', 'sd', 'g', 'k'); map.json's stations block has no tile_list key."
+    },
+    {
+      "gate": "Sample build with every flag (--sample --now 2026-10-24T12:00:00Z --hail-history --hail-addresses --storm-layers).",
+      "status": "done",
+      "evidence": "logs/build-sample.log: EXIT=0 (scratch site /home/user/hail-b5/out/b2/smoke/final-check/site-sample, deleted after the check)."
+    },
+    {
+      "gate": "Flag-off build identical to the base (test_site.HailSwathLayers.test_the_default_build_matches_the_manifest_of_its_base_commit).",
+      "status": "not done",
+      "evidence": "The test fails: the default build differs from base c860e23 in about.html only (tests/test_site.py line 3891). Owner: site (the About page)."
+    },
+    {
+      "gate": "Sheet smoke (tools/smoke_map.py) passes in Chromium at 390 and 1280 px with --addresses --history.",
+      "status": "not done",
+      "evidence": "Combined site (logs/smoke-map-combined.log): 12 failures, all in the five-season table and its tile lists (the table is not built; hail/tl answers 404). Patched copy with hail/tl copied in (logs/smoke-map-combined-tl-patched.log): the same 12 table failures. Every other check passed on both runs: page, frames, bubbles, layers, card, imagery, hail words at the spots, joins, station and zone unavailable, address zoom rules (draw times up to 24.7 ms against 30), pan (2 requests), search, swath layers, phone budget."
+    },
+    {
+      "gate": "smoke_pages.py passes at 390 and 1280 px (and 288 to 1440 px), light and dark, with --history.",
+      "status": "done",
+      "evidence": "logs/smoke-pages-combined.log: passed at all seven widths, light and dark; five-season table check passed on 17 town pages at 10 widths; EXIT=0."
+    },
+    {
+      "gate": "Three-cell comparison exact (Billings, 792,1998, 797,1986) through summary.describe_summary on the same store.",
+      "status": "not done",
+      "evidence": "Not evaluated: no table renders on the combined site or on the patched copy (see the sheet smoke gate). Needs the browser's table build and the site's summary keys."
+    },
+    {
+      "gate": "Fetch list per tap and the 650 KB phone budget measured.",
+      "status": "partial",
+      "evidence": "Measured: phone view 661,416 bytes gzip against 665,600 (pass). Fetch lists printed for 12 taps; largest file 40,074 B gzip (under 100,000). On the combined site every tile-list request answers 404, so the 200 rule fails; with hail/tl copied in every tap answers 200."
+    },
+    {
+      "gate": "Zero off-site requests in every context.",
+      "status": "done",
+      "evidence": "No off-site line in either map smoke run (logs/smoke-map-combined.log, logs/smoke-map-combined-tl-patched.log)."
+    },
+    {
+      "gate": "Words rules (tests/words_rules.py) over every WORDS string and the built pages.",
+      "status": "partial",
+      "evidence": "Suite: test_addresses WordsTests fails (expects 'coverage varies'); test_site's station-unavailable constant lacks 'This is not an all-clear.' (D41). Built pages (site-combined): no model or vendor name in repository text; one address-data street name matched a name pattern (a false positive). D13 stems in built HTML: 'damage' in the footer (D52, allowed), NWS damage-threat tag labels and quoted remarks; 'Not observed hail or damage.' in the storm text of town.html and map.html, present at HEAD before B5 (outside B5's history words); 'PROB is the probability of hail in percent' in the About SWDI row (a probability word); 'claim' only in quoted licence text. The last two need a words-owner decision under D13."
+    },
+    {
+      "gate": "D13 greps on the owner-4 added lines (no product words added).",
+      "status": "done",
+      "evidence": "1,019 added lines in the six owner-4 files (/home/user/hail-b5/out/b2/smoke/final-check/added-lines.txt). D13 stems appear only in test fixtures, docstrings and developer messages ('no hail file', 'the build has no five-season history'), and in the required sentence 'This is not an all-clear.'."
+    },
+    {
+      "gate": "No em dash and no banned model, AI-vendor or AI-product name in the added lines.",
+      "status": "done",
+      "evidence": "0 em-dash characters and 0 matches for the banned-name list (model, vendor and product names) in the 1,019 added lines."
+    },
+    {
+      "gate": "Decision 7 audit: no owner, parcel, place-type or building-use field read, stored or shown.",
+      "status": "done",
+      "evidence": "No such field is read in the owner-4 added lines. Built site: about_exclusion ('Owner names and parcel identifiers are never read, stored or shown') is a disclosure. The B3 placement words ('at the parcel', code L) come from the file's Placement value, which D41 allows as a placement method, not a parcel field."
+    }
+  ],
+  "needed_from_others": [
+    "Site owner (website/build.py): HAIL_FOLDERS_B5 must copy the store's hail/tl folder into the site (today ('c', 'sd', 'g', 'k')). Every tap requests hail/tl/{tile}.json and gets 404 on the built site. Check: the built site's hail/tl holds 4,597 files, as the store does.",
+    "Site owner (website/build.py, map.json hail.stations): write tile_list 'hail/tl/{tile}.json' (D71). The stations block has no tile_list key today.",
+    "Site owner and browser owner: the summary words map.js reads that the build does not write: report_types, record_types, auto_sources, element_names, family_nouns, county_suffix and all_clear (map.js lines around 3513 to 3777 and 4504; D71 F7, D72 R1 and R2). Without them the five-season table is not built and the sheet prints 'the five-season table could not be built' on every opening (probe and smoke). Check: after the fix, tools/smoke_map.py _site --addresses --history runs the table checks on Billings, 792,1998 and 797,1986 at 390 and 1280 px, with no 'no five-season table' line.",
+    "Site owner (tests/test_site.py): STATION_UNAVAILABLE must end 'This is not an all-clear.' (D41, D71 F2). The browser already prints it. Four subtests of test_a_station_file_that_did_not_load_says_so_and_gives_no_count fail on it.",
+    "Site owner (About, tests/test_site.py line 3891): the flag-off build differs from base c860e23 only in about.html. Find the About line that changes with no flag (the D74 rows, the iem_ugcs credit or the hail_swath row) and make the default About match the base, or rebase the manifest with the reason. This is the flag-off identity gate.",
+    "Owner of tests/test_summary.py (site round 2, D76): the synthetic tile lists lack margin_miles (D68, D76), so tile_list_picks returns None. Failing: StationPicksAndNames.test_the_summary_picks_are_the_rule_and_the_tile_list_is_the_one_rule (line 1489 (5, 0) != (5, 5) and the sheet and town subtests; line 1499 TypeError).",
+    "Owner of tests/test_summary.py (site and products): ReviewFixTests.test_an_unread_candidate_nearer_than_the_second_pick_is_named_and_never_skipped (line 1280) expects ['BILLINGS WTP', 'BILLINGS INTL AP']; the code gives ['Billings WTP', 'Billings Logan'], which matches brief gate 3 (Billings Logan USW00024033). Settle the station name case once and align the test.",
+    "Owner of tests/test_summary.py: ReviewFixTests.test_the_two_nearest_passing_candidates_come_from_the_tile_list_at_the_point (line 1266) expects 'BILLINGS WTP' and gets 'Billings WTP' (the same name-case question).",
+    "Owner of tests/test_summary.py (products, D62 naming): StationPicksAndNames.test_a_canadian_candidate_is_said_not_read_and_never_failed_or_passing (line 1516) expects 'MILK RIVER is not read in this build (in Canada; the terms for its data are under review)' in the Billings town text. The sentence is absent.",
+    "Owner of tests/test_addresses.py (B3, D74): line 870 expects 'its coverage varies from county to county'. addresses.py carries 'its completeness varies from county to county' (D74). Update the test to D74's wording.",
+    "Browser owner (website/static/map/map.js, map.css): once the table builds (item 3 above), the smoke's exact three-cell check and the first-screen rule at 390 px run for the first time. Re-run tools/smoke_map.py _site --addresses --history on the adopted store and fix what it names.",
+    "Words owner (D13): the About SWDI row says 'PROB is the probability of hail in percent', a probability word in a history About row. Decide whether it is a quoted source definition or reword it.",
+    "Words owner (D13): 'Not observed hail or damage.' in the storm text of website/templates/town.html and map.html predates B5 (present at HEAD). Decide whether D13 covers it; the smoke does not check it.",
+    "Supervisor: the live preview needs a branch push so website.yml's preview runs with these smoke flags. The D49 wait belongs to main's B1 go-live (D59, D60); confirm it arrives with the main merge.",
+    "Docs owner: the figures to carry once the failures are fixed: phone view 661,416 bytes gzip with 6 layers (budget 665,600); largest tap file 40,074 B gzip; tile lists 4,597 files, 19 MB; full suite 1,809 tests with 11 failures and 1 error at this run."
+  ],
+  "tests_tail": "Ran 1809 tests in 364.075s\n\nFAILED (failures=11, errors=1, skipped=3)\n\nreal 6m5.658s; exit 1. Command: /home/user/hail-b1/venv/bin/python -m unittest discover -s tests (log /home/user/hail-b5/out/b2/smoke/final-check/logs/unittest-full.log). Owner-4 modules run alone: tests/test_website_workflow.py Ran 39 tests OK; tests/test_hail_workflow.py Ran 25 tests OK."
+}

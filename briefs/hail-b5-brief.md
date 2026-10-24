@@ -841,3 +841,70 @@ runner before it counts (R16). Phone view measured 653,442 of 665,600 bytes with
   summary.tile_list_format), R14 (the unplaced statements read the key the build writes, zone_unplaced_rows, or the site
   adds the shape the browser needs) and R17 to D71's list; the smoke adds R15 (a --history run without --hail-addresses
   fails readably).
+
+## Supervisor rulings on the smoke review (2026-10-24 04:15 UTC; D75)
+The smoke reviewer (F-01 to F-15) reported: the sheet smoke cannot read the CI preview's own hail/ copy (B4 writes hail/live
+after the manifest check, so hail.load_store refuses the site copy), the tl copy and the six summary keys are missing (F-02,
+F-03, owner 2), the browser's words and notes (F-04, F-05), the store adoption (F-06), the test constant and the words key
+(F-07, F-08), and the smoke's own gaps (F-09 to F-15).
+- D75 **The smoke reads the site's own store copy; budgets come from map.json; a step with its own deadline.** (a) The
+  built site's hail/ is the store the CI smoke checks: hail.load_store (or the manifest check it runs) gains a documented
+  exclusion for hail/live/, B4's live files that the manifest never lists (products owner, website/hail.py), and the smoke
+  reads the site copy without --store in CI; a test covers the site-copy path. (b) The three-cell comparison is exact:
+  a cell's text equals Python's words plus its coverage line, nothing appended (F-09). (c) The tap budget is map.json's
+  hail.budget.tile_events_gzip_bytes (100,000 bytes, D66), never a literal 100 times 1024 (F-10). (d) A step that enforces
+  its own deadline (the joins step, JOINS_DEADLINE_S of 35 minutes) gets a backstop of 1.5 times that deadline, 53
+  minutes, so the step's graceful stop runs before the backstop; D42's "1.5 times the measured time" applies to steps
+  without one; the test's header and the docs say so (F-11; D70's 54 is corrected). (e) F-12 to F-15 are applied as nits
+  (the stale 60-minute comment, the usage line, console errors with their URL, the duplicated error list). The round-2
+  smoke items: R15, the re-run on the adopted store with the browser's second round, and whatever the fixer leaves.
+
+## Supervisor rulings on fixer C (2026-10-24 05:50 UTC; D76)
+Fixer C fixed RV1 and RV3 to RV10 and the county-line duplicate, rebuilt the station part with the margin at the tile's
+farthest corner (4.248 miles at most; parity 0 of 206,865 points, nine per tile), added the `rejected` part (201,004
+entries; the longest passing list 33; the largest tile list 3,401 bytes gzip) and the daily set of D73 (495 files: 439 picks
+and 56 in reach; 487,235,520 bytes worst case), and regenerated the fixture (94 files, 471,538 bytes outside hail/a/, 67
+sample station summaries; budget 480 KB). Its candidate is /home/user/hail-b5/out/b2/products-fix/fixer-c/store.
+- D76 **Fixer C's calls accepted.** The candidate to adopt is fixer C's store (fixer B's with the new station part). The
+  station note uses the computed distance (MOCCASIN EXP STN is 3.6 miles from the Benchland point; D69's 3.2 was the
+  cell-centre figure). The rejected part draws on every loaded station, lapsed inventories included (Moccasin is loaded
+  through the regression set), and the daily reach follows the same rule (D73). `records_newest_unknown` is the phrase
+  "an unknown date" filling {newest} in "NCEI's database runs to {newest}." The hail_swath row's second bare stem is
+  reworded too ("A cell with no radar coverage is hatched"). D67's figures are restated to fixer C's (495 daily files,
+  487,235,520 bytes; tile lists 4,597 files, 56,947,475 bytes raw; summary files 805; pool 2,778 stations, 21 Canadian
+  not read; rule files 700, 537,226,020 bytes). The six new failures in tests/test_summary.py (synthetic tile lists
+  without centre, margin_miles and rejected) are the site owner's round-2 item, as are the rejected words in
+  chosen_from_tile_list, the STATION_UNAVAILABLE constant, JOIN_SITE_WORDS["unknown_date"] (unused) and the
+  warnings_row requirement at tests/test_site.py line 2004 (the products owner removes the key once that test drops
+  it). The products owner's round 2: D71 F4 (describe_joins reads its spot and lists the town-point rows from
+  hail/j/towns.json with "covered this spot", plus the words and tests), D75(a) (hail.py's load_store exclusion for
+  hail/live/, with website/hail.py added to its files for this item), and the warnings_row removal when the test allows.
+
+## Supervisor rulings after the smoke fixer (2026-10-24 07:15 UTC; D77)
+The smoke fixer applied F-01, F-09, F-10 and F-12 to F-15 with D75 (the sheet's words from the site's own hail/ copy, exact
+cells, budgets from map.json, the backstop 53, console errors with their URL; 64 owner tests; a mutation check of 9 of 9);
+the CI-equivalent smoke now fails only on owner 1's and owner 2's items (the table's keys, the tl copy, the words).
+- D77 **The flag-off identity allows D53's word swaps.** The default build must equal the base commit's except for the
+  two About lines D53 changed (the radar line "a blank area is not a statement about the weather" and the MESH row's
+  "-3 (no radar coverage)") and D74's address words ("its completeness varies from county to county"): the test that
+  compares the default build with its base commit's manifest (tests/test_site.py HailSwathLayers) pins those lines as
+  the expected difference instead of failing on about.html, and B3's words test (tests/test_addresses.py, the D21
+  sentence) follows the D74 words. The flag-off gate of the re-check reads the same way. Leftovers for the completion
+  pass: the joins.py comment near line 346 that says the job has 60 minutes (it is 150); the test_addresses words test
+  (D74) if the docs owner does not take it; tests/test_site.py's base-manifest test (owner 2's round 2).
+
+## Supervisor rulings after the smoke round (2026-10-24 07:50 UTC; D78)
+The smoke owner's check (34 agents) passed its own items (the site-copy store, exact cells, budgets from map.json, the
+backstop 53, zero off-site requests, smoke_pages at every width, the self-test) and left the sheet gates to the browser's
+and the site's second rounds. Three word questions it raised are ruled here.
+- D78 **Words the smoke raised.** (a) The About SWDI row's "PROB is the probability of hail in percent" is NOAA's own field
+  definition and stays as a quoted source definition ("NOAA defines PROB as ..."), which D13 allows; it is never used as a
+  statement about a roof or an address. (b) The storm layer's sentence "Not observed hail or damage." predates B5 and
+  says what the radar estimate is not; it stands under D52's reasoning (D13 governs the history words). (c) Station names
+  are shown in title case as the product's words ("Billings WTP", "Harlowton 11NW", "W Glacier", "Buffalo 1.7 E"; the
+  direction and distance tokens keep their case), decided once in Python: stations.py writes the display name into the
+  tile lists, the summary files and the stations block (the GHCN name kept beside it as ghcn_name), so the browser and
+  the summary show the name as given and never re-case it; the gust rows keep the IEM station names as the source gives
+  them; tests follow the display names. This is a products item for the completion pass (a tile-list rebuild into the
+  candidate and a fixture regeneration follow). (d) The tile-list path and format live in map.json's summary block
+  (summary.tile_list, summary.tile_list_format), which the browser reads (R13); the stations block need not repeat them.

@@ -81,3 +81,9 @@ Measured facts the fixers can rely on (from the skeptics, read-only runs on the 
   varies from county to county".
 - RV6 is D69 (the `rejected` part of the tile list); RV7 to RV10 are applied as nits (the docstring fragment; the current-year
   filter on every unread candidate; the sample block carries every station its tile lists name; a fixture consistency test).
+
+## From the smoke review (2026-10-24 04:15 UTC; D75): one products item
+- website/hail.py: `load_store` (or the manifest check) gains a documented exclusion for `hail/live/` when it reads a built
+  site's hail/ copy (B4 writes the live swath files after the manifest check and the manifest never lists them), with a test;
+  the CI smoke then reads the site copy without --store. If fixer C cannot take it (hail.py is outside the listed files), it
+  goes to the products owner's round 2.
