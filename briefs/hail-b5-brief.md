@@ -908,3 +908,24 @@ and the site's second rounds. Three word questions it raised are ruled here.
   them; tests follow the display names. This is a products item for the completion pass (a tile-list rebuild into the
   candidate and a fixture regeneration follow). (d) The tile-list path and format live in map.json's summary block
   (summary.tile_list, summary.tile_list_format), which the browser reads (R13); the stations block need not repeat them.
+
+## Supervisor rulings after the round-1 fixers and the products round 2 (2026-10-24 08:20 UTC; D79)
+The site fixer applied F1, F3 to F7 (site halves), F9, F10, F13 to F15 and the D71 to D77 items (the tl copy, the stations
+block keys, the WORDS keys the browser asks for, STATION_UNAVAILABLE, the base-manifest test by sentences); the browser
+fixer applied R1, R3 to R6, R12 to R14 and R17 (every table part builds on its own, every word from map.json, the notes
+under the table, the rejected and unread lines); the products round-2 fixer restored the sheet's cell words beside the
+town-point words (its F1) and the suite stands at one failure (the B3 words test that follows D74). Rulings on what they
+asked:
+- D79 **Four calls.** (a) Two sources place the Billings airport 0.1 mile apart (the IEM gust station and the GHCN
+  station): each row keeps its own source's distance, and How this was made says in one sentence that a station's
+  position comes from its source and two sources may place one airport a few hundred feet apart; no mapping table.
+  (b) A town page's storm and flood count sentences name the five-season count and the partial season's count
+  separately ("19 in the five seasons; 2 more in 2026-27 so far") while the rows list every event in the window newest
+  first (site owner). (c) The desktop sheet may widen to at most 640 px (60 percent of the view) while the table shows,
+  so the columns read; the phone layout stays the one-card-per-row reflow; the reviewer judges the first screen at both
+  widths; the row heads carry the unit beside the kind word as the town page does; the notes print once each under the
+  table. (d) WORDS_JOINS["warnings_row"] is removed with its uses in tests/test_joins.py (the B2 placeholder test is
+  superseded by the B5 keys; products, completion pass); the joins ledger stays at <store>/ledger/joins.jsonl, outside
+  hail/ and outside the packed asset (no change). The browser's round 2 is the eleven sections, the roof groups and How
+  this was made (R11), with summary.how_made and the section data written by the site owner, and the remaining
+  placeholders (county.short_names; the station_status words read where the build writes them).

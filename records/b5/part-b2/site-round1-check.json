@@ -1,0 +1,245 @@
+{
+ "items": [
+  {
+   "item": "Summary table: 24 rows in the Product order, each with a kind word and a unit; five-season column; coverage lines; partial 2026-27 line; radar sentence",
+   "status": "done",
+   "evidence": "describe_summary on the site copy of the combined store (Benchland 792,1998) returns 24 rows, each with a kind and a unit. Coverage lines sit on zero and no-report cells in partial seasons (for example 'Largest radar hail estimate' 2021-22: '109 days missing'). Every town page has the partial line ('2026-27 so far, 107 days to Oct 15, 2026: ...'). No-day template at summary.py:324. Radar sentence present (summary radar_sentence)."
+  },
+  {
+   "item": "map.json blocks the browser needs: summary (words, thresholds, row order, sections, tile_list path and format, nouns, report and record types, auto_sources, element_names, family_nouns, unplaced_products, conv); climate (tile_split, no tile list); stations (tile and tile_list paths); gauges, snow, county (URL patterns); budget",
+   "status": "done",
+   "evidence": "build.py b5_map_blocks and stations_map_block (about lines 1100-1158); summary.map_data_summary (summary.py 2724-2762). On the real store the seven B5 blocks total 54,385 bytes raw; climate tile_split is 1,031 bytes; no block lists every tile (D40). budget block: phone_gzip_bytes 665600, tile_events_gzip_bytes 100000 (D66). Browser reads of these keys are owner 1's."
+  },
+  {
+   "item": "map.json under 140 KB raw with the history flag (build list item 2; D66; the real-store test)",
+   "status": "not done",
+   "evidence": "Sample fixture with --hail-history: 131,239 bytes raw (passes). Real store with --hail-history, the test's own call (site.build with hail_store_path): 143,057 bytes raw, and tests/test_site.py:4236 fails (143057 not less than 140000). Real-store breakdown: hail block 88,622 (summary 33,558 with words 12,139 and indicators 11,175; joins 29,553 with words 19,017; climate 9,837; stations 3,318; gauges 3,059; snow 2,576; county 1,978); towns 36,420; layers 13,648. The file is above the D66 measure (136,569); the words added under D69, D71 and D76 are the likely cause, not measured per addition. Needs a ruling or a trim (see needed_from_others)."
+  },
+  {
+   "item": "D56 build.py and summary.py halves: the town point is the spot for joined records, stations and the gust station (R1)",
+   "status": "done",
+   "evidence": "build.py 774-776 passes spot=(town lat, lon) to joins.describe_joins; build.py 1198-1207 town_summary passes town=point to summary.describe_summary; summary._Spot sets station_point to the town point on a town page (summary.py 912-940); gust_station measures from station_point (summary.py 1079-1093)."
+  },
+  {
+   "item": "D57: gust season cells name their station; the roof snowfall line names its station; the ice-dam line leads with 'Station reading:' on every town page; the flood-record row keeps its count",
+   "status": "done",
+   "evidence": "Gust cells read 'at Lewistown Municipal' (Benchland) or 'Data unavailable for 2021-22: Lima has 22 of 365 days with a gust value ...' (gate cell). Roof snowfall: 'Station reading: 191.9 in of snowfall in the five seasons at HARLOWTON 11NW.' 'Station reading:' precedes the ice-dam count on 17 of 17 built town pages (checked here with a pattern, check/measure-map-realstore.log and the page scan). Flood-record count through _count_text (summary.py 1966-1978)."
+  },
+  {
+   "item": "D63 one pick rule: _Spot.chosen_from_tile_list delegates to stations.tile_list_picks; parity at the 17 towns and cells 753,2230, 792,1998, 797,1986 (D61)",
+   "status": "done",
+   "evidence": "summary.py 1124-1146 delegates to stations.tile_list_picks and returns None for a list without margin_miles. tests/test_summary.py:1585 (test_the_real_store_picks_are_the_rule_at_the_17_towns_and_the_named_cells) is skipped unless HAIL_PARITY_STORE is set; run with HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store: OK (1 test, 0.273 s). Synthetic parity test at tests/test_summary.py:1487 passes in the default run."
+  },
+  {
+   "item": "Seven browser-against-module tests kept as the contract (HailJoinedRecords; D64, D68), and the two map.js source-string tests follow the browser's final lines",
+   "status": "done",
+   "evidence": "tests/test_site.py passes in full (240 tests, OK). node is installed at /opt/node22/bin/node, so the node-based browser comparisons ran rather than skipped. The browser's own output is owner 1's."
+  },
+  {
+   "item": "D69 rejected stations: nearer candidates that fail the rule are named with the reason; farther ones are counted in one clause (Moccasin at Benchland)",
+   "status": "done",
+   "evidence": "Benchland 792,1998 snowfall note: 'MOCCASIN EXP STN, 3.2 miles from this spot, is not used: 14.8 percent of the days 2020 to 2025 have a value for snowfall; the rule needs at least 80 percent.' Then '1 more station within 40 miles does not pass the same rule; it is farther than the stations named here.' (summary._rejected_notes, summary.py 1638-1660). Distance is from the cell centre (D76)."
+  },
+  {
+   "item": "D71 F1, F5 and F10: a failed or unbuilt ice-dam count prints the D20 sentence with its reason, never a no-station claim; the five-season count follows the one-station rule (D41); a failed roof section shows the D20 sentence",
+   "status": "done",
+   "evidence": "summary.py 2236-2262 (ice_line for a failed stations part, a none result and an unbuilt count; each ends 'This is not an all-clear.'). One-station rule: Anaconda 'Station reading: 1073 days with 1 inch or more of snow on the ground ... in these five seasons at Barker Lakes: a measured pattern, not a count of ice dams.' against Benchland and the gate cell 'Data unavailable for the five seasons: the seasons come from more than one station (...)'. Roof failure path summary.py 2680-2685 uses the unavailable_part sentence."
+  },
+  {
+   "item": "D71 F2, F3 and F9: STATION_UNAVAILABLE ends with the all-clear; the snow lead names the station of each figure; per-season unavailable sentences carry 'for {season}'",
+   "status": "done",
+   "evidence": "tests/test_site.py 2465-2466 (STATION_UNAVAILABLE ends 'This is not an all-clear.'). Snowfall line and the snow section lead name HARLOWTON 11NW (gate cell). 'Data unavailable for 2021-22: Lima has 22 of 365 days with a gust value, so this season is not shown ...' (gate cell gust rows)."
+  },
+  {
+   "item": "D71 F4 (and D38): town-page warning rows are town-point rows worded 'covered this spot', with the explanation; the sheet keeps 'covered this cell or part of it'",
+   "status": "done",
+   "evidence": "17 built town pages: 10 to 67 'covered this spot' phrases each; no 'covered this cell or part of it' in any town history block. summary.py 357-371 (covered_town, town_warnings_note). The point rows come from hail/j/towns.json through joins (products)."
+  },
+  {
+   "item": "D71 F7: sentences and nouns the browser asks for are WORDS keys carried in map.json (all_clear, county_note, coverage_one, partial_no_report, these_five, station_status_*, nouns, report_types, record_types, auto_sources, element_names, family_nouns)",
+   "status": "done",
+   "evidence": "summary.py 237-250 (station_status_*, coverage_one, all_clear, county_note, partial_no_report, these_five); map_data_summary carries words, nouns, report_types, record_types, auto_sources, element_names, family_nouns and unplaced_products (summary.py 2724-2762). The browser's reads are owner 1's."
+  },
+  {
+   "item": "D74, D77 and D53: About rows and the flag-off identity (the default build matches the committed base manifest; only about.html differs)",
+   "status": "done",
+   "evidence": "Identity check against tests/fixtures/default-build-manifest.json (base c860e23): 92 files, none missing or extra, only about.html differs. A git-archive build of c860e23 against the flag-off build: About differs by one sentence, the radar line (D53: 'a blank area is not proof of dry weather' is now 'a blank area is not a statement about the weather'). The all-flags About reads '-1 is missing and -3 is no radar coverage in NOAA's table', 'its completeness varies from county to county' and 'Hatched cells have no radar coverage'. tests/test_site.py HailSwathLayers passes."
+  },
+  {
+   "item": "D76 site items: JOIN_SITE_WORDS['unknown_date'] removed; rejected words in chosen_from_tile_list; STATION_UNAVAILABLE; the warnings_row requirement dropped from tests/test_site.py; the six test_summary failures fixed",
+   "status": "done",
+   "evidence": "No 'unknown_date' in build.py; no 'warnings_row' in tests/test_site.py; tests/test_summary.py: 114 tests OK. The phrase 'an unknown date' fills \"NCEI's database runs to {newest}.\" (joins.py 388-389). WORDS_JOINS['warnings_row'] is still in website/joins.py line 455 for the products owner to remove once tests/test_joins.py stops using it."
+  },
+  {
+   "item": "D78(d): the tile-list path and format live in map.json's summary block (summary.tile_list, summary.tile_list_format)",
+   "status": "done",
+   "evidence": "map_data_summary carries tile_list 'hail/tl/{tile}.json' and tile_list_format (summary.py 2750-2751). The stations block repeats them (build.py 1112), which D78(d) allows."
+  },
+  {
+   "item": "D78(a): the SWDI PROB row reads 'NOAA defines PROB as ...' as a quoted source definition (D13 stem 'probability')",
+   "status": "not done",
+   "evidence": "The About still reads 'PROB is the probability of hail in percent; this filtered product keeps PROB 100 ...'. The text is in website/sources.py line 380, the products owner's file, so it is needed from that owner. Not changed here."
+  },
+  {
+   "item": "D78(c): station names in title case as the product's words, decided in Python (display names in tl/, sd/ and the stations block, ghcn_name beside them); the site shows names as given and its tests follow the display names",
+   "status": "partial",
+   "evidence": "summary.py has no re-casing (no title() or capitalize) and shows the name it is given, so the site side is ready. The candidate store still holds the uppercase GHCN names, and the pages show 'HARLOWTON 11NW', 'BILLINGS WTP', 'MISSOULA INTL AP', 'GREAT FALLS AP'. The display-name rebuild is the products owner's (stations.py, tile lists, summary files, fixture)."
+  },
+  {
+   "item": "Town-page cell sentence matches the cell sizes (build.py HISTORY_WORDS['cell'], line 1035)",
+   "status": "not done",
+   "evidence": "The sentence reads 'The table is for the grid cell at the town's centre, about 0.7 miles north to south and 0.5 miles east to west. The grid and radar rows are for that cell' and appears on all 17 town pages. The 0.7 by 0.5 mile figure is the radar cell (hail.CELL_DEG 0.01; sources.py line 173). The grid rows are for the 1/48-degree climate cell, which the grid notes give as about 4.6 km north to south and about 3 km east to west (climate.UNITS_PER_DEG 48). Found by this check; the sentence needs a fix in build.py (owner 2). Not changed here."
+  },
+  {
+   "item": "D13 words: every WORDS table and the rendered history blocks carry no displayed forbidden word outside the allowed contexts",
+   "status": "done",
+   "evidence": "tests/words_rules.py over 586 WORDS strings (summary, joins, stations, gauges, snowgrid, climate, build HISTORY_WORDS and JOIN_SITE_WORDS): 8 hits, all inside quoted source sentences (R5, R6, R7, R8, R11) or URL fields (R11, R16), which D13 allows. Over the 17 town history blocks (text between id=hist-h and id=other-h): 0 hits. Every bare word 'coverage' in About is 'radar coverage' (D45). Older live-weather text outside the history is not in B5's scope (D52, D78b)."
+  },
+  {
+   "item": "Decision 7 audit for owner-2 files: no owner, parcel, place-type or building-use field is read, stored or shown",
+   "status": "done",
+   "evidence": "build.py and summary.py read no such field (grep: none; the hit at build.py 901 is a statement). About says 'Owner names and parcel identifiers are never read, stored or shown.' Flag for the B3 owner's file: addresses.py PLACEMENT_HOW class 'L' is 'at the parcel' and appears in map.json and About (the Placement field is read under B3 D32). Needs a recorded ruling; see needed_from_others."
+  },
+  {
+   "item": "D20: the partial 2026-27 line with its own counts; the no-day sentence",
+   "status": "done",
+   "evidence": "Every town page carries the partial line ('2026-27 so far, 107 days to Oct 15, 2026: highest 112.6 F on Jul 13, 2026 ...', with the preliminary note). No-day template 'No day of the {season} season is in the data yet. This is not an all-clear.' (summary.py 324); not triggered on this store."
+  },
+  {
+   "item": "D39 town page order: the five-year block with the summary table first; the jump link 'Five years of weather at {town}' on the first screen; sections in the fixed order",
+   "status": "done",
+   "evidence": "Billings page: the link 'Five years of weather at Billings' comes before 'Official alerts here'. The h2 hist-h follows 'Next 7 days' and precedes 'Other towns'. The block opens with the plain sentence and the table. h3 order: Hail, Wind, Storms and warnings, Temperature, Rain, Snow, Flooding, Ice and winter, Heat, Weather that matters for a roof, How this was made."
+  },
+  {
+   "item": "D48 flood and flash flood records within 5 miles as a row of their own (kind Record); D15 hit-and-miss About sentence; D23 snow-analysis sentence; D68 Canadian clause in How this was made",
+   "status": "done",
+   "evidence": "Row 'Flood and flash flood records within 5 miles' with kind 'Record (NCEI)' (Benchland and gate cells). About: 'The radar missed many of them.' and 'The NOAA National Snow Analysis was checked against station season totals and left out ... This is not an all-clear.' How this was made: 'Canadian stations within 40 miles are named as not read ...'. The Red Lodge record (D48, gate 5) was not checked: there is no Red Lodge town page."
+  },
+  {
+   "item": "Count wording: thousands separators (nit)",
+   "status": "partial",
+   "evidence": "Some count lines print '1073 days ...' while others print '1,464 days missing' (summary._count_text at summary.py 755 has no separator; _missing_text does). Nit only; no gate names it."
+  }
+ ],
+ "gates": [
+  {
+   "gate": "Owner tests: tests/test_summary.py (python -m unittest tests.test_summary)",
+   "status": "done",
+   "evidence": "Ran 114 tests in 2.091s, OK (skipped=1). The skipped test, the 17-town real-store parity, passes with HAIL_PARITY_STORE set (check/parity-17-towns.log)."
+  },
+  {
+   "gate": "Owner tests: tests/test_site.py (python -m unittest tests.test_site)",
+   "status": "partial",
+   "evidence": "Ran 240 tests in 261.268s, OK (skipped=1). The skipped test test_with_the_real_store_every_town_page_leads_with_station_reading_and_map_json_is_under_140_kb FAILS when HAIL_PARITY_STORE is set: 143057 not less than 140000 (check/parity-17-pages.log). Its 17-page lead check, run separately, passes 17 of 17."
+  },
+  {
+   "gate": "Full suite (python -m unittest discover -s tests, venv python)",
+   "status": "not done",
+   "evidence": "Ran 1822 tests in 335.433s; FAILED (failures=1, skipped=3). The one failure is outside the owner-2 files: tests/test_addresses.py line 871 expects 'its coverage varies from county to county' (D21), while addresses.py line 236 and sources.py line 247 say 'completeness' (D74). Log: check/full-suite.log."
+  },
+  {
+   "gate": "Self-test (python desktop/launcher.py --selftest payload)",
+   "status": "done",
+   "evidence": "PASS payload 1.0.0, exit 0 (check/selftest.log)."
+  },
+  {
+   "gate": "Sample build, flag off, against the committed base manifest (D77 identity)",
+   "status": "done",
+   "evidence": "python -m website.build --out <scratch> --sample --now 2026-10-19T12:00:00Z: exit 0, 92 files; identical to tests/fixtures/default-build-manifest.json (base c860e23) except about.html (the D53 radar line, D77)."
+  },
+  {
+   "gate": "History-only sample build (--sample --hail-history)",
+   "status": "done",
+   "evidence": "Exit 0; map.json 131,239 bytes raw, 24,367 gzip; under 140 KB on the fixture (check/build-sample-history.log)."
+  },
+  {
+   "gate": "Combined-store build with every flag (--sample --hail-history --hail-store combined --hail-addresses --address-text on --storm-layers)",
+   "status": "partial",
+   "evidence": "Exit 0 in 30.98 s; map.json 443,946 bytes raw, 83,812 gzip, including B3's address, road and building blocks (D66 recorded 404,103 for the full-flag file). The same store with --hail-history alone gives 143,057 raw, over the 140 KB gate (item 3). Log: check/build-combined-allflags.log; the build was deleted after the check."
+  },
+  {
+   "gate": "The combined store is unchanged by the builds and tests",
+   "status": "done",
+   "evidence": "sha256 of every path, size and mtime under /home/user/hail-b5/out/combined/store (45,644 files, 496,331,216 bytes) is identical before and after the builds and the parity tests (check/store-before.txt, store-after2.txt)."
+  },
+  {
+   "gate": "Words rules (tests/words_rules.py) over every WORDS string and the built history blocks",
+   "status": "done",
+   "evidence": "586 WORDS strings: 8 hits, all in quoted source sentences or URL fields (allowed). 17 history blocks: 0 hits (check/scan_dicts.py, check/scan_hist.py)."
+  },
+  {
+   "gate": "D13 greps on the added lines of the four owner files",
+   "status": "done",
+   "evidence": "850 added lines against HEAD bd3ae20: no displayed-word hits. The 11 matches are code comments and identifiers (check/added-lines-vs-HEAD.txt)."
+  },
+  {
+   "gate": "No em-dash and no banned model, AI-vendor or AI-product name in added lines and built output",
+   "status": "done",
+   "evidence": "0 em-dashes and 0 en-dashes in the 850 added lines and in the built HTML. No Claude, Anthropic, OpenAI, GPT, Gemini, Haiku, LLM or AI in the owner files, the built pages or map.json."
+  },
+  {
+   "gate": "Decision 7 audit (no owner, parcel, place-type or building-use field read, stored or shown)",
+   "status": "partial",
+   "evidence": "Owner-2 files are clean (item 20). In built output, 'parcel' appears in the About disclaimer ('Owner names and parcel identifiers are never read, stored or shown') and in B3's placement wording 'at the parcel' (map.json and About). The B3 wording needs a recorded ruling."
+  },
+  {
+   "gate": "Three cells through summary.describe_summary on the same store (Billings town point, Benchland 792,1998, gate 797,1986)",
+   "status": "partial",
+   "evidence": "The words are produced on the site copy of the combined store (check/cells-benchland-gate.txt; Billings from the town point). The exact browser-against-Python comparison and the smoke are owner 1's and owner 4's and were not run here."
+  },
+  {
+   "gate": "D61 and D63 parity at the 17 towns and named cells on the real store",
+   "status": "done",
+   "evidence": "tests/test_summary.py real-store parity test OK with HAIL_PARITY_STORE (check/parity-17-towns.log)."
+  },
+  {
+   "gate": "B5-3 named picks (Billings; Benchland snowfall and depth; Stanford snowfall at 79.9 percent)",
+   "status": "partial",
+   "evidence": "Picks match. Billings: BILLINGS WTP and BILLINGS INTL AP (the Logan airport named in the brief; the site prints no station IDs). Benchland snowfall: BUFFALO 1.7 E and HARLOWTON 11NW; LEWISTOWN 11 SSE is not used because its newest snowfall value is from May 18, 2026 (D65). Depth: Stanford and Crystal Lake; Stanford snowfall at 79.9 percent is shown as not used. Distances differ from the gate text: Billings 1.2 and 2.7 miles from the town point, 1.5 and 2.5 from the cell centre (gate: 1.4 and 2.6); Benchland 20.5 and 34.4 miles from the cell centre (gate: 20.9 and 34.8). The gate's reference point needs stating."
+  },
+  {
+   "gate": "B5-10 words: the four Data unavailable lines with reasons; the radar sentence; forbidden terms",
+   "status": "done",
+   "evidence": "Gate cell: 'Lightning: Data unavailable. The national lightning network is commercial ...', 'UV and sunlight: Data unavailable. ...', 'Roof surface temperature: Data unavailable at this spot. ...', 'Roof ponding: Data unavailable. ...', each ending 'This is not an all-clear.'. Radar sentence present. Words rules pass (gate 9)."
+  },
+  {
+   "gate": "B5-16 temperature extremes and station rows (dates, kind word, station names; no row mixes sources)",
+   "status": "done",
+   "evidence": "Benchland 'Highest temperature' carries a date and 'Grid estimate' ('97.5 F on Jul 24, 2024'). Billings station row 'Highest temperature at the station' carries 'Station reading' and 'at BILLINGS WTP'. Gust rows name Lewistown Municipal or Lima."
+  },
+  {
+   "gate": "B5-11 readability (site side): each table cell has a unit and a kind word",
+   "status": "done",
+   "evidence": "All 24 rows on Benchland carry a kind and a unit; partial seasons carry their coverage line. The 390 px first-screen check is the browser's and was not run here."
+  },
+  {
+   "gate": "B5-12 budgets in map.json (phone 665,600 gzip; tile events 100,000 gzip) and the 140 KB raw gate",
+   "status": "partial",
+   "evidence": "The budget block carries 665600 and 100000 (D66). The raw-size gate fails on the real store (143,057; item 3). The phone-view measurement is the smoke's (owner 4), not run here."
+  },
+  {
+   "gate": "Zero off-site requests from the built output (site side)",
+   "status": "done",
+   "evidence": "No src or action attribute points off-site in any built page. The external URLs are href links to official sources (weather.gov, spc.noaa.gov, usgs.gov and similar) and reference URLs in map.json used as links. The browser's fetch list is owner 4's, not run here."
+  },
+  {
+   "gate": "smoke_pages and the sheet smoke at 390 and 1280 px (owner 4)",
+   "status": "not run",
+   "evidence": "Not run in this check; it is owner 4's gate, and nothing here claims it."
+  }
+ ],
+ "needed_from_others": [
+  "Products owner, website/sources.py line 380 (SWDI units text): replace 'PROB is the probability of hail in percent' with a quoted source definition, e.g. NOAA defines PROB as \"the probability of hail in percent\" (D78a). Check: the About contains 'NOAA defines PROB as'.",
+  "Products owner, website/stations.py and the tile lists, summary files and stations block: write the title-case display name as the name and the GHCN name as ghcn_name (D78c; e.g. 'Billings WTP', 'Harlowton 11NW', 'Buffalo 1.7 E'), then rebuild the candidate store and the fixture. Check: the Benchland snowfall cell reads 'at Harlowton 11NW', not 'HARLOWTON 11NW'.",
+  "Products owner, website/joins.py WORDS_JOINS['warnings_row'] (line 455): remove the key once tests/test_joins.py (lines about 2641 to 2664) stops using it (D76, D68). Check: no 'warnings_row' key remains in website/.",
+  "B3 addresses owner, tests/test_addresses.py line 871: expect 'its completeness varies from county to county.' (D74; addresses.py line 236 and sources.py line 247 already say it). Check: the full suite reports 0 failures.",
+  "Carson, decision 7 (D12): a ruling on addresses.py PLACEMENT_HOW class 'L' ('at the parcel'), which map.json and About show through the Placement field (B3 D32). Keep it as method wording under decision 7, or reword it. Check: a recorded ruling in docs/DECISIONS.md.",
+  "Carson, map.json gate: the real-store history build is 143,057 bytes raw against the 140,000 gate in tests/test_site.py line 4236. Either trim site words (summary words 12,139 B, indicators.words 5,907 B and joins words 19,017 B are the largest; the browser needs them) or restate the gate with the measured figure and its reason (D66 and D70 precedent). Check: the test passes on the chosen figure.",
+  "Browser owner 1, website/static/map/map.js: read only the map.json keys the build writes (D68); show names as given (D78c); keep the seven HailJoinedRecords tests and the two source-string tests green; match the cell sentence once build.py HISTORY_WORDS['cell'] is corrected.",
+  "Smoke owner 4, tools/smoke_map.py: the three-cell exact comparison should read summary.describe_summary on the site copy of the same build (Billings with the town point; cells 792,1998 and 797,1986). Measure the phone view at zoom 15 with every layer on. smoke_pages and the sheet smoke at 390 and 1280 px were not run here.",
+  "Docs owner 5: restate the map.json figures (143,057 bytes raw on the real store with history on; the B5 blocks are 54,385) and the ruling from item 6; state the reference point of the B5-3 distances (1.4 and 2.6 miles at Billings do not match the town point 1.2 and 2.7, or the cell centre 1.5 and 2.5).",
+  "Products owner, website/joins.py around line 346: the comment says the job has 60 minutes; the workflow sets 150 (D77 leftover).",
+  "Browser owner 1, sheet flooding section: confirm the Red Lodge record (2022-06-10, 0.3 miles, D48 and gate 5) appears in the flood-record row and the flooding section; not checked here (no Red Lodge town page)."
+ ],
+ "tests_tail": "test_summary: python -m unittest tests.test_summary -> Ran 114 tests in 2.091s / OK (skipped=1). With HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store, the skipped 17-town test -> Ran 1 test in 0.273s / OK.\ntest_site: python -m unittest tests.test_site -> Ran 240 tests in 261.268s / OK (skipped=1). With HAIL_PARITY_STORE set, test_with_the_real_store_every_town_page_leads_with_station_reading_and_map_json_is_under_140_kb -> FAILED: AssertionError: 143057 not less than 140000 (tests/test_site.py:4236).\nfull suite: python -m unittest discover -s tests -> Ran 1822 tests in 335.433s / FAILED (failures=1, skipped=3). Failure: test_addresses.WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number (not an owner-2 file).\nself-test: python desktop/launcher.py --selftest payload -> PASS payload 1.0.0 (exit 0)."
+}
