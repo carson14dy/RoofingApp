@@ -161,6 +161,7 @@ from pathlib import Path, PurePosixPath
 from zoneinfo import ZoneInfo
 
 from . import hail
+from . import stations as stn                 # D56: the tile lists' format and cap, the fixture's station part
 
 FORMAT = "hail-joins-v2"            # j/ files (B5: the touch rule D11, the counties map, a report's type word)
 ZONE_FORMAT = "hail-zone-v1"        # z/ files (B5: one event per period, D8; the shape is B2's)
@@ -1695,6 +1696,7 @@ class Context:
         self.vtec_counts: dict[str, dict] = {}        # product -> {"zone", "county", "polygon", "window"} (VTEC events)
         self.zone_periods = 0                         # the spans (periods) kept in the window, zone and county
         self.vtec_counts_research: dict[str, dict] = {}   # the same counts over the research window (every row read)
+        self.vtec_edges: list[dict] = []              # D55: each event the two windows count differently, named
 
 
 def _take(result: Result, parser):
@@ -2715,23 +2717,30 @@ def _zone_events(ctx: Context, start: datetime, end: datetime) -> dict:
         if level == "zone":
             zone_keys.add(ekey)
         groups.setdefault((level, code) + ekey, []).append(row)
-        item = vtec.setdefault(ekey, {"issues": [], "new": [], "level": set()})
+        item = vtec.setdefault(ekey, {"issues": [], "new": [], "level": set(), "first": None, "codes": set()})
         item["issues"].append(row["issue"])
         if row["status"] in ("NEW", "CON"):
             item["new"].append(row["issue"])
         item["level"].add(level)
+        item["codes"].add(code)
+        if item["first"] is None or row["issue"] < item["first"]["issue"]:
+            item["first"] = row                      # D55: the first archived row, named when the two windows differ
         if row["status"] == "CAN" and start <= row["issue"] < end and (row["issue"].hour, row["issue"].minute) == (0, 0):
             ctx.zone_can_midnight += 1
     counts: dict[str, dict] = {}
     research: dict[str, dict] = {}
+    edges: list[dict] = []
     for ekey, item in vtec.items():
         begin = min(item["new"]) if item["new"] else min(item["issues"])
         name = f"{ekey[0]}.{ekey[1]}"
-        if RESEARCH_START <= begin < RESEARCH_END:        # the research's own window, from every row read
+        in_store, in_research = start <= begin < end, RESEARCH_START <= begin < RESEARCH_END
+        if in_research:                                   # the research's own window, from every row read
             row = research.setdefault(name, {"zone": 0, "county": 0, "window": 0})
             row["window"] += 1
             row["zone" if "zone" in item["level"] else "county"] += 1
-        if not (start <= begin < end):
+        if in_store != in_research:                       # D55: an event at the edge of one window only, named
+            edges.append(_vtec_edge(name, ekey, item, begin, in_store, in_research))
+        if not in_store:
             continue
         row = counts.setdefault(name, {"zone": 0, "county": 0, "window": 0})
         row["window"] += 1
@@ -2741,6 +2750,7 @@ def _zone_events(ctx: Context, start: datetime, end: datetime) -> dict:
             row["county"] += 1
     ctx.vtec_counts = counts
     ctx.vtec_counts_research = research
+    ctx.vtec_edges = edges
     out: dict[str, list] = {}
     fire: dict[str, list] = {}
     county: dict[str, list] = {}
@@ -2970,6 +2980,9 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
                                                       {"zone": 0, "county": 0, "polygon": 0, "window": 0})
             row["polygon"] += 1
             row["window"] += 1
+        in_store, in_research = start <= event["b"] < end, RESEARCH_START <= event["b"] < RESEARCH_END
+        if in_store != in_research:                  # D55: a polygon event at the edge of one window only, named
+            ctx.vtec_edges.append(_polygon_edge(event, in_store, in_research))
     _join_nulls(ctx, start, end)
     towns = json.loads(TOWNS_FILE.read_text(encoding="utf-8"))
     town_check = town_checks(ctx, towns) if ctx.ww_all else {"towns": [], "events_checked": 0, "pairs_tested": 0,
@@ -3120,6 +3133,9 @@ def build(store_dir, cache_dir=None, procs: int = 4, today=None, fetcher: Fetche
         block["counties"]["cells_by_nearest_edge"] = prep["county_nearest"]
         block["vtec_counts_research"] = {k: dict(v) for k, v in sorted(ctx.vtec_counts_research.items())}
         block["research_window"] = [RESEARCH_START.date().isoformat(), RESEARCH_END.date().isoformat()]
+        block["vtec_store_window"] = [iso_utc(start), iso_utc(end)]          # D55: the store window's UTC instants
+        block["vtec_window_edges"] = sorted(ctx.vtec_edges, key=lambda e: (e["product"], e["begin"], e["wfo"] or "",
+                                                                             e["eventid"] or ""))     # D55
         block["events_tiles"] = _events_tiles_block(events_tiles["entries"], events_tiles["referenced"])
         block["towns_file"] = _towns_file_block(towns_doc, len(towns_bytes))
         new_index = dict(index)
@@ -3294,7 +3310,9 @@ def _index_block(ctx, index, tiles, zone_list, station_index, totals, bytes_by, 
         "sources": {src: dict(row, **({"served_from_cache_since": fetcher.served_since[src]}
                                       if src in fetcher.served_since else {}))
                     for src, row in fetcher.stats.items()},
-        "failures": fetcher.failures[:50],
+        # sorted: the fetches run concurrently, so the order the failures arrive in is not the build's order (two offline
+        # builds from one cache must be byte-identical)
+        "failures": sorted(fetcher.failures, key=lambda f: (f["source"], f["url"]))[:50],
         "failure_count": len(fetcher.failures),
     }
 
@@ -4099,6 +4117,11 @@ RESEARCH_B5 = {                       # source 4: the window counts the research
     "FL.W": 43, "FA.W": 37, "FA.Y": 548, "FL.A": 35, "FL.Y": 10, "SQ.W": 78,              # county ones by key)
     "WW.Y": 865, "WS.A": 226, "HW.A": 277, "HT.Y": 58, "EH.W": 4, "EH.A": 3, "FR.Y": 14, "FZ.W": 4, "DU.Y": 3,
     "FF.A": 20,
+    # D55: HW.W 339 is the research's count (the research record's flood-ice-heat-products table, iem_watchwarn_table). FW.W
+    # 169 is not a row of the research record: it is the B5 recheck's figure, and the research's own rule (the research
+    # window, the earliest issue as the begin) recounts it as 169 from the rows the cache holds. This table checks the
+    # recount, and verify names each edge event that the two windows split.
+    "HW.W": 339, "FW.W": 169,
 }
 RESEARCH_B5_COUNTY = {"FA.A": 18, "FF.A": 2}             # county-only events in the window
 # rules-F26: the HW.A window note the compare step records. HW.A has no NEW rows (its rows are CON, UPG, CAN and EXT), so
@@ -4328,6 +4351,81 @@ def _research_compare(block: dict, research: bool = True) -> list:
         rows.append({"product": name + " (county-only)", "ours_window_vtec_events": ours,
                      "research_window": want, "delta": None if ours is None else ours - want})
     return rows
+
+
+def _vtec_edge(name: str, ekey: tuple, item: dict, begin: datetime, in_store: bool, in_research: bool) -> dict:
+    """D55: one zone-path event that the store window and the research window count differently: its product, office,
+    VTEC event number and year, the begin the count uses (the earliest NEW or CON issue, else the earliest issue), the
+    first archived row (its status, issue, product time and expiry) and the zone codes it covers."""
+    first = item["first"]
+    return {"product": name, "level": "zone" if "zone" in item["level"] else "county", "wfo": ekey[2],
+            "eventid": ekey[3], "vtec_year": ekey[4], "begin": iso_utc(begin), "in_store_window": in_store,
+            "in_research_window": in_research, "first_status": first["status"], "first_issue": iso_utc(first["issue"]),
+            "product_time": iso_utc(first["prod"]), "expire": iso_utc(first["expire"]), "codes": sorted(item["codes"]),
+            "rows": len(item["issues"])}
+
+
+def _polygon_edge(event: dict, in_store: bool, in_research: bool) -> dict:
+    """D55: one polygon event (a NEW polygon) that the store window and the research window count differently."""
+    return {"product": f"{event['k']}.{event['s']}", "level": "polygon", "wfo": event.get("o"),
+            "eventid": event.get("eventid"), "vtec_year": event.get("vtec_year"), "begin": iso_utc(event["b"]),
+            "in_store_window": in_store, "in_research_window": in_research, "first_status": "NEW",
+            "first_issue": iso_utc(event["b"]), "product_time": None,
+            "expire": None if event.get("e") is None else iso_utc(event["e"]), "codes": [], "rows": 1}
+
+
+def _utc_words(iso: str) -> str:
+    """'2026-10-17T15:00Z' as '17 October 2026 at 15:00 UTC' (the words verify prints)."""
+    return datetime.strptime(iso, "%Y-%m-%dT%H:%MZ").strftime("%-d %B %Y at %H:%M UTC")
+
+
+def _edge_sentence(edge: dict, store_window: list) -> str:
+    """D55: the plain sentence verify prints for one edge event: its product, office and event number, its first archived
+    row, the window that counts it, and why the other window does not."""
+    first = (f"its first archived row is {edge['first_status']} issued {_utc_words(edge['first_issue'])}"
+             + ("" if edge["product_time"] is None else f" (product time {_utc_words(edge['product_time'])})"))
+    research = (f"{RESEARCH_START:%-d %B %Y} at 00:00 UTC to {RESEARCH_END:%-d %B %Y} at 00:00 UTC")
+    store = f"{_utc_words(store_window[0])} to {_utc_words(store_window[1])}" if len(store_window) == 2 else "unknown"
+    if edge["in_store_window"]:
+        window = "the store window only"
+        why = f"it begins outside the research window, which runs from {research}"
+    else:
+        window = "the research window only"
+        why = f"it begins outside the store window, which runs from {store}"
+    return (f"{edge['product']} {edge['wfo']} event {edge['eventid']} ({edge['vtec_year']}) begins "
+            f"{_utc_words(edge['begin'])}, so it is counted in {window}: {first}; {why}. No store rule drops it; the "
+            f"window edge alone decides which window counts it.")
+
+
+def _window_edge_check(block: dict) -> dict:
+    """D55: the store window's counts less the research window's counts, product by product and level by level, must equal
+    the edge events the two windows split (+1 for each the store window counts and the research window does not, -1 for
+    each the research window counts and the store window does not). Returns the windows, the named edges with their
+    sentences, the differences, and any difference the edges do not explain (unexplained: empty when every difference is
+    named)."""
+    store_window = block.get("vtec_store_window") or []
+    edges = block.get("vtec_window_edges", [])
+    vs, vr = block.get("vtec_counts", {}), block.get("vtec_counts_research", {})
+    rows, unexplained = [], []
+    for name in sorted(set(vs) | set(vr) | {e["product"] for e in edges}):
+        for level in ("zone", "county", "polygon"):
+            s = vs.get(name, {}).get(level, 0)
+            r = vr.get(name, {}).get(level, 0)
+            named = sum((1 if e["in_store_window"] else 0) - (1 if e["in_research_window"] else 0)
+                        for e in edges if e["product"] == name and e["level"] == level)
+            if s == r and named == 0:
+                continue
+            row = {"product": name, "level": level, "store_window": s, "research_window": r, "difference": s - r,
+                   "named": named}
+            rows.append(row)
+            if s - r != named:
+                unexplained.append(row)
+    return {"store_window": store_window, "research_window": [RESEARCH_START.date().isoformat(),
+                                                              RESEARCH_END.date().isoformat()],
+            "sentences": [_edge_sentence(e, store_window) for e in edges], "edges": len(edges),
+            "differences": rows, "unexplained": unexplained,
+            "note": ("The store window is the 1,826 SPC days ending on the store's as-of date (B1, D3); the research window "
+                     "is calendar days (UTC), so the two differ by the days at their ends. Both are shown.")}
 
 
 def _cover_counts_check(block: dict) -> dict:
@@ -4804,6 +4902,23 @@ def _verify_b5(root: Path, index: dict, events: dict, block: dict, check, cache_
     b5["vtec_counts"] = block.get("vtec_counts", {})
     b5["research_window_counts"] = _research_compare(block, research=True)
     b5["store_window_counts"] = _research_compare(block, research=False)
+    # D55: the research window reproduces the research counts, and each store-window difference is a named edge event
+    b5["vtec_window_edges"] = _window_edge_check(block)
+    if block.get("vtec_counts_research"):
+        off = [r for r in b5["research_window_counts"] if r["delta"] != 0]
+        check("D55: the research window's counts equal the research's counts, product by product (zero difference)",
+              bool(b5["research_window_counts"]) and not off,
+              "; ".join(f"{r['product']} {r['ours_window_vtec_events']} against {r['research_window']}" for r in off)
+              or f"{len(b5['research_window_counts'])} products, zero difference")
+        edge_check = b5["vtec_window_edges"]
+        check("D55: every difference between the store window and the research window is a named event at a window edge",
+              not edge_check["unexplained"],
+              " ".join(edge_check["sentences"]) if edge_check["sentences"] else "no event falls in only one window")
+    else:
+        skip("D55: the research window's counts equal the research's counts",
+             "this store holds no VTEC counts (it was built before the B5 counts)")
+        skip("D55: every difference between the store window and the research window is named",
+             "this store holds no VTEC counts (it was built before the B5 counts)")
     b5["zone_periods"] = block.get("zone_periods")
     b5["periods"] = guarded("period cases", lambda: _periods_check(root), [])
     present = [p for p in b5["periods"] if p["zone"] in set(block.get("zone_list", []))]
@@ -4999,6 +5114,43 @@ def compare(store_dir) -> dict:
 FIXTURE_DAYS = ("2025-06-14", "2025-06-15", "2025-06-16")
 
 
+def _station_sample(src: Path, real_index: dict, tiles, gust_ids) -> tuple[dict, dict, list]:
+    """D56: the station reader's part of the sample store. The tile lists (hail/tl) of the sample tiles are the candidates the
+    summary's point picks read; the station summaries (hail/sd) are those of every station a list names and of the gust
+    stations the sample names (a station whose summary the build lacks is left out); the index's stations block is cut to
+    those stations, with the real block's state, rule, as-of date and sources, and says it is a sample. Without this block
+    the summary reads every station row as "could not be loaded" while the joins part of the same page reads the gusts.
+    Returns (the stations block, {tile name: tile list document}, the station ids whose summary file is copied)."""
+    real = real_index.get("stations") or {}
+    lists: dict = {}
+    named = set(gust_ids)
+    for name in sorted(tiles):
+        path = src / "hail" / "tl" / f"{name}.json"
+        if not path.is_file():
+            continue
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        lists[name] = doc
+        for part in doc.get("elements", {}).values():
+            named.update(e["id"] for e in part.get("passing", []))
+            named.update(e["id"] for e in part.get("unread", []))
+    ids = sorted(sid for sid in named if (src / "hail" / "sd" / f"{sid}.json").is_file()) if real else []
+    rows = {sid: real["stations"][sid] for sid in ids if sid in real.get("stations", {})}
+    parts = [part for doc in lists.values() for part in doc.get("elements", {}).values()]
+    block = {"state": "loaded" if real else "unavailable",       # a source with no stations block says so, never loaded
+             "problem": None if real else "the build the sample is cut from has no stations block",
+             "detail": None, "as_of": real.get("as_of"),
+             "rule": real.get("rule", {}), "sources": real.get("sources", {}), "sample": True,
+             "counts": {"sample_tiles": len(lists), "sample_stations": len(rows)},
+             "refresh": {"mode": "none", "ids": 0, "unchanged": 0}, "failures": [], "failed_station_ids": [],
+             "malformed": 0, "unchanged_station_ids": [], "stations": rows,
+             "chosen_station_ids": sorted(rows), "rule_station_ids": sorted(rows),
+             "tile_lists": {"format": stn.TILE_LIST_FORMAT, "cap": stn.TILE_LIST_CAP, "miles": stn.RADIUS_MILES,
+                            "files": len(lists), "capped": sum(1 for p in parts if p.get("capped")),
+                            "longest": max((len(p.get("passing", [])) for p in parts), default=0),
+                            "unread": sum(len(p.get("unread", [])) for p in parts)}}
+    return block, lists, ids
+
+
 def fixture(out_dir, from_store) -> dict:
     """Write the SAMPLE joins for the fixture store (website/data/hail-fixture): the three fixture tiles' files, the
     events they refer to, and the zone and station files they name, cut to FIXTURE_DAYS, from a real joins build
@@ -5006,7 +5158,8 @@ def fixture(out_dir, from_store) -> dict:
     out = Path(out_dir)
     hail.fixture_store(out)
     src = Path(from_store)
-    real_block = load_joins_index(src)[INDEX_KEY]
+    real_index = load_joins_index(src)
+    real_block = real_index[INDEX_KEY]
     real_events = _read_events(src)
     if real_events is None:
         raise JoinsError("the real build has no events table")
@@ -5096,6 +5249,15 @@ def fixture(out_dir, from_store) -> dict:
         doc = json.loads((src / "hail" / "s" / f"{sid}.json").read_text(encoding="utf-8"))
         doc["days"] = [d for d in doc["days"] if hail.day_of_index(d[0]) in days]
         (hail_out / "s" / f"{sid}.json").write_bytes(_compact(doc))
+    # D56: the station reader's part (the tile lists the summary's point picks read, the summaries of the stations they
+    # name, and the index's stations block cut to them), so the sample's station rows read as the build's do
+    station_block, tile_lists, sd_ids = _station_sample(src, real_index, sample_tiles, station_list)
+    for name, doc in sorted(tile_lists.items()):
+        (hail_out / "tl").mkdir(parents=True, exist_ok=True)
+        (hail_out / "tl" / f"{name}.json").write_bytes(_compact(doc))
+    for sid in sd_ids:
+        (hail_out / "sd").mkdir(parents=True, exist_ok=True)
+        (hail_out / "sd" / f"{sid}.json").write_bytes((src / "hail" / "sd" / f"{sid}.json").read_bytes())
     events_counts = {k: len(v) for k, v in new_events.items()}
     block = {
         "format": FORMAT, "events_format": EVENTS_FORMAT,
@@ -5134,12 +5296,12 @@ def fixture(out_dir, from_store) -> dict:
         e_entries.append((path.name, len(raw), len(gzip.compress(raw, compresslevel=9, mtime=0))))
     block["events_tiles"] = _events_tiles_block(e_entries, ref_counts)
     block["towns_file"] = _towns_file_block(towns_doc, len(towns_bytes))
-    index_bytes = _pretty(dict(sample, **{INDEX_KEY: block}))
+    index_bytes = _pretty(dict(sample, **{INDEX_KEY: block, "stations": station_block}))
     (hail_out / "index.json").write_bytes(index_bytes)
     manifest = json.loads((hail_out / "manifest.json").read_text(encoding="utf-8"))
     files = {rel: meta for rel, meta in manifest["files"].items()
-             if not rel.startswith(("hail/j/", "hail/z/", "hail/s/", "hail/k/"))}
-    for sub in ("j", "z", "s", "k"):
+             if not rel.startswith(("hail/j/", "hail/z/", "hail/s/", "hail/k/", "hail/tl/", "hail/sd/"))}
+    for sub in ("j", "z", "s", "k", "tl", "sd"):
         for path in sorted((hail_out / sub).rglob("*.json")):
             data = path.read_bytes()
             files[path.relative_to(out).as_posix()] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}

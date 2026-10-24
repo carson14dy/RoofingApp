@@ -942,3 +942,97 @@ class TileListTests(unittest.TestCase):
         counted = S._partial_problem([], [{"source": "stations", "reason": "x"}, {"source": "daily", "station": "Z"}])
         self.assertEqual(counted, "Some station files could not be loaded in this update (2 files); that is not the same as "
                                   "no station reading. This is not an all-clear.")
+
+
+class PointPicksTests(unittest.TestCase):
+    """D36, the shared rule for the picks at a point (stations.tile_list_picks; the browser is to run the same rule): the two
+    nearest passing stations of one element's tile list to the point, the unread candidates nearer than the second pick
+    named (D32), and a capped list that cannot answer. The Billings case is the gate's: from the Billings gate point the
+    SNOW list of the Billings tile names WTP (1.4 miles) and the airport (2.6 miles); the positions are the store's own."""
+
+    GATE = (45.7836, -108.5047)                  # the Billings gate point (stations.GATE_POINTS["billings"])
+    MILE_DEG = 1.0 / 69.09                       # one mile of latitude, near these latitudes (the rule is haversine)
+
+    @staticmethod
+    def entry(sid, name, lat, lon):
+        return {"id": sid, "name": name, "lat": lat, "lon": lon, "miles": 0.0, "ok": 2000, "of": 2192, "share": 0.91}
+
+    def north(self, miles, lon=-110.0):
+        return (47.0 + miles * self.MILE_DEG, lon)
+
+    def test_the_billings_gate_names_the_cooperative_site_and_the_airport(self):
+        block = {"capped": True, "unread": [], "passing": [
+            self.entry("USC00240801", "BILLINGS WFO", 45.7503, -108.5697),
+            self.entry("USC00240802", "BILLINGS WTP", 45.7717, -108.4811),
+            self.entry("USW00024033", "BILLINGS INTL AP", 45.8072, -108.5461),
+            self.entry("US1MTYS0014", "BILLINGS 4.5 NE", 45.8323, -108.444)]}
+        got = S.tile_list_picks(block, *self.GATE, light={"USC00240802": {"net": "COOP"}, "USW00024033": {"net": "ASOS"}})
+        self.assertEqual(got["state"], "two")
+        self.assertEqual([(p["id"], p["name"], p["net"], p["miles"]) for p in got["picks"]],
+                         [("USC00240802", "BILLINGS WTP", "COOP", 1.4), ("USW00024033", "BILLINGS INTL AP", "ASOS", 2.6)])
+        self.assertEqual(got["unread"], [])
+        self.assertFalse(got["incomplete"])
+
+    def test_the_two_nearest_passing_stations_come_first_and_ties_go_by_id(self):
+        block = {"capped": False, "unread": [], "passing": [
+            self.entry("USC00000003", "FAR", *self.north(9.0)),
+            self.entry("USC00000002", "TIE B", *self.north(3.0)),
+            self.entry("USC00000001", "TIE A", *self.north(3.0)),
+            self.entry("USC00000004", "NEAR", *self.north(1.0))]}
+        got = S.tile_list_picks(block, 47.0, -110.0)
+        self.assertEqual([p["id"] for p in got["picks"]], ["USC00000004", "USC00000001"])   # nearest, then the tie by id
+        self.assertEqual(got["state"], "two")
+        self.assertEqual(got["candidates"], 4)
+
+    def test_a_passing_station_beyond_the_radius_is_not_a_pick(self):
+        block = {"capped": False, "unread": [], "passing": [self.entry("USC00000005", "FAR", *self.north(45.0))]}
+        got = S.tile_list_picks(block, 47.0, -110.0)
+        self.assertEqual(got["picks"], [])
+        self.assertEqual(got["state"], "none")                  # no passing station within 40 miles, nothing unread
+        self.assertEqual(got["candidates"], 0)
+
+    def test_one_pick_is_state_one_and_the_radius_bounds_the_pick_list(self):
+        block = {"capped": False, "unread": [], "passing": [self.entry("USC00000006", "ONLY", *self.north(12.0)),
+                                                            self.entry("USC00000007", "OUT", *self.north(41.0))]}
+        got = S.tile_list_picks(block, 47.0, -110.0)
+        self.assertEqual(got["state"], "one")
+        self.assertEqual([p["id"] for p in got["picks"]], ["USC00000006"])
+
+    def test_an_unread_candidate_nearer_than_the_second_pick_is_named_and_a_farther_one_is_not(self):
+        block = {"capped": False, "passing": [self.entry("USC00000010", "P1", *self.north(1.0)),
+                                              self.entry("USC00000011", "P2", *self.north(5.0))],
+                 "unread": [{"id": "USC00000012", "name": "NEAR UNREAD", "lat": 47.0 + 2.0 * self.MILE_DEG,
+                             "lon": -110.0, "reason": "its file did not load"},
+                            {"id": "USC00000013", "name": "FAR UNREAD", "lat": 47.0 + 30.0 * self.MILE_DEG,
+                             "lon": -110.0, "reason": "its file did not load"}]}
+        got = S.tile_list_picks(block, 47.0, -110.0)
+        self.assertEqual([p["id"] for p in got["picks"]], ["USC00000010", "USC00000011"])
+        self.assertEqual([u["name"] for u in got["unread"]], ["NEAR UNREAD"])        # named (D32), never skipped
+        self.assertEqual(got["unread"][0]["reason"], "its file did not load")
+        self.assertTrue(got["incomplete"])
+        self.assertEqual(got["state"], "two")
+
+    def test_an_unread_candidate_without_a_position_is_always_named(self):
+        block = {"capped": False, "passing": [], "unread": [{"id": "USC00000020", "name": "NO POSITION", "lat": None,
+                                                             "lon": None, "reason": "the file did not load"}]}
+        got = S.tile_list_picks(block, 47.0, -110.0)
+        self.assertEqual(got["state"], "unavailable")          # no pick and an unread candidate: never "none"
+        self.assertEqual([(u["name"], u["miles"]) for u in got["unread"]], [("NO POSITION", None)])
+
+    def test_a_capped_list_with_fewer_than_two_stations_in_the_radius_cannot_answer(self):
+        block = {"capped": True, "unread": [], "passing": [self.entry("USC00000030", "IN", *self.north(4.0)),
+                                                           self.entry("USC00000031", "OUT", *self.north(50.0))]}
+        self.assertIsNone(S.tile_list_picks(block, 47.0, -110.0))   # a station the list does not hold might be nearer
+
+    def test_a_capped_list_with_two_stations_in_the_radius_answers(self):
+        block = {"capped": True, "unread": [], "passing": [self.entry("USC00000040", "A", *self.north(4.0)),
+                                                           self.entry("USC00000041", "B", *self.north(8.0)),
+                                                           self.entry("USC00000042", "C", *self.north(50.0))]}
+        got = S.tile_list_picks(block, 47.0, -110.0)
+        self.assertEqual([p["id"] for p in got["picks"]], ["USC00000040", "USC00000041"])
+
+    def test_no_block_cannot_answer_and_an_empty_block_says_none(self):
+        self.assertIsNone(S.tile_list_picks(None, 47.0, -110.0))            # the file or the element is not in the store
+        self.assertIsNone(S.tile_list_picks({}, 47.0, -110.0))
+        empty = S.tile_list_picks({"capped": False, "passing": [], "unread": []}, 47.0, -110.0)
+        self.assertEqual((empty["state"], empty["picks"]), ("none", []))

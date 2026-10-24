@@ -213,7 +213,7 @@ CONTRACTS = {
                   "5 am in winter (the SPC reporting day). The day is held by the file stamped the day after at "
                   "12:00 UTC, posted about 12:08 UTC. The newest day is added by a job that starts at 12:43 UTC and "
                   "shows here on the next rebuild, usually within the hour. Each page shows the store's as-of date.",
-        "missing": "-1 (missing) and -3 (no coverage) are never stored. A cell with no stored value on a day is no radar "
+        "missing": "-1 (missing) and -3 (no radar coverage) are never stored. A cell with no stored value on a day is no radar "
                    "estimate, never 'no hail'. A day with no file is listed on the page and not counted, and a day that "
                    "fails stays missing. An estimate is not a measurement at the ground and not an inspection.",
     },
