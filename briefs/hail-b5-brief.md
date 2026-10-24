@@ -962,3 +962,46 @@ numbers. Its questions:
   the pull request, never a WIP commit hash (the squash changes it); the D49 wait step is recorded after the merge of
   main brings it (D59, D60); the two round-1 tests in tests/test_site.py that pin the old sheet strings (the radar days
   before the joins; the six-section template slots) follow the browser's round-2 structure (site owner).
+
+## Supervisor rulings on the round-2 reviews (2026-10-24 10:00 UTC; D82)
+The round-2 reviewers found 14 findings each. The browser's six blocking items are the missing summary.section_data block
+(site), the two round-1 tests that pin the old sheet strings (site, D81(e)), the B3 words test (D74, completion pass),
+the phone view over 665,600 bytes (below), and the smoke's sheet reader (owner 4's round 2). The site's blocking item is the
+history-flag map.json at 153,127 bytes, with a gate test rewritten to measure six blocks and omit joins: a gate is never
+met by narrowing what it measures. Rulings:
+- D82 **Budgets, a zero, and the joined lines.** (a) The history-flag map.json gate is restated to 163,840 bytes raw
+  (160 KB) with the reason: the words, orders and section data the browser reads from map.json instead of carrying
+  literals (D29, D41) are 132 summary words, the joins words and summary.section_data; the test measures the whole
+  file with the history flag, never a subset of blocks; the every-flag figure is recorded beside it (D66).
+  (b) The phone view at zoom 15 with every layer on measured about 674,000 bytes gzip once the sections landed; as D70
+  said, the budget is restated, to 700,000 bytes gzip, with the reason (the sheet's words and sections from map.json;
+  B3's tile membership sets at 80,186 bytes gzip, D66), in map.json's hail.budget, the smoke and the docs; the compact
+  encoding of B3's tile sets is the first follow-up and would recover most of the difference; no words or rows are cut.
+  (c) A partial radar season never reads as zero: the row "Days with a radar hail estimate of 1 inch or more" follows
+  D37's rule (a zero only at 95 percent coverage; otherwise "Data unavailable" with the days missing), the "No radar
+  estimate of 0.25 in or more" sentence appears only at 95 percent coverage, and the "Largest radar hail estimate" row
+  shows the largest value over the days present with its coverage line (2021-22 has 109 days before the archive began);
+  Python first (summary.py), the browser mirrors; B1's own day list on town pages is unchanged.
+  (d) The sheet's joined sections keep every line describe_joins gives for the cell (the freshness lines, the NCEI
+  flood cause line, the zone-switch line, the no-county-product line with its evidence caveat, the implausible-count
+  line), computed by the browser's mirror from the per-tile files and map.json's words, as the town page carries them;
+  the B2 smoke's expectations for them stand. Also ruled: unavailable roof lines lead with their kind word (site F2);
+  "from this spot" is the phrase on every page, the spot being the town point on a town page (D80(b), site F5); a
+  partial season with no valid day keeps its count and days missing beside the D20 sentence (site F6); every section of
+  a sample build carries the sample word (browser F11); sumSharePct rounds half to even as Python's round() does and
+  takes its scale and step from map.json (browser F10).
+
+## Supervisor rulings after the round-2 fixers (2026-10-24 13:35 UTC; D83)
+The round-2 site fixer applied its F1 to F8 (the map.json gate measured whole against 163,840 bytes, the phone budget
+700,000, "from this spot" everywhere, "a few hundred yards", unavailable roof lines led by their kind word, the partial
+season's count kept, thousands separators in Python, the two old pins) and the browser fixer its F10 to F12 (round half to
+even from map.json's percent rule, the sample word on every section, the rows-shown threshold from map.json). The browser
+review's F1 (summary.section_data, owner site) was filed in the browser's pipeline, so the site fixer never received it:
+the eleven sections still read placeholders on the real build. It heads the completion pass with the other cross-owner
+items (summary.rule.percent; nouns.days; hail.joins.show_first; the browser's kind-word fill and thousands separators;
+the smoke's DOM reader).
+- D83 **Two browser calls.** (a) A section shows its first rows and a "Show all n rows" control, a browser-only need for
+  a phone sheet with long lists; the threshold is map.json's hail.joins.show_first (the site writes 10), every row is
+  rendered in the DOM so the text comparison and the smoke read all of them, and the control only toggles visibility.
+  (b) The season rule's 95 percent and the unit scales come from map.json (summary.rule's season share; summary.units
+  with a scale per unit), never from literals in map.js; a parity test covers the season rule as the share rule has one.
