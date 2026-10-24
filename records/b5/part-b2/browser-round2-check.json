@@ -1,0 +1,238 @@
+{
+ "items": [
+  {
+   "item": "R11 (round-2 item 1): the eleven sections in the fixed order after the table and its notes (Hail; Wind; Storms and warnings; Temperature; Rain; Snow; Flooding; Ice and winter; Heat; Weather that matters for a roof; How this was made), each with heading, lead with its kind word, rows beginning with their kind label, notes",
+   "status": "not done",
+   "evidence": "Order and sentence-case headings are right on all 14 sheets. The rows are not: at Billings (921,2149, 390 px) the DOM holds 4 of 74 hail rows and none of the others (wind 0 of 270, storms 0 of 23, temperature 0 of 5, rain 0 of 96, snow 0 of 421, flooding 0 of 25, ice 0 of 21, heat 0 of 8); at the gate (797,1986) hail 10 of 26 and 0 elsewhere. Section notes are absent and no 'Show all' control exists. Kind labels and lead kind words print as '[missing words key: summary.section_data.kind.report]' (also .radar, .record, .reference). Browser cause: the sections read summary.section_data through sdGet and sdList (map.js 4780-4786); when section_data.rules is missing, joined rows are dropped without a row-level notice (map.js 5312-5325); season_rows, section_keys and extra_notes return empty with no notice (sdList, map.js 4786). Site cause: website/summary.py, build.py, joins.py and sources.py write no section_data (0 matches). How this was made shows its 26 notes. Evidence: /home/user/hail-b5/out/b2r2/browser/final-r2/check/browser_results2.json (sections block per cell)."
+  },
+  {
+   "item": "D57 and D48: the flooding section lists each NCEI flood record with its date and distance; the flood records row is its own row",
+   "status": "not done",
+   "evidence": "The table row 'Flood and flash flood records within 5 miles' (kind Record) is on every sheet and its cells match Python. The flooding section holds 0 of 25 rows at Billings and 0 of 18 at the gate (item 1). Smoke: the gate and Benchland records sections are empty ('records sheet has 0 rows, the module's 10')."
+  },
+  {
+   "item": "F8 and D6: gauge lines carry one 'River gauge:' prefix",
+   "status": "not done",
+   "evidence": "Not evidenced. No 'River gauge' line appears on any of the 14 sheets; gauge lines are a town-page item in B5 (D6), and this check did not exercise the gauge code path."
+  },
+  {
+   "item": "Round-2 item 2: county.short_names and the station status words read where the build writes them; no placeholder remains on the five cells",
+   "status": "not done",
+   "evidence": "county.short_names (56 names) is present and used; no station-status placeholder shows. But all 14 sheets show placeholders, 10 to 13 distinct keys each: summary.rule.percent, nouns, summary.section_data.kind.radar/report/record/reference, .rules, .words.county_word, .words.report_near, .words.span_to, .words.nearest_station, .roof.reference_line, .roof.lines.ice_dam_weather_days, .roof.lines.wind_gust_days, .roof.lines.snowfall_season. Stray '{kind}' template braces show on the Billings and gate sheets. Evidence: /home/user/hail-b5/out/b2r2/browser/final-r2/check/browser_results2.json (placeholders per cell)."
+  },
+  {
+   "item": "Sheet order (round-2 item 1 and D39): B3 address lines, then the B4 live line when a hail layer is on, then the table with its notes, then the sections",
+   "status": "partial",
+   "evidence": "The table follows the address block in the smoke's --addresses run and the smoke reports no order or first-screen failure. The live line was not on the page for these cells ('this build has no Montana cell with a value, so the sheet's live line is not checked', smoke note). Sections follow the table; their content fails (item 1)."
+  },
+  {
+   "item": "D79(c): desktop sheet at most 640 px (60 percent of the view) while the table shows; phone one card per row; the first row of the table inside the first screen below the address lines at 390 and 1280 px",
+   "status": "done",
+   "evidence": "Desktop sheet 640 px wide at 1280 px (the limit); phone sheet 374 px at 390 px; no sideways scroll in any of the 14 opens. First table row top at 332 px (390 x 844) and 191 px (1280 x 800); no address block on a ?at= open, and the smoke's first-screen rule passes in its --addresses run. Phone cards show label, kind word and unit, then the seasons (screenshot /home/user/hail-b5/out/b2r2/browser/final-r2/check/shots/921-2149-phone-first-screen.png)."
+  },
+  {
+   "item": "D79(c): row heads carry the unit beside the kind word as the town page does; notes print once each under the table",
+   "status": "partial",
+   "evidence": "Every row head carries its kind word and unit in the DOM text (24 rows on each sheet; head check passes). On the phone card the unit sits on the line under the kind word, not beside it. Notes: 154 row-note problems across the 14 sheets, all of them rejected or passed-over station sentences (percentage placeholder) or the county note (county_word placeholder)."
+  },
+  {
+   "item": "Heading in sentence case; map.css styles the sections like the table (round-2 item 3)",
+   "status": "partial",
+   "evidence": "Headings are sentence case (table title 'Five seasons, July to June'; section headings as in item 1). Section heads and leads are styled; rows and notes cannot be judged because the page does not render them (item 1)."
+  },
+  {
+   "item": "Five cells 921,2149, 792,1998, 797,1986, 753,2230 and 920,1899 compared text for text with describe_summary (table, notes, partial line, every section and its rows)",
+   "status": "not done",
+   "evidence": "Table: every cell exact at Billings, Benchland, 753,2230 and 920,1899 (138 of 138 each). The gate has 2 five-season gust cells wrong at both widths (thousands separator). Lead, radar sentence, table title, partial line and held line are present at all five cells. Notes: wrong where placeholders replace percentages or the county word. Sections and their rows: not rendered (item 1). Check: /home/user/hail-b5/out/b2r2/browser/final-r2/check/browser_results2.json."
+  },
+  {
+   "item": "Unread candidates 602,1396 and 607,1428 (D62): the unread line shows, the unread station is never counted as passing, words as Python",
+   "status": "partial",
+   "evidence": "602,1396 shows 'Data unavailable for some stations: LISTER is not read (in Canada; the terms for its data are under review), so the two nearest stations that pass are not known for snowfall. This is not an all-clear.' as Python gives it. Both unread cells print the gust five-season cells as '1826 days missing' (Python '1,826') and their station notes print the percentage placeholder."
+  },
+  {
+   "item": "Thousands separators in counts as Python's _thousands writes them (1,464 days missing; 1,826 days missing)",
+   "status": "not done",
+   "evidence": "The Peak gust and Strongest gust five-season cells print '1464 days missing' at 797,1986 and '1826 days missing' at 602,1396 and 607,1428, at both widths (12 cell comparisons). Python prints '1,464' and '1,826'. The gate's three-cell comparison fails on these cells."
+  },
+  {
+   "item": "Station picks at the cell centre from the tile lists (the browser's mirror of tile_list_picks), rejected candidates named in plain words, unread candidates named, no 'No station' sentence where a list cannot answer (D61, D62, D63, D69, D72)",
+   "status": "partial",
+   "evidence": "Picks in the table cells match Python exactly at 921,2149, 792,1998, 753,2230 and 920,1899. Rejected-candidate sentences print the name, miles and newest date, but the percentage is a placeholder: 'MOCCASIN EXP STN, 3.2 miles from this spot, is not used: [missing words key: summary.rule.percent] percent of the days ...'. Station names print as Python writes them, in upper case (the D78(c) title-case change is not yet in the products output)."
+  },
+  {
+   "item": "A partial radar season never reads as zero: a zero only at 95 percent coverage, 'No radar estimate of 0.25 in or more' only at 95 percent, the largest radar row over the days present (D37, D82(c))",
+   "status": "partial",
+   "evidence": "The browser mirrors Python exactly, and Python does not meet D82(c). For 2021-22 (109 days missing, under 95 percent coverage) the sheets at 921,2149 and 797,1986 show '0 days' with '109 days missing' in the one-inch row and 'No radar estimate of 0.25 in or more' with '109 days missing' in the largest-radar row. The fault is in website/summary.py (needed from owner 2)."
+  },
+  {
+   "item": "A failed part prints its D20 sentence in place: reports, records, zones and stations (D16, D28, D32)",
+   "status": "not done",
+   "evidence": "The smoke's injected-failure checks fail six times: the reports section is hidden or lacks the module's unavailable sentence; the stations, zones and records sheets lack theirs. A failed part's sentence is only pushed as a notice (map.js 5317) and its rows are dropped with the rest (item 1)."
+  },
+  {
+   "item": "B1 radar day rows: every radar day on the sheet's day list is shown",
+   "status": "partial",
+   "evidence": "Billings shows 4 of 4 radar-day rows and Benchland 10 of 10. The gate shows 10 of 11: 'Jul 4, 2022: 0.34 in (8.7 mm), pea to mothball' is missing (smoke: 'the sheet lacks the day ...'). Cause not found in this check; it sits with the B1 day list in the browser."
+  },
+  {
+   "item": "Words: no literal sentence, unit, threshold, constant or colour in map.js; unit constants read from map.json (D29, D41, D71)",
+   "status": "partial",
+   "evidence": "The sheet's code (map.js 2289-5486) carries no prose sentence: every word is a key, apart from console labels and CSS class names. Literal scales remain: 100 for hundredths (lines 3514, 3638, 3738-3739, 4450-4451, 4574) and 10 for tenths of a degree F (lines 4009-4010, 4423-4424), where map.json already writes summary.units.in.scale 100 and summary.units.F.scale 10; season bounds '-07-01' and '-06-30' (line 3404). No colour literal and no 9/5 or 32 literal. The 1000 factors at lines 1911 and 2307 are older code (km and day length). map.js holds 213 prose-like literals in total, most of them Now-page, legend, banner and location text that predates B5."
+  },
+  {
+   "item": "Zero off-site requests; the fetch list per tap; each file under the tile budget (D75(c), D66)",
+   "status": "done",
+   "evidence": "0 requests left the local server in 14 opens (7 cells at 2 widths); 0 page errors. Largest file on an open: hail/j/e/r0092_c0214.json at 18,052 bytes gzip; largest on a tap (smoke, desktop at Billings): b/r0092_c021500.json at 40,074 bytes gzip. Budget 100,000 read from map.json hail.budget.tile_events_gzip_bytes. map.json (83,468 bytes gzip) loads once."
+  },
+  {
+   "item": "Phone view at zoom 15 with every layer on under the phone budget (D70; D82(b) restates it to 700,000 bytes gzip; D66's 665,600 is the earlier figure)",
+   "status": "done",
+   "evidence": "Smoke on the clean build: 678,563 bytes gzip for the B3 files (267,789), the shell and data (410,774), 82 files; the picture frames (1,907,791 bytes) are listed apart, as D70 asks. Under 700,000 in map.json hail.budget.phone_gzip_bytes. Over the 665,600 constant the smoke still uses for its B3 check, which fails (needed from owner 4)."
+  },
+  {
+   "item": "D82(d) and F11: every section of a sample build carries the sample word; sumSharePct rounds half to even and takes scale and step from map.json (F10)",
+   "status": "partial",
+   "evidence": "Sample word: not run here (no sample build made). sumSharePct: the half-to-even rounding is in place (sumRoundEven, map.js 4385-4390) and it reads summary.rule.percent, which the build does not write, so it prints a placeholder (item 3 of needed_from_others)."
+  },
+  {
+   "item": "Round-2 item 4 checks: tests.test_site -k HailJoinedRecords, and the static-rule tests (-k HailHistory, -k HailAddresses, -k HailSwathLayers, -k HailJoins)",
+   "status": "done",
+   "evidence": "All five classes pass with no skips, run by class: HailJoinedRecords 15 tests, HailHistory 34, HailAddresses 23, HailSwathLayers 27, HailJoins 8. These passes did not catch items 1, 3 or 11: the four-cell note test compares the browser's notes with the browser's own sheet text (node run), so it cannot see placeholders. Logs: /home/user/hail-b5/out/b2r2/browser/final-r2/owner-tests/."
+  },
+  {
+   "item": "Full suite with the venv python (tail, round-2 item 4)",
+   "status": "partial",
+   "evidence": "Ran 1848 tests in 350.703s; FAILED (failures=1, skipped=5). The one failure is test_addresses WordsTests (the B3 coverage sentence; the code writes 'completeness', D74's completion item; not a browser test). With HAIL_PARITY_STORE set to the combined store the four store-dependent browser and summary classes pass (8, 7, 8, 7 tests). One skip needs ADDRESS_FRAMEWORK_ZIP and was not run."
+  },
+  {
+   "item": "D66 and D82(a): map.json carries the budgets; the browser reads no key the build does not write (county_suffix dropped)",
+   "status": "done",
+   "evidence": "map.json hail.budget = {phone_gzip_bytes: 700000, tile_events_gzip_bytes: 100000}. No county_suffix read in map.js. The tile list path summary.tile_list 'hail/tl/{tile}.json' is fetched on every open. Keys the browser asks for that the build does not write are listed in needed_from_others."
+  },
+  {
+   "item": "Decision 7 and D12: no owner, parcel, place-type or building-use field read, stored or shown by the browser",
+   "status": "done",
+   "evidence": "grep of map.js for owner, parcel, place type, building use, land use, placement, occupancy, tax and assessment: no match."
+  },
+  {
+   "item": "D13 and D41 for the roof section: the roof reference lines grouped (Thresholds; Snow and ice; Wind and hail; Heat and rain; Lightning and sun), kind Reference; How this was made from summary.how_made",
+   "status": "partial",
+   "evidence": "The five roof group headings and the How this was made notes (26) are present on the sheet. The roof lines and reference lines print placeholders for their kind words and labels (summary.section_data.roof.lines.*, roof.reference_line, kind.reference); 'Reference' is not in the roof lead. Checks: /home/user/hail-b5/out/b2r2/browser/final-r2/check/browser_results2.json."
+  }
+ ],
+ "gates": [
+  {
+   "gate": "Owner tests: tests.test_site HailJoinedRecords, HailHistory, HailAddresses, HailSwathLayers, HailJoins (run by class)",
+   "status": "pass",
+   "evidence": "OK for each class: 15, 34, 23, 27 and 8 tests; no skips. Logs in /home/user/hail-b5/out/b2r2/browser/final-r2/owner-tests/."
+  },
+  {
+   "gate": "Full suite passes with 0 failures (python -m unittest discover -s tests, venv python)",
+   "status": "fail",
+   "evidence": "Ran 1848 tests in 350.703s; FAILED (failures=1, skipped=5). The failure is test_addresses.WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number: the code writes 'its completeness varies from county to county' (D74), the test still expects 'coverage varies' (test_addresses.py line 870). Not a browser test. Log: /home/user/hail-b5/out/b2r2/browser/final-r2/full-suite.log."
+  },
+  {
+   "gate": "Store-dependent browser and summary tests against the combined store (HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store)",
+   "status": "pass",
+   "evidence": "SheetFiveSeasonsInTheBrowser Ran 8 OK; MapBlocksForTheBrowser Ran 7 OK; StationPicksAndNames Ran 8 OK; TownPartialSeasonTests Ran 7 OK. The store was read in place: 45,878 files, none written (none newer than the build). Logs in /home/user/hail-b5/out/b2r2/browser/final-r2/parity-tests/."
+  },
+  {
+   "gate": "Self-test: python desktop/launcher.py --selftest payload",
+   "status": "pass",
+   "evidence": "PASS payload 1.0.0, exit 0 (/home/user/hail-b5/out/b2r2/browser/final-r2/check/selftest.log)."
+  },
+  {
+   "gate": "Sheet smoke: tools/smoke_map.py <build> --addresses --history (CI form, no --store), at 390 and 1280 px",
+   "status": "fail",
+   "evidence": "Exit 1 with 269 failure lines: 236 lines for the six joined sections in the B2 structure (the sheet's joined sections are [], expected the six in order); 8 five-season gust cells (thousands separator, gate); 6 'what this is' sentences (they sit in section notes, which are not rendered); 2 gate radar-day rows; 2 template braces; 2 gate warnings and 2 Benchland report rows; 6 unavailable-part sentences (reports, records, zones, stations); 4 cross-day warnings rows; 1 B3 budget line (678,563 against 665,600). Passed: the first-screen rule, the fetch budgets and the zero off-site rule. Log: /home/user/hail-b5/out/b2r2/browser/final-r2/smoke-ci.log."
+  },
+  {
+   "gate": "Three-cell words exact: Billings, Benchland 792,1998 and the gate 797,1986 (D75(b))",
+   "status": "fail",
+   "evidence": "Billings and Benchland: every table cell equals Python's words plus its coverage line (138 of 138 each). Gate: two five-season gust cells differ ('Data unavailable 1464 days missing' against Python's '1,464 days missing')."
+  },
+  {
+   "gate": "Table inside the first screen below the address and live lines at 390 and 1280 px (gate B5-11)",
+   "status": "pass",
+   "evidence": "First row at 332 px (390 x 844) and 191 px (1280 x 800); the smoke's first-screen rule reports no failure."
+  },
+  {
+   "gate": "Every cell with a unit and a kind word (gate B5-11)",
+   "status": "pass",
+   "evidence": "Each row head has its kind word and unit (24 rows per sheet); the smoke's unit rule reports none missing. On the phone card the unit is on its own line below the kind word (item 6)."
+  },
+  {
+   "gate": "Each file a tap fetches under the tile budget (D75(c); map.json hail.budget.tile_events_gzip_bytes = 100,000)",
+   "status": "pass",
+   "evidence": "Largest file on a tap 40,074 bytes gzip (smoke, desktop tap at Billings); largest on an open 18,052 bytes gzip."
+  },
+  {
+   "gate": "Phone view at zoom 15 with every layer on under the phone budget (D70; D82(b): 700,000 bytes gzip)",
+   "status": "pass",
+   "evidence": "678,563 bytes gzip (B3 files, shell and data), pictures apart; under 700,000. The smoke's B3 line still uses 665,600 and fails (see the smoke gate)."
+  },
+  {
+   "gate": "Zero off-site requests",
+   "status": "pass",
+   "evidence": "0 requests off the local server in 14 opens; the smoke reports no off-site request."
+  },
+  {
+   "gate": "Words rules over the built sheet (D13 forbidden terms; tests/words_rules.py as the one list)",
+   "status": "partial",
+   "evidence": "summary.forbidden_hits on each sheet's visible text: no hits at 7 cells. Partial coverage, because the sections render only their leads (item 1)."
+  },
+  {
+   "gate": "No em dash and no banned name in added lines",
+   "status": "pass",
+   "evidence": "0 em dashes in the 1,581 added lines of the worktree diff against HEAD. No banned name; the only 'claude' strings are branch names, allowed by D43."
+  },
+  {
+   "gate": "Decision 7 audit: no owner, parcel, place-type or building-use field read, stored or shown",
+   "status": "pass",
+   "evidence": "No match in map.js for owner, parcel, place type, building use, land use, placement, occupancy, tax or assessment."
+  },
+  {
+   "gate": "No literal sentence, unit, threshold, constant or colour in map.js (D29, D41, D71)",
+   "status": "fail",
+   "evidence": "No sentence literal in the sheet code and no colour literal; unit scale literals (100 and 10) and season bounds remain (item 15)."
+  },
+  {
+   "gate": "Sheet text equals describe_summary for the five cells, text for text (round-2 item 4)",
+   "status": "fail",
+   "evidence": "Table cells exact at four of five cells; notes, sections and their rows not exact at any of the five (item 9)."
+  },
+  {
+   "gate": "Partial radar season follows D82(c) (Python words, mirrored by the browser)",
+   "status": "fail",
+   "evidence": "A 109-day-missing season reads '0 days' and 'No radar estimate of 0.25 in or more' on the sheets (item 12)."
+  },
+  {
+   "gate": "Flag-off identity, sample build, and the combined-store build with every flag",
+   "status": "partial",
+   "evidence": "The combined-store build with every flag completed (exit 0, 1 min 40 s; /home/user/hail-b5/out/b2r2/browser/final-r2/build.log). The flag-off identity and the sample build were not run here."
+  },
+  {
+   "gate": "Chromium smoke_pages at 390 and 1280 px",
+   "status": "not run",
+   "evidence": "tools/smoke_pages.py was not run in this check."
+  },
+  {
+   "gate": "Unread candidates 602,1396 and 607,1428 (D62, D72)",
+   "status": "partial",
+   "evidence": "The unread line is present at 602,1396. Gust cells differ by the separator and station notes print placeholders (item 10)."
+  }
+ ],
+ "store_candidate": "/home/user/hail-b5/out/combined/store (read in place; hash-identical to /home/user/hail-b5/out/b2/products-fix/fixer-c/store; 45,878 files; not written)",
+ "needed_from_others": [
+  "owner 2 (website/build.py and website/summary.py): write hail.summary.section_data in map.json. The browser reads these paths (map.js 4780-4786, and the section code 4768-5486): kinds (radar, report, record, warning, zone, station, reference, unavailable, each with the kind word Python gives it), kind_what, rules (by_label, product_labels, product_patterns, zone_labels, zone_split, time_pattern, split, rules, default, as joins._section_of gives them), section_keys (each section id with its note keys), extra_notes, season_rows (per section: kind, keys, names), row_labels, partial_marker, roof.lines (ice_dam_weather_days, wind_gust_days, snowfall_season and every other roof line key), roof.reference_line, roof.partial_keys, roof.extra, roof.held_names, words.county_word, words.report_near, words.span_to, words.nearest_station, words.tail_five_comma, words.tail_five_roof, words.roof_part, words.roof_part_lower, words.no_miles. Check: no '[missing words key: summary.section_data' text on any of the 14 sheets (/home/user/hail-b5/out/b2r2/browser/final-r2/check/browser_results2.json).",
+  "owner 2 (website/build.py): add summary.rule.percent = {scale: 100, decimals: 1, step: 0.1} to map.json (sumPercent and sumSharePct read scale, decimals and step, map.js 4379-4394). Check: the Benchland snowfall note on the sheet reads 'MOCCASIN EXP STN, 3.2 miles from this spot, is not used: 14.8 percent of the days 2020 to 2025 have a value for snowfall; the rule needs at least 80 percent.' with no placeholder.",
+  "owner 2 (website/build.py): summary.nouns needs the detection and warning nouns the browser asks for (the sheet shows '[missing words key: nouns]' in 'Radar detection: [..] within 2 miles' and 'Warning: [..] covered this cell'). Check: no 'nouns' placeholder on the 14 sheets.",
+  "owner 2 (website/summary.py, D37 and D82(c)): a season with 109 days missing (under 95 percent coverage) must not read '0 days' or 'No radar estimate of 0.25 in or more'. It reads 'Data unavailable for 2021-22' with its days missing, and 'Largest radar hail estimate at this cell' shows the largest day present with its coverage line. Check: cells 921,2149 and 797,1986, rows radar_1in and radar_max, 2021-22.",
+  "owner 2 with owner 3 (D78(c)): station display names in title case ('Billings WTP', 'Harlowton 11NW') in the tile lists, the summary files and the stations block, with the GHCN name beside as ghcn_name. Check: the 921,2149 snowfall row reads 'Billings WTP', not 'BILLINGS WTP'.",
+  "owner 2 (tests): a test that fails when the sheet's visible text holds '[missing words key' or a stray '{' template brace, for the sample and the real-store builds; and a test that counts each section's rows at the five cells against history_view's rows. The four-cell note test compares the browser with itself and passed while placeholders showed.",
+  "owner 4 (tools/smoke_map.py): (a) check_joins (236 failure lines) follows the eleven-section structure with the rows and notes inside each section, or the supervisor re-decides the B2 six sections; (b) ADDRESS_FETCH_BUDGET_GZIP (650 KB, 665,600 bytes) reads map.json hail.budget.phone_gzip_bytes (700,000, D82(b)); the measured B3 figure is 678,563 bytes gzip; (c) the live-line check needs a build with at least one live Montana hail value at a cell (the smoke notes that this build has none).",
+  "owner 5 (docs and record: b5-verification.json, ROADMAP, DECISIONS): do not mark the eleven sections, the sheet smoke or the browser gates as passed until the smoke passes on a clean build; record this check's figures: table cells exact at four of five cells, no section rows rendered at the five cells, phone view 678,563 bytes gzip against 700,000, and the Python words for the 2021-22 radar season (D82(c))."
+ ],
+ "tests_tail": "Owner tests, run by class (python -m unittest tests.test_site.<Class>): HailJoinedRecords Ran 15 tests OK; HailHistory Ran 34 OK; HailAddresses Ran 23 OK; HailSwathLayers Ran 27 OK; HailJoins Ran 8 OK. Full suite (python -m unittest discover -s tests -v): Ran 1848 tests in 350.703s; FAILED (failures=1, skipped=5); failure: test_addresses.WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number (AssertionError: 'completeness' != 'coverage', test_addresses.py line 870); skipped: four need HAIL_PARITY_STORE (run with the combined store: SheetFiveSeasonsInTheBrowser Ran 8 OK; MapBlocksForTheBrowser Ran 7 OK; StationPicksAndNames Ran 8 OK; TownPartialSeasonTests Ran 7 OK), one needs ADDRESS_FRAMEWORK_ZIP (not run). Self-test: PASS payload 1.0.0 (exit 0). Smoke (tools/smoke_map.py <build> --addresses --history, CI form): exit 1, 269 failure lines (see gates). Browser sheet check: 14 of 14 opens loaded, 0 off-site requests, 0 page errors. Full logs: /home/user/hail-b5/out/b2r2/browser/final-r2/full-suite.log, /home/user/hail-b5/out/b2r2/browser/final-r2/owner-tests/, /home/user/hail-b5/out/b2r2/browser/final-r2/parity-tests/, /home/user/hail-b5/out/b2r2/browser/final-r2/smoke-ci.log, /home/user/hail-b5/out/b2r2/browser/final-r2/check/browser_results2.json."
+}

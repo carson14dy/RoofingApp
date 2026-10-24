@@ -1005,3 +1005,18 @@ the smoke's DOM reader).
   rendered in the DOM so the text comparison and the smoke read all of them, and the control only toggles visibility.
   (b) The season rule's 95 percent and the unit scales come from map.json (summary.rule's season share; summary.units
   with a scale per unit), never from literals in map.js; a parity test covers the season rule as the share rule has one.
+
+## Supervisor rulings on the display names (2026-10-24 14:30 UTC; D84)
+The products completion builder wrote the display names (D78(c)) into the adopted store (805 summary files, 4,396,079
+bytes; tile lists 67,832,479 bytes raw, largest 3,804 bytes gzip; the stations block 826 entries; 0 names differ from
+display_name(ghcn_name)), moved the Billings gate to towns.json's point (WTP 1.2 miles, the airport 2.7), removed
+warnings_row, fixed the SWDI row and the joins comment, and regenerated the fixture (485,066 bytes outside hail/a). Its
+two questions:
+- D84 **Names.** (a) The IEM gust names keep B2's rule (joins.py near line 1135 title-cases an all-capital IEM name, so
+  "Billings/Logan Intl"), which is what D78(c) meant by "as the source gives them" after B2's own step; no rebuild of the
+  joins for names. (b) In the GHCN display rule, initialisms keep their capitals (WTP, AP, RS, NP, ASOS, NWS, FAA, USGS,
+  SNOTEL) and abbreviations of words are title-cased like words (INTL as Intl, EXP as Exp, STN as Stn, FT, ST, MT, CO, RCH,
+  LK, CRK, MTN), so "Billings Intl AP" and "Moccasin Exp Stn"; compass and distance tokens keep their case (11NW, 1.7 E,
+  SSE). If the products pass's check shows INTL, EXP or STN still in capitals, the fixer of the re-check round applies
+  this rule, rebuilds the station part into the adopted store and regenerates the fixture; the summary and the browser
+  show the names as given.
