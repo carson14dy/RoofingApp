@@ -1,0 +1,348 @@
+{
+ "owner": "fixer 1 (site-2), round b2r6",
+ "worktree": "/home/user/wt/wt-b5",
+ "branch_head": "d083d45 (uncommitted changes in the worktree; nothing committed or pushed by me)",
+ "store": "/home/user/hail-b5/out/combined/store (read only; adopted)",
+ "files_owned": [
+  "website/summary.py",
+  "website/build.py",
+  "tests/test_site.py",
+  "tests/test_summary.py"
+ ],
+ "files_not_touched": "no other repository file was edited by this fixer; swath.py, map.js, smoke_map.py, website.yml and test_swath.py were changed by other fixers during this pass",
+ "sheet_function": {
+  "name": "website.summary.describe_sheet(store, row, col, now)",
+  "note": "D88(p) allows summary.describe_sheet in place of describe_summary(town=None) carrying rows: describe_summary has no joined records or radar words, so describe_sheet composes them and the rows are built once by summary.sheet_rows.",
+  "returns": {
+   "summary": "describe_summary(store, row, col, now, town=None): table (rows, partial, held), sections (lead, heading, kind), roof, how_made, about",
+   "radar": "hail.describe(index, cell_events, now, sample=False)",
+   "joined": "{\"sections\": [join_view(...) x6]} from joins.describe_joins at the cell centre (no spot)",
+   "built": "{\"rows\": {section id: [{label, text[, note]}]}, \"notes\": {section id: [text]}} for the eleven ids in SECTION_ORDER",
+   "section_order": "list(SECTION_ORDER) = [hail, wind, storms, temperature, rain, snow, flooding, ice, heat, roof, made]"
+  },
+  "town_page": "build.history_view calls summary.sheet_rows (build.history_sections is an alias): one row builder for both surfaces",
+  "sample_counts_at_921_2149": {
+   "rows": {
+    "hail": 74,
+    "wind": 270,
+    "storms": 23,
+    "temperature": 5,
+    "rain": 96,
+    "snow": 421,
+    "flooding": 25,
+    "ice": 21,
+    "heat": 8,
+    "roof": 0,
+    "made": 0
+   },
+   "notes": {
+    "hail": 12,
+    "wind": 8,
+    "storms": 3,
+    "temperature": 3,
+    "rain": 4,
+    "snow": 12,
+    "flooding": 8,
+    "ice": 3,
+    "heat": 2,
+    "roof": 0,
+    "made": 26
+   }
+  }
+ },
+ "keys_for_browser": {
+  "hail.summary.section_order": "the eleven ids in order (new)",
+  "hail.summary.section_data.words.all_clear": "This is not an all-clear. (new; the same string as hail.summary.words.all_clear, which sumClear reads)",
+  "hail.summary.section_data.section_keys.roof / .made": "[] each (new; the browser reads section_keys with a fallback to an empty list)",
+  "hail.summary.indicators.roof_lines.hail_signatures.label and hail.summary.section_data.roof.lines.hail_signatures.label": "now \"Hail signatures within 2 miles (days)\" (was \"Radar detections within 2 miles (days)\")",
+  "unchanged": "hail.summary.units.in.scale 100, decimals 2; hail.summary.rule.season (start_month 7, start_day 1, end_month 6, end_day 30); hail.budget.phone_gzip_bytes 700000"
+ },
+ "keys_for_smoke": {
+  "functions": [
+   "summary.describe_sheet",
+   "summary.SECTION_ORDER (tuple of 11 ids)",
+   "summary.SECTION_KEYS (11 keys; roof and made map to ())",
+   "summary.SECTION_WORDS (\"all_clear\" key)",
+   "summary._split_kind and summary._section_of (the real functions; build._split_kind and build._section_of are aliases)"
+  ],
+  "describe_sheet_keys": [
+   "summary",
+   "radar",
+   "joined",
+   "built",
+   "section_order"
+  ],
+  "built_shape": "built.rows[id] = list of {label, text} (joined rows also note); built.notes[id] = list of strings; built.notes.made ends with summary.TIMES_NOTE"
+ },
+ "items": [
+  {
+   "id": "1",
+   "item": "D88(i): SECTION_ORDER = tuple(SECTION_KEYS); inline tuple uses it; build writes hail.summary.section_order; key and town-page order tests",
+   "status": "done",
+   "applied": [
+    "website/summary.py:190-205 SECTION_KEYS gains roof and made (empty tuples) and SECTION_ORDER = tuple(SECTION_KEYS)",
+    "website/summary.py:2878 _sections loops over SECTION_ORDER (was the inline tuple)",
+    "website/build.py:1047 HISTORY_SECTIONS = sm.SECTION_ORDER",
+    "website/build.py:1134-1136 b5_map_blocks writes summary.section_order = list(summary.SECTION_ORDER)",
+    "tests/test_site.py:4256 MapBlocksForTheBrowser.test_the_section_order_is_one_constant_for_map_json_and_the_town_page (key equals constant, section list equals it, town/billings.html sec ids in order)",
+    "tests/test_summary.py:2209 SheetRowsTests.test_the_section_order_is_the_keys_in_the_brief_order"
+   ],
+   "evidence": "every-flag build: hail.summary.section_order = the eleven ids; Billings page sec-ids appear in order; SECTION_ORDER equals the test_site SECTIONS tuple"
+  },
+  {
+   "id": "2",
+   "item": "D88(p) and S-4: one Python source for the sheet's text; build.history_view uses it; the parity tests compare against one function; say which function and its keys",
+   "status": "done",
+   "applied": [
+    "website/summary.py:3110-3320 new block: SHOW_ALL, GAUGE_ROW, TIMES_NOTE, JOIN_HEADS, JOIN_OWN_LINES, _split_kind, _section_of, _line_pattern, _line_part, join_view, _joined_coverage, _per_season, _window_lines, sheet_rows (the moved history_sections body), describe_sheet",
+    "website/build.py:681-693 JOIN_HEADS, JOIN_OWN_LINES, _line_pattern, _line_part, join_view become aliases of summary",
+    "website/build.py:1049 _split_kind and _section_of aliases; 1225-1229 history_sections = sm.sheet_rows, _joined_coverage, _per_season, _window_lines aliases",
+    "website/build.py HISTORY_WORDS gauge_label, times, show_all now read summary constants; JOIN_SITE_WORDS show_all too",
+    "tests/test_site.py:4700 module_sheet(site, cell, now) returns sm.describe_sheet(site, row, col, now)"
+   ],
+   "in_place_verified": [
+    "five-cell module output (921,2149; 792,1998; 797,1986; 753,2230; 920,1899) equals HEAD's except one roof label (scripts/sheet_head.json vs sheet_new.json): summary, radar, rows and notes identical",
+    "17 town pages of the every-flag build: 0 changed lines against HEAD's build",
+    "pyflakes clean on the moved code (one pre-existing unused import, see skipped)"
+   ],
+   "evidence": "tests.test_summary SheetRowsTests passes; SheetAgreesWithTheModule and FiveSeasonHistory pass in test_site"
+  },
+  {
+   "id": "3",
+   "item": "D88(l): season-rule parity covers 347 of 365 and 348 of 366 days (2023-24 has 366) and the SEASON_RULE bounds",
+   "status": "done",
+   "applied": [
+    "tests/test_site.py:4958-4968 (in test_the_browser_season_rule_is_pythons_at_every_day_count_and_the_bounds): (365, 347) True and (365, 346) False; (366, 348) True and (366, 347) False; rule[season] equals summary.SEASON_RULE; 2023-24 bounds are 2023-07-01 to 2024-06-30 and span 366 days"
+   ],
+   "in_place_verified": [
+    "the existing test already compares the browser's 95 percent rule with Python's at every day count 0 to 366 for totals 365 and 366, and each label's bounds with season_bounds()"
+   ],
+   "evidence": "SummaryContract (13 tests) and the legend test pass in an isolated run (14 tests OK)"
+  },
+  {
+   "id": "4",
+   "item": "D88(r): hailInches pin asserts behaviour (no literal 100 or 2; reads units.in.scale and units.in.decimals); budget pin equals build.PHONE_GZIP_BUDGET equals map.json hail.budget.phone_gzip_bytes equals 700,000",
+   "status": "done (already in place from round 3 and run 1; one line added)",
+   "applied": [
+    "tests/test_site.py:4277 explicit assertion: map.json hail.budget.phone_gzip_bytes equals site.PHONE_GZIP_BUDGET (the dict equality at :4275 remains)"
+   ],
+   "in_place_verified": [
+    "tests/test_site.py ~1680-1725 hailInches pin: no 100 or 2 in the function, U.scale and U.decimals present, node behaviour with scale 10",
+    "website/static/map/map.js:2397 hailInches reads U.scale and U.decimals",
+    "tests/test_site.py:4278 site.PHONE_GZIP_BUDGET == 700_000; website/build.py:1121 PHONE_GZIP_BUDGET = 700_000"
+   ],
+   "evidence": "test_the_map_script_rounds_sizes_down_to_the_hundredth and the budget test pass in the full suite"
+  },
+  {
+   "id": "5",
+   "item": "D88(s) and D87(b): the partial count sentence's tail is written once in the words the browser reads (section_data words), and the town page prints it from the same words",
+   "status": "done",
+   "applied": [
+    "website/summary.py:149-160 SECTION_WORDS dict (span_to ... county_word and all_clear: ALL_CLEAR)",
+    "website/summary.py _section_data(): \"words\": dict(SECTION_WORDS)",
+    "website/summary.py:2215 _town_five ends with SECTION_WORDS['all_clear'] (was the ALL_CLEAR constant)"
+   ],
+   "key_named": "hail.summary.section_data.words.all_clear (= summary.words.all_clear, the key sumClear reads; both are the same string written from ALL_CLEAR)",
+   "tests": [
+    "tests/test_summary.py:2232 SheetRowsTests.test_a_partial_count_sentence_ends_with_the_words_all_clear (exact text of the Billings partial count sentence; the tail equals the section_data key)"
+   ],
+   "evidence": "Billings page: 'Warning: 19 severe thunderstorm warnings covered this spot in the five seasons; 2 more in 2026-27 so far. This is not an all-clear.'"
+  },
+  {
+   "id": "6",
+   "item": "D88(b): held lines lead 'Data unavailable: {label}. {why} This is not an all-clear.'; station and radar lines carry their kind word once and the label's parenthetical keeps its unit word; held-row notes follow the same words; held tests check the lead",
+   "status": "done (run 1 did most; finished here)",
+   "applied": [
+    "website/summary.py:709 ROOF_LINES hail_signatures label: \"Hail signatures within 2 miles (days)\" (was \"Radar detections within 2 miles (days)\"; the kind word 'Radar detection' appeared twice)",
+    "tests/test_summary.py:470 test_held_row_has_the_four_reasons: exact held notes, each note startswith 'Data unavailable: {label}. ' and endswith the all-clear (was word membership)",
+    "tests/test_summary.py:2242 SheetRowsTests.test_a_roof_label_keeps_its_unit_word_and_no_kind_word (every ROOF_LINES parenthetical has no kind word)"
+   ],
+   "in_place_verified": [
+    "website/summary.py:541-556 WORDS_INDICATORS['held'] leads with 'Data unavailable: {label}.' (HELD_NAMES at :722)",
+    "_held_row (summary.py ~2250) carries the four held words as the table's held-row notes",
+    "ROOF_LINES labels: '(days)', '(inches)', '(count)' only",
+    "tests/test_summary.py:1141 test_a_held_line_leads_with_its_kind_word_once (startswith); :1151 test_the_built_held_lines... (exact text on the sheet and the town page)",
+    "Billings page: 'Station reading: Snowfall, July to June (inches). Data unavailable for the five seasons: ...' and 'Data unavailable: Lightning. ...' (kind word once)"
+   ],
+   "evidence": "tests.test_summary: Ran 152 tests OK"
+  },
+  {
+   "id": "7",
+   "item": "Tests (test_summary, test_site, full suite), scratch build from the adopted store with every flag, read Billings and Benchland, delete the build, write check.json",
+   "status": "done with the failures named below",
+   "applied": [
+    "scratch builds under /home/user/hail-b5/out/b2r6/site/: baseline every-flag and history-only (HEAD code) and the new every-flag and history-only builds; each deleted after its numbers and pages were read"
+   ],
+   "build_results": {
+    "every_flag_new": {
+     "rc": 0,
+     "map_json_raw": 464566,
+     "map_json_gzip9": 88532,
+     "seconds": 29.5
+    },
+    "history_only_new": {
+     "rc": 0,
+     "map_json_raw": 162512,
+     "map_json_gzip9": 32433,
+     "gate": 163840,
+     "headroom": 1328
+    },
+    "every_flag_head_baseline": {
+     "map_json_raw": 464401
+    },
+    "compare_against_head": "map.json: 6 differences (roof label x2, section_keys roof and made added, section_data.words.all_clear added, summary.section_order added); town pages: 0 changed lines in 17 pages"
+   },
+   "billings_read": "partial count sentences end 'This is not an all-clear.'; held lines lead 'Data unavailable: <label>.'; section ids in SECTION_ORDER",
+   "benchland_read": "no town page exists for grid cell 792,1998 (not one of the 17 towns); read through describe_sheet on the adopted store: state loaded, hail 29 rows, wind 219 rows, storms 32 rows, temperature 5 rows; How this was made ends with the times note",
+   "tests_tail": "see tests_tail"
+  },
+  {
+   "id": "8",
+   "item": "D89(e): test_site pins 'not observed hail and not an inspection' (the swath words; swath.py changed by words-2 in this run)",
+   "status": "done",
+   "applied": [
+    "tests/test_site.py:3501 HailSwathLayers.test_the_legend_has_every_class_with_its_inches_and_the_uncoloured_sentence: assertIn 'not observed hail and not an inspection' in L['legend_note'] (was 'not observed hail and not damage')"
+   ],
+   "in_place_verified": [
+    "website/swath.py:107-108 legend_note and :110 sample_legend_note read 'not observed hail and not an inspection' (words-2's change, now in the tree); tests/test_swath.py:757 and :763 follow (words-2)",
+    "tests/test_site.py:3548 About pin already had 'not observed hail and not an inspection'"
+   ],
+   "discrepancy": "D89(e) names test_site.py line 3615 as pinning the sentence. The line there (now 3625) is the map-script forbidden-fragment list ('not observed', 'not damage' must not appear in the live swath code). It pins no swath sentence, so it is unchanged.",
+   "evidence": "the legend test passes in the isolated run (run last, as D89(e) asks)"
+  },
+  {
+   "id": "9",
+   "item": "D89(g): SummaryContract test near line 4935 passes once the browser-2 change lands; run it last and report",
+   "status": "done: passes now",
+   "evidence": "isolated run: SummaryContract 13 tests OK (includes test_the_browser_reads_the_season_bounds_and_the_inch_scale_from_map_json and the season rule test). map.js last changed 20:51:41 (run 1 browser change, present at HEAD); no browser-2 edit was needed for these pins at the time of the run"
+  },
+  {
+   "id": "10",
+   "item": "D90(c): remove the em-dash in test_site near line 403; change the pinned source text the same way",
+   "status": "done",
+   "applied": [
+    "tests/test_site.py:403 assertEqual(site.fmt_time(None), \"-\") (was an em-dash)",
+    "website/build.py:503 and :506 fmt_time returns \"-\" for None (was the em-dash; the pinned source text)",
+    "website/build.py:516 and :518 the num and feet Jinja filters return \"-\" for None (were em-dashes)"
+   ],
+   "in_place_verified": [
+    "owned files: 0 em-dashes and 0 en-dashes (summary.py, build.py, test_site.py, test_summary.py)",
+    "no test pins the placeholder elsewhere (the word test forbids only em and en dashes in swath words)"
+   ],
+   "not_changed": "em-dashes remain in other repository files (listed under needed_from_others)"
+  },
+  {
+   "id": "11",
+   "item": "round-3 site fixer's work (fixes.site, 20:20 to 20:33 UTC): keep, do not redo",
+   "status": "kept",
+   "in_place": [
+    "summary.HELD_NAMES and held lines (R1-F1)",
+    "test_site SheetAgreesWithTheModule five-cell subTests (R1-F2)",
+    "test_site gate comment without measured sizes (R1-F3)",
+    "summary_reads and SummaryReadsReader (R1-F6)",
+    "hailInches pins at test_site ~1680-1725 and test_summary held pins at ~1138-1165 (kept; my edits only add to them)"
+   ]
+  },
+  {
+   "id": "12",
+   "item": "workflow pins that count python -m unittest lines (follow-on from D88(a) parity step in website.yml)",
+   "status": "done (my pins follow the workflow; the smoke owner owns the workflow)",
+   "applied": [
+    "tests/test_site.py ~1885 HailHistory.test_the_workflow_passes_the_flag_to_branch_previews_and_runs_its_tests: unit lines == 2 (offline unit step and the real-store parity step), HAIL_PARITY_STORE: _site asserted",
+    "tests/test_site.py ~3161 HailAddresses.test_the_workflow_previews_pass_the_addresses_flag_and_the_tests_and_smoke_run: unit lines == 2",
+    "tests/test_site.py ~3311 B3Completion.test_the_workflow_installs_pyproj_and_pyogrio...: unit lines == 2"
+   ],
+   "evidence": "each passes in an isolated run; the pyproj pin also passes in the full suite"
+  }
+ ],
+ "needed_from_others": [
+  {
+   "owner": "smoke (owner 4)",
+   "file": "tools/smoke_map.py",
+   "need": "tools/smoke_map.py no longer defines ADDRESS_FETCH_BUDGET_GZIP (HEAD line 2075: 650 * 1024). tests/test_site.py:3176 (HailAddresses.test_the_smoke_test_has_the_address_checks) errors with AttributeError. Either keep the constant at 650 * 1024 or tell site-2 the new name; I did not change my pin for a name I was not given.",
+   "status": "open; the one error left in test_site"
+  },
+  {
+   "owner": "smoke (owner 4)",
+   "file": "tools/smoke_map.py, tools/smoke_pages.py, tests/test_website_workflow.py",
+   "need": "compare the sheet with summary.describe_sheet(store, row, col, now) (keys above) and take the order from summary.SECTION_ORDER (S-5); website.yml's parity step must match the pins now counting two unit lines (test_site ~1885, ~3161, ~3311). Any change of that count is a change to those pins."
+  },
+  {
+   "owner": "browser (owner 1)",
+   "file": "website/static/map/map.js",
+   "need": "none required by these items. Optional: read sdGet(S, \"words.all_clear\") where a count tail is printed (same string as sumWord(S, \"all_clear\")). Note: the browser's hailInches and season functions already read map.json at HEAD."
+  },
+  {
+   "owner": "docs (owner 5)",
+   "files": "docs/DESIGN.md, docs/ROADMAP.md, README.md, research/hail-history/validation-evidence/b5-verification.json",
+   "need": "record the measured figures: history-only map.json 162,512 bytes raw, gzip -9 32,433 bytes, gate 163,840, headroom 1,328 bytes (D90(b)); every-flag map.json 464,566 raw and 88,532 gzip -9; phone budget 700,000 gzip and tile budget 100,000 gzip unchanged; the ROADMAP budget decision for the next growth of the history blocks (D90(b))."
+  },
+  {
+   "owner": "words / products / docs",
+   "files": "website/gridded.py (4), website/sample.py (2), website/satellite.py (2), website/templates/index.html (3), website/templates/town.html (2), website/static/style.css (1), tests/test_gridded.py (2), plus docs and payload files",
+   "need": "em-dashes outside the four site files (D90(c) covers only tests/test_site.py:403). Not changed here: not my files."
+  },
+  {
+   "owner": "products / shared",
+   "file": "website/joins.py or the about_terms function in website/build.py",
+   "need": "none for these items. The unused 'from . import joins as jn, snowgrid' in build.about_terms predates this pass (HEAD line 1435); left as is."
+  }
+ ],
+ "skipped": [
+  {
+   "item": "D88(p) literal: describe_summary(town=None) returns the rows",
+   "reason": "describe_summary has no joined records or radar words, so the rows cannot come from it alone; D88(p) allows summary.describe_sheet, which returns them."
+  },
+  {
+   "item": "D89(e) line 3615 'pins the sentence'",
+   "reason": "the line (now 3625) is the forbidden-fragment list of the map script; it pins no swath sentence. Left unchanged, and reported here."
+  },
+  {
+   "item": "pyflakes unused 'joins as jn' in build.about_terms",
+   "reason": "pre-existing (HEAD line 1435), outside the move, not in the ruling; left as is."
+  },
+  {
+   "item": "R1-F10 wording in the brief and other brief-only items",
+   "reason": "not repository files; owned by the supervisor."
+  }
+ ],
+ "tests_tail": {
+  "test_summary (HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store)": "Ran 152 tests in 1.910s / OK (final run after all edits)",
+  "test_site, full module (chain run 21:00:22 to 21:07:33, store set)": "Ran 269 tests in 430.218s / FAILED (failures=2, errors=1, skipped=2). Failures: test_the_workflow_installs_pyproj_and_pyogrio... and test_the_workflow_previews_pass_the_addresses_flag... (both my pins, stale: they were fixed after the module was loaded; each passes now in an isolated run). Error: test_the_smoke_test_has_the_address_checks (smoke-owned constant missing; still failing; see needed_from_others). Skips: the two named fixture-cell subtests (R1-F2: cells 753,2230 and 920,1899; no adopted-store skip).",
+  "full suite, python -m unittest discover -s tests (store set; 21:07:33 to 21:15:53)": "Ran 1953 tests in 498.194s / FAILED (failures=1, errors=1, skipped=3). Failure: test_the_workflow_previews_pass... (my pin; stale, fixed afterwards, passes now in an isolated run). Error: test_site.HailAddresses.test_the_smoke_test_has_the_address_checks (smoke constant; smoke owner). Skips: 2 named fixture-cell subtests and 1 test_addresses test that needs ADDRESS_FRAMEWORK_ZIP (round-3 count: 3, unchanged).",
+  "after the last fixes (isolated runs, store set)": {
+   "HailAddresses.test_the_workflow_previews...": "ok",
+   "B3Completion.test_the_workflow_installs_pyproj...": "ok",
+   "HailAddresses.test_the_smoke_test_has_the_address_checks": "ERROR (AttributeError: smoke_map has no attribute ADDRESS_FETCH_BUDGET_GZIP)",
+   "SummaryContract (13) + HailSwathLayers legend test": "Ran 14 tests in 45.696s / OK",
+   "tests.test_summary": "Ran 152 tests in 1.910s / OK"
+  },
+  "logs": [
+   "/home/user/hail-b5/out/b2r6/site/logs/sel1.log (selected classes, first pass: 90 tests, 2 failures fixed afterwards)",
+   "/home/user/hail-b5/out/b2r6/site/logs/test_site_full.log",
+   "/home/user/hail-b5/out/b2r6/site/logs/full_suite.log",
+   "/home/user/hail-b5/out/b2r6/site/logs/last_contract_legend.log"
+  ]
+ },
+ "commands": [
+  "/home/user/hail-b1/venv/bin/python -B -m unittest tests.test_summary (HAIL_PARITY_STORE set) -> Ran 152 tests OK",
+  "/home/user/hail-b1/venv/bin/python -B -m unittest -v tests.test_site (HAIL_PARITY_STORE set; TMPDIR under out/b2r6/site/tmp) -> Ran 269 tests FAILED (failures=2, errors=1, skipped=2) (see tests_tail)",
+  "/home/user/hail-b1/venv/bin/python -B -m unittest discover -s tests (HAIL_PARITY_STORE set) -> Ran 1953 tests FAILED (failures=1, errors=1, skipped=3) (see tests_tail)",
+  "python -B -m website.build --out <scratch> --sample --storm-layers --hail-history --hail-store <adopted> --hail-addresses --address-text on --now 2026-10-24T12:00:00Z -> rc 0, data/map.json 464,566 bytes (gzip -9 88,532); deleted after reading",
+  "python -B -m website.build --out <scratch> --sample --hail-history --hail-store <adopted> --now 2026-10-24T12:00:00Z -> rc 0, data/map.json 162,512 bytes (gzip -9 32,433); deleted after measuring",
+  "python -B -m pyflakes on the four owned files -> only the pre-existing unused 'joins as jn' (build.py about_terms)",
+  "scripts/snap_sheet.py (five cells, HEAD vs new) -> 5 differences, all the roof label"
+ ],
+ "scratch": {
+  "kept": [
+   "/home/user/hail-b5/out/b2r6/site/check.json",
+   "/home/user/hail-b5/out/b2r6/site/logs/ (test logs)",
+   "/home/user/hail-b5/out/b2r6/site/scripts/sheet_head.json and sheet_new.json (five-cell module snapshots, 827 KB each)"
+  ],
+  "deleted": [
+   "builds: base, hist-build, build (all deleted after reading)",
+   "scripts/base-out (baseline town pages and map.json copies)",
+   "tmp (empty)"
+  ]
+ }
+}

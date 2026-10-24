@@ -1203,3 +1203,29 @@ and the site fixer's report. Rulings:
   any edit it cannot attribute to an item (the stopped round-3 browser fixer may have left partial edits); node --check
   and the HailHistory tests gate its final state. (e) Run 2 starts when run 1's browser fixer has finished; no other
   workflow edits the worktree while run 2 runs.
+
+## Supervisor rulings on the run-2 site, browser and words checks (2026-10-24 21:25 UTC; D91)
+site-2 (/home/user/hail-b5/out/b2r6/site/check.json): SECTION_ORDER and hail.summary.section_order written; summary.describe_sheet
+is the one Python source of the sheet's text (keys summary, radar, joined, built, section_order); SECTION_WORDS all_clear in
+section_data.words; the roof label "Hail signatures within 2 miles (days)"; the em-dash placeholder replaced; map.json
+162,512 bytes raw with the history flag (headroom 1,328), 464,566 with every flag. browser-2: one line (a missing held
+word shows the placeholder, never "undefined"); everything else in place. words-2: swath and streets words done; the
+D89(a) exclusion is a documented FORECAST tuple in words_rules.py; About and Map scan clean. Rulings:
+- D91 **Reconciliation after run 2.** (a) tests/test_site.py near line 3176 follows the smoke's budget source: the pin
+  asserts that the smoke reads the phone budget from map.json's hail.budget (whatever name the smoke check gives), not a
+  module constant (site-3, after the smoke check). (b) The three pins that count the workflow's unittest lines (near
+  tests/test_site.py 1885, 3161 and 3311) follow the smoke's final website.yml (site-3 verifies against the file as
+  landed). (c) The SPC reports page (website/templates/reports.html lines 7 and 57, live on main before B5) joins the words
+  gate because the scan reads built pages: "No report is not evidence that no hail fell." reads "No report is not the
+  same as no hail."; "No hail or wind reports in or near Montana for this day." reads "No reports of hail or wind in or
+  near Montana for this day; that is not the same as no hail."; the pin near tests/test_site.py line 596 follows (site-3).
+  (d) tests/test_words_rules.py gains the D89(a) pins the words-2 fixer listed (pass and fail cases of the FORECAST rule)
+  (words-3). (e) Pre-existing em-dashes outside the B5 files (gridded.py, sample.py, satellite.py, index.html, town.html,
+  style.css, test_gridded.py, docs, payload) stay in this PR; the rule covers the lines B5 adds; ROADMAP lists the sweep as
+  a follow-up. (f) website.yml's offline unittest module list names tests.test_words_rules, with the pin in
+  tests/test_website_workflow.py (smoke-2). (g) The browser keeps reading summary.sections (the same eleven ids, from
+  map.json): no switch to hail.summary.section_order is required; the smoke asserts both equal summary.SECTION_ORDER.
+  (h) The partial count tail: the browser prints the table's partial line from summary.words.partial_counts and the town
+  page from SECTION_WORDS all_clear through section_data.words; both come from map.json and carry the same sentence; the
+  Recheck's three-cell comparison is the test that they agree. (i) Run 2b (site-3, words-3, smoke-2) runs after the smoke
+  fixer's check lands; then the Recheck (run 3).

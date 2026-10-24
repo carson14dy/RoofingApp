@@ -1,0 +1,758 @@
+{
+ "brief": "B5 part B2 run 2: browser-2 follow-up of run 1 (D87 to D90; D88(c), (l), (s), (b), (u); D89(b), (c); D90(d))",
+ "worktree": "/home/user/wt/wt-b5",
+ "branch": "claude/hail-b5",
+ "base_commit": "d083d45",
+ "owned_files": [
+  "website/static/map/map.js",
+  "website/static/map/map.css",
+  "website/templates/map.html"
+ ],
+ "owned_files_changed_this_run": [
+  "website/static/map/map.js (line 5227 only)"
+ ],
+ "map_js_sha256": "6ad7e44a2a13bcf9ae2cf48b450828b2dc815dc6a4dbb0e610a8ab4dc1710020",
+ "store": "/home/user/hail-b5/out/combined/store (read only; adopted, immutable)",
+ "build": "scratch site from git archive HEAD website with the edited map.js; --now 2026-10-24T12:00:00Z --storm-layers --hail-history --hail-addresses --hail-store <combined store>; deleted after the checks (639 MB)",
+ "items": [
+  {
+   "id": "D88(c)",
+   "brief": "picture status sentences end with the D41 sentence",
+   "status": "in place",
+   "file": "website/static/map/map.js",
+   "line": "3362-3363",
+   "evidence": "3362 ends 'No ... picture in this update. This is not an all-clear.'; 3363 ends 'The ... picture didn't load. This is not an all-clear.'; the labels at 3367-3369 stay; line 1320 ends the same way. Written by the 20:16:19 write (the run-1 browser fixer could not attribute it; its text matches D88(c) exactly and it is kept)."
+  },
+  {
+   "id": "D88(l)/D83(b)/D87(d)",
+   "brief": "inch scale and decimals from summary.units.in; season bounds from summary.rule.season",
+   "status": "in place",
+   "file": "website/static/map/map.js",
+   "line": "2397 (hailInches); 3402-3410 (sumSeasonOf); 3412-3418 (sumBounds); 3489-3495 (sumSeasonRule)",
+   "evidence": "hailInches reads U.scale and U.decimals from own(own(h.summary,'units'),'in') (summary.units.in: scale 100, decimals 2 in map.json); the function holds no literal 100 or 2. sumSeasonOf and sumBounds read summary.rule.season (start_month 7, start_day 1, end_month 6, end_day 30 in map.json); sumSeasonRule reads summary.rule.season_min and summary.rule.percent. The node pins (test_map_script_holds_no_threshold..., test_the_map_script_rounds_sizes_down..., SummaryContract season and inch pins) pass in the HailHistory and SummaryContract runs."
+  },
+  {
+   "id": "D88(s)",
+   "brief": "partial count sentence prints its tail from the words the site-2 fixer names",
+   "status": "pending site-2",
+   "file": "website/static/map/map.js",
+   "line": "4693-4719 (sumPartialLine; the tail is sumWord(S, 'partial_counts') at 4715); 4722-4731 (sumPartialRow)",
+   "evidence": "No literal tail in map.js: no 'so far', 'not a complete record', 'more in' or 'not counting' outside comments. The browser prints the table's partial line from summary.words.partial_counts, the same words Python's _partial reads (one source, D88(s) 'written once' holds today). The key that site-2 names for the tail (summary.section_data words, D88(s)) is not in this build and not in a site-2 check, so the browser switch is listed under needed_from_others."
+  },
+  {
+   "id": "D88(b)/D90(a)",
+   "brief": "held lines print as map.json gives them (no prefix added or removed by the browser)",
+   "status": "applied",
+   "file": "website/static/map/map.js",
+   "line": "5227 (histRoof held lines); 5515 (histGroups prints the held line with no label)",
+   "evidence": "The seven held words in map.json begin 'Data unavailable: <label>.' and end 'This is not an all-clear.' (for example 'Data unavailable: Roof ponding. No public weather record shows water on a roof. This is not an all-clear.'). The browser prints them unchanged; the roof held lines equal Python's in every compared case. Edit this run (only change to the file): a held id with no words now shows missingKey('summary.indicators.words.held.<id>') instead of the text 'undefined' (D88(u))."
+  },
+  {
+   "id": "D88(u)",
+   "brief": "no missingKey placeholder renders on the five cells and 602,1396 and 607,1428",
+   "status": "in place",
+   "file": "website/static/map/map.js",
+   "line": "the 37 lines that call missingKey (2397 to 5467, plus the definition at 2779)",
+   "evidence": "Final build, 390 and 1280 px, open by URL and by a tap: 26 cases compared, 0 text diffs, 0 placeholder tokens ('[missing', 'undefined', 'NaN', '[object', '{source}', '{quote}', '{count}', '{n}') in the sheet or the whole sheet panel (check_sheet2 scans both), 0 off-site requests, 0 errors. The sheet body at Billings measured 45,149 characters with 11 sections and 24 all-clear sentences (scratch probe). A static scan of every literal key the browser reads (sumWord, sdGet, joinsWord, stWord, lineT, indWord, W) finds each key in the final map.json. The tap on 920,1899 is skipped by design (a warning polygon takes the click), as in run 1; its open case is compared."
+  },
+  {
+   "id": "D89(b)",
+   "brief": "map.js line 175 reads 'the file was incomplete or unreadable'",
+   "status": "in place",
+   "file": "website/static/map/map.js",
+   "line": "175",
+   "evidence": "The line reads 'the file was incomplete or unreadable'. The round-2 commit (7d13c64) still had 'damaged'; the change is in the 20:16:19 write window and matches D89(b) exactly, so it is kept."
+  },
+  {
+   "id": "D89(c)",
+   "brief": "map.js line 2131 'That is not an all-clear.' deferred",
+   "status": "deferred (ruled)",
+   "file": "website/static/map/map.js",
+   "line": "2131",
+   "evidence": "Left unchanged, as ruled (predates B5; the alerts feature)."
+  },
+  {
+   "id": "D90(d)",
+   "brief": "reconcile map.js; keep changes after D87 to D89; report unattributed edits; node --check and HailHistory tests",
+   "status": "done",
+   "file": "website/static/map/map.js",
+   "line": "whole file",
+   "evidence": "map.js was last written at 20:16:19 UTC before this run (mtime; the run-1 snapshot sha256 prefix 310467187e44f3af matched the file at 20:43 and at the start of this run). No edit by the stopped round-3 browser fixer exists after 20:16:19, so nothing was reverted. The 20:16:19 write carries D88(c) (verified above) and the D89(b) wording (verified above); both are kept. This run's only edit is line 5227 (listed above); it is attributed to D88(b)/(u). node --check passes; the HailHistory tests pass in the subset run. Current sha256 6ad7e44a2a13bcf9."
+  },
+  {
+   "id": "D87(i) / D88(i)",
+   "brief": "the browser reads hail.summary.section_order (the sheet's section order)",
+   "status": "pending site-2",
+   "file": "website/static/map/map.js",
+   "line": "5352-5354 (histModel reads S.sections; missingKey('summary.sections') at 5354)",
+   "evidence": "The browser still reads summary.sections, which the build writes now as the same eleven ids in the fixed order (map_data_summary 'sections'). hail.summary.section_order is not in this build (site-2 has SECTION_ORDER in summary.py in the worktree, uncommitted). The switch is not made now, so no placeholder ships; it is listed under needed_from_others."
+  }
+ ],
+ "checks": {
+  "node_check": "node --check website/static/map/map.js: OK",
+  "browser": {
+   "checker": "scripts/check_sheet2.py (run 1's check_sheet.py with a whole-page placeholder scan)",
+   "reference": "ref_cells_final.json (describe_summary town None plus build.history_sections; see needed_from_others)",
+   "widths_px": [
+    390,
+    1280
+   ],
+   "modes": [
+    "open by ?at=",
+    "tap on the map"
+   ],
+   "cells": {
+    "billings": "921,2149",
+    "benchland": "792,1998",
+    "gate": "797,1986",
+    "tile753": "753,2230",
+    "cell920": "920,1899",
+    "unread602": "602,1396",
+    "unread607": "607,1428"
+   },
+   "cases": 28,
+   "compared": 26,
+   "skipped": {
+    "tap 390x844 cell920": "tap blocked by a warning polygon over the cell (alerts take the click)",
+    "tap 1280x800 cell920": "tap blocked by a warning polygon over the cell (alerts take the click)"
+   },
+   "diffs_total": 0,
+   "offsite_total": 0,
+   "errors_total": 0,
+   "log": "check_final.log",
+   "json": "check_final.json",
+   "fetch_per_open": {
+    "open 1280x800 benchland": {
+     "files": [
+      "/hail/c/r0079_c0199.json",
+      "/hail/j/e/r0079_c0199.json",
+      "/hail/j/r0079_c0199.json",
+      "/hail/k/MTC045.json",
+      "/hail/s/1LM.json",
+      "/hail/s/LWT.json",
+      "/hail/sd/US1MTFG0003.json",
+      "/hail/sd/USC00243947.json",
+      "/hail/sd/USC00247864.json",
+      "/hail/sd/USS0009C01S.json",
+      "/hail/t/r0079_c0199.json",
+      "/hail/tl/r0079_c0199.json",
+      "/hail/z/MTZ050.json",
+      "/hail/z/MTZ313.json",
+      "/hail/z/fire-MTZ117.json"
+     ],
+     "gzip_total": 26317,
+     "largest": [
+      5852,
+      "/hail/j/e/r0079_c0199.json"
+     ]
+    },
+    "open 1280x800 billings": {
+     "files": [
+      "/hail/c/r0092_c0214.json",
+      "/hail/j/e/r0092_c0214.json",
+      "/hail/j/r0092_c0214.json",
+      "/hail/k/MTC111.json",
+      "/hail/s/6S8.json",
+      "/hail/s/BIL.json",
+      "/hail/sd/USC00240802.json",
+      "/hail/sd/USW00024033.json",
+      "/hail/t/r0092_c0214.json",
+      "/hail/tl/r0092_c0214.json",
+      "/hail/z/MTZ235.json",
+      "/hail/z/fire-MTZ128.json"
+     ],
+     "gzip_total": 32528,
+     "largest": [
+      17293,
+      "/hail/j/e/r0092_c0214.json"
+     ]
+    },
+    "open 1280x800 cell920": {
+     "files": [
+      "/hail/c/r0091_c0189.json",
+      "/hail/j/e/r0092_c0189.json",
+      "/hail/j/r0092_c0189.json",
+      "/hail/k/MTC031.json",
+      "/hail/s/9S5.json",
+      "/hail/s/BZN.json",
+      "/hail/sd/US1MTGN0011.json",
+      "/hail/sd/USC00241044.json",
+      "/hail/sd/USS0010D10S.json",
+      "/hail/sd/USS0010D35S.json",
+      "/hail/t/r0092_c0189.json",
+      "/hail/tl/r0092_c0189.json",
+      "/hail/z/MTZ055.json",
+      "/hail/z/MTZ320.json",
+      "/hail/z/fire-MTZ123.json"
+     ],
+     "gzip_total": 31999,
+     "largest": [
+      13829,
+      "/hail/j/e/r0092_c0189.json"
+     ]
+    },
+    "open 1280x800 gate": {
+     "files": [
+      "/hail/c/r0079_c0198.json",
+      "/hail/j/e/r0079_c0198.json",
+      "/hail/j/r0079_c0198.json",
+      "/hail/k/MTC045.json",
+      "/hail/s/1LM.json",
+      "/hail/s/LWT.json",
+      "/hail/sd/US1MTFG0003.json",
+      "/hail/sd/USC00243947.json",
+      "/hail/sd/USC00247864.json",
+      "/hail/sd/USS0010C15S.json",
+      "/hail/t/r0079_c0198.json",
+      "/hail/tl/r0079_c0198.json",
+      "/hail/z/MTZ050.json",
+      "/hail/z/MTZ313.json",
+      "/hail/z/fire-MTZ117.json"
+     ],
+     "gzip_total": 28911,
+     "largest": [
+      7567,
+      "/hail/j/e/r0079_c0198.json"
+     ]
+    },
+    "open 1280x800 tile753": {
+     "files": [
+      "/hail/c/r0075_c0223.json",
+      "/hail/j/e/r0075_c0223.json",
+      "/hail/j/r0075_c0223.json",
+      "/hail/k/MTC033.json",
+      "/hail/s/JDN.json",
+      "/hail/sd/USC00248498.json",
+      "/hail/sd/USC00249048.json",
+      "/hail/t/r0075_c0223.json",
+      "/hail/tl/r0075_c0223.json",
+      "/hail/z/MTZ022.json",
+      "/hail/z/fire-MTZ136.json"
+     ],
+     "gzip_total": 14388,
+     "largest": [
+      2733,
+      "/hail/z/MTZ022.json"
+     ]
+    },
+    "open 1280x800 unread602": {
+     "files": [
+      "/hail/c/r0060_c0139.json",
+      "/hail/j/e/r0060_c0139.json",
+      "/hail/j/r0060_c0139.json",
+      "/hail/k/MTC053.json",
+      "/hail/sd/USC00249187.json",
+      "/hail/sd/USS0015A03S.json",
+      "/hail/sd/USS0015A05S.json",
+      "/hail/t/r0060_c0139.json",
+      "/hail/tl/r0060_c0139.json",
+      "/hail/z/MTZ001.json",
+      "/hail/z/fire-MTZ104.json"
+     ],
+     "gzip_total": 11686,
+     "largest": [
+      3221,
+      "/hail/z/MTZ001.json"
+     ]
+    },
+    "open 1280x800 unread607": {
+     "files": [
+      "/hail/c/r0060_c0142.json",
+      "/hail/j/e/r0060_c0142.json",
+      "/hail/j/r0060_c0142.json",
+      "/hail/k/MTC053.json",
+      "/hail/s/88M.json",
+      "/hail/sd/USC00245011.json",
+      "/hail/sd/USC00249187.json",
+      "/hail/sd/USS0015A05S.json",
+      "/hail/t/r0060_c0142.json",
+      "/hail/tl/r0060_c0142.json",
+      "/hail/z/MTZ001.json",
+      "/hail/z/fire-MTZ104.json"
+     ],
+     "gzip_total": 13811,
+     "largest": [
+      3221,
+      "/hail/z/MTZ001.json"
+     ]
+    },
+    "open 390x844 benchland": {
+     "files": [
+      "/hail/c/r0079_c0199.json",
+      "/hail/j/e/r0079_c0199.json",
+      "/hail/j/r0079_c0199.json",
+      "/hail/k/MTC045.json",
+      "/hail/s/1LM.json",
+      "/hail/s/LWT.json",
+      "/hail/sd/US1MTFG0003.json",
+      "/hail/sd/USC00243947.json",
+      "/hail/sd/USC00247864.json",
+      "/hail/sd/USS0009C01S.json",
+      "/hail/t/r0079_c0199.json",
+      "/hail/tl/r0079_c0199.json",
+      "/hail/z/MTZ050.json",
+      "/hail/z/MTZ313.json",
+      "/hail/z/fire-MTZ117.json"
+     ],
+     "gzip_total": 26317,
+     "largest": [
+      5852,
+      "/hail/j/e/r0079_c0199.json"
+     ]
+    },
+    "open 390x844 billings": {
+     "files": [
+      "/hail/c/r0092_c0214.json",
+      "/hail/j/e/r0092_c0214.json",
+      "/hail/j/r0092_c0214.json",
+      "/hail/k/MTC111.json",
+      "/hail/s/6S8.json",
+      "/hail/s/BIL.json",
+      "/hail/sd/USC00240802.json",
+      "/hail/sd/USW00024033.json",
+      "/hail/t/r0092_c0214.json",
+      "/hail/tl/r0092_c0214.json",
+      "/hail/z/MTZ235.json",
+      "/hail/z/fire-MTZ128.json"
+     ],
+     "gzip_total": 32528,
+     "largest": [
+      17293,
+      "/hail/j/e/r0092_c0214.json"
+     ]
+    },
+    "open 390x844 cell920": {
+     "files": [
+      "/hail/c/r0091_c0189.json",
+      "/hail/j/e/r0092_c0189.json",
+      "/hail/j/r0092_c0189.json",
+      "/hail/k/MTC031.json",
+      "/hail/s/9S5.json",
+      "/hail/s/BZN.json",
+      "/hail/sd/US1MTGN0011.json",
+      "/hail/sd/USC00241044.json",
+      "/hail/sd/USS0010D10S.json",
+      "/hail/sd/USS0010D35S.json",
+      "/hail/t/r0092_c0189.json",
+      "/hail/tl/r0092_c0189.json",
+      "/hail/z/MTZ055.json",
+      "/hail/z/MTZ320.json",
+      "/hail/z/fire-MTZ123.json"
+     ],
+     "gzip_total": 31999,
+     "largest": [
+      13829,
+      "/hail/j/e/r0092_c0189.json"
+     ]
+    },
+    "open 390x844 gate": {
+     "files": [
+      "/hail/c/r0079_c0198.json",
+      "/hail/j/e/r0079_c0198.json",
+      "/hail/j/r0079_c0198.json",
+      "/hail/k/MTC045.json",
+      "/hail/s/1LM.json",
+      "/hail/s/LWT.json",
+      "/hail/sd/US1MTFG0003.json",
+      "/hail/sd/USC00243947.json",
+      "/hail/sd/USC00247864.json",
+      "/hail/sd/USS0010C15S.json",
+      "/hail/t/r0079_c0198.json",
+      "/hail/tl/r0079_c0198.json",
+      "/hail/z/MTZ050.json",
+      "/hail/z/MTZ313.json",
+      "/hail/z/fire-MTZ117.json"
+     ],
+     "gzip_total": 28911,
+     "largest": [
+      7567,
+      "/hail/j/e/r0079_c0198.json"
+     ]
+    },
+    "open 390x844 tile753": {
+     "files": [
+      "/hail/c/r0075_c0223.json",
+      "/hail/j/e/r0075_c0223.json",
+      "/hail/j/r0075_c0223.json",
+      "/hail/k/MTC033.json",
+      "/hail/s/JDN.json",
+      "/hail/sd/USC00248498.json",
+      "/hail/sd/USC00249048.json",
+      "/hail/t/r0075_c0223.json",
+      "/hail/tl/r0075_c0223.json",
+      "/hail/z/MTZ022.json",
+      "/hail/z/fire-MTZ136.json"
+     ],
+     "gzip_total": 14388,
+     "largest": [
+      2733,
+      "/hail/z/MTZ022.json"
+     ]
+    },
+    "open 390x844 unread602": {
+     "files": [
+      "/hail/c/r0060_c0139.json",
+      "/hail/j/e/r0060_c0139.json",
+      "/hail/j/r0060_c0139.json",
+      "/hail/k/MTC053.json",
+      "/hail/sd/USC00249187.json",
+      "/hail/sd/USS0015A03S.json",
+      "/hail/sd/USS0015A05S.json",
+      "/hail/t/r0060_c0139.json",
+      "/hail/tl/r0060_c0139.json",
+      "/hail/z/MTZ001.json",
+      "/hail/z/fire-MTZ104.json"
+     ],
+     "gzip_total": 11686,
+     "largest": [
+      3221,
+      "/hail/z/MTZ001.json"
+     ]
+    },
+    "open 390x844 unread607": {
+     "files": [
+      "/hail/c/r0060_c0142.json",
+      "/hail/j/e/r0060_c0142.json",
+      "/hail/j/r0060_c0142.json",
+      "/hail/k/MTC053.json",
+      "/hail/s/88M.json",
+      "/hail/sd/USC00245011.json",
+      "/hail/sd/USC00249187.json",
+      "/hail/sd/USS0015A05S.json",
+      "/hail/t/r0060_c0142.json",
+      "/hail/tl/r0060_c0142.json",
+      "/hail/z/MTZ001.json",
+      "/hail/z/fire-MTZ104.json"
+     ],
+     "gzip_total": 13811,
+     "largest": [
+      3221,
+      "/hail/z/MTZ001.json"
+     ]
+    }
+   },
+   "fetch_per_tap": {
+    "tap 1280x800 benchland": {
+     "files": [
+      "/hail/c/r0079_c0199.json",
+      "/hail/j/e/r0079_c0199.json",
+      "/hail/j/r0079_c0199.json",
+      "/hail/k/MTC045.json",
+      "/hail/s/1LM.json",
+      "/hail/s/LWT.json",
+      "/hail/sd/US1MTFG0003.json",
+      "/hail/sd/USC00243947.json",
+      "/hail/sd/USC00247864.json",
+      "/hail/sd/USS0009C01S.json",
+      "/hail/t/r0079_c0199.json",
+      "/hail/tl/r0079_c0199.json",
+      "/hail/z/MTZ050.json",
+      "/hail/z/MTZ313.json",
+      "/hail/z/fire-MTZ117.json"
+     ],
+     "gzip_total": 26317,
+     "largest": [
+      5852,
+      "/hail/j/e/r0079_c0199.json"
+     ]
+    },
+    "tap 1280x800 billings": {
+     "files": [
+      "/hail/b/r0092_c021501.json",
+      "/hail/b/r0092_c021503.json",
+      "/hail/c/r0092_c0214.json",
+      "/hail/j/e/r0092_c0214.json",
+      "/hail/j/r0092_c0214.json",
+      "/hail/k/MTC111.json",
+      "/hail/s/6S8.json",
+      "/hail/s/BIL.json",
+      "/hail/sd/USC00240802.json",
+      "/hail/sd/USW00024033.json",
+      "/hail/t/r0092_c0214.json",
+      "/hail/tl/r0092_c0214.json",
+      "/hail/z/MTZ235.json",
+      "/hail/z/fire-MTZ128.json"
+     ],
+     "gzip_total": 43197,
+     "largest": [
+      17293,
+      "/hail/j/e/r0092_c0214.json"
+     ]
+    },
+    "tap 1280x800 gate": {
+     "files": [
+      "/hail/c/r0079_c0198.json",
+      "/hail/j/e/r0079_c0198.json",
+      "/hail/j/r0079_c0198.json",
+      "/hail/k/MTC045.json",
+      "/hail/s/1LM.json",
+      "/hail/s/LWT.json",
+      "/hail/sd/US1MTFG0003.json",
+      "/hail/sd/USC00243947.json",
+      "/hail/sd/USC00247864.json",
+      "/hail/sd/USS0010C15S.json",
+      "/hail/t/r0079_c0198.json",
+      "/hail/tl/r0079_c0198.json",
+      "/hail/z/MTZ050.json",
+      "/hail/z/MTZ313.json",
+      "/hail/z/fire-MTZ117.json"
+     ],
+     "gzip_total": 28911,
+     "largest": [
+      7567,
+      "/hail/j/e/r0079_c0198.json"
+     ]
+    },
+    "tap 1280x800 tile753": {
+     "files": [
+      "/hail/c/r0075_c0223.json",
+      "/hail/j/e/r0075_c0223.json",
+      "/hail/j/r0075_c0223.json",
+      "/hail/k/MTC033.json",
+      "/hail/s/JDN.json",
+      "/hail/sd/USC00248498.json",
+      "/hail/sd/USC00249048.json",
+      "/hail/t/r0075_c0223.json",
+      "/hail/tl/r0075_c0223.json",
+      "/hail/z/MTZ022.json",
+      "/hail/z/fire-MTZ136.json"
+     ],
+     "gzip_total": 14388,
+     "largest": [
+      2733,
+      "/hail/z/MTZ022.json"
+     ]
+    },
+    "tap 1280x800 unread602": {
+     "files": [
+      "/hail/c/r0060_c0139.json",
+      "/hail/j/e/r0060_c0139.json",
+      "/hail/j/r0060_c0139.json",
+      "/hail/k/MTC053.json",
+      "/hail/sd/USC00249187.json",
+      "/hail/sd/USS0015A03S.json",
+      "/hail/sd/USS0015A05S.json",
+      "/hail/t/r0060_c0139.json",
+      "/hail/tl/r0060_c0139.json",
+      "/hail/z/MTZ001.json",
+      "/hail/z/fire-MTZ104.json"
+     ],
+     "gzip_total": 11686,
+     "largest": [
+      3221,
+      "/hail/z/MTZ001.json"
+     ]
+    },
+    "tap 1280x800 unread607": {
+     "files": [
+      "/hail/c/r0060_c0142.json",
+      "/hail/j/e/r0060_c0142.json",
+      "/hail/j/r0060_c0142.json",
+      "/hail/k/MTC053.json",
+      "/hail/s/88M.json",
+      "/hail/sd/USC00245011.json",
+      "/hail/sd/USC00249187.json",
+      "/hail/sd/USS0015A05S.json",
+      "/hail/t/r0060_c0142.json",
+      "/hail/tl/r0060_c0142.json",
+      "/hail/z/MTZ001.json",
+      "/hail/z/fire-MTZ104.json"
+     ],
+     "gzip_total": 13811,
+     "largest": [
+      3221,
+      "/hail/z/MTZ001.json"
+     ]
+    },
+    "tap 390x844 benchland": {
+     "files": [
+      "/hail/c/r0079_c0199.json",
+      "/hail/j/e/r0079_c0199.json",
+      "/hail/j/r0079_c0199.json",
+      "/hail/k/MTC045.json",
+      "/hail/s/1LM.json",
+      "/hail/s/LWT.json",
+      "/hail/sd/US1MTFG0003.json",
+      "/hail/sd/USC00243947.json",
+      "/hail/sd/USC00247864.json",
+      "/hail/sd/USS0009C01S.json",
+      "/hail/t/r0079_c0199.json",
+      "/hail/tl/r0079_c0199.json",
+      "/hail/z/MTZ050.json",
+      "/hail/z/MTZ313.json",
+      "/hail/z/fire-MTZ117.json"
+     ],
+     "gzip_total": 26317,
+     "largest": [
+      5852,
+      "/hail/j/e/r0079_c0199.json"
+     ]
+    },
+    "tap 390x844 billings": {
+     "files": [
+      "/hail/c/r0092_c0214.json",
+      "/hail/j/e/r0092_c0214.json",
+      "/hail/j/r0092_c0214.json",
+      "/hail/k/MTC111.json",
+      "/hail/s/6S8.json",
+      "/hail/s/BIL.json",
+      "/hail/sd/USC00240802.json",
+      "/hail/sd/USW00024033.json",
+      "/hail/t/r0092_c0214.json",
+      "/hail/tl/r0092_c0214.json",
+      "/hail/z/MTZ235.json",
+      "/hail/z/fire-MTZ128.json"
+     ],
+     "gzip_total": 32528,
+     "largest": [
+      17293,
+      "/hail/j/e/r0092_c0214.json"
+     ]
+    },
+    "tap 390x844 gate": {
+     "files": [
+      "/hail/c/r0079_c0198.json",
+      "/hail/j/e/r0079_c0198.json",
+      "/hail/j/r0079_c0198.json",
+      "/hail/k/MTC045.json",
+      "/hail/s/1LM.json",
+      "/hail/s/LWT.json",
+      "/hail/sd/US1MTFG0003.json",
+      "/hail/sd/USC00243947.json",
+      "/hail/sd/USC00247864.json",
+      "/hail/sd/USS0010C15S.json",
+      "/hail/t/r0079_c0198.json",
+      "/hail/tl/r0079_c0198.json",
+      "/hail/z/MTZ050.json",
+      "/hail/z/MTZ313.json",
+      "/hail/z/fire-MTZ117.json"
+     ],
+     "gzip_total": 28911,
+     "largest": [
+      7567,
+      "/hail/j/e/r0079_c0198.json"
+     ]
+    },
+    "tap 390x844 tile753": {
+     "files": [
+      "/hail/c/r0075_c0223.json",
+      "/hail/j/e/r0075_c0223.json",
+      "/hail/j/r0075_c0223.json",
+      "/hail/k/MTC033.json",
+      "/hail/s/JDN.json",
+      "/hail/sd/USC00248498.json",
+      "/hail/sd/USC00249048.json",
+      "/hail/t/r0075_c0223.json",
+      "/hail/tl/r0075_c0223.json",
+      "/hail/z/MTZ022.json",
+      "/hail/z/fire-MTZ136.json"
+     ],
+     "gzip_total": 14388,
+     "largest": [
+      2733,
+      "/hail/z/MTZ022.json"
+     ]
+    },
+    "tap 390x844 unread602": {
+     "files": [
+      "/hail/c/r0060_c0139.json",
+      "/hail/j/e/r0060_c0139.json",
+      "/hail/j/r0060_c0139.json",
+      "/hail/k/MTC053.json",
+      "/hail/sd/USC00249187.json",
+      "/hail/sd/USS0015A03S.json",
+      "/hail/sd/USS0015A05S.json",
+      "/hail/t/r0060_c0139.json",
+      "/hail/tl/r0060_c0139.json",
+      "/hail/z/MTZ001.json",
+      "/hail/z/fire-MTZ104.json"
+     ],
+     "gzip_total": 11686,
+     "largest": [
+      3221,
+      "/hail/z/MTZ001.json"
+     ]
+    },
+    "tap 390x844 unread607": {
+     "files": [
+      "/hail/c/r0060_c0142.json",
+      "/hail/j/e/r0060_c0142.json",
+      "/hail/j/r0060_c0142.json",
+      "/hail/k/MTC053.json",
+      "/hail/s/88M.json",
+      "/hail/sd/USC00245011.json",
+      "/hail/sd/USC00249187.json",
+      "/hail/sd/USS0015A05S.json",
+      "/hail/t/r0060_c0142.json",
+      "/hail/tl/r0060_c0142.json",
+      "/hail/z/MTZ001.json",
+      "/hail/z/fire-MTZ104.json"
+     ],
+     "gzip_total": 13811,
+     "largest": [
+      3221,
+      "/hail/z/MTZ001.json"
+     ]
+    }
+   },
+   "largest_file_gzip": 17293,
+   "run1_reproduced_on_committed_tree": "check_baseline.json (the committed tree, before the edit): 26 compared, 0 diffs, 0 off-site"
+  }
+ },
+ "needed_from_others": [
+  {
+   "owner": "site-2",
+   "key": "hail.summary.section_order",
+   "site_item": "D87(i) and D88(i): summary.py SECTION_ORDER written by map_data_summary as section_order; build.py writes it into hail.summary",
+   "browser_item": "browser-2 switches histModel's section list (map.js 5352-5354) from S.sections to S.section_order once the build writes the key; the check then compares the sheet's section order with it"
+  },
+  {
+   "owner": "site-2",
+   "key": "the partial count sentence's tail key (summary.section_data.words, the key named in site-2's check, not yet written)",
+   "site_item": "D88(s): the tail is written once in summary.section_data.words and both surfaces (the sheet's partial line, the town page) print it from there",
+   "browser_item": "browser-2 reads it in sumPartialLine (map.js 4715) in place of summary.words.partial_counts' tail once the build writes the key"
+  },
+  {
+   "owner": "site-2 (for the reference)",
+   "key": "summary.describe_sheet (uncommitted in the worktree; not in the snapshot this check built from)",
+   "site_item": "D87(p)/S-4: one Python source for the sheet's text",
+   "browser_item": "the next run compares against describe_sheet; this run used describe_summary (town None) with build.history_sections for the rows, as tests/test_site.py's module_sheet does"
+  }
+ ],
+ "tests": {
+  "subset_command": "python -m unittest tests.test_site -k HailJoinedRecords -k HailHistory -k HailAddresses -k HailSwathLayers -k HailJoins -k SheetFiveSeasonsInTheBrowser (HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store)",
+  "subset_first_run_2116": "tests/subset.log: 115 tests, one failure, HailSwathLayers.test_the_legend_has_every_class_with_its_inches_and_the_uncoloured_sentence (site-2's pin still read 'not damage' while words-2 changed swath.py to 'not an inspection', D89(e)). The pin on disk now reads 'not an inspection' and the test passes in tests/rerun-3.log.",
+  "subset_final_tail": [
+   "----------------------------------------------------------------------",
+   "Ran 115 tests in 191.810s",
+   "FAILED (errors=1)",
+   "SUBSET_EXIT=1"
+  ],
+  "full_command": "python -m unittest discover -s tests (HAIL_PARITY_STORE set)",
+  "full_tail": [
+   "----------------------------------------------------------------------",
+   "Ran 1953 tests in 514.727s",
+   "FAILED (failures=1, errors=1, skipped=3)",
+   "FULL_EXIT=1"
+  ],
+  "full_failures_named": [
+   {
+    "test": "tests.test_site.HailAddresses.test_the_smoke_test_has_the_address_checks",
+    "kind": "ERROR",
+    "why": "smoke_map has no ADDRESS_FETCH_BUDGET_GZIP (tools/smoke_map.py was rewritten; the pin at tests/test_site.py:3176 still reads it)",
+    "owner": "smoke (tools/smoke_map.py); the pin at tests/test_site.py:3176 is site's and must read the budget from map.json (D75(c)) or the constant must stay; still failing at 21:13 (tests/rerun-3.log)"
+   },
+   {
+    "test": "tests.test_site.HailAddresses.test_the_workflow_previews_pass_the_addresses_flag_and_the_tests_and_smoke_run",
+    "kind": "FAIL",
+    "why": "the workflow has two unit steps (the offline step and the D88(a) parity step); the pin read one",
+    "owner": "smoke (.github/workflows/website.yml); the pin in tests/test_site.py was updated on disk to two steps and passes in tests/rerun-3.log"
+   }
+  ],
+  "node_harness": "the node-based HailHistory tests passed in the subset (the sheet and the summary blocks run under node from map.js)"
+ },
+ "notes": [
+  "Full suite at 21:03 on the shared worktree: 1953 tests, FAILED (failures=1, errors=1, skipped=3). Other owners were editing the tree while it ran; each failure is named above with its owner.",
+  "The reference is describe_summary (town None) with build.history_sections for the row text, as tests/test_site.py module_sheet does; describe_sheet is uncommitted (site-2)."
+ ]
+}

@@ -228,3 +228,6 @@ wf_d8728e1a-b66 (hail-b5b2-round2.js) had fix and check stages after its skeptic
 
 ## 2026-10-24 20:58 UTC: run 1 complete; WIP d083d45; run 2 launched
 Run 1 (wf_0fb69837-1d4): words 20 of 24, site 17 of 19 (the rest landed with the browser), browser all items done or in place; full suite 1,933 OK on the final tree; Chromium check 0 diffs, 0 off-site requests, no placeholder. The map.js write at 20:16:19 was the stopped round-3 browser fixer applying D88(c). WIP safety commit d083d45 pushed to session/hail-b5-wip. Run 2 launched as two workflows (smoke + words-2; site-2 + browser-2), recheck false; checks to /home/user/hail-b5/out/b2r5/smoke/ and /home/user/hail-b5/out/b2r6/<owner>/.
+
+## 2026-10-24 21:25 UTC: run 2 site-2, browser-2, words-2 done; D91
+site-2: SECTION_ORDER, hail.summary.section_order, describe_sheet (one source), SECTION_WORDS all_clear, roof label rename, em-dash placeholder; map.json 162,512 raw (headroom 1,328). browser-2: one line (placeholder for a missing held word). words-2: swath and streets words, FORECAST rule in words_rules.py; About and Map scan clean. One suite error left: tests/test_site.py 3176 reads a smoke constant the smoke fixer removed. D91(a) to (i) recorded; run 2b entries site-3 and words-3 written; smoke-2 waits on the smoke check.

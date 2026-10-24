@@ -1,0 +1,155 @@
+{
+ "owner": "fixer 2 (words-2)",
+ "worktree": "/home/user/wt/wt-b5",
+ "branch": "claude/hail-b5",
+ "snapshot_utc": "2026-10-24 21:20 UTC (final full suite 21:12:27 to 21:18:51 UTC)",
+ "scope_files": [
+  "website/swath.py",
+  "website/streets.py",
+  "tests/test_swath.py",
+  "tests/test_streets.py",
+  "tests/words_rules.py"
+ ],
+ "items": [
+  {
+   "item": "(1) D89(e): website/swath.py WORDS_SWATH legend_note (line 108), sample_legend_note (line 110) and what_this_is (line 144) read 'not observed hail and not an inspection' (the sources.py hail_swath row's form).",
+   "status": "DONE",
+   "evidence": "git diff website/swath.py: the three strings changed, 'not damage' removed. The sample build's map.json holds 8 copies of 'not observed hail and not an inspection' and none of 'not damage' (item 12). tests.test_swath 97 OK."
+  },
+  {
+   "item": "(1) D89(e): the swath.py module docstring follows (lines 11 to 14).",
+   "status": "DONE",
+   "evidence": "Line 11 now reads 'not a measurement at the ground and not an inspection'. The paragraph is rewrapped to 120 columns with no other wording change."
+  },
+  {
+   "item": "(1) D89(e): tests/test_swath.py pin (now line 763; the brief's 751 moved with the new test above it) reads 'not observed hail and not an inspection'; a new test (line 752) pins that the three sentences need no exemption and that every line WordsTests.all_words() returns passes the one words list.",
+   "status": "DONE",
+   "evidence": "tests/test_swath.py test_the_swath_sentences_pass_the_one_words_list_with_no_exemption and test_the_required_sentences_are_present; tests.test_swath 97 OK."
+  },
+  {
+   "item": "(1) D89(e): no words_rules exemption for these sentences; remove a run-1 one if present.",
+   "status": "ALREADY IN PLACE",
+   "evidence": "tests/words_rules.py EXEMPT has no swath sentence (its storm-row and footer entries are other sentences: D78(b), D52). Nothing removed. The new test pins W.residue(text) == text for the three sentences."
+  },
+  {
+   "item": "(1) D89(e): the sources.py hail_swath row and About line 29 keep the form 'not observed hail and not an inspection'.",
+   "status": "ALREADY IN PLACE",
+   "evidence": "website/sources.py line 175 ends 'An estimate, not observed hail and not an inspection.'; website/templates/about.html line 29 reads 'It is an estimate, not observed hail and not an inspection.' Neither file edited by words-2."
+  },
+  {
+   "item": "(2) D89(d): website/streets.py WORDS_STREETS msl and tiger 'unavailable' strings (lines 355-356 and 368-369) end with ' This is not an all-clear.', as addresses.py and buildings.py do (D41).",
+   "status": "DONE",
+   "evidence": "git diff website/streets.py. The sample About page prints 'Streets could not be loaded in this update; that is not the same as having no streets. This is not an all-clear.' (1 occurrence)."
+  },
+  {
+   "item": "(2) D89(d): tests/test_streets.py pins the sentence.",
+   "status": "DONE",
+   "evidence": "tests/test_streets.py test_the_unavailable_lines_end_with_the_required_sentence (line 304) and test_the_filled_streets_words_pass_the_one_words_list (line 311: W.assert_clean on the filled msl, undated msl and tiger legend, attribution, caveat and unavailable). tests.test_streets 61 OK."
+  },
+  {
+   "item": "(3) D89(a): NWS forecast and observation words are outside the words gate, expressed as a documented rule in tests/words_rules.py, not as a wider forbidden list.",
+   "status": "DONE for the rule and the scan; the rule's test pins are PARTIAL (not in this file set, needed_from_others 1)",
+   "evidence": "tests/words_rules.py: a comment block (line 70) cites D89(a) and its sources (index.html line 56, sources.py flags_for, map.js lines 2108 and 2117, sample.py). FORECAST (line 75) is a tuple of five exact-field patterns: 'chance of rain or snow'; 'chance rain showers'; 'night: clear' ending a day line; 'Clear' ending an observation line after the middle dot; 'Clear' or 'Clear.' as a whole field. residue() (line 89) applies EXEMPT, then FORECAST. The module docstring names the rule. STEMS is unchanged (53 stems; EXEMPT 17, FORECAST 5), so the forbidden list does not widen. Scratch check forecast_check.py: 26 of 26 (15 forecast wordings clear; 11 history sentences keep their flags: 'Clear sky over the roof.' gives clear, 'Chance of hail this week.' gives chance, 'Clear Creek' gives clear)."
+  },
+  {
+   "item": "(3) D89(a): the run-1 scan script (scan/scan_pages.py) excludes the same words; no edit needed.",
+   "status": "ALREADY IN PLACE",
+   "evidence": "It calls W.forbidden_words, which now applies FORECAST. Run unchanged on the new build with python -I: SUMMARY page_block_hits=0 map_json_string_hits=8."
+  },
+  {
+   "item": "(3) D89(a): index.html line 56, sources.py flags_for (line 924), map.js lines 2108 and 2117 and the sample's NWS wording keep their text (nothing changes there).",
+   "status": "ALREADY IN PLACE",
+   "evidence": "No edit by words-2 to any of those files. index.html now scans 0 hits (run 1: 1 hit)."
+  },
+  {
+   "item": "(4) Build --sample --hail-history --hail-addresses --storm-layers --now 2026-10-24T12:00:00Z under /home/user/hail-b5/out/b2r6/words/ (one build).",
+   "status": "DONE",
+   "evidence": "Exit 0 (build.log). Output: about.html, map.html, index.html, reports.html, 17 town pages, data/map.json (190,287 bytes), hail/, map/, static/. The site folder was deleted after the scan."
+  },
+  {
+   "item": "(4) Rescan the About page, the Map page and map.json's words with tests/words_rules.py; report every remaining hit with its ruling.",
+   "status": "DONE",
+   "evidence": "scan_r6.py (scan-r6-after.txt): about.html 0; map.html 0; map.json 8. The 8: roof-reference quotes R5, R6, R7, R8, R11 and R15 (the raw string has no quotation marks; summary.py REFERENCE_LINE wraps each quote, curly on the town page and straight on About, and the rendered text passes; ruling: quoted source wording, D46, no change); URLs R11 and R16 (only an href on About, not visible text; ruling: link targets, no change). Outside this item's scope: index.html 0; 17 town pages 0; reports.html 3 (needed_from_others 4). The sheet's own text is written by map.js at run time and is not in the static scan."
+  },
+  {
+   "item": "(4) tests.test_swath, tests.test_streets, tests.test_words_rules, tests.test_joins.",
+   "status": "DONE",
+   "evidence": "Final owned run: Ran 465 tests in 36.872s, OK (swath 97, streets 61, words_rules 19, joins 288); tests-owned-final.log."
+  },
+  {
+   "item": "(4) Full suite (discover -s tests): named failures and their owners.",
+   "status": "DONE; ONE ERROR, IN NEITHER WORDS-2'S FILES NOR THE WORDS RULES",
+   "evidence": "Final run (full-suite-final2.log, 21:12:27 to 21:18:51 UTC): Ran 1953 tests, FAILED (errors=1, skipped=10). The error: test_site.HailAddresses.test_the_smoke_test_has_the_address_checks (tests/test_site.py:3176 reads smoke.ADDRESS_FETCH_BUDGET_GZIP, which tools/smoke_map.py no longer defines). Owners: site-2 (the pin) and smoke (tools/smoke_map.py). See tests_tail and needed_from_others 3."
+  },
+  {
+   "item": "(4) check.json written at /home/user/hail-b5/out/b2r6/words/check.json; the site build deleted; scratch kept under the same folder.",
+   "status": "DONE",
+   "evidence": "This file. Logs and scan files are kept; the build folder is deleted."
+  },
+  {
+   "item": "Required: no em-dash or en-dash, no model, AI-vendor or product name, and ASCII code in added lines; no new pip package; no git write command; no edit outside the five owned files (tests/test_words_rules.py was not edited).",
+   "status": "DONE",
+   "evidence": "The 70 added lines in the five files: 0 dashes, 0 banned names, 0 non-ASCII characters (checked after the last edit). Git commands run: diff, status, log, show, grep, rev-parse, branch --list, merge-base --is-ancestor; all read-only."
+  }
+ ],
+ "needed_from_others": [
+  "1. tests/test_words_rules.py (not in words-2's list; owner to assign): add the D89(a) pins. Pass (no forbidden word left): 'Clear', 'Clear.', 'Chance Rain Showers', 'chance rain showers', '40% chance of rain or snow', 'Chance of rain or snow', 'Read at 5:48 am, 12 min ago · SAMPLE Clear', 'Read at 5:48 am, 12 min ago · Clear', 'Sunny · 10% rain or snow · wind 5 to 10 mph W · night: clear SAMPLE. High near 61. Winds 5 to 10 mph.'. Still flagged: 'Clear sky over the roof.' [clear], 'A clear view of the roof.' [clear], 'Clear Creek' [clear], 'Chance of hail this week.' [chance], 'Read at 5:48 am, 12 min ago · Clear sky over the roof' [clear], 'Sunny · night: clear skies were seen.' [clear]. Full list: /home/user/hail-b5/out/b2r6/words/forecast_check.py (26 cases, 0 failures). Until this lands, the FORECAST rule has no pin in the suite.",
+  "2. .github/workflows/website.yml line 105 (smoke owner): the website job's unittest module list does not name tests.test_words_rules (grep count 0), so CI does not run the words gate's own tests; the full suite does. Add tests.test_words_rules to that list, with any matching pin in tests/test_website_workflow.py (smoke's file).",
+  "3. tests/test_site.py:3176 (site-2) and tools/smoke_map.py (smoke): the one error of the final run. The pin reads smoke.ADDRESS_FETCH_BUDGET_GZIP, which tools/smoke_map.py no longer defines; D75(c) moves the budget to map.json's hail.budget. Re-point the pin or restore the name. Not caused by a words-2 edit.",
+  "4. website/templates/reports.html lines 7 and 57 (site owner; main's SPC reports page, live before B5): 'No report is not evidence that no hail fell.' (a double negative, and a bare 'no hail' outside 'not the same as no hail', D13) and 'No hail or wind reports in or near Montana for this day.' (a bare 'no hail'). These are the three scan hits outside this item's scope. tests/test_site.py:596 pins the first sentence. Supervisor ruling needed: D13 governs the history words and D52 keeps older text, but D41 removed the double negative from the B5 no-report sentence. Not changed by words-2.",
+  "5. tests/test_site.py:3500 (site-2): the swath legend pin reads 'not observed hail and not an inspection' on disk now (site-2 changed it during the first run); the final run passes it. Recorded for confirmation only."
+ ],
+ "tests_by_module": {
+  "tests.test_swath": "Ran 97 tests OK",
+  "tests.test_streets": "Ran 61 tests OK",
+  "tests.test_words_rules": "Ran 19 tests OK",
+  "tests.test_joins": "Ran 288 tests OK",
+  "four owned modules together": "Ran 465 tests OK (tests-owned-final.log)",
+  "full suite, run 20:51 (after the first edits)": "Ran 1936 tests; failures=1 (test_site HailSwathLayers swath legend pin, site-2; updated on disk during the run and passing in later runs), errors=1 (test_site 3175 smoke constant)",
+  "full suite, run 20:59": "Ran 1953 tests; failures=7, errors=3, all in tests/test_site.py and tests/test_website_workflow.py (workflow unit-line counts, a parity step's gated list, smoke FREE_CENTRE_JS, section order); owners smoke and site-2; none in words-2's files; cleared by 21:12 except the one error below",
+  "full suite, final run 21:12:27 to 21:18:51 UTC": "Ran 1953 tests in 366.290s; FAILED (errors=1, skipped=10); the error is needed_from_others 3"
+ },
+ "tests_tail": "ERROR: test_the_smoke_test_has_the_address_checks (test_site.HailAddresses.test_the_smoke_test_has_the_address_checks)\nAttributeError: module 'smoke_map' has no attribute 'ADDRESS_FETCH_BUDGET_GZIP'\n----------------------------------------------------------------------\nRan 1953 tests in 366.290s\nFAILED (errors=1, skipped=10)\nSUITE_EXIT=1",
+ "commands": [
+  {
+   "command": "python -m website.build --out /home/user/hail-b5/out/b2r6/words/site --sample --hail-history --hail-addresses --storm-layers --now 2026-10-24T12:00:00Z",
+   "tail": "exit=0 (build.log)"
+  },
+  {
+   "command": "python -I scan_r6.py <site> scan-r6-after.txt",
+   "tail": "COUNTS about.html 0, map.html 0, map.json 8, index.html 0, reports.html 3, town pages 0; HITS 8"
+  },
+  {
+   "command": "python -I scan_pages.py <site> (run-1 script, unchanged)",
+   "tail": "SUMMARY page_block_hits=0 map_json_string_hits=8"
+  },
+  {
+   "command": "python -I forecast_check.py",
+   "tail": "FAILURES 0 of 26"
+  },
+  {
+   "command": "python -m unittest tests.test_swath tests.test_streets tests.test_words_rules tests.test_joins",
+   "tail": "Ran 465 tests in 36.872s / OK"
+  },
+  {
+   "command": "python -m unittest discover -s tests (final, 21:12 UTC)",
+   "tail": "Ran 1953 tests in 366.290s / FAILED (errors=1, skipped=10)"
+  }
+ ],
+ "scratch": {
+  "folder": "/home/user/hail-b5/out/b2r6/words/",
+  "kept": [
+   "build.log",
+   "scan_r6.py",
+   "scan-r6-after.txt",
+   "forecast_check.py",
+   "test_joins.log",
+   "tests-owned-final.log",
+   "full-suite*.log",
+   "added-lines.txt"
+  ],
+  "deleted": [
+   "site (the --sample build), after the scan"
+  ]
+ }
+}
