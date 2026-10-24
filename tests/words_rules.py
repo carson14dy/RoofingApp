@@ -7,10 +7,12 @@ or an all-clear) and the older test lists this list replaces (dry, clear, custom
 A scan first removes what the brief allows, and nothing else: quoted wording (curly or straight quotation marks: a
 remark, or a source's own words), the NWS damage threat tag label, the required "This is not an all-clear." (and "That
 is not an all-clear.", the same sentence on the no-alerts line), the allowed "not the same as no hail", NOAA's term
-"radar coverage" (D45), and the exact sentences and names listed in EXEMPT below, each with its ruling. It then fails
-any forbidden word left in the text, and any "no hail" left in it. "damage" is a forbidden stem, so a source's type word
+"radar coverage" (D45), and the exact sentences and names listed in EXEMPT below, each with its ruling. The NWS's own
+forecast and observation words (the forecast card's chance-of-rain wording and the NWS condition names) are the forecast
+product's wording, not history text, so the exact patterns in FORECAST remove them too (D89(a)). It then fails any
+forbidden word left in the text, and any "no hail" left in it. "damage" is a forbidden stem, so a source's type word
 that contains it has to be quoted, or be an abbreviation such as DMG, which the words never print as a claim about this
-address.
+address. The forbidden list (STEMS) does not widen for any allowance: each one is matched by its own wording.
 
 Imported by name: the test modules put tests/ on sys.path (discover -s tests)."""
 
@@ -65,10 +67,28 @@ EXEMPT = (
         "or affiliation with NOAA/NWS, or 3) modify its content and then present it as official government material.")),
 )
 
+# D89(a): the NWS's forecast and observation words are the forecast product's own wording, not history text, so the
+# scan does not read them. Each pattern matches one field's wording, as the forecast, the observation or the forecast
+# card gives it (sample.py supplies the NWS condition names for the sample). A condition name is matched only as a
+# whole field, as the last word of an observation line, or as the last word of a day line's "night:" part, so a bare
+# "clear" or "chance" in history text is still flagged.
+FORECAST = (
+    # the forecast card's precipitation words (index.html line 56; sources.py flags_for; map.js lines 2108 and 2117)
+    re.compile(r"chance of rain or snow", re.IGNORECASE),
+    # the NWS condition name, in an hour line or a day line
+    re.compile(r"chance rain showers", re.IGNORECASE),
+    # the NWS night condition, as the last words of a day line (before the SAMPLE label or the next field)
+    re.compile(r"night: clear(?=\s*(?:\u00b7|SAMPLE\b|$))", re.IGNORECASE),
+    # the observation's condition, as the last word of its line (after the middle dot)
+    re.compile(r"(?<=\u00b7 )(?:SAMPLE )?Clear(?=\.?\s*(?:\u00b7|$))"),
+    # a condition name alone, as a map data field holds it
+    re.compile(r"^Clear\.?$"),
+)
+
 
 def residue(text: str) -> str:
-    """The text with every allowed exemption removed: what the scan reads."""
-    for pattern in EXEMPT:
+    """The text with every allowed exemption removed (EXEMPT, then FORECAST): what the scan reads."""
+    for pattern in EXEMPT + FORECAST:
         text = pattern.sub(" ", text)
     return text
 

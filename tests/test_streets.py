@@ -27,6 +27,9 @@ from unittest import mock
 from website import hail
 from website import streets as S
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # words_rules is the one forbidden list (D81(c))
+import words_rules as W  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW = ROOT / ".github" / "workflows" / "hail-store.yml"
 REAL_LIBRARY = Path("/home/user/hail-b3/cache/roads/TransportationFramework_shp.zip")
@@ -297,6 +300,22 @@ class WordTests(unittest.TestCase):
             for key, template in words.items():
                 authored = re.sub(r'"[^"]*"', "", template)
                 self.assertIsNone(FORBIDDEN.search(authored), f"{kind}.{key}: {authored!r}")
+
+    def test_the_unavailable_lines_end_with_the_required_sentence(self):   # D41, D89(d)
+        for kind, words in S.WORDS_STREETS.items():
+            self.assertTrue(words["unavailable"].endswith(" This is not an all-clear."), kind)
+            self.assertIn("could not be loaded in this update; that is not the same as having no streets.",
+                          words["unavailable"], kind)
+        self.assertEqual(S.wording("msl", {})["unavailable"], S.WORDS_STREETS["msl"]["unavailable"])
+
+    def test_the_filled_streets_words_pass_the_one_words_list(self):   # D13, D41, D81(c)
+        msl = S.wording("msl", {"pubdate": "2026-09-30", "quotes": {"convenience": S.LIBRARY_CONVENIENCE,
+                                                                    "disclaimer": S.LIBRARY_DISCLAIMER}})
+        undated = S.wording("msl", {})
+        tiger = S.wording("tiger", {"quotes": {}})
+        for label, facts in (("msl", msl), ("msl undated", undated), ("tiger", tiger)):
+            for key in ("legend", "attribution", "caveat", "unavailable"):
+                W.assert_clean(self, facts[key], f"{label}.{key}")
 
     def test_filled_attribution_quotes_the_file_verbatim(self):
         msl = S.wording("msl", {"pubdate": "2026-09-30", "quotes": {"convenience": S.LIBRARY_CONVENIENCE,

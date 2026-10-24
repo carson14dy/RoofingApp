@@ -1,9 +1,12 @@
 """Execute the workflow's planning shell with a fake GitHub CLI, without network."""
 
+import ast
 from datetime import datetime, timezone
 import importlib
+import inspect
 import os
 from pathlib import Path
+import re
 import shlex
 import shutil
 import subprocess
@@ -99,7 +102,7 @@ class StormFlag(unittest.TestCase):
         self.assertFalse(any("website.build" in line and "--storm-layers" in line for line in self.text.splitlines()))
 
     def test_the_storm_tests_run_in_the_unittest_line_and_the_path_filter(self):
-        unit = [line for line in self.text.splitlines() if "python -m unittest" in line]
+        unit = [line for line in self.text.splitlines() if "python -m unittest tests." in line]   # the offline line (not the parity step's)
         self.assertEqual(len(unit), 1)
         self.assertIn("tests.test_storm", unit[0])
         self.assertIn('"tests/test_storm.py"', self.text)
@@ -118,10 +121,24 @@ class SatelliteReader(unittest.TestCase):
         self.assertIn("h5py", installs[0].split())
 
     def test_the_satellite_tests_run_in_the_unittest_line_and_the_path_filter(self):
-        unit = [line for line in self.text.splitlines() if "python -m unittest" in line]
+        unit = [line for line in self.text.splitlines() if "python -m unittest tests." in line]   # the offline line (not the parity step's)
         self.assertEqual(len(unit), 1)
         self.assertIn("tests.test_satellite", unit[0].split())
         self.assertIn('"tests/test_satellite.py"', self.text)
+
+
+class OfflineWordsRules(unittest.TestCase):
+    """D91(f), D92(c): the offline unittest line runs tests.test_words_rules, the tests of the one forbidden list
+    (tests/words_rules.py). The module must exist, and the line must name it once, so the words gate runs in CI."""
+
+    def setUp(self):
+        self.text = (ROOT / ".github/workflows/website.yml").read_text(encoding="utf-8")
+
+    def test_the_offline_unittest_line_names_the_words_rules_module(self):
+        unit = [line for line in self.text.splitlines() if "python -m unittest tests." in line]   # the offline line only
+        self.assertEqual(len(unit), 1)
+        self.assertEqual(unit[0].split().count("tests.test_words_rules"), 1)
+        self.assertTrue((ROOT / "tests" / "test_words_rules.py").is_file())
 
 
 class SmokeFlags(unittest.TestCase):
@@ -726,3 +743,270 @@ class SheetReader(unittest.TestCase):
             (site / "data").mkdir()
             (site / "data" / "map.json").write_text(json.dumps(no_addresses), encoding="utf-8")
             self.assertEqual(self.smoke.check(site, history=True), [message])     # one line; no browser is started for it
+
+
+def reads_parity_store(node) -> bool:
+    """Whether a test reads HAIL_PARITY_STORE from the environment (os.environ.get or os.environ[...]), in its body or its
+    decorators (ast.walk visits both). A text that only mentions the name, such as a workflow pin, does not count."""
+    for sub in ast.walk(node):
+        if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute) and sub.func.attr == "get" \
+                and isinstance(sub.func.value, ast.Attribute) and sub.func.value.attr == "environ" and sub.args \
+                and isinstance(sub.args[0], ast.Constant) and sub.args[0].value == "HAIL_PARITY_STORE":
+            return True
+        if isinstance(sub, ast.Subscript) and isinstance(sub.value, ast.Attribute) and sub.value.attr == "environ" \
+                and isinstance(sub.slice, ast.Constant) and sub.slice.value == "HAIL_PARITY_STORE":
+            return True
+    return False
+
+
+def gated_parity_tests() -> set[str]:
+    """The dotted names of every test method in tests/test_site.py and tests/test_summary.py that reads HAIL_PARITY_STORE
+    (reads_parity_store): the tests the Website workflow's parity step names one by one (D88(a))."""
+    found: set[str] = set()
+    for module in ("test_site", "test_summary"):
+        source = (ROOT / "tests" / f"{module}.py").read_text(encoding="utf-8")
+        for node in ast.parse(source).body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            for fn in node.body:
+                if isinstance(fn, ast.FunctionDef) and fn.name.startswith("test_") and reads_parity_store(fn):
+                    found.add(f"tests.{module}.{node.name}.{fn.name}")
+    return found
+
+
+class ParityStep(unittest.TestCase):
+    """D88(a), F-14: the real-store parity tests run on branch pushes, after the build, against the site's own copy of the store
+    (HAIL_PARITY_STORE=_site). The step fails when that copy has no tile lists and when a gated test skips, and it names exactly
+    the gated tests of the two modules, so a new or renamed gated test cannot drop out of the step silently."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.doc = yaml.safe_load((ROOT / ".github/workflows/website.yml").read_text(encoding="utf-8"))
+        cls.steps = cls.doc["jobs"]["build"]["steps"]
+        cls.names = [step.get("name") for step in cls.steps]
+
+    def step(self, prefix: str) -> dict:
+        found = [step for step in self.steps if (step.get("name") or "").startswith(prefix)]
+        self.assertEqual(len(found), 1, prefix)
+        return found[0]
+
+    def test_the_step_follows_the_build_and_runs_on_branch_pushes_only(self):
+        parity = self.step("Real-store parity tests")
+        self.assertEqual(self.names.index(parity["name"]), self.names.index("Build from live data") + 1)
+        self.assertLess(self.names.index(parity["name"]), self.names.index("Map smoke test in a real browser (branch pushes)"))
+        self.assertEqual(parity["if"], "steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'")
+
+    def test_the_step_reads_the_site_copy_and_fails_without_its_tile_lists_or_on_a_skip(self):
+        parity = self.step("Real-store parity tests")
+        self.assertEqual(parity["env"], {"HAIL_PARITY_STORE": "_site"})
+        self.assertIn("if [ ! -d _site/hail/tl ]; then", parity["run"])
+        self.assertIn("exit 1", parity["run"])
+        self.assertIn("if grep -q '(skipped=' parity.log; then", parity["run"])
+        self.assertNotIn("--hail-store", parity["run"])
+
+    def test_the_step_names_exactly_the_gated_tests_of_the_two_modules(self):
+        parity = self.step("Real-store parity tests")
+        named = set(re.findall(r"tests\.test_(?:site|summary)\.\w+\.test_\w+", parity["run"]))
+        self.assertEqual(named, gated_parity_tests())
+        self.assertEqual(len(named), 7, named)
+
+    def test_the_offline_step_passes_no_parity_store(self):
+        self.assertNotIn("HAIL_PARITY_STORE", str(self.step("Website tests (offline)")))
+
+    def test_the_build_job_timeout_leaves_room_for_the_step(self):
+        self.assertGreaterEqual(self.doc["jobs"]["build"]["timeout-minutes"], 25)
+
+
+class FakeFramePage:
+    """The few page calls the swath spot helpers make: the frame picture's box, the free centre the grid finds, the test hook's
+    pan, and a zoom that the wheel steps (2.5 levels each, as map.js sets them) move."""
+
+    class Mouse:
+        def __init__(self, page):
+            self.page = page
+
+        def move(self, x, y):
+            pass
+
+        def wheel(self, dx, dy):
+            self.page.wheels += 1
+            self.page.zoom = min(17.0, self.page.zoom + 2.5)
+
+    class Clock:
+        def run_for(self, ms):
+            pass
+
+    def __init__(self, smoke, free=None, zoom: float = 0.0):
+        self.smoke, self.free, self.zoom, self.wheels, self.pans = smoke, free, zoom, 0, []
+        self.mouse, self.clock = self.Mouse(self), self.Clock()
+
+    def locator(self, selector):
+        page = self
+
+        class Frame:
+            @property
+            def first(self):
+                return self
+
+            def bounding_box(self):
+                return {"x": 0.0, "y": 0.0, "width": 390.0, "height": 844.0}
+        return Frame()
+
+    def wait_for_timeout(self, ms):
+        pass
+
+    def evaluate(self, js, arg=None):
+        if js == self.smoke.FREE_POINTS_JS:
+            return [list(point) for point in self.free]
+        if "hailMapTest.pan" in js:
+            self.pans.append(list(arg))
+            return None
+        if "img.leaflet-image-layer.frame" in js:            # map_zoom: the frame picture's width on the screen
+            return 256 * 2 ** self.zoom * (-104.0 + 117.0) / 360
+        return None
+
+
+class SmokeRowsAndBudgets(unittest.TestCase):
+    """The browser smoke's rules that need no browser (S-1 to S-5, D87(g), D88): the readers take the text a reader sees, every row
+    of every section is compared with the one Python source, the eleven section ids come from the summary's constant, the swath
+    spot is zoomed to the gate's floor and panned to the visible centre before it is read, and the B3 phone view is held to
+    map.json's phone budget."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.smoke = import_tool("smoke_map")
+        cls.sm = cls.smoke.summary_module()
+        cls.ids = list(cls.sm.SECTION_ORDER)
+
+    def test_the_readers_take_the_text_a_reader_sees_and_never_inner_text(self):
+        """D83(a), S-2, F-02: the rows behind 'Show all' are in the text the sheet readers take, so none of them uses innerText."""
+        smoke = self.smoke
+        for js in (smoke.SHEET_BODY_JS, smoke.SUMMARY_READ, smoke.SHEET_READ, smoke.READ_TEXT_JS):
+            self.assertNotIn("innerText", js)
+        self.assertIn("readText(document.getElementById('sheet-body'", smoke.SHEET_BODY_JS)
+        for func in (smoke.sheet_settled, smoke.sheet_text, smoke.check_hail):
+            self.assertNotIn("innerText", inspect.getsource(func))
+            self.assertNotIn("inner_text(", inspect.getsource(func))
+
+    def test_the_eleven_section_ids_are_the_summary_constant_and_map_json_must_agree(self):
+        """S-5, D88(i): the smoke's ids are website.summary.SECTION_ORDER; map.json's section order and sections must equal it."""
+        self.assertEqual(self.smoke.section_order(), list(self.sm.SECTION_ORDER))
+        self.assertEqual(len(self.smoke.section_order()), 11)
+        good = {"hail": {"summary": {"state": "loaded", "section_order": list(self.sm.SECTION_ORDER),
+                                     "sections": list(self.sm.SECTION_ORDER)}}}
+        self.assertEqual(self.smoke.section_order_problems(good), [])
+        short = {"hail": {"summary": {"state": "loaded", "section_order": list(self.sm.SECTION_ORDER)[:10],
+                                      "sections": list(self.sm.SECTION_ORDER)}}}
+        problems = self.smoke.section_order_problems(short)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("hail.summary.section_order", problems[0])
+        self.assertEqual(self.smoke.section_order_problems({"hail": {"summary": {"state": "unavailable"}}}), [])
+
+    def test_the_sheet_words_come_from_describe_sheet_with_its_built_rows(self):
+        """D88(p): the smoke's one source is summary.describe_sheet, and its built rows travel with its summary."""
+        built = {"rows": {"hail": [{"label": "Radar estimate", "text": "x", "note": ""}]}, "notes": {}}
+        fake = {"summary": {"table": {"rows": []}, "sections": []}, "built": built, "section_order": list(self.ids)}
+        with mock.patch.object(self.sm, "describe_sheet", lambda store, row, col, now: fake, create=True), \
+                mock.patch.object(self.sm, "describe_summary", lambda *a, **k: self.fail("describe_summary was used")):
+            words = self.smoke.sheet_words(Path("store"), 797, 1986, None)
+        self.assertEqual(self.smoke.python_rows(words, "hail"), [("Radar estimate", "x", "")])
+        self.assertIsNone(self.smoke.python_rows(words, "wind"))
+
+    def test_every_row_of_every_section_is_compared_with_the_python_source(self):
+        """S-4, D87(g), D88(p): the rows shown and the rows behind 'Show all', of every section, against the one Python source. No
+        label list selects them, so a season row and a radar row are compared as a joined row is."""
+        season = ("Grid estimate", "highest 94.6 F on Jul 19, 2021; lowest 40.1 F on Jan 3, 2022", "")
+        radar = ("Radar estimate", "Jul 4, 2022: 0.34 in (8.7 mm), pea to mothball", "")
+        joined = ("Report", "Jun 14, 2025 11:45 pm MDT: hail, 1.00 in", "Remark: a")
+        shown, behind = [season, radar, joined], [("Radar estimate", "Jun 14, 2025: 1.20 in (30.5 mm), golf ball", "")]
+        items = [self.item_for(sid, shown, behind) for sid in self.ids]
+        as_rows = lambda triples: [{"label": label, "text": text, "note": note} for label, text, note in triples]  # noqa: E731
+        want = {"rows_by_section": {sid: as_rows(shown + behind) if sid == "hail" else [] for sid in self.ids}}
+        self.assertEqual(self.smoke.sheet_rows_problems("gate", want, {"sections": {"items": items}}, self.ids), [])
+
+        changed = [dict(items[0], rows=[dict(items[0]["rows"][0], text="highest 95.0 F on Jul 19, 2021; lowest 40.1 F on Jan 3, 2022")]
+                   + items[0]["rows"][1:])] + items[1:]
+        problems = self.smoke.sheet_rows_problems("gate", want, {"sections": {"items": changed}}, self.ids)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("the hail section's rows differ at row 1 (4 on the sheet, 4 from the Python source)", problems[0])
+
+        behind_changed = [dict(items[0], more=dict(items[0]["more"], rows=[dict(items[0]["more"]["rows"][0],
+                                                                                 text="Jun 14, 2025: 1.30 in (33.0 mm), golf ball")]))] + items[1:]
+        problems = self.smoke.sheet_rows_problems("gate", want, {"sections": {"items": behind_changed}}, self.ids)
+        self.assertTrue(any("rows differ at row 4" in p for p in problems), problems)
+
+        missing = {"rows_by_section": {sid: rows for sid, rows in want["rows_by_section"].items() if sid != "wind"}}
+        problems = self.smoke.sheet_rows_problems("gate", missing, {"sections": {"items": items}}, self.ids)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("gives no rows for the wind section", problems[0])
+
+    def item_for(self, sid, shown, behind):
+        """One section as the reader reads it (the same shape SheetReader builds)."""
+        def row(triple):
+            label, text, note = triple
+            return {"label": label, "text": text, "note": note}
+        rows = [row(t) for t in shown] if sid == "hail" else []
+        more = [row(t) for t in behind] if sid == "hail" and behind else []
+        return {"id": sid, "heading": sid.title(), "sample": None, "lead": "A lead.", "rows": rows,
+                "more": ({"summary": f"Show all {len(rows) + len(more)} rows", "rows": more} if more else None),
+                "groups": [], "notes": [], "text": ""}
+
+    def test_the_swath_spot_is_panned_to_the_visible_centre_before_it_is_read(self):
+        """S-3, D88(h): the spot moves to the centre of the part of the map no panel covers. The test hook's pan moves the view the
+        other way, so the offset is the spot's place less the centre's."""
+        data = {"image_bounds": [[44.0, -117.0], [49.0, -104.0]]}
+        # two bands of free points around a card: their centre (198, 387) is on the card, so the free point nearest it is taken
+        page = FakeFramePage(self.smoke, free=[(100.0, 300.0), (195.0, 430.0), (300.0, 430.0)], zoom=11.5)
+        before = self.smoke.map_pixel(page, data, 45.8, -108.5)
+        after = self.smoke.centre_on_spot(page, data, 45.8, -108.5)
+        self.assertEqual(page.pans, [[before[0] - 195.0, before[1] - 430.0]])
+        self.assertEqual(after, before)                     # this fake frame does not move: the spot reads where it was
+
+    def test_the_swath_zoom_stops_at_the_gate_floor_and_takes_no_step_it_does_not_need(self):
+        """S-3, D88(h): the wheel stops at GATE_MIN_ZOOM. A map that is there takes no step; one step from 9 reaches it."""
+        data = {"image_bounds": [[44.0, -117.0], [49.0, -104.0]]}
+        for start, steps in ((9.0, 1), (10.0, 0), (4.0, 3)):
+            page = FakeFramePage(self.smoke, zoom=start)
+            self.smoke.zoom_on_spot(page, data, 45.8, -108.5)
+            self.assertEqual(page.wheels, steps, start)
+            self.assertGreaterEqual(page.zoom, self.smoke.GATE_MIN_ZOOM - 0.05, start)
+            self.assertLess(page.zoom, self.smoke.GATE_MIN_ZOOM + 2.5, start)      # at most one step past the floor
+
+    def test_the_b3_phone_view_is_held_to_the_phone_budget_map_json_carries(self):
+        """S-1, D82(b), D88(h): the B3 files and the shell of the 390 px view are held to hail.budget.phone_gzip_bytes, the same
+        budget the whole phone view is held to; with no budget in map.json the check names it."""
+        body = os.urandom(20_000)
+        size = self.smoke.gzip_size(body)
+
+        class Ctx:
+            def close(self):
+                pass
+
+        class Page:
+            def wait_for_timeout(self, ms):
+                pass
+
+            def evaluate(self, js, arg=None):
+                return [] if ("fetches" in js or "draws" in js) else None
+
+        def run(block):
+            data = {"hail": {"budget": block}}
+
+            def fake_b3_open(browser, base, width, height, allow=(), listen=None):
+                if listen:
+                    listen(FakeResponse("b/t.json", body))         # an outline file: a B3 file in the view's scope
+                return Ctx(), Page()
+
+            with mock.patch.multiple(self.smoke, b3_open=fake_b3_open, b3_view=lambda *a, **k: None):
+                return self.smoke.check_budget_and_pan(None, "http://127.0.0.1:1/", data)
+
+        def real(problems):
+            return [p for p in problems if not p.startswith(self.smoke.NOTE)]
+
+        over = real(run({"phone_gzip_bytes": 10_000}))
+        self.assertEqual(len(over), 1, over)
+        self.assertIn("the budget is 10000", over[0])
+        self.assertEqual(real(run({"phone_gzip_bytes": size + 1_000})), [])
+        missing = real(run({}))
+        self.assertEqual(len(missing), 1, missing)
+        self.assertIn("no phone-view budget", missing[0])

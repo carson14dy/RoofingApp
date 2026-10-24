@@ -467,13 +467,16 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(self.rows["county_watch"]["values"][2], 1)      # FF.A 2024-06-30 is 2023-24
         self.assertEqual(self.rows["county_watch"]["values"][3], 1)      # FA.A 2025-05-12 is 2024-25
 
-    def test_held_row_has_the_four_reasons(self):
+    def test_held_row_has_the_four_reasons(self):                                                       # D41, D88(b)
         held = self.rows["held"]
         self.assertEqual(held["kind"], "Data unavailable")
         self.assertTrue(all(v is None for v in held["values"]))
-        text = " ".join(held["notes"])
-        for word in ("Lightning", "UV and sunlight", "Roof surface temperature", "ponding"):
-            self.assertIn(word, text)
+        keys = ("lightning", "uv_and_sun", "roof_surface_temperature", "ponding")
+        self.assertEqual(held["notes"], [S.WORDS_INDICATORS["held"][k] for k in keys])
+        for note, key in zip(held["notes"], keys):                  # the lead: the kind word, then the label, once each
+            with self.subTest(held=key):
+                self.assertTrue(note.startswith(f"{S.KIND_UNAVAILABLE}: {S.HELD_NAMES[key]}. "), note[:90])
+                self.assertTrue(note.endswith(S.ALL_CLEAR), note[-40:])
 
     def test_partial_season_line_below_the_table(self):
         partial = self.result["table"]["partial"]
@@ -2194,6 +2197,56 @@ class SeasonRuleTests(unittest.TestCase):
 
     def test_the_words_test_names_the_block(self):                                                        # D87(d)
         self.assertIn("season: start_month 7, start_day 1, end_month 6, end_day 30", S.__doc__)
+
+
+class SheetRowsTests(unittest.TestCase):
+    """The sheet's rows and notes come from one function (summary.describe_sheet, D88(p), S-4) in the fixed section order
+    (D87(g), D88(i)); the partial and unavailable lines keep their kind words and their all-clear sentence (D41, D87(a),
+    D87(b), D88(b), D88(s))."""
+
+    NOW = datetime(2026, 10, 16, 12, 0, tzinfo=timezone.utc)
+
+    def test_the_section_order_is_the_keys_in_the_brief_order(self):                                    # D87(g), D88(i)
+        self.assertEqual(S.SECTION_ORDER, tuple(S.SECTION_KEYS))
+        self.assertEqual(S.SECTION_ORDER, ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice",
+                                           "heat", "roof", "made"))
+
+    def test_describe_sheet_gives_the_rows_and_notes_of_the_eleven_sections(self):                      # D88(p), S-4
+        root, _ = build_store("full")
+        try:
+            sheet = S.describe_sheet(root, ROW, COL, self.NOW)
+            self.assertEqual(sorted(sheet), ["built", "joined", "radar", "section_order", "summary"])
+            self.assertEqual(sheet["section_order"], list(S.SECTION_ORDER))
+            self.assertEqual(list(sheet["built"]["rows"]), list(S.SECTION_ORDER))
+            self.assertEqual(list(sheet["built"]["notes"]), list(S.SECTION_ORDER))
+            self.assertTrue(sheet["built"]["rows"]["temperature"], "the grid rows of the five seasons are in the sheet")
+            for sid, rows in sheet["built"]["rows"].items():
+                for row in rows:
+                    with self.subTest(section=sid):
+                        self.assertIn("label", row)
+                        self.assertIsInstance(row["text"], str)
+            self.assertEqual(sheet["built"]["notes"]["made"][-1], S.TIMES_NOTE)              # How this was made ends with the times
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
+
+    def test_a_partial_count_sentence_ends_with_the_words_all_clear(self):                             # D41, D87(b), D88(s)
+        tail = S.SECTION_WORDS["all_clear"]
+        self.assertEqual(tail, S.ALL_CLEAR)
+        self.assertEqual(S.map_data_summary(None)["section_data"]["words"]["all_clear"], tail)
+        text = S._town_five("19 severe thunderstorm warnings covered this spot in the five seasons",
+                            {"n": 2, "valid": 300, "missing": 0})
+        self.assertEqual(text, "19 severe thunderstorm warnings covered this spot in the five seasons; 2 more in 2026-27 "
+                               "so far. This is not an all-clear.")
+        self.assertEqual(text.count(tail), 1)
+
+    def test_a_roof_label_keeps_its_unit_word_and_no_kind_word(self):                                  # D87(a), D88(b)
+        kinds = {kind for _label, kind, _unit in S.ROOF_LINES.values()} | set(S.SECTION_KINDS.values()) | {S.KIND_UNAVAILABLE}
+        for ind, (label, kind, unit) in S.ROOF_LINES.items():
+            with self.subTest(line=ind):
+                self.assertIn(kind, kinds, ind)
+                for inside in re.findall(r"\(([^)]*)\)", label):
+                    for word in kinds:
+                        self.assertNotIn(word.lower(), inside.lower(), label)
 
 
 if __name__ == "__main__":

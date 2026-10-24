@@ -8,10 +8,10 @@ rows (Mercator), and writes the cells at or above 0.25 in, and the no-coverage c
 the folder of the frame's valid time (hail/live/<window>/<YYYYMMDDHHMM>/<tile>.json, D14), so a click reads its value
 without a second decode.
 
-A RADAR ESTIMATE. It is not observed hail, not a measurement at the ground and not damage. Uncoloured means no estimate
-of 0.25 in or more, never "no hail". -1 (missing) is uncoloured; -3 (no coverage) is hatched. Units and codes are
-NOAA's MRMS GRIB2 user table: millimetres; -1 missing; -3 no coverage. The header's own units and name read "unknown"
-to pygrib, so a file is identified by its discipline (209), category (3) and parameter number (30 or 34).
+A RADAR ESTIMATE. It is not observed hail, not a measurement at the ground and not an inspection. Uncoloured means no
+estimate of 0.25 in or more, never "no hail". -1 (missing) is uncoloured; -3 (no coverage) is hatched. Units and codes
+are NOAA's MRMS GRIB2 user table: millimetres; -1 missing; -3 no coverage. The header's own units and name read
+"unknown" to pygrib, so a file is identified by its discipline (209), category (3) and parameter number (30 or 34).
 
     frames, files, states = collect(now, None, out_dir, towns)                      # live: NOAA buckets on S3 (the site build)
     frames, files, states = collect(now, cache_dir, out_dir, towns, sample=True)    # invented field, no network
@@ -105,9 +105,9 @@ PARAMETER_WINDOW = {p.parameter: p.window for p in PRODUCTS}
 # (valid_text); sizes are inches to the hundredth, rounded down, with the millimetres exact (hail.inches, mm_text).
 WORDS_SWATH = {
     "legend_note": ("Radar estimate of the largest hail in the last {window}, in inches (NOAA MRMS MESH). An estimate, "
-                    "not observed hail and not damage."),
+                    "not observed hail and not an inspection."),
     "sample_legend_note": ("Sample: invented field, not NOAA MRMS MESH. Radar estimate of the largest hail in the last "
-                           "{window}, in inches. An estimate, not observed hail and not damage."),
+                           "{window}, in inches. An estimate, not observed hail and not an inspection."),
     "uncoloured": ("Uncoloured: no radar hail estimate of 0.25 in or more in the last {window}, or no value; NOAA's data "
                    "does not tell the two apart."),
     "hatched": "Hatched: no radar coverage.",
@@ -141,7 +141,7 @@ WORDS_SWATH = {
     "large_note": "Unusually large for a radar estimate; treat with care.",
     "what_this_is": ("MESH (maximum estimated size of hail) is a radar estimate at the grid cell, about 0.7 miles north "
                      "to south and 0.5 miles east to west. It is not a measurement at the ground, not observed hail and "
-                     "not damage."),
+                     "not an inspection."),
     "source": "Source: NOAA MRMS MESH, {folder}, CONUS grid, NOAA Open Data on AWS. Valid {valid}.",
     "sample_source": "SAMPLE: invented radar estimate, not NOAA data.",
     "as_of_build": "As of the build at {time}.",

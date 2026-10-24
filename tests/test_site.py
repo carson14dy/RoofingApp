@@ -32,6 +32,8 @@ from website import gridded as g  # noqa: E402
 from website import hail as hs  # noqa: E402
 from website import sources as src  # noqa: E402
 from website.sample import SampleFetcher  # noqa: E402
+sys.path.insert(0, str(ROOT / "tests"))   # tests/words_rules.py: the one forbidden list (D41, D81(c))
+import words_rules  # noqa: E402
 
 UTC = timezone.utc
 NOW = datetime(2026, 10, 14, 15, 0, tzinfo=UTC)
@@ -400,7 +402,7 @@ class Formatting(unittest.TestCase):
     def test_times_have_no_leading_zeros_on_any_platform(self):
         self.assertEqual(site.fmt_time("2026-10-14T15:05:00Z"), "Wed 9:05 am MDT")
         self.assertEqual(site.fmt_time("2026-12-02T03:00:00Z", "%a %b %-d %-I %p"), "Tue Dec 1 8 pm")
-        self.assertEqual(site.fmt_time(None), "—")
+        self.assertEqual(site.fmt_time(None), "-")
         self.assertEqual(site.strftime(date(2026, 7, 4), "%b %-d"), "Jul 4")
 
 
@@ -593,7 +595,16 @@ class SampleBuild(unittest.TestCase):
         html = page(self.out, "reports.html")
         self.assertIn("1.75 in", html)
         self.assertIn("unknown", html)
-        self.assertIn("No report is not evidence that no hail fell.", html)
+        self.assertIn("No report is not the same as no hail.", html)
+        empty = "No reports of hail or wind in or near Montana for this day; that is not the same as no hail."
+        self.assertIn(empty, html)                                       # the empty days say it too (D91(c))
+        self.assertEqual(html.count('<p class="empty">'), html.count(empty))
+
+    def test_reports_page_text_passes_the_one_forbidden_list(self):
+        """D91(c): the storm reports page is built text, so tests/words_rules.py scans its visible text: the stems of the one
+        forbidden list, and "no hail" only inside "not the same as no hail" (the lead and each empty day)."""
+        visible = re.sub(r"<(script|style)\b.*?</\1>", " ", page(self.out, "reports.html"), flags=re.S)
+        words_rules.assert_clean(self, " ".join(html_text(visible).split()), "reports.html")
 
     def test_reports_map_key_names_the_forecast_numbers_and_outlines(self):
         """The Storm reports card draws town bubbles and warning outlines beside the reports and hides
@@ -1882,9 +1893,10 @@ class HailHistory(unittest.TestCase):
         self.assertIn('if [ "$GITHUB_REF" != "refs/heads/main" ]', args[0])
         self.assertIn("--require-live --storm-layers --hail-history", args[0])
         unit = [line for line in text.splitlines() if "python -m unittest" in line]
-        self.assertEqual(len(unit), 1)
+        self.assertEqual(len(unit), 2, "the offline unit step and the real-store parity step (D88(a))")
         self.assertIn("tests.test_hail", unit[0])
         self.assertIn('"tests/test_hail.py"', text)
+        self.assertIn("HAIL_PARITY_STORE: _site", text)      # the parity step reads the built site's copy of the store (D88(a))
 
     def test_the_smoke_test_has_the_hail_checks(self):
         smoke = smoke_map()
@@ -3157,7 +3169,7 @@ class HailAddresses(unittest.TestCase):
         self.assertEqual(len(args), 1)
         self.assertIn("--require-live --storm-layers --hail-history --hail-addresses", args[0])
         unit = [line for line in text.splitlines() if "python -m unittest" in line]
-        self.assertEqual(len(unit), 1)
+        self.assertEqual(len(unit), 2, "the offline unit step and the real-store parity step (D88(a))")
         self.assertIn("tests.test_streets", unit[0])
         self.assertIn("tests.test_buildings", unit[0])
         self.assertIn("python tools/smoke_map.py _site --addresses", text)
@@ -3170,13 +3182,97 @@ class HailAddresses(unittest.TestCase):
                      "check_search", "check_address_text_off"):
             self.assertTrue(callable(getattr(smoke, name, None)), name)
         self.assertEqual(smoke.ADDRESS_GATE_ZOOM, 15)                 # the zoom of the gate and the budget (D30)
-        # the B3 check (the B3 files and the shell) keeps its own 650 KiB; the whole phone view's budget is the restated 700,000 bytes
-        # gzip (D82(b)): build.PHONE_GZIP_BUDGET, written to map.json as hail.budget.phone_gzip_bytes (pinned in the budget test)
-        self.assertEqual(smoke.ADDRESS_FETCH_BUDGET_GZIP, 650 * 1024)
+        # D91(a), D66, D82(b): the phone budget is read from the build's map.json (hail.budget.phone_gzip_bytes, written from
+        # build.PHONE_GZIP_BUDGET) by the smoke's map_budget; the B3 check and the whole phone view both use it, and the smoke
+        # keeps no budget constant of its own. A map.json without the budget gives None, which the smoke names as a problem.
+        self.assertFalse(hasattr(smoke, "ADDRESS_FETCH_BUDGET_GZIP"))
+        self.assertEqual(smoke.map_budget({"hail": {"budget": {"phone_gzip_bytes": 123_456}}}, "phone_gzip_bytes"), 123_456)
+        self.assertEqual(smoke.map_budget({"hail": {"budget": {"phone_gzip_bytes": site.PHONE_GZIP_BUDGET}}}, "phone_gzip_bytes"),
+                         700_000)
+        self.assertIsNone(smoke.map_budget({"hail": {}}, "phone_gzip_bytes"))
         self.assertEqual(site.PHONE_GZIP_BUDGET, 700_000)
         self.assertEqual(smoke.ADDRESS_DRAW_MS, 30)
         self.assertEqual(smoke.PAN_FETCH_LIMIT, 20)
         self.assertEqual(smoke.B3_BILLINGS, (45.7857, -108.5071))     # 401 North 27th Street, Billings
+
+
+class SiteCopySource(unittest.TestCase):
+    """D92(a), D75(a): a build's copy may take a built site's own hail/ folder as its source (the parity step reads _site as
+    HAIL_PARITY_STORE). That folder holds B4's live swath files under hail/live/, which the manifest never lists. _copy_hail
+    checks its source with allow_live=True, so such a source passes; any other unlisted file under hail/ still refuses it, and
+    a link is refused either way. The copy's own check stays strict, and the copy takes only the listed folders."""
+
+    def store(self, extra: dict) -> Path:
+        """A hail/ folder copied from the sample fixture, with extra files written under the store root. The manifest lists
+        the fixture's files only, so each extra file is unlisted."""
+        root = Path(tempfile.mkdtemp(prefix="hailwatch-d92-store-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        shutil.copytree(hs.FIXTURE_DIR / "hail", root / "hail")
+        for rel, data in extra.items():
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_bytes(data)
+        return root
+
+    def site_dir(self) -> Path:
+        """A site folder that does not exist yet (the copy makes its hail/ folder)."""
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-d92-site-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        return out / "site"
+
+    def test_a_source_with_live_files_passes_and_the_copy_never_carries_them(self):
+        root = self.store({"hail/live/60/20261024T120000Z/MTC045.json": b'{"f": "hail-live-test"}'})
+        with self.assertRaises(hs.HailStoreError):
+            hs.check_manifest(root)                     # strict refuses it: the pass below is allow_live's doing
+        out = self.site_dir()
+        site._copy_hail(root, out, hs.load_index(root), addresses=False)
+        self.assertFalse((out / "hail" / "live").exists())
+        hs.check_manifest(out)
+
+    def test_a_source_with_an_unlisted_file_elsewhere_under_hail_still_fails(self):
+        for rel in ("hail/zz/unlisted.json", "hail/t/unlisted.json"):
+            with self.subTest(rel=rel):
+                root = self.store({rel: b"{}"})
+                out = self.site_dir()
+                words = "the history has a file the manifest does not list: " + re.escape(rel)
+                with self.assertRaisesRegex(hs.HailStoreError, words):
+                    site._copy_hail(root, out, hs.load_index(root), addresses=False)
+                self.assertFalse((out / "hail").exists())
+
+    def test_a_link_under_the_live_folder_is_refused_either_way(self):
+        root = self.store({})
+        (root / "hail" / "live").mkdir()
+        os.symlink(root / "hail" / "manifest.json", root / "hail" / "live" / "link.json")
+        with self.assertRaisesRegex(hs.HailStoreError, "the history has a link"):
+            site._copy_hail(root, self.site_dir(), hs.load_index(root), addresses=False)
+
+    def test_the_source_is_checked_with_allow_live_and_the_copy_strictly(self):
+        root = self.store({"hail/live/60/20261024T120000Z/MTC045.json": b"{}"})
+        out = self.site_dir()
+        real_check = hs.check_manifest
+        calls = []
+
+        def recording(path, allow_live=False):
+            calls.append((Path(path).resolve(), allow_live))
+            return real_check(path, allow_live=allow_live)
+
+        with mock.patch.object(hs, "check_manifest", side_effect=recording):
+            site._copy_hail(root, out, hs.load_index(root), addresses=False)
+        self.assertEqual(calls[0], (root.resolve(), True))       # the source: hail/live is skipped (D92(a))
+        self.assertEqual(calls[-1], (out.resolve(), False))      # the copy: its own check is strict
+
+    def test_the_copy_refuses_an_unlisted_file_it_would_carry_from_a_clean_source(self):
+        root = self.store({})
+        out = self.site_dir()
+        real_copytree = shutil.copytree
+
+        def copytree_with_a_stray(src, dst, *args, **kwargs):
+            result = real_copytree(src, dst, *args, **kwargs)
+            (Path(dst) / "stray.json").write_bytes(b"{}")         # an unlisted file the copy would carry
+            return result
+
+        with mock.patch.object(shutil, "copytree", side_effect=copytree_with_a_stray):
+            with self.assertRaisesRegex(hs.HailStoreError, "the history has a file the manifest does not list: hail/"):
+                site._copy_hail(root, out, hs.load_index(root), addresses=False)
 
 
 class B3Completion(unittest.TestCase):
@@ -3307,7 +3403,7 @@ class B3Completion(unittest.TestCase):
                 self.assertNotIn("==", line)                                       # no pin on any pip line (D19)
         for module in ("tests.test_addresses", "tests.test_streets", "tests.test_buildings"):
             unit = [line for line in text.splitlines() if "python -m unittest" in line]
-            self.assertEqual(len(unit), 1)
+            self.assertEqual(len(unit), 2, "the offline unit step and the real-store parity step (D88(a))")
             self.assertIn(module, unit[0].split())
 
 
@@ -3497,7 +3593,7 @@ class HailSwathLayers(unittest.TestCase):
         for field in ("legend_note", "legend_uncoloured"):                          # no template left unfilled in the legend
             self.assertNotIn("{", L[field], field)
         self.assertNotIn(sw.WORDS_SWATH["uncoloured"].format(window=L["window_word"]), L["legend_note"])   # not repeated
-        self.assertIn("not observed hail and not damage", L["legend_note"])
+        self.assertIn("not observed hail and not an inspection", L["legend_note"])   # the swath words (D89(e))
 
     def test_the_status_line_names_both_layers_with_their_valid_time_and_age(self):
         status = self.on_result["status"]["hail_swath"]
@@ -3895,6 +3991,10 @@ class HailSwathLayers(unittest.TestCase):
     # change does not count. Regenerate with write_default_manifest (see its docstring).
     MANIFEST = ROOT / "tests" / "fixtures" / "default-build-manifest.json"
     ABOUT_CHANGED = ("about.html",)
+    # D91(c): the storm reports page's lead and its empty-day line are reworded on purpose (the words gate's own sentences)
+    REPORTS_CHANGED = ("reports.html",)
+    REPORTS_SENTENCES = ("No report is not the same as no hail.",
+                         "No reports of hail or wind in or near Montana for this day; that is not the same as no hail.")
     # the radar line of the default page (D53): the sentences the base build's page did not have; the D74 rows are checked by
     # test_joins (the contract texts) and the storm and address builds elsewhere in this file
     ABOUT_SENTENCES = ("a blank area is not a statement about the weather", "areas with no radar coverage are hatched")
@@ -3909,13 +4009,17 @@ class HailSwathLayers(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr[-800:])
         now = default_digests(out)
         self.assertEqual(sorted(set(now) ^ set(expected["files"])), [], f"base {expected['base']}: files differ")
-        # D53 and D77: the About page's radar line changed on purpose, so its digest is not the base's; every other file must
-        # match, and the page must carry the changed sentences
-        changed = sorted(name for name in now if now[name] != expected["files"][name] and name not in self.ABOUT_CHANGED)
+        # D53, D77 and D91(c): the About page's radar line and the storm reports page's two sentences changed on purpose, so
+        # their digests are not the base's; every other file must match, and each of those pages must carry the changed sentences
+        on_purpose = self.ABOUT_CHANGED + self.REPORTS_CHANGED
+        changed = sorted(name for name in now if now[name] != expected["files"][name] and name not in on_purpose)
         self.assertEqual(changed, [], f"base {expected['base']}: these files differ from the base build")
         about = " ".join(page(out, "about.html").split())
         for sentence in self.ABOUT_SENTENCES:
             self.assertIn(sentence, about)
+        reports = " ".join(page(out, "reports.html").split())
+        for sentence in self.REPORTS_SENTENCES:
+            self.assertIn(sentence, reports)
 class FiveSeasonHistory(unittest.TestCase):
     """The town page's five-season table and sections, the About words and the copies (B5, --hail-history), on the
     synthetic store that tests/test_summary.py writes (a spot at Billings with every part present). Nothing here is real."""
@@ -4252,6 +4356,17 @@ class MapBlocksForTheBrowser(unittest.TestCase):
         self.assertNotIn("gust_five_at", s["words"])                             # the season cell names its station (D57)
         self.assertIn("none_gust_at", s["words"])
 
+    def test_the_section_order_is_one_constant_for_map_json_and_the_town_page(self):          # D87(g), D88(i)
+        from website import summary as sm
+        self.assertEqual(sm.SECTION_ORDER, tuple(sm.SECTION_KEYS))
+        self.assertEqual(list(sm.SECTION_ORDER), self.SECTIONS)
+        block = self.hail_block()["summary"]
+        self.assertEqual(block["section_order"], list(sm.SECTION_ORDER))
+        self.assertEqual(block["sections"], list(sm.SECTION_ORDER))
+        town = page(self.out, "town/billings.html")
+        pos = [town.index(f'id="sec-{sid}"') for sid in sm.SECTION_ORDER]
+        self.assertEqual(pos, sorted(pos), "the town page shows the sections in SECTION_ORDER")
+
     def test_the_joins_block_carries_the_six_section_order_and_the_per_tile_events_path(self):
         j = self.hail_block()["joins"]
         self.assertEqual(j["section_order"], ["reports", "records", "detections", "warnings", "zones", "stations"])
@@ -4262,6 +4377,7 @@ class MapBlocksForTheBrowser(unittest.TestCase):
         from website import joins as jn
         self.assertEqual(self.hail_block()["budget"], {"phone_gzip_bytes": site.PHONE_GZIP_BUDGET,
                                                        "tile_events_gzip_bytes": jn.TILE_EVENTS_BUDGET_GZIP})
+        self.assertEqual(self.hail_block()["budget"]["phone_gzip_bytes"], site.PHONE_GZIP_BUDGET)   # D88(r): the build's constant
         self.assertEqual(site.PHONE_GZIP_BUDGET, 700_000)                 # D82(b): restated with its reason, no cut
         self.assertEqual(jn.TILE_EVENTS_BUDGET_GZIP, 100_000)
 
@@ -4685,20 +4801,12 @@ def node_sheet(site: Path, h: dict, cell: dict) -> dict:
 
 
 def module_sheet(site: Path, cell: tuple[int, int], now) -> dict:
-    """The sheet for a cell as the module writes it: the summary (table, sections' leads, roof), the B1 radar words, and the
-    rows and notes of the eleven sections (build.history_sections) with the joined records of the cell (describe_joins)."""
-    from website import build as bd, hail as hs, joins as jn, summary as sm
+    """The sheet for a cell as the module writes it: summary.describe_sheet (D88(p), S-4), the one function the browser's sheet
+    is compared with. Its keys: summary (table, sections' leads, roof), radar (the B1 words), joined (the join views), built
+    (the rows and notes of the eleven sections) and section_order."""
+    from website import summary as sm
     row, col = cell
-    index = hs.load_index(site)
-    lat, lon = hs.cell_centre(row, col)
-    radar = hs.describe(index, hs.cell_events(site, lat, lon), now, sample=False)
-    summary = sm.describe_summary(site, row, col, now, town=None)
-    tile = json.loads((site / "hail" / "j" / f"{hs.tile_name(row // hs.TILE, col // hs.TILE)}.json").read_text(encoding="utf-8"))
-    words = jn.describe_joins(index, tile, row, col, now, sample=False, store_dir=site, events=jn._read_events(site), spot=None)
-    jv = {"sections": [bd.join_view(sec) for sec in words["sections"]]}
-    through = (index.get("climate") or {}).get("through")
-    built = bd.history_sections(summary, jv, radar, town_page=False, through=through)
-    return {"summary": summary, "radar": radar, "built": built}
+    return sm.describe_sheet(site, row, col, now)
 
 
 def section_rows(rows: list[dict]) -> list[list[str]]:
@@ -4951,6 +5059,14 @@ class SummaryContract(unittest.TestCase):
         self.assertEqual(browser["share"], {"scale": 100, "share": python_share})
         python_full = [[total, valid, valid * 100 >= total * python_share] for total in (365, 366) for valid in range(367)]
         self.assertEqual(browser["full"], python_full, "the 95 percent rule at every day count 0 to 366")
+        full = {(total, valid): ok for total, valid, ok in browser["full"]}
+        for total, enough, short in ((365, 347, 346), (366, 348, 347)):        # D88(l): 346.75 and 347.7 days need 347 and 348
+            with self.subTest(total=total):
+                self.assertTrue(full[(total, enough)], f"{enough} of {total} days is a season shown")
+                self.assertFalse(full[(total, short)], f"{short} of {total} days is not")
+        self.assertEqual(rule["season"], sm.SEASON_RULE)                        # the block the browser reads is the module's rule
+        self.assertEqual(sm.season_bounds("2023-24"), (date(2023, 7, 1), date(2024, 6, 30)))
+        self.assertEqual((sm.season_bounds("2023-24")[1] - sm.season_bounds("2023-24")[0]).days + 1, 366)   # a leap season
         for label, start, end in browser["bounds"]:
             with self.subTest(label=label):
                 self.assertEqual((start, end), tuple(d.isoformat() for d in sm.season_bounds(label)))

@@ -351,7 +351,9 @@ WORDS_STREETS = {
         "attribution_undated": ("Roads: Montana State Library, Transportation Framework (file date not available in "
                                 "this update). Terms in the file's metadata: \"{convenience}\""),
         "caveat": "The file's metadata says: \"{disclaimer}\"",
-        "unavailable": ("Streets could not be loaded in this update; that is not the same as having no streets."),
+        # D41, D89(d): the unavailable line ends with the required sentence, as addresses.py and buildings.py do
+        "unavailable": ("Streets could not be loaded in this update; that is not the same as having no streets. "
+                        "This is not an all-clear."),
     },
     "tiger": {
         "legend": ("Streets from the U.S. Census Bureau's 2026 road files; unnamed roads are drawn without a label"),
@@ -362,7 +364,9 @@ WORDS_STREETS = {
                                 "\"{acknowledgement}\" It also says: \"{trademark}\" This site does not put those "
                                 "names in any product name."),
         "caveat": "The Census Bureau's metadata says the files \"{accuracy}\"",
-        "unavailable": ("Streets could not be loaded in this update; that is not the same as having no streets."),
+        # D41, D89(d): the unavailable line ends with the required sentence, as addresses.py and buildings.py do
+        "unavailable": ("Streets could not be loaded in this update; that is not the same as having no streets. "
+                        "This is not an all-clear."),
     },
 }
 

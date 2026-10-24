@@ -5224,7 +5224,7 @@
           var r = own(S.indicators.references, rid);
           return r ? { id: rid, kind: refKind, text: fill(refLine, { source: r.source, quote: r.quote }) } : null;
         }).filter(function (x) { return !!x; }),
-        held: held.map(function (hid) { return { id: hid, kind: unavKind, label: own(heldNames, hid), text: own(heldWords, hid) }; })
+        held: held.map(function (hid) { return { id: hid, kind: unavKind, label: own(heldNames, hid), text: has(own(heldWords, hid)) ? heldWords[hid] : missingKey("summary.indicators.words.held." + hid) }; })
       };
     });
     return { groups: groups, how_made: own(S.indicators.words, "how_made_roof") || [] };

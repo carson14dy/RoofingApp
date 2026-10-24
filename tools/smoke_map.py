@@ -40,7 +40,8 @@ On a --hail-addresses build (run with --addresses) the address dots, the streets
 are checked by check_addresses: at zoom 12 nothing of them is fetched or drawn over Billings; at 13 the arterials and
 the count bubbles show and no outline is fetched; at 15 the local streets, one dot per outline and the unmatched
 address dots show, with no street names; at 16 the fills and the street names show; a 390 px view at zoom 15 fetches
-under 650 KB gzip; each redraw at 15 and 16 takes under 30 ms; a pan across Billings makes fewer than 20 requests.
+under the phone budget map.json carries (hail.budget.phone_gzip_bytes); each redraw at 15 and 16 takes under 30 ms;
+a pan across Billings makes fewer than 20 requests.
 A tap on an outline's dot opens the sheet with its address line on top (or the no-address sentence), and a tap on an
 unmatched dot shows its address line and how it was placed. The attribution lines are on the first screen at 390 px.
 The Find an address search is tried with "401 N 27th St Billings", "27th Billings", "Colony Rd Roundup" and "qwzx 99",
@@ -57,8 +58,10 @@ running sideways. Every cell of the table must read exactly the words that summa
 cell, followed by its coverage line and nothing else (D75); the table's notes, the partial line, the held line, the
 five-season sentences, the lead, the radar sentence and the table's heading must be on the sheet. The sections are
 read from the page's [data-hail='sections'] slot with every row in the DOM, the rows behind 'Show all' included (D83):
-the eleven in their fixed order, each with the heading and lead describe_summary gives, its notes, How this was made
-and the roof groups, and the joined rows of the cell as describe_joins writes them (sections_problems, joined_problems).
+the eleven in their fixed order (website.summary.SECTION_ORDER, D88(i)), each with the heading, the lead, its notes, its
+rows (every row, against the one Python source the sheet's words come from, sheet_rows_problems, D88(p)), How this was
+made and the roof groups (sections_problems). The joined rows of a joined part are checked against describe_joins as
+well (joined_rows_problems, the part checks).
 The words come from the store the smoke is given (--store PATH; by default the built site's own hail/ folder, whose B4
 live files under hail/live/ the store reader skips, D75). If that store cannot be read, the words are not compared and
 the failure is named; the table's position and the sizes of the files a tap fetches are still checked. Every row shows
@@ -101,9 +104,16 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class QuietServer(http.server.ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        # a page left while its files load closes the connection mid-file: expected, so it is not printed as an error
+        if not isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+            super().handle_error(request, client_address)
+
+
 def serve(root: Path) -> tuple[http.server.ThreadingHTTPServer, str]:
     handler = functools.partial(QuietHandler, directory=str(root))
-    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    httpd = QuietServer(("127.0.0.1", 0), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd, f"http://127.0.0.1:{httpd.server_address[1]}/"
 
@@ -257,7 +267,8 @@ def check(root: Path, shots: Path | None = None, addresses: bool = False, store:
             if addresses:
                 extras += (("check_addresses", lambda: check_addresses(browser, base, root, data, shots)),)
             if "hail" in data:                            # B5 part B2: the summary table, the taps and the phone budget
-                extras += (("check_summary", lambda: check_summary(browser, base, root, data, summary_store(store, root),
+                extras += (("check_section_order", lambda: section_order_problems(data)),
+                           ("check_summary", lambda: check_summary(browser, base, root, data, summary_store(store, root),
                                                                    shots, history)),
                            ("check_every_layer", lambda: check_every_layer(browser, base, data)))
             if "hail_60" in data["layers"]:               # --storm-layers: the live hail swath layers (B4)
@@ -355,7 +366,7 @@ def check_no_outline_key(browser, base, data) -> list[str]:
     else:
         key.click()
         page.wait_for_timeout(300)
-        if page.locator("#sheet-title").inner_text() != "List":
+        if page.locator("#sheet-title").text_content().strip() != "List":
             problems.append("legend: the no-outline key did not open the List")
     ctx.close()
     # in the one-column legend (wide screens, a phone on its side) the row sits right under the scale:
@@ -1169,6 +1180,27 @@ def map_pixel(page, data: dict, lat: float, lon: float) -> tuple[float, float]:
     return x, y
 
 
+# The text a reader sees (D83(a), S-2, F-02). It is read as textContent, with a separator at each block's edge (a table's
+# coverage line is a block, so the words and the line stay apart) and nothing that CSS hides (display: none). innerText is
+# not used: it leaves out the rows of a closed <details>, the 'Show all' rows, which the page holds and the check must read.
+READ_TEXT_JS = """const readText = (el, sep) => {
+  if (!el) return '';
+  let out = '';
+  for (const n of el.childNodes) {
+    if (n.nodeType === 3) { out += n.textContent; continue; }
+    if (n.nodeType !== 1) continue;
+    const d = getComputedStyle(n).display;
+    if (d === 'none') continue;
+    const block = !/^(inline|contents)/.test(d);
+    out += (block ? sep : '') + readText(n, sep) + (block ? sep : '');
+  }
+  return out;
+};"""
+# the hail sheet's body, read as the words a reader sees with a space at each block edge (the day lines, the words)
+SHEET_BODY_JS = ("() => { " + READ_TEXT_JS + " const s = document.getElementById('sheet');"
+                 " return s && !s.hidden ? readText(document.getElementById('sheet-body'), ' ') : null; }")
+
+
 def hail_open(page, root_url: str, at: str | None = None) -> None:
     """Open the map (on a spot, when the address names one) and wait until it is drawn."""
     page.goto(root_url + "map.html" + (f"?at={at}" if at else ""), wait_until="load")
@@ -1178,13 +1210,13 @@ def hail_open(page, root_url: str, at: str | None = None) -> None:
 
 
 def sheet_settled(page, loading: str, seconds: float = 15) -> str:
-    """The hail sheet's text once it has left the loading line; '' when it does not open in time."""
+    """The hail sheet's text once it has left the loading line; '' when it does not open in time. The rows behind 'Show all'
+    are in the text (D83(a)): see READ_TEXT_JS."""
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
-        text = page.evaluate("() => { const s = document.getElementById('sheet');"
-                             " return s && !s.hidden ? document.getElementById('sheet-body').innerText : null; }")
+        text = page.evaluate(SHEET_BODY_JS)
         if text is not None and text.strip() and loading not in text:
-            return text
+            return norm(text)
         page.wait_for_timeout(150)
     return ""
 
@@ -1269,7 +1301,8 @@ def check_hail(browser, base: str, root: Path, data: dict, shots: Path | None) -
             if not text:
                 problems.append(f"{label}: ?at={hail_at(HAIL_BENCHLAND)} did not open the hail sheet")
             else:
-                if page.inner_text("#sheet-title").strip() != words["title"]:
+                title = page.evaluate("() => document.getElementById('sheet-title').textContent")
+                if norm(title) != words["title"]:
                     problems.append(f"{label}: the hail sheet's title is not {words['title']!r}")
                 problems += check_sheet_words(label, text, want, sample)
                 problems += [f"{label}: the sheet lacks {part!r} (Benchland's cell, 792, 1998)"
@@ -1541,10 +1574,33 @@ def sheet_read(page, ids: list[str]) -> dict:
         page.wait_for_timeout(200)
 
 
-def section_ids(data: dict) -> list[str]:
-    """The eleven sections of the sheet in their fixed order, as map.json's summary block lists them (summary.py _sections)."""
-    ids = (data["hail"].get("summary") or {}).get("sections")
-    return list(ids) if isinstance(ids, list) else []
+def section_order() -> list[str]:
+    """The eleven sections of the sheet in their fixed order (D88(i), S-5): website.summary.SECTION_ORDER, the constant the
+    build writes as hail.summary.section_order. The smoke does not take the order from the build it checks. Until the
+    constant exists the order is the eleven keys of WORDS_SUMMARY["section_titles"], the list the summary's own map block
+    gives (the brief's SECTION_KEYS fallback names nine ids, S-5); section_order_problems names the fallback."""
+    sm = summary_module()
+    order = getattr(sm, "SECTION_ORDER", None)
+    return list(order) if order else list(sm.WORDS_SUMMARY["section_titles"])
+
+
+def section_order_problems(data: dict) -> list[str]:
+    """map.json's hail.summary.section_order and hail.summary.sections equal the fixed order of the sections (D88(i)): the
+    eleven ids, in the brief's Product order. Nothing is compared when the summary did not load (check_summary names that)."""
+    summary = (data.get("hail") or {}).get("summary") or {}
+    if summary.get("state") != "loaded":
+        return []
+    sm = summary_module()
+    if not hasattr(sm, "SECTION_ORDER"):
+        return [f"website.summary has no SECTION_ORDER, so the smoke checks the sections against the eleven keys of "
+                f"WORDS_SUMMARY['section_titles'] ({len(section_order())} ids) until it does (D88(i))"]
+    want = list(sm.SECTION_ORDER)
+    problems = []
+    for key in ("section_order", "sections"):
+        got = summary.get(key)
+        if got != want:
+            problems.append(f"map.json's hail.summary.{key} is {got}, the fixed order of the sections is {want} (D88(i))")
+    return problems
 
 
 def section_rows(section: dict) -> list[dict]:
@@ -1585,11 +1641,17 @@ def expected_rows_by_section(expected: dict) -> dict[str, list[dict]]:
 
 
 def joined_problems(label: str, sheet: dict, expected: dict, data: dict) -> list[str]:
-    """The joined rows of one cell on the open sheet against describe_joins for the same cell (B2 gates 1, 5 and 7; D82(d),
-    D83). In each section the joined rows (those whose kind label is a joined kind) are the module's, in its order, each with
-    its label, its words and its remark. A section with more rows than map.json's show_first shows that many, and its 'Show
-    all n rows' control (the words from map.json) holds the rest. Each line and each unavailable sentence of the cell is on
-    the sheet, and a section shows the kind sentence (kind_what) of each kind label among its rows."""
+    """The checks of a joined part against describe_joins (the part checks: a part that failed, a file that is missing):
+    its rows (joined_rows_problems), its lines, the Show all rule and the kind sentences (joined_lines_problems). The
+    three-cell comparison reads every row against the Python source instead (sheet_rows_problems, D88(p))."""
+    return joined_rows_problems(label, sheet, expected) + joined_lines_problems(label, sheet, expected, data)
+
+
+def joined_rows_problems(label: str, sheet: dict, expected: dict) -> list[str]:
+    """The joined rows of one cell on the open sheet against describe_joins for the same cell (B2 gates 1, 5 and 7; D82(d)).
+    Only the joined rows are compared here, the rows whose kind label is a joined kind (ROW_LABELS): describe_joins writes
+    only those, so the part checks, which compare with it, select them by that label. Each is the module's, in its order,
+    with its label, its words and its remark. The three-cell comparison compares every row (sheet_rows_problems)."""
     problems: list[str] = []
     got = sheet.get("sections") or {}
     items = got.get("items") or []
@@ -1610,6 +1672,19 @@ def joined_problems(label: str, sheet: dict, expected: dict, data: dict) -> list
             wanted = ": ".join(want[i][:2])[:90] if i < len(want) else "nothing"
             problems.append(f"{label}: the {sid} section's joined rows differ at row {i + 1} ({len(seen)} on the sheet, "
                             f"{len(want)} from the module): the sheet has {shown!r}, the module {wanted!r}")
+    return problems
+
+
+def joined_lines_problems(label: str, sheet: dict, expected: dict, data: dict) -> list[str]:
+    """The lines, the unavailable sentences, the Show all rule and the kind sentences of one cell on the open sheet (B2 gates
+    1, 5 and 7; D82(d), D83). A section with more rows than map.json's show_first shows that many, and its 'Show all n rows'
+    control (the words from map.json) holds the rest. Each line and each unavailable sentence of the cell is on the sheet,
+    and a section shows the kind sentence (kind_what) of each kind label among its rows."""
+    problems: list[str] = []
+    got = sheet.get("sections") or {}
+    items = got.get("items") or []
+    have = {item["id"]: item for item in items}
+    sm = summary_module()
     show_first = (data["hail"].get("joins") or {}).get("show_first")
     show_all = ((data["hail"].get("joins") or {}).get("words") or {}).get("show_all")
     if not isinstance(show_first, int) or isinstance(show_first, bool) or show_first < 1:
@@ -1724,18 +1799,60 @@ def sections_problems(where: str, want: dict, sheet: dict, ids: list[str]) -> li
     return problems
 
 
+def python_rows(want: dict, sid: str) -> list[tuple[str, str, str]] | None:
+    """One section's rows as the one Python source gives them (D88(p)): (label, words, note) for each row, in the order the
+    sheet shows them: describe_sheet's built rows (sheet_words keeps them as rows_by_section), or a rows list on the section
+    of describe_summary. None when the source carries no rows for the section."""
+    rows = (want.get("rows_by_section") or {}).get(sid)
+    if rows is None:
+        section = next((s for s in want.get("sections") or [] if s.get("id") == sid), None)
+        rows = section.get("rows") if section else None
+    if not isinstance(rows, list):
+        return None
+    return [(row.get("label") or "", _flat(row.get("text") or ""), _flat(row.get("note") or "")) for row in rows]
+
+
+def sheet_rows_problems(where: str, want: dict, sheet: dict, ids: list[str]) -> list[str]:
+    """Every row of every section, the rows shown and the rows behind 'Show all' (D83(a)), against the one Python source the
+    sheet's words come from (D87(g), D88(p), S-4): each row's label, words and note, in order. No label list selects the
+    rows, so a season row, a radar row or a joined row is compared alike. A source that gives no rows for a section is a
+    named failure, not a pass."""
+    problems: list[str] = []
+    have = {item["id"]: item for item in ((sheet.get("sections") or {}).get("items") or [])}
+    for sid in ids:
+        item = have.get(sid)
+        if item is None:
+            continue                                    # the missing section is named by sheet_order_problems
+        wanted_rows = python_rows(want, sid)
+        if wanted_rows is None:
+            problems.append(f"{where}: the Python source gives no rows for the {sid} section (summary.describe_sheet or "
+                            "describe_summary's sections, D88(p))")
+            continue
+        got_rows = [(row["label"], _flat(row["text"]), _flat(row["note"])) for row in section_rows(item)]
+        if got_rows != wanted_rows:
+            i = next((k for k, (g, w) in enumerate(zip(got_rows, wanted_rows)) if g != w),
+                     min(len(got_rows), len(wanted_rows)))
+            shown = ": ".join(got_rows[i][:2])[:90] if i < len(got_rows) else "nothing"
+            wanted = ": ".join(wanted_rows[i][:2])[:90] if i < len(wanted_rows) else "nothing"
+            problems.append(f"{where}: the {sid} section's rows differ at row {i + 1} ({len(got_rows)} on the sheet, "
+                            f"{len(wanted_rows)} from the Python source): the sheet has {shown!r}, the source {wanted!r}")
+    return problems
+
+
 def sheet_checks(where: str, want: dict | None, sheet: dict, ids: list[str], expected: dict | None,
                  data: dict) -> list[str]:
-    """The sheet below the table at one spot and one size: the eleven sections in order (always); with the store's words
-    (want), the table's notes, each section's heading, lead and notes, How this was made and the roof (sections_problems);
-    with the cell's joined rows (expected), those rows (joined_problems)."""
+    """The sheet below the table at one spot and one size: the eleven sections in order (always); with the Python words
+    (want), the table's notes, each section's heading, lead and notes, How this was made and the roof (sections_problems),
+    and every row of every section against the same source (sheet_rows_problems); with the cell's joined part (expected),
+    its lines, unavailable sentences, Show all rule and kind sentences (joined_lines_problems)."""
     problems = sheet_order_problems(where, sheet, ids)
     if want is None:
         return problems                                 # no words to compare with: the order and the position still count
     problems += table_notes_problems(where, want, sheet.get("summary"))
     problems += sections_problems(where, want, sheet, ids)
+    problems += sheet_rows_problems(where, want, sheet, ids)
     if expected is not None:
-        problems += joined_problems(where, sheet, expected, data)
+        problems += joined_lines_problems(where, sheet, expected, data)
     return problems
 
 
@@ -1802,7 +1919,7 @@ def check_joins(browser, base: str, root: Path, data: dict, shots: Path | None) 
     (check_part_unavailable, check_station_unavailable, check_zone_unavailable, check_cross_day_end) follow."""
     problems: list[str] = []
     loading = data["hail"]["words"]["loading"]
-    ids = section_ids(data)
+    ids = section_order()
     if data["hail"]["joins"].get("state") == "unavailable":      # a store without the records (the published asset before
         words = data["hail"]["joins"]["words"]                   # the joins step has run): every part says so in the module's
         for label, size in HAIL_SIZES:                           # own sentence (D20) and nothing else, and the page throws
@@ -1894,7 +2011,7 @@ def check_part_unavailable(browser, base: str, root: Path, data: dict) -> list[s
     try:
         hail_open(page, base, hail_at(HAIL_GATE))
         sheet_settled(page, loading, 20)
-        sheet = sheet_read(page, section_ids(data))
+        sheet = sheet_read(page, section_order())
         expected = joins_expected(root, data, HAIL_GATE, PART_UNAVAILABLE)
         sentence = next(sec["unavailable"] for sec in expected["sections"] if sec["id"] == PART_UNAVAILABLE)
         if not sentence:
@@ -1914,7 +2031,7 @@ def check_sample_labels(sheet: dict, data: dict, label: str) -> list[str]:
     word, sample = joins["words"]["sample"], joins.get("state") == "sample"
     have = {item["id"]: item for item in ((sheet.get("sections") or {}).get("items") or [])}
     problems: list[str] = []
-    for sid in section_ids(data):
+    for sid in section_order():
         if sid not in have:
             problems.append(f"{label}: the {sid} section is missing, so its sample label cannot be checked")
             continue
@@ -1951,7 +2068,7 @@ def check_station_unavailable(browser, base: str, root: Path, data: dict) -> lis
     try:
         hail_open(page, base, hail_at(HAIL_GATE))
         sheet_settled(page, loading, 20)
-        sheet = sheet_read(page, section_ids(data))
+        sheet = sheet_read(page, section_order())
         if not refused:
             problems.append("the station check refused no station file: the gate cell asked for none")
         problems += joined_problems("station file", sheet, joins_expected(root, data, HAIL_GATE, "stations"), data)
@@ -2019,7 +2136,7 @@ def check_zone_unavailable(browser, base: str, root: Path, data: dict) -> list[s
     try:
         hail_open(page, base, hail_at(HAIL_GATE))
         sheet_settled(page, loading, 20)
-        sheet = sheet_read(page, section_ids(data))
+        sheet = sheet_read(page, section_order())
         if not refused:
             problems.append("the zone check refused no zone file: the gate cell asked for none")
         problems += joined_problems("zone file", sheet, zone_lost_expected(root, data, HAIL_GATE, zone), data)
@@ -2050,7 +2167,7 @@ def check_cross_day_end(browser, base: str, root: Path, data: dict) -> list[str]
     try:
         hail_open(page, base, hail_at(HAIL_CROSS_DAY_CENTRE))
         sheet_settled(page, loading, 20)
-        shown = {_flat(f"{r['label']}: {r['text']}") for r in sheet_rows(sheet_read(page, section_ids(data)))}
+        shown = {_flat(f"{r['label']}: {r['text']}") for r in sheet_rows(sheet_read(page, section_order()))}
         for row in cross:
             if _flat(row) not in shown:
                 problems.append(f"the sheet lacks the cross-day row {row[:90]!r}")
@@ -2069,10 +2186,10 @@ B3_BILLINGS = (45.7857, -108.5071)       # the centre of the Billings view the c
 B3_STREET = {"line": "401 North 27th Street", "city": "Billings", "zip": "59101", "at": (45.78566, -108.50717)}
 B3_ROUNDUP = {"line": "500 Colony Road", "city": "Roundup", "zip": "59072", "at": (46.71750, -108.50031)}
 ADDRESS_GATE_ZOOM = 15                   # the zoom at which the dots, the local streets and the budget are measured
-# bytes of gzip: 650 KiB (650 * 1024). The brief says "650 KB"; the unit is for the supervisor to confirm. The budget is
-# asserted on the B3 files plus the shell (the page without the precipitation frames, which predate B3). The precipitation
-# layer is listed apart on the note line, which splits the whole page by part (D30, D48).
-ADDRESS_FETCH_BUDGET_GZIP = 650 * 1024
+# The phone budget is map.json's hail.budget.phone_gzip_bytes (D66, D82(b), D88(h)), the same figure check_every_layer holds
+# the whole phone view to. The B3 check holds the B3 files and the shell of this view to it (the page without the
+# precipitation frames, which predate B3). The precipitation layer is listed apart on the note line, which splits the
+# whole page by part (D30, D48).
 # The map's line for the address list (build.py, D44). The smoke's own expectation, so a map.json without the line fails
 # here (R-03, R-13); the line is checked on the rendered page, like the others.
 ADDRESS_ATTRIBUTION_START = "Addresses: Montana State Library"
@@ -2176,7 +2293,12 @@ def tap_centre(page, lat: float, lon: float) -> None:
 
 
 def sheet_text(page) -> str:
-    return page.evaluate("() => { const s = document.getElementById('sheet'); return s && !s.hidden ? s.innerText : ''; }")
+    """The sheet's text as lines, as a reader sees them: a block edge starts a line, each line is folded to single spaces and
+    empty lines are dropped (so the first lines are the first words on the sheet). The rows behind 'Show all' are in it
+    (READ_TEXT_JS, D83(a))."""
+    raw = page.evaluate("() => { " + READ_TEXT_JS + " const s = document.getElementById('sheet');"
+                        " return s && !s.hidden ? readText(s, '\\n') : ''; }")
+    return "\n".join(line for line in (norm(part) for part in raw.split("\n")) if line)
 
 
 def close_sheet(page) -> None:
@@ -2238,11 +2360,12 @@ def check_zoom_rules(browser, base: str, data: dict) -> list[str]:
     return problems
 
 
-def check_budget_and_pan(browser, base: str) -> list[str]:
-    """A 390 px phone view of Billings at zoom 15 fetches under the gzip budget (D30), counted on the B3 files (the note
-    gives the whole page split by part), and a pan across Billings at zoom 15 makes fewer than PAN_FETCH_LIMIT requests,
-    all to this site, with every redraw under the draw budget."""
+def check_budget_and_pan(browser, base: str, data: dict) -> list[str]:
+    """A 390 px phone view of Billings at zoom 15 fetches under the phone budget map.json carries (D30, D82(b)), counted on
+    the B3 files and the shell (the note gives the whole page split by part), and a pan across Billings at zoom 15 makes
+    fewer than PAN_FETCH_LIMIT requests, all to this site, with every redraw under the draw budget."""
     problems: list[str] = []
+    budget = map_budget(data, "phone_gzip_bytes")
     lat, lon = B3_BILLINGS
     seen: list = []
     ctx, page = b3_open(browser, base, 390, 844, listen=lambda r: seen.append(r))    # every response, from the first request
@@ -2263,11 +2386,14 @@ def check_budget_and_pan(browser, base: str) -> list[str]:
     if unread:
         problems.append(f"{unread} responses could not be read to measure them")
     b3_and_shell = sizes["B3 files"] + sizes["shell and data"]          # the budget's scope (D30, D48)
-    if b3_and_shell >= ADDRESS_FETCH_BUDGET_GZIP:
+    if budget is None:
+        problems.append("the build's map.json has no phone-view budget (hail.budget.phone_gzip_bytes), so the B3 files and "
+                        "the shell of the 390 px view are not checked against it")
+    elif b3_and_shell >= budget:
         problems.append(f"the B3 files and the shell of a 390 px Billings view at zoom {ADDRESS_GATE_ZOOM} fetched "
-                        f"{b3_and_shell} bytes gzip; the budget is {ADDRESS_FETCH_BUDGET_GZIP}")
+                        f"{b3_and_shell} bytes gzip; the budget is {budget}")
     problems.append(f"note: 390 px Billings view at zoom {ADDRESS_GATE_ZOOM}: the B3 files plus the shell {b3_and_shell} bytes "
-                    f"gzip against the budget of {ADDRESS_FETCH_BUDGET_GZIP} (B3 files {sizes['B3 files']} in "
+                    f"gzip against the budget of {budget} (B3 files {sizes['B3 files']} in "
                     f"{counts['B3 files']} files; shell and data {sizes['shell and data']} in {counts['shell and data']} "
                     f"files); the precipitation frames {sizes['precipitation frames']} bytes gzip in "
                     f"{counts['precipitation frames']} files, a layer that predates B3, listed apart (page total {total})")
@@ -2480,7 +2606,7 @@ def check_addresses(browser, base: str, root: Path, data: dict, shots: Path | No
         return [f"the address list is {h['addresses'].get('state')}: {h['addresses'].get('problem')}"]
     off = h["addresses"].get("text") == "off"
     problems = check_zoom_rules(browser, base, data)
-    problems += check_budget_and_pan(browser, base)
+    problems += check_budget_and_pan(browser, base, data)
     problems += check_taps(browser, base, root, data, off)
     problems += check_attribution(browser, base, data)
     problems += check_address_text_off(browser, base) if off else check_search(browser, base, root, data)
@@ -2503,7 +2629,8 @@ MINUTE_MS = 60_000
 KIND_WORDS = {"value": "with a value", "none": "without an estimate in a tile that has a live file",
               "missing": "in a tile with no live file"}
 GATE_MIN_CHANGED = 16      # D17: the picture changes at least this many pixels in a box around a listed value cell
-GATE_MIN_ZOOM = 10         # D17: the cell is looked at from zoom 10 or closer (the map's maximum zoom is 11)
+GATE_MIN_ZOOM = 10         # D17: the cell is looked at from zoom 10 or closer (D88(h); the map's top zoom with the B3 layers is 17)
+ZOOM_STEPS_MAX = 6         # the most wheel steps zoom_on_spot takes (a step is 2.5 zoom levels: the floor is reached in two)
 GATE_SPOT_RADIUS = 80      # D17: the count is taken in a box this many screen pixels either side of the spot
 GATE_NOTE_PIXELS = 16     # a pixel counts as changed when a colour channel moves by more than this (changed_share)
 TICK_MS = 60_000          # the hail layers' state is checked this often (map.js STATE_TICK, D7): once a minute
@@ -2918,16 +3045,71 @@ def clear_spot(page, data: dict, lat: float, lon: float) -> None:
     page.wait_for_timeout(300)
 
 
+# The points of the map that no panel covers (D88(h)): a grid of points over the map, each read by what the screen shows at it,
+# so a point under a panel reads as that panel. Every fixed-position panel counts (map.html and map.css): the top bar with the
+# legend card, the search box and the buttons, the layer menu, the timeline, the card chip, the sheet and the scrim. On a phone
+# the legend card sits in the middle, so the free points are two bands and their centre can fall on the card: visible_centre
+# takes the free point nearest that centre instead.
+FREE_POINTS_JS = """() => {
+  const m = document.getElementById('map').getBoundingClientRect();
+  const free = [];
+  for (let i = 1; i <= 9; i++) for (let j = 1; j <= 9; j++) {
+    const px = m.left + m.width * i / 10, py = m.top + m.height * j / 10;
+    const e = document.elementFromPoint(px, py);
+    if (e && e.closest('#map')) free.push([px, py]);
+  }
+  return free;
+}"""
+
+
+def visible_centre(page) -> tuple[float, float] | None:
+    """The free point of the map nearest the centre of the free points (D88(h)): the visible centre of the map, on a point no
+    panel covers. None when the grid finds no free point."""
+    free = page.evaluate(FREE_POINTS_JS)
+    if not free:
+        return None
+    cx = sum(x for x, _ in free) / len(free)
+    cy = sum(y for _, y in free) / len(free)
+    x, y = min(free, key=lambda p: (p[0] - cx) ** 2 + (p[1] - cy) ** 2)
+    return x, y
+
+
+def covering(page, x: float, y: float) -> str:
+    """What covers a screen point, named by its nearest element with an id (for the failure line)."""
+    return page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); if (!e) return 'nothing';"
+                         " const p = e.closest('[id]'); return p ? '#' + p.id : e.tagName.toLowerCase(); }", [x, y])
+
+
 def zoom_on_spot(page, data: dict, lat: float, lon: float) -> None:
-    """Zooms in with the wheel over the spot (D17): Leaflet keeps the point under the pointer, so the spot stays where it
-    is on the screen. The gate's clock is fake, so the map's wheel timers are run once the wheel has been turned."""
+    """Zooms in with the wheel over the spot until the map is at GATE_MIN_ZOOM or closer (D17, D88(h)). A wheel step is 2.5
+    zoom levels and keeps the point under the pointer, so the steps stop at the first one that reaches the floor: a spot is
+    not carried off the screen by steps the check does not need (fourteen fixed steps went to zoom 17). The gate's clock is
+    fake, so the map's wheel timers run once each step has been turned."""
     x, y = map_pixel(page, data, lat, lon)
     page.mouse.move(x, y)
-    for _ in range(14):
+    for _ in range(ZOOM_STEPS_MAX):
+        zoom = map_zoom(page, data)
+        if zoom is not None and zoom >= GATE_MIN_ZOOM - 0.05:
+            break
         page.mouse.wheel(0, -500)
         page.wait_for_timeout(120)
+        page.clock.run_for(1000)
+        page.wait_for_timeout(200)
     page.clock.run_for(3000)
     page.wait_for_timeout(400)
+
+
+def centre_on_spot(page, data: dict, lat: float, lon: float) -> tuple[float, float]:
+    """Pans the map so the spot sits at the visible centre of the map (visible_centre, D88(h)), and returns the spot's screen
+    position after the pan. The test hook's pan moves the map's view, so the content moves the other way: the offset is the
+    spot's place less the centre's."""
+    sx, sy = map_pixel(page, data, lat, lon)
+    centre = visible_centre(page)
+    if centre is not None:
+        page.evaluate("([dx, dy]) => window.hailMapTest.pan(dx, dy)", [sx - centre[0], sy - centre[1]])
+        page.wait_for_timeout(300)
+        sx, sy = map_pixel(page, data, lat, lon)
+    return sx, sy
 
 
 def check_swath_gate(browser, base, root: Path, data: dict, shots) -> list[str]:
@@ -2938,7 +3120,9 @@ def check_swath_gate(browser, base, root: Path, data: dict, shots) -> list[str]:
     them (a colour channel moves by more than 16 of 255). The picture hidden is the control: the whole canvas may not
     change with it hidden. The count is recorded as a note for each size, with the canvas share for the record. A layer
     with no cell at or above the floor is a note: "no values in the box: pixel gate not applicable". The 2 percent rule
-    is for the dense pictures (radar and satellite), not for these layers."""
+    is for the dense pictures (radar and satellite), not for these layers. Zoom and position (D88(h)): the wheel stops at
+    GATE_MIN_ZOOM, then the spot is panned to the visible centre of the map, clear of the panels; a spot still under a
+    panel is named, and its count is still reported, so every phone check gives a result."""
     problems = []
     hs = hail_store()
     for key, title, prefix, window in SWATH:
@@ -2969,9 +3153,11 @@ def check_swath_gate(browser, base, root: Path, data: dict, shots) -> list[str]:
             zoom = map_zoom(page, data)
             if zoom is None or zoom < GATE_MIN_ZOOM - 0.05:
                 problems.append(f"{label}: {title}: the spot is at zoom {zoom_words(zoom)}, not {GATE_MIN_ZOOM} or closer")
-            sx, sy = map_pixel(page, data, lat, lon)
+            sx, sy = centre_on_spot(page, data, lat, lon)       # D88(h): the visible centre, clear of the panels, before reading
             if not on_map(page, sx, sy):
-                problems.append(f"{label}: {title}: the spot is under a panel at zoom {zoom_words(zoom)}, so it is not checked")
+                problems.append(f"{label}: {title}: the spot is still under {covering(page, sx, sy)} at zoom "
+                                f"{zoom_words(zoom)} after the pan to the visible centre (the count below is what the "
+                                "picture shows at the spot)")
             page.wait_for_timeout(300)
             page.evaluate(IMAGES_SHOWN, False)
             page.wait_for_timeout(150)
@@ -3195,16 +3381,16 @@ def check_swath(browser, base, root: Path, data: dict, shots) -> list[str]:
 SUMMARY_SIZES = (("phone", (390, 844)), ("desktop", (1280, 800)))   # gate B5-11: the sheet at these two sizes
 SUMMARY_WAIT_S = 15                     # the table is awaited this long once the sheet's loading line has gone
 
-SUMMARY_READ = """() => {
+SUMMARY_READ = "() => {\n" + READ_TEXT_JS + """
   const clean = s => (s || '').replace(/\\s+/g, ' ').trim();
   const body = document.getElementById('sheet-body');
   const sheet = document.getElementById('sheet');
   if (!body || !sheet) return null;
   const sb = sheet.getBoundingClientRect();
-  const out = {present: false, body: clean(body.innerText),
+  const out = {present: false, body: clean(readText(body, ' ')),
                viewport: {w: innerWidth, h: innerHeight, scrollW: document.documentElement.scrollWidth},
                sheet: {top: sb.top, bottom: sb.bottom}};
-  // the table lives in the summary slot ([data-hail='summary'], B5 round 2); textContent, not innerText, names it: in the phone's
+  // the table lives in the summary slot ([data-hail='summary'], B5 round 2); its text content names it: in the phone's
   // card layout the column header is hidden, and a hidden header still names the table
   const slot = body.querySelector('[data-hail="summary"]') || body;
   const table = [...slot.querySelectorAll('table')].find(t => {
@@ -3225,8 +3411,8 @@ SUMMARY_READ = """() => {
   out.table = box(table.getBoundingClientRect());
   out.above_bottom = above;
   out.rows = [...table.querySelectorAll('tr')].map(tr => ({
-    text: clean(tr.innerText),
-    cells: [...tr.querySelectorAll('th, td')].map(c => clean(c.innerText)),
+    text: clean(readText(tr, ' ')),
+    cells: [...tr.querySelectorAll('th, td')].map(c => clean(readText(c, ' '))),
     rect: box(tr.getBoundingClientRect())}));
   out.first_row = out.rows.length > 1 ? out.rows[1].rect : null;   // row 0 is the column header
   return out;
@@ -3253,10 +3439,25 @@ def summary_module():
     return sm
 
 
+def sheet_words(store, row: int, col: int, now) -> dict:
+    """The Python words of one cell's sheet, the one source the smoke compares the page with (D88(p), S-4): summary.describe_sheet
+    (its summary is describe_summary's dict, the table, the sections, How this was made and the roof; its built block holds
+    each section's rows, {label, text, note}, which are kept here as rows_by_section). Without describe_sheet the smoke reads
+    describe_summary with no town, whose sections must then carry their rows (python_rows names the gap)."""
+    sm = summary_module()
+    if hasattr(sm, "describe_sheet"):
+        sheet = sm.describe_sheet(store, row, col, now)
+        words = dict(sheet["summary"])
+        words["rows_by_section"] = sheet["built"]["rows"]
+        return words
+    return sm.describe_summary(store, row, col, now)
+
+
 def summary_spots(data: dict) -> list[tuple[str, tuple[int, int]]]:
     """The three cells the smoke compares word for word (gate B5-11): the cell of Billings' town point (read from the map's
     own town list), Benchland's cell 792,1998 and the gate cell 797,1986. No station, count or value is pinned here: the
-    expected words come from describe_summary on the store the smoke is given."""
+    expected words come from summary.describe_sheet (describe_summary's table and sections, and the rows) on the store the smoke
+    is given."""
     hs = hail_store()
     town = next(t for t in data["towns"] if t["name"] == "Billings")
     return [("Billings", hs.cell_for(town["lat"], town["lon"])), ("Benchland cell 792,1998", (792, 1998)),
@@ -3293,7 +3494,8 @@ def unit_shown(unit: str, text: str, unit_spec: dict) -> bool:
 
 def cell_words(text, coverage) -> str:
     """The words a cell of the table must read: the cell's own words, then its coverage line (if any). The browser sets the line
-    in a block after the words (map.css: .sum-cover is a block), and innerText joins the two with one space."""
+    in a block after the words (map.css: .sum-cover is a block), and READ_TEXT_JS joins the two with one space at the block's
+    edge."""
     return norm(text) + (" " + norm(coverage) if coverage else "")
 
 
@@ -3453,7 +3655,7 @@ def summary_spot(browser, base: str, data: dict, label: str, cell: tuple[int, in
     hs = hail_store()
     lat, lon = hs.cell_centre(*cell)
     loading = data["hail"]["words"]["loading"]
-    ids = section_ids(data)
+    ids = section_order()
     slug = re.sub(r"[^a-z0-9]+", "-", f"{label} {size_name}".lower()).strip("-")
     problems: list[str] = []
 
@@ -3499,9 +3701,10 @@ def check_summary(browser, base: str, root: Path, data: dict, store: Path, shots
                   history: bool) -> list[str]:
     """The five-season summary and the eleven sections on the hail sheet (B5 part B2; brief Product and gates B5-11 and B5-12)
     at 390 and 1280 px, for the Billings cell, Benchland's cell 792,1998 and the gate cell 797,1986 (summary_spots): the words
-    of every cell, row and line against describe_summary on the store given (--store, or the built site's hail/), the table's
-    notes, each section's heading, lead, notes and rows, How this was made and the roof groups (sections_problems and
-    joined_problems), the first-screen rule, and the tile-file budget map.json carries for every file a tap fetches. A summary
+    of every cell, row and line against summary.describe_sheet on the store given (--store, or the built site's hail/): the
+    table's notes, each section's heading, lead, notes, How this was made and the roof groups (sections_problems), every row
+    of every section (sheet_rows_problems), the joined lines of the cell (joined_lines_problems), the first-screen rule, and
+    the tile-file budget map.json carries for every file a tap fetches. A summary
     that did not load is a failure with --history and a note without it. A store that cannot be read is a failure too (named
     once); the sheet is still opened at each spot, so the table's position and the tap's files are checked (D75)."""
     summary = (data["hail"].get("summary") or {})
@@ -3527,7 +3730,7 @@ def check_summary(browser, base: str, root: Path, data: dict, store: Path, shots
             problems.append(f"the store the smoke was given ({store}) cannot be read: {exc}. The sheet's words were not "
                             f"compared; the table's position and the sizes of the files a tap fetches were still checked.")
         else:
-            want = {label: sm.describe_summary(store_root, row, col, now) for label, (row, col) in spots}
+            want = {label: sheet_words(store_root, row, col, now) for label, (row, col) in spots}
             expected = {label: joins_expected(store_root, data, hs.cell_centre(row, col)) for label, (row, col) in spots}
             for label, words in want.items():
                 if words["state"] not in ("loaded", "partial"):

@@ -1,5 +1,5 @@
 """The one forbidden list (tests/words_rules.py): what it allows and what it still flags (D13, D41, D45, D46, D52, D78(b),
-D86(a) to (e)). Each allowance is an exact sentence or name, so each test pins the text it allows, the nearby text it
+D86(a) to (e), D89(a)). Each allowance is an exact sentence or name, so each test pins the text it allows, the nearby text it
 must still flag, and (where the text lives in a source file) that the allowed text is still in that file."""
 
 import re
@@ -88,6 +88,53 @@ class WordForWordTests(unittest.TestCase):
         self.assertEqual(W.forbidden_words("You may claim it as your own."), ["claim"])
 
 
+class ForecastWordsTests(unittest.TestCase):
+    """The NWS forecast and observation wording is the forecast product's own, not history text (D89(a)), so the scan
+    reads it as clean. Each exemption is a whole field or a whole part of a line, so the same words in history text are
+    still flagged (D13)."""
+
+    def test_the_nws_condition_and_chance_wording_passes(self):           # D89(a)
+        for text in ("Clear", "Clear.", "Chance Rain Showers", "chance rain showers", "40% chance of rain or snow",
+                     "Chance of rain or snow"):
+            with self.subTest(text=text):
+                W.assert_clean(self, text, text)
+
+    def test_the_observation_line_passes(self):                           # D89(a): the town page's "Read at" line
+        for text in ("Read at 5:48 am, 12 min ago \u00b7 SAMPLE Clear", "Read at 5:48 am, 12 min ago \u00b7 Clear",
+                     "Read at 3:30 am, 2 h 30 min ago \u00b7 stale \u00b7 SAMPLE Clear"):
+            with self.subTest(text=text):
+                W.assert_clean(self, text, text)
+
+    def test_the_day_line_passes(self):                                   # D89(a): the town page's day line
+        for text in (
+            "Sunday High 61\u00b0 / low 39\u00b0 Sunny \u00b7 10% rain or snow \u00b7 wind 5 to 10 mph W "
+            "\u00b7 night: clear SAMPLE. High near 61. Winds 5 to 10 mph.",
+            "Sunny \u00b7 10% rain or snow \u00b7 wind 5 to 10 mph W \u00b7 night: clear",
+            "Sunny \u00b7 10% rain or snow \u00b7 wind 5 to 10 mph W \u00b7 night: clear "
+            "SAMPLE. High near 61. Winds 5 to 10 mph.",
+            "Today High 62\u00b0 / low 40\u00b0 Chance Rain Showers \u00b7 40% rain or snow \u00b7 wind 5 to 10 mph W "
+            "\u00b7 night: chance rain showers SAMPLE. High near 62. Winds 5 to 10 mph.",
+        ):
+            with self.subTest(text=text):
+                W.assert_clean(self, text, text)
+
+    def test_the_same_words_in_history_text_are_still_flagged(self):      # D13: a field, not a word
+        self.assertEqual(W.forbidden_words("Clear sky over the roof."), ["clear"])
+        self.assertEqual(W.forbidden_words("A clear view of the roof."), ["clear"])
+        self.assertEqual(W.forbidden_words("Clear Creek"), ["clear"])
+        self.assertEqual(W.forbidden_words("clear"), ["clear"])
+        self.assertEqual(W.forbidden_words("Clear. High near 61."), ["clear"])
+        self.assertEqual(W.forbidden_words("Chance of hail this week."), ["chance"])
+        self.assertEqual(W.forbidden_words("The chance of hail is high."), ["chance"])
+        self.assertEqual(W.forbidden_words("Chance of hail or rain or snow."), ["chance"])
+        self.assertEqual(W.forbidden_words("Chance of hail or damage this week."), ["chance", "damage"])
+
+    def test_the_observation_and_day_lines_still_flag_history_words(self):   # D89(a) with D13
+        self.assertEqual(W.forbidden_words("Read at 5:48 am, 12 min ago \u00b7 Clear sky over the roof"), ["clear"])
+        self.assertEqual(W.forbidden_words("Sunny \u00b7 night: clear skies were seen."), ["clear"])
+        self.assertEqual(W.forbidden_words("Chance of rain or snow, and a risk of hail."), ["risk"])
+
+
 class OutsideGridTests(unittest.TestCase):
     def test_the_outside_grid_sentence_says_the_history_does_not_cover_the_point(self):   # D86(f)
         self.assertEqual(W.forbidden_words("This point is outside the hail grid's Montana outline; the history does not "
@@ -131,6 +178,15 @@ class SourceTextTests(unittest.TestCase):
     def test_the_nws_conditions_are_the_snow_module_text(self):
         from website import snowgrid
         self.assertEqual(W.residue(snowgrid.PUBLIC_DOMAIN_TEXT).strip(), "")
+
+    def test_the_nws_forecast_wording_is_in_the_files_that_show_it(self):   # D89(a): a dropped wording fails here
+        for part, needle in ((("website", "sources.py"), "chance of rain or snow"),
+                             (("website", "templates", "index.html"), "chance of rain or snow"),
+                             (("website", "static", "map", "map.js"), "chance of rain or snow"),
+                             (("website", "templates", "town.html"), "Read at "),
+                             (("website", "sample.py"), "Chance Rain Showers"),
+                             (("website", "sample.py"), "SAMPLE Clear")):
+            self.assertIn(needle.lower(), self.read(*part).lower(), f"{needle!r} is not in {'/'.join(part)}")
 
     def test_the_building_words_pass_the_one_list(self):
         from website import buildings

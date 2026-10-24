@@ -143,6 +143,13 @@ NO_MILES = "?"                                        # a distance that is not k
 ROOF_PART = "The roof lines"                          # the roof section's name in its sentences: sentence case and lower case
 ROOF_PART_LOWER = "roof lines"
 COUNTY_WORD = "County"                                # a county's name ends with this word (the page adds it when it is missing)
+# the words the browser reads beside the section rules (summary.section_data.words, D29). The all-clear sentence is named
+# here once: a count sentence that names a partial season ends with it on the town page, as the sheet's partial line does
+# (D41, D87(b), D88(s)); the browser's copy of the sentence is the same value (summary.words.all_clear).
+SECTION_WORDS = {"span_to": SPAN_TO, "report_near": REPORT_NEAR, "tail_five_roof": TAIL_FIVE_ROOF,
+                 "tail_five_comma": TAIL_FIVE_COMMA, "nearest_station": NEAREST_STATION, "no_miles": NO_MILES,
+                 "roof_part": ROOF_PART, "roof_part_lower": ROOF_PART_LOWER, "county_word": COUNTY_WORD,
+                 "all_clear": ALL_CLEAR}
 REFERENCE_LINE = "{source}: “{quote}”"      # a roof reference line: its source, then its quotation
 PERCENT = {"scale": 100, "decimals": 1, "step": 0.1}  # a share shown as a percent: the scale, the decimals and the step (D82(c))
 # the July to June season's first and last day (D87(d)): written once into map.json as summary.rule.season, which the browser
@@ -178,7 +185,8 @@ SEASON_ROWS = (
     ("ice", "Grid estimate", ("freeze_thaw", "frost32"), ("freeze-thaw", "low below 32 F")),
     ("heat", "Grid estimate", ("hot90",), ("high of 90 F or more",)),
 )
-# the table rows whose notes each section shows, in the order the page shows them (build.history_view)
+# the table rows whose notes each section shows, in the order the page shows them (build.history_view). The roof and How
+# this was made sections show no table row: their words are the roof lines and how_made (empty tuples keep the eleven ids).
 SECTION_KEYS = {
     "hail": ("radar_max", "radar_1in", "hail_max", "hail_n"),
     "wind": ("gust_days", "gust_max", "wind_n", "hw_zone"),
@@ -189,7 +197,12 @@ SECTION_KEYS = {
     "flooding": ("flood_report_n", "flood_record_n", "flood_warn", "county_watch"),
     "ice": ("freezing_rain_n", "ice_warn", "freeze_thaw"),
     "heat": ("hot90",),
+    "roof": (),
+    "made": (),
 }
+# the eleven section ids in the brief's fixed order (Hail first, How this was made last): the sheet, the town page, the
+# smoke and map.json's summary.section_order all follow this one tuple (D87(g), D88(i))
+SECTION_ORDER = tuple(SECTION_KEYS)
 # the words a section shows after its rows (keys of WORDS_SUMMARY): the snow analysis was checked and left out (D23)
 EXTRA_NOTES = {"snow": ("analysis_held",)}
 # the section each joined part's lines are notes of (D82(d)): the freshness lines of detections and warnings, the NCEI flood
@@ -693,7 +706,7 @@ SECTION_KINDS = {"hail": "Radar estimate", "wind": "Station reading", "storms": 
 ROOF_LINES = {
     "hail_size_days": ("Hail of 1 inch or more (days)", "Radar estimate", "days"),
     "hail_reports": ("Hail reports within 5 miles (count)", "Report", "count"),
-    "hail_signatures": ("Radar detections within 2 miles (days)", "Radar detection", "days"),
+    "hail_signatures": ("Hail signatures within 2 miles (days)", "Radar detection", "days"),   # the kind word leads once (D87(a))
     "hail_warnings": ("Severe thunderstorm warnings {covered} (count)", KIND_WARNING, "count"),
     "wind_gust_days": ("Peak gust of 50 knots (58 mph) or more (days)", "Station reading", "days"),
     "wind_reports": ("Wind reports within 5 miles (count)", "Report", "count"),
@@ -2197,8 +2210,9 @@ def _town_five(text_five: str, partial: dict | None) -> str:
             else WORDS_SUMMARY["partial_no_more"].format(season=PARTIAL))
     if partial["missing"]:
         more += f"; {_missing_text(partial['missing'])} in {PARTIAL}"
-    # a count sentence that names the partial season ends with the all-clear sentence, as the sheet's partial line does (D41, D87(b))
-    return f"{text_five}; {more}. {ALL_CLEAR}"
+    # a count sentence that names the partial season ends with the all-clear sentence, as the sheet's partial line does (D41,
+    # D87(b)); the tail is the section_data words' copy, the one the browser reads (D88(s))
+    return f"{text_five}; {more}. {SECTION_WORDS['all_clear']}"
 
 
 def _polygon_days(spot: _Spot, events: dict, kinds: tuple, sig: str):
@@ -2861,7 +2875,7 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
     }
     notes = section_notes or {}
     out = []
-    for sid in ("hail", "wind", "storms", "temperature", "rain", "snow", "flooding", "ice", "heat", "roof", "made"):
+    for sid in SECTION_ORDER:
         entry = {"id": sid, "heading": T[sid], "lead": leads[sid], "kind": SECTION_KINDS[sid]}
         if sid == "flooding" and gauge_lines:
             entry["lines"] = list(gauge_lines)
@@ -3088,6 +3102,204 @@ def describe_summary(store, row: int, col: int, now, town=None) -> dict:
     return _result(state, "; ".join(problems) if problems else None, place, index, table, roof, sections, town_block, stale)
 
 
+# ------------------------------------------------ the sheet's rows and notes (B5 part B2; D82(d), D88(p), S-4)
+# The rows and the notes of the eleven sections are built here, once. describe_sheet gives the sheet's rows as the sheet
+# renders them, and build.history_view gives the town page the same rows from the same function (sheet_rows). The browser
+# mirrors them from section_data and the joins block (D29, D41), so the smoke and the parity tests compare against this module.
+
+SHOW_ALL = "Show all {n} rows"                       # a section's rows beyond the first ten (the sheet and the town tables)
+GAUGE_ROW = "River gauge"                            # the kind label of a river gauge line (D6, D41)
+TIMES_NOTE = "Times are Montana time, with the zone abbreviation (MDT or MST)."
+# the town tables' one column: the row label of each joined part (D3)
+JOIN_HEADS = {"reports": "Report", "records": "Record", "detections": "Detection", "warnings": "Warning",
+              "zones": "Zone product", "stations": "Station"}
+# the lines that belong to a part of their own although describe_joins writes them in another part's section (the county
+# product lines and the fire-zone lines sit in the zones section); each is matched by its words (joins.WORDS_JOINS)
+JOIN_OWN_LINES = {"county": ("county_unavailable", "county_lead_none", "county_lead_one", "county_lead_many"),
+                  "fire": ("zones_fire_unavailable", "zones_fire_none")}
+_PRODUCT_RE = tuple(re.compile(p) for p in PRODUCT_PATTERNS)
+_ZONE_SPLIT_RE = re.compile(ZONE_SPLIT)
+_TIME_RE = re.compile(TIME_PATTERN, re.I)
+_ROW_SPLIT_RE = re.compile(ROW_SPLIT)
+_SECTION_RE = tuple((sid, re.compile(pattern, re.I)) for sid, pattern in SECTION_RULES)
+
+
+def _split_kind(text: str) -> tuple[str, str]:
+    """A joined row's kind label and its words: "Report: ..." gives ("Report", "...")."""
+    m = KIND_LABEL.match(text)
+    return (m.group(1), m.group(2)) if m else ("", text)
+
+
+def _section_of(label: str, body: str) -> str:
+    """The section a joined row belongs to, from its kind and its type or product words (B5): a station row is wind, a
+    detection is hail, a warning, watch or advisory row takes its product's name, a zone or county product its name before
+    the comma, and a report or record its type word. The first rule that matches decides (SECTION_RULES)."""
+    if label in ROW_SECTION:
+        return ROW_SECTION[label]
+    if label in PRODUCT_LABELS:
+        # the product's name only: a B5 row reads "...: flood watch, TFX, covered this cell or part of it; tags: ...", so
+        # the tags (hail, wind) never move a warning, watch or advisory to another section (D41)
+        m = _PRODUCT_RE[0].search(body) or _PRODUCT_RE[1].search(body)
+        words = m.group(1) if m else body
+    elif label in ZONE_LABELS:
+        words = _ZONE_SPLIT_RE.split(body, maxsplit=1)[0]
+    else:
+        m = _TIME_RE.search(body)                                              # "5:16 pm MDT: tstm wnd gst, ..."
+        words = _ROW_SPLIT_RE.split(m.group(1) if m else body, maxsplit=1)[0]
+    for sid, rule in _SECTION_RE:
+        if rule.search(words):
+            return sid
+    return SECTION_DEFAULT
+
+
+def _line_pattern(template: str) -> re.Pattern:
+    """A words template as a pattern: its values ({name}) match any text."""
+    return re.compile(re.sub(r"\\\{\w+\\\}", ".+?", re.escape(template)))
+
+
+def _line_part(text: str, part: str) -> str:
+    """The part a joined line feeds (D82(d)): its own part when its words are a county or fire-zone line, else its section's part."""
+    for own, keys in JOIN_OWN_LINES.items():
+        for key in keys:
+            if _line_pattern(joins.WORDS_JOINS[key]).fullmatch(text):
+                return own
+    return part
+
+
+def join_view(section: dict) -> dict:
+    """One section of a town's hail history, as the town page and the sheet show it (joins.describe_joins): its rows with
+    their notes, its lines and the part each line feeds (D82(d)), and its unavailable sentence (D41: blank stays blank)."""
+    rows = [{"text": r["text"], "note": r.get("remark") or ""} for r in section["rows"]]
+    unavailable = section["unavailable"] or ""
+    return {"key": section["id"], "head": JOIN_HEADS[section["id"]], "heading": section["heading"],
+            "lead": section["lead"] or "", "fire_lead": section.get("fire_lead") or "", "rows": rows,
+            "what": " ".join(x for x in (section["what"], section["source"]) if x),
+            "lines": list(section["lines"]), "note": " ".join(section["lines"]),
+            "line_parts": [_line_part(line, section["id"]) for line in section["lines"]],
+            "unavailable": _clear(unavailable) if unavailable else unavailable, "show_all": SHOW_ALL.format(n=len(rows))}
+
+
+def _joined_coverage(pairs: list[tuple[str, str]]) -> str:
+    """The coverage lines of one season's figures as one phrase: the same line once, or each row's line named by its word
+    when the rows differ (highest and lowest, two stations), so "n days missing" is written once for each count."""
+    texts = list(dict.fromkeys(text for _word, text in pairs))
+    if len(texts) == 1:
+        return texts[0]
+    return "; ".join(f"{word}: {text}" for word, text in pairs)
+
+
+def _per_season(rows: dict, label: str, keys: tuple, names: tuple) -> list[dict]:
+    """One row per season from the table's own words for these keys (highest and lowest, a count, a depth), with the
+    coverage line of any missing days (never a zero for a missing day)."""
+    out = []
+    for k, season in enumerate(FIVE):
+        parts, cov = [], []
+        for key, word in zip(keys, names):
+            row = rows.get(key)
+            if row is None:
+                continue
+            text = row["texts"][k] or WORDS_SUMMARY["cell_unavailable"]
+            if text.startswith(WORDS_SUMMARY["cell_unavailable"]):   # a season that did not load says so in the table's footnotes
+                continue
+            parts.append(f"{word} {text}")
+            if row["coverage"][k]:
+                cov.append((word, row["coverage"][k]))
+        if parts:
+            out.append({"label": label, "text": f"{season}: " + "; ".join(parts) + (f" ({_joined_coverage(cov)})" if cov else "")})
+    return out
+
+
+def _window_lines(s: dict, through: str | None) -> list[str]:
+    """How the periods are counted: the radar and report windows, the grid's newest day and the station window."""
+    W = WORDS_SUMMARY
+    lines = []
+    if s.get("window") and s.get("as_of"):
+        first, last = (_fmt_date(date.fromisoformat(x)) for x in s["window"])
+        as_of = _fmt_date(date.fromisoformat(s["as_of"]))
+        lines.append(W["window_radar"].format(first=first, last=last, as_of=as_of, season=FIVE[0]))
+        lines.append(W["window_reports"].format(first=first, last=last))
+    if through:
+        lines.append(W["window_grid"].format(through=_fmt_date(date.fromisoformat(through))))
+    lines.append(W["window_station"])
+    return lines
+
+
+def sheet_rows(s: dict, jv: dict, radar: dict, *, town_page: bool, through: str | None) -> dict:
+    """The rows and the notes of the eleven sections, built one way for the sheet and the town page (B5 R11, D82(d)): the
+    per-season rows of the table, the radar days, each joined part's rows by their kind words, the river gauge lines (a town
+    page only), and each section's notes in this order: the words of its kinds, the radar's lead and class counts, the table's
+    notes, the words of the section, the joined lines of the part it feeds, then the radar's missing days and source. The
+    browser mirrors this order from section_data and the joins block (D29, D41). s is describe_summary's dict, jv the join
+    views (join_view) and radar the hail words (hail.describe); returns {"rows": {id: [row]}, "notes": {id: [str]}}."""
+    W = WORDS_SUMMARY
+    rows = {r["key"]: r for r in s["table"]["rows"]}
+
+    # the rows of each section: the grid and station rows (per season), the radar days and the joined rows by kind
+    bucket: dict[str, list[dict]] = {k: [] for k in SECTION_ORDER}
+    for sid, kind, keys, names in SEASON_ROWS:
+        bucket[sid] += _per_season(rows, kind, keys, names)
+    if radar.get("state") == "loaded":
+        bucket["hail"] += [{"label": KIND_RADAR, "text": r["text"]} for r in radar.get("rows", [])]
+    for sec in jv.get("sections", []):
+        for row in sec.get("rows", []):
+            label, body = _split_kind(row["text"])
+            bucket[_section_of(label, body)].append({"label": label, "text": body, "note": row.get("note") or ""})
+    bucket["flooding"] = [{"label": GAUGE_ROW, "text": line} for line in (s.get("town") or {}).get("gauge") or []] \
+        + bucket["flooding"]
+
+    notes: dict[str, list[str]] = {k: [] for k in bucket}
+    for sec_id, keys in SECTION_KEYS.items():
+        for key in keys:
+            for note in (rows.get(key) or {}).get("notes", []):
+                if note not in notes[sec_id]:
+                    notes[sec_id].append(note)
+    for sec_id, word_keys in EXTRA_NOTES.items():                # D23: the analysis was checked and left out
+        notes[sec_id] += [W[word] for word in word_keys]
+    for part in jv.get("sections", []):                              # D82(d): each part's lines, under the section it feeds
+        for line, line_part in zip(part.get("lines") or [], part.get("line_parts") or []):
+            target = PART_SECTIONS.get(line_part)
+            if line and target in notes:
+                notes[target].append(line)
+    notes["made"] = list(s.get("how_made") or []) + _window_lines(s, through) + [TIMES_NOTE]
+    # each section opens with what its kinds of record are (the words each kind has, per section, once)
+    what = kind_what(town=town_page)
+    radar_head = ([radar["lead"]] if radar.get("lead") else []) \
+        + ([radar["class_title"]] + list(radar.get("class_lines") or []) if radar.get("class_lines") else [])
+    radar_tail = [radar[k] for k in ("missing", "source") if radar.get(k)]
+    for sid in SECTION_ORDER:
+        kinds = list(dict.fromkeys(row["label"] for row in bucket[sid]))
+        first = [what[k] for k in kinds if k in what]
+        if sid == "hail":
+            first += radar_head
+            notes[sid] = first + notes[sid] + radar_tail
+        else:
+            notes[sid] = first + notes[sid]
+    return {"rows": bucket, "notes": notes}
+
+
+def describe_sheet(store, row: int, col: int, now) -> dict:
+    """The sheet for the B1 cell (row, col) of the store in `store` (the directory that holds hail/), as the sheet renders it
+    (B5 part B2; D88(p), S-4). One function for the smoke and the parity tests: describe_summary's table and sections (no
+    town), the radar words (hail.describe), the joined sections of the cell (joins.describe_joins at the cell centre, with no
+    spot) and the rows and notes of the eleven sections (sheet_rows). Returns the keys summary (describe_summary's dict),
+    radar (hail.describe's dict), joined ({"sections": [join_view, ...]}), built ({"rows": {section id: [{label, text, note}]},
+    "notes": {section id: [text]}}) and section_order (SECTION_ORDER, the sections' fixed order). A store that cannot be
+    read raises; a town page gives its own unavailable words (build.town_summary)."""
+    store = Path(store)
+    index = hail.load_index(store)
+    lat, lon = hail.cell_centre(row, col)
+    radar = hail.describe(index, hail.cell_events(store, lat, lon), now, sample=False)
+    summary = describe_summary(store, row, col, now, town=None)
+    tile_path = store / "hail" / "j" / f"{hail.tile_name(row // hail.TILE, col // hail.TILE)}.json"
+    tile = json.loads(tile_path.read_text(encoding="utf-8"))
+    words = joins.describe_joins(index, tile, row, col, now, sample=False, store_dir=store,
+                                 events=joins._read_events(store), spot=None)
+    joined = {"sections": [join_view(sec) for sec in words["sections"]]}
+    through = (index.get("climate") or {}).get("through")
+    built = sheet_rows(summary, joined, radar, town_page=False, through=through)
+    return {"summary": summary, "radar": radar, "joined": joined, "built": built, "section_order": list(SECTION_ORDER)}
+
+
 def kind_what(town: bool = False) -> dict:
     """The sentence each kind of record opens with on its section, keyed by the row label the section shows: the words the
     modules hold (hail.WORDS, WORDS_INDICATORS, joins.WORDS_JOINS). A town page's warnings are counted at the town point (D38),
@@ -3125,9 +3337,7 @@ def _section_data() -> dict:
         "extra_notes": {sid: list(keys) for sid, keys in EXTRA_NOTES.items()},
         "part_sections": dict(PART_SECTIONS),
         "partial_marker": PARTIAL_MARKER,
-        "words": {"span_to": SPAN_TO, "report_near": REPORT_NEAR, "tail_five_roof": TAIL_FIVE_ROOF,
-                  "tail_five_comma": TAIL_FIVE_COMMA, "nearest_station": NEAREST_STATION, "no_miles": NO_MILES,
-                  "roof_part": ROOF_PART, "roof_part_lower": ROOF_PART_LOWER, "county_word": COUNTY_WORD},
+        "words": dict(SECTION_WORDS),                 # includes all_clear: the partial count sentence's tail (D88(s))
         "roof": {"lines": _roof_line_specs(), "extra": roof_extra(), "held_names": dict(HELD_NAMES),
                  "reference_line": REFERENCE_LINE, "partial_keys": list(ZONE_EXTRA)},
     }

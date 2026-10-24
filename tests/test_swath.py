@@ -29,6 +29,8 @@ from website import gridded as g  # noqa: E402
 from website import hail as hs  # noqa: E402
 from website import sample as sample_data  # noqa: E402
 from website import swath as sw  # noqa: E402
+sys.path.insert(0, str(ROOT / "tests"))   # words_rules is the one forbidden list (D81(c))
+import words_rules as W  # noqa: E402
 
 UTC = timezone.utc
 NOW = datetime(2026, 10, 19, 2, 0, tzinfo=UTC)
@@ -747,8 +749,18 @@ class WordsTests(unittest.TestCase):
                 self.assertEqual(low[max(0, m.start() - 7):m.start()], "not an ", f"{name}: all-clear")
             self.assertNotIn("clear", low.replace("all-clear", ""), f"{name}: clear")
 
+    def test_the_swath_sentences_pass_the_one_words_list_with_no_exemption(self):   # D89(e); D88(q) is withdrawn
+        for name in ("legend_note", "sample_legend_note", "what_this_is"):
+            text = sw.WORDS_SWATH[name]
+            self.assertEqual(W.residue(text), text, name)        # no EXEMPT or FORECAST pattern applies to the sentence
+            W.assert_clean(self, text, name)
+        self.assertIn("not observed hail and not an inspection", sw.WORDS_SWATH["legend_note"])
+        for name, text in self.all_words().items():              # every line the swath layers print, as Python gives it
+            if isinstance(text, str):
+                W.assert_clean(self, text, name)
+
     def test_the_required_sentences_are_present(self):
-        self.assertIn("not observed hail and not damage", sw.WORDS_SWATH["legend_note"])
+        self.assertIn("not observed hail and not an inspection", sw.WORDS_SWATH["legend_note"])
         self.assertIn("Uncoloured: no radar hail estimate of 0.25 in or more in the last {window}, or no value; "
                       "NOAA's data does not tell the two apart.", sw.WORDS_SWATH["uncoloured"])
         self.assertTrue(self.all_words()["unavailable"].endswith(ALL_CLEAR))
