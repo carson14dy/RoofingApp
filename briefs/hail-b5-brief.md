@@ -1100,3 +1100,64 @@ smoke's six still queued at the time of these rulings). The round-4 products nam
   SNOW second pick Harlowton 11NW, the file list with hail.py and snowgrid.py) and to the browser (sumTilePicks mirrors
   stations.tile_list_picks as it stands: the rejected part, D69; None for a block without centre or margin_miles and for a
   point beyond the margin, D72; the D32 sentence, never a "none" sentence).
+
+## Supervisor rulings after the D87 audit (2026-10-24 20:05 UTC; D88)
+A read-only audit of D87 against D1 to D86 (record: /home/user/hail-b5/out/b2r3/supervisor/d87-audit.json) found one
+blocking clause (D87(e)) and a dozen minor conflicts or ambiguities. Amendments:
+- D88 **D87 amended.** (a) D87(e) is replaced: website.yml has no store download step (the build fetches the asset itself
+  into a temporary directory, and tests/test_website_workflow.py pins that the workflow never passes --hail-store). The
+  parity step runs after the build step on branch pushes only (the Chromium smoke's guard), with HAIL_PARITY_STORE set to
+  the built site folder (_site, the site copy of the store, D75(a)); it runs whenever the step runs and fails when
+  _site/hail/tl is missing (never a silent skip); after the merge of main it follows the D59 wait like every later step.
+  (b) D87(a) read with the kind-word list: a line with a source leads with its source's kind word; a held line with no
+  source leads with "Data unavailable", its kind word ("Data unavailable: Roof ponding. ..."); "Data unavailable" after a
+  source lead is the state, not a second kind word; the season template "Data unavailable for {season}: ..." is unchanged;
+  a held line's parenthetical carries the reason (D41); a station line's parenthetical keeps the unit word and drops the
+  kind word. (c) D87(c) narrowed: the two sentences at map.js lines 3361 and 3362 end with the D41 sentence "This is not an
+  all-clear." now (a two-string edit by the browser fixer; map.js line 1320 and build.py line 562 already do); the labels
+  at line 3366 stay; moving the picture status sentences into map.json words (SWATH_SITE_WORDS no_picture and a
+  picture_failed key) stays the ROADMAP follow-up; the storm layers are merged behind --storm-layers and off on main, not
+  live on main. (d) D53's last sentence now reads: older About prose may be word-swapped where the meaning holds (D86(c));
+  nothing else is rewritten. (e) D87(j) supersedes the fixer named in D86(a) and the owner list at the end of D86; words
+  owns sources.py's storm row and the satellite row's missing text (both already as ruled); website/satellite.py's
+  docstring line 11 takes "cloud-free sky" (the supervisor's one-line edit, done). (f) D41 is extended to count sentences
+  (D87(b)); the D79(b) example reads "19 in the five seasons; 2 more in 2026-27 so far. This is not an all-clear."
+  (g) D86(d) amends D81(c): the R9 title carries the safe stem and is exempt as a quoted citation (D46). (h) D87(f)
+  corrected: map.json has no swath zoom key and none is added (the browser applies no minimum zoom to the swath layers);
+  zoom_on_spot's zoom applies to the swath checks only and targets GATE_MIN_ZOOM (10, D17, tools/smoke_map.py line 2506);
+  the phone budget stays measured at zoom 15 (ADDRESS_GATE_ZOOM); the panels that can cover the spot are the fixed-position
+  elements of map.html (the timeline, the layer menu, the sheet, the card chip, the search box); the smoke pans the spot
+  to the visible centre of the map before reading. (i) D87(g) made concrete: summary.py defines
+  SECTION_ORDER = tuple(SECTION_KEYS) (the eleven ids in the brief's order) and the inline tuple near line 2863 uses it;
+  build.py writes hail.summary.section_order; the smoke imports website.summary.SECTION_ORDER and asserts the key and the
+  sheet's history section sequence equal it; hail.joins.section_order (the six joined parts) stays. (j) Each file has one
+  owner: tests/test_hail.py, tests/test_stations.py, tests/test_snowgrid.py, tests/test_climate.py and website/stations.py
+  are the products owner's and are not edited in this round unless a products fixer is named; the docs pass owns the B2
+  step 5 files; the season-rule parity test lives in tests/test_site.py (site). (k) D87(d) reads: every rule and threshold
+  the browser applies comes from map.json; sentences are governed by D41 and (c). (l) The season block is
+  summary.rule.season as summary.py already writes it (SEASON_RULE, line 151, written at line 3164); the alternative is
+  struck; the browser reads it; the parity test covers the thresholds 347 of 365 and 348 of 366 days (2023-24 has 366) and
+  the bounds; the inch rounding reads both summary.units.in.scale and summary.units.in.decimals (UNIT_SPEC: 100 and 2), so
+  map.js line 2396 keeps no literal. (m) The record of the skeptics' verdicts is
+  /home/user/hail-b5/out/b2r3/supervisor/round3-reviews-and-verdicts.json; the rulings on S-3 to S-5, F-12 to F-14 and
+  D-1 hold whatever the skeptics decide unless a pair refutes the code fact a ruling rests on, in which case the supervisor
+  reviews that ruling before the smoke fixer runs. The adopted names: "Great Falls 16St", "Eastend Cypress (Aut)" and
+  "Rockglen (Aut)" changed; "Billings Intl AP", "Moccasin Exp Stn" and "Lister" unchanged since round 3; stations verify
+  37 of 37 and joins verify loaded on the adopted store at 18:58 UTC; the store is immutable again. (n) D29 gains: browser
+  words and thresholds come from map.json (B2 build list step 1). (o) The docs pass also carries: DESIGN.md line 882's
+  phone budget (700,000; D-1), the D87(c) follow-up in ROADMAP, the "clear sky" wording in DECISIONS.md line 514 and
+  DESIGN.md lines 279 and 701 (cloud-free sky), and the record of the adoption. (p) One Python source for the sheet's text:
+  summary.describe_summary with town None returns the table, its notes and the eleven sections with every row and note as
+  the sheet renders them, and build.history_view uses the same for the town page; if section rows are built in
+  build.history_sections today, the site moves the row text into summary (or exposes summary.describe_sheet that returns
+  all of it) so the smoke and the parity tests compare against one function (S-4). (q) website/swath.py's sentence "It is
+  an estimate, not observed hail and not damage." (a B4 sentence on the Map page) is exempted in words_rules by exact text
+  like the storm row (D86(a)); swath.py is not edited. (r) A test pin on browser code asserts behaviour, not an
+  expression: the hailInches pin asserts no literal 100 or 2 in the function and a read of units.in.scale and
+  units.in.decimals; the budget pin asserts build.PHONE_GZIP_BUDGET equals map.json's hail.budget.phone_gzip_bytes equals
+  700,000. (s) The partial count sentence's tail is written once in the words the browser reads (summary.section_data
+  words, key named in the site's check) and both surfaces print it from there. (t) No browser item is needed for S-3's
+  map.js lines 318 to 321 (the smoke fixer reads them) or for the held lines of R1-F1 (the browser prints held words as
+  map.json gives them, map.js near line 5500). (u) Run 2 carries the smoke entry and two follow-up entries, site-2 and
+  browser-2, for (c), (i), (l), (p), (r) and (s) and for whatever run 1's checks leave; a placeholder never ships: the
+  re-check fails on any.

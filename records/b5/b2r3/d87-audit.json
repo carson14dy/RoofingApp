@@ -1,0 +1,335 @@
+{
+ "a4a4a33da73f540a9": {
+  "label": "audit:consistency",
+  "result": {
+   "contradictions": [
+    {
+     "clause": "D87(e), lines 1078 to 1080: the real-store parity step runs in website.yml after 'the store download', with HAIL_PARITY_STORE set to 'the extracted store'.",
+     "conflicts_with": "tests/test_website_workflow.py lines 161 to 165 (pinned: the build line 'passes no local store'; the test asserts that '--hail-store' does not appear in the website.yml text). D59 lines 657 to 664 (the build reads its own branch's asset through HAIL_STORE_ASSET, which is not in the code yet).",
+     "evidence": "website.yml has no store download step. The store is fetched inside the 'Build from live data' step (website.yml lines 105 to 117) by website.build's hail_store (/home/user/wt/wt-b5/website/build.py, about lines 585 to 606), which downloads into a TemporaryDirectory that is removed when the function returns. The shared asset is named at /home/user/wt/wt-b5/website/hail.py line 94. The only documented way to hand a stored copy to the build is --hail-store, which the pinned test forbids. HAIL_STORE_ASSET appears nowhere in .github, tests, tools or website.",
+     "proposed_fix": "Set HAIL_PARITY_STORE to the built site folder (_site, which holds the hail/ folders the build copies, including hail/tl, per D71 lines 788 to 811). Run the parity step after 'Build from live data', with no new download and no --hail-store. Before use, confirm which path form the tests expect (store root or hail/ folder) and that the site copy holds everything they read. If a separate download is wanted instead, the clause must amend the pin at tests/test_website_workflow.py line 165 by ruling, and the step must follow the D59 wait, which reaches this branch only with the main merge (D60, lines 665 to 672).",
+     "severity": "blocking: a fixer who takes the store route the clause implies breaks tests/test_website_workflow.py line 165. The site-copy route breaks no pinned rule, but it is unverified."
+    },
+    {
+     "clause": "D87(a), lines 1065 to 1067: an unavailable or held roof line 'carries its kind word once' and leads with it. The example is 'Station reading: Peak gust of 50 knots (58 mph) or more (days). Data unavailable ...'.",
+     "conflicts_with": "Words and kind words: line 202 (the kind-word list includes 'Data unavailable'); line 216 (the season template leads 'Data unavailable for {season}:'); lines 101 to 103 (rows begin with their kind label).",
+     "evidence": "The example carries two kind-word phrases, 'Station reading' and 'Data unavailable', so it fails 'once' under line 202. A roof line that is also a season-unavailable line would take two different leads: the line-216 lead and the D87(a) lead.",
+     "proposed_fix": "Strike 'Data unavailable' from the kind-word list at line 202. Add to D87(a): 'A line with a source leads with its source's kind word. A held line with no source leads with Data unavailable. Data unavailable after that lead is a state, not a second kind word. The line-216 template is unchanged.'",
+     "severity": "minor (it becomes blocking only if a fixer rewrites the line-216 template to satisfy 'leads with the kind word', which gate B5-10 at line 271 reads)."
+    },
+    {
+     "clause": "D87(c), lines 1070 to 1072: the picture status lines in map.js keep 'Not an all-clear.' in this PR, with the D41 sentence in a ROADMAP follow-up. The lines are described as 'live on main with the storm layers'.",
+     "conflicts_with": "D41, lines 439 to 448, and Words line 220 (every unavailable, partial and held line ends 'This is not an all-clear.'). B2 build list step 1, lines 619 to 620 ('no literal sentence, unit, threshold or colour in map.js (D29, D41)').",
+     "evidence": "map.js lines 3361 and 3362 still end 'Not an all-clear.' (/home/user/wt/wt-b5/website/static/map/map.js). The same kind of picture line at map.js line 1320 already ends with the D41 sentence, as does build.py line 562. D52 (lines 573 to 577) limited D13 to the history words and kept the live block's pre-existing wording; D41 has no such limit, and D87(c) does not give it one. website.yml line 115 says the storm layers are 'off on main until reviewed', so 'live on main' is inaccurate.",
+     "proposed_fix": "Either change map.js lines 3361 and 3362 to the D41 sentence now (two strings), or add to D41 and to B2 step 1: 'The storm-layer picture status lines at map.js lines 3361 and 3362 keep their current sentence until the ROADMAP follow-up (D87(c)); no other line is excepted.' Replace 'live on main with the storm layers' with 'merged behind --storm-layers and off on main'.",
+     "severity": "minor"
+    },
+    {
+     "clause": "D87(j), lines 1090 to 1096, with D86(c), lines 1048 to 1051: older About prose inside the storm-layers block and the B3 terms block is word-swapped in this round.",
+     "conflicts_with": "D53, lines 578 to 581: 'Nothing else in the older About text is rewritten in B5.'",
+     "evidence": "D86(c) cites 'D53's pattern' but does not amend D53's last sentence. The sentence is already out of date: D74 (lines 833 to 836), D76, D78(a) and D81(d) rewrote older About rows.",
+     "proposed_fix": "Amend D53's last sentence in D87(j): 'Older About prose may be word-swapped where the meaning holds (D86(c)); nothing else is rewritten.'",
+     "severity": "minor"
+    },
+    {
+     "clause": "D87(j), lines 1090 to 1096: words owns sources.py (the storm row, D86(a)); site owns every tests/test_site.py pin.",
+     "conflicts_with": "D86(a), lines 1044 to 1045 ('the products fixer restores it'); D86's closing owner list, lines 1056 to 1058 (words owns 'tests/test_site.py's two pins').",
+     "evidence": "Two owners are named for the same storm row and the same pins, and D87(j) does not say that it supersedes D86.",
+     "proposed_fix": "Add to D87(j): 'This supersedes the fixer named in D86(a) and the owner list at the end of D86.'",
+     "severity": "minor"
+    },
+    {
+     "clause": "D87(b), lines 1068 to 1069: a count sentence that names a partial season ends 'This is not an all-clear.'",
+     "conflicts_with": "D79(b), lines 922 to 924: its example, '19 in the five seasons; 2 more in 2026-27 so far', has no sentence and names a partial season.",
+     "evidence": "The D79(b) example is the case that D87(b) covers, so the example is now incomplete.",
+     "proposed_fix": "Add 'This is not an all-clear.' to the D79(b) example, or say in D87(b) that it amends D79(b).",
+     "severity": "minor"
+    },
+    {
+     "clause": "D86(d), lines 1051 to 1052, with the D86 preamble at line 1042 ('the R9 title carries the stem safe'): words_rules exempts 'Snow Load Safety Guide' by name. D87(j) and D87(k) give that exemption to the words fixer.",
+     "conflicts_with": "D81(c), lines 958 to 960: 'a source title such as FEMA P-957, Snow Load Safety Guide carries no listed stem, so no exemption is added for it.'",
+     "evidence": "The two rulings disagree on whether the title carries a listed stem, and D86 does not say that it amends D81(c).",
+     "proposed_fix": "Add to D86(d): 'This amends D81(c): the R9 title carries the safe stem and is exempt as a quoted citation (D46).'",
+     "severity": "minor"
+    }
+   ],
+   "ambiguities": [
+    {
+     "clause": "D87(e), lines 1078 to 1080: 'only when that store carries the B5 folders (hail/tl present)'.",
+     "misreading": "A store without hail/tl skips the parity step and the job stays green. On this branch the build reads the shared asset (hail.py line 94), which D59 line 662 says held the address stage's data, so the parity check could pass with nothing run. Compare D58 (lines 602 to 605), which refuses a broken store.",
+     "proposed_wording": "The parity step runs whenever HAIL_PARITY_STORE is set, and it fails when hail/tl is missing."
+    },
+    {
+     "clause": "D87(e), line 1079: 'beside the Chromium smoke'.",
+     "misreading": "The step runs on every push. The smoke steps are guarded by github.ref != refs/heads/main (website.yml lines 119 to 131), so 'beside them' means branch pushes only.",
+     "proposed_wording": "The parity step runs on branch pushes only, under the same guard as the Chromium smoke (website.yml line 120), or the clause names main too."
+    },
+    {
+     "clause": "D87(e), lines 1078 to 1080, read with D60, lines 665 to 672.",
+     "misreading": "The parity step inherits the D59 wait, so its store is the branch's own gated asset. The wait reaches this branch only when main is merged in, so until then the step reads an ungated download.",
+     "proposed_wording": "The parity step follows the D59 wait. Until the main merge brings the wait (D60), the step is not claimed to be gated."
+    },
+    {
+     "clause": "D87(f), lines 1081 to 1082: 'read from map.json's layer rule (the swath layers' minimum zoom)'.",
+     "misreading": "A map.json key for the swath minimum zoom exists. None does. The only minimum is GATE_MIN_ZOOM = 10 (/home/user/wt/wt-b5/tools/smoke_map.py line 2506, the smoke's own D17 constant). map.json carries hail.at_zoom = 9 (build.py line 331) and the town, address and street zoom rules.",
+     "proposed_wording": "The site writes the swath minimum zoom to map.json as hail.swath.min_zoom (value 10, the D17 value now in tools/smoke_map.py line 2506), and the smoke reads that key."
+    },
+    {
+     "clause": "D87(f), line 1082: 'keeps the spot on screen clear of the panels ... (S-3; the timeline is the panel F-03 did not name)'.",
+     "misreading": "The reader is expected to know the panels. None is named, and F-03 is refuted (line 1062), so the parenthetical cannot be followed.",
+     "proposed_wording": "The spot stays clear of the panels that can cover it. List them by name (the timeline and any others)."
+    },
+    {
+     "clause": "D87(f), line 1081: 'zooms to the level the check needs'.",
+     "misreading": "The same zoom changes the phone budget, which is measured at ADDRESS_GATE_ZOOM = 15 (tools/smoke_map.py line 2071; D82(b) lines 976 to 977; D70 lines 780 to 787).",
+     "proposed_wording": "zoom_on_spot's zoom applies to the swath checks only; the phone budget stays at zoom 15."
+    },
+    {
+     "clause": "D87(g), lines 1083 to 1084: 'the smoke takes the order from website.summary's constant and asserts map.json's section order and the sheet equal it'.",
+     "misreading": "The constant and the map.json key exist. Neither does. summary.py line 2863 loops over an inline tuple of the eleven ids, and the only map.json order key is hail.joins.section_order = list(JOIN_HEADS) (build.py line 729), which holds the six joined parts. 'The sheet' may mean the whole sheet or the history section sequence.",
+     "proposed_wording": "summary.py defines SECTION_ORDER (the eleven ids in the brief's order). build.py writes it to map.json as hail.summary.section_order. The smoke asserts that the key equals SECTION_ORDER and that the history block's section sequence equals it."
+    },
+    {
+     "clause": "D87(h), lines 1085 to 1089: 'the fixture five-cell test', 'the S.-prefixed aliases', 'the every-key test', 'the zone fixture's field'.",
+     "misreading": "A fixer can locate each. None is named by file or test, 'S.-prefixed aliases' is undefined, and tests/test_hail.py (whose budget D64 lines 712 to 714 restates) has no owner under D87(j). 'Test comments carry no measured sizes' may also clash with D64's 'with the reason' if the reason is read to need the measured size.",
+     "proposed_wording": "Name each file and test by path and name. Define 'S.-prefixed aliases' (the map.js alias of the summary object). Give tests/test_hail.py to the site owner. Measured sizes and budget reasons go to b5-verification.json, never into a test comment."
+    },
+    {
+     "clause": "D87(i), lines 1089 to 1090: 'R1-F10 corrects D82(c) in place'.",
+     "misreading": "An edit is still needed. D82(c) already reads '2021-22 has 109 days missing: 108 before the archive's first day, 17 Oct 2021, and one inside the window; corrected under D87(i)' (line 983), so a second edit could change a correct sentence. The arithmetic is right: 1 July to 16 October 2021 is 108 days.",
+     "proposed_wording": "D82(c) already carries the correction. D87(i) needs no edit."
+    },
+    {
+     "clause": "D87(a), lines 1065 to 1067: 'the label's parenthetical keeps its unit word and drops the kind word'.",
+     "misreading": "A held line has a unit word to keep. It has none: D41 (lines 439 to 448) makes a held row's unit the reason.",
+     "proposed_wording": "A held line's parenthetical carries the reason (D41). A station line's parenthetical keeps its unit word and drops the kind word."
+    },
+    {
+     "clause": "D87(b), lines 1068 to 1069: 'D41 covers the town page's count sentences'.",
+     "misreading": "D41 already covers count sentences. It names whole partial, unavailable and held lines (lines 439 to 448), not a sentence inside a line. 'Count sentence' is also undefined.",
+     "proposed_wording": "D41 is extended: a count sentence that names a partial season ends 'This is not an all-clear.', as the partial line does."
+    },
+    {
+     "clause": "D87(c), lines 1070 to 1072: the list 'Sample radar' and 'the NOAA names'.",
+     "misreading": "The labels 'Sample radar' and 'NOAA radar estimate' (map.js line 3366) are status lines that must change. They are labels. The sentences that carry the all-clear wording are at map.js lines 3361 and 3362. build.py line 560 already holds 'no_picture' in SWATH_SITE_WORDS, without the D41 sentence.",
+     "proposed_wording": "The lines to move are map.js lines 3361 and 3362 (the two 'Not an all-clear.' sentences). They move to SWATH_SITE_WORDS in build.py: no_picture takes the D41 sentence, and a picture-failed key is added. The labels at map.js line 3366 stay."
+    },
+    {
+     "clause": "D87(d), line 1073: 'Every rule the browser applies comes from map.json', read against D87(c), lines 1070 to 1072.",
+     "misreading": "'Rule' includes the sentences, so the literal status sentences of (c) must also move now, which contradicts (c)'s deferral.",
+     "proposed_wording": "'Every rule and threshold the browser applies comes from map.json. Sentences are governed by D41 and by (c).'"
+    },
+    {
+     "clause": "D87(d), line 1076: 'or an equivalent block the site owner names and documents'.",
+     "misreading": "The site fixer may choose a different key while the browser fixer, running in parallel (D87(k)), reads the one named here. The block already exists: summary.py lines 61 to 62 and 151 (SEASON_RULE), and line 3164 ('season': dict(SEASON_RULE)).",
+     "proposed_wording": "Use summary.rule.season with start_month 7, start_day 1, end_month 6, end_day 30, as summary.py already writes it (line 3164). Delete the alternative."
+    },
+    {
+     "clause": "D87(d), line 1079: 'the season-rule parity test asked by D83(b) exists (F-09) and covers the 95 percent rule at every day count and the bounds'.",
+     "misreading": "The clause reads as a status claim, so the coverage is taken as done. A test exists at /home/user/wt/wt-b5/tests/test_site.py lines 4912 to 4932 (its name cites D87(d), F-08 and F-12), but whether it covers every day count is not verified.",
+     "proposed_wording": "The parity test covers the 95 percent rule at every day count and the bounds. The threshold counts are 347 of 365 and 348 of 366 days (2023-24 has 366). Extend the test at tests/test_site.py line 4932 to these counts if it lacks them."
+    },
+    {
+     "clause": "D87(d), lines 1077 to 1078: 'the inch rounding scale is summary.units.in.scale, not the literal 100'.",
+     "misreading": "Only the 100 goes. The decimal count in .toFixed(2) on the same line (map.js line 2396) is also a unit literal, which D83(b) and B2 step 1 (line 619) forbid.",
+     "proposed_wording": "Replace the literals 100 and 2 on map.js line 2396 with the scale and the decimals that map.json's summary.units.in carries (a key the site names)."
+    },
+    {
+     "clause": "D87(j), lines 1090 to 1096: 'words owns ... sources.py (the storm row, D86(a))'.",
+     "misreading": "The satellite row's 'missing' text in sources.py line 166 (changed by D86(b), pinned at tests/test_site.py line 395) is not words' work. It is already changed in the code, so the risk is a future edit with no owner.",
+     "proposed_wording": "words owns sources.py: the storm row (D86(a)) and the satellite row's 'missing' text (line 166, D86(b)). The pin at tests/test_site.py line 395 follows."
+    },
+    {
+     "clause": "D87(j), line 1091: 'words owns ... buildings.py (the About words and the outside-grid sentence)'. D86(f), line 1055, names addresses.py only.",
+     "misreading": "buildings.py holds an About word, or the outside-grid sentence lives only in addresses.py.",
+     "proposed_wording": "D86(f) applies to addresses.py (line 240) and buildings.py (line 156), which hold the same sentence in D86(f)'s wording."
+    },
+    {
+     "clause": "D87(j), lines 1090 to 1096, and D87(k), lines 1097 to 1102: owners and 'the docs pass'.",
+     "misreading": "Files on no owner list, such as tests/test_hail.py, tests/test_stations.py, tests/test_snowgrid.py, tests/test_climate.py, and the docs named in B2 step 5 (lines 645 to 649), can be edited by any fixer or by none.",
+     "proposed_wording": "Add to D87(j): each file has one owner. tests/test_hail.py is site's. The docs pass has a named owner for the B2 step 5 files. The season-rule parity test lives in tests/test_site.py (site)."
+    },
+    {
+     "clause": "D87(k), lines 1097 to 1102: 'The words, site and browser fixers run now', read with (a), lines 1065 to 1067 ('Python first (summary.py)'), and with (f) and (g), which need keys the site does not yet write.",
+     "misreading": "The browser fixer can start at once. It needs the site keys (the swath minimum zoom, SECTION_ORDER, the picture words), which are not yet written.",
+     "proposed_wording": "The site fixer writes the keys first and records them in the review record; the browser fixer starts after that record exists."
+    },
+    {
+     "clause": "D87 preamble, lines 1061 to 1064, and (k), lines 1097 to 1102: 'the smoke fixer runs once the smoke skeptics have finished (their verdicts are the record)'.",
+     "misreading": "Every ruled finding has a verdict. It does not: F-12 to F-14 and S-3 to S-5 are still queued, the verdicts for R1-F1 to R1-F10, F-01 and F-02 are not stated, F-04, F-05 and F-06 are browser findings assigned to words and site owners, and 'the record' is not identified.",
+     "proposed_wording": "State each ruled finding's verdict, or write 'the ruling holds whatever the skeptics decide'. Name the record file that holds the skeptic verdicts."
+    },
+    {
+     "clause": "D87 preamble, line 1064: 'The round-4 products names are adopted into the combined store (277 files, three names, D84(b))'.",
+     "misreading": "The site's test pins can follow from D87 alone. The three names are not listed, and D85 (lines 1035 to 1037) requires the exact names to be reported so that the pins follow.",
+     "proposed_wording": "List the three names in D87, or name the record file that lists them."
+    },
+    {
+     "clause": "B2 build list step 1, lines 619 to 620, cites D29 (lines 389 to 391) for 'no literal sentence, unit, threshold or colour in map.js'.",
+     "misreading": "D29 is the source of the rule that browser words come from map.json. D29 covers kind words for every product and does not mention map.json or map.js literals. The rule rests on B2 step 1 and on D82(a) (lines 972 to 975), which cites D29 and D41 back.",
+     "proposed_wording": "Add to D29: 'Browser words and thresholds come from map.json (B2 build list step 1).'"
+    }
+   ],
+   "checked": "Read all of /home/user/wt/briefs/hail-b5-brief.md. wc and grep count 1,102 newline-terminated lines; the Read tool reports 1,103. Every line number in this report is a grep -n number. Read in full: the Sources (lines 13 to 66), the Product section (68 to 112), the D1 to D16 rules (114 to 183), Store files (184 to 198), Words and kind words (200 to 220), Jobs and budget (222 to 234), Contract rows (236 to 247), Gates B5-1 to B5-18 (249 to 288), Ownership (288 to 303), and every ruling from D17 to D87 (320 to 1102), including the D87 preamble and clauses (a) to (k) at 1061 to 1102. Each D87 clause was checked against the Product section, the Words section, and D1 to D86, with particular attention to D29 (389 to 391), D37 (428 to 429), D41 (439 to 448), D46 (501 to 503), D53 (578 to 581), D59 (657 to 664), D60 (665 to 672), D74 (833 to 836), D75 (850 to 859), D77 (887 to 895), D78 (900 to 910), and D79 to D86 (919 to 1058). As asked, D87(e) was checked against D59 and D60, and D87(d) against D83(b) (1006 to 1008). Code claims were checked by reading and grep only, with no writes, no git commands, no builds and no test runs. Files read: website.yml (lines 101 to 131, including the line 115 comment; no store download step; no gh run wait; no HAIL_STORE_ASSET anywhere in .github, tests, tools or website); website/build.py (hail_store about 585 to 606; SWATH_SITE_WORDS 554 to 569; hail.at_zoom at 331; section_order at 729); website/summary.py (the loop at 2863; SEASON_RULE at 151; summary.rule at 61 to 62 and 3164); website/hail.py (STORE_URL at 94; load_store near 770); website/static/map/map.js (season literals at 3400 and 3407; inch literal at 2396; picture status lines at 3361, 3362 and 3366; the D41 line at 1320; histLine at 5046; sumTilePicks at 4268; season rule reads at 3477 to 3483); website/templates/about.html (storm-layer block at 25 to 29; hail_history lines 19 and 170 to 175); website/sources.py line 166; website/addresses.py line 240; website/buildings.py line 156; tools/smoke_map.py (ADDRESS_GATE_ZOOM at 2071; GATE_MIN_ZOOM at 2506; zoom_on_spot at 2921, which uses 14 fixed wheel steps); and tests/test_site.py (395, 1686, 3888 to 3909, 4912 to 4932) and tests/test_website_workflow.py (94 to 99 and 161 to 165, which read website.yml). Confirmed as the brief says: the season and inch literals sit where D87(d) places them; the D82(c) correction is already in the text; the 108-day count from 1 July to 16 October 2021 is right; the zoom_on_spot function exists. Not verified: which path form the parity tests expect, whether the built site folder holds everything they read, and whether the existing season test covers every day count. No file was changed."
+  }
+ },
+ "a7c6c4972aab98522": {
+  "label": "audit:completeness",
+  "result": {
+   "unassigned": [
+    {
+     "source": "round-3 smoke review, pending finding D-1",
+     "id": "D-1",
+     "claim": "docs/DESIGN.md:882 gives the phone budget as 665,600 bytes gzip; D82(b) restated it to 700,000.",
+     "belongs_to": "docs",
+     "why_unassigned": "No fixer entry names DESIGN.md. D87(k)'s docs pass names only the products leftovers (D56 cause, measured figures, Harlowton pick, file list). It needs naming in the docs pass."
+    },
+    {
+     "source": "check.json needed_from_others line 5",
+     "id": "NFO-5",
+     "claim": "Adopt the round-4 candidate store (products/fixer/store/hail) as the combined store; restore the immutable flag; verify stations 37 of 37 and joins 50 of 50.",
+     "belongs_to": "supervisor",
+     "why_unassigned": "The D87 preamble records the adoption as done (277 files, three names). No input records the post-adoption verify or the restored immutable flag. D87(k) puts a gate re-check after the four fixers, which could cover the verify but not the flag."
+    },
+    {
+     "source": "round-3 smoke review S-3, owner field",
+     "id": "S-3 (owner note)",
+     "claim": "Browser (owner 1) is asked to confirm map.js:318-321 for the swath zoom.",
+     "belongs_to": "browser",
+     "why_unassigned": "No browser item names map.js:318-321."
+    },
+    {
+     "source": "round-3 smoke review S-4, claim",
+     "id": "S-4 (dependency)",
+     "claim": "describe_summary carries no section rows, so the smoke row comparison has no Python-side source for section rows.",
+     "belongs_to": "site",
+     "why_unassigned": "No site item adds section rows to describe_summary. Site item (1) says the sheet's sections equal describe_summary's text, which S-4 contradicts."
+    },
+    {
+     "source": "round-3 browser review F-06, claim",
+     "id": "F-06 (satellite docstring)",
+     "claim": "website/satellite.py:11 docstring still says 'never drawn as clear sky'.",
+     "belongs_to": "products",
+     "why_unassigned": "satellite.py is in no fixer's file list. D86(b) puts the satellite wording on the products side. Site item (4) covers only the test pin in tests/test_site.py."
+    },
+    {
+     "source": "D87(c) follow-up",
+     "id": "F-10 (ROADMAP entry)",
+     "claim": "D87(c) moves the picture status literals to map.json words in a follow-up recorded in ROADMAP.",
+     "belongs_to": "docs",
+     "why_unassigned": "D87(c) requires the ROADMAP entry. No fixer item and no D87(k) docs-pass line names it."
+    },
+    {
+     "source": "round-3 browser review F-12 and site item (9)",
+     "id": "F-12 (source of the season rule)",
+     "claim": "Python writes the season rule in summary.py and in website/stations.py (season_of, lines 269 to 274). Site item (9) allows stations.season_of as the source.",
+     "belongs_to": "products",
+     "why_unassigned": "website/stations.py is in no fixer's file list. If the block is written from stations.py, the edit belongs to products. D87(d) requires one written source."
+    },
+    {
+     "source": "words item (c) and check.json needed_from_others line 4",
+     "id": "website/swath.py sentence",
+     "claim": "'It is an estimate, not observed hail and not damage.' (website/swath.py near lines 108 to 144) is named in words item (c).",
+     "belongs_to": "words",
+     "why_unassigned": "swath.py is not in the words file list or in D87(j)'s split. A fixer never edits another's file, so the file list needs amending or the change goes under needed from others."
+    },
+    {
+     "source": "round-3 site review R1-F1 and D87(a)",
+     "id": "R1-F1 (browser side)",
+     "claim": "D87(a) says the browser's histLine mirrors held roof lines as well as unavailable ones.",
+     "belongs_to": "browser",
+     "why_unassigned": "Browser item (1) names only indicator_unavailable. The held branch of histLine is not named."
+    },
+    {
+     "source": "round-3 smoke review S-5, smoke item (1)",
+     "id": "S-5 (order constant)",
+     "claim": "Smoke item (1) takes the eleven section ids from website.summary's constant.",
+     "belongs_to": "site",
+     "why_unassigned": "summary.py has no constant named SECTION_ORDER or SECTION_IDS (it has SECTION_KEYS and SECTION_KINDS). Site item (1) names summary._sections only. Confirm which constant the smoke imports."
+    }
+   ],
+   "double_assigned": [
+    {
+     "id": "F-08 (code in browser item 3, pin in site item 5f)",
+     "fixers": "browser item (3): hailInches literal near map.js line 2396 reads summary.units.in.scale; site item (5)(f): pin near tests/test_site.py line 1687 requires the same read",
+     "risk": "The pin asserts the literal expression, so it fails the moment the browser changes map.js unless both use the same expression. Both fixers run in parallel under D87(k)."
+    },
+    {
+     "id": "F-12 (writer site item 9, reader browser item 3)",
+     "fixers": "site item (9): writes summary.rule.season into map.json; browser item (3): reads it and keeps a placeholder if the block is missing",
+     "risk": "A key-shape mismatch, or a placeholder that ships, leaves the browser with no season bounds. Site item (9) also allows stations.season_of as the source, and no fixer owns website/stations.py."
+    },
+    {
+     "id": "F-13",
+     "fixers": "site item (7): Python label drops the kind word from the parenthetical; browser item (1): histLine stops adding the kind word",
+     "risk": "If only one side changes, the kind word appears zero or two times, and the sheet and the town page can differ."
+    },
+    {
+     "id": "S-1 (same literal as F-01)",
+     "fixers": "smoke item (1): budget read from map.json hail.budget; site item (5)(g): pin reads build.PHONE_GZIP_BUDGET and map.json hail.budget",
+     "risk": "Two budget sources must agree on 700,000. Smoke item (1) names only the literal near line 2075; the stale comment (lines 2071 to 2074) and the docstring (line 43) in the same file are not named."
+    },
+    {
+     "id": "R1-F8 (refuted by both skeptics; ruled in by D87(b))",
+     "fixers": "site item (8): town-page count sentence ends 'This is not an all-clear.'; browser item (8): sheet count sentence, words from map.json",
+     "risk": "The browser needs a map.json key for the sentence, but site item (8) names only the town page and the tests. A missing key leaves the sheet without the sentence or with a placeholder. Both skeptics refuted R1-F8, so the change rests on the D87(b) ruling, not on a verified defect."
+    },
+    {
+     "id": "I-6 (check item, D82(d), partial)",
+     "fixers": "site item (6): build.history_view carries the section lines as notes; browser item (6): renders them, with a placeholder if the key is missing",
+     "risk": "A placeholder can ship if a key name differs. Same pattern as F-12."
+    },
+    {
+     "id": "I-2 (check item, D78(c) and D84(b), partial) and NFO-6 (names after adoption)",
+     "fixers": "site item (2): summary and tests show names as the store gives them; browser item (5): sheet shows them, never re-cased",
+     "risk": "If one surface reads names from another store or re-cases them, the summary and the sheet can show different names. Low risk."
+    },
+    {
+     "id": "NFO-14 (three-cell comparison on the adopted store)",
+     "fixers": "browser item (10): Chromium, five cells, scratch build under out/b2r5/browser; smoke item (5): smoke_map and smoke_pages on a fresh build under out/b2r5/smoke",
+     "risk": "Two builds of about 36 seconds and 642 MB each may run during the parallel pass, against each fixer's 'one build at a time' note. Duplicate effort. Low risk."
+    }
+   ],
+   "file_overlaps": [
+    {
+     "file": "tests/test_site.py",
+     "fixers": "site edits every pin (files). Read or excluded elsewhere: browser item (4) reads near line 1655 before its final run; smoke item (4) names it in the CI parity step; words excludes it (files note and item b). No edit overlap."
+    },
+    {
+     "file": "tests/test_summary.py",
+     "fixers": "site edits (files). Smoke item (4) names it as a HAIL_PARITY_STORE test file for CI. Read or run only."
+    },
+    {
+     "file": "tests/test_addresses.py",
+     "fixers": "words edits (files). Site's files note excludes it. Exclusion only, no overlap."
+    },
+    {
+     "file": "website/summary.py",
+     "fixers": "site edits (files). Smoke item (1) takes the eleven section ids from website.summary's constant. Read only."
+    },
+    {
+     "file": "website/sources.py",
+     "fixers": "words edits the storm_levels row only. Site item (4) reads the satellite row. Read only."
+    },
+    {
+     "file": "website/static/map/map.js",
+     "fixers": "browser edits (files). Site item (5)(h) reads it again before its final run. Read only."
+    },
+    {
+     "file": "website/templates/map.html",
+     "fixers": "browser edits the dead CSS (files, item 4). Site item (5)(a) must land first. Dependency, no edit overlap."
+    },
+    {
+     "file": "website/stations.py",
+     "fixers": "No fixer lists it. Browser item (7) names it for comparison (read). Site item (9) may take stations.season_of as the source. Unowned if edited (see unassigned)."
+    },
+    {
+     "file": "map.json (generated)",
+     "fixers": "Browser, site and smoke read the generated file. No edit by any fixer."
+    }
+   ],
+   "tally": "Round-3 findings: 30 reviewed (site 10, browser 14, smoke 6). Surviving 14: R1-F1, R1-F2, R1-F3, R1-F6, R1-F9, R1-F10, F-01, F-02, F-04, F-05, F-06, F-08, F-09, F-10. Pending 9: F-12, F-13, F-14, S-1, S-2, S-3, S-4, S-5, D-1. Refuted 6 (both verdicts refuted): R1-F4, R1-F7, R1-F8, F-03, F-07, F-11. Split, not surviving 1: R1-F5. Of the 23 surviving or pending: assigned to a fixer entry 20 (surviving 12, pending 8); deferred by a D87 clause 1 (F-10, D87(c)); settled by D87(i) with no fixer item 1 (R1-F10); unassigned 1 (D-1, docs). needed_from_others (check.json, 14 lines): assigned 9 (NFO-1, 2, 3, 4, 6, 7, 8, 9, 14); deferred to the docs pass by D87(k) 4 (NFO-10 to 13); unassigned 1 (NFO-5, supervisor). Non-DONE check items (6): assigned 5 (I-2 to I-6); deferred 1 (I-1, D56, docs pass by D87(k)). Double-assigned entries 8. File overlaps: no edit overlap; 9 files named in two or more entries, all read, excluded or dependency references. Unassigned entries 10. Failing or open check gates map to words (a), site (4), NFO-5 (adoption), browser (10), smoke (5) and the docs pass. Notes: (1) The D87 preamble omits F-01 and F-02 from its survivor list; both skeptics confirm them, and smoke item (1) carries them. (2) Owner fields conflict with D87(j) for F-04 and F-05 (docs or site) and for R1-F9 (products, in the round-3 site review's own needed line); this mapping follows D87(j) and (h). (3) The round-3 reviewers' own needed_from lists were not mapped; they fall outside the requested set. (4) On disk at read time, several carried items already show their change: addresses.py:240 and buildings.py:156 (D86(f)), tests/test_addresses.py:924 (pin), tests/test_site.py:395 ('cloud-free sky'), tests/words_rules.py:43, 47, 48 and 50 (exemptions). check.json (18:45) and the reviews record them open. I did not check fixer progress and ran no build or test. (5) D87(f) and (g) rule on S-3, S-4 and S-5 before the smoke skeptics finish, while D87(k) says the smoke fixer waits for verdicts; if a skeptic refutes one, its ruling needs review. (6) Each of the four fixers says 'one build at a time'; if that rule is global, the parallel pass breaks it. (7) D86's text gives words 'tests/test_site.py's two pins' (brief line 1058); D87(j) gives every test_site.py pin to site, which this mapping follows.",
+   "assignments": "[{\"ref\":\"R1-F1\",\"status\":\"surviving; site; should\",\"carried_by\":\"site item (7)\",\"text\":\"D87(a), R1-F1 and F-13: an unavailable or held roof line leads with its kind word; summary.py first. Browser side: see unassigned (R1-F1 browser side).\"},{\"ref\":\"R1-F2\",\"status\":\"surviving; site; should\",\"carried_by\":\"site item (10)\",\"text\":\"R1-F2: the fixture five-cell comparison names the cells the fixture lacks through subTest and skipTest.\"},{\"ref\":\"R1-F3\",\"status\":\"surviving; site; should\",\"carried_by\":\"site item (10)\",\"text\":\"R1-F3: the gate comment near line 4199 carries no measured size; cites the budget constant and b5-verification.json.\"},{\"ref\":\"R1-F6\",\"status\":\"surviving; site; nit\",\"carried_by\":\"site item (10)\",\"text\":\"R1-F6: the every-key test near line 4621 follows direct h.summary reads as well as S.-prefixed aliases.\"},{\"ref\":\"R1-F9\",\"status\":\"surviving; owner products; nit\",\"carried_by\":\"site item (10) and site files (tests/test_joins.py line 601 only)\",\"text\":\"R1-F9: zone fixture field width holds MTZ002. D87(h) and D87(j) give it to site. The round-3 site review's own needed line (products) is superseded by D87; it is not a check.json line.\"},{\"ref\":\"R1-F10\",\"status\":\"surviving; supervisor; nit\",\"carried_by\":\"D87(i) (settled in the brief; brief line 983 reads 'corrected under D87(i)')\",\"text\":\"R1-F10 corrects D82(c) in place. No fixer item.\"},{\"ref\":\"F-01\",\"status\":\"surviving; smoke; blocking\",\"carried_by\":\"smoke item (1)\",\"text\":\"the budgets come from map.json's hail.budget; the 650 KB literal near line 2075 goes; S-1, F-01. Test pin: site item (5)(g), see double_assigned.\"},{\"ref\":\"F-02\",\"status\":\"surviving; smoke; blocking\",\"carried_by\":\"smoke item (1)\",\"text\":\"read textContent, never innerText (S-2, F-02: sheet_settled near line 1185 and every reader).\"},{\"ref\":\"F-04\",\"status\":\"surviving; blocking; owner field says docs and site\",\"carried_by\":\"words item (e)\",\"text\":\"The proper name 'Montana State Library Structures and Addresses Framework' joins 'USA Structures' in the exemptions (D86(e), browser F-04). D87(j) gives the files to words. On disk: tests/words_rules.py:43.\"},{\"ref\":\"F-05\",\"status\":\"surviving; blocking; owner field says docs and site\",\"carried_by\":\"words item (f)\",\"text\":\"The outside-grid sentence near addresses.py line 239 and buildings.py near line 154 reads 'the history does not cover it' (D86(f), browser F-05). D87(j) gives both files to words. On disk: addresses.py:240, buildings.py:156, and test_addresses.py:924 pins it.\"},{\"ref\":\"F-06\",\"status\":\"surviving; blocking\",\"carried_by\":\"site item (4)\",\"text\":\"The pin in tests/test_site.py near lines 395 to 396 expects 'never drawn as cloud-free sky' (D86(b), browser F-06). Words item (b) only confirms the wording and excludes the pin. On disk: test_site.py:395 reads cloud-free sky. The satellite.py:11 docstring is unassigned.\"},{\"ref\":\"F-08\",\"status\":\"surviving; should\",\"carried_by\":\"browser item (3) and site item (5)(f)\",\"text\":\"D87(d): the inch rounding scale is summary.units.in.scale, not the literal 100 (F-08, map.js near line 2396; the pin near tests/test_site.py line 1687 follows).\"},{\"ref\":\"F-09\",\"status\":\"surviving; should; owner site\",\"carried_by\":\"site item (5)(h)\",\"text\":\"The season-rule parity test asked by D83(b) (D87(d), F-09): browser season rule against Python at every day count 0 to 366 and the bounds.\"},{\"ref\":\"F-10\",\"status\":\"surviving; should; owner browser\",\"carried_by\":\"DEFERRED by D87(c); browser item (9)\",\"text\":\"'F-10 (the picture status literals near line 3361) is deferred by D87(c): leave them.' D87(c) moves the lines to map.json words in a follow-up recorded in ROADMAP; that ROADMAP entry is unassigned.\"},{\"ref\":\"F-12\",\"status\":\"pending; nit; owner site and browser\",\"carried_by\":\"site item (9) and browser item (3)\",\"text\":\"Site (9): 'D87(d), F-12: Python writes the season bounds once into map.json (summary.rule.season ...)'. Browser (3): 'the season bounds near lines 3400 and 3407 read summary.rule.season (F-12; placeholder ...)'.\"},{\"ref\":\"F-13\",\"status\":\"pending; nit; owner site\",\"carried_by\":\"site item (7) and browser item (1)\",\"text\":\"Site (7): 'D87(a), R1-F1 and F-13'. Browser (1): 'histLine ... the kind word appears once on the line, as Python's words give it'.\"},{\"ref\":\"F-14\",\"status\":\"pending; nit; owner smoke and CI\",\"carried_by\":\"smoke item (4)\",\"text\":\"'D87(e), F-14: website.yml runs the real-store parity tests ... after the store download, beside the Chromium smoke.'\"},{\"ref\":\"S-1\",\"status\":\"pending; blocking; same literal as F-01\",\"carried_by\":\"smoke item (1) and site item (5)(g)\",\"text\":\"Smoke (1): 'the 650 KB literal near line 2075 goes; S-1, F-01'. Site (5)(g): 'the pin near line 3165 of the 650 KB phone budget reads build.PHONE_GZIP_BUDGET (700,000) and map.json's hail.budget (D82(b), S-1)'.\"},{\"ref\":\"S-2\",\"status\":\"pending; blocking; same defect as F-02\",\"carried_by\":\"smoke item (1)\",\"text\":\"'(S-2, F-02: sheet_settled near line 1185 and every reader)'.\"},{\"ref\":\"S-3\",\"status\":\"pending; blocking; owner smoke\",\"carried_by\":\"smoke item (3)\",\"text\":\"'D87(f), S-3: zoom_on_spot ... zooms to the level the check needs, read from map.json's layer rule ... the phone swath checks then report a result, never not checked.' No fixer item names the map.json layer-rule key. Owner note (browser to confirm map.js:318-321) is unassigned.\"},{\"ref\":\"S-4\",\"status\":\"pending; should; owner smoke\",\"carried_by\":\"smoke item (1)\",\"text\":\"'the three-cell comparison reads every row of every section against summary.describe_summary ... never a label list (S-4, ROW_LABELS near line 1606, expected_rows_by_section near line 1573)'; D87(g). The section-row source is unassigned (site).\"},{\"ref\":\"S-5\",\"status\":\"pending; should; owner smoke\",\"carried_by\":\"smoke item (1)\",\"text\":\"'D87(g): the eleven section ids come from website.summary's constant, and the smoke asserts map.json's section order and the sheet equal it (S-5, section_ids near line 1544)'. The constant name is unassigned (site).\"},{\"ref\":\"D-1\",\"status\":\"pending; should; owner docs\",\"carried_by\":\"UNASSIGNED (docs)\",\"text\":\"No fixer item or D87 clause names docs/DESIGN.md line 882. See unassigned.\"},{\"ref\":\"R1-F4\",\"status\":\"refuted (both verdicts)\",\"carried_by\":\"site item (2) and browser item (5), via check item I-2; adoption recorded in the D87 preamble\",\"text\":\"Both skeptics: the current tree already title-cases the names; the finding quotes an older snapshot.\"},{\"ref\":\"R1-F7\",\"status\":\"refuted (both verdicts)\",\"carried_by\":\"none needed\",\"text\":\"The 21st line is the D79(a)/D80(c) sentence. No action.\"},{\"ref\":\"R1-F8\",\"status\":\"refuted (both verdicts); ruled in by D87(b)\",\"carried_by\":\"site item (8) and browser item (8)\",\"text\":\"'D87(b), R1-F8: a count sentence that names a partial season ends This is not an all-clear.' Carried on the ruling, not on the refuted defect.\"},{\"ref\":\"F-03\",\"status\":\"refuted (both verdicts); skeptic 1 says the narrower defect is real\",\"carried_by\":\"smoke item (3), under D87(f)\",\"text\":\"D87(f) says the timeline is the panel F-03 did not name; S-3 carries the zoom cause.\"},{\"ref\":\"F-07\",\"status\":\"refuted (both verdicts)\",\"carried_by\":\"words item (a) (check only)\",\"text\":\"'tests/test_storm.py's pin near line 571 holds.' Per the skeptic reasons, sources.py:152 now carries the D86(a) wording.\"},{\"ref\":\"F-11\",\"status\":\"refuted (both verdicts)\",\"carried_by\":\"browser item (2), for consistency rather than F-11's citation\",\"text\":\"Both skeptics: D83 does not name the station-days fills, so the citation is wrong. Browser (2) makes the histDlCells change on its own consistency reason.\"},{\"ref\":\"R1-F5\",\"status\":\"split: skeptic 1 refutes, skeptic 2 confirms; not surviving\",\"carried_by\":\"none needed\",\"text\":\"The run-1 errors are resolved on the tree. The red tests now are carried by words (a) (NFO-1) and site (4) (NFO-2).\"},{\"ref\":\"NFO-1\",\"status\":\"needed_from_others; words owner\",\"carried_by\":\"words item (a)\",\"text\":\"'exempt the exact sentence A radar estimate, not observed hail or damage.' On disk: tests/words_rules.py:50.\"},{\"ref\":\"NFO-2\",\"status\":\"needed_from_others; site\",\"carried_by\":\"site item (4)\",\"text\":\"'the pin must read never drawn as cloud-free sky'. On disk: tests/test_site.py:395.\"},{\"ref\":\"NFO-3\",\"status\":\"needed_from_others; words or B3\",\"carried_by\":\"words item (f)\",\"text\":\"'replace the sentence with D86(f)'s wording'. On disk: addresses.py:240.\"},{\"ref\":\"NFO-4\",\"status\":\"needed_from_others; words owner\",\"carried_by\":\"words items (c), (d), (e)\",\"text\":\"'decide line by line the pre-existing About prose ... R9 and R20 titles ... State Library name'. On disk: the (d) and (e) exemptions at words_rules.py:43, 47, 48. The swath.py sentence is unassigned.\"},{\"ref\":\"NFO-5\",\"status\":\"needed_from_others; supervisor\",\"carried_by\":\"UNASSIGNED (supervisor)\",\"text\":\"Adoption. The D87 preamble records it done. See unassigned.\"},{\"ref\":\"NFO-6\",\"status\":\"needed_from_others; names after adoption\",\"carried_by\":\"site item (2) and browser item (5)\",\"text\":\"Site (2) names 'Great Falls 16St' and asks for the store's exact names. Browser (5) names 'Great Falls 16St'. The two AUT names rest on the general never-re-cased rule; neither item names them.\"},{\"ref\":\"NFO-7\",\"status\":\"needed_from_others; site\",\"carried_by\":\"site item (10)\",\"text\":\"'the comments near tests/test_site.py line 4413 and tests/test_summary.py line 30 cite the Billings town point 45.7833 N'.\"},{\"ref\":\"NFO-8\",\"status\":\"needed_from_others; browser\",\"carried_by\":\"browser item (7)\",\"text\":\"'sumTilePicks mirrors stations.tile_list_picks as it stands: the rejected part, D69; None ... D72; the D32 sentence'.\"},{\"ref\":\"NFO-9\",\"status\":\"needed_from_others; browser\",\"carried_by\":\"browser item (5)\",\"text\":\"'the sheet shows station names as the store gives them ... never re-cased'.\"},{\"ref\":\"NFO-10\",\"status\":\"needed_from_others; docs\",\"carried_by\":\"DEFERRED to the docs pass by D87(k)\",\"text\":\"D87(k) names 'the measured figures' (products leftovers). The reason: the docs pass runs after the gate re-check.\"},{\"ref\":\"NFO-11\",\"status\":\"needed_from_others; docs\",\"carried_by\":\"DEFERRED to the docs pass by D87(k)\",\"text\":\"D87(k) names 'the Benchland SNOW second pick Harlowton 11NW'.\"},{\"ref\":\"NFO-12\",\"status\":\"needed_from_others; site or products\",\"carried_by\":\"DEFERRED to the docs pass by D87(k)\",\"text\":\"D87(k) names 'the D56 cause line'.\"},{\"ref\":\"NFO-13\",\"status\":\"needed_from_others; process\",\"carried_by\":\"DEFERRED to the docs pass by D87(k)\",\"text\":\"D87(k) names 'the file list with hail.py and snowgrid.py'.\"},{\"ref\":\"NFO-14\",\"status\":\"needed_from_others; owners 1 and 4\",\"carried_by\":\"browser item (10) and smoke item (5)\",\"text\":\"Browser (10): five cells in Chromium on a scratch build from the adopted store. Smoke (5): smoke_map and smoke_pages on a fresh adopted-store build. Double-assigned; see double_assigned.\"},{\"ref\":\"I-1 (D56, partial)\",\"status\":\"non-DONE; products\",\"carried_by\":\"DEFERRED to the docs pass by D87(k)\",\"text\":\"D87(k) names 'the D56 cause line'.\"},{\"ref\":\"I-2 (D78(c), D84(b), partial)\",\"status\":\"non-DONE\",\"carried_by\":\"site item (2) and browser item (5)\",\"text\":\"Names as the store gives them. Adoption is recorded in the D87 preamble.\"},{\"ref\":\"I-3 (D85, partial)\",\"status\":\"non-DONE\",\"carried_by\":\"words item (a)\",\"text\":\"The open part is the storm_levels exemption. The swath sentence sits under words item (c).\"},{\"ref\":\"I-4 (D86(c), (d), (e), not done)\",\"status\":\"non-DONE\",\"carried_by\":\"words items (c), (d), (e)\",\"text\":\"Exemptions. On disk: (d) and (e) are present at words_rules.py:43, 47, 48. Item (c) is not confirmed on disk.\"},{\"ref\":\"I-5 (D86(f), not done)\",\"status\":\"non-DONE\",\"carried_by\":\"words item (f)\",\"text\":\"'the outside-grid sentence takes the D86(f) wording'. On disk: addresses.py:240.\"},{\"ref\":\"I-6 (D82(d), partial)\",\"status\":\"non-DONE\",\"carried_by\":\"site item (6) and browser item (6)\",\"text\":\"Section lines carried as notes; placeholder if the key is missing.\"}]"
+  }
+ }
+}
