@@ -929,3 +929,36 @@ asked:
   hail/ and outside the packed asset (no change). The browser's round 2 is the eleven sections, the roof groups and How
   this was made (R11), with summary.how_made and the section data written by the site owner, and the remaining
   placeholders (county.short_names; the station_status words read where the build writes them).
+
+## Supervisor rulings after products round 2 (2026-10-24 08:50 UTC; D80)
+Products round 2 (24 agents) is complete: the town-point warning rows (D71 F4), the hail/live exclusion (D75(a)), the
+sheet's cell words restored; its check passed every products gate (D61 full-cell parity 0 of 2,298,500; the fixture equal
+to a fresh run; the 17 town pages' count notes equal to their rows). The fixer C candidate is adopted as the combined store
+at /home/user/hail-b5/out/combined/store (45,878 files, 541,075,953 bytes; the previous store removed). Rulings on the
+check's questions:
+- D80 **Points and figures.** (a) Billings has one point: towns.json's (45.7833, -108.5007). stations.GATE_POINTS and
+  gate B5-3 follow it, so the Billings gate distances are the computed ones from that point (WTP about 1.2 miles, the
+  airport about 2.7 miles; the test fixes the numbers from the computation, never by hand); the Benchland point stays
+  47.08, -110.02. (b) A distance is always from the point in use: the sheet measures from the clicked cell's centre
+  (MOCCASIN EXP STN 3.2 miles at cell 792,1998) and a town page from the town point (3.6 miles from the Benchland
+  point); both are right and the words say "from this spot". (c) D79(a)'s separation of the two airport positions is
+  about 0.19 miles, a fifth of a mile; the How-this-was-made sentence says "a few hundred yards". (d) The warnings
+  no-outline clause uses the cell words on the sheet and the spot words on town pages, like the heading and the count
+  note. These are completion-pass items (products for (a) and (d); site for the words of (b) and (c)).
+
+## Supervisor rulings after the docs round (2026-10-24 09:15 UTC; D81)
+The docs owner (42 agents) wrote the DECISIONS bullets for D44 to D76, the ROADMAP status and open items, the README and
+AGENTS command lines, DESIGN section 12, About's D53, D19 and D62 lines, addresses.py's D74 words and the record with
+every gate's round-2 status; several items stay partial until the browser round and the re-check give the final
+numbers. Its questions:
+- D81 **Five answers.** (a) The counsel list's item 19 is the legal review's disclaimer question; the GHCN-Daily non-US
+  data note and the Environment and Climate Change Canada licence are item 20 (D62 and D64 read "item 20"). (b) The
+  State Library's Placement value ("Parcel" as placement class L; "at the parcel" in the words) describes where the
+  address point was placed, not a parcel identifier or any parcel attribute; decision 6 and D12 stand and the words
+  stay. (c) tests/words_rules.py is the one forbidden list: "radar coverage" and "no radar coverage" are allowed (D45),
+  the R20 title appears only as the About references citation (D46), and a source title such as "FEMA P-957, Snow Load
+  Safety Guide" carries no listed stem, so no exemption is added for it. (d) The SWDI row reads "NOAA defines PROB as
+  the probability of hail in percent" (D78(a); products, sources.py). (e) The roadmap and the record name the branch and
+  the pull request, never a WIP commit hash (the squash changes it); the D49 wait step is recorded after the merge of
+  main brings it (D59, D60); the two round-1 tests in tests/test_site.py that pin the old sheet strings (the radar days
+  before the joins; the six-section template slots) follow the browser's round-2 structure (site owner).

@@ -1,0 +1,193 @@
+{
+ "items": [
+  {
+   "item": "First-round check file for the docs owner (out/b2/<owner>/check.json)",
+   "status": "not done",
+   "evidence": "No docs folder under /home/user/hail-b5/out/b2/ (present: browser, site, smoke, smoke-review, products-fix). Round-2 docs logs are in /home/user/hail-b5/out/b2r2-docs/docs/ (tests-full.log, fix/tests-full-r2.log, tests-summary.json)."
+  },
+  {
+   "item": "docs/DECISIONS.md: the D38 entry (B5) after D36 (B3) and D37 (B4), with its store figures and the round-2 bullets for D44 to D76",
+   "status": "partial",
+   "evidence": "Entry runs lines 878-970. D36 at line 809 and D37 at line 857. Figures match a fresh measure of the combined store (45,878 files, 541,075,953 bytes; hail/j/e 4,597 files, 63,082,924 bytes; hail/tl 4,597 files, 56,947,475 bytes; hail/sd 805 files, 4,373,407 bytes). Missing: D49, D50, D51, D60, D65, D71, D78, D79 (no entry in DECISIONS). Stale: the D56/D68 bullet (about line 964) says the supervisor still rules the Billings figures, but D80(a) ruled the town point; the D53/D74 bullet (about line 949) says the flag-off clause needs restating, but D77 restated it; line 933 says '650 KB gzip' while D66 sets 665,600 bytes. The 'Names' bullet relies on D43 alone: the brief's D43 says AGENTS.md excepts branch names, but AGENTS.md has no such text."
+  },
+  {
+   "item": "docs/DESIGN.md section 12 (line 777 to the end, 108 lines): summary table, eleven sections, states, town pages, About, budgets",
+   "status": "partial",
+   "evidence": "Summary table rows at lines 796-819 (23 measured rows and the Data unavailable row; the snow analysis row is held per D23). Sections table at 830-840. States at 847-860. Budgets at 873-884. Stale: line 875 says the phone view 'stays under the 650 KB gzip gate', while line 882 says 665,600 bytes gzip (D66, D70). Not recorded: D79(c) 640 px desktop width, D80(b) and D80(c) ('from this spot'; 'a few hundred yards'), D60 sheet order. Line 854 still reads 'Planned words for round 2'."
+  },
+  {
+   "item": "docs/ROADMAP.md: one 'Built, not merged' section with a row per stage (D51), the B5 status row, the budget line, and the open items for the owner in one place",
+   "status": "partial",
+   "evidence": "Line 35: one section with rows for B2, B3, B4 and B5. Line 81: budget at 541,075,953 bytes in 45,878 files with the caps under O12. Lines 76-105: technical open items, then 'Open items for the owner (B5)' with seven numbered items (timer, data repository, gauge distance, swath extent, NOHRSC held, counsel list, B3 follow-up). Line 88 cites '1,839 tests, 3 failures', which equals this check's run. Stale: line 179 says 'the 650 KB gzip gate'. The counsel item stays at 20 (D62 asks for 19; see needed_from_others)."
+  },
+  {
+   "item": "README.md: layout and command lines (union with B3 and B4), the pyyaml test-only line, the smoke and history flags",
+   "status": "done",
+   "evidence": "Module names present (climate.py, snowgrid.py, stations.py, gauges.py and summary.py twice each; joins.py three times). pyyaml test-only command at line 131. --hail-history, --hail-addresses and --storm-layers documented. File unchanged since HEAD 7d13c64."
+  },
+  {
+   "item": "AGENTS.md: layout and command lines (union); pyyaml line; no rule changed",
+   "status": "done",
+   "evidence": "pyyaml test-only command at line 79. Module names present (same counts as README). File unchanged since HEAD 7d13c64."
+  },
+  {
+   "item": "website/templates/about.html: D53 radar line, D60 radar-coverage words, D62 Canadian clause, D19 threshold sentence, D23 snow-analysis sentence, and the source credits",
+   "status": "partial",
+   "evidence": "Built About (all-flags build from a copy of the store; the copy and build were deleted after the check): 'a blank area is not a statement about the weather' (template line 19); 'no radar coverage' 6 times and 'outside radar coverage' once; Canadian clause present ('not read' 5 times); the D19 sentence with 32.15 C present; the D23 sentence ('checked against station season totals and left out') present; credits for IEM, Census, GHCN, NOHRSC, nClimGrid, Storm Events, Natural Earth and NCEI public domain present. Open: the SWDI row 'PROB is the probability of hail in percent' (sources.py line 380) lacks D78(a)'s 'NOAA defines PROB as' wording. The R20 'freeze-thaw damage to roofs' citation is in the references list (D46 allows it) but tests/words_rules.py has no exemption for it."
+  },
+  {
+   "item": "website/addresses.py: About words only; D74 'its completeness varies from county to county'",
+   "status": "done",
+   "evidence": "addresses.py line 236 (about_coverage) and sources.py line 247 both read 'its completeness varies from county to county'. tests/test_addresses.py line 870 still expects 'coverage' (see needed_from_others)."
+  },
+  {
+   "item": "research/hail-history/validation-evidence/b5-verification.json: valid JSON; round-2 status and evidence per gate; open items; figures",
+   "status": "partial",
+   "evidence": "Loads: 18 gates, 13 open items. Its figures match the store and the suite (1,839 tests, 3 failures; 541,075,953 bytes). Stale against rulings: gate B5-3 says the Billings distances 'need the supervisor's ruling' (ruled by D80(a), 2026-10-24 08:50 UTC); gate B5-18 says the flag-off clause 'needs the supervisor's restatement' (ruled by D77, 07:15 UTC). Unresolved: the counsel numbering (the record uses item 20; D62 asks for 19). The banned-name claim ('checked against 19 names') cannot be re-run because the list is not in the repository."
+  },
+  {
+   "item": "D49 (branch-preview wait), D51 (merge rules) and D59 (store asset named after the branch) recorded in the docs",
+   "status": "partial",
+   "evidence": "D59 is recorded (DECISIONS D59 bullet, line 966: hail-store-<branch>.tar.gz, the wait, the three-day stale rule). D49 and D51 of the brief have no entry in DECISIONS, DESIGN, ROADMAP or README. The only 'D49' in the docs is B3's own decision (DECISIONS line 851, the index rewrite; ROADMAP line 63), a numbering collision that the log does not explain for this brief."
+  },
+  {
+   "item": "Rulings D60, D65, D71, D78 and D79 recorded where a reader needs them (sheet order, About rows, site and browser words, the four calls)",
+   "status": "not done",
+   "evidence": "Zero matches for D60 and D65 in DECISIONS, DESIGN, ROADMAP, README, AGENTS and about.html. D71, D78 and D79 appear only in the verification record. Text needed: D60 (storm wording and sheet order: address block, live line, then history); D78(a) (SWDI PROB attribution); D78(c) (station display names); D79(a) (airport positions and each row's own source distance); D79(c) (640 px desktop width). D80 is recorded at DECISIONS lines 918 and 929 and ROADMAP line 98, but the Billings bullet at about line 964 is stale."
+  },
+  {
+   "item": "Counsel list item 19 (D62, D64): GHCN-Daily note on non-US data and the Environment and Climate Change Canada licence",
+   "status": "partial",
+   "evidence": "DECISIONS D62 bullet (about line 954), ROADMAP line 102 and the open-items item 6 all record the GHCN note as item 20, because the legal review's item 19 is the disclaimer question. The brief's D62 and D64 ask for item 19. Listed for the supervisor; not decided."
+  },
+  {
+   "item": "Open items for Carson in one place: timer, data repository with the measured bytes and the packed size, gauge distance, swath extent, counsel list",
+   "status": "done",
+   "evidence": "ROADMAP 'Open items for the owner (B5)': item 1 timer (6 runs in 24 hours against 144); item 2 data repository (541,075,953 bytes in 45,878 files; packed asset not yet measured); item 3 gauge distance (10 or 25 miles; shares 17.3, 69.6 and 4.8 percent); item 4 swath picture at the state line; item 5 NOHRSC held (slope 0.664); item 6 counsel list; item 7 B3 follow-up. The brief's 496 MB figure is updated."
+  },
+  {
+   "item": "Budgets restated in bytes with measured figures and reasons (D54, D66, D67, D70, D73, D76)",
+   "status": "partial",
+   "evidence": "Matches: j/ 87,628,936 bytes in 9,196 files (hail/j 24,546,012 plus hail/j/e 63,082,924); whole store 541,075,953 bytes; daily set 495 files and 487,235,520 bytes; monthly rule files 700 and 537,226,020 bytes; summary files 805; built map.json hail.budget phone_gzip_bytes 665600 and tile_events_gzip_bytes 100000; fixture budget 480 KB (tests/test_hail.py line 821); daily job timeout 150 (hail-store.yml line 106) and joins backstop 53 (line 158). Stale: '650 KB gzip' at DESIGN line 875, ROADMAP line 179, DECISIONS line 933 and the record's B5-12 text. Pending: the phone view (663,276 bytes in round 1, not re-measured here) and the packed asset and daily wall time."
+  },
+  {
+   "item": "Flag-off clause: the docs state D77's rule (default build equals base except the D53 and D74 lines) and the record's B5-18 status is restated",
+   "status": "partial",
+   "evidence": "The suite's HailSwathLayers test passes with the pinned differences (tests/test_site.py SWATH_BASE c860e23, line 3403). DECISIONS D53/D74 bullet and the record (B5-18 status and needed_from_supervisor) still say the restatement is needed; D77 (07:15 UTC) already restated it."
+  }
+ ],
+ "gates": [
+  {
+   "gate": "Full suite passes with 0 failures (venv Python)",
+   "status": "not met",
+   "evidence": "Re-run from /home/user/wt/wt-b5: /home/user/hail-b1/venv/bin/python -m unittest discover -s tests (PYTHONDONTWRITEBYTECODE=1), started 2026-10-24T09:02:03Z. Result: Ran 1839 tests in 363.330s; FAILED (failures=3, skipped=4); exit=1. Failures: test_addresses.WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number (tests/test_addresses.py:870); test_site.HailHistory.test_the_sheet_shows_the_radar_days_before_the_joins (tests/test_site.py:1735); test_site.HailJoins.test_the_sheet_has_the_template_slots_for_the_six_sections (tests/test_site.py:1954). The round-2 docs run (fix/tests-full-r2.log, 08:50-08:56) had the same three. The git diff HEAD fingerprint was the same at 09:02 and 09:12."
+  },
+  {
+   "gate": "Self-test: desktop/launcher.py --selftest payload",
+   "status": "pass",
+   "evidence": "selftest.log: 'PASS  payload 1.0.0', exit=0 (09:08 UTC)."
+  },
+  {
+   "gate": "Sample build with --hail-history",
+   "status": "pass",
+   "evidence": "website.build --out <scratch> --sample --hail-history --now 2026-10-24T12:00:00Z: exit 0 in 7.2 s (sample-history.log). Output deleted after the check."
+  },
+  {
+   "gate": "Combined-store build with every flag",
+   "status": "pass",
+   "evidence": "--sample --hail-history --hail-addresses --storm-layers --hail-store <full copy of /home/user/hail-b5/out/combined/store> --now 2026-10-24T12:00:00Z: exit 0 in 33 s (build-all.log). The store itself was not written. Billings page: 'BILLINGS WTP, 1.2 miles from the town' and 'BILLINGS INTL AP, 2.7 miles from the town'; 'Gust station: Billings/Logan Intl, 2.6 miles from this spot'. Still open on that page: uppercase station names (D78(c)) and 'a few hundred feet' (D80(c) says yards)."
+  },
+  {
+   "gate": "Flag-off build identical to base, except the D53, D74 and D77 lines",
+   "status": "pass (by the suite; not rebuilt here)",
+   "evidence": "tests/test_site.py HailSwathLayers.test_the_default_build_matches_the_manifest_of_its_base_commit passes in the run (base c860e23; the about.html lines pinned per D77)."
+  },
+  {
+   "gate": "Sheet smoke (tools/smoke_map.py) and smoke_pages in Chromium at 390 and 1280 px",
+   "status": "not run (pending)",
+   "evidence": "Owned by the browser and smoke owners; the record marks it pending. Not run by the checker."
+  },
+  {
+   "gate": "Three-cell comparison exact (Billings, Benchland cell 792,1998, gate cell 797,1986)",
+   "status": "not run (pending)",
+   "evidence": "Needs the browser round 2 and the smoke run. The Python picks at the Benchland point are checked under the stations gate below."
+  },
+  {
+   "gate": "Fetch list per tap and the phone view at zoom 15 under 665,600 bytes gzip; per-tile files under 100,000 bytes gzip",
+   "status": "pending",
+   "evidence": "Round 1 measured 663,276 bytes (record). Largest per-tile files re-measured here: hail/j/e/r0076_c0186.json 22,933 bytes gzip; hail/tl/r0096_c0213.json 3,401 bytes gzip. The phone view was not re-measured."
+  },
+  {
+   "gate": "Zero off-site requests",
+   "status": "not run (pending)",
+   "evidence": "Smoke owner's check; not run by the checker."
+  },
+  {
+   "gate": "Words rules (tests/words_rules.py) over every WORDS string and the built pages",
+   "status": "partial",
+   "evidence": "The suite's words tests pass except test_addresses (D74 expectation). Billings town history in the built page: no forbidden words. The built About history block ('Hail history' to 'Known gaps', 12,885 characters) returns: 'damage' in 'not observed hail or damage' (kept by D78(b)) and in the R20 citation (D46); 'all-clear', 'fails' and 'clear' in pre-B5 storm and satellite lines ('is not an all-clear', 'GOES-East fails', 'never drawn as clear sky'); 'coverage' in 'no radar coverage' (D45 exemption not in words_rules.py); 'safety' in the R9 title 'FEMA P-957, Snow Load Safety Guide'. The record lists only the R20 and R9 items."
+  },
+  {
+   "gate": "D13 greps on history words and added docs text",
+   "status": "partial",
+   "evidence": "'no hail' occurs only as 'not the same as no hail' (allowed by the rules). 'structure' and 'warrant' do not occur in the built About history block or the Billings history. The other About hits are listed under the words gate."
+  },
+  {
+   "gate": "No em-dash in added lines",
+   "status": "pass",
+   "evidence": "git diff HEAD added lines: 1,489, none with U+2014. git diff db84d76 added lines: 47,973, none with U+2014."
+  },
+  {
+   "gate": "No banned model, vendor or product name in added lines",
+   "status": "pass (for the 18 names checked here)",
+   "evidence": "Names checked: claude, anthropic, chatgpt, openai, gpt, codex, copilot, gemini, llama, mistral, haiku, sonnet, opus, qwen, deepseek, grok, cohere, ollama (branch names removed). vs HEAD: no hit. vs db84d76: only branch names remain: 'codex/montana-weather-pilot' (research/globe/README.md, an existing branch) and 'hail-store-claude-hail-b5' (DECISIONS D59 and the record), both allowed by D43. The owner's 19-name list is not in the repository, so the record's '19 names' claim is not re-run."
+  },
+  {
+   "gate": "Decision 7 audit: no owner, parcel, place-type or building-use field read, stored or shown",
+   "status": "partial (one question for the supervisor)",
+   "evidence": "addresses.py FORBIDDEN_FIELDS (line 159) lists ParcelID and Place_Type; the reader keeps an allow-list; EXCLUSION_TEXT (line 208) says owner names and parcel identifiers are never read, stored or shown; streets.py line 135 excludes Ownership; sources.py lines 245-246 say the same. Question: addresses.py line 114 maps the Placement value 'Parcel' to class L and line 119 shows 'at the parcel' (D32). Whether a placement class counts as a parcel field under decision 6 needs the supervisor's reading."
+  },
+  {
+   "gate": "The docs' numbers equal the measured ones",
+   "status": "partial",
+   "evidence": "Equal to measured values: store 45,878 files and 541,075,953 bytes; hail/j/e 4,597 files and 63,082,924 bytes; hail/tl 4,597 files and 56,947,475 bytes; hail/sd 805 files and 4,373,407 bytes; hail/c 4,569 files and 35,149,062 bytes; hail/g 104 files and 285,713 bytes; hail/a, hail/b, hail/r 49,252,605, 196,302,000 and 69,632,279 bytes; index: pool 2,778 (1,325 in Montana, 21 not read), rule files 700 (537,226,020 bytes), chosen 495 (487,235,520 bytes), daily reach 56, gauge files 104 with 7,560 rows; D44 placement table 15,764 groups, 3,327 mapped, 11,580 by set in force, 0 unplaced; largest per-tile files 22,933 and 3,401 bytes gzip; fixture 480 KB. Stale or pending: '650 KB' in four places; Billings gate figures 1.4 and 2.6 (GATE_POINTS still 45.7836, -108.5047 at stations.py line 170); the packed asset and the daily wall time."
+  },
+  {
+   "gate": "B5 gates as recorded in b5-verification.json (B5-1 to B5-18)",
+   "status": "partial",
+   "evidence": "Recorded: pass B5-1, B5-2 (not re-run), B5-4 to B5-9, B5-15, B5-17; partial B5-3, B5-10, B5-12, B5-13, B5-14, B5-16; pending B5-11, B5-18. The checker agrees on B5-3's Benchland picks (computed, see the stations gate), on B5-3's Billings picks from the town point (build), on B5-6, B5-7, B5-8 and B5-15 (suite passes), and on B5-10 (words gate). Stale in the record: B5-3 (ruled by D80(a)) and B5-18 (ruled by D77). Not re-run here: B5-1, B5-2, B5-9, B5-17 (record evidence only)."
+  },
+  {
+   "gate": "Stations gate (B5-3, D18, D65, D69): Benchland picks and rejected candidates",
+   "status": "pass (computed here)",
+   "evidence": "Tile list at the Benchland point (47.08, -110.02), tile r0079_c0199, SNOW: picks BUFFALO 1.7 E (US1MTFG0003, 20.9 miles) and HARLOWTON 11NW (USC00243947, 34.8 miles); rejected MOCCASIN EXP STN (3.6 miles, share 0.1478), HOBSON (9.0 miles, 0.0151), STANFORD (10.9 miles, 0.7993), LEWISTOWN AP (26.6 miles, 0.0014). Verify log (combined/verify-stations.log, 2026-10-20) lists the SNWD picks USC00247864 and USS0009C01S and the Billings picks USC00240802 and USW00024033."
+  },
+  {
+   "gate": "Daily job end to end under 25 minutes (B5-12)",
+   "status": "not done (pending)",
+   "evidence": "The record says the end-to-end time is not measured. Timeouts are in place (daily 150 minutes, hail-store.yml line 106; joins backstop 53, line 158). Not measured here."
+  },
+  {
+   "gate": "Determinism of j/e and tl (B5-13)",
+   "status": "not done (pending)",
+   "evidence": "The record says the j/e and tl determinism check is pending. Not run here."
+  }
+ ],
+ "needed_from_others": [
+  "tests/test_addresses.py line 870 (WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number): the expected text must be 'its completeness varies from county to county' (D74; addresses.py line 236 and sources.py line 247 already read it). Owner: the test owner (B3 or the supervisor). The docs owner may not edit tests.",
+  "tests/test_site.py line 1735 (HailHistory.test_the_sheet_shows_the_radar_days_before_the_joins): it expects the string 'joinRender(el.sheetBody.querySelector(...), joins);' that website/static/map/map.js no longer carries. Owner: browser (round 2) or the owner of tests/test_site.py to retire the round-1 check.",
+  "tests/test_site.py line 1954 (HailJoins.test_the_sheet_has_the_template_slots_for_the_six_sections): it expects '<template id=\"hail-join-sec\">' in the sheet. Owner: browser (round 2) or the test owner.",
+  "website/stations.py line 170: GATE_POINTS['billings'] must become towns.json's point (45.7833, -108.5007) per D80(a); tests/test_joins.py and tests/test_stations.py then take the computed gate distances (about 1.2 and 2.7 miles) instead of 1.4 and 2.6. Owner: products (owner 3).",
+  "website/sources.py line 380 (SWDI row, units): replace 'PROB is the probability of hail in percent' with NOAA's own definition, e.g. 'NOAA defines PROB as the probability of hail in percent' (D78(a)). Owner: site (owner 2) or the sources owner.",
+  "Station display names (D78(c)): the sheet and town pages still print uppercase GHCN names ('BILLINGS WTP', 'BILLINGS INTL AP', 'BILLINGS 1.1 S'). Write display names (e.g. 'Billings WTP') into the tile lists, the summaries and the stations block, keeping ghcn_name. Owners: products (stations.py) then site (summary.py words).",
+  "website/summary.py How-this-was-made sentence (D80(c)): 'a few hundred feet apart' must read 'a few hundred yards apart'. Owner: site (owner 2).",
+  "Browser (D79(c)): the desktop sheet may widen to at most 640 px while the table shows; the phone layout stays one card per row; row heads carry the unit beside the kind word; notes print once each under the table. Owner: browser (owner 1); the reviewer judges the first screen at 390 and 1280 px.",
+  "tests/words_rules.py (words owner or supervisor): (a) D45: exempt 'radar coverage' and 'no radar coverage' from the bare coverage stem; (b) D46: exempt only the About references-list citation of the R20 'freeze-thaw damage to roofs'; (c) decide whether the R9 source title 'FEMA P-957, Snow Load Safety Guide' is exempt under the safe-word stem; (d) decide whether the B4 storm and satellite lines are in the history words scope ('not observed hail or damage' kept by D78(b); 'GOES-East fails'; 'never drawn as clear sky'; 'is not an all-clear' without the required sentence).",
+  "Supervisor: decide the counsel numbering (D62 and D64 say item 19 for the GHCN-Daily and Environment and Climate Change Canada note; the legal review's item 19 is the disclaimer question; the record uses item 20). The docs owner follows the decision.",
+  "Supervisor: decision 6 reading of addresses.py's Placement values (line 114 maps 'Parcel' to class L; line 119 shows 'at the parcel'; D32). Decide whether a placement class is a parcel field.",
+  "Browser and smoke owners (owners 1 and 4): run the sheet smoke at 390 and 1280 px (tools/smoke_map.py, smoke_pages), the exact three-cell comparison (Billings, Benchland cell 792,1998, gate cell 797,1986), the fetch list and phone view under 665,600 bytes gzip at zoom 15 with every layer on, zero off-site requests, and the redraw timing. None was run by the checker.",
+  "Smoke and CI (owner 4) and the branch run: the measured end-to-end daily job time (B5-12), the packed asset size, and the j/e and tl determinism check (B5-13). The record marks all three pending.",
+  "Smoke and CI (owner 4): confirm the D49 branch-preview wait step in .github/workflows/website.yml (the string 'gh run list' that the brief names is not in that file) and its test in tests/test_website_workflow.py. The docs record D49 once that is confirmed."
+ ],
+ "tests_tail": "Ran 1839 tests in 363.330s\n\nFAILED (failures=3, skipped=4)\nexit=1\n\nFAIL: test_addresses.WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number\nFAIL: test_site.HailHistory.test_the_sheet_shows_the_radar_days_before_the_joins\nFAIL: test_site.HailJoins.test_the_sheet_has_the_template_slots_for_the_six_sections"
+}

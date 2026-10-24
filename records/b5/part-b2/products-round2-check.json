@@ -1,0 +1,315 @@
+{
+  "items": [
+    {
+      "item": "Round 2 D71 F4: a town page's warning rows and count note come from the town point (hail/j/towns.json), worded 'covered this spot'; the sheet keeps 'covered this cell or part of it'",
+      "status": "done",
+      "evidence": "joins.py:3664-3700 (town page uses the _point words; rows from _town_point_warnings at joins.py:4065-4095, which reads hail/j/towns.json by exact point); words at joins.py:436-474. Tests: tests/test_joins.py TownPointWarningTests 3640-3712 (a town point inside neither warning gives 'No warning in the archive covered this spot'; count note and rows agree), 3776-3830 (words), 3827 (fixture town). All 17 towns on the candidate copy: count note equals row count, no unavailable line, no 'covered this cell' row (checker/logs/towns-warning-agreement.txt). Billings page built from the candidate: 42 text lines say 'covered this spot', none say 'covered this cell' (checker/logs/billings-page-spot-lines.txt). Caveat: the committed fixture's Billings cell and point both hold 0 warnings, so that fixture test checks 0 = 0; the differing case is the synthetic test."
+    },
+    {
+      "item": "Round 2 D75(a): a built site's hail/ copy loads with hail/live/ files; the exclusion is documented and limited to load_store on a folder; a test in tests/test_hail.py covers a site copy with a hail/live file",
+      "status": "done",
+      "evidence": "website/hail.py:512-520 (LIVE_PREFIX, allow_live, documented), 544-547 (unlisted files under hail/live/ skipped; links under it still refused), 771-781 (load_store checks a folder with allow_live=True; an archive stays strict). tests/test_hail.py:1944-1990 (a site copy with hail/live loads; stray hail/t, hail/live.json and hail/liveness files are still refused). test_hail: 190 OK. On the built site copy (924 live files): load_store returns the folder; the strict check still refuses an unlisted file."
+    },
+    {
+      "item": "Round 2: WORDS_JOINS['warnings_row'] removed once tests/test_site.py no longer requires it",
+      "status": "not done",
+      "evidence": "The condition is met: tests/test_site.py:2004 names warnings_row_b5 and warnings_row_point, not the bare key, and map.js reads only warnings_row_b5 (map.js:3334). The key is still defined at joins.py:470 and used at tests/test_joins.py:2267, 2641, 2662 and 2664. D79(d) moves the removal to the completion pass (products), so it was not made in round 2. Nothing is needed from the site owner."
+    },
+    {
+      "item": "Round 2: daily set and rejected part (fixer C) re-verified on the candidate after the changes; fixture regenerated only if needed",
+      "status": "done",
+      "evidence": "Full copy of the candidate store (fixer-c store, copied to checker/store-copy): stations verify ok, 34 of 34 checks, 206,865 parity points with 0 differences (checker/logs/stations-verify.json); joins verify ok, 50 of 50 checks, not_run empty (checker/logs/joins-verify.json). A fresh 'joins fixture' run from the candidate equals website/data/hail-fixture (diff -rq empty; 145 files), so no fixture regeneration was needed."
+    },
+    {
+      "item": "D61: each tile list covers every cell of its tile (margin to the tile's farthest corner, no per-element cap); tile_list_picks equals point_rule and rejected_rule at every cell centre and element",
+      "status": "done",
+      "evidence": "stations.py:343-361 (tile_margin_miles, routed_corners), 789-792 (None beyond the margin). Verify: 206,865 points (tile centres, four cell corners, four routed corners, five elements, 4,597 tiles), 0 differences. Full-cell sweep of every cell centre and element: 459,700 cells, 2,298,500 answers, 0 differences (checker/logs/parity-all-cells.part0.json and part1.json). Named: cell 753,2230 SNOW = VALENTINE 38.6 and WINNETT 6NNE 39.3; cell 920,1899 PRCP = Sacajawea 6.3 then Brackett Creek 7.3. Largest tile list 3,401 bytes gzip (budget 100,000); longest list 33."
+    },
+    {
+      "item": "D62: the station pool is every GHCN station within reach, by position; Canadian (CA) stations are 'not read' with the reason 'in Canada; the terms for its data are under review'; 'stations in Montana and the neighbouring states' replaces 'Montana stations'",
+      "status": "done",
+      "evidence": "stations.py:30 (wording), 164-165 (CANADA_PREFIX, CANADA_REASON), sources.py:524 (ghcn_daily row: stations in Montana and the neighbouring states; Canadian stations not read). Stations block counts: pool_stations 2,778, pool_montana 1,325, not_read_stations 21, failed_files 0. stations.py:380 keeps 'Montana stations only' for the regression set (the D7 Montana set), which is correct."
+    },
+    {
+      "item": "D63: one pick rule (stations.tile_list_picks); the summary delegates to it; parity at the 17 towns and cells 753,2230, 792,1998, 797,1986",
+      "status": "done",
+      "evidence": "summary.py:1138 calls stations.tile_list_picks. parity_named on the candidate copy: 21 points (the 17 towns and cells 753,2230, 792,1998, 797,1986, 920,1899), 105 element answers, 0 differences (checker/logs/parity-named.json). tests/test_summary.py StationPicksAndNames (line 1421) passes in the full suite. The browser mirror is covered under D36."
+    },
+    {
+      "item": "D64: fixture regenerated from the candidate with the fixture command and swapped in by one rename; budget restated with its reason; fixture tests follow the tree",
+      "status": "done",
+      "evidence": "A fresh fixture run equals the committed tree (diff -rq empty; checker/logs/fixture-diff.txt). Budget: 471,538 bytes outside hail/a (limit 480 KB; tests/test_joins.py:897-906) and hail/a 50,601 bytes (limit 50 KB). The fixture's joins block has no vtec keys (grep count 0). test_hail: 190 OK (file lists, manifest and fixture_store equality)."
+    },
+    {
+      "item": "D66, D67, D76: figures restated from the measured candidate",
+      "status": "done",
+      "evidence": "Measured on the candidate: 4,597 tile lists, 56,947,475 bytes raw, largest 3,401 bytes gzip; 805 summary files, 4,373,407 bytes; 700 rule files, 537,226,020 bytes; 495 daily files, 487,235,520 bytes (439 picks and 56 in reach); pool 2,778 (Montana 1,325); not read 21. The daily rule (stations.py:1314-1319) is unchanged since the first check. The docs owner restates them (needed_from_others 8)."
+    },
+    {
+      "item": "D68: records_newest_unknown is a WORDS_JOINS key the browser fills; county_suffix is no longer read",
+      "status": "done",
+      "evidence": "joins.py:389 ('an unknown date'), used at joins.py:3895; map.js:3052 reads W.records_newest_unknown. grep finds no county_suffix in website/ or tests/."
+    },
+    {
+      "item": "D69 (products part): tile lists carry a rejected part per element; tile_list_picks returns rejected beside unread; verify compares it",
+      "status": "done",
+      "evidence": "stations.py rejected_of_tile, rejected_rule and tile_list_picks (about lines 721-830) return rejected and rejected_more beside unread; verify compares rejected names (0 differences). At cell 792,1998 SNOW the first rejected entry is USC00245761 MOCCASIN EXP STN. The Billings town page prints 'BILLINGS 1.1 S, 2.0 miles from the town, is not used: 10.4 percent of the days ...', so the note words work."
+    },
+    {
+      "item": "D69 / D76: the distance point for the Benchland rejected note (MOCCASIN EXP STN)",
+      "status": "partial",
+      "evidence": "The rejected entry gives 3.2 miles from the cell centre (computed 3.25 from 47.075, -110.015), the point the sheet picks at (D36). D76 says the note reads 3.6 miles, the distance from the Benchland gate point 47.08, -110.02 (computed 3.60). The two points differ, so the note must name one. D79 does not settle it. Needs a ruling (needed_from_others 2)."
+    },
+    {
+      "item": "D71: the joins ledger lives outside the store root",
+      "status": "done",
+      "evidence": "Superseded by D79(d): the ledger stays at <store>/ledger/joins.jsonl, outside hail/ and outside the packed asset. The code is unchanged (joins.py:2990). The pack step is 'tar czf hail-store.tar.gz -C store hail' (.github/workflows/hail-store.yml:677 and 827), so the ledger folder is not packed."
+    },
+    {
+      "item": "D71: the joins block of the fixture stays without the D55 keys",
+      "status": "done",
+      "evidence": "grep finds 0 'vtec' keys in website/data/hail-fixture/hail/index.json."
+    },
+    {
+      "item": "D72: the tile margin covers every point of the tile; tile_list_picks answers None beyond it, docstring says so; verify adds the four routed corners of every tile",
+      "status": "done",
+      "evidence": "stations.py:343-361 (margin to the farthest tile corner), 789-792 (None beyond the margin; docstring says so). tests/test_stations.py:1100 (None 6.9 miles north; round-1 check). Verify samples the four routed corners of every tile: 9 spots per tile (206,865 = 9 x 5 x 4,597), 0 differences."
+    },
+    {
+      "item": "D73: the daily refresh covers every loaded station in reach with at least 80 percent coverage for some element, current or not",
+      "status": "done",
+      "evidence": "stations.py:1314-1319 (reach and chosen_ids). Measured 495 files (439 picks, 56 in reach). Verify: 0 passing stations outside the daily set. The daily-scope test in tests/test_stations.py passes."
+    },
+    {
+      "item": "D74 RV8, RV9, RV10 (products): current-year filter on every unread candidate; the sample stations block carries every station the tile lists name; a fixture test ties tl/, sd/ and the stations block",
+      "status": "done",
+      "evidence": "stations.py:1214-1222 (a failed candidate is dropped unless its inventory reports the element in the current window); Canadian entries filtered at 1203-1204 (round-1 check). The fixture's tile lists, sd files and stations block agree (round-1 count 67 stations; the fixture is unchanged). tests/test_joins FixtureStationTests (the tie test) passes."
+    },
+    {
+      "item": "D53 and D74 (products part): sources.py hail_swath 'missing' row and address row words",
+      "status": "done",
+      "evidence": "sources.py:175 ('-1 is missing and -3 is no radar coverage in NOAA's table'); sources.py:247 ('its completeness varies from county to county'). hail.py:90 keeps the MRMS units-table name '-3 no coverage', which is not on a page (round-1 check)."
+    },
+    {
+      "item": "D55: the three one-event differences are named window-edge events; no store rule drops a product; verify checks them",
+      "status": "done",
+      "evidence": "joins verify on the candidate copy: 'research window counts equal the research counts' (20 products, zero difference). vtec_window_edges: FW.W 169 (research) against 170 (store), HW.A 277 against 276, HW.W 339 against 338, each named as a window-edge event; unexplained is empty (checker/logs/joins-verify.json)."
+    },
+    {
+      "item": "D56 and gate B5-3 (Billings): the picks, and the miles the test expects",
+      "status": "partial",
+      "evidence": "Picks pass at both points: BILLINGS WTP USC00240802 and BILLINGS INTL AP USW00024033 for all five elements (stations verify gate_rules). The gate test (tests/test_stations.py:978-1007) expects 1.4 and 2.6 miles from the gate point 45.7836, -108.5047 (computed 1.40 and 2.58). D56 says 2.6 miles 'from the town point'. From the town point the page prints 1.2 and 2.7 miles (computed 1.24 and 2.74). D56's wording is wrong; needs a ruling (needed_from_others 1)."
+    },
+    {
+      "item": "D36: the candidate list at a point is one rule for the sheet, the town page and the browser",
+      "status": "partial",
+      "evidence": "Products side done: tile_list_picks is the rule and summary.py:1138 delegates to it. The browser mirror is present: map.js sumTilePicks (4261-4313, including the rejected part) and sumChosenFromTiles (4316-4326, which returns null only when the file lacks margin_miles; the tile files carry it at file level, 4.134 in the sample). Whether the sheet prints the same words at the named cells is owner 1's smoke check, not verified here."
+    },
+    {
+      "item": "Completion pass D78(c): display names in title case written by stations.py into the tile lists, sd summaries and stations block (ghcn_name kept)",
+      "status": "not done",
+      "evidence": "stations.py has no display-name or ghcn_name field (grep). The Billings page prints 'BILLINGS WTP', 'BILLINGS INTL AP' and 'BILLINGS 1.1 S' in capitals. Completion pass: write the display name in stations.py, rebuild the station part into the candidate, regenerate the fixture by rename, tests follow (items-completion.md, product item 1)."
+    },
+    {
+      "item": "Completion pass D78(c): stations.py WORDS['two_of_one'] drops 'Stations that did not pass are not shown.'",
+      "status": "not done",
+      "evidence": "stations.py:191-192 still ends the two_of_one sentence with 'Stations that did not pass are not shown.' D69 requires the rejected stations to be named, so the sentence must go (items-completion.md, product item 2)."
+    },
+    {
+      "item": "Completion pass: joins.py comment near line 346 says the job has 150 minutes, not 60 (D75, D77)",
+      "status": "not done",
+      "evidence": "joins.py:346 still reads '(the job has 60 minutes; D34, D35)' beside JOINS_DEADLINE_S = 35 * 60. The value is right (D75(d)); only the comment is stale."
+    },
+    {
+      "item": "Round-one R10 to R13 (D65): FW.W 169 recount comment; test_snowgrid EXEMPT comment; Billings unit test labels USW00024033 as WBAN; tile_list_picks docstring names unread candidates within the radius",
+      "status": "done",
+      "evidence": "joins.py:4196 (FW.W 169 is an independent recount of the cached rows); tests/test_snowgrid.py:673-677 (EXEMPT allowances); tests/test_stations.py:1004-1007 (WBAN label); stations.py:767-777 (docstring)."
+    },
+    {
+      "item": "D75(d): JOINS_DEADLINE_S is 35 minutes, the step's own deadline",
+      "status": "done",
+      "evidence": "joins.py:346 JOINS_DEADLINE_S = 35 * 60. The workflow backstop (53 minutes) is in hail-store.yml, owner 4's file, not checked here."
+    },
+    {
+      "item": "Same airport, two distances on the Billings page (2.6 and 2.7 miles): one rule for each row's source (D79(a))",
+      "status": "partial",
+      "evidence": "The gust row says 'Billings/Logan Intl, 2.6 miles from this spot' (IEM station BIL at 45.8069, -108.5422, hail/s/BIL.json). The station row says 'BILLINGS INTL AP, 2.7 miles from the town' (GHCN USW00024033 at 45.8072, -108.5461). D79(a) keeps each row on its own source and asks for one sentence in How this was made; that sentence is not in the site words yet (no 'position comes from its source' text in website/summary.py or sources.py). The separation is about 0.19 miles, not the 0.1 mile in D79(a)."
+    },
+    {
+      "item": "Warnings section no-outline clause: 'N warnings ... have no outline on file, so they cannot be matched to this spot'",
+      "status": "partial",
+      "evidence": "The count is store-wide: describe_joins reads index[INDEX_KEY] (joins.py:3527), whose warnings_no_outline is the store-wide count (joins.py:3270), read at joins.py:3690. The same number appears on every page. The words are true, but a reader may take the number as this spot's. A per-spot or per-tile count is not in the brief; the supervisor decides."
+    }
+  ],
+  "gates": [
+    {
+      "gate": "Owner tests (venv python): tests/test_stations.py, tests/test_joins.py, tests/test_snowgrid.py, tests/test_hail.py",
+      "status": "pass",
+      "evidence": "Ran 100, 284, 50 and 190 tests: all OK (checker/logs/tests-test_*.log)."
+    },
+    {
+      "gate": "Full suite: python -m unittest discover -s tests (venv python)",
+      "status": "fail",
+      "evidence": "Ran 1,825 tests in 383.7 s: failures=1, skipped=3 (checker/logs/full-suite.log). The one failure is tests/test_addresses.py:870 (B3's words test expects 'coverage varies'; D74 says 'completeness varies'), not a products file. Every products test in the suite passes."
+    },
+    {
+      "gate": "Self-test: python desktop/launcher.py --selftest payload",
+      "status": "pass",
+      "evidence": "'PASS payload 1.0.0', exit 0 (checker/logs/selftest-payload.log)."
+    },
+    {
+      "gate": "stations verify on the candidate copy (fixer C)",
+      "status": "pass",
+      "evidence": "34 of 34 checks ok; tile parity 206,865 points, 0 differences; 4,597 tile files; largest 3,401 bytes gzip; longest list 33 (checker/logs/stations-verify.json)."
+    },
+    {
+      "gate": "joins verify on the candidate copy",
+      "status": "pass",
+      "evidence": "50 of 50 checks ok; not_run empty; D55 zero difference for 20 products; D8 named periods, D11 and D38 town-point checks, D12 gusts, D15 hit-and-miss and gate 7 checks pass (checker/logs/joins-verify.json)."
+    },
+    {
+      "gate": "D61 full-cell parity: every cell centre of every tile, every element",
+      "status": "pass",
+      "evidence": "459,700 cells, 2,298,500 element answers, 0 differences (checker/logs/parity-all-cells.part0.json and part1.json)."
+    },
+    {
+      "gate": "D61 and D63 named parity: the 17 towns and cells 753,2230, 792,1998, 797,1986, 920,1899",
+      "status": "pass",
+      "evidence": "21 points, 105 element answers, 0 differences (checker/logs/parity-named.json). Named picks: 753,2230 SNOW VALENTINE and WINNETT 6NNE; 920,1899 PRCP Sacajawea then Brackett Creek; 792,1998 SNOW BUFFALO 1.7 E and HARLOWTON 11NW, with MOCCASIN EXP STN rejected."
+    },
+    {
+      "gate": "Fixture tree equals a fresh fixture run from the candidate",
+      "status": "pass",
+      "evidence": "diff -rq empty; 145 files (checker/logs/fixture-diff.txt)."
+    },
+    {
+      "gate": "Fixture budgets: store files outside hail/a under 480 KB; hail/a under 50 KB",
+      "status": "pass",
+      "evidence": "471,538 bytes outside hail/a; hail/a 50,601 bytes."
+    },
+    {
+      "gate": "Tile list budget: 100,000 bytes gzip per file",
+      "status": "pass",
+      "evidence": "Largest tile list 3,401 bytes gzip (r0096_c0213.json)."
+    },
+    {
+      "gate": "Words rules over every WORDS string (tests/words_rules.py) and the D13 stems in added lines",
+      "status": "pass",
+      "evidence": "Owner tests with the words rules pass. Added-line scan of the owned files against db84d76 (9,305 lines): D13 stems appear only in tests, quoted or source remarks, proper names, the 'NWS damage threat tag' label, 'This is not an all-clear.' and 'not the same as no hail'."
+    },
+    {
+      "gate": "No em-dash and no banned model, AI-vendor or AI-product name in added lines (owned files and fixture)",
+      "status": "pass",
+      "evidence": "0 em-dash lines and 0 banned-name lines in the 9,305 added lines; 0 in the fixture tree."
+    },
+    {
+      "gate": "Decision 7 audit: no owner, parcel, place-type or building-use field read, stored or shown",
+      "status": "pass",
+      "evidence": "Added lines have no such field read. The five text hits say owner names and parcel identifiers are never read, stored or shown (address terms text)."
+    },
+    {
+      "gate": "Billings town page built from the candidate (F4 words and count notes)",
+      "status": "pass",
+      "evidence": "Build from the candidate with --sample --storm-layers --hail-history --hail-addresses --hail-store (site-build.log rc 0). Warnings: 42 text lines 'covered this spot', 0 'covered this cell'; count note agrees with rows (checker/logs/billings-page-spot-lines.txt)."
+    },
+    {
+      "gate": "Count note and rows agree on every town page (17 towns)",
+      "status": "pass",
+      "evidence": "17 of 17 agree; no unavailable line; no 'covered this cell' row (checker/logs/towns-warning-agreement.txt)."
+    },
+    {
+      "gate": "D75(a): a built site's hail/ copy loads; archives and stray files stay strict",
+      "status": "pass",
+      "evidence": "load_store on the site copy (924 hail/live files) returns the folder; check_manifest strict still refuses an unlisted file; tests/test_hail.py:1944-1990 pass."
+    },
+    {
+      "gate": "B5-3 stations: the rule's picks at Billings, Benchland and the gate; the D18 Benchland replacement",
+      "status": "partial",
+      "evidence": "Picks pass: Billings all five elements (USC00240802, USW00024033); Benchland SNOW US1MTFG0003 and USC00243947 (Lewistown 11 SSE replaced under D18); SNWD USC00247864 and USS0009C01S. Open: the Billings miles (see item D56)."
+    },
+    {
+      "gate": "B5-5: product counts equal the research counts, zero difference; edges named",
+      "status": "pass",
+      "evidence": "joins verify: 20 products zero difference; FW.W, HW.A and HW.W edge events named; unexplained empty."
+    },
+    {
+      "gate": "B5-6: period rule (D8 named cases)",
+      "status": "pass",
+      "evidence": "joins verify D8 check ok (the named zone periods as the rows give them)."
+    },
+    {
+      "gate": "B5-7: NCEI points (Glentana found at its point; Hays 2021-07-07 excluded)",
+      "status": "pass",
+      "evidence": "Glentana found at cell 615,2375, 0.41 miles; hays_excluded absent and outside the window (joins verify b5 block)."
+    },
+    {
+      "gate": "B5-8: gusts (LWT 182.5 kt dropped and counted; HVR and MSO flagged)",
+      "status": "pass",
+      "evidence": "joins verify b5 gusts block and the D12 check: lwt_182_5_dropped, hvr_flagged and mso_flagged all true."
+    },
+    {
+      "gate": "B5-9: roof counts (Billings highs of 90 F; 1-inch snow depth)",
+      "status": "pass",
+      "evidence": "stations verify: [45, 42, 27, 35, 25] and [55, 70, 30, 53, 25]."
+    },
+    {
+      "gate": "B5-15: polygon rule (cover counts per product; town-point check for 17 towns; null geometry counted)",
+      "status": "pass",
+      "evidence": "joins verify: town_point_check ran for 17 towns (4 disagreements listed); D38 0 missing from covers; polygon_nulls joined 0, unjoined 0."
+    },
+    {
+      "gate": "B5-16: temperature extremes (dates, kind word, station name)",
+      "status": "partial",
+      "evidence": "Dates and kind words present on the Billings page. Station names are GHCN capitals ('BILLINGS WTP'), pending D78(c)."
+    },
+    {
+      "gate": "B5-17: hit-and-miss table (Lewistown 2.50 in and Petrolia Lake 3.50 in present; nothing before the window)",
+      "status": "pass",
+      "evidence": "joins verify D15 checks ok (Lewistown 1 row, Petrolia Lake 1 row; 0 reports before 2021-10-17 12:00 UTC)."
+    },
+    {
+      "gate": "Gate 5 (D24): Red Lodge flood record and warnings",
+      "status": "pass",
+      "evidence": "Cell 983,2074 records: 'Jun 10, 2022 1:00 am MDT: flood ... Emergency manager, 0.3 mi NE' as a Record row; FA.W at 2022-06-12T05:00Z; Gardiner FL.W 2022-06-13T12:00Z; Billings FL.W 2022-06-14T05:41Z and FL.A 06:00Z (joins verify june_2022 block)."
+    },
+    {
+      "gate": "Cache rule: new .dly files only; the 495 chosen station files present (487,235,520 bytes)",
+      "status": "pass",
+      "evidence": "All 495 chosen .dly files are in the cache; cache dly directory unchanged since the first check (listing mtime 05:05; not content-hashed)."
+    },
+    {
+      "gate": "B5-13: determinism (two builds from cache byte-identical)",
+      "status": "not run",
+      "evidence": "Products builds were not re-run in round 2."
+    },
+    {
+      "gate": "B5-4: NOHRSC regression and the snow analysis decision",
+      "status": "not run",
+      "evidence": "Builder 2's snowgrid.py. tests/test_snowgrid.py (50 tests) passes; the regression values were not re-measured here."
+    },
+    {
+      "gate": "Sheet smoke at 390 and 1280 px, the three-cell comparison, the phone budget, zero off-site requests, flag-off identity, docs numbers",
+      "status": "not run",
+      "evidence": "Owners 1, 2, 4 and 5 (not products' gates). Not run here."
+    },
+    {
+      "gate": "Checker scope: read-only; no git write; scratch only under checker/; store copy and site build deleted when checked",
+      "status": "pass",
+      "evidence": "Git used only for read-only log, status and diff. Scratch under checker/. The site build and fixture copy were deleted after checking; the store copy and the scratch temp folder were deleted afterwards with literal paths."
+    }
+  ],
+  "needed_from_others": [
+    "Supervisor, D56: the gate test expects WTP 1.4 and the airport 2.6 miles from the gate point 45.7836, -108.5047 (tests/test_stations.py:978-1007; computed 1.40 and 2.58). From the town point the page prints BILLINGS WTP 1.2 miles and BILLINGS INTL AP 2.7 miles (computed 1.24 and 2.74). Restate D56's 'from the town point', or move the test to the town point. Products follows the ruling.",
+    "Supervisor, D69 and D76: the sheet picks at the cell centre (D36) and the rejected MOCCASIN EXP STN entry at cell 792,1998 carries 3.2 miles from it (computed 3.25). D76's 3.6 miles is from the Benchland gate point 47.08, -110.02 (computed 3.60). Name the point the note uses; then the words must match it.",
+    "Supervisor, D79(a): the ruling says the two sources place the airport 0.1 mile apart; the computed separation is about 0.19 miles (IEM BIL 45.8069, -108.5422; GHCN USW00024033 45.8072, -108.5461). Correct the figure if the ruling is restated.",
+    "Owner 2 (site, How this was made): add the D79(a) one-sentence note that a station's position comes from its source and two sources may place one airport a few hundred feet apart. It is not in website/summary.py or sources.py yet.",
+    "Owner 2 (site, summary.py station_rejected words, line 282): the rejected note at cell 792,1998 takes the miles of the point ruled in item 2 above; the Billings town-page note ('BILLINGS 1.1 S, 2.0 miles from the town, is not used') already matches.",
+    "Owner 1 (browser): at cells 753,2230, 792,1998, 920,1899 and 797,1986 the sheet must print the picks and rejected names in checker/logs/parity-named.json (for example 792,1998 SNOW: BUFFALO 1.7 E 20.5 and HARLOWTON 11NW 34.4, rejected USC00245761 at 3.2). The browser mirror is map.js:4261-4326.",
+    "Owner 4 (smoke): read the built site's own hail/ with hs.load_store(site_root) (website/hail.py:771-781, D75(a)). A site copy holds hail/live (924 files in the checker build).",
+    "Owner 5 (docs): restate the products figures: 4,597 tile lists, 56,947,475 bytes raw, largest 3,401 bytes gzip (budget 100,000); 805 summary files, 4,373,407 bytes; 700 rule files, 537,226,020 bytes; 495 daily files, 487,235,520 bytes; pool 2,778, Montana 1,325, not read 21 (Canadian); fixture 471,538 bytes outside hail/a (budget 480 KB), hail/a 50,601 bytes (budget 50 KB); D62 counsel item 19.",
+    "Owner 5 or the B3 owner: tests/test_addresses.py:870 expects 'its coverage varies from county to county'; D74 requires 'its completeness varies from county to county' (sources.py:247). It is the only failure in the full suite (1 of 1,825).",
+    "Completion pass, owner 2: the D78(c) name-case tests (tests/test_summary.py and tests/test_site.py) follow the display names once products writes them.",
+    "Supervisor: the candidate is fixer C's store (D76); every check here ran on a full copy of it. If another store is adopted, re-run the stations and joins verifies and the fixture equality."
+  ],
+  "tests_tail": "checker/logs/tests-test_stations.log: Ran 100 tests in 1.999s - OK\nchecker/logs/tests-test_joins.log: Ran 284 tests in 16.637s - OK\nchecker/logs/tests-test_snowgrid.log: Ran 50 tests in 20.680s - OK\nchecker/logs/tests-test_hail.log: Ran 190 tests in 19.263s - OK\nfull suite (checker/logs/full-suite.log): Ran 1825 tests in 383.698s - FAILED (failures=1, skipped=3)\n  FAIL test_addresses.WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number (tests/test_addresses.py:870: expects 'coverage varies'; D74 says 'completeness varies')\nself-test: PASS payload 1.0.0, exit 0"
+}
