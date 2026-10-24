@@ -231,3 +231,6 @@ Run 1 (wf_0fb69837-1d4): words 20 of 24, site 17 of 19 (the rest landed with the
 
 ## 2026-10-24 21:25 UTC: run 2 site-2, browser-2, words-2 done; D91
 site-2: SECTION_ORDER, hail.summary.section_order, describe_sheet (one source), SECTION_WORDS all_clear, roof label rename, em-dash placeholder; map.json 162,512 raw (headroom 1,328). browser-2: one line (placeholder for a missing held word). words-2: swath and streets words, FORECAST rule in words_rules.py; About and Map scan clean. One suite error left: tests/test_site.py 3176 reads a smoke constant the smoke fixer removed. D91(a) to (i) recorded; run 2b entries site-3 and words-3 written; smoke-2 waits on the smoke check.
+
+## 2026-10-24 21:40 UTC: smoke check; D92; run 2b
+Smoke fixer done: DOM reader, SECTION_ORDER checks, every-row comparison against describe_sheet, budgets from map.json, swath zoom and centring, the parity step; smoke passes on the adopted-store build at 390 and 1280 px; phone view 682,102 gzip. Parity step fails against the site copy until build.py _copy_hail checks its source with allow_live=True (D92(a)); site-3 takes it with the website.yml unittest list (D92(c)). Run 2b = site-3 and words-3 launched.

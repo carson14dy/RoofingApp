@@ -1229,3 +1229,20 @@ D89(a) exclusion is a documented FORECAST tuple in words_rules.py; About and Map
   page from SECTION_WORDS all_clear through section_data.words; both come from map.json and carry the same sentence; the
   Recheck's three-cell comparison is the test that they agree. (i) Run 2b (site-3, words-3, smoke-2) runs after the smoke
   fixer's check lands; then the Recheck (run 3).
+
+## Supervisor rulings on the smoke check (2026-10-24 21:40 UTC; D92)
+The smoke fixer (/home/user/hail-b5/out/b2r5/smoke/check.json) landed the DOM reader (textContent), the SECTION_ORDER
+checks, the every-row comparison against describe_sheet, the budgets from map.json, the swath zoom and centring, and the
+parity step; the smoke passes on the adopted-store build at 390 and 1280 px; measured: phone view 682,102 bytes gzip
+(budget 700,000), B3 files 267,789, largest B5 tap file j/e/r0092_c0214.json 18,052 bytes gzip, largest tap file of any
+kind b/r0092_c021500.json 40,074 (budget 100,000). The parity step as written fails against the built site copy: the
+build's _copy_hail runs the strict manifest check on its source, and a site copy holds hail/live files the manifest does
+not list. Rulings:
+- D92 **The parity step's source.** (a) website/build.py's _copy_hail checks its source with allow_live=True (D75(a):
+  a built site's own copy may be the source; the copy takes only the listed folders, so hail/live is never copied); the
+  copy's own check stays strict; a test pins both. (b) The build job's timeout rises from 15 to 25 minutes for the
+  parity step (the smoke fixer's call stands; the step measured 132 seconds locally). (c) For run 2b no smoke fixer
+  runs, so site-3 owns .github/workflows/website.yml and tests/test_website_workflow.py as well: the offline unittest
+  module list names tests.test_words_rules (D91(f)) with its pin, and site-3 re-runs the parity step's own run: script
+  against a fresh every-flag build (_site) and quotes the tail: seven tests, OK, no skip. (d) The one-hour swath layer's
+  pixel gate is measured by the live preview only (no live file offline); the smoke says so and does not fail on it.
