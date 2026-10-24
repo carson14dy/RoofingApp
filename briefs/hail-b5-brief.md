@@ -733,3 +733,111 @@ of the Billings failure. The rulings:
   1,826 SPC days ending on the as-of date, 2026-10-16, while the cache holds events to 2026-10-18) and the D8 begin for
   an event whose archived rows all close it stand; the three D55 edge events (HW.A TFX 30 of 2026 and HW.W TFX 34 of
   2026 in the research window only; FW.W TFX 19 of 2021 in the store window only) are recorded by verify and the record.
+
+## Supervisor rulings on the first part B2 reports (2026-10-24 02:50 UTC; D66 to D68)
+Fixer A (the station rule) and the site owner reported; both are accepted. The figures: the tile lists now cover every cell
+of their tile (largest margin 3.823 miles; no cap; longest list 32; 4,597 files, 24,108,522 bytes, largest 1,549 bytes
+gzip), parity with the point rule is zero at all 2,298,500 cell-element answers (the old lists were wrong at 26,478); the
+pool holds 2,772 stations in the box, 1,325 in Montana, 229 read in the neighbouring states (WY 111, ID 81, SD 23, ND 14),
+20 Canadian stations not read (AB 10, SK 6, BC 4); 800 summary files; town and gate picks unchanged (95 rows).
+- D66 **map.json budgets.** The 140 KB raw gate applies to the B5 blocks (136,569 bytes measured with the history flag,
+  under it). The full-flag file is 404,103 bytes because B3's blocks (addresses.tiles, roads.tiles, buildings.tiles,
+  buildings.split) list every tile as membership sets the browser reads; that is accepted with the reason and recorded,
+  and a compact encoding is a B3 follow-up in the roadmap, not part B2's work. The gate a user feels is the phone view at
+  zoom 15 with every layer on, measured by the smoke, and budgets are written as byte counts: 665,600 bytes gzip for the
+  phone view (the smoke's unit for "650 KB") and 100,000 bytes gzip per tile file (the joins constant for "100 KB");
+  map.json's hail.budget block carries both numbers.
+- D67 **The station refresh budget restated (D26, D42).** The daily refresh covers the chosen stations, now 437 files
+  (421,389,540 bytes worst case; 437 conditional requests, a file whose Last-Modified is unchanged is not fetched); the
+  monthly job covers the 800 summary files (695 rule files, 532,000,980 bytes, plus the 105 regression-only Montana
+  files); the local rebuild measured 86 seconds with 57 downloads (28,327,860 bytes). Step timeouts stay 1.5 times the
+  measured time once the branch run measures them; the docs carry these numbers (owner 5).
+- D68 **Judgement calls accepted.** Lewistown Municipal (LWT, within 40 miles) replaces Billings as the gate and Benchland
+  tiles' station in the invented test store (R9), and the station test's expected name follows. A tile list without
+  margin_miles cannot answer: in Python the stations block answers through point_rule; in the browser the D32 sentence
+  is printed, never "No station". The How-this-was-made sentence carries the Canadian clause. The ice-dam label reads
+  "(days; a measured pattern, not ice dams)" with the kind word in the lead. The immutable combined store refuses hard
+  links, so store copies are full copies (cp -a; one at a time). The 13 Canadian .dly files in the review folders were
+  not seeded into the cache (D62: never pulled, never summarised). Cross-owner items received: WORDS_JOINS gains the
+  sentence for an unknown NCEI newest date (records_newest_unknown; Python's voice, the browser fills it; products
+  fixer C), WORDS_JOINS["warnings_row"] goes once map.js no longer reads it, and the browser reads no map.json key the
+  build does not write (county_suffix is dropped unless Python provides a constant); the two map.js source-string tests
+  in tests/test_site.py follow the browser's final lines (owner 2 after owner 1).
+
+## Supervisor rulings on the second round of part B2 reports (2026-10-24 03:20 UTC; D69 to D71)
+Fixer B, the browser builder (partial: the five-season table matches describe_summary at 120 row-cells on the candidate
+store in Chromium at 390 and 1280 px; the eleven sections, the roof lines and How this was made are not built), the site
+reviewer (F1 to F15) and the smoke builder reported. Fixer B's candidate store (/home/user/hail-b5/out/b2/products-fix/
+fixer-b/store: 45,873 files, 508,204,168 bytes; every module's verify ok; the fixture regenerated at 305,024 bytes outside
+hail/a/ against a 320 KB budget) is adopted as the combined store once the three part B2 workflows finish (D50, D64).
+- D69 **Rejected candidates are named (F6).** The Product section requires "Benchland names the station used and says why
+  Moccasin is not" and D5 shows every station's share. The tile list gains a `rejected` part per element: the candidates
+  within the radius nearer than the second pick that failed the coverage or currency test, with id, name, miles, the
+  share and the newest report date (MOCCASIN EXP STN, 3.2 miles, 324 of 2,192 days, is the named case); the station note
+  names them in plain words ("MOCCASIN EXP STN, 3.2 miles away, is not used: 15 percent of the days 2020 to 2025 have a
+  snowfall value; the rule needs 80.") and the browser mirrors it; farther rejected candidates are counted in one clause.
+  Owners: products (stations.py and the tile list format), site (the note words), browser (the mirror).
+- D70 **The phone budget excludes the picture frames (smoke).** The 665,600-byte gate counts the shell, map.json and the
+  data shards of a zoom 15 view with every layer on; the radar, model, satellite and swath pictures are the pre-existing
+  map layers, listed apart as B3 did (with them the view is 3,361,080 bytes more; the precipitation frames alone 1.2 MB).
+  Measured now: 663,276 bytes, of which map.json's gzip grew to 80,186 bytes with B3's tile membership sets (D66). The
+  gate stands as the target; if the figure exceeds it once the browser's sections land, the budget is restated to the
+  measured figure with the reason and the compact encoding of B3's tile sets becomes the first follow-up (roadmap), never
+  a cut of words or rows. The joins backstop in the daily job is 54 minutes (1.5 times the measured 35.6 end to end; the
+  joins step's own deadline is 35). pyyaml is a test-only dependency in the Install step and the docs' command lines.
+- D71 **The site review's findings.** F1 (confirmed): a failed ice-dam count prints the D20 unavailable sentence with the
+  reason, never station_none. F2: the browser's station-unavailable sentence ends with the all-clear and the test constant
+  STATION_UNAVAILABLE in tests/test_site.py gains it (D41); records_newest_unknown is a WORDS_JOINS word (products) that
+  the browser fills. F3: the Snow lead names the station of each figure (the five-season snowfall total under D41's
+  one-station rule). F4: a town page's warning rows are the town-point rows (hail/j/towns.json, D11 and D38) worded
+  "covered this spot", and the explanation sentence says so; the sheet keeps the cell words; describe_joins with a town
+  spot lists the point rows (products) and summary words them (site). F5: the ice-dam five-season count follows D41's
+  one-station rule (named when one station covers all five seasons; else each season's count names its station and the
+  five-season cell reads Data unavailable with the reason). F7: the five sentences the browser asks for (all_clear,
+  county_note, coverage_one, partial_no_report, these_five) and the literals Python keeps for them become WORDS keys
+  carried in map.json (site), and the browser reads them (browser); the same for nouns, report_types, record_types,
+  auto_sources, element_names, family_nouns and the day words the browser owner listed. F8: the browser fills status
+  from the station_status words. F9: the per-season unavailable sentences carry "for {season}". F10: a failed roof section
+  shows the D20 sentence. F11: ruled by D66. F12: About drops the D13 stem: the hail_swath row reads "no radar coverage"
+  (D60) and the address rows read "its completeness varies from county to county" (sources.py and the B3 addresses.py
+  words, in the completion pass). F13 to F15 applied as nits (imports instead of copies; the docstring; "the deepest snow
+  on the ground was {depth}"). Also: build.py's HAIL_FOLDERS_B5 copies hail/tl into the site (the browser requests it;
+  every tap 404s without it) and the stations block carries tile_list "hail/tl/{tile}.json" (site); the two Python
+  defects the browser owner found (the county-unavailable line appended twice in describe_joins; station_failed formatted
+  without status) are fixed in Python, never mirrored (products and site); the fixture's joins block stays without the
+  D55 keys (verify skips D55 on a store without VTEC counts); the joins ledger lives outside the store root. The browser's
+  second round builds the eleven sections in the fixed order, the roof lines, How this was made, the unread and rejected
+  station words, the gauge lines (F8 of the B5 words), the D57 flooding listing, the unit constants from map.json (no
+  9/5, 32 or 1000 literal), the sentence-case heading, and the failure mode where only the station rows fail (D16, D32).
+
+## Supervisor rulings on the browser and products reviews (2026-10-24 03:50 UTC; D72 to D74)
+The browser reviewer (R1 to R17) and the products reviewer (RV1 to RV10) reported. The browser's table only built with the
+Python constants injected by hand: on the real build map.json lacks report_types and the TypeError takes the whole table
+down (R1, R2; D71's exports and failure mode); row notes never reach the page (R4); the records failure row loses its label
+and reason (R5); 22 lines of literal sentences, units and constants remain (R6); the sections are not built (R11); unread
+candidates print a placeholder (R12); the tile-list path and the unplaced flags read keys the build does not write (R13,
+R14); a redraw sample at zoom 16 took 70.9 ms against a 30 ms budget on this loaded sandbox and is re-measured on the CI
+runner before it counts (R16). Phone view measured 653,442 of 665,600 bytes with three layers (a lower bound). Rulings:
+- D72 **The tile margin covers every point of the tile (RV3).** The margin was the distance to the farthest cell centre
+  (3.823 miles at most) while a routed point near the tile's edge (a town point, a typed address) lies up to 4.239 miles
+  from the centre: 64 of 91,940 element answers at routed corner points differ from point_rule (12 false "none"). Rule:
+  the margin is the distance from the tile centre to the tile's farthest corner (the tile extent, computed per tile), so
+  every point of the tile is covered by construction; tile_list_picks answers None for a point farther from the tile
+  centre than the margin (a routing error, never a false absence) and its docstring says so; verify adds the four routed
+  corners of every tile to the parity sample; the tile lists are rebuilt into the candidate store and the fixture is
+  regenerated (products fixer C, then the supervisor adopts).
+- D73 **The daily refresh covers the stations that could resume (RV4; D26 amended).** The daily set is every loaded
+  station within reach of a tile with at least 80 percent coverage for some element, whether or not it is current for
+  it (today 437 chosen plus 56 more), so a station that starts reporting again is picked up the next day, not a month
+  later; a file whose Last-Modified is unchanged is still not fetched; D67's figures are restated with the measured set.
+- D74 **The two About rows (RV5, F12, D53, D60).** The hail_swath row reads "-1 is missing and -3 is no radar coverage in
+  NOAA's table" (the MESH row's words; "no radar coverage" is NOAA's term, D45); the address rows read "its completeness
+  varies from county to county" (sources.py line 247 and the B3 addresses.py words); storm.py keeps "code -999 means
+  outside radar coverage" for its own product. Nits applied by the products fixer: the docstring fragment (RV7); the
+  current-year filter on every unread candidate, not only the Canadian ones (RV8); the sample's stations block carries
+  every station its tile lists name, with the summary file where one exists (RV9); a fixture test ties tl/, sd/ and the
+  stations block together (RV10). The browser's round 2 adds R4 (every row's notes rendered as describe_summary gives
+  them), R5 (the unavailable-row call with its label, kind word and reason), R13 (summary.tile_list and
+  summary.tile_list_format), R14 (the unplaced statements read the key the build writes, zone_unplaced_rows, or the site
+  adds the shape the browser needs) and R17 to D71's list; the smoke adds R15 (a --history run without --hail-addresses
+  fails readably).

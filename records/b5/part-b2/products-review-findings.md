@@ -37,3 +37,47 @@ Measured facts the fixers can rely on (from the skeptics, read-only runs on the 
 - Scratch of the review (scripts and logs; read-only inputs): /home/user/hail-b5/out/b2p/products/ (review/,
   skeptic1/, skeptic2/, skeptic1-r3/, skeptic2-R3/, skeptic-r4/, skeptic2-r4/, skeptic-r5/, fixture-d56/, store/ with the
   rebuilt joins, verify-final.json).
+
+## Cross-owner items received during the run (2026-10-24 02:50 UTC; for the reviewer and fixer C; rulings D66 to D68)
+- From the site owner: `WORDS_JOINS` must carry `records_newest_unknown`, the sentence for an unknown NCEI newest date, in
+  Python's voice beside the existing records words (the browser reads `W.records_newest_unknown` near map.js line 3045 and
+  the build writes map.json's words from `WORDS_JOINS`); add it with a test. `WORDS_JOINS["warnings_row"]` ("issuance polygon
+  in effect", D41) is no longer used by `describe_joins`: remove it only when `grep -n warnings_row website/static/map/map.js`
+  finds nothing (the browser owner is switching map.js during this run); otherwise list it as pending.
+- From fixer A: the regression set stays Montana only; the Canadian .dly files were not seeded (D62); `cp -a` replaces `cp -al`
+  (the immutable store refuses hard links). Fixer B works the same way (one full copy at a time; delete it when the
+  candidate is done, keeping the candidate).
+- The daily job's station figures for the docs (D67): 437 chosen files, 421,389,540 bytes worst case; 800 summary files;
+  the local rebuild 86 seconds with 57 downloads.
+
+## Items from the site review and the browser and smoke owners for the products side (2026-10-24 03:20 UTC; rulings D69 to D71)
+- D69 (F6): the tile list gains a `rejected` part per element (candidates within the radius nearer than the second pick that
+  failed the coverage or currency test: id, name, miles, share as ok of total days, newest report date), the format note and
+  verify follow, `tile_list_picks` returns it as `rejected` beside `unread`; the Benchland snowfall case names MOCCASIN EXP STN
+  (USC00245761, 3.2 miles, 324 of 2,192 days). The words are the site owner's; the browser mirrors.
+- D71 (F4): `describe_joins` for a town (a spot is given) lists the town-point warning rows from hail/j/towns.json (D11, D38)
+  with the words "covered this spot" (a WORDS_JOINS key beside warnings_row_b5), and the count note and the rows agree; the
+  sheet keeps "covered this cell or part of it".
+- D71 (F2): `WORDS_JOINS["records_newest_unknown"]` is the sentence for an unknown NCEI newest date, used by `_records_lead`
+  (joins.py near line 3860) and filled by the browser; with a test.
+- The browser owner's Python defect: `describe_joins` appends the county-unavailable line twice when the county file fails
+  (joins.py near lines 3765 and 3795); fix once, with a test.
+- D71 (F12): `website/sources.py` line 175 (the hail_swath row) reads "no radar coverage" for both phrases (D45, D60); line 247
+  reads "its completeness varies from county to county" (the D13 stem leaves About). addresses.py line 236 is the B3 module's
+  words and goes to the completion pass.
+- The candidate store is adopted by the supervisor after the workflows finish; fixer C rebuilds only the parts its change
+  touches (tile lists if the `rejected` part lands: into the candidate store, then the fixture regenerated as fixer B did).
+
+## Rulings on the products review RV1 to RV10 (2026-10-24 03:50 UTC; for fixer C; D72 to D74 in the brief)
+- RV1 confirmed: `WORDS_JOINS["records_newest_unknown"]` (Python's voice; `_records_lead` uses it; the browser fills it).
+- RV3 confirmed, ruled D72: the margin becomes the distance from the tile centre to the tile's farthest corner (every point of
+  the tile covered); `tile_list_picks` returns None beyond the margin with the docstring saying so; verify's parity sample adds
+  the four routed corners; rebuild hail/tl (and the index stations block) into the candidate store
+  /home/user/hail-b5/out/b2/products-fix/fixer-b/store with the stations build, re-run stations verify, regenerate the fixture
+  from the candidate as fixer B did (swap by rename), and re-run the fixture tests.
+- RV4 ruled D73: the daily set is every loaded station within reach with at least 80 percent coverage for some element
+  (current or not), beside the chosen ones; restate the counts in the index (D67's figures).
+- RV5 ruled D74: sources.py line 175 "-1 is missing and -3 is no radar coverage in NOAA's table"; line 247 "its completeness
+  varies from county to county".
+- RV6 is D69 (the `rejected` part of the tile list); RV7 to RV10 are applied as nits (the docstring fragment; the current-year
+  filter on every unread candidate; the sample block carries every station its tile lists name; a fixture consistency test).
