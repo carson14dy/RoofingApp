@@ -1035,3 +1035,24 @@ tile-list budget, and a question on About's contract text.
   only if words_rules exempts it, else it is reworded without the stem. The products owner applies D84(b) and these in
   one pass (a station rebuild into the adopted store, the fixture regenerated, the exact new names reported so the site's
   test pins follow), then the store is marked immutable again.
+
+## Supervisor rulings on the words gate over About (2026-10-24 17:05 UTC; D86)
+D85 put the About page and the CONTRACTS rows inside the words gate; the products leftovers builder then reworded two
+older rows and the reviewers found the conflicts: the storm layer's sentence (D78(b)) was reworded, the satellite row's
+"clear sky" became "cloud-free sky" without its test, the R9 title carries the stem "safe", the State Library's name
+carries "Structures", and B3's outside-grid sentence says "no hail". Rulings:
+- D86 **Six words calls.** (a) D78(b) stands: the storm_levels row keeps "A radar estimate, not observed hail or damage."
+  (the products fixer restores it; tests/test_storm.py's pin holds) and tests/words_rules.py exempts this one
+  pre-existing negative sentence, as D52 exempts the footer. (b) The satellite row reads "never drawn as cloud-free sky"
+  (the stem rule applies to a row B5 shows on About; "clear" is the all-clear stem); tests/test_site.py's pin follows
+  (site), and website/satellite.py's docstring is not page text and may keep its words. (c) About's pre-existing prose
+  inside the storm-layers block and the B3 terms block follows words_rules where the fix is a word swap that keeps the
+  meaning (D53's pattern); a sentence that cannot be reworded without changing what it says is exempted by listing it in
+  words_rules with the ruling cited; the words owner decides line by line and reports each. (d) D46 covers source titles:
+  the About references list may quote a title that carries a stem ("freeze-thaw damage to roofs", "Snow Load Safety
+  Guide"); words_rules exempts the quoted titles of that list (R9 and R20 named), nowhere else. (e) A source's proper
+  name is a citation: "Montana State Library Structures and Addresses Framework" joins "USA Structures" in the exemptions.
+  (f) B3's outside-grid sentence reads "This point is outside the hail grid's Montana outline; the history does not cover
+  it." (website/addresses.py's words; the browser shows the words as given). These are the words owner's items in the
+  completion round (files: website/templates/about.html, website/addresses.py's About and outside words,
+  tests/words_rules.py, website/sources.py's storm_levels row, tests/test_storm.py and tests/test_site.py's two pins).
