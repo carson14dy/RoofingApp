@@ -4,6 +4,8 @@ real files are checked by `python -m website.stations verify`."""
 from __future__ import annotations
 
 import json
+import math
+import random
 import re
 import shutil
 import sys
@@ -75,14 +77,22 @@ class ReaderTests(unittest.TestCase):
         parsed = S.parse_dly(text, "USC00000001")
         self.assertEqual(parsed["obs"]["PRCP"], [])
 
-    def test_station_list_keeps_montana_only(self):
+    def test_station_list_keeps_stations_by_position_not_by_state(self):
+        # D62: the pool is the box, whatever the state; the state is kept (the snow regression reads Montana only)
         text = "\n".join([station_line("USC00240802", 45.7717, -108.4811, "MT", "BILLINGS WTP"),
-                          station_line("USC00000009", 40.0, -100.0, "NE", "ELSEWHERE")])
-        stations = S.parse_station_list(text)
-        self.assertEqual(list(stations), ["USC00240802"])
+                          station_line("USS0014C05S", 46.0, -114.0, "ID", "LOLO PASS"),
+                          station_line("USC00000009", 40.0, -100.0, "NE", "ELSEWHERE"), "",
+                          station_line("CAN03031402", 49.1, -111.5, "AB", "CARWAY")])
+        stations = S.parse_station_list(text, (44.0, 49.6, -117.0, -103.0))
+        self.assertEqual(sorted(stations), ["CAN03031402", "USC00240802", "USS0014C05S"])
         self.assertEqual(stations["USC00240802"]["name"], "BILLINGS WTP")
         self.assertEqual(stations["USC00240802"]["net"], "COOP")
+        self.assertEqual((stations["USC00240802"]["state"], stations["USS0014C05S"]["state"]), ("MT", "ID"))
         self.assertAlmostEqual(stations["USC00240802"]["lon"], -108.4811)
+
+    def test_a_station_line_without_a_position_is_a_stations_error_not_a_silent_skip(self):
+        with self.assertRaises(S.StationsError):
+            S.parse_station_list("USC00000007 xx.xxxx  -110.0000 MT", (40.0, 50.0, -120.0, -100.0))
 
     def test_inventory_reads_core_elements_and_ranges(self):
         text = "\n".join(["USC00240802  45.7717 -108.4811 TMAX 1948 2026",
@@ -382,7 +392,7 @@ class OfflineBuildTests(unittest.TestCase):
         # verify: the loaded files match the loaded entries, and the failed file is listed with no sd file
         checks = {c["check"]: c["pass"] for c in S.verify(self.store)["checks"]}
         self.assertTrue(checks["sd files match the stations block"])
-        self.assertTrue(checks["failed files are listed, and none has an sd file"])
+        self.assertTrue(checks["failed or not-read candidates are listed, and none has an sd file"])
 
 
 class FakeResponse:
@@ -859,15 +869,17 @@ class TileListTests(unittest.TestCase):
             patch.stop()
         self.tmp.cleanup()
 
-    def test_a_tile_list_holds_the_six_nearest_passing_stations_and_names_the_failed_candidate(self):
+    def test_a_tile_list_holds_every_passing_station_with_no_cap_and_names_the_failed_candidate(self):
         result = S.build(self.store, self.cache, offline=True, procs=1)
         self.assertEqual(result["state"], "partial")
         doc = json.loads((self.store / "hail" / "tl" / f"{self.TILE}.json").read_text(encoding="utf-8"))
-        self.assertEqual((doc["f"], doc["tile"], doc["cap"], doc["miles"]), ("hail-stn-tiles-v1", self.TILE, 6, 40.0))
+        self.assertEqual((doc["f"], doc["tile"], doc["miles"]), ("hail-stn-tiles-v1", self.TILE, 40.0))
+        self.assertNotIn("cap", doc)                                       # D61: the cap is gone
+        self.assertEqual(doc["margin_miles"], S.tile_margin_miles(79, 199))
         self.assertEqual(doc["centre"], [47.05, -110.05])
         snow = doc["elements"]["SNOW"]
-        self.assertEqual([p["id"] for p in snow["passing"]], [f"USC0000{n:04d}" for n in range(101, 107)])
-        self.assertTrue(snow["capped"])
+        self.assertEqual([p["id"] for p in snow["passing"]], [f"USC0000{n:04d}" for n in range(101, 109)])   # all eight
+        self.assertFalse(snow["capped"])
         self.assertEqual([u["id"] for u in snow["unread"]], ["USC00000150"])
         self.assertEqual(snow["unread"][0]["name"], "BROKEN")
         self.assertIsNotNone(snow["unread"][0]["lat"])
@@ -877,9 +889,13 @@ class TileListTests(unittest.TestCase):
             self.assertEqual(p["of"], 2192)
             self.assertGreaterEqual(p["share"], 0.8)
             self.assertEqual(set(p), {"id", "name", "lat", "lon", "miles", "ok", "of", "share"})
-        self.assertEqual(doc["elements"]["TMAX"], {"passing": [], "unread": [], "capped": False})   # no TMAX candidate
+        self.assertEqual(doc["elements"]["TMAX"], {"centre": [47.05, -110.05], "margin_miles": S.tile_margin_miles(79, 199),
+                                                   "passing": [], "rejected": [], "unread": [], "capped": False})   # no TMAX candidate
+        self.assertEqual(snow["rejected"], [])                                  # all eight pass: nothing is rejected (D69)
+        self.assertEqual((snow["centre"], snow["margin_miles"]), ([47.05, -110.05], S.tile_margin_miles(79, 199)))
         block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]
-        self.assertEqual((block["tile_lists"]["capped"], block["tile_lists"]["unread"]), (1, 1))
+        self.assertEqual((block["tile_lists"]["capped"], block["tile_lists"]["unread"]), (0, 1))
+        self.assertEqual(block["tile_lists"]["margin_miles_max"], S.tile_margin_miles(79, 199))
         self.assertEqual(block["tile_lists"]["format"], "hail-stn-tiles-v1")
         # D32: the problem line names the failed candidate, with its name and id, and no absence claim
         self.assertEqual(block["problem"], "Station readings could not be loaded in this update for BROKEN (USC00000150); "
@@ -901,9 +917,13 @@ class TileListTests(unittest.TestCase):
         manifest = json.loads((self.store / "hail" / "manifest.json").read_text(encoding="utf-8"))
         # the manifest of this synthetic store lists the tile lists and the station files it wrote
         checks = []
-        picks = S._verify_tile_lists(self.store, index, block, manifest,
-                                     lambda name, passed, detail="": checks.append((name, passed, detail)))
+        picks, parity = S._verify_tile_lists(self.store, index, block, manifest,
+                                             lambda name, passed, detail="": checks.append((name, passed, detail)))
         self.assertEqual(sorted(picks), ["benchland", "billings"])
+        self.assertEqual(parity["differences"], 0)
+        self.assertEqual(parity["points"], 9 * len(S.CORE))                 # the centre, four cell corners, four routed corners
+        self.assertEqual((parity["tile_files"]["files"], parity["tile_files"]["longest_list"]), (1, 8))   # D61: recorded
+        self.assertGreater(parity["tile_files"]["largest_gzip"], 0)
         snow = picks["benchland"]["SNOW"]
         self.assertEqual(len(snow["picks"]), 2)
         self.assertTrue(set(snow["picks"]) <= {f"USC0000{n:04d}" for n in range(101, 107)})
@@ -912,25 +932,32 @@ class TileListTests(unittest.TestCase):
         second = passing_positions(self.store, self.TILE, "SNOW")[1]
         cut = S.haversine_miles(47.08, -110.02, *second)
         self.assertEqual(snow["failed_nearer"], ["USC00000150"] if broken < cut else [])
-        self.assertEqual(picks["benchland"]["TMAX"], {"picks": [], "miles": [], "failed_nearer": []})
+        self.assertEqual(picks["benchland"]["TMAX"], {"picks": [], "miles": [], "failed_nearer": [], "rejected_nearer": [],
+                                                      "rejected_more": 0})
         # the listed checks: one file per index tile, the manifest entry, and the list's own rules
         names = {name: passed for name, passed, _detail in checks}
         self.assertTrue(names["tile lists: one file per index tile"])
         self.assertTrue(names["manifest lists each tile list with its bytes and SHA-256"])
-        self.assertTrue(names["tile lists: format, the cap of six, nearest first, every passing entry current at 80 percent"])
+        self.assertTrue(names["tile lists: format, margin, uncapped, nearest first, passing entries current at 80 percent "
+                               "and within the radius, unread entries are candidates not read, rejected entries are read "
+                               "candidates that fail the rule"])
+        self.assertTrue(names["tile lists agree with the point rule at each tile's centre, cell corners and routed corners, "
+                               "every element (D61, D63, D69, D72)"])
+        self.assertTrue(names["the daily set holds every passing station of every tile list (D73)"])
 
-    def test_the_passing_walk_stops_at_the_cap_and_asks_for_a_missing_summary(self):
+    def test_the_passing_walk_keeps_every_passing_station_and_asks_for_a_missing_summary(self):
         cands = [(1.0, "A"), (2.0, "B"), (3.0, "C"), (4.0, "D")]
         def summary(sid, share_ok=2000):
-            return {"name": sid, "lat": 47.0, "lon": -110.0, "cover": {"SNOW": share_ok}, "current": {"SNOW": True}}
+            return {"name": sid, "lat": 47.0, "lon": -110.0, "cover": {"SNOW": share_ok}, "current": {"SNOW": True},
+                    "newest": {"SNOW": 20261001}}
         summaries = {"A": summary("A"), "B": summary("B"), "C": summary("C"), "D": summary("D")}
-        capped = S._passing_list(cands, summaries, "SNOW", date(2026, 10, 16), cap=3)
-        self.assertEqual([p["id"] for p in capped["passing"]], ["A", "B", "C"])
-        self.assertTrue(capped["capped"])
-        self.assertIsNone(capped["need"])
-        short = S._passing_list(cands, {"A": summary("A")}, "SNOW", date(2026, 10, 16), cap=3)
+        walked = S._passing_list(cands, summaries, "SNOW", date(2026, 10, 16))
+        self.assertEqual([p["id"] for p in walked["passing"]], ["A", "B", "C", "D"])   # D61: no cap
+        self.assertFalse(walked["capped"])
+        self.assertIsNone(walked["need"])
+        short = S._passing_list(cands, {"A": summary("A")}, "SNOW", date(2026, 10, 16))
         self.assertEqual((short["passing"][0]["id"], short["need"]), ("A", "B"))   # the walk pulls B, then walks again
-        failing = S._passing_list(cands, {"A": summary("A", 100), "B": summary("B")}, "SNOW", date(2026, 10, 16), cap=2)
+        failing = S._passing_list(cands, {"A": summary("A", 100), "B": summary("B")}, "SNOW", date(2026, 10, 16))
         self.assertEqual([p["id"] for p in failing["passing"]], ["B"])               # A is under 80 percent
 
     def test_the_partial_problem_names_each_failed_candidate_and_counts_the_other_files(self):
@@ -951,6 +978,14 @@ class PointPicksTests(unittest.TestCase):
     SNOW list of the Billings tile names WTP (1.4 miles) and the airport (2.6 miles); the positions are the store's own."""
 
     GATE = (45.7836, -108.5047)                  # the Billings gate point (stations.GATE_POINTS["billings"])
+    FRAME = {"centre": [47.0, -110.0], "margin_miles": 4.3}     # the test points are this centre (D72: a list carries both)
+
+    def gate_frame(self) -> dict:
+        """The centre and margin of the tile that holds the Billings gate point."""
+        from website import hail
+        row, col = hail.cell_for(*self.GATE)
+        return {"centre": list(S.tile_centre(row // hail.TILE, col // hail.TILE)),
+                "margin_miles": S.tile_margin_miles(row // hail.TILE, col // hail.TILE)}
     MILE_DEG = 1.0 / 69.09                       # one mile of latitude, near these latitudes (the rule is haversine)
 
     @staticmethod
@@ -961,20 +996,20 @@ class PointPicksTests(unittest.TestCase):
         return (47.0 + miles * self.MILE_DEG, lon)
 
     def test_the_billings_gate_names_the_cooperative_site_and_the_airport(self):
-        block = {"capped": True, "unread": [], "passing": [
+        block = {**self.gate_frame(), "capped": True, "unread": [], "passing": [
             self.entry("USC00240801", "BILLINGS WFO", 45.7503, -108.5697),
             self.entry("USC00240802", "BILLINGS WTP", 45.7717, -108.4811),
             self.entry("USW00024033", "BILLINGS INTL AP", 45.8072, -108.5461),
             self.entry("US1MTYS0014", "BILLINGS 4.5 NE", 45.8323, -108.444)]}
-        got = S.tile_list_picks(block, *self.GATE, light={"USC00240802": {"net": "COOP"}, "USW00024033": {"net": "ASOS"}})
+        got = S.tile_list_picks(block, *self.GATE, light={"USC00240802": {"net": "COOP"}, "USW00024033": {"net": "WBAN"}})
         self.assertEqual(got["state"], "two")
         self.assertEqual([(p["id"], p["name"], p["net"], p["miles"]) for p in got["picks"]],
-                         [("USC00240802", "BILLINGS WTP", "COOP", 1.4), ("USW00024033", "BILLINGS INTL AP", "ASOS", 2.6)])
+                         [("USC00240802", "BILLINGS WTP", "COOP", 1.4), ("USW00024033", "BILLINGS INTL AP", "WBAN", 2.6)])
         self.assertEqual(got["unread"], [])
         self.assertFalse(got["incomplete"])
 
     def test_the_two_nearest_passing_stations_come_first_and_ties_go_by_id(self):
-        block = {"capped": False, "unread": [], "passing": [
+        block = {**self.FRAME, "capped": False, "unread": [], "passing": [
             self.entry("USC00000003", "FAR", *self.north(9.0)),
             self.entry("USC00000002", "TIE B", *self.north(3.0)),
             self.entry("USC00000001", "TIE A", *self.north(3.0)),
@@ -985,21 +1020,21 @@ class PointPicksTests(unittest.TestCase):
         self.assertEqual(got["candidates"], 4)
 
     def test_a_passing_station_beyond_the_radius_is_not_a_pick(self):
-        block = {"capped": False, "unread": [], "passing": [self.entry("USC00000005", "FAR", *self.north(45.0))]}
+        block = {**self.FRAME, "capped": False, "unread": [], "passing": [self.entry("USC00000005", "FAR", *self.north(45.0))]}
         got = S.tile_list_picks(block, 47.0, -110.0)
         self.assertEqual(got["picks"], [])
         self.assertEqual(got["state"], "none")                  # no passing station within 40 miles, nothing unread
         self.assertEqual(got["candidates"], 0)
 
     def test_one_pick_is_state_one_and_the_radius_bounds_the_pick_list(self):
-        block = {"capped": False, "unread": [], "passing": [self.entry("USC00000006", "ONLY", *self.north(12.0)),
+        block = {**self.FRAME, "capped": False, "unread": [], "passing": [self.entry("USC00000006", "ONLY", *self.north(12.0)),
                                                             self.entry("USC00000007", "OUT", *self.north(41.0))]}
         got = S.tile_list_picks(block, 47.0, -110.0)
         self.assertEqual(got["state"], "one")
         self.assertEqual([p["id"] for p in got["picks"]], ["USC00000006"])
 
     def test_an_unread_candidate_nearer_than_the_second_pick_is_named_and_a_farther_one_is_not(self):
-        block = {"capped": False, "passing": [self.entry("USC00000010", "P1", *self.north(1.0)),
+        block = {**self.FRAME, "capped": False, "passing": [self.entry("USC00000010", "P1", *self.north(1.0)),
                                               self.entry("USC00000011", "P2", *self.north(5.0))],
                  "unread": [{"id": "USC00000012", "name": "NEAR UNREAD", "lat": 47.0 + 2.0 * self.MILE_DEG,
                              "lon": -110.0, "reason": "its file did not load"},
@@ -1013,19 +1048,19 @@ class PointPicksTests(unittest.TestCase):
         self.assertEqual(got["state"], "two")
 
     def test_an_unread_candidate_without_a_position_is_always_named(self):
-        block = {"capped": False, "passing": [], "unread": [{"id": "USC00000020", "name": "NO POSITION", "lat": None,
+        block = {**self.FRAME, "capped": False, "passing": [], "unread": [{"id": "USC00000020", "name": "NO POSITION", "lat": None,
                                                              "lon": None, "reason": "the file did not load"}]}
         got = S.tile_list_picks(block, 47.0, -110.0)
         self.assertEqual(got["state"], "unavailable")          # no pick and an unread candidate: never "none"
         self.assertEqual([(u["name"], u["miles"]) for u in got["unread"]], [("NO POSITION", None)])
 
     def test_a_capped_list_with_fewer_than_two_stations_in_the_radius_cannot_answer(self):
-        block = {"capped": True, "unread": [], "passing": [self.entry("USC00000030", "IN", *self.north(4.0)),
+        block = {**self.FRAME, "capped": True, "unread": [], "passing": [self.entry("USC00000030", "IN", *self.north(4.0)),
                                                            self.entry("USC00000031", "OUT", *self.north(50.0))]}
         self.assertIsNone(S.tile_list_picks(block, 47.0, -110.0))   # a station the list does not hold might be nearer
 
     def test_a_capped_list_with_two_stations_in_the_radius_answers(self):
-        block = {"capped": True, "unread": [], "passing": [self.entry("USC00000040", "A", *self.north(4.0)),
+        block = {**self.FRAME, "capped": True, "unread": [], "passing": [self.entry("USC00000040", "A", *self.north(4.0)),
                                                            self.entry("USC00000041", "B", *self.north(8.0)),
                                                            self.entry("USC00000042", "C", *self.north(50.0))]}
         got = S.tile_list_picks(block, 47.0, -110.0)
@@ -1034,5 +1069,381 @@ class PointPicksTests(unittest.TestCase):
     def test_no_block_cannot_answer_and_an_empty_block_says_none(self):
         self.assertIsNone(S.tile_list_picks(None, 47.0, -110.0))            # the file or the element is not in the store
         self.assertIsNone(S.tile_list_picks({}, 47.0, -110.0))
-        empty = S.tile_list_picks({"capped": False, "passing": [], "unread": []}, 47.0, -110.0)
+        empty = S.tile_list_picks({**self.FRAME, "capped": False, "passing": [], "unread": []}, 47.0, -110.0)
         self.assertEqual((empty["state"], empty["picks"]), ("none", []))
+
+
+class RejectedAndMarginTests(unittest.TestCase):
+    """D68, D69, D72 and D74: a point beyond the margin is refused and a block without its centre and margin cannot answer; the
+    rejected candidates nearer than the second pick are named and the rest counted; rejected_rule and tile_list_picks name the
+    same candidates; the margin covers every routed corner. Synthetic stations; the real tile lists are checked by verify."""
+
+    CENTRE = (47.05, -110.05)
+
+    def north(self, miles: float) -> tuple[float, float]:
+        return (self.CENTRE[0] + miles / 69.09, self.CENTRE[1])
+
+    def row(self, sid: str, name: str, miles: float, *, ok: int = 2000, current: bool = True, newest: int = 20260901) -> dict:
+        lat, lon = self.north(miles)
+        return {"id": sid, "name": name, "lat": lat, "lon": lon, "miles": miles, "ok": ok, "of": 2192,
+                "share": round(ok / 2192, 4), "current": current, "newest": newest}
+
+    def frame(self, passing=(), unread=(), rejected=(), capped: bool = False, margin: float = 4.2) -> dict:
+        return {"centre": list(self.CENTRE), "margin_miles": margin, "capped": capped, "passing": list(passing),
+                "unread": list(unread), "rejected": list(rejected)}
+
+    def test_the_margin_covers_every_routed_corner_and_a_point_beyond_it_is_refused(self):
+        self.assertTrue(all(abs(lat - self.CENTRE[0]) <= 0.05 and abs(lon - self.CENTRE[1]) <= 0.05
+                            for lat, lon in S.routed_corners(79, 199)))
+        block = self.frame(passing=[self.row("USC00000001", "A", 0.1)])
+        self.assertEqual(S.tile_list_picks(block, *self.CENTRE)["state"], "one")
+        self.assertIsNone(S.tile_list_picks(block, self.CENTRE[0] + 0.1, self.CENTRE[1]))   # 6.9 miles north: beyond 4.2
+
+    def test_a_block_without_its_centre_or_margin_cannot_answer(self):
+        block = self.frame(passing=[self.row("USC00000002", "B", 0.5)])
+        self.assertIsNone(S.tile_list_picks({k: v for k, v in block.items() if k != "margin_miles"}, *self.CENTRE))   # D68
+        self.assertIsNone(S.tile_list_picks({k: v for k, v in block.items() if k != "centre"}, *self.CENTRE))
+        self.assertEqual(S.tile_list_picks(block, *self.CENTRE)["picks"][0]["id"], "USC00000002")
+
+    def test_the_rejected_candidates_nearer_than_the_second_pick_are_named_and_the_others_counted(self):
+        block = self.frame(passing=[self.row("USC00000010", "P1", 1.0), self.row("USC00000011", "P2", 5.0)],
+                           rejected=[self.row("USC00000012", "R NEAR", 2.0, ok=300),
+                                     self.row("USC00000013", "R FAR", 6.0, ok=300, current=False, newest=20250601),
+                                     self.row("USC00000014", "R TINY", 0.5, ok=100),
+                                     self.row("USC00000015", "R OUTSIDE", 44.0, ok=100)])
+        got = S.tile_list_picks(block, *self.CENTRE)
+        self.assertEqual([p["id"] for p in got["picks"]], ["USC00000010", "USC00000011"])
+        self.assertEqual([r["name"] for r in got["rejected"]], ["R TINY", "R NEAR"])     # nearer than P2, nearest first
+        self.assertEqual(got["rejected_more"], 1)                                       # R FAR is beyond P2: counted
+        self.assertEqual(set(got["rejected"][0]), {"id", "name", "miles", "ok", "of", "share", "current", "newest"})
+        self.assertEqual((got["rejected"][1]["miles"], got["rejected"][1]["share"]), (2.0, round(300 / 2192, 4)))
+        self.assertEqual(got["state"], "two")                                           # a rejected station is not unread
+
+    def test_with_one_pick_every_rejected_candidate_within_the_radius_is_named(self):
+        block = self.frame(passing=[self.row("USC00000020", "P1", 1.0)],
+                           rejected=[self.row("USC00000021", "R A", 2.0, ok=100), self.row("USC00000022", "R B", 30.0, ok=100),
+                                     self.row("USC00000023", "R C", 50.0, ok=100)])
+        got = S.tile_list_picks(block, *self.CENTRE)
+        self.assertEqual(got["state"], "one")
+        self.assertEqual([r["name"] for r in got["rejected"]], ["R A", "R B"])          # R C is beyond the radius
+        self.assertEqual(got["rejected_more"], 0)
+
+    def test_the_routed_corners_are_inside_their_tile_and_inside_the_margin(self):
+        from website import hail
+        for tr, tc in ((79, 199), (60, 140), (106, 171)):
+            centre = S.tile_centre(tr, tc)
+            for lat, lon in S.routed_corners(tr, tc):
+                self.assertEqual(hail.tile_name(*(v // hail.TILE for v in hail.cell_for(lat, lon))), hail.tile_name(tr, tc))
+                self.assertLessEqual(S.haversine_miles(centre[0], centre[1], lat, lon), S.tile_margin_miles(tr, tc))
+
+    def test_rejected_rule_and_the_tile_list_name_the_same_candidates_and_counts_at_each_point(self):
+        light = {}
+        for sid, name, miles, ok, current in [("USC00000030", "A", 1.0, 2000, True), ("USC00000031", "B", 3.0, 300, True),
+                                              ("USC00000032", "C", 4.0, 2000, True), ("USC00000033", "D", 2.0, 2000, False),
+                                              ("USC00000034", "E", 9.0, 2000, True), ("USC00000035", "F", 30.0, 300, True)]:
+            lat, lon = self.north(miles)
+            light[sid] = {"name": name, "lat": lat, "lon": lon, "elev": 0.0, "net": "COOP", "current": {"SNOW": current},
+                          "newest": {"SNOW": 20260901 if current else 20250601}, "cover": {"SNOW": ok}}
+        cands = S.ordered_candidates(S.within_radius(light, *self.CENTRE), {s: r["cover"] for s, r in light.items()}, "SNOW")
+        block = S._passing_list(cands, light, "SNOW", date(2026, 10, 16))
+        block.update(centre=list(self.CENTRE), margin_miles=4.2)
+        block["rejected"] = S.rejected_of_tile(S.within_radius(light, *self.CENTRE), light, "SNOW")
+        self.assertEqual([r["name"] for r in S.rejected_rule(light, *self.CENTRE, "SNOW")["rejected"]], ["D", "B"])
+        for point in (self.CENTRE, self.north(3.5), self.north(-4.0), self.north(1.2)):
+            want = S.rejected_rule(light, *point, "SNOW")
+            got = S.tile_list_picks(block, *point, light=light)
+            self.assertEqual(got["rejected"], want["rejected"])
+            self.assertEqual(got["rejected_more"], want["rejected_more"])
+            self.assertEqual(got["picks"] and [p["id"] for p in got["picks"]],
+                             [c["id"] for c in S.point_rule(light, *point, "SNOW", date(2026, 10, 16))["chosen"]])
+
+
+class RejectedBuildTests(unittest.TestCase):
+    """D69, D73 and D74 on a built store: an unread candidate that cannot report the element into the current window is not
+    named for it (D74); the daily set holds every loaded station in reach with 80 percent coverage for some element, current
+    or not (D73); the rejected part of the tile list names the candidates that fail the rule (D69)."""
+
+    TILE = "r0079_c0199"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.cache = self.root / "cache"
+        (self.cache / "ghcn" / "dly").mkdir(parents=True)
+        self.store = self.root / "store"
+        (self.store / "hail").mkdir(parents=True)
+        self.patches = [mock.patch.object(S, "_check_list", lambda data: None),
+                        mock.patch.object(S, "_check_inventory", lambda data: None)]
+        for patch in self.patches:
+            patch.start()
+        (self.store / "hail" / "index.json").write_text(json.dumps({"as_of": "2026-10-16", "tiles": [self.TILE]}),
+                                                        encoding="utf-8")
+        (self.store / "hail" / "manifest.json").write_text(json.dumps({"files": {}}), encoding="utf-8")
+
+    def tearDown(self):
+        for patch in self.patches:
+            patch.stop()
+        self.tmp.cleanup()
+
+    def write_store(self, rows: list[tuple]) -> None:
+        """rows: (id, lat, lon, name, {element: (first_year, last_year)}, {element: [(year, months)]} or None). None means the
+        station file is missing from the cache, so the station failed."""
+        days = {d: (10, " ", " ") for d in range(1, 29)}
+        stn, inv = [], []
+        for sid, lat, lon, name, spans, records in rows:
+            stn.append(station_line(sid, lat, lon, "MT", name))
+            for element, (first, last) in spans.items():
+                inv.append(f"{sid:<11} {lat:8.4f} {lon:9.4f} {element} {first} {last}")
+            if records is not None:
+                lines = [dly_line(sid, year, month, element, days)
+                         for element, periods in records.items() for year, months in periods for month in months]
+                (self.cache / "ghcn" / "dly" / f"{sid}.dly").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (self.cache / "ghcn" / "ghcnd-stations.txt").write_text("\n".join(stn) + "\n", encoding="utf-8")
+        (self.cache / "ghcn" / "ghcnd-inventory.txt").write_text("\n".join(inv) + "\n", encoding="utf-8")
+
+    def test_an_unread_candidate_that_cannot_report_the_element_now_is_not_named_for_it(self):
+        self.write_store([
+            ("USC00000201", 47.06, -110.04, "GOOD", {"SNOW": (2000, 2026)}, {"SNOW": [(y, range(1, 13)) for y in range(2020, 2027)]}),
+            ("USC00000202", 47.07, -110.03, "OLD SNOW", {"TMAX": (2000, 2026), "SNOW": (2000, 2019)}, None),
+            ("USC00000203", 47.08, -110.02, "NEW SNOW", {"SNOW": (2000, 2026)}, None)])
+        S.build(self.store, self.cache, offline=True, procs=1)
+        doc = json.loads((self.store / "hail" / "tl" / f"{self.TILE}.json").read_text(encoding="utf-8"))
+        self.assertEqual([u["name"] for u in doc["elements"]["SNOW"]["unread"]], ["NEW SNOW"])     # OLD SNOW ended in 2019
+        self.assertEqual([u["name"] for u in doc["elements"]["TMAX"]["unread"]], ["OLD SNOW"])     # but it reports TMAX
+        block = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]["stations"]
+        self.assertEqual(block["USC00000202"]["cover"], {"TMAX": None})                             # D74: the walk's elements
+        self.assertEqual(block["USC00000203"]["cover"], {"SNOW": None})
+
+    def test_the_daily_set_holds_the_loaded_stations_in_reach_with_80_percent_coverage_current_or_not(self):
+        full = {"SNOW": [(y, range(1, 13)) for y in range(2020, 2027)]}
+        self.write_store([
+            ("USC00000211", 47.06, -110.04, "CURRENT", {"SNOW": (2000, 2026)}, full),
+            ("USC00000212", 47.09, -110.00, "NOT CURRENT",
+             {"SNOW": (2000, 2026)}, {"SNOW": [(y, range(1, 13)) for y in range(2020, 2026)] + [(2026, range(1, 8))]}),
+            ("USC00000213", 47.10, -110.00, "LOW COVERAGE", {"SNOW": (2000, 2026)},
+             {"SNOW": [(y, range(1, 13)) for y in range(2024, 2027)]}),
+            ("USC00000214", 49.20, -107.00, "FAR", {"SNOW": (2000, 2026)}, full)])
+        S.build(self.store, self.cache, offline=True, procs=1)
+        index = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))
+        daily = set(index["stations"]["chosen_station_ids"])
+        self.assertIn("USC00000211", daily)                       # a pick
+        self.assertIn("USC00000212", daily)                       # D73: in reach, 92 percent coverage, not current
+        self.assertNotIn("USC00000213", daily)                    # under 80 percent for every element
+        self.assertTrue((self.store / "hail" / "sd" / "USC00000214.json").is_file())   # loaded: the regression set reads it
+        self.assertNotIn("USC00000214", daily)                    # loaded and complete, but in reach of no location
+        self.assertEqual(index["stations"]["counts"]["pick_files"], 1)
+        self.assertEqual(index["stations"]["counts"]["daily_reach_files"], len(daily) - 1)
+        doc = json.loads((self.store / "hail" / "tl" / f"{self.TILE}.json").read_text(encoding="utf-8"))
+        snow = doc["elements"]["SNOW"]
+        self.assertEqual([p["name"] for p in snow["passing"]], ["CURRENT"])
+        rejected = {r["name"]: r for r in snow["rejected"]}                  # D69: the candidates that fail the rule
+        self.assertEqual(sorted(rejected), ["LOW COVERAGE", "NOT CURRENT"])
+        self.assertFalse(rejected["NOT CURRENT"]["current"])
+        self.assertEqual(rejected["NOT CURRENT"]["newest"], 20260728)
+        self.assertEqual(rejected["LOW COVERAGE"]["share"], round(672 / 2192, 4))
+        self.assertEqual(index["stations"]["tile_lists"]["rejected"], 2)
+        checks = []
+        S._verify_tile_lists(self.store, index, index["stations"],
+                             json.loads((self.store / "hail" / "manifest.json").read_text(encoding="utf-8")),
+                             lambda name, passed, detail="": checks.append((name, passed)))
+        self.assertIn(("the daily set holds every passing station of every tile list (D73)", True), checks)
+
+
+def destination(lat: float, lon: float, bearing_deg: float, miles: float) -> tuple[float, float]:
+    """The point miles away from (lat, lon) along the initial bearing (spherical; the module's own earth radius)."""
+    d = miles / (S.EARTH_KM / S.MILE_KM)
+    th, p1, l1 = math.radians(bearing_deg), math.radians(lat), math.radians(lon)
+    p2 = math.asin(math.sin(p1) * math.cos(d) + math.cos(p1) * math.sin(d) * math.cos(th))
+    l2 = l1 + math.atan2(math.sin(th) * math.sin(d) * math.cos(p1), math.cos(d) - math.sin(p1) * math.sin(p2))
+    return math.degrees(p2), math.degrees(l2)
+
+
+def bearing_to(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    p1, p2, dl = math.radians(lat1), math.radians(lat2), math.radians(lon2 - lon1)
+    x = math.sin(dl) * math.cos(p2)
+    y = math.cos(p1) * math.sin(p2) - math.sin(p1) * math.cos(p2) * math.cos(dl)
+    return math.degrees(math.atan2(x, y))
+
+
+class PoolFixture:
+    """A cache and an empty store for the given tiles. Each station is (id, lat, lon, state, name, elements): it reports
+    each element unflagged on 28 days of every month from 2020 to 2026 (the records of TileListTests), and its inventory
+    lists the element to 2026. The list and inventory checks of the build are the synthetic-size ones."""
+
+    def __init__(self, root: Path, tiles: list[str], stations: list[tuple]):
+        self.root = root
+        self.cache = root / "cache"
+        (self.cache / "ghcn" / "dly").mkdir(parents=True)
+        self.store = root / "store"
+        (self.store / "hail").mkdir(parents=True)
+        (self.store / "hail" / "index.json").write_text(json.dumps({"as_of": "2026-10-16", "tiles": tiles}), encoding="utf-8")
+        (self.store / "hail" / "manifest.json").write_text(json.dumps({"files": {}}), encoding="utf-8")
+        stn, inv, lines = [], [], {}
+        days = {d: (10, " ", " ") for d in range(1, 29)}
+        for sid, lat, lon, state, name, elements in stations:
+            stn.append(station_line(sid, lat, lon, state, name))
+            for element in elements:
+                inv.append(f"{sid:<11} {lat:8.4f} {lon:9.4f} {element} 2000 2026")
+                lines.setdefault(sid, []).extend(dly_line(sid, y, m, element, days)
+                                                 for y in range(2020, 2027) for m in range(1, 13))
+        (self.cache / "ghcn" / "ghcnd-stations.txt").write_text("\n".join(stn) + "\n", encoding="utf-8")
+        (self.cache / "ghcn" / "ghcnd-inventory.txt").write_text("\n".join(inv) + "\n", encoding="utf-8")
+        for sid, rows in lines.items():
+            if sid.startswith("CA"):             # a Canadian station's file is never in the cache (D62)
+                continue
+            (self.cache / "ghcn" / "dly" / f"{sid}.dly").write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+
+class PoolTests(unittest.TestCase):
+    """D61 and D62: the tile's margin, the uncapped list, the Canadian candidates that are not read, the pool by position,
+    the regression set, and the words. Synthetic stations only; the real files are checked by verify."""
+
+    TILE = "r0079_c0199"                                  # centre 47.05 N, 110.05 W; margin 4.181 miles
+    CENTRE = (47.05, -110.05)
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.patches = [mock.patch.object(S, "_check_list", lambda data: None),
+                        mock.patch.object(S, "_check_inventory", lambda data: None)]
+        for patch in self.patches:
+            patch.start()
+
+    def tearDown(self):
+        for patch in self.patches:
+            patch.stop()
+        self.tmp.cleanup()
+
+    def build(self, fixture: PoolFixture, *, record_calls: list | None = None) -> dict:
+        real = S.fetch
+
+        def recording(url, *args, **kwargs):
+            if record_calls is not None:
+                record_calls.append(url)
+            return real(url, *args, **kwargs)
+
+        with mock.patch.object(S, "fetch", side_effect=recording):
+            S.build(fixture.store, fixture.cache, offline=True, procs=1)
+        return json.loads((fixture.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]["stations"]
+
+    def test_a_tile_margin_is_the_distance_to_its_farthest_corner_and_covers_every_routed_corner(self):
+        centre = S.tile_centre(79, 199)
+        far = max(S.haversine_miles(centre[0], centre[1], lat, lon)
+                  for lat in (centre[0] - 0.05, centre[0] + 0.05) for lon in (centre[1] - 0.05, centre[1] + 0.05))
+        self.assertEqual(S.tile_margin_miles(79, 199), math.ceil(far * 1000) / 1000)   # D72: the corner, rounded up
+        self.assertTrue(4.1 < S.tile_margin_miles(79, 199) < 4.3)                       # 4.181 miles for this tile
+        for lat, lon in S.routed_corners(79, 199):
+            self.assertLessEqual(S.haversine_miles(centre[0], centre[1], lat, lon), S.tile_margin_miles(79, 199))
+
+    def test_a_station_forty_two_miles_from_the_centre_is_listed_for_a_cell_about_four_miles_off_it(self):
+        # the north-east corner cell of the tile is about 3.8 miles from the centre; a station 42 miles from the centre on
+        # the same bearing is 38 miles from that cell: inside the rule's 40 miles for the cell, outside 40 for the centre
+        from website import hail
+        cell = hail.cell_centre(790, 1999)
+        self.assertLess(S.haversine_miles(*self.CENTRE, *cell), 4.0)
+        far = destination(*self.CENTRE, bearing_to(*self.CENTRE, *cell), 42.0)
+        fixture = PoolFixture(self.root, [self.TILE], [("USC00000201", far[0], far[1], "MT", "FAR NE", ["SNOW"]),
+                                                       ("USC00000202", 47.10, -110.10, "MT", "NEAR", ["SNOW"])])
+        light = self.build(fixture)
+        self.assertAlmostEqual(S.haversine_miles(*self.CENTRE, *far), 42.0, places=3)
+        self.assertLess(S.haversine_miles(*cell, *far), S.RADIUS_MILES)
+        doc = json.loads((fixture.store / "hail" / "tl" / f"{self.TILE}.json").read_text(encoding="utf-8"))
+        listed = {p["id"]: p["miles"] for p in doc["elements"]["SNOW"]["passing"]}
+        self.assertIn("USC00000201", listed)                                  # the margin admits it to the list
+        self.assertAlmostEqual(listed["USC00000201"], 42.0, places=1)
+        cell_pick = S.tile_list_picks(doc["elements"]["SNOW"], *cell, light=light)
+        self.assertIn("USC00000201", [p["id"] for p in cell_pick["picks"]])
+        self.assertEqual(S.point_rule(light, *cell, "SNOW", AS_OF)["chosen"][1]["id"], "USC00000201")   # the same rule
+        centre_pick = S.tile_list_picks(doc["elements"]["SNOW"], *self.CENTRE, light=light)
+        self.assertNotIn("USC00000201", [p["id"] for p in centre_pick["picks"]])   # 42 miles: outside 40 for the centre
+
+    def test_a_canadian_station_is_a_candidate_not_read_named_only_when_it_is_nearer_than_a_pick(self):
+        near = destination(*self.CENTRE, 180.0, 3.0)
+        far = destination(*self.CENTRE, 270.0, 30.0)
+        fixture = PoolFixture(self.root, [self.TILE], [
+            ("USC00000301", *destination(*self.CENTRE, 0.0, 5.0), "MT", "FIVE N", ["SNOW"]),
+            ("USC00000302", *destination(*self.CENTRE, 90.0, 10.0), "MT", "TEN E", ["SNOW"]),
+            ("CAN00000001", *near, "AB", "CARWAY NEAR", ["SNOW"]),
+            ("CAN00000002", *far, "AB", "CARWAY FAR", ["SNOW"])])
+        calls: list[str] = []
+        light = self.build(fixture, record_calls=calls)
+        self.assertFalse(any("/CAN" in url for url in calls))                 # never requested (D62)
+        self.assertFalse((fixture.cache / "ghcn" / "dly" / "CAN00000001.dly").exists())
+        self.assertFalse((fixture.store / "hail" / "sd" / "CAN00000001.json").exists())
+        self.assertTrue(light["CAN00000001"]["unread"])
+        self.assertEqual(light["CAN00000001"]["reason"], S.CANADA_REASON)
+        self.assertEqual(light["CAN00000001"]["cover"], {"SNOW": None})
+        self.assertEqual(light["CAN00000001"]["net"], "other")
+        self.assertEqual(sorted(light["CAN00000001"]["cover"]), ["SNOW"])
+        self.assertEqual(sorted(light["CAN00000002"]["cover"]), ["SNOW"])
+        index = json.loads((fixture.store / "hail" / "index.json").read_text(encoding="utf-8"))["stations"]
+        self.assertEqual(index["not_read_station_ids"], ["CAN00000001", "CAN00000002"])
+        self.assertEqual(index["failed_station_ids"], [])
+        self.assertEqual(index["state"], "loaded")                            # a candidate not read is not a failed file
+        doc = json.loads((fixture.store / "hail" / "tl" / f"{self.TILE}.json").read_text(encoding="utf-8"))
+        snow = doc["elements"]["SNOW"]
+        self.assertEqual({u["id"]: u["reason"] for u in snow["unread"]},
+                         {"CAN00000001": S.CANADA_REASON, "CAN00000002": S.CANADA_REASON})
+        self.assertNotIn("CAN00000001", [p["id"] for p in snow["passing"]])   # never counted as passing
+        centre = S.tile_list_picks(snow, *self.CENTRE, light=light)
+        self.assertEqual([p["id"] for p in centre["picks"]], ["USC00000301", "USC00000302"])
+        self.assertEqual([u["id"] for u in centre["unread"]], ["CAN00000001"])   # 3 miles: before the second pick (10)
+        self.assertTrue(centre["incomplete"])
+        self.assertEqual(centre["state"], "two")
+        rule = S.point_rule(light, *self.CENTRE, "SNOW", AS_OF)
+        self.assertEqual([u["id"] for u in rule["unread"]], ["CAN00000001"])     # the one rule agrees (D63)
+        words = " ".join(S.station_words(rule, "SNOW"))
+        self.assertIn("CARWAY NEAR is not read (in Canada; the terms for its data are under review)", words)
+        self.assertIn("so the two nearest stations that pass are not known for snowfall", words)
+        self.assertTrue(words.endswith("This is not an all-clear."))
+        self.assertNotIn("did not load", words)
+
+    def test_the_words_say_not_read_for_a_canadian_station_and_did_not_load_for_a_failed_file(self):
+        def result(*rows, state="unavailable"):
+            return {"state": state, "chosen": [], "unread": list(rows)}
+        canada = {"id": "CAN00000001", "name": "CARWAY", "miles": 3.0, "reason": S.CANADA_REASON}
+        failed = {"id": "USC00000009", "name": "BROKEN", "miles": 2.0, "reason": "HTTP 503"}
+        self.assertIn("CARWAY is not read (in Canada; the terms for its data are under review)",
+                      S.station_words(result(canada), "SNOW")[0])
+        self.assertIn("BROKEN did not load (HTTP 503)", S.station_words(result(failed), "SNOW")[0])
+        mixed = S.station_words(result(canada, failed), "SNOW")[0]
+        self.assertIn("could not be read", mixed)
+        self.assertIn("CARWAY", mixed)
+        self.assertIn("BROKEN", mixed)
+        for line in (S.station_words(result(canada), "SNOW")[0], S.station_words(result(failed), "SNOW")[0], mixed):
+            self.assertTrue(line.endswith("This is not an all-clear."))
+            self.assertIsNone(FORBIDDEN.search(line.replace("This is not an all-clear.", "")))
+
+    def test_the_pool_box_holds_every_station_within_the_radius_of_any_point_it_is_drawn_for(self):
+        points = [(47.05, -110.05), (45.0, -104.0), (48.9, -116.0), (44.4, -115.0)]
+        radius = S.RADIUS_MILES + 4.0
+        box = S.pool_box(points, radius)
+        for lat, lon in points:
+            for bearing in range(0, 360, 15):
+                for miles in (S.RADIUS_MILES, radius):
+                    plat, plon = destination(lat, lon, bearing, miles)
+                    self.assertTrue(box[0] <= plat <= box[1] and box[2] <= plon <= box[3],
+                                    f"{plat:.4f},{plon:.4f} at {miles} miles from {lat},{lon} is outside the box")
+
+    def test_within_radius_skips_by_latitude_and_gives_the_same_answer_as_the_distance_alone(self):
+        rng = random.Random(7)
+        stations = {f"S{i:04d}": {"lat": 44.0 + 6.0 * rng.random(), "lon": -117.0 + 14.0 * rng.random()} for i in range(400)}
+        for radius in (40.0, 44.0):
+            for lat, lon in [(47.05, -110.05), (49.0, -104.0), (44.5, -116.5)]:
+                brute = sorted((S.haversine_miles(lat, lon, m["lat"], m["lon"]), sid) for sid, m in stations.items()
+                               if S.haversine_miles(lat, lon, m["lat"], m["lon"]) <= radius)
+                self.assertEqual(S.within_radius(stations, lat, lon, radius), brute)
+
+    def test_a_neighbouring_state_station_is_a_candidate_and_the_snow_regression_reads_montana_only(self):
+        fixture = PoolFixture(self.root, [self.TILE], [
+            ("USS0014C05S", *destination(*self.CENTRE, 45.0, 20.0), "ID", "IDAHO SITE", ["SNOW"]),
+            ("USC00000401", *destination(*self.CENTRE, 225.0, 20.0), "WY", "WYOMING SITE", ["SNOW"]),
+            ("USC00000402", *destination(*self.CENTRE, 135.0, 20.0), "MT", "MONTANA SITE", ["SNOW"])])
+        light = self.build(fixture)
+        self.assertEqual(light["USS0014C05S"]["net"], "SNOTEL")
+        self.assertTrue((fixture.store / "hail" / "sd" / "USS0014C05S.json").exists())    # read like any station
+        self.assertTrue((fixture.store / "hail" / "sd" / "USC00000401.json").exists())
+        got = S.collect(json.loads((fixture.store / "hail" / "index.json").read_text(encoding="utf-8")), fixture.cache,
+                        offline=True, procs=1)
+        self.assertEqual(got["regression"], ["USC00000402"])                              # Montana only (D7)
+        self.assertEqual(sorted(got["not_read"]), [])

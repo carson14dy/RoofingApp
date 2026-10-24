@@ -161,7 +161,7 @@ from pathlib import Path, PurePosixPath
 from zoneinfo import ZoneInfo
 
 from . import hail
-from . import stations as stn                 # D56: the tile lists' format and cap, the fixture's station part
+from . import stations as stn                 # D56: the tile lists' format, the fixture's station part
 
 FORMAT = "hail-joins-v2"            # j/ files (B5: the touch rule D11, the counties map, a report's type word)
 ZONE_FORMAT = "hail-zone-v1"        # z/ files (B5: one event per period, D8; the shape is B2's)
@@ -386,6 +386,7 @@ WORDS_JOINS = {
                      "Wind magnitudes are in knots, with miles per hour beside them. A flood record shows NCEI's cause "
                      "as written. Records are not a complete account of every storm."),
     "records_lag": "NCEI's database runs to {newest}.",
+    "records_newest_unknown": "an unknown date",       # D68, D71 (F2): the {newest} of the records lead when NCEI's date is unknown
     "records_lead_many": ("NCEI's database runs to {newest}. {n} official records for this spot or its zone between "
                           "{start} and {end}."),
     "records_lead_one": ("NCEI's database runs to {newest}. 1 official record for this spot or its zone between "
@@ -422,31 +423,55 @@ WORDS_JOINS = {
                              "known gaps, so this is not the same as no hail."),
     "detections_row_many": "Detection: {date}: {n} detections, largest {in} in",
     "detections_row_one": "Detection: {date}: 1 detection, largest {in} in",
-    # warnings
-    "warnings_heading": "Warnings that covered this spot",
+    # warnings (F1): the sheet's words say "covered this cell or part of it" (D38, D41); a town point's words are the
+    # same keys with the suffix "_point" and say "covered this spot" (D71 F4). describe_joins picks the set by its spot.
+    "warnings_heading": "Warnings that covered this cell or part of it",
+    "warnings_heading_point": "Warnings that covered this spot",
     "warnings_what": ("A warning is listed when its issuance polygon covered this cell or part of it when it was "
                       "issued. The times are when that polygon was in effect, which can differ from the warning's own "
                       "valid time; this sheet does not show the valid time. Tags are the forecast threat at issue time, "
                       "not what fell. The archive keeps the number only, so a value the text gave as less than shows as "
                       "that number. A report's remark and a warning's tag are the NWS's own words about the report or "
                       "the forecast threat, not a finding about this address."),
+    # D71 (F4): a town page lists the town point's rows (hail/j/towns.json, D11 and D38); the explanation says so
+    "warnings_what_point": ("A warning is listed when its issuance polygon covered this spot, the town point, when it "
+                            "was issued. A warning whose polygon reached the town's grid cell but not the town point is "
+                            "not listed here. The times are when that polygon was in effect, which can differ from the "
+                            "warning's own valid time; this sheet does not show the valid time. Tags are the forecast "
+                            "threat at issue time, not what fell. The archive keeps the number only, so a value the text "
+                            "gave as less than shows as that number. A report's remark and a warning's tag are the NWS's "
+                            "own words about the report or the forecast threat, not a finding about this address."),
     "warnings_lag": "The newest warning in this build starts on {newest}.",
     "warnings_lag_none": "No warning start date is in this build.",
-    "warnings_lead_many": "{n} warnings covered this spot between {start} and {end}.",
-    "warnings_lead_one": "1 warning covered this spot between {start} and {end}.",
-    "warnings_lead_none": ("No warning in the archive covered this spot between {start} and {end}. Warnings cover "
-                           "areas, and a spot outside every polygon is not a statement that no storm reached it."),
-    "warnings_lead_unknown": ("Warnings for this spot cannot be checked in this build, because some warnings in these "
-                              "five years have no outline on file. That is not the same as no warning. This is not an "
-                              "all-clear."),
+    "warnings_lead_many": "{n} warnings covered this cell or part of it between {start} and {end}.",
+    "warnings_lead_many_point": "{n} warnings covered this spot between {start} and {end}.",
+    "warnings_lead_one": "1 warning covered this cell or part of it between {start} and {end}.",
+    "warnings_lead_one_point": "1 warning covered this spot between {start} and {end}.",
+    "warnings_lead_none": ("No warning in the archive covered this cell or part of it between {start} and {end}. "
+                           "Warnings cover areas, and a spot outside every polygon is not a statement that no storm "
+                           "reached it."),
+    "warnings_lead_none_point": ("No warning in the archive covered this spot between {start} and {end}. "
+                                 "Warnings cover areas, and a spot outside every polygon is not a statement that no "
+                                 "storm reached it."),
+    "warnings_lead_unknown": ("Warnings for this cell or part of it cannot be checked in this build, because some "
+                              "warnings in these five years have no outline on file. That is not the same as no "
+                              "warning. This is not an all-clear."),
+    "warnings_lead_unknown_point": ("Warnings for this spot cannot be checked in this build, because some warnings in "
+                                    "these five years have no outline on file. That is not the same as no warning. "
+                                    "This is not an all-clear."),
     "warnings_no_outline_one": ("1 warning in these five years has no outline on file, so it cannot be matched to "
-                                "this spot. This is not an all-clear."),
-    "warnings_no_outline_many": ("{n} warnings in these five years have no outline on file, so they cannot be matched "
-                                 "to this spot. This is not an all-clear."),
+                                "this cell or part of it. This is not an all-clear."),
+    "warnings_no_outline_one_point": ("1 warning in these five years has no outline on file, so it cannot be "
+                                      "matched to this spot. This is not an all-clear."),
+    "warnings_no_outline_many": ("{n} warnings in these five years have no outline on file, so they cannot be "
+                                 "matched to this cell or part of it. This is not an all-clear."),
+    "warnings_no_outline_many_point": ("{n} warnings in these five years have no outline on file, so they cannot "
+                                       "be matched to this spot. This is not an all-clear."),
     "warnings_row": "Warning: {date} {begin} to {end}, issuance polygon in effect: {kind}, {office}; tags: {tags}",
     "warnings_tags_none": "none stated",
     # D41 (B5 part B1): the label is the significance (Warning, Watch or Advisory) and the product gives the kind word
     "warnings_row_b5": "{label}: {date} {span}: {product}, {office}, covered this cell or part of it; tags: {tags}",
+    "warnings_row_point": "{label}: {date} {span}: {product}, {office}, covered this spot; tags: {tags}",   # D71 (F4)
     "warnings_span": "{begin} to {end}",
     "warnings_span_none": "{begin}, end not recorded",
     "warnings_tags": "; tags: {tags}",
@@ -3497,7 +3522,8 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
     fire zone and station files. Each section is a dict: id, heading, what (the kind's sentence), kind, lead, rows
     (text, and the remark of a report), lines (extra sentences), source, and unavailable (the Data unavailable words
     when the part did not load, or the partial words when some periods did not). Rows are newest first; each row
-    starts with its kind label (D3)."""
+    starts with its kind label (D3). A spot (lat, lon) is a town point: its warnings are the town file's rows for that
+    point (D71 F4); without one, the warnings are the tile's cell covers."""
     block = index[INDEX_KEY]
     start, end = date.fromisoformat(index["window"][0]), date.fromisoformat(index["window"][1])
     w = WORDS_JOINS
@@ -3635,32 +3661,43 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
             sec["unavailable"] = _unavailable_text("detections", reasons.get("detections"), partial.get("detections"))
     out["sections"].append(sec)
 
-    # warnings: the tile's warnings whose cover includes this cell's key
-    sec = _section("warnings", w["warnings_heading"], w["warnings_what"], "warning")
+    # warnings: a town page (spot given) lists the town point's rows from hail/j/towns.json (D11, D38, D71 F4); the sheet
+    # (no spot) lists the tile's cell covers, which are wider ("covered this cell or part of it")
+    town_point = spot is not None
+    sfx = "_point" if town_point else ""     # F1: the words of the place the rows are counted at
+    what = w["warnings_what_point"] if town_point else w["warnings_what"]
+    sec = _section("warnings", w["warnings_heading" + sfx], what, "warning")
     sec["source"] = w["source_warnings"]
     if parts.get("warnings") == "unavailable":
         sec["unavailable"] = _unavailable_text("warnings", reasons.get("warnings"))
     elif events is None:
         sec["unavailable"] = _unavailable_text("warnings", w["reason_events"])
     else:
-        rows = []
-        for ref, cover in tile_doc.get("warnings", []):
-            if not cover_has(cover, key):
-                continue
-            item = events["warnings"][ref]
-            rows.append((parse_iso_utc(item["b"]), None if item["e"] is None else parse_iso_utc(item["e"]), item))
-        rows.sort(key=lambda x: x[0], reverse=True)
-        no_outline = block.get("warnings_no_outline", 0)
-        sec["lead"] = (w["warnings_lead_unknown"] if (not rows and no_outline)
-                       else _warnings_lead(len(rows), ftn, w))
-        for b, e, item in rows:
-            sec["rows"].append({"text": _warning_text(b, e, item, w), "remark": None, "utc": iso_utc(b)})
-        sec["lines"].append(w["warnings_lag"].format(newest=newest_ww) if newest_ww else w["warnings_lag_none"])
-        if no_outline:
-            sec["lines"].append(w["warnings_no_outline_one" if no_outline == 1 else "warnings_no_outline_many"].format(
-                n=no_outline))
-        if parts.get("warnings") == "partial":
-            sec["unavailable"] = _unavailable_text("warnings", reasons.get("warnings"), partial.get("warnings"))
+        if town_point:
+            rows, failed = _town_point_warnings(store_dir, spot, events)
+        else:
+            rows, failed = [], False
+            for ref, cover in tile_doc.get("warnings", []):
+                if not cover_has(cover, key):
+                    continue
+                item = events["warnings"][ref]
+                rows.append((parse_iso_utc(item["b"]), None if item["e"] is None else parse_iso_utc(item["e"]), item))
+        if failed:          # the town file did not answer for this point: the D20 sentence, no lead, rows or lines
+            sec["unavailable"] = _unavailable_text("warnings", None)
+        else:
+            rows.sort(key=lambda x: x[0], reverse=True)
+            row_key = "warnings_row_point" if town_point else "warnings_row_b5"
+            no_outline = block.get("warnings_no_outline", 0)
+            sec["lead"] = (w["warnings_lead_unknown" + sfx] if (not rows and no_outline)
+                           else _warnings_lead(len(rows), ftn, w, sfx))
+            for b, e, item in rows:
+                sec["rows"].append({"text": _warning_text(b, e, item, w, row_key), "remark": None, "utc": iso_utc(b)})
+            sec["lines"].append(w["warnings_lag"].format(newest=newest_ww) if newest_ww else w["warnings_lag_none"])
+            if no_outline:
+                key = "warnings_no_outline_one" if no_outline == 1 else "warnings_no_outline_many"
+                sec["lines"].append(w[key + sfx].format(n=no_outline))
+            if parts.get("warnings") == "partial":
+                sec["unavailable"] = _unavailable_text("warnings", reasons.get("warnings"), partial.get("warnings"))
     out["sections"].append(sec)
 
     # zone products: the cell's forecast zone (the whole zone) and its fire weather zone (red flag warnings, D7)
@@ -3792,8 +3829,6 @@ def describe_joins(index: dict, tile_doc: dict, cell_row: int, cell_col: int, no
             sec["fire_lead"] = _fire_lead(len(red_items), fire_zone_name, fire, ftn, w)
         if parts.get("zones") == "partial":
             sec["unavailable"] = _unavailable_text("zones", reasons.get("zones"), partial.get("zones"))
-        if county_lost:
-            sec["lines"].append(w["county_unavailable"])
         if zone_lost:       # D27: no lead, rows or lines from a zone file that did not load; the section says so
             sec.update(lead=None, fire_lead=None, rows=[], lines=[], unavailable=_unavailable_text("zones", zone_lost))
     out["sections"].append(sec)
@@ -3857,7 +3892,7 @@ def _lead(rows, kind, ftn, w):
 
 
 def _records_lead(n, newest, ftn, w):
-    newest = newest or "an unknown date"
+    newest = newest or w["records_newest_unknown"]
     if n == 0:
         return w["records_lead_none"].format(newest=newest, **ftn)
     key = "records_lead_one" if n == 1 else "records_lead_many"
@@ -3871,11 +3906,12 @@ def _detections_lead(n, ftn, w):
     return w[key].format(n=n, **ftn)
 
 
-def _warnings_lead(n, ftn, w):
+def _warnings_lead(n, ftn, w, sfx: str = ""):
+    """The count note of the warnings section (F1): the sheet's words, or the town point's when sfx is "_point"."""
     if n == 0:
-        return w["warnings_lead_none"].format(**ftn)
+        return w["warnings_lead_none" + sfx].format(**ftn)
     key = "warnings_lead_one" if n == 1 else "warnings_lead_many"
-    return w[key].format(n=n, **ftn)
+    return w[key + sfx].format(n=n, **ftn)
 
 
 def _zone_lead(n, zone_name, zone, ftn, w):
@@ -4018,12 +4054,51 @@ def _kind_word(item: dict) -> str:
     return KIND_WORDS.get(code, code)
 
 
-def _warning_text(b, e, item, w) -> str:
+def _is_town_point(town, lat: float, lon: float) -> bool:
+    """True when a town entry of hail/j/towns.json is at this point (the file keeps each town's own coordinates)."""
+    try:
+        return abs(float(town["lat"]) - lat) < 1e-9 and abs(float(town["lon"]) - lon) < 1e-9
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
+def _town_point_warnings(store_dir, spot, events: dict) -> tuple[list, bool]:
+    """The warnings whose issuance polygon holds a town point (D11, D38, D71 F4), as (begin, end, item) rows. The rows
+    come from the town file the build wrote (hail/j/towns.json: the exact point test), not from the tile's cell covers,
+    which are wider. Returns (rows, failed). failed is True when the file cannot answer for this point: there is no store
+    folder, the file is missing, unreadable or in another format, its warnings part did not load, no town is at this
+    point, or a row does not match the events table. The section then says the D20 sentence, never an empty list."""
+    if store_dir is None:
+        return [], True
+    try:
+        doc = _read_part_file(store_dir, f"j/{TOWNS_NAME}", TOWNS_FORMAT)
+    except JoinsError:
+        return [], True
+    towns = doc.get("towns")
+    if doc.get("state") not in ("loaded", "partial") or not isinstance(towns, dict):
+        return [], True
+    lat, lon = float(spot[0]), float(spot[1])
+    found = [town for town in towns.values() if _is_town_point(town, lat, lon)]
+    if len(found) != 1:
+        return [], True
+    rows = []
+    try:
+        for ref, *_ in found[0]["events"]:
+            if not 0 <= int(ref) < len(events["warnings"]):
+                return [], True
+            item = events["warnings"][int(ref)]
+            rows.append((parse_iso_utc(item["b"]), None if item["e"] is None else parse_iso_utc(item["e"]), item))
+    except (KeyError, IndexError, TypeError, ValueError):
+        return [], True
+    return rows, False
+
+
+def _warning_text(b, e, item, w, row: str = "warnings_row_b5") -> str:
     """A warning row (D4, B2; B5 D41): the significance label (Warning, Watch or Advisory: never "Warning" for a watch or
     an advisory), the begin and end (Montana time, the end's date only on a later day), the product's own kind word
     (KIND_WORDS), the office and the tags the archive gives (hail, wind, tornado, and the NWS damage threat tag where the
-    product has one). The row is WORDS_JOINS["warnings_row_b5"]; the B2 template the browser fills
-    (WORDS_JOINS["warnings_row"]) stays until part B2 switches map.js."""
+    product has one). The sheet's row is WORDS_JOINS["warnings_row_b5"]; a town point's row is "warnings_row_point"
+    (D71 F4), passed as row."""
     tags = []
     tg = item["tags"]
     if tg.get("hail_in") is not None:
@@ -4036,9 +4111,9 @@ def _warning_text(b, e, item, w) -> str:
         tags.append(w["tag_damage"].format(value=str(tg["damage"]).lower()))
     tag_text = ", ".join(tags) if tags else w["warnings_tags_none"]
     span = w["warnings_span"].format(begin=fmt_clock(b), end=fmt_end(e, b))
-    return w["warnings_row_b5"].format(label=SIGNIFICANCE_LABEL.get(item["s"], "Product"),
-                                       date=fmt_day(_local(b).date()), span=span,
-                                       product=_kind_word(item), office=item["o"], tags=tag_text)
+    return w[row].format(label=SIGNIFICANCE_LABEL.get(item["s"], "Product"),
+                         date=fmt_day(_local(b).date()), span=span,
+                         product=_kind_word(item), office=item["o"], tags=tag_text)
 
 
 # ---------------------------------------------------------------- the map block (map.json["hail"]["joins"])
@@ -4117,10 +4192,11 @@ RESEARCH_B5 = {                       # source 4: the window counts the research
     "FL.W": 43, "FA.W": 37, "FA.Y": 548, "FL.A": 35, "FL.Y": 10, "SQ.W": 78,              # county ones by key)
     "WW.Y": 865, "WS.A": 226, "HW.A": 277, "HT.Y": 58, "EH.W": 4, "EH.A": 3, "FR.Y": 14, "FZ.W": 4, "DU.Y": 3,
     "FF.A": 20,
-    # D55: HW.W 339 is the research's count (the research record's flood-ice-heat-products table, iem_watchwarn_table). FW.W
-    # 169 is not a row of the research record: it is the B5 recheck's figure, and the research's own rule (the research
-    # window, the earliest issue as the begin) recounts it as 169 from the rows the cache holds. This table checks the
-    # recount, and verify names each edge event that the two windows split.
+    # D55: HW.W 339 is the research's count (research record flood-ice-heat-products.json, the iem_watchwarn table:
+    # "HW.W 430 (339)"). FW.W 169 is not a row of the research record. It is an independent recount of the cached FW.W
+    # rows, deduplicated across the six yearly files (262 events) under B2's begin rule: 169 in the research window and
+    # 170 in the store window. This table checks both counts, and verify names each edge event that the two windows
+    # split (the FW.W edge is TFX event 19 of 2021, in the store window only).
     "HW.W": 339, "FW.W": 169,
 }
 RESEARCH_B5_COUNTY = {"FA.A": 18, "FF.A": 2}             # county-only events in the window
@@ -5115,10 +5191,11 @@ FIXTURE_DAYS = ("2025-06-14", "2025-06-15", "2025-06-16")
 
 
 def _station_sample(src: Path, real_index: dict, tiles, gust_ids) -> tuple[dict, dict, list]:
-    """D56: the station reader's part of the sample store. The tile lists (hail/tl) of the sample tiles are the candidates the
-    summary's point picks read; the station summaries (hail/sd) are those of every station a list names and of the gust
-    stations the sample names (a station whose summary the build lacks is left out); the index's stations block is cut to
-    those stations, with the real block's state, rule, as-of date and sources, and says it is a sample. Without this block
+    """D56 and D74: the station reader's part of the sample store. The tile lists (hail/tl) of the sample tiles are the
+    candidates the summary's point picks read. The index's stations block is cut to every station a list names (passing,
+    unread or rejected) and to the gust stations the sample names, with the real block's state, rule, as-of date and sources,
+    and says it is a sample; each of those stations keeps its row even when the build has no summary file for it (an unread
+    one never does). The summary files (hail/sd) are copied for the same stations where the build has one. Without this block
     the summary reads every station row as "could not be loaded" while the joins part of the same page reads the gusts.
     Returns (the stations block, {tile name: tile list document}, the station ids whose summary file is copied)."""
     real = real_index.get("stations") or {}
@@ -5133,18 +5210,22 @@ def _station_sample(src: Path, real_index: dict, tiles, gust_ids) -> tuple[dict,
         for part in doc.get("elements", {}).values():
             named.update(e["id"] for e in part.get("passing", []))
             named.update(e["id"] for e in part.get("unread", []))
-    ids = sorted(sid for sid in named if (src / "hail" / "sd" / f"{sid}.json").is_file()) if real else []
-    rows = {sid: real["stations"][sid] for sid in ids if sid in real.get("stations", {})}
+            named.update(e["id"] for e in part.get("rejected", []))
+    named_ids = sorted(named) if real else []
+    rows = {sid: real["stations"][sid] for sid in named_ids if sid in real.get("stations", {})}
+    ids = [sid for sid in named_ids if (src / "hail" / "sd" / f"{sid}.json").is_file()]
     parts = [part for doc in lists.values() for part in doc.get("elements", {}).values()]
     block = {"state": "loaded" if real else "unavailable",       # a source with no stations block says so, never loaded
-             "problem": None if real else "the build the sample is cut from has no stations block",
-             "detail": None, "as_of": real.get("as_of"),
+             "problem": None if real else stn.WORDS["unavailable"],   # D28: the D20 sentence; the reason is "detail"
+             "detail": None if real else "the build the sample is cut from has no stations block",
+             "as_of": real.get("as_of"),
              "rule": real.get("rule", {}), "sources": real.get("sources", {}), "sample": True,
              "counts": {"sample_tiles": len(lists), "sample_stations": len(rows)},
              "refresh": {"mode": "none", "ids": 0, "unchanged": 0}, "failures": [], "failed_station_ids": [],
              "malformed": 0, "unchanged_station_ids": [], "stations": rows,
              "chosen_station_ids": sorted(rows), "rule_station_ids": sorted(rows),
-             "tile_lists": {"format": stn.TILE_LIST_FORMAT, "cap": stn.TILE_LIST_CAP, "miles": stn.RADIUS_MILES,
+             "tile_lists": {"format": stn.TILE_LIST_FORMAT, "miles": stn.RADIUS_MILES,
+                            "margin_miles_max": max((doc.get("margin_miles", 0.0) for doc in lists.values()), default=0.0),
                             "files": len(lists), "capped": sum(1 for p in parts if p.get("capped")),
                             "longest": max((len(p.get("passing", [])) for p in parts), default=0),
                             "unread": sum(len(p.get("unread", [])) for p in parts)}}

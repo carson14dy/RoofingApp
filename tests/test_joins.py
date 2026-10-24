@@ -894,12 +894,14 @@ class FixtureTests(unittest.TestCase):
     def test_the_committed_sample_joins_verify_and_are_small(self):
         result = J.verify(FIXTURE)
         self.assertTrue(result["ok"], result["checks"])
-        # D10, D18 and D54: the store and joins files have a 62 KB budget (restated by the B5 merge from 50 KB; measured
-        # 60,559 bytes), and the address files under hail/a/ keep their 50 KB budget
+        # D10, D18, D54, D64 and D74: the store and joins files have a 480 KB budget. D64 restated it from 62 KB when the sample
+        # gained the station part, and D74 from 320 KB: the sample names the rejected candidates of its tile lists (D69), so
+        # their summaries are cut in too (67 summaries where there were 33). Measured on the regenerated fixture: 471,538
+        # bytes outside hail/a/ (305,024 before D74). The address files under hail/a/ keep their 50 KB budget
         store_bytes = sum(p.stat().st_size for p in FIXTURE.rglob("*") if p.is_file()
                           and not p.relative_to(FIXTURE).as_posix().startswith("hail/a/"))
         address_bytes = sum(p.stat().st_size for p in (FIXTURE / "hail" / "a").rglob("*") if p.is_file())
-        self.assertLess(store_bytes, 62 * 1024, store_bytes)
+        self.assertLess(store_bytes, 480 * 1024, store_bytes)
         self.assertLess(address_bytes, 50 * 1024, address_bytes)
 
     @staticmethod
@@ -2117,8 +2119,8 @@ class NoOutlineTests(unittest.TestCase):
         out = J.describe_joins(index, _cell_doc(), *GATE, events=store_form({})[1])
         warnings = next(s for s in out["sections"] if s["id"] == "warnings")
         self.assertEqual(warnings["lead"], J.WORDS_JOINS["warnings_lead_unknown"])
-        self.assertIn("1 warning in these five years has no outline on file, so it cannot be matched to this spot." + AC,
-                      warnings["lines"])
+        self.assertIn("1 warning in these five years has no outline on file, so it cannot be matched to this cell or "
+                      "part of it." + AC, warnings["lines"])
         self.assertNotIn("No warning in the archive", warnings["lead"])
 
 
@@ -2214,6 +2216,24 @@ class RecordLeadTests(unittest.TestCase):
         lead = next(s for s in out["sections"] if s["id"] == "records")["lead"]
         self.assertTrue(lead.startswith("NCEI's database runs to Jun 30, 2026. 1 official record"), lead)
         self.assertNotIn("1 official records", lead)
+
+    def test_an_unknown_ncei_date_reads_as_the_words_key_not_a_placeholder(self):
+        # D68 and D71 (F2): the lead's {newest} is WORDS_JOINS["records_newest_unknown"], Python's voice, which the browser fills
+        self.assertEqual(J.WORDS_JOINS["records_newest_unknown"], "an unknown date")
+        lead = J._records_lead(0, None, {"start": "Jun 1, 2025", "end": "Jun 30, 2025"}, J.WORDS_JOINS)
+        self.assertEqual(lead, "NCEI's database runs to an unknown date. No official record for this spot or its zone between "
+                               "Jun 1, 2025 and Jun 30, 2025. Records are not a complete account of every storm.")
+        centre = hail.cell_centre(*GATE)
+        day = hail.day_index(date(2025, 6, 15))
+        record = [day, 2010, round(centre[0], 4), round(centre[1], 4), "hail", "1.75", "in", "", "Public", "Benchland",
+                  "", None, None]
+        doc, events = store_form({"records": [record]})
+        index = _index()
+        index["joins"]["lags"]["ncei"] = None
+        out = J.describe_joins(index, _cell_doc(records=doc["records"]), *GATE, events=events)
+        lead = next(s for s in out["sections"] if s["id"] == "records")["lead"]
+        self.assertTrue(lead.startswith("NCEI's database runs to an unknown date. 1 official record"), lead)
+        self.assertNotIn("[", lead)                                # no bracketed placeholder from the browser's fallback
 
 
 class DocumentedDataTests(unittest.TestCase):
@@ -2715,6 +2735,8 @@ class B5SheetTests(unittest.TestCase):
         out = J.describe_joins(index, doc, *GATE, store_dir=self.root)
         sec = next(s for s in out["sections"] if s["id"] == "zones")
         self.assertIn(J.WORDS_JOINS["county_unavailable"], sec["lines"])
+        # D71: the line is written once when the county file is lost and the block says unavailable (it was written twice)
+        self.assertEqual(sec["lines"].count(J.WORDS_JOINS["county_unavailable"]), 1)
 
     def test_a_flagged_station_reading_carries_the_flag_words(self):
         day = hail.day_index(date(2025, 2, 20))
@@ -3617,6 +3639,210 @@ class StationPickFromSpotTests(unittest.TestCase):
             {"id": "A", "name": "A", "lat": 47.02, "lon": -110.13}]}, 47.0, -110.1)], ["A"])
 
 
+class TownPointWarningTests(unittest.TestCase):
+    """D71 (F4): a town page's warning rows are the town point's rows from hail/j/towns.json (the D11 point test, D38),
+    worded "covered this spot", and the count note agrees with them. The sheet keeps the tile's cell covers ("covered this
+    cell or part of it"). A town file that cannot answer for the point gives the D20 sentence, never an empty list."""
+
+    TOWN = (47.025, -110.135)         # the centre of the gate cell (797, 1986): inside both warnings' cell cover
+    OTHER = (47.030, -110.140)        # a second town point in the same cell, inside neither warning
+    FIRST = {"k": "SV", "s": "W", "o": "TFX", "b": utc(2025, 6, 15, 0, 26), "e": utc(2025, 6, 15, 1, 8),
+             "tags": {"hail_in": 1.0, "wind_mph": 60.0, "tornado": None, "damage": None}}
+    SECOND = {"k": "FL", "s": "A", "o": "TFX", "b": utc(2025, 6, 15, 5, 39), "e": utc(2025, 6, 15, 5, 59),
+              "tags": {"hail_in": None, "wind_mph": None, "tornado": None, "damage": None}}
+
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp(prefix="joins-test-town-point-"))
+        self.addCleanup(shutil.rmtree, self.root, True)
+        (self.root / "hail" / "j").mkdir(parents=True)
+        self.index = _index()
+        # the events table holds the warnings with their times as ISO text, as the build writes them
+        self.items = [dict(self.FIRST, b=J.iso_utc(self.FIRST["b"]), e=J.iso_utc(self.FIRST["e"])),
+                      dict(self.SECOND, b=J.iso_utc(self.SECOND["b"]), e=J.iso_utc(self.SECOND["e"]))]
+        cover = J.cover_hex([GATE_KEY])
+        self.doc, self.events = store_form({"warnings": [(self.items[0], cover), (self.items[1], cover)]})
+        self.path = self.root / "hail" / "j" / J.TOWNS_NAME
+
+    def town(self, point, refs):
+        """One town entry as the build writes it: the warnings its point is inside, by their events-table index."""
+        events = []
+        for ref in refs:
+            item = self.items[ref] if ref < len(self.items) else self.items[0]    # a ref the table does not hold
+            events.append([ref, f"{item['k']}.{item['s']}", item["o"], item["b"], item["e"]])
+        return {"name": "Test town", "lat": point[0], "lon": point[1], "cell": list(GATE), "events": events}
+
+    def write_towns(self, towns, **over):
+        doc = {"f": J.TOWNS_FORMAT, "d0": "2020-01-01", "state": "loaded", "reason": None, "towns": towns}
+        doc.update(over)
+        self.path.write_text(json.dumps(doc), encoding="utf-8")
+
+    def warnings(self, spot=None, folder=None):
+        out = J.describe_joins(self.index, _cell_doc(warnings=self.doc["warnings"]), *GATE,
+                               store_dir=self.root if folder is None else folder, events=self.events, spot=spot)
+        return next(s for s in out["sections"] if s["id"] == "warnings")
+
+    def test_a_town_point_lists_its_own_rows_and_the_sheet_keeps_the_cell_covers(self):
+        self.write_towns({"edge": self.town(self.TOWN, [0])})
+        town = self.warnings(spot=self.TOWN)
+        self.assertEqual(len(town["rows"]), 1)
+        self.assertIn("covered this spot", town["rows"][0]["text"])
+        self.assertNotIn("cell or part of it", town["rows"][0]["text"])
+        self.assertTrue(town["lead"].startswith("1 warning covered this spot"), town["lead"])
+        self.assertEqual(town["what"], J.WORDS_JOINS["warnings_what_point"])
+        self.assertEqual(town["heading"], "Warnings that covered this spot")
+        sheet = self.warnings()
+        self.assertEqual(len(sheet["rows"]), 2)
+        self.assertTrue(all("covered this cell or part of it" in row["text"] for row in sheet["rows"]))
+        # F4: the heading and the count note are checked in their words, not only by the count
+        self.assertEqual(sheet["heading"], "Warnings that covered this cell or part of it")
+        self.assertTrue(sheet["lead"].startswith("2 warnings covered this cell or part of it between "), sheet["lead"])
+        self.assertNotIn("this spot", sheet["lead"])
+        self.assertEqual(sheet["what"], J.WORDS_JOINS["warnings_what"])
+
+    def test_the_count_note_and_the_rows_agree_for_each_town_point_in_the_cell(self):
+        self.write_towns({"edge": self.town(self.TOWN, [0, 1]), "inner": self.town(self.OTHER, [])})
+        both = self.warnings(spot=self.TOWN)
+        self.assertEqual(len(both["rows"]), 2)
+        self.assertTrue(both["lead"].startswith("2 warnings covered this spot"), both["lead"])
+        neither = self.warnings(spot=self.OTHER)
+        self.assertEqual(neither["rows"], [])
+        self.assertTrue(neither["lead"].startswith("No warning in the archive covered this spot"), neither["lead"])
+        self.assertIsNone(neither["unavailable"])
+
+    def test_the_town_rows_are_newest_first_and_each_starts_with_its_significance(self):
+        self.write_towns({"edge": self.town(self.TOWN, [0, 1])})
+        rows = self.warnings(spot=self.TOWN)["rows"]
+        self.assertTrue(rows[0]["text"].startswith("Watch: "), rows[0]["text"])        # the flood watch, 05:39 UTC
+        self.assertTrue(rows[1]["text"].startswith("Warning: "), rows[1]["text"])
+        self.assertEqual([row["utc"] for row in rows], sorted((row["utc"] for row in rows), reverse=True))
+
+    def test_a_town_file_that_cannot_answer_gives_the_unavailable_sentence_and_no_rows(self):
+        cases = {
+            "the file is missing": None,
+            "the warnings part did not load": ({"edge": self.town(self.TOWN, [0])}, {"state": "unavailable"}),
+            "the file is in another format": ({"edge": self.town(self.TOWN, [0])}, {"f": "other"}),
+            "no town is at this point": ({"inner": self.town(self.OTHER, [])}, {}),
+            "a row names an event the table does not hold": ({"edge": self.town(self.TOWN, [9])}, {}),
+        }
+        for label, case in cases.items():
+            with self.subTest(label):
+                if case is None:
+                    self.path.unlink(missing_ok=True)
+                else:
+                    self.write_towns(case[0], **case[1])
+                sec = self.warnings(spot=self.TOWN)
+                self.assertEqual(sec["rows"], [])
+                self.assertIsNone(sec["lead"])
+                self.assertEqual(sec["unavailable"], J._unavailable_text("warnings", None))
+                self.assertTrue(sec["unavailable"].endswith("This is not an all-clear."), sec["unavailable"])
+
+    def test_the_sheet_still_lists_its_cell_covers_without_a_town_file(self):
+        self.assertFalse(self.path.exists())
+        sec = self.warnings()
+        self.assertEqual(len(sec["rows"]), 2)
+        self.assertIsNone(sec["unavailable"])
+
+    def test_a_town_point_without_a_store_folder_is_unavailable_not_empty(self):
+        out = J.describe_joins(self.index, _cell_doc(warnings=self.doc["warnings"]), *GATE, store_dir=None,
+                               events=self.events, spot=self.TOWN)
+        sec = next(s for s in out["sections"] if s["id"] == "warnings")
+        self.assertEqual(sec["rows"], [])
+        self.assertEqual(sec["unavailable"], J._unavailable_text("warnings", None))
+
+    def section(self, warnings, spot=None):
+        out = J.describe_joins(self.index, _cell_doc(warnings=warnings), *GATE, store_dir=self.root, events=self.events,
+                               spot=spot)
+        return next(s for s in out["sections"] if s["id"] == "warnings")
+
+    def test_the_sheet_heading_and_count_notes_name_the_cell_cover_for_every_count(self):
+        """F1, F4: the sheet's heading and count notes say "covered this cell or part of it" for one, many, none and the
+        unknown count, and the no-outline line names the cell too. None of them says "this spot"."""
+        cell = "covered this cell or part of it"
+        sheet = self.section(self.doc["warnings"])
+        self.assertEqual(sheet["heading"], "Warnings that covered this cell or part of it")
+        self.assertTrue(sheet["lead"].startswith("2 warnings " + cell + " between "), sheet["lead"])
+        one = self.section(self.doc["warnings"][:1])
+        self.assertTrue(one["lead"].startswith("1 warning " + cell + " between "), one["lead"])
+        none = self.section([])
+        self.assertTrue(none["lead"].startswith("No warning in the archive " + cell + " between "), none["lead"])
+        self.index["joins"]["warnings_no_outline"] = 1
+        unknown = self.section([])
+        self.assertEqual(unknown["lead"], J.WORDS_JOINS["warnings_lead_unknown"])
+        self.assertIn("1 warning in these five years has no outline on file, so it cannot be matched to this cell or "
+                      "part of it." + AC, unknown["lines"])
+        for text in [sheet["heading"], sheet["lead"], one["lead"], none["lead"], unknown["lead"], *unknown["lines"]]:
+            self.assertNotIn("this spot", text)
+
+    def test_the_town_point_heading_and_count_notes_say_this_spot_for_every_count(self):
+        """F4: a town page's heading and count notes say "covered this spot" (the town point's rows) for one, none
+        and the unknown count, and none of its lines says "cell or part of it"."""
+        self.write_towns({"edge": self.town(self.TOWN, [0]), "inner": self.town(self.OTHER, [])})
+        town = self.section(self.doc["warnings"], spot=self.TOWN)
+        self.assertEqual(town["heading"], "Warnings that covered this spot")
+        self.assertTrue(town["lead"].startswith("1 warning covered this spot between "), town["lead"])
+        neither = self.section(self.doc["warnings"], spot=self.OTHER)
+        self.assertTrue(neither["lead"].startswith("No warning in the archive covered this spot between "),
+                        neither["lead"])
+        self.index["joins"]["warnings_no_outline"] = 1
+        unknown = self.section([], spot=self.OTHER)
+        self.assertEqual(unknown["lead"], J.WORDS_JOINS["warnings_lead_unknown_point"])
+        self.assertIn("1 warning in these five years has no outline on file, so it cannot be matched to this spot."
+                      + AC, unknown["lines"])
+        for text in [town["heading"], town["lead"], neither["lead"], unknown["lead"], *unknown["lines"]]:
+            self.assertNotIn("cell or part of it", text)
+
+    def test_each_warning_word_the_sheet_reads_names_the_cell_and_each_point_twin_names_the_spot(self):
+        """F1, F4: the keys the browser reads for the sheet (the heading and the count notes, map.js) name the cell
+        cover, and each "_point" twin names the spot. A twin takes the same fields, so one .format call fills either."""
+        from string import Formatter
+
+        def fields(text):
+            return {field for _lit, field, _spec, _conv in Formatter().parse(text) if field}
+
+        for key in ("warnings_heading", "warnings_lead_one", "warnings_lead_many", "warnings_lead_none",
+                    "warnings_lead_unknown", "warnings_no_outline_one", "warnings_no_outline_many"):
+            cell, point = J.WORDS_JOINS[key], J.WORDS_JOINS[key + "_point"]
+            self.assertIn("this cell or part of it", cell, key)
+            self.assertNotIn("this spot", cell, key)
+            self.assertIn("this spot", point, key)
+            self.assertNotIn("cell or part of it", point, key)
+            self.assertEqual(fields(point), fields(cell), key)
+            check_words(self, cell)
+            check_words(self, point)
+
+    def test_the_point_words_say_covered_this_spot_with_the_fields_of_the_cell_row(self):
+        from string import Formatter
+
+        def fields(text):
+            return {field for _lit, field, _spec, _conv in Formatter().parse(text) if field}
+
+        self.assertEqual(fields(J.WORDS_JOINS["warnings_row_point"]), fields(J.WORDS_JOINS["warnings_row_b5"]))
+        self.assertIn("covered this spot", J.WORDS_JOINS["warnings_row_point"])
+        self.assertNotIn("cell or part of it", J.WORDS_JOINS["warnings_row_point"])
+        self.assertIn("covered this spot", J.WORDS_JOINS["warnings_what_point"])
+        self.assertNotIn("covered this cell or part of it", J.WORDS_JOINS["warnings_what_point"])
+        for text in (J.WORDS_JOINS["warnings_row_point"], J.WORDS_JOINS["warnings_what_point"]):
+            check_words(self, text)
+
+    def test_the_fixture_town_page_reads_its_town_file_and_shows_no_unavailable_line(self):
+        index = hail.load_index(FIXTURE)
+        events = J._read_events(FIXTURE)
+        tile = json.loads((FIXTURE / "hail" / "j" / "r0092_c0214.json").read_text(encoding="utf-8"))
+        town = json.loads((FIXTURE / "hail" / "j" / J.TOWNS_NAME).read_text(encoding="utf-8"))["towns"]["billings"]
+        row, col = town["cell"]
+        key = hail.cell_key(row, col)
+        covers = sum(1 for _ref, cover in tile["warnings"] if J.cover_has(cover, key))
+        point = J.describe_joins(index, tile, row, col, None, sample=True, store_dir=FIXTURE, events=events,
+                                 spot=(town["lat"], town["lon"]))
+        point_sec = next(s for s in point["sections"] if s["id"] == "warnings")
+        self.assertEqual(point_sec["rows"], [])        # the town file lists no warning at the point
+        self.assertTrue(point_sec["lead"].startswith("No warning in the archive covered this spot"), point_sec["lead"])
+        sheet = J.describe_joins(index, tile, row, col, None, sample=True, store_dir=FIXTURE, events=events)
+        sheet_sec = next(s for s in sheet["sections"] if s["id"] == "warnings")
+        self.assertEqual(len(sheet_sec["rows"]), covers)
+        self.assertTrue(all("covered this cell or part of it" in r["text"] for r in sheet_sec["rows"]))
+
+
 class FloodRecordRowTests(unittest.TestCase):
     """D48: NCEI flood and flash flood records within five miles are their own row (the words the summary reads). The
     Red Lodge record of 10 June 2022 (event 1039252) is 0.3 miles from its cell's centre."""
@@ -3776,10 +4002,26 @@ class EdgeWindowTests(unittest.TestCase):
     def test_the_utc_words_and_the_research_table(self):
         self.assertEqual(J._utc_words("2026-10-17T15:00Z"), "17 October 2026 at 15:00 UTC")
         self.assertEqual(J._utc_words("2021-10-19T00:00Z"), "19 October 2021 at 00:00 UTC")
-        # D55: the research's own counts, with HW.W from the research record and FW.W from the B5 recheck (its recount is 169)
+        # D55: the research's own counts, with HW.W from the research record and FW.W from an independent recount of the
+        # cached FW.W rows (169 in the research window; 170 in the store window, which verify checks)
         self.assertEqual((J.RESEARCH_B5["HW.A"], J.RESEARCH_B5["HW.W"], J.RESEARCH_B5["FW.W"]), (277, 339, 169))
         self.assertEqual((J.RESEARCH_START.date().isoformat(), J.RESEARCH_END.date().isoformat()),
                          ("2021-10-19", "2026-10-19"))
+
+
+class ContractStemTests(unittest.TestCase):
+    """D13, D41, D45, D60 and D74: no About contract row says a bare "coverage" (the stem is barred; NOAA's "radar coverage"
+    is allowed), and the rows that gave the stem its place say "no radar coverage" or "completeness"."""
+
+    def test_no_contract_row_says_a_bare_coverage(self):
+        from website import sources
+        stem = re.compile(r"(?<!radar )\bcoverage\b", re.IGNORECASE)
+        for key, row in sources.CONTRACTS.items():
+            for field, text in row.items():
+                if isinstance(text, str):
+                    self.assertIsNone(stem.search(text), (key, field, text[:80]))
+        self.assertIn("-3 is no radar coverage in NOAA's table", sources.CONTRACTS["hail_swath"]["missing"])
+        self.assertIn("its completeness varies from county to county", sources.CONTRACTS["msl_addresses"]["missing"])
 
 
 class FixtureStationTests(unittest.TestCase):
@@ -3795,7 +4037,8 @@ class FixtureStationTests(unittest.TestCase):
     def write_source(self, src: Path):
         (src / "hail" / "tl").mkdir(parents=True)
         (src / "hail" / "sd").mkdir(parents=True)
-        tile = {"f": "hail-stn-tiles-v1", "elements": {"SNOW": {
+        tile = {"f": "hail-stn-tiles-v1", "miles": 40.0, "margin_miles": 3.8, "centre": [45.7836, -108.5047],
+                "elements": {"SNOW": {"centre": [45.7836, -108.5047], "margin_miles": 3.8, "rejected": [],
             "passing": [self.entry("USC00000A01", "ALPHA", 45.7836, -108.5047),
                         self.entry("USC00000A02", "BETA", 45.9, -108.2)],
             "unread": [{"id": "USC00000A03", "name": "GAMMA", "lat": None, "lon": None, "reason": "its file did not load"}],
@@ -3806,20 +4049,21 @@ class FixtureStationTests(unittest.TestCase):
                              "stations": {"USC00000A01": {"name": "ALPHA", "lat": 45.7836, "lon": -108.5047, "net": "COOP"},
                                           "USC00000A02": {"name": "BETA", "lat": 45.9, "lon": -108.2, "net": "COOP"}}}}
 
-    def test_the_sample_keeps_the_named_stations_that_have_a_summary_file(self):
+    def test_the_sample_keeps_a_row_for_every_named_station_and_a_summary_file_where_one_exists(self):
         with tempfile.TemporaryDirectory() as tmp:
             src = Path(tmp)
             real = self.write_source(src)
             block, lists, ids = J._station_sample(src, real, ["T1", "T2"], ["USC00000G9"])
-            self.assertEqual(ids, ["USC00000A01"])                      # BETA and GAMMA have no summary file: left out
-            self.assertEqual(sorted(block["stations"]), ["USC00000A01"])
+            self.assertEqual(ids, ["USC00000A01"])                      # only ALPHA has a summary file: the one copied
+            self.assertEqual(sorted(block["stations"]), ["USC00000A01", "USC00000A02"])   # D74: BETA is named, so it has a row
             self.assertEqual(sorted(lists), ["T1"])                     # T2 has no list file, so none is written
             self.assertEqual((block["state"], block["sample"], block["as_of"]), ("loaded", True, "2026-10-16"))
-            self.assertEqual(block["counts"], {"sample_tiles": 1, "sample_stations": 1})
-            self.assertEqual(block["chosen_station_ids"], ["USC00000A01"])
+            self.assertEqual(block["counts"], {"sample_tiles": 1, "sample_stations": 2})
+            self.assertEqual(block["chosen_station_ids"], ["USC00000A01", "USC00000A02"])
             self.assertEqual(block["tile_lists"]["files"], 1)
             self.assertEqual(block["tile_lists"]["unread"], 1)
-            self.assertEqual(block["tile_lists"]["cap"], 6)
+            self.assertNotIn("cap", block["tile_lists"])                # D61: no cap; the margin is recorded
+            self.assertEqual((block["tile_lists"]["miles"], block["tile_lists"]["margin_miles_max"]), (40.0, 3.8))
 
     def test_the_sample_answers_the_point_picks_from_its_own_tile_list(self):
         # the shared rule (stations.tile_list_picks) reads the cut tile list and the cut block's net at the point
@@ -3834,13 +4078,39 @@ class FixtureStationTests(unittest.TestCase):
             self.assertEqual(got["state"], "two")
             self.assertEqual([u["name"] for u in got["unread"]], ["GAMMA"])     # no position: named, never skipped (D32)
 
+    def test_the_committed_fixture_ties_the_tile_lists_the_summaries_and_the_stations_block_together(self):
+        # D74 (RV10): every station a tile list names has a row in the stations block; the summary files are those of the rows
+        # that are loaded (not unread), every passing station has one, and the chosen set is the rows' set
+        root = Path(J.__file__).resolve().parent / "data" / "hail-fixture" / "hail"
+        index = json.loads((root / "index.json").read_text(encoding="utf-8"))
+        rows = index["stations"]["stations"]
+        named, passing, lists = set(), set(), 0
+        for path in sorted((root / "tl").glob("*.json")):
+            lists += 1
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            for part in doc["elements"].values():
+                named.update(e["id"] for key in ("passing", "unread", "rejected") for e in part.get(key, []))
+                passing.update(e["id"] for e in part.get("passing", []))
+        files = {p.stem for p in (root / "sd").glob("*.json")}
+        loaded = {sid for sid, row in rows.items() if not row.get("unread")}
+        self.assertEqual(index["stations"]["tile_lists"]["files"], lists)
+        self.assertFalse(named - set(rows), sorted(named - set(rows)))
+        self.assertEqual(files, loaded)
+        self.assertTrue(passing <= files, sorted(passing - files))
+        self.assertEqual(index["stations"]["chosen_station_ids"], sorted(rows))
+        self.assertEqual(index["stations"]["counts"]["sample_stations"], len(rows))
+
     def test_a_source_without_a_stations_block_says_so(self):
         with tempfile.TemporaryDirectory() as tmp:
             src = Path(tmp)
             self.write_source(src)
             block, _lists, ids = J._station_sample(src, {}, ["T1"], [])
             self.assertEqual(block["state"], "unavailable")
-            self.assertEqual(block["problem"], "the build the sample is cut from has no stations block")
+            # D28 and R14: the D20 sentence is the problem (the same words stations.py writes); the reason is the detail
+            from website import stations as stn
+            self.assertEqual(block["problem"], stn.WORDS["unavailable"])
+            self.assertTrue(block["problem"].endswith("This is not an all-clear."), block["problem"])
+            self.assertEqual(block["detail"], "the build the sample is cut from has no stations block")
             self.assertEqual(block["stations"], {})
             self.assertEqual(ids, [])                                    # no summary is named without the block's stations
 

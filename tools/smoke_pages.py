@@ -14,6 +14,11 @@ executable if Playwright's own isn't installed.
 On a --hail-history build the five-season table of each town page is checked too, at TABLE_WIDTHS: no sideways scroll,
 and one card per row (the row's label first, each cell named by its season) below CARD_BELOW px. At 390 px the page's jump
 link to the five-year history (D39) must be on the first screen, and its target must be on the page.
+
+    python tools/smoke_pages.py _site --history
+
+With --history (the branch preview passes it) a build whose town pages carry no five-season table fails, rather than
+passing without the check.
 """
 from __future__ import annotations
 
@@ -138,7 +143,7 @@ def check_tables(root: Path, base: str, browser, problems: list[str]) -> None:
         ctx.close()
 
 
-def check(root: Path) -> list[str]:
+def check(root: Path, history: bool = False) -> list[str]:
     from playwright.sync_api import sync_playwright
 
     pages = ["index.html", "map.html", "reports.html", "about.html"]
@@ -163,6 +168,9 @@ def check(root: Path) -> list[str]:
                                             f"screen: " + ("; ".join(res["past"]) or "no single element named"))
                     ctx.close()
             check_tables(root, base, browser, problems)
+            if history and not TABLES_CHECKED:
+                problems.append("no town page has its five-season table: the build must pass --hail-history (this check "
+                                "was run with --history)")
             browser.close()
     finally:
         httpd.shutdown()
@@ -170,9 +178,11 @@ def check(root: Path) -> list[str]:
 
 
 def main(argv=None) -> int:
-    args = argv if argv is not None else sys.argv[1:]
+    args = list(sys.argv[1:] if argv is None else argv)
+    history = "--history" in args                 # the build passed --hail-history: a missing table is a failure
+    args = [a for a in args if a != "--history"]
     root = Path(args[0] if args else "_site")
-    problems = check(root)
+    problems = check(root, history=history)
     if problems:
         print("Page width check failed:\n- " + "\n- ".join(problems))
         return 1

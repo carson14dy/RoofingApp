@@ -172,7 +172,7 @@ CONTRACTS = {
         "request": "noaa-mrms-pds.s3.amazonaws.com, CONUS/MESH_Max_60min_00.50 (GRIB2 parameter 30, a file every 2 minutes) and CONUS/MESH_Max_1440min_00.50 (parameter 34, a file every 30 minutes). Each build lists today's folder (yesterday's when today's is empty, just after 00:00 UTC), takes the newest file of each product and downloads it once (a gzipped GRIB2 file). The grid is regular latitude and longitude, 7,000 by 3,500 cells of 0.01 degree, from 54.995 degrees north, 230.005 degrees east (stored 0 to 360) to 20.005 degrees north, 299.995 degrees east.",
         "units": "Millimetres (NOAA's GRIB2 user table, UserTable_MRMS_v12.2: MESH (maximum estimated size of hail) and its maxima), stored in tenths of a millimetre. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact (513 tenths: 2.01 in, 51.3 mm). Size classes start at 0.25 in (64 tenths), 0.75 in (191), 1.00 in (254), 1.50 in (381), 2.00 in (508) and 2.75 in (699). A radar estimate of the largest hail over each 0.01 degree cell, about 0.7 miles north to south and 0.5 miles east to west, in the last hour or the last 24 hours.",
         "timing": "The hour file is new every 2 minutes: fresh within 20 minutes of its valid time, stale to 60 minutes, then unavailable. The 24-hour file is new every 30 minutes: fresh within 60 minutes, stale to 120 minutes, then unavailable. The valid time is the header's date and time in UTC and must equal the file name's time. The valid time is the end of the window. The window comes from the parameter number (30 is 60 minutes, 34 is 1,440 minutes) and must match the folder. A stale picture is drawn and says so.",
-        "missing": "-1 is missing and -3 is no coverage in NOAA's table; neither is stored as a value or as 0. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart. Cells under 0.25 in (64 tenths) are not drawn and not written to the live files. A cell with no coverage is hatched, and its tile's live file lists it as no radar coverage. A file that is missing, unreadable, or does not match its time or window, and a request that fails, make the layer unavailable with its reason and no picture. This is not an all-clear. An estimate, not observed hail and not damage.",
+        "missing": "-1 is missing and -3 is no radar coverage in NOAA's table; neither is stored as a value or as 0. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart. Cells under 0.25 in (64 tenths) are not drawn and not written to the live files. A cell with no radar coverage is hatched, and its tile's live file lists it as no radar coverage. A file that is missing, unreadable, or does not match its time or window, and a request that fails, make the layer unavailable with its reason and no picture. This is not an all-clear. An estimate, not observed hail and not damage.",
     },
     "basemap": {
         "name": "Map outlines and names",
@@ -244,7 +244,7 @@ CONTRACTS = {
                    "contained in the Framework are publicly available and non-sensitive.\" Its terms say the Library makes "
                    "the data available as a convenience to the public, \"and for no other purpose.\" Owner names and "
                    "parcel identifiers are never read, stored or shown. The list is of addresses, not of buildings, and its "
-                   "coverage varies from county to county.",
+                   "completeness varies from county to county.",
     },
     "msl_roads": {
         "name": "Montana State Library Transportation Framework, roads (the default street source)",
@@ -520,8 +520,10 @@ CONTRACTS = {
         "name": "NOAA NCEI GHCN-Daily, station daily records (airport, cooperative and SNOTEL sites)",
         "request": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/: ghcnd-stations.txt (the station list), ghcnd-inventory.txt "
                    "(what each station reports, by year) and all/<ID>.dly (each station's daily values, the NCEI copy). NOAA's "
-                   "S3 by-station copies are not used: their SNOTEL and airport records end early in 2025. Montana stations "
-                   "within 40 miles are candidates, and the station rule picks the two nearest that pass, per element and place. "
+                   "S3 by-station copies are not used: their SNOTEL and airport records end early in 2025. Stations in Montana "
+                   "and the neighbouring states within 40 miles are candidates, and the station rule picks the two nearest that "
+                   "pass, per element and place. Canadian stations (identifiers beginning CA) are candidates that are not read: "
+                   "their files are never requested, because the terms for their data are under review. "
                    "The elements read are TMAX, TMIN, PRCP, SNOW and SNWD. The NRCS SNOTEL service is not used; the GHCN copies "
                    "of SNOTEL stations are station records like the others. Licence: NOAA and federal records are public domain "
                    "in the United States under NCEI-PD-10-2-02, section 4(a) (\"These data are in the public domain in the United "

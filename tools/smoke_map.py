@@ -51,6 +51,21 @@ hook these checks read is window.hailMapTest (map.js, test only).
 
 Every browser context counts the requests that leave this server, and that count must be zero, except for
 the imagery host in the contexts that have switched to Imagery. Exits 1 with the reasons if anything fails.
+The five-season summary on the hail sheet (B5 part B2) is checked on a --hail-history build (check_summary). At 390 and
+1280 px the sheet is opened on the Billings cell, Benchland's cell 792,1998 and the gate cell 797,1986, once with ?at= and
+once by a tap, and the table must sit inside the first screen below the address and live lines, with nothing running
+sideways. Every cell of it (each season and the five-season column) must read exactly the words that
+summary.describe_summary gives for that cell, followed by its coverage line and nothing else (D75); the partial line, the
+held line, the five-season sentences, the lead, the radar sentence and the table's heading must be on the sheet. The words
+come from the store the smoke is given (--store PATH; by default the built site's own hail/ folder, whose B4 live files
+under hail/live/ the store reader skips, D75). If that store cannot be read, the words are not compared and the failure is
+named; the table's position and the sizes of the files a tap fetches are still checked. Every row shows its kind word and
+its unit. Each file a tap fetches must be under the tile-file budget in map.json (hail.budget.tile_events_gzip_bytes, D66),
+and the fetch list of every tap is printed as a note. check_every_layer measures the phone view at zoom 15 over Billings
+with every layer of the menu on: the files it fetches, apart from the picture frames (listed apart, as B3's note lists
+them), must be under the phone budget in map.json (hail.budget.phone_gzip_bytes). --history makes a missing or unavailable
+summary a failure (the branch preview passes it); without the flag that is a note.
+
 The Website workflow runs it on branch pushes; locally set PW_CHROMIUM to a Chromium executable if
 Playwright's own isn't installed.
 """
@@ -114,7 +129,15 @@ class Counted:
         return getattr(self._browser, name)
 
 
-def check(root: Path, shots: Path | None = None, addresses: bool = False) -> list[str]:
+def console_error(message) -> str:
+    """A console error with the URL it names (Playwright's location). A failed request's file is then named, so a 404 can be
+    traced to its file (F-14)."""
+    url = (message.location or {}).get("url") or ""
+    return f"console: {message.text}" + (f" ({url})" if url else "")
+
+
+def check(root: Path, shots: Path | None = None, addresses: bool = False, store: Path | None = None,
+          history: bool = False) -> list[str]:
     from playwright.sync_api import sync_playwright
 
     problems: list[str] = []
@@ -130,7 +153,7 @@ def check(root: Path, shots: Path | None = None, addresses: bool = False) -> lis
                 page = ctx.new_page()
                 errors: list[str] = []
                 page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
-                page.on("console", lambda m: errors.append(f"console: {m.text}") if m.type == "error" else None)
+                page.on("console", lambda m: errors.append(console_error(m)) if m.type == "error" else None)
                 page.on("requestfailed", lambda r: errors.append(f"failed request: {r.url}")
                         if r.url.startswith(base) else None)
                 page.goto(base + "map.html", wait_until="load")
@@ -213,6 +236,12 @@ def check(root: Path, shots: Path | None = None, addresses: bool = False) -> lis
                 extras += (("check_joins", lambda: check_joins(browser, base, root, data, shots)),)
             if addresses:
                 extras += (("check_addresses", lambda: check_addresses(browser, base, root, data, shots)),)
+            if "hail" in data:                            # B5 part B2: the summary table, the taps and the phone budget
+                extras += (("check_summary", lambda: check_summary(browser, base, root, data, summary_store(store, root),
+                                                                   shots, history)),
+                           ("check_every_layer", lambda: check_every_layer(browser, base, data)))
+            elif history:
+                problems.append("the build has no five-season history (no hail data in map.json): build with --hail-history")
             if "hail_60" in data["layers"]:               # --storm-layers: the live hail swath layers (B4)
                 extras += (("check_swath", lambda: check_swath(browser, base, root, data, shots)),)
             for name, extra in extras:
@@ -1061,10 +1090,21 @@ def key_centre(shard: dict, key: int) -> tuple[float, float]:
     return hail_store().cell_centre(shard["r"] * 10 + key // 10, shard["c"] * 10 + key % 10)
 
 
+def listed_tiles(data: dict) -> list[str]:
+    """The tile names the map lists, from the compact split map the hail block carries (D40: no block lists every tile
+    name): {"<tile row>": [[first column, last column], ...]}, written by build.py's tile_split. Names read as the store
+    writes them, r0079_c0199. A map with no split map gives the list it had before D40, when there is one."""
+    split = data["hail"].get("tile_split")
+    if split is None:
+        return sorted(data["hail"].get("tiles", []))
+    return sorted(f"r{int(row):04d}_c{col:04d}" for row, runs in split.items()
+                  for first, last in runs for col in range(first, last + 1))
+
+
 def no_estimate_spot(root: Path, data: dict):
     """A Montana cell with no stored value on any day: a key in its tile's state list with no entry in cells, read from
     the store's shards (Benchland's tile first). None when no listed tile has one."""
-    listed = set(data["hail"]["tiles"])
+    listed = set(listed_tiles(data))
     for name in [HAIL_BENCHLAND_TILE] + sorted(listed):
         if name not in listed:
             continue
@@ -1079,7 +1119,7 @@ def no_estimate_spot(root: Path, data: dict):
 def outside_spot(root: Path, data: dict):
     """A cell inside a listed tile whose key is not in the tile's state list: outside Montana, in a tile the browser
     does fetch (the border tiles). None when the store has no such cell."""
-    for name in sorted(data["hail"]["tiles"]):
+    for name in listed_tiles(data):
         shard = hail_shard(root, name)
         inside = set(shard["state"])
         for key in range(100):
@@ -1191,8 +1231,8 @@ def check_hail(browser, base: str, root: Path, data: dict, shots: Path | None) -
     words = h["words"]
     if h["state"] == "unavailable":
         return [f"{NOTE}the history did not load in this build ({h['problem']}), so only the words were checked"]
-    if "tiles" not in h:
-        return ["the map data has no tile list (hail.tiles), so the browser cannot tell outside from no estimate"]
+    if not listed_tiles(data):
+        return ["the map data has no tile split (hail.tile_split), so the browser cannot tell outside from no estimate"]
     sample = h["state"] == "sample"
     want = hail_expected(root, data, *HAIL_BENCHLAND)
     centre = hail_expected(root, data, *HAIL_CELL_CENTRE)
@@ -1202,7 +1242,7 @@ def check_hail(browser, base: str, root: Path, data: dict, shots: Path | None) -
         page = ctx.new_page()
         errors: list[str] = []
         page.on("pageerror", lambda e: errors.append(f"script error: {e}"))
-        page.on("console", lambda m: errors.append(f"console: {m.text}") if m.type == "error"
+        page.on("console", lambda m: errors.append(console_error(m)) if m.type == "error"
                 and "/hail/t/" not in (m.location or {}).get("url", "") else None)
         try:
             asked = hail_shard_asks(page)
@@ -1521,7 +1561,7 @@ def no_join_spot(root: Path, data: dict, budget: int = 4000):
     radii: the first one found in the store's tiles, or None after `budget` cells. Its sections come from the module."""
     hs = hail_store()
     tested = 0
-    for name in sorted(data["hail"]["tiles"])[::23]:          # spread over the state; the first tiles are zone-covered
+    for name in listed_tiles(data)[::23]:                     # spread over the state; the first tiles are zone-covered
         if not (root / "hail" / "j" / f"{name}.json").is_file():
             continue
         tr, tc = int(name[1:5]), int(name[7:11])
@@ -2835,7 +2875,7 @@ def check_swath_outside(browser, base, root: Path, data: dict, shots) -> list[st
             row, col = hs.cell_for(lat, lon)
             tile = hs.tile_name(row // hs.TILE, col // hs.TILE)
             inside_box = south <= lat <= north and west <= lon <= east
-            listed = tile in data["hail"]["tiles"]
+            listed = tile in set(listed_tiles(data))
             ctx = browser.new_context(viewport={"width": 1280, "height": 800}, reduced_motion="reduce")
             page = ctx.new_page()
             errors: list[str] = []
@@ -2952,15 +2992,431 @@ def check_swath(browser, base, root: Path, data: dict, shots) -> list[str]:
     return problems
 
 
-def main(argv=None) -> int:
+# ---------------------------------------------------------------- the five-season summary on the sheet (B5, part B2)
+# The table is the browser's words. describe_summary (website/summary.py) gives the Python words for the same cell of the
+# same store. The page is read as a reader sees it: the table inside the sheet that holds the column names, with no class
+# names, so the browser may build it any way. Each row is found by its label; its kind word and unit are read from the row;
+# every cell is compared with the Python cell text and its coverage line.
+SUMMARY_SIZES = (("phone", (390, 844)), ("desktop", (1280, 800)))   # gate B5-11: the sheet at these two sizes
+SUMMARY_WAIT_S = 15                     # the table is awaited this long once the sheet's loading line has gone
+
+SUMMARY_READ = """() => {
+  const clean = s => (s || '').replace(/\\s+/g, ' ').trim();
+  const body = document.getElementById('sheet-body');
+  const sheet = document.getElementById('sheet');
+  if (!body || !sheet) return null;
+  const sb = sheet.getBoundingClientRect();
+  const out = {present: false, body: clean(body.innerText),
+               viewport: {w: innerWidth, h: innerHeight, scrollW: document.documentElement.scrollWidth},
+               sheet: {top: sb.top, bottom: sb.bottom}};
+  // textContent, not innerText: in the phone's card layout the column header is hidden, and a hidden header still names the table
+  const table = [...body.querySelectorAll('table')].find(t => {
+    const text = clean(t.textContent);
+    return text.includes('2021-22') && text.includes('Five seasons');
+  });
+  if (!table) return out;
+  out.present = true;
+  const box = r => ({top: r.top, bottom: r.bottom, left: r.left, right: r.right});
+  let top = table;
+  while (top.parentElement && top.parentElement !== body) top = top.parentElement;
+  const kids = [...body.children];
+  let above = null;
+  for (const k of kids.slice(0, kids.indexOf(top))) {
+    const b = k.getBoundingClientRect().bottom;
+    above = above === null ? b : Math.max(above, b);
+  }
+  out.table = box(table.getBoundingClientRect());
+  out.above_bottom = above;
+  out.rows = [...table.querySelectorAll('tr')].map(tr => ({
+    text: clean(tr.innerText),
+    cells: [...tr.querySelectorAll('th, td')].map(c => clean(c.innerText)),
+    rect: box(tr.getBoundingClientRect())}));
+  out.first_row = out.rows.length > 1 ? out.rows[1].rect : null;   // row 0 is the column header
+  return out;
+}"""
+
+
+def map_budget(data: dict, key: str) -> int | None:
+    """A byte budget the build wrote into map.json's hail.budget block (D66, D75): tile_events_gzip_bytes for a file a tap
+    fetches, phone_gzip_bytes for the phone view. None when the build did not write it, and the caller names that."""
+    value = ((data.get("hail") or {}).get("budget") or {}).get(key)
+    return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
+
+
+def summary_store(store: Path | None, root: Path) -> Path:
+    """The store the sheet's summary words are read from: --store when it is given, else the built site's own copy (D75)."""
+    return store if store is not None else root
+
+
+def summary_module():
+    """The summary's words and rules, website/summary.py, imported from this repository."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from website import summary as sm
+    return sm
+
+
+def summary_spots(data: dict) -> list[tuple[str, tuple[int, int]]]:
+    """The three cells the smoke compares word for word (gate B5-11): the cell of Billings' town point (read from the map's
+    own town list), Benchland's cell 792,1998 and the gate cell 797,1986. No station, count or value is pinned here: the
+    expected words come from describe_summary on the store the smoke is given."""
+    hs = hail_store()
+    town = next(t for t in data["towns"] if t["name"] == "Billings")
+    return [("Billings", hs.cell_for(town["lat"], town["lon"])), ("Benchland cell 792,1998", (792, 1998)),
+            ("the gate cell 797,1986", (797, 1986))]
+
+
+def map_now(data: dict) -> datetime:
+    """The build's time (map.json "now", UTC): the time the build gave describe_summary, so the stale line reads the same."""
+    return datetime.fromisoformat(data["now"].replace("Z", "+00:00"))
+
+
+def norm(text) -> str:
+    """Text as a reader sees it: each run of white space is one space, and the ends are cut."""
+    return " ".join(str(text or "").split())
+
+
+def gzip_size(body: bytes) -> int:
+    return len(gzip.compress(body, 6))
+
+
+UNIT_NOUNS = {"days": ("day",),                                   # the cells' own nouns: "1 day", "3 hail reports"
+              "count": ("report", "reports", "watch", "watches", "warning", "warnings", "product", "products",
+                        "record", "records")}
+
+
+def unit_shown(unit: str, text: str, unit_spec: dict) -> bool:
+    """The row's unit, as its abbreviation, its word or the noun its cells use, is in the row's text. The held row's unit
+    slot is its reason."""
+    if unit == "reason":
+        return True
+    tokens = {unit, unit_spec[unit]["word"], *UNIT_NOUNS.get(unit, ())}
+    return any(re.search(r"(?<!\w)" + re.escape(token) + r"(?!\w)", text) for token in tokens if token)
+
+
+def cell_words(text, coverage) -> str:
+    """The words a cell of the table must read: the cell's own words, then its coverage line (if any). The browser sets the line
+    in a block after the words (map.css: .sum-cover is a block), and innerText joins the two with one space."""
+    return norm(text) + (" " + norm(coverage) if coverage else "")
+
+
+def find_cell(cells: list[str], start: int, text, coverage) -> int | None:
+    """The first cell from start whose words are exactly the Python words of the cell and its coverage line (D75(b)). A cell
+    with other words before or after them is not that cell, so words added to a correct cell fail."""
+    want = cell_words(text, coverage)
+    for i in range(start, len(cells)):
+        if want and norm(cells[i]) == want:
+            return i
+    return None
+
+
+def summary_problems(label: str, want: dict, got: dict | None) -> list[str]:
+    """The sheet's table against describe_summary for the same cell: the heading, the lead and the radar sentence; the partial
+    line and the held line; every row in the Product order with its label, its kind word and its unit; every season cell and
+    the five-season cell with its exact Python words and coverage line; the five-season sentence. Nothing here looks at a
+    class name or a position beyond the order of the cells."""
+    sm = summary_module()
+    if not got or not got.get("present"):
+        return [f"{label}: the sheet shows no five-season table (no table inside the sheet holds 2021-22 and Five seasons)"]
+    problems: list[str] = []
+    body = norm(got.get("body"))
+    table = want["table"]
+    # the heading's words, not its capitals: a heading the style shows in capitals reads the same words (AGENTS: sentence case
+    # is the convention for the words; the style is checked by the browser's own review, not here)
+    if norm(sm.WORDS_SUMMARY["table_title"]).lower() not in body.lower():
+        problems.append(f"{label}: the sheet lacks the table's heading {sm.WORDS_SUMMARY['table_title']!r}")
+    for what, text in (("the lead sentence", want["plain"]), ("the radar sentence", want["radar_sentence"])):
+        if norm(text) not in body:
+            problems.append(f"{label}: the sheet lacks {what} {norm(text)!r}")
+    partial = (table.get("partial") or {}).get("text")
+    if partial and norm(partial) not in body:
+        problems.append(f"{label}: the sheet lacks the partial line that starts {norm(partial)[:70]!r}")
+    if table.get("held") and norm(table["held"]) not in body:
+        problems.append(f"{label}: the sheet lacks the held line {norm(table['held'])!r}")
+    data_rows = (got.get("rows") or [])[1:]                  # row 0 is the column header
+    j = 0
+    for py in table["rows"]:
+        if py.get("town_only") or py["key"] == "held":
+            continue
+        name = norm(py["label"])
+        k = next((i for i in range(j, len(data_rows))
+                  if data_rows[i]["cells"] and data_rows[i]["cells"][0].startswith(name)), None)
+        if k is None:
+            problems.append(f"{label}: the table has no row labelled {py['label']!r}, in the Product order")
+            continue
+        row, j = data_rows[k], k + 1
+        if norm(py["kind"]) not in row["text"]:
+            problems.append(f"{label}: the row {py['label']!r} does not show its kind word {py['kind']!r}")
+        if not unit_shown(py["unit"], row["text"], sm.UNIT_SPEC):
+            problems.append(f"{label}: the row {py['label']!r} does not show its unit "
+                            f"({sm.UNIT_SPEC[py['unit']]['word']})")
+        cells, pos = row["cells"], 1
+        for i, text in enumerate(py["texts"]):
+            found = find_cell(cells, pos, text, py["coverage"][i])
+            if found is None:
+                problems.append(f"{label}: {py['label']!r}, {sm.FIVE[i]}: the sheet does not show exactly "
+                                f"{cell_words(text, py['coverage'][i])!r}")
+            else:
+                pos = found + 1
+        if find_cell(cells, pos, py["five_text"], py["five_coverage"]) is None:
+            problems.append(f"{label}: {py['label']!r}, Five seasons: the sheet does not show exactly "
+                            f"{cell_words(py['five_text'], py['five_coverage'])!r}")
+        if py.get("five_note") and norm(py["five_note"]) not in body:
+            problems.append(f"{label}: {py['label']!r}: the sheet lacks the five-season line {norm(py['five_note'])[:70]!r}")
+    return problems
+
+
+def first_screen_problems(label: str, got: dict | None) -> list[str]:
+    """The table starts inside the first screen of the sheet, below the address and live lines, its first row is in that
+    screen, and nothing runs sideways at this width (gate B5-11: the table within the first screen at 390 px)."""
+    if not got or not got.get("present"):
+        return []
+    vp, sheet, table = got["viewport"], got["sheet"], got["table"]
+    limit = min(sheet["bottom"], vp["h"])
+    problems: list[str] = []
+    if got.get("above_bottom") is not None and got["above_bottom"] > table["top"] + 1:
+        problems.append(f"{label}: a block above the table ends at {got['above_bottom']:.0f} px, below the table's top at "
+                        f"{table['top']:.0f} px; the address lines and the live line come first")
+    if not sheet["top"] - 1 <= table["top"] <= limit:
+        problems.append(f"{label}: the table starts at {table['top']:.0f} px, outside the first screen of the sheet "
+                        f"({sheet['top']:.0f} to {limit:.0f} px at {vp['w']} px wide)")
+    first = got.get("first_row")
+    if not first or first["top"] < sheet["top"] - 1 or first["bottom"] > limit:
+        where = "missing" if not first else f"{first['top']:.0f} to {first['bottom']:.0f} px"
+        problems.append(f"{label}: the table's first row is not inside the first screen ({where}; the screen ends at "
+                        f"{limit:.0f} px)")
+    if table["left"] < -0.5 or table["right"] > vp["w"] + 0.5 or vp["scrollW"] > vp["w"] + 0.5:
+        problems.append(f"{label}: the table or the page runs sideways at {vp['w']} px (the page is {vp['scrollW']} px wide)")
+    return problems
+
+
+def fetch_problems(label: str, sizes: dict, limit: int) -> list[str]:
+    """sizes: {path: gzip bytes}. Every file a tap fetches is under limit, the tile-file budget map.json carries (D30, D66, D75)."""
+    return [f"{label}: {path} is {size} bytes gzip, at or over the {limit}-byte limit for a file a tap fetches"
+            for path, size in sorted(sizes.items()) if size >= limit]
+
+
+def tap_problems(label: str, responses: list, limit: int | None) -> list[str]:
+    """The hail files one tap fetched, each counted once: the fetch list as a note, the unread files, the answers that are not
+    200, and the size rule against limit (None when the build wrote no budget; check_summary names that once)."""
+    files: dict[str, int | None] = {}
+    statuses: dict[str, int] = {}
+    for response in responses:
+        path = urlsplit(response.url).path
+        if path not in files:
+            statuses[path] = response.status
+            try:
+                files[path] = gzip_size(response.body())
+            except Exception:                                   # noqa: BLE001 - reported below
+                files[path] = None
+    measured = {path: size for path, size in files.items() if size is not None}
+    listed = ", ".join(f"{path.split('/hail/')[-1]} {size} B"
+                       + ("" if statuses[path] == 200 else f" (answered {statuses[path]})")
+                       for path, size in sorted(measured.items()))
+    problems = [f"{NOTE}fetch list {label}: {listed or 'no hail file'}"]
+    unread = sorted(path for path, size in files.items() if size is None)
+    if unread:
+        problems.append(f"{label}: {len(unread)} file(s) could not be read to measure them: {', '.join(unread[:3])}")
+    answered = sorted(path for path, status in statuses.items() if status != 200)
+    if answered:
+        problems.append(f"{label}: {', '.join(p.split('/hail/')[-1] for p in answered[:4])} did not answer 200 OK "
+                        f"(a file the sheet needs is missing or failed)")
+    return problems + (fetch_problems(label, measured, limit) if limit is not None else [])
+
+
+def summary_read(page) -> dict:
+    """The sheet's summary table as the page shows it, once the table is there (or the last reading, after SUMMARY_WAIT_S)."""
+    deadline = time.monotonic() + SUMMARY_WAIT_S
+    got = None
+    while time.monotonic() < deadline:
+        got = page.evaluate(SUMMARY_READ)
+        if got and got.get("present"):
+            return got
+        page.wait_for_timeout(200)
+    return got or {"present": False}
+
+
+def table_problems(label: str, want: dict | None, got: dict | None) -> list[str]:
+    """The sheet's table against the store's words when want is given (summary_problems). With no words (the store could not
+    be read, and check_summary names that), only the table's presence is checked here."""
+    if want is not None:
+        return summary_problems(label, want, got)
+    if not got or not got.get("present"):
+        return [f"{label}: the sheet shows no five-season table (no table inside the sheet holds 2021-22 and Five seasons)"]
+    return []
+
+
+def summary_spot(browser, base: str, data: dict, label: str, cell: tuple[int, int], want: dict | None, size_name: str,
+                 size: tuple[int, int], shots: Path | None, limit: int | None) -> list[str]:
+    """One spot at one size, twice: opened with ?at= (the link a reader gets), and by a tap on the map at the spot's centre,
+    from a page that has loaded and holds no sheet yet (so the tap's own files are the ones it lists). want is the store's
+    words for the cell, or None when the store could not be read; the table's position and the tap's files are checked
+    either way. limit is the tile-file budget (map.json), or None."""
+    hs = hail_store()
+    lat, lon = hs.cell_centre(*cell)
+    loading = data["hail"]["words"]["loading"]
+    slug = re.sub(r"[^a-z0-9]+", "-", f"{label} {size_name}".lower()).strip("-")
+    problems: list[str] = []
+
+    ctx = browser.new_context(viewport={"width": size[0], "height": size[1]})
+    page = ctx.new_page()
+    errors_first: list[str] = []                        # this context's errors only (F-15)
+    page.on("pageerror", lambda e: errors_first.append(f"script error: {e}"))
+    arrival: list = []
+    page.on("response", lambda r: arrival.append(r) if "/hail/" in r.url else None)
+    hail_open(page, base, hail_at((lat, lon)))
+    where = f"{label} at {size_name}, opened with ?at="
+    if not sheet_settled(page, loading):
+        problems.append(f"{where}: the hail sheet did not open")
+    got = summary_read(page)
+    problems += table_problems(where, want, got) + first_screen_problems(where, got)
+    snap(page, shots, f"summary-{slug}-open.png")
+    problems += tap_problems(where, arrival, limit)
+    problems += [f"{label} at {size_name}: {e}" for e in errors_first]
+    ctx.close()
+
+    tapped: list = []
+    errors_tapped: list[str] = []                       # the tapped context's errors, not the first context's again (F-15)
+    ctx, page = b3_open(browser, base, size[0], size[1], listen=lambda r: tapped.append(r))
+    page.on("pageerror", lambda e: errors_tapped.append(f"script error: {e}"))
+    start = len(tapped)
+    tap_centre(page, lat, lon)
+    where = f"{label} at {size_name}, tapped at its centre"
+    if not sheet_settled(page, loading):
+        problems.append(f"{where}: the tap did not open the hail sheet")
+    got = summary_read(page)
+    problems += table_problems(where, want, got) + first_screen_problems(where, got)
+    problems += tap_problems(where, [r for r in tapped[start:] if "/hail/" in r.url], limit)
+    problems += [f"{label} at {size_name}: {e}" for e in errors_tapped]
+    ctx.close()
+    return problems
+
+
+def check_summary(browser, base: str, root: Path, data: dict, store: Path, shots: Path | None,
+                  history: bool) -> list[str]:
+    """The five-season summary on the hail sheet (B5 part B2; brief Product and gates B5-11 and B5-12) at 390 and 1280 px, for
+    the Billings cell, Benchland's cell 792,1998 and the gate cell 797,1986 (summary_spots): the words of every cell, row and
+    line against describe_summary on the store given (--store, or the built site's hail/), the first-screen rule, and the
+    tile-file budget map.json carries for every file a tap fetches. A summary that did not load is a failure with --history and
+    a note without it. A store that cannot be read is a failure too (named once); the sheet is still opened at each spot, so the
+    table's position and the tap's files are checked (D75)."""
+    summary = (data["hail"].get("summary") or {})
+    if summary.get("state") != "loaded":
+        text = (f"the five-season summary is {summary.get('state', 'missing')} in this build: "
+                f"{summary.get('problem') or 'no reason given'}")
+        return [text] if history else [f"{NOTE}{text}; the sheet's summary words were not checked"]
+    hs = hail_store()
+    sm = summary_module()
+    now = map_now(data)
+    limit = map_budget(data, "tile_events_gzip_bytes")
+    problems: list[str] = []
+    if limit is None:
+        problems.append("the build's map.json has no tile-file budget (hail.budget.tile_events_gzip_bytes), so the sizes of "
+                        "the files a tap fetches are not checked")
+    spots = summary_spots(data)
+    want: dict | None = None
+    with tempfile.TemporaryDirectory(prefix="smoke-store-") as tmp:
+        try:
+            store_root = hs.load_store(store, tmp)
+        except hs.HailStoreError as exc:
+            problems.append(f"the store the smoke was given ({store}) cannot be read: {exc}. The sheet's words were not "
+                            f"compared; the table's position and the sizes of the files a tap fetches were still checked.")
+        else:
+            want = {label: sm.describe_summary(store_root, row, col, now) for label, (row, col) in spots}
+            for label, words in want.items():
+                if words["state"] not in ("loaded", "partial"):
+                    problems.append(f"{label}: the store's own words for this cell are {words['state']}: "
+                                    f"{words.get('problem')}")
+    for size_name, size in SUMMARY_SIZES:
+        for label, cell in spots:
+            problems += summary_spot(browser, base, data, label, cell, want[label] if want is not None else None,
+                                     size_name, size, shots, limit)
+    return problems
+
+
+def check_every_layer(browser, base: str, data: dict) -> list[str]:
+    """The phone view at zoom 15 over Billings with every layer of the menu on (gate B5-12, D30, D40, D42, D66): each layer is
+    ticked in turn, and the files the view fetches (shell, data, B3 files, B4 live files, B5 history files) must be under the
+    phone budget map.json carries (hail.budget.phone_gzip_bytes). The picture frames (map/frames/) are listed apart, as B3's
+    note lists them."""
+    problems: list[str] = []
+    titles = [layer["title"] for layer in data["layers"].values() if layer.get("title")]
+    lat, lon = B3_BILLINGS
+    seen: list = []
+    ctx, page = b3_open(browser, base, 390, 844, listen=lambda r: seen.append(r))   # every response, from the first request
+    b3_view(page, lat, lon, ADDRESS_GATE_ZOOM, settle_ms=2500)
+    missing = []
+    for title in titles:
+        try:
+            pick_layer(page, title)
+            page.wait_for_timeout(1500)
+        except Exception as e:                                  # noqa: BLE001 - reported below
+            missing.append(f"{title} ({str(e).splitlines()[0][:70]})")
+    if missing:
+        problems.append("the layer menu would not turn on every layer at 390 px: " + "; ".join(missing))
+    sizes: dict[str, tuple[str, int]] = {}
+    unread = 0
+    for response in seen:
+        if response.url in sizes:
+            continue
+        try:
+            sizes[response.url] = (layer_part(response.url), gzip_size(response.body()))
+        except Exception:                                       # noqa: BLE001 - reported below
+            unread += 1
+    ctx.close()
+    totals: dict[str, int] = {}
+    for part, size in sizes.values():
+        totals[part] = totals.get(part, 0) + size
+    scope = sum(size for part, size in totals.items() if part != "frames")
+    if unread:
+        problems.append(f"{unread} responses could not be read to measure them")
+    phone = map_budget(data, "phone_gzip_bytes")                # map.json's phone budget (D66, D75)
+    if phone is None:
+        problems.append("the build's map.json has no phone-view budget (hail.budget.phone_gzip_bytes), so the phone view "
+                        "with every layer on is not checked")
+    elif scope >= phone:
+        problems.append(f"the phone view at zoom {ADDRESS_GATE_ZOOM} over Billings with every layer on fetched {scope} bytes "
+                        f"gzip; the budget is {phone}")
+    parts = ", ".join(f"{part} {size}" for part, size in sorted(totals.items()))
+    problems.append(f"note: phone view at zoom {ADDRESS_GATE_ZOOM} over Billings with {len(titles)} layers on: {scope} bytes "
+                    f"gzip against the budget of {phone} ({parts}; {len(sizes)} files)")
+    return problems
+
+
+def layer_part(url: str) -> str:
+    """Which part of a phone view a response belongs to: the picture frames (listed apart), the B3 files, the B4 live swath
+    files (hail/live/), the B5 history files (the other hail/ files), or the shell and data."""
+    path = "/" + urlsplit(url).path.lstrip("/")
+    if "/map/frames/" in path:
+        return "frames"
+    if b3_kind(url) != "other":
+        return "B3 files"
+    if "/hail/live/" in path:
+        return "B4 live files"
+    if "/hail/" in path:
+        return "B5 history files"
+    return "shell and data"
+
+
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="Check the built Montana map in Chromium (AGENTS.md rule 8)")
     ap.add_argument("root", nargs="?", default="_site", type=Path, help="the built site (default: _site)")
     ap.add_argument("--shots", type=Path, metavar="DIR",
                     help="also save pictures for the record: the desktop and phone, both base maps")
     ap.add_argument("--addresses", action="store_true",
                     help="also check the address dots, streets and building outlines (a --hail-addresses build)")
-    a = ap.parse_args(argv)
-    problems = check(a.root, a.shots, addresses=a.addresses)
+    ap.add_argument("--store", type=Path, metavar="PATH",
+                    help="the store the sheet's summary words are read from (a folder that holds hail/, or a "
+                         "hail-store.tar.gz); default: the built site's own hail/ folder")
+    ap.add_argument("--history", action="store_true",
+                    help="the build passed --hail-history: its five-season summary must load and its sheet checks must "
+                         "run (without the flag, a missing summary is a note)")
+    return ap
+
+
+def main(argv=None) -> int:
+    a = build_parser().parse_args(argv)
+    problems = check(a.root, a.shots, addresses=a.addresses, store=a.store, history=a.history)
     notes = [p[len(NOTE):] for p in problems if p.startswith(NOTE)]
     failures = [p for p in problems if not p.startswith(NOTE)]
     for n in notes:
@@ -2971,6 +3427,8 @@ def main(argv=None) -> int:
     print("Map smoke test passed: page, frames, basemap, bubbles, play, layers, card and the Imagery base map all work, "
           "and on a --hail-history build the hail sheet does too (or, without the flag, no sheet is offered); "
           "on a --storm-layers build the hail swath layers, their freshness and their List do too; "
+          "on a --hail-history build the five-season summary on the sheet shows the store's own words at three cells, "
+          "inside the first screen, and each file a tap fetches is under the budget map.json carries; "
           "no request went to another site (the imagery tiles aside, after a switch to Imagery).")
     return 0
 

@@ -669,8 +669,10 @@ class UrlAndWordsTests(unittest.TestCase):
             self.assertNotIn("<", value)
 
     def test_no_forbidden_term_in_any_snow_word(self):
-        # D41 and D56: the one list in words_rules; its residue rule strips "This is not an all-clear." (the required end
-        # of every unavailable, partial and held line) before the forbidden check, and nothing else
+        # D41 and D56: the one list in words_rules. Its residue rule removes what D13 allows before the forbidden check,
+        # and nothing else: quoted wording (curly or straight quotation marks), the NWS damage threat tag label, the
+        # required "This is not an all-clear." (the end of every unavailable, partial and held line), the allowed "not
+        # the same as no hail", and the proper name "USA Structures" (words_rules.EXEMPT)
         for key, text in G.WORDS.items():
             if isinstance(text, str):
                 W.assert_clean(self, text, key)

@@ -195,11 +195,11 @@ WORDS_SUMMARY = {
     "in_plain": "{inches} in",
     "f_on": "{f} F on {date}",
     "f_plain": "{f} F",
-    "gust": "{kt} kt ({mph} mph) on {date}",
-    "gust_flagged": "{kt} kt ({mph} mph) on {date}, flagged for check",
+    "gust": "{kt} kt ({mph} mph) on {date} at {station}",            # D57: every strongest-gust season names its station
+    "gust_flagged": "{kt} kt ({mph} mph) on {date} at {station}, flagged for check",
+    "none_gust_at": "No day at 50 kt or more at {station}",
     "station_days_one": "1 day at {station}",
     "station_days": "{n} days at {station}",
-    "gust_five_at": "{text} at {station}",
     "snow_at": "{inches} in at {station}",
     "snow_depth_at": "{inches} in on {date} at {station}",
     "temp_at": "{f} F on {date} at {station}",
@@ -228,16 +228,68 @@ WORDS_SUMMARY = {
                         "day shows no value rather than a lower gust."),
     "gust_interim": ("Data unavailable: the gust record for {station} does not yet say how many of its days have a value, so "
                      "no gust count or maximum is shown; a missing value is not zero. This is not an all-clear."),
-    "gust_season_short": ("Data unavailable: {station} has {k} of {d} days with a gust value, so this season is not shown; a "
-                          "missing value is not zero. This is not an all-clear."),
+    "gust_season_short": ("Data unavailable for {season}: {station} has {k} of {d} days with a gust value, so this season is "
+                          "not shown; a missing value is not zero. This is not an all-clear."),
     # D32: a station whose record did not load is named as failed (never skipped for a farther one, never "no station")
-    "station_failed": ("Data unavailable for {season}: {names} could not be loaded in this update{reason}; that is not the "
-                       "same as no {element} reading. This is not an all-clear."),
+    "station_failed": ("Data unavailable for {season}: {names} {status}{reason}; that is not the same as no {element} "
+                       "reading. This is not an all-clear."),
+    # the verbs (D32, D62): a file that did not load, or a Canadian station that is not read (stations.py words the same two)
+    "station_status_failed": "could not be loaded in this update",
+    "station_status_not_read": "is not read in this build",
+    "station_status_not_read_many": "are not read in this build",
+    "station_status_both": "could not be loaded or read in this build",
     "gust_failed": ("Data unavailable: {names} could not be loaded in this update{reason}; that is not the same as no gust "
                     "record. This is not an all-clear."),
-    "station_short": ("Data unavailable: {station} has {k} of {d} days with a {element} value, so this season is not shown; "
-                      "a missing value is not zero. This is not an all-clear."),
+    "station_short": ("Data unavailable for {season}: {station} has {k} of {d} days with a {element} value, so this season is "
+                      "not shown; a missing value is not zero. This is not an all-clear."),
     "coverage": "{n} days missing",
+    "coverage_one": "1 day missing",
+    "all_clear": ALL_CLEAR,
+    "these_five": "these five years",
+    "county_note": "{county}: the whole county, not this spot alone.",
+    "partial_no_report": "no NWS local storm report of {word}",
+    "day_one": "{n} day",
+    "day_noun": "day",
+    "days_noun": "days",
+    "class_item": "{count} {word} ({span})",
+    "class_open": "{min} in or more",
+    "class_range": "{min} to {max} in",
+    "five_seasons": "the five seasons",
+    "gust_record_at": "gust record at {station}",
+    "list_last": "{head} and {last}",
+    "product_one": "{noun} product",
+    "product_many": "{noun} products",
+    "radar_problem": "the radar rows could not be built",
+    "reason_part": " ({reasons})",
+    "source_radar_history": "radar history",
+    "source_record_archive": "record archive",
+    "source_report_archive": "report archive",
+    "station_one": "station",
+    "station_many": "stations",
+    "station_part": "Station readings",
+    "station_part_lower": "station readings",
+    "stations_within": "the stations within {miles} miles",
+    "table_problem": "the summary table could not be built",
+    "temperature_part": "Temperature",
+    "temperature_part_lower": "temperature",
+    "unplaced_part": "{n} {products} in {season}",
+    "unread_more": "{names} and {n} more {stations}",
+    "when_span": "{first} to {last}",
+    "newest_unknown": "an unknown date",
+    "place_spot": "this spot",
+    "place_town": "the town",
+    # D69 (F6): a station the rule does not use, named nearer than the second pick, with its reason (the share to one decimal)
+    "station_rejected": ("{station}, {miles} miles from {place}, is not used: {pct} percent of the days 2020 to 2025 have a "
+                         "value for {element}; the rule needs at least {need} percent."),
+    "station_rejected_current": ("{station}, {miles} miles from {place}, is not used: its newest {element} value is from "
+                                 "{newest}, and the rule needs one within {days} days of {as_of}."),
+    "station_rejected_more": ("{n} more stations within 40 miles do not pass the same rule; they are farther than the stations "
+                              "named here."),
+    "station_rejected_more_one": ("1 more station within 40 miles does not pass the same rule; it is farther than the stations "
+                                  "named here."),
+    # F5 (D41): the ice-dam count over more than one station, with the seasons' stations named
+    "ice_five_split": ("Data unavailable for the five seasons: the seasons come from more than one station ({runs}), so no "
+                       "five-season count is shown. This is not an all-clear."),
     "cell_unavailable": "Data unavailable",
     "season_unavailable": ("Data unavailable for {season}: no day of this season is in the {source}. This is not an "
                            "all-clear."),
@@ -253,8 +305,6 @@ WORDS_SUMMARY = {
                     "is shown."),
     "record_failed_passed": ("{station}'s record for {season} could not be loaded in this update, so {chosen} is shown; that is "
                              "not the same as no {element} reading. This is not an all-clear."),
-    "station_season": ("Data unavailable for {season}: {station} has {k} of {d} days with a {element} value, so this "
-                       "season is not shown; a missing value is not zero. This is not an all-clear."),
     "station_none": "No station within 40 miles has enough reports for {element} from 2020 to 2025.",
     "station_rule_town": ("Stations: the two nearest that have enough days with the element, measured from the town point. A "
                           "station value shows only when 95 percent of its season's days have the element."),
@@ -262,8 +312,8 @@ WORDS_SUMMARY = {
                           "from this spot."),
     "station_named": "{station}, {miles} miles from this spot",
     "station_named_town": "{station}, {miles} miles from the town",
-    "gust_station": "Gust station: {station}, {miles} miles from this spot (the nearer of this tile's two gust stations).",
-    "gust_none": "No station within 40 miles has gust records for this tile.",
+    "gust_station": "Gust station: {station}, {miles} miles from this spot (the nearest gust station to this spot).",
+    "gust_none": "No station within 40 miles has gust records for this spot.",
     "window_radar": ("Radar history: {first} to {last}, 1,826 storm-report days (each from 12:00 to 12:00 UTC) ending {as_of}. "
                      "Days before {first} are not in it, so {season} shows them as missing."),
     "window_reports": ("Reports, warnings, zone products and gusts: {first} to {last} (the same 1,826 storm-report days). Days "
@@ -294,12 +344,13 @@ WORDS_SUMMARY = {
     "lead_temperature": "Grid estimate: highest {tmax}; lowest {tmin}, in these five seasons.",
     "lead_rain": ("Grid estimate: {precip} of precipitation in these five seasons, rain and melted snow together; the largest "
                   "one day {pmax}."),
-    "lead_snow": "Station reading: {snow} of snowfall in the five seasons; the deepest snow on the ground {depth}.",
+    "lead_snow": ("Station reading: {snow} of snowfall in the five seasons at {station}; the deepest snow on the ground was "
+                  "{depth}."),
     "lead_snow_split": ("Station reading: each season's snowfall is from the station named in it, and no five-season total is "
-                        "shown because more than one station supplies the seasons; the deepest snow on the ground {depth}. "
+                        "shown because more than one station supplies the seasons; the deepest snow on the ground was {depth}. "
                         "This is not an all-clear."),
     "lead_snow_none": ("Station reading: no five-season snowfall total is shown; each season names its station. The deepest "
-                       "snow on the ground {depth}. This is not an all-clear."),
+                       "snow on the ground was {depth}. This is not an all-clear."),
     "lead_flood": "{report}; {record}; Warning: {flood_w} {covered}, in these five years.",
     "lead_ice": "Zone product: {ice}; {report}.",
     "lead_heat": "Grid estimate: {hot} with a high of 90 F or more in these five seasons; {report}.",
@@ -335,6 +386,9 @@ WORDS_INDICATORS = {
                      "nothing happened; reports are not a complete record."),
     "what_warnings": ("A warning is the National Weather Service polygon that covered this cell or part of it at issue time. Its tags are "
                       "the forecast threat, not what fell."),
+    "what_warnings_town": ("A warning is the National Weather Service polygon that covered this spot, the town point, at issue "
+                           "time. A warning whose polygon reached only the grid cell is not counted here. Its tags are the "
+                           "forecast threat, not what fell."),
     "what_station": "A station reading is at a named airport or cooperative site, with its distance. It is not a reading at this address.",
     "what_grid": ("A grid estimate is a gridded analysis of station observations for a cell about 4.6 km across (NOAA "
                   "nClimGrid-Daily). It is not a reading at this address."),
@@ -356,11 +410,13 @@ WORDS_INDICATORS = {
         "days_high_90": ("Grid estimate: {count} with a high of 90 F or more in these five seasons (a site threshold, not an "
                          "NWS heat criterion)."),
         "temperature_extremes": "Grid estimate: highest {hi}; lowest {lo}, in these five seasons.",
-        "snowfall_season": "Station reading: {total} of snowfall in the five seasons (the station named in each season).",
+        "snowfall_season": "Station reading: {total} of snowfall in the five seasons at {station}.",
         "snow_depth": "Station reading: the deepest snow on the ground was {largest} in these five seasons.",
         # the roof record's measured pattern (roof-indicators M10), named as a count of weather, not of ice dams (D41)
         "ice_dam_weather_days": ("Station reading: {count} with 1 inch or more of snow on the ground and a low below 32 F in "
-                                 "these five seasons: a measured pattern, not a count of ice dams."),
+                                 "these five seasons at {station}: a measured pattern, not a count of ice dams."),
+        # the same line with no figure (D57): it leads with the kind word, then the label, then the reason
+        "ice_dam_unavailable": "Station reading: {label}. {why}",
         "freezing_rain_reports": "Report: {count} within 5 miles in these five years.",
         "ice_storm_warnings": "Zone product: {count} for the zone in these five years.",
         "winter_storm_warnings": "Zone product: {count} for the zone in these five years.",
@@ -610,7 +666,19 @@ def _join_names(names: list[str]) -> str:
     names = [n for n in names if n]
     if len(names) <= 1:
         return "".join(names)
-    return ", ".join(names[:-1]) + " and " + names[-1]
+    return WORDS_SUMMARY["list_last"].format(head=", ".join(names[:-1]), last=names[-1])
+
+
+def _unread_status(unread: list[dict]) -> str:
+    """The verb for the candidates that were not read (D32, D62), worded as stations.py words them: a file that did not load
+    could not be loaded, and a Canadian station (its reason is stations.CANADA_REASON) is not read by policy. Named together,
+    they could not be loaded or read."""
+    kinds = {u.get("reason") == stations.CANADA_REASON for u in unread}
+    if kinds == {False}:
+        return WORDS_SUMMARY["station_status_failed"]
+    if kinds == {True}:
+        return WORDS_SUMMARY["station_status_not_read"] if len(unread) == 1 else WORDS_SUMMARY["station_status_not_read_many"]
+    return WORDS_SUMMARY["station_status_both"]
 
 
 def _joins_unavailable(feed_key: str, reason, partial_periods=None) -> str:
@@ -619,9 +687,9 @@ def _joins_unavailable(feed_key: str, reason, partial_periods=None) -> str:
 
 
 TILE_LIST_DIR = "tl"                  # hail/tl/<tile>.json (D36): the station candidates of each tile (stations.py)
-TILE_LIST_FORMAT = "hail-stn-tiles-v1"
+TILE_LIST_FORMAT = stations.TILE_LIST_FORMAT   # one copy of the format string, in stations.py (F13)
 TOWNS_FILE_NAME = "towns.json"        # hail/j/towns.json (D38): each town's polygon products by the point test
-TOWNS_FORMAT = "hail-joins-towns-v1"
+TOWNS_FORMAT = joins.TOWNS_FORMAT              # one copy of the format string, in joins.py (F13)
 
 GAUGE_LABEL = "River gauge: "       # the label the page prints once before each river gauge line (D41)
 
@@ -721,7 +789,7 @@ def _fmt_f_on(tenths_f: int, date_: int | None) -> str:
 
 def _missing_text(n: int) -> str:
     """The coverage line for missing days: "1 day missing", "108 days missing"."""
-    return "1 day missing" if n == 1 else WORDS_SUMMARY["coverage"].format(n=n)
+    return WORDS_SUMMARY["coverage_one"] if n == 1 else WORDS_SUMMARY["coverage"].format(n=n)
 
 
 def _cover(missing: int, flag: str | None = None) -> str | None:
@@ -838,8 +906,8 @@ def _block(index: dict, name: str) -> dict:
 
 class _Spot:
     """One spot (a B1 cell) and the parts of the store its rows read. On a town page the station rule runs at the town
-    point and the gauge line is read; on the sheet the rule runs at the spot's 0.1 degree tile centre (the build ran the
-    same rule for every tile centre), and every distance is from the spot itself."""
+    point and the gauge line is read; on the sheet the rule runs at the spot's own cell centre (D36), and every distance is
+    from the spot itself. The tile lists answer every point of their tile (D61, D72)."""
 
     def __init__(self, root: Path, index: dict, row: int, col: int, town: dict | None):
         self.root = root
@@ -1009,19 +1077,18 @@ class _Spot:
         return min(days) if days else None
 
     def gust_station(self, tile: dict) -> tuple | None:
-        """(miles from the spot, station row, gust file) for the nearest station of the tile's list (B2's list: the two
-        nearest within 40 miles of the tile centre), or None when the list is empty. The gust file is None when it did
-        not load: the nearest station is still the one named, so the rows say it failed and the rule does not skip to the
-        farther station (D32)."""
-        best = None
-        for st in tile.get("stations", []):
-            miles = _miles(self.lat, self.lon, st["lat"], st["lon"])
-            if best is None or miles < best[0]:
-                best = (miles, st)
-        if best is None:
+        """(miles from the spot, station row, gust file) for the nearest gust station to the station point (D56): the town
+        point on a town page, the cell centre on the sheet. The candidates are the tile's station list at that point, and
+        the rule is joins.station_picks, the one the joined records use, so the station and its distance match the town
+        page's own station lines. None when no candidate lies within 40 miles of the point. The gust file is None when it
+        did not load: the nearest station is still the one named, so the rows say it failed and the rule does not skip to
+        a farther station (D32)."""
+        lat, lon = self.station_point
+        picks = joins.station_picks(tile, lat, lon)
+        if not picks:
             return None
-        miles, st = best
-        return miles, st, _read_json(self.root / "hail" / "s" / f"{st['id']}.json")
+        st = picks[0]
+        return st["miles"], st, _read_json(self.root / "hail" / "s" / f"{st['id']}.json")
 
     # --- the grid
     def climate_cell(self) -> tuple[str, object]:
@@ -1055,42 +1122,27 @@ class _Spot:
         return doc if isinstance(doc, dict) and doc.get("f") == TILE_LIST_FORMAT else None
 
     def chosen_from_tile_list(self, element: str):
-        """D36: the two nearest passing candidates of the tile's list to the station point (the cell centre on the sheet, the
-        town point on a town page), or None when the list does not hold the element or cannot answer (its cap is reached
-        and fewer than two lie within the radius of the point). An unread candidate nearer than the second pick is named as
-        failed, never skipped (D32)."""
+        """D36 and D63: the two nearest passing candidates of the tile's list to the station point (the cell centre on the
+        sheet, the town point on a town page). The rule is stations.tile_list_picks, the one rule the browser runs too; None
+        when the list does not hold the element or cannot answer. An unread candidate nearer than the second pick is named
+        as failed, never skipped (D32)."""
         doc = self.tile_list()
         block = (doc or {}).get("elements", {}).get(element) if doc else None
         if not block:
             return None
+        if "margin_miles" not in doc:
+            # a list from before D61 has no margin, so it may miss a station near a cell at the tile's edge (the 753,2230
+            # case): it cannot answer, and the station block's rule gives the picks instead of a false "none"
+            return None
         lat, lon = self.station_point
-        light = self.sb.get("stations") or {}
-        rows = []
-        for entry in block.get("passing", []):
-            miles = _miles(lat, lon, entry["lat"], entry["lon"])
-            if miles <= TOWN_RADIUS:
-                rows.append((miles, entry))
-        rows.sort(key=lambda r: (r[0], r[1]["id"]))
-        if block.get("capped") and len(rows) < 2:
-            return None                                 # the list is capped: the point's two nearest are not all in it
-        picks = rows[:2]
-        cut = picks[-1][0] if len(picks) == 2 else TOWN_RADIUS
-        unread = []
-        for entry in block.get("unread", []):
-            miles = _miles(lat, lon, entry["lat"], entry["lon"]) if entry.get("lat") is not None else None
-            if miles is None or miles <= cut:
-                unread.append({"id": entry["id"], "name": entry.get("name") or entry["id"],
-                               "miles": None if miles is None else round(miles, 1),
-                               "reason": entry.get("reason")})
-        out = []
-        for miles, entry in picks:
-            row = light.get(entry["id"]) or {}
-            out.append({"id": entry["id"], "name": entry.get("name") or row.get("name", entry["id"]),
-                        "net": row.get("net"), "miles": round(miles, 1)})
-        state = "two" if len(out) == 2 else "one" if out else ("unavailable" if unread else "none")
-        res = {"state": state, "chosen": [dict(c, ok=None, of=None, share=None) for c in out], "examined": [],
-               "need": None, "candidates": len(rows), "unread": unread, "incomplete": bool(unread), "source": "tile list"}
-        return state, out, res
+        got = stations.tile_list_picks(block, lat, lon, light=self.sb.get("stations") or {}, radius_miles=TOWN_RADIUS)
+        if got is None:
+            return None                                 # the list is capped and cannot answer this point (D61, D32)
+        out = got["picks"]
+        res = {"state": got["state"], "chosen": [dict(c, ok=None, of=None, share=None) for c in out], "examined": [],
+               "need": None, "candidates": got["candidates"], "unread": got["unread"], "incomplete": got["incomplete"],
+               "source": "tile list", "rejected": got["rejected"], "rejected_more": got["rejected_more"]}
+        return got["state"], out, res
 
     def chosen(self, element: str) -> tuple[str, list[dict], dict]:
         """(state, the chosen stations nearest first, the rule's result) for one element at the station point (D5, D18).
@@ -1106,6 +1158,8 @@ class _Spot:
         inventory = {sid: row.get("cover", {}) for sid, row in light.items()}
         cands = stations.ordered_candidates(base, inventory, element)
         res = stations.choose(cands, light, element, as_of)
+        rj = stations.rejected_rule(light, lat, lon, element, inventory=inventory, base=base)     # D69 (F6)
+        res = dict(res, rejected=rj["rejected"], rejected_more=rj["rejected_more"])
         out = []
         for c in res["chosen"]:
             row = light[c["id"]]
@@ -1143,9 +1197,10 @@ class _Spot:
             names = _join_names([str(u.get("name") or u["id"]) for u in unread])
             reasons = sorted({str(u["reason"]) for u in unread if u.get("reason")})
         else:
-            names, reasons = "the stations within 40 miles", []
-        reason = f" ({'; '.join(reasons)})" if reasons else ""
-        return {"kind": "failed", "text": WORDS_SUMMARY["station_failed"].format(season="{season}", names=names,
+            names, reasons = WORDS_SUMMARY["stations_within"].format(miles=f"{TOWN_RADIUS:g}"), []
+        reason = WORDS_SUMMARY["reason_part"].format(reasons="; ".join(reasons)) if reasons else ""
+        status = _unread_status(unread) if unread else WORDS_SUMMARY["station_status_failed"]
+        return {"kind": "failed", "text": WORDS_SUMMARY["station_failed"].format(season="{season}", names=names, status=status,
                                                                              reason=reason, element=name)}
 
     def _none_cell(self, label: str, none: dict) -> dict:
@@ -1189,11 +1244,12 @@ class _Spot:
             if failed:
                 names = _join_names([f["station"] for f in failed])
                 text = WORDS_SUMMARY["station_failed"].format(season=label, names=names, reason="",
+                                                              status=WORDS_SUMMARY["station_status_failed"],
                                                               element=stations.element_name(element))
                 return _cell(text=text, valid=0, missing=0)
             return self._none_cell(label, none)
         first = short[0]
-        text = WORDS_SUMMARY["station_short"].format(station=first["station"], k=first["ok"], d=first["n"],
+        text = WORDS_SUMMARY["station_short"].format(season=label, station=first["station"], k=first["ok"], d=first["n"],
                                                      element=stations.element_name(element))
         return _cell(value=None, text=text, valid=0, missing=first["n"] - first["ok"], station=first["station"],
                      miles=first["miles"], sid=first["sid"])
@@ -1268,7 +1324,7 @@ def _radar_rows(spot: _Spot, days: list[tuple[date, int]]) -> tuple[dict, dict]:
         total, store, valid = spot.season_cover(label, spot.missing)
         missing = total - valid
         if valid <= 0:
-            text = WORDS_SUMMARY["season_unavailable"].format(season=label, source="radar history")
+            text = WORDS_SUMMARY["season_unavailable"].format(season=label, source=WORDS_SUMMARY["source_radar_history"])
             cells_max.append(_unavailable_cell(WORDS_SUMMARY["cell_unavailable"]))
             cells_one.append(_unavailable_cell(WORDS_SUMMARY["cell_unavailable"]))
             season_notes.append(text)
@@ -1284,8 +1340,8 @@ def _radar_rows(spot: _Spot, days: list[tuple[date, int]]) -> tuple[dict, dict]:
             cells_max.append(_cell(value=None, text=WORDS_SUMMARY["none_radar"], valid=valid, missing=missing))
         n_one = sum(1 for t in vals.values() if t >= ONE_INCH_TENTHS)
         cells_one.append(_cell(value=n_one, text=_count_text("days", n_one), valid=valid, missing=missing))
-    five_max = _five(cells_max, "max", None, "radar history", WORDS_SUMMARY["none_radar"])
-    five_one = _five(cells_one, "sum", lambda v: _count_text("days", v), "radar history", "")
+    five_max = _five(cells_max, "max", None, WORDS_SUMMARY["source_radar_history"], WORDS_SUMMARY["none_radar"])
+    five_one = _five(cells_one, "sum", lambda v: _count_text("days", v), WORDS_SUMMARY["source_radar_history"], "")
     class_note = _class_note(by_season)
     notes = season_notes + [WORDS_SUMMARY["window_radar"].format(first=_fmt_date(spot.first), last=_fmt_date(spot.last),
                                                   as_of=_fmt_date(spot.as_of), season=FIVE[0])]
@@ -1307,10 +1363,10 @@ def _class_note(by_season: dict) -> str | None:
         if not n:
             continue
         if cls["max_in"] is None:
-            span = f"{cls['min_in']:.2f} in or more"
+            span = WORDS_SUMMARY["class_open"].format(min=f"{cls['min_in']:.2f}")
         else:
-            span = f"{cls['min_in']:.2f} to {cls['max_in']:.2f} in"
-        items.append(f"{_count_text('days', n)} {cls['word']} ({span})")
+            span = WORDS_SUMMARY["class_range"].format(min=f"{cls['min_in']:.2f}", max=f"{cls['max_in']:.2f}")
+        items.append(WORDS_SUMMARY["class_item"].format(count=_count_text("days", n), word=cls["word"], span=span))
     if not items:
         return None
     return WORDS_SUMMARY["class_counts"].format(items="; ".join(items))
@@ -1331,13 +1387,13 @@ def _lsr_cells(spot: _Spot, lsr: list[dict]) -> dict:
         missing = total - valid
         for key, pick in picks.items():
             if valid <= 0:
-                out[key].append(_unavailable_cell(WORDS_SUMMARY["season_unavailable"].format(season=label, source="report archive")))
+                out[key].append(_unavailable_cell(WORDS_SUMMARY["season_unavailable"].format(season=label, source=WORDS_SUMMARY["source_report_archive"])))
                 continue
             members = [r for r in lsr if pick(r) and stations.season_of(r["day"]) == label and spot.in_window(r["day"])]
             out[key].append(_cell(value=len(members), text=_count_text(key, len(members), label), valid=valid,
                                   missing=missing))
         if valid <= 0:
-            out["hail_max"].append(_unavailable_cell(WORDS_SUMMARY["season_unavailable"].format(season=label, source="report archive")))
+            out["hail_max"].append(_unavailable_cell(WORDS_SUMMARY["season_unavailable"].format(season=label, source=WORDS_SUMMARY["source_report_archive"])))
             continue
         best = None
         for r in lsr:
@@ -1362,7 +1418,7 @@ def _count_cells(spot: _Spot, days: list[date], key: str) -> list[dict]:
     for label in FIVE:
         total, store, valid = spot.season_cover(label)
         if valid <= 0:
-            cells.append(_unavailable_cell(WORDS_SUMMARY["season_unavailable"].format(season=label, source="record archive")))
+            cells.append(_unavailable_cell(WORDS_SUMMARY["season_unavailable"].format(season=label, source=WORDS_SUMMARY["source_record_archive"])))
             continue
         n = sum(1 for d in days if stations.season_of(d) == label and spot.in_window(d))
         cells.append(_cell(value=n, text=_count_text(key, n, label), valid=valid, missing=total - valid))
@@ -1420,13 +1476,13 @@ def _gust_rows(spot: _Spot, tile: dict) -> tuple[dict, dict]:
         n_days = int(per.get("n") or 0)
         ok = int(per.get("ok") or 0)
         if n_days <= 0:
-            text = WORDS_SUMMARY["season_unavailable"].format(season=label, source="gust record")
+            text = WORDS_SUMMARY["season_unavailable"].format(season=label, source=WORDS_SUMMARY["gust_record_at"].format(station=name))   # D57
             cells_days.append(_cell(text=text, unknown=True, station=name, miles=miles_text, sid=st["id"]))
             cells_max.append(_cell(text=text, unknown=True, station=name, miles=miles_text, sid=st["id"]))
             continue
         missing = max(0, n_days - ok)
         if ok * 100 < n_days * share:
-            text = WORDS_SUMMARY["gust_season_short"].format(station=name, k=ok, d=n_days)
+            text = WORDS_SUMMARY["gust_season_short"].format(season=label, station=name, k=ok, d=n_days)
             cells_days.append(_cell(text=text, valid=ok, missing=missing, unknown=True, station=name, miles=miles_text,
                                     sid=st["id"]))
             cells_max.append(_cell(text=text, valid=ok, missing=missing, unknown=True, station=name, miles=miles_text,
@@ -1444,19 +1500,17 @@ def _gust_rows(spot: _Spot, tile: dict) -> tuple[dict, dict]:
         if members:
             day, mph, kt, flag = max(members, key=lambda m: (m[2], -m[0].toordinal()))
             wording = WORDS_SUMMARY["gust_flagged" if flag else "gust"]
-            cells_max.append(_cell(value=kt, text=wording.format(kt=kt, mph=mph, date=_fmt_date(day)),
+            # D57: every strongest-gust season names its station; a flag's words still close the cell (D12)
+            cells_max.append(_cell(value=kt, text=wording.format(kt=kt, mph=mph, date=_fmt_date(day), station=name),
                                    date_=_yyyymmdd(day), valid=ok, missing=missing, station=name, miles=miles_text,
                                    sid=st["id"]))
         else:
-            cells_max.append(_cell(value=None, text=WORDS_SUMMARY["none_gust"], valid=ok, missing=missing, station=name,
-                                   miles=miles_text, sid=st["id"]))
-    # the five-season gust figures name their station too (B5-16, D41): one station gives every season of the record
+            cells_max.append(_cell(value=None, text=WORDS_SUMMARY["none_gust_at"].format(station=name), valid=ok,
+                                   missing=missing, station=name, miles=miles_text, sid=st["id"]))
+    # the five-season gust figures name their station too (B5-16, D41): one station gives every season of the record, and
+    # the strongest season's own text carries the station (D57)
     five_days = _five(cells_days, "sum", lambda v: _days_at(v, name), "gust record", "")
     five_max = _five(cells_max, "max", None, "gust record", WORDS_SUMMARY["none_gust"])
-    if five_max["value"] is not None:
-        # the station goes before a flag's words, so the flag still closes the cell (D12)
-        head, flagged, tail = five_max["text"].partition(", flagged for check")
-        five_max = dict(five_max, text=WORDS_SUMMARY["gust_five_at"].format(text=head, station=name) + flagged + tail)
     return (_row(_spec("gust_days"), cells_days, five_days, [note, WORDS_SUMMARY["gust_coverage_note"]]),
             _row(_spec("gust_max"), cells_max, five_max, [note, WORDS_SUMMARY["gust_floor_note"]]))
 
@@ -1527,6 +1581,10 @@ def _climate_part(spot: _Spot) -> dict:
 
 # ---------------------------------------------------------------- the stations (B5 sd/)
 
+# the integer constants of the station conversions below (stations.mm_to_hundredths_in and stations.tenths_c_to_tenths_f give
+# the same numbers; a test checks them): the browser reads them as summary.conv (its station records, D36)
+STATION_UNIT_CONV = {"mm_scale": 1000, "c_to_f": {"mul": 9, "offset": 1600, "round": 2, "div": 5}}
+
 STATION_CONV = {
     "SNOW": lambda rec: (stations.mm_to_hundredths_in(rec["sum"]) if "sum" in rec else None, None),
     "SNWD": lambda rec: (stations.mm_to_hundredths_in(rec["max"]) if "max" in rec else None, rec.get("max_d")),
@@ -1567,6 +1625,40 @@ def _station_runs(cells: list[dict]) -> str:
     return ", ".join(parts)
 
 
+def _share_text(share: float) -> str:
+    """A station's share of the days 2020 to 2025 as a percent with one decimal (D5). A share under the rule never reads as
+    the rule's own figure: 79.96 percent shows 79.9, not 80.0."""
+    pct = round(share * 100, 1)
+    need = round(stations.COVER_MIN * 100, 1)
+    if share < stations.COVER_MIN and pct >= need:
+        pct = round(need - 0.1, 1)
+    return f"{pct:.1f}"
+
+
+def _rejected_notes(spot: _Spot, res: dict, element: str) -> list[str]:
+    """D69 (F6): the stations that fail the rule and lie nearer than the second pick are named, with the reason they are not
+    used (their share of the days, or the date of their newest value); the farther ones are counted in one clause. The
+    distance is from the station point, as the chosen stations' lines give it."""
+    place = WORDS_SUMMARY["place_town" if spot.town else "place_spot"]
+    name = stations.element_name(element)
+    need = f"{stations.COVER_MIN * 100:.0f}"
+    out = []
+    for r in res.get("rejected") or []:
+        miles = f"{r['miles']:.1f}"
+        if r["share"] < stations.COVER_MIN:
+            out.append(WORDS_SUMMARY["station_rejected"].format(station=r["name"], miles=miles, place=place,
+                                                                pct=_share_text(r["share"]), element=name, need=need))
+        else:
+            newest = _fmt_date(_from_yyyymmdd(r["newest"])) if r.get("newest") else WORDS_SUMMARY["newest_unknown"]
+            out.append(WORDS_SUMMARY["station_rejected_current"].format(
+                station=r["name"], miles=miles, place=place, element=name, newest=newest, days=stations.FRESH_DAYS,
+                as_of=_fmt_date(spot.as_of)))
+    more = int(res.get("rejected_more") or 0)
+    if more:
+        out.append(WORDS_SUMMARY["station_rejected_more_one" if more == 1 else "station_rejected_more"].format(n=more))
+    return out
+
+
 def _station_row(spot: _Spot, key: str, element: str, combine: str) -> dict:
     """A station row: each season from the first chosen station that passes the season share (D5), named in its text. A
     total (snowfall) is shown only when one station supplies all five seasons, and names it (D41, B5-16): with more than
@@ -1581,7 +1673,7 @@ def _station_row(spot: _Spot, key: str, element: str, combine: str) -> dict:
             cell["text"] = _station_text(element, cell["value"], cell["date"], cell["station"])
         cells.append(cell)
     plain = (lambda v: WORDS_SUMMARY["in_plain"].format(inches=stations.fmt_in(v))) if combine == "sum" else None
-    none_five = none["text"].format(season="the five seasons") if none["kind"] == "failed" else none["text"]
+    none_five = none["text"].format(season=WORDS_SUMMARY["five_seasons"]) if none["kind"] == "failed" else none["text"]
     five = _five(cells, combine, plain, "station record", none_five)
     names: list[str] = []
     for c in cells:
@@ -1604,7 +1696,8 @@ def _station_row(spot: _Spot, key: str, element: str, combine: str) -> dict:
         # the one-station line is partial, so it ends with the all-clear sentence (D41, D47); the none line does not
         notes.extend(_clear(w) if res.get("state") == "one" else w for w in stations.station_words(res, element))
     else:
-        notes.append(none["text"].format(season="the five seasons") if none["kind"] == "failed" else none["text"])
+        notes.append(none["text"].format(season=WORDS_SUMMARY["five_seasons"]) if none["kind"] == "failed" else none["text"])
+    notes.extend(_rejected_notes(spot, res, element))                 # D69 (F6): the stations the rule does not use
     for label, cell in zip(FIVE, cells):
         for po in cell.get("passed_over") or []:
             pct = f"{po['ok'] * 100 / po['n']:.1f}" if po["n"] else "0.0"
@@ -1622,7 +1715,7 @@ def _station_part(spot: _Spot) -> dict:
     """The station rows: snowfall and the deepest snow everywhere; the two temperature rows on a town page."""
     keys = ["snow", "snow_depth"] + (["tmax_station", "tmin_station"] if spot.town else [])
     if not spot.sb or spot.sb.get("state") == "unavailable" or not spot.sb.get("stations"):
-        sentence = WORDS_SUMMARY["unavailable_part"].format(part="Station readings", part_lower="station readings")
+        sentence = WORDS_SUMMARY["unavailable_part"].format(part=WORDS_SUMMARY["station_part"], part_lower=WORDS_SUMMARY["station_part_lower"])
         return {key: _unavailable_row(_spec(key), sentence) for key in keys}
     out = {"snow": _station_row(spot, "snow", "SNOW", "sum"),
            "snow_depth": _station_row(spot, "snow_depth", "SNWD", "max")}
@@ -1636,7 +1729,7 @@ def _dl_cells(spot: _Spot):
     """Days with 1 inch or more of snow on the ground and a low below 32 F, per season: the pair count of the station
     that passes the snow-depth share for that season (D5). None when no station passes."""
     if not spot.sb or spot.sb.get("state") == "unavailable" or not spot.sb.get("stations"):
-        return WORDS_SUMMARY["unavailable_part"].format(part="Station readings", part_lower="station readings")
+        return WORDS_SUMMARY["unavailable_part"].format(part=WORDS_SUMMARY["station_part"], part_lower=WORDS_SUMMARY["station_part_lower"])
     state, chosen, res = spot.chosen("SNWD")
     none = spot.station_none("SNWD", state, res)
     if not chosen:
@@ -1655,7 +1748,8 @@ def _dl_cells(spot: _Spot):
             cells.append(_unavailable_cell(WORDS_SUMMARY["cell_unavailable"]))
             continue
         n = int(pair["n"])
-        cells.append(_cell(value=n, text=_count_text("days", n), valid=cell["valid"], missing=cell["missing"],
+        text = WORDS_SUMMARY["station_days_one" if n == 1 else "station_days"].format(n=n, station=cell["station"])
+        cells.append(_cell(value=n, text=text, valid=cell["valid"], missing=cell["missing"],
                            station=cell["station"], miles=cell["miles"], sid=cell["sid"]))
     return cells
 
@@ -1679,7 +1773,7 @@ def _partial_five(cells: list[dict], key: str) -> dict | None:
 def _extra_five(cells: list[dict], key: str) -> dict:
     """The five-season figure of a roof count from season cells: the total, or, for a zone-coded count with some seasons
     unknown, the total of the seasons shown, with those left out named."""
-    five = _five(cells, "sum", None, "record archive", "")
+    five = _five(cells, "sum", None, WORDS_SUMMARY["source_record_archive"], "")
     if five["value"] is None and key in ZONE_EXTRA and any(c["value"] is not None for c in cells):
         five = _partial_five(cells, ZONE_EXTRA[key]) or five
     return five
@@ -1705,14 +1799,14 @@ def _family_noun(key: str) -> str:
 
 
 def _product_words(noun: str, n: int) -> str:
-    return f"{noun} product" if n == 1 else f"{noun} products"
+    return WORDS_SUMMARY["product_one" if n == 1 else "product_many"].format(noun=noun)
 
 
 def _when(rec: dict) -> str:
     """"Jul 18, 2022" for one day, "Jul 18, 2022 to Sep 7, 2022" for a span of days."""
     if rec["first"] == rec["last"]:
         return _fmt_date(rec["first"])
-    return f"{_fmt_date(rec['first'])} to {_fmt_date(rec['last'])}"
+    return WORDS_SUMMARY["when_span"].format(first=_fmt_date(rec["first"]), last=_fmt_date(rec["last"]))
 
 
 def _zone_flag(spot: _Spot, family: str | None, label: str) -> str | None:
@@ -1755,10 +1849,11 @@ def _unplaced_note(spot: _Spot, families: tuple) -> str | None:
         for label in FIVE:
             rec = unp.get((fam, label))
             if rec:
-                parts.append(f"{rec['n']:,} {_product_words(_family_noun(fam), rec['n'])} in {label}")
+                parts.append(WORDS_SUMMARY["unplaced_part"].format(n=f"{rec['n']:,}", season=label,
+                                                                   products=_product_words(_family_noun(fam), rec["n"])))
     if not parts:
         return None
-    listed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+    listed = _join_names(parts)
     return WORDS_SUMMARY["zone_unplaced_note"].format(parts=listed)
 
 
@@ -1848,7 +1943,7 @@ def _county_rows(spot: _Spot, tile: dict | None) -> dict:
     five = _five(cells, "sum", lambda v: _count_text("county_watch", v), "county archive", "")
     county = (block.get("names") or {}).get(code, code)
     return {"county_watch": _row(_spec("county_watch"), cells, five,
-                                 [f"{county.replace(' County', '')} County: the whole county, not this spot alone."])}
+                                 [WORDS_SUMMARY["county_note"].format(county=county if county.endswith(" County") else f"{county} County")])}
 
 
 def _held_row() -> dict:
@@ -1928,8 +2023,8 @@ def _partial_grid(climate_rec, through: str) -> str:
         season=PARTIAL, n_days=row["valid"], through=_fmt_date(date.fromisoformat(through)),
         high=row["tmax"]["value"], high_date=row["tmax"]["date"], low=row["tmin"]["value"],
         low_date=row["tmin"]["date"], hot=row["hot90"]["value"],
-        hot_days="day" if row["hot90"]["value"] == 1 else "days",
-        frost=row["below32"]["value"], frost_days="day" if row["below32"]["value"] == 1 else "days",
+        hot_days=WORDS_SUMMARY["day_noun" if row["hot90"]["value"] == 1 else "days_noun"],
+        frost=row["below32"]["value"], frost_days=WORDS_SUMMARY["day_noun" if row["below32"]["value"] == 1 else "days_noun"],
         total=row["rain"]["value"], rain_max=row["rain_max"]["value"], rain_max_date=row["rain_max"]["date"])
     if row["missing"]:
         text += " " + WORDS_SUMMARY["partial_missing"].format(n=row["missing"]) + "."
@@ -1962,10 +2057,10 @@ def _partial(spot: _Spot, climate_rec, through, lsr, radar_days) -> str:
             if n:
                 items.append(f"{n} {word} {'report' if n == 1 else 'reports'}{extra}")
             else:
-                items.append(f"no NWS local storm report of {word}")
+                items.append(WORDS_SUMMARY["partial_no_report"].format(word=word))
         parts.append(WORDS_SUMMARY["partial_counts"].format(
             season=PARTIAL, items="; ".join(items),
-            r1=one, r1_word="day" if one == 1 else "days"))
+            r1=one, r1_word=WORDS_SUMMARY["day_noun" if one == 1 else "days_noun"]))
     return " ".join(parts) if parts else WORDS_SUMMARY["partial_none"].format(season=PARTIAL)
 
 
@@ -2097,31 +2192,49 @@ def _roof(spot: _Spot, rows: dict, extra: dict, dl_cells) -> dict:
         lines["temperature_extremes"] = _line("temperature_extremes", "Highest high and lowest low (F, with date)",
                                               "Grid estimate", "F", None, None, why)
     ns, ts, cs = rv("snow")
+    # D57: a five-season total exists only when one station gives every season, so the first station named is the one
+    snow_station = next((s for s in (rows.get("snow") or {}).get("stations") or [] if s), None)
     lines["snowfall_season"] = _line(
         "snowfall_season", "Snowfall, July to June (inches, station reading)", "Station reading", "in", ns,
-        L["snowfall_season"].format(total=WORDS_SUMMARY["in_plain"].format(inches=stations.fmt_in(ns)))
-        if ns is not None else None, _row_why(rows.get("snow")) or ts, cs)
+        L["snowfall_season"].format(total=WORDS_SUMMARY["in_plain"].format(inches=stations.fmt_in(ns)), station=snow_station)
+        if ns is not None and snow_station else None, _row_why(rows.get("snow")) or ts, cs)
     nd, td, cd = rv("snow_depth")
     lines["snow_depth"] = _line(
         "snow_depth", "Deepest snow on the ground (inches, station reading)", "Station reading", "in", nd,
         L["snow_depth"].format(largest=td) if nd is not None else None, _row_why(rows.get("snow_depth")) or td, cd)
-    # the kind word sits in the label, so the line carries it in every state, the unavailable ones too (D41)
-    dl_label = ("Days with 1 inch or more on the ground and a low below 32 F (days, station reading; a measured pattern, "
-                "not ice dams)")
+    # the kind word leads the line in every state, the unavailable ones too (D41, D57): "Station reading:" comes first
+    dl_label = ("Days with 1 inch or more on the ground and a low below 32 F (days; a measured pattern, not ice dams)")
+
+    def ice_line(why, coverage=None):
+        """The ice-dam line with no figure: "Station reading: {label}. {reason}", the reason ending with the all-clear."""
+        line = _line("ice_dam_weather_days", dl_label, "Station reading", "days", None, None, why, coverage)
+        line["text"] = _clear(L["ice_dam_unavailable"].format(
+            label=dl_label, why=why or WORDS_SUMMARY["cell_unavailable"]))
+        return line
+
+    station_part = WORDS_SUMMARY["unavailable_part"].format(part=WORDS_SUMMARY["station_part"], part_lower=WORDS_SUMMARY["station_part_lower"])
     if isinstance(dl_cells, str):                         # the stations did not load: the D20 sentence
-        lines["ice_dam_weather_days"] = _line("ice_dam_weather_days", dl_label, "Station reading", "days", None, None, dl_cells)
+        lines["ice_dam_weather_days"] = ice_line(dl_cells)
     elif isinstance(dl_cells, dict):                      # no station gives a figure (D32): its words, for the five seasons
-        why = dl_cells["text"].format(season="the five seasons") if dl_cells["kind"] == "failed" else dl_cells["text"]
-        lines["ice_dam_weather_days"] = _line("ice_dam_weather_days", dl_label, "Station reading", "days", None, None, why)
+        why = dl_cells["text"].format(season=WORDS_SUMMARY["five_seasons"]) if dl_cells["kind"] == "failed" else dl_cells["text"]
+        lines["ice_dam_weather_days"] = ice_line(why)
     elif dl_cells is not None:
+        # D71 (F5): the five-season count names its one station when one gives every season (D41); more than one station
+        # would mix sources, so the cell reads Data unavailable and names the stations of the seasons
+        names = list(dict.fromkeys(c["station"] for c in dl_cells if c.get("station")))
         dl = _five(dl_cells, "sum", None, "station record", "")
-        lines["ice_dam_weather_days"] = _line(
-            "ice_dam_weather_days", dl_label, "Station reading", "days",
-            dl["value"], L["ice_dam_weather_days"].format(count=_count_text("days", dl["value"])) if dl["value"] is not None
-            else None, dl.get("note"), dl.get("coverage"))
-    else:
-        lines["ice_dam_weather_days"] = _line("ice_dam_weather_days", dl_label, "Station reading", "days", None, None,
-                                              WORDS_SUMMARY["station_none"].format(element="snow depth"))
+        if dl["value"] is not None and len(names) != 1:
+            note = WORDS_SUMMARY["ice_five_split"].format(runs=_station_runs(dl_cells)) if names else station_part
+            dl = {"value": None, "date": None, "text": None, "coverage": dl.get("coverage"), "note": note}
+        if dl["value"] is not None:
+            lines["ice_dam_weather_days"] = _line(
+                "ice_dam_weather_days", dl_label, "Station reading", "days", dl["value"],
+                L["ice_dam_weather_days"].format(count=_count_text("days", dl["value"]), station=names[0]),
+                dl.get("note"), dl.get("coverage"))
+        else:
+            lines["ice_dam_weather_days"] = ice_line(dl.get("note"), dl.get("coverage"))
+    else:                                                 # the count did not build (F1): the D20 sentence, no no-station claim
+        lines["ice_dam_weather_days"] = ice_line(station_part)
     lines["freezing_rain_reports"] = counted("freezing_rain_reports", "Freezing rain reports within 5 miles (count)", "Report",
                                              "count", "freezing_rain_n", "freezing_rain_n", L["freezing_rain_reports"])
     lines["ice_storm_warnings"] = from_cells("ice_storm_warnings", "Ice storm warnings for the zone (count)", "Zone product",
@@ -2342,10 +2455,11 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
         wind_lead = W["lead_wind"].format(gust=count_text("days", "gust_days"), station=station_name,
                                           report=report("wind_n", "wind_n", "wind_n"))
     snow_row = rows.get("snow") or {}
-    snow_names = {s for s in (snow_row.get("stations") or []) if s}
-    if snow_row.get("five") is not None:
+    snow_names = list(dict.fromkeys(s for s in (snow_row.get("stations") or []) if s))     # the stations, in season order
+    if snow_row.get("five") is not None and len(snow_names) == 1:
+        # D57 and B5-16: the five-season total names its one station, as the row's own text does (F3)
         snow_text = W["lead_snow"].format(snow=W["in_plain"].format(inches=stations.fmt_in(snow_row["five"])),
-                                          depth=five_text("snow_depth"))
+                                          station=snow_names[0], depth=five_text("snow_depth"))
     elif len(snow_names) > 1:
         snow_text = W["lead_snow_split"].format(depth=five_text("snow_depth"))
     else:
@@ -2374,7 +2488,7 @@ def _sections(rows: dict, roof: dict, extra: dict, gauge_lines, gust=None, secti
         "heat": finish(W["lead_heat"].format(hot=count_text("days", "hot90"),
                                              report=report("extreme_heat", "xheat")),
                        ("hot90", "extreme_heat")),
-        "roof": W["lead_roof"],
+        "roof": (roof or {}).get("unavailable") or W["lead_roof"],
         "made": W["lead_made"],
     }
     kinds = {"hail": "Radar estimate", "wind": "Station reading", "storms": "Zone product",
@@ -2403,7 +2517,7 @@ def _how_made() -> list[str]:
         "Records: NOAA Storm Events (NCEI) point and zone rows. The use terms of this copy were not read in this build, so they are not quoted.",
         "Gusts: IEM daily summaries of the airport stations. Gusts of 130 kt or more are dropped and counted as implausible; two readings are flagged for check, and the flag shows with them.",
         "Stations: NOAA GHCN-Daily from NCEI, public domain in the United States under NCEI-PD-10-2-02, section 4(a). CoCoRaHS records are released under CC BY 3.0 and ask for acknowledgement. A station value shows only when 95 percent of its season's days have the element; a missing day is never zero.",
-        "Station rule: the candidates within 40 miles; a station is current for an element when it reported that element within 30 days of the newest date; at least 80 percent of the days 2020 to 2025 have an unflagged value; the two nearest that pass.",
+        "Station rule: the candidates are stations in Montana and the neighbouring states within 40 miles; Canadian stations within 40 miles are named as not read and never count as passing. A station is current for an element when it reported that element within 30 days of the newest date; at least 80 percent of the days 2020 to 2025 have an unflagged value; the two nearest that pass.",
         "Gauges: NWS flood stages (National Water Prediction Service) and USGS annual peaks. Observations courtesy of U.S. Geological Survey. The nearest gauge with a flood stage within 10 miles; it does not say water reached this address.",
         "Counties: US Census Bureau TIGER/Line 2026 county boundaries. “The TIGER/Line shapefile products are not copyrighted; however, TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source.”",
         _size_legend(),
@@ -2498,7 +2612,7 @@ def describe_summary(store, row: int, col: int, now, town=None) -> dict:
             return _result("outside", "the spot is outside Montana", place, index, _empty_table(), None, [], None, None)
         radar = guard("radar", lambda: _radar_rows(spot, days))
         if radar is None:
-            rows.update({k: _unavailable_row(_spec(k), _clear(hail.WORDS["unavailable"].format(problem="the radar rows could not be built")))
+            rows.update({k: _unavailable_row(_spec(k), _clear(hail.WORDS["unavailable"].format(problem=WORDS_SUMMARY["radar_problem"])))
                          for k in ("radar_max", "radar_1in")})
         else:
             rows["radar_max"], rows["radar_1in"] = radar
@@ -2536,12 +2650,12 @@ def describe_summary(store, row: int, col: int, now, town=None) -> dict:
                 {"county_watch": _unavailable_row(_spec("county_watch"), joins.WORDS_JOINS["county_unavailable"])})
     climate_rows = guard("grid", lambda: _climate_part(spot))
     if climate_rows is None:
-        climate_rows = {k: _unavailable_row(_spec(k), climate.WORDS_CLIMATE["unavailable"].format(part="Temperature", part_lower="temperature"))
+        climate_rows = {k: _unavailable_row(_spec(k), climate.WORDS_CLIMATE["unavailable"].format(part=WORDS_SUMMARY["temperature_part"], part_lower=WORDS_SUMMARY["temperature_part_lower"]))
                         for k in CLIMATE_KEYS}
     rows.update(climate_rows)
     station_rows = guard("stations", lambda: _station_part(spot))
     if station_rows is None:
-        station_rows = {k: _unavailable_row(_spec(k), WORDS_SUMMARY["unavailable_part"].format(part="Station readings", part_lower="station readings"))
+        station_rows = {k: _unavailable_row(_spec(k), WORDS_SUMMARY["unavailable_part"].format(part=WORDS_SUMMARY["station_part"], part_lower=WORDS_SUMMARY["station_part_lower"]))
                         for k in ("snow", "snow_depth")}
     rows.update(station_rows)
     rows["held"] = _held_row()
@@ -2561,10 +2675,13 @@ def describe_summary(store, row: int, col: int, now, town=None) -> dict:
             "reports", reports_state[1] if reports_state[0] == "unavailable" else joins.WORDS_JOINS["reason_events"])
     extra = guard("roof counts", lambda: _extra(spot, events, tile, lsr_all)) or {}
     dl = guard("ice dam days", lambda: _dl_cells(spot))
+    if dl is None:                                        # the count did not build (F1): the D20 sentence, not a no-station claim
+        dl = WORDS_SUMMARY["unavailable_part"].format(part=WORDS_SUMMARY["station_part"], part_lower=WORDS_SUMMARY["station_part_lower"])
     roof = guard("roof", lambda: _roof(spot, rows, extra, dl))
-    if roof is None:
+    if roof is None:                                      # F10: the roof section says what did not load (D16, D20)
         roof = {"title": WORDS_SUMMARY["section_titles"]["roof"], "lead": WORDS_INDICATORS["section_lead"],
-                "kind_key": WORDS_INDICATORS["kind_key"], "groups": [], "how_made": [], "lines": 0}
+                "kind_key": WORDS_INDICATORS["kind_key"], "groups": [], "how_made": [], "lines": 0,
+                "unavailable": WORDS_SUMMARY["unavailable_part"].format(part="The roof lines", part_lower="roof lines")}
         problems.append("roof: the roof lines could not be built")
 
     # the table, in the brief's order (the town rows only on a town page)
@@ -2627,6 +2744,19 @@ def map_data_summary(index: dict | None) -> dict:
                        "references": REFERENCE_LINES},
         "thresholds": climate.THRESHOLDS,
         "rule": {"radius_miles": TOWN_RADIUS, "fresh_days": stations.FRESH_DAYS, "cover_min": stations.COVER_MIN,
+                 "unread_names_shown": stations.UNREAD_NAMES_SHOWN,
                  "season_min": SEASON_SHARE, "gust_kt": GUST_KT, "one_inch_tenths": ONE_INCH_TENTHS,
                  "floor_tenths": FLOOR_TENTHS, "wind_codes": list(WIND_CODES)},
+        # the fixed order of the sections (Hail first, How this was made last) and the file the station picks read (D36)
+        "sections": list(WORDS_SUMMARY["section_titles"]),
+        "tile_list": "hail/tl/{tile}.json",
+        "tile_list_format": TILE_LIST_FORMAT,
+        "nouns": {key: list(pair) for key, pair in NOUNS.items()},
+        "report_types": dict(REPORT_TYPES),
+        "record_types": dict(RECORD_TYPES),
+        "auto_sources": list(AUTO_SOURCES),
+        "element_names": {element: stations.element_name(element) for element in stations.CORE},
+        "family_nouns": {fam: noun for fam, _products, noun in UNPLACED_FAMILIES},
+        "unplaced_products": {product: fam for fam, products, _noun in UNPLACED_FAMILIES for product in products},
+        "conv": STATION_UNIT_CONV,
     }

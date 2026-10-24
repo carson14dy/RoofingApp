@@ -27,7 +27,7 @@
    - The hail history (--hail-history builds only; see "hail history at a spot" below): a click or tap on the map
      that no bubble, alert or report takes opens the five-year radar-estimated hail history for the 0.01-degree
      cell under it. The browser finds the cell from data/map.json (hail.grid). Outside Montana is decided by the
-     store, not by this file: in a store file, a tile that hail.tiles does not list has no Montana cell, so the
+     store, not by this file: in a store file, a tile that hail.tile_split does not list has no Montana cell, so the
      build's outside words show with no fetch; a cell whose key is not in its shard's state list gets them after one
      fetch. A --sample build holds only a few tiles, so there a tile it does not hold, or a key outside the state list,
      gets the sample's own outside words (hail.words.sample_outside) instead.
@@ -1969,6 +1969,7 @@
       Close button do; the page's history is left alone. */
   function openSheet(kind, title, html, opener, opts) {
     opts = opts || {};
+    if (el.sheet) el.sheet.classList.remove("sheet-wide");     // the five-season table widens the sheet; no other sheet does
     if (!sheetState) {
       sheetState = { opener: opener || document.activeElement,
         view: { center: map.getCenter(), zoom: map.getZoom(), userMoved: state.userMoved } };   // closeSheet puts it back
@@ -2309,7 +2310,6 @@
   var hailTopEnd = null;                      // the last node of that block once the sheet's body holds it (hailShow): the live line goes after it
   var hailAt = null;                          // "lat,lon" of the spot the sheet shows; the address carries it as at=
   var hailTiles = {};                         // shard URL -> promise of its JSON (a failed load is asked again)
-  var hailTileSet = null;                     // the tiles the store holds (hail.tiles), as a set; made on first use
   var hailSeq = 0;                            // the newest click or arrival: an answer to an older one is dropped
   var dtfUtcDay = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" });
 
@@ -2342,16 +2342,18 @@
   /** The cell's key inside its tile's file: its row and column within the tile. */
   function hailKey(h, cell) { var t = h.grid.tile_cells; return (cell.row % t) * t + (cell.col % t); }
 
-  /** The tile's name as the build lists it (hail.tiles): "r0079_c0199" for the tile that holds the cell. */
+  /** The tile's name as the build writes it: "r0079_c0199" for the tile that holds the cell. */
   function hailTileName(h, cell) {
     var t = h.grid.tile_cells;
     return "r" + pad4(Math.floor(cell.row / t)) + "_c" + pad4(Math.floor(cell.col / t));
   }
 
-  /** Whether the store holds the tile at all: the build lists every tile with a Montana cell, and no other. */
+  /** Whether the store holds the tile at all. The build's compact split map (hail.tile_split, D40) gives each tile row's runs of
+      tile columns, [first, last]; a tile with no run is not in the store, so it has no Montana cell. The tile is named as the
+      build writes it ("r0079_c0199", hailTileName). */
   function hailListed(h, name) {
-    if (!hailTileSet) hailTileSet = new Set(h.tiles);
-    return hailTileSet.has(name);
+    var runs = own(h.tile_split, String(parseInt(name.slice(1, 5), 10))) || [], col = parseInt(name.slice(7, 11), 10);
+    return runs.some(function (run) { return col >= run[0] && col <= run[1]; });
   }
 
   /** Whether a cell's key is in its shard's state list: the Montana cells of the tile, in key order. */
@@ -2542,6 +2544,9 @@
       var text;
       try { text = hailText(h, cell, doc); } catch (e) { return failed(); }
       hailShow(h, "loaded", text, null);                // the radar days at once; the joins follow in their own sections
+      sumTable(h, cell).then(function (res) {          // B5: the five-season table the sheet leads with (its own promise)
+        if (current()) sumRender(el.sheetBody.querySelector('[data-hail="summary"]'), res);
+      }, function () { if (current()) sumRender(el.sheetBody.querySelector('[data-hail="summary"]'), null); });
       joinSections(h, cell).then(function (joins) {     // never rejects: a part that fails says so in its own section
         if (!current() || !joins) return;               // no joins block: the radar days stand alone
         joinRender(el.sheetBody.querySelector('[data-hail="joins"]'), joins);
@@ -2743,23 +2748,44 @@
 
   /** The six joined sections under the radar estimate, in JOIN_PARTS order. They follow the rules and the templates of
       website/joins.py describe_joins (the town pages write the same sentences from the same records), so a sheet and a
-      town page for one cell say the same words. The build writes the record files (hail/j per tile, hail/z per zone and
-      per fire weather zone, hail/s per station), the templates (hail.joins.words), the shard templates, the radii and the
-      earth radius, the counts the lines say, the lags and each part's state. The browser does these steps and no others: the
-      tile's file (one fetch, kept for the page); the forecast zone's file, the fire weather zone's file and each station
-      file the tile names; the distance from the cell's centre in miles; the filters (reports and records within the report
-      radius, detections within the detection radius, the warnings whose cover bit is set for the cell's key, the zone
-      products and the station days in the window); the newest-first order; the Montana-time text (Intl, the zone named by
-      data.tz); and the fill of the templates. A part the build marks unavailable, or whose file does not load, shows its own
-      unavailable sentence and nothing else; a partial part keeps its lead and rows. It writes no sentence, unit, radius or
-      threshold of its own: tests/test_site.py runs this block under node and compares it with describe_joins. */
+      town page for one cell say the same words. The build writes the record files (hail/j per tile, hail/j/e per tile for
+      the events they refer to, hail/z per zone and per fire weather zone, hail/k per county, hail/s per station), the
+      templates (hail.joins.words), the shard templates, the radii and the earth radius, the counts the lines say, the lags
+      and each part's state. The browser does these steps and no others: the tile's file and its events file (one fetch
+      each, kept for the page); the forecast zone's, the zone before the switch's, the fire weather zone's, the county's and
+      each station file the tile names; the distance from the cell's centre in miles; the filters (reports and records
+      within the report radius, detections within the detection radius, the warnings whose cover bit is set for the cell's
+      key, the zone and county products and the station days in the window); the station picks at the cell's centre (the
+      rule of joins.station_picks: the two nearest within the station radius, nearest first); the newest-first order; the
+      Montana-time text (Intl, the zone named by data.tz); and the fill of the templates. A part the build marks
+      unavailable, or whose file does not load, shows its own unavailable sentence and nothing else; a partial part keeps
+      its lead and rows. It writes no sentence, unit, radius or threshold of its own: tests/test_site.py runs this block
+      under node and compares it with describe_joins. */
   var JOIN_PARTS = ["reports", "records", "detections", "warnings", "zones", "stations"];
   var joinFmts = null;                        // the Montana-time formatters, made on first use
-  // the fields of a joined row, as joins.py writes them: a report or a record, a detection and a station day
-  var JROW = { day: 0, hhmm: 1, lat: 2, lon: 3, code: 4, mag: 5, unit: 6, qual: 7, source: 8, city: 9, remark: 10,
-    mph: 11, kt: 12 };
+  // the fields of a row of the events table (hail/j/e/<tile>.json: the rows joins.py reads, the same shapes): a report's
+  // type word is at 11; a record's mph, kt and cause are at 11, 12 and 13
+  var JROW = { day: 0, hhmm: 1, lat: 2, lon: 3, code: 4, mag: 5, unit: 6, qual: 7, source: 8, city: 9, remark: 10, type: 11,
+    mph: 11, kt: 12, cause: 13 };
   var JDET = { day: 0, hhmm: 1, lat: 2, lon: 3, size: 4 };
-  var JDAY = { day: 0, mph: 1, kt: 2 };
+  var JDAY = { day: 0, mph: 1, kt: 2, flag: 3 };
+  // the stop words of a zone event (joins.ZONE_STOP_WORDS): the suffix key and the "at" key of each stop state
+  var JZONE_STOP = { cancelled: ["zones_cancelled", "zones_cancelled_at"], upgraded: ["zones_upgraded", "zones_upgraded_at"] };
+
+  /** A key of a map.json object when the object holds it as its own; undefined otherwise. */
+  function own(obj, key) { return obj && Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined; }
+  function has(v) { return v !== null && v !== undefined; }
+  /** The placeholder for a words key the build does not write yet: it names the key, so the gap shows on the page. */
+  function missingKey(key) { return "[missing words key: " + key + "]"; }
+  /** Python's round() to a whole number: half to even (joins._warning_text rounds the wind tag so). */
+  function roundEven(x) {
+    var f = Math.floor(x), twice = 2 * (x - f);
+    if (twice > 1) return f + 1;
+    if (twice < 1) return f;
+    return f % 2 === 0 ? f : f + 1;
+  }
+  /** Digits with a comma every three places, as Python's {n:,} writes them. */
+  function thousands(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
 
   /** The formatters for a Montana calendar date and for a clock time with its zone. */
   function joinFormats() {
@@ -2776,18 +2802,20 @@
   /** "Jun 14, 2025": the Montana calendar date of an instant (ms), as describe_joins writes a local date. */
   function joinDay(ms) { return joinFormats().day.format(new Date(ms)); }
 
-  /** The qualifier part of a record row (" (word)"), or "" when the code has no word: the module's _qualifier lookup. */
-  function joinQualifier(J, code) {
-    var word = code ? (J.qualifiers[code] || J.ncei_qualifiers[code] || "") : "";
-    return word ? fill(J.words.qualifier_part, { qualifier: word }) : "";
-  }
-
   /** The clock text of an instant in Montana time, from the build's time template (hour, minute, am or pm, zone). */
   function joinClock(J, ms) {
     var p = {};
     joinFormats().clock.formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
     return fill(J.words.time, { hour: p.hour, minute: p.minute, ampm: p.dayPeriod === "AM" ? J.words.am : J.words.pm,
       zone: p.timeZoneName });
+  }
+
+  /** The end of a span (joins.fmt_end): "end not recorded" when there is none; the clock alone on the begin's day, else
+      with its date. Without a begin (null), the date is always written. */
+  function joinEnd(J, ms, begin) {
+    if (ms === null) return J.words.zones_end_unset;
+    if (begin !== null && joinDay(ms) === joinDay(begin)) return joinClock(J, ms);
+    return joinDay(ms) + " " + joinClock(J, ms);
   }
 
   /** The UTC instant of a record: its UTC day index (counted from the store's d0) and its UTC time as hhmm. */
@@ -2827,47 +2855,82 @@
     return { lat: g.row0_lat - cell.row / per, lon: g.col0_lon + cell.col / per };
   }
 
-  /** The magnitude of a row (joins._magnitude): a speed in knots with its miles per hour beside it, or a magnitude in its
-      unit (the build's words); "" is missing and shows the build's "no size given" words. */
-  function joinMagnitude(J, r) {
-    var W = J.words, text = r[JROW.mag], unit = r[JROW.unit];
-    if (r[JROW.kt] !== null && r[JROW.kt] !== undefined) return fill(W.magnitude_kt_mph, { value: r[JROW.kt], mph: r[JROW.mph] });
-    if (text === null || text === undefined || text === "") return W.magnitude_none;
-    if (unit === J.hail_unit) return fill(W.magnitude_in, { value: Number(text).toFixed(2) });
-    return fill(W[J.unit_words[unit]] || W.magnitude_unitless, { value: text });
+  /** The station picks at a point (joins.station_picks, D36): the two nearest candidates within the station radius, nearest
+      first, ties by id. The candidates are the tile's station_candidates when the file has them, else its stations list.
+      The miles are shown to one decimal place. */
+  function joinPicks(J, tile, lat, lon) {
+    var cands = has(tile.station_candidates) ? tile.station_candidates : (tile.stations || []);
+    var list = cands.map(function (s) { return { s: s, miles: joinMiles(J, lat, lon, s.lat, s.lon) }; });
+    list.sort(function (a, b) {
+      if (a.miles !== b.miles) return a.miles - b.miles;
+      return a.s.id < b.s.id ? -1 : a.s.id > b.s.id ? 1 : 0;
+    });
+    var out = [];
+    for (var i = 0; i < list.length && out.length < 2; i++) {
+      if (list[i].miles > J.radius_miles.station) break;
+      out.push({ id: list[i].s.id, name: list[i].s.name, lat: list[i].s.lat, lon: list[i].s.lon,
+        miles: Number(list[i].miles.toFixed(1)) });
+    }
+    return out;
   }
 
-  /** The text of a report row (joins._report_text): the label, the Montana date and time, the type word, the magnitude when
-      the code has a unit (J.unit_codes), the qualifier, the source, the distance and the bearing (none for a spot at the
-      centre). A code with no unit shows its type word and qualifier only (D19). */
+  /** The magnitude of a row (joins._magnitude): knots with their miles per hour beside them, or the magnitude in its
+      unit; no number reads the build's "no size given" words. */
+  function joinMagnitude(J, text, unit, mph, kt) {
+    var W = J.words;
+    if (unit === "kt" && has(kt)) return fill(W.magnitude_kt_mph, { value: kt, mph: mph });
+    if (unit === "kt" && text) return fill(W.magnitude_kt, { value: text });
+    if (unit === J.hail_unit && text) return fill(W.magnitude_in, { value: Number(text).toFixed(2) });
+    if (unit === "mph" && text) return fill(W.magnitude_mph, { value: text });
+    return W.magnitude_none;
+  }
+
+  /** The qualifier part of a row (" (word)"), or "" when the code has no word (joins._qualifier). */
+  function joinQualifier(J, code) {
+    var word = has(code) ? (own(J.qualifiers, code) || own(J.ncei_qualifiers, code) || "") : "";
+    return word ? fill(J.words.qualifier_part, { qualifier: word }) : "";
+  }
+
+  /** The NCEI cause as written, its whitespace collapsed (joins._record_text); "" when there is none. */
+  function joinCause(v) {
+    if (!v) return "";
+    return String(v).split(/\s+/).filter(function (s) { return s.length > 0; }).join(" ");
+  }
+
+  /** The text of a report row (joins._report_text): the type word the row carries (or the store's type word for its code),
+      the magnitude when the code has a unit, the qualifier, the source, the distance and the bearing (none for a spot at the
+      centre). A code with no unit shows its type word and qualifier only (D9, D19). */
   function joinReportText(J, r, ms, miles, bearing) {
     var W = J.words, code = r[JROW.code], typed = J.unit_codes.indexOf(code) < 0, here = bearing === null;
-    var base = { date: joinDay(ms), time: joinClock(J, ms), type: J.types[code] || String(code || "").toLowerCase(),
-      qualifier: joinQualifier(J, r[JROW.qual]), source: r[JROW.source] || "", miles: miles.toFixed(1) };
-    if (!typed) base.magnitude = joinMagnitude(J, r);
+    var base = { date: joinDay(ms), time: joinClock(J, ms),
+      type: r[JROW.type] || own(J.types, code) || String(code).toLowerCase(),
+      qualifier: joinQualifier(J, r[JROW.qual]), source: r[JROW.source], miles: miles.toFixed(1) };
+    if (!typed) base.magnitude = joinMagnitude(J, r[JROW.mag], r[JROW.unit], null, null);
     if (!here) base.bearing = bearing;
     var key = here ? (typed ? "reports_row_here_typed" : "reports_row_here") : (typed ? "reports_row_typed" : "reports_row");
     return fill(W[key], base);
   }
 
-  /** The text of a record row (joins._record_text): the label of a record, the magnitude when its type carries a unit
-      (J.unit_codes, D19), the qualifier, the source, the distance and the bearing. */
+  /** The text of a record row (joins._record_text): the label of a record, the magnitude when its type carries a unit, the
+      qualifier, the NCEI cause, the source, the distance and the bearing. */
   function joinRecordText(J, r, ms, miles, bearing) {
-    var W = J.words, typed = J.unit_codes.indexOf(r[JROW.code]) < 0, here = bearing === null;
-    var base = { date: joinDay(ms), time: joinClock(J, ms), type: r[JROW.code], qualifier: joinQualifier(J, r[JROW.qual]),
-      source: r[JROW.source] || "", miles: miles.toFixed(1) };
-    if (!typed) base.magnitude = joinMagnitude(J, r);
+    var W = J.words, code = r[JROW.code], typed = J.unit_codes.indexOf(code) < 0, here = bearing === null;
+    var cause = joinCause(r[JROW.cause]);
+    var base = { date: joinDay(ms), time: joinClock(J, ms), type: code, qualifier: joinQualifier(J, r[JROW.qual]),
+      source: r[JROW.source], miles: miles.toFixed(1), cause: cause ? fill(W.records_cause, { cause: cause }) : "" };
+    if (!typed) base.magnitude = joinMagnitude(J, r[JROW.mag], r[JROW.unit], r[JROW.mph], r[JROW.kt]);
     if (!here) base.bearing = bearing;
-    var key = here ? (typed ? "records_row_here_typed" : "records_row_here") : (typed ? "records_row_typed" : "records_row");
+    var key = here ? (typed ? "records_row_here_typed_b5" : "records_row_here_b5") :
+      (typed ? "records_row_typed_b5" : "records_row_b5");
     return fill(W[key], base);
   }
 
-  /** The text of a zone record row (joins._zone_record_text): the same words with the zone's code in place of the place. */
+  /** The text of a zone-coded record row (joins._zone_record_text): the same words for the whole zone. */
   function joinZoneRecordText(J, r, ms, zone) {
-    var W = J.words, typed = J.unit_codes.indexOf(r[JROW.code]) < 0;
-    var base = { date: joinDay(ms), time: joinClock(J, ms), type: r[JROW.code], qualifier: joinQualifier(J, r[JROW.qual]),
-      source: r[JROW.source] || "", zone: zone };
-    if (!typed) base.magnitude = joinMagnitude(J, r);
+    var W = J.words, code = r[JROW.code], typed = J.unit_codes.indexOf(code) < 0;
+    var base = { date: joinDay(ms), time: joinClock(J, ms), type: code, qualifier: joinQualifier(J, r[JROW.qual]),
+      source: r[JROW.source], zone: zone, cause: "" };
+    if (!typed) base.magnitude = joinMagnitude(J, r[JROW.mag], r[JROW.unit], r[JROW.mph], r[JROW.kt]);
     return fill(W[typed ? "records_zone_row_typed" : "records_zone_row"], base);
   }
 
@@ -2883,12 +2946,12 @@
   /** The words for the reason a file did not load (D27): the file did not answer, or it was in an unexpected format. */
   function joinReason(W, err) { return err && err.reason === "format" ? W.reason_format : W.reason_no_answer; }
 
-  /** The zone code whose cell keys include a key, in the tile's map of field ("zones" for the forecast zones, "fire" for the
-      fire weather zones: {code: [keys]}); null when none does. */
+  /** The zone code whose cell keys include a key, in the tile's map of field ("zones", "zones_before", "fire" or
+      "counties": {code: [keys]}); undefined when none does (joins._zone_for_key). */
   function joinZoneOf(j, field, key) {
     var zones = j[field] || {}, codes = Object.keys(zones);
     for (var i = 0; i < codes.length; i++) { if (zones[codes[i]].indexOf(key) >= 0) return codes[i]; }
-    return null;
+    return undefined;
   }
 
   /** The heading of a section: the zone's name and code for the zone products (zones_heading, or the no-zone heading), else
@@ -2898,54 +2961,69 @@
     return zone ? fill(W.zones_heading, { zone_name: zoneName, zone: zone }) : W.zones_heading_no_zone;
   }
 
-  /** The events table (hail/j/events.json), read as the format it is written in (joins._read_events): a file in any other
-      format is a failed load, and the three sections it feeds say so. */
+  /** The events of one tile (hail/j/e/<tile>.json, format J.events_tiles_format): a file in any other format is a failed
+      load, and the sections it feeds say so. */
   function joinEvents(J, url) {
     return hailTile(url).then(function (doc) {
-      if (doc.f !== J.events_format) throw hailFailure("format", url);
+      if (doc.f !== J.events_tiles_format) throw hailFailure("format", url);
       return doc;
     });
   }
 
-  /** A zone, fire weather zone or station file as the sheet reads it (joins._read_part_file, D27): where it has them, its row
-      lists are arrays. A file that is not in that shape is a failed load, in the format. */
-  function joinFile(url) {
-    return hailTile(url).then(function (doc) {
-      if (["events", "records", "days"].some(function (k) { return doc[k] !== undefined && !Array.isArray(doc[k]); })) {
-        throw hailFailure("format", url);
-      }
-      return doc;
-    });
+  /** A zone, county or station file as the sheet reads it (joins._read_part_file, D27): the row lists are arrays, and the
+      format tag is the one the build writes (when the block carries it). A file in that shape is a failed load. */
+  function joinFile(fmt) {
+    return function (url) {
+      return hailTile(url).then(function (doc) {
+        if (["events", "records", "days"].some(function (k) { return doc[k] !== undefined && !Array.isArray(doc[k]); })) {
+          throw hailFailure("format", url);
+        }
+        if (fmt && doc.f !== fmt) throw hailFailure("format", url);
+        return doc;
+      });
+    };
   }
 
-  /** The record files one cell needs: the events table (hail/j/events.json, one fetch for the page, which holds every
-      report, record and warning row once), the cell's tile (one fetch), then the forecast zone, the fire weather zone and each
-      station file the tile names. Resolves with {j, events, eventsError, zoneCode, zone, fireCode, fire, stations, sdocs}; a
-      part that fails holds its error. The tile's own failure is the whole result's error. Never rejects. */
+  /** The files one cell needs: the tile's events file and its record file (one fetch each), then the forecast zone's, the zone
+      before the switch's, the fire weather zone's, the county's and each station file the picks name. Resolves with
+      {j, events, zoneCode, zone, zoneBeforeCode, zoneBefore, fireCode, fire, countyCode, county, picks, sdocs}; a part that
+      fails holds its error (.error). The tile's own failure is the whole result's error. Never rejects. */
   function joinLoad(h, cell) {
-    var J = h.joins, key = hailKey(h, cell), name = hailTileName(h, cell);
+    var J = h.joins, key = hailKey(h, cell), name = hailTileName(h, cell), spot = hailCentre(h.grid, cell);
     var part = function (load, url) {
       return load(url).then(function (doc) { return { doc: doc }; }, function (e) { return { error: e }; });
     };
-    return part(function (url) { return joinEvents(J, url); }, J.events).then(function (ev) {
-      return part(hailTile, J.shards.j.replace("{tile}", name)).then(function (got) {
+    var fmts = J.formats || {};
+    return part(function (url) { return joinEvents(J, url); }, fill(J.events_tiles, { tile: name })).then(function (ev) {
+      return part(hailTile, fill(J.shards.j, { tile: name })).then(function (got) {
         if (got.error) return { error: got.error };
-        var j = got.doc, zoneCode = joinZoneOf(j, "zones", key), fireCode = joinZoneOf(j, "fire", key), list = j.stations || [];
+        var j = got.doc, zoneCode = joinZoneOf(j, "zones", key), zbCode = joinZoneOf(j, "zones_before", key);
+        var fireCode = joinZoneOf(j, "fire", key), countyCode = joinZoneOf(j, "counties", key);
+        var picks = joinPicks(J, j, spot.lat, spot.lon);
+        var zoneOf = function (code) { return part(joinFile(fmts.zone), fill(J.shards.z, { zone: code })); };
+        var needZone = parts("zones") !== "unavailable" || parts("records") !== "unavailable";
         return Promise.all([
-          zoneCode ? part(joinFile, J.shards.z.replace("{zone}", zoneCode)) : null,
-          fireCode ? part(joinFile, J.shards.fire.replace("{zone}", fireCode)) : null,
-          Promise.all(list.map(function (st) { return part(joinFile, J.shards.s.replace("{station}", st.id)); }))
+          zoneCode && needZone ? zoneOf(zoneCode) : null,
+          zbCode && zbCode !== zoneCode && needZone ? zoneOf(zbCode) : null,
+          fireCode && parts("zones") !== "unavailable" ? part(joinFile(fmts.zone), fill(J.shards.fire, { zone: fireCode })) : null,
+          countyCode && parts("zones") !== "unavailable" ? part(joinFile(fmts.county), fill(h.county.tile, { county: countyCode })) : null,
+          parts("stations") !== "unavailable" ? Promise.all(picks.map(function (st) {
+            return part(joinFile(fmts.station), fill(J.shards.s, { station: st.id }));
+          })) : []
         ]).then(function (all) {
           return { j: j, events: ev.doc || null, eventsError: ev.error || null, zoneCode: zoneCode, zone: all[0],
-            fireCode: fireCode, fire: all[1], stations: list, sdocs: all[2] };
+            zoneBeforeCode: zbCode, zoneBefore: all[1], fireCode: fireCode, fire: all[2], countyCode: countyCode,
+            county: all[3], picks: picks, sdocs: all[4] };
         });
       });
     });
+    /** The part's state (the build's parts block; loaded when it says nothing else). */
+    function parts(k) { return J.parts[k] === "unavailable" ? "unavailable" : J.parts[k] === "partial" ? "partial" : "loaded"; }
   }
 
   /** The six sections for one cell (never rejects): {reports, records, detections, warnings, zones, stations, times}; each
-      section {id, heading, what, lead, rows, lines, unavailable}, and a row {text, remark}. A section that did not load says
-      so in its unavailable sentence and shows nothing else, except a partial part, which keeps its lead and rows. */
+      section {id, heading, what, lead, fire_lead, rows, lines, unavailable}, and a row {text, remark}. A section that did not
+      load says so in its unavailable sentence and shows nothing else, except a partial part, which keeps its lead and rows. */
   function joinSections(h, cell) {
     if (!h.joins || !h.joins.words) return Promise.resolve(null);
     var J = h.joins, W = J.words, key = hailKey(h, cell), spot = hailCentre(h.grid, cell);
@@ -2971,13 +3049,23 @@
     };
     if (J.state === "unavailable") return Promise.resolve(allUnavailable());   // no records in the store: no fetch; the words say why
     var ftn = { start: hailDate(J.window[0]), end: hailDate(J.window[1]) };   // read only once the store is known to hold records
+    var newestNcei = lag.ncei ? hailDate(lag.ncei) : (W.records_newest_unknown || missingKey("records_newest_unknown"));
     var joinFill = function (got) {
       var out = {};
       JOIN_PARTS.forEach(function (k) { out[k] = shell(k, joinHeading(W, k, null, null)); });
-      var j = got.j, zoneErr = got.zoneCode && got.zone && got.zone.error ? got.zone.error : null, zoneLost = !!zoneErr;
-      var zdoc = got.zone && !got.zone.error ? got.zone.doc : null;
-      var fdoc = got.fire && !got.fire.error ? got.fire.doc : null, fireLost = !!(got.fireCode && got.fire && got.fire.error);
-      if (got.zoneCode) out.zones.heading = joinHeading(W, "zones", J.zone_names[got.zoneCode] || got.zoneCode, got.zoneCode);
+      var j = got.j, zoneCode = got.zoneCode, fireCode = got.fireCode, countyCode = got.countyCode;
+      // the zone file error (D27): the zone's own file, then the zone before the switch's, which overrides it as in joins.py
+      var zoneErr = null;
+      if (got.zone && got.zone.error) zoneErr = got.zone.error;
+      if (got.zoneBefore && got.zoneBefore.error) zoneErr = got.zoneBefore.error;
+      var zdoc = got.zone && !got.zone.error ? got.zone.doc : {};
+      var bdoc = got.zoneBefore && !got.zoneBefore.error ? got.zoneBefore.doc : {};
+      var fdoc = got.fire && !got.fire.error ? got.fire.doc : {};
+      var kdoc = got.county && !got.county.error ? got.county.doc : {};
+      var fireErr = got.fire && got.fire.error ? got.fire.error : null, countyErr = got.county && got.county.error ? got.county.error : null;
+      var iemSwitch = Date.parse(J.iem_switch || "");
+      var iemZones = J.iem_outline_zones || [];
+      if (zoneCode) out.zones.heading = joinHeading(W, "zones", J.zone_names[zoneCode] || zoneCode, zoneCode);
       var within = function (b) {                        // a time that does not parse is not in the window
         if (isNaN(b)) return false;
         var iso = new Date(b).toISOString().slice(0, 10);
@@ -3003,7 +3091,8 @@
         if (parts("reports") === "partial") out.reports.unavailable = joinUnavailable(J, "reports", J.partial.reports);
       }
 
-      // official records: the NCEI point rows within the report radius, then the zone's rows (describe_joins "records")
+      // official records: the NCEI point rows within the report radius, then the zone's rows, then the rows of the zone that
+      // held the cell before the switch (describe_joins "records", D44, D48)
       if (parts("records") === "unavailable" || !got.events) out.records.unavailable = joinUnavailable(J, "records");
       else {
         var rec = [];
@@ -3011,22 +3100,34 @@
           var r = got.events.records[ref], miles = joinMiles(J, spot.lat, spot.lon, r[JROW.lat], r[JROW.lon]);
           if (miles <= J.radius_miles.report) rec.push({ ms: joinInstant(h, r[JROW.day], r[JROW.hhmm]), miles: miles, r: r, zone: null });
         });
-        ((zdoc && zdoc.records) || []).forEach(function (r) {
-          rec.push({ ms: joinInstant(h, r[JROW.day], r[JROW.hhmm]), miles: null, r: r, zone: got.zoneCode });
+        (zdoc.records || []).forEach(function (r) {
+          rec.push({ ms: joinInstant(h, r[JROW.day], r[JROW.hhmm]), miles: null, r: r, zone: zoneCode });
         });
+        if (got.zoneBeforeCode !== undefined && got.zoneBeforeCode !== zoneCode) {
+          (bdoc.records || []).forEach(function (r) {
+            var when = joinInstant(h, r[JROW.day], r[JROW.hhmm]);
+            if (when < iemSwitch) rec.push({ ms: when, miles: null, r: r, zone: got.zoneBeforeCode });
+          });
+        }
         rec.sort(function (a, b) { return b.ms - a.ms; });
-        var newest = lag.ncei ? hailDate(lag.ncei) : W.unknown_date;
         out.records.lead = fill(W[rec.length === 1 ? "records_lead_one" : rec.length ? "records_lead_many" : "records_lead_none"],
-          Object.assign({ n: rec.length, newest: newest }, ftn));
+          Object.assign({ n: rec.length, newest: newestNcei }, ftn));
         out.records.rows = rec.map(function (x) {
-          if (x.zone !== null) return { text: joinZoneRecordText(J, x.r, x.ms, x.zone), remark: "" };
+          if (x.zone !== null) {
+            var zt = joinZoneRecordText(J, x.r, x.ms, x.zone);
+            if (iemZones.indexOf(x.zone) >= 0 && x.ms < iemSwitch) zt += W.zones_simplified_suffix;
+            return { text: zt, remark: "" };
+          }
           var bearing = x.miles < J.here_miles ? null : joinCompass(J, spot.lat, spot.lon, x.r[JROW.lat], x.r[JROW.lon]);
           return { text: joinRecordText(J, x.r, x.ms, x.miles, bearing), remark: "" };
         });
+        var floodCodes = J.flood_record_codes || [];
+        var floodN = rec.filter(function (x) { return x.zone === null && floodCodes.indexOf(x.r[JROW.code]) >= 0; }).length;   // D48
+        if (floodN) out.records.lines.push(fill(W[floodN === 1 ? "flood_records_line_one" : "flood_records_line_many"], { n: floodN }));
         if (counts.ncei_zone_rows_unmatched) out.records.lines.push(fill(W[counts.ncei_zone_rows_unmatched === 1 ? "records_unplaced_one" : "records_unplaced_many"],
           { n: counts.ncei_zone_rows_unmatched }));
         if (parts("records") === "partial") out.records.unavailable = joinUnavailable(J, "records", J.partial.records);
-        if (zoneLost) out.records.unavailable = joinUnavailable(J, "records", [got.zoneCode], joinReason(W, zoneErr));   // D27
+        if (zoneErr) out.records.unavailable = joinUnavailable(J, "records", [zoneCode], joinReason(W, zoneErr));   // D27
       }
 
       // radar detections: the hail detections within the detection radius, grouped by SPC day (describe_joins "detections")
@@ -3057,87 +3158,139 @@
         (j.warnings || []).forEach(function (pair) {
           if (!joinCovers(pair[1], key)) return;
           var item = got.events.warnings[pair[0]];
-          wrn.push({ b: Date.parse(item.b), e: Date.parse(item.e), w: item });
+          wrn.push({ b: Date.parse(item.b), e: item.e ? Date.parse(item.e) : null, w: item });
         });
         wrn.sort(function (a, b) { return b.b - a.b; });
         var noOutline = counts.warnings_no_outline || 0;
         out.warnings.lead = !wrn.length && noOutline ? W.warnings_lead_unknown
           : fill(W[wrn.length === 1 ? "warnings_lead_one" : wrn.length ? "warnings_lead_many" : "warnings_lead_none"],
             Object.assign({ n: wrn.length }, ftn));
-        out.warnings.rows = wrn.map(function (x) {
-          var t = x.w.tags || {}, tags = [];
-          if (t.hail_in !== null && t.hail_in !== undefined) tags.push(fill(W.tag_hail, { value: Number(t.hail_in).toFixed(2) }));
-          if (t.wind_mph !== null && t.wind_mph !== undefined) tags.push(fill(W.tag_wind, { value: String(Math.round(t.wind_mph)) }));
-          if (t.tornado) tags.push(fill(W.tag_tornado, { value: String(t.tornado).toLowerCase() }));
-          if (t.damage) tags.push(fill(W.tag_damage, { value: String(t.damage).toLowerCase() }));
-          var ends = joinDay(x.e) === joinDay(x.b) ? "" : joinDay(x.e) + " ";      // the end's date only on a later Montana day
-          return { text: fill(W.warnings_row, { date: joinDay(x.b), begin: joinClock(J, x.b), end: ends + joinClock(J, x.e),
-            kind: J.kinds[x.w.k] || x.w.k, office: x.w.o, tags: tags.length ? tags.join(", ") : W.warnings_tags_none }), remark: "" };
-        });
+        out.warnings.rows = wrn.map(function (x) { return { text: joinWarningText(J, x), remark: "" }; });
         out.warnings.lines = [lag.warnings ? fill(W.warnings_lag, { newest: hailDate(lag.warnings) }) : W.warnings_lag_none];
         if (noOutline) out.warnings.lines.push(fill(W[noOutline === 1 ? "warnings_no_outline_one" : "warnings_no_outline_many"],
           { n: noOutline }));
         if (parts("warnings") === "partial") out.warnings.unavailable = joinUnavailable(J, "warnings", J.partial.warnings);
       }
 
-      // zone products: the forecast zone's products and the fire weather zone's red flag warnings (D7, D17), windowed and
-      // ordered by their begin, or by their end when the begin is not recorded (joins._zone_when)
-      if (parts("zones") === "unavailable" || zoneLost) out.zones.unavailable = joinUnavailable(J, "zones");
+      // zone products: the forecast zone's products (the zone before the switch's, for a removed zone or MTZ060, D44), the fire
+      // weather zone's red flag warnings (D7, D17) and the county's products, windowed and ordered by their begin, or by their
+      // end when the begin is not recorded (joins._zone_when)
+      if (parts("zones") === "unavailable") out.zones.unavailable = joinUnavailable(J, "zones");
       else {
-        var groups = {}, zoneN = 0, fireN = 0, fireName = null;
-        var add = function (e, fireLabel) {                  // fireLabel: the fire weather zone's name, or null for a forecast zone
+        var publicItems = [], redItems = [], countyItems = [], beforeItems = [];
+        var fireName = J.fire_zone_names[fireCode] !== undefined ? J.fire_zone_names[fireCode] : fireCode;
+        if (fireCode !== undefined && got.fire && !got.fire.error) fireName = fdoc.name || fireName;
+        var spanOf = function (e) {
           var begin = e.b ? Date.parse(e.b) : null, endAt = e.e ? Date.parse(e.e) : null;
-          var when = begin !== null ? begin : endAt;          // the time an event is windowed and ordered by (joins._zone_when)
-          if (when === null || !within(when)) return false;
-          var name = J.products[e.k + "." + e.s] || (e.k + "." + e.s);
-          if (fireLabel !== null) name = fill(W.fire_product, { product: name, zone_name: fireLabel, zone: got.fireCode });
-          (groups[name] || (groups[name] = [])).push({ b: begin, e: endAt, when: when, stop: joinStop(e) });
-          return true;
+          return { begin: begin, end: endAt, when: begin !== null ? begin : endAt, st: e.st, ev: e };
         };
-        ((zdoc && zdoc.events) || []).forEach(function (e) { if (add(e, null)) zoneN += 1; });
-        if (fdoc) {
-          fireName = fdoc.name || J.fire_zone_names[got.fireCode] || got.fireCode;
-          (fdoc.events || []).forEach(function (e) { if (add(e, fireName)) fireN += 1; });
+        (zdoc.events || []).forEach(function (e) {
+          var s = spanOf(e);
+          if (s.when === null || !within(s.when)) return;
+          if (iemZones.indexOf(zoneCode) >= 0 && s.when < iemSwitch) beforeItems.push(withZone(s, zoneCode));
+          else publicItems.push(s);
+        });
+        if (got.zoneBeforeCode !== undefined && got.zoneBeforeCode !== zoneCode) {
+          (bdoc.events || []).forEach(function (e) {
+            var s = spanOf(e);
+            if (s.when !== null && within(s.when) && s.when < iemSwitch) beforeItems.push(withZone(s, got.zoneBeforeCode));
+          });
         }
-        var zoneName = J.zone_names[got.zoneCode] || got.zoneCode;
-        out.zones.lead = !got.zoneCode ? W.zones_no_zone
-          : fill(W[zoneN === 1 ? "zones_lead_one" : zoneN ? "zones_lead_many" : "zones_lead_none"],
-            { n: zoneN, zone_name: zoneName, zone: got.zoneCode, start: ftn.start, end: ftn.end });
-        Object.keys(groups).sort(function (a, b) { return minOf(groups[b]) - minOf(groups[a]); }).forEach(function (name) {
-          var texts = groups[name].sort(function (a, b) { return a.when - b.when; }).map(function (ev) { return joinZoneSpan(J, ev); });
+        (fdoc.events || []).forEach(function (e) { var s = spanOf(e); if (s.when !== null && within(s.when)) redItems.push(s); });
+        (kdoc.events || []).forEach(function (e) { var s = spanOf(e); if (s.when !== null && within(s.when)) countyItems.push(s); });
+        var zoneName = J.zone_names[zoneCode] !== undefined ? J.zone_names[zoneCode] : zoneCode;
+        var leadN = publicItems.length + beforeItems.filter(function (x) { return x.code === zoneCode; }).length;   // D17, D44
+        out.zones.lead = zoneCode === undefined ? W.zones_no_zone
+          : fill(W[leadN === 1 ? "zones_lead_one" : leadN ? "zones_lead_many" : "zones_lead_none"],
+            { n: leadN, zone_name: zoneName, zone: zoneCode, start: ftn.start, end: ftn.end });
+        var grouped = {}, order = [];
+        var addTo = function (map, name, item) { if (!map[name]) { map[name] = []; order.push(name); } map[name].push(item); };
+        var nameOf = function (ev) { return own(J.products, ev.k + "." + ev.s) || (ev.k + "." + ev.s); };
+        publicItems.forEach(function (x) { addTo(grouped, nameOf(x.ev), x); });
+        redItems.forEach(function (x) {
+          addTo(grouped, fill(W.fire_product, { product: nameOf(x.ev), zone_name: fireName, zone: fireCode }), x);
+        });
+        var groupKeys = Object.keys(grouped);
+        var minWhen = function (list) { return list.reduce(function (m, x) { return x.when < m ? x.when : m; }, Infinity); };
+        groupKeys.sort(function (a, b) { return minWhen(grouped[b]) - minWhen(grouped[a]); });
+        groupKeys.forEach(function (name) {
+          var texts = grouped[name].slice().sort(function (a, b) { return a.when - b.when; }).map(function (x) { return joinZoneSpan(J, x); });
           out.zones.rows.push({ text: fill(W.zones_row, { product: name, events: texts.join("; ") }), remark: "" });
         });
+        // the cell's zone before the switch: its products, grouped by product and zone (D44)
+        var beforeGroups = {}, beforeOrder = [], beforeCodes = {};
+        beforeItems.forEach(function (x) {
+          var name = nameOf(x.ev), gkey = JSON.stringify([name, x.code]);
+          if (!beforeGroups[gkey]) { beforeGroups[gkey] = { name: name, code: x.code, items: [] }; beforeOrder.push(gkey); }
+          beforeGroups[gkey].items.push(x);
+          beforeCodes[x.code] = (beforeCodes[x.code] || 0) + 1;
+        });
+        beforeOrder.sort(function (a, b) { return minWhen(beforeGroups[b].items) - minWhen(beforeGroups[a].items); });
+        beforeOrder.forEach(function (gkey) {
+          var g = beforeGroups[gkey];
+          var texts = g.items.slice().sort(function (a, b) { return a.when - b.when; }).map(function (x) { return joinZoneSpan(J, x); });
+          out.zones.rows.push({ text: fill(W.zones_row_simplified, { product: g.name, zone_name: J.zone_names[g.code] !== undefined ? J.zone_names[g.code] : g.code,
+            zone: g.code, note: W.zones_simplified, events: texts.join("; ") }), remark: "" });
+        });
+        Object.keys(beforeCodes).sort().forEach(function (bcode) {
+          var n = beforeCodes[bcode];
+          out.zones.lines.push(fill(W[n === 1 ? "zones_before_line_one" : "zones_before_line_many"],
+            { n: n, zone_name: J.zone_names[bcode] !== undefined ? J.zone_names[bcode] : bcode, zone: bcode }));
+        });
         if (counts.zone_products_unplaced) out.zones.lines.push(fill(W[counts.zone_products_unplaced === 1 ? "zones_unplaced_one" : "zones_unplaced_many"],
-          { n: counts.zone_products_unplaced }));
-        if (J.fire_state !== "loaded" || fireLost) out.zones.lines.push(W.zones_fire_unavailable);
-        else if (!got.fireCode) out.zones.lines.push(W.zones_fire_none);
-        else out.zones.fire_lead = fill(W[fireN === 1 ? "fire_lead_one" : fireN ? "fire_lead_many" : "fire_lead_none"],
-          { n: fireN, zone_name: fireName, zone: got.fireCode, start: ftn.start, end: ftn.end });
+          { n: thousands(counts.zone_products_unplaced) }));
+        if (countyCode !== undefined) {
+          var countyName = own(h.county && h.county.short_names, countyCode);      // without the word County (the build's short_names)
+          if (countyName === undefined) countyName = missingKey("county.short_names");
+          if ((h.county && h.county.state) !== "loaded" || countyErr) out.zones.lines.push(W.county_unavailable);
+          else {
+            var ckw = { start: ftn.start, end: ftn.end, county_name: countyName, county: countyCode };
+            out.zones.lines.push(countyItems.length === 0 ? fill(W.county_lead_none, ckw)
+              : fill(W[countyItems.length === 1 ? "county_lead_one" : "county_lead_many"], Object.assign({ n: countyItems.length }, ckw)));
+            var cgroups = {}, corder = [];
+            countyItems.forEach(function (x) { addTo(cgroups, nameOf(x.ev), x); });
+            Object.keys(cgroups).sort(function (a, b) { return minWhen(cgroups[b]) - minWhen(cgroups[a]); }).forEach(function (name) {
+              var texts = cgroups[name].slice().sort(function (a, b) { return a.when - b.when; }).map(function (x) { return joinZoneSpan(J, x); });
+              out.zones.rows.push({ text: fill(W.county_row, { product: name, county_name: countyName, events: texts.join("; ") }), remark: "" });
+            });
+          }
+        }
+        if (J.fire_state !== "loaded" || fireErr) out.zones.lines.push(W.zones_fire_unavailable);
+        else if (fireCode === undefined) out.zones.lines.push(W.zones_fire_none);
+        else out.zones.fire_lead = fill(W[redItems.length === 1 ? "fire_lead_one" : redItems.length ? "fire_lead_many" : "fire_lead_none"],
+          { n: redItems.length, zone_name: fireName, zone: fireCode, start: ftn.start, end: ftn.end });
         if (parts("zones") === "partial") out.zones.unavailable = joinUnavailable(J, "zones", J.partial.zones);
+        if (countyErr) out.zones.lines.push(W.county_unavailable);      // joins.py appends this line again after the fire lines (D27)
+        if (zoneErr) {                                                  // D27: no lead, rows or lines from a zone file that did not load
+          out.zones.lead = null; out.zones.fire_lead = null; out.zones.rows = []; out.zones.lines = [];
+          out.zones.unavailable = joinUnavailable(J, "zones");
+        }
       }
 
       // station gusts: the station days in the window, newest first, and the days each station's file dropped (describe_joins)
       var stationLost = got.sdocs.some(function (x) { return x && x.error; });     // a station file that did not load (D27)
-      if (parts("stations") === "unavailable" || stationLost) out.stations.unavailable = joinUnavailable(J, "stations");
-      else if (!got.stations.length) out.stations.lead = fill(W.stations_none_near, { miles: Math.floor(J.radius_miles.station) });
+      if (parts("stations") === "unavailable") out.stations.unavailable = joinUnavailable(J, "stations");
+      else if (!got.picks.length) out.stations.lead = fill(W.stations_none_near, { miles: Math.floor(J.radius_miles.station) });
+      else if (stationLost) out.stations.unavailable = joinUnavailable(J, "stations");
       else {
         var days = [], dropped = 0;
-        got.stations.forEach(function (st, i) {
-          var sdoc = got.sdocs[i] && !got.sdocs[i].error ? got.sdocs[i].doc : null;
-          ((sdoc && sdoc.days) || []).forEach(function (row) {
+        got.picks.forEach(function (st, i) {
+          var sdoc = got.sdocs[i] && !got.sdocs[i].error ? got.sdocs[i].doc : {};
+          (sdoc.days || []).forEach(function (row) {
             var iso = hailIso(h, row[JDAY.day]);
             if (iso < J.window[0] || iso > J.window[1]) return;
-            days.push({ iso: iso, mph: row[JDAY.mph], kt: row[JDAY.kt], st: st });
+            days.push({ iso: iso, mph: row[JDAY.mph], kt: row[JDAY.kt], flag: row.length > JDAY.flag ? row[JDAY.flag] : 0, st: st });
           });
-          dropped += (sdoc && sdoc.dropped) || 0;
+          dropped += sdoc.dropped || 0;
         });
         days.sort(function (a, b) { return a.iso < b.iso ? 1 : a.iso > b.iso ? -1 : b.mph - a.mph; });
         out.stations.lead = fill(W[days.length === 1 ? "stations_lead_one" : days.length ? "stations_lead_many" : "stations_lead_none"],
           Object.assign({ n: days.length, kt_min: J.station_kt, mph_min: J.station_mph }, ftn));
         out.stations.rows = days.map(function (x) {
           return { text: fill(W.stations_row, { date: hailDate(x.iso), kt: Math.floor(x.kt), mph: Math.floor(x.mph),
-            station: x.st.name, miles: Number(x.st.miles).toFixed(1) }), remark: "" };
+            station: x.st.name, miles: Number(x.st.miles).toFixed(1) }) + (x.flag ? W.flag_suffix : ""), remark: "" };
         });
+        if (days.some(function (x) { return x.flag; })) out.stations.lines.push(W.flag_check_line);
         if (dropped) out.stations.lines.push(fill(W[dropped === 1 ? "stations_dropped_one" : "stations_dropped"],
           { n: dropped, kt: J.implausible_kt }));
       }
@@ -3150,31 +3303,39 @@
     }, allUnavailable);
   }
 
-  /** The earliest instant of a zone group's events, by their windowing time (the begin, or the end when there is none). */
-  function minOf(list) { return list.reduce(function (m, x) { return x.when < m ? x.when : m; }, Infinity); }
-
-  /** The stop that ended a zone event (joins.ZONE_STOP_STATE, D31): "cancelled" or "upgraded", the status the build gives the
-      event's "st"; null when no stop ended it. Its words are zones_<stop> and zones_<stop>_at in WORDS_JOINS. */
-  function joinStop(e) { return e.st === "cancelled" || e.st === "upgraded" ? e.st : null; }
+  /** A zone event's span with the zone code it belongs to (the zone before the switch's products keep their own code). */
+  function withZone(span, code) { var out = {}; Object.keys(span).forEach(function (k) { out[k] = span[k]; }); out.code = code; return out; }
 
   /** One zone event's span in words (joins._zone_event_text, D6, D16, D26, D31): "{date} {begin} to {end}", "end not recorded"
-      when there is no end, "start not recorded; end {end}" when there is no begin. An end at or before the begin of a stop
-      reads "{stop} at {time}" in place of the span (zones_<stop>_at); a stop's word follows the span (zones_<stop>). */
-  function joinZoneSpan(J, ev) {
-    var W = J.words, text, stop = ev.stop ? "zones_" + ev.stop : null;
-    if (stop && ev.b !== null && ev.e !== null && ev.e <= ev.b) return fill(W[stop + "_at"], { time: joinSpanEnd(J, ev.e, null) });
-    if (ev.b === null && ev.e === null) text = W.zones_event_no_span;
-    else if (ev.b === null) text = fill(W.zones_event_no_start, { end: joinSpanEnd(J, ev.e, null) });
-    else text = fill(W.zones_event, { date: joinDay(ev.b), begin: joinClock(J, ev.b),
-      end: ev.e === null ? W.zones_end_unset : joinSpanEnd(J, ev.e, ev.b) });
-    return text + (stop ? W[stop] : "");
+      when there is none, "start not recorded; end {end}" when there is no begin, and ", cancelled" or ", upgraded" when a
+      stop ended it. A stop at or before the begin reads "cancelled at {time}" or "upgraded at {time}" in place of the span. */
+  function joinZoneSpan(J, x) {
+    var W = J.words, keys = own(JZONE_STOP, x.st);
+    if (keys && x.begin !== null && x.end !== null && x.end <= x.begin) return fill(W[keys[1]], { time: joinEnd(J, x.end, null) });
+    var text;
+    if (x.begin === null && x.end === null) text = W.zones_event_no_span;
+    else if (x.begin === null) text = fill(W.zones_event_no_start, { end: joinEnd(J, x.end, null) });
+    else text = fill(W.zones_event, { date: joinDay(x.begin), begin: joinClock(J, x.begin), end: joinEnd(J, x.end, x.begin) });
+    return text + (keys ? W[keys[0]] : "");
   }
 
-  /** The end of a span in Montana time (joins.fmt_end): the clock alone on the begin's day, the date and clock on a later
-      day, and the date and clock when there is no begin. */
-  function joinSpanEnd(J, e, b) {
-    if (b === null || joinDay(e) !== joinDay(b)) return joinDay(e) + " " + joinClock(J, e);
-    return joinClock(J, e);
+  /** One warning row (joins._warning_text, B5 D41): the significance label, the Montana date and span, the product's own
+      kind word, the office and the tags the archive gives. */
+  function joinWarningText(J, x) {
+    var W = J.words, tg = x.w.tags || {}, tags = [];
+    if (has(tg.hail_in)) tags.push(fill(W.tag_hail, { value: Number(tg.hail_in).toFixed(2) }));
+    if (has(tg.wind_mph)) tags.push(fill(W.tag_wind, { value: String(roundEven(tg.wind_mph)) }));
+    if (tg.tornado) tags.push(fill(W.tag_tornado, { value: String(tg.tornado).toLowerCase() }));
+    if (tg.damage) tags.push(fill(W.tag_damage, { value: String(tg.damage).toLowerCase() }));
+    var code = x.w.k + "." + x.w.s;
+    var ends = joinDay(x.e) === joinDay(x.b) ? "" : joinDay(x.e) + " ";     // the end's date only on a later Montana day
+    var span = x.e === null ? fill(W.warnings_span, { begin: joinClock(J, x.b), end: W.zones_end_unset })
+      : fill(W.warnings_span, { begin: joinClock(J, x.b), end: ends + joinClock(J, x.e), });
+    return fill(W.warnings_row_b5, {
+      label: own(J.significance, x.w.s) || missingKey("significance"),
+      date: joinDay(x.b), span: span,
+      product: own(J.kind_words, code) || own(J.products, code) || code, office: x.w.o,
+      tags: tags.length ? tags.join(", ") : W.warnings_tags_none });
   }
 
   /** The rows of one section as a list: the text, and the remark (when there is one) on a line of its own. */
@@ -3263,6 +3424,1374 @@
     if (el.cardChip._html !== html) { el.cardChip.innerHTML = html; el.cardChip._html = html; }
     el.cardChip.classList.toggle("warn", warn);
     if (state.ready && !cardFitting && map && el.cardChip.offsetHeight !== h0) fitView();
+  }
+
+  // ------------------------------------------------------------------ five seasons at a spot (B5, the sheet's table and sections)
+
+  /** The five-season table and the sections the sheet shows at a cell, computed here from the per-tile files, with the
+      rules of website/summary.py describe_summary and the words of map.json "summary" (the browser holds no word, unit or
+      threshold of its own). Each function names the Python function it mirrors. The table's cells are {value, date, text,
+      valid, missing, flag, unknown, coverage}: value an integer (or null), date yyyymmdd (or null), text the words, valid
+      the days with a value, missing the days missing (never counted as zero), coverage the line the page shows under it. */
+
+  var SUM_SEASONS = [];                      // the five season labels, set from h.summary.seasons on first use
+
+  /** A UTC day number (days since 1970) of an ISO date, and the ISO date of a day number. */
+  function sumDayNum(iso) { return Date.parse(iso) / HAIL_DAY_MS; }
+  function sumIsoOf(n) { return new Date(n * HAIL_DAY_MS).toISOString().slice(0, 10); }
+
+  /** The July-to-June season label of an ISO date, "2021-22" (stations.season_of: the label, for any year). */
+  function sumSeasonOf(iso) {
+    var y = Number(iso.slice(0, 4)), m = Number(iso.slice(5, 7)), sy = m >= 7 ? y : y - 1;
+    return sy + "-" + String(sy + 1).slice(2);
+  }
+
+  /** The first and last day numbers of a season label (summary.season_bounds: July 1 to June 30). */
+  function sumBounds(label) {
+    var y = Number(label.slice(0, 4));
+    return { start: sumDayNum(y + "-07-01"), end: sumDayNum((y + 1) + "-06-30") };
+  }
+
+  /** The Montana calendar day of an instant, as an ISO date (joins._local(utc).date()). */
+  function sumMontanaIso(ms) {
+    if (!sumIsoFmt) {
+      sumIsoFmt = new Intl.DateTimeFormat("en-US", { timeZone: data.tz, year: "numeric", month: "2-digit", day: "2-digit" });
+    }
+    var p = {};
+    sumIsoFmt.formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+    return p.year + "-" + p.month + "-" + p.day;
+  }
+  var sumIsoFmt = null;
+
+  /** "Jul 24, 2022" for an ISO date (hail.fmt_date). */
+  function sumFmtDate(iso) { return hailDate(iso); }
+
+  /** The words of the summary, with the check that a key the page needs is present (a missing key shows its placeholder). */
+  function sumWord(S, key) {
+    var v = own(S.words, key);
+    return v === undefined || v === null ? missingKey(key) : v;
+  }
+
+
+  /** A words key of the stations block (stations.words), or its placeholder when the build does not write it. */
+  function stWord(h, key) { var v = own(h.stations.words, key); return v === undefined ? missingKey(key) : v; }
+
+  /** summary._join_names: "A", "A and B", "A, B and C" (the list words of the summary, never a literal here). */
+  function sumJoinNames(S, names) {
+    var list = names.filter(function (n) { return n; });
+    if (list.length <= 1) return list.join("");
+    return fill(sumWord(S, "list_last"), { head: list.slice(0, -1).join(", "), last: list[list.length - 1] });
+  }
+
+  /** The type word of a report key (summary.REPORT_TYPES, the build's report_types); a missing key shows its placeholder. */
+  function sumReportType(S, key) {
+    var type = own(S.report_types, key);
+    return type === undefined ? missingKey("report_types") : type;
+  }
+
+  /** summary._no_report for a report key: the key's type word, in the period's words. */
+  function sumNoReport(S, key, when) {
+    return fill(sumWord(S, "no_report"), { type: sumReportType(S, key), when: when });
+  }
+
+  /** The noun of a count of a key: the singular for one, else the plural (summary.NOUNS, the build's nouns). */
+  function sumNoun(S, key, n) {
+    var pair = own(S.nouns, key);
+    return pair === undefined ? missingKey("nouns") : pair[n === 1 ? 0 : 1];
+  }
+
+  /** The decimal places a unit shows (summary.UNIT_SPEC, the build's units). A build without them fails the part that needs them. */
+  function sumDecimals(S, unit) {
+    var spec = own(S.units, unit);
+    if (spec === undefined || typeof spec.decimals !== "number") throw new Error("summary.units." + unit + ".decimals");
+    return spec.decimals;
+  }
+
+  /** summary._clear: the line with the all-clear sentence at its end, added once when the line lacks it (D41). */
+  function sumClear(S, text) {
+    var allClear = sumWord(S, "all_clear"), t = String(text).replace(/\s+$/, "");
+    if (t.slice(-allClear.length) === allClear) return t;
+    return (t.charAt(t.length - 1) === "." ? t : t + ".") + " " + allClear;
+  }
+
+  /** summary._cover: the coverage line, the days missing (when there are any) and a zone's statement (which ends with the
+      all-clear sentence, D41). null when there is neither. */
+  function sumCover(S, missing, flag) {
+    if (flag) {
+      var parts = (missing ? [sumMissingText(S, missing)] : []).concat([flag]);
+      return sumClear(S, parts.join("; ") + ".");
+    }
+    return missing ? sumMissingText(S, missing) : null;
+  }
+
+  /** summary._missing_text: "1 day missing", "108 days missing". */
+  function sumMissingText(S, n) {
+    return n === 1 ? sumWord(S, "coverage_one") : fill(sumWord(S, "coverage"), { n: n });
+  }
+
+  /** summary._cell: one season's figure. */
+  function sumCell(S, o) {
+    var missing = o.missing || 0, flag = o.flag || null;
+    return { value: o.value === undefined ? null : o.value, date: o.date === undefined ? null : o.date,
+      text: o.text === undefined ? null : o.text, valid: o.valid || 0, missing: missing, station: o.station || null,
+      flag: flag, unknown: !!o.unknown, coverage: sumCover(S, missing, flag) };
+  }
+
+  /** summary._unavailable_cell: a season with no figure and the cell's words (never a zero). */
+  function sumUnavailableCell(S, text) { return sumCell(S, { text: text || sumWord(S, "cell_unavailable") }); }
+
+  /** summary._count_text: "1 hail report", "3 hail reports", "2 days"; a zero report or record count reads as its no-report
+      or no-record sentence for the period (D41). */
+  function sumCountText(S, key, n, when) {
+    if (when === undefined) when = sumWord(S, "these_five");      // summary._count_text's default period
+    if (key === "days") return fill(sumWord(S, n === 1 ? "day_one" : "days"), { n: n });
+    var reportKey = ["hail_max", "hail_n", "wind_n", "freezing_rain_n", "flood_report_n"].indexOf(key) >= 0;
+    if (n === 0 && reportKey) {
+      if (S.report_types === undefined || S.report_types[key] === undefined) return missingKey("report_types");
+      return fill(sumWord(S, "no_report"), { type: S.report_types[key], when: when });
+    }
+    if (n === 0 && key === "flood_record_n") {
+      if (S.record_types === undefined || S.record_types[key] === undefined) return missingKey("record_types");
+      return fill(sumWord(S, "no_record"), { type: S.record_types[key], when: when });
+    }
+    if (S.nouns === undefined || S.nouns[key] === undefined) return missingKey("nouns");
+    return n + " " + sumNoun(S, key, n);
+  }
+
+  /** summary._fmt_in_on: hundredths of an inch with its date when it has one: "1.25 in on Jun 15, 2025". */
+  function sumInText(hund) { return Math.floor(hund / 100) + "." + ("0" + (hund % 100)).slice(-2); }
+  function sumInOn(S, hund, iso) {
+    if (iso) return fill(sumWord(S, "in_on"), { inches: sumInText(hund), date: sumFmtDate(iso) });
+    return fill(sumWord(S, "in_plain"), { inches: sumInText(hund) });
+  }
+
+  /** summary._five: the five-season figure from the five season cells. "sum": every season must have a valid day and a value,
+      else the five-season sentence (a total never leaves a season out). "max" or "min": the extreme of the seasons that have
+      one, with its own season text; the earliest season wins a tie. none when no season has one. */
+  function sumFive(S, cells, combine, fmt, none) {
+    var missing = cells.reduce(function (s, c) { return s + c.missing; }, 0);
+    var flags = [];
+    cells.forEach(function (c) { if (c.flag && flags.indexOf(c.flag) < 0) flags.push(c.flag); });
+    var coverage = sumCover(S, missing, flags.length ? flags.join("; ") : null);
+    var unknown = [];
+    cells.forEach(function (c, k) { if (c.unknown) unknown.push(SUM_SEASONS[k]); });
+    if (unknown.length) return { value: null, date: null, text: sumWord(S, "cell_unavailable"), coverage: coverage, note: sumFiveUnavailable(S, unknown) };
+    if (combine === "sum") {
+      var bad = [];
+      cells.forEach(function (c, k) { if (c.valid <= 0 || c.value === null) bad.push(SUM_SEASONS[k]); });
+      if (bad.length) return { value: null, date: null, text: sumWord(S, "cell_unavailable"), coverage: coverage, note: sumFiveUnavailable(S, bad) };
+      var total = cells.reduce(function (s, c) { return s + c.value; }, 0);
+      return { value: total, date: null, text: fmt ? fmt(total) : String(total), coverage: coverage, note: null };
+    }
+    var present = cells.filter(function (c) { return c.value !== null; });
+    if (!present.length) return { value: null, date: null, text: none, coverage: coverage, note: null };
+    var best = present.reduce(function (m, c) { return combine === "max" ? Math.max(m, c.value) : Math.min(m, c.value); }, present[0].value);
+    // the season that holds the best value: a dated season before an undated one, then the earliest date (summary's min key)
+    var candidates = present.filter(function (c) { return c.value === best; }), pick = candidates[0];
+    candidates.forEach(function (c) { if (sumEarlier(c, pick)) pick = c; });
+    return { value: best, date: pick.date, text: pick.text, coverage: coverage, note: null };
+  }
+
+  /** The order summary._five's min key gives two season cells: a dated cell first, then the earlier date. */
+  function sumEarlier(a, b) {
+    var ua = a.date === null ? 1 : 0, ub = b.date === null ? 1 : 0;
+    if (ua !== ub) return ua < ub;
+    return (a.date || 0) < (b.date || 0);
+  }
+
+  /** summary._five_unavailable_text: the five-season sentence for the seasons that have no usable value. */
+  function sumFiveUnavailable(S, bad) {
+    if (bad.length === SUM_SEASONS.length) return sumWord(S, "five_unavailable_all");
+    return fill(sumWord(S, "five_unavailable"), { season: bad.join(", "), verb: bad.length === 1 ? "has" : "have" });
+  }
+
+  /** summary._row: a table row with its five season cells, its five-season figure and its notes. */
+  function sumRow(S, spec, cells, five, notes) {
+    var out = { key: spec.key, label: spec.label, kind: spec.kind, unit: spec.unit, scale: spec.scale,
+      decimals: spec.decimals, source: spec.source, town_only: !!spec.town_only,
+      values: cells.map(function (c) { return c.value; }), dates: cells.map(function (c) { return c.date; }),
+      texts: cells.map(function (c) { return c.text; }), coverage: cells.map(function (c) { return c.coverage; }),
+      stations: cells.map(function (c) { return c.station; }), five: five.value, five_date: five.date,
+      five_text: five.text, five_coverage: five.coverage, five_note: five.note || null,
+      notes: notes.filter(function (n) { return n; }), five_missing: cells.reduce(function (s, c) { return s + c.missing; }, 0) };
+    if (five.note) out.notes.push(five.note);
+    return out;
+  }
+
+  /** summary._unavailable_row: a row whose part did not load (D16): no figure in any season and the part's sentence as its note. */
+  function sumUnavailableRow(S, spec, sentence) {
+    var cells = SUM_SEASONS.map(function () { return sumUnavailableCell(S); });
+    var five = { value: null, date: null, text: sumWord(S, "cell_unavailable"), coverage: null, note: null };
+    return sumRow(S, spec, cells, five, [sentence]);
+  }
+
+  /** The spec of a table row (summary.ROWS, as map.json "summary" rows carry it). */
+  function sumSpec(S, key) {
+    for (var i = 0; i < S.rows.length; i++) { if (S.rows[i].key === key) return S.rows[i]; }
+    return null;
+  }
+
+  /** A spot's frame: the cell's centre, its key and tile, the store's window, its as-of day and its missing days. */
+  function sumSpot(h, cell) {
+    var c = hailCentre(h.grid, cell);
+    var missing = {};
+    (h.missing_days || []).forEach(function (d) { missing[d] = true; });
+    return { row: cell.row, col: cell.col, lat: c.lat, lon: c.lon, key: hailKey(h, cell), tile: hailTileName(h, cell),
+      first: h.window[0], last: h.window[1], asOf: h.as_of, missing: missing };
+  }
+
+  /** summary._Spot.in_window and season_cover: the days of a season, the days of it in the window and the valid days. The
+      store's missing days are subtracted only when withMissing (the radar rows ask for them; the report rows do not). */
+  function sumInWindow(sp, iso) { return iso >= sp.first && iso <= sp.last; }
+  function sumCoverOf(sp, label, withMissing) {
+    var b = sumBounds(label), lo = Math.max(b.start, sumDayNum(sp.first)), hi = Math.min(b.end, sumDayNum(sp.last));
+    var total = b.end - b.start + 1, store = hi >= lo ? hi - lo + 1 : 0, miss = 0;
+    if (withMissing) {
+      Object.keys(sp.missing).forEach(function (d) {
+        if (sumSeasonOf(d) === label && sumInWindow(sp, d)) miss += 1;
+      });
+    }
+    return { total: total, store: store, valid: store - miss };
+  }
+
+  /** summary._radar_rows (B1): the largest radar estimate of each season with its date, and the days of 1 inch or more; the
+      radar rows read the cell's days from hail/t (the B1 shard) and count each day once (D35). The class note sits under the
+      one-inch row. */
+  function sumRadarRows(h, sp, S, days) {
+    var bySeason = {};
+    SUM_SEASONS.forEach(function (lab) { bySeason[lab] = {}; });
+    days.forEach(function (x) {
+      var label = sumSeasonOf(x.iso);
+      if (bySeason[label] !== undefined && sumInWindow(sp, x.iso)) {
+        bySeason[label][x.iso] = Math.max(bySeason[label][x.iso] === undefined ? 0 : bySeason[label][x.iso], x.t);
+      }
+    });
+    var floor = h.floor_tenths, one = S.rule.one_inch_tenths;
+    var maxCells = [], oneCells = [], seasonNotes = [];
+    SUM_SEASONS.forEach(function (label) {
+      var cov = sumCoverOf(sp, label, true), missing = cov.total - cov.valid;
+      if (cov.valid <= 0) {
+        maxCells.push(sumUnavailableCell(S));
+        oneCells.push(sumUnavailableCell(S));
+        seasonNotes.push(fill(sumWord(S, "season_unavailable"), { season: label, source: sumWord(S, "source_radar_history") }));
+        return;
+      }
+      var vals = bySeason[label], isos = Object.keys(vals);
+      var big = isos.filter(function (iso) { return vals[iso] >= floor; });
+      if (big.length) {
+        var bestIso = big[0];                       // the largest value; on a tie the earliest day (summary's max key)
+        big.forEach(function (iso) {
+          if (vals[iso] > vals[bestIso] || (vals[iso] === vals[bestIso] && iso < bestIso)) bestIso = iso;
+        });
+        var hund = Math.floor(100 * vals[bestIso] / h.tenths_per_inch);
+        maxCells.push(sumCell(S, { value: hund, text: sumInOn(S, hund, bestIso), date: Number(bestIso.replace(/-/g, "")),
+          valid: cov.valid, missing: missing }));
+      } else {
+        maxCells.push(sumCell(S, { value: null, text: sumWord(S, "none_radar"), valid: cov.valid, missing: missing }));
+      }
+      var nOne = isos.filter(function (iso) { return vals[iso] >= one; }).length;
+      oneCells.push(sumCell(S, { value: nOne, text: sumCountText(S, "days", nOne), valid: cov.valid, missing: missing }));
+    });
+    var fiveMax = sumFive(S, maxCells, "max", null, sumWord(S, "none_radar"));
+    var fiveOne = sumFive(S, oneCells, "sum", function (v) { return sumCountText(S, "days", v); }, "");
+    var classNote = sumClassNote(h, S, bySeason);
+    var notes = seasonNotes.concat([fill(sumWord(S, "window_radar"), { first: sumFmtDate(sp.first), last: sumFmtDate(sp.last),
+      as_of: sumFmtDate(sp.asOf), season: SUM_SEASONS[0] })]);
+    return {
+      radar_max: sumRow(S, sumSpec(S, "radar_max"), maxCells, fiveMax, notes),
+      radar_1in: sumRow(S, sumSpec(S, "radar_1in"), oneCells, fiveOne, classNote ? [classNote] : [])
+    };
+  }
+
+  /** summary._class_note: the radar days by size class over the five seasons (the store's classes), or null when no day
+      has an estimate of 0.25 in or more. */
+  function sumClassNote(h, S, bySeason) {
+    var counts = {};
+    SUM_SEASONS.forEach(function (label) {
+      Object.keys(bySeason[label]).forEach(function (iso) {
+        var t = bySeason[label][iso];
+        if (t >= h.floor_tenths) { var c = hailClass(h, t); counts[c.word] = (counts[c.word] || 0) + 1; }
+      });
+    });
+    var items = [];
+    h.classes.forEach(function (cls) {
+      var n = counts[cls.word] || 0;
+      if (!n) return;
+      var dec = sumDecimals(S, "in"), span = cls.max_in === null ? fill(sumWord(S, "class_open"), { min: cls.min_in.toFixed(dec) })
+        : fill(sumWord(S, "class_range"), { min: cls.min_in.toFixed(dec), max: cls.max_in.toFixed(dec) });
+      items.push(fill(sumWord(S, "class_item"), { count: sumCountText(S, "days", n), word: cls.word, span: span }));
+    });
+    return items.length ? fill(sumWord(S, "class_counts"), { items: items.join("; ") }) : null;
+  }
+
+  /** The montana-time event rows of one tile's joins (summary._Spot.lsr_within, records_within): the reports within the
+      report radius of the cell's centre, with the Montana day, the code, the type word, the magnitude and unit, the
+      distance in miles (rounded to two places) and the source. */
+  function sumReports(h, sp, events, j) {
+    var J = h.joins, out = [];
+    (j.reports || []).forEach(function (ref) {
+      var r = events.reports[ref], miles = joinMiles(J, sp.lat, sp.lon, r[JROW.lat], r[JROW.lon]);
+      if (miles > J.radius_miles.report) return;
+      out.push({ day: sumMontanaIso(joinInstant(h, r[JROW.day], r[JROW.hhmm])), code: r[JROW.code], mag: r[JROW.mag],
+        unit: r[JROW.unit], kind: r[JROW.type] !== undefined ? r[JROW.type] : r[JROW.code], miles: Number(miles.toFixed(2)),
+        src: r[JROW.source] });
+    });
+    return out;
+  }
+  function sumRecords(h, sp, events, j) {
+    var J = h.joins, out = [];
+    (j.records || []).forEach(function (ref) {
+      var r = events.records[ref], miles = joinMiles(J, sp.lat, sp.lon, r[JROW.lat], r[JROW.lon]);
+      if (miles <= J.radius_miles.report) out.push({ day: sumMontanaIso(joinInstant(h, r[JROW.day], r[JROW.hhmm])), code: r[JROW.code] });
+    });
+    return out;
+  }
+
+  /** summary._lsr_cells: the per-season cells of the report rows (hail largest and count, wind, freezing rain, flood). */
+  function sumReportCells(h, sp, S, lsr) {
+    var picks = {
+      hail_n: function (r) { return r.code === "H"; },
+      wind_n: function (r) { return S.rule.wind_codes.indexOf(r.code) >= 0; },
+      freezing_rain_n: function (r) { return r.kind === "freezing rain"; },
+      flood_report_n: function (r) { return r.kind === "flood" || r.kind === "flash flood"; }
+    };
+    var out = { hail_max: [], hail_n: [], wind_n: [], freezing_rain_n: [], flood_report_n: [] };
+    SUM_SEASONS.forEach(function (label) {
+      var cov = sumCoverOf(sp, label, false), missing = cov.total - cov.valid;
+      Object.keys(picks).forEach(function (key) {
+        if (cov.valid <= 0) { out[key].push(sumUnavailableCell(S, fill(sumWord(S, "season_unavailable"), { season: label, source: sumWord(S, "source_report_archive") }))); return; }
+        var n = lsr.filter(function (r) { return picks[key](r) && sumSeasonOf(r.day) === label && sumInWindow(sp, r.day); }).length;
+        out[key].push(sumCell(S, { value: n, text: sumCountText(S, key, n, label), valid: cov.valid, missing: missing }));
+      });
+      if (cov.valid <= 0) { out.hail_max.push(sumUnavailableCell(S, fill(sumWord(S, "season_unavailable"), { season: label, source: sumWord(S, "source_report_archive") }))); return; }
+      var best = null;
+      lsr.forEach(function (r) {
+        if (r.code !== "H" || r.unit !== h.joins.hail_unit || sumSeasonOf(r.day) !== label || !sumInWindow(sp, r.day)) return;
+        var hund = sumHundredths(r.mag);
+        if (hund === null) return;
+        if (best === null || hund > best.hund || (hund === best.hund && r.day < best.day)) best = { hund: hund, day: r.day };
+      });
+      if (best === null) out.hail_max.push(sumCell(S, { value: null, text: sumNoReport(S, "hail_max", label), valid: cov.valid, missing: missing }));
+      else out.hail_max.push(sumCell(S, { value: best.hund, text: sumInOn(S, best.hund, best.day), date: Number(best.day.replace(/-/g, "")), valid: cov.valid, missing: missing }));
+    });
+    return out;
+  }
+
+  /** summary._hundredths_from_decimal: an LSR magnitude as written ("1.25") to hundredths of an inch, rounding half up; null when
+      it is not a number. */
+  function sumHundredths(text) {
+    var m = /^\s*(\d+)(?:\.(\d+))?\s*$/.exec(String(text === null || text === undefined ? "" : text));
+    if (!m) return null;
+    var frac = m[2] || "";
+    var hund = Number(m[1]) * 100 + Number((frac + "00").slice(0, 2));
+    if (frac.length > 2 && Number(frac.charAt(2)) >= 5) hund += 1;
+    return hund;
+  }
+
+  /** summary._reports_rows: the report rows (hail largest and count, wind, freezing rain, flood), with the automated count
+      of the hail and wind rows and its note. */
+  function sumReportRows(h, sp, S, state, reason, periods, events, j) {
+    var keys = ["hail_max", "hail_n", "wind_n", "freezing_rain_n", "flood_report_n"];
+    var J = h.joins;
+    if (state === "unavailable" || !events) {
+      var sentence = sumClear(S, joinUnavailable(J, "reports", null, null));
+      return keys.reduce(function (o, k) { o[k] = sumUnavailableRow(S, sumSpec(S, k), sentence); return o; }, {});
+    }
+    var lsr = sumReports(h, sp, events, j);
+    var note = state === "partial" ? sumClear(S, joinUnavailable(J, "reports", periods, reason)) : null;
+    var cells = sumReportCells(h, sp, S, lsr);
+    var out = {};
+    var fiveMax = sumFive(S, cells.hail_max, "max", null, sumNoReport(S, "hail_max", sumWord(S, "these_five")));
+    out.hail_max = sumRow(S, sumSpec(S, "hail_max"), cells.hail_max, fiveMax, note ? [note] : []);
+    var inFive = function (r) { return SUM_SEASONS.indexOf(sumSeasonOf(r.day)) >= 0 && sumInWindow(sp, r.day); };
+    var picks = {
+      hail_n: function (r) { return r.code === "H"; },
+      wind_n: function (r) { return S.rule.wind_codes.indexOf(r.code) >= 0; }
+    };
+    [["hail_n", NOUNS_PLURAL(S, "hail_n")], ["wind_n", NOUNS_PLURAL(S, "wind_n")]].forEach(function (pair) {
+      var key = pair[0], autoList = S.auto_sources || [];
+      var automated = S.auto_sources === undefined ? 0 : lsr.filter(function (r) { return picks[key](r) && inFive(r) && autoList.indexOf(r.src) >= 0; }).length;
+      var extra = note ? [note] : [];
+      if (S.auto_sources === undefined) extra.push(missingKey("auto_sources"));
+      if (automated) extra.push(sumAutomated(S, automated, pair[1]));
+      var five = sumFive(S, cells[key], "sum", function (v) { return sumCountText(S, key, v); }, "");
+      out[key] = sumRow(S, sumSpec(S, key), cells[key], five, extra);
+      out[key].automated = automated;
+    });
+    ["freezing_rain_n", "flood_report_n"].forEach(function (key) {
+      var five = sumFive(S, cells[key], "sum", function (v) { return sumCountText(S, key, v); }, "");
+      out[key] = sumRow(S, sumSpec(S, key), cells[key], five, note ? [note] : []);
+    });
+    return out;
+  }
+  function NOUNS_PLURAL(S, key) { return S.nouns === undefined || S.nouns[key] === undefined ? missingKey("nouns") : S.nouns[key][1]; }
+
+  /** summary._automated_sentence. */
+  function sumAutomated(S, n, kind) {
+    return n === 1 ? fill(sumWord(S, "automated_one"), { kind: kind }) : fill(sumWord(S, "automated_note"), { n: n, kind: kind });
+  }
+
+  /** summary._records_row (D48): the NCEI flood and flash flood records within 5 miles, a row of its own. */
+  function sumRecordsRow(h, sp, S, state, reason, periods, events, j) {
+    var J = h.joins, spec = sumSpec(S, "flood_record_n");
+    if (state === "unavailable" || !events || !j) {
+      var why = !events ? J.words.reason_events : !j ? J.words.reason_no_answer : reason;
+      return sumUnavailableRow(S, spec, sumClear(S, joinUnavailable(J, "records", null, why)));
+    }
+    var note = state === "partial" ? sumClear(S, joinUnavailable(J, "records", periods, reason)) : null;
+    var days = sumRecords(h, sp, events, j).filter(function (r) { return J.flood_record_codes.indexOf(r.code) >= 0; }).map(function (r) { return r.day; });
+    var cells = SUM_SEASONS.map(function (label) {
+      var cov = sumCoverOf(sp, label, false);
+      if (cov.valid <= 0) return sumUnavailableCell(S, fill(sumWord(S, "season_unavailable"), { season: label, source: sumWord(S, "source_record_archive") }));
+      var n = days.filter(function (d) { return sumSeasonOf(d) === label && sumInWindow(sp, d); }).length;
+      return sumCell(S, { value: n, text: sumCountText(S, "flood_record_n", n, label), valid: cov.valid, missing: cov.total - cov.valid });
+    });
+    var five = sumFive(S, cells, "sum", function (v) { return sumCountText(S, "flood_record_n", v); }, "");
+    return sumRow(S, spec, cells, five, note ? [note] : []);
+  }
+
+  /** The files the table reads at a cell: the radar tile (hail/t), the joins record tile (hail/j) and its events (hail/j/e);
+      then the zone, county and climate files the cell names; then the tile list (hail/tl, D36), the station files it names
+      for snowfall and deepest snow, and the gust file of the joined records' station. Each part holds its error or null; a
+      part that fails is said so by its rows. Never rejects. */
+  function sumLoad(h, cell) {
+    var J = h.joins, name = hailTileName(h, cell), sp = sumSpot(h, cell);
+    var part = function (url, load) { return (load || hailTile)(url).then(function (doc) { return { doc: doc }; }, function (e) { return { error: e }; }); };
+    return Promise.all([
+      part(hailShardUrl(h, cell)),
+      part(fill(J.shards.j, { tile: name })),
+      part(fill(J.events_tiles, { tile: name }), function (url) { return joinEvents(J, url); })
+    ]).then(function (all) {
+      var jdoc = all[1].doc || null, key = sp.key;
+      var zc = jdoc ? joinZoneOf(jdoc, "zones", key) : undefined;
+      var cc = jdoc ? joinZoneOf(jdoc, "counties", key) : undefined;
+      var clim = sumClimateCellRecord(h, sp);
+      var zoneP = zc !== undefined ? part(fill(J.shards.z, { zone: zc }), joinFile(J.formats && J.formats.zone)) : Promise.resolve({});
+      var countyP = cc !== undefined && h.county ? part(fill(h.county.tile, { county: cc }), joinFile(J.formats && J.formats.county)) : Promise.resolve({});
+      var climP = clim.status === "pending" ? part(fill(h.climate.tile, { tile: clim.tile }), hailTile) : Promise.resolve({});
+      var tlPath = own(h.summary, "tile_list");          // the build's path and format of the tile lists (D36, D62)
+      var tlP = tlPath === undefined ? Promise.resolve({}) : part(fill(tlPath, { tile: name }));
+      var picks = jdoc ? joinPicks(J, jdoc, sp.lat, sp.lon) : [];
+      var gustP = picks.length ? part(fill(J.shards.s, { station: picks[0].id })) : Promise.resolve({});
+      return Promise.all([zoneP, countyP, climP, tlP, gustP]).then(function (more) {
+        var tl = more[3].doc && more[3].doc.f === own(h.summary, "tile_list_format") ? more[3].doc : null;
+        var ids = {};
+        ["SNOW", "SNWD"].forEach(function (el) {
+          var block = tl ? own(tl.elements, el) : undefined;
+          var got = block && tl.margin_miles !== undefined ? sumTilePicks(J, block, sp.lat, sp.lon, h.stations.radius_miles) : null;
+          if (got) got.picks.forEach(function (p) { ids[p.id] = true; });
+        });
+        var sdKeys = Object.keys(ids);
+        return Promise.all(sdKeys.map(function (id) { return part(fill(h.stations.tile, { station: id })); })).then(function (sdAll) {
+          var sd = {};
+          sdKeys.forEach(function (id, k) { sd[id] = sdAll[k].doc || null; });
+          return { t: all[0], j: all[1], events: all[2], zoneDoc: more[0].doc || null, countyDoc: more[1].doc || null,
+            clim: clim, climDoc: more[2].doc || null, tileDoc: tl, sd: sd, gustDoc: more[4].doc || null };
+        });
+      });
+    });
+  }
+
+  /** The table's context: the words and rules of h.summary (with the exports the page needs from the build), the spot, the
+      store's days, the tile's records, the tile list and the station files. */
+  function sumContext(h, cell, loaded) {
+    var S = Object.assign({}, h.summary);
+    S.nouns = own(h.summary, "nouns");                 // undefined when the build does not write the key: a placeholder shows
+    S.report_types = own(h.summary, "report_types");
+    S.record_types = own(h.summary, "record_types");
+    S.auto_sources = own(h.summary, "auto_sources");
+    S.element_names = own(h.summary, "element_names");
+    S.family_nouns = own(h.summary, "family_nouns");
+    SUM_SEASONS = h.summary.seasons;
+    S.canada = own(h.stations, "canada_reason");                 // the Canada reason of an unread station (stations.CANADA_REASON)
+    S.unplaced_products = own(h.summary, "unplaced_products");   // product code to family (summary.UNPLACED_FAMILIES)
+    S.unplaced = sumUnplacedIndex(h, S);                         // family|season to the unplaced count; null when the rows are not written
+    var sp = sumSpot(h, cell);
+    var J = h.joins, parts = function (k) { return J.parts[k] === "unavailable" ? "unavailable" : J.parts[k] === "partial" ? "partial" : "loaded"; };
+    var reasons = function (k) { return (J.reasons && J.reasons[k]) || J.words.reason_no_answer; };
+    var periods = function (k) { return (J.partial && J.partial[k]) || []; };
+    var tdoc = loaded.t.error ? null : loaded.t.doc;
+    var days = [];
+    if (tdoc) {
+      var rows = (tdoc.cells && tdoc.cells[String(sp.key)]) || [];
+      rows.forEach(function (pair) { days.push({ iso: hailIso(h, pair[0]), t: pair[1] }); });
+    }
+    var jdoc = loaded.j.error ? null : loaded.j.doc;
+    var events = loaded.events.error ? null : loaded.events.doc;
+    var climRec = loaded.clim.status !== "pending" ? { status: loaded.clim.status } : null;
+    if (!climRec) {
+      var cdoc = loaded.climDoc, key = loaded.clim.key;
+      if (!cdoc || !cdoc.cells) climRec = { status: "outside" };
+      else if (cdoc.state && cdoc.state.indexOf(key) < 0) climRec = { status: "outside" };
+      else if (!cdoc.cells[String(key)]) climRec = { status: "no_land" };
+      else climRec = { status: "ok", record: cdoc.cells[String(key)] };
+    }
+    return { S: S, sp: sp, h: h, days: days, tileOk: !!tdoc, jdoc: jdoc, events: events, parts: parts, reasons: reasons,
+      periods: periods, zoneDoc: loaded.zoneDoc, countyDoc: loaded.countyDoc, climRec: climRec, tileDoc: loaded.tileDoc,
+      sd: loaded.sd, gustDoc: loaded.gustDoc };
+  }
+
+  /** The table's rows, by key, in the row order of map.json summary.row_order (the town-only rows are not on the sheet). Each part is
+      built on its own: a part that throws (a key the build does not write, a file of the wrong shape) gives its rows the D20 sentence
+      and the console the error, and the rest of the table stands (D16). */
+  function sumRows(ctx) {
+    var h = ctx.h, S = ctx.S, sp = ctx.sp, out = {};
+    var part = function (name, keys, build) {
+      var got;
+      try { got = build(); }
+      catch (e) {
+        if (window.console) console.error("summary part", name, e);
+        got = {};
+        var sentence = sumClear(S, fill(h.words.unavailable, { problem: sumWord(S, "table_problem") }));
+        keys.forEach(function (k) { got[k] = sumUnavailableRow(S, sumSpec(S, k), sentence); });
+      }
+      Object.keys(got).forEach(function (k) { out[k] = got[k]; });
+    };
+    part("radar", ["radar_max", "radar_1in"], function () {
+      var radar = ctx.tileOk ? sumRadarRows(h, sp, S, ctx.days) : null;
+      if (radar) return radar;
+      var rs = sumClear(S, fill(h.words.unavailable, { problem: sumWord(S, "radar_problem") }));
+      return { radar_max: sumUnavailableRow(S, sumSpec(S, "radar_max"), rs), radar_1in: sumUnavailableRow(S, sumSpec(S, "radar_1in"), rs) };
+    });
+    part("reports", ["hail_max", "hail_n", "wind_n", "freezing_rain_n", "flood_report_n"], function () {
+      return sumReportRows(h, sp, S, ctx.parts("reports"), ctx.reasons("reports"), ctx.periods("reports"), ctx.events, ctx.jdoc);
+    });
+    part("gust", ["gust_days", "gust_max"], function () { return sumGustRows(ctx); });
+    part("records", ["flood_record_n"], function () {
+      return { flood_record_n: sumRecordsRow(h, sp, S, ctx.parts("records"), ctx.reasons("records"), ctx.periods("records"), ctx.events, ctx.jdoc) };
+    });
+    part("warnings", ["flood_warn"], function () { return { flood_warn: sumWarningRow(ctx) }; });
+    part("county", ["county_watch"], function () { return { county_watch: sumCountyRow(ctx) }; });
+    part("zones", ["hw_zone", "ice_warn"], function () { return sumZoneRows(ctx); });
+    part("climate", ["tmax", "tmin", "hot90", "frost32", "freeze_thaw", "precip", "precip_max"], function () { return sumClimateRows(ctx, ctx.climRec); });
+    part("stations", ["snow", "snow_depth"], function () {
+      return { snow: sumStationRow(ctx, "snow", "SNOW", "sum"), snow_depth: sumStationRow(ctx, "snow_depth", "SNWD", "max") };
+    });
+    part("held", ["held"], function () { return { held: sumHeldRow(S) }; });
+    return out;
+  }
+
+  /** The table of a cell: the rows, the partial line and the context, as {rows, partial, ctx}. The partial line is built on its own: a
+      failure there gives its D20 sentence and leaves the rows (D16). */
+  function sumTable(h, cell) {
+    return sumLoad(h, cell).then(function (loaded) {
+      var ctx = sumContext(h, cell, loaded), partial;
+      try { partial = sumPartialRow(ctx); }
+      catch (e) {
+        if (window.console) console.error("summary part", "partial", e);
+        partial = { label: h.summary.partial, text: sumClear(ctx.S, fill(h.words.unavailable, { problem: sumWord(ctx.S, "table_problem") })) };
+      }
+      return { rows: sumRows(ctx), partial: partial, ctx: ctx };
+    });
+  }
+  /** climate.climate_cell_for: the 1/48-degree grid cell (i, j) that holds a point, in exact whole millionths of a degree
+      (the half-open rule: latitude (south edge, north edge], longitude [west edge, east edge)); null off the grid. */
+  function sumClimateCell(h, lat, lon) {
+    var g = h.climate.grid, U = g.units_per_degree;
+    var latM = Math.round(lat * HAIL_MICRO) * U, lonM = Math.round(lon * HAIL_MICRO) * U;   // millionths times 48
+    var i = Math.ceil((latM - g.lat_edge_units * HAIL_MICRO) / (2 * HAIL_MICRO));
+    var j = Math.floor((lonM + g.lon_edge_units * HAIL_MICRO) / (2 * HAIL_MICRO));
+    return i >= 0 && i < g.rows && j >= 0 && j < g.cols ? { i: i, j: j } : null;
+  }
+
+  /** climate.climate_tile: the B1 tile and in-tile key of the B1 cell that holds a climate cell's centre. */
+  function sumClimateTile(h, i, j) {
+    var g = h.climate.grid, U = g.units_per_degree;
+    var lat = (g.lat_centre_units[0] + g.lat_centre_units[1] * i) / U;
+    var lon = (g.lon_centre_units[0] + g.lon_centre_units[1] * j) / U;
+    var cell = hailCell(h.grid, hailPoint(lat, lon));
+    return cell ? { tile: hailTileName(h, cell), key: hailKey(h, cell) } : null;
+  }
+
+  /** summary._Spot.climate_cell: ("ok", the cell's record {s: six season records}), ("no_land", null), ("outside", null), or
+      ("unavailable", the reason). */
+  function sumClimateCellRecord(h, sp) {
+    var cb = h.climate;
+    if (!cb || cb.state === "unavailable") return { status: "unavailable", problem: (cb && cb.problem) || null };
+    var cell = sumClimateCell(h, sp.lat, sp.lon);
+    if (!cell) return { status: "outside" };
+    var t = sumClimateTile(h, cell.i, cell.j);
+    if (!t) return { status: "outside" };
+    return { status: "pending", tile: t.tile, key: t.key };
+  }
+
+  /** climate.py's 13 fields of a season record, read as summary._clim_cells reads them. */
+  function sumClimRecordRow(r) {
+    var days = r[0], missing = r[1];
+    return { valid: days - missing, missing: missing,
+      tmax: { value: r[5], date: r[6] }, tmin: { value: r[7], date: r[8] }, hot90: r[9], freeze_thaw: r[11], below32: r[12],
+      rain: r[2], rain_max: { value: r[3], date: r[4] } };
+  }
+
+  /** summary._clim_cells: one season's grid figures from its record (highest and lowest temperature with dates, the day
+      counts, the precipitation and the largest one-day precipitation with its date). */
+  function sumClimCells(S, label, r) {
+    var days = r[0], missing = r[1], valid = days - missing;
+    var keys = ["tmax", "tmin", "hot90", "frost32", "freeze_thaw", "precip", "precip_max"];
+    if (valid <= 0) {
+      return keys.reduce(function (o, k) { o[k] = sumUnavailableCell(S, fill(sumWord(S, "season_unavailable"), { season: label, source: "grid" })); return o; }, {});
+    }
+    var o = {};
+    o.tmax = sumCell(S, { value: r[5], text: r[5] !== null ? sumFmtF(S, r[5], r[6]) : null, date: r[6], valid: valid, missing: missing });
+    o.tmin = sumCell(S, { value: r[7], text: r[7] !== null ? sumFmtF(S, r[7], r[8]) : null, date: r[8], valid: valid, missing: missing });
+    [["hot90", 9], ["frost32", 12], ["freeze_thaw", 11]].forEach(function (pair) {
+      var v = r[pair[1]];
+      o[pair[0]] = sumCell(S, { value: v, text: v !== null ? sumCountText(S, "days", v) : null, valid: valid, missing: missing });
+    });
+    o.precip = sumCell(S, { value: r[2], text: r[2] !== null ? fill(sumWord(S, "in_plain"), { inches: sumInText(r[2]) }) : null, valid: valid, missing: missing });
+    o.precip_max = sumCell(S, { value: r[3], text: r[3] !== null ? sumInOn(S, r[3], sumIsoFromYmd(r[4])) : null, date: r[4], valid: valid, missing: missing });
+    return o;
+  }
+
+  /** "2021-07-30" from a yyyymmdd number (null for null). */
+  function sumIsoFromYmd(v) {
+    if (v === null || v === undefined) return null;
+    var s = String(v);
+    return s.slice(0, 4) + "-" + s.slice(4, 6) + "-" + s.slice(6, 8);
+  }
+
+  /** summary._fmt_f_on: a temperature in tenths of a degree F with its date: "102.9 F on Jul 20, 2021". The text of the
+      tenths follows climate._tenths_f_text (a sign, the whole degrees, a full stop, the tenth). */
+  function sumTenthsF(t) {
+    var sign = t < 0 ? "-" : "", a = Math.abs(t);
+    return sign + Math.floor(a / 10) + "." + (a % 10);
+  }
+  function sumFmtF(S, t, date) {
+    var text = sumTenthsF(t);
+    return date ? fill(sumWord(S, "f_on"), { f: text, date: sumFmtDate(sumIsoFromYmd(date)) }) : fill(sumWord(S, "f_plain"), { f: text });
+  }
+
+  /** summary._climate_part: the grid rows (highest and lowest temperature with dates, the day counts, precipitation and the
+      largest one-day precipitation). Five seasons: each season's cells, then the five-season figure from them. */
+  function sumClimateRows(ctx, rec) {
+    var h = ctx.h, S = ctx.S, sp = ctx.sp, keys = ["tmax", "tmin", "hot90", "frost32", "freeze_thaw", "precip", "precip_max"];
+    var out = {};
+    if (rec.status === "unavailable") {
+      keys.forEach(function (k) { out[k] = sumUnavailableRow(S, sumSpec(S, k), sumClear(S, fill(h.climate.templates.unavailable, { part: sumWord(S, "temperature_part"), part_lower: sumWord(S, "temperature_part_lower") }))); });
+      return out;
+    }
+    if (rec.status !== "ok") {
+      var sentence = sumClear(S, rec.status === "no_land" ? h.climate.templates.no_land : h.climate.templates.not_in_store);
+      keys.forEach(function (k) { out[k] = sumUnavailableRow(S, sumSpec(S, k), sentence); });
+      return out;
+    }
+    var per = {};
+    keys.forEach(function (k) { per[k] = []; });
+    SUM_SEASONS.forEach(function (label, k) {
+      var cells = sumClimCells(S, label, rec.record.s[k]);
+      keys.forEach(function (key) { per[key].push(cells[key]); });
+    });
+    var gridNotes = [h.climate.templates.cell_sentence];
+    if (h.climate.through) gridNotes.push(fill(sumWord(S, "window_grid"), { through: sumFmtDate(h.climate.through) }));
+    var combine = { tmax: "max", tmin: "min", precip_max: "max" };
+    var fmtSum = {
+      hot90: function (v) { return sumCountText(S, "days", v); }, frost32: function (v) { return sumCountText(S, "days", v); },
+      freeze_thaw: function (v) { return sumCountText(S, "days", v); },
+      precip: function (v) { return fill(sumWord(S, "in_plain"), { inches: sumInText(v) }); }
+    };
+    keys.forEach(function (key) {
+      var five = sumFive(S, per[key], combine[key] || "sum", fmtSum[key] || null, sumWord(S, "cell_unavailable"));
+      var notes = key === "tmax" || key === "precip" ? gridNotes.slice() : [];
+      out[key] = sumRow(S, sumSpec(S, key), per[key], five, notes);
+    });
+    return out;
+  }
+
+  /** summary._warning_rows (the flood and flash flood warnings, polygon covers of the cell, D11). */
+  function sumWarningRow(ctx, reportsOk) {
+    var h = ctx.h, S = ctx.S, sp = ctx.sp, J = h.joins, spec = sumSpec(S, "flood_warn");
+    var state = ctx.parts("warnings"), reason = ctx.reasons("warnings"), periods = ctx.periods("warnings");
+    if (state === "unavailable" || !ctx.events || !ctx.jdoc) return sumUnavailableRow(S, spec, sumClear(S, joinUnavailable(J, "warnings", null, reason)));
+    var note = state === "partial" ? sumClear(S, joinUnavailable(J, "warnings", periods, reason)) : null;
+    var days = [];
+    (ctx.jdoc.warnings || []).forEach(function (pair) {
+      if (!joinCovers(pair[1], sp.key)) return;
+      var item = ctx.events.warnings[pair[0]];
+      if (["FF", "FL", "FA"].indexOf(item.k) >= 0 && item.s === "W") days.push(sumMontanaIso(Date.parse(item.b)));
+    });
+    var cells = sumCountCells(ctx, days, "flood_warn");
+    var five = sumFive(S, cells, "sum", function (v) { return sumCountText(S, "flood_warn", v); }, "");
+    return sumRow(S, spec, cells, five, note ? [note] : []);
+  }
+
+  /** summary._count_cells: one count per season from the days of its items (Montana time), with the window coverage. */
+  function sumCountCells(ctx, days, key) {
+    var S = ctx.S, sp = ctx.sp;
+    return SUM_SEASONS.map(function (label) {
+      var cov = sumCoverOf(sp, label, false);
+      if (cov.valid <= 0) return sumUnavailableCell(S, fill(sumWord(S, "season_unavailable"), { season: label, source: sumWord(S, "source_record_archive") }));
+      var n = days.filter(function (d) { return sumSeasonOf(d) === label && sumInWindow(sp, d); }).length;
+      return sumCell(S, { value: n, text: sumCountText(S, key, n, label), valid: cov.valid, missing: cov.total - cov.valid });
+    });
+  }
+
+  /** summary._county_rows: the county-only flood and flash flood watches for the cell's county (k/ file, loaded with the table). */
+  function sumCountyRow(ctx) {
+    var h = ctx.h, S = ctx.S, sp = ctx.sp, spec = sumSpec(S, "county_watch");
+    var unavailable = sumUnavailableRow(S, spec, h.joins.words.county_unavailable);
+    var code = ctx.jdoc ? joinZoneOf(ctx.jdoc, "counties", sp.key) : undefined;
+    if (!h.county || h.county.state !== "loaded" || !ctx.jdoc || code === undefined || !ctx.countyDoc) return unavailable;
+    var days = (ctx.countyDoc.events || []).filter(function (ev) { return ev.k === "FA" || ev.k === "FF"; })
+      .filter(function (ev) { return ev.s === "A" && ev.b; }).map(function (ev) { return sumMontanaIso(Date.parse(ev.b)); });
+    var cells = sumCountCells(ctx, days, "county_watch");
+    var five = sumFive(S, cells, "sum", function (v) { return sumCountText(S, "county_watch", v); }, "");
+    var county = own(h.county.short_names, code);       // the county's name without the word County, as the build writes it
+    if (county === undefined) county = missingKey("county.short_names");
+    return sumRow(S, spec, cells, five, [fill(sumWord(S, "county_note"), { county: county })]);
+  }
+
+  /** summary._zone_rows: high wind watches and warnings, and winter storm and ice storm warnings, for the cell's forecast
+      zone (the zone's products, the whole zone). The unplaced products of a family mark their seasons (B5 D27). */
+  function sumZoneRows(ctx) {
+    var h = ctx.h, S = ctx.S, sp = ctx.sp, J = h.joins, out = {};
+    var state = ctx.parts("zones"), reason = ctx.reasons("zones"), periods = ctx.periods("zones");
+    var zoneCode = ctx.jdoc ? joinZoneOf(ctx.jdoc, "zones", sp.key) : undefined;
+    if (state === "unavailable" || !ctx.jdoc) {
+      var sentence = sumClear(S, joinUnavailable(J, "zones", null, reason));
+      return { hw_zone: sumUnavailableRow(S, sumSpec(S, "hw_zone"), sentence), ice_warn: sumUnavailableRow(S, sumSpec(S, "ice_warn"), sentence) };
+    }
+    if (S.unplaced === null) {                                   // the build does not write the unplaced rows: the rows cannot say
+      var noRows = sumClear(S, missingKey("zone_unplaced_rows"));
+      return { hw_zone: sumUnavailableRow(S, sumSpec(S, "hw_zone"), noRows), ice_warn: sumUnavailableRow(S, sumSpec(S, "ice_warn"), noRows) };
+    }
+    var partialNote = state === "partial" ? sumClear(S, joinUnavailable(J, "zones", periods, reason)) : null;
+    var zdoc = ctx.zoneDoc;
+    [["hw_zone", ["HW"], ["W", "A"], "high_wind"], ["ice_warn", ["WS", "IS"], ["W"], "winter_storm"]].forEach(function (t) {
+      var key = t[0], kinds = t[1], sigs = t[2], family = t[3];
+      if (zoneCode === undefined || !zdoc) { out[key] = sumUnavailableRow(S, sumSpec(S, key), sumClear(S, joinUnavailable(J, "zones", null, null))); return; }
+      var days = (zdoc.events || []).filter(function (ev) { return kinds.indexOf(ev.k) >= 0 && sigs.indexOf(ev.s) >= 0 && ev.b; })
+        .map(function (ev) { return sumMontanaIso(Date.parse(ev.b)); });
+      var cells = sumZoneCells(ctx, days, key, family);
+      var five = sumFive(S, cells, "sum", function (v) { return sumCountText(S, key, v); }, "");
+      if (five.value === null && cells.some(function (c) { return c.value !== null; })) five = sumPartialFive(S, cells, key) || five;
+      var notes = [partialNote, sumUnplacedNote(ctx, [family])].filter(function (n) { return n; });
+      out[key] = sumRow(S, sumSpec(S, key), cells, five, notes);
+    });
+    return out;
+  }
+
+  /** summary._zone_cells: a zone's season cells (the counts in the window), with the unplaced statement of the family on the
+      seasons it falls in: a zero there is Data unavailable, a count keeps its value with the statement (B5 D27, D44). */
+  function sumZoneCells(ctx, days, key, family) {
+    var S = ctx.S;
+    return sumCountCells(ctx, days, key).map(function (cell, k) {
+      var flagged = sumZoneFlag(ctx, family, SUM_SEASONS[k]);
+      if (cell.value === 0 && flagged) return sumCell(S, { text: sumWord(S, "zero_unknown"), valid: 0, missing: cell.missing, flag: flagged });
+      if (flagged) return sumCell(S, { value: cell.value, text: cell.text, valid: cell.valid, missing: cell.missing, flag: flagged });
+      return cell;
+    });
+  }
+
+  /** summary._unplaced_index (B5 D27): (family|season) to {n, first, last} for the zone products the joins could not place, counted
+      for Montana. The rows are the joins block's zone_unplaced_rows ([product, zone code, issue day, edition, reason]); a product's
+      family is the build's unplaced_products map. null when the build does not write them (the zone rows then say so). */
+  function sumUnplacedIndex(h, S) {
+    var rows = own(h.joins, "zone_unplaced_rows"), fams = S.unplaced_products;
+    if (!Array.isArray(rows) || !fams) return null;
+    var out = {};
+    rows.forEach(function (row) {
+      var fam = own(fams, row[0]), day = String(row[2]);
+      if (fam === undefined || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+      var label = sumSeasonOf(day);
+      if (SUM_SEASONS.indexOf(label) < 0) return;
+      var k = fam + "|" + label, rec = out[k] || (out[k] = { n: 0, first: day, last: day });
+      rec.n += 1;
+      if (day < rec.first) rec.first = day;
+      if (day > rec.last) rec.last = day;
+    });
+    return out;
+  }
+
+  /** The unplaced record of a family in a season (undefined when there is none). */
+  function sumUnplaced(ctx, family, label) {
+    return ctx.S.unplaced ? own(ctx.S.unplaced, family + "|" + label) : undefined;
+  }
+
+  /** summary._zone_flag: Montana's unplaced products of a family in a season, as the cell's statement; null when none. */
+  function sumZoneFlag(ctx, family, label) {
+    if (!family) return null;
+    var rec = sumUnplaced(ctx, family, label);
+    if (!rec) return null;
+    var S = ctx.S, noun = own(S.family_nouns, family) || missingKey("family_nouns");
+    var products = fill(sumWord(S, rec.n === 1 ? "product_one" : "product_many"), { noun: noun });
+    var when = rec.first === rec.last ? sumFmtDate(rec.first)
+      : fill(sumWord(S, "when_span"), { first: sumFmtDate(rec.first), last: sumFmtDate(rec.last) });
+    return fill(sumWord(S, "zone_flag"), { n: thousands(rec.n), noun: products, when: when });
+  }
+
+  /** summary._unplaced_note: the zone row's statement of the families' products that could not be placed, by season. */
+  function sumUnplacedNote(ctx, families) {
+    var S = ctx.S, parts = [];
+    families.forEach(function (fam) {
+      SUM_SEASONS.forEach(function (label) {
+        var rec = sumUnplaced(ctx, fam, label);
+        if (!rec) return;
+        var noun = own(S.family_nouns, fam) || missingKey("family_nouns");
+        parts.push(fill(sumWord(S, "unplaced_part"), { n: thousands(rec.n), season: label,
+          products: fill(sumWord(S, rec.n === 1 ? "product_one" : "product_many"), { noun: noun }) }));
+      });
+    });
+    if (!parts.length) return null;
+    var listed = parts.length === 1 ? parts[0]
+      : fill(sumWord(S, "list_last"), { head: parts.slice(0, -1).join(", "), last: parts[parts.length - 1] });
+    return fill(sumWord(S, "zone_unplaced_note"), { parts: listed });
+  }
+
+  /** summary._partial_five: the five-season total of a count when some seasons are unknown: the total of the seasons shown,
+      with the seasons it leaves out named. */
+  function sumPartialFive(S, cells, key) {
+    var shown = cells.filter(function (c) { return c.value !== null; }).map(function (c) { return c.value; });
+    if (!shown.length) return null;
+    var skipped = SUM_SEASONS.filter(function (lab, k) { return cells[k].value === null; });
+    var total = shown.reduce(function (s, v) { return s + v; }, 0);
+    var missing = cells.reduce(function (s, c) { return s + c.missing; }, 0);
+    var flags = []; cells.forEach(function (c) { if (c.flag && flags.indexOf(c.flag) < 0) flags.push(c.flag); });
+    return { value: total, date: null, text: fill(sumWord(S, "five_partial"), { count: sumCountText(S, key, total), seasons: skipped.join(", ") }),
+      coverage: sumCover(S, missing, flags.length ? flags.join("; ") : null), note: null };
+  }
+
+  /** summary._held_row: the held items the table carries as one row (D14, D41). */
+  function sumHeldRow(S) {
+    var cells = SUM_SEASONS.map(function () { return sumUnavailableCell(S); });
+    var five = { value: null, date: null, text: sumWord(S, "cell_unavailable"), coverage: null, note: null };
+    var held = S.indicators.words.held;
+    return sumRow(S, sumSpec(S, "held"), cells, five, [held.lightning, held.uv_and_sun, held.roof_surface_temperature, held.ponding]);
+  }
+
+  /** stations.tile_list_picks (D36, D63), mirrored line for line from website/stations.py: the passing entries within the
+      radius of the point, nearest first (ties by id); a capped list with fewer than two entries within the radius cannot
+      answer (null); the first two are the picks; an unread candidate is named when it comes before the second pick (or,
+      with fewer than two picks, lies within the radius), or when it has no position; miles to one decimal place. */
+  function sumTilePicks(J, block, lat, lon, radius) {
+    if (!block) return null;
+    var rows = [];
+    (block.passing || []).forEach(function (entry) {
+      var miles = joinMiles(J, lat, lon, entry.lat, entry.lon);
+      if (miles <= radius) rows.push({ miles: miles, entry: entry });
+    });
+    rows.sort(function (a, b) {
+      if (a.miles !== b.miles) return a.miles - b.miles;
+      return a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0;
+    });
+    if (block.capped && rows.length < 2) return null;
+    var picks = rows.slice(0, 2), unread = [];
+    (block.unread || []).forEach(function (entry) {
+      var miles = null, named;
+      if (entry.lat === null || entry.lat === undefined) named = true;
+      else {
+        miles = joinMiles(J, lat, lon, entry.lat, entry.lon);
+        if (picks.length === 2) named = miles < picks[1].miles || (miles === picks[1].miles && entry.id < picks[1].entry.id);
+        else named = miles <= radius;
+      }
+      if (named) unread.push({ id: entry.id, name: entry.name || entry.id, miles: miles === null ? null : Number(miles.toFixed(1)), reason: entry.reason });
+    });
+    var out = picks.map(function (p) {
+      return { id: p.entry.id, name: p.entry.name || p.entry.id, miles: Number(p.miles.toFixed(1)) };
+    });
+    var state = out.length === 2 ? "two" : out.length === 1 ? "one" : unread.length ? "unavailable" : "none";
+    // the rejected candidates the point names (stations.rejected_rule, D69): nearer than the second pick; with fewer than two picks,
+    // every one within the radius. The others are counted.
+    var within = [];
+    (block.rejected || []).forEach(function (entry) {
+      var m = joinMiles(J, lat, lon, entry.lat, entry.lon);
+      if (m <= radius) within.push({ miles: m, entry: entry });
+    });
+    within.sort(function (a, b) {
+      if (a.miles !== b.miles) return a.miles - b.miles;
+      return a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0;
+    });
+    var named = within, more = 0;
+    if (picks.length === 2) {
+      named = within.filter(function (r) { return r.miles < picks[1].miles || (r.miles === picks[1].miles && r.entry.id < picks[1].entry.id); });
+      more = within.length - named.length;
+    }
+    var rejected = named.map(function (r) {
+      return { id: r.entry.id, name: r.entry.name || r.entry.id, miles: Number(r.miles.toFixed(1)), ok: r.entry.ok, of: r.entry.of,
+        share: r.entry.share, current: r.entry.current, newest: r.entry.newest };
+    });
+    return { state: state, picks: out, unread: unread, candidates: rows.length, incomplete: unread.length > 0,
+      rejected: rejected, rejected_more: more };
+  }
+
+  /** summary._Spot.chosen_from_tile_list: the picks of one element from the tile's list (D36, D61). null when the list does not
+      hold the element, predates the radius rule (no margin_miles), or cannot answer. */
+  function sumChosenFromTiles(ctx, element) {
+    var doc = ctx.tileDoc;
+    var block = doc && doc.elements ? own(doc.elements, element) : undefined;
+    if (!block || doc.margin_miles === undefined) return null;
+    var got = sumTilePicks(ctx.h.joins, block, ctx.sp.lat, ctx.sp.lon, ctx.h.stations.radius_miles);
+    if (got === null) return null;
+    return { state: got.state, chosen: got.picks, unread: got.unread, incomplete: got.incomplete, candidates: got.candidates,
+      rejected: got.rejected, rejected_more: got.rejected_more };
+  }
+
+  /** summary._Spot.chosen: (state, the chosen stations nearest first, the rule's result), from the tile list only. The browser
+      has no station block, so a list that cannot answer gives state "cannot"; the sheet says so (see sumStationRow). */
+  function sumChosen(ctx, element) {
+    var got = sumChosenFromTiles(ctx, element);
+    if (got === null) return { state: "cannot", chosen: [], res: null };
+    return { state: got.state, chosen: got.chosen.map(function (c) {
+        var sd = ctx.sd[c.id];
+        return { id: c.id, name: c.name, net: sd && sd.net ? sd.net : null, miles: c.miles };
+      }), res: got };
+  }
+
+  /** The station file's season period for a label (summary._Spot.station_season reads periods.season[label]). */
+  function sumSeasonPeriod(sdoc, label) {
+    var seasons = sdoc && sdoc.periods && sdoc.periods.season;
+    return seasons ? own(seasons, label) : undefined;
+  }
+
+  function sumStationNone(ctx, element, state, res) {
+    var S = ctx.S, name = sumElementName(S, element);
+    var unread = res && res.unread ? res.unread : [];
+    if (state === "none" && !unread.length && ctx.h.stations.state === "loaded") {
+      return { kind: "none", text: fill(sumWord(S, "station_none"), { element: name }) };
+    }
+    return { kind: "failed", text: sumStationFailed(S, unread, name, "{season}") };
+  }
+
+  /** The element's plain name (stations.element_name), from the build's words (a need: map.json summary "element_names"). */
+  function sumElementName(S, element) { return own(S.element_names, element) || missingKey("element_names"); }
+
+  /** summary._station_text: a station value's words (snowfall, snow depth, highs and lows, with the station's name). */
+  function sumStationText(S, element, value, date, name) {
+    if (element === "SNOW") return fill(sumWord(S, "snow_at"), { inches: sumInFmt(value), station: name });
+    if (element === "SNWD") return fill(sumWord(S, "snow_depth_at"), { inches: sumInFmt(value), date: sumFmtDate(sumIsoFromYmd(date)), station: name });
+    return fill(sumWord(S, "temp_at"), { f: sumTenthsF(value), date: sumFmtDate(sumIsoFromYmd(date)), station: name });
+  }
+
+
+  /** The verb of the candidates that were not read (D32, D62): a file that did not load, a Canadian station (its reason is the
+      build's Canada reason), or both. word(key) gives the words of the block the line belongs to: the summary's words for its
+      station sentences, the stations' words for the rule's lines (stations._unread_status), which word them differently. */
+  function sumUnreadVerb(S, unread, word) {
+    if (!unread.length) return word("station_status_failed");
+    if (S.canada === undefined) return missingKey("canada_reason");
+    var flags = unread.map(function (u) { return u.reason === S.canada; });
+    if (flags.every(function (f) { return !f; })) return word("station_status_failed");
+    if (flags.every(function (f) { return f; })) return word(flags.length === 1 ? "station_status_not_read" : "station_status_not_read_many");
+    return word("station_status_both");
+  }
+
+  /** summary._unread_status: the verb of a summary station sentence (D32, D62). */
+  function sumUnreadStatus(S, unread) {
+    return sumUnreadVerb(S, unread, function (key) { return sumWord(S, key); });
+  }
+
+  /** stations._unread_text's names: the nearest UNREAD_NAMES_SHOWN unread stations by name, then the count of the others. */
+  function sumUnreadNames(S, unread) {
+    var names = unread.map(function (u) { return u.name || u.id; }), shown = S.rule.unread_names_shown;
+    if (typeof shown !== "number") throw new Error("summary.rule.unread_names_shown");
+    var more = names.length - shown;
+    if (more <= 0) return sumJoinNames(S, names);
+    return fill(sumWord(S, "unread_more"), { names: names.slice(0, shown).join(", "), n: more,
+      stations: sumWord(S, more === 1 ? "station_one" : "station_many") });
+  }
+
+  /** The reasons of the unread candidates, sorted and joined in brackets ("" when there are none). */
+  function sumUnreadReason(S, unread) {
+    var reasons = [];
+    unread.forEach(function (u) { if (u.reason && reasons.indexOf(u.reason) < 0) reasons.push(u.reason); });
+    reasons.sort();
+    return reasons.length ? fill(sumWord(S, "reason_part"), { reasons: reasons.join("; ") }) : "";
+  }
+
+  /** summary._Spot.station_none's failed sentence (D32): the unread candidates by name, or the stations within the radius when none
+      is named; their status and reasons. The season keeps its placeholder for the cell. */
+  function sumStationFailed(S, unread, name, season) {
+    var names = unread.length ? sumJoinNames(S, unread.map(function (u) { return u.name || u.id; }))
+      : fill(sumWord(S, "stations_within"), { miles: S.rule.radius_miles });
+    return fill(sumWord(S, "station_failed"), { season: season, names: names, status: sumUnreadStatus(S, unread),
+      reason: sumUnreadReason(S, unread), element: name });
+  }
+
+  /** stations.station_words for a chosen result (D41, D62): the unread candidates' line (unread_element when the rule cannot
+      answer, else unread_partial), or the one-station line. Nothing for two stations with no candidate unread. */
+  function sumStationLines(ctx, element, state, res) {
+    var S = ctx.S, name = sumElementName(S, element), unread = res && res.unread ? res.unread : [];
+    if (unread.length) {
+      return [fill(stWord(ctx.h, state === "unavailable" ? "unread_element" : "unread_partial"), { element: name,
+        stations: sumUnreadNames(S, unread), status: sumUnreadVerb(S, unread, function (key) { return stWord(ctx.h, key); }),
+        reason: sumUnreadReason(S, unread) })];
+    }
+    if (state === "one") return [sumClear(S, fill(stWord(ctx.h, "two_of_one"), { element: name, station: res.chosen[0].name }))];
+    return [];
+  }
+
+
+  /** summary._share_text (D5): a station's share of the days as a percent with one decimal; a share under the rule never reads as the
+      rule's own figure (79.96 percent shows 79.9, not 80.0). */
+  function sumSharePct(S, share) {
+    var pct = Math.round(share * 1000) / 10, need = Math.round(S.rule.cover_min * 1000) / 10;
+    if (share < S.rule.cover_min && pct >= need) pct = Math.round((need - 0.1) * 10) / 10;
+    return pct.toFixed(1);
+  }
+
+  /** summary._rejected_notes (D69, F6): the candidates the rule does not use that lie nearer than the second pick, each with its
+      reason (its share of the days, or the date of its newest value); the farther ones are counted in one clause. */
+  function sumRejectedNotes(ctx, res, element) {
+    var S = ctx.S, out = [], name = sumElementName(S, element), place = sumWord(S, "place_spot");
+    (res.rejected || []).forEach(function (r) {
+      var miles = r.miles.toFixed(1);
+      if (r.share < S.rule.cover_min) {
+        out.push(fill(sumWord(S, "station_rejected"), { station: r.name, miles: miles, place: place, pct: sumSharePct(S, r.share),
+          element: name, need: Math.round(S.rule.cover_min * 100) }));
+      } else {
+        var newest = r.newest ? sumFmtDate(sumIsoFromYmd(r.newest)) : sumWord(S, "newest_unknown");
+        out.push(fill(sumWord(S, "station_rejected_current"), { station: r.name, miles: miles, place: place, element: name,
+          newest: newest, days: S.rule.fresh_days, as_of: sumFmtDate(ctx.sp.asOf) }));
+      }
+    });
+    var more = res.rejected_more || 0;
+    if (more) out.push(fill(sumWord(S, more === 1 ? "station_rejected_more_one" : "station_rejected_more"), { n: more }));
+    return out;
+  }
+
+  /** stations.fmt_in: inches from hundredths, one decimal, rounded half away from zero ("50.3" for 5029). */
+  function sumInFmt(h) {
+    var v = Math.abs(h), tenths = Math.floor((v + 5) / 10);
+    return (h < 0 ? "-" : "") + Math.floor(tenths / 10) + "." + (tenths % 10);
+  }
+
+  /** The record conversions of summary.STATION_CONV: (value, date) of a station's season record for an element. The constants are
+      the build's (summary.conv: mm_scale for snowfall, c_to_f for the tenths of a degree C to F rule), never written here. */
+  function sumConv(h, element, rec) {
+    var C = own(h.summary, "conv");
+    if (C === undefined) throw new Error("summary.conv");
+    var T = h.tenths_per_inch, half = Math.floor(T / 2);                 // T: the store's tenths of a millimetre per inch
+    var toF = function (c10) { return Math.floor((C.c_to_f.mul * c10 + C.c_to_f.offset + C.c_to_f.round) / C.c_to_f.div); };
+    if (element === "SNOW") return { value: rec.sum !== undefined ? Math.floor((rec.sum * C.mm_scale + half) / T) : null, date: null };
+    if (element === "SNWD") return { value: rec.max !== undefined ? Math.floor((rec.max * C.mm_scale + half) / T) : null, date: rec.max_d === undefined ? null : rec.max_d };
+    if (element === "TMAX") return { value: rec.max !== undefined ? toF(rec.max) : null, date: rec.max_d === undefined ? null : rec.max_d };
+    return { value: rec.min !== undefined ? toF(rec.min) : null, date: rec.min_d === undefined ? null : rec.min_d };
+  }
+
+  /** summary._Spot.station_season: one season's figure: the first chosen station (nearest first) whose season has at least
+      95 percent of its days with the element; the nearer stations that fell short are named on the cell (passed over). */
+  function sumStationSeason(ctx, element, label, chosen, none) {
+    var S = ctx.S, total = sumCoverOf(ctx.sp, label, false).total;
+    if (!chosen.length) return sumNoneCell(S, label, none, total);
+    var short = [], failed = [];
+    for (var k = 0; k < chosen.length; k++) {
+      var st = chosen[k], sdoc = ctx.sd[st.id];
+      var period = sdoc ? sumSeasonPeriod(sdoc, label) : undefined;
+      if (!period) { failed.push({ station: st.name, miles: st.miles, sid: st.id }); continue; }
+      var n = Number(period.n), rec = own(period, element) || {}, ok = Number(rec.ok || 0), share = Math.round(ctx.S.rule.season_min * 100);
+      if (n > 0 && ok * 100 >= n * share) {
+        var conv = sumConv(ctx.h, element, rec);
+        if (conv.value !== null) {
+          var cell = sumCell(S, { value: conv.value, date: conv.date, valid: ok, missing: n - ok, station: st.name });
+          cell.station = st.name; cell.miles = st.miles; cell.sid = st.id;
+          cell.passedOver = short.slice(); cell.failed = failed.slice(); cell.season = label;
+          return cell;
+        }
+      }
+      short.push({ station: st.name, n: n, ok: ok, miles: st.miles, sid: st.id });
+    }
+    if (!short.length) {
+      if (failed.length) {
+        var names = sumJoinNames(S, failed.map(function (f) { return f.station; }));   // summary._station_season's failed line
+        return sumCell(S, { text: fill(sumWord(S, "station_failed"), { season: label, names: names,
+          status: sumWord(S, "station_status_failed"), reason: "", element: sumElementName(S, element) }), valid: 0, missing: 0 });
+      }
+      return sumNoneCell(S, label, none, total);
+    }
+    var first = short[0];
+    var text = fill(sumWord(S, "station_short"), { season: label, station: first.station, k: first.ok, d: first.n, element: sumElementName(S, element) });
+    var c2 = sumCell(S, { value: null, text: text, valid: 0, missing: first.n - first.ok, station: first.station });
+    c2.miles = first.miles; c2.sid = first.sid;
+    return c2;
+  }
+
+  /** summary._none_cell: the cell of a season no chosen station gives a figure for. */
+  function sumNoneCell(S, label, none, total) {
+    if (none.kind === "failed") return sumCell(S, { text: none.text.replace("{season}", label), valid: 0, missing: 0 });
+    return sumCell(S, { text: none.text, valid: 0, missing: total });
+  }
+
+  function sumStationRow(ctx, key, element, combine) {
+    var S = ctx.S, spec = sumSpec(S, key);
+    var ch = sumChosen(ctx, element);
+    if (ch.state === "cannot") {
+      return sumUnavailableRow(S, spec, sumClear(S, fill(sumWord(S, "unavailable_part"), { part: sumWord(S, "station_part"), part_lower: sumWord(S, "station_part_lower") })));
+    }
+    var none = sumStationNone(ctx, element, ch.state, ch.res);
+    var cells = [];
+    SUM_SEASONS.forEach(function (label) {
+      var cell = sumStationSeason(ctx, element, label, ch.chosen, none);
+      if (cell.value !== null) cell.text = sumStationText(S, element, cell.value, cell.date, cell.station);
+      cells.push(cell);
+    });
+    var plain = combine === "sum" ? function (v) { return fill(sumWord(S, "in_plain"), { inches: sumInFmt(v) }); } : null;
+    var noneFive = none.kind === "failed" ? none.text.replace("{season}", sumWord(S, "five_seasons")) : none.text;
+    var five = sumFive(S, cells, combine, plain, noneFive);
+    var names = [];
+    cells.forEach(function (c) { if (c.station && names.indexOf(c.station) < 0) names.push(c.station); });
+    if (combine === "sum" && five.value !== null) {
+      if (names.length > 1) five = { value: null, date: null, text: sumWord(S, "five_snow_split"), coverage: five.coverage, note: null };
+      else if (names.length) five.text = fill(sumWord(S, "five_station_one"), { total: five.text, station: names[0] });
+    }
+    var notes = [];
+    if (ch.chosen.length) {
+      notes.push(sumWord(S, "station_rule_spot"));
+      ch.chosen.forEach(function (st) {
+        notes.push(fill(sumWord(S, "station_named"), { station: st.name, miles: st.miles.toFixed(1) }));
+        if (st.net === "SNOTEL") notes.push(fill(sumWord(S, "snotel_station"), { station: st.name }));
+      });
+      sumStationLines(ctx, element, ch.state, ch.res).forEach(function (w) { notes.push(w); });
+    } else {
+      notes.push(none.kind === "failed" ? none.text.replace("{season}", sumWord(S, "five_seasons")) : none.text);
+    }
+    sumRejectedNotes(ctx, ch.res, element).forEach(function (w) { notes.push(w); });   // the candidates the rule does not use (D69)
+    cells.forEach(function (cell, k) {
+      (cell.passedOver || []).forEach(function (po) {
+        var pct = po.n ? (po.ok * 100 / po.n).toFixed(1) : "0.0";
+        notes.push(fill(sumWord(S, "passed_over"), { station: po.station, pct: pct, season: SUM_SEASONS[k], ok: po.ok, n: po.n, chosen: cell.station }));
+      });
+      (cell.failed || []).forEach(function (fl) {
+        notes.push(fill(sumWord(S, "record_failed_passed"), { station: fl.station, season: SUM_SEASONS[k], chosen: cell.station, element: sumElementName(S, element) }));
+      });
+    });
+    notes.push(sumWord(S, "window_station"));
+    return sumRow(S, spec, cells, five, notes);
+  }
+
+  /** summary._gust_rows: the days at 50 kt or more and the strongest gust, at the nearer of the cell's station picks (the rule of
+      joins.station_picks, the joined records' own station). A season shows its figures only when 95 percent of its days have a
+      value (D5, O8, D37); a record without those counts shows Data unavailable; a failed record is named (D32). */
+  function sumGustRows(ctx) {
+    var h = ctx.h, S = ctx.S, sp = ctx.sp, J = h.joins;
+    var picks = ctx.jdoc ? joinPicks(J, ctx.jdoc, sp.lat, sp.lon) : null;
+    if (!picks) return { gust_days: sumUnavailableRow(S, sumSpec(S, "gust_days"), sumClear(S, joinUnavailable(J, "stations", null, null))),
+      gust_max: sumUnavailableRow(S, sumSpec(S, "gust_max"), sumClear(S, joinUnavailable(J, "stations", null, null))) };
+    if (!picks.length) {
+      var totals = SUM_SEASONS.map(function (label) { return sumCoverOf(sp, label, false).total; });
+      var cells = totals.map(function (t) { return sumCell(S, { text: sumWord(S, "gust_none"), valid: 0, missing: t }); });
+      var five = { value: null, date: null, text: sumWord(S, "gust_none"), coverage: sumCover(S, totals.reduce(function (a, b) { return a + b; }, 0), null), note: null };
+      return { gust_days: sumRow(S, sumSpec(S, "gust_days"), cells, five, [sumWord(S, "gust_none")]),
+        gust_max: sumRow(S, sumSpec(S, "gust_max"), cells, five, [sumWord(S, "gust_none")]) };
+    }
+    var st = picks[0], name = st.name, miles = st.miles, milesText = Number(miles).toFixed(1);
+    var note = fill(sumWord(S, "gust_station"), { station: name, miles: miles.toFixed(1) });
+    var gdoc = ctx.gustDoc;
+    if (!gdoc) {
+      var failed = fill(sumWord(S, "gust_failed"), { names: name, reason: "" });
+      var fcells = SUM_SEASONS.map(function () { return sumCell(S, { text: failed, valid: 0, missing: 0, station: name }); });
+      var ffive = { value: null, date: null, text: sumWord(S, "cell_unavailable"), coverage: null, note: failed };
+      return { gust_days: sumRow(S, sumSpec(S, "gust_days"), fcells, ffive, [note, failed]),
+        gust_max: sumRow(S, sumSpec(S, "gust_max"), fcells, ffive, [note, failed]) };
+    }
+    var seasons = gdoc.periods && gdoc.periods.season;
+    if (!seasons || typeof seasons !== "object") {
+      var interim = fill(sumWord(S, "gust_interim"), { station: name });
+      var ucells = SUM_SEASONS.map(function () { return sumCell(S, { text: sumWord(S, "cell_unavailable"), unknown: true, station: name }); });
+      var fd = sumFive(S, ucells, "sum", null, "");
+      var fm = sumFive(S, ucells, "max", null, sumWord(S, "none_gust"));
+      return { gust_days: sumRow(S, sumSpec(S, "gust_days"), ucells, fd, [note, interim, sumWord(S, "gust_coverage_note")]),
+        gust_max: sumRow(S, sumSpec(S, "gust_max"), ucells, fm, [note, interim, sumWord(S, "gust_floor_note")]) };
+    }
+    var cellsDays = [], cellsMax = [];
+    SUM_SEASONS.forEach(function (label) {
+      var per = own(seasons, label) || {}, nDays = Number(per.n || 0), ok = Number(per.ok || 0);
+      if (nDays <= 0) {
+        var t = fill(sumWord(S, "season_unavailable"), { season: label, source: fill(sumWord(S, "gust_record_at"), { station: name }) });
+        cellsDays.push(sumCell(S, { text: t, unknown: true, station: name })); cellsMax.push(sumCell(S, { text: t, unknown: true, station: name }));
+        return;
+      }
+      var missing = Math.max(0, nDays - ok);
+      if (ok * 100 < nDays * Math.round(ctx.S.rule.season_min * 100)) {
+        var s = fill(sumWord(S, "gust_season_short"), { season: label, station: name, k: ok, d: nDays });
+        cellsDays.push(sumCell(S, { text: s, valid: ok, missing: missing, unknown: true, station: name }));
+        cellsMax.push(sumCell(S, { text: s, valid: ok, missing: missing, unknown: true, station: name }));
+        return;
+      }
+      var members = [];
+      (gdoc.days || []).forEach(function (item) {
+        var iso = hailIso(h, item[0]);
+        if (sumSeasonOf(iso) === label) members.push({ iso: iso, mph: Number(item[1]), kt: Number(item[2]), flag: item.length > 3 ? Number(item[3]) : 0 });
+      });
+      var n = members.length;
+      var dtext = fill(sumWord(S, n === 1 ? "station_days_one" : "station_days"), { n: n, station: name });
+      cellsDays.push(sumCell(S, { value: n, text: dtext, valid: ok, missing: missing, station: name }));
+      if (members.length) {
+        var best = members[0];
+        members.forEach(function (m) { if (m.kt > best.kt || (m.kt === best.kt && m.iso < best.iso)) best = m; });
+        var wording = sumWord(S, best.flag ? "gust_flagged" : "gust");
+        cellsMax.push(sumCell(S, { value: best.kt, text: fill(wording, { kt: best.kt, mph: best.mph, date: sumFmtDate(best.iso), station: name }),
+          date: Number(best.iso.replace(/-/g, "")), valid: ok, missing: missing, station: name }));
+      } else {
+        cellsMax.push(sumCell(S, { value: null, text: fill(sumWord(S, "none_gust_at"), { station: name }), valid: ok, missing: missing, station: name }));
+      }
+    });
+    var fiveDays = sumFive(S, cellsDays, "sum", function (v) { return fill(sumWord(S, v === 1 ? "station_days_one" : "station_days"), { n: v, station: name }); }, "");
+    var fiveMax = sumFive(S, cellsMax, "max", null, sumWord(S, "none_gust"));
+    return { gust_days: sumRow(S, sumSpec(S, "gust_days"), cellsDays, fiveDays, [note, sumWord(S, "gust_coverage_note")]),
+      gust_max: sumRow(S, sumSpec(S, "gust_max"), cellsMax, fiveMax, [note, sumWord(S, "gust_floor_note")]) };
+  }
+
+  /** summary._partial_grid: the grid's values for the days of the partial season so far, labelled preliminary, never a record;
+      a season whose highest, lowest or rain total is not known says so instead (D20, D33). */
+  function sumPartialGrid(ctx, rec, through) {
+    var S = ctx.S, h = ctx.h, label = h.summary.partial;
+    var days = Number(rec[0]), missing = Number(rec[1]), valid = days - missing;
+    if (valid <= 0) return fill(h.climate.templates.season_unavailable, { label: label });
+    var tmax = rec[5] !== null ? sumTenthsF(rec[5]) : null, tmin = rec[7] !== null ? sumTenthsF(rec[7]) : null;
+    var rain = rec[2] !== null ? sumInText(rec[2]) : null, rmax = rec[3] !== null ? sumInText(rec[3]) : null;
+    if (tmax === null || tmin === null || rain === null || rmax === null) return fill(sumWord(S, "partial_grid_unavailable"), { season: label });
+    var hot = rec[9], frost = rec[12];
+    var text = fill(sumWord(S, "partial_grid"), {
+      season: label, n_days: valid, through: sumFmtDate(through), high: tmax, high_date: sumFmtDate(sumIsoFromYmd(rec[6])),
+      low: tmin, low_date: sumFmtDate(sumIsoFromYmd(rec[8])), hot: hot, hot_days: sumWord(S, hot === 1 ? "day_noun" : "days_noun"),
+      frost: frost, frost_days: sumWord(S, frost === 1 ? "day_noun" : "days_noun"), total: rain,
+      rain_max: rmax, rain_max_date: sumFmtDate(sumIsoFromYmd(rec[4])) });
+    if (missing) text += " " + fill(sumWord(S, "partial_missing"), { n: missing }) + ".";
+    return text;
+  }
+
+  /** summary._partial: the one line below the table for the partial season (D20, D33): the grid's preliminary values, and the
+      report and radar counts so far. */
+  function sumPartialLine(ctx, lsr, radarDays) {
+    var S = ctx.S, sp = ctx.sp, h = ctx.h, label = h.summary.partial;
+    var storeDays = sumCoverOf(sp, label, false).store;
+    var rec = ctx.climRec && ctx.climRec.status === "ok" ? ctx.climRec.record.s[5] : null;
+    var gridDays = rec ? Number(rec[0]) : 0, through = h.climate.through;
+    if (storeDays <= 0 && gridDays <= 0) return fill(sumWord(S, "partial_none"), { season: label });
+    var parts = [];
+    if (rec && gridDays > 0 && through) parts.push(sumPartialGrid(ctx, rec, through));
+    if (lsr !== null && radarDays !== null) {
+      var count = function (pick) { return lsr.filter(function (r) { return pick(r) && sumSeasonOf(r.day) === label && sumInWindow(sp, r.day); }).length; };
+      var hailN = count(function (r) { return r.code === "H"; });
+      var windN = count(function (r) { return S.rule.wind_codes.indexOf(r.code) >= 0; });
+      var windAuto = S.auto_sources === undefined ? 0 : count(function (r) { return S.rule.wind_codes.indexOf(r.code) >= 0 && S.auto_sources.indexOf(r.src) >= 0; });
+      var floodN = count(function (r) { return r.kind === "flood" || r.kind === "flash flood"; });
+      var one = radarDays.filter(function (x) { return sumSeasonOf(x.iso) === label && x.t >= S.rule.one_inch_tenths; }).length;
+      var auto = windN && S.auto_sources === undefined ? missingKey("auto_sources") : windN && windAuto ? fill(sumWord(S, "auto_partial"), { n: windAuto }) : "";
+      var items = [];
+      [["hail_n", hailN, ""], ["wind_n", windN, auto], ["flood_report_n", floodN, ""]].forEach(function (t) {
+        var key = t[0], n = t[1], extra = t[2];
+        if (n) items.push(n + " " + sumNoun(S, key, n) + extra);
+        else items.push(fill(sumWord(S, "partial_no_report"), { word: sumReportType(S, key) }));
+      });
+      parts.push(fill(sumWord(S, "partial_counts"), { season: label, items: items.join("; "), r1: one,
+        r1_word: sumWord(S, one === 1 ? "day_noun" : "days_noun") }));
+    }
+    return parts.length ? parts.join(" ") : fill(sumWord(S, "partial_none"), { season: label });
+  }
+
+  /** The table's partial line (summary.describe_summary's partial): the line, with the all-clear sentence (D41). */
+  function sumPartialRow(ctx) {
+    var J = ctx.h.joins, reasonsState = ctx.parts("reports");
+    var lsr = null, radarDays = ctx.tileOk ? ctx.days : null;
+    if (ctx.events && reasonsState !== "unavailable" && ctx.jdoc) lsr = sumReports(ctx.h, ctx.sp, ctx.events, ctx.jdoc);
+    var text = sumPartialLine(ctx, lsr, radarDays);
+    if (reasonsState === "unavailable" || (lsr === null && !ctx.events)) {
+      var why = reasonsState === "unavailable" ? ctx.reasons("reports") : J.words.reason_events;
+      text = (text ? text + " " : "") + sumClear(ctx.S, joinUnavailable(J, "reports", null, why));
+    }
+    return { label: ctx.h.summary.partial, text: sumClear(ctx.S, text || fill(sumWord(ctx.S, "partial_none"), { season: ctx.h.summary.partial })) };
+  }
+
+  /** The sheet's five-season table (summary.describe_summary's table): one row per table row in map.json's row order, the five
+      seasons and the five-season figure, each cell with its words and its coverage line; then the partial line and the radar
+      sentence (D20, D33, D41). Built with DOM calls, so every word on it is the build's. A failure shows the B1 unavailable
+      words with the reason, never an empty table. */
+  function sumRender(slot, res) {
+    if (!slot) return;
+    slot.textContent = "";
+    var sheetEl = slot.closest ? slot.closest(".sheet") : null;
+    if (sheetEl) sheetEl.classList.toggle("sheet-wide", !!res);   // the table needs the room: a wider sheet at desktop width (B5-11)
+    if (!res) {
+      var failed = document.createElement("p");
+      failed.className = "warn";
+      var hd = hailData(), problem = hd ? own(hd.summary.words, "table_problem") : undefined;
+      failed.textContent = hd ? fill(hd.words.unavailable, { problem: problem === undefined ? missingKey("table_problem") : problem }) : "";
+      slot.appendChild(failed);
+      slot.hidden = false;
+      return;
+    }
+    var S = res.ctx.S, cols = S.columns, rows = S.row_order;
+    var h3 = document.createElement("h3");
+    h3.textContent = S.words.table_title;
+    slot.appendChild(h3);
+    var plain = document.createElement("p");
+    plain.className = "sub";
+    plain.textContent = S.words.plain;
+    slot.appendChild(plain);
+    var table = document.createElement("table");
+    table.className = "sum-table";
+    var hr = table.createTHead().insertRow();
+    hr.appendChild(document.createElement("th"));
+    cols.forEach(function (c) {
+      var th = document.createElement("th");
+      th.scope = "col";
+      th.textContent = c;
+      hr.appendChild(th);
+    });
+    var tbody = table.createTBody();
+    rows.forEach(function (key) {
+      var row = res.rows[key];
+      if (!row) return;                                      // the town-only rows are not on the sheet
+      var tr = tbody.insertRow();
+      var th = document.createElement("th");
+      th.scope = "row";
+      var label = document.createElement("span");
+      label.className = "sum-label";
+      label.textContent = row.label;
+      th.appendChild(label);
+      var kind = document.createElement("small");
+      kind.className = "sum-kind";
+      kind.textContent = row.kind;
+      th.appendChild(kind);
+      if (row.unit !== "reason") {                         // the unit's word beside the kind word, as the page's row heads show it
+        var unitWord = document.createElement("small");
+        unitWord.className = "sum-kind";
+        var unitSpec = own(S.units, row.unit);
+        unitWord.textContent = unitSpec === undefined ? missingKey("units") : unitSpec.word;
+        th.appendChild(unitWord);
+      }
+      tr.appendChild(th);
+      cols.forEach(function (c, k) {
+        var td = tr.insertCell();
+        td.setAttribute("data-label", c);
+        var fiveCell = k === cols.length - 1;
+        td.textContent = fiveCell ? row.five_text : row.texts[k];
+        var cov = fiveCell ? row.five_coverage : row.coverage[k];
+        if (cov) {
+          var sm = document.createElement("small");
+          sm.className = "sum-cover";
+          sm.textContent = cov;
+          td.appendChild(sm);
+        }
+      });
+    });
+    slot.appendChild(table);
+    var notes = [];                                        // every row's notes, once each, under the table (R4): the D20 reasons,
+    rows.forEach(function (key) {                          // the rule lines and the explanations, as the page's footnotes
+      var row = res.rows[key];
+      if (row) row.notes.forEach(function (n) { if (notes.indexOf(n) < 0) notes.push(n); });
+    });
+    if (notes.length) {
+      var list = document.createElement("ul");
+      list.className = "sum-notes";
+      notes.forEach(function (n) {
+        var li = document.createElement("li");
+        li.textContent = n;
+        list.appendChild(li);
+      });
+      slot.appendChild(list);
+    }
+    if (res.partial) {
+      var part = document.createElement("p");
+      part.className = "sum-partial";
+      part.textContent = res.partial.text;
+      slot.appendChild(part);
+    }
+    var rs = document.createElement("p");
+    rs.className = "sub";
+    rs.textContent = S.words.radar_sentence;
+    slot.appendChild(rs);
+    slot.hidden = false;
   }
 
   // B3 layers: begin

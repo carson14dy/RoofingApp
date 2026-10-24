@@ -54,7 +54,7 @@ Website** and re-enable it. Every page says how old it is, so a stalled site is 
 | Map | A full-screen map of Montana in the style of Apple Weather's: press play to run the past hour of radar into the next 12 hours of forecast, switch to temperature or wind gusts, see warning outlines and storm reports, tap a town for its NWS forecast, or find your own location | NOAA MRMS radar estimate, NOAA HRRR model, NWS, SPC |
 | Town (17) | Alerts at that town, what the three nearest weather stations measured (with each reading's age), the next 24 hours hour by hour (gusts first), the next 7 days | NWS |
 | Storm reports | Hail and wind reports in and near Montana for the last three reporting days, on a map and in tables | SPC |
-| Hail history (build flag `--hail-history`, off on `main`) | On the Map, tap or click a spot for its five-year history of NOAA radar-estimated hail: each day at 0.25 in or more, in inches and millimetres, with its SPC day. The same spot also lists its NWS local storm reports, NCEI Storm Events records, radar hail detections, the warnings whose polygon covered it, the zone products for its forecast zone, the red flag warnings for its fire weather zone and the gusts at the nearest stations, each under its own kind label. Each town page has the same tables. An estimate is not a measurement or an inspection | NOAA MRMS radar estimate (MESH); NWS reports, warnings and zone products (IEM); NCEI Storm Events and SWDI; IEM station data |
+| Hail history (build flag `--hail-history`, on `main` at the owner's decision of 2026-10-21) | On the Map, tap or click a spot for its five-year history of NOAA radar-estimated hail: each day at 0.25 in or more, in inches and millimetres, with its SPC day. The same spot also lists its NWS local storm reports, NCEI Storm Events records, radar hail detections, the warnings whose polygon covered it, the zone products for its forecast zone, the red flag warnings for its fire weather zone and the gusts at the nearest stations, each under its own kind label. Station readings come from stations in Montana and the neighbouring states within 40 miles; Canadian stations within reach are not read while the terms for their data are under review. Each town page has the same tables. An estimate is not a measurement or an inspection | NOAA MRMS radar estimate (MESH); NWS reports, warnings and zone products (IEM); NCEI Storm Events and SWDI; NCEI GHCN-Daily and NOAA nClimGrid-Daily (station and grid values); IEM station data |
 | Addresses, streets and building outlines (build flag `--hail-addresses`, off on `main`) | On the Map: the street lines, the arterials from zoom 13, the local streets from 15 and the names from 16; from zoom 15 each building outline has one dot, and each address that no outline holds has its own dot. Tap a dot for its address, if one is on file, and the weather history for its cell. A search box, "Find an address", finds a typed address; what is typed stays in the browser | Montana State Library (address points and roads); USA Structures, Oak Ridge National Laboratory and FEMA (building outlines); U.S. Census Bureau (roads, if the fallback is built). The terms are on the About page |
 | About | What each part is, the flag limits, what happens when something fails, the data sources in detail | — |
 
@@ -93,7 +93,7 @@ links weather.gov for the latest. Pushes to `claude/**` and `codex/**` branches 
 against live data as a check. That run fails if any source failed, and its pages can be
 downloaded from the run.
 
-With `--hail-history` (off on `main`), a daily job, `.github/workflows/hail-store.yml`, runs at 12:43 UTC. It rebuilds the whole trailing five years of NOAA's radar archive each day (a full rebuild, not an append), joins the NWS reports, NCEI records, radar detections, warnings, zone products and station gusts to each tile (`website/joins.py`), verifies the result and publishes it as one release asset, which the 10-minute build downloads.
+With `--hail-history` (on `main` at the owner's decision of 2026-10-21), a daily job, `.github/workflows/hail-store.yml`, runs at 12:43 UTC. It rebuilds the whole trailing five years of NOAA's radar archive each day (a full rebuild, not an append), joins the NWS reports, NCEI records, radar detections, warnings, zone products and station gusts to each tile (`website/joins.py`), verifies the result and publishes it as one release asset, which the 10-minute build downloads.
 
 The same job always builds the address dots, the street lines, the building outlines and the address search into that store (D36), from the State Library's address points and roads files and the FEMA and ORNL building outline file. The site shows them only with `--hail-addresses`, a second flag that is off on `main`. Each of these steps is non-fatal: a source that fails marks its layer unavailable, and the rest of the store is published. The job installs `pyproj~=3.8` and `pyogrio~=0.13` (compatible releases) for these steps only; the site build needs neither.
 
@@ -124,11 +124,14 @@ python -m website.climate backfill --cache climate-cache        # the past weath
 python -m website.climate update --cache climate-cache          # then daily: the prelim days and any new scaled month
 python -m website.climate build --store store --cache climate-cache
 python -m website.stations build --store store --cache b5-cache --scope daily   # station readings; --scope monthly reads the whole union
+python -m website.stations verify --store store                      # check the station figures and gates (exit 1 on a failure)
 python -m website.snowgrid build --store store --cache b5-cache --offline       # NOHRSC snow analysis; the unit check decides whether it shows
 python -m website.gauges build --store store --cache b5-cache                   # NWS flood stages and USGS peaks, within 10 miles
 python -m http.server -d _site 8000            # open http://localhost:8000
+pip install pyyaml                                                  # test-only: the workflow-file tests read YAML (requirements.txt does not list it)
 python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_addresses tests.test_streets tests.test_buildings tests.test_swath tests.test_climate tests.test_stations tests.test_snowgrid tests.test_gauges tests.test_summary tests.test_website_workflow   # website tests, offline, seconds
 python tools/smoke_map.py _site                # the built map in Chromium (needs playwright)
+python tools/smoke_map.py _site --history --store store   # the sheet's summary words read from a store folder or hail-store.tar.gz (the build passed --hail-history)
 python tools/smoke_pages.py _site              # no page wider than the screen, 288–1440 px
 ```
 
@@ -145,7 +148,7 @@ website/addresses.py   the address points (behind --hail-addresses): the State L
 website/streets.py     the street lines (behind --hail-addresses): the State Library roads (default) or the Census roads (fallback); job only
 website/buildings.py   the building outlines (behind --hail-addresses): one dot per outline, the address join, verify (job only; pyogrio)
 website/climate.py     the past weather (B5, D38): NOAA nClimGrid daily rain, highs and lows per 1/24 degree cell (grid estimates); the backfill once, the daily update, the release archive
-website/stations.py    GHCN-Daily station readings (B5): the station rule (40 miles, 80 and 95 percent coverage), season totals and season highs and lows
+website/stations.py    GHCN-Daily station readings (B5): the station rule (40 miles, 80 and 95 percent coverage), the pool of stations in Montana and the neighbouring states (D62), the tile lists with their rejected candidates (D61 to D69), season totals and season highs and lows
 website/snowgrid.py    NOHRSC season snowfall (B5): the unit check; the analysis stays out unless the check passes
 website/gauges.py      NWS flood stages and USGS annual peaks (B5): the nearest gauge within 10 miles
 website/summary.py     the five-season table that leads the sheet and the roof lines (B5); every word is Python's

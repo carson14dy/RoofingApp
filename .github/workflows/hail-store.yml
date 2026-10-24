@@ -155,10 +155,12 @@ jobs:
             joins-cache-
 
       - name: Join reports, records, detections, warnings, zone products and station gusts (with the B5 zone editions and event files)
-        timeout-minutes: 50
+        timeout-minutes: 53
         # The joins stop new requests at 35 minutes (JOINS_DEADLINE_S, D23); parsing and writing then take about 7 minutes
-        # measured live; requests in flight add up to about 5 minutes. 50 minutes is the backstop for a response that
-        # trickles past the per-read timeout. The join stays fatal (the B2 rule, D35).
+        # measured live, and requests in flight add up to about 5 minutes, so the step's own stop comes first. Its backstop is
+        # 1.5 times that 35-minute deadline, 53 minutes (D75). D42's 1.5 times the measured time is for the steps that have no
+        # deadline of their own. A response that trickles past the per-read timeout is cut there, and the job's 150-minute cap
+        # is not reached. The join stays fatal (the B2 rule, D35).
         run: python -m website.joins build --store store --cache joins-cache --procs 4
 
       - name: Verify the joins (the Benchland gate rows are printed)
@@ -171,7 +173,7 @@ jobs:
       # left (timeout --kill-after=30). A step's deadline is the smaller of its own deadline and the seconds left less 440,
       # because an in-flight request can run about 440 seconds past its deadline. The joins are not on this clock: their
       # limit (JOINS_DEADLINE_S, D23) counts from their own start, so a late join leaves the B5 steps no time, and the
-      # 60-minute job cap binds (DECISIONS D38, open item B5-12). The measured times in the part A record
+      # 150-minute job cap binds (DECISIONS D38, open item B5-12). The measured times in the part A record
       # (/home/user/hail-b5/out/b5a-recheck-completion.json, offline, this machine): joins 355 s; climate build 11 s;
       # stations build 32 s; gauges build 2 s; NOHRSC build 1 s. The climate update took 7 to 8 s with no new scaled
       # month, and the whole backfill 222 s for 63 months and 3.72 GB. The download-bound steps (the station refresh, the

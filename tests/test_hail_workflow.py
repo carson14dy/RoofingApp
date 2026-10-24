@@ -1,16 +1,21 @@
 """The hail store job (.github/workflows/hail-store.yml, D26, D35, D38): the B5 steps share one clock and are killed at
-the seconds left, every non-fatal step has a timeout, the joins are fatal with a timeout above JOINS_DEADLINE_S, the
-climate archive is published under a versioned name without --clobber, the older archives are removed only after the
-new one unpacks, the restore takes the newest archive, and the store asset keeps the name the site build reads.
+the seconds left, every non-fatal step has a timeout, the joins are fatal with a backstop of 1.5 times JOINS_DEADLINE_S
+(53 minutes, D75), the climate archive is published under a versioned name without --clobber, the older archives are
+removed only after the new one unpacks, the restore takes the newest archive, and the store asset keeps the name the site
+build reads.
 
-The job file is read as text (no YAML package is needed): each step starts with a "      - name:" line and its keys sit
-at eight spaces, which is how the file is written. The checks are the file's own text, so they hold for the file as
-committed. No network, no workflow run."""
+The job file is read as text: each step starts with a "      - name:" line and its keys sit at eight spaces, which is how
+the file is written. The checks are the file's own text, so they hold for the file as committed. The YAML parse (PyYAML,
+installed by the Website workflow's Install step for its tests) checks that both workflow files parse and that the
+timeouts the text sets are the ones the parse reads. No network, no workflow run."""
 
+import math
 import re
 import sys
 import unittest
 from pathlib import Path
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -118,15 +123,29 @@ class HailStoreJobTests(unittest.TestCase):
         self.assertNotIn("==", self.text)
         self.assertNotIn(chr(0x2014), self.text)
 
-    def test_the_job_keeps_its_sixty_minute_cap(self):
+    def test_the_daily_job_is_capped_at_150_minutes_and_the_monthly_job_at_60(self):
+        # D50: the daily job's cap is B5's 60 plus B3's 90 until the branch run measures it; the monthly job keeps its 60
+        self.assertIn("    timeout-minutes: 150\n    steps:\n", self.text)
         self.assertIn("    timeout-minutes: 60\n    steps:\n", self.text)
+        doc = yaml.safe_load(self.text)
+        self.assertEqual(doc["jobs"]["store"]["timeout-minutes"], 150)
+        self.assertEqual(doc["jobs"]["monthly"]["timeout-minutes"], 60)
+        self.assertEqual(doc["jobs"]["plan"]["timeout-minutes"], 5)
 
     def test_the_join_is_fatal_and_its_timeout_is_above_the_joins_deadline(self):
         join = self.step("Join reports, records")
         self.assertIsNone(join.attr("continue-on-error"), "the join stays fatal (the B2 rule)")
         self.assertIsNotNone(join.attr("timeout-minutes"))
         self.assertGreater(int(join.attr("timeout-minutes")) * 60, J.JOINS_DEADLINE_S)
-        self.assertEqual(join.attr("timeout-minutes"), "50")
+        # D75(d): the step stops at JOINS_DEADLINE_S, so its backstop is 1.5 times that deadline, rounded up to whole minutes
+        self.assertEqual(join.attr("timeout-minutes"), str(math.ceil(1.5 * J.JOINS_DEADLINE_S / 60)))
+        self.assertEqual(join.attr("timeout-minutes"), "53")
+
+    def test_the_comments_name_the_150_minute_job_cap(self):
+        # F-12: the store job's cap is 150 minutes (its timeout-minutes line), and the comments that name the cap say so
+        self.assertIn("    timeout-minutes: 150\n    steps:\n", self.text)
+        self.assertNotIn("60-minute job cap", self.text)
+        self.assertIn("150-minute job cap binds", self.text)
 
     def test_the_b1_and_b2_verify_steps_stay_fatal(self):
         for prefix in ("Verify the store", "Verify the joins"):
@@ -264,12 +283,48 @@ class HailStoreJobTests(unittest.TestCase):
         self.assertEqual(self.step("Verify the joins").attr("timeout-minutes"), "1")
         self.assertEqual(self.step("Build the climate files").attr("timeout-minutes"), "1")
         self.assertEqual(self.step("Snow analysis").attr("timeout-minutes"), "1")
-        self.assertEqual(self.step("Join reports, records").attr("timeout-minutes"), "50")
+        self.assertEqual(self.step("Join reports, records").attr("timeout-minutes"), "53")
 
     def test_every_non_fatal_step_of_both_jobs_has_a_timeout(self):
         for step in self.steps + self.monthly_steps:
             if step.attr("continue-on-error") == "true":
                 self.assertIsNotNone(step.attr("timeout-minutes"), step.name)
+
+
+class WorkflowYaml(unittest.TestCase):
+    """The store workflow parses as YAML, and the parse reads the same steps, in the same order, as the text does, with the
+    timeouts the checks above rely on (the joins backstop, the daily cap)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = WORKFLOW.read_text(encoding="utf-8")
+        cls.doc = yaml.safe_load(cls.text)
+
+    def test_the_file_parses_with_its_three_jobs_and_its_triggers(self):
+        self.assertIsInstance(self.doc, dict)
+        self.assertEqual(sorted(self.doc["jobs"]), ["monthly", "plan", "store"])
+        self.assertTrue("on" in self.doc or True in self.doc, "the file has its triggers")
+        self.assertEqual(self.doc["jobs"]["store"]["timeout-minutes"], 150)
+
+    def test_the_parse_reads_the_same_daily_steps_in_the_same_order_as_the_text(self):
+        head, _, rest = self.text.partition("\n  store:\n")
+        store_part = rest.partition("\n  monthly:\n")[0]
+        text_names = [s.name for s in job_steps(store_part)]
+        parsed_names = [s.get("name", "") for s in self.doc["jobs"]["store"]["steps"]]
+        self.assertEqual(parsed_names, text_names)
+        monthly_text = [s.name for s in job_steps(rest.partition("\n  monthly:\n")[2])]
+        monthly_parsed = [s.get("name", "") for s in self.doc["jobs"]["monthly"]["steps"]]
+        self.assertEqual(monthly_parsed, monthly_text)
+
+    def test_the_parse_reads_the_joins_backstop_and_keeps_it_fatal(self):
+        join = next(s for s in self.doc["jobs"]["store"]["steps"] if s.get("name", "").startswith("Join reports"))
+        self.assertEqual(join["timeout-minutes"], math.ceil(1.5 * J.JOINS_DEADLINE_S / 60))   # 53 (D75(d))
+        self.assertNotIn("continue-on-error", join)
+        self.assertGreater(join["timeout-minutes"] * 60, J.JOINS_DEADLINE_S)
+
+    def test_every_daily_step_parsed_has_a_run_or_a_uses(self):
+        for step in self.doc["jobs"]["store"]["steps"]:
+            self.assertTrue("run" in step or "uses" in step, step.get("name"))
 
 
 if __name__ == "__main__":

@@ -35,6 +35,7 @@ on:
       - "tests/test_streets.py"
       - "tests/test_buildings.py"
       - "tests/test_website_workflow.py"
+      - "tests/test_hail_workflow.py"
       - "tests/test_swath.py"
       - "tools/**"
       - ".github/workflows/website.yml"
@@ -93,8 +94,9 @@ jobs:
         if: steps.plan.outputs.run == 'true'
         # pyarrow is for the hail compare tests only (tests/test_hail.py); the site build never imports it.
         # pyproj and pyogrio read the B3 address, street and outline files in the offline tests (D2, D19): compatible
-        # releases, never pinned.
-        run: python -m pip install requests jinja2 pillow numpy pygrib h5py pyarrow "pyproj~=3.8" "pyogrio~=0.13"
+        # releases, never pinned. pyyaml is for the workflow file tests (tests/test_website_workflow.py and
+        # tests/test_hail_workflow.py read the YAML of both workflows).
+        run: python -m pip install requests jinja2 pillow numpy pygrib h5py pyarrow pyyaml "pyproj~=3.8" "pyogrio~=0.13"
 
       - name: Website tests (offline)
         if: steps.plan.outputs.run == 'true'
@@ -119,11 +121,14 @@ jobs:
         run: |
           python -m pip install playwright
           python -m playwright install --with-deps chromium
-          python tools/smoke_map.py _site --addresses
+          # --addresses: the preview's B3 flag; --history: the preview's --hail-history flag, so a missing five-season summary
+          # fails here instead of passing with a note (tools/smoke_map.py, check_summary). No --store: the smoke reads the
+          # site's own hail/ folder, which holds B4's live files under hail/live/ that the store reader skips (D75).
+          python tools/smoke_map.py _site --addresses --history
 
       - name: Page width check in a real browser (branch pushes)
         if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'
-        run: python tools/smoke_pages.py _site
+        run: python tools/smoke_pages.py _site --history
 
       - name: Summary of what each source returned
         if: always() && steps.plan.outputs.run == 'true'

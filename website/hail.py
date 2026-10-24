@@ -509,10 +509,18 @@ def cell_events(store_dir, lat: float, lon: float, index: dict | None = None) ->
     return [(day_of_index(int(d)), int(t)) for d, t in rows]
 
 
-def check_manifest(store_dir) -> dict:
+# D75: B4's live swath files (website/swath.py, hail/live/<window minutes>/<valid time>/<tile>.json). The build writes
+# them into a built site after the site's copy of the store is checked, and the manifest never lists them.
+LIVE_PREFIX = "hail/live/"
+
+
+def check_manifest(store_dir, allow_live: bool = False) -> dict:
     """Check that every file the manifest lists is under hail/ and has its listed size and SHA-256, that no other
     file is under hail/ (any type of file, not only JSON), that no link is under hail/, and that the manifest's
     counts equal the index's counts.
+    allow_live (D75) skips the unlisted-file check for the files under hail/live/: a built site's own copy of the
+    store carries them, and no store does. The default is strict (an archive, the build's copy, a store folder).
+    A link under hail/live/ is refused either way.
     Returns the manifest. Raises HailStoreError."""
     root = Path(store_dir)
     manifest = _read_json(root / "hail" / "manifest.json", "the history manifest file is missing")
@@ -536,7 +544,7 @@ def check_manifest(store_dir) -> dict:
             raise HailStoreError(f"the history has a link, which is not allowed: {rel}")
         if path.is_dir():
             continue
-        if rel not in known:
+        if rel not in known and not (allow_live and rel.startswith(LIVE_PREFIX)):
             raise HailStoreError(f"the history has a file the manifest does not list: {rel}")
     index = load_index(root)
     for key, value in manifest.get("counts", {}).items():
@@ -761,12 +769,13 @@ def fetch_store(get, dest_dir, url: str = STORE_URL) -> dict:
 def load_store(path, dest_dir=None) -> Path:
     """The directory that holds a verified hail/ tree, from a store directory or a release tar.gz (--hail-store).
 
-    A directory is checked in place and returned. A tar.gz is unpacked into dest_dir (a new temporary directory
-    when None) and that directory is returned. Read the index with load_index() and the cells with
-    cell_events(). Raises HailStoreError."""
+    A directory is checked in place and returned. It may be a built site's own hail/ copy: the live swath files under
+    hail/live/ are skipped (D75). A tar.gz is unpacked into dest_dir (a new temporary directory when None) and that
+    directory is returned; an archive is checked strictly, since it never carries live files. Read the index with
+    load_index() and the cells with cell_events(). Raises HailStoreError."""
     source = Path(path)
     if source.is_dir():
-        check_manifest(source)
+        check_manifest(source, allow_live=True)
         return source
     if source.is_file():
         dest = Path(dest_dir) if dest_dir is not None else Path(tempfile.mkdtemp(prefix="hail-store-"))

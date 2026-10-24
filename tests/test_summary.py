@@ -9,11 +9,13 @@ data: the real store is checked by the B5 verify and gate steps on the built sto
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import tempfile
 import unittest
 from datetime import date, datetime, timedelta, timezone
+from unittest import mock
 from pathlib import Path
 
 import sys
@@ -370,7 +372,7 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("Billings Logan", snow["texts"][2])
         # a season with too few days with a gust value shows Data unavailable, never a zero: 257 of 365 days in 2021-22
         self.assertIsNone(self.rows["gust_max"]["values"][0])
-        self.assertIn("Data unavailable: Billings Logan has 257 of 365 days with a gust value",
+        self.assertIn("Data unavailable for 2021-22: Billings Logan has 257 of 365 days with a gust value",
                       self.rows["gust_max"]["texts"][0])
         self.assertNotIn("No day at 50 kt", self.rows["gust_max"]["texts"][0])
         self.assertIsNone(self.rows["gust_days"]["values"][0])
@@ -429,7 +431,9 @@ class SummaryTests(unittest.TestCase):
     def test_gust_flagged_reading_is_said(self):
         gmax = self.rows["gust_max"]
         self.assertEqual(gmax["values"][3], 105)
-        self.assertEqual(gmax["texts"][3], "105 kt (121 mph) on Feb 20, 2025, flagged for check")
+        # D57: the season's own text names its station, and the flag's words still close the cell (D12)
+        self.assertEqual(gmax["texts"][3], "105 kt (121 mph) on Feb 20, 2025 at Billings Logan, flagged for check")
+        self.assertEqual(gmax["stations"], ["Billings Logan"] * 5)
         self.assertEqual(self.rows["gust_days"]["values"][3], 2)
         self.assertEqual(self.rows["gust_days"]["values"][1], 1)          # 2022-07-01 at 50 kt, in 2022-23
         self.assertEqual(self.rows["gust_days"]["texts"][3], "2 days at Billings Logan")
@@ -842,7 +846,8 @@ class WordsTests(unittest.TestCase):
         # the town variant (D38) is the one place "covered this spot" is written; the sheet's words never say it
         sheet_words = {k: v for k, v in S.WORDS_SUMMARY.items()
                        if k != "covered_town" and not k.startswith("town_warnings")}
-        for text in list(strings_of(sheet_words)) + list(strings_of(S.WORDS_INDICATORS)) + [k["means"] for k in S.KIND_WORDS]:
+        sheet_indicators = {k: v for k, v in S.WORDS_INDICATORS.items() if k != "what_warnings_town"}
+        for text in list(strings_of(sheet_words)) + list(strings_of(sheet_indicators)) + [k["means"] for k in S.KIND_WORDS]:
             for phrase in ("covered this spot", "covering the spot", "covered the spot"):
                 self.assertNotIn(phrase, text)
 
@@ -974,7 +979,7 @@ class GustTests(unittest.TestCase):
     def test_a_season_below_ninety_five_percent_is_data_unavailable(self):
         result, rows = self._rows("gust_40")
         self.assertIsNone(rows["gust_days"]["values"][1])
-        self.assertIn("Data unavailable: Billings Logan has 146 of 365 days with a gust value, so this season is not shown; "
+        self.assertIn("Data unavailable for 2022-23: Billings Logan has 146 of 365 days with a gust value, so this season is not shown; "
                       "a missing value is not zero. This is not an all-clear.", rows["gust_days"]["texts"][1])
         self.assertEqual(rows["gust_days"]["coverage"][1], "219 days missing")
         self.assertIsNone(rows["gust_days"]["five"])
@@ -1047,13 +1052,26 @@ class ReportTests(unittest.TestCase):
     def test_automated_sources_are_the_one_set(self):
         self.assertEqual(S.AUTO_SOURCES, ("Mesonet", "ASOS", "AWOS"))
 
-    def test_the_gust_station_is_named_as_the_nearer_of_the_tiles_two(self):
+    def test_the_gust_station_is_the_nearest_to_the_spot_and_its_distance_is_from_the_spot(self):      # D56, R6
         root, _ = build_store("full")
         try:
-            result = S.describe_summary(root, ROW, COL, None)
-            notes = {r["key"]: r for r in result["table"]["rows"]}["gust_days"]["notes"]
-            self.assertIn("Gust station: Billings Logan, ", " ".join(notes))
-            self.assertIn("(the nearer of this tile's two gust stations)", " ".join(notes))
+            station = (45.8077, -108.5429)                  # BIL, the synthetic store's gust station (s/BIL.json)
+
+            def gust_note(town):
+                result = S.describe_summary(root, ROW, COL, None, town=town)
+                notes = {r["key"]: r for r in result["table"]["rows"]}["gust_days"]["notes"]
+                return next(n for n in notes if n.startswith("Gust station: "))
+
+            # the sheet measures from the grid cell's centre
+            lat, lon = hail.cell_centre(ROW, COL)
+            sheet = round(stations.haversine_miles(lat, lon, *station), 1)
+            self.assertIn(f"Gust station: Billings Logan, {sheet:.1f} miles from this spot (the nearest gust station to this "
+                          "spot).", gust_note(None))
+            # a town page measures from the town point: a point 0.3 degrees north is a different distance from the station
+            north = dict(BILLINGS, lat=BILLINGS["lat"] + 0.3)
+            town = round(stations.haversine_miles(north["lat"], north["lon"], *station), 1)
+            self.assertNotEqual(sheet, town)
+            self.assertIn(f"Gust station: Billings Logan, {town:.1f} miles from this spot", gust_note(north))
         finally:
             shutil.rmtree(root, ignore_errors=True)
 
@@ -1233,8 +1251,10 @@ class ReviewFixTests(unittest.TestCase):
 
     def _tile_list(self, root, passing, unread=(), capped=False, element="SNOW"):
         """Writes hail/tl/<tile>.json (stations.py's tile list, D36) for the spot's tile with these entries for one element."""
-        doc = {"f": S.TILE_LIST_FORMAT, "tile": "r0092_c0214", "centre": [45.75, -108.55], "miles": 40.0, "cap": 6,
-               "elements": {element: {"passing": passing, "unread": list(unread), "capped": capped}}}
+        block = {"centre": [45.75, -108.55], "margin_miles": 5.0, "passing": passing, "unread": list(unread),
+                 "rejected": [], "capped": capped}
+        doc = {"f": S.TILE_LIST_FORMAT, "tile": "r0092_c0214", "centre": [45.75, -108.55], "miles": 40.0,
+               "margin_miles": 5.0, "elements": {element: block}}
         write_json(root / "hail" / "tl" / "r0092_c0214.json", doc)
 
     def test_the_two_nearest_passing_candidates_come_from_the_tile_list_at_the_point(self):
@@ -1377,13 +1397,18 @@ class RoundTwoWordsTests(unittest.TestCase):
         self.assertEqual(days["five_text"], "3 days at Billings Logan")
         self.assertEqual(peak["five_text"], "105 kt (121 mph) on Feb 20, 2025 at Billings Logan, flagged for check")
 
-    def test_the_ice_dam_line_carries_its_kind_word_in_every_state(self):        # D41
+    def test_the_ice_dam_line_leads_with_station_reading_in_every_state(self):        # D41, D57
         full = self._lines(self._summary("full"))["ice_dam_weather_days"]["text"]
         self.assertTrue(full.startswith("Station reading: "), full)
-        for variant in ("stations_unavailable",):
-            text = self._lines(self._summary(variant))["ice_dam_weather_days"]["text"]
-            self.assertIn("(days, station reading; a measured pattern, not ice dams)", text, variant)
-            self.assertTrue(text.endswith("This is not an all-clear."), text)
+        for variant in ("stations_unavailable", "gust_empty", "no_partial"):
+            line = self._lines(self._summary(variant))["ice_dam_weather_days"]
+            self.assertTrue(line["text"].startswith("Station reading: "), (variant, line["text"]))
+            if line["value"] is None:                 # a line with no figure says why, and ends with the all-clear
+                self.assertTrue(line["text"].endswith("This is not an all-clear."), (variant, line["text"]))
+        text = self._lines(self._summary("stations_unavailable"))["ice_dam_weather_days"]["text"]
+        self.assertIn("Days with 1 inch or more on the ground and a low below 32 F (days; a measured pattern, not ice dams). ",
+                      text)
+        self.assertTrue(text.startswith("Station reading: Days with 1 inch or more on the ground"), text)
 
     def test_the_roof_snow_lines_give_the_reason_when_the_stations_did_not_load(self):  # D16, D20
         lines = self._lines(self._summary("stations_unavailable"))
@@ -1391,6 +1416,367 @@ class RoundTwoWordsTests(unittest.TestCase):
             self.assertIn("Station readings could not be loaded in this update; that is not the same as no station readings.",
                           lines[key]["text"], key)
             self.assertTrue(lines[key]["text"].endswith("This is not an all-clear."), key)
+
+
+class StationPicksAndNames(unittest.TestCase):
+    """B5 D56, D57, D62, D63 (owner 2): the station picks and the gust station run at the station point (the town point on a
+    town page, the cell centre on the sheet); where a tile list answers, its picks are the full rule's picks at the same
+    point (stations.point_rule); and the words name each station where the rows say it."""
+
+    SHEET_CELLS = ((753, 2230), (792, 1998), (797, 1986))      # the named cells of D61 and D63
+    ELEMENTS = ("PRCP", "SNOW", "SNWD", "TMAX", "TMIN")
+
+    @classmethod
+    def _points(cls):
+        """(label, town or None, row, col): the 17 towns at their own cells (towns.json) and the three named cells."""
+        out = []
+        for town in json.loads(stations.TOWNS_FILE.read_text(encoding="utf-8")):
+            row, col = hail.cell_for(town["lat"], town["lon"])
+            out.append((f"town {town['slug']}", town, row, col))
+        for row, col in cls.SHEET_CELLS:
+            out.append((f"cell {row},{col}", None, row, col))
+        return out
+
+    def _compare(self, root, label, town, row, col):
+        """For every element: the summary's picks (chosen) equal the full rule's picks at the same point, and where the tile
+        list answers (chosen_from_tile_list), its picks and state equal the rule's too. Returns (comparisons, answered)."""
+        index = hail.load_index(root)
+        spot = S._Spot(root, index, row, col, town)
+        lat, lon = spot.station_point
+        light = spot.sb.get("stations") or {}
+        as_of = date.fromisoformat(spot.sb["as_of"]) if spot.sb.get("as_of") else spot.as_of
+        checked = answered = 0
+        for element in self.ELEMENTS:
+            rule = stations.point_rule(light, lat, lon, element, as_of)
+            if rule["state"] == "need":                  # a candidate with no summary: the rule itself stops there
+                continue
+            want = [c["id"] for c in rule["chosen"]]
+            _state, picks, _res = spot.chosen(element)
+            self.assertEqual([c["id"] for c in picks], want, (label, element))
+            got = spot.chosen_from_tile_list(element)
+            if got is not None:
+                answered += 1
+                self.assertEqual([c["id"] for c in got[1]], want, (label, element, "tile list"))
+                self.assertEqual(got[0], rule["state"], (label, element, "tile list state"))
+            checked += 1
+        return checked, answered
+
+    def _write_tile_list(self, root: Path) -> None:
+        """hail/tl/<tile>.json for the spot's tile, built as stations.py builds it (D61): every station of the block that
+        passes the coverage and currency test for an element, within the radius plus a margin of the tile centre, no cap."""
+        tile_row, tile_col = ROW // hail.TILE, COL // hail.TILE
+        tile = hail.tile_name(tile_row, tile_col)
+        clat, clon = stations.tile_centre(tile_row, tile_col)
+        light = hail.load_index(root)["stations"]["stations"]
+        elements = {}
+        for element in self.ELEMENTS:
+            passing = []
+            for sid, meta in light.items():
+                ok = meta["cover"].get(element, 0)
+                miles = stations.haversine_miles(clat, clon, meta["lat"], meta["lon"])
+                if meta["current"].get(element) and ok / stations.COVER_DAYS >= stations.COVER_MIN and miles <= 45.0:
+                    passing.append({"id": sid, "name": meta["name"], "lat": meta["lat"], "lon": meta["lon"],
+                                    "miles": round(miles, 1), "ok": ok, "of": stations.COVER_DAYS,
+                                    "share": round(ok / stations.COVER_DAYS, 4)})
+            elements[element] = {"centre": [clat, clon], "margin_miles": 5.0, "passing": passing, "unread": [],
+                                 "rejected": [], "capped": False}
+        write_json(root / "hail" / "tl" / f"{tile}.json", {"f": S.TILE_LIST_FORMAT, "tile": tile, "centre": [clat, clon],
+                                                           "miles": stations.RADIUS_MILES, "margin_miles": 5.0,
+                                                           "elements": elements})
+
+    def test_the_summary_picks_are_the_rule_and_the_tile_list_is_the_one_rule(self):      # D63, parity on a synthetic store
+        root, _ = build_store("full")
+        self.addCleanup(shutil.rmtree, root, True)
+        self._write_tile_list(root)
+        for label, town in (("sheet", None), ("town", dict(BILLINGS))):
+            with self.subTest(label):
+                checked, answered = self._compare(root, label, town, ROW, COL)
+                self.assertEqual((checked, answered), (5, 5))
+        # the summary delegates: its picks are stations.tile_list_picks' picks at the same point, field for field
+        spot = S._Spot(root, hail.load_index(root), ROW, COL, dict(BILLINGS))
+        doc = spot.tile_list()
+        lat, lon = spot.station_point
+        for element in self.ELEMENTS:
+            block = doc["elements"][element]
+            want = stations.tile_list_picks(block, lat, lon, light=spot.sb.get("stations") or {},
+                                            radius_miles=S.TOWN_RADIUS)
+            got = spot.chosen_from_tile_list(element)
+            self.assertEqual(got[1], want["picks"], element)
+            self.assertEqual(got[0], want["state"], element)
+
+    def test_a_canadian_candidate_is_said_not_read_and_never_failed_or_passing(self):   # D62
+        root, _ = build_store("full")
+        self.addCleanup(shutil.rmtree, root, True)
+        tile_row, tile_col = ROW // hail.TILE, COL // hail.TILE
+        clat, clon = stations.tile_centre(tile_row, tile_col)
+        canada = {"id": "CA000000001", "name": "MILK RIVER", "lat": 45.95, "lon": -108.5, "reason": stations.CANADA_REASON}
+        block = {"centre": [clat, clon], "margin_miles": 5.0, "rejected": [], "capped": False}
+        elements = {el: dict(block, passing=[], unread=[]) for el in self.ELEMENTS}
+        elements["SNOW"] = dict(block, passing=[], unread=[canada])
+        write_json(root / "hail" / "tl" / f"{hail.tile_name(tile_row, tile_col)}.json",
+                   {"f": S.TILE_LIST_FORMAT, "tile": hail.tile_name(tile_row, tile_col), "centre": [clat, clon],
+                    "miles": stations.RADIUS_MILES, "margin_miles": 5.0, "elements": elements})
+        result = S.describe_summary(root, ROW, COL, None, town=dict(BILLINGS))
+        snow = {r["key"]: r for r in result["table"]["rows"]}["snow"]
+        text = " ".join(snow["notes"])
+        self.assertIn("MILK RIVER is not read in this build (in Canada; the terms for its data are under review)", text)
+        self.assertNotIn("could not be loaded", text)
+        self.assertNotIn("No station within 40 miles", text)           # a candidate not read is not an absence
+
+    def test_an_older_list_without_a_margin_cannot_answer_so_the_station_block_gives_the_picks(self):   # D61
+        root, _ = build_store("full")
+        self.addCleanup(shutil.rmtree, root, True)
+        self._write_tile_list(root)
+        path = root / "hail" / "tl" / f"{hail.tile_name(ROW // hail.TILE, COL // hail.TILE)}.json"
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        del doc["margin_miles"]                              # a list from before the D61 rebuild
+        path.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
+        spot = S._Spot(root, hail.load_index(root), ROW, COL, dict(BILLINGS))
+        self.assertIsNone(spot.chosen_from_tile_list("SNOW"))  # it may miss a station: it does not answer "none"
+        state, chosen, res = spot.chosen("SNOW")
+        self.assertEqual(state, "two")
+        self.assertEqual(len(chosen), 2)
+        self.assertNotEqual(res.get("source"), "tile list")
+
+    def test_the_gust_station_is_the_nearest_candidate_to_the_spot_and_every_season_names_it(self):   # D56, D57
+        root, _ = build_store("full")
+        self.addCleanup(shutil.rmtree, root, True)
+        result = S.describe_summary(root, ROW, COL, None, town=dict(BILLINGS))
+        rows = {r["key"]: r for r in result["table"]["rows"]}
+        peak = rows["gust_max"]
+        self.assertEqual(len(peak["texts"]), 5)
+        for text, station in zip(peak["texts"], peak["stations"]):
+            self.assertEqual(station, "Billings Logan", peak["texts"])
+            self.assertIn(station, text)                  # D57: each strongest-gust season cell names its station
+        self.assertIn("at Billings Logan, flagged for check", peak["texts"][3])
+
+    def test_the_five_season_snowfall_names_its_one_station_and_the_roof_line_says_so(self):          # D57
+        root, _ = build_store("one_station")                # one station covers all five seasons, so a total shows
+        self.addCleanup(shutil.rmtree, root, True)
+        result = S.describe_summary(root, ROW, COL, None)
+        snow = {r["key"]: r for r in result["table"]["rows"]}["snow"]
+        names = {n for n in snow["stations"] if n}
+        self.assertEqual(len(names), 1)
+        (station,) = names
+        line = {x["id"]: x for g in result["roof"]["groups"] for x in g["lines"]}["snowfall_season"]
+        self.assertIsNotNone(line["value"])
+        self.assertTrue(line["text"].startswith("Station reading: "), line["text"])
+        self.assertTrue(line["text"].endswith(f"in the five seasons at {station}."), (line["text"], station))
+
+    def test_the_how_made_station_rule_names_montana_and_the_neighbouring_states(self):           # D62
+        root, _ = build_store("full")
+        self.addCleanup(shutil.rmtree, root, True)
+        text = " ".join(S.describe_summary(root, ROW, COL, None)["how_made"])
+        self.assertIn("Station rule: the candidates are stations in Montana and the neighbouring states within 40 miles;", text)
+        self.assertIn("Canadian stations within 40 miles are named as not read and never count as passing.", text)
+        self.assertNotIn("the candidates within 40 miles;", text)
+
+    def test_the_fixture_carries_the_station_part_and_its_picks_are_the_rule(self):                 # D64, D63
+        root = Path(__file__).resolve().parents[1] / "website" / "data" / "hail-fixture"
+        # the fixture's three tiles: Billings and the gate and Benchland cells (753,2230 lies in a tile the fixture does not hold)
+        wanted = [p for p in self._points() if p[0] in ("town billings", "cell 792,1998", "cell 797,1986")]
+        self.assertEqual(len(wanted), 3)
+        for label, town, row, col in wanted:
+            with self.subTest(label):
+                spot = S._Spot(root, hail.load_index(root), row, col, town)
+                self.assertIsNotNone(spot.tile_list(), f"{label}: the fixture has no station tile list for this tile")
+                self._compare(root, label, town, row, col)
+
+    def test_the_real_store_picks_are_the_rule_at_the_17_towns_and_the_named_cells(self):          # D61, D63
+        store = os.environ.get("HAIL_PARITY_STORE")
+        if not store:
+            self.skipTest("set HAIL_PARITY_STORE to a built store (the combined store) to check every town and named cell")
+        checked = answered = 0
+        for label, town, row, col in self._points():
+            with self.subTest(label):
+                c, a = self._compare(Path(store), label, town, row, col)
+                checked, answered = checked + c, answered + a
+        self.assertGreater(checked, 0)
+
+
+class RoundTwoSiteTests(unittest.TestCase):
+    """The round-2 site fixes (D69, D71, D76) on the synthetic store: a station the rule does not use is named with its reason
+    (F6), a failed ice-dam count or roof says the D20 sentence (F1, F10), the five-season ice-dam count and the snowfall lead
+    name their station (F3, F5), the season sentences name their season (F9), the words the browser asks for are in the
+    summary block (F7), the sentences a town page's warnings use are the town point's (F4), and the unread-status words
+    classify as the station module does (F13)."""
+
+    TILE = "r0092_c0214"                            # the spot's tile (ROW // 10, COL // 10)
+    TOWN_NOTE = "Stations: the two nearest that have enough days with the element, measured from the town point."
+
+    def _variant(self):
+        root, _ = build_store("full")
+        self.addCleanup(shutil.rmtree, root, True)
+        return root
+
+    def _write(self, root, passing, rejected=(), unread=()):
+        """hail/tl/<tile>.json with the snowfall block: the tile centre and margin, the passing, the rejected and the unread."""
+        clat, clon = 45.75, -108.55
+        block = {"centre": [clat, clon], "margin_miles": 5.0, "passing": list(passing), "unread": list(unread),
+                 "rejected": list(rejected), "capped": False}
+        doc = {"f": S.TILE_LIST_FORMAT, "tile": self.TILE, "centre": [clat, clon], "miles": stations.RADIUS_MILES,
+               "margin_miles": 5.0, "elements": {"SNOW": block}}
+        write_json(root / "hail" / "tl" / f"{self.TILE}.json", doc)
+
+    @staticmethod
+    def _entry(sid, name, lat, lon, ok, current=True, newest=20260101):
+        return {"id": sid, "name": name, "lat": lat, "lon": lon, "miles": 0.0, "ok": ok, "of": 2192,
+                "share": round(ok / 2192, 4), "current": current, "newest": newest}
+
+    def _passing(self):
+        return [self._entry("USC00240802", "BILLINGS WTP", 45.78, -108.52, 2000),
+                self._entry("USW00024033", "BILLINGS INTL AP", 45.8077, -108.5429, 2100)]
+
+    @staticmethod
+    def _miles_from_town(lat, lon):
+        return f"{round(stations.haversine_miles(BILLINGS['lat'], BILLINGS['lon'], lat, lon), 1):.1f}"
+
+    def _snow_notes(self, root):
+        result = S.describe_summary(root, ROW, COL, None, town=dict(BILLINGS))
+        return result, {r["key"]: r for r in result["table"]["rows"]}["snow"]["notes"]
+
+    def test_a_station_the_rule_does_not_use_is_named_with_its_share_and_the_farther_ones_are_counted(self):    # D69, F6
+        root = self._variant()
+        moccasin = self._entry("USC00245761", "MOCCASIN EXP STN", 45.79, -108.50, 324)     # 14.8 percent: under the rule
+        far = self._entry("US1MTFAR0001", "FAR RANGE 3 N", 45.95, -108.95, 900)            # 41 percent and farther
+        self._write(root, self._passing(), rejected=[moccasin, far])
+        result, notes = self._snow_notes(root)
+        self.assertEqual([s["name"] for s in result["town"]["stations"]["snow"]], ["BILLINGS WTP", "BILLINGS INTL AP"])
+        self.assertIn(f"MOCCASIN EXP STN, {self._miles_from_town(45.79, -108.50)} miles from the town, is not used: 14.8 "
+                      "percent of the days 2020 to 2025 have a value for snowfall; the rule needs at least 80 percent.", notes)
+        self.assertIn("1 more station within 40 miles does not pass the same rule; it is farther than the stations named here.",
+                      notes)
+        self.assertFalse(any("FAR RANGE" in n for n in notes), notes)     # counted, not named
+
+    def test_a_station_that_is_not_current_is_named_with_the_date_of_its_newest_value(self):      # D69, F6
+        root = self._variant()
+        old = self._entry("US1MTOLD0001", "OLD CANAL 1 SW", 45.79, -108.50, 2100, current=False, newest=20240115)
+        self._write(root, self._passing(), rejected=[old])
+        _result, notes = self._snow_notes(root)
+        self.assertIn(f"OLD CANAL 1 SW, {self._miles_from_town(45.79, -108.50)} miles from the town, is not used: its newest "
+                      "snowfall value is from Jan 15, 2024, and the rule needs one within 30 days of Oct 16, 2026.", notes)
+
+    def test_a_share_under_the_rule_never_reads_as_the_rule_itself(self):                              # D5, F6
+        self.assertEqual(S._share_text(0.14781), "14.8")
+        self.assertEqual(S._share_text(0.79996), "79.9")
+        self.assertEqual(S._share_text(0.8), "80.0")
+
+    def test_a_failed_ice_dam_count_says_the_station_readings_did_not_load_and_names_no_station(self):   # F1, D16, D20
+        root = self._variant()
+        with mock.patch.object(S, "_dl_cells", side_effect=KeyError("boom")):
+            result = S.describe_summary(root, ROW, COL, None, town=dict(BILLINGS))
+        lines = {x["id"]: x for g in result["roof"]["groups"] for x in g["lines"]}
+        text = lines["ice_dam_weather_days"]["text"]
+        self.assertIn("Station readings could not be loaded in this update; that is not the same as no station readings. "
+                      "This is not an all-clear.", text)
+        self.assertNotIn("No station within 40 miles", text)
+        self.assertIsNone(lines["ice_dam_weather_days"]["value"])
+        self.assertEqual(result["state"], "partial")
+        self.assertIn("ice dam days", result["problem"])
+
+    def _dl_cells(self, names, values):
+        return [S._cell(value=n, text=f"{n} days at {name}", valid=365, missing=0, station=name, miles=1.0, sid="X")
+                for name, n in zip(names, values)]
+
+    def test_the_ice_dam_five_season_count_names_one_station_that_gives_every_season(self):          # F5, D41
+        root = self._variant()
+        cells = self._dl_cells(["Billings WTP"] * 5, [55, 68, 22, 56, 21])
+        with mock.patch.object(S, "_dl_cells", return_value=cells):
+            result = S.describe_summary(root, ROW, COL, None, town=dict(BILLINGS))
+        line = {x["id"]: x for g in result["roof"]["groups"] for x in g["lines"]}["ice_dam_weather_days"]
+        self.assertEqual(line["value"], 222)
+        self.assertEqual(line["text"], "Station reading: 222 days with 1 inch or more of snow on the ground and a low below 32 F "
+                         "in these five seasons at Billings WTP: a measured pattern, not a count of ice dams.")
+
+    def test_the_ice_dam_five_season_count_is_unavailable_when_more_than_one_station_gives_the_seasons(self):   # F5, D41
+        root = self._variant()
+        cells = self._dl_cells(["Billings WTP"] * 4 + ["Billings Logan"], [55, 68, 22, 56, 21])
+        with mock.patch.object(S, "_dl_cells", return_value=cells):
+            result = S.describe_summary(root, ROW, COL, None, town=dict(BILLINGS))
+        line = {x["id"]: x for g in result["roof"]["groups"] for x in g["lines"]}["ice_dam_weather_days"]
+        self.assertIsNone(line["value"])
+        self.assertEqual(line["text"], "Station reading: Days with 1 inch or more on the ground and a low below 32 F (days; a "
+                         "measured pattern, not ice dams). Data unavailable for the five seasons: the seasons come from more "
+                         "than one station (Billings WTP 2021-22 to 2024-25, Billings Logan 2025-26), so no five-season count is "
+                         "shown. This is not an all-clear.")
+        self.assertEqual(cells[0]["text"], "55 days at Billings WTP")                         # each season names its station
+
+    def test_a_failed_roof_section_says_the_roof_lines_did_not_load(self):                            # F10, D16, D20
+        root = self._variant()
+        with mock.patch.object(S, "_roof", side_effect=KeyError("boom")):
+            result = S.describe_summary(root, ROW, COL, None, town=dict(BILLINGS))
+        sentence = ("The roof lines could not be loaded in this update; that is not the same as no roof lines. "
+                    "This is not an all-clear.")
+        self.assertEqual(result["roof"]["groups"], [])
+        self.assertEqual(result["roof"]["unavailable"], sentence)
+        self.assertEqual([s["lead"] for s in result["sections"] if s["id"] == "roof"], [sentence])
+        self.assertEqual(result["state"], "partial")
+
+    def test_the_snowfall_lead_names_the_station_of_its_total_and_says_was_before_the_depth(self):      # F3, F15, D57
+        rows = {"snow": {"five": 19190, "five_text": "191.9 in at Harlowton 11NW", "five_missing": 0,
+                         "stations": ["Harlowton 11NW"] * 5},
+                "snow_depth": {"five": 6500, "five_text": "65.0 in on Jan 24, 2025 at Crystal Lake", "five_missing": 0,
+                               "stations": ["Crystal Lake"] * 5}}
+        sections = S._sections(rows, {}, {}, None, None, None, None)
+        lead = [s["lead"] for s in sections if s["id"] == "snow"][0]
+        self.assertEqual(lead, "Station reading: 191.9 in of snowfall in the five seasons at Harlowton 11NW; the deepest snow on "
+                         "the ground was 65.0 in on Jan 24, 2025 at Crystal Lake.")
+        rows["snow"]["stations"] = ["Harlowton 11NW"] * 2 + ["Lewistown 11 SSE"] * 3
+        rows["snow"]["five"] = None
+        lead = [s["lead"] for s in S._sections(rows, {}, {}, None, None, None, None) if s["id"] == "snow"][0]
+        self.assertIn("the deepest snow on the ground was 65.0 in on Jan 24, 2025 at Crystal Lake. This is not an all-clear.", lead)
+
+    def test_every_season_unavailable_sentence_names_its_season(self):                                # F9, D32
+        short = S.WORDS_SUMMARY["station_short"].format(season="2021-22", station="Billings WTP", k=300, d=365,
+                                                        element="snowfall")
+        self.assertEqual(short, "Data unavailable for 2021-22: Billings WTP has 300 of 365 days with a snowfall value, so this "
+                         "season is not shown; a missing value is not zero. This is not an all-clear.")
+        gust = S.WORDS_SUMMARY["gust_season_short"].format(season="2023-24", station="Billings Logan", k=146, d=365)
+        self.assertTrue(gust.startswith("Data unavailable for 2023-24: Billings Logan has 146 of 365 days with a gust value"), gust)
+
+    def test_a_town_page_explains_its_warnings_at_the_town_point_and_the_sheet_at_the_cell(self):   # F4, D38, D71
+        from website import build
+        self.assertIn("covered this spot", S.WORDS_INDICATORS["what_warnings_town"])
+        self.assertNotIn("covered this cell", S.WORDS_INDICATORS["what_warnings_town"])
+        self.assertIn("covered this cell or part of it", S.WORDS_INDICATORS["what_warnings"])
+        self.assertNotIn("covered this spot", S.WORDS_INDICATORS["what_warnings"])
+        self.assertEqual(build.kind_what(town=True)["Warning"], S.WORDS_INDICATORS["what_warnings_town"])
+        self.assertEqual(build.kind_what()["Warning"], S.WORDS_INDICATORS["what_warnings"])
+
+    def test_every_word_the_browser_asks_the_summary_for_is_in_the_summary_block(self):               # F7, D71, D72
+        src = (Path(__file__).resolve().parents[1] / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        asked = set()
+        for call in re.finditer(r'sumWord\(S, ([^)\n]*)\)', src):   # the key: a literal, or a ternary of two literals
+            asked |= set(re.findall(r'"([a-zA-Z_0-9]+)"', call.group(1)))
+        block = S.map_data_summary(None)
+        self.assertEqual(sorted(k for k in asked if k not in block["words"]), [])
+        for key in ("nouns", "report_types", "record_types", "auto_sources", "element_names", "family_nouns"):
+            self.assertIn(key, block)
+        for key in set(re.findall(r'own\(h\.summary, "([a-zA-Z_]+)"\)', src)):
+            self.assertIn(key, block)
+        self.assertEqual(block["report_types"]["hail_n"], "hail")
+        self.assertEqual(block["element_names"]["SNOW"], "snowfall")
+        self.assertEqual(block["family_nouns"]["flash_flood_watch"], "flash flood watch")
+
+    def test_the_browser_station_conversions_are_the_station_module_conversions(self):                  # D36, F7
+        conv = S.map_data_summary(None)["conv"]
+        for mm in (0, 1, 25, 254, 1000, 12345):
+            self.assertEqual((mm * conv["mm_scale"] + 127) // 254, stations.mm_to_hundredths_in(mm), mm)
+        c = conv["c_to_f"]
+        for c10 in (-400, -1, 0, 322, 400):
+            self.assertEqual((c["mul"] * c10 + c["offset"] + c["round"]) // c["div"], stations.tenths_c_to_tenths_f(c10), c10)
+
+    def test_the_unread_status_words_follow_the_station_module_classification(self):                  # F13, D32, D62
+        cases = (([{"reason": "the file did not load"}], "did not load", "station_status_failed"),
+                 ([{"reason": stations.CANADA_REASON}], "is not read", "station_status_not_read"),
+                 ([{"reason": stations.CANADA_REASON}] * 2, "are not read", "station_status_not_read_many"),
+                 ([{"reason": "the file did not load"}, {"reason": stations.CANADA_REASON}], "could not be read",
+                  "station_status_both"))
+        for unread, module_words, summary_key in cases:
+            self.assertEqual(stations._unread_status(unread), module_words)
+            self.assertEqual(S._unread_status(unread), S.WORDS_SUMMARY[summary_key])
+        self.assertEqual(S.TILE_LIST_FORMAT, stations.TILE_LIST_FORMAT)
+        self.assertEqual(S.TOWNS_FORMAT, joins.TOWNS_FORMAT)
 
 
 if __name__ == "__main__":

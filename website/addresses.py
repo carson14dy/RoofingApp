@@ -233,7 +233,7 @@ WORDS_ADDRESSES = {
                      "file, and draws each address as a dot with its address line."),
     "about_persons": ("This site publishes no list of persons. Montana Code Annotated 2-6-1017 concerns lists of "
                       "persons."),
-    "about_coverage": "The list is of addresses, not of buildings, and its coverage varies from county to county.",
+    "about_coverage": "The list is of addresses, not of buildings, and its completeness varies from county to county.",
     "about_privacy": "What you type stays in your browser.",
     # D23: an address tile with no B1 shard is outside the hail grid; the dot says so and never says "no hail".
     "outside_grid": "This point is outside the hail grid's Montana outline; no hail history is kept here.",

@@ -866,3 +866,25 @@ a { color: inherit; }
 
 /* the List's lines: a gap between the paragraphs of one section (B4 live-12; map.css resets p margins to 0, and the map page does not load style.css, so the token is not there) */
 .storm-sec p + p { margin-top: 8px; }
+
+/* the five-season table (B5, the sheet's first block of history): a table on wide screens; under 521 px each row is a card with
+   its label first and each season's cell labelled by its column head, so nothing scrolls sideways */
+.sum { margin-top: 14px; }
+.sum-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.sum-table th, .sum-table td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--edge);
+  overflow-wrap: anywhere; }
+.sum-table thead th { font-size: 12px; color: var(--ink-2); font-weight: 700; }
+.sum-table .sum-label { font-weight: 700; }
+.sum-table .sum-kind, .sum-table .sum-cover { display: block; color: var(--ink-2); font-size: 12.5px; font-weight: 400; }
+.sum-partial { font-size: 14px; }
+.sum-notes { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
+.sum-notes li { margin: 2px 0; }
+@media (min-width: 760px) { .sheet.sheet-wide { width: min(640px, 60vw); } }   /* the five-season table (B5-11) */
+@media (min-width: 760px) { .sheet-wide .sum-table th[scope="row"] { width: 30%; min-width: 160px; } }
+@media (max-width: 520px) {
+  .sum-table thead { display: none; }
+  .sum-table, .sum-table tbody, .sum-table tr, .sum-table th, .sum-table td { display: block; width: 100%; }
+  .sum-table tr { padding: 8px 0; border-bottom: 1px solid var(--edge); }
+  .sum-table th, .sum-table td { border: 0; padding: 2px 0; }
+  .sum-table td::before { content: attr(data-label) ": "; color: var(--ink-2); font-size: 12.5px; }
+}

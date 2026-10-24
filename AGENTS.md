@@ -37,7 +37,7 @@ website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · g
            State Library roads, the Census fallback, the street shards; pyproj lazily) · buildings.py (B3, D14, D15, D32,
            D34: the FEMA and ORNL building outlines, one dot each, the address join; pyogrio imported lazily) · climate.py
            (the past weather, B5, D38: the NOAA nClimGrid daily grid per cell, the backfill once and its release archive,
-           hail/c/; h5py imported lazily) · stations.py (GHCN-Daily station readings and the station rule, D5 and D18;
+           hail/c/; h5py imported lazily) · stations.py (GHCN-Daily station readings and the station rule, D5 and D18; the pool of stations in Montana and the neighbouring states, D62; the tile lists with their rejected candidates, D61 to D69;
            hail/sd/) · snowgrid.py (the NOHRSC season snowfall grid and its unit check, D7; hail/n/) · gauges.py (NWS
            flood stages and USGS annual peaks, the nearest gauge within 10 miles, D6; hail/g/) · summary.py (the
            five-season table that leads the sheet and the roof lines, B5; its words are Python's)
@@ -57,7 +57,7 @@ build.py   PyInstaller build      ship.py   test → bump version → commit →
 ```bash
 pip install requests jinja2 pillow numpy pygrib h5py tzdata     # enough for the website
 python -m website.build --out _site --sample             # labelled sample data, no network
-python -m website.build --out _site --hail-history       # the five-year hail history; off by default (D34)
+python -m website.build --out _site --hail-history       # the five-year hail history (D34; on main at the owner's decision of 2026-10-21)
 python -m website.joins build --store store --cache joins-cache   # the hail joins (D35); needs pyshp
 python -m website.joins verify store                     # check the hail joins
 python -m website.build --out _site --sample --hail-history --hail-addresses   # the address dots, streets and outlines (D36); off by default
@@ -70,20 +70,23 @@ python -m website.climate backfill --cache climate-cache   # B5, once: the 63 sc
 python -m website.climate update --cache climate-cache     # B5 daily: prelim days (and a new scaled month when one appears)
 python -m website.climate build --store store --cache climate-cache   # then: stations, snowgrid, gauges (the same store)
 python -m website.stations build --store store --cache b5-cache --scope daily   # --scope monthly for the whole union
+python -m website.stations verify --store store   # check the station figures and gates (exit 1 on a failure)
 python -m website.snowgrid build --store store --cache b5-cache --offline       # drop --offline to check NOAA (monthly)
 python -m website.gauges build --store store --cache b5-cache                   # --refresh for the monthly read
 python -m website.build --out _site --require-live       # live data; exit 1 if any source failed
 python -m http.server -d _site 8000                      # then open http://localhost:8000
 pip install -r requirements.txt                          # the parked desktop app
+pip install pyyaml                                       # test-only: the workflow-file tests read YAML (not in requirements.txt)
 python desktop/launcher.py                      # native window (--browser, or --headless --offline for tests)
 python desktop/launcher.py --selftest payload   # the check installed apps run before accepting an update
 python -m unittest discover -s tests -v         # offline; must pass before any merge
+python tools/smoke_map.py _site --history --store store   # B5: the sheet's summary words from a store folder or hail-store.tar.gz (the build passed --hail-history)
 python ship.py "one-line note" [--minor]        # ships to users — only when the owner asks
 ```
 
 ## Hard rules
 1. **Shipping.** Website: merging to `main` publishes. Keep `main` green; push to a branch first
-   (the Website workflow builds branch pushes against live data) and check the pages in a browser. The hail flags `--hail-history` and `--hail-addresses` stay off on `main` until the owner approves their terms and counsel answers them (D34, D36).
+   (the Website workflow builds branch pushes against live data) and check the pages in a browser. The hail history flag `--hail-history` is on for the public site from `main` (the owner's decision of 2026-10-21); `--hail-addresses` stays off on `main` until the owner approves its terms and counsel answers them (D34, D36).
    Parked app: users get a change only when `payload/manifest.json` `version` increases on `main`;
    don't bump it unless the owner asked to ship; never lower it; use `ship.py`.
 2. **Payload contract (SHELL_API 1).** The shell imports `payload/` as a package: `app.py` exposes

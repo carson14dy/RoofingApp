@@ -1,14 +1,14 @@
 {
   "record": "B5 verification: the past weather of every location (the climate grid, station readings, the NOHRSC snow analysis, river gauges, the zone and county products, the hail hit-and-miss record) (D38)",
-  "status": "part A gates settled; part B1 re-checked 2026-10-19 (the checker's record, /home/user/hail-b5/out/b5b1-recheck.json); the B1 completion of 2026-10-20 changed this part's files and rebuilt the joins, stations and gauges parts offline (/home/user/hail-b5/out/b1/store-ready.json). B5-10 and B5-11 are fixed pending re-check for this part's files, with the items in other owners' files named; B5-18's flag-off clause is fixed pending re-check; B5-16 is open with its owner; part B2 (the browser) and the final builds are pending Second round (2026-10-20, 01:25 UTC): the summary, site and docs items of D44 to D48 are in code and tested, with the open items in second_round.",
-  "verdict": "Not a supervisor gate yet. Gates B5-1 to B5-9 and B5-15 pass on the part A records and the re-check; B5-14 and B5-17 pass in Python; B5-10, B5-11 and the flag-off clause of B5-18 are fixed pending re-check; B5-12 and B5-13 are partial; B5-16 is open with its owner; the browser halves and the live preview are part B2. The supervisor decides the open items in this record.",
-  "written_by": "docs and job builder (part B1), 2026-10-19: the original record, quoting the part A completion and the products store record. B1 completion (products, stations, gauges and docs fixer), 2026-10-20: the re-check numbers from /home/user/hail-b5/out/b5b1-recheck.json (run finished 2026-10-19T23:33:00Z) and the store numbers from /home/user/hail-b5/out/b1/store-ready.json (rebuilt 2026-10-20T00:15:32Z, offline, procs 2); the joins verify timed again on 2026-10-20 (13.9 s wall time).",
+  "status": "Part A and part B1 gates settled (2026-10-19 and 2026-10-20). Round 2 of part B2 (2026-10-24): the docs and this record are brought to the candidate store (fixer C; 45,878 files, 541,075,953 bytes; the supervisor adopts it after the round), with the round-2 status of each gate in its `status` and `evidence`; the earlier ones are kept under `earlier`. The browser, site and smoke round-2 items are in progress, so every figure that waits for them is pending.",
+  "verdict": "Round 2, not a supervisor gate. Pass on B5-1, B5-2 (not re-run), B5-4 to B5-9, B5-15 and B5-17 (10 gates). Partial on B5-3, B5-10, B5-12, B5-13, B5-14 and B5-16 (6 gates). Pending on B5-11 and B5-18 (2 gates). The browser halves, the Chromium smoke, the live preview, the daily timing and the packed asset are round 2 of part B2 and the branch run. The supervisor decides the open items in this record.",
+  "written_by": "docs and record builder, part B2 round 2, 2026-10-24: the DECISIONS B5 entry (D44 to D76), DESIGN section 12, ROADMAP (B1 and B5 status; the owner's open items), README and AGENTS (layout, command, smoke-flag and pyyaml lines), about.html (D19, D53, D62), addresses.py (D74, the About words), and this record. Earlier writers are in written_by_earlier.",
   "branch": "claude/hail-b5",
   "base": {
     "branch": "claude/hail-b1 at db84d76 (B2)",
     "commit": "db84d76"
   },
-  "head_commit": "dcb7e93 (HEAD: WIP by the supervisor after the B1 review and fixes; fa33c8d and de0793c are earlier WIP commits on the branch). The B1 completion edits of 2026-10-20 are not committed.",
+  "head_commit": "bd3ae20 (WIP (local safety): B5 part B2 products owner (D53, D55, D56, D36) applied from claude/hail-b5p 719e7c6; review and fix rounds follow). The round-2 edits of this pass are not committed.",
   "brief": "/home/user/wt/briefs/hail-b5-brief.md (gates B5-1 to B5-18; supervisor rulings D1 to D30; the part B1 list)",
   "decision": "docs/DECISIONS.md D38",
   "design": "docs/DESIGN.md section 12",
@@ -16,130 +16,202 @@
     {
       "id": "B5-1",
       "gate": "Grid: the Billings cell's calendar 2025 precipitation (468.9 mm rounded monthly sum; NCEI monthly 468.98 mm), the June 15, 2025 tmax and tmin, and the 2024-25 freeze-thaw days reproduce an independent h5py read with zero difference; the airport comparison is shown (GHCN 73 freeze-thaw days in calendar 2025).",
-      "status": "pass",
-      "evidence": "Part A completion, B5-1. Billings cell row 509, column 388 (tile r0092_c0214). Independent h5py re-read of 18 scaled months (2024-07 to 2025-12, 1,055,926,671 bytes read): 549 days compared, zero differences in calendar 2025 rain (store 1,846 hundredths of an inch; independent 46,898 hundredths of a mm, 468.98 mm), 2024-25 freeze-thaw, days at or above 90 F, days below 32 F and missing days. June 15, 2025: raw precipitation 1.2266 mm, tmax 27.3125 C (81.1 F), tmin 14.3516 C (57.9 F). Airport USW00024033 calendar 2025: 73 freeze-thaw days (GHCN) against 104 for the grid cell; both shown."
+      "status": "pass (not re-run in round 2; the climate code is unchanged from HEAD)",
+      "evidence": "Round 2 (2026-10-24): not re-run. website/climate.py is unchanged from HEAD; the candidate store's climate part is the part B1 measure (c/: 4,569 files, 35,149,062 bytes).",
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-1. Billings cell row 509, column 388 (tile r0092_c0214). Independent h5py re-read of 18 scaled months (2024-07 to 2025-12, 1,055,926,671 bytes read): 549 days compared, zero differences in calendar 2025 rain (store 1,846 hundredths of an inch; independent 46,898 hundredths of a mm, 468.98 mm), 2024-25 freeze-thaw, days at or above 90 F, days below 32 F and missing days. June 15, 2025: raw precipitation 1.2266 mm, tmax 27.3125 C (81.1 F), tmin 14.3516 C (57.9 F). Airport USW00024033 calendar 2025: 73 freeze-thaw days (GHCN) against 104 for the grid cell; both shown."
+      }
     },
     {
       "id": "B5-2",
       "gate": "Backfill: 63 scaled months July 2021 to September 2026 read once; 25,902 land cells; no -999.99 value in any sum (asserted); 71 water cells read \"no land value\"; the read speed and the aggregate sizes recorded.",
-      "status": "pass",
-      "evidence": "Part A completion, B5-2. Ledger: 63 scaled months 2021-07 to 2026-09 (one entry each; the ETag equals the MD5 for all 63), plus 2026-10 prelim. Climate build: 64 months loaded, none missing or failed; 25,902 land and 71 water cells; 4,569 tiles, 35,149,062 bytes. Download median 27.78 MB/s (minimum 14.25, maximum 67.96); scaled bytes 3,721,141,537; read time 68.2 s. Aggregates: 64 monthly files, 16,013,234 bytes, and a 15.9 MB release archive (climate-aggregates.tar.gz). The fill is excluded before any sum (test_fill_is_missing_not_summed). The read-once rule is evidenced by the ledger; the backfill was not repeated in the re-check."
+      "status": "pass (not re-run in round 2; the backfill code is unchanged from HEAD)",
+      "evidence": "Round 2: not re-run. The backfill, its aggregates and the release archive are unchanged (climate code unchanged from HEAD; see B5-1).",
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-2. Ledger: 63 scaled months 2021-07 to 2026-09 (one entry each; the ETag equals the MD5 for all 63), plus 2026-10 prelim. Climate build: 64 months loaded, none missing or failed; 25,902 land and 71 water cells; 4,569 tiles, 35,149,062 bytes. Download median 27.78 MB/s (minimum 14.25, maximum 67.96); scaled bytes 3,721,141,537; read time 68.2 s. Aggregates: 64 monthly files, 16,013,234 bytes, and a 15.9 MB release archive (climate-aggregates.tar.gz). The fill is excluded before any sum (test_fill_is_missing_not_summed). The read-once rule is evidenced by the ledger; the backfill was not repeated in the re-check."
+      }
     },
     {
       "id": "B5-3",
-      "gate": "Stations: at Billings the rule picks WTP COOP USC00240802 (1.4 miles) and Billings Logan USW00024033 (2.6 miles) for all five elements; at Benchland snow Buffalo 1.7 E US1MTFG0003 (20.9 miles, 81.7 percent) and Lewistown 11 SSE USC00244978 (31.1 miles, 90.0 percent), depth Stanford USC00247864 (10.9 miles, 81.9 percent) and Crystal Lake USS0009C01S (31.3 miles, 99.9 percent); Stanford snow at 79.9 percent misses by 0.1 point and every station's share is shown. For each of the 17 towns, verify records how many of the five seasons pass the 95 percent rule at its two stations, per element.",
-      "status": "pass",
-      "evidence": "Part A completion, B5-3. Billings: PRCP, SNOW, SNWD, TMAX and TMIN from USC00240802 and USW00024033. Benchland SNOW: US1MTFG0003 (20.9 miles, 81.7 percent) and USC00243947 (HARLOWTON 11NW, 34.8 miles, 99.5 percent); Lewistown 11 SSE (USC00244978, 31.1 miles, 90.0 percent) has no SNOW report in the 30 days to the as-of day (last 2026-05-18), so the per-element currency rule of D18 replaces it. SNWD: USC00247864 (10.9 miles, 81.9 percent) and USS0009C01S (31.3 miles, 99.9 percent). Stanford SNOW: 1,752 of 2,192 days, 79.9 percent, fails by 0.1 point and is shown. Stations verify: 21 of 21 checks pass. Five-season counts per element at the two stations of the 17 towns are recorded (towns_seasons_95)."
+      "gate": "Stations: at Billings the rule picks WTP COOP USC00240802 (1.4 miles) and Billings Logan USW00024033 (2.6 miles) for all five elements; at Benchland snow Buffalo 1.7 E US1MTFG0003 (20.9 miles, 81.7 percent) and Lewistown 11 SSE USC00244978 (31.1 miles, 90.0 percent), depth Stanford USC00247864 (10.9 miles, 81.9 percent) and Crystal Lake USS0009C01S (31.3 miles, 99.9 percent); Stanford snow at 79.9 percent misses by 0.1 point and every station's share is shown. For each of the 17 towns, verify records how many of the five seasons pass the 95 percent rule at its two stations, per element. D18 replacement (round 2): the Benchland snowfall picks are Buffalo 1.7 E US1MTFG0003 (20.9 miles) and Harlowton 11NW USC00243947 (34.8 miles), because Lewistown 11 SSE USC00244978 has no snowfall report in the 30 days before the as-of date.",
+      "status": "partial: the D18 replacement and the stations verify pass; the Billings distances need the supervisor's ruling",
+      "evidence": "Round 2 (candidate store, fixer C): stations verify 34 of 34 checks; tile parity 0 differences at 206,865 points and at all 2,298,500 cell-element answers; the 21 named points and cells 0 differences (products check gates: the D61 parity sample and the D63 named-points parity). Benchland snowfall: BUFFALO 1.7 E (US1MTFG0003, 81.7 percent, 20.9 miles from the point) and HARLOWTON 11NW (USC00243947, 99.5 percent, 34.8 miles from the point) pass; LEWISTOWN 11 SSE (USC00244978, 90.0 percent) fails the 30-day currency rule (last snowfall report 2026-05-18) and is named as rejected (D69); STANFORD (USC00247864, 79.9 percent) is rejected for coverage; MOCCASIN EXP STN (USC00245761, 14.8 percent, 324 of 2,192 days) is named as not used. Billings from the town point (45.7833, -108.5007): BILLINGS WTP 1.2 miles and BILLINGS INTL AP 2.7 miles; the gate's 1.4 and 2.6 miles were measured from 45.7836, -108.5047 (tests/test_joins.py). The gust line's 2.6 miles uses Logan's IEM coordinate (45.8069, -108.5422). Open: the supervisor rules on the Billings figures and on one coordinate per station (products check item 42).",
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-3. Billings: PRCP, SNOW, SNWD, TMAX and TMIN from USC00240802 and USW00024033. Benchland SNOW: US1MTFG0003 (20.9 miles, 81.7 percent) and USC00243947 (HARLOWTON 11NW, 34.8 miles, 99.5 percent); Lewistown 11 SSE (USC00244978, 31.1 miles, 90.0 percent) has no SNOW report in the 30 days to the as-of day (last 2026-05-18), so the per-element currency rule of D18 replaces it. SNWD: USC00247864 (10.9 miles, 81.9 percent) and USS0009C01S (31.3 miles, 99.9 percent). Stanford SNOW: 1,752 of 2,192 days, 79.9 percent, fails by 0.1 point and is shown. Stations verify: 21 of 21 checks pass. Five-season counts per element at the two stations of the 17 towns are recorded (towns_seasons_95)."
+      }
     },
     {
       "id": "B5-4",
       "gate": "NOHRSC: the D7 regression recorded (slope, stations, residuals) and the display decision follows it; five water years 2021-22 to 2025-26 present (11,562,084 bytes); 2020-21 missing is stated.",
-      "status": "pass",
-      "evidence": "Part A completion, B5-4. Regression over 682 station-seasons: slope 0.664164, intercept 12.031601, correlation 0.809719, RMS residual 17.6727 in, maximum absolute residual 124.2277 in. The 0.85 to 1.15 band is not met, so the analysis is not shown (state unavailable; no n/ files; the words say why; station readings are shown; D23). Water years 2022 to 2026 present (five files, 11,562,084 bytes); 2020-21 missing upstream (HTTP 404), and stated. Samples reproduce: Billings 50.29 (2024-25) and 33.85 (2025-26); Benchland 87.17 and 94.05. Store record (store-ready.json): the snow block state is unavailable, with the sentence \"Analysis: not shown. Its amounts did not match measured snowfall closely enough to be sure they are in inches. Station readings are shown instead.\""
+      "status": "pass (unchanged)",
+      "evidence": "Unchanged in round 2: the D7 regression (slope 0.664 over 682 station-seasons, outside 0.85 to 1.15) keeps the analysis held; the snow rows are station readings; five water years 2021-22 to 2025-26 are present (11,562,084 bytes); 2020-21 is missing upstream and the page says so.",
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-4. Regression over 682 station-seasons: slope 0.664164, intercept 12.031601, correlation 0.809719, RMS residual 17.6727 in, maximum absolute residual 124.2277 in. The 0.85 to 1.15 band is not met, so the analysis is not shown (state unavailable; no n/ files; the words say why; station readings are shown; D23). Water years 2022 to 2026 present (five files, 11,562,084 bytes); 2020-21 missing upstream (HTTP 404), and stated. Samples reproduce: Billings 50.29 (2024-25) and 33.85 (2025-26); Benchland 87.17 and 94.05. Store record (store-ready.json): the snow block state is unavailable, with the sentence \"Analysis: not shown. Its amounts did not match measured snowfall closely enough to be sure they are in inches. Station readings are shown instead.\""
+      }
     },
     {
       "id": "B5-5",
       "gate": "Product counts equal the research's window counts (source 4) with zero difference; June 2022 (E01): FL.W and FA.W products over Red Lodge, Gardiner and Billings, the NCEI flood records, the Billings gauge peak of 16.37 ft on 2022-06-15.",
-      "status": "pass",
-      "evidence": "Part A completion, B5-5 (wording as restated in D24). Joins compare: 33 of 33 rows, every delta 0 (LSR hail 1,347; LSR gusts 2,733; NCEI hail by year; SWDI 60,357; SV 2,240; TO 17; station days at 50 kt by year; the B5 window counts per product, FA.A and FF.A county-only included). June 2022: FA.W Red Lodge 2022-06-12; FL.W Gardiner 2022-06-13; FL.W and FL.A Billings 2022-06-14; the only NCEI flood record in June 2022 is Red Lodge 2022-06-10 (0.3 miles); Billings gauge peak 16.37 ft on 2022-06-15 (g/06214500.json). Store record: 33 compare rows, no non-zero delta (store-ready.json, verify.compare)."
+      "status": "pass (round 2: the three one-event differences are window-edge events, D55)",
+      "evidence": "Round 2: HW.A 277 in the research window against 276 in the store window (TFX event 30 of 2026, research window only); HW.W 339 against 338 (TFX event 34 of 2026, research window only); FW.W 169 against 170 (TFX event 19 of 2021, store window only). joins verify on the candidate: 50 of 50 checks; the three edges are recorded with their sentences; no store rule drops a product (products check item 34).",
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-5 (wording as restated in D24). Joins compare: 33 of 33 rows, every delta 0 (LSR hail 1,347; LSR gusts 2,733; NCEI hail by year; SWDI 60,357; SV 2,240; TO 17; station days at 50 kt by year; the B5 window counts per product, FA.A and FF.A county-only included). June 2022: FA.W Red Lodge 2022-06-12; FL.W Gardiner 2022-06-13; FL.W and FL.A Billings 2022-06-14; the only NCEI flood record in June 2022 is Red Lodge 2022-06-10 (0.3 miles); Billings gauge peak 16.37 ft on 2022-06-15 (g/06214500.json). Store record: 33 compare rows, no non-zero delta (store-ready.json, verify.compare)."
+      }
     },
     {
       "id": "B5-6",
       "gate": "Period rule: the four named zone cases of D8 with their expected periods; the MTZ003 case checked against the window.",
-      "status": "pass",
-      "evidence": "Part A completion, B5-6. Eight of eight periods ok: MTZ004 WS 2024 event 1 (cancelled 2024-01-10 15:22Z; continuation 2024-01-11 12:00Z to 2024-01-12 12:00Z); MTZ302 HW 2022 event 38 (two cancelled periods); MTZ320 WS 2023 event 4 (cancelled 2023-02-22 10:54Z; expiry 2023-02-23 01:00Z); MTZ003 WS 2021 event 12 (2021-12-19 04:00Z to 15:00Z expired, and 18:00Z to 2021-12-20 03:27Z cancelled; the period begins inside the window, which starts 2021-10-17 12:00Z)."
+      "status": "pass (unchanged)",
+      "evidence": "Unchanged in round 2: the four named period cases of D8 are in tests/test_joins.py, which passes (273 tests OK on the candidate).",
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-6. Eight of eight periods ok: MTZ004 WS 2024 event 1 (cancelled 2024-01-10 15:22Z; continuation 2024-01-11 12:00Z to 2024-01-12 12:00Z); MTZ302 HW 2022 event 38 (two cancelled periods); MTZ320 WS 2023 event 4 (cancelled 2023-02-22 10:54Z; expiry 2023-02-23 01:00Z); MTZ003 WS 2021 event 12 (2021-12-19 04:00Z to 15:00Z expired, and 18:00Z to 2021-12-20 03:27Z cancelled; the period begins inside the window, which starts 2021-10-17 12:00Z)."
+      }
     },
     {
       "id": "B5-7",
       "gate": "NCEI points: the county-coded rows join as records; Glentana (T04, 2022-07-18 23:47 UTC) is found at its point; the Hays case (2021-07-07) is excluded as outside the window and the exclusion is asserted.",
-      "status": "pass",
-      "evidence": "Part A completion, B5-7. Glentana (T04, 2022-07-18 23:47Z) NCEI tornado record found 0.41 miles from the point (cell 615, 2375). Hays tornado of 2021-07-07 absent, outside the window; no rows on that day (asserted). County-coded point rows join as records: 2,097 record rows in the store (events: records 2097; store-ready.json, joins_counts.records)."
+      "status": "pass (unchanged)",
+      "evidence": "Unchanged in round 2: the county-coded rows join as records and test_joins passes (273 tests OK on the candidate).",
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-7. Glentana (T04, 2022-07-18 23:47Z) NCEI tornado record found 0.41 miles from the point (cell 615, 2375). Hays tornado of 2021-07-07 absent, outside the window; no rows on that day (asserted). County-coded point rows join as records: 2,097 record rows in the store (events: records 2097; store-ready.json, joins_counts.records)."
+      }
     },
     {
       "id": "B5-8",
       "gate": "Gusts: LWT 182.5 kt dropped and counted; HVR and MSO flagged (D12).",
-      "status": "pass",
-      "evidence": "Part A completion, B5-8. Station gusts of 130 kt or more are dropped and counted (D12): LWT 182.5 kt on 2023-03-13, and by the same rule DLN 165.1 kt (2023-11-30) and SDY 255.0 kt (2023-08-06); station_dropped 3. HVR 105.1 kt (2025-02-20) and MSO 86.0 kt (2025-05-09) are flagged for check (station_flagged_readings 2)."
+      "status": "pass (unchanged)",
+      "evidence": "Unchanged in round 2: LWT 182.5 kt is dropped and counted; HVR and MSO are flagged (D12); test_joins passes.",
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-8. Station gusts of 130 kt or more are dropped and counted (D12): LWT 182.5 kt on 2023-03-13, and by the same rule DLN 165.1 kt (2023-11-30) and SDY 255.0 kt (2023-08-06); station_dropped 3. HVR 105.1 kt (2025-02-20) and MSO 86.0 kt (2025-05-09) are flagged for check (station_flagged_readings 2)."
+      }
     },
     {
       "id": "B5-9",
       "gate": "Roof counts: the M6 and M10 series reproduce the corrected counts under D1 (90 F highs [45, 42, 27, 35, 25]; 1 inch snow depth [55, 70, 30, 53, 25]).",
-      "status": "pass",
-      "evidence": "Part A completion, B5-9. Billings airport USW00024033 by season, 2021-22 to 2025-26: highs of 90 F or more [45, 42, 27, 35, 25]; days with 1 inch of snow on the ground (SNWD of 25 mm or more) [55, 70, 30, 53, 25]. Also freeze-thaw [86, 102, 88, 88, 85] and lows below 32 F [121, 154, 118, 126, 103]; M10 calendar years 2021 to 2025 under D1 [40, 66, 39, 25, 57] (Stanford [34, 63, 34, 32, 60]). The refuter's corrections (roof-indicators-refuter.json) are the figures above: GHCN stores 90 F as 322 tenths of a degree C, and 1 inch as 25 mm."
+      "status": "pass (unchanged; not re-run in round 2)",
+      "evidence": "Unchanged in round 2: the roof counts under D1 are the record's figures (Billings airport: 90 F highs [45, 42, 27, 35, 25]; 1 inch of snow on the ground [55, 70, 30, 53, 25]).",
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-9. Billings airport USW00024033 by season, 2021-22 to 2025-26: highs of 90 F or more [45, 42, 27, 35, 25]; days with 1 inch of snow on the ground (SNWD of 25 mm or more) [55, 70, 30, 53, 25]. Also freeze-thaw [86, 102, 88, 88, 85] and lows below 32 F [121, 154, 118, 126, 103]; M10 calendar years 2021 to 2025 under D1 [40, 66, 39, 25, 57] (Stanford [34, 63, 34, 32, 60]). The refuter's corrections (roof-indicators-refuter.json) are the figures above: GHCN stores 90 F as 322 tenths of a degree C, and 1 inch as 25 mm."
+      }
     },
     {
       "id": "B5-10",
       "gate": "Words: the forbidden-term test covers every template and the six sheet strings; \"structure\" only in proper names; \"damage\" only in the allowed contexts; the four Data unavailable lines present with reasons; the radar sentence present.",
-      "status": "second round: fixed in code and tested in the second round (R20's title only in the About citations; the one-station all-clear; NOAA's radar coverage allowed; the snow unit sentences end with the all-clear); still open in files this part does not own: sources.py's hail store row ('-3 (no coverage)'), tests/words_rules.py's bare stem, and tests/test_snowgrid.py (its word test flags the required all-clear sentence; its exact expectation pins the old unit sentence)",
-      "evidence": "Re-check 2026-10-19: fail on the all-clear rule (F6) and on 'coverage' in about.html (F11b). Fixed in the working tree on 2026-10-20: the unavailable, partial and unplaced lines of the joins, stations, gauges and climate word tables end with 'This is not an all-clear.'; in summary.py the held lines (summary.py:380 to 391) and the zone line (summary.py:204) carry it, and the zone-reconfigured lines (summary.py:219 to 221) do too; the 'pass the coverage rule' wording is gone from about.html. Open: snowgrid.py:137 and :139 have no all-clear sentence (F6d), a file this part does not own. The four Data unavailable lines and the radar sentence were present on the re-check; not re-read in a page. Second round (2026-10-20): fixed in code and tested in the second round (R20's title only in the About citations; the one-station all-clear; NOAA's radar coverage allowed; the snow unit sentences end with the all-clear); still open in files this part does not own: sources.py's hail store row ('-3 (no coverage)'), tests/words_rules.py's bare stem, and tests/test_snowgrid.py (its word test flags the required all-clear sentence; its exact expectation pins the old unit sentence).",
+      "status": "partial: the history block of the About page passes the words rules except two named sources; the site round-2 words and tests are open",
+      "evidence": "Round 2: the words rules (tests/words_rules.py) over the About history block of the sample build (2026-10-24; 'Hail history' to 'Known gaps') find two items: 'damage' in the R20 citation (D46 allows it in the About references list) and 'Safety' in the R9 source title (FEMA P-957, Snow Load Safety Guide; a source's name). The history source rows carry words the rules flag: the MRMS hail row (line 160 of the extracted text, 'a day that fails stays missing'), the SWDI row (line 162, 'PROB is the probability of hail in percent') and the NOHRSC row (line 165, 'a water year whose download fails'). D13 governs those history rows, so the sources owner rewords them in sources.py. The NWS rows and the flag text (lines 115 to 118, 149, 150, 153, 155) are older text that D53 keeps, and the source's own quoted terms (line 131, 'claim it is your own') are quoted words, which D13 allows. The About radar line, the threshold sentence, the station sentence and the address words pass. The forbidden-term test over the sheet strings and the templates is the site owner's round-2 item (see the suite tail in round_2.tests).",
       "findings": [
         "F6d"
-      ]
+      ],
+      "earlier": {
+        "status": "second round: fixed in code and tested in the second round (R20's title only in the About citations; the one-station all-clear; NOAA's radar coverage allowed; the snow unit sentences end with the all-clear); still open in files this part does not own: sources.py's hail store row ('-3 (no coverage)'), tests/words_rules.py's bare stem, and tests/test_snowgrid.py (its word test flags the required all-clear sentence; its exact expectation pins the old unit sentence)",
+        "evidence": "Re-check 2026-10-19: fail on the all-clear rule (F6) and on 'coverage' in about.html (F11b). Fixed in the working tree on 2026-10-20: the unavailable, partial and unplaced lines of the joins, stations, gauges and climate word tables end with 'This is not an all-clear.'; in summary.py the held lines (summary.py:380 to 391) and the zone line (summary.py:204) carry it, and the zone-reconfigured lines (summary.py:219 to 221) do too; the 'pass the coverage rule' wording is gone from about.html. Open: snowgrid.py:137 and :139 have no all-clear sentence (F6d), a file this part does not own. The four Data unavailable lines and the radar sentence were present on the re-check; not re-read in a page. Second round (2026-10-20): fixed in code and tested in the second round (R20's title only in the About citations; the one-station all-clear; NOAA's radar coverage allowed; the snow unit sentences end with the all-clear); still open in files this part does not own: sources.py's hail store row ('-3 (no coverage)'), tests/words_rules.py's bare stem, and tests/test_snowgrid.py (its word test flags the required all-clear sentence; its exact expectation pins the old unit sentence)."
+      }
     },
     {
       "id": "B5-11",
       "gate": "Readability: a reviewer reads the summary table for three places (the gate cell, Benchland, Billings): every cell has a unit and a kind word, no sentence needs decoding, the table is within the first screen at 390 px.",
-      "status": "second round: fixed in code and tested in the second round (the ice-dam kind word in every state; the roof snow and gust reasons; the five-season gust cells name the station; the ice-storm zero follows the winter storm family's unplaced products); the 390 px first-screen check of the sheet is part B2",
-      "evidence": "Re-check 2026-10-19: every row head has a kind word on 17 of 17 tables; the Python half failed on F4, F5, F7, F8 and F9. Fixed in the working tree on 2026-10-20: F4 (the B5 warning row, joins.py:431, formatted by _warning_text at joins.py:3735; the label is Warning, Watch or Advisory by significance, joins.py:173; FA.A is named 'Areal flood watch', joins.py:240); F8 (gauges.py:99: the words carry no 'River gauge:' prefix); F12 (joins.py:240). In summary.py, F5 is fixed (summary.py:228 is the brief's no-report sentence; summary.py:337 to 338 carry 'A missing report is not a finding that nothing happened'). Not re-checked: F7 (a comment at summary.py:89 says the held row's unit carries its reason) and F9 (duplicate 'N days missing'). The 390 px first-screen check is part B2. Second round (2026-10-20): fixed in code and tested in the second round (the ice-dam kind word in every state; the roof snow and gust reasons; the five-season gust cells name the station; the ice-storm zero follows the winter storm family's unplaced products); the 390 px first-screen check of the sheet is part B2.",
+      "status": "pending: the browser and smoke round 2 (the 390 px first-screen check and the three-cell comparison)",
+      "evidence": "Round 2: pending. The sheet's table in Chromium at 390 and 1280 px, the 390 px first-screen check and the three-cell comparison need the browser's round 2 and the smoke run. The browser's notes record an exact table match on an earlier candidate (fixer A); the round-2 sections and station words are not built.",
       "findings": [
         "F7",
         "F9"
-      ]
+      ],
+      "earlier": {
+        "status": "second round: fixed in code and tested in the second round (the ice-dam kind word in every state; the roof snow and gust reasons; the five-season gust cells name the station; the ice-storm zero follows the winter storm family's unplaced products); the 390 px first-screen check of the sheet is part B2",
+        "evidence": "Re-check 2026-10-19: every row head has a kind word on 17 of 17 tables; the Python half failed on F4, F5, F7, F8 and F9. Fixed in the working tree on 2026-10-20: F4 (the B5 warning row, joins.py:431, formatted by _warning_text at joins.py:3735; the label is Warning, Watch or Advisory by significance, joins.py:173; FA.A is named 'Areal flood watch', joins.py:240); F8 (gauges.py:99: the words carry no 'River gauge:' prefix); F12 (joins.py:240). In summary.py, F5 is fixed (summary.py:228 is the brief's no-report sentence; summary.py:337 to 338 carry 'A missing report is not a finding that nothing happened'). Not re-checked: F7 (a comment at summary.py:89 says the held row's unit carries its reason) and F9 (duplicate 'N days missing'). The 390 px first-screen check is part B2. Second round (2026-10-20): fixed in code and tested in the second round (the ice-dam kind word in every state; the roof snow and gust reasons; the five-season gust cells name the station; the ice-storm zero follows the winter storm family's unplaced products); the 390 px first-screen check of the sheet is part B2."
+      }
     },
     {
       "id": "B5-12",
       "gate": "Budget: the daily job runs end to end locally in under 25 minutes; the measured sizes recorded; the phone view at zoom 15 stays under 650 KB gzip.",
-      "status": "partial (not confirmed): the store-job timing is not measured in the second round; the measured sizes on the store copy are j/ 86,276,949 bytes raw in 9,196 files and hail/ 176,293,267 bytes in 23,867 files, before the products part's rebuild",
-      "evidence": "Offline steps measured on 2026-10-20 (store-ready.json, products_rebuild_2026_10_20): joins build 277 s, stations build 29.5 s, gauges build 1.5 s, joins verify 13.9 s (wall time); the re-check's climate build 11 s and NOHRSC build 1 s. The B1 store build is 612 s on CI (the brief). The daily pulls (the station refresh, NWPS, the preliminary climate, NOHRSC and the products pulls) were not run here, so the end-to-end time with downloads is not measured. Budget as written: one 40-minute clock for the B5 steps; the join step has a 50-minute timeout over its own 35-minute deadline; the job cap is 60 minutes; the monthly job runs on its own clock (hail-store.yml, D42). Second round (2026-10-20): partial (not confirmed): the store-job timing is not measured in the second round; the measured sizes on the store copy are j/ 86,276,949 bytes raw in 9,196 files and hail/ 176,293,267 bytes in 23,867 files, before the products part's rebuild.",
-      "findings": []
+      "status": "partial: sizes and jobs restated; the end-to-end run and the phone view are pending",
+      "evidence": "Round 2: the daily set is 495 files, 487,235,520 bytes worst case (439 picks and 56 more; D73, D76); the monthly job reads 805 summary files (700 rule files, 537,226,020 bytes; 105 regression-only Montana files). The joins step has timeout-minutes 53 (1.5 times its 35-minute deadline, D75(d)); the daily job timeout is 150 minutes (hail-store.yml). The offline steps measured on 2026-10-20: joins build 277 s, stations build 29.5 s, gauges 1.5 s, joins verify 13.9 s. The daily total with downloads is not measured. The phone view was 663,276 bytes in the first round against 665,600 (D70); the round-2 figure is pending.",
+      "findings": [],
+      "earlier": {
+        "status": "partial (not confirmed): the store-job timing is not measured in the second round; the measured sizes on the store copy are j/ 86,276,949 bytes raw in 9,196 files and hail/ 176,293,267 bytes in 23,867 files, before the products part's rebuild",
+        "evidence": "Offline steps measured on 2026-10-20 (store-ready.json, products_rebuild_2026_10_20): joins build 277 s, stations build 29.5 s, gauges build 1.5 s, joins verify 13.9 s (wall time); the re-check's climate build 11 s and NOHRSC build 1 s. The B1 store build is 612 s on CI (the brief). The daily pulls (the station refresh, NWPS, the preliminary climate, NOHRSC and the products pulls) were not run here, so the end-to-end time with downloads is not measured. Budget as written: one 40-minute clock for the B5 steps; the join step has a 50-minute timeout over its own 35-minute deadline; the job cap is 60 minutes; the monthly job runs on its own clock (hail-store.yml, D42). Second round (2026-10-20): partial (not confirmed): the store-job timing is not measured in the second round; the measured sizes on the store copy are j/ 86,276,949 bytes raw in 9,196 files and hail/ 176,293,267 bytes in 23,867 files, before the products part's rebuild."
+      }
     },
     {
       "id": "B5-13",
       "gate": "Determinism: two builds from cache give byte-identical c/, n/, sd/, g/ and k/ files.",
-      "status": "partial",
-      "evidence": "Part A completion, B5-13: a second store from the same tarball and caches matched the first file by file for c, g, j, k, s, sd, t and z (n absent in both). Not yet run: j/e/ and tl/ (written after that store was built) and the store rebuilt on 2026-10-20 (its towns file, periods and tile lists are new).",
-      "findings": []
+      "status": "partial: j/e/ and tl/ are not yet compared across two builds",
+      "evidence": "Round 2: not re-run. Part A: c, g, j, k, s, sd, t and z matched file by file across two builds from the same tarball and caches (n absent in both). j/e/ and tl/ were written after that; their determinism check is pending.",
+      "findings": [],
+      "earlier": {
+        "status": "partial",
+        "evidence": "Part A completion, B5-13: a second store from the same tarball and caches matched the first file by file for c, g, j, k, s, sd, t and z (n absent in both). Not yet run: j/e/ and tl/ (written after that store was built) and the store rebuilt on 2026-10-20 (its towns file, periods and tile lists are new)."
+      }
     },
     {
       "id": "B5-14",
       "gate": "Failure: each source's failure marks its part unavailable (D16), in Python and in the browser, and the rest builds.",
-      "status": "second round: the roof snow line gives the D20 reason in the failure state (test_summary, stations_unavailable); the Python half is the same as before; the browser half is part B2",
-      "evidence": "Re-check 2026-10-19 (Python half): with the gauges and stations blocks removed from a scratch copy, the build finished with rc 0 and 17 pages; the D20 sentence with 'This is not an all-clear.' shows for stations and gauges (their unavailable words carry it). The snow block's words (snowgrid.py:137 and :139) have no all-clear sentence (F6d), for the snow owner. Part A (completion, B5-14): fake responses on the gauges, snow and stations builds raised no exception in 12 calls. Browser half: part B2, not run. Second round (2026-10-20): second round: the roof snow line gives the D20 reason in the failure state (test_summary, stations_unavailable); the Python half is the same as before; the browser half is part B2.",
+      "status": "partial: the Python parts pass; the browser half is round 2 of part B2",
+      "evidence": "Round 2: a failed part is marked unavailable with its sentence (D16, D20); the ice-dam count prints the D20 sentence in its failure state (D71 F1); a failed station file is named as failed and the search never moves to a farther station (D32); the roof snowfall line gives the D20 reason. The browser half (only the failed rows fail, in the browser) is pending.",
       "findings": [
         "F6d"
-      ]
+      ],
+      "earlier": {
+        "status": "second round: the roof snow line gives the D20 reason in the failure state (test_summary, stations_unavailable); the Python half is the same as before; the browser half is part B2",
+        "evidence": "Re-check 2026-10-19 (Python half): with the gauges and stations blocks removed from a scratch copy, the build finished with rc 0 and 17 pages; the D20 sentence with 'This is not an all-clear.' shows for stations and gauges (their unavailable words carry it). The snow block's words (snowgrid.py:137 and :139) have no all-clear sentence (F6d), for the snow owner. Part A (completion, B5-14): fake responses on the gauges, snow and stations builds raised no exception in 12 calls. Browser half: part B2, not run. Second round (2026-10-20): second round: the roof snow line gives the D20 reason in the failure state (test_summary, stations_unavailable); the Python half is the same as before; the browser half is part B2."
+      }
     },
     {
       "id": "B5-15",
       "gate": "Polygon rule (D11): the cell-cover counts before and after the change recorded per product; the town point check lists every disagreement between the centre rule and the point rule for the 17 towns; a null-geometry block test.",
-      "status": "pass",
-      "evidence": "Part A completion, B5-15. Cell covers per product (centre rule, touch rule, added), recorded in the joins index: centre-not-touched 0 for every product; added: SV.W +310,012; FA.Y +63,796; SQ.W +11,514; FF.W +11,650; TO.W +1,797; FL.W +3,629; FA.W +3,321; FL.A +3,103; FL.Y +848 (9 products). Town point check: 17 towns, 4 disagreements (Belgrade SV.W 2023-08-30 03:01Z; Helena SV.W 2024-08-19 23:51Z and 2025-07-28 20:39Z; Kalispell SQ.W 2022-02-01 23:58Z). Null geometry: polygon_nulls 0 in the window (store-ready.json, joins: no_outline 0, window 0, joined 0, unjoined 0); NoOutlineTests pass (completion). 2026-10-20 (joins verify, the D38 towns file): 0 town events missing from a cell cover; 12 cover-only events; 469 town-event pairs for the 17 towns.",
-      "findings": []
+      "status": "pass (unchanged)",
+      "evidence": "Unchanged in round 2: the town point test is in hail/j/towns.json (first round: 469 town-event pairs; 0 missing from a cover; 12 cover-only events recorded); test_joins passes.",
+      "findings": [],
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-15. Cell covers per product (centre rule, touch rule, added), recorded in the joins index: centre-not-touched 0 for every product; added: SV.W +310,012; FA.Y +63,796; SQ.W +11,514; FF.W +11,650; TO.W +1,797; FL.W +3,629; FA.W +3,321; FL.A +3,103; FL.Y +848 (9 products). Town point check: 17 towns, 4 disagreements (Belgrade SV.W 2023-08-30 03:01Z; Helena SV.W 2024-08-19 23:51Z and 2025-07-28 20:39Z; Kalispell SQ.W 2022-02-01 23:58Z). Null geometry: polygon_nulls 0 in the window (store-ready.json, joins: no_outline 0, window 0, joined 0, unjoined 0); NoOutlineTests pass (completion). 2026-10-20 (joins verify, the D38 towns file): 0 town events missing from a cell cover; 12 cover-only events; 469 town-event pairs for the 17 towns."
+      }
     },
     {
       "id": "B5-16",
       "gate": "Temperature extremes: the season highest-high and lowest-low rows carry dates and the grid kind word; the town pages' station rows carry the station's name; no row mixes sources.",
-      "status": "partial in the second round: the five-season gust cells name their station (test_summary; the built Billings page shows '29 days at Billings/Logan Intl' and '69 kt (79 mph) on Dec 17, 2025 at Billings/Logan Intl'); the temperature rows are unchanged in this round (F10 stays with the summary builder)",
-      "evidence": "Re-check 2026-10-19: grid rows carry 'Grid estimate' and dates on all 17 towns; station rows name their station in 167 of 167 cells. Fails 'no row mixes sources' for the five-season snowfall cell: Billings shows two stations in one number ('185.0 in; two stations: BILLINGS WTP 2021-22 to 2024-25, BILLINGS INTL AP 2025-26'), and Benchland's five-season cell names no station. Not fixed on 2026-10-20: summary.py:1598 still takes the station sum for that cell. F10 asks for a decision (show the five-season total only when one station supplies all five seasons, or say so). Second round (2026-10-20): partial in the second round: the five-season gust cells name their station (test_summary; the built Billings page shows '29 days at Billings/Logan Intl' and '69 kt (79 mph) on Dec 17, 2025 at Billings/Logan Intl'); the temperature rows are unchanged in this round (F10 stays with the summary builder).",
+      "status": "partial: the gust cells name their station; the grid rows need a store with the climate part on the page",
+      "evidence": "Round 2: every season cell of the strongest-gust row names its station (D57; the first-round Billings page shows '29 days at Billings/Logan Intl' and '69 kt (79 mph) on Dec 17, 2025 at Billings/Logan Intl'). The town page's station rows carry the station name (BILLINGS WTP, BILLINGS INTL AP). The sample build has no climate part (the fixture has no c/ folder), so its grid rows read 'Data unavailable' and the date and kind-word check cannot be read on the sample. Partial until a page built from the candidate's climate part is read.",
       "findings": [
         "F10"
-      ]
+      ],
+      "earlier": {
+        "status": "partial in the second round: the five-season gust cells name their station (test_summary; the built Billings page shows '29 days at Billings/Logan Intl' and '69 kt (79 mph) on Dec 17, 2025 at Billings/Logan Intl'); the temperature rows are unchanged in this round (F10 stays with the summary builder)",
+        "evidence": "Re-check 2026-10-19: grid rows carry 'Grid estimate' and dates on all 17 towns; station rows name their station in 167 of 167 cells. Fails 'no row mixes sources' for the five-season snowfall cell: Billings shows two stations in one number ('185.0 in; two stations: BILLINGS WTP 2021-22 to 2024-25, BILLINGS INTL AP 2025-26'), and Benchland's five-season cell names no station. Not fixed on 2026-10-20: summary.py:1598 still takes the station sum for that cell. F10 asks for a decision (show the five-season total only when one station supplies all five seasons, or say so). Second round (2026-10-20): partial in the second round: the five-season gust cells name their station (test_summary; the built Billings page shows '29 days at Billings/Logan Intl' and '69 kt (79 mph) on Dec 17, 2025 at Billings/Logan Intl'); the temperature rows are unchanged in this round (F10 stays with the summary builder)."
+      }
     },
     {
       "id": "B5-17",
       "gate": "Hail hit-and-miss (D15): the table built for every LSR hail report of 1.00 in or more in the window; the Lewistown and Glendive cases present; the About summary in words.",
-      "status": "pass",
-      "evidence": "Part A completion, B5-17 and D24. 737 rows: every LSR hail report of 1.00 in or more in the window; hits 464; misses 273 (a miss under by up to 3.01 in, median 0.88 in). Own-cell MESH hits 297 of 737 (40.3 percent, \"fewer than half\"). Lewistown 2.50 in (3 S Lewistown, 2025-06-15 22:48Z, MESH 0.0 mm) is present as a miss under by 2.50 in. Petrolia Lake 3.50 in (1 SSE Petrolia Lake, 2025-06-16 01:01Z) is present. Glendive 4.00 in (2021-06-08) is named as a research case outside the window, not a row (D24). The About page carries the sentence about_hit_miss (WORDS_JOINS): the reports were checked against the radar estimate and the radar signatures near each report, and \"The radar missed many of them.\" The fuller summary, hit_miss_summary (WORDS_JOINS; \"fewer than half\" and \"most\"; no digits), is not yet placed on any page. Re-check 2026-10-19: joins verify b5.hit_and_miss, 737 rows, hits 464, misses 273; the About page carries the sentence in words, with no numbers.",
-      "findings": []
+      "status": "pass (unchanged)",
+      "evidence": "Unchanged in round 2: 737 rows of LSR hail reports of 1.00 inch or more in the window; 464 hits and 273 misses (a miss under by up to 3.01 inches, median 0.88); Lewistown 2.50 inches and Petrolia Lake 3.50 inches are present; Glendive 4.00 inches is named as a research case outside the window (D24). The About sentence 'The radar missed many of them.' is on the built sample page of 2026-10-24.",
+      "findings": [],
+      "earlier": {
+        "status": "pass",
+        "evidence": "Part A completion, B5-17 and D24. 737 rows: every LSR hail report of 1.00 in or more in the window; hits 464; misses 273 (a miss under by up to 3.01 in, median 0.88 in). Own-cell MESH hits 297 of 737 (40.3 percent, \"fewer than half\"). Lewistown 2.50 in (3 S Lewistown, 2025-06-15 22:48Z, MESH 0.0 mm) is present as a miss under by 2.50 in. Petrolia Lake 3.50 in (1 SSE Petrolia Lake, 2025-06-16 01:01Z) is present. Glendive 4.00 in (2021-06-08) is named as a research case outside the window, not a row (D24). The About page carries the sentence about_hit_miss (WORDS_JOINS): the reports were checked against the radar estimate and the radar signatures near each report, and \"The radar missed many of them.\" The fuller summary, hit_miss_summary (WORDS_JOINS; \"fewer than half\" and \"most\"; no digits), is not yet placed on any page. Re-check 2026-10-19: joins verify b5.hit_and_miss, 737 rows, hits 464, misses 273; the About page carries the sentence in words, with no numbers."
+      }
     },
     {
       "id": "B5-18",
       "gate": "Flag-off and --hail-history-only builds unchanged; Chromium smoke at 390 and 1280 px; smoke_pages; the live preview build on the branch; zero off-site requests.",
-      "status": "fixed pending re-check for the flag-off clause; the live preview build and the zero off-site request count are part B2",
-      "evidence": "Re-check 2026-10-19: the smoke_pages clause passed on the combined-store build (every page fits 288 to 1440 px, light and dark; the five-season table on 17 pages at 10 widths). The flag-off clause failed on 17 town pages (one blank line, F2). Checked again on 2026-10-20: the flag-off sample build of this worktree and of db84d76 (git archive) each wrote 94 files, and diff -rq shows no difference. The live preview build on the branch and the zero off-site request count are part B2.",
+      "status": "pending: the flag-off clause must be restated to exclude the About lines D53 and D74 change; the smoke, the preview and the off-site count are round 2",
+      "evidence": "Round 2: pending. The sample build with --hail-history (2026-10-24, --now 2026-10-24T12:00:00Z) exited 0 in 6.0 seconds. A byte-for-byte flag-off identity no longer holds: the About radar line changed in every build (D53); the address words (D74) appear only in the --hail-addresses builds. The clause needs the supervisor's restatement. The Chromium smoke at 390 and 1280 px, smoke_pages, the live preview on the branch and the zero off-site request count are round 2 and the branch run.",
       "findings": [
         "F2 (fixed 2026-10-20)"
-      ]
+      ],
+      "earlier": {
+        "status": "fixed pending re-check for the flag-off clause; the live preview build and the zero off-site request count are part B2",
+        "evidence": "Re-check 2026-10-19: the smoke_pages clause passed on the combined-store build (every page fits 288 to 1440 px, light and dark; the five-season table on 17 pages at 10 widths). The flag-off clause failed on 17 town pages (one blank line, F2). Checked again on 2026-10-20: the flag-off sample build of this worktree and of db84d76 (git archive) each wrote 94 files, and diff -rq shows no difference. The live preview build on the branch and the zero off-site request count are part B2."
+      }
     }
   ],
   "measurements": {
@@ -563,21 +635,19 @@
     }
   },
   "open_items": [
-    "The zone editions (D27, D31): 1,230 zone groups are unplaced (edition_unpublished). The six older editions return HTTP 404 at the NWS address the build uses (checked 2026-10-19). The research (zone-editions.json, 2026-10-19) found IEM's Montana zone sets for every date tested, simplified: 103 zones through 2022-09-13 12:00 UTC and 83 from 18:00 UTC. They serve code identity and coarse placement only, and IEM does not show the change log's 2022-09-07 date for the Montana switch. The owner or the supervisor decides between placing by the IEM sets and finding the full-resolution older files.",
-    "The gauge cut-off: 10 miles (O4, provisional). The brief's figures: 10 miles covers 17.3 percent of Montana (12 of 14 towns); the 25-mile alternative covers 69.6 percent; 5 miles covers 4.8 percent. The owner confirms.",
-    "The NOHRSC method: the regression slope is 0.664 over 682 station-seasons, outside the 0.85 to 1.15 band, so the analysis stays out (D7, D23). Whether to publish an analysis under a different method is an owner decision (O10).",
-    "The LSR unit codes: magnitudes for codes 5, 6, 7, I and J are not shown until the IEM documentation confirms their units (D15). The IEM documentation was not read in the research.",
-    "The data-site split (D22, D30): the browser fetches the per-tile files on a tap, hail/j/e/<tile>.json (4,597 files; the largest 22,933 bytes gzip against a 100,000-byte budget) and hail/tl/<tile>.json (the largest 856 bytes gzip). The events table hail/j/events.json (6,083,996 bytes) stays for Python. The browser change is part B2 and not built; the determinism check of j/e/ and tl/ (B5-13) is pending.",
-    "The caps (O12, not ruled): j/ is 86,276,949 bytes raw in 9,196 files, j/e/ included, against 40 MB; hail/ is 176,293,267 bytes in 23,866 files against 60 MB. The owner or the supervisor rules on both (D38, D42).",
-    "The schedule and the monthly job (D42): the daily job runs at 12:43 UTC; the monthly job runs on the first day of each month or by the monthly input; the climate backfill runs once, by hand. The daily station refresh needs the station list carried from the last published store. The daily total with downloads is not measured against the 25-minute budget (B5-12).",
-    "The job clock and the joins: the B5 steps share a 40-minute clock in hail-store.yml, but the joins do not: joins.py counts its 35 minutes from its own start, so a late join can leave no time before the pack. The supervisor also rules on whether the join stays fatal (it does now, by the B2 rule).",
-    "The station carry, drop and containment: the carry and drop edit index.json without refreshing manifest.json. The tested stations command, the containment step and the fatal store gates before the pack are still to be built (DECISIONS D38).",
-    "The daily NWPS read and the gauge dates: D26 asks for the NWPS list and the pool details on every daily run; the daily gauges step does not read them yet.",
-    "The NOHRSC revision check: a daily rebuild replaces the snow block, so the monthly check's record is erased until the snow module keeps it through the rebuild.",
-    "The summary and the section router (other owners' files): website/summary.py (the partial-season line's all-clear sentence; the five-season snowfall cell, which still sums stations (B5-16, F10); the F7 and F9 re-checks); website/snowgrid.py (the unavailable and unit lines have no all-clear sentence, F6d); website/build.py (the section router needs the labels Watch and Advisory and the product after the span's colon; it reads in effect: at build.py:717).",
-    "The flag-off and browser checks: the flag-off build matches db84d76 (94 files, zero differences, 2026-10-20). The live preview build, the zero off-site request count, the 390 and 1280 px smoke, and the 390 px first-screen check are part B2.",
-    "Counsel: items 11 to 19 of the legal terms review, and the NCEI Storm Events licence text, which was not read (D38). SNOTEL: Crystal Lake (USS0009C01S) is read from the GHCN copy; counsel confirms the held SNOTEL item covers it.",
-    "Smaller items: a cache with no climate ledger makes climate build raise and write no climate block; the climate owner decides the fix. The owner confirms the list of banned names behind the no model or vendor names rule, which is not in the repository, and whether branch names count (3 mentions in DECISIONS.md and ROADMAP.md). The branch carries the WIP commits fa33c8d, de0793c and HEAD dcb7e93 and the uncommitted part B1 edits; the supervisor decides the clean-up."
+    "The 10-minute timer (owner): GitHub's schedule ran 6 times in 24 hours to 04:25 UTC on 2026-10-19 against 144 for every 10 minutes (DECISIONS D37; ROADMAP, owner item 1).",
+    "The data repository for the bulk files (owner; O12): the candidate combined store is 541,075,953 bytes raw in 45,878 files; the packed asset is measured in the branch run (ROADMAP, owner item 2).",
+    "The gauge distance, 10 or 25 miles (owner; O4 provisional at 10 miles; 10 miles covers 17.3 percent of Montana and 12 of 14 towns, 25 miles 69.6 percent).",
+    "Whether the swath picture stops at the state line (owner; the B4 open item, DECISIONS D37).",
+    "The NOHRSC snow analysis, held: slope 0.664 over 682 station-seasons against 0.85 to 1.15 (owner; O10; ROADMAP, owner item 5).",
+    "The counsel list: items 1 to 19 of the legal terms review's counsel_questions (found by grepping MCA 2-6-1017; item 19 there is the disclaimer question) and item 20, GHCN-Daily's note on non-US data and the Environment and Climate Change Canada licence (D62). The brief numbers that note 19; the supervisor decides the numbering.",
+    "The B3 follow-up of D66: a compact encoding of the tile membership sets in map.json (the full-flag file is 404,103 bytes; B3's work).",
+    "The Billings distances and one coordinate per station (supervisor; D56, D68; products check item 42).",
+    "Adoption of fixer C's candidate store as the combined store (supervisor; D50, D64, D76) and the part B2 completion re-check.",
+    "The merge of main (f96f5c7, the B1 go-live) into claude/hail-b5 under D59 (supervisor). DECISIONS D59 is written as adopted with that merge.",
+    "The flag-off identity clause of B5-18, restated to exclude the About radar line of D53 (supervisor).",
+    "The phone view figure: 663,276 bytes in the first round; the round-2 figure is pending (gate 665,600; D70).",
+    "The byte caps (O12): on the candidate store j/ and all of hail/ are over their caps (owner or supervisor; D54)."
   ],
   "notes": [
     "Two stores were built in the part A re-check, one at a time, and deleted after their checks (the disk rule); the shared cache /home/user/hail-b5/cache was unchanged (listing hash before and after).",
@@ -589,7 +659,11 @@
     "The workflow parses as YAML (a scratch check with PyYAML: 43 steps, the job cap 60 minutes, every non-fatal step has a timeout), and every run block passes bash -n with the Actions expressions replaced. The repository test reads the file as text and needs no YAML package.",
     "The climate archive ordering was checked on sample names: the highest run id first (sort -t- -k3,3nr), and the first fixed name last.",
     "2026-10-20 (B1 completion): the joins, stations and gauges parts were rebuilt offline in /home/user/hail-b5/out/b1/store (procs 2) and verified (joins verify ok, 40 checks; stations verify ok, 32 checks; gauges verify ok, 9 checks); the fixture was regenerated (rc 0); the flag-off build matches db84d76; the five test modules pass (617 tests) and test_hail_workflow passes (20 tests).",
-    "Nothing was committed, pushed, checked out, stashed, reset or added by the B1 completion; the git status is recorded in the worktree, and the WIP commits on the branch are the supervisor's."
+    "Nothing was committed, pushed, checked out, stashed, reset or added by the B1 completion; the git status is recorded in the worktree, and the WIP commits on the branch are the supervisor's.",
+    "Round 2 (2026-10-24): DECISIONS D25 (line about station lists never filtered by state) is reconciled with D62 (filtered by position); the D36, job-timeout and O12 bullets carry round-2 restatements.",
+    "Round 2: ROADMAP's B1 row shows PR 13 merged (main at f96f5c7, 2026-10-22 UTC); PRs 14 (B2), 15 (B4) and 16 (B3) are open and superseded by the B5 pull request on main.",
+    "Round 2: the About text's IEM terms sentence reads 'removed on 13 September 2022'; D44 says the IEM set changes between 12:00 and 18:00 UTC that day and the changeover week is placed by code (site and products owners; sources.py).",
+    "Round 2: the sample build's Billings page shows Data unavailable for the grid rows because the fixture has no climate part (fixture c/ absent); this is a fixture limit, not a grid finding."
   ],
   "failed_checks": [
     {
@@ -827,6 +901,321 @@
       "tests/test_snowgrid.py: two changes (see snowgrid_tests).",
       "The five-season table's zone rows do not carry the D44 simplified-outline statement (see zone_placement).",
       "The browser's joined popup (part B2, not built) still uses the B2 template for warnings (WORDS_JOINS warnings_row), so the seven HailJoinedRecords browser tests stay red until it switches."
+    ]
+  },
+  "written_by_earlier": "docs and job builder (part B1), 2026-10-19: the original record, quoting the part A completion and the products store record. B1 completion (products, stations, gauges and docs fixer), 2026-10-20: the re-check numbers from /home/user/hail-b5/out/b5b1-recheck.json (run finished 2026-10-19T23:33:00Z) and the store numbers from /home/user/hail-b5/out/b1/store-ready.json (rebuilt 2026-10-20T00:15:32Z, offline, procs 2); the joins verify timed again on 2026-10-20 (13.9 s wall time).",
+  "round_2": {
+    "date": "2026-10-24",
+    "scope": "docs/DECISIONS.md (the B5 entry: D44 to D76 bullets, restated figures, D25 pointer, D59); docs/DESIGN.md section 12; docs/ROADMAP.md (B1 and B5 status; open items for the owner); README.md and AGENTS.md (layout, command, smoke-flag, pyyaml and flag lines); website/templates/about.html (D19, D53, D62); website/addresses.py (the About words, D74); this record. The browser, site, products and smoke files belong to their owners and were not edited in this pass.",
+    "store": {
+      "path": "/home/user/hail-b5/out/b2/products-fix/fixer-c/store (fixer C; read only; no copy made)",
+      "files": 45878,
+      "bytes": 541075953,
+      "measured_with": "find over the store, 2026-10-24",
+      "folders": {
+        "a": [
+          11714,
+          49252605
+        ],
+        "b": [
+          5615,
+          196302000
+        ],
+        "r": [
+          4427,
+          69632279
+        ],
+        "c": [
+          4569,
+          35149062
+        ],
+        "j": [
+          9196,
+          87628936
+        ],
+        "j/e": [
+          4597,
+          63082924
+        ],
+        "tl": [
+          4597,
+          56947475
+        ],
+        "sd": [
+          805,
+          4373407
+        ],
+        "g": [
+          104,
+          285713
+        ],
+        "k": [
+          56,
+          13689
+        ],
+        "s": [
+          60,
+          34913
+        ],
+        "z": [
+          135,
+          1943955
+        ],
+        "t": [
+          4597,
+          32022304
+        ]
+      },
+      "adoption": "the supervisor adopts it as the combined store after this round (task 33)"
+    },
+    "branch": {
+      "head": "bd3ae20",
+      "main": "f96f5c7 is not an ancestor of the branch (task 34, the supervisor's merge)",
+      "prs": {
+        "13": "B1, closed (merged to main 2026-10-22 00:23 UTC, merge commit f96f5c7)",
+        "14": "B2, open",
+        "15": "B4, open",
+        "16": "B3, open"
+      }
+    },
+    "check_sources": {
+      "products": "/home/user/hail-b5/out/b2/products-fix/check.json (46 items, 9 gates, needed_from_others; read in full)",
+      "browser_site_smoke": "no check.json exists under /home/user/hail-b5/out/b2/<owner>/ for browser, site or smoke at this round; their status is taken from their notes and logs, not from a check file, and is not final",
+      "round_2_products_items": "/home/user/hail-b5/out/b2r2/items-products.md"
+    },
+    "measures": {
+      "tile_lists": {
+        "files": 4597,
+        "bytes_raw": 56947475,
+        "largest_gzip": 3401,
+        "longest_list": 33,
+        "largest_rejected_part": 50,
+        "rejected_entries": 201004,
+        "margin_max_miles": 4.248
+      },
+      "parity": {
+        "verify_points": 206865,
+        "verify_differences": 0,
+        "cell_element_answers": 2298500,
+        "cell_answer_differences": 0,
+        "named_points_and_cells": {
+          "points": 21,
+          "answers": 105,
+          "differences": 0
+        }
+      },
+      "pool": {
+        "stations": 2778,
+        "montana": 1325,
+        "canadian_not_read": 21
+      },
+      "daily_refresh": {
+        "files": 495,
+        "picks": 439,
+        "reach": 56,
+        "bytes_worst_case": 487235520
+      },
+      "monthly_summary": {
+        "files": 805,
+        "rule_files": 700,
+        "rule_bytes": 537226020,
+        "regression_extra_files": 105
+      },
+      "placement": {
+        "groups": 15764,
+        "current": 785,
+        "mapped": 3327,
+        "iem_set": 11580,
+        "changeover_week": 72,
+        "unplaced": 0,
+        "simplified_outline": 1279
+      },
+      "d55_edges": {
+        "HW.A TFX 30 of 2026": "research 277, store 276 (research window only)",
+        "HW.W TFX 34 of 2026": "research 339, store 338 (research window only)",
+        "FW.W TFX 19 of 2021": "research 169, store 170 (store window only)"
+      },
+      "benchland_snow": {
+        "BUFFALO 1.7 E US1MTFG0003": "81.7 percent; 20.9 miles from the point",
+        "HARLOWTON 11NW USC00243947": "99.5 percent; 34.8 miles from the point",
+        "LEWISTOWN 11 SSE USC00244978": "90.0 percent; newest snow 2026-05-18; rejected for currency",
+        "STANFORD USC00247864": "79.9 percent; rejected for coverage",
+        "MOCCASIN EXP STN USC00245761": "14.8 percent (324 of 2,192); newest 2024-12-31; 3.6 miles from the point; rejected and named (D69)"
+      },
+      "billings": {
+        "town_point": [
+          45.7833,
+          -108.5007
+        ],
+        "BILLINGS WTP": "1.2 miles",
+        "BILLINGS INTL AP": "2.7 miles",
+        "gate_point": [
+          45.7836,
+          -108.5047
+        ],
+        "gate_figures": "1.4 and 2.6 miles",
+        "gust_coordinate_logan": [
+          45.8069,
+          -108.5422
+        ],
+        "ghcn_coordinate_logan": [
+          45.8072,
+          -108.5461
+        ]
+      },
+      "fixture": {
+        "files": 145,
+        "bytes": 522139,
+        "hail_a": [
+          51,
+          50601
+        ],
+        "outside_hail_a": [
+          94,
+          471538
+        ],
+        "budget": "480 KB (D76)",
+        "sample_station_summaries": 67,
+        "tile_list_files": 3,
+        "climate_folder": "absent"
+      },
+      "budgets_in_map_json": {
+        "phone_gzip_bytes": 665600,
+        "tile_events_gzip_bytes": 100000,
+        "source": "sample build map.json hail.budget"
+      },
+      "phone_view": {
+        "first_round_bytes": 663276,
+        "first_round_map_json_gzip": 80186,
+        "round_2": "pending"
+      },
+      "job": {
+        "joins_timeout_minutes": 53,
+        "daily_job_timeout_minutes": 150,
+        "joins_own_deadline_minutes": 35,
+        "source": ".github/workflows/hail-store.yml lines 106 and 158"
+      },
+      "owner_tests_on_candidate": {
+        "test_joins": "273 OK",
+        "test_stations": "100 OK",
+        "test_snowgrid": "50 OK",
+        "source": "products check"
+      }
+    },
+    "sample_build": {
+      "command": "python -m website.build --out /home/user/hail-b5/out/b2r2-docs/docs/site --sample --hail-history --now 2026-10-24T12:00:00Z (PYTHONDONTWRITEBYTECODE=1, from /home/user/wt/wt-b5)",
+      "exit": 0,
+      "seconds": 6.0,
+      "about_text_characters": 49262,
+      "deleted_after_checks": true
+    },
+    "checks": {
+      "em_dash_in_added_lines": 0,
+      "en_dash_in_added_lines": 0,
+      "added_lines_checked": 73,
+      "banned_names_in_added_lines": "0; the only match is the branch name hail-store-claude-hail-b5 (allowed, D43)",
+      "words_rules_about_history_block": {
+        "lines": "'Hail history' to 'Known gaps' of the About page",
+        "hits": [
+          "damage (extracted About text, line 98): the R20 citation; D46 allows the title in the About references list as a citation",
+          "safety (extracted About text, line 99): the R9 source title 'Snow Load Safety Guide'; a source's name, to be exempted by the test owner"
+        ],
+        "result": "no other forbidden word in the history block; the radar line, threshold sentence, station sentence and hit-and-miss sentence pass"
+      },
+      "words_rules_outside_history_block": "older text (the NWS rows and the flag text; D53 keeps them) and the history source rows at lines 160, 162 and 165 of the extracted About text (MRMS hail, SWDI and NOHRSC; D13 covers them, and the sources owner rewords them): flagged words fails, probability, chance, claim, clears, safe",
+      "coverage_stem": "'radar coverage' and 'no radar coverage' only (D45); no bare 'coverage' in the history block",
+      "no_hail_phrases": "history block: only 'not the same as no hail' and quoted forms (D13)",
+      "iem_zone_credit": "present in the terms ('Iowa State IEM zone outlines'); the sentence 'removed on 13 September 2022' is for the site owner (see notes)",
+      "hit_and_miss_sentence": "present: 'The radar missed many of them.'",
+      "footer_on_about": "not present in about.html or the About words; the footer is in base.html only (D52)"
+    },
+    "tests": {
+      "command": "/home/user/hail-b1/venv/bin/python -m unittest discover -s tests (from /home/user/wt/wt-b5, PYTHONDONTWRITEBYTECODE=1)",
+      "started_utc": "2026-10-24T06:26:22Z",
+      "ran": "1808",
+      "seconds": "344.814",
+      "result": "FAILED (failures=11, errors=1, skipped=3)",
+      "exit": "1",
+      "failing": [
+        "ERROR test_the_summary_picks_are_the_rule_and_the_tile_list_is_the_one_rule (test_summary.StationPicksAndNames.test_the_summary_picks_are_the_rule_and_the_tile_list_is_the_one_rule)",
+        "FAIL test_the_coverage_words_are_the_sentence_of_d21_with_no_number (test_addresses.WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number)",
+        "FAIL test_a_station_file_that_did_not_load_says_so_and_gives_no_count (test_site.HailJoinedRecords.test_a_station_file_that_did_not_load_says_so_and_gives_no_count)",
+        "FAIL test_a_station_file_that_did_not_load_says_so_and_gives_no_count (test_site.HailJoinedRecords.test_a_station_file_that_did_not_load_says_so_and_gives_no_count)",
+        "FAIL test_a_station_file_that_did_not_load_says_so_and_gives_no_count (test_site.HailJoinedRecords.test_a_station_file_that_did_not_load_says_so_and_gives_no_count)",
+        "FAIL test_a_station_file_that_did_not_load_says_so_and_gives_no_count (test_site.HailJoinedRecords.test_a_station_file_that_did_not_load_says_so_and_gives_no_count)",
+        "FAIL test_the_default_build_matches_the_manifest_of_its_base_commit (test_site.HailSwathLayers.test_the_default_build_matches_the_manifest_of_its_base_commit)",
+        "FAIL test_an_unread_candidate_nearer_than_the_second_pick_is_named_and_never_skipped (test_summary.ReviewFixTests.test_an_unread_candidate_nearer_than_the_second_pick_is_named_and_never_skipped)",
+        "FAIL test_the_two_nearest_passing_candidates_come_from_the_tile_list_at_the_point (test_summary.ReviewFixTests.test_the_two_nearest_passing_candidates_come_from_the_tile_list_at_the_point)",
+        "FAIL test_a_canadian_candidate_is_said_not_read_and_never_failed_or_passing (test_summary.StationPicksAndNames.test_a_canadian_candidate_is_said_not_read_and_never_failed_or_passing)",
+        "FAIL test_the_summary_picks_are_the_rule_and_the_tile_list_is_the_one_rule (test_summary.StationPicksAndNames.test_the_summary_picks_are_the_rule_and_the_tile_list_is_the_one_rule)",
+        "FAIL test_the_summary_picks_are_the_rule_and_the_tile_list_is_the_one_rule (test_summary.StationPicksAndNames.test_the_summary_picks_are_the_rule_and_the_tile_list_is_the_one_rule)"
+      ],
+      "log": "/home/user/hail-b5/out/b2r2-docs/docs/tests-full.log",
+      "classification": {
+        "allowed_by_brief": "4 subtests of test_site.HailJoinedRecords (browser-side, part B2) and the 6 test_summary synthetic tile-list tests (site owner, round 2): 5 failures and 1 error",
+        "not_allowed_caused_by_round_2_rulings": [
+          "test_addresses.WordsTests.test_the_coverage_words_are_the_sentence_of_d21_with_no_number: expects the old address words; D74 requires 'completeness' (website/addresses.py changed here)",
+          "test_site.HailSwathLayers.test_the_default_build_matches_the_manifest_of_its_base_commit: about.html differs from base c860e23 because D53 changes the radar line in every build (B5-18)"
+        ],
+        "not_run_or_passing": "STATION_UNAVAILABLE constant: no failure in this run; 3 skipped"
+      }
+    },
+    "needed_from": {
+      "owner 1 (browser, website/static/map/map.js and map.css)": [
+        "mirror tile_list_picks with the element block's margin_miles and centre (D72), the rejected part (D69) and the unread part (D32)",
+        "drop the reads of J.county_suffix (map.js:3242) and h.joins.county_suffix (map.js:4077), or take a constant from products",
+        "the seven HailJoinedRecords browser-against-module subtests in tests/test_site.py (four in test_a_station_file_that_did_not_load_says_so_and_gives_no_count) follow the round-2 words",
+        "the sheet's words and rows: D71 F7 keys (all_clear, county_note, coverage_one, partial_no_report, these_five) and the D75(c) tap budget from map.json hail.budget.tile_events_gzip_bytes"
+      ],
+      "owner 2 (site, website/summary.py, build.py, tests/test_summary.py, tests/test_site.py)": [
+        "the rejected-candidate note (D69): \"{NAME}, {miles} miles away, is not used: {share} percent of the days 2020 to 2025 have a {element} value; the rule needs 80.\" (summary.py has no 'rejected' today)",
+        "tests/test_summary.py _write_tile_list (about lines 1460 to 1480): write centre and margin_miles inside each element block (D72); the Canadian test (about 1503 to 1516) needs the same",
+        "tests/test_summary.py ReviewFixTests (about lines 1266 and 1280): the expectations 'BILLINGS WTP' and 'BILLINGS INTL AP' against the synthetic names 'Billings WTP' and 'Billings Logan'",
+        "tests/test_site.py line 2004: remove 'warnings_row' from the words list once products removes WORDS_JOINS['warnings_row'] (joins.py:447)",
+        "STATION_UNAVAILABLE in tests/test_site.py gains the all-clear sentence (D71 F2); JOIN_SITE_WORDS['unknown_date'] is unused (D76)",
+        "the About source text for the IEM zone sets: the sentence 'removed on 13 September 2022' should say the IEM set changes between 12:00 and 18:00 UTC that day (D44; sources.py iem_ugcs row and the build.py terms)",
+        "the R9 title 'Snow Load Safety Guide' in the About references: decide whether the words test exempts a source's name (D46), or the citation is worded differently",
+        "sources.py history rows (D13 covers them): the MRMS hail row 'a day that fails stays missing', the SWDI row 'PROB is the probability of hail in percent', and the NOHRSC row 'A water year whose download fails is named as missing'; reword without the stems fails and probability"
+      ],
+      "owner of tests/test_site.py HailSwathLayers (line 3891, base c860e23)": [
+        "the flag-off build differs from its base manifest on about.html because of the D53 radar line; the base manifest is regenerated for the About change, or the test is restated with the gate (supervisor)"
+      ],
+      "owner of tests/test_addresses.py (line 870 to 871)": [
+        "the expectation must read \"The list is of addresses, not of buildings, and its completeness varies from county to county.\" (D74; website/addresses.py changed in this pass)"
+      ],
+      "products (website/joins.py, stations.py, hail.py)": [
+        "hail.load_store and check_manifest exclude hail/live/ with a test (D75(a)); website/hail.py is outside the products file list, so the supervisor widens it or assigns the hail owner",
+        "the joins ledger moves out of the store root (D71; joins.py:2966 writes <store>/ledger/joins.jsonl)",
+        "WORDS_JOINS['warnings_row'] removed once no test requires it (products check item 25)",
+        "the Billings coordinate: one coordinate per station for the gust candidate and the GHCN list (products check item 42; supervisor ruling)"
+      ],
+      "smoke and CI (tools/smoke_map.py, tools/smoke_pages.py, .github/workflows/website.yml)": [
+        "R15 (the --history run without --hail-addresses fails readably), the exact three-cell comparison (D75(b)), and the joins step deadline check at 53 minutes (D75(d); hail-store.yml line 158 has it)",
+        "the phone view at zoom 15 with every layer on, measured against 665,600 bytes gzip, and the per-tap file sizes against 100,000 bytes gzip (D66, D70)"
+      ],
+      "test owner for tests/words_rules.py": [
+        "exempt the citation in the About references (D46) and the source titles, and the 'radar coverage' phrase (D45; the bare coverage stem is still listed)"
+      ]
+    },
+    "needed_from_supervisor": [
+      "Adopt fixer C's store as the combined store (task 33) and run the part B2 completion re-check on it.",
+      "Rule the Billings figures (1.2 and 2.7 miles from the town point, 2.6 for the gust line) and one coordinate per station.",
+      "Restate B5-18's flag-off clause to exclude the About radar line that D53 changes in every build.",
+      "Decide the counsel numbering: the brief's item 19 (GHCN-Daily, ECCC) against the legal review's item 19 (the disclaimer question); this record uses item 20 for GHCN.",
+      "The flag-off identity test (tests/test_site.py HailSwathLayers) fails on about.html: D53 changes the radar line in every build, so the base manifest or the gate must be restated (supervisor).",
+      "The numbers that wait for the browser round or the re-check: the phone view at zoom 15 (663,276 bytes in the first round against 665,600; round 2 pending), the per-tile file sizes in the browser (the largest tile file is 22,933 bytes gzip for j/e; the largest tile list 3,401 bytes gzip), the Chromium smoke at 390 and 1280 px, the 390 px first-screen check (B5-11), the zero off-site request count and the fetch list (B5-18), the redraw time at zoom 16 (70.9 ms on this sandbox against 30 ms; to be measured on the CI runner), and the determinism of j/e/ and tl/ (B5-13).",
+      "The numbers that wait for the branch run: the daily job's end-to-end time with downloads against the 25-minute budget (B5-12), the packed hail-store asset size (D50, D54), and the daily job's step timings.",
+      "The owner's decisions in the ROADMAP's owner section (timer, data repository, gauge distance, swath state line, NOHRSC method, counsel, B3 follow-up, caps)."
+    ],
+    "not_done": [
+      "The browser's sections, roof lines, unread and rejected station words, and the D57 flooding listing (owner 1, round 2 in progress).",
+      "The site's rejected-candidate words and the test updates listed under owner 2 (round 2 in progress).",
+      "The Chromium smoke, smoke_pages, the live preview and the zero off-site count (smoke owner, round 2; the branch run).",
+      "The flag-off identity check against db84d76: byte identity cannot hold because D53 changes the About radar line in every build (see B5-18).",
+      "A commit or a push: none was made (the supervisor commits; no git write command was run).",
+      "The merge of main (task 34) and the adoption of the candidate store (task 33): supervisor steps.",
+      "A check.json for the browser, site and smoke owners: none exists at the expected path, so their figures are not taken from a check file.",
+      "The B3 compact encoding of the tile membership sets (a follow-up, not this round's work)."
     ]
   }
 }

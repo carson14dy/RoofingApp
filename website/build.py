@@ -613,7 +613,7 @@ B3_INDEX = (ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY)   # the index blocks the B
 # (D30); hail/n/ (the snow analysis) is copied only when the index's snow block says it is shown (D7, D23).
 HAIL_FILES = ("index.json", "manifest.json")
 HAIL_FOLDERS = ("t", "j", "z", "s")              # B2: shards, joined records (with j/e), zone and station files
-HAIL_FOLDERS_B5 = ("c", "sd", "g", "k")          # B5: grid tiles, station files, gauges, county files
+HAIL_FOLDERS_B5 = ("c", "sd", "g", "k", "tl")    # B5: grid tiles, station files, gauges, county files, station tile lists
 
 
 
@@ -625,9 +625,9 @@ def snow_shown(index: dict) -> bool:
 
 
 def _copy_hail(root: Path, out: Path, index: dict, addresses: bool = False) -> dict:
-    """Copy the store's hail/ files into the site as out/hail/: the B2 folders, the B5 folders (c, sd, g, k; j/e comes with
+    """Copy the store's hail/ files into the site as out/hail/: the B2 folders, the B5 folders (c, sd, g, k, tl; j/e comes with
     j), and hail/n only when the snow block says it is shown (D7, D23). The B3 folders and files (a, b, r, counts.json) are
-    copied only with --hail-addresses (default off, D35); any other folder (tl, for the browser's part B2) is not copied.
+    copied only with --hail-addresses (default off, D35); any other folder is not copied.
     The copy's manifest lists only the files it carries: a build without the flag carries no B3 file, folder, manifest
     entry or index block (the index is written again without them and its manifest entry is updated). The manifest is
     checked first, and the copy is checked against the manifest it was written with (hail.check_manifest). A store without
@@ -669,7 +669,6 @@ def _copy_hail(root: Path, out: Path, index: dict, addresses: bool = False) -> d
 # words and the few values the browser needs that the module does not export (map.json hail.joins).
 JOIN_SITE_WORDS = {
     "show_all": "Show all {n} rows",
-    "unknown_date": "an unknown date",       # a missing NCEI lag reads so (joins._records_lead writes the same words)
     "reason_no_store_joins": "the joined records are not in this history store",
 }
 JOIN_SHOW_FIRST = 10          # rows a section shows before "show all" (the sheet and the town tables)
@@ -700,7 +699,19 @@ def join_block(jn, index: dict, sample: bool) -> dict:
                   "counts": {key: int(store.get(key, 0)) for key in JOIN_COUNTS},
                   "fire_state": store.get("fire_zones", {}).get("state", "unavailable")})
     block["words"] = {**block["words"], **JOIN_SITE_WORDS}
+    # the zone products the joins could not place (D27): the rows the summary's unplaced statements count (the browser reads them)
+    block["zone_unplaced_rows"] = [list(row) for row in store.get("zone_unplaced_rows") or []]
     block["shards"] = {**block["shards"], "fire": JOIN_FIRE_SHARD}
+    block["section_order"] = list(JOIN_HEADS)           # the six joined sections in the order the town page shows them
+    # the words, codes, switch and formats the browser reads beside the block's words (the values are joins.py's constants)
+    block["significance"] = dict(jn.SIGNIFICANCE_LABEL)                    # the label of each significance letter (D41)
+    block["kind_words"] = dict(jn.KIND_WORDS)                              # the kind word of each product code (D29)
+    block["flood_record_codes"] = list(jn.FLOOD_RECORD_CODES)              # the NCEI codes that count as flood records (D48)
+    block["iem_switch"] = jn.IEM_SWITCH.strftime("%Y-%m-%dT%H:%M:%SZ")     # the zone set changes here (D44)
+    block["iem_outline_zones"] = list(jn.IEM_OUTLINE_ZONES)                # the zones drawn with the IEM outline before it (D44)
+    block["formats"] = {"joins": jn.FORMAT, "events": jn.EVENTS_FORMAT, "events_tile": jn.TILE_EVENTS_FORMAT,
+                        "zone": jn.ZONE_FORMAT, "fire": jn.ZONE_FORMAT, "county": jn.COUNTY_FORMAT,
+                        "station": jn.STATION_FORMAT, "towns": jn.TOWNS_FORMAT}   # the "f" each file carries (the browser checks it)
     return block
 
 
@@ -759,7 +770,9 @@ def hail_joins(out: Path, index: dict, towns: list, now: datetime, sample: bool)
         name = hs.tile_name(row // hs.TILE, col // hs.TILE)
         try:
             tile = json.loads((out / "hail" / "j" / f"{name}.json").read_text(encoding="utf-8"))
-            words = jn.describe_joins(index, tile, row, col, now, sample=sample, store_dir=out, events=events)
+            # D56: the town page's station picks and gust station run at the town point, not at the grid cell's centre
+            words = jn.describe_joins(index, tile, row, col, now, sample=sample, store_dir=out, events=events,
+                                      spot=(t["lat"], t["lon"]))
             views.append({"show_first": JOIN_SHOW_FIRST, "times": words["times_note"],
                           "sections": [join_view(s) for s in words["sections"]]})
         except OSError:
@@ -1096,6 +1109,8 @@ def stations_map_block(index: dict | None) -> dict:
             "as_of": (block or {}).get("as_of"), "rule": (block or {}).get("rule"), "counts": (block or {}).get("counts"),
             "radius_miles": stations.RADIUS_MILES, "fresh_days": stations.FRESH_DAYS, "cover_min": stations.COVER_MIN,
             "season_min": stations.SEASON_MIN, "cover_days": stations.COVER_DAYS, "tile": "hail/sd/{station}.json",
+            "tile_list": "hail/tl/{tile}.json", "tile_list_format": stations.TILE_LIST_FORMAT,
+            "canada_reason": stations.CANADA_REASON,
             "words": dict(stations.WORDS)}
 
 
@@ -1122,6 +1137,11 @@ def county_map_block(index: dict | None) -> dict:
             "words": {k: v for k, v in jn.WORDS_JOINS.items() if k.startswith("county_")}}
 
 
+# the phone view at zoom 15 with every layer on stays under this many gzip bytes (B5-12, D42): 650 KB, in the unit the smoke
+# test uses (tools/smoke_map.py ADDRESS_FETCH_BUDGET_GZIP); the browser reads it from map.json hail.budget
+PHONE_GZIP_BUDGET = 650 * 1024
+
+
 def b5_map_blocks(index: dict | None) -> dict:
     """The map.json["hail"] blocks of the five-season history: climate (climate.map_data_climate), summary
     (summary.map_data_summary) and the snow, stations, gauges and county blocks. None gives every block unavailable.
@@ -1131,9 +1151,12 @@ def b5_map_blocks(index: dict | None) -> dict:
     climate_block = climate.map_data_climate(index)
     names = climate_block.pop("tile_names", [])
     climate_block["tile_split"] = tile_split(names)
+    from . import joins as jn
     return {"climate": climate_block, "summary": summary.map_data_summary(index),
             "snow": snow_map_block(index), "stations": stations_map_block(index),
-            "gauges": gauges_map_block(index), "county": county_map_block(index)}
+            "gauges": gauges_map_block(index), "county": county_map_block(index),
+            # the sizes the viewer keeps to (B5-12, D30): the phone view's gzip total, and the largest per-tile events file
+            "budget": {"phone_gzip_bytes": PHONE_GZIP_BUDGET, "tile_events_gzip_bytes": jn.TILE_EVENTS_BUDGET_GZIP}}
 
 
 TILE_PARTS = re.compile(r"r(\d{4})_c(\d{4})")
@@ -1258,14 +1281,15 @@ def _window_lines(s: dict, through: str | None) -> list[str]:
     return lines
 
 
-def kind_what() -> dict:
+def kind_what(town: bool = False) -> dict:
     """The sentence each kind of record opens with on its section: the words the modules already hold (hail.WORDS,
-    summary.WORDS_INDICATORS, joins.WORDS_JOINS), keyed by the row label the section shows."""
+    summary.WORDS_INDICATORS, joins.WORDS_JOINS), keyed by the row label the section shows. A town page's warnings are
+    counted at the town point (D38), so its "Warning" sentence says so (D71, F4)."""
     from . import joins as jn, summary as sm
     W = sm.WORDS_INDICATORS
     return {"Radar estimate": hs.WORDS["what_this_is"], "Report": W["what_reports"],
             "Record": jn.WORDS_JOINS["records_what"], "Detection": jn.WORDS_JOINS["detections_what"],
-            "Warning": W["what_warnings"], "Zone product": jn.WORDS_JOINS["zones_what"],
+            "Warning": W["what_warnings_town" if town else "what_warnings"], "Zone product": jn.WORDS_JOINS["zones_what"],
             "County product": jn.WORDS_JOINS["county_what"], "Station": W["what_station"],
             "Station reading": W["what_station"], "Grid estimate": W["what_grid"]}
 
@@ -1332,7 +1356,7 @@ def history_view(s: dict, jv: dict, radar: dict, town: dict, now, through: str |
     notes["snow"].append(W["analysis_held"])                    # D23: the analysis was checked and left out
     notes["made"] = list(s.get("how_made") or []) + _window_lines(s, through) + [H["times"]]
     # each section opens with what its kinds of record are (the words each kind has, per section, once)
-    what = kind_what()
+    what = kind_what(town=True)
     for sid in HISTORY_SECTIONS:
         kinds = list(dict.fromkeys(row["label"] for row in bucket[sid]))
         notes[sid] = [what[k] for k in kinds if k in what] + notes[sid]
