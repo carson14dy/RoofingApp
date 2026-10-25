@@ -1425,3 +1425,20 @@ build test imported pyshp, none with a guard.
   tests do; the Website workflow's offline step and the daily job install the packages and run them. The fix is a second
   signed commit on claude/hail-b5 (tests only), reproduced first in a minimal environment with the app check's packages
   (five errors, then none) and checked in the full environment with the store (1,989 tests OK).
+
+## Supervisor ruling on the real-store parity failure (2026-10-25 06:58 UTC; D104)
+Website runs 118 and 119 on pull request 17 failed the parity step (D88(a)) against the branch's freshly published store
+(hail-store-claude-hail-b5.tar.gz, run 11: as_of 2026-10-23, 721 stations, parts.stations "partial" with 65 station-years
+that did not load). Reproduced locally against the downloaded asset: the five cells disagreed on gust_days.notes,
+gust_max.notes and the wind section's notes (the module had the D20 partial sentence, the browser did not), and the
+real-store names test pinned the adopted store's stations (Moccasin Exp Stn, 109 days missing).
+- D104 **The gust rows' partial note and the names test.** (a) The browser's gust part adds the partial stations sentence
+  from the joins block (parts, partial periods, reasons) after the rows' own notes, as summary.py appends it; the wind
+  section carries it once through the rows. (b) The names test asserts behaviour on whatever store HAIL_PARITY_STORE names:
+  every stations-block name is stations.display_name of its GHCN name, a printed name is a store name in display form and
+  never the GHCN form, the radar rows follow D37 with the coverage they state; no store-specific name or count is pinned.
+  (c) A fixture test (a copy of the fixture store with parts.stations "partial", two station-years and its own reason)
+  pins the note in both the browser and the module, once, ending with the all-clear sentence. (d) Before any push that
+  touches the sheet, the parity class runs against the branch's published store as well as the adopted store. The fix is
+  the third signed commit on claude/hail-b5 (199dfa9; tests and map.js): parity class OK on both stores, full suite 1,990
+  OK (5 skipped), selftest PASS.

@@ -279,3 +279,6 @@ The app check (check-app.yml) is green on the head commit. Website 119 pending b
 
 ## 2026-10-25 06:40 UTC: store job 11 succeeded
 The branch store job built and published hail-store-claude-hail-b5.tar.gz: 88,647,098 bytes, run time 39.1 minutes (B5-12 daily job end to end; budget 150). Website 118 continues past its wait; 119 pending. After the Website runs: one docs commit with the measured figures (B5-12 pass; the packed asset size; the preview phone-view bytes) into the record and ROADMAP.
+
+## 2026-10-25 06:58 UTC: parity fix pushed (199dfa9)
+Website 118 and 119 failed the real-store parity step on e03532f: the browser lacked the partial stations note in the gust rows and the wind section, and the names test pinned the adopted store's stations. D104 recorded. Third signed commit on claude/hail-b5: map.js gust part mirrors the note; the names test reads behaviour; a fixture test pins the note. Parity class OK against the published branch store and the adopted store; full suite 1,990 OK (5 skipped); selftest PASS. The push starts a Website run (no store job: no store code changed).
