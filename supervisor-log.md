@@ -318,3 +318,6 @@ Second critic: the nine fixes hold; six detail failures ruled into the build spe
 
 ## 2026-10-25 20:22 UTC: stage 1 delivered; research record updated on claude/map-b6
 Proof pictures (region zoom 8.5, city zoom 12) read as the same kind of map as the reference in the site's palette; sent to Carson with the sheet and the bubbles. Landmark sources verified (NCES schools public domain; PAD-US parks public domain; FAA airports; HIFLD hospital copy without licence text; the FEMA/IRS places of worship with a geocoder terms question). research/map-b6/README.md section 9 committed and pushed. Stage 1 evidence archived under records/b6/stage1. Next: the stage 2 build brief (B6-1 data products first), then the build workflows on /home/user/wt/wt-b6.
+
+## 2026-10-25 20:27 UTC: B6 stage 2 part 1 launched
+Brief written (briefs/map-b6-build-brief.md). Two workflows: wf b6-build-products (P1 terrain, P2 base bands) and b6-build-products-b (P3 landmarks, P4 pictures, zones, recent cells, labels). Outputs under /home/user/hail-b5/out/b6/build/. D111 recorded.

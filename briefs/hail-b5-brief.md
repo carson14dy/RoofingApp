@@ -1579,3 +1579,15 @@ passed those and failed six details, which become the build spec, not another mo
   then it names the kinds and their sources. (g) The switch is named "Highlight recent radar hail" (a radar estimate, never hail
   seen; rule 5). (h) The build's smoke renders the states the critic found missing in the mock set: each legend, the Points of
   interest off state with its reason, the highlight and storm-report legends. (i) Sub-lines at 14 px like the legend lines.
+
+## Supervisor ruling: B6 stage 2 part 1 launched (2026-10-25 21:05 UTC; D111)
+- D111 **The data products build.** The brief briefs/map-b6-build-brief.md sets four products on the worktree
+  /home/user/wt/wt-b6 (claude/map-b6): P1 terrain tiles (3DEP hillshade grey JPEG and NLCD tint palette PNG, zooms 5 to 10, the
+  Montana outline's tiles), P2 the base map bands (reservations, forests, parks, water with names, places with a population
+  rule, peaks with 3DEP-sampled elevations, route refs; bands A to D with gzip budgets), P3 landmark points per tile (schools,
+  hospitals, airports, fire stations, parks; churches built but held for counsel), P4 the five-year pictures (hail 1 inch days,
+  heat 90 F days), the per-zone counts, the recent radar hail cells and the bubble anchors (the cluster rule, zooms 17 and 18,
+  deterministic). Each product: a module in the gauges and buildings pattern, tests, a report, measurements and integration notes;
+  then a reviewer, two skeptics per finding, a fixer and a checker (wf b6-build-products and b6-build-products-b). Shared files
+  wait for the phase B integrator. The owner's two open picks (bubble rule A or B; the sheet) do not block part 1: the anchors
+  carry both rules' data if the builder finds it cheap, else rule A.
