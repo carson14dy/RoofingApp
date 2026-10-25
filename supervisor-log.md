@@ -273,3 +273,6 @@ Signed commit (tests only) on claude/hail-b5: the optional-package guards (D103)
 
 ## 2026-10-25 06:25 UTC: PR 17 body updated with the head-commit runs
 Head e03532f. Runs: app check 70 in progress; Website 119 pending (118 on the old commit in progress); store job 11 in progress (the test-only push started no new store run). Monitor bbtyotkql watches all four.
+
+## 2026-10-25 06:25 UTC: app check 70 passed on e03532f
+The app check (check-app.yml) is green on the head commit. Website 119 pending behind 118; store job 11 in progress.
