@@ -60,6 +60,10 @@
   var app = document.getElementById("app");
   var params = new URLSearchParams(location.search);
   var CARD = params.get("card") === "1";
+  // Embedded (?embed=1, the full map inside the Veor home page concept, index.html on the design branch):
+  // every control works as here, except that the page's own top bar holds the Layers button and the
+  // sidebar replaces the close button (map.html hides both, and sends links to the whole window).
+  var EMBED = !CARD && params.get("embed") === "1";
   var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   // keep these in step with the media queries of the same layouts in map.css
   // (not under 301 px tall or 521 px wide: those fold the legend instead, map.css "very short or narrow")
@@ -214,7 +218,7 @@
     data = null;
     setPlaying(false);
     banner("warn", "<strong>The map data didn't load</strong> (" + esc(why || "it didn't load") + "). No radar, forecast or warnings are shown. " +
-      "This is not an all-clear. <a href=\"index.html\" target=\"_top\">See the Now page</a> or reload.");
+      "This is not an all-clear. <a href=\"index.html#forecast\" target=\"_top\">See the warnings list</a> or reload.");
     whenEl.textContent = "Map data unavailable";
     srcEl.textContent = "";
     el.title.textContent = "No data";
@@ -266,6 +270,11 @@
         map.setView([t.lat, t.lon], Math.max(map.getZoom(), 7.5), { animate: false });
         openTown(t, t._el);
       }
+    }
+    var area = EMBED && !town && findTown(params.get("area") || "");
+    if (area) {                                        // ?area=slug (embedded): the home page's area menu
+      state.userMoved = true;                          // centres that town, with no sheet to close first
+      map.setView([area.lat, area.lon], Math.max(map.getZoom(), 8), { animate: false });
     }
     var at = hailParam();                              // ?at=lat,lon: the hail history at that spot
     if (at && hailData()) {
@@ -1685,7 +1694,17 @@
       fitLayersMenu();
       var checked = el.layers.querySelector("input[name=layer]:checked") || el.layers.querySelector("input");
       if (checked) checked.focus();
-    } else if (refocus) el.layersBtn.focus();
+    } else if (refocus) focusLayersButton();
+  }
+
+  /** Back to the button that opened the menu: the home page's Layers button when embedded (this
+      page's own is hidden there), else this page's. */
+  function focusLayersButton() {
+    var outside = null;
+    if (EMBED && window.parent !== window) {
+      try { outside = window.parent.document.getElementById("btn-layers-top"); } catch (e) { outside = null; }
+    }
+    (outside || el.layersBtn).focus();
   }
 
   /** The layer menu ends above the bottom of the screen and scrolls inside when it is taller (a phone
@@ -2144,7 +2163,7 @@
     if (a.description) html += '<p class="official">' + esc(a.description) + "</p>";
     if (a.instruction) html += "<h3>Instructions</h3><p class=\"official\">" + esc(a.instruction) + "</p>";
     html += '<p class="muted">From ' + esc(a.sender || "the National Weather Service") + ". Official text, shown as issued.</p>";
-    html += '<p><a class="go" href="index.html">All warnings on the Now page</a></p>';
+    html += '<p><a class="go" href="index.html#forecast">All warnings and town forecasts</a></p>';
     openSheet("alert", a.event, html, opener, { back: back });
   }
 
@@ -2463,9 +2482,9 @@
 
   // ------------------------------------------------------------------ card mode (inside other pages)
 
-  /** The card: latest frame, outlines and bubbles; no controls except "Open map". The Now page's
-      caption names the same picture: build.py map_card() picks the frame the way setLayer and
-      buildTimeline open the card (precipitation, 12h timeline, now_index). Change both together. */
+  /** The card: latest frame, outlines and bubbles; no controls except "Open map". build.py map_card()
+      words the picture the home page's map opens on, picking the frame the way setLayer and buildTimeline
+      open the map (precipitation, 12h timeline, now_index). Change both together. */
   function setupCard() {
     el.cardOpen.href = "map.html" + layerQuery("?");
     el.canvas.removeAttribute("aria-describedby");   // its keys and List button aren't in the card
@@ -2493,8 +2512,8 @@
     var html = '<span class="card-main">' + esc(main) + "</span>" + (k ? '<span class="card-hatch"><span class="key ' +
       (k === "outside" ? "key-hatch-out" : "key-hatch") + '" aria-hidden="true"></span>' +
       '<span class="visually-hidden">. Hatched areas: </span>' + esc(HATCH[k][0]) + "</span>" : "");
-    // the Storm reports card: alerts without an outline aren't on it (the Now page card sits beside
-    // the full alert list, so it needn't say). One line on a phone; the page's key says where they are
+    // the Storm reports card: alerts without an outline aren't on it. One line on a phone; the page's
+    // key says where they are (the home page's Forecast)
     var n = state.reports ? noOutlineCount() : 0;
     if (n) html += '<span class="card-alerts"><span class="visually-hidden">. </span>' + esc(n + (n > 1 ? " alerts have" : " alert has") + " no outline") + "</span>";
     if (el.cardChip._html !== html) { el.cardChip.innerHTML = html; el.cardChip._html = html; }

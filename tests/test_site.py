@@ -496,7 +496,7 @@ class SampleBuild(unittest.TestCase):
             self.assertIn(needed, html)
         self.assertNotRegex(html, r'<(script|link|img)[^>]+(src|href)="(https?:)?//')
         self.assertIn("Sample data", html)
-        self.assertIn('src="map.html?card=1&amp;layer=precip', page(self.out, "index.html"))
+        self.assertIn('src="map.html?embed=1&amp;v=', page(self.out, "index.html"))      # the home page's map
         self.assertIn("overlay=reports", page(self.out, "reports.html"))
         self.assertIn('href="map.html"', page(self.out, "about.html"))           # main navigation
         self.assertIn("map.html?town=livingston", page(self.out, "town/livingston.html"))
@@ -513,10 +513,11 @@ class SampleBuild(unittest.TestCase):
         for name in ("map/map.js", "map/map.css", "map/basemap.json"):
             self.assertIn(f"static/{name}?v={digest(name)}", html)
         self.assertIn(f"static/style.css?v={digest('style.css')}", page(self.out, "index.html"))
+        self.assertIn(f"static/home.css?v={digest('home.css')}", page(self.out, "index.html"))
         self.assertEqual(site.asset_versions(site.HERE / "static"), site.asset_versions(self.out / "static"))
         minute = NOW.strftime("%Y%m%d%H%M")
         self.assertIn(f"data/map.json?v={minute}", html)
-        self.assertIn(f"map.html?card=1&amp;layer=precip&amp;v={minute}", page(self.out, "index.html"))
+        self.assertIn(f"map.html?embed=1&amp;v={minute}", page(self.out, "index.html"))
 
     def test_map_page_landmark_and_text_version(self):
         html = page(self.out, "map.html")
@@ -588,7 +589,8 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("<li>Town number: NWS forecast temperature, °F</li>", html)
         self.assertNotIn("orange ring", html)
         self.assertIn("Outline: NWS alert area (red warning, orange watch, gold advisory, grey statement)", html)
-        self.assertIn('Alerts without an outline (issued by county or zone) are listed on the <a href="index.html">Now page</a>', html)
+        self.assertIn('Alerts without an outline (issued by county or zone) are listed in the '
+                      '<a href="index.html#forecast">home page\'s Forecast</a>', html)
 
     def test_reporting_days_start_at_noon_utc_in_montana_time(self):
         self.assertIn("Reporting day starting Wed Oct 14 at 6 am MDT", page(self.out, "reports.html"))
@@ -600,11 +602,13 @@ class SampleBuild(unittest.TestCase):
         self.assertNotIn("MDT", html)
 
     def test_now_page_card_words_match_the_sample_picture(self):
+        """The home page's map frame is named and described in build.map_card's words for the picture it
+        opens on, so a screen reader hears what the map shows (and, below, what is missing)."""
         html = " ".join(page(self.out, "index.html").split())
-        self.assertIn('title="Montana map: sample radar, warning outlines and town temperatures"', html)
-        self.assertIn("The latest sample radar picture (invented, not NOAA radar), NWS warning outlines and the NWS "
-                      'forecast temperature for each town. <a href="map.html">Open the map</a> to play the past hour '
-                      "of sample radar and the sample model forecast, or switch to temperature and wind gusts.", html)
+        self.assertIn('title="Montana map: sample radar, warning outlines and town temperatures" '
+                      'aria-describedby="map-words"', html)
+        self.assertIn('<p class="visually-hidden" id="map-words">The latest sample radar picture (invented, not NOAA '
+                      "radar), NWS warning outlines and the NWS forecast temperature for each town. </p>", html)
 
 
     def test_observed_now_on_the_town_pages_and_cards(self):
@@ -821,11 +825,11 @@ class MapFailures(unittest.TestCase):
         self.assertFalse(m["status"]["radar"]["ok"])
         self.assertEqual(m["now"], "2026-10-14T15:00:00Z")    # no radar frame: "now" is the build time
         self.assertEqual(len(m["towns"]), len(site.TOWNS))    # the towns and alerts still draw
-        html = " ".join(page(out, "index.html").split())    # the Now page's card names what is missing
+        html = " ".join(page(out, "index.html").split())    # the home page's map frame names what is missing
         self.assertIn('title="Montana map: warning outlines and town temperatures"', html)
         self.assertIn("NWS warning outlines and the NWS forecast temperature for each town. Missing from this "
-                      "update: the radar and model pictures. This is not an all-clear. "
-                      '<a href="map.html">Open the map</a> for the List of alerts and towns.', html)
+                      "update: the radar and model pictures. This is not an all-clear.</p>", html)
+        self.assertIn('<p class="bad"><a href="#forecast" data-view="forecast">2 source problems: see Forecast</a>', html)
         self.assertNotIn("radar estimate", html)
 
 
@@ -861,7 +865,7 @@ def map_layers(radar=True, model=True, now=NOW, radar_age=4, sample=False):
 
 
 class MapCard(unittest.TestCase):
-    """The words with the Now page's map card (build.map_card) follow what the card shows: the frame
+    """The words for the home page's map (build.map_card) follow what it shows when it opens: the frame
     map.js opens it on (precipitation, 12h, now_index), the outlines and the town numbers."""
 
     OK = {"radar": {"ok": True}, "forecast": {"ok": True}}
@@ -878,8 +882,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "The latest NOAA radar estimate, NWS warning outlines and the NWS forecast "
                                      "temperature for each town.")
         self.assertEqual(c["missing"], "")
-        self.assertEqual(c["then"], "to play the past hour of radar and the HRRR model forecast, or switch to "
-                                    "temperature and wind gusts")
 
     def test_radar_failed_the_model_forecast_is_never_called_radar(self):
         layers = map_layers(radar=False)
@@ -891,7 +893,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "The HRRR model forecast for 10 am, NWS warning outlines and the NWS forecast "
                                      "temperature for each town.")
         self.assertEqual(c["missing"], "Missing from this update: NOAA radar. This is not an all-clear.")
-        self.assertEqual(c["then"], "to play the HRRR model forecast, or switch to temperature and wind gusts")
         self.assertNotIn("radar estimate", " ".join(c.values()))
 
     def test_stale_radar_is_still_radar_and_says_how_old(self):
@@ -906,7 +907,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "")
         self.assertEqual(c["missing"], "Missing from this update: the radar and model pictures, NWS warning outlines "
                                        "and town temperatures. This is not an all-clear.")
-        self.assertEqual(c["then"], "for the List of alerts and towns")
 
     def test_last_verified_alerts_and_some_town_forecasts(self):
         c = self.card(map_layers(model=False), alerts={"ok": False, "items": [{"id": "w1"}]},
@@ -914,7 +914,6 @@ class MapCard(unittest.TestCase):
         self.assertEqual(c["shown"], "The latest NOAA radar estimate, the outlines of the NWS alerts listed on this "
                                      "page and the NWS forecast temperature for each town whose forecast loaded.")
         self.assertEqual(c["missing"], "")
-        self.assertEqual(c["then"], "to play the past hour of radar")
 
     def test_sample_pictures_say_they_are_invented(self):
         self.assertTrue(self.card(map_layers(sample=True))["shown"].startswith(
@@ -931,7 +930,7 @@ class MapCard(unittest.TestCase):
 
     def test_forecast_only_build(self):
         """The forecast-only state of a real build: the radar bucket fails, the HRRR answers, NWS and
-        SPC fail. The Now page's caption and frame title name the model forecast, never radar."""
+        SPC fail. The home page's map frame title and description name the model forecast, never radar."""
         def forecast_only(out_dir, get, now, sample=False):
             return map_layers(radar=False, now=now), {
                 "radar": {"label": g.LABELS["radar"], "ok": False,
@@ -941,15 +940,91 @@ class MapCard(unittest.TestCase):
             out, _ = build_with(FailingFetcher())
         html = " ".join(page(out, "index.html").split())
         self.assertIn('title="Montana map: HRRR model forecast for 10 am"', html)
-        self.assertIn('<p class="caption"> The HRRR model forecast for 10 am. Missing from this update: NOAA radar, '
-                      "NWS warning outlines and town temperatures. This is not an all-clear. "
-                      '<a href="map.html">Open the map</a> to play the HRRR model forecast, or switch to temperature '
-                      "and wind gusts. </p>", html)
+        self.assertIn('<p class="visually-hidden" id="map-words">The HRRR model forecast for 10 am. Missing from '
+                      "this update: NOAA radar, NWS warning outlines and town temperatures. This is not an all-clear.</p>",
+                      html)
         self.assertNotIn("radar estimate", html)
         m = json.loads(page(out, "data/map.json"))
         precip = m["layers"]["precip"]
         self.assertEqual(precip["frames"][precip["modes"]["12h"][precip["now_index"]["12h"]]]["time"],
                          "2026-10-14T16:00:00Z")                     # 10 am MDT: the frame the card opens on
+
+
+class HomeConcept(unittest.TestCase):
+    """The Veor home page concept (design branch; docs/DESIGN.md section 10): an app shell around the site's
+    own map. The map is map.html in its embedded mode, the lead is sample data labelled as such in every build,
+    and the old Now page's freshness line, warnings and town cards are in the Forecast panel, which the other
+    pages' links to the warnings list open (index.html#forecast)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-home-"))
+        site.build(cls.out, None, NOW, sample=True)
+        cls.html = " ".join(page(cls.out, "index.html").split())
+
+    def test_the_map_is_the_sites_own_map_embedded(self):
+        self.assertIn('<iframe class="stage-map" id="map-frame" src="map.html?embed=1&amp;v=', self.html)
+        m = page(self.out, "map.html")
+        self.assertIn('document.documentElement.classList.add("is-embed")', m)
+        self.assertIn('{ target: "_top" }', m)                  # links in the map open in the whole window
+        css = (site.HERE / "static" / "map" / "map.css").read_text(encoding="utf-8")
+        self.assertIn(".is-embed .corner-left > .close, .is-embed #btn-layers { display: none; }", css)
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('var EMBED = !CARD && params.get("embed") === "1";', js)
+        self.assertIn('window.parent.document.getElementById("btn-layers-top")', js)   # focus back to the top bar
+        self.assertIn('id="btn-layers-top"', self.html)
+
+    def test_the_sample_lead_is_labelled_in_a_live_build_too(self):
+        out, _ = build_with(FailingFetcher())                   # not a sample build: the weather is not invented
+        html = " ".join(page(out, "index.html").split())
+        self.assertIn('Lead details <span class="tag">Sample</span>', html)
+        self.assertIn("Desktop concept · Sample data", html)
+        self.assertNotIn("Everything on this page is invented", html)
+        self.assertIn("Everything on this page is invented", self.html)      # the sample build says so as well
+
+    def test_the_forecast_panel_has_the_freshness_line_the_warnings_and_every_town(self):
+        self.assertIn('<section class="view view-forecast" id="view-forecast" aria-labelledby="fc-h" hidden>', self.html)
+        self.assertIn("rebuilt on a schedule set to every 10 minutes", self.html)
+        self.assertIn("Loaded: NWS alerts, NWS forecasts", self.html)
+        self.assertIn('Warnings and advisories<span class="count">2</span>', self.html)
+        self.assertIn("High Wind Warning", self.html)
+        self.assertEqual(self.html.count('<li data-slug="'), len(site.TOWNS))
+        self.assertIn("Weather information only. It does not confirm roof damage", self.html)
+        self.assertIn("<noscript><style>.shell #view-forecast { display: block; }</style></noscript>", self.html)
+
+    def test_the_forecast_button_counts_the_alerts_or_says_they_did_not_load(self):
+        self.assertIn('<span class="badge badge-warning"><span aria-hidden="true">2</span>'
+                      '<span class="visually-hidden">: 2 NWS alerts</span></span>', self.html)
+        out, _ = build_with(FailingFetcher())
+        html = " ".join(page(out, "index.html").split())
+        self.assertIn('<span class="badge badge-unknown"><span aria-hidden="true">?</span>'
+                      "<span class=\"visually-hidden\">: NWS alerts didn't load</span></span>", html)
+        self.assertIn("Couldn't load NWS alerts at", html)
+        self.assertNotIn("No active NWS warnings", html)
+        self.assertNotIn("Every source loaded", html)
+        self.assertNotIn("Every source loaded", page(out, "index.html"))
+        self.assertIn("Every source loaded", self.html)
+
+    def test_every_town_is_in_the_area_menu_and_the_search_list(self):
+        for t in site.TOWNS:
+            self.assertIn(f'<option value="{t["slug"]}">{t["name"]} area</option>', self.html)
+            self.assertIn(f'<option value="{t["name"]}"></option>', self.html)
+        self.assertIn('<option value="">All of Montana</option>', self.html)     # the map opens on all of Montana
+
+    def test_the_home_page_loads_only_site_files_and_serves_its_font(self):
+        self.assertNotRegex(self.html, r'<(script|link|img|iframe)[^>]+(src|href)="(https?:)?//')
+        self.assertTrue((self.out / "static" / "fonts" / "newsreader-latin-opsz-normal.woff2").is_file())
+        self.assertIn("url(newsreader-latin-opsz-normal.woff2)", page(self.out, "static/fonts/fonts.css"))
+        self.assertIn("The Newsreader Project Authors", page(self.out, "static/fonts/LICENSE-fonts.txt"))
+
+    def test_the_links_to_the_warnings_list_open_the_forecast_panel(self):
+        self.assertIn('if (location.hash === "#forecast") show("forecast");', self.html)
+        self.assertIn('<a href="../index.html#forecast">All towns</a>', page(self.out, "town/livingston.html"))
+        self.assertIn('<a href="index.html#forecast">Now</a>', page(self.out, "about.html"))
+        self.assertIn('href="index.html#forecast"', page(self.out, "map.html"))           # the noscript list
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('href="index.html#forecast">All warnings and town forecasts</a>', js)
+        self.assertNotIn("Now page", js)
 
 
 class StormLayers(unittest.TestCase):

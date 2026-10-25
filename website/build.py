@@ -163,7 +163,7 @@ class Collector:
         return towns
 
     def add_town_alerts(self, alerts: dict, towns: list) -> None:
-        """Put every alert a town's point check found into the statewide list, so the Now page, the
+        """Put every alert a town's point check found into the statewide list, so the home page, the
         map (outlines, town sheets, List) and state.json name the same alerts the towns point to. The
         statewide request goes first, so a warning issued while the towns are checked is only in
         their answers; and when it failed, the list is the last verified one. A listed alert that a
@@ -331,15 +331,15 @@ def _round(v):
     return None if v is None else round(v)
 
 
-# ---------------------------------------------------------------- the map card on the Now page
+# ---------------------------------------------------------------- the words for the home page's map
 
 def map_card(layers: dict, alerts: dict, towns: list, status: dict, now: datetime) -> dict:
-    """The words with the map card on the Now page (index.html): the frame's title, what the card
-    shows, what this update is missing, and what the full map can play. They follow the data, so a
-    model forecast is never called the radar estimate and outlines or town numbers that didn't load
-    are never described as shown (AGENTS.md rule 5). The card opens where map.js opens it (setLayer,
-    buildTimeline): the precipitation layer's 12h timeline, or its only timeline with frames, at its
-    now_index. Stale radar keeps its frames, so the picture is read from the frames, not the status."""
+    """The words for the map on the home page (index.html, the map's frame): its title, what it shows
+    when it opens and what this update is missing. They follow the data, so a model forecast is never
+    called the radar estimate and outlines or town numbers that didn't load are never described as shown
+    (AGENTS.md rule 5). The map opens where map.js opens it (setLayer, buildTimeline): the precipitation
+    layer's 12h timeline, or its only timeline with frames, at its now_index. Stale radar keeps its frames,
+    so the picture is read from the frames, not the status."""
     precip = layers.get("precip") or {}
     frames, modes = precip.get("frames") or [], precip.get("modes") or {}
     mode = "12h" if modes.get("12h") else next((m for m, idx in modes.items() if idx), None)
@@ -378,20 +378,10 @@ def map_card(layers: dict, alerts: dict, towns: list, status: dict, now: datetim
         short.append("town temperatures")
     else:
         missing.append("town temperatures")
-    kinds = {f["kind"] for f in frames} if len(frames) > 1 else set()
-    plays = [w for k, w in (("radar", "the past hour of sample radar" if sample else "the past hour of radar"),
-                            ("forecast", "the sample model forecast" if sample else "the HRRR model forecast"))
-             if k in kinds]
-    switch = [w for k, w in (("temp", "temperature"), ("wind", "wind gusts")) if (layers.get(k) or {}).get("frames")]
-    if plays:
-        then = "to play " + _and(plays) + (", or switch to " + _and(switch) if switch else "")
-    else:
-        then = "to switch to " + _and(switch) if switch else "for the List of alerts and towns"
     words = _and(shown)
     return {"title": "Montana map: " + (_and(short) if short else "nothing loaded in this update"),
             "shown": words[:1].upper() + words[1:] + "." if words else "",
-            "missing": f"Missing from this update: {_and(missing)}. This is not an all-clear." if missing else "",
-            "then": then}
+            "missing": f"Missing from this update: {_and(missing)}. This is not an all-clear." if missing else ""}
 
 
 def _and(items: list[str]) -> str:
@@ -443,7 +433,7 @@ def env() -> Environment:
 # browsers and GitHub Pages reuse the unchanged ones across the 10-minute rebuilds (map.js, map.css,
 # the 377 KB basemap and style.css change only with the code). data/map.json and the map card's
 # address change every build, so they keep the build minute.
-VERSIONED = ("style.css", "map/map.js", "map/map.css", "map/basemap.json")
+VERSIONED = ("style.css", "home.css", "map/map.js", "map/map.css", "map/basemap.json")
 
 
 STORM_JS = "map/storm.js"   # places the storm text in the Map's List and town sheets; --storm-layers only

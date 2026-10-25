@@ -28,7 +28,7 @@ website/   the product. sources.py (NWS/SPC feeds, parsers, feed contracts) · g
            + HRRR model → map frames) · storm.py and satellite.py (radar echo tops and the GOES
            band 13 picture, both behind --storm-layers) · build.py (collect → frames + data/map.json →
            pages) · sample.py (labelled sample data) · towns.json · templates/ · static/ (style, Leaflet,
-           fonts, map/ = map.js, map.css, basemap.json)
+           fonts, map/ = map.js, map.css, basemap.json; home.css on the `design` branch)
            hail.py (hail history: grid, size words, store readers, daily build; --hail-history) · hail_fixture_data.py (the
            SAMPLE store's events) · data/hail-fixture/ (the SAMPLE store)
 tools/     build_basemap.py (rebuilds static/map/basemap.json from Natural Earth + Census; by hand)
@@ -71,7 +71,8 @@ python ship.py "one-line note" [--minor]        # ships to users — only when t
 4. **Python first.** Python builds all data and pages (Jinja; the radar and model frames in
    `website/gridded.py`). Hand-written JavaScript only for browser-only needs, documented inline
    (website: the page-age check in `website/templates/base.html` and the interactive map in
-   `website/static/map/map.js` — playback, scrubbing, menus, sheets, geolocation, D28; app: the
+   `website/static/map/map.js` — playback, scrubbing, menus, sheets, geolocation, D28; on the `design`
+   branch, the home page's controls in `website/templates/index.html`, DESIGN.md section 10; app: the
    ~20-line bridge in `templates/live.html`). Owner
    preference — don't add a JS framework. Third-party code (Leaflet) and fonts are served by the
    site, not a CDN. The browser fetches only site files, except the USGS imagery tiles, which it

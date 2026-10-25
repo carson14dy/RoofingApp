@@ -2,7 +2,7 @@
 {% from "_alerts.html" import alert_item, office_links %}
 {% block title %}{{ town.name }} forecast · Montana Hail Watch{% endblock %}
 {% block content %}
-<p class="crumbs"><a href="../index.html">All towns</a> · <a href="../map.html?town={{ town.slug }}">See {{ town.name }} on the map</a></p>
+<p class="crumbs"><a href="../index.html#forecast">All towns</a> · <a href="../map.html?town={{ town.slug }}">See {{ town.name }} on the map</a></p>
 <div class="lead">
   <h1>{{ town.name }}</h1>
   <p class="sub">
@@ -24,7 +24,7 @@
   <div class="section-head"><h2 id="alerts-h">Official alerts here</h2></div>
   {% if town.alerts is none %}
   <p class="empty">Couldn't check NWS alerts for {{ town.name }} at {{ built|t }}. This is not an all-clear: see the
-    <a href="../index.html">statewide list</a> or {{ office_links(offices) }}.</p>
+    <a href="../index.html#forecast">statewide list</a> or {{ office_links(offices) }}.</p>
   {% elif town.alerts %}
   <ul class="alert-list">{% for a in town.alerts %}{{ alert_item(a) }}{% endfor %}</ul>
   {% else %}
