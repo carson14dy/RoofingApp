@@ -270,3 +270,6 @@ The app check installs only the parked app packages; tests/test_climate.py (h5py
 
 ## 2026-10-25 06:15 UTC: app-check fix pushed
 Signed commit (tests only) on claude/hail-b5: the optional-package guards (D103). Minimal-environment suite OK (0 errors, 242 skipped); full suite with the store 1,989 OK; selftest PASS. The push restarts the branch runs (Website, store job, app check).
+
+## 2026-10-25 06:25 UTC: PR 17 body updated with the head-commit runs
+Head e03532f. Runs: app check 70 in progress; Website 119 pending (118 on the old commit in progress); store job 11 in progress (the test-only push started no new store run). Monitor bbtyotkql watches all four.
