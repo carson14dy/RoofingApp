@@ -306,3 +306,6 @@ wf_e43759f7-1a0 (the Apple and open-stack skeptics) stopped by the supervisor af
 
 ## 2026-10-25 18:50 UTC: correction
 The stop request for wf_e43759f7-1a0 found no running task: the workflow had already ended or the id was stale; its journal holds the verify results and the skeptic verdicts recorded so far. No further action.
+
+## 2026-10-25 19:21 UTC: stage 1 mocks in; D108; sheet fixer launched
+Sheet mock and critic (failed on substance: caps, glass, contrast, legends, names). Bubble placement measured (cluster rule recommended). b6-sheet-fix launched (fixer + second critic). Cartography workflow: the two source workers still running; the proof render queued behind them.

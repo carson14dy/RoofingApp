@@ -1515,3 +1515,22 @@ own design, not Apple's, and Apple's maps are not used.
   (wf b6-own-cartography), and the design mocks of the options sheet and the bubbles in Chromium at phone size (wf
   b6-design-mocks); the owner sees the mocks before any build. (f) The research record on claude/map-b6 gets the owner's decision
   and the revised plan in its next commit.
+
+## Supervisor rulings on the stage 1 mocks (2026-10-25 18:20 UTC; D108)
+The design workflow delivered the options sheet mock (nine renders, measured: 0 hex values, 0 overflow, 44 px targets, the body
+scrolls) and the bubble placement (the block view: 248 houses in four cells with values 0.38 in, --, 0.30 in and 0.26 in; one bubble
+per house with a skip rule labels 91 of 248 at zoom 17, 52 of 69 at zoom 18; one bubble per cluster of houses in the same cell
+labels every house with 56 bubbles at zoom 17 and 34 at zoom 18). The sheet critic failed the mock on substance: uppercase headings,
+the map.css glass panel and its blue switch, the off-track contrast at 1.3:1, the live hail legends without the "not no hail"
+sentence, a landmark legend that names one kind only, "Satellite" clashing with the cloud picture, "risks" in a five-year
+history heading (DESIGN section 12 rule 6).
+- D108 **The sheet and the bubbles.** (a) The sheet is in the site's own roles (a solid surface, a line edge, the 12 px radius, the
+  focus blue for a switch), sentence case throughout, no glass; the map page's existing chrome (D28) is not the Apple base map the
+  owner dropped, but the sheet does not depend on it. (b) Names: "Base map" with "Map" and "Imagery" (D32), "Live weather",
+  "Five-year history" (never "risks"), "Landmarks"; live weather and five-year history are one at a time, landmark kinds are
+  independent, Points of interest shows the chosen kinds. (c) Every legend line carries its kind, its source, its age and what a
+  missing value shows; the live hail legends end with the DESIGN section 11 sentence; wind reads "50 kt (58 mph)". (d) Bubbles: one
+  bubble per cluster of houses in the same cell (the data has one value per cell), placed by Python per zoom and written into the
+  building shards as label anchors; the per-house variant is shown to the owner as the alternative with its count (91 of 248). The
+  owner picks; the recommendation is the cluster rule. (e) Top zoom 18 is a build item (the data supports it). (f) A fixer applies
+  the critic's items to the mock and a second critic re-checks before the owner sees it (wf b6-sheet-fix).
