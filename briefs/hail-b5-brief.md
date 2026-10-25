@@ -1454,3 +1454,25 @@ said under 25 minutes, a figure set before the B1 build, the B2 joins and the B3
   60 minutes is a budget decision (raise the wait bound, the job cap and the timeout together, as the wait step's comment
   says), never a silent breach (D90(b)). (c) Gate B5-12 reads pass against the restated budget, with the run time, the
   asset size and the phone view as its evidence; the record keeps the 25-minute wording as the gate's first-round text.
+
+## B6: the owner's map reference (2026-10-25 08:00 UTC)
+Carson sent ten screenshots of Apple Maps as shown inside the Zillow app and wrote: "I want the first map to look exactly like this. And
+work like this." The screenshots: (1) a "Map options" sheet with Default / Satellite / 3D View, "Climate risks" chips (Flood, Fire, Wind,
+Air, Heat), "Neighborhood amenities" chips (Banks, Bars & clubs, Coffee shops, ...), a Points of interest toggle, a Highlight open houses
+toggle and a Reset button; (2) a block view of the Missoula slant streets (Brooks St, Blaine St, E Florence St) with a dark value bubble on
+every house (Zillow's price; ours would be the weather figure) and "--" where there is none; (3) the neighbourhood with points of interest
+drawn with icons (Loyola Sacred Heart High School, Rockin Rudy's, Florabella, Hellgate High School, Sacajawea Park, Rose Park, Big Dipper
+Ice Cream, Clyde Coffee, Tagliare Delicatessen), route shields (US 12), street names; (4) to (6) the city and metro with parks, the
+university, rivers, terrain tint, the airport, highway shields; (7) and (8) the region with hillshade, towns, the Flathead Indian
+Reservation with its Salish name, national forests, peaks; (9) eastern Montana with the reservations and the state border; (10) the
+state with the cities.
+The supervisor's reading: the base map is Apple's; "exactly" has one honest path (Apple MapKit JS: Apple's own tiles, points of interest,
+satellite and amenity filters; needs an Apple Developer account held by the owner, Apple's script from Apple's CDN (a change to AGENTS.md
+rule 4's CDN clause, the owner's call), a token minted at each build; no 3D on the web) and one near path (MapLibre GL JS served by the site,
+OpenStreetMap-derived Protomaps tiles for Montana as one PMTiles file in the Pages artifact, USGS imagery for Satellite, public-domain
+terrain for hillshade and a real 3D view; not pixel-identical to Apple; the ODbL reading is a counsel question). The parts that are ours in
+either path: the Map options sheet, the value bubble per house (the radar cell's figure, honest about the cell), the risk chips from our
+store (hail, heat, wind, flood) plus new public sources (fire, air), the search, the sheet on tap.
+Running (stage 0): wf_e43759f7-1a0 (the two base-map paths, verified live, two skeptics per claim) and wf_3b78ff46-de4 (side-by-side views
+of our map against the reference at eight zooms from a local build with every layer on, the per-house bubble measurements, and the
+risk-layer sources verified live). The question put to Carson: whether he is willing to hold an Apple Developer account for the site.

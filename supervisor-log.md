@@ -291,3 +291,6 @@ App check 72 green on the docs commit; GitHub reports mergeable_state clean (4 c
 
 ## 2026-10-25 07:56 UTC: check-in on PR 17: nothing new
 Head 906b49f, mergeable_state clean, the app check green, no review threads, no comments, Carson has not written since the PR went up. By the check-in rule (the owner has not written since the PR went up and the first quiet check-in found nothing new) no further check-in is armed; the PR subscription stays, so a review, a merge, a push or a comment wakes the session. On merge: close PRs 14, 15 and 16; delete the WIP session branches.
+
+## 2026-10-25 16:06 UTC: B6 opened (the owner's Apple Maps reference)
+Carson: "I want the first map to look exactly like this. And work like this." (ten screenshots). Reply sent with the two paths and the one owner question (the Apple Developer account). Local build with every layer on started at /home/user/hail-b5/out/ref/site (live feeds, the adopted store, --now 2026-10-17T12:00:00Z). Workflows: wf_e43759f7-1a0 (base-map paths) and wf_3b78ff46-de4 (views, bubbles, risk sources). Task #38 created. Scripts under workflows/scripts/b6-*.js.
