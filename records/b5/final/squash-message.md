@@ -23,7 +23,7 @@ What is new on top of main (the B1 radar hail history, public since 2026-10-22):
   every layer under 700,000 bytes gzip, every tap file under 100,000 bytes gzip; the words gate (tests/words_rules.py)
   over every words table and the About page; the real-store parity tests in the branch preview.
 
-Verified: python -m unittest discover -s tests (SUITE_COUNT tests, 0 failures); python desktop/launcher.py --selftest
+Verified: python -m unittest discover -s tests (1,989 tests, 0 failures, 3 skipped with the store set); python desktop/launcher.py --selftest
 payload (PASS); Chromium smoke at 390 and 1280 px on a build from the adopted combined store (the three cells compared
 word for word with the Python source; zero off-site requests); the branch's Website run.
 

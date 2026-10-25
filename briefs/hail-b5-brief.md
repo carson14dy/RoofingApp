@@ -1404,3 +1404,14 @@ Billings town page's five-season table (/home/user/hail-b5/out/sup-read/billings
   form ("Billings/Logan Intl") and the GHCN rows in the display form ("Billings Intl AP"), two sources and two name
   rules (D84(a) and D78(c)); the record carries the note. The verification record's B5-11 gate reads pass with this
   reading as its evidence (docs-final or the supervisor before the squash).
+
+## Supervisor rulings on words-4 and ci-final (2026-10-25 05:30 UTC; D102)
+words-4 reverted the three forecast-word swaps to main's text (about.html line 132; sources.py lines 70 and 84) and trimmed
+the identity table; ci-final added the seven test modules to website.yml's on.push.paths with a seven-test pin; full suite
+1,989 OK.
+- D102 **Final-b calls.** (a) The sources.py line 70 edit stands (the About flag row is main's "Chance of rain or snow in
+  %."; D97(c) named the row). (b) on.push.paths also lists tests/fixtures/** (tests/test_site.py reads the default-build
+  manifest there; the supervisor's edit, done); the parked-app test modules (test_alert_scenarios, test_updates,
+  test_weather) stay exempt from the Website workflow's paths because check-app.yml runs them on every push to main and
+  no website or tools module imports the parked app. (c) The em-dashes in website.yml's summary step predate B5 and
+  fall under the D91(e) sweep.

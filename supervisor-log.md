@@ -258,3 +258,6 @@ Docs pass (wf_4c225e23-481, 44 agents): 20 findings, 14 confirmed and fixed, 5 r
 
 ## 2026-10-25 05:15 UTC: B5-11 supervisor reading passes (D101)
 Billings table and Benchland sheet read on a local build at the D94(c) clock; records under wt-session/records/b5/final/. Scratch build deleted.
+
+## 2026-10-25 06:25 UTC: squashed and pushed
+All fixers done (words-4, ci-final, docs-final; D101 and D102 recorded in DECISIONS; the B5-11 gate passes with the supervisor reading). Machine paths scrubbed from the docs, records and two tests (HAIL_CACHE_DIR). Final suite with the store: 1,989 tests OK (skipped 4); selftest PASS. Squashed onto main f96f5c7 as one signed commit bf2909b (199 files, 60,145 insertions, 411 deletions) and pushed as origin/claude/hail-b5. Next: the branch runs (Website, store job), the pull request on main superseding PRs 14, 15 and 16, subscribe, report to Carson.
