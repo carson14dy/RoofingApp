@@ -303,3 +303,6 @@ Carson dropped the Apple path (the screenshots were a base, not the finish). D10
 
 ## 2026-10-25 18:50 UTC: base-map paths workflow stopped
 wf_e43759f7-1a0 (the Apple and open-stack skeptics) stopped by the supervisor after the owner dropped both paths: its verify results are in the journal (records/b6/journals) and the facts still used (GitHub Pages byte ranges and limits, the terrain tile decode, the glyph build) were read by the supervisor; the remaining skeptic rounds would only slow the stage 1 workers on the four CPUs. wf_3b78ff46-de4 (risk-source skeptics) keeps running.
+
+## 2026-10-25 18:50 UTC: correction
+The stop request for wf_e43759f7-1a0 found no running task: the workflow had already ended or the id was stale; its journal holds the verify results and the skeptic verdicts recorded so far. No further action.
