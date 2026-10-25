@@ -1,6 +1,6 @@
 {
   "record": "B5 verification: the past weather of every location (the climate grid, station readings, the NOHRSC snow analysis, river gauges, the zone and county products, the hail hit-and-miss record) (D38)",
-  "status": "Gates B5-1 to B5-18 are stated under 'gates' (the completion pass, 2026-10-25, on the merged tree). The branch carries the merge of main (D59, D60, D94, D95); the squash, the push, the live preview and the pull request are the supervisor's next steps (D93(f)).",
+  "status": "Gates B5-1 to B5-18 are stated under 'gates' (the completion pass, 2026-10-25, on the merged tree). The branch carries the merge of main (D59, D60, D94, D95); the squash, the push, the live preview (Website run 121) and pull request 17 on main are done (D93(f), D104, D105).",
   "verdict": "Completion pass (2026-10-25): one status and one evidence line per gate B5-1 to B5-18 under 'gates'. Where the re-check (2026-10-24, the pre-merge worktree) measured a gate, its result is stated; where it did not, the 2026-10-19 result is stated as not re-run.",
   "written_by": "docs and record builder, the completion pass, 2026-10-25: the DECISIONS D38 round block (D19 to D96 in order), DESIGN section 12, ROADMAP, README and AGENTS commands, and this record. about.html and addresses.py were checked against the rulings and needed no edit.",
   "branch": "claude/hail-b5",
@@ -134,8 +134,8 @@
     {
       "id": "B5-12",
       "gate": "Budget: the daily job runs end to end locally in under 25 minutes; the measured sizes recorded; the phone view at zoom 15 stays under 650 KB gzip (the first-round budget; D82(b) restates it to 700,000 bytes gzip, and the re-check of 2026-10-24 measured 682,129 bytes).",
-      "status": "partial",
-      "evidence": "The phone view at zoom 15 with every layer on is 682,129 bytes gzip against the 700,000 budget (D82(b); the re-check of 2026-10-24, D93). A build on 2026-10-25 measured 681,569 bytes gzip: a note that restates nothing (D100(c)). The largest B5 tap file is j/e/r0092_c0214.json at 18,052 bytes gzip; the largest tap file of any kind is b/r0092_c021500.json at 40,074 bytes; the per-file budget is 100,000 bytes. The daily job end to end under 25 minutes is not timed here (the branch run measures it). Measured steps: joins 218 s; station refresh 86 s (D67).",
+      "status": "pass (the budget restated by D105)",
+      "evidence": "The branch's store job (run 11, 2026-10-25, commit bf2909b) ran 39.1 minutes end to end on the runner with its downloads (05:47:51 to 06:26:57 UTC) and published hail-store-claude-hail-b5.tar.gz at 88,647,098 bytes; D105 restates the first-round 25-minute figure to 60 minutes (the preview's wait bound; the 150-minute job timeout is the backstop). The phone view at zoom 15 with every layer on is 682,129 bytes gzip against the 700,000 budget (D82(b); the re-check of 2026-10-24, D93). A build on 2026-10-25 measured 681,569 bytes gzip: a note that restates nothing (D100(c)). The largest B5 tap file is j/e/r0092_c0214.json at 18,052 bytes gzip; the largest tap file of any kind is b/r0092_c021500.json at 40,074 bytes; the per-file budget is 100,000 bytes. Measured steps: joins 218 s; station refresh 86 s (D67).",
       "findings": [],
       "earlier": {
         "status": "partial (not confirmed): the store-job timing is not measured in the second round; the measured sizes on the store copy are j/ 86,276,949 bytes raw in 9,196 files and hail/ 176,293,267 bytes in 23,867 files, before the products part's rebuild",
@@ -204,8 +204,8 @@
     {
       "id": "B5-18",
       "gate": "Flag-off and --hail-history-only builds unchanged; Chromium smoke at 390 and 1280 px; smoke_pages; the live preview build on the branch; zero off-site requests.",
-      "status": "partial: the flag-off identity is restated by D93(a); the live preview is open",
-      "evidence": "The default build equals its base except the ruled lines (D53, D74, D85, D86(c), D88(d), D91(c)) and map.js and map.css with their cache-busting hashes in map.html; tests/test_site.py names those differences and is the gate. The re-check's byte comparison found 5 differing files, all of them in that list. The --hail-history-only build exited 0. The smoke at 390 and 1280 px passed (exit 0), and smoke_pages passed (exit 0). Host capture recorded 300 requests, all to the local server (zero off-site requests). The live preview build on the branch was not run here; CI runs it on the push.",
+      "status": "pass: the flag-off identity is restated by D93(a); the live preview ran on the branch",
+      "evidence": "The default build equals its base except the ruled lines (D53, D74, D85, D86(c), D88(d), D91(c)) and map.js and map.css with their cache-busting hashes in map.html; tests/test_site.py names those differences and is the gate. The re-check's byte comparison found 5 differing files, all of them in that list. The --hail-history-only build exited 0. The smoke at 390 and 1280 px passed (exit 0), and smoke_pages passed (exit 0). Host capture recorded 300 requests, all to the local server (zero off-site requests). The live preview: the branch's Website run 121 (2026-10-25, commit 199dfa9) passed the real-store parity step, the Chromium smoke with --addresses --history; the phone view at zoom 15 over Billings with six layers on measured 681,988 bytes gzip against the 700,000-byte budget and the page width check; the first preview after the squash (runs 118 and 119) failed the parity step on the partial stations note and the pinned names (D104). The one-hour swath pixel gate (D92(d)) was not exercised: the preview's smoke found no hail values in the box for the last hour or the last 24 hours (\"pixel gate not applicable\"), so the gate waits for a run with hail on the picture.",
       "findings": [
         "F2 (fixed 2026-10-20)"
       ],
@@ -1342,13 +1342,13 @@
       ]
     },
     "not_done": [
-      "B5-18's live preview build, the one-hour swath pixel gate (D92(d)), the daily job's run time (B5-12) and the packed asset's size: CI and the supervisor measure them on the branch.",
+      "B5-18's live preview (Website run 121), the daily job's run time (B5-12: 39.1 minutes, store job run 11) and the packed asset's size (88,647,098 bytes) were measured on the branch on 2026-10-25 (D104, D105). The one-hour swath pixel gate (D92(d)) was not exercised: the preview's smoke found no hail values in the box for the last hour or the last 24 hours (\"pixel gate not applicable\"), so the gate waits for a run with hail on the picture.",
       "The em-dashes in README.md (28) and AGENTS.md (11) are main's text on lines B5 does not change (D91(e)); they stay, and the sweep is ROADMAP follow-up D.",
       "Model, vendor and product names already in main's text (in AGENTS.md, README.md, DECISIONS.md and ROADMAP.md) are not added by B5. Removing them would rewrite the other agent's text and the decision records; the banned-name list is the owner's to confirm (ROADMAP owner item 7).",
       "The cause of the run-6 station line is not recorded anywhere (D56); the line is closed as not reproducing on the adopted store. The B5 logs that show the same kind of line (the paths in d56_line) show the symptom and do not establish the cause.",
       "tests/test_addresses.py RealMetadataTests skips while ADDRESS_FRAMEWORK_ZIP is unset (ROADMAP owner item 8)."
     ],
-    "parity_step_seven_tests": "The seven real-store parity tests of .github/workflows/website.yml, run with HAIL_PARITY_STORE set to a history-flag site copy built on the working tree (--hail-history --hail-store <combined store> --now 2026-10-24T12:00:00Z, 2026-10-25): Ran 7 tests in 100.6 s; OK.",
+    "parity_step_seven_tests": "The seven real-store parity tests of .github/workflows/website.yml, run with HAIL_PARITY_STORE set to a history-flag site copy built on the working tree (--hail-history --hail-store <combined store> --now 2026-10-24T12:00:00Z, 2026-10-25): Ran 7 tests in 100.6 s; OK. Against the branch's published store (run 11, as_of 2026-10-23, parts.stations partial with 65 station-years) on 2026-10-25 the step failed on two of the seven (the five-cell agreement and the names test; D104); after the fix the seven pass against that store and the adopted store, and tests/test_site.py gains a fixture test for the partial stations note (not gated, so not in the step's list).",
     "figure_keys": {
       "note": "Where each figure sits in this record. Test comments that cite the record name these keys. Each folder entry is [files, bytes].",
       "store_total_files": "completion.store_figures.files",
@@ -1363,7 +1363,27 @@
       "tile_file_budget_gzip": "completion.phone_view.per_file_budget",
       "history_flag_gate_raw": "completion.map_json_figures.history_flag_gate_raw"
     },
-    "tests_earlier_runs": "Superseded, kept for the history (the 01:21 run failed on one test, fixed by D97; the 04:21 run and the browser pass runs passed with 1,982 tests): Full suite, python -m unittest discover -s tests, on the working tree at 2026-10-25 01:21 to 01:27 UTC (HAIL_PARITY_STORE unset): Ran 1979 tests in 375.7 s; FAILED (failures=1, skipped=10). The one failure is tests/test_hail.py WordTests.test_no_forbidden_term_in_any_word (products owner's files: website/hail.py and tests/test_hail.py): hail.py's WORDS['stale'] ends with the required sentence 'This is not an all-clear.' (D41, D96(b)), which the test's forbidden-word check does not exempt (tests/words_rules.py exempts that sentence in its required-sentence pattern). At the merge commit the suite passed (1,975 OK, the merge fixer). The 10 skips are the seven HAIL_PARITY_STORE tests, two fixture-cell skips in tests.test_site SheetAgreesWithTheModule and one ADDRESS_FRAMEWORK_ZIP skip (tests.test_addresses RealMetadataTests), as the re-check recorded. Later full suite, python -m unittest discover -s tests, on the working tree from about 04:21 to 04:28 UTC (HAIL_PARITY_STORE unset; the last code write was at 03:23 UTC, and the docs and this record were edited during the run, so the docs-reading test tests.test_site HailSwathLayers.test_the_hail_state_is_checked_once_a_minute_and_the_docs_say_so and tests.test_hail WordTests were rerun alone afterwards and pass, 9 tests OK): Ran 1982 tests in 368.185 s; OK (skipped=10). The 01:21 failure is resolved by D97 (failed_checks)."
+    "tests_earlier_runs": "Superseded, kept for the history (the 01:21 run failed on one test, fixed by D97; the 04:21 run and the browser pass runs passed with 1,982 tests): Full suite, python -m unittest discover -s tests, on the working tree at 2026-10-25 01:21 to 01:27 UTC (HAIL_PARITY_STORE unset): Ran 1979 tests in 375.7 s; FAILED (failures=1, skipped=10). The one failure is tests/test_hail.py WordTests.test_no_forbidden_term_in_any_word (products owner's files: website/hail.py and tests/test_hail.py): hail.py's WORDS['stale'] ends with the required sentence 'This is not an all-clear.' (D41, D96(b)), which the test's forbidden-word check does not exempt (tests/words_rules.py exempts that sentence in its required-sentence pattern). At the merge commit the suite passed (1,975 OK, the merge fixer). The 10 skips are the seven HAIL_PARITY_STORE tests, two fixture-cell skips in tests.test_site SheetAgreesWithTheModule and one ADDRESS_FRAMEWORK_ZIP skip (tests.test_addresses RealMetadataTests), as the re-check recorded. Later full suite, python -m unittest discover -s tests, on the working tree from about 04:21 to 04:28 UTC (HAIL_PARITY_STORE unset; the last code write was at 03:23 UTC, and the docs and this record were edited during the run, so the docs-reading test tests.test_site HailSwathLayers.test_the_hail_state_is_checked_once_a_minute_and_the_docs_say_so and tests.test_hail WordTests were rerun alone afterwards and pass, 9 tests OK): Ran 1982 tests in 368.185 s; OK (skipped=10). The 01:21 failure is resolved by D97 (failed_checks).",
+    "daily_job_run_11": {
+      "run_id": 40166818057,
+      "commit": "bf2909b",
+      "started": "2026-10-25T05:47:51Z",
+      "finished": "2026-10-25T06:26:57Z",
+      "minutes": 39.1,
+      "asset": "hail-store-claude-hail-b5.tar.gz",
+      "asset_bytes": 88647098,
+      "budget_minutes": 60,
+      "budget_rule": "D105 (the preview's wait bound; the 150-minute job timeout is the backstop)"
+    },
+    "live_preview": {
+      "run_id": 40171005020,
+      "run_number": 121,
+      "commit": "199dfa9",
+      "date": "2026-10-25",
+      "phone_gzip_bytes": 681988,
+      "smoke": "passed: the parity step (7 tests OK in 71.7 s), the Chromium smoke with --addresses --history (the five-season summary at three cells inside the first screen; every tap file under its budget; no off-site request), the page width check at 288 to 1440 px and the five-season table check on 17 town pages at 10 widths",
+      "swath": "The one-hour swath pixel gate (D92(d)) was not exercised: the preview's smoke found no hail values in the box for the last hour or the last 24 hours (\"pixel gate not applicable\"), so the gate waits for a run with hail on the picture."
+    }
   },
   "d56_line": "D56 (the run-6 'Station reading: Data unavailable' line with no Station line): the cause is not recorded in the repository, the products check (session-archive/b2r4/products/check.json) or the products completion report under session-archive/b2r3/products/, and the run-6 log is not available to this record. The line does not reproduce on the adopted store: the Billings town-page test, tests/test_site.py test_the_billings_town_page_joins_sit_in_their_sections_newest_first, passes in the full run. The B5 logs that show the same kind of Billings line are session-archive/b5b1-checker/billings-fail.txt, session-archive/b2p/products/skeptic2/logs/billings-before-msg.txt and billings-regen-msg.txt, and the failing test in session-archive/b2p/products/skeptic2-r1-full.log; they show the symptom and do not establish its cause."
 }
