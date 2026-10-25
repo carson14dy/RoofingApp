@@ -288,3 +288,6 @@ Website run 121 (199dfa9) passed: offline tests, the wait step (store job 11 alr
 
 ## 2026-10-25 07:17 UTC: PR 17 clean on 906b49f
 App check 72 green on the docs commit; GitHub reports mergeable_state clean (4 commits, 199 files, +60,255 / -411 against f96f5c7). Report sent to Carson with the measured figures and the nine open owner items. Waiting on the owner's review and merge; the safety-net check-in fires at 07:55 UTC; PR events wake the session. When 17 merges: close PRs 14, 15 and 16; delete origin/session/hail-b5-wip and origin/session/hail-b5p-wip; the state branch stays until the programme ends.
+
+## 2026-10-25 07:56 UTC: check-in on PR 17: nothing new
+Head 906b49f, mergeable_state clean, the app check green, no review threads, no comments, Carson has not written since the PR went up. By the check-in rule (the owner has not written since the PR went up and the first quiet check-in found nothing new) no further check-in is armed; the PR subscription stays, so a review, a merge, a push or a comment wakes the session. On merge: close PRs 14, 15 and 16; delete the WIP session branches.
