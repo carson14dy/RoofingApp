@@ -276,3 +276,6 @@ Head e03532f. Runs: app check 70 in progress; Website 119 pending (118 on the ol
 
 ## 2026-10-25 06:25 UTC: app check 70 passed on e03532f
 The app check (check-app.yml) is green on the head commit. Website 119 pending behind 118; store job 11 in progress.
+
+## 2026-10-25 06:40 UTC: store job 11 succeeded
+The branch store job built and published hail-store-claude-hail-b5.tar.gz: 88,647,098 bytes, run time 39.1 minutes (B5-12 daily job end to end; budget 150). Website 118 continues past its wait; 119 pending. After the Website runs: one docs commit with the measured figures (B5-12 pass; the packed asset size; the preview phone-view bytes) into the record and ROADMAP.
