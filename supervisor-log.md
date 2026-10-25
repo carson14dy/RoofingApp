@@ -300,3 +300,6 @@ Views (nine composites), the Apple and open-stack verification (two workflows; r
 
 ## 2026-10-25 18:49 UTC: owner: no Apple design in the finish; D107; stage 1 workflows launched
 Carson dropped the Apple path (the screenshots were a base, not the finish). D107: our own map, public-domain cartography, Leaflet stays, no OSM. Launched b6-own-cartography (raster and vector sources, a Python proof picture, skeptics, a critic) and b6-design-mocks (the options sheet and the bubbles in Chromium, critics). Outputs under /home/user/hail-b5/out/b6/.
+
+## 2026-10-25 18:50 UTC: base-map paths workflow stopped
+wf_e43759f7-1a0 (the Apple and open-stack skeptics) stopped by the supervisor after the owner dropped both paths: its verify results are in the journal (records/b6/journals) and the facts still used (GitHub Pages byte ranges and limits, the terrain tile decode, the glyph build) were read by the supervisor; the remaining skeptic rounds would only slow the stage 1 workers on the four CPUs. wf_3b78ff46-de4 (risk-source skeptics) keeps running.
