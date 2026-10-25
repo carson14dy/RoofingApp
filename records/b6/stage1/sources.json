@@ -1,0 +1,153 @@
+{
+ "generated_utc": "2026-10-25T19:54:44+00:00",
+ "note": "Every URL was called from this session unless marked as read from a secondary copy or another agent's notes. No account or personal data is sent to any service.",
+ "downloads": {
+  "box-1600 3DEP PNG": 1078329,
+  "region 3DEP PNG": 924824,
+  "city 3DEP PNG": 827083,
+  "region NLCD GeoTIFF (2340 x 5064)": 15058434,
+  "owner box NLCD GeoTIFF (1600 x 1430, checked: NLCD codes only)": 2306002,
+  "city NLCD GeoTIFF (927 x 922)": 1130450,
+  "Census AIANNH zip": 1524576,
+  "Census places zip": 309103,
+  "TIGER Missoula County roads zip": 2030136,
+  "TIGER Montana primary and secondary roads zip": 2615588,
+  "Forest Service forests JSON (region frame)": 119412
+ },
+ "not_used": [
+  "Montana State Library Transportation Framework (the site's default road source): the zip is 117,639,105 bytes (Content-Length read today). Not downloaded; the Census county roads were used instead.",
+  "USGS shaded relief and hydro caches (basemap service): not needed; NLCD class 11 gives the water.",
+  "Landmark points (schools, hospitals, airports, churches), parks and peaks: no point source was fetched for this proof."
+ ],
+ "sources": [
+  {
+   "id": "3dep-hillshade",
+   "use": "Hillshade Gray: box at 1600 px, region frame 780 x 1688, city box 1456 x 1448, sample tiles",
+   "url": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage",
+   "service_metadata": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer?f=pjson",
+   "checked": [
+    "Service JSON read today (HTTP 200, 12,988 bytes): copyrightText 'USGS National Map 3D Elevation Program (3DEP). October 01, 2026.'",
+    "Box PNG read with Pillow: 1600 x 978, mode L, values 0 to 255, 256 distinct grey levels.",
+    "Region and city PNGs read with Pillow: 780 x 1688 and 1456 x 1448, mode L, full grey range."
+   ],
+   "licence_quote": "Secondary copy read today (joerd attribution file, quoting USGS): 'All 3DEP products available through The National Map are in the public domain and may be used without restriction.' One plain request to the USGS copyrights page made today returned HTTP 403 (another agent's notes record the same block); not retried or routed around.",
+   "status": "Public domain: verified in a secondary copy; primary USGS page not reachable"
+  },
+  {
+   "id": "nlcd-2021",
+   "use": "Land cover classes for the region frame (3x grid, mode to 1x), city box (native cells), sample tiles",
+   "url": "https://www.mrlc.gov/geoserver/mrlc_display/wcs (WCS 1.0.0 GetCoverage, coverage mrlc_display:NLCD_2021_Land_Cover_L48, EPSG:3857, GeoTIFF)",
+   "service_metadata": "https://www.mrlc.gov/geoserver/mrlc_display/wcs?service=WCS&version=2.0.1&request=DescribeCoverage&coverageId=mrlc_display__NLCD_2021_Land_Cover_L48",
+   "checked": [
+    "DescribeCoverage read today: EPSG:3857, 30 unit grid, range PALETTE_INDEX.",
+    "Region GeoTIFF read with Pillow: 2340 x 5064 cells, values only NLCD codes (11, 12, 21 to 24, 31, 41 to 43, 52, 71, 81, 82, 90, 95); no in-between values."
+   ],
+   "licence_quote": "MRLC About page read today: 'The primary objective of the MRLC NLCD is to provide the Nation with nationally complete, current, consistent and public domain information on the Nation's land cover.'",
+   "status": "Public domain: verified today"
+  },
+  {
+   "id": "census-aiannh-2024",
+   "use": "Reservation outline and name (Flathead Reservation in the region frame)",
+   "url": "https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_aiannh_500k.zip",
+   "checked": [
+    "Zip read today with pyogrio: 704 features nationally; the frame query returned one feature, 'Flathead Reservation' (GEOID 1110)."
+   ],
+   "licence_quote": "ISO metadata inside the zip, read today: 'Access constraints: None'. Use constraint: 'The intended display scale for this file is 1:500,000.'",
+   "status": "Access constraints read today. A public domain sentence was not found on the three Census pages checked (terms-of-service, policies, cartographic-boundary)."
+  },
+  {
+   "id": "census-places-2024",
+   "use": "Place names and points for Montana (497 places: incorporated, towns and census designated places)",
+   "url": "https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_30_place_500k.zip",
+   "checked": [
+    "Zip read today with pyogrio: 497 features; names, LSAD and land area read; points are the representative points of each polygon."
+   ],
+   "licence_quote": "ISO metadata inside the zip, read today: 'Access constraints: None'.",
+   "status": "Access constraints read today (same Census metadata wording as above)"
+  },
+  {
+   "id": "census-tiger-roads",
+   "use": "Local roads and road names for the city box (Missoula County); state, US and interstate routes for the region frame (Montana primary and secondary roads)",
+   "url": [
+    "https://www2.census.gov/geo/tiger/TIGER2026/ROADS/tl_2026_30063_roads.zip",
+    "https://www2.census.gov/geo/tiger/TIGER2026/PRISECROADS/tl_2026_30_prisecroads.zip"
+   ],
+   "checked": [
+    "Missoula County zip read today: 8,016 road lines; 2,572 inside the city box.",
+    "Montana primary and secondary roads zip read today: 1,252 lines; names such as 'I- 90', 'US Hwy 93', 'State Hwy 200'."
+   ],
+   "licence_quote": "ISO metadata inside both zips, read today: 'Access constraints: None'. Use constraints: 'The TIGER/Line Shapefile products are not copyrighted however TIGER/Line and Census TIGER are registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however acknowledgement must be given to the U.S. Census Bureau as the source.'",
+   "status": "Verified today; the attribution line is required by the licence text"
+  },
+  {
+   "id": "usfs-forest-boundaries",
+   "use": "Administrative forest outlines and names (five forests touch the region frame)",
+   "url": "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_ForestSystemBoundaries_01/MapServer/0/query (layer 0, Administrative Forest Boundaries - National Extent)",
+   "service_metadata": "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_ForestSystemBoundaries_01/MapServer/0?f=pjson",
+   "checked": [
+    "Query read today: 5 features in the frame (Beaverhead-Deerlodge, Bitterroot, Flathead, Lolo, Nez Perce-Clearwater National Forests), rings in EPSG:3857, generalised at 60 m."
+   ],
+   "licence_quote": "Layer metadata read today: copyrightText is empty; description: 'This dataset is intended for read-only use.' The EDW datasets page read today has no public domain sentence for this layer.",
+   "status": "OPEN: no public domain wording found. Get the Forest Service terms in writing before the product uses this layer."
+  },
+  {
+   "id": "natural-earth",
+   "use": "Rivers, lakes and county lines from website/static/map/basemap.json (the site's own base map build; read only)",
+   "url": "https://www.naturalearthdata.com/about/terms-of-use/",
+   "checked": [
+    "Terms page read today (HTTP 200); the sentence below found in the page text.",
+    "basemap.json sources entry read today: 'Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com (public domain; v5.1.2: provinces, lakes, rivers, roads, places).'"
+   ],
+   "licence_quote": "'All versions of Natural Earth raster + vector map data found on this website are in the public domain.'",
+   "status": "Public domain: verified today"
+  },
+  {
+   "id": "mrlc-state-of-licence",
+   "use": "Land cover (same source as nlcd-2021); the MRLC FAQ gives the citation",
+   "url": "https://www.mrlc.gov/about and https://www.mrlc.gov/faq",
+   "checked": [
+    "About page read today (29,457 bytes); FAQ citation read by another agent today, not re-read here."
+   ],
+   "licence_quote": "Citation (FAQ): 'U.S. Geological Survey (USGS), 2024, Annual NLCD Collection 1 Science Products: U.S. Geological Survey data release, https://doi.org/10.5066/P94UXNTS.'",
+   "status": "Citation text; the public domain sentence is under nlcd-2021"
+  },
+  {
+   "id": "atkinson-hyperlegible-next",
+   "use": "Label font (website/static/fonts woff2 files, converted to TTF with fontTools for drawing)",
+   "url": "repo file website/static/fonts/LICENSE-fonts.txt (copied from the font project)",
+   "checked": [
+    "Local file read today; the three Next weights (400, 600, 700) converted and read back: family name and 247 glyphs."
+   ],
+   "licence_quote": "'This Font Software is licensed under the SIL Open Font License, Version 1.1.'",
+   "status": "Read today (local file)"
+  },
+  {
+   "id": "basemap-json",
+   "use": "Water names, river widths and ranks, county lines, interstate and US road records (only interstate and US routes; no local roads), the town list",
+   "url": "repo file website/static/map/basemap.json (read only, 384,935 bytes)",
+   "checked": [
+    "Feature counts read today: 12 land, 5 borders, 139 counties, 53 lakes, 114 rivers, 34 roads, 60 places, 62 labels."
+   ],
+   "licence_quote": "See natural-earth above.",
+   "status": "Read today"
+  },
+  {
+   "id": "towns-json",
+   "use": "Site towns (bold labels and the town list)",
+   "url": "repo file website/towns.json",
+   "checked": [
+    "17 towns read today; only Missoula falls inside the region frame and the city box."
+   ],
+   "status": "Read today"
+  },
+  {
+   "id": "owner-reference-images",
+   "use": "Composites only (not data)",
+   "paths": [
+    "reference/region-reference.jpg (copy of the owner's upload eca9a283-image.jpg)",
+    "reference/city-reference.jpg (copy of the owner's upload 6a526b96-image.jpg)"
+   ],
+   "status": "Used as pictures only"
+  }
+ ]
+}

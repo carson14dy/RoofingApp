@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Map options mock</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="map.css">
+<style>
+  /* Design mock only (B6). The product behaviour is in spec.md and goes in website/static/map/map.js.
+     The sheet is a solid panel. It uses only the style.css roles, takes no glass or blue token from
+     map.css, and overrides the map.css rules it inherits (uppercase headings, the glass surface, the
+     grey switch track, the blue focus ring). The background is the block-view capture; in dark mode it
+     is inverted as a stand-in for the dark basemap. No colour value is written here. */
+  .bg { position: absolute; inset: 0; z-index: 0;
+    background: url("block-view-light.png") center / cover no-repeat, var(--color-bg); }
+  @media (prefers-color-scheme: dark) { .bg { filter: invert(1) hue-rotate(180deg); } }
+  .mock-stack { position: absolute; z-index: 20; top: calc(var(--safe-t) + 12px); right: calc(var(--safe-r) + 12px); }
+
+  /* the sheet: a solid surface, a hairline edge and the 12 px corner; no blur, no shadow */
+  #map-options {
+    background: var(--color-surface); color: var(--color-text);
+    border: 1px solid var(--color-line); border-radius: var(--radius);
+    box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  #map-options .sheet-title { color: var(--color-text); }
+  #map-options .sheet-close { color: var(--color-text); }
+  #map-options .sheet-close::before { background: var(--color-surface-muted); }
+  #map-options .sheet-close:hover::before { background: var(--color-line); }
+  #map-options :focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+
+  /* headings: sentence case, one colour token (--color-text-muted) for all four groups */
+  #map-options .mo-h { display: block; margin: 18px 0 8px; padding: 0; font-size: var(--text-xs); font-weight: 700;
+    line-height: 1.3; letter-spacing: 0; text-transform: none; color: var(--color-text-muted); }
+  #map-options .mo-sub { margin: -2px 0 8px; font-size: var(--text-xs); line-height: 1.4; color: var(--color-text-muted); }
+  /* legend lines are 14 px (--text-sm); the Reset note and sub-lines stay at 13 px */
+  #map-options .mo-legend { margin: 10px 0 0; padding: 2px 0 2px 10px; border-left: 3px solid var(--color-text-muted);
+    font-size: var(--text-sm); line-height: 1.4; color: var(--color-text); }
+  #map-options .mo-switches .mo-legend { margin: 0 0 6px; }
+  #map-options .mo-note { max-width: 36ch; text-align: center; font-size: var(--text-xs); line-height: 1.4; color: var(--color-text-muted); }
+
+  /* base map: two labelled cards; the chosen card has a 2 px focus edge and a tick */
+  #map-options .mo-base { min-width: 0; margin: 0; padding: 0; border: 0; }
+  #map-options .mo-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 6px; }
+  #map-options .mo-tile { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 44px; padding: 10px 12px; border: 1px solid var(--color-text-muted); border-radius: var(--radius-sm);
+    background: var(--color-surface); color: var(--color-text); font-size: 15px; font-weight: 600; line-height: 1.2; cursor: pointer; }
+  #map-options .mo-tile:hover { background: var(--color-surface-muted); }
+  #map-options .mo-tile input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+  #map-options .mo-tile:has(input:checked) { border-color: var(--color-focus); box-shadow: inset 0 0 0 1px var(--color-focus); font-weight: 700; }
+  #map-options .mo-tile:has(input:focus-visible) { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+  #map-options .mo-tile .mo-tick { display: block; visibility: hidden; }
+  #map-options .mo-tile:has(input:checked) .mo-tick { visibility: visible; }
+
+  /* chips: off (outline), on (filled, with a tick), unavailable or waiting (dashed, with the reason) */
+  #map-options .mo-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  #map-options .mo-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 0;
+    padding: 6px 14px 6px 12px; border: 1px solid var(--color-text-muted); border-radius: 999px;
+    background: transparent; color: var(--color-text); font-size: 15px; font-weight: 600; line-height: 1.2; text-align: left; }
+  #map-options .mo-chip:hover { background: var(--color-surface-muted); }
+  #map-options .mo-chip[aria-pressed="true"] { background: var(--color-text); border-color: var(--color-text); color: var(--color-on-chip); }
+  #map-options .mo-chip[aria-pressed="true"]:hover { background: var(--color-text); }
+  #map-options .mo-chip[aria-disabled="true"] { border-style: dashed; background: transparent; color: var(--color-text-muted); }
+  #map-options .mo-chip[aria-disabled="true"]:hover { background: transparent; }
+  #map-options .mo-chip[aria-disabled="true"][aria-pressed="true"] { border-color: var(--color-text-muted); color: var(--color-text-muted); }
+  #map-options .mo-ico { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; }
+  #map-options .mo-tick { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6;
+    stroke-linecap: round; stroke-linejoin: round; }
+  #map-options .mo-chip .mo-tick { display: none; }
+  #map-options .mo-chip[aria-pressed="true"] .mo-tick { display: block; }
+  #map-options .mo-soon { font-size: var(--text-xs); font-weight: 400; color: var(--color-text-muted); }
+
+  /* switches: on is the focus colour; off is a 1 px muted outline on the surface; the knobs use the surface and muted roles */
+  #map-options .toggles { border-top-color: var(--color-line); }
+  #map-options .toggle:hover { background: var(--color-surface-muted); }
+  #map-options .toggle-text small { font-size: var(--text-sm); line-height: 1.3; color: var(--color-text-muted); }
+  #map-options .toggle input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; position: relative; margin: 0;
+    width: 46px; height: 28px; border-radius: 999px; background: var(--color-surface); cursor: pointer;
+    box-shadow: inset 0 0 0 1px var(--color-text-muted); transition: background-color 0.2s; }
+  #map-options .toggle input[type="checkbox"]::after { content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px;
+    border-radius: 50%; background: var(--color-text-muted); transition: transform 0.2s; }
+  #map-options .toggle input[type="checkbox"]:checked { background: var(--color-focus); box-shadow: none; }
+  #map-options .toggle input[type="checkbox"]:checked::after { transform: translateX(18px); background: var(--color-surface); }
+
+  /* footer */
+  #map-options .mo-foot { display: grid; justify-items: center; gap: 8px; margin-top: 18px; padding-top: 16px;
+    border-top: 1px solid var(--color-line); }
+  #map-options .mo-reset { min-height: 44px; padding: 0 24px; border: 1px solid var(--color-text-muted); border-radius: 999px;
+    background: transparent; color: var(--color-text); font-size: 16px; font-weight: 700; }
+  #map-options .mo-reset:hover { background: var(--color-surface-muted); }
+
+  .mo-title { display: flex; align-items: center; gap: 10px; }
+  .mo-title-icon { width: 24px; height: 24px; flex: none; fill: none; }
+  .mo-title-icon .fill { fill: currentColor; stroke: none; }
+
+  /* a sheet on a phone; a panel under the layers button from 640 px */
+  @media (min-width: 640px) {
+    .mock-stack { top: calc(var(--safe-t) + 16px); right: calc(var(--safe-r) + 16px); }
+    #map-options { left: auto; right: 16px; top: 114px; bottom: 16px; width: 380px; max-height: none; }
+  }
+</style>
+</head>
+<body class="mapapp">
+<div class="app">
+  <div class="bg" aria-hidden="true"></div>
+
+  <div class="glass stack mock-stack">
+    <button type="button" class="icon-btn" id="btn-layers" aria-label="Map options" aria-haspopup="dialog" aria-expanded="true" aria-controls="map-options">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M12 3.2 21.4 8.4 12 13.6 2.6 8.4Z"/><path class="fill" d="M4.6 11.6 12 15.7l7.4-4.1 2 1.1-9.4 5.2-9.4-5.2Z"/></svg>
+    </button>
+    <button type="button" class="icon-btn" id="btn-locate" aria-label="Show my location">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 3.8 3.9 10.6l7.2 2.3 2.3 7.2Z"/></svg>
+    </button>
+  </div>
+
+  <div class="scrim" id="scrim"></div>
+
+  <section class="sheet mo" id="map-options" role="dialog" aria-modal="true" aria-labelledby="mo-title">
+    <header class="sheet-head">
+      <h2 class="sheet-title mo-title" id="mo-title">
+        <svg class="mo-title-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M12 3.2 21.4 8.4 12 13.6 2.6 8.4Z"/><path class="fill" d="M4.6 11.6 12 15.7l7.4-4.1 2 1.1-9.4 5.2-9.4-5.2Z"/></svg>
+        <span>Map options</span>
+      </h2>
+      <button type="button" class="icon-btn sheet-close" id="mo-close" aria-label="Close map options">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>
+      </button>
+    </header>
+
+    <div class="sheet-body mo-body">
+
+      <fieldset class="mo-base">
+        <legend class="mo-h">Base map</legend>
+        <div class="mo-tiles">
+          <label class="mo-tile">
+            <input type="radio" name="base" value="map" data-legend="" checked>
+            <span class="mo-tile-name">Map</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </label>
+          <label class="mo-tile">
+            <input type="radio" name="base" value="imagery" data-legend="Aerial imagery with roads and names from USGS. Your IP address and the map area you view go to USGS while it is on.">
+            <span class="mo-tile-name">Imagery</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </label>
+        </div>
+        <p class="mo-legend" data-legend-for="base" aria-live="polite" hidden></p>
+      </fieldset>
+
+      <section class="mo-group" aria-labelledby="mo-h-live">
+        <h3 class="mo-h" id="mo-h-live">Live weather</h3>
+        <div class="mo-chips">
+          <button type="button" class="mo-chip" data-group="live" data-key="precip" aria-pressed="true" data-legend="Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 15.5h9a3.5 3.5 0 0 0 .3-7 5.2 5.2 0 0 0-10-1.3A4.2 4.2 0 0 0 7.5 15.5Z"/><path d="M8.5 18.5l-.7 2M12.5 18.5l-.7 2M16.5 18.5l-.7 2"/></svg>
+            <span>Precipitation</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="live" data-key="temp" aria-pressed="false" data-legend="HRRR model temperature, in °F. Town numbers are the National Weather Service (NWS) forecast.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14.2V5.5a2 2 0 0 1 4 0v8.7a3.8 3.8 0 1 1-4 0Z"/><path d="M12 9v6"/></svg>
+            <span>Temperature</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="live" data-key="wind" aria-pressed="false" data-legend="HRRR model. Roofing limit 25 mph.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5h10.5a2.5 2.5 0 1 0-2.5-2.5"/><path d="M3 12.5h14.5a2.5 2.5 0 1 1-2.5 2.5"/><path d="M3 16.5h6.5"/></svg>
+            <span>Wind gusts</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="live" data-key="hail_60" aria-pressed="false" data-legend="Radar estimate of the largest hail in the last hour, in inches, from NOAA's Multi-Radar Multi-Sensor (MRMS) maximum estimated size of hail (MESH). An estimate, not observed hail and not an inspection. Uncoloured means no radar estimate of 0.25 in or more, or no value, and that is not “no hail”.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="8.5" r="3.5"/><circle cx="16" cy="7.5" r="2.3"/><circle cx="14.5" cy="16" r="3.3"/><circle cx="7" cy="16.5" r="1.8"/></svg>
+            <span>Hail, last hour</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="live" data-key="hail_1440" aria-pressed="false" data-legend="Radar estimate of the largest hail in the last 24 hours, in inches, from MRMS (MESH). An estimate, not observed hail and not an inspection. Uncoloured means no radar estimate of 0.25 in or more, or no value, and that is not “no hail”.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+            <span>Hail, last 24 hours</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+        </div>
+        <p class="mo-legend" data-legend-for="live" aria-live="polite">Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.</p>
+      </section>
+
+      <section class="mo-group" aria-labelledby="mo-h-history">
+        <h3 class="mo-h" id="mo-h-history">Five-year history</h3>
+        <p class="mo-sub">Past records from the last five years. Not a forecast or a damage estimate.</p>
+        <div class="mo-chips">
+          <button type="button" class="mo-chip" data-group="history" data-key="hail" aria-pressed="false" data-legend="Largest radar estimate over five years for each cell, 0.25 in and up. Every building in a cell shares its value. A value of -- means no estimate of 0.25 in or more was stored; that is not the same as no hail.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+            <span>Hail</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="history" data-key="heat" aria-pressed="false" data-legend="Grid estimate: days with a high of 90 °F or more in the last five years. A grid value is an estimate for a cell about 4.6 km across. A value of -- means no grid value was stored. That is not zero or an all-clear.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>
+            <span>Heat</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="history" data-key="wind" aria-pressed="false" data-legend="Station reading: days with a gust of 50 kt (58 mph) or more at the nearest station, in the last five years. Not a measurement at this building. A value of -- means no station reading was stored. That is not zero or an all-clear.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 16a8.5 8.5 0 0 1 17 0"/><path d="M3.5 16h17"/><path d="M12 16l3.6-4.6"/></svg>
+            <span>Wind</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="history" data-key="flood" aria-pressed="false" data-legend="Reports, records and NWS warnings for floods and flash floods in the last five years, near this place. Not a measure of water at any building. A missing value shows as Data unavailable. That is not zero or an all-clear." data-demo-reason="Data unavailable: flood records did not load in this update. This is not an all-clear.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5c1.5-1.2 3-1.2 4.5 0s3 1.2 4.5 0 3-1.2 4.5 0 2.5 1.2 4 0"/><path d="M3 15.5c1.5-1.2 3-1.2 4.5 0s3 1.2 4.5 0 3-1.2 4.5 0 2.5 1.2 4 0"/><path d="M12 3.5v4.5M10 6l2-2 2 2"/></svg>
+            <span>Flood</span>
+            <span class="mo-soon" hidden>Data unavailable</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="history" data-key="fire" aria-disabled="true" data-reason="Coming later: fire is not in the map yet.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c.8 3 4.6 5 4.6 9.2a4.6 4.6 0 0 1-9.2 0c0-2 .9-3.4 2-4.5.1 1.6.8 2.6 1.9 3C11.2 8.5 11.3 6 12 3.5Z"/></svg>
+            <span>Fire</span>
+            <span class="mo-soon">Coming</span>
+          </button>
+          <button type="button" class="mo-chip" data-group="history" data-key="smoke" aria-disabled="true" data-reason="Coming later: smoke is not in the map yet.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 20.5c-1.8-1.9 1.8-3 0-5.2s1.8-3.2 0-5.3"/><path d="M12 20.5c-1.8-1.9 1.8-3 0-5.2s1.8-3.2 0-5.3"/><path d="M16.5 20.5c-1.8-1.9 1.8-3 0-5.2s1.8-3.2 0-5.3"/></svg>
+            <span>Smoke</span>
+            <span class="mo-soon">Coming</span>
+          </button>
+        </div>
+        <p class="mo-legend" data-legend-for="history" aria-live="polite" hidden></p>
+      </section>
+
+      <section class="mo-group" aria-labelledby="mo-h-land">
+        <h3 class="mo-h" id="mo-h-land">Landmarks</h3>
+        <p class="mo-sub">From public-domain data. Businesses are not in it, so none are shown.</p>
+        <div class="mo-chips">
+          <button type="button" class="mo-chip" data-group="landmark" data-key="schools" data-name="schools" aria-pressed="false" data-reason="Turn on Points of interest to show these.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5c2.6-1.2 5.4-1.2 8.5.9 3.1-2.1 5.9-2.1 8.5-.9v12.5c-2.6-1.2-5.4-1.2-8.5.9-3.1-2.1-5.9-2.1-8.5-.9Z"/><path d="M12 7.4v12.5"/></svg>
+            <span>Schools</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="landmark" data-key="parks" data-name="parks" aria-pressed="false" data-reason="Turn on Points of interest to show these.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V21M9.5 21h5"/></svg>
+            <span>Parks</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="landmark" data-key="hospitals" data-name="hospitals" aria-pressed="false" data-reason="Turn on Points of interest to show these.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 7.5v9M7.5 12h9"/></svg>
+            <span>Hospitals</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="landmark" data-key="airports" data-name="airports" aria-pressed="false" data-reason="Turn on Points of interest to show these.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2c.9 0 1.5.8 1.5 1.8v4.8l6.7 3.6v2l-6.7-2v4.2l2.2 1.5v1.4L12 19.9l-3.7 1.6v-1.4l2.2-1.5v-4.2l-6.7 2v-2l6.7-3.6V5c0-1 .6-1.8 1.5-1.8Z"/></svg>
+            <span>Airports</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+          <button type="button" class="mo-chip" data-group="landmark" data-key="churches" data-name="churches" aria-pressed="false" data-reason="Turn on Points of interest to show these.">
+            <svg class="mo-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v3.2M10.3 4.1h3.4"/><path d="M7.5 21v-9L12 8.5l4.5 3.5v9"/><path d="M10.2 21v-4h3.6v4"/></svg>
+            <span>Churches</span>
+            <svg class="mo-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.8 17 19 7.5"/></svg>
+          </button>
+        </div>
+        <p class="mo-legend" data-legend-for="landmark" data-template="{kinds} from public-domain data, shown as dots with their names." aria-live="polite" hidden></p>
+      </section>
+
+      <div class="toggles mo-switches">
+        <label class="toggle">
+          <span class="toggle-text">Points of interest<small>Landmark dots and names, for the kinds chosen below</small></span>
+          <input type="checkbox" role="switch" id="tg-poi" checked>
+        </label>
+        <label class="toggle">
+          <span class="toggle-text">Highlight recent hail<small>Radar estimate of 1 in or more, last 30 days</small></span>
+          <input type="checkbox" role="switch" id="tg-hail-recent">
+        </label>
+        <p class="mo-legend" id="legend-hail-recent" aria-live="polite" hidden>Buildings in cells where radar estimated 1 in or more in the last 30 days are highlighted. Buildings in other cells are not; that is not the same as no hail. Radar estimate, not a measurement at the ground.</p>
+        <label class="toggle">
+          <span class="toggle-text">Warnings<small>NWS outlines</small></span>
+          <input type="checkbox" role="switch" id="tg-warnings" checked>
+        </label>
+        <label class="toggle">
+          <span class="toggle-text">Storm reports<small>Storm Prediction Center (SPC), last 3 days</small></span>
+          <input type="checkbox" role="switch" id="tg-reports">
+        </label>
+        <p class="mo-legend" id="legend-reports" aria-live="polite" hidden>No report is not “no hail”.</p>
+      </div>
+
+      <div class="mo-foot">
+        <button type="button" class="mo-reset" id="mo-reset">Reset</button>
+        <p class="mo-note">Back to Map and Precipitation, with Points of interest and Warnings on. Everything else off.</p>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script>
+/* Mock behaviour only, so the states can be clicked through. The product's version goes in
+   website/static/map/map.js (see spec.md, "How the sheet replaces the layer menu"). The legend words are
+   read from data-legend, data-reason and data-template; in the product, Python writes those attributes.
+   map.js joins the landmark names with commas and "and", the only words it adds. */
+(function () {
+  'use strict';
+  function byId(id) { return document.getElementById(id); }
+  var sheet = byId('map-options');
+  var scrim = byId('scrim');
+  var openBtn = byId('btn-layers');
+  var closeBtn = byId('mo-close');
+  var resetBtn = byId('mo-reset');
+  var poi = byId('tg-poi');
+  var hail = byId('tg-hail-recent');
+  var hailLegend = byId('legend-hail-recent');
+  var warnings = byId('tg-warnings');
+  var reports = byId('tg-reports');
+  var reportsLegend = byId('legend-reports');
+  var chips = [].slice.call(sheet.querySelectorAll('.mo-chip'));
+  var baseInputs = [].slice.call(sheet.querySelectorAll('input[name="base"]'));
+  var legends = {};
+  [].forEach.call(sheet.querySelectorAll('[data-legend-for]'), function (p) {
+    legends[p.getAttribute('data-legend-for')] = p;
+  });
+
+  function group(name) {
+    return chips.filter(function (c) { return c.getAttribute('data-group') === name; });
+  }
+  function chipFor(name, key) {
+    return group(name).filter(function (c) { return c.getAttribute('data-key') === key; })[0];
+  }
+  function isOn(c) { return c.getAttribute('aria-pressed') === 'true'; }
+  function isOff(c) { return c.getAttribute('aria-disabled') === 'true'; }
+  function press(c, on) { c.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+  function say(name, text) {
+    var p = legends[name];
+    if (!p) return;
+    p.textContent = text || '';
+    p.hidden = !text;
+  }
+  /* live weather and five-year history: one at a time */
+  function chooseOne(name, key) {
+    group(name).forEach(function (c) { if (!isOff(c)) press(c, c.getAttribute('data-key') === key); });
+  }
+  /* one line naming every landmark kind that is on; hidden while Points of interest is off, or when no kind is on */
+  function landmarkLine() {
+    var kinds = group('landmark').filter(isOn).map(function (c) { return c.getAttribute('data-name'); });
+    if (!poi.checked || !kinds.length) { say('landmark', ''); return; }
+    var last = kinds.pop();
+    var list = kinds.length ? kinds.join(', ') + ' and ' + last : last;
+    list = list.charAt(0).toUpperCase() + list.slice(1);
+    say('landmark', legends.landmark.getAttribute('data-template').replace('{kinds}', list));
+  }
+  /* Points of interest gates the landmark chips; their choices are kept while it is off */
+  function syncPoi() {
+    var on = poi.checked;
+    group('landmark').forEach(function (c) {
+      if (on) c.removeAttribute('aria-disabled'); else c.setAttribute('aria-disabled', 'true');
+    });
+    landmarkLine();
+  }
+
+  sheet.addEventListener('click', function (e) {
+    var c = e.target.closest ? e.target.closest('.mo-chip') : null;
+    if (!c || !sheet.contains(c)) return;
+    var name = c.getAttribute('data-group');
+    if (isOff(c)) { say(name, c.getAttribute('data-reason')); return; }
+    if (name === 'landmark') {
+      press(c, !isOn(c));
+      landmarkLine();
+      return;
+    }
+    if (isOn(c)) { press(c, false); say(name, ''); return; }
+    chooseOne(name, c.getAttribute('data-key'));
+    say(name, c.getAttribute('data-legend'));
+  });
+
+  baseInputs.forEach(function (r) {
+    r.addEventListener('change', function () {
+      say('base', r.checked ? r.getAttribute('data-legend') : '');
+    });
+  });
+  poi.addEventListener('change', syncPoi);
+  hail.addEventListener('change', function () { hailLegend.hidden = !hail.checked; });
+  reports.addEventListener('change', function () { reportsLegend.hidden = !reports.checked; });
+
+  function resetAll() {
+    baseInputs.forEach(function (r) { r.checked = r.value === 'map'; });
+    say('base', '');
+    chooseOne('live', 'precip');
+    say('live', chipFor('live', 'precip').getAttribute('data-legend'));
+    group('history').forEach(function (c) { if (!isOff(c)) press(c, false); });
+    say('history', '');
+    group('landmark').forEach(function (c) { press(c, false); });
+    poi.checked = true;
+    syncPoi();
+    hail.checked = false; hailLegend.hidden = true;
+    warnings.checked = true;
+    reports.checked = false; reportsLegend.hidden = true;
+  }
+  resetBtn.addEventListener('click', resetAll);
+
+  function setOpen(open) {
+    sheet.hidden = !open;
+    scrim.hidden = !open;
+    openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    (open ? closeBtn : openBtn).focus();
+  }
+  openBtn.addEventListener('click', function () { setOpen(sheet.hidden); });
+  closeBtn.addEventListener('click', function () { setOpen(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !sheet.hidden) setOpen(false);
+  });
+
+  /* ?demo: one example of each state (on, a second group on, a switch on, one unavailable with its reason) */
+  if (/(^|[?&])demo(=|&|$)/.test(window.location.search)) {
+    chooseOne('history', 'hail');
+    say('history', chipFor('history', 'hail').getAttribute('data-legend'));
+    press(chipFor('landmark', 'schools'), true);
+    press(chipFor('landmark', 'parks'), true);
+    landmarkLine();
+    hail.checked = true; hailLegend.hidden = false;
+    var flood = chipFor('history', 'flood');
+    flood.setAttribute('aria-disabled', 'true');
+    flood.querySelector('.mo-soon').hidden = false;
+    flood.setAttribute('data-reason', flood.getAttribute('data-demo-reason'));
+  }
+})();
+</script>
+</body>
+</html>

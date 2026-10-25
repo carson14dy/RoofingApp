@@ -315,3 +315,6 @@ Raster and vector source reports read (the proof render still running). D109 rec
 
 ## 2026-10-25 19:55 UTC: sheet second critique; D110
 Second critic: the nine fixes hold; six detail failures ruled into the build spec (D110). No further mock round. Waiting on the proof render, the landmark sources and the risk-source skeptics; Carson has the sheet and the bubble pictures.
+
+## 2026-10-25 20:22 UTC: stage 1 delivered; research record updated on claude/map-b6
+Proof pictures (region zoom 8.5, city zoom 12) read as the same kind of map as the reference in the site's palette; sent to Carson with the sheet and the bubbles. Landmark sources verified (NCES schools public domain; PAD-US parks public domain; FAA airports; HIFLD hospital copy without licence text; the FEMA/IRS places of worship with a geocoder terms question). research/map-b6/README.md section 9 committed and pushed. Stage 1 evidence archived under records/b6/stage1. Next: the stage 2 build brief (B6-1 data products first), then the build workflows on /home/user/wt/wt-b6.

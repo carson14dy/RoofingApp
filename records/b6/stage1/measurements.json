@@ -1,0 +1,2368 @@
+{
+  "shots": {
+    "mock-390x844-light.png": {
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        8,
+        178,
+        374,
+        658
+      ],
+      "sheet_surface": {
+        "background": "rgb(255, 255, 255)",
+        "border": "rgb(220, 226, 232) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 602,
+      "sheet_body_scroll_h": 1205,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(17, 28, 40)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "console_problems": []
+    },
+    "mock-390x844-dark.png": {
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        8,
+        178,
+        374,
+        658
+      ],
+      "sheet_surface": {
+        "background": "rgb(24, 33, 43)",
+        "border": "rgb(44, 57, 71) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 602,
+      "sheet_body_scroll_h": 1205,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(227, 232, 238)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "console_problems": []
+    },
+    "mock-390x844-light-bottom.png": {
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        8,
+        178,
+        374,
+        658
+      ],
+      "sheet_surface": {
+        "background": "rgb(255, 255, 255)",
+        "border": "rgb(220, 226, 232) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 602,
+      "sheet_body_scroll_h": 1205,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(17, 28, 40)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "console_problems": []
+    },
+    "mock-390x844-dark-bottom.png": {
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        8,
+        178,
+        374,
+        658
+      ],
+      "sheet_surface": {
+        "background": "rgb(24, 33, 43)",
+        "border": "rgb(44, 57, 71) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 602,
+      "sheet_body_scroll_h": 1205,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(227, 232, 238)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "console_problems": []
+    },
+    "mock-1280x800-light.png": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        884,
+        114,
+        380,
+        670
+      ],
+      "sheet_surface": {
+        "background": "rgb(255, 255, 255)",
+        "border": "rgb(220, 226, 232) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 614,
+      "sheet_body_scroll_h": 1135,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(17, 28, 40)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "console_problems": []
+    },
+    "mock-1280x800-dark.png": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        884,
+        114,
+        380,
+        670
+      ],
+      "sheet_surface": {
+        "background": "rgb(24, 33, 43)",
+        "border": "rgb(44, 57, 71) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 614,
+      "sheet_body_scroll_h": 1135,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(227, 232, 238)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "console_problems": []
+    },
+    "states-390x844-light.png": {
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        8,
+        178,
+        374,
+        658
+      ],
+      "sheet_surface": {
+        "background": "rgb(255, 255, 255)",
+        "border": "rgb(220, 226, 232) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 602,
+      "sheet_body_scroll_h": 1460,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(17, 28, 40)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Largest radar estimate over fi",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Schools and parks from public-",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation",
+        "Hail",
+        "Schools",
+        "Parks"
+      ],
+      "chips_unavailable": [
+        "Flood Data unavailable",
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=true",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "console_problems": []
+    }
+  },
+  "console": [],
+  "layouts": {
+    "320x568-light": {
+      "viewport": [
+        320,
+        568
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        8,
+        117,
+        304,
+        443
+      ],
+      "sheet_surface": {
+        "background": "rgb(255, 255, 255)",
+        "border": "rgb(220, 226, 232) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 387,
+      "sheet_body_scroll_h": 1361,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(17, 28, 40)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "reset_in_body_after_scroll": true,
+      "reset_in_viewport_after_scroll": true,
+      "close_in_viewport": true,
+      "console_problems": []
+    },
+    "667x375-light": {
+      "viewport": [
+        667,
+        375
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        271,
+        114,
+        380,
+        245
+      ],
+      "sheet_surface": {
+        "background": "rgb(255, 255, 255)",
+        "border": "rgb(220, 226, 232) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 189,
+      "sheet_body_scroll_h": 1135,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(17, 28, 40)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "reset_in_body_after_scroll": true,
+      "reset_in_viewport_after_scroll": true,
+      "close_in_viewport": true,
+      "console_problems": []
+    },
+    "667x375-dark": {
+      "viewport": [
+        667,
+        375
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        271,
+        114,
+        380,
+        245
+      ],
+      "sheet_surface": {
+        "background": "rgb(24, 33, 43)",
+        "border": "rgb(44, 57, 71) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 189,
+      "sheet_body_scroll_h": 1135,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(227, 232, 238)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(169, 182, 195)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "reset_in_body_after_scroll": true,
+      "reset_in_viewport_after_scroll": true,
+      "close_in_viewport": true,
+      "console_problems": []
+    },
+    "1280x800-light-check": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "horizontal_overflow_px": 0,
+      "sheet_box": [
+        884,
+        114,
+        380,
+        670
+      ],
+      "sheet_surface": {
+        "background": "rgb(255, 255, 255)",
+        "border": "rgb(220, 226, 232) 1px",
+        "radius": "12px",
+        "backdrop": "none",
+        "shadow": "none"
+      },
+      "sheet_body_client_h": 614,
+      "sheet_body_scroll_h": 1135,
+      "sheet_body_scrolls": true,
+      "touch_targets_checked": 26,
+      "touch_targets_under_44": [],
+      "min_target_h_px": 44,
+      "min_target_w_px": 44,
+      "min_text_px": 13,
+      "headings": [
+        {
+          "text": "Map options",
+          "transform": "none",
+          "color": "rgb(17, 28, 40)",
+          "px": 20
+        },
+        {
+          "text": "Base map",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Live weather",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Five-year history",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        },
+        {
+          "text": "Landmarks",
+          "transform": "none",
+          "color": "rgb(77, 93, 110)",
+          "px": 13
+        }
+      ],
+      "legend_and_switch_px": [
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Rate as liquid water. Radar es",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "Landmark dots and names, for t",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Radar estimate of 1 in or more",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Buildings in cells where radar",
+          "px": 14,
+          "shown": false
+        },
+        {
+          "text": "NWS outlines",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "Storm Prediction Center (SPC),",
+          "px": 14,
+          "shown": true
+        },
+        {
+          "text": "No report is not “no hail”.",
+          "px": 14,
+          "shown": false
+        }
+      ],
+      "chips_pressed": [
+        "Precipitation"
+      ],
+      "chips_unavailable": [
+        "Fire Coming",
+        "Smoke Coming"
+      ],
+      "base_checked": [
+        "map"
+      ],
+      "switches": [
+        "tg-poi=true",
+        "tg-hail-recent=false",
+        "tg-warnings=true",
+        "tg-reports=false"
+      ],
+      "fonts": [
+        "Atkinson Hyperlegible Next 400 loaded",
+        "Atkinson Hyperlegible Next 600 loaded",
+        "Atkinson Hyperlegible Next 700 loaded",
+        "Atkinson Hyperlegible Mono 400 unloaded",
+        "Atkinson Hyperlegible Mono 600 unloaded",
+        "Atkinson Hyperlegible Mono 700 unloaded"
+      ],
+      "fonts_check_next": true,
+      "reset_in_body_after_scroll": true,
+      "reset_in_viewport_after_scroll": true,
+      "close_in_viewport": true,
+      "console_problems": []
+    }
+  },
+  "flows": {
+    "steps": [
+      {
+        "step": "start",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Schools",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:on",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": "Schools from public-domain data, shown as dots with their names.",
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Parks",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:on",
+          "parks:on",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": "Schools and parks from public-domain data, shown as dots with their names.",
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "Points of interest off",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:on:waiting-or-unavailable",
+          "parks:on:waiting-or-unavailable",
+          "hospitals:off:waiting-or-unavailable",
+          "airports:off:waiting-or-unavailable",
+          "churches:off:waiting-or-unavailable"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": false,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Hospitals while off",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:on:waiting-or-unavailable",
+          "parks:on:waiting-or-unavailable",
+          "hospitals:off:waiting-or-unavailable",
+          "airports:off:waiting-or-unavailable",
+          "churches:off:waiting-or-unavailable"
+        ],
+        "landmark_legend": "Turn on Points of interest to show these.",
+        "points_of_interest": false,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "Points of interest on",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:on",
+          "parks:on",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": "Schools and parks from public-domain data, shown as dots with their names.",
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Parks again (off)",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:on",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": "Schools from public-domain data, shown as dots with their names.",
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "Reset",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Hail (five-year)",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:on",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": "Largest radar estimate over five years for each cell, 0.25 in and up. Every building in a cell shares its value. A value of -- means no estimate of 0.25 in or more was stored; that is not the same as no hail.",
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Heat (one at a time)",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:on",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": "Grid estimate: days with a high of 90 °F or more in the last five years. A grid value is an estimate for a cell about 4.6 km across. A value of -- means no grid value was stored. That is not zero or an all-clear.",
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Heat again (off)",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Hail, last hour",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:off",
+          "temp:off",
+          "wind:off",
+          "hail_60:on",
+          "hail_1440:off"
+        ],
+        "live_legend": "Radar estimate of the largest hail in the last hour, in inches, from NOAA's Multi-Radar Multi-Sensor (MRMS) maximum estimated size of hail (MESH). An estimate, not observed hail and not an inspection. Uncoloured means no radar estimate of 0.25 in or more, or no value, and that is not “no hail”.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Hail, last 24 hours (one at a time)",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:off",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:on"
+        ],
+        "live_legend": "Radar estimate of the largest hail in the last 24 hours, in inches, from MRMS (MESH). An estimate, not observed hail and not an inspection. Uncoloured means no radar estimate of 0.25 in or more, or no value, and that is not “no hail”.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Imagery",
+        "base": [
+          "imagery"
+        ],
+        "base_legend": "Aerial imagery with roads and names from USGS. Your IP address and the map area you view go to USGS while it is on.",
+        "live": [
+          "precip:off",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:on"
+        ],
+        "live_legend": "Radar estimate of the largest hail in the last 24 hours, in inches, from MRMS (MESH). An estimate, not observed hail and not an inspection. Uncoloured means no radar estimate of 0.25 in or more, or no value, and that is not “no hail”.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Map",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:off",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:on"
+        ],
+        "live_legend": "Radar estimate of the largest hail in the last 24 hours, in inches, from MRMS (MESH). An estimate, not observed hail and not an inspection. Uncoloured means no radar estimate of 0.25 in or more, or no value, and that is not “no hail”.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "tap Fire (unavailable)",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:off",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:on"
+        ],
+        "live_legend": "Radar estimate of the largest hail in the last 24 hours, in inches, from MRMS (MESH). An estimate, not observed hail and not an inspection. Uncoloured means no radar estimate of 0.25 in or more, or no value, and that is not “no hail”.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": "Coming later: fire is not in the map yet.",
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      },
+      {
+        "step": "Reset again",
+        "base": [
+          "map"
+        ],
+        "base_legend": null,
+        "live": [
+          "precip:on",
+          "temp:off",
+          "wind:off",
+          "hail_60:off",
+          "hail_1440:off"
+        ],
+        "live_legend": "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after.",
+        "history": [
+          "hail:off",
+          "heat:off",
+          "wind:off",
+          "flood:off",
+          "fire:off:waiting-or-unavailable",
+          "smoke:off:waiting-or-unavailable"
+        ],
+        "history_legend": null,
+        "landmarks": [
+          "schools:off",
+          "parks:off",
+          "hospitals:off",
+          "airports:off",
+          "churches:off"
+        ],
+        "landmark_legend": null,
+        "points_of_interest": true,
+        "hail_recent": false,
+        "warnings": true,
+        "storm_reports": false
+      }
+    ],
+    "console_errors": []
+  },
+  "edges": [
+    {
+      "scheme": "light",
+      "what": "switch Highlight recent hail, off: 1 px outline",
+      "ratio": 6.97,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        75,
+        91,
+        108
+      ],
+      "surface_rgb": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "scheme": "light",
+      "what": "switch Highlight recent hail, off: knob",
+      "ratio": 6.76,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        77,
+        93,
+        110
+      ],
+      "surface_rgb": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "scheme": "light",
+      "what": "switch Points of interest, on: track against the surface",
+      "ratio": 7.03,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        26,
+        90,
+        156
+      ],
+      "surface_rgb": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "scheme": "light",
+      "what": "switch Points of interest, on: knob against the track",
+      "ratio": 7.03,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        255,
+        255,
+        255
+      ],
+      "surface_rgb": [
+        26,
+        90,
+        156
+      ]
+    },
+    {
+      "scheme": "light",
+      "what": "base card Map, chosen: 2 px focus edge",
+      "ratio": 7.03,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        26,
+        90,
+        156
+      ],
+      "surface_rgb": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "scheme": "light",
+      "what": "base card Imagery, not chosen: 1 px outline",
+      "ratio": 6.76,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        77,
+        93,
+        110
+      ],
+      "surface_rgb": [
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "scheme": "dark",
+      "what": "switch Highlight recent hail, off: 1 px outline",
+      "ratio": 7.87,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        169,
+        182,
+        195
+      ],
+      "surface_rgb": [
+        24,
+        33,
+        43
+      ]
+    },
+    {
+      "scheme": "dark",
+      "what": "switch Highlight recent hail, off: knob",
+      "ratio": 7.87,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        169,
+        182,
+        195
+      ],
+      "surface_rgb": [
+        24,
+        33,
+        43
+      ]
+    },
+    {
+      "scheme": "dark",
+      "what": "switch Points of interest, on: track against the surface",
+      "ratio": 8.54,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        143,
+        192,
+        245
+      ],
+      "surface_rgb": [
+        24,
+        33,
+        43
+      ]
+    },
+    {
+      "scheme": "dark",
+      "what": "switch Points of interest, on: knob against the track",
+      "ratio": 8.54,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        24,
+        33,
+        43
+      ],
+      "surface_rgb": [
+        143,
+        192,
+        245
+      ]
+    },
+    {
+      "scheme": "dark",
+      "what": "base card Map, chosen: 2 px focus edge",
+      "ratio": 8.54,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        143,
+        192,
+        245
+      ],
+      "surface_rgb": [
+        24,
+        33,
+        43
+      ]
+    },
+    {
+      "scheme": "dark",
+      "what": "base card Imagery, not chosen: 1 px outline",
+      "ratio": 7.87,
+      "needs": 3.0,
+      "pass": true,
+      "sampled_rgb": [
+        169,
+        182,
+        195
+      ],
+      "surface_rgb": [
+        24,
+        33,
+        43
+      ]
+    }
+  ],
+  "page_checks": {
+    "hex_values_in_page": 0,
+    "em_or_en_dashes_in_page": 0
+  }
+}
