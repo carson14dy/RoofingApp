@@ -1562,3 +1562,20 @@ elevation, 1,870 populated places. Places: TIGER 497 with 2020 counts. Route num
   view at zoom 15 over Billings stays under its 700,000-byte gzip budget with the new tiles counted (about 18,000 bytes of headroom
   today, so the first paint cannot grow). (e) Terms: every source gets a CONTRACTS row and an About sentence with its credit line;
   the State Library roads keep their counsel gate.
+
+## Supervisor rulings on the sheet's second critique (2026-10-25 20:05 UTC; D110)
+The fixer applied all nine items (measured: 0 hex values, 0 overflow at 288 to 1440 px, every target 44 px, text contrast at least
+6.76:1 light and 7.87:1 dark, the off switch outline 6.97:1 and 7.87:1, sentence case everywhere, no "risk"). The second critic
+passed those and failed six details, which become the build spec, not another mock round:
+- D110 **Sheet copy and details for the build.** (a) The Points of interest sub-line reads "Landmark dots and names, for the kinds
+  chosen above" (the kinds sit above the switch). (b) The five-year sub-line reads "Past records from the last five years. Not a
+  forecast." (no "damage" wording; D86 and DESIGN section 9 keep that word to its three places). (c) Missing values: in every
+  sentence the words are "Data unavailable" (AGENTS rule 5); the map bubble alone may show the glyph "--" for room, and its legend
+  line says "-- means Data unavailable: no radar estimate of 0.25 in or more was stored for this cell; that is not zero and not an
+  all-clear"; the owner sees the glyph in the mock and can veto it. (d) The Imagery line carries D32's words ("Imagery: USDA, USGS,
+  The National Map. Your IP address and the map area you view go to USGS while it is on."); map.html's present line is brought to
+  the same words in the build. (e) The switch knob has no shadow (box-shadow none in the sheet rules that move to map.css); every
+  painted colour is a style.css role. (f) The Landmarks sub-line states no data fact until the sources are verified (D109(c));
+  then it names the kinds and their sources. (g) The switch is named "Highlight recent radar hail" (a radar estimate, never hail
+  seen; rule 5). (h) The build's smoke renders the states the critic found missing in the mock set: each legend, the Points of
+  interest off state with its reason, the highlight and storm-report legends. (i) Sub-lines at 14 px like the legend lines.

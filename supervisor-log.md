@@ -312,3 +312,6 @@ Sheet mock and critic (failed on substance: caps, glass, contrast, legends, name
 
 ## 2026-10-25 19:52 UTC: cartography sources in; D109; landmark gap workflow launched
 Raster and vector source reports read (the proof render still running). D109 recorded. b6-landmark-sources launched (NCES EDGE, HIFLD, FAA, PAD-US by the staged-products bucket or the feature service, GNIS summit elevations from 3DEP, the NHD small-scale rivers with sizes). The sheet fixer applied all nine fixes; the second critic is running.
+
+## 2026-10-25 19:55 UTC: sheet second critique; D110
+Second critic: the nine fixes hold; six detail failures ruled into the build spec (D110). No further mock round. Waiting on the proof render, the landmark sources and the risk-source skeptics; Carson has the sheet and the bubble pictures.
