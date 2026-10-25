@@ -15,7 +15,12 @@ import sys
 import unittest
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+except ImportError:   # the app check (check-app.yml) installs no pyyaml; the Website workflow's offline step does
+    yaml = None
+# every class below reads the workflow files through yaml, so each one skips when pyyaml is absent
+needs_yaml = unittest.skipUnless(yaml is not None, "pyyaml is not installed (the Website workflow installs it)")
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -91,6 +96,7 @@ def job_steps(text):
     return [Step(name, lines) for name, lines in steps]
 
 
+@needs_yaml
 class HailStoreJobTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -292,6 +298,7 @@ class HailStoreJobTests(unittest.TestCase):
                 self.assertIsNotNone(step.attr("timeout-minutes"), step.name)
 
 
+@needs_yaml
 class WorkflowYaml(unittest.TestCase):
     """The store workflow parses as YAML, and the parse reads the same steps, in the same order, as the text does, with the
     timeouts the checks above rely on (the joins backstop, the daily cap)."""

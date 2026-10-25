@@ -16,7 +16,12 @@ import textwrap
 import unittest
 from unittest import mock
 
-import yaml
+try:
+    import yaml
+except ImportError:   # the app check (check-app.yml) installs no pyyaml; the Website workflow's offline step does
+    yaml = None
+# every class below reads the workflow files through yaml, so each one skips when pyyaml is absent
+needs_yaml = unittest.skipUnless(yaml is not None, "pyyaml is not installed (the Website workflow installs it)")
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,6 +45,7 @@ class FakeResponse:
         return self._body
 
 
+@needs_yaml
 class WebsitePlan(unittest.TestCase):
     def plan(self, response, status=0, ref="refs/heads/main", event="push"):
         workflow = (ROOT / ".github/workflows/website.yml").read_text()
@@ -88,6 +94,7 @@ class WebsitePlan(unittest.TestCase):
         self.assertEqual(output, {"publish": "false", "run": "true", "pages_url": ""})
 
 
+@needs_yaml
 class StormFlag(unittest.TestCase):
     """--storm-layers (radar echo tops) is passed on branch builds only, and the storm tests run in CI."""
 
@@ -108,6 +115,7 @@ class StormFlag(unittest.TestCase):
         self.assertIn('"tests/test_storm.py"', self.text)
 
 
+@needs_yaml
 class SatelliteReader(unittest.TestCase):
     """The GOES reader imports h5py (website/satellite.py read_cmip). The Install step installs it with the
     other packages, and the satellite tests run in the offline unittest line and the path filter."""
@@ -127,6 +135,7 @@ class SatelliteReader(unittest.TestCase):
         self.assertIn('"tests/test_satellite.py"', self.text)
 
 
+@needs_yaml
 class ShapefileReader(unittest.TestCase):
     """The joins tests that need pyshp (the module "shapefile") skip without it. The Install step of the Website workflow
     installs it with the other packages, as the daily job does (hail-store.yml), so those tests run in the offline line."""
@@ -145,6 +154,7 @@ class ShapefileReader(unittest.TestCase):
         self.assertIn("tests.test_joins", unit[0].split())
 
 
+@needs_yaml
 class OfflineWordsRules(unittest.TestCase):
     """D91(f), D92(c): the offline unittest line runs tests.test_words_rules, the tests of the one forbidden list
     (tests/words_rules.py). The module must exist, and the line must name it once, so the words gate runs in CI."""
@@ -188,6 +198,7 @@ def covered(path: str, patterns: list[str]) -> bool:
     return False
 
 
+@needs_yaml
 class PushPathsCoverTheTests(unittest.TestCase):
     """D100(a), D91(f): on.push.paths names every website test module and the words-rules helper, so a change to any of them
     starts the Website workflow. The offline line runs every website test module and names no module the paths miss. The
@@ -241,6 +252,7 @@ class PushPathsCoverTheTests(unittest.TestCase):
         self.assertFalse(covered("tests/test_summary.py", ["tests/test_summ"]))
 
 
+@needs_yaml
 class SmokeFlags(unittest.TestCase):
     """The Website preview's browser smoke commands, read from the workflow and parsed by the tools' own parsers. The preview
     builds with --hail-history and --hail-addresses, so its smoke runs with --history (a missing five-season summary fails
@@ -301,6 +313,7 @@ class SmokeFlags(unittest.TestCase):
         self.assertIn("tools/smoke_pages.py _site --history", steps["Page width check in a real browser (branch pushes)"]["run"])
 
 
+@needs_yaml
 class SmokeHelpers(unittest.TestCase):
     """The browser smoke's checks that need no browser (tools/smoke_map.py): the sheet's table against summary.describe_summary's
     words for the same cell (exactly), the first screen, the budget map.json carries for a tap's files, the unit and kind words,
@@ -645,6 +658,7 @@ class SmokeHelpers(unittest.TestCase):
         self.assertIn("no phone-view budget", missing[0])
 
 
+@needs_yaml
 class SiteCopy(unittest.TestCase):
     """D75(a): with no --store the smoke's summary reads the built site's own hail/ folder, which holds B4's live files under
     hail/live/ that the manifest never lists. The store reader skips those files and no other unlisted file."""
@@ -676,6 +690,7 @@ class SiteCopy(unittest.TestCase):
 
 
 
+@needs_yaml
 class SheetReader(unittest.TestCase):
     """The round-2 sheet (B5 part B2; D75, D82, D83): the browser smoke's reader and comparisons, tested on synthetic sheets
     shaped as the page's [data-hail='summary'] and [data-hail='sections'] slots hold them. The browser itself is checked by
@@ -876,6 +891,7 @@ def gated_parity_tests() -> set[str]:
     return found
 
 
+@needs_yaml
 class ParityStep(unittest.TestCase):
     """D88(a), F-14: the real-store parity tests run on branch pushes, after the build, against the site's own copy of the store
     (HAIL_PARITY_STORE=_site). The step fails when that copy has no tile lists and when a gated test skips, and it names exactly
@@ -973,6 +989,7 @@ class FakeFramePage:
         return None
 
 
+@needs_yaml
 class SmokeRowsAndBudgets(unittest.TestCase):
     """The browser smoke's rules that need no browser (S-1 to S-5, D87(g), D88): the readers take the text a reader sees, every row
     of every section is compared with the one Python source, the eleven section ids come from the summary's constant, the swath

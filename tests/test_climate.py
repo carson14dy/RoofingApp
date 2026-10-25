@@ -22,6 +22,11 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 import numpy as np
+try:
+    import h5py   # the daily job installs it; the app check (check-app.yml) does not
+    HAVE_H5PY = True
+except ImportError:
+    HAVE_H5PY = False
 import requests
 from unittest import mock
 
@@ -1210,6 +1215,7 @@ class RunUpdateFailures(unittest.TestCase):
         self.assertEqual(block["problem"], "the NOAA file list did not load: the request timed out")
         self.assertEqual(block["tile_names"], [])
 
+    @unittest.skipUnless(HAVE_H5PY, "h5py is not installed (the daily job installs it)")
     def test_a_prelim_month_whose_range_reads_time_out_is_recorded(self):
         sess = _FakeSession(listing={2025: _listing_bytes({"access/grids/2025/ncdd-202506-grd-prelim.nc": (1000, "p")})},
                             files={"ncdd-202506-grd-prelim": lambda: requests.exceptions.ReadTimeout("slow")})
@@ -1329,6 +1335,7 @@ class SourceConstants(unittest.TestCase):
         self.assertFalse(hasattr(cl, "GHCN_DLY_URL"))
 
 
+@unittest.skipUnless(HAVE_H5PY, "h5py is not installed (the daily job installs it)")
 class FileRead(unittest.TestCase):
     """Synthetic netCDF files with the grid's shape and three variables, for two months (July and August 2025), written
     with h5py one day at a time and read back through check_file, read_box, select_cells and daily_arrays. Two cells

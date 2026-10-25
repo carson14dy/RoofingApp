@@ -3955,6 +3955,7 @@ def _zone_zip_bytes(codes) -> bytes:
         shutil.rmtree(tmp)
 
 
+@unittest.skipUnless(HAVE_PYSHP, "pyshp is not installed (the daily job installs it)")
 class PlacementTableBuildTests(unittest.TestCase):
     """D44 on a built store: the index's table, the snapshots, and the z/ files of the removed zones."""
 
