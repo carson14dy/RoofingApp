@@ -1302,3 +1302,22 @@ heading, a README phrase, a sources.py sentence) and the fixer restored them (su
   allowance list against the rulings. (h) The resolver's edits to files main did not change (the manifest fixture,
   tests/test_hail_workflow.py, tests/test_website_workflow.py, town.html) are part of the merge commit; the supervisor
   stages the whole tree.
+
+## Supervisor rulings after the merge commit (2026-10-25 01:00 UTC; D96)
+The merge is committed as b848989 (suite 1,975 OK on the merged tree; parity step 7 OK; self-test PASS). The third review
+left four items against D95 and the stale line needs a D41 call: hail.py's WORDS["stale"] ("The newest day in this
+history is {as_of}; newer days have not been added yet.") carries no all-clear sentence, while summary.py's stale
+sentence does. Rulings:
+- D96 **After the merge.** (a) The zone-edition reason (joins.py WORDS_JOINS reason_not_published) reads "the NWS does not
+  publish this zone edition at its address (the address returned no file when checked on 2026-10-19)": no code in a
+  user-facing word (main's plain-words rule, D59); tests/test_joins.py's pin follows; the HTTP word filter in
+  build.py join_block_unavailable and its test (tests/test_site.py near line 2049) go (D95(b)). (b) One stale sentence,
+  one source: hail.py's WORDS["stale"] ends with "This is not an all-clear." (D41), summary.py's stale line uses the
+  same words (it imports hail's), and the town page prints one stale line (the hail line, with the summary line only
+  as a fallback when the hail line is unset, as the merge left it; D95(f) is amended to this); main's test counts the
+  hail sentence once and the summary sentence is the same text; map.html's hail_history line and map.js are checked
+  so no page prints the all-clear sentence twice in one line. (c) The About timing row's "before it reads the store
+  (main does not wait)" stands (the asset is the store); README and DECISIONS say "the asset"; both are accurate.
+  (d) README's sample build line takes B5's "(off by default; it also carries the B5 weather files)" in the docs pass
+  (D95(c)). (e) site-4 and the docs pass run now in parallel on disjoint files; then the final suite and self-test, the
+  squash, the push, the preview and the pull request.
