@@ -1591,3 +1591,32 @@ passed those and failed six details, which become the build spec, not another mo
   then a reviewer, two skeptics per finding, a fixer and a checker (wf b6-build-products and b6-build-products-b). Shared files
   wait for the phase B integrator. The owner's two open picks (bubble rule A or B; the sheet) do not block part 1: the anchors
   carry both rules' data if the builder finds it cheap, else rule A.
+
+## Supervisor rulings on the part 1 builders' open points (2026-10-25 23:30 UTC; D112)
+P1 terrain (built: 881 tiles per layer for zooms 5 to 10, 14,819,475 bytes, cold build 1,175 s, cache rebuild 14 s, verify 21 of 21,
+10 of 10 re-fetched tiles byte for byte), P3 landmarks (2,185 points in 542 shards, 107,868 bytes gzip, 485 church rows counted and
+held; reproduced exactly by the reviewer) and P4 (hail1.png 62,458 bytes with 144,522 cells at 1 inch or more; heat90.png 4,714
+bytes; zones.json 103 zones; recent cells 64 in the 30 days to 2026-10-16; labels statewide 483,008 bubbles at zoom 17 covering
+95.25 percent of 918,052 outlines, 732,531 at zoom 18 covering 98.78 percent, 1,386,996 gzip bytes added in all) reported open
+points; the reviewers' findings go to the fixers as the workflow runs. The supervisor rules the open points:
+- D112 (a) **Sampling and classes.** Nearest sampling of the land cover stands for part 1 (the speckle is judged on the browser
+  look in B6-3; a majority option is a measured follow-up); wetlands (codes 90 and 95) take the shrub-and-grass colour, barren
+  stays transparent; pasture stays with crop; developed land is one shade. (b) **Timeouts.** The terrain build's request timeout
+  is 60 s (two zoom 5 land cover tiles take up to 30 s); the monthly job passes it. (c) **Credit lines.** The NLCD line reads
+  "Land cover: National Land Cover Database 2021, U.S. Geological Survey and the Multi-Resolution Land Characteristics
+  Consortium (public domain)"; the 3DEP line "Relief: 3DEP data courtesy of the U.S. Geological Survey"; both go to the counsel
+  list as items to confirm, not as blockers. (d) **Tiles.** The 881-tile set (the exact overlap rule) stands; the 805 was a sample.
+  (e) **Park names.** Where a TIGER park point and a PAD-US polygon are the same park, the PAD-US name stands and the TIGER name
+  is kept in the row as an alternate for the search ("Rose Garden", alternate "Rose Park"). (f) **Hospitals and fire stations.**
+  The USGS structures layers stand as the sources; the HIFLD licensure copy stays the tested fallback; the fire kind's label is
+  "Fire and EMS stations". (g) **The FAA fixture.** No private owner name, address, phone or manager field goes into the
+  repository: the test fixture keeps only the columns the module reads; every fixture of every product is checked for this
+  before the commit. (h) **Zero is never a count for an unavailable kind** (rule 5): the map block carries "Data unavailable"
+  with the reason. (i) **Flood measures.** Flash flood watches and warnings are counted as their own two measures beside the
+  flood ones (eight zone measures). (j) **Bubbles.** Bubbles sit above their dot; the 56 px rule uses the measured label width
+  (55.75 px); the clusters skipped for overlap (4.75 percent of outlines at zoom 17, 1.22 percent at zoom 18) are accepted: the
+  tapped sheet always has the value; the 36 shards over the 250,000-byte raw split threshold are accepted because every shard
+  stays under the 100,000-byte gzip budget (largest 45,053), and the threshold is not changed in this stage. (k) **Heat bands.**
+  The 25-day bands stand with "125 days or more" as the top band. (l) **Zone counts** carry the newest-warning date (2026-09-19)
+  in their words, as built. (m) **Caches.** Each product prunes its download cache to the newest cycle or month; a cache keeps no
+  error page (a body that fails the content check is never written).

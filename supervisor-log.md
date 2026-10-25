@@ -321,3 +321,6 @@ Proof pictures (region zoom 8.5, city zoom 12) read as the same kind of map as t
 
 ## 2026-10-25 20:27 UTC: B6 stage 2 part 1 launched
 Brief written (briefs/map-b6-build-brief.md). Two workflows: wf b6-build-products (P1 terrain, P2 base bands) and b6-build-products-b (P3 landmarks, P4 pictures, zones, recent cells, labels). Outputs under /home/user/hail-b5/out/b6/build/. D111 recorded.
+
+## 2026-10-25 21:59 UTC: part 1 builders' reports read; D112
+P1, P3 and P4 built and measured; P2 still building. Reviewers' findings (P1 20, P3 23) are in the refute stage. D112 rules the open points (sampling, timeouts, credit lines, park names, hospitals, the FAA fixture's private fields, zero never a count, flash flood measures, bubbles above, heat bands, caches). After the checks: one ruling-fixer pass per product with D112, then the integrator.
