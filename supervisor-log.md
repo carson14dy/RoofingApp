@@ -261,3 +261,6 @@ Billings table and Benchland sheet read on a local build at the D94(c) clock; re
 
 ## 2026-10-25 06:25 UTC: squashed and pushed
 All fixers done (words-4, ci-final, docs-final; D101 and D102 recorded in DECISIONS; the B5-11 gate passes with the supervisor reading). Machine paths scrubbed from the docs, records and two tests (HAIL_CACHE_DIR). Final suite with the store: 1,989 tests OK (skipped 4); selftest PASS. Squashed onto main f96f5c7 as one signed commit bf2909b (199 files, 60,145 insertions, 411 deletions) and pushed as origin/claude/hail-b5. Next: the branch runs (Website, store job), the pull request on main superseding PRs 14, 15 and 16, subscribe, report to Carson.
+
+## 2026-10-25 05:50 UTC: pull request 17 open
+PR 17 (claude/hail-b5 -> main) created with the template body, run links and the open decisions; subscribed to its activity. Branch runs: Website 118 (40166817950) and store job 11 (40166818057) in progress; a monitor watches both.
