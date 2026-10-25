@@ -252,3 +252,6 @@ products-final (test comments) and site-final (banner heading by state, zone fla
 
 ## 2026-10-25 04:05 UTC: browser-final done
 map.js sumFlagClause, sumJoinedFlags and sumCover mirror summary (one all-clear per flagged line); pin test added; Chromium check on a store copy with three unplaced rows: 0 differences; full suite 1,982 OK with and without HAIL_PARITY_STORE. Waiting on the docs pass (skeptics F17 to F20, fixer, check), then final-b (words-4, docs-final).
+
+## 2026-10-25 04:55 UTC: docs pass done; D100; final-b launched
+Docs pass (wf_4c225e23-481, 44 agents): 20 findings, 14 confirmed and fixed, 5 refuted, F19 dropped (done by site-final); check: suite 1,982 OK, parity 7 OK, selftest PASS; leftovers (D98 entry, labels, README 406, record test line, DESIGN lines, ROADMAP follow-ups). D100(a) to (d) recorded. final-b launched: words-4 + ci-final (one workflow) and docs-final (another).

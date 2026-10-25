@@ -1,0 +1,179 @@
+{
+ "items": [
+  {
+   "item": "docs/DECISIONS.md D38 entry (lines 902 to 1021): sources, store figures, budgets in bytes, and the rulings as bullets",
+   "status": "partial",
+   "evidence": "Store figures match the measured combined store (45,878 files, 552,012,463 bytes; hail/tl 67,832,479; hail/sd 4,396,079; hail/j 87,628,936 with j/e 63,082,924; hail/c 35,149,062; hail/g 285,713; hail/k 13,689). Bullets cover D44 to D96 except D50. Missing: D98 has no bullet; D97 and D99 appear only inside other bullets; D50 (the combined store ruling) is never cited by number; the lead at line 902 still says 'The bullets' D31 to D96' and should run to D99."
+  },
+  {
+   "item": "DECISIONS D98 (cross-owner calls: banner heading per state, the zone flag sentence ends with the all-clear, test comments carry no sizes, the smoke clock, the 390 px banner follow-up)",
+   "status": "not done",
+   "evidence": "No D98 entry or bullet in docs/DECISIONS.md; 'D98' appears only in docs/DESIGN.md line 856 (the banner heading). docs/ROADMAP.md has no follow-up for the stale banner's layout at 390 px (D98(d))."
+  },
+  {
+   "item": "Superseded store and fixture totals labelled (D99(d)): one measured total of 552,012,463 bytes in 45,878 files, 541,075,953 labelled as pre-adoption, one current fixture entry (94 files, 485,066 bytes outside hail/a)",
+   "status": "partial",
+   "evidence": "DECISIONS lines 942 and 977 label 541,075,953 as pre-adoption; DESIGN line 871 and ROADMAP lines 81 and 98 use 552,012,463. Still unlabelled: the record's notes[14] ('measured again ... 541,075,953 bytes'). The fixture entry is in the D64 bullet (DECISIONS line 987: 94 files and 485,066 bytes outside hail/a)."
+  },
+  {
+   "item": "docs/DESIGN.md section 12 (lines 777 to 888): summary table, sections, states, store figures, budgets, the banner heading (D98(a)) and the cloud-free wording (D88(o))",
+   "status": "partial",
+   "evidence": "Verified: store figures (line 871), the 700,000 phone budget (line 882), the banner heading (line 856), 'cloud-free sky' (lines 279 and 701), and the summary (map.json holds 25 measures plus the held line; the two station rows appear on town pages only, consistent with the sheet's 23 measures plus the held line). Not current: lines 875 and 882 quote the phone view as 682,129 bytes (the D93 re-check); the smoke on the every-flag build measured 681,569 bytes gzip today. Browser duty 6 (line 879) says warnings_tags_none stays 'until' a switch that has already happened; website/static/map/map.js line 3341 still reads that key, so the note should say the key stays."
+  },
+  {
+   "item": "docs/ROADMAP.md: the B5 status row (line 42), the budget line (line 81), the open items for the owner (lines 93 to 113), follow-ups A to E, the counsel list (item 6) and the gauge count",
+   "status": "partial",
+   "evidence": "Verified: follow-up C is accurate (website.yml on.push.paths omits seven test modules); follow-up E matches the measures (162,748 bytes with 1,092 headroom at 2026-10-17; 162,959 with 881 at 2026-10-24; every flag 464,802); gauge count 15 of 17 matches hail/index.json (lewistown and west-yellowstone have none); counsel item 6 says 20 items with item 20 the GHCN note (D81(a)). Not done: the D98(d) follow-up is missing. Line 42 quotes the phone view as 682,129 bytes; the smoke measured 681,569 today."
+  },
+  {
+   "item": "README.md: layout and command lines, the pyshp and pyyaml notes, the sample line (D95(c)), the hail-history feature row, the daily job paragraph, the offline test line",
+   "status": "partial",
+   "evidence": "Commands checked: the pyshp note is accurate (website/joins.py line 1196 imports shapefile only in the job path); pyyaml is marked test-only; the sample line carries the B5 weather files note (D95(c)); --hail-store and --storm-layers builds exit 0. Not done: line 406 says 'about 600 tests, offline, about 2 minutes' (the suite now runs 1,982 tests in 363.7 s). The daily job paragraph (lines 96 to 98) omits the B5 steps (climate prelim and monthly, station refresh, gauges, NOHRSC). The hail-history row (line 57) does not name the five-season table or the B5 sections. The test-module line (133) omits tests.test_hail_workflow."
+  },
+  {
+   "item": "AGENTS.md: layout and command lines, the pyyaml line, no rule changed",
+   "status": "done",
+   "evidence": "git diff HEAD: two command lines added (--hail-store and --storm-layers; both build with exit 0) and the tests line adds test_words_rules.py. No hard rule changed. The test-only pyyaml line is at line 81."
+  },
+  {
+   "item": "website/templates/about.html: the D53 radar line, the D60 and D45 words, the D62 Canadian clause, the D19 threshold sentence, the D23 snow analysis, the source credits",
+   "status": "done",
+   "evidence": "Line 19: 'a blank area is not a statement about the weather' (D53); 'beyond radar range' or 'with no radar coverage' (D60, D45). Line 60: the 90 F rule (hundredth of a degree C, then the tenth; 32.15 C) matches climate.py THRESHOLDS (D19). Lines 72 and 73: the candidate stations and the Canadian 'not read while the terms for their data are under review' clause (D62). Line 76: the snow analysis heading, with text from Python (D23). The Census and USGS credits are present. The built About page has no forbidden word under tests/words_rules.py."
+  },
+  {
+   "item": "website/addresses.py About words: the D74 completeness sentence and the D86(f) outside-grid sentence",
+   "status": "done",
+   "evidence": "addresses.py line 237 (about_coverage) and sources.py line 252 read 'its completeness varies from county to county' (D74). addresses.py line 240 (outside_grid) reads 'This point is outside the hail grid's Montana outline; the history does not cover it.' (D86(f)). Line 208 says owner names and parcel identifiers are never read, stored or shown."
+  },
+  {
+   "item": "research/hail-history/validation-evidence/b5-verification.json: valid JSON; one status and one evidence line per gate B5-1 to B5-18; B5-3 and B5-18 restated; figures and open items",
+   "status": "partial",
+   "evidence": "Parses (18 gates, 14 open items). B5-3 reads 1.2 and 2.7 miles from the town point and Harlowton 11NW as the Benchland snow second pick (D80(a), D65). B5-11, B5-12, B5-13 and B5-18 stay partial, as recorded. Not current: completion.tests_final_completion reads 'Ran 1979 tests ... FAILED (failures=1, skipped=10)'; today's full run is 'Ran 1982 tests in 363.742s, OK (skipped=10)'. The phone view in B5-12 (line 137) is 682,129; the smoke measured 681,569. notes[14] gives 541,075,953 bytes without a superseded label."
+  },
+  {
+   "item": "Budgets restated in bytes with their reasons (D54, D66, D67, D70, D73, D76, D82, D84, D90)",
+   "status": "done",
+   "evidence": "Measured today on a copy of the combined store (copy deleted after): 45,878 files, 552,012,463 bytes; hail/j 87,628,936 (9,196 files); hail/j/e 63,082,924 (4,597; largest 22,933 bytes gzip-9); hail/tl 67,832,479 (4,597; largest 3,817 bytes gzip-9); hail/sd 4,396,079 (805; largest 1,799 bytes gzip-9); hail/c 35,149,062 (4,569); hail/g 285,713 (104); hail/k 13,689 (56). Stations block: rule files 700 (537,226,020 bytes), regression-only extra 105, daily set 495 (487,235,520 bytes), pool 2,778 (Montana 1,325; not read 21). History-flag map.json 162,748 bytes at --now 2026-10-17 and 162,959 at 2026-10-24, against 163,840. All match the DECISIONS and DESIGN text."
+  },
+  {
+   "item": "Counsel list: item 19 (the disclaimer question) and item 20 (the GHCN-Daily non-US note and the Environment and Climate Change Canada licence) (D62, D81(a))",
+   "status": "done",
+   "evidence": "DECISIONS D62 and D81(a) bullets (lines 985 and 1001) and ROADMAP open item 6 agree: 20 items, item 20 the GHCN note. The brief's D62 and D64 text says item 19; D81(a) is the later ruling and is recorded."
+  },
+  {
+   "item": "Open items for Carson in one place (timer, data repository and caps, gauge distance, swath state line, NOHRSC method, counsel list, banned-name list, ADDRESS_FRAMEWORK_ZIP, the Placement reading)",
+   "status": "done",
+   "evidence": "ROADMAP 'Open items for the owner (B5)' items 1 to 9, with their figures: six timer runs in 24 hours; 552,012,463 bytes in 45,878 files; gauge rule 15 of 17 towns; NOHRSC slope 0.664 over 682 station-seasons; 20 counsel items."
+  },
+  {
+   "item": "Flag-off identity restated (D53, D74, D77, D93(a)) and the record's B5-18 status",
+   "status": "done",
+   "evidence": "DECISIONS D53/D74 bullet (line 976) and D77 bullet (line 997) name the ruled About lines; the D93(a) bullet (line 1013) names the static map.js and map.css hashes; record B5-18 is partial with the D93(a) reason. The HailSwathLayers identity test passed in the full run."
+  },
+  {
+   "item": "Rulings recorded where a reader needs them: D49, D51, D59, D60 (the sheet order), D65, D71, D78, D79, and the D77 to D96 bullets",
+   "status": "done",
+   "evidence": "Bullets at DECISIONS lines 973 (D49), 974 (D51), 982 (D59), 983 (D60, which also states the sheet order), 988 (D65), 993 (D71), 998 (D78), 999 (D79); D77 to D96 at lines 997 to 1017; names at 1018. The gaps (D98, D99) are reported under their own items."
+  },
+  {
+   "item": "Decision 7 record: the Placement class (D81(b)) and the attribute audit (D32, D41)",
+   "status": "done",
+   "evidence": "DECISIONS lines 850 and 853 (placement classes), line 1001 (D81(b)); ROADMAP item 9 and the record's decision-7 note say the Placement class (L, 'at the parcel') is read and shown and ask the owner to confirm it under decision 6. The allow-list (addresses.py lines 155 to 157) has no owner, parcel, place-type or identifier field; streets.py line 136 excludes Ownership, LocalID, NGUID and GlobalID."
+  }
+ ],
+ "gates": [
+  {
+   "gate": "Full suite passes with 0 failures (python -m unittest discover -s tests, venv Python, PYTHONDONTWRITEBYTECODE=1)",
+   "status": "pass",
+   "evidence": "Ran 1982 tests in 363.742s: OK (skipped=10); SUITE_EXIT=0; log final-check/suite-full-v.log. The 10 skips are seven real-store parity tests (run separately below), one test that needs ADDRESS_FRAMEWORK_ZIP (owner item 8), and two fixture subtests skipped by design."
+  },
+  {
+   "gate": "Self-test: python desktop/launcher.py --selftest payload",
+   "status": "pass",
+   "evidence": "PASS payload 1.0.0, exit 0 (final-check/selftest-payload.log)."
+  },
+  {
+   "gate": "Real-store parity step: seven named tests, no skip, against a fresh every-flag build",
+   "status": "pass",
+   "evidence": "HAIL_PARITY_STORE set to the every-flag build (--hail-history --hail-addresses --storm-layers --hail-store <copy of the combined store> --now 2026-10-17T12:00:00Z): Ran 7 tests in 119.864s, OK, no skip (final-check/parity-7-final.log)."
+  },
+  {
+   "gate": "Combined-store build with every flag (--sample --hail-history --hail-addresses --storm-layers --hail-store <copy> --now 2026-10-17T12:00:00Z)",
+   "status": "pass",
+   "evidence": "Exit 0 in 31 s (build-every-1017.log); the same build at --now 2026-10-24T12:00:00Z exits 0 (build-every-1024.log)."
+  },
+  {
+   "gate": "Flag-off build identical to its base except the ruled lines (D77, D93(a)); sample flag-off build",
+   "status": "pass",
+   "evidence": "Flag-off sample build exits 0 (build-flagoff.log). The tests/test_site.py HailSwathLayers identity test passes in the full run, with the pinned differences (D53, D74, D85, D86(c), D88(d), D91(c)) and the map.js and map.css hashes (D93(a))."
+  },
+  {
+   "gate": "Sheet smoke (tools/smoke_map.py --addresses --history) in Chromium at 390 and 1280 px: table inside the first screen, units and kind words, three cells exact, each tap file under the budget, zero off-site requests",
+   "status": "pass",
+   "evidence": "Exit 0 and 'Map smoke test passed' (final-check/smoke_map.log). Phone view at 390 px over Billings at zoom 15 with six layers: 681,569 bytes gzip against 700,000 (B3 files 267,789 in 18 files; shell and data 413,780 in 12 files; picture frames listed apart). The log notes that the imagery tile check was refused because no tile came from the USGS host within 20 seconds (the sandbox may be offline), so the imagery switch is not confirmed here."
+  },
+  {
+   "gate": "Page-width smoke (tools/smoke_pages.py --history) at 288 to 1440 px, light and dark",
+   "status": "pass",
+   "evidence": "Exit 0: every page fits the screen at 288, 320, 375, 390, 768, 1280 and 1440 px; the five-season table check passed on 17 town pages at 10 widths (final-check/smoke_pages.log)."
+  },
+  {
+   "gate": "Phone view at zoom 15 with every layer on under 700,000 bytes gzip (D70, D82(b)); each per-tile file under 100,000 bytes gzip (D66)",
+   "status": "pass",
+   "evidence": "681,569 bytes gzip (the smoke's count; picture frames excluded per D70). Largest per-tile events file 22,933 bytes gzip-9 (hail/j/e/r0076_c0186.json); largest tile list 3,817 bytes gzip-9 (hail/tl/r0096_c0213.json); both under 100,000."
+  },
+  {
+   "gate": "History-flag map.json under 163,840 bytes raw (D82(a)), with the every-flag figure beside it (D66)",
+   "status": "pass",
+   "evidence": "162,748 bytes at --now 2026-10-17T12:00:00Z (headroom 1,092); 162,959 bytes at --now 2026-10-24T12:00:00Z (headroom 881); every flag 464,802 bytes raw at 2026-10-17 (465,013 at 2026-10-24). These match DECISIONS D82 and ROADMAP follow-up E."
+  },
+  {
+   "gate": "Words rules (tests/words_rules.py) over every WORDS string and the built pages (D85, D89(a))",
+   "status": "pass",
+   "evidence": "The suite passes (test_words_rules, the About and history words tests). A scan of the built pages with words_rules.forbidden_words: the built About page has 0 forbidden words; the Billings and Anaconda town pages have only the word 'Clear' in NWS observation, hourly and daily forecast rows, outside the history gate under D89(a); the history sections carry no forbidden word."
+  },
+  {
+   "gate": "D13 greps on the history words and the added docs text (damage, claim, probability, structure, no hail, coverage, all-clear)",
+   "status": "pass",
+   "evidence": "In the 417 added docs lines against HEAD: 'damage' only inside quoted sentences and the D86(a) exemption; 'claim' only in 'disclaimer' and counsel wording; 'probability' only in the NOAA SWDI definition (D78(a)); 'structure' only in proper names (D86(e)); 'no hail' only as 'not the same as no hail'; 'coverage' only as 'radar coverage' (D45) or the docs' own rule wording; 'all-clear' only in the required sentence."
+  },
+  {
+   "gate": "No em-dash in added lines",
+   "status": "pass",
+   "evidence": "0 U+2014 characters in the 417 added lines of the docs files against HEAD, and in the 52,338 added lines of all files against db84d76 (read-only git diff)."
+  },
+  {
+   "gate": "No model, AI-vendor or AI-product name in added lines (D43, D58)",
+   "status": "pass",
+   "evidence": "The added lines hold only branch names, allowed by D43 (for example the branch-named store assets and the branch lines in the docs). The one other hit is an existing branch name in research/globe/README.md. Names in main's own text (AGENTS.md, README.md, DECISIONS.md, DESIGN.md) are not added lines; the owner's list is open (ROADMAP owner item 7)."
+  },
+  {
+   "gate": "Decision 7 audit: no owner, parcel, place-type or building-use field read, stored or shown",
+   "status": "partial",
+   "evidence": "The address allow-list (addresses.py lines 155 to 157) has no owner, parcel, place-type or identifier field; streets.py excludes Ownership, LocalID, NGUID and GlobalID (line 136). One reading is open: the Placement field (class L, 'at the parcel') is read and shown. The record and ROADMAP ask the owner to confirm it is within decision 6 (D81(b); owner item 9)."
+  },
+  {
+   "gate": "The docs' numbers equal the measured ones",
+   "status": "partial",
+   "evidence": "Equal: store totals and file counts, tile lists, summaries, station and daily-set figures, the gauge count, the map.json history-flag and every-flag bytes, the largest per-tile sizes, the parity step. Not equal today: the phone view (682,129 in DECISIONS lines 957, 992 and 1002, DESIGN lines 875 and 882, ROADMAP line 42, record B5-12; the smoke measured 681,569 today); the README test count and time (line 406); the record's completion test result (1,979 FAILED; today 1,982 OK). Earlier figures are labelled as historical in DECISIONS lines 942, 977, 1002 and 1010."
+  },
+  {
+   "gate": "B5 gates as recorded in b5-verification.json (B5-1 to B5-18) match the checks run here",
+   "status": "partial",
+   "evidence": "Consistent: B5-3 (the parity step passes on the adopted store; Billings 1.2 and 2.7 miles); B5-11 (the sheet smoke passes at 390 and 1280 px; the reviewer's reading stays open); B5-18 (the identity test and both smokes pass; the branch's live preview is still open). Still to restate: B5-12 (the phone view must read 681,569; the daily job's run time is not measured here). B5-13 (the two-build comparison of j/e and tl) stays open. B5-1 and B5-2 were not re-run here."
+  },
+  {
+   "gate": "Store untouched; checker read-only (no git write); scratch only under final-check; copies and builds deleted after checking",
+   "status": "pass",
+   "evidence": "The combined store measures 45,878 files and 552,012,463 bytes before and after the copy; nothing was written to it. git status (read-only) shows the same 18 modified files and no untracked files after the checks. The store copy and five site builds were deleted after checking; logs and scripts are kept under /home/user/hail-b5/out/b2r8-docs/docs/final-check."
+  }
+ ],
+ "needed_from_others": [
+  "CI owner (website.yml and tests/test_website_workflow.py): add tests/test_words_rules.py, tests/words_rules.py, tests/test_summary.py, tests/test_stations.py, tests/test_climate.py, tests/test_gauges.py and tests/test_snowgrid.py to on.push.paths, with a pin (ROADMAP follow-up C; D91(f)). None of the seven is listed today.",
+  "Products owner (record B5-13): the two-build byte comparison of hail/j/e and hail/tl is open. Run it, or keep the record's partial status.",
+  "Supervisor or live preview: the imagery check could not reach the USGS host from this sandbox (smoke_map.log note), so the branch's live preview should confirm the imagery layer. The preview's phone-view figure should be the one the docs carry (681,569 today; re-measure on the branch).",
+  "Carson (owner): the Placement class reading under decision 6 (ROADMAP item 9; DECISIONS line 1001); the banned-name list (ROADMAP item 7); ADDRESS_FRAMEWORK_ZIP for the metadata test (item 8); the timer (item 1), the data repository and caps (item 2), the gauge distance (item 3), the swath picture's state line (item 4), the NOHRSC method (item 5) and the counsel list (item 6).",
+  "Supervisor: the squash onto the merge base, the push, the branch's store job (the daily job's run time for B5-12), the live preview (B5-18 and the one-hour swath pixel gate, D92(d)) and the pull request (D93(f)). The docs owner's D98 entry and the phone-view restatement (items above) should land before the squash."
+ ],
+ "tests_tail": "Full suite: python -m unittest discover -s tests -v (venv Python, PYTHONDONTWRITEBYTECODE=1, 2026-10-25 about 04:30 to 04:37 UTC):\nRan 1982 tests in 363.742s\n\nOK (skipped=10)\nSUITE_EXIT=0\n\nReal-store parity step (HAIL_PARITY_STORE set to the every-flag build; the seven named tests):\nRan 7 tests in 119.864s\n\nOK\n\nSelf-test: python desktop/launcher.py --selftest payload -> PASS payload 1.0.0 (exit 0)\n\nSmoke: tools/smoke_map.py --addresses --history -> exit 0, 'Map smoke test passed'; tools/smoke_pages.py --history -> exit 0, page width passed at 288 to 1440 px"
+}

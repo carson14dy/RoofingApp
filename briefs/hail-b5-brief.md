@@ -1372,3 +1372,22 @@ cite constants and the record.
   (94 files, 485,066 bytes outside hail/a, limit 480 KiB), the older entry labelled superseded; D74 keeps one meaning
   in the record (the About rows; the fixture budget citations in the tests say "the sample budget" with D64 and D69):
   docs-final after the docs pass, with words-4 (final-b). (e) Then the supervisor's final suite and self-test.
+
+## Supervisor rulings on the docs pass (2026-10-25 04:50 UTC; D100)
+The docs pass (44 agents: builder, reviewer, 40 skeptics, fixer, checker; /home/user/hail-b5/out/b2r8-docs/docs/check.json)
+left: no D98 entry in DECISIONS and no ROADMAP follow-up for the stale banner's layout; the record's notes still name
+541,075,953 bytes without the pre-adoption label; README line 406 says "about 600 tests"; the record's final test line is
+stale (1,979 with a failure; the suite is 1,982 OK); DESIGN section 12 has lines the checker marked not current; the
+phone-view figure moves between builds (682,129 at the re-check; 681,569 at the docs check). Rulings:
+- D100 **Final-b.** (a) website.yml's on.push.paths lists the test modules the checker found missing (tests/test_words_rules.py,
+  tests/words_rules.py, tests/test_summary.py, tests/test_stations.py, tests/test_climate.py, tests/test_gauges.py,
+  tests/test_snowgrid.py), or tests/** if the list form allows it, with the pin in tests/test_website_workflow.py
+  (D91(f); the ROADMAP follow-up C closes): ci-final. (b) docs-final carries the leftovers above: the D98 entry (banner
+  heading per state; the zone flag sentence; test comments without sizes; the smoke clock) and D99 and D100 as bullets;
+  the ROADMAP follow-up for the stale banner's 390 px layout; the record's notes labelled; README line 406 with the
+  suite's size as "about 2,000 tests, offline, about 7 minutes"; the record's final test line from the last full run
+  before the squash; DESIGN's not-current lines as the checker names them. (c) The phone-view figure in the docs is the
+  re-check's (682,129 bytes gzip against 700,000) with its date; a later build within the budget is a note, not a
+  restatement; the branch's live preview figure is recorded in the pull request. (d) final-b = words-4 (D97(c)),
+  docs-final and ci-final in parallel on disjoint files; then the supervisor's final suite and self-test, the squash onto
+  main's head f96f5c7, the push, the branch run and the pull request.
