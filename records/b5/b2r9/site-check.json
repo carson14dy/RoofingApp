@@ -1,0 +1,112 @@
+{
+  "fixer": "site-final (fixer 2)",
+  "round": "b2r9",
+  "rulings": [
+    "D98(a)",
+    "D98(b)",
+    "D41",
+    "F11 (docs review, map banner heading)",
+    "F19 (docs review, zone flag sentence)"
+  ],
+  "worktree": "/home/user/wt/wt-b5 (branch claude/hail-b5); no git write command run; other owners' edits left alone",
+  "items": [
+    {
+      "id": "D98a",
+      "title": "Map banner hail history heading follows the problem",
+      "status": "done",
+      "applied": [
+        "website/hail.py lines 196-198: WORDS stale_lead (the stale sentence without its all-clear), heading_stale ('Hail history is older than three days'), heading_failed ('Hail history didn't load'). WORDS stale (line 193) is unchanged and still ends with the all-clear sentence.",
+        "website/build.py line 25: import date. Lines 320-322: on a stale store the hail_history status gets heading (heading_stale) and sentence (stale_lead formatted with the store's as_of). Lines 327-328: on a failed load the status gets heading (heading_failed) and sentence (the plain problem from plain_problem, capitalised, with a full stop). The build log detail (status detail, technical text) is unchanged.",
+        "website/templates/map.html line 65 (the hail_history branch of problem_line only): <strong>{{ s.heading }}</strong> at {{ s.when|t }}. {{ s.sentence }}. The banner still adds the all-clear sentence once."
+      ],
+      "evidence": [
+        "Rendered in a scratch build (deleted after reading). Stale store, built 4 days after its as_of: 'Hail history is older than three days at 7:00 am. The newest day in this history is Oct 15, 2026; newer days have not been added yet. This is not an all-clear.'",
+        "Failed download (404 for the store asset): 'Hail history didn't load at 6:00 am. The history store could not be downloaded in this update.' One all-clear in the summary line.",
+        "Before this change the failed banner printed the raw problem text (for example '(HTTP 404)'); that text now stays in the build log only.",
+        "tests/test_site.py: test_a_stale_store_is_a_failed_source_but_the_sample_never_is (heading, no 'didn't load', the stale sentence with the as-of date, one all-clear, STALE_DAYS == 3, stale == stale_lead + all-clear); test_a_store_that_does_not_load_marks_the_source_failed_and_the_pages_still_build (escaped heading 'didn&#39;t load', plain sentence, one all-clear); new test_the_map_banner_for_a_failed_download_says_didnt_load_in_plain_words (full build with a 404 download: heading, plain sentence, no HTTP in the hail line, one all-clear); test_the_map_page_has_the_legend_line_the_sheet_templates_and_the_noscript_words (heading word pin, line 1657).",
+        "Jinja autoescape writes the apostrophe as &#39; in the rendered banner; the tests pin that form."
+      ]
+    },
+    {
+      "id": "D98b",
+      "title": "zone_flag sentence ends with the all-clear sentence, printed once",
+      "status": "done_with_scope_note",
+      "applied": [
+        "website/summary.py line 334: WORDS_SUMMARY zone_flag = 'Montana: {n} {noun} issued {when} could not be placed to a zone. This is not an all-clear.' (same sentence as zone_unplaced_note).",
+        "Scope note (outside 'zone_flag only'): with the word alone, _cover appended its own full stop and all-clear to a statement that already had both, which printed 'all-clear.. This is not an all-clear.'. So website/summary.py gained _flag_clause (line 1013; strips the statement's sentence and full stop), and _cover (line 1019) and _joined_flags (line 1029) use it, so each coverage line and the five-season line carry the sentence once. Flagged for the supervisor to accept or reject.",
+        "tests/test_summary.py: new test_a_zone_statement_closes_its_line_with_the_all_clear_sentence_once (lines 1058-1085, ZoneTests): word pin; _cover strings with and without missing days; _joined_flags as clauses; every coverage and five-season line with a zone statement has one sentence at its end and no '..'; the zero cell's text keeps its own sentence once; roof coverage lines the same."
+      ],
+      "evidence": [
+        "test_summary: 153 tests OK (152 before this change plus the new test). Existing unplaced-zone tests pass unchanged.",
+        "Exact strings: _cover(2, flag) = '2 days missing; Montana: 2 high wind products issued Dec 11, 2021 to Jan 2, 2022 could not be placed to a zone. This is not an all-clear.'; _joined_flags of two statements = the two clauses joined with '; ' and no sentence."
+      ]
+    },
+    {
+      "id": "D98b_check_town_page",
+      "title": "Town page prints the zone statement's sentence once",
+      "status": "pass",
+      "evidence": [
+        "Scratch full site build from a copy of the combined store (read only source; copy deleted) with two extra unplaced rows (HW.W 2021-12-11 and 2022-01-02, HW.A 2024-10-01) and the index manifest entry rewritten for the edited index.",
+        "Billings, Glasgow and Miles City: 5 lines carry the statement each; each line has exactly one 'This is not an all-clear.'; none has '..'. Example: '108 days missing; Montana: 2 high wind products issued Dec 11, 2021 to Jan 2, 2022 could not be placed to a zone. This is not an all-clear.' and the five-season line '... could not be placed to a zone; Montana: 1 high wind product issued Oct 1, 2024 could not be placed to a zone. This is not an all-clear.'"
+      ]
+    },
+    {
+      "id": "D98b_check_sheet",
+      "title": "Sheet prints the zone statement's sentence once",
+      "status": "fail_until_browser_owner_changes_map_js",
+      "evidence": [
+        "map.js was not edited (git diff on website/static/map/map.js is empty). Its own helpers (sumZoneFlag, sumCover, sumUnplacedIndex, sumSeasonOf, sumWord, fill, histWithoutClear and the rest, extracted by name and run under node on the scratch build's map.json) print: 2021-22 coverage '...could not be placed to a zone. This is not an all-clear.. This is not an all-clear.' and the five-season line with the sentence twice and a '..'.",
+        "With a one-line change in a scratch copy of map.js (sumZoneFlag returns histWithoutClear(S, fill(...)).replace(/\\.$/, \"\")), each flagged line has one sentence, no '..', and the five-season line has one sentence at its end. The scratch copy is /home/user/hail-b5/out/site-final/map.patched.js; the real file is not changed.",
+        "The combined store has zone_unplaced_rows = 0 and zone_products_unplaced = 0, so no production sheet or town page shows a zone statement today. The problem appears only when a zone product cannot be placed."
+      ]
+    }
+  ],
+  "already_in_place": [
+    "The stale sentence 'The newest day in this history is {as_of}; newer days have not been added yet. This is not an all-clear.' (hail.py WORDS stale) already ended with the all-clear and is unchanged.",
+    "The failed heading 'Hail history didn't load' already existed in map.html; it is now supplied by Python (hail.py heading_failed).",
+    "The unplaced-zone coverage lines already ended with the all-clear sentence through _clear; the existing summary tests for them pass unchanged.",
+    "The town page's stale line (WORDS stale on the town page) is unchanged; one stale line per page (D96(b)) still holds."
+  ],
+  "skipped": [
+    "The F11 and F19 review texts were not found under /home/user/hail-b5/out/b2r8-docs/ (that folder holds docs logs, a diff and scripts); the items were worked from D98's wording, which names both findings.",
+    "The multi-problem banner's summary 'Problem loading ... hail history.' comes from the names dict in map.html line 57, which is outside this owner's lines. For a stale store it reads 'Problem loading hail history.' above the item 'Hail history is older than three days'. Not a contradiction; left for the map.html owner.",
+    "A zero-valued zone cell prints the sentence in its text ('Data unavailable: some products could not be placed to a zone. This is not an all-clear.') and again in its coverage line. Kept, because D41 wants each line to end with the sentence. Flagged, not changed.",
+    "No docs file (README, docs/*.md, website templates) quotes the banner heading or the zone statement; nothing to change in the docs pass."
+  ],
+  "needed_from_others": [
+    {
+      "owner": "browser owner (website/static/map/map.js; not this fixer's file)",
+      "change": "In sumZoneFlag, return the statement without its all-clear sentence and its full stop: return histWithoutClear(S, fill(sumWord(S, \"zone_flag\"), { n: thousands(rec.n), noun: products, when: when })).replace(/\\.$/, \"\"); sumCover and sumFive then join clauses and add the sentence once, as summary._cover does.",
+      "why": "Without it the sheet prints 'This is not an all-clear.. This is not an all-clear.' on every flagged line (checked under node). Ship with the summary.py change in the same merge, or hold the zone_flag word until it lands.",
+      "verified": "Under node on a scratch copy only; the real map.js is unchanged."
+    },
+    {
+      "owner": "supervisor",
+      "change": "Accept or reject the summary.py scope extension: _flag_clause (new), _cover and _joined_flags changed, beyond 'WORDS_SUMMARY zone_flag only'."
+    },
+    {
+      "owner": "map.html owner (optional)",
+      "change": "Line 57 names dict: 'hail history' in the multi-problem summary for a stale store could read differently; not required by D98."
+    }
+  ],
+  "tests_tail": {
+    "env": "HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store",
+    "test_summary": "Ran 153 tests in 2.203s / OK (exit 0). Baseline before edits: Ran 152 tests in 2.140s / OK.",
+    "test_site": "Ran 285 tests in 390.851s / OK (skipped=2) (exit 0). Baseline before edits: Ran 284 tests in 385.681s / OK (skipped=2).",
+    "full_suite": "python -m unittest discover -s tests: Ran 1981 tests in 483.042s / OK (skipped=3) (exit 0). Log: /home/user/hail-b5/out/site-final/full-suite-1.log. No FAIL or ERROR lines, so nothing to attribute. The docs pass had no failing test in this run.",
+    "note": "The full suite ran while other fixers' edits were on disk; the standalone test_summary and test_site runs were made afterwards on the then-current tree."
+  },
+  "commands": [
+    "tests.test_summary baseline: Ran 152 tests in 2.140s OK",
+    "tests.test_site baseline: Ran 284 tests in 385.681s OK (skipped=2)",
+    "tests.test_summary after the summary.py change and the new test: Ran 153 tests in 1.986s OK",
+    "tests.test_site -k subset (stale, banner, missing store, legend, failed download): Ran 5 tests in 29.513s OK (after one fix to the new test's constructor call)",
+    "scratch banner render (stale and 404 download): printed the two banner texts quoted under D98a; scratch build removed",
+    "scratch town-page build from a copy of the combined store with two unplaced rows: 5 statement lines per town, one all-clear each, no '..'; copy removed",
+    "node sheet check on map.js and on the scratch copy: current file prints the sentence twice; scratch fix prints it once",
+    "full suite (discover -s tests): Ran 1981 tests in 483.042s OK (skipped=3)",
+    "tests.test_summary final: Ran 153 tests in 2.203s OK",
+    "tests.test_site final: Ran 285 tests in 390.851s OK (skipped=2)"
+  ],
+  "cleanup": "Scratch store copy (633 MB) and scratch site builds deleted. Logs and small scripts kept in /home/user/hail-b5/out/site-final/."
+}

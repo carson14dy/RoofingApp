@@ -1357,3 +1357,18 @@ fixer takes the docs-owned ones. Four belong to other owners and are ruled now:
   a stale store on the preview. (e) The docs pass continues through its skeptics, fixer and check; a final-a round
   (products-final for (c), site-final for (a) and (b)) runs now on disjoint files; words-4 (D97(c)) follows the docs pass
   because it edits about.html; then the supervisor's final suite and self-test.
+
+## Supervisor rulings on the final-a round (2026-10-25 03:30 UTC; D99)
+products-final and site-final finished (/home/user/hail-b5/out/b2r9/{products,site}/check.json; full suite 1,981 OK):
+the banner heading follows the state (stale: "Hail history is older than three days"; failed: "Hail history didn't
+load", with the technical detail in the log only), the zone_flag sentence ends with the all-clear and the test comments
+cite constants and the record.
+- D99 **Final-a calls.** (a) site-final's wider edit stands: summary._cover and _joined_flags take the sentence from the
+  word through _flag_clause so a flagged line prints the all-clear once. (b) The browser prints the zone flag as Python's
+  word gives it and adds no second all-clear sentence (map.js sumZoneFlag; one source, D29): browser-final, with the
+  parity tests. (c) products-final's unpack-limit comment edit (tests/test_hail.py near line 2054) stands under D87(h).
+  (d) The verification record names one measured total for the combined store (552,012,463 bytes in 45,878 files as
+  adopted; the 541,075,953 figure is the pre-adoption round-2 measure and is labelled so) and one current fixture entry
+  (94 files, 485,066 bytes outside hail/a, limit 480 KiB), the older entry labelled superseded; D74 keeps one meaning
+  in the record (the About rows; the fixture budget citations in the tests say "the sample budget" with D64 and D69):
+  docs-final after the docs pass, with words-4 (final-b). (e) Then the supervisor's final suite and self-test.

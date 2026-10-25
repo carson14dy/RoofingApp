@@ -246,3 +246,6 @@ Merge workflow wf_539ab67f-711: resolver, three reviews, two fixes; suite 1,975 
 
 ## 2026-10-25 02:10 UTC: site-4 done; D97
 site-4: identity base f96f5c7 verified (92 digests), ON_PURPOSE table with rulings, pyshp in the offline install, D96(a) word and filter, D96(b) stale sentence one source; suite 1,979 with 1 failure (test_hail WordTests on the stale sentence) fixed by the supervisor; map.json 162,527 raw history flag (headroom 1,313), 464,581 every flag. D97(a) to (e) recorded; words-4 entry (revert the three chance swaps) prepared for after the docs pass.
+
+## 2026-10-25 03:35 UTC: final-a done; D99; browser-final launched
+products-final (test comments) and site-final (banner heading by state, zone flag all-clear once) done; suite 1,981 OK. D99(a) to (e) recorded. browser-final (map.js sumZoneFlag one source) launched as wf_ceeab4ff-cdc beside the docs pass skeptics. final-b after the docs pass: words-4 (the chance revert) and docs-final (record labels, D98 and D99 records).

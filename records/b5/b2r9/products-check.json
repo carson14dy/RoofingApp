@@ -1,0 +1,84 @@
+{
+  "fixer": "products-final (fixer 1)",
+  "brief": "/home/user/wt/briefs/hail-b5-brief.md",
+  "ruling": "D98(c) with D87(h) (test comments carry no measured sizes); the docs review's F10, scoped as the task names it",
+  "worktree": "/home/user/wt/wt-b5 (branch claude/hail-b5)",
+  "owned_files": ["tests/test_hail.py", "tests/test_joins.py"],
+  "items": [
+    {
+      "id": "P1-1",
+      "item": "The fixture size comment of tests/test_hail.py (FixtureTests.test_fixture_without_the_address_files_is_under_480_kb_and_holds_only_the_store_and_joins, near line 782) carries no measured sizes",
+      "status": "applied",
+      "evidence": "tests/test_hail.py lines 783-789 now cite the 480 KiB budget the assertion tests (480 * 1024 bytes; the assertion at line 823 is unchanged) and point to research/hail-history/validation-evidence/b5-verification.json for the measured fixture sizes and file counts. Removed: 485,066, 471,538 and 305,024 bytes; 67 summaries where there were 33; 62,000 bytes; 320 KB. Rulings kept: D10, D18, D54, D64, D74, D69 and D78(c)."
+    },
+    {
+      "id": "P1-2",
+      "item": "tests/test_hail.py test_the_unpack_limits_hold_the_measured_b3_store: the comment carried a measured size and file count (372,739,036 bytes in 31,129 files; '373 MB')",
+      "status": "applied (outside the named line; applied under D87(h)'s rule that test comments carry no measured sizes; the supervisor should confirm this scope, see notes)",
+      "evidence": "tests/test_hail.py lines 2054-2055 now cite MAX_UNPACK_BYTES and MAX_UNPACK_FILES (website/hail.py lines 861-862; D42) and the verification record. The two assertions at lines 2056-2057 are unchanged."
+    },
+    {
+      "id": "P1-3",
+      "item": "The fixture budget comment of tests/test_joins.py (FixtureTests.test_the_committed_sample_joins_verify_and_are_small) carries no measured sizes",
+      "status": "applied",
+      "evidence": "tests/test_joins.py lines 897-902 cite the 480 KiB budget (480 * 1024, assertion at line 906) and the 50 KiB address budget (50 * 1024, assertion at line 907), both unchanged, and point to the record for the measured figures. Removed: the 480 KB, 62 KB and 320 KB budget history; 67 summaries where there were 33; 485,066, 471,538 and 305,024 bytes. Rulings kept: D10, D18, D54, D64, D74, D69 and D78(c)."
+    },
+    {
+      "id": "P1-4",
+      "item": "Every other comment in tests/test_joins.py and tests/test_hail.py that states a measured byte count or file count",
+      "status": "already in place (no other instance found)",
+      "evidence": "Every comment and docstring in both files was searched for byte and file figures (B, KB, KiB, MB, GB, gzip, files, thousands separators, 'measured'). No other measured byte or file count was found. Left as written because they are not byte or file counts: tests/test_joins.py line 4057 (research event row counts 169 and 170, asserted through J.RESEARCH_B5); tests/test_hail.py line 1437 ('5 files and 3 frames', the mocked downloads of one scenario); tests/test_hail.py line 1229 (212 vertices of a ring); tests/test_hail.py line 1692 (five mask cells)."
+    },
+    {
+      "id": "P1-5",
+      "item": "No assertion, test name or code line changed",
+      "status": "verified",
+      "evidence": "This item edited comment lines only, and comments do not enter the AST. The AST diff against HEAD (git show HEAD:<path> into a scratch folder, ast.dump, unified diff; the scratch copies were deleted after the check) contains only the earlier-round hunks that were already in the working tree: tests/test_hail.py line 331 (WordTests.test_no_forbidden_term_in_any_word) and tests/test_joins.py lines 3275-3276 (B5PartB1Tests, reason_not_published). py_compile of both files passes. Comment lines are at most 121 characters."
+    },
+    {
+      "id": "P1-6",
+      "item": "The rulings the comments cite stay cited (D69, D74, D78(c))",
+      "status": "verified",
+      "evidence": "D69, D74 and D78(c) appear in the fixture comments of both files (tests/test_hail.py 783-789; tests/test_joins.py 897-902). D42 and D87(h) are added as citations; no ruling was dropped."
+    }
+  ],
+  "not_changed": [
+    "No test logic, test name, fixture file, website code or docs file was touched by this item; the docs pass's files were not edited.",
+    "No git write command was run (no add, commit, checkout, restore, reset, stash, merge or push)."
+  ],
+  "needed_from_others": [
+    {
+      "owner": "docs (research/hail-history/validation-evidence/b5-verification.json)",
+      "need": "The record gives two byte totals for the same 45,878-file combined store: 541,075,953 bytes (round_2.store, measured 2026-10-24 with find; its adoption note names this total) and 552,012,463 bytes (store_figures, and the line near 641). Name which total the store measures and why the other differs. The new comment at tests/test_hail.py lines 2054-2055 cites this record for the measured store sizes."
+    },
+    {
+      "owner": "docs (research/hail-history/validation-evidence/b5-verification.json)",
+      "need": "The record has two fixture entries: an older one (145 files, 522,139 bytes; 94 files and 471,538 bytes outside hail/a/; budget 480 KB (D76)) and the completion entry (94 files and 485,066 bytes outside hail/a/; limit 480 KiB). The new comments at tests/test_hail.py lines 786-787 and tests/test_joins.py lines 901-902 cite 'the measured fixture sizes and file counts' in the record. Label which entry is current."
+    },
+    {
+      "owner": "docs or supervisor (docs/DECISIONS.md and the brief)",
+      "need": "D74 is used in tests/test_joins.py for two different rulings. The fixture comments cite it for the sample budget restatement (320 KB) and for the rule that the sample names the rejected candidates of its tile lists (tests/test_hail.py 783-785; tests/test_joins.py 897-899), and tests/test_joins.py lines 4134 and 4158 cite it for the station rows. Line 4064 cites it for the About contract rows. docs/DECISIONS.md's D74 is 'D53 and D74, About's older lines' (the About rows), and the brief's D74 (line 833) is the same About-rows ruling. The fixture and station-row meanings are not recorded under D74. The citations are kept as the task requires; one number needs to name one ruling."
+    }
+  ],
+  "notes": [
+    "The docs review's F10 text is not under /home/user/hail-b5/out/b2r8-docs/. That folder holds docs/added-vs-main.diff and the docs scripts; its only 'F10' is an earlier finding about the five-season snowfall cell. The scope applied is the task's wording (the named fixture comment, plus every test_joins comment with a measured byte or file count), plus D87(h) for the unpack-limit comment at tests/test_hail.py lines 2054-2055. The supervisor should confirm that P1-2 is in scope.",
+    "The unpack-limit assertions (tests/test_hail.py lines 2056-2057) still compare with 372,739,036 bytes and 31,129 files. Those are older B3 figures; docs/DECISIONS.md D42 gives 372,880,597 B raw. Both thresholds still hold against the limits (800 MiB, 60,000 files; website/hail.py lines 861-862) and against the combined store (541,075,953 bytes, 45,878 files). The assertions were not changed, as the task requires.",
+    "The full suite printed 10 skips. The run was not verbose, so the names were not printed. The record (b5-verification.json) gives the same account: seven HAIL_PARITY_STORE tests (tests/test_site.py lines 4691, 4901, 5190 and 5402; tests/test_summary.py lines 1652, 1667 and 1967), two sample-fixture cell skips (tests/test_site.py lines 5116 and 5173) and one ADDRESS_FRAMEWORK_ZIP skip (tests/test_addresses.py line 2042). That mapping is by source and the record, not by names from this run.",
+    "Two tracebacks are printed inside passing tests in the full-suite log (log lines 85 and 100: a failed-start path of the update channel and an error-page request). They are logged output, not results; the run has no FAIL or ERROR lines.",
+    "The scratch copies used for the AST check were deleted. The two logs are kept as evidence: test_hail_joins.log and full-suite.log in this folder."
+  ],
+  "tests": {
+    "command": "cd /home/user/wt/wt-b5 && /home/user/hail-b1/venv/bin/python -m unittest tests.test_hail tests.test_joins",
+    "result": "Ran 480 tests in 20.992s; OK (rc 0); no skips",
+    "log": "/home/user/hail-b5/out/b2r9/products/test_hail_joins.log"
+  },
+  "full_suite": {
+    "command": "cd /home/user/wt/wt-b5 && env -u HAIL_PARITY_STORE /home/user/hail-b1/venv/bin/python -m unittest discover -s tests",
+    "result": "Ran 1979 tests in 364.325s; OK (skipped=10); rc 0; no FAIL or ERROR results, so no failures to assign to any owner",
+    "log": "/home/user/hail-b5/out/b2r9/products/full-suite.log"
+  },
+  "tests_tail": {
+    "test_hail_joins": "Ran 480 tests in 20.992s\n\nOK",
+    "full_suite": "Ran 1979 tests in 364.325s\n\nOK (skipped=10)\nrc=0"
+  }
+}
