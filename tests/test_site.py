@@ -1024,12 +1024,16 @@ class HomeConcept(unittest.TestCase):
         self.assertIn("Alerts not checked", html)
         html = " ".join(page(state, "index.html").split())
         self.assertIn('<p class="bad"><a href="#forecast" data-view="forecast">NWS alerts problem: see Forecast</a></p>', html)
+        self.assertIn('<span class="badge badge-unknown">', html)        # the count of a failed check is never shown
+        self.assertIn('<p class="alert-now"><a href="#forecast" data-view="forecast">High Wind Warning and 1 more, may be out of date'
+                      "</a></p>", html)                                 # what the town checks found is still named
 
     def test_the_page_reloads_only_while_unused_and_without_script_as_before(self):
         raw = page(self.out, "index.html")
         self.assertEqual(raw.count('http-equiv="refresh"'), 1)
         self.assertIn('<noscript><meta http-equiv="refresh" content="600">', raw)
-        self.assertIn("now - loadedAt >= 600000 && (document.hidden || now - lastUse >= 60000)", raw)
+        self.assertIn("Date.now() - loadedAt >= 600000 && document.hidden", raw)       # never under a reader
+        self.assertIn("showAge();", raw)                                                    # the age counts on
 
     def test_the_forecast_alerts_sit_under_their_heading_and_the_tab_panels_take_focus(self):
         self.assertIn("<h4>High Wind Warning</h4>", self.html)
@@ -1052,7 +1056,8 @@ class HomeConcept(unittest.TestCase):
         self.assertIn("The Newsreader Project Authors", page(self.out, "static/fonts/LICENSE-fonts.txt"))
 
     def test_the_links_to_the_warnings_list_open_the_forecast_panel(self):
-        self.assertIn('if (location.hash === "#forecast") show("forecast", true);', self.html)
+        self.assertIn('if (location.hash !== "#forecast") return;', self.html)
+        self.assertIn('show("forecast", !!e || nav.type !== "reload");', self.html)     # focus on a link, not a reload
         self.assertIn("""closest('a[href$="#forecast"]')""", self.html)      # the map's links open it in place
         self.assertIn('<a href="../index.html#forecast">All towns</a>', page(self.out, "town/livingston.html"))
         self.assertIn('<a href="index.html#forecast">Now</a>', page(self.out, "about.html"))

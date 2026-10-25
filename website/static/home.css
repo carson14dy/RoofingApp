@@ -130,11 +130,11 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
 .side-nav [aria-current="page"] .i { color: var(--v-accent-bar); fill: var(--v-accent-bar); stroke: var(--v-accent-bar); }
 .side-nav [aria-current="page"] .i .hole { fill: var(--v-accent-soft); stroke: none; }
 .side-rule { flex: none; height: 1px; margin: 22px 10px 0 14px; background: var(--v-line); border: 0; }
-.side-gap { flex: 1 1 auto; min-height: 24px; }
+.side-gap { flex: 1 1 auto; min-height: 12px; }
 .side-foot { gap: 1px; margin-top: 12px; }
 .side-foot a, .side-foot button { gap: 20px; min-height: 54px; padding-left: 22px; font-size: 1.1875rem; }
 .side-foot .i { width: 33px; height: 33px; }
-.collapse { display: grid; place-items: center; width: 44px; height: 44px; margin: 41px auto 0; padding: 0;
+.collapse { display: grid; place-items: center; width: 44px; height: 44px; margin: clamp(12px, calc(100vh - 730px), 41px) auto 0; padding: 0;
   border: 1px solid var(--v-line-strong); border-radius: 50%; background: var(--v-surface-soft); color: var(--v-icon); cursor: pointer; }
 .collapse .i { width: 22px; height: 22px; }
 
@@ -150,14 +150,15 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
   .frame.side-min .collapse .i { transform: scaleX(-1); }
 }
 @media (min-width: 1024px) and (max-width: 1279.98px) {
-  .frame:not(.side-open) { --v-side-w: 84px; }
+  .frame { --v-side-w: 84px; }                  /* folded, or open as a drawer (below) */
   .frame:not(.side-open) .side .word, .frame:not(.side-open) .role { display: none; }
   .frame:not(.side-open) .logo { padding: 0; justify-content: center; }
   .frame:not(.side-open) .side .mark { width: 54px; height: 54px; }
   .frame:not(.side-open) .side-nav a, .frame:not(.side-open) .side-nav button { justify-content: center; padding: 0; }
   .frame:not(.side-open) .side-nav .label { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .frame:not(.side-open) .collapse .i { transform: scaleX(-1); }
-  .frame.side-open { --v-side-w: 200px; }
+  /* unfolded here, the sidebar opens over the map as a drawer, so the top bar keeps its room */
+  .frame.side-open .side { z-index: 15; width: 200px; box-shadow: 6px 0 24px rgb(60 40 20 / 0.18); }
   .frame.side-open .role select { padding: 0 34px 0 44px; }
 }
 
@@ -197,15 +198,18 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
 .badge-watch { background: var(--chip-watch); }
 .badge-advisory { background: var(--chip-advisory); }
 .badge-unknown { background: var(--color-surface); color: var(--color-warning); border: 1px solid var(--color-warning-line); }
-/* wide screens: the mockup's sizes; the area menu as wide as its longest place */
-@media (min-width: 1440px) {
-  .search input { font-size: 1.375rem; }
+/* from 1180 px the area menu is as wide as its longest place; from 1440 px the mockup's text sizes */
+@media (min-width: 1180px) {
   .area { width: auto; }
   .area select { width: auto; }
 }
-/* 1024 to 1439 px: Forecast and Layers keep their icons and lose their words, so the search box and the
+@media (min-width: 1440px) {
+  .search input { font-size: 1.375rem; }
+  .status time { white-space: nowrap; }
+}
+/* 1024 to 1535 px: Forecast and Layers keep their icons and lose their words, so the search box and the
    area menu keep room for theirs */
-@media (min-width: 1024px) and (max-width: 1439.98px) {
+@media (min-width: 1024px) and (max-width: 1535.98px) {
   .tb-btn { width: var(--v-ctl-h); justify-content: center; padding: 0; }
   .tb-btn .tb-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .tb-btn .i { width: 32px; height: 32px; }
@@ -223,7 +227,7 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
   background: var(--color-advisory-bg); color: var(--v-text); text-align: left; font-size: 0.8125rem; line-height: 1.2; }
 .status.stale strong { color: var(--color-advisory); }
 .status.stale .all-loaded { display: none; }   /* the age warning takes its place */
-@media (min-width: 1024px) and (max-width: 1439.98px) { .status { max-width: 220px; } }
+@media (min-width: 1024px) and (max-width: 1535.98px) { .status { max-width: 220px; } }
 
 /* ---------------------------------------------------------------- the map */
 .stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; background: var(--v-surface-soft); }
@@ -322,7 +326,7 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
 /* ---------------------------------------------------------------- tablets and phones: one column */
 @media (max-width: 1023.98px) {
   :root { --v-ctl-h: 48px; }
-  html { scroll-padding-bottom: calc(var(--v-tabbar-h) + env(safe-area-inset-bottom)); }  /* focus never under the tab bar */
+  html { scroll-padding-bottom: calc(var(--v-tabbar-h) + 8px + env(safe-area-inset-bottom)); }  /* focus never under the tab bar */
   body.shell { display: block; height: auto; min-height: 0; padding-bottom: calc(var(--v-tabbar-h) + env(safe-area-inset-bottom));
     font-size: 1.0625rem; }
   .frame { display: block; }
@@ -368,12 +372,16 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
   .ld-name { font-size: 2.25rem; }
   .v-toast { bottom: calc(var(--v-tabbar-h) + 16px + env(safe-area-inset-bottom)); }
 }
-/* narrow phones: Forecast and Layers keep their icons and lose their words and move up beside the search box;
-   the area menu gets a row of its own, so its place always shows */
-@media (max-width: 479.98px) {
-  .topbar { grid-template-areas: "brand status status status" "search search fc layers" "area area area area"; }
+/* phones: Forecast and Layers keep their icons and lose their words, so the area menu shows its place */
+@media (max-width: 539.98px) {
   .tb-btn { width: var(--v-ctl-h); justify-content: center; padding: 0; }
   .tb-btn .tb-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+/* the narrowest phones: Forecast and Layers move up beside the search box and the area menu has a row of its own */
+@media (max-width: 359.98px) {
+  .topbar { grid-template-areas: "brand status status status" "search search fc layers" "area area area area"; }
+}
+@media (max-width: 479.98px) {
   .tb-brand .mark { width: 38px; height: 38px; }
   .tb-brand .word { font-size: 1.75rem; }
   .ld-hero { gap: 14px; }

@@ -127,14 +127,16 @@
       {% elif n_alerts %}{% set kind = alerts['items'][0].kind %}<span class="badge badge-{{ kind }}"><span aria-hidden="true">{{ n_alerts }}</span><span class="visually-hidden">, {{ n_alerts }} NWS alert{{ 's' if n_alerts > 1 }}, the most urgent {{ 'an' if kind == 'advisory' else 'a' }} {{ kind }}</span></span>{% endif %}
     </button>
     <button type="button" class="tb-btn" id="btn-layers-top" aria-haspopup="dialog" aria-expanded="false"
-      data-wait="The map is still loading. Try Layers again in a moment.">
+      data-wait="The map is still loading. Try Layers again in a moment."
+      data-nodata="The map's data didn't load, so there are no layers to choose. Reload, or open Forecast for the warnings.">
       <svg class="i" aria-hidden="true"><use href="#i-layers"/></svg><span class="tb-label">Layers</span></button>
-    {# the page's age, the most urgent alert by name (alerts issued by county or zone have no outline on the map),
-       then the sources: a failed source, towns with a value missing (t.errors), or every source loaded #}
+    {# the page's age, the most urgent alert by name (alerts issued by county or zone have no outline on the map;
+       after a failed check, the listed ones "may be out of date"), then the sources: a failed source, towns with a
+       value missing (t.errors), or every source loaded #}
     {% set gaps = towns|selectattr('errors')|list %}
     <div class="status" id="freshness">
       <p>Updated <time datetime="{{ built.isoformat() }}">{{ built|when }}</time><span id="age"></span></p>
-      {% if alerts.ok and n_alerts %}<p class="alert-now"><a href="#forecast" data-view="forecast">{{ alerts['items'][0].event }}{% if n_alerts > 1 %} and {{ n_alerts - 1 }} more{% endif %}</a></p>{% endif %}
+      {% if n_alerts %}<p class="alert-now"><a href="#forecast" data-view="forecast">{{ alerts['items'][0].event }}{% if n_alerts > 1 %} and {{ n_alerts - 1 }} more{% endif %}{% if not alerts.ok %}, may be out of date{% endif %}</a></p>{% endif %}
       {% if bad %}<p class="bad"><a href="#forecast" data-view="forecast">{% if bad|length == 1 %}{{ bad[0].label }} problem{% else %}{{ bad|length }} source problems{% endif %}: see Forecast</a></p>
       {% elif gaps %}<p class="bad"><a href="#forecast" data-view="forecast">{{ gaps|length }} town{{ 's' if gaps|length > 1 }} with missing data: see Forecast</a></p>
       {% else %}<p class="all-loaded">Every source loaded</p>{% endif %}
@@ -337,15 +339,16 @@
   var MAP_KEYS = ["layer", "mode", "overlay", "base", "at"];       // the map's own choices (map.js saveUrl)
 
   /* Page age: the site is rebuilt on a schedule set to every 10 minutes, which GitHub does not always keep. Past
-     25 minutes, say so in words so nobody relies on an old warning list (as base.html does). */
+     25 minutes, say so in words so nobody relies on an old warning list (as base.html does). Counted again every
+     minute, since this page stays open while it is used (the reload below waits for the tab to be in the background). */
   var built = Number(document.body.getAttribute("data-built")), age = byId("age");
-  if (age && built) {
-    var minutes = Math.round((Date.now() - built) / 60000);
-    if (minutes >= 1) age.textContent = " · " + minutes + " min ago";
-    if (minutes > 25) {
-      byId("freshness").classList.add("stale");
-      age.innerHTML = " · <strong>" + minutes + " minutes old.</strong> Warnings may have changed since. Reload, or check weather.gov.";
-    }
+  function showAge() {
+    if (!age || !built) return;
+    var minutes = Math.round((Date.now() - built) / 60000), stale = minutes > 25;
+    byId("freshness").classList.toggle("stale", stale);
+    if (stale) age.innerHTML = " · <strong>" + minutes + " minutes old.</strong> Warnings may have changed since. Reload, or check weather.gov.";
+    else age.textContent = minutes >= 1 ? " · " + minutes + " min ago" : "";
+    measureAbove();
   }
 
   function say(words) {
@@ -362,9 +365,11 @@
     history.replaceState(history.state, "", location.pathname + (s ? "?" + s : "") + hash);
   }
 
-  /* The panel shows the sample lead, the forecast, or nothing (the map takes its room). focus: move to its
-     heading, scrolled into view on phones, where the panel is under the map. */
+  /* The panel shows the sample lead, the forecast, or nothing (the map takes its room). A new view starts at its
+     top. focus: move to its heading, scrolled into view on phones, where the panel is under the map. */
   function show(view, focus) {
+    var was = byId("view-lead").hidden ? (byId("view-forecast").hidden ? null : "forecast") : "lead";
+    if (view !== was) byId("panel").scrollTop = 0;
     frame.classList.toggle("no-panel", !view);
     byId("view-lead").hidden = view !== "lead";
     byId("view-forecast").hidden = view !== "forecast";
@@ -440,8 +445,13 @@
     moveMap(p0);
   }
 
-  /* index.html#forecast (the other pages' links to the warnings list) opens on the forecast. */
-  function fromHash() { if (location.hash === "#forecast") show("forecast", true); }
+  /* index.html#forecast (the other pages' links to the warnings list) opens on the forecast. Focus goes to it on a
+     link, not on a reload, so a reload never moves a reader's place. */
+  function fromHash(e) {
+    if (location.hash !== "#forecast") return;
+    var nav = (window.performance && performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) || {};
+    show("forecast", !!e || nav.type !== "reload");
+  }
   fromHash();
   window.addEventListener("hashchange", fromHash);
 
@@ -450,8 +460,9 @@
   search.addEventListener("submit", function (e) {
     e.preventDefault();
     var typed = q.value.trim();
+    if (!typed) return;
     var want = typed.toLowerCase().replace(/,?\s*(mt|montana)$/, "").replace(/\s+area$/, "").trim();
-    if (!want) return;
+    if (!want) { setArea(""); q.value = ""; return; }                // "Montana" or "MT": all of Montana
     var hit = null;
     towns.forEach(function (t) { if (!hit && t[1].toLowerCase() === want) hit = t; });
     towns.forEach(function (t) { if (!hit && t[1].toLowerCase().indexOf(want) === 0) hit = t; });
@@ -470,8 +481,10 @@
     } catch (e) { return null; }
   }
   layersBtn.addEventListener("click", function () {
-    var b = innerLayers();
-    if (b) b.click(); else say(layersBtn.getAttribute("data-wait"));
+    var b = innerLayers(), failed = false;
+    if (b) { b.click(); return; }
+    try { failed = mapFrame.contentWindow.document.getElementById("app").classList.contains("no-data"); } catch (e) { failed = false; }
+    say(layersBtn.getAttribute(failed ? "data-nodata" : "data-wait"));
   });
   function closeLayers() {
     var b = innerLayers();
@@ -502,7 +515,8 @@
   });
 
   /* The « button folds the sidebar to its icons. From 1024 to 1279 px it starts folded (home.css), so the
-     button sets whichever class gives the other state. */
+     button sets whichever class gives the other state. The choice lasts for this tab (sessionStorage), across a
+     reload; the button's name follows the state when the window crosses 1024 or 1280 px. */
   var fold = byId("collapse"), word = document.querySelector(".side .word");
   function folded() { return getComputedStyle(word).display === "none"; }
   function nameFold() {
@@ -510,14 +524,19 @@
     fold.setAttribute("aria-expanded", f ? "false" : "true");
     fold.setAttribute("aria-label", f ? "Expand the menu" : "Collapse the menu");
   }
+  function setFold(open) {
+    frame.classList.toggle("side-min", !open);
+    frame.classList.toggle("side-open", open);
+  }
   fold.addEventListener("click", function () {
-    var f = folded();
-    frame.classList.toggle("side-min", !f);
-    frame.classList.toggle("side-open", f);
+    var open = folded();
+    setFold(open);
+    try { sessionStorage.setItem("veor-fold", open ? "open" : "min"); } catch (e) { /* not kept: no harm */ }
     nameFold();
   });
+  try { var kept = sessionStorage.getItem("veor-fold"); if (kept) setFold(kept === "open"); } catch (e) { /* default */ }
   nameFold();
-  window.matchMedia("(min-width: 1280px)").addEventListener("change", nameFold);
+  [narrow, window.matchMedia("(min-width: 1280px)")].forEach(function (m) { m.addEventListener("change", nameFold); });
 
   byId("role").addEventListener("change", function () { say(this.getAttribute("data-soon")); });
 
@@ -531,39 +550,44 @@
   });
 
   /* Phones: the map fills the screen under the top bar, whose height changes with the status (home.css --above). */
-  var stage = byId("stage");
   function measureAbove() {
-    document.documentElement.style.setProperty("--above", Math.round(stage.getBoundingClientRect().top + window.scrollY) + "px");
+    document.documentElement.style.setProperty("--above", Math.round(byId("stage").getBoundingClientRect().top + window.scrollY) + "px");
   }
-  measureAbove();
+  showAge();
   window.addEventListener("resize", measureAbove);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureAbove);
 
   /* Every 10 minutes the page reloads for the newer build, as the old page's refresh did (it still does with
-     scripting off), but only while nobody is using it: not within a minute of a key, a tap, a click or a scroll
-     wheel here or in the map. location.reload() keeps the address: the area, #forecast and the map's choices. */
-  var loadedAt = Date.now(), lastUse = Date.now();
-  function used() { lastUse = Date.now(); }
-  var USE = ["pointerdown", "keydown", "wheel"];
-  USE.forEach(function (t) { document.addEventListener(t, used, true); });
+     scripting off), but only while the tab is in the background, so it never pulls the page from under someone
+     reading it; a page in view counts its age instead (showAge). location.reload() keeps the address: the area,
+     #forecast and the map's choices. */
+  var loadedAt = Date.now();
   setInterval(function () {
-    var now = Date.now();
-    if (now - loadedAt >= 600000 && (document.hidden || now - lastUse >= 60000)) location.reload();
-  }, 30000);
+    showAge();
+    if (Date.now() - loadedAt >= 600000 && document.hidden) location.reload();
+  }, 60000);
 
-  /* The map frame's document (each time it loads): use there counts too, and its links to the warnings list
-     (index.html#forecast) open this page's forecast instead of loading the page again. */
+  /* The map frame's document (each time it loads). Its links to the warnings list (index.html#forecast) open
+     this page's forecast instead of loading the page again. On phones the map's controls sit in a fixed box
+     inside the frame, so the browser doesn't scroll this page to a control that takes keyboard focus there:
+     this does, clear of the tab bar. */
   function watchFrame() {
     var d;
     try { d = mapFrame.contentWindow.document; } catch (e) { return; }
     if (!/map\.html$/.test(mapFrame.contentWindow.location.pathname) || d.hailwatchWatched) return;
     d.hailwatchWatched = true;
-    USE.forEach(function (t) { d.addEventListener(t, used, true); });
     d.addEventListener("click", function (e) {
       var a = e.target.closest ? e.target.closest('a[href$="#forecast"]') : null;
       if (!a) return;
       e.preventDefault();
       show("forecast", true);
+    });
+    d.addEventListener("focusin", function (e) {
+      if (!narrow.matches || !e.target.matches || !e.target.matches(":focus-visible")) return;
+      var f = mapFrame.getBoundingClientRect(), r = e.target.getBoundingClientRect();
+      var top = f.top + r.top, bottom = f.top + r.bottom, limit = window.innerHeight - byId("side").offsetHeight - 8;
+      if (top < 8) window.scrollBy(0, top - 8);
+      else if (bottom > limit) window.scrollBy(0, Math.min(bottom - limit, top - 8));
     });
   }
   mapFrame.addEventListener("load", watchFrame);

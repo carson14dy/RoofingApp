@@ -497,10 +497,10 @@ that page; the other pages keep the field-sheet look. Nothing here is on `main`.
 | Part | Real or concept | What it does |
 |---|---|---|
 | Map | Real: the site's map, whole (`map.html?embed=1` in a frame) | Everything section 8 says. The sidebar replaces its close button and the top bar holds its Layers button, so `map.css` hides both in the frame (`.is-embed`). Its links open in the whole window (a `<base target="_top">` the page sets), except its links to the warnings list, which open the Forecast panel in place. Its choices (layer, timeline, overlay, base map, hail spot) are copied into the home page's address, so a reload or a bookmark keeps them |
-| Top bar status | Real | "Updated" with the page's age; the most urgent alert by name ("High Wind Warning and 1 more"), because an alert issued by county or zone has no outline on the map; then "Every source loaded", or a failed source by name ("NWS alerts problem: see Forecast"), or "{n} towns with missing data". Past 25 minutes the age becomes the old page's warning. The bar grows to fit it |
+| Top bar status | Real | "Updated" with the page's age, counted again every minute; the most urgent alert by name ("High Wind Warning and 1 more"), because an alert issued by county or zone has no outline on the map (after a failed alert check, the alerts still listed, with "may be out of date"); then "Every source loaded", or a failed source by name ("NWS alerts problem: see Forecast"), or "{n} towns with missing data". Past 25 minutes the age becomes the old page's warning. The bar grows to fit it |
 | Forecast button and panel | Real | The old Now page in one column: the freshness line, the warnings (all of them, with the failure notices) and the 17 town cards, built from the same data and template code. A badge on the button counts the alerts in the most urgent one's colour (its words name the kind), or shows "?" when the alert check failed. `index.html#forecast` opens it; the address keeps `#forecast` while it shows |
 | Area menu | Real | "All of Montana" or a town's area: the map centres the town (`?area=slug`, zoom 8, no sheet), the forecast shows that town's card (every warning stays), and the address keeps it (`index.html?area=billings`) |
-| Search | Real for towns | A town ("Billings", "Billings area", "Billings, MT", or the first letters) opens its sheet on the map (`?town=slug`, its NWS forecast) and becomes the area; "Oak Street" opens the sample lead; anything else says no town has that name |
+| Search | Real for towns | A town ("Billings", "Billings area", "Billings, MT", or the first letters) opens its sheet on the map (`?town=slug`, its NWS forecast) and becomes the area; "Montana" or "MT" is all of Montana; "Oak Street" opens the sample lead; anything else says no town has that name |
 | Lead panel, Leads | Concept | Oak Street, labelled "Sample" in its heading and "Desktop concept · Sample data" at its foot, in every build. Its tabs switch; its buttons say what isn't built |
 | Projects, Organizer, Setup, Account, Settings, the role menu | Concept | Each says it isn't built yet (a short note at the bottom of the screen) |
 
@@ -516,18 +516,22 @@ that page; the other pages keep the field-sheet look. Nothing here is on `main`.
   shade deeper (white text 4.94:1), so every pair meets 4.5:1. Dark mode follows the phone, as on the other pages.
 - The links that used to open the Now page's warning list (the town pages, Storm reports, the map's alert sheet,
   the other pages' "Now") open `index.html#forecast`. Without JavaScript the forecast shows under the lead.
-- The old page refreshed itself every 10 minutes. This one reloads only while nobody is using it (no key, tap,
-  click or wheel on the page or the map for a minute, or the tab is in the background), and the address carries
-  the area, the map's choices and the open forecast across the reload. With scripting off the old refresh stands.
+- The old page refreshed itself every 10 minutes. This one reloads every 10 minutes only while its tab is in the
+  background, so a reload never pulls the page from under someone reading it (a screen reader sends no sign of
+  use). A page in view counts its age every minute instead, and past 25 minutes says to reload. The address
+  carries the area, the map's choices and the open forecast across a reload, and the tab keeps the sidebar's fold.
+  With scripting off the old refresh stands. A wall screen that must update by itself is an open question.
 
 **Layout.** At 1024 px and wider the page is the screen: sidebar 228 px, top bar at least 90 px (it grows with the
-status), the map, and the panel 432 px (372 px under 1280), which scrolls inside. The « button folds the sidebar
-to its icons (84 px); from 1024 to 1279 px it starts folded. Under 1440 px Forecast and Layers show their icons
-only, so the search box and the area menu keep room for their words; from 1440 px the area menu is as wide as its
-longest place. Closing the panel gives its room to the map. Under 1024 px the page scrolls: the top bar (mark and
-status; search; area, Forecast and Layers), the map filling the screen above a tab bar with the four main places,
-then the panel; opening the forecast or the lead scrolls to it. Under 480 px Forecast and Layers sit beside the
-search box with their icons only, and the area menu has a row of its own.
+status), the map, and the panel 432 px (372 px under 1280), which scrolls inside and starts at the top of each
+view. The « button folds the sidebar to its icons (84 px); from 1024 to 1279 px it starts folded and opens as a
+drawer over the map, so the top bar keeps its room. Under 1536 px Forecast and Layers show their icons only, so
+the search box and the area menu keep room for their words; from 1180 px the area menu is as wide as its longest
+place ("West Yellowstone area" is cut from 1024 to 1179 px). Closing the panel gives its room to the map. Under
+1024 px the page scrolls: the top bar (mark and status; search; area, Forecast and Layers), the map filling the
+screen above a tab bar with the four main places, then the panel; opening the forecast or the lead scrolls to it,
+and a map control that takes keyboard focus is scrolled clear of the tab bar. Under 540 px Forecast and Layers
+show their icons only; under 360 px they sit beside the search box and the area menu has a row of its own.
 
 **Look.** Tokens in `website/static/home.css` (`--v-` raw scale, roles, components); the page also overrides
 `style.css`'s page roles so the alert and town cards take the warm look. The face is Newsreader (SIL Open Font
@@ -538,7 +542,8 @@ contrast), and rust edges on the outline buttons.
 
 **Checked.** In Chromium, light and dark, at 288 to 1586 px wide: no sideways scroll with the forecast open or shut
 (`tools/smoke_pages.py` now opens `index.html#forecast` too), the stale status inside the top bar, focus never
-under the tab bar, the controls by keyboard, and the map frame's Layers menu, area and links. On the shortest
+under the tab bar, the controls by keyboard, and the map frame's Layers menu, area, links and reload
+(`tools/smoke_map.py` check_home). On the shortest
 phones (568 to 640 px tall) the map keeps a 320 px minimum and runs under the tab bar until the page is scrolled.
 
 **Open questions for Carson.** Keep the name Veor or Montana Hail Watch? Should leads (with their addresses) come
