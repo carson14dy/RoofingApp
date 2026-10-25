@@ -1,8 +1,10 @@
-/* Veor home page concept (design branch): index.html only, loaded after style.css.
-   An app shell around the site's interactive map: sidebar, top bar, the map (map.html?embed=1 in a
-   frame) and a right-hand panel with a sample lead or the forecast. The look follows Carson's mockup of
-   2026-10-25: warm paper, a serif face, rust accents. Three token tiers, as in style.css; components
-   never use a hex. Every text pair is at least 4.5:1 (lowest: white on the primary button, 4.94:1). */
+/* Veor (design branch): the app shell on every page but the map, loaded after style.css. A sidebar, a top
+   bar and, on the home page (index.html), the site's interactive map (map.html?embed=1 in a frame) with a
+   right-hand panel holding a sample lead or the forecast; on the other pages (base.html), the page's content.
+   The look follows Carson's mockup of 2026-10-25: warm paper, a serif face, rust accents. Three token tiers,
+   as in style.css; components never use a hex. Every text pair is at least 4.5:1 (lowest: white on the
+   primary button, 4.94:1). Sections: tokens · frame · sidebar · top bar · the map · panel · a page of
+   content · toast · phones. */
 
 :root {
   /* raw scale */
@@ -119,20 +121,22 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
   background: transparent; font-size: 1.0625rem; cursor: pointer; }
 
 .side-nav { display: grid; gap: 10px; margin: 26px 0 0; }
-.side-nav a, .side-nav button { position: relative; display: flex; align-items: center; gap: 22px; min-height: 54px;
-  padding: 0 14px 0 22px; border: 0; border-radius: 8px; background: none; color: var(--v-text); text-decoration: none;
-  font-size: 1.25rem; text-align: left; cursor: pointer; }
+.side-nav a, .side-nav button { position: relative; display: flex; align-items: center; gap: 18px; min-height: 54px;
+  padding: 0 10px 0 18px; border: 0; border-radius: 8px; background: none; color: var(--v-text); text-decoration: none;
+  font-size: 1.25rem; text-align: left; white-space: nowrap; cursor: pointer; }
 .side-nav .i { width: 36px; height: 36px; stroke-width: 1.4; color: var(--v-icon); }
+.side-nav .nav-short { display: none; }
 .side-nav a:hover, .side-nav button:hover { background: var(--v-surface-soft); }
 .side-nav [aria-current="page"] { background: var(--v-accent-soft); color: var(--v-accent); }
 .side-nav [aria-current="page"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
   border-radius: 4px 0 0 4px; background: var(--v-accent-bar); }
-.side-nav [aria-current="page"] .i { color: var(--v-accent-bar); fill: var(--v-accent-bar); stroke: var(--v-accent-bar); }
-.side-nav [aria-current="page"] .i .hole { fill: var(--v-accent-soft); stroke: none; }
+.side-nav [aria-current="page"] .i { color: var(--v-accent-bar); stroke: var(--v-accent-bar); }
+.side-nav [aria-current="page"] .i-pin { fill: var(--v-accent-bar); }            /* the pin fills; its hole stays open */
+.side-nav [aria-current="page"] .i-pin .hole { fill: var(--v-accent-soft); stroke: none; }
 .side-rule { flex: none; height: 1px; margin: 22px 10px 0 14px; background: var(--v-line); border: 0; }
 .side-gap { flex: 1 1 auto; min-height: 12px; }
 .side-foot { gap: 1px; margin-top: 12px; }
-.side-foot a, .side-foot button { gap: 20px; min-height: 54px; padding-left: 22px; font-size: 1.1875rem; }
+.side-foot a, .side-foot button { gap: 18px; min-height: 54px; padding-left: 20px; font-size: 1.1875rem; }
 .side-foot .i { width: 33px; height: 33px; }
 .collapse { display: grid; place-items: center; width: 44px; height: 44px; margin: clamp(12px, calc(100vh - 730px), 41px) auto 0; padding: 0;
   border: 1px solid var(--v-line-strong); border-radius: 50%; background: var(--v-surface-soft); color: var(--v-icon); cursor: pointer; }
@@ -183,7 +187,7 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
   text-overflow: ellipsis; }
 .tb-btn { position: relative; display: inline-flex; align-items: center; gap: 15px; flex: none; height: var(--v-ctl-h);
   padding: 0 22px 0 15px; border: 1px solid var(--v-line-strong); border-radius: var(--v-radius); background: var(--v-surface);
-  font-size: 1.1875rem; cursor: pointer; box-shadow: var(--v-shadow); white-space: nowrap; }
+  color: var(--v-text); font-size: 1.1875rem; text-decoration: none; cursor: pointer; box-shadow: var(--v-shadow); white-space: nowrap; }
 .tb-btn:first-of-type { margin-left: 13px; }
 .tb-btn + .tb-btn { margin-left: 9px; }
 .tb-btn .i { width: 34px; height: 34px; stroke-width: 1.4; color: var(--v-icon); }
@@ -313,6 +317,34 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
 .fc-foot { margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--v-line); font-size: 0.875rem; color: var(--v-text-muted); }
 .fc-foot p + p { margin-top: 8px; }
 
+/* ---------------------------------------------------------------- a page of content (base.html) */
+/* The frame without the panel: the page scrolls inside the shell. The width stays readable (72 rem, as the old
+   pages), centred in the room the map had. */
+.frame-page { grid-template-columns: var(--v-side-w) minmax(0, 1fr); grid-template-areas: "side top" "side main"; }
+.page { grid-area: main; min-width: 0; min-height: 0; overflow-y: auto; background: var(--v-bg); }
+.shell .page { padding: 0; }
+.page-inner { max-width: 72rem; margin-inline: auto; padding: 28px 32px 56px; }
+.page-foot { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--v-line); font-size: 0.875rem; color: var(--v-text-muted); }
+.page-foot p + p { margin-top: 8px; }
+/* the old pages' pieces in the shell's voice: the serif at the lead panel's sizes, warm rules and cards */
+.shell-page h1 { font-size: 2.65rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.05; }
+.shell-page h2 { font-size: 1.625rem; font-weight: 500; letter-spacing: -0.005em; }
+.shell-page h3 { font-size: 1.25rem; font-weight: 600; }
+.shell-page .lead { margin-bottom: 28px; }
+.shell-page .lead .sub { font-size: 1.125rem; }
+.shell-page .section-head { padding-bottom: 10px; border-bottom: 1px solid var(--v-line); margin-bottom: 18px; }
+.shell-page .section-link { color: var(--v-accent); }
+.shell-page section + section, .shell-page .now-grid + section { margin-top: 40px; }
+.shell-page .crumbs { font-size: 1rem; }
+.shell-page .crumbs a { color: var(--v-accent); }
+.shell-page .table-box, .shell-page .obs, .shell-page .days li, .shell-page .empty, .shell-page .town-links a { border-color: var(--v-line); }
+.shell-page thead th { background: var(--v-surface-soft); color: var(--v-text-2); font-family: var(--v-serif); font-size: 0.8125rem; letter-spacing: 0.06em; }
+.shell-page th.day-row { background: var(--v-surface-soft); }
+.shell-page .town-links a[aria-current="page"] { background: var(--v-accent-soft); color: var(--v-accent); border-color: var(--v-accent-line); }
+.shell-page .stats dd { font-family: var(--font-mono); }
+.shell-page .prose h2 { padding-bottom: 8px; border-bottom: 1px solid var(--v-line); }
+.shell-page .map { border-color: var(--v-line); }
+
 /* ---------------------------------------------------------------- toast */
 /* An empty live region stays rendered (1 px, clipped), as the map's own toast does (map.css): a region that
    appears together with its words is often not read out. */
@@ -337,9 +369,11 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
     padding: 0 0 env(safe-area-inset-bottom); border-right: 0; border-top: 1px solid var(--v-line-strong); background: var(--v-bg); }
   .side::after { content: none; }
   .side .logo, .side .role, .side .side-rule, .side .side-gap, .side .side-foot, .side .collapse { display: none; }
-  .side-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; flex: 1; margin: 0; }
+  .side-nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; flex: 1; margin: 0; }
   .side-nav a, .side-nav button { flex-direction: column; justify-content: center; gap: 2px; min-height: var(--v-tabbar-h); padding: 4px 2px;
     border-radius: 0; font-size: 0.8125rem; text-align: center; }
+  .side-nav .nav-long { display: none; }
+  .side-nav .nav-short { display: inline; }
   .side-nav .i { width: 28px; height: 28px; }
   .side-nav [aria-current="page"]::before { left: 20%; right: 20%; top: 0; bottom: auto; width: auto; height: 3px; border-radius: 0 0 3px 3px; }
 
@@ -369,6 +403,9 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
     border-block: 1px solid var(--v-line-strong); }
   .panel { border-left: 0; overflow: visible; }
   .view { max-width: 40rem; margin-inline: auto; padding: 20px 16px 28px; }
+  .page { overflow: visible; }
+  .page-inner { padding: 20px 16px 40px; }
+  .shell-page h1 { font-size: 2.1rem; }
   .ld-name { font-size: 2.25rem; }
   .v-toast { bottom: calc(var(--v-tabbar-h) + 16px + env(safe-area-inset-bottom)); }
 }
@@ -392,6 +429,7 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
   .tabs button { font-size: 1.0625rem; }
 }
 @media (max-width: 339.98px) {
+  .side-nav a, .side-nav button { font-size: 0.75rem; }
   .pill { padding-inline: 14px; }
   .btn { padding-inline: 10px; }
 }

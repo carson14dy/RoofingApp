@@ -283,6 +283,13 @@
         map.setView([at.lat, at.lon], Math.max(map.getZoom(), hailData().at_zoom), { animate: false });
       openHail(at.lat, at.lon, null);
     }
+    // ?view=lat,lon,zoom (embedded): where the viewer had the map before the home page reloaded (copyToHome)
+    var v = EMBED && !town && !at && /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?),(\d+(?:\.\d+)?)$/.exec(params.get("view") || "");
+    if (v) {
+      state.userMoved = true;
+      map.setView([Number(v[1]), Number(v[2])], Number(v[3]), { animate: false });
+    }
+    if (EMBED) map.on("moveend", function () { if (state.ready && !sheetState) copyToHome(new URLSearchParams(location.search)); });
   }
 
   /** The Leaflet map: no tiles (Python drew the basemap), one pane per kind of thing. */
@@ -1735,14 +1742,19 @@
     if (EMBED) copyToHome(q);
   }
 
-  /** Embedded: the same choices go into the home page's address too, so its reload and its bookmarks keep
-      them (the home page hands them back to this frame when it loads). */
+  /** Embedded: the same choices go into the home page's address too, with the view once the viewer has moved
+      the map, so the home page's reload and its bookmarks keep them (it hands them back to this frame when it
+      loads). */
   function copyToHome(q) {
     try {
       var home = window.parent.location, p = new URLSearchParams(home.search);
       ["layer", "mode", "overlay", "base", "at"].forEach(function (k) {
         if (q.has(k)) p.set(k, q.get(k)); else p.delete(k);
       });
+      if (state.userMoved && map) {
+        var c = map.getCenter();
+        p.set("view", c.lat.toFixed(4) + "," + c.lng.toFixed(4) + "," + map.getZoom().toFixed(2));
+      } else p.delete("view");
       var s = p.toString();
       window.parent.history.replaceState(window.parent.history.state, "", home.pathname + (s ? "?" + s : "") + home.hash);
     } catch (e) { /* not inside the home page */ }
@@ -2504,7 +2516,7 @@
       words the picture the home page's map opens on, picking the frame the way setLayer and buildTimeline
       open the map (precipitation, 12h timeline, now_index). Change both together. */
   function setupCard() {
-    el.cardOpen.href = "map.html" + layerQuery("?");
+    el.cardOpen.href = "index.html" + layerQuery("?");      // the home page holds the full map (design branch)
     el.canvas.removeAttribute("aria-describedby");   // its keys and List button aren't in the card
     renderCardChip();
   }

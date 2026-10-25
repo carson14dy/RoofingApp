@@ -1,0 +1,278 @@
+{#- The Veor shell (design branch; docs/DESIGN.md section 10): the parts every page shares. index.html lays the
+    map and its panel inside the shell; base.html lays a page of content inside it. Imported with context, so the
+    macros read root, built, alerts, towns, status, page and sample from the page. -#}
+
+{% macro icons() -%}
+<svg class="icons" aria-hidden="true" focusable="false">
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8.5 7V5.6A1.6 1.6 0 0 1 10.1 4h3.8a1.6 1.6 0 0 1 1.6 1.6V7M3 12.2h18M10.4 12.2v1.7h3.2v-1.7"/></symbol>
+  <symbol id="i-user-plus" viewBox="0 0 24 24"><circle cx="9.5" cy="8" r="3.6"/><path d="M3 20c.6-3.6 3.3-5.6 6.5-5.6s5.9 2 6.5 5.6M19 7.5v6M16 10.5h6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7M5.8 9.3V20h12.4V9.3M10 20v-5.5h4V20"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.8h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-storm" viewBox="0 0 24 24"><path d="M7.5 15.5a4 4 0 0 1-.6-7.9 5.5 5.5 0 0 1 10.6.9 3.5 3.5 0 0 1 .3 7"/><path d="M12.5 11.5 10 16h3.5l-2.2 4.5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8l1.6 2.2 2.6-.7.5 2.7 2.4 1.3-1 2.5 1.4 2.3-2.2 1.6-.1 2.7-2.7.1-1.6 2.2L12 21.2l-1.6-2.2-2.7-.1-.1-2.7L5.4 14.6l1.4-2.3-1-2.5 2.4-1.3.5-2.7 2.6.7Z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c.8-4 3.8-6.2 7.5-6.2s6.7 2.2 7.5 6.2"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M3.5 7H13M17 7h3.5M3.5 12H7M11 12h9.5M3.5 17H15M19 17h1.5"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r="0.9"/></symbol>
+  <symbol id="i-chevs-left" viewBox="0 0 24 24"><path d="M11.5 6.5 6 12l5.5 5.5M18 6.5 12.5 12l5.5 5.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.8"/><path d="M15.6 15.6 21 21"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3.5 21 8.5 12 13.5 3 8.5ZM3 12.6l9 5 9-5M3 16.4l9 5 9-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4.5"/></symbol>
+  <symbol id="i-plus-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13.5 6.5 19 12l-5.5 5.5"/></symbol>
+</svg>
+{%- endmacro %}
+
+{% macro mark() -%}
+<svg class="mark" viewBox="3 3 54 54" aria-hidden="true" focusable="false">
+  <path class="guide" d="M12 12 48 48M48 12 12 48"/>
+  <circle class="ring" cx="30" cy="30" r="23"/>
+  <path class="tick" d="M30 7V3.6M7 30H3.6M53 30h3.4"/>
+  <path class="roof" d="M10.2 39.5 30 19l19.8 20.5"/>
+  <path class="stem" d="M30 28v28"/>
+  <circle class="dot" cx="30" cy="28" r="2.2"/>
+</svg>
+{%- endmacro %}
+
+{% macro forecast_icon() -%}
+<svg class="i wx" viewBox="0 0 34 30" aria-hidden="true">
+  <path class="sun" d="M13 2.5v2.2M4.2 11.2h2.2M7 5.2l1.5 1.5M19 5.2l-1.5 1.5M8.1 14a5.4 5.4 0 0 1 10-5.6"/>
+  <path d="M9.2 27h15.3a5.4 5.4 0 0 0 .7-10.8 7.4 7.4 0 0 0-14.3 1.2A4.9 4.9 0 0 0 9.2 27Z"/>
+</svg>
+{%- endmacro %}
+
+{#- The badge on Forecast: the count of NWS alerts in the most urgent one's colour, its words naming the kind, or
+    "?" when the alert check failed (never a count from a failed check). -#}
+{% macro alert_badge() -%}
+{% set n_alerts = alerts['items']|length %}
+{% if not alerts.ok %}<span class="badge badge-unknown"><span aria-hidden="true">?</span><span class="visually-hidden">, NWS alerts didn't load</span></span>
+{%- elif n_alerts %}{% set kind = alerts['items'][0].kind %}<span class="badge badge-{{ kind }}"><span aria-hidden="true">{{ n_alerts }}</span><span class="visually-hidden">, {{ n_alerts }} NWS alert{{ 's' if n_alerts > 1 }}, the most urgent {{ 'an' if kind == 'advisory' else 'a' }} {{ kind }}</span></span>{% endif %}
+{%- endmacro %}
+
+{#- The sidebar: the app's places. Map, Storm reports and About are real pages; Leads shows the sample lead (on the
+    home page its panel, elsewhere the home page); the rest say they aren't built yet (data-soon). -#}
+{% macro sidebar(current) -%}
+<aside class="side" id="side" aria-label="Veor">
+  <a class="logo" href="{{ root }}index.html" aria-label="Veor, home">{{ mark() }}<span class="word" aria-hidden="true">Veor</span></a>
+  <label class="role">
+    <span class="visually-hidden">View the app as</span>
+    <svg class="i" aria-hidden="true"><use href="#i-briefcase"/></svg>
+    <select id="role" data-soon="Roles aren't built yet: every role sees this same page. This page is a design concept.">
+      <option>Contractor</option>
+      <option>Crew lead</option>
+      <option>Office</option>
+    </select>
+    <svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg>
+  </label>
+  <nav class="side-nav" aria-label="Main">
+    <a href="{{ root }}index.html"{% if current == 'now' %} aria-current="page"{% endif %}>
+      <svg class="i i-pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.2s-6.6-6.1-6.6-11.3a6.6 6.6 0 0 1 13.2 0c0 5.2-6.6 11.3-6.6 11.3Z"/><circle class="hole" cx="12" cy="9.8" r="2.5"/></svg><span class="label">Map</span></a>
+    <a href="{{ root }}reports.html"{% if current == 'reports' %} aria-current="page"{% endif %}>
+      <svg class="i" aria-hidden="true"><use href="#i-storm"/></svg><span class="label"><span class="nav-long">Storm reports</span><span class="nav-short">Reports</span></span></a>
+    {% if current == 'now' %}
+    <button type="button" data-view="lead" data-soon="The list of leads isn't built yet. Oak Street is the one sample lead.">
+      <svg class="i" aria-hidden="true"><use href="#i-user-plus"/></svg><span class="label">Leads</span></button>
+    {% else %}
+    <a href="{{ root }}index.html" title="The sample lead, on the map page">
+      <svg class="i" aria-hidden="true"><use href="#i-user-plus"/></svg><span class="label">Leads</span></a>
+    {% endif %}
+    <button type="button" data-soon="Projects aren't built yet. This page is a design concept.">
+      <svg class="i" aria-hidden="true"><use href="#i-home"/></svg><span class="label">Projects</span></button>
+    <button type="button" data-soon="The organizer isn't built yet. This page is a design concept.">
+      <svg class="i" aria-hidden="true"><use href="#i-calendar"/></svg><span class="label">Organizer</span></button>
+  </nav>
+  <hr class="side-rule">
+  <div class="side-gap"></div>
+  <hr class="side-rule">
+  <nav class="side-nav side-foot" aria-label="Account">
+    <button type="button" data-soon="Setup isn't built yet. This page is a design concept.">
+      <svg class="i" aria-hidden="true"><use href="#i-gear"/></svg><span class="label">Setup</span></button>
+    <button type="button" data-soon="Accounts aren't built yet: the site has no sign-in. This page is a design concept.">
+      <svg class="i" aria-hidden="true"><use href="#i-user"/></svg><span class="label">Account</span></button>
+    <button type="button" data-soon="Settings aren't built yet. This page is a design concept.">
+      <svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg><span class="label">Settings</span></button>
+    <a href="{{ root }}about.html"{% if current == 'about' %} aria-current="page"{% endif %}>
+      <svg class="i" aria-hidden="true"><use href="#i-info"/></svg><span class="label">About</span></a>
+  </nav>
+  <button type="button" class="collapse" id="collapse" aria-expanded="true" aria-controls="side" aria-label="Collapse the menu">
+    <svg class="i" aria-hidden="true"><use href="#i-chevs-left"/></svg></button>
+</aside>
+{%- endmacro %}
+
+{#- The top bar's first parts: the brand (phones) and the search box. On the home page the search moves the map;
+    on a page of content it opens the town's page. -#}
+{% macro topbar_start() -%}
+<a class="tb-brand" href="{{ root }}index.html" aria-label="Veor, home">{{ mark() }}<span class="word" aria-hidden="true">Veor</span></a>
+<form class="search" id="search" role="search" data-none="No town called “{q}”. Try a town name, such as Billings.">
+  <label class="visually-hidden" for="q">Search places, leads or projects</label>
+  <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
+  <input id="q" type="search" list="places" placeholder="Search places, leads or projects" autocomplete="off" enterkeyhint="search">
+  <datalist id="places">
+    {% for slug, name in towns_nav %}<option value="{{ name }}"></option>{% endfor %}
+    <option value="Oak Street (sample lead)"></option>
+  </datalist>
+</form>
+{%- endmacro %}
+
+{#- The status: the page's age (counted on by the script), the most urgent alert by name (alerts issued by county
+    or zone have no outline on the map; after a failed check, the listed ones "may be out of date"), then the
+    sources: a failed source, towns with a value missing (t.errors), or every source loaded. Its links open the
+    Forecast panel: in place on the home page, else on the home page. -#}
+{% macro status_block() -%}
+{% set n_alerts = alerts['items']|length %}
+{% set bad = status.values()|rejectattr('ok')|list %}
+{% set gaps = towns|selectattr('errors')|list %}
+{% set fc = '#forecast' if page == 'now' else root ~ 'index.html#forecast' %}
+{% set view = ' data-view="forecast"' if page == 'now' else '' %}
+<div class="status" id="freshness">
+  <p>Updated <time datetime="{{ built.isoformat() }}">{{ built|when }}</time><span id="age"></span></p>
+  {% if n_alerts %}<p class="alert-now"><a href="{{ fc }}"{{ view|safe }}>{{ alerts['items'][0].event }}{% if n_alerts > 1 %} and {{ n_alerts - 1 }} more{% endif %}{% if not alerts.ok %}, may be out of date{% endif %}</a></p>{% endif %}
+  {% if bad %}<p class="bad"><a href="{{ fc }}"{{ view|safe }}>{% if bad|length == 1 %}{{ bad[0].label }} problem{% else %}{{ bad|length }} source problems{% endif %}: see Forecast</a></p>
+  {% elif gaps %}<p class="bad"><a href="{{ fc }}"{{ view|safe }}>{{ gaps|length }} town{{ 's' if gaps|length > 1 }} with missing data: see Forecast</a></p>
+  {% else %}<p class="all-loaded">Every source loaded</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- The shell's script, on every page. Browser-only (AGENTS.md rule 4): the viewer's clock (the page's age, counted
+    every minute, and the 10-minute reload for the newer build, which carries the viewer's place across: scroll,
+    focus, open "Official NWS text" sections, the search box, the sidebar's fold; the home page adds its own),
+    the sidebar's fold, the "not built yet" notes (toasts) on the concept's buttons, and on a page of content the
+    search box (a town opens its page). The words are on the page, from Python. Publishes window.Veor for the
+    home page's own script (index.html). -#}
+{% macro shell_script() -%}
+<script type="application/json" id="towns-data">{{ towns_nav|tojson }}</script>
+<script>
+(function () {
+  "use strict";
+  var HOME = document.body.hasAttribute("data-home"), ROOT = document.body.getAttribute("data-root") || "";
+  function byId(id) { return document.getElementById(id); }
+  var frame = byId("frame"), toast = byId("v-toast"), towns = JSON.parse(byId("towns-data").textContent);   // [[slug, name], ...]
+  var toastTimer = 0, V = window.Veor = { onAge: null, restore: null, save: null };
+
+  function say(words) {
+    clearTimeout(toastTimer);
+    toast.textContent = words;
+    toastTimer = setTimeout(function () { toast.textContent = ""; }, 5000);
+  }
+  V.say = say;
+
+  /* Page age: the site is rebuilt on a schedule set to every 10 minutes, which GitHub does not always keep. Past
+     25 minutes, say so in words so nobody relies on an old warning list. Counted again every minute. */
+  var built = Number(document.body.getAttribute("data-built")), age = byId("age");
+  function showAge() {
+    if (!age || !built) return;
+    var minutes = Math.round((Date.now() - built) / 60000), stale = minutes > 25;
+    byId("freshness").classList.toggle("stale", stale);
+    if (stale) age.innerHTML = " · <strong>" + minutes + " minutes old.</strong> Warnings may have changed since. Reload, or check weather.gov.";
+    else age.textContent = minutes >= 1 ? " · " + minutes + " min ago" : "";
+    if (V.onAge) V.onAge();
+  }
+  V.showAge = showAge;
+
+  /* The « button folds the sidebar to its icons. From 1024 to 1279 px it starts folded (veor.css), so the button
+     sets whichever class gives the other state. The choice lasts for this tab (sessionStorage); the button's name
+     follows the state when the window crosses 1024 or 1280 px. */
+  var fold = byId("collapse"), word = document.querySelector(".side .word");
+  function folded() { return getComputedStyle(word).display === "none"; }
+  function nameFold() {
+    var f = folded();
+    fold.setAttribute("aria-expanded", f ? "false" : "true");
+    fold.setAttribute("aria-label", f ? "Expand the menu" : "Collapse the menu");
+  }
+  function setFold(open) {
+    frame.classList.toggle("side-min", !open);
+    frame.classList.toggle("side-open", open);
+  }
+  fold.addEventListener("click", function () {
+    var open = folded();
+    setFold(open);
+    try { sessionStorage.setItem("veor-fold", open ? "open" : "min"); } catch (e) { /* not kept: no harm */ }
+    nameFold();
+  });
+  try { var kept = sessionStorage.getItem("veor-fold"); if (kept) setFold(kept === "open"); } catch (e) { /* default */ }
+  nameFold();
+  ["(max-width: 1023.98px)", "(min-width: 1280px)"].forEach(function (q) { window.matchMedia(q).addEventListener("change", nameFold); });
+
+  byId("role").addEventListener("change", function () { say(this.getAttribute("data-soon")); });
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest ? e.target.closest("[data-soon]") : null;
+    if (t && t.tagName !== "SELECT") say(t.getAttribute("data-soon"));
+  });
+
+  /* A page of content: the search box opens a town's page ("Billings", "Billings area", "Billings, MT" or the
+     first letters); "Montana", "MT" or "Oak Street" open the home page; anything else says no town has that name.
+     The home page's own script handles its search (the map). */
+  var search = byId("search"), q = byId("q");
+  if (!HOME) search.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var typed = q.value.trim();
+    if (!typed) return;
+    var want = typed.toLowerCase().replace(/,?\s*(mt|montana)$/, "").replace(/\s+area$/, "").trim();
+    if (!want) { location.href = ROOT + "index.html"; return; }
+    var hit = null;
+    towns.forEach(function (t) { if (!hit && t[1].toLowerCase() === want) hit = t; });
+    towns.forEach(function (t) { if (!hit && t[1].toLowerCase().indexOf(want) === 0) hit = t; });
+    if (hit) { location.href = ROOT + "town/" + hit[0] + ".html"; return; }
+    if ("oak street (sample lead)".indexOf(want) === 0) { location.href = ROOT + "index.html"; return; }
+    say(search.getAttribute("data-none").replace("{q}", function () { return typed; }));
+  });
+
+  /* Every 10 minutes the page reloads for the newer build, as the old page's refresh did (it still does with
+     scripting off). It waits only for a press or a drag to end and for typing to stop (a key in a text box in the
+     last 30 seconds), never longer than that, and it carries the viewer's place across: the scroll, what had
+     focus, the open "Official NWS text" sections (by their words and order), the search box, and what the home
+     page adds (V.save, V.restore). The address keeps the rest: the area, #forecast and the map's choices. */
+  var loadedAt = Date.now(), pressed = false, lastKey = 0;
+  document.addEventListener("pointerdown", function () { pressed = true; }, true);
+  document.addEventListener("pointerup", function () { pressed = false; }, true);
+  document.addEventListener("pointercancel", function () { pressed = false; }, true);
+  document.addEventListener("keydown", function (e) {
+    var a = e.target;
+    if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA") && a.type !== "range") lastKey = Date.now();
+  }, true);
+  V.pressed = function (p) { pressed = p; };                    // the home page relays presses inside the map
+  function typing() { return Date.now() - lastKey < 30000; }
+  function openDetails() {
+    var out = [];
+    document.querySelectorAll("details").forEach(function (d, i) { if (d.open) out.push([i, (d.querySelector("summary") || d).textContent.trim()]); });
+    return out;
+  }
+  function focusedId() {
+    var a = document.activeElement;
+    return a && a.id && a !== document.body ? a.id : "";
+  }
+  var pageEl = document.querySelector(".page");                 // a page of content scrolls inside the shell on desktops
+  function saveState() {
+    var s = { t: Date.now(), y: window.scrollY, page: pageEl ? pageEl.scrollTop : 0, focus: focusedId(), details: openDetails(), q: q.value };
+    if (V.save) V.save(s);
+    try { sessionStorage.setItem("veor-restore", JSON.stringify(s)); } catch (e) { /* not kept: a plain reload */ }
+  }
+  function restoreState() {
+    var s = null;
+    try { s = JSON.parse(sessionStorage.getItem("veor-restore") || "null"); sessionStorage.removeItem("veor-restore"); } catch (e) { s = null; }
+    if (!s || Date.now() - s.t > 180000) return;
+    var all = document.querySelectorAll("details");
+    (s.details || []).forEach(function (d) {
+      var el = all[d[0]];
+      if (el && (el.querySelector("summary") || el).textContent.trim() === d[1]) el.open = true;
+    });
+    if (s.q) q.value = s.q;
+    if (V.restore) V.restore(s);
+    window.scrollTo(0, s.y || 0);
+    if (pageEl && s.page) pageEl.scrollTop = s.page;
+    var f = s.focus && byId(s.focus);
+    if (f && f.focus) f.focus({ preventScroll: true });
+  }
+  V.restoreState = restoreState;
+  setInterval(function () {
+    showAge();
+    if (Date.now() - loadedAt < 600000 || pressed || typing()) return;
+    saveState();
+    location.reload();
+  }, 60000);
+  showAge();
+  if (!HOME) restoreState();                                     // the home page restores once its views are set
+})();
+</script>
+{%- endmacro %}

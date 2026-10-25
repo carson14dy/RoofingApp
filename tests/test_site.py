@@ -498,8 +498,8 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("Sample data", html)
         self.assertIn('src="map.html?embed=1&amp;v=', page(self.out, "index.html"))      # the home page's map
         self.assertIn("overlay=reports", page(self.out, "reports.html"))
-        self.assertIn('href="map.html"', page(self.out, "about.html"))           # main navigation
-        self.assertIn("map.html?town=livingston", page(self.out, "town/livingston.html"))
+        self.assertIn('<a href="index.html"', page(self.out, "about.html"))       # the sidebar's Map (the home page holds the map)
+        self.assertIn("index.html?town=livingston", page(self.out, "town/livingston.html"))
         for name in ("index.html", "about.html", "map.html"):
             self.assertNotIn("googleapis", page(self.out, name))
 
@@ -513,7 +513,7 @@ class SampleBuild(unittest.TestCase):
         for name in ("map/map.js", "map/map.css", "map/basemap.json"):
             self.assertIn(f"static/{name}?v={digest(name)}", html)
         self.assertIn(f"static/style.css?v={digest('style.css')}", page(self.out, "index.html"))
-        self.assertIn(f"static/home.css?v={digest('home.css')}", page(self.out, "index.html"))
+        self.assertIn(f"static/veor.css?v={digest('veor.css')}", page(self.out, "index.html"))
         self.assertEqual(site.asset_versions(site.HERE / "static"), site.asset_versions(self.out / "static"))
         minute = NOW.strftime("%Y%m%d%H%M")
         self.assertIn(f"data/map.json?v={minute}", html)
@@ -1028,12 +1028,19 @@ class HomeConcept(unittest.TestCase):
         self.assertIn('<p class="alert-now"><a href="#forecast" data-view="forecast">High Wind Warning and 1 more, may be out of date'
                       "</a></p>", html)                                 # what the town checks found is still named
 
-    def test_the_page_reloads_only_while_unused_and_without_script_as_before(self):
-        raw = page(self.out, "index.html")
-        self.assertEqual(raw.count('http-equiv="refresh"'), 1)
-        self.assertIn('<noscript><meta http-equiv="refresh" content="600">', raw)
-        self.assertIn("Date.now() - loadedAt >= 600000 && document.hidden", raw)       # never under a reader
-        self.assertIn("showAge();", raw)                                                    # the age counts on
+    def test_the_page_reloads_every_ten_minutes_carrying_the_place_and_without_script_as_before(self):
+        for name in ("index.html", "about.html", "town/billings.html"):
+            raw = page(self.out, name)
+            self.assertEqual(raw.count('http-equiv="refresh"'), 1, name)
+            self.assertIn('<noscript><meta http-equiv="refresh" content="600">', raw, name)
+            self.assertIn("if (Date.now() - loadedAt < 600000 || pressed || typing()) return;", raw, name)   # waits for a press or typing only
+            self.assertIn("function typing() { return Date.now() - lastKey < 30000; }", raw, name)         # typing: a key in the last 30 s
+            self.assertIn('sessionStorage.setItem("veor-restore"', raw, name)              # the viewer's place goes across
+            self.assertIn("showAge();", raw, name)                                          # the age counts on
+        home = page(self.out, "index.html")
+        self.assertIn("s.panel = panel.scrollTop;", home)                                  # the home page's own part
+        js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertIn('p.set("view", c.lat.toFixed(4)', js)                                # and the map's view
 
     def test_the_forecast_alerts_sit_under_their_heading_and_the_tab_panels_take_focus(self):
         self.assertIn("<h4>High Wind Warning</h4>", self.html)
@@ -1060,7 +1067,8 @@ class HomeConcept(unittest.TestCase):
         self.assertIn('show("forecast", !!e || nav.type !== "reload");', self.html)     # focus on a link, not a reload
         self.assertIn("""closest('a[href$="#forecast"]')""", self.html)      # the map's links open it in place
         self.assertIn('<a href="../index.html#forecast">All towns</a>', page(self.out, "town/livingston.html"))
-        self.assertIn('<a href="index.html#forecast">Now</a>', page(self.out, "about.html"))
+        self.assertIn('id="btn-forecast" href="index.html#forecast"', page(self.out, "about.html"))   # the top bar's Forecast
+        self.assertIn('id="btn-forecast" href="../index.html#forecast"', page(self.out, "town/livingston.html"))
         self.assertIn('href="index.html#forecast"', page(self.out, "map.html"))           # the noscript list
         js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
         self.assertIn('href="index.html#forecast">All warnings and town forecasts</a>', js)

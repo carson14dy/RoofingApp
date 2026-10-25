@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Storm reports · Montana Hail Watch{% endblock %}
+{% block title %}Storm reports · Veor{% endblock %}
 {% block content %}
 <div class="lead">
   <h1>Storm reports</h1>
@@ -16,7 +16,7 @@
 
 <section aria-labelledby="map-h">
   <div class="section-head"><h2 id="map-h">Map</h2>
-    <a class="section-link" href="map.html?overlay=reports">Open the map</a></div>
+    <a class="section-link" href="index.html?overlay=reports">Open the map</a></div>
   <iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v={{ built.strftime('%Y%m%d%H%M') }}"
     title="Map of storm reports in and near Montana" loading="lazy"></iframe>
   {# the card also draws the town bubbles and warning outlines, and hides its own legend: key them here #}

@@ -433,7 +433,7 @@ def env() -> Environment:
 # browsers and GitHub Pages reuse the unchanged ones across the 10-minute rebuilds (map.js, map.css,
 # the 377 KB basemap and style.css change only with the code). data/map.json and the map card's
 # address change every build, so they keep the build minute.
-VERSIONED = ("style.css", "home.css", "map/map.js", "map/map.css", "map/basemap.json")
+VERSIONED = ("style.css", "veor.css", "map/map.js", "map/map.css", "map/basemap.json")
 
 
 STORM_JS = "map/storm.js"   # places the storm text in the Map's List and town sheets; --storm-layers only
@@ -540,7 +540,7 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
             t["storm"] = storms[t["slug"]]
     hail_block = c.hail(out, sample, hail_store_path, towns) if hail_history else None
 
-    base = {"built": now, "built_ms": int(now.timestamp() * 1000),
+    base = {"built": now, "built_ms": int(now.timestamp() * 1000), "alerts": alerts, "towns": towns,   # the shell's status
             "asset_v": asset_versions(out / "static", VERSIONED + ((STORM_JS,) if storm_layers else ())),
             "status": c.status, "sample": sample, "storm_layers": storm_layers, "satellite_text": satellite_text,
             "hail_history": hail_history, "hail_words": hs.WORDS if hail_history else None,
@@ -552,9 +552,9 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
             "qc_rejected": src.QC_REJECTED}
     e = env()
     pages = {
-        "index.html": ("index.html", {"page": "now", "root": "", "alerts": alerts, "towns": towns,
+        "index.html": ("index.html", {"page": "now", "root": "",
                                       "card": map_card(layers, alerts, towns, c.status, now)}),
-        "map.html": ("map.html", {"page": "map", "root": "", "towns": towns}),
+        "map.html": ("map.html", {"page": "map", "root": ""}),
         "reports.html": ("reports.html", {"page": "reports", "root": "", "reports": reports}),
         "about.html": ("about.html", {"page": "about", "root": ""}),
     }

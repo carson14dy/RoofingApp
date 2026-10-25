@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% from "_alerts.html" import alert_item, office_links %}
-{% block title %}{{ town.name }} forecast · Montana Hail Watch{% endblock %}
+{% block title %}{{ town.name }} forecast · Veor{% endblock %}
 {% block content %}
-<p class="crumbs"><a href="../index.html#forecast">All towns</a> · <a href="../map.html?town={{ town.slug }}">See {{ town.name }} on the map</a></p>
+<p class="crumbs"><a href="../index.html#forecast">All towns</a> · <a href="../index.html?town={{ town.slug }}">See {{ town.name }} on the map</a></p>
 <div class="lead">
   <h1>{{ town.name }}</h1>
   <p class="sub">
