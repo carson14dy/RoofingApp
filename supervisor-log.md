@@ -249,3 +249,6 @@ site-4: identity base f96f5c7 verified (92 digests), ON_PURPOSE table with rulin
 
 ## 2026-10-25 03:35 UTC: final-a done; D99; browser-final launched
 products-final (test comments) and site-final (banner heading by state, zone flag all-clear once) done; suite 1,981 OK. D99(a) to (e) recorded. browser-final (map.js sumZoneFlag one source) launched as wf_ceeab4ff-cdc beside the docs pass skeptics. final-b after the docs pass: words-4 (the chance revert) and docs-final (record labels, D98 and D99 records).
+
+## 2026-10-25 04:05 UTC: browser-final done
+map.js sumFlagClause, sumJoinedFlags and sumCover mirror summary (one all-clear per flagged line); pin test added; Chromium check on a store copy with three unplaced rows: 0 differences; full suite 1,982 OK with and without HAIL_PARITY_STORE. Waiting on the docs pass (skeptics F17 to F20, fixer, check), then final-b (words-4, docs-final).

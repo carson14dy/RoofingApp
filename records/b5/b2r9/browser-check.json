@@ -1,0 +1,107 @@
+{
+ "fixer": "browser-final (fixer 1)",
+ "round": "b2r9",
+ "rulings": [
+  "D99(b)",
+  "D98(b)",
+  "D29 (one source)",
+  "D41 (the all-clear sentence once on each flagged line)",
+  "F19 (docs review, zone flag sentence)"
+ ],
+ "worktree": "/home/user/wt/wt-b5 (branch claude/hail-b5); no git write command run (git status, log, diff only); edited only website/static/map/map.js (owned) and tests/test_site.py (one added method); no other file touched",
+ "items": [
+  {
+   "id": "D99b_map_js",
+   "title": "Browser composes a flagged coverage line as Python does: the statement as the word gives it, the all-clear sentence once",
+   "status": "done",
+   "applied": [
+    "website/static/map/map.js lines 3503-3507: new sumFlagClause (summary._flag_clause): histWithoutClear(S, flag), then trailing spaces and full stops removed.",
+    "website/static/map/map.js lines 3509-3518: new sumJoinedFlags (summary._joined_flags): the distinct clauses of the cells in season order, joined with '; ', null when none.",
+    "website/static/map/map.js lines 3520-3528: sumCover joins the missing-days text and sumFlagClause(S, flag), then sumClear once (before: it joined the raw statement, which already ends with the sentence, so a full stop came before the second sentence).",
+    "website/static/map/map.js line 3584 (sumFive) and line 4277 (sumPartialFive): coverage = sumCover(S, missing, sumJoinedFlags(S, cells)) in place of the raw-flag loop.",
+    "sumZoneFlag (line 4239) unchanged: it already returns fill(sumWord(S, 'zone_flag'), ...), the word as Python gives it, as summary._zone_flag does. Diff: 22 insertions, 8 deletions in map.js."
+   ],
+   "evidence": [
+    "Reproduced under node (tests/test_site.py node_summary on a scratch build) before the fix: browser 2021-22 coverage '108 days missing; Montana: 2 high wind products issued Dec 11, 2021 to Jan 2, 2022 could not be placed to a zone. This is not an all-clear.. This is not an all-clear.' against the module's one sentence; five-season coverage ends 'This is not an all-clear.. This is not an all-clear.' (printed by browser-final/bin/node_flags.py on the scratch build before that build was deleted; it was not saved to a file, and the same comparison is in pin-before.log).",
+    "Chromium at 390 x 844, before the fix (browser-final/sheet-flags-before.json): each of the three cells showed 3 doubled sentences in the sheet text and 3 table differences from summary.describe_sheet (smoke_map.summary_problems); one Python line per cell missing from the sheet.",
+    "Chromium at 390 x 844, after the fix on a rebuilt scratch build (browser-final/sheet-flags-after.json): cells 921,2149 / 792,1998 / 797,1986 open with the sheet; summary_problems = 0 for each; 'all-clear..' occurrences in the sheet text = 0; every Python flagged line is on the sheet word for word; page errors = 0; all-clear sentences in the sheet text 30 / 30 / 44.",
+    "Built site (after the fix): built static/map/map.js is byte-identical to website/static/map/map.js (cmp)."
+   ]
+  },
+  {
+   "id": "D99b_pin_test",
+   "title": "Browser-against-module pin for the zone flag line (missing before this round)",
+   "status": "done",
+   "applied": [
+    "tests/test_site.py lines 5239-5275: new method SheetAgreesWithTheModule.test_a_flagged_zone_line_reads_the_all_clear_sentence_once. It copies the fixture store (hs.FIXTURE_DIR), writes three unplaced rows (HW.W 2021-12-11, HW.W 2022-01-02, HW.A 2024-10-01, cell zone MTZ235) into hail/index.json joins and rewrites its manifest entry (hail.check_manifest passes), builds the sample site from that store, compares FIVE_CELLS[:3] with the module through compare_cell, and asserts each flagged coverage line has the all-clear sentence once, at its end, with no '..'."
+   ],
+   "evidence": [
+    "Before the fix: FAILED (failures=4), 'table hw_zone.coverage: browser [...] != module [...]' and '2 != 1 : 107 days missing; ... This is not an all-clear.. This is not an all-clear.' (browser-final/pin-before.log).",
+    "After the fix: OK, Ran 1 test in 11.930s (browser-final/pin-after.log).",
+    "The method is inside the class (the file's next top-level definition is sm_sections at line 5278); no other line of tests/test_site.py was changed by this fixer."
+   ]
+  },
+  {
+   "id": "D98b_check_sheet_390px",
+   "title": "Sheet prints the zone statement's sentence once at 390 px (site-final check D98b_check_sheet, previously fail_until_browser_owner_changes_map_js)",
+   "status": "pass",
+   "applied": [],
+   "evidence": [
+    "Method: scratch copy of /home/user/hail-b5/out/combined/store (hail/ only; read-only source; the copy's index and manifest entry changed as the site-final check describes), three unplaced rows as above, sample site built with --hail-history --now 2026-10-17T12:00:00Z at /home/user/hail-b5/out/b2r9/browser/site, served locally, Chromium 141.0.7390.37 (PW_CHROMIUM=/opt/pw-browsers/chromium) at 390 x 844, opened with ?at=lat,lon by smoke_map.hail_open; sheet read with smoke_map.summary_read; module side smoke_map.sheet_words = summary.describe_sheet.",
+    "Notes and section rows (browser-final/notes-after.json): the one zone statement in the notes of each cell is on the sheet word for word; 0 doubled full stops.",
+    "Town pages of the same scratch build (Python-rendered, not changed here): 58 flagged lines, each with one sentence; 0 html files contain 'all-clear..'; map.json holds 0 doubled sentences."
+   ]
+  }
+ ],
+ "already_in_place": [
+  "sumZoneFlag (map.js line 4239) already printed the word as Python gives it (fill(sumWord(S, 'zone_flag'), ...)); not changed.",
+  "The zone note (sumUnplacedNote, line 4251, through sumClear) already ends with the all-clear sentence once; checked on the sheet (notes-after.json).",
+  "summary.py _flag_clause, _cover and _joined_flags (site-final's D98(b) change, lines 1013-1034) already strip and re-add the sentence once; not edited here.",
+  "The zero-valued zone cell's text ('Data unavailable: some products could not be placed to a zone. This is not an all-clear.') and its coverage line each carry the sentence once; both sides agree (kept, see skipped)."
+ ],
+ "skipped": [
+  {
+   "item": "Change sumZoneFlag to return the statement without its sentence (the site-final check's needed_from_others suggestion)",
+   "reason": "Not applied. A cell's flag keeps the word as summary._zone_flag returns it, and the sentence is removed where the line is composed (sumFlagClause, as summary._flag_clause). Changing sumZoneFlag would make the cell's statement differ from Python's and would still need the join to add the sentence; the printed text is the same as Python's either way."
+  },
+  {
+   "item": "Two unplaced rows (the brief's wording)",
+   "reason": "The site-final check says 'two extra unplaced rows' but lists three (HW.W 2021-12-11, HW.W 2022-01-02, HW.A 2024-10-01). The three listed rows were used, so the five-season join (two seasons, two statements) is exercised. The two HW.W rows alone are a subset of the same check."
+  },
+  {
+   "item": "zone_products_unplaced in the scratch store",
+   "reason": "Left at 0, as in the site-final method (rows only); the zones section's own unplaced count line is not part of this check."
+  },
+  {
+   "item": "Full smoke (tools/smoke_map.py) in Chromium",
+   "reason": "Not run. Its table and notes readers (summary_read, summary_problems, sheet_words, hail_open) were run at 390 px on the three cells; the full smoke is a CI step and was not asked for."
+  }
+ ],
+ "needed_from_others": [],
+ "needed_from_others_note": "Nothing is needed for this item. The browser change answers the site-final check's needed_from_others entry for map.js; the summary.py change it asked the supervisor to accept is unchanged.",
+ "tests_tail": {
+  "env_for_run_b": "HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store (the seven parity tests read it; CI sets HAIL_PARITY_STORE to the built site)",
+  "pin_before_fix": "Ran 1 test in 12.249s / FAILED (failures=4)",
+  "pin_after_fix": "Ran 1 test in 11.930s / OK",
+  "subset": "python -m unittest tests.test_site -k HailJoinedRecords -k HailJoins -k SheetAgreesWithTheModule: Ran 27 tests in 39.984s / OK (skipped=3) (no HAIL_PARITY_STORE; the skips are the adopted-store test and two fixture subtests for cells 753,2230 and 920,1899)",
+  "full_suite_run_a": "python -m unittest discover -s tests (no HAIL_PARITY_STORE): Ran 1982 tests in 372.866s / OK (skipped=10) / SUITE_EXIT=0. Log: browser-final/full-suite.log",
+  "full_suite_run_b": "HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store python -m unittest discover -s tests -v: Ran 1982 tests in 487.940s / OK (skipped=3) / SUITE_EXIT=0. The skips: test_addresses.RealMetadataTests (needs ADDRESS_FRAMEWORK_ZIP) and two fixture subtests of SheetAgreesWithTheModule.test_the_five_cells_agree_on_the_fixture (cells 753,2230 and 920,1899, which the adopted-store test covers). Log: browser-final/full-suite-parity.log",
+  "failures": "none in either run, so no attribution is needed; no docs-related failure",
+  "note": "The suite ran while other owners' WIP was on disk in this worktree (the docs pass included); it passed in full."
+ },
+ "commands": [
+  "git status --short / git log --oneline -8 / git diff --stat (read-only): map.js was clean at the start (no diff); after the edit 22 insertions and 8 deletions",
+  "cp -r /home/user/hail-b5/out/combined/store/hail -> browser-final/store/hail: 633M, 45878 files; index.json identical",
+  "python -I browser-final/inject_rows.py: rows: 3 / check_manifest counts ok",
+  "python -P browser-final/bin/build_site.py --out .../b2r9/browser/site --sample --hail-history --hail-store browser-final/store --now 2026-10-17T12:00:00Z: exit 0 (about 22 s)",
+  "python -P browser-final/bin/node_flags.py (node via tests.test_site.node_summary, before the fix): printed the doubled sentences on the flagged coverage lines and the five-season line, as quoted in the first evidence item",
+  "PW_CHROMIUM=/opt/pw-browsers/chromium python -P browser-final/bin/sheet_flags.py <log>: before: 3 problems and 3 doubled per cell; after rebuild: 0 / 0 per cell, Chromium 141.0.7390.37",
+  "PW_CHROMIUM=/opt/pw-browsers/chromium python -P browser-final/bin/notes_check.py: 1 statement per cell, 0 missing, 0 doubled",
+  "node --check website/static/map/map.js: ok",
+  "python -m unittest tests.test_site.SheetAgreesWithTheModule.test_a_flagged_zone_line_reads_the_all_clear_sentence_once: FAILED before the fix, OK after",
+  "python -m unittest tests.test_site -k HailJoinedRecords -k HailJoins -k SheetAgreesWithTheModule: Ran 27 tests / OK (skipped=3)",
+  "python -m unittest discover -s tests: Ran 1982 tests / OK (skipped=10)",
+  "HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store python -m unittest discover -s tests -v: Ran 1982 tests / OK (skipped=3)"
+ ],
+ "cleanup": "Scratch build /home/user/hail-b5/out/b2r9/browser/site and store copy /home/user/hail-b5/out/browser-final/store deleted after the checks. Combined store checked: no file changed (find -newer: 0). Logs and scripts kept in /home/user/hail-b5/out/browser-final/ (404 KB)."
+}
