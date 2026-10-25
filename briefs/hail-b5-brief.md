@@ -1321,3 +1321,22 @@ sentence does. Rulings:
   (d) README's sample build line takes B5's "(off by default; it also carries the B5 weather files)" in the docs pass
   (D95(c)). (e) site-4 and the docs pass run now in parallel on disjoint files; then the final suite and self-test, the
   squash, the push, the preview and the pull request.
+
+## Supervisor rulings on the site-4 check (2026-10-25 02:10 UTC; D97)
+site-4 (/home/user/hail-b5/out/b2r8/site/check.json) verified the identity base f96f5c7 and its manifest (92 digests agree),
+named every on-purpose difference with its ruling, added pyshp to the offline install, reworded the zone-edition reason
+and removed the HTTP filter, and made hail's stale sentence the one source with the D41 ending; map.json with the history
+flag 162,527 bytes raw (headroom 1,313), every flag 464,581. The suite's one failure (tests/test_hail.py WordTests scanning
+the stale sentence) is fixed by the supervisor (the required sentence is scanned apart, as tests/test_site.py does).
+- D97 **Last calls before the final round.** (a) About's CONTRACTS rows may name an HTTP code where they document a
+  feed's behaviour (sources.py near lines 429, 504 and 578: editions not published, a file missing upstream); the words
+  gate forbids stems, not codes; the pages' status lines use plain words (main's rule); no change. (b) The combined
+  store's zone_editions reasons and the fixture's index.json keep "HTTP 404 when checked" until the next store build
+  writes the new word; only the verify log reads them. (c) The three "chance of rain or snow" swaps made by the run-1
+  words fixer (about.html's flag sentence; sources.py's forecast units row near line 84; the About flag row "Chance of
+  rain or snow in %.") revert to main's words: D89(a) rules forecast words outside the gate and the plain phrase is the
+  better one; the identity table in tests/test_site.py drops those entries and its mutation test uses another sentence;
+  index.html's sentence and flags_for stay as they are (never swapped). (d) town/glasgow.html's live-block reason
+  "(not published (HTTP 404))" is main's live text (D52) and stays. (e) After the docs pass: one final fixer round
+  (words-4 for (c); the docs check's leftovers if any), then the supervisor runs the full suite and the self-test,
+  squashes onto main's head, pushes, reads the branch run and opens the pull request.

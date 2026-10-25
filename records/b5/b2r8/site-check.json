@@ -1,0 +1,114 @@
+{
+  "check": "b2r8 site: fixer 1 (site-4), post-merge items D77, D93(a), D95(b), D96(a), D96(b) and the test/workflow gates",
+  "worktree": "/home/user/wt/wt-b5",
+  "head": "b848989 (merge commit); my edits are uncommitted working-tree changes, nothing committed or pushed",
+  "files_edited": [
+    ".github/workflows/website.yml (line 102)",
+    "tests/test_joins.py (lines 3274-3276)",
+    "tests/test_site.py (HailHistory 1781-1834, 2066-2106; HailSwathLayers identity block 3724-3749 and 4238-4300)",
+    "tests/test_website_workflow.py (class ShapefileReader, lines 130-146)",
+    "website/build.py (join_block_unavailable, line 739 on)",
+    "website/hail.py (line 193)",
+    "website/joins.py (lines 588-589)",
+    "website/summary.py (line 454)",
+    "website/templates/map.html (line 65)"
+  ],
+  "items": [
+    {
+      "item": "1 flag-off identity: SWATH_BASE, manifest, on-purpose table (D77, D93(a), D95(g))",
+      "status": "done",
+      "evidence": "SWATH_BASE is f96f5c7 (tests/test_site.py HailSwathLayers). The base commit's default build (git archive f96f5c7 extracted to scratch; python -m website.build --sample --now 2026-10-19T12:00:00Z; 94 files) matches tests/fixtures/default-build-manifest.json on all 92 digested files, with the same file set, so the manifest needed no regeneration (scripts/identity_check.py). The merged tree's default build differs from the manifest only in about.html and reports.html; map.js and map.css are not digested (D93(a)) and map.html differs only in its ?v= hashes, which are normalised. ON_PURPOSE names each change with its ruling: about.html 13 changes: D53 radar sentence (1); D85 with D86(c) and D88(d) for the roof-flag sentence, 'chance of rain or snow' to 'rain or snow percent' (3 places), 'clears' to 'removes', 'is safe' to 'can go ahead', 'fails' to 'goes wrong', 'replaced' to 'that a later message has changed', 'fails' to 'does not pass its check' and to 'does not load', 'dry' to 'a zero reading'; D80(b) and D82(d) 'from this spot' (1). reports.html: D91(c), 2 sentences (3 copies). D74 has no entry: its hail swath and address rows are flag-gated and absent from the default build (0 matches in the base and merged default about.html). The restore check (scripts/table_check.py) returns no problems and the base digests. In the full run, test_the_default_build_matches_the_manifest_of_its_base_commit is ok and the new mutation test test_a_line_the_table_does_not_name_fails_the_identity is ok."
+    },
+    {
+      "item": "2 pyshp in the Website workflow's offline unittest line",
+      "status": "done",
+      "evidence": ".github/workflows/website.yml line 102: pyshp is appended to the Install step's pip line; no other workflow change. tests/test_website_workflow.py ShapefileReader (lines 130-146): the install line and the tests.test_joins entry of the offline line, both ok in the full run. The daily job already installs pyshp (hail-store.yml lines 128 and 766), so this adds no new package. The pyshp-gated joins tests ran: run1 printed no skipped count, and the full run's three skips are outside test_joins."
+    },
+    {
+      "item": "3 tests.test_site and tests.test_website_workflow with HAIL_PARITY_STORE, and the full suite",
+      "status": "done_with_failure",
+      "evidence": "tests.test_site and tests.test_website_workflow with HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store: Ran 346, OK (skipped=2), EXIT 0 (run2). That run began before the final map.js pin was added; the pin passed alone and in the full run. Full suite, python -m unittest discover -s tests -v, HAIL_PARITY_STORE set: Ran 1979, FAILED (failures=1, skipped=3), EXIT 1 (run3, 470.9 s). The failure is not in my files: tests/test_hail.py line 331, WordTests.test_no_forbidden_term_in_any_word (products-owned), which scans hail.WORDS['stale']; that text now ends with the required sentence (D96(b)). Skips: tests/test_addresses.py RealMetadataTests (ADDRESS_FRAMEWORK_ZIP not set); two tests/test_site.py fixture-gated cell checks for cells 753,2230 and 920,1899 (the fixture lacks those tiles, as the skip message says). node 22 is installed, so the node-dependent checks ran. test_site and test_website_workflow have no failure in the full run."
+    },
+    {
+      "item": "4 D96(a): zone-edition reason words; HTTP filter and its test removed",
+      "status": "done",
+      "evidence": "website/joins.py lines 588-589: reason_not_published reads 'the NWS does not publish this zone edition at its address (the address returned no file when checked on 2026-10-19)'. tests/test_joins.py lines 3274-3276 pin the new words and assert that no 'HTTP' appears. website/build.py join_block_unavailable (line 739 on): the HTTP word filter and its two comment lines are removed. tests/test_site.py HailHistory: the test that pinned the filter is replaced at line 2066 by test_an_unavailable_joins_block_carries_the_same_words_as_a_loaded_one (D95(b): equal words; no WORDS_JOINS value carries 'HTTP'); ok. Main's test_a_failed_download_reads_plainly_on_the_pages_and_in_full_in_the_log: ok."
+    },
+    {
+      "item": "5 D96(b): one stale sentence, one source; map.html and map.js checked",
+      "status": "done",
+      "evidence": "website/hail.py line 193: WORDS['stale'] ends with 'This is not an all-clear.'. website/summary.py line 454: WORDS_SUMMARY['stale'] = hail.WORDS['stale'], so one text. website/templates/town.html line 184 already prints one stale line ({% if h.stale %} else {% elif v.stale %}): unchanged. website/templates/map.html line 65: the hail_history problem line no longer adds the sentence, so the single-problem banner (line 70) carries it once; the other keys' lines work the same way and the multi-problem list keeps the summary sentence. website/static/map/map.js: no change needed; the stale line is filled once (line 2459) and shown once (line 2477). The appended all-clear at line 2653 belongs to the live swath line, not the history. Pins: new test_the_sheet_prints_the_stale_line_once_and_map_js_adds_no_second_all_clear (test_site.py line 1792; ok); test_a_stale_store_is_a_failed_source_but_the_sample_never_is (line 2082; ok) counts the sentence once on the town page and checks the banner; the banner test at line 1829 counts it once (ok); test_the_new_words_say_no_forbidden_term_and_no_dash (line 1781; ok) exempts the required sentence (D41)."
+    },
+    {
+      "item": "6 measured map.json sizes, self-test, check",
+      "status": "done",
+      "evidence": "Sizes are in map_json_sizes (builds of the merged tree; gzip is Python gzip level 9). History flag from the combined store: 162,527 bytes raw against the 163,840 gate (headroom 1,313). Every flag from the combined store: 464,581 bytes raw. Self-test: python desktop/launcher.py --selftest payload printed 'PASS payload 1.0.0', exit 0. node --check website/static/map/map.js: ok. git diff --check clean; py_compile and the YAML parse of website.yml ok; no em-dash or model, vendor or product name in the added lines."
+    },
+    {
+      "item": "already in place",
+      "status": "in_place",
+      "evidence": "town.html already prints one stale line (line 184). joins.py line 346 already says the job has 150 minutes (D77 leftover). tests/test_addresses.py already uses the D74 wording 'completeness varies from county to county'. Main's failed-download test passes unchanged. The default build's live-block line for an unreadable station is main's own text (D52), unchanged."
+    },
+    {
+      "item": "not done, by ruling or by ownership",
+      "status": "skipped",
+      "evidence": "No D74 entry in the identity table: no default-build line carries those rows. tests/test_joins.py line 3331 pins sources.py's zone-edition row text, which is not my pin, so it is unchanged. sources.py About rows and the store and fixture index text are not mine (see needed_from_others). AGENTS.md, README.md, docs/*.md and research/hail-history/validation-evidence/b5-verification.json show as modified in this worktree: the docs pass is editing them, and I did not touch them."
+    }
+  ],
+  "needed_from_others": [
+    {
+      "owner": "products (tests/test_hail.py)",
+      "what": "WordTests.test_no_forbidden_term_in_any_word (line 331) fails on hail.WORDS['stale']. Exempt the required sentence 'This is not an all-clear.' before the scan (D41), as tests/test_site.py HailHistory now does (line 1789). This is the only failure in the full suite."
+    },
+    {
+      "owner": "words (website/sources.py) with the joins pin",
+      "what": "About-visible rows carry an HTTP code in hail builds: line 504 ('file is missing upstream (HTTP 404 on 2026-10-19)'), line 578 ('are not published (HTTP 404 when checked on 2026-10-19)') and line 429 (the same older-editions wording). D96(a) says no code in a user-facing word. If reworded, tests/test_joins.py line 3331 pins the line-578 wording and must change with it."
+    },
+    {
+      "owner": "products (store and fixture data)",
+      "what": "The combined store's hail/index.json zone_editions reason text (about lines 5163-5184) and the committed website/data/hail-fixture/hail/index.json (lines 543-578) still read '(HTTP 404 when checked on 2026-10-19)'. Only the joins verify log reads them; no page does. A joins rebuild or a fixture regeneration writes the new words. Not edited: the store is immutable and the fixture is products'."
+    },
+    {
+      "owner": "supervisor (D85 and D89(a))",
+      "what": "Three About word swaps of 'chance of rain or snow' to 'rain or snow percent' (about.html roof-flag sentence; sources.py lines 70 and 84) were not needed by the words gate (tests/words_rules.py FORECAST already exempts the phrase), and D89(a) says forecast words stay. They are named under D85, D86(c) and D88(d) in the identity table. Keep or revert is a supervisor call; a revert changes three table entries."
+    },
+    {
+      "owner": "supervisor (D52)",
+      "what": "The default build's town/glasgow.html carries 'No reading from this station in this update (not published (HTTP 404)).' (main's live block, not a hail line; pinned by tests/test_site.py lines 657 and 694). D52 says its wording stays; recorded so the call is explicit."
+    }
+  ],
+  "map_json_sizes": {
+    "unit": "bytes of data/map.json in a built site; gzip is Python gzip.compress (level 9)",
+    "combined_store_history_flag": {
+      "command": "python -m website.build --out <scratch> --sample --hail-history --hail-store /home/user/hail-b5/out/combined/store --now 2026-10-17T12:00:00Z",
+      "raw": 162527,
+      "gzip": 32627,
+      "gate_raw": 163840,
+      "headroom_raw": 1313
+    },
+    "combined_store_every_flag": {
+      "command": "... --sample --storm-layers --hail-history --hail-addresses --hail-store /home/user/hail-b5/out/combined/store --now 2026-10-17T12:00:00Z",
+      "raw": 464581,
+      "gzip": 85442,
+      "site_files": 46900,
+      "site_size": "642 MB"
+    },
+    "sample_fixture_history_flag": {
+      "command": "python -m website.build --out <scratch> --sample --hail-history --now 2026-10-19T12:00:00Z",
+      "raw": 150488,
+      "gzip": 28828
+    },
+    "sample_fixture_every_flag": {
+      "command": "... --sample --storm-layers --hail-history --hail-addresses --now 2026-10-19T12:00:00Z",
+      "raw": 190467,
+      "gzip": 34096
+    }
+  },
+  "tests_tail": {
+    "run1_targeted_420": "tests.test_site.HailSwathLayers, tests.test_site.HailHistory, tests.test_website_workflow, tests.test_joins (HAIL_PARITY_STORE unset)\nRan 420 tests in 114.464s\n\nOK\nEXIT 0",
+    "run2_test_site_and_workflow_346": "tests.test_site and tests.test_website_workflow, HAIL_PARITY_STORE set (before the final map.js pin)\nRan 346 tests in 401.317s\n\nOK (skipped=2)\nEXIT 0",
+    "run3_full_suite_1979": "python -m unittest discover -s tests -v, HAIL_PARITY_STORE set\n\n----------------------------------------------------------------------\nRan 1979 tests in 470.883s\n\nFAILED (failures=1, skipped=3)\nEXIT 1",
+    "selftest": "python desktop/launcher.py --selftest payload\nPASS  payload 1.0.0"
+  },
+  "logs": "/home/user/hail-b5/out/site-4/logs/ (run1-targeted.log, run2-site-workflow.log, run3-full-suite-verbose.log, selftest.log)"
+}

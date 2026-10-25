@@ -243,3 +243,6 @@ Re-check (wf_505c17e9-dab; /home/user/hail-b5/out/b5b2-recheck.json): suite 1,96
 
 ## 2026-10-25 01:00 UTC: merge committed (b848989); D96; site-4 and the docs pass launched
 Merge workflow wf_539ab67f-711: resolver, three reviews, two fixes; suite 1,975 OK; parity 7 OK; selftest PASS. Review 3 left four items against D95 (the HTTP word filter, README 107, town.html stale line) plus the D41 gap in hail WORDS[stale]; D96(a) to (e) recorded. Merge committed unsigned as b848989 and pushed to session/hail-b5-wip. site-4 (identity base check, pyshp, the joins word, the stale sentence) and the docs pass (round2 script, owner docs, out b2r8-docs) launched in parallel.
+
+## 2026-10-25 02:10 UTC: site-4 done; D97
+site-4: identity base f96f5c7 verified (92 digests), ON_PURPOSE table with rulings, pyshp in the offline install, D96(a) word and filter, D96(b) stale sentence one source; suite 1,979 with 1 failure (test_hail WordTests on the stale sentence) fixed by the supervisor; map.json 162,527 raw history flag (headroom 1,313), 464,581 every flag. D97(a) to (e) recorded; words-4 entry (revert the three chance swaps) prepared for after the docs pass.
