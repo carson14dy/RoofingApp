@@ -48,5 +48,2647 @@
   "coverage": {},
   "partial": []
  },
- "sample": true
+ "sample": true,
+ "addresses": {
+  "format": "hail-addresses-v1",
+  "state": "loaded",
+  "sample": true,
+  "built_at": "2026-10-19T22:11:00Z",
+  "sample_of": "2026-10-19T22:11:00Z",
+  "source": {
+   "name": "Montana State Library Structures and Addresses Framework",
+   "url": "https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip",
+   "file": "StructuresFramework_shp.zip",
+   "bytes": 65788772,
+   "export_date": "2026-09-30",
+   "pubdate": "2026-09-30",
+   "accconst": "None. All data contained in the Framework are publicly available and non-sensitive.",
+   "useconst": "DISCLAIMER: The Montana State Library Geographic Information Services provides this product/service for informational purposes only. The Library did not produce it for, nor is it suitable for legal, engineering, or surveying purposes. Consumers of this information should review or consult the primary data and information sources to ascertain the viability of the information for their purposes. The Library provides these data in good faith but does not represent or warrant its accuracy, adequacy, or completeness. In no event shall the Library be liable for any incorrect results or analysis; any direct, indirect, special, or consequential damages to any party; or any lost profits arising out of or in connection with the use or the inability to use the data or the services provided. The Library makes these data and services available as a convenience to the public, and for no other purpose. The Library reserves the right to change or revise published data and/or services at any time.",
+   "purpose": "To provide a statewide, standardized repository for structure and address point data. The Structures/Addresses Framework complies with the NENA Standard for NG9-1-1 GIS Data Model and is designed to support a wide range of public and private sector uses including: 9-1-1 and emergency response, elections management, broadband internet mapping, census programs, planning, natural resource studies, etc.",
+   "projection": "NAD_1983_2011_StatePlane_Montana_FIPS_2500",
+   "dbf_fields": 51,
+   "fields_read": [
+    "Add_Number",
+    "AddNum_Pre",
+    "AddNum_Suf",
+    "St_PreMod",
+    "St_PreDir",
+    "St_PreTyp",
+    "St_PreSep",
+    "St_Name",
+    "St_PosTyp",
+    "St_PosDir",
+    "St_PosMod",
+    "Post_Comm",
+    "Post_Code",
+    "Inc_Muni",
+    "County",
+    "Unit",
+    "Placement"
+   ],
+   "sha256": "7bc7a0fea8a190c0a8cbec2bf4f0facee357bb31314dc6884da07ac94671afba",
+   "last_modified": "Wed, 30 Sep 2026 15:23:57 GMT",
+   "note": "SAMPLE: a few rows of the real file, cut for the fixture"
+  },
+  "points": 360,
+  "left_out_no_position": 0,
+  "left_out_no_street": 0,
+  "left_out_no_city": 0,
+  "left_out_deleted": 0,
+  "merged_duplicates": 0,
+  "rows": 360,
+  "shards": 3,
+  "tiles": [
+   "r0079_c0198",
+   "r0079_c0199",
+   "r0092_c0214"
+  ],
+  "split": {},
+  "depths": {
+   "0": 3
+  },
+  "largest_shard": {
+   "name": "r0092_c0214",
+   "bytes": 22418,
+   "rows": 320
+  },
+  "cities": 4,
+  "letter_files": 46,
+  "largest_letter": {
+   "city": "Billings",
+   "key": "BR",
+   "rows": 81,
+   "bytes": 5104,
+   "file": "hail/a/idx/billings/BR.json"
+  },
+  "two_character_files": 19,
+  "over_limit_shards": [],
+  "over_limit_letter_files": [],
+  "bytes": {
+   "shards": 25325,
+   "letters": 24389,
+   "cities": 460,
+   "words": 427,
+   "idx": 25276,
+   "a": 50601
+  },
+  "fields_read": [
+   "Add_Number",
+   "AddNum_Pre",
+   "AddNum_Suf",
+   "St_PreMod",
+   "St_PreDir",
+   "St_PreTyp",
+   "St_PreSep",
+   "St_Name",
+   "St_PosTyp",
+   "St_PosDir",
+   "St_PosMod",
+   "Post_Comm",
+   "Post_Code",
+   "Inc_Muni",
+   "County",
+   "Unit",
+   "Placement"
+  ],
+  "projection": {
+   "from": "EPSG:6514",
+   "to": "EPSG:4326",
+   "always_xy": true,
+   "decimals": 5
+  },
+  "pyproj": "3.8.0",
+  "projection_pairs": [
+   {
+    "name": "1611 South Avenue West, Missoula",
+    "file": [
+     -114.02078,
+     46.84868
+    ],
+    "live": [
+     -114.0208,
+     46.84869
+    ],
+    "metres": 1.236
+   },
+   {
+    "name": "500 Colony Road, Roundup",
+    "file": [
+     -108.50031,
+     46.7175
+    ],
+    "live": [
+     -108.50032,
+     46.71751
+    ],
+    "metres": 1.2
+   },
+   {
+    "name": "1617 Euclid Avenue Unit 4, Helena",
+    "file": [
+     -112.05997,
+     46.60374
+    ],
+    "live": [
+     -112.05998,
+     46.60375
+    ],
+    "metres": 1.223
+   }
+  ],
+  "limits": {
+   "rows": 2500,
+   "depth_cap": 6
+  },
+  "placement": {
+   "classes": {
+    "S": 360,
+    "P": 0,
+    "G": 0,
+    "L": 0,
+    "T": 0,
+    "U": 0
+   },
+   "blank_as_unknown": 0,
+   "by_county": {
+    "(sample)": {
+     "S": 360,
+     "P": 0,
+     "G": 0,
+     "L": 0,
+     "T": 0,
+     "U": 0
+    }
+   }
+  }
+ },
+ "joins": {
+  "format": "hail-joins-v2",
+  "events_format": "hail-events-v2",
+  "built_at": "2026-10-24T02:29:59Z",
+  "as_of": "2026-10-15",
+  "window": [
+   "2021-10-16",
+   "2026-10-15"
+  ],
+  "sample": true,
+  "state": "sample",
+  "parts": {
+   "reports": "loaded",
+   "records": "loaded",
+   "detections": "loaded",
+   "warnings": "loaded",
+   "zones": "loaded",
+   "stations": "loaded"
+  },
+  "reasons": {},
+  "partial": {},
+  "lags": {
+   "ncei": "2026-06-29",
+   "swdi": "2026-09-28",
+   "warnings": "2026-09-19"
+  },
+  "types": {
+   "2": "blowing dust",
+   "5": "freezing rain",
+   "6": "extreme cold",
+   "7": "extr wind chill",
+   "A": "high sust winds",
+   "B": "downburst",
+   "C": "funnel cloud",
+   "D": "tstm wnd dmg",
+   "E": "flood",
+   "F": "flash flood",
+   "G": "tstm wnd gst",
+   "H": "hail",
+   "I": "extreme heat",
+   "J": "fog",
+   "L": "lightning",
+   "M": "marine tstm wind",
+   "N": "non-tstm wnd gst",
+   "O": "non-tstm wnd dmg",
+   "P": "misc mrn/srf hzd",
+   "Q": "snow squall",
+   "R": "rain",
+   "S": "snow",
+   "T": "tornado",
+   "U": "wildfire",
+   "V": "avalanche",
+   "W": "landspout",
+   "X": "debris flow",
+   "Z": "blizzard"
+  },
+  "zone_list": [
+   "MTZ235",
+   "MTZ313"
+  ],
+  "zones_before": {
+   "codes": [
+    "MTZ008",
+    "MTZ009",
+    "MTZ010",
+    "MTZ011",
+    "MTZ012",
+    "MTZ013",
+    "MTZ014",
+    "MTZ015",
+    "MTZ044",
+    "MTZ045",
+    "MTZ046",
+    "MTZ047",
+    "MTZ048",
+    "MTZ049",
+    "MTZ050",
+    "MTZ051",
+    "MTZ052",
+    "MTZ053",
+    "MTZ054",
+    "MTZ055",
+    "MTZ060"
+   ],
+   "cells": {
+    "MTZ008": 16884,
+    "MTZ009": 7174,
+    "MTZ010": 4542,
+    "MTZ011": 9199,
+    "MTZ012": 8378,
+    "MTZ013": 12443,
+    "MTZ014": 7921,
+    "MTZ015": 10833,
+    "MTZ044": 6178,
+    "MTZ045": 4583,
+    "MTZ046": 3585,
+    "MTZ047": 13663,
+    "MTZ048": 8259,
+    "MTZ049": 2420,
+    "MTZ050": 5862,
+    "MTZ051": 14002,
+    "MTZ052": 5265,
+    "MTZ053": 3757,
+    "MTZ054": 7572,
+    "MTZ055": 8082,
+    "MTZ060": 2813
+   }
+  },
+  "zone_list_before": [
+   "MTZ050"
+  ],
+  "counties": {
+   "state": "sample",
+   "names": {
+    "MTC045": "Judith Basin",
+    "MTC111": "Yellowstone"
+   },
+   "count": 2
+  },
+  "zone_names": {
+   "MTZ050": "Judith Basin",
+   "MTZ235": "Southwestern Yellowstone",
+   "MTZ313": "Judith Basin County and Judith Gap"
+  },
+  "zones": 2,
+  "station_list": [
+   "1LM",
+   "6S8",
+   "BIL",
+   "LWT"
+  ],
+  "stations": 4,
+  "fire_zone_list": [
+   "MTZ117",
+   "MTZ128"
+  ],
+  "fire_zones": {
+   "state": "loaded",
+   "reason": null,
+   "zones": 2
+  },
+  "fire_zone_names": {
+   "MTZ117": "Central and Eastern Lewis and Clark National Forest Areas",
+   "MTZ128": "Yellowstone County"
+  },
+  "tiles": 3,
+  "sample_days": [
+   "2025-06-14",
+   "2025-06-15",
+   "2025-06-16"
+  ],
+  "source": "cut from the joins build of 2026-10-24T02:29:59Z (days 2025-06-14, 2025-06-15, 2025-06-16 only)",
+  "cover": "25 lower-case hex digits; bit k (the cell key 0 to 99) is set when the polygon touches the cell's square (D11: a vertex in it, an edge across its side, or its centre inside)",
+  "shapes": {
+   "report": [
+    "d",
+    "t",
+    "lat",
+    "lon",
+    "code",
+    "mag_text",
+    "unit",
+    "qual",
+    "src",
+    "city",
+    "remark",
+    "kind"
+   ],
+   "record": [
+    "d",
+    "t",
+    "lat",
+    "lon",
+    "code",
+    "mag_text",
+    "unit",
+    "qual",
+    "src",
+    "city",
+    "remark",
+    "mag_mph",
+    "mag_kt",
+    "cause"
+   ],
+   "warning": [
+    "k",
+    "b",
+    "e",
+    "o",
+    "tags",
+    "s"
+   ],
+   "detection": [
+    "d",
+    "t",
+    "lat",
+    "lon",
+    "size_hundredths_in"
+   ],
+   "station_day": [
+    "d",
+    "mph",
+    "kt",
+    "flag"
+   ],
+   "county_event": [
+    "k",
+    "s",
+    "b",
+    "e",
+    "o",
+    "st",
+    "n"
+   ]
+  },
+  "tile": {
+   "reports": "indexes into events.reports, sorted by the row's first five fields",
+   "records": "indexes into events.records, sorted the same way",
+   "warnings": "[index into events.warnings, cover]",
+   "detections": "[d, t, lat, lon, size_hundredths_in]",
+   "zones": "{zone code: [cell keys]}",
+   "fire": "{fire weather zone code: [cell keys]}",
+   "counties": "{county code (MTC plus FIPS): [cell keys]} (B5: each Montana cell is in one county)",
+   "stations": "[{id, name, lat, lon, miles}]"
+  },
+  "montana_time": [
+   [
+    "2020-01-01T00:00Z",
+    "MST"
+   ],
+   [
+    "2020-03-08T09:00Z",
+    "MDT"
+   ],
+   [
+    "2020-11-01T08:00Z",
+    "MST"
+   ],
+   [
+    "2021-03-14T09:00Z",
+    "MDT"
+   ],
+   [
+    "2021-11-07T08:00Z",
+    "MST"
+   ],
+   [
+    "2022-03-13T09:00Z",
+    "MDT"
+   ],
+   [
+    "2022-11-06T08:00Z",
+    "MST"
+   ],
+   [
+    "2023-03-12T09:00Z",
+    "MDT"
+   ],
+   [
+    "2023-11-05T08:00Z",
+    "MST"
+   ],
+   [
+    "2024-03-10T09:00Z",
+    "MDT"
+   ],
+   [
+    "2024-11-03T08:00Z",
+    "MST"
+   ],
+   [
+    "2025-03-09T09:00Z",
+    "MDT"
+   ],
+   [
+    "2025-11-02T08:00Z",
+    "MST"
+   ],
+   [
+    "2026-03-08T09:00Z",
+    "MDT"
+   ],
+   [
+    "2026-11-01T08:00Z",
+    "MST"
+   ],
+   [
+    "2027-03-14T09:00Z",
+    "MDT"
+   ],
+   [
+    "2027-11-07T08:00Z",
+    "MST"
+   ]
+  ],
+  "events": {
+   "reports": 16,
+   "records": 7,
+   "warnings": 7
+  },
+  "compare": {},
+  "bytes": {},
+  "counts": {},
+  "station_days_by_year": {},
+  "station_dropped": 0,
+  "station_days": 0,
+  "station_missing": 0,
+  "zone_rows_unmatched": 0,
+  "ncei_zone_rows_unmatched": 0,
+  "sources": {},
+  "failures": [],
+  "failure_count": 0,
+  "zone_editions": [
+   {
+    "file": "z_08se21.zip",
+    "effective": "2021-09-08",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_22mr22.zip",
+    "effective": "2022-03-22",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_07se22.zip",
+    "effective": "2022-09-07",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_13se22.zip",
+    "effective": "2022-09-13",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_08mr23.zip",
+    "effective": "2023-03-08",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_05mr24.zip",
+    "effective": "2024-03-05",
+    "current": false,
+    "read": false,
+    "reason": "the NWS does not publish this zone edition at its address (HTTP 404 when checked on 2026-10-19)"
+   },
+   {
+    "file": "z_18mr25.zip",
+    "effective": "2025-03-18",
+    "current": false,
+    "read": true,
+    "zones": 83,
+    "same_codes": 83,
+    "renamed": {},
+    "geometry_max_diff_deg": 0.0
+   },
+   {
+    "file": "z_16ap26.zip",
+    "effective": "2026-04-16",
+    "current": true,
+    "read": true,
+    "zones": 83
+   }
+  ],
+  "zone_edition_cutover": "2026-04-16",
+  "zone_products_unplaced": 0,
+  "zone_products_renumbered": 0,
+  "ncei_zone_rows_renumbered": 0,
+  "zone_placement": {},
+  "zone_placed_by_code_alone": 0,
+  "zone_unplaced_rows": [],
+  "malformed_rows": {
+   "reports": 0,
+   "records": 0,
+   "detections": 0,
+   "warnings": 0,
+   "zones": 0,
+   "stations": 0
+  },
+  "repull": {
+   "months": [],
+   "years": []
+  },
+  "offline": true,
+  "events_tiles": {
+   "format": "hail-events-tile-v1",
+   "dir": "hail/j/e/",
+   "count": 3,
+   "bytes": 5538,
+   "gzip_bytes": 1944,
+   "largest_raw": {
+    "file": "r0079_c0199.json",
+    "bytes": 2020
+   },
+   "largest_gzip": {
+    "file": "r0079_c0199.json",
+    "bytes": 709
+   },
+   "budget_gzip": 100000,
+   "referenced": {
+    "reports": 20,
+    "records": 11,
+    "warnings": 10
+   }
+  },
+  "towns_file": {
+   "format": "hail-joins-towns-v1",
+   "file": "hail/j/towns.json",
+   "towns": 1,
+   "events": 0,
+   "bytes": 177
+  }
+ },
+ "stations": {
+  "state": "loaded",
+  "problem": null,
+  "detail": null,
+  "as_of": "2026-10-16",
+  "rule": {
+   "radius_miles": 40.0,
+   "fresh_days": 30,
+   "cover_min": 0.8,
+   "tile_radius": "RADIUS_MILES plus the tile's margin_miles, the distance from the tile centre to its farthest corner (D61, D72)",
+   "current": "per element: an unflagged value of the element within fresh_days of as_of (D18)",
+   "season_min": 0.95,
+   "cover_days": 2192,
+   "cover_window": "2020-01-01 to 2025-12-31",
+   "hot_tenths": 322,
+   "deep_mm": 25,
+   "pull_first": 6
+  },
+  "sources": {
+   "stations": {
+    "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt",
+    "bytes": 11441354
+   },
+   "inventory": {
+    "url": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-inventory.txt",
+    "bytes": 36396304
+   },
+   "daily": {
+    "example": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/all/USC00240802.dly",
+    "note": "one file per station: the station id is the file name, followed by .dly"
+   }
+  },
+  "sample": true,
+  "counts": {
+   "sample_tiles": 3,
+   "sample_stations": 67
+  },
+  "refresh": {
+   "mode": "none",
+   "ids": 0,
+   "unchanged": 0
+  },
+  "failures": [],
+  "failed_station_ids": [],
+  "malformed": 0,
+  "unchanged_station_ids": [],
+  "stations": {
+   "US1MTBH0006": {
+    "name": "Fort Smith 0.5 ENE",
+    "ghcn_name": "FORT SMITH 0.5 ENE",
+    "lat": 45.3108,
+    "lon": -107.9163,
+    "elev": 1000.7,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261015,
+     "SNOW": 20261015,
+     "SNWD": 20261015,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 1920,
+     "SNOW": 1918,
+     "SNWD": 1856
+    }
+   },
+   "US1MTCB0012": {
+    "name": "Fromberg 2.7 NE",
+    "ghcn_name": "FROMBERG 2.7 NE",
+    "lat": 45.4196,
+    "lon": -108.8668,
+    "elev": 1072.6,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261015,
+     "SNOW": 20261015,
+     "SNWD": 20251212,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2150,
+     "SNOW": 1480,
+     "SNWD": 16
+    }
+   },
+   "US1MTCB0013": {
+    "name": "Joliet 2.2 WNW",
+    "ghcn_name": "JOLIET 2.2 WNW",
+    "lat": 45.5004,
+    "lon": -109.0107,
+    "elev": 1264.3,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261014,
+     "SNOW": 20261014,
+     "SNWD": 20250319,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 1659,
+     "SNOW": 1381,
+     "SNWD": 2
+    }
+   },
+   "US1MTCH0006": {
+    "name": "Geraldine 12.0 E",
+    "ghcn_name": "GERALDINE 12.0 E",
+    "lat": 47.5974,
+    "lon": -110.0075,
+    "elev": 962.3,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": 20260210,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2178,
+     "SNOW": 1637,
+     "SNWD": 2
+    }
+   },
+   "US1MTFG0003": {
+    "name": "Buffalo 1.7 E",
+    "ghcn_name": "BUFFALO 1.7 E",
+    "lat": 46.8201,
+    "lon": -109.7935,
+    "elev": 1301.8,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261013,
+     "SNOW": 20261013,
+     "SNWD": 20220413,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2093,
+     "SNOW": 1791,
+     "SNWD": 1
+    }
+   },
+   "US1MTFG0006": {
+    "name": "Lewistown 0.4 SW",
+    "ghcn_name": "LEWISTOWN 0.4 SW",
+    "lat": 47.0601,
+    "lon": -109.4344,
+    "elev": 1225.0,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20260920,
+     "SNOW": 20251024,
+     "SNWD": 20260316,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 403,
+     "SNOW": 232,
+     "SNWD": 0
+    }
+   },
+   "US1MTGV0008": {
+    "name": "Judith Gap 20.0 E",
+    "ghcn_name": "JUDITH GAP 20.0 E",
+    "lat": 46.6417,
+    "lon": -109.3368,
+    "elev": 1579.5,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20210215,
+     "SNOW": 20210128,
+     "SNWD": null,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 403,
+     "SNOW": 305
+    }
+   },
+   "US1MTMH0007": {
+    "name": "Roundup 4.3 SSE",
+    "ghcn_name": "ROUNDUP 4.3 SSE",
+    "lat": 46.3879,
+    "lon": -108.5206,
+    "elev": 1056.4,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261012,
+     "SNOW": 20261012,
+     "SNWD": 20260209,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 249,
+     "SNOW": 64,
+     "SNWD": 2
+    }
+   },
+   "US1MTMH0010": {
+    "name": "Roundup 8.1 SE",
+    "ghcn_name": "ROUNDUP 8.1 SE",
+    "lat": 46.3514,
+    "lon": -108.443,
+    "elev": 1188.7,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20251226,
+     "SNOW": 20251226,
+     "SNWD": 20251215,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 1595,
+     "SNOW": 1343,
+     "SNWD": 302
+    }
+   },
+   "US1MTMH0014": {
+    "name": "Lavina 10.6 E",
+    "ghcn_name": "LAVINA 10.6 E",
+    "lat": 46.2972,
+    "lon": -108.7172,
+    "elev": 1070.8,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20220128,
+     "SNOW": 20220128,
+     "SNWD": 20210209,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 321,
+     "SNOW": 238,
+     "SNWD": 9
+    }
+   },
+   "US1MTMH0017": {
+    "name": "Roundup 7.4 SSE",
+    "ghcn_name": "ROUNDUP 7.4 SSE",
+    "lat": 46.3499,
+    "lon": -108.48,
+    "elev": 1072.3,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20260604,
+     "SNOW": 20260604,
+     "SNWD": 20260526,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2126,
+     "SNOW": 2124,
+     "SNWD": 2062
+    }
+   },
+   "US1MTMH0022": {
+    "name": "Roundup 7.3 SE",
+    "ghcn_name": "ROUNDUP 7.3 SE",
+    "lat": 46.3606,
+    "lon": -108.4538,
+    "elev": 1163.1,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20251116,
+     "SNOW": 20251116,
+     "SNWD": 20200130,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 783,
+     "SNOW": 576,
+     "SNWD": 4
+    }
+   },
+   "US1MTMH0024": {
+    "name": "Roundup 13.9 S",
+    "ghcn_name": "ROUNDUP 13.9 S",
+    "lat": 46.2493,
+    "lon": -108.4953,
+    "elev": 1225.3,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20260923,
+     "SNOW": 20261012,
+     "SNWD": 20261012,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 393,
+     "SNOW": 319,
+     "SNWD": 20
+    }
+   },
+   "US1MTSW0002": {
+    "name": "Columbus 7.2 E",
+    "ghcn_name": "COLUMBUS 7.2 E",
+    "lat": 45.6208,
+    "lon": -109.104,
+    "elev": 1242.1,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": 20261016,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2023,
+     "SNOW": 1658,
+     "SNWD": 896
+    }
+   },
+   "US1MTSW0005": {
+    "name": "Park City 0.5 S",
+    "ghcn_name": "PARK CITY 0.5 S",
+    "lat": 45.627,
+    "lon": -108.9193,
+    "elev": 1036.9,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261012,
+     "SNOW": 20261010,
+     "SNWD": 20260427,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2096,
+     "SNOW": 1655,
+     "SNWD": 339
+    }
+   },
+   "US1MTSW0010": {
+    "name": "Columbus 8.2 ESE",
+    "ghcn_name": "COLUMBUS 8.2 ESE",
+    "lat": 45.6001,
+    "lon": -109.0899,
+    "elev": 1094.8,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261014,
+     "SNOW": 20261014,
+     "SNWD": 20261013,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2169,
+     "SNOW": 1780,
+     "SNWD": 417
+    }
+   },
+   "US1MTSW0012": {
+    "name": "Park City 6.0 WSW",
+    "ghcn_name": "PARK CITY 6.0 WSW",
+    "lat": 45.6036,
+    "lon": -109.0339,
+    "elev": 1052.5,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": 20250220,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2189,
+     "SNOW": 1611,
+     "SNWD": 1
+    }
+   },
+   "US1MTSW0013": {
+    "name": "Columbus 6.0 SSE",
+    "ghcn_name": "COLUMBUS 6.0 SSE",
+    "lat": 45.5532,
+    "lon": -109.2188,
+    "elev": 1396.0,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": null,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2158,
+     "SNOW": 1143
+    }
+   },
+   "US1MTWH0003": {
+    "name": "Two Dot 0.4 WNW",
+    "ghcn_name": "TWO DOT 0.4 WNW",
+    "lat": 46.4268,
+    "lon": -110.0798,
+    "elev": 1354.8,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20220725,
+     "SNOW": 20220412,
+     "SNWD": 20220418,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 23,
+     "SNOW": 14,
+     "SNWD": 14
+    }
+   },
+   "US1MTYS0005": {
+    "name": "Billings 2.8 WNW",
+    "ghcn_name": "BILLINGS 2.8 WNW",
+    "lat": 45.8006,
+    "lon": -108.5947,
+    "elev": 1029.9,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20210630,
+     "SNOW": 20210630,
+     "SNWD": 20210630,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 529,
+     "SNOW": 519,
+     "SNWD": 528
+    }
+   },
+   "US1MTYS0011": {
+    "name": "Billings 7.4 SW",
+    "ghcn_name": "BILLINGS 7.4 SW",
+    "lat": 45.7148,
+    "lon": -108.6473,
+    "elev": 983.0,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20221028,
+     "SNOW": 20221028,
+     "SNWD": 20220829,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 984,
+     "SNOW": 964,
+     "SNWD": 720
+    }
+   },
+   "US1MTYS0012": {
+    "name": "Billings 7.1 W",
+    "ghcn_name": "BILLINGS 7.1 W",
+    "lat": 45.7995,
+    "lon": -108.686,
+    "elev": 1040.0,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20211005,
+     "SNOW": 20211005,
+     "SNWD": 20210929,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 639,
+     "SNOW": 613,
+     "SNWD": 482
+    }
+   },
+   "US1MTYS0013": {
+    "name": "Billings 5.1 S",
+    "ghcn_name": "BILLINGS 5.1 S",
+    "lat": 45.7192,
+    "lon": -108.5218,
+    "elev": 1008.9,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20230719,
+     "SNOW": 20230719,
+     "SNWD": 20230405,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 1268,
+     "SNOW": 1029,
+     "SNWD": 273
+    }
+   },
+   "US1MTYS0014": {
+    "name": "Billings 4.5 NE",
+    "ghcn_name": "BILLINGS 4.5 NE",
+    "lat": 45.8323,
+    "lon": -108.444,
+    "elev": 963.8,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261014,
+     "SNOW": 20261014,
+     "SNWD": 20261014,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2187,
+     "SNOW": 2180,
+     "SNWD": 2183
+    }
+   },
+   "US1MTYS0027": {
+    "name": "Billings 3.2 NNE",
+    "ghcn_name": "BILLINGS 3.2 NNE",
+    "lat": 45.8359,
+    "lon": -108.5221,
+    "elev": 1037.2,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": 20260331,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2102,
+     "SNOW": 1623,
+     "SNWD": 334
+    }
+   },
+   "US1MTYS0028": {
+    "name": "Billings 4.2 WSW",
+    "ghcn_name": "BILLINGS 4.2 WSW",
+    "lat": 45.7595,
+    "lon": -108.6133,
+    "elev": 990.3,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261009,
+     "SNOW": 20261009,
+     "SNWD": 20251215,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 1846,
+     "SNOW": 1189,
+     "SNWD": 24
+    }
+   },
+   "US1MTYS0032": {
+    "name": "Billings 3.4 NNE",
+    "ghcn_name": "BILLINGS 3.4 NNE",
+    "lat": 45.8377,
+    "lon": -108.5165,
+    "elev": 1026.3,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20240109,
+     "SNOW": 20240109,
+     "SNWD": 20220429,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 631,
+     "SNOW": 299,
+     "SNWD": 41
+    }
+   },
+   "US1MTYS0033": {
+    "name": "Billings 4.1 WSW",
+    "ghcn_name": "BILLINGS 4.1 WSW",
+    "lat": 45.7615,
+    "lon": -108.6123,
+    "elev": 994.3,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20210508,
+     "SNOW": 20210326,
+     "SNWD": 20210510,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 64,
+     "SNOW": 30,
+     "SNWD": 34
+    }
+   },
+   "US1MTYS0037": {
+    "name": "Billings 3.3 NW",
+    "ghcn_name": "BILLINGS 3.3 NW",
+    "lat": 45.8185,
+    "lon": -108.5954,
+    "elev": 1133.2,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20210920,
+     "SNOW": 20210423,
+     "SNWD": null,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 121,
+     "SNOW": 48,
+     "SNWD": 0
+    }
+   },
+   "US1MTYS0041": {
+    "name": "Billings 1.7 W",
+    "ghcn_name": "BILLINGS 1.7 W",
+    "lat": 45.7938,
+    "lon": -108.5733,
+    "elev": 999.7,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261015,
+     "SNOW": 20261015,
+     "SNWD": 20251129,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 1940,
+     "SNOW": 1286,
+     "SNWD": 21
+    }
+   },
+   "US1MTYS0043": {
+    "name": "Billings 1.1 S",
+    "ghcn_name": "BILLINGS 1.1 S",
+    "lat": 45.7757,
+    "lon": -108.5401,
+    "elev": 963.5,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20240509,
+     "SNOW": 20231022,
+     "SNWD": null,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 354,
+     "SNOW": 229
+    }
+   },
+   "US1MTYS0044": {
+    "name": "Billings 5.3 SSE",
+    "ghcn_name": "BILLINGS 5.3 SSE",
+    "lat": 45.7182,
+    "lon": -108.5037,
+    "elev": 1028.7,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20241123,
+     "SNOW": 20241124,
+     "SNWD": 20241123,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 534,
+     "SNOW": 534,
+     "SNWD": 540
+    }
+   },
+   "US1MTYS0046": {
+    "name": "Billings 1.9 WNW",
+    "ghcn_name": "BILLINGS 1.9 WNW",
+    "lat": 45.799,
+    "lon": -108.5759,
+    "elev": 1030.8,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261012,
+     "SNOW": 20261012,
+     "SNWD": 20251216,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 814,
+     "SNOW": 673,
+     "SNWD": 64
+    }
+   },
+   "US1MTYS0047": {
+    "name": "Billings 4.3 S",
+    "ghcn_name": "BILLINGS 4.3 S",
+    "lat": 45.7294,
+    "lon": -108.5249,
+    "elev": 996.7,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261012,
+     "SNOW": 20261012,
+     "SNWD": 20261012,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 460,
+     "SNOW": 343,
+     "SNWD": 13
+    }
+   },
+   "US1MTYS0048": {
+    "name": "Worden 2.5 W",
+    "ghcn_name": "WORDEN 2.5 W",
+    "lat": 45.9619,
+    "lon": -108.215,
+    "elev": 905.0,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20251006,
+     "SNOW": 20251003,
+     "SNWD": null,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 292,
+     "SNOW": 217
+    }
+   },
+   "US1MTYS0050": {
+    "name": "Billings 5.2 WSW",
+    "ghcn_name": "BILLINGS 5.2 WSW",
+    "lat": 45.7575,
+    "lon": -108.6342,
+    "elev": 993.6,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261015,
+     "SNOW": 20261015,
+     "SNWD": 20261012,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 332,
+     "SNOW": 331,
+     "SNWD": 335
+    }
+   },
+   "US1MTYS0052": {
+    "name": "Billings 6.2 W",
+    "ghcn_name": "BILLINGS 6.2 W",
+    "lat": 45.7923,
+    "lon": -108.667,
+    "elev": 1022.6,
+    "net": "CoCoRaHS",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261012,
+     "SNOW": 20261012,
+     "SNWD": 20260427,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 225,
+     "SNOW": 148,
+     "SNWD": 7
+    }
+   },
+   "USC00240801": {
+    "name": "Billings WFO",
+    "ghcn_name": "BILLINGS WFO",
+    "lat": 45.7503,
+    "lon": -108.5697,
+    "elev": 970.8,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2192,
+     "SNOW": 2192,
+     "SNWD": 2192,
+     "TMAX": 2192,
+     "TMIN": 2192
+    }
+   },
+   "USC00240802": {
+    "name": "Billings WTP",
+    "ghcn_name": "BILLINGS WTP",
+    "lat": 45.7717,
+    "lon": -108.4811,
+    "elev": 944.0,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2174,
+     "SNOW": 2150,
+     "SNWD": 2156,
+     "TMAX": 2130,
+     "TMIN": 2135
+    }
+   },
+   "USC00241102": {
+    "name": "Bridger 2 N",
+    "ghcn_name": "BRIDGER 2 N",
+    "lat": 45.3261,
+    "lon": -108.9092,
+    "elev": 1092.1,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261014,
+     "SNOW": 20261013,
+     "SNWD": 20261013,
+     "TMAX": 20261014,
+     "TMIN": 20261014
+    },
+    "cover": {
+     "PRCP": 2190,
+     "SNOW": 2190,
+     "SNWD": 2190,
+     "TMAX": 2188,
+     "TMIN": 2190
+    }
+   },
+   "USC00241938": {
+    "name": "Columbus",
+    "ghcn_name": "COLUMBUS",
+    "lat": 45.6444,
+    "lon": -109.2675,
+    "elev": 1097.9,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20260715,
+     "SNOW": 20260715,
+     "SNWD": 20260715,
+     "TMAX": 20260715,
+     "TMIN": 20260715
+    },
+    "cover": {
+     "PRCP": 2191,
+     "SNOW": 2191,
+     "SNWD": 2191,
+     "TMAX": 2190,
+     "TMIN": 2191
+    }
+   },
+   "USC00243939": {
+    "name": "Harlowton",
+    "ghcn_name": "HARLOWTON",
+    "lat": 46.4356,
+    "lon": -109.8428,
+    "elev": 1286.9,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20260930,
+     "SNOW": 20260930,
+     "SNWD": 20260930,
+     "TMAX": 20260930,
+     "TMIN": 20260930
+    },
+    "cover": {
+     "PRCP": 1569,
+     "SNOW": 1671,
+     "SNWD": 1678,
+     "TMAX": 1797,
+     "TMIN": 1796
+    }
+   },
+   "USC00243947": {
+    "name": "Harlowton 11NW",
+    "ghcn_name": "HARLOWTON 11NW",
+    "lat": 46.5786,
+    "lon": -109.9478,
+    "elev": 1510.0,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261014,
+     "SNOW": 20261012,
+     "SNWD": 20261014,
+     "TMAX": 20261014,
+     "TMIN": 20261014
+    },
+    "cover": {
+     "PRCP": 2183,
+     "SNOW": 2182,
+     "SNWD": 2183,
+     "TMAX": 2174,
+     "TMIN": 2176
+    }
+   },
+   "USC00244193": {
+    "name": "Hobson",
+    "ghcn_name": "HOBSON",
+    "lat": 46.9997,
+    "lon": -109.8703,
+    "elev": 1293.6,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20211208,
+     "SNOW": 20211208,
+     "SNWD": 20211208,
+     "TMAX": 20210808,
+     "TMIN": 20210808
+    },
+    "cover": {
+     "PRCP": 27,
+     "SNOW": 33,
+     "SNWD": 33,
+     "TMAX": 56,
+     "TMIN": 55
+    }
+   },
+   "USC00244345": {
+    "name": "Huntley Exp Stn",
+    "ghcn_name": "HUNTLEY EXP STN",
+    "lat": 45.9228,
+    "lon": -108.2453,
+    "elev": 924.8,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20260930,
+     "SNWD": 20260930,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2181,
+     "SNOW": 2161,
+     "SNWD": 2159,
+     "TMAX": 2186,
+     "TMIN": 2184
+    }
+   },
+   "USC00244538": {
+    "name": "Judith Gap",
+    "ghcn_name": "JUDITH GAP",
+    "lat": 46.6778,
+    "lon": -109.7506,
+    "elev": 1411.2,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20221231,
+     "SNOW": 20230831,
+     "SNWD": 20230831,
+     "TMAX": 20221231,
+     "TMIN": 20221231
+    },
+    "cover": {
+     "PRCP": 831,
+     "SNOW": 899,
+     "SNWD": 898,
+     "TMAX": 818,
+     "TMIN": 818
+    }
+   },
+   "USC00244545": {
+    "name": "Judith Gap 13 E",
+    "ghcn_name": "JUDITH GAP 13 E",
+    "lat": 46.6103,
+    "lon": -109.4736,
+    "elev": 1460.3,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20210204,
+     "SNOW": 20210204,
+     "SNWD": 20210204,
+     "TMAX": 20210204,
+     "TMIN": 20210204
+    },
+    "cover": {
+     "PRCP": 354,
+     "SNOW": 354,
+     "SNWD": 354,
+     "TMAX": 352,
+     "TMIN": 351
+    }
+   },
+   "USC00244976": {
+    "name": "Lewistown",
+    "ghcn_name": "LEWISTOWN",
+    "lat": 47.0706,
+    "lon": -109.41,
+    "elev": 1192.1,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20241113,
+     "SNOW": 20230219,
+     "SNWD": 20230219,
+     "TMAX": 20250124,
+     "TMIN": 20250124
+    },
+    "cover": {
+     "PRCP": 1019,
+     "SNOW": 807,
+     "SNWD": 739,
+     "TMAX": 1520,
+     "TMIN": 1518
+    }
+   },
+   "USC00244978": {
+    "name": "Lewistown 11 SSE",
+    "ghcn_name": "LEWISTOWN 11 SSE",
+    "lat": 46.9058,
+    "lon": -109.4114,
+    "elev": 1513.3,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261006,
+     "SNOW": 20260518,
+     "SNWD": 20260427,
+     "TMAX": 20261006,
+     "TMIN": 20261006
+    },
+    "cover": {
+     "PRCP": 2180,
+     "SNOW": 1973,
+     "SNWD": 1462,
+     "TMAX": 2168,
+     "TMIN": 2150
+    }
+   },
+   "USC00245761": {
+    "name": "Moccasin Exp Stn",
+    "ghcn_name": "MOCCASIN EXP STN",
+    "lat": 47.0572,
+    "lon": -109.9511,
+    "elev": 1310.6,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20241231,
+     "SNOW": 20241231,
+     "SNWD": 20241231,
+     "TMAX": 20241231,
+     "TMIN": 20241231
+    },
+    "cover": {
+     "PRCP": 364,
+     "SNOW": 324,
+     "SNWD": 283,
+     "TMAX": 354,
+     "TMIN": 353
+    }
+   },
+   "USC00245791": {
+    "name": "Molt 6 SW",
+    "ghcn_name": "MOLT 6 SW",
+    "lat": 45.7847,
+    "lon": -108.9664,
+    "elev": 1216.2,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20260904,
+     "SNOW": 20251027,
+     "SNWD": 20251027,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2042,
+     "SNOW": 1842,
+     "SNWD": 1691
+    }
+   },
+   "USC00246647": {
+    "name": "Pompeys Pillar 15N",
+    "ghcn_name": "POMPEYS PILLAR 15N",
+    "lat": 46.1972,
+    "lon": -108.0039,
+    "elev": 1033.3,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2036,
+     "SNOW": 2037,
+     "SNWD": 2035,
+     "TMAX": 2021,
+     "TMIN": 1954
+    }
+   },
+   "USC00246862": {
+    "name": "Rapelje",
+    "ghcn_name": "RAPELJE",
+    "lat": 45.9717,
+    "lon": -109.2536,
+    "elev": 1239.9,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20210831,
+     "SNOW": 20210831,
+     "SNWD": 20210831,
+     "TMAX": 20210831,
+     "TMIN": 20210831
+    },
+    "cover": {
+     "PRCP": 607,
+     "SNOW": 605,
+     "SNWD": 605,
+     "TMAX": 607,
+     "TMIN": 606
+    }
+   },
+   "USC00247128": {
+    "name": "Roberts 1 W",
+    "ghcn_name": "ROBERTS 1 W",
+    "lat": 45.3753,
+    "lon": -109.1697,
+    "elev": 1380.7,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261012,
+     "SNOW": null,
+     "SNWD": null,
+     "TMAX": null,
+     "TMIN": null
+    },
+    "cover": {
+     "PRCP": 2160
+    }
+   },
+   "USC00247220": {
+    "name": "Roundup 15 SW",
+    "ghcn_name": "ROUNDUP 15 SW",
+    "lat": 46.3253,
+    "lon": -108.7403,
+    "elev": 1032.1,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20260914,
+     "SNOW": 20251106,
+     "SNWD": 20251106,
+     "TMAX": 20251106,
+     "TMIN": 20251106
+    },
+    "cover": {
+     "PRCP": 2024,
+     "SNOW": 2027,
+     "SNWD": 2027,
+     "TMAX": 2025,
+     "TMIN": 2025
+    }
+   },
+   "USC00247540": {
+    "name": "Shonkin 7 S",
+    "ghcn_name": "SHONKIN 7 S",
+    "lat": 47.5311,
+    "lon": -110.5767,
+    "elev": 1309.1,
+    "net": "COOP",
+    "current": {
+     "PRCP": false,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20260131,
+     "SNOW": 20260131,
+     "SNWD": 20251031,
+     "TMAX": 20200930,
+     "TMIN": 20200930
+    },
+    "cover": {
+     "PRCP": 1940,
+     "SNOW": 1962,
+     "SNWD": 1509,
+     "TMAX": 274,
+     "TMIN": 274
+    }
+   },
+   "USC00247864": {
+    "name": "Stanford",
+    "ghcn_name": "STANFORD",
+    "lat": 47.155,
+    "lon": -110.2239,
+    "elev": 1307.3,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2111,
+     "SNOW": 1752,
+     "SNWD": 1796,
+     "TMAX": 2117,
+     "TMIN": 2116
+    }
+   },
+   "USC00249240": {
+    "name": "Yellowtail Dam",
+    "ghcn_name": "YELLOWTAIL DAM",
+    "lat": 45.3128,
+    "lon": -107.9383,
+    "elev": 1007.4,
+    "net": "COOP",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": false,
+     "TMIN": false
+    },
+    "newest": {
+     "PRCP": 20261007,
+     "SNOW": 20261007,
+     "SNWD": 20261007,
+     "TMAX": 20230703,
+     "TMIN": 20230403
+    },
+    "cover": {
+     "PRCP": 1961,
+     "SNOW": 1997,
+     "SNWD": 1983,
+     "TMAX": 1083,
+     "TMIN": 1039
+    }
+   },
+   "USS0009C01S": {
+    "name": "Crystal Lake",
+    "ghcn_name": "Crystal Lake",
+    "lat": 46.79,
+    "lon": -109.51,
+    "elev": 1844.0,
+    "net": "SNOTEL",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261014,
+     "SNOW": null,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261015
+    },
+    "cover": {
+     "PRCP": 2189,
+     "SNWD": 2189,
+     "TMAX": 2188,
+     "TMIN": 2189
+    }
+   },
+   "USS0010C06S": {
+    "name": "Spur Park",
+    "ghcn_name": "Spur Park",
+    "lat": 46.78,
+    "lon": -110.62,
+    "elev": 2468.9,
+    "net": "SNOTEL",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": null,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2190,
+     "SNWD": 2188,
+     "TMAX": 2192,
+     "TMIN": 2190
+    }
+   },
+   "USS0010C09S": {
+    "name": "Deadman Creek",
+    "ghcn_name": "Deadman Creek",
+    "lat": 46.79,
+    "lon": -110.68,
+    "elev": 1966.0,
+    "net": "SNOTEL",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": null,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2191,
+     "SNWD": 2190,
+     "TMAX": 2191,
+     "TMIN": 2187
+    }
+   },
+   "USS0010C15S": {
+    "name": "Daisy Peak",
+    "ghcn_name": "Daisy Peak",
+    "lat": 46.67,
+    "lon": -110.33,
+    "elev": 2316.5,
+    "net": "SNOTEL",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": null,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2192,
+     "SNWD": 2192,
+     "TMAX": 2176,
+     "TMIN": 2170
+    }
+   },
+   "USS0010C22S": {
+    "name": "Onion Park",
+    "ghcn_name": "Onion Park",
+    "lat": 46.91,
+    "lon": -110.85,
+    "elev": 2258.6,
+    "net": "SNOTEL",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": null,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2192,
+     "SNWD": 2192,
+     "TMAX": 2189,
+     "TMIN": 2187
+    }
+   },
+   "USS0010C23S": {
+    "name": "Stringer Creek",
+    "ghcn_name": "Stringer Creek",
+    "lat": 46.93,
+    "lon": -110.9,
+    "elev": 1996.4,
+    "net": "SNOTEL",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": null,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2190,
+     "SNWD": 2188,
+     "TMAX": 2189,
+     "TMIN": 2189
+    }
+   },
+   "USW00004140": {
+    "name": "Lewistown 42 WSW",
+    "ghcn_name": "LEWISTOWN 42 WSW",
+    "lat": 46.8847,
+    "lon": -110.2894,
+    "elev": 1545.3,
+    "net": "WBAN",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": null,
+     "SNWD": null,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2191,
+     "TMAX": 2187,
+     "TMIN": 2188
+    }
+   },
+   "USW00024033": {
+    "name": "Billings Intl AP",
+    "ghcn_name": "BILLINGS INTL AP",
+    "lat": 45.8072,
+    "lon": -108.5461,
+    "elev": 1094.2,
+    "net": "WBAN",
+    "current": {
+     "PRCP": true,
+     "SNOW": true,
+     "SNWD": true,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261016,
+     "SNOW": 20261016,
+     "SNWD": 20261016,
+     "TMAX": 20261016,
+     "TMIN": 20261016
+    },
+    "cover": {
+     "PRCP": 2192,
+     "SNOW": 2192,
+     "SNWD": 2191,
+     "TMAX": 2192,
+     "TMIN": 2192
+    }
+   },
+   "USW00024036": {
+    "name": "Lewistown AP",
+    "ghcn_name": "LEWISTOWN AP",
+    "lat": 47.0544,
+    "lon": -109.4567,
+    "elev": 1257.3,
+    "net": "WBAN",
+    "current": {
+     "PRCP": true,
+     "SNOW": false,
+     "SNWD": false,
+     "TMAX": true,
+     "TMIN": true
+    },
+    "newest": {
+     "PRCP": 20261015,
+     "SNOW": 20240429,
+     "SNWD": 20240430,
+     "TMAX": 20261015,
+     "TMIN": 20261015
+    },
+    "cover": {
+     "PRCP": 2184,
+     "SNOW": 3,
+     "SNWD": 766,
+     "TMAX": 2188,
+     "TMIN": 2190
+    }
+   }
+  },
+  "chosen_station_ids": [
+   "US1MTBH0006",
+   "US1MTCB0012",
+   "US1MTCB0013",
+   "US1MTCH0006",
+   "US1MTFG0003",
+   "US1MTFG0006",
+   "US1MTGV0008",
+   "US1MTMH0007",
+   "US1MTMH0010",
+   "US1MTMH0014",
+   "US1MTMH0017",
+   "US1MTMH0022",
+   "US1MTMH0024",
+   "US1MTSW0002",
+   "US1MTSW0005",
+   "US1MTSW0010",
+   "US1MTSW0012",
+   "US1MTSW0013",
+   "US1MTWH0003",
+   "US1MTYS0005",
+   "US1MTYS0011",
+   "US1MTYS0012",
+   "US1MTYS0013",
+   "US1MTYS0014",
+   "US1MTYS0027",
+   "US1MTYS0028",
+   "US1MTYS0032",
+   "US1MTYS0033",
+   "US1MTYS0037",
+   "US1MTYS0041",
+   "US1MTYS0043",
+   "US1MTYS0044",
+   "US1MTYS0046",
+   "US1MTYS0047",
+   "US1MTYS0048",
+   "US1MTYS0050",
+   "US1MTYS0052",
+   "USC00240801",
+   "USC00240802",
+   "USC00241102",
+   "USC00241938",
+   "USC00243939",
+   "USC00243947",
+   "USC00244193",
+   "USC00244345",
+   "USC00244538",
+   "USC00244545",
+   "USC00244976",
+   "USC00244978",
+   "USC00245761",
+   "USC00245791",
+   "USC00246647",
+   "USC00246862",
+   "USC00247128",
+   "USC00247220",
+   "USC00247540",
+   "USC00247864",
+   "USC00249240",
+   "USS0009C01S",
+   "USS0010C06S",
+   "USS0010C09S",
+   "USS0010C15S",
+   "USS0010C22S",
+   "USS0010C23S",
+   "USW00004140",
+   "USW00024033",
+   "USW00024036"
+  ],
+  "rule_station_ids": [
+   "US1MTBH0006",
+   "US1MTCB0012",
+   "US1MTCB0013",
+   "US1MTCH0006",
+   "US1MTFG0003",
+   "US1MTFG0006",
+   "US1MTGV0008",
+   "US1MTMH0007",
+   "US1MTMH0010",
+   "US1MTMH0014",
+   "US1MTMH0017",
+   "US1MTMH0022",
+   "US1MTMH0024",
+   "US1MTSW0002",
+   "US1MTSW0005",
+   "US1MTSW0010",
+   "US1MTSW0012",
+   "US1MTSW0013",
+   "US1MTWH0003",
+   "US1MTYS0005",
+   "US1MTYS0011",
+   "US1MTYS0012",
+   "US1MTYS0013",
+   "US1MTYS0014",
+   "US1MTYS0027",
+   "US1MTYS0028",
+   "US1MTYS0032",
+   "US1MTYS0033",
+   "US1MTYS0037",
+   "US1MTYS0041",
+   "US1MTYS0043",
+   "US1MTYS0044",
+   "US1MTYS0046",
+   "US1MTYS0047",
+   "US1MTYS0048",
+   "US1MTYS0050",
+   "US1MTYS0052",
+   "USC00240801",
+   "USC00240802",
+   "USC00241102",
+   "USC00241938",
+   "USC00243939",
+   "USC00243947",
+   "USC00244193",
+   "USC00244345",
+   "USC00244538",
+   "USC00244545",
+   "USC00244976",
+   "USC00244978",
+   "USC00245761",
+   "USC00245791",
+   "USC00246647",
+   "USC00246862",
+   "USC00247128",
+   "USC00247220",
+   "USC00247540",
+   "USC00247864",
+   "USC00249240",
+   "USS0009C01S",
+   "USS0010C06S",
+   "USS0010C09S",
+   "USS0010C15S",
+   "USS0010C22S",
+   "USS0010C23S",
+   "USW00004140",
+   "USW00024033",
+   "USW00024036"
+  ],
+  "tile_lists": {
+   "format": "hail-stn-tiles-v1",
+   "miles": 40.0,
+   "margin_miles_max": 4.214,
+   "files": 3,
+   "capped": 0,
+   "longest": 19,
+   "unread": 0
+  }
+ }
 }

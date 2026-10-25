@@ -40,6 +40,12 @@ QC_REJECTED = {"X": "failed quality control", "B": "marked bad on review"}
 # Flag thresholds. These are placeholders until the company sets its own limits (DECISIONS D16).
 LIMITS = {"wind_mph": 20, "gust_mph": 25, "pop_pct": 30, "cold_f": 40, "hot_f": 95}
 
+# The county file's own use constraint (TIGER/Line 2026, tl_2026_us_county.shp.iso.xml), quoted verbatim: the
+# acknowledgement the About page gives (B5 source 4; joins.py docstring).
+CENSUS_TERMS = ("The TIGER/Line shapefile products are not copyrighted; however, TIGER/Line and Census TIGER are registered "
+                "trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, however "
+                "acknowledgement must be given to the U.S. Census Bureau as the source.")
+
 # What each feed sends and how this site treats it. Change the parser, this table and
 # tests/test_site.py together (AGENTS.md rule 7). Shown on the About page.
 CONTRACTS = {
@@ -49,13 +55,13 @@ CONTRACTS = {
         "units": "Times in ISO 8601 with an offset, shown in Montana time. Area as an outline, or none.",
         "timing": "Fetched at every build (a schedule set to every 10 minutes; each page says when it was built).",
         "missing": "No readable list means the check failed: the last verified list stays up with its time. "
-                   "An alert without an outline is listed with a note. Test messages and replaced updates are left out.",
+                   "An alert without an outline is listed with a note. Test messages and updates that a later message has changed are left out.",
     },
     "points": {
         "name": "NWS forecast grid lookup",
         "request": "api.weather.gov/points/lat,lon",
         "units": "Links to the forecasts for the 2.5 km grid square, the NWS office and time zone.",
-        "timing": "Every build; the last good lookup is reused if it fails.",
+        "timing": "Every build; if a lookup does not work, the last good lookup is reused.",
         "missing": "No links means that town's forecast is unavailable.",
     },
     "hourly": {
@@ -82,9 +88,9 @@ CONTRACTS = {
     "stations": {
         "name": "NWS observation stations",
         "request": "the point's observationStations link: the stations NWS lists for the town's 2.5 km grid square",
-        "units": "Station id, name, position and elevation in metres (shown in feet). The distance from the "
-                 "town is worked out here, in miles; the nearest three are read.",
-        "timing": "Every build; the last good list is reused if it fails.",
+        "units": "Station id, name, position and elevation in metres (shown in feet). The distance from this "
+                 "spot is worked out here, in miles; the nearest three are read.",
+        "timing": "Every build; if a list does not load, the last good list is reused.",
         "missing": "Never filtered by state: the nearest stations can be in Wyoming, Idaho or the Dakotas. "
                    "No list means no readings for that town, and the town page says so.",
     },
@@ -105,7 +111,7 @@ CONTRACTS = {
         "units": "Hail size in hundredths of an inch (175 = 1.75 in). Wind in mph. Times HHMM UTC; "
                  "a reporting day runs 12:00 to 11:59 UTC (6 am to 5:59 am MDT).",
         "timing": "Preliminary; today's files appear once there are reports. Three days are shown.",
-        "missing": "\"UNK\" wind stays unknown. A file that fails is listed as a problem; no report is not \"no hail\".",
+        "missing": "\"UNK\" wind stays unknown. A file that does not pass its check is listed as a problem; no report is not \"no hail\".",
     },
     "radar": {
         "name": "NOAA radar estimate (MRMS)",
@@ -113,7 +119,7 @@ CONTRACTS = {
         "units": "Precipitation rate in mm/h as liquid water, shown in in/h. A 0.01° latitude-longitude grid; "
                  "the map uses one frame every 10 minutes for the past hour.",
         "timing": "NOAA publishes a new grid every 2 minutes; a newest frame older than 30 minutes is reported as stale.",
-        "missing": "Negative values mean no radar coverage: those areas are hatched, never drawn as dry. "
+        "missing": "Negative values mean no radar coverage: those areas are hatched, never drawn as a zero reading. "
                    "If the files don't load, the map says so and shows no radar.",
     },
     "forecast_model": {
@@ -139,14 +145,15 @@ CONTRACTS = {
                  "NWS forecast grid point's elevation in metres, not a surveyed terrain height.",
         "timing": "A new set every 2 minutes. A set older than 30 minutes is reported as stale, the same limit as "
                   "the radar frames.",
-        "missing": "-99 and -999 mean no radar value; their meaning is not verified, and they are never a value or 0. "
+        "missing": "-99 and -999 mean no radar value: -99 is missing and -999 is outside radar coverage (NOAA's MRMS GRIB2 "
+                   "user table, versions 12.0 to 12.2). They are never a value, never 0. "
                    "Heights below the town's ground height are counted and not used. A town whose NWS grid height "
-                   "didn't load gets 'Echo top not available', never a value. No echo at 35 dBZ is not an all-clear. "
+                   "didn't load gets 'Echo top not available', never a value. No echo at 35 dBZ does not rule out hail. "
                    "A radar estimate, not observed hail or damage.",
     },
     "satellite": {
         "name": "NOAA GOES satellite picture (band 13, observation)",
-        "request": "noaa-goes19.s3.amazonaws.com (GOES-East; GOES-West noaa-goes18 if East fails or has no scan in "
+        "request": "noaa-goes19.s3.amazonaws.com (GOES-East; GOES-West noaa-goes18 if East is unavailable or has no scan in "
                    "the last hour), ABI-L2-CMIPC band 13: one NetCDF file per 5-minute CONUS scan; the newest scan "
                    "of the current or previous UTC hour",
         "units": "Infrared brightness temperature in kelvin at 2 km (nadir), drawn as one picture on the map's image box. "
@@ -156,8 +163,16 @@ CONTRACTS = {
         "timing": "A new scan every 5 minutes, on the bucket about 30 s after the scan ends. A newest scan older than "
                   "20 minutes is reported as stale; none within 60 minutes: no picture",
         "missing": "Fill values, raw values outside the file's valid range, quality flags other than 0 and cells outside "
-                   "the satellite's grid are hatched as no satellite data, never drawn as clear sky. If the file doesn't "
-                   "load, the map says so and shows no satellite picture. Not an all-clear.",
+                   "the satellite's grid are hatched as no satellite data, never drawn as cloud-free sky. If the file doesn't "
+                   "load, the map says so and shows no satellite picture. This is not an all-clear.",
+    },
+    # --storm-layers builds only (build.py STORM_CONTRACTS): the live hail swath layers (B4)
+    "hail_swath": {
+        "name": "NOAA MRMS MESH hail swath, last hour and last 24 hours (radar estimates)",
+        "request": "noaa-mrms-pds.s3.amazonaws.com, CONUS/MESH_Max_60min_00.50 (GRIB2 parameter 30, a file every 2 minutes) and CONUS/MESH_Max_1440min_00.50 (parameter 34, a file every 30 minutes). Each build lists today's folder (yesterday's when today's is empty, just after 00:00 UTC), takes the newest file of each product and downloads it once (a gzipped GRIB2 file). The grid is regular latitude and longitude, 7,000 by 3,500 cells of 0.01 degree, from 54.995 degrees north, 230.005 degrees east (stored 0 to 360) to 20.005 degrees north, 299.995 degrees east.",
+        "units": "Millimetres (NOAA's GRIB2 user table, UserTable_MRMS_v12.2: MESH (maximum estimated size of hail) and its maxima), stored in tenths of a millimetre. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact (513 tenths: 2.01 in, 51.3 mm). Size classes start at 0.25 in (64 tenths), 0.75 in (191), 1.00 in (254), 1.50 in (381), 2.00 in (508) and 2.75 in (699). A radar estimate of the largest hail over each 0.01 degree cell, about 0.7 miles north to south and 0.5 miles east to west, in the last hour or the last 24 hours.",
+        "timing": "The hour file is new every 2 minutes: fresh within 20 minutes of its valid time, stale to 60 minutes, then unavailable. The 24-hour file is new every 30 minutes: fresh within 60 minutes, stale to 120 minutes, then unavailable. The valid time is the header's date and time in UTC and must equal the file name's time. The valid time is the end of the window. The window comes from the parameter number (30 is 60 minutes, 34 is 1,440 minutes) and must match the folder. A stale picture is drawn and says so.",
+        "missing": "-1 is missing and -3 is no radar coverage in NOAA's table; neither is stored as a value or as 0. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart. Cells under 0.25 in (64 tenths) are not drawn and not written to the live files. A cell with no radar coverage is hatched, and its tile's live file lists it as no radar coverage. A file that is missing, unreadable, or does not match its time or window, and a request that does not work, make the layer unavailable with its reason and no picture. This is not an all-clear. An estimate, not observed hail and not an inspection.",
     },
     "basemap": {
         "name": "Map outlines and names",
@@ -198,13 +213,486 @@ CONTRACTS = {
         "timing": "A day runs from 12:00 UTC to 12:00 UTC the next day: 6 am to 6 am Mountain daylight time, 5 am to "
                   "5 am in winter (the SPC reporting day). The day is held by the file stamped the day after at "
                   "12:00 UTC, posted about 12:08 UTC. The newest day is added by a job that starts at 12:43 UTC and "
-                  "shows here on the next rebuild. Each page shows the store's as-of date. A build "
-                  "waits for the store job of its own commit before it reads the store. A store whose last day is more "
-                  "than three days old is a failed source: the pages keep it with the stale line, and a branch preview "
-                  "fails.",
-        "missing": "-1 (missing) and -3 (no coverage) are never stored. A cell with no stored value on a day is no radar "
-                   "estimate, never 'no hail'. A day with no file is listed on the page and not counted, and a day that "
-                   "fails stays missing. An estimate is not a measurement at the ground and not an inspection.",
+                  "shows here on the next rebuild. Each page shows the store's as-of date. A branch build "
+                  "waits for its branch's latest store job before it reads the store (main does not wait). A store whose "
+                  "last day is more than three days old is a failed source: the pages keep it with the stale line, and a "
+                  "branch preview is marked as failed.",
+        "missing": "-1 (missing) and -3 (no radar coverage) are never stored. A cell with no stored value on a day is no radar "
+                   "estimate, and it never means that hail did not fall. A day with no file, or a file that does not pass "
+                   "its check, is listed on the page and not counted, and it stays missing. An estimate is not a measurement "
+                   "at the ground and not an inspection.",
+    },
+    # --hail-addresses builds only (build.py B3_ROWS and ROAD_ROWS): the address points, the road source built and the
+    # building outlines of the B3 layers. The words are in website/addresses.py, streets.py and buildings.py (D8, D13,
+    # D16, D17, D25, D29, D34); the road row shown is the source the store built (msl_roads, or census_roads when the
+    # store is built with the Census fallback, D25).
+    "msl_addresses": {
+        "name": "Montana State Library address points (Structures and Addresses Framework)",
+        "request": "The Montana State Library's address file, StructuresFramework_shp.zip (65.8 MB), from the Library's "
+                   "download server. Each daily update reads the position of every address point and these parts of its "
+                   "address: number, street, unit, city, zip, county and placement. No other field is read. The address "
+                   "dots and the search come from this file.",
+        "units": "Positions are longitude and latitude, converted from the file's Montana State Plane grid (metres) and "
+                 "checked against three recorded points within 2 metres. Address lines follow the file's street words in "
+                 "their standard order, with the unit title-cased. Each point carries the file's placement, which says how "
+                 "the point was placed: on the building, at the property entrance, along the road by its number, at the "
+                 "parcel, at the site, or by a method the file does not state. Only a point placed on its building joins a "
+                 "building outline; a point placed anywhere other than on the building keeps its own dot and says how it "
+                 "was placed.",
+        "timing": "The Library exports the file monthly, around the end of the month. Each daily update checks the file's "
+                  "size and last-changed date, reads the file again when either changes, and reads it once in each calendar "
+                  "month. The file's date and export date are on the About page, with the file's name.",
+        "missing": "A point with no street name is left out, a point with no city after the file's fallbacks is counted, "
+                   "and exact duplicates are merged; each count is kept with the data. A missing or changed file, or a "
+                   "terms sentence that is not the one quoted here, marks the list unavailable, and the map says so: an "
+                   "unavailable list is never shown as no addresses. The file's access terms read: \"None. All data "
+                   "contained in the Framework are publicly available and non-sensitive.\" Its terms say the Library makes "
+                   "the data available as a convenience to the public, \"and for no other purpose.\" Owner names and "
+                   "parcel identifiers are never read, stored or shown. The list is of addresses, not of buildings, and its "
+                   "completeness varies from county to county.",
+    },
+    "msl_roads": {
+        "name": "Montana State Library Transportation Framework, roads (the default street source)",
+        "request": "The Montana State Library's Transportation Framework zip (RoadCenterLine, 258,208 segments) from the "
+                   "Library's download server. The daily update reads the street name parts, the road class, the county "
+                   "and the surface, and no other field. Kept: the centre lines, the street names, each line's road class "
+                   "as one letter, and counts by county. The surface is read and not kept. The road lines are built from "
+                   "them and copied to this site.",
+        "units": "Lines are longitude and latitude, to 5 decimal places, simplified to within 2 metres. Drawn as "
+                 "primary and secondary roads from zoom 13, and as ramps, local streets, service drives, alleys, private "
+                 "roads and vehicular trails from zoom 15. A record of class Other is drawn as a local street when it is a "
+                 "public road; a trail, a ferry, a private drive or an airfield surface among them is left out, and each "
+                 "count is kept with the data. Where roads share one line, the line is drawn once with each name, joined by "
+                 "a slash. Abbreviations are spelled out (Highway, Road, Street). Placeholder names are drawn without a label "
+                 "and are never found by search.",
+        "timing": "The Library publishes the file with its own date, which is on the About page. The daily update "
+                  "reads it again only when its size or its last-changed date changes.",
+        "missing": "A road with no name is drawn without a label; almost every road in this file has a name. A missing "
+                   "file or a failed check marks the streets unavailable, and the map says so: unavailable is not the same "
+                   "as no streets. The file's metadata says the Library makes the data \"available as a convenience to the "
+                   "public, and for no other purpose.\" Its disclaimer says the data are provided for informational purposes "
+                   "only and are not suitable for legal, engineering, or surveying purposes.",
+    },
+    "census_roads": {
+        "name": "U.S. Census Bureau TIGER/Line 2026 roads (the fallback street source)",
+        "request": "www2.census.gov/geo/tiger/TIGER2026/ROADS/, the 56 Montana county files (tl_2026_30XXX_roads.zip, about "
+                   "88.9 MB). They are read by the daily update only when the site is built with this source, and the update "
+                   "reads the centre lines, the names, the class code (MTFCC), the route type (RTTYP) and the line ID "
+                   "(LINEARID), and no other field. Kept: the centre lines, the names, each line's class as one letter, and "
+                   "counts of lines left out by class code. The route type and the line ID are read and not kept.",
+        "units": "Lines are longitude and latitude, to 5 decimal places, simplified to within 2 metres. Drawn: primary roads, "
+                 "secondary roads, local streets, 4-wheel-drive roads, ramps, service drives, alleys and private roads. Left "
+                 "out and counted: the Census's internal roads (class S1750), parking lot roads (class S1780), and any other "
+                 "class not drawn (in the 2026 county files, S1710, S1720, S1820 and S1830). Each count is kept with the "
+                 "data. Features that share one line are drawn once, with each name joined by a slash.",
+        "timing": "The Census Bureau publishes the 2026 files; the daily update reads them when the site is built with this "
+                  "source. The date of the data is on the About page.",
+        "missing": "Most vehicular features in the rural counties carry no name in these files, so many roads are drawn "
+                   "without a label, and an unnamed road is never found by search. Placeholder names are drawn without a "
+                   "label. The Census Bureau's metadata says \"acknowledgement must be given to the U.S. Census Bureau as the "
+                   "source.\" It also says \"TIGER/Line and Census TIGER are registered trademarks of the U.S. Census "
+                   "Bureau.\" The files \"may not be suitable for high-precision measurement applications such as engineering "
+                   "problems, property transfers, or other uses that might require highly accurate measurements of the earth's "
+                   "surface.\" A failed file marks the streets unavailable; unavailable is not the same as no streets.",
+    },
+    "usa_structures": {
+        "name": "USA Structures, Oak Ridge National Laboratory and FEMA (building outlines)",
+        "request": "FEMA's public data server, the Montana file MT_Structures_20260913.zip (173,088,786 bytes), with 918,052 "
+                   "outlines in longitude and latitude. Only the outline geometry is read: no attribute column is read, so no "
+                   "other field of the file is ever read, stored or shown.",
+        "units": "Each outline is drawn from its exact edge, in longitude and latitude to 5 decimal places, with no "
+                 "simplification. Each outline has one dot at a point inside it. The address points that the Montana list "
+                 "places on an outline, or within 15 metres of its edge, are listed on that dot. A point placed anywhere other "
+                 "than on the building keeps its own dot and says how it was placed. Dots from zoom 15, fills and hairlines "
+                 "from zoom 16, and a heavier outline from zoom 17.",
+        "timing": "The file is dated 2026-09-13, and its outlines come from imagery dated 2008 to 2025. Each daily update "
+                  "checks the file's size and last-changed date and reads the file again when either changes, and once in each "
+                  "calendar month. The file's date is on the About page.",
+        "missing": "A county with no outlines in the file shows none; that is not the same as no buildings. Outlines are not "
+                   "surveys, and the file does not separate other kinds of building, so sheds and barns are outlines too. The "
+                   "attribution is \"Oak Ridge National Laboratory and FEMA, USA Structures.\"",
+    },
+    # --hail-addresses builds only (build.py B3_ROWS): the county boundary file the store job reads for the counts by county
+    # (buildings.py, D34). Its only use is the labels of those counts; its own metadata is quoted in the row.
+    "census_counties": {
+        "name": "U.S. Census Bureau county boundaries, 2025 cartographic file (1:500,000)",
+        "request": "www2.census.gov/geo/tiger/GENZ2025/shp/cb_2025_us_county_500k.zip (11.8 MB, last changed 2026-04-23 on the "
+                   "server). The store job reads it for the counts by county: from its attributes only the county code and name, "
+                   "and from its geometry the rings that place each building outline in a county. The address records are counted "
+                   "by the County field of the address file, not by this file.",
+        "units": "Whole counts: the building outlines and the address records in each county, kept beside each other. No area, "
+                 "length or distance is computed from the file, and none is shown.",
+        "timing": "The job keeps the file in a cache keyed by name and month, so it is downloaded once in each calendar month, "
+                  "or when the cache is empty. A failed download marks the counts by county unavailable in that store; the "
+                  "outlines and the addresses are kept.",
+        "missing": "Unavailable is not the same as zero: when the file cannot be read, the counts by county are unavailable and "
+                   "the outline and address totals are kept. At this file's scale of 1:500,000, a point near a county line can "
+                   "fall on either side, so each county count is a label, not a measurement. The Census Bureau's metadata says: "
+                   "\"These products are free to use in a product or publication, however acknowledgement must be given to the "
+                   "U.S. Census Bureau as the source.\" It also says: \"Cartographic boundary files should not be used for "
+                   "geographic analysis including area or perimeter calculation. Files should not be used for geocoding addresses. "
+                   "Files should not be used for determining precise geographic area relationships.\"",
+    },
+    # --hail-history builds only (build.py HAIL_CONTRACTS): the joined records behind the history's sheet and tables
+    # (B2). Each row says what its records are for the cell; the words built from them are in website/joins.py.
+    "lsr": {
+        "name": "NWS local storm reports (Iowa State archive)",
+        "superseded_by": "iem_lsr",     # B5: the About page lists iem_lsr (every type read); this row stays for the record
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py for Montana, one CSV per calendar month the window "
+                   "touches (the count moves with the window); the last two months are read again each daily run. Every "
+                   "window report is kept in the events table, and the sheet and town tables show those within 5 miles "
+                   "of a cell's centre.",
+        "units": "Hail in inches as reported. Thunderstorm wind gusts and sustained wind as the archive's magnitude, shown "
+                 "in mph: the archive does not state its wind unit, and the research checked it against NCEI's knots. "
+                 "Qualifier E is estimated, M measured and U unknown, in Iowa State's words. Times are UTC, shown in Montana "
+                 "time. Source is in sentence case; the remark is shown to its first 160 characters.",
+        "timing": "Each report carries the time it was valid, in UTC. The files are monthly, and the newest month grows as "
+                  "reports arrive, so its last two months are read again each day.",
+        "missing": "A magnitude of 'None' is missing, not zero; it appears on many type codes, for example D, O, E, F, "
+                   "C, T, W and Z. A report is what someone sent the NWS, not a complete record: no report is not the same "
+                   "as no hail. Known gaps: the wind "
+                   "unit is inferred; Iowa State does not document the basis of qualifiers on reports from before September "
+                   "2024.",
+    },
+    "ncei_storm_events": {
+        "name": "NOAA NCEI Storm Events, bulk details files (hail and thunderstorm wind)",
+        "request": "ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d<year>_c<creation>.csv.gz "
+                   "for the window's years; the creation date is read from NCEI's directory listing, and each file is cached "
+                   "by its name. Joined as points: Hail, Thunderstorm Wind, Flood, Flash Flood, Heavy Rain, Tornado, Funnel "
+                   "Cloud, Lightning and Debris Flow rows with coordinates within 5 miles of a cell's centre. Zone-coded rows "
+                   "(CZ_TYPE Z) of any event type, such as High Wind, Winter Storm, Heavy Snow, Blizzard and Drought, have no "
+                   "coordinates and are joined by the cell's forecast zone. Other county-coded types are not joined as points.",
+        "units": "Hail in inches (MAGNITUDE). Thunderstorm wind in knots, shown in knots and in mph (1 knot is 1.15078 mph). "
+                 "MAGNITUDE_TYPE: MG measured gust, EG estimated gust, MS measured sustained, ES estimated sustained. The "
+                 "point types flood, flash flood, heavy rain, tornado, funnel cloud, lightning and debris flow carry no magnitude "
+                 "in these files and show their type word only. FLOOD_CAUSE is shown as written (for example \"Heavy Rain / Snow "
+                 "Melt\" or \"Ice Jam\"). Begin times are local (MST-7, the file's CZ_TIMEZONE on every Montana row), converted to "
+                 "UTC and then to Montana time.",
+        "timing": "Yearly files that NCEI updates monthly. The sheet shows the newest event the database holds, so the lag is "
+                  "stated on each page.",
+        "missing": "A zone-coded row has no coordinates and is shown with its zone, not as a point. A county-coded row "
+                   "with no coordinates is not joined. A blank magnitude is missing, not zero. Known gaps: NCEI's database "
+                   "runs behind the other sources and has no "
+                   "events after its newest event date (shown on the sheet); NCEI cuts source names at 20 characters. "
+                   "NCEI's documentation checked does not say whether its begin times use daylight time. In summer 2025, "
+                   "some NCEI begin times ran an hour before the matching LSR reports; the cause is not established.",
+    },
+    "swdi_nx3hail": {
+        "name": "NCEI SWDI NEXRAD hail signatures (radar detections)",
+        "request": "ncei.noaa.gov/swdiws/csv/nx3hail/<start>:<end>?bbox=-116.05,44.36,-104.04,49.00, one request per month "
+                   "(start inclusive, end exclusive). Exact duplicate rows are dropped, and the three footer lines (summary, "
+                   "count and time) are not rows. Detections within 2 miles of a cell's centre are joined, grouped by SPC day.",
+        "units": "MAXSIZE in inches, in steps of a quarter inch. NOAA defines PROB as \"the probability of hail in percent\"; "
+                 "this filtered product keeps PROB 100 with a maximum size above zero. A signature is the radar algorithm's detection for a "
+                 "storm cell, not hail on the ground.",
+        "timing": "Each detection is dated to the second, in UTC. The archive's inventory lagged the data by a median of "
+                  "0.75 day from 1 September to 14 October 2026, but by 19.5 days (June 2025) and 64.4 days (February "
+                  "2026) in the inventory samples checked. Its last-update times do not state a time zone, so the lags are "
+                  "good to about 0.2 day. The sheet shows the newest detection date in this build, the last day with a "
+                  "detection, not the archive's last day.",
+        "missing": "The filtered product drops most signatures, so a day with none is not the same as no hail. A missing or "
+                   "zero MAXSIZE is not shown as a size. Known gaps: the archive's inventory is not complete. On 2025-06-15 "
+                   "it holds no signature in this box after 03:29 UTC, although its inventory lists the day as complete. "
+                   "SWDI states a general spatial accuracy of 1 degree by 1 km, from 1 km to 4 km at 230 km from a radar.",
+    },
+    "nws_warnings_polygons": {
+        "name": "NWS severe thunderstorm, tornado and flash flood warnings (Iowa State archive)",
+        "superseded_by": "iem_watchwarn",   # B5: the About page lists iem_watchwarn (polygon, zone and county products)
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py for Montana, per year and one phenomenon per "
+                   "request (SV, TO and FF are not returned together), with limitps=1 and the issuance polygons only. Expired "
+                   "rows are skipped, and county rows (gtype C) are twins of polygon rows, also skipped. A cell is covered "
+                   "when its centre lies inside a polygon.",
+        "units": "Begin and end times are UTC, shown in Montana time. Tags as the archive gives them: hail in inches, wind in "
+                 "mph, the tornado tag word and the NWS damage threat tag. Iowa State drops the '<' sign of a tag, so a tag "
+                 "shows its number only.",
+        "timing": "Each warning is dated by its issue and polygon times, in UTC. The newest year is read again each daily run.",
+        "missing": "A new warning with no outline cannot be tied to a spot: it is counted, and the sheet says how many. "
+                   "When no matched warning covers a spot and some warnings have no outline, the sheet says the warnings "
+                   "cannot be checked, which is not the same as no warning. A missing tag is shown as not given, never as "
+                   "zero. Tags are the forecast threat at issue time, not what fell. Known gaps: follow-up polygons are not "
+                   "used, so a warning extended after issue shows at its issue polygon. In the five-year window the archive "
+                   "gives both hail and wind tags for every severe thunderstorm warning checked.",
+    },
+    "nws_zone_products": {
+        "name": "NWS zone-based warnings (Iowa State archive, zone rows)",
+        "superseded_by": "iem_watchwarn",   # B5: the About page lists iem_watchwarn (polygon, zone and county products)
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py for Montana, zone rows (gtype C with a UGC "
+                   "zone code), per year and one phenomenon per request with limitps=1, for ten products: HW.W (high "
+                   "wind warning), WS.W (winter storm warning), BZ.W (blizzard warning), IS.W (ice storm warning), EC.W "
+                   "(extreme cold warning), WC.W (wind chill warning), DS.W (dust storm warning), WI.Y (wind advisory), "
+                   "FW.W (red flag warning) and FA.A (flood watch). A cell's forecast zone is its NWS public forecast "
+                   "zone, found by point in "
+                   "polygon at build time from the NWS zone file. Red flag warnings are matched to the cell's NWS fire "
+                   "weather zone, a separate zone map, found the same way from the NWS fire zone file. Each product takes "
+                   "the zone code of the public zone edition in force at its issue time. The NWS publishes two "
+                   "editions: z_18mr25.zip (effective 18 March 2025) and z_16ap26.zip (effective 16 April 2026). The "
+                   "six older editions named in the NWS change history were requested and are not published (HTTP 404 "
+                   "when checked on 2026-10-19), so a product issued before 18 March 2025 is placed by the Iowa State zone "
+                   "set in force at its issue time (the iem_ugcs row; D44), and a product of 7 to 13 September 2022 by the "
+                   "set that holds its code.",
+        "units": "Begin and end times are UTC, shown in Montana time. The product is named in words, for example 'High wind "
+                 "warning'. No measurement is given: the product covered the whole zone.",
+        "timing": "Each row has its issue and expiry times and a status (NEW, CON, EXT, EXA, EXB, UPG, EXP or CAN). A zone "
+                  "event is one VTEC event: its key is the zone, the phenomenon, the significance, the issuing office, the "
+                  "event number and the year, and rows with other issue times are updates of that event, never new events. "
+                  "A span starts at the earliest issue time of its new or continued rows, or of its earliest row when it has "
+                  "none. It ends at the earliest cancellation or upgrade time when the archive gives one (an upgrade ends the "
+                  "lower product at the upgrade time, as NWS Instruction 10-1703 says, and the sheet says upgraded), else at "
+                  "the latest expiry of its other rows. Its end is not recorded when neither is given. The newest year is "
+                  "read again each daily run.",
+        "missing": "A zone with no product in these five years is listed as none, which is not the same as no "
+                   "wind. The product "
+                   "covered the whole forecast zone, named, and not this spot alone. A product the build cannot place on a zone "
+                   "(its code is in no zone of the edition in force) is counted, and the sheet says how many in Montana. "
+                   "FL.W (flood warning) is a polygon product and is not joined in this version. Flood watches are joined "
+                   "where the archive gives a zone code; county-only flood watches are not joined in this version. Known "
+                   "gaps: zone "
+                   "rows carry cancelled and expired statuses as the archive gives them. An event number that NWS "
+                   "re-used for separate periods in one zone is one span here, which can hide a later period (four zones in "
+                   "five years). NCEI names some zones by an "
+                   "older name (Little Rocky Mountains under code MTZ060, for example); rows are placed by code, not by name.",
+    },
+    "asos_daily_gusts": {
+        "name": "Iowa State daily summary, Montana airport stations (ASOS)",
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/daily.py for the MT_ASOS network, one station and year per "
+                   "request (max_wind_gust_kts). The two nearest stations to a tile's centre within 40 miles are joined. Each "
+                   "station's file is cached by station and year, and the current year is read again each daily run.",
+        "units": "Knots as the archive gives them, which are not always whole knots. Shown as whole knots and whole miles per "
+                 "hour (1 knot is 1.15078 mph before rounding). Days with a maximum gust of 50 knots (58 mph) or more are "
+                 "listed. Values of 130 knots or more are dropped as implausible for these sites and counted.",
+        "timing": "One maximum per station per local day. The current year is read again each daily run.",
+        "missing": "A station-day with no value is missing, not zero. A station reading is at the airport, not at this "
+                   "address. Known gaps: the summary does not name the reading its gust comes from (a METAR gust or the peak "
+                   "wind); about 39 percent of the values checked were not whole knots, and they match whole mph; 42 of the "
+                   "network's 60 stations are ongoing, so some places have no station within 40 miles.",
+    },
+    # --hail-history builds only (build.py HAIL_CONTRACTS): the B5 feeds behind the five-season table, the sections and the
+    # roof lines (AGENTS.md rule 7; the terms are quoted from the module docstrings and the records named in each row).
+    "nclimgrid_daily": {
+        "name": "NOAA nClimGrid-Daily, daily temperature and rain grid (Montana cells)",
+        "request": "The NOAA bucket noaa-nclimgrid-daily-pds (AWS Open Data, anonymous HTTPS): access/grids/YYYY/"
+                   "ncdd-YYYYMM-grd-scaled.nc for each month (the scaled monthly files), and ncdd-YYYYMM-grd-prelim.nc only "
+                   "where no scaled file exists yet. The variables prcp, tmax and tmin are read by whole month in the backfill "
+                   "and the monthly update, and by HTTP Range for the newest prelim days. Each cell keeps monthly aggregates "
+                   "(rain, the highest and lowest with their dates, days at or above 90 F, days at or below 0 F, freeze-thaw "
+                   "days, days with a low below 32 F, missing days); a monthly file is deleted once its aggregates are written. "
+                   "Terms, quoted from the file and the NOAA registry: the file attribute \"license = no restrictions\"; the "
+                   "registry says \"NOAA requests attribution for the use or dissemination of unaltered NOAA data. However, it is "
+                   "not permissible to state or imply endorsement by or affiliation with NOAA. If you modify NOAA data, you may "
+                   "not state or imply that it is original, unaltered NOAA data.\" The page says \"US government data; NOAA "
+                   "declares no restrictions; attribution requested\". No NOAA page checked says public domain for these grids, "
+                   "so this site does not say so.",
+        "units": "Rain: millimetres in the file, shown in inches (hundredths of an inch stored). Temperature: degrees Celsius "
+                 "in the file, rounded to the hundredth of a degree and then to the tenth; shown in degrees Fahrenheit (tenths "
+                 "stored). Days are whole days. Every value is a grid estimate for a cell about 4.6 km across (1/24 degree), "
+                 "not a reading at the address. The grid holds no snow variable.",
+        "timing": "Scaled months appear about 4 to 68 days after the month ends (median 66). The prelim days are valid to 2 to "
+                  "3 days before the build. The daily job reads the new prelim days and the monthly job reads a new scaled "
+                  "file. Each run compares the listing's ETags, because scaled files are revised (2026-06 to 2026-08 were "
+                  "rewritten on 2026-10-19).",
+        "missing": "NaN, -999.99 (a prelim day not yet available) and values outside the file's valid range are missing. A "
+                   "missing input makes its day a missing day for that cell, and the page says \"n days missing\". A missing "
+                   "value is never summed and never zero, and the -999.99 fill is never summed. 71 water cells have no land "
+                   "value and read \"No land value for this grid cell\". Known gaps: the grid is about 4.6 km across, so a "
+                   "cell and an airport can differ (at Billings the grid differed from the airport by 18.8 mm of rain in July "
+                   "2025 and by 1.0 C on one day).",
+    },
+    "nohrsc_season_snowfall": {
+        "name": "NOAA NOHRSC National Snow Analysis, season-total snowfall (water years)",
+        "request": "The NOHRSC season-total snowfall GeoTIFF for each water year, sfav2_CONUS_<Y>093012_to_<Y+1>093012.tif, "
+                   "from nohrsc.noaa.gov: 2021-22 to 2025-26 (water years 2022 to 2026), 11,562,084 bytes in all. The 2020-21 "
+                   "file is missing upstream (HTTP 404 on 2026-10-19). The grid is 0.04 degree, about 3 to 4 km. The file "
+                   "prints no units, so the build checks them against station season totals; the analysis is shown only if the "
+                   "check passes. On 2026-10-19 it did not (slope 0.664, outside 0.85 to 1.15), so the analysis is not shown. "
+                   "The NWS terms, quoted as the live page gives them: \"The information on National Weather Service (NWS) Web "
+                   "pages are in the public domain, unless specifically noted otherwise, and may be used without charge for any "
+                   "lawful purpose so long as you do not: 1) claim it is your own (e.g., by claiming copyright for NWS "
+                   "information -- see below), 2) use it in a manner that implies an endorsement or affiliation with NOAA/NWS, or "
+                   "3) modify its content and then present it as official government material.\" and \"As required by 17 U.S.C. "
+                   "§ 403, third parties producing copyrighted works consisting predominantly of the material appearing in "
+                   "NWS Web pages must provide notice with such work(s) identifying the NWS material incorporated and stating "
+                   "that such material is not subject to copyright protection.\"",
+        "units": "Inches only when the unit check passes; the store's index says whether it did. Water year: October 1 to "
+                 "September 30, named for the year it ends. An analysis, not a measurement at this address.",
+        "timing": "The 2025-26 file is checked with one request each run and fetched again when its Last-Modified time changes "
+                  "(on 2026-10-19: Mon, 05 Oct 2026 14:33:16 GMT). The other files are not checked again after their fetch.",
+        "missing": "Values below -9000 are no data (the file uses -99999). A negative value is missing, not zero. A water year "
+                   "whose download does not pass its check is named as missing and the rest of the block builds. The analysis was checked against "
+                   "station season totals and left out in this build: its amounts did not match the station totals closely "
+                   "enough to show, and the About page says so.",
+    },
+    "ghcn_daily": {
+        "name": "NOAA NCEI GHCN-Daily, station daily records (airport, cooperative and SNOTEL sites)",
+        "request": "https://www.ncei.noaa.gov/pub/data/ghcn/daily/: ghcnd-stations.txt (the station list), ghcnd-inventory.txt "
+                   "(what each station reports, by year) and all/<ID>.dly (each station's daily values, the NCEI copy). NOAA's "
+                   "S3 by-station copies are not used: their SNOTEL and airport records end early in 2025. Stations in Montana "
+                   "and the neighbouring states within 40 miles are candidates, and the station rule picks the two nearest that "
+                   "pass, per element and place. Canadian stations (identifiers beginning CA) are candidates that are not read: "
+                   "their files are never requested, because the terms for their data are under review. "
+                   "The elements read are TMAX, TMIN, PRCP, SNOW and SNWD. The NRCS SNOTEL service is not used; the GHCN copies "
+                   "of SNOTEL stations are station records like the others. Licence: NOAA and federal records are public domain "
+                   "in the United States under NCEI-PD-10-2-02, section 4(a) (\"These data are in the public domain in the United "
+                   "States.\"). CoCoRaHS records (file prefix US1) are released under CC BY 3.0 (\"Unless otherwise noted, all "
+                   "CoCoRaHS content and data are released under a Creative Commons Attribution 3.0 License\") and ask users to "
+                   "acknowledge the source. The NODD copy is CC0 (\"NOAA data disseminated through NODD is made available under "
+                   "the Creative Commons 1.0 Universal Public Domain Dedication (CC0-1.0) license\"). Cite NCEI-PD-10-2-02.",
+        "units": "SNOW and SNWD in millimetres (shown in inches; a 1-inch snow depth is 25 mm or more). PRCP in tenths of a "
+                 "millimetre (shown in inches). TMAX and TMIN in tenths of a degree Celsius (shown in degrees Fahrenheit; a 90 F "
+                 "day is a high of 32.2 C or more). A season shows only when at least 95 percent of its days have the element.",
+        "timing": "The archive values take the place of the preliminary real-time values about 45 to 60 days after the end of a month (NCEI: "
+                  "\"Generally, real-time replacement of updated data streams are replaced by archive-ready data sources 45 to 60 "
+                  "days after the end of a month.\"). Each station shows its newest report date. The daily job refreshes the "
+                  "list, the inventory and the files of the chosen stations whose Last-Modified time changed; the monthly job "
+                  "refreshes every file the rule reads.",
+        "missing": "-9999 and an absent day are missing, never zero. A value with a non-blank quality flag is excluded from every "
+                   "sum, record and count. The measurement flag T (trace) counts as zero in sums, and the page says so. A station "
+                   "is a candidate for an element only when it reported that element within 30 days of the as-of date and has at "
+                   "least 80 percent of the days 2020 to 2025 with an unflagged value. A station reading is at the station, not at "
+                   "the address, and its distance is shown on every row. Known gaps: the archive lags 45 to 60 days, so the newest "
+                   "season can be partial.",
+    },
+    "iem_watchwarn": {
+        "name": "NWS warnings, watches, advisories and zone products (Iowa State archive: polygons, zones and counties)",
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py for Montana. Polygon shapefiles: FL.W (flood "
+                   "warning), FA.W (areal flood warning), FA.Y (areal flood advisory), FL.A (flood watch), FL.Y (flood advisory), "
+                   "SQ.W (snow squall warning), and SV.W, TO.W and FF.W. Zone CSVs: HW.W, WS.W, BZ.W, IS.W, EC.W, WC.W, DS.W, WI.Y, "
+                   "WW.Y, WS.A, HW.A, HT.Y, EH.W, EH.A, FR.Y, FZ.W, DU.Y and FA.A, and the county twins of FA.A and FF.A (the "
+                   "county-only events). FW.W (red flag warning) is matched to the fire weather zones. Each request covers 1 "
+                   "December of the year before to 31 January of the year after, and a row that two years' files share is kept "
+                   "once. A cell is covered when a polygon intersects its square, and the centre rule is counted beside it. A zone "
+                   "event is one VTEC event (its key is the zone, phenomenon, significance, office, event number and year). Its "
+                   "periods open at a NEW, CON, EXT, EXA or EXB and close at a CAN, UPG or EXP, and each period is a span. Terms, "
+                   "quoted from the Iowa State and NWS pages: \"The materials found on this website are in the public domain and "
+                   "may be used freely by anyone for any lawful purpose.\" \"Attributing the Iowa Environmental Mesonet of Iowa "
+                   "State University would be appreciated.\" \"We therefore provide this information without any warranty of "
+                   "accuracy.\" \"The information on National Weather Service Web servers and Web sites is in the public domain, "
+                   "unless specifically annotated otherwise, and may be used freely by the public.\" \"You also cannot present "
+                   "information of your own in a way that makes it appear to be official government information.\"",
+        "units": "Begin and end times are UTC (the feed's YYYYMMDDHHMM), shown in Montana time. Tags as the archive gives them: hail "
+                 "in inches, wind in mph, the tornado tag word, and the NWS damage threat tag shown as the NWS's own label. Counts "
+                 "are whole warnings, products or events.",
+        "timing": "Each row carries its issue and expiry times and a status (NEW, CON, EXT, EXA, EXB, UPG, EXP or CAN). The "
+                  "latest year is read again each daily run and earlier years are cached. The NWS publishes two zone editions, "
+                  "z_18mr25.zip (effective 18 March 2025) and z_16ap26.zip (effective 16 April 2026); a product takes the zone "
+                  "of the edition in force at its issue time when that edition is published. The six older editions named in the "
+                  "NWS change history are not published (HTTP 404 when checked on 2026-10-19), so a product issued while one of "
+                  "them was in force keeps its zone code and is checked against the current edition.",
+        "missing": "A warning with no outline and no zone or county code cannot be tied to a spot: it is counted, the page says "
+                   "how many, and it is never read as no warning. A row with a null or empty geometry joins by its zone or county "
+                   "codes where the product carries them. A tag with no value is shown as not given, never as zero. Tags are the "
+                   "forecast threat at issue time, not what fell. A warning extended after issue shows at its issue polygon, "
+                   "because follow-up polygons are not used. A product the build cannot place on a zone is counted, and the page "
+                   "says how many in Montana.",
+    },
+    "iem_ugcs": {
+        "name": "Montana public forecast zones by date (Iowa State IEM ugcs service: simplified outlines)",
+        "request": "mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=<UTC>, for seven dates: 2021-09-15, "
+                   "2022-06-01, 2022-09-10 and 2022-09-13 12:00Z (103 Montana zones), and 2022-09-13 18:00Z, 2023-06-01 and "
+                   "2025-03-18 (83 zones). Each answer is a GeoJSON FeatureCollection; its MTZ features give the zone code, "
+                   "name and outline. Terms, quoted from the IEM pages read: the API disclaimer says \"All of these services "
+                   "are provided as-is and without warranty. You are free to use these services for any lawful purpose "
+                   "(including commercial ...)\", and the OpenAPI description says \"This service is free to use for most any "
+                   "legal purpose.\" The IEM site footer reads \"All rights reserved.\" The words \"public domain\" and "
+                   "\"attribution appreciated\" were not found on the pages read, so the About page does not say them.",
+        "units": "Zone codes (MTZ and a number) and names as the snapshot gives them. Outlines are decimal degrees of longitude "
+                 "and latitude, simplified by the IEM. Counts are zones.",
+        "timing": "A snapshot is the zone set valid at the time asked. The 103 zones hold through 12:00Z on 13 September 2022 "
+                  "and the 83 zones from 18:00Z that day. The NWS change log dates the change 7 September 2022, so the switch "
+                  "date lies between 12:00Z and 18:00Z on 13 September; products issued from 7 September to 18:00Z on 13 "
+                  "September are placed by the set that holds their code. The snapshots are historical: they are cached once "
+                  "and not re-pulled.",
+        "missing": "A zone that a snapshot does not hold is not in that zone set, so a product under its code is counted as "
+                   "unplaced and never placed on a neighbouring zone. A snapshot that does not parse, has a zone with no "
+                   "outline, or repeats a code is refused, and the products its set would place are counted as unplaced. The "
+                   "outlines are simplified: the 20 zones removed on 13 September 2022 (MTZ008 to MTZ015 and MTZ044 to MTZ055) "
+                   "and MTZ060 before that change use these outlines, and their rows say so. The 83 zones in force since then "
+                   "keep the NWS outlines; the IEM outlines of those 83 zones lie within 0.014 degrees of the NWS file.",
+    },
+    "iem_lsr": {
+        "name": "NWS local storm reports (Iowa State archive, the types the history reads)",
+        "request": "mesonet.agron.iastate.edu/cgi-bin/request/gis/lsr.py for Montana, one CSV per calendar month the window "
+                   "touches; the last two months are read again each daily run. The types read are FLASH FLOOD, FLOOD, HEAVY RAIN "
+                   "and RAIN (the label changed in 2023), FREEZING RAIN, HEAVY SNOW and SNOW (the label changed in 2023), BLIZZARD, "
+                   "EXTREME COLD and WIND CHILL (the type words changed over the window: the build keeps a dated table and shows the "
+                   "word each report carries), EXTREME HEAT, LIGHTNING, NON-TSTM WND GST and NON-TSTM WND DMG, with the hail, "
+                   "thunderstorm wind, tornado and funnel cloud reports read before. Each report within 5 miles of a cell's centre "
+                   "is joined to it. The terms are the Iowa State terms quoted in the warnings row.",
+        "units": "Hail, rain and snow in inches as reported (codes H, R and S). Gusts and sustained wind in mph (codes G, N and A; "
+                 "the archive gives no unit, and the research read it as mph). Codes 5, 6, 7, I and J (freezing rain, extreme cold, "
+                 "wind chill, extreme heat and fog) show no magnitude: their unit is not verified in the IEM documentation read, "
+                 "so the remark is shown as written. Times are UTC (VALID), shown in Montana time.",
+        "timing": "Each report carries its valid time in UTC. The files are monthly and the newest month grows as reports arrive, "
+                  "so its last two months are read again each day. The type words in the store are listed with their first and "
+                  "last dates.",
+        "missing": "A magnitude of None is missing, not zero, and many type codes carry None. A report is what someone sent the "
+                   "NWS, not a complete record. A missing report is not the same as no hail; the same holds for wind and flood. "
+                   "Known gaps: the wind "
+                   "unit is inferred; Iowa State does not document the basis of qualifiers on reports from before September 2024; "
+                   "the magnitudes of codes 5, 6, 7, I and J are not shown until their units are verified.",
+    },
+    "nwps_gauges": {
+        "name": "NWS National Water Prediction Service gauges (flood categories)",
+        "request": "api.water.noaa.gov/nwps/v1: the gauge list for the Montana box (srid EPSG_4326; -117.0 to -103.5 W and 44.0 "
+                   "to 49.5 N), and each gauge's detail: its flood categories (action, minor, moderate and major, in feet), state, "
+                   "USGS number and position. The pool is every gauge in the box that defines an NWS flood stage (its minor "
+                   "category), except gauges whose categories are elevations of 1,000 ft or more (Lake Pend Oreille at Hope, Idaho, "
+                   "is the nearest such, 13.7 miles from a Montana grid point). The nearest pool gauge within 10 miles of a town "
+                   "or tile centre gives the river gauge line (owner decision O4; 25 miles is the alternative). The NWS conditions "
+                   "in the warnings row apply to these pages.",
+        "units": "Flood stages in feet, two decimals, stored as hundredths of a foot. -9999 is not defined. Water years run "
+                 "October 1 to September 30.",
+        "timing": "The gauge list and each gauge's detail are read on the monthly job, and again when a gauge enters the pool. "
+                  "The daily job reads the list and the details the job names. Flood categories change rarely.",
+        "missing": "-9999 and an absent category are not defined. A reservoir gauge that defines only an action stage has no flood "
+                   "stage and is not in the pool. A gauge whose detail could not be read is kept as a candidate by its position: "
+                   "its line reads that the gauge could not be loaded, never none, and a farther gauge is not used instead. A "
+                   "gauge with no USGS number has no peak series. The gauge line does not say that water reached the address.",
+    },
+    "usgs_water_api": {
+        "name": "USGS Water Data API, annual peak stage at the river gauges",
+        "request": "api.waterdata.usgs.gov (OGC API, collection peaks): monitoring_location_id=USGS-<number>, parameter_code=00065 "
+                   "(gage height, feet), limit 1000, f=json; one request per USGS number in scope (104 series, 103 with peak rows). "
+                   "The parameter code is required: without it the response mixes 99 discharge rows into 64 gage-height rows. "
+                   "waterservices.usgs.gov is retired on 2027-02-22 and is not used. Credit: \"Observations courtesy of U.S. "
+                   "Geological Survey\". Not all USGS site content is public domain (non-USGS photographs and graphics need "
+                   "permission); the peaks are USGS data.",
+        "units": "Gage height in feet, two decimals (the service returns text), stored as hundredths of a foot. Annual peak stage by "
+                 "water year (October 1 to September 30, named for the year it ends). The service's qualifiers are shown as given.",
+        "timing": "Read on the monthly job for every series in scope. The newest water year is read again when it changes.",
+        "missing": "A series that could not be read is marked unavailable on its gauge's line, which never reads as no annual peak. "
+                   "A water year with two USGS rows keeps both, each with its qualifiers. A gauge with no USGS number has no series.",
+    },
+    "census_tiger_counties": {
+        "name": "US Census Bureau TIGER/Line 2026 county boundaries",
+        "request": "www2.census.gov/geo/tiger/TIGER2026/COUNTY/tl_2026_us_county.zip (83,378,454 bytes), read once and kept. It "
+                   "places each Montana cell in one of the state's 56 counties (the MTC codes), joins the county-only watches (FA.A "
+                   "and FF.A) and the county-coded polygon products. A cell that no county polygon holds (177 cells, each within 2 km "
+                   "of a county edge) takes the nearest county edge within 2 km. The county file's own use constraint, from its "
+                   "metadata: \"The TIGER/Line shapefile products are not copyrighted; however, TIGER/Line and Census TIGER are "
+                   "registered trademarks of the U.S. Census Bureau. These products are free to use in a product or publication, "
+                   "however acknowledgement must be given to the U.S. Census Bureau as the source.\"",
+        "units": "Boundaries as polygons in degrees, with the cell tests in exact decimal arithmetic. Counts are whole events.",
+        "timing": "Read once per edition. TIGER/Line is issued each year; the 2026 edition is kept and the next edition is read when "
+                  "it is published.",
+        "missing": "A cell with no county is counted as unplaced, never given a county of its own. A county product without county "
+                   "codes is counted and not joined. The acknowledgement is required, and this site gives it on the About page.",
+    },
+    "roof_references": {
+        "name": "Public references for the roof lines (reference statements, not findings)",
+        "request": "The research record roof-indicators.json holds R1 to R20, each a statement from a public source. The sheet "
+                   "quotes fifteen of them on its roof lines: R1, R3, R4, R5, R6, R7, R8, R10, R11, R12, R14, R15, R16, R18 and R19. "
+                   "Each quote is in the source's own words, and each line names its source and its address. R2, R9, R13, R17 and R20 "
+                   "are not quoted, and the record gives the reason for each: R2 (the NWS glossary) repeats the thresholds that R1 "
+                   "and R3 quote, with a missing space in its wording; R9 (FEMA P-957) describes a design value that the history "
+                   "holds out; R13 (ARMA) gives no mph threshold and its quote is a test standard's title; R17 (drought.gov, SNOTEL) "
+                   "concerns a network the history holds out; R20 is a secondary source found in search results and not fetched, "
+                   "which the record treats as unverified.",
+        "units": "Kind word \"Reference\" on every line. A reference is a quoted statement from its source and gives no measurement "
+                 "for this place.",
+        "timing": "The quotes were read from the source pages during the research (2026-10-19). A source that changes its page is "
+                  "not read again by the build; the line names the source and its address.",
+        "missing": "A reference with no quote is not shown. None of the reference lines says what a roof needs, and none is a "
+                   "finding about any roof, weather event or address.",
     },
 }
 

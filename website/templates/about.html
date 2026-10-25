@@ -16,19 +16,21 @@
     <li><strong>The map</strong> plays the past hour of NOAA's radar estimate (MRMS, every 10 minutes) and then the
       HRRR computer model's forecast: every 15 minutes for the next hour, then hourly to 12 hours. Before "Now" it is
       radar; after "Now" it is a model forecast, and the map always says which. Far from a radar site the beam passes
-      over low clouds, so a blank area is not proof of dry weather; areas with no radar coverage are hatched.
+      over low clouds, so a blank area is not a statement about the weather; areas {% if hail_history %}beyond radar range{% else %}with no radar coverage{% endif %} are hatched.
       The temperature and wind-gust layers are the same model. The numbers on the towns are the NWS forecast.</li>
     <li><strong>Town forecasts</strong> are NWS forecasts for the 2.5 km grid square around each town. They are predictions for an area,
       not measurements at a roof.</li>
     <li><strong>Storm reports</strong> are preliminary hail and wind reports gathered by the Storm Prediction Center. Hail sizes are as
       reported; a report is a point, not the edge of a storm.</li>
-    {% if storm_layers %}<li><strong>Radar echo tops</strong> are NOAA's radar estimate (MRMS) for each town: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data, in metres above sea level ("at least" when heights above it had no radar value). The 11 heights run from 500 to 15,000 m above sea level. They are not observed hail or damage, and no echo is not an all-clear.</li>
+    {% if storm_layers %}<li><strong>Radar echo tops</strong> are NOAA's radar estimate (MRMS) for each town: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data, in metres above sea level ("at least" when heights above it had no radar value). The 11 heights run from 500 to 15,000 m above sea level. They are not observed hail or harm to a roof, and no echo at 35 dBZ does not rule out hail.</li>
     {% endif %}
-    {% if storm_layers %}<li><strong>Satellite picture</strong> is NOAA's GOES infrared picture (band 13, 10.3 µm) of the newest 5-minute scan over the map's area, in kelvin. It is an observation of the infrared brightness temperature of the cloud tops and of the ground where there is no cloud. It is not a height and not a hail signal. GOES-East is read first; GOES-West is used when GOES-East fails or has no scan in the last hour. An uncorrected cloud top is drawn away from the satellite (north-west for GOES-East, north-east for GOES-West), about 3 to 4 km for a 2 km top and 20 to 33 km for a 12 to 15 km top. Missing pixels are hatched, never drawn as clear sky. Areas warmer than 300 K are left uncoloured, and missing areas show hatch lines; uncoloured is not a statement about the weather.</li>
+    {% if storm_layers %}<li><strong>Satellite picture</strong> is NOAA's GOES infrared picture (band 13, 10.3 µm) of the newest 5-minute scan over the map's area, in kelvin. It is an observation of the infrared brightness temperature of the cloud tops and of the ground where there is no cloud. It is not a height and not a hail signal. GOES-East is read first; GOES-West is used when GOES-East is unavailable or has no scan in the last hour. An uncorrected cloud top is drawn away from the satellite (north-west for GOES-East, north-east for GOES-West), about 3 to 4 km for a 2 km top and 20 to 33 km for a 12 to 15 km top. Missing pixels are hatched, never drawn as cloud-free sky. Areas warmer than 300 K are left uncoloured, and missing areas show hatch lines; uncoloured is not a statement about the weather.</li>
+    {% endif %}
+    {% if storm_layers %}<li><strong>Hail swath (radar estimate)</strong> is NOAA's MRMS MESH (maximum estimated size of hail), a radar estimate of the largest hail over each 0.01-degree cell, about 0.7 miles north to south and 0.5 miles east to west, in the last hour and in the last 24 hours. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact. An uncoloured cell means no radar hail estimate of 0.25 in or more in the last hour (hour layer) or the last 24 hours (24-hour layer), or no value; NOAA's data does not tell the two apart, so uncoloured is not the same as no hail. Hatched cells have no radar coverage. It is an estimate, not observed hail and not an inspection. The map works out how old each picture is when you look at it, and an old or missing picture says "This is not an all-clear."</li>
     {% endif %}
   </ul>
 
-{% if hail_history %}
+{% if hail_history %}{% set ah = about_hail %}
   <h2>Hail history</h2>
   <p>The hail history is NOAA's radar estimate (MRMS MESH) of the largest hail over this cell, about 0.7 miles north to south
     and 0.5 miles east to west, during the day, for the five years to the newest day in the store. The cell is the one under
@@ -41,6 +43,78 @@
     at 12:43 UTC and shows here on the next rebuild. The as-of date is on every page that shows the
     history. The units and the source are in the data
     sources table below.</p>
+  <h2>Five years of weather</h2>
+  <p>Each town's page has a five-season table for July 2021 to June 2026, with the partial 2026-27
+    season below it. Each row names its kind of record and its unit, and no row mixes two kinds of record. The history sits
+    below the town's forecast, under one heading, and a link at the top of the page jumps to it. The five-season table leads the
+    history, and the sections under it come in one order: Hail, Wind, Storms and warnings, Temperature, Rain, Snow, Flooding,
+    Ice and winter, Heat, Weather that matters for a roof, and How this was made.</p>
+  <p>The kinds of record are these. A radar estimate is NOAA's MRMS MESH value for a grid cell about 0.7 miles north to
+    south and 0.5 miles east to west. A report is what a spotter, a member of the public or a sensor sent to the National
+    Weather Service. An official record is a NOAA Storm Events entry. A warning is the NWS polygon that covered the spot,
+    with the tags it carried when it was issued. A zone product is an NWS product for a whole forecast zone, and a county
+    product is one for a whole county. A station reading is a value at a named station, with its distance. A grid estimate
+    is NOAA's gridded daily value for a cell about 4.6 km across. A reference is a public statement about a stress on roofs.
+    A grid estimate and a station reading are not readings at the address, and no row is an inspection or a finding about
+    a roof.</p>
+  <p>Temperatures are shown in degrees Fahrenheit and rain and snow in inches. A day with a high of 90 F or more is one whose
+    high, rounded to the hundredth of a degree C and then to the tenth, is 32.2 C or more (a high of 32.15 C or more); a freeze-thaw day has a high above 32 F and a low below 32 F. A missing day is never a zero: the
+    page says how many days are missing, and a season with too many missing days shows Data unavailable with the reason.</p>
+  <h3>Other records for the same cell</h3>
+  <p>The history also joins the other records for the same cell, each with its own kind word. Reports are NWS local storm
+    reports within 5 miles, of every type the history reads. Official records are NOAA Storm Events points within 5 miles
+    (hail, thunderstorm wind, flood, flash flood, heavy rain, tornado, funnel cloud, lightning and debris flow) and the
+    zone-coded rows of every type for the cell's forecast zone. Radar detections are the NEXRAD hail signatures within 2
+    miles, which are the radar algorithm's detections for a storm cell and not hail on the ground. Warnings are the NWS
+    polygons that intersect the cell, with the forecast tags they carried at issue time. Zone products cover a whole
+    forecast zone, and county products a whole county; red flag warnings cover a fire weather zone. Station readings are
+    the peak gusts at the two nearest airport stations within 40 miles, and the daily values of the two nearest stations that
+    pass the enough-days rule. Stations in Montana and the neighbouring states within 40 miles are candidates.
+    Canadian stations within reach are not read while the terms for their data are under review.</p>
+  <h3>Not in this history</h3>
+  <ul>{% for text in ah.held.values() %}<li>{{ text }}</li>{% endfor %}</ul>
+  <h3>Snow analysis</h3>
+  <p>{{ ah.analysis }}</p>
+  <h3>Reports and radar</h3>
+  <p>{{ ah.hit_miss }}</p>
+  <h3>County boundaries</h3>
+  <p>{{ ah.census }} Source: U.S. Census Bureau, TIGER/Line 2026 county boundaries.</p>
+  <h3>Roof references</h3>
+  <p>The roof lines quote public statements in their own words. Each line says it is a reference, not a finding about any
+    roof, weather event or address.</p>
+  <ul>{% for r in ah.refs %}<li><a href="{{ r.url }}">{{ r.source }}</a>: "{{ r.quote }}"</li>{% endfor %}{% for c in ah.citations %}<li>{{ c.source }} ({{ c.id }}, not quoted): {{ c.why }}.</li>{% endfor %}</ul>
+  <p>{{ ah.not_quoted }}</p>
+  <p>Known gaps: NCEI's database runs behind the other sources, and the page says to which date. The wind unit of the local
+    storm reports is inferred. Warning tags are the forecast threat at issue time, not what fell. Iowa State's inventory of
+    radar detections is not complete.</p>
+{% endif %}
+{% if hail_addresses and b3 %}
+  <h2 id="addresses">Addresses, streets and building outlines</h2>
+  <p>{{ b3.about.addresses.source }}</p>
+  {% if b3.about.addresses_ok %}
+  <p>{{ b3.about.addresses.access }} {{ b3.about.addresses.use }}</p>
+  <p>{{ b3.about.addresses.purpose }}</p>
+  <p>{{ b3.about.addresses.fields }} {{ b3.about.addresses.exclusion }} {{ b3.about.addresses.persons }}</p>
+  <p>{{ b3.about.addresses.coverage }}</p>
+  {% else %}
+  <p>{{ b3.unavailable.addresses }} {{ b3.about.addresses.exclusion }} {{ b3.about.addresses.persons }}</p>
+  {% endif %}
+  {% if address_text == 'on' %}
+  <p>{{ b3.about.addresses.privacy }}</p>
+  {% endif %}
+  {% if b3.about.roads_ok %}
+  <p>{{ b3.about.roads.attribution }}</p>
+  <p>{{ b3.about.roads.caveat }}</p>
+  {% else %}
+  <p>{{ b3.unavailable.roads }}</p>
+  {% endif %}
+  {% if b3.about.outlines_ok %}
+  <p>{{ b3.about.outlines.source }} {{ b3.about.outlines.caveat }}</p>
+  <p>{{ b3.about.outlines.dot }}</p>
+  {% if b3.about.counties %}<p>{{ b3.about.counties }}</p>{% endif %}
+  {% else %}
+  <p>{{ b3.unavailable.outlines }} {{ b3.about.outlines.caveat }}</p>
+  {% endif %}
 {% endif %}
   <h2>Base map imagery</h2>
   <p>The map's base is a white map of public outlines. In the Layers menu you can switch it to aerial imagery with roads and
@@ -56,10 +130,10 @@
   <h2>Flags</h2>
   <p>An hour is flagged for gusts of {{ limits.gust_mph }}&nbsp;mph or more, sustained wind of {{ limits.wind_mph }}&nbsp;mph or more, a
     {{ limits.pop_pct }}% or higher chance of rain or snow, or a temperature under {{ limits.cold_f }}&nbsp;°F or over {{ limits.hot_f }}&nbsp;°F.
-    These are placeholders until the company sets limits for its roof systems. A missing value never raises a flag and never clears one.
-    An hour without a flag is not a promise that work is safe.</p>
+    These are placeholders until the company sets limits for its roof systems. A missing value never raises a flag and never removes one.
+    An hour without a flag is not a promise that work can go ahead.</p>
 
-  <h2>When something fails</h2>
+  <h2>When something goes wrong</h2>
   <p>If a source doesn't answer, the page says so and shows a dash instead of a number. If the alert list can't be refreshed, the
     last list that was checked stays on the page with its time. The line under the header lists each source and whether it loaded.
     If a page is more than 25 minutes old, it says so.</p>
@@ -69,6 +143,14 @@
 
   <h2 id="sources">Data sources in detail</h2>
   <p>What each source sends and how this site treats it.</p>
+{% if hail_history %}
+  <h3>Terms of the new sources</h3>
+  <p>Each sentence below is the source's own words, from its record or its module.</p>
+  {% for t in about_hail.terms %}
+  <h4>{{ t.source }}</h4>
+  {% for s in t.terms %}<p>{{ s }}</p>{% endfor %}
+  {% endfor %}
+{% endif %}
 </div>
 <div class="table-box contracts">
   <table>

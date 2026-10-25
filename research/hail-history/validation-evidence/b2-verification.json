@@ -1,0 +1,1172 @@
+{
+ "record": "B2 verification: the joins (reports, official records, radar detections, warnings, zone products, station gusts) in the hail history sheet and town tables",
+ "status": "pass",
+ "verdict": "Supervisor gate, 2026-10-19 after round 7: every gate but the deferred B2-4 passes on the tree pushed as the squashed B2 commit (771 tests OK; launcher selftest PASS; joins verify 22 of 22; compare 15 of 15 with delta 0; Chromium smoke_map and smoke_pages pass on the real-store build; the flag-off build is byte-identical to 7aec754 except static/map/map.js and its ?v= hash). Known limit of the re-used event numbers: the four named cases and 19 groups under the broader check; B5's period rule (D33) covers them. Earlier verdicts follow. Round 7 (2026-10-19; the supervisor's D35 correction, the docs part of the round-7 list). D35 restores FA.A (flood watch) to the joined zone products: ten products in all, with FW.W; FL.W stays out, and the 18 county-only FA.A events are B5's county path. The store was rebuilt on that list (store-r7; counts in session-archive/joins/r7-counts.json) and verified: verify 22 of 22 checks, the release tar verified 22 of 22 after extraction, and the compare against the research 15 rows with no delta. The rebuilt figures: 4,960 public zone events (FA.A 491; round 6 had 4,469), 660 fire zone events, z/ 919,402 bytes (round 6: 875,220), 452 products unplaced (456 rows), and 447 cancellation rows at 00:00 UTC across the public and fire rows. j/, s/ and t/ are byte-identical to round 6; hail/ measures 54,227,125 bytes in 9,372 files, as in round 4. The cancellation-only groups (3,411 public and 276 fire; 446 public at 00:00 UTC; 2,965 public at other times) are the round-4 recount, which had FA.A in the zone products; the round-7 counts file does not re-count them. The flag-on site sizes are round-4 measures. Status is pending: gates B2-6 (zone rows), B2-7 (the Billings zone rows) and B2-8 (sizes and hashes) are not re-run in this round and are for the supervisor's gate to confirm before the push. The round-5 build passed every gate but the deferred B2-4 (units).",
+ "written_by": "final checker (read-only, round 4, 2026-10-19 UTC). Every number in measurements was measured on a copy of the worktree (216 files, copied without .git) under session-archive/recheck4/ (logs/, scripts/, builds off/, sample/, real/, base-off/, base-real/, determinism det/). This file is the only file edited in the worktree. Round 5: the docs fixer edited the notes, open items, gates, measurements, failed_checks, status and verdict of this file (note 39; the figures added under measurements.round5). No live requests; the store tar was read in memory and not extracted. Scratch scripts: session-archive/docs-fixer/. Round 6: the docs fixer applied D34 to DECISIONS D35, DESIGN section 9, ROADMAP and website/templates/about.html, and set the B2-7 gate, failed_checks, status and verdict of this file from the round-5 evidence (note 41; measurements.round6).",
+ "branch": "claude/hail-b2",
+ "base": {
+  "branch": "claude/hail-b1",
+  "commit": "7aec754"
+ },
+ "head_commit": "the squashed B2 commit on claude/hail-b2 (see the pull request); the review rounds' safety commits were squashed into it",
+ "brief": "session-archive/briefs/hail-b2-brief.md",
+ "decision": "docs/DECISIONS.md D35 (after D34); the supervisor's round-6 D34 ruling is applied in D35 (note 41), and the supervisor's round-7 D35 correction (flood watch stays in the zone products) is applied in place in the same entry (note 42).",
+ "design": "docs/DESIGN.md section 9, Joined records (B2)",
+ "gates": [
+  {
+   "id": "B2-1",
+   "gate": "Benchland, SPC day 2025-06-15, two cells (D1). Benchland's own cell (row 792, col 1998; centre 47.075 N 110.015 W) lists the LSR 1.75 in report of 2025-06-15 20:10 UTC (0.42 miles away) and its NCEI record. The hail gate cell (row 797, col 1986) lists the TFX warnings whose issuance polygon covers it and its zone with the zone's high wind warnings. verify measures distance from the cell centre with the 5-mile rule, never from tile bounds.",
+   "status": "pass",
+   "evidence": "Per D1, both cells pass. (a) Benchland's own cell, row 792 col 1998, centre 47.075 N 110.015 W (tile r0079_c0199): the reports section lists 'Report: Jun 15, 2025 2:10 pm MDT: hail, 1.75 in (estimated), Public, 0.4 mi NW' (20:10 UTC) and the records section lists 'Record: Jun 15, 2025 2:10 pm MDT: hail, 1.75 in, Public, 0.4 mi NW' (NCEI); both 0.42 mi from the centre (the four verify gate-1 checks are ok). (b) Gate cell, row 797 col 1986, centre 47.025 N 110.135 W (key 76, tile r0079_c0198): the warnings section lists the two TFX severe thunderstorm warnings whose polygons cover it on Jun 15, 2025 (1:53 to 2:02 pm MDT and 3:23 to 3:35 pm MDT; 19:53 to 20:02 and 21:23 to 21:35 UTC); no ETN text in any section; the zones section names Judith Basin County and Judith Gap (MTZ313) with its High wind warning rows (62 spans); the fire zone MTZ117 lists 18 red flag warnings. The gate cell does not list the 1.75 in report (it is 6.6 mi away; the R-12 correction). Chromium: tools/smoke_map.py on the real build, check_joins at 1280 and 390 px for both cells, passed (exit 0).",
+   "closes": "B1-4 (deferred in b1-verification.json until B2 lands) when this gate passes; that file is not edited here",
+   "notes": [
+    "Benchland's cell and the gate cell are checked separately, as D1 states; the gate's own text has no ETN.",
+    "SWDI has no records after 03:32:39 UTC on 2025-06-15 (research gap 4); the gate does not read the detections for that day as complete."
+   ]
+  },
+  {
+   "id": "B2-2",
+   "gate": "Counts reproduce the research within the window (five years to the build date): LSR hail about 1,347 and G about 2,733 statewide; NCEI hail by year 139/233/75/96/190 (2021 to 2025); SWDI nx3hail about 60,357 distinct detections in the window; SV polygon events about 2,240 and TO 17 (plus FF, counted); station-days at or above 50 kt by year 305/285/121/238/247 (2021 to 2025). Deviations are explained (the window moves daily).",
+   "status": "pass",
+   "evidence": "joins compare (window 2021-10-17 to 2026-10-16): 15 of 15 rows delta 0: LSR hail 1,347 and LSR G 2,733; NCEI hail 139, 233, 75, 96 and 190 (2021 to 2025); SWDI nx3hail 60,357 distinct detections in the Montana polygon; SV 2,240 and TO 17 polygon events; FF 148 (index); station days at or above 50 kt 305, 285, 121, 238 and 247 (2021 to 2025). Index counts: zone events 4,960 public and 660 fire-weather; zone products unplaced 452 (distinct), 456 IEM rows, 451 NCEI rows; station days 1,261 at 60 stations, 3 readings at 130 kt or more dropped.",
+   "expected": "The figures below are the brief's and the research's, not measurements. The build's own counts are in the joins block of hail/index.json.",
+   "notes": [
+    "The window moves daily; compare states each row's basis (LSR counted by SPC day in this build against the research's UTC days; NCEI by local begin date; SV and TO by polygon begin; station days by station local day)."
+   ]
+  },
+  {
+   "id": "B2-3",
+   "gate": "Every row carries its kind word; the forbidden-term check passes over every new word and template.",
+   "status": "pass",
+   "evidence": "Kind labels: all 490 rows of the six sections for the gate and Benchland cells start with their label ('Report:', 'Record:', 'Detection:', 'Warning:', 'Zone product:', 'Station:'), and all 7,102 joins rows on the 17 town pages start with theirs (D3; checked by script). Forbidden terms: 127 hits in the joins sections of the built town pages, classified by a script: 32 in quoted NWS remarks, 75 in the 'NWS damage threat tag' label, and 20 more that were read by hand (quoted remark text or the negation 'not evidence of no hail'); 0 outside those. map.json hail words: 6 hits, all negations ('That is not the same as no hail', 'not an inspection'). The unit test test_the_new_words_say_no_forbidden_term_and_no_dash (test_site.py 1737) and the word tests that use the FORBIDDEN patterns (test_site.py 1431, 1873, 1944) pass.",
+   "notes": [
+    "Every visible 'no hail' is in a negation sentence; 'damage' appears only in quoted remarks and the tag label (D4)."
+   ]
+  },
+  {
+   "id": "B2-4",
+   "gate": "Units: LSR hail in, gusts mph (inferred, stated); NCEI kt and mph both; SWDI inches; tags inches and mph; station kt and mph.",
+   "status": "deferred",
+   "evidence": "Deferred as agreed for this round. Not measured in this check. Round-2 findings F-02 and F-12 are reported in measurements.round2_findings for reference only.",
+   "notes": [
+    "The units gate is re-checked when it is taken up again."
+   ]
+  },
+  {
+   "id": "B2-5",
+   "gate": "A tile with no joins shows the 'no report' sentences, never empty sections; a failed source part shows its unavailable sentence.",
+   "status": "pass",
+   "evidence": "No-join spot: tools/smoke_map.py no_join_spot on the real build: the six sections match describe_joins (the no-report sentences) at 1280 and 390 px (passed). Failed parts on the real build (smoke check_part_unavailable, check_station_unavailable, check_zone_unavailable) each show their D20 sentence ('{Part} could not be loaded in this update; that is not the same as no {part}.') with no lead, rows or note, and the other sections keep their text (passed). Sample build: every section says 'Data unavailable' and 'This is not an all-clear.' (passed). Unit tests for the no-report wording pass.",
+   "notes": [
+    "The sheet and the town table are checked against one partial index (D2), inside the smoke's check_joins."
+   ]
+  },
+  {
+   "id": "B2-6",
+   "gate": "Zone products: the gate cell's zone is named and its high wind warnings in the window are listed (or the unavailable sentence if the source could not be read, with the reason).",
+   "status": "pass",
+   "evidence": "Gate zone MTZ313 (Judith Basin County and Judith Gap): 98 products (62 cancelled, 1 upgraded, 35 expiry, 0 with no end). The 'High wind warning' row lists all 62 high-wind products in the window, 38 of them 'cancelled' and none 'end not recorded' (F-03 closed); the lead reads '98 products for zone Judith Basin County and Judith Gap (MTZ313)'. Fire zone MTZ117: '18 red flag warnings'. The unavailable path: check_zone_unavailable (smoke) and test_a_zone_file_that_did_not_load_keeps_the_point_records_and_says_so (test_site.py 2449) pass.",
+   "notes": [
+    "The live CGI check (the brief's first route) is answered by the r4 build's fetch counts: zone_products 66 requests, 11 fetched, 55 cached, 0 failed; the cached CSVs hold MTZ rows."
+   ]
+  },
+  {
+   "id": "B2-7",
+   "gate": "Chromium smoke at 390 and 1280 px: the gate cell's sheet shows all six sections with the Benchland rows; Billings' town page tables match an independent read of the shards; zero off-site requests.",
+   "status": "pass",
+   "evidence": "Round 5 (2026-10-19) fixed the page width that round 4 failed. tools/smoke_pages.py on the real build (built 04:23 UTC, with the rule in place) passes at 288, 320, 375, 768 and 1440 px, light and dark: session-archive/r5-site/smoke_pages2.log ends with 'Page width check passed: every page fits the screen at 288, 320, 375, 768, 1440 px, light and dark.' and 'EXIT 0'. The rule is in website/templates/town.html line 143, '.joins-sec { margin-top: 20px; overflow-wrap: anywhere; }', and in website/templates/map.html line 28, '.sheet-body .joins-sec { margin-top: 22px; overflow-wrap: anywhere; }'. The round-4 build without the rule (real-before, 04:17 UTC) failed town/glendive.html and town/sidney.html at 288 px (42 px wider) and 320 px (10 px wider), so the rule is what passed. Round 5 also ran tools/smoke_map.py on a --hail-history build (session-archive/r5-site/smoke_map_after.log: passed, EXIT 0, no request to another site) and the site unit tests (unittest_site.log: 155 tests, OK). The joins change recorded after the 04:23 build is a docstring (joins_done.txt, 04:41 UTC). The sheet and Billings checks below are round 4's; the D34 rebuild must repeat them (DECISIONS D35 open item 20). Round 4 evidence, kept (its failure is the one round 5 fixed): Passes: tools/smoke_map.py on the real build at 390 and 1280 px (exit 0): the gate sheet shows all six sections with the Benchland rows, the sheet equals describe_joins section by section (heading, sentences, leads, rows, remarks), and no request went to another site. Billings (cell 921 2149, zone MTZ235), independent read of the shards: reports 754 (page 754); records 68 = 40 point + 28 zone (page 68); detections 0 (page: none); warnings 24 (page 24; the LSB bit order, MSB would give 23); zone products 34 = HW 14, WS 11, WC 2, FA 7 (page 34, the rows match) plus the fire-zone group of 16 red flag warnings (MTZ128, page 16); station days 42 = BIL 31 + 6S8 Laurel 11 (page 42). Fails: tools/smoke_pages.py on the real build, exit 1, town/glendive.html and town/sidney.html at 288 and 320 px (see failed_checks, measurements.smoke and notes 31).",
+   "notes": [
+    "The page-width fault is in the B2 zones section (the fire-zone lead), not in B1: the base commit with --hail-history on the same store passes.",
+    "Round 5: the page-width fault is fixed by the overflow-wrap rule (evidence above; note 41)."
+   ]
+  },
+  {
+   "id": "B2-8",
+   "gate": "The joins build is deterministic from cache (two runs give byte-identical j/, z/ and s/ files) and the job's steps run locally end to end; sizes measured.",
+   "status": "pass",
+   "evidence": "Two --offline joins builds from one copy of the joins cache (1,152 files) into two copies of store-r4: j/ 4,598 files, z/ 115, s/ 60 are byte-identical in both runs (diff -rq empty), and equal to the online r4 store and to the files packed in the r4 tar (hail-store.tar.gz, 12,876,467 bytes). Both verify runs exit 0 (22 of 22 checks ok). The job steps run locally: the B1 verify on a copy (exit 0); the joins build offline from cache (96 s and 100 s; exit 0); the joins verify (exit 0); the pack of hail/ (the r4 tar). Not run: the B1 build step (it needs the NOAA archive over the network) and the release upload. Sizes: j/ 19,912,416 bytes (40 MB budget); z/ 919,402 and s/ 22,478 (2 MB each).",
+   "notes": [
+    "Offline builds make no requests and write the same index except built_at; the j/, z/ and s/ files are the comparison."
+   ]
+  },
+  {
+   "id": "B2-9",
+   "gate": "Flag-off build unchanged except shared static assets and their hashes.",
+   "status": "pass",
+   "evidence": "Flag-off build (--sample --now 2026-10-18T12:00:00Z) against the base commit 7aec754 built with the same flags: 94 files each. diff -rq lists two files: static/map/map.js (content changed) and map.html (one line, 169: the map.js ?v= hash db35924adec4 becomes 8615208b8373). static/map/map.css and the other 92 files are identical.",
+   "notes": [
+    "Only the shared map script and its hash differ; the flag gates all hail markup."
+   ]
+  }
+ ],
+ "expected_counts_from_brief_and_research": {
+  "lsr_hail_window": 1347,
+  "lsr_g_window": 2733,
+  "ncei_hail_by_year_2021_to_2025": [
+   139,
+   233,
+   75,
+   96,
+   190
+  ],
+  "swdi_nx3hail_distinct_window": 60357,
+  "sv_polygon_events_window": 2240,
+  "to_events_window": 17,
+  "station_days_50kt_by_year_2021_to_2025": [
+   305,
+   285,
+   121,
+   238,
+   247
+  ]
+ },
+ "live_requests": [
+  {
+   "url": "https://www.weather.gov/gis/PublicZones",
+   "status": 200,
+   "bytes": 28802,
+   "content": "links z_18mr25.zip and z_16ap26.zip: the prior public zone edition is listed and reachable (never fetched by the build)"
+  },
+  {
+   "url": "https://www.weather.gov/gis/FireZones",
+   "status": 200,
+   "bytes": 28023,
+   "content": "links fz18mr25.zip and fz16ap26.zip"
+  },
+  {
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_18mr25.zip",
+   "status": 200,
+   "bytes": 25826029,
+   "content": "83 Montana zones; names and vertices identical to z_16ap26.zip (pyshp, 0 differences); MT060 = Southwest Phillips"
+  },
+  {
+   "url": "https://www.weather.gov/source/gis/Shapefiles/WSOM/z_16ap26.zip",
+   "status": 200,
+   "bytes": 26465980,
+   "content": "83 Montana zones; MT060 = Southwest Phillips"
+  }
+ ],
+ "live_requests_note": "Round 4 made no new live requests: the offline rebuilds ran from the cache copy. The r4 online build's own source counts are in measurements.job_index_sources.",
+ "measurements": {
+  "round": "4 (2026-10-19, read-only)",
+  "snapshot": {
+   "copy": "session-archive/recheck4/src (216 files, the worktree without .git)",
+   "git_status_short_before_this_file_was_edited": [
+    " M docs/DECISIONS.md",
+    " M docs/DESIGN.md",
+    " M docs/ROADMAP.md",
+    " M research/hail-history/validation-evidence/b2-verification.json",
+    " M tests/test_joins.py",
+    " M tests/test_site.py",
+    " M tools/smoke_map.py",
+    " M website/joins.py",
+    " M website/sources.py",
+    " M website/static/map/map.js"
+   ],
+   "diff_stat_vs_7aec754_before_this_file_was_edited": "33 files changed, 8503 insertions(+), 46 deletions(-)",
+   "added_lines_before_this_file_was_edited": 8503
+  },
+  "unit_tests": {
+   "command": "python -m unittest discover -s tests (cwd: worktree; PYTHONDONTWRITEBYTECODE=1)",
+   "ran": 760,
+   "skipped": 0,
+   "failures": 0,
+   "errors": 0,
+   "seconds": 201.656,
+   "exit": 0,
+   "tail": "Ran 760 tests in 201.656s\n\nOK",
+   "log": "session-archive/recheck4/logs/unittest.log",
+   "expected_tracebacks_in_log": "logs from deliberate failure tests (test_updates ZeroDivisionError, the rollback RuntimeError) are printed by design; the result is OK"
+  },
+  "launcher_selftest": {
+   "command": "python desktop/launcher.py --selftest payload",
+   "output": "PASS  payload 1.0.0",
+   "exit": 0
+  },
+  "builds": {
+   "off": {
+    "command": "website.build --out recheck4/off --sample --now 2026-10-18T12:00:00Z",
+    "exit": 0,
+    "seconds": 8.2,
+    "files": 94
+   },
+   "base_7aec754_off": {
+    "command": "same flags in recheck4/base-src (git archive 7aec754)",
+    "exit": 0,
+    "seconds": 8.1,
+    "files": 94
+   },
+   "sample": {
+    "command": "website.build --out recheck4/sample --hail-history --sample",
+    "exit": 0,
+    "seconds": 7.9
+   },
+   "real": {
+    "command": "website.build --out recheck4/real --hail-history --sample --hail-store out2/joins/hail-store.tar.gz",
+    "exit": 0,
+    "seconds": 13.5,
+    "files": 9466
+   },
+   "base_real_for_page_width_diagnosis": {
+    "command": "base-src with --hail-history --sample --hail-store (same tar), recheck4/base-real",
+    "exit": 0
+   }
+  },
+  "flag_off_vs_base": {
+   "command": "diff -rq base-off off",
+   "differing_files": [
+    "static/map/map.js (content)",
+    "map.html (line 169: the map.js ?v= hash only)"
+   ],
+   "map_css": "identical",
+   "other_files_identical": 92,
+   "files_each": 94
+  },
+  "smoke": {
+   "map_off": {
+    "command": "PW_CHROMIUM=/opt/pw-browsers/chromium python tools/smoke_map.py recheck4/off",
+    "exit": 0
+   },
+   "map_sample": {
+    "exit": 0,
+    "notes": [
+     "no listed tile has a cell outside Montana, so the outside-after-fetch check did not run",
+     "the cross-day check did not run: this build holds no record file for tile r0060_c0190"
+    ]
+   },
+   "map_real": {
+    "exit": 0,
+    "shots": "recheck4/shots-real (12 pictures: desktop and phone map and imagery, hail sheet arrival, click and gate at 390 and 1280 px, joins gate desktop and phone)",
+    "pass_line": "Map smoke test passed: page, frames, basemap, bubbles, play, layers, card and the Imagery base map all work, and on a --hail-history build the hail sheet does too..."
+   },
+   "pages_off": {
+    "command": "tools/smoke_pages.py recheck4/off",
+    "exit": 0,
+    "line": "Page width check passed: every page fits the screen at 288, 320, 375, 768, 1440 px, light and dark."
+   },
+   "pages_sample": {
+    "command": "tools/smoke_pages.py recheck4/sample",
+    "exit": 0
+   },
+   "pages_real": {
+    "command": "tools/smoke_pages.py recheck4/real",
+    "exit": 1,
+    "failures": [
+     "town/glendive.html at 288 px (light) is 42 px wider than the screen",
+     "town/sidney.html at 288 px (light) is 42 px wider than the screen",
+     "town/glendive.html at 320 px (light) is 10 px wider than the screen",
+     "town/sidney.html at 320 px (light) is 10 px wider than the screen",
+     "the same four at 288 and 320 px (dark)"
+    ],
+    "log": "recheck4/logs/smoke_pages-real.log"
+   }
+  },
+  "browser_sheet_vs_module": {
+   "method": "tools/smoke_map.py check_joins: sheet_matches compares each section's heading, what-sentence, lead, fire lead, rows and remarks, in order, with describe_joins; no_join_spot; check_part_unavailable; check_station_unavailable; check_zone_unavailable",
+   "result": "pass (real build, 1280 and 390 px)",
+   "rows_in_sheet": {
+    "gate_797_1986": {
+     "reports": 17,
+     "records": 86,
+     "detections": 8,
+     "warnings": 27,
+     "zones": 8,
+     "stations": 31,
+     "total": 177
+    },
+    "benchland_792_1998": {
+     "reports": 145,
+     "records": 91,
+     "detections": 7,
+     "warnings": 31,
+     "zones": 8,
+     "stations": 31,
+     "total": 313
+    }
+   },
+   "rows_without_label": 0
+  },
+  "joins_verify": {
+   "command": "python -m website.joins verify out2/joins/store-r4",
+   "exit": 0,
+   "state": "loaded",
+   "ok": true,
+   "checks": 22,
+   "failing": []
+  },
+  "joins_compare": {
+   "command": "python -m website.joins compare out2/joins/store-r4",
+   "exit": 0,
+   "rows": 15,
+   "rows_delta_0": 15,
+   "window": [
+    "2021-10-17",
+    "2026-10-16"
+   ],
+   "ff_events_index": 148
+  },
+  "index_counts": {
+   "zone_events_public": 4960,
+   "zone_events_fire": 660,
+   "zone_products_unplaced_distinct": 452,
+   "zone_rows_unmatched_iem_window_public": 456,
+   "ncei_zone_rows_unmatched": 451,
+   "ncei_zone_rows": 4748,
+   "warnings": {
+    "SV": 2240,
+    "TO": 17,
+    "FF": 148
+   },
+   "reports_rows": 301678,
+   "records_rows": 12739,
+   "detections_rows": 170350,
+   "warnings_rows": 106790,
+   "tiles": 4597,
+   "tiles_with_warnings": 4371,
+   "zones": 83,
+   "fire_zones": 32,
+   "stations": 60,
+   "station_days": 1261,
+   "station_dropped": 3,
+   "malformed_rows": {
+    "reports": 0,
+    "records": 0,
+    "detections": 0,
+    "warnings": 0,
+    "zones": 0,
+    "stations": 0
+   },
+   "short_rows": {
+    "reports": 0,
+    "records": 0,
+    "zones": 0
+   },
+   "swdi_duplicates_dropped": 3119,
+   "zone_editions": [
+    {
+     "file": "z_18mr25.zip",
+     "effective": "2025-03-18",
+     "current": false,
+     "read": true,
+     "zones": 83,
+     "same_codes": 83,
+     "renamed": {},
+     "geometry_max_diff_deg": 0.0
+    },
+    {
+     "file": "z_16ap26.zip",
+     "effective": "2026-04-16",
+     "current": true,
+     "read": true,
+     "zones": 83
+    }
+   ],
+   "zone_edition_cutover": "2026-04-16"
+  },
+  "zone_span_ends": {
+   "gate_MTZ313": {
+    "events": 98,
+    "cancellation": 62,
+    "upgrade": 1,
+    "expiry": 35,
+    "none": 0,
+    "upgraded_spans": 1,
+    "cancelled_at_spans": 0
+   },
+   "store_public_83_zones": {
+    "events": 4960,
+    "cancellation": 3145,
+    "cancellation_suffix_spans": 3124,
+    "cancelled_at_spans": 21,
+    "upgrade": 34,
+    "upgraded_suffix_spans": 28,
+    "upgraded_at_spans": 6,
+    "expiry": 1781,
+    "none": 0
+   },
+   "store_fire_32_zones": {
+    "events": 660,
+    "cancellation": 276,
+    "expiry": 384,
+    "none": 0
+   },
+   "method": "website/joins.py _zone_span and _zone_event_text applied to every event in hail/z/*.json (scripts/zone_counts.py)"
+  },
+  "zone_round4_recount": {
+   "data6": {
+    "cache_csv_files": 66,
+    "rows": 7136,
+    "short_rows": 0,
+    "NEW_rows_all_zone_rows": 157,
+    "NEW_rows_MTZ_codes": 110,
+    "MTZ_groups_with_a_NEW_row": 110,
+    "public_groups_with_a_NEW_row": 69,
+    "fire_groups_with_a_NEW_row": 41,
+    "reading": "the docstring's '110 public groups' should read 110 zone groups (69 public and 41 fire weather); the 157 is across all zone rows (47 are non-MTZ)"
+   },
+   "cancellation_only_D30_key": {
+    "public_all_cache": 3691,
+    "fire_all_cache": 425,
+    "public_begin_in_window": 3411,
+    "fire_begin_in_window": 276,
+    "public_plus_fire_begin_in_window": 3687,
+    "public_begin_at_0000_UTC_in_window": 446,
+    "public_other_times_in_window": 2965,
+    "docs_figure": "round 5: 3,687 (3,411 public and 276 fire weather; 446 public at 00:00 UTC; 2,965 public at other times; 298 of the 446 on the day after their earliest product time)",
+    "result": "round 4: 446 reproduced and 3,687 measured; the round-4 docs total did not reproduce and was corrected in round 5 (note 39)"
+   },
+   "one_office_claim": {
+    "event_keys_with_more_than_one_office": 0,
+    "event_keys": 6910
+   },
+   "reused_event_numbers": {
+    "groups_with_two_NEW_issue_times": 0,
+    "MTZ004_WS_2024_event_1": "CAN 2024-01-09 00:00, then CON 2024-01-11 12:00; stored as begin 2024-01-11T12:00Z, end 2024-01-10T15:22Z, cancelled; the sheet reads 'cancelled at Jan 10, 2024 8:22 am MST'",
+    "MTZ320_WS_2023_event_4": "CAN 2023-02-19 18:00, then EXP 2023-02-22 18:58",
+    "MTZ003_WS_2021_event_12": "EXP 2021-12-19 04:00, then CAN 2021-12-19 18:00",
+    "MTZ302_HW_2022_event_38": "two CAN rows, 2022-12-26 18:00 and 2022-12-27 15:00"
+   },
+   "unplaced_reconciliation": {
+    "round1_figure_1648_IEM_rows": "MTZ-coded rows in every cache year not in the current 83 zones: 1,648 measured",
+    "window_MTZ_not_in_current_zones": 1116,
+    "window_public_excluding_red_flag": 456,
+    "index_zone_rows_unmatched": 456,
+    "distinct_unplaced_products": 452
+   }
+  },
+  "gate_facts": {
+   "gate_cell": [
+    797,
+    1986
+   ],
+   "gate_centre": [
+    47.025,
+    -110.135
+   ],
+   "gate_zone": "MTZ313",
+   "gate_fire_zone": "MTZ117",
+   "gate_key": 76,
+   "report_cell": [
+    792,
+    1998
+   ],
+   "report_centre": [
+    47.075,
+    -110.015
+   ],
+   "lsr_1_75_in": {
+    "utc": "2025-06-15T20:10Z",
+    "miles_from_report_centre": 0.42
+   },
+   "ncei_1_75_in": {
+    "utc": "2025-06-15T20:10Z",
+    "miles_from_report_centre": 0.42
+   },
+   "gate_warnings_utc": [
+    "2025-06-15T19:53Z to 20:02Z TFX SV",
+    "2025-06-15T21:23Z to 21:35Z TFX SV"
+   ],
+   "gate_warning_cover_count": 27,
+   "gate_zone_HW_spans": 62,
+   "distance_report_to_gate_cell_mi": 6.6
+  },
+  "determinism": {
+   "runs": 2,
+   "mode": "website.joins build --offline --procs 4 from one copy of the cache (1,152 files) into two copies of store-r4",
+   "j_files": 4598,
+   "z_files": 115,
+   "s_files": 60,
+   "byte_identical_A_vs_B": {
+    "j": true,
+    "z": true,
+    "s": true
+   },
+   "equal_to_online_r4_store": {
+    "j": true,
+    "z": true,
+    "s": true
+   },
+   "equal_to_r4_tar_contents": {
+    "j": true,
+    "z": true,
+    "s": true
+   },
+   "verify_exit": {
+    "B1_verify_copy": 0,
+    "run_A": 0,
+    "run_B": 0
+   },
+   "build_seconds": {
+    "run_A": 96,
+    "run_B": 100
+   }
+  },
+  "job_steps_local": {
+   "B1_build_from_NOAA": "not run (network)",
+   "B1_verify": "exit 0 (copy)",
+   "joins_build_offline": "exit 0, 96 s",
+   "joins_verify": "exit 0, 22 of 22",
+   "pack": "r4 tar 12,876,467 bytes; its hail/ equals the offline rebuild",
+   "publish": "not run"
+  },
+  "job_index_sources": {
+   "nws": {
+    "requests": 2,
+    "cache": 0,
+    "fetched": 2,
+    "stale": 0,
+    "failed": 0
+   },
+   "asos": {
+    "requests": 1,
+    "cache": 0,
+    "fetched": 1,
+    "stale": 0,
+    "failed": 0
+   },
+   "ncei": {
+    "requests": 7,
+    "cache": 6,
+    "fetched": 1,
+    "stale": 0,
+    "failed": 0
+   },
+   "lsr": {
+    "requests": 61,
+    "cache": 59,
+    "fetched": 2,
+    "stale": 0,
+    "failed": 0
+   },
+   "swdi": {
+    "requests": 61,
+    "cache": 59,
+    "fetched": 2,
+    "stale": 0,
+    "failed": 0
+   },
+   "ww": {
+    "requests": 18,
+    "cache": 15,
+    "fetched": 3,
+    "stale": 0,
+    "failed": 0
+   },
+   "zone_products": {
+    "requests": 66,
+    "cache": 55,
+    "fetched": 11,
+    "stale": 0,
+    "failed": 0
+   },
+   "zone_map": {
+    "requests": 2,
+    "cache": 2,
+    "fetched": 0,
+    "stale": 0,
+    "failed": 0
+   },
+   "fire_zone_map": {
+    "requests": 1,
+    "cache": 1,
+    "fetched": 0,
+    "stale": 0,
+    "failed": 0
+   },
+   "daily": {
+    "requests": 360,
+    "cache": 300,
+    "fetched": 60,
+    "stale": 0,
+    "failed": 0
+   }
+  },
+  "sizes": {
+   "j_total": 19912416,
+   "j_tiles": 14560609,
+   "j_events_json": 5351807,
+   "j_files": 4598,
+   "j_budget": "40 MB (19,912,416 measured, 49.8 percent)",
+   "z_total": 919402,
+   "z_files": 115,
+   "s_total": 22478,
+   "s_files": 60,
+   "zs_budget": "2 MB each; z 919,402 and s 22,478 measured",
+   "hail_total": 54227125,
+   "hail_files": 9372,
+   "hail_t": 32022304,
+   "hail_budget_B1": "60 MB for all of hail/ (54,227,125 measured)",
+   "tar_bytes": 12876467,
+   "site_flag_on_real": 58098447,
+   "site_flag_off_off": 2464186,
+   "flag_on_increase": 55634261
+  },
+  "billings_independent_read": {
+   "cell": [
+    921,
+    2149
+   ],
+   "key": 19,
+   "zone": "MTZ235",
+   "method": "scripts/billings_check.py: own haversine, cover bits, shard reads; compared with the page's leads and table rows",
+   "reports_within_5mi": {
+    "shard": 754,
+    "page_lead": 754,
+    "page_rows": 754
+   },
+   "records": {
+    "point_within_5mi": 40,
+    "zone_MTZ235": 28,
+    "total": 68,
+    "page_lead": 68,
+    "page_rows": 68
+   },
+   "detections_within_2mi": {
+    "shard": 0,
+    "page": "No radar hail detection within 2 miles"
+   },
+   "warnings_covering": {
+    "shard_LSB": 24,
+    "shard_MSB": 23,
+    "page_lead": 24,
+    "page_rows": 24
+   },
+   "zone_products": {
+    "shard": 34,
+    "by_product": {
+     "HW": 14,
+     "WS": 11,
+     "WC": 2,
+     "FA": 7
+    },
+    "page_lead": 34,
+    "page_rows_public": [
+     7,
+     2,
+     11,
+     14
+    ],
+    "fire_group_MTZ128": {
+     "shard": 16,
+     "page": 16
+    }
+   },
+   "stations": {
+    "BIL_days_kt_ge_50": 31,
+    "6S8_Laurel_days_kt_ge_50": 11,
+    "total": 42,
+    "page_lead": 42,
+    "page_rows": 42
+   },
+   "result": "pass"
+  },
+  "forbidden_terms": {
+   "joins_section_hits": 127,
+   "classes": {
+    "quoted_remark": 32,
+    "NWS_damage_threat_tag_label": 75,
+    "negation_or_hand_checked": 20,
+    "other": 0
+   },
+   "map_json_hail_words_hits": 6,
+   "map_json_hits_all_negations": true
+  },
+  "banned_names_added_lines": {
+   "em_dash_added_lines": 0,
+   "en_dash_added_lines": 0,
+   "model_vendor_product_pattern_lines": 11,
+   "breakdown": "9 are 'claude/...' branch references (the base commit already has such references in AGENTS.md, README.md, docs/DECISIONS.md and docs/ROADMAP.md); 2 are CSS 'cursor: pointer' in map.html and town.html",
+   "measured_before_this_file_was_edited": true
+  },
+  "decision_7_audit": {
+   "lines_matching_rmtree_or_unlink_in_tests": 73,
+   "by_file": {
+    "test_hail.py": 15,
+    "test_joins.py": 25,
+    "test_site.py": 31,
+    "test_updates.py": 1,
+    "test_weather.py": 1
+   },
+   "result": "pass: every target is a folder the same test or class created with mkdtemp or TemporaryDirectory, or a copy that test made (test_site.py 2098 removes j, z, s from a copytree into the test's folder; 2440, 2465, 2489 unlink from copy_site or gate_copy folders; test_hail.py 717, 1370, 1436 unlink from the test's own store folder)"
+  },
+  "brace_scan_real": {
+   "pages": 21,
+   "template_braces_in_visible_hail_text": 0,
+   "note": "one visible '{id}' in about.html is a station URL pattern (api.weather.gov/stations/{id}/observations/latest); the flag-off and base builds carry it too"
+  },
+  "page_width_diagnosis": {
+   "failing": [
+    "town/glendive.html",
+    "town/sidney.html"
+   ],
+   "widths": [
+    288,
+    320
+   ],
+   "element": "zones section fire lead paragraph: '46 red flag warnings for fire weather zone Dawson/McCone/Prairie/Richland/Wibaux Counties (MTZ122) ...' (both towns: fire zone MTZ122)",
+   "measured": "the paragraph is 314 px wide in a 256 px box (no break point at the slashes); the document scrolls to 330 px",
+   "tests": {
+    "remove section.joins-sec": 288,
+    "remove details.joins-more": 330,
+    "th and td position static": 330,
+    ".table-box overflow hidden": 330,
+    "base commit with --hail-history on the same store": 288
+   },
+   "not_the_cause": "the B1 days table (335 px) is inside its scroll box (.table-box, overflow-x auto) and is the same in the base build"
+  },
+  "docs_placeholders": {
+   "DECISIONS_md_lines": [
+    732,
+    781,
+    785
+   ],
+   "DECISIONS_md_occurrences": 11,
+   "DESIGN_md_lines": [
+    485,
+    562
+   ],
+   "DESIGN_md_occurrences": 6,
+   "text": "The bracketed 'measured in the re-check' placeholder of round 4 is replaced in round 5 with measured figures (note 39); no placeholder of that form remains in DECISIONS, DESIGN or ROADMAP.",
+   "resolved_round": 5
+  },
+  "round2_findings": {
+   "F-01": "closed: the fire lead is in the sheet (smoke sheet_matches on the gate cell)",
+   "F-02": "closed in the browser: rows are the module's, typed rows carry the type word only (smoke exact comparison)",
+   "F-03": "closed: cancelled spans read 'cancelled'; 0 'end not recorded' on the gate",
+   "F-04": "closed: index zone_editions lists z_18mr25.zip read, 83 codes the same, max difference 0.0 degrees",
+   "F-05": "closed: the cut-over 2026-04-16 is the newer edition's effective date (index zone_edition_cutover; verify check)",
+   "F-06": "closed: station rows match describe_joins exactly in the browser (smoke)",
+   "F-07": "closed: the D20 sentence is in joins.py (line 309) and the browser matches it (smoke part check)",
+   "F-08": "closed: the sample smoke exits 0 with the cross-day note",
+   "F-09": "closed: git status shows no untracked files",
+   "F-10": "closed: the statewide counts say 'in Montana in the window'",
+   "F-11": "closed in round 5: the sizes are restated from the round-4 build (DECISIONS D35 budget, DESIGN section 9, ROADMAP); the 15:20 UTC figures are gone (note 39)",
+   "F-12": "closed: 0 'no size given' in the real town pages",
+   "F-13": "closed: 0 'damage threat word' in sources.py",
+   "F-14": "closed: the About text no longer says only High Wind and Strong Wind (grep)"
+  },
+  "gate_summary": {
+   "B2-1": "pass",
+   "B2-2": "pass",
+   "B2-3": "pass",
+   "B2-4": "deferred",
+   "B2-5": "pass",
+   "B2-6": "pass",
+   "B2-7": "fail",
+   "B2-8": "pass",
+   "B2-9": "pass"
+  },
+  "round5": {
+   "scope": "docs fixer: round-5 list items 2, 3 and 5 (DECISIONS, DESIGN, ROADMAP and this record)",
+   "live_requests": "none",
+   "store_tar_listing": {
+    "path": "session-archive/joins/hail-store.tar.gz",
+    "method": "tarfile listing and member reads in memory; nothing extracted",
+    "tar_bytes": 12876467,
+    "hail_files": 9372,
+    "hail_bytes": 54227125,
+    "j_files": 4598,
+    "j_bytes": 19912416,
+    "events_json_bytes": 5351807,
+    "j_tile_files": 4597,
+    "j_tile_bytes": 14560609,
+    "z_files": 115,
+    "z_bytes": 919402,
+    "s_files": 60,
+    "s_bytes": 22478,
+    "t_files": 4597,
+    "t_bytes": 32022304,
+    "top_level_files_bytes": 1350525
+   },
+   "tiles_list_bytes": {
+    "tiles": 4597,
+    "hail_index_json_as_written": 78152,
+    "data_map_json_as_written": 64359,
+    "gzip_level9_as_written_index": 10967,
+    "gzip_level9_as_written_map": 10870,
+    "source_map": "recheck4/real/data/map.json"
+   },
+   "site_sums": {
+    "flag_on_real_files": 9466,
+    "flag_on_real_bytes": 58098447,
+    "flag_off_files": 94,
+    "flag_off_bytes": 2464186,
+    "increase_bytes": 55634261,
+    "real_hail_files": 9372,
+    "real_hail_bytes": 54227125,
+    "method": "os.walk sums over recheck4/real and recheck4/off (both built with --sample)"
+   },
+   "store_counts": {
+    "stations": 60,
+    "station_days_all": 1261,
+    "station_days_in_window": 1261,
+    "zone_files": 115,
+    "public_zone_events": 4960,
+    "fire_zone_events": 660,
+    "warnings": {
+     "SV": 2240,
+     "TO": 17,
+     "FF": 148
+    },
+    "station_readings_dropped_implausible": 3,
+    "zone_products_unplaced_distinct": 452,
+    "zone_rows_unmatched_public": 456,
+    "method": "index.json and tar member reads; zone and station counts by summing events and days"
+   },
+   "copy_check": {
+    "days_checked": 1586,
+    "days_differed": [
+     "2025-06-25",
+     "2025-06-26",
+     "2026-05-25",
+     "2026-09-10"
+    ],
+    "rederived": [
+     "2025-06-25",
+     "2025-06-26",
+     "2026-05-25",
+     "2026-09-10"
+    ],
+    "skipped": "239 days from 2021-10-17 to 2022-06-13 with no IEM copy (HTTP 404); the bucket copy is used",
+    "partial": [
+     {
+      "day": "2025-06-25",
+      "frames": 717,
+      "expected": 720
+     }
+    ],
+    "built_at": "2026-10-18T12:42:28Z"
+   },
+   "compare_from_b1_record": {
+    "source": "research/hail-history/validation-evidence/b1-verification.json recheck.compare (B1 final check, 12:42 build)",
+    "passed": true,
+    "overlap_days": 1824,
+    "mask_equal": true,
+    "matched": 2636407,
+    "only_in_store": 201,
+    "only_in_prototype": 921,
+    "value_differs": 1915,
+    "mismatches_on_days_not_rederived": 0,
+    "mismatches_on_rederived_days": 3037,
+    "mismatches_by_day": {
+     "2025-06-25": 3033,
+     "2026-05-25": 4
+    },
+    "rederived_days_equal_frame_maximum": true
+   },
+   "determinism_restated": {
+    "source": "measurements.determinism (round 4)",
+    "j_files": 4598,
+    "z_files": 115,
+    "s_files": 60,
+    "cache_files": 1152,
+    "build_seconds": {
+     "run_A": 96,
+     "run_B": 100
+    }
+   },
+   "zone_recount": {
+    "script": "session-archive/docs-fixer/zone_recount.py (read-only; reads the cached IEM zone CSVs)",
+    "key": "D30: ugc, phenomena, significance, wfo, eventid, vtec_year; window 2021-10-17 12:00 UTC to 2026-10-17 12:00 UTC",
+    "product_time_column": "utc_prodissue",
+    "cancellation_only_public_all_cache": 3691,
+    "cancellation_only_fire_all_cache": 425,
+    "in_window_total": 3687,
+    "in_window_public": 3411,
+    "in_window_fire": 276,
+    "public_at_0000_UTC": 446,
+    "public_other_times": 2965,
+    "midnight_day_after_earliest_product": 298,
+    "midnight_same_day_as_product": 0,
+    "midnight_before_earliest_product": 0
+   }
+  },
+  "round6": {
+   "window": "2021-10-19 to 2026-10-19 by begin time (the research's rule)",
+   "ncei_points_window_by_type": {
+    "Tornado": 13,
+    "Flood": 60,
+    "Flash Flood": 52,
+    "Heavy Rain": 85,
+    "Funnel Cloud": 30,
+    "Lightning": 6,
+    "Debris Flow": 10,
+    "total": 256
+   },
+   "ncei_points_2020_2026_by_type": {
+    "Tornado": 17,
+    "Flood": 76,
+    "Flash Flood": 60,
+    "Heavy Rain": 144,
+    "Funnel Cloud": 35,
+    "Lightning": 8,
+    "Debris Flow": 11,
+    "total": 351
+   },
+   "ncei_hail_by_year_2021_to_2025": {
+    "2021": 139,
+    "2022": 233,
+    "2023": 75,
+    "2024": 96,
+    "2025": 190
+   },
+   "ncei_script": "session-archive/docs-fixer/r6/ncei_window.py",
+   "ncei_output": "session-archive/docs-fixer/r6/ncei_window.json",
+   "iem_window_events_from_research": {
+    "FL.W": 43,
+    "FA.W": 37,
+    "FA.Y": 548,
+    "FL.A": 35,
+    "FL.Y": 10,
+    "FA.A county-only": 18,
+    "FA.A zone-coded": 64,
+    "FF.A county-only": 2,
+    "FF.A zone-coded": 18,
+    "SQ.W": 78,
+    "WW.Y": 865,
+    "WS.A": 226,
+    "HT.Y": 58,
+    "EH.W": 4,
+    "EH.A": 3,
+    "FR.Y": 14,
+    "FZ.W": 4,
+    "HW.A": 277,
+    "DU.Y": 3,
+    "BZ.A": 0,
+    "LE.W": 0,
+    "HZ.W": 0
+   },
+   "iem_source": "session-archive/research-b35/flood-ice-heat-products.json (b2_coverage_today; iem_watchwarn_table)"
+  },
+  "round7": {
+   "round": "7 (2026-10-19; the supervisor's D35 correction)",
+   "counts_file": "session-archive/joins/r7-counts.json (built_at 2026-10-19T05:36:28Z)",
+   "store": "session-archive/joins/store-r7",
+   "hail_total_store_r7": {
+    "bytes": 54227125,
+    "files": 9372,
+    "measured": "walked store-r7/hail read-only; equal to the round-4 measure (54,227,125 bytes, 9,372 files)"
+   },
+   "cancellation_only_groups": {
+    "measured_in": "round 4 recount (measurements.zone_round4_recount.cancellation_only_D30_key), with FA.A in the zone products",
+    "re_counted_in_round_7": false,
+    "public_begin_in_window": 3411,
+    "fire_begin_in_window": 276,
+    "public_plus_fire_begin_in_window": 3687,
+    "public_begin_at_0000_UTC_in_window": 446,
+    "public_other_times_in_window": 2965
+   },
+   "site_sizes": "flag-on 58,098,447 bytes and flag-off 2,464,186 bytes are round-4 measures; not re-measured in round 7",
+   "gates_not_rerun_in_round_7": [
+    "B2-6",
+    "B2-7",
+    "B2-8"
+   ],
+   "counts_file_copy": {
+    "build": {
+     "command": "python -m website.joins build --store store-r7 --cache session-archive/joins/cache --procs 4",
+     "failure_count": 0,
+     "seconds_in_index": 148.1
+    },
+    "built_at": "2026-10-19T05:36:28Z",
+    "bytes": {
+     "events": 5351807,
+     "s": 22478,
+     "tiles": 14560609,
+     "total": 20854296,
+     "z": 919402
+    },
+    "compare": {
+     "delta_zero": 15,
+     "rows": 15
+    },
+    "delta_vs_round6": {
+     "note": "all of the change is FA.A: 491 public zone events; j/, s/ and t/ are byte-identical to round 6; the 83 public z/ files differ only by their FA.A events; fire z/ files are unchanged",
+     "z_bytes": 44182,
+     "zone_can_midnight_rows": 42,
+     "zone_events_public": 491,
+     "zone_products_unplaced": 23
+    },
+    "docstring_recount_on_cache": {
+     "NEW_rows_in_cache_all_types": 113,
+     "check": "the nine-product list reproduces round 6 exactly (107; 66 public, 41 fire; 107 NEW rows); the eleven-product list reproduces round 5 exactly (110; 69 public, 41 fire; 157 NEW rows across all types)",
+     "fire_weather": 41,
+     "groups_more_than_one_issue_time": 21,
+     "groups_with_rows_from_two_offices": 0,
+     "measured_by": "scratch script in the joins owner session scratchpad (path not recorded here)",
+     "public": 69,
+     "zone_groups_with_NEW_row": 110
+    },
+    "fire_zones": {
+     "events": 660,
+     "reason": null,
+     "state": "loaded",
+     "zones": 32
+    },
+    "index_counts": {
+     "detections": 170350,
+     "records": 12739,
+     "reports": 301678,
+     "warnings": 106790
+    },
+    "known_limit_check": {
+     "FA_A_groups_flagged": 0,
+     "measured_by": "scratch script in the joins owner session scratchpad (path not recorded here)",
+     "nine_product_groups_flagged": 19,
+     "note": "the broad row-after-end check flags the same 19 groups with or without FA.A; it flags more groups than the four named in the _zone_events docstring, so the four-zone sentence is a narrower definition and is not re-derived here"
+    },
+    "lags": {
+     "ncei": "2026-06-29",
+     "swdi": "2026-09-28",
+     "warnings": "2026-09-18"
+    },
+    "lsr_rows": 43510,
+    "ncei_rows": 1841,
+    "parts": {
+     "detections": "loaded",
+     "records": "loaded",
+     "reports": "loaded",
+     "stations": "loaded",
+     "warnings": "loaded",
+     "zones": "loaded"
+    },
+    "round6_index": {
+     "z_bytes": 875220,
+     "zone_can_midnight_rows": 405,
+     "zone_events_public": 4469,
+     "zone_products_unplaced": 429
+    },
+    "state": "loaded",
+    "station_days": 1261,
+    "stations": 60,
+    "store": "session-archive/joins/store-r7",
+    "swdi_duplicates_dropped": 3119,
+    "swdi_rows": 69857,
+    "tar": {
+     "bytes": 12876689,
+     "entries": 9377,
+     "file": "session-archive/joins/hail-store.tar.gz",
+     "round6_tar_bytes": 12872249,
+     "round6_tar_kept_as": "session-archive/joins/hail-store.tar.gz.r6",
+     "verify_after_extract": {
+      "checks": 22,
+      "ok": true
+     }
+    },
+    "verify": {
+     "checks": 22,
+     "failed": [],
+     "ok": true
+    },
+    "warnings": {
+     "FF": 148,
+     "SV": 2240,
+     "TO": 17
+    },
+    "window": [
+     "2021-10-17",
+     "2026-10-16"
+    ],
+    "zone_can_midnight_rows": 447,
+    "zone_events_fire": 660,
+    "zone_events_public": 4960,
+    "zone_events_public_by_product": {
+     "BZ.W": 130,
+     "EC.W": 156,
+     "FA.A": 491,
+     "HW.W": 2179,
+     "IS.W": 5,
+     "WC.W": 241,
+     "WI.Y": 427,
+     "WS.W": 1331
+    },
+    "zone_products_fire_missing": 0,
+    "zone_products_renumbered": 0,
+    "zone_products_unplaced": 452,
+    "zone_rows_unmatched": 456,
+    "zones": 83
+   }
+  }
+ },
+ "fetches_per_click": {
+  "designed": "up to seven on a page's first click: the B1 shard, the events table (once per page), the tile's joins file, the public zone file when the tile names the cell's zone, the fire zone file when the tile names the cell's fire zone (D17), and up to two station files. A click whose files were read earlier makes no request.",
+  "work_order_expected": "two to four",
+  "measured": "not measured in the browser; the smoke tool counts shard requests only."
+ },
+ "open_items": [
+  "B3's address shards share the 60 MB cap for all of hail/; the owner or supervisor sets how that applies before B3 is built (DECISIONS D35 open item 1). The sizes are restated in the docs from the round-4 measurements (D24, round 5; note 39).",
+  "The j/ layout as built writes each report, record and warning once in j/events.json (5,351,807 bytes), and the tile files index it. The brief's in-tile layout is over budget per the joins note. Confirm the layout as built and correct the brief.",
+  "Fetches per click: up to seven on a page's first click (the B1 shard, the events table, the tile, the public zone file, the fire zone file and up to two station files; the fire zone file is added by D17), against the two to four the work order expected. Not measured in the browser. Fewer needs the events table or the station files inlined, which is a contract change.",
+  "Qualifier words: 'estimated', 'measured' and 'unknown' (the brief and IEM's changelog). The research also recommended 'provisional until the code is verified' (validation-evidence/evaluation-and-wording.json, qualifier_labels). That label is not shown. Owner or supervisor to decide.",
+  "Flood watch (FA): the brief gives significance W; the build uses A (FA.A), the watch's own significance. Correct the brief.",
+  "Warnings: the EXP rule (103 SV and one TO rows end before they begin, research gap 22) and warnings in effect for a county whose polygon missed the spot (research section 4.6) are open. The words say the polygon test is the rule.",
+  "NCEI summer offset: the research found NCEI-derived UTC an hour early against LSR for 42 hail and 55 gust pairs in summer 2025 (research gap 15); the Benchland pair matches the MST-7 rule (R-08). The cause is not established. Decide whether the words say so.",
+  "NCEI's PDF does not state whether daylight time is used in BEGIN_DATE_TIME (research section 4.4). The MST-7 rule is the brief's; the summer pairs are the evidence against it.",
+  "Station day boundary: the research did not state the day boundary of IEM's daily summary. Check one station's day against its hourly readings before the words rely on it.",
+  "Reports have no lag line in the words (the brief names only NCEI's). The research found LSR rows through 2026-10-17. Decide whether the reports section states its newest row.",
+  "Job run time: round 4 measured two offline joins builds from one cache at 96 s and 100 s (measurements.determinism.build_seconds); the earlier 54.2 s warm figure is superseded (note 39). The cold-cache run, with the 60-minute job timeout, is not measured.",
+  "Cancellation-only zone events (DECISIONS D35 open item 11): D16's 'start not recorded' is superseded by D25 and D30, which begin such an event at the earliest issue time its rows carry. Round 4 recount on the cached zone files (measurements.zone_round4_recount): 3,411 public and 276 fire cancellation-only groups begin in the window (3,687 together), 446 public groups begin at 00:00 UTC, and 2,965 public at other times. Round 5 corrected the docs to these figures and reproduced them, with 298 of the 446 on the day after their earliest product time (measurements.round5.zone_recount; note 39). Decide whether the 446 stay as the archive gives them or are blanked to 'start not recorded'.",
+  "Fire weather zones and D8 (DECISIONS D35 open item 12): the nearest-edge rule of D8 is applied to public zones only. In the store's tiles, 930 Montana cells have no fire zone key, and all 337 cells with no public zone are among them (measured on the 2026-10-18 store by the docs fixer). The NWS fire zone page also links fz18mr25.zip, which this build does not read; every red flag warning code in the cache (32 codes, 2021 to 2026) is in the newest edition's list, and the older edition's 32 Montana zones were compared in review and match the newest edition's codes, names and outlines. Decide whether D8 applies to fire zones.",
+  "The missing-part sentence (D2, D20; DECISIONS D35 open item 13): D2's example reads 'Reports could not be loaded in this update; that is not the same as no report'. D20's template, with the part's name, gives 'no reports', which the docs follow. The build's words print the singular. Decide whether the words change to the plural or D20 changes to the singular.",
+  "AGENTS.md rule 5 asks for 'Data unavailable' when a missing input is shown. D20's unavailable sentence does not use those words; the partial sentence does. Decide whether D20 amends rule 5 for a part that did not load (DECISIONS D35 open item 14).",
+  "Re-used event numbers (DECISIONS D35 open item 15; D30): an event number re-used for separate periods in one zone is one event key, so its periods read as one span. Four zones in five years do this, all confirmed in the cache (measurements.zone_round4_recount): MTZ004 WS 2024 (event 1: a cancellation at 2024-01-09 00:00 UTC, then a continuation at 2024-01-11 12:00 UTC; the sheet reads 'cancelled at Jan 10, 2024 8:22 am MST' for an event that begins Jan 11), MTZ320 WS 2023 (event 4), MTZ003 WS 2021 (event 12) and MTZ302 HW 2022 (event 38). Decide whether to split an event where a row follows its cancellation or upgrade, or to keep the one-event key and say the limit in the words. Review decision D33 (round 4) sets the period rule that B5 implements (DECISIONS D35 open item 16; note 39).",
+  "Page width at 288 px (round 4): resolved in round 5 (note 41). tools/smoke_pages.py passes on the 04:23 UTC build (smoke_pages2.log, EXIT 0) after the overflow-wrap rule in town.html line 143 and map.html line 28. The zones section's fire lead paragraph had no break point in fire zone names with slashes (MTZ122: 'Dawson/McCone/Prairie/Richland/Wibaux').",
+  "The map sheet at 288 px is not in tools/smoke_map.py (390 and 1280 px only). The same long token may overflow the sheet; the page rule is 288 to 1440 px (DESIGN.md). Owner: site.",
+  "Resolved in round 5 (joins owner): the docstring now sits at website/joins.py line 1891 (it was line 1888) and reads 110 zone groups with a NEW row (69 public and 41 fire weather).",
+  "Zone layout in the brief: the brief's data layout says zones is {\"<key>\": \"MTZ048\"}; the build writes {zone code: [cell keys]} (the index's tile block says so). Decide: accept the built shape in the brief and DESIGN, or change the build. Owner: docs and joins.",
+  "The sources.py row nws_zone_products says zone rows are gtype C; the parser accepts C, Z and P (joins.py line 1901); the cache holds C (7,092) and P (44) rows and no Z, while the brief says Z. Wording only. Owner: joins.",
+  "Gate B2-4 (units) is deferred as agreed; it is not measured in round 4.",
+  "Resolved in round 5 (note 39): the placeholders in DECISIONS (lines 732, 781 and 785), DESIGN (lines 485 and 562) and ROADMAP (line 39) are filled from the round-4 measurements.",
+  "Resolved in round 7 (D35; this was DECISIONS D35 open item 17 before the renumbering): FA.A's zone-coded events are joined again under the name flood watch, as D35 rules. The 18 county-only events go to B5's county path, which the hand-off names.",
+  "D34 (round 6; DECISIONS D35 open item 17 after the round-7 renumbering): FF.A's zone-coded events. 18 of the 20 FF.A events in the window are zone-coded; B2 does not join them, and neither D34 nor the B5 brief names them. The owner or supervisor decides.",
+  "D34 (round 6; DECISIONS D35 open item 18 after the round-7 renumbering): HW.A (high wind watch, 277 events in the window) and DU.Y (blowing dust advisory, 3) are in the B5 brief's zone path and in neither D34's nor D35's list. BZ.A, LE.W and HZ.W have no events in the window. The owner or supervisor decides which join and whether the three empty codes stay.",
+  "Resolved in round 7 (D35; this was DECISIONS D35 open item 20 before the renumbering): the rebuild with FA.A restored is measured, and the figures are restated in measurements.round7 and in DECISIONS D35 and DESIGN section 9. Gates B2-6 to B2-8 are for the supervisor's gate to confirm on those figures before the push.",
+  "Resolved in round 7 (D35; this was DECISIONS D35 open item 21 before the renumbering): FA.A is named flood watch in the words, as D35 rules. Its polygon counterpart FL.A is also a flood watch in NWS usage, so the B5 hand-off in DECISIONS D35 writes the code beside each name.",
+  "D34 (round 6; DECISIONS D35 open item 19 after the round-7 renumbering): the B5 brief's NCEI counts (76, 60, 144, 17, 35, 8 and 11) are 2020 to 2026 totals. The window counts are 60, 52, 85, 13, 30, 6 and 10 (256 rows; measurements.round6)."
+ ],
+ "notes": [
+  "CONFIRMED F-01 (blocking, D7 and D2, B2-6/B2-7): map.js has no fire-zone code (the only 'fire' is a comment at map.js:1966), so the sheet omits the gate's red flag warnings; the Python lead at joins.py:2274-2287 counts fire-zone events as 'zone products for this zone' (116 = 98 + 18), the sheet's lead says 98. Fix: fetch z/fire-<zone>.json in map.js joinSections and render FW rows with the fire_product words; count public events only in the lead, or word it 'this zone and its fire weather zone'.",
+  "CONFIRMED F-02 (blocking, D9, B2-4): map.js joinMagnitude (2567-2572) and joinPointText (2577-2587) print a magnitude for every type; the module (joins.py _report_text, 2438-2446) prints the type only for types outside LSR_UNITS. Browser: 27 Benchland rows with bare numbers ('extr wind chill, -37 (measured)'), 6 rows 'no size given'. Fix: use reports_row_typed / reports_row_here_typed when the code is not in J.unit_codes; drop the unitless fallback.",
+  "CONFIRMED F-03 (blocking, D6): joins.py:1697 sets end None for cancelled groups and the docstring (1662) says the zone file carries no cancellation time; the CAN rows carry it (utc_expire = utc_updated on 4,236 of 4,236 rows). 3,362 of 5,536 stored zone events show 'end not recorded' (38 of 62 MTZ313 high-wind events). Fix: for a cancelled group take the earliest CAN-row utc_expire as the end (min with the latest non-CAN expiry when present).",
+  "CONFIRMED F-04 (blocking, D6): the prior public zone edition z_18mr25.zip is linked on the NWS page (HTTP 200) but never fetched: joins.py zone_zip_name (893-907) and collect (1214, 1258) take only the newest. The fallback is taken unconditionally. Fix: fetch every linked z_<ddmmyy>.zip and assign each event the code of the edition in force at its issue time; use the fallback sentence only when a fetch fails.",
+  "CONFIRMED F-05 (blocking, D6, factual): EDITION_DATE 2026-04-16 (joins.py:133), ZONE_CODE_CHANGES (134), the uses at 1693 and 1732, and the sentences at 184 and 241 claim an April 2026 change; the 2025 and 2026 editions have identical Montana zones, names and vertices, and MT060 is Southwest Phillips in both. The build drops 24 MTZ060 products issued 2025-03-20 to 2026-04-07 (HW 19, WS 4, BZ 1) and 18 CZ060 NCEI rows, and all 17 town pages print 'Zone boundaries changed in April 2026'. Fix: remove the April 2026 claim; with F-04, use each edition's own map.",
+  "CONFIRMED F-06 (smoke gate B2-7, D2): map.js:2799 passes the raw knots, so the sheet prints '53 kt' where joins.py prints '53.0 kt' (19 station rows per cell). Fix: format kt to one decimal in map.js (toFixed(1)) so both sides print the same text.",
+  "CONFIRMED F-07 (major, D2): the unavailable and partial sentences (joins.py:262-264, _unavailable_text 2082-2087) read 'Data unavailable: ... This is not an all-clear.', not the sentence D2 specifies ('Reports could not be loaded in this update; that is not the same as no report'); no unit test renders the sheet and the town table from one partial index (tests/test_joins.py:479 checks the Python text only). Fix: use the D2 wording for the reports part (the others per the decision) and add the test; smoke check_part_unavailable already compares the browser with describe_joins.",
+  "CONFIRMED F-08 (major, smoke tool, gate B2-7 'smoke on each build'): tools/smoke_map.py:1592 HAIL_CROSS_DAY_CENTRE is tile r0060_c0190, which the sample fixture does not hold; check_cross_day_end (1595-1603) raises FileNotFoundError and aborts check_joins on the sample build. Fix: return [] with a NOTE when the tile's j file is absent (as no_join_spot does).",
+  "CONFIRMED F-09 (blocking for the commit): website/data/hail-fixture/hail/z/fire-MTZ117.json and fire-MTZ128.json are untracked (git status '??') but listed in website/data/hail-fixture/hail/manifest.json; HEAD has 15 fixture files, the worktree 17. Fix: git add both with the other fixture files before the commit.",
+  "CONFIRMED F-10 (major, D11): the statewide counts are printed in every town page's zone section as if they were about that zone: joins.py:2201-2204 and 2304-2307 use index-level totals (84 earlier products, 452 unplaced; 81 and 451 for records) on all 17 town pages. Fix: count per zone, or say 'in Montana' ('{n} zone products in Montana in the window could not be placed on a zone').",
+  "CONFIRMED F-11 (major, D14): docs/DECISIONS.md:776 (D35 Budget) and docs/DESIGN.md:553 quote the 15:20 UTC build (j 18,518,314; hail 52,732,273; z 826,752; s 22,478; flag-on 56,563,074); the current build measures 19,912,416; 54,162,504; 852,905; 25,000; 58,135,131. Fix: replace with the measured figures and the build time.",
+  "CONFIRMED F-12 (minor, D9 Python side): joins.py _record_text and _zone_record_text (2448-2461) write 'no size given' for zone-coded records; 17 town pages (e.g. 'Record: Mar 12, 2026 10:00 pm MDT: winter storm, no size given, ASOS, across zone MTZ235'). Fix: use records_zone_row without the magnitude when the type has no magnitude.",
+  "CONFIRMED F-13 (minor, D4): website/sources.py:267 (shown on About) says 'the damage threat word' outside the three D4 contexts. Fix: 'the NWS damage threat tag'.",
+  "CONFIRMED F-14 (minor, About text): website/sources.py:229-230 says only High Wind and Strong Wind rows are joined by zone; the records also carry drought, winter storm, heavy snow, blizzard, cold and fog rows. Fix: 'High Wind, Strong Wind and other zone-coded rows'.",
+  "REFUTED R-01: verify's two 'NCEI zone name' disagreements (MTZ060 'Little ROCKY mountains') are NCEI's stale name (CZ 060 carries it in every year 2021-2026); both NWS editions give MTZ060 the same name and polygon, so the rows are placed by code correctly.",
+  "REFUTED R-02: 'two skipped tests' are environmental (pyshp absent from the hail-b1 venv); with the joins venv (pyshp 3.1.6), test_joins runs 101 tests, all OK.",
+  "REFUTED R-03: D8 holds. The 337 Montana cells with no public zone are all more than 2 km from every Montana zone edge (nearest 2.95 km), so the nearest-zone rule correctly leaves them without a zone.",
+  "REFUTED R-04: the D14 items '73 months' and 'the rest are not kept' are no longer in the docs (resolved).",
+  "REFUTED R-05: banned-name hits (9): 7 'claude/...' branch references (the convention already appears 14 times at 7aec754) and 2 CSS 'cursor' properties; em-dash count 0 in added lines.",
+  "REFUTED R-06: decision 7 holds: 62 delete calls in tests/, 58 trace to mkdtemp/TemporaryDirectory folders, 4 act on copies the test made (test_hail.py:717, 1370, 1436; test_site.py:2100).",
+  "REFUTED R-07: the screenshot joins-gate-desktop.png shows the no-join spot (the smoke saves it after the no-join check); naming only.",
+  "REFUTED R-08: the NCEI time rule holds for the gate pair: BEGIN 15-JUN-25 13:10:00 MST-7 at 47.08 -110.02 is 20:10 UTC, the LSR time.",
+  "REFUTED R-09: the 160-character remark cap (max observed 160), the >= 130 kt implausible rule and the >= 50 kt station threshold match the brief.",
+  "REFUTED R-10: 'damage' in the Billings and Bozeman pages sits inside quoted remarks or the 'NWS damage threat tag' label (D4 allowed); 'does not confirm roof damage' is a footer that predates B2 (base.html:45 at 7aec754).",
+  "REFUTED R-11: D10's 20-hour age guard (joins.py MAX_AGE_S) does not stop the daily re-pull (runs ~24 h apart); a manual rerun within 20 h reuses the cache by design.",
+  "REFUTED R-12: the gate text recorded for B2-1 (the gate cell lists the 1.75 in report within 5 miles) is superseded by D1 and is wrong (6.6 mi); the build follows D1.",
+  "DECISIONS (round 1 and 2 status): D1 pass; D2 FAIL (F-06, F-07); D3 pass; D4 pass with F-13; D5 pass; D6 FAIL (F-03, F-04, F-05); D7 FAIL in the browser (F-01), Python fire mapping passes; D8 pass (R-03); D9 FAIL in the browser (F-02), F-12 minor; D10 pass (R-11); D11 partial (F-10, basis open); D12 pass (suite OK); D13 pass (unpinned pip line with pyshp); D14 FAIL (F-11, F-14). Round 2 decisions 10 to 16 and round 1 decisions 1 to 9 checked where they touch the sheet: inches floor (10) and gate texts 2.01 in (51.3 mm) and 0.72 in (18.5 mm) (15) pass; the day, cell and next-day sentences (14) pass; decision 16 passes (R-06).",
+  "Round 4 (supervisor decisions D30 to D32, 2026-10-19 02:55 UTC; docs fixer, read-only on the code). D30: the zone key in joins.py _zone_events is the existing behaviour: zone, phenomenon, significance, issuing office, event number and year, with no issue time. The office is a sixth part that D30 does not name; no event key in the cache has rows from two offices (0 keys), so the office splits nothing. The _zone_events docstring says 'no event number is shared by two offices'; that is wider than the check supports (141 of 198 event number and year pairs are used by more than one office, in different zones), so the joins owner should narrow it to the event key. The docstring's '110 public groups with a NEW row' is 110 zone groups, of which 69 are public and 41 are fire weather (red flag) groups; the 157 NEW rows are across all rows (110 with an MTZ code, 3 county rows, 44 polygon rows with no zone code). Measured: measurements.zone_round4_recount. D31: NWS Instruction 10-1703 (April 6, 2021, the UPG definition and its note) says UPG implies the lower event is cancelled in the segment's area; all 41 UPG rows in the cache have an expiry equal to their update time. Withdrawn: D25's issue-time key sentence, and the review's D26 sentence that UPG rows do not end an event (cited as D27 in D31; review D27, on station and zone file failures, stands). DECISIONS D35 (header note, Spans and keys, open items 11 and 15) and DESIGN section 9 (zone words with upgraded and the at-time forms; the st value) are updated; ROADMAP's open decision count is 11 to 15. Open item 12 keeps its D8 question: D29 closes it for the editions, and the supervisor should confirm whether it also closes the D8 question. Not measured in this note: the tests, the rebuild, the two-run hashes and the Chromium smoke (the joins and site owners' items, and the next re-check).",
+  "Round 4 (2026-10-19, read-only checker). D32 item 1 (map.js), checked: test_a_station_file_that_did_not_load_says_so_and_gives_no_count (test_site.py 2423) passes; the parity cases test_a_cancelled_zone_product_at_or_before_its_begin_reads_cancelled_at_as_the_module_does (2498) and test_an_upgraded_zone_product_reads_its_span_with_upgraded_and_one_upgraded_at_its_begin_reads_so (2518) pass; the Chromium exact comparison (smoke_map check_joins, sheet_matches) passes on the real build at 390 and 1280 px.",
+  "Round 4, D32 item 2 (joins.py and tests), checked: the D31 end rule is in _zone_events (joins.py 1912 to 1919: CAN and UPG both stop an event; the earliest expire ends it; a tie reads cancelled); zones_upgraded and zones_upgraded_at are in WORDS_JOINS (joins.py 282 and 283) and used by _zone_event_text (2722); the D30 key (joins.py 1902: zone, phenomenon, significance, office, event number, year) is the existing behaviour, with test_the_group_key_is_the_vtec_event_zone_phenomenon_significance_office_number_and_year (test_joins.py 1087) and the reuse limit test (1100) passing; the data-4 tests (test_joins.py 1024 and 1033) pass; the nws_zone_products row in sources.py (277 to 300) covers the event key (D30) and upgrades (D31). The store was rebuilt (store-r4, 03:31 UTC), the tar packed (03:32 UTC), joins verify 22 of 22 and compare 15 of 15 (delta 0).",
+  "Round 4, D32 item 3 (docs), checked: DECISIONS D35 line 769 names the withdrawals: D25's sentence (products sharing an event number are different events) and the sentence that upgrade rows do not end an event, which D31 cites as D27 but which is D26's; D27 stands. The data-6 figures in this file are the measured ones (110 zone groups with a NEW row: 69 public, 41 fire weather; 157 NEW rows across all zone rows, 110 on MTZ codes). Still open at round 4: D24's placeholders (note 32) and the open item 11 total (both closed in round 5, note 39).",
+  "Round 4 FAILED check: tools/smoke_pages.py on the real build (exit 1; the log is in logs/smoke_pages-real.log). Eight failures: town/glendive.html and town/sidney.html at 288 px (42 px wider than the screen) and at 320 px (10 px wider), light and dark. Measured with Playwright: the zones section's fire lead paragraph ('46 red flag warnings for fire weather zone Dawson/McCone/Prairie/Richland/Wibaux Counties (MTZ122) ...') is 314 px wide in a 256 px box, because a slash-joined name has no break point; the document then scrolls to 330 px. Removing section.joins-sec restores 288 px; removing details.joins-more does not. The base commit with --hail-history on the same store passes at 288 px, so the fault is in B2, not B1. The off and sample builds pass. Owner: joins and site.",
+  "Round 4, D24 NOT DONE: DECISIONS.md lines 732, 781 and 785 (11 occurrences) and DESIGN.md lines 485 and 562 (6 occurrences) still held the bracketed 'measured in the re-check' placeholder (the bracket form is not repeated here). Resolved in round 5 (note 39). The round-4 measured sizes are in measurements.sizes (j/ 19,912,416 bytes; z/ 919,402; s/ 22,478; hail/ 54,227,125; flag-on site 58,098,447 against flag-off 2,464,186).",
+  "Round 4, decision 7 (tests delete only their own folders): 73 lines in tests/ match rmtree or unlink; each acts on a folder the same test or class created, or on a copy of one (measurements.decision_7_audit). Pass.",
+  "Round 4, open item 11 (cancellation-only groups): the recount gives 3,687 in the window (3,411 public and 276 fire), with 446 public at 00:00 UTC matching the docs. The round-4 docs total and other-times figures did not reproduce exactly (3 groups, not explained in round 4). Round 5 corrected the docs to the recount and reproduced the 298 day-after figure (note 39). Owner: joins (the figure), docs (done).",
+  "Round 4, the docstring at joins.py line 1888 says '110 public groups with a NEW row'; the figure is right as 110 zone groups (69 public and 41 fire weather). Owner: joins (wording).",
+  "Round 4, the D11 figure: the round-1 reviewers' 1,648 IEM rows counts every cache year (MTZ codes not in the current 83 zones: 1,648 measured); the window count is 1,116 rows, of which 456 are public (not red flag), which is the index's zone_rows_unmatched (456); 452 distinct products (zone_products_unplaced). Both index figures are right for the window; the docs should say which basis they use.",
+  "Round 4, the round-2 findings F-01 to F-14 are checked one by one in measurements.round2_findings: F-01 to F-10 and F-12 to F-14 are closed; F-11 is partly closed (its old figures are gone, the new sizes are not yet restated).",
+  "Round 4, re-used event number in MTZ004 WS 2024 (open item 15): the continuation after the cancellation is rendered as 'cancelled at Jan 10, 2024 8:22 am MST' for an event that begins Jan 11, 2024 (5:00 am MST). The rule (D26) is followed; the reading is the limit recorded in open item 15.",
+  "Round 5, docs fixer (2026-10-19; round-5 list items 2, 3 and 5). (a) Placeholders: every bracketed placeholder in DECISIONS (lines 732, 781 and 785), DESIGN (lines 485 and 562) and ROADMAP (line 39) is replaced by a measured figure. Sources: measurements.sizes (the round-4 build); a listing of the round-4 store tar, read in memory with tarfile and not extracted (hail/ 9,372 files, 54,227,125 bytes; j/ 4,598 files, 19,912,416 bytes, events.json 5,351,807 bytes; z/ 115 files, 919,402 bytes; s/ 60 files, 22,478 bytes; the tar itself 12,876,467 bytes); the tiles list (4,597 names: 78,152 bytes in hail/index.json as written, 64,359 bytes in data/map.json, 10,870 to 10,967 bytes gzipped); the flag-on and flag-off site output (9,466 files, 58,098,447 bytes; 94 files, 2,464,186 bytes); the store's zone and station counts (4,960 public and 660 fire zone events in 115 files; 1,261 station days in 60 files, all in the window); the index's counts (SV 2,240, TO 17, FF 148; 452 distinct unplaced products; 456 public zone rows; 3 readings left out as implausible); the determinism figures (round-4 record: 4,598, 115 and 60 files byte-identical in 96 s and 100 s); and the copy check (index copy_check: 1,586 days checked, 4 re-derived, 239 days with no IEM copy, partial 2025-06-25 at 717 of 720; the compare counts are from b1-verification.json recheck.compare, B1's final check of the 12:42 build). (b) Open item 11 is corrected to 3,687 cancellation-only groups in the window (3,411 public, 276 fire weather); 446 public groups begin at 00:00 UTC and 2,965 public groups at other times; 298 of the 446 begin on the day after their earliest product time (utc_prodissue). Round 5 reproduces all of these with a read-only recount (measurements.round5.zone_recount; script session-archive/docs-fixer/zone_recount.py). The round-4 docs total and other-times figures are withdrawn; round 4 had not reproduced them (3 groups unexplained). (c) Review decision D33 (round 4 of the B2 review; a supervisor decision, not the log's own D33 on the schedule) is recorded in DECISIONS as open item 16: the four named cases (MTZ004 WS 2024 event 1, MTZ302 HW 2022 event 38, MTZ320 WS 2023 event 4, MTZ003 WS 2021 event 12) and the period rule that B5 implements (rows ordered by product time; a CAN, UPG or EXP closes the current period; a later NEW, CON, EXT, EXA or EXB opens the next; each period is its own span). The spans paragraph and open item 15 point to it; this note is the record copy. (d) Open item 10 is corrected: round 4 measured two offline joins builds from one cache at 96 s and 100 s (determinism.build_seconds), so the earlier 54.2 s warm figure is superseded. The cold-cache run is not measured. (e) The DECISIONS D35 header covers review decisions D1 to D33. Em-dashes: the 31 on base lines (DECISIONS 24, DESIGN 5, ROADMAP 2) were replaced with punctuation, so the three files have none, and no meaning changed. En-dashes are unchanged. Model and vendor names: none in added text; the two branch names the base already uses stay, and the two decision headings that name a vendor (DECISIONS D23 and D25) are kept as the log has them. (f) The page-width fix and its smoke belong to the site owner, and the smoke did not pass in this round: no smoke_pages_pass.txt appeared in the site owner's folder during 30 minutes of polling. The joins docstring (open item 18) was corrected by the joins owner, at line 1891.",
+  "Round 6, docs fixer (2026-10-19; the supervisor's D34 ruling and the docs part of the round-6 list). (a) D34 is applied: DECISIONS D35 names the joined kinds as D34 lists them, the B5 kinds with the window counts, and the two corrected claims (open items 17 to 22 in round-6 numbering; note 42 renumbers them); DESIGN section 9 has the joined-kinds table and the corrected zone and records rows; ROADMAP's B2 row is updated and Next item 20 is the B5 hand-off; the About paragraph in website/templates/about.html lists the kinds (the template holds them, so the paragraph is the docs owner's; WORDS_JOINS holds no About sentence). The About paragraph keeps every phrase that tests/test_site.py HailJoins asserts. (b) Corrected claim 1: ZONE_PRODUCTS (joins.py line 121) listed FL.W and FA.A as joined zone products. B2 finds no FL.W event: its polygon rows carry no zone code (the cached FL.W files hold 44 polygon rows with a blank UGC, 52 county rows and no MTZ row, read in round 6; the research counts 62 polygon events for 2020 to 2026). The zone path keeps MTZ rows only, so it dropped the 18 county-only FA.A events in the window and kept the 64 zone-coded ones. D34 removes both from ZONE_PRODUCTS. (c) Corrected claim 2: D34 says B2's words name tornado and flash flood among the NCEI records. No such words were found: no WORDS_JOINS, sheet or About text names a tornado or flash flood record, and brief line 20 (the NCEI row) names hail and thunderstorm wind points only. The research (built 03:46 UTC) cites line 20 as naming them; the brief file was last edited at 04:37 UTC, so the research may have read an earlier wording. The gap stands: NCEI's Montana tornado (17) and flash flood (60) rows for 2020 to 2026 are county-coded points, B2 drops them, and B5 takes them. (d) NCEI window counts, 2021-10-19 to 2026-10-19 by begin time (the UTC and local counts are equal): tornado 13, flood 60, flash flood 52, heavy rain 85, funnel cloud 30, lightning 6, debris flow 10, 256 rows. The research gives calendar totals only, so these were computed read-only from the cached NCEI files for 2021 to 2026 and the research's 2020 file (session-archive/docs-fixer/r6/ncei_window.py; output ncei_window.json). Its 2020 to 2026 totals reproduce the research (76, 60, 144, 17, 35, 8, 11), and its hail rows by year reproduce gate B2-2 (139, 233, 75, 96, 190). (e) The IEM window counts are the research's (session-archive/research-b35/flood-ice-heat-products.json, b2_coverage_today and iem_watchwarn_table). (f) The B5 brief's zone path lists HW.A (277) and DU.Y (3), and D34's list does not (open item 19); its NCEI counts are 2020 to 2026 totals (open item 22). (g) Gate B2-7 is set to pass from the round-5 evidence (smoke_pages2.log, smoke_map_after.log, unittest_site.log, and the overflow-wrap rule quoted in the gate). failed_checks is empty. Status is pass, since every gate but the deferred B2-4 passes on the round-5 build; the verdict says the D34 rebuild is not yet measured. (h) Not done here, and not the docs owner's: the D34 code change in joins.py, the words, the two CONTRACTS rows in sources.py, the tests, the store rebuild and its verification, and the restatement of the figures the rebuild changes (open item 27). The DECISIONS header says a reversal is a new entry; D35 is amended in place, as the round-6 list asks, because it is an unmerged B2 entry. No live requests were made in round 6.",
+  "Round 7, docs fixer (2026-10-19; the supervisor's D35 correction and the docs part of the round-7 list). (a) D35 is applied in place in DECISIONS, as round 6 amended D34's entry: FA.A (flood watch) returns to the joined zone products, ten in all with FW.W; FL.W stays out; the 18 county-only FA.A events are B5's county path. The joined-kinds bullet, the zone-product bullet, the Not joined bullets (NCEI county-coded records named as records; the IEM reports of tornado, flood, flash flood, funnel cloud, lightning and debris flow joined as reports, with the round-6 checker's counts), the Left out bullet, the Corrected in round 7 bullet and the Budget bullet are rewritten; the wording 'once the D34 change and its rebuild are in' is gone. Open items renumber as DECISIONS now reads: old 17, 20 and 21 close; old 18 and 19 become 17 and 18; old 22 becomes 19. The round-6 note (note 41) keeps the round-6 numbers, marked as such. (b) DESIGN section 9 (the joined-kinds table, the zone and records rows, the flood watch note and the Budget bullet), ROADMAP (the B2 row, its limits, the open decisions range, its byte sentence and Next item 20) and the About paragraph (website/templates/about.html) follow it. The About paragraph keeps every phrase that tests/test_site.py HailJoins asserts; tests/test_site.py passed in full (155 tests, OK) in this round. (c) Figures, from session-archive/joins/r7-counts.json and store-r7: 4,960 public zone events (FA.A 491), 660 fire zone events, z/ 919,402 bytes, 452 products unplaced (456 rows), 447 cancellation rows at 00:00 UTC (public and fire rows), j/ 19,912,416 bytes and s/ 22,478 bytes unchanged from round 6, and the release tar 12,876,689 bytes (12,876,467 in round 4). The cancellation-only groups stay at the round-4 recount (3,411 public and 276 fire; 446 public at 00:00 UTC; 2,965 at other times) and are not re-counted here. (d) verify-r7.json and verify-r7-tar.json each report 22 of 22 checks ok; compare-r7.json has 15 rows, all with zero delta. Gates B2-6, B2-7 and B2-8 are not re-run in this round: status is pending until the supervisor's gate decides. Nothing was committed or pushed by the docs fixer."
+ ],
+ "failed_checks": []
+}

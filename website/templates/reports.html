@@ -4,7 +4,7 @@
 <div class="lead">
   <h1>Storm reports</h1>
   <p class="sub">Preliminary hail and wind reports in and near Montana from the Storm Prediction Center, for the last three
-    reporting days. Each report is a point where someone saw or measured something. No report is not evidence that no hail fell.</p>
+    reporting days. Each report is a point where someone saw or measured something. No report is not the same as no hail.</p>
 </div>
 
 {% if reports.problems %}
@@ -54,7 +54,7 @@
       </table>
     </div>
     {% else %}
-    <p class="empty">No hail or wind reports in or near Montana for this day.</p>
+    <p class="empty">No reports of hail or wind in or near Montana for this day; that is not the same as no hail.</p>
     {% endif %}
   </div>
   {% endfor %}

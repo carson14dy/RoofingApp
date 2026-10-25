@@ -1,16 +1,58 @@
 name: Hail history store
 
-# The daily job for the five-year hail history (B1, D34). It rebuilds the trailing store of the NOAA MRMS MESH
-# archive (website/hail.py) and publishes it as a release asset named after the branch (main's is
-# hail-store-main.tar.gz), which the Website build reads with --hail-history (on main at the owner's decision of
-# 2026-10-21). 12:43 UTC is after the 12:00 UTC file is published (about 12:08 UTC). A failed run leaves the last
-# published asset in place: the new file goes up under a temporary name and takes the asset's name only once it is
-# complete.
+# The daily job for the five-year hail and weather history. B1 (D34) rebuilds the trailing store of the NOAA MRMS
+# MESH archive (website/hail.py). B2 (D35) joins the reports, official records, radar detections, warnings, zone
+# products and station gusts to each tile (website/joins.py). The join also carries the B5 product pulls (D27: the
+# older NWS zone editions; D30: the per-tile event files), and it stays fatal by the B2 rule: a failed join or verify
+# leaves the last published asset in place. B5 (D38) adds the past weather
+# of every location: the climate grid (website/climate.py), the station readings (website/stations.py), the NOHRSC
+# snow analysis (website/snowgrid.py) and the river gauges (website/gauges.py). The job publishes the store as a release
+# asset named after the branch (main's is hail-store-main.tar.gz), which the Website build reads with --hail-history
+# (on main at the owner's decision of 2026-10-21; a branch's build reads its own branch's asset). 12:43 UTC is after
+# the 12:00 UTC file is published (about 12:08 UTC). A failed run leaves the last published asset in place: the new
+# file goes up under a temporary name and takes the asset's name only once it is complete. A B5 source that fails
+# marks its part unavailable in the store (the sheet says so).
+# Every B5 step is non-fatal (continue-on-error), has a timeout, and runs on one 40-minute clock (D16, D26).
+#
+# The address, street and outline steps (B3, D9, D20, D36) run after the joins and the B5 parts, and before the pack.
+# The address step reads the MSL Structures and Addresses Framework (website/addresses.py: positions from the shapefile
+# geometry, only the DBF fields of its allow-list, never an owner or parcel field) into hail/a/ of the same store. The
+# street and outline steps follow it in the same way (website/streets.py, website/buildings.py). No address, street or
+# outline step stops the job: a failed build or check leaves the store with that list or block marked unavailable (never
+# missing) and the rest of the store as it was.
+#
+# Jobs (D26, D42). The plan job decides whether the monthly job runs: on the first day of the month by schedule, or
+# when the monthly input is on. The store job is the daily run: the station list and inventory, the chosen stations'
+# files whose Last-Modified changed, the NWPS gauge files that are missing from the cache, the climate prelim days (and
+# a new scaled month when NOAA posts one, inside the same update), the cached NOHRSC files (no request), and the product
+# pulls. D26 also asks for the NWPS gauge list and each pool detail on every run; the gauges step does not read them
+# on a daily run yet (DECISIONS D38, open). The monthly job starts from the release asset the store job published: every
+# file of the station candidate union and the regression set, the NWPS and USGS refresh, and the NOHRSC check on NOAA
+# (the only NOHRSC request); then it publishes the store again. Every B5 and monthly step is non-fatal, with a timeout;
+# the B1 and B2 build steps stay fatal, so a failed build never publishes a partial store (the last release stays).
+#
+# Once, by hand: the climate backfill (input climate_backfill) reads the 63 scaled months from July 2021 to September
+# 2026 and writes the release archive climate-aggregates-RUNID.tar.gz to the hail-climate release. Every later run
+# restores the newest archive that unpacks and updates it; with no archive the climate update is skipped, so the
+# backfill is never repeated by accident.
+#
+# First run, by hand: turn on monthly and climate_backfill. It fills the caches (the station candidate union, the
+# NOHRSC files, the NWPS and USGS files and the climate aggregates). Without a station list from an earlier release,
+# the daily station step reads the candidate union too, so the first daily run is complete as well.
 
 on:
   schedule:
     - cron: "43 12 * * *"
   workflow_dispatch:
+    inputs:
+      monthly:
+        description: "Run the monthly job: the whole station union, the NWPS and USGS refresh, the NOHRSC check"
+        type: boolean
+        default: false
+      climate_backfill:
+        description: "Backfill the climate aggregates from the 63 scaled months, once (writes the hail-climate asset)"
+        type: boolean
+        default: false
   # A branch push that changes the job or the store code runs it once, as the check that the job works on a
   # runner (GitHub dispatches a workflow by hand only once it is on the default branch). The run publishes the
   # same asset the schedule would; a change to the store format must rename the asset so an older build never
@@ -22,6 +64,14 @@ on:
       - ".github/workflows/hail-store.yml"
       - "website/hail.py"
       - "website/hail_fixture_data.py"
+      - "website/joins.py"
+      - "website/addresses.py"
+      - "website/streets.py"
+      - "website/buildings.py"
+      - "website/climate.py"
+      - "website/stations.py"
+      - "website/snowgrid.py"
+      - "website/gauges.py"
 
 permissions:
   contents: write
@@ -31,26 +81,59 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      monthly: ${{ steps.when.outputs.monthly }}
+    steps:
+      - name: Decide whether the monthly job runs (a scheduled run on the first of the month, or the monthly input)
+        id: when
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          MONTHLY_INPUT: ${{ inputs.monthly }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          due=""
+          if [ "$EVENT" = "schedule" ] && [ "$(date -u +%d)" = "01" ]; then due=yes; fi
+          if [ "$MONTHLY_INPUT" = "true" ]; then due=yes; fi
+          echo "monthly=$due" >> "$GITHUB_OUTPUT"
+          echo "the monthly job runs this time: ${due:-no}"
+
   store:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # 150 minutes until the branch run measures it (D50): the B5 job's 60 and B3's 90. The B5 steps share a 40-minute clock.
+    # The six build and verify caps total 45 minutes and the three unavailable caps 15.
+    # The uncapped steps (the hail build, the joins with their 35-minute deadline, the pack) are not timed in that
+    # measurement, so the total is not yet shown to fit.
+    timeout-minutes: 150
     steps:
+      - name: Start the job clock (the B5 steps share its 40 minutes; the job cap is 150)
+        timeout-minutes: 1
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
       - name: Check out the repository
+        timeout-minutes: 5
         uses: actions/checkout@v4
 
       - name: Set up Python 3.12
+        timeout-minutes: 5
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install the GRIB reader and the HTTP client
-        run: pip install numpy pygrib requests
+      - name: Install the GRIB reader, the HTTP client and the shapefile reader
+        timeout-minutes: 5
+        run: pip install numpy pygrib requests pyshp
 
       - name: Name the download cache by month
+        timeout-minutes: 1
         id: month
         run: echo "key=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
 
       - name: Restore the downloaded files (optional; a cold cache builds the same store)
+        timeout-minutes: 10
         uses: actions/cache@v4
         with:
           path: hail-cache
@@ -59,24 +142,751 @@ jobs:
             hail-cache-
 
       - name: Build the store from the NOAA archive
+        timeout-minutes: 16
         run: python -m website.hail build --out store --cache hail-cache --procs 4
 
       - name: Verify the store
+        timeout-minutes: 5
         run: python -m website.hail verify store
 
       - name: Name the asset after the branch (main's is hail-store-main.tar.gz; a branch's job never touches it)
         id: asset
+        timeout-minutes: 1
         run: echo "name=hail-store-$(echo "$GITHUB_REF_NAME" | tr '/' '-').tar.gz" >> "$GITHUB_OUTPUT"
 
+      - name: Restore the joins' downloads (optional; a cold cache builds the same joins)
+        timeout-minutes: 10
+        uses: actions/cache@v4
+        with:
+          path: joins-cache
+          key: joins-cache-${{ steps.month.outputs.key }}
+          restore-keys: |
+            joins-cache-
+
+      - name: Join reports, records, detections, warnings, zone products and station gusts (with the B5 zone editions and event files)
+        timeout-minutes: 53
+        # The joins stop new requests at 35 minutes (JOINS_DEADLINE_S, D23); parsing and writing then take about 7 minutes
+        # measured live, and requests in flight add up to about 5 minutes, so the step's own stop comes first. Its backstop is
+        # 1.5 times that 35-minute deadline, 53 minutes (D75). D42's 1.5 times the measured time is for the steps that have no
+        # deadline of their own. A response that trickles past the per-read timeout is cut there, and the job's 150-minute cap
+        # is not reached. The join stays fatal (the B2 rule, D35).
+        run: python -m website.joins build --store store --cache joins-cache --procs 4
+
+      - name: Verify the joins (the Benchland gate rows are printed)
+        timeout-minutes: 1
+        run: python -m website.joins verify store
+
+      # ---- B5 (D26, D38). The steps from here to the pack are non-fatal, and they share one clock. The first step
+      # writes JOB_START; the B5 window is 2400 seconds (40 minutes) from it. Before each B5 step a clock step writes the
+      # seconds left. A B5 step runs only with more than 60 seconds left, and each program it runs is killed at the seconds
+      # left (timeout --kill-after=30). A step's deadline is the smaller of its own deadline and the seconds left less 440,
+      # because an in-flight request can run about 440 seconds past its deadline. The joins are not on this clock: their
+      # limit (JOINS_DEADLINE_S, D23) counts from their own start, so a late join leaves the B5 steps no time, and the
+      # 150-minute job cap binds (DECISIONS D38, open item B5-12). The measured times in the part A record
+      # (session-archive/b5a-recheck-completion.json, offline, this machine): joins 355 s; climate build 11 s;
+      # stations build 32 s; gauges build 2 s; NOHRSC build 1 s. The climate update took 7 to 8 s with no new scaled
+      # month, and the whole backfill 222 s for 63 months and 3.72 GB. The download-bound steps (the station refresh, the
+      # monthly station read, the backfill) are sized from the measured download rate (median 27.78 MB/s) with room to
+      # spare; the first runs on the runner measure them again.
+
+      - name: Seconds left on the B5 clock before the readers
+        id: clock_readers
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Install the B5 readers (h5py and Pillow; this job only, the site build installs nothing)
+        if: ${{ steps.clock_readers.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_readers.outputs.left }}
+        run: timeout --kill-after=30 "$LEFT" pip install h5py Pillow
+
+      - name: Seconds left on the B5 clock before the B5 downloads
+        id: clock_cache
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the B5 downloads (the stations, NWPS, USGS and NOHRSC files; optional, a cold cache builds the same parts)
+        if: ${{ steps.clock_cache.outputs.left > 60 }}
+        uses: actions/cache@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b5-cache
+          key: b5-cache-${{ github.run_id }}
+          restore-keys: |
+            b5-cache-
+
+      - name: Seconds left on the B5 clock before the climate restore
+        id: clock_climate_restore
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the climate aggregates from the hail-climate release (the newest archive that unpacks; none, no climate update)
+        id: climate_restore
+        if: ${{ steps.clock_climate_restore.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEFT: ${{ steps.clock_climate_restore.outputs.left }}
+        run: |
+          mkdir -p climate-download climate-cache
+          # Versioned names (climate-aggregates-RUNID.tar.gz, and the first fixed name): the highest run id is the newest.
+          names=$(timeout --kill-after=30 "$LEFT" gh release view hail-climate --json assets --jq '.assets[].name' 2>/dev/null \
+            | grep -E '^climate-aggregates(-[0-9]+)?\.tar\.gz$' | sort -t- -k3,3nr || true)
+          restored=""
+          for name in $names; do
+            if timeout --kill-after=30 "$LEFT" gh release download hail-climate --pattern "$name" --dir climate-download --clobber \
+                && timeout --kill-after=30 "$LEFT" python -m website.climate unpack --archive "climate-download/$name" --cache climate-cache; then
+              restored="$name"
+              break
+            fi
+            echo "the climate archive $name did not unpack; trying an older one"
+          done
+          if [ -n "$restored" ]; then
+            echo "restored=yes" >> "$GITHUB_OUTPUT"
+            echo "restored $restored"
+          else
+            echo "no climate archive to restore; the climate update is skipped"
+          fi
+
+      - name: Seconds left on the B5 clock before the climate backfill
+        id: clock_backfill
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Backfill the climate aggregates (manual and once; reads the 63 scaled months, one file at a time)
+        if: ${{ inputs.climate_backfill && steps.clock_backfill.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 30
+        env:
+          LEFT: ${{ steps.clock_backfill.outputs.left }}
+        run: timeout --kill-after=30 "$LEFT" python -m website.climate backfill --cache climate-cache
+
+      - name: Seconds left on the B5 clock before the climate update
+        id: clock_climate_update
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Update the climate grid (the prelim days, and a new scaled month when NOAA posts one)
+        id: climate_update
+        if: ${{ steps.clock_climate_update.outputs.left > 60 && (steps.climate_restore.outputs.restored || inputs.climate_backfill) }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          LEFT: ${{ steps.clock_climate_update.outputs.left }}
+        run: |
+          set -e
+          timeout --kill-after=30 "$LEFT" python -m website.climate update --cache climate-cache
+          echo "updated=yes" >> "$GITHUB_OUTPUT"
+
+      - name: Seconds left on the B5 clock before the climate build
+        id: clock_climate_build
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Build the climate files (hail/c/; a cache with no plan raises and writes no block, which the sheet reports)
+        if: ${{ steps.clock_climate_build.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 1
+        env:
+          LEFT: ${{ steps.clock_climate_build.outputs.left }}
+        run: timeout --kill-after=30 "$LEFT" python -m website.climate build --store store --cache climate-cache
+
+      - name: Seconds left on the B5 clock before the climate verify
+        id: clock_climate_verify
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the climate files (the cached aggregates; the independent re-read is run by hand)
+        if: ${{ steps.clock_climate_verify.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_climate_verify.outputs.left }}
+        run: timeout --kill-after=30 "$LEFT" python -m website.climate verify --store store --cache climate-cache
+
+      - name: Seconds left on the B5 clock before the climate publish
+        id: clock_climate_publish
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Pack and publish the climate aggregates (a new versioned archive; older ones are removed only after the new one unpacks)
+        id: climate_publish
+        if: ${{ steps.clock_climate_publish.outputs.left > 60 && steps.climate_update.outputs.updated }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEFT: ${{ steps.clock_climate_publish.outputs.left }}
+        run: |
+          set -e
+          name="climate-aggregates-${GITHUB_RUN_ID}.tar.gz"
+          timeout --kill-after=30 "$LEFT" python -m website.climate pack --cache climate-cache --out "$name"
+          if ! timeout --kill-after=30 "$LEFT" gh release view hail-climate > /dev/null 2>&1; then
+            timeout --kill-after=30 "$LEFT" gh release create hail-climate --prerelease --title "Climate aggregates" \
+              --notes "Monthly aggregates per grid cell of NOAA nClimGrid-Daily (grid estimates) for the hail history. One archive per daily run (climate-aggregates-RUNID.tar.gz; the newest is read). The Website build does not read it."
+          fi
+          # No --clobber: each run uploads its own name, so an interrupted upload leaves the previous archive in place.
+          timeout --kill-after=30 "$LEFT" gh release upload hail-climate "$name"
+          # Check the uploaded copy: download it and unpack it into a scratch cache (every member's SHA-256 is checked).
+          rm -rf climate-check
+          mkdir -p climate-check
+          if timeout --kill-after=30 "$LEFT" gh release download hail-climate --pattern "$name" --dir climate-check \
+              && timeout --kill-after=30 "$LEFT" python -m website.climate unpack --archive "climate-check/$name" --cache climate-check/cache; then
+            # The older archives go only now, after the new one has unpacked.
+            old_names=$(timeout --kill-after=30 "$LEFT" gh release view hail-climate --json assets --jq '.assets[].name' 2>/dev/null \
+              | grep -E '^climate-aggregates(-[0-9]+)?\.tar\.gz$' | grep -v -x "$name" || true)
+            for old in $old_names; do
+              timeout --kill-after=30 "$LEFT" gh release delete-asset hail-climate "$old" --yes
+            done
+          else
+            # A copy that does not unpack is removed, so the restore keeps the last good archive.
+            timeout --kill-after=30 "$LEFT" gh release delete-asset hail-climate "$name" --yes
+            exit 1
+          fi
+
+      - name: Seconds left on the B5 clock before the station carry
+        id: clock_stations_carry
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Carry the last published station list into the new index (the daily scope reads its chosen ids)
+        id: stations_carry
+        if: ${{ steps.clock_stations_carry.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          ASSET_NAME: ${{ steps.asset.outputs.name }}
+          GH_TOKEN: ${{ github.token }}
+          LEFT: ${{ steps.clock_stations_carry.outputs.left }}
+        run: |
+          set -e
+          mkdir -p previous-store
+          timeout --kill-after=30 "$LEFT" gh release download hail-store --pattern "$ASSET_NAME" --dir previous-store --clobber
+          timeout --kill-after=30 "$LEFT" tar xzf "previous-store/$ASSET_NAME" -C previous-store hail/index.json
+          count=$(timeout --kill-after=30 "$LEFT" jq -n --slurpfile prev previous-store/hail/index.json '($prev[0].stations.chosen_station_ids // []) | length')
+          if [ "$count" -gt 0 ]; then
+            timeout --kill-after=30 "$LEFT" jq --slurpfile prev previous-store/hail/index.json '.stations = $prev[0].stations' store/hail/index.json > store/hail/index.carried.json
+            mv store/hail/index.carried.json store/hail/index.json
+            echo "carried=yes" >> "$GITHUB_OUTPUT"
+            echo "carried $count chosen station ids from the last published store"
+          fi
+
+      - name: Seconds left on the B5 clock before the station readings
+        id: clock_stations
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Station readings (the daily scope re-reads changed chosen files; the full union when nothing was carried, as on a first run)
+        id: stations
+        if: ${{ steps.clock_stations.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 30
+        env:
+          CARRIED: ${{ steps.stations_carry.outputs.carried }}
+          LEFT: ${{ steps.clock_stations.outputs.left }}
+        run: |
+          if [ "$CARRIED" = "yes" ]; then
+            scope=daily
+            own=720
+          else
+            scope=monthly
+            own=1620
+          fi
+          budget=$(( LEFT - 440 ))
+          if [ "$budget" -gt "$own" ]; then budget=$own; fi
+          timeout --kill-after=30 "$LEFT" python -m website.stations build --store store --cache b5-cache --procs 4 --scope "$scope" \
+            --deadline-at "$(( $(date +%s) + budget ))"
+
+      - name: Seconds left on the B5 clock before the drop
+        id: clock_drop
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Drop a carried station block that this run did not replace (the stations step failed or timed out)
+        if: ${{ steps.clock_drop.outputs.left > 60 && steps.stations_carry.outputs.carried && !contains(steps.stations.outcome, 'success') }}
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          LEFT: ${{ steps.clock_drop.outputs.left }}
+        run: |
+          timeout --kill-after=30 "$LEFT" jq 'del(.stations)' store/hail/index.json > store/hail/index.reset.json
+          mv store/hail/index.reset.json store/hail/index.json
+
+      - name: Seconds left on the B5 clock before the river gauges
+        id: clock_gauges
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: River gauges (the NWPS and USGS files that are missing from the cache; the monthly job refreshes every one)
+        id: gauges
+        if: ${{ steps.clock_gauges.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          LEFT: ${{ steps.clock_gauges.outputs.left }}
+        run: |
+          own=480
+          budget=$(( LEFT - 440 ))
+          if [ "$budget" -gt "$own" ]; then budget=$own; fi
+          timeout --kill-after=30 "$LEFT" python -m website.gauges build --store store --cache b5-cache --procs 3 \
+            --deadline-at "$(( $(date +%s) + budget ))"
+
+      - name: Seconds left on the B5 clock before the snow analysis
+        id: clock_snow
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Snow analysis (the cached NOHRSC files, offline; the monthly job asks NOAA whether the latest file changed)
+        id: snow
+        if: ${{ steps.clock_snow.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 1
+        env:
+          LEFT: ${{ steps.clock_snow.outputs.left }}
+        run: timeout --kill-after=30 "$LEFT" python -m website.snowgrid build --store store --cache b5-cache --offline
+
+      - name: Seconds left on the B5 clock before the station, gauge and snow verify
+        id: clock_verify
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the station, gauge and snow parts (informational; the index says what did not load)
+        if: ${{ steps.clock_verify.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_verify.outputs.left }}
+        run: |
+          timeout --kill-after=30 "$LEFT" python -m website.stations verify --store store || echo "stations verify did not pass; see the index"
+          timeout --kill-after=30 "$LEFT" python -m website.gauges verify --store store --cache b5-cache || echo "gauges verify did not pass; see the index"
+          timeout --kill-after=30 "$LEFT" python -m website.snowgrid verify --store store --cache b5-cache || echo "snow verify did not pass; see the index"
+
+      # ---- End of B5. The B3 steps below (the address, street and outline steps; non-fatal, D36) come next, then the
+      # B1 and B2 pack and publish steps (the branch-named asset). Not yet here: the containment step
+      # and the fatal store gates before the pack (DECISIONS D38, job-4), which need the stations module's commands.
+      - name: Read the framework file's size and date from the MSL server (non-fatal; D20)
+        id: src
+        run: |
+          url="https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/AddressStructures/StructuresFramework_shp.zip"
+          head="$(curl -fsSI --retry 3 "$url" | tr -d '\r' || true)"
+          size="$(printf '%s\n' "$head" | awk 'tolower($1) ~ /^content-length:$/ {print $2}' | tail -n 1)"
+          modified="$(printf '%s\n' "$head" | sed -n 's/^[Ll]ast-[Mm]odified: //p' | tail -n 1)"
+          test -n "$size" && test -n "$modified" || echo "::warning::The framework file's size or date was not read; the address step still runs and marks its part unavailable if the download fails (D20)."
+          echo "size=$size" >> "$GITHUB_OUTPUT"
+          echo "modified=$(printf '%s' "$modified" | sha1sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "Framework file: $size bytes, last modified $modified"
+
+      - name: Restore the framework file (keyed by name, size, last-modified and month, so it is re-checked monthly)
+        id: structures
+        uses: actions/cache@v4
+        with:
+          path: structures
+          key: structures-StructuresFramework_shp.zip-${{ steps.src.outputs.size }}-${{ steps.src.outputs.modified }}-${{ steps.src.outputs.month }}
+
+      - name: Install the projection library (a compatible release; the address step only; non-fatal, D20)
+        run: pip install pyproj~=3.8 || echo "::warning::The projection library did not install; the address step marks its part unavailable (D20)."
+
+      - name: Read the roads file's size and date from the MSL server (non-fatal; D20, D25)
+        id: roads_src
+        run: |
+          url="https://ftpgeoinfo.msl.mt.gov/Data/Spatial/MSDI/Transportation/TransportationFramework_shp.zip"
+          head="$(curl -fsSI --retry 3 "$url" | tr -d '\r' || true)"
+          size="$(printf '%s\n' "$head" | awk 'tolower($1) ~ /^content-length:$/ {print $2}' | tail -n 1)"
+          modified="$(printf '%s\n' "$head" | sed -n 's/^[Ll]ast-[Mm]odified: //p' | tail -n 1)"
+          test -n "$size" && test -n "$modified" || echo "::warning::The roads file's size or date was not read; the roads step still runs and marks its part unavailable if the download fails (D20)."
+          echo "size=$size" >> "$GITHUB_OUTPUT"
+          echo "modified=$(printf '%s' "$modified" | sha1sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "Roads file: $size bytes, last modified $modified"
+
+      - name: Restore the roads file (keyed by name, size, Last-Modified and month, so it is re-checked monthly)
+        id: roads
+        uses: actions/cache@v4
+        with:
+          path: roads
+          key: roads-TransportationFramework_shp.zip-${{ steps.roads_src.outputs.size }}-${{ steps.roads_src.outputs.modified }}-${{ steps.roads_src.outputs.month }}
+          restore-keys: |
+            roads-TransportationFramework_shp.zip-
+
+      - name: Build the streets from the Library's Transportation Framework (non-fatal; D20, D25; the layer stays flag-off on main)
+        id: roads_build
+        # Cap 15 min: a cold-cache run took 386 s with the 118 MB download (timed 2026-10-19, four cores, shared).
+        timeout-minutes: 15
+        continue-on-error: true
+        run: |
+          if python -m website.streets build --store store --cache roads --roads-source msl; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "built=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The roads build did not pass; the roads step after the check marks the roads unavailable (D20)."
+          fi
+
+      - name: Verify the roads (the record count recomputed from the file when it is there; non-fatal; D20)
+        id: roads_verify
+        # Cap 5 min: 18 s measured on a cold cache (timed 2026-10-19); the floor for a step that reads the zip.
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          zip_arg=""
+          if [ -f roads/TransportationFramework_shp.zip ]; then zip_arg="--zip roads/TransportationFramework_shp.zip"; fi
+          if python -m website.streets verify --store store --roads-source msl $zip_arg; then
+            echo "verified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The roads check did not pass; the roads step after it marks them unavailable (D20)."
+          fi
+
+      - name: Mark the roads unavailable when their build or their check did not pass (non-fatal; D20)
+        # The store keeps an unavailable roads block, never a missing one: after a crashed build or a failed check the
+        # block carries the reason and the r/ shards are removed (website/streets.py, the unavailable command).
+        if: steps.roads_build.outputs.built != 'true' || steps.roads_verify.outputs.verified != 'true'
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          python -m website.streets unavailable --store store --reason "the roads build or its check did not pass in this run"
+          echo "::warning::The roads are marked unavailable in this store, and the sheet says so (D20). The rest of the store is kept."
+
+      - name: Build the address shards and the search index from the framework file (non-fatal; D20, D36)
+        id: addr_build
+        # Cap 5 min: a cold-cache run took 86 s with the 66 MB download (timed 2026-10-19).
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          if python -m website.addresses build --store store --cache structures; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "built=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The address build did not pass; the unavailable step after the check marks the list unavailable (D20, D36)."
+          fi
+
+      - name: Verify the addresses (counts recomputed from the file when it is there, the no-owner check, the projection pairs, the manifest hashes; non-fatal, D36)
+        id: addr_verify
+        # Cap 5 min: 40 s measured on a cold cache (timed 2026-10-19).
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          zip_arg=""
+          if [ -f structures/StructuresFramework_shp.zip ]; then zip_arg="--zip structures/StructuresFramework_shp.zip"; fi
+          if python -m website.addresses verify --store store $zip_arg; then
+            echo "verified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The address check did not pass; the unavailable step after it marks the list unavailable (D20, D36)."
+          fi
+
+      - name: Mark the address list unavailable when its build or its check did not pass (non-fatal; D20, D36)
+        # The store keeps an unavailable block, never a missing one: after a crashed build or a failed check, the block
+        # carries the reason and the address files are removed (website/addresses.py, the unavailable command).
+        if: steps.addr_build.outputs.built != 'true' || steps.addr_verify.outputs.verified != 'true'
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          python -m website.addresses unavailable --store store --reason "the address build or its check did not pass in this run"
+          echo "::warning::The address list is marked unavailable in this store, and the sheet says so (D20, D36). The rest of the store is kept."
+
+      - name: Read the outline file's size and date from the USA Structures host (non-fatal; D20, D36)
+        id: bld_src
+        run: |
+          url="https://fema-femadata.s3.us-east-1.amazonaws.com/Partners/ORNL/USA_Structures/Montana/MT_Structures_20260913.zip"
+          head="$(curl -fsSI --retry 3 "$url" | tr -d '\r' || true)"
+          size="$(printf '%s\n' "$head" | awk 'tolower($1) ~ /^content-length:$/ {print $2}' | tail -n 1)"
+          modified="$(printf '%s\n' "$head" | sed -n 's/^[Ll]ast-[Mm]odified: //p' | tail -n 1)"
+          test -n "$size" && test -n "$modified" || echo "::warning::The outline file's size or date was not read; the buildings step still runs and marks its part unavailable if the download fails (D20)."
+          echo "size=$size" >> "$GITHUB_OUTPUT"
+          echo "modified=$(printf '%s' "$modified" | sha1sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "Outline file: $size bytes, last modified $modified"
+
+      - name: Restore the outline file (keyed by name, size, last-modified and month, so it is re-checked monthly)
+        uses: actions/cache@v4
+        with:
+          path: structures-fema/MT_Structures_20260913.zip*
+          key: structures-fema-MT_Structures_20260913.zip-${{ steps.bld_src.outputs.size }}-${{ steps.bld_src.outputs.modified }}-${{ steps.bld_src.outputs.month }}
+
+      - name: Restore the county boundary file (keyed by name and month; non-fatal; D34)
+        uses: actions/cache@v4
+        with:
+          path: counties
+          key: counties-cb_2025_us_county_500k-${{ steps.month.outputs.key }}
+
+      - name: Install the geometry reader (pyogrio, a compatible release; the buildings step only; non-fatal, D20)
+        run: pip install "pyogrio~=0.13" || echo "::warning::The geometry reader did not install; the buildings step marks its part unavailable (D20)."
+
+      - name: Build the building outlines, their dots and the address join (non-fatal; D20, D26 to D28, D32, D34)
+        id: bld_build
+        # Cap 10 min: a cold-cache run took 136 s with the 173 MB and 12 MB downloads (timed 2026-10-19). A download
+        # that needs its retries (website/buildings.py, three tries) can run past this cap; the step is then non-fatal.
+        timeout-minutes: 10
+        continue-on-error: true
+        run: |
+          if python -m website.buildings build --store store --cache structures-fema --counties-cache counties; then
+            echo "built=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "built=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The outline build did not pass; the unavailable step after the check marks the outlines unavailable (D20)."
+          fi
+
+      - name: Verify the outlines (the bytes and counts recomputed from the file when it is there; non-fatal; D20)
+        id: bld_verify
+        # Cap 5 min: 119 s measured on a cold cache (timed 2026-10-19).
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          zip_arg=""
+          county_arg=""
+          if [ -f structures-fema/MT_Structures_20260913.zip ]; then zip_arg="--gdb-zip structures-fema/MT_Structures_20260913.zip"; fi
+          if [ -f counties/cb_2025_us_county_500k.zip ]; then county_arg="--counties-zip counties/cb_2025_us_county_500k.zip"; fi
+          if python -m website.buildings verify --store store $zip_arg $county_arg; then
+            echo "verified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::The outline check did not pass; the unavailable step after it marks the outlines unavailable (D20)."
+          fi
+
+      - name: Check the address figures after the outline rewrite (the index block equals the files on disk; non-fatal; D49)
+        # The outline step moves the matched rows onto the building dots and rewrites the address block's figures
+        # (website/buildings.py); this store-only check fails when any figure is stale, so no stale figure is ever cited.
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          if ! python -m website.addresses verify --store store; then
+            echo "::warning::The address figures do not match the files after the outline rewrite (D49); rebuild the store."
+          fi
+
+      - name: Mark the outlines unavailable when their build or their check did not pass (non-fatal; D20)
+        # The store keeps an unavailable buildings block, never a missing one: after a crashed build or a failed check the
+        # block carries the reason and the b/ and counts files are removed (website/buildings.py, the unavailable command).
+        if: steps.bld_build.outputs.built != 'true' || steps.bld_verify.outputs.verified != 'true'
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          python -m website.buildings unavailable --store store --reason "the outline build or its check did not pass in this run"
+          echo "::warning::The building outlines are marked unavailable in this store, and the sheet says so (D20). The rest of the store is kept."
+
       - name: Pack the store
+        timeout-minutes: 5
         env:
           ASSET: ${{ steps.asset.outputs.name }}
         run: tar czf "$ASSET.new" -C store hail
 
       - name: Publish the release asset
+        timeout-minutes: 10
         env:
           GH_TOKEN: ${{ github.token }}
           ASSET: ${{ steps.asset.outputs.name }}
+        run: |
+          notes="Radar estimates (NOAA MRMS MESH) for the five years to the last published day. One asset per branch, named after it (main's is hail-store-main.tar.gz, rebuilt daily); the Website build with --hail-history reads its own branch's asset. Radar estimates, not measurements or inspections."
+          if ! gh release view hail-store > /dev/null 2>&1; then
+            gh release create hail-store --prerelease --title "Hail history store" --notes "$notes"
+          else
+            gh release edit hail-store --notes "$notes"
+          fi
+          # The new file goes up under a temporary name and takes the asset's name only once it is complete, so a
+          # failed or interrupted upload leaves the last published asset in place, and a build never finds the name
+          # missing for longer than the moment between the two renames below.
+          gh release upload hail-store "$ASSET.new" --clobber
+          assets=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/hail-store" --jq '.assets[] | "\(.id) \(.name)"')
+          old_id=""; new_id=""; stale_id=""; shared_id=""
+          while read -r id name; do
+            case "$name" in
+              "$ASSET") old_id=$id;;
+              "$ASSET.new") new_id=$id;;
+              "$ASSET.old") stale_id=$id;;
+              hail-store.tar.gz) shared_id=$id;;
+            esac
+          done <<< "$assets"
+          if [ -z "$new_id" ]; then echo "The uploaded file $ASSET.new is not in the release's asset list; nothing was replaced." >&2; exit 1; fi
+          # The old asset steps aside, the new one takes the name, and the old one is removed last. If the new one
+          # cannot take the name, the old one gets it back, so the name is never left missing. A .old left by an
+          # earlier failed run is removed first.
+          if [ -n "$stale_id" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$stale_id"; fi
+          if [ -n "$old_id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$old_id" -f name="$ASSET.old" > /dev/null; fi
+          if ! gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new_id" -f name="$ASSET" > /dev/null; then
+            if [ -n "$old_id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$old_id" -f name="$ASSET" > /dev/null; fi
+            echo "The new file could not take the name $ASSET; the previous asset keeps it." >&2; exit 1
+          fi
+          if [ -n "$old_id" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$old_id"; fi
+          echo "Published $ASSET."
+          # The earlier branch jobs published under one shared name, hail-store.tar.gz, and the last of them held a
+          # later stage's data (the address points) while that stage's gates are open. Any job that finds it removes
+          # it; a listing or a removal that fails fails the job.
+          if [ -n "$shared_id" ]; then
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$shared_id"
+            echo "Removed the shared-name asset hail-store.tar.gz."
+          else
+            echo "No shared-name asset to remove."
+          fi
+
+
+  monthly:
+    needs: [plan, store]
+    if: ${{ always() && needs.plan.outputs.monthly != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Start the job clock (the monthly steps share its 40 minutes; the job cap is 60)
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Check out the repository
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the monthly readers (the HTTP client, the shapefile reader, and h5py and Pillow for the NOHRSC check)
+        continue-on-error: true
+        timeout-minutes: 5
+        run: pip install numpy requests pyshp h5py Pillow
+
+      - name: Name the asset after the branch (the daily job's name; the monthly job reads and replaces the same asset)
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "ASSET=hail-store-$(echo "$GITHUB_REF_NAME" | tr '/' '-').tar.gz" >> "$GITHUB_ENV"
+
+      - name: Fetch the published store (the daily job's release asset, which the monthly steps change and publish again)
+        id: fetch
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf monthly-download store
+          mkdir -p monthly-download store
+          gh release download hail-store --pattern "$ASSET" --dir monthly-download --clobber
+          tar xzf "monthly-download/$ASSET" -C store
+          echo "fetched=yes" >> "$GITHUB_OUTPUT"
+
+      - name: Seconds left on the monthly clock before the B5 downloads
+        id: clock_cache
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the B5 downloads (the station, NWPS, USGS and NOHRSC files of the daily job; optional)
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_cache.outputs.left > 60 }}
+        uses: actions/cache@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b5-cache
+          key: b5-cache-${{ github.run_id }}
+          restore-keys: |
+            b5-cache-
+
+      - name: Seconds left on the monthly clock before the station union
+        id: clock_stations
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Station candidate union and regression set (every file of the monthly scope is read, none skipped)
+        id: stations
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_stations.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 30
+        env:
+          LEFT: ${{ steps.clock_stations.outputs.left }}
+        run: |
+          budget=$(( LEFT - 440 ))
+          if [ "$budget" -gt 1620 ]; then budget=1620; fi
+          timeout --kill-after=30 "$LEFT" python -m website.stations build --store store --cache b5-cache --procs 4 \
+            --scope monthly --deadline-at "$(( $(date +%s) + budget ))"
+
+      - name: Seconds left on the monthly clock before the river gauges
+        id: clock_gauges
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: River gauges (every NWPS and USGS file refreshed)
+        id: gauges
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_gauges.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          LEFT: ${{ steps.clock_gauges.outputs.left }}
+        run: |
+          budget=$(( LEFT - 440 ))
+          if [ "$budget" -gt 540 ]; then budget=540; fi
+          timeout --kill-after=30 "$LEFT" python -m website.gauges build --store store --cache b5-cache --procs 3 --refresh \
+            --deadline-at "$(( $(date +%s) + budget ))"
+
+      - name: Seconds left on the monthly clock before the snow analysis
+        id: clock_snow
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Snow analysis (NOAA's latest NOHRSC file, checked once a month; the only NOHRSC request)
+        id: snow
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_snow.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_snow.outputs.left }}
+        run: |
+          budget=$(( LEFT - 440 ))
+          if [ "$budget" -gt 240 ]; then budget=240; fi
+          timeout --kill-after=30 "$LEFT" python -m website.snowgrid build --store store --cache b5-cache \
+            --deadline-at "$(( $(date +%s) + budget ))"
+
+      - name: Seconds left on the monthly clock before the monthly verify
+        id: clock_verify
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the station, gauge and snow parts (informational; the index says what did not load)
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_verify.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_verify.outputs.left }}
+        run: |
+          timeout --kill-after=30 "$LEFT" python -m website.stations verify --store store || echo "stations verify did not pass; see the index"
+          timeout --kill-after=30 "$LEFT" python -m website.gauges verify --store store --cache b5-cache || echo "gauges verify did not pass; see the index"
+          timeout --kill-after=30 "$LEFT" python -m website.snowgrid verify --store store --cache b5-cache || echo "snow verify did not pass; see the index"
+
+      - name: Pack the store (whatever the monthly steps left in it)
+        id: pack
+        if: ${{ steps.fetch.outputs.fetched != '' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        run: tar czf "$ASSET.new" -C store hail
+
+      - name: Publish the monthly store (the same release asset, replaced only once the pack has been made)
+        if: ${{ contains(steps.pack.outcome, 'success') }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           notes="Radar estimates (NOAA MRMS MESH) for the five years to the last published day. One asset per branch, named after it (main's is hail-store-main.tar.gz, rebuilt daily); the Website build with --hail-history reads its own branch's asset. Radar estimates, not measurements or inspections."
           if ! gh release view hail-store > /dev/null 2>&1; then

@@ -30,7 +30,22 @@ on:
       - "tests/test_storm.py"
       - "tests/test_satellite.py"
       - "tests/test_hail.py"
+      - "tests/test_joins.py"
+      - "tests/test_addresses.py"
+      - "tests/test_streets.py"
+      - "tests/test_buildings.py"
       - "tests/test_website_workflow.py"
+      - "tests/test_hail_workflow.py"
+      - "tests/test_swath.py"
+      # Every website test module and the words-rules helper; PushPathsCoverTheTests in tests/test_website_workflow.py checks this list.
+      - "tests/test_climate.py"
+      - "tests/test_stations.py"
+      - "tests/test_snowgrid.py"
+      - "tests/test_gauges.py"
+      - "tests/test_summary.py"
+      - "tests/test_words_rules.py"
+      - "tests/words_rules.py"
+      - "tests/fixtures/**"            # the default-build manifest and other test fixtures (D102(b))
       - "tools/**"
       - ".github/workflows/website.yml"
 
@@ -44,11 +59,13 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # D92(b)'s 25 minutes cannot hold the wait: it runs in this job, up to 60 minutes (D59). So a branch has 75 for the wait,
+    # the build, the real-store parity step (D88(a)) and the browser smoke after it. Main keeps 15: it never waits.
     timeout-minutes: ${{ github.ref == 'refs/heads/main' && 15 || 75 }}   # a branch preview may wait up to 60 minutes for its store job
     permissions:
       contents: read
       pages: read
-      actions: read   # the wait step lists this commit's store job
+      actions: read   # the wait step lists the branch's latest store job
     outputs:
       publish: ${{ steps.plan.outputs.publish }}
     steps:
@@ -88,11 +105,14 @@ jobs:
       - name: Install
         if: steps.plan.outputs.run == 'true'
         # pyarrow is for the hail compare tests only (tests/test_hail.py); the site build never imports it.
-        run: python -m pip install requests jinja2 pillow numpy pygrib h5py pyarrow
+        # pyproj and pyogrio read the B3 address, street and outline files in the offline tests (D2, D19): compatible
+        # releases, never pinned. pyyaml is for the workflow file tests (tests/test_website_workflow.py and
+        # tests/test_hail_workflow.py read the YAML of both workflows).
+        run: python -m pip install requests jinja2 pillow numpy pygrib h5py pyarrow pyyaml "pyproj~=3.8" "pyogrio~=0.13" pyshp
 
       - name: Website tests (offline)
         if: steps.plan.outputs.run == 'true'
-        run: python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_website_workflow
+        run: python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_addresses tests.test_streets tests.test_buildings tests.test_swath tests.test_climate tests.test_stations tests.test_snowgrid tests.test_gauges tests.test_summary tests.test_words_rules tests.test_hail_workflow tests.test_website_workflow
 
       - name: Wait for this branch's hail history store job (branch previews read the asset it publishes)
         if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'
@@ -136,9 +156,10 @@ jobs:
           set -o pipefail   # the build's exit code must reach the step: without this, tee's 0 hid a --require-live failure
           args=(--out _site)
           if [ -n "$PAGES_URL" ]; then args+=(--previous "$PAGES_URL"); fi
-          # Branch pushes also read NOAA radar echo tops (text only), the GOES satellite picture and the five-year
-          # hail history (its store is downloaded), and fail on any failed source.
-          if [ "$GITHUB_REF" != "refs/heads/main" ]; then args+=(--require-live --storm-layers --hail-history); fi
+          # Branch pushes also read NOAA radar echo tops (text only), the GOES satellite picture, the five-year hail
+          # history (its store is downloaded) and the address, street and outline layers (B3, --hail-addresses); off
+          # on main until reviewed. They fail on any failed source.
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then args+=(--require-live --storm-layers --hail-history --hail-addresses); fi
           # On main at the owner's decision of 2026-10-21: the hail history is public. Its store download is a source
           # like any other, so a failed download leaves the pages saying the history is unavailable (never an
           # all-clear) and the rest of the site still publishes; main's first builds after the merge say so until
@@ -150,16 +171,47 @@ jobs:
           export HAIL_STORE_ASSET="hail-store-$(echo "$GITHUB_REF_NAME" | tr '/' '-').tar.gz"
           python -m website.build "${args[@]}" | tee build-result.json
 
+      - name: Real-store parity tests (branch pushes)
+        if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'
+        # The seven tests that read HAIL_PARITY_STORE (tests/test_site.py and tests/test_summary.py) check the sheet and the
+        # town pages against the store, so they run after the build, against the site's own copy of the store (D75(a),
+        # _site/hail). The step fails when that copy has no tile lists (hail/tl): a missing store is a failure, never a skip.
+        # A test that skips anyway fails the step too. They are named one by one; tests/test_website_workflow.py (ParityStep)
+        # checks the names against the test modules, so a renamed or new gated test cannot drop out silently (D88(a)).
+        env:
+          HAIL_PARITY_STORE: _site
+        run: |
+          set -o pipefail
+          if [ ! -d _site/hail/tl ]; then
+            echo '::error::_site/hail/tl is missing, so the real-store parity tests have no store to read. The build must pass --hail-history.'
+            exit 1
+          fi
+          python -m unittest \
+            tests.test_site.MapBlocksForTheBrowser.test_with_the_real_store_every_town_page_leads_with_station_reading_and_map_json_is_under_160_kb \
+            tests.test_site.SheetFiveSeasonsInTheBrowser.test_with_the_real_store_every_row_note_reaches_the_sheet_at_four_cells \
+            tests.test_site.SheetAgreesWithTheModule.test_the_five_cells_agree_on_the_adopted_store \
+            tests.test_site.SummaryContract.test_the_real_store_names_are_the_display_names_the_store_gives \
+            tests.test_summary.StationPicksAndNames.test_the_real_store_picks_are_the_rule_at_the_17_towns_and_the_named_cells \
+            tests.test_summary.StationPicksAndNames.test_the_real_store_names_are_the_display_names_the_store_gives_and_its_radar_is_partial \
+            tests.test_summary.TownPartialSeasonTests.test_the_candidate_store_gives_the_billings_partial_counts_it_holds 2>&1 | tee parity.log
+          if grep -q '(skipped=' parity.log; then
+            echo '::error::A real-store parity test was skipped, so the store was not checked.'
+            exit 1
+          fi
+
       - name: Map smoke test in a real browser (branch pushes)
         if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'
         run: |
           python -m pip install playwright
           python -m playwright install --with-deps chromium
-          python tools/smoke_map.py _site
+          # --addresses: the preview's B3 flag; --history: the preview's --hail-history flag, so a missing five-season summary
+          # fails here instead of passing with a note (tools/smoke_map.py, check_summary). No --store: the smoke reads the
+          # site's own hail/ folder, which holds B4's live files under hail/live/ that the store reader skips (D75).
+          python tools/smoke_map.py _site --addresses --history
 
       - name: Page width check in a real browser (branch pushes)
         if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'
-        run: python tools/smoke_pages.py _site
+        run: python tools/smoke_pages.py _site --history
 
       - name: Summary of what each source returned
         if: always() && steps.plan.outputs.run == 'true'

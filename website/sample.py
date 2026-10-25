@@ -9,6 +9,8 @@ from __future__ import annotations
 import math
 from datetime import datetime, timedelta, timezone
 
+import numpy as np
+
 from . import sources as src
 
 UTC = timezone.utc
@@ -244,3 +246,28 @@ def storm_levels(now: datetime, towns: list[dict]) -> tuple[datetime, dict[str, 
                 row.append(42.0 if h <= top else (30.0 if h <= top + 2000 else 18.0))
         values[slug] = row
     return when, values
+
+
+# ---------------------------------------------------------------- hail swath sample (B4; website/swath.py)
+# An invented MRMS MESH field for the swath layers' sample builds, labelled SAMPLE. It keeps the NOAA files' codes:
+# -1 is no estimate and -3 no coverage (a corner), and positive values are millimetres to a tenth. swath.py draws it
+# through the same pack, palette and live-file path that a live file takes.
+SWATH_STORM = {60: (47.0, -108.6, 72.0, 0.22), 1440: (46.4, -108.0, 46.0, 0.45)}   # window: lat, lon, peak mm, sigma (deg)
+SWATH_NODATA_FROM = (49.8, -103.5)     # no coverage from this latitude north and this longitude east
+
+
+def swath_field(lats, lons, window: int):
+    """Invented MESH in mm (with -1 and -3 codes) on the grid rows at lats (degrees north) and columns at lons (degrees
+    east): one storm core, a smaller core beside it, a halo of positive values under 0.25 in, and a no-coverage corner."""
+    la0, lo0, peak, sigma = SWATH_STORM[window]
+    lat = np.asarray(lats, dtype=float)[:, None]
+    lon = np.asarray(lons, dtype=float)[None, :]
+    dx = (lon - lo0) * math.cos(math.radians(la0))
+    v = peak * np.exp(-0.5 * ((lat - la0) ** 2 + dx ** 2) / sigma ** 2)
+    dx2 = (lon - (lo0 + 0.35)) * math.cos(math.radians(la0))
+    v = v + 0.45 * peak * np.exp(-0.5 * ((lat - (la0 + 0.45)) ** 2 + dx2 ** 2) / (0.6 * sigma) ** 2)
+    v = np.where((v > 0.4) & (v < 6.35), 3.0, v)          # positive, under the 0.25 in floor: uncoloured
+    v = np.round(v, 1)
+    v = np.where(v < 0.5, -1.0, v)                       # no estimate
+    no_coverage = (lat >= SWATH_NODATA_FROM[0]) & (lon >= SWATH_NODATA_FROM[1])
+    return np.where(no_coverage, -3.0, v).astype(np.float64)
