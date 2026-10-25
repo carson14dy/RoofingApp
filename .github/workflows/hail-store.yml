@@ -4,11 +4,14 @@ name: Hail history store
 # MESH archive (website/hail.py). B2 (D35) joins the reports, official records, radar detections, warnings, zone
 # products and station gusts to each tile (website/joins.py). The join also carries the B5 product pulls (D27: the
 # older NWS zone editions; D30: the per-tile event files), and it stays fatal by the B2 rule: a failed join or verify
-# leaves the last published release in place, because the upload is the last step. B5 (D38) adds the past weather
+# leaves the last published asset in place. B5 (D38) adds the past weather
 # of every location: the climate grid (website/climate.py), the station readings (website/stations.py), the NOHRSC
-# snow analysis (website/snowgrid.py) and the river gauges (website/gauges.py). The job publishes the store as one
-# release asset (hail-store), which the Website build reads with --hail-history. 12:43 UTC is after the 12:00 UTC file
-# is published (about 12:08 UTC). A B5 source that fails marks its part unavailable in the store (the sheet says so).
+# snow analysis (website/snowgrid.py) and the river gauges (website/gauges.py). The job publishes the store as a release
+# asset named after the branch (main's is hail-store-main.tar.gz), which the Website build reads with --hail-history
+# (on main at the owner's decision of 2026-10-21; a branch's build reads its own branch's asset). 12:43 UTC is after
+# the 12:00 UTC file is published (about 12:08 UTC). A failed run leaves the last published asset in place: the new
+# file goes up under a temporary name and takes the asset's name only once it is complete. A B5 source that fails
+# marks its part unavailable in the store (the sheet says so).
 # Every B5 step is non-fatal (continue-on-error), has a timeout, and runs on one 40-minute clock (D16, D26).
 #
 # The address, street and outline steps (B3, D9, D20, D36) run after the joins and the B5 parts, and before the pack.
@@ -53,7 +56,8 @@ on:
   # A branch push that changes the job or the store code runs it once, as the check that the job works on a
   # runner (GitHub dispatches a workflow by hand only once it is on the default branch). The run publishes the
   # same asset the schedule would; a change to the store format must rename the asset so an older build never
-  # reads a newer format.
+  # reads a newer format. Every job publishes under its branch's name (hail-store-<branch>.tar.gz, slashes as
+  # dashes; main's is hail-store-main.tar.gz), so a branch job never touches the asset main reads.
   push:
     branches: [main, "claude/**", "codex/**"]
     paths:
@@ -73,7 +77,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: hail-store
+  group: hail-store-${{ github.ref }}   # one run per branch at a time; a branch's run never queues behind or cancels main's
   cancel-in-progress: false
 
 jobs:
@@ -144,6 +148,11 @@ jobs:
       - name: Verify the store
         timeout-minutes: 5
         run: python -m website.hail verify store
+
+      - name: Name the asset after the branch (main's is hail-store-main.tar.gz; a branch's job never touches it)
+        id: asset
+        timeout-minutes: 1
+        run: echo "name=hail-store-$(echo "$GITHUB_REF_NAME" | tr '/' '-').tar.gz" >> "$GITHUB_OUTPUT"
 
       - name: Restore the joins' downloads (optional; a cold cache builds the same joins)
         timeout-minutes: 10
@@ -359,13 +368,14 @@ jobs:
         continue-on-error: true
         timeout-minutes: 5
         env:
+          ASSET_NAME: ${{ steps.asset.outputs.name }}
           GH_TOKEN: ${{ github.token }}
           LEFT: ${{ steps.clock_stations_carry.outputs.left }}
         run: |
           set -e
           mkdir -p previous-store
-          timeout --kill-after=30 "$LEFT" gh release download hail-store --pattern hail-store.tar.gz --dir previous-store --clobber
-          timeout --kill-after=30 "$LEFT" tar xzf previous-store/hail-store.tar.gz -C previous-store hail/index.json
+          timeout --kill-after=30 "$LEFT" gh release download hail-store --pattern "$ASSET_NAME" --dir previous-store --clobber
+          timeout --kill-after=30 "$LEFT" tar xzf "previous-store/$ASSET_NAME" -C previous-store hail/index.json
           count=$(timeout --kill-after=30 "$LEFT" jq -n --slurpfile prev previous-store/hail/index.json '($prev[0].stations.chosen_station_ids // []) | length')
           if [ "$count" -gt 0 ]; then
             timeout --kill-after=30 "$LEFT" jq --slurpfile prev previous-store/hail/index.json '.stations = $prev[0].stations' store/hail/index.json > store/hail/index.carried.json
@@ -470,7 +480,7 @@ jobs:
           timeout --kill-after=30 "$LEFT" python -m website.snowgrid verify --store store --cache b5-cache || echo "snow verify did not pass; see the index"
 
       # ---- End of B5. The B3 steps below (the address, street and outline steps; non-fatal, D36) come next, then the
-      # B1 and B2 publish steps, unchanged. Not yet here: the containment step
+      # B1 and B2 pack and publish steps (the branch-named asset). Not yet here: the containment step
       # and the fatal store gates before the pack (DECISIONS D38, job-4), which need the stations module's commands.
       - name: Read the framework file's size and date from the MSL server (non-fatal; D20)
         id: src
@@ -674,18 +684,58 @@ jobs:
 
       - name: Pack the store
         timeout-minutes: 5
-        run: tar czf hail-store.tar.gz -C store hail
+        env:
+          ASSET: ${{ steps.asset.outputs.name }}
+        run: tar czf "$ASSET.new" -C store hail
 
       - name: Publish the release asset
         timeout-minutes: 10
         env:
           GH_TOKEN: ${{ github.token }}
+          ASSET: ${{ steps.asset.outputs.name }}
         run: |
+          notes="Radar estimates (NOAA MRMS MESH) for the five years to the last published day. One asset per branch, named after it (main's is hail-store-main.tar.gz, rebuilt daily); the Website build with --hail-history reads its own branch's asset. Radar estimates, not measurements or inspections."
           if ! gh release view hail-store > /dev/null 2>&1; then
-            gh release create hail-store --prerelease --title "Hail history store" \
-              --notes "Radar estimates (NOAA MRMS MESH) for the five years to the last published day. One asset, rebuilt daily; the Website build with --hail-history reads it. Radar estimates, not measurements or inspections."
+            gh release create hail-store --prerelease --title "Hail history store" --notes "$notes"
+          else
+            gh release edit hail-store --notes "$notes"
           fi
-          gh release upload hail-store hail-store.tar.gz --clobber
+          # The new file goes up under a temporary name and takes the asset's name only once it is complete, so a
+          # failed or interrupted upload leaves the last published asset in place, and a build never finds the name
+          # missing for longer than the moment between the two renames below.
+          gh release upload hail-store "$ASSET.new" --clobber
+          assets=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/hail-store" --jq '.assets[] | "\(.id) \(.name)"')
+          old_id=""; new_id=""; stale_id=""; shared_id=""
+          while read -r id name; do
+            case "$name" in
+              "$ASSET") old_id=$id;;
+              "$ASSET.new") new_id=$id;;
+              "$ASSET.old") stale_id=$id;;
+              hail-store.tar.gz) shared_id=$id;;
+            esac
+          done <<< "$assets"
+          if [ -z "$new_id" ]; then echo "The uploaded file $ASSET.new is not in the release's asset list; nothing was replaced." >&2; exit 1; fi
+          # The old asset steps aside, the new one takes the name, and the old one is removed last. If the new one
+          # cannot take the name, the old one gets it back, so the name is never left missing. A .old left by an
+          # earlier failed run is removed first.
+          if [ -n "$stale_id" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$stale_id"; fi
+          if [ -n "$old_id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$old_id" -f name="$ASSET.old" > /dev/null; fi
+          if ! gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new_id" -f name="$ASSET" > /dev/null; then
+            if [ -n "$old_id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$old_id" -f name="$ASSET" > /dev/null; fi
+            echo "The new file could not take the name $ASSET; the previous asset keeps it." >&2; exit 1
+          fi
+          if [ -n "$old_id" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$old_id"; fi
+          echo "Published $ASSET."
+          # The earlier branch jobs published under one shared name, hail-store.tar.gz, and the last of them held a
+          # later stage's data (the address points) while that stage's gates are open. Any job that finds it removes
+          # it; a listing or a removal that fails fails the job.
+          if [ -n "$shared_id" ]; then
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$shared_id"
+            echo "Removed the shared-name asset hail-store.tar.gz."
+          else
+            echo "No shared-name asset to remove."
+          fi
+
 
   monthly:
     needs: [plan, store]
@@ -715,6 +765,11 @@ jobs:
         timeout-minutes: 5
         run: pip install numpy requests pyshp h5py Pillow
 
+      - name: Name the asset after the branch (the daily job's name; the monthly job reads and replaces the same asset)
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "ASSET=hail-store-$(echo "$GITHUB_REF_NAME" | tr '/' '-').tar.gz" >> "$GITHUB_ENV"
+
       - name: Fetch the published store (the daily job's release asset, which the monthly steps change and publish again)
         id: fetch
         continue-on-error: true
@@ -724,8 +779,8 @@ jobs:
         run: |
           rm -rf monthly-download store
           mkdir -p monthly-download store
-          gh release download hail-store --pattern hail-store.tar.gz --dir monthly-download --clobber
-          tar xzf monthly-download/hail-store.tar.gz -C store
+          gh release download hail-store --pattern "$ASSET" --dir monthly-download --clobber
+          tar xzf "monthly-download/$ASSET" -C store
           echo "fetched=yes" >> "$GITHUB_OUTPUT"
 
       - name: Seconds left on the monthly clock before the B5 downloads
@@ -824,7 +879,7 @@ jobs:
         if: ${{ steps.fetch.outputs.fetched != '' }}
         continue-on-error: true
         timeout-minutes: 5
-        run: tar czf hail-store.tar.gz -C store hail
+        run: tar czf "$ASSET.new" -C store hail
 
       - name: Publish the monthly store (the same release asset, replaced only once the pack has been made)
         if: ${{ contains(steps.pack.outcome, 'success') }}
@@ -832,4 +887,45 @@ jobs:
         timeout-minutes: 10
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload hail-store hail-store.tar.gz --clobber
+        run: |
+          notes="Radar estimates (NOAA MRMS MESH) for the five years to the last published day. One asset per branch, named after it (main's is hail-store-main.tar.gz, rebuilt daily); the Website build with --hail-history reads its own branch's asset. Radar estimates, not measurements or inspections."
+          if ! gh release view hail-store > /dev/null 2>&1; then
+            gh release create hail-store --prerelease --title "Hail history store" --notes "$notes"
+          else
+            gh release edit hail-store --notes "$notes"
+          fi
+          # The new file goes up under a temporary name and takes the asset's name only once it is complete, so a
+          # failed or interrupted upload leaves the last published asset in place, and a build never finds the name
+          # missing for longer than the moment between the two renames below.
+          gh release upload hail-store "$ASSET.new" --clobber
+          assets=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/hail-store" --jq '.assets[] | "\(.id) \(.name)"')
+          old_id=""; new_id=""; stale_id=""; shared_id=""
+          while read -r id name; do
+            case "$name" in
+              "$ASSET") old_id=$id;;
+              "$ASSET.new") new_id=$id;;
+              "$ASSET.old") stale_id=$id;;
+              hail-store.tar.gz) shared_id=$id;;
+            esac
+          done <<< "$assets"
+          if [ -z "$new_id" ]; then echo "The uploaded file $ASSET.new is not in the release's asset list; nothing was replaced." >&2; exit 1; fi
+          # The old asset steps aside, the new one takes the name, and the old one is removed last. If the new one
+          # cannot take the name, the old one gets it back, so the name is never left missing. A .old left by an
+          # earlier failed run is removed first.
+          if [ -n "$stale_id" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$stale_id"; fi
+          if [ -n "$old_id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$old_id" -f name="$ASSET.old" > /dev/null; fi
+          if ! gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new_id" -f name="$ASSET" > /dev/null; then
+            if [ -n "$old_id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$old_id" -f name="$ASSET" > /dev/null; fi
+            echo "The new file could not take the name $ASSET; the previous asset keeps it." >&2; exit 1
+          fi
+          if [ -n "$old_id" ]; then gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$old_id"; fi
+          echo "Published $ASSET."
+          # The earlier branch jobs published under one shared name, hail-store.tar.gz, and the last of them held a
+          # later stage's data (the address points) while that stage's gates are open. Any job that finds it removes
+          # it; a listing or a removal that fails fails the job.
+          if [ -n "$shared_id" ]; then
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$shared_id"
+            echo "Removed the shared-name asset hail-store.tar.gz."
+          else
+            echo "No shared-name asset to remove."
+          fi

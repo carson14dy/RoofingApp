@@ -180,7 +180,8 @@ table.five .held-cell { color: var(--color-text-muted); }
   {% if v.state in ('loaded', 'partial') %}
   <p class="sub">{{ v.plain }}</p>
   <p class="sub">{{ v.cell }}</p>
-  {% if v.stale %}<p class="sub"><strong>{{ v.stale }}</strong></p>{% endif %}
+  {# one stale line: the hail history's, or the summary's when the hail line is not set (both come from the same stale store) #}
+  {% if h.stale %}<p class="sub"><strong>{{ h.stale }}</strong></p>{% elif v.stale %}<p class="sub"><strong>{{ v.stale }}</strong></p>{% endif %}
   <div class="table-box">
     <table class="five">
       <caption class="visually-hidden">{{ v.table_caption }}</caption>

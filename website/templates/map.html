@@ -62,7 +62,7 @@ if (/[?&]card=1(&|$)/.test(location.search)) document.documentElement.classList.
         {%- elif key == 'storm' %}<strong>Radar echo tops problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'satellite' %}<strong>Satellite picture problem</strong> at {{ s.when|t }}: {{ s.detail }}.
         {%- elif key == 'hail_swath' %}<strong>Hail swath problem</strong> at {{ s.when|t }}: {{ s.detail }}.
-        {%- elif key == 'hail_history' %}<strong>Hail history didn't load</strong> at {{ s.when|t }}: {{ s.detail }}.
+        {%- elif key == 'hail_history' %}<strong>Hail history didn't load</strong> at {{ s.when|t }}: {{ s.detail }}. This is not an all-clear.
         {%- else %}<strong>NWS town forecasts</strong> loaded for {{ s.detail }}. A town without one shows a dash.{% endif %}
       {%- endmacro %}
       {% if problems|length == 1 %}

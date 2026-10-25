@@ -177,8 +177,10 @@ class SmokeFlags(unittest.TestCase):
 
     def test_the_build_line_keeps_the_history_and_address_flags_and_passes_no_local_store(self):
         build = [line for line in self.lines if "args+=(" in line and "--hail-history" in line]
-        self.assertEqual(len(build), 1)
+        self.assertEqual(len(build), 2, "the branch line and main's own line (D59: main passes --hail-history alone)")
         self.assertIn("--require-live --storm-layers --hail-history --hail-addresses", build[0])
+        self.assertIn("args+=(--hail-history)", build[1])
+        self.assertNotIn("--require-live", build[1])
         self.assertNotIn("--hail-store", self.text)
 
     def test_pyyaml_is_installed_for_the_workflow_file_tests(self):
@@ -814,7 +816,12 @@ class ParityStep(unittest.TestCase):
         self.assertNotIn("HAIL_PARITY_STORE", str(self.step("Website tests (offline)")))
 
     def test_the_build_job_timeout_leaves_room_for_the_step(self):
-        self.assertGreaterEqual(self.doc["jobs"]["build"]["timeout-minutes"], 25)
+        # D59 (main's rule): 15 minutes on main; on a branch 75, because the wait for the store job (up to 60) runs in this
+        # job before the build, the parity step and the smoke. D92(b)'s 25 minutes cannot hold that wait, so it is superseded.
+        limit = str(self.doc["jobs"]["build"]["timeout-minutes"])
+        match = re.fullmatch(r"\$\{\{ github\.ref == 'refs/heads/main' && 15 \|\| (\d+) \}\}", limit)
+        self.assertIsNotNone(match, limit)
+        self.assertGreaterEqual(int(match.group(1)), 60 + 15)
 
 
 class FakeFramePage:

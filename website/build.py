@@ -9,7 +9,7 @@
     python -m website.build --out _site --hail-history --hail-addresses  # also the address dots, streets and building outlines (B3)
     python -m website.build --out _site --hail-history --hail-addresses --address-text off  # the same, with no address text (D35)
 
-GitHub Actions runs the live build every 10 minutes and publishes the folder with GitHub Pages
+GitHub Actions runs the live build on a schedule set to every 10 minutes and publishes the folder with GitHub Pages
 (.github/workflows/website.yml). Every page says when its data was fetched; nothing on a page is
 newer than that time.
 """
@@ -311,19 +311,25 @@ class Collector:
             days = (f"{index['days_present']} of {index['days_expected']} days, " if "days_present" in index
                     and "days_expected" in index else "")
             detail = f"{counts}{days}as of {index['as_of']}; joined records {joins_block['state']}"
-            self.note("hail_history", HAIL_LABEL, True, ("SAMPLE store: " if sampled else "") + detail)
+            if index.get("asset"):                  # the release asset the download took (the branch's, else main's)
+                detail += f", from {index['asset']}"
+            stale = not sampled and hs.is_stale(index["as_of"], self.now)    # a real store older than STALE_DAYS
+            if stale:                               # the pages carry it with the stale line; the source counts as failed
+                detail += f" (stale: more than {hs.STALE_DAYS} days old, the daily job has not published)"
+            self.note("hail_history", HAIL_LABEL, not stale, ("SAMPLE store: " if sampled else "") + detail)
         except (hs.HailStoreError, OSError, ValueError, KeyError, TypeError) as e:
             problem = str(e) if isinstance(e, hs.HailStoreError) else f"the history files couldn't be read ({type(e).__name__})"
-            self.note("hail_history", HAIL_LABEL, False, problem)
-            words = [hs.describe_unavailable(problem) for _ in towns]
-            block = hs.map_data_unavailable(problem)
+            self.note("hail_history", HAIL_LABEL, False, problem)       # the log keeps the technical detail
+            shown = hs.plain_problem(problem)                             # the pages say it in plain words
+            words = [hs.describe_unavailable(shown) for _ in towns]
+            block = hs.map_data_unavailable(shown)
             block.pop("tiles", None)
             block["tile_split"] = {}                # no store, so no tile is known: the map says unavailable, not outside
             from . import joins as jn
-            block["joins"] = join_block_unavailable(jn, problem)
+            block["joins"] = join_block_unavailable(jn, shown)
             joins_views = [join_view_unavailable(jn) for _ in towns]
             block.update(b5_map_blocks(None))       # every B5 block says unavailable, with the reason
-            summaries = [summary_unavailable(problem, t) for t in towns]
+            summaries = [summary_unavailable(shown, t) for t in towns]
         for t, w, jv, s in zip(towns, words, joins_views, summaries):
             t["hail"] = {**w, "joins": jv, "summary": s, "view": history_view(s, jv, w, t, self.now, through)}
         block["words"].update(HAIL_SITE_WORDS)
@@ -601,7 +607,8 @@ def hail_store(out: Path, store: str | None, sample: bool, fetch, addresses: boo
         hs.check_manifest(hs.FIXTURE_DIR)
         return _copy_hail(hs.FIXTURE_DIR, out, index, addresses)
     with tempfile.TemporaryDirectory(prefix="hail-store-") as tmp:
-        index = hs.fetch_store(fetch.binary, tmp, hs.STORE_URL)
+        index, url = hs.fetch_store_any(fetch.binary, tmp, hs.store_urls())   # the branch's asset, else main's
+        index = dict(index, asset=url.rsplit("/", 1)[-1])
         return _copy_hail(Path(tmp), out, index, addresses)
 
 
@@ -737,6 +744,9 @@ def join_block_unavailable(jn, problem: str) -> dict:
         "partial": {}, "zone_names": {}, "types": {}, "cover": "", "shapes": {}, "montana_time": []}}
     block = join_block(jn, fake, False)
     block.update({"state": "unavailable", "problem": problem})
+    # a words entry that quotes a technical code (B5's zone-edition reason, "HTTP 404 ...") stays out of the unavailable block:
+    # the pages say a failed download in plain words (main's rule); a loaded build still carries every word
+    block["words"] = {k: v for k, v in block["words"].items() if "HTTP" not in str(v)}
     return block
 
 

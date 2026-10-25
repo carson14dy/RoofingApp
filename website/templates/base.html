@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="600">
 <title>{% block title %}Montana Hail Watch{% endblock %}</title>
-<meta name="description" content="Official NWS warnings, a live radar and forecast map, roofing forecasts and storm reports for Montana, updated every 10 minutes.">
+<meta name="description" content="Official NWS warnings, a live radar and forecast map, roofing forecasts and storm reports for Montana, updated on a schedule set to every 10 minutes.">
 <link rel="icon" href="{{ root }}static/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{{ root }}static/icon-180.png">
 <link rel="stylesheet" href="{{ root }}static/fonts/fonts.css">
@@ -31,7 +31,7 @@
   </div>
 </header>
 <div class="wrap freshness" id="freshness">
-  <p>Updated <time datetime="{{ built.isoformat() }}">{{ built|when }}</time> · rebuilt every 10 minutes<span id="age"></span></p>
+  <p>Updated <time datetime="{{ built.isoformat() }}">{{ built|when }}</time> · rebuilt on a schedule set to every 10 minutes<span id="age"></span></p>
   {% set good = status.values()|selectattr('ok')|map(attribute='label')|list %}
   {% set bad = status.values()|rejectattr('ok')|list %}
   <p class="sources">{% if good %}Loaded: {{ good|join(', ') }}.{% endif %}
@@ -46,7 +46,7 @@
 </footer>
 <script>
 /* Page-age check. Browser-only: it needs the viewer's clock (AGENTS.md rule 4).
-   The site is rebuilt about every 10 minutes. If this copy is older than 25 minutes,
+   The site is rebuilt on a schedule set to every 10 minutes, which GitHub does not always keep. If this copy is older than 25 minutes,
    say so in words so nobody relies on an old warning list. */
 (function () {
   var built = Number(document.body.getAttribute("data-built"));

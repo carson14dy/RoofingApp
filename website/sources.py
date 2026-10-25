@@ -53,7 +53,7 @@ CONTRACTS = {
         "name": "NWS alerts",
         "request": "api.weather.gov/alerts/active?area=MT, and ?point=lat,lon for each town",
         "units": "Times in ISO 8601 with an offset, shown in Montana time. Area as an outline, or none.",
-        "timing": "Fetched at every build (about every 10 minutes).",
+        "timing": "Fetched at every build (a schedule set to every 10 minutes; each page says when it was built).",
         "missing": "No readable list means the check failed: the last verified list stays up with its time. "
                    "An alert without an outline is listed with a note. Test messages and updates that a later message has changed are left out.",
     },
@@ -200,7 +200,8 @@ CONTRACTS = {
         "name": "NOAA MRMS MESH, five-year hail history (radar estimates)",
         "request": "NOAA Open Data on AWS (noaa-mrms-pds), MESH_Max_1440min_00.50, the 12:00 UTC file of each SPC day "
                    "(the file stamped the day after). A daily job turns the trailing 1,826 SPC days into one store on "
-                   "GitHub Releases, and each build copies that store to this site. Where the NOAA copy and Iowa "
+                   "GitHub Releases, named after the branch whose job built it (main's is hail-store-main.tar.gz), and each "
+                   "build copies its own branch's store to this site, or main's when the branch has none. Where the NOAA copy and Iowa "
                    "State's archive copy of a file differ in size, the day is rebuilt as the maximum of its two-minute "
                    "frames. Where Iowa State's copy does not answer, the NOAA copy is used alone and the store's index "
                    "counts those days as skipped.",
@@ -212,7 +213,10 @@ CONTRACTS = {
         "timing": "A day runs from 12:00 UTC to 12:00 UTC the next day: 6 am to 6 am Mountain daylight time, 5 am to "
                   "5 am in winter (the SPC reporting day). The day is held by the file stamped the day after at "
                   "12:00 UTC, posted about 12:08 UTC. The newest day is added by a job that starts at 12:43 UTC and "
-                  "shows here on the next rebuild, usually within the hour. Each page shows the store's as-of date.",
+                  "shows here on the next rebuild. Each page shows the store's as-of date. A branch build "
+                  "waits for its branch's latest store job before it reads the store (main does not wait). A store whose "
+                  "last day is more than three days old is a failed source: the pages keep it with the stale line, and a "
+                  "branch preview is marked as failed.",
         "missing": "-1 (missing) and -3 (no radar coverage) are never stored. A cell with no stored value on a day is no radar "
                    "estimate, and it never means that hail did not fall. A day with no file, or a file that does not pass "
                    "its check, is listed on the page and not counted, and it stays missing. An estimate is not a measurement "

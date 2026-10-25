@@ -8,7 +8,7 @@ Montana Hail Watch (D26), weather for a Montana roofing company (owner: Carson, 
 **The product is a website (D27):** official NWS alerts, an interactive radar, forecast and warning
 map in the style of Apple Weather (D28), a 12-hour card and a 24-hour/7-day page per town, and SPC
 storm reports. Python builds it into static pages;
-GitHub Actions rebuilds it every 10 minutes from `main` and publishes it with GitHub Pages, so
+GitHub Actions is asked to rebuild it every 10 minutes from `main` (and builds on every push to `main`) and publishes it with GitHub Pages, so
 **anything merged to `main` is live within about 10 minutes**.
 The earlier desktop app (`payload/`, `desktop/`) is **parked**: unchanged and still tested, not
 shipped. Its rules below (1–3) apply only if work on it resumes.

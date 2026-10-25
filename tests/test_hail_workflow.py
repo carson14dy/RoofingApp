@@ -253,8 +253,9 @@ class HailStoreJobTests(unittest.TestCase):
         self.assertIn("steps.climate_restore.outputs.restored", update.attr("if"))
 
     def test_the_store_asset_keeps_the_name_the_site_build_reads(self):
-        self.assertTrue(h.STORE_URL.endswith("/hail-store/hail-store.tar.gz"), h.STORE_URL)
-        self.assertIn("gh release upload hail-store hail-store.tar.gz --clobber", self.text)
+        # D59 (main's scheme): the job publishes the branch-named asset, and main's is the default the site reads
+        self.assertTrue(h.STORE_URL.endswith("/hail-store/hail-store-main.tar.gz"), h.STORE_URL)
+        self.assertIn('gh release upload hail-store "$ASSET.new" --clobber', self.text)
 
     def test_the_plan_job_decides_the_first_of_the_month_or_the_monthly_input(self):
         plan = {s.name: s for s in self.plan_steps}
