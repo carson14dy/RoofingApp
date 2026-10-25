@@ -1340,3 +1340,20 @@ the stale sentence) is fixed by the supervisor (the required sentence is scanned
   "(not published (HTTP 404))" is main's live text (D52) and stays. (e) After the docs pass: one final fixer round
   (words-4 for (c); the docs check's leftovers if any), then the supervisor runs the full suite and the self-test,
   squashes onto main's head, pushes, reads the branch run and opens the pull request.
+
+## Supervisor rulings on the docs review's cross-owner findings (2026-10-25 02:45 UTC; D98)
+The docs reviewer (round under /home/user/hail-b5/out/b2r8-docs/) found 20 findings; its skeptics are judging them and its
+fixer takes the docs-owned ones. Four belong to other owners and are ruled now:
+- D98 **Cross-owner calls from the docs review.** (a) The map banner's hail history heading follows the problem (F11): a
+  stale store heads "Hail history is older than three days" and the sentence after it says what loaded and the as-of
+  date; a failed download heads "Hail history didn't load"; Python supplies the heading word per state (hail.py's status
+  words or build.py's problems entry) and map.html prints it, never a heading that contradicts its sentence; the
+  site-final fixer owns map.html line 65 for this item. (b) summary.py's WORDS_SUMMARY zone_flag sentence ("Montana: {n}
+  {noun} issued {when} could not be placed to a zone") ends with "This is not an all-clear." like the unplaced-zone note
+  (D41; F19); tests follow. (c) Test comments carry no measured sizes (D87(h); F10): tests/test_hail.py near line 786 and
+  the tests/test_joins.py comments the reviewer names cite the budget constant and b5-verification.json instead.
+  (d) The smoke's local runs use the D94(c) clock (--now within three days of the store's as-of), and the stale banner's
+  layout at 390 px (it moves the legend over the map centre; F20) is a ROADMAP follow-up: a fresh branch job never shows
+  a stale store on the preview. (e) The docs pass continues through its skeptics, fixer and check; a final-a round
+  (products-final for (c), site-final for (a) and (b)) runs now on disjoint files; words-4 (D97(c)) follows the docs pass
+  because it edits about.html; then the supervisor's final suite and self-test.
