@@ -1,0 +1,129 @@
+RISK LAYER SOURCES: EVIDENCE LOG (label risk-sources)
+Checked 2026-10-25 UTC from this session. Read only on the combined hail store (/home/user/hail-b5/out/combined/store)
+and on the repo at /home/user/wt/wt-b5 (the hail-b5 branch of wt-b5). Downloads were small, measured, and deleted.
+Scripts kept in /home/user/hail-b5/out/ref/risk-sources/scripts/. Small saved pages are in .../dl/pages/.
+A report .md file was not written because the agent instructions forbid report .md files; this log is plain text.
+
+== 1. Commands (main ones) ==
+python3 -I scripts/store_stats.py /home/user/hail-b5/out/combined/store      (radar and climate counts)
+python3 -I scripts/zone_stats.py /home/user/hail-b5/out/combined/store       (zone product counts)
+python3 -I scripts/climate_check.py /home/user/hail-b5/out/combined/store    (90 F counts at town cells)
+python3 -I scripts/render_test.py <store> <png>                             (hail palette PNG size test; file deleted)
+python3 -I (inline)                                                          (joins warnings counts, station day counts)
+curl -sS -G https://www.ncei.noaa.gov/access/services/data/v1 --data dataset=daily-summaries&stations=USW00024033&startDate=2021-07-01&endDate=2022-06-30&dataTypes=TMAX,TMIN&units=standard&format=csv   (Billings airport)
+curl -sS https://www.ncei.noaa.gov/data/normals-daily/1991-2020/access/USW00024033.csv   (668,404 bytes; 293 columns; 366 rows)
+curl -sSI https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-202506-grd-scaled.nc   (Content-Length 56872702; ETag ac926d8900eaa5f6a3e9e1959bc25abd; Last-Modified Wed, 22 Jul 2026 13:22:40 GMT)
+curl -sS -r 0-1048575 (same URL)                                             (first 1 MB read: HDF5 signature and global attributes)
+curl -sS -G https://mesonet.agron.iastate.edu/cgi-bin/request/daily.py --data network=MT_ASOS&stations=BIL&year1=2024&month1=1&day1=1&year2=2024&month2=12&day2=31&var=max_wind_gust_kts&format=comma   (11,171 bytes; 366 rows)
+curl -sS -G https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py --data ...&phenomena[]=HW&significance[]=W&limitps=1&accept=csv   (89,635 bytes; 491 rows; window 2023-12-01 to 2025-01-31)
+curl -sS -G https://mesonet.agron.iastate.edu/cgi-bin/request/gis/watchwarn.py --data ...&phenomena[]=FL&significance[]=W&limitps=1&accept=shapefile   (4,108 bytes zip; 4 records; window 2025-12-01 to 2026-01-31)
+curl -sS -H "User-Agent: ..." "https://api.weather.gov/alerts/active?area=MT&event=Flood%20Warning,Flood%20Watch,Flash%20Flood%20Warning"   (220 bytes; 0 features; updated 2026-10-25T16:12:05+00:00)
+curl -sS "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer?f=json"   (layers list; layer 28 = Flood Hazard Zones)
+curl -sS -G .../NFHL/MapServer/28/query  bbox -116.1,44.3,-103.9,49.1  returnCountOnly=true   (count 31335)
+curl -sS -G .../NFHL/MapServer/28/query  resultRecordCount=200 f=geojson   (8,338,020 bytes)
+curl -sS "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0/query" bbox count (5); fields and dates
+curl -sS -G .../InterAgencyFirePerimeterHistory_All_Years_View/FeatureServer/0/query bbox returnCountOnly (6879); resultRecordCount=200 (3,017,161 bytes)
+curl -sS https://www.arcgis.com/sharing/rest/content/items/d1c32af3212341869b3c810f1a215824?f=json   (item licence text)
+curl -sSI https://edcintl.cr.usgs.gov/downloads/sciweb1/shared/MTBS_Fire/data/composite_data/burned_area_extent_shapefile/mtbs_perimeter_data.zip   (Content-Length 389925218; Last-Modified Sun, 25 Oct 2026 05:08:44 GMT)
+curl -sS -r -131072 (same URL) + range reads of the member headers; metadata XML (8,605 compressed bytes, deflate) and DBF header (record count 30932)
+curl -sSL https://www.fs.usda.gov/rds/archive/catalog/RDS-2015-0047-4   (Data zip 351.36 MB; Supplements zip 26.13 MB)
+curl -sS -o hms_smoke20261024.zip https://satepsanone.nesdis.noaa.gov/pub/FIRE/web/HMS/Smoke_Polygons/Shapefile/2026/10/hms_smoke20261024.zip   (48,596 bytes; 116 polygons)
+curl -sS https://api.water.noaa.gov/nwps/v1/gauges?srid=EPSG_4326&bbox.xmin=-117.0&bbox.ymin=44.0&bbox.xmax=-103.5&bbox.ymax=49.5   (486 gauges; 277 with state MT)
+curl -sS https://api.water.noaa.gov/nwps/v1/gauges/<LID>   (checked for all 277 MT gauges: flood categories 277; inundation enabled 1, CFMM8)
+curl -sS https://mapservices.weather.noaa.gov/static/rest/services/NWS_FIM/FIM_cfmm8/MapServer?f=json   (copyrightText "Source: National Weather Service")
+curl -sS "https://mesonet.agron.iastate.edu/api/1/nws/ugcs.geojson?state=MT&valid=2026-10-25T00:00Z"   (475,411 bytes; 139 features; 83 MTZ)
+curl -sS https://www.purpleair.com/... , https://api.purpleair.com/ , https://docs.airnowapi.org/ , https://files.airnowtech.org/airnow/today/ (see section 4)
+
+== 2. Verbatim quotes (source, how checked) ==
+Q1 IEM disclaimer. Source https://mesonet.agron.iastate.edu/disclaimer.php (HTTP 200, 31,469 bytes; text search).
+   "The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose. Attributing the Iowa Environmental Mesonet of Iowa State University would be appreciated."
+   "We therefore provide this information without any warranty of accuracy."
+Q2 NWS disclaimer. Source https://www.weather.gov/disclaimer (HTTP 200, 41,679 bytes; text search).
+   "The information on National Weather Service (NWS) Web pages are in the public domain, unless specifically noted otherwise, and may be used without charge for any lawful purpose so long as you do not: 1) claim it is your own (e.g., by claiming copyright for NWS information [...]), 2) use it in a manner that implies an endorsement or affiliation with NOAA/NWS, or 3) modify its content and then present it as official government material."
+Q3 NODD registry for nClimGrid. Source https://registry.opendata.aws/noaa-nclimgrid/ (HTTP 200, 12,439 bytes; text search).
+   "NOAA data disseminated through NODD are open to the public and can be used as desired."
+   "NOAA requests attribution for the use or dissemination of unaltered NOAA data."
+   Registry field: "Update Frequency Monthly".
+Q4 nClimGrid file header (1 MB range of https://noaa-nclimgrid-daily-pds.s3.amazonaws.com/access/grids/2025/ncdd-202506-grd-scaled.nc; HDF5 signature present).
+   Global attribute "license" = "no restrictions"; creator_name "NOAA National Centers for Environmental Information (NCEI)"; summary "This file is part of NCEI's nClimGrid-Daily product and contains one month of daily gridded fields of daily maximum, minimum, and average temperatures as well as 24-hour precipitation".
+Q5 NIFC item WFIGS Current Interagency Fire Perimeters (https://www.arcgis.com/sharing/rest/content/items/d1c32af3212341869b3c810f1a215824?f=json; access "public"; owner NIFC_Authoritative).
+   "The National Interagency Fire Center shall not be held liable for improper or incorrect use of the data described and/or contained herein."
+   "The National Fire Center gives no warranty, expressed or implied, as to the accuracy, reliability, or completeness of these data."
+   The licence field carries disclaimer text only. No licence grant and no "public domain" words were found.
+   Service description: "Fall-off rules are used to ensure that stale records are not retained."
+Q6 MTBS metadata inside mtbs_perimeter_data.zip (member mtbs_perims_DD_metadata.xml; pubdate 20261025).
+   Title: "Monitoring Trends in Burn Severity Burned Areas Boundaries for 1984-2026"
+   accconst: "None"
+   useconst: "There are no restrictions on use, except for reasonable and proper acknowledgement of information sources."
+   Threshold: "All fires reported as greater than 1,000 acres in the western U.S. and greater than 500 acres in the eastern U.S. are mapped across all ownerships."
+Q7 RDS WHP catalog RDS-2015-0047-4, https://www.fs.usda.gov/rds/archive/catalog/RDS-2015-0047-4 (text search).
+   "Wildfire Hazard Potential for the United States (270-m), version 2023 (4th Edition). Updated 17 July 2024."
+   "These data were collected using funding from the U.S. Government and can be used without additional permissions or fees."
+   RDS-2015-0047-2 page: "This page describes an out-of-date version of the publication."
+Q8 NOAA HMS OSPO page, https://www.ospo.noaa.gov/products/land/hms.html (HTTP 200, 352,468 bytes; text search).
+   "Analysis for day 10/25/2026 last updated Oct 25, 2026 15:48:06 GMT"
+   "Disclaimer : The location of the fires displayed may be slightly offset from the actual fire location due to satellite resolution."
+   No reuse, copyright or public domain statement on the page.
+Q9 AirNow API docs, https://docs.airnowapi.org/ (HTTP 200; text search).
+   "Access to the AirNow API is available to the public, and new accounts can be acquired via the Log In page."
+   Keyless request https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude=46.87&longitude=-113.99&distance=50 returned HTTP 401: {"WebServiceError":[{"Message":"Request not authenticated."}]}
+Q10 Repo: FEMA reason. /home/user/wt/wt-b5/docs/DECISIONS.md line 921, inside the D38 entry that starts at line 902 (the hail-b5 branch of wt-b5; the RoofingApp main checkout has no D38):
+   "*Left out, and why.* FEMA flood zones: a hazard and insurance designation, not a weather event (AGENTS rule 5); the owner and counsel first."
+Q11 Repo: counsel item for FEMA. DECISIONS.md line 941: "the disclaimer and flood-zone wording before any flood layer (12, FEMA NFHL, not read)".
+Q12 Repo: AGENTS.md rule 5 (wt-b5 and RoofingApp are the same text): "Never state confirmed damage, insurance eligibility or a damage probability. No report is not 'no hail.' Missing inputs show 'Data unavailable,' never an all-clear."
+Q13 Repo: website/hail.py docstring: "The history is a radar estimate, not a measurement and not an inspection." and "A cell with no stored value on a day is 'no estimate', never 'no hail'." The words "never say damage, dry, clear, insurance, eligible or confirmed".
+Q14 Repo: website/climate.py docstring: "Every value is a grid estimate about 4.6 km across, not a reading at the address." Kind word on every row: "Grid estimate".
+Q15 Repo: website/sources.py, asos_daily_gusts: "Days with a maximum gust of 50 knots (58 mph) or more are listed." and "A station reading is at the airport, not at this address."
+Q16 Repo: website/sources.py, nws_zone_products units: "No measurement is given: the product covered the whole zone."
+
+== 3. Store facts (read only, counted by the scripts above) ==
+Radar (hail/t/, format hail-store-v1, MESH in tenths of a mm, stored only at 0.25 in = 64 tenths or more):
+  window 2021-10-17 to 2026-10-16 (1,826 SPC days; 1,825 present; missing 2022-06-08); as_of 2026-10-16.
+  Montana state cells 450,765; cells with a stored value 428,843; stored (cell, day) values 2,638,537; shards 4,597 (index bytes 32,022,304; du 40 MB).
+  Cells with 1+ day at 1 in (254 tenths) or more: 144,522. With 3+ days: 13,765. Max days in one cell: 20.
+  Largest stored value: 5.21 in. Cells whose largest stored value is 2.00 in or more: 13,786; 1.00 to 1.99 in: 130,736.
+Climate (hail/c/, nClimGrid-Daily, 13-number period records; index 9 = days at or above 90 F):
+  25,902 land cells (4,569 tile files). Five seasons (July to June, 2021-22 to 2025-26): min 0, p25 27, median 103, p75 148, p90 174, max 253 (cell near 45.52 N, 105.31 W).
+  Town cells (five seasons): Billings 196, Glasgow 173, Missoula 156, Kalispell 107.
+  Check against station USW00024033 (Billings airport), 2021-07-01 to 2022-06-30: TMAX of 90 F or more on 45 days. Grid cell nearest Billings, season 2021-22: 47 days.
+  Station check, min at or below 0 F: 18 days (station) against 23 (grid, season 2021-22).
+Zones (hail/z/, 135 files: 103 public zone files MT*, 32 fire weather zone files fi*; 16,599 events):
+  WW.Y 6,234; HW.W 2,544; HW.A 2,010; WS.W 1,384; WS.A 1,307; HT.Y 737; FW.W 660; FA.A 514; WI.Y 427; WC.W 273; EC.W 156; BZ.W 134; FF.A 49; FR.Y 45; EH.W 45; EH.A 42; DU.Y 18; FZ.W 15; IS.W 5.
+  No FL (flood warning) zone rows: FL.W is a polygon product in the joins.
+  Zones with the most HW events (both significance): MTZ303 Eastern Glacier, Western Toole, and Central Pondera (183); MTZ302 Northern High Plains (165); MTZ301 East Glacier Park Region (144); MTZ308 Southern High Plains (140).
+  Zones with the most WI.Y events: MTZ065 Livingston Area (128); MTZ066 Beartooth Foothills (125).
+  Zones with 1+ FA.A (flood watch): 99. Top: MTZ026 Prairie (11), MTZ138 (10), MTZ027 (10), MTZ025 (10).
+Joins (hail/j/events.json, "warnings": 3,156 rows): SV.W 2,240; FA.Y 548; FF.W 148; SQ.W 78; FL.W 43; FA.W 37; FL.A 35; TO.W 17; FL.Y 10.
+  Store lags (index joins block): warnings 2026-09-19; swdi 2026-09-28; ncei 2026-06-29.
+Stations (hail/s/, format hail-station-v3, 60 files): 1,261 station days, all listed at 50 knots or more. Row order [day, mph, knots, flag] (61 mph = 53.0 kt).
+Heat check of the hail/c/ period: see the climate counts above.
+
+== 4. Live content checks ==
+IEM zone rows HW.W, 2023-12-01 to 2025-01-31, Montana: 491 rows (MTZ zone codes; gtype C). Sample: TFX office, product HW, significance W, status CAN.
+IEM daily BIL 2024: 366 rows, fractional knots (for example 20.85543), 10 days at 50 kt or more, maximum 66.0422 kt on 2024-08-06.
+IEM FL.W polygon records 2025-12-01 to 2026-01-31: 4 rows (office MSO; GTYPE P and C; significance W).
+NWS active alerts for Montana right now (flood warning, flood watch, flash flood warning): 0 features at 2026-10-25T16:12:05Z.
+NFHL layer 28 Flood Hazard Zones: 31,335 polygons intersecting the Montana box. Sample attributes FLD_ZONE "D", SFHA_TF "F" (near -111.0, 46.9). Full-precision GeoJSON for 200 features: 8,338,020 bytes (41.7 KB each); extrapolated size of the whole box about 1.3 GB (rough). Service copyrightText and description are empty.
+NIFC current perimeters, Montana box: 5 polygons. Newest DateCurrent 2026-10-21 22:25 UTC (Bras, 1,688 acres). Others: Sand Creek 35,520 acres (2026-09-14), Nature Grove 1,422 (2026-09-09), Moose 6,005 (2026-09-06), Deer Creek 1,099 (2026-08-28).
+NIFC historic perimeters (InterAgencyFirePerimeterHistory_All_Years_View), Montana box: 6,879 polygons; FIRE_YEAR_INT from 1915 on. 200-feature sample 3,017,161 bytes (15.1 KB each); extrapolated about 104 MB (rough).
+MTBS national perimeter zip: 389,925,218 bytes; members mtbs_perims_DD.shp (616,598,824 bytes uncompressed), .dbf (43,336,470), .shx, .prj, .cpg, metadata XML. DBF header record count 30,932 (national, 1984 to 2026). Montana portion not extracted.
+RDS WHP 2023 (4th edition): RDS-2015-0047-4_Data.zip 351.36 MB; Supplements 26.13 MB. National raster, 270 m. Montana portion not extracted.
+NWS FIM (inundation) for CFMM8 Flathead River at Columbia Falls: enabled; FIM MapServer live; depth layers from 2993.5 to 3000.5 (NAVD88 datum 2981.54 zero datum). Only inundation-enabled Montana gauge among 277.
+NWPS gauges: 277 Montana gauges, all with flood categories (action, minor, moderate, major stage). Sample ABOM8 Clark Fork River above Missoula: observed 2.97 ft, floodCategory "no_flooding" at 2026-10-25T15:00Z; its inundation field: enabled false.
+IEM ugcs for Montana, valid 2026-10-25: 139 features; 83 MTZ public zones (the store's zone files span 103 MT names over several zone editions).
+HMS sample 2026-10-24: hms_smoke20261024.zip 48,596 bytes; .shp 69,460 bytes; .dbf 6,194 bytes; fields Satellite (C20), Start (C12), End (C12), Density (C7); 116 polygons: Light 69, Medium 35, Heavy 12. Folder listing shows daily zips through hms_smoke20261025.zip.
+nClimGrid 2025-06 scaled monthly file: 56,872,702 bytes (national grid, 1/24 degree, 596 x 1385 cells).
+NCEI 1991-2020 daily normals, Billings (USW00024033): columns include DLY-TMAX-NORMAL and DLY-TMAX-STDDEV. No TMAX percentile column (no 90 F exceedance column) in the file.
+Test images (deleted after measuring): hail palette PNG 1,220 x 480 px, 42,073 bytes (Montana box, 0.01 degree grid, four classes); heat PNG 288 x 111 px, 6,415 bytes (1/24 degree, five seasons, 25-day bands).
+
+== 5. Blocked or not read ==
+FEMA disclaimer https://www.fema.gov/about/reports-and-data/disclaimer: HTTP 403 (a content delivery network block page) to curl; HTTP 404 to the fetch tool.
+FEMA https://www.fema.gov/disclaimer: HTTP 404 to the fetch tool. https://www.fema.gov/national-flood-hazard-layer-nfhl: HTTP 403 to curl. https://msc.fema.gov/portal/home: an 863-byte shell.
+   A web search gave no FEMA-authored reuse statement. Its "public domain" remark was the search summary's own background, not a source.
+USGS https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits: HTTP 403 (block page). USGS FIM https://water.usgs.gov/osw/flood_inundation/: HTTP 403. No Montana USGS inundation site was identified.
+PurpleAir https://www.purpleair.com/policies/terms-of-service and the www2 alias: the fetch tool returned a heading only; curl returned a 77-character shell. https://api.purpleair.com/ and https://www.purpleair.com/api: client-side shells (64 and 1,961 text characters). PurpleAir terms: not read.
+EPA https://www.epa.gov/web-policies-and-procedures/copyright-notices: HTTP 404. AirNow about page https://www.airnow.gov/about-airnow/: no reuse terms (fetch tool). The AirNow file listing https://files.airnowtech.org/airnow/today/ returned an empty body.
+NOAA HMS: no reuse statement on the OSPO page. https://www.noaa.gov/disclaimer (curl, 49,564 bytes) has no "domain" text. A web search found no NOAA-authored public domain statement for the smoke polygons.
+Wildfire Risk to Communities methods page https://wildfirerisk.org/about/methods/: no "Hazard Potential" text (the WHP raster is named on the Research Data Archive, not here). WRC download index workbook wrc_download_20260415.xlsx (4,968,274 bytes): statistics only, no raster link. Legacy WHP ArcGIS image service https://apps.fs.usda.gov/fsgisx01/rest/services/RDW_Wildfire/RMRS_WRC_WildfireHazardPotential/ImageServer: an error page saying the service moved (HTTP 403).
+MTBS direct download https://www.mtbs.gov/direct-download: notice that the tool moved to https://burnseverity.cr.usgs.gov/ and that "The website will be offline from Wednesday the 28th of October 2026 at 8:00 PM for maintenance." The burnseverity page itself is client-rendered (954 text characters); no terms text.
+IEM pages https://mesonet.agron.iastate.edu/info/datause.shtml and /info/faq.shtml: HTTP 404.

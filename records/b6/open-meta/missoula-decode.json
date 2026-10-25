@@ -1,0 +1,13853 @@
+{
+ "archive": "dl-missoula-full/missoula-z0-15.pmtiles",
+ "header_min_zoom": 0,
+ "header_max_zoom": 15,
+ "tiles_present_by_zoom": {
+  "0": 1,
+  "1": 1,
+  "2": 1,
+  "3": 1,
+  "4": 1,
+  "5": 1,
+  "6": 1,
+  "7": 1,
+  "8": 1,
+  "9": 1,
+  "10": 2,
+  "11": 2,
+  "12": 6,
+  "13": 20,
+  "14": 63,
+  "15": 238
+ },
+ "pois_in_core_z15_by_kind": {
+  "crossing": 7890,
+  "tree": 901,
+  "bus_stop": 394,
+  "turning_circle": 371,
+  "switch": 122,
+  "traffic_signals": 112,
+  "park": 90,
+  "bench": 87,
+  "restaurant": 83,
+  "residential": 74,
+  "level_crossing": 74,
+  "place_of_worship": 62,
+  "fast_food": 52,
+  "stop": 49,
+  "mini_roundabout": 45,
+  "bicycle_parking": 43,
+  "waste_basket": 36,
+  "drinking_water": 35,
+  "bank": 35,
+  "fuel": 35,
+  "school": 34,
+  "cafe": 34,
+  "car_repair": 29,
+  "hotel": 26,
+  "clothes": 26,
+  "street_lamp": 21,
+  "clinic": 21,
+  "beauty": 21,
+  "bar": 21,
+  "car": 20,
+  "casino": 20,
+  "give_way": 20,
+  "motel": 19,
+  "hairdresser": 19,
+  "convenience": 19,
+  "supermarket": 17,
+  "dentist": 17,
+  "trailhead": 17,
+  "fitness_centre": 16,
+  "social_facility": 15,
+  "garden": 15,
+  "turning_loop": 14,
+  "commercial": 14,
+  "pitch": 14,
+  "holding_position": 12,
+  "furniture": 12,
+  "retail": 12,
+  "car_parts": 12,
+  "mobile_phone": 11,
+  "car_wash": 10,
+  "building": 10,
+  "motorway_junction": 10,
+  "signal": 10,
+  "veterinary": 9,
+  "parking": 9,
+  "outdoor": 9,
+  "doityourself": 9,
+  "pub": 9,
+  "museum": 8,
+  "fishing": 8,
+  "pawnbroker": 8,
+  "cannabis": 8,
+  "studio": 8,
+  "peak": 8,
+  "storage_rental": 7,
+  "playground": 7,
+  "childcare": 7,
+  "recreation_ground": 7,
+  "loading_dock": 7,
+  "tyres": 7,
+  "sports_centre": 7,
+  "sports": 7,
+  "farm": 6,
+  "fire_station": 6,
+  "farmland": 6,
+  "attraction": 6,
+  "letter_box": 6,
+  "picnic_table": 6,
+  "dog_park": 6,
+  "pharmacy": 6,
+  "information": 6,
+  "plumber": 6,
+  "gift": 6,
+  "second_hand": 6,
+  "memorial": 6,
+  "gallery": 6,
+  "construction": 5,
+  "toilets": 5,
+  "golf_course": 5,
+  "department_store": 5,
+  "bakery": 5,
+  "signmaker": 5,
+  "tattoo": 5,
+  "stationery": 5,
+  "police": 5,
+  "massage": 5,
+  "bicycle": 5,
+  "bicycle_repair_station": 5,
+  "post_box": 5,
+  "bathing_place": 5,
+  "kindergarten": 4,
+  "shelter": 4,
+  "waste_disposal": 4,
+  "cemetery": 4,
+  "bed": 4,
+  "ice_cream": 4,
+  "shoes": 4,
+  "alcohol": 4,
+  "vending_machine": 4,
+  "paint": 4,
+  "coffee": 4,
+  "butcher": 4,
+  "farmyard": 4,
+  "rental": 4,
+  "social_centre": 4,
+  "copyshop": 4,
+  "brewery": 4,
+  "yes": 4,
+  "post_office": 4,
+  "deli": 4,
+  "theatre": 4,
+  "sewing": 4,
+  "photographer": 4,
+  "artwork": 4,
+  "religious": 4,
+  "laundry": 4,
+  "water": 3,
+  "quarry": 3,
+  "caravan": 3,
+  "flooring": 3,
+  "wholesale": 3,
+  "floorer": 3,
+  "weapons": 3,
+  "hardware": 3,
+  "university": 3,
+  "pet": 3,
+  "jewelry": 3,
+  "cinema": 3,
+  "chemist": 3,
+  "monument": 3,
+  "charging_station": 3,
+  "hvac": 3,
+  "optician": 3,
+  "books": 3,
+  "craft": 3,
+  "medical_supply": 3,
+  "variety_store": 3,
+  "dojo": 3,
+  "grass": 3,
+  "collector": 3,
+  "music": 3,
+  "atm": 3,
+  "art": 3,
+  "viewpoint": 3,
+  "census": 2,
+  "military": 2,
+  "forest": 2,
+  "heliport": 2,
+  "helipad": 2,
+  "caravan_site": 2,
+  "pastry": 2,
+  "garden_centre": 2,
+  "allotments": 2,
+  "plant_nursery": 2,
+  "marketplace": 2,
+  "hospital": 2,
+  "nursing_home": 2,
+  "window_construction": 2,
+  "doctors": 2,
+  "dance": 2,
+  "car_rental": 2,
+  "electronics": 2,
+  "electronics_repair": 2,
+  "prep_school": 2,
+  "nutrition_supplements": 2,
+  "parking_space": 2,
+  "apartment": 2,
+  "sawmill": 2,
+  "tailor": 2,
+  "community_centre": 2,
+  "e-cigarette": 2,
+  "ice_rink": 2,
+  "pedestrian": 2,
+  "vacuum_cleaner": 2,
+  "glaziery": 2,
+  "water_park": 2,
+  "stadium": 2,
+  "arts_centre": 2,
+  "herbalist": 2,
+  "money_lender": 2,
+  "bureau_de_change": 2,
+  "dry_cleaning": 2,
+  "caterer": 2,
+  "antiques": 2,
+  "fabric": 2,
+  "parking_entrance": 2,
+  "tobacco": 2,
+  "library": 2,
+  "windsock": 2,
+  "beach": 2,
+  "orchard": 1,
+  "roofer": 1,
+  "appliance": 1,
+  "agrarian": 1,
+  "wood": 1,
+  "boat_storage": 1,
+  "camp_pitch": 1,
+  "payment_terminal": 1,
+  "industrial": 1,
+  "charity": 1,
+  "window_blind": 1,
+  "lighting": 1,
+  "electrician": 1,
+  "metal_construction": 1,
+  "swimming_pool": 1,
+  "games": 1,
+  "trade": 1,
+  "motorcycle": 1,
+  "fireplace": 1,
+  "conference_centre": 1,
+  "beverages": 1,
+  "stonemason": 1,
+  "prison": 1,
+  "recycling": 1,
+  "party": 1,
+  "mall": 1,
+  "buffer_stop": 1,
+  "video_games": 1,
+  "kitchen": 1,
+  "stripclub": 1,
+  "houseware": 1,
+  "erotic": 1,
+  "interior_decoration": 1,
+  "funeral_directors": 1,
+  "electrical": 1,
+  "frame": 1,
+  "bowling_alley": 1,
+  "money_transfer": 1,
+  "cleaning": 1,
+  "derail": 1,
+  "video": 1,
+  "hearing_aids": 1,
+  "music_school": 1,
+  "travel_agency": 1,
+  "hills": 1,
+  "landfill": 1,
+  "hifi": 1,
+  "slipway": 1,
+  "animal_shelter": 1,
+  "zoo": 1,
+  "hairdresser_supply": 1,
+  "snack": 1,
+  "animal_boarding": 1,
+  "leather": 1,
+  "silo": 1,
+  "administrative": 1,
+  "bus_station": 1,
+  "courthouse": 1,
+  "townhall": 1,
+  "carousel": 1,
+  "outdoor_seating": 1,
+  "carpet": 1,
+  "camera": 1,
+  "cosmetics": 1,
+  "toys": 1,
+  "tree_stump": 1,
+  "station_site": 1,
+  "baby_goods": 1,
+  "florist": 1,
+  "track": 1,
+  "vacant": 1,
+  "pet_grooming": 1,
+  "hostel": 1,
+  "guest_house": 1,
+  "tea": 1,
+  "dressmaker": 1,
+  "locomotive": 1,
+  "events_venue": 1,
+  "stone": 1,
+  "public_bookcase": 1,
+  "bird_hide": 1,
+  "college": 1,
+  "winery": 1,
+  "wine": 1,
+  "nature_reserve": 1,
+  "disc_golf_course": 1
+ },
+ "all_named_pois_z15": [
+  [
+   "1889 Steakhouse",
+   "restaurant",
+   "steak_house",
+   -113.99491,
+   46.87266
+  ],
+  [
+   "23rd Ave & Cloverdale Dr",
+   "bus_stop",
+   "",
+   -114.03524,
+   46.83515
+  ],
+  [
+   "23rd Ave & Foothills Dr",
+   "bus_stop",
+   "",
+   -114.03531,
+   46.82952
+  ],
+  [
+   "23rd Ave & Garland Dr",
+   "bus_stop",
+   "",
+   -114.03556,
+   46.82584
+  ],
+  [
+   "23rd Ave & Hillside Dr",
+   "bus_stop",
+   "",
+   -114.03533,
+   46.825
+  ],
+  [
+   "23rd Ave & Valley View Dr",
+   "bus_stop",
+   "",
+   -114.03583,
+   46.82748
+  ],
+  [
+   "23rd Ave & Vista Dr",
+   "bus_stop",
+   "",
+   -114.03538,
+   46.8161
+  ],
+  [
+   "23rd at bike/walking path",
+   "bus_stop",
+   "",
+   -114.03525,
+   46.83641
+  ],
+  [
+   "27th Avenue",
+   "residential",
+   "",
+   -114.04478,
+   46.85783
+  ],
+  [
+   "2M Co Inc",
+   "plumber",
+   "",
+   -114.0335,
+   46.89753
+  ],
+  [
+   "2nd St Community Garden",
+   "garden",
+   "",
+   -114.01551,
+   46.87476
+  ],
+  [
+   "3 Rivers Pediatric Dentisty",
+   "dentist",
+   "",
+   -114.01996,
+   46.85144
+  ],
+  [
+   "34th St & Stephens Ave",
+   "bus_stop",
+   "",
+   -114.01299,
+   46.8448
+  ],
+  [
+   "34th St & Stephens Ave",
+   "bus_stop",
+   "",
+   -114.01285,
+   46.84494
+  ],
+  [
+   "34th St at Albertson's",
+   "bus_stop",
+   "",
+   -114.01717,
+   46.83021
+  ],
+  [
+   "34th St at Albertson's",
+   "bus_stop",
+   "",
+   -114.01654,
+   46.83036
+  ],
+  [
+   "34th St at Bancroft Pond",
+   "bus_stop",
+   "",
+   -114.0098,
+   46.8448
+  ],
+  [
+   "34th St at Bancroft Pond",
+   "bus_stop",
+   "",
+   -114.00975,
+   46.84495
+  ],
+  [
+   "36th Avenue Parking",
+   "parking",
+   "",
+   -114.06745,
+   46.85091
+  ],
+  [
+   "36th St & Paxson St",
+   "bus_stop",
+   "",
+   -114.02919,
+   46.83128
+  ],
+  [
+   "39th St & 21st Ave",
+   "bus_stop",
+   "",
+   -114.03092,
+   46.83362
+  ],
+  [
+   "39th St & Arrrowhead Dr",
+   "bus_stop",
+   "",
+   -114.02422,
+   46.8336
+  ],
+  [
+   "39th St & Barbara Ln",
+   "bus_stop",
+   "",
+   -114.03448,
+   46.83366
+  ],
+  [
+   "39th St & Gharrett St",
+   "bus_stop",
+   "",
+   -114.043,
+   46.83398
+  ],
+  [
+   "39th St & Lake Pl",
+   "bus_stop",
+   "",
+   -114.03322,
+   46.83365
+  ],
+  [
+   "39th St & Lux Dr",
+   "bus_stop",
+   "",
+   -114.02521,
+   46.83345
+  ],
+  [
+   "39th St & Paxson St",
+   "bus_stop",
+   "",
+   -114.02867,
+   46.83346
+  ],
+  [
+   "39th St & Pittman Dr",
+   "bus_stop",
+   "",
+   -114.02023,
+   46.83344
+  ],
+  [
+   "39th St & Rainbow Dr",
+   "bus_stop",
+   "",
+   -114.04097,
+   46.83344
+  ],
+  [
+   "39th St & Russell",
+   "bus_stop",
+   "",
+   -114.01505,
+   46.83334
+  ],
+  [
+   "39th St & Thomas Dr",
+   "bus_stop",
+   "",
+   -114.03454,
+   46.83349
+  ],
+  [
+   "39th St & Virginia Dr",
+   "bus_stop",
+   "",
+   -114.02883,
+   46.83361
+  ],
+  [
+   "39th St & Wapikya Dr",
+   "bus_stop",
+   "",
+   -114.02005,
+   46.83359
+  ],
+  [
+   "39th St at Albertson's",
+   "bus_stop",
+   "",
+   -114.01604,
+   46.83328
+  ],
+  [
+   "3B Bagel Company LLC",
+   "restaurant",
+   "bagel;bakery",
+   -113.99352,
+   46.86957
+  ],
+  [
+   "406 Clinic Pharmacy",
+   "pharmacy",
+   "",
+   -114.01585,
+   46.87162
+  ],
+  [
+   "44 Ranch",
+   "residential",
+   "",
+   -114.07043,
+   46.89319
+  ],
+  [
+   "5 Valleys CrossFit",
+   "fitness_centre",
+   "",
+   -114.00861,
+   46.88974
+  ],
+  [
+   "55th St & 23rd Ave",
+   "bus_stop",
+   "",
+   -114.03309,
+   46.81691
+  ],
+  [
+   "55th St & Bridger Ct",
+   "bus_stop",
+   "",
+   -114.04086,
+   46.81799
+  ],
+  [
+   "55th St & Ebb Way",
+   "bus_stop",
+   "",
+   -114.03567,
+   46.81791
+  ],
+  [
+   "710 Montana",
+   "yes",
+   "",
+   -114.01218,
+   46.88008
+  ],
+  [
+   "8th St Pocket Park",
+   "park",
+   "",
+   -114.02634,
+   46.86539
+  ],
+  [
+   "A Carousel for Missoula",
+   "carousel",
+   "",
+   -113.99806,
+   46.8726
+  ],
+  [
+   "A Kreative Touch",
+   "beauty",
+   "",
+   -114.00814,
+   46.8601
+  ],
+  [
+   "A&W",
+   "fast_food",
+   "burger",
+   -114.02926,
+   46.84235
+  ],
+  [
+   "A-1 Vacuum & Janitorial Supply",
+   "cleaning",
+   "",
+   -114.01808,
+   46.85984
+  ],
+  [
+   "AC Hotel Downtown Missoula",
+   "hotel",
+   "",
+   -113.99367,
+   46.87244
+  ],
+  [
+   "AMC Classic Missoula 12",
+   "cinema",
+   "",
+   -114.04343,
+   46.88566
+  ],
+  [
+   "AMC Dine-In Southgate 9",
+   "cinema",
+   "",
+   -114.02835,
+   46.83853
+  ],
+  [
+   "ASUM Garden",
+   "garden",
+   "",
+   -113.99351,
+   46.84081
+  ],
+  [
+   "AT&T",
+   "mobile_phone",
+   "",
+   -114.04107,
+   46.89476
+  ],
+  [
+   "AT&T",
+   "mobile_phone",
+   "",
+   -114.02858,
+   46.84058
+  ],
+  [
+   "AT&T",
+   "mobile_phone",
+   "",
+   -114.03589,
+   46.83029
+  ],
+  [
+   "Aaron's",
+   "furniture",
+   "",
+   -114.03876,
+   46.84375
+  ],
+  [
+   "Access Fitness",
+   "fitness_centre",
+   "",
+   -114.01157,
+   46.84594
+  ],
+  [
+   "Ace Hardware",
+   "doityourself",
+   "",
+   -114.01784,
+   46.84754
+  ],
+  [
+   "Ace Hardware",
+   "doityourself",
+   "",
+   -114.0145,
+   46.85985
+  ],
+  [
+   "Ace Hardware",
+   "doityourself",
+   "",
+   -113.98259,
+   46.87499
+  ],
+  [
+   "Action Auto Body Shop of Missoula",
+   "car_repair",
+   "",
+   -114.03724,
+   46.85206
+  ],
+  [
+   "Adair Jewelers",
+   "jewelry",
+   "",
+   -114.041,
+   46.89761
+  ],
+  [
+   "Adam & Eve",
+   "erotic",
+   "",
+   -114.02964,
+   46.84155
+  ],
+  [
+   "Adams Event Center",
+   "events_venue",
+   "",
+   -113.98345,
+   46.86409
+  ],
+  [
+   "Agate Salon",
+   "hairdresser",
+   "",
+   -113.99228,
+   46.8723
+  ],
+  [
+   "Al's & Vic's Bar",
+   "bar",
+   "",
+   -113.99312,
+   46.86791
+  ],
+  [
+   "Albertsons",
+   "supermarket",
+   "",
+   -114.03629,
+   46.88709
+  ],
+  [
+   "Albertsons",
+   "supermarket",
+   "",
+   -114.0178,
+   46.84681
+  ],
+  [
+   "Albertsons",
+   "supermarket",
+   "",
+   -114.01538,
+   46.83165
+  ],
+  [
+   "Albertsons",
+   "supermarket",
+   "",
+   -113.98122,
+   46.86027
+  ],
+  [
+   "Alder Park Apartments",
+   "residential",
+   "",
+   -113.99963,
+   46.8812
+  ],
+  [
+   "Alderwood Estate & Loan",
+   "pawnbroker",
+   "",
+   -113.99302,
+   46.86794
+  ],
+  [
+   "Alien Detention Center Barracks",
+   "building",
+   "",
+   -114.05964,
+   46.84006
+  ],
+  [
+   "All American Auto Sales",
+   "car",
+   "",
+   -114.03809,
+   46.84368
+  ],
+  [
+   "All American Trophy",
+   "variety_store",
+   "",
+   -114.01799,
+   46.85801
+  ],
+  [
+   "All Star Self Storage",
+   "storage_rental",
+   "",
+   -114.06881,
+   46.9161
+  ],
+  [
+   "All Things Metal Inc",
+   "metal_construction",
+   "",
+   -114.03812,
+   46.83789
+  ],
+  [
+   "AlphaGraphics",
+   "signmaker",
+   "",
+   -114.02872,
+   46.84927
+  ],
+  [
+   "Alpine Foot & Ankle Clinic",
+   "clinic",
+   "",
+   -114.00809,
+   46.85928
+  ],
+  [
+   "Alpine Veterinary Care",
+   "veterinary",
+   "",
+   -114.00393,
+   46.86227
+  ],
+  [
+   "Altered Skin Tattoo & Body Piercings",
+   "tattoo",
+   "",
+   -113.99801,
+   46.86447
+  ],
+  [
+   "Ambrosia",
+   "restaurant",
+   "greek",
+   -114.03778,
+   46.88788
+  ],
+  [
+   "American Eagle Outfitters",
+   "clothes",
+   "",
+   -114.02832,
+   46.83794
+  ],
+  [
+   "Amira Rug Gallery",
+   "carpet",
+   "",
+   -113.99558,
+   46.87297
+  ],
+  [
+   "Anderson Park",
+   "park",
+   "",
+   -113.99773,
+   46.86679
+  ],
+  [
+   "Anderson's Air and Heating",
+   "hvac",
+   "",
+   -114.04329,
+   46.83281
+  ],
+  [
+   "Animal Clinic",
+   "animal_boarding",
+   "",
+   -114.01273,
+   46.83198
+  ],
+  [
+   "Annunciation Greek Orthodox Church",
+   "place_of_worship",
+   "christian",
+   -114.00079,
+   46.86404
+  ],
+  [
+   "Applebee's",
+   "restaurant",
+   "american",
+   -114.04845,
+   46.83372
+  ],
+  [
+   "AquaJet Car Wash",
+   "car_wash",
+   "",
+   -113.98078,
+   46.87446
+  ],
+  [
+   "Arby's",
+   "fast_food",
+   "sandwich",
+   -114.03998,
+   46.89425
+  ],
+  [
+   "Arby's",
+   "fast_food",
+   "sandwich",
+   -114.02435,
+   46.8387
+  ],
+  [
+   "Art & Soul Tattoo",
+   "tattoo",
+   "",
+   -114.03659,
+   46.84925
+  ],
+  [
+   "Art Hang Up",
+   "art",
+   "",
+   -113.99769,
+   46.86473
+  ],
+  [
+   "Art Haus Framing",
+   "frame",
+   "",
+   -114.01947,
+   46.87922
+  ],
+  [
+   "Arthur Ave & Beverly Ave",
+   "bus_stop",
+   "",
+   -113.98914,
+   46.85848
+  ],
+  [
+   "Arthur Ave & Beverly Ave",
+   "bus_stop",
+   "",
+   -113.98928,
+   46.85915
+  ],
+  [
+   "Arthur Ave & Daly Ave",
+   "bus_stop",
+   "",
+   -113.98936,
+   46.86627
+  ],
+  [
+   "Arthur Ave & Daly Ave",
+   "bus_stop",
+   "",
+   -113.98921,
+   46.86648
+  ],
+  [
+   "Arthur Ave & E Central Ave",
+   "bus_stop",
+   "",
+   -113.9891,
+   46.84704
+  ],
+  [
+   "Arthur Ave & E Central Ave",
+   "bus_stop",
+   "",
+   -113.98928,
+   46.84706
+  ],
+  [
+   "Arthur Ave & Eddy Ave",
+   "bus_stop",
+   "",
+   -113.98913,
+   46.86475
+  ],
+  [
+   "Arthur Ave & Eddy Ave",
+   "bus_stop",
+   "",
+   -113.98934,
+   46.86475
+  ],
+  [
+   "Arthur Ave & Evans Ave",
+   "bus_stop",
+   "",
+   -113.98931,
+   46.85716
+  ],
+  [
+   "Arthur Ave & Keith Ave",
+   "bus_stop",
+   "",
+   -113.98911,
+   46.8542
+  ],
+  [
+   "Arthur Ave & Keith Ave",
+   "bus_stop",
+   "",
+   -113.98932,
+   46.85457
+  ],
+  [
+   "Arthur Ave & University Ave",
+   "bus_stop",
+   "",
+   -113.98936,
+   46.86761
+  ],
+  [
+   "Arthur Ave & Woodworth Ave",
+   "bus_stop",
+   "",
+   -113.98911,
+   46.85994
+  ],
+  [
+   "Arts Missoula",
+   "museum",
+   "",
+   -113.99039,
+   46.87213
+  ],
+  [
+   "Ashley HomeStore",
+   "furniture",
+   "",
+   -114.03661,
+   46.88331
+  ],
+  [
+   "Aspen Sound",
+   "hifi",
+   "",
+   -114.01432,
+   46.87952
+  ],
+  [
+   "Atonement Lutheran Church",
+   "place_of_worship",
+   "christian",
+   -114.03213,
+   46.83039
+  ],
+  [
+   "Auto Detail",
+   "car",
+   "",
+   -114.02435,
+   46.83959
+  ],
+  [
+   "AutoZone",
+   "car_parts",
+   "",
+   -114.04007,
+   46.84515
+  ],
+  [
+   "AutoZone",
+   "car_parts",
+   "",
+   -114.02275,
+   46.86117
+  ],
+  [
+   "Axmen Firearms",
+   "weapons",
+   "",
+   -114.08129,
+   46.81642
+  ],
+  [
+   "Backcountry Racks",
+   "outdoor",
+   "",
+   -114.03586,
+   46.90244
+  ],
+  [
+   "Bagnell's Sewing Center",
+   "sewing",
+   "",
+   -114.01267,
+   46.87966
+  ],
+  [
+   "Baha'i Center",
+   "place_of_worship",
+   "bahai",
+   -114.02928,
+   46.84848
+  ],
+  [
+   "Bailey's Park",
+   "park",
+   "",
+   -114.05194,
+   46.90456
+  ],
+  [
+   "Bancroft Pond",
+   "water",
+   "",
+   -114.00994,
+   46.84453
+  ],
+  [
+   "Bancroft Pond Nature Area",
+   "park",
+   "",
+   -114.01048,
+   46.84438
+  ],
+  [
+   "Bancroft St & Benton Ave",
+   "bus_stop",
+   "",
+   -114.00771,
+   46.85223
+  ],
+  [
+   "Bancroft St & Benton Ave",
+   "bus_stop",
+   "",
+   -114.00796,
+   46.83772
+  ],
+  [
+   "Bancroft St & Dearborn Ave",
+   "bus_stop",
+   "",
+   -114.00774,
+   46.85074
+  ],
+  [
+   "Bancroft St & Dearborn Ave",
+   "bus_stop",
+   "",
+   -114.00794,
+   46.85122
+  ],
+  [
+   "Bancroft St & Pattee Creek Dr",
+   "bus_stop",
+   "",
+   -114.00804,
+   46.84155
+  ],
+  [
+   "Bancroft St & Salish Ct",
+   "bus_stop",
+   "",
+   -114.00803,
+   46.83995
+  ],
+  [
+   "Barmeyer Scenic Overlook",
+   "viewpoint",
+   "",
+   -113.98525,
+   46.82818
+  ],
+  [
+   "Barmeyer Trailhead",
+   "trailhead",
+   "",
+   -113.97917,
+   46.82325
+  ],
+  [
+   "Barnes & Noble",
+   "books",
+   "",
+   -114.03663,
+   46.89754
+  ],
+  [
+   "Barre 406",
+   "fitness_centre",
+   "",
+   -114.01991,
+   46.84936
+  ],
+  [
+   "Basal",
+   "restaurant",
+   "",
+   -113.99478,
+   46.87242
+  ],
+  [
+   "Baskin-Robbins",
+   "ice_cream",
+   "ice_cream",
+   -114.01049,
+   46.85935
+  ],
+  [
+   "Bass's Gun Rack",
+   "weapons",
+   "",
+   -114.02049,
+   46.84923
+  ],
+  [
+   "Bayern Brewing",
+   "brewery",
+   "",
+   -114.02023,
+   46.87032
+  ],
+  [
+   "Bayern Brewing, Inc",
+   "bar",
+   "american",
+   -114.02018,
+   46.87037
+  ],
+  [
+   "Beaches Beauty Supply",
+   "beauty",
+   "",
+   -114.02325,
+   46.84966
+  ],
+  [
+   "Bed Bath & Beyond",
+   "houseware",
+   "",
+   -114.03066,
+   46.83979
+  ],
+  [
+   "Bel Aire Motel",
+   "motel",
+   "",
+   -113.99006,
+   46.87159
+  ],
+  [
+   "Bella Vista Field",
+   "pitch",
+   "soccer",
+   -114.06175,
+   46.85123
+  ],
+  [
+   "Bella Vista Pavilion",
+   "shelter",
+   "",
+   -114.06253,
+   46.8522
+  ],
+  [
+   "Bella Vista Playground",
+   "playground",
+   "",
+   -114.06329,
+   46.85219
+  ],
+  [
+   "Bellevue Park",
+   "park",
+   "",
+   -114.02664,
+   46.83185
+  ],
+  [
+   "Ben Hughes Park",
+   "park",
+   "",
+   -113.94368,
+   46.86243
+  ],
+  [
+   "Bernice's Bakery",
+   "bakery",
+   "",
+   -113.99913,
+   46.86079
+  ],
+  [
+   "Bess Reed Park",
+   "park",
+   "",
+   -113.99516,
+   46.87484
+  ],
+  [
+   "Best Buy",
+   "electronics",
+   "",
+   -114.03659,
+   46.88378
+  ],
+  [
+   "Best Western Grant Creek Inn",
+   "hotel",
+   "",
+   -114.03178,
+   46.91952
+  ],
+  [
+   "Bethel Baptist Church",
+   "place_of_worship",
+   "christian",
+   -114.02094,
+   46.8638
+  ],
+  [
+   "Better Body Fitness of Montana",
+   "fitness_centre",
+   "",
+   -114.02805,
+   46.83967
+  ],
+  [
+   "Bettys Divine",
+   "clothes",
+   "",
+   -113.99774,
+   46.86127
+  ],
+  [
+   "Bicycle Hangar",
+   "bicycle",
+   "",
+   -114.01093,
+   46.859
+  ],
+  [
+   "Big Dipper Ice Cream",
+   "ice_cream",
+   "",
+   -113.99804,
+   46.86269
+  ],
+  [
+   "Big Sky Bikes",
+   "bicycle",
+   "",
+   -113.98409,
+   46.87493
+  ],
+  [
+   "Big Sky Billiard Supply & Darts",
+   "games",
+   "",
+   -114.04214,
+   46.83248
+  ],
+  [
+   "Big Sky High School",
+   "school",
+   "",
+   -114.05808,
+   46.84715
+  ],
+  [
+   "Big Sky Horse Park Main Arena",
+   "pitch",
+   "equestrian",
+   -114.06739,
+   46.85847
+  ],
+  [
+   "Big Sky Motorsports",
+   "sports",
+   "",
+   -114.03463,
+   46.84934
+  ],
+  [
+   "Big Sky Park",
+   "park",
+   "",
+   -114.06716,
+   46.85527
+  ],
+  [
+   "Big Sky Tire & Service",
+   "tyres",
+   "",
+   -114.04155,
+   46.83224
+  ],
+  [
+   "Big Sky Veterinary Clinic",
+   "veterinary",
+   "",
+   -114.03836,
+   46.85113
+  ],
+  [
+   "Biga Pizza",
+   "restaurant",
+   "pizza;italian",
+   -113.99746,
+   46.87108
+  ],
+  [
+   "Bigfoot Cookies",
+   "pastry",
+   "",
+   -113.9956,
+   46.87303
+  ],
+  [
+   "Bike Doctor",
+   "bicycle",
+   "",
+   -114.00672,
+   46.88011
+  ],
+  [
+   "Bill Bevis Ice Rink",
+   "ice_rink",
+   "",
+   -113.97046,
+   46.89632
+  ],
+  [
+   "BioLife Plasma Services",
+   "clinic",
+   "",
+   -114.03484,
+   46.89605
+  ],
+  [
+   "Birdie Thatcher",
+   "furniture",
+   "",
+   -113.99706,
+   46.84579
+  ],
+  [
+   "Bitteroot Beanery",
+   "cafe",
+   "coffee_shop",
+   -114.02363,
+   46.84921
+  ],
+  [
+   "Bitterroot Flower Shop",
+   "florist",
+   "",
+   -113.99794,
+   46.86406
+  ],
+  [
+   "Bitterroot Line Comunity Garden",
+   "garden",
+   "",
+   -114.02766,
+   46.84703
+  ],
+  [
+   "Bitterroot Shelter",
+   "shelter",
+   "",
+   -114.05285,
+   46.83909
+  ],
+  [
+   "Black Coffee Roastery",
+   "coffee",
+   "",
+   -113.98644,
+   46.87109
+  ],
+  [
+   "Blackfoot River Outfitters",
+   "fishing",
+   "",
+   -114.04041,
+   46.89526
+  ],
+  [
+   "Blackjack Pizza",
+   "fast_food",
+   "pizza",
+   -114.01887,
+   46.84934
+  ],
+  [
+   "Blaque Owl Tattoo",
+   "tattoo",
+   "",
+   -113.99406,
+   46.87045
+  ],
+  [
+   "Blessed Trinity Catholic Church",
+   "place_of_worship",
+   "christian",
+   -114.03502,
+   46.85538
+  ],
+  [
+   "Blue Canyon Kitchen & Tavern",
+   "bar",
+   "",
+   -114.03783,
+   46.89863
+  ],
+  [
+   "Blue Mountain Clinic",
+   "clinic",
+   "",
+   -114.0131,
+   46.88061
+  ],
+  [
+   "Blue Mountain Veterinary",
+   "veterinary",
+   "",
+   -114.07613,
+   46.82446
+  ],
+  [
+   "Blue Ribbon Auto Inc",
+   "car_repair",
+   "",
+   -114.0174,
+   46.88051
+  ],
+  [
+   "Bluebird Preserve",
+   "trailhead",
+   "",
+   -114.03165,
+   46.91636
+  ],
+  [
+   "Board of Missoula",
+   "outdoor",
+   "",
+   -113.99717,
+   46.86243
+  ],
+  [
+   "Bob Gugisberg Auto Repair",
+   "car_repair",
+   "",
+   -114.03711,
+   46.84251
+  ],
+  [
+   "Bob Ward's",
+   "sports",
+   "",
+   -114.03133,
+   46.83979
+  ],
+  [
+   "Bonner Park",
+   "park",
+   "",
+   -113.99333,
+   46.85774
+  ],
+  [
+   "Boom Swagger Salon",
+   "hairdresser",
+   "",
+   -113.99934,
+   46.86079
+  ],
+  [
+   "Boone and Crockett Club",
+   "station_site",
+   "",
+   -113.99834,
+   46.86034
+  ],
+  [
+   "Boone.doeshair at Fabrik Salon",
+   "hairdresser",
+   "",
+   -113.99234,
+   46.87268
+  ],
+  [
+   "Boot Barn",
+   "clothes",
+   "",
+   -114.03828,
+   46.83195
+  ],
+  [
+   "Bound by Glory Tattoo",
+   "tattoo",
+   "",
+   -113.99508,
+   46.87179
+  ],
+  [
+   "Boyce Lumber",
+   "doityourself",
+   "",
+   -114.01793,
+   46.85393
+  ],
+  [
+   "Boyd Park",
+   "park",
+   "",
+   -114.02081,
+   46.84077
+  ],
+  [
+   "Break Espresso",
+   "cafe",
+   "",
+   -113.99274,
+   46.8692
+  ],
+  [
+   "Bretz RV & Marine",
+   "caravan",
+   "",
+   -114.03205,
+   46.90851
+  ],
+  [
+   "Bridge Park",
+   "park",
+   "",
+   -114.05444,
+   46.80148
+  ],
+  [
+   "Bridge Pizza",
+   "restaurant",
+   "pizza",
+   -114.0254,
+   46.83955
+  ],
+  [
+   "Bridge Pizza",
+   "restaurant",
+   "pizza",
+   -113.99701,
+   46.86216
+  ],
+  [
+   "Briggs Street",
+   "residential",
+   "",
+   -114.03101,
+   46.83754
+  ],
+  [
+   "Broadway Industrial Supply",
+   "yes",
+   "",
+   -114.02346,
+   46.87699
+  ],
+  [
+   "Broadway Inn",
+   "hotel",
+   "",
+   -114.02224,
+   46.8782
+  ],
+  [
+   "Broadway Storage",
+   "storage_rental",
+   "",
+   -113.97594,
+   46.86185
+  ],
+  [
+   "Brooks St & Oxford St",
+   "bus_stop",
+   "",
+   -114.0169,
+   46.84809
+  ],
+  [
+   "Brooks St at the Montana Club",
+   "bus_stop",
+   "",
+   -114.02082,
+   46.85111
+  ],
+  [
+   "Brooks Street Motor Inn",
+   "motel",
+   "",
+   -114.03265,
+   46.84282
+  ],
+  [
+   "Brookside on the Rattlesnake",
+   "residential",
+   "",
+   -113.96874,
+   46.89118
+  ],
+  [
+   "Brosious Carpet & Floors",
+   "flooring",
+   "",
+   -114.03714,
+   46.90249
+  ],
+  [
+   "Browntown",
+   "residential",
+   "",
+   -114.05069,
+   46.86368
+  ],
+  [
+   "Bryant Photographics",
+   "photographer",
+   "",
+   -113.99772,
+   46.86435
+  ],
+  [
+   "Buckhouse Storage",
+   "commercial",
+   "",
+   -114.07417,
+   46.82627
+  ],
+  [
+   "Budget Host Inn",
+   "motel",
+   "",
+   -113.98337,
+   46.87361
+  ],
+  [
+   "Buffalo Wild Wings",
+   "restaurant",
+   "wings",
+   -114.04189,
+   46.8838
+  ],
+  [
+   "Bugbee Nature Preserve",
+   "park",
+   "",
+   -113.97198,
+   46.8759
+  ],
+  [
+   "Bulls Eye Wear",
+   "optician",
+   "",
+   -114.03918,
+   46.83921
+  ],
+  [
+   "Burger King",
+   "fast_food",
+   "burger",
+   -114.04006,
+   46.88343
+  ],
+  [
+   "Burger King",
+   "fast_food",
+   "burger",
+   -113.98546,
+   46.87378
+  ],
+  [
+   "Burns St. Bistro",
+   "restaurant",
+   "brunch",
+   -114.0149,
+   46.88722
+  ],
+  [
+   "Burton's Classic Hair Co.,",
+   "hairdresser",
+   "",
+   -114.0388,
+   46.84343
+  ],
+  [
+   "Butterfly Herbs",
+   "herbalist",
+   "",
+   -113.99404,
+   46.87127
+  ],
+  [
+   "Byron St & W Broadway St",
+   "bus_stop",
+   "",
+   -114.01685,
+   46.87943
+  ],
+  [
+   "C'mon Inn Hotel & Suites",
+   "hotel",
+   "",
+   -114.0344,
+   46.91762
+  ],
+  [
+   "C.M. Buxton",
+   "jewelry",
+   "",
+   -113.99774,
+   46.86149
+  ],
+  [
+   "C.S. Porter Middle School",
+   "school",
+   "",
+   -114.04094,
+   46.84675
+  ],
+  [
+   "CHEF'STORE",
+   "wholesale",
+   "",
+   -114.02152,
+   46.84986
+  ],
+  [
+   "CVS Pharmacy",
+   "pharmacy",
+   "",
+   -114.01216,
+   46.84594
+  ],
+  [
+   "Cabela's",
+   "outdoor",
+   "",
+   -114.03726,
+   46.83208
+  ],
+  [
+   "Cafe Dolce",
+   "cafe",
+   "",
+   -114.02752,
+   46.85172
+  ],
+  [
+   "Cafe Rio",
+   "restaurant",
+   "mexican",
+   -114.03632,
+   46.88623
+  ],
+  [
+   "Cambie Taphouse + Coffee",
+   "restaurant",
+   "",
+   -113.99764,
+   46.84978
+  ],
+  [
+   "Campbell Kia",
+   "car",
+   "",
+   -114.07323,
+   46.9129
+  ],
+  [
+   "Campbell Park",
+   "park",
+   "",
+   -113.99518,
+   46.85067
+  ],
+  [
+   "Canyon River Beach",
+   "beach",
+   "swimming",
+   -113.93094,
+   46.88995
+  ],
+  [
+   "Canyon View County Park",
+   "park",
+   "",
+   -113.93515,
+   46.86879
+  ],
+  [
+   "Capt. John Mullan",
+   "attraction",
+   "",
+   -113.99179,
+   46.86793
+  ],
+  [
+   "Caras Nursery and Landscape",
+   "plant_nursery",
+   "",
+   -114.0474,
+   46.86219
+  ],
+  [
+   "Caras Park",
+   "park",
+   "",
+   -113.99732,
+   46.87309
+  ],
+  [
+   "Carriage House",
+   "building",
+   "",
+   -114.0616,
+   46.83892
+  ],
+  [
+   "Carter's",
+   "clothes",
+   "",
+   -114.04116,
+   46.89284
+  ],
+  [
+   "Cash on Broadway Pawn Shop",
+   "pawnbroker",
+   "",
+   -114.01318,
+   46.88036
+  ],
+  [
+   "Caterpillar",
+   "trade",
+   "",
+   -114.03696,
+   46.91203
+  ],
+  [
+   "Cats on Broadway Veterinary Hospital",
+   "veterinary",
+   "",
+   -114.01818,
+   46.87954
+  ],
+  [
+   "Cattail Corner",
+   "park",
+   "",
+   -114.01742,
+   46.83262
+  ],
+  [
+   "Cedar Villas Apartments",
+   "residential",
+   "",
+   -114.01763,
+   46.88627
+  ],
+  [
+   "Cenex",
+   "fuel",
+   "",
+   -114.03643,
+   46.91016
+  ],
+  [
+   "Cenex",
+   "fuel",
+   "",
+   -114.0312,
+   46.84289
+  ],
+  [
+   "Cenex",
+   "fuel",
+   "",
+   -114.01342,
+   46.87974
+  ],
+  [
+   "Cenex",
+   "fuel",
+   "",
+   -113.98078,
+   46.87464
+  ],
+  [
+   "Center for Integrative Care",
+   "social_facility",
+   "",
+   -113.99671,
+   46.88242
+  ],
+  [
+   "Central Christian Church",
+   "place_of_worship",
+   "christian",
+   -114.0017,
+   46.86298
+  ],
+  [
+   "Central Park Structure",
+   "parking",
+   "",
+   -113.99534,
+   46.87121
+  ],
+  [
+   "Ceretana Feed Mill Elevator",
+   "silo",
+   "",
+   -114.00225,
+   46.87833
+  ],
+  [
+   "Changes Salon & Day Spa",
+   "beauty",
+   "",
+   -114.01192,
+   46.84642
+  ],
+  [
+   "Charlie's Bar",
+   "bar",
+   "",
+   -113.99279,
+   46.86927
+  ],
+  [
+   "Chelsea Mitchell Massage Therapy",
+   "massage",
+   "",
+   -114.03253,
+   46.88928
+  ],
+  [
+   "Cherry St Trailhead",
+   "trailhead",
+   "",
+   -113.97617,
+   46.87266
+  ],
+  [
+   "Chick-fil-A",
+   "fast_food",
+   "chicken",
+   -114.03864,
+   46.89692
+  ],
+  [
+   "Chief Charlo Elementary School",
+   "school",
+   "none",
+   -114.03141,
+   46.81883
+  ],
+  [
+   "Childbloom Guitar Program",
+   "music_school",
+   "",
+   -114.0266,
+   46.84847
+  ],
+  [
+   "China Buffet",
+   "restaurant",
+   "chinese",
+   -114.01042,
+   46.84594
+  ],
+  [
+   "China Garden",
+   "restaurant",
+   "chinese",
+   -114.01217,
+   46.84642
+  ],
+  [
+   "Chipotle",
+   "fast_food",
+   "mexican",
+   -114.03986,
+   46.8958
+  ],
+  [
+   "Choice Floors",
+   "floorer",
+   "",
+   -114.03555,
+   46.90243
+  ],
+  [
+   "Christ Church Missoula",
+   "place_of_worship",
+   "christian",
+   -114.0533,
+   46.84851
+  ],
+  [
+   "Christ Church of Missoula",
+   "place_of_worship",
+   "christian",
+   -113.9954,
+   46.87666
+  ],
+  [
+   "Christ the King Catholic Church",
+   "place_of_worship",
+   "christian",
+   -113.99523,
+   46.85511
+  ],
+  [
+   "Christian Assembly Foursquare Church",
+   "place_of_worship",
+   "christian",
+   -114.01539,
+   46.85461
+  ],
+  [
+   "Christian Assembly Foursquare Church Academy",
+   "school",
+   "",
+   -114.01539,
+   46.85461
+  ],
+  [
+   "Christian Life Center",
+   "place_of_worship",
+   "christian",
+   -114.02003,
+   46.83205
+  ],
+  [
+   "Christian and Missionary Alliance Church",
+   "place_of_worship",
+   "christian",
+   -114.02789,
+   46.81878
+  ],
+  [
+   "Church at the Gates",
+   "place_of_worship",
+   "christian",
+   -114.01432,
+   46.83241
+  ],
+  [
+   "Church of the Living God",
+   "place_of_worship",
+   "christian",
+   -114.01999,
+   46.87992
+  ],
+  [
+   "Ciao Mambo",
+   "restaurant",
+   "italian",
+   -113.99773,
+   46.86177
+  ],
+  [
+   "Circle Square",
+   "clothes",
+   "",
+   -113.99267,
+   46.86825
+  ],
+  [
+   "Circle Square",
+   "park",
+   "",
+   -113.99166,
+   46.86792
+  ],
+  [
+   "Citilodge Suites",
+   "motel",
+   "",
+   -114.01066,
+   46.88113
+  ],
+  [
+   "City Brew",
+   "cafe",
+   "coffee_shop",
+   -114.03824,
+   46.83112
+  ],
+  [
+   "City Center Motel",
+   "motel",
+   "",
+   -113.98984,
+   46.87174
+  ],
+  [
+   "City Hall",
+   "townhall",
+   "",
+   -113.99488,
+   46.86846
+  ],
+  [
+   "City Life Community Center",
+   "community_centre",
+   "",
+   -114.01983,
+   46.85228
+  ],
+  [
+   "Claim Jumper Casino",
+   "casino",
+   "",
+   -114.02739,
+   46.84007
+  ],
+  [
+   "Clark Fork Dental",
+   "dentist",
+   "",
+   -114.01281,
+   46.83284
+  ],
+  [
+   "Clark Fork Inn",
+   "motel",
+   "",
+   -114.00766,
+   46.88139
+  ],
+  [
+   "Clark Fork Natural Park",
+   "park",
+   "",
+   -114.00029,
+   46.87383
+  ],
+  [
+   "Clark Fork Organics",
+   "farm",
+   "",
+   -114.06536,
+   46.86535
+  ],
+  [
+   "Clark Fork Storage",
+   "storage_rental",
+   "",
+   -114.04013,
+   46.87582
+  ],
+  [
+   "Clearwater Credit Union",
+   "bank",
+   "",
+   -114.03862,
+   46.88374
+  ],
+  [
+   "Clearwater Credit Union",
+   "bank",
+   "",
+   -114.03475,
+   46.83014
+  ],
+  [
+   "Clearwater Credit Union",
+   "bank",
+   "",
+   -114.01891,
+   46.85827
+  ],
+  [
+   "Clearwater Credit Union",
+   "bank",
+   "",
+   -113.99391,
+   46.86817
+  ],
+  [
+   "Clements Rd & Colonial Ln",
+   "bus_stop",
+   "",
+   -114.08155,
+   46.8471
+  ],
+  [
+   "Clements Rd & S 7th St W",
+   "bus_stop",
+   "",
+   -114.08059,
+   46.86474
+  ],
+  [
+   "Clements Rd & Spurgin Rd",
+   "bus_stop",
+   "",
+   -114.08136,
+   46.8533
+  ],
+  [
+   "Clements Rd & Spurgin Rd",
+   "bus_stop",
+   "",
+   -114.08155,
+   46.85336
+  ],
+  [
+   "Clements Rd at The Olde Dairy",
+   "bus_stop",
+   "",
+   -114.08136,
+   46.84711
+  ],
+  [
+   "Clyde Coffee",
+   "cafe",
+   "coffee_shop",
+   -113.99773,
+   46.86368
+  ],
+  [
+   "Coinstar",
+   "payment_terminal",
+   "",
+   -114.04218,
+   46.8889
+  ],
+  [
+   "Cold Springs School",
+   "school",
+   "",
+   -114.04652,
+   46.82316
+  ],
+  [
+   "Cold Stone Creamery",
+   "ice_cream",
+   "ice_cream",
+   -114.04114,
+   46.89348
+  ],
+  [
+   "ColdAvenger",
+   "outdoor",
+   "",
+   -114.00356,
+   46.88031
+  ],
+  [
+   "Comfort Inn",
+   "hotel",
+   "",
+   -114.03762,
+   46.90939
+  ],
+  [
+   "Comfort Inn",
+   "hotel",
+   "",
+   -113.97931,
+   46.86109
+  ],
+  [
+   "Commerce & Industry",
+   "bus_stop",
+   "",
+   -114.02609,
+   46.89662
+  ],
+  [
+   "Commerce & Industry",
+   "bus_stop",
+   "",
+   -114.02558,
+   46.89651
+  ],
+  [
+   "Community FirstCare",
+   "clinic",
+   "",
+   -114.01784,
+   46.84712
+  ],
+  [
+   "Community Medical Center",
+   "hospital",
+   "",
+   -114.04783,
+   46.85086
+  ],
+  [
+   "Community Medical Center Heliport",
+   "heliport",
+   "",
+   -114.04774,
+   46.84937
+  ],
+  [
+   "Community Medical Services",
+   "clinic",
+   "",
+   -114.02252,
+   46.84962
+  ],
+  [
+   "Community Physician Group North Walk-in Clinic",
+   "clinic",
+   "",
+   -114.03718,
+   46.88801
+  ],
+  [
+   "Compass Barbershop",
+   "hairdresser",
+   "",
+   -113.9972,
+   46.86373
+  ],
+  [
+   "Conflux Brewing Co",
+   "brewery",
+   "",
+   -113.99276,
+   46.87202
+  ],
+  [
+   "Conlin's Furniture",
+   "furniture",
+   "",
+   -114.02116,
+   46.85981
+  ],
+  [
+   "Connell Ave & Maurice Ave",
+   "bus_stop",
+   "",
+   -113.98683,
+   46.86559
+  ],
+  [
+   "Connery Circle",
+   "residential",
+   "",
+   -114.04557,
+   46.89495
+  ],
+  [
+   "Connery Way & American Way",
+   "bus_stop",
+   "",
+   -114.04629,
+   46.89729
+  ],
+  [
+   "Connery Way & Chelsea Dr",
+   "bus_stop",
+   "",
+   -114.04618,
+   46.8947
+  ],
+  [
+   "Connery Way & Chelsea Dr",
+   "bus_stop",
+   "",
+   -114.04633,
+   46.8947
+  ],
+  [
+   "Connery Way & Flanagin Ln",
+   "bus_stop",
+   "",
+   -114.04705,
+   46.89733
+  ],
+  [
+   "Conoco",
+   "fuel",
+   "",
+   -114.04007,
+   46.88743
+  ],
+  [
+   "Conoco",
+   "fuel",
+   "",
+   -114.03921,
+   46.85235
+  ],
+  [
+   "Conoco",
+   "fuel",
+   "",
+   -114.04006,
+   46.8324
+  ],
+  [
+   "Conoco",
+   "fuel",
+   "",
+   -114.01793,
+   46.85701
+  ],
+  [
+   "Conoco",
+   "fuel",
+   "",
+   -114.01356,
+   46.84571
+  ],
+  [
+   "Conoco",
+   "fuel",
+   "",
+   -113.99758,
+   46.84654
+  ],
+  [
+   "Conoco",
+   "fuel",
+   "",
+   -113.99768,
+   46.84925
+  ],
+  [
+   "Conoco",
+   "fuel",
+   "",
+   -113.98461,
+   46.87386
+  ],
+  [
+   "Contract Design Associates",
+   "furniture",
+   "",
+   -114.01494,
+   46.87957
+  ],
+  [
+   "Cooper Mountain Coffee",
+   "cafe",
+   "coffee_shop",
+   -114.03574,
+   46.90696
+  ],
+  [
+   "Cooper St & N Russell St",
+   "bus_stop",
+   "",
+   -114.01833,
+   46.87883
+  ],
+  [
+   "Copper Mountain Coffee",
+   "cafe",
+   "coffee_shop",
+   -114.01333,
+   46.85802
+  ],
+  [
+   "Copper Run at Reserve",
+   "residential",
+   "",
+   -114.03422,
+   46.88802
+  ],
+  [
+   "Cornerstone Dental Missoula",
+   "dentist",
+   "",
+   -114.02697,
+   46.84107
+  ],
+  [
+   "Cornerstone Orthodox Church",
+   "place_of_worship",
+   "christian",
+   -114.03428,
+   46.86547
+  ],
+  [
+   "Corso Apartments",
+   "residential",
+   "",
+   -114.02046,
+   46.87305
+  ],
+  [
+   "Corso Pet Play Area",
+   "dog_park",
+   "",
+   -114.02016,
+   46.8731
+  ],
+  [
+   "CosmoProf",
+   "hairdresser_supply",
+   "",
+   -114.01587,
+   46.84824
+  ],
+  [
+   "Costco",
+   "wholesale",
+   "",
+   -114.03762,
+   46.8922
+  ],
+  [
+   "Costco Gasoline",
+   "fuel",
+   "",
+   -114.03874,
+   46.89371
+  ],
+  [
+   "Cottage Court Park",
+   "recreation_ground",
+   "",
+   -114.03536,
+   46.85601
+  ],
+  [
+   "Council Groves Apartments",
+   "residential",
+   "",
+   -114.02636,
+   46.87454
+  ],
+  [
+   "Countryside Court Mobile Home Park",
+   "residential",
+   "",
+   -114.07056,
+   46.8846
+  ],
+  [
+   "Courtyard",
+   "hotel",
+   "",
+   -114.04015,
+   46.91063
+  ],
+  [
+   "Cowles Montana Media Company",
+   "studio",
+   "",
+   -114.01264,
+   46.84752
+  ],
+  [
+   "Cracker Barrel",
+   "restaurant",
+   "american",
+   -114.03545,
+   46.91784
+  ],
+  [
+   "CraigsMart Showroom",
+   "furniture",
+   "",
+   -114.02709,
+   46.84064
+  ],
+  [
+   "Cravens Coffee Company",
+   "coffee",
+   "",
+   -114.03696,
+   46.90202
+  ],
+  [
+   "Crazy Canyon",
+   "trailhead",
+   "",
+   -113.93846,
+   46.8273
+  ],
+  [
+   "Crazy Creek Café",
+   "snack",
+   "",
+   -114.00869,
+   46.83993
+  ],
+  [
+   "Creative Paint & Glass",
+   "window_construction",
+   "",
+   -114.01694,
+   46.85838
+  ],
+  [
+   "Creekside Apartments",
+   "residential",
+   "",
+   -113.9693,
+   46.86492
+  ],
+  [
+   "Creekside Dog Park",
+   "dog_park",
+   "",
+   -113.96275,
+   46.86521
+  ],
+  [
+   "Crestmont Heights",
+   "residential",
+   "",
+   -114.0116,
+   46.83298
+  ],
+  [
+   "Crestview Apartments",
+   "residential",
+   "",
+   -114.0517,
+   46.90916
+  ],
+  [
+   "Cricket Wireless",
+   "mobile_phone",
+   "",
+   -114.02324,
+   46.83794
+  ],
+  [
+   "Crumbl Cookies",
+   "pastry",
+   "",
+   -114.04096,
+   46.89515
+  ],
+  [
+   "Cruz Tacos",
+   "restaurant",
+   "mexican",
+   -114.01183,
+   46.88028
+  ],
+  [
+   "Culligan Water Conditioning",
+   "plumber",
+   "",
+   -114.03002,
+   46.841
+  ],
+  [
+   "Currents Water Park",
+   "water_park",
+   "",
+   -114.00542,
+   46.86994
+  ],
+  [
+   "Curtis Street Storage",
+   "commercial",
+   "",
+   -114.033,
+   46.87201
+  ],
+  [
+   "Custom Screen Printing",
+   "copyshop",
+   "",
+   -114.03212,
+   46.84475
+  ],
+  [
+   "DNRC",
+   "forest",
+   "",
+   -114.04683,
+   46.85607
+  ],
+  [
+   "DQ Grill & Chill",
+   "fast_food",
+   "ice_cream;burger",
+   -114.03942,
+   46.91187
+  ],
+  [
+   "DQ Grill & Chill",
+   "fast_food",
+   "ice_cream;burger",
+   -114.01969,
+   46.85098
+  ],
+  [
+   "Dailys Premium Meat Division",
+   "butcher",
+   "",
+   -114.03599,
+   46.889
+  ],
+  [
+   "Dairy Queen",
+   "fast_food",
+   "ice_cream;burger",
+   -114.02692,
+   46.85185
+  ],
+  [
+   "Dairy Queen",
+   "fast_food",
+   "ice_cream",
+   -113.99766,
+   46.85857
+  ],
+  [
+   "Dale Clawson Complex at Playfair Park",
+   "park",
+   "",
+   -114.01467,
+   46.8419
+  ],
+  [
+   "Dale Dahlgren Baseball Field",
+   "park",
+   "",
+   -114.06189,
+   46.85574
+  ],
+  [
+   "Dan's Barber Shop",
+   "hairdresser",
+   "",
+   -113.99776,
+   46.85518
+  ],
+  [
+   "Dana Gallery",
+   "gallery",
+   "",
+   -113.99384,
+   46.87121
+  ],
+  [
+   "Dancing Goat Gardens",
+   "cannabis",
+   "",
+   -114.03175,
+   46.84931
+  ],
+  [
+   "Dark Room of Montana",
+   "camera",
+   "",
+   -113.99499,
+   46.87185
+  ],
+  [
+   "Darlene Drive",
+   "residential",
+   "",
+   -114.03812,
+   46.87478
+  ],
+  [
+   "Dave's Hot Chicken",
+   "fast_food",
+   "chicken",
+   -114.03989,
+   46.89763
+  ],
+  [
+   "David J. Thatcher Memorial Outpatient Clinic",
+   "clinic",
+   "",
+   -114.05567,
+   46.91221
+  ],
+  [
+   "Dax Photography",
+   "photographer",
+   "",
+   -114.01388,
+   46.85758
+  ],
+  [
+   "Days Inn",
+   "hotel",
+   "",
+   -113.98413,
+   46.8732
+  ],
+  [
+   "Dazzlers Car Wash",
+   "car_wash",
+   "",
+   -114.04082,
+   46.88377
+  ],
+  [
+   "Dearborn Ave & S Garfield St",
+   "bus_stop",
+   "",
+   -114.02413,
+   46.85074
+  ],
+  [
+   "Deep Tissue Massage Group",
+   "massage",
+   "",
+   -114.00265,
+   46.8801
+  ],
+  [
+   "Dennehy + Jerde Orthodontics",
+   "dentist",
+   "",
+   -114.00545,
+   46.84466
+  ],
+  [
+   "Denny Menholt University Honda",
+   "car",
+   "",
+   -114.03866,
+   46.84488
+  ],
+  [
+   "Design Air, Inc",
+   "hvac",
+   "",
+   -114.01238,
+   46.88776
+  ],
+  [
+   "Desperado Sports Tavern",
+   "bar",
+   "",
+   -114.01889,
+   46.84054
+  ],
+  [
+   "Diamond Bar Meats",
+   "butcher",
+   "",
+   -114.01809,
+   46.85612
+  ],
+  [
+   "Diamond Jim's Casino",
+   "casino",
+   "",
+   -114.01912,
+   46.85697
+  ],
+  [
+   "Diamond Jim's Casino & Liquor",
+   "casino",
+   "",
+   -113.98201,
+   46.87412
+  ],
+  [
+   "Dickens St & Cooley St",
+   "bus_stop",
+   "",
+   -114.00333,
+   46.88836
+  ],
+  [
+   "Dickens St & Rogers St",
+   "bus_stop",
+   "",
+   -114.00328,
+   46.88387
+  ],
+  [
+   "Dickinson School",
+   "school",
+   "",
+   -114.03032,
+   46.87435
+  ],
+  [
+   "Dillard's",
+   "department_store",
+   "",
+   -114.02732,
+   46.85045
+  ],
+  [
+   "Discount Tire",
+   "tyres",
+   "",
+   -114.042,
+   46.88442
+  ],
+  [
+   "Discovery Alliance Church",
+   "place_of_worship",
+   "christian",
+   -114.04615,
+   46.89765
+  ],
+  [
+   "Do Crew Salon",
+   "beauty",
+   "",
+   -114.03908,
+   46.8401
+  ],
+  [
+   "Doc's Sandwich Shop",
+   "deli",
+   "sandwich;regional;italian",
+   -113.99423,
+   46.8715
+  ],
+  [
+   "Dog and Bicycle",
+   "cafe",
+   "regional",
+   -114.00807,
+   46.86195
+  ],
+  [
+   "Dollar",
+   "car_rental",
+   "",
+   -114.02344,
+   46.87603
+  ],
+  [
+   "Dollar Tree",
+   "variety_store",
+   "",
+   -114.02153,
+   46.85199
+  ],
+  [
+   "Domino's",
+   "fast_food",
+   "pizza",
+   -114.036,
+   46.90716
+  ],
+  [
+   "Domino's",
+   "fast_food",
+   "pizza",
+   -113.99824,
+   46.84933
+  ],
+  [
+   "Dore Ln & 36th St",
+   "bus_stop",
+   "",
+   -114.03529,
+   46.83125
+  ],
+  [
+   "Dore Ln & 36th St",
+   "bus_stop",
+   "",
+   -114.03569,
+   46.83143
+  ],
+  [
+   "Dornblaser Park and Ride",
+   "parking",
+   "",
+   -113.99712,
+   46.84968
+  ],
+  [
+   "Dornblazer Field",
+   "track",
+   "athletics",
+   -113.9968,
+   46.85145
+  ],
+  [
+   "Double Dogs",
+   "cannabis",
+   "",
+   -113.99505,
+   46.87197
+  ],
+  [
+   "Double Front",
+   "cafe",
+   "",
+   -113.99281,
+   46.88242
+  ],
+  [
+   "Doubletree Missoula/Edgewater",
+   "hotel",
+   "",
+   -113.98645,
+   46.87496
+  ],
+  [
+   "Downtown Lions Club City Park",
+   "park",
+   "",
+   -114.01217,
+   46.88174
+  ],
+  [
+   "Downtown Motel",
+   "motel",
+   "",
+   -113.98792,
+   46.8723
+  ],
+  [
+   "Downtown Pawn",
+   "pawnbroker",
+   "",
+   -113.99625,
+   46.87032
+  ],
+  [
+   "Dragon Hollow",
+   "playground",
+   "",
+   -113.99827,
+   46.87239
+  ],
+  [
+   "Dram Shop",
+   "alcohol",
+   "",
+   -114.02869,
+   46.83968
+  ],
+  [
+   "Draught Works",
+   "pub",
+   "",
+   -114.00389,
+   46.88018
+  ],
+  [
+   "Driving Range",
+   "grass",
+   "",
+   -113.99096,
+   46.85222
+  ],
+  [
+   "Drum Coffee",
+   "cafe",
+   "coffee_shop",
+   -114.0064,
+   46.84879
+  ],
+  [
+   "Drum Coffee",
+   "cafe",
+   "coffee",
+   -113.98018,
+   46.8747
+  ],
+  [
+   "Drummond Depot",
+   "building",
+   "",
+   -114.06166,
+   46.84003
+  ],
+  [
+   "Drybar",
+   "hairdresser",
+   "",
+   -113.99473,
+   46.87281
+  ],
+  [
+   "Duncan Field",
+   "park",
+   "",
+   -113.97529,
+   46.89502
+  ],
+  [
+   "Duncan Field Trailhead",
+   "trailhead",
+   "",
+   -113.97642,
+   46.89542
+  ],
+  [
+   "Duncan Trailhead",
+   "trailhead",
+   "",
+   -113.96909,
+   46.90858
+  ],
+  [
+   "E Broadway St & Easy St",
+   "bus_stop",
+   "",
+   -113.95384,
+   46.86357
+  ],
+  [
+   "E Broadway St & Easy St",
+   "bus_stop",
+   "",
+   -113.95303,
+   46.86322
+  ],
+  [
+   "E Broadway St & Jackson",
+   "bus_stop",
+   "",
+   -113.98357,
+   46.87384
+  ],
+  [
+   "E Broadway St & Monroe St",
+   "bus_stop",
+   "",
+   -113.98533,
+   46.87357
+  ],
+  [
+   "E Broadway St & N Adams St",
+   "bus_stop",
+   "",
+   -113.98948,
+   46.87232
+  ],
+  [
+   "E Broadway St & N Adams St",
+   "bus_stop",
+   "",
+   -113.98947,
+   46.8721
+  ],
+  [
+   "E Broadway St & N Washington St",
+   "bus_stop",
+   "",
+   -113.99141,
+   46.87151
+  ],
+  [
+   "E Broadway St & Van Buren St",
+   "bus_stop",
+   "",
+   -113.98237,
+   46.87384
+  ],
+  [
+   "E Broadway St & Van Buren St",
+   "bus_stop",
+   "",
+   -113.98158,
+   46.87466
+  ],
+  [
+   "E Broadway St & Van Buren St",
+   "bus_stop",
+   "",
+   -113.98133,
+   46.87451
+  ],
+  [
+   "E Broadway St at MT Tech",
+   "bus_stop",
+   "",
+   -113.97672,
+   46.8618
+  ],
+  [
+   "E Broadway St at Silvertip Apartments",
+   "bus_stop",
+   "",
+   -113.97235,
+   46.86367
+  ],
+  [
+   "E Broadway St at Silvertip Apartments",
+   "bus_stop",
+   "",
+   -113.97105,
+   46.86425
+  ],
+  [
+   "E Broadway at Cobblestone",
+   "bus_stop",
+   "",
+   -113.95862,
+   46.86457
+  ],
+  [
+   "E Front St & N Adams St",
+   "bus_stop",
+   "",
+   -113.99025,
+   46.87378
+  ],
+  [
+   "E Front St & N Pattee St",
+   "bus_stop",
+   "",
+   -113.99348,
+   46.87329
+  ],
+  [
+   "E Main St & N Adams St",
+   "bus_stop",
+   "",
+   -113.99042,
+   46.87275
+  ],
+  [
+   "E3 Convergance Gallery",
+   "museum",
+   "",
+   -113.99721,
+   46.87116
+  ],
+  [
+   "East Broadway Park-n-Ride Lot",
+   "bus_stop",
+   "",
+   -113.97498,
+   46.86266
+  ],
+  [
+   "East Missoula",
+   "census",
+   "",
+   -113.94183,
+   46.87978
+  ],
+  [
+   "East Missoula Lions Park",
+   "park",
+   "",
+   -113.93818,
+   46.8811
+  ],
+  [
+   "East Missoula Rural Fire Department",
+   "fire_station",
+   "",
+   -113.94523,
+   46.87367
+  ],
+  [
+   "East Pine Lot",
+   "parking",
+   "",
+   -113.99285,
+   46.86975
+  ],
+  [
+   "East Toole Park River Access",
+   "bathing_place",
+   "",
+   -113.99012,
+   46.86125
+  ],
+  [
+   "East Village Apartments",
+   "residential",
+   "",
+   -113.94865,
+   46.8729
+  ],
+  [
+   "Eastgate Rental & Party Center",
+   "rental",
+   "",
+   -113.98659,
+   46.87038
+  ],
+  [
+   "Eastgate Shopping Center",
+   "retail",
+   "",
+   -113.98163,
+   46.87516
+  ],
+  [
+   "Eaton St & Emily Ct",
+   "bus_stop",
+   "",
+   -114.03411,
+   46.85284
+  ],
+  [
+   "Eaton St & Mount Ave",
+   "bus_stop",
+   "",
+   -114.0343,
+   46.85672
+  ],
+  [
+   "Eaton St & Mount Ave",
+   "bus_stop",
+   "",
+   -114.0341,
+   46.8566
+  ],
+  [
+   "Eaton St & S 10th St W",
+   "bus_stop",
+   "",
+   -114.03432,
+   46.86745
+  ],
+  [
+   "Eaton St & S 12th St W",
+   "bus_stop",
+   "",
+   -114.03431,
+   46.85433
+  ],
+  [
+   "Eaton St & S 12th St W",
+   "bus_stop",
+   "",
+   -114.03412,
+   46.85454
+  ],
+  [
+   "Eaton St & Strand Ave",
+   "bus_stop",
+   "",
+   -114.03429,
+   46.85852
+  ],
+  [
+   "Eaton St & Strand Ave",
+   "bus_stop",
+   "",
+   -114.03411,
+   46.85872
+  ],
+  [
+   "Ecig Vapor Juice Store",
+   "e-cigarette",
+   "",
+   -114.01005,
+   46.85983
+  ],
+  [
+   "Econo Lodge Missoula",
+   "motel",
+   "",
+   -114.03664,
+   46.90669
+  ],
+  [
+   "Eddie Bauer",
+   "clothes",
+   "",
+   -114.02793,
+   46.83794
+  ],
+  [
+   "Edgewood Missoula Memory Care",
+   "social_facility",
+   "",
+   -114.03168,
+   46.88643
+  ],
+  [
+   "Eide Motors",
+   "car",
+   "",
+   -114.03893,
+   46.83986
+  ],
+  [
+   "El Cazador",
+   "restaurant",
+   "",
+   -114.03343,
+   46.84929
+  ],
+  [
+   "El Diablo",
+   "restaurant",
+   "mexican",
+   -113.99771,
+   46.85551
+  ],
+  [
+   "El-Mar Trailer Village",
+   "residential",
+   "",
+   -114.04343,
+   46.9042
+  ],
+  [
+   "Electrical Wholesale Supply",
+   "electrical",
+   "",
+   -114.02427,
+   46.87772
+  ],
+  [
+   "Electrify America",
+   "charging_station",
+   "",
+   -114.04057,
+   46.88856
+  ],
+  [
+   "Elevate Church",
+   "place_of_worship",
+   "christian",
+   -114.08075,
+   46.82802
+  ],
+  [
+   "Elks Lodge",
+   "hotel",
+   "",
+   -113.99328,
+   46.87295
+  ],
+  [
+   "Elms Park",
+   "park",
+   "",
+   -114.00229,
+   46.84064
+  ],
+  [
+   "Elote Mexican Bar and Grille",
+   "restaurant",
+   "mexican",
+   -114.02645,
+   46.85198
+  ],
+  [
+   "Emery Place",
+   "residential",
+   "",
+   -114.04537,
+   46.87333
+  ],
+  [
+   "Emmanuel Baptist Church",
+   "place_of_worship",
+   "christian",
+   -114.00233,
+   46.85014
+  ],
+  [
+   "Energy Partners Propane",
+   "fireplace",
+   "",
+   -114.03778,
+   46.89974
+  ],
+  [
+   "England Blvd & N Reserve St",
+   "bus_stop",
+   "",
+   -114.04095,
+   46.89408
+  ],
+  [
+   "England Blvd & Tina Ave",
+   "bus_stop",
+   "",
+   -114.04274,
+   46.89396
+  ],
+  [
+   "England Blvd & Tina Ave",
+   "bus_stop",
+   "",
+   -114.0422,
+   46.8941
+  ],
+  [
+   "Enterprise",
+   "car_rental",
+   "",
+   -114.03611,
+   46.89118
+  ],
+  [
+   "Expressway & Canyon Creek Blvd",
+   "bus_stop",
+   "",
+   -114.06417,
+   46.91744
+  ],
+  [
+   "Expressway & Canyon Creek Blvd",
+   "bus_stop",
+   "",
+   -114.06393,
+   46.91771
+  ],
+  [
+   "Expressway & N Reserve St",
+   "bus_stop",
+   "",
+   -114.04033,
+   46.91226
+  ],
+  [
+   "Expressway Storage",
+   "commercial",
+   "",
+   -114.05955,
+   46.9144
+  ],
+  [
+   "Expressway at the Crestview Apartments",
+   "bus_stop",
+   "",
+   -114.05214,
+   46.90991
+  ],
+  [
+   "Expressway at the Crestview Apartments",
+   "bus_stop",
+   "",
+   -114.05218,
+   46.91008
+  ],
+  [
+   "Exxon",
+   "convenience",
+   "",
+   -114.0354,
+   46.90576
+  ],
+  [
+   "Exxon",
+   "fuel",
+   "",
+   -114.03857,
+   46.88723
+  ],
+  [
+   "Exxon",
+   "fuel",
+   "",
+   -114.03507,
+   46.90586
+  ],
+  [
+   "Exxon",
+   "fuel",
+   "",
+   -114.03549,
+   46.90607
+  ],
+  [
+   "Fair Way",
+   "pedestrian",
+   "",
+   -114.01627,
+   46.8511
+  ],
+  [
+   "Faith Evangelical Free Church of Missoula",
+   "place_of_worship",
+   "christian",
+   -114.041,
+   46.85477
+  ],
+  [
+   "Famous Dave's",
+   "restaurant",
+   "barbecue",
+   -114.03991,
+   46.89638
+  ],
+  [
+   "Famous Footwear",
+   "shoes",
+   "",
+   -114.0399,
+   46.8936
+  ],
+  [
+   "Famous Footwear",
+   "shoes",
+   "",
+   -114.02691,
+   46.85089
+  ],
+  [
+   "Fancy Plants",
+   "plant_nursery",
+   "",
+   -114.01565,
+   46.85795
+  ],
+  [
+   "Fantasy for Adults",
+   "video",
+   "",
+   -114.02178,
+   46.85137
+  ],
+  [
+   "Farm Hand Farm",
+   "farm",
+   "",
+   -114.05337,
+   46.84693
+  ],
+  [
+   "Farm to Market Pork",
+   "butcher",
+   "",
+   -113.99881,
+   46.86969
+  ],
+  [
+   "Farmers State Bank",
+   "bank",
+   "",
+   -114.03879,
+   46.89451
+  ],
+  [
+   "Farrside Sign",
+   "signmaker",
+   "",
+   -114.03275,
+   46.84922
+  ],
+  [
+   "Fast Trip",
+   "convenience",
+   "",
+   -114.03878,
+   46.85234
+  ],
+  [
+   "Fastsigns",
+   "signmaker",
+   "",
+   -114.03586,
+   46.90273
+  ],
+  [
+   "FedEx Office",
+   "copyshop",
+   "",
+   -113.99491,
+   46.87034
+  ],
+  [
+   "Felton Dental Care",
+   "dentist",
+   "",
+   -114.00925,
+   46.85841
+  ],
+  [
+   "Ferguson Plumbing Supply",
+   "plumber",
+   "",
+   -114.04162,
+   46.83158
+  ],
+  [
+   "Feruqi's Bar",
+   "bar",
+   "",
+   -113.99333,
+   46.87035
+  ],
+  [
+   "Fiesta En Jalisco",
+   "restaurant",
+   "mexican",
+   -114.03511,
+   46.90793
+  ],
+  [
+   "Fiesta En Jalisco",
+   "restaurant",
+   "mexican",
+   -114.03808,
+   46.83023
+  ],
+  [
+   "Finn",
+   "restaurant",
+   "american",
+   -113.98689,
+   46.8752
+  ],
+  [
+   "Firefly",
+   "art",
+   "",
+   -113.99571,
+   46.87319
+  ],
+  [
+   "Firestone",
+   "car_repair",
+   "",
+   -114.03837,
+   46.90116
+  ],
+  [
+   "First Baptist Church of Missoula",
+   "place_of_worship",
+   "christian",
+   -113.99636,
+   46.86852
+  ],
+  [
+   "First Christian Church",
+   "place_of_worship",
+   "christian",
+   -114.01888,
+   46.85209
+  ],
+  [
+   "First Church of Christ, Scientist",
+   "place_of_worship",
+   "christian",
+   -114.00466,
+   46.8444
+  ],
+  [
+   "First Interstate Bank",
+   "bank",
+   "",
+   -114.03864,
+   46.88441
+  ],
+  [
+   "First Interstate Bank",
+   "bank",
+   "",
+   -114.03252,
+   46.84419
+  ],
+  [
+   "First Interstate Bank",
+   "bank",
+   "",
+   -113.99482,
+   46.87316
+  ],
+  [
+   "First Interstate Plaza",
+   "pedestrian",
+   "",
+   -113.99428,
+   46.87335
+  ],
+  [
+   "First Lutheran Church and Schools",
+   "place_of_worship",
+   "christian",
+   -114.04809,
+   46.84851
+  ],
+  [
+   "First Montana Bank",
+   "bank",
+   "",
+   -114.03096,
+   46.84252
+  ],
+  [
+   "First Montana Bank",
+   "bank",
+   "",
+   -113.99471,
+   46.8715
+  ],
+  [
+   "First National Pawn",
+   "pawnbroker",
+   "",
+   -114.03901,
+   46.84063
+  ],
+  [
+   "First Presbyterian Church",
+   "place_of_worship",
+   "christian",
+   -113.99933,
+   46.86322
+  ],
+  [
+   "First Security Bank",
+   "bank",
+   "",
+   -114.0438,
+   46.88696
+  ],
+  [
+   "First Security Bank",
+   "bank",
+   "",
+   -114.03509,
+   46.89675
+  ],
+  [
+   "First Security Bank",
+   "bank",
+   "",
+   -114.02459,
+   46.85115
+  ],
+  [
+   "First Security Bank",
+   "bank",
+   "",
+   -114.0234,
+   46.85046
+  ],
+  [
+   "First Security Bank",
+   "bank",
+   "",
+   -113.99352,
+   46.87077
+  ],
+  [
+   "First Security Bank",
+   "bank",
+   "",
+   -113.98794,
+   46.87292
+  ],
+  [
+   "First Security Bank of Missoula",
+   "bank",
+   "",
+   -114.0399,
+   46.89516
+  ],
+  [
+   "Five Guys",
+   "fast_food",
+   "burger",
+   -113.98301,
+   46.87351
+  ],
+  [
+   "Five Valley Auto Sales",
+   "car",
+   "",
+   -114.03911,
+   46.84256
+  ],
+  [
+   "Five Valleys Archery Club",
+   "pitch",
+   "archery",
+   -114.06283,
+   46.7999
+  ],
+  [
+   "Five on Black",
+   "restaurant",
+   "brazilian",
+   -114.0392,
+   46.83222
+  ],
+  [
+   "Five on Black",
+   "restaurant",
+   "brazilian",
+   -113.99383,
+   46.87006
+  ],
+  [
+   "Flanagan Motors Mazda",
+   "car",
+   "",
+   -114.01219,
+   46.85828
+  ],
+  [
+   "Flipper's Casino",
+   "casino",
+   "",
+   -113.9985,
+   46.86114
+  ],
+  [
+   "Flor-Haven Home",
+   "social_facility",
+   "",
+   -114.00233,
+   46.86075
+  ],
+  [
+   "Florabella",
+   "restaurant",
+   "italian",
+   -114.00222,
+   46.85369
+  ],
+  [
+   "Florence Coffee",
+   "cafe",
+   "coffee_shop",
+   -114.01608,
+   46.84743
+  ],
+  [
+   "Florence Coffee Co.",
+   "cafe",
+   "coffee_shop",
+   -114.02943,
+   46.88573
+  ],
+  [
+   "Florence Coffee Co.",
+   "cafe",
+   "coffee_shop",
+   -113.99298,
+   46.87853
+  ],
+  [
+   "Florence Coffee Company",
+   "cafe",
+   "coffee_shop",
+   -114.03419,
+   46.90703
+  ],
+  [
+   "Florence Coffee Company",
+   "cafe",
+   "",
+   -114.01163,
+   46.83136
+  ],
+  [
+   "Florence Coffee Company",
+   "cafe",
+   "coffee_shop",
+   -113.94954,
+   46.87493
+  ],
+  [
+   "Flynn Lane Park",
+   "park",
+   "",
+   -114.05476,
+   46.89288
+  ],
+  [
+   "Fort Courage Child Care",
+   "childcare",
+   "",
+   -114.05492,
+   46.84599
+  ],
+  [
+   "Fort Missoula",
+   "military",
+   "",
+   -114.06234,
+   46.83986
+  ],
+  [
+   "Fort Missoula Native Plant Garden",
+   "park",
+   "",
+   -114.0579,
+   46.84371
+  ],
+  [
+   "Fort Missoula Ponds",
+   "water",
+   "",
+   -114.07588,
+   46.84119
+  ],
+  [
+   "Fort Missoula Post Cemetery",
+   "cemetery",
+   "",
+   -114.05776,
+   46.85099
+  ],
+  [
+   "Fort Missoula Regional Park",
+   "park",
+   "",
+   -114.05334,
+   46.85249
+  ],
+  [
+   "Foster's Reach",
+   "residential",
+   "",
+   -114.06201,
+   46.87402
+  ],
+  [
+   "Fox Club Cabaret",
+   "stripclub",
+   "",
+   -114.02941,
+   46.84095
+  ],
+  [
+   "Frank's Little Farm",
+   "farmyard",
+   "",
+   -114.03209,
+   46.87119
+  ],
+  [
+   "Franklin Elementary School",
+   "school",
+   "",
+   -114.02722,
+   46.85286
+  ],
+  [
+   "Franklin Park",
+   "park",
+   "",
+   -114.03108,
+   46.86696
+  ],
+  [
+   "Fred's Appliance",
+   "appliance",
+   "",
+   -114.07595,
+   46.82713
+  ],
+  [
+   "Freddy's",
+   "fast_food",
+   "ice_cream;burger",
+   -114.03675,
+   46.90815
+  ],
+  [
+   "Free Cycles",
+   "bicycle_repair_station",
+   "",
+   -114.00765,
+   46.87376
+  ],
+  [
+   "Freestone Climbing Center",
+   "sports_centre",
+   "climbing",
+   -114.00864,
+   46.88955
+  ],
+  [
+   "Fresenius Kidney Care",
+   "clinic",
+   "",
+   -114.03492,
+   46.89521
+  ],
+  [
+   "Fresh Natural Cleaners",
+   "dry_cleaning",
+   "",
+   -114.01515,
+   46.83287
+  ],
+  [
+   "Frolic",
+   "beauty",
+   "",
+   -113.99791,
+   46.85562
+  ],
+  [
+   "Front St & Orange St",
+   "bus_stop",
+   "",
+   -113.99846,
+   46.87102
+  ],
+  [
+   "Front Street Pizza",
+   "restaurant",
+   "pizza",
+   -113.99181,
+   46.87365
+  ],
+  [
+   "Frugals",
+   "fast_food",
+   "burger",
+   -114.03999,
+   46.88565
+  ],
+  [
+   "Frugals",
+   "restaurant",
+   "burger",
+   -114.01998,
+   46.85004
+  ],
+  [
+   "Fuel Fitness",
+   "fitness_centre",
+   "",
+   -114.01003,
+   46.84537
+  ],
+  [
+   "Funk It Thrift",
+   "cafe",
+   "coffee_shop",
+   -113.99425,
+   46.88028
+  ],
+  [
+   "Furniture Row",
+   "furniture",
+   "",
+   -114.0416,
+   46.89073
+  ],
+  [
+   "GA Seating",
+   "grass",
+   "",
+   -114.00753,
+   46.86891
+  ],
+  [
+   "GAM Missoula",
+   "sewing",
+   "",
+   -114.00209,
+   46.87814
+  ],
+  [
+   "GAM Missoula",
+   "sewing",
+   "",
+   -114.00225,
+   46.87834
+  ],
+  [
+   "GEM Jewelers",
+   "jewelry",
+   "",
+   -114.001,
+   46.84307
+  ],
+  [
+   "GILD",
+   "restaurant",
+   "",
+   -113.99774,
+   46.86134
+  ],
+  [
+   "GNC",
+   "nutrition_supplements",
+   "",
+   -114.03644,
+   46.88765
+  ],
+  [
+   "GameStop",
+   "video_games",
+   "",
+   -114.02779,
+   46.85241
+  ],
+  [
+   "Gap",
+   "clothes",
+   "",
+   -114.02684,
+   46.85232
+  ],
+  [
+   "Garage Door Guys",
+   "doityourself",
+   "",
+   -114.03426,
+   46.91252
+  ],
+  [
+   "Garden City Church of Christ",
+   "place_of_worship",
+   "christian",
+   -114.00178,
+   46.86297
+  ],
+  [
+   "Garden City Compost",
+   "industrial",
+   "",
+   -114.04645,
+   46.87836
+  ],
+  [
+   "Garden City Funeral Home",
+   "funeral_directors",
+   "",
+   -114.02328,
+   46.87783
+  ],
+  [
+   "Garden City Harvest",
+   "farmland",
+   "",
+   -114.02243,
+   46.88268
+  ],
+  [
+   "Garden City Harvest - Youth Farm",
+   "garden",
+   "",
+   -114.04843,
+   46.84583
+  ],
+  [
+   "Garden City Medical Arts Building",
+   "clinic",
+   "",
+   -114.00176,
+   46.88199
+  ],
+  [
+   "Garden City Monument Services",
+   "monument",
+   "",
+   -114.01831,
+   46.8532
+  ],
+  [
+   "Garden City Paints & Glass",
+   "paint",
+   "",
+   -114.03008,
+   46.84195
+  ],
+  [
+   "Garden Mother",
+   "herbalist",
+   "",
+   -114.01154,
+   46.85935
+  ],
+  [
+   "Garland Park",
+   "park",
+   "",
+   -114.03501,
+   46.82701
+  ],
+  [
+   "Gary's Service Station",
+   "car_repair",
+   "",
+   -113.99774,
+   46.84688
+  ],
+  [
+   "Gasworks Trailhead",
+   "trailhead",
+   "",
+   -113.98876,
+   46.83343
+  ],
+  [
+   "Gentle Dental",
+   "dentist",
+   "",
+   -114.0091,
+   46.84507
+  ],
+  [
+   "Gharrett St & Anthony Ln",
+   "bus_stop",
+   "",
+   -114.04307,
+   46.83002
+  ],
+  [
+   "Gharrett St & Briggs St",
+   "bus_stop",
+   "",
+   -114.04302,
+   46.83744
+  ],
+  [
+   "Gharrett St & Garland Dr",
+   "bus_stop",
+   "",
+   -114.04301,
+   46.8245
+  ],
+  [
+   "Gharrett St & Meadowlark Ct",
+   "bus_stop",
+   "",
+   -114.04302,
+   46.81729
+  ],
+  [
+   "Gharrett St & South Hills Dr",
+   "bus_stop",
+   "",
+   -114.04305,
+   46.82653
+  ],
+  [
+   "Ginger Quill Addition",
+   "construction",
+   "",
+   -113.9284,
+   46.86868
+  ],
+  [
+   "Ginny Mountain",
+   "peak",
+   "",
+   -113.94897,
+   46.83513
+  ],
+  [
+   "Glacier Ice Rink",
+   "ice_rink",
+   "",
+   -114.01764,
+   46.85041
+  ],
+  [
+   "Glad Tidings Assembly of God Church",
+   "place_of_worship",
+   "christian",
+   -114.03879,
+   46.85882
+  ],
+  [
+   "Global Travel & Tours",
+   "travel_agency",
+   "",
+   -114.02129,
+   46.85155
+  ],
+  [
+   "Go Fetch!",
+   "pet",
+   "",
+   -114.04113,
+   46.89335
+  ],
+  [
+   "Goin' Quilting",
+   "fabric",
+   "",
+   -113.99405,
+   46.87772
+  ],
+  [
+   "Golden Rose Whiskey Bar",
+   "bar",
+   "",
+   -113.99515,
+   46.87064
+  ],
+  [
+   "Goldsmith's Inn Bed and Breakfast",
+   "guest_house",
+   "",
+   -113.98431,
+   46.875
+  ],
+  [
+   "Good Food Store",
+   "supermarket",
+   "",
+   -114.02032,
+   46.86024
+  ],
+  [
+   "Goodwill",
+   "charity",
+   "",
+   -114.04035,
+   46.85029
+  ],
+  [
+   "Grace United Methodist Church",
+   "place_of_worship",
+   "christian",
+   -114.02393,
+   46.8671
+  ],
+  [
+   "Graffiti Wall",
+   "arts_centre",
+   "",
+   -114.01349,
+   46.86795
+  ],
+  [
+   "Granite Mill Coffee",
+   "coffee",
+   "",
+   -113.94632,
+   46.87177
+  ],
+  [
+   "Granite Peak Orthodontics",
+   "dentist",
+   "",
+   -113.99783,
+   46.85407
+  ],
+  [
+   "Grant Creek Pit",
+   "quarry",
+   "",
+   -113.9541,
+   46.82805
+  ],
+  [
+   "Grant Creek Schoolhouse",
+   "building",
+   "",
+   -114.06097,
+   46.83979
+  ],
+  [
+   "Grant Creek Self Storage",
+   "boat_storage",
+   "",
+   -114.04271,
+   46.91961
+  ],
+  [
+   "Grant Creek Town Center",
+   "retail",
+   "",
+   -114.04059,
+   46.89257
+  ],
+  [
+   "Grant Creek Veterinary Services",
+   "veterinary",
+   "",
+   -114.03641,
+   46.90201
+  ],
+  [
+   "Grant Creek Village Apartments",
+   "residential",
+   "",
+   -114.03659,
+   46.91552
+  ],
+  [
+   "Gravity Haus",
+   "hotel",
+   "",
+   -113.99896,
+   46.8689
+  ],
+  [
+   "Graybeal Heating & Air Conditioning",
+   "hvac",
+   "",
+   -114.03846,
+   46.84154
+  ],
+  [
+   "Great Burn Brewing",
+   "brewery",
+   "",
+   -114.03285,
+   46.84284
+  ],
+  [
+   "Great Clips",
+   "hairdresser",
+   "",
+   -114.04114,
+   46.89376
+  ],
+  [
+   "Great Clips",
+   "hairdresser",
+   "",
+   -114.01536,
+   46.83213
+  ],
+  [
+   "Great Harvest Bread Company",
+   "bakery",
+   "",
+   -113.99775,
+   46.8551
+  ],
+  [
+   "Great Northern Apartments",
+   "residential",
+   "",
+   -114.03517,
+   46.89287
+  ],
+  [
+   "Great Northern Ave & American Way",
+   "bus_stop",
+   "",
+   -114.03553,
+   46.89759
+  ],
+  [
+   "Great Northern Ave & American Way",
+   "bus_stop",
+   "",
+   -114.03574,
+   46.89759
+  ],
+  [
+   "Great Northern Ave & Union Pacific St",
+   "bus_stop",
+   "",
+   -114.03573,
+   46.88496
+  ],
+  [
+   "Great Northern Ave & Union Pacific St",
+   "bus_stop",
+   "",
+   -114.0355,
+   46.88461
+  ],
+  [
+   "Green Hanger",
+   "laundry",
+   "",
+   -113.99895,
+   46.8649
+  ],
+  [
+   "Green Source",
+   "restaurant",
+   "smoothie",
+   -113.99773,
+   46.86248
+  ],
+  [
+   "Greener Pastures",
+   "cannabis",
+   "",
+   -114.01153,
+   46.85844
+  ],
+  [
+   "Greener Visuals Photography",
+   "photographer",
+   "",
+   -114.0089,
+   46.8427
+  ],
+  [
+   "Greenough Park",
+   "park",
+   "",
+   -113.97693,
+   46.88146
+  ],
+  [
+   "Grizzly Gate",
+   "artwork",
+   "",
+   -113.98813,
+   46.86238
+  ],
+  [
+   "Grizzly Gold and Silver",
+   "bureau_de_change",
+   "",
+   -114.01264,
+   46.84519
+  ],
+  [
+   "Grizzly Grocery",
+   "supermarket",
+   "",
+   -113.99802,
+   46.8557
+  ],
+  [
+   "Grizzly Hackle Outfitters",
+   "clothes",
+   "",
+   -113.99689,
+   46.87221
+  ],
+  [
+   "Grizzly Indoor Practice Facility",
+   "sports_centre",
+   "soccer;american_football;athletics",
+   -113.98556,
+   46.86234
+  ],
+  [
+   "Grizzly Liqour",
+   "alcohol",
+   "",
+   -113.99337,
+   46.86841
+  ],
+  [
+   "Grizzly Peak",
+   "social_facility",
+   "",
+   -114.04286,
+   46.89605
+  ],
+  [
+   "Grizzly Pool",
+   "sports_centre",
+   "swimming",
+   -113.98293,
+   46.86476
+  ],
+  [
+   "Grizzly Softball Field",
+   "pitch",
+   "softball",
+   -113.99499,
+   46.84973
+  ],
+  [
+   "Grizzly Statue",
+   "turning_loop",
+   "",
+   -113.98681,
+   46.8528
+  ],
+  [
+   "Grizzly Tackle",
+   "fishing",
+   "",
+   -113.99698,
+   46.87212
+  ],
+  [
+   "H&H Meats",
+   "butcher",
+   "",
+   -114.02419,
+   46.84933
+  ],
+  [
+   "H&M",
+   "clothes",
+   "",
+   -114.02645,
+   46.85222
+  ],
+  [
+   "H-O Auto Paint & Industrial",
+   "car_parts",
+   "",
+   -114.01592,
+   46.85827
+  ],
+  [
+   "HOWLgate Canyon Carwash",
+   "car_wash",
+   "",
+   -113.97745,
+   46.86107
+  ],
+  [
+   "Hallmark",
+   "gift",
+   "",
+   -114.02761,
+   46.85099
+  ],
+  [
+   "Hampton",
+   "hotel",
+   "",
+   -114.03762,
+   46.90938
+  ],
+  [
+   "Hana",
+   "restaurant",
+   "sushi",
+   -113.99591,
+   46.87347
+  ],
+  [
+   "Happy Days Carwash",
+   "car_wash",
+   "",
+   -114.0414,
+   46.83124
+  ],
+  [
+   "Har Shalom",
+   "place_of_worship",
+   "jewish",
+   -114.01888,
+   46.83997
+  ],
+  [
+   "Harbor Freight Tools",
+   "hardware",
+   "",
+   -114.03654,
+   46.88787
+  ],
+  [
+   "Harrier Dr & Technology Way",
+   "bus_stop",
+   "",
+   -114.06539,
+   46.9133
+  ],
+  [
+   "Harrier Dr & Technology Way",
+   "bus_stop",
+   "",
+   -114.06549,
+   46.9134
+  ],
+  [
+   "Harrington Surgical Supply",
+   "medical_supply",
+   "",
+   -114.01892,
+   46.85497
+  ],
+  [
+   "Hart's Landing Subdivision",
+   "construction",
+   "",
+   -114.04345,
+   46.86216
+  ],
+  [
+   "Harvest Calling Farms",
+   "farm",
+   "",
+   -114.07787,
+   46.86599
+  ],
+  [
+   "Hawthorne School",
+   "school",
+   "",
+   -114.05196,
+   46.86227
+  ],
+  [
+   "Hayes Homestead Cabin",
+   "building",
+   "",
+   -114.06108,
+   46.83933
+  ],
+  [
+   "Hazel & Fawn",
+   "baby_goods",
+   "",
+   -113.99705,
+   46.86231
+  ],
+  [
+   "Head Start Preschool",
+   "school",
+   "",
+   -113.99817,
+   46.87644
+  ],
+  [
+   "Health Options Clinic",
+   "clinic",
+   "",
+   -114.01909,
+   46.83956
+  ],
+  [
+   "Hell Gate",
+   "information",
+   "",
+   -113.95205,
+   46.86342
+  ],
+  [
+   "Hell Gate and Missoula Historical Marker",
+   "park",
+   "",
+   -113.95094,
+   46.87494
+  ],
+  [
+   "Hellgate Canyon Storage",
+   "commercial",
+   "",
+   -113.94337,
+   46.86889
+  ],
+  [
+   "Hellgate Elementary School",
+   "school",
+   "",
+   -114.05597,
+   46.89484
+  ],
+  [
+   "Hellgate High School",
+   "school",
+   "",
+   -113.99662,
+   46.86503
+  ],
+  [
+   "Hellgate Intermediate School",
+   "school",
+   "",
+   -114.05757,
+   46.89389
+  ],
+  [
+   "Hellgate Meadows Village",
+   "monument",
+   "",
+   -114.0456,
+   46.88414
+  ],
+  [
+   "Hellgate Middle School",
+   "school",
+   "",
+   -114.05944,
+   46.89394
+  ],
+  [
+   "Hellgate Osprey Nest Viewing Point",
+   "bird_hide",
+   "",
+   -113.97558,
+   46.86363
+  ],
+  [
+   "Hellgate Primary School",
+   "school",
+   "",
+   -114.05871,
+   46.89506
+  ],
+  [
+   "Hiberta St & James St",
+   "bus_stop",
+   "",
+   -114.05258,
+   46.863
+  ],
+  [
+   "Hiberta St & James St",
+   "bus_stop",
+   "",
+   -114.05275,
+   46.86306
+  ],
+  [
+   "Hiberta St & S 3rd St W",
+   "bus_stop",
+   "",
+   -114.05258,
+   46.86106
+  ],
+  [
+   "Hickory Leaf Dairy Goats",
+   "farm",
+   "",
+   -114.07918,
+   46.88876
+  ],
+  [
+   "Higgins Ave & E Front St",
+   "bus_stop",
+   "",
+   -113.99509,
+   46.87276
+  ],
+  [
+   "Higgins Ave Car Wash",
+   "car_wash",
+   "",
+   -113.999,
+   46.84232
+  ],
+  [
+   "Higgins Corner",
+   "residential",
+   "",
+   -114.04617,
+   46.85986
+  ],
+  [
+   "High Park",
+   "park",
+   "",
+   -114.01248,
+   46.82371
+  ],
+  [
+   "Hillview Apartments",
+   "residential",
+   "",
+   -114.01781,
+   46.83415
+  ],
+  [
+   "Hilton Garden Inn",
+   "hotel",
+   "",
+   -114.03723,
+   46.89812
+  ],
+  [
+   "Historical Museum at Fort Missoula",
+   "museum",
+   "",
+   -114.0629,
+   46.839
+  ],
+  [
+   "Hoagieville",
+   "fast_food",
+   "",
+   -114.02746,
+   46.85147
+  ],
+  [
+   "Hobby Lobby",
+   "craft",
+   "",
+   -114.02684,
+   46.83793
+  ],
+  [
+   "Hokkaido Ramen House",
+   "restaurant",
+   "ramen",
+   -114.03982,
+   46.89664
+  ],
+  [
+   "Holiday",
+   "convenience",
+   "",
+   -113.998,
+   46.86237
+  ],
+  [
+   "Holiday",
+   "fuel",
+   "",
+   -114.0403,
+   46.84861
+  ],
+  [
+   "Holiday",
+   "fuel",
+   "",
+   -113.9979,
+   46.86216
+  ],
+  [
+   "Holiday Inn Express & Suites",
+   "hotel",
+   "",
+   -114.04068,
+   46.91177
+  ],
+  [
+   "Holiday Inn Missoula Downtown",
+   "hotel",
+   "",
+   -113.99381,
+   46.87472
+  ],
+  [
+   "Holiday Village Shopping Center",
+   "retail",
+   "",
+   -114.01039,
+   46.86005
+  ],
+  [
+   "Hollister",
+   "clothes",
+   "",
+   -114.02744,
+   46.85258
+  ],
+  [
+   "Hollywood Trailer Court",
+   "residential",
+   "",
+   -114.01691,
+   46.88747
+  ],
+  [
+   "Holmes St & Stoddard St",
+   "bus_stop",
+   "",
+   -114.00009,
+   46.88911
+  ],
+  [
+   "Holy Spirit Episcopal Church",
+   "place_of_worship",
+   "christian",
+   -113.9961,
+   46.86359
+  ],
+  [
+   "Home ReSource",
+   "doityourself",
+   "",
+   -114.01894,
+   46.87133
+  ],
+  [
+   "Hometana",
+   "clothes",
+   "",
+   -113.99358,
+   46.87049
+  ],
+  [
+   "Hometown Motors RV and Consignment",
+   "car",
+   "",
+   -114.07509,
+   46.82884
+  ],
+  [
+   "Homewood Suites",
+   "hotel",
+   "",
+   -114.03714,
+   46.90857
+  ],
+  [
+   "Honeysuckle Park",
+   "park",
+   "",
+   -114.03309,
+   46.83684
+  ],
+  [
+   "Hope Thrift Boutique",
+   "second_hand",
+   "",
+   -114.01051,
+   46.83057
+  ],
+  [
+   "Horizon Credit Union",
+   "bank",
+   "",
+   -114.03835,
+   46.89879
+  ],
+  [
+   "Hot House Yoga",
+   "fitness_centre",
+   "yoga",
+   -113.99517,
+   46.87214
+  ],
+  [
+   "Hunter Bay",
+   "coffee",
+   "",
+   -113.99518,
+   46.87322
+  ],
+  [
+   "Hunter Bay Coffee Roasters",
+   "cafe",
+   "coffee_shop;sandwich",
+   -114.00256,
+   46.87977
+  ],
+  [
+   "Hunter's Glen",
+   "social_facility",
+   "",
+   -114.04422,
+   46.89605
+  ],
+  [
+   "Hybrid Poplar Tree Project",
+   "forest",
+   "",
+   -114.05067,
+   46.87654
+  ],
+  [
+   "IHOP",
+   "restaurant",
+   "breakfast;pancake",
+   -114.03841,
+   46.89926
+  ],
+  [
+   "Imagination Station Toys",
+   "toys",
+   "",
+   -113.99438,
+   46.87089
+  ],
+  [
+   "Imagine Nation Brewing",
+   "pub",
+   "",
+   -114.00965,
+   46.88144
+  ],
+  [
+   "Immanuel Lutheran Church",
+   "place_of_worship",
+   "christian",
+   -114.01088,
+   46.84864
+  ],
+  [
+   "Immanuel Lutheran Church",
+   "religious",
+   "christian",
+   -114.01079,
+   46.84852
+  ],
+  [
+   "Import Market",
+   "gift",
+   "",
+   -113.9959,
+   46.87041
+  ],
+  [
+   "Import Palace Auto Service",
+   "car_repair",
+   "",
+   -114.01574,
+   46.87956
+  ],
+  [
+   "International Rescue Committee",
+   "social_centre",
+   "",
+   -114.01998,
+   46.88081
+  ],
+  [
+   "Invermere Park",
+   "park",
+   "",
+   -114.05167,
+   46.81139
+  ],
+  [
+   "Iron Horse",
+   "restaurant",
+   "burger",
+   -113.99296,
+   46.86841
+  ],
+  [
+   "J & D Glass",
+   "car_parts",
+   "",
+   -114.01351,
+   46.84733
+  ],
+  [
+   "Jackson Contractor Group Indoor Hitting Facility",
+   "sports_centre",
+   "softball",
+   -113.99464,
+   46.8503
+  ],
+  [
+   "Jacob's Island",
+   "park",
+   "",
+   -113.97946,
+   46.86262
+  ],
+  [
+   "Jacob's Island Offleash Dog Park",
+   "dog_park",
+   "",
+   -113.97925,
+   46.86273
+  ],
+  [
+   "Jakers Bar & Grill",
+   "restaurant",
+   "",
+   -114.03362,
+   46.84374
+  ],
+  [
+   "James Bar",
+   "bar",
+   "",
+   -113.99323,
+   46.86789
+  ],
+  [
+   "Jay's Mart",
+   "convenience",
+   "",
+   -114.03863,
+   46.83337
+  ],
+  [
+   "Jefferson School",
+   "kindergarten",
+   "",
+   -114.02253,
+   46.84805
+  ],
+  [
+   "Jeffrey Park",
+   "park",
+   "",
+   -114.05772,
+   46.80532
+  ],
+  [
+   "Jenny Place Apartments",
+   "residential",
+   "",
+   -114.07806,
+   46.80867
+  ],
+  [
+   "Jersey Mike’s",
+   "deli",
+   "",
+   -114.02315,
+   46.83791
+  ],
+  [
+   "Jiffy Lube",
+   "car_repair",
+   "",
+   -114.03878,
+   46.89979
+  ],
+  [
+   "Jiffy Lube",
+   "car_repair",
+   "",
+   -114.0169,
+   46.84862
+  ],
+  [
+   "Jiffy Lube",
+   "car_repair",
+   "",
+   -113.98662,
+   46.87338
+  ],
+  [
+   "Jim's Cars",
+   "car",
+   "",
+   -114.02259,
+   46.8769
+  ],
+  [
+   "Jimmy John's",
+   "fast_food",
+   "sandwich",
+   -114.03752,
+   46.83091
+  ],
+  [
+   "Jimmy John's",
+   "fast_food",
+   "sandwich",
+   -113.99284,
+   46.8696
+  ],
+  [
+   "John's Appliance Service",
+   "electronics_repair",
+   "",
+   -114.00891,
+   46.8475
+  ],
+  [
+   "Jolly",
+   "car_repair",
+   "",
+   -114.03583,
+   46.84279
+  ],
+  [
+   "Journeys",
+   "shoes",
+   "",
+   -114.02704,
+   46.85249
+  ],
+  [
+   "Jumbo Trailhead",
+   "trailhead",
+   "",
+   -113.97576,
+   46.87429
+  ],
+  [
+   "Juneau Court",
+   "residential",
+   "",
+   -114.04555,
+   46.87276
+  ],
+  [
+   "KECI",
+   "studio",
+   "",
+   -113.99848,
+   46.87024
+  ],
+  [
+   "KFC",
+   "fast_food",
+   "chicken",
+   -114.02926,
+   46.84251
+  ],
+  [
+   "KLS Hydrualics & Machine Works",
+   "car_repair",
+   "",
+   -114.03378,
+   46.90079
+  ],
+  [
+   "KPAX",
+   "studio",
+   "",
+   -114.01445,
+   46.84779
+  ],
+  [
+   "Karl Tyler Autobody & Glass",
+   "car_repair",
+   "",
+   -114.03902,
+   46.91126
+  ],
+  [
+   "Karl Tyler Chevrolet",
+   "car",
+   "",
+   -114.04104,
+   46.89811
+  ],
+  [
+   "Karl Tyler Volkswagon",
+   "car",
+   "",
+   -114.04155,
+   46.91245
+  ],
+  [
+   "Kasberg Siding and Remodel",
+   "roofer",
+   "",
+   -114.07137,
+   46.84592
+  ],
+  [
+   "Katie O'Keefe's Casino",
+   "casino",
+   "",
+   -114.01166,
+   46.84694
+  ],
+  [
+   "Katoonah Lodges",
+   "residential",
+   "",
+   -114.08043,
+   46.88477
+  ],
+  [
+   "Keller Supply",
+   "kitchen",
+   "",
+   -114.03537,
+   46.84925
+  ],
+  [
+   "Keller Supply Co",
+   "plumber",
+   "",
+   -114.01601,
+   46.85748
+  ],
+  [
+   "Kelley Connect",
+   "copyshop",
+   "",
+   -114.01247,
+   46.88071
+  ],
+  [
+   "Kelsey Park",
+   "park",
+   "",
+   -114.06268,
+   46.80157
+  ],
+  [
+   "Kerr's Custom Draperies",
+   "window_blind",
+   "",
+   -114.03872,
+   46.84281
+  ],
+  [
+   "KettleHouse Brewery Northside",
+   "brewery",
+   "",
+   -113.99532,
+   46.88001
+  ],
+  [
+   "Kid Central Preschool",
+   "kindergarten",
+   "",
+   -114.01107,
+   46.84746
+  ],
+  [
+   "Kids Crossing",
+   "childcare",
+   "",
+   -114.02877,
+   46.83999
+  ],
+  [
+   "Kids Crossing",
+   "childcare",
+   "",
+   -114.0191,
+   46.85551
+  ],
+  [
+   "Kingdom Hall of Jehovah's Witnesses",
+   "place_of_worship",
+   "christian",
+   -114.0406,
+   46.86666
+  ],
+  [
+   "Kingfisher Fly Shop",
+   "fishing",
+   "",
+   -113.98151,
+   46.87439
+  ],
+  [
+   "Kirby",
+   "vacuum_cleaner",
+   "",
+   -114.01427,
+   46.85752
+  ],
+  [
+   "Kiwanis Park",
+   "park",
+   "",
+   -113.99079,
+   46.87478
+  ],
+  [
+   "Kobe Seafood & Steakhouse",
+   "restaurant",
+   "japanese;steak_house",
+   -114.04031,
+   46.89194
+  ],
+  [
+   "Kohl's",
+   "department_store",
+   "",
+   -114.03623,
+   46.83211
+  ],
+  [
+   "Korean Veterans Memorial",
+   "memorial",
+   "",
+   -114.00475,
+   46.85566
+  ],
+  [
+   "Kornutopia",
+   "restaurant",
+   "",
+   -113.99804,
+   46.86248
+  ],
+  [
+   "Krispy Kreme",
+   "fast_food",
+   "donut",
+   -114.01376,
+   46.84739
+  ],
+  [
+   "Kyndra's Corner",
+   "childcare",
+   "",
+   -114.03827,
+   46.84192
+  ],
+  [
+   "LA Design Custom Framing",
+   "gallery",
+   "",
+   -113.99018,
+   46.87229
+  ],
+  [
+   "La Peak",
+   "cafe",
+   "",
+   -113.98898,
+   46.85332
+  ],
+  [
+   "La Quinta Inn Missoula",
+   "hotel",
+   "",
+   -114.03627,
+   46.9057
+  ],
+  [
+   "LaFray Park",
+   "park",
+   "",
+   -114.02833,
+   46.86834
+  ],
+  [
+   "Lake Missoula Tea Company",
+   "tea",
+   "tea",
+   -113.99271,
+   46.87102
+  ],
+  [
+   "Larchmont Golf Course",
+   "golf_course",
+   "",
+   -114.04464,
+   46.84076
+  ],
+  [
+   "Last Best Bridal Shop",
+   "clothes",
+   "",
+   -114.04073,
+   46.89764
+  ],
+  [
+   "Latimer St & W Broadway St",
+   "bus_stop",
+   "",
+   -114.03175,
+   46.89663
+  ],
+  [
+   "Laughing Grizzly",
+   "restaurant",
+   "brunch;american",
+   -114.0254,
+   46.88675
+  ],
+  [
+   "Laurel Creek",
+   "clothes",
+   "",
+   -113.99592,
+   46.87273
+  ],
+  [
+   "Le Petit Bake House",
+   "bakery",
+   "",
+   -113.99872,
+   46.86209
+  ],
+  [
+   "Le Petit Café",
+   "cafe",
+   "coffee_shop",
+   -113.99766,
+   46.8616
+  ],
+  [
+   "Learning with Meaning Inc",
+   "prep_school",
+   "",
+   -114.0269,
+   46.84825
+  ],
+  [
+   "Lemon Laundry",
+   "laundry",
+   "",
+   -113.98104,
+   46.87429
+  ],
+  [
+   "LendUS",
+   "money_lender",
+   "",
+   -114.01459,
+   46.84819
+  ],
+  [
+   "Les Schwab Tire Center",
+   "car_parts",
+   "",
+   -114.02951,
+   46.89688
+  ],
+  [
+   "Les Schwab Tire Center",
+   "tyres",
+   "",
+   -114.01864,
+   46.85115
+  ],
+  [
+   "Lester Park",
+   "park",
+   "",
+   -113.99942,
+   46.83969
+  ],
+  [
+   "Lewis & Clark Elementary School",
+   "school",
+   "",
+   -114.00397,
+   46.83874
+  ],
+  [
+   "Lewis & Clark Park and Ride",
+   "parking",
+   "",
+   -113.99549,
+   46.85152
+  ],
+  [
+   "Lewis & Clark Trail Adventures",
+   "outdoor",
+   "",
+   -113.98151,
+   46.87414
+  ],
+  [
+   "Lewis & Clark Village",
+   "residential",
+   "",
+   -113.99643,
+   46.83876
+  ],
+  [
+   "Lewis and Clark Square",
+   "retail",
+   "",
+   -114.01126,
+   46.83112
+  ],
+  [
+   "Liberty Safes of Montana",
+   "hardware",
+   "",
+   -113.94951,
+   46.87399
+  ],
+  [
+   "Liberty Vapor Smoke",
+   "e-cigarette",
+   "",
+   -114.0208,
+   46.84916
+  ],
+  [
+   "Library Car",
+   "attraction",
+   "",
+   -114.0632,
+   46.83977
+  ],
+  [
+   "Life of Faith Church",
+   "place_of_worship",
+   "christian",
+   -114.06999,
+   46.91934
+  ],
+  [
+   "Lighthouse Baptist Church",
+   "place_of_worship",
+   "christian",
+   -114.04341,
+   46.81692
+  ],
+  [
+   "Lil Griz Club House",
+   "childcare",
+   "",
+   -114.01164,
+   46.84642
+  ],
+  [
+   "Lil' Bear Mini Storage",
+   "storage_rental",
+   "",
+   -114.01488,
+   46.88652
+  ],
+  [
+   "Lincoln Hills Trailhead",
+   "trailhead",
+   "",
+   -113.9491,
+   46.90518
+  ],
+  [
+   "Lincoln Rd & Heritage Way",
+   "bus_stop",
+   "",
+   -113.96616,
+   46.89962
+  ],
+  [
+   "Lincoln Rd & Lincolnwood",
+   "bus_stop",
+   "",
+   -113.96584,
+   46.90245
+  ],
+  [
+   "Lincoln Rd & Timberlane St",
+   "bus_stop",
+   "",
+   -113.96726,
+   46.91267
+  ],
+  [
+   "Lincolnwood North",
+   "trailhead",
+   "",
+   -113.96749,
+   46.91126
+  ],
+  [
+   "Lincolnwood Rd & Lincoln Rd",
+   "bus_stop",
+   "",
+   -113.96601,
+   46.90254
+  ],
+  [
+   "Linda Vista Golf Course",
+   "golf_course",
+   "",
+   -114.05751,
+   46.82986
+  ],
+  [
+   "Lindborg-Cregg Legion Field",
+   "pitch",
+   "baseball",
+   -114.0621,
+   46.85566
+  ],
+  [
+   "Liquid Planet",
+   "cafe",
+   "coffee_shop",
+   -114.01784,
+   46.84823
+  ],
+  [
+   "Liquid Planet",
+   "cafe",
+   "coffee",
+   -113.99512,
+   46.87083
+  ],
+  [
+   "Liquid Planet",
+   "cafe",
+   "coffee_shop",
+   -113.99867,
+   46.86921
+  ],
+  [
+   "Liquid Planet Grille",
+   "cafe",
+   "cafe",
+   -113.98951,
+   46.86655
+  ],
+  [
+   "Liquid Planet Grille On Brooks",
+   "restaurant",
+   "",
+   -114.02503,
+   46.83918
+  ],
+  [
+   "Lithia Chrysler Jeep Dodge of Missoula",
+   "car",
+   "",
+   -114.07167,
+   46.91476
+  ],
+  [
+   "Lithia Ford of Missoula",
+   "car",
+   "",
+   -114.045,
+   46.83227
+  ],
+  [
+   "Lithia Toyota of Missoula",
+   "car",
+   "",
+   -114.04698,
+   46.83295
+  ],
+  [
+   "Little Caesars",
+   "fast_food",
+   "pizza",
+   -114.04107,
+   46.89466
+  ],
+  [
+   "Little Caesars",
+   "fast_food",
+   "pizza",
+   -114.0116,
+   46.84529
+  ],
+  [
+   "Little Chair at Jumbo Saddle",
+   "bench",
+   "",
+   -113.93434,
+   46.89352
+  ],
+  [
+   "Little Free Library",
+   "public_bookcase",
+   "",
+   -113.97274,
+   46.88153
+  ],
+  [
+   "Little McCormick Park",
+   "park",
+   "",
+   -114.00035,
+   46.88028
+  ],
+  [
+   "LivAway Suites",
+   "hotel",
+   "",
+   -114.04152,
+   46.90457
+  ],
+  [
+   "Living Savior Lutheran Church",
+   "place_of_worship",
+   "christian",
+   -114.04184,
+   46.82282
+  ],
+  [
+   "Lolo St & Raymond Ave",
+   "bus_stop",
+   "",
+   -113.96847,
+   46.88811
+  ],
+  [
+   "Lolo View Court",
+   "residential",
+   "",
+   -114.04096,
+   46.85982
+  ],
+  [
+   "Loose Moose",
+   "clothes",
+   "",
+   -113.99449,
+   46.87113
+  ],
+  [
+   "Lords Church",
+   "place_of_worship",
+   "christian",
+   -114.02205,
+   46.86519
+  ],
+  [
+   "Lorens Carpet One Floor & Home",
+   "flooring",
+   "",
+   -114.0761,
+   46.82752
+  ],
+  [
+   "Lovin Color Salon",
+   "hairdresser",
+   "",
+   -114.02099,
+   46.85247
+  ],
+  [
+   "Lowe's",
+   "doityourself",
+   "",
+   -114.03676,
+   46.89494
+  ],
+  [
+   "Lowell Grade School",
+   "school",
+   "",
+   -114.0086,
+   46.87745
+  ],
+  [
+   "Loyola Sacred Heart High School",
+   "school",
+   "",
+   -114.00196,
+   46.86585
+  ],
+  [
+   "Lucky Diamond Casino",
+   "casino",
+   "",
+   -114.03894,
+   46.83151
+  ],
+  [
+   "Lucky Lil's Casino",
+   "casino",
+   "",
+   -114.0386,
+   46.88764
+  ],
+  [
+   "Lucky Lil's Casino",
+   "casino",
+   "",
+   -114.02787,
+   46.84045
+  ],
+  [
+   "Lucky Lil's Casino",
+   "casino",
+   "",
+   -114.01456,
+   46.84598
+  ],
+  [
+   "Lucky Lil's Liquor Store",
+   "alcohol",
+   "",
+   -114.03985,
+   46.88322
+  ],
+  [
+   "Lyman Motors Inc",
+   "car",
+   "",
+   -114.03899,
+   46.8388
+  ],
+  [
+   "M Massage",
+   "massage",
+   "",
+   -114.00881,
+   46.84527
+  ],
+  [
+   "M-80 Chicken",
+   "restaurant",
+   "chicken",
+   -113.99671,
+   46.87092
+  ],
+  [
+   "MFD Fire Station No. 3",
+   "fire_station",
+   "",
+   -114.0189,
+   46.83402
+  ],
+  [
+   "MFD Fire Station No. 4",
+   "fire_station",
+   "",
+   -114.03264,
+   46.89644
+  ],
+  [
+   "MRL Fuel Racks",
+   "fuel",
+   "",
+   -113.98925,
+   46.86868
+  ],
+  [
+   "MRL Fuel Racks",
+   "fuel",
+   "",
+   -113.9893,
+   46.86863
+  ],
+  [
+   "MT Highway 200 & Highton St",
+   "bus_stop",
+   "",
+   -113.94796,
+   46.87452
+  ],
+  [
+   "MT Highway 200 & Highton St",
+   "bus_stop",
+   "",
+   -113.94805,
+   46.87445
+  ],
+  [
+   "MT Highway 200 & Lerch Ln",
+   "bus_stop",
+   "",
+   -113.93139,
+   46.88756
+  ],
+  [
+   "MT Highway 200 & Speedway Ave",
+   "bus_stop",
+   "",
+   -113.93519,
+   46.87601
+  ],
+  [
+   "MT Highway 200 & Speedway Ave",
+   "bus_stop",
+   "",
+   -113.93549,
+   46.87606
+  ],
+  [
+   "MT Highway 200 & Staple St",
+   "bus_stop",
+   "",
+   -113.94173,
+   46.88133
+  ],
+  [
+   "MacArthur Co",
+   "sawmill",
+   "",
+   -114.02263,
+   46.85978
+  ],
+  [
+   "MacKenzie River Pizza Co.",
+   "restaurant",
+   "pizza",
+   -114.03304,
+   46.91904
+  ],
+  [
+   "MacKenzie River Pizza Company",
+   "restaurant",
+   "pizza",
+   -114.03916,
+   46.83199
+  ],
+  [
+   "Mackenzie River Pizza",
+   "restaurant",
+   "pizza",
+   -113.99643,
+   46.87264
+  ],
+  [
+   "Madeline's Mediterranean Grille & Street Food",
+   "restaurant",
+   "mediterranean",
+   -113.98215,
+   46.87403
+  ],
+  [
+   "Madison Bridge River Access",
+   "bathing_place",
+   "",
+   -113.98805,
+   46.86073
+  ],
+  [
+   "Madison Creek Furnishings",
+   "furniture",
+   "",
+   -114.07665,
+   46.82779
+  ],
+  [
+   "Madison Park",
+   "park",
+   "",
+   -113.98729,
+   46.86171
+  ],
+  [
+   "Madison St & E Main St",
+   "bus_stop",
+   "",
+   -113.98785,
+   46.87308
+  ],
+  [
+   "Magic Diamond Casino",
+   "casino",
+   "",
+   -114.04073,
+   46.88729
+  ],
+  [
+   "Magic Diamond Casino",
+   "casino",
+   "",
+   -114.01109,
+   46.8803
+  ],
+  [
+   "Magic Diamond Casino & Liquor Store",
+   "casino",
+   "",
+   -114.03633,
+   46.90744
+  ],
+  [
+   "Magic Diamond Liquor Store",
+   "alcohol",
+   "",
+   -114.01537,
+   46.8478
+  ],
+  [
+   "Magic Touch Car Wash",
+   "car_wash",
+   "",
+   -114.03873,
+   46.85203
+  ],
+  [
+   "Main Toole Park River Access",
+   "bathing_place",
+   "",
+   -113.99305,
+   46.86133
+  ],
+  [
+   "Maintenance Area",
+   "commercial",
+   "",
+   -114.06004,
+   46.81651
+  ],
+  [
+   "Majestic Dr & Wheeler Dr",
+   "bus_stop",
+   "",
+   -114.05711,
+   46.91882
+  ],
+  [
+   "Majestic Dr & Wheeler Dr",
+   "bus_stop",
+   "",
+   -114.05712,
+   46.91894
+  ],
+  [
+   "Majestic Madness",
+   "beauty",
+   "",
+   -114.01593,
+   46.88017
+  ],
+  [
+   "Maloney Ranch Park",
+   "park",
+   "",
+   -114.07248,
+   46.80801
+  ],
+  [
+   "Maria Management Inc",
+   "gift",
+   "",
+   -114.02302,
+   46.85108
+  ],
+  [
+   "Marilyn Park",
+   "park",
+   "",
+   -114.06137,
+   46.82086
+  ],
+  [
+   "Market on Front",
+   "deli",
+   "",
+   -113.9937,
+   46.87329
+  ],
+  [
+   "Martha Jane's Uptown Dance",
+   "dance",
+   "",
+   -114.01373,
+   46.85749
+  ],
+  [
+   "Martin Briggeman 4-H Arena",
+   "pitch",
+   "equestrian",
+   -114.07029,
+   46.85993
+  ],
+  [
+   "Masala",
+   "restaurant",
+   "indian",
+   -113.99627,
+   46.87111
+  ],
+  [
+   "Massage on Broadway",
+   "massage",
+   "",
+   -113.99854,
+   46.86929
+  ],
+  [
+   "Master Technician Inc",
+   "car_repair",
+   "",
+   -113.99837,
+   46.86252
+  ],
+  [
+   "Mattress Firm",
+   "bed",
+   "",
+   -114.03987,
+   46.89566
+  ],
+  [
+   "Maulers Hockey Central",
+   "sports",
+   "",
+   -114.0139,
+   46.86012
+  ],
+  [
+   "Maureen and Mike Mansfield Library",
+   "library",
+   "",
+   -113.9829,
+   46.85355
+  ],
+  [
+   "Maverick Motorsports",
+   "motorcycle",
+   "",
+   -114.03415,
+   46.90667
+  ],
+  [
+   "Mazda Parts",
+   "car_parts",
+   "",
+   -114.01176,
+   46.85895
+  ],
+  [
+   "McCormick Park",
+   "park",
+   "",
+   -114.00416,
+   46.87026
+  ],
+  [
+   "McDonald's",
+   "fast_food",
+   "burger",
+   -114.03717,
+   46.91073
+  ],
+  [
+   "McDonald's",
+   "fast_food",
+   "burger",
+   -114.02971,
+   46.84276
+  ],
+  [
+   "McDonald's",
+   "fast_food",
+   "burger",
+   -114.02061,
+   46.87969
+  ],
+  [
+   "McDonald's",
+   "fast_food",
+   "burger",
+   -113.98455,
+   46.87305
+  ],
+  [
+   "McLeod Park",
+   "park",
+   "",
+   -114.02108,
+   46.84583
+  ],
+  [
+   "McNett Flats",
+   "residential",
+   "",
+   -114.06849,
+   46.89105
+  ],
+  [
+   "Meadow Hill Community Garden",
+   "allotments",
+   "",
+   -114.03836,
+   46.8365
+  ],
+  [
+   "Meadow Hill Middle School",
+   "school",
+   "",
+   -114.03919,
+   46.8354
+  ],
+  [
+   "Meadowlark Dental Care",
+   "dentist",
+   "",
+   -114.00751,
+   46.84877
+  ],
+  [
+   "Meadowlark Shelter",
+   "shelter",
+   "",
+   -114.05103,
+   46.85
+  ],
+  [
+   "Mellow Mood",
+   "tobacco",
+   "",
+   -113.99703,
+   46.86264
+  ],
+  [
+   "Memorial Rose Garden",
+   "park",
+   "",
+   -114.0053,
+   46.85626
+  ],
+  [
+   "Men's Wearhouse",
+   "clothes",
+   "",
+   -114.03684,
+   46.83061
+  ],
+  [
+   "Meng Dentistry",
+   "dentist",
+   "",
+   -114.03484,
+   46.84335
+  ],
+  [
+   "Meraki Beauty Lounge",
+   "beauty",
+   "",
+   -114.03529,
+   46.90305
+  ],
+  [
+   "Merry Bobbins",
+   "tailor",
+   "",
+   -114.01694,
+   46.858
+  ],
+  [
+   "Messiah Lutheran Church",
+   "place_of_worship",
+   "christian",
+   -113.96391,
+   46.90387
+  ],
+  [
+   "Messiah Lutheran Church",
+   "religious",
+   "christian",
+   -113.96411,
+   46.9038
+  ],
+  [
+   "Metro Express Carwash",
+   "car_wash",
+   "",
+   -114.03292,
+   46.84465
+  ],
+  [
+   "Metro by T-Mobile",
+   "mobile_phone",
+   "",
+   -114.02991,
+   46.84183
+  ],
+  [
+   "Michaels",
+   "craft",
+   "",
+   -114.03676,
+   46.89659
+  ],
+  [
+   "Midtown Flats",
+   "apartment",
+   "",
+   -114.03439,
+   46.84287
+  ],
+  [
+   "Milwaukee Community Garden",
+   "garden",
+   "",
+   -114.02092,
+   46.87239
+  ],
+  [
+   "Missoula",
+   "administrative",
+   "",
+   -113.99468,
+   46.87198
+  ],
+  [
+   "Missoula Art Museum",
+   "museum",
+   "",
+   -113.99241,
+   46.87045
+  ],
+  [
+   "Missoula Batting Cages",
+   "pitch",
+   "baseball",
+   -114.05034,
+   46.83843
+  ],
+  [
+   "Missoula Bible Church",
+   "place_of_worship",
+   "christian",
+   -114.04115,
+   46.85451
+  ],
+  [
+   "Missoula Bicycle Works",
+   "bicycle",
+   "",
+   -113.99718,
+   46.86333
+  ],
+  [
+   "Missoula Bike Shop",
+   "bicycle",
+   "",
+   -114.01908,
+   46.85528
+  ],
+  [
+   "Missoula Bone & Joint Clinic",
+   "clinic",
+   "",
+   -114.02979,
+   46.88914
+  ],
+  [
+   "Missoula Butterfly House and Insectarium",
+   "zoo",
+   "",
+   -114.01429,
+   46.8493
+  ],
+  [
+   "Missoula Cemetery",
+   "cemetery",
+   "none",
+   -114.01917,
+   46.89594
+  ],
+  [
+   "Missoula Children's Theatre",
+   "theatre",
+   "",
+   -113.98947,
+   46.8725
+  ],
+  [
+   "Missoula Christian Preschool",
+   "kindergarten",
+   "",
+   -114.08088,
+   46.82807
+  ],
+  [
+   "Missoula Church of Christ",
+   "place_of_worship",
+   "christian",
+   -113.99694,
+   46.85615
+  ],
+  [
+   "Missoula Club",
+   "pub",
+   "american",
+   -113.99585,
+   46.87156
+  ],
+  [
+   "Missoula College",
+   "college",
+   "",
+   -113.97538,
+   46.86315
+  ],
+  [
+   "Missoula College West Campus",
+   "university",
+   "",
+   -114.07041,
+   46.85198
+  ],
+  [
+   "Missoula Community Access TV",
+   "studio",
+   "",
+   -113.99228,
+   46.86876
+  ],
+  [
+   "Missoula Community Medical Center",
+   "bus_stop",
+   "",
+   -114.0476,
+   46.85096
+  ],
+  [
+   "Missoula Conference Center",
+   "conference_centre",
+   "",
+   -114.03724,
+   46.89862
+  ],
+  [
+   "Missoula Copy Center",
+   "copyshop",
+   "",
+   -114.03543,
+   46.84288
+  ],
+  [
+   "Missoula Country Club",
+   "golf_course",
+   "",
+   -114.05046,
+   46.8311
+  ],
+  [
+   "Missoula County Courthouse",
+   "courthouse",
+   "",
+   -113.99591,
+   46.86962
+  ],
+  [
+   "Missoula County Detention",
+   "prison",
+   "",
+   -114.02739,
+   46.88997
+  ],
+  [
+   "Missoula County Fairgrounds",
+   "recreation_ground",
+   "",
+   -114.01568,
+   46.85155
+  ],
+  [
+   "Missoula County Sheriffs Office",
+   "police",
+   "",
+   -113.99567,
+   46.86946
+  ],
+  [
+   "Missoula Early Learning Center",
+   "childcare",
+   "",
+   -114.031,
+   46.84106
+  ],
+  [
+   "Missoula Farmer's Market",
+   "supermarket",
+   "",
+   -113.99203,
+   46.86819
+  ],
+  [
+   "Missoula Fire Department Memorial",
+   "memorial",
+   "",
+   -114.00627,
+   46.85657
+  ],
+  [
+   "Missoula Fire Department Station No. 2",
+   "fire_station",
+   "",
+   -114.00221,
+   46.85713
+  ],
+  [
+   "Missoula Fire Station No. 5",
+   "fire_station",
+   "",
+   -114.07819,
+   46.80794
+  ],
+  [
+   "Missoula First United Methodist Church",
+   "place_of_worship",
+   "christian",
+   -113.9911,
+   46.87242
+  ],
+  [
+   "Missoula Food Bank & Community Center",
+   "social_facility",
+   "",
+   -114.02292,
+   46.87069
+  ],
+  [
+   "Missoula Fresh Market Fuel",
+   "fuel",
+   "",
+   -114.00682,
+   46.88166
+  ],
+  [
+   "Missoula Friends Meeting",
+   "place_of_worship",
+   "christian",
+   -114.02603,
+   46.85456
+  ],
+  [
+   "Missoula Gold & Silver Exchange",
+   "bureau_de_change",
+   "",
+   -114.01327,
+   46.84613
+  ],
+  [
+   "Missoula Gospel Assembly",
+   "place_of_worship",
+   "christian",
+   -114.00011,
+   46.8613
+  ],
+  [
+   "Missoula Health and Rehabilitation Center",
+   "social_facility",
+   "",
+   -113.9653,
+   46.89452
+  ],
+  [
+   "Missoula Housing Authority",
+   "social_facility",
+   "",
+   -114.01643,
+   46.8306
+  ],
+  [
+   "Missoula Hyundai & Nissan",
+   "car",
+   "",
+   -114.02355,
+   46.85207
+  ],
+  [
+   "Missoula Indoor Sports Arena",
+   "sports_centre",
+   "",
+   -114.03373,
+   46.8839
+  ],
+  [
+   "Missoula Institute of Religion of The Church Of Jesus Christ Of Latter-Day Saints",
+   "place_of_worship",
+   "christian",
+   -113.99028,
+   46.85406
+  ],
+  [
+   "Missoula International School",
+   "school",
+   "",
+   -114.00901,
+   46.86024
+  ],
+  [
+   "Missoula Iris Society Show Garden",
+   "garden",
+   "",
+   -114.06346,
+   46.8388
+  ],
+  [
+   "Missoula KOA Holiday",
+   "caravan_site",
+   "",
+   -114.04357,
+   46.89286
+  ],
+  [
+   "Missoula KOA Holiday",
+   "caravan_site",
+   "",
+   -114.04232,
+   46.89134
+  ],
+  [
+   "Missoula Landfill",
+   "landfill",
+   "",
+   -114.01447,
+   46.90038
+  ],
+  [
+   "Missoula Law Enforcement Memorial",
+   "memorial",
+   "",
+   -114.00563,
+   46.85666
+  ],
+  [
+   "Missoula Lender",
+   "money_lender",
+   "",
+   -113.99815,
+   46.86639
+  ],
+  [
+   "Missoula Lofts",
+   "residential",
+   "",
+   -114.05144,
+   46.89873
+  ],
+  [
+   "Missoula Oral Surgery",
+   "dentist",
+   "",
+   -114.03884,
+   46.84017
+  ],
+  [
+   "Missoula Police Department",
+   "police",
+   "",
+   -113.99499,
+   46.86864
+  ],
+  [
+   "Missoula Power Equipment",
+   "hardware",
+   "",
+   -114.08139,
+   46.81668
+  ],
+  [
+   "Missoula Pre Release Center",
+   "police",
+   "",
+   -114.02725,
+   46.89008
+  ],
+  [
+   "Missoula Public Library",
+   "library",
+   "",
+   -113.98977,
+   46.87327
+  ],
+  [
+   "Missoula Rural Fire District #1",
+   "fire_station",
+   "",
+   -114.04073,
+   46.84934
+  ],
+  [
+   "Missoula Senior Citizens Center",
+   "social_facility",
+   "",
+   -113.99771,
+   46.86309
+  ],
+  [
+   "Missoula Taekwondo Center",
+   "dojo",
+   "",
+   -114.0266,
+   46.84831
+  ],
+  [
+   "Missoula Tailoring Services",
+   "tailor",
+   "",
+   -114.02105,
+   46.84916
+  ],
+  [
+   "Missoula Textile Services",
+   "dry_cleaning",
+   "",
+   -113.99199,
+   46.86943
+  ],
+  [
+   "Missoula Underground Strength Training Center",
+   "fitness_centre",
+   "",
+   -114.00125,
+   46.87874
+  ],
+  [
+   "Missoula Unit Heliport",
+   "heliport",
+   "",
+   -114.05802,
+   46.85727
+  ],
+  [
+   "Missoula Valley Winter Market",
+   "supermarket",
+   "",
+   -113.99805,
+   46.8631
+  ],
+  [
+   "Missoula Vet Center",
+   "veterinary",
+   "",
+   -114.00747,
+   46.85736
+  ],
+  [
+   "Missoula Vet Clinic",
+   "veterinary",
+   "",
+   -114.04329,
+   46.83142
+  ],
+  [
+   "Missoula's Office City",
+   "stationery",
+   "",
+   -113.99491,
+   46.87074
+  ],
+  [
+   "Missoulian Angler",
+   "sports",
+   "",
+   -113.99713,
+   46.8641
+  ],
+  [
+   "Mitten Mountain",
+   "peak",
+   "",
+   -113.95178,
+   46.80577
+  ],
+  [
+   "Mobash Skate Park",
+   "pitch",
+   "skateboard;bmx",
+   -114.00219,
+   46.87158
+  ],
+  [
+   "Mobile City Trailer Park",
+   "residential",
+   "",
+   -114.02009,
+   46.868
+  ],
+  [
+   "Mockingbird Park",
+   "recreation_ground",
+   "",
+   -114.04977,
+   46.81532
+  ],
+  [
+   "Modory Home Furnishings",
+   "furniture",
+   "",
+   -114.01584,
+   46.84652
+  ],
+  [
+   "Monk's Bar",
+   "bar",
+   "",
+   -113.99597,
+   46.87066
+  ],
+  [
+   "Montana Antique Mall",
+   "antiques",
+   "",
+   -113.99552,
+   46.88117
+  ],
+  [
+   "Montana Army National Guard Field Maintenance Shop #2",
+   "military",
+   "",
+   -114.0657,
+   46.83888
+  ],
+  [
+   "Montana Center Facial Plastic Surgery",
+   "doctors",
+   "",
+   -114.0371,
+   46.90098
+  ],
+  [
+   "Montana Compounding Pharmacy",
+   "pharmacy",
+   "",
+   -113.99543,
+   46.87263
+  ],
+  [
+   "Montana Educators Credit Union",
+   "bank",
+   "",
+   -114.01788,
+   46.84562
+  ],
+  [
+   "Montana Glass",
+   "glaziery",
+   "",
+   -114.00776,
+   46.88092
+  ],
+  [
+   "Montana Guiding Company",
+   "fishing",
+   "",
+   -114.00692,
+   46.88056
+  ],
+  [
+   "Montana Jack's",
+   "restaurant",
+   "",
+   -114.0295,
+   46.84933
+  ],
+  [
+   "Montana Lil's Casino",
+   "casino",
+   "",
+   -114.04004,
+   46.89194
+  ],
+  [
+   "Montana Lil's Casino",
+   "casino",
+   "",
+   -114.03995,
+   46.83096
+  ],
+  [
+   "Montana Medicinals",
+   "cannabis",
+   "",
+   -113.99257,
+   46.86969
+  ],
+  [
+   "Montana Motor Mall",
+   "car",
+   "",
+   -114.04242,
+   46.83252
+  ],
+  [
+   "Montana Motor Mall",
+   "car",
+   "",
+   -114.04095,
+   46.83199
+  ],
+  [
+   "Montana Motor Mall",
+   "car",
+   "",
+   -114.01749,
+   46.85844
+  ],
+  [
+   "Montana Museum of Art and Culture",
+   "arts_centre",
+   "",
+   -113.98514,
+   46.86437
+  ],
+  [
+   "Montana Museum of Art and Culture",
+   "museum",
+   "",
+   -113.9847,
+   46.86312
+  ],
+  [
+   "Montana Nail Salon",
+   "beauty",
+   "",
+   -114.02966,
+   46.84181
+  ],
+  [
+   "Montana Natural History Center / Five Valleys Land Trust",
+   "museum",
+   "",
+   -114.00599,
+   46.8723
+  ],
+  [
+   "Montana Preferred Provider",
+   "chemist",
+   "",
+   -113.99416,
+   46.87778
+  ],
+  [
+   "Montana Rail Link Park",
+   "park",
+   "",
+   -114.02747,
+   46.84787
+  ],
+  [
+   "Montana Tattoo Company",
+   "tattoo",
+   "",
+   -114.035,
+   46.90257
+  ],
+  [
+   "Montgomery Distillery",
+   "bar",
+   "",
+   -113.99622,
+   46.87259
+  ],
+  [
+   "Mood Boutique",
+   "clothes",
+   "",
+   -113.99426,
+   46.87157
+  ],
+  [
+   "Moon-Randolph Homestead",
+   "farmyard",
+   "",
+   -113.99536,
+   46.9044
+  ],
+  [
+   "Moose Can Gully",
+   "park",
+   "",
+   -114.03166,
+   46.81521
+  ],
+  [
+   "MorTech",
+   "medical_supply",
+   "",
+   -114.00112,
+   46.84314
+  ],
+  [
+   "Morgenroth Music Center",
+   "music",
+   "",
+   -114.0152,
+   46.84834
+  ],
+  [
+   "Morning Birds Bakery",
+   "bakery",
+   "",
+   -113.99652,
+   46.87025
+  ],
+  [
+   "Moss' Barber Shop",
+   "hairdresser",
+   "",
+   -113.94723,
+   46.87273
+  ],
+  [
+   "Motel 6 Missoula",
+   "motel",
+   "",
+   -114.0374,
+   46.91705
+  ],
+  [
+   "Motel 6 Missoula, MT - University",
+   "motel",
+   "",
+   -113.98616,
+   46.87259
+  ],
+  [
+   "Motel 6 Missoula, MT - University",
+   "motel",
+   "",
+   -113.98552,
+   46.87274
+  ],
+  [
+   "Mother Goose Gifts & Gallery",
+   "gift",
+   "",
+   -114.02608,
+   46.84006
+  ],
+  [
+   "Motown Casino",
+   "casino",
+   "",
+   -114.01752,
+   46.85715
+  ],
+  [
+   "Mount Dean Stone",
+   "peak",
+   "",
+   -113.97289,
+   46.80549
+  ],
+  [
+   "Mount Jumbo",
+   "peak",
+   "",
+   -113.95649,
+   46.87896
+  ],
+  [
+   "Mount Jumbo Elementary School",
+   "school",
+   "",
+   -113.93885,
+   46.88214
+  ],
+  [
+   "Mount Jumbo Trailer Court",
+   "residential",
+   "",
+   -113.94683,
+   46.8704
+  ],
+  [
+   "Mount Jumbo Wildlife Management Area",
+   "nature_reserve",
+   "",
+   -113.93623,
+   46.90786
+  ],
+  [
+   "Mount Sentinel",
+   "peak",
+   "",
+   -113.96332,
+   46.8456
+  ],
+  [
+   "Mount Sentinel",
+   "trailhead",
+   "",
+   -113.98041,
+   46.86577
+  ],
+  [
+   "Mount Sentinel Mine",
+   "quarry",
+   "",
+   -113.97433,
+   46.85794
+  ],
+  [
+   "Mount Sentinel South",
+   "peak",
+   "",
+   -113.96063,
+   46.85061
+  ],
+  [
+   "Mount Sentinel trailhead",
+   "trailhead",
+   "",
+   -113.98695,
+   46.85032
+  ],
+  [
+   "Mount Zion Lutheran Church",
+   "place_of_worship",
+   "christian",
+   -114.00567,
+   46.85822
+  ],
+  [
+   "Mountain FM",
+   "studio",
+   "",
+   -114.00879,
+   46.85882
+  ],
+  [
+   "Mountain Line Transfer Center",
+   "bus_station",
+   "",
+   -113.99558,
+   46.86913
+  ],
+  [
+   "Mountain Supply Co",
+   "plumber",
+   "",
+   -114.02588,
+   46.87724
+  ],
+  [
+   "Mountain Time Farm",
+   "farmland",
+   "",
+   -114.05994,
+   46.86694
+  ],
+  [
+   "Mountain West Bank",
+   "bank",
+   "",
+   -114.03633,
+   46.89356
+  ],
+  [
+   "Mountain West Co-op",
+   "convenience",
+   "",
+   -114.03644,
+   46.9106
+  ],
+  [
+   "Mountain West Office Solutions",
+   "stationery",
+   "",
+   -114.01702,
+   46.85985
+  ],
+  [
+   "Mountainview Chapel",
+   "place_of_worship",
+   "christian",
+   -114.03344,
+   46.86603
+  ],
+  [
+   "Mountainwood Estates",
+   "residential",
+   "",
+   -113.98085,
+   46.88062
+  ],
+  [
+   "Moxie Makeup & Lash Studio",
+   "cosmetics",
+   "",
+   -113.996,
+   46.87151
+  ],
+  [
+   "Mr. T's Self Storage",
+   "storage_rental",
+   "",
+   -114.06624,
+   46.91781
+  ],
+  [
+   "Mt Flyfishing Connection LLC",
+   "fishing",
+   "",
+   -113.99523,
+   46.84611
+  ],
+  [
+   "Muffler Bandit",
+   "car_repair",
+   "",
+   -114.0126,
+   46.86006
+  ],
+  [
+   "Mullan Heights Riverfront Condos",
+   "apartment",
+   "",
+   -114.02352,
+   46.87868
+  ],
+  [
+   "Mullan Mini Storage",
+   "commercial",
+   "",
+   -114.03375,
+   46.8897
+  ],
+  [
+   "Mullan Reserve Apartments",
+   "residential",
+   "",
+   -114.0482,
+   46.88563
+  ],
+  [
+   "Muse Comics & Games",
+   "collector",
+   "",
+   -113.99772,
+   46.8484
+  ],
+  [
+   "Museum of Mountain Flying",
+   "museum",
+   "",
+   -114.07807,
+   46.91549
+  ],
+  [
+   "Mustard Seed",
+   "restaurant",
+   "asian",
+   -114.02765,
+   46.8388
+  ],
+  [
+   "Mutual Materials",
+   "stonemason",
+   "",
+   -114.0337,
+   46.89671
+  ],
+  [
+   "My Place Hotel-Missoula, MT",
+   "hotel",
+   "",
+   -114.03637,
+   46.91767
+  ],
+  [
+   "Myrtle Street Taproom",
+   "pub",
+   "",
+   -113.99873,
+   46.86232
+  ],
+  [
+   "N 2nd St & Orange St",
+   "bus_stop",
+   "",
+   -113.99408,
+   46.87891
+  ],
+  [
+   "N 5th St & Butte Ave",
+   "bus_stop",
+   "",
+   -113.99645,
+   46.88982
+  ],
+  [
+   "N 5th St W & N 4th St W",
+   "bus_stop",
+   "",
+   -113.99413,
+   46.87688
+  ],
+  [
+   "N Higgins Ave & W Front St",
+   "bus_stop",
+   "",
+   -113.9956,
+   46.87309
+  ],
+  [
+   "N Palmer St at State Office Complex",
+   "bus_stop",
+   "",
+   -114.03022,
+   46.88601
+  ],
+  [
+   "N Palmer St at State Office Complex",
+   "bus_stop",
+   "",
+   -114.03053,
+   46.88556
+  ],
+  [
+   "N Reserve St & England Blvd",
+   "bus_stop",
+   "",
+   -114.04096,
+   46.89395
+  ],
+  [
+   "N Reserve St & Expressway",
+   "bus_stop",
+   "",
+   -114.03921,
+   46.89813
+  ],
+  [
+   "N Russell St & Broadway St",
+   "bus_stop",
+   "",
+   -114.01641,
+   46.88008
+  ],
+  [
+   "N Russell St & Howell St",
+   "bus_stop",
+   "",
+   -114.01837,
+   46.87608
+  ],
+  [
+   "N Russell St & Maple St",
+   "bus_stop",
+   "",
+   -114.01858,
+   46.87627
+  ],
+  [
+   "N Russell St & Turner St",
+   "bus_stop",
+   "",
+   -114.01856,
+   46.88706
+  ],
+  [
+   "N Russell St & Turner St",
+   "bus_stop",
+   "",
+   -114.01834,
+   46.88706
+  ],
+  [
+   "NAPA Auto Parts",
+   "car_parts",
+   "",
+   -114.01502,
+   46.85828
+  ],
+  [
+   "Nanette’s Office",
+   "dentist",
+   "",
+   -114.0072,
+   46.83038
+  ],
+  [
+   "National Coatings & Supplies",
+   "paint",
+   "",
+   -114.01687,
+   46.88024
+  ],
+  [
+   "Native Plant Garden",
+   "garden",
+   "",
+   -113.9836,
+   46.86695
+  ],
+  [
+   "Natura Health and Wellness",
+   "clinic",
+   "",
+   -114.00831,
+   46.85896
+  ],
+  [
+   "Natural Grocers",
+   "supermarket",
+   "",
+   -114.04029,
+   46.87497
+  ],
+  [
+   "Neighborhood Dental",
+   "dentist",
+   "",
+   -114.01399,
+   46.83328
+  ],
+  [
+   "Nettles Herbal Health & Spa",
+   "beauty",
+   "",
+   -114.00812,
+   46.85981
+  ],
+  [
+   "NickesWorth",
+   "pawnbroker",
+   "",
+   -114.03797,
+   46.84696
+  ],
+  [
+   "Nicole Park",
+   "park",
+   "",
+   -114.06087,
+   46.8147
+  ],
+  [
+   "Nina's Playhouse",
+   "childcare",
+   "",
+   -114.01799,
+   46.84603
+  ],
+  [
+   "Ninkpata Park",
+   "park",
+   "",
+   -113.99769,
+   46.83265
+  ],
+  [
+   "Nitro Coffee",
+   "cafe",
+   "coffee_shop",
+   -114.01836,
+   46.85538
+  ],
+  [
+   "Noncommissioned Officer's Quarters",
+   "building",
+   "",
+   -114.06182,
+   46.83898
+  ],
+  [
+   "Noodles & Company",
+   "restaurant",
+   "pasta",
+   -114.03749,
+   46.83086
+  ],
+  [
+   "Noon's",
+   "convenience",
+   "",
+   -114.01911,
+   46.85716
+  ],
+  [
+   "Noon's",
+   "convenience",
+   "",
+   -114.01795,
+   46.83299
+  ],
+  [
+   "Noon's",
+   "convenience",
+   "",
+   -113.98725,
+   46.87243
+  ],
+  [
+   "Norco Products",
+   "wholesale",
+   "",
+   -114.07963,
+   46.82874
+  ],
+  [
+   "North Ave W & Eaton St",
+   "bus_stop",
+   "",
+   -114.0341,
+   46.84533
+  ],
+  [
+   "North Ave W & Kemp St",
+   "bus_stop",
+   "",
+   -114.02974,
+   46.84547
+  ],
+  [
+   "North Ave W & Kemp St",
+   "bus_stop",
+   "",
+   -114.0305,
+   46.84535
+  ],
+  [
+   "North Grove",
+   "residential",
+   "",
+   -114.04147,
+   46.86814
+  ],
+  [
+   "North Hills",
+   "hills",
+   "",
+   -114.0065,
+   46.91919
+  ],
+  [
+   "North Hills Froehlich Trailhead",
+   "trailhead",
+   "",
+   -113.99238,
+   46.87678
+  ],
+  [
+   "North Missoula Community Development",
+   "social_centre",
+   "",
+   -114.01489,
+   46.88735
+  ],
+  [
+   "North Reserve Business Center",
+   "retail",
+   "",
+   -114.03581,
+   46.90222
+  ],
+  [
+   "North Site",
+   "quarry",
+   "",
+   -114.07468,
+   46.83987
+  ],
+  [
+   "Northern Pacific Building Parking",
+   "parking",
+   "",
+   -113.99249,
+   46.88225
+  ],
+  [
+   "Northern Pacific Steam Engine Train",
+   "grass",
+   "",
+   -113.99126,
+   46.86815
+  ],
+  [
+   "Northern Rockies Orthopaedics",
+   "dentist",
+   "",
+   -114.04675,
+   46.84882
+  ],
+  [
+   "Northside Community Garden",
+   "garden",
+   "",
+   -113.99952,
+   46.88783
+  ],
+  [
+   "Northside Park",
+   "park",
+   "",
+   -113.99626,
+   46.8882
+  ],
+  [
+   "Northstar Optical Lab",
+   "optician",
+   "",
+   -114.00861,
+   46.85991
+  ],
+  [
+   "Northwest Plastic Surgery Associates",
+   "clinic",
+   "",
+   -114.03069,
+   46.8888
+  ],
+  [
+   "Noteworthy",
+   "stationery",
+   "",
+   -113.99563,
+   46.87309
+  ],
+  [
+   "Noteworthy Paper & Press",
+   "gift",
+   "",
+   -113.99962,
+   46.86122
+  ],
+  [
+   "Nourishing Cultures Kombucha",
+   "beverages",
+   "",
+   -114.0347,
+   46.90242
+  ],
+  [
+   "Now Care Downtown",
+   "doctors",
+   "",
+   -114.00018,
+   46.86834
+  ],
+  [
+   "O'Reilly Auto Parts",
+   "car_parts",
+   "",
+   -114.02854,
+   46.88278
+  ],
+  [
+   "O'Reilly Auto Parts",
+   "car_parts",
+   "",
+   -114.03742,
+   46.84505
+  ],
+  [
+   "O'Reilly Auto Parts",
+   "car_parts",
+   "",
+   -113.98281,
+   46.87495
+  ],
+  [
+   "Office Solutions & Services",
+   "stationery",
+   "",
+   -114.01433,
+   46.86012
+  ],
+  [
+   "Ogren Park",
+   "park",
+   "",
+   -114.0058,
+   46.86868
+  ],
+  [
+   "Ogren Park at Allegiance Field",
+   "stadium",
+   "baseball",
+   -114.007,
+   46.86929
+  ],
+  [
+   "Old Chicago",
+   "restaurant",
+   "pizza",
+   -114.03854,
+   46.90041
+  ],
+  [
+   "Old Fort Rd & Fort Rd",
+   "bus_stop",
+   "",
+   -114.04364,
+   46.85044
+  ],
+  [
+   "Old Navy",
+   "clothes",
+   "",
+   -114.03677,
+   46.89627
+  ],
+  [
+   "Ole's Country Store",
+   "convenience",
+   "",
+   -114.01753,
+   46.85701
+  ],
+  [
+   "Oles Country Store",
+   "convenience",
+   "",
+   -113.99425,
+   46.87849
+  ],
+  [
+   "Olsen and Peters Dental Group",
+   "dentist",
+   "",
+   -114.00858,
+   46.84743
+  ],
+  [
+   "One Eyed Jacks",
+   "casino",
+   "",
+   -114.03877,
+   46.85218
+  ],
+  [
+   "One Stop Nail Salon",
+   "beauty",
+   "",
+   -114.01241,
+   46.84642
+  ],
+  [
+   "Opportunity Bank",
+   "bank",
+   "",
+   -114.03886,
+   46.83813
+  ],
+  [
+   "Opportunity Bank of Montana",
+   "bank",
+   "",
+   -114.02624,
+   46.88738
+  ],
+  [
+   "Orange St & Cregg Ln",
+   "bus_stop",
+   "",
+   -114.00308,
+   46.87272
+  ],
+  [
+   "Orange St & S 1st St W",
+   "bus_stop",
+   "",
+   -114.00324,
+   46.87368
+  ],
+  [
+   "Orange St & S 2nd St W",
+   "bus_stop",
+   "",
+   -114.0036,
+   46.87457
+  ],
+  [
+   "Orange St & S 2nd St W",
+   "bus_stop",
+   "",
+   -114.00338,
+   46.86021
+  ],
+  [
+   "Orange St & S 3rd St W",
+   "bus_stop",
+   "",
+   -114.00362,
+   46.86152
+  ],
+  [
+   "Orange St & S 5th St W",
+   "bus_stop",
+   "",
+   -114.00338,
+   46.86317
+  ],
+  [
+   "Orange St & S 5th St W",
+   "bus_stop",
+   "",
+   -114.00363,
+   46.86317
+  ],
+  [
+   "Orange Street Food Farm",
+   "supermarket",
+   "",
+   -114.00409,
+   46.86364
+  ],
+  [
+   "Orangetheory Fitness",
+   "fitness_centre",
+   "",
+   -114.03627,
+   46.8306
+  ],
+  [
+   "Orchard Gardens",
+   "allotments",
+   "",
+   -114.04026,
+   46.87126
+  ],
+  [
+   "Orchard Gardens Apartments",
+   "residential",
+   "",
+   -114.04095,
+   46.87101
+  ],
+  [
+   "Orchard Homes",
+   "census",
+   "",
+   -114.07843,
+   46.85444
+  ],
+  [
+   "Orchard Homes",
+   "residential",
+   "",
+   -114.07616,
+   46.85687
+  ],
+  [
+   "Orchard Homes",
+   "residential",
+   "",
+   -114.04247,
+   46.86298
+  ],
+  [
+   "Orchard Homes Farmer's Market",
+   "marketplace",
+   "",
+   -114.04191,
+   46.86121
+  ],
+  [
+   "Orchard Homes Icelandics",
+   "farmland",
+   "",
+   -114.0548,
+   46.86549
+  ],
+  [
+   "Outback Steakhouse",
+   "restaurant",
+   "american;steak",
+   -114.04038,
+   46.88534
+  ],
+  [
+   "Outside In Garden & Greenhouse",
+   "garden_centre",
+   "",
+   -114.03464,
+   46.84294
+  ],
+  [
+   "Overlook Shelter",
+   "shelter",
+   "",
+   -114.0629,
+   46.85195
+  ],
+  [
+   "P & P Nail Salon",
+   "beauty",
+   "",
+   -114.04106,
+   46.89493
+  ],
+  [
+   "PEAK Health and Wellness Center",
+   "fitness_centre",
+   "",
+   -114.07775,
+   46.82847
+  ],
+  [
+   "PEAK Racquet Club",
+   "fitness_centre",
+   "",
+   -114.07941,
+   46.82743
+  ],
+  [
+   "PEAS Farm",
+   "garden",
+   "",
+   -113.9752,
+   46.89357
+  ],
+  [
+   "PJ's Feed Bin",
+   "agrarian",
+   "",
+   -114.06255,
+   46.86071
+  ],
+  [
+   "PVHOA Park",
+   "park",
+   "",
+   -114.05296,
+   46.90231
+  ],
+  [
+   "PVHOA Park",
+   "park",
+   "",
+   -114.05225,
+   46.90232
+  ],
+  [
+   "Pacific Steel",
+   "recycling",
+   "",
+   -114.03176,
+   46.88554
+  ],
+  [
+   "Paddle Heads Post",
+   "clothes",
+   "",
+   -113.99449,
+   46.87198
+  ],
+  [
+   "Pagoda Thai & Chinese Restaurant",
+   "restaurant",
+   "asian",
+   -113.99425,
+   46.87787
+  ],
+  [
+   "Pak Rat Mini Storage",
+   "commercial",
+   "",
+   -114.08149,
+   46.81516
+  ],
+  [
+   "Pak Rat Mini Storage",
+   "commercial",
+   "",
+   -114.03498,
+   46.90017
+  ],
+  [
+   "Palace Apartments",
+   "residential",
+   "",
+   -113.99539,
+   46.87062
+  ],
+  [
+   "Palmer Professional Park",
+   "commercial",
+   "",
+   -114.03078,
+   46.88751
+  ],
+  [
+   "Palmer St & Latimer St",
+   "bus_stop",
+   "",
+   -114.03317,
+   46.88587
+  ],
+  [
+   "Palmer's Drug",
+   "pharmacy",
+   "",
+   -114.01248,
+   46.83189
+  ],
+  [
+   "Panda Express",
+   "fast_food",
+   "chinese",
+   -114.03833,
+   46.8985
+  ],
+  [
+   "Panera Bread",
+   "fast_food",
+   "sandwich;bakery",
+   -114.03869,
+   46.88567
+  ],
+  [
+   "Papa John's",
+   "fast_food",
+   "pizza",
+   -114.02685,
+   46.84053
+  ],
+  [
+   "Papa Murphy's",
+   "fast_food",
+   "pizza",
+   -114.01527,
+   46.83225
+  ],
+  [
+   "Paradise Falls",
+   "restaurant",
+   "",
+   -114.0363,
+   46.84445
+  ],
+  [
+   "Park Side Credit Union",
+   "bank",
+   "",
+   -114.03507,
+   46.88693
+  ],
+  [
+   "Parkside Village",
+   "residential",
+   "",
+   -114.01175,
+   46.8303
+  ],
+  [
+   "Partnership Health Center",
+   "clinic",
+   "",
+   -113.99654,
+   46.88091
+  ],
+  [
+   "Partschannel Inc",
+   "car_parts",
+   "",
+   -114.02158,
+   46.84917
+  ],
+  [
+   "Party City",
+   "party",
+   "",
+   -114.03649,
+   46.88662
+  ],
+  [
+   "Patte Canyon Disc Golf Course",
+   "disc_golf_course",
+   "disc_golf",
+   -113.93058,
+   46.82435
+  ],
+  [
+   "Pattee Creek Market",
+   "supermarket",
+   "",
+   -114.01114,
+   46.83079
+  ],
+  [
+   "Paul's Pancake Parlor",
+   "restaurant",
+   "breakfast",
+   -114.01784,
+   46.84791
+  ],
+  [
+   "Pawn Shop",
+   "pawnbroker",
+   "",
+   -113.99256,
+   46.86918
+  ],
+  [
+   "Paxson Bike Skills Park",
+   "park",
+   "",
+   -114.02786,
+   46.83318
+  ],
+  [
+   "Paxson Elementary School",
+   "school",
+   "",
+   -113.99659,
+   46.85726
+  ],
+  [
+   "Paxson St & 34th St",
+   "bus_stop",
+   "",
+   -114.02908,
+   46.84514
+  ],
+  [
+   "Paxson St & 34th St",
+   "bus_stop",
+   "",
+   -114.02885,
+   46.8448
+  ],
+  [
+   "Paxson St & 36th St",
+   "bus_stop",
+   "",
+   -114.0292,
+   46.83114
+  ],
+  [
+   "Paxson St & McDonald Ave",
+   "bus_stop",
+   "",
+   -114.02887,
+   46.84294
+  ],
+  [
+   "Peak Auto Repair",
+   "car_repair",
+   "",
+   -114.00277,
+   46.87917
+  ],
+  [
+   "Peak Health & Wellness Center",
+   "fitness_centre",
+   "fitness;multi",
+   -113.99161,
+   46.86887
+  ],
+  [
+   "Pearl Ranch",
+   "farmyard",
+   "",
+   -113.97748,
+   46.88745
+  ],
+  [
+   "Peery Park",
+   "park",
+   "",
+   -114.03833,
+   46.8296
+  ],
+  [
+   "Pella Windows & Doors",
+   "window_construction",
+   "",
+   -114.03886,
+   46.83799
+  ],
+  [
+   "PetSmart",
+   "pet",
+   "",
+   -114.03677,
+   46.89691
+  ],
+  [
+   "Petco",
+   "pet",
+   "",
+   -114.0379,
+   46.83195
+  ],
+  [
+   "Petes Electric",
+   "electrician",
+   "",
+   -114.03838,
+   46.84061
+  ],
+  [
+   "Petra Church",
+   "place_of_worship",
+   "",
+   -114.04345,
+   46.90247
+  ],
+  [
+   "Pheasant Run Park",
+   "park",
+   "",
+   -114.04037,
+   46.82483
+  ],
+  [
+   "Phillips St & Burns St",
+   "bus_stop",
+   "",
+   -114.01526,
+   46.87686
+  ],
+  [
+   "Phillips St & Burns St",
+   "bus_stop",
+   "",
+   -114.0151,
+   46.877
+  ],
+  [
+   "Phillips St & Scott St",
+   "bus_stop",
+   "",
+   -114.00637,
+   46.87727
+  ],
+  [
+   "Phillips St & Shakespeare St",
+   "bus_stop",
+   "",
+   -114.00967,
+   46.87688
+  ],
+  [
+   "Phillips St & Shakespeare St",
+   "bus_stop",
+   "",
+   -114.00967,
+   46.87702
+  ],
+  [
+   "Phylis Washington Amphitheater",
+   "theatre",
+   "",
+   -113.98048,
+   46.86604
+  ],
+  [
+   "Pie Hole",
+   "restaurant",
+   "pizza",
+   -113.99259,
+   46.86803
+  ],
+  [
+   "Piece of Mind",
+   "tobacco",
+   "",
+   -113.99552,
+   46.87167
+  ],
+  [
+   "Pierce Flooring & Design",
+   "flooring",
+   "",
+   -114.00824,
+   46.85705
+  ],
+  [
+   "Pineview Park",
+   "park",
+   "",
+   -113.96977,
+   46.89583
+  ],
+  [
+   "Pinnacle Compounding",
+   "pharmacy",
+   "",
+   -114.01596,
+   46.85925
+  ],
+  [
+   "Pixi Salon",
+   "beauty",
+   "",
+   -114.02271,
+   46.84922
+  ],
+  [
+   "Pizza Hut",
+   "restaurant",
+   "pizza",
+   -114.04284,
+   46.83195
+  ],
+  [
+   "Pizza Hut",
+   "restaurant",
+   "pizza",
+   -114.03687,
+   46.88791
+  ],
+  [
+   "Pizza Hut",
+   "restaurant",
+   "pizza",
+   -113.98407,
+   46.8742
+  ],
+  [
+   "Planet Fitness",
+   "fitness_centre",
+   "",
+   -114.03662,
+   46.8829
+  ],
+  [
+   "Planned Parenthood",
+   "clinic",
+   "",
+   -113.99223,
+   46.87273
+  ],
+  [
+   "Playfair Park",
+   "park",
+   "",
+   -114.01505,
+   46.83994
+  ],
+  [
+   "Playfair Park Pup Pen",
+   "dog_park",
+   "",
+   -114.01089,
+   46.83871
+  ],
+  [
+   "Pleasant View Park",
+   "park",
+   "",
+   -114.04969,
+   46.89302
+  ],
+  [
+   "Pleasant View Playground",
+   "playground",
+   "",
+   -114.04967,
+   46.89253
+  ],
+  [
+   "Plonk",
+   "restaurant",
+   "",
+   -113.99323,
+   46.87028
+  ],
+  [
+   "Point S",
+   "car_repair",
+   "",
+   -113.99125,
+   46.87124
+  ],
+  [
+   "Polished Beauty Salon",
+   "beauty",
+   "",
+   -113.99765,
+   46.85539
+  ],
+  [
+   "Popeyes",
+   "fast_food",
+   "chicken",
+   -114.03625,
+   46.90976
+  ],
+  [
+   "Poverello Center",
+   "social_facility",
+   "",
+   -114.00897,
+   46.88113
+  ],
+  [
+   "Power Wash",
+   "car_wash",
+   "",
+   -114.01779,
+   46.85743
+  ],
+  [
+   "Prescott School",
+   "school",
+   "",
+   -113.975,
+   46.87006
+  ],
+  [
+   "Press Box Sports Bar",
+   "bar",
+   "",
+   -113.98355,
+   46.87442
+  ],
+  [
+   "Prince of Peace Lutheran Church",
+   "place_of_worship",
+   "christian",
+   -114.04013,
+   46.85465
+  ],
+  [
+   "Pro-Align",
+   "car_repair",
+   "",
+   -114.03652,
+   46.84092
+  ],
+  [
+   "Probation and Parole Office",
+   "police",
+   "",
+   -114.01346,
+   46.85887
+  ],
+  [
+   "Professional Sight and Sound",
+   "electronics",
+   "",
+   -114.0361,
+   46.84058
+  ],
+  [
+   "Providence Center",
+   "clinic",
+   "",
+   -113.99236,
+   46.87958
+  ],
+  [
+   "Providence ExpressCare",
+   "clinic",
+   "",
+   -114.03601,
+   46.83057
+  ],
+  [
+   "Providence Medical Group",
+   "clinic",
+   "",
+   -114.04112,
+   46.89434
+  ],
+  [
+   "Pruyn Veterinary Hospital",
+   "veterinary",
+   "",
+   -114.01885,
+   46.85014
+  ],
+  [
+   "Pullman St & Scott St",
+   "bus_stop",
+   "",
+   -114.0061,
+   46.89771
+  ],
+  [
+   "Pure Barre",
+   "fitness_centre",
+   "fitness",
+   -114.00223,
+   46.87977
+  ],
+  [
+   "Quality Inn & Suites",
+   "hotel",
+   "",
+   -114.03886,
+   46.9109
+  ],
+  [
+   "Queen Street",
+   "residential",
+   "",
+   -114.00608,
+   46.84188
+  ],
+  [
+   "Quiznos",
+   "fast_food",
+   "sandwich",
+   -114.04114,
+   46.89358
+  ],
+  [
+   "REI",
+   "outdoor",
+   "",
+   -114.04117,
+   46.89264
+  ],
+  [
+   "REVO Training Center",
+   "fitness_centre",
+   "",
+   -114.01681,
+   46.84606
+  ],
+  [
+   "ROAM Student Living",
+   "residential",
+   "",
+   -113.99187,
+   46.87401
+  ],
+  [
+   "Radius Gallery",
+   "gallery",
+   "",
+   -113.99465,
+   46.87227
+  ],
+  [
+   "Radius Gallery Clayworks",
+   "art",
+   "",
+   -113.99442,
+   46.87211
+  ],
+  [
+   "Rail Link Dog Park B.C.",
+   "dog_park",
+   "",
+   -114.02774,
+   46.84829
+  ],
+  [
+   "Railroad & Well St",
+   "bus_stop",
+   "",
+   -114.02132,
+   46.88308
+  ],
+  [
+   "Railroad & Well St",
+   "bus_stop",
+   "",
+   -114.02139,
+   46.88321
+  ],
+  [
+   "Rainbow Park",
+   "park",
+   "",
+   -114.05827,
+   46.81063
+  ],
+  [
+   "Rainbow Vacuum",
+   "vacuum_cleaner",
+   "",
+   -114.01182,
+   46.88793
+  ],
+  [
+   "Raja Smoke Shop",
+   "yes",
+   "",
+   -114.01164,
+   46.88026
+  ],
+  [
+   "Ralene Park",
+   "recreation_ground",
+   "",
+   -114.05908,
+   46.82156
+  ],
+  [
+   "Rangitsch Brothers RV and Manufactured Home Center",
+   "caravan",
+   "",
+   -114.02551,
+   46.88889
+  ],
+  [
+   "Rankin Park",
+   "park",
+   "",
+   -113.98806,
+   46.86258
+  ],
+  [
+   "Rattlesnake Creek Distillery",
+   "bar",
+   "",
+   -113.9931,
+   46.88249
+  ],
+  [
+   "Rattlesnake Dr & Creek Crossing Rd",
+   "bus_stop",
+   "",
+   -113.96553,
+   46.9038
+  ],
+  [
+   "Rattlesnake Dr & Dickinson St",
+   "bus_stop",
+   "",
+   -113.96558,
+   46.88418
+  ],
+  [
+   "Rattlesnake Dr & Dickinson St",
+   "bus_stop",
+   "",
+   -113.96576,
+   46.88404
+  ],
+  [
+   "Rattlesnake Dr & Gilbert Ave",
+   "bus_stop",
+   "",
+   -113.9673,
+   46.88937
+  ],
+  [
+   "Rattlesnake Dr & Herbert St",
+   "bus_stop",
+   "",
+   -113.96971,
+   46.87672
+  ],
+  [
+   "Rattlesnake Dr & Khanabad Way",
+   "bus_stop",
+   "",
+   -113.96554,
+   46.88289
+  ],
+  [
+   "Rattlesnake Dr & Lower Lincoln Hills Dr",
+   "bus_stop",
+   "",
+   -113.96555,
+   46.89169
+  ],
+  [
+   "Rattlesnake Dr & Lower Lincoln Hills Dr",
+   "bus_stop",
+   "",
+   -113.96578,
+   46.89146
+  ],
+  [
+   "Rattlesnake Dr & Murray St",
+   "bus_stop",
+   "",
+   -113.96558,
+   46.8868
+  ],
+  [
+   "Rattlesnake Dr & Powell St",
+   "bus_stop",
+   "",
+   -113.96576,
+   46.88562
+  ],
+  [
+   "Rattlesnake Dr & Richard St",
+   "bus_stop",
+   "",
+   -113.96991,
+   46.87765
+  ],
+  [
+   "Rattlesnake Dr & Stanely Rd",
+   "bus_stop",
+   "",
+   -113.96557,
+   46.89487
+  ],
+  [
+   "Rattlesnake Dr & Stanely Rd",
+   "bus_stop",
+   "",
+   -113.96577,
+   46.89491
+  ],
+  [
+   "Rattlesnake Elementary School",
+   "school",
+   "",
+   -113.96713,
+   46.89608
+  ],
+  [
+   "Rattlesnake Graveyard Memorial",
+   "memorial",
+   "",
+   -113.9682,
+   46.89564
+  ],
+  [
+   "Rattlesnake Outdoor Learning Center",
+   "garden",
+   "",
+   -113.96594,
+   46.8957
+  ],
+  [
+   "Ravenwood Hills Park",
+   "recreation_ground",
+   "",
+   -114.03916,
+   46.82072
+  ],
+  [
+   "Ravenwood Park",
+   "park",
+   "",
+   -114.03992,
+   46.81291
+  ],
+  [
+   "ReStyle Clothing Exchange",
+   "clothes",
+   "",
+   -114.021,
+   46.85227
+  ],
+  [
+   "Red Fern Park",
+   "park",
+   "",
+   -114.06225,
+   46.91531
+  ],
+  [
+   "Red Hen Farm and Orchard",
+   "orchard",
+   "",
+   -114.07492,
+   46.85346
+  ],
+  [
+   "Red Lion Inn & Suites",
+   "hotel",
+   "",
+   -114.0034,
+   46.88272
+  ],
+  [
+   "Red Rooster",
+   "doityourself",
+   "",
+   -113.99375,
+   46.86997
+  ],
+  [
+   "Red's Bar",
+   "bar",
+   "",
+   -113.99614,
+   46.8709
+  ],
+  [
+   "Redbox",
+   "vending_machine",
+   "",
+   -114.04193,
+   46.88889
+  ],
+  [
+   "Reformed Baptist Church",
+   "place_of_worship",
+   "christian",
+   -114.02817,
+   46.86686
+  ],
+  [
+   "Renae Court",
+   "residential",
+   "",
+   -114.04566,
+   46.87192
+  ],
+  [
+   "Rent-A-Space",
+   "commercial",
+   "",
+   -114.01758,
+   46.84361
+  ],
+  [
+   "Rent-A-Space",
+   "rental",
+   "",
+   -114.0372,
+   46.85141
+  ],
+  [
+   "Residence Inn Missoula Downtown",
+   "hotel",
+   "",
+   -113.99435,
+   46.8727
+  ],
+  [
+   "Revive Church",
+   "place_of_worship",
+   "christian",
+   -114.03371,
+   46.88341
+  ],
+  [
+   "Riata Park",
+   "park",
+   "",
+   -114.07334,
+   46.89384
+  ],
+  [
+   "Richard 'Dick' Hexter Memorial Park",
+   "park",
+   "",
+   -114.05383,
+   46.90362
+  ],
+  [
+   "River Bowl",
+   "park",
+   "",
+   -113.98563,
+   46.8618
+  ],
+  [
+   "River Pine Park",
+   "park",
+   "",
+   -114.04435,
+   46.82977
+  ],
+  [
+   "River Ridge Apartments",
+   "residential",
+   "",
+   -114.03254,
+   46.88694
+  ],
+  [
+   "River Road Storage",
+   "commercial",
+   "",
+   -114.03231,
+   46.88076
+  ],
+  [
+   "River Rock Apartments",
+   "residential",
+   "",
+   -114.01083,
+   46.89599
+  ],
+  [
+   "River of Life",
+   "place_of_worship",
+   "christian",
+   -113.941,
+   46.88067
+  ],
+  [
+   "River of Life",
+   "religious",
+   "",
+   -113.94109,
+   46.88078
+  ],
+  [
+   "Riverfront Trails Subdivision",
+   "construction",
+   "",
+   -114.07143,
+   46.81776
+  ],
+  [
+   "Riverside Health Care Center",
+   "nursing_home",
+   "",
+   -113.97396,
+   46.8639
+  ],
+  [
+   "Riverside Pawn",
+   "pawnbroker",
+   "",
+   -114.03919,
+   46.87533
+  ],
+  [
+   "Riverside Storage Missoula",
+   "commercial",
+   "",
+   -114.04323,
+   46.87552
+  ],
+  [
+   "Robert B Curry Health Center",
+   "clinic",
+   "",
+   -113.98766,
+   46.86457
+  ],
+  [
+   "Rockin' Rudy's",
+   "music",
+   "",
+   -113.9985,
+   46.86655
+  ],
+  [
+   "Rockin' Rudy's Attic",
+   "collector",
+   "",
+   -114.01019,
+   46.86068
+  ],
+  [
+   "Rocky Mountain Contact Lenses",
+   "optician",
+   "",
+   -114.00851,
+   46.85988
+  ],
+  [
+   "Rocky Mountain Disel Corporation",
+   "car_repair",
+   "",
+   -114.03544,
+   46.90931
+  ],
+  [
+   "Rocky Mountain Gardens",
+   "garden",
+   "",
+   -114.014,
+   46.84995
+  ],
+  [
+   "Rocky Mountain Hearing Aid",
+   "hearing_aids",
+   "",
+   -114.02531,
+   46.84949
+  ],
+  [
+   "Rocky Mountain Museum of Military History",
+   "museum",
+   "",
+   -114.06484,
+   46.8389
+  ],
+  [
+   "Rod's and Dog's Car Wash",
+   "car_wash",
+   "",
+   -114.06092,
+   46.91845
+  ],
+  [
+   "Rodda Paint",
+   "paint",
+   "",
+   -114.02661,
+   46.84053
+  ],
+  [
+   "Rollin Field",
+   "recreation_ground",
+   "",
+   -114.01029,
+   46.8733
+  ],
+  [
+   "Romeo's Italian Kitchen",
+   "restaurant",
+   "italian",
+   -114.01233,
+   46.83265
+  ],
+  [
+   "Ron's Auto Refinishers",
+   "car_repair",
+   "",
+   -114.01262,
+   46.85886
+  ],
+  [
+   "Roosevelt",
+   "monument",
+   "",
+   -113.99841,
+   46.87513
+  ],
+  [
+   "Roots Off Reserve Community Garden",
+   "garden",
+   "",
+   -114.05864,
+   46.89583
+  ],
+  [
+   "Rosauers",
+   "supermarket",
+   "",
+   -114.03754,
+   46.84829
+  ],
+  [
+   "Rosauers Gas",
+   "fuel",
+   "",
+   -114.03876,
+   46.84877
+  ],
+  [
+   "Rosecrest Park",
+   "park",
+   "",
+   -114.07264,
+   46.85463
+  ],
+  [
+   "Rosetta Assisted Living",
+   "social_facility",
+   "",
+   -114.03176,
+   46.88859
+  ],
+  [
+   "Ross",
+   "department_store",
+   "",
+   -114.04117,
+   46.89305
+  ],
+  [
+   "Rotech",
+   "medical_supply",
+   "",
+   -114.03088,
+   46.84929
+  ],
+  [
+   "Ruby's Cafe",
+   "cafe",
+   "diner",
+   -114.01522,
+   46.84652
+  ],
+  [
+   "Runner's Edge",
+   "shoes",
+   "",
+   -113.99369,
+   46.87064
+  ],
+  [
+   "Runway Fashion Exchange",
+   "clothes",
+   "",
+   -114.02869,
+   46.841
+  ],
+  [
+   "Russell Elementary School",
+   "school",
+   "",
+   -114.01719,
+   46.84187
+  ],
+  [
+   "Russell Park West",
+   "park",
+   "",
+   -114.01953,
+   46.84401
+  ],
+  [
+   "Russell Square",
+   "retail",
+   "",
+   -114.01595,
+   46.83183
+  ],
+  [
+   "Russell St at Opportunity Resources",
+   "bus_stop",
+   "",
+   -114.01844,
+   46.83854
+  ],
+  [
+   "Russell St at YMCA",
+   "bus_stop",
+   "",
+   -114.01812,
+   46.83913
+  ],
+  [
+   "S & Co.",
+   "beauty",
+   "",
+   -114.0196,
+   46.84928
+  ],
+  [
+   "S 10th St W & Kemp St",
+   "bus_stop",
+   "",
+   -114.02967,
+   46.86747
+  ],
+  [
+   "S 10th St W & Kemp St",
+   "bus_stop",
+   "",
+   -114.02988,
+   46.86732
+  ],
+  [
+   "S 10th St W & S Catlin St",
+   "bus_stop",
+   "",
+   -114.02456,
+   46.86735
+  ],
+  [
+   "S 10th St W & S Catlin St",
+   "bus_stop",
+   "",
+   -114.02419,
+   46.86744
+  ],
+  [
+   "S 10th St W & S Grant St",
+   "bus_stop",
+   "",
+   -114.02605,
+   46.8675
+  ],
+  [
+   "S 10th St W & S Grant St",
+   "bus_stop",
+   "",
+   -114.02651,
+   46.86733
+  ],
+  [
+   "S 10th St W & S Johnson St",
+   "bus_stop",
+   "",
+   -114.02844,
+   46.86732
+  ],
+  [
+   "S 3rd St & Catlin St",
+   "bus_stop",
+   "",
+   -114.02464,
+   46.86137
+  ],
+  [
+   "S 3rd St W & Ash St",
+   "bus_stop",
+   "",
+   -114.00974,
+   46.861
+  ],
+  [
+   "S 3rd St W & California St",
+   "bus_stop",
+   "",
+   -114.01321,
+   46.86084
+  ],
+  [
+   "S 3rd St W & California St",
+   "bus_stop",
+   "",
+   -114.01361,
+   46.86096
+  ],
+  [
+   "S 3rd St W & Cottonwood St",
+   "bus_stop",
+   "",
+   -114.00525,
+   46.86088
+  ],
+  [
+   "S 3rd St W & Cottonwood St",
+   "bus_stop",
+   "",
+   -114.00474,
+   46.86098
+  ],
+  [
+   "S 3rd St W & Darlene Dr",
+   "bus_stop",
+   "",
+   -114.03719,
+   46.86106
+  ],
+  [
+   "S 3rd St W & Darlene Dr",
+   "bus_stop",
+   "",
+   -114.03721,
+   46.86091
+  ],
+  [
+   "S 3rd St W & Grant St",
+   "bus_stop",
+   "",
+   -114.02604,
+   46.86081
+  ],
+  [
+   "S 3rd St W & Hiberta St",
+   "bus_stop",
+   "",
+   -114.05277,
+   46.8613
+  ],
+  [
+   "S 3rd St W & Prince St",
+   "bus_stop",
+   "",
+   -114.01666,
+   46.86099
+  ],
+  [
+   "S 3rd St W & S Catlin St",
+   "bus_stop",
+   "",
+   -114.02169,
+   46.86098
+  ],
+  [
+   "S 3rd St W & S Curtis St",
+   "bus_stop",
+   "",
+   -114.03144,
+   46.86089
+  ],
+  [
+   "S 3rd St W & S Grove St",
+   "bus_stop",
+   "",
+   -114.04261,
+   46.86104
+  ],
+  [
+   "S 3rd St W & S Grove St",
+   "bus_stop",
+   "",
+   -114.04274,
+   46.86094
+  ],
+  [
+   "S 3rd St W & S Inez St",
+   "bus_stop",
+   "",
+   -114.01615,
+   46.86082
+  ],
+  [
+   "S 3rd St W & S Johnson St",
+   "bus_stop",
+   "",
+   -114.02755,
+   46.86096
+  ],
+  [
+   "S 3rd St W & Schilling St",
+   "bus_stop",
+   "",
+   -114.03099,
+   46.86105
+  ],
+  [
+   "S 3rd St W & Short St",
+   "bus_stop",
+   "",
+   -114.04722,
+   46.86103
+  ],
+  [
+   "S 3rd St W & Short St",
+   "bus_stop",
+   "",
+   -114.04781,
+   46.86095
+  ],
+  [
+   "S 3rd St W & Walnut St",
+   "bus_stop",
+   "",
+   -114.00827,
+   46.86082
+  ],
+  [
+   "S 5th St E & Gerald Ave",
+   "bus_stop",
+   "",
+   -113.99567,
+   46.86284
+  ],
+  [
+   "S 5th St E & Hilda Ave",
+   "bus_stop",
+   "",
+   -113.99237,
+   46.86282
+  ],
+  [
+   "S 5th St W & Ash St",
+   "bus_stop",
+   "",
+   -114.00978,
+   46.86283
+  ],
+  [
+   "S 5th St W & Hickory St",
+   "bus_stop",
+   "",
+   -114.00694,
+   46.86282
+  ],
+  [
+   "S 5th St W & Inez St",
+   "bus_stop",
+   "",
+   -114.01592,
+   46.8628
+  ],
+  [
+   "S 5th St W & Ivy St",
+   "bus_stop",
+   "",
+   -114.01275,
+   46.86278
+  ],
+  [
+   "S 5th St W & Myrtle St",
+   "bus_stop",
+   "",
+   -113.99863,
+   46.86283
+  ],
+  [
+   "S 5th St W & Orange St",
+   "bus_stop",
+   "",
+   -114.00391,
+   46.86287
+  ],
+  [
+   "S 5th St W & S Catlin St",
+   "bus_stop",
+   "",
+   -114.02232,
+   46.86301
+  ],
+  [
+   "S 5th St W & S Russell St",
+   "bus_stop",
+   "",
+   -114.01815,
+   46.86279
+  ],
+  [
+   "S 5th St W & S Washburn St",
+   "bus_stop",
+   "",
+   -114.02018,
+   46.86296
+  ],
+  [
+   "S 5th St W & S Washburn St",
+   "bus_stop",
+   "",
+   -114.02091,
+   46.86279
+  ],
+  [
+   "S 6th St E & Gerald Ave",
+   "bus_stop",
+   "",
+   -113.99603,
+   46.86397
+  ],
+  [
+   "S 6th St E & Hilda Ave",
+   "bus_stop",
+   "",
+   -113.99234,
+   46.86395
+  ],
+  [
+   "S 6th St W & Ash St",
+   "bus_stop",
+   "",
+   -114.00981,
+   46.8639
+  ],
+  [
+   "S 6th St W & Catlin St",
+   "bus_stop",
+   "",
+   -114.02251,
+   46.86373
+  ],
+  [
+   "S 6th St W & Chestnut St",
+   "bus_stop",
+   "",
+   -114.00223,
+   46.86392
+  ],
+  [
+   "S 6th St W & Cottonwood St",
+   "bus_stop",
+   "",
+   -114.00524,
+   46.86389
+  ],
+  [
+   "S 6th St W & Ivy St",
+   "bus_stop",
+   "",
+   -114.01282,
+   46.86392
+  ],
+  [
+   "S 6th St W & S Inez St",
+   "bus_stop",
+   "",
+   -114.01582,
+   46.8639
+  ],
+  [
+   "S 6th St W & Woodford St",
+   "bus_stop",
+   "",
+   -113.99901,
+   46.86393
+  ],
+  [
+   "S 7th St W & Clements Rd",
+   "bus_stop",
+   "",
+   -114.08151,
+   46.86491
+  ],
+  [
+   "S 7th St W & Gladis Dr",
+   "bus_stop",
+   "",
+   -114.05722,
+   46.86449
+  ],
+  [
+   "S 7th St W & Gladis Dr",
+   "bus_stop",
+   "",
+   -114.05707,
+   46.8646
+  ],
+  [
+   "S 7th St W & Grace Ct",
+   "bus_stop",
+   "",
+   -114.06741,
+   46.86465
+  ],
+  [
+   "S 7th St W & Hiberta St",
+   "bus_stop",
+   "",
+   -114.05264,
+   46.86444
+  ],
+  [
+   "S 7th St W & Howard St",
+   "bus_stop",
+   "",
+   -114.07395,
+   46.86471
+  ],
+  [
+   "S 7th St W & Howard St",
+   "bus_stop",
+   "",
+   -114.07365,
+   46.86459
+  ],
+  [
+   "S 7th St W & Tower St",
+   "bus_stop",
+   "",
+   -114.06346,
+   46.86448
+  ],
+  [
+   "S 7th St W & Tower St",
+   "bus_stop",
+   "",
+   -114.06301,
+   46.86459
+  ],
+  [
+   "S 8th St W & S Catlin St",
+   "bus_stop",
+   "",
+   -114.02253,
+   46.86528
+  ],
+  [
+   "S Catlin St & S 8th St W",
+   "bus_stop",
+   "",
+   -114.0223,
+   46.86535
+  ],
+  [
+   "S Higgins Ave & Agnes Ave",
+   "bus_stop",
+   "",
+   -113.99717,
+   46.83935
+  ],
+  [
+   "S Higgins Ave & Agnes Ave",
+   "bus_stop",
+   "",
+   -113.99743,
+   46.8396
+  ],
+  [
+   "S Higgins Ave & Benton Ave",
+   "bus_stop",
+   "",
+   -113.99746,
+   46.85257
+  ],
+  [
+   "S Higgins Ave & Benton Ave",
+   "bus_stop",
+   "",
+   -113.99718,
+   46.83778
+  ],
+  [
+   "S Higgins Ave & Beverly Ave",
+   "bus_stop",
+   "",
+   -113.99728,
+   46.85846
+  ],
+  [
+   "S Higgins Ave & Central Ave W",
+   "bus_stop",
+   "",
+   -113.99729,
+   46.84702
+  ],
+  [
+   "S Higgins Ave & Connell Ave",
+   "bus_stop",
+   "",
+   -113.99752,
+   46.86571
+  ],
+  [
+   "S Higgins Ave & Connell Ave",
+   "bus_stop",
+   "",
+   -113.9973,
+   46.86556
+  ],
+  [
+   "S Higgins Ave & Dearborn Ave",
+   "bus_stop",
+   "",
+   -113.99744,
+   46.85009
+  ],
+  [
+   "S Higgins Ave & Evans Ave",
+   "bus_stop",
+   "",
+   -113.99731,
+   46.8566
+  ],
+  [
+   "S Higgins Ave & Florence St",
+   "bus_stop",
+   "",
+   -113.99755,
+   46.85481
+  ],
+  [
+   "S Higgins Ave & Keith Ave",
+   "bus_stop",
+   "",
+   -113.99729,
+   46.85461
+  ],
+  [
+   "S Higgins Ave & Livingston Ave",
+   "bus_stop",
+   "",
+   -113.99721,
+   46.85022
+  ],
+  [
+   "S Higgins Ave & North Ave E",
+   "bus_stop",
+   "",
+   -113.99726,
+   46.84591
+  ],
+  [
+   "S Higgins Ave & North Ave W",
+   "bus_stop",
+   "",
+   -113.99748,
+   46.8457
+  ],
+  [
+   "S Higgins Ave & S 5th St",
+   "bus_stop",
+   "",
+   -113.99758,
+   46.86315
+  ],
+  [
+   "S Higgins Ave & S 5th St",
+   "bus_stop",
+   "",
+   -113.99735,
+   46.86271
+  ],
+  [
+   "S Higgins Ave & Strand Ave",
+   "bus_stop",
+   "",
+   -113.99753,
+   46.85883
+  ],
+  [
+   "S Higgins Ave & Tremont St",
+   "bus_stop",
+   "",
+   -113.99755,
+   46.8527
+  ],
+  [
+   "S Higgins Ave & University Ave",
+   "bus_stop",
+   "",
+   -113.9973,
+   46.8676
+  ],
+  [
+   "S Higgins Ave & W Sussex Ave",
+   "bus_stop",
+   "",
+   -113.99748,
+   46.84735
+  ],
+  [
+   "S Higgins Ave & W Sussex Ave",
+   "bus_stop",
+   "",
+   -113.99723,
+   46.84826
+  ],
+  [
+   "S Johnson St & 12th St W",
+   "bus_stop",
+   "",
+   -114.02809,
+   46.85416
+  ],
+  [
+   "S Johnson St & Central Ave",
+   "bus_stop",
+   "",
+   -114.02808,
+   46.84697
+  ],
+  [
+   "S Johnson St & S 10th St W",
+   "bus_stop",
+   "",
+   -114.02807,
+   46.86757
+  ],
+  [
+   "S Johnson St & S 10th St W",
+   "bus_stop",
+   "",
+   -114.02828,
+   46.8676
+  ],
+  [
+   "S Johnson St & S 12th St W",
+   "bus_stop",
+   "",
+   -114.02831,
+   46.85452
+  ],
+  [
+   "S Johnson St & S 4th St W",
+   "bus_stop",
+   "",
+   -114.02823,
+   46.86197
+  ],
+  [
+   "S Johnson St & S 4th St W",
+   "bus_stop",
+   "",
+   -114.02805,
+   46.8617
+  ],
+  [
+   "S Johnson St & S 8th St W",
+   "bus_stop",
+   "",
+   -114.02808,
+   46.86555
+  ],
+  [
+   "S Johnson St & S 8th St W",
+   "bus_stop",
+   "",
+   -114.0283,
+   46.86566
+  ],
+  [
+   "S Johnson St & Strand Ave",
+   "bus_stop",
+   "",
+   -114.0283,
+   46.8588
+  ],
+  [
+   "S Johnson St & Strand Ave",
+   "bus_stop",
+   "",
+   -114.02811,
+   46.85846
+  ],
+  [
+   "S Johnson St & W Kent Ave",
+   "bus_stop",
+   "",
+   -114.02829,
+   46.84617
+  ],
+  [
+   "S Johnson St & W Sussex Ave",
+   "bus_stop",
+   "",
+   -114.02828,
+   46.84798
+  ],
+  [
+   "S Russell St  & Earnest Ave",
+   "bus_stop",
+   "",
+   -114.01812,
+   46.84103
+  ],
+  [
+   "S Russell St & McDonald Ave",
+   "bus_stop",
+   "",
+   -114.01813,
+   46.8433
+  ],
+  [
+   "S Russell St & Russell Park W",
+   "bus_stop",
+   "",
+   -114.01839,
+   46.84394
+  ],
+  [
+   "S Van Buren St & Willow St",
+   "bus_stop",
+   "",
+   -113.97413,
+   46.88271
+  ],
+  [
+   "S. Russell St & Earnest Ave",
+   "bus_stop",
+   "",
+   -114.01841,
+   46.84111
+  ],
+  [
+   "SIT Happens Dog Training Center",
+   "animal_shelter",
+   "",
+   -114.01202,
+   46.85931
+  ],
+  [
+   "Sacajawea Park",
+   "park",
+   "",
+   -114.00275,
+   46.86415
+  ],
+  [
+   "Sacred Roots Massage School of Montana",
+   "massage",
+   "",
+   -114.00225,
+   46.87811
+  ],
+  [
+   "Saigon Nails",
+   "beauty",
+   "",
+   -114.01631,
+   46.83302
+  ],
+  [
+   "Saint Anthony Catholic Church",
+   "place_of_worship",
+   "christian",
+   -114.00145,
+   46.86568
+  ],
+  [
+   "Saint Francis Xavier Catholic Church",
+   "place_of_worship",
+   "christian",
+   -113.99777,
+   46.86802
+  ],
+  [
+   "Saint Josephs Elementary School",
+   "school",
+   "",
+   -113.99872,
+   46.86784
+  ],
+  [
+   "Saint Mary's Cemetery",
+   "cemetery",
+   "",
+   -113.99882,
+   46.88577
+  ],
+  [
+   "Saint Patrick Hospital",
+   "hospital",
+   "",
+   -114.00027,
+   46.86777
+  ],
+  [
+   "Saint Patrick Hospital Heliport",
+   "helipad",
+   "",
+   -113.99978,
+   46.88244
+  ],
+  [
+   "Saint Pauls Lutheran Church",
+   "place_of_worship",
+   "christian",
+   -113.99824,
+   46.866
+  ],
+  [
+   "Sakura Warrior Arts",
+   "dojo",
+   "",
+   -114.00006,
+   46.84276
+  ],
+  [
+   "Santa Fe Court",
+   "residential",
+   "",
+   -114.03297,
+   46.88745
+  ],
+  [
+   "Sayre & Karvandi Orthodontist",
+   "dentist",
+   "",
+   -114.00812,
+   46.84837
+  ],
+  [
+   "Scenic Mobile Home Park",
+   "residential",
+   "",
+   -113.93573,
+   46.88114
+  ],
+  [
+   "Scheels",
+   "sports",
+   "",
+   -114.02961,
+   46.85267
+  ],
+  [
+   "Schreiber Gymnasium",
+   "sports_centre",
+   "",
+   -113.98247,
+   46.85452
+  ],
+  [
+   "Scott St & Cooper St",
+   "bus_stop",
+   "",
+   -114.00619,
+   46.87934
+  ],
+  [
+   "Scott St & Sherwood St",
+   "bus_stop",
+   "",
+   -114.00615,
+   46.87761
+  ],
+  [
+   "Scott St & Turner St",
+   "bus_stop",
+   "",
+   -114.00613,
+   46.88673
+  ],
+  [
+   "Scott Street Ravara Community Land Trust",
+   "construction",
+   "",
+   -114.00853,
+   46.8844
+  ],
+  [
+   "Scott Street Ravara Community Land Trust",
+   "residential",
+   "",
+   -114.00709,
+   46.8845
+  ],
+  [
+   "Scott's EQ Auto Repair",
+   "car_repair",
+   "",
+   -114.02584,
+   46.83972
+  ],
+  [
+   "Scotty Park",
+   "park",
+   "",
+   -114.05493,
+   46.814
+  ],
+  [
+   "Secret Seconds",
+   "second_hand",
+   "",
+   -114.01262,
+   46.85932
+  ],
+  [
+   "Selway Armory",
+   "weapons",
+   "",
+   -114.03555,
+   46.90274
+  ],
+  [
+   "Sensory Garden",
+   "garden",
+   "",
+   -114.0144,
+   46.84993
+  ],
+  [
+   "Sentinel High School",
+   "school",
+   "",
+   -114.0094,
+   46.85026
+  ],
+  [
+   "Sentinel Lodge",
+   "social_centre",
+   "",
+   -114.03575,
+   46.84929
+  ],
+  [
+   "Sentinel Storage",
+   "storage_rental",
+   "",
+   -113.97676,
+   46.86138
+  ],
+  [
+   "Seventh Day Adventist Church",
+   "place_of_worship",
+   "christian",
+   -114.01003,
+   46.84871
+  ],
+  [
+   "Seventh Day Adventist Church",
+   "religious",
+   "christian",
+   -114.01002,
+   46.84854
+  ],
+  [
+   "Sgt. Bozo Dog Park",
+   "dog_park",
+   "",
+   -114.05658,
+   46.83857
+  ],
+  [
+   "Sgt. Don Gregory Park",
+   "park",
+   "",
+   -113.98096,
+   46.87158
+  ],
+  [
+   "Sha-Ron Beach",
+   "beach",
+   "swimming",
+   -113.93296,
+   46.87725
+  ],
+  [
+   "Sha-Ron Fishing Access",
+   "recreation_ground",
+   "",
+   -113.93491,
+   46.87639
+  ],
+  [
+   "Shady Spruce Hostel",
+   "hostel",
+   "",
+   -113.99098,
+   46.86914
+  ],
+  [
+   "Shakespeare & Co",
+   "books",
+   "",
+   -113.99774,
+   46.86113
+  ],
+  [
+   "Shear Prophesy",
+   "hairdresser",
+   "",
+   -113.9977,
+   46.86463
+  ],
+  [
+   "Sherwin-Williams",
+   "paint",
+   "",
+   -114.03908,
+   46.8416
+  ],
+  [
+   "Shine Auto Detailing",
+   "car_repair",
+   "",
+   -114.00828,
+   46.88974
+  ],
+  [
+   "Show Tyme Academy for the Performing Arts",
+   "dance",
+   "",
+   -114.03471,
+   46.90273
+  ],
+  [
+   "Sign Pro",
+   "signmaker",
+   "",
+   -114.02229,
+   46.85141
+  ],
+  [
+   "Silver Creek Casino",
+   "casino",
+   "",
+   -114.03783,
+   46.89842
+  ],
+  [
+   "Silver Dollar Bar",
+   "bar",
+   "",
+   -113.99504,
+   46.88129
+  ],
+  [
+   "Silver Park",
+   "park",
+   "",
+   -114.01045,
+   46.8693
+  ],
+  [
+   "Silver Scissors",
+   "hairdresser",
+   "",
+   -114.03246,
+   46.84922
+  ],
+  [
+   "Silver Slipper Sports Bar & Casino",
+   "casino",
+   "",
+   -114.04932,
+   46.83407
+  ],
+  [
+   "Silver Summit Playground",
+   "playground",
+   "",
+   -114.0037,
+   46.87001
+  ],
+  [
+   "Silver's Lagoon",
+   "water",
+   "",
+   -114.0061,
+   46.87081
+  ],
+  [
+   "Silvertip Apartments",
+   "residential",
+   "",
+   -113.97261,
+   46.8644
+  ],
+  [
+   "Silvertip Casino",
+   "casino",
+   "",
+   -114.00849,
+   46.8451
+  ],
+  [
+   "Simply Vitamins",
+   "nutrition_supplements",
+   "",
+   -114.01855,
+   46.84973
+  ],
+  [
+   "Sinclair",
+   "fuel",
+   "",
+   -114.03902,
+   46.83338
+  ],
+  [
+   "Sinclair",
+   "fuel",
+   "",
+   -114.03479,
+   46.89934
+  ],
+  [
+   "Sinclair",
+   "fuel",
+   "",
+   -114.02904,
+   46.89749
+  ],
+  [
+   "Sinclair",
+   "fuel",
+   "",
+   -114.01869,
+   46.85711
+  ],
+  [
+   "Sinclair",
+   "fuel",
+   "",
+   -114.02652,
+   46.84885
+  ],
+  [
+   "Sinclair",
+   "fuel",
+   "",
+   -114.01773,
+   46.83321
+  ],
+  [
+   "Sinclair",
+   "fuel",
+   "",
+   -113.98725,
+   46.8726
+  ],
+  [
+   "Sinclair",
+   "fuel",
+   "",
+   -113.97839,
+   46.86071
+  ],
+  [
+   "Sinclair",
+   "fuel",
+   "",
+   -113.94874,
+   46.87434
+  ],
+  [
+   "Skin Care Center",
+   "clinic",
+   "",
+   -114.02537,
+   46.84918
+  ],
+  [
+   "Sky View",
+   "residential",
+   "",
+   -114.04675,
+   46.86641
+  ],
+  [
+   "Skyview Park",
+   "park",
+   "",
+   -114.03028,
+   46.82168
+  ],
+  [
+   "Sleep City",
+   "bed",
+   "",
+   -114.03917,
+   46.84655
+  ],
+  [
+   "Sleep Inn",
+   "hotel",
+   "",
+   -114.03622,
+   46.84374
+  ],
+  [
+   "Sleep Number",
+   "bed",
+   "",
+   -114.03983,
+   46.89746
+  ],
+  [
+   "Sleep Number",
+   "bed",
+   "",
+   -114.0398,
+   46.89699
+  ],
+  [
+   "Sleven's Island",
+   "wood",
+   "",
+   -114.06045,
+   46.84377
+  ],
+  [
+   "Sliderock Lookout",
+   "building",
+   "",
+   -114.06417,
+   46.8399
+  ],
+  [
+   "Smile Missoula",
+   "dentist",
+   "",
+   -113.99918,
+   46.84268
+  ],
+  [
+   "Snap Communications",
+   "mobile_phone",
+   "",
+   -114.03288,
+   46.84361
+  ],
+  [
+   "Snowfarm Apartments",
+   "residential",
+   "",
+   -114.05168,
+   46.88464
+  ],
+  [
+   "Sola Salons",
+   "beauty",
+   "",
+   -114.01516,
+   46.83239
+  ],
+  [
+   "Solid Rock Church",
+   "place_of_worship",
+   "christian",
+   -114.04011,
+   46.82545
+  ],
+  [
+   "Soup Farm",
+   "restaurant",
+   "sandwich;soup",
+   -113.99429,
+   46.87885
+  ],
+  [
+   "Sousa Trailhead",
+   "trailhead",
+   "",
+   -113.99252,
+   46.82832
+  ],
+  [
+   "South Ave E & Arthur Ave",
+   "bus_stop",
+   "",
+   -113.99166,
+   46.84897
+  ],
+  [
+   "South Ave E & Arthur Ave",
+   "bus_stop",
+   "",
+   -113.98955,
+   46.8491
+  ],
+  [
+   "South Ave E & Gerald Ave",
+   "bus_stop",
+   "",
+   -113.99525,
+   46.8491
+  ],
+  [
+   "South Ave E & Gerald Ave",
+   "bus_stop",
+   "",
+   -113.99596,
+   46.84899
+  ],
+  [
+   "South Ave E & Hilda Ave",
+   "bus_stop",
+   "",
+   -113.99279,
+   46.84895
+  ],
+  [
+   "South Ave E & Hilda Ave",
+   "bus_stop",
+   "",
+   -113.99178,
+   46.84914
+  ],
+  [
+   "South Ave Market",
+   "convenience",
+   "",
+   -113.99788,
+   46.84936
+  ],
+  [
+   "South Ave W & 26th Ave",
+   "bus_stop",
+   "",
+   -114.04213,
+   46.84918
+  ],
+  [
+   "South Ave W & 31st Ave",
+   "bus_stop",
+   "",
+   -114.05582,
+   46.84906
+  ],
+  [
+   "South Ave W & 35th Ave",
+   "bus_stop",
+   "",
+   -114.06605,
+   46.84905
+  ],
+  [
+   "South Ave W & 35th Ave",
+   "bus_stop",
+   "",
+   -114.06602,
+   46.84918
+  ],
+  [
+   "South Ave W & 37th Ave",
+   "bus_stop",
+   "",
+   -114.07132,
+   46.84905
+  ],
+  [
+   "South Ave W & 37th Ave",
+   "bus_stop",
+   "",
+   -114.07078,
+   46.84919
+  ],
+  [
+   "South Ave W & Bow St",
+   "bus_stop",
+   "",
+   -114.0094,
+   46.84914
+  ],
+  [
+   "South Ave W & Clements Rd",
+   "bus_stop",
+   "",
+   -114.08045,
+   46.84918
+  ],
+  [
+   "South Ave W & Eaton St",
+   "bus_stop",
+   "",
+   -114.03449,
+   46.84914
+  ],
+  [
+   "South Ave W & Eaton St",
+   "bus_stop",
+   "",
+   -114.03411,
+   46.84899
+  ],
+  [
+   "South Ave W & Guardsman Ln",
+   "bus_stop",
+   "",
+   -114.0541,
+   46.84923
+  ],
+  [
+   "South Ave W & Holborn St",
+   "bus_stop",
+   "",
+   -114.01045,
+   46.84893
+  ],
+  [
+   "South Ave W & Kemp St",
+   "bus_stop",
+   "",
+   -114.02998,
+   46.84899
+  ],
+  [
+   "South Ave W & Kemp St",
+   "bus_stop",
+   "",
+   -114.02965,
+   46.84911
+  ],
+  [
+   "South Ave W & Lester St",
+   "bus_stop",
+   "",
+   -113.99809,
+   46.8491
+  ],
+  [
+   "South Ave W & Lester St",
+   "bus_stop",
+   "",
+   -113.99896,
+   46.84894
+  ],
+  [
+   "South Ave W & Old Fort Rd",
+   "bus_stop",
+   "",
+   -114.04385,
+   46.8507
+  ],
+  [
+   "South Ave W & Park St",
+   "bus_stop",
+   "",
+   -114.00246,
+   46.84911
+  ],
+  [
+   "South Ave W & Park St",
+   "bus_stop",
+   "",
+   -114.00299,
+   46.84894
+  ],
+  [
+   "South Ave W & Queen St",
+   "bus_stop",
+   "",
+   -114.00595,
+   46.84912
+  ],
+  [
+   "South Ave W & Queen St",
+   "bus_stop",
+   "",
+   -114.00595,
+   46.84895
+  ],
+  [
+   "South Ave W & Regent St",
+   "bus_stop",
+   "",
+   -114.01423,
+   46.84909
+  ],
+  [
+   "South Ave W & S Catlin St",
+   "bus_stop",
+   "",
+   -114.02233,
+   46.84889
+  ],
+  [
+   "South Ave W & S Clark St",
+   "bus_stop",
+   "",
+   -114.03775,
+   46.84921
+  ],
+  [
+   "South Ave W & S Clark St",
+   "bus_stop",
+   "",
+   -114.03662,
+   46.84901
+  ],
+  [
+   "South Ave W & S Garfield St",
+   "bus_stop",
+   "",
+   -114.02473,
+   46.84912
+  ],
+  [
+   "South Ave W & S Grant St",
+   "bus_stop",
+   "",
+   -114.02676,
+   46.84893
+  ],
+  [
+   "South Ave W & S Reserve St",
+   "bus_stop",
+   "",
+   -114.04089,
+   46.84901
+  ],
+  [
+   "South Campus Stadium",
+   "pitch",
+   "soccer",
+   -113.99618,
+   46.8499
+  ],
+  [
+   "South Crossing",
+   "retail",
+   "",
+   -114.03746,
+   46.8314
+  ],
+  [
+   "South Grove",
+   "residential",
+   "",
+   -114.04593,
+   46.87291
+  ],
+  [
+   "Southgate Animal Hospital",
+   "veterinary",
+   "",
+   -114.01944,
+   46.84966
+  ],
+  [
+   "Southgate Mall",
+   "mall",
+   "",
+   -114.02727,
+   46.85181
+  ],
+  [
+   "Southgate Mall",
+   "retail",
+   "",
+   -114.02733,
+   46.85116
+  ],
+  [
+   "Southgate Mall East",
+   "bus_stop",
+   "",
+   -114.02634,
+   46.85105
+  ],
+  [
+   "Southgate Mall West",
+   "bus_stop",
+   "",
+   -114.02656,
+   46.8511
+  ],
+  [
+   "Southgate Market",
+   "convenience",
+   "",
+   -114.02666,
+   46.8487
+  ],
+  [
+   "Southside Auto Reconditioning",
+   "car_repair",
+   "",
+   -114.0233,
+   46.85101
+  ],
+  [
+   "Southside Lions Park",
+   "park",
+   "",
+   -114.0087,
+   46.84672
+  ],
+  [
+   "Southside Mini Storage",
+   "storage_rental",
+   "",
+   -114.02549,
+   46.84003
+  ],
+  [
+   "Spark1 Missoula",
+   "cannabis",
+   "",
+   -113.98936,
+   46.87199
+  ],
+  [
+   "Sparkle Laundry",
+   "laundry",
+   "",
+   -113.99724,
+   46.86429
+  ],
+  [
+   "Spartan Park",
+   "park",
+   "",
+   -114.01093,
+   46.83869
+  ],
+  [
+   "Spartans Tuning",
+   "car_repair",
+   "",
+   -114.03739,
+   46.85245
+  ],
+  [
+   "Spas of Montana",
+   "swimming_pool",
+   "",
+   -114.04374,
+   46.83296
+  ],
+  [
+   "Speedway Ave & Clyde St",
+   "bus_stop",
+   "",
+   -113.94246,
+   46.87102
+  ],
+  [
+   "Speedway Ave & Clyde St",
+   "bus_stop",
+   "",
+   -113.94203,
+   46.87091
+  ],
+  [
+   "Speedway Ave & Randles St",
+   "bus_stop",
+   "",
+   -113.94439,
+   46.87223
+  ],
+  [
+   "Speedway Ave & Randles St",
+   "bus_stop",
+   "",
+   -113.94394,
+   46.87209
+  ],
+  [
+   "Speedway Ave & Sommers St",
+   "bus_stop",
+   "",
+   -113.94057,
+   46.86982
+  ],
+  [
+   "Speedway Ave & Sommers St",
+   "bus_stop",
+   "",
+   -113.94012,
+   46.86972
+  ],
+  [
+   "Speedy Glass",
+   "car_parts",
+   "",
+   -114.02077,
+   46.85199
+  ],
+  [
+   "Spirit of Peace",
+   "community_centre",
+   "",
+   -113.9981,
+   46.87978
+  ],
+  [
+   "Splash Carwash",
+   "car_wash",
+   "",
+   -114.02104,
+   46.87891
+  ],
+  [
+   "Splash Montana",
+   "water_park",
+   "",
+   -114.00903,
+   46.84034
+  ],
+  [
+   "Sport Clips",
+   "hairdresser",
+   "",
+   -114.03916,
+   46.83232
+  ],
+  [
+   "Sportsman's Warehouse",
+   "outdoor",
+   "",
+   -114.04137,
+   46.88619
+  ],
+  [
+   "Spurgin Park",
+   "park",
+   "",
+   -114.06188,
+   46.8541
+  ],
+  [
+   "St. Joseph Elementary & Grade School",
+   "school",
+   "",
+   -114.00565,
+   46.867
+  ],
+  [
+   "St. Michael’s Church",
+   "building",
+   "",
+   -114.06034,
+   46.83996
+  ],
+  [
+   "St. Patrick House",
+   "building",
+   "",
+   -113.99852,
+   46.88137
+  ],
+  [
+   "St. Patricks Hospital Laundry Facility",
+   "laundry",
+   "",
+   -113.993,
+   46.88015
+  ],
+  [
+   "Staggering Ox",
+   "fast_food",
+   "sandwich",
+   -114.01631,
+   46.83313
+  ],
+  [
+   "Staple St & MT Highway 200",
+   "bus_stop",
+   "",
+   -113.94166,
+   46.88125
+  ],
+  [
+   "Staple St & Michigan Ave",
+   "bus_stop",
+   "",
+   -113.93993,
+   46.88254
+  ],
+  [
+   "Staple St & Michigan Ave",
+   "bus_stop",
+   "",
+   -113.94018,
+   46.88249
+  ],
+  [
+   "Staples",
+   "stationery",
+   "",
+   -114.03627,
+   46.8875
+  ],
+  [
+   "Star Rental",
+   "rental",
+   "",
+   -114.03064,
+   46.84929
+  ],
+  [
+   "Starbucks",
+   "cafe",
+   "coffee_shop",
+   -114.0389,
+   46.84932
+  ],
+  [
+   "Starbucks",
+   "cafe",
+   "coffee_shop",
+   -114.03289,
+   46.91864
+  ],
+  [
+   "Starbucks",
+   "cafe",
+   "coffee_shop",
+   -114.01532,
+   46.84682
+  ],
+  [
+   "Starbucks",
+   "cafe",
+   "coffee_shop",
+   -113.98168,
+   46.8752
+  ],
+  [
+   "Starrbuds",
+   "cannabis",
+   "",
+   -114.01436,
+   46.88022
+  ],
+  [
+   "Staybridge Suites",
+   "hotel",
+   "",
+   -114.04064,
+   46.91136
+  ],
+  [
+   "Stephens Ave & Burlington Ave",
+   "bus_stop",
+   "",
+   -114.01291,
+   46.85753
+  ],
+  [
+   "Stephens Ave & Burlington Ave",
+   "bus_stop",
+   "",
+   -114.01316,
+   46.85823
+  ],
+  [
+   "Stephens Ave & Kensington Ave",
+   "bus_stop",
+   "",
+   -114.01292,
+   46.85911
+  ],
+  [
+   "Stephens Ave & Kensington Ave",
+   "bus_stop",
+   "",
+   -114.01315,
+   46.8597
+  ],
+  [
+   "Stephens Ave & W Addison St",
+   "bus_stop",
+   "",
+   -114.01095,
+   46.8548
+  ],
+  [
+   "Stephens Ave & W Beckwith St",
+   "bus_stop",
+   "",
+   -114.00503,
+   46.86592
+  ],
+  [
+   "Stephens Ave & W Bickford St",
+   "bus_stop",
+   "",
+   -114.00901,
+   46.85377
+  ],
+  [
+   "Stephens Ave & W Crosby St",
+   "bus_stop",
+   "",
+   -114.00712,
+   46.86707
+  ],
+  [
+   "Stephens Ave & W Harlem St",
+   "bus_stop",
+   "",
+   -114.01156,
+   46.8556
+  ],
+  [
+   "Stephens Ave at Missoula Aging Services",
+   "bus_stop",
+   "",
+   -114.00414,
+   46.86489
+  ],
+  [
+   "Stephens Center",
+   "retail",
+   "",
+   -114.01218,
+   46.84671
+  ],
+  [
+   "Sterling Bank Services Inc",
+   "electronics_repair",
+   "",
+   -114.03402,
+   46.88686
+  ],
+  [
+   "Stockman Bank",
+   "bank",
+   "",
+   -114.03507,
+   46.8442
+  ],
+  [
+   "Stockman Bank",
+   "bank",
+   "",
+   -114.01761,
+   46.85801
+  ],
+  [
+   "Stockman Bank",
+   "bank",
+   "",
+   -113.99818,
+   46.86988
+  ],
+  [
+   "Stockman's Cafe & Bar",
+   "pub",
+   "",
+   -113.99611,
+   46.87266
+  ],
+  [
+   "Stone Horse Estates",
+   "residential",
+   "",
+   -113.97781,
+   46.90331
+  ],
+  [
+   "Storage Rentals of America",
+   "commercial",
+   "",
+   -114.05322,
+   46.83459
+  ],
+  [
+   "Storage yard",
+   "commercial",
+   "",
+   -114.01479,
+   46.88064
+  ],
+  [
+   "Story House Montana",
+   "studio",
+   "",
+   -114.02676,
+   46.90458
+  ],
+  [
+   "Strandz Salon",
+   "beauty",
+   "",
+   -114.0162,
+   46.85895
+  ],
+  [
+   "Studio Greytak",
+   "gallery",
+   "",
+   -114.0146,
+   46.83336
+  ],
+  [
+   "Subaru of Missoula",
+   "car",
+   "",
+   -114.01245,
+   46.85716
+  ],
+  [
+   "Subway",
+   "fast_food",
+   "sandwich",
+   -114.03926,
+   46.84103
+  ],
+  [
+   "Subway",
+   "fast_food",
+   "sandwich",
+   -114.03522,
+   46.90573
+  ],
+  [
+   "Subway",
+   "fast_food",
+   "sandwich",
+   -114.02007,
+   46.87882
+  ],
+  [
+   "Subway",
+   "fast_food",
+   "sandwich",
+   -114.02237,
+   46.85238
+  ],
+  [
+   "Subway",
+   "fast_food",
+   "sandwich",
+   -113.99778,
+   46.8487
+  ],
+  [
+   "Sugar Tree Hair Salon",
+   "hairdresser",
+   "",
+   -113.99568,
+   46.87283
+  ],
+  [
+   "Summit Independent Living",
+   "social_centre",
+   "",
+   -114.0101,
+   46.83043
+  ],
+  [
+   "Sun Mountain Sports",
+   "sports",
+   "",
+   -113.9943,
+   46.88051
+  ],
+  [
+   "Sunflower Montessori School",
+   "kindergarten",
+   "",
+   -114.00717,
+   46.86402
+  ],
+  [
+   "Sunlight Trailhead",
+   "trailhead",
+   "",
+   -113.97585,
+   46.89987
+  ],
+  [
+   "Sunrise Saloon and Casino",
+   "casino",
+   "",
+   -114.01544,
+   46.8588
+  ],
+  [
+   "Sunrise Terrace",
+   "residential",
+   "",
+   -113.94335,
+   46.87971
+  ],
+  [
+   "Sunset Mount",
+   "residential",
+   "",
+   -114.0434,
+   46.85583
+  ],
+  [
+   "Sunshine Factory",
+   "beauty",
+   "",
+   -114.0199,
+   46.8492
+  ],
+  [
+   "Super 7",
+   "motel",
+   "",
+   -114.00991,
+   46.88127
+  ],
+  [
+   "Super 8",
+   "motel",
+   "",
+   -114.03821,
+   46.9098
+  ],
+  [
+   "Super 8",
+   "motel",
+   "",
+   -114.04374,
+   46.83212
+  ],
+  [
+   "Super 8 by Wyndham Missoula/Brooks Street",
+   "motel",
+   "",
+   -114.04408,
+   46.83174
+  ],
+  [
+   "Super thrift",
+   "variety_store",
+   "",
+   -114.02589,
+   46.88607
+  ],
+  [
+   "Superior Hardwoods of Montana",
+   "floorer",
+   "",
+   -114.07699,
+   46.8298
+  ],
+  [
+   "Sussex School",
+   "school",
+   "",
+   -114.025,
+   46.87454
+  ],
+  [
+   "Sussex School - Lower Elementary",
+   "school",
+   "",
+   -114.02397,
+   46.87363
+  ],
+  [
+   "Sussex School - Upper Elementary",
+   "school",
+   "",
+   -114.02511,
+   46.87454
+  ],
+  [
+   "Syringa Bike Skills Park",
+   "park",
+   "",
+   -113.96294,
+   46.89217
+  ],
+  [
+   "T & A Supply Co",
+   "floorer",
+   "",
+   -114.03787,
+   46.85125
+  ],
+  [
+   "T-Mobile",
+   "mobile_phone",
+   "",
+   -114.03983,
+   46.89761
+  ],
+  [
+   "TC Glass",
+   "glaziery",
+   "",
+   -114.01512,
+   46.85928
+  ],
+  [
+   "TJ Maxx",
+   "department_store",
+   "",
+   -114.04116,
+   46.89229
+  ],
+  [
+   "Taco Bell",
+   "fast_food",
+   "tex-mex",
+   -114.03871,
+   46.88657
+  ],
+  [
+   "Taco Bell",
+   "fast_food",
+   "tex-mex",
+   -114.03119,
+   46.84357
+  ],
+  [
+   "Taco Bell",
+   "fast_food",
+   "tex-mex",
+   -113.98614,
+   46.87359
+  ],
+  [
+   "Taco Del Sol",
+   "fast_food",
+   "mexican",
+   -114.04107,
+   46.89457
+  ],
+  [
+   "Taco Del Sol",
+   "restaurant",
+   "mexican",
+   -114.01588,
+   46.84681
+  ],
+  [
+   "Taco John's",
+   "fast_food",
+   "mexican",
+   -114.03918,
+   46.85107
+  ],
+  [
+   "Taco Sano",
+   "restaurant",
+   "mexican",
+   -113.99834,
+   46.86225
+  ],
+  [
+   "Taco Time",
+   "fast_food",
+   "mexican",
+   -114.03605,
+   46.90939
+  ],
+  [
+   "Taco Treat",
+   "restaurant",
+   "mexican",
+   -114.00905,
+   46.85882
+  ],
+  [
+   "Tagliare Delicatessen",
+   "deli",
+   "",
+   -113.99781,
+   46.85557
+  ],
+  [
+   "Tamarack Brewing Co",
+   "pub",
+   "american",
+   -113.9973,
+   46.87192
+  ],
+  [
+   "Tangles Hairstyling",
+   "hairdresser",
+   "",
+   -113.99792,
+   46.87105
+  ],
+  [
+   "Target",
+   "department_store",
+   "",
+   -114.03651,
+   46.88474
+  ],
+  [
+   "Target Range Farmer's Market",
+   "farm",
+   "",
+   -114.07924,
+   46.85008
+  ],
+  [
+   "Target Range School",
+   "school",
+   "",
+   -114.08026,
+   46.85039
+  ],
+  [
+   "Tasting Room",
+   "wine",
+   "",
+   -113.96415,
+   46.89905
+  ],
+  [
+   "Team Shirts",
+   "fabric",
+   "",
+   -113.99511,
+   46.88125
+  ],
+  [
+   "Teen Challenge Thrift Store",
+   "second_hand",
+   "",
+   -114.02419,
+   46.8767
+  ],
+  [
+   "Ten Spoon Vineyard and Winery",
+   "winery",
+   "",
+   -113.96298,
+   46.89986
+  ],
+  [
+   "Tent Village",
+   "camp_pitch",
+   "",
+   -114.04354,
+   46.89245
+  ],
+  [
+   "Tesla Supercharger",
+   "charging_station",
+   "",
+   -114.03192,
+   46.91863
+  ],
+  [
+   "Texas Roadhouse",
+   "restaurant",
+   "steak_house",
+   -114.02652,
+   46.85158
+  ],
+  [
+   "The 4100 Condominiums",
+   "residential",
+   "",
+   -114.04958,
+   46.8855
+  ],
+  [
+   "The Adalia East Apartments",
+   "residential",
+   "",
+   -113.94459,
+   46.86989
+  ],
+  [
+   "The Aesthetic Co.",
+   "clinic",
+   "",
+   -114.00929,
+   46.83138
+  ],
+  [
+   "The Artists' Shop",
+   "gallery",
+   "",
+   -113.99508,
+   46.87206
+  ],
+  [
+   "The Aspen Motel",
+   "motel",
+   "",
+   -113.94614,
+   46.87045
+  ],
+  [
+   "The Badlander",
+   "bar",
+   "",
+   -113.99554,
+   46.87082
+  ],
+  [
+   "The Book Exchange",
+   "books",
+   "",
+   -114.01784,
+   46.84806
+  ],
+  [
+   "The Breakfast Club",
+   "restaurant",
+   "breakfast",
+   -114.01515,
+   46.83274
+  ],
+  [
+   "The Camino",
+   "restaurant",
+   "mexican",
+   -113.99403,
+   46.87297
+  ],
+  [
+   "The Cedars",
+   "residential",
+   "",
+   -114.03721,
+   46.81728
+  ],
+  [
+   "The Church of Jesus Christ of Latter-day Saints",
+   "place_of_worship",
+   "christian",
+   -114.05463,
+   46.84858
+  ],
+  [
+   "The Church of Jesus Christ of Latter-day Saints",
+   "place_of_worship",
+   "christian",
+   -114.00866,
+   46.84185
+  ],
+  [
+   "The Confident Stitch",
+   "sewing",
+   "",
+   -113.99644,
+   46.8725
+  ],
+  [
+   "The Dairy Subdivision",
+   "construction",
+   "",
+   -114.07824,
+   46.84604
+  ],
+  [
+   "The Dark Horse Bar",
+   "bar",
+   "",
+   -114.01518,
+   46.85888
+  ],
+  [
+   "The Den",
+   "restaurant",
+   "",
+   -114.04791,
+   46.80392
+  ],
+  [
+   "The Depot",
+   "restaurant",
+   "steak_house",
+   -113.99377,
+   46.88211
+  ],
+  [
+   "The Dram Shop",
+   "bar",
+   "",
+   -113.9928,
+   46.87349
+  ],
+  [
+   "The Empanada Joint",
+   "restaurant",
+   "",
+   -113.99397,
+   46.87212
+  ],
+  [
+   "The FairBridge Inn & Suites",
+   "motel",
+   "",
+   -114.04108,
+   46.83087
+  ],
+  [
+   "The Fishing Kids",
+   "artwork",
+   "",
+   -114.00543,
+   46.87034
+  ],
+  [
+   "The Greek Pastry Shop - #1 Gyros",
+   "restaurant",
+   "greek",
+   -114.00417,
+   46.86263
+  ],
+  [
+   "The Hi-Line",
+   "cannabis",
+   "",
+   -114.0371,
+   46.90186
+  ],
+  [
+   "The Highlands Golf Club",
+   "golf_course",
+   "",
+   -114.00162,
+   46.82332
+  ],
+  [
+   "The Home Depot",
+   "doityourself",
+   "",
+   -114.04396,
+   46.88302
+  ],
+  [
+   "The L",
+   "attraction",
+   "",
+   -113.96864,
+   46.87011
+  ],
+  [
+   "The Line Ranch",
+   "farmyard",
+   "",
+   -114.00516,
+   46.82812
+  ],
+  [
+   "The Living Room",
+   "furniture",
+   "",
+   -114.03866,
+   46.85149
+  ],
+  [
+   "The Loose Caboose",
+   "cafe",
+   "coffee_shop",
+   -114.03912,
+   46.84416
+  ],
+  [
+   "The Loose Caboose",
+   "cafe",
+   "coffee_shop",
+   -114.01721,
+   46.84883
+  ],
+  [
+   "The M",
+   "attraction",
+   "",
+   -113.97573,
+   46.85353
+  ],
+  [
+   "The Man Shop",
+   "hairdresser",
+   "",
+   -114.01631,
+   46.84681
+  ],
+  [
+   "The Mane Gallery",
+   "hairdresser",
+   "",
+   -114.0172,
+   46.84607
+  ],
+  [
+   "The Modern Pastime",
+   "clothes",
+   "",
+   -113.99431,
+   46.87289
+  ],
+  [
+   "The Montana Club",
+   "restaurant",
+   "american",
+   -114.03862,
+   46.91031
+  ],
+  [
+   "The Montana Club",
+   "restaurant",
+   "american",
+   -114.0205,
+   46.85142
+  ],
+  [
+   "The Montana Scene",
+   "clothes",
+   "",
+   -113.99418,
+   46.8729
+  ],
+  [
+   "The Notorious PIG BBQ",
+   "restaurant",
+   "barbecue",
+   -114.04072,
+   46.83035
+  ],
+  [
+   "The Notorious Pig BBQ",
+   "restaurant",
+   "barbecue",
+   -113.99756,
+   46.87174
+  ],
+  [
+   "The Old Post",
+   "restaurant",
+   "american",
+   -113.9935,
+   46.86889
+  ],
+  [
+   "The Oval",
+   "park",
+   "",
+   -113.98542,
+   46.8528
+  ],
+  [
+   "The Oxford",
+   "bar",
+   "burger;american",
+   -113.99383,
+   46.86987
+  ],
+  [
+   "The Peace Sign",
+   "artwork",
+   "",
+   -113.98718,
+   46.88041
+  ],
+  [
+   "The Pitch",
+   "pitch",
+   "american_football",
+   -114.05925,
+   46.85007
+  ],
+  [
+   "The Recording Center",
+   "studio",
+   "",
+   -113.99388,
+   46.86948
+  ],
+  [
+   "The Reno",
+   "bar",
+   "",
+   -113.94649,
+   46.87104
+  ],
+  [
+   "The Rhino",
+   "bar",
+   "",
+   -113.99626,
+   46.87176
+  ],
+  [
+   "The Roxy Theater",
+   "cinema",
+   "",
+   -113.99704,
+   46.86346
+  ],
+  [
+   "The Silk Road Catering & Spice",
+   "caterer",
+   "",
+   -114.0098,
+   46.83028
+  ],
+  [
+   "The Sports Exchange",
+   "sports",
+   "",
+   -113.99808,
+   46.86112
+  ],
+  [
+   "The Springs at Missoula",
+   "social_facility",
+   "",
+   -114.04533,
+   46.89634
+  ],
+  [
+   "The Stone of Accord",
+   "pub",
+   "",
+   -114.03579,
+   46.90673
+  ],
+  [
+   "The Trailhead",
+   "outdoor",
+   "",
+   -113.99304,
+   46.87343
+  ],
+  [
+   "The Treasure Chest of Hobbies & Crafts",
+   "craft",
+   "",
+   -114.02057,
+   46.85228
+  ],
+  [
+   "The Trough",
+   "restaurant",
+   "american",
+   -114.08075,
+   46.84695
+  ],
+  [
+   "The UPS Store",
+   "post_office",
+   "",
+   -114.02344,
+   46.83809
+  ],
+  [
+   "The UPS Store",
+   "post_office",
+   "",
+   -113.99846,
+   46.86931
+  ],
+  [
+   "The Vantage Apartments",
+   "residential",
+   "",
+   -114.04437,
+   46.88548
+  ],
+  [
+   "The Wild Hare Salon",
+   "hairdresser",
+   "",
+   -113.99614,
+   46.8715
+  ],
+  [
+   "The Women's Club",
+   "fitness_centre",
+   "",
+   -114.01007,
+   46.84682
+  ],
+  [
+   "The X’s",
+   "attraction",
+   "",
+   -113.99211,
+   46.8679
+  ],
+  [
+   "The YMCA Learning Center",
+   "prep_school",
+   "",
+   -114.03182,
+   46.88797
+  ],
+  [
+   "Third street pawn",
+   "pawnbroker",
+   "",
+   -114.02927,
+   46.86117
+  ],
+  [
+   "Thomas Meagher Bar",
+   "restaurant",
+   "irish",
+   -113.99422,
+   46.86924
+  ],
+  [
+   "Thomas Plumbing & Heating",
+   "plumber",
+   "",
+   -114.03488,
+   46.84924
+  ],
+  [
+   "Thunderbird Motel",
+   "motel",
+   "",
+   -113.98047,
+   46.86045
+  ],
+  [
+   "Tia's Big Sky",
+   "restaurant",
+   "mexican",
+   -114.00799,
+   46.8814
+  ],
+  [
+   "Timberlane Mailboxes",
+   "bus_stop",
+   "",
+   -113.96787,
+   46.89829
+  ],
+  [
+   "Timberlane St & Lincolnwood Rd",
+   "bus_stop",
+   "",
+   -113.96892,
+   46.90244
+  ],
+  [
+   "Tire-Rama",
+   "tyres",
+   "",
+   -114.04192,
+   46.83168
+  ],
+  [
+   "Tire-Rama",
+   "tyres",
+   "",
+   -114.02625,
+   46.88532
+  ],
+  [
+   "Tire-Rama",
+   "tyres",
+   "",
+   -114.02707,
+   46.84872
+  ],
+  [
+   "Tire-Rama",
+   "tyres",
+   "",
+   -113.99719,
+   46.86833
+  ],
+  [
+   "Tom Green Memorial Park",
+   "park",
+   "",
+   -113.97056,
+   46.88282
+  ],
+  [
+   "Toole Park",
+   "park",
+   "",
+   -113.99045,
+   46.86179
+  ],
+  [
+   "Top Hat",
+   "restaurant",
+   "american",
+   -113.99608,
+   46.8722
+  ],
+  [
+   "Top Hat (outdoor seating)",
+   "outdoor_seating",
+   "",
+   -113.99637,
+   46.87213
+  ],
+  [
+   "Top Shelf Botanicals",
+   "cannabis",
+   "",
+   -114.01985,
+   46.85064
+  ],
+  [
+   "Tower Gardens Farm",
+   "farmland",
+   "",
+   -114.0625,
+   46.86336
+  ],
+  [
+   "Town Pump",
+   "convenience",
+   "",
+   -114.03858,
+   46.88749
+  ],
+  [
+   "Town Pump",
+   "convenience",
+   "",
+   -114.04047,
+   46.8873
+  ],
+  [
+   "Town Pump",
+   "convenience",
+   "",
+   -114.03243,
+   46.91822
+  ],
+  [
+   "Town Pump",
+   "convenience",
+   "",
+   -114.01415,
+   46.84556
+  ],
+  [
+   "Town Pump",
+   "fuel",
+   "",
+   -114.03293,
+   46.91816
+  ],
+  [
+   "Town Pump",
+   "fuel",
+   "",
+   -114.03255,
+   46.91777
+  ],
+  [
+   "Town and Country Auto Body",
+   "car_repair",
+   "",
+   -114.04209,
+   46.8755
+  ],
+  [
+   "Town and Country Lounge",
+   "bar",
+   "",
+   -114.02213,
+   46.86057
+  ],
+  [
+   "TownePlace Suites",
+   "hotel",
+   "",
+   -114.03811,
+   46.90186
+  ],
+  [
+   "Trail Head River Sports",
+   "outdoor",
+   "",
+   -114.02444,
+   46.85007
+  ],
+  [
+   "TrailWest Bank",
+   "bank",
+   "",
+   -114.04137,
+   46.8505
+  ],
+  [
+   "TrailWest Bank",
+   "bank",
+   "",
+   -114.02796,
+   46.88556
+  ],
+  [
+   "TrailWest Bank",
+   "bank",
+   "",
+   -113.99199,
+   46.87229
+  ],
+  [
+   "Transolution Auto Care Center",
+   "car_repair",
+   "",
+   -114.07269,
+   46.82395
+  ],
+  [
+   "Travois Village",
+   "residential",
+   "",
+   -114.0212,
+   46.88528
+  ],
+  [
+   "Trempers Shopping Center",
+   "retail",
+   "",
+   -114.01742,
+   46.84713
+  ],
+  [
+   "Tres Chic Hair and Nail Salon",
+   "beauty",
+   "",
+   -114.0213,
+   46.84917
+  ],
+  [
+   "Tripp Lumber Company",
+   "sawmill",
+   "",
+   -114.0247,
+   46.89264
+  ],
+  [
+   "Trust Land Farm",
+   "farmland",
+   "",
+   -114.06189,
+   46.86184
+  ],
+  [
+   "Turner Farms",
+   "farm",
+   "",
+   -114.06721,
+   46.86148
+  ],
+  [
+   "Turner Farms",
+   "farmland",
+   "",
+   -114.06629,
+   46.86225
+  ],
+  [
+   "Twigs Salon",
+   "beauty",
+   "",
+   -113.99691,
+   46.86786
+  ],
+  [
+   "U-Haul",
+   "rental",
+   "",
+   -114.01069,
+   46.85805
+  ],
+  [
+   "U-Swirl Frozen Yogurt",
+   "ice_cream",
+   "",
+   -114.01631,
+   46.8329
+  ],
+  [
+   "U.S. Bank",
+   "atm",
+   "",
+   -113.99075,
+   46.86993
+  ],
+  [
+   "U.S. Bank",
+   "bank",
+   "",
+   -114.02447,
+   46.85246
+  ],
+  [
+   "U.S. Bank",
+   "bank",
+   "",
+   -113.99069,
+   46.86973
+  ],
+  [
+   "UM Police Department",
+   "police",
+   "",
+   -113.97948,
+   46.86474
+  ],
+  [
+   "USEA Dressage Arena",
+   "pitch",
+   "equestrian",
+   -114.06727,
+   46.85929
+  ],
+  [
+   "USEA Dressage Arena",
+   "pitch",
+   "equestrian",
+   -114.06785,
+   46.85985
+  ],
+  [
+   "Ulta Beauty",
+   "beauty",
+   "",
+   -114.04102,
+   46.89192
+  ],
+  [
+   "Underground Thrift Store",
+   "second_hand",
+   "",
+   -113.99789,
+   46.86309
+  ],
+  [
+   "Union Club Bar",
+   "pub",
+   "american",
+   -113.99252,
+   46.87221
+  ],
+  [
+   "Union Pacific & Best Buy",
+   "bus_stop",
+   "",
+   -114.03648,
+   46.88407
+  ],
+  [
+   "Union Pacific & Home Depot",
+   "bus_stop",
+   "",
+   -114.04336,
+   46.8842
+  ],
+  [
+   "Union Pacific & Home Depot",
+   "bus_stop",
+   "",
+   -114.04349,
+   46.88404
+  ],
+  [
+   "Union Pacific & Target",
+   "bus_stop",
+   "",
+   -114.03631,
+   46.88423
+  ],
+  [
+   "Union Square Apartments",
+   "residential",
+   "",
+   -114.04306,
+   46.85036
+  ],
+  [
+   "Unitarian Universalist Fellowship of Missoula",
+   "place_of_worship",
+   "unitarian_universalist",
+   -113.99717,
+   46.85356
+  ],
+  [
+   "United Pentecostal Church",
+   "place_of_worship",
+   "christian",
+   -114.03727,
+   46.8433
+  ],
+  [
+   "United States Post Office",
+   "post_office",
+   "",
+   -114.01572,
+   46.84538
+  ],
+  [
+   "United States Post Office",
+   "post_office",
+   "",
+   -113.99221,
+   46.87113
+  ],
+  [
+   "United Way",
+   "building",
+   "",
+   -113.99683,
+   46.88123
+  ],
+  [
+   "Unity Church of Missoula",
+   "place_of_worship",
+   "christian",
+   -114.00585,
+   46.84874
+  ],
+  [
+   "Universal Athletic",
+   "clothes",
+   "",
+   -114.01004,
+   46.84576
+  ],
+  [
+   "University Congregational Church",
+   "place_of_worship",
+   "christian",
+   -113.99193,
+   46.85305
+  ],
+  [
+   "University Golf Course",
+   "golf_course",
+   "",
+   -113.99043,
+   46.83809
+  ],
+  [
+   "University Mountain",
+   "peak",
+   "",
+   -113.92912,
+   46.85984
+  ],
+  [
+   "University Villages",
+   "residential",
+   "",
+   -113.98875,
+   46.84967
+  ],
+  [
+   "University of Montana",
+   "university",
+   "",
+   -113.96553,
+   46.85869
+  ],
+  [
+   "Unravel Cafe",
+   "cafe",
+   "",
+   -113.99956,
+   46.86891
+  ],
+  [
+   "Upcycled",
+   "gift",
+   "",
+   -113.99774,
+   46.86143
+  ],
+  [
+   "Uptown Motel",
+   "motel",
+   "",
+   -113.99683,
+   46.8692
+  ],
+  [
+   "VA Clinic",
+   "bus_stop",
+   "",
+   -114.05417,
+   46.89844
+  ],
+  [
+   "VW Ice",
+   "yes",
+   "",
+   -114.0247,
+   46.84602
+  ],
+  [
+   "Valley Christian School",
+   "school",
+   "",
+   -114.04145,
+   46.85571
+  ],
+  [
+   "Valvoline",
+   "car_repair",
+   "",
+   -114.01375,
+   46.8802
+  ],
+  [
+   "Van Buren St & Cherry St",
+   "bus_stop",
+   "",
+   -113.97928,
+   46.87103
+  ],
+  [
+   "Van Buren St & Cherry St",
+   "bus_stop",
+   "",
+   -113.97836,
+   46.87057
+  ],
+  [
+   "Van Buren St & Elm St",
+   "bus_stop",
+   "",
+   -113.97741,
+   46.86976
+  ],
+  [
+   "Van Buren St & Elm St",
+   "bus_stop",
+   "",
+   -113.97668,
+   46.86943
+  ],
+  [
+   "Van Buren St & Holly St",
+   "bus_stop",
+   "",
+   -113.97244,
+   46.88138
+  ],
+  [
+   "Van Buren St & Holly St",
+   "bus_stop",
+   "",
+   -113.97177,
+   46.8811
+  ],
+  [
+   "Van Buren St & Willow St",
+   "bus_stop",
+   "",
+   -113.9744,
+   46.86771
+  ],
+  [
+   "Veera Donuts",
+   "fast_food",
+   "donut",
+   -113.99786,
+   46.86249
+  ],
+  [
+   "Velvet Bride",
+   "dressmaker",
+   "",
+   -113.99265,
+   46.86967
+  ],
+  [
+   "Verizon",
+   "mobile_phone",
+   "",
+   -114.03845,
+   46.89574
+  ],
+  [
+   "Verizon",
+   "mobile_phone",
+   "",
+   -114.04007,
+   46.8566
+  ],
+  [
+   "Verizon",
+   "mobile_phone",
+   "",
+   -114.03915,
+   46.83244
+  ],
+  [
+   "Verizon",
+   "mobile_phone",
+   "",
+   -113.98657,
+   46.87282
+  ],
+  [
+   "Vietnam Grill",
+   "restaurant",
+   "vietnamese",
+   -113.99296,
+   46.8695
+  ],
+  [
+   "Vietnam Noodle",
+   "restaurant",
+   "vietnamese",
+   -114.01252,
+   46.84691
+  ],
+  [
+   "Vietnam Veterans Memorial",
+   "memorial",
+   "",
+   -114.00428,
+   46.85592
+  ],
+  [
+   "Vigilante Parking and Storage",
+   "retail",
+   "",
+   -114.06064,
+   46.90757
+  ],
+  [
+   "Village Health Care Center",
+   "nursing_home",
+   "",
+   -114.04538,
+   46.84975
+  ],
+  [
+   "Village Senior Residence",
+   "social_facility",
+   "",
+   -114.04498,
+   46.85099
+  ],
+  [
+   "Village Square",
+   "residential",
+   "",
+   -114.03762,
+   46.86514
+  ],
+  [
+   "Village at Elk Hills",
+   "residential",
+   "",
+   -114.02961,
+   46.81619
+  ],
+  [
+   "Villagio Apartments",
+   "residential",
+   "",
+   -114.00766,
+   46.89614
+  ],
+  [
+   "Volkmann Woodworking",
+   "furniture",
+   "",
+   -113.98681,
+   46.87028
+  ],
+  [
+   "W Broadway St & Burton St",
+   "bus_stop",
+   "",
+   -114.01163,
+   46.88044
+  ],
+  [
+   "W Broadway St & Latimer St",
+   "bus_stop",
+   "",
+   -114.03184,
+   46.89648
+  ],
+  [
+   "W Broadway St & Maple",
+   "bus_stop",
+   "",
+   -114.02278,
+   46.87626
+  ],
+  [
+   "W Broadway St & Maple",
+   "bus_stop",
+   "",
+   -114.02256,
+   46.87596
+  ],
+  [
+   "W Broadway St & May St",
+   "bus_stop",
+   "",
+   -114.00407,
+   46.86791
+  ],
+  [
+   "W Broadway St & May St",
+   "bus_stop",
+   "",
+   -114.00346,
+   46.86788
+  ],
+  [
+   "W Broadway St & McCormick St",
+   "bus_stop",
+   "",
+   -114.0013,
+   46.86852
+  ],
+  [
+   "W Broadway St & Owen St",
+   "bus_stop",
+   "",
+   -114.00049,
+   46.86898
+  ],
+  [
+   "W Broadway St & Scott St",
+   "bus_stop",
+   "",
+   -114.00614,
+   46.88205
+  ],
+  [
+   "W Broadway St & Scott St",
+   "bus_stop",
+   "",
+   -114.00699,
+   46.88205
+  ],
+  [
+   "W Broadway St & Sherwood St",
+   "bus_stop",
+   "",
+   -114.02065,
+   46.87834
+  ],
+  [
+   "W Broadway St at Eagle Watch",
+   "bus_stop",
+   "",
+   -114.01144,
+   46.88074
+  ],
+  [
+   "W Central Ave & Stephens Ave",
+   "bus_stop",
+   "",
+   -114.01292,
+   46.84705
+  ],
+  [
+   "W Central Ave & Stephens Ave",
+   "bus_stop",
+   "",
+   -114.01317,
+   46.84705
+  ],
+  [
+   "W Main St & Ryman St",
+   "bus_stop",
+   "",
+   -113.99581,
+   46.8709
+  ],
+  [
+   "W Spruce St & McCormick St",
+   "bus_stop",
+   "",
+   -114.00042,
+   46.8815
+  ],
+  [
+   "W Spruce St & Nora St",
+   "bus_stop",
+   "",
+   -114.00507,
+   46.88028
+  ],
+  [
+   "W Spurce St & McCormick St",
+   "bus_stop",
+   "",
+   -114.00046,
+   46.88166
+  ],
+  [
+   "W Sussex Ave & Stephens Ave",
+   "bus_stop",
+   "",
+   -114.01378,
+   46.84801
+  ],
+  [
+   "Wagner's Home Furnishings",
+   "furniture",
+   "",
+   -114.01258,
+   46.83146
+  ],
+  [
+   "Walgreens",
+   "chemist",
+   "",
+   -114.04021,
+   46.88454
+  ],
+  [
+   "Walgreens",
+   "chemist",
+   "",
+   -114.01362,
+   46.84679
+  ],
+  [
+   "Walla Walla University - Missoula",
+   "university",
+   "christian",
+   -114.02782,
+   46.87635
+  ],
+  [
+   "Wally and Buck",
+   "caterer",
+   "",
+   -113.99142,
+   46.87371
+  ],
+  [
+   "Walmart",
+   "bus_stop",
+   "",
+   -114.04653,
+   46.83552
+  ],
+  [
+   "Walmart Garden Center",
+   "garden_centre",
+   "",
+   -114.04305,
+   46.88901
+  ],
+  [
+   "Walmart Pharmacy",
+   "pharmacy",
+   "",
+   -114.0411,
+   46.88919
+  ],
+  [
+   "Walmart Supercenter",
+   "supermarket",
+   "",
+   -114.04201,
+   46.88933
+  ],
+  [
+   "Walmart Supercenter",
+   "supermarket",
+   "",
+   -114.04711,
+   46.83624
+  ],
+  [
+   "Wapikiya Park",
+   "park",
+   "",
+   -114.02913,
+   46.8229
+  ],
+  [
+   "Wapikiya Park Playground",
+   "playground",
+   "",
+   -114.02837,
+   46.82274
+  ],
+  [
+   "Warden's Market",
+   "marketplace",
+   "",
+   -113.99325,
+   46.86896
+  ],
+  [
+   "Warm Springs Productions",
+   "studio",
+   "",
+   -114.00428,
+   46.88014
+  ],
+  [
+   "Washington Middle School",
+   "school",
+   "",
+   -114.00673,
+   46.8477
+  ],
+  [
+   "Washington Park",
+   "park",
+   "",
+   -114.00509,
+   46.84771
+  ],
+  [
+   "Washington Park",
+   "residential",
+   "",
+   -114.01762,
+   46.83105
+  ],
+  [
+   "Washington-Grizzly Stadium",
+   "stadium",
+   "american_football",
+   -113.9814,
+   46.86391
+  ],
+  [
+   "Water Wise Garden",
+   "garden",
+   "",
+   -113.99506,
+   46.86175
+  ],
+  [
+   "Water's Edge",
+   "residential",
+   "",
+   -113.9334,
+   46.87964
+  ],
+  [
+   "Waterworks",
+   "trailhead",
+   "",
+   -113.98384,
+   46.88229
+  ],
+  [
+   "Waterworks Hill",
+   "peak",
+   "",
+   -113.98518,
+   46.88241
+  ],
+  [
+   "Watson Children's Shelter",
+   "social_facility",
+   "",
+   -114.07852,
+   46.82648
+  ],
+  [
+   "Waypoint Church",
+   "place_of_worship",
+   "christian",
+   -113.99703,
+   46.86713
+  ],
+  [
+   "Wear Your Roots",
+   "clothes",
+   "",
+   -113.99442,
+   46.87099
+  ],
+  [
+   "Wells Fargo",
+   "bank",
+   "",
+   -114.04114,
+   46.88462
+  ],
+  [
+   "Wells Fargo",
+   "bank",
+   "",
+   -114.01739,
+   46.85914
+  ],
+  [
+   "Wells Fargo",
+   "bank",
+   "",
+   -113.99708,
+   46.87061
+  ],
+  [
+   "Wells Fargo",
+   "bank",
+   "",
+   -113.99515,
+   46.8702
+  ],
+  [
+   "Wendy's",
+   "fast_food",
+   "burger",
+   -114.03859,
+   46.89762
+  ],
+  [
+   "Wendy's",
+   "fast_food",
+   "burger",
+   -114.02687,
+   46.83971
+  ],
+  [
+   "West Broadway Island Natural Area",
+   "park",
+   "",
+   -114.01066,
+   46.88229
+  ],
+  [
+   "West Side Park",
+   "park",
+   "",
+   -114.00717,
+   46.87745
+  ],
+  [
+   "West Side Studios & Theater",
+   "theatre",
+   "",
+   -114.00891,
+   46.88974
+  ],
+  [
+   "West Toole Park River Access",
+   "bathing_place",
+   "",
+   -113.991,
+   46.86132
+  ],
+  [
+   "Western Cider",
+   "pub",
+   "",
+   -114.01387,
+   46.88123
+  ],
+  [
+   "Western Events Arena",
+   "pitch",
+   "equestrian",
+   -114.06932,
+   46.85772
+  ],
+  [
+   "Western Montana Endodontics",
+   "dentist",
+   "",
+   -114.01381,
+   46.83326
+  ],
+  [
+   "Western Montana Lighting",
+   "lighting",
+   "",
+   -114.03895,
+   46.84199
+  ],
+  [
+   "Western Montana State Veterans Cemetary",
+   "cemetery",
+   "",
+   -114.05417,
+   46.85865
+  ],
+  [
+   "Western States Trailer and Auto Sales",
+   "caravan",
+   "",
+   -114.07211,
+   46.82805
+  ],
+  [
+   "Western Union",
+   "money_transfer",
+   "",
+   -114.01907,
+   46.85749
+  ],
+  [
+   "Westside Lanes & Fun Center",
+   "bowling_alley",
+   "",
+   -114.02174,
+   46.87173
+  ],
+  [
+   "Westside Place",
+   "residential",
+   "",
+   -114.01463,
+   46.88844
+  ],
+  [
+   "Westview Park",
+   "residential",
+   "",
+   -114.04876,
+   46.90716
+  ],
+  [
+   "Westview Public Mini-Storage",
+   "retail",
+   "",
+   -114.04472,
+   46.91067
+  ],
+  [
+   "Wheat Montana",
+   "bakery",
+   "",
+   -114.04012,
+   46.86063
+  ],
+  [
+   "Whiskey Leatherworks",
+   "leather",
+   "",
+   -114.00224,
+   46.87821
+  ],
+  [
+   "Whitaker Park",
+   "park",
+   "",
+   -114.00456,
+   46.83292
+  ],
+  [
+   "Whitepine Park",
+   "park",
+   "",
+   -114.00705,
+   46.88637
+  ],
+  [
+   "Whitetail Park",
+   "park",
+   "",
+   -114.06099,
+   46.80877
+  ],
+  [
+   "Whoosh Productions",
+   "photographer",
+   "",
+   -114.00784,
+   46.87362
+  ],
+  [
+   "Wildflower Apartments",
+   "residential",
+   "",
+   -114.01701,
+   46.84458
+  ],
+  [
+   "Wildroot Phase 1",
+   "residential",
+   "",
+   -114.02683,
+   46.81629
+  ],
+  [
+   "Willard School",
+   "school",
+   "",
+   -114.01039,
+   46.86406
+  ],
+  [
+   "Willowridge Place",
+   "residential",
+   "",
+   -114.02811,
+   46.8099
+  ],
+  [
+   "Willy's Auto",
+   "car_repair",
+   "",
+   -114.00923,
+   46.85708
+  ],
+  [
+   "Wilma Theatre",
+   "theatre",
+   "",
+   -113.9961,
+   46.87324
+  ],
+  [
+   "WinCo Foods",
+   "supermarket",
+   "",
+   -114.03762,
+   46.85
+  ],
+  [
+   "WingStreet",
+   "fast_food",
+   "wings",
+   -113.984,
+   46.87407
+  ],
+  [
+   "WoodSpring Suites",
+   "hotel",
+   "",
+   -114.03825,
+   46.90245
+  ],
+  [
+   "Woody Lot",
+   "parking",
+   "",
+   -113.99574,
+   46.86867
+  ],
+  [
+   "World Market",
+   "interior_decoration",
+   "",
+   -114.03004,
+   46.83979
+  ],
+  [
+   "Wrench Works",
+   "car_repair",
+   "",
+   -114.03714,
+   46.83836
+  ],
+  [
+   "YESCO",
+   "signmaker",
+   "",
+   -114.03787,
+   46.85145
+  ],
+  [
+   "YMCA",
+   "sports_centre",
+   "",
+   -114.01734,
+   46.8397
+  ],
+  [
+   "YWCA Missoula",
+   "social_facility",
+   "",
+   -114.00959,
+   46.88072
+  ],
+  [
+   "YWCA Secret Seconds",
+   "second_hand",
+   "",
+   -114.01015,
+   46.88067
+  ],
+  [
+   "Yay Puppy Grooming",
+   "pet_grooming",
+   "",
+   -114.00177,
+   46.84333
+  ],
+  [
+   "Yoke's Fresh Market",
+   "supermarket",
+   "",
+   -114.04123,
+   46.83297
+  ],
+  [
+   "Yoke's Fresh Markets",
+   "supermarket",
+   "",
+   -114.00493,
+   46.88191
+  ],
+  [
+   "Zip Auto Services",
+   "car_repair",
+   "",
+   -113.99765,
+   46.87048
+  ],
+  [
+   "Zip Trip",
+   "convenience",
+   "",
+   -114.03138,
+   46.8428
+  ],
+  [
+   "Zip Trip",
+   "convenience",
+   "",
+   -114.0134,
+   46.87954
+  ],
+  [
+   "Zoo Brazilian Jiu Jitsu",
+   "dojo",
+   "",
+   -114.01326,
+   46.87923
+  ],
+  [
+   "Zoo Thai",
+   "restaurant",
+   "thai",
+   -113.99444,
+   46.87287
+  ],
+  [
+   "Zootown Church",
+   "place_of_worship",
+   "christian",
+   -114.03721,
+   46.84434
+  ],
+  [
+   "Zootown Crossfit",
+   "fitness_centre",
+   "",
+   -114.0384,
+   46.83888
+  ],
+  [
+   "Zootown Sports Cards",
+   "collector",
+   "",
+   -113.99713,
+   46.8488
+  ],
+  [
+   "Zootown Super Stop",
+   "convenience",
+   "",
+   -113.99797,
+   46.8466
+  ],
+  [
+   "Zootown Thrift",
+   "second_hand",
+   "",
+   -114.01775,
+   46.87961
+  ],
+  [
+   "Zumiez",
+   "clothes",
+   "",
+   -114.02759,
+   46.83792
+  ],
+  [
+   "rue21",
+   "clothes",
+   "",
+   -114.02868,
+   46.85245
+  ],
+  [
+   "“Galloping Goose” Crummy",
+   "attraction",
+   "",
+   -114.06336,
+   46.83975
+  ]
+ ],
+ "named_checks": {
+  "Big Dipper Ice Cream": [
+   "ice_cream"
+  ],
+  "Clyde Coffee": [
+   "cafe"
+  ],
+  "Rockin Rudy's": [],
+  "Florabella": [
+   "restaurant"
+  ],
+  "Tagliare Delicatessen": [
+   "deli"
+  ],
+  "Loyola Sacred Heart High School": [
+   "school"
+  ],
+  "Hellgate High School": [
+   "school"
+  ],
+  "Sacajawea Park": [
+   "park"
+  ],
+  "Rose Park": [],
+  "St. Paul Lutheran": []
+ },
+ "buildings_z15": {
+  "features_in_core": 36381,
+  "kind=building": 33747,
+  "kind=address": 2597,
+  "with_addr_housenumber": 2597,
+  "with_height_tag": 239,
+  "kind=building_part": 37
+ },
+ "road_shields_z15_top": [
+  [
+   "US:US",
+   "12",
+   33
+  ],
+  [
+   "US:I",
+   "90",
+   33
+  ],
+  [
+   "US:I:Business:Loop",
+   "90",
+   32
+  ],
+  [
+   "US:US:Business",
+   "93",
+   17
+  ],
+  [
+   "US:MT:secondary",
+   "263",
+   15
+  ],
+  [
+   "US:US",
+   "93",
+   13
+  ],
+  [
+   "US:US:Business",
+   "12",
+   5
+  ]
+ ],
+ "water_named_z15_top": [
+  [
+   "river",
+   "",
+   "Clark Fork",
+   26
+  ],
+  [
+   "stream",
+   "",
+   "Rattlesnake Creek",
+   13
+  ],
+  [
+   "stream",
+   "",
+   "Pattee Creek",
+   12
+  ],
+  [
+   "stream",
+   "",
+   "Grant Creek",
+   10
+  ],
+  [
+   "river",
+   "",
+   "Bitterroot River",
+   9
+  ],
+  [
+   "stream",
+   "",
+   "Moose Can Gully",
+   5
+  ],
+  [
+   "stream",
+   "",
+   "Danny O'Brien Gulch",
+   5
+  ],
+  [
+   "ditch",
+   "",
+   "Quast Ditch",
+   4
+  ],
+  [
+   "stream",
+   "",
+   "Crazy Canyon",
+   4
+  ],
+  [
+   "stream",
+   "",
+   "Miller Creek",
+   2
+  ],
+  [
+   "water",
+   "lake",
+   "Fort Missoula Ponds",
+   1
+  ],
+  [
+   "canal",
+   "",
+   "Big Flat Irrigation Ditch",
+   1
+  ],
+  [
+   "water",
+   "lake",
+   "Silver's Lagoon",
+   1
+  ],
+  [
+   "ditch",
+   "",
+   "Orchard Homes Irrigation Ditch",
+   1
+  ],
+  [
+   "water",
+   "lake",
+   "Bancroft Pond",
+   1
+  ]
+ ],
+ "landuse_kind_z15": {
+  "residential": 795,
+  "grass": 376,
+  "meadow": 349,
+  "wood": 251,
+  "pitch": 224,
+  "park": 164,
+  "commercial": 147,
+  "farmland": 98,
+  "sand": 85,
+  "garden": 84,
+  "industrial": 79,
+  "playground": 70,
+  "forest": 47,
+  "recreation_ground": 45,
+  "school": 38,
+  "grassland": 27,
+  "wetland": 26,
+  "pedestrian": 26,
+  "nature_reserve": 24,
+  "golf_course": 21,
+  "beach": 19,
+  "university": 16,
+  "railway": 11,
+  "cemetery": 10,
+  "scrub": 10,
+  "dog_park": 8,
+  "hospital": 7,
+  "aerodrome": 3,
+  "military": 3,
+  "kindergarten": 3,
+  "other": 3,
+  "allotments": 2,
+  "zoo": 1,
+  "college": 1,
+  "bare_rock": 1
+ },
+ "place_names_z15": [
+  "East Missoula",
+  "Farviews / Pattee Canyon",
+  "Franklin to the Fort",
+  "Grant Creek",
+  "Heart of Missoula",
+  "Lewis & Clark",
+  "Lower Rattlesnake",
+  "Miller Creek",
+  "Missoula",
+  "Moose Can Gully",
+  "Mullan Road",
+  "North Reserve",
+  "Northside",
+  "Orchard Homes",
+  "River Road",
+  "Riverfront",
+  "Rose Park",
+  "South 39th",
+  "Southgate Triangle",
+  "Target Range",
+  "Two Rivers",
+  "University District",
+  "Upper Rattlesnake",
+  "Westside"
+ ]
+}

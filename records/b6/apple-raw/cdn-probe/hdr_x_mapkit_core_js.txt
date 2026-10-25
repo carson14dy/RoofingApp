@@ -1,0 +1,16 @@
+HTTP/1.1 200 Connection Established
+
+HTTP/2 200 
+server: Apple
+content-type: application/javascript; charset=utf-8
+last-modified: Mon, 28 Sep 2026 10:29:43 GMT
+access-control-allow-origin: *
+timing-allow-origin: *
+x-envoy-upstream-service-time: 1
+strict-transport-security: max-age=31536000; includeSubdomains
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+cache-control: public, max-age=248
+date: Sun, 25 Oct 2026 16:11:39 GMT
+

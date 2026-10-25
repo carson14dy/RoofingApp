@@ -1476,3 +1476,24 @@ store (hail, heat, wind, flood) plus new public sources (fire, air), the search,
 Running (stage 0): wf_e43759f7-1a0 (the two base-map paths, verified live, two skeptics per claim) and wf_3b78ff46-de4 (side-by-side views
 of our map against the reference at eight zooms from a local build with every layer on, the per-house bubble measurements, and the
 risk-layer sources verified live). The question put to Carson: whether he is willing to hold an Apple Developer account for the site.
+
+## Supervisor ruling on B6 stage 0 (2026-10-25 17:10 UTC; D106)
+The research wave is in (records/b6/README.md is the record; the journals under records/b6/journals). Findings: the reference is
+Apple's map; Apple's web maps (MapKit JS) give the same cartography at every zoom and the amenity and point-of-interest behaviour
+one to one (a 73-category filter), with tile and DOM overlays for our layers; no 3D on the web; a domain-restricted static token
+with no expiry from the developer console; 99 dollars a year for the Program membership; the logo and Legal link must stay; no
+caching, so sample and offline builds never carry Apple tiles; the script loads from Apple (an exception to AGENTS rule 4). The
+self-hosted stack (MapLibre, OpenStreetMap tiles 98.8 MB at zoom 13 or about 404 MB at zoom 15, USGS imagery, AWS terrain) is a near
+look with weeks of cartography and an ODbL reading for counsel. Our map today: dots and outlines at the block, otherwise a white
+map with no points of interest, parks, terrain, shields or river bands; top zoom 17 against the reference's 17.4; the store's
+values are per 1 km cell (four cells, four values, in the block view); labels collide at zoom 17 unless thinned.
+- D106 **B6 path and shape.** (a) Recommend Apple's web maps (path A) with the present white map as the fallback when the token
+  is missing, the script fails or the build is a sample; the owner decides (the membership, the rule 4 exception, the logo and
+  Legal link, the consent line before the locate button). (b) The 3D choice is left out of the sheet with one About sentence;
+  never a greyed promise. (c) The value bubble is the cell's largest five-year radar estimate on every house in the cell, "--"
+  where nothing of 0.25 in or more was stored, never a zero; the sheet names the cell; the engine thins collisions. (d) The risk
+  chips: hail, heat, wind and flood from the store first; fire (NIFC, MTBS, USFS) and smoke (NOAA HMS) as new daily parts with
+  their terms in About; FEMA stays out (counsel item 12); "Air quality" waits for an AirNow key and readable terms. (e) The build
+  list B6-1 to B6-7 in the record; the branch is claude/map-b6 from the B5 head (906b49f); no code until the owner decides the
+  path, except the Python products that both paths share (the risk pictures, the recent-hail product, the bubble values).
+  (f) Skeptic verdicts so far confirm the figures and refute wording only; any claim that falls on substance is re-ruled.

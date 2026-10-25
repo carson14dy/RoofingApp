@@ -1,0 +1,45 @@
+HTTP/1.1 200 Connection Established
+
+HTTP/2 301 
+server: GitHub.com
+content-type: text/html
+location: https://tc39.es/ecma262/
+x-github-request-id: 5A1E:34C37C:1E42B7B:226FE09:6ADE2A68
+x-github-edge-region: iad
+accept-ranges: bytes
+age: 0
+date: Sun, 25 Oct 2026 16:12:24 GMT
+via: 1.1 varnish
+x-served-by: cache-iad-khef600071-IAD
+x-cache: MISS
+x-cache-hits: 0
+x-timer: S1792944744.084553,VS0,VE27
+vary: Accept-Encoding
+x-fastly-request-id: fdc79fb336ccc9221dd44c304da0ced026e77a14
+content-length: 162
+
+HTTP/1.1 200 Connection Established
+
+HTTP/2 200 
+server: GitHub.com
+content-type: text/html; charset=utf-8
+last-modified: Sun, 25 Oct 2026 15:42:09 GMT
+access-control-allow-origin: *
+etag: "6ade2351-74998a"
+expires: Sun, 25 Oct 2026 16:09:31 GMT
+cache-control: max-age=600
+x-proxy-cache: HIT
+x-github-request-id: 99CE:2187BC:244241F:27F326E:6ADE2919
+x-github-edge-region: iad
+accept-ranges: bytes
+date: Sun, 25 Oct 2026 16:12:24 GMT
+via: 1.1 varnish
+age: 334
+x-served-by: cache-iad-khef600056-IAD
+x-cache: HIT
+x-cache-hits: 1
+x-timer: S1792944744.277171,VS0,VE20
+vary: Accept-Encoding
+x-fastly-request-id: 3ca077770bcc014f9e409b45c485e16da02f800d
+content-length: 7641482
+

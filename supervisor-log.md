@@ -294,3 +294,6 @@ Head 906b49f, mergeable_state clean, the app check green, no review threads, no 
 
 ## 2026-10-25 16:06 UTC: B6 opened (the owner's Apple Maps reference)
 Carson: "I want the first map to look exactly like this. And work like this." (ten screenshots). Reply sent with the two paths and the one owner question (the Apple Developer account). Local build with every layer on started at /home/user/hail-b5/out/ref/site (live feeds, the adopted store, --now 2026-10-17T12:00:00Z). Workflows: wf_e43759f7-1a0 (base-map paths) and wf_3b78ff46-de4 (views, bubbles, risk sources). Task #38 created. Scripts under workflows/scripts/b6-*.js.
+
+## 2026-10-25 17:12 UTC: B6 research in; record on claude/map-b6; report to Carson
+Views (nine composites), the Apple and open-stack verification (two workflows; refute stages still running), the risk sources. research/map-b6/README.md committed on claude/map-b6 (from 906b49f) and pushed; D106 recorded. Four composites sent to Carson. Waiting on the owner's path decision (the Apple Developer Program membership). Disk: the open worker built pmtiles from source (2.9 GB of Go caches, removed after the binary was ready); finished scratch folders removed; 6 GB free.
