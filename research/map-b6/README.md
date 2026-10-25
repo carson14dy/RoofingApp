@@ -154,3 +154,64 @@ record, its source and its age.
 - Open stack: the extract logs and sizes, the decoded Missoula tiles, the terrain tile decode, the Pages range test, the glyph
   build, the ODbL and OpenStreetMap attribution texts, all in the session archive.
 - Risk sources: the live fetches, counts and quoted terms per source, in the session archive.
+
+## 9. The owner's decision and stage 1 (2026-10-25, afternoon)
+
+The owner, after the research above: "We don't need the apple design anymore. That was just a base that I don't want in the
+finish." So the screenshots set the behaviour and the structure; the finished map is ours, on the architecture the site has
+(Leaflet drawing Python-built site files), from public-domain data only. No Apple membership, no OpenStreetMap, no MapLibre
+(DECISIONS D107 when recorded). The 3D choice is out. The amenity chips become landmark chips.
+
+### 9.1 What stage 1 verified (all live, two skeptics per claim)
+
+| Layer | Source and terms | Montana size | Build note |
+|---|---|---|---|
+| Terrain shading | USGS 3DEP hillshade, exportImage per 256 px tile (no tile cache); public domain, credit requested | zooms 5 to 10: 805 tiles, about 8 MB as grey JPEG (29 MB PNG); zooms 11 and 12 add 11,058 tiles, about 79 MB JPEG | tiles join without seams; built by the monthly job |
+| Land cover tint | NLCD 2021 (MRLC): "public domain information"; Fees NONE | about 2 MB at 240 m statewide; palette tiles 5 to 9 KB each (zoom 10 about 5 MB; zoom 12 about 50 MB) | drawn under the hillshade at low opacity; fades out by zoom 13 |
+| Water with names | USGS NHD map service (small-scale layer for low zooms, large-scale per tile); TIGER county files as the fallback (162 MB zipped, abbreviated names) | statewide sizes measured in stage 2 | Natural Earth rivers stay for the first paint |
+| Reservations | Census TIGER AIANNH: 7 Montana reservations, English names only | 9.2 MB national file | the Salish name of the Flathead Reservation needs the Tribes' confirmation |
+| National forests | Forest Service administrative boundaries: 7 forests with most of their area in Montana; federal work, no reuse sentence in the metadata | 93 MB national zip or the map service | a courtesy note to the Forest Service recorded; counsel sees the terms |
+| Parks | PAD-US 4.1 Fee layer by its map service (public domain): 1,457 Montana polygons, 558 local parks; Sacajawea, McCormick and Rose Garden found; TIGER area landmarks as the fallback (104 parks, 101 state parks, 22 city parks) | attribute sample 133 KB; geometry per tile | city parks at zoom 13 and up, state parks from zoom 9 |
+| Schools | NCES EDGE public (854) and private (109) school points; "All information contained in this file is in the public domain" | 234 KB of attributes | Loyola Sacred Heart and Hellgate both present |
+| Hospitals | HIFLD copy of the state licensure list (71); no licence text; FAA heliport records and TIGER as checks | 59 KB | counsel confirms the licensure list's terms, else the USGS structures layer |
+| Airports | FAA NASR airport file (318 Montana records) and the HIFLD copy of the national transportation atlas (United States government work) | 10 MB national zip | public-use airports only on the map |
+| Churches | FEMA copy of an IRS-based places-of-worship layer (1,074; "no use limitations"); 499 are geocoded to a postal code only | 293 KB | point-address rows only; the geocoder's terms to counsel |
+| Fire stations | USGS National Map structures layer (461) | 209 KB | optional kind |
+| Peaks | GNIS summits (3,181) without elevation; 3DEP sampled at the point | 1.5 MB zip | the sampling check is in stage 2 |
+| Places | TIGER places (497) with 2020 counts; min zoom by population | 2.3 MB | Lolo, Frenchtown, Florence, Stevensville, Hamilton, Seeley Lake, Darby all present |
+| Route numbers | TIGER full names (US Hwy 12, State Hwy 200, I- 90) and the basemap refs | 2.6 MB | shields drawn by the browser from the data |
+
+The proof pictures (`views/proof-region-side-by-side.jpg`, `views/proof-city-side-by-side.jpg`) were drawn by Python from these
+sources in the site's palette: relief multiplied in at 0.28, soft green forest and cream developed land from the land cover,
+blue water, Census roads with shields, towns by rank, forests and the reservation named in spaced capitals. The statewide
+raster base measured about 57 MB as WebP tiles for zooms 5 to 12, or about 8 MB of hillshade plus 5 MB of tint for zooms 5 to 10
+as separate layers.
+
+### 9.2 The sheet and the bubbles (mocks in Chromium, `views/sheet-mock-side-by-side.jpg`, `views/bubbles-a-clusters-vs-b-per-building.jpg`)
+
+The Map options sheet in the site's roles: Base map (Map, Imagery), Live weather and Five-year history as one-at-a-time chips,
+Landmarks as independent chips, the switches Points of interest, Highlight recent radar hail, Warnings and Storm reports, Reset;
+a one-line legend under whatever is on, with the source, the age and what a missing value shows. Measured: 0 hex values, 0
+overflow from 288 to 1440 px, every target 44 px, text contrast at least 6.76:1 light and 7.87:1 dark. "Risks" is not used:
+the five-year group is history (DESIGN section 12 rule 6).
+
+The bubble on the block: 248 buildings in four radar cells (0.38 in, no value, 0.30 in, 0.26 in). One bubble per building with a
+skip rule labels 91 of 248 at zoom 17; one bubble per cluster of buildings in the same cell labels every building with 56
+bubbles. The cluster rule is recommended; the owner picks. Top zoom 18 is a build item.
+
+### 9.3 The build list, revised (stage 2)
+
+1. B6-1 Data products (Python, the monthly and daily jobs, the store): hillshade and tint tiles for zooms 5 to 10; rivers and
+   lakes with names by zoom band and per tile; reservations, forests, parks, places and peaks as shards by zoom band; the
+   landmark points per tile with their kind; the route shields' data; the hail and heat pictures and the wind and flood
+   per-zone counts; the recent radar hail product (cells with 1 inch or more in the last 30 days); the bubble anchors per
+   zoom in the building shards; a CONTRACTS row and an About sentence per source; sizes measured against the phone budget.
+2. B6-2 The Map options sheet (the mock's HTML and CSS into the site's template and map.css; map.js wires the chips to the
+   layers).
+3. B6-3 The base map in the browser: the raster tiles under the vector layers, the new shards drawn by zoom, labels thinned by
+   the Python placement, shields, landmark icons (ours), the tint fading by zoom 13.
+4. B6-4 The value bubbles (the anchors from B6-1) and top zoom 18.
+5. B6-5 The five-year layers in the sheet (hail, heat, wind, flood) with their legends; fire and smoke as new daily parts.
+6. B6-6 Tests and smoke: the parity and words tests, the budget smoke with every new layer on, the sheet states, the fallback
+   without the raster tiles; docs (DECISIONS, DESIGN, ROADMAP, About).
+
