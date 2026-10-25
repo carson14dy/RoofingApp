@@ -3977,7 +3977,16 @@
     part("reports", ["hail_max", "hail_n", "wind_n", "freezing_rain_n", "flood_report_n"], function () {
       return sumReportRows(h, sp, S, ctx.parts("reports"), ctx.reasons("reports"), ctx.periods("reports"), ctx.events, ctx.jdoc);
     });
-    part("gust", ["gust_days", "gust_max"], function () { return sumGustRows(ctx); });
+    part("gust", ["gust_days", "gust_max"], function () {
+      var got = sumGustRows(ctx);
+      // summary.py: when the stations part loaded for some station-years only (D20 partial), the sentence that names the
+      // station-years that did not load is the last note of both gust rows (the wind section then carries it once)
+      if (ctx.jdoc && ctx.parts("stations") === "partial") {
+        var missed = sumClear(S, joinUnavailable(h.joins, "stations", ctx.periods("stations"), ctx.reasons("stations")));
+        ["gust_days", "gust_max"].forEach(function (k) { if (got[k] && got[k].notes) got[k].notes.push(missed); });
+      }
+      return got;
+    });
     part("records", ["flood_record_n"], function () {
       return { flood_record_n: sumRecordsRow(h, sp, S, ctx.parts("records"), ctx.reasons("records"), ctx.periods("records"), ctx.events, ctx.jdoc) };
     });

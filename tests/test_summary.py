@@ -1685,42 +1685,50 @@ class StationPicksAndNames(unittest.TestCase):
                 checked, answered = checked + c, answered + a
         self.assertGreater(checked, 0)
 
-    def test_the_real_store_names_are_the_display_names_the_store_gives_and_its_radar_is_partial(self):   # D78(c), D82(c)
-        """The adopted store's own names (hail/tl/r0079_c0199.json: "Buffalo 1.7 E", "Harlowton 11NW"; hail/tl/r0092_c0214.json:
-        "Billings WTP") reach the summary as given, never re-cased; 2021-22 has 109 days missing (108 before the window opens
-        on 17 Oct 2021, and one inside it), so its 1-inch count is Data unavailable and its largest estimate is over the days
-        present (D82(c), D87(i))."""
+    def test_the_real_store_names_are_the_display_names_the_store_gives_and_its_radar_is_partial(self):   # D78(c), D82(c), D84(b)
+        """Whatever store HAIL_PARITY_STORE names (the adopted combined store, or the branch's freshly built store in the preview),
+        every station name in its stations block is the display form of its GHCN name (never re-cased), the names the summary
+        prints at Benchland and Billings are names the store gives, with no GHCN capitals, and the first season's radar count
+        row follows D37: Data unavailable with the days missing when the record has under 95 percent of the season's days
+        (D82(c)); the store's own window decides which season that is."""
         store = os.environ.get("HAIL_PARITY_STORE")
         if not store:
-            self.skipTest("set HAIL_PARITY_STORE to the adopted combined store (the names and the partial radar season)")
+            self.skipTest("set HAIL_PARITY_STORE to a built store (the names and the partial radar season)")
         now = datetime(2026, 10, 19, 12, 0, tzinfo=timezone.utc)
-        benchland = {r["key"]: r for r in S.describe_summary(Path(store), 792, 1998, now)["table"]["rows"]}
-        snow = " ".join(benchland["snow"]["texts"] + benchland["snow"]["notes"])
-        self.assertIn("Harlowton 11NW", snow)
-        self.assertIn("Buffalo 1.7 E", snow)
-        self.assertNotIn("HARLOWTON", snow)
-        self.assertNotIn("BUFFALO", snow)
-        billings = {r["key"]: r for r in S.describe_summary(Path(store), 921, 2149, now)["table"]["rows"]}
-        self.assertIn("Billings WTP", " ".join(billings["snow"]["texts"] + billings["snow"]["notes"]))
-        self.assertIn("Billings Intl AP, 2.5 miles from this spot", " ".join(billings["snow"]["notes"]))   # the store's own name (D84(b))
-        self.assertNotIn("INTL", " ".join(billings["snow"]["notes"]))
-        # the four names the adopted store gives (D78(c), D84(b)): the display name as written, the GHCN name beside it, never re-cased
         with open(Path(store) / "hail" / "index.json", encoding="utf-8") as fh:
             named = json.load(fh)["stations"]["stations"]
-        pairs = {st["name"]: st["ghcn_name"] for st in named.values() if st.get("name") in
-                 ("Billings Intl AP", "Moccasin Exp Stn", "Lister", "Great Falls 16St")}
-        self.assertEqual(pairs, {"Billings Intl AP": "BILLINGS INTL AP", "Moccasin Exp Stn": "MOCCASIN EXP STN",
-                                 "Lister": "LISTER", "Great Falls 16St": "GREAT FALLS 16ST"})
-        moccasin = " ".join(benchland["snow"]["notes"])
-        self.assertIn("Moccasin Exp Stn, 3.", moccasin)                    # D80(b): the distance from the spot, the name as given
-        self.assertNotIn("EXP STN", moccasin)
-        one = billings["radar_1in"]
-        self.assertTrue(one["texts"][0].startswith("Data unavailable for 2021-22"), one["texts"][0])
-        self.assertEqual(one["coverage"][0], "109 days missing")
-        self.assertIsNone(one["values"][0])
-        self.assertTrue(billings["radar_max"]["texts"][0].startswith("Data unavailable for 2021-22"))   # no day of 0.25 in or more
-        self.assertIsNotNone(billings["radar_max"]["five"])                 # the largest over the days present ...
-        self.assertEqual(billings["radar_max"]["five_coverage"], "109 days missing")                    # ... with its coverage
+        self.assertGreater(len(named), 100)
+        for st in named.values():
+            with self.subTest(station=st.get("id")):
+                self.assertEqual(st["name"], stations.display_name(st["ghcn_name"]), st)
+        display_names = {st["name"] for st in named.values()}
+        raw_forms = {st["ghcn_name"] for st in named.values() if st["ghcn_name"] != st["name"]}   # the GHCN form, when it differs
+        for row, col in ((792, 1998), (921, 2149)):
+            table = {r["key"]: r for r in S.describe_summary(Path(store), row, col, now)["table"]["rows"]}
+            for key in ("snow", "snow_depth"):
+                text = " ".join(table[key]["texts"] + table[key]["notes"])
+                shown = {n for n in display_names if n in text}
+                self.assertTrue(shown or "Data unavailable" in text, text[:300])     # a station the store names, or the stated gap
+                for n in shown:
+                    self.assertEqual(n, stations.display_name(next(st["ghcn_name"] for st in named.values() if st["name"] == n)))
+                for raw in raw_forms:
+                    self.assertNotIn(raw, text, text[:300])                       # never the GHCN form of a name (D78(c), D84(b))
+                for n in shown:
+                    self.assertEqual(stations.display_name(n), n)                 # a shown name is already in display form
+                self.assertNotIn("from this cell", text)                          # D80(b): distances are from the spot
+        one = {r["key"]: r for r in S.describe_summary(Path(store), 921, 2149, now)["table"]["rows"]}["radar_1in"]
+        self.assertRegex(one["coverage"][0], r"^\d+ days missing$")
+        if one["texts"][0].startswith("Data unavailable for "):
+            self.assertIsNone(one["values"][0])
+            self.assertIn("missing day is not zero", one["texts"][0])
+        else:
+            self.assertIsNotNone(one["values"][0])
+        biggest = {r["key"]: r for r in S.describe_summary(Path(store), 921, 2149, now)["table"]["rows"]}["radar_max"]
+        self.assertRegex(biggest["five_coverage"], r"^\d+ days missing$")   # the five-year line carries its coverage ...
+        if any(v is not None for v in biggest["values"]):
+            self.assertIsNotNone(biggest["five"])                           # ... and the largest over the days present (D37)
+        else:
+            self.assertIsNone(biggest["five"])
 
 
 class RoundTwoSiteTests(unittest.TestCase):

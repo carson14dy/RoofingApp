@@ -5269,6 +5269,45 @@ class SheetAgreesWithTheModule(unittest.TestCase):
             self.assertTrue(text.endswith("This is not an all-clear."), text)
             self.assertNotIn("..", text)
 
+    def test_a_partial_stations_part_adds_the_same_note_in_the_browser_and_the_module(self):                 # D20, D41, B5-12
+        """When the station gusts loaded for some station-years only (the joins block's parts.stations is "partial"), summary.py
+        closes both gust rows' notes with the sentence that names the station-years that did not load, with the reason the
+        block gives and the all-clear sentence once, and the wind section carries it once. The browser mirrors that from the
+        same block: the branch's own store had 65 such station-years, and the preview's parity step found the browser without
+        the note (B5-12). The part goes into a copy of the fixture store, with its index and its manifest entry written again."""
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-partial-store-"))
+        self.addCleanup(shutil.rmtree, store, True)
+        shutil.copytree(hs.FIXTURE_DIR, store, dirs_exist_ok=True)
+        index_path = store / "hail" / "index.json"
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index["joins"]["parts"]["stations"] = "partial"
+        index["joins"]["partial"]["stations"] = ["00U 2024", "THM 2025"]
+        index["joins"]["reasons"]["stations"] = "the gust files were not fetched"
+        data = hs._pretty(index)
+        index_path.write_bytes(data)
+        manifest_path = store / "hail" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["files"]["hail/index.json"] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        manifest_path.write_bytes(hs._pretty(manifest))
+        hs.check_manifest(store)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-partial-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        h = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(h["joins"]["parts"]["stations"], "partial")
+        self.assertEqual(h["joins"]["partial"]["stations"], ["00U 2024", "THM 2025"])
+        for cell in FIVE_CELLS[:3]:                 # the cells the fixture holds
+            with self.subTest(cell=cell):
+                self.compare_cell(out, h, cell)
+        browser = node_sheet(out, h, {"row": FIVE_CELLS[0][0], "col": FIVE_CELLS[0][1]})
+        for key in ("gust_days", "gust_max"):
+            last = browser["table"]["rows"][key]["notes"][-1]
+            self.assertIn("did not load for 00U 2024, THM 2025 (the gust files were not fetched)", last)
+            self.assertEqual(last.count("This is not an all-clear."), 1, last)
+            self.assertTrue(last.endswith("This is not an all-clear."), last)
+        wind = {sec["id"]: sec for sec in browser["model"]["sections"]}["wind"]
+        self.assertEqual(sum(1 for n in wind["notes"] if "did not load for 00U 2024, THM 2025" in n), 1, wind["notes"])
+
 
 def sm_sections() -> list[str]:
     """The eleven section ids in the brief's order (summary.WORDS_SUMMARY section_titles; Hail first, How this was made last)."""
