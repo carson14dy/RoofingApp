@@ -255,3 +255,6 @@ map.js sumFlagClause, sumJoinedFlags and sumCover mirror summary (one all-clear 
 
 ## 2026-10-25 04:55 UTC: docs pass done; D100; final-b launched
 Docs pass (wf_4c225e23-481, 44 agents): 20 findings, 14 confirmed and fixed, 5 refuted, F19 dropped (done by site-final); check: suite 1,982 OK, parity 7 OK, selftest PASS; leftovers (D98 entry, labels, README 406, record test line, DESIGN lines, ROADMAP follow-ups). D100(a) to (d) recorded. final-b launched: words-4 + ci-final (one workflow) and docs-final (another).
+
+## 2026-10-25 05:15 UTC: B5-11 supervisor reading passes (D101)
+Billings table and Benchland sheet read on a local build at the D94(c) clock; records under wt-session/records/b5/final/. Scratch build deleted.

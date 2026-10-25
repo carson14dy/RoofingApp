@@ -1391,3 +1391,16 @@ phone-view figure moves between builds (682,129 at the re-check; 681,569 at the 
   restatement; the branch's live preview figure is recorded in the pull request. (d) final-b = words-4 (D97(c)),
   docs-final and ci-final in parallel on disjoint files; then the supervisor's final suite and self-test, the squash onto
   main's head f96f5c7, the push, the branch run and the pull request.
+
+## Supervisor reading for B5-11 (2026-10-25 05:15 UTC; D101)
+Read on a build of the merged tree from the adopted store at the local-check clock (--now 2026-10-17T12:00:00Z): the
+Billings town page's five-season table (/home/user/hail-b5/out/sup-read/billings-history.txt) and the Benchland sheet at
+390 px in Chromium (sheet-390.txt, sheet-390.png; zero off-site requests).
+- D101 **B5-11 passes.** Every row names its kind of record and its unit; every value carries its unit or reads "Data
+  unavailable" with a footnote under the heading "Why a cell reads Data unavailable"; the partial 2021-22 season says
+  "the radar record has 256 of 365 days, so no figure is shown for this season; a missing day is not zero. This is not an
+  all-clear."; the report rows say "reports are not a complete record"; the held roof lines lead with "Data unavailable"
+  and end with the all-clear; nothing needs decoding. One note, not a change: the gust rows name the airport in the IEM
+  form ("Billings/Logan Intl") and the GHCN rows in the display form ("Billings Intl AP"), two sources and two name
+  rules (D84(a) and D78(c)); the record carries the note. The verification record's B5-11 gate reads pass with this
+  reading as its evidence (docs-final or the supervisor before the squash).
