@@ -1534,3 +1534,31 @@ history heading (DESIGN section 12 rule 6).
   building shards as label anchors; the per-house variant is shown to the owner as the alternative with its count (91 of 248). The
   owner picks; the recommendation is the cluster rule. (e) Top zoom 18 is a build item (the data supports it). (f) A fixer applies
   the critic's items to the mock and a second critic re-checks before the owner sees it (wf b6-sheet-fix).
+
+## Supervisor rulings on the cartography sources (2026-10-25 19:45 UTC; D109)
+The cartography workers reported (records to follow under records/b6/cartography): 3DEP hillshade comes only by exportImage per tile
+(no cache); Montana-outline tiles for zooms 5 to 10 are 805 (about 8 MB as grey JPEG, 29 MB as PNG) and for zooms 5 to 12 are 11,863
+(about 87 MB JPEG, 363 MB PNG); tiles join without seams; the USGS shaded relief cache has holes at zooms 9 to 11, the hydro cache
+covers 5 to 12. NLCD 2021 land cover (public domain; Fees and AccessConstraints NONE) is about 2 MB statewide at 240 m and 25 to 35 MB
+at 30 m; palette tiles are 5 to 9 KB each (zoom 10 about 5 MB statewide, zoom 12 about 50 MB). Water: TIGER county files (162 MB
+zipped statewide, abbreviated names) or NHD (592 MB state file; the map service has small-scale and large-scale layers with GNIS
+names). Reservations: TIGER AIANNH, 7 in Montana, English names only (the Salish name of the Flathead Reservation needs the
+Tribes' confirmation). Forests: the Forest Service boundaries, 7 forests (federal work; the metadata has no reuse sentence). Parks:
+PAD-US not readable from this session by ScienceBase; TIGER area landmarks give 104 parks, 101 state parks and 22 city parks
+statewide. Landmarks: TIGER points are too thin (52 schools, 37 hospitals, 6 churches statewide). GNIS: 3,181 summits without
+elevation, 1,870 populated places. Places: TIGER 497 with 2020 counts. Route numbers: TIGER full names and the State Library fields.
+- D109 **The cartography stack and its budgets.** (a) Raster: hillshade as grey JPEG tiles from 3DEP for zooms 5 to 10 (about 8 MB,
+  built by the monthly job into the store under hail/m/ or a new map/ part), drawn under the vector layers at low opacity; land cover
+  tint as palette tiles from NLCD 2021 at zooms 5 to 10 (about 5 MB); zooms 11 and 12 are a later budget decision with the measured
+  figures (87 MB and 50 MB); above the native zoom the tiles are scaled, and the tint fades out by zoom 13 where the streets and
+  outlines take over. (b) Vector: rivers and lakes with names from the NHD small-scale layers for zooms 5 to 12 (simplified by Python,
+  sizes to be measured) and the large-scale layer per B3 tile at zoom 13 and up; reservations from TIGER AIANNH with their English
+  names (the Salish name added when the Tribes confirm it); national forests from the Forest Service boundaries (federal work, public
+  domain by law; a courtesy line to the Forest Service recorded); parks from PAD-US when it can be read, else the TIGER landmarks;
+  places from TIGER with a min-zoom rule by 2020 population; peaks from GNIS with elevations sampled from 3DEP by the build; route
+  shields drawn from the refs already in basemap.json plus the state routes from TIGER. (c) Landmarks for the chips come from sources
+  still to verify (NCES EDGE schools, HIFLD hospitals and places of worship, FAA airports); a chip whose source fails stays out.
+  (d) Budget rule: nothing is added to the first-paint files; every new layer loads by zoom band or by tile as B3 does, and the phone
+  view at zoom 15 over Billings stays under its 700,000-byte gzip budget with the new tiles counted (about 18,000 bytes of headroom
+  today, so the first paint cannot grow). (e) Terms: every source gets a CONTRACTS row and an About sentence with its credit line;
+  the State Library roads keep their counsel gate.

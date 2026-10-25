@@ -309,3 +309,6 @@ The stop request for wf_e43759f7-1a0 found no running task: the workflow had alr
 
 ## 2026-10-25 19:21 UTC: stage 1 mocks in; D108; sheet fixer launched
 Sheet mock and critic (failed on substance: caps, glass, contrast, legends, names). Bubble placement measured (cluster rule recommended). b6-sheet-fix launched (fixer + second critic). Cartography workflow: the two source workers still running; the proof render queued behind them.
+
+## 2026-10-25 19:52 UTC: cartography sources in; D109; landmark gap workflow launched
+Raster and vector source reports read (the proof render still running). D109 recorded. b6-landmark-sources launched (NCES EDGE, HIFLD, FAA, PAD-US by the staged-products bucket or the feature service, GNIS summit elevations from 3DEP, the NHD small-scale rivers with sizes). The sheet fixer applied all nine fixes; the second critic is running.
