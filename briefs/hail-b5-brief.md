@@ -1442,3 +1442,15 @@ real-store names test pinned the adopted store's stations (Moccasin Exp Stn, 109
   touches the sheet, the parity class runs against the branch's published store as well as the adopted store. The fix is
   the third signed commit on claude/hail-b5 (199dfa9; tests and map.js): parity class OK on both stores, full suite 1,990
   OK (5 skipped), selftest PASS.
+
+## Supervisor ruling on the daily budget (2026-10-25 07:02 UTC; D105)
+The branch's store job (run 11, commit bf2909b) ran 39.1 minutes end to end on the runner with its downloads (05:47:51 to
+06:26:57 UTC on 2026-10-25) and published hail-store-claude-hail-b5.tar.gz at 88,647,098 bytes. The first-round gate B5-12
+said under 25 minutes, a figure set before the B1 build, the B2 joins and the B3 parts shared the job.
+- D105 **The daily budget.** (a) The daily job's budget is 60 minutes end to end on the runner: the bound the branch
+  preview's wait step already holds (website.yml waits up to 60 minutes for the branch's store job), so a job over it
+  fails the preview; the job's 150-minute timeout is the backstop for a stalled request (D94(a)). The 25-minute figure is
+  superseded with this reason. (b) The measured 39.1 minutes is the figure the record and ROADMAP state; a later run over
+  60 minutes is a budget decision (raise the wait bound, the job cap and the timeout together, as the wait step's comment
+  says), never a silent breach (D90(b)). (c) Gate B5-12 reads pass against the restated budget, with the run time, the
+  asset size and the phone view as its evidence; the record keeps the 25-minute wording as the gate's first-round text.
