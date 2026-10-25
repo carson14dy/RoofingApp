@@ -267,3 +267,6 @@ PR 17 (claude/hail-b5 -> main) created with the template body, run links and the
 
 ## 2026-10-25 06:05 UTC: the app check (check-app.yml) failed on PR 17: five optional-package imports
 The app check installs only the parked app packages; tests/test_climate.py (h5py), tests/test_website_workflow.py and tests/test_hail_workflow.py (pyyaml) and tests/test_joins.py (pyshp, one class) imported them without skipping. Reproduced in a minimal venv (5 errors), guarded with skipUnless (classes and the one test), both environments pass the four modules. Full runs follow, then a signed fix commit on claude/hail-b5.
+
+## 2026-10-25 06:15 UTC: app-check fix pushed
+Signed commit (tests only) on claude/hail-b5: the optional-package guards (D103). Minimal-environment suite OK (0 errors, 242 skipped); full suite with the store 1,989 OK; selftest PASS. The push restarts the branch runs (Website, store job, app check).

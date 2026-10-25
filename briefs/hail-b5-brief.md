@@ -1415,3 +1415,13 @@ the identity table; ci-final added the seven test modules to website.yml's on.pu
   test_weather) stay exempt from the Website workflow's paths because check-app.yml runs them on every push to main and
   no website or tools module imports the parked app. (c) The em-dashes in website.yml's summary step predate B5 and
   fall under the D91(e) sweep.
+
+## Supervisor ruling on the app check (2026-10-25 06:15 UTC; D103)
+Pull request 17's app check (check-app.yml: the parked app's packages only, the whole suite) failed with five errors: the
+two workflow tests imported pyyaml, the climate file-read class and one update test imported h5py, and the placement table
+build test imported pyshp, none with a guard.
+- D103 **Optional packages in tests.** A test that needs a package the app check does not install (pyyaml, h5py, pyshp,
+  pygrib, pyarrow, pyproj, pyogrio) skips with the reason when the package is missing, as the suite's other optional
+  tests do; the Website workflow's offline step and the daily job install the packages and run them. The fix is a second
+  signed commit on claude/hail-b5 (tests only), reproduced first in a minimal environment with the app check's packages
+  (five errors, then none) and checked in the full environment with the store (1,989 tests OK).
