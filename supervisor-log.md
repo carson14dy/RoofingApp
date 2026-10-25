@@ -297,3 +297,6 @@ Carson: "I want the first map to look exactly like this. And work like this." (t
 
 ## 2026-10-25 17:12 UTC: B6 research in; record on claude/map-b6; report to Carson
 Views (nine composites), the Apple and open-stack verification (two workflows; refute stages still running), the risk sources. research/map-b6/README.md committed on claude/map-b6 (from 906b49f) and pushed; D106 recorded. Four composites sent to Carson. Waiting on the owner's path decision (the Apple Developer Program membership). Disk: the open worker built pmtiles from source (2.9 GB of Go caches, removed after the binary was ready); finished scratch folders removed; 6 GB free.
+
+## 2026-10-25 18:49 UTC: owner: no Apple design in the finish; D107; stage 1 workflows launched
+Carson dropped the Apple path (the screenshots were a base, not the finish). D107: our own map, public-domain cartography, Leaflet stays, no OSM. Launched b6-own-cartography (raster and vector sources, a Python proof picture, skeptics, a critic) and b6-design-mocks (the options sheet and the bubbles in Chromium, critics). Outputs under /home/user/hail-b5/out/b6/.

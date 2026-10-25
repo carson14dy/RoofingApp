@@ -1497,3 +1497,21 @@ values are per 1 km cell (four cells, four values, in the block view); labels co
   list B6-1 to B6-7 in the record; the branch is claude/map-b6 from the B5 head (906b49f); no code until the owner decides the
   path, except the Python products that both paths share (the risk pictures, the recent-hail product, the bubble values).
   (f) Skeptic verdicts so far confirm the figures and refute wording only; any claim that falls on substance is re-ruled.
+
+## Owner decision on B6 (2026-10-25 17:35 UTC) and ruling D107
+Carson: "We don't need the apple design anymore. That was just a base that I don't want in the finish." Reading: the screenshots
+set the behaviour and the structure (the options sheet, the chips and switches, a value bubble per house, a map that carries
+terrain, water, forests, reservations, parks, landmarks, shields and names at every zoom); the finished product is in the site's
+own design, not Apple's, and Apple's maps are not used.
+- D107 **B6 on our own map.** (a) No Apple membership, no MapKit JS, and no OpenStreetMap or MapLibre either: the map stays
+  Leaflet with Python-built site files, as the architecture is (D27 to D29, B3), and the cartography is built from public-domain
+  sources only (USGS 3DEP terrain, NLCD land cover or a USGS relief service, NHD or TIGER water with names, Census AIANNH
+  reservations, Forest Service forest boundaries, PAD-US and TIGER landmarks for parks, schools, hospitals, airports and churches,
+  GNIS peaks and places, TIGER or State Library route numbers), served by the site with no request to another site in use (the
+  opt-in USGS imagery stays the one exception, D32). (b) The amenity chips become landmark chips from public-domain categories;
+  businesses (banks, bars, coffee shops) are out until the owner asks for OpenStreetMap and counsel reads the ODbL (D106 record).
+  (c) The 3D choice is out. (d) The value bubble rule of D106(c) stands; placement is computed by Python per zoom where it can be.
+  (e) Stage 1 (running): the public-domain cartography sources verified live with a Python proof picture in the site's palette
+  (wf b6-own-cartography), and the design mocks of the options sheet and the bubbles in Chromium at phone size (wf
+  b6-design-mocks); the owner sees the mocks before any build. (f) The research record on claude/map-b6 gets the owner's decision
+  and the revised plan in its next commit.
