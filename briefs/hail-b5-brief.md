@@ -1267,3 +1267,38 @@ under 700,000, every tap file under 100,000, zero off-site requests, the parity 
   here: this edit committed as WIP; main merged (D59, D60, D88(a), D92; the merge script); the docs pass on the merged
   tree; the full suite and the self-test; the squash onto the merge base with main; the push; the preview in Chromium; the
   pull request on main superseding PRs 14, 15 and 16.
+
+## Supervisor rulings on the merge of main (2026-10-25 00:00 UTC; D94)
+The merge resolver finished with the full suite passing on the merged tree (1,974 tests), the parity step passing against a
+fresh build and the self-test passing; review round 1 found five losses (the build job timeout, two ROADMAP cells and a
+heading, a README phrase, a sources.py sentence) and the fixer restored them (suite 1,975 OK), leaving two calls:
+- D94 **Merge calls.** (a) The build job's timeout stays main's expression (15 minutes on main, 75 on branch pushes):
+  the D59 wait for the branch's store job (up to 60 minutes) runs in that job before the build, the parity step and the
+  smoke, so D92(b)'s 25 minutes is superseded for branch builds; tests/test_website_workflow.py's pin requires at least 75
+  on a branch; DECISIONS records the reason. (b) Main's stale-rule sentence "and a branch preview fails." reads "and a
+  branch preview is marked as failed." in the About-visible contract text, because the words gate (D85) forbids the
+  stem; the meaning is unchanged; the test that pinned main's words follows. (c) Local builds from the combined store
+  now meet main's three-day stale rule (the store's as_of is 2026-10-16): local checks pass --now within three days of
+  the as_of (2026-10-17T12:00:00Z) or read the branch's fresh store; the live preview reads the branch's own store job.
+  (d) After the merge commit, site-4 (the identity test's base and allowance list under D93(a); pyshp in the offline
+  install) and the docs pass run in parallel on disjoint files.
+
+## Supervisor rulings on merge review round 2 (2026-10-25 00:35 UTC; D95)
+- D95 **Merge wording calls.** (a) The wait sentence: main's own sentences ("every build waits for the same commit's store
+  job", README; "A build waits for the store job of its own commit", the hail_history timing row) disagree with main's
+  code and its DECISIONS entry (the wait step is skipped on main and reads the branch's latest run); the resolver's
+  sentence stands on both pages: "a branch build waits for its branch's latest store job before it reads the asset (main
+  does not wait)"; the tests pin it; DECISIONS records the correction. (b) The unavailable joins block carries the same
+  words as the loaded block (join_block reads one word table): no filter on words that mention HTTP; if a words rule
+  forbids a word there, the word is reworded in the table, never dropped; the filter in build.py near line 749 and its
+  test near tests/test_site.py line 2049 go. (c) README's sample build line keeps B5's "(off by default; it also carries
+  the B5 weather files)": accurate and explicit. (d) D94(a) stands for the build job timeout: main's expression (15 on
+  main, 75 on branch pushes); tests/test_website_workflow.py requires at least 75 on a branch; D92(b) is superseded for
+  branch builds. (e) Any further wording where main's go-live text and B5's text differ and both are accurate: keep the
+  sentence that matches the code as merged; where only one is accurate, that one; record the choice in the merge record. (f) website/templates/town.html: the resolver re-added the base's "{% if h.stale %}" line that B5
+  had removed when it rewrote the hail section; B5's one stale line (v.stale) stands and the re-added line goes, so a stale
+  store prints one notice. (g) The default-build identity pin (tests/test_site.py SWATH_BASE) is f96f5c7, main's head at
+  the merge, and tests/fixtures/default-build-manifest.json is regenerated from that build (D93(a)); site-4 verifies the
+  allowance list against the rulings. (h) The resolver's edits to files main did not change (the manifest fixture,
+  tests/test_hail_workflow.py, tests/test_website_workflow.py, town.html) are part of the merge commit; the supervisor
+  stages the whole tree.
