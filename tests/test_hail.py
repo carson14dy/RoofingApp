@@ -328,7 +328,8 @@ class ClassTests(unittest.TestCase):
 class WordTests(unittest.TestCase):
     def test_no_forbidden_term_in_any_word(self):
         for key, template in h.WORDS.items():
-            assert_clean_words(self, template)
+            # the required sentence of every stale or unavailable line (D41) is scanned apart from the words it ends
+            assert_clean_words(self, template.replace("This is not an all-clear.", ""))
         for cls in h.CLASSES:
             assert_clean_words(self, cls["word"])
 
@@ -779,12 +780,13 @@ class ReaderTests(unittest.TestCase):
 
 class FixtureTests(unittest.TestCase):
     def test_fixture_without_the_address_files_is_under_480_kb_and_holds_only_the_store_and_joins(self):
-        # D10, D18, D54, D64 and D74: the store and joins files have their own budget. D64 restated it from 62,000 bytes when
-        # the sample gained the station part, and D74 from 320 KB: the sample names the rejected candidates of its tile lists
-        # (D69), so their summaries are cut in too (67 summaries where there were 33). D78(c) adds the GHCN name beside each
-        # display name: measured on the regenerated fixture, 485,066 bytes outside hail/a/ (471,538 before the display names;
-        # 305,024 before D74). The address files under hail/a/ are checked by
-        # test_the_address_files_are_listed_in_the_manifest_and_the_index_carries_their_block and tests/test_joins.py
+        # D10, D18, D54, D64 and D74: the store and joins files have their own budget, the 480 KiB that the assertion
+        # below tests (480 * 1024 bytes). D64 restated it when the sample gained the station part, and D74 when the
+        # sample began to name the rejected candidates of its tile lists (D69), so their summaries are cut in too.
+        # D78(c) adds the GHCN name beside each display name. The measured fixture sizes and file counts are in
+        # research/hail-history/validation-evidence/b5-verification.json, not here (D87(h)). The address files under
+        # hail/a/ are checked by test_the_address_files_are_listed_in_the_manifest_and_the_index_carries_their_block and
+        # tests/test_joins.py
         files = sorted(p.relative_to(FIXTURE).as_posix() for p in FIXTURE.rglob("*")
                        if p.is_file() and not p.relative_to(FIXTURE).as_posix().startswith("hail/a/"))
         self.assertEqual(files, [
@@ -2049,7 +2051,8 @@ class FetchAndLoadTests(unittest.TestCase):
         self.assertFalse((dest / "hail").exists())
 
     def test_the_unpack_limits_hold_the_measured_b3_store(self):
-        # A guard on the constants, not a 373 MB archive: the store measured 372,739,036 bytes in 31,129 files.
+        # A guard on the constants (MAX_UNPACK_BYTES and MAX_UNPACK_FILES, D42), not an archive of the store. The
+        # measured store sizes are in research/hail-history/validation-evidence/b5-verification.json, not here (D87(h)).
         self.assertGreater(h.MAX_UNPACK_BYTES, 372_739_036)
         self.assertGreater(h.MAX_UNPACK_FILES, 31_129)
 

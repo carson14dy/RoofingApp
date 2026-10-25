@@ -22,7 +22,7 @@ import re
 import shutil
 import sys
 import tempfile
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -317,10 +317,15 @@ class Collector:
             if stale:                               # the pages carry it with the stale line; the source counts as failed
                 detail += f" (stale: more than {hs.STALE_DAYS} days old, the daily job has not published)"
             self.note("hail_history", HAIL_LABEL, not stale, ("SAMPLE store: " if sampled else "") + detail)
+            if stale:                               # the map banner (D98(a)): the heading names the age; the sentence keeps what loaded
+                self.status["hail_history"].update(heading=hs.WORDS["heading_stale"], sentence=hs.WORDS["stale_lead"].format_map(
+                    {"as_of": hs.fmt_date(date.fromisoformat(index["as_of"]))}))
         except (hs.HailStoreError, OSError, ValueError, KeyError, TypeError) as e:
             problem = str(e) if isinstance(e, hs.HailStoreError) else f"the history files couldn't be read ({type(e).__name__})"
             self.note("hail_history", HAIL_LABEL, False, problem)       # the log keeps the technical detail
             shown = hs.plain_problem(problem)                             # the pages say it in plain words
+            # the map banner (D98(a)): a load that failed reads "didn't load", and its sentence is the plain words, capitalised
+            self.status["hail_history"].update(heading=hs.WORDS["heading_failed"], sentence=shown[:1].upper() + shown[1:] + ".")
             words = [hs.describe_unavailable(shown) for _ in towns]
             block = hs.map_data_unavailable(shown)
             block.pop("tiles", None)
@@ -744,9 +749,6 @@ def join_block_unavailable(jn, problem: str) -> dict:
         "partial": {}, "zone_names": {}, "types": {}, "cover": "", "shapes": {}, "montana_time": []}}
     block = join_block(jn, fake, False)
     block.update({"state": "unavailable", "problem": problem})
-    # a words entry that quotes a technical code (B5's zone-edition reason, "HTTP 404 ...") stays out of the unavailable block:
-    # the pages say a failed download in plain words (main's rule); a loaded build still carries every word
-    block["words"] = {k: v for k, v in block["words"].items() if "HTTP" not in str(v)}
     return block
 
 

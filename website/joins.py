@@ -585,8 +585,8 @@ WORDS_JOINS = {
     "reason_events": "the joins table could not be read",
     "reason_no_file_year": "the NCEI file list has no file for this year",
     "reason_offline": "the file is not in the cache and this build does not fetch",
-    "reason_not_published": ("the NWS does not publish this zone edition at its address (HTTP 404 when checked on "
-                             "2026-10-19)"),
+    "reason_not_published": ("the NWS does not publish this zone edition at its address (the address returned no file "
+                             "when checked on 2026-10-19)"),
     # B5: section headings, kind words, the radar sentence, the flag and county words, and the touch rule
     "section_flooding": "Flooding",
     "section_ice": "Ice and winter",

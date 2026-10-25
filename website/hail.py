@@ -190,7 +190,12 @@ WORDS = {
                "{as_of}. The newest day is added by a job that starts at 12:43 UTC and shows here on the next "
                "rebuild."),
     "sample": "SAMPLE data",
-    "stale": "The newest day in this history is {as_of}; newer days have not been added yet.",
+    "stale": "The newest day in this history is {as_of}; newer days have not been added yet. This is not an all-clear.",
+    # the map banner's words (D98(a)): the heading names the state; the sentence after it is the stale sentence without
+    # its all-clear (the banner adds that sentence once, after the line), so it keeps what loaded and the as-of date
+    "stale_lead": "The newest day in this history is {as_of}; newer days have not been added yet.",
+    "heading_stale": "Hail history is older than three days",
+    "heading_failed": "Hail history didn't load",
     "loading": "Loading the hail history for this spot",
 }
 

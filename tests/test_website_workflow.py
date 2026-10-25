@@ -127,6 +127,24 @@ class SatelliteReader(unittest.TestCase):
         self.assertIn('"tests/test_satellite.py"', self.text)
 
 
+class ShapefileReader(unittest.TestCase):
+    """The joins tests that need pyshp (the module "shapefile") skip without it. The Install step of the Website workflow
+    installs it with the other packages, as the daily job does (hail-store.yml), so those tests run in the offline line."""
+
+    def setUp(self):
+        self.text = (ROOT / ".github/workflows/website.yml").read_text()
+
+    def test_the_install_step_installs_pyshp_with_the_other_packages(self):
+        installs = [line for line in self.text.splitlines() if "python -m pip install" in line and "pygrib" in line]
+        self.assertEqual(len(installs), 1)
+        self.assertIn("pyshp", installs[0].split())
+
+    def test_the_offline_unittest_line_runs_the_joins_tests_that_need_pyshp(self):
+        unit = [line for line in self.text.splitlines() if "python -m unittest tests." in line]   # the offline line only
+        self.assertEqual(len(unit), 1)
+        self.assertIn("tests.test_joins", unit[0].split())
+
+
 class OfflineWordsRules(unittest.TestCase):
     """D91(f), D92(c): the offline unittest line runs tests.test_words_rules, the tests of the one forbidden list
     (tests/words_rules.py). The module must exist, and the line must name it once, so the words gate runs in CI."""
@@ -139,6 +157,88 @@ class OfflineWordsRules(unittest.TestCase):
         self.assertEqual(len(unit), 1)
         self.assertEqual(unit[0].split().count("tests.test_words_rules"), 1)
         self.assertTrue((ROOT / "tests" / "test_words_rules.py").is_file())
+
+
+# The parked desktop app's tests (AGENTS.md). check-app.yml runs the whole suite on every push to main, and no website or tools
+# module imports them, so a change to one of them does not start the Website workflow. PushPathsCoverTheTests checks that they stay so.
+PARKED_APP_TESTS = {"test_alert_scenarios.py", "test_updates.py", "test_weather.py"}
+
+
+def push_paths() -> list[str]:
+    """The Website workflow's on.push.paths. PyYAML reads the key "on" as the boolean True."""
+    doc = yaml.safe_load((ROOT / ".github/workflows/website.yml").read_text(encoding="utf-8"))
+    return doc.get("on", doc.get(True))["push"]["paths"]
+
+
+def offline_modules() -> list[str]:
+    """The test modules the offline unittest line runs, as files: tests.test_site is tests/test_site.py."""
+    lines = [found for found in (ROOT / ".github/workflows/website.yml").read_text(encoding="utf-8").splitlines()
+             if "python -m unittest tests." in found]   # the offline line only (the parity step's line ends in a backslash)
+    if len(lines) != 1:
+        raise AssertionError(f"expected one offline unittest line, found {len(lines)}")
+    return [f"tests/{word.removeprefix('tests.')}.py" for word in lines[0].split() if word.startswith("tests.")]
+
+
+def covered(path: str, patterns: list[str]) -> bool:
+    """Whether a changed file starts the workflow, by GitHub's rule: "**" crosses folders, "*" stays inside one."""
+    for pattern in patterns:
+        regex = re.escape(pattern).replace(r"\*\*", ".*").replace(r"\*", "[^/]*")
+        if re.fullmatch(regex, path):
+            return True
+    return False
+
+
+class PushPathsCoverTheTests(unittest.TestCase):
+    """D100(a), D91(f): on.push.paths names every website test module and the words-rules helper, so a change to any of them
+    starts the Website workflow. The offline line runs every website test module and names no module the paths miss. The
+    parked app's modules (PARKED_APP_TESTS) are the one exemption, and they must stay outside the website."""
+
+    def setUp(self):
+        self.paths = push_paths()
+        self.website = sorted(f"tests/{p.name}" for p in (ROOT / "tests").glob("test_*.py") if p.name not in PARKED_APP_TESTS)
+
+    def test_every_website_test_module_is_a_push_path(self):
+        for module in self.website:
+            with self.subTest(module=module):
+                self.assertTrue(covered(module, self.paths), f"{module} is not in on.push.paths")
+
+    def test_every_website_test_module_runs_in_the_offline_line(self):
+        ran = offline_modules()
+        self.assertEqual([module for module in self.website if module not in ran], [])
+
+    def test_every_module_the_offline_line_runs_is_a_push_path(self):
+        for module in offline_modules():
+            with self.subTest(module=module):
+                self.assertTrue(covered(module, self.paths), f"{module} runs offline but is not in on.push.paths")
+
+    def test_words_rules_and_every_other_helper_module_is_a_push_path(self):
+        helpers = sorted(f"tests/{p.name}" for p in (ROOT / "tests").glob("*.py") if not p.name.startswith("test_"))
+        self.assertIn("tests/words_rules.py", helpers)
+        for helper in helpers:
+            with self.subTest(helper=helper):
+                self.assertTrue(covered(helper, self.paths), f"{helper} is not in on.push.paths")
+
+    def test_each_listed_test_file_exists(self):
+        for entry in self.paths:
+            if entry.startswith("tests/") and not any(mark in entry for mark in "*?["):
+                with self.subTest(entry=entry):
+                    self.assertTrue((ROOT / entry).is_file(), f"{entry} is listed but does not exist")
+
+    def test_the_parked_app_modules_exist_and_stay_outside_the_website(self):
+        for name in sorted(PARKED_APP_TESTS):
+            path = ROOT / "tests" / name
+            with self.subTest(module=name):
+                self.assertTrue(path.is_file(), f"{name} is named as parked but does not exist")
+                self.assertFalse(covered(f"tests/{name}", self.paths), f"{name} is listed, so its exemption is stale")
+                self.assertNotIn(f"tests/{name}", offline_modules())
+                self.assertIsNone(re.search(r"^\s*(from|import)\s+(website|tools)\b", path.read_text(encoding="utf-8"), re.MULTILINE))
+
+    def test_the_path_rule_is_githubs_glob_rule(self):
+        self.assertTrue(covered("website/static/map/map.js", ["website/**"]))
+        self.assertTrue(covered("tests/words_rules.py", ["tests/words_rules.py"]))
+        self.assertTrue(covered("tests/words_rules.py", ["tests/*.py"]))
+        self.assertFalse(covered("tests/sub/x.py", ["tests/*.py"]))
+        self.assertFalse(covered("tests/test_summary.py", ["tests/test_summ"]))
 
 
 class SmokeFlags(unittest.TestCase):

@@ -118,7 +118,7 @@ class SnowTestCase(unittest.TestCase):
         (self.store / "hail" / "index.json").write_text(json.dumps({"as_of": "2026-10-16", "tiles": []}),
                                                         encoding="utf-8")
         (self.store / "hail" / "manifest.json").write_text(json.dumps({"files": {}}), encoding="utf-8")
-        # the build tests write only the station cells' tiles (the full box is 5,694 tile files, which the store-write
+        # the build tests write only the station cells' tiles (the full box's tile count is in the verification record; the store-write
         # tests cover once); the code path is the same
         small_box = [(row, col) for row, col, _inches in STATION_CELLS.values()]
         self.patches = [mock.patch("time.sleep", lambda seconds: None),

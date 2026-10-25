@@ -67,7 +67,7 @@ CONTRACTS = {
     "hourly": {
         "name": "NWS hourly forecast",
         "request": "the point's forecastHourly link",
-        "units": "°F (°C converted). Wind \"10 mph\" or \"10 to 15 mph\" (the higher number used). Rain or snow percent, as the forecast gives it.",
+        "units": "°F (°C converted). Wind \"10 mph\" or \"10 to 15 mph\" (the higher number used). Chance of rain or snow in %.",
         "timing": "NWS updates it about hourly; the issue time is shown on the town page.",
         "missing": "A missing value shows as a dash. It never raises a flag and never passes one.",
     },
@@ -81,7 +81,7 @@ CONTRACTS = {
     "daily": {
         "name": "NWS 7-day forecast",
         "request": "the point's forecast link",
-        "units": "12-hour periods paired into days: high, low, sky, wind and the higher rain or snow percent.",
+        "units": "12-hour periods paired into days: high, low, sky, wind and the higher chance of rain or snow.",
         "timing": "NWS updates it several times a day.",
         "missing": "A missing high or low shows as a dash.",
     },

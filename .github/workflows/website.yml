@@ -37,6 +37,15 @@ on:
       - "tests/test_website_workflow.py"
       - "tests/test_hail_workflow.py"
       - "tests/test_swath.py"
+      # Every website test module and the words-rules helper; PushPathsCoverTheTests in tests/test_website_workflow.py checks this list.
+      - "tests/test_climate.py"
+      - "tests/test_stations.py"
+      - "tests/test_snowgrid.py"
+      - "tests/test_gauges.py"
+      - "tests/test_summary.py"
+      - "tests/test_words_rules.py"
+      - "tests/words_rules.py"
+      - "tests/fixtures/**"            # the default-build manifest and other test fixtures (D102(b))
       - "tools/**"
       - ".github/workflows/website.yml"
 
@@ -99,7 +108,7 @@ jobs:
         # pyproj and pyogrio read the B3 address, street and outline files in the offline tests (D2, D19): compatible
         # releases, never pinned. pyyaml is for the workflow file tests (tests/test_website_workflow.py and
         # tests/test_hail_workflow.py read the YAML of both workflows).
-        run: python -m pip install requests jinja2 pillow numpy pygrib h5py pyarrow pyyaml "pyproj~=3.8" "pyogrio~=0.13"
+        run: python -m pip install requests jinja2 pillow numpy pygrib h5py pyarrow pyyaml "pyproj~=3.8" "pyogrio~=0.13" pyshp
 
       - name: Website tests (offline)
         if: steps.plan.outputs.run == 'true'

@@ -331,7 +331,7 @@ WORDS_SUMMARY = {
     "zone_unplaced_note": ("Montana had {parts} that could not be placed to a zone, because their zone codes are not in the "
                            "zone maps this build reads. This build cannot say how many were this zone's. This is not an "
                            "all-clear."),
-    "zone_flag": "Montana: {n} {noun} issued {when} could not be placed to a zone",
+    "zone_flag": "Montana: {n} {noun} issued {when} could not be placed to a zone. This is not an all-clear.",
     # a report count of zero (D5, B5 Words): the sentence names the type and the period, and says what a missing report is
     "no_report": "No NWS local storm report of {type} within 5 miles in {when}; reports are not a complete record.",
     "no_record": "No NOAA Storm Events record of {type} within 5 miles in {when} (records are not a complete list).",
@@ -451,7 +451,7 @@ WORDS_SUMMARY = {
     "town_warning": "Warning: {count}",
     "town_report": "Report: {count}",
     "town_record": "{kind}: {count}",
-    "stale": "The newest radar day in this history is {as_of}; newer days have not been added yet. This is not an all-clear.",
+    "stale": hail.WORDS["stale"],                       # D96(b): the same sentence as the hail history's, one text in hail.py
     "unavailable_part": "{part} could not be loaded in this update; that is not the same as no {part_lower}. This is not an all-clear.",
     # the section leads (D33, D41): each names its kind words; a report clause is "Report: ..." or, for zero reports, the
     # no-report sentence (the clause without its full stop); a lead whose rows miss days ends with the lead_missing sentence
@@ -1010,22 +1010,28 @@ def _missing_text(n: int) -> str:
     return WORDS_SUMMARY["coverage_one"] if n == 1 else WORDS_SUMMARY["coverage"].format(n=_thousands(n))
 
 
+def _flag_clause(flag: str) -> str:
+    """A zone statement without its all-clear sentence and its full stop (D98(b)): a coverage line joins the statements and
+    adds the sentence once at its end, so the sentence is never printed twice in one line."""
+    return _without_clear(flag).rstrip().rstrip(".").rstrip()
+
+
 def _cover(missing: int, flag: str | None = None) -> str | None:
-    """The coverage line: the days missing (when there are any) and a zone's statements (which carry no full stop of their
-    own; the line ends with one, and a statement that products could not be placed is partial, so it ends with the
-    all-clear sentence, D41). None when there is neither."""
+    """The coverage line: the days missing (when there are any) and a zone's statements (their clauses; the line ends with
+    the all-clear sentence once, because a statement that products could not be placed is partial, D41). None when there
+    is neither."""
     if flag:
-        parts = ([_missing_text(int(missing))] if missing else []) + [flag]
+        parts = ([_missing_text(int(missing))] if missing else []) + [_flag_clause(flag)]
         return _clear("; ".join(parts) + ".")
     return _missing_text(int(missing)) if missing else None
 
 
 def _joined_flags(cells: list[dict]) -> str | None:
-    """The distinct zone statements of the cells, in season order."""
+    """The distinct zone statements of the cells, in season order, as clauses (see _flag_clause)."""
     seen: list[str] = []
     for c in cells:
-        if c.get("flag") and c["flag"] not in seen:
-            seen.append(c["flag"])
+        if c.get("flag") and _flag_clause(c["flag"]) not in seen:
+            seen.append(_flag_clause(c["flag"]))
     return "; ".join(seen) or None
 
 

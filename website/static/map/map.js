@@ -3500,11 +3500,28 @@
     return (t.charAt(t.length - 1) === "." ? t : t + ".") + " " + allClear;
   }
 
-  /** summary._cover: the coverage line, the days missing (when there are any) and a zone's statement (which ends with the
-      all-clear sentence, D41). null when there is neither. */
+  /** summary._flag_clause: a zone statement without its all-clear sentence and its full stop (D98(b)). The statement is the word
+      the build gives (sumZoneFlag); a coverage line joins its clauses and adds the sentence once, at its end (D29, D41). */
+  function sumFlagClause(S, flag) {
+    return histWithoutClear(S, flag).replace(/\s+$/, "").replace(/\.+$/, "").replace(/\s+$/, "");
+  }
+
+  /** summary._joined_flags: the distinct zone statements of the cells, in season order, as clauses; null when there are none. */
+  function sumJoinedFlags(S, cells) {
+    var seen = [];
+    cells.forEach(function (c) {
+      if (!c.flag) return;
+      var clause = sumFlagClause(S, c.flag);
+      if (seen.indexOf(clause) < 0) seen.push(clause);
+    });
+    return seen.length ? seen.join("; ") : null;
+  }
+
+  /** summary._cover: the coverage line, the days missing (when there are any) and a zone's statement (its clauses; the line ends
+      with the all-clear sentence once, D41). null when there is neither. */
   function sumCover(S, missing, flag) {
     if (flag) {
-      var parts = (missing ? [sumMissingText(S, missing)] : []).concat([flag]);
+      var parts = (missing ? [sumMissingText(S, missing)] : []).concat([sumFlagClause(S, flag)]);
       return sumClear(S, parts.join("; ") + ".");
     }
     return missing ? sumMissingText(S, missing) : null;
@@ -3564,9 +3581,7 @@
       one, with its own season text; the earliest season wins a tie. none when no season has one. */
   function sumFive(S, cells, combine, fmt, none) {
     var missing = cells.reduce(function (s, c) { return s + c.missing; }, 0);
-    var flags = [];
-    cells.forEach(function (c) { if (c.flag && flags.indexOf(c.flag) < 0) flags.push(c.flag); });
-    var coverage = sumCover(S, missing, flags.length ? flags.join("; ") : null);
+    var coverage = sumCover(S, missing, sumJoinedFlags(S, cells));
     var unknown = [];
     cells.forEach(function (c, k) { if (c.unknown) unknown.push(SUM_SEASONS[k]); });
     if (unknown.length) return { value: null, date: null, text: sumWord(S, "cell_unavailable"), coverage: coverage, note: sumFiveUnavailable(S, unknown) };
@@ -4258,9 +4273,8 @@
     var skipped = SUM_SEASONS.filter(function (lab, k) { return cells[k].value === null; });
     var total = shown.reduce(function (s, v) { return s + v; }, 0);
     var missing = cells.reduce(function (s, c) { return s + c.missing; }, 0);
-    var flags = []; cells.forEach(function (c) { if (c.flag && flags.indexOf(c.flag) < 0) flags.push(c.flag); });
     return { value: total, date: null, text: fill(sumWord(S, "five_partial"), { count: sumCountText(S, key, total), seasons: skipped.join(", ") }),
-      coverage: sumCover(S, missing, flags.length ? flags.join("; ") : null), note: null };
+      coverage: sumCover(S, missing, sumJoinedFlags(S, cells)), note: null };
   }
 
   /** summary._held_row: the held items the table carries as one row (D14, D41). */

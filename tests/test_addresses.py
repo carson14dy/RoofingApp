@@ -1389,7 +1389,8 @@ class FixtureTests(unittest.TestCase):
 
     def test_the_address_fixture_is_under_fifty_kilobytes_in_all(self):
         # D10: the address files (shards, cities.json, words.json, letter files) are under 50 KB in all. The folder as a
-        # whole also holds the B2 sample (35,212 bytes at B2's head); test_hail and test_joins assert on that folder.
+        # whole also holds the B2 sample (its measured size is in the verification record); test_hail and test_joins assert
+        # on that folder.
         total = sum(p.stat().st_size for p in (FIXTURE / "hail" / "a").rglob("*") if p.is_file())
         self.assertLess(total, 50 * 1024, total)
 

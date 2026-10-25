@@ -48,7 +48,7 @@ payload/   the parked app — updates itself. app.py (routes) · weather.py (fee
            rules, targeting, feed contracts) · store.py (SQLite) · maps.py (Folium) · templates/
 desktop/   the shell — changes only with a new installer. launcher.py (window, local server,
            notifications, recovery page) · updater.py (GitHub updates, self-test, rollback)
-tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py, test_addresses.py, test_streets.py, test_buildings.py, test_swath.py, test_climate.py, test_stations.py, test_snowgrid.py, test_gauges.py, test_summary.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
+tests/     test_site.py, test_gridded.py, test_basemap.py, test_storm.py, test_satellite.py, test_hail.py, test_joins.py, test_addresses.py, test_streets.py, test_buildings.py, test_swath.py, test_climate.py, test_stations.py, test_snowgrid.py, test_gauges.py, test_summary.py, test_words_rules.py (website) · app: acceptance checks · 240 alert scenarios + outage replay ·
            update channel vs fake GitHub
 build.py   PyInstaller build      ship.py   test → bump version → commit → push
 ```
@@ -58,6 +58,8 @@ build.py   PyInstaller build      ship.py   test → bump version → commit →
 pip install requests jinja2 pillow numpy pygrib h5py tzdata     # enough for the website
 python -m website.build --out _site --sample             # labelled sample data, no network
 python -m website.build --out _site --hail-history       # the five-year hail history (D34; on main at the owner's decision of 2026-10-21)
+python -m website.build --out _site --hail-history --hail-store store   # a local store folder or hail-store.tar.gz instead of the download (D59)
+python -m website.build --out _site --storm-layers       # B4, B5: the radar echo tops, the GOES picture and the MRMS hail swath (behind the flag; off on main)
 python -m website.joins build --store store --cache joins-cache   # the hail joins (D35); needs pyshp
 python -m website.joins verify store                     # check the hail joins
 python -m website.build --out _site --sample --hail-history --hail-addresses   # the address dots, streets and outlines (D36); off by default

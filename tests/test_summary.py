@@ -1055,6 +1055,34 @@ class ZoneTests(unittest.TestCase):
                       lines["wind_zone_warnings"]["coverage"])
         self.assertIn("could not be placed to a zone", lines["heat_reports_warnings"]["coverage"] or "")
 
+    def test_a_zone_statement_closes_its_line_with_the_all_clear_sentence_once(self):          # D98(b), D41
+        """The zone statement's own words end with the all-clear sentence, so a coverage line, the five-season line and a
+        roof line carry it once at their end, with no doubled full stop; the zero cell keeps its own unavailable sentence."""
+        self.assertTrue(S.WORDS_SUMMARY["zone_flag"].endswith(" This is not an all-clear."))
+        self.assertEqual(S.WORDS_SUMMARY["zone_flag"].count("This is not an all-clear."), 1)
+        flag = S.WORDS_SUMMARY["zone_flag"].format(n="2", noun="high wind products", when="Dec 11, 2021 to Jan 2, 2022")
+        self.assertEqual(S._cover(2, flag), "2 days missing; Montana: 2 high wind products issued Dec 11, 2021 to Jan 2, 2022 "
+                         "could not be placed to a zone. This is not an all-clear.")
+        self.assertEqual(S._cover(0, flag), "Montana: 2 high wind products issued Dec 11, 2021 to Jan 2, 2022 could not be "
+                         "placed to a zone. This is not an all-clear.")
+        self.assertEqual(S._joined_flags([{"flag": flag}, {"flag": flag}, {"flag": None}]),          # distinct, as clauses
+                         "Montana: 2 high wind products issued Dec 11, 2021 to Jan 2, 2022 could not be placed to a zone")
+        result, rows = FailureVariantTests()._rows("zones_unplaced")
+        for key in ("hw_zone", "ice_warn"):
+            for line in rows[key]["coverage"] + [rows[key]["five_coverage"]]:
+                if line and "could not be placed" in line:
+                    self.assertEqual(line.count("This is not an all-clear."), 1, line)
+                    self.assertTrue(line.endswith("could not be placed to a zone. This is not an all-clear."), line)
+                    self.assertNotIn("..", line)
+        five = rows["hw_zone"]["five_coverage"]                 # the three flagged seasons, each statement once
+        self.assertEqual(five.count("could not be placed to a zone"), 3, five)
+        self.assertEqual(rows["hw_zone"]["texts"][0].count("This is not an all-clear."), 1)   # the zero cell's own sentence
+        for x in (x for g in result["roof"]["groups"] for x in g["lines"]):
+            cover = x.get("coverage") or ""
+            if "could not be placed to a zone" in cover:
+                self.assertEqual(cover.count("This is not an all-clear."), 1, (x["id"], cover))
+                self.assertNotIn("..", cover)
+
 
 class ReportTests(unittest.TestCase):
     """Automated station reports: one set for every wind count (Mesonet, ASOS or AWOS)."""

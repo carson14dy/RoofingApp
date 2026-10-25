@@ -894,12 +894,12 @@ class FixtureTests(unittest.TestCase):
     def test_the_committed_sample_joins_verify_and_are_small(self):
         result = J.verify(FIXTURE)
         self.assertTrue(result["ok"], result["checks"])
-        # D10, D18, D54, D64 and D74: the store and joins files have a 480 KB budget. D64 restated it from 62 KB when the sample
-        # gained the station part, and D74 from 320 KB: the sample names the rejected candidates of its tile lists (D69), so
-        # their summaries are cut in too (67 summaries where there were 33). D78(c) adds the GHCN name beside each display name
-        # (ghcn_name in the summaries, the tile lists and the stations block): measured on the regenerated fixture, 485,066
-        # bytes outside hail/a/ (471,538 before the display names; 305,024 before D74). The address files under hail/a/ keep
-        # their 50 KB budget
+        # D10, D18, D54, D64 and D74: the store and joins files have the 480 KiB budget the first assertion below tests
+        # (480 * 1024 bytes). D64 restated it when the sample gained the station part, and D74 when the sample began to
+        # name the rejected candidates of its tile lists (D69), so their summaries are cut in too. D78(c) adds the GHCN
+        # name beside each display name (ghcn_name in the summaries, the tile lists and the stations block). The address
+        # files under hail/a/ keep the 50 KiB budget the second assertion tests (50 * 1024 bytes). The measured fixture
+        # sizes and file counts are in research/hail-history/validation-evidence/b5-verification.json, not here (D87(h)).
         store_bytes = sum(p.stat().st_size for p in FIXTURE.rglob("*") if p.is_file()
                           and not p.relative_to(FIXTURE).as_posix().startswith("hail/a/"))
         address_bytes = sum(p.stat().st_size for p in (FIXTURE / "hail" / "a").rglob("*") if p.is_file())
@@ -3272,7 +3272,8 @@ class B5PartB1Tests(unittest.TestCase):
         check_words(self, J.WORDS_JOINS["about_iem_zones"])
         self.assertIn("You are free to use these services for any lawful purpose", J.WORDS_JOINS["about_iem_zones"])
         self.assertIn("does not publish", J.WORDS_JOINS["reason_not_published"])
-        self.assertIn("HTTP 404", J.WORDS_JOINS["reason_not_published"])
+        self.assertIn("the address returned no file when checked on 2026-10-19", J.WORDS_JOINS["reason_not_published"])
+        self.assertNotIn("HTTP", J.WORDS_JOINS["reason_not_published"])     # D96(a): no code in a user-facing word
 
     def test_the_radar_sentence_and_the_about_sentence_for_hail_misses_are_as_the_brief_states(self):
         self.assertEqual(J.WORDS_JOINS["radar_sentence"], "Radar estimates can miss hail that people reported and can "

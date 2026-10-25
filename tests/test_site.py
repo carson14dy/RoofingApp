@@ -1654,7 +1654,8 @@ class HailHistory(unittest.TestCase):
         self.assertIn('<template id="hail-sheet">', on)
         self.assertIn('<template id="hail-list">', on)
         self.assertIn("Each town's page has its five-year hail history", on)
-        self.assertIn("Hail history didn't load", (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8"))
+        self.assertEqual(hs.WORDS["heading_failed"], "Hail history didn't load")     # D98(a): Python supplies the banner heading
+        self.assertIn("{{ s.heading }}", (ROOT / "website" / "templates" / "map.html").read_text(encoding="utf-8"))
         self.assertNotIn("legend-tap", off)
         self.assertNotIn("hail-sheet", off)
         self.assertNotIn("Each town's page has its five-year hail history", off)
@@ -1786,7 +1787,20 @@ class HailHistory(unittest.TestCase):
             self.assertNotIn("\u2014", text)        # no em dash
             self.assertNotIn("\u2013", text)        # no en dash
             rest = text.replace("not the same as no hail", "").replace("'no hail'", "")
+            rest = rest.replace("This is not an all-clear.", "")      # the required sentence of every unavailable line (D41)
             self.assertIsNone(self.FORBIDDEN.search(rest), text)
+
+    def test_the_sheet_prints_the_stale_line_once_and_map_js_adds_no_second_all_clear(self):
+        """D96(b): the stale line is the words' own sentence, which ends with the required all-clear sentence once; map.js
+        fills that line from the words and appends no all-clear to it, and the sheet shows the line in one slot."""
+        from website import hail as hs
+        js = (ROOT / "website" / "static" / "map" / "map.js").read_text(encoding="utf-8")
+        self.assertEqual(js.count("out.stale = fill(w.stale, { as_of: hailDate(h.as_of) });"), 1)
+        self.assertEqual(js.count('show(slot("stale"), payload.stale);'), 1)
+        self.assertNotIn("out.stale +=", js)
+        self.assertNotIn("w.stale + ", js)
+        self.assertTrue(hs.WORDS["stale"].endswith("This is not an all-clear."))
+        self.assertEqual(hs.WORDS["stale"].count("This is not an all-clear."), 1)
 
     def test_the_build_flag_adds_only_the_hail_key_to_map_data(self):
         off = set(json.loads(page(self.off, "data/map.json")))
@@ -1813,8 +1827,14 @@ class HailHistory(unittest.TestCase):
                       page(out, "town/billings.html"))
         self.assertTrue((out / "index.html").is_file())
         self.assertIn("Hail history (radar estimates)", page(out, "index.html"))
-        self.assertIn("Hail history didn't load", page(out, "map.html"))     # the banner says it, with no all-clear
-        self.assertIn("This is not an all-clear.", page(out, "map.html"))
+        # D98(a): the banner's heading is Python's word for a store that did not load, and its sentence says the plain words
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner)
+        self.assertIn("<strong>Hail history didn&#39;t load</strong>", banner.group(0))    # the template escapes the apostrophe
+        self.assertIn("The history store file store.tar.gz is missing.", banner.group(0))
+        # D96(b): the banner's own line carries the all-clear sentence once (the macro line no longer adds a second copy)
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
 
     def test_require_live_fails_on_a_failed_store_and_the_default_build_passes(self):
         missing_dir = Path(tempfile.mkdtemp(prefix="hailwatch-missing-"))
@@ -2046,22 +2066,49 @@ class HailHistory(unittest.TestCase):
         self.assertNotIn("HTTP", json.dumps(town["hail"]))
         self.assertEqual(hs.plain_problem("the history store file x.tar.gz is missing"), "the history store file x.tar.gz is missing")
 
-    def test_an_unavailable_joins_block_leaves_out_only_the_words_that_quote_an_http_code(self):
-        """The pages say a failed download in plain words, so an unavailable joins block carries no word with an HTTP code
-        (build.join_block_unavailable); a loaded block keeps every word, the zone-edition reason included."""
+    def test_the_map_banner_for_a_failed_download_says_didnt_load_in_plain_words(self):
+        """D98(a): a store whose download answers 404 heads the map banner "Hail history didn't load"; its sentence is the
+        plain words (the HTTP code stays in the build log), and the all-clear sentence closes the banner once."""
+        from website import hail as hs
+
+        class DownloadFails(SampleFetcher):
+            """Sample data for every feed; the history store's download answers 404, as when no asset is published."""
+            def binary(self, url, headers=None):
+                return None, "not published (HTTP 404)"
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-404-banner-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        result = site.build(out, DownloadFails(self.HAIL_NOW), self.HAIL_NOW, hail_history=True)
+        status = result["status"]["hail_history"]
+        self.assertFalse(status["ok"])
+        self.assertIn("(HTTP 404)", status["detail"])                                   # the log keeps the code
+        self.assertEqual(status["heading"], hs.WORDS["heading_failed"])
+        self.assertEqual(status["sentence"], "The history store could not be downloaded in this update.")
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner, "a failed download is a failed source: the map page's problem banner")
+        self.assertIn("<strong>Hail history didn&#39;t load</strong>", banner.group(0))
+        self.assertIn("The history store could not be downloaded in this update.", banner.group(0))
+        self.assertNotIn("Hail history is older", banner.group(0))
+        start = banner.group(0).index('data-source="hail_history"')
+        hail_line = banner.group(0)[start:].split("</li>")[0].split("</p>")[0]         # the history's own line, as printed
+        self.assertNotIn("HTTP", hail_line)
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
+
+    def test_an_unavailable_joins_block_carries_the_same_words_as_a_loaded_one(self):
+        """D95(b) and D96(a): the unavailable joins block reads the same word table as a loaded block, so it is filtered by
+        nothing; no word in that table quotes an HTTP code (the zone-edition reason says it in plain words)."""
         from website import build as bd
         from website import joins as jn
-        http = sorted(k for k, v in jn.WORDS_JOINS.items() if "HTTP" in str(v))
-        self.assertEqual(http, ["reason_not_published"], "a new word that quotes an HTTP code needs a rule of its own")
+        self.assertEqual([k for k, v in jn.WORDS_JOINS.items() if "HTTP" in str(v)], [],
+                         "a word that quotes an HTTP code is reworded in WORDS_JOINS, never filtered out of a block")
         gone = bd.join_block_unavailable(jn, "the joined records are not in this history store")
         self.assertNotIn("HTTP", json.dumps(gone))
-        self.assertNotIn("reason_not_published", gone["words"])
+        self.assertIn("reason_not_published", gone["words"])
         self.assertIn("section_flooding", gone["words"])
         store = {"state": "ok", "parts": {part: "ok" for part in jn.PARTS}, "reasons": {}, "lags": {}, "partial": {},
                  "zone_names": {}, "types": {}, "cover": "", "shapes": {}, "montana_time": []}
         loaded = bd.join_block(jn, {"as_of": "2026-10-19", "window": ["2021-10-19", "2026-10-19"], jn.INDEX_KEY: store}, False)
-        self.assertIn("reason_not_published", loaded["words"])
-        self.assertEqual(len(loaded["words"]), len(gone["words"]) + 1)
+        self.assertEqual(gone["words"], loaded["words"])
 
     def test_a_stale_store_is_a_failed_source_but_the_sample_never_is(self):
         """A real store whose last day is more than STALE_DAYS old still builds the pages (with the stale line) but
@@ -2078,10 +2125,27 @@ class HailHistory(unittest.TestCase):
         status = result["status"]["hail_history"]
         self.assertFalse(status["ok"])
         self.assertIn("stale", status["detail"])
+        self.assertEqual(status["heading"], hs.WORDS["heading_stale"])                # D98(a): the banner's heading for this state
+        self.assertEqual(hs.STALE_DAYS, 3)                                             # the heading's "three days"
+        self.assertEqual(hs.WORDS["stale"], hs.WORDS["stale_lead"] + " This is not an all-clear.")   # D96(b): one sentence, one source
         self.assertEqual(json.loads(page(out, "data/map.json"))["hail"]["state"], "loaded")
         billings = page(out, "town/billings.html")
-        self.assertEqual(billings.count(hs.WORDS["stale"].format_map({"as_of": hs.fmt_date(as_of)})), 1)
-        self.assertNotIn("The newest radar day in this history is", billings)   # one stale line, not two
+        stale = hs.WORDS["stale"].format_map({"as_of": hs.fmt_date(as_of)})
+        self.assertEqual(billings.count(stale), 1)                                  # one stale line, not two
+        self.assertIn(f"<p class=\"sub\"><strong>{stale}</strong></p>", billings)  # the town page's own stale paragraph
+        self.assertEqual(stale.count("This is not an all-clear."), 1)               # D96(b): the sentence once in the line
+        from website import summary as sm
+        self.assertEqual(sm.WORDS_SUMMARY["stale"], hs.WORDS["stale"])            # D96(b): one text, imported by summary.py
+        # D96(b): the stale store is a failed source, so the map page's problem banner says so, with the all-clear once
+        banner = re.search(r'<div class="banner banner-problem" role="alert" id="problems">.*?</div>',
+                           page(out, "map.html"), re.S)
+        self.assertIsNotNone(banner, "a stale store is a failed source: the map page's problem banner")
+        # D98(a): the heading says the store is older than three days (not that it did not load), and the sentence after it
+        # keeps what loaded and the as-of date
+        self.assertIn("<strong>" + hs.WORDS["heading_stale"] + "</strong>", banner.group(0))
+        self.assertNotIn("didn&#39;t load", banner.group(0))
+        self.assertIn(hs.WORDS["stale_lead"].format_map({"as_of": hs.fmt_date(as_of)}), banner.group(0))
+        self.assertEqual(banner.group(0).count("This is not an all-clear."), 1)
         fresh = datetime.combine(as_of + timedelta(days=hs.STALE_DAYS), time(13, 0), tzinfo=timezone.utc)
         self.assertTrue(site.build(out, None, fresh, sample=True, hail_history=True,
                                    hail_store_path=str(store))["status"]["hail_history"]["ok"])
@@ -3695,6 +3759,31 @@ def write_default_manifest(build_dir, base: str) -> Path:
     return path
 
 
+def restore_base(data: bytes, changes) -> tuple[bytes, list]:
+    """The page with each named on-purpose change written back to the base's text (D95(g)). A change the page does not
+    carry exactly the stated number of times is a problem; the restored bytes are what the digest then compares."""
+    problems = []
+    for ruling, base_text, now_text, count in changes:
+        new, old = now_text.encode("utf-8"), base_text.encode("utf-8")
+        found = data.count(new)
+        if found != count:
+            problems.append(f"{ruling}: the page has {found} copies of {now_text!r}, not {count}")
+        data = data.replace(new, old)
+    return data, problems
+
+
+def on_purpose_problems(name: str, data: bytes, changes, base_digest: str) -> list:
+    """The problems with one page of the default build: a named change that is missing or repeated, or a line that no
+    named change accounts for (the page still differs from the base's digest once the named changes are written back).
+    An empty list means the page differs from the base only as the rulings name (D93(a), D95(g))."""
+    restored, problems = restore_base(data, changes)
+    if name.endswith(".html"):
+        restored = VERSION_QUERY.sub(rb"\1?v=HASH", restored)
+    if hashlib.sha256(restored).hexdigest() != base_digest:
+        problems.append(f"{name} differs from the base build on a line that no named ruling accounts for")
+    return problems
+
+
 class HailSwathLayers(unittest.TestCase):
     """The live hail swath layers (B4; website/swath.py) behind --storm-layers, sample builds only (the live feed is
     checked by the Website workflow and tools/smoke_map.py): the two Map layers and their status line, the List and the
@@ -4176,18 +4265,37 @@ class HailSwathLayers(unittest.TestCase):
                          json.loads(page(self.on, "data/map.json"))["layers"]["hail_60"]["legend_note"])
 
     # B4-6 without git history (the Website workflow checks out shallow): the default build's files as digests, against
-    # the manifest of the base commit's build. The shared script and style files are left out (they change with the
-    # feature), the pages' ?v= hashes are normalised, and PNG frames are compared by their decoded pixels, so an encoder
-    # change does not count. Regenerate with write_default_manifest (see its docstring).
+    # the manifest of the base commit's build (SWATH_BASE). Regenerate with write_default_manifest (see its docstring).
+    # D93(a): map.js and map.css are not digested (SHARED_STATIC; the browser code is one file for every build), and the
+    # ?v= hashes that map.html carries for them are normalised, so map.html differs from the base only in those hashes.
     MANIFEST = ROOT / "tests" / "fixtures" / "default-build-manifest.json"
-    ABOUT_CHANGED = ("about.html",)
-    # D91(c): the storm reports page's lead and its empty-day line are reworded on purpose (the words gate's own sentences)
-    REPORTS_CHANGED = ("reports.html",)
-    REPORTS_SENTENCES = ("No report is not the same as no hail.",
-                         "No reports of hail or wind in or near Montana for this day; that is not the same as no hail.")
-    # the radar line of the default page (D53): the sentences the base build's page did not have; the D74 rows are checked by
-    # test_joins (the contract texts) and the storm and address builds elsewhere in this file
-    ABOUT_SENTENCES = ("a blank area is not a statement about the weather", "areas with no radar coverage are hatched")
+    # The default build's other differences from the base, each named with its ruling. A change is (ruling, the base's
+    # text, the text the build has now, how many times the build has it). The test writes each text back to the base's and
+    # the page must then have the base's digest, so a line this table does not name fails the test. D74's rows (the hail
+    # swath row and the address rows) and D85's hail history and NOHRSC rows are flag-gated: the default build has none.
+    ON_PURPOSE = {
+        "about.html": (
+            # D53: the radar paragraph's satellite and radar sentence
+            ("D53", "a blank area is not proof of dry weather", "a blank area is not a statement about the weather", 1),
+            ("D85", "never clears one.", "never removes one.", 1),
+            ("D85, D86(c), D88(d)", "that work is safe.", "that work can go ahead.", 1),
+            ("D85, D86(c)", "When something fails</h2>", "When something goes wrong</h2>", 1),
+            # the source table's rows: the alerts row, the forecast and station rows and the radar row
+            ("D85", "Test messages and replaced updates are left out.",
+             "Test messages and updates that a later message has changed are left out.", 1),
+            ("D85", "the last good lookup is reused if it fails.", "if a lookup does not work, the last good lookup is reused.", 1),
+            ("D80(b), D82(d)", "distance from the town is worked out here", "distance from this spot is worked out here", 1),
+            ("D85", "the last good list is reused if it fails.", "if a list does not load, the last good list is reused.", 1),
+            ("D85", "A file that fails is listed as a problem", "A file that does not pass its check is listed as a problem", 1),
+            ("D85, D86(c)", "never drawn as dry.", "never drawn as a zero reading.", 1),
+        ),
+        "reports.html": (
+            # D91(c): the SPC reports page's lead and its two empty-day lines (the words gate's own sentences)
+            ("D91(c)", "No report is not evidence that no hail fell.", "No report is not the same as no hail.", 1),
+            ("D91(c)", "No hail or wind reports in or near Montana for this day.",
+             "No reports of hail or wind in or near Montana for this day; that is not the same as no hail.", 2),
+        ),
+    }
 
     def test_the_default_build_matches_the_manifest_of_its_base_commit(self):
         expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
@@ -4199,17 +4307,27 @@ class HailSwathLayers(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr[-800:])
         now = default_digests(out)
         self.assertEqual(sorted(set(now) ^ set(expected["files"])), [], f"base {expected['base']}: files differ")
-        # D53, D77 and D91(c): the About page's radar line and the storm reports page's two sentences changed on purpose, so
-        # their digests are not the base's; every other file must match, and each of those pages must carry the changed sentences
-        on_purpose = self.ABOUT_CHANGED + self.REPORTS_CHANGED
-        changed = sorted(name for name in now if now[name] != expected["files"][name] and name not in on_purpose)
+        # every file the table does not name has the base's digest
+        changed = sorted(name for name in now if now[name] != expected["files"][name] and name not in self.ON_PURPOSE)
         self.assertEqual(changed, [], f"base {expected['base']}: these files differ from the base build")
-        about = " ".join(page(out, "about.html").split())
-        for sentence in self.ABOUT_SENTENCES:
-            self.assertIn(sentence, about)
-        reports = " ".join(page(out, "reports.html").split())
-        for sentence in self.REPORTS_SENTENCES:
-            self.assertIn(sentence, reports)
+        # each named page differs from the base only in its named lines (the rulings above)
+        for name, changes in self.ON_PURPOSE.items():
+            problems = on_purpose_problems(name, (out / name).read_bytes(), changes, expected["files"][name])
+            self.assertEqual(problems, [], f"base {expected['base']}: {'; '.join(problems)}")
+
+    def test_a_line_the_table_does_not_name_fails_the_identity(self):
+        """The check is exact: one more word in a named page, not in the table, makes the page differ from the base."""
+        expected = json.loads(self.MANIFEST.read_text(encoding="utf-8"))
+        real = (self.off / "about.html").read_bytes()
+        self.assertEqual(on_purpose_problems("about.html", real, self.ON_PURPOSE["about.html"],
+                                             expected["files"]["about.html"]), [])
+        mutated = real.replace(b"that work can go ahead.", b"that work can go ahead now.", 1)
+        self.assertNotEqual(mutated, real)
+        self.assertTrue(on_purpose_problems("about.html", mutated, self.ON_PURPOSE["about.html"],
+                                            expected["files"]["about.html"]))
+        missing = real.replace(b"a blank area is not a statement about the weather", b"a blank area says nothing about the weather", 1)
+        self.assertTrue(on_purpose_problems("about.html", missing, self.ON_PURPOSE["about.html"],
+                                            expected["files"]["about.html"]))
 class FiveSeasonHistory(unittest.TestCase):
     """The town page's five-season table and sections, the About words and the copies (B5, --hail-history), on the
     synthetic store that tests/test_summary.py writes (a spot at Billings with every part present). Nothing here is real."""
@@ -5112,6 +5230,44 @@ class SheetAgreesWithTheModule(unittest.TestCase):
         for cell in FIVE_CELLS:
             with self.subTest(cell=cell):
                 self.compare_cell(folder, h, cell)
+
+    def test_a_flagged_zone_line_reads_the_all_clear_sentence_once(self):                                    # D98(b), D99(b)
+        """Montana's unplaced zone products (two high wind warnings in 2021-22, one high wind watch in 2024-25) add a statement
+        to the high wind row's coverage lines. The browser prints the statement as summary.WORDS_SUMMARY gives it and composes
+        each line as summary._cover does: the sentence once, at the line's end, never a doubled full stop. The sheet agrees
+        with the module cell by cell, the coverage lines included. The rows go into a copy of the fixture store, with its
+        index and its manifest entry written again (hail.check_manifest)."""
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-flag-store-"))
+        self.addCleanup(shutil.rmtree, store, True)
+        shutil.copytree(hs.FIXTURE_DIR, store, dirs_exist_ok=True)
+        index_path = store / "hail" / "index.json"
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index["joins"]["zone_unplaced_rows"] = [["HW.W", "MTZ235", "2021-12-11", "2021-12-07", "not_in_iem_set"],
+                                                ["HW.W", "MTZ235", "2022-01-02", "2021-12-07", "not_in_iem_set"],
+                                                ["HW.A", "MTZ235", "2024-10-01", "2024-09-30", "not_in_iem_set"]]
+        data = hs._pretty(index)
+        index_path.write_bytes(data)
+        manifest_path = store / "hail" / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["files"]["hail/index.json"] = {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        manifest_path.write_bytes(hs._pretty(manifest))
+        hs.check_manifest(store)
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-flag-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        h = json.loads(page(out, "data/map.json"))["hail"]
+        self.assertEqual(len(h["joins"]["zone_unplaced_rows"]), 3)
+        for cell in FIVE_CELLS[:3]:                 # the cells the fixture holds (the other two need the adopted store)
+            with self.subTest(cell=cell):
+                self.compare_cell(out, h, cell)
+        rows = node_sheet(out, h, {"row": 921, "col": 2149})["table"]["rows"]
+        flagged = [text for row in rows.values() for text in row["coverage"] + [row["five_coverage"]]
+                   if text and "could not be placed to a zone" in text]
+        self.assertTrue(flagged, "the high wind row says what could not be placed")
+        for text in flagged:
+            self.assertEqual(text.count("This is not an all-clear."), 1, text)
+            self.assertTrue(text.endswith("This is not an all-clear."), text)
+            self.assertNotIn("..", text)
 
 
 def sm_sections() -> list[str]:
