@@ -149,7 +149,8 @@ Measured for the daily job (`hail-store.yml`) in the record: the run time (10.7 
 - The repo description says "Roofing Weather and Maps Contact app". What should "Contact" cover?
 - The `design` branch (2026-10-25) holds the Veor home page concept, DESIGN.md section 10: an app shell with
   leads and projects around the site's map. Its open questions: the name (Veor or Montana Hail Watch), whether
-  leads come next and on the map, the area the home page opens on, and whether the other pages follow.
+  leads come next and on the map, whether the first screen shows the warnings list rather than the sample lead,
+  the area the home page opens on, and whether the other pages follow.
 - Globe questions (3D storm view): see `research/globe/README.md` section 14. Answer these first: keep or
   relax the site-files-only browser rule; rule on the one new browser script for the storm text (P1) and,
   later at the P4 gate, a vendored WebGL library; may storm or height views ever reach homeowners, adjusters

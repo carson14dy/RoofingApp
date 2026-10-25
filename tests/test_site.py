@@ -971,7 +971,8 @@ class HomeConcept(unittest.TestCase):
         self.assertIn(".is-embed .corner-left > .close, .is-embed #btn-layers { display: none; }", css)
         js = (site.HERE / "static" / "map" / "map.js").read_text(encoding="utf-8")
         self.assertIn('var EMBED = !CARD && params.get("embed") === "1";', js)
-        self.assertIn('window.parent.document.getElementById("btn-layers-top")', js)   # focus back to the top bar
+        self.assertIn('window.parent.document.getElementById("btn-layers-top")', js)   # focus and state on the top bar
+        self.assertIn("if (EMBED) copyToHome(q);", js)                     # the map's choices in the home page's address
         self.assertIn('id="btn-layers-top"', self.html)
 
     def test_the_sample_lead_is_labelled_in_a_live_build_too(self):
@@ -990,20 +991,53 @@ class HomeConcept(unittest.TestCase):
         self.assertIn("High Wind Warning", self.html)
         self.assertEqual(self.html.count('<li data-slug="'), len(site.TOWNS))
         self.assertIn("Weather information only. It does not confirm roof damage", self.html)
-        self.assertIn("<noscript><style>.shell #view-forecast { display: block; }</style></noscript>", self.html)
+        self.assertIn("<style>.shell #view-forecast { display: block; }</style></noscript>", self.html)   # scripting off
 
-    def test_the_forecast_button_counts_the_alerts_or_says_they_did_not_load(self):
-        self.assertIn('<span class="badge badge-warning"><span aria-hidden="true">2</span>'
-                      '<span class="visually-hidden">: 2 NWS alerts</span></span>', self.html)
+    def test_the_forecast_button_counts_the_alerts_and_names_the_kind_or_says_they_did_not_load(self):
+        self.assertIn('<span class="badge badge-warning"><span aria-hidden="true">2</span><span class="visually-hidden">, '
+                      "2 NWS alerts, the most urgent a warning</span></span>", self.html)
         out, _ = build_with(FailingFetcher())
         html = " ".join(page(out, "index.html").split())
         self.assertIn('<span class="badge badge-unknown"><span aria-hidden="true">?</span>'
-                      "<span class=\"visually-hidden\">: NWS alerts didn't load</span></span>", html)
+                      "<span class=\"visually-hidden\">, NWS alerts didn't load</span></span>", html)
         self.assertIn("Couldn't load NWS alerts at", html)
         self.assertNotIn("No active NWS warnings", html)
+        self.assertNotIn('class="alert-now"', html)          # no alert is named from a failed check
         self.assertNotIn("Every source loaded", html)
-        self.assertNotIn("Every source loaded", page(out, "index.html"))
         self.assertIn("Every source loaded", self.html)
+
+    def test_the_status_names_the_most_urgent_alert_and_any_missing_town_data(self):
+        """Alerts issued by county or zone have no outline on the map, so the top bar names the most urgent alert
+        (with a count of the rest) on the first screen. 'Every source loaded' needs every town's values too."""
+        self.assertIn('<p class="alert-now"><a href="#forecast" data-view="forecast">High Wind Warning and 1 more</a></p>',
+                      self.html)
+        def pictures_loaded(out_dir, get, now, sample=False):         # SampleWith's radar and model downloads fail
+            return map_layers(now=now), {"radar": {"label": g.LABELS["radar"], "ok": True, "detail": "7 frames"},
+                                         "forecast": {"label": g.LABELS["forecast"], "ok": True, "detail": "12 hours"}}
+        with mock.patch.object(g, "build_gridded", pictures_loaded):
+            gaps, _ = build_with(SampleWith(NOW, fail=("alerts-point",)))
+            state, _ = build_with(SampleWith(NOW, fail=("alerts-state",)))
+        html = " ".join(page(gaps, "index.html").split())
+        self.assertIn(f'<p class="bad"><a href="#forecast" data-view="forecast">{len(site.TOWNS)} towns with missing data: '
+                      "see Forecast</a></p>", html)
+        self.assertNotIn("Every source loaded", html)
+        self.assertIn("Alerts not checked", html)
+        html = " ".join(page(state, "index.html").split())
+        self.assertIn('<p class="bad"><a href="#forecast" data-view="forecast">NWS alerts problem: see Forecast</a></p>', html)
+
+    def test_the_page_reloads_only_while_unused_and_without_script_as_before(self):
+        raw = page(self.out, "index.html")
+        self.assertEqual(raw.count('http-equiv="refresh"'), 1)
+        self.assertIn('<noscript><meta http-equiv="refresh" content="600">', raw)
+        self.assertIn("now - loadedAt >= 600000 && (document.hidden || now - lastUse >= 60000)", raw)
+
+    def test_the_forecast_alerts_sit_under_their_heading_and_the_tab_panels_take_focus(self):
+        self.assertIn("<h4>High Wind Warning</h4>", self.html)
+        self.assertIn("<h3>High Wind Warning</h3>", " ".join(page(self.out, "town/livingston.html").split()))
+        self.assertIn('<h1 class="visually-hidden">Veor: Montana weather map and forecast</h1>', self.html)
+        self.assertEqual(self.html.count('role="tabpanel"'), 3)
+        self.assertEqual(self.html.count('role="tabpanel" id="tp-'), 3)
+        self.assertEqual(len(re.findall(r'role="tabpanel" id="tp-\w+" aria-labelledby="tab-\w+" tabindex="0"', self.html)), 3)
 
     def test_every_town_is_in_the_area_menu_and_the_search_list(self):
         for t in site.TOWNS:
@@ -1018,7 +1052,8 @@ class HomeConcept(unittest.TestCase):
         self.assertIn("The Newsreader Project Authors", page(self.out, "static/fonts/LICENSE-fonts.txt"))
 
     def test_the_links_to_the_warnings_list_open_the_forecast_panel(self):
-        self.assertIn('if (location.hash === "#forecast") show("forecast");', self.html)
+        self.assertIn('if (location.hash === "#forecast") show("forecast", true);', self.html)
+        self.assertIn("""closest('a[href$="#forecast"]')""", self.html)      # the map's links open it in place
         self.assertIn('<a href="../index.html#forecast">All towns</a>', page(self.out, "town/livingston.html"))
         self.assertIn('<a href="index.html#forecast">Now</a>', page(self.out, "about.html"))
         self.assertIn('href="index.html#forecast"', page(self.out, "map.html"))           # the noscript list

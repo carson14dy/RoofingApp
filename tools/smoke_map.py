@@ -7,10 +7,10 @@ sizes, and checks: the page loads without script errors; the map data, basemap a
 load (a picture from map/frames/, not the blank placeholder the overlays start with, and no "didn't
 load" note); play moves the timeline; the layer menu switches the legend title and the pictures; a
 bubble is drawn for every town (basemap names are markers too, so only .town counts); the card
-used on the Now page loads. Also: every row of the layer menu can be tapped on a phone held
+used on the Storm reports page loads. Also: every row of the layer menu can be tapped on a phone held
 sideways (nothing paints over it); alerts without an outline are named in the legend with a way to
 the List; a picture still loading when the viewer switches to a layer with no pictures never appears
-under the new layer's legend; the Now page's caption names the picture the card shows (radar or
+under the new layer's legend; the home page's words for its map name the picture the map opens on (radar or
 model); a portrait phone gets the short two-column legend, which keeps one height through the whole
 timeline, and the Precipitation layer rings no town. On a --storm-layers build the Satellite layer is checked
 too (check_satellite), including a switch to it made while the timeline plays.
@@ -387,8 +387,9 @@ CARD_WORDS = {"NOAA radar estimate": "The latest NOAA radar estimate",
 
 
 def check_card_words(browser, base, root) -> list[str]:
-    """The Now page's caption (build.py map_card) names the picture the card shows (map.js), so a
-    model forecast is never called the radar estimate (AGENTS.md rule 5)."""
+    """The home page's words for its map (build.py map_card: the frame's description) name the picture the map
+    opens on, which is the one the card shows (map.js), so a model forecast is never called the radar estimate
+    (AGENTS.md rule 5)."""
     import html as _html
     import re
     ctx = browser.new_context(viewport={"width": 600, "height": 400}, reduced_motion="reduce")
@@ -398,14 +399,15 @@ def check_card_words(browser, base, root) -> list[str]:
     page.wait_for_timeout(500)
     chip = " ".join(page.locator("#card-chip .card-main").inner_text().replace(" ", " ").split())
     ctx.close()
-    found = re.search(r'<p class="caption">(.*?)</p>', (root / "index.html").read_text(encoding="utf-8"), re.S)
+    found = re.search(r'<p class="visually-hidden" id="map-words">(.*?)</p>',
+                      (root / "index.html").read_text(encoding="utf-8"), re.S)
     caption = " ".join(re.sub(r"<[^>]+>", " ", _html.unescape(found.group(1))).split()) if found else ""
     kind, _, at = chip.partition(" · ")
     want = CARD_WORDS.get(kind, "").format(at=at)
     if not want and chip.startswith("No "):
         want = "Missing from this update: the radar and model pictures"
     if not want or want not in caption:
-        return [f"Now page: the caption doesn't name the card's picture (card: {chip!r}; caption: {caption[:100]!r})"]
+        return [f"Home page: the map's words don't name its picture (card: {chip!r}; words: {caption[:100]!r})"]
     return []
 
 

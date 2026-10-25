@@ -496,37 +496,51 @@ that page; the other pages keep the field-sheet look. Nothing here is on `main`.
 **What is real and what is the concept.**
 | Part | Real or concept | What it does |
 |---|---|---|
-| Map | Real: the site's map, whole (`map.html?embed=1` in a frame) | Everything section 8 says. The sidebar replaces its close button and the top bar holds its Layers button, so `map.css` hides both in the frame (`.is-embed`); its links open in the whole window (a `<base target="_top">` the page sets) |
-| Forecast button and panel | Real | The old Now page in one column: the freshness line, the warnings (all of them, with the failure notices) and the 17 town cards, built from the same data and template code. A badge on the button counts the alerts in the most urgent one's colour, or shows "?" when the alert check failed |
-| Area menu | Real | "All of Montana" or a town's area: the map centres the town (`?area=slug`, zoom 8, no sheet), the forecast shows that town's card (every warning stays), and the page address keeps it (`index.html?area=billings`) |
-| Search | Real for towns | A town opens its sheet on the map (`?town=slug`, its NWS forecast) and becomes the area; "Oak Street" opens the sample lead; anything else says no town has that name |
-| Top bar status | Real | "Updated" with the page's age, then "Every source loaded" or "{n} source problems: see Forecast" in red; past 25 minutes it turns into the old-page warning |
+| Map | Real: the site's map, whole (`map.html?embed=1` in a frame) | Everything section 8 says. The sidebar replaces its close button and the top bar holds its Layers button, so `map.css` hides both in the frame (`.is-embed`). Its links open in the whole window (a `<base target="_top">` the page sets), except its links to the warnings list, which open the Forecast panel in place. Its choices (layer, timeline, overlay, base map, hail spot) are copied into the home page's address, so a reload or a bookmark keeps them |
+| Top bar status | Real | "Updated" with the page's age; the most urgent alert by name ("High Wind Warning and 1 more"), because an alert issued by county or zone has no outline on the map; then "Every source loaded", or a failed source by name ("NWS alerts problem: see Forecast"), or "{n} towns with missing data". Past 25 minutes the age becomes the old page's warning. The bar grows to fit it |
+| Forecast button and panel | Real | The old Now page in one column: the freshness line, the warnings (all of them, with the failure notices) and the 17 town cards, built from the same data and template code. A badge on the button counts the alerts in the most urgent one's colour (its words name the kind), or shows "?" when the alert check failed. `index.html#forecast` opens it; the address keeps `#forecast` while it shows |
+| Area menu | Real | "All of Montana" or a town's area: the map centres the town (`?area=slug`, zoom 8, no sheet), the forecast shows that town's card (every warning stays), and the address keeps it (`index.html?area=billings`) |
+| Search | Real for towns | A town ("Billings", "Billings area", "Billings, MT", or the first letters) opens its sheet on the map (`?town=slug`, its NWS forecast) and becomes the area; "Oak Street" opens the sample lead; anything else says no town has that name |
 | Lead panel, Leads | Concept | Oak Street, labelled "Sample" in its heading and "Desktop concept · Sample data" at its foot, in every build. Its tabs switch; its buttons say what isn't built |
 | Projects, Organizer, Setup, Account, Settings, the role menu | Concept | Each says it isn't built yet (a short note at the bottom of the screen) |
 
 **Decisions in the build that differ from the mockup.**
 - The map opens on all of Montana, not "Billings area": the statewide warning outlines stay on the first screen
   (principle 1). Billings is one choice away and the address keeps it.
+- The panel opens on the sample lead, as in the mockup, so the warnings list itself is one click away (Forecast).
+  Threshold T2 (section 3) asked for warnings with no click: here the first screen has the outlines, the most urgent
+  alert by name and a count of the rest, not the list. An open question below.
 - No lead pins on the map, and no Lead/Project/Other key: the map is the site's own, as asked. Pins would need
   real lead locations first.
 - Muted text is darker than the mockup's grey (5.28:1 instead of about 3.6:1) and the primary button's rust is a
   shade deeper (white text 4.94:1), so every pair meets 4.5:1. Dark mode follows the phone, as on the other pages.
 - The links that used to open the Now page's warning list (the town pages, Storm reports, the map's alert sheet,
-  the other pages' "Now") open `index.html#forecast`, which opens the Forecast panel. Without JavaScript the
-  forecast shows under the lead.
+  the other pages' "Now") open `index.html#forecast`. Without JavaScript the forecast shows under the lead.
+- The old page refreshed itself every 10 minutes. This one reloads only while nobody is using it (no key, tap,
+  click or wheel on the page or the map for a minute, or the tab is in the background), and the address carries
+  the area, the map's choices and the open forecast across the reload. With scripting off the old refresh stands.
 
-**Layout.** At 1024 px and wider the page is the screen: sidebar 228 px (200 px under 1280), top bar 90 px, the
-map, and the panel 432 px (372 px under 1280), which scrolls inside. The « button folds the sidebar to its icons;
-closing the panel gives its room to the map. Under 1024 px the page scrolls: the top bar (mark, status, search;
-then area, Forecast and Layers), the map filling the screen above a tab bar with the four main places, then the
-panel. Under 480 px Forecast and Layers keep their icons and lose their words.
+**Layout.** At 1024 px and wider the page is the screen: sidebar 228 px, top bar at least 90 px (it grows with the
+status), the map, and the panel 432 px (372 px under 1280), which scrolls inside. The « button folds the sidebar
+to its icons (84 px); from 1024 to 1279 px it starts folded. Under 1440 px Forecast and Layers show their icons
+only, so the search box and the area menu keep room for their words; from 1440 px the area menu is as wide as its
+longest place. Closing the panel gives its room to the map. Under 1024 px the page scrolls: the top bar (mark and
+status; search; area, Forecast and Layers), the map filling the screen above a tab bar with the four main places,
+then the panel; opening the forecast or the lead scrolls to it. Under 480 px Forecast and Layers sit beside the
+search box with their icons only, and the area menu has a row of its own.
 
 **Look.** Tokens in `website/static/home.css` (`--v-` raw scale, roles, components); the page also overrides
 `style.css`'s page roles so the alert and town cards take the warm look. The face is Newsreader (SIL Open Font
 License 1.1, Fontsource 5.3.0, variable weight and optical size, served by the site), the closest of six serifs
-compared against the mockup. Colours were measured from the mockup: paper #fdfbf7, ink #1f1c19, rust #b9502f
-(buttons) and #a3401f (text), sage pill #dfe6da, pine pin #3f6b51.
+compared against the mockup. Colours follow the mockup: paper #fdfbf7, ink #1f1c19, sage pill #dfe6da, pine pin
+#3f6b51, rust #b9502f for the primary button and #a3401f for accent text (each a shade from the mockup's, for
+contrast), and rust edges on the outline buttons.
+
+**Checked.** In Chromium, light and dark, at 288 to 1586 px wide: no sideways scroll with the forecast open or shut
+(`tools/smoke_pages.py` now opens `index.html#forecast` too), the stale status inside the top bar, focus never
+under the tab bar, the controls by keyboard, and the map frame's Layers menu, area and links. On the shortest
+phones (568 to 640 px tall) the map keeps a 320 px minimum and runs under the tab bar until the page is scrolled.
 
 **Open questions for Carson.** Keep the name Veor or Montana Hail Watch? Should leads (with their addresses) come
-next, and on the map? Should the area default to the company's own (Billings) once warnings have another place on
-the first screen? Restyle the other pages to match, or keep this to the home page?
+next, and on the map? Should the first screen show the warnings list (T2) rather than the sample lead, or the
+area default to the company's own (Billings)? Restyle the other pages to match, or keep this to the home page?

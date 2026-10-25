@@ -1533,6 +1533,7 @@
 
   /** Connect buttons, the slider, menus and keys. */
   function wireControls() {
+    if (EMBED) document.documentElement.classList.add("map-ready");   // the home page's Layers button may use ours now
     el.play.addEventListener("click", function () { setPlaying(!state.playing); });
 
     el.seg.addEventListener("click", function (e) {
@@ -1690,6 +1691,8 @@
     el.layers.hidden = !open;
     el.top.classList.toggle("menu-open", !!open);
     el.layersBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    var outside = homeLayersButton();
+    if (outside) outside.setAttribute("aria-expanded", open ? "true" : "false");
     if (open) {
       fitLayersMenu();
       var checked = el.layers.querySelector("input[name=layer]:checked") || el.layers.querySelector("input");
@@ -1697,14 +1700,15 @@
     } else if (refocus) focusLayersButton();
   }
 
-  /** Back to the button that opened the menu: the home page's Layers button when embedded (this
-      page's own is hidden there), else this page's. */
+  /** Embedded, the home page's Layers button, which stands in for this page's own (hidden there); else null. */
+  function homeLayersButton() {
+    if (!EMBED || window.parent === window) return null;
+    try { return window.parent.document.getElementById("btn-layers-top"); } catch (e) { return null; }
+  }
+
+  /** Back to the button that opened the menu: the home page's when embedded, else this page's. */
   function focusLayersButton() {
-    var outside = null;
-    if (EMBED && window.parent !== window) {
-      try { outside = window.parent.document.getElementById("btn-layers-top"); } catch (e) { outside = null; }
-    }
-    (outside || el.layersBtn).focus();
+    (homeLayersButton() || el.layersBtn).focus();
   }
 
   /** The layer menu ends above the bottom of the screen and scrolls inside when it is taller (a phone
@@ -1728,6 +1732,20 @@
     if (hailAt) q.set("at", hailAt); else q.delete("at");
     var s = q.toString();
     history.replaceState(null, "", location.pathname + (s ? "?" + s : "") + location.hash);
+    if (EMBED) copyToHome(q);
+  }
+
+  /** Embedded: the same choices go into the home page's address too, so its reload and its bookmarks keep
+      them (the home page hands them back to this frame when it loads). */
+  function copyToHome(q) {
+    try {
+      var home = window.parent.location, p = new URLSearchParams(home.search);
+      ["layer", "mode", "overlay", "base", "at"].forEach(function (k) {
+        if (q.has(k)) p.set(k, q.get(k)); else p.delete(k);
+      });
+      var s = p.toString();
+      window.parent.history.replaceState(window.parent.history.state, "", home.pathname + (s ? "?" + s : "") + home.hash);
+    } catch (e) { /* not inside the home page */ }
   }
 
   /** "&layer=temp&overlay=reports" for links to the full map (prefix "?" or "&"). */

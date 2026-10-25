@@ -70,7 +70,8 @@ PAST_THE_EDGE = """() => {
 def check(root: Path) -> list[str]:
     from playwright.sync_api import sync_playwright
 
-    pages = ["index.html", "map.html", "reports.html", "about.html"]
+    # index.html#forecast: the home page with its forecast panel open (its town cards are hidden until then)
+    pages = ["index.html", "index.html#forecast", "map.html", "reports.html", "about.html"]
     pages += sorted(f"town/{p.name}" for p in (root / "town").glob("*.html"))
     problems: list[str] = []
     httpd, base = serve(root)
