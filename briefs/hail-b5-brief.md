@@ -2085,3 +2085,19 @@ branch runs; B6 changes no map code.
   rides this PR (a smoke-only change in tools/smoke_map.py); the two 5-second waits in the check stay (the check was not
   slow, it was aimed at the wrong element). (c) The branch Website build is dispatched again after the monthly store job
   finishes, since a push that touches only tools/ does not trigger it.
+
+## Owner's decision and the supervisor's plan (2026-10-26 22:35 UTC; D143)
+Carson: "I want you to merge everything into the app main then. And delete old stuff you think is unnecessary for our new
+maps. I also want you to merge the new design too."
+- D143 (a) **Merge order**: PR 17 (B5) into main by a merge commit in the repo's style; main's Website run and store job
+  must pass; then PR 18 (B6 stage 2) retargeted to main and merged; main's runs again; the monthly store job dispatched on
+  main to fill the terrain and base map caches (a second run if the base map's cold run hits its cap). PRs 14, 15 and 16 are
+  closed as superseded; their branches, the WIP session branch and the merged branches are deleted. main keeps its flags
+  (--hail-history; the address and storm layers stay off until counsel and the owner turn them on). (b) **Cleanup**: a
+  separate PR removes what the new maps no longer need: the parked desktop app (payload/, desktop/, build.py, ship.py, its
+  tests and workflow, its rules in AGENTS.md and CLAUDE.md, the selftest pre-push step) and the 3D globe research
+  (research/globe; D107 says no 3D); the hail research the roadmap still cites stays; the suite and a branch run must pass
+  before the merge. (c) **The new design**: the browser side of B6 (B6-3 to B6-6, DESIGN 13) is built on a fresh branch from
+  main with Haiku builders and skeptics under supervision, with the owner picks taken as built (bubble rule A, the sheet as
+  DESIGN 13.6 specifies, the terrain tint on and hidden in dark mode, the D110(c) legend, names as the sources give them) and
+  listed in the PR; verified in Chromium at phone and desktop widths and under the phone view budget; then merged.
