@@ -1811,4 +1811,4 @@ NLCD 2021 Products record (doi 10.5066/P9JZ7AO3) states "public domain informati
 constraints None and fees None, and the MRLC WCS capabilities give Fees NONE and AccessConstraints NONE.
 - D124 D115's "NLCD 2021's data release carries a CC0 1.0 licence" is corrected: CC0 applies to the Annual NLCD collection, a
   different product. The terrain module's terms note cites the NLCD 2021 record's own words and DOI and claims no CC0 for it
-  (run wf: see the log). The About sentence keeps "(public domain)" on the strength of the record's own words.
+  (wf_c09cc861-aaf). The About sentence keeps "(public domain)" on the strength of the record's own words.
