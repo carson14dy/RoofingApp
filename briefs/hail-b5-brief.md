@@ -1677,3 +1677,25 @@ product effect). The render critic failed the proof pictures on points that are 
   local mesh); route-like street names ("FAS 533") get no label; street names keep the source's case rendered in the site's
   mixed-case style. (g) **Dark mode**: the tint and relief tiles are hidden in dark mode (the charcoal paper stands alone)
   until a dark palette is designed and measured for contrast; the sheet and the labels follow the existing dark tokens.
+
+## Supervisor rulings on the part 1 chains and the owner-decision findings (2026-10-26 05:35 UTC; D116)
+The two build workflows ran their refute stages two agents at a time (the per-workflow cap on 4 CPUs), with P1's fixer queued
+behind P2's 19 remaining refutes and P3's behind P4's 7. A resume replays only the unchanged prefix of agent calls in order, so a
+one-product resume re-ran the reviews (stopped at once); the chains were split instead into four fresh runs with the journals'
+state passed as arguments (standing findings, pending findings) and the original prompts: P1 wf_2924148e-459, P3 wf_e68b48b6-2b3
+(fixer then checker), P2 wf_420ecadb-f82 (19 refutes, fixer, checker), P4 wf_8d440c0d-382 (7 refutes, fixer, checker). Rulings
+on the findings the reviewers left to the owner or the supervisor, passed to the fixers as notes:
+- D116 (a) P1-07: the remap of the hillshade transparency value is dropped (a changed stored value is a wrong number). (b) P1-10
+  and P2-19: --cache stays optional, defaulting to a folder beside the store, never a relative path in the repository; the
+  integrator adds terrain-cache to .gitignore. (c) P1-11: a zoom subset is refused unless --keep-other-zooms is given. (d)
+  P1-12: the monthly job passes --refresh; the land cover date is read from the service's layer name at each build. (e) P2-08:
+  the per-cell band D request unit stands as a recorded decision; band D is not re-run before phase B (D114(a)). (f) P2-10: the
+  water and summit sentence names the publisher and is held with the forest line until counsel reads the NHD and GNIS terms
+  (item 24). (g) P3-12: the minimal name rule (Memorial, Field, USFS kept, 'at' lower case); the rest is an owner item. (h)
+  P3-20: the label point's distance measure is stated as degrees; no change now. (i) M5: bubbles stay above the dot only for
+  this stage; the coverage figures (95.25 percent at zoom 17, 98.78 at 18) are stated; the below-side option is an owner item.
+  (j) M6: the 36 shards over the raw split threshold are accepted (D112(j)); the integrator keeps the buildings verify before the
+  labels pass. (k) L10: the kv words stay "Data unavailable" with the "--" glyph (D110); the wording is an owner item. (l) L18:
+  research notes under research/ may name the products they analyse (the owner's reference); product files, docs and tests may
+  not. (m) L19: the per-zone sums are labelled as sums over zones, never as Montana totals. (n) Shared-file findings (website.yml,
+  .gitignore, hail-store.yml, buildings.py) go to integration.md for the integrator; no fixer edits a shared file.

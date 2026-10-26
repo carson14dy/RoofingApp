@@ -339,3 +339,12 @@ Band A to C complete and under budget; band D 20 of 4,597 tiles (NHD 504s); peak
 
 ## 2026-10-26 04:07 UTC: cartography skeptics done; D115
 wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a design decision with the owner's veto, picture palettes, type scale, credits, the AIANNH file, no local road mesh below zoom 13, dark mode without the tint). Journal archived.
+
+## 2026-10-26 05:35 UTC: B6 part 1 chains split into four runs (D116)
+- Stopped: run A resumed task w1ksj3emu (wf_74f50175-7c5) and run B task wek9bbexw (wf_fa0bebd7-711); the one-product resumes
+  wc3e5sg2q and w9cl0rv97 were stopped within minutes (they re-ran the reviews: a resume replays the call prefix in order).
+- Launched (inline script b6-continue-product.js, args from records/b6/continuation/P*-args.json plus supervisor notes):
+  P1 wf_2924148e-459 task wwot8yx11; P3 wf_e68b48b6-2b3 task wu2151l7z; P2 wf_420ecadb-f82 task wx8jxyn10; P4 wf_8d440c0d-382
+  task w2ej6pw1x. Landmark skeptics wf_b7916376-008 task w5pjapetx still running (refute:B5:2, refute:B6:1).
+- Next: read fix:* and check:* per product; rulings pass per product (inline script scripts/b6-rulings-pass.js; the Workflow tool
+  loads scriptPath only from the working directory); then the integrator (scripts/b6-integrator.js, inline).
