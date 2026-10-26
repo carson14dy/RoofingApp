@@ -1946,3 +1946,17 @@ against the 110-minute cap (review B6-16) and build.py reading basemap2's "fetch
   is the integration's fix round: six fixers on disjoint files (P1 with the monthly job, P2, P3, P4, the site files, the docs),
   then one read-only checker that runs the suite, the self-test, the rebuilt store parts, the site build, the smoke and the
   map.json gate. (d) The integrator's six reports and the review state are archived (records/b6/continuation/).
+
+## Supervisor rulings after the site and docs fixers (2026-10-26 13:00 UTC; D134)
+The site and docs fixers (wf_6f31ff28-9ce) applied F1 to F12 and E1 to E2 (335 site tests, one failing on a cross-fixer
+conflict). Rulings:
+- D134 (a) **The sheet water line** keeps the D122(b) sentence exactly ("Detailed water and local parks: Data unavailable for
+  this area in this update. This is not an all-clear."); the P2 fixer's rewording under B1 is reverted, since the words "Data
+  unavailable" are already in it. (b) **Every credit line prints only for a source the store read**: the index-driven rule of
+  F1 extends from the landmark kinds with a fallback to every B6 source whose index block names the sources read (a failed
+  source's line does not print; the part's "Data unavailable" sentence does). (c) **The NOHRSC regression figures** in the
+  docs are a data-quality record, not a count derived from a counsel-held source; they stay. (d) The remaining cross-fixer
+  leftovers (landmarks "date not recorded" in the index credit strings; the held_parks template sentence; the iem_ugcs row in
+  sources.py; DESIGN 13.3's monthly step row; the ROADMAP's "D106 to D127" ranges) go to one tidy fixer before the final check.
+  (e) A stray empty log file a fixer wrote at the container's filesystem root (/b6_run2.txt, outside the repository) stays:
+  the harness refuses a removal at the root; it is harmless in this ephemeral container.

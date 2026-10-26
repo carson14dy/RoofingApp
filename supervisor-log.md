@@ -403,3 +403,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   verification checker. Launching it next.
 - 12:25 UTC: the fix round launched as three runs (two fixers each, disjoint files): P1 and P2 wf_9df7e041-d5c (ww7hqfauo);
   P3 and P4 wf_c16fbe88-ac0 (wdfn5vx5v); site and docs wf_6f31ff28-9ce (wwyd1j9p1). The final checker runs after all three.
+- 13:00 UTC: site and docs fixers done (F1..F12, E1..E2); D134 recorded; a tidy fixer follows the P1/P2 and P3/P4 runs,
+  then the final check. The stray /b6_run2.txt cannot be removed by the agent (root-level removal refused); harmless.
