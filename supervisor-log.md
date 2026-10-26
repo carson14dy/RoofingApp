@@ -359,3 +359,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   runs), P4 (refutes), the landmark skeptics.
 - 06:40 UTC: P3 continuation done (20 findings fixed; verify 18/18; budgets met). D118 recorded; P3 rulings pass launched with
   X1..X8: wf_b1bb475d-6c2 task wilozzudh.
+- 06:55 UTC: P2 refutations complete (14 of 19 stand). D119 recorded. P2 fixer and checker launched (inline continuation
+  script; args in records/b6/continuation/P2-fix-args.json; the run id follows in the transcript).

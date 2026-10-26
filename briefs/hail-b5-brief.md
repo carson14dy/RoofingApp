@@ -1727,3 +1727,18 @@ passed to the P3 rulings pass as X1 to X8:
   (Hs, Ms at the end; Elem; Schl and Sch; Jr and Sr before High). Every other abbreviation stays as the source gives it and is
   listed for the owner with its count. (d) An en dash or an apostrophe in source text is kept (the ban is the em dash).
   (e) A repository URL in a User-Agent string, like a URL path, is not a vendor or product name (D117(c)).
+
+## Supervisor rulings on the P2 refutations (2026-10-26 06:55 UTC; D119)
+The 19 pending P2 findings were refuted in four parallel runs (38 skeptics): 14 stand, 5 are refuted (P2-10 the held water
+sentence, P2-18 verify's manifest check, P2-20 the missing report, P2-22 the missing-count zoom, P2-24 the integrator's pins),
+so the P2 fixer applies 19 standing findings (P2-01 to P2-09, P2-11 to P2-17, P2-19, P2-21, P2-23). Rulings passed as notes:
+- D119 (a) **Band D's request unit.** The per-cell request stands as a recorded decision (the skeptics measured that per-tile
+  requests would take roughly 24 to 47 hours serially, while a cell answers in one request when the service is up); band D is
+  not re-run before phase B (D114(a)). (b) **Pieces carry size and a feature id** (the source OBJECTID), and the label sits on
+  the piece with the label point. (c) **Placeholder and agency names.** A park whose name is blank, a placeholder ("Unknown
+  Park") or the managing agency's name keeps its outline and gets no name and no label point (the D16a precedent for roads).
+  (d) **Partial sentence.** Every failed kind is named, with no cap and no count. (e) **Missing sizes.** A river with no
+  drainage area is left out and counted as unusable; a park with no acreage keeps its outline with size None, ordered last
+  when a file is over budget; never a zero. (f) The 3DEP statement is marked as quoted from a secondary copy of the USGS text,
+  as P1 does; the unrecorded river-rule figures leave the docstring. (g) A river check is skipped only when the bands that
+  could hold the river (A and B) failed.
