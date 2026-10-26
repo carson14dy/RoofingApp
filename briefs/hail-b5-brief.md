@@ -1755,3 +1755,18 @@ measurements as outside its file list) and P3-R4 (its wording conflicted with D1
   (d) A data-format type code from a service's own schema ("esriFieldTypeOID"), like a URL path, is not a vendor name under
   the names rule (D117(c)). (e) The FAA fixture keeps only the spans the module reads (nine spans including the status code),
   every other column blank.
+
+## Supervisor rulings on the P1 rulings pass (2026-10-26 07:20 UTC; D121)
+The P1 rulings pass (wf_bcf01aa8-f13) applied all 16 items (92 tests; wetlands in the shrub-and-grass class, so 880 of 881 land
+cover tiles change and the statewide bytes fall to 14,349,318; offline builds never delete files; the shading copyright read
+from the service; "Data unavailable" in every layer sentence; verify's "byte for byte" only when true). The checker passed every
+item and raised four points, ruled here and passed to a P1 follow-up as F1 to F4:
+- D121 (a) **Credit forms.** The labelled lines ("Relief: 3DEP data courtesy of the U.S. Geological Survey", "Land cover:
+  National Land Cover Database 2021, ...") are the legend's lines on the map; the About page's sentences are written by the
+  integrator in the "Source: ..." form (D113(a)) from them. Both name the source and neither implies endorsement. (b) **The
+  shared base index** is never discarded by any reader: a document with no "f" key or another format refuses the write with
+  the reason and leaves the file unchanged (the P2-R7 and P3-R8 rule applied to terrain.py). (c) **CC0 evidence.** The CC0
+  1.0 sentence stays only with a citation of the page and date read in the research record; otherwise it goes and the note
+  says the statement was not confirmed. (d) The block-level "Data unavailable." sentence stands (rule 5). (e) **The adopted
+  store's land tiles** predate the wetland change: the integrator's store copy takes the rebuilt land files from the P1 test
+  store or runs the offline build; the monthly job rebuilds them on its first run.

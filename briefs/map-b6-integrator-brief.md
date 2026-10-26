@@ -52,3 +52,17 @@ Tasks, in order:
    tools/smoke_map.py with --addresses --history and record the phone view bytes (the new tiles and bands are not drawn yet, so
    the figure is the baseline for B6-3); write /home/user/hail-b5/out/b6/build/integrator/report.md with every figure, the
    suite result and what is open.
+
+## Additions from the part 1 chains (2026-10-26; D116 to D121)
+- Read each product's integration.md "Rulings pass" section: it carries the exact website.yml lines (the five test modules in
+  on.push.paths and the offline unittest line), the .gitignore lines (terrain-cache/, b6-cache/, !tests/fixtures/**/*.zip), the
+  hail-store.yml commands (P1 build and verify with --timeout 60 and --refresh monthly; P2 with --deadline-at under a 20-minute
+  cap; P3 daily and monthly with --refresh; hail.check_manifest after the last store writer), and the words for map.json.
+- The store writers run one after another; every base index writer now carries "f": "hail-base-index-v1" and keeps the other
+  products' keys. The store copy for the local build takes the land cover tiles from /home/user/hail-b5/out/b6/build/P1/store
+  (the adopted store's tiles predate the wetland class change) and the rebuilt P3 store (held rows and counts are not written).
+- About sentences are in the "Source: ..." form (D113(a), D121(a)); the legend keeps the labelled lines ("Relief: ...", "Land
+  cover: ..."). No number derived from a held source appears anywhere on the page (D118(b)); held kinds and sources show
+  "held" with the reason.
+- The landmark display-name owner items, the bubble side option, the kv wording and the cold-run figure are owner items in
+  docs/ROADMAP.md; the counsel items 21 to 24 and the TIGER area landmark use constraints stay listed.
