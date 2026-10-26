@@ -1640,3 +1640,16 @@ wording, currency and licence-scope corrections, which become rules for the buil
   (h) **Flood maps.** USGS flood inundation map data exist for some Montana reaches (the skeptic read them); a later option.
   (i) **Report figures.** The views report's building counts were off by 60 and 8 against the store (25,202 and 7,960); the
   record uses the store's figures; the pictures were right.
+
+## Supervisor rulings on P2's report (2026-10-26 01:05 UTC; D114)
+P2 built: band A 133,301 bytes gzip (budget 150,000), band B 21 files (largest 55,596; budget 100,000 each), band C 78 files
+(largest 9,273; budget 60,000), places 497 with the population rule, peaks 3,181 all with 3DEP heights (Granite Peak 3,899 m;
+McDonald Peak sampled 25.2 m under the listed height, inside the 30 m tolerance), two offline builds identical. Band D (water and
+park polygons per B1 tile at zoom 13 and up) reached 20 of 4,597 tiles: the NHD large-scale service answered 504 for the rest.
+- D114 (a) **Band D is optional for the first release.** The browser draws band C's rivers and lakes at zoom 13 and up until a
+  tile's band D shard exists; a missing shard is never an error on the page. The monthly job builds band D over several runs
+  under its deadline, resuming from the cache; the index says how many tiles are built. (b) **Forests are shown.** The Forest
+  Service boundaries are federal work (public domain by 17 U.S.C. 105); the service's "read-only use" note is a usage note, not a
+  licence; the credit line "Forest boundaries: USDA Forest Service" stands and counsel sees the terms as item 23, not as a hold.
+  The NHD terms (USGS, public domain, credit requested) are counsel item 24. (c) **Cold timings** are measured by the first monthly
+  run and recorded then; the job's step gets a 20-minute cap with the cache carrying the rest to the next run.

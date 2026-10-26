@@ -333,3 +333,6 @@ The stop hook reported untracked files: the four products' modules, tests and fi
 
 ## 2026-10-26 00:30 UTC: risk-source skeptics done; D113
 wf_3b78ff46-de4 complete (109 agents; 53 claims; the facts hold, the wording and licence scope corrected). D113 recorded; the journal archived. Workflows still running: part 1 A (resumed; P2 builder), part 1 B (P3 refutes near the end, then P4 review), the cartography and landmark skeptics.
+
+## 2026-10-26 01:00 UTC: P2 built; D114
+Band A to C complete and under budget; band D 20 of 4,597 tiles (NHD 504s); peaks and places complete. D114: band D optional for the first release, forests shown, counsel items 23 and 24. Reviews of P1 and P2 running.
