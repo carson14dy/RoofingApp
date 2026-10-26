@@ -1790,3 +1790,15 @@ checker listed 20 problems; rulings, passed to the P2 rulings pass as X1 to X14:
   or product name under the names rule. (h) A missing shapefile reader is a named failure of the kinds that need it, never a
   crash. (i) The local park polygons appear as band D builds; the P3 park chips show the parks meanwhile. (j) The workflow
   step reads the vector state from the index because build exits 0 for an unavailable store.
+
+## Supervisor rulings on the P3 follow-up (2026-10-26 07:50 UTC; D123)
+The P3 follow-up (wf_2944b627-c8e) rebuilt the test store with the final code (verify 22 of 22; 101 tests; the held block names
+each held kind and source with state, reason and count null; no Census row written) and scrubbed the three remaining FAA spans.
+Rulings on its open points:
+- D123 (a) The FAA parser reads eight spans (1 to 3, 15 to 27, 49 to 50, 134 to 183, 186 to 187, 524 to 538, 551 to 565, 841 to
+  842); the fixture keeps those and nothing else; "nine" in D120(e) was my miscount. (b) A product's test store carries a
+  manifest in the adopted format listing the files it holds (539 for P3); the adopted manifest's 45,877 entries belong to the
+  full store, which the integrator checks. (c) The product cache's six layer descriptions are renamed to the module's names
+  (bytes unchanged) so an offline build from the cache reproduces the store; the first live run refreshes them anyway. (d) The
+  changed-name figure is recounted per row (66 pairs, not 53) and every stale figure in the P3 records (101 tests, 22 checks,
+  539 entries) is corrected before the integrator reads them. A close-out run (wf: see the log) does (c) and (d).
