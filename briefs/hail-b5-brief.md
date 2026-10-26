@@ -1974,3 +1974,17 @@ open points:
   licence sentence in the sources.py row for the held park source is removed (tidy T7); DESIGN's held chip quotes the one
   church sentence. (d) A store built before these changes fails the new verify checks until the next landmarks build; the
   final check rebuilds the store copy's parts in sequence before it builds the site.
+
+## Supervisor rulings after the tidy round (2026-10-26 13:45 UTC; D136)
+The tidy fixers (wf_5bf7e48d-350) applied T1 to T7 and T9 to T11: the D122(b) water line, "Data unavailable" in the landmark
+credit strings, the held park words, the iem_ugcs and terrain rows, the TIGER licence sentence out, the credit lines gated by
+the index, the TIGER credit and the one-text legend pin, the docs (339 site tests, 235 module tests). Rulings on their open points:
+- D136 (a) **About prints module words**: the About page's held sentences (places of worship, Census park points) and every
+  "Data unavailable" sentence for a source the store did not read are the modules' own constants (landmarks WORDS held and
+  held_parks; basemap2, landmarks, history_layers and terrain part sentences), passed through build.py and printed as they are;
+  the template's compositions and literals go (tidy U1 to U3). The held-reason sentence "The file's use constraints are for
+  counsel to read." stands. (b) "139 features" in history_layers.py and DESIGN describes the outline file and stays; the count
+  claim in the iem_ugcs row is gone (T4). (c) The B5 county boundaries credit line is PR 17's and is not gated here. (d) The
+  final check runs in two parts: the store copy's parts are rebuilt and checked (store checker) while the About fixer works;
+  the site check follows and runs the six parity tests against the adopted combined store (HAIL_PARITY_STORE). (e) The test
+  fixture's "date not recorded" credit reads "Data unavailable" (U4). (f) ROADMAP's open-items header "D107 to D134" stands.
