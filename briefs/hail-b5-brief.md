@@ -1988,3 +1988,18 @@ the index, the TIGER credit and the one-text legend pin, the docs (339 site test
   final check runs in two parts: the store copy's parts are rebuilt and checked (store checker) while the About fixer works;
   the site check follows and runs the six parity tests against the adopted combined store (HAIL_PARITY_STORE). (e) The test
   fixture's "date not recorded" credit reads "Data unavailable" (U4). (f) ROADMAP's open-items header "D107 to D134" stands.
+
+## Supervisor rulings on the store check (2026-10-26 14:00 UTC; D137)
+The store checker (wf_88545064-81a) rebuilt the store copy's parts with the final modules from the caches (566 module tests;
+terrain 881 tiles per layer, 14,349,318 bytes; base map partial by design, band D 20 of 4,597 tiles; landmarks 2,159 points in
+537 shards; history layers 14 of 14 checks; labels 83 shards of three tiles; check_manifest 48,305 files) and found one failed
+check: the buildings verify's size rule on the labelled copy (four shards of the three labelled tiles between 254,587 and
+258,207 bytes raw against the 250,000-byte raw threshold; every shard under the 100,000-byte gzip budget).
+- D137 (a) **The size rule is for unlabelled shards**: the job runs the buildings verify before the labels pass, where it
+  passes; on a labelled copy it fails by design until owner item 9 is decided (D125(f)). The final site check treats that one
+  check as expected, and ROADMAP item 9 carries the figures. (b) The band D water state (partial, 52 of 54 areas not loaded
+  from an offline cache) is the monthly job's to continue (D114(a)); the About page prints the partial sentence and credits
+  only the sources read. (c) The branch filter `claude/**` in hail-store.yml is a git ref pattern, not a product name, and
+  predates B6; the rule statement in landmarks.py line 71 names no product. (d) The online terrain re-fetch sample and the
+  buildings whole-part recompute need the network and the county files; the branch Website run covers the first, the daily
+  job the second.
