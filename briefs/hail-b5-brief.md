@@ -2014,3 +2014,13 @@ credit spacing (343 site tests). Rulings on its open points:
   four latent fallbacks (and the labels one) use it; an index-recorded problem still wins. (c) The 90 F window prints only
   when the 90 F picture was read. (d) The stale landmarks pin asserts the new template line and the build.py key (V1).
   (e) The test count of the brief (339) was the count before the first About run; the fixer's counts (342 then 343) stand.
+
+## Supervisor rulings after tidy round 3 (2026-10-26 17:05 UTC; D139)
+The tidy round 3 fixer (wf_ba3f124c-df3) applied V1 to V4 (347 site tests, 71 history tests, 121 landmark tests). Rulings
+on its open points, applied by the supervisor before the site check:
+- D139 (a) **The reason-free sentence reads right for plural parts**: WORDS["missing"] becomes "Data unavailable. {what}
+  could not be read from the store in this update. This is not an all-clear." (b) **The exception fallbacks print module
+  words**: build.py's three exception fallbacks (history layers, recent cells, labels) print that sentence; the reason text
+  with the exception type stays in the data key "reason" for diagnosis and is printed nowhere. (c) The data-file reason keys
+  (REASON_NO_STORE and the rest) stay: no sentence prints them, and the pins hold. (d) The About rule sentence "shows Data
+  unavailable with the reason" is prose about the rule and stays.

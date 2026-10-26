@@ -1,0 +1,79 @@
+[
+ {
+  "run": "wf_ba3f124c-df3",
+  "fixer": "Montana Hail Watch, B6 About page, tidy round 3 (D138): V1 to V4 applied in /home/user/wt/wt-b6 (branch claude/map-b6). Changes are uncommitted; no git write was run.",
+  "report": {
+   "product": "Montana Hail Watch, B6 About page, tidy round 3 (D138): V1 to V4 applied in /home/user/wt/wt-b6 (branch claude/map-b6). Changes are uncommitted; no git write was run.",
+   "items": [
+    {
+     "id": "V1",
+     "state": "applied",
+     "evidence": "tests/test_landmarks.py:1467-1475: the test is renamed to test_the_about_template_prints_the_church_sentence_as_its_own_paragraph_that_build_passes. It reads website/templates/about.html and website/build.py as text and asserts '<p>{{ b6.held_church }}</p>' (about.html:79) and '\"held_church\": lm.CHURCH_HELD' (build.py:1888). The composition assertion is kept at line 1475 and still holds, because CHURCH_HELD is built from HELD_REASON (landmarks.py:153). The class docstring at lines 1434-1438 is updated to match. Before: 1 failure (the old composed sentence, line 1468). After: 121 tests OK."
+    },
+    {
+     "id": "V2",
+     "state": "applied",
+     "evidence": "website/templates/about.html:99-101: the value-bubble paragraph prints '{{ b6.bubble_unavailable or \"\" }} {{ b6.bubble_legend }}' in place of its own dash sentence. website/build.py:1402 BUBBLE_LEGEND equals history_layers.WORDS['label_legend'] (history_layers.py:199-202); the equality was already pinned in test_site.py and is asserted again at test_site.py:6221. build.py:1891-1893 adds bubble_legend (BUBBLE_LEGEND) and bubble_unavailable (None when the labels state is 'loaded'; otherwise the labels block's own problem, or WORDS['missing'] with the part name when it has none). Tests: test_site.py:6219-6226 (the legend prints once, equals the module words, and matches data/base.json) and test_site.py:6228-6243 (a synthetic labels block with state unavailable and a problem: the problem sentence comes after the first sentence and before the legend). Rendered check: the loaded copy prints the legend once."
+    },
+    {
+     "id": "V3",
+     "state": "applied",
+     "evidence": "website/history_layers.py:208 adds WORDS['missing'] = 'Data unavailable. {what} is not in the store in this update. This is not an all-clear.' Fallbacks now use it with the part names build.py already passed: _history_block at build.py:1615-1624 (whole layer, 'The five-year history layers'), :1635 (pictures, HISTORY_WHAT), :1643 (zones, 'The zone counts'); _recent_block at :1653-1660; _labels_block at :1666-1675. The index-recorded problem still wins in each. The four literals are gone from build.py (verified by grep and asserted in the test). HISTORY_WHAT is kept at build.py:1604-1605. history_layers' title words (hail1_title, heat90_title, recent_title, zones_title) name the same parts; they were not renamed, and this is noted in the comment at build.py:1598-1603. Judgment call: history_unavailable (build.py:1821-1829) now ends with WORDS['missing'], so a missing part never prints nothing. The data-file reason keys carry the copy's own reason (why), which no printed sentence uses. Tests: test_history_layers.py:907-922 (missing added to the lead and close check; exact wording; only {what} as a field; no em-dash). test_site.py:6244-6273 (BUILD_REASON_LITERALS asserts the four literals are absent from build.py; the bare copy and a copy whose index lacks the problem sentences print the WORDS['missing'] sentences and never the old literals or copy reasons). Existing pins that quoted the old build.py text were updated at test_site.py:6206 and :6309. b6_store gained labels and pictures overrides (test_site.py:5709-5711, 5753-5754, 5767)."
+    },
+    {
+     "id": "V4",
+     "state": "applied",
+     "evidence": "website/build.py:1881: 'heat_window': window_words(heat) if heat_read and heat else None. Test at tests/test_site.py:6275 (test_a_90_f_count_is_not_counted_over_when_its_picture_did_not_load): the heat90 picture is set to unavailable with its window kept, through a patched base_document. The page prints the picture's unavailable sentence and never 'counted over' or 'has no grid value', and about_b6_context gives heat_window None."
+    }
+   ],
+   "files_changed": [
+    "/home/user/wt/wt-b6/website/build.py",
+    "/home/user/wt/wt-b6/website/templates/about.html",
+    "/home/user/wt/wt-b6/website/history_layers.py",
+    "/home/user/wt/wt-b6/tests/test_site.py",
+    "/home/user/wt/wt-b6/tests/test_landmarks.py",
+    "/home/user/wt/wt-b6/tests/test_history_layers.py"
+   ],
+   "tests": "py_compile OK on build.py, history_layers.py, test_site.py, test_landmarks.py and test_history_layers.py. tests.test_history_layers: 71 OK (70 before, plus 1 new). tests.test_landmarks: 121 OK (before: 1 failure at test_landmarks.py:1468, now passing). tests.test_site: 347 run, OK, 6 skipped (343 run and 6 skipped before, plus 4 new). Run twice: once before a whitespace-only fix in history_layers.py and once after, both green. U+2014 count is 0 in all six touched files. No network request, no store-copy path touched, no git write. To check the printed sentences I rendered the About page for a bare copy and a loaded copy with a scratch script (/tmp/claude-0/-home-user-RoofingApp/7638440a-a008-5ef8-a289-86be0a23e7a7/scratchpad/show_about.py, not in the repo).",
+   "open": [
+    "Grammar: WORDS['missing'] says 'is' after plural part names. The bare copy prints 'Data unavailable. The five-year history layers is not in the store in this update.' (hail paragraph) and 'Data unavailable. The bubble values on the building outlines is not in the store in this update.' (value bubbles). 'The zone counts' would read the same way if its block failed with no problem of its own. The brief fixed the sentence and the part names, so both are kept as given. The owner should choose 'are' for plural parts, or singular names.",
+    "The exception fallbacks in base_document (build.py:1708-1723, for history_layers, recent and labels) still print build's own reason text, including the exception type, for example '(KeyError)'. They run only when the builder raises, and they are not among V3's named fallbacks. WORDS['missing'] says 'is not in the store', which would be wrong for a file that exists but cannot be read, so I left them. Owner's call.",
+    "The data-file reason keys still take build's copy-state reasons (REASON_NO_STORE, REASON_NO_BASE, REASON_NO_HISTORY, REASON_NO_RECENT, REASON_NO_LABELS, build.py:1406-1410). No printed sentence uses them, and test_site.py (B6BaseMapData, about lines 5836-5841) pins them. Removing them would also mean changing those pins.",
+    "about.html:118 has a fixed explanatory sentence that contains 'Data unavailable' ('shows Data unavailable with the reason'). It is prose describing the rule, not a sentence for a missing part, so I left it. Say if you want it routed through build.py.",
+    "Uncommitted state: all these edits are in the working tree, and no commit was made. The worktree already held uncommitted edits from the stopped run, which I kept because their tests pass: about.html:85 (the nClimGrid credit joined onto the 90 F line), the U1 held-paragraph test and the nClimGrid spacing assertion in test_site.py, and docs/DECISIONS.md. The D138 entry in docs/DECISIONS.md is already present and matches what the code does. I did not edit that file."
+   ]
+  }
+ },
+ {
+  "run": "supervisor",
+  "fixer": "supervisor edits after tidy round 3 (D139)",
+  "report": {
+   "product": "supervisor edits after tidy round 3 (D139)",
+   "items": [
+    {
+     "id": "S1 (D139(a))",
+     "state": "applied",
+     "evidence": "website/history_layers.py WORDS[\"missing\"] reads \"Data unavailable. {what} could not be read from the store in this update. This is not an all-clear.\" (singular and plural part names read right); tests/test_history_layers.py pins follow (lines about 918 and 922)."
+    },
+    {
+     "id": "S2 (D139(b))",
+     "state": "applied",
+     "evidence": "website/build.py base_document: the three exception fallbacks (history_layers, recent, labels; about lines 1708 to 1723) print hl.WORDS[\"missing\"] formatted with the part name as their problem sentence; the reason text with the exception type stays in the data key \"reason\" for diagnosis and is printed nowhere."
+    },
+    {
+     "id": "S3 (D138)",
+     "state": "applied",
+     "evidence": "docs/DECISIONS.md carries the D137 and D138 bullets after D136 and its D38 header reads D31 to D138 (D139 is added by the supervisor after the check)."
+    }
+   ],
+   "files_changed": [
+    "website/history_layers.py",
+    "website/build.py",
+    "tests/test_history_layers.py",
+    "docs/DECISIONS.md"
+   ],
+   "tests": "tests.test_history_layers OK (71); tests.test_site 347 run, OK, 6 skipped (391 s).",
+   "open": []
+  }
+ }
+]
