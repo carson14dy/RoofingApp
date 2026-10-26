@@ -105,7 +105,7 @@ the 7-day list. Reports page: map and legend, then one table per reporting day.
 
 **Hierarchy, in reading order.**
 1. Header: mark, "Montana Hail Watch", Now · Storm reports · About.
-2. Freshness line: "Updated Wed 9:02 am MDT · rebuilt every 10 minutes · 3 min ago", then which
+2. Freshness line: "Updated Wed 9:02 am MDT · rebuilt on a schedule set to every 10 minutes · 3 min ago", then which
    sources loaded and any problem in red words.
 3. Now: warnings and advisories with a count (the six most urgent shown, the rest one tap away), the
    radar and warning-area map with its frame time, then "Next 12 hours by town".
@@ -456,7 +456,7 @@ keep their address across rebuilds) and `data/map.json` with `?v=` = the build m
 | Sample | A `--sample` build | "SAMPLE data" sits in the sheet body in every state (loaded, no estimate, outside, loading, unavailable), not on the title, and every town table carries it too. The SAMPLE store holds real decoded values for a few tiles and days only |
 | Missing days | Any day in the window with no file | "Days with no data, not counted: {list}." |
 | What this is | On a loaded sheet and in each loaded town table | "A radar estimate (NOAA MRMS MESH) of the largest hail over this cell, about 0.7 miles north to south and 0.5 miles east to west, during the day. Sizes are shown to the hundredth of an inch, rounded down, with the millimetre value exact. An estimate is not a measurement at the ground and not an inspection. A day runs from 12:00 UTC to 12:00 UTC the next day: 6 am to 6 am Mountain daylight time, 5 am to 5 am in winter (the SPC reporting day). Days not listed have no radar estimate of 0.25 in or more; that is not the same as no hail." |
-| Source | On a loaded sheet and in each loaded town table | "Source: NOAA MRMS MESH 24-hour maximum, 12:00 UTC files, NOAA Open Data on AWS. History as of {as_of}. The newest day is added by a job that starts at 12:43 UTC and shows here on the next rebuild, usually within the hour." |
+| Source | On a loaded sheet and in each loaded town table | "Source: NOAA MRMS MESH 24-hour maximum, 12:00 UTC files, NOAA Open Data on AWS. History as of {as_of}. The newest day is added by a job that starts at 12:43 UTC and shows here on the next rebuild." |
 
 **Size words.** The stored value is tenths of a millimetre. The size shows to the hundredth of an inch, rounded down, with the millimetre value beside it, exact to the tenth of a millimetre.
 | Stored (tenths of a mm) | Size shown (in, to the hundredth, rounded down) | Class word | Severe tag |

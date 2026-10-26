@@ -7,7 +7,7 @@
     python -m website.build --out _site --hail-history  # also the five-year hail history (website/hail.py)
     python -m website.build --out _site --sample --hail-history --hail-store store.tar.gz  # a local store, not the download
 
-GitHub Actions runs the live build every 10 minutes and publishes the folder with GitHub Pages
+GitHub Actions runs the live build on a schedule set to every 10 minutes and publishes the folder with GitHub Pages
 (.github/workflows/website.yml). Every page says when its data was fetched; nothing on a page is
 newer than that time.
 """
@@ -260,9 +260,10 @@ class Collector:
             self.note("hail_history", HAIL_LABEL, True, ("SAMPLE store: " if sampled else "") + detail)
         except (hs.HailStoreError, OSError, ValueError, KeyError, TypeError) as e:
             problem = str(e) if isinstance(e, hs.HailStoreError) else f"the history files couldn't be read ({type(e).__name__})"
-            self.note("hail_history", HAIL_LABEL, False, problem)
-            words = [hs.describe_unavailable(problem) for _ in towns]
-            block = hs.map_data_unavailable(problem)
+            self.note("hail_history", HAIL_LABEL, False, problem)       # the log keeps the technical detail
+            shown = hs.plain_problem(problem)                             # the pages say it in plain words
+            words = [hs.describe_unavailable(shown) for _ in towns]
+            block = hs.map_data_unavailable(shown)
             block["tiles"] = []                     # no store, so no tile is known: the map says unavailable, not outside
             from . import joins as jn
             block["joins"] = join_block_unavailable(jn, problem)
@@ -495,7 +496,8 @@ def hail_store(out: Path, store: str | None, sample: bool, fetch) -> dict:
         hs.check_manifest(hs.FIXTURE_DIR)
         return _copy_hail(hs.FIXTURE_DIR, out, index)
     with tempfile.TemporaryDirectory(prefix="hail-store-") as tmp:
-        index = hs.fetch_store(fetch.binary, tmp, hs.STORE_URL)
+        index, url = hs.fetch_store_any(fetch.binary, tmp, hs.store_urls())   # the branch's asset, else main's
+        index = dict(index, asset=url.rsplit("/", 1)[-1])
         return _copy_hail(Path(tmp), out, index)
 
 

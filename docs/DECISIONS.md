@@ -644,7 +644,7 @@ delayed during periods of high loads", that "High load times include the start o
 "some queued jobs may be dropped". The schedule becomes 7, 17, 27, 37, 47 and 57 minutes past the hour:
 still six rebuilds an hour, but not on the hour. The cause of the gaps has not been diagnosed, so this is
 an experiment, not a fix. The measurement is the count of scheduled starts in the 24 hours after the change
-reaches `main` (144 is the every-10-minutes figure), to compare with the four runs above.
+reaches `main` (144 is the every-10-minutes figure), to compare with the four runs above. Measured 2026-10-21 (the 24-hour count this entry asked for): GitHub ran the scheduled rebuild 6 times in the 24 hours to 23:00 UTC (Website runs 86 to 93; gaps 2 h 21 min to 5 h 01 min), against 4 runs in the 13 hours before the offset. The offset did not bring the cadence near every 10 minutes; the timer decision (an external trigger) stays open in the roadmap.
 
 *Why:* GitHub's own advice for delayed schedules is to "schedule your workflow to run at a different time of
 the hour". The change is one line and easy to undo, so the measured count can decide whether it stays.
@@ -680,7 +680,7 @@ What they settle:
   The gate is that a cold-cache and a warm-cache build give byte-identical
   shards (B1-6), so the cache only saves downloads. The 12:00 UTC file is published about 12:08 UTC (measured in
   `hosting-and-architecture.json` on the hail-history research branch). The newest day is added by a job that starts
-  at 12:43 UTC and shows here on the next rebuild, usually within the hour. The schedule offset is the consistency fix
+  at 12:43 UTC and shows here on the next rebuild. The schedule offset is the consistency fix
   for the builds, which leave the top of the hour as the job does (D33).
 - *Units and codes (5).* NOAA's MRMS GRIB2 user table settles them (its evidence is
   `research/hail-history/validation-evidence/mrms-grib2-tables/` on the `claude/hail-history` research branch).
@@ -743,18 +743,20 @@ What they settle:
 - *Labels.* The globe research's proposed decision labels (`research/globe/README.md` section 9b, from D31) are
   proposals, not entries in this log. The D34 that D30 cites for the satellite freshness limits is one of those
   proposals. This entry is the D34 in the log.
-- *Built on `claude/hail-b1`, not merged.* `website/hail.py` (the grid, size classes and words, store readers, the
+- *Built on `claude/hail-b1`; merged at the owner's decision of 2026-10-21.* `website/hail.py` (the grid, size classes and words, store readers, the
   SAMPLE fixture, the full daily build and verify); `website/build.py`, the templates and `website/sources.py`
   (`--hail-history`, `--hail-store`, the town tables, the About paragraph, the contract row);
   `website/static/map/map.js` (the click, the outside rule, one shard fetch and the sheet, documented in its header);
   `.github/workflows/hail-store.yml` (installs unpinned, as the site build does); the tests and the docs. The words
   are in `docs/DESIGN.md` section 9. The gates and their results are in
-  `research/hail-history/validation-evidence/b1-verification.json`, pending the re-check.
+  `research/hail-history/validation-evidence/b1-verification.json`: the final check of 2026-10-18 and the go-live
+  block of 2026-10-21.
 
 *Why:* the owner's seven decisions change what the site is for: a public history at any spot, five years, no owner
 names, and the laws. The next agent needs them word for word before B2 and B3 are built. The radar estimate ships
-first because its units are now verified and its source is one NOAA file a day. The flag keeps the history off
-the public site until the owner has read the About text and counsel has read the terms.
+first because its units are now verified and its source is one NOAA file a day. The flag kept the history off
+the public site until the owner had read the About text; he turned it on at his decision of 2026-10-21, with the
+terms items recorded for counsel.
 
 **D35 · Hail history B2: the other kinds of evidence in the same sheet (2026-10-18).** Within this entry, D1 to D35 (such as D6, D26, D33, D34 or D35) cite the supervisor's B2 review decisions, which are not entries of this log. The supervisor's D34 (round 6, the flood products ruling) is applied below, and the supervisor's D35 (round 7) corrects part of it in the same entry, in place, as the round-6 entry was amended; the log's own D34, above, is the owner's seven decisions. B2 adds the other kinds of weather at a spot to the sheet and the town tables that B1 opened (D34). It serves Carson's decisions 2, 6, 4 and 7 in D34, quoted there by number: 2 (a popup on each history of weather), 6 (all types of weather at that address for five years, with no owner names), 4 (updates as consistent and recent as possible) and 7 (follow the laws). What they settle:
 

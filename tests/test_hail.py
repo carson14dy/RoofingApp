@@ -370,8 +370,7 @@ class WordTests(unittest.TestCase):
         self.assertNotIn("about 6 am to 6 am", text)
 
     def test_source_gives_the_next_day_sentence(self):
-        self.assertIn("The newest day is added by a job that starts at 12:43 UTC and shows here on the next rebuild, "
-                      "usually within the hour.", h.WORDS["source"])
+        self.assertIn("The newest day is added by a job that starts at 12:43 UTC and shows here on the next rebuild.", h.WORDS["source"])
 
     def test_no_em_dash_in_the_module_or_the_words(self):
         dash = "\u2014"
@@ -414,7 +413,7 @@ class DescribeTests(unittest.TestCase):
         out = h.describe(self.index, self.benchland, NOW)
         self.assertEqual(out["source"], "Source: NOAA MRMS MESH 24-hour maximum, 12:00 UTC files, NOAA Open Data on "
                                         "AWS. History as of Oct 15, 2026. The newest day is added by a job that starts "
-                                        "at 12:43 UTC and shows here on the next rebuild, usually within the hour.")
+                                        "at 12:43 UTC and shows here on the next rebuild.")
         self.assertIn("not a measurement at the ground and not an inspection", out["what_this_is"])
         self.assertIn("about 0.7 miles north to south and 0.5 miles east to west", out["what_this_is"])
         self.assertIn("6 am to 6 am Mountain daylight time", out["what_this_is"])
@@ -840,7 +839,17 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(h.FLOOR_TENTHS, 64)
         self.assertEqual(h.D0, date(2020, 1, 1))
         self.assertEqual(h.TILE, 10)
-        self.assertTrue(h.STORE_URL.endswith("/releases/download/hail-store/hail-store.tar.gz"))
+        self.assertTrue(h.STORE_URL.endswith("/releases/download/hail-store/hail-store-main.tar.gz"))
+        self.assertTrue(h.store_url("hail-store-claude-x.tar.gz").endswith("/hail-store/hail-store-claude-x.tar.gz"))
+        with mock.patch.dict(os.environ, {"HAIL_STORE_ASSET": "hail-store-claude-hail-b1.tar.gz"}):
+            self.assertTrue(h.store_url().endswith("/hail-store/hail-store-claude-hail-b1.tar.gz"))
+            self.assertEqual([u.rsplit("/", 1)[-1] for u in h.store_urls()],
+                             ["hail-store-claude-hail-b1.tar.gz", "hail-store-main.tar.gz"])
+        with mock.patch.dict(os.environ, {"HAIL_STORE_ASSET": "hail-store-main.tar.gz"}):
+            self.assertEqual([u.rsplit("/", 1)[-1] for u in h.store_urls()], ["hail-store-main.tar.gz"])
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("HAIL_STORE_ASSET", None)
+            self.assertEqual([u.rsplit("/", 1)[-1] for u in h.store_urls()], ["hail-store-main.tar.gz"])
         self.assertTrue(issubclass(h.HailStoreError, Exception))
         for name in ("cell_for", "cell_centre", "shard_path", "tile_name", "cell_key", "day_index", "day_of_index",
                      "inches", "class_for", "fetch_store", "load_index", "cell_events", "describe", "map_data",
@@ -1685,6 +1694,20 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("==", text)
         self.assertIn('python-version: "3.12"', text)
         self.assertIn("python -m website.hail verify store", text)
+        # the asset is named after the branch; the new file goes up under a temporary name and takes the asset's
+        # name once complete; any job that finds the earlier shared-name asset removes it, loudly
+        self.assertIn('echo "name=hail-store-$(echo "$GITHUB_REF_NAME" | tr \'/\' \'-\').tar.gz" >> "$GITHUB_OUTPUT"', text)
+        self.assertIn('run: tar czf "$ASSET.new" -C store hail', text)
+        self.assertIn('gh release upload hail-store "$ASSET.new" --clobber', text)
+        self.assertIn('gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/assets/$new_id" -f name="$ASSET"', text)
+        self.assertIn('-f name="$ASSET.old"', text)
+        self.assertIn('              hail-store.tar.gz) shared_id=$id;;\n', text)
+        self.assertIn('          done <<< "$assets"\n          if [ -z "$new_id" ]; then echo "The uploaded file $ASSET.new is not in the release\'s asset list; nothing was replaced." >&2; exit 1; fi\n', text)
+        self.assertNotIn("|| true", text[text.index("name: Publish the release asset"):])
+        self.assertIn("gh release edit hail-store --notes", text)
+        self.assertEqual(text.count("ASSET: ${{ steps.asset.outputs.name }}"), 2)
+        # one run per branch at a time: a branch's run never queues behind or cancels main's
+        self.assertIn("group: hail-store-${{ github.ref }}", text)
 
 
 class FetchAndLoadTests(unittest.TestCase):
@@ -1723,6 +1746,123 @@ class FetchAndLoadTests(unittest.TestCase):
         def get(url, headers=None):
             return data, error
         return get
+
+    def test_fetch_store_any_takes_the_first_asset_that_answers_and_never_hides_a_bad_one(self):
+        """A branch's own asset first, then main's: a download that fails moves on; an archive that downloads but
+        does not check out raises at once; none answering names every failure."""
+        good = self.make_tar(self.fixture_members())
+        urls = ["https://x/hail-store-claude-x.tar.gz", "https://x/hail-store-main.tar.gz"]
+
+        def get_fallback(url, headers=None):
+            return (None, "not published (HTTP 404)") if url.endswith("claude-x.tar.gz") else (good, None)
+        index, used = h.fetch_store_any(get_fallback, self.tmp / "fb", urls)
+        self.assertEqual(used, urls[1])
+        self.assertEqual(index["format"], "hail-store-v1")
+        # a branch asset that is down (not a 404) is never replaced by main's without a word
+        asked = []
+
+        def get_down(url, headers=None):
+            asked.append(url)
+            return (None, "server error (HTTP 503)") if url.endswith("claude-x.tar.gz") else (good, None)
+        with self.assertRaises(h.HailStoreError) as cm:
+            h.fetch_store_any(get_down, self.tmp / "down", urls)
+        self.assertIn("hail-store-claude-x.tar.gz: server error (HTTP 503)", str(cm.exception))
+        self.assertEqual(asked, [urls[0]])
+
+        def get_first(url, headers=None):
+            return (good, None)
+        self.assertEqual(h.fetch_store_any(get_first, self.tmp / "first", urls)[1], urls[0])
+        with self.assertRaises(h.HailStoreError) as cm:
+            h.fetch_store_any(lambda url, headers=None: (b"<html>an error page</html>", None), self.tmp / "bad", urls)
+        self.assertNotIn("hail-store-main", str(cm.exception))      # the bad first asset is not hidden by the second
+        with self.assertRaises(h.HailStoreError) as cm:
+            h.fetch_store_any(lambda url, headers=None: (None, "not published (HTTP 404)"), self.tmp / "none", urls)
+        self.assertIn("hail-store-claude-x.tar.gz: not published (HTTP 404)", str(cm.exception))
+        self.assertIn("hail-store-main.tar.gz: not published (HTTP 404)", str(cm.exception))
+
+    def test_the_publish_step_replaces_the_asset_in_one_step_and_removes_the_shared_name_loudly(self):
+        """The publish step's own shell under bash -e with a stub gh: with an old asset and the shared name present
+        it uploads the .new file, moves the old asset aside, gives the new one the name, removes the old one and the
+        shared name; with neither present it only renames; when the new one cannot take the name the old one gets it
+        back and the step fails; a missing .new, a failed listing or a failed removal fails the step; a failed
+        upload stops before any change; a .old left by an earlier run is removed first."""
+        import textwrap
+        text = (ROOT / ".github" / "workflows" / "hail-store.yml").read_text(encoding="utf-8")
+        step = text[text.index("- name: Publish the release asset"):]
+        end = step.find("\n\n", step.index("No shared-name asset to remove"))
+        step = step if end < 0 else step[:end]
+        script = textwrap.dedent(step[step.index("run: |") + len("run: |"):])
+        work = Path(tempfile.mkdtemp(prefix="hailwatch-publish-"))
+        self.addCleanup(shutil.rmtree, work, True)
+        stub = work / "bin"
+        stub.mkdir()
+        (stub / "gh").write_text(
+            '#!/bin/sh\n'
+            'echo "gh $*" >> "$PUB_TEST_LOG"\n'
+            'case "$PUB_TEST_CASE:$*" in\n'
+            '  *"release view"*) exit 0;;\n'
+            '  *"release edit"*) exit 0;;\n'
+            '  upload_fails:*"release upload"*) echo "HTTP 502" >&2; exit 1;;\n'
+            '  *"release upload"*) exit 0;;\n'
+            '  listing_fails:*"releases/tags/hail-store"*) echo "HTTP 502" >&2; exit 1;;\n'
+            '  both:*"releases/tags/hail-store"*) printf "11 hail-store-main.tar.gz\\n12 hail-store-main.tar.gz.new\\n13 hail-store.tar.gz\\n";;\n'
+            '  neither:*"releases/tags/hail-store"*) printf "12 hail-store-main.tar.gz.new\\n";;\n'
+            '  removal_fails:*"releases/tags/hail-store"*) printf "12 hail-store-main.tar.gz.new\\n13 hail-store.tar.gz\\n";;\n'
+            '  removal_fails:*"DELETE repos/x/y/releases/assets/13"*) echo "HTTP 500" >&2; exit 1;;\n'
+            '  patch_fails:*"releases/tags/hail-store"*) printf "11 hail-store-main.tar.gz\\n12 hail-store-main.tar.gz.new\\n";;\n'
+            '  patch_fails:*"assets/12 -f name=hail-store-main.tar.gz"*) echo "HTTP 500" >&2; exit 1;;\n'
+            '  no_new:*"releases/tags/hail-store"*) printf "11 hail-store-main.tar.gz\\n";;\n'
+            '  stale_old:*"releases/tags/hail-store"*) printf "11 hail-store-main.tar.gz\\n12 hail-store-main.tar.gz.new\\n14 hail-store-main.tar.gz.old\\n";;\n'
+            '  *"-X DELETE"*) exit 0;;\n'
+            '  *"-X PATCH"*) exit 0;;\n'
+            '  *) echo "unexpected gh call: $*" >&2; exit 9;;\n'
+            'esac\n', encoding="utf-8")
+        (stub / "gh").chmod(0o755)
+
+        def run(case):
+            log = work / f"log-{case}"
+            env = dict(os.environ, PATH=f"{stub}:{os.environ.get('PATH', '')}", ASSET="hail-store-main.tar.gz",
+                       GITHUB_REPOSITORY="x/y", PUB_TEST_CASE=case, PUB_TEST_LOG=str(log))
+            p = subprocess.run(["bash", "-e", "-c", script], env=env, capture_output=True, text=True)
+            calls = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+            return p.returncode, p.stdout, calls
+
+        code, out, calls = run("both")
+        self.assertEqual(code, 0, out)
+        self.assertIn("gh release upload hail-store hail-store-main.tar.gz.new --clobber", calls)
+        aside = "gh api -X PATCH repos/x/y/releases/assets/11 -f name=hail-store-main.tar.gz.old"
+        rename = "gh api -X PATCH repos/x/y/releases/assets/12 -f name=hail-store-main.tar.gz"
+        remove_old = "gh api -X DELETE repos/x/y/releases/assets/11"
+        for call in (aside, rename, remove_old, "gh api -X DELETE repos/x/y/releases/assets/13"):
+            self.assertIn(call, calls)
+        self.assertLess(calls.index(aside), calls.index(rename))
+        self.assertLess(calls.index(rename), calls.index(remove_old))
+        self.assertIn("Published hail-store-main.tar.gz.", out)
+        self.assertIn("Removed the shared-name asset hail-store.tar.gz.", out)
+        code, out, calls = run("neither")
+        self.assertEqual(code, 0, out)
+        self.assertEqual([c for c in calls if "DELETE" in c], [])
+        self.assertEqual([c for c in calls if "PATCH" in c], [rename])
+        self.assertIn("No shared-name asset to remove.", out)
+        code, out, calls = run("patch_fails")            # the old asset gets its name back; nothing is deleted
+        self.assertEqual(code, 1)
+        self.assertEqual(calls[-1], "gh api -X PATCH repos/x/y/releases/assets/11 -f name=hail-store-main.tar.gz")
+        self.assertEqual([c for c in calls if "DELETE" in c], [])
+        code, out, calls = run("no_new")
+        self.assertEqual(code, 1)
+        self.assertEqual([c for c in calls if "DELETE" in c or "PATCH" in c], [])
+        code, out, calls = run("stale_old")              # a leftover .old goes first
+        self.assertEqual(code, 0, out)
+        self.assertLess(calls.index("gh api -X DELETE repos/x/y/releases/assets/14"), calls.index(aside))
+        code, out, calls = run("listing_fails")
+        self.assertEqual(code, 1)
+        self.assertEqual([c for c in calls if "DELETE" in c or "PATCH" in c], [])
+        code, out, calls = run("removal_fails")
+        self.assertEqual(code, 1)
+        self.assertIn(rename, calls)
+        code, out, calls = run("upload_fails")
+        self.assertEqual(code, 1)
+        self.assertEqual([c for c in calls if "api" in c], [])
 
     def test_fetch_store_unpacks_the_fixture_tar(self):
         dest = self.tmp / "store"

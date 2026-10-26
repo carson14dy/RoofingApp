@@ -2,7 +2,7 @@ name: Website
 
 # Builds the Montana Hail Watch website from live NWS, SPC and NOAA data.
 #
-# main + GitHub Pages turned on: rebuilds every 10 minutes and publishes the site.
+# main + GitHub Pages turned on: asks for a rebuild every 10 minutes (GitHub keeps the schedule loosely; D33) and publishes the site.
 #   Turn Pages on once: Settings > Pages > Build and deployment > Source: "GitHub Actions".
 # Branch pushes (claude/**, codex/**): a live preview check. The build fails if any source
 #   failed or was stale (--require-live), and the built site is kept as a downloadable artifact.
@@ -45,10 +45,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: ${{ github.ref == 'refs/heads/main' && 15 || 75 }}   # a branch preview may wait up to 60 minutes for its store job
     permissions:
       contents: read
       pages: read
+      actions: read   # the wait step lists this commit's store job
     outputs:
       publish: ${{ steps.plan.outputs.publish }}
     steps:
@@ -94,6 +95,40 @@ jobs:
         if: steps.plan.outputs.run == 'true'
         run: python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_joins tests.test_website_workflow
 
+      - name: Wait for this branch's hail history store job (branch previews read the asset it publishes)
+        if: steps.plan.outputs.run == 'true' && github.ref != 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A push that changes the store code starts the store job and this preview at the same moment, and the
+          # preview reads whatever asset is published when its build starts. So wait for the branch's latest store
+          # run (this commit's, or an earlier commit's still going), for up to 60 minutes, the store job's own cap
+          # (the B1 job ran 10.7 minutes on 2026-10-18; the B3-stage job 35.6 minutes on 2026-10-20; a later stage
+          # raises this bound, the job cap and the timeout above together). When that latest run is this commit's
+          # and did not succeed, or the listing fails, or the run is still going at the end, this step fails; when
+          # the latest run is an earlier commit's and did not succeed, the asset stays as it was and the build's own
+          # rules (the fallback to main's asset, the stale rule) decide. main never waits: its store job replaces
+          # the asset in one step.
+          i=0
+          while :; do
+            i=$((i + 1))
+            if ! state=$(timeout 60 gh run list --workflow hail-store.yml --branch "$GITHUB_REF_NAME" --limit 1 --json status,conclusion,headSha --jq '.[0] | "\(.status) \(.conclusion) \(.headSha)"'); then
+              echo "The store job's state could not be read. Check the gh output above and the build job's actions: read scope."; exit 1
+            fi
+            set -- $state
+            case "$1" in
+              ""|null) echo "No store job on this branch; the build reads the asset already published."; exit 0;;
+              completed)
+                if [ "$2" = success ]; then echo "The store job succeeded, after $i checks."; exit 0; fi
+                if [ "$3" = "$GITHUB_SHA" ]; then echo "The store job for this commit ended as $2. Read its log in the Actions tab."; exit 1; fi
+                echo "The branch's last store job ended as $2 (an earlier commit); the build reads the asset already published."; exit 0;;
+              *)
+                if [ "$i" -ge 60 ]; then echo "The store job is still running after 60 minutes. Read its log in the Actions tab, then re-run this build."; exit 1; fi
+                case "$1" in in_progress) word=running;; *) word=queued;; esac
+                echo "The store job is $word; waiting a minute."; sleep 60;;
+            esac
+          done
+
       - name: Build from live data
         if: steps.plan.outputs.run == 'true'
         env:
@@ -103,8 +138,17 @@ jobs:
           args=(--out _site)
           if [ -n "$PAGES_URL" ]; then args+=(--previous "$PAGES_URL"); fi
           # Branch pushes also read NOAA radar echo tops (text only), the GOES satellite picture and the five-year
-          # hail history (its store is downloaded); off on main until reviewed.
+          # hail history (its store is downloaded), and fail on any failed source.
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then args+=(--require-live --storm-layers --hail-history); fi
+          # On main at the owner's decision of 2026-10-21: the hail history is public. Its store download is a source
+          # like any other, so a failed download leaves the pages saying the history is unavailable (never an
+          # all-clear) and the rest of the site still publishes; main's first builds after the merge say so until
+          # main's first store job publishes its asset (about 11 minutes).
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then args+=(--hail-history); fi
+          # Each build reads its own branch's store asset, named as the store job names it (main's is
+          # hail-store-main.tar.gz), and a branch with no asset of its own reads main's; a branch job never writes
+          # what main reads.
+          export HAIL_STORE_ASSET="hail-store-$(echo "$GITHUB_REF_NAME" | tr '/' '-').tar.gz"
           python -m website.build "${args[@]}" | tee build-result.json
 
       - name: Map smoke test in a real browser (branch pushes)
@@ -146,7 +190,7 @@ jobs:
           if c.get("satellite"):
               print("\nSatellite picture (branch preview, --storm-layers): " + c["satellite"])
           if c.get("hail"):
-              print("\nHail history (branch preview, --hail-history):")
+              print("\nHail history (--hail-history):")
               for name, text in c["hail"].items():
                   print(f"- {name}: {text}")
           if c.get("alert_events"):
