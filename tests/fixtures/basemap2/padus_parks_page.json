@@ -1,0 +1,147 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "geometryType": "esriGeometryPolygon",
+ "features": [
+  {
+   "attributes": {
+    "OBJECTID": 1,
+    "Des_Tp": "NP",
+    "Unit_Nm": "Glacier National Park",
+    "Loc_Nm": "GLAC",
+    "GIS_Acres": 1010000
+   },
+   "geometry": {
+    "rings": [
+     [
+      [
+       -114.0,
+       48.5
+      ],
+      [
+       -113.6,
+       48.5
+      ],
+      [
+       -113.6,
+       48.9
+      ],
+      [
+       -114.0,
+       48.9
+      ],
+      [
+       -114.0,
+       48.5
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 2,
+    "Des_Tp": "SP",
+    "Unit_Nm": "Lone Pine",
+    "Loc_Nm": "Lone Pine State Park",
+    "GIS_Acres": 300
+   },
+   "geometry": {
+    "rings": [
+     [
+      [
+       -114.3,
+       48.0
+      ],
+      [
+       -114.25,
+       48.0
+      ],
+      [
+       -114.25,
+       48.05
+      ],
+      [
+       -114.3,
+       48.05
+      ],
+      [
+       -114.3,
+       48.0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 3,
+    "Des_Tp": "LP",
+    "Unit_Nm": "Sacajawea",
+    "Loc_Nm": "Sacajawea Park",
+    "GIS_Acres": 16
+   },
+   "geometry": {
+    "rings": [
+     [
+      [
+       -114.0,
+       46.87
+      ],
+      [
+       -113.99,
+       46.87
+      ],
+      [
+       -113.99,
+       46.88
+      ],
+      [
+       -114.0,
+       46.88
+      ],
+      [
+       -114.0,
+       46.87
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 4,
+    "Des_Tp": "PUB",
+    "Unit_Nm": "Ignored",
+    "Loc_Nm": "Ignored",
+    "GIS_Acres": 5
+   },
+   "geometry": {
+    "rings": [
+     [
+      [
+       -114.2,
+       46.85
+      ],
+      [
+       -114.19,
+       46.85
+      ],
+      [
+       -114.19,
+       46.86
+      ],
+      [
+       -114.2,
+       46.86
+      ],
+      [
+       -114.2,
+       46.85
+      ]
+     ]
+    ]
+   }
+  }
+ ],
+ "exceededTransferLimit": false
+}

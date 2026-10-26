@@ -39,12 +39,18 @@ EXEMPT = (
     re.compile(r"\b(?:This|That) is not an all-clear\b\.?"),   # the required sentence (D41), with its full stop when it has one;
     #                                                      "That" is the no-alerts form, which the index page follows with a caveat
     re.compile(r"not the same as no hail"),       # the one allowed "no hail"
+    # the bubble legend's sentence as D110(c) words it (the owner's ruling; ROADMAP item 4 leaves the wording to the owner).
+    # Only this sentence is set aside; it is the one all-clear the B6 legend carries (F11: the words gate found it on data/base.json)
+    re.compile(r"that is not zero and not an all-clear"),
     re.compile(r"radar coverage", re.IGNORECASE),  # NOAA's term, "no radar coverage" or "outside radar coverage" (D45, D81(c))
     # Source names and file names are citations (D86(e)), as "USA Structures" is:
     re.compile(r"USA Structures"),                # a proper name (the B3 attribution line)
     re.compile(r"Montana State Library Structures and Addresses Framework"),   # the State Library's name (D86(e))
     re.compile(r"Structures and Addresses Framework"),   # the same name as the rows and the attribution give it (D86(e))
     re.compile(r"StructuresFramework_shp\.zip"),  # the State Library's file name (D86(e); tests/test_joins.py sets it aside too)
+    # the USGS National Map service paths of the hospital and fire layers: a citation of a service path, as the file names
+    # above are (D86(e); D117(c) for a URL path segment), not a claim about any structure
+    re.compile(r"services/structures/MapServer/\d+"),
     # Titles of the About references list (D46, D86(d)): these two titles, in that list only
     re.compile(r"FEMA P-957, Snow Load Safety Guide"),
     re.compile(r"freeze-thaw damage to roofs"),

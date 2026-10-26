@@ -1830,7 +1830,11 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('-f name="$ASSET.old"', text)
         self.assertIn('              hail-store.tar.gz) shared_id=$id;;\n', text)
         self.assertIn('          done <<< "$assets"\n          if [ -z "$new_id" ]; then echo "The uploaded file $ASSET.new is not in the release\'s asset list; nothing was replaced." >&2; exit 1; fi\n', text)
-        self.assertNotIn("|| true", text[text.index("name: Publish the release asset"):])
+        # the daily job's publish step; the monthly job follows it in the file, and its own publish step is checked too:
+        # no error is swallowed by either publish step
+        daily = text[text.index("name: Publish the release asset"):text.index("\n  monthly:\n")]
+        self.assertNotIn("|| true", daily)
+        self.assertNotIn("|| true", text[text.index("name: Publish the monthly store"):])
         self.assertIn("gh release edit hail-store --notes", text)
         self.assertEqual(text.count("ASSET: ${{ steps.asset.outputs.name }}"), 2)
         # one run per branch at a time: a branch's run never queues behind or cancels main's

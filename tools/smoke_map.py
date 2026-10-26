@@ -626,7 +626,7 @@ def check_satellite_while_playing(browser, base, want: str) -> list[str]:
 # ---------------------------------------------------------------- the Imagery base map (D32)
 
 IMAGERY_HOST = "basemap.nationalmap.gov"    # the only host the browser asks for imagery tiles, and only after a switch
-PRIVACY = "Your IP address and the map area you view go to USGS."   # the credit row's privacy words (D32)
+PRIVACY = "Your IP address and the map area you view go to USGS while it is on."   # the credit row's privacy words (D32, D110(d))
 NOTE = "note: "                             # a check line that starts with this is reported and never fails the run
 TILE_WAIT = 20                              # seconds to wait for the first tile before it counts as not loaded
 VECTOR = "path.bm-land, path.bm-lake, path.bm-river, path.bm-road, path.bm-county"   # the shapes Imagery hides

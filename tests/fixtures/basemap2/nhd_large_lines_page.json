@@ -1,0 +1,34 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "geometryType": "esriGeometryPolygon",
+ "features": [
+  {
+   "attributes": {
+    "OBJECTID": 21,
+    "gnis_name": "Rattlesnake Creek",
+    "lengthkm": 2.5,
+    "ftype": 460,
+    "fcode": 46006
+   },
+   "geometry": {
+    "paths": [
+     [
+      [
+       -114.08,
+       46.9
+      ],
+      [
+       -114.0,
+       46.93
+      ],
+      [
+       -113.92,
+       46.98
+      ]
+     ]
+    ]
+   }
+  }
+ ],
+ "exceededTransferLimit": false
+}

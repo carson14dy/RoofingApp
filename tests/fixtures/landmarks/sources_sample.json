@@ -1,0 +1,436 @@
+{
+ "note": "Real rows from the live responses of 2026-10-25 (names and positions as the services give them), plus three synthetic rows marked SYNTHETIC that test a placeholder name, a missing position and a second layer answer.",
+ "meta": {
+  "nces_public": {
+   "fields": [
+    {
+     "name": "NAME",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "LAT",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "LON",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "STFIP",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "OBJECTID",
+     "type": "esriFieldTypeOID"
+    }
+   ],
+   "maxRecordCount": 2000,
+   "objectIdField": "OBJECTID"
+  },
+  "nces_private": {
+   "fields": [
+    {
+     "name": "NAME",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "LAT",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "LON",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "STFIP",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "OBJECTID",
+     "type": "esriFieldTypeOID"
+    }
+   ],
+   "maxRecordCount": 2000,
+   "objectIdField": "OBJECTID"
+  },
+  "usgs_hospitals": {
+   "fields": [
+    {
+     "name": "name",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "OBJECTID",
+     "type": "esriFieldTypeOID"
+    }
+   ],
+   "maxRecordCount": 2000
+  },
+  "usgs_fire": {
+   "fields": [
+    {
+     "name": "name",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "OBJECTID",
+     "type": "esriFieldTypeOID"
+    }
+   ],
+   "maxRecordCount": 2000
+  },
+  "hifld_hospitals": {
+   "fields": [
+    {
+     "name": "NAME",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "LATITUDE",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "LONGITUDE",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "STATUS",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "STATE",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "FID",
+     "type": "esriFieldTypeOID"
+    }
+   ],
+   "maxRecordCount": 2000,
+   "objectIdField": "FID"
+  },
+  "fema_worship": {
+   "fields": [
+    {
+     "name": "NAME",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "X",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "Y",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "LOC_NAME",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "STATE",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "FID",
+     "type": "esriFieldTypeOID"
+    }
+   ],
+   "maxRecordCount": 2000,
+   "objectIdField": "FID",
+   "editingInfo": {
+    "lastEditDate": 1756999827153
+   }
+  },
+  "padus_local": {
+   "fields": [
+    {
+     "name": "Unit_Nm",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "Des_Tp",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "State_Nm",
+     "type": "esriFieldTypeString"
+    },
+    {
+     "name": "OBJECTID",
+     "type": "esriFieldTypeOID"
+    }
+   ],
+   "maxRecordCount": 2000,
+   "objectIdField": "OBJECTID",
+   "editingInfo": {
+    "lastEditDate": 1776880752730
+   }
+  }
+ },
+ "pages": {
+  "nces_public": {
+   "features": [
+    {
+     "attributes": {
+      "NAME": "Hellgate High School",
+      "LAT": 46.86272,
+      "LON": -113.996336
+     }
+    },
+    {
+     "attributes": {
+      "NAME": "Big Sky High School",
+      "LAT": 46.850462,
+      "LON": -114.057906
+     }
+    },
+    {
+     "attributes": {
+      "NAME": "Unknown School",
+      "LAT": 46.9,
+      "LON": -114.0,
+      "STFIP": "30"
+     }
+    },
+    {
+     "attributes": {
+      "NAME": "Lowell School",
+      "LAT": null,
+      "LON": null,
+      "STFIP": "30"
+     }
+    }
+   ],
+   "exceededTransferLimit": false
+  },
+  "nces_private": {
+   "features": [
+    {
+     "attributes": {
+      "NAME": "LOYOLA SACRED HEART HIGH SCHOOL",
+      "LAT": 46.86217,
+      "LON": -114.002141
+     }
+    },
+    {
+     "attributes": {
+      "NAME": "MISSOULA INTERNATIONAL SCHOOL",
+      "LAT": 46.867265,
+      "LON": -114.00927
+     }
+    }
+   ],
+   "exceededTransferLimit": false
+  },
+  "usgs_hospitals": {
+   "features": [
+    {
+     "attributes": {
+      "name": "Saint Patrick Hospital"
+     },
+     "geometry": {
+      "x": -114.00002084061646,
+      "y": 46.87514377111928
+     }
+    },
+    {
+     "attributes": {
+      "name": "Community Medical Center"
+     },
+     "geometry": {
+      "x": -114.0472312146718,
+      "y": 46.84776543508314
+     }
+    }
+   ],
+   "exceededTransferLimit": false
+  },
+  "usgs_fire": {
+   "features": [
+    {
+     "attributes": {
+      "name": "Helena Fire Department Station 1 Headquarters"
+     },
+     "geometry": {
+      "x": -112.04027306109121,
+      "y": 46.59475987653894
+     }
+    },
+    {
+     "attributes": {
+      "name": "Missoula Fire Department Station 1 - Headquarters"
+     },
+     "geometry": {
+      "x": -113.98610482115788,
+      "y": 46.87069965026642
+     }
+    }
+   ],
+   "exceededTransferLimit": false
+  },
+  "hifld_hospitals": {
+   "features": [
+    {
+     "attributes": {
+      "NAME": "COMMUNITY MEDICAL CENTER",
+      "LATITUDE": 46.84737836,
+      "LONGITUDE": -114.04787954,
+      "STATUS": "OPEN",
+      "STATE": "MT"
+     }
+    },
+    {
+     "attributes": {
+      "NAME": "ST PATRICK HOSPITAL",
+      "LATITUDE": 46.87591,
+      "LONGITUDE": -113.99991,
+      "STATUS": "OPEN",
+      "STATE": "MT"
+     }
+    }
+   ],
+   "exceededTransferLimit": false
+  },
+  "fema_worship": {
+   "features": [
+    {
+     "attributes": {
+      "NAME": "ST PAUL LUTHERAN CHURCH OF MISSOULA",
+      "X": -113.999002,
+      "Y": 46.861895,
+      "LOC_NAME": "POINTADDRESS",
+      "STATE": "MT"
+     }
+    },
+    {
+     "attributes": {
+      "NAME": "HEARTS CENTER",
+      "X": -110.563223,
+      "Y": 45.659534,
+      "LOC_NAME": "POSTAL",
+      "STATE": "MT"
+     }
+    }
+   ],
+   "exceededTransferLimit": false
+  },
+  "padus_local": {
+   "features": [
+    {
+     "attributes": {
+      "OBJECTID": 118979,
+      "Unit_Nm": "Rose Garden",
+      "Des_Tp": "LP",
+      "State_Nm": "MT"
+     },
+     "geometry": {
+      "rings": [
+       [
+        [
+         -114.004893,
+         46.857468
+        ],
+        [
+         -114.004486,
+         46.857205
+        ],
+        [
+         -114.004322,
+         46.857325
+        ],
+        [
+         -114.004292,
+         46.857306
+        ],
+        [
+         -114.003915,
+         46.857061
+        ],
+        [
+         -114.003918,
+         46.857059
+        ],
+        [
+         -114.004903,
+         46.856343
+        ],
+        [
+         -114.005177,
+         46.856144
+        ],
+        [
+         -114.005239,
+         46.856099
+        ],
+        [
+         -114.005954,
+         46.856098
+        ],
+        [
+         -114.006064,
+         46.856098
+        ],
+        [
+         -114.006777,
+         46.856098
+        ],
+        [
+         -114.00678,
+         46.856098
+        ],
+        [
+         -114.005991,
+         46.856671
+        ],
+        [
+         -114.005716,
+         46.85687
+        ],
+        [
+         -114.004893,
+         46.857468
+        ]
+       ]
+      ]
+     }
+    },
+    {
+     "attributes": {
+      "OBJECTID": 999991,
+      "Unit_Nm": "Unknown Park",
+      "Des_Tp": "LP",
+      "State_Nm": "MT"
+     },
+     "geometry": {
+      "rings": [
+       [
+        [
+         -114.0,
+         46.86
+        ],
+        [
+         -113.999,
+         46.86
+        ],
+        [
+         -113.999,
+         46.861
+        ],
+        [
+         -114.0,
+         46.861
+        ],
+        [
+         -114.0,
+         46.86
+        ]
+       ]
+      ]
+     }
+    }
+   ],
+   "exceededTransferLimit": false
+  }
+ }
+}

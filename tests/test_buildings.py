@@ -1095,11 +1095,21 @@ class WorkflowTest(unittest.TestCase):
 
     @unittest.skipUnless(yaml is not None, "PyYAML is not installed")
     def test_every_step_that_marks_a_source_unavailable_cannot_stop_the_job(self):
-        steps = yaml.safe_load(self.text)["jobs"]["store"]["steps"]
-        marks = [s for s in steps if " unavailable --store store " in str(s.get("run", ""))]
-        self.assertEqual(len(marks), 3)                       # the roads, the addresses and the outlines
-        for step in marks:
-            self.assertIs(step.get("continue-on-error"), True, step.get("name"))
+        # A mark is a step that writes "unavailable". The manifest check (id manifest) holds the containment commands
+        # and is the one fatal step of the daily job (a store that does not check is not published), so it is not a mark.
+        doc = yaml.safe_load(self.text)
+        marks = {job: [s for s in doc["jobs"][job]["steps"]
+                       if " unavailable --store store " in str(s.get("run", "")) and s.get("id") != "manifest"]
+                 for job in ("store", "monthly")}
+        # daily: the roads, the addresses and the outlines (B3) and the terrain, base map, landmarks, history layers and
+        # bubble values (B6); monthly: the landmarks, terrain tiles and base map vectors (B6)
+        self.assertEqual([len(marks["store"]), len(marks["monthly"])], [8, 3])
+        for job in marks:
+            for step in marks[job]:
+                self.assertIs(step.get("continue-on-error"), True, step.get("name"))
+        check = [s for s in doc["jobs"]["store"]["steps"] if s.get("id") == "manifest"]
+        self.assertEqual(len(check), 1)
+        self.assertIsNot(check[0].get("continue-on-error"), True, "the daily manifest check must stay fatal")
 
     def test_a_branch_push_that_changes_a_store_module_runs_the_job(self):
         for path in ("website/streets.py", "website/buildings.py", "website/addresses.py"):
@@ -1117,11 +1127,15 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(caps, [15, 5, 5, 5, 10, 5])          # the cold-cache timings of 2026-10-19, about 2 to 4 times
         for key in ("roads_build", "roads_verify", "addr_build", "addr_verify", "bld_build", "bld_verify"):
             self.assertIs(steps[key].get("continue-on-error"), True, key)
+        # the eight non-fatal marks of the daily job in step order: B6's terrain, base map, landmarks and history layers,
+        # B3's roads, addresses and outlines, then B6's bubble values; the manifest check is fatal and has its own cap
         unavailable = [s["timeout-minutes"] for s in doc["jobs"]["store"]["steps"]
-                       if " unavailable --store store " in str(s.get("run", ""))]
-        self.assertEqual(unavailable, [5, 5, 5])
+                       if " unavailable --store store " in str(s.get("run", "")) and s.get("id") != "manifest"]
+        self.assertEqual(unavailable, [3, 3, 5, 3, 5, 5, 5, 5])
+        manifest = [s["timeout-minutes"] for s in doc["jobs"]["store"]["steps"] if s.get("id") == "manifest"]
+        self.assertEqual(manifest, [10])
         self.assertEqual(doc["jobs"]["store"]["timeout-minutes"], 150)   # D50, D51: B5's 60 minutes plus B3's 90
-        self.assertLess(sum(caps) + sum(unavailable), doc["jobs"]["store"]["timeout-minutes"])
+        self.assertLess(sum(caps) + sum(unavailable) + sum(manifest), doc["jobs"]["store"]["timeout-minutes"])
 
 
 if __name__ == "__main__":

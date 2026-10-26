@@ -1,0 +1,22 @@
+{
+ "format": "hail-store-v1",
+ "as_of": "2026-10-16",
+ "window": [
+  "2021-10-17",
+  "2026-10-16"
+ ],
+ "d0": "2020-01-01",
+ "grid": {
+  "cell_deg": 0.01,
+  "tile_cells": 10,
+  "row0_lat": 54.995,
+  "col0_lon": -129.995,
+  "rows": 3500,
+  "cols": 7000
+ },
+ "state": "Montana",
+ "tiles": [
+  "r0081_c0160"
+ ],
+ "floor_tenths": 64
+}
