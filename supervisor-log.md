@@ -387,4 +387,4 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - 08:45 UTC: P2 rulings pass done (21 of 21 applied; two record items fixed by hand). D126 recorded. P2 is final. Waiting:
   P4 rulings pass (wdoeyuosf), landmark skeptics (w5pjapetx). The integrator launches when P4 reports clean.
 - 09:00 UTC: P4 rulings pass done (14 of 17 pass; P4-R6 amended, X2b deferred to B7, X8 record cleanup folded into the
-  integrator's first step). D127 recorded. All four products final. Integrator launched (inline script; the run id follows).
+  integrator's first step). D127 recorded. All four products final. Integrator launched (inline script with the P4 notes cleanup first): wf_7425e7dc-00f task w9xvsaj0t.
