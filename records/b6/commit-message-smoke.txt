@@ -1,0 +1,8 @@
+Smoke: the swath town-card check picks a town marker that no panel covers (D142)
+
+The first branch Website run failed one map smoke check, check_swath: the town-card check clicked the first town marker on screen, which lay under the legend panel, so the click hit the legend and the town card never opened. Where that marker lands depends on the live value cell of the day; the same check failed on the base branch with the same day's data, and this PR changes no map code.
+
+TOWN_ON_SCREEN now returns a town marker only when it is the topmost element at its centre. The two 5-second waits in the check stay: the check was aimed at the wrong element, not slow. Verified: the storm-layers build's smoke passes locally with the fix and fails without it; the whole suite and the self-test pass.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01D7npHSU4NQFAmdz8Ep5sV7
