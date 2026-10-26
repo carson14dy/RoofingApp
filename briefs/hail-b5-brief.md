@@ -1880,3 +1880,16 @@ ROADMAP open items, README). Rulings on the decisions they put to the supervisor
   Service, 24 NHD); the live hail legend ends with the quoted form of the DESIGN section 11 sentence; a "Fire and EMS stations"
   chip is in the sheet; churches show a "Held" chip state with the reason and no count; the landmark sub-line reads "from the
   public lists named under About". (h) tools/smoke_map.py learns data/base.json in the B6-3 browser pass.
+
+## Supervisor rulings from the landmark source skeptics (2026-10-26 10:05 UTC; D129)
+The landmark source pass (wf_b7916376-008; 118 agents; 58 claims, 47 standing) ended. The refutations are licence-scope and
+figure corrections: the HIFLD public school and hospital copies carry no licence text of their own (the NCES EDGE layers are
+public domain in their own metadata, so P3 reads NCES directly and keeps the HIFLD hospital copy as the tested fallback with its
+terms marked not checked, D118(a)); the FEMA copy of the IRS-based places of worship is not a public-domain source (the church
+kind stays held, D112, D118(b)); the TIGER 2026 point landmark file (tl_2026_30_pointlm.zip, park code K2190) holds park points
+the area landmark file lacks ("Mc Cormick Park", Missoula), a second TIGER file for the park chips once counsel clears the TIGER
+use constraints; the "all attributes" byte figures for the NHD layers were six-attribute figures; FTYPE 466 is "Swamp Marsh",
+not "Estuary"; the band D 504 answers came after about 60 s, not 30 s. None changes a built product.
+- D129 (a) The TIGER point landmark file is recorded as a future park point source under the same counsel item as the area
+  landmark file. (b) The research record's corrected figures are the record; the products cite none of the wrong ones. (c) The
+  skeptic scratch (1.5 GB under landmarks/refute) is deleted; the journal and the result are archived on the state branch.

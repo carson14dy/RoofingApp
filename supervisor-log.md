@@ -390,3 +390,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   integrator's first step). D127 recorded. All four products final. Integrator launched (inline script with the P4 notes cleanup first): wf_7425e7dc-00f task w9xvsaj0t.
 - 09:45 UTC: integrator tasks P4N, 1, 3, 4, 6 done; task 2 running; D128 recorded (post-integration fix round on product
   files: P4 legend text, P2 and P4 rule 5 words, P3 mirror, P1 --refresh-descriptions and the monthly step cap).
+- 10:05 UTC: landmark source skeptics done (47 of 58 claims stand). D129 recorded; journal and result archived; the 1.5 GB
+  scratch deleted. Integrator still running (task 2, then the build and smoke, then the review loop).
