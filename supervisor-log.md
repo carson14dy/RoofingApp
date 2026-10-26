@@ -401,3 +401,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - 12:15 UTC: the integrator run (w9xvsaj0t) stopped at 19 of 78 skeptic verdicts; D133: the 30 pending findings restate ruled
   items; the post-integration round becomes the fix round (A1..A4, B1..B2, C1..C4, D1..D3, F1..F12, E1..E2) with a final
   verification checker. Launching it next.
+- 12:25 UTC: the fix round launched as three runs (two fixers each, disjoint files): P1 and P2 wf_9df7e041-d5c (ww7hqfauo);
+  P3 and P4 wf_c16fbe88-ac0 (wdfn5vx5v); site and docs wf_6f31ff28-9ce (wwyd1j9p1). The final checker runs after all three.
