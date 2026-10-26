@@ -348,3 +348,9 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   task w2ej6pw1x. Landmark skeptics wf_b7916376-008 task w5pjapetx still running (refute:B5:2, refute:B6:1).
 - Next: read fix:* and check:* per product; rulings pass per product (inline script scripts/b6-rulings-pass.js; the Workflow tool
   loads scriptPath only from the working directory); then the integrator (scripts/b6-integrator.js, inline).
+- 06:10 UTC: the P2 continuation (task wx8jxyn10, wf_420ecadb-f82) was refuting one finding at a time (two slots, about 15 min
+  each, 17 left); stopped it after P2-06 and P2-07 (both stand) and split the rest into four refute-only runs: P2-08..11
+  wf_d5451657-1b8 (w0x0iamv9), P2-12..15 wf_562f4f9b-91e (wdp30s8xy), P2-16..19 wf_c6585c4f-ebd (wguamtqau), P2-20..24
+  wf_6e7a5682-6ed (wi92q8tx9). The P2 fixer and checker run afterwards with the union of standing findings (P2-01..07 plus
+  the new ones). fix:P1 done (80 tests; the six website.yml pins stay for the integrator; P1-14 base index 'f' key noted for
+  the P2 and P3 rulings pass as P2-R7 and P3-R8); check:P1 running; fix:P3 running; P4 at L15 (L13 stands, L14 refuted).
