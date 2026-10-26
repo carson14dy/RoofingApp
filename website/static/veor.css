@@ -321,7 +321,7 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
 /* The frame without the panel: the page scrolls inside the shell. The width stays readable (72 rem, as the old
    pages), centred in the room the map had. */
 .frame-page { grid-template-columns: var(--v-side-w) minmax(0, 1fr); grid-template-areas: "side top" "side main"; }
-.page { grid-area: main; min-width: 0; min-height: 0; overflow-y: auto; background: var(--v-bg); }
+.page { grid-area: main; position: relative; min-width: 0; min-height: 0; overflow-y: auto; background: var(--v-bg); }   /* relative: its hidden spans stay inside it */
 .shell .page { padding: 0; }
 .page-inner { max-width: 72rem; margin-inline: auto; padding: 28px 32px 56px; }
 .page-foot { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--v-line); font-size: 0.875rem; color: var(--v-text-muted); }
@@ -344,6 +344,195 @@ body.shell { display: flex; flex-direction: column; height: 100dvh; min-height: 
 .shell-page .stats dd { font-family: var(--font-mono); }
 .shell-page .prose h2 { padding-bottom: 8px; border-bottom: 1px solid var(--v-line); }
 .shell-page .map { border-color: var(--v-line); }
+
+/* ---- the town page (templates/town.html, .town-page) ----------------------------------------------------- */
+/* The place page in the mockup's panel voice: the name large with the grid sentence under it; each section a
+   heading with its icon and a thin rule; the station readings as white cards with three large numbers; the
+   hourly table and the days as rows with mono numbers and thin rules; the other towns as pills. */
+.town-page .lead { margin-bottom: 30px; }
+.town-page .lead .sub { max-width: 42rem; margin-top: 10px; }
+.town-page .crumbs a { min-height: 32px; }
+.town-page .section-head { display: flex; align-items: center; justify-content: flex-start; gap: 14px; }
+.town-page .section-head .i { width: 30px; height: 30px; flex: none; stroke-width: 1.4; color: var(--v-icon); }
+.town-page .sub { font-size: 1.0625rem; max-width: 42rem; }
+.town-page .empty { padding: 2px 0; border: 0; background: none; font-size: 1.125rem; color: var(--v-text-2); }
+.town-page .alert-list { gap: 12px; }
+.town-page .alert { border-radius: var(--v-radius); box-shadow: var(--v-shadow); padding: 18px 20px; }
+.town-page .alert h3 { font-size: 1.375rem; font-weight: 600; }
+.town-page .alert summary { min-height: 40px; }
+/* the station readings: white cards, the three numbers large in the mono face, labels under them */
+.town-page .obs-list { margin-top: 18px; gap: 16px; }
+.town-page .obs { gap: 12px; padding: 18px 20px 18px; background: var(--v-surface); border: 1px solid var(--v-line);
+  border-radius: var(--v-radius); box-shadow: var(--v-shadow); }
+.town-page .obs h3 { font-size: 1.3125rem; font-weight: 600; line-height: 1.2; }
+.town-page .obs-where { font-size: 0.9375rem; color: var(--v-text-muted); }
+.town-page .obs .stats { gap: 10px; padding: 12px 0; border-top: 1px solid var(--v-line); border-bottom: 1px solid var(--v-line); }
+.town-page .obs .stats div { gap: 4px; }
+.town-page .obs .stats dt { font-size: 0.9375rem; color: var(--v-text-2); }
+.town-page .obs .stats dd { font-family: var(--font-mono); font-size: 1.75rem; font-weight: 600; line-height: 1.15;
+  color: var(--v-text); white-space: nowrap; }
+.town-page .obs .stats dd small { font-family: var(--v-serif); font-size: 0.9375rem; font-weight: 400; color: var(--v-text-muted); }
+.town-page .obs .stats .obs-word { display: block; white-space: normal; font-family: var(--v-serif); font-size: 1rem;
+  font-weight: 400; line-height: 1.3; color: var(--v-text-muted); }
+.town-page .obs .stats .over, .town-page .obs .stats .over small { color: var(--color-flag); }
+.town-page .obs-time { font-size: 0.9375rem; line-height: 1.35; }
+.town-page .obs-qc { font-size: 0.9375rem; line-height: 1.35; }
+/* the hourly table and the hail table: a white card, thin rules, mono numbers */
+.town-page .table-box { margin-top: 14px; background: var(--v-surface); border-color: var(--v-line); box-shadow: var(--v-shadow); }
+.town-page .table-box table { font-size: 1rem; }
+.town-page .table-box th, .town-page .table-box td { padding: 11px 16px; border-bottom-color: var(--v-line); }
+.town-page .table-box thead th { font-family: var(--v-serif); font-size: 0.9375rem; font-weight: 500; letter-spacing: 0;
+  text-transform: none; color: var(--v-text-muted); background: var(--v-surface-soft); }
+.town-page .table-box td.n { font-family: var(--font-mono); font-size: 1.0625rem; }
+.town-page .table-box thead th.n { font-family: var(--v-serif); font-size: 0.9375rem; }   /* the header row keeps one face */
+.town-page .table-box td.time { font-size: 1.0625rem; font-weight: 500; color: var(--v-text); }
+.town-page .table-box td.over { color: var(--color-flag); font-weight: 700; }
+.town-page .table-box td.flags { color: var(--color-flag); font-weight: 600; }
+.town-page .table-box td.sky { color: var(--v-text-2); }
+.town-page .table-box th.day-row { font-family: var(--v-serif); font-size: 1.0625rem; font-weight: 600; background: var(--v-surface-soft);
+  color: var(--v-text); padding: 10px 16px; }
+.town-page .table-box td small { font-size: 0.9375rem; color: var(--v-text-muted); }
+/* the seven days: rows with thin rules, the high standing out, the low muted */
+.town-page .days { border-top: 1px solid var(--v-line); }
+.town-page .days li { grid-template-columns: 9.5rem 9.5rem minmax(0, 1fr); gap: 4px 20px; align-items: baseline;
+  padding: 18px 2px 16px; background: none; border: 0; border-bottom: 1px solid var(--v-line); border-radius: 0; }
+.town-page .days .name { font-family: var(--v-serif); font-size: 1.25rem; font-weight: 600; }
+.town-page .days .temp { font-family: var(--font-mono); font-size: 1rem; font-weight: 400; color: var(--v-text-muted); }
+.town-page .days .temp .hi { font-size: 1.75rem; font-weight: 600; color: var(--v-text); line-height: 1; }
+.town-page .days .temp .lo { font-size: 1.125rem; font-weight: 400; color: var(--v-text-muted); }
+.town-page .days .summary { font-size: 1.0625rem; color: var(--v-text-2); }
+.town-page .days .detail { grid-column: 3; font-size: 0.9375rem; color: var(--v-text-muted); }
+/* the hail history's class lines and its sentences */
+.town-page .hail-history th[scope="row"] { white-space: nowrap; }   /* a date on one line; the table scrolls inside its box */
+.town-page .hail-history h3 { margin-top: 22px; font-size: 1.25rem; font-weight: 600; }
+.town-page .hail-history ul { margin: 10px 0 0; padding-left: 22px; }
+.town-page .hail-history li + li { margin-top: 6px; }
+.town-page .hail-history .sub + .sub { margin-top: 12px; }
+/* the other towns: pills in the warm look; the current one in the accent */
+.town-page .town-links { gap: 10px; }
+.town-page .town-links a { min-height: 44px; padding: 0 16px; border-radius: 999px; border-color: var(--v-line-strong);
+  background: var(--v-surface); font-size: 1.0625rem; box-shadow: var(--v-shadow); }
+.town-page .town-links a:hover { border-color: var(--v-accent-line); color: var(--v-accent); }
+.town-page .town-links a[aria-current="page"] { background: var(--v-accent-soft); color: var(--v-accent); border-color: var(--v-accent-line); }
+/* phones: the days stack (name and high beside each other, the summary and detail under), 44 px targets */
+@media (max-width: 560px) {
+  .town-page .days li { grid-template-columns: 1fr auto; }
+  .town-page .days .summary, .town-page .days .detail { grid-column: 1 / -1; }
+  .town-page .table-box th, .town-page .table-box td { padding: 10px 12px; }
+}
+@media (max-width: 1023.98px) {
+  .town-page .crumbs a { min-height: 44px; }
+  .town-page .alert summary { min-height: 44px; }
+  .town-page p a { display: inline-block; padding-block: 10px; margin-block: -10px; }
+  .town-page .lead .sub { font-size: 1.0625rem; }
+}
+
+/* ---- the storm reports page (templates/reports.html, .reports-page) -------------------------------------------- */
+/* The map and its key as one framed card: the key sits under the map on the card's own rule. Each reporting day is
+   a white card with its heading on a thin rule; its table has thin rules, the numbers in the mono face, and the hail
+   and wind words in style.css's colours (.kind-hail, .kind-wind) with a dot of the same colour beside them. In the
+   dark the key's rings lighten, since the violet and teal would sink into the night surface. */
+.reports-page .lead { margin-bottom: 30px; }
+.reports-page .lead .sub { max-width: 42rem; margin-top: 10px; }
+.reports-page section + section { margin-top: 32px; }
+.reports-page .map-block { overflow: hidden; margin-top: 18px; background: var(--v-surface); border: 1px solid var(--v-line);
+  border-radius: var(--v-radius); box-shadow: var(--v-shadow); }
+.reports-page .map-block .map { border: 0; border-radius: 0; background: var(--v-surface-soft); }
+.reports-page .legend { margin: 0; padding: 14px 18px 16px; gap: 10px 24px; border-top: 1px solid var(--v-line);
+  font-size: 1rem; color: var(--v-text-2); }
+/* the key's items are blocks, so a sentence with a link wraps as text (a flex row would squeeze the link) */
+.reports-page .legend li { display: block; line-height: 1.35; }
+.reports-page .legend .swatch { display: inline-block; vertical-align: -0.2em; margin-right: 8px; }
+@media (prefers-color-scheme: dark) {
+  .reports-page .swatch-hail { border-color: color-mix(in srgb, var(--violet-700) 40%, var(--v-white)); background: color-mix(in srgb, var(--violet-700) 40%, transparent); }
+  .reports-page .swatch-wind { border-color: color-mix(in srgb, var(--teal-700) 40%, var(--v-white)); background: color-mix(in srgb, var(--teal-700) 40%, transparent); }
+}
+.reports-page .report-days { display: grid; gap: 24px; }
+.reports-page .report-day { margin: 0; overflow: hidden; background: var(--v-surface); border: 1px solid var(--v-line);
+  border-radius: var(--v-radius); box-shadow: var(--v-shadow); }
+.reports-page .report-day h3 { margin: 0; padding: 16px 20px 14px; border-bottom: 1px solid var(--v-line);
+  font-size: 1.25rem; font-weight: 600; line-height: 1.25; }
+.reports-page .day-count { font-weight: 400; color: var(--v-text-muted); white-space: nowrap; }
+.reports-page .report-day .table-box { margin: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+/* scroll shadows: when a table is wider than its card (phones), a soft edge shows on the side that has more to read.
+   The covers are the card's surface, attached to the table (local), so they hide the edge when the table is not
+   scrolled that way; the edges are attached to the card (scroll). Each edge is 12 px wide. */
+.reports-page .report-day .table-box {
+  --edge-w: 0.75rem;
+  background:
+    linear-gradient(var(--v-surface), var(--v-surface)) left top / var(--edge-w) 100% no-repeat local,
+    linear-gradient(to right, color-mix(in srgb, var(--v-line-strong) 60%, transparent), transparent) left top / var(--edge-w) 100% no-repeat scroll,
+    linear-gradient(var(--v-surface), var(--v-surface)) right top / var(--edge-w) 100% no-repeat local,
+    linear-gradient(to left, color-mix(in srgb, var(--v-line-strong) 60%, transparent), transparent) right top / var(--edge-w) 100% no-repeat scroll;
+}
+.reports-page .report-day table { font-size: 1.0625rem; }
+.reports-page .report-day th, .reports-page .report-day td { padding: 12px 18px; border-bottom-color: var(--v-line); }
+.reports-page .report-day thead th { background: var(--v-surface-soft); font-family: var(--v-serif); font-size: 0.9375rem;
+  font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--v-text-muted); }
+.reports-page .report-day td.time { font-size: 1rem; color: var(--v-text); }
+.reports-page .report-day td.n, .reports-page .report-day th.n { font-size: 1.0625rem; }
+.reports-page .report-day td.n { color: var(--v-text); }
+.reports-page .report-day td:last-child { color: var(--v-text-2); }
+.reports-page .report-day .kind { display: inline-flex; align-items: center; gap: 9px; }
+.reports-page .report-day .kind .swatch { width: 10px; height: 10px; border: 0; background: currentColor; }
+.reports-page .report-day .empty { margin: 0; padding: 16px 20px; border: 0; border-radius: 0; background: none;
+  font-size: 1.0625rem; color: var(--v-text-2); }
+/* tablets and phones: the key's link takes a 44 px touch target (its 21.6 px line + 12 px above and below = 45.6 px;
+   the negative margin keeps the key's line spacing as it was) */
+@media (max-width: 1023.98px) {
+  .reports-page .legend a { display: inline-block; padding-block: 12px; margin-block: -12px; }
+}
+/* phones: the table scrolls inside its card; Place and Notes keep a column wide enough to read in, so a row's
+   text wraps in a few lines instead of a tall, narrow stack */
+@media (max-width: 639.98px) {
+  .reports-page .legend { padding: 12px 16px 14px; }
+  .reports-page .report-day h3 { padding: 14px 16px 12px; }
+  .reports-page .report-day th, .reports-page .report-day td { padding: 10px 14px; }
+  .reports-page .report-day td:nth-child(4), .reports-page .report-day td:nth-child(5) { min-width: 12rem; }
+  .reports-page .report-day td { vertical-align: middle; }
+}
+
+/* ---- the about page (templates/about.html, .about-page) -------------------------------------------------------- */
+/* The prose in the mockup's voice: a 65-character column in the serif at the reading size, each section a heading
+   on a warm rule, the lists with room between their items and rust bullets. The data sources table is a framed card
+   (the card surface, line and shadow of the other cards). Its four columns keep their width, so on a phone the table
+   scrolls sideways inside its own frame (with the storm reports' edge shadows) and the page never does. The request
+   addresses are in the mono face, as the other technical text. */
+.about-page .lead { margin-bottom: 30px; }
+.about-page .prose { line-height: 1.6; }
+.about-page .prose > h2 { margin-top: 44px; padding-bottom: 10px; border-bottom: 1px solid var(--v-line);
+  font-size: 1.625rem; font-weight: 500; letter-spacing: -0.005em; line-height: 1.2; scroll-margin-top: 20px; }
+.about-page .lead + .prose > h2:first-child { margin-top: 0; }
+.about-page .prose p, .about-page .prose ul { margin-top: 16px; }
+.about-page .prose ul { padding-left: 1.25rem; }
+.about-page .prose li + li { margin-top: 12px; }
+.about-page .prose li::marker { color: var(--v-accent-bar); }
+.about-page .contracts { --edge-w: 0.75rem; margin-top: 20px; box-shadow: var(--v-shadow); background:
+    linear-gradient(var(--v-surface), var(--v-surface)) left top / var(--edge-w) 100% no-repeat local,
+    linear-gradient(to right, color-mix(in srgb, var(--v-line-strong) 60%, transparent), transparent) left top / var(--edge-w) 100% no-repeat scroll,
+    linear-gradient(var(--v-surface), var(--v-surface)) right top / var(--edge-w) 100% no-repeat local,
+    linear-gradient(to left, color-mix(in srgb, var(--v-line-strong) 60%, transparent), transparent) right top / var(--edge-w) 100% no-repeat scroll;
+  background-color: var(--v-surface); }
+.about-page .contracts table { font-size: 1rem; }
+.about-page .contracts th, .about-page .contracts td { padding: 14px 18px; border-bottom-color: var(--v-line); line-height: 1.5; }
+.about-page .contracts thead th { background: var(--v-surface-soft); font-family: var(--v-serif); font-size: 0.9375rem;
+  font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--v-text-muted); }
+.about-page .contracts th[scope="row"] { min-width: 12rem; font-size: 1.0625rem; font-weight: 600; color: var(--v-text); }
+.about-page .contracts td { min-width: 12rem; color: var(--v-text-2); }
+.about-page .contracts .request { display: block; margin-top: 6px; font-family: var(--font-mono); font-size: 0.8125rem;
+  font-weight: 400; color: var(--v-text-muted); }
+/* the heading that introduces the data sources table spans the page, as the table does; its sentence keeps the
+   reading width */
+.about-page .prose:has(+ .contracts) { max-width: none; }
+.about-page .prose:has(+ .contracts) > p { max-width: 65ch; }
+/* tablets and phones: the office links are a row of 44 px targets (links inside sentences keep their lines) */
+@media (max-width: 1023.98px) {
+  .about-page .offices a { display: inline-flex; align-items: center; min-height: 44px; }   /* the commas stay in the line */
+  .about-page .prose > h2 { font-size: 1.5rem; }
+}
+@media (max-width: 560px) {
+  .about-page .contracts th, .about-page .contracts td { padding: 12px 14px; }
+}
 
 /* ---------------------------------------------------------------- toast */
 /* An empty live region stays rendered (1 px, clipped), as the map's own toast does (map.css): a region that

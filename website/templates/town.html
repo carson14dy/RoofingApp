@@ -2,6 +2,9 @@
 {% from "_alerts.html" import alert_item, office_links %}
 {% block title %}{{ town.name }} forecast · Veor{% endblock %}
 {% block content %}
+{# The place page in the Veor look (docs/DESIGN.md section 10): the section icons are the shell's own symbols or the
+   same paths drawn inline; the words, the states and the table captions are the page's own. #}
+<div class="town-page">
 <p class="crumbs"><a href="../index.html#forecast">All towns</a> · <a href="../index.html?town={{ town.slug }}">See {{ town.name }} on the map</a></p>
 <div class="lead">
   <h1>{{ town.name }}</h1>
@@ -21,7 +24,9 @@
 {% endif %}
 
 <section aria-labelledby="alerts-h">
-  <div class="section-head"><h2 id="alerts-h">Official alerts here</h2></div>
+  <div class="section-head">
+    <svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.8 21.4 20H2.6Z"/><path d="M12 10v4.4M12 16.9v.2"/></svg>
+    <h2 id="alerts-h">Official alerts here</h2></div>
   {% if town.alerts is none %}
   <p class="empty">Couldn't check NWS alerts for {{ town.name }} at {{ built|t }}. This is not an all-clear: see the
     <a href="../index.html#forecast">statewide list</a> or {{ office_links(offices) }}.</p>
@@ -33,7 +38,9 @@
 </section>
 
 <section aria-labelledby="obs-h">
-  <div class="section-head"><h2 id="obs-h">Observed now</h2></div>
+  <div class="section-head">
+    <svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 14.5V5.5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0Z"/><path d="M12 9.5v6.5"/></svg>
+    <h2 id="obs-h">Observed now</h2></div>
   {% set o = town.obs %}
   {% if o.stations %}
   {# D29: the latest reading at each of the nearest stations, stale ones marked, flags in words #}
@@ -52,10 +59,13 @@
         <p class="obs-where">{{ s.id }} · {{ s.miles|num }}&nbsp;mi from {{ town.name }}{% if elev is not none %} · {{ elev|feet }}&nbsp;ft{% endif %}</p>
       </div>
       {% if r %}
+      {% set temp_over = r.temp.value is not none and (r.temp.value < limits.cold_f or r.temp.value > limits.hot_f) %}
+      {% set wind_over = r.wind.value is not none and r.wind.value >= limits.wind_mph %}
+      {% set gust_over = r.gust.value is not none and r.gust.value >= limits.gust_mph %}
       <dl class="stats">
-        <div><dt>Temperature</dt><dd{% if r.temp.value is not none and (r.temp.value < limits.cold_f or r.temp.value > limits.hot_f) %} class="over"{% endif %}>{{ reading(r.temp, '°F') }}</dd></div>
-        <div><dt>Wind</dt><dd{% if r.wind.value is not none and r.wind.value >= limits.wind_mph %} class="over"{% endif %}>{% if r.wind.value is not none and r.wind.value|round == 0 %}<span class="obs-word">calm</span>{% else %}{{ reading(r.wind, 'mph') }}{% if r.dir and r.wind.value is not none %}<small> {{ r.dir }}</small>{% endif %}{% endif %}</dd></div>
-        <div><dt>Gusts</dt><dd{% if r.gust.value is not none and r.gust.value >= limits.gust_mph %} class="over"{% endif %}>{% if r.no_gust %}<span class="obs-word">no gust reported</span>{% else %}{{ reading(r.gust, 'mph') }}{% endif %}</dd></div>
+        <div><dt>Temperature</dt><dd{% if temp_over %} class="over"{% endif %}>{{ reading(r.temp, '°F') }}{% if temp_over %}<span class="visually-hidden"> (over limit)</span>{% endif %}</dd></div>
+        <div><dt>Wind</dt><dd{% if wind_over %} class="over"{% endif %}>{% if r.wind.value is not none and r.wind.value|round == 0 %}<span class="obs-word">calm</span>{% else %}{{ reading(r.wind, 'mph') }}{% if r.dir and r.wind.value is not none %}<small> {{ r.dir }}</small>{% endif %}{% endif %}{% if wind_over %}<span class="visually-hidden"> (over limit)</span>{% endif %}</dd></div>
+        <div><dt>Gusts</dt><dd{% if gust_over %} class="over"{% endif %}>{% if r.no_gust %}<span class="obs-word">no gust reported</span>{% else %}{{ reading(r.gust, 'mph') }}{% endif %}{% if gust_over %}<span class="visually-hidden"> (over limit)</span>{% endif %}</dd></div>
       </dl>
       <p class="obs-time">Read at {{ r.time|t }}, {{ r.age_min|ago }}{% if not r.current %} · <strong>stale</strong>{% endif %}{% if r.sky %} · {{ r.sky }}{% endif %}</p>
       {# flags only for the values this station sent: a missing value's flag says nothing #}
@@ -77,13 +87,17 @@
 
 {% if town.storm %}
 <section aria-labelledby="storm-h">
-  <div class="section-head"><h2 id="storm-h">Radar echo top</h2></div>
+  <div class="section-head">
+    <svg class="i" aria-hidden="true" focusable="false"><use href="#i-storm"/></svg>
+    <h2 id="storm-h">Radar echo top</h2></div>
   <p class="sub">NOAA radar estimate (MRMS), 11 heights from 500 to 15,000 m above sea level. Each echo top is in metres above sea level: the highest sampled height above ground with 35 dBZ or more, among heights that had radar data. "At least" means some heights above it had no radar value. Not observed hail or damage.</p>
   <p class="storm-text">{{ town.storm.text }}</p>
 </section>
 {% endif %}
 <section aria-labelledby="hours-h">
-  <div class="section-head"><h2 id="hours-h">Next 24 hours</h2></div>
+  <div class="section-head">
+    <svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7.2V12l3.2 2"/></svg>
+    <h2 id="hours-h">Next 24 hours</h2></div>
   {% set upcoming = town.hours | selectattr('start', 'ge', now - delta_hour) | list %}
   {% if upcoming %}
   <p class="sub">Values over a limit are in bold. Limits: gusts {{ limits.gust_mph }}&nbsp;mph,
@@ -119,13 +133,15 @@
 </section>
 
 <section aria-labelledby="days-h">
-  <div class="section-head"><h2 id="days-h">Next 7 days</h2></div>
+  <div class="section-head">
+    <svg class="i" aria-hidden="true" focusable="false"><use href="#i-calendar"/></svg>
+    <h2 id="days-h">Next 7 days</h2></div>
   {% if town.days %}
   <ul class="days">
   {% for p in town.days %}
     <li>
       <span class="name">{{ p.name }}</span>
-      <span class="temp"><span class="visually-hidden">High </span>{{ p.hi|num }}°<span class="lo"> / <span class="visually-hidden">low </span>{{ p.lo|num }}°</span></span>
+      <span class="temp"><span class="visually-hidden">High </span><span class="hi">{{ p.hi|num }}°</span><span class="lo"> / <span class="visually-hidden">low </span>{{ p.lo|num }}°</span></span>
       <span class="summary">{{ p.sky }}{% if p.precip is not none %} · {{ p.precip|num }}% rain or snow{% endif %} · wind {{ p.wind }} {{ p.wind_dir }}{% if p.night_sky %} · night: {{ p.night_sky|lower }}{% endif %}</span>
       {% if p.detail %}<span class="detail">{{ p.detail }}</span>{% endif %}
     </li>
@@ -137,8 +153,10 @@
 </section>
 
 {% if hail_history and town.hail %}{% set h = town.hail %}
-<section aria-labelledby="hail-h">
-  <div class="section-head"><h2 id="hail-h">Hail history, five years</h2></div>
+<section class="hail-history" aria-labelledby="hail-h">
+  <div class="section-head">
+    <svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="8.5" cy="8.5" r="3.5"/><circle cx="15.8" cy="7.2" r="2.6"/><circle cx="13.2" cy="16.2" r="3.8"/></svg>
+    <h2 id="hail-h">Hail history, five years</h2></div>
   {% if h.sample %}<p class="sub"><span class="chip chip-unknown">{{ h.sample }}</span></p>{% endif %}
   {% if h.unavailable %}
   <p class="empty">{{ h.unavailable }}</p>
@@ -176,11 +194,14 @@
 </section>
 {% endif %}
 <section aria-labelledby="other-h">
-  <div class="section-head"><h2 id="other-h">Other towns</h2></div>
+  <div class="section-head">
+    <svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.2s-6.6-6.1-6.6-11.3a6.6 6.6 0 0 1 13.2 0c0 5.2-6.6 11.3-6.6 11.3Z"/><circle cx="12" cy="9.8" r="2.5"/></svg>
+    <h2 id="other-h">Other towns</h2></div>
   <ul class="town-links">
   {% for slug, name in towns_nav %}
     <li><a href="{{ slug }}.html"{% if slug == town.slug %} aria-current="page"{% endif %}>{{ name }}</a></li>
   {% endfor %}
   </ul>
 </section>
+</div>
 {% endblock %}

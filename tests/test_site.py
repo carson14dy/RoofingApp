@@ -566,6 +566,13 @@ class SampleBuild(unittest.TestCase):
         self.assertIn("(over limit)", html)
         self.assertIn("Next 7 days", html)
 
+    def test_town_page_says_over_limit_station_values_in_words_and_keeps_the_veor_hooks(self):
+        html = page(self.out, "town/livingston.html")
+        # the gust over the limit: colour plus a spoken "(over limit)", as the hourly table does
+        self.assertIn('<dd class="over">41<small> mph</small><span class="visually-hidden"> (over limit)</span></dd>', html)
+        self.assertIn('<div class="town-page">', html)          # the Veor place layout (veor.css, .town-page)
+        self.assertIn('<span class="hi">', html)                # a day's high, styled apart from its low
+
     def test_about_page_lists_every_source(self):
         html = page(self.out, "about.html")
         for key, c in src.CONTRACTS.items():
@@ -574,11 +581,46 @@ class SampleBuild(unittest.TestCase):
         for key in site.STORM_CONTRACTS + site.HAIL_CONTRACTS:
             self.assertNotIn(src.CONTRACTS[key]["name"], html)
 
+    def test_about_page_names_the_app_and_frames_the_sources_table(self):
+        html = page(self.out, "about.html")
+        self.assertIn("Veor is a plain weather page for roofing work in Montana. It gathers public data",
+                      " ".join(html.split()))
+        self.assertIn('<div class="about-page">', html)              # the page's scope in veor.css (.about-page)
+        self.assertIn('<div class="table-box contracts">', html)     # the framed table; it scrolls inside its own box
+
+    def test_about_page_table_card_has_its_own_surface_and_the_office_links_are_targets_on_phones(self):
+        """The data sources card keeps the card surface behind its table (the gradient shorthand alone would reset
+        it). On phones the office links are a row of 44 px targets; links inside sentences keep their lines (padding
+        on an inline link would overlap the next line's link)."""
+        css = (self.out / "static" / "veor.css").read_text()
+        self.assertIn(".about-page .contracts {", css)
+        self.assertIn("background-color: var(--v-surface); }", css)
+        self.assertIn(".about-page .offices a { display: inline-flex; align-items: center; min-height: 44px; }", css)
+        self.assertNotIn(".about-page .prose a {", css)
+        self.assertIn('<p class="offices">', page(self.out, "about.html"))
+
     def test_reports_page_shows_sizes_in_inches_and_unknown_wind(self):
         html = page(self.out, "reports.html")
         self.assertIn("1.75 in", html)
         self.assertIn("unknown", html)
         self.assertIn("No report is not evidence that no hail fell.", html)
+
+    def test_reports_page_frames_the_map_and_its_key_and_colours_the_kind_words(self):
+        """The Veor reports page (docs/DESIGN.md section 10): the map card and its key share one framed block,
+        each reporting day is a card whose heading keeps its count, and the hail and wind words keep the
+        .kind-hail and .kind-wind colours with a dot of the same colour beside them (the dot is aria-hidden)."""
+        html = page(self.out, "reports.html")
+        self.assertIn('<div class="map-block">', html)
+        self.assertIn('<iframe class="map map-card" src="map.html?card=1&amp;layer=precip&amp;overlay=reports&amp;v=', html)
+        self.assertIn('title="Map of storm reports in and near Montana" loading="lazy"></iframe>', html)
+        self.assertIn('<span class="kind kind-hail"><span class="swatch swatch-hail" aria-hidden="true"></span>Hail</span>', html)
+        self.assertIn('<span class="kind kind-wind"><span class="swatch swatch-wind" aria-hidden="true"></span>Wind</span>', html)
+        self.assertIn('<span class="day-count">(0 reports)</span>', html)
+        # the key's link is a 44 px touch target on tablets and phones (45.6 px: the 21.6 px line plus 12 px each side),
+        # and a table wider than its card shows a scroll shade on its edge (veor.css, .reports-page)
+        css = (self.out / "static" / "veor.css").read_text()
+        self.assertIn(".reports-page .legend a { display: inline-block; padding-block: 12px; margin-block: -12px; }", css)
+        self.assertIn("--edge-w: 0.75rem;", css)
 
     def test_reports_map_key_names_the_forecast_numbers_and_outlines(self):
         """The Storm reports card draws town bubbles and warning outlines beside the reports and hides
@@ -1656,6 +1698,7 @@ class HailHistory(unittest.TestCase):
         town = page(self.on, "town/billings.html")
         self.assertIn("Hail history, five years", town)
         self.assertIn("SAMPLE data", town)
+        self.assertIn('<section class="hail-history" aria-labelledby="hail-h">', town)   # the Veor hail styles (veor.css)
         self.assertIn("4 days with a radar-estimated hail size of 0.25 in or more between Oct 16, 2021 and "
                       "Oct 15, 2026. Largest: 0.62 in (16.0 mm) on Jul 24, 2022.", town)     # 160 tenths: 0.62, not 0.63
         self.assertIn("<th scope=\"row\">Jul 24, 2022</th>", town)
@@ -1666,7 +1709,7 @@ class HailHistory(unittest.TestCase):
         about = " ".join(page(self.on, "about.html").split())      # the template wraps the sentences across lines
         self.assertIn("<h2>Hail history</h2>", page(self.on, "about.html"))
         self.assertIn("An estimate is not a measurement at the ground and not an inspection.", about)
-        self.assertIn("(6.35 mm)", about)
+        self.assertIn("(6.35&nbsp;mm)", about)              # one unbreakable unit: no break between 6.35 and mm
         self.assertIn("12:43 UTC", about)
         self.assertIn(src.CONTRACTS["hail_history"]["name"], about)
         for sentence in (self.DAY_SENTENCE, self.CELL_SENTENCE, self.NEXT_DAY_SENTENCE, self.DISPLAY_SENTENCE):

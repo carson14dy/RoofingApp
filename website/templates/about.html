@@ -2,9 +2,10 @@
 {% from "_alerts.html" import office_links %}
 {% block title %}About · Veor{% endblock %}
 {% block content %}
+<div class="about-page">
 <div class="lead prose">
   <h1>About this site</h1>
-  <p class="sub">A plain weather page for roofing work in Montana. It gathers public data from the National Weather Service
+  <p class="sub">Veor is a plain weather page for roofing work in Montana. It gathers public data from the National Weather Service
     and NOAA on a schedule set to every 10 minutes and shows it with its time and source.</p>
 </div>
 
@@ -34,7 +35,7 @@
     and 0.5 miles east to west, during the day, for the five years to the newest day in the store. The cell is the one under
     the spot you tap or click on the map, and each town's page has the history for the cell at its own spot. A day runs from
     12:00 UTC to 12:00 UTC the next day: 6 am to 6 am Mountain daylight time, 5 am to 5 am in winter (the SPC reporting day). Sizes are shown to the
-    hundredth of an inch, rounded down, with the millimetre value exact; a day below 0.25 in (6.35 mm) is not stored.
+    hundredth of an inch, rounded down, with the millimetre value exact; a day below 0.25 in (6.35&nbsp;mm) is not stored.
     A day with no radar estimate is not the same as no hail: radar misses some hail, and a day with no file is listed and not
     counted. An estimate is not a measurement at the ground and not an inspection. Days not listed have no radar estimate of 0.25 in or more; that is not the same as no hail.
     The newest day is added by a job that starts
@@ -65,7 +66,7 @@
     If a page is more than 25 minutes old, it says so.</p>
 
   <h2>Local NWS offices</h2>
-  <p>{{ office_links(offices) }}.</p>
+  <p class="offices">{{ office_links(offices) }}.</p>
 
   <h2 id="sources">Data sources in detail</h2>
   <p>What each source sends and how this site treats it.</p>
@@ -93,5 +94,6 @@
 {% endif %}
     <li>Lightning and nearby station readings.</li>
   </ul>
+</div>
 </div>
 {% endblock %}
