@@ -8,12 +8,14 @@ will print comes from map.json or data/base.json, built by Python.
 - website/basemap2.py: reservations, forests, parks, water and route shields in four zoom bands; places with 2020 counts; peaks with 3DEP heights.
 - website/landmarks.py: schools, hospitals, airports, fire and EMS stations and parks per tile (2,159 points; churches and the Census park points held for counsel).
 - website/history_layers.py and website/labels.py: the five-year hail and heat pictures, the eight zone measures with the newest-warning date, the recent radar hail cells, and the bubble anchors (483,008 bubbles statewide at zoom 17).
-- website/build.py: HAIL_FOLDERS_B6, the map.json pointer and data/base.json; sources.py CONTRACTS rows; the jobs; About; docs (D107 to D128).
+- website/build.py: HAIL_FOLDERS_B6, the map.json pointer and data/base.json; sources.py CONTRACTS rows; the jobs; About; docs (D107 to D141).
 
 ## How it was verified
-- Suite: 2,439 tests OK, 12 skipped (after the post-integration round: see below). Selftest: PASS payload 1.0.0.
-- Local build from the adopted store with the new parts: 95.4 s, 665 MB; history-flag map.json 128,522 bytes raw against the 163,840 gate; data/base.json 30,861 bytes; hail.check_manifest: OK, 48,305 files (2,428 added by B6); smoke: passed (Chromium, --addresses --history).
-- Branch Website run: __RUN__.
+- Suite: 2,537 tests OK, 12 skipped (355 site tests; with the adopted store as the parity store, four parity tests exercised and passing). Selftest: PASS payload 1.0.0.
+- Store copy rebuilt from the caches with the final modules: 566 module tests OK; terrain, base map, landmark, history and label checks pass; hail.check_manifest OK, 48,305 files. The one open check is the building-shard size rule on a labelled copy (owner item 9).
+- Local build from the adopted store with the new parts, live feeds reachable: 95 s, 578.6 MB, 48,401 files; history-flag map.json 128,222 bytes raw against the 163,840 gate (31,782 bytes gzip); data/base.json 33,526 bytes; smoke passed (Chromium, --addresses --history; the phone view at zoom 15 over Billings 681,666 bytes gzip against the 700,000 budget).
+- Words: the words gate over data/base.json and the B6 keys of map.json is clean; no em-dash, no vendor name; every B6 credit line prints only for a source the store read, every part not read prints its module's "Data unavailable" sentence, and a second read of the About page as a roofer would read it (D141) was applied: plain words, the eight zone measures named, one bubble legend, the summit and place notes from the modules.
+- Branch runs on this commit: Website run 132 (https://github.com/carson14dy/RoofingApp/actions/runs/40392623463) and the store job run 15 (https://github.com/carson14dy/RoofingApp/actions/runs/40392623345), both in progress when this PR was opened; this line is updated when they finish.
 
 ## Open for the owner
 Decisions only the owner makes (docs/ROADMAP.md, "Open items for B6", items 1 to 11):
