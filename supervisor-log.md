@@ -324,3 +324,6 @@ Brief written (briefs/map-b6-build-brief.md). Two workflows: wf b6-build-product
 
 ## 2026-10-25 21:59 UTC: part 1 builders' reports read; D112
 P1, P3 and P4 built and measured; P2 still building. Reviewers' findings (P1 20, P3 23) are in the refute stage. D112 rules the open points (sampling, timeouts, credit lines, park names, hospitals, the FAA fixture's private fields, zero never a count, flash flood measures, bubbles above, heat bands, caches). After the checks: one ruling-fixer pass per product with D112, then the integrator.
+
+## 2026-10-26 00:00 UTC: part 1 workflow A resumed
+Two agents in wf_74f50175-7c5 had stopped answering: the P2 builder (last event 21:28 UTC, a JSON parse error on a tool call) and one P1 skeptic (23:01 UTC, a schema error). The workflow was stopped and resumed with the same script and args (cached results for the finished agents; the two dead calls run live; the P2 builder finds its own files in the worktree and continues).
