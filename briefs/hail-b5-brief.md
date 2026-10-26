@@ -1918,3 +1918,20 @@ data/base.json 30,861 bytes; the smoke passed after its imagery credit words fol
   refuses a subagent's report file, the supervisor writes the report from the structured result (done for P2 and for the
   integrator: build/integrator/report.md and integrator-reports.json). (e) The three words-gate hits in index.html (expect,
   expected, likely) are traced by the final checker; the suite's words gate passes, so they are exempted words to confirm.
+
+## Supervisor rulings on the integration review (2026-10-26 11:50 UTC; D132)
+The two reviewers of the integration (wf_7425e7dc-00f) returned 39 findings; the skeptics are refuting them and the
+integrator's fixer applies the standing ones on the shared files. Rulings on the questions they raise, folded into the
+post-integration round for the product files:
+- D132 (a) **The About page describes data, not undrawn behaviour.** Sentences about the browser (tint zooms, dark mode, the
+  Highlight switch, bubble overlap, the tapped sheet) become data statements now and return with the B6-3 pass. (b) **No
+  licence or use conclusion for a held source** reaches a published file: a held source is named as held with its reason
+  (the TIGER area landmark file's "free to use" line and any FEMA line go; the internal terms note keeps the quoted text as
+  not read by counsel). (c) **No held-source rows in the repository**: the TIGER area landmark fixture is replaced by a synthetic
+  shapefile of the same schema. (d) One held reason text everywhere. (e) **The monthly verify step** is not killed by its own
+  timeout (900 s, or a sample of 3 under 300 s). (f) **The words gate must be able to fail**: the B6 words test runs the
+  forbidden-words rule over every string of data/base.json and the B6 keys of map.json and is proved with a mutant; the one
+  real hit is fixed. (g) **No held-source count in the docs**: docs/DECISIONS.md, DESIGN.md and ROADMAP.md carry no number
+  derived from a held source (the supervisor's brief and the out-tree reports keep the figures as the record for counsel);
+  DESIGN 13.3 gives the measured built sizes. (h) The daily B6 steps' clock and the monthly steps after the 80-minute clock
+  are recorded as follow-up 7 (the first branch run measures them); a dropped B6 part is a stated absence, never an error.
