@@ -1,0 +1,134 @@
+[
+ {
+  "run": "wf_37b52759-767",
+  "fixer": "B6 About words (words fixer, D141): website/build.py, website/templates/about.html, tests/test_site.py",
+  "report": {
+   "product": "B6 About words (words fixer, D141): website/build.py, website/templates/about.html, tests/test_site.py",
+   "items": [
+    {
+     "id": "B1",
+     "state": "not applied",
+     "evidence": "No Forest Service line exists in the Terms section: about_terms() (website/build.py lines 1325-1359) has no forest entry, and the About's Terms heading is at about.html line ~200. The sentence is 'and counsel reads the terms (counsel item 23).' in website/sources.py line 544 (CONTRACTS base_forests.missing). The About prints it in the data-sources table (the contracts loop after about.html line ~210). The test test_the_forest_row_drops_the_internal_reference_and_keeps_the_terms_and_the_statute (tests/test_site.py line 6277) fails until sources.py changes.",
+     "reason": "The text lives in website/sources.py, which is outside this fixer's three files, so I did not edit it and did not strip the reference at render time."
+    },
+    {
+     "id": "B2",
+     "state": "applied",
+     "evidence": "about.html line 71 now reads '{{ b6.hospital_sentence }} {{ b6.hospital_credit or \"\" }}'; the template sentence about the state licensure list is gone. The copy's own hospital_hifld sentence prints by itself (build.py HOSPITAL_SENTENCE, line ~1452). Tests: test_the_copy_line_is_the_hospital_source_the_store_used_and_no_usgs_line_is_printed (tests/test_site.py line 6653) and test_no_hospital_line_when_no_hospital_source_was_read (line 6666)."
+    },
+    {
+     "id": "B3",
+     "state": "applied",
+     "evidence": "about.html line 64: '{{ b6.peak_note }} It can differ from a published height.' (build.py line 1928 passes basemap2 WORDS['peak_note']). 'by tens of metres' and 'and a summit with no value is not shown' are gone. peak_note opens with the template's first sentence, so that sentence is replaced rather than repeated. about.html line 57: '{{ b6.place_note }}' follows the places credit. about.html line 55: '{{ b6.route_note }}' follows the TIGER credit. Test: test_the_summit_place_and_route_paragraphs_print_the_basemap_notes_and_no_figure (line 6264)."
+    },
+    {
+     "id": "B4",
+     "state": "applied",
+     "evidence": "about.html line 79: 'over five years, from {{ b6.hail_window }}' (build.py line 1920: the hail picture's own window, October 17, 2021 to October 16, 2026); 'over five seasons' is gone. about.html line 81: '{{ b6.hail1_legend }}' (build.py line 1921: pictures.hail1.words.legend from the index, which carries the missing-day sentence when a day is missing). about.html line 83: '{{ b6.heat90_blank }}' replaces 'and a blank cell has no grid value' (build.py line 1922: the closing sentence of history_layers WORDS heat90_legend). about.html line 89: '{{ b6.zero_legend }}' (build.py line 1923: the closing sentence of WORDS zones_legend, printed only when the zone counts loaded). Tests: test_the_five_year_pictures_print_the_index_legend_the_module_sentences_and_the_window (line 6229), test_a_missing_radar_day_is_named_in_the_hail_legend_the_about_page_prints (line 6247), test_the_nclimgrid_sentence_quotes_the_file_attribute_and_asks_for_attribution (line 6490)."
+    },
+    {
+     "id": "B5",
+     "state": "applied",
+     "evidence": "about.html line 85: 'Counts of {{ b6.zones_what }} by public forecast zone come from the NWS zone products and warning areas in the Iowa State archive'; 'polygon' is now 'warning area'; 'the rows the build counted from the zone and warning-area files' (wording as quoted in the item; see open). about.html line 91: 'The zone outlines are the zone outline file of 2026-10-25 from the Iowa State archive, which gives the 83 public zone outlines only.' ZONES_WHAT is build.py line 1405 (passed as b6.zones_what, line 1924). The Terms sentence is build.py line 1351: 'the 83 zone outlines are the Iowa State copy, simplified, within 0.014 degrees of the NWS file.' The 0.014 figure is in the sources table row iem_ugcs (sources.py line 883). Test: test_the_zone_counts_name_the_eight_measures_and_say_what_they_use_in_plain_words (line 6294).",
+     "reason": "The About table row iem_ugcs (sources.py line 883) still prints 'The 83 zones in force since then keep the NWS outlines'; that row is outside this fixer's files (see open)."
+    },
+    {
+     "id": "B6",
+     "state": "applied",
+     "evidence": "about.html line 98: '{{ b6.label_what }} {{ b6.bubble_unavailable }} {{ b6.bubble_legend }}'. label_what comes from the labels words block (build.py _label_words, lines 1672-1676, key 'what' = hl.WORDS.get('label_what')), which history_layers.py line 210 now defines as LABEL_WHAT, exact. The partial state prints the labels block's own problem, which labels.py now sets to LABELS_PARTIAL (labels.py lines 98 and 506). The template holds no partial-state words: the test asserts 'Bubble values were built' is absent from about.html and build.py. Tests: test_the_value_bubbles_say_what_a_bubble_is_before_the_legend (line 6326), test_the_value_bubble_paragraph_prints_the_labels_problem_after_its_first_sentence (line 6334), test_a_partial_bubble_layer_prints_the_labels_sentence_and_no_template_words (line 6350)."
+    },
+    {
+     "id": "B7",
+     "state": "applied",
+     "evidence": "about.html line 201: '{{ ah.terms_lead }}' (TERMS_LEAD, build.py line 1402; about_hail_context line 1371). about.html line 61: '{{ b6.water_around }} \"{{ b6.water_line }}\"' (WATER_AROUND, build.py line 1403; 'at zoom 13 and up' is gone). about.html line 80: 'grid cells about 2.9 by 1.9 miles (4.6 by 3 km)' replaces 'about 1/24 degree cells (roughly 4.6 by 3 km in Montana)'; those words are template text, not a module constant, so they are retyped in the template as the item asks. Tests: test_the_terms_lead_the_water_line_and_the_cell_words_are_the_fixed_sentences (line 6283), test_the_five_year_pictures_print... (line 6229).",
+     "reason": "The 1/24-degree words also stand in the sources table row history_pictures (sources.py line 697), which the About prints; that row is outside this fixer's files (see open)."
+    },
+    {
+     "id": "B8",
+     "state": "applied",
+     "evidence": "about.html line 60: the base map parks paragraph prints '{{ b6.padus_base_credit }}' (build.py line 1929: about_vector(PADUS_VECTOR_LINE), basemap2's CREDIT[3]); the landmarks' local-parks credit is no longer there. about.html line 75: the Landmarks park paragraph prints '{{ b6.padus_credit }}' (the landmarks' padus_local line). Tests: test_each_section_prints_its_own_pad_us_line_and_the_base_map_prints_basemap2s (line 6499) and test_one_pad_us_line_per_section_and_no_source_line_for_a_held_source (line 6687)."
+    },
+    {
+     "id": "B9",
+     "state": "already so",
+     "evidence": "about.html lines 76-77 already print '{{ b6.held_church }}' and '{{ b6.held_park }}', which are landmarks.CHURCH_HELD (landmarks.py line 158) and WORDS['held_parks'] (line 289). Both now equal the fixed CHURCH and PARKS sentences exactly (checked against the brief's text). Test: test_the_held_sentences_print_the_fixed_words_exactly_and_no_old_words (tests/test_site.py line 6190); test_the_held_kinds_carry_the_modules_words_and_no_figure (line 6202) and test_the_held_sources_are_named_as_held_with_their_reason_and_no_source_line (line 6483) pin the same text."
+    }
+   ],
+   "files_changed": [
+    "/home/user/wt/wt-b6/website/build.py",
+    "/home/user/wt/wt-b6/website/templates/about.html",
+    "/home/user/wt/wt-b6/tests/test_site.py"
+   ],
+   "tests": "tests.test_site (verbose): 355 run, 6 skipped (baseline 347 run, 6 skipped), 2 failures. Both failures need the sources.py change in open item 1: test_the_forest_row_drops_the_internal_reference_and_keeps_the_terms_and_the_statute (line 6277) and test_the_b6_rows_carry_the_corrected_words (line 6123, failing on the history_pictures cell words first). py_compile passes for website/build.py and tests/test_site.py. No U+2014 in the three files. Other modules that import build (test_addresses, test_buildings, test_hail, test_summary, test_website_workflow, test_words_rules): 675 run, OK, 4 skipped. The modules fixer's test files (test_landmarks, test_labels, test_history_layers, test_basemap2, test_terrain): 457 run, OK. No browser check: the change is About copy only, with no map or JavaScript change.",
+   "open": [
+    "sources.py, outside this fixer's list, must change before two tests pass: (a) CONTRACTS base_forests.missing, line 544: drop ' (counsel item 23)', keeping 'and counsel reads the terms.' and '17 U.S.C. 105' (B1). (b) CONTRACTS history_pictures.units, line 697: 'about 1/24 degree cells (roughly 4.6 by 3 km in Montana)' becomes 'grid cells about 2.9 by 1.9 miles (4.6 by 3 km)'; the About table prints this row (B7). (c) CONTRACTS iem_ugcs, line 883: 'The 83 zones in force since then keep the NWS outlines' becomes the Terms sentence 'the 83 zone outlines are the Iowa State copy, simplified, within 0.014 degrees of the NWS file.' (B5). Until (a) to (c) land, the table still shows the old sentences.",
+    "history_layers heat90_legend still carries the old cell words; the About prints only that legend's closing sentence, so they do not reach the page. The modules fixer decides whether to change the module text.",
+    "ZONES_WHAT, as quoted, reads as nine measures: 'flood and flash flood watches, warnings and advisories' implies flash flood advisories, which history_layers.MEASURES does not count. The eight are high wind warnings, high wind watches, wind advisories, flood watches, flood warnings, flood advisories, flash flood watches and flash flood warnings. Applied as given; needs a ruling.",
+    "Banned-word collisions, applied as the items quote them: 'rows' in the B5 text (about.html line 88); 'store' in the module's zero sentence 'A zero is a count of products in the store.' (history_layers zones_legend, printed at about.html line 89); 'ugcs service' in the zone-outline credit (history_layers about_outlines, about.html line 92); 'ISO dates' in the hail legend (2021-10-17 to 2026-10-16, history_layers hail1_legend, about.html line 81). Template paragraphs outside the items still use banned words, and I did not change them: 'polygon' (about.html lines 107, 122), 'row(s)' (101, 111, 120), 'store' (36, 94, 95), 'tiles' (178), and the module list 'held' (128).",
+    "Copy choices to confirm. (a) The summit's first sentence is replaced by peak_note, which opens with it, so there is no repeat. (b) The five-year paragraph keeps the template sentence 'A radar estimate is not a measurement, and a blank cell is not the same as no hail.' beside the index legend, which says the same. (c) 'counted per grid cell: grid cells about 2.9 by 1.9 miles' reads redundantly, applied literally. (d) The zone paragraph keeps 'including flash flood watches and warnings' after ZONES_WHAT. (e) The new IEM terms sentence says 'simplified' twice, as the item quotes it.",
+    "TERMS_LEAD, WATER_AROUND and ZONES_WHAT are build.py constants, because no module holds them (the same pattern as BUBBLE_LEGEND). A module key could hold them instead if the modules fixer wants that.",
+    "label_what is read as hl.WORDS.get('label_what'). The key has landed, so no fallback runs. If the key is ever dropped, the sentence disappears silently; the tests pin it. The two sliced sentences (the heat blank-cell sentence and the zone zero sentence) return None when their lead is missing, and the tests pin them as well.",
+    "Not changed: the store copy at /home/user/hail-b5/out/b6/store-copy (not read or written), the network (no requests), and git write commands (none). Untouched: sources.py, the module files, and the other test files."
+   ]
+  }
+ },
+ {
+  "run": "wf_37b52759-767",
+  "fixer": "B6 words fixer (modules), D141 round: A2, A3 and A4 applied; A1 and A5 already so (A1 gained a regression pin test). Worktree /home/user/wt/wt-b6, branch claude/map-b6.",
+  "report": {
+   "product": "B6 words fixer (modules), D141 round: A2, A3 and A4 applied; A1 and A5 already so (A1 gained a regression pin test). Worktree /home/user/wt/wt-b6, branch claude/map-b6.",
+   "items": [
+    {
+     "id": "A1",
+     "state": "already so",
+     "evidence": "website/landmarks.py 1453-1454: while tiger_park is held (HELD_SOURCES at line 277, read at call time by _held at 1368-1371), park_same comes from dedupe_parks over the PAD-US rows only ([row[:5] for row in pad_rows]). TIGER rows reach it only in the else branch (line 1456), which runs only when tiger_park is released. The count is written at line 1538 (park_same_name) and is not derived from a held source, so it stays in the index, the mirror and the map data. Pin added: tests/test_landmarks.py line 1093 (HeldAndFiguresTests): dedupe_parks sees only padus_local rows. In a scratch copy with the held branch disabled, the pin fails.",
+     "reason": "The count is not derived from the held TIGER points while the Census list is held, so nothing moves to the stdout summary."
+    },
+    {
+     "id": "A2",
+     "state": "applied",
+     "evidence": "website/landmarks.py: CHURCH 149-150 (exact item text), PARKS 151 (exact item text), HELD_REASON 152 = CHURCH, TIGER_HELD_REASON 153 = PARKS, TIGER_HELD_SENTENCE 154 = PARKS, CHURCH_HELD 158 = CHURCH; HELD_KIND_REASONS 172, HELD_SOURCE_REASONS 276 (fema_worship) and WORDS held 288 follow; WORDS held_parks 289 = PARKS. docs/DESIGN.md line 1039 (Held chip) quotes CHURCH. Pins: tests/test_landmarks.py 1022 (F6, now PARKS), 1029 (new plain-word test: one sentence, no held, counsel, geocoder, rows, store, polygon, ugcs, run, tile or band), 1107 and 1433 (tiger_park reason and terms = PARKS), 1463 and 1499 (HeldKindSentenceTests = CHURCH). docs/DECISIONS.md unchanged (no new bullet)."
+    },
+    {
+     "id": "A3",
+     "state": "applied",
+     "evidence": "website/history_layers.py: ZONES_WHAT line 175; zones_title line 194 = 'High wind warnings and watches, wind advisories, and flood and flash flood watches, warnings and advisories by forecast zone'; zones_legend lines 195-199 = 'NWS products counted by public forecast zone, {first} to {last}: ' + ZONES_WHAT + '. Each count is every such product the store holds for the zone, cancelled, upgraded and early-ended ones included; an event that stopped and then started again counts once for each part. A warning area product counts in a zone when it touches the zone. {newest} A zero is a count of products in the store. This is not an all-clear.' Pins: tests/test_history_layers.py 770-775 (legend), new class ZoneAndLabelWords at line 902 (three tests)."
+    },
+    {
+     "id": "A4",
+     "state": "applied",
+     "evidence": "website/history_layers.py: LABEL_WHAT line 176; WORDS label_what line 210. website/labels.py: LABELS_PARTIAL lines 98-99 (exact item text); rule_words words key 'what' = H.WORDS['label_what'] at line 402 (label_legend is carried as 'legend', so label_what is carried as 'what'); partial problem lines 502-512: a run with tiles prints LABELS_PARTIAL; failed files add the unavailable sentence after it; failures alone keep the old unavailable form. Pins: tests/test_labels.py 58-61 (constants), 98 (plain words and form), 125 (rule words incl. 'what'), 155 and 385 (problem equals LABELS_PARTIAL), 389 (tiles plus a lost file)."
+    },
+    {
+     "id": "A5",
+     "state": "already so",
+     "evidence": "website/sources.py 588-589 (summit row) says what the code does: basemap2.py 2007-2008 (no value is counted as no_height), 2016-2017 (peaks.json gets only the summits with a height), 2015 (state partial through the peaks_unknown note), 2013 (no value at all: 'Summit heights' named as not loaded), 2070 (counts.peaks_no_height). Pinned by tests/test_basemap2.py 698-710. website/sources.py 725-726 (recent radar row) says what the code does: history_layers.py 1013-1014 (the recent legend adds the missing-day sentence for the window). Pinned by tests/test_history_layers.py 731-739. No text changed, no test added.",
+     "reason": "Both rows already match the code and their existing tests."
+    }
+   ],
+   "files_changed": [
+    "/home/user/wt/wt-b6/website/landmarks.py",
+    "/home/user/wt/wt-b6/website/history_layers.py",
+    "/home/user/wt/wt-b6/website/labels.py",
+    "/home/user/wt/wt-b6/docs/DESIGN.md",
+    "/home/user/wt/wt-b6/tests/test_landmarks.py",
+    "/home/user/wt/wt-b6/tests/test_history_layers.py",
+    "/home/user/wt/wt-b6/tests/test_labels.py"
+   ],
+   "tests": "py_compile passes on the six touched Python files. The four named modules pass with the venv Python: test_landmarks 123 (baseline 121), test_history_layers 74 (71), test_labels 40 (38), test_basemap2 114 (114), 351 in total, no failures. The font and shapefile tests run here (raqm and pyshp are present). Em-dash count is 0 in all ten listed files. Full discovery on the current tree (python -m unittest discover -s tests): 2537 run, 2 failures, 12 skipped. Both failures are test_site.py pins on sources.py rows outside these items (see open 1), and both also fail on a scratch copy with my three website modules reverted, so they are not caused by these edits. No git write command was run; only read-only git status and git diff.",
+   "open": [
+    "tests/test_site.py (another fixer's file): test_the_b6_rows_carry_the_corrected_words expects the sources.py history_pictures units to say '2.9 by 1.9 miles (4.6 by 3 km)'; test_the_forest_row_drops_the_internal_reference_and_keeps_the_terms_and_the_statute expects no 'counsel item 23' on the About page, but website/sources.py line 544 still has '(counsel item 23)'. Neither is in the D141 items, so neither was changed.",
+    "website/sources.py lines 705 and 710 (history_zone_counts row: its name 'Warnings, watches and advisories by public forecast zone, eight measures, five seasons' and its missing text 'A polygon product counts in a zone...') still print the old zone wording on the About table. Not in the items, and they now differ from the A3 title and legend.",
+    "website/sources.py lines 679 and 689 (tiger_park and fema_worship missing text) still say 'Held for counsel' in the About table's 'When values are missing' column (about.html line 214 prints that column). Not in the items; the plain-word rule applies.",
+    "website/basemap2.py lines 322-323 (WORDS peak_note) say 'A summit with no value shows Data unavailable.' The build leaves such summits out of peaks.json (lines 2016-2017), so the note overstates what the page shows. basemap2.py is not in my list.",
+    "website/sources.py lines 588-589 print 'the index counts it as peaks_no_height' in the About table's missing column, so a visitor reads a key name. Left as is because A5 is already so; a plain-words rewording is an owner call.",
+    "ZONES_WHAT, as the item gives it, reads as naming 'flash flood advisories' too ('flood and flash flood watches, warnings and advisories'). The eight measures have no flash flood advisory (MEASURES has no FF.Y product), so the phrase can mislead. Applied exactly as given; owner to decide.",
+    "CHURCH and PARKS are the owner's fixed text. They do not carry the 'Data unavailable.' lead or the 'This is not an all-clear.' closing that AGENTS rule 5 asks for on missing-input sentences. Held kinds are not failed inputs, so I did not add them.",
+    "Labels: when a run labels some tiles and also loses files, the problem reads LABELS_PARTIAL and then the failed-files sentence (two sentences). That sentence keeps its old '1 files could not be read' wording, which is not in the items.",
+    "Plain-word leftovers in my files outside the items: landmarks.py RULE_TEXT (line 159) says 'The Census park points are held' (written to the index rule field, not printed); the DESIGN.md Held chip row (line 1039) labels the chip 'Held'; the zones legend keeps 'store' because the item quotes 'the store holds'.",
+    "Interpretations to confirm: TIGER_HELD_REASON (the Census source's held reason and terms) is PARKS, as is TIGER_HELD_SENTENCE; the labels words key for label_what is 'what' (label_legend is 'legend'); HELD_REASON now equals CHURCH and no longer builds CHURCH_HELD. The About page reads CHURCH_HELD through build.py (b6.held_church), so about.html needed no change for the church sentence.",
+    "A1 risk: landmarks._held reads HELD_SOURCES at call time, so a test can release tiger_park and make park_same TIGER-derived. No build does that now, and the new pin catches it."
+   ]
+  }
+ }
+]
