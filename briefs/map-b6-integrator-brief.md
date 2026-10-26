@@ -66,3 +66,6 @@ Tasks, in order:
   "held" with the reason.
 - The landmark display-name owner items, the bubble side option, the kv wording and the cold-run figure are owner items in
   docs/ROADMAP.md; the counsel items 21 to 24 and the TIGER area landmark use constraints stay listed.
+- D122: the P2 monthly step reads vector.state from hail/base/index.json after the build (build exits 0 for an unavailable
+  store); the water line words of D122(b) go into map.json; the About sentences for the forest boundaries and the lakes and
+  rivers are written (not held); AGENTS.md's website install line gains pyshp; .gitignore gains !tests/fixtures/**/*.zip.

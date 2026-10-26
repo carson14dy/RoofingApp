@@ -1770,3 +1770,23 @@ item and raised four points, ruled here and passed to a P1 follow-up as F1 to F4
   says the statement was not confirmed. (d) The block-level "Data unavailable." sentence stands (rule 5). (e) **The adopted
   store's land tiles** predate the wetland change: the integrator's store copy takes the rebuilt land files from the P1 test
   store or runs the offline build; the monthly job rebuilds them on its first run.
+
+## Supervisor rulings on the P2 check (2026-10-26 07:45 UTC; D122)
+P2's continuation (wf_5024a4f7-0c1) ended: the fixer applied the 19 standing findings (85 tests, 28 new; pieces carry a size
+and a feature id; placeholder and agency park names draw no label; the partial sentence names every failed kind), verify
+passes 22 of 22 on the rebuilt test store, the offline build reproduces every data file, budgets met on the built set. The
+checker listed 20 problems; rulings, passed to the P2 rulings pass as X1 to X14:
+- D122 (a) **No coverage claim the counts contradict.** The index writes band D's built and unbuilt counts and the failed
+  cells, never "every listed tile". (b) **Two true statements about an unbuilt band D tile.** The browser keeps drawing band
+  C's lakes and rivers at zoom 13 and up (they loaded statewide), and the sheet's water line reads "Detailed water and local
+  parks: Data unavailable for this area in this update. This is not an all-clear." Every text says both. (c) **Simplification
+  never drops silently.** A feature that collapses at a band's tolerance moves to the next finer band; one that collapses in
+  the finest band it can reach is dropped and counted (136 of 415 state parks and recreation areas, mostly fishing access
+  sites under 0.02 square kilometres, collapsed silently at band B). (d) **Skipped checks are not passes.** verify reports a
+  check it did not run as "not checked"; ok is over the checks that ran. (e) **Forests and water ship** in the first release
+  with their credit lines (D114(b)); counsel items 23 and 24 are items to confirm, not holds. (f) **First-paint names.** The
+  twenty first-paint towns keep the basemap's names and zooms; "Butte-Silver Bow (balance)" is Butte and "Anaconda-Deer Lodge
+  County" is Anaconda through a documented table. (g) A cited reference (Peakbagger, Wikipedia) in a citation is not a vendor
+  or product name under the names rule. (h) A missing shapefile reader is a named failure of the kinds that need it, never a
+  crash. (i) The local park polygons appear as band D builds; the P3 park chips show the parks meanwhile. (j) The workflow
+  step reads the vector state from the index because build exits 0 for an unavailable store.
