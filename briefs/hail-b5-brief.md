@@ -1653,3 +1653,27 @@ park polygons per B1 tile at zoom 13 and up) reached 20 of 4,597 tiles: the NHD 
   licence; the credit line "Forest boundaries: USDA Forest Service" stands and counsel sees the terms as item 23, not as a hold.
   The NHD terms (USGS, public domain, credit requested) are counsel item 24. (c) **Cold timings** are measured by the first monthly
   run and recorded then; the job's step gets a 20-minute cap with the cache carrying the rest to the next run.
+
+## Supervisor rulings from the cartography skeptics and the render critic (2026-10-26 04:10 UTC; D115)
+The cartography research pass ended (96 agents; 46 claims, 36 standing, the rest corrected on wording, currency or licence
+scope). Corrections that matter: NLCD 2021's data release carries a CC0 1.0 licence (public domain), better than the citation
+request the worker quoted; the TIGER area landmark file's own use constraints are read by counsel before the park and landmark
+points from it ship (the NCES, PAD-US and USGS structures sources carry the landmark chips without it); the Montana State
+Library roads licence is a disclaimer (the existing counsel gate); the W3 river ranking in the research report was wrong (no
+product effect). The render critic failed the proof pictures on points that are design decisions, not errors:
+- D115 (a) **The base look.** The owner dropped Apple's design, not terrain: the reference's information (relief, land cover,
+  forests, reservations, water, places, shields) is what "work like this" means, drawn in the site's own palette. DESIGN.md
+  section 8's "white land" rule is amended for B6: the land is paper white at the street zooms (13 and up); the region zooms
+  (5 to 10, fading through 11 and 12) carry a light land cover tint and relief shading under the field-sheet lines. The owner
+  saw the proof pictures and can veto the tint; the default is on. (b) **Picture palettes.** The tint and relief colours are
+  picture palettes defined once in Python with named constants and listed in DESIGN.md beside the radar palettes, as the frames
+  are; the CSS token rule covers the page, not the pictures. (c) **Type.** The browser draws every map label at the site's
+  type scale (13 px minimum; towns per the hierarchy in DESIGN section 8; the label side from towns.json); the proof's small
+  type was the Python picture's, not the product's. (d) **Credits.** Every credit line names the party the terms ask for:
+  "U.S. Census Bureau", "USDA Forest Service", "U.S. Geological Survey", "Natural Earth", "Multi-Resolution Land
+  Characteristics Consortium"; one credit line per page state, complete, never implying endorsement (D113(a)). (e)
+  **Reservation outlines** come from the full-resolution TIGER/Line AIANNH file at every zoom (P2 built it so); the 1:500,000
+  cartographic file is never drawn above zoom 9. (f) **Streets at zoom 12 and below** are the main roads only (no stand-in
+  local mesh); route-like street names ("FAS 533") get no label; street names keep the source's case rendered in the site's
+  mixed-case style. (g) **Dark mode**: the tint and relief tiles are hidden in dark mode (the charcoal paper stands alone)
+  until a dark palette is designed and measured for contrast; the sheet and the labels follow the existing dark tokens.
