@@ -1844,3 +1844,18 @@ harness refused the write) and were corrected by the supervisor by hand (report-
   a test box or a deadline stop (stricter than the brief; accepted). (c) The integrator assembles the store copy from the
   product test stores; any base index written with the old "format" key is removed first and the three base parts rebuilt.
   (d) P2 is final for the integrator.
+
+## Supervisor rulings on the P4 rulings pass (2026-10-26 09:00 UTC; D127)
+The P4 rulings pass (wf_0d6568a7-302) applied the items (60 history tests, 34 label tests; the newest-warning date from the
+counted rows, 2026-10-10; plain legend words; the picture bounds pinned to gridded.IMAGE_BOUNDS; the unread cache pages
+deleted; the map.json budget table: 139 bytes raw for the first paint, 4,029 bytes for the second data file). Three items
+need rulings:
+- D127 (a) **P4-R6 amended.** The zone outline download is checked as a file of zone outlines before it is written and its
+  SHA-256 is recorded; nothing is pinned, because the service puts a per-request id in the file so the bytes differ on every
+  fetch; the valid date in the file name names the snapshot. (b) **Once per event is deferred.** The store's zone rows and
+  polygon rows carry no VTEC event number, so the counts count the rows the store holds and the legend says so in plain words;
+  carrying the event number in the joins and counting once per event is a B7 item for the owner (the figures: 1,603 of 2,544
+  high wind warnings later cancelled; 1,711 of 2,010 high wind watches upgraded; 393 of 514 flood watches cancelled). (c) **The
+  P4 notes are cleaned before the integrator reads them**: every section of integration.md agrees with its section 11
+  (no block copied into map.json; newest_warning words; the measured bytes; 60 tests; no "archived products"; the Source: credit
+  line); the integrator's run does this as its first step. (d) P4 is final for the integrator.
