@@ -1859,3 +1859,24 @@ need rulings:
   P4 notes are cleaned before the integrator reads them**: every section of integration.md agrees with its section 11
   (no block copied into map.json; newest_warning words; the measured bytes; 60 tests; no "archived products"; the Source: credit
   line); the integrator's run does this as its first step. (d) P4 is final for the integrator.
+
+## Supervisor rulings on the first integrators (2026-10-26 09:45 UTC; D128)
+The integrator run (wf_7425e7dc-00f) has finished the P4 notes cleanup, task 1 (build.py: the map.json pointer and
+data/base.json; 301 site tests; map.json 163,250 bytes against the 163,840 gate on the adopted store), tasks 3 and 4 (the
+jobs, website.yml, .gitignore, AGENTS.md; 111 workflow tests) and task 6 (docs: D107 to D127 bullets, DESIGN section 13,
+ROADMAP open items, README). Rulings on the decisions they put to the supervisor:
+- D128 (a) **One bubble legend.** The printed legend is the D110(c) sentence in labels.words.legend; the P4 module's own
+  label_legend text is retired after the integrator finishes (a post-integration fix round on the product files). (b) **Rule 5
+  words in the modules.** The P2 and P4 unavailable and partial sentences gain the words "Data unavailable" in their own WORDS
+  (as P1 did under D117(b)); build.py's lead words stay as the safety net. (c) **Budgets** live in data/base.json "budget";
+  hail.budget keeps the phone and tile-event budgets the smoke reads. (d) **map.json headroom** is 590 bytes on the adopted
+  store: no further first-paint key goes into map.json. (e) **The landmark mirror.** landmarks.py writes its block into the
+  hail/index.json "base" mirror as the other two writers do (post-integration fix). (f) **The monthly job.** The cap of 110
+  minutes and the 80-minute clock stand; the daily B6 steps run on the 60-minute clock after the B5 steps; the terrain step
+  gets a 25-minute cap (1,500 s, deadline 120 s earlier) because a cold month takes 1,175 s; the monthly terrain build re-reads
+  the two service descriptions without re-fetching unchanged tiles (a --refresh-descriptions flag in terrain.py, post-integration
+  fix; the data month in the cache key triggers the re-fetch when the data changes); a full --refresh runs only when the owner
+  asks. (g) **Docs calls confirmed:** the counsel numbering follows the rulings (21 park and landmark terms, 22 AirNow, 23 Forest
+  Service, 24 NHD); the live hail legend ends with the quoted form of the DESIGN section 11 sentence; a "Fire and EMS stations"
+  chip is in the sheet; churches show a "Held" chip state with the reason and no count; the landmark sub-line reads "from the
+  public lists named under About". (h) tools/smoke_map.py learns data/base.json in the B6-3 browser pass.
