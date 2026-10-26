@@ -366,5 +366,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - 07:20 UTC: P1 rulings pass done (16 of 16 pass; 92 tests). D121 recorded; integrator brief appended; P1 follow-up launched
   (F1 base index never discarded, F2 CC0 citation, F3 confirm, F4 integration notes): wf_4a91573b-627 task wd1cxrsze.
 - 07:45 UTC: P2 continuation done (19 findings fixed; 85 tests; verify 22/22). D122 recorded; P2 rulings pass launched with
-  X1..X14 (the run id follows in the transcript). Note: landmarks/refute/venv (a skeptic's own interpreter, untouched 70 min)
+  X1..X14: wf_4a61607c-6a4 task wi4oamao5. Note: landmarks/refute/venv (a skeptic's own interpreter, untouched 70 min)
   was deleted in the scratch sweep at 07:25; venv folders are excluded from the sweep from now on.
