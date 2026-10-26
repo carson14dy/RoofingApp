@@ -379,3 +379,6 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   (newest-warning date from the counted rows; plain words for the counts; data/base.json for the sheet's words). P4 rulings
   pass launched with X1..X8: wf_0d6568a7-302 task wdoeyuosf. The flagged skeptic refute:P4:L19:2 ran rm -rf on its own
   scratch store only; no worktree file changed.
+- 08:30 UTC: P1 terms note done and checked (100 tests; the NLCD 2021 record cited; no CC0 claim). P1 is final for the
+  integrator. Waiting: P2 rulings pass (wi4oamao5), P4 rulings pass (wdoeyuosf), P3 close-out (wg0z6fn0b), landmark skeptics
+  (w5pjapetx).
