@@ -357,3 +357,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - 06:25 UTC: P1 continuation done (fix 12 findings, check: budgets met, 15 items). D117 recorded. P1 rulings pass launched:
   wf_bcf01aa8-f13 task w3ihwzzgg (inline script with args.extra X1..X10). Waiting on P3 (fix running), P2 (four refute-only
   runs), P4 (refutes), the landmark skeptics.
+- 06:40 UTC: P3 continuation done (20 findings fixed; verify 18/18; budgets met). D118 recorded; P3 rulings pass launched with
+  X1..X8 (the run id is in the Workflow result that follows in the transcript).

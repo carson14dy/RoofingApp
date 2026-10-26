@@ -1712,3 +1712,18 @@ rulings pass (wf_bcf01aa8-f13) as items X1 to X10:
   a layer that is not rebuilt keeps its block and date. (f) The record cites full-set figures (1,762 cache hits), not a
   subset run's. (g) The cold run's 1,175 s against the 1,500 s step budget is an owner item (the monthly job may need a longer
   step or two runs). (h) .gitignore gains terrain-cache/ and b6-cache/ (integrator).
+
+## Supervisor rulings on the P3 check (2026-10-26 06:40 UTC; D118)
+P3's continuation (wf_e68b48b6-2b3) ended: the fixer applied the twenty standing findings (71 tests, 31 of them skipped without
+pyshp; the FAA fixture scrubbed of owner, address, phone and manager columns; the fire label "Fire and EMS stations"); the checker
+found 18 of 18 verify checks passing, 542 shards reproduced byte for byte offline, budgets met, and listed 15 items. Rulings,
+passed to the P3 rulings pass as X1 to X8:
+- D118 (a) **Hospital sources.** The rule as coded stands: the HIFLD copy is read only when the USGS layer answers with no Montana
+  rows; a failed USGS request makes the kind unavailable, never a silent switch of source (a map whose hospitals change source
+  from day to day is not honest about its source). The notes follow the code. (b) **Held counts are not published.** No number
+  derived from a held source goes into a published file: the index carries state "held" with the reason and count null; the
+  figure (485 places of worship) stays in the build report. (c) **Display names.** A local rule after the shared title case:
+  possessive 's, lower-case ordinals, Mc-capitalisation, a capital after a slash, backslash to slash, and the safe expansions
+  (Hs, Ms at the end; Elem; Schl and Sch; Jr and Sr before High). Every other abbreviation stays as the source gives it and is
+  listed for the owner with its count. (d) An en dash or an apostrophe in source text is kept (the ban is the em dash).
+  (e) A repository URL in a User-Agent string, like a URL path, is not a vendor or product name (D117(c)).
