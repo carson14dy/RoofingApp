@@ -382,3 +382,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - 08:30 UTC: P1 terms note done and checked (100 tests; the NLCD 2021 record cited; no CC0 claim). P1 is final for the
   integrator. Waiting: P2 rulings pass (wi4oamao5), P4 rulings pass (wdoeyuosf), P3 close-out (wg0z6fn0b), landmark skeptics
   (w5pjapetx).
+- 08:35 UTC: P3 close-out done (cache descriptions renamed to the module's names, offline rebuild byte-identical on 537 of 537
+  shards; 66 changed names recorded; integration.md figures 101 tests, 22 checks, 539 entries). P3 is final for the integrator.
