@@ -377,5 +377,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   None). P1 terms-note run launched: wf_c09cc861-aaf task w64f1flrn.
 - 08:20 UTC: P4 continuation done (standing findings fixed; 89 tests; verify passes; byte-identical rerun). D125 recorded
   (newest-warning date from the counted rows; plain words for the counts; data/base.json for the sheet's words). P4 rulings
-  pass launched with X1..X8; the run id follows in the transcript. The flagged skeptic refute:P4:L19:2 ran rm -rf on its own
+  pass launched with X1..X8: wf_0d6568a7-302 task wdoeyuosf. The flagged skeptic refute:P4:L19:2 ran rm -rf on its own
   scratch store only; no worktree file changed.

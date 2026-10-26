@@ -7,6 +7,7 @@ const worker = 'haiku'
 const BRIEF = '/home/user/wt/wt-session/briefs/map-b6-integrator-brief.md'
 const RULINGS = '/home/user/wt/wt-session/briefs/hail-b5-brief.md'
 const RULINGS_PASS = '/home/user/wt/wt-session/briefs/map-b6-rulings-pass.md'
+// D116 to D125 are in the brief file after D115; the integrator brief carries the additions.
 const WT = '/home/user/wt/wt-b6'
 const PY = '/home/user/hail-b1/venv/bin/python'
 const OUT = '/home/user/hail-b5/out/b6/build/integrator'
@@ -31,10 +32,12 @@ const common = ' The worktree is ' + WT + ' (branch claude/map-b6); the Python i
   ' every string the browser prints comes from map.json (D29, D41). Run ' + PY + ' -m py_compile on every Python file you touch and the tests named for your task.' +
   ' Write your notes for the next integrator into ' + OUT + '/<task>.md.'
 const TASKS = {
-  I1: 'Task 1 of the brief (website/build.py: HAIL_FOLDERS_B6, _copy_hail, the map.json blocks "base", "history_layers", "recent" and the label flags\' words, the budgets' +
-    ' block, the identity rule for a build without the new parts) and the test pins for it in tests/test_site.py (the copy list, the map.json keys, the identity of the' +
-    ' sample build). The words come from the product modules\' WORDS, CREDIT and SOURCES constants where they exist (import them; do not retype), so the browser prints' +
-    ' the modules\' words. Run ' + PY + ' -m unittest tests.test_site -v and fix until green.',
+  I1: 'Task 1 of the brief as amended by D125(d) (website/build.py: HAIL_FOLDERS_B6, _copy_hail, a small first-paint pointer block "base" in map.json (the tile URL templates,' +
+    ' zooms, state, the as_of and the name of the second file) and a second Python-built data file data/base.json that carries the blocks "base" (bands, cells, the landmark' +
+    ' shard pattern, peaks and places files, credit lines, held kinds and sources with reasons, the words the browser prints, the legend lines), "history_layers", "recent"' +
+    ' and the label flags\' words and budgets; map.json stays under its 163,840-byte raw gate; the identity rule for a build without the new parts covers both files) and the' +
+    ' test pins for it in tests/test_site.py (the copy list, the keys of both files, the identity of the sample build, the raw size gate). The words come from the product' +
+    ' modules\' WORDS, CREDIT and SOURCES constants where they exist (import them; do not retype), so the browser prints the modules\' words. Run ' + PY + ' -m unittest tests.test_site -v and fix until green.',
   I2: 'Task 2 and task 5 of the brief (website/sources.py: one CONTRACTS row per source from the integration notes with the words corrected by D112(c), D113(b), D113(c),' +
     ' D113(d); website/templates/about.html: one sentence per source with its credit line under the hail history headings, the landmark kinds with the held kinds and' +
     ' sources and their reasons, the five-year pictures, the zone counts with the newest-warning date words, the recent radar hail switch) and their pins in' +
