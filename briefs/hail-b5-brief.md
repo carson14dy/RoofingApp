@@ -2042,3 +2042,34 @@ five tries (its result is recovered from its attempts). Its smoke run failed one
   the cell centre; a build with the feeds reachable carries no such note. The smoke is re-run on that build before the
   commit. (f) The exception name "(ProxyError)" inside the precipitation note is main's wording, before B6: a follow-up for the
   gridded module (plain words).
+
+## Supervisor rulings on the words reader (2026-10-26 18:25 UTC; D141)
+The second-opinion reader (wf_f87d4a6b-342) returned 34 findings on the final build's About page and data/base.json
+(records/b6/words-check.json). Sixteen are B6's and stand; they are fixed in a words round of two fixers (modules and rows;
+the About page) before the commit. Rulings:
+- D141 (a) **No held-derived number**: landmarks' "park_same_name" count leaves the index, the mirror and data/base.json if it
+  is derived from the held TIGER points (D132(g)); the build's stdout may keep it. (b) **Public sentences in plain words**: the
+  one church sentence becomes "Places of worship are not shown yet: the use terms of the list they come from are still being
+  read, so no church is drawn or named." and the park sentence "The Census park points and their names are not shown yet: the
+  file's use terms are still being read." ("held", "counsel", "geocoder", "rows" and "store" leave the visitor's text; the
+  docs keep the owner's words). (c) **The zone counts name their eight measures** (high wind warnings and watches, wind
+  advisories, and flood and flash flood watches, warnings and advisories) in the module title and legend and on About; "every
+  warning, watch and advisory" read as if hail, tornado and winter products were counted. (d) **The bubble value is a cell's
+  radar estimate**: a module sentence says so (not a measurement at the roof, not an inspection) and About prints it; the
+  partial-labels sentence is the module's, in plain words. (e) **Rows say what the code does**: the summit row (a summit with
+  no height shows Data unavailable, unranked, as basemap2 does, not "left out") and the recent-cells row (missing days). (f)
+  "(counsel item 23)" leaves the public page. (g) The hospital fallback sentence leaves About (the module sentence prints
+  when the copy is used). (h) About prints the summit, place and route notes of basemap2; "by tens of metres" goes (no check
+  behind the figure). (i) About prints the pictures' legends and missing-day sentences and the zone legend's zero sentence
+  (rule 5). (j) The Terms lead-in says where the words are quotes; the water sentence is shortened and names "the map's
+  information sheet"; the heat grid cell is given in miles with km. (k) The base map parks paragraph carries basemap2's PAD-US
+  credit; the landmarks' local-parks credit moves to the Landmarks section.
+- Not B6's, or not defects: the page stamp of the local build (--now 2026-10-17; the published build uses the real time);
+  the county-file TIGER statement (already scoped to that file); the B3 and imagery credit forms ("Building outlines:",
+  "Roads:", "Imagery:") and the county-file use note (main's and PR 17's lines; follow-ups there); the NOAA MRMS terms line
+  (B1's Terms cover NOAA data; a follow-up to name MRMS); Natural Earth's footer credit (main's); vendor and platform names
+  (AWS, GitHub Releases, ArcGIS service paths, a font file name: not AI names, D117(c), D118(e)); the {one} placeholder of
+  part_unavailable (intended: the singular noun); failure wording "missing" on a loaded build (the sentences exist in the
+  modules and print on failure, D136(a) tests); as_of "Data unavailable" for cached sources (the rule of D134(a); recording the
+  cache file's date is a follow-up); the table rows that describe the designed page behaviour (D132(a)); "1 km cell" stays
+  the site's unit (B1 to B5 use it; miles beside km is an owner question for B6-3).

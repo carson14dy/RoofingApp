@@ -8,7 +8,7 @@ Python data products for the Map page's own cartography, built from public-domai
 - website/history_layers.py and website/labels.py: the five-year hail and heat pictures, the eight zone measures with the newest-warning date, the recent radar hail cells and the bubble anchors (483,008 bubbles statewide at zoom 17).
 - website/build.py and the About page: HAIL_FOLDERS_B6, the map.json pointer, data/base.json, credit lines only for sources read, the modules' own "Data unavailable" sentences; sources.py CONTRACTS rows; the daily and monthly store jobs; tests; docs (D107 to D140).
 
-Verified: __SUITE__; selftest PASS; local build from the adopted store with the new parts __BUILD__; smoke passed; map.json __GATE__ raw against the 163,840 gate.
+Verified: 2,522 tests OK, 12 skipped (347 site tests with the adopted parity store); selftest PASS; local build from the adopted store with the new parts in 105 s (578.6 MB, 48,401 files); smoke passed; map.json 129,187 bytes raw against the 163,840 gate.
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01D7npHSU4NQFAmdz8Ep5sV7

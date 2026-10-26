@@ -1,0 +1,209 @@
+{
+ "findings": [
+  {
+   "file": "/home/user/hail-b5/out/b6/site/data/base.json",
+   "line": 0,
+   "text": "base.landmarks.counts.park_same_name = 1. About line 260 says: 'The named park points are held, so no count of them is published.'",
+   "why": "High. This count is derived from the held TIGER/Line park points (base.held.sources.tiger_park), which the page says are not counted. A number from a held source is not allowed on any page. It is the only held-derived number found."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 248,
+   "text": "that is read as a usage note on a federal work (public domain, 17 U.S.C. 105). The credit line ships with the first release, and counsel reads the terms (counsel item 23).",
+   "why": "High. A licence conclusion ('public domain') for the USDA Forest Service outlines that the base map draws, while the same row says counsel has not read the terms. State it as pending or drop it. 'Counsel item 23' is an internal ticket reference shown on a public page."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 96,
+   "text": "If that list names no Montana hospital, a copy of the state licensure list is read instead, and that copy carries its own credit.",
+   "why": "High. The fallback (HIFLD copy) is 'not used' (base.json base.sources.landmarks.hifld_hospitals.state), its licence is 'not checked' (row 256), and base.json base.landmarks.credits has no entry for it. The sentence states a credit exists, which implies a cleared licence for an unchecked source. The module sentence base.landmarks.templates.hospital_hifld does not say this."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 110,
+   "text": "Warnings, watches and advisories by public forecast zone come from the NWS zone products and polygon warnings ... including flash flood watches and warnings. Also base.json history_layers.zones.words.title: 'Warnings, watches and advisories by forecast zone', and legend: 'Each count is every warning, watch and advisory the store holds for the zone'.",
+   "why": "High. Only eight measures are counted (history_layers.zones.measures: high wind warnings and watches, wind advisories, flood and flash flood watches, warnings and advisories). Hail, tornado, thunderstorm, heat and winter products are not counted, but the heading and text say every warning, watch and advisory. Row 263 says eight measures."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 89,
+   "text": "and a summit with no value is not shown.",
+   "why": "High. Contradicts the module sentence base.json base.vector.words.peak_note: 'A summit with no value shows Data unavailable.' A silent omission breaks rule 5. Row 252 says the summit is 'left out of the peak list', which matches the About, not the module."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 31,
+   "text": "Updated Sat 6:00 am MDT (time datetime 2026-10-17T12:00:00+00:00; base.json built 2026-10-17T12:00:00Z)",
+   "why": "Medium-high. The page is stamped built on 17 Oct 2026, but it cites a zone-outline snapshot 'of 2026-10-25' (line 116), a source row says 'read 2026-10-26' (line 255), and other rows are dated 2026-10-19 (lines 266, 267, 275). Either the stamp or the dates are wrong, so a reader cannot tell how current the B6 data is."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 217,
+   "text": "The TIGER/Line shapefile products are not copyrighted; ... These products are free to use in a product or publication",
+   "why": "Medium-high. A general licence statement that reaches the TIGER/Line 2026 area-landmark park file, which row 260 holds for counsel and base.json lists as held. Line 160 repeats it. Limit the statement to the county file it was read from."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 105,
+   "text": "Days with a radar estimate of 1 inch or more are counted per 1 km cell over five seasons.",
+   "why": "Medium-high. The About omits the module disclosure (base.json history_layers.pictures.hail1.words.legend): 'Data unavailable. The store has no radar estimate for 2022-06-08, so a cell can count one day fewer than it had. This is not an all-clear.' A count can be one day short with no sign on the page (rule 5)."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 108,
+   "text": "and a blank cell has no grid value.",
+   "why": "Medium. The module (base.json history_layers.pictures.heat90.words.legend) reads 'Data unavailable. A blank cell has no grid value. This is not an all-clear.' The About drops the missing-input label and the not-an-all-clear sentence (rule 5)."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 113,
+   "text": "The counts use the counted rows from the store's zone and polygon files.",
+   "why": "Medium. The zone section never says that a zero is only a count of products, or that a missing zone file shows Data unavailable. The module legend says 'A zero is a count of products in the store. This is not an all-clear.' and base.json history_layers.zones.unavailable is null, so no missing-zone wording exists."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 208,
+   "text": "Each sentence below is the source's own words, from its record or its module.",
+   "why": "Medium. False for line 214 (the sentence that the 83 zones 'keep the NWS outlines' is the About's own gloss), line 215 ('The use terms of this copy were not read in this build, so they are not quoted.') and the last sentence of line 210. The lead-in presents the About's own words as quotes."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 214,
+   "text": "The IEM API disclaimer reads: ... (quoted in part).",
+   "why": "Medium. This Terms line quotes the permissive API lines and omits the IEM site footer 'All rights reserved.', which row 270 quotes on the same page. Quote both or state both."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 107,
+   "text": "Source: NOAA MRMS MESH radar estimates, NOAA Open Data on AWS.",
+   "why": "Medium. MRMS radar estimates drive the five-year picture (line 107), recent radar hail (line 121) and the value bubbles (rows 235, 262, 264, 265). No Terms line covers NOAA MRMS or NOAA Open Data. The credit is present; the terms are not."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 70,
+   "text": "The base map is built by this site from the public sources below, and each one has its own credit line.",
+   "why": "Low-medium. The Base map section gives no credit for Natural Earth or the US Census county lines (us-atlas), which row 233 says the basemap is built from. Credit appears only in the site footer (line 289), in 'Map outlines: ...' form, not 'Source: ...'."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 184,
+   "text": "The credit on the map reads Imagery: USDA, USGS, The National Map.",
+   "why": "Medium. Neither permitted credit form ('Source: ...' or '... data courtesy of ...') is used. map.html line 41 (data-imagery credit_line) uses the same 'Imagery: ...' form on the map itself."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 178,
+   "text": "Building outlines: USA Structures, Oak Ridge National Laboratory and FEMA (file dated 2026-09-13).",
+   "why": "Medium. Neither permitted credit form is used (line 176, 'Roads: ...', has the same problem). Building outlines drive the value bubbles, and no Terms line covers USA Structures. Row 238 gives the attribution in another order: 'Oak Ridge National Laboratory and FEMA, USA Structures'."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 180,
+   "text": "used to label the per-county counts only.",
+   "why": "Medium-low. Understates use. Row 239 says this 1:500,000 file's geometry places each building outline in a county, and it quotes Census metadata that such files should not be used for determining precise geographic area relationships. Row 274 uses the full TIGER county file for cell-to-county placement. The line is also a bare paragraph under the Addresses heading, not a credit line."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 182,
+   "text": "USGS says its map services are free and in the public domain.",
+   "why": "Medium. No quote or source row for this USGS statement appears in the About page; the imagery row (234) says nothing about licence. The next sentence says USGS has not stated a licence for the road and name layers, so 'free and in the public domain' reads as an unsupported licence conclusion."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 181,
+   "text": "In the Layers menu you can switch it to aerial imagery ... Your IP address and the map area you view go to USGS while it is on. The white map makes no request to any other site.",
+   "why": "Low-medium. map.html already has the Layers menu and imagery switch (lines 90, 108; data-imagery at line 41), so these describe present behaviour. Open point: the brief says B6 layers are not drawn until B6-3; if the imagery switch counts as B6, that status is out of date. 'Makes no request to any other site' is a network claim the build does not test; verify it or cut it."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 85,
+   "text": "the lakes and rivers that loaded statewide still show at zoom 13 and up, and the sheet says:",
+   "why": "Medium. Describes what the water layers draw at zoom 13 and up, which the brief says is not drawn until B6-3. 'The sheet' is never explained. The sentence runs about 44 words. base.json base.vector.problem says statewide loading ran only to zoom 12, so 'loaded statewide still show at zoom 13' needs the overzoom explanation."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 123,
+   "text": "The bubble values on the building outlines are the largest radar estimate of each 1 km cell over the five years, in inches.",
+   "why": "Medium. Each bubble sits on one house, so a reader will take it as the hail at that roof. The section never says the value is for a cell, not a measurement at the roof or an inspection. The five-year text (line 107) and row 235 do say so. Rule 5 on evidence."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/data/base.json",
+   "line": 0,
+   "text": "base.vector.words.part_unavailable = 'Data unavailable. {Part} could not be loaded in this update; that is not the same as no {one}. This is not an all-clear.'",
+   "why": "Medium. The placeholder {one} does not match the {part} used in every other template, so the rendered sentence reads 'no {one}' or fails. Change it to {part}."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/data/base.json",
+   "line": 0,
+   "text": "history_layers.zones.unavailable = null; recent.words has only title and legend; history_layers.pictures.hail1 and heat90 have no failure wording; recent.stale and history_layers.stale are null with no stale sentence.",
+   "why": "Medium. Failure paths have no Data unavailable text, but the sources table promises it: row 263 says a missing zone file 'shows Data unavailable for its counts', row 262 says a failed picture 'the page says so', and row 264 says missing radar days 'are named in the legend' (recent.words.legend has no slot for them). Rule 5."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 233,
+   "text": "Without the outlines the map still shows the weather layers and towns. (Also rows 234, 243, 244, 253, 262, 263, 264, 265, 266.)",
+   "why": "Low-medium. B6 table rows describe what the map draws or says before B6-3: row 243 and 244 'the map shows paper there with Data unavailable'; row 253 'the sheet says Data unavailable'; row 264 'The switch Highlight recent radar hail shows these cells on the map'; row 265 'reads Data unavailable and its bubble is a dash'; row 266 'read No land value for this grid cell'. The table is technical, but the rule applies."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/data/base.json",
+   "line": 0,
+   "text": "base.vector.words.coverage_box: '... Elsewhere the browser keeps drawing band C's lakes and rivers at zoom 13 and up, and the sheet's water line reads Data unavailable for that area.' Also base.terrain.words.tile_missing: 'so it is drawn as paper.'",
+   "why": "Low-medium. Browser behaviour for B6 layers the brief says are not drawn until B6-3. 'Band C', 'tile' and 'drawn as paper' are internal or unexplained words in reader text."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 110,
+   "text": "NWS zone products and polygon warnings (line 110); the counted rows from the store's zone and polygon files (line 113); ugcs snapshot (line 116)",
+   "why": "Low-medium. Jargon a roofer cannot parse ('polygon', 'counted rows', 'store', 'ugcs'). The first sentence (lines 110-111) runs 38 words, over the 30-word guide."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 105,
+   "text": "per 1 km cell over five seasons; about 1/24 degree cells (roughly 4.6 by 3 km in Montana); line 124: this run labelled only the named tiles",
+   "why": "Low-medium. '1/24 degree cells' and 'five seasons' are unexplained. The radar window is 17 Oct 2021 to 16 Oct 2026 (history_layers.pictures.hail1.window), which is five years, not seasons. 'This run' and 'named tiles' are internal words, and km units are not what a US reader uses."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 102,
+   "text": "the geocoder's terms are a counsel question, so the rows are not written to the store while the kind is held. Also line 77: state route shields",
+   "why": "Low-medium. Internal words in public text: held, counsel, geocoder, rows, store. 'Route shields' is never defined here (base.json base.vector.words.route_note defines it, but the About does not print it). Whether to name counsel review on a public page is the owner's call."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 79,
+   "text": "and each place's population is its 2020 Census count.",
+   "why": "Low-medium. Omits the module sentence 'A place with no count shows Data unavailable.' (base.json base.vector.words.place_note). A place with no count would show nothing on the About."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 83,
+   "text": "Source: USGS Gap Analysis Project, Protected Areas Database of the United States (PAD-US) 4.1, local parks, layer last edited 2026-04-22.",
+   "why": "Low. The paragraph covers national, state, recreation and local parks, but the credit names only the local-parks layer and its edit date. base.json base.credit.5 has the correct base-map credit."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 89,
+   "text": "It can differ from a published height by tens of metres",
+   "why": "Low. A figure with no check behind it in the build. State the test or drop the number."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 214,
+   "text": "the 83 zones in force since then keep the NWS outlines.",
+   "why": "Low. The B6 zone outlines are the IEM simplified copy (base.json history_layers.outlines.credit: 'The outlines are simplified'), and row 270 says they lie within 0.014 degrees of the NWS file. Say that instead of 'keep the NWS outlines'."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/about.html",
+   "line": 107,
+   "text": "NOAA Open Data on AWS (also line 121; row 235 'AWS' and 'GitHub Releases'; ArcGIS service URLs in rows 249-261; line 164 names Vaisala inside a quote; base.json labels.rule.font 'atkinson-hyperlegible-next-latin-700-normal.woff2')",
+   "why": "Low, a judgment call. The rule reads 'no AI model, vendor or product names'. No AI names appear in either file. Vendor or product names do appear (AWS, GitHub, ArcGIS, Vaisala, a font name). If the rule covers all vendor names, these need changing. HRRR (a NOAA weather model) and Natural Earth (a dataset) were not treated as AI or vendor names."
+  },
+  {
+   "file": "/home/user/hail-b5/out/b6/site/data/base.json",
+   "line": 0,
+   "text": "base.sources.vector.*.as_of = 'Data unavailable' for 10 sources with state 'cache' (and 2 partial); base.sources.landmarks.hifld_hospitals.as_of = 'Data unavailable' with state 'not used'.",
+   "why": "Low. An unknown as-of date is shown with the missing-input phrase, which reads as missing data for sources that loaded from cache. It matters only if the sheet prints these dates."
+  }
+ ],
+ "notes": "Read: all of /home/user/hail-b5/out/b6/site/about.html (309 lines), including the B6 prose (lines 69-124 and 180-190), the Terms (207-217), the data table (223-276) and the footer (289). The page script (292-307) was skimmed, not analysed. Every prose string in /home/user/hail-b5/out/b6/site/data/base.json was listed by path (340 strings); 709 identifier strings (tile names, cell keys) were checked as keys only. /home/user/hail-b5/out/b6/site/map.html was checked for B6 strings: the Layers menu and imagery switch are present (lines 41, 90, 108); no landmark, five-year, zone-count, recent-hail or value-bubble text is there yet. Sound: no em-dash (U+2014) in either file; no AI model, AI vendor or AI product names; B6 headings and table headings are sentence case; the date windows match base.json (17 Oct 2021 to 16 Oct 2026; 1 Jul 2021 to 30 Jun 2026; 17 Sep to 16 Oct 2026; newest warning 10 Oct 2026); the water-line sentence (line 85), the value-bubble problem and legend (line 124), the held church sentence (line 102) and the held Census park sentence (line 103) print the module text as written; landmark counts reconcile (kinds total 2,159; schools 853 + 106); the terrain sun direction (315 degrees, 45 up) matches 'north-west at 45 degrees'. No zero in base.json stands for a missing input: requests and downloaded_bytes are build counts, and the 0 to 24 days class is a real bucket because blank cells are transparent. Open questions for the parent: (a) the imagery switch is already in map.html, which conflicts with the brief if imagery counts as B6 (see the line 181 finding); (b) the 20 zones removed on 13 Sep 2022 may be in the zone totals but have no outline in the 83-zone snapshot, and the About does not say how their counts show; (c) base.json vector.problem (32 words) is just over the 30-word guide and not flagged. Outside B6 and not reviewed in depth: Hail history (lines 57-68), Five years of weather (125-168; the 83-word sentence at line 139), Roof references (164-165; internal IDs R2 to R20 and a 141-word sentence at line 165), Flags (191-195), and the header 'Loaded' list at line 32, which names building outlines as loaded while value bubbles are partial. Line 173 cites Montana Code Annotated 2-6-1017, and line 212 needs a CoCoRaHS acknowledgement (CC BY 3.0) that no credit line gives."
+}
