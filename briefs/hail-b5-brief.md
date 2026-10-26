@@ -1802,3 +1802,13 @@ Rulings on its open points:
   (bytes unchanged) so an offline build from the cache reproduces the store; the first live run refreshes them anyway. (d) The
   changed-name figure is recounted per row (66 pairs, not 53) and every stale figure in the P3 records (101 tests, 22 checks,
   539 entries) is corrected before the integrator reads them. A close-out run (wf_2f42c9f1-0fb) does (c) and (d).
+
+## Supervisor ruling on the NLCD terms (2026-10-26 08:05 UTC; D124)
+The P1 follow-up (wf_4a91573b-627; F1 to F4 pass; 100 tests; the terrain reader never discards a foreign base index) found no
+record naming the NLCD 2021 release page with a CC0 statement. The cartography skeptic journal (wf_ef4c997e-067) holds the
+reading: the Creative Commons CC0 1.0 Universal statement is on the Annual NLCD Collection 1 record (doi 10.5066/P94UXNTS); the
+NLCD 2021 Products record (doi 10.5066/P9JZ7AO3) states "public domain information" with access constraints None, use
+constraints None and fees None, and the MRLC WCS capabilities give Fees NONE and AccessConstraints NONE.
+- D124 D115's "NLCD 2021's data release carries a CC0 1.0 licence" is corrected: CC0 applies to the Annual NLCD collection, a
+  different product. The terrain module's terms note cites the NLCD 2021 record's own words and DOI and claims no CC0 for it
+  (run wf: see the log). The About sentence keeps "(public domain)" on the strength of the record's own words.

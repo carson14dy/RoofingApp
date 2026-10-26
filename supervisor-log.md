@@ -373,3 +373,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - 08:00 UTC: P1 follow-up done (F1 base index never discarded, 100 tests; F2 CC0 sentence removed, no record names the release
   page, "not confirmed here"; F3 confirmed; F4 notes). P1 is final pending the integrator. Open for the owner or counsel: the
   CC0 1.0 statement for the NLCD 2021 release (read the release page); the monthly --refresh cost; tint classes; sampling.
+- 08:05 UTC: D124 (NLCD terms corrected: CC0 is the Annual NLCD collection's; NLCD 2021 says public domain, use constraints
+  None). P1 terms-note run launched; the run id follows in the transcript.
