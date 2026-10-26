@@ -3295,9 +3295,12 @@ def check_swath_outside(browser, base, root: Path, data: dict, shots) -> list[st
 
 
 # the centre of a town marker that lies fully on screen (the town card check clicks it)
+# A town marker that a click reaches: on screen, visible, and the topmost element at its centre (the legend panel and the
+# bottom bar can cover a marker near the left edge, which depends on where the live value cell sits that day, D142).
 TOWN_ON_SCREEN = ("() => { const w = innerWidth, h = innerHeight; for (const t of document.querySelectorAll('.leaflet-marker-icon.town')) {"
-                  " const b = t.getBoundingClientRect(); if (b.width > 0 && b.left >= 0 && b.top >= 0 && b.right <= w && b.bottom <= h &&"
-                  " getComputedStyle(t).visibility !== 'hidden') return {x: b.left + b.width / 2, y: b.top + b.height / 2}; }"
+                  " const b = t.getBoundingClientRect(); if (!(b.width > 0 && b.left >= 0 && b.top >= 0 && b.right <= w && b.bottom <= h &&"
+                  " getComputedStyle(t).visibility !== 'hidden')) continue; const x = b.left + b.width / 2, y = b.top + b.height / 2;"
+                  " const e = document.elementFromPoint(x, y); if (e && (e === t || t.contains(e))) return {x: x, y: y}; }"
                   " return null; }")
 
 
