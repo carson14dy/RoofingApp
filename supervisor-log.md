@@ -369,4 +369,4 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   X1..X14: wf_4a61607c-6a4 task wi4oamao5. Note: landmarks/refute/venv (a skeptic's own interpreter, untouched 70 min)
   was deleted in the scratch sweep at 07:25; venv folders are excluded from the sweep from now on.
 - 07:50 UTC: P3 follow-up done (F1, F3, F4 pass; F2 figures off by 13 pairs; cache naming and manifest reading needed rulings).
-  D123 recorded; P3 close-out launched (F5 cache rename, F6 figures, F7 report notes); the run id follows in the transcript.
+  D123 recorded; P3 close-out launched (F5 cache rename, F6 figures, F7 report notes): wf_2f42c9f1-0fb task wg0z6fn0b.

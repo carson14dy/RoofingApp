@@ -1801,4 +1801,4 @@ Rulings on its open points:
   full store, which the integrator checks. (c) The product cache's six layer descriptions are renamed to the module's names
   (bytes unchanged) so an offline build from the cache reproduces the store; the first live run refreshes them anyway. (d) The
   changed-name figure is recounted per row (66 pairs, not 53) and every stale figure in the P3 records (101 tests, 22 checks,
-  539 entries) is corrected before the integrator reads them. A close-out run (wf: see the log) does (c) and (d).
+  539 entries) is corrected before the integrator reads them. A close-out run (wf_2f42c9f1-0fb) does (c) and (d).
