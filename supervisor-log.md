@@ -394,3 +394,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   scratch deleted. Integrator still running (task 2, then the build and smoke, then the review loop).
 - 10:20 UTC: integrator task 2 done (23 CONTRACTS rows; About sections; 315 site tests); D130 recorded; the post-integration
   script gains B2, D3 and a site job (F1, F2). Task 8 (store copy, build, smoke) running.
+- 11:15 UTC: integrator task 8 done (suite 2,439 OK; selftest PASS; store copy and site built; manifest OK; smoke passed);
+  review loop running. D131 recorded; integrator report written by the supervisor; post-integration script gains F3.

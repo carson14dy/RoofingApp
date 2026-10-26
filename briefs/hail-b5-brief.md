@@ -1904,3 +1904,17 @@ its open points, folded into the post-integration round:
   names ("reservations, roads and place names"). (d) The words-rule exemption for a USGS service path in a citation stands
   (D117(c)). (e) The About sentences that describe the browser (tint zooms, dark mode, the Highlight switch, bubble overlap,
   the water line) are checked in the B6-3 browser pass against the page as drawn.
+
+## Supervisor rulings on the integrator's build and smoke (2026-10-26 11:15 UTC; D131)
+Task 8 (wf_7425e7dc-00f, integrate:I5): the whole suite 2,439 tests OK (12 skipped) after three workflow pins followed the
+job edit; self-test PASS; the store copy built in place by the four writers (hail.check_manifest OK, 48,305 files, 2,428 of
+them B6); the site built in 95.4 s (665 MB); the history-flag map.json 128,522 bytes raw (35,318 under the 163,840 gate) and
+data/base.json 30,861 bytes; the smoke passed after its imagery credit words followed D110(d). Rulings on its open items:
+- D131 (a) **Gate scope.** The 163,840-byte raw gate of D82(a) is the history-flag build's; the every-flag build (397,716 bytes
+  raw with --hail-addresses) is recorded, not gated, as D82(a) already did (464,802 bytes then). (b) **Local labels.** The
+  local store copy labels the Billings tiles r0092_c0214 and r0092_c0215 and the Missoula tile, so the smoke's Billings
+  address sees bubbles; statewide labels come from the daily job. (c) **The sheet water line** of D122(b) is a key of the sheet
+  block in data/base.json, imported from basemap2.WORDS (post-integration site item F3). (d) **Reports.** When the harness
+  refuses a subagent's report file, the supervisor writes the report from the structured result (done for P2 and for the
+  integrator: build/integrator/report.md and integrator-reports.json). (e) The three words-gate hits in index.html (expect,
+  expected, likely) are traced by the final checker; the suite's words gate passes, so they are exempted words to confirm.
