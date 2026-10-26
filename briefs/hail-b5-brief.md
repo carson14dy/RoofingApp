@@ -1947,7 +1947,7 @@ against the 110-minute cap (review B6-16) and build.py reading basemap2's "fetch
   then one read-only checker that runs the suite, the self-test, the rebuilt store parts, the site build, the smoke and the
   map.json gate. (d) The integrator's six reports and the review state are archived (records/b6/continuation/).
 
-## Supervisor rulings after the site and docs fixers (2026-10-26 13:00 UTC; D134)
+## Supervisor rulings after the site and docs fixers (2026-10-26 12:49 UTC; D134)
 The site and docs fixers (wf_6f31ff28-9ce) applied F1 to F12 and E1 to E2 (335 site tests, one failing on a cross-fixer
 conflict). Rulings:
 - D134 (a) **The sheet water line** keeps the D122(b) sentence exactly ("Detailed water and local parks: Data unavailable for
@@ -1961,7 +1961,7 @@ conflict). Rulings:
   (e) A stray empty log file a fixer wrote at the container's filesystem root (/b6_run2.txt, outside the repository) stays:
   the harness refuses a removal at the root; it is harmless in this ephemeral container.
 
-## Supervisor rulings after the P3 and P4 fixers (2026-10-26 13:10 UTC; D135)
+## Supervisor rulings after the P3 and P4 fixers (2026-10-26 12:50 UTC; D135)
 The P3 fixer (wf_c16fbe88-ac0) wrote the landmark mirror, published the held reason alone as a held source's terms, replaced
 the TIGER fixture with a synthetic shapefile and unified the church sentence (113 tests); the P4 fixer made the module's
 legend the printed D110(c) sentence, the grid words and the "Data unavailable" leads (70 and 38 tests). Rulings on their
