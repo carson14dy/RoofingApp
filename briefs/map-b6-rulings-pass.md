@@ -74,9 +74,9 @@ that is already so is reported as "already so" with the line; an item the fixer 
   in the module's row format; absent on every other row. See P3-R4 for when it is written.
 - P3-R4 (D115 intro) TIGER area landmarks are held: the TIGER area landmark file's own use constraints are read by counsel
   before any text from it ships. Add a held-sources rule beside the held-kinds rule: rows from source "tiger_park" and the
-  alternate names of P3-R3 are built and counted (the index records the held counts and the reason "the file's use
-  constraints are for counsel to read") but never written to the store while held; PAD-US park rows ship. The index's
-  "held" block lists kinds and sources with reasons; integration.md says the About sentence.
+  alternate names of P3-R3 are built and counted but never written to the store while held; PAD-US park rows ship. The
+  index's "held" block lists kinds and sources with state and reason and count null (D118(b): no number derived from a held
+  source is published; the figures stay in report.md); integration.md says the About sentence.
 - P3-R5 (D113(a)) Every credit line in SOURCES reads "Source: ..." (today the USGS fire line reads "USGS The National Map,
   fire and EMS stations, October 2026 refresh." and others vary): one form for all, no endorsement words.
 - P3-R6 (D112(h)) Zero is never a count for an unavailable kind: the index gives "Data unavailable" words and the reason

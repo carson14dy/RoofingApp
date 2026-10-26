@@ -1742,3 +1742,16 @@ so the P2 fixer applies 19 standing findings (P2-01 to P2-09, P2-11 to P2-17, P2
   when a file is over budget; never a zero. (f) The 3DEP statement is marked as quoted from a secondary copy of the USGS text,
   as P1 does; the unrecorded river-rule figures leave the docstring. (g) A river check is skipped only when the bands that
   could hold the river (A and B) failed.
+
+## Supervisor rulings on the P3 rulings pass (2026-10-26 07:05 UTC; D120)
+The P3 rulings pass (wf_b1bb475d-6c2) applied 13 of 16 items (98 tests; the FAA fixture scrubbed; held sources and the shared
+base index format; the hospital rule; display names; credits in one form). Three items need a follow-up: P3-R1 (three unread
+FAA spans still carry text: columns 4 to 14, 94 to 133 and 184 to 185), X5 (the fixer refused the out-tree report and
+measurements as outside its file list) and P3-R4 (its wording conflicted with D118(b)). Rulings:
+- D120 (a) P3-R4 is amended: the index carries held kinds and sources with state and reason and count null; D118(b) stands.
+  (b) A product's out-tree files (report.md, measurements.json, integration.md and its test store under
+  /home/user/hail-b5/out/b6/build/<product>/) are the product's own and every fixer may edit them. (c) A product's test store
+  is rebuilt offline from the cache before its verify is run against new code; a stale store is never cited as a verify result.
+  (d) A data-format type code from a service's own schema ("esriFieldTypeOID"), like a URL path, is not a vendor name under
+  the names rule (D117(c)). (e) The FAA fixture keeps only the spans the module reads (nine spans including the status code),
+  every other column blank.
