@@ -384,3 +384,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   (w5pjapetx).
 - 08:35 UTC: P3 close-out done (cache descriptions renamed to the module's names, offline rebuild byte-identical on 537 of 537
   shards; 66 changed names recorded; integration.md figures 101 tests, 22 checks, 539 entries). P3 is final for the integrator.
+- 08:45 UTC: P2 rulings pass done (21 of 21 applied; two record items fixed by hand). D126 recorded. P2 is final. Waiting:
+  P4 rulings pass (wdoeyuosf), landmark skeptics (w5pjapetx). The integrator launches when P4 reports clean.

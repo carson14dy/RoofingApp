@@ -1832,3 +1832,15 @@ as X1 to X8 and to the integrator:
   outline file loads only when its layer is on. (f) The 36 building shards over the raw split threshold stay accepted
   (D112(j)); the daily job keeps the buildings verify before the labels pass; the threshold's treatment of flag bytes is an
   owner item. (g) hail.check_manifest runs on the assembled store, never on a partial test store.
+
+## Supervisor rulings on the P2 rulings pass (2026-10-26 08:45 UTC; D126)
+The P2 rulings pass (wf_4a61607c-6a4) applied all 21 items (110 tests; verify 24 of 24; the shared base index refused when
+foreign; the collapse-move rule; coverage counts; the two water statements; first-paint names; a missing shapefile reader as a
+named failure). Two record-keeping items failed (a stale parenthesis in integration.md; report.md not rewritten because the
+harness refused the write) and were corrected by the supervisor by hand (report-rulings-pass.json holds the pass's report).
+- D126 (a) The collapse-move rule stands: a feature that collapses at a band's tolerance moves to the next finer band with its
+  minimum zoom raised to that band's first zoom (136 parks B to C, 27 of them C to D, 1 lake C to D; band C 109,088 gzip bytes,
+  within budget). (b) Cache pruning runs only after a statewide online run with no failed request, never after an offline run,
+  a test box or a deadline stop (stricter than the brief; accepted). (c) The integrator assembles the store copy from the
+  product test stores; any base index written with the old "format" key is removed first and the three base parts rebuilt.
+  (d) P2 is final for the integrator.
