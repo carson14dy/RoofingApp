@@ -1,0 +1,120 @@
+[
+ {
+  "run": "wf_5bf7e48d-350",
+  "fixer": "B6 map build (branch claude/map-b6), tidy fixer (modules): T1, T2, T3, T4, T7 and T11 applied in the worktree /home/user/wt/wt-b6",
+  "report": {
+   "product": "B6 map build (branch claude/map-b6), tidy fixer (modules): T1, T2, T3, T4, T7 and T11 applied in the worktree /home/user/wt/wt-b6",
+   "items": [
+    {
+     "id": "T1 (D134(a))",
+     "state": "applied",
+     "evidence": "website/basemap2.py WORDS['water_line_unavailable'] now reads 'Detailed water and local parks: Data unavailable for this area in this update. This is not an all-clear.' The module docstring (band D paragraph and the rule paragraph) carries the same sentence and names the one exemption. tests/test_basemap2.py UnavailableWordingTests: WORDS_INSIDE exempts this one key from the 'Data unavailable.' opening check, with comments saying why; the body checks the words inside the sentence instead. The exact-sentence assertions in both places are updated. The tests.test_site water pin (test_the_sheet_water_line_carries_the_d122b_words_in_the_vector_module) failed before the edit and passes now. The sources.py base water row already quotes the same sentence, so it needed no change."
+    },
+    {
+     "id": "T2 (F2)",
+     "state": "applied",
+     "evidence": "website/landmarks.py _credit: the missing-date branches (faa_nasr, and padus_local, hifld_hospitals, fema_worship) now write 'Data unavailable' in place of 'cycle date not recorded' and 'date not recorded'. _sources_block writes every credit through _credit, so every index credit line follows the same rule. Tests in tests/test_landmarks.py WordsTests: test_a_missing_date_reads_data_unavailable_in_every_credit_line and test_the_index_credit_lines_read_data_unavailable_when_no_date_was_read (calls _sources_block({}))."
+    },
+    {
+     "id": "T3 (F6)",
+     "state": "applied",
+     "evidence": "website/landmarks.py: WORDS['held_parks'] = 'The Census park points and their names are held for counsel and not shown. ' + TIGER_HELD_SENTENCE, where TIGER_HELD_SENTENCE = \"The file's use constraints are for counsel to read.\" (the sentence form of TIGER_HELD_REASON, which is unchanged). The 'Some park names come from a second public list' text is removed; the module no longer contains 'second public' (asserted by the test). Test: tests/test_landmarks.py WordsTests.test_the_held_parks_words_say_the_census_points_are_held_and_give_the_reason."
+    },
+    {
+     "id": "T4 (F5)",
+     "state": "applied",
+     "evidence": "website/sources.py CONTRACTS['iem_ugcs']: the request and the timing text now say that the ugcs snapshot of 2026-10-25 (valid=2026-10-25T00:00Z) gives the 83 public zone outlines only and that the B6 zone counts use the counted rows from the store's zone and polygon files. '(83 zones, 139 features)' is removed from the row; valid=2026-10-25T00:00Z stays, because B6AboutAndSources.test_the_b6_rows_carry_the_corrected_words checks it. Test: tests/test_landmarks.py SourceRowWordingTests.test_the_iem_zone_row_says_what_the_snapshot_gives_and_what_the_counts_use. tests/test_sources.py does not exist; tests.test_site -k Contracts passes."
+    },
+    {
+     "id": "T7 (D132(b)) tiger_park",
+     "state": "applied",
+     "evidence": "website/sources.py CONTRACTS['tiger_park']['missing'] now ends 'A missing shapefile reader stops this held source only; the PAD-US parks still ship.' The licence sentence 'Not copyrighted; acknowledgement to the U.S. Census Bureau as the source is required.' is removed; the held wording before it is unchanged. Test: tests/test_landmarks.py SourceRowWordingTests.test_the_held_census_row_says_held_and_carries_no_licence_sentence."
+    },
+    {
+     "id": "T7 (D132(b)) fema_worship",
+     "state": "already so",
+     "evidence": "website/sources.py CONTRACTS['fema_worship'] carries no licence sentence in any field. Its 'missing' text is only the held wording (the layer's copyright line says the geocoder terms are not read, and the rows are not shown or written). Test: tests/test_landmarks.py SourceRowWordingTests.test_the_held_church_row_carries_no_licence_sentence."
+    },
+    {
+     "id": "T11 (D128(f), D132(e))",
+     "state": "applied",
+     "evidence": "website/sources.py terrain_shading and terrain_land_cover timing: 'The monthly job passes --refresh-descriptions, not --refresh'. The two service descriptions are read again; a tile is requested again only when its data month changed, through the cache key; a full --refresh runs only when the owner asks. The build step is capped at 25 minutes and the check at 900 seconds. These figures match .github/workflows/hail-store.yml (build CAP 1500 s, check 900 s) and the website/terrain.py docs. The old 'asks again (--refresh): the description and every tile' and 'Monthly job with --refresh' wording is gone. No CONTRACTS row says every tile is asked again each month. Tests: SourceRowWordingTests.test_the_terrain_rows_say_what_the_monthly_job_passes_and_its_caps and test_no_row_says_every_tile_is_asked_again_each_month."
+    }
+   ],
+   "files_changed": [
+    "/home/user/wt/wt-b6/website/basemap2.py",
+    "/home/user/wt/wt-b6/tests/test_basemap2.py",
+    "/home/user/wt/wt-b6/website/landmarks.py",
+    "/home/user/wt/wt-b6/tests/test_landmarks.py",
+    "/home/user/wt/wt-b6/website/sources.py"
+   ],
+   "tests": "py_compile: all five touched files compile. '/home/user/hail-b1/venv/bin/python -m unittest tests.test_basemap2 tests.test_landmarks -v': Ran 235 tests, OK (227 before the edits; 8 new tests). '/home/user/hail-b1/venv/bin/python -m unittest tests.test_site -k water -k Contracts -k B6 -k held -k credit -k park -v': Ran 54, OK (before the edits the water pin failed, 1 failure). Full '/home/user/hail-b1/venv/bin/python -m unittest tests.test_site': Ran 335, OK (skipped=6), 400 s. '/home/user/hail-b1/venv/bin/python -m unittest tests.test_joins.ContractStemTests tests.test_words_rules tests.test_storm tests.test_terrain tests.test_hail_workflow': Ran 221, OK. No U+2014 in the five files. No network request was made. Output files are in the scratchpad.",
+   "open": [
+    "about.html line 86 composes its own park sentence, with a colon, from build.py's b6.held_park (the TIGER reason). It does not render WORDS['held_parks'] (the period form). describe_landmarks returns that key, but no page reads it, so the About page and the WORDS text differ in punctuation. about.html and build.py are outside this fixer's list; the About sentence is what tests.test_site pins, and that test passes.",
+    "tests/test_site.py line 5643 holds 'date not recorded' as input text in a hand-written fixture. _credit does not produce it, and the test passes. The test_site owner may change it to 'Data unavailable'.",
+    "website/history_layers.py line 30 and docs/DESIGN.md line 950 still say '139 features' for the outline file. That is a measured file fact, not a claim about the counts, but the owner may want those lines checked against T4. Both files are outside this fixer's list.",
+    "The held-reason sentence in WORDS['held_parks'] is my wording, 'The file's use constraints are for counsel to read.', built from TIGER_HELD_REASON, because the item gave only 'the held reason sentence'. Please confirm the wording.",
+    "tests/test_sources.py does not exist. The contract checks for these rows are in tests/test_site.py (Contracts and B6AboutAndSources). The new SourceRowWordingTests sit in tests/test_landmarks.py because test_site.py is outside this fixer's files.",
+    "The full 'python -m unittest discover -s tests' was not run, because other fixers are editing this worktree at the same time. The full tests.test_site module was run and passed.",
+    "These five files already had uncommitted changes in the worktree before this fixer started (git status showed them modified). The edits here sit on top of those changes. Nothing was staged, committed or pushed."
+   ]
+  }
+ },
+ {
+  "run": "wf_5bf7e48d-350",
+  "fixer": "B6 site tidy fixer: T5, T10, T9 and T6 applied within the six allowed files",
+  "report": {
+   "product": "B6 site tidy fixer: T5, T10, T9 and T6 applied within the six allowed files",
+   "items": [
+    {
+     "id": "T5 (D134(b))",
+     "state": "applied",
+     "evidence": "website/build.py: TERRAIN_LINES, VECTOR_LINE_SOURCES, read_vector_lines and terrain_line are new; _landmark_words returns a keyed 'lines' map of the shown landmark sources; _base_block lists only the sources read in base credit and vector credit; about_b6_context sets each B6 credit line only when its source was read: vector sources by their index states (fetched, cache, partial), terrain layers by loaded or partial, landmark sources by loaded and kept, and the five-year MRMS pictures, nClimGrid, zone warnings, zone outlines and recent MRMS by their blocks. website/templates/about.html prints each line from its b6 key or nothing; the terrain fallback sentences stand; hospital, FAA and PAD-US are unchanged. tests/test_site.py: new class B6CreditsFollowTheStore (synthetic index with the land cover layer unavailable, the forest source edw failed, the fire and EMS source usgs_fire failed, census_pl2020 not listed, and the recent cells unavailable), 4 tests passing; B6_VECTOR_READ and the loaded landmark fixture list every source the loaded store read; b6_store takes vector and recent arguments."
+    },
+    {
+     "id": "T10 (B2 follow-through)",
+     "state": "applied",
+     "evidence": "The About TIGER line prints basemap2.CREDIT[0] through b6.tiger: 'Source: U.S. Census Bureau, TIGER/Line 2026 (reservations, roads and place names).' The B6AboutAndSources.CREDITS pin follows. The sheet water sentence (website/templates/about.html line 62) is printed from SHEET_WORDS['water_line_unavailable'], which is basemap2.WORDS, inside quotes; the D122(b) sentence is now in the worktree after the other fixer's T1 change. test_the_water_fallback asserts the module's words."
+    },
+    {
+     "id": "T9 (D135(a))",
+     "state": "applied",
+     "evidence": "tests/test_site.py: the printed legend (labels.words.legend and site.BUBBLE_LEGEND) is asserted equal to hl.WORDS['label_legend'] (one text), and the retyped constant B6_D110_LEGEND is removed. The 'differs' assertion the item describes is not in this worktree's test_site.py; the equality replaces the nearest pinned copy. The words-rules exemption in tests/words_rules.py is outside this file list and untouched."
+    },
+    {
+     "id": "T6 docs/DESIGN.md",
+     "state": "applied",
+     "evidence": "docs/DESIGN.md line 925 (13.1 paragraph): the terrain step passes --refresh-descriptions (D128(f)) instead of --refresh. The 13.3 monthly terrain step row (line 965) reads 25-minute cap (1,500 s), with --refresh-descriptions (D128(f)). The held chip (line 1039) quotes the one church sentence that landmarks.CHURCH_HELD builds."
+    },
+    {
+     "id": "T6 docs/ROADMAP.md",
+     "state": "applied",
+     "evidence": "docs/ROADMAP.md: D106 to D127 becomes D106 to D134 on lines 43, 118 and 229; the B6 open-items header on line 116 becomes D107 to D134. Follow-up 7 (line 152) records the monthly end clock: the steps after the 80-minute build clock wait for JOB_START + 6300 (105 minutes), and the manifest check, pack and publish start only when their whole cap fits. Checked against the comments in .github/workflows/hail-store.yml (lines 29 to 36)."
+    },
+    {
+     "id": "T6 docs/DECISIONS.md",
+     "state": "applied",
+     "evidence": "docs/DECISIONS.md: the D38 header reads D31 to D134 (line 902); D116(d) says the monthly job passes --refresh-descriptions (D128(f)) (line 1036); the D134 bullet is inserted after D133 (line 1054) in the log's style, carrying rulings (a) to (e), with (d) noting which leftovers this round applied."
+    }
+   ],
+   "files_changed": [
+    "/home/user/wt/wt-b6/website/build.py",
+    "/home/user/wt/wt-b6/website/templates/about.html",
+    "/home/user/wt/wt-b6/tests/test_site.py",
+    "/home/user/wt/wt-b6/docs/DESIGN.md",
+    "/home/user/wt/wt-b6/docs/ROADMAP.md",
+    "/home/user/wt/wt-b6/docs/DECISIONS.md"
+   ],
+   "tests": "py_compile website/build.py and tests/test_site.py: ok. /home/user/hail-b1/venv/bin/python -m unittest tests.test_site -v: Ran 339 tests, OK, skipped=6 (the six need HAIL_PARITY_STORE, as in the baseline). Baseline before these edits, same worktree: 335 tests, 1 failure (test_the_sheet_water_line_carries_the_d122b_words_in_the_vector_module), which needed the basemap2 wording that the other fixer's T1 change now provides. The docs pin HailSwathLayers.test_the_hail_state_is_checked_once_a_minute_and_the_docs_say_so passes.",
+   "open": [
+    "Paragraphs with no Data unavailable sentence print only their description when a source failed: the vector parts, the school and fire paragraphs, and the zone-outline paragraph. The FAA paragraph already works this way. A module sentence for each part would be new wording, so the owner or supervisor should decide.",
+    "The B5 county boundaries line (about.html, census_tiger_counties) sits outside the B6 block and is not gated. The nClimGrid, zone outline (ugcs), five-year MRMS, warnings and recent MRMS lines are gated as B6 history lines.",
+    "D134(d) leftovers outside this item list and outside this fixer's files were not changed: the landmarks 'date not recorded' words in the index credit strings (website/landmarks.py), the held_parks template sentence, and the iem_ugcs row in website/sources.py.",
+    "data/base.json: base credit and vector credit now list only the sources read, and base landmarks gains a keyed 'lines' map. No browser code reads these keys (checked in map.js), but an outside consumer would see the change.",
+    "The six skipped tests need HAIL_PARITY_STORE (the adopted combined store) and were not run against it.",
+    "The B6 open-items header in ROADMAP (line 116) was changed from D107 to D127 to D107 to D134, beyond the literal D106 to D127 ranges. Confirm that reading.",
+    "Other fixers' uncommitted changes in these six files were left in place. This fixer ran no git write commands and made no network requests."
+   ]
+  }
+ }
+]
