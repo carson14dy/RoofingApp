@@ -432,3 +432,22 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 
 ## 2026-10-26 22:35 UTC: Carson: merge everything into main, delete the old, merge the new design (D143)
 - PR 17 merge requested (merge commit); then main's runs; PR 18 retargeted and merged; the monthly job on main; PRs 14 to 16 closed; the cleanup PR; then the B6 browser programme on claude/map-b6-browser.
+
+## 2026-10-26, 22:30 to 23:00 UTC: the merges (D143(a))
+- PR 17 (B5) merged into main as ec7bfbb at 22:35; main's Website run 134 and Check the app 76 passed on it.
+- PRs 14, 15 and 16 closed as superseded (comments posted). PR 2 (the pilot, 34 commits on a base from before the
+  website) closed as superseded with a comment; its branch is left for Carson to delete.
+- PR 18 (B6 part 1) retargeted to main and merged as 687a609 at 22:44 (mergeable state clean; Website 135 and
+  Check the app 77 started). Its push-triggered store run 19 was cancelled by the monthly dispatch (run 20, pending
+  behind the daily run 18 of ec7bfbb); the monthly run supersedes the daily one.
+- PR 12 (the hail history research) merged as aaf4455 after the whole suite passed locally on main with it merged
+  (1,990 tests OK, 12 skipped on that tree; the merge message says 2,537, the B6 branch's count: a slip, recorded
+  here and in D143).
+- Branch deletion (claude/hail-b1 to b5, claude/map-b6, the merged feature branches, the session WIP branches) was
+  refused by the permission classifier (Git Destructive). The heads are recorded in records/merge/deleted-branches.txt.
+  Carson deletes them on GitHub's branches page or allows the push.
+- Rulings: D144(a) the five-year Wind and Flood chips draw the zone counts with the module's words (the 13.6 mock
+  lines for Wind and Flood are superseded); the cleanup keeps the two handoff documents, turns requirements.txt
+  into the website's list and keeps a tests workflow (check-app.yml renamed), see briefs/cleanup-brief.md.
+- Programme: briefs/b6-browser-brief.md (S1 to S5, Haiku builders and skeptics on /home/user/wt/wt-b6b, branch
+  claude/map-b6-browser from 687a609). The cleanup runs on /home/user/wt/wt-clean, branch claude/cleanup.
