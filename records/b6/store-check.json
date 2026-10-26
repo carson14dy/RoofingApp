@@ -1,0 +1,98 @@
+{
+ "steps": [
+  {
+   "name": "1. Unit tests, seven named modules",
+   "pass": true,
+   "seconds": 35,
+   "evidence": "Ran 566 tests: OK, 0 failures, 0 errors, 0 skipped. terrain 107, basemap2 114, landmarks 121, history_layers 70, labels 38, hail_workflow 42, website_workflow 74. Log: /home/user/hail-b5/out/b6/build/store-check/step1-tests.log"
+  },
+  {
+   "name": "2a. Terrain build, P1 cache, --offline",
+   "pass": true,
+   "seconds": 16,
+   "evidence": "Exit 0. Requests 0, cache hits 1762, downloaded 0 bytes. Shading h: 881 tiles loaded. Land cover l: 881 tiles loaded. Missing 0. Bytes 14349318 (budget 20000000). Log: /home/user/hail-b5/out/b6/build/store-check/step2-terrain-build.log"
+  },
+  {
+   "name": "2b. Terrain verify, --offline",
+   "pass": true,
+   "seconds": 2,
+   "evidence": "Exit 0, ok true, 20 of 20 local checks pass. The re-fetch sample was not run (checked 0) because --offline skips it. Log: /home/user/hail-b5/out/b6/build/store-check/step2-terrain-verify.log"
+  },
+  {
+   "name": "3a. Basemap2 build, P2 cache, --offline",
+   "pass": true,
+   "seconds": 27,
+   "evidence": "Exit 0 (process pass), requests 0. Store state PARTIAL: band D (lake and river outlines at zoom 13 and up) not loaded for 52 of 54 areas, because the cache has no copy and this build makes no requests. Zooms 5 to 12 loaded statewide. Budgets within. Log: /home/user/hail-b5/out/b6/build/store-check/step3-basemap2-build.log"
+  },
+  {
+   "name": "3b. Basemap2 verify",
+   "pass": true,
+   "seconds": 3,
+   "evidence": "Exit 0, ok true, 24 passed, 0 failed, 0 not checked. The check accepts the partial state because the block says it is partial. Log: /home/user/hail-b5/out/b6/build/store-check/step3-basemap2-verify.log"
+  },
+  {
+   "name": "4a. Landmarks build, P3 cache, --now 2026-10-17T12:00:00Z, --offline",
+   "pass": true,
+   "seconds": 5,
+   "evidence": "Exit 0, requests 0, failures none. State loaded: 2159 points in 537 shards (school 959, park 553, fire 461, airport 123, hospital 63). Church kind and two sources held, not shown. Largest shard 1702 gzip bytes (limit 20000). Log: /home/user/hail-b5/out/b6/build/store-check/step4-landmarks-build.log"
+  },
+  {
+   "name": "4b. Landmarks verify",
+   "pass": true,
+   "seconds": 12,
+   "evidence": "Exit 0, ok true, 25 of 25 checks pass, including hail.check_manifest. Log: /home/user/hail-b5/out/b6/build/store-check/step4-landmarks-verify.log"
+  },
+  {
+   "name": "5a. History layers build, P4 cache, --now 2026-10-17T12:00:00Z, --offline",
+   "pass": true,
+   "seconds": 6,
+   "evidence": "Exit 0, failures none. Loaded: zone outlines (83 zones), zone counts, pictures hail1 and heat90, recent cells (64). Log: /home/user/hail-b5/out/b6/build/store-check/step5-history-build.log"
+  },
+  {
+   "name": "5b. History layers verify",
+   "pass": true,
+   "seconds": 5,
+   "evidence": "Exit 0, ok true, 14 of 14 checks pass. Zone counts recounted for 20 zones, no differences. Log: /home/user/hail-b5/out/b6/build/store-check/step5-history-verify.log"
+  },
+  {
+   "name": "6a. Buildings verify, store copy",
+   "pass": false,
+   "seconds": 19,
+   "evidence": "Exit 1, ok false. 10 of 11 checks pass. Failed check: 'every outline shard ... stays within the limit'. Detail: r0081_c016020.json is 254587 bytes, limit 250000 (SHARD_BYTES, website/buildings.py:79). This was the only over-limit shard before step 6b, and its file was last written at 10:27, before this run. Counts: 5615 shards, 918052 footprints, 558356 matched and 105403 unmatched address rows. Log: /home/user/hail-b5/out/b6/build/store-check/step6-buildings-verify.log"
+  },
+  {
+   "name": "6b. Labels build, tiles r0081_c0160 r0092_c0214 r0092_c0215, --now 2026-10-17T12:00:00Z",
+   "pass": true,
+   "seconds": 5,
+   "evidence": "Exit 0 (process pass), failures none. State partial by design: only these three tiles were labelled. 83 shards: 55 rewritten, 28 unchanged. Bubbles: zoom 17 12971, zoom 18 25085. Shard bytes 9589324 to 9904324 (+315000). Side effect: three shards crossed the 250000-byte limit (see notes, item 1). Log: /home/user/hail-b5/out/b6/build/store-check/step6-labels-build.log"
+  },
+  {
+   "name": "6c. Labels verify, same three tiles",
+   "pass": true,
+   "seconds": 8,
+   "evidence": "Exit 0, ok true, 7 of 7 checks pass, 83 shards checked. Log: /home/user/hail-b5/out/b6/build/store-check/step6-labels-verify.log"
+  },
+  {
+   "name": "7. hail.check_manifest on the store copy, strict (allow_live False)",
+   "pass": true,
+   "seconds": 6,
+   "evidence": "Returned the manifest without error: format hail-manifest-v1, 48305 listed files, count keys match the index. This passes although step 6a fails, because 6a is a shard size rule, not a hash or manifest mismatch. Log: /home/user/hail-b5/out/b6/build/store-check/step7-manifest-check.log"
+  }
+ ],
+ "tests": "566 tests across the seven named modules: OK, 0 failures, 0 errors, 0 skipped, 35 s. Per module: terrain 107, basemap2 114, landmarks 121, history_layers 70, labels 38, hail_workflow 42, website_workflow 74. tests.test_site was not run, per the instruction.",
+ "manifest": "PASS (strict, allow_live False). hail.check_manifest returned the manifest on the store copy after all builds: format hail-manifest-v1, 48305 listed files, and the counts (bytes, days_expected, days_present, events, shards) match hail/index.json. 6 s.",
+ "measurements": "Store files after the run (store copy):\n- hail/base/index.json: 35212 bytes. The sha256 changed because the terrain, basemap2 and landmarks writers rewrote their blocks. f is still hail-base-index-v1. No writer refused it, and nothing was deleted.\n- hail/index.json: 1268562 bytes (1261279 before this run).\n- hail/manifest.json: 6523021 bytes (same size as before, new sha256).\n- Before and after sha256: /home/user/hail-b5/out/b6/build/store-check/store-sha-before-step2.log\nTerrain tiles on disk: hail/base/h 881 .jpg files, 8443719 bytes. hail/base/l 881 .png files, 5905599 bytes. Total 1762 files, 14349318 bytes (zooms 5 to 10; budget 20000000).\nLandmarks: 537 shard files in hail/base/p, all parse (hail-landmarks-v1). Shown points: 2159 (n equals the list length in every shard). School 959, park 553, fire 461, airport 123, hospital 63. Church rows are not shown.\nBubbles in the three label tiles (83 building shards): 38056 total, zoom 17 12971, zoom 18 25085. r0081_c0160: 8026 (2731 / 5295) in 21 shards. r0092_c0214: 25982 (8692 / 17290) in 55 shards. r0092_c0215: 4048 (1548 / 2500) in 7 shards. kv entries 380. 9843 of 39502 outlines carry a bubble at both zooms.\nNewest warning date: 2026-10-10 (hail/history/zones.json, newest_warning.date). hail/history/index.json has no newest-warning field; its window ends 2026-10-16.\nBuilding shards over the 250000-byte limit: 1 before step 6b (r0081_c016020.json, 254587 bytes); 4 after step 6b (see notes, item 1).",
+ "not_read": [
+  "vector (base map vectors; band D, detailed lake and river outlines at zoom 13 and up): partial. 52 of 54 areas not loaded, and the cache has no copy. In hail/base/index.json, and mirrored at base.vector in hail/index.json.",
+  "vector.sources.nhd_large_areas: partial. 966 of 974 files failed, 8 from cache. Same two indexes.",
+  "vector.sources.nhd_large_lines: partial. 1092 of 1135 files failed, 43 from cache. Same two indexes.",
+  "landmarks.kinds.church (places of worship): held. Not shown; the geocoder's terms are a counsel question. Also under landmarks.held in both indexes.",
+  "landmarks.sources.fema_worship (FEMA copy of the places of worship list): held. Same reason as church.",
+  "landmarks.sources.tiger_park (TIGER/Line 2026 area landmarks, park codes K2180 and K2188): held. The file's use constraints are for counsel to read.",
+  "landmarks.sources.hifld_hospitals: not used. Fallback only; its terms are not checked.",
+  "snow (snow analysis; hail/index.json only): unavailable. Not shown; its amounts did not match measured snowfall closely enough to be sure they are in inches.",
+  "labels (bubble values on building outlines; hail/index.json only): partial. Only r0081_c0160, r0092_c0214 and r0092_c0215 were labelled in this run."
+ ],
+ "scans": "Em-dash (U+2014): 0 occurrences in website/terrain.py, website/basemap2.py, website/landmarks.py, website/history_layers.py, website/labels.py, website/sources.py and .github/workflows/hail-store.yml.\n\nAI model, vendor or product names: no name found in the seven files. The scan was case-insensitive for claude, anthropic, openai, chatgpt, gpt, gemini, llama, mistral, copilot, codex, grok, deepseek, qwen, cohere, perplexity, haiku, sonnet, opus, xai, bard, deepmind, chatbot, llm, 'meta ai' and 'google ai', plus the bare word AI and common vendor words. Two hits to judge:\n(a) .github/workflows/hail-store.yml line 76: branches: [main, 'claude/**', 'codex/**']. This is a branch-name filter, a git ref path pattern, not product naming. The reader should decide whether it is covered by the path exception.\n(b) website/landmarks.py line 71: the bare word AI in the sentence 'Nothing in this module reads an AI, a vendor or a product name'. It is a rule statement and names no product.\nOther vendor-word hits were the word 'meta' (metadata) in terrain.py and landmarks.py, not Meta the company. Log: /home/user/hail-b5/out/b6/build/store-check/step9-scan.log",
+ "notes": "OPEN ITEMS\n\n1. The store check is blocked by the building shard size limit. Before step 6b, one shard was over 250000 bytes: r0081_c016020.json (254587), which this run did not change. Step 6b added 315000 bytes across 55 shards (largest +11529, r0092_c0214120.json) and pushed three more over the limit: r0092_c0214000.json 244234 to 255211, r0092_c0214001.json 245431 to 256507, and r0092_c0214120.json 246678 to 258207. Four shards are now over the limit. The buildings verify was not re-run after step 6b; its detail lists up to four names, so a re-run should name all four. The three tiles already carried labels from an earlier pass before this run (9589324 bytes, against 9463545 in /home/user/hail-b5/out/combined/store, which has no labels). The site copy /home/user/hail-b5/out/b6/site/hail/b matches the pre-run sizes. Choosing a fix (re-split these tiles with label bytes counted, or revisit the 250000 limit in D26) is for the owner. Nothing was changed. Evidence: /home/user/hail-b5/out/b6/build/store-check/step11-shard-compare.log and step12-site-vs-post.log\n\n2. Basemap2 is partial. Detailed water at zoom 13 and up is missing for 52 of 54 areas. The P2 cache has no copy of nhd_large_areas (966 of 974 files missing) or nhd_large_lines (1092 of 1135). The index reports tiles_built 20 of 4597 tiles in coverage. This check cannot refill the cache without network access. Until the cache is refilled and the build rerun, the About page must not credit those outlines.\n\n3. The terrain re-fetch was not run. --offline skipped the 10-tile sample (checked 0), so tile pixels were not compared with the service. The 20 local checks pass. An online verify is still needed.\n\n4. Labels are partial by design. The other tiles keep flags from an earlier pass, so bubbles outside the three tiles are not from this run. The labels verify covered only the 83 shards of the three tiles.\n\n5. The buildings verify ran without --gdb-zip and --counties-zip, so the whole-part recompute and the per-county counts were not checked.\n\n6. Offline status: the terrain, basemap2, landmarks and history builds reported zero requests. The verifies and the labels commands have no --offline switch and read only the store or the cache. No HTTP client import was found in buildings.py, labels.py, history_layers.py, basemap2.py, hail.py, addresses.py or stations.py. landmarks.py imports only urllib.parse.urlencode.\n\n7. Six station elements chose only one station: anaconda SNOW, butte SNOW, glendive TMAX and TMIN, and miles-city SNOW and SNWD. The index state word is 'one'. These are station counts, not sources, so they are not in not_read, but the About page should not assume two stations for them.\n\n8. The ten vector sources with state 'cache' (tiger_aiannh, tiger_prisec, tiger_place, census_pl2020, edw, padus, nhd_small_lines, nhd_small_areas, gnis, 3dep) pass the rule and are not in not_read. They were read from the cache in this run, not fetched.\n\n9. The newest warning date, 2026-10-10, is the build's own value in zones.json. It was not recomputed from event data.\n\n10. Worktree: git status --short is identical before and after (/home/user/hail-b5/out/b6/build/store-check/git-status-before.log and git-status-final.log). No git write command ran. Python wrote git-ignored __pycache__ folders under website/ and tests/ (.gitignore line 1). tests.test_site was not run. The scratch folder /home/user/hail-b5/out/b6/build/store-check/ keeps only the logs; the helper scripts were deleted.\n\n11. Logs for every step are in /home/user/hail-b5/out/b6/build/store-check/: step1-tests.log, step2-terrain-build.log, step2-terrain-verify.log, step3-basemap2-build.log, step3-basemap2-verify.log, step4-landmarks-build.log, step4-landmarks-verify.log, step5-history-build.log, step5-history-verify.log, step6-buildings-verify.log, step6-labels-build.log, step6-labels-verify.log, step7-manifest-check.log, step8-measurements.log, step9-scan.log, step10-all-states.log, states-base-index.log, states-hail-index.log."
+}
