@@ -24,12 +24,14 @@ const CHECK = { type: 'object', properties: { suite: { type: 'string' }, selftes
   evidence: { type: 'string' } }, required: ['id', 'fixed', 'evidence'] } }, open: { type: 'array', items: { type: 'string' } } },
   required: ['suite', 'selftest', 'build', 'manifest', 'smoke', 'words', 'verdicts', 'open'] }
 const common = ' The worktree is ' + WT + ' (branch claude/map-b6); the Python is ' + PY + '. Read first: ' + BRIEF + ' (the integrator brief, in full), the' +
-  ' supervisor rulings in ' + RULINGS + ' from the heading "B6: the owner\'s map reference" to the end (D106 to D115) and ' + RULINGS_PASS + ', and the four' +
+  ' supervisor rulings in ' + RULINGS + ' from the heading "B6: the owner\'s map reference" to the end (D106 to D126) and ' + RULINGS_PASS + ', and the four' +
   ' products\' integration.md and report.md under /home/user/hail-b5/out/b6/build/P1..P4/. Never run a git write command (no add, commit, stash, checkout, reset).' +
   ' Keep every product module (website/terrain.py, basemap2.py, landmarks.py, history_layers.py, labels.py and their tests) as it is: the shared files are yours.' +
   ' No AI model, vendor or product names in repository files; no em-dashes (U+2014); sentence case; plain words; every credit line reads "Source: ..." or' +
   ' "... data courtesy of ..." and never implies endorsement (D113(a)); a missing input shows "Data unavailable", never a zero or an all-clear (rule 5);' +
-  ' every string the browser prints comes from map.json (D29, D41). Run ' + PY + ' -m py_compile on every Python file you touch and the tests named for your task.' +
+  ' every string the browser prints comes from map.json or from the data file map.json names (data/base.json), both built by Python (D29, D41, D125(d));' +
+  ' held kinds and sources show "held" with the reason and no number derived from them appears anywhere (D118(b)); the About sentences are in the "Source: ..." form' +
+  ' built from the modules\' labelled credit lines (D121(a)); an unbuilt band D tile is said both ways (D122(b)). Run ' + PY + ' -m py_compile on every Python file you touch and the tests named for your task.' +
   ' Write your notes for the next integrator into ' + OUT + '/<task>.md.'
 const TASKS = {
   I1: 'Task 1 of the brief as amended by D125(d) (website/build.py: HAIL_FOLDERS_B6, _copy_hail, a small first-paint pointer block "base" in map.json (the tile URL templates,' +
@@ -43,23 +45,29 @@ const TASKS = {
     ' sources and their reasons, the five-year pictures, the zone counts with the newest-warning date words, the recent radar hail switch) and their pins in' +
     ' tests/test_site.py (the rows exist; the About words). The previous integrator\'s notes are in ' + OUT + '/I1.md: tests/test_site.py already carries its pins, so' +
     ' extend, never rewrite. Run ' + PY + ' -m unittest tests.test_site tests.test_sources -v (whichever exist) and fix until green.',
-  I3: 'Task 3 and task 4 of the brief (.github/workflows/hail-store.yml: the monthly job runs P1 (terrain build --timeout 60 under a 20-minute step cap, non-fatal, the' +
-    ' cache restored and saved) and P2 (bands A to C each run, band D continued under the step\'s deadline), each with its verify and its unavailable mark; the daily' +
+  I3: 'Task 3 and task 4 of the brief (.github/workflows/hail-store.yml: the monthly job runs P1 (terrain build --refresh --timeout 60 under a 20-minute step cap, non-fatal, the' +
+    ' cache restored and saved, verify --timeout 60) and P2 (bands A to C each run, band D continued under the step\'s deadline with --deadline-at; the step reads vector.state from' +
+    ' hail/base/index.json because build exits 0 for an unavailable store), each with its verify and its unavailable mark; the store writers run one after another; the daily' +
     ' job runs P3 (landmarks), P4 history_layers and recent after the joins, and the labels pass after the outlines step, all non-fatal on the B5 clock with the clock' +
     ' checks the other B5 steps use; pyshp installed for the parks source; the pack and the manifest check cover the new folders; hail.check_manifest after the last' +
-    ' part. .github/workflows/website.yml: on.push.paths and the offline unittest line list the five new test modules; the parity step unchanged) and the pins in' +
+    ' part; the buildings verify stays before the labels pass. .github/workflows/website.yml: on.push.paths and the offline unittest line list the five new test modules; the parity step unchanged;' +
+    ' .gitignore gains terrain-cache/, b6-cache/ and !tests/fixtures/**/*.zip; AGENTS.md\'s website install line gains pyshp) and the pins in' +
     ' tests/test_website_workflow.py (PushPathsCoverTheTests must pass). Run ' + PY + ' -m unittest tests.test_website_workflow -v and fix until green.',
-  I4: 'Task 6 of the brief (docs): docs/DECISIONS.md gains D107 to D115 as the D38 round\'s next bullets in the style of D101 to D105 (copy the rulings\' substance,' +
+  I4: 'Task 6 of the brief (docs): docs/DECISIONS.md gains D107 to D126 as the D38 round\'s next bullets in the style of D101 to D105 (copy the rulings\' substance,' +
     ' not the brief\'s headings; keep every figure with its unit); docs/DESIGN.md gains section 13 "The map\'s own cartography, the options sheet and the value bubbles' +
     ' (B6)" with the store layout, the bands, the budgets, the picture palettes (from the products\' integration notes, as named constants with hex values), the sheet' +
     ' spec from /home/user/hail-b5/out/b6/design/sheet/spec.md with D110 applied, the bubble rule (A clusters by default, B per building as the owner\'s alternative)' +
     ' and the D115 amendments to section 8 (land cover tint and relief at zooms 5 to 10 fading through 12, paper white from 13; hidden in dark mode); docs/ROADMAP.md' +
-    ' gains the B6 row and the owner items (bubble rule A or B, the sheet, the terrain tint veto, counsel items 21 to 24); README.md\'s layout and commands lines name' +
+    ' gains the B6 row and the owner items (bubble rule A or B and the below-side option, the sheet, the terrain tint veto, the kv wording, the landmark display names, the cold-run' +
+    ' figure, issued-only zone counts, the split threshold and flag bytes, the NLCD CC0 question) and the counsel items (21 to 24, the TIGER area landmark use constraints, the' +
+    ' PAD-US and FEMA terms, the Forest Service hazard DUA); README.md\'s layout and commands lines name' +
     ' the new modules. Run ' + PY + ' -m unittest tests.test_docs -v if it exists.',
   I5: 'Tasks 7 and 8 of the brief: run the whole suite ' + PY + ' -m unittest discover -s tests (must pass; fix only shared files and their pins if not, and say what) and' +
     ' ' + PY + ' desktop/launcher.py --selftest payload; make one writable copy of the adopted store\'s index, manifest and the folders the site build reads' +
-    ' (/home/user/hail-b5/out/combined/store is read only) under /home/user/hail-b5/out/b6/store-copy, add the products\' new parts from their test stores or build' +
-    ' them in place from the caches (P1 and P2 cache-only builds, P3, P4 with the labels for the Missoula and Billings tiles only), run' +
+    ' (/home/user/hail-b5/out/combined/store is read only) under /home/user/hail-b5/out/b6/store-copy, then build the new parts in place, one writer after another, from the product' +
+    ' caches (P1 terrain build --offline from /home/user/hail-b5/out/b6/cache/P1; P2 basemap2 build --offline from cache/P2; P3 landmarks build --offline from cache/P3; P4 history_layers' +
+    ' build and the labels pass for the Missoula and Billings tiles only; each writer carries the shared base index key f hail-base-index-v1; no base index with the old format key may' +
+    ' exist first), check map.json stays under 163,840 bytes raw, run' +
     ' ' + PY + ' -m website.build --out /home/user/hail-b5/out/b6/site --hail-history --hail-addresses --hail-store /home/user/hail-b5/out/b6/store-copy --now' +
     ' 2026-10-17T12:00:00Z, run hail.check_manifest on the copy, run the Chromium smoke tools/smoke_map.py with --addresses --history against the built site and' +
     ' record the phone view bytes, and write ' + OUT + '/report.md with every figure (bytes, counts, seconds), the suite result, the selftest result and what is open.' +
@@ -81,7 +89,7 @@ log('integration: ' + reports.length + ' of 5 reports')
 phase('Review')
 const LENSES = [
   { key: 'rules', prompt: 'the rules: rule 5 (missing never zero, "Data unavailable", not an all-clear), D29/D41 (every printed word from map.json), D113(a) credits, the identity rule for builds without the new parts, no vendor or model names, no em-dashes, sentence case, the workflow pins' },
-  { key: 'correctness', prompt: 'correctness: every map.json key the integration notes name exists with the right shape and words, the copy list copies the new folders and states absences, the CONTRACTS rows match the modules, the jobs\' steps call the modules with the options they accept (read the argparse of each module), the test pins test the behaviour, the docs figures match the reports' },
+  { key: 'correctness', prompt: 'correctness: every key of map.json and data/base.json the integration notes name exists with the right shape and words, map.json stays under its 163,840-byte raw gate, the copy list copies the new folders and states absences, the CONTRACTS rows match the modules, the jobs\' steps call the modules with the options they accept (read the argparse of each module), the store writers run in sequence with the shared base index key, the test pins test the behaviour, the docs figures match the reports' },
 ]
 const reviews = await parallel(LENSES.map(l => () => agent('You are a read-only reviewer of the B6 integration on the shared files.' + common +
   ' Review the uncommitted changes to the shared files (git diff and git status are read-only and allowed) through ' + l.prompt + '. The integrators reported: ' +
