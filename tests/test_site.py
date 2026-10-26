@@ -28,10 +28,16 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from website import basemap2 as b2  # noqa: E402
 from website import build as site  # noqa: E402
+from website import buildings as bd  # noqa: E402
 from website import gridded as g  # noqa: E402
 from website import hail as hs  # noqa: E402
+from website import history_layers as hl  # noqa: E402
+from website import labels as lb  # noqa: E402
+from website import landmarks as lm  # noqa: E402
 from website import sources as src  # noqa: E402
+from website import terrain as tr  # noqa: E402
 from website.sample import SampleFetcher  # noqa: E402
 sys.path.insert(0, str(ROOT / "tests"))   # tests/words_rules.py: the one forbidden list (D41, D81(c))
 import words_rules  # noqa: E402
@@ -370,7 +376,8 @@ class Contracts(unittest.TestCase):
                                               "hail_swath",
                                               "nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily",
                                               "iem_watchwarn", "iem_lsr", "nwps_gauges", "usgs_water_api",
-                                              "roof_references", "iem_ugcs"})
+                                              "roof_references", "iem_ugcs"} | set(site.B6_CONTRACTS))     # B6: the 23 base map,
+        # landmark, picture, zone and recent-hail rows (the B6 class below pins their words)
         for key, c in src.CONTRACTS.items():
             # a row a B5 row replaces names it (superseded_by); every other row has the five fields only
             self.assertTrue({"name", "request", "units", "timing", "missing"} <= set(c) <= {"name", "request", "units",
@@ -461,7 +468,7 @@ class SampleBuild(unittest.TestCase):
         cls.result = site.build(cls.out, None, NOW, sample=True)
 
     def test_every_file_is_there(self):
-        expected = ["index.html", "reports.html", "about.html", "map.html", "data/map.json",
+        expected = ["index.html", "reports.html", "about.html", "map.html", "data/map.json", "data/base.json",
                     "static/map/map.js", "static/map/map.css", "static/map/basemap.json",
                     "data/state.json", ".nojekyll", "static/style.css", "static/favicon.svg", "static/icon-180.png",
                     "static/leaflet/leaflet.js", "static/leaflet/leaflet.css", "static/leaflet/images/layers.png",
@@ -1373,8 +1380,9 @@ class ImageryPages(unittest.TestCase):
 
     def test_the_imagery_config_has_its_fields_and_the_two_words_the_credit_row_shows(self):
         self.assertEqual(set(site.IMAGERY), {"url", "max_zoom", "host", "credit_line", "failed_line"})
+        # D110(d) (B6): the credit row carries the privacy words "while it is on", as the Map page's Imagery description does
         self.assertEqual(site.IMAGERY["credit_line"], "Imagery: USDA, USGS, The National Map. Your IP address and the "
-                         "map area you view go to USGS.")
+                         "map area you view go to USGS while it is on.")
         self.assertEqual(site.IMAGERY["failed_line"], "Imagery didn't load from USGS. Outlines and towns are still shown.")
         self.assertTrue(site.IMAGERY["url"].endswith("/tile/{z}/{y}/{x}"))
 
@@ -3784,6 +3792,29 @@ def on_purpose_problems(name: str, data: bytes, changes, base_digest: str) -> li
     return problems
 
 
+# B6 (D125(d)): the files and keys the base-map build adds to the default build, and the one named change of an existing
+# line (D110(d): the imagery credit row carries the privacy words "while it is on"). Nothing else in the default build changes.
+B6_FILES = ("data/base.json",)
+B6_MAP_KEYS = ("base", "history_layers", "recent", "labels")      # data/map.json's pointer and first-paint states, last keys
+B6_IMAGERY = ("D110(d)", "go to USGS.", "go to USGS while it is on.", 1)
+
+
+def b6_map_problems(data: bytes, base_digest: str) -> list:
+    """The problems with the default build's data/map.json: it has exactly the B6 keys as its last keys, and without them and
+    with the named imagery change written back it has the base build's digest (byte for byte)."""
+    doc = json.loads(data)
+    problems = []
+    if list(doc)[-len(B6_MAP_KEYS):] != list(B6_MAP_KEYS):
+        problems.append(f"data/map.json does not end with the B6 keys {list(B6_MAP_KEYS)} (its keys end with {list(doc)[-4:]})")
+    for key in B6_MAP_KEYS:
+        doc.pop(key, None)
+    restored, changes_problems = restore_base(json.dumps(doc, separators=(",", ":")).encode("utf-8"), (B6_IMAGERY,))
+    problems += changes_problems
+    if hashlib.sha256(restored).hexdigest() != base_digest:
+        problems.append("data/map.json differs from the base build on a line that no named ruling accounts for")
+    return problems
+
+
 class HailSwathLayers(unittest.TestCase):
     """The live hail swath layers (B4; website/swath.py) behind --storm-layers, sample builds only (the live feed is
     checked by the Website workflow and tools/smoke_map.py): the two Map layers and their status line, the List and the
@@ -4295,6 +4326,11 @@ class HailSwathLayers(unittest.TestCase):
             ("D91(c)", "No hail or wind reports in or near Montana for this day.",
              "No reports of hail or wind in or near Montana for this day; that is not the same as no hail.", 2),
         ),
+        "map.html": (
+            # D110(d) (B6): the imagery object the page carries (data-imagery) gets the privacy words "while it is on", as the
+            # credit row does; the page's Imagery description already had them. One occurrence, inside the attribute.
+            ("D110(d)", 'go to USGS.", "failed_line"', 'go to USGS while it is on.", "failed_line"', 1),
+        ),
     }
 
     def test_the_default_build_matches_the_manifest_of_its_base_commit(self):
@@ -4306,7 +4342,14 @@ class HailSwathLayers(unittest.TestCase):
                                "--now", "2026-10-19T12:00:00Z"], cwd=ROOT, capture_output=True, text=True, timeout=900)
         self.assertEqual(done.returncode, 0, done.stderr[-800:])
         now = default_digests(out)
-        self.assertEqual(sorted(set(now) ^ set(expected["files"])), [], f"base {expected['base']}: files differ")
+        # B6 (D125(d)): the default build adds data/base.json, and data/map.json gains the B6 keys and one named imagery change.
+        # Both are checked on their own below; every other file must match the base build.
+        self.assertEqual(sorted(set(now) - set(expected["files"])), list(B6_FILES), f"base {expected['base']}: files added")
+        self.assertEqual(sorted(set(expected["files"]) - set(now)), [], f"base {expected['base']}: files removed")
+        self.assertEqual(b6_map_problems((out / "data" / "map.json").read_bytes(), expected["files"]["data/map.json"]), [],
+                         f"base {expected['base']}: data/map.json differs from the base build apart from the B6 keys")
+        for name in B6_FILES + ("data/map.json",):
+            now.pop(name)
         # every file the table does not name has the base's digest
         changed = sorted(name for name in now if now[name] != expected["files"][name] and name not in self.ON_PURPOSE)
         self.assertEqual(changed, [], f"base {expected['base']}: these files differ from the base build")
@@ -5528,10 +5571,965 @@ class SummaryContract(unittest.TestCase):
         self.assertNotIn("BILLINGS WTP", text)
 
 
+# ---------------------------------------------------------------- the B6 base map's data files (D125(d); build.base_document)
+# data/base.json (every word, credit, band, cell, held kind and budget the sheet and the toggled layers need) and map.json's
+# first-paint pointer. The store below is invented: the fixture's hail files, and small files named as the B6 modules name
+# them, with the module's own map functions reading them. Real figures are in the B6 build records, not here.
+
+B6_TERRAIN = {
+    "state": "loaded", "problem": None, "zooms": [5, 6, 7, 8, 9, 10], "tile_px": 256,
+    "as_of": {"shading_date": "2026-09-28", "shading_month": "2026-09", "shading_copyright": "Test copyright line.",
+              "land_cover": "2023-06"},
+    "layers": {"h": {"state": "loaded", "path": "hail/base/h/{z}/{x}/{y}.jpg", "missing": [], "files": 1, "problem": None},
+               "l": {"state": "loaded", "path": "hail/base/l/{z}/{x}/{y}.png", "missing": [], "files": 1, "problem": None}},
+    "budget": {"zooms": "5 to 10", "bytes_limit": 20000000, "bytes": 1234, "under_budget": True},
+    "bytes": 1234, "counts": {},
+    "sources": {"shading": {"name": "test shading", "as_of": "2026-09-28"}, "land_cover": {"name": "test land cover", "as_of": "2023-06"}},
+}
+# every vector source the loaded store read (basemap2's keys); the credit lines of the About page follow these (T5, D134(b))
+B6_VECTOR_READ = ("tiger_aiannh", "tiger_prisec", "tiger_place", "census_pl2020", "edw", "padus", "nhd_small_lines",
+                  "nhd_small_areas", "nhd_large_lines", "nhd_large_areas", "gnis", "3dep")
+B6_VECTOR = {
+    "state": "loaded", "problem": None, "as_of": "2026-10-16",
+    "budgets": {"A": {"limit": 150000, "gzip": 100, "ok": True},
+                "B": {"limit": 100000, "gzip_largest": 10, "over_budget": 0, "files": 1},
+                "C": {"limit": 60000, "gzip_largest": 10, "over_budget": 0, "files": 1},
+                "D": {"limit": 30000, "gzip_largest": 10, "over_budget": 0, "shards": 1}},
+    "coverage": {"tiles_listed": 1, "tiles_in_coverage": 1, "tiles_built": 1, "tiles_unbuilt": 0, "band_d_areas": 1,
+                 "band_d_failed_cells": [], "band_d_cell_reasons": {}},
+    "failures": [], "counts": {},
+    # the vector part's rows as basemap2 writes them: file counts and bytes, no date (F12)
+    "sources": {name: {"state": "cache", "files": 1, "fetched": 0, "cache": 1, "failed": 0, "bytes": 1, "reasons": []}
+                for name in B6_VECTOR_READ},
+}
+B6_LANDMARKS = {
+    "state": "loaded", "problem": None, "as_of": "2026-10-25",
+    "kinds": {"school": {"code": "s", "state": "loaded", "held": False, "sources": ["nces_public", "nces_private"], "count": 2},
+              "hospital": {"code": "h", "state": "loaded", "held": False, "sources": ["usgs_hospitals"], "count": 1},
+              "fire": {"code": "f", "state": "loaded", "held": False, "sources": ["usgs_fire"], "count": 1},
+              "park": {"code": "p", "state": "loaded", "held": False, "sources": ["padus_local", "tiger_park"], "count": 1},
+              "airport": {"code": "a", "state": "loaded", "held": False, "sources": ["faa_nasr"], "count": 3},
+              "church": {"code": "c", "state": "held", "held": True, "sources": ["fema_worship"], "count": None}},
+    "counts": {"points": 8, "kinds": {"school": 2, "hospital": 1, "fire": 1, "park": 1, "airport": 3}}, "tiles": ["r0079_c0199"],
+    "held": {"kinds": {"church": {"held": True, "state": "held", "count": None, "reason": "held for the test"}},
+             "sources": {"fema_worship": {"held": True, "state": "held", "count": None, "reason": "held for the test"}}},
+    "budget": {"shard_gzip_bytes": 20000, "largest_gzip_bytes": 90, "within": True},
+    "sources": {"nces_public": {"kind": "school", "label": "test school list", "state": "loaded", "as_of": "2024-25 school year",
+                                "kept": 1, "credit": "Source: National Center for Education Statistics, EDGE public school "
+                                                     "locations, 2024-25 school year."},
+                "usgs_hospitals": {"kind": "hospital", "label": "test hospital list", "state": "loaded", "as_of": "October 2026 refresh",
+                                   "kept": 1, "credit": "Source: USGS The National Map, hospitals and medical centers, October 2026 "
+                                                        "refresh."},
+                "nces_private": {"kind": "school", "label": "test private school list", "state": "loaded",
+                                 "as_of": "2023-24 school year", "kept": 1,
+                                 "credit": "Source: National Center for Education Statistics, EDGE private school "
+                                           "locations, 2023-24 school year."},
+                "usgs_fire": {"kind": "fire", "label": "test fire and EMS list", "state": "loaded",
+                              "as_of": "October 2026 refresh", "kept": 1,
+                              "credit": "Source: USGS The National Map, fire and EMS stations, October 2026 refresh."},
+                "faa_nasr": {"kind": "airport", "label": "test airport file", "state": "loaded", "as_of": "2026-10-01", "kept": 3,
+                             "credit": "Source: Federal Aviation Administration, National Airspace System Resources airport data, "
+                                       "cycle effective 2026-10-01."},
+                "padus_local": {"kind": "park", "label": "test park list", "state": "loaded", "as_of": "2026-10-20", "kept": 1,
+                                "credit": "Source: USGS Gap Analysis Project, Protected Areas Database of the United States "
+                                          "(PAD-US) 4.1, local parks, layer last edited 2026-10-20."},
+                "fema_worship": {"kind": "church", "state": "held", "held": True, "reason": "held for the test"}},
+}
+# B6 landmark indexes for the credit tests (F1, F2, F9, F10): a copy of the hospitals used (USGS answered with no Montana
+# rows, so the copy was read), the FAA cycle with its date, and PAD-US with no date in its index
+HIFLD_LANDMARKS = {
+    "state": "loaded", "problem": None, "as_of": "2026-10-25",
+    "kinds": {"hospital": {"code": "h", "state": "loaded", "held": False, "sources": ["hifld_hospitals"], "count": 2},
+              "airport": {"code": "a", "state": "loaded", "held": False, "sources": ["faa_nasr"], "count": 3},
+              "park": {"code": "p", "state": "loaded", "held": False, "sources": ["padus_local", "tiger_park"], "count": 4},
+              "church": {"code": "c", "state": "held", "held": True, "sources": ["fema_worship"], "count": None}},
+    "counts": {"points": 9, "kinds": {"hospital": 2, "airport": 3, "park": 4}}, "tiles": ["r0079_c0199"],
+    "held": B6_LANDMARKS["held"],
+    "budget": {"shard_gzip_bytes": 20000, "largest_gzip_bytes": 90, "within": True},
+    "sources": {"usgs_hospitals": {"kind": "hospital", "label": "test hospital list", "state": "loaded", "as_of": None, "kept": 0,
+                                   "credit": "Source: USGS The National Map, hospitals and medical centers, October 2026 refresh."},
+                "hifld_hospitals": {"kind": "hospital", "label": "test state licensure copy", "state": "loaded", "as_of": "2026-10-20",
+                                    "kept": 2, "credit": "Source: Hospital list copied from the state licensure list (copy by the "
+                                                         "Homeland Infrastructure Foundation-Level Data), layer last edited 2026-10-20."},
+                "faa_nasr": {"kind": "airport", "label": "test airport file", "state": "loaded", "as_of": "2026-10-01", "kept": 3,
+                             "credit": "Source: Federal Aviation Administration, National Airspace System Resources airport data, "
+                                       "cycle effective 2026-10-01."},
+                "padus_local": {"kind": "park", "label": "test park list", "state": "loaded", "as_of": None, "kept": 4,
+                                "credit": "Source: USGS Gap Analysis Project, Protected Areas Database of the United States "
+                                          "(PAD-US) 4.1, local parks, Data unavailable."},
+                "tiger_park": {"kind": "park", "state": "held", "held": True, "reason": "held for the test"},
+                "fema_worship": {"kind": "church", "state": "held", "held": True, "reason": "held for the test"}},
+}
+# no hospital, airport or park source was read (each one failed): the page names none of them
+NONE_LANDMARKS = {
+    "state": "partial", "problem": "Data unavailable: some landmarks could not be loaded in this update. This is not an all-clear.",
+    "as_of": "2026-10-25",
+    "kinds": {"school": {"code": "s", "state": "loaded", "held": False, "sources": ["nces_public"], "count": 1},
+              "hospital": {"code": "h", "state": "unavailable", "held": False, "sources": ["usgs_hospitals"], "count": None,
+                           "reason": "the USGS layer could not be used (test)"},
+              "airport": {"code": "a", "state": "unavailable", "held": False, "sources": ["faa_nasr"], "count": None,
+                          "reason": "test"},
+              "park": {"code": "p", "state": "unavailable", "held": False, "sources": ["padus_local", "tiger_park"], "count": None,
+                       "reason": "test"},
+              "church": {"code": "c", "state": "held", "held": True, "sources": ["fema_worship"], "count": None}},
+    "counts": {"points": 1, "kinds": {"school": 1}}, "tiles": ["r0079_c0199"],
+    "held": B6_LANDMARKS["held"],
+    "budget": {"shard_gzip_bytes": 20000, "largest_gzip_bytes": 90, "within": True},
+    "sources": {"nces_public": B6_LANDMARKS["sources"]["nces_public"],
+                "usgs_hospitals": {"kind": "hospital", "label": "test hospital list", "state": "unavailable", "reason": "test"},
+                "faa_nasr": {"kind": "airport", "label": "test airport file", "state": "unavailable", "reason": "test"},
+                "padus_local": {"kind": "park", "label": "test park list", "state": "unavailable", "reason": "test"},
+                "fema_worship": {"kind": "church", "state": "held", "held": True, "reason": "held for the test"}},
+}
+B6_HISTORY = {
+    "state": "loaded", "problem": None, "as_of": "2026-10-16", "window": ["2021-10-17", "2026-10-16"],
+    "built_at": "2026-10-19T12:00:00Z", "sidecar": {"file": "hail/history/index.json", "bytes": 1, "sha256": "0"},
+    "pictures": {"hail1": {"state": "loaded"}, "heat90": {"state": "loaded"}},
+    "zones": {"state": "loaded", "file": "hail/history/zones.json", "bytes": 1, "sha256": "0", "zones": 1,
+              "newest_warning": "2026-10-10", "unavailable": None, "missing_zone_files": None},
+    "outlines": {"state": "loaded", "file": "hail/base/v/zones.json", "bytes": 1, "sha256": "0", "zones": 1, "simplify_m": 150.0},
+    "failures": [], "seconds": 0.1,
+}
+B6_RECENT = {
+    "state": "loaded", "file": "hail/recent/cells.json", "bytes": 1, "sha256": "0", "as_of": "2026-10-16",
+    "window": ["2026-09-17", "2026-10-16"], "cells": 0, "days": 0, "stale": None, "floor_tenths": 254,
+    "words": {"title": hl.WORDS["recent_title"], "legend": hl.WORDS["recent_legend"].format(first="2026-09-17",
+                                                                                              as_of="2026-10-16")},
+}
+B6_LABEL_RULE = {"zooms": [17, 18], "cluster_px": 55.75, "tol_px": 2.0, "dot_radius_px": 4.0, "tip_gap_px": 1.0,
+                 "pointer_px": 5.0, "body_px": 22.0, "pad_px": 7.0, "letter_px": -0.26, "min_width_px": 30.0,
+                 "font": "atkinson-hyperlegible-next-latin-700-normal.woff2", "order": "test order",
+                 "placement": "test placement", "clusters": "test clusters",
+                 "words": {"dash": "--", "unavailable": "Data unavailable", "legend": hl.WORDS["label_legend"]}}
+B6_LABELS = {"state": "loaded", "problem": None, "as_of": "2026-10-16", "window": ["2021-10-17", "2026-10-16"],
+             "built_at": "2026-10-19T12:00:00Z", "zooms": [17, 18], "rule": B6_LABEL_RULE, "tiles": "all",
+             "counts": {"shards": 0}, "bytes_added": 0, "failures": [], "seconds": 0.1}
+
+
+def b6_store(root: Path, *, base: bool = True, history: bool = True, terrain: dict | None = None,
+             landmarks: dict | None = None, vector: dict | None = None, recent: dict | None = None,
+             history_block: dict | None = None) -> Path:
+    """A hail/ folder for the B6 tests: the sample fixture, plus the base map, the five-year pictures, the zone counts, the
+    recent cells and the labels as the modules name them. The manifest lists every file (hail.check_manifest)."""
+    hail = root / "hail"
+    shutil.copytree(hs.FIXTURE_DIR / "hail", hail)
+    index = json.loads((hail / "index.json").read_text(encoding="utf-8"))
+
+    def put(rel: str, data) -> None:
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if isinstance(data, bytes):
+            path.write_bytes(data)
+        else:
+            path.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8")
+
+    if base:
+        put("hail/base/index.json", {"f": "hail-base-index-v1", "terrain": terrain or B6_TERRAIN, "vector": vector or B6_VECTOR,
+                                     "landmarks": landmarks or B6_LANDMARKS})
+        put("hail/base/h/5/8/12.jpg", b"\xff\xd8 test tile")
+        put("hail/base/l/5/8/12.png", b"\x89PNG test tile")
+        put("hail/base/v/a.json", {"f": "hail-base-vector-v1", "features": []})
+        put("hail/base/v/b/n46w114.json", {"f": "hail-base-vector-v1", "features": []})
+        put("hail/base/v/c/n46w114.json", {"f": "hail-base-vector-v1", "features": []})
+        put("hail/base/v/zones.json", {"f": "hail-zone-outlines-v1", "zones": [],
+                                       "source": {"credit": hl.WORDS["about_outlines"]}})
+        put("hail/base/w/r0079_c0199.json", {"f": "hail-base-water-v1", "features": []})
+        put("hail/base/p/r0079_c0199.json", {"f": "hail-landmarks-v1", "t": "r0079_c0199", "n": 1,
+                                             "i": [[-108.5, 45.8, "s", "Test School", "nces_public"]]})
+        put("hail/base/peaks.json", {"f": "hail-base-peaks-v1", "peaks": []})
+        put("hail/base/places.json", {"f": "hail-base-places-v1", "places": []})
+    if history:
+        put("hail/history/hail1.png", b"\x89PNG hail test")
+        put("hail/history/heat90.png", b"\x89PNG heat test")
+        sidecar_pictures = {
+            "hail1": {"state": "loaded", "file": hl.HAIL1_PATH, "width": 2, "height": 2, "unit": "days",
+                      "window": ["2021-10-17", "2026-10-16"], "classes": [dict(c, alpha=217) for c in hl.HAIL_CLASSES],
+                      "words": {"title": hl.WORDS["hail1_title"], "legend": "Test legend.", "transparent": "A blank cell is "
+                                                                                                 "not the same as no hail."}},
+            "heat90": {"state": "loaded", "file": hl.HEAT_PATH, "width": 2, "height": 2, "unit": "days",
+                       "window": ["2021-07-01", "2026-06-30"], "classes": [dict(c, alpha=209) for c in hl.HEAT_CLASSES],
+                       "words": {"title": hl.WORDS["heat90_title"], "legend": hl.WORDS["heat90_legend"]}},
+        }
+        put(hl.SIDECAR_PATH, {"f": hl.FORMAT_PICTURES, "as_of": "2026-10-16", "window": ["2021-10-17", "2026-10-16"],
+                              "bounds": [[43.0, -118.5], [50.5, -101.0]], "state": "loaded", "stale": None,
+                              "missing_days": [], "pictures": sidecar_pictures, "words": hl.WORDS})
+        put(hl.ZONES_PATH, {"f": hl.FORMAT_ZONES, "as_of": "2026-10-16", "window": ["2021-10-17", "2026-10-16"],
+                            "newest_warning": {"date": "2026-10-10", "words": hl._newest_sentence("2026-10-10")},
+                            "measures": [{"key": m["key"], "label": m["label"], "kind": m["kind"]} for m in hl.MEASURES],
+                            "outline": {"file": hl.OUTLINE_PATH, "format": hl.FORMAT_OUTLINES}, "unavailable": None,
+                            "missing_zone_files": None,
+                            "words": {"title": hl.WORDS["zones_title"], "legend": "Test zone legend."}, "zones": {}})
+        put(hl.RECENT_PATH, {"f": hl.FORMAT_RECENT, "as_of": "2026-10-16", "window": ["2026-09-17", "2026-10-16"],
+                             "cells": 0, "days": 0, "stale": None, "rows": []})
+        index[hl.INDEX_KEY] = history_block or B6_HISTORY
+        index[hl.RECENT_KEY] = recent or B6_RECENT
+        index[lb.INDEX_KEY] = B6_LABELS
+    put("hail/index.json", index)
+    manifest = json.loads((hail / "manifest.json").read_text(encoding="utf-8"))
+    manifest["files"] = {}
+    for path in sorted(hail.rglob("*")):
+        if path.is_file() and path.name != "manifest.json":
+            data = path.read_bytes()
+            manifest["files"][path.relative_to(root).as_posix()] = {"bytes": len(data),
+                                                                   "sha256": hashlib.sha256(data).hexdigest()}
+    put("hail/manifest.json", manifest)
+    hs.check_manifest(root)
+    return root
+
+
+class B6BaseMapData(unittest.TestCase):
+    """The B6 base map's two data files (D125(d)): the default and the sample build write both with every block unavailable
+    and its reason (the identity rule); a store with the B6 folders fills the blocks through the modules' own map functions,
+    so the browser prints the modules' words; map.json keeps only the pointer and the first-paint states."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    BLOCKS = ("base", "history_layers", "recent", "labels")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.default = Path(tempfile.mkdtemp(prefix="hailwatch-b6-default-"))
+        cls.addClassCleanup(shutil.rmtree, cls.default, True)
+        site.build(cls.default, None, cls.NOW, sample=True)
+        cls.sample_hail = Path(tempfile.mkdtemp(prefix="hailwatch-b6-hail-"))
+        cls.addClassCleanup(shutil.rmtree, cls.sample_hail, True)
+        site.build(cls.sample_hail, None, cls.NOW, sample=True, hail_history=True)     # the fixture store: no B6 parts
+        cls.store = Path(tempfile.mkdtemp(prefix="hailwatch-b6-store-"))
+        cls.addClassCleanup(shutil.rmtree, cls.store, True)
+        b6_store(cls.store)
+        cls.loaded = Path(tempfile.mkdtemp(prefix="hailwatch-b6-loaded-"))
+        cls.addClassCleanup(shutil.rmtree, cls.loaded, True)
+        site.build(cls.loaded, None, cls.NOW, sample=True, hail_history=True, hail_store_path=str(cls.store))
+
+    def data(self, out: Path, name: str = "data/base.json") -> dict:
+        return json.loads(page(out, name))
+
+    def test_the_copy_list_names_the_three_b6_folders(self):
+        self.assertEqual(site.HAIL_FOLDERS_B6, ("base", "history", "recent"))
+
+    def test_the_copy_takes_the_b6_folders_a_store_holds_and_a_store_without_them_still_copies(self):
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b6-copy-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        index = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))
+        site._copy_hail(self.store, out / "with", index, addresses=False)
+        for name in ("base", "history", "recent"):
+            self.assertTrue((out / "with" / "hail" / name).is_dir(), name)
+        self.assertTrue((out / "with" / "hail" / "base" / "index.json").is_file())
+        hs.check_manifest(out / "with")
+        fixture_index = json.loads((hs.FIXTURE_DIR / "hail" / "index.json").read_text(encoding="utf-8"))
+        site._copy_hail(hs.FIXTURE_DIR, out / "without", fixture_index, addresses=False)     # no error: a stated absence
+        for name in ("base", "history", "recent"):
+            self.assertFalse((out / "without" / "hail" / name).exists(), name)
+        hs.check_manifest(out / "without")
+
+    def test_the_default_and_the_sample_builds_write_both_files_with_every_block_unavailable(self):
+        for out in (self.default, self.sample_hail):
+            m = self.data(out, "data/map.json")
+            self.assertEqual(tuple(list(m)[-len(self.BLOCKS):]), self.BLOCKS)
+            b = self.data(out)
+            self.assertEqual(sorted(b), ["as_of", "base", "budget", "built", "history_layers", "labels", "recent", "sheet", "version"])
+            for key in self.BLOCKS:
+                self.assertEqual(b[key]["state"], "unavailable", key)
+                self.assertTrue(b[key]["problem"].startswith("Data unavailable"), key)
+                self.assertTrue(b[key]["problem"].endswith("This is not an all-clear."), key)
+                self.assertEqual(m[key]["state"], "unavailable", key)
+        default = self.data(self.default)
+        self.assertEqual({default[key]["reason"] for key in self.BLOCKS}, {site.REASON_NO_STORE})
+        sample = self.data(self.sample_hail)
+        self.assertEqual(sample["base"]["reason"], site.REASON_NO_BASE)            # the fixture store has no base folder
+        self.assertEqual(sample["history_layers"]["reason"], site.REASON_NO_HISTORY)
+        self.assertEqual(sample["recent"]["reason"], site.REASON_NO_RECENT)
+        self.assertEqual(sample["labels"]["reason"], site.REASON_NO_LABELS)
+
+    def test_map_json_carries_the_pointer_and_the_first_paint_states_only(self):
+        m = self.data(self.default, "data/map.json")
+        self.assertEqual(m["base"], {"state": "unavailable", "as_of": None, "file": "data/base.json", "zooms": [5, 10],
+                                     "tiles": {"h": "hail/base/h/{z}/{x}/{y}.jpg", "l": "hail/base/l/{z}/{x}/{y}.png"}})
+        for key in ("history_layers", "recent", "labels"):
+            self.assertEqual(m[key], {"state": "unavailable"}, key)
+        self.assertEqual(site.BASE_TILES, {"h": "hail/base/h/{z}/{x}/{y}.jpg", "l": "hail/base/l/{z}/{x}/{y}.png"})
+
+    def test_data_base_json_has_the_keys_and_the_same_build_time_as_map_json(self):
+        for out in (self.default, self.loaded):
+            m, b = self.data(out, "data/map.json"), self.data(out)
+            self.assertEqual(b["built"], m["built"])
+            self.assertEqual(b["version"], 1)
+            self.assertEqual(sorted(b["base"]), sorted(["as_of", "cells", "credit", "held", "landmarks", "problem", "reason",
+                                                        "sources", "state", "terrain", "tiles", "vector", "zooms"]))
+            self.assertEqual(sorted(b["budget"]), ["bands", "base_tiles", "landmark_shard"])
+            self.assertEqual(b["sheet"], site.SHEET_WORDS)
+            self.assertEqual(m["base"]["as_of"], b["as_of"])
+            for key in self.BLOCKS[1:]:
+                self.assertEqual(m[key]["state"], b[key]["state"], key)
+
+    def test_a_loaded_store_fills_the_base_map_through_the_module_functions(self):
+        base = self.data(self.loaded)["base"]
+        self.assertEqual(base["state"], "loaded")
+        self.assertIsNone(base["reason"])
+        self.assertIsNone(base["problem"])
+        self.assertEqual(base["cells"], {"B": ["n46w114"], "C": ["n46w114"], "D": ["r0079_c0199"]})
+        self.assertEqual(base["terrain"]["layers"]["h"]["template"], site.BASE_TILES["h"])        # the pointer's template
+        self.assertEqual(base["terrain"]["layers"]["l"]["template"], site.BASE_TILES["l"])
+        self.assertEqual(base["terrain"]["words"]["unavailable"], tr.WORDS["unavailable"])
+        self.assertEqual(base["terrain"]["credits"]["land_cover"], tr.WORDS["land_source"])
+        self.assertEqual(base["terrain"]["credits"]["shading"], tr.WORDS["shading_source"].format(date="2026-09-28"))
+        self.assertEqual(base["vector"]["words"], b2.WORDS)
+        self.assertEqual(base["vector"]["part_words"]["water"], list(b2.PART_WORDS["water"]))
+        self.assertEqual(base["vector"]["tiles"]["w"], "hail/base/w/{tile}.json")
+        self.assertEqual(base["vector"]["zooms"]["D"], [13, 18])
+        for line in (b2.CREDIT[0], b2.CREDIT[1], b2.CREDIT[2], b2.CREDIT[3], b2.CREDIT[4], b2.CREDIT[5], b2.CREDIT[6]):   # T5
+            self.assertIn(line, base["credit"])                 # every vector source this store read, PAD-US outlines included
+        self.assertEqual(base["landmarks"]["templates"]["what"], lm.WORDS["what"])
+        self.assertEqual(base["landmarks"]["shard"], "hail/base/p/{name}.json")
+        self.assertEqual(base["landmarks"]["tiles"], ["r0079_c0199"])
+        # the credit lines of the shown landmark sources, in the module's order, with the date words built here (F2)
+        self.assertEqual(base["landmarks"]["sources"], [
+            lm.SOURCES["nces_public"]["credit"],
+            lm.SOURCES["nces_private"]["credit"],
+            lm.SOURCES["usgs_hospitals"]["credit"],
+            lm.SOURCES["usgs_fire"]["credit"],
+            site.landmark_line("faa_nasr", "2026-10-01"),                # the airports, read with the cycle date (F2)
+            "Source: USGS Gap Analysis Project, Protected Areas Database of the United States (PAD-US) 4.1, local parks, "
+            "layer last edited 2026-10-20."])
+        self.assertEqual(base["as_of"]["vector"], "2026-10-16")
+        self.assertEqual(base["as_of"]["landmarks"], "2026-10-25")
+        # the date of each source: the as_of its row carries, and Data unavailable where it carries none (F12); a fetch time or a
+        # file count is never a date
+        self.assertEqual(base["sources"]["terrain"]["shading"], {"as_of": "2026-09-28"})     # the name stays in the module's block
+        self.assertEqual(base["sources"]["vector"]["tiger_aiannh"], {"state": "cache", "as_of": site.NO_DATE})
+        self.assertEqual(base["sources"]["landmarks"]["nces_public"], {"state": "loaded", "as_of": "2024-25 school year"})
+        self.assertEqual(base["sources"]["landmarks"]["padus_local"], {"state": "loaded", "as_of": "2026-10-20"})
+        self.assertEqual(base["sources"]["landmarks"]["fema_worship"], {"state": "held", "as_of": site.NO_DATE})
+        # the hospital source the store used (F1, D130(b)): USGS, with its own line and no other; the FAA line, with its cycle date
+        self.assertEqual(base["landmarks"]["hospital"], {"state": "loaded", "source": "usgs_hospitals",
+                                                         "sentence": lm.WORDS["hospital_usgs"],
+                                                         "credit": lm.SOURCES["usgs_hospitals"]["credit"]})
+        self.assertEqual(base["landmarks"]["credits"], {
+            "faa_nasr": site.landmark_line("faa_nasr", "2026-10-01"),
+            "padus": "Source: USGS Gap Analysis Project, Protected Areas Database of the United States (PAD-US) 4.1, local parks, "
+                     "layer last edited 2026-10-20."})
+
+    def test_held_kinds_and_sources_show_their_reason_and_no_count(self):
+        base = self.data(self.loaded)["base"]
+        self.assertEqual(base["landmarks"]["kinds"]["church"]["state"], "held")
+        self.assertTrue(base["landmarks"]["kinds"]["church"]["held"])
+        self.assertEqual(base["held"]["kinds"]["church"], {"held": True, "state": "held", "count": None,
+                                                           "reason": "held for the test"})
+        self.assertEqual(base["held"]["sources"]["fema_worship"]["reason"], "held for the test")
+        self.assertIsNone(base["held"]["sources"]["fema_worship"]["count"])
+        self.assertNotIn("church", base["landmarks"]["counts"]["kinds"])     # a held kind has no count in the words either
+
+    def test_the_history_layers_recent_cells_and_labels_come_from_the_store_and_the_modules_words(self):
+        b = self.data(self.loaded)
+        history = b["history_layers"]
+        self.assertEqual(history["state"], "loaded")
+        self.assertEqual(history["pictures"]["hail1"]["classes"][0]["word"], "1 day")
+        self.assertEqual(history["pictures"]["hail1"]["bounds"], [[43.0, -118.5], [50.5, -101.0]])
+        self.assertEqual(history["pictures"]["heat90"]["words"]["title"], hl.WORDS["heat90_title"])
+        self.assertEqual([m["key"] for m in history["zones"]["measures"]], [m["key"] for m in hl.MEASURES])
+        self.assertEqual(len(history["zones"]["measures"]), 8)                       # the eight zone measures (D112(i))
+        self.assertEqual(history["zones"]["newest_warning"], {"date": "2026-10-10",
+                                                              "words": "The newest warning in these counts is dated 2026-10-10."})
+        self.assertEqual(history["outlines"]["credit"], hl.WORDS["about_outlines"])
+        self.assertEqual(history["outlines"]["url"], "hail/base/v/zones.json")
+        recent = b["recent"]
+        self.assertEqual((recent["state"], recent["window"], recent["stale"]), ("loaded", ["2026-09-17", "2026-10-16"], None))
+        self.assertEqual(recent["url"], "hail/recent/cells.json")
+        self.assertEqual(recent["words"]["title"], hl.WORDS["recent_title"])
+        labels = b["labels"]
+        self.assertEqual(labels["state"], "loaded")
+        self.assertEqual(labels["words"], {"dash": "--", "unavailable": "Data unavailable", "legend": hl.WORDS["label_legend"]})
+        self.assertEqual(labels["words"]["legend"], hl.WORDS["label_legend"])       # D135(a): one bubble legend, one text
+        self.assertNotIn("words", labels["rule"])
+        self.assertEqual(labels["rule"]["cluster_px"], 55.75)
+        self.assertEqual(labels["budget"], {"shard_gzip": site.LABEL_SHARD_GZIP, "shard_raw_split": bd.SHARD_BYTES})
+
+    def test_the_budgets_carry_the_base_tiles_bytes_and_the_band_budgets(self):
+        budget = self.data(self.loaded)["budget"]
+        self.assertEqual(budget["base_tiles"], {"zooms": "5 to 10", "bytes": 1234, "limit_bytes": 20000000, "under_budget": True})
+        self.assertEqual(budget["bands"], B6_VECTOR["budgets"])
+        self.assertEqual(budget["landmark_shard"], {"limit_gzip": 20000, "largest_gzip": 90})
+
+    def test_the_sheet_words_are_the_d110_sub_lines_the_switch_name_and_the_b6_lines(self):
+        self.assertEqual(site.SHEET_WORDS, {
+            "points_of_interest": "Landmark dots and names, for the kinds chosen above",
+            "five_year_history": "Past records from the last five years. Not a forecast.",
+            "highlight_recent_hail": "Highlight recent radar hail",
+            # F3: the water line for an area with no band D shard, imported from the vector module (not retyped here)
+            "water_line_unavailable": b2.WORDS["water_line_unavailable"],
+            # F3: the Landmarks sub-line the sheet shows under its heading (DESIGN section 13.6, item 5)
+            "landmarks_sub_line": ("Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named "
+                                   "under About.")})
+        self.assertEqual(self.data(self.loaded)["sheet"], site.SHEET_WORDS)
+        self.assertEqual(site.BUBBLE_LEGEND, hl.WORDS["label_legend"])              # D135(a): the printed legend is the module's text
+
+    def test_the_sheet_water_line_is_the_vector_modules_words_imported(self):                      # F3: imported, not retyped
+        self.assertIs(site.SHEET_WORDS["water_line_unavailable"], b2.WORDS["water_line_unavailable"])
+
+    def test_the_sheet_water_line_carries_the_d122b_words_in_the_vector_module(self):              # F3, D122(b): the exact words
+        # The words the decision and the F3 item name. basemap2.WORDS must hold them; this test fails until it does.
+        self.assertEqual(site.SHEET_WORDS["water_line_unavailable"],
+                         "Detailed water and local parks: Data unavailable for this area in this update. This is not an all-clear.")
+
+    def test_the_imagery_credit_row_in_map_json_carries_the_privacy_words(self):
+        imagery = self.data(self.default, "data/map.json")["imagery"]
+        self.assertEqual(imagery["credit_line"], "Imagery: USDA, USGS, The National Map. Your IP address and the map area you "
+                                                 "view go to USGS while it is on.")
+
+    def test_map_json_stays_under_the_raw_gate_with_the_loaded_store(self):
+        size = map_json_bytes(self.loaded)
+        self.assertLess(size, HISTORY_MAP_GATE, size)                                  # D82(a): the whole file
+
+    def test_every_string_of_data_base_json_and_the_b6_keys_of_map_json_pass_the_words_gate(self):      # F11, AGENTS.md rule 5
+        # Every string VALUE of data/base.json is scanned, and the values under data/map.json's B6 keys. The old scan read the raw
+        # file text, where words_rules sets every straight-quoted string aside, so it could never fail; keys are field names,
+        # not text a reader sees.
+        for out in (self.default, self.loaded):
+            base = self.data(out)
+            m = self.data(out, "data/map.json")
+            self.assertEqual(b6_words_hits(base), [], f"data/base.json ({out.name})")
+            self.assertEqual(b6_words_hits({key: m[key] for key in self.BLOCKS}), [], f"data/map.json B6 keys ({out.name})")
+        church = self.data(self.loaded)["base"]["held"]["kinds"]["church"]
+        self.assertIsNone(church["count"])
+
+    def test_the_words_gate_fails_on_a_planted_forbidden_word_and_on_a_planted_em_dash(self):     # F11: a mutant of the data
+        mutant = json.loads(json.dumps(self.data(self.loaded)))
+        mutant["base"]["landmarks"]["templates"]["what"] += " A roof at risk."
+        mutant["sheet"]["points_of_interest"] += " " + chr(0x2014) + " kept"
+        hits = b6_words_hits(mutant)
+        self.assertEqual([path for path, _, _ in hits], ["$.base.landmarks.templates.what", "$.sheet.points_of_interest"])
+        self.assertEqual(hits[0][1], ["risk"])
+        self.assertEqual(hits[1][1], [])                                                          # the em dash is the hit there
+        clean = self.data(self.loaded)
+        self.assertEqual(b6_words_hits(clean), [])                                                # the mutant is the only change
+
+    def test_a_part_that_cannot_be_read_fails_alone(self):
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-b6-bad-"))
+        self.addCleanup(shutil.rmtree, store, True)
+        b6_store(store, terrain=dict(B6_TERRAIN, zooms=None))            # the terrain block cannot be read
+        out = Path(tempfile.mkdtemp(prefix="hailwatch-b6-bad-out-"))
+        self.addCleanup(shutil.rmtree, out, True)
+        site.build(out, None, self.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        base = self.data(out)["base"]
+        self.assertEqual(base["terrain"]["state"], "unavailable")
+        self.assertIn("the terrain files could not be read", base["terrain"]["reason"])
+        self.assertEqual(base["vector"]["state"], "loaded")
+        self.assertEqual(base["landmarks"]["state"], "loaded")
+        self.assertEqual(base["state"], "partial")
+        self.assertEqual(self.data(out)["history_layers"]["state"], "loaded")
+
+
+def json_strings(node, path: str = "$"):
+    """Every string VALUE of a parsed JSON document, with its path (F11). Keys are field names, not text a reader sees."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            yield from json_strings(value, f"{path}.{key}")
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            yield from json_strings(value, f"{path}[{i}]")
+    elif isinstance(node, str):
+        yield path, node
+
+
+def b6_words_hits(doc) -> list:
+    """(path, forbidden words, text) for each string of a B6 document that holds a forbidden word (words_rules) or an em dash
+    (AGENTS.md rule 5). An empty list is a pass."""
+    hits = []
+    for path, text in json_strings(doc):
+        found = words_rules.forbidden_words(text)
+        if found or chr(0x2014) in text:
+            hits.append((path, found, text))
+    return hits
+
+
 def html_text(fragment: str) -> str:
     """The visible text of an HTML fragment: its tags removed and its entities read."""
     import html as html_lib
     return html_lib.unescape(re.sub(r"<[^>]+>", " ", fragment))
+
+
+class B6AboutAndSources(unittest.TestCase):
+    """The B6 feeds (sources.py rows: the base map, the landmark points, the five-year pictures, the zone counts and the recent
+    radar hail, B6_CONTRACTS) and the About page's B6 sentences under the hail history heading: each source's sentence with its
+    credit line in the "Source: ..." form (D121(a)), the newest-warning words from the counted rows (D125(a)), the held kinds with
+    the modules' own reasons and no figure of a held source (D118(b)), and the words gate (AGENTS.md rule 5)."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    # one credit line per source, as the About page carries it in a loaded build (the modules' lines, the Source form)
+    CREDITS = (
+        "Source: 3DEP data courtesy of the U.S. Geological Survey (data as of 2026-09-28).",
+        "Source: National Land Cover Database 2021, U.S. Geological Survey and the Multi-Resolution Land Characteristics "
+        "Consortium (public domain).",
+        "Source: U.S. Census Bureau, TIGER/Line 2026 (reservations, roads and place names).",
+        "Source: U.S. Census Bureau, 2020 Census, Public Law 94-171 counts (place populations).",
+        "Source: USDA Forest Service, forest boundaries (national forests).",
+        # the one PAD-US line on the page, with the layer's own date (F2, F10): it sits under the park outlines
+        "Source: USGS Gap Analysis Project, Protected Areas Database of the United States (PAD-US) 4.1, local parks, layer last "
+        "edited 2026-10-20.",
+        "Source: U.S. Geological Survey, National Hydrography Dataset (lakes and rivers).",
+        "Source: U.S. Geological Survey, Geographic Names Information System (summit names).",
+        "3DEP data courtesy of the U.S. Geological Survey (summit heights).",
+        "Source: National Center for Education Statistics, EDGE public school locations, 2024-25 school year.",
+        "Source: National Center for Education Statistics, EDGE private school locations, 2023-24 school year.",
+        "Source: USGS The National Map, hospitals and medical centers, October 2026 refresh.",
+        "Source: USGS The National Map, fire and EMS stations, October 2026 refresh.",
+        "Source: NOAA MRMS MESH radar estimates, NOAA Open Data on AWS.",
+        "Source: NOAA nClimGrid-Daily grid estimates (file attribute \"license = no restrictions\"; attribution requested).",
+        "Source: National Weather Service warnings, through the Iowa Environmental Mesonet archive.",
+        "Source: Iowa State University, Iowa Environmental Mesonet, ugcs service. The outlines are simplified.",
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        cls.default = Path(tempfile.mkdtemp(prefix="hailwatch-b6-about-default-"))
+        cls.addClassCleanup(shutil.rmtree, cls.default, True)
+        site.build(cls.default, None, cls.NOW, sample=True)
+        cls.bare = Path(tempfile.mkdtemp(prefix="hailwatch-b6-about-bare-"))
+        cls.addClassCleanup(shutil.rmtree, cls.bare, True)
+        site.build(cls.bare, None, cls.NOW, sample=True, hail_history=True)        # no B6 parts in the store
+        cls.store = Path(tempfile.mkdtemp(prefix="hailwatch-b6-about-store-"))
+        cls.addClassCleanup(shutil.rmtree, cls.store, True)
+        b6_store(cls.store)
+        cls.loaded = Path(tempfile.mkdtemp(prefix="hailwatch-b6-about-loaded-"))
+        cls.addClassCleanup(shutil.rmtree, cls.loaded, True)
+        site.build(cls.loaded, None, cls.NOW, sample=True, hail_history=True, hail_store_path=str(cls.store))
+
+    @staticmethod
+    def b6_block(out: Path) -> str:
+        """The B6 sentences of the About page as a reader sees them: from the Base map heading to the Five years heading."""
+        text = page(out, "about.html")
+        start, end = text.index("<h3>Base map</h3>"), text.index("<h2>Five years of weather</h2>")
+        return " ".join(html_text(text[start:end]).split())
+
+    def test_the_b6_rows_are_one_group_in_sources_order_before_the_b5_rows(self):
+        keys = list(src.CONTRACTS)
+        self.assertEqual(len(site.B6_CONTRACTS), 23)
+        self.assertEqual(len(set(site.B6_CONTRACTS)), 23)
+        start = keys.index("terrain_shading")
+        self.assertEqual(keys[start:start + len(site.B6_CONTRACTS)], list(site.B6_CONTRACTS))
+        self.assertLess(keys.index("bubble_anchors"), keys.index("nclimgrid_daily"))     # the B5 order test keeps B5 last
+        for key in site.B6_CONTRACTS:
+            self.assertIn(key, site.HAIL_CONTRACTS, key)                                 # on the About page in a hail build only
+            self.assertNotIn(key, site.STORM_CONTRACTS, key)
+            row = src.CONTRACTS[key]
+            self.assertEqual(set(row), {"name", "request", "units", "timing", "missing"}, key)
+            self.assertTrue(all(isinstance(v, str) and v.strip() for v in row.values()), key)
+
+    def test_the_b6_rows_carry_the_corrected_words(self):
+        rows = src.CONTRACTS
+        self.assertIn("about 1/24 degree cells (roughly 4.6 by 3 km in Montana)", rows["history_pictures"]["units"])   # D113(c)
+        self.assertNotIn("4.6 km", rows["history_pictures"]["units"])
+        self.assertIn("Source: 3DEP data courtesy of the U.S. Geological Survey.", rows["terrain_shading"]["missing"])  # D112(c)
+        self.assertIn("Source: National Land Cover Database 2021, U.S. Geological Survey and the Multi-Resolution Land "
+                      "Characteristics Consortium (public domain).", rows["terrain_land_cover"]["missing"])
+        self.assertNotIn("CC0", " ".join(rows["terrain_land_cover"].values()))                                         # D124
+        self.assertIn("USDA Forest Service", rows["base_forests"]["name"])                                            # D114(b)
+        self.assertIn("counsel item 23", rows["base_forests"]["missing"])
+        self.assertIn("iem_watchwarn", rows["history_zone_counts"]["request"])                                        # D113(d)
+        self.assertNotRegex(" ".join(" ".join(rows[k].values()) for k in site.B6_CONTRACTS), r"\blag\b")
+        self.assertIn("valid=2026-10-25T00:00Z", rows["iem_ugcs"]["request"])
+
+    def test_the_held_rows_name_the_hold_and_publish_no_count(self):
+        for key in ("tiger_park", "fema_worship"):                                                                    # D118(b)
+            row = src.CONTRACTS[key]
+            self.assertIn("held", row["name"], key)
+            self.assertNotRegex(" ".join(row.values()), r"\d[\d,]*\s+(?:rows|features|points|places|churches|parks|schools|records)\b",
+                                key)
+        self.assertIn("No count of its rows is published", src.CONTRACTS["fema_worship"]["request"])
+
+    def test_no_b6_row_has_an_em_dash_or_a_forbidden_word(self):
+        for key in site.B6_CONTRACTS:
+            text = " ".join(src.CONTRACTS[key].values())
+            self.assertNotIn(chr(0x2014), text, key)
+            # addresses and file names are names, not claims: the scan reads the words around them
+            words_rules.assert_clean(self, re.sub(r"\S*/\S*|\S*\.(?:gov|com|zip|json|txt|geojson)\S*", " ", text), key)
+
+    def test_the_default_build_has_no_b6_sentence(self):
+        about = page(self.default, "about.html")
+        for words in ("<h3>Base map</h3>", "Highlight recent radar hail", "Source: 3DEP", "NOAA nClimGrid-Daily",
+                      "<h3>Zone counts</h3>", "Source: FEMA copy"):
+            self.assertNotIn(words, about, words)
+
+    def test_the_b6_block_sits_under_the_hail_history_heading(self):
+        text = page(self.loaded, "about.html")
+        self.assertLess(text.index("<h2>Hail history</h2>"), text.index("<h3>Base map</h3>"))
+        self.assertLess(text.index("<h3>Value bubbles</h3>"), text.index("<h2>Five years of weather</h2>"))
+        self.assertNotIn("Relief: ", self.b6_block(self.loaded))            # the labelled legend lines are not the About form
+        self.assertNotIn("Land cover: ", self.b6_block(self.loaded))
+
+    def test_the_hail_history_about_page_gives_each_source_its_credit_line(self):
+        block = self.b6_block(self.loaded)
+        for line in self.CREDITS:
+            self.assertIn(line, block, line)
+
+    def test_the_loaded_page_prints_no_unavailable_sentence_and_the_held_sentences_as_landmarks_words_them(self):     # D136(a)
+        block = self.b6_block(self.loaded)
+        for words in ("could not be loaded in this update", "could not be built in this update"):
+            self.assertNotIn(words, block, words)                            # every source was read: no module sentence prints
+        ctx = site.about_b6_context(json.loads(page(self.loaded, "data/base.json")))
+        for key in [key for key in ctx if key.endswith("unavailable")]:
+            self.assertIsNone(ctx[key], key)
+        self.assertEqual((ctx["held_church"], ctx["held_park"]), (lm.CHURCH_HELD, lm.WORDS["held_parks"]))
+        self.assertIn(lm.CHURCH_HELD, block)                                 # the two held lines are the module's sentences, whole
+        self.assertIn(lm.WORDS["held_parks"], block)
+
+    def test_the_held_kinds_carry_the_modules_reasons_and_no_figure(self):
+        block = self.b6_block(self.loaded)
+        self.assertIn(lm.HELD_REASON, block)                                 # D118(b): held, with the reason
+        self.assertIn(lm.WORDS["held_parks"], block)
+        self.assertIn("Places of worship are held and not shown", block)
+        self.assertIn("No church is drawn or named.", block)
+        self.assertNotRegex(block, r"\d[\d,]*\s+(?:places of worship|churches|church|parks held)\b")
+
+    def test_the_zone_counts_carry_the_newest_warning_words_from_the_counted_rows(self):
+        block = self.b6_block(self.loaded)
+        base = json.loads(page(self.loaded, "data/base.json"))
+        newest = base["history_layers"]["zones"]["newest_warning"]
+        self.assertEqual(newest["date"], "2026-10-10")                       # D125(a): the counted rows, not the joins lag
+        self.assertIn(newest["words"], block)
+        self.assertIn("The newest warning in these counts is dated 2026-10-10.", block)
+        self.assertNotRegex(block, r"\blag\b")
+
+    def test_the_zone_and_picture_windows_come_from_the_store_not_from_fixed_words(self):
+        block = self.b6_block(self.loaded)
+        self.assertIn("from October 17, 2021 to October 16, 2026", block)            # the store's window, in the About form
+        self.assertIn("Days at or above 90 F are counted over July 1, 2021 to June 30, 2026", block)
+        self.assertNotIn("the five seasons in the store", block)
+        bare = self.b6_block(self.bare)
+        # F7 (rule 5): with no heat picture the count sentence says Data unavailable, and reads as no count over the seasons
+        self.assertIn("Data unavailable. The five-year history layers could not be built in this update: the store has no five-year "
+                      "picture files. This is not an all-clear.", bare)     # no picture in the store: the layer's own sentence
+        self.assertNotIn("counted over", bare)
+        self.assertNotIn("the five seasons in the store", bare)
+
+    def test_the_recent_radar_hail_list_and_the_bubble_dash_are_data_statements(self):
+        block = self.b6_block(self.loaded)
+        self.assertEqual(site.SHEET_WORDS["highlight_recent_hail"], "Highlight recent radar hail")     # D110(g): the sheet's name
+        self.assertIn("Recent radar hail", block)                                                     # the heading
+        self.assertIn("The recent radar hail list holds the cells with a radar estimate of 1 inch or more", block)   # F4
+        self.assertIn(f"A dash ({lb.DASH}) means Data unavailable for that cell", block)                 # D110(c)
+        self.assertIn("about 1/24 degree cells (roughly 4.6 by 3 km in Montana)", block)                # D113(c)
+        self.assertNotIn("4.6 km across", block)
+
+    def test_the_b6_block_names_no_browser_behaviour_the_page_does_not_draw_yet(self):     # F4 (D132(a)): the B6-3 pass brings it back
+        block = self.b6_block(self.loaded)
+        for words in ("dark mode", "overlap", "tapped", "clicked", "fades", "zooms 11 and 12", "switch", "Highlight", "tap "):
+            self.assertNotIn(words, block, words)
+
+    def test_an_unloaded_base_map_says_data_unavailable_and_credits_nothing_it_does_not_use(self):
+        block = self.b6_block(self.bare)
+        self.assertIn("Terrain shading is a picture of the land for zooms 5 to 10. Data unavailable. Terrain shading could not be "
+                      "loaded in this update; that is not the same as no terrain shading. This is not an all-clear.", block)
+        self.assertIn("Data unavailable: airports could not be loaded in this update", block)     # the FAA paragraph's kind sentence
+        self.assertNotIn("Source: 3DEP", block)
+        self.assertNotIn("The newest warning in these counts is dated", block)
+        self.assertIn("Data unavailable. The five-year history layers could not be built", block)
+        # F1, F2, F10: no source was read, so no credit line for one (the hospital, FAA or PAD-US source)
+        self.assertNotIn("Protected Areas Database", block)
+        self.assertNotIn("Federal Aviation Administration", block)
+        self.assertNotIn("Source: USGS The National Map, hospitals", block)
+        self.assertIn("Data unavailable: hospitals could not be loaded in this update", block)
+        ctx = site.about_b6_context(json.loads(page(self.bare, "data/base.json")))
+        self.assertIsNone(ctx["relief"])
+        self.assertIsNone(ctx["land_cover"])
+        self.assertIsNone(ctx["newest"])
+        self.assertIsNone(ctx["faa_credit"])
+        self.assertIsNone(ctx["padus_credit"])
+        self.assertIsNone(ctx["hospital_credit"])
+        self.assertTrue(ctx["zones_unavailable"].startswith("Data unavailable."))
+
+    def test_the_water_fallback_says_both_ways_and_the_map_has_no_3d_view(self):
+        block = self.b6_block(self.loaded)
+        self.assertIn("still show at zoom 13 and up", block)                     # D122(b): both true statements
+        self.assertIn(b2.WORDS["water_line_unavailable"], block)                  # T10: the module's words, quoted on the page
+        self.assertIn("The map has no 3D view.", block)                           # D106(b), D107(c)
+        self.assertIn("counts once for each part", block)                         # D125(b): the rows, as the legend says
+
+    def test_the_b6_about_words_pass_the_words_gate_and_carry_no_em_dash(self):
+        for out in (self.loaded, self.bare):
+            block = self.b6_block(out)
+            words_rules.assert_clean(self, block, out.name)
+            self.assertNotIn(chr(0x2014), block, out.name)
+
+    def test_the_usgs_hospital_line_is_printed_when_the_usgs_layer_is_the_source_used(self):       # F1, the USGS case
+        block = self.b6_block(self.loaded)
+        self.assertIn("Hospitals come from the USGS list of hospitals and medical centers.", block)
+        self.assertIn(lm.SOURCES["usgs_hospitals"]["credit"], block)
+        self.assertNotIn("Hospital list copied", block)                                # the copy was not read
+
+    def test_the_zone_counts_say_what_they_use_and_what_the_outlines_are(self):                    # F5
+        block = self.b6_block(self.loaded)
+        self.assertIn("The counts use the counted rows from the store's zone and polygon files.", block)
+        self.assertIn("The zone outlines are the Iowa State archive's ugcs snapshot of 2026-10-25, which gives the 83 public zone "
+                      "outlines only.", block)
+        self.assertNotIn("valid=", block)
+
+    def test_the_zone_outline_line_is_the_history_words_and_its_sentence_is_the_module_words(self):                 # U3
+        ctx = site.about_b6_context(json.loads(page(self.loaded, "data/base.json")))
+        self.assertEqual(ctx["ugcs"], hl.WORDS["about_outlines"])            # the credit words come from history_layers, via build.py
+        self.assertIsNone(ctx["ugcs_unavailable"])
+        self.assertIn(hl.WORDS["about_outlines"], self.b6_block(self.loaded))
+        bare = site.about_b6_context(json.loads(page(self.bare, "data/base.json")))
+        self.assertIsNone(bare["ugcs"])
+        self.assertEqual(bare["ugcs_unavailable"], hl.WORDS["outline_unavailable"])     # no outlines read: the module's sentence
+        self.assertIn(hl.WORDS["outline_unavailable"], self.b6_block(self.bare))
+
+    def test_the_park_names_paragraph_says_the_census_points_are_held_for_counsel(self):           # F6, F9
+        about = page(self.loaded, "about.html")
+        self.assertNotIn("Some park names come from a second public list", about)
+        self.assertIn(lm.WORDS["held_parks"], self.b6_block(self.loaded))     # the module's two sentences, as they are (D136(a))
+        self.assertNotIn("Source: U.S. Census Bureau, TIGER/Line 2026 area landmarks.", about)
+
+    def test_the_held_sources_are_named_as_held_with_their_reason_and_no_source_line(self):        # F9 (D118(b))
+        block = self.b6_block(self.loaded)
+        self.assertNotIn("Source: FEMA copy", page(self.loaded, "about.html"))
+        self.assertIn("Places of worship are held and not shown: " + lm.HELD_REASON + ".", block)
+        self.assertIn("No church is drawn or named.", block)
+
+    def test_the_nclimgrid_sentence_quotes_the_file_attribute_and_asks_for_attribution(self):      # F8
+        block = self.b6_block(self.loaded)
+        sentence = re.search(r"Source: NOAA nClimGrid-Daily grid estimates \(([^)]*)\)\.", block)
+        self.assertIsNotNone(sentence)
+        self.assertEqual(sentence.group(1), 'file attribute "license = no restrictions"; attribution requested')
+        self.assertNotIn("NOAA declares", block)
+
+    def test_one_pad_us_credit_line_on_the_page(self):                                              # F10
+        # the page's data-sources table names the layer in its rows too; the credit lines are the B6 sentences
+        self.assertEqual(self.b6_block(self.loaded).count("Protected Areas Database of the United States (PAD-US) 4.1"), 1)
+
+
+class B6CreditsFollowTheStore(unittest.TestCase):
+    """T5 (D134(b)): every B6 credit line prints only for a source the store read, from the index. In this synthetic store one
+    terrain layer (land cover), one vector source (the forest boundaries, edw), one landmark source (the fire and EMS list,
+    usgs_fire) and the recent cells failed, and the place population file is not listed at all. Each failed or unlisted
+    source's line does not print, the part's own sentence stands, and every other line prints as before."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    LAND = "Source: National Land Cover Database 2021"
+    FOREST = "Source: USDA Forest Service, forest boundaries (national forests)."
+    FIRE = "Source: USGS The National Map, fire and EMS stations, October 2026 refresh."
+    PL = "Source: U.S. Census Bureau, 2020 Census, Public Law 94-171 counts (place populations)."
+    MRMS = "Source: NOAA MRMS MESH radar estimates, NOAA Open Data on AWS."
+
+    @classmethod
+    def setUpClass(cls):
+        terrain = json.loads(json.dumps(B6_TERRAIN))
+        terrain["state"] = "partial"
+        terrain["layers"]["l"] = {"state": "unavailable", "path": "hail/base/l/{z}/{x}/{y}.png", "missing": [], "files": 0,
+                                  "problem": "test: the land cover layer failed"}
+        vector = json.loads(json.dumps(B6_VECTOR))
+        vector["sources"]["edw"] = {"state": "failed", "files": 1, "fetched": 0, "cache": 0, "failed": 1, "bytes": 0,
+                                    "reasons": ["test: the forest service failed"]}
+        del vector["sources"]["census_pl2020"]                                     # not listed: the place counts were not read
+        landmarks = json.loads(json.dumps(B6_LANDMARKS))
+        landmarks["kinds"]["fire"] = {"code": "f", "state": "unavailable", "held": False, "sources": ["usgs_fire"],
+                                      "count": None, "reason": "test"}
+        landmarks["sources"]["usgs_fire"] = {"kind": "fire", "label": "test fire and EMS list", "state": "failed", "reason": "test"}
+        # the recent cells failed, and the index records the reason for that part in its failures (D136(a))
+        recent = dict(B6_RECENT, state="unavailable", problem=hl.WORDS["unavailable"].format(
+            what="The recent radar hail list", reason="the recent cells test failed"))
+        history = dict(B6_HISTORY, failures=[{"part": "recent", "reason": "the recent cells test failed"}])
+        cls.store = Path(tempfile.mkdtemp(prefix="hailwatch-b6-credits-store-"))
+        cls.addClassCleanup(shutil.rmtree, cls.store, True)
+        b6_store(cls.store, terrain=terrain, landmarks=landmarks, vector=vector, recent=recent, history_block=history)
+        cls.out = Path(tempfile.mkdtemp(prefix="hailwatch-b6-credits-"))
+        cls.addClassCleanup(shutil.rmtree, cls.out, True)
+        site.build(cls.out, None, cls.NOW, sample=True, hail_history=True, hail_store_path=str(cls.store))
+
+    def block(self) -> str:
+        text = page(self.out, "about.html")
+        start, end = text.index("<h3>Base map</h3>"), text.index("<h2>Five years of weather</h2>")
+        return " ".join(html_text(text[start:end]).split())
+
+    def test_a_failed_or_unlisted_source_prints_no_credit_line_and_its_part_keeps_its_sentence(self):
+        block = self.block()
+        for line in (self.LAND, self.FOREST, self.FIRE, self.PL):
+            self.assertNotIn(line, block, line)
+        # each part that did not load keeps the module's own sentence, with its part name and the reason the index recorded
+        self.assertIn("It covers zooms 5 to 10. " + tr.WORDS["part_unavailable"].format(**tr.LAYER_WORDS["l"]), block)   # land cover
+        self.assertIn(b2.WORDS["part_unavailable"].format(Part=b2.PART_WORDS["forest"][0], one=b2.PART_WORDS["forest"][1]), block)
+        self.assertIn(b2.WORDS["part_unavailable"].format(Part=b2.PART_WORDS["place"][0], one=b2.PART_WORDS["place"][1]), block)
+        self.assertIn(lm.WORDS["kind_unavailable"].format(plural=lm.KIND_PLURAL["fire"]), block)
+        self.assertIn(hl.WORDS["unavailable"].format(what="The recent radar hail list", reason="the recent cells test failed"), block)
+        self.assertIn("Fire and EMS stations are points from the USGS list of fire and EMS stations.", block)        # its description
+        self.assertEqual(block.count(self.MRMS), 1)              # the five-year pictures' line; the recent cells' line is gone
+
+    def test_every_other_line_prints_for_the_source_it_names(self):
+        block = self.block()
+        for line in ("Source: 3DEP data courtesy of the U.S. Geological Survey (data as of 2026-09-28).",
+                     b2.CREDIT[0], b2.CREDIT[4], b2.CREDIT[5], b2.CREDIT[6],
+                     lm.SOURCES["nces_public"]["credit"], lm.SOURCES["nces_private"]["credit"],
+                     lm.SOURCES["usgs_hospitals"]["credit"],
+                     "Source: National Weather Service warnings, through the Iowa Environmental Mesonet archive."):
+            self.assertIn(line, block, line)
+
+    def test_the_data_file_and_the_about_context_name_only_the_sources_read(self):
+        data = json.loads(page(self.out, "data/base.json"))
+        base = data["base"]
+        self.assertFalse(any(line.startswith("Land cover: ") for line in base["credit"]), base["credit"])
+        self.assertNotIn(lm.SOURCES["usgs_fire"]["credit"], base["credit"])
+        self.assertEqual(base["vector"]["credit"], [b2.CREDIT[0], b2.CREDIT[3], b2.CREDIT[4], b2.CREDIT[5], b2.CREDIT[6]])
+        ctx = site.about_b6_context(data)
+        self.assertIsNone(ctx["land_cover"])
+        self.assertEqual(ctx["land_cover_unavailable"], tr.WORDS["part_unavailable"].format(**tr.LAYER_WORDS["l"]))
+        self.assertIsNone(ctx["relief_unavailable"])
+        self.assertEqual(ctx["forests_unavailable"],
+                         b2.WORDS["part_unavailable"].format(Part=b2.PART_WORDS["forest"][0], one=b2.PART_WORDS["forest"][1]))
+        self.assertTrue(ctx["relief"].startswith("Source: 3DEP"), ctx["relief"])
+        self.assertIsNone(ctx["forests"])
+        self.assertIsNone(ctx["places_2020"])
+        self.assertIsNone(ctx["fire_ems"])
+        self.assertEqual(ctx["tiger"], b2.CREDIT[0])
+        self.assertTrue(ctx["mrms_pictures"])
+        self.assertFalse(ctx["mrms_recent"])
+        self.assertTrue(ctx["iem_warnings"])
+        self.assertTrue(ctx["nclimgrid"])
+        self.assertEqual(ctx["ugcs"], hl.WORDS["about_outlines"])
+        data["history_layers"]["pictures"]["heat90"]["state"] = "unavailable"        # the picture failed: no nClimGrid line
+        data["history_layers"]["outlines"]["state"] = "failed"                       # the outlines failed: no ugcs line
+        ctx = site.about_b6_context(data)
+        self.assertFalse(ctx["nclimgrid"])
+        self.assertIsNone(ctx["ugcs"])
+        self.assertEqual(ctx["ugcs_unavailable"], hl.WORDS["outline_unavailable"])
+        self.assertEqual(ctx["water_line"], site.SHEET_WORDS["water_line_unavailable"])
+
+    def test_the_read_rule_names_a_line_for_a_read_source_and_none_for_the_rest(self):                  # T5 (unit)
+        rows = {"tiger_place": {"state": "partial"}, "edw": {"state": "failed"}, "3dep": {"state": "cache"},
+                "nhd_large_areas": {"state": "fetched"}, "census_pl2020": {"state": "unknown"}}
+        self.assertEqual(site.read_vector_lines(rows), [b2.CREDIT[0], b2.CREDIT[4], b2.CREDIT[6]])
+        self.assertEqual(site.read_vector_lines(None), [])
+        terrain = {"layers": {"h": {"state": "loaded"}, "l": {"state": "unavailable"}},
+                   "credits": {"shading": "Relief: test shading", "land_cover": "Land cover: test land cover"}}
+        self.assertEqual(site.terrain_line(terrain, "h"), "Relief: test shading")
+        self.assertIsNone(site.terrain_line(terrain, "l"))
+        self.assertIsNone(site.terrain_line({"layers": {"h": {"state": "loaded"}}, "credits": {"shading": "Data unavailable"}}, "h"))
+
+
+class B6LandmarkCredits(unittest.TestCase):
+    """F1, F2, F9, F10 (D130(b)): the About page prints the credit line of the hospital source the store used and no other line
+    for a source that was not read; the FAA and PAD-US lines print only when their source was read, each with its own date or
+    Data unavailable (never 'date not recorded'); a held source has no source line; and the page has one PAD-US line. Two
+    synthetic stores: a state licensure copy used (the USGS layer answered with no Montana rows), and a store where no hospital,
+    airport or park source was read."""
+
+    NOW = datetime(2026, 10, 19, 12, 0, tzinfo=UTC)
+    USGS_LINE = lm.SOURCES["usgs_hospitals"]["credit"]
+    COPY_LINE = ("Source: Hospital list copied from the state licensure list (copy by the Homeland Infrastructure "
+                 "Foundation-Level Data), layer last edited 2026-10-20.")
+    FAA_LINE = ("Source: Federal Aviation Administration, National Airspace System Resources airport data, cycle effective "
+                "2026-10-01.")
+    PAD_LINE = ("Source: USGS Gap Analysis Project, Protected Areas Database of the United States (PAD-US) 4.1, local parks, "
+                "Data unavailable.")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.copy = Path(tempfile.mkdtemp(prefix="hailwatch-b6-copy-about-"))
+        cls.addClassCleanup(shutil.rmtree, cls.copy, True)
+        store = Path(tempfile.mkdtemp(prefix="hailwatch-b6-copy-store-"))
+        cls.addClassCleanup(shutil.rmtree, store, True)
+        b6_store(store, landmarks=HIFLD_LANDMARKS)
+        site.build(cls.copy, None, cls.NOW, sample=True, hail_history=True, hail_store_path=str(store))
+        cls.none = Path(tempfile.mkdtemp(prefix="hailwatch-b6-none-about-"))
+        cls.addClassCleanup(shutil.rmtree, cls.none, True)
+        empty = Path(tempfile.mkdtemp(prefix="hailwatch-b6-none-store-"))
+        cls.addClassCleanup(shutil.rmtree, empty, True)
+        vector = json.loads(json.dumps(B6_VECTOR))                                 # the PAD-US outlines failed too: neither source
+        vector["sources"]["padus"] = {"state": "failed", "files": 1, "fetched": 0, "cache": 0, "failed": 1, "bytes": 0,
+                                      "reasons": ["test: the protected areas service failed"]}
+        b6_store(empty, landmarks=NONE_LANDMARKS, vector=vector)
+        site.build(cls.none, None, cls.NOW, sample=True, hail_history=True, hail_store_path=str(empty))
+
+    def test_the_copy_line_is_the_hospital_source_the_store_used_and_no_usgs_line_is_printed(self):      # F1
+        block = B6AboutAndSources.b6_block(self.copy)
+        self.assertIn(self.COPY_LINE, block)
+        self.assertIn("Hospitals come from a copy of the state licensure list, because the USGS list named no Montana hospital "
+                      "in this update.", block)
+        self.assertNotIn(self.USGS_LINE, block)                                  # the USGS layer answered, with no Montana row
+        self.assertIn("If that list names no Montana hospital, a copy of the state licensure list is read instead, and that copy "
+                      "carries its own credit.", block)                          # the sentence that explains the rule stays
+
+    def test_both_school_paragraphs_print_the_kind_sentence_when_the_store_lists_no_school_kind(self):             # D136(a)
+        block = B6AboutAndSources.b6_block(self.copy)                             # this store has no school kind
+        self.assertEqual(block.count(lm.WORDS["kind_unavailable"].format(plural=lm.KIND_PLURAL["school"])), 2)
+
+    def test_no_hospital_line_when_no_hospital_source_was_read(self):                                    # F1
+        block = B6AboutAndSources.b6_block(self.none)
+        self.assertIn("Data unavailable: hospitals could not be loaded in this update; that is not the same as no hospitals.", block)
+        self.assertNotIn(self.USGS_LINE, block)
+        self.assertNotIn(self.COPY_LINE, block)
+        self.assertIn("If that list names no Montana hospital, a copy of the state licensure list is read instead", block)
+
+    def test_the_faa_line_takes_the_cycle_date_and_the_pad_us_line_says_data_unavailable_for_a_missing_date(self):     # F2
+        block = B6AboutAndSources.b6_block(self.copy)
+        self.assertIn(self.FAA_LINE, block)
+        self.assertIn(self.PAD_LINE, block)                                      # the index's layer has no as_of
+
+    def test_no_faa_or_pad_us_line_when_neither_source_was_read(self):                                   # F1's rule, for each line
+        block = B6AboutAndSources.b6_block(self.none)                            # the B6 sentences (the table names the layers too)
+        self.assertNotIn("Federal Aviation Administration", block)
+        self.assertNotIn("Protected Areas Database of the United States", block)
+        self.assertIn("Only public-use airports that are operational are shown. Heliports are not shown.", block)
+        self.assertIn(lm.WORDS["kind_unavailable"].format(plural=lm.KIND_PLURAL["airport"]), block)   # D136(a): the airports' sentence
+        self.assertIn(lm.WORDS["kind_unavailable"].format(plural=lm.KIND_PLURAL["park"]), block)       # the local parks' sentence
+        self.assertIn(b2.WORDS["part_unavailable"].format(Part=b2.PART_WORDS["park"][0], one=b2.PART_WORDS["park"][1]), block)
+
+    def test_one_pad_us_line_on_the_page_and_no_source_line_for_a_held_source(self):                      # F9, F10
+        block = B6AboutAndSources.b6_block(self.copy)
+        self.assertEqual(block.count("Protected Areas Database of the United States (PAD-US) 4.1"), 1)
+        about = page(self.copy, "about.html")
+        self.assertNotIn("Source: FEMA copy", about)
+        self.assertNotIn("Source: U.S. Census Bureau, TIGER/Line 2026 area landmarks.", about)
+
+    def test_date_not_recorded_appears_nowhere_on_the_page_or_in_the_data(self):                          # F2
+        for out in (self.copy, self.none):
+            self.assertNotIn("not recorded", page(out, "about.html"), out.name)
+            self.assertNotIn("not recorded", page(out, "data/base.json"), out.name)
+
+    def test_the_credit_builder_takes_the_index_date_and_says_data_unavailable_without_one(self):        # F2 (unit)
+        self.assertEqual(site.landmark_line("faa_nasr", "2026-10-01"), self.FAA_LINE)
+        self.assertEqual(site.landmark_line("padus_local", None), self.PAD_LINE)
+        self.assertEqual(site.landmark_line("padus_local", "2026-10-20"), "Source: USGS Gap Analysis Project, Protected Areas "
+                         "Database of the United States (PAD-US) 4.1, local parks, layer last edited 2026-10-20.")
+        self.assertEqual(site.landmark_line("usgs_hospitals", None), self.USGS_LINE)     # no date slot: the module's own line
+        for key in ("faa_nasr", "padus_local", "hifld_hospitals"):
+            self.assertNotIn("not recorded", site.landmark_line(key, None), key)
+
+    def test_the_hospital_source_is_named_only_when_the_store_used_it_for_each_case(self):                  # F1 (unit)
+        usgs = site._landmark_words({"landmarks": B6_LANDMARKS}, None)
+        self.assertEqual(usgs["hospital"], {"state": "loaded", "source": "usgs_hospitals", "sentence": lm.WORDS["hospital_usgs"],
+                                            "credit": self.USGS_LINE})
+        self.assertNotIn(self.COPY_LINE, usgs["sources"])
+        copy = site._landmark_words({"landmarks": HIFLD_LANDMARKS}, None)
+        self.assertEqual(copy["hospital"], {"state": "loaded", "source": "hifld_hospitals", "sentence": lm.WORDS["hospital_hifld"],
+                                            "credit": self.COPY_LINE})
+        self.assertNotIn(self.USGS_LINE, copy["sources"])                        # read, with no row kept: never named
+        none = site._landmark_words({"landmarks": NONE_LANDMARKS}, None)
+        self.assertEqual(none["hospital"]["state"], "unavailable")
+        self.assertIsNone(none["hospital"]["source"])
+        self.assertIsNone(none["hospital"]["credit"])
+        self.assertEqual(none["hospital"]["sentence"], lm.WORDS["kind_unavailable"].format(plural="hospitals"))
+        # a copy the kind names but that kept no row is not the source used
+        kept_none = json.loads(json.dumps(HIFLD_LANDMARKS))
+        kept_none["sources"]["hifld_hospitals"]["kept"] = 0
+        self.assertIsNone(site._landmark_words({"landmarks": kept_none}, None)["hospital"]["source"])
+        nothing = site._landmark_words(None, None)
+        self.assertEqual((nothing["sources"], nothing["credits"]), ([], {"faa_nasr": None, "padus": None}))
+
+    def test_the_pad_us_line_follows_either_part_that_read_the_layer(self):                               # F10 (unit)
+        vector_read = {"sources": {"padus": {"state": "fetched", "files": 1, "fetched": 1, "cache": 0, "failed": 0}}}
+        only_vector = site._landmark_words({"landmarks": NONE_LANDMARKS}, vector_read)
+        self.assertEqual(only_vector["credits"]["padus"], self.PAD_LINE)         # the park outlines were read: one line
+        vector_failed = {"sources": {"padus": {"state": "failed", "files": 1, "fetched": 0, "cache": 0, "failed": 1}}}
+        self.assertIsNone(site._landmark_words({"landmarks": NONE_LANDMARKS}, vector_failed)["credits"]["padus"])
+
+    def test_a_source_row_with_no_as_of_has_no_date_and_its_count_is_never_read_as_one(self):            # F12 (unit)
+        block = {"sources": {"tiger_aiannh": {"state": "cache", "files": 1, "fetched": 1, "cache": 0, "failed": 0, "bytes": 9,
+                                              "reasons": []},
+                             "shown": {"state": "loaded", "as_of": "2026-09-28"},
+                             "fetched_only": {"state": "loaded", "fetched": "2026-10-20T12:00:00Z"}}}
+        self.assertEqual(site._source_dates(block), {"tiger_aiannh": {"state": "cache", "as_of": site.NO_DATE},
+                                                     "shown": {"state": "loaded", "as_of": "2026-09-28"},
+                                                     "fetched_only": {"state": "loaded", "as_of": site.NO_DATE}})
+        self.assertEqual(site._source_dates(None), {})
 
 
 if __name__ == "__main__":

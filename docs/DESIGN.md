@@ -338,6 +338,8 @@ move; the hatching note itself steps aside while a town's bubble or name is unde
 a pan or My location, or on a screen too short for Montana), and the legend's keys still name the
 hatching. Names may run off the screen's edge, as in the reference.
 
+**B6 amendment to the basemap (D115, 2026-10-26).** For the B6 map the white land rule changes by zoom band. At the street zooms (13 and up) the land stays paper white, as above. At the region zooms (5 to 10) the land carries a light land cover tint and relief shading under the field-sheet lines; both fade through zooms 11 and 12 and are off from zoom 13. Both are hidden in dark mode, where the charcoal paper stands alone, until a dark palette is designed and measured for contrast. Both default to on, and the owner can switch either off. Python builds the tiles and the site serves them, so "no tile service" above still holds. The colours are the picture palettes in section 13.4.
+
 **Imagery base map (opt-in, D32).** The Layers menu's Base map group switches the white map for USGS aerial
 imagery with roads and names (The National Map, ImageryTopo). While it is on, the vector land, water, roads, county
 lines, place dots and names are hidden and the USGS tiles show in their place. The Montana outline and the state and
@@ -886,3 +888,187 @@ The roof section has 23 lines, one per indicator (for example "Radar estimate: {
 **Follow-up.** The picture status sentences in `map.js` ("No ... picture in this update" and the failed-picture sentence) move into `map.json` words in a later change, with the D41 sentence (D87(c), ROADMAP); this page does not change them now.
 
 *Why:* the owner asked for every kind of weather at a place, in one view, in words a roofer reads without decoding. The table puts five seasons on one screen, with a unit and a kind word on every number, so the answer comes before the detail. A missing value is said, not written as a zero, because a zero that means "not measured" would read as a clear season. The detail follows the same order everywhere, so a reader who has learned one place can read the next.
+
+## 13. The map's own cartography, the options sheet and the value bubbles (B6)
+
+**Frame.** The owner dropped the reference map's base and kept its behaviour: an options sheet, a value bubble on each house, and a map that carries terrain, water, forests, reservations, parks, landmarks, shields and names at every zoom (D107). The map stays Leaflet, with site files that Python builds from public-domain sources only, served by the site (the opt-in USGS imagery stays the one exception, D32). The Python products are built on the B6 branch (P1 to P4, D111 to D127). The browser that draws these layers and the sheet is the next stage (B6-3); until it lands, the map page keeps its present white map and its present layer menu.
+
+**Users and moments.** A roofer on a phone, looking at a block of houses, who wants the cell's weather figure on each house and the parks, schools and water names around it. The owner, checking which reservation, forest or landmark lies near a job.
+
+**Principles specific to B6.**
+1. *Our own cartography.* Every layer comes from a source with its credit line, a CONTRACTS row and an About sentence (D107(a), D109(e)). The sources are public-domain works, or sources whose terms counsel still reads (counsel items 21 to 24 in ROADMAP). A source whose terms are held is built and counted, but not shown (D118(b)).
+2. *Missing is not zero.* A bubble with no stored value shows "--", and its legend says Data unavailable (D110(c)). A held kind shows "held" with its reason and no count. An unbuilt band D tile is said both ways (D122(b)).
+3. *Python writes every word.* The browser prints only strings from map.json or from data/base.json (D29, D41, D125(d)).
+4. *Budgets first.* Nothing is added to the first-paint files, and every new layer loads by zoom band or by tile (D109(d)).
+
+**13.1 Store layout.** The B6 parts are `hail/base/` (with `hail/history/` and `hail/recent/`) under the store root. The site build copies them with the other folders. Every file is listed in `hail/manifest.json`, and `hail.check_manifest` runs on the assembled store, never on a partial test store (D125(g)).
+
+| File | Holds | Format |
+|---|---|---|
+| `hail/base/h/<z>/<x>/<y>.jpg` | Hillshade tiles, Web Mercator, 256 px, zooms 5 to 10, the 881 tiles that touch the Montana outline | Grey JPEG at quality 80 |
+| `hail/base/l/<z>/<x>/<y>.png` | Land cover tint tiles, the same tile set | Palette PNG; index 0 transparent |
+| `hail/base/v/a.json` | Band A, zooms 5 to 7, one file | `hail-base-vector-v1` |
+| `hail/base/v/b/<cell>.json` | Band B, zooms 8 to 10, 2 by 2 degree cells named by the south-west corner (n46w114) | `hail-base-vector-v1` |
+| `hail/base/v/c/<cell>.json` | Band C, zooms 11 and 12, 1 by 1 degree cells | `hail-base-vector-v1` |
+| `hail/base/w/<tile>.json` | Band D, zooms 13 to 18, one shard per B1 tile (for example r0079_c0199), only for tiles built | `hail-base-water-v1` |
+| `hail/base/v/zones.json` | Zone outlines for the zone counts, simplified at 150 m | `hail-zone-outlines-v1` |
+| `hail/base/p/<tile>.json` | Landmark points per B1 tile: `[lon, lat, kind code, name, source key]`; kind codes s, h, a, f, p and c | `hail-landmarks-v1` |
+| `hail/base/peaks.json`, `places.json` | Summits with heights in metres and feet, ranked; places with the 2020 count, a rank and a minimum zoom | `hail-base-peaks-v1`, `hail-base-places-v1` |
+| `hail/base/index.json` | The shared base index, with the blocks `terrain`, `vector` and `landmarks`; each writer keeps the others | `"f": "hail-base-index-v1"`; a foreign document is refused, never replaced |
+| `hail/history/hail1.png`, `heat90.png` | Five-year pictures on the picture bounds (43.0 to 50.5 N, 118.5 to 101.0 W) | Palette PNG with alpha; sidecar `hail/history/index.json` (`hail-history-pictures-v1`) |
+| `hail/history/zones.json` | Counts for eight measures per public forecast zone (103 zones), and `newest_warning` | `hail-zone-counts-v1` |
+| `hail/recent/cells.json` | Cells with a radar estimate of 1 inch or more in the last 30 days, with their days | `hail-recent-v1` |
+| `hail/b/<shard>.json` | Building shards gain `k` (the zoom 17 and zoom 18 flags of each outline) and `kv` (the cell's value text) | `hail-buildings-v1` |
+| `hail/index.json` | The blocks `base` (a mirror), `history_layers`, `recent` and `labels` | |
+| `data/map.json`, `data/base.json` | The first-paint pointer (tile URL templates, zooms, state, file name); the second data file (words, credits, legends, bands, shard pattern, budgets), named from map.json with its as_of | D82(a), D125(d) |
+
+The caches sit outside the store, in the git-ignored `b6-cache/` folder: `b6-cache/terrain`, `b6-cache/basemap2`, `b6-cache/landmarks` and `b6-cache/zone-outlines`. The monthly job refreshes them; the terrain step passes `--refresh-descriptions` (D128(f)): it reads both service descriptions again, a valid cached tile is used whatever its age, and a request has a 60-second timeout. The daily job rebuilds the terrain and the base map vectors offline from those caches, with no request, then writes the landmarks, the pictures and the zone outlines, and the bubble labels after the outline steps. Each writer runs after the one before, on the same shared index. The buildings verify runs before the labels pass (D125(f)). When the labels pass does not run, its block is set unavailable, because the outline step has rewritten the shards without their flags.
+
+**13.2 Bands and zoom rules (the base map vectors).**
+
+| Band | Zooms | Unit | Budget (gzip) | Holds |
+|---|---|---|---|---|
+| A | 5 to 7 | One file | 150,000 bytes | Reservations, forests, national park land, interstates, lakes of 20 km2 and up (100 km2 and up at zoom 5), and rivers of 3,000 km2 and up (zooms 5 and 6) |
+| B | 8 to 10 | 2 by 2 degree cell (21 cells touch Montana) | 100,000 bytes per cell | State parks and recreation areas, lakes from 0.2 to 20 km2, rivers from 100 to 3,000 km2 of drainage, US and state routes |
+| C | 11 and 12 | 1 by 1 degree cell (78 cells) | 60,000 bytes per cell | Lakes from 0.02 to 0.2 km2, and the parks that collapse in band B |
+| D | 13 to 18 | One shard per B1 tile | 30,000 bytes per shard | Named lakes and rivers from the large-scale layers, and local parks (LP and LREC from zoom 13) |
+
+The minimum zooms, by feature:
+- Lakes, area in km2: 100 at zoom 5; 20 at zoom 7; 2 at zoom 8; 0.2 at zoom 9; 0.02 at zoom 11.
+- Rivers, drainage area in km2: 10,000 at zoom 5; 3,000 at zoom 6; 300 at zoom 8; 100 at zoom 9. No river starts at zoom 7.
+- Parks, by PAD-US designation: national park 5; national monument and national recreation area 7; state park, state recreation area and recreation area 9; local park and local recreation area 13.
+- Route shields: interstate 7; US 8; state 9. A route-like local name ("FAS 533") carries no shield.
+- Places, by 2020 population: 50,000 and up at zoom 5; 10,000 at zoom 7; 2,000 at zoom 8; 500 at zoom 9; the rest at zoom 10.
+- Summits: 25 km apart from zoom 8, 10 km apart from zoom 10, and the rest from zoom 12.
+- Tolerances (Douglas-Peucker): 500 m in band A, 150 m in B, 50 m in C, none in D. A feature that collapses moves to the next finer band, with its minimum zoom raised to that band's first zoom; one that collapses in band D is dropped and counted (D122(c)). Water wholly in another state is not drawn, and a river that crosses the border is kept whole.
+
+**13.3 Budgets.**
+
+| Part | Budget | Measured on the B6 branch |
+|---|---|---|
+| Terrain tiles, zooms 5 to 10, both layers together | under 20,000,000 bytes (D109(d), P1) | 14,349,318 bytes in 881 tiles per layer |
+| Band A, zooms 5 to 7, one file | under 150,000 bytes gzip | 134,818 bytes gzip, 139 features |
+| Band B, zooms 8 to 10, each cell | under 100,000 bytes gzip | 543,500 bytes gzip in 21 cells; largest 57,545 bytes |
+| Band C, zooms 11 and 12, each cell | under 60,000 bytes gzip | 109,088 bytes gzip in 78 cells; largest 10,745 bytes |
+| Band D, zooms 13 to 18, each shard | under 30,000 bytes gzip | 142,321 bytes gzip in 20 shards, built from 4,597 tiles; largest 20,741 bytes |
+| Landmark shard, each tile | under 20,000 bytes gzip | 2,159 points in 537 shards; 106,817 bytes gzip in all; largest 1,702 bytes |
+| Building shard, each file | under 100,000 bytes gzip (D66) | largest 45,053 bytes gzip, after the flags |
+| Building shard split threshold | 250,000 bytes raw (D26); 36 shards over it are accepted (D112(j)) | largest 262,318 bytes raw |
+| Five-year hail picture, `hail1.png` | none set | 62,458 bytes; 1,750 by 1,097 px |
+| Five-year heat picture, `heat90.png` | none set | 4,714 bytes; 420 by 263 px |
+| Zone counts, `hail/history/zones.json` | none set | 25,294 bytes raw; 3,369 bytes gzip |
+| Zone outlines, `hail/base/v/zones.json` | none set | 162,666 bytes raw; 28,031 bytes gzip; 83 zones |
+| Recent radar hail, `hail/recent/cells.json` | none set | 1,718 bytes; 64 cells |
+| First paint, `data/map.json` | 163,840 bytes raw (D82(a)) | 128,522 bytes raw for the whole file on the history-flag build; 35,318 bytes under the gate |
+| Second data file, `data/base.json` | within the page budget (D125(d)) | 30,861 bytes raw for the whole file |
+| Phone view, zoom 15 over Billings | 700,000 bytes gzip (D82(b)) | 681,569 bytes gzip on 2026-10-25, before the B6 layers are drawn |
+| Monthly terrain step | 25-minute cap (1,500 s), with `--refresh-descriptions` (D128(f)); 60 s request timeout (D112(b), D117(a)) | cold run 1,175 s for 1,818 requests |
+
+The first two rows are the sizes the B6 integrator measured (D131). The earlier figures of 139 and 4,029 bytes were the P4 group sums, not the sizes of these files. The every-flag build, with `--hail-addresses`, is 397,716 bytes raw; it is recorded and not gated (D131(a)).
+
+**13.4 Picture palettes.** The palettes are defined once, in Python, as named constants, and are listed here beside the radar palettes in section 11 (D115(b)). The hex values are the constants' values.
+
+`TINT` in `website/terrain.py` (the land cover tint; index 0 is transparent):
+
+| Index | Class | Hex | NLCD 2021 codes |
+|---|---|---|---|
+| 1 | forest | `#cde2c3` | 41, 42, 43 |
+| 2 | shrub and grass | `#e6ecd6` | 52, 71, 90, 95 |
+| 3 | developed | `#f1ead6` | 21, 22, 23, 24 |
+| 4 | crop | `#f2efd0` | 81, 82 |
+| 5 | water | `#b9d9f2` | 11 |
+| 0 | none (transparent) | none | 0, 12, 31, 32, 51, 72, 73, 74, and 255 outside the coverage |
+
+The relief has no palette. `RENDER_RULE` in `website/terrain.py` is the service's "Hillshade Gray" rule: 8-bit grey from 0 to 255, larger is brighter, kept as the service sends it.
+
+`HAIL_CLASSES` in `website/history_layers.py` (the hail picture, days; `HAIL_ALPHA` 217, about 0.85 of 255; index 0 transparent):
+
+| Class | Words | Hex |
+|---|---|---|
+| 1 | 1 day | `#f9d65c` |
+| 2 | 2 days | `#f5a524` |
+| 3 | 3 to 5 days | `#e8600f` |
+| 4 | 6 days or more | `#d1283b` |
+
+`HEAT_CLASSES` in `website/history_layers.py` (the heat picture, days at or above 90 F; `HEAT_ALPHA` 209, about 0.82 of 255; index 0 transparent):
+
+| Class | Words | Hex |
+|---|---|---|
+| 1 | 0 to 24 days | `#fff3c4` |
+| 2 | 25 to 49 days | `#fde08a` |
+| 3 | 50 to 74 days | `#fbb35a` |
+| 4 | 75 to 99 days | `#f2843a` |
+| 5 | 100 to 124 days | `#d6452f` |
+| 6 | 125 days or more | `#9e1c2b` |
+
+The bubble has no colour constant. Its glyph is `DASH` ("--") and its missing-value text is `UNAVAILABLE_TEXT` ("Data unavailable") in `website/labels.py`; the bubble's colours are style.css roles, set with the browser (B6-3).
+
+**13.5 Value bubbles.** Rule A is built and is the default; rule B is the owner's alternative.
+- *Where.* Zooms 17 and 18 only. Each building outline carries two flags, `k` (zoom 17 and zoom 18), and the shard header carries `kv`, the value text of each radar cell.
+- *Cluster.* The outlines of one shard that lie in the same radar cell, and within 55.75 px (the measured width of the label "0.38 in" in the site font, `labels.cluster_px`) of the cluster's first outline, form one cluster. The anchor is the outline nearest the cluster's middle.
+- *Placement.* Bubbles are placed greedily, by value (largest first) and then by position. A bubble is skipped when its box overlaps a placed box by more than 2 px in both directions. It sits above its dot only, because a flag carries no side.
+- *Value.* The largest radar estimate of the cell over the five seasons, to two decimals with "in" ("0.39 in"). A cell with no stored estimate of 0.25 in or more shows the "--" glyph, with "Data unavailable" as its kv text. The browser draws bubbles only when `labels.state` is "loaded".
+- *Deterministic.* The same input gives the same flags; a test runs the pass twice.
+- *Statewide (read only; 5,615 shards and 918,052 outlines).* 483,008 bubbles at zoom 17, of which 29,483 are dashes, covering 95.25 percent of the outlines; 732,531 at zoom 18, of which 42,278 are dashes, covering 98.78 percent. The rest are skipped for overlap (4.75 and 1.22 percent of outlines; D112(j)). The pass took 104.3 s, and it added 247.0 bytes gzip per shard on average.
+- *Rule B (the alternative, not built).* One bubble per house, with the same skip rule. In the block view it labels 91 of 248 houses at zoom 17 and 52 of 69 at zoom 18 (D108(d)). Choosing it changes `website/labels.py`.
+- *Below side (not built).* A bubble below its dot needs a side in the flag (0 none, 1 above, 2 below), a format change; the owner decides (D116(i)).
+
+**13.6 The options sheet (D108, with D110 applied).** The sheet replaces the layer menu. The mock and its spec sit in the B6 design folder, outside the repository; this section is the build's copy of the spec, with the D110 wording, the D112(f) fire chip and the D118(b) held state applied. `toggleLayers` becomes `toggleOptions`.
+
+*What it shows, top to bottom.*
+1. A header: a layers icon, "Map options", and a close button (44 px).
+2. Base map: two labelled cards, Map (chosen) and Imagery.
+3. Live weather, one at a time: Precipitation, Temperature, Wind gusts, Hail, last hour, and Hail, last 24 hours.
+4. Five-year history, one at a time, under the sub-line "Past records from the last five years. Not a forecast.": Hail, Heat, Wind, Flood, and Fire and Smoke, marked Coming.
+5. Landmarks, any number at once, under the sub-line "Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named under About.": Schools, Parks, Hospitals, Airports, Fire and EMS stations (added from D112(f); the mock omitted it), and Churches, held.
+6. Switches, each with a 14 px description: Points of interest ("Landmark dots and names, for the kinds chosen above"); Highlight recent radar hail ("Radar estimate of 1 in or more, last 30 days"); Warnings ("NWS outlines"); Storm reports ("Storm Prediction Center (SPC), last 3 days").
+7. Reset, with the line "Back to Map and Precipitation, with Points of interest and Warnings on. Everything else off."
+
+On a phone the sheet is a bottom sheet; from 640 px wide it is a 380 px panel. Its body scrolls inside the sheet.
+
+*Look.* A solid panel (`--color-surface`), a 1 px `--color-line` edge and the `--radius` corner (12 px). No backdrop blur, no shadow and no glass variables. Colours come only from the roles in `style.css`: `--color-surface`, `--color-surface-muted`, `--color-line`, `--color-text`, `--color-text-muted`, `--color-focus` and `--color-on-chip`. Headings are in sentence case; group headings are 13 px in the muted role. Legend lines, sub-lines and switch descriptions are 14 px (`--text-sm`). The two layer buttons at the top right keep the map's glass look, because they are the map's own controls.
+
+*Chip states.*
+
+| State | Look | Tap | Attributes |
+|---|---|---|---|
+| Off | Outline, 1 px muted | Turns on and opens its legend line; in a one-at-a-time group, the chip that was on turns off | `aria-pressed="false"` |
+| On | Filled, label in the on-chip role, a tick | Turns off and closes its legend line; a landmark kind rebuilds the landmark line | `aria-pressed="true"` |
+| Unavailable | Dashed outline, muted; the label, and "Coming" or the store's words (Data unavailable) | Opens its reason; nothing else changes | `aria-disabled="true"`, `data-reason` |
+| Waiting | Dashed, muted; the choice is kept and its tick shows | Opens "Turn on Points of interest to show these."; nothing else changes | `aria-disabled="true"` |
+| Held | Dashed, muted; the label and "Held" | Opens its reason: "Places of worship are held and not shown: the geocoder's terms are a counsel question, so the rows are not written to the store while the kind is held. No church is drawn or named." No count is shown (D118(b)) | `aria-disabled="true"`, `data-reason` |
+
+*Base map.* The chosen card has a 2 px focus edge (a 1 px border and a 1 px inset ring), a tick and a bold label. The other card has a 1 px muted outline. Keyboard focus is a 3 px focus ring. The Imagery value is `imagery`, and the link parameter `base=imagery` still works.
+
+*Legend lines (each in `data-legend`).*
+- Imagery: "Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS while it is on." (D110(d))
+- Precipitation: "Rate as liquid water. Radar estimate up to now, High-Resolution Rapid Refresh (HRRR) model forecast after."
+- Temperature: "HRRR model temperature, in °F. Town numbers are the National Weather Service (NWS) forecast."
+- Wind gusts: "HRRR model. Roofing limit 25 mph."
+- Hail, last hour: "Radar estimate of the largest hail in the last hour, in inches, from NOAA's Multi-Radar Multi-Sensor (MRMS) maximum estimated size of hail (MESH). An estimate, not observed hail and not an inspection. Uncoloured means no radar estimate of 0.25 in or more, or no value, and that is not "no hail"." (the section 11 sentence, D108(c))
+- Hail, last 24 hours: the same, with "in the last 24 hours" and "from MRMS (MESH)", and the same closing sentence.
+- Hail, five-year: "Largest radar estimate over five years for each cell, 0.25 in and up. Every building in a cell shares its value. Data unavailable means no estimate of 0.25 in or more was stored for this cell; that is not the same as no hail."
+- Heat, five-year: "Grid estimate: days with a high of 90 °F or more in the last five years. A grid value is an estimate for one cell of about 1/24 degree (roughly 4.6 by 3 km in Montana). Data unavailable means no grid value was stored. That is not zero or an all-clear." (D113(c))
+- Wind, five-year: "Station reading: days with a gust of 50 kt (58 mph) or more at the nearest station, in the last five years. Not a measurement at this building. Data unavailable means no station reading was stored. That is not zero or an all-clear."
+- Flood, five-year: "Reports, records and NWS warnings for floods and flash floods in the last five years, near this place. Not a measure of water at any building. A missing value shows as Data unavailable. That is not zero or an all-clear."
+- Fire and Smoke, Coming: "Coming later: fire is not in the map yet." and "Coming later: smoke is not in the map yet."
+- Landmarks (one line, rebuilt on every change, from `data-template`, hidden while no kind is on or Points of interest is off): "{kinds} from the public lists named under About, shown as dots with their names." With one kind, the kind's name stands alone ("Schools from the public lists named under About, shown as dots with their names.").
+- Points of interest off, on a tap on a waiting chip: "Turn on Points of interest to show these."
+- Highlight recent radar hail, on: "Buildings in cells where radar estimated 1 in or more in the last 30 days are highlighted. Buildings in other cells are not; that is not the same as no hail. Radar estimate, not a measurement at the ground."
+- Storm reports, on: "No report is not "no hail"."
+
+*Switches.* Points of interest is on by default, as in the reference; it gates the landmark chips and their dots. Off, the chips wait with their choices kept. Highlight recent radar hail is off by default; it shows the building highlight for cells whose radar estimate reached 1 in in the last 30 days, and when the hail store is stale (newest day more than 3 days old) or unavailable it shows unavailable with the store's words. Warnings is on by default; Storm reports is off. On: a `--color-focus` track with a `--color-surface` knob. Off: a `--color-surface` track with a 1 px muted inside outline and a muted knob. The knob has no shadow (D110(e)). Both states are 3:1 or more against the sheet.
+
+*Reset.* Restores Map as the base map; Precipitation on (the only live choice); no five-year history; no landmark kind on; Points of interest on; Highlight recent radar hail off; Warnings on; Storm reports off. Reset leaves the sheet open and unavailable chips unavailable. It clears the address parameters the sheet adds (`poi`, `hail_recent`, `history`, `landmarks`) and keeps `base=imagery`.
+
+*Layout and touch.* Measured in the mock at 390 by 844 and 1280 by 800 (light and dark) and at 320 by 568 and 667 by 375: no horizontal overflow, and every control at least 44 by 44 px. At each size the Reset button is reachable and the close button is in view after scrolling to the bottom.
+
+*Browser hooks.* `toggleOptions`, `setLive`, `setHistory`, `setLandmark`, `setPoi`, `landmarkLine`, `setHailRecent`, `renderOptions` and `resetOptions` replace the layer menu's functions; `setLayer(null)` hides the timeline and the legend card; `setBase` keeps its logic, with the values `map` and `imagery`; `setWarnings` and `setReports` keep their ids (`#tg-warnings`, `#tg-reports`). The page writes `#map-options` (`section.sheet`, `role="dialog"`, `aria-modal="true"`, `hidden` until opened), `#btn-layers` with `aria-controls="map-options"`, the chips `button.mo-chip` with `data-group`, `data-key` and `aria-pressed`, and the switches `#tg-poi`, `#tg-hail-recent`, `#tg-warnings` and `#tg-reports` (`role="switch"`).
+
+*Contrast.* The mock's measured contrast: text at least 6.76:1 in light and 7.87:1 in dark; non-text (outlines, focus rings, switch track and knob) at least 6.76:1 in light and 7.87:1 in dark, against 3:1. Every colour is a role from `style.css`.
+
+**13.7 Labels, type and credits.** The browser draws every map label at the site's type scale, 13 px at least. Towns keep the hierarchy of section 8, and each town's label side comes from `towns.json`. Each credit line names the party the terms ask for (D115(d)) and reads "Source: ..." or "... data courtesy of ..." (D113(a)). The exact lines are held by the modules (`basemap2.CREDIT`, the landmark sources, the terrain sources and the history layers' outline credit); the About page quotes one sentence per source. The parties are: U.S. Census Bureau; USDA Forest Service; U.S. Geological Survey; Natural Earth; National Center for Education Statistics; Federal Aviation Administration; Iowa State University (Iowa Environmental Mesonet); NOAA; and the Multi-Resolution Land Characteristics Consortium.
+
+**13.8 Status.** The Python side of B6 is built on the B6 branch (P1 to P4) and tested offline. The browser (B6-3) draws the tiles, the bands, the chips, the pictures, the bubbles and the sheet, and is not yet in the worktree. The phone view with the B6 layers on is measured by the local smoke with the default layers (D125(e)).
+
+*Why:* the owner's reference shows what a roofer needs in one view: where the place is, what the land and the water look like, and the weather figure on the house. The map keeps that behaviour and draws its cartography from public-domain sources, so every line on the map has a source the site can name, and a missing value says so.

@@ -21,6 +21,20 @@ name: Hail history store
 # outline step stops the job: a failed build or check leaves the store with that list or block marked unavailable (never
 # missing) and the rest of the store as it was.
 #
+# The B6 parts (DECISIONS D107 to D127: the map's base layers, the landmark points, the five-year pictures and the bubble
+# values) are non-fatal, as the B5 parts are, and a part that is not built and checked in a run is marked unavailable (rule 5).
+# The store job builds the store fresh each day, so the terrain tiles and the base map vectors are rebuilt here from the caches
+# that the monthly job refreshes, with no request (the store job does not carry the last asset's parts forward). The
+# landmark and zone-outline caches are read and saved as the B5 downloads are. The daily B6 steps share a 60-minute clock
+# (JOB_START + 3600, the daily budget of D105(a)). The bubble values come after the outline steps and their check, and the
+# manifest check runs after the last part, before the pack. The monthly job refreshes the terrain descriptions and tiles
+# (the tiles of the data month come from the cache, under a 25-minute cap) and the base map vectors (each under a 20-minute
+# cap; the base map continues band D under a deadline) and saves their caches under b6-cache/. Its builds start only before
+# its clock, 80 minutes after JOB_START (JOB_START + 4800), inside a 110-minute cap. The checks, the marks and the tail (the
+# manifest check, the pack and the publish) wait for the monthly end, 105 minutes after JOB_START (JOB_START + 6300): each
+# check and mark is capped at the time left to it, and the manifest check, the pack and the publish start only when their
+# own cap fits before the monthly end, so the job ends inside the cap. The B5 monthly steps keep their own budgets.
+#
 # Jobs (D26, D42). The plan job decides whether the monthly job runs: on the first day of the month by schedule, or
 # when the monthly input is on. The store job is the daily run: the station list and inventory, the chosen stations'
 # files whose Last-Modified changed, the NWPS gauge files that are missing from the cache, the climate prelim days (and
@@ -72,6 +86,11 @@ on:
       - "website/stations.py"
       - "website/snowgrid.py"
       - "website/gauges.py"
+      - "website/terrain.py"          # B6 (the terrain tiles, rebuilt from the cache each day)
+      - "website/basemap2.py"         # B6 (the base map vectors)
+      - "website/landmarks.py"        # B6 (the landmark points)
+      - "website/history_layers.py"   # B6 (the five-year pictures, the zone counts and the recent cells)
+      - "website/labels.py"           # B6 (the bubble values)
 
 permissions:
   contents: write
@@ -479,6 +498,217 @@ jobs:
           timeout --kill-after=30 "$LEFT" python -m website.gauges verify --store store --cache b5-cache || echo "gauges verify did not pass; see the index"
           timeout --kill-after=30 "$LEFT" python -m website.snowgrid verify --store store --cache b5-cache || echo "snow verify did not pass; see the index"
 
+      # ---- B6 (D107 to D127): the base map parts, the landmark points, the five-year pictures and the bubble values. Each part
+      # is non-fatal and is marked unavailable when it is not built and checked in this run (rule 5). The terrain tiles and the base
+      # map vectors come from the caches that the monthly job refreshes (no request); the bubble values wait for the outlines.
+
+      - name: Install Pillow for the terrain tiles, the history pictures and the bubble font (non-fatal; the B6 steps only)
+        continue-on-error: true
+        timeout-minutes: 5
+        run: pip install Pillow || echo "::warning::Pillow did not install; the B6 parts that draw images or fonts are marked unavailable (D20)."
+
+      - name: Seconds left on the B6 clock before the terrain tiles
+        id: clock_terrain_daily
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 3600 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the terrain cache (read only; the monthly job saves it after it refreshes the tiles)
+        if: ${{ steps.clock_terrain_daily.outputs.left > 60 }}
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b6-cache/terrain
+          key: b6-cache-terrain-${{ github.run_id }}
+          restore-keys: |
+            b6-cache-terrain-
+
+      - name: Terrain tiles from the cache (no request; zooms 5 to 10; non-fatal, D20)
+        id: terrain_daily
+        if: ${{ steps.clock_terrain_daily.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_terrain_daily.outputs.left }}
+        run: |
+          if timeout --kill-after=30 "$LEFT" python -m website.terrain build --store store --cache b6-cache/terrain --zooms 5-10 --procs 4 --offline; then
+            echo "built=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The terrain tiles did not build from the cache; the mark step below says so (D20)."
+          fi
+
+      - name: Check the terrain tiles from the cache (no request; non-fatal, D20)
+        id: terrain_daily_check
+        if: ${{ steps.terrain_daily.outputs.built }}
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          if timeout --kill-after=30 240 python -m website.terrain verify --store store --offline; then
+            echo "verified=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The terrain check did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Mark the terrain tiles unavailable when they were not built and checked in this run (non-fatal; D20)
+        if: ${{ steps.terrain_daily.outputs.built != 'yes' || steps.terrain_daily_check.outputs.verified != 'yes' }}
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          python -m website.terrain unavailable --store store --reason "the terrain tiles were not built and checked from the cache in this update"
+          echo "::warning::The terrain tiles are marked unavailable in this store, and the page says so (D20). The rest of the store is kept."
+
+      - name: Seconds left on the B6 clock before the base map vectors
+        id: clock_basemap_daily
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 3600 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the base map cache (read only; the monthly job saves it after it continues band D)
+        if: ${{ steps.clock_basemap_daily.outputs.left > 60 }}
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b6-cache/basemap2
+          key: b6-cache-basemap2-${{ github.run_id }}
+          restore-keys: |
+            b6-cache-basemap2-
+
+      - name: Base map vectors from the cache (no request; non-fatal; the state is read from the index, not the exit code)
+        id: basemap_daily
+        if: ${{ steps.clock_basemap_daily.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_basemap_daily.outputs.left }}
+        run: |
+          if timeout --kill-after=30 "$LEFT" python -m website.basemap2 build --store store --cache b6-cache/basemap2 --offline; then
+            state=$(python -c "import json; print(json.load(open('store/hail/base/index.json'))['vector']['state'])" || echo "")
+            echo "state=$state" >> "$GITHUB_OUTPUT"
+            if [ -n "$state" ] && [ "$state" != "unavailable" ]; then echo "built=yes" >> "$GITHUB_OUTPUT"; fi
+          else
+            echo "::warning::The base map vectors did not build from the cache; the mark step below says so (D20)."
+          fi
+
+      - name: Check the base map vectors from the cache (the index, the files and the budgets; non-fatal, D20)
+        id: basemap_daily_check
+        if: ${{ steps.basemap_daily.outputs.built }}
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          if timeout --kill-after=30 240 python -m website.basemap2 verify --store store --cache b6-cache/basemap2; then
+            echo "verified=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The base map check did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Mark the base map vectors unavailable when they were not built and checked in this run (non-fatal; D20)
+        if: ${{ steps.basemap_daily.outputs.state != 'unavailable' && (steps.basemap_daily.outputs.built != 'yes' || steps.basemap_daily_check.outputs.verified != 'yes') }}
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          python -m website.basemap2 unavailable --store store --reason "the base map vectors were not built and checked from the cache in this update"
+          echo "::warning::The base map vectors are marked unavailable in this store, and the page says so (D20). The rest of the store is kept."
+
+      - name: Seconds left on the B6 clock before the landmark points
+        id: clock_landmarks
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 3600 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the landmark cache (the daily job reads and saves it; the monthly job asks every list again)
+        if: ${{ steps.clock_landmarks.outputs.left > 60 }}
+        uses: actions/cache@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b6-cache/landmarks
+          key: b6-cache-landmarks-${{ github.run_id }}
+          restore-keys: |
+            b6-cache-landmarks-
+
+      - name: Landmark points (schools, hospitals, airports, fire and EMS stations and parks; the cached lists; non-fatal, D20)
+        id: landmarks
+        if: ${{ steps.clock_landmarks.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          LEFT: ${{ steps.clock_landmarks.outputs.left }}
+        run: |
+          if timeout --kill-after=30 "$LEFT" python -m website.landmarks build --store store --cache b6-cache/landmarks; then
+            echo "built=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The landmark build did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Landmark check (store files only; non-fatal, D20)
+        id: landmarks_check
+        if: ${{ steps.landmarks.outputs.built }}
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          if timeout --kill-after=30 180 python -m website.landmarks verify --store store; then
+            echo "verified=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The landmark check did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Mark the landmarks unavailable when they were not built and checked in this run (non-fatal; D20)
+        if: ${{ steps.landmarks.outputs.built != 'yes' || steps.landmarks_check.outputs.verified != 'yes' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          python -m website.landmarks unavailable --store store --reason "the landmark build or its check did not pass in this run"
+          echo "::warning::The landmark points are marked unavailable in this store, and the page says so (D20). The rest of the store is kept."
+
+      - name: Seconds left on the B6 clock before the five-year pictures
+        id: clock_history
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 3600 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the zone outline file (keyed by its name, so it is fetched once; non-fatal; D20)
+        if: ${{ steps.clock_history.outputs.left > 60 }}
+        uses: actions/cache@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b6-cache/zone-outlines
+          key: b6-cache-zone-outlines-ugcs-mt-valid-2026-10-25
+
+      - name: Build the five-year pictures, the zone counts, the recent cells and the zone outlines (non-fatal; D20)
+        id: hist_build
+        if: ${{ steps.clock_history.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_history.outputs.left }}
+        run: |
+          if timeout --kill-after=30 "$LEFT" python -m website.history_layers build --store store --cache b6-cache/zone-outlines; then
+            echo "built=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The history layers did not build; the mark step below says so (D20)."
+          fi
+
+      - name: Verify the history layers (the files and their hashes, the PNG sizes and palettes, a sample of zone counts recounted; non-fatal; D20)
+        id: hist_verify
+        if: ${{ steps.hist_build.outputs.built }}
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          if timeout --kill-after=30 180 python -m website.history_layers verify --store store; then
+            echo "verified=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The history check did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Mark the history layers unavailable when they were not built and checked in this run (non-fatal; D20)
+        if: ${{ steps.hist_build.outputs.built != 'yes' || steps.hist_verify.outputs.verified != 'yes' }}
+        continue-on-error: true
+        timeout-minutes: 3
+        run: python -m website.history_layers unavailable --store store --reason "the five-year pictures and counts did not pass this update's build or check"
+
       # ---- End of B5. The B3 steps below (the address, street and outline steps; non-fatal, D36) come next, then the
       # B1 and B2 pack and publish steps (the branch-named asset). Not yet here: the containment step
       # and the fatal store gates before the pack (DECISIONS D38, job-4), which need the stations module's commands.
@@ -682,6 +912,81 @@ jobs:
           python -m website.buildings unavailable --store store --reason "the outline build or its check did not pass in this run"
           echo "::warning::The building outlines are marked unavailable in this store, and the sheet says so (D20). The rest of the store is kept."
 
+      - name: Seconds left on the B6 clock before the bubble labels
+        id: clock_labels
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 3600 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Label the building outlines with the bubble anchors (non-fatal; D20; after the outlines and their check)
+        id: lab_build
+        if: ${{ steps.clock_labels.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 12
+        env:
+          LEFT: ${{ steps.clock_labels.outputs.left }}
+        run: |
+          if timeout --kill-after=30 "$LEFT" python -m website.labels build --store store; then
+            echo "built=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The bubble anchors did not build; the mark step below removes them (D20)."
+          fi
+
+      - name: Verify the bubble anchors (a sample of shards recomputed and compared; non-fatal; D20)
+        id: lab_verify
+        if: ${{ steps.lab_build.outputs.built }}
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          if timeout --kill-after=30 240 python -m website.labels verify --store store --sample 40; then
+            echo "verified=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The bubble check did not pass; the mark step below removes the bubble values (D20)."
+          fi
+
+      - name: Remove the bubble values when they were not built and checked in this run (non-fatal; D20)
+        # The outline step has just rewritten the building shards without their flags, so a labels pass that did not run must
+        # say so: the labels block then reads unavailable, never a stale loaded.
+        if: ${{ steps.lab_build.outputs.built != 'yes' || steps.lab_verify.outputs.verified != 'yes' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          python -m website.labels unavailable --store store --reason "the bubble values did not pass this update's build or check, or did not run"
+          echo "::warning::The bubble values are removed from this store, and the page says so (D20). The rest of the store is kept."
+
+      - name: Check the store manifest after the last store part (hail.check_manifest; fatal, so a store that does not check is not published)
+        id: manifest
+        timeout-minutes: 10
+        run: |
+          check_store() {
+            python - <<'PY'
+          import sys
+          from website import hail as h
+          try:
+              h.check_manifest("store")
+          except h.HailStoreError as error:
+              sys.exit(f"error: {error}")
+          print("The store manifest checks out (hail.check_manifest).")
+          PY
+          }
+          if check_store; then
+            exit 0
+          fi
+          # The B6 parts are contained first (D26(b)): each one is removed with its manifest entries and marked unavailable, then
+          # the check runs again. A store that still does not check is not published, and the last published asset stays in place.
+          echo "::warning::The store manifest did not check. The B6 parts are contained, and the check runs again."
+          python -m website.labels unavailable --store store --reason "the store manifest did not check, so the bubble values were removed" || true
+          python -m website.history_layers unavailable --store store --reason "the store manifest did not check, so the five-year pictures and counts were removed" || true
+          python -m website.landmarks unavailable --store store --reason "the store manifest did not check, so the landmark points were removed" || true
+          python -m website.basemap2 unavailable --store store --reason "the store manifest did not check, so the base map vectors were removed" || true
+          python -m website.terrain unavailable --store store --reason "the store manifest did not check, so the terrain tiles were removed" || true
+          if check_store; then
+            echo "::warning::The store manifest checks out once the B6 parts are contained; the store is published without them."
+            exit 0
+          fi
+          echo "::error::The store manifest still does not check after the B6 parts were contained. The store is not published; the last published asset stays in place (D26)."
+          exit 1
+
       - name: Pack the store
         timeout-minutes: 5
         env:
@@ -741,9 +1046,9 @@ jobs:
     needs: [plan, store]
     if: ${{ always() && needs.plan.outputs.monthly != '' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 110
     steps:
-      - name: Start the job clock (the monthly steps share its 40 minutes; the job cap is 60)
+      - name: Start the job clock (the monthly steps share its 80 minutes; the job cap is 110)
         continue-on-error: true
         timeout-minutes: 1
         run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
@@ -787,7 +1092,7 @@ jobs:
         id: clock_cache
         continue-on-error: true
         timeout-minutes: 1
-        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+        run: echo "left=$(( JOB_START + 4800 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
 
       - name: Restore the B5 downloads (the station, NWPS, USGS and NOHRSC files of the daily job; optional)
         if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_cache.outputs.left > 60 }}
@@ -804,7 +1109,7 @@ jobs:
         id: clock_stations
         continue-on-error: true
         timeout-minutes: 1
-        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+        run: echo "left=$(( JOB_START + 4800 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
 
       - name: Station candidate union and regression set (every file of the monthly scope is read, none skipped)
         id: stations
@@ -823,7 +1128,7 @@ jobs:
         id: clock_gauges
         continue-on-error: true
         timeout-minutes: 1
-        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+        run: echo "left=$(( JOB_START + 4800 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
 
       - name: River gauges (every NWPS and USGS file refreshed)
         id: gauges
@@ -838,11 +1143,83 @@ jobs:
           timeout --kill-after=30 "$LEFT" python -m website.gauges build --store store --cache b5-cache --procs 3 --refresh \
             --deadline-at "$(( $(date +%s) + budget ))"
 
+      - name: Seconds left on the monthly clock before the landmark points
+        id: clock_landmarks_monthly
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 4800 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the landmark cache (the daily job saves it; this job asks every list again)
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_landmarks_monthly.outputs.left > 60 }}
+        uses: actions/cache@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b6-cache/landmarks
+          key: b6-cache-landmarks-${{ github.run_id }}
+          restore-keys: |
+            b6-cache-landmarks-
+
+      - name: Landmark points, every list asked again (non-fatal; D20)
+        id: landmarks_monthly
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_landmarks_monthly.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          LEFT: ${{ steps.clock_landmarks_monthly.outputs.left }}
+        run: |
+          budget=$(( LEFT - 440 ))
+          if [ "$budget" -gt 540 ]; then budget=540; fi
+          if timeout --kill-after=30 "$LEFT" python -m website.landmarks build --store store --cache b6-cache/landmarks --refresh \
+            --deadline-at "$(( $(date +%s) + budget ))"; then
+            echo "built=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The monthly landmark build did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Seconds left to the monthly end (105 minutes) before the landmark check
+        id: clock_end_landmarks_check
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 6300 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Landmark check after the monthly build (store files only; non-fatal, D20)
+        id: landmarks_monthly_check
+        if: ${{ steps.landmarks_monthly.outputs.built && steps.clock_end_landmarks_check.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          LEFT: ${{ steps.clock_end_landmarks_check.outputs.left }}
+        run: |
+          CAP=$(( LEFT < 180 ? LEFT : 180 ))
+          if timeout --kill-after=30 "$CAP" python -m website.landmarks verify --store store; then
+            echo "verified=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The monthly landmark check did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Seconds left to the monthly end (105 minutes) before the landmark mark
+        id: clock_end_landmarks_mark
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 6300 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Mark the landmarks unavailable when the monthly build or its check did not pass (non-fatal; D20)
+        if: ${{ steps.landmarks_monthly.outcome != 'skipped' && (steps.landmarks_monthly.outputs.built != 'yes' || steps.landmarks_monthly_check.outputs.verified != 'yes') && steps.clock_end_landmarks_mark.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_end_landmarks_mark.outputs.left }}
+        run: |
+          CAP=$(( LEFT < 300 ? LEFT : 300 ))
+          timeout --kill-after=30 "$CAP" python -m website.landmarks unavailable --store store --reason "the landmark build or its check did not pass in this run"
+          echo "::warning::The landmark points are marked unavailable in this store, and the page says so (D20). The rest of the store is kept."
+
       - name: Seconds left on the monthly clock before the snow analysis
         id: clock_snow
         continue-on-error: true
         timeout-minutes: 1
-        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+        run: echo "left=$(( JOB_START + 4800 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
 
       - name: Snow analysis (NOAA's latest NOHRSC file, checked once a month; the only NOHRSC request)
         id: snow
@@ -857,11 +1234,160 @@ jobs:
           timeout --kill-after=30 "$LEFT" python -m website.snowgrid build --store store --cache b5-cache \
             --deadline-at "$(( $(date +%s) + budget ))"
 
+      - name: Seconds left on the monthly clock before the terrain tiles
+        id: clock_terrain_monthly
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 4800 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the terrain cache (this job reads the tiles of the data month and saves the cache; the daily job reads it)
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_terrain_monthly.outputs.left > 60 }}
+        uses: actions/cache@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b6-cache/terrain
+          key: b6-cache-terrain-${{ github.run_id }}
+          restore-keys: |
+            b6-cache-terrain-
+
+      - name: Terrain tiles, descriptions asked again (zooms 5 to 10; cached tiles; a 25-minute cap; non-fatal, D20)
+        id: terrain
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_terrain_monthly.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          LEFT: ${{ steps.clock_terrain_monthly.outputs.left }}
+        run: |
+          # The build reads both service descriptions again and uses a valid cached tile whatever its age, so a data month
+          # that has not changed costs no tile request. The build starts no request in the last 120 seconds before its cap,
+          # so the requests in flight (60 seconds each) end inside it.
+          CAP=$(( LEFT < 1500 ? LEFT : 1500 ))
+          DEADLINE=$(( $(date +%s) + CAP - 120 ))
+          if timeout --kill-after=30 "$CAP" python -m website.terrain build --store store --cache b6-cache/terrain --zooms 5-10 --procs 4 --timeout 60 --refresh-descriptions --deadline-at "$DEADLINE"; then
+            echo "built=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The terrain build did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Seconds left to the monthly end (105 minutes) before the terrain check
+        id: clock_end_terrain_check
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 6300 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Check the terrain tiles after the monthly build (a re-fetch sample of ten tiles at 60 seconds a request, within 900 seconds; non-fatal, D20)
+        id: terrain_monthly_check
+        if: ${{ steps.terrain.outputs.built && steps.clock_end_terrain_check.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 16
+        env:
+          LEFT: ${{ steps.clock_end_terrain_check.outputs.left }}
+        run: |
+          # The check runs for 900 seconds at most, and for less when the monthly end leaves less time.
+          CAP=$(( LEFT < 900 ? LEFT : 900 ))
+          if timeout --kill-after=30 "$CAP" python -m website.terrain verify --store store --cache b6-cache/terrain --timeout 60; then
+            echo "verified=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The terrain check did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Seconds left to the monthly end (105 minutes) before the terrain mark
+        id: clock_end_terrain_mark
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 6300 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Mark the terrain tiles unavailable when the monthly build or its check did not pass (non-fatal; D20)
+        if: ${{ steps.terrain.outcome != 'skipped' && (steps.terrain.outputs.built != 'yes' || steps.terrain_monthly_check.outputs.verified != 'yes') && steps.clock_end_terrain_mark.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_end_terrain_mark.outputs.left }}
+        run: |
+          CAP=$(( LEFT < 300 ? LEFT : 300 ))
+          timeout --kill-after=30 "$CAP" python -m website.terrain unavailable --store store --reason "the terrain build or its check did not pass in this run"
+          echo "::warning::The terrain tiles are marked unavailable in this store, and the page says so (D20). The rest of the store is kept."
+
+      - name: Seconds left on the monthly clock before the base map vectors
+        id: clock_basemap_monthly
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 4800 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the base map cache (this job continues band D and saves the cache; the daily job reads it)
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_basemap_monthly.outputs.left > 60 }}
+        uses: actions/cache@v4
+        continue-on-error: true
+        timeout-minutes: 10
+        with:
+          path: b6-cache/basemap2
+          key: b6-cache-basemap2-${{ github.run_id }}
+          restore-keys: |
+            b6-cache-basemap2-
+
+      - name: Base map vectors (bands A to C each month, band D under a deadline; a 20-minute cap; non-fatal, D20)
+        id: basemap
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_basemap_monthly.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 20
+        env:
+          LEFT: ${{ steps.clock_basemap_monthly.outputs.left }}
+        run: |
+          # The state is read from the index, because the build exits 0 for an unavailable store (D122(j)).
+          CAP=$(( LEFT < 1140 ? LEFT : 1140 ))
+          DEADLINE=$(( $(date +%s) + CAP - 120 ))
+          if timeout --kill-after=30 "$CAP" python -m website.basemap2 build --store store --cache b6-cache/basemap2 --deadline-at "$DEADLINE"; then
+            state=$(python -c "import json; print(json.load(open('store/hail/base/index.json'))['vector']['state'])" || echo "")
+            echo "state=$state" >> "$GITHUB_OUTPUT"
+            if [ -n "$state" ] && [ "$state" != "unavailable" ]; then echo "built=yes" >> "$GITHUB_OUTPUT"; fi
+          else
+            echo "::warning::The base map build did not finish; the mark step below says so (D20)."
+          fi
+
+      - name: Seconds left to the monthly end (105 minutes) before the base map check
+        id: clock_end_basemap_check
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 6300 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Check the base map vectors after the monthly build (the index, the files and the budgets; non-fatal, D20)
+        id: basemap_monthly_check
+        if: ${{ steps.basemap.outputs.built && steps.clock_end_basemap_check.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 6
+        env:
+          LEFT: ${{ steps.clock_end_basemap_check.outputs.left }}
+        run: |
+          CAP=$(( LEFT < 300 ? LEFT : 300 ))
+          if timeout --kill-after=30 "$CAP" python -m website.basemap2 verify --store store --cache b6-cache/basemap2; then
+            echo "verified=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::The base map check did not pass; the mark step below says so (D20)."
+          fi
+
+      - name: Seconds left to the monthly end (105 minutes) before the base map mark
+        id: clock_end_basemap_mark
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 6300 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Mark the base map vectors unavailable when the monthly build or its check did not pass (non-fatal; D20)
+        if: ${{ steps.basemap.outcome != 'skipped' && steps.basemap.outputs.state != 'unavailable' && (steps.basemap.outputs.built != 'yes' || steps.basemap_monthly_check.outputs.verified != 'yes') && steps.clock_end_basemap_mark.outputs.left > 60 }}
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          LEFT: ${{ steps.clock_end_basemap_mark.outputs.left }}
+        run: |
+          CAP=$(( LEFT < 300 ? LEFT : 300 ))
+          timeout --kill-after=30 "$CAP" python -m website.basemap2 unavailable --store store --reason "the base map build or its check did not pass in this run"
+          echo "::warning::The base map vectors are marked unavailable in this store, and the page says so (D20). The rest of the store is kept."
+
       - name: Seconds left on the monthly clock before the monthly verify
         id: clock_verify
         continue-on-error: true
         timeout-minutes: 1
-        run: echo "left=$(( JOB_START + 2400 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+        run: echo "left=$(( JOB_START + 4800 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
 
       - name: Verify the station, gauge and snow parts (informational; the index says what did not load)
         if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_verify.outputs.left > 60 }}
@@ -874,15 +1400,64 @@ jobs:
           timeout --kill-after=30 "$LEFT" python -m website.gauges verify --store store --cache b5-cache || echo "gauges verify did not pass; see the index"
           timeout --kill-after=30 "$LEFT" python -m website.snowgrid verify --store store --cache b5-cache || echo "snow verify did not pass; see the index"
 
+      - name: Seconds left to the monthly end (105 minutes) before the manifest check
+        id: clock_end_manifest
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 6300 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
+      - name: Check the store manifest after the monthly parts (hail.check_manifest; the monthly base map parts are contained when it fails; the publish waits for it)
+        id: manifest
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_end_manifest.outputs.left > 600 }}
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          check_store() {
+            python - <<'PY'
+          import sys
+          from website import hail as h
+          try:
+              h.check_manifest("store")
+          except h.HailStoreError as error:
+              sys.exit(f"error: {error}")
+          print("The store manifest checks out (hail.check_manifest).")
+          PY
+          }
+          if check_store; then
+            exit 0
+          fi
+          echo "::warning::The store manifest did not check. The monthly base map parts are contained, and the check runs again."
+          python -m website.landmarks unavailable --store store --reason "the store manifest did not check, so the landmark points were removed" || true
+          python -m website.basemap2 unavailable --store store --reason "the store manifest did not check, so the base map vectors were removed" || true
+          python -m website.terrain unavailable --store store --reason "the store manifest did not check, so the terrain tiles were removed" || true
+          if check_store; then
+            echo "::warning::The store manifest checks out once the monthly base map parts are contained; the store is published without them."
+            exit 0
+          fi
+          echo "::error::The store manifest still does not check. The monthly store is not published; the last published asset stays in place (D26)."
+          exit 1
+
+      - name: Seconds left to the monthly end (105 minutes) before the pack
+        id: clock_end_pack
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 6300 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
       - name: Pack the store (whatever the monthly steps left in it)
         id: pack
-        if: ${{ steps.fetch.outputs.fetched != '' }}
+        if: ${{ steps.fetch.outputs.fetched != '' && steps.clock_end_pack.outputs.left > 300 }}
         continue-on-error: true
         timeout-minutes: 5
         run: tar czf "$ASSET.new" -C store hail
 
+      - name: Seconds left to the monthly end (105 minutes) before the publish
+        id: clock_end_publish
+        continue-on-error: true
+        timeout-minutes: 1
+        run: echo "left=$(( JOB_START + 6300 - $(date +%s) ))" >> "$GITHUB_OUTPUT"
+
       - name: Publish the monthly store (the same release asset, replaced only once the pack has been made)
-        if: ${{ contains(steps.pack.outcome, 'success') }}
+        if: ${{ contains(steps.pack.outcome, 'success') && contains(steps.manifest.outcome, 'success') && steps.clock_end_publish.outputs.left > 600 }}
         continue-on-error: true
         timeout-minutes: 10
         env:

@@ -5,22 +5,26 @@ A value bubble shows that cell's largest radar estimate over the five seasons ("
 of houses that the bubble stands for. This module decides which outline carries the bubble at zoom 17 and at zoom 18, and
 writes the decision into the shard:
   k     on every outline: [z17 flag, z18 flag]. 1 means this outline carries the cluster's bubble at that zoom; 0 means not.
-        The browser draws the bubble above the outline's dot.
+        The browser draws the bubble above the outline's dot, and only when the labels block reads loaded.
   kv    in the shard header: the value text of each cell key that an outline of the shard sits in. The key is the cell's
         in-tile key (hail.cell_key). The text is "0.39 in" (inches to the hundredth, rounded down, as hail.inches), or
-        "Data unavailable" when the cell has no stored estimate of 0.25 in or more. The browser prints "--" for such a
-        bubble. A dash is never zero.
+        "Data unavailable" when the cell has no stored estimate of 0.25 in or more (hail.FLOOR_TENTHS). The browser prints
+        "--" for such a bubble. A dash is never zero.
 
-The rule (stage 1's measured Rule B, /home/user/hail-b5/out/b6/design/bubbles/final.py, computed here in Python):
+The rule. The owner's reference for the value bubble is research/map-b6/README.md: a value bubble on every house, and "--"
+where nothing is stored. The rule that places the bubbles is this module's:
   1. Each outline's dot is projected to Web Mercator pixels at the zoom (256 px tiles).
   2. Within one 1 km cell, the dots are taken north to south, then west to east, then by index. A dot joins the nearest
-     cluster leader of its cell when the leader is within CLUSTER_PX, the width of the label "0.38 in" (55.75 px in the
-     site's font; the brief writes 56 px). A dot with no leader in reach starts a cluster, so every member lies within
-     CLUSTER_PX of its cluster's first dot.
+     cluster leader of its cell when the leader is within cluster_px(), the width of the label "0.38 in" in the site's font
+     (55.75 px). A dot with no leader in reach starts a cluster, so every member lies within that radius of its first dot.
   3. The anchor is the member nearest the middle of the cluster (the mean of its members); ties go to the earlier member.
   4. The bubbles are placed greedily: value descending (a dash last), then north to south, then west to east, then by the
      anchor's index. A bubble is placed unless its box overlaps a placed box by more than TOL (2 px) in both directions.
-     Each bubble is placed above its dot; the flag cannot say a side, so a skipped cluster has no bubble.
+     A bubble is placed above its dot only, because a flag carries no side, so the outlines of a skipped cluster have no
+     bubble.
+  Coverage, measured on the statewide store (read only: 5,615 shards and 918,052 outlines): 95.25 percent of outlines lie
+  inside a placed cluster at zoom 17 and 98.78 percent at zoom 18. On the two test tiles a below side would raise the zoom 17
+  share from 91.4 to 98.5 percent; that needs a side in the flag, which is an owner decision.
   The label box is measured in the site's own font: the text is set in the woff2 face Atkinson Hyperlegible Next 700 with
   tabular figures and -0.02 em letter spacing, at 13 px on the page, measured by Pillow (with raqm) at 26 px and halved.
 
@@ -37,11 +41,14 @@ and this module adds flags and value text beside them. It reads no owner and no 
 Units. Pixels (CSS px at the zoom) for the geometry; tenths of a mm for the stored values; inches to the hundredth for the text.
 
 Missing rules (rule 5). A radar shard the index lists that cannot be read leaves its cells "Data unavailable", and the block is
-partial with the tile named. A shard that cannot be read is named and left as it was. Without Pillow, or with a Pillow that
-has no raqm, or without the site font, the block is unavailable with the reason, and no shard is changed.
+partial with the tile named. A shard that cannot be labelled is rewritten without its flags and kv when it parses, and it is
+named; a shard that does not parse is left as it is, and it is named. Without Pillow, without raqm, without the site font, or
+with a font file that cannot be read, the block is unavailable with the reason, and every readable shard loses its flags.
 
-Failures (D16, D20). Each shard fails alone. The unavailable command removes the flags and the value text from every shard, so
-no stale bubble can be drawn, and marks the block unavailable with the reason.
+Failures (D16, D20). Each shard fails alone, and no stale bubble is drawn: a failed shard loses its flags, the block reads
+partial, and the browser draws no bubble unless the block reads loaded (see the integration notes). The unavailable command
+writes its block before it touches any shard, removes the flags and the value text from every readable shard, names each
+shard it could not read, and exits 0 with those names. A run that stops part way still reads unavailable.
 
 Store (format hail-buildings-v1, unchanged except the two keys above): hail/b/<shard>.json gains "k" on each outline and "kv" in
 the header; hail/manifest.json lists each rewritten shard with its bytes and SHA-256; hail/index.json gains "labels".
@@ -52,8 +59,9 @@ Command line (run from the repository root):
     python -m website.labels measure --store DIR [--out FILE]     (statewide and read only: it writes nothing)
     python -m website.labels unavailable --store DIR --reason TEXT
 
---tiles limits build and verify to the named B1 tiles (for example r0081_c0160). measure labels every shard in memory and
-writes nothing, so it runs on the read-only adopted store.
+--tiles limits build and verify to the named B1 tiles (for example r0081_c0160). A run that names tiles reads partial, since the
+other shards keep their last flags. measure labels every shard in memory and writes nothing, so it runs on the read-only
+adopted store.
 """
 from __future__ import annotations
 
@@ -107,13 +115,16 @@ def _font():
         raise LabelError("Pillow was built without raqm, so the font features (tabular figures) cannot be set")
     if not FONT_FILE.is_file():
         raise LabelError("the site font for the bubble labels is missing")
-    _FONT["font"] = ImageFont.truetype(str(FONT_FILE), FONT_PX)
+    try:
+        _FONT["font"] = ImageFont.truetype(str(FONT_FILE), FONT_PX)
+    except OSError as exc:
+        raise LabelError("the site font for the bubble labels could not be read") from exc
     return _FONT["font"]
 
 
 def label_width(text: str) -> float:
     """The body width of a bubble for this text, in CSS px: the 26 px measure halved, with the letter spacing and the
-    padding, and at least MIN_W (place.py's label_width, rounded to two decimals as it was)."""
+    padding, and at least MIN_W, rounded to two decimals."""
     width = _WIDTHS.get(text)
     if width is None:
         raw = _font().getlength(text, features=["tnum"]) / 2.0 + LETTER * len(text) + 2 * PAD
@@ -128,21 +139,22 @@ def cluster_px() -> float:
 
 
 def label_text(tenths) -> str:
-    """The bubble's glyph text for a cell value in tenths of a mm, or the dash when there is no value."""
-    if tenths is None or int(tenths) <= 0:
+    """The bubble's glyph text for a cell value in tenths of a mm, or the dash when there is no value of FLOOR_TENTHS (0.25 in)
+    or more."""
+    if tenths is None or int(tenths) < hail.FLOOR_TENTHS:
         return DASH
     return f"{hail.inches(int(tenths))} in"
 
 
 def kv_text(tenths) -> str:
-    """The shard header's text for a cell: its inches, or "Data unavailable" when no value is stored."""
-    if tenths is None or int(tenths) <= 0:
+    """The shard header's text for a cell: its inches, or "Data unavailable" when no value of FLOOR_TENTHS or more is stored."""
+    if tenths is None or int(tenths) < hail.FLOOR_TENTHS:
         return UNAVAILABLE_TEXT
     return f"{hail.inches(int(tenths))} in"
 
 
 def world(lat: float, lon: float, zoom: int) -> tuple[float, float]:
-    """Web Mercator pixel coordinates of a point at a zoom (256 px tiles), as extract.py's world()."""
+    """Web Mercator pixel coordinates of a point at a zoom (256 px tiles)."""
     scale = TILE_PX * 2 ** zoom
     x = (lon + 180.0) / 360.0 * scale
     s = math.sin(math.radians(lat))
@@ -151,7 +163,7 @@ def world(lat: float, lon: float, zoom: int) -> tuple[float, float]:
 
 
 def box_for(x: float, y: float, text: str) -> tuple[float, float, float, float]:
-    """The bubble's box (body and pointer) above the dot at (x, y), as place.py's box_for."""
+    """The bubble's box (body and pointer) above the dot at (x, y)."""
     w = label_width(text)
     tip = y - DOT_R - TIP_GAP
     bottom = tip - POINTER_H
@@ -159,7 +171,7 @@ def box_for(x: float, y: float, text: str) -> tuple[float, float, float, float]:
 
 
 def clash(a, b) -> bool:
-    """True when two boxes overlap by more than TOL in both directions (place.py's clash)."""
+    """True when two boxes overlap by more than TOL in both directions."""
     ox = min(a[2], b[2]) - max(a[0], b[0])
     oy = min(a[3], b[3]) - max(a[1], b[1])
     return ox > TOL and oy > TOL
@@ -250,7 +262,7 @@ def label_shard(doc: dict, tops: dict, tile: tuple[int, int]) -> dict:
             continue
         tenths = int(tops.get((row, col), 0))
         in_tile.append({"i": i, "cell": (row, col), "lat": lat, "lon": lon,
-                        "tenths": tenths if tenths > 0 else None})
+                        "tenths": tenths if tenths >= hail.FLOOR_TENTHS else None})
     kv: dict = {}
     for item in in_tile:
         key = str(hail.cell_key(*item["cell"]))
@@ -395,9 +407,44 @@ def _write_block(store: Path, index: dict, block: dict, written: dict, removed=(
 
 # ---------------------------------------------------------------- build
 
+def _clear_paths(paths) -> tuple[dict, list]:
+    """Removes the flags and the kv from each shard that can be read, writing it in place. Returns the files rewritten (keyed
+    by their store path, with their bytes) and the shards that could not be read, each named with its reason (D20)."""
+    written: dict = {}
+    failures: list = []
+    for path in paths:
+        try:
+            raw = path.read_bytes()
+            doc = json.loads(raw.decode("utf-8"))
+            if not isinstance(doc, dict) or doc.get("f") != FORMAT or not isinstance(doc.get("a"), list):
+                raise ValueError("not a buildings shard")
+            data = render(doc, None, None)
+        except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError) as exc:
+            failures.append({"shard": path.name, "reason": f"the shard could not be read ({type(exc).__name__}), so its "
+                                                           "flags could not be checked"})
+            continue
+        if data != raw:
+            H._write_atomic(path, data)
+            written[f"hail/b/{path.name}"] = data
+    return written, failures
+
+
+def _mark_unavailable(store: Path, index: dict, fields: dict) -> dict:
+    """Writes the unavailable block first, so a run that stops part way still reads unavailable; then removes the flags and the
+    kv from every shard that can be read; then records how many shards were cleared and which could not be read (D20)."""
+    block = dict(fields, state="unavailable", shards_cleared=0, failures=[])
+    _write_block(store, index, block, {})
+    written, failures = _clear_paths(_shard_paths(store, None))
+    block = dict(block, shards_cleared=len(written), failures=failures[:50])
+    _write_block(store, index, block, written)
+    return block
+
+
 def build(store, *, tiles=None, now=None) -> dict:
-    """Writes the flags and the kv of every buildings shard (or the named tiles), the manifest entries of the shards it
-    rewrote, and the labels block. Returns the summary."""
+    """Writes the flags and the kv of every buildings shard (or of the named tiles), the manifest entries of the shards it
+    rewrote, and the labels block. A shard that fails is rewritten without its flags when it parses. A font that cannot be
+    read removes the flags from every shard and marks the block unavailable (D20). A run that names tiles reads partial,
+    since the other shards keep their last flags. Returns the summary."""
     store = Path(store)
     t0 = time.monotonic()
     built_at = H._parse_now(now).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -405,11 +452,8 @@ def build(store, *, tiles=None, now=None) -> dict:
     try:
         cluster_px()
     except LabelError as exc:
-        reason = str(exc)
-        block = {"state": "unavailable", "problem": H.WORDS["unavailable"].format(
-            what="The bubble values on the building outlines", reason=reason), "built_at": built_at}
-        _write_block(store, index, block, {})
-        return block
+        return _mark_unavailable(store, index, {"problem": H.WORDS["unavailable"].format(
+            what="The bubble values on the building outlines", reason=str(exc)), "built_at": built_at})
     if not (store / "hail" / "b").is_dir():
         block = {"state": "unavailable", "problem": H.WORDS["unavailable"].format(
             what="The bubble values on the building outlines", reason="the building outline shards are not in the store"),
@@ -430,8 +474,11 @@ def build(store, *, tiles=None, now=None) -> dict:
             tops = values.for_cells(_shard_cells(doc))
             result = label_shard(doc, tops, _tile_of(path))
             data = render(doc, result["flags"], result["kv"] or None)
-        except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
-            failures.append({"shard": path.name, "reason": f"the shard could not be read ({type(exc).__name__})"})
+        except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError) as exc:
+            failures.append({"shard": path.name, "reason": f"the shard could not be labelled ({type(exc).__name__}); its "
+                                                           "flags were removed where it could be read"})
+            cleared, _unread = _clear_paths([path])
+            written.update(cleared)
             continue
         totals["shards"] += 1
         totals["outlines"] += len(doc["a"])
@@ -448,10 +495,15 @@ def build(store, *, tiles=None, now=None) -> dict:
             H._write_atomic(path, data)
     for name, reason in sorted(values.failed.items()):
         failures.append({"tile": name, "reason": f"the radar shard could not be read ({reason}); its cells read Data unavailable"})
-    state = "loaded" if not failures else "partial"
+    reasons = []
+    if tiles:
+        reasons.append("this run labelled only the named tiles")
+    if failures:
+        reasons.append(f"{len(failures)} files could not be read")
+    state = "partial" if reasons else "loaded"
     block = {"state": state,
              "problem": None if state == "loaded" else H.WORDS["unavailable"].format(
-                 what="Some bubble values on the building outlines", reason=f"{len(failures)} files could not be read"),
+                 what="Some bubble values on the building outlines", reason="; ".join(reasons)),
              "built_at": built_at, "as_of": index.get("as_of"), "window": index.get("window"),
              "zooms": list(ZOOMS), "rule": rule_words(), "tiles": tiles or "all", "counts": totals,
              "bytes_added": totals["bytes_after"] - totals["bytes_before"], "failures": failures[:50],
@@ -461,27 +513,19 @@ def build(store, *, tiles=None, now=None) -> dict:
 
 
 def unavailable(store, reason: str) -> dict:
-    """Removes the flags and the value text from every shard and marks the block unavailable (D20): no stale bubble is drawn."""
+    """Removes the flags and the value text from every shard that can be read, and marks the block unavailable (D20): no stale
+    bubble is drawn. The block is written before any shard is touched, and a shard that cannot be read is named in the block
+    rather than stopping the run. Returns the summary, which names those shards."""
     store = Path(store)
     text = " ".join(str(reason).split())
     if not text:
         raise LabelError("give the reason the bubble values are unavailable (--reason TEXT)")
     index = _read_index(store)
-    written: dict = {}
-    for path in _shard_paths(store, None):
-        raw = path.read_bytes()
-        doc = json.loads(raw.decode("utf-8"))
-        if not isinstance(doc, dict) or doc.get("f") != FORMAT:
-            continue
-        data = render(doc, None, None)
-        if data != raw:
-            H._write_atomic(path, data)
-            written[f"hail/b/{path.name}"] = data
-    block = {"state": "unavailable", "problem": H.WORDS["unavailable"].format(
-        what="The bubble values on the building outlines", reason=text), "built_at": H._utc_now(),
-        "shards_cleared": len(written)}
-    _write_block(store, index, block, written)
-    return {"state": "unavailable", "shards_cleared": len(written), "problem": block["problem"]}
+    block = _mark_unavailable(store, index, {
+        "problem": H.WORDS["unavailable"].format(what="The bubble values on the building outlines", reason=text),
+        "built_at": H._utc_now()})
+    return {"state": "unavailable", "shards_cleared": block["shards_cleared"], "failures": block["failures"],
+            "problem": block["problem"]}
 
 
 # ---------------------------------------------------------------- verify
@@ -545,7 +589,6 @@ def verify(store, *, tiles=None, sample: int = 40, seed: int = 4) -> dict:
                 flagged = [m for m in cluster["members"] if result["flags"][m][z_index]]
                 if len(flagged) > 1:
                     bad["cluster"].append(path.name)
-        kv = result["kv"]
         for i, outline in enumerate(doc["a"]):
             if result["flags"][i] != [0, 0]:
                 cell = cell_of(outline)

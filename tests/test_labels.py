@@ -8,6 +8,12 @@ box and the 2 px skip rule; the clusters (a dot joins the nearest leader within 
 nearest the middle); the greedy placement (value descending, a dash last, the skip rule); the flags and the kv of the fixture
 shard; an outline outside its shard's tile gets no flag; a shard with no change renders to its own bytes; the build (manifest,
 determinism, the unavailable path, the missing radar tile, a font that is absent) and verify (a changed shard is named).
+Also: the value floor (0.25 in is the first value with a bubble value; a smaller value reads as no value); a font file that
+cannot be read; a shard that fails and is rewritten without its flags; the unavailable command with a corrupt shard (every
+readable shard cleared, the corrupt one named, exit 0); a run that names tiles reads partial; the largest estimate of a
+window per cell.
+Also: the one bubble legend (D1, D128(a)) and the "Data unavailable." lead and the all-clear closing of the unavailable sentences
+(D2, D128(b), D117(b)).
 """
 from __future__ import annotations
 
@@ -44,6 +50,12 @@ except ImportError:                       # pragma: no cover
 needs_font = unittest.skipUnless(HAVE_FONT, "Pillow with raqm (and numpy) is not installed")
 
 
+NOW = "2026-10-17T12:00:00Z"
+# The printed bubble legend (D110(c)): the one sentence build.py puts in labels.words.legend, the module's text too (D1)
+D110_LEGEND = ("-- means Data unavailable: no radar estimate of 0.25 in or more was stored for this cell; that is not zero "
+               "and not an all-clear.")
+
+
 def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -69,6 +81,11 @@ class Words(unittest.TestCase):
     def test_the_label_words_pass_the_forbidden_list(self):
         for key, text in H.WORDS.items():
             if isinstance(text, str) and key.startswith("label"):
+                if key == "label_legend":
+                    # D110(c): the legend's clause "and not an all-clear." is the owner's sentence (see test_history_layers);
+                    # only that clause is set aside, and only when the legend is the D110(c) sentence exactly
+                    self.assertEqual(text, D110_LEGEND, key)
+                    text = text.replace("and not an all-clear.", "")
                 W.assert_clean(self, text, key)
         W.assert_clean(self, L.DASH, "dash")
         W.assert_clean(self, L.UNAVAILABLE_TEXT, "unavailable")
@@ -77,6 +94,55 @@ class Words(unittest.TestCase):
         text = Path(L.__file__).read_text(encoding="utf-8")
         self.assertNotIn("\u2014", text)
         self.assertNotIn("\u2013", text)
+
+
+class BubbleLegendWords(unittest.TestCase):
+    """D1 (D128(a)): one bubble legend. The labels rule words carry the printed legend, the D110(c) sentence that build.py puts
+    in labels.words.legend, and the index carries the same words."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.store = make_store(self.tmp)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    @needs_font
+    def test_the_rule_words_carry_the_printed_legend(self):
+        self.assertEqual(L.rule_words()["words"], {"dash": "--", "unavailable": "Data unavailable", "legend": D110_LEGEND})
+
+    @needs_font
+    def test_the_index_carries_the_printed_legend_in_its_rule_words(self):
+        L.build(self.store, tiles=[TILE], now=NOW)
+        index = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(index[L.INDEX_KEY]["rule"]["words"]["legend"], D110_LEGEND)
+
+
+class UnavailableBlock(unittest.TestCase):
+    """D2 (D128(b), D117(b)): the labels block's unavailable sentences lead with "Data unavailable." and close with the all-clear
+    sentence (D41)."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.store = make_store(self.tmp)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_the_unavailable_command_writes_a_problem_that_leads_and_closes(self):
+        result = L.unavailable(self.store, "a test")
+        self.assertEqual(result["problem"], "Data unavailable. The bubble values on the building outlines could not be built in "
+                                            "this update: a test. This is not an all-clear.")
+        index = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(index[L.INDEX_KEY]["problem"], result["problem"])
+
+    @needs_font
+    def test_a_partial_run_leads_and_closes_its_problem(self):
+        block = L.build(self.store, tiles=[TILE], now=NOW)
+        self.assertEqual(block["state"], "partial")
+        self.assertTrue(block["problem"].startswith("Data unavailable. Some bubble values on the building outlines could not be "
+                                                    "built in this update: "), block["problem"])
+        self.assertTrue(block["problem"].endswith("This is not an all-clear."), block["problem"])
 
 
 class TextAndKv(unittest.TestCase):
@@ -90,6 +156,35 @@ class TextAndKv(unittest.TestCase):
         self.assertEqual(L.label_text(100), "0.39 in")     # 100 tenths: 10.0 mm, 0.3937 in, shown 0.39
         self.assertEqual(L.kv_text(100), "0.39 in")
         self.assertEqual(L.label_text(99), "0.38 in")      # 9.9 mm: 0.3897 in, rounded down to 0.38
+
+
+class Floor(unittest.TestCase):
+    def test_a_value_below_a_quarter_inch_has_no_bubble_value(self):
+        self.assertEqual(hail.FLOOR_TENTHS, 64)
+        self.assertEqual(L.label_text(63), "--")
+        self.assertEqual(L.kv_text(63), "Data unavailable")
+        self.assertEqual(L.label_text(50), "--")
+        self.assertEqual(L.label_text(64), "0.25 in")
+        self.assertEqual(L.kv_text(64), "0.25 in")
+
+
+class RadarValues(unittest.TestCase):
+    """The largest estimate of the window, per cell, read from the radar shard (the fixture tile r0081_c0160)."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.store = make_store(self.tmp)
+        self.index = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))
+        self.values = L.TileValues(self.store, self.index)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_the_largest_estimate_in_the_window_is_taken_per_cell(self):
+        cell = (810, 1600)                       # the in-tile key 0: days 1688 (97 tenths) and 2339 (65 tenths)
+        self.assertEqual(self.values.for_cells([cell]), {cell: 97})
+        self.assertEqual(self.values.for_cells([(810, 1601)]), {(810, 1601): 70})
+        self.assertEqual(self.values.for_cells([(900, 900)]), {})
 
 
 class Geometry(unittest.TestCase):
@@ -246,7 +341,7 @@ class BuildAndVerify(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_a_build_writes_flags_and_the_manifest_and_verify_passes(self):
-        block = L.build(self.store, tiles=[TILE], now="2026-10-17T12:00:00Z")
+        block = L.build(self.store, now=NOW)
         self.assertEqual(block["state"], "loaded", block)
         raw = (self.store / "hail" / "b" / SHARD).read_bytes()
         doc = json.loads(raw)
@@ -267,6 +362,11 @@ class BuildAndVerify(unittest.TestCase):
         first = (self.store / "hail" / "b" / SHARD).read_bytes()
         L.build(self.store, tiles=[TILE], now="2026-10-17T12:00:00Z")
         self.assertEqual((self.store / "hail" / "b" / SHARD).read_bytes(), first)
+
+    def test_a_run_that_names_tiles_reads_partial_because_the_other_shards_keep_their_flags(self):
+        block = L.build(self.store, tiles=[TILE], now=NOW)
+        self.assertEqual(block["state"], "partial")
+        self.assertIn("named tiles", block["problem"])
 
     def test_a_missing_radar_tile_is_partial_and_its_cells_read_data_unavailable(self):
         (self.store / "hail" / "t" / f"{TILE}.json").unlink()
@@ -296,17 +396,69 @@ class BuildAndVerify(unittest.TestCase):
         result = L.verify(self.store, tiles=[TILE])
         self.assertFalse(result["ok"])
 
-    def test_without_the_font_the_block_is_unavailable_and_no_shard_changes(self):
-        before = (self.store / "hail" / "b" / SHARD).read_bytes()
+    def test_without_the_font_the_flags_are_removed_and_the_block_is_unavailable(self):
+        L.build(self.store, now=NOW)                          # the flags, with the font
+        self.assertIn(b'"kv"', (self.store / "hail" / "b" / SHARD).read_bytes())
         L._WIDTHS.clear()
         L._FONT.clear()
-        with mock.patch.object(L, "FONT_FILE", Path(self.tmp) / "missing.woff2"):
-            block = L.build(self.store, tiles=[TILE], now="2026-10-17T12:00:00Z")
-        L._WIDTHS.clear()
-        L._FONT.clear()
+        try:
+            with mock.patch.object(L, "FONT_FILE", Path(self.tmp) / "missing.woff2"):
+                block = L.build(self.store, now=NOW)
+        finally:
+            L._WIDTHS.clear()
+            L._FONT.clear()
         self.assertEqual(block["state"], "unavailable")
         self.assertIn("font", block["problem"])
-        self.assertEqual((self.store / "hail" / "b" / SHARD).read_bytes(), before)
+        self.assertEqual(block["shards_cleared"], 1)
+        doc = json.loads((self.store / "hail" / "b" / SHARD).read_text(encoding="utf-8"))
+        self.assertNotIn("kv", doc)
+        self.assertTrue(all("k" not in o for o in doc["a"]))
+        self.assertTrue(L.verify(self.store)["ok"])
+
+    def test_a_font_file_that_cannot_be_read_is_a_label_error_not_a_crash(self):
+        L._WIDTHS.clear()
+        L._FONT.clear()
+        try:
+            with mock.patch("PIL.ImageFont.truetype", side_effect=OSError("a test")):
+                with self.assertRaises(L.LabelError):
+                    L._font()
+        finally:
+            L._WIDTHS.clear()
+            L._FONT.clear()
+
+    def test_a_shard_that_fails_is_rewritten_without_its_flags_and_named(self):
+        L.build(self.store, now=NOW)
+        path = self.store / "hail" / "b" / SHARD
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        del doc["a"][3]["p"]                                  # an outline with no point: the labelling raises KeyError
+        path.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
+        block = L.build(self.store, now=NOW)
+        self.assertEqual(block["state"], "partial")
+        self.assertTrue(any(f.get("shard") == SHARD for f in block["failures"]), block["failures"])
+        after = json.loads(path.read_text(encoding="utf-8"))
+        self.assertNotIn("kv", after)
+        self.assertTrue(all("k" not in o for o in after["a"]))
+
+    def test_the_unavailable_command_clears_the_readable_shards_and_names_a_corrupt_one(self):
+        copy = self.store / "hail" / "b" / "r0081_c016001.json"
+        copy.write_bytes((self.store / "hail" / "b" / SHARD).read_bytes())
+        L.build(self.store, now=NOW)                          # both shards carry flags now
+        bad = self.store / "hail" / "b" / "r0081_c016002.json"
+        bad.write_bytes((self.store / "hail" / "b" / SHARD).read_bytes()[:700])     # truncated: not JSON
+        out = io.StringIO()
+        with redirect_stdout(out):
+            code = L.main(["unavailable", "--store", str(self.store), "--reason", "a test"])
+        self.assertEqual(code, 0)
+        result = json.loads(out.getvalue())
+        self.assertEqual(result["state"], "unavailable")
+        self.assertEqual(result["shards_cleared"], 2)
+        self.assertTrue(any(f.get("shard") == bad.name for f in result["failures"]), result["failures"])
+        for path in (self.store / "hail" / "b" / SHARD, copy):
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            self.assertNotIn("kv", doc)
+            self.assertTrue(all("k" not in o for o in doc["a"]))
+        index = json.loads((self.store / "hail" / "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(index[L.INDEX_KEY]["state"], "unavailable")
 
     def test_measure_reads_the_store_and_writes_nothing(self):
         before = (self.store / "hail" / "b" / SHARD).read_bytes()

@@ -128,6 +128,16 @@ python -m website.stations build --store store --cache b5-cache --scope daily   
 python -m website.stations verify --store store                      # check the station figures and gates (exit 1 on a failure)
 python -m website.snowgrid build --store store --cache b5-cache --offline       # NOHRSC snow analysis; the unit check decides whether it shows
 python -m website.gauges build --store store --cache b5-cache                   # NWS flood stages and USGS peaks, within 10 miles
+python -m website.terrain build --store store --cache b6-cache/terrain --zooms 5-10   # B6 terrain tiles: 3DEP shading and NLCD land cover tint (the monthly job adds --refresh and --timeout 60)
+python -m website.terrain verify --store store                    # check the terrain tiles and re-fetch a sample (exit 1 on a failure)
+python -m website.basemap2 build --store store --cache b6-cache/basemap2   # B6 base map vectors: reservations, forests, parks, water, places, peaks (bands A to D)
+python -m website.basemap2 verify --store store                   # check the vectors and their budgets
+python -m website.landmarks build --store store --cache b6-cache/landmarks   # B6 landmark points per tile (schools, hospitals, airports, fire and EMS stations, parks)
+python -m website.landmarks verify --store store                  # check the landmark files
+python -m website.history_layers build --store store --cache b6-cache/zone-outlines   # B6 five-year pictures, zone counts, recent radar cells, zone outlines
+python -m website.history_layers verify --store store              # check the files and recount a sample
+python -m website.labels build --store store                       # B6 value bubble anchors on the building outlines, zooms 17 and 18 (after the outline step)
+python -m website.labels verify --store store --sample 40          # recompute a sample of shards
 python -m http.server -d _site 8000            # open http://localhost:8000
 pip install pyyaml                                                  # test-only: the workflow-file tests read YAML (requirements.txt does not list it)
 python -m unittest tests.test_site tests.test_gridded tests.test_basemap tests.test_storm tests.test_satellite tests.test_hail tests.test_hail_workflow tests.test_joins tests.test_addresses tests.test_streets tests.test_buildings tests.test_swath tests.test_climate tests.test_stations tests.test_snowgrid tests.test_gauges tests.test_summary tests.test_words_rules tests.test_website_workflow   # website tests, offline
@@ -153,6 +163,11 @@ website/stations.py    GHCN-Daily station readings (B5): the station rule (40 mi
 website/snowgrid.py    NOHRSC season snowfall (B5): the unit check; the analysis stays out unless the check passes
 website/gauges.py      NWS flood stages and USGS annual peaks (B5): the nearest gauge within 10 miles
 website/summary.py     the five-season table that leads the sheet and the roof lines (B5); every word is Python's
+website/terrain.py        B6: the terrain tiles for the map, 3DEP hillshade and NLCD land cover tint, zooms 5 to 10 (grey JPEG and palette PNG tiles)
+website/basemap2.py       B6: the base map vectors: reservations, forests, parks, lakes and rivers with names, places, summit names (bands A to D)
+website/landmarks.py      B6: landmark points per tile: schools, hospitals, airports, fire and EMS stations, parks (places of worship held)
+website/history_layers.py B6: the five-year hail and heat pictures, the zone counts (eight measures), the recent radar hail cells and the zone outlines
+website/labels.py         B6: the value bubble anchors on the building outlines at zooms 17 and 18 (the cluster rule)
 website/data/hail-fixture/ a labelled SAMPLE store for --sample builds and tests
 website/build.py       collect every source → map frames and data/map.json → pages (Jinja) → _site/
 website/sample.py      invented, labelled sample data for design checks and tests

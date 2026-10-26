@@ -43,6 +43,64 @@
     at 12:43 UTC and shows here on the next rebuild. The as-of date is on every page that shows the
     history. The units and the source are in the data
     sources table below.</p>
+  <h3>Base map</h3>
+  <p>The base map is built by this site from the public sources below, and each one has its own credit line. A lake, river or
+    park on the map is not a statement about water or land use at an address. The map has no 3D view.</p>
+  <p>Terrain shading is a picture of the land for zooms 5 to 10.
+    {{ b6.relief or "" }} {{ b6.relief_unavailable or "" }}</p>
+  <p>The land cover file holds the 2021 National Land Cover Database in five classes: forest, shrub and grass, developed, crop
+    and water. It covers zooms 5 to 10.
+    {{ b6.land_cover or "" }} {{ b6.land_cover_unavailable or "" }}</p>
+  <p>Reservation outlines and the interstate, US and state route shields come from the Census Bureau's 2026 files, with the names
+    the files give. {{ b6.tiger or "" }} {{ b6.reservations_unavailable or "" }} {{ b6.roads_unavailable or "" }}</p>
+  <p>Place names come from the Census Bureau's 2026 place file, and each place's population is its 2020 Census count.
+    {{ b6.places_2020 or "" }} {{ b6.place_unavailable or "" }}</p>
+  <p>National forest outlines come from the Forest Service's forest system boundaries. {{ b6.forests or "" }} {{ b6.forests_unavailable or "" }}</p>
+  <p>Park outlines and names, for national, state, recreation and local parks, come from the protected areas database.
+    {{ b6.padus_credit or "" }} {{ b6.pad_us_unavailable or "" }} {{ b6.local_parks_unavailable or "" }}</p>
+  <p>Lakes and rivers with their names come from the National Hydrography Dataset. Where the detailed water for an area did not load
+    in an update, the lakes and rivers that loaded statewide still show at zoom 13 and up, and the sheet says: "{{ b6.water_line }}"
+    {{ b6.lakes or "" }} {{ b6.lakes_unavailable or "" }}</p>
+  <p>Summit names come from the Geographic Names Information System. {{ b6.summits or "" }} {{ b6.summits_unavailable or "" }}</p>
+  <p>A summit height is the 3D Elevation Program's value at the summit's position, in metres and feet. It can differ from a
+    published height by tens of metres, and a summit with no value is not shown. {{ b6.heights or "" }} {{ b6.heights_unavailable or "" }}</p>
+  <h3>Landmarks</h3>
+  <p>A landmark is a point from a public list: a school, a hospital, a public-use airport, a fire or EMS station or a local park.
+    The point is where the list puts it. The list does not say that the place is open or staffed today. Each point keeps its name,
+    its kind, its position and the list it came from. Nothing else from a list is kept.</p>
+  <p>Public school points come from a federal school list. {{ b6.public_schools or "" }} {{ b6.public_schools_unavailable or "" }}</p>
+  <p>Private school points come from a federal school list. {{ b6.private_schools or "" }} {{ b6.private_schools_unavailable or "" }}</p>
+  <p>{{ b6.hospital_sentence }} If that list names no Montana hospital, a copy of the state licensure list is read instead, and that
+    copy carries its own credit. {{ b6.hospital_credit or "" }}</p>
+  <p>Fire and EMS stations are points from the USGS list of fire and EMS stations.
+    {{ b6.fire_ems or "" }} {{ b6.fire_ems_unavailable or "" }}</p>
+  <p>Only public-use airports that are operational are shown. Heliports are not shown. {{ b6.faa_credit or "" }} {{ b6.faa_unavailable or "" }}</p>
+  <p>A park point sits near the middle of the park. The park outline comes from the protected areas list.</p>
+  <p>{{ b6.held_church }}</p>
+  <p>{{ b6.held_park }}</p>
+  <h3>Five-year pictures</h3>
+  <p>Days with a radar estimate of 1 inch or more are counted per 1 km cell over five seasons. Days at or above 90 F are counted per
+    grid cell: about 1/24 degree cells (roughly 4.6 by 3 km in Montana). A radar estimate is not a measurement, and a blank cell is
+    not the same as no hail. {{ b6.hail1_unavailable or "" }} {% if b6.mrms_pictures %}Source: NOAA MRMS MESH radar estimates, NOAA Open Data on AWS.{% endif %}</p>
+  <p>{% if b6.heat_window %}Days at or above 90 F are counted over {{ b6.heat_window }}, and a blank cell has no grid value.{% else %}{{ b6.heat90_unavailable or "" }}{% endif %}
+    {% if b6.nclimgrid %}Source: NOAA nClimGrid-Daily grid estimates (file attribute "license = no restrictions"; attribution requested).{% endif %}</p>
+  <h3>Zone counts</h3>
+  <p>Warnings, watches and advisories by public forecast zone come from the NWS zone products and polygon warnings in the Iowa State
+    archive{% if b6.zone_window %}, from {{ b6.zone_window }}{% endif %}, including flash flood watches and warnings. Each count includes those later
+    cancelled, upgraded or expired early, and an event that stopped and then started again counts once for each part. A polygon
+    counts in a zone when it touches the zone. The counts use the counted rows from the store's zone and polygon files.
+    {{ b6.newest or b6.zones_unavailable or "" }}
+    {% if b6.iem_warnings %}Source: National Weather Service warnings, through the Iowa Environmental Mesonet archive.{% endif %}</p>
+  <p>The zone outlines are the Iowa State archive's ugcs snapshot of 2026-10-25, which gives the 83 public zone outlines only.
+    {{ b6.ugcs or b6.ugcs_unavailable or "" }}</p>
+  <h3>Recent radar hail</h3>
+  <p>The recent radar hail list holds the cells with a radar estimate of 1 inch or more on a day in the last 30 days of the store.
+    These are radar estimates, not hail seen on the ground. A cell that is not listed had no such day in the store, which is not
+    the same as no hail. {{ b6.recent_unavailable or "" }} {% if b6.mrms_recent %}Source: NOAA MRMS MESH radar estimates, NOAA Open Data on AWS.{% endif %}</p>
+  <h3>Value bubbles</h3>
+  <p>The bubble values on the building outlines are the largest radar estimate of each 1 km cell over the five years, in inches.
+    A dash (--) means Data unavailable for that cell: no radar estimate of 0.25 in or more was stored for it. That is not zero.
+    This is not an all-clear.</p>
   <h2>Five years of weather</h2>
   <p>Each town's page has a five-season table for July 2021 to June 2026, with the partial 2026-27
     season below it. Each row names its kind of record and its unit, and no row mixes two kinds of record. The history sits

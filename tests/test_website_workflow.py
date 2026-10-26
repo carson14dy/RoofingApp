@@ -1134,3 +1134,35 @@ class SmokeRowsAndBudgets(unittest.TestCase):
         missing = real(run({}))
         self.assertEqual(len(missing), 1, missing)
         self.assertIn("no phone-view budget", missing[0])
+
+
+@needs_yaml
+class RepositoryLines(unittest.TestCase):
+    """The repository lines the B6 build depends on: the git rules that keep the fixture archives in git and the B6 caches out
+    of it, the website install line in AGENTS.md (which names the shapefile reader), and the five B6 test modules, which are
+    push paths and run in the offline line (PushPathsCoverTheTests checks the rest of the modules)."""
+
+    B6_MODULES = ("test_terrain", "test_basemap2", "test_landmarks", "test_history_layers", "test_labels")
+
+    def test_the_fixture_archives_are_re_included_directly_after_the_zip_rule(self):
+        lines = [line.strip() for line in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(lines[lines.index("*.zip") + 1], "!tests/fixtures/**/*.zip")
+
+    def test_the_b6_caches_are_never_committed(self):
+        lines = [line.strip() for line in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()]
+        self.assertIn("terrain-cache/", lines)
+        self.assertIn("b6-cache/", lines)
+
+    def test_the_website_install_line_in_agents_names_the_shapefile_reader(self):
+        install = [line for line in (ROOT / "AGENTS.md").read_text(encoding="utf-8").splitlines()
+                   if line.startswith("pip install requests jinja2 pillow numpy")]
+        self.assertEqual(len(install), 1)
+        self.assertIn("pyshp", install[0].split())
+
+    def test_the_five_b6_test_modules_are_push_paths_and_run_in_the_offline_line(self):
+        paths, ran = push_paths(), offline_modules()
+        for module in self.B6_MODULES:
+            with self.subTest(module=module):
+                self.assertTrue((ROOT / "tests" / f"{module}.py").is_file())
+                self.assertTrue(covered(f"tests/{module}.py", paths), f"tests/{module}.py is not in on.push.paths")
+                self.assertIn(f"tests/{module}.py", ran)

@@ -29,11 +29,16 @@ from zoneinfo import ZoneInfo
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import addresses as ad
+from . import basemap2 as b2
 from . import buildings as bd
 from . import hail as hs
+from . import history_layers as hl
+from . import labels as lb
+from . import landmarks as lm
 from . import summary as sm
 from . import sources as src
 from . import streets as st
+from . import terrain as tr
 
 HERE = Path(__file__).resolve().parent
 UTC = timezone.utc
@@ -51,6 +56,8 @@ class Collector:
     def __init__(self, fetch: src.Fetcher, now: datetime, previous: dict | None = None):
         self.f, self.now, self.prev = fetch, now, previous or {}
         self.status: dict[str, dict] = {}
+        self.hail_index: dict | None = None    # B6: the store's index as the copy holds it (data/base.json reads it), or None
+        self.hail_problem: str | None = None   # B6: why the store did not load, in plain words (None when it did)
         self.replaced: set[str] = set()        # alert ids a newer message in this build's responses replaced
 
     def note(self, key, label, ok, detail="", when=None, words=None):
@@ -343,6 +350,8 @@ class Collector:
         block["tenths_per_mm"] = HAIL_TENTHS_PER_MM
         if addresses:                           # --hail-addresses only (B3): the address, street and outline layers
             block.update(self.layers(out_dir, index, problem, address_text))
+        # B6: data/base.json reads the copied store (its base, history and recent folders and the blocks of its index)
+        self.hail_index, self.hail_problem = (index, None) if problem is None else (None, problem)
         return block
 
     def layers(self, out_dir: Path, index: dict | None, problem: str | None, address_text: str) -> dict:
@@ -381,15 +390,18 @@ MAP_VIEW = {"bounds": [[44.35, -116.06], [49.01, -104.03]], "min_zoom": 5, "max_
 IMAGERY = {
     "url": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}",
     "max_zoom": 16, "host": "basemap.nationalmap.gov",
-    "credit_line": "Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS.",
+    # D110(d) (B6): the credit row carries the same privacy words as the Map page's Imagery description and the About page
+    "credit_line": ("Imagery: USDA, USGS, The National Map. Your IP address and the map area you view go to USGS while it "
+                    "is on."),
     "failed_line": "Imagery didn't load from USGS. Outlines and towns are still shown."}
 
 
 def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dict, reports: dict,
-             status: dict, hail: dict | None = None) -> dict:
+             status: dict, hail: dict | None = None, base: dict | None = None) -> dict:
     """Everything the map page draws, as one JSON document (data/map.json). The contract is in
     docs/DESIGN.md ("Interactive map"); website/static/map/map.js reads it. The "hail" block is there only in a
-    --hail-history build (Collector.hail): no key otherwise."""
+    --hail-history build (Collector.hail): no key otherwise. The "base" pointer (base_pointer) is always there (B6, D125(d)):
+    the states, the base map's tile templates and zooms, and the name of data/base.json."""
     from . import gridded
     radar_times = [f["time"] for f in (layers.get("precip") or {}).get("frames", []) if f.get("kind") == "radar"]
     first, last = now - timedelta(hours=1, minutes=10), now + timedelta(hours=14)
@@ -417,6 +429,7 @@ def map_data(now: datetime, sample: bool, layers: dict, towns: list, alerts: dic
                    "items": alerts["items"]},
         "reports": reports["items"],
         **({"hail": hail} if hail is not None else {}),
+        **(base or {}),                       # B6: base, history_layers, recent and labels (base_pointer)
     }
 
 
@@ -553,7 +566,14 @@ ADDRESS_TEXT_MODES = ("on", "off")                 # --address-text (D35): off w
 # is the TIGER 2026 county file (B5); census_counties is the 1:500,000 county file of the outline counts (B3)
 B5_CONTRACTS = ("nclimgrid_daily", "nohrsc_season_snowfall", "ghcn_daily", "iem_watchwarn", "iem_ugcs", "iem_lsr",
                 "nwps_gauges", "usgs_water_api", "census_tiger_counties", "roof_references")   # the order of sources.py's rows
-HAIL_CONTRACTS = ("hail_history",) + JOIN_CONTRACTS + B5_CONTRACTS  # on the About page only in a --hail-history build
+# the B6 feeds (sources.py rows, the B6 integration notes): the base map (terrain, vectors, landmark points), the five-year
+# pictures, the zone counts and the recent radar hail. On the About page only in a --hail-history build; the rows sit before
+# the B5 rows in sources.py, which the B5 order test keeps last.
+B6_CONTRACTS = ("terrain_shading", "terrain_land_cover", "base_reservations", "base_roads", "base_places", "base_forests",
+                "base_parks", "base_water", "base_summit_names", "base_summit_heights", "nces_public", "nces_private",
+                "usgs_hospitals", "hifld_hospitals", "faa_nasr", "usgs_fire", "padus_local", "tiger_park", "fema_worship",
+                "history_pictures", "history_zone_counts", "recent_radar_cells", "bubble_anchors")
+HAIL_CONTRACTS = ("hail_history",) + JOIN_CONTRACTS + B5_CONTRACTS + B6_CONTRACTS  # on the About page only in a --hail-history build
 # Words map.js fills that hail.WORDS doesn't hold: a shard that didn't load (the unavailable line's problem)
 HAIL_SITE_WORDS = {"fetch_failed": "the history for this spot didn't load in this update"}
 HAIL_STALE_DAYS = hs.STALE_DAYS    # map.js: an as_of older than this (in days) shows the stale line
@@ -627,6 +647,10 @@ B3_INDEX = (ad.INDEX_KEY, st.INDEX_KEY, bd.INDEX_KEY)   # the index blocks the B
 HAIL_FILES = ("index.json", "manifest.json")
 HAIL_FOLDERS = ("t", "j", "z", "s")              # B2: shards, joined records (with j/e), zone and station files
 HAIL_FOLDERS_B5 = ("c", "sd", "g", "k", "tl")    # B5: grid tiles, station files, gauges, county files, station tile lists
+# B6 (D125(d)): the base map (terrain tiles, band files, landmark shards, peaks, places, the zone outline file and the base
+# index), the five-year pictures, the zone counts and the recent cells. A folder the store lacks is copied as nothing, and the
+# data files say so (base_document): the copy never fails for a missing B6 folder.
+HAIL_FOLDERS_B6 = ("base", "history", "recent")
 
 
 
@@ -639,7 +663,8 @@ def snow_shown(index: dict) -> bool:
 
 def _copy_hail(root: Path, out: Path, index: dict, addresses: bool = False) -> dict:
     """Copy the store's hail/ files into the site as out/hail/: the B2 folders, the B5 folders (c, sd, g, k, tl; j/e comes with
-    j), and hail/n only when the snow block says it is shown (D7, D23). The B3 folders and files (a, b, r, counts.json) are
+    j), the B6 folders (base, history, recent; each only when the store holds it), and hail/n only when the snow block says it
+    is shown (D7, D23). The B3 folders and files (a, b, r, counts.json) are
     copied only with --hail-addresses (default off, D35); any other folder is not copied.
     The copy's manifest lists only the files it carries: a build without the flag carries no B3 file, folder, manifest
     entry or index block (the index is written again without them and its manifest entry is updated). The manifest is
@@ -648,7 +673,7 @@ def _copy_hail(root: Path, out: Path, index: dict, addresses: bool = False) -> d
     # D92(a), D75(a): the source may be a built site's own hail/ folder (the parity step reads _site as its store), which holds
     # B4's hail/live files; allow_live skips only those. The copy takes only the listed folders, and its own check stays strict.
     hs.check_manifest(root, allow_live=True)
-    names = set(HAIL_FILES) | set(HAIL_FOLDERS) | set(HAIL_FOLDERS_B5)
+    names = set(HAIL_FILES) | set(HAIL_FOLDERS) | set(HAIL_FOLDERS_B5) | set(HAIL_FOLDERS_B6)
     if snow_shown(index):
         names.add("n")
     if addresses:
@@ -1346,6 +1371,518 @@ def about_hail_context() -> dict:
             "terms": about_terms(), "not_quoted": sm.not_quoted_text(), "citations": sm.citations()}
 
 
+# ---------------------------------------------------------------- the B6 base map: data/base.json and map.json's pointer
+# (D125(d)). map.json carries only the first-paint pointer: each block's state, the base map's as_of, its tile templates
+# and zooms, and the name of data/base.json. data/base.json, written by the same build, carries the rest: the three base
+# parts (terrain, vector, landmarks) with their words, credit lines, bands, cells, held kinds and sources and budgets; the
+# five-year pictures and the zone counts; the recent cells; the label rule and words; the sheet's words; and the budgets.
+# The modules' own words (WORDS, CREDIT, the credit lines) are imported; only the sentences no module holds are written here.
+
+BASE_DATA = "data/base.json"                                   # the second data file; map.json names it (D125(d))
+BASE_ZOOMS = (tr.ZOOMS[0], tr.ZOOMS[-1])                       # the terrain tiles: zooms 5 to 10 (terrain.ZOOMS)
+BASE_TILES = {"h": "hail/base/h/{z}/{x}/{y}.jpg", "l": "hail/base/l/{z}/{x}/{y}.png"}   # the terrain tile files (terrain.py)
+LABEL_SHARD_GZIP = 100_000                                     # D66: a building shard, with its bubble flags, stays under this
+# The sentences no module holds (rule 5: "Data unavailable" leads, the D20 sentence follows).
+BASE_UNAVAILABLE = ("Data unavailable. The base map could not be loaded in this update; that is not the same as no base map. "
+                    "This is not an all-clear.")
+NO_DATE = "Data unavailable"          # the words for a date the index does not carry (F2, F12): never a count, never "not recorded"
+# D110(a), (b), (g): the sheet's sub-lines and the switch's name, as the owner saw them in the mock (the words the browser prints)
+SHEET_WORDS = {
+    "points_of_interest": "Landmark dots and names, for the kinds chosen above",
+    "five_year_history": "Past records from the last five years. Not a forecast.",
+    "highlight_recent_hail": "Highlight recent radar hail",
+    # F3 (D122(b), D131(c)): the water line for an area whose tile has no band D shard, the vector module's own words
+    "water_line_unavailable": b2.WORDS["water_line_unavailable"],
+    # F3 (DESIGN section 13.6, item 5): the sub-line the sheet shows under the Landmarks heading
+    "landmarks_sub_line": ("Schools, parks, hospitals, airports, and fire and EMS stations, from the public lists named under "
+                           "About."),
+}
+# D110(c): the bubble's legend line; the glyph and the unavailable words are the labels module's
+BUBBLE_LEGEND = (f"{lb.DASH} means {lb.UNAVAILABLE_TEXT}: no radar estimate of 0.25 in or more was stored for this cell; that "
+                 "is not zero and not an all-clear.")
+# the reasons a part gives when the copy lacks its files (plain words; the data file keeps them as "reason")
+REASON_NO_STORE = "this build does not include the hail store"
+REASON_NO_BASE = "the store has no base map files"
+REASON_NO_HISTORY = "the store has no five-year picture files"
+REASON_NO_RECENT = "the store has no recent radar hail files"
+REASON_NO_LABELS = "the store has no bubble values"
+
+
+def _json_file(path: Path):
+    """A JSON file of the copy, or None when it is absent or cannot be read (its block then says why)."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _shard_names(folder: Path) -> list[str]:
+    """The shard names a folder of the copy holds, sorted (the band cells and the band D tiles); none when it is absent."""
+    return sorted(p.stem for p in folder.glob("*.json")) if folder.is_dir() else []
+
+
+def _first_paint(block: dict) -> dict:
+    """A block's entry in map.json: its state only (the words and the reasons are in data/base.json)."""
+    return {"state": block["state"]}
+
+
+def _safely(build, fallback, what: str) -> dict:
+    """A block that cannot be read gives its unavailable block with the reason, so one part fails alone (D16, D20)."""
+    try:
+        return build()
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError, OSError) as e:
+        return fallback(f"{what} ({type(e).__name__})")
+
+
+def _part(build, unavailable, what: str) -> dict:
+    """One base part through its module's map function. A part that cannot be read gives the module's unavailable block with
+    the reason, and the other parts still build (D16, D20)."""
+    try:
+        return build()
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e:
+        block = unavailable()
+        block["reason"] = f"the {what} could not be read ({type(e).__name__})"
+        return block
+
+
+PAD_US_VECTOR = "padus"                        # basemap2's source key for the PAD-US fee layer (its park outlines; padus_features)
+PAD_US_READ = ("fetched", "cache", "partial")   # the basemap2 source states that mean the layer was read (source_states)
+HOSPITAL_SENTENCE = {"usgs_hospitals": lm.WORDS["hospital_usgs"], "hifld_hospitals": lm.WORDS["hospital_hifld"]}
+# T5 (D134(b)): a credit line prints only for a source the store read. A terrain layer is read when its index state is loaded
+# or partial; a vector source when basemap2 lists it fetched, cache or partial (PAD_US_READ names the same states); a landmark
+# source when it is shown (loaded, with rows kept: landmarks.describe_landmarks). basemap2.CREDIT holds one line per vector
+# source in this order, so its seven lines unpack here (a change to the tuple fails at import).
+TERRAIN_READ = ("loaded", "partial")
+TERRAIN_LINES = {"h": ("shading", "Relief: "), "l": ("land_cover", "Land cover: ")}   # the credit key and the labelled form
+VECTOR_READ = PAD_US_READ
+TIGER_LINE, PL2020_LINE, FOREST_LINE, PADUS_VECTOR_LINE, NHD_LINE, GNIS_LINE, DEM_LINE = b2.CREDIT
+# each vector credit line and the index keys of the sources it names; the line prints when one of them was read
+VECTOR_LINE_SOURCES = (
+    (TIGER_LINE, ("tiger_aiannh", "tiger_prisec", "tiger_place")),
+    (PL2020_LINE, ("census_pl2020",)),
+    (FOREST_LINE, ("edw",)),
+    (PADUS_VECTOR_LINE, ("padus",)),
+    (NHD_LINE, ("nhd_small_lines", "nhd_small_areas", "nhd_large_lines", "nhd_large_areas")),
+    (GNIS_LINE, ("gnis",)),
+    (DEM_LINE, ("3dep",)),
+)
+
+
+def read_vector_lines(rows) -> list[str]:
+    """The vector credit lines whose sources the store read (T5, D134(b)). rows is the vector part's "sources", keyed by source:
+    a source that is absent, or that basemap2 did not read, names no line. The lines come in basemap2.CREDIT's order."""
+    rows = rows if isinstance(rows, dict) else {}
+    return [line for line, keys in VECTOR_LINE_SOURCES
+            if any(isinstance(rows.get(key), dict) and rows[key].get("state") in VECTOR_READ for key in keys)]
+
+
+def terrain_line(terrain, name: str) -> str | None:
+    """A terrain layer's credit line in the labelled form the module gives ("Relief: ...", "Land cover: ...") when the store read
+    the layer and the module names its source; None otherwise (T5, D134(b)). terrain is the terrain part's block (terrain.map_data)."""
+    key, label = TERRAIN_LINES[name]
+    layer = ((terrain or {}).get("layers") or {}).get(name)
+    line = ((terrain or {}).get("credits") or {}).get(key)
+    read = isinstance(layer, dict) and layer.get("state") in TERRAIN_READ
+    return line if read and isinstance(line, str) and line.startswith(label) else None
+
+
+def _entry(block, key: str) -> dict:
+    """The row of one source in an index block's "sources" (an absent or non-dict row is an empty dict)."""
+    rows = block.get("sources") if isinstance(block, dict) else None
+    row = rows.get(key) if isinstance(rows, dict) else None
+    return row if isinstance(row, dict) else {}
+
+
+def landmark_line(key: str, as_of) -> str:
+    """A landmark source's credit line (landmarks.SOURCES) with its own date (F2): the FAA cycle, or the layer's last edit, as
+    the index's as_of gives it. Where the index carries no date the date reads Data unavailable; no line says a date was
+    not recorded."""
+    text = lm.SOURCES[key]["credit"]
+    if "{when}" not in text:
+        return text
+    if key == "faa_nasr":
+        when = f"cycle effective {as_of}" if as_of else NO_DATE
+    else:
+        when = f"layer last edited {as_of}" if as_of else NO_DATE
+    return text.format(when=when)
+
+
+def _landmark_words(base_index: dict | None, vector_block: dict | None) -> dict:
+    """The landmark words that data/base.json and the About page carry (F1, F2, F10; D130(b)).
+    sources: the credit line of each landmark source the store read and shows, the list describe_landmarks picks, with this
+    module's date words (landmark_line). hospital: the hospital source the store used, read from kinds.hospital.sources, which
+    names a source only when the kind loaded, so a source that was tried and not used is never named; its sentence is the
+    landmarks module's words for that source (or the unavailable words), and its credit is that source's line and no other.
+    credits: the FAA line, printed only when its source was read, and the PAD-US line, printed when either part read the
+    layer (the landmark list, or the park outlines in the vector part). lines: the credit line of each shown source,
+    by its key (the About page's school and fire lines, T5).
+    """
+    block = base_index.get(lm.INDEX_KEY) if isinstance(base_index, dict) else None
+    block = block if isinstance(block, dict) else {}
+    kinds = block.get("kinds") if isinstance(block.get("kinds"), dict) else {}
+    hospital_kind = kinds.get("hospital") if isinstance(kinds.get("hospital"), dict) else {}
+    shown = [key for key in lm.ORDER + ("hifld_hospitals",)
+             if key not in lm.HELD_SOURCES and _entry(block, key).get("state") == "loaded" and _entry(block, key).get("kept")]
+    lines = {key: landmark_line(key, _entry(block, key).get("as_of")) for key in shown}
+    listed = hospital_kind.get("sources") if isinstance(hospital_kind.get("sources"), list) else []
+    used = [key for key in listed if key in HOSPITAL_SENTENCE] if hospital_kind.get("state") == "loaded" else []
+    source = used[0] if len(used) == 1 and used[0] in lines else None
+    padus_read = "padus_local" in lines or _entry(vector_block, PAD_US_VECTOR).get("state") in PAD_US_READ
+    padus = lines.get("padus_local") or (
+        landmark_line("padus_local", _entry(block, "padus_local").get("as_of")) if padus_read else None)
+    return {"sources": [lines[key] for key in shown], "lines": lines,
+            "hospital": {"state": "loaded" if source else "unavailable", "source": source,
+                         "sentence": (HOSPITAL_SENTENCE[source] if source else
+                                      lm.WORDS["kind_unavailable"].format(plural=lm.KIND_PLURAL["hospital"])),
+                         "credit": lines.get(source) if source else None},
+            "credits": {"faa_nasr": lines.get("faa_nasr"), "padus": padus}}
+
+
+def _base_block(out: Path, base_index: dict | None, why: str | None) -> dict:
+    """The base map: its three parts, each through its module's own map function (terrain.map_data, basemap2.map_data_vector,
+    landmarks.map_data_landmarks), which give the module's unavailable block and words for a part the index lacks."""
+    terrain_block = (base_index or {}).get("terrain")          # the part's key in hail/base/index.json (terrain.py)
+    terrain = _part(lambda: tr.map_data({tr.INDEX_KEY: {"terrain": terrain_block}} if isinstance(terrain_block, dict) else None),
+                    lambda: tr.map_data(None), "terrain files")
+    vector = _part(lambda: b2.map_data_vector((base_index or {}).get(b2.PRODUCT)), lambda: b2.map_data_vector(None),
+                   "vector files")
+    landmark_block = (base_index or {}).get(lm.INDEX_KEY)
+    vector_block = (base_index or {}).get(b2.PRODUCT)
+    landmarks = _part(lambda: lm.map_data_landmarks(base_index or {}), lambda: lm.map_data_landmarks({}), "landmark files")
+    landmarks["as_of"] = landmark_block.get("as_of") if isinstance(landmark_block, dict) else None
+    # F1, F2, F10 (D130(b)): the credit lines, the hospital source the store used, and the words the About page prints for them
+    landmarks.update(_landmark_words(None if landmarks["state"] == "unavailable" else base_index, vector_block))
+    states = [terrain["state"], vector["state"], landmarks["state"]]
+    if all(s == "loaded" for s in states):
+        state = "loaded"
+    elif any(s in ("loaded", "partial") for s in states):
+        state = "partial"
+    else:
+        state = "unavailable"
+    # T5 (D134(b)): the credit lists name the sources the store read, the rule the About page follows
+    vector_rows = vector_block.get("sources") if isinstance(vector_block, dict) else None
+    if "credit" in vector:
+        vector["credit"] = read_vector_lines(vector_rows)
+    credit: list[str] = [line for line in (terrain_line(terrain, "h"), terrain_line(terrain, "l")) if line]
+    credit += read_vector_lines(vector_rows)
+    if landmarks["state"] != "unavailable":
+        credit += landmarks["sources"]
+    held = (landmark_block or {}).get("held") if isinstance(landmark_block, dict) else None
+    cells = {"B": _shard_names(out / "hail/base/v/b"), "C": _shard_names(out / "hail/base/v/c"),
+             "D": _shard_names(out / "hail/base/w")} if base_index else {"B": [], "C": [], "D": []}
+    reason = None if state != "unavailable" else (why or "none of the base map parts could be read")
+    return {"state": state, "problem": BASE_UNAVAILABLE if state == "unavailable" else None, "reason": reason,
+            "as_of": {"terrain": terrain.get("as_of") or None, "vector": vector.get("as_of"), "landmarks": landmarks["as_of"]},
+            "sources": {"terrain": _source_dates(terrain_block), "vector": _source_dates(vector_block),
+                        "landmarks": _source_dates(landmark_block)},
+            "tiles": dict(BASE_TILES), "zooms": list(BASE_ZOOMS), "terrain": terrain, "vector": vector,
+            "landmarks": landmarks, "cells": cells, "held": held or {"kinds": {}, "sources": {}}, "credit": credit}
+
+
+def _source_dates(block) -> dict:
+    """Each source of a base part with its date: the as_of its row carries (the terrain layers and the landmark sources carry
+    one). A row with no as_of has no date, and its date reads Data unavailable. The vector part's rows carry a file count and a
+    byte count, not a date, and basemap2 does not read a source's own release date, so a count or a fetch time is never read
+    as a date (F12). A source's state is kept where its row has one; a held source's reason is in the held block."""
+    rows = block.get("sources") if isinstance(block, dict) else None
+    if not isinstance(rows, dict):
+        return {}
+    dates = {}
+    for key, row in rows.items():
+        if isinstance(row, dict):
+            entry = {"state": row.get("state"), "as_of": row.get("as_of") or NO_DATE}
+            dates[key] = {name: value for name, value in entry.items() if value is not None}
+    return dates
+
+
+# D136(a): the names history_layers gives its five-year parts in its own unavailable sentences (its index's problem words:
+# history_layers.py lines 973, 976, 1037 and 1074). The About page formats WORDS["unavailable"] with these names.
+HISTORY_WHAT = {"hail1": "The five-year hail picture", "heat90": "The days at or above 90 F picture",
+                "recent": "The recent radar hail list", "zones": "The zone counts"}
+
+
+def _index_failures(block) -> list[dict]:
+    """The failures the index recorded for a block: its {part, reason} rows, where "all" is a failure of the whole layer. The
+    About page formats each part's unavailable sentence with the reason the index gave it (D136(a))."""
+    rows = block.get("failures") if isinstance(block, dict) else None
+    return [row for row in rows or [] if isinstance(row, dict)]
+
+
+def _history_block(out: Path, store_index: dict | None, why: str | None) -> dict:
+    """The five-year pictures and the zone counts: the store index's history_layers block, the picture sidecar (the classes,
+    words and bounds) and zones.json (the eight measures and the newest-warning date with its words)."""
+    block = (store_index or {}).get(hl.INDEX_KEY)
+    if not isinstance(block, dict) or block.get("state") not in ("loaded", "partial"):
+        reason = why or "the store holds no five-year pictures"
+        problem = block.get("problem") if isinstance(block, dict) else None
+        return {"state": "unavailable", "reason": reason, "failures": _index_failures(block),
+                "problem": problem or hl.WORDS["unavailable"].format(what="The five-year history layers", reason=reason)}
+    sidecar = _json_file(out / hl.SIDECAR_PATH) or {}
+    zones_doc = _json_file(out / hl.ZONES_PATH) or {}
+    pictures = {}
+    for key, path in (("hail1", hl.HAIL1_PATH), ("heat90", hl.HEAT_PATH)):
+        info = (sidecar.get("pictures") or {}).get(key) or {}
+        if info.get("state") == "loaded":
+            pictures[key] = {"url": path, "state": "loaded", "width": info["width"], "height": info["height"],
+                             "bounds": sidecar.get("bounds"), "classes": info["classes"], "window": info["window"],
+                             "words": info["words"]}
+        else:
+            pictures[key] = {"url": path, "state": "unavailable",
+                             "problem": info.get("problem") or hl.WORDS["unavailable"].format(
+                                 what=HISTORY_WHAT[key], reason=why or "the picture file is not in the store")}
+    zones_block = block.get("zones") or {}
+    zones = {"state": zones_block.get("state", "unavailable"), "url": hl.ZONES_PATH}
+    if zones_block.get("state") in ("loaded", "partial") and zones_doc:
+        zones.update(measures=zones_doc.get("measures"), newest_warning=zones_doc.get("newest_warning"),
+                     words=zones_doc.get("words"), unavailable=zones_doc.get("unavailable"),
+                     missing_zone_files=zones_doc.get("missing_zone_files"))
+    else:
+        zones["problem"] = zones_block.get("problem") or hl.WORDS["unavailable"].format(
+            what="The zone counts", reason=why or "the zone files are not in the store")
+    outlines = block.get("outlines") or {}
+    outline = {"state": outlines.get("state", "unavailable"), "url": hl.OUTLINE_PATH, "credit": hl.WORDS["about_outlines"]}
+    if outline["state"] not in ("loaded", "partial"):
+        outline["problem"] = outlines.get("problem") or hl.WORDS["outline_unavailable"]
+    return {"state": block["state"], "problem": block.get("problem"), "as_of": block.get("as_of"),
+            "window": block.get("window"), "stale": sidecar.get("stale"), "pictures": pictures, "zones": zones,
+            "outlines": outline, "failures": _index_failures(block)}
+
+
+def _recent_block(store_index: dict | None, why: str | None) -> dict:
+    """The recent radar hail cells: the store index's recent block (the window, the as_of, the stale sentence and the words).
+    The cells themselves are in hail/recent/cells.json, which the copy holds and the browser reads."""
+    block = (store_index or {}).get(hl.RECENT_KEY)
+    if not isinstance(block, dict) or block.get("state") not in ("loaded", "partial"):
+        reason = why or "the store holds no recent radar hail"
+        problem = block.get("problem") if isinstance(block, dict) else None
+        return {"state": "unavailable", "reason": reason,
+                "problem": problem or hl.WORDS["unavailable"].format(what="The recent radar hail list", reason=reason)}
+    return {"state": block["state"], "problem": block.get("problem"), "url": hl.RECENT_PATH, "as_of": block.get("as_of"),
+            "window": block.get("window"), "stale": block.get("stale"), "cells": block.get("cells"), "days": block.get("days"),
+            "floor_tenths": block.get("floor_tenths"), "words": block.get("words")}
+
+
+def _labels_block(store_index: dict | None, why: str | None) -> dict:
+    """The bubble rule and its words (labels.py): the glyph, the unavailable words and the legend line (D110(c)); the shard
+    budgets (D66) and the buildings module's raw split threshold."""
+    block = (store_index or {}).get(lb.INDEX_KEY)
+    words = {"dash": lb.DASH, "unavailable": lb.UNAVAILABLE_TEXT, "legend": BUBBLE_LEGEND}
+    budget = {"shard_gzip": LABEL_SHARD_GZIP, "shard_raw_split": bd.SHARD_BYTES}
+    if not isinstance(block, dict) or block.get("state") not in ("loaded", "partial"):
+        reason = why or REASON_NO_LABELS
+        problem = block.get("problem") if isinstance(block, dict) else None
+        return {"state": "unavailable", "reason": reason, "zooms": list(lb.ZOOMS), "rule": {}, "words": words, "budget": budget,
+                "problem": problem or hl.WORDS["unavailable"].format(what="The bubble values on the building outlines",
+                                                                     reason=reason)}
+    rule = {k: v for k, v in (block.get("rule") or {}).items() if k != "words"}     # the module's legend is replaced (D110(c))
+    return {"state": block["state"], "problem": block.get("problem"), "zooms": list(lb.ZOOMS), "rule": rule,
+            "words": words, "budget": budget}
+
+
+def _budget_block(base_index: dict | None) -> dict:
+    """The budgets the browser and the smoke read (D125(d)): the base tiles' statewide bytes against their budget, the per-band
+    budgets (basemap2's own figures) and the landmark shard budget. The phone budget stays in map.json (hail.budget)."""
+    terrain_budget = ((base_index or {}).get("terrain") or {}).get("budget") or {}
+    landmark = ((base_index or {}).get("landmarks") or {}).get("budget") or {}
+    return {"base_tiles": {"zooms": "5 to 10", "bytes": terrain_budget.get("bytes"), "limit_bytes": tr.BUDGET_BYTES,
+                           "under_budget": terrain_budget.get("under_budget")},
+            "bands": ((base_index or {}).get("vector") or {}).get("budgets"),
+            "landmark_shard": {"limit_gzip": lm.BUDGET_GZIP, "largest_gzip": landmark.get("largest_gzip_bytes")}}
+
+
+def base_document(out: Path, store_index: dict | None, store_problem: str | None, now: datetime) -> dict:
+    """data/base.json (D125(d)), from the copy out/hail/ and the store index. A build without the store (no --hail-history, or
+    a store that did not load) or without a B6 folder writes each block as unavailable with its reason, so the file is always
+    there with the same keys (the identity rule: the default build and the sample build both carry it)."""
+    absent = store_problem or REASON_NO_STORE
+    base_index = _json_file(out / "hail" / "base" / "index.json") if store_index is not None else None
+    base_index = base_index if isinstance(base_index, dict) else None
+    base_why = absent if store_index is None else (None if base_index else REASON_NO_BASE)
+    history_why = absent if store_index is None else (
+        None if isinstance(store_index.get(hl.INDEX_KEY), dict) else REASON_NO_HISTORY)
+    recent_why = absent if store_index is None else (
+        None if isinstance(store_index.get(hl.RECENT_KEY), dict) else REASON_NO_RECENT)
+    labels_why = absent if store_index is None else (
+        None if isinstance(store_index.get(lb.INDEX_KEY), dict) else REASON_NO_LABELS)
+    doc = {"version": 1, "built": src._iso(now), "as_of": (store_index or {}).get("as_of"),
+           "base": _safely(lambda: _base_block(out, base_index, base_why), lambda r: _base_block(out, None, r),
+                           "the base map files could not be read"),
+           "history_layers": _safely(lambda: _history_block(out, store_index, history_why),
+                                     lambda r: {"state": "unavailable", "reason": r, "problem": hl.WORDS["unavailable"].format(
+                                         what="The five-year history layers", reason=r)},
+                                     "the five-year history files could not be read"),
+           "recent": _safely(lambda: _recent_block(store_index, recent_why),
+                             lambda r: {"state": "unavailable", "reason": r, "problem": hl.WORDS["unavailable"].format(
+                                 what="The recent radar hail list", reason=r)},
+                             "the recent radar hail files could not be read"),
+           "labels": _safely(lambda: _labels_block(store_index, labels_why),
+                             lambda r: {"state": "unavailable", "reason": r, "zooms": list(lb.ZOOMS), "rule": {},
+                                        "words": {"dash": lb.DASH, "unavailable": lb.UNAVAILABLE_TEXT, "legend": BUBBLE_LEGEND},
+                                        "budget": {"shard_gzip": LABEL_SHARD_GZIP, "shard_raw_split": bd.SHARD_BYTES},
+                                        "problem": hl.WORDS["unavailable"].format(
+                                            what="The bubble values on the building outlines", reason=r)},
+                             "the bubble values could not be read"),
+           "sheet": dict(SHEET_WORDS), "budget": _budget_block(base_index)}
+    return _rule5_blocks(doc)
+
+
+def _layer_sentence(text: str) -> str:
+    """A sentence the browser prints for a layer that did not load carries the words "Data unavailable" (rule 5, D117(b)). A
+    sentence that has them is kept; any other (a module's own D20 sentence) is kept after them, unchanged."""
+    return text if "Data unavailable" in text else f"Data unavailable. {text}"
+
+
+def _rule5(block):
+    """The rule above, on one block: a block that did not load (state other than loaded) and has a problem sentence gets it."""
+    if isinstance(block, dict) and block.get("state") != "loaded" and isinstance(block.get("problem"), str):
+        block["problem"] = _layer_sentence(block["problem"])
+    return block
+
+
+def _rule5_blocks(doc: dict) -> dict:
+    """Rule 5 on every layer-level sentence of data/base.json: the base map and its three parts, the picture, zone and outline
+    blocks, the recent cells and the labels. Only the words "Data unavailable" are added; no module sentence is rewritten."""
+    base = doc["base"]
+    for block in (base, base["terrain"], base["vector"], base["landmarks"], doc["history_layers"], doc["recent"], doc["labels"]):
+        _rule5(block)
+    for block in list((doc["history_layers"].get("pictures") or {}).values()) + [doc["history_layers"].get("zones"),
+                                                                                doc["history_layers"].get("outlines")]:
+        _rule5(block)
+    return doc
+
+
+def base_pointer(doc: dict) -> dict:
+    """map.json's first-paint pointer (D125(d)): each block's state, the base map's as_of, its tile templates and zooms, and the
+    name of data/base.json. The words stay in that file, so map.json keeps its raw gate (D82(a))."""
+    return {"base": {"state": doc["base"]["state"], "as_of": doc["as_of"], "file": BASE_DATA, "zooms": list(BASE_ZOOMS),
+                     "tiles": dict(BASE_TILES)},
+            "history_layers": _first_paint(doc["history_layers"]), "recent": _first_paint(doc["recent"]),
+            "labels": _first_paint(doc["labels"])}
+
+
+def about_b6_context(doc: dict) -> dict:
+    """The words of the B6 About sentences that depend on the built data (--hail-history only; data/base.json, D121(a)).
+    Each part of the About page has a credit line, printed only when the store read its source (T5, D134(b)), and an
+    unavailable sentence, printed only when the store did not read it (rule 5, D136(a)). A source is read by the states of the
+    base index (a terrain layer, a vector source, a landmark kind) or by its block (the five-year pictures, the zone counts,
+    the zone outlines and the recent cells). Every unavailable sentence is a module's own words: terrain's and basemap2's
+    part names, landmarks' kind plurals, history_layers' WORDS["unavailable"] with the reason the index recorded, or its
+    outline words. The newest-warning sentence of the zone counts is taken from the counted rows (D125(a)); the hospital
+    sentence and credit line are those of the source the store used (D130(b)); the FAA and PAD-US lines follow the same rule
+    (F2). The sheet's water line is the vector module's words (D134(a)). The held sentences are landmarks' own (D136(a))."""
+    base, history = doc["base"], doc["history_layers"]
+    terrain = base.get("terrain") or {}
+    landmarks = base.get("landmarks") or {}
+    hospital = landmarks.get("hospital") or {}
+    lines = landmarks.get("credits") or {}
+    shown = landmarks.get("lines") or {}          # the credit line of each shown landmark source, by its key (T5)
+    kinds = landmarks.get("kinds") or {}          # each landmark kind's state (landmarks.map_data_landmarks)
+    rows = (base.get("sources") or {}).get("vector") or {}      # basemap2's rows: a state for each vector source (T5)
+    vector = read_vector_lines(rows)
+    zones = history.get("zones") or {}
+    pictures = history.get("pictures") or {}
+    outlines = history.get("outlines") or {}
+    recent = doc.get("recent") or {}
+    # the reasons the index recorded for the five-year history, by part ("all" is a failure of the whole layer)
+    recorded = {row.get("part"): row.get("reason") for row in history.get("failures") or []}
+
+    def about_terrain(name: str) -> str | None:
+        line = terrain_line(terrain, name)
+        return None if line is None else "Source: " + line[len(TERRAIN_LINES[name][1]):]
+
+    def about_vector(line: str) -> str | None:
+        return line if line in vector else None
+
+    def terrain_read(name: str) -> bool:
+        layer = ((terrain or {}).get("layers") or {}).get(name)
+        return isinstance(layer, dict) and layer.get("state") in TERRAIN_READ
+
+    def terrain_unavailable(name: str) -> str | None:
+        """terrain's sentence for a layer that did not load, with the part name terrain gives it (its LAYER_WORDS)."""
+        return None if terrain_read(name) else tr.WORDS["part_unavailable"].format(**tr.LAYER_WORDS[name])
+
+    def vector_read(*keys: str) -> bool:
+        """True when the store read one of these vector sources (the states basemap2 gives a file that was read)."""
+        return any(isinstance(rows.get(key), dict) and rows[key].get("state") in VECTOR_READ for key in keys)
+
+    def vector_unavailable(kind: str) -> str:
+        """basemap2's sentence for one vector part, with the part name basemap2 uses in its index and sheet words."""
+        part, one = b2.PART_WORDS[kind]
+        return b2.WORDS["part_unavailable"].format(Part=part, one=one)
+
+    def kind_unavailable(kind: str) -> str | None:
+        """landmarks' sentence for a kind that did not load, with the plural landmarks uses; None when the kind loaded."""
+        loaded = isinstance(kinds.get(kind), dict) and kinds[kind].get("state") == "loaded"
+        return None if loaded else lm.WORDS["kind_unavailable"].format(plural=lm.KIND_PLURAL[kind])
+
+    def history_unavailable(part: str, block: dict | None) -> str | None:
+        """history_layers' sentence for a five-year part that did not load: its WORDS["unavailable"], formatted with the part's
+        name and the reason the index recorded for it (or for the whole layer, "all"). With no reason recorded, the sentence the
+        module wrote in the index stands: the part's own problem, else the layer's."""
+        reason = recorded.get(part) or recorded.get("all")
+        if reason:
+            return hl.WORDS["unavailable"].format(what=HISTORY_WHAT[part], reason=reason)
+        return (block or {}).get("problem") or history.get("problem")
+
+    def window_words(window) -> str | None:
+        """A window of two ISO dates in the About page's form: October 17, 2021 to October 16, 2026."""
+        try:
+            first, last = (date.fromisoformat(day) for day in window)
+        except (TypeError, ValueError):
+            return None
+        return f"{first:%B} {first.day}, {first.year} to {last:%B} {last.day}, {last.year}"
+
+    zones_read = zones.get("state") in ("loaded", "partial")
+    outline_read = outlines.get("state") in ("loaded", "partial")
+    recent_read = recent.get("state") in ("loaded", "partial")
+    mrms_read = (pictures.get("hail1") or {}).get("state") == "loaded"
+    heat_read = (pictures.get("heat90") or {}).get("state") == "loaded"
+    newest = (zones.get("newest_warning") or {}).get("words") if zones_read else None
+    heat = (pictures.get("heat90") or {}).get("window")
+    return {"relief": about_terrain("h"), "relief_unavailable": terrain_unavailable("h"),
+            "land_cover": about_terrain("l"), "land_cover_unavailable": terrain_unavailable("l"),
+            "tiger": about_vector(TIGER_LINE),
+            "reservations_unavailable": None if vector_read("tiger_aiannh") else vector_unavailable("reservation"),
+            "roads_unavailable": None if vector_read("tiger_prisec") else vector_unavailable("route"),
+            "places_2020": about_vector(PL2020_LINE),
+            "place_unavailable": None if vector_read("tiger_place") and vector_read("census_pl2020")
+            else vector_unavailable("place"),
+            "forests": about_vector(FOREST_LINE),
+            "forests_unavailable": None if vector_read("edw") else vector_unavailable("forest"),
+            "padus_credit": lines.get("padus"),
+            "pad_us_unavailable": None if vector_read("padus") else vector_unavailable("park"),
+            "local_parks_unavailable": kind_unavailable("park"),
+            "lakes": about_vector(NHD_LINE),
+            "lakes_unavailable": None if vector_read(*dict(VECTOR_LINE_SOURCES)[NHD_LINE]) else vector_unavailable("water"),
+            "summits": about_vector(GNIS_LINE),
+            "summits_unavailable": None if vector_read("gnis") else vector_unavailable("peak"),
+            "heights": about_vector(DEM_LINE),
+            "heights_unavailable": None if vector_read("3dep") else vector_unavailable("peak"),
+            "public_schools": shown.get("nces_public"), "public_schools_unavailable": kind_unavailable("school"),
+            "private_schools": shown.get("nces_private"), "private_schools_unavailable": kind_unavailable("school"),
+            "fire_ems": shown.get("usgs_fire"), "fire_ems_unavailable": kind_unavailable("fire"),
+            "faa_credit": lines.get("faa_nasr"), "faa_unavailable": kind_unavailable("airport"),
+            # the sheet's water line for an area with no detailed water (D134(a)): the vector module's own words
+            "water_line": SHEET_WORDS["water_line_unavailable"],
+            # the history lines of the B6 folders (hail/history, hail/recent): the pictures (MRMS, nClimGrid), the zone counts
+            # (warnings), the zone outlines (ugcs) and the recent cells (MRMS)
+            "mrms_pictures": mrms_read, "iem_warnings": zones_read, "nclimgrid": heat_read,
+            "ugcs": hl.WORDS["about_outlines"] if outline_read else None,
+            "ugcs_unavailable": None if outline_read else hl.WORDS["outline_unavailable"],
+            "mrms_recent": recent_read,
+            "hail1_unavailable": None if mrms_read else history_unavailable("hail1", pictures.get("hail1")),
+            "heat90_unavailable": None if heat_read else history_unavailable("heat90", pictures.get("heat90")),
+            "newest": newest or (hl.WORDS["zones_newest_unknown"] if zones_read else None),
+            "zone_window": window_words(history.get("window")) if zones_read else None,
+            "heat_window": window_words(heat) if heat else None,
+            "zones_unavailable": None if zones_read else history_unavailable("zones", zones),
+            "recent_unavailable": None if recent_read else history_unavailable("recent", recent),
+            "hospital_sentence": hospital.get("sentence") or lm.WORDS["kind_unavailable"].format(
+                plural=lm.KIND_PLURAL["hospital"]),
+            "hospital_credit": hospital.get("credit"),
+            # the two held sentences as landmarks words them, printed as they are (D136(a))
+            "held_church": lm.CHURCH_HELD, "held_park": lm.WORDS["held_parks"]}
+
 def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | None = None,
           sample: bool = False, storm_layers: bool = False, hail_history: bool = False,
           hail_store_path: str | None = None, hail_addresses: bool = False, address_text: str = "on") -> dict:
@@ -1389,6 +1926,8 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
         b3["attribution"] = hail_block["attribution"]
     road_row = ROAD_ROWS.get(c.road_kind) if hail_addresses else None
 
+    # B6 (D125(d)): data/base.json is built before the pages, so the About page's B6 sentences read the words it holds.
+    base_doc = base_document(out, c.hail_index, c.hail_problem, now)
     base = {"built": now, "built_ms": int(now.timestamp() * 1000),
             "asset_v": asset_versions(out / "static", VERSIONED + ((STORM_JS,) if storm_layers else ())),
             "status": c.status, "sample": sample, "storm_layers": storm_layers, "satellite_text": satellite_text,
@@ -1402,6 +1941,7 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
                           # a row a B5 row replaces is listed once, as the B5 row (sources.py superseded_by)
                           and not (hail_history and v.get("superseded_by"))},
             "about_hail": about_hail_context() if hail_history else None,
+            "b6": about_b6_context(base_doc) if hail_history else None,
             "fresh_min": src.FRESH_MINUTES, "qc_words": src.QC_WORDS,
             "qc_rejected": src.QC_REJECTED}
     e = env()
@@ -1419,8 +1959,11 @@ def build(out: Path, fetch: src.Fetcher | None, now: datetime, previous: dict | 
                                                  delta_hour=timedelta(hours=1))
         (out / "town" / f"{t['slug']}.html").write_text(html, encoding="utf-8")
 
+    # B6 (D125(d)): data/base.json is written beside map.json, and map.json carries its pointer. Both carry this build's time.
+    (out / BASE_DATA).write_text(json.dumps(base_doc, separators=(",", ":")), encoding="utf-8")
     (out / "data" / "map.json").write_text(
-        json.dumps(map_data(now, sample, layers, towns, alerts, reports, c.status, hail=hail_block),
+        json.dumps(map_data(now, sample, layers, towns, alerts, reports, c.status, hail=hail_block,
+                            base=base_pointer(base_doc)),
                    separators=(",", ":")),
         encoding="utf-8")
     state = {"built": src._iso(now), "sample": sample, "status": c.status,
