@@ -1,0 +1,220 @@
+{
+ "workstream": "H0 units and codes gate",
+ "slug": "mrms-grib2-tables",
+ "checked_at_utc": "2026-10-18T06:01:40Z",
+ "note": "First fetched 2026-10-18 02:18 UTC; the folder was lost with the session scratch area and re-fetched at checked_at_utc with identical byte sizes.",
+ "source": {
+  "repository": "https://github.com/NOAA-National-Severe-Storms-Laboratory/mrms-support (folder GRIB2_TABLES; the README calls it 'a collection of current and previous GRIB2 definitions for operational MRMS products in CSV format')",
+  "files": {
+   "UserTable_MRMS_v12.0.csv": {
+    "url": "https://raw.githubusercontent.com/NOAA-National-Severe-Storms-Laboratory/mrms-support/main/GRIB2_TABLES/UserTable_MRMS_v12.0.csv",
+    "bytes": 15341,
+    "sha256_prefix": "2a32376ca0b62703"
+   },
+   "UserTable_MRMS_v12.1.csv": {
+    "url": "https://raw.githubusercontent.com/NOAA-National-Severe-Storms-Laboratory/mrms-support/main/GRIB2_TABLES/UserTable_MRMS_v12.1.csv",
+    "bytes": 15280,
+    "sha256_prefix": "d975ed87efaf383c"
+   },
+   "UserTable_MRMS_v12.2.csv": {
+    "url": "https://raw.githubusercontent.com/NOAA-National-Severe-Storms-Laboratory/mrms-support/main/GRIB2_TABLES/UserTable_MRMS_v12.2.csv",
+    "bytes": 15476,
+    "sha256_prefix": "ce73a09305c90a32"
+   }
+  },
+  "how": "curl through the session proxy, HTTP 200; the NSSL tables page itself returned 503 from two network paths on 2026-10-18 and failed TLS verification through the proxy on 2026-10-17"
+ },
+ "columns": [
+  "Discipline",
+  "Category",
+  "Parameter",
+  "Name",
+  "Frequency",
+  "Unit",
+  "Missing",
+  "Range Folded",
+  "No Coverage",
+  "Description",
+  "Notes"
+ ],
+ "rows": {
+  "SHI": {
+   "Discipline": "209",
+   "Category": "3",
+   "Parameter": "26",
+   "Name": "SHI",
+   "Frequency": "2-min",
+   "Unit": "index",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "Severe Hail Index",
+   "Notes": ""
+  },
+  "MESH": {
+   "Discipline": "209",
+   "Category": "3",
+   "Parameter": "28",
+   "Name": "MESH",
+   "Frequency": "2-min",
+   "Unit": "mm",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "Maximum Estimated Size of Hail (MESH)",
+   "Notes": ""
+  },
+  "MESHMax30min": {
+   "Discipline": "209",
+   "Category": "3",
+   "Parameter": "29",
+   "Name": "MESHMax30min",
+   "Frequency": "2-min",
+   "Unit": "mm",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "MESH Hail Swath 30-min",
+   "Notes": ""
+  },
+  "MESHMax60min": {
+   "Discipline": "209",
+   "Category": "3",
+   "Parameter": "30",
+   "Name": "MESHMax60min",
+   "Frequency": "2-min",
+   "Unit": "mm",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "MESH Hail Swath 60-min",
+   "Notes": ""
+  },
+  "MESHMax120min": {
+   "Discipline": "209",
+   "Category": "3",
+   "Parameter": "31",
+   "Name": "MESHMax120min",
+   "Frequency": "30-min",
+   "Unit": "mm",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "MESH Hail Swath 120-min",
+   "Notes": ""
+  },
+  "MESHMax240min": {
+   "Discipline": "209",
+   "Category": "3",
+   "Parameter": "32",
+   "Name": "MESHMax240min",
+   "Frequency": "30-min",
+   "Unit": "mm",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "MESH Hail Swath 240-min",
+   "Notes": ""
+  },
+  "MESHMax360min": {
+   "Discipline": "209",
+   "Category": "3",
+   "Parameter": "33",
+   "Name": "MESHMax360min",
+   "Frequency": "30-min",
+   "Unit": "mm",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "MESH Hail Swath 360-min",
+   "Notes": ""
+  },
+  "MESHMax1440min": {
+   "Discipline": "209",
+   "Category": "3",
+   "Parameter": "34",
+   "Name": "MESHMax1440min",
+   "Frequency": "30-min",
+   "Unit": "mm",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "MESH Hail Swath 1440-min",
+   "Notes": ""
+  },
+  "PrecipRate": {
+   "Discipline": "209",
+   "Category": "6",
+   "Parameter": "1",
+   "Name": "PrecipRate",
+   "Frequency": "2-min",
+   "Unit": "mm/hr",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "Radar Precipitation Rate",
+   "Notes": ""
+  },
+  "RadarQualityIndex": {
+   "Discipline": "209",
+   "Category": "8",
+   "Parameter": "0",
+   "Name": "RadarQualityIndex",
+   "Frequency": "2-min",
+   "Unit": "non-dim",
+   "Missing": "-1",
+   "Range Folded": "n/a",
+   "No Coverage": "-3",
+   "Description": "Radar Quality Index",
+   "Notes": ""
+  },
+  "MergedReflectivityQC": {
+   "Discipline": "209",
+   "Category": "9",
+   "Parameter": "0",
+   "Name": "MergedReflectivityQC",
+   "Frequency": "2-min",
+   "Unit": "dBZ",
+   "Missing": "-99",
+   "Range Folded": "n/a",
+   "No Coverage": "-999",
+   "Description": "3D Reflectivty Mosaic - 33 CAPPIS (500-19000m)",
+   "Notes": "33 levels (one file per level)"
+  }
+ },
+ "facts": [
+  {
+   "claim": "MESH and every MESHMax swath product are in millimetres",
+   "value": "Unit column 'mm' for MESH (209,3,28) and MESHMax30min to MESHMax1440min (209,3,29 to 34)",
+   "evidence": "UserTable_MRMS_v12.2.csv rows quoted above",
+   "verified": true
+  },
+  {
+   "claim": "MESH missing value is -1 and no-coverage value is -3",
+   "value": "Missing column -1, No Coverage column -3 for MESH and all MESHMax products (and SHI)",
+   "evidence": "same rows",
+   "verified": true
+  },
+  {
+   "claim": "MergedReflectivityQC: -99 is the missing value and -999 is no coverage",
+   "value": "Unit dBZ, Missing -99, No Coverage -999 (209,9,0)",
+   "evidence": "same file; this also answers the P1 storm-layer question recorded in docs/ROADMAP.md and website/storm.py (meanings 'not verified')",
+   "verified": true
+  },
+  {
+   "claim": "The table defines the two codes as 'Missing' and 'No Coverage', not as 'no hail' or 'clear'",
+   "value": "column names only; no row defines missing as zero hail",
+   "evidence": "column headers",
+   "verified": true
+  },
+  {
+   "claim": "Versions 12.0, 12.1 and 12.2 agree on the unit, missing and no-coverage values of every row quoted here",
+   "value": true,
+   "evidence": "programmatic comparison of the three CSVs",
+   "verified": true
+  }
+ ],
+ "limits": [
+  "The CSV is NSSL's user table for operational products; the MRMS version running on the NOAA bucket is not stated in the files themselves (research/globe/validation-evidence/mrms.json facts: 'File version not in the GRIB2 header')."
+ ]
+}
