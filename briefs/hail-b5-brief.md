@@ -1935,3 +1935,14 @@ post-integration round for the product files:
   derived from a held source (the supervisor's brief and the out-tree reports keep the figures as the record for counsel);
   DESIGN 13.3 gives the measured built sizes. (h) The daily B6 steps' clock and the monthly steps after the 80-minute clock
   are recorded as follow-up 7 (the first branch run measures them); a dropped B6 part is a stated absence, never an error.
+
+## Supervisor ruling: the integration review's refutation is cut short (2026-10-26 12:15 UTC; D133)
+The skeptics had decided 9 of the 39 integration findings after an hour (8 standing, 1 refuted: the About sentences about
+undrawn behaviour, which D132(a) settles anyway). Every one of the 30 pending findings restates an item already ruled and
+queued for the post-integration round (D128 to D132), except two new points: the monthly steps after the 80-minute clock
+against the 110-minute cap (review B6-16) and build.py reading basemap2's "fetched" file count as a date (review B6-R6).
+- D133 (a) The integrator run is stopped; the remaining refutations are not run (each would confirm an item that is applied
+  in any case, with "already so" allowed). (b) The two new points join the round as A4 and F12. (c) The post-integration round
+  is the integration's fix round: six fixers on disjoint files (P1 with the monthly job, P2, P3, P4, the site files, the docs),
+  then one read-only checker that runs the suite, the self-test, the rebuilt store parts, the site build, the smoke and the
+  map.json gate. (d) The integrator's six reports and the review state are archived (records/b6/continuation/).

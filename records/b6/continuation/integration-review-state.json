@@ -1,0 +1,753 @@
+{
+ "findings": [
+  {
+   "id": "rules-B6-R1-monthly-terrain-cap",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/.github/workflows/hail-store.yml",
+   "line": 1241,
+   "claim": "The monthly terrain step still runs a 20-minute cap and a full --refresh every month. D128(f) rules a 25-minute cap (1,500 s), a descriptions-only refresh (--refresh-descriptions), and a full refresh only when the owner asks.",
+   "evidence": "Line 1241 sets CAP=$(( LEFT < 1200 ? LEFT : 1200 )); line 1243 passes --refresh --deadline-at with DEADLINE = now + CAP - 120, a 1,080 s request window. The P1 cold run took 1,175 s for 1,818 requests (ROADMAP owner item 6; D117(g)), so about 6 to 8 percent of tiles are cut every month and show as paper with Data unavailable. website/terrain.py has no --refresh-descriptions flag. tests/test_hail_workflow.py:390 pins the 1200 cap and --refresh, and DESIGN.md:965, README.md (the terrain command line) and ROADMAP owner item 6 repeat the superseded values.",
+   "fix": "Use CAP=min(LEFT,1500) with DEADLINE=CAP-120 per D128(f). Add terrain.py build --refresh-descriptions (re-read the two service descriptions; re-fetch a tile only when its cache key's data month changes) and use it in the monthly job; keep --refresh for owner-requested runs. Update the pin at tests/test_hail_workflow.py:390, the DESIGN 13.3 row, the README line and ROADMAP owner item 6."
+  },
+  {
+   "id": "rules-B6-R4-held-licence-claim",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/website/landmarks.py",
+   "line": 237,
+   "claim": "The held TIGER park source states a free-use licence ('Not copyrighted; free to use in a product or publication'). The sentence reaches the public site in three places: landmarks.py SOURCES terms (line 237), the published index hail/base/index.json sources.tiger_park.terms, and the About data-sources table (website/sources.py:675, printed beside 'Held for counsel'). D115 and D129 say counsel reads the TIGER area landmark file's use constraints before any text from it ships; D121(c) allows a licence sentence only with a cited page read.",
+   "evidence": "The built about.html tiger_park row reads 'Held for counsel, because the file's use constraints are for counsel to read ... Not copyrighted; acknowledgement to the U.S. Census Bureau as the source is required.' The same text is in hail/base/index.json under sources.tiger_park.terms.",
+   "fix": "Replace both sentences (landmarks.py:237 and sources.py:675) with 'Recorded as not read; held for counsel.', then rebuild the store index and the About page."
+  },
+  {
+   "id": "rules-B6-R2-words-gate-vacuous",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/tests/test_site.py",
+   "line": 5879,
+   "claim": "The B6 words test (class B6BaseMapData, checking data/base.json and the B6 keys of data/map.json) cannot fail on words. It runs words_rules.forbidden_words on the JSON text, and the EXEMPT straight-quote pattern removes every JSON string literal before the scan.",
+   "evidence": "forbidden_words of json.dumps({'note': 'A damage claim.'}) returns []; the same sentence as a bare string returns ['claim', 'damage']. Walking the strings of the built data/base.json finds one hit the test misses: labels.words.legend ('-- means Data unavailable: ... that is not zero and not an all-clear.', build.py:1395), flagged for 'all-clear' because only 'This is not an all-clear' and 'That is not an all-clear' are exempt. The task 1 and task 8 reports of 'base.json 0 hits' come from this same scan.",
+   "fix": "Assert forbidden_words on each string value (walk the JSON) and add a control fixture that must fail (a planted 'damage'). Then either add the negated form 'not an all-clear' to tests/words_rules.py EXEMPT (it is the D110(c) sentence) or reword the legend, and re-run the gate on the built file."
+  },
+  {
+   "id": "rules-B6-R5-browser-claims-before-browser",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 49,
+   "claim": "The B6 About sentences describe browser behaviour that is not built. map.js and map.css are unchanged from HEAD, so the terrain tint, its zoom range, the dark-mode hiding, the Highlight switch, and the bubble and sheet behaviour are not drawn. The B6 About block sits under {% if hail_history %} (line 33), and --hail-history is on for the public site (AGENTS.md; D34), so merging before the browser pass would publish these sentences.",
+   "evidence": "Sentences at about.html:49 (zoom range and dark mode), :106 (Highlight recent radar hail), and :110 to :112 (bubble overlap and the value in the sheet when tapped). git status shows website/static/map/map.js and map.css not modified. D130(e) requires these sentences to be checked in the B6-3 browser pass against the page as drawn.",
+   "fix": "Do not merge this branch to main until B6-3 checks each sentence against the drawn page, or move these sentences behind a flag that stays off until that check passes."
+  },
+  {
+   "id": "rules-B6-R3-held-number-in-decisions",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+   "line": 1038,
+   "claim": "The D118 bullet prints the held church count, '(485 places of worship)'. The review rule is that no number derived from a held source appears anywhere (D118(b)); repository text is included.",
+   "evidence": "Line 1038: 'the figure (485 places of worship) stays in the build report'. The count is the held church rows.",
+   "fix": "Delete the number: 'the count stays in the build report'."
+  },
+  {
+   "id": "rules-B6-R6-vector-dates-are-counts",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/website/build.py",
+   "line": 1490,
+   "claim": "_source_dates takes row.get('fetched') as a date, but basemap2's source rows store 'fetched' as a file count. data/base.json therefore carries 'as_of': 0 for every vector source (for example tiger_aiannh and nhd_large_areas). The docstring at lines 1481 to 1482 (the vector rows carry a fetch time) is wrong.",
+   "evidence": "Built /home/user/hail-b5/out/b6/site/data/base.json, base.sources.vector: tiger_aiannh {'state': 'cache', 'as_of': 0}; nhd_large_areas {'state': 'partial', 'as_of': 0}. The store index hail/base/index.json vector.sources.tiger_aiannh is {'files': 1, 'fetched': 0, 'cache': 1, ...}. basemap2.py:381 defines the row with fetched as a counter.",
+   "fix": "Take as_of only (never a counter); give vector sources a real date or 'Data unavailable'; correct the docstring; add a test that a numeric 'fetched' never becomes a date."
+  },
+  {
+   "id": "rules-B6-R7-zone-provenance-misprinted",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/website/sources.py",
+   "line": 861,
+   "claim": "The iem_ugcs row says the B6 zone counts use the valid=2026-10-25T00:00Z snapshot (83 zones, 139 features), and that sentence prints on the About page. The counts come from the store's zone rows (zones.json has 103 zones); only the outline file (hail/base/v/zones.json, 83 features) uses the snapshot.",
+   "evidence": "Built about.html contains 'The B6 zone counts use the snapshot with valid=2026-10-25T00:00Z (83 zones, 139 features).' Store copy: hail/history/zones.json holds 103 zones; hail/base/v/zones.json holds 83 features.",
+   "fix": "Say 'The B6 zone outlines use the snapshot with valid=2026-10-25T00:00Z (83 zones, 139 features)' and keep the counts' source as the store's zone rows."
+  },
+  {
+   "id": "rules-B6-R8-budget-figures-wrong",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/docs/DESIGN.md",
+   "line": 962,
+   "claim": "DESIGN 13.3 gives 139 bytes raw for the B6 keys of data/map.json and 4,029 bytes raw for the B6 keys of data/base.json. Measured on the built files, the four B6 keys take 259 to 269 bytes (the base pointer alone is 153 bytes), and data/base.json is 4,878 bytes in the sample build and 30,861 bytes in the store build. The 139 and 4,029 figures are P4's pre-pointer projections, and DECISIONS D127 (line 1047) repeats them.",
+   "evidence": "Sample builds at a fixed clock, HEAD versus the working tree: data/map.json 54,195 to 54,478 bytes (+283, which covers the four keys and the imagery wording). Store build: data/base.json 30,861 bytes; sample build: data/base.json 4,878 bytes.",
+   "fix": "Restate both rows with the measured figures and name the build that measured each. Add a note to D127 that the figures were the projection. Re-check the 590-byte headroom (D128(d)) against the corrected key size."
+  },
+  {
+   "id": "rules-B6-R9-heat-legend-grid-words",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/history_layers.py",
+   "line": 180,
+   "claim": "The heat legend printed in data/base.json says 'in cells about 4.6 km across'. D113(c) and D130(a) require 'about 1/24 degree cells (roughly 4.6 by 3 km in Montana)' in every printed grid sentence. Printed B5 text has the same wrong shape: summary.py:274 and :515 ('a cell about 4.6 km across') and sources.py:751 and :760.",
+   "evidence": "Built data/base.json history_layers.pictures.heat90.words.legend reads 'Grid estimate of days at or above 90 F ... in cells about 4.6 km across.'",
+   "fix": "Use the D113(c) words in the P4 legend (history_layers.py:180) and in the B5 printed phrases (summary.py:274 and :515; sources.py:751 and :760), or record a ruling that those B5 phrases stand under D130(a)."
+  },
+  {
+   "id": "rules-B6-R10-credit-date-not-recorded",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/landmarks.py",
+   "line": 1199,
+   "claim": "_credit prints 'cycle date not recorded' or 'date not recorded' when the index has no as_of. The About's FAA and PAD-US credit lines use it (build.py:1681). D130(b) says such a date prints 'Data unavailable', never 'date not recorded'. No test pins the wording, so the change is free.",
+   "evidence": "landmarks.py:1199 and :1201; build.py:1681 (faa_credit, padus_credit).",
+   "fix": "Print 'Data unavailable' for a missing date at lines 1199 and 1201; add a test with as_of None that checks the About credit line."
+  },
+  {
+   "id": "rules-B6-R11-hospital-fire-credits-hard-coded",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 80,
+   "claim": "The hospital paragraph always prints the USGS credit (line 81) and says a copy 'carries its own credit' (line 80), which is never printed. D130(b) requires the credit of the hospital source the store used (landmarks index hospital_source.used) and no line for a source not read. The fire line (line 83) and the USGS credits carry 'October 2026 refresh' as static text (landmarks.py:183-184 and :213-214); the build does not re-read the service date (terms at landmarks.py:186-188).",
+   "evidence": "Store index hospital_source.used = 'usgs_hospitals'; about.html lines 80 to 83 are literal text.",
+   "fix": "Build the hospital credit from hospital_source.used and print the copy's line when the copy is used; take each credit date from its index row, or print 'Data unavailable'."
+  },
+  {
+   "id": "rules-B6-R12-tiger-place-names-credit",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 55,
+   "claim": "The reservation credit reads 'TIGER/Line 2026 (reservations and roads)', but the next sentence (line 56) takes place names from the TIGER 2026 place file. D130(c) says the TIGER credit line covers place names ('reservations, roads and place names').",
+   "evidence": "about.html:55 and :56; the built base.json vector credit list has the same reservations-and-roads wording.",
+   "fix": "Change the TIGER credit to '(reservations, roads and place names)' in the About page and in the basemap2 credit line it draws from."
+  },
+  {
+   "id": "rules-B6-R13-park-names-contradiction",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 88,
+   "claim": "The paragraph says 'Some park names come from a second public list' and then 'That list is held'. No name from that list is shown, so the first sentence is wrong. The sheet's held_parks sentence (landmarks.py:269, printed through base.json) has the same contradiction. The Source line also lacks the '(held; not shown)' tag that the church line carries.",
+   "evidence": "about.html:88; landmarks.py:269 WORDS held_parks.",
+   "fix": "Use 'Park names from a second public list are held, so none is shown; the parks that only it names are not shown.' in both places, and add '(held; not shown)' to the Source line."
+  },
+  {
+   "id": "rules-B6-R14-rule5-heat-fallback",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 94,
+   "claim": "When the heat picture is unavailable, the fallback 'the five seasons in the store' completes 'Days at or above 90 F are counted over ...', so the page reads as a count with no missing-value wording. Rule 5 needs Data unavailable here.",
+   "evidence": "about.html:94 uses {{ b6.heat_window or 'the five seasons in the store' }}; b6.heat_window is None when the heat90 picture window is absent (build.py:1679).",
+   "fix": "Fall back to 'Data unavailable in this update. This is not an all-clear.', the same sentence the relief and land cover lines use."
+  },
+  {
+   "id": "rules-B6-R15-noaa-licence-words",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 95,
+   "claim": "'NOAA declares no restrictions' restates the file attribute 'license = no restrictions' (quoted at sources.py:743). The registry asks for attribution and forbids stating or implying NOAA endorsement (D113(a)); the line keeps the first and drops the second.",
+   "evidence": "about.html:95; sources.py:743 to 749 quotes both the attribute and the registry text.",
+   "fix": "Use the registry's wording in the About line: 'NOAA requests attribution and does not allow its endorsement to be stated or implied.'"
+  },
+  {
+   "id": "rules-B6-R16-monthly-verify-timeout",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/.github/workflows/hail-store.yml",
+   "line": 1255,
+   "claim": "The monthly terrain verify is killed at 300 s, but terrain verify re-fetches 10 tiles one after another (terrain.py verify loop, about lines 1267 to 1276), each up to 60 s with up to three tries. A slow service, the condition the monthly build already struggles with, can time the check out; the step then marks a sound terrain layer unavailable, a false negative rather than wrong data.",
+   "evidence": "Line 1255: timeout --kill-after=30 300 python -m website.terrain verify ... --timeout 60; terrain.py verify iterates picks sequentially through _refetch_compare.",
+   "fix": "Re-fetch in parallel (the --procs setting) or lower the monthly sample, set the step timeout above the worst case, and make the log say that a timed-out check is not checked."
+  },
+  {
+   "id": "rules-B6-R17-held-tiger-fixture",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/tests/fixtures/landmarks/tiger_arealm_mt_sample.zip",
+   "line": 1,
+   "claim": "The new untracked fixture carries real names and coordinates from the held TIGER area landmark file (Rose Park, Dickerson Park, Lange Park, Beavertail Hill State Park). D115 and D118(b) say nothing from it ships before counsel reads its terms.",
+   "evidence": "The zip holds tl_2026_30_arealm.dbf with six records, five of them Montana park names with positions; tests/test_landmarks.py reads it at lines 74, 273 and 840.",
+   "fix": "Before the file is added to git, replace the names and coordinates with synthetic values (keep the field layout and MTFCC codes), or record counsel's clearance first."
+  },
+  {
+   "id": "rules-B6-R18-rulings-after-integration-open",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/labels.py",
+   "line": 398,
+   "claim": "Rulings made after the integrators reported are not yet in the worktree. D128(a): labels.py:398 still passes P4's label_legend (history_layers.py:194); build.py:1395 overrides it for the page, but the module text remains. D128(e): no landmark mirror, so hail/index.json base holds only format, terrain and vector (landmarks.py writes none). D128(f): no --refresh-descriptions flag (see B6-R1). D130(a), (b), (c) and (e) are open (see B6-R9, R10, R11, R12 and R5).",
+   "evidence": "Store copy hail/index.json base keys: format, terrain, vector. grep finds no --refresh-descriptions in website/terrain.py.",
+   "fix": "Apply these in the post-integration round and re-run the words and identity checks afterwards."
+  },
+  {
+   "id": "rules-B6-R19-held-reason-wording",
+   "severity": "low",
+   "file": "/home/user/wt/wt-b6/website/landmarks.py",
+   "line": 268,
+   "claim": "The held church kind has two reasons. data/base.json uses 'Their list is under review' (WORDS held, line 268), while the About page and the index use HELD_REASON ('the geocoder's terms are a counsel question ...', line 139). D118(b) asks for the held reason, and the two should agree.",
+   "evidence": "landmarks.py:268 and :139; built base.json kinds.church.problem and about.html's church sentence.",
+   "fix": "Use one reason in WORDS['held'] and HELD_REASON, then re-check both printed places."
+  },
+  {
+   "id": "rules-B6-R20-decisions-missing-d128-d130",
+   "severity": "low",
+   "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+   "line": 1047,
+   "claim": "DECISIONS records D107 to D127 only. The D128 to D130 rulings (2026-10-26, 09:45 to 10:20 UTC, on the first integrators and the About and CONTRACTS integrator) are not recorded.",
+   "evidence": "The last B6 bullet is D127 (line 1047).",
+   "fix": "Add D128 to D130 as bullets in the D38 round's style when the post-integration round lands."
+  },
+  {
+   "id": "correctness-B6-01",
+   "severity": "high",
+   "file": "tests/test_site.py",
+   "line": 5879,
+   "claim": "The data/base.json words test cannot fail, and the integrator's 'words gate clean' result for that file is wrong: the file has one real hit.",
+   "evidence": "The test passes the raw JSON text to words_rules.forbidden_words. The straight-quote EXEMPT rule (tests/words_rules.py, EXEMPT list) strips every quoted span, which is every JSON string, so the scan returns []. A probe JSON string holding 'Pass an all-clear. Structural damage claim.' returns [] while the same words as plain text return ['all-clear', 'claim', 'damage', 'structural']. Scanning each string value of the built data/base.json finds one hit: labels.words.legend (website/build.py:1395, BUBBLE_LEGEND, the D110(c) sentence ending 'that is not zero and not an all-clear'), because only 'This/That is not an all-clear' is exempt (tests/words_rules.py:39). Task 1 and Task 8 both reported base.json clean.",
+   "fix": "Scan each string value of the parsed JSON (walk the structure) instead of the raw text, and resolve the D110(c) sentence against the gate: add an exemption for that exact ruled sentence in tests/words_rules.py (a supervisor call) or reword it with approval. Correct the Task 1 and Task 8 notes."
+  },
+  {
+   "id": "correctness-B6-02",
+   "severity": "high",
+   "file": "website/basemap2.py",
+   "line": 308,
+   "claim": "Five printed vector sentences do not carry 'Data unavailable' (AGENTS rule 5), and the build's safety net does not reach them.",
+   "evidence": "Built data/base.json base.vector.words holds unavailable, part_unavailable, partial_named, peaks_unknown and band_d_water_partial without the words (basemap2.py lines 308, 310, 312, 314, 328). build.py _rule5 (line 1619, used by _rule5_blocks at line 1626) adds the lead only to block 'problem' strings, not to 'words' entries. AGENTS rule 5 and D117(b) require the words; D128(b) orders the module fix for the post-integration round.",
+   "fix": "In the product round (D128(b)) add 'Data unavailable.' to those five WORDS entries. Also widen the rule-5 pass to the words that can be printed, or add a test that every unavailable or partial sentence in data/base.json contains 'Data unavailable'."
+  },
+  {
+   "id": "correctness-B6-03",
+   "severity": "high",
+   "file": ".github/workflows/hail-store.yml",
+   "line": 1241,
+   "claim": "The monthly terrain step is still capped at 20 minutes, not the 25 minutes that D128(f) rules, so the measured cold run loses tiles every month.",
+   "evidence": "CAP=$(( LEFT < 1200 ? LEFT : 1200 )) with DEADLINE=now+CAP-120 (step timeout at line 1236), so no request starts after 1,080 s. The measured cold refresh took 1,175 s for 1,818 requests (P1 integration notes section 5; Task 3 notes), so about 8 percent of requests would start after the deadline and show as paper with 'Data unavailable' each month. The test pins 1200 (tests/test_hail_workflow.py:390-395). docs/ROADMAP.md:129 (owner item 6) still presents the cap as an open owner choice.",
+   "fix": "Set the step to 25 minutes (timeout-minutes 25, CAP=min(LEFT,1500), DEADLINE=CAP-120), update the pin and its test name, and record the D128(f) ruling in ROADMAP owner item 6."
+  },
+  {
+   "id": "correctness-B6-04",
+   "severity": "medium",
+   "file": ".github/workflows/hail-store.yml",
+   "line": 1255,
+   "claim": "The monthly terrain verify can be killed by its own 300 s timeout, and the kill removes the month's terrain layers.",
+   "evidence": "verify re-fetches its 10-tile sample one after another (website/terrain.py:1271, 'for rel in picks'). Each re-fetch allows 60 s per try and up to three tries (TRIES=3, terrain.py:160; retry loop 549-564). A slow service can run past `timeout --kill-after=30 300`. Exit 124 leaves `verified` unset, so the mark step (line 1266) runs `terrain unavailable` and removes the layers for the month.",
+   "fix": "Give the monthly verify a budget that fits its sample (for example a 4-tile sample in the monthly job, or the remaining clock), and report a re-fetch that timed out as 'not checked' rather than failing the whole layer."
+  },
+  {
+   "id": "correctness-B6-05",
+   "severity": "medium",
+   "file": "website/templates/about.html",
+   "line": 86,
+   "claim": "The About credits two held sources with 'Source:' lines, which P3's rules say to leave out.",
+   "evidence": "about.html:86-87 prints 'Source: FEMA copy of an IRS-based places of worship list (held; not shown).' (landmarks.py:247); about.html:88-89 prints 'Source: U.S. Census Bureau, TIGER/Line 2026 area landmarks.' for the held park list (landmarks.py:236). P3 integration notes section 7 say held sources are not listed, and section 9 says the integrator 'leave[s] out the held church source'. D118(b) and D130(b) print a credit only for a source the store uses. The tests pin both lines (tests/test_site.py:5937 in the CREDITS tuple and the assertion at 6022).",
+   "fix": "Remove the two 'Source:' sentences from about.html and keep the held-reason sentences; change the pin to assert that both credit lines are absent."
+  },
+  {
+   "id": "correctness-B6-06",
+   "severity": "medium",
+   "file": "website/build.py",
+   "line": 1527,
+   "claim": "Hospital and zone-outline credits are static or unconditional, and a missing credit date would print 'date not recorded', against D130(b).",
+   "evidence": "about.html:79-81 names only the USGS hospital list and says a copy 'carries its own credit' without printing it; the HIFLD copy's line (landmarks.py:196) is never printed. about.html:103 prints the outline credit, and build.py:1527 always sets it, even when the outline block is unavailable. landmarks._credit (landmarks.py:1194-1202) prints 'date not recorded' or 'cycle date not recorded' when as_of is missing, and build.py:1661-1663 passes the index's date to it. D130(b) asks for 'Data unavailable'. The current store has the dates and the USGS layer answers, so these cases are latent.",
+   "fix": "Choose the hospital credit from the block's hospital source (USGS or the HIFLD copy), print the outline credit only when the outline state is loaded or partial, and print 'Data unavailable' for a missing date. Add tests for the HIFLD and missing-outline cases."
+  },
+  {
+   "id": "correctness-B6-07",
+   "severity": "medium",
+   "file": "website/templates/about.html",
+   "line": 55,
+   "claim": "The TIGER credit line leaves out place names, against D130(c).",
+   "evidence": "about.html:55 reads 'Source: U.S. Census Bureau, TIGER/Line 2026 (reservations and roads).' and the place-name sentence at lines 56-57 relies on TIGER names with no TIGER credit. basemap2.CREDIT[0] (website/basemap2.py:2140) and data/base.json base.credit[2] carry the same text. D130(c) asks for 'reservations, roads and place names'.",
+   "fix": "Change CREDIT[0] (P2 post-integration fix) and the About sentence, and update the credit pins in tests/test_site.py (the CREDITS tuple near line 5924 and the B6BaseMapData credit checks)."
+  },
+  {
+   "id": "correctness-B6-08",
+   "severity": "medium",
+   "file": "website/history_layers.py",
+   "line": 180,
+   "claim": "The printed heat legend still uses the superseded grid words.",
+   "evidence": "heat90_legend reads 'in cells about 4.6 km across', and built data/base.json history_layers.pictures.heat90.words.legend prints it. D113(c) and D130(a) require 'about 1/24 degree cells (roughly 4.6 by 3 km in Montana)' in every printed grid sentence; the About (about.html:91) already uses that wording, so the page contradicts itself.",
+   "fix": "Change heat90_legend to the ruled wording in the P4 post-integration round, and add a test that the legend carries '1/24 degree' and not '4.6 km across'."
+  },
+  {
+   "id": "correctness-B6-09",
+   "severity": "medium",
+   "file": "website/templates/about.html",
+   "line": 94,
+   "claim": "The About states a count the site cannot back when the grid pictures are unavailable.",
+   "evidence": "When b6.heat_window is empty, line 94 prints 'Days at or above 90 F are counted over the five seasons in the store'. The bare-build test asserts that sentence at tests/test_site.py:6050, where the pictures are unavailable. AGENTS rule 5 requires 'Data unavailable' for a missing input.",
+   "fix": "Print 'Data unavailable in this update. This is not an all-clear.' when the window is missing, and change the test to assert that."
+  },
+  {
+   "id": "correctness-B6-10",
+   "severity": "medium",
+   "file": "website/landmarks.py",
+   "line": 237,
+   "claim": "The published index states a use conclusion for a held source that counsel has not reached.",
+   "evidence": "landmarks.py:237 gives the tiger_park terms 'Not copyrighted; free to use in a product or publication.' The built copy publishes it in hail/base/index.json (sources.tiger_park.terms). The same source is held because 'the file's use constraints are for counsel to read' (landmarks.py:140), and counsel item 21 is open (D115, D129(a)). The copy is served with the site.",
+   "fix": "Replace the terms text with the hold (for example 'use constraints not yet read; held for counsel'), or leave the terms out of the copied index for held sources."
+  },
+  {
+   "id": "correctness-B6-11",
+   "severity": "medium",
+   "file": "docs/DESIGN.md",
+   "line": 962,
+   "claim": "DESIGN section 13 gives P4's group sums as the built size of the B6 keys.",
+   "evidence": "The table says '139 bytes raw for the B6 keys' (map.json) and '4,029 bytes raw for the B6 keys' (data/base.json). Those are P4's group (i) and (ii) sums (P4 report, 'Numbers for the integrator'). The built map.json holds 259 bytes for the four B6 keys (the base pointer alone is 157 bytes), and data/base.json is 30,861 bytes in total (its base block alone is 25,222 bytes).",
+   "fix": "Restate both rows as built sizes with their build flags, or label them as P4's sums and give the built totals beside them."
+  },
+  {
+   "id": "correctness-B6-12",
+   "severity": "medium",
+   "file": "/home/user/hail-b5/out/b6/build/integrator/task1-build-base-json.md",
+   "line": 35,
+   "claim": "The map.json headroom the supervisor relies on (590 bytes, D128(d)) does not reproduce from the store copy.",
+   "evidence": "Task 1 measures 163,250 bytes for the history-only build of the adopted store (headroom 590 bytes). Task 8 measures 128,522 bytes for a history-only build of the store copy with the same flags and clock. The store copy adds only the B6 folders and the 157-byte base pointer, so the 34,728-byte gap is unexplained. The built site with --hail-addresses is 397,716 bytes; without the addresses, roads and buildings blocks (268,731 bytes) that leaves about 129,000 bytes, which supports the lower figure.",
+   "fix": "Re-measure the history-only build of the adopted store with the flags stated, correct task 1 and D128(d) if needed, and keep the note that D82(a) gates the history flag only."
+  },
+  {
+   "id": "correctness-B6-13",
+   "severity": "low",
+   "file": "tests/fixtures/landmarks/tiger_arealm_mt_sample.zip",
+   "line": 1,
+   "claim": "The new fixture to be committed carries real rows from a held source.",
+   "evidence": "The zip (untracked, 1,106 bytes) holds real Census area-landmark rows (Rose Park, Dickerson Park, Beavertail Hill State Park, Lange Park). The source is held for counsel (counsel item 21; D115; D129(a)).",
+   "fix": "Use synthetic park rows in the fixture, or hold the fixture until counsel clears the source."
+  },
+  {
+   "id": "correctness-B6-14",
+   "severity": "low",
+   "file": "website/templates/about.html",
+   "line": 61,
+   "claim": "Two different PAD-US credit lines appear on the same page.",
+   "evidence": "Line 61 credits 'Protected Areas Database of the United States (PAD-US) 4.1, U.S. Geological Survey (parks)' (basemap2 CREDIT). Line 85 (b6.padus_credit) credits 'USGS Gap Analysis Project, Protected Areas Database ... local parks'. D115(d) asks for one complete credit line per source.",
+   "fix": "Keep one PAD-US credit line, naming the party the terms ask for, and use it in both places."
+  },
+  {
+   "id": "correctness-B6-15",
+   "severity": "low",
+   "file": ".github/workflows/hail-store.yml",
+   "line": 129,
+   "claim": "The daily B6 steps share a clock that starts before the hail build and the joins, so slow upstream steps can drop B6 parts from the day's store.",
+   "evidence": "JOB_START is written at line 129. The hail build (cap 16 minutes, line 160) and the joins (cap 53 minutes, line 182) run before the B5 window, and the B6 clock is JOB_START+3600 (line 510). If upstream steps take most of the hour, the B6 steps are skipped and the mark steps publish the store with the B6 parts unavailable. It fails closed, but the public base map is missing on those days.",
+   "fix": "Start a separate B6 clock after the joins, and record the expected headroom in the notes."
+  },
+  {
+   "id": "correctness-B6-16",
+   "severity": "low",
+   "file": ".github/workflows/hail-store.yml",
+   "line": 1255,
+   "claim": "After the 80-minute monthly clock, the remaining steps can run past the 110-minute job cap.",
+   "evidence": "Caps after the clock: terrain verify 6 minutes (300 s kill), marks 5 minutes each, basemap verify 6 minutes, manifest 10, pack 5, publish 10. The worst case is about 47 minutes against about 30 minutes of headroom. Only a slow run reaches it; publish is then skipped and the last asset stays.",
+   "fix": "Bring the post-clock verify steps under the seconds left (cap them by LEFT), or give the monthly job more headroom."
+  },
+  {
+   "id": "correctness-B6-17",
+   "severity": "low",
+   "file": "website/labels.py",
+   "line": 398,
+   "claim": "The retired P4 bubble legend remains in the labels rule words and in the published hail index.",
+   "evidence": "labels.py:398 puts H.WORDS['label_legend'] into the rule words (history_layers.py:194 defines it). The copied hail/index.json carries it. data/base.json strips it (build.py _labels_block) and prints the D110(c) sentence, so the page itself is right. D128(a) asks for the retirement after integration.",
+   "fix": "Retire label_legend in the P4 post-integration round (D128(a)), so the store index no longer carries it."
+  },
+  {
+   "id": "correctness-B6-18",
+   "severity": "low",
+   "file": "website/build.py",
+   "line": 1389,
+   "claim": "The sheet block omits the water line and the landmark sub-line the browser needs.",
+   "evidence": "SHEET_WORDS (build.py:1389) holds three sub-lines. The water line (D122(b)) exists only in base.vector.words, and the landmark sub-line (D110(f)) is not written. Both are open in the Task 1 and Task 8 notes.",
+   "fix": "Add both to the sheet block in the B6-3 browser round, from the modules' own words."
+  },
+  {
+   "id": "correctness-B6-19",
+   "severity": "low",
+   "file": "website/landmarks.py",
+   "line": 1,
+   "claim": "The hail/index.json base mirror has no landmark block (D128(e), pending).",
+   "evidence": "The copy's hail/index.json base holds only terrain and vector keys. landmarks.py writes no mirror, and no test checks for one. The page reads hail/base/index.json directly, so the page is unaffected.",
+   "fix": "Add the landmark mirror writer with its manifest entry (D128(e)) and a test that the mirror matches the block."
+  }
+ ],
+ "standing": [
+  {
+   "id": "rules-B6-R1-monthly-terrain-cap",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/.github/workflows/hail-store.yml",
+   "line": 1241,
+   "claim": "The monthly terrain step still runs a 20-minute cap and a full --refresh every month. D128(f) rules a 25-minute cap (1,500 s), a descriptions-only refresh (--refresh-descriptions), and a full refresh only when the owner asks.",
+   "evidence": "Line 1241 sets CAP=$(( LEFT < 1200 ? LEFT : 1200 )); line 1243 passes --refresh --deadline-at with DEADLINE = now + CAP - 120, a 1,080 s request window. The P1 cold run took 1,175 s for 1,818 requests (ROADMAP owner item 6; D117(g)), so about 6 to 8 percent of tiles are cut every month and show as paper with Data unavailable. website/terrain.py has no --refresh-descriptions flag. tests/test_hail_workflow.py:390 pins the 1200 cap and --refresh, and DESIGN.md:965, README.md (the terrain command line) and ROADMAP owner item 6 repeat the superseded values.",
+   "fix": "Use CAP=min(LEFT,1500) with DEADLINE=CAP-120 per D128(f). Add terrain.py build --refresh-descriptions (re-read the two service descriptions; re-fetch a tile only when its cache key's data month changes) and use it in the monthly job; keep --refresh for owner-requested runs. Update the pin at tests/test_hail_workflow.py:390, the DESIGN 13.3 row, the README line and ROADMAP owner item 6."
+  },
+  {
+   "id": "rules-B6-R4-held-licence-claim",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/website/landmarks.py",
+   "line": 237,
+   "claim": "The held TIGER park source states a free-use licence ('Not copyrighted; free to use in a product or publication'). The sentence reaches the public site in three places: landmarks.py SOURCES terms (line 237), the published index hail/base/index.json sources.tiger_park.terms, and the About data-sources table (website/sources.py:675, printed beside 'Held for counsel'). D115 and D129 say counsel reads the TIGER area landmark file's use constraints before any text from it ships; D121(c) allows a licence sentence only with a cited page read.",
+   "evidence": "The built about.html tiger_park row reads 'Held for counsel, because the file's use constraints are for counsel to read ... Not copyrighted; acknowledgement to the U.S. Census Bureau as the source is required.' The same text is in hail/base/index.json under sources.tiger_park.terms.",
+   "fix": "Replace both sentences (landmarks.py:237 and sources.py:675) with 'Recorded as not read; held for counsel.', then rebuild the store index and the About page."
+  },
+  {
+   "id": "rules-B6-R2-words-gate-vacuous",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/tests/test_site.py",
+   "line": 5879,
+   "claim": "The B6 words test (class B6BaseMapData, checking data/base.json and the B6 keys of data/map.json) cannot fail on words. It runs words_rules.forbidden_words on the JSON text, and the EXEMPT straight-quote pattern removes every JSON string literal before the scan.",
+   "evidence": "forbidden_words of json.dumps({'note': 'A damage claim.'}) returns []; the same sentence as a bare string returns ['claim', 'damage']. Walking the strings of the built data/base.json finds one hit the test misses: labels.words.legend ('-- means Data unavailable: ... that is not zero and not an all-clear.', build.py:1395), flagged for 'all-clear' because only 'This is not an all-clear' and 'That is not an all-clear' are exempt. The task 1 and task 8 reports of 'base.json 0 hits' come from this same scan.",
+   "fix": "Assert forbidden_words on each string value (walk the JSON) and add a control fixture that must fail (a planted 'damage'). Then either add the negated form 'not an all-clear' to tests/words_rules.py EXEMPT (it is the D110(c) sentence) or reword the legend, and re-run the gate on the built file."
+  },
+  {
+   "id": "rules-B6-R3-held-number-in-decisions",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+   "line": 1038,
+   "claim": "The D118 bullet prints the held church count, '(485 places of worship)'. The review rule is that no number derived from a held source appears anywhere (D118(b)); repository text is included.",
+   "evidence": "Line 1038: 'the figure (485 places of worship) stays in the build report'. The count is the held church rows.",
+   "fix": "Delete the number: 'the count stays in the build report'."
+  },
+  {
+   "id": "rules-B6-R6-vector-dates-are-counts",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/website/build.py",
+   "line": 1490,
+   "claim": "_source_dates takes row.get('fetched') as a date, but basemap2's source rows store 'fetched' as a file count. data/base.json therefore carries 'as_of': 0 for every vector source (for example tiger_aiannh and nhd_large_areas). The docstring at lines 1481 to 1482 (the vector rows carry a fetch time) is wrong.",
+   "evidence": "Built /home/user/hail-b5/out/b6/site/data/base.json, base.sources.vector: tiger_aiannh {'state': 'cache', 'as_of': 0}; nhd_large_areas {'state': 'partial', 'as_of': 0}. The store index hail/base/index.json vector.sources.tiger_aiannh is {'files': 1, 'fetched': 0, 'cache': 1, ...}. basemap2.py:381 defines the row with fetched as a counter.",
+   "fix": "Take as_of only (never a counter); give vector sources a real date or 'Data unavailable'; correct the docstring; add a test that a numeric 'fetched' never becomes a date."
+  },
+  {
+   "id": "rules-B6-R7-zone-provenance-misprinted",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/website/sources.py",
+   "line": 861,
+   "claim": "The iem_ugcs row says the B6 zone counts use the valid=2026-10-25T00:00Z snapshot (83 zones, 139 features), and that sentence prints on the About page. The counts come from the store's zone rows (zones.json has 103 zones); only the outline file (hail/base/v/zones.json, 83 features) uses the snapshot.",
+   "evidence": "Built about.html contains 'The B6 zone counts use the snapshot with valid=2026-10-25T00:00Z (83 zones, 139 features).' Store copy: hail/history/zones.json holds 103 zones; hail/base/v/zones.json holds 83 features.",
+   "fix": "Say 'The B6 zone outlines use the snapshot with valid=2026-10-25T00:00Z (83 zones, 139 features)' and keep the counts' source as the store's zone rows."
+  },
+  {
+   "id": "rules-B6-R8-budget-figures-wrong",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/docs/DESIGN.md",
+   "line": 962,
+   "claim": "DESIGN 13.3 gives 139 bytes raw for the B6 keys of data/map.json and 4,029 bytes raw for the B6 keys of data/base.json. Measured on the built files, the four B6 keys take 259 to 269 bytes (the base pointer alone is 153 bytes), and data/base.json is 4,878 bytes in the sample build and 30,861 bytes in the store build. The 139 and 4,029 figures are P4's pre-pointer projections, and DECISIONS D127 (line 1047) repeats them.",
+   "evidence": "Sample builds at a fixed clock, HEAD versus the working tree: data/map.json 54,195 to 54,478 bytes (+283, which covers the four keys and the imagery wording). Store build: data/base.json 30,861 bytes; sample build: data/base.json 4,878 bytes.",
+   "fix": "Restate both rows with the measured figures and name the build that measured each. Add a note to D127 that the figures were the projection. Re-check the 590-byte headroom (D128(d)) against the corrected key size."
+  },
+  {
+   "id": "rules-B6-R9-heat-legend-grid-words",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/history_layers.py",
+   "line": 180,
+   "claim": "The heat legend printed in data/base.json says 'in cells about 4.6 km across'. D113(c) and D130(a) require 'about 1/24 degree cells (roughly 4.6 by 3 km in Montana)' in every printed grid sentence. Printed B5 text has the same wrong shape: summary.py:274 and :515 ('a cell about 4.6 km across') and sources.py:751 and :760.",
+   "evidence": "Built data/base.json history_layers.pictures.heat90.words.legend reads 'Grid estimate of days at or above 90 F ... in cells about 4.6 km across.'",
+   "fix": "Use the D113(c) words in the P4 legend (history_layers.py:180) and in the B5 printed phrases (summary.py:274 and :515; sources.py:751 and :760), or record a ruling that those B5 phrases stand under D130(a)."
+  }
+ ],
+ "refuted": [
+  {
+   "id": "rules-B6-R5-browser-claims-before-browser",
+   "severity": "high",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 49,
+   "claim": "The B6 About sentences describe browser behaviour that is not built. map.js and map.css are unchanged from HEAD, so the terrain tint, its zoom range, the dark-mode hiding, the Highlight switch, and the bubble and sheet behaviour are not drawn. The B6 About block sits under {% if hail_history %} (line 33), and --hail-history is on for the public site (AGENTS.md; D34), so merging before the browser pass would publish these sentences.",
+   "evidence": "Sentences at about.html:49 (zoom range and dark mode), :106 (Highlight recent radar hail), and :110 to :112 (bubble overlap and the value in the sheet when tapped). git status shows website/static/map/map.js and map.css not modified. D130(e) requires these sentences to be checked in the B6-3 browser pass against the page as drawn.",
+   "fix": "Do not merge this branch to main until B6-3 checks each sentence against the drawn page, or move these sentences behind a flag that stays off until that check passes."
+  }
+ ],
+ "pending": [
+  {
+   "id": "rules-B6-R10-credit-date-not-recorded",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/landmarks.py",
+   "line": 1199,
+   "claim": "_credit prints 'cycle date not recorded' or 'date not recorded' when the index has no as_of. The About's FAA and PAD-US credit lines use it (build.py:1681). D130(b) says such a date prints 'Data unavailable', never 'date not recorded'. No test pins the wording, so the change is free.",
+   "evidence": "landmarks.py:1199 and :1201; build.py:1681 (faa_credit, padus_credit).",
+   "fix": "Print 'Data unavailable' for a missing date at lines 1199 and 1201; add a test with as_of None that checks the About credit line."
+  },
+  {
+   "id": "rules-B6-R11-hospital-fire-credits-hard-coded",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 80,
+   "claim": "The hospital paragraph always prints the USGS credit (line 81) and says a copy 'carries its own credit' (line 80), which is never printed. D130(b) requires the credit of the hospital source the store used (landmarks index hospital_source.used) and no line for a source not read. The fire line (line 83) and the USGS credits carry 'October 2026 refresh' as static text (landmarks.py:183-184 and :213-214); the build does not re-read the service date (terms at landmarks.py:186-188).",
+   "evidence": "Store index hospital_source.used = 'usgs_hospitals'; about.html lines 80 to 83 are literal text.",
+   "fix": "Build the hospital credit from hospital_source.used and print the copy's line when the copy is used; take each credit date from its index row, or print 'Data unavailable'."
+  },
+  {
+   "id": "rules-B6-R12-tiger-place-names-credit",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 55,
+   "claim": "The reservation credit reads 'TIGER/Line 2026 (reservations and roads)', but the next sentence (line 56) takes place names from the TIGER 2026 place file. D130(c) says the TIGER credit line covers place names ('reservations, roads and place names').",
+   "evidence": "about.html:55 and :56; the built base.json vector credit list has the same reservations-and-roads wording.",
+   "fix": "Change the TIGER credit to '(reservations, roads and place names)' in the About page and in the basemap2 credit line it draws from."
+  },
+  {
+   "id": "rules-B6-R13-park-names-contradiction",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 88,
+   "claim": "The paragraph says 'Some park names come from a second public list' and then 'That list is held'. No name from that list is shown, so the first sentence is wrong. The sheet's held_parks sentence (landmarks.py:269, printed through base.json) has the same contradiction. The Source line also lacks the '(held; not shown)' tag that the church line carries.",
+   "evidence": "about.html:88; landmarks.py:269 WORDS held_parks.",
+   "fix": "Use 'Park names from a second public list are held, so none is shown; the parks that only it names are not shown.' in both places, and add '(held; not shown)' to the Source line."
+  },
+  {
+   "id": "rules-B6-R14-rule5-heat-fallback",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 94,
+   "claim": "When the heat picture is unavailable, the fallback 'the five seasons in the store' completes 'Days at or above 90 F are counted over ...', so the page reads as a count with no missing-value wording. Rule 5 needs Data unavailable here.",
+   "evidence": "about.html:94 uses {{ b6.heat_window or 'the five seasons in the store' }}; b6.heat_window is None when the heat90 picture window is absent (build.py:1679).",
+   "fix": "Fall back to 'Data unavailable in this update. This is not an all-clear.', the same sentence the relief and land cover lines use."
+  },
+  {
+   "id": "rules-B6-R15-noaa-licence-words",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/templates/about.html",
+   "line": 95,
+   "claim": "'NOAA declares no restrictions' restates the file attribute 'license = no restrictions' (quoted at sources.py:743). The registry asks for attribution and forbids stating or implying NOAA endorsement (D113(a)); the line keeps the first and drops the second.",
+   "evidence": "about.html:95; sources.py:743 to 749 quotes both the attribute and the registry text.",
+   "fix": "Use the registry's wording in the About line: 'NOAA requests attribution and does not allow its endorsement to be stated or implied.'"
+  },
+  {
+   "id": "rules-B6-R16-monthly-verify-timeout",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/.github/workflows/hail-store.yml",
+   "line": 1255,
+   "claim": "The monthly terrain verify is killed at 300 s, but terrain verify re-fetches 10 tiles one after another (terrain.py verify loop, about lines 1267 to 1276), each up to 60 s with up to three tries. A slow service, the condition the monthly build already struggles with, can time the check out; the step then marks a sound terrain layer unavailable, a false negative rather than wrong data.",
+   "evidence": "Line 1255: timeout --kill-after=30 300 python -m website.terrain verify ... --timeout 60; terrain.py verify iterates picks sequentially through _refetch_compare.",
+   "fix": "Re-fetch in parallel (the --procs setting) or lower the monthly sample, set the step timeout above the worst case, and make the log say that a timed-out check is not checked."
+  },
+  {
+   "id": "rules-B6-R17-held-tiger-fixture",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/tests/fixtures/landmarks/tiger_arealm_mt_sample.zip",
+   "line": 1,
+   "claim": "The new untracked fixture carries real names and coordinates from the held TIGER area landmark file (Rose Park, Dickerson Park, Lange Park, Beavertail Hill State Park). D115 and D118(b) say nothing from it ships before counsel reads its terms.",
+   "evidence": "The zip holds tl_2026_30_arealm.dbf with six records, five of them Montana park names with positions; tests/test_landmarks.py reads it at lines 74, 273 and 840.",
+   "fix": "Before the file is added to git, replace the names and coordinates with synthetic values (keep the field layout and MTFCC codes), or record counsel's clearance first."
+  },
+  {
+   "id": "rules-B6-R18-rulings-after-integration-open",
+   "severity": "medium",
+   "file": "/home/user/wt/wt-b6/website/labels.py",
+   "line": 398,
+   "claim": "Rulings made after the integrators reported are not yet in the worktree. D128(a): labels.py:398 still passes P4's label_legend (history_layers.py:194); build.py:1395 overrides it for the page, but the module text remains. D128(e): no landmark mirror, so hail/index.json base holds only format, terrain and vector (landmarks.py writes none). D128(f): no --refresh-descriptions flag (see B6-R1). D130(a), (b), (c) and (e) are open (see B6-R9, R10, R11, R12 and R5).",
+   "evidence": "Store copy hail/index.json base keys: format, terrain, vector. grep finds no --refresh-descriptions in website/terrain.py.",
+   "fix": "Apply these in the post-integration round and re-run the words and identity checks afterwards."
+  },
+  {
+   "id": "rules-B6-R19-held-reason-wording",
+   "severity": "low",
+   "file": "/home/user/wt/wt-b6/website/landmarks.py",
+   "line": 268,
+   "claim": "The held church kind has two reasons. data/base.json uses 'Their list is under review' (WORDS held, line 268), while the About page and the index use HELD_REASON ('the geocoder's terms are a counsel question ...', line 139). D118(b) asks for the held reason, and the two should agree.",
+   "evidence": "landmarks.py:268 and :139; built base.json kinds.church.problem and about.html's church sentence.",
+   "fix": "Use one reason in WORDS['held'] and HELD_REASON, then re-check both printed places."
+  },
+  {
+   "id": "rules-B6-R20-decisions-missing-d128-d130",
+   "severity": "low",
+   "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+   "line": 1047,
+   "claim": "DECISIONS records D107 to D127 only. The D128 to D130 rulings (2026-10-26, 09:45 to 10:20 UTC, on the first integrators and the About and CONTRACTS integrator) are not recorded.",
+   "evidence": "The last B6 bullet is D127 (line 1047).",
+   "fix": "Add D128 to D130 as bullets in the D38 round's style when the post-integration round lands."
+  },
+  {
+   "id": "correctness-B6-01",
+   "severity": "high",
+   "file": "tests/test_site.py",
+   "line": 5879,
+   "claim": "The data/base.json words test cannot fail, and the integrator's 'words gate clean' result for that file is wrong: the file has one real hit.",
+   "evidence": "The test passes the raw JSON text to words_rules.forbidden_words. The straight-quote EXEMPT rule (tests/words_rules.py, EXEMPT list) strips every quoted span, which is every JSON string, so the scan returns []. A probe JSON string holding 'Pass an all-clear. Structural damage claim.' returns [] while the same words as plain text return ['all-clear', 'claim', 'damage', 'structural']. Scanning each string value of the built data/base.json finds one hit: labels.words.legend (website/build.py:1395, BUBBLE_LEGEND, the D110(c) sentence ending 'that is not zero and not an all-clear'), because only 'This/That is not an all-clear' is exempt (tests/words_rules.py:39). Task 1 and Task 8 both reported base.json clean.",
+   "fix": "Scan each string value of the parsed JSON (walk the structure) instead of the raw text, and resolve the D110(c) sentence against the gate: add an exemption for that exact ruled sentence in tests/words_rules.py (a supervisor call) or reword it with approval. Correct the Task 1 and Task 8 notes."
+  },
+  {
+   "id": "correctness-B6-02",
+   "severity": "high",
+   "file": "website/basemap2.py",
+   "line": 308,
+   "claim": "Five printed vector sentences do not carry 'Data unavailable' (AGENTS rule 5), and the build's safety net does not reach them.",
+   "evidence": "Built data/base.json base.vector.words holds unavailable, part_unavailable, partial_named, peaks_unknown and band_d_water_partial without the words (basemap2.py lines 308, 310, 312, 314, 328). build.py _rule5 (line 1619, used by _rule5_blocks at line 1626) adds the lead only to block 'problem' strings, not to 'words' entries. AGENTS rule 5 and D117(b) require the words; D128(b) orders the module fix for the post-integration round.",
+   "fix": "In the product round (D128(b)) add 'Data unavailable.' to those five WORDS entries. Also widen the rule-5 pass to the words that can be printed, or add a test that every unavailable or partial sentence in data/base.json contains 'Data unavailable'."
+  },
+  {
+   "id": "correctness-B6-03",
+   "severity": "high",
+   "file": ".github/workflows/hail-store.yml",
+   "line": 1241,
+   "claim": "The monthly terrain step is still capped at 20 minutes, not the 25 minutes that D128(f) rules, so the measured cold run loses tiles every month.",
+   "evidence": "CAP=$(( LEFT < 1200 ? LEFT : 1200 )) with DEADLINE=now+CAP-120 (step timeout at line 1236), so no request starts after 1,080 s. The measured cold refresh took 1,175 s for 1,818 requests (P1 integration notes section 5; Task 3 notes), so about 8 percent of requests would start after the deadline and show as paper with 'Data unavailable' each month. The test pins 1200 (tests/test_hail_workflow.py:390-395). docs/ROADMAP.md:129 (owner item 6) still presents the cap as an open owner choice.",
+   "fix": "Set the step to 25 minutes (timeout-minutes 25, CAP=min(LEFT,1500), DEADLINE=CAP-120), update the pin and its test name, and record the D128(f) ruling in ROADMAP owner item 6."
+  },
+  {
+   "id": "correctness-B6-04",
+   "severity": "medium",
+   "file": ".github/workflows/hail-store.yml",
+   "line": 1255,
+   "claim": "The monthly terrain verify can be killed by its own 300 s timeout, and the kill removes the month's terrain layers.",
+   "evidence": "verify re-fetches its 10-tile sample one after another (website/terrain.py:1271, 'for rel in picks'). Each re-fetch allows 60 s per try and up to three tries (TRIES=3, terrain.py:160; retry loop 549-564). A slow service can run past `timeout --kill-after=30 300`. Exit 124 leaves `verified` unset, so the mark step (line 1266) runs `terrain unavailable` and removes the layers for the month.",
+   "fix": "Give the monthly verify a budget that fits its sample (for example a 4-tile sample in the monthly job, or the remaining clock), and report a re-fetch that timed out as 'not checked' rather than failing the whole layer."
+  },
+  {
+   "id": "correctness-B6-05",
+   "severity": "medium",
+   "file": "website/templates/about.html",
+   "line": 86,
+   "claim": "The About credits two held sources with 'Source:' lines, which P3's rules say to leave out.",
+   "evidence": "about.html:86-87 prints 'Source: FEMA copy of an IRS-based places of worship list (held; not shown).' (landmarks.py:247); about.html:88-89 prints 'Source: U.S. Census Bureau, TIGER/Line 2026 area landmarks.' for the held park list (landmarks.py:236). P3 integration notes section 7 say held sources are not listed, and section 9 says the integrator 'leave[s] out the held church source'. D118(b) and D130(b) print a credit only for a source the store uses. The tests pin both lines (tests/test_site.py:5937 in the CREDITS tuple and the assertion at 6022).",
+   "fix": "Remove the two 'Source:' sentences from about.html and keep the held-reason sentences; change the pin to assert that both credit lines are absent."
+  },
+  {
+   "id": "correctness-B6-06",
+   "severity": "medium",
+   "file": "website/build.py",
+   "line": 1527,
+   "claim": "Hospital and zone-outline credits are static or unconditional, and a missing credit date would print 'date not recorded', against D130(b).",
+   "evidence": "about.html:79-81 names only the USGS hospital list and says a copy 'carries its own credit' without printing it; the HIFLD copy's line (landmarks.py:196) is never printed. about.html:103 prints the outline credit, and build.py:1527 always sets it, even when the outline block is unavailable. landmarks._credit (landmarks.py:1194-1202) prints 'date not recorded' or 'cycle date not recorded' when as_of is missing, and build.py:1661-1663 passes the index's date to it. D130(b) asks for 'Data unavailable'. The current store has the dates and the USGS layer answers, so these cases are latent.",
+   "fix": "Choose the hospital credit from the block's hospital source (USGS or the HIFLD copy), print the outline credit only when the outline state is loaded or partial, and print 'Data unavailable' for a missing date. Add tests for the HIFLD and missing-outline cases."
+  },
+  {
+   "id": "correctness-B6-07",
+   "severity": "medium",
+   "file": "website/templates/about.html",
+   "line": 55,
+   "claim": "The TIGER credit line leaves out place names, against D130(c).",
+   "evidence": "about.html:55 reads 'Source: U.S. Census Bureau, TIGER/Line 2026 (reservations and roads).' and the place-name sentence at lines 56-57 relies on TIGER names with no TIGER credit. basemap2.CREDIT[0] (website/basemap2.py:2140) and data/base.json base.credit[2] carry the same text. D130(c) asks for 'reservations, roads and place names'.",
+   "fix": "Change CREDIT[0] (P2 post-integration fix) and the About sentence, and update the credit pins in tests/test_site.py (the CREDITS tuple near line 5924 and the B6BaseMapData credit checks)."
+  },
+  {
+   "id": "correctness-B6-08",
+   "severity": "medium",
+   "file": "website/history_layers.py",
+   "line": 180,
+   "claim": "The printed heat legend still uses the superseded grid words.",
+   "evidence": "heat90_legend reads 'in cells about 4.6 km across', and built data/base.json history_layers.pictures.heat90.words.legend prints it. D113(c) and D130(a) require 'about 1/24 degree cells (roughly 4.6 by 3 km in Montana)' in every printed grid sentence; the About (about.html:91) already uses that wording, so the page contradicts itself.",
+   "fix": "Change heat90_legend to the ruled wording in the P4 post-integration round, and add a test that the legend carries '1/24 degree' and not '4.6 km across'."
+  },
+  {
+   "id": "correctness-B6-09",
+   "severity": "medium",
+   "file": "website/templates/about.html",
+   "line": 94,
+   "claim": "The About states a count the site cannot back when the grid pictures are unavailable.",
+   "evidence": "When b6.heat_window is empty, line 94 prints 'Days at or above 90 F are counted over the five seasons in the store'. The bare-build test asserts that sentence at tests/test_site.py:6050, where the pictures are unavailable. AGENTS rule 5 requires 'Data unavailable' for a missing input.",
+   "fix": "Print 'Data unavailable in this update. This is not an all-clear.' when the window is missing, and change the test to assert that."
+  },
+  {
+   "id": "correctness-B6-10",
+   "severity": "medium",
+   "file": "website/landmarks.py",
+   "line": 237,
+   "claim": "The published index states a use conclusion for a held source that counsel has not reached.",
+   "evidence": "landmarks.py:237 gives the tiger_park terms 'Not copyrighted; free to use in a product or publication.' The built copy publishes it in hail/base/index.json (sources.tiger_park.terms). The same source is held because 'the file's use constraints are for counsel to read' (landmarks.py:140), and counsel item 21 is open (D115, D129(a)). The copy is served with the site.",
+   "fix": "Replace the terms text with the hold (for example 'use constraints not yet read; held for counsel'), or leave the terms out of the copied index for held sources."
+  },
+  {
+   "id": "correctness-B6-11",
+   "severity": "medium",
+   "file": "docs/DESIGN.md",
+   "line": 962,
+   "claim": "DESIGN section 13 gives P4's group sums as the built size of the B6 keys.",
+   "evidence": "The table says '139 bytes raw for the B6 keys' (map.json) and '4,029 bytes raw for the B6 keys' (data/base.json). Those are P4's group (i) and (ii) sums (P4 report, 'Numbers for the integrator'). The built map.json holds 259 bytes for the four B6 keys (the base pointer alone is 157 bytes), and data/base.json is 30,861 bytes in total (its base block alone is 25,222 bytes).",
+   "fix": "Restate both rows as built sizes with their build flags, or label them as P4's sums and give the built totals beside them."
+  },
+  {
+   "id": "correctness-B6-12",
+   "severity": "medium",
+   "file": "/home/user/hail-b5/out/b6/build/integrator/task1-build-base-json.md",
+   "line": 35,
+   "claim": "The map.json headroom the supervisor relies on (590 bytes, D128(d)) does not reproduce from the store copy.",
+   "evidence": "Task 1 measures 163,250 bytes for the history-only build of the adopted store (headroom 590 bytes). Task 8 measures 128,522 bytes for a history-only build of the store copy with the same flags and clock. The store copy adds only the B6 folders and the 157-byte base pointer, so the 34,728-byte gap is unexplained. The built site with --hail-addresses is 397,716 bytes; without the addresses, roads and buildings blocks (268,731 bytes) that leaves about 129,000 bytes, which supports the lower figure.",
+   "fix": "Re-measure the history-only build of the adopted store with the flags stated, correct task 1 and D128(d) if needed, and keep the note that D82(a) gates the history flag only."
+  },
+  {
+   "id": "correctness-B6-13",
+   "severity": "low",
+   "file": "tests/fixtures/landmarks/tiger_arealm_mt_sample.zip",
+   "line": 1,
+   "claim": "The new fixture to be committed carries real rows from a held source.",
+   "evidence": "The zip (untracked, 1,106 bytes) holds real Census area-landmark rows (Rose Park, Dickerson Park, Beavertail Hill State Park, Lange Park). The source is held for counsel (counsel item 21; D115; D129(a)).",
+   "fix": "Use synthetic park rows in the fixture, or hold the fixture until counsel clears the source."
+  },
+  {
+   "id": "correctness-B6-14",
+   "severity": "low",
+   "file": "website/templates/about.html",
+   "line": 61,
+   "claim": "Two different PAD-US credit lines appear on the same page.",
+   "evidence": "Line 61 credits 'Protected Areas Database of the United States (PAD-US) 4.1, U.S. Geological Survey (parks)' (basemap2 CREDIT). Line 85 (b6.padus_credit) credits 'USGS Gap Analysis Project, Protected Areas Database ... local parks'. D115(d) asks for one complete credit line per source.",
+   "fix": "Keep one PAD-US credit line, naming the party the terms ask for, and use it in both places."
+  },
+  {
+   "id": "correctness-B6-15",
+   "severity": "low",
+   "file": ".github/workflows/hail-store.yml",
+   "line": 129,
+   "claim": "The daily B6 steps share a clock that starts before the hail build and the joins, so slow upstream steps can drop B6 parts from the day's store.",
+   "evidence": "JOB_START is written at line 129. The hail build (cap 16 minutes, line 160) and the joins (cap 53 minutes, line 182) run before the B5 window, and the B6 clock is JOB_START+3600 (line 510). If upstream steps take most of the hour, the B6 steps are skipped and the mark steps publish the store with the B6 parts unavailable. It fails closed, but the public base map is missing on those days.",
+   "fix": "Start a separate B6 clock after the joins, and record the expected headroom in the notes."
+  },
+  {
+   "id": "correctness-B6-16",
+   "severity": "low",
+   "file": ".github/workflows/hail-store.yml",
+   "line": 1255,
+   "claim": "After the 80-minute monthly clock, the remaining steps can run past the 110-minute job cap.",
+   "evidence": "Caps after the clock: terrain verify 6 minutes (300 s kill), marks 5 minutes each, basemap verify 6 minutes, manifest 10, pack 5, publish 10. The worst case is about 47 minutes against about 30 minutes of headroom. Only a slow run reaches it; publish is then skipped and the last asset stays.",
+   "fix": "Bring the post-clock verify steps under the seconds left (cap them by LEFT), or give the monthly job more headroom."
+  },
+  {
+   "id": "correctness-B6-17",
+   "severity": "low",
+   "file": "website/labels.py",
+   "line": 398,
+   "claim": "The retired P4 bubble legend remains in the labels rule words and in the published hail index.",
+   "evidence": "labels.py:398 puts H.WORDS['label_legend'] into the rule words (history_layers.py:194 defines it). The copied hail/index.json carries it. data/base.json strips it (build.py _labels_block) and prints the D110(c) sentence, so the page itself is right. D128(a) asks for the retirement after integration.",
+   "fix": "Retire label_legend in the P4 post-integration round (D128(a)), so the store index no longer carries it."
+  },
+  {
+   "id": "correctness-B6-18",
+   "severity": "low",
+   "file": "website/build.py",
+   "line": 1389,
+   "claim": "The sheet block omits the water line and the landmark sub-line the browser needs.",
+   "evidence": "SHEET_WORDS (build.py:1389) holds three sub-lines. The water line (D122(b)) exists only in base.vector.words, and the landmark sub-line (D110(f)) is not written. Both are open in the Task 1 and Task 8 notes.",
+   "fix": "Add both to the sheet block in the B6-3 browser round, from the modules' own words."
+  },
+  {
+   "id": "correctness-B6-19",
+   "severity": "low",
+   "file": "website/landmarks.py",
+   "line": 1,
+   "claim": "The hail/index.json base mirror has no landmark block (D128(e), pending).",
+   "evidence": "The copy's hail/index.json base holds only terrain and vector keys. landmarks.py writes no mirror, and no test checks for one. The page reads hail/base/index.json directly, so the page is unaffected.",
+   "fix": "Add the landmark mirror writer with its manifest entry (D128(e)) and a test that the mirror matches the block."
+  }
+ ],
+ "verdicts": {
+  "rules-B6-R1-monthly-terrain-cap": {
+   "1": false,
+   "2": false
+  },
+  "rules-B6-R4-held-licence-claim": {
+   "1": false,
+   "2": false
+  },
+  "rules-B6-R2-words-gate-vacuous": {
+   "1": false,
+   "2": false
+  },
+  "rules-B6-R5-browser-claims-before-browser": {
+   "1": true,
+   "2": true
+  },
+  "rules-B6-R3-held-number-in-decisions": {
+   "1": false,
+   "2": false
+  },
+  "rules-B6-R6-vector-dates-are-counts": {
+   "1": false,
+   "2": false
+  },
+  "rules-B6-R7-zone-provenance-misprinted": {
+   "1": false,
+   "2": false
+  },
+  "rules-B6-R8-budget-figures-wrong": {
+   "1": false,
+   "2": false
+  },
+  "rules-B6-R9-heat-legend-grid-words": {
+   "1": false,
+   "2": false
+  },
+  "rules-B6-R10-credit-date-not-recorded": {
+   "1": false
+  }
+ }
+}

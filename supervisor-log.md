@@ -398,3 +398,6 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   review loop running. D131 recorded; integrator report written by the supervisor; post-integration script gains F3.
 - 11:50 UTC: integration review 39 findings (20 rules, 19 correctness); refutations running; D132 recorded; the
   post-integration script gains A3, C2 to C4, F4 to F11 and E2 (product-file findings the integrator's fixer cannot touch).
+- 12:15 UTC: the integrator run (w9xvsaj0t) stopped at 19 of 78 skeptic verdicts; D133: the 30 pending findings restate ruled
+  items; the post-integration round becomes the fix round (A1..A4, B1..B2, C1..C4, D1..D3, F1..F12, E1..E2) with a final
+  verification checker. Launching it next.
