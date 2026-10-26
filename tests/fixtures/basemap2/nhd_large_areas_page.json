@@ -1,0 +1,112 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "geometryType": "esriGeometryPolygon",
+ "features": [
+  {
+   "attributes": {
+    "OBJECTID": 11,
+    "GNIS_NAME": "Mill Pond",
+    "AREASQKM": 0.05,
+    "FTYPE": 390,
+    "FCODE": 39004
+   },
+   "geometry": {
+    "rings": [
+     [
+      [
+       -114.0,
+       46.9
+      ],
+      [
+       -113.99,
+       46.9
+      ],
+      [
+       -113.99,
+       46.91
+      ],
+      [
+       -114.0,
+       46.91
+      ],
+      [
+       -114.0,
+       46.9
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 12,
+    "GNIS_NAME": "Rattlesnake Lake",
+    "AREASQKM": 0.04,
+    "FTYPE": 390,
+    "FCODE": 39004
+   },
+   "geometry": {
+    "rings": [
+     [
+      [
+       -114.05,
+       46.95
+      ],
+      [
+       -114.03,
+       46.95
+      ],
+      [
+       -114.03,
+       46.97
+      ],
+      [
+       -114.05,
+       46.97
+      ],
+      [
+       -114.05,
+       46.95
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 13,
+    "GNIS_NAME": "Backwater Slough",
+    "AREASQKM": 0.2,
+    "FTYPE": 466,
+    "FCODE": 46000
+   },
+   "geometry": {
+    "rings": [
+     [
+      [
+       -114.2,
+       46.9
+      ],
+      [
+       -113.95,
+       46.9
+      ],
+      [
+       -113.95,
+       46.92
+      ],
+      [
+       -114.2,
+       46.92
+      ],
+      [
+       -114.2,
+       46.9
+      ]
+     ]
+    ]
+   }
+  }
+ ],
+ "exceededTransferLimit": false
+}

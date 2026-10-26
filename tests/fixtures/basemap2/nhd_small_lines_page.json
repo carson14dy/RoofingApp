@@ -1,0 +1,111 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "geometryType": "esriGeometryPolygon",
+ "features": [
+  {
+   "attributes": {
+    "OBJECTID": 1,
+    "GNIS_NAME": "Clark Fork",
+    "TotDASqKM": 12000.0,
+    "LENGTHKM": 45.0,
+    "FTYPE": 460,
+    "FCODE": 46006
+   },
+   "geometry": {
+    "paths": [
+     [
+      [
+       -113.9,
+       47.2
+      ],
+      [
+       -113.6,
+       46.9
+      ],
+      [
+       -113.2,
+       46.8
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 2,
+    "GNIS_NAME": "Bitterroot River",
+    "TotDASqKM": 4000.0,
+    "LENGTHKM": 30.0,
+    "FTYPE": 460,
+    "FCODE": 46006
+   },
+   "geometry": {
+    "paths": [
+     [
+      [
+       -114.2,
+       46.5
+      ],
+      [
+       -114.0,
+       46.6
+      ],
+      [
+       -113.9,
+       46.7
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 3,
+    "GNIS_NAME": "Tiny Creek",
+    "TotDASqKM": 5.0,
+    "LENGTHKM": 2.0,
+    "FTYPE": 460,
+    "FCODE": 46006
+   },
+   "geometry": {
+    "paths": [
+     [
+      [
+       -114.05,
+       46.9
+      ],
+      [
+       -114.02,
+       46.92
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 4,
+    "GNIS_NAME": " ",
+    "TotDASqKM": 900.0,
+    "LENGTHKM": 9.0,
+    "FTYPE": 460,
+    "FCODE": 46006
+   },
+   "geometry": {
+    "paths": [
+     [
+      [
+       -113.5,
+       46.5
+      ],
+      [
+       -113.4,
+       46.6
+      ]
+     ]
+    ]
+   }
+  }
+ ],
+ "exceededTransferLimit": false
+}
