@@ -1893,3 +1893,14 @@ not "Estuary"; the band D 504 answers came after about 60 s, not 30 s. None chan
 - D129 (a) The TIGER point landmark file is recorded as a future park point source under the same counsel item as the area
   landmark file. (b) The research record's corrected figures are the record; the products cite none of the wrong ones. (c) The
   skeptic scratch (1.5 GB under landmarks/refute) is deleted; the journal and the result are archived on the state branch.
+
+## Supervisor rulings on the About and CONTRACTS integrator (2026-10-26 10:20 UTC; D130)
+Task 2 and task 5 (wf_7425e7dc-00f, integrate:I2) wrote 23 CONTRACTS rows and the About sections (315 site tests). Rulings on
+its open points, folded into the post-integration round:
+- D130 (a) The nClimGrid grid words of D113(c) apply to every printed grid sentence, so P4's heat legend takes them; the B5 town
+  page's "about 4.6 km north to south and about 3 km east to west" says the same figures in other words and stands. (b) The
+  About page prints the credit line of the hospital source the store actually used, never a line for a source not read; a
+  credit date the index lacks prints "Data unavailable", never "date not recorded". (c) The TIGER credit line covers the place
+  names ("reservations, roads and place names"). (d) The words-rule exemption for a USGS service path in a citation stands
+  (D117(c)). (e) The About sentences that describe the browser (tint zooms, dark mode, the Highlight switch, bubble overlap,
+  the water line) are checked in the B6-3 browser pass against the page as drawn.

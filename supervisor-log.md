@@ -392,3 +392,5 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   files: P4 legend text, P2 and P4 rule 5 words, P3 mirror, P1 --refresh-descriptions and the monthly step cap).
 - 10:05 UTC: landmark source skeptics done (47 of 58 claims stand). D129 recorded; journal and result archived; the 1.5 GB
   scratch deleted. Integrator still running (task 2, then the build and smoke, then the review loop).
+- 10:20 UTC: integrator task 2 done (23 CONTRACTS rows; About sections; 315 site tests); D130 recorded; the post-integration
+  script gains B2, D3 and a site job (F1, F2). Task 8 (store copy, build, smoke) running.
