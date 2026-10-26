@@ -1,0 +1,14 @@
+B6 stage 2: the map's own cartography data, the five-year pictures, the zone counts, the recent radar hail cells and the bubble anchors (D107 to D139)
+
+Python data products for the Map page's own cartography, built from public-domain sources; the page draws nothing new yet (B6-3). Every string the browser will print comes from map.json or data/base.json.
+
+- website/terrain.py: 3DEP relief shading and NLCD 2021 land cover tint tiles for zooms 5 to 10 (881 tiles per layer, 14,349,318 bytes); the monthly job passes --refresh-descriptions under a 25-minute cap.
+- website/basemap2.py: reservations, forests, parks, water and route shields in four zoom bands; places with 2020 counts; summits with 3DEP heights; band D water continued monthly.
+- website/landmarks.py: schools, hospitals, airports, fire and EMS stations and parks per tile (2,159 points in 537 shards); places of worship and the Census park points held for counsel; the base index mirrored into hail/index.json.
+- website/history_layers.py and website/labels.py: the five-year hail and heat pictures, the eight zone measures with the newest-warning date, the recent radar hail cells and the bubble anchors (483,008 bubbles statewide at zoom 17).
+- website/build.py and the About page: HAIL_FOLDERS_B6, the map.json pointer, data/base.json, credit lines only for sources read, the modules' own "Data unavailable" sentences; sources.py CONTRACTS rows; the daily and monthly store jobs; tests; docs (D107 to D139).
+
+Verified: __SUITE__; selftest PASS; local build from the adopted store with the new parts __BUILD__; smoke passed; map.json __GATE__ raw against the 163,840 gate.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01D7npHSU4NQFAmdz8Ep5sV7
