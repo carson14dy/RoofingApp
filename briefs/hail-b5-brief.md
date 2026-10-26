@@ -2073,3 +2073,15 @@ the About page) before the commit. Rulings:
   modules and print on failure, D136(a) tests); as_of "Data unavailable" for cached sources (the rule of D134(a); recording the
   cache file's date is a follow-up); the table rows that describe the designed page behaviour (D132(a)); "1 km cell" stays
   the site's unit (B1 to B5 use it; miles beside km is an owner question for B6-3).
+
+## Supervisor ruling on the branch run's smoke failure (2026-10-26 21:25 UTC; D142)
+The branch Website run 132 failed one map smoke check, check_swath, and the failure reproduced locally with a storm-layers
+build: in check_swath_town_card the town marker that TOWN_ON_SCREEN picked (at 96, 475 on the 1280 by 800 desktop view)
+lay under the legend panel (12, 185, 176 by 468), so the click hit the legend's uncoloured note and the town card never
+opened. Where that marker lands depends on the live value cell of the day, which is why the same check passed on earlier
+branch runs; B6 changes no map code.
+- D142 (a) **The picker skips covered markers**: TOWN_ON_SCREEN returns a town marker only when document.elementFromPoint at
+  its centre is the marker itself (the legend panel and the bottom bar can cover a marker near the left edge). (b) The fix
+  rides this PR (a smoke-only change in tools/smoke_map.py); the two 5-second waits in the check stay (the check was not
+  slow, it was aimed at the wrong element). (c) The branch Website build is dispatched again after the monthly store job
+  finishes, since a push that touches only tools/ does not trigger it.
