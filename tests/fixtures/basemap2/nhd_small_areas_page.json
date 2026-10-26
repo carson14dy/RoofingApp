@@ -1,0 +1,77 @@
+{
+ "objectIdFieldName": "OBJECTID",
+ "geometryType": "esriGeometryPolygon",
+ "features": [
+  {
+   "attributes": {
+    "OBJECTID": 1,
+    "GNIS_NAME": "Flathead Lake",
+    "AREASQKM": 480.0,
+    "FTYPE": 390,
+    "FCODE": 39004
+   },
+   "geometry": {
+    "rings": [
+     [
+      [
+       -114.3,
+       47.7
+      ],
+      [
+       -114.0,
+       47.7
+      ],
+      [
+       -114.0,
+       48.1
+      ],
+      [
+       -114.3,
+       48.1
+      ],
+      [
+       -114.3,
+       47.7
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "attributes": {
+    "OBJECTID": 2,
+    "GNIS_NAME": "Mill Pond",
+    "AREASQKM": 0.05,
+    "FTYPE": 390,
+    "FCODE": 39004
+   },
+   "geometry": {
+    "rings": [
+     [
+      [
+       -114.0,
+       46.9
+      ],
+      [
+       -113.99,
+       46.9
+      ],
+      [
+       -113.99,
+       46.91
+      ],
+      [
+       -114.0,
+       46.91
+      ],
+      [
+       -114.0,
+       46.9
+      ]
+     ]
+    ]
+   }
+  }
+ ],
+ "exceededTransferLimit": false
+}

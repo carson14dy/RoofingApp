@@ -55,7 +55,7 @@ build.py   PyInstaller build      ship.py   test → bump version → commit →
 
 ## Commands
 ```bash
-pip install requests jinja2 pillow numpy pygrib h5py tzdata     # enough for the website
+pip install requests jinja2 pillow numpy pygrib h5py tzdata pyshp     # enough for the website
 python -m website.build --out _site --sample             # labelled sample data, no network
 python -m website.build --out _site --hail-history       # the five-year hail history (D34; on main at the owner's decision of 2026-10-21)
 python -m website.build --out _site --hail-history --hail-store store   # a local store folder or hail-store.tar.gz instead of the download (D59)

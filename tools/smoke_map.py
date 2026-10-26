@@ -626,7 +626,7 @@ def check_satellite_while_playing(browser, base, want: str) -> list[str]:
 # ---------------------------------------------------------------- the Imagery base map (D32)
 
 IMAGERY_HOST = "basemap.nationalmap.gov"    # the only host the browser asks for imagery tiles, and only after a switch
-PRIVACY = "Your IP address and the map area you view go to USGS."   # the credit row's privacy words (D32)
+PRIVACY = "Your IP address and the map area you view go to USGS while it is on."   # the credit row's privacy words (D32, D110(d))
 NOTE = "note: "                             # a check line that starts with this is reported and never fails the run
 TILE_WAIT = 20                              # seconds to wait for the first tile before it counts as not loaded
 VECTOR = "path.bm-land, path.bm-lake, path.bm-river, path.bm-road, path.bm-county"   # the shapes Imagery hides
@@ -3295,9 +3295,12 @@ def check_swath_outside(browser, base, root: Path, data: dict, shots) -> list[st
 
 
 # the centre of a town marker that lies fully on screen (the town card check clicks it)
+# A town marker that a click reaches: on screen, visible, and the topmost element at its centre (the legend panel and the
+# bottom bar can cover a marker near the left edge, which depends on where the live value cell sits that day, D142).
 TOWN_ON_SCREEN = ("() => { const w = innerWidth, h = innerHeight; for (const t of document.querySelectorAll('.leaflet-marker-icon.town')) {"
-                  " const b = t.getBoundingClientRect(); if (b.width > 0 && b.left >= 0 && b.top >= 0 && b.right <= w && b.bottom <= h &&"
-                  " getComputedStyle(t).visibility !== 'hidden') return {x: b.left + b.width / 2, y: b.top + b.height / 2}; }"
+                  " const b = t.getBoundingClientRect(); if (!(b.width > 0 && b.left >= 0 && b.top >= 0 && b.right <= w && b.bottom <= h &&"
+                  " getComputedStyle(t).visibility !== 'hidden')) continue; const x = b.left + b.width / 2, y = b.top + b.height / 2;"
+                  " const e = document.elementFromPoint(x, y); if (e && (e === t || t.contains(e))) return {x: x, y: y}; }"
                   " return null; }")
 
 

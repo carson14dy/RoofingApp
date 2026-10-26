@@ -466,6 +466,274 @@ CONTRACTS = {
                    "wind); about 39 percent of the values checked were not whole knots, and they match whole mph; 42 of the "
                    "network's 60 stations are ongoing, so some places have no station within 40 miles.",
     },
+    # --hail-history builds only (build.py B6_CONTRACTS): the B6 base map (terrain, vectors, landmark points), the five-year
+    # pictures, the zone counts and the recent radar hail. Each row's words are its module's (the B6 integration notes) with
+    # the rulings applied: D112(c) and D121(a) credit lines in the "Source: ..." form, D113(c) grid words, D113(d) newest-warning
+    # wording, D118(b) no figure of a held source, D124 no CC0 statement for NLCD 2021 (the record's own words are quoted).
+    "terrain_shading": {
+        "name": "USGS 3D Elevation Program (3DEP) hillshade, grey relief (rendering rule Hillshade Gray)",
+        "request": "elevation.nationalmap.gov ImageServer exportImage, one 256 by 256 PNG per tile in EPSG:3857 for the 881 tiles "
+                   "that overlap the Montana outline at zooms 5 to 10 (sun from 315 degrees, 45 degrees up); the service "
+                   "description gives the data date, read at each build",
+        "units": "8-bit grey, 0 to 255, stored as a grey JPEG at quality 80. Every grey value is kept as the service sends it.",
+        "timing": "The monthly job passes --refresh-descriptions, not --refresh: the two service descriptions are read again, and a "
+                  "tile is requested again only when its data month changed, through the cache key. A full --refresh runs only when "
+                  "the owner asks. The build step is capped at 25 minutes and the check at 900 seconds. Otherwise a cached copy that "
+                  "passes its check is used. The cache is keyed by the data month, and the other months are deleted after a build.",
+        "missing": "A tile that does not load after three tries has no file, and the map shows paper there with 'Data "
+                   "unavailable'. A service description that cannot be read makes the shading unavailable: that is not the same "
+                   "as no shading. This is not an all-clear. Source: 3DEP data courtesy of the U.S. Geological Survey.",
+    },
+    "terrain_land_cover": {
+        "name": "National Land Cover Database (NLCD) 2021, land cover (MRLC)",
+        "request": "www.mrlc.gov geoserver, WCS 1.0.0 DescribeCoverage for mrlc_display:NLCD_2021_Land_Cover_L48 (read at each "
+                   "build; its date keyword gives the cache month), then GetCoverage for the same 881 tiles, EPSG:3857, 256 by "
+                   "256 GeoTIFF, nearest-neighbour sampling",
+        "units": "NLCD class codes (2021 legend) in five tint colours: forest (41 to 43), shrub and grass (52, 71, 90 and 95; "
+                 "woody and emergent wetlands take this class), developed (21 to 24), crop (81 and 82) and water (11). Barren "
+                 "land (31 and 32) is transparent. Stored as palette PNGs with index 0 transparent; codes 0 and 255 are no data.",
+        "timing": "The monthly job passes --refresh-descriptions, not --refresh, with the shading: the two service descriptions are "
+                  "read again, and a tile is requested again only when its data month changed, through the cache key. A full "
+                  "--refresh runs only when the owner asks. The build step is capped at 25 minutes and the check at 900 seconds. "
+                  "The layer's date is read from the service at each build. A layer name that is no longer in the service makes "
+                  "the land cover unavailable, with the reason in the block and on stderr.",
+        "missing": "A tile that does not load after three tries has no file, and the map shows paper there with 'Data unavailable'. "
+                   "A code outside the legend, or a truncated answer, is a failed try. The NLCD 2021 product record reads 'public "
+                   "domain information', with access, use and fees none (doi 10.5066/P9JZ7AO3). Source: National Land Cover "
+                   "Database 2021 data courtesy of the U.S. Geological Survey and the Multi-Resolution Land Characteristics Consortium (public domain).",
+    },
+    "base_reservations": {
+        "name": "U.S. Census Bureau TIGER/Line 2026 American Indian reservations (Montana)",
+        "request": "www2.census.gov/geo/tiger/TIGER2026/AIANNH/tl_2026_us_aiannh.zip, read for its seven Montana reservations at every "
+                   "zoom (the full-resolution file; the 1:500,000 cartographic file is never used)",
+        "units": "Polygon rings in longitude and latitude (WGS 84), 5 decimals, simplified to 500 m in the statewide file. English "
+                 "names, as the file gives them.",
+        "timing": "Census TIGER 2026 release. The build reads the cached copy; the monthly job fetches it only when it is missing.",
+        "missing": "If the file cannot be read, the reservation outlines are left out, the index names the source, and the map shows "
+                   "the partial sentence rather than an empty map.",
+    },
+    "base_roads": {
+        "name": "U.S. Census Bureau TIGER/Line 2026 primary and secondary roads (Montana), route shields",
+        "request": "www2.census.gov/geo/tiger/TIGER2026/PRISECROADS/tl_2026_30_prisecroads.zip; interstate, US and state route "
+                   "numbers only",
+        "units": "Line paths in longitude and latitude (WGS 84), 5 decimals. The shield text (I-90, US-12, MT-200) is the route "
+                 "number; the feature id is the road's LINEARID. A route-like local name (FAS 533, W US Hwy 12) carries no shield.",
+        "timing": "Census TIGER 2026 release, read from the cache and fetched when missing.",
+        "missing": "Without the file, or with no interstate, US or state route in it, the route shields are left out and the "
+                   "index names them. Local roads are not part of this source.",
+    },
+    "base_places": {
+        "name": "U.S. Census Bureau TIGER/Line 2026 places, with the 2020 Census counts (Montana)",
+        "request": "www2.census.gov/geo/tiger/TIGER2026/PLACE/tl_2026_30_place.zip (names and points); the 2020 Census Public Law "
+                   "94-171 Montana file, mt2020.pl.zip (population)",
+        "units": "Points in longitude and latitude (WGS 84), 5 decimals. Population in persons, the 2020 count.",
+        "timing": "The 2020 counts are fixed. TIGER 2026 is the Census annual release. Both are read from the cache.",
+        "missing": "A place with no 2020 count shows Data unavailable, with the reason 'no census count under its code' in its row. "
+                   "If the population file cannot be read, every place shows Data unavailable and the place kind is named. If the "
+                   "place file cannot be read, places are left out and the index names them.",
+    },
+    "base_forests": {
+        "name": "USDA Forest Service, Forest System Boundaries (the seven Montana national forests)",
+        "request": "apps.fs.usda.gov, Forest System Boundaries map service, queried by the Montana envelope; outlines simplified to "
+                   "about 20 m by the service",
+        "units": "Polygon rings in longitude and latitude (WGS 84), 5 decimals. The forest name as the layer gives it.",
+        "timing": "The layer's own update cycle. Read from the cache; a monthly run requests the query again only when its page is missing.",
+        "missing": "If the query cannot be read, or names none of the seven forests, the forest outlines are left out and the index "
+                   "names them. The layer's description says it is intended for read-only use; that is read as a usage note on a "
+                   "federal work (public domain, 17 U.S.C. 105). The credit line ships with the first release, and counsel reads "
+                   "the terms.",
+    },
+    "base_parks": {
+        "name": "PAD-US 4.1 Fee layer, Montana parks (national, state, recreation and local)",
+        "request": "services.arcgis.com, PAD-US 4.1 Fee layer map service, where State_Nm = 'MT' and Des_Tp is one of NP, NM, NRA, "
+                   "SP, SREC, REC, LP, LREC",
+        "units": "Polygon rings in longitude and latitude (WGS 84), simplified to about 5 m by the service. Acres converted to km2 "
+                 "for ranking; a park with no acreage has no size (null). The designation code is kept.",
+        "timing": "PAD-US 4.1. Read from the cache; the monthly job requests the query again only when its page is missing.",
+        "missing": "Without the query, or with no park of a known designation in it, no park outline is drawn and the index names the "
+                   "source. A park with no name, a placeholder name or the managing agency's name keeps its outline and gets no name "
+                   "and no label. A park that does not survive its band's simplification moves to the next finer band; one that does "
+                   "not survive in the finest band it can reach is dropped and counted.",
+    },
+    "base_water": {
+        "name": "U.S. Geological Survey National Hydrography Dataset, named lakes and rivers",
+        "request": "hydro.nationalmap.gov, nhd map service: small scale lines (layer 4, drainage 100 km2 and up) and areas (layer 10, "
+                   "0.02 km2 and up); large scale lines (layer 6) and areas (layer 12) for each 1 degree cell that holds a listed "
+                   "tile, pages of 250 features; a query the service times out on (HTTP 504) is split into quarters, twice at most; "
+                   "named features only",
+        "units": "Lines and rings in longitude and latitude (WGS 84), 5 decimals. Drainage area in km2, length in km, lake area in km2. "
+                 "Feature ids are the OBJECTID.",
+        "timing": "The service as it stands when a page is requested. Each page is cached. The monthly job requests only the large-scale "
+                  "cells missing from the cache and stops requesting at its deadline: a request that would start after the deadline is "
+                  "not made, and the cells it leaves are listed with the reason 'deadline'. After a statewide online run in which no "
+                  "request failed, the cache keeps the current cycle of each source and deletes the older files (the count is in the index).",
+        "missing": "A cell whose water request still does not load after the quarter split, or is stopped by the deadline, leaves its "
+                   "tiles unbuilt: no shard is written, and the index lists the cells and their reasons. Where a tile has no band D "
+                   "shard, the browser keeps drawing band C's lakes and rivers at zoom 13 and up, and the sheet's water line for that "
+                   "area reads 'Detailed water and local parks: Data unavailable for this area in this update. This is not an all-clear.' "
+                   "A river with no drainage area is left out and counted. A lake or river wholly in another state is not drawn.",
+    },
+    "base_summit_names": {
+        "name": "U.S. Geological Survey Geographic Names Information System, Montana summits",
+        "request": "prd-tnm.s3.amazonaws.com, staged Domestic Names file for Montana (text), feature class Summit",
+        "units": "Named points in decimal degrees (WGS 84). The file has no height.",
+        "timing": "The staged file is read from the cache and fetched when missing.",
+        "missing": "Without the file, or with no summit in it, no summit name is shown and the index names the source.",
+    },
+    "base_summit_heights": {
+        "name": "U.S. Geological Survey 3D Elevation Program, summit heights at each summit's position",
+        "request": "elevation.nationalmap.gov, 3DEP elevation image service, getSamples at each summit point in batches of 200",
+        "units": "Metres at the summit's GNIS point (feet are metres divided by 0.3048). No-data values are missing.",
+        "timing": "The 3DEP raster as the service holds it. Each batch is cached by its points.",
+        "missing": "A summit with no sampled value is not ranked and is left out of the peak list; the number left out is "
+                   "counted and the state is partial. If no summit has a value, the summit heights are named as not loaded.",
+    },
+    "nces_public": {
+        "name": "National Center for Education Statistics, EDGE public school locations, 2024-25 (Montana)",
+        "request": "nces.ed.gov/opengis/rest/services/K12_School_Locations/EDGE_GEOCODE_PUBLICSCH_2425/MapServer/0: the NAME, LAT "
+                   "and LON fields where STFIP is 30. Duplicates of one name at one position are dropped.",
+        "units": "Positions in decimal degrees (WGS 84) to five decimals, from the layer's own LAT and LON attributes. Counts of "
+                 "schools. No distance is computed.",
+        "timing": "The daily job reads the cache. The monthly job asks again for every file. NCES publishes a school year's file for "
+                  "its own year.",
+        "missing": "A request that does not load and has no cached copy, a layer description or page that is not in the form the build reads, or a "
+                   "count below 600 rows makes the schools unavailable as a whole, so the sheet says Data unavailable. Unavailable is "
+                   "not the same as zero. The layer says: \"All information contained in this file is in the public domain.\"",
+    },
+    "nces_private": {
+        "name": "National Center for Education Statistics, EDGE private school locations, 2023-24 (Montana)",
+        "request": "nces.ed.gov/opengis/rest/services/K12_School_Locations/EDGE_GEOCODE_PRIVATESCH_2324/MapServer/0: NAME, LAT and "
+                   "LON where STFIP is 30.",
+        "units": "Positions in decimal degrees (WGS 84) to five decimals. Counts of schools.",
+        "timing": "The daily job reads the cache; the monthly job asks again. The private school file is for its own year (2023-24).",
+        "missing": "As for the public schools: a request that does not load with no cached copy, or a count below 80 rows, makes the "
+                   "schools unavailable as a whole. The layer says: \"All information contained in this file is in the public domain.\"",
+    },
+    "usgs_hospitals": {
+        "name": "USGS The National Map, hospitals and medical centers (Montana)",
+        "request": "carto.nationalmap.gov/arcgis/rest/services/structures/MapServer/49: STATE 'MT', NAME and position (layer 14 "
+                   "holds the same rows). The layer has no rights line: its copyright text is empty. The service root's copyright "
+                   "line reads \"Data Refreshed October, 2026.\" (read 2026-10-26).",
+        "units": "Positions in decimal degrees (WGS 84) to five decimals. Counts of hospitals.",
+        "timing": "The daily job reads the cache; the monthly job asks again.",
+        "missing": "This layer is the hospital source when it answers with named Montana rows. The HIFLD copy is read only when this "
+                   "layer answers with no Montana rows. A request that does not load makes hospitals unavailable, never a silent "
+                   "switch of source. The USGS terms page was not read in this build, so its licence is recorded as not read.",
+    },
+    "hifld_hospitals": {
+        "name": "HIFLD copy of the state licensure list (hospitals, Montana, STATUS OPEN): fallback only",
+        "request": "services2.arcgis.com/PYn6bWCjT6bhw1z3/arcgis/rest/services/HIFLD_Hospitals/FeatureServer/0. Read only when the USGS "
+                   "layer answers with no Montana hospital row. The block records which source it used and why.",
+        "units": "Positions in decimal degrees (WGS 84) to five decimals. Counts of hospitals.",
+        "timing": "Read only in a run where the USGS layer has no rows; the monthly job asks again.",
+        "missing": "Read only when the USGS layer answers with no Montana rows; a request that does not load makes hospitals "
+                   "unavailable, never a silent switch of source. Its licence is not checked, so this copy is the fallback only.",
+    },
+    "faa_nasr": {
+        "name": "FAA National Airspace System Resources, airport file (NASR 28-day cycle): public-use operational airports in Montana",
+        "request": "nfdc.faa.gov/webContent/28DaySub/<cycle>/APT.zip, the cycle in force on the run date (28-day cycles anchored on "
+                   "2026-10-01). Only the APT.txt member is read. Records kept: facility type AIRPORT, facility use PU, status O.",
+        "units": "The airport reference point in decimal degrees (degrees, minutes and seconds in the file, converted). Names as "
+                 "given, with the abbreviations written out and Airport added when no airport word is in the name.",
+        "timing": "The cycle changes every 28 days; the build picks it from the run date. The cache keeps only the cycle in force: "
+                  "the older zips are removed after a good build.",
+        "missing": "A download that does not load with no cached copy, a file that is not a zip with an APT.txt member, or a file "
+                   "with no Montana airport records makes the airports unavailable. There is no HIFLD fallback: its aviation copy is "
+                   "an older cycle (2025/06/12).",
+    },
+    "usgs_fire": {
+        "name": "USGS The National Map, fire and EMS stations (Montana)",
+        "request": "carto.nationalmap.gov/arcgis/rest/services/structures/MapServer/51: STATE 'MT', NAME and position (layer 16 holds "
+                   "the same rows). The layer has no rights line; the service root's copyright line is the one given for the "
+                   "hospital layer.",
+        "units": "Positions in decimal degrees (WGS 84) to five decimals. Counts of stations. The layer lists EMS stations with fire "
+                 "stations.",
+        "timing": "The daily job reads the cache; the monthly job asks again.",
+        "missing": "A request that does not load with no cached copy, a layer description or page that is not in the form the build reads, or a count "
+                   "below 300 makes the fire and EMS stations unavailable. Unavailable is not the same as no stations.",
+    },
+    "padus_local": {
+        "name": "USGS Protected Areas Database of the United States (PAD-US) 4.1, local parks (Montana)",
+        "request": "services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Fee_Managers_PADUS/FeatureServer/0: State_Nm 'MT' and "
+                   "Des_Tp 'LP'. The layer was last edited 2026-04-22. The park points ship; the Census park list is held and is "
+                   "not shown.",
+        "units": "A label point for each park: the pole of inaccessibility of its polygon, the distance measured in degrees (about "
+                 "1e-5 degree, about a metre of latitude). Names as the layer gives them, with the name rules of the landmarks "
+                 "module. Counts of parks.",
+        "timing": "The monthly job asks again; the daily job reads the cache. The polygon outlines for the map come from the base map "
+                  "files, so the names here and there match.",
+        "missing": "A request that does not load with no cached copy, a layer description or page that is not in the form the build reads, or a count "
+                   "below 300 makes the parks unavailable. The layer's copyright line is the USGS citation with DOI 10.5066/P96WBCHS. "
+                   "The layer does not say the data is in the public domain, and the PAD-US terms of use were not read: a counsel "
+                   "question.",
+    },
+    "tiger_park": {
+        "name": "U.S. Census Bureau TIGER/Line 2026, area landmarks: park (K2180) and incorporated place park (K2188), Montana "
+                "(not shown yet: the file's use terms are still being read)",
+        "request": "www2.census.gov/geo/tiger/TIGER2026/AREALM/tl_2026_30_arealm.zip. The named park points are not shown yet, so no count of "
+                   "them is published. A park point that is the same park as a PAD-US park gives that PAD-US row an alternate name, "
+                   "which is held with the points.",
+        "units": "The Census interior point in decimal degrees (WGS 84) to five decimals. Named rows only.",
+        "timing": "The Census vintage is 2026. The file is cached by its own name, and an older vintage is removed after a good build. "
+                  "The daily job reads the cache; the monthly job asks again.",
+        "missing": "Not shown yet: the file's use terms are still being read, so no text from it ships. A "
+                   "missing shapefile reader stops this held source only; the PAD-US parks still ship.",
+    },
+    "fema_worship": {
+        "name": "FEMA copy of an IRS-based places of worship list, point-address rows, Montana (not shown yet: the list's use terms are "
+                "still being read)",
+        "request": "services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/All_Places_Of_Worship__HiFLD_Open_/FeatureServer/42: "
+                   "STATE 'MT' and LOC_NAME 'POINTADDRESS'. The layer was last edited 2025-09-04. No count of its rows is published.",
+        "units": "Positions in decimal degrees (WGS 84) to five decimals while the kind is held; no count is published.",
+        "timing": "Not shown while held. When the hold is lifted, the next build writes the kind.",
+        "missing": "Not shown yet: the layer's copyright line says the points were placed by a commercial address-matching service "
+                   "whose terms are still being read. While that holds, its points are not shown and not written; the data carries "
+                   "the state and the reason only. A request that does not load changes nothing.",
+    },
+    "history_pictures": {
+        "name": "Five-year radar and grid pictures: days with a radar estimate of 1 inch or more, and days at or above 90 F, Montana",
+        "request": "The store's own files: hail/t/ (NOAA MRMS MESH radar estimates; see hail_history) and hail/c/ (NOAA nClimGrid-Daily "
+                   "grid estimates; see nclimgrid_daily). No network request.",
+        "units": "Days (whole). A radar cell is 1 km (0.01 degree). The grid cells are about 2.9 by 1.9 miles (4.6 by 3 km). "
+                 "Radar values are stored in tenths of a millimetre and counted at 254 tenths (1.00 in).",
+        "timing": "Built by the daily job after the store is packed; the store's as_of names the newest day in the pictures.",
+        "missing": "A cell with no stored day at 1 inch or more is transparent. That is not the same as no hail. A climate cell with no "
+                   "grid value is transparent. A listed shard that cannot be read makes its picture unavailable for that update, and "
+                   "the page says so. Missing radar days in the store are named in the legend.",
+    },
+    "history_zone_counts": {
+        "name": "High wind, wind and flood products by public forecast zone, eight measures, five years",
+        "request": "The store's zone rows (hail/z/), read from the IEM watchwarn zone file under the name nws_zone_products, and its "
+                   "polygon rows (hail/j/events.json and the tile join files hail/j/r<tile>.json), read from the IEM watchwarn "
+                   "shapefile under the name nws_warnings_polygons. The sources table lists both under iem_watchwarn. No network request.",
+        "units": "Counts of products (whole): every such product the archive files read hold for the zone (high wind warnings and watches, wind advisories, flood watches, warnings and advisories, and flash flood watches and warnings), including those later "
+                 "cancelled, upgraded or expired early. A warning area product counts in a zone when it touches one of the zone's 1 km "
+                 "cells. Times are UTC; the window is 12:00 UTC on the first SPC day to 12:00 UTC after the last.",
+        "timing": "Built by the daily job. The newest warning in these counts is dated in the words shown with the counts "
+                  "(newest_warning, taken from the counted rows).",
+        "missing": "A zone whose product file is absent shows Data unavailable for its counts; a part of the joins that did not load "
+                   "makes its measures Data unavailable for every zone, with the reason. A zero is a count only when the rows were read. "
+                   "A joins row that names a warning the warnings file does not hold makes the zone counts unavailable; the pictures "
+                   "and the outlines still build.",
+    },
+    "recent_radar_cells": {
+        "name": "Cells with a radar estimate of 1 inch or more in the last 30 days",
+        "request": "The store's radar shards (hail/t/). No network request.",
+        "units": "A day index from 2020-01-01 and tenths of a millimetre, per cell (row and column of the 1 km grid).",
+        "timing": "Built by the daily job with the store's as_of. A sentence is shown when the store is older than 3 days (hail.is_stale). "
+                  "The switch Highlight recent radar hail shows these cells on the map.",
+        "missing": "A cell not listed had no such day in the store. That is not the same as no hail. Missing radar days in the window "
+                   "are named in the legend.",
+    },
+    "bubble_anchors": {
+        "name": "Value bubble anchors on the building outlines (derived from the outlines and the radar store)",
+        "request": "The store's building shards (hail/b/, from usa_structures) and radar shards (hail/t/). No network request.",
+        "units": "Pixels at zoom 17 and 18 (256 px tiles) for the placement; bubble text in inches to the hundredth, rounded down.",
+        "timing": "After every outline rebuild: the labels pass runs after the outlines step, every time.",
+        "missing": "A cell with no stored estimate of 0.25 in or more reads \"Data unavailable\" and its bubble is a dash, never zero. "
+                   "An outline whose cell lies outside its shard's tile gets no bubble and is counted. A shard that does not load "
+                   "loses its flags, and the block reads partial.",
+    },
     # --hail-history builds only (build.py HAIL_CONTRACTS): the B5 feeds behind the five-season table, the sections and the
     # roof lines (AGENTS.md rule 7; the terms are quoted from the module docstrings and the records named in each row).
     "nclimgrid_daily": {
@@ -593,14 +861,20 @@ CONTRACTS = {
                    "are provided as-is and without warranty. You are free to use these services for any lawful purpose "
                    "(including commercial ...)\", and the OpenAPI description says \"This service is free to use for most any "
                    "legal purpose.\" The IEM site footer reads \"All rights reserved.\" The words \"public domain\" and "
-                   "\"attribution appreciated\" were not found on the pages read, so the About page does not say them.",
+                   "\"attribution appreciated\" were not found on the pages read, so the About page does not say them. The "
+                   "ugcs snapshot of 2026-10-25 (valid=2026-10-25T00:00Z) gives the 83 public zone outlines only. The B6 zone "
+                   "counts use the counted rows from the store's zone and polygon files.",
         "units": "Zone codes (MTZ and a number) and names as the snapshot gives them. Outlines are decimal degrees of longitude "
                  "and latitude, simplified by the IEM. Counts are zones.",
         "timing": "A snapshot is the zone set valid at the time asked. The 103 zones hold through 12:00Z on 13 September 2022 "
                   "and the 83 zones from 18:00Z that day. The NWS change log dates the change 7 September 2022, so the switch "
                   "date lies between 12:00Z and 18:00Z on 13 September; products issued from 7 September to 18:00Z on 13 "
                   "September are placed by the set that holds their code. The snapshots are historical: they are cached once "
-                  "and not re-pulled.",
+                  "and not re-pulled. The B6 history layers read the ugcs snapshot of 2026-10-25 (valid=2026-10-25T00:00Z) from "
+                  "the cache, and it gives the 83 public zone outlines only; the B6 zone counts use the counted rows from the "
+                  "store's zone and polygon files. The snapshot is fetched "
+                  "once; a new valid time or a changed zone set is a reviewed change. The build refuses any zone count other than "
+                  "83, and a fetched page that is not that set is never cached.",
         "missing": "A zone that a snapshot does not hold is not in that zone set, so a product under its code is counted as "
                    "unplaced and never placed on a neighbouring zone. A snapshot that does not parse, has a zone with no "
                    "outline, or repeats a code is refused, and the products its set would place are counted as unplaced. The "
