@@ -327,3 +327,6 @@ P1, P3 and P4 built and measured; P2 still building. Reviewers' findings (P1 20,
 
 ## 2026-10-26 00:00 UTC: part 1 workflow A resumed
 Two agents in wf_74f50175-7c5 had stopped answering: the P2 builder (last event 21:28 UTC, a JSON parse error on a tool call) and one P1 skeptic (23:01 UTC, a schema error). The workflow was stopped and resumed with the same script and args (cached results for the finished agents; the two dead calls run live; the P2 builder finds its own files in the worktree and continues).
+
+## 2026-10-26 00:03 UTC: WIP snapshot of the part 1 builders' files
+The stop hook reported untracked files: the four products' modules, tests and fixtures in wt-b6 (mid-review). Snapshot committed on claude/map-b6 locally as 7ab4392 (unsigned WIP, to be squashed) and pushed to origin/session/map-b6-wip (no workflow runs on session branches). claude/map-b6 on origin stays at ee52460 until the reviewed, signed commit.
