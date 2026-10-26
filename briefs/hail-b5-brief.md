@@ -2024,3 +2024,21 @@ on its open points, applied by the supervisor before the site check:
   with the exception type stays in the data key "reason" for diagnosis and is printed nowhere. (c) The data-file reason keys
   (REASON_NO_STORE and the rest) stay: no sentence prints them, and the pins hold. (d) The About rule sentence "shows Data
   unavailable with the reason" is prose about the rule and stays.
+
+## Supervisor rulings on the site check (2026-10-26 17:55 UTC; D140)
+The site checker (wf_7352bd5b-119) verified 59 fixer items (56 pass), ran the three site modules (463 tests), the parity
+run on the adopted store (347, four parity tests now exercised), the whole suite (2,522 tests, 12 skipped), the self-test
+(PASS), the build, the gate (map.json 116,336 bytes raw without addresses against 163,840; base.json 33,192) and the scans
+(no em-dash, no vendor name, the words gate clean, the legend once), then failed to return its structured result after
+five tries (its result is recovered from its attempts). Its smoke run failed one check, the phone tap on the cell's centre.
+- D140 (a) **Credit form**: the land cover credit line reads "Land cover: National Land Cover Database 2021 data courtesy of
+  the U.S. Geological Survey and the Multi-Resolution Land Characteristics Consortium (public domain)." (D113(a)); the relief
+  line already had that form. (b) **fix:C2 passes**: the quoted TIGER notice in landmarks.py is an internal note marked not
+  published (D132(b)), a cited reference that no store file or page carries. (c) **DESIGN 13.3** carries both the live-feed
+  and the offline figures of 2026-10-26 (map.json 128,522 and 116,336; every-flag 397,716 and 385,530) and base.json's final
+  33,192 bytes. (d) **ROADMAP's B5 follow-up 5** says the snow analysis is "checked and left out", not "held"; its regression
+  figures stay (D134(c)). (e) **The phone tap failure was the checker's own network block**: its build ran with no route out,
+  every live feed failed, and the map's precipitation warning note (68 px at 390 px width) pushed the attribution control over
+  the cell centre; a build with the feeds reachable carries no such note. The smoke is re-run on that build before the
+  commit. (f) The exception name "(ProxyError)" inside the precipitation note is main's wording, before B6: a follow-up for the
+  gridded module (plain words).
