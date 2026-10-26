@@ -52,6 +52,11 @@ that is already so is reported as "already so" with the line; an item the fixer 
   "W US Hwy 12") carry none; a test asserts "FAS 533" gives no shield.
 - P2-R6 (D112(m)) Cache pruning: the cache keeps the newest cycle of each source (TIGER 2026 files, the EDW, PAD-US and
   NHD pages, the PL file) and deletes older ones after a successful build; a failed or unexpected body is never cached.
+- P2-R7 (P1-14, the shared base index) hail/base/index.json is one document shared by P1, P2 and P3: a writer that starts a
+  new document gives it "f": "hail-base-index-v1" (the key and value terrain.py uses; basemap2.py today starts it with
+  "format"), every writer keeps the other products' blocks and writes only its own keys, and a document whose "f" differs is
+  reported as a failure of this product, never discarded. A test writes the three blocks in each order and shows all three
+  survive.
 
 ## P3 landmarks (website/landmarks.py, tests/test_landmarks.py, tests/fixtures/landmarks/)
 - P3-R1 (D112(g)) The FAA fixture tests/fixtures/landmarks/faa_apt_mt_sample.txt carries owner names, owner and manager
@@ -78,6 +83,10 @@ that is already so is reported as "already so" with the line; an item the fixer 
   (already so per WORDS kind_unavailable; the checker confirms the index block carries null, not 0, for the count).
 - P3-R7 (D112(m)) Cache pruning: the cache keeps the newest cycle per source and deletes older cycles after a successful
   build; a failed body is never cached.
+- P3-R8 (P1-14, the shared base index) landmarks.py writes its block into hail/base/index.json without the "f" key: a writer
+  that starts a new document gives it "f": "hail-base-index-v1", keeps the other products' blocks and writes only its own
+  keys; a document whose "f" differs is reported as a failure of this product, never discarded. A test shows the terrain and
+  basemap blocks survive a landmarks write and the reverse.
 
 ## P4 pictures, zones, recent cells and anchors (website/history_layers.py, website/labels.py, tests/test_history_layers.py,
 ## tests/test_labels.py, tests/fixtures/history_layers/, tests/fixtures/labels/)
