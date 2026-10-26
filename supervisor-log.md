@@ -370,3 +370,6 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   was deleted in the scratch sweep at 07:25; venv folders are excluded from the sweep from now on.
 - 07:50 UTC: P3 follow-up done (F1, F3, F4 pass; F2 figures off by 13 pairs; cache naming and manifest reading needed rulings).
   D123 recorded; P3 close-out launched (F5 cache rename, F6 figures, F7 report notes): wf_2f42c9f1-0fb task wg0z6fn0b.
+- 08:00 UTC: P1 follow-up done (F1 base index never discarded, 100 tests; F2 CC0 sentence removed, no record names the release
+  page, "not confirmed here"; F3 confirmed; F4 notes). P1 is final pending the integrator. Open for the owner or counsel: the
+  CC0 1.0 statement for the NLCD 2021 release (read the release page); the monthly --refresh cost; tint classes; sampling.
