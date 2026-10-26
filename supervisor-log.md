@@ -364,4 +364,4 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
 - 07:05 UTC: P3 rulings pass done (13 of 16 pass; 98 tests). D120 recorded; P3 follow-up launched for P3-R1 (three spans),
   X5 (out-tree report and measurements) and the stale test store: wf_2944b627-c8e task wcgm67fda.
 - 07:20 UTC: P1 rulings pass done (16 of 16 pass; 92 tests). D121 recorded; integrator brief appended; P1 follow-up launched
-  (F1 base index never discarded, F2 CC0 citation, F3 confirm, F4 integration notes); the run id follows in the transcript.
+  (F1 base index never discarded, F2 CC0 citation, F3 confirm, F4 integration notes): wf_4a91573b-627 task wd1cxrsze.
