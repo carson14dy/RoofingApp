@@ -1,0 +1,570 @@
+{
+  "summary": "Inventory of everything in the repository that belongs to the parked desktop app or the 3D globe research, for the cleanup PR (D143(b)): read-only",
+  "agentCount": 2,
+  "logs": [
+    "[inventory:globe] SECURITY WARNING: This subagent performed actions that may violate security policy. Reason: [Irreversible Local Destruction]. Review the subagent's actions carefully before acting on its output."
+  ],
+  "result": {
+    "app": {
+      "delete_paths": [
+        "/home/user/wt/wt-b6/payload/",
+        "/home/user/wt/wt-b6/desktop/",
+        "/home/user/wt/wt-b6/assets/",
+        "/home/user/wt/wt-b6/build.py",
+        "/home/user/wt/wt-b6/ship.py",
+        "/home/user/wt/wt-b6/requirements.txt",
+        "/home/user/wt/wt-b6/tests/test_weather.py",
+        "/home/user/wt/wt-b6/tests/test_alert_scenarios.py",
+        "/home/user/wt/wt-b6/tests/test_updates.py",
+        "/home/user/wt/wt-b6/.github/workflows/build-desktop.yml",
+        "/home/user/wt/wt-b6/.github/workflows/check-app.yml",
+        "/home/user/wt/wt-b6/docs/handoff/Roofing_Weather_Claude_Handoff.md"
+      ],
+      "edit_sites": [
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "13-14",
+          "what": "Delete the sentence saying the desktop app is parked and that its rules 1-3 apply only if work on it resumes."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "17-18",
+          "what": "Delete the Claude handoff bullet (docs/handoff/Roofing_Weather_Claude_Handoff.md, the app's product spec). Keep lines 19-20 (the Independent Review); its P0/P1 priorities are the website's work order."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "47-50",
+          "what": "Delete the payload/ and desktop/ layout entries."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "51-52",
+          "what": "In the tests/ entry delete the app clause ('app: acceptance checks · 240 alert scenarios + outage replay · update channel vs fake GitHub'). Optional: add the seven website modules it omits (test_hail_workflow, test_website_workflow, test_terrain, test_basemap2, test_landmarks, test_history_layers, test_labels)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "53",
+          "what": "Delete the 'build.py PyInstaller build      ship.py test -> bump version -> commit -> push' line."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "80, 82-83, 86",
+          "what": "Delete the commands 'pip install -r requirements.txt  # the parked desktop app', the two 'python desktop/launcher.py' lines, and 'python ship.py ...'. Keep the test, website and smoke commands."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "81",
+          "what": "Keep the pyyaml line but change '(not in requirements.txt)' to '(the Website workflow installs it too)', because the file is gone."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "92-93",
+          "what": "In Rule 1, delete the 'Parked app: users get a change only when payload/manifest.json ...' sentences. Keep the website half of Rule 1."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "94-99",
+          "what": "Delete Rule 2 (Payload contract, SHELL_API) and Rule 3 (Database, store.MIGRATIONS). Do not renumber: put one placeholder line (for example '2-3. Retired with the desktop app (D143).') so Rules 4-8 keep the numbers that 37 citations use."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "103-104",
+          "what": "In Rule 4 delete 'app: the ~20-line bridge in templates/live.html'. Keep the website half."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/AGENTS.md",
+          "lines": "116",
+          "what": "In Rule 7 delete '(and the app's weather.CONTRACTS)'."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/CLAUDE.md",
+          "lines": "5-6",
+          "what": "Remove 'or the update channel' and 'the handoff specs are in docs/handoff/' from the read-first sentence."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/CLAUDE.md",
+          "lines": "7-8",
+          "what": "Line 7 keeps only 'python -m unittest discover -s tests' (drop the --selftest payload command). Delete the line 8 ship.py bullet."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/README.md",
+          "lines": "11-12",
+          "what": "Delete the 'parked, not deleted' paragraph, or replace it with one line: the app was removed 2026-10-26 (D143); its last commit is 33cda31."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/README.md",
+          "lines": "16-17",
+          "what": "Change 'requirements in docs/handoff/' to 'the independent review in docs/handoff/' (the link still resolves)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/README.md",
+          "lines": "30-32",
+          "what": "Delete the 'The parked desktop app' heading and Contents item 7 ('Bottom line and the app's sections after it')."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/README.md",
+          "lines": "195-507",
+          "what": "Delete the whole '# Parked: the desktop app' section: install, updates, ship, payload, feeds, screens, data, tests, troubleshooting, security, limits, renaming, and the app's Project layout (483-506). Lines 1-194 are website text; no other README edit is needed except the optional one at 143."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/README.md",
+          "lines": "143",
+          "what": "Optional fix: the website unittest line omits test_terrain, test_basemap2, test_landmarks, test_history_layers and test_labels. Match the offline line in /home/user/wt/wt-b6/.github/workflows/website.yml (line 120)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "before line 1067 ('## Gotchas found the hard way')",
+          "what": "Insert a bold entry D143 after the last decision (the D142 bullet and the paragraph after it, about line 1064) and before the Gotchas heading. The next free number is D143; D142 is the last. Name the decision it replaces: D27's 'Parked, not deleted' bullet (lines 322-323), as the file header requires. Record the deleted paths and the last commit with the app (33cda31). Keep D1-D142 unchanged."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "1074, 1078-1079, 1080, 1081-1084",
+          "what": "In the Gotchas list delete the app-only bullets: Folium camelizes kwargs (1074); the installed built-in payload copy (1078-1079); ship.py and the update tests (1080); the two Folium Popup and stylesheet bullets (1081-1084). Keep the Jinja, Leaflet, inspect.py, upload-artifact and reporting-day bullets."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "157-158",
+          "what": "Optional: note that the 'Check the app' CI was removed (D143). Leave the rest of D22 as history."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "7-9",
+          "what": "Replace 'The desktop app (payload 1.0.0, shell 1.1.0) is parked ... Branches: claude/desktop-app ...' with one sentence: the app was removed 2026-10-26 (D143); its last commit is 33cda31. Keep the website and pilot-branch facts."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "9-10",
+          "what": "The sentence 'It also carries the 3D storm view research in research/globe/ ...' needs the owner's globe decision (D107(c): the 3D view is out). See risk 7."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "20",
+          "what": "Delete '5. Decide whether to delete the parked desktop app.' (this cleanup answers it)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "33",
+          "what": "In the Tests row delete 'alongside the app's tests'."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "200-202",
+          "what": "Delete Next item 15 'The parked app' (answered by this cleanup)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "203 (item 16) and 264-266 (open question 'Globe questions')",
+          "what": "Update with the globe decision. Both describe the 3D storm view that D107(c) removes (see risk 7)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "237",
+          "what": "P1 row: change 'Parked with the app' to 'Out of scope: the app was removed (D143)'."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "259",
+          "what": "Delete the open question 'Delete the parked desktop app, or keep it in the repo?' (answered)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "270-272",
+          "what": "Delete the handoff-images item (the handoff spec is gone). Keep or drop the Engine_Blueprint note (271-272) as the owner prefers. Do NOT touch the '| Live hail swaths' row at line 41: tests/test_site.py:4219-4220 reads it."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DESIGN.md",
+          "lines": "4-5",
+          "what": "Replace 'It replaces the desktop app's design of 2026-10-11, which is parked with the app (payload/, desktop/).' with a note that the app was removed 2026-10-26 (D143); its code is in git history. Keep the '## 11. ' heading at line 693: tests/test_site.py:4216 splits on it."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DESIGN.md",
+          "lines": "26",
+          "what": "Change 'Python builds every page (Jinja + Folium)' to '(Jinja + Leaflet)'. The site does not use Folium."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DESIGN.md",
+          "lines": "186",
+          "what": "Change 'the phone home-screen icon is the app's icon at 180 px' to 'the Montana Hail Watch icon at 180 px' (the file is website/static/icon-180.png)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DESIGN.md",
+          "lines": "777",
+          "what": "Optional: drop 'and the self-test pass' from 'The full suite (895 tests) and the self-test pass.' (the app self-test is gone)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/.github/pull_request_template.md",
+          "lines": "6",
+          "what": "Delete the checkbox 'python desktop/launcher.py --selftest payload passes'."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/.github/pull_request_template.md",
+          "lines": "10-13",
+          "what": "Delete the 'Ships to users?' section (the manifest version and installer checkboxes)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/.gitignore",
+          "lines": "3-7",
+          "what": "Delete build/, dist/, *.spec, .devdata/ and *.db (PyInstaller and app-data entries; nothing tracked matches them and the website never writes them). Keep lines 8-10 in this order: *.zip, then !tests/fixtures/**/*.zip directly after it (tests/test_website_workflow.py:1147-1149 checks the order). Keep lines 24-25 (terrain-cache/ and b6-cache/; tests/test_website_workflow.py:1151-1154)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/tests/test_website_workflow.py",
+          "lines": "21",
+          "what": "Reword the comment that names check-app.yml. The needs_yaml skip stays."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/tests/test_website_workflow.py",
+          "lines": "172-174",
+          "what": "Delete the 'parked desktop app's tests' comment block and PARKED_APP_TESTS."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/tests/test_website_workflow.py",
+          "lines": "202-205",
+          "what": "In the PushPathsCoverTheTests docstring, delete the sentence that makes the parked app's modules the one exemption."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/tests/test_website_workflow.py",
+          "lines": "209",
+          "what": "In setUp, drop the filter 'if p.name not in PARKED_APP_TESTS' (it would raise NameError once the constant is gone)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/tests/test_website_workflow.py",
+          "lines": "238-245",
+          "what": "Delete test_the_parked_app_modules_exist_and_stay_outside_the_website. It asserts the three deleted test files exist. It must land in the same commit as the deletions."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/tests/test_hail_workflow.py",
+          "lines": "20",
+          "what": "Reword the comment that names check-app.yml (comment only)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/tests/test_climate.py",
+          "lines": "26",
+          "what": "Reword the comment that names check-app.yml (comment only)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/tests/test_storm.py",
+          "lines": "536-539",
+          "what": "The comment and docstring cite research/globe/README.md section 9b; nothing reads that file. Keep while research/globe stays; otherwise reword to the decision that sets the cap."
+        }
+      ],
+      "keep_notes": [
+        "Delete set: 32 tracked files, about 8,800 text lines: payload/ (17 files), desktop/ (3), assets/ (3), build.py, ship.py, requirements.txt, three app tests, two workflows, one handoff spec. The six untracked .pyc files under payload/ and desktop/ are gitignored and go with their folders; no git change beyond the 32 tracked files.",
+        "Website independence: no file under /home/user/wt/wt-b6/website/, /home/user/wt/wt-b6/tools/ or the website tests imports payload or desktop (checked by import grep). The only importers of updater and launcher are the three app tests being deleted. The site's icons are /home/user/wt/wt-b6/website/static/icon-180.png and favicon.svg, not assets/.",
+        "Website third-party packages (import census): requests, numpy, PIL, jinja2 (website/build.py:29), h5py, pygrib, pyshp (shapefile), pyproj, pyogrio, zoneinfo (stdlib; tzdata for Windows). Tests: PyYAML, pyarrow, markupsafe (tests/test_site.py:3676). Tools: playwright. flask, folium, waitress, pywebview, pyinstaller and werkzeug are used only by the app. The packages in requirements.txt that the site needs (requests, pillow, tzdata) are already in the AGENTS.md install line, so deleting requirements.txt loses nothing. If one install file is wanted, write a website-only one: jinja2 and numpy reach requirements.txt today only through Flask and folium.",
+        "AGENTS.md line 58 (pip install requests jinja2 pillow numpy pygrib h5py tzdata pyshp) must stay as it is: /home/user/wt/wt-b6/tests/test_website_workflow.py:1157 requires exactly one line starting with 'pip install requests jinja2 pillow numpy' that names pyshp.",
+        "The offline unittest line in /home/user/wt/wt-b6/.github/workflows/website.yml (line 120) must keep naming all 24 website test modules. tests/test_website_workflow.py PushPathsCoverTheTests compares the test_*.py glob with that line and with on.push.paths. The three app tests are the only test_*.py files outside it, so after their deletion the lists match.",
+        "The doc anchors that /home/user/wt/wt-b6/tests/test_site.py:4216-4220 reads must survive every edit: the '## 11. ' heading in docs/DESIGN.md (line 693), the '**D37 · ' entry in docs/DECISIONS.md (line 881), and the '| Live hail swaths' row in docs/ROADMAP.md (line 41).",
+        "Keep docs/DECISIONS.md whole and add D143. The site's documents keep citing the older numbers (AGENTS.md cites D26 to D42; DESIGN.md cites D24 at line 30 and D27 to D29), and D27 is the decision the cleanup replaces. Next free number: D143 (highest is D142, bullet at line 1062).",
+        "Keep /home/user/wt/wt-b6/docs/handoff/Roofing_Weather_Independent_Review.md. AGENTS.md (lines 19-20) makes its P0/P1 priorities the order of work, and ROADMAP's 'Independent review priorities, for the website' table (about line 231) cites it. Its P0 items (alert geography, lifecycle, baseline and predeclared metrics) apply to the website.",
+        "Keep /home/user/wt/wt-b6/research/map-b6/ (website/labels.py:14 cites research/map-b6/README.md as the owner's bubble reference; ROADMAP item 22) and /home/user/wt/wt-b6/research/hail-history/validation-evidence/*.json (cited by DECISIONS D34 to D38, DESIGN sections 9 and 10, and test comments such as tests/test_hail.py:787).",
+        "Names that look like the app but belong to the site, all kept: 'MontanaHailWatch' in the USER_AGENT of website/sources.py:22 and tools/build_basemap.py:220; the 'hailwatch-*' temp-folder prefixes in tests/test_site.py and tools/smoke_map.py:2097; id='app' in website/templates/map.html:39 and the .app and #app selectors in website/static/map/map.css and map.js (the Map page's own container); the word 'payload' as a JavaScript variable (website/static/map/map.js:2466-2490, tests/test_site.py:1807).",
+        "The root build.py is not website/build.py. Only the root file is deleted. website/build.py (imported by tests and the workflow as website.build) stays, as do the comments in website/static/map/map.js that say 'build.py'.",
+        "Clean and unchanged: .github/workflows/hail-store.yml and website.yml (no app references); website/templates/about.html (no app wording); tools/ (no app references); tests/words_rules.py and tests/test_words_rules.py; all 32 tracked files under tests/fixtures/ (website fixtures; default-build-manifest.json is read at tests/test_site.py:4302).",
+        "Gitignore entries that stay: __pycache__/, *.pyc, .DS_Store, _site/, and the website cache entries (lines 11-22 and 24-25 of /home/user/wt/wt-b6/.gitignore).",
+        "Recovery point: the last commit that touched payload/, desktop/, build.py, ship.py or requirements.txt is 33cda31 (c2b3998 added the app). Record it in D143."
+      ],
+      "risks": [
+        "Failing suite if the edits are split: /home/user/wt/wt-b6/tests/test_website_workflow.py lines 172-174 and 238-245 assert the three app test files exist, and line 209's setUp filter uses PARKED_APP_TESTS. Deleting the files without these edits in the same commit breaks the suite. A failing offline test also stops the Website build job, and deploy needs build (/home/user/wt/wt-b6/.github/workflows/website.yml), so a red test blocks publishing to Pages from main.",
+        "Required status check (not verified: no network): /home/user/wt/wt-b6/.github/workflows/check-app.yml is the only workflow that runs on pull_request and on every push to main. website.yml runs on pushes to main, claude/** and codex/**, on schedule, and by hand. If branch protection or a ruleset requires the 'Check the app' check, deleting the workflow leaves merges blocked. Check the repo's rules first.",
+        "Installed copies of the parked app: /home/user/wt/wt-b6/desktop/updater.py:222 raises 'has no payload/manifest.json on main' once payload/ is gone. Installed copies keep running their installed version but show that error every hour (update_config.json checks hourly) and never update. The parked README section says crews were given installers, so confirm nobody still runs the app. D27 and ROADMAP item 15 leave deletion to Carson; this request is the owner's call. Recovery: git history at 33cda31.",
+        "Installers: deleting /home/user/wt/wt-b6/.github/workflows/build-desktop.yml ends installer builds (manual run or a desktop-v* tag). No local desktop-v* tag exists. Any GitHub Releases with installer zips stay on GitHub (not checked: no network).",
+        "Rule numbers: AGENTS.md rules 4-8 are cited 37 times across website code, tests, tools and docs (rule 4 x12, rule 5 x15, rule 6 x4, rule 7 x3, rule 8 x3; for example website/sources.py 'AGENTS.md rule 7' and tests/test_site.py 'AGENTS.md rule 5' x4). Removing rules 2-3 must not renumber them. Use placeholder lines.",
+        "Name clashes: the root build.py (PyInstaller) and website/build.py (the site builder) share a basename, so a search-and-delete on 'build.py' would break the site. The same holds for 'payload' (JavaScript variables in website code) and 'app' (the Map page's container). Edit by path, not by search term.",
+        "research/globe is not app-only, so it is not in delete_paths. The owner's plan (task 44) lists it for deletion, and D107(c) says the 3D view is out. CI is unaffected (no test reads it), but live website features cite its validation evidence: ROADMAP item 17 (imagery-switch-verification.json, imagery-switch-review.json), ROADMAP item 19 (p3-verification.json), DECISIONS D30 (lines 485-518), D32 (lines 603-619: base-imagery.json, labels-on-globe.json, montana-imagery-buildings.json, rights-matrix.json), D33 (line 642: p0-gates.json), D37 (line 889), DESIGN.md line 777 (p3-verification.json). Code references are comments only: website/storm.py:1, website/satellite.py:1 and :92 (which copies goes_cloud_height.py as provenance), tests/test_storm.py:537-539. Move the cited JSON files first or re-point the citations. research/globe/validation-evidence/app-integration.json is an app record and goes with the folder.",
+        "Judgment call: docs/handoff/Roofing_Weather_Claude_Handoff.md is listed because it is the app's product spec (Live Storms, Storm History, Crew Outlook). It is cited by AGENTS.md (lines 17-18), README.md (line 17 and the parked Project layout), CLAUDE.md (line 6), DECISIONS D12 (line 94) and D19 (lines 140-141), and ROADMAP lines 270-272. No test reads it. The independent review says it 'supplements' the handoff (review line 9), so the review loses that context. Owner's call.",
+        "Process gap: once check-app.yml is gone, pull requests whose branch is not claude/** or codex/** get no CI, and 'python -m unittest discover -s tests' (AGENTS.md: 'must pass before any merge') is no longer run by CI. Consider a pull_request trigger for the website tests. That is the owner's decision.",
+        "Triggering: website.yml runs on a branch push only when a changed file matches its paths. Deleting app files alone matches none. The edits to tests/test_website_workflow.py, tests/test_hail_workflow.py, tests/test_climate.py and tests/test_storm.py do match. If the PR has no test edits, run the Website workflow by hand (workflow_dispatch) on the branch so the suite and browser checks actually run.",
+        "Merge-conflict hot spots: docs/DECISIONS.md and docs/ROADMAP.md take an append from almost every branch, and earlier merges conflicted there. Land the cleanup after the open B5 and B6 PRs, or rebase it after them. Also check that those branches do not edit tests/test_website_workflow.py.",
+        "Stale text left if not edited: DESIGN.md line 26 says 'Jinja + Folium' (the site uses Leaflet). README line 143 and the README and AGENTS.md test lists omit the B6 modules (test_terrain, test_basemap2, test_landmarks, test_history_layers, test_labels), and AGENTS.md also omits test_hail_workflow and test_website_workflow.",
+        "Scope of this inventory: read-only. I did not run the suite, the self-test, the workflows or any git write, and made no network request. Test-impact claims come from reading the test code, the workflow files, and grep and wc counts."
+      ]
+    },
+    "globe": {
+      "delete_paths": [
+        "/home/user/wt/wt-b6/research/globe/README.md",
+        "/home/user/wt/wt-b6/research/globe/design-references/01-street-3d-buildings.jpg",
+        "/home/user/wt/wt-b6/research/globe/design-references/02-street-detail.jpg",
+        "/home/user/wt/wt-b6/research/globe/design-references/03-downtown-blocks.jpg",
+        "/home/user/wt/wt-b6/research/globe/design-references/04-city.jpg",
+        "/home/user/wt/wt-b6/research/globe/design-references/05-valley-terrain.jpg",
+        "/home/user/wt/wt-b6/research/globe/design-references/06-region-states.jpg",
+        "/home/user/wt/wt-b6/research/globe/prototype/globe.css",
+        "/home/user/wt/wt-b6/research/globe/prototype/globe.js",
+        "/home/user/wt/wt-b6/research/globe/prototype/goes_cloud_height.py",
+        "/home/user/wt/wt-b6/research/globe/prototype/index.html",
+        "/home/user/wt/wt-b6/research/globe/prototype/mrms_volume.py",
+        "/home/user/wt/wt-b6/research/globe/prototype/parallax.py",
+        "/home/user/wt/wt-b6/research/globe/prototype/serve.py",
+        "/home/user/wt/wt-b6/research/globe/prototype/fixtures/alerts_classes_synthetic.json",
+        "/home/user/wt/wt-b6/research/globe/prototype/fixtures/cloud-height-synthetic.json",
+        "/home/user/wt/wt-b6/research/globe/prototype/fixtures/cloud-height-synthetic.png",
+        "/home/user/wt/wt-b6/research/globe/prototype/fixtures/nws_alerts_mt_2026-10-17T0255Z.json",
+        "/home/user/wt/wt-b6/research/globe/prototype/fixtures/places.json",
+        "/home/user/wt/wt-b6/research/globe/prototype/fixtures/volume-2025-06-15-sample.json",
+        "/home/user/wt/wt-b6/research/globe/prototype/fixtures/volume-synthetic.json",
+        "/home/user/wt/wt-b6/research/globe/prototype/tests/test_globe_browser.py",
+        "/home/user/wt/wt-b6/research/globe/prototype/tests/test_goes_cloud_height.py",
+        "/home/user/wt/wt-b6/research/globe/prototype/tests/test_mrms_volume.py",
+        "/home/user/wt/wt-b6/research/globe/prototype/tests/test_parallax.py",
+        "/home/user/wt/wt-b6/research/globe/prototype/tests/test_serve.py",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/app-integration.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/critic-report.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/design-a.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/design-b.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/design-c.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/design-d.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/design-references.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/design-synthesis-website.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/design-synthesis.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/evaluation-predeclared.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/globe-libs.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/globe-prototype.png",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/globe-volume.png",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/judge-engineering.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/judge-product.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/judge-rules.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/judge2-engineering.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/judge2-product.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/judge2-rules.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/main-architecture.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/p1-review.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/p1-verification.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/p2-review.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/p2-verification.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/parallax.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/pipeline-options.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/prior-work.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/prototype-globe.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/prototype-goes.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/prototype-integration.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/prototype-mrms.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/radar-tiles.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/rendering-options.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/terrain.json",
+        "/home/user/wt/wt-b6/research/globe/validation-evidence/webgl-runtime.json"
+      ],
+      "edit_sites": [
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "10",
+          "what": "Delete the sentence 'It also carries the 3D storm view research in research/globe/, with main merged in; pull request #2 is open.' (stale status; D107(c) says the 3D view is out)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "31",
+          "what": "Publishing row: re-point the cite research/globe/validation-evidence/hosting-options.json to the file's new home (keep the sentence; it is the GitHub schedule evidence behind D33)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "203-212",
+          "what": "Replace item 16 (3D storm view (globe)) with a closure: 3D view out (D107(c)); the globe research removed, last in git at bf2909b. Keep the P1/P2 status facts (website/storm.py text, PR 7; website/satellite.py on branch claude/storm-layers-p2). Drop 'waits on README section 2', 'P0 gates before it', and 'a link-only globe only after P1 to P4'. The two still-open gates on lines 211-212 move to open questions (next site)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "253 (heading 'Open questions for Carson'; add)",
+          "what": "Add the still-open items that exist only in the globe README before it is deleted: the GOES counsel gate (D-G10 publishing terms for NOAA-derived products; D-G11 the GOES access banner; no GOES layer reaches users until counsel has read both) and the clear-night -99/-999 ruling (D-G13). Copy their text from globe README section 2, or point to bf2909b."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "218-219",
+          "what": "Item 17 (imagery base map): re-point imagery-switch-verification.json and imagery-switch-review.json (line 218). rights-matrix.json (line 219) is cited by name only; update its location if it moves."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "226",
+          "what": "Item 19 (Hail B4): change 'the globe plan's P3' to 'the storm layers' P3', and re-point research/globe/validation-evidence/p3-verification.json."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/ROADMAP.md",
+          "lines": "264-266",
+          "what": "Delete the 'Globe questions (3D storm view)' bullet under Open questions for Carson (answered by D107(c)). If the owner still wants the audience question (homeowners, adjusters, insurers) for the 2D storm layers, restate it without globe words."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "485-488",
+          "what": "D30: keep the decision text. Add one sentence under the heading: partly superseded by D107(c) (the 3D view is out); the research was removed, last in git at bf2909b. Replace 'research is in research/globe/ (plan and evidence sections, validation-evidence/ ...)' with a past-tense pointer to bf2909b."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "491-492",
+          "what": "D30: 'The globe waits on the owner decisions in research/globe/README.md section 2 (D-G1 to D-G26)': say the decisions were in the globe README (removed; bf2909b) and that the still-open ones are in ROADMAP open questions."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "516-518",
+          "what": "D30: the counsel items D-G10 and D-G11 sentence. Keep the gate ('no GOES layer reaches users until counsel has read both'); replace '(research/globe/README.md section 2)' with the ROADMAP open-question entry or bf2909b."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "520-521",
+          "what": "D30: 'listed in README section 9b as D31 onward and wait for Carson' is about proposals in the removed README; say they were removed with the research (bf2909b)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "603-604",
+          "what": "D32 facts: base-imagery.json, labels-on-globe.json and montana-imagery-buildings.json are said to be 'all in research/globe/validation-evidence/'. Point to the kept files' new folder."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "619",
+          "what": "D32: labels-on-globe.json and rights-matrix.json cited by name only. No path to change unless the files move."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "620-624",
+          "what": "D32 History and Sources bullets: 'D-G15 in research/globe/README.md' (line 621) and 'D-G4 in research/globe/README.md' (line 624) point to bf2909b. If gibs.json and google-terms.json move, re-point the NASA GIBS and Google terms sentences to them."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "642",
+          "what": "D33: re-point research/globe/validation-evidence/p0-gates.json to its new home."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "765-766",
+          "what": "'Labels.' bullet: replace the README section 9b reference. Say the globe research's proposed labels were never DECISIONS entries; D30's 'D33' and 'D34' (its P2 paragraph) are those labels; the research is removed (bf2909b). Keep the sentence about this log's D34."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "881",
+          "what": "D37 heading: change 'the globe plan's P3' to 'the storm layers' P3'; keep the prefix '**D37 · ' (tests/test_site.py splits on it). Body: '(research/globe/README.md section 6)' points to bf2909b."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "884",
+          "what": "D37 'Units and codes': 'This meets the globe plan's gate on units.' Optional wording: 'This meets the P3 gate on units.'"
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "889",
+          "what": "D37 'Freshness in the browser': re-point research/globe/validation-evidence/p3-verification.json."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "895",
+          "what": "D37 'Measured sizes': 'the runs are in p3-verification.json' (no path, same file). Re-point it."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DECISIONS.md",
+          "lines": "896",
+          "what": "D37 'Built on claude/hail-b4': re-point research/globe/validation-evidence/p3-verification.json (gates and measurements)."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DESIGN.md",
+          "lines": "777",
+          "what": "Status (2026-10-19): re-point research/globe/validation-evidence/p3-verification.json (gates B4-1 to B4-7). Keep the '## 11. ' heading; tests/test_site.py reads it."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/docs/DESIGN.md",
+          "lines": "691",
+          "what": "Pre-existing mis-cite, optional: 'the synthesis gates 9 to 18 (D30)'. D30 defines no numbered gates and no globe file numbers gates 9 to 18. Name the real source or drop '(D30)'. Not a globe path."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/tests/test_storm.py",
+          "lines": "536-539",
+          "what": "BrowserScript docstring and the MAX_LINES comment cite research/globe/README.md section 9b (row S1). Restate the 40-line and 2,000-byte cap as this script's own limit and drop the path. storm.js is 37 lines and 1,741 bytes, so the test still passes unchanged."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/website/storm.py",
+          "lines": "1",
+          "what": "Docstring '(P1 of the storm layers; research/globe §6)': drop the globe cite (for example '(P1 of the storm layers; D30)'). Docstring only."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/website/satellite.py",
+          "lines": "1",
+          "what": "Docstring '(P2 of the storm layers; research/globe README §3, §6)': drop the globe cite (for example '(P2 of the storm layers; D30)'). Docstring only."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/website/satellite.py",
+          "lines": "92",
+          "what": "Comment 'Copied from research/globe/prototype/goes_cloud_height.py (Geos and latlon_to_scan)': say it was copied from the globe prototype, which is removed and last in git at bf2909b. Comment only; there is no import to change."
+        },
+        {
+          "file": "/home/user/wt/wt-b6/research/hail-history/validation-evidence/b1-verification.json",
+          "lines": "668",
+          "what": "JSON string 'the globe research's proposed decision labels (research/globe/README.md section 9b, D31) clash ...': drop the path and keep the string; keep the file valid JSON. The 'ROADMAP item 21' pointer is stale (item 21 is now Hail B5, part B2); optional fix."
+        }
+      ],
+      "keep_notes": [
+        "Paths in these notes are relative to /home/user/wt/wt-b6 (the checkout, branch claude/map-b6, HEAD e269a79). KEEP AND MOVE, not in delete_paths: 13 files in research/globe/validation-evidence/ that live decisions or open items rest on. Nine are cited by path or name in docs: base-imagery.json (DECISIONS 603), labels-on-globe.json (DECISIONS 603, 619), montana-imagery-buildings.json (DECISIONS 604), rights-matrix.json (DECISIONS 619; ROADMAP 219 by name), imagery-switch-verification.json and imagery-switch-review.json (ROADMAP 218), p0-gates.json (DECISIONS 642, D33), p3-verification.json (ROADMAP 226; DECISIONS 889, 895, 896; DESIGN 777), hosting-options.json (ROADMAP 31). Four more are relied on by open items or D32 facts without a path: mrms.json (globe README D-G13; ROADMAP 211 rests on it), goes-aws.json (globe README D-G11; ROADMAP 212 and DECISIONS 516-518 rest on it), gibs.json and google-terms.json (D32's rejected-sources facts, via globe README D-G4 and D-G15). Total 347,596 bytes. Recommended new home: a non-globe folder such as research/evidence/, moved and re-pointed in the same commit.",
+        "KEEP, research/hail-history/validation-evidence/ (four files, 280,098 bytes; this is the whole hail scaffold in this checkout): b1-verification.json, b2-verification.json, b3-verification.json, b5-verification.json. Cited by ROADMAP lines 38, 39, 42, 47, 50, 228; DECISIONS 774, 828, 867, 944; DESIGN 691; tests/test_site.py:4667, tests/test_joins.py:903, tests/test_hail.py:787 and 2059; website/joins.py:271 (a glob). Only b1 has a globe pointer (line 668, edit site 28). B4 has no b4 file here: its gate record is the globe p3-verification.json (kept, see first note).",
+        "Nothing to keep for the hail scaffold's programs list or owner decisions: no such file exists under research/ or anywhere in this checkout, and no path cites either. ROADMAP item 16 names them only as parts of branch claude/hail-history. DECISIONS D34 quotes the owner's decisions inline.",
+        "KEEP, research/map-b6/README.md (22,310 bytes, the B6 record): website/labels.py:14 cites it as the owner's reference for the value bubble. ROADMAP and DECISIONS cite the branch claude/map-b6 and D106 to D142, not this path.",
+        "KEEP, research/map-b6/views/ (nine JPEGs, 2,245,861 bytes): the only in-repo reference-vs-ours composites (reference left, ours right). README section 2 describes the block, neighbourhood, city, metro and state views and names four files (proof-city, proof-region, sheet-mock, bubbles); layers-and-sheet-side-by-side.jpg is named nowhere. README section 8 says five of nine are committed, but nine are present; fix that count when the README is next edited. Under the stated rule layers-and-sheet is the only uncited file; I recommend keeping it.",
+        "DELETE, research/globe/design-references (six JPEGs, 324,754 bytes), checked by eye: they are OSM Boundary Extractor (MapKit, Missoula) screenshots for the globe's street-zoom brief, not the Zillow-style reference composites in research/map-b6/views (value bubbles). Nothing outside research/globe cites them. See the risk on whether the owner wants them kept.",
+        "No edits needed: README.md and AGENTS.md (no research/ or globe reference; AGENTS.md layout has no research/ entry), CLAUDE.md, .github/ (workflows and PR template), tools/, docs/handoff/, payload/, desktop/, build.py, ship.py, requirements.txt, .gitignore, and every test except tests/test_storm.py (grep for research, globe, prototype, parallax, goes_cloud_height, mrms_volume, serve.py, globe.js, index.html and the fixture names found no other use). The prototype's five test files are under research/globe/prototype/tests and are not discovered by python -m unittest discover -s tests.",
+        "Not globe, do not touch in this cleanup: website/hail.py and website/hail_fixture_data.py use 'the prototype' for a hail prototype store (events.parquet, grid.json, pack_tenths) that is not in this repo and is not research/globe/prototype. tools/smoke_map.py:1505 'research LSR row' is hail research. tests/test_terrain.py:172 ('the research's 805') and DECISIONS D109 ('about 8 MB estimated by the research') are not globe references: 805 is not in research/globe, and the 8 MB and 5 MB figures match research/map-b6 section 9.1.",
+        "Plain wording that stays true with no edit: DECISIONS 495, 500, 537 and 629 ('the globe', history of D30 and D32); DECISIONS 1027 (D107(c) 'The 3D view is out.'); website/templates/about.html:48 and tests/test_site.py:6449 ('The map has no 3D view.').",
+        "Counts: research/ holds 88 files. The globe folder has 74 files and 2,686,304 bytes: 61 to delete (2,338,708 bytes: README 229,616; design-references 324,754; prototype 19 files 504,720; 35 validation-evidence files 1,279,618) and 13 to keep and move (347,596). Other folders stay: research/hail-history (4 files, 280,098 bytes) and research/map-b6 (10 files, 2,268,171 bytes)."
+      ],
+      "risks": [
+        "Dangling citations: if research/globe is deleted before the nine path-cited files move, DECISIONS D32, D33 and D37, DESIGN section 11 (line 777) and ROADMAP items 17 and 19 and the Publishing row lose their evidence. Move and re-point (edit sites 2, 5, 6, 12, 14, 15, 19 to 22) in the same commit, then grep for research/globe to confirm nothing is left.",
+        "Open gates exist only in the globe README: the GOES counsel gate (D-G10 and D-G11; D30 lines 516-518 and ROADMAP 212 say no GOES layer reaches users until counsel reads both) and the clear-night -99/-999 ruling (D-G13; ROADMAP 211). They must be carried into ROADMAP open questions before the README is deleted (edit site 4).",
+        "Evidence behind those gates is not cited by path in any product doc: mrms.json, goes-aws.json, gibs.json and google-terms.json. The cleanup could drop them silently. They are kept as keep-and-move; if the owner accepts losing them, the record remains in git at bf2909b.",
+        "The globe README's section 16 index lists 39 of the 48 validation-evidence files. It omits critic-report, imagery-switch-review and -verification, p0-gates, p1-review and -verification, p2-review and -verification and p3-verification. Use the directory listing as the source of truth, not the index.",
+        "Copies, not imports: website/satellite.py copies Geos and latlon_to_scan (comment only). Deleting goes_cloud_height.py breaks no import, and tests/test_satellite.py checks the copy against reference points without reading the prototype. The parallax wording in satellite.py (lines 509 to 517) and tests/test_satellite.py:804 may derive from parallax.json (globe D-G16 option b uses its wording verbatim). No path cites it, so the product text stands on its own, but its source record goes with the cleanup.",
+        "The storm.js cap (40 lines, 2,000 bytes) is globe README section 9b row S1, which was a proposal. tests/test_storm.py enforces it, and storm.js is within it (37 lines, 1,741 bytes). Keep the test and move its reason into the test docstring (edit site 24); otherwise it cites a deleted file.",
+        "Test-read anchors: tests/test_site.py test 'test_the_hail_state_is_checked_once_a_minute_and_the_docs_say_so' splits DESIGN.md at '## 11. ', reads DECISIONS.md from '**D37 · ' to the end, and reads the ROADMAP row beginning '| Live hail swaths' (ROADMAP line 41). Keep those anchors when editing DESIGN 777, DECISIONS 881 to 896 and ROADMAP 226. tests/test_website_workflow.py:1157 reads AGENTS.md's install line, which is unaffected.",
+        "b1-verification.json is JSON: change only the string at line 668 and keep the file valid. Its 'ROADMAP item 21' pointer is stale (item 21 is now Hail B5, part B2); that is not a globe reference, so the fix is optional.",
+        "D30's P2 paragraph cites the globe README's proposal labels 'D33' and 'D34'. DECISIONS 765 to 766 says they are proposals, but they collide with the real D33 (schedule) and D34 (hail). After deletion they can be resolved only at bf2909b. Annotate them (edit site 16) rather than rewriting D30's history.",
+        "DESIGN.md:691 'the synthesis gates 9 to 18 (D30)' is a mis-citation: D30 defines no numbered gates and no globe file numbers gates 9 to 18 (the hail B3 synthesis uses gate numbers, cf. website/buildings.py:36). It is not a globe path, so it survives the cleanup unless fixed (edit site 23).",
+        "Pre-existing dangling 'research' paths that are not globe and that this cleanup does not touch, all absent from this checkout: website/climate.py:8 (research/temperature-rain-grid.json), website/build.py:858 and tests/words_rules.py:3 (research-b35/...), docs/ROADMAP.md:103 and docs/DECISIONS.md:797 (session-archive/research-b35/...), docs/DECISIONS.md:686 (research/hail-history/validation-evidence/mrms-grib2-tables/, on a branch) and b1-verification.json:665. A grep for research/ will keep finding them after the cleanup; do not count them as globe references.",
+        "Restore pointer: git log on this branch lists four commits that touch research/globe, newest first: bf2909b (B5; edited the README and added p3-verification.json), 825d6c7 (imagery; added the imagery-switch files), 9c05feb (P2; added the p2 files) and 9d7cc46 (2026-10-17; added the folder). To restore: git checkout bf2909b -- research/globe, or git show bf2909b:research/globe/<path>.",
+        "design-references: deleting them removes the repo's only copies of those six screenshots (they are not the B6 reference, but the owner may want them). Confirm before the delete.",
+        "The ROADMAP 'Globe questions' bullet asks whether storm or height views may reach homeowners, adjusters or insurers. No decision answers it. If still wanted, restate it for the 2D storm layers (edit site 7).",
+        "No hidden copies: no file outside research/ is byte-identical to any research file (checked over the repo), and the satellite palette in website/gridded.py (SAT_STOPS) does not appear in the prototype. No .gitignore, requirements.txt, workflow or tool entry names a globe file, so the cleanup needs no change to CI or installers."
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Inventory"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "inventory:app",
+      "phaseIndex": 1,
+      "phaseTitle": "Inventory",
+      "agentId": "a869e093d285f226d",
+      "model": "claude-haiku-5-5",
+      "state": "done",
+      "startedAt": 1793054220939,
+      "queuedAt": 1793054220878,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You inventory the parked desktop app in a Python repository, for a cleanup that removes it. The repository checkout to read is /home/user/wt/wt-b6 (branch claude/map-b6, which carries everything main will hold after the merges). Read only: edit nothing, run no git write command, make no network request. You may run grep, find, ls, cat and python -c for counting. The product is now the website (web…",
+      "promptFramed": true,
+      "lastProgressAt": 1793054929323,
+      "tokens": 389660,
+      "toolCalls": 65,
+      "durationMs": 708383,
+      "resultPreview": "{\"delete_paths\":[\"/home/user/wt/wt-b6/payload/\",\"/home/user/wt/wt-b6/desktop/\",\"/home/user/wt/wt-b6/assets/\",\"/home/user/wt/wt-b6/build.py\",\"/home/user/wt/wt-b6/ship.py\",\"/home/user/wt/wt-b6/requirements.txt\",\"/home/user/wt/wt-b6/tests/test_weather.py\",\"/home/user/wt/wt-b6/tests/test_alert_scenarios.py\",\"/home/user/wt/wt-b6/tests/test_updates.py\",\"/home/user/wt/wt-b6/.github/workflows/build-deskto…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "inventory:globe",
+      "phaseIndex": 1,
+      "phaseTitle": "Inventory",
+      "agentId": "ab109901a54461574",
+      "model": "claude-haiku-5-5",
+      "state": "done",
+      "startedAt": 1793054220939,
+      "queuedAt": 1793054220878,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You inventory the 3D globe research in a Python repository, for a cleanup that removes it. The repository checkout to read is /home/user/wt/wt-b6 (branch claude/map-b6, which carries everything main will hold after the merges). Read only: edit nothing, run no git write command, make no network request. You may run grep, find, ls, cat and python -c for counting. The decision D107 (docs/DECISIONS.md…",
+      "promptFramed": true,
+      "lastProgressAt": 1793054953632,
+      "tokens": 318878,
+      "toolCalls": 61,
+      "durationMs": 730720,
+      "resultPreview": "{\"delete_paths\":[\"/home/user/wt/wt-b6/research/globe/README.md\",\"/home/user/wt/wt-b6/research/globe/design-references/01-street-3d-buildings.jpg\",\"/home/user/wt/wt-b6/research/globe/design-references/02-street-detail.jpg\",\"/home/user/wt/wt-b6/research/globe/design-references/03-downtown-blocks.jpg\",\"/home/user/wt/wt-b6/research/globe/design-references/04-city.jpg\",\"/home/user/wt/wt-b6/research/glo…"
+    }
+  ],
+  "totalTokens": 708538,
+  "totalToolCalls": 126
+}
