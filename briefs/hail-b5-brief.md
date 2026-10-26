@@ -1699,3 +1699,16 @@ on the findings the reviewers left to the owner or the supervisor, passed to the
   research notes under research/ may name the products they analyse (the owner's reference); product files, docs and tests may
   not. (m) L19: the per-zone sums are labelled as sums over zones, never as Montana totals. (n) Shared-file findings (website.yml,
   .gitignore, hail-store.yml, buildings.py) go to integration.md for the integrator; no fixer edits a shared file.
+
+## Supervisor rulings on the P1 check (2026-10-26 06:25 UTC; D117)
+P1's continuation (wf_2924148e-459) ended: the fixer applied the twelve standing findings (80 tests, 26 of which fail against
+the unfixed module); the checker found the budgets met (14,819,458 bytes for zooms 5 to 10 against 20,000,000; 881 tiles; a
+cache-only rebuild gives identical bytes; 10 of 10 live re-fetches byte for byte) and listed 15 items. Rulings, passed to the P1
+rulings pass (wf_bcf01aa8-f13) as items X1 to X10:
+- D117 (a) The job's 60 s timeout stands for build and for verify (verify's default stays 20 s). (b) Every layer-level
+  unavailable or partial sentence carries the words "Data unavailable" beside the D20 wording (rule 5). (c) A URL path segment
+  (the "arcgis" in a USGS service path) is not a product name under the names rule. (d) verify says "byte for byte" only when
+  the bytes match; a palette-equal answer with different bytes is a failed match. (e) An offline build never deletes tile files;
+  a layer that is not rebuilt keeps its block and date. (f) The record cites full-set figures (1,762 cache hits), not a
+  subset run's. (g) The cold run's 1,175 s against the 1,500 s step budget is an owner item (the monthly job may need a longer
+  step or two runs). (h) .gitignore gains terrain-cache/ and b6-cache/ (integrator).

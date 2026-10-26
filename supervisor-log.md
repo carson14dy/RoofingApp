@@ -354,3 +354,6 @@ wf_ef4c997e-067 complete (96 agents). D115 recorded (the base look stands as a d
   wf_6e7a5682-6ed (wi92q8tx9). The P2 fixer and checker run afterwards with the union of standing findings (P2-01..07 plus
   the new ones). fix:P1 done (80 tests; the six website.yml pins stay for the integrator; P1-14 base index 'f' key noted for
   the P2 and P3 rulings pass as P2-R7 and P3-R8); check:P1 running; fix:P3 running; P4 at L15 (L13 stands, L14 refuted).
+- 06:25 UTC: P1 continuation done (fix 12 findings, check: budgets met, 15 items). D117 recorded. P1 rulings pass launched:
+  wf_bcf01aa8-f13 task w3ihwzzgg (inline script with args.extra X1..X10). Waiting on P3 (fix running), P2 (four refute-only
+  runs), P4 (refutes), the landmark skeptics.
