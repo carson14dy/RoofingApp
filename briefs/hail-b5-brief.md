@@ -1812,3 +1812,23 @@ constraints None and fees None, and the MRLC WCS capabilities give Fees NONE and
 - D124 D115's "NLCD 2021's data release carries a CC0 1.0 licence" is corrected: CC0 applies to the Annual NLCD collection, a
   different product. The terrain module's terms note cites the NLCD 2021 record's own words and DOI and claims no CC0 for it
   (wf_c09cc861-aaf). The About sentence keeps "(public domain)" on the strength of the record's own words.
+
+## Supervisor rulings on the P4 check (2026-10-26 08:20 UTC; D125)
+P4's continuation (wf_8d440c0d-382) ended: 7 pending findings refuted (L13 stands; L14 refuted; the rest mixed), the fixer
+applied the standing findings (55 history tests, 34 label tests; eight zone measures; newest_warning in place of lag; the
+pictures' legends name the missing radar day; the labels unavailable command fails closed), both verify commands pass on the
+test store, a rerun reproduces every output byte for byte. The checker listed 13 items; rulings, passed to the P4 rulings pass
+as X1 to X8 and to the integrator:
+- D125 (a) **The newest-warning date comes from the counted rows** (2026-10-10T21:00Z today), never from the polygon warnings'
+  date in the joins index (2026-09-19); the test pins the computed date. (b) **Plain words for the counts.** Each count counts
+  every warning, watch or advisory issued for the zone once per event, including ones later cancelled or upgraded; the legend
+  says so and never says "archived products"; whether to show issued-only counts is an owner item with the figures. (c) The
+  name of the platform that serves a public data set ("NOAA Open Data on AWS") and this repository's URL are not vendor names
+  under the names rule (D117(c), D118(e)). (d) **The map.json budget.** The B6 words that only the sheet or a toggled layer
+  needs go into a second Python-built data file, data/base.json, named from map.json with its as_of; map.json keeps the
+  first-paint pointer (the tile URL templates, zooms and state) and its 163,840-byte raw gate (D82(a)); the D29 and D41 rule
+  reads "every word the browser prints comes from map.json or from a data file map.json names, built by Python". (e) The
+  phone view gate (700,000 bytes gzip, D82(b)) is measured by the integrator's smoke with the default layers; the zone
+  outline file loads only when its layer is on. (f) The 36 building shards over the raw split threshold stay accepted
+  (D112(j)); the daily job keeps the buildings verify before the labels pass; the threshold's treatment of flag bytes is an
+  owner item. (g) hail.check_manifest runs on the assembled store, never on a partial test store.

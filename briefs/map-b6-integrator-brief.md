@@ -69,3 +69,8 @@ Tasks, in order:
 - D122: the P2 monthly step reads vector.state from hail/base/index.json after the build (build exits 0 for an unavailable
   store); the water line words of D122(b) go into map.json; the About sentences for the forest boundaries and the lakes and
   rivers are written (not held); AGENTS.md's website install line gains pyshp; .gitignore gains !tests/fixtures/**/*.zip.
+- D125: data/base.json is a second Python-built data file (the words, credits, legends, bands, landmark shard pattern and
+  budgets the sheet and the toggled layers need), named from map.json with its as_of; map.json carries only the first-paint
+  pointer (tile URL templates, zooms, state, the file name); the page-age check and the identity rule cover both files; the
+  tests pin both. The daily job runs the buildings verify before the labels pass. The browser draws value bubbles only when
+  labels.state is loaded. The zone legend is zones.words.legend and the date is newest_warning (eight measures).
