@@ -1960,3 +1960,17 @@ conflict). Rulings:
   sources.py; DESIGN 13.3's monthly step row; the ROADMAP's "D106 to D127" ranges) go to one tidy fixer before the final check.
   (e) A stray empty log file a fixer wrote at the container's filesystem root (/b6_run2.txt, outside the repository) stays:
   the harness refuses a removal at the root; it is harmless in this ephemeral container.
+
+## Supervisor rulings after the P3 and P4 fixers (2026-10-26 13:10 UTC; D135)
+The P3 fixer (wf_c16fbe88-ac0) wrote the landmark mirror, published the held reason alone as a held source's terms, replaced
+the TIGER fixture with a synthetic shapefile and unified the church sentence (113 tests); the P4 fixer made the module's
+legend the printed D110(c) sentence, the grid words and the "Data unavailable" leads (70 and 38 tests). Rulings on their
+open points:
+- D135 (a) **One bubble legend, the D110(c) sentence**: it begins "-- means Data unavailable" and ends "and not an all-clear."
+  by design; the "begins with Data unavailable." rule (D117(b), D128(b)) applies to the unavailable and partial sentences, not
+  to the legend; the words-rules exemption carries that clause with its reason; the site test's "differs" assertion becomes
+  an equality. (b) The B5 "stale" sentence in hail.WORDS and the caveats "A blank cell is not the same as no hail" and "Cells
+  not listed had no such day in the store" stay as they are: they describe stored absence, not a missing input. (c) The TIGER
+  licence sentence in the sources.py row for the held park source is removed (tidy T7); DESIGN's held chip quotes the one
+  church sentence. (d) A store built before these changes fails the new verify checks until the next landmarks build; the
+  final check rebuilds the store copy's parts in sequence before it builds the site.
