@@ -2003,3 +2003,14 @@ check: the buildings verify's size rule on the labelled copy (four shards of the
   predates B6; the rule statement in landmarks.py line 71 names no product. (d) The online terrain re-fetch sample and the
   buildings whole-part recompute need the network and the county files; the branch Website run covers the first, the daily
   job the second.
+
+## Supervisor rulings after the About fixer (2026-10-26 16:15 UTC; D138)
+The About fixer (wf_7b5291b6-3ff, after its stopped first run) found U1 to U4 applied, added the pins and fixed the 90 F
+credit spacing (343 site tests). Rulings on its open points:
+- D138 (a) **One legend on the About page too**: the value-bubble paragraph prints BUBBLE_LEGEND (equal to
+  history_layers.WORDS["label_legend"], D135(a)) instead of its own dash sentence, and when the labels block is not loaded
+  it prints the block's problem sentence through build.py. (b) **No invented reason**: history_layers.WORDS gains the
+  reason-free sentence "Data unavailable. {what} is not in the store in this update. This is not an all-clear." and build.py's
+  four latent fallbacks (and the labels one) use it; an index-recorded problem still wins. (c) The 90 F window prints only
+  when the 90 F picture was read. (d) The stale landmarks pin asserts the new template line and the build.py key (V1).
+  (e) The test count of the brief (339) was the count before the first About run; the fixer's counts (342 then 343) stand.

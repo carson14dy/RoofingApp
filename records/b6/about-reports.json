@@ -1,0 +1,60 @@
+[
+ {
+  "run": "wf_7b5291b6-3ff",
+  "fixer": "B6 map About page, tidy round 2 (D136)",
+  "report": {
+   "product": "B6 map About page, tidy round 2 (D136)",
+   "items": [
+    {
+     "id": "U1",
+     "state": "already so",
+     "reason": "build.py passes the module sentences, and about.html prints them whole, one sentence per paragraph. The About pins follow them. One stale pin remains in tests/test_landmarks.py (see open 1).",
+     "evidence": "website/build.py:1883-1884 ('held_church': lm.CHURCH_HELD, 'held_park': lm.WORDS['held_parks']); website/templates/about.html:79-80 (<p>{{ b6.held_church }}</p>, <p>{{ b6.held_park }}</p>); tests/test_site.py:6164-6173, 6181-6186, 6288-6291."
+    },
+    {
+     "id": "U1 pin",
+     "state": "applied",
+     "reason": "added a pin that each held sentence is its own paragraph with nothing composed around it.",
+     "evidence": "tests/test_site.py:6175-6179 (passes in the full run)."
+    },
+    {
+     "id": "U2",
+     "state": "already so",
+     "reason": "every enumerated paragraph prints its module's unavailable sentence through build.py, with module part names and the index reason where one is recorded. The template's 'Data unavailable in this update. This is not an all-clear.' literal is gone (0 matches). The remaining 'Data unavailable' words are static explanations: the value-bubble explainer (open 2) and the history prose. Where the index records no reason, the block's own module sentence is printed (open 3 covers four build-side fallbacks).",
+     "evidence": "website/build.py:1800-1802 (terrain part_unavailable via LAYER_WORDS), 1808-1811 (basemap2 part_unavailable via PART_WORDS), 1813-1816 (landmarks kind_unavailable via KIND_PLURAL), 1818-1825 (history_layers unavailable with the recorded reason, else the block's problem, else the layer's problem), 1852-1864 (PAD-US, schools, fire, FAA), 1871 and 1880-1881 (outlines, hospital). The template prints them at about.html 50, 53, 55, 57, 58, 60, 63-64, 66, 71-72, 73, 76-77, 84-85, 91, 94, 98. Tests: tests/test_site.py:6350-6361 pin the land cover, forest, place, fire and recent sentences and the absent credit lines. A store-less scratch render printed a module sentence in every source paragraph; the value-bubble explainer is the one exception (open 2)."
+    },
+    {
+     "id": "U2 extra (90 F spacing)",
+     "state": "applied",
+     "reason": "outside the four items, but inside U2's enumerated 90 F paragraph. trim_blocks and lstrip_blocks had removed the space before the nClimGrid credit, so the page read 'no grid value.Source:'. The sentence and the credit now share one line with a space.",
+     "evidence": "website/templates/about.html:85 (one line fewer, so later lines moved up by one); tests/test_site.py:6299 (pin); scratch render now reads 'no grid value. Source: NOAA nClimGrid-Daily grid estimates'."
+    },
+    {
+     "id": "U3",
+     "state": "already so",
+     "reason": "the zone-outline credit prints history_layers' about_outlines sentence through build.py, and the template literal is gone. The MRMS, nClimGrid and warnings literals are unchanged, as asked.",
+     "evidence": "website/build.py:1870-1871; website/templates/about.html:94 ({{ b6.ugcs or b6.ugcs_unavailable or \"\" }}); website/history_layers.py:206-209; tests/test_site.py:6272-6280 and 6393-6399."
+    },
+    {
+     "id": "U4",
+     "state": "already so",
+     "reason": "the PAD-US fixture credit reads 'Data unavailable', which is what landmarks._credit writes for a missing date. No 'date not recorded' credit remains. The brief's line 5643 has moved (it is now an airport entry), and the credit is at 5659.",
+     "evidence": "tests/test_site.py:5659; website/landmarks.py:1208 (_credit); tests/test_site.py:6489-6500 (pins that 'not recorded' never reaches the page or the data)."
+    }
+   ],
+   "files_changed": [
+    "/home/user/wt/wt-b6/website/templates/about.html",
+    "/home/user/wt/wt-b6/tests/test_site.py"
+   ],
+   "tests": "py_compile of website/build.py and tests/test_site.py: OK. tests.test_site: 343 run, 6 skipped (as before), 0 failures, after the edits. Before the edits: 342 run, 6 skipped, OK. B6AboutAndSources, B6CreditsFollowTheStore and B6LandmarkCredits: 39 OK. tests.test_landmarks, tests.test_basemap2, tests.test_history_layers and tests.test_terrain: 412 run, 1 failure, at tests/test_landmarks.py:1468, identical before my edits. U+2014 in the three files: 0. No git write command, no network request, and /home/user/hail-b5/out/b6/store-copy was not read or written.",
+   "open": [
+    "tests/test_landmarks.py:1466-1469 (HeldKindSentenceTests.test_the_about_page_composes_the_same_sentence_from_the_reason_it_is_given) fails, as it did before my edits. It asserts the old composed sentence in about.html, which U1 removed. That file is outside my three, so I changed nothing there. The fix is to assert that about.html prints {{ b6.held_church }} and that build.py passes lm.CHURCH_HELD. The module pins in that class (1449-1464) pass.",
+    "The About value-bubble explainer (about.html 99-102) keeps its own wording, 'A dash (--) means Data unavailable for that cell ...'. It is not in the item list, so I left it. The module words are history_layers.py:201 (WORDS['label_legend']) and build.py:1401 (BUBBLE_LEGEND, which the map uses). The paragraph also prints no unavailable sentence when the bubble block failed: its problem is built at build.py:1675 and the page never reads it. This needs a decision.",
+    "Four build.py fallbacks write a reason the index did not record: build.py:1616 ('the store holds no five-year pictures'), 1632 ('the picture file is not in the store'), 1641 ('the zone files are not in the store') and 1656 ('the store holds no recent radar hail'). They run only when a block has no problem sentence of its own. history_layers writes one for each failed part (history_layers.py:972, 996, 1036, 1073, 1106), so these are latent. 'Do not invent a reason' would need a reason-free module sentence, and history_layers.WORDS has none; adding one is a history_layers change outside my files. Not changed.",
+    "build.py:1877 does not gate heat_window on the 90 F read state. A failed picture carries no window (history_layers.py:1036), so a real build is right, but a fixture that sets only the state would still print 'counted over'. A one-line gate (heat_read and heat) would close it. Not applied.",
+    "Test count: the brief's '339 passed before this round' does not match the start of this run, which was 342 run, 6 skipped, 336 passed. The current count is 343 run, 6 skipped, 337 passed. I removed no test.",
+    "docs/DECISIONS.md was already modified in this worktree before the run. I did not touch it."
+   ]
+  }
+ }
+]
