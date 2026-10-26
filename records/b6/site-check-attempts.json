@@ -1,0 +1,1224 @@
+[
+ {
+  "verdicts": [
+   {
+    "id": "fix:B1",
+    "pass": true,
+    "evidence": "website/basemap2.py WORDS 311-338: unavailable, part_unavailable, partial_named, peaks_unknown, population_unknown, coverage_box and band_d_water_partial begin 'Data unavailable.' and end 'This is not an all-clear.' (population_unknown closing present). water_line_unavailable was later changed by tidy T1 (lines 337-338), which supersedes the B1 lead for that one key. tests/test_basemap2.py UnavailableWordingTests present; full suite OK."
+   },
+   {
+    "id": "fix:B1-notes",
+    "pass": true,
+    "evidence": "peak_note, place_note, route_note, water_note and park_note (basemap2.py 322-328) are unchanged, as the 'not applied' state says."
+   },
+   {
+    "id": "fix:B2",
+    "pass": true,
+    "evidence": "basemap2.py CREDIT[0] line 2146 = 'Source: U.S. Census Bureau, TIGER/Line 2026 (reservations, roads and place names).'; module docstring quote at line 92 matches; DocumentWordingTests and CreditTests exist in tests/test_basemap2.py."
+   },
+   {
+    "id": "fix:A1",
+    "pass": true,
+    "evidence": "website/terrain.py build(..., refresh_descriptions) at line 875; described = dict(options, refresh=refresh or refresh_descriptions) at line 913 (tiles keep refresh only); CLI --refresh-descriptions at line 1441; named tests exist in tests/test_terrain.py; full suite OK."
+   },
+   {
+    "id": "fix:A2",
+    "pass": true,
+    "evidence": ".github/workflows/hail-store.yml 1256-1267: monthly terrain step timeout-minutes 25; CAP=min(LEFT,1500); DEADLINE=now+CAP-120; build runs with --timeout 60 --refresh-descriptions --deadline-at; no bare --refresh in that step. terrain.py docstring 119-126 states the flag, 25-minute cap, 1500 s and 120 s deadline. Pins exist in tests/test_hail_workflow.py and tests/test_terrain.py; full suite OK."
+   },
+   {
+    "id": "fix:A3",
+    "pass": true,
+    "evidence": "Workflow 1279-1292: check timeout-minutes 16; CAP=min(LEFT,900) under timeout --kill-after=30; verify sample default VERIFY_SAMPLE = 10 (terrain.py line 173), so the sample stayed at 10. Docstring 119-126 states 900 s, ten re-fetches at 60 s (600 s) and the 16-minute step. Named test exists; full suite OK."
+   },
+   {
+    "id": "fix:A4",
+    "pass": true,
+    "evidence": "Nine steps after the 80-minute clock read JOB_START + 6300 (landmark check and mark, terrain check and mark, base map check and mark, manifest check, pack, publish; lines 1184-1457). Guards: checks and marks need more than 60 s left; manifest > 600, pack > 300, publish > 600 (lines 1411, 1448, 1460). CAPs of 180, 300 and 300 where stated. All 66 referenced step ids exist (71 defined); all 112 run blocks pass bash -n. Named tests exist; full suite OK."
+   },
+   {
+    "id": "fix:D1",
+    "pass": true,
+    "evidence": "history_layers.py line 201 WORDS['label_legend'] = the D110(c) sentence; build.py BUBBLE_LEGEND line 1402 equals it (built about.html shows it once, equal); labels.rule_words() reads H.WORDS['label_legend'] (labels.py 398). test_site.py 5941-5942 and 5964 assert equality; the old out-of-list assertNotEqual is gone; full suite OK."
+   },
+   {
+    "id": "fix:D2",
+    "pass": true,
+    "evidence": "history_layers.py: WORDS 'unavailable' line 205, 'outline_unavailable' line 209, 'missing_one' and 'missing_many' lines 178-181 lead and close as stated; labels problems come from H.WORDS['unavailable'] (labels.py 455-525). hail1_legend and recent_legend keep no lead (the reported judgement). 'stale' still hail.WORDS['stale'] (line 213), recorded as open. Tests exist; full suite OK."
+   },
+   {
+    "id": "fix:D3",
+    "pass": true,
+    "evidence": "history_layers.py heat90_legend lines 184-186: 'Grid estimate of days at or above 90 F ... (roughly 4.6 by 3 km in Montana). Data unavailable. A blank cell has no grid value. This is not an all-clear.' The old 'cells about 4.6 km across' wording is gone."
+   },
+   {
+    "id": "fix:C1",
+    "pass": true,
+    "evidence": "landmarks.py _mirror 1300-1307; _hail_index_with_mirror 1318-1332 (only the base mirror key changes; other keys kept); _write_block 1334-1374 builds the hail index before any file changes; mark_unavailable goes through _write_block (1563-1577). verify check 'hail/index.json base mirror matches the block' at line 1703. HailIndexMirrorTests exist; full suite OK."
+   },
+   {
+    "id": "fix:C2",
+    "pass": false,
+    "evidence": "Index and verify parts verified: _sources_block 1221-1240 writes HELD_SOURCE_REASONS as the terms of held sources; verify check at line 1805; HeldTermsTests exist; tidy T7 removed the CONTRACTS licence sentence (sources.py 679-680). But landmarks.py lines 251-253 keep SOURCES['tiger_park']['terms'] as an internal note quoting 'Not copyrighted; free to use in a product or publication.' for the held TIGER park source. That is a licence conclusion for a held source in a repository file, which the scan rule bars. D132(b) keeps it by ruling, and tests/test_landmarks.py 1380-1400 pin it. Owner ruling needed."
+   },
+   {
+    "id": "fix:C3",
+    "pass": true,
+    "evidence": "tests/fixtures/landmarks/tiger_arealm_mt_sample.zip is 1,011 bytes with .shp, .shx and .dbf. The dbf has 6 records with fields STATEFP, MTFCC, FULLNAME, INTPTLAT, INTPTLON and synthetic names (SYNTHETIC GARDEN PARK, Synthetic Cedar Park, one blank name, K2184 state park, Synthetic Aspen Park, one state 31 record). FixtureTests.test_the_tiger_fixture_is_synthetic exists; the test_landmarks docstring says the fixture is synthetic. The 13 m distance to the PAD-US label point was not re-measured."
+   },
+   {
+    "id": "fix:C4",
+    "pass": true,
+    "evidence": "landmarks.py CHURCH_HELD line 153 = 'Places of worship are held and not shown: <HELD_REASON>. No church is drawn or named.'; WORDS['held'] line 283; HELD_KIND_REASONS['church'] line 167; HELD_SOURCE_REASONS['fema_worship'] line 271. build.py 1888 passes lm.CHURCH_HELD; about.html line 79 prints it whole (U1 later removed the composition); base.json kinds.church problem equals it. HeldKindSentenceTests exist."
+   },
+   {
+    "id": "fix:F1",
+    "pass": true,
+    "evidence": "build.py _landmark_words 1512-1541: hospital source from kinds.hospital.sources; credit only for the used source. Built base.json base.landmarks.hospital = {state loaded, source usgs_hospitals, sentence 'Hospitals come from the USGS list of hospitals and medical centers.', credit 'Source: USGS The National Map, hospitals and medical centers, October 2026 refresh.'}; about.html lines 73-74 print sentence, rule sentence and credit."
+   },
+   {
+    "id": "fix:F2",
+    "pass": true,
+    "evidence": "build.py landmark_line 1498-1509 uses NO_DATE ('Data unavailable') when the index has no as_of; FAA and PAD-US lines print only for read sources (shown-lines dict); about.html line 77 uses faa_credit and line 60 uses padus_credit. landmarks.py _credit 1208-1218 writes 'Data unavailable'. No 'date not recorded' string in website/."
+   },
+   {
+    "id": "fix:F3",
+    "pass": true,
+    "evidence": "build.py SHEET_WORDS 1390-1399: water_line_unavailable = b2.WORDS['water_line_unavailable'] (imported) and landmarks_sub_line = the DESIGN 13.6 item 5 sentence. Built base.json sheet carries both keys with these values."
+   },
+   {
+    "id": "fix:F4",
+    "pass": true,
+    "evidence": "Built about.html has none of 'dark mode', 'overlap', 'tapped', 'clicked', 'fades', 'zooms 11', 'Highlight'. The Highlight sentence now reads 'The recent radar hail list holds the cells ...' (template around line 97). One 'tap or click' sentence remains in the hail-history section (about line 37), outside the F4 list and noted as open."
+   },
+   {
+    "id": "fix:F5",
+    "pass": true,
+    "evidence": "Built about.html: 'The counts use the counted rows from the store's zone and polygon files.' (line 90) and 'The zone outlines are the Iowa State archive's ugcs snapshot of 2026-10-25, which gives the 83 public zone outlines only.' (lines 94-95). The iem_ugcs row in sources.py carries the same snapshot sentence (T4)."
+   },
+   {
+    "id": "fix:F6",
+    "pass": true,
+    "evidence": "about.html line 80 prints {{ b6.held_park }} = landmarks WORDS['held_parks'] (landmarks.py 284): 'The Census park points and their names are held for counsel and not shown. The file's use constraints are for counsel to read.' The colon form was replaced later by tidy T3 (superseded; consistent). 'Some park names' and 'second public' are absent from website/ and from the page."
+   },
+   {
+    "id": "fix:F7",
+    "pass": true,
+    "evidence": "about.html line 85: the 'counted over' sentence appears only when b6.heat_window is set, else heat90_unavailable is printed; 'the five seasons in the store' is absent from the page. Superseded by tidy3 V4 (build.py 1881) and S1; consistent."
+   },
+   {
+    "id": "fix:F8",
+    "pass": true,
+    "evidence": "Built about.html: 'Source: NOAA nClimGrid-Daily grid estimates (file attribute license = no restrictions; attribution requested).' follows 'a blank cell has no grid value.' on the same line. No 'NOAA declares' inside the B6 block. The phrase does appear once in the Terms text quoted from build.py about_terms, outside the B6 block, as F8's open item 6 says."
+   },
+   {
+    "id": "fix:F9",
+    "pass": true,
+    "evidence": "about.html lines 79-80 name the held church and park sentences with no 'Source:' line. The built page has no Source line for the FEMA places-of-worship list or the Census park points (checked against the full list of Source lines). Named tests exist."
+   },
+   {
+    "id": "fix:F10",
+    "pass": true,
+    "evidence": "Built about.html prints one PAD-US credit line in the park paragraph: 'Source: USGS Gap Analysis Project, Protected Areas Database of the United States (PAD-US) 4.1, local parks, layer last edited 2026-04-22.' The second mention is a data-sources table row name, which the report allows. The vector PAD-US credit is not printed on the page (base.json base.credit still lists it, as the report says)."
+   },
+   {
+    "id": "fix:F11",
+    "pass": true,
+    "evidence": "test_site.py test_every_string_of_data_base_json_and_the_b6_keys_of_map_json_pass_the_words_gate (line 5983) and b6_words_hits (line 6034) read string values; tests/words_rules.py EXEMPT contains 'that is not zero and not an all-clear'. Run on the built data (base.json string values; map.json keys base, history_layers, recent, labels): 0 forbidden-word hits and 0 em dashes."
+   },
+   {
+    "id": "fix:F12",
+    "pass": true,
+    "evidence": "build.py _source_dates 1584-1601 takes only the row's as_of (NO_DATE otherwise) with no fetched fallback. Code and the named tests in tests/test_site.py verified."
+   },
+   {
+    "id": "fix:E1",
+    "pass": true,
+    "evidence": "docs/ROADMAP.md line 140, counsel item 21(a): adds the TIGER 2026 point landmark file (tl_2026_30_pointlm.zip, park code K2190) as a future park chip source under D129(a). Text matches the report."
+   },
+   {
+    "id": "fix:E2-bullets",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md lines 1048-1053 carry the D128 to D133 italic bullets after the D127 bullet (line 1047); D134 to D139 follow at lines 1054-1059 from later fixers."
+   },
+   {
+    "id": "fix:E2-D118",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 1038 (D118(b)) reads '(the held rows)'. No '485 places' appears in docs/."
+   },
+   {
+    "id": "fix:E2-ROADMAP-counts",
+    "pass": true,
+    "evidence": "Already so: ROADMAP lines 43, 128, 134 and 140 name held kinds with no number. The held-with-number scan of the three docs found no count beside a held church or park row."
+   },
+   {
+    "id": "fix:E2-DESIGN-13.3",
+    "pass": false,
+    "evidence": "DESIGN lines 962-963 state map.json 128,522 bytes raw (gate 35,318) and base.json 30,861 bytes; DESIGN line 967 states the every-flag build is 397,716 bytes raw. This offline check measured map.json 116,336 bytes (gate build, no addresses), base.json 33,192 bytes (both builds), and map.json 385,530 bytes (with --hail-addresses). The figures are not reproduced here. Offline live-feed failures change the content, so they are unverified rather than disproved; re-measure on a live build or amend the table."
+   },
+   {
+    "id": "fix:E2-D38-header",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 902 reads 'The bullets' D31 to D139 are the B5 brief's rulings...' (later updated by the supervisor; consistent with the D137 to D139 entries at lines 1057-1059)."
+   },
+   {
+    "id": "fix:E2-general-rule",
+    "pass": false,
+    "evidence": "ROADMAP lines 42 and 102 and DECISIONS line 937 still carry NOHRSC snow regression numbers (slope 0.664 over 682 station-seasons, intercept 12.03, correlation 0.81, RMS 17.7 inches, two Billings cells). ROADMAP line 102 labels the analysis 'held'. D132(g) says DECISIONS, DESIGN and ROADMAP carry no number derived from a held source. The fixer left this for a supervisor ruling, which is still open."
+   },
+   {
+    "id": "tidy:T1",
+    "pass": true,
+    "evidence": "basemap2.py 337-338: water_line_unavailable = 'Detailed water and local parks: Data unavailable for this area in this update. This is not an all-clear.' (D134(a)). Module docstring 132-146 carries the same sentence and names the exemption; WORDS_INSIDE exemption at tests/test_basemap2.py line 1008. The built sheet and About page carry the same text."
+   },
+   {
+    "id": "tidy:T2",
+    "pass": true,
+    "evidence": "landmarks.py _credit 1208-1218 writes 'Data unavailable' in the missing-date branches, and _sources_block writes every credit through _credit. No 'cycle date not recorded' or 'date not recorded' string in website/. Named tests in tests/test_landmarks.py exist and the full suite passes."
+   },
+   {
+    "id": "tidy:T3",
+    "pass": true,
+    "evidence": "landmarks.py 284: held_parks = 'The Census park points and their names are held for counsel and not shown. ' + TIGER_HELD_SENTENCE. The text 'second public' is absent from website/. Built base.json templates.held_parks equals that sentence pair."
+   },
+   {
+    "id": "tidy:T4",
+    "pass": true,
+    "evidence": "sources.py iem_ugcs row: the request and timing text say the ugcs snapshot of 2026-10-25 (valid=2026-10-25T00:00Z) gives the 83 public zone outlines only, and that the B6 zone counts use the counted rows from the store's zone and polygon files. '(83 zones, 139 features)' is removed from the row."
+   },
+   {
+    "id": "tidy:T7-tiger",
+    "pass": true,
+    "evidence": "sources.py 679-680: tiger_park 'missing' ends 'A missing shapefile reader stops this held source only; the PAD-US parks still ship.' with no licence sentence. The built About page prints the held TIGER park row with held wording only. The only 'not copyrighted' text on the page is the B5 county row, which is not held. The landmarks.py internal note is a separate issue (see fix:C2 and scans)."
+   },
+   {
+    "id": "tidy:T7-fema",
+    "pass": true,
+    "evidence": "Already so: sources.py fema_worship 'missing' (689-690) carries only the held wording; no licence sentence in any field of the row."
+   },
+   {
+    "id": "tidy:T11",
+    "pass": true,
+    "evidence": "sources.py 479-482 and 495-497: 'The monthly job passes --refresh-descriptions, not --refresh ... capped at 25 minutes and the check at 900 seconds'. No CONTRACTS row says every tile is asked again each month (grep finds only the NCES row 'asks again for every file', which is not a tile row)."
+   },
+   {
+    "id": "tidy:T5",
+    "pass": true,
+    "evidence": "build.py read_vector_lines 1473-1478, terrain_line 1481-1495, the landmark 'lines' map (1512-1541), and about_b6_context 1762-1900, which prints each line from its key only when read. Class B6CreditsFollowTheStore exists and passes. Built base.json credit lists hold only read sources (seven vector lines plus terrain and landmark lines); the 'Land cover:' string form is a separate finding under scans."
+   },
+   {
+    "id": "tidy:T10",
+    "pass": true,
+    "evidence": "build.py about_b6_context 'tiger' = about_vector(TIGER_LINE) (line 1848); TIGER_LINE = b2.CREDIT[0]. about.html line 62 prints the sheet water sentence from SHEET_WORDS. test_the_water_fallback exists in tests/test_site.py."
+   },
+   {
+    "id": "tidy:T9",
+    "pass": true,
+    "evidence": "B6_D110_LEGEND is absent from tests/test_site.py (grep count 0). test_site.py lines 5941-5942, 5964 and 6215 assert the printed legend equals hl.WORDS['label_legend']."
+   },
+   {
+    "id": "tidy:T6-DESIGN",
+    "pass": true,
+    "evidence": "docs/DESIGN.md line 925: the terrain step passes --refresh-descriptions (D128(f)); line 965: 25-minute cap (1,500 s) with --refresh-descriptions; line 1039: the held church chip quotes the CHURCH_HELD sentence exactly."
+   },
+   {
+    "id": "tidy:T6-ROADMAP",
+    "pass": true,
+    "evidence": "docs/ROADMAP.md lines 43, 118 and 229 cite D106 to D134; line 116 header reads 'Open items for B6 (D107 to D134)'; line 152 (follow-up 7) records the 105-minute monthly end and the JOB_START+6300 wait, matching hail-store.yml."
+   },
+   {
+    "id": "tidy:T6-DECISIONS",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 902 header covers D31 to D139; line 1036 (D116(d)) says the monthly job passes --refresh-descriptions (D128(f)); the D134 bullet is present at line 1054."
+   },
+   {
+    "id": "about:U1",
+    "pass": true,
+    "evidence": "about.html lines 79-80 print {{ b6.held_church }} and {{ b6.held_park }} as their own paragraphs; build.py 1888 passes lm.CHURCH_HELD and lm.WORDS['held_parks']; the built page shows each sentence whole."
+   },
+   {
+    "id": "about:U1-pin",
+    "pass": true,
+    "evidence": "tests/test_site.py lines 6175-6180 assert that each held sentence is its own paragraph; the full suite passes."
+   },
+   {
+    "id": "about:U2",
+    "pass": true,
+    "evidence": "about.html has no literal 'Data unavailable in this update. This is not an all-clear.' (grep count 0). Unavailable sentences come from module words through build.py (terrain and basemap2 part_unavailable, landmarks kind words, history_layers words). The exceptions (held parts; the B5 snow paragraph) are recorded in the about verdict."
+   },
+   {
+    "id": "about:U2-extra",
+    "pass": true,
+    "evidence": "Built about.html: '...and a blank cell has no grid value. Source: NOAA nClimGrid-Daily grid estimates ...' on one line, with the space in place."
+   },
+   {
+    "id": "about:U3",
+    "pass": true,
+    "evidence": "about.html line 94 prints {{ b6.ugcs or b6.ugcs_unavailable }}; build.py 1870-1871 takes hl.WORDS['about_outlines']; no literal template sentence. Built page: 'Source: Iowa State University, Iowa Environmental Mesonet, ugcs service. The outlines are simplified.'"
+   },
+   {
+    "id": "about:U4",
+    "pass": true,
+    "evidence": "No 'date not recorded' text in the built about.html or base.json. The PAD-US fixture credit reads 'Data unavailable' through landmarks._credit. test_site.py 6489-6500 pins it."
+   },
+   {
+    "id": "tidy3:V1",
+    "pass": true,
+    "evidence": "tests/test_landmarks.py 1467-1475: renamed test present (test_the_about_template_prints_the_church_sentence_as_its_own_paragraph_that_build_passes); about.html line 79 '<p>{{ b6.held_church }}</p>'; build.py 1888 'held_church': lm.CHURCH_HELD. test_landmarks passes in the full suite."
+   },
+   {
+    "id": "tidy3:V2",
+    "pass": true,
+    "evidence": "about.html lines 99-101 print '{{ b6.bubble_unavailable }} {{ b6.bubble_legend }}'; build.py 1891-1893 define bubble_legend and bubble_unavailable. Built page shows the legend once, equal to history_layers.WORDS['label_legend']. Tests at test_site.py 6219-6243 exist and pass."
+   },
+   {
+    "id": "tidy3:V3",
+    "pass": true,
+    "evidence": "history_layers.py line 208 WORDS['missing']; build.py fallbacks use hl.WORDS['missing'] (1615-1675 and 1821-1829). The four retired literals are absent from website/ (grep count 0). BUILD_REASON_LITERALS (test_site.py 6244-6273) and test_history_layers.py 907-922 exist and pass."
+   },
+   {
+    "id": "tidy3:V4",
+    "pass": true,
+    "evidence": "build.py 1881: 'heat_window': window_words(heat) if heat_read and heat else None. test_a_90_f_count_is_not_counted_over_when_its_picture_did_not_load (test_site.py 6275) exists and passes."
+   },
+   {
+    "id": "tidy3:S1",
+    "pass": true,
+    "evidence": "history_layers.py line 208 reads 'Data unavailable. {what} could not be read from the store in this update. This is not an all-clear.' Singular and plural part names read correctly. The pins in tests/test_history_layers.py pass."
+   },
+   {
+    "id": "tidy3:S2",
+    "pass": true,
+    "evidence": "build.py base_document 1706-1721: the history, recent and labels exception fallbacks print hl.WORDS['missing'] with their part name. The exception text stays in the data 'reason' key, and the About template prints no reason key."
+   },
+   {
+    "id": "tidy3:S3",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md carries the D137, D138 and D139 bullets (lines 1057-1059). The D38 header (line 902) reads D31 to D139, covering the supervisor's later addition."
+   }
+  ],
+  "suite": "PASS on both commands. (1) Timed run: python -m unittest tests.test_site tests.test_hail_workflow tests.test_website_workflow -v: Ran 463 tests in 394.6 s, OK (skipped=6). 463 = 347 (test_site) + 42 (test_hail_workflow) + 74 (test_website_workflow); the 6 skips are the store-dependent tests that need HAIL_PARITY_STORE. (2) Whole suite: python -m unittest discover -s tests (no -v, timed 537.8 s, wall 559 s): Ran 2522 tests, OK (skipped=12), 0 failures, 0 errors. The non-verbose run does not print the 12 skip reasons. Logs: site-check/suite3.log and fullsuite.log.",
+  "parity": "PASS. HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store python -m unittest tests.test_site -v (variable name confirmed in tests/test_site.py): Ran 347 tests in 651.7 s, OK (skipped=2), 0 failures, 0 errors. Of the six store-dependent skips seen without the variable, four now run and pass: test_with_the_real_store_every_town_page_leads_with_station_reading_and_map_json_is_under_160_kb; test_the_five_cells_agree_on_the_adopted_store; test_with_the_real_store_every_row_note_reaches_the_sheet_at_four_cells; test_the_real_store_names_are_the_display_names_the_store_gives. The two remaining skips are per-cell subtests of test_the_five_cells_agree_on_the_fixture (cells 753,2230 and 920,1899) that skip by design when the committed sample lacks their tile; the adopted-store test covers all five cells. Log: site-check/parity.log.",
+  "selftest": "PASS. python desktop/launcher.py --selftest payload: exit code 0 in 1 s; output 'PASS  payload 1.0.0'.",
+  "build": "PASS (exit 0) with caveats. python -m website.build --out /home/user/hail-b5/out/b6/site --hail-history --hail-addresses --hail-store /home/user/hail-b5/out/b6/store-copy --now 2026-10-17T12:00:00Z. --help read first: no offline switch. The command has no --sample, so it calls the live fetcher; the sandbox has no route out, so every live source failed (status ok=false, detail ProxyError: NWS alerts, forecasts, station readings, SPC reports, radar, HRRR), and the store-based B6 parts were built. Time: 356 s (exit 0). Total site bytes: 575,913,347 in 48,353 files. data/map.json 385,530 bytes raw; data/base.json 33,192 bytes raw; about.html 98,322 bytes. The largest outline shard is r0092_c0214120.json at 258,207 bytes, over the 250,000-byte SHARD_BYTES limit (the store check found four such shards; expected per D137(a)). Log: site-check/build.log; sizes in site-check/site-sizes.txt.",
+  "smoke": "FAIL (exit 1, 309 s). Command: python tools/smoke_map.py /home/user/hail-b5/out/b6/site --addresses --history (--help read: root, --shots, --addresses, --store default = the site's own hail/ folder, --history). It printed these notes: phone view at zoom 15 over Billings with 3 layers on: 680264 bytes gzip against the budget of 700000 (B3 files 273924 in 18 files; shell and data 406340 in 11 files; the precipitation frames 0 bytes in 0 files); pan across Billings at zoom 15: 2 requests; search results listed; attribution lines present in the Leaflet control; zone rules printed; imagery notes 'no answer from basemap.nationalmap.gov in 20 seconds, so the internet may be off' (the imagery checks still ran). The only failure listed: 'phone: a click on the cell's centre did not open the hail sheet'. Every desktop check passed. Scratch diagnosis (read-only copy of the check, not in the repo): at 390 px the tap point (150.7, 538.4) lands on the Leaflet attribution block (box y 513 to 632); a red 'ProxyError' note in the bottom panel (SPAN.note-warn) lifts that block over the tap point. With only that note hidden, the attribution moves to y 581, the same tap hits the map, and the sheet opens with 110,063 characters. The cause is the offline state of this build, not a confirmed site defect, but a live build was not run, so a pass is not confirmed. Logs: site-check/smoke.log, diag-phone-tap.log, diag-phone-tap2.log.</smoke>\n<parameter name=\"gate\">PASS. Second build with the same flags minus --hail-addresses, into site-check/gate (deleted after): exit 0 in 224 s. Raw data/map.json = 116,336 bytes, under the 163,840-byte gate (margin 47,504). data/base.json = 33,192 bytes raw in both builds (identical). Note: the DESIGN 13.3 figures (128,522 and 30,861 bytes) are not reproduced here (see fix:E2-DESIGN-13.3). Sizes: site-check/gate-sizes.txt; the gate folder is removed.</gate>\n<parameter name=\"about\">FAIL on one item (held parts), PASS on the rest. Checked against /home/user/hail-b5/out/b6/site/about.html (98,322 bytes). (1) Every 'Source:' line in the B6 sections names a source the store read: 3DEP, NLCD, Census TIGER roads/reservations, Census 2020 counts, USDA forests, PAD-US, GNIS, NCES public and private, USGS hospitals, USGS fire/EMS, FAA, NOAA MRMS (twice), nClimGrid, NWS warnings via IEM, IEM ugcs, Montana State Library addresses. None names the church kind, the FEMA worship copy, the TIGER park points, hifld, snow or the large NHD outlines. The NHD lakes-and-rivers credit prints because the small NHD layers were read; the large layers are covered by the water sentence (a judgement). PASS. (2) Every part not read prints a module 'Data unavailable' sentence: PASS for water band D (sheet words), labels (partial), schools, fire, places, FAA, PAD-US, zone outlines, pictures and recent cells. FAIL as written for the three held parts (church kind, FEMA worship copy, TIGER park points): they print their held sentences ('Places of worship are held and not shown: ...'; 'The Census park points and their names are held for counsel and not shown.') with no 'Data unavailable' words, by the D136(a) design. The B5 snow analysis paragraph ('left out ... This is not an all-clear.') prints no module 'Data unavailable' sentence either; it is B5 scope. (3) Bubble legend: printed once (visible text and raw HTML) and equal to history_layers.WORDS['label_legend'] (PASS). (4) No held source carries a count or a licence sentence on the page; base.json held counts are null and the held reasons are the held sentences alone (PASS). (5) The B6 template has no literal 'Data unavailable' or all-clear sentence of its own (PASS). The 'lag' wording is a separate words failure.",
+  "scans": "FAIL. Em dash (U+2014): 0 in built data/base.json, data/map.json and about.html. The branch adds 0 em dashes to changed files (git diff added lines). Whole-file em dashes remain in AGENTS.md (11), README.md (29) and .github/workflows/website.yml (5); the branch did not add them. AI model, vendor or product names: 0 in the built data and the About page. In changed files the branch adds only git ref and branch names (claude/map-b6; claude/** workflow filters), the generic word 'AI' in rule text (website/landmarks.py line 71; tests/test_history_layers.py docstring), and a name guard built by concatenation (tests/test_terrain.py line 1292). Pre-existing agent names remain in AGENTS.md, README.md, docs/DECISIONS.md, docs/ROADMAP.md and docs/DESIGN.md. Credit-line form: FAIL. data/base.json has 'Land cover: National Land Cover Database 2021 ... (public domain).' at base.credit[1] and terrain.credits.land_cover, which are neither 'Source: ...' nor '... data courtesy of ...'; the About page prints the Source form. Numbers beside held kinds or sources: none in the built about.html or base.json (no held string there contains a digit). In the docs, NOHRSC regression numbers sit beside the word 'held' in docs/ROADMAP.md lines 42 and 102 and docs/DECISIONS.md line 937: FAIL (open). Licence conclusion for a held source in a repository file: FAIL, website/landmarks.py lines 251-253 (see fix:C2). Built pages: none. Git: 59 changed files from git diff against origin/claude/map-b6, no untracked files. Log: site-check/scan-names-changed.txt and site-scan.log.",
+  "words": "FAIL on 'lag'; forbidden-word gate PASS. Forbidden-words check (tests/words_rules.forbidden_words, with the em-dash test used by test_site.b6_words_hits) over every string value of data/base.json and the B6 keys base, history_layers, recent and labels of data/map.json: 0 hits, 0 em dashes; no 'no hail' outside the allowed clause. Printed words: 'lag' appears three times on the About page, all in B5 source-row text (website/sources.py around lines 371, 390 and 819: 'so the lag is stated on each page'; 'so the lags are good to about 0.2 day'; 'the archive lags 45 to 60 days'). FAIL. 'read through': not found in the built About page, base.json or map.json. Browser strings (website/static/map/map.js, unchanged by this branch) are outside this check; see notes.",
+  "notes": "OPEN ITEMS (for the parent or owner; nothing in the worktree was edited; no git write command ran).\n1. Smoke failed (exit 1) on one check: the phone tap at a cell centre. Scratch diagnosis: at 390 px the attribution block covers the tap point, because the offline 'ProxyError' note lifts it. With that note hidden the same tap opens the sheet. Not confirmed on a live build. Run the smoke on the branch's live preview before merge.\n2. About: the three held parts (church kind, FEMA worship copy, TIGER park points) print held sentences with no 'Data unavailable' words (D136(a)). The rule as written asks for a 'Data unavailable' sentence for every part not read. Owner or supervisor to accept the held design or add a lead.\n3. Scans: website/landmarks.py lines 251-253 keep 'Not copyrighted; free to use in a product or publication' as an internal note for the held TIGER park source. D132(b) keeps it; tests/test_landmarks.py 1380-1400 pin it. The scan rule bars licence conclusions in any repository file. Owner ruling needed.\n4. Scans: data/base.json 'Land cover: ...' credit strings (base.credit[1] and terrain.credits.land_cover) are not in the Source or courtesy form. Reword in the terrain module's credit text.\n5. Words: 'lag' printed three times on the About page in B5 source rows (sources.py about lines 371, 390, 819). Reword or accept.\n6. Scans and docs: NOHRSC snow regression numbers (ROADMAP 42 and 102, DECISIONS 937) sit under a 'held' label, which conflicts with D132(g). Supervisor ruling outstanding (E2 general rule).\n7. DESIGN 13.3 figures (128,522 / 30,861 / 397,716 bytes) are not reproduced by this offline build (gate build 116,336 and 33,192; addresses build 385,530). The live feeds were down here, so re-measure on a live build or amend the table.\n8. Pre-existing, not added by this branch: em dashes in AGENTS.md (11), README.md (29) and .github/workflows/website.yml (5); agent and vendor names in AGENTS.md, README.md, docs/DECISIONS.md, docs/ROADMAP.md and docs/DESIGN.md. The strict rule fails on them; owner decision.\n9. Live feeds did not run (no route out from the sandbox). NWS alerts, forecasts, station readings, SPC reports, radar and HRRR all show ProxyError (status ok=false), so this About page and map are a store-only view. The 'about 9 days old' banner appears because --now is 2026-10-17 and today is 2026-10-26.\n10. Outline shards over the 250,000-byte per-shard limit: the largest is r0092_c0214120.json at 258,207 bytes (the store check found four; expected per D137(a)). The buildings verify was not re-run here.\n11. website/static/map/map.js (not in this branch's diff) hard-codes browser sentences with 'Data unavailable' and 'This is not an all-clear.' (for example lines 249, 1316, 1320, 2122-2131, 3362-3363). The rule says browser strings come from map.json or base.json. Pre-existing; outside the B6 change.\n12. About: the 'Terms of the new sources' list pairs the NWS public-domain quotation with the NOHRSC snow analysis row, which the store did not read. Judge whether that is a licence sentence for an unread source.\n13. About: the NHD lakes-and-rivers credit prints because the small NHD layers were read; the large NHD outlines (zoom 13 and up) are partial. The store check asked that the About page not credit those outlines. Judgement call; the water sentence covers the gap.\n14. Leftovers from earlier fixers (judgements as reported): the 'tap or click' sentence in the hail-history section (about line 37, outside F4's list); hail.WORDS['stale'] unprefixed; hail1_legend and recent_legend without a lead; the value-bubble wording in U2.\n15. Test counts: the full discover run was not verbose, so its 12 skips have no printed reasons. The parity run's 2 remaining skips are by-design fixture subtests.\n16. Network: every Python step, the build, the smoke and Chromium ran in a loopback-only network namespace with a socket guard loaded. No blocked attempts were logged (0). The live fetch errors were refusals by the sandbox proxy at 127.0.0.1, which is not reachable inside the namespace, so no packet left the machine.\n17. Worktree: git status is identical before and after (7 modified files, no commits). PYTHONDONTWRITEBYTECODE=1 was set for every run. Scratch scripts and images are deleted; logs and the three sizes files are kept in /home/user/hail-b5/out/b6/build/site-check/.\n18. Sentence case and plain-word style were not machine-checked.</notes>\n"
+ },
+ {
+  "verdicts": [
+   {
+    "id": "fix:B1",
+    "pass": true,
+    "evidence": "website/basemap2.py WORDS 311-338: unavailable, part_unavailable, partial_named, peaks_unknown, population_unknown, coverage_box and band_d_water_partial begin 'Data unavailable.' and end 'This is not an all-clear.' (population_unknown closing present). water_line_unavailable was later changed by tidy T1 (lines 337-338), which supersedes the B1 lead for that one key. tests/test_basemap2.py UnavailableWordingTests present; full suite OK."
+   },
+   {
+    "id": "fix:B1-notes",
+    "pass": true,
+    "evidence": "peak_note, place_note, route_note, water_note and park_note (basemap2.py 322-328) are unchanged, as the 'not applied' state says."
+   },
+   {
+    "id": "fix:B2",
+    "pass": true,
+    "evidence": "basemap2.py CREDIT[0] line 2146 = 'Source: U.S. Census Bureau, TIGER/Line 2026 (reservations, roads and place names).'; module docstring quote at line 92 matches; DocumentWordingTests and CreditTests exist in tests/test_basemap2.py."
+   },
+   {
+    "id": "fix:A1",
+    "pass": true,
+    "evidence": "website/terrain.py build(..., refresh_descriptions) at line 875; described = dict(options, refresh=refresh or refresh_descriptions) at line 913 (tiles keep refresh only); CLI --refresh-descriptions at line 1441; named tests exist in tests/test_terrain.py; full suite OK."
+   },
+   {
+    "id": "fix:A2",
+    "pass": true,
+    "evidence": ".github/workflows/hail-store.yml 1256-1267: monthly terrain step timeout-minutes 25; CAP=min(LEFT,1500); DEADLINE=now+CAP-120; build runs with --timeout 60 --refresh-descriptions --deadline-at; no bare --refresh in that step. terrain.py docstring 119-126 states the flag, 25-minute cap, 1500 s and 120 s deadline. Pins exist in tests/test_hail_workflow.py and tests/test_terrain.py; full suite OK."
+   },
+   {
+    "id": "fix:A3",
+    "pass": true,
+    "evidence": "Workflow 1279-1292: check timeout-minutes 16; CAP=min(LEFT,900) under timeout --kill-after=30; verify sample default VERIFY_SAMPLE = 10 (terrain.py line 173), so the sample stayed at 10. Docstring 119-126 states 900 s, ten re-fetches at 60 s (600 s) and the 16-minute step. Named test exists; full suite OK."
+   },
+   {
+    "id": "fix:A4",
+    "pass": true,
+    "evidence": "Nine steps after the 80-minute clock read JOB_START + 6300 (landmark check and mark, terrain check and mark, base map check and mark, manifest check, pack, publish; lines 1184-1457). Guards: checks and marks need more than 60 s left; manifest > 600, pack > 300, publish > 600 (lines 1411, 1448, 1460). CAPs of 180, 300 and 300 where stated. All 66 referenced step ids exist (71 defined); all 112 run blocks pass bash -n. Named tests exist; full suite OK."
+   },
+   {
+    "id": "fix:D1",
+    "pass": true,
+    "evidence": "history_layers.py line 201 WORDS['label_legend'] = the D110(c) sentence; build.py BUBBLE_LEGEND line 1402 equals it (built about.html shows it once, equal); labels.rule_words() reads H.WORDS['label_legend'] (labels.py 398). test_site.py 5941-5942 and 5964 assert equality; the old out-of-list assertNotEqual is gone; full suite OK."
+   },
+   {
+    "id": "fix:D2",
+    "pass": true,
+    "evidence": "history_layers.py: WORDS 'unavailable' line 205, 'outline_unavailable' line 209, 'missing_one' and 'missing_many' lines 178-181 lead and close as stated; labels problems come from H.WORDS['unavailable'] (labels.py 455-525). hail1_legend and recent_legend keep no lead (the reported judgement). 'stale' still hail.WORDS['stale'] (line 213), recorded as open. Tests exist; full suite OK."
+   },
+   {
+    "id": "fix:D3",
+    "pass": true,
+    "evidence": "history_layers.py heat90_legend lines 184-186: 'Grid estimate of days at or above 90 F ... (roughly 4.6 by 3 km in Montana). Data unavailable. A blank cell has no grid value. This is not an all-clear.' The old 'cells about 4.6 km across' wording is gone."
+   },
+   {
+    "id": "fix:C1",
+    "pass": true,
+    "evidence": "landmarks.py _mirror 1300-1307; _hail_index_with_mirror 1318-1332 (only the base mirror key changes; other keys kept); _write_block 1334-1374 builds the hail index before any file changes; mark_unavailable goes through _write_block (1563-1577). verify check 'hail/index.json base mirror matches the block' at line 1703. HailIndexMirrorTests exist; full suite OK."
+   },
+   {
+    "id": "fix:C2",
+    "pass": false,
+    "evidence": "Index and verify parts verified: _sources_block 1221-1240 writes HELD_SOURCE_REASONS as the terms of held sources; verify check at line 1805; HeldTermsTests exist; tidy T7 removed the CONTRACTS licence sentence (sources.py 679-680). But landmarks.py lines 251-253 keep SOURCES['tiger_park']['terms'] as an internal note quoting 'Not copyrighted; free to use in a product or publication.' for the held TIGER park source. That is a licence conclusion for a held source in a repository file, which the scan rule bars. D132(b) keeps it by ruling, and tests/test_landmarks.py 1380-1400 pin it. Owner ruling needed."
+   },
+   {
+    "id": "fix:C3",
+    "pass": true,
+    "evidence": "tests/fixtures/landmarks/tiger_arealm_mt_sample.zip is 1,011 bytes with .shp, .shx and .dbf. The dbf has 6 records with fields STATEFP, MTFCC, FULLNAME, INTPTLAT, INTPTLON and synthetic names (SYNTHETIC GARDEN PARK, Synthetic Cedar Park, one blank name, K2184 state park, Synthetic Aspen Park, one state 31 record). FixtureTests.test_the_tiger_fixture_is_synthetic exists; the test_landmarks docstring says the fixture is synthetic. The 13 m distance to the PAD-US label point was not re-measured."
+   },
+   {
+    "id": "fix:C4",
+    "pass": true,
+    "evidence": "landmarks.py CHURCH_HELD line 153 = 'Places of worship are held and not shown: HELD_REASON. No church is drawn or named.' (HELD_REASON is the geocoder counsel sentence, built at line 147); WORDS['held'] line 283; HELD_KIND_REASONS['church'] line 167; HELD_SOURCE_REASONS['fema_worship'] line 271. build.py 1888 passes lm.CHURCH_HELD; about.html line 79 prints it whole (U1 later removed the composition); base.json kinds.church problem equals it. HeldKindSentenceTests exist."
+   },
+   {
+    "id": "fix:F1",
+    "pass": true,
+    "evidence": "build.py _landmark_words 1512-1541: hospital source from kinds.hospital.sources; credit only for the used source. Built base.json base.landmarks.hospital = {state loaded, source usgs_hospitals, sentence 'Hospitals come from the USGS list of hospitals and medical centers.', credit 'Source: USGS The National Map, hospitals and medical centers, October 2026 refresh.'}; about.html lines 73-74 print sentence, rule sentence and credit."
+   },
+   {
+    "id": "fix:F2",
+    "pass": true,
+    "evidence": "build.py landmark_line 1498-1509 uses NO_DATE ('Data unavailable') when the index has no as_of; FAA and PAD-US lines print only for read sources (shown-lines dict); about.html line 77 uses faa_credit and line 60 uses padus_credit. landmarks.py _credit 1208-1218 writes 'Data unavailable'. No 'date not recorded' string in website/."
+   },
+   {
+    "id": "fix:F3",
+    "pass": true,
+    "evidence": "build.py SHEET_WORDS 1390-1399: water_line_unavailable = b2.WORDS['water_line_unavailable'] (imported) and landmarks_sub_line = the DESIGN 13.6 item 5 sentence. Built base.json sheet carries both keys with these values."
+   },
+   {
+    "id": "fix:F4",
+    "pass": true,
+    "evidence": "Built about.html has none of 'dark mode', 'overlap', 'tapped', 'clicked', 'fades', 'zooms 11', 'Highlight'. The Highlight sentence now reads 'The recent radar hail list holds the cells ...' (template around line 97). One 'tap or click' sentence remains in the hail-history section (about line 37), outside the F4 list and noted as open."
+   },
+   {
+    "id": "fix:F5",
+    "pass": true,
+    "evidence": "Built about.html: 'The counts use the counted rows from the store's zone and polygon files.' (line 90) and 'The zone outlines are the Iowa State archive's ugcs snapshot of 2026-10-25, which gives the 83 public zone outlines only.' (lines 94-95). The iem_ugcs row in sources.py carries the same snapshot sentence (T4)."
+   },
+   {
+    "id": "fix:F6",
+    "pass": true,
+    "evidence": "about.html line 80 prints {{ b6.held_park }} = landmarks WORDS['held_parks'] (landmarks.py 284): 'The Census park points and their names are held for counsel and not shown. The file's use constraints are for counsel to read.' The colon form was replaced later by tidy T3 (superseded; consistent). 'Some park names' and 'second public' are absent from website/ and from the page."
+   },
+   {
+    "id": "fix:F7",
+    "pass": true,
+    "evidence": "about.html line 85: the 'counted over' sentence appears only when b6.heat_window is set, else heat90_unavailable is printed; 'the five seasons in the store' is absent from the page. Superseded by tidy3 V4 (build.py 1881) and S1; consistent."
+   },
+   {
+    "id": "fix:F8",
+    "pass": true,
+    "evidence": "Built about.html: 'Source: NOAA nClimGrid-Daily grid estimates (file attribute license = no restrictions; attribution requested).' follows 'a blank cell has no grid value.' on the same line. No 'NOAA declares' inside the B6 block. The phrase does appear once in the Terms text quoted from build.py about_terms, outside the B6 block, as F8's open item 6 says."
+   },
+   {
+    "id": "fix:F9",
+    "pass": true,
+    "evidence": "about.html lines 79-80 name the held church and park sentences with no 'Source:' line. The built page has no Source line for the FEMA places-of-worship list or the Census park points (checked against the full list of Source lines). Named tests exist."
+   },
+   {
+    "id": "fix:F10",
+    "pass": true,
+    "evidence": "Built about.html prints one PAD-US credit line in the park paragraph: 'Source: USGS Gap Analysis Project, Protected Areas Database of the United States (PAD-US) 4.1, local parks, layer last edited 2026-04-22.' The second mention is a data-sources table row name, which the report allows. The vector PAD-US credit is not printed on the page (base.json base.credit still lists it, as the report says)."
+   },
+   {
+    "id": "fix:F11",
+    "pass": true,
+    "evidence": "test_site.py test_every_string_of_data_base_json_and_the_b6_keys_of_map_json_pass_the_words_gate (line 5983) and b6_words_hits (line 6034) read string values; tests/words_rules.py EXEMPT contains 'that is not zero and not an all-clear'. Run on the built data (base.json string values; map.json keys base, history_layers, recent, labels): 0 forbidden-word hits and 0 em dashes."
+   },
+   {
+    "id": "fix:F12",
+    "pass": true,
+    "evidence": "build.py _source_dates 1584-1601 takes only the row's as_of (NO_DATE otherwise) with no fetched fallback. Code and the named tests in tests/test_site.py verified."
+   },
+   {
+    "id": "fix:E1",
+    "pass": true,
+    "evidence": "docs/ROADMAP.md line 140, counsel item 21(a): adds the TIGER 2026 point landmark file (tl_2026_30_pointlm.zip, park code K2190) as a future park chip source under D129(a). Text matches the report."
+   },
+   {
+    "id": "fix:E2-bullets",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md lines 1048-1053 carry the D128 to D133 italic bullets after the D127 bullet (line 1047); D134 to D139 follow at lines 1054-1059 from later fixers."
+   },
+   {
+    "id": "fix:E2-D118",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 1038 (D118(b)) reads '(the held rows)'. No '485 places' appears in docs/."
+   },
+   {
+    "id": "fix:E2-ROADMAP-counts",
+    "pass": true,
+    "evidence": "Already so: ROADMAP lines 43, 128, 134 and 140 name held kinds with no number. The held-with-number scan of the three docs found no count beside a held church or park row."
+   },
+   {
+    "id": "fix:E2-DESIGN-13.3",
+    "pass": false,
+    "evidence": "DESIGN lines 962-963 state map.json 128,522 bytes raw (gate 35,318) and base.json 30,861 bytes; DESIGN line 967 states the every-flag build is 397,716 bytes raw. This offline check measured map.json 116,336 bytes (gate build, no addresses), base.json 33,192 bytes (both builds), and map.json 385,530 bytes (with --hail-addresses). The figures are not reproduced here. Offline live-feed failures change the content, so they are unverified rather than disproved; re-measure on a live build or amend the table."
+   },
+   {
+    "id": "fix:E2-D38-header",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 902 reads 'The bullets' D31 to D139 are the B5 brief's rulings...' (later updated by the supervisor; consistent with the D137 to D139 entries at lines 1057-1059)."
+   },
+   {
+    "id": "fix:E2-general-rule",
+    "pass": false,
+    "evidence": "ROADMAP lines 42 and 102 and DECISIONS line 937 still carry NOHRSC snow regression numbers (slope 0.664 over 682 station-seasons, intercept 12.03, correlation 0.81, RMS 17.7 inches, two Billings cells). ROADMAP line 102 labels the analysis 'held'. D132(g) says DECISIONS, DESIGN and ROADMAP carry no number derived from a held source. The fixer left this for a supervisor ruling, which is still open."
+   },
+   {
+    "id": "tidy:T1",
+    "pass": true,
+    "evidence": "basemap2.py 337-338: water_line_unavailable = 'Detailed water and local parks: Data unavailable for this area in this update. This is not an all-clear.' (D134(a)). Module docstring 132-146 carries the same sentence and names the exemption; WORDS_INSIDE exemption at tests/test_basemap2.py line 1008. The built sheet and About page carry the same text."
+   },
+   {
+    "id": "tidy:T2",
+    "pass": true,
+    "evidence": "landmarks.py _credit 1208-1218 writes 'Data unavailable' in the missing-date branches, and _sources_block writes every credit through _credit. No 'cycle date not recorded' or 'date not recorded' string in website/. Named tests in tests/test_landmarks.py exist and the full suite passes."
+   },
+   {
+    "id": "tidy:T3",
+    "pass": true,
+    "evidence": "landmarks.py 284: held_parks = 'The Census park points and their names are held for counsel and not shown. ' + TIGER_HELD_SENTENCE. The text 'second public' is absent from website/. Built base.json templates.held_parks equals that sentence pair."
+   },
+   {
+    "id": "tidy:T4",
+    "pass": true,
+    "evidence": "sources.py iem_ugcs row: the request and timing text say the ugcs snapshot of 2026-10-25 (valid=2026-10-25T00:00Z) gives the 83 public zone outlines only, and that the B6 zone counts use the counted rows from the store's zone and polygon files. '(83 zones, 139 features)' is removed from the row."
+   },
+   {
+    "id": "tidy:T7-tiger",
+    "pass": true,
+    "evidence": "sources.py 679-680: tiger_park 'missing' ends 'A missing shapefile reader stops this held source only; the PAD-US parks still ship.' with no licence sentence. The built About page prints the held TIGER park row with held wording only. The only 'not copyrighted' text on the page is the B5 county row, which is not held. The landmarks.py internal note is a separate issue (see fix:C2 and scans)."
+   },
+   {
+    "id": "tidy:T7-fema",
+    "pass": true,
+    "evidence": "Already so: sources.py fema_worship 'missing' (689-690) carries only the held wording; no licence sentence in any field of the row."
+   },
+   {
+    "id": "tidy:T11",
+    "pass": true,
+    "evidence": "sources.py 479-482 and 495-497: 'The monthly job passes --refresh-descriptions, not --refresh ... capped at 25 minutes and the check at 900 seconds'. No CONTRACTS row says every tile is asked again each month (grep finds only the NCES row 'asks again for every file', which is not a tile row)."
+   },
+   {
+    "id": "tidy:T5",
+    "pass": true,
+    "evidence": "build.py read_vector_lines 1473-1478, terrain_line 1481-1495, the landmark 'lines' map (1512-1541), and about_b6_context 1762-1900, which prints each line from its key only when read. Class B6CreditsFollowTheStore exists and passes. Built base.json credit lists hold only read sources (seven vector lines plus terrain and landmark lines); the 'Land cover:' string form is a separate finding under scans."
+   },
+   {
+    "id": "tidy:T10",
+    "pass": true,
+    "evidence": "build.py about_b6_context 'tiger' = about_vector(TIGER_LINE) (line 1848); TIGER_LINE = b2.CREDIT[0]. about.html line 62 prints the sheet water sentence from SHEET_WORDS. test_the_water_fallback exists in tests/test_site.py."
+   },
+   {
+    "id": "tidy:T9",
+    "pass": true,
+    "evidence": "B6_D110_LEGEND is absent from tests/test_site.py (grep count 0). test_site.py lines 5941-5942, 5964 and 6215 assert the printed legend equals hl.WORDS['label_legend']."
+   },
+   {
+    "id": "tidy:T6-DESIGN",
+    "pass": true,
+    "evidence": "docs/DESIGN.md line 925: the terrain step passes --refresh-descriptions (D128(f)); line 965: 25-minute cap (1,500 s) with --refresh-descriptions; line 1039: the held church chip quotes the CHURCH_HELD sentence exactly."
+   },
+   {
+    "id": "tidy:T6-ROADMAP",
+    "pass": true,
+    "evidence": "docs/ROADMAP.md lines 43, 118 and 229 cite D106 to D134; line 116 header reads 'Open items for B6 (D107 to D134)'; line 152 (follow-up 7) records the 105-minute monthly end and the JOB_START+6300 wait, matching hail-store.yml."
+   },
+   {
+    "id": "tidy:T6-DECISIONS",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 902 header covers D31 to D139; line 1036 (D116(d)) says the monthly job passes --refresh-descriptions (D128(f)); the D134 bullet is present at line 1054."
+   },
+   {
+    "id": "about:U1",
+    "pass": true,
+    "evidence": "about.html lines 79-80 print the held church and held park sentences as their own paragraphs; build.py 1888 passes lm.CHURCH_HELD and lm.WORDS['held_parks']; the built page shows each sentence whole."
+   },
+   {
+    "id": "about:U1-pin",
+    "pass": true,
+    "evidence": "tests/test_site.py lines 6175-6180 assert that each held sentence is its own paragraph; the full suite passes."
+   },
+   {
+    "id": "about:U2",
+    "pass": true,
+    "evidence": "about.html has no literal 'Data unavailable in this update. This is not an all-clear.' (grep count 0). Unavailable sentences come from module words through build.py (terrain and basemap2 part_unavailable, landmarks kind words, history_layers words). The exceptions (held parts; the B5 snow paragraph) are recorded in the about verdict."
+   },
+   {
+    "id": "about:U2-extra",
+    "pass": true,
+    "evidence": "Built about.html: '...and a blank cell has no grid value. Source: NOAA nClimGrid-Daily grid estimates ...' on one line, with the space in place."
+   },
+   {
+    "id": "about:U3",
+    "pass": true,
+    "evidence": "about.html line 94 prints the ugcs credit from b6.ugcs or b6.ugcs_unavailable; build.py 1870-1871 takes hl.WORDS['about_outlines']; no literal template sentence. Built page: 'Source: Iowa State University, Iowa Environmental Mesonet, ugcs service. The outlines are simplified.'"
+   },
+   {
+    "id": "about:U4",
+    "pass": true,
+    "evidence": "No 'date not recorded' text in the built about.html or base.json. The PAD-US fixture credit reads 'Data unavailable' through landmarks._credit. test_site.py 6489-6500 pins it."
+   },
+   {
+    "id": "tidy3:V1",
+    "pass": true,
+    "evidence": "tests/test_landmarks.py 1467-1475: renamed test present (test_the_about_template_prints_the_church_sentence_as_its_own_paragraph_that_build_passes); about.html line 79 prints the held church sentence whole; build.py 1888 'held_church': lm.CHURCH_HELD. test_landmarks passes in the full suite."
+   },
+   {
+    "id": "tidy3:V2",
+    "pass": true,
+    "evidence": "about.html lines 99-101 print the bubble_unavailable key then the bubble_legend key; build.py 1891-1893 define bubble_legend and bubble_unavailable. Built page shows the legend once, equal to history_layers.WORDS['label_legend']. Tests at test_site.py 6219-6243 exist and pass."
+   },
+   {
+    "id": "tidy3:V3",
+    "pass": true,
+    "evidence": "history_layers.py line 208 WORDS['missing']; build.py fallbacks use hl.WORDS['missing'] (1615-1675 and 1821-1829). The four retired literals are absent from website/ (grep count 0). BUILD_REASON_LITERALS (test_site.py 6244-6273) and test_history_layers.py 907-922 exist and pass."
+   },
+   {
+    "id": "tidy3:V4",
+    "pass": true,
+    "evidence": "build.py 1881: heat_window = window_words(heat) if heat_read and heat, else None. test_a_90_f_count_is_not_counted_over_when_its_picture_did_not_load (test_site.py 6275) exists and passes."
+   },
+   {
+    "id": "tidy3:S1",
+    "pass": true,
+    "evidence": "history_layers.py line 208 reads 'Data unavailable. {what} could not be read from the store in this update. This is not an all-clear.' Singular and plural part names read correctly. The pins in tests/test_history_layers.py pass."
+   },
+   {
+    "id": "tidy3:S2",
+    "pass": true,
+    "evidence": "build.py base_document 1706-1721: the history, recent and labels exception fallbacks print hl.WORDS['missing'] with their part name. The exception text stays in the data 'reason' key, and the About template prints no reason key."
+   },
+   {
+    "id": "tidy3:S3",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md carries the D137, D138 and D139 bullets (lines 1057-1059). The D38 header (line 902) reads D31 to D139, covering the supervisor's later addition."
+   }
+  ],
+  "suite": "PASS on both commands. (1) Timed run: python -m unittest tests.test_site tests.test_hail_workflow tests.test_website_workflow -v: Ran 463 tests in 394.6 s, OK (skipped=6). 463 = 347 (test_site) + 42 (test_hail_workflow) + 74 (test_website_workflow); the 6 skips are the store-dependent tests that need HAIL_PARITY_STORE. (2) Whole suite: python -m unittest discover -s tests (no -v, timed 537.8 s, wall 559 s): Ran 2522 tests, OK (skipped=12), 0 failures, 0 errors. The non-verbose run does not print the 12 skip reasons. Logs: site-check/suite3.log and fullsuite.log.",
+  "parity": "PASS. HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store python -m unittest tests.test_site -v (variable name confirmed in tests/test_site.py): Ran 347 tests in 651.7 s, OK (skipped=2), 0 failures, 0 errors. Of the six store-dependent skips seen without the variable, four now run and pass: test_with_the_real_store_every_town_page_leads_with_station_reading_and_map_json_is_under_160_kb; test_the_five_cells_agree_on_the_adopted_store; test_with_the_real_store_every_row_note_reaches_the_sheet_at_four_cells; test_the_real_store_names_are_the_display_names_the_store_gives. The two remaining skips are per-cell subtests of test_the_five_cells_agree_on_the_fixture (cells 753,2230 and 920,1899) that skip by design when the committed sample lacks their tile; the adopted-store test covers all five cells. Log: site-check/parity.log.",
+  "selftest": "PASS. python desktop/launcher.py --selftest payload: exit code 0 in 1 s; output 'PASS  payload 1.0.0'.",
+  "build": "PASS (exit 0) with caveats. python -m website.build --out /home/user/hail-b5/out/b6/site --hail-history --hail-addresses --hail-store /home/user/hail-b5/out/b6/store-copy --now 2026-10-17T12:00:00Z. --help read first: no offline switch. The command has no --sample, so it calls the live fetcher; the sandbox has no route out, so every live source failed (status ok=false, detail ProxyError: NWS alerts, forecasts, station readings, SPC reports, radar, HRRR), and the store-based B6 parts were built. Time: 356 s (exit 0). Total site bytes: 575,913,347 in 48,353 files. data/map.json 385,530 bytes raw; data/base.json 33,192 bytes raw; about.html 98,322 bytes. The largest outline shard is r0092_c0214120.json at 258,207 bytes, over the 250,000-byte SHARD_BYTES limit (the store check found four such shards; expected per D137(a)). Log: site-check/build.log; sizes in site-check/site-sizes.txt.",
+  "smoke": "FAIL (exit 1, 309 s). Command: python tools/smoke_map.py /home/user/hail-b5/out/b6/site --addresses --history (--help read: root, --shots, --addresses, --store default = the site's own hail/ folder, --history). It printed these notes: phone view at zoom 15 over Billings with 3 layers on: 680264 bytes gzip against the budget of 700000 (B3 files 273924 in 18 files; shell and data 406340 in 11 files; the precipitation frames 0 bytes in 0 files); pan across Billings at zoom 15: 2 requests; search results listed; attribution lines present in the Leaflet control; zone rules printed; imagery notes 'no answer from basemap.nationalmap.gov in 20 seconds, so the internet may be off' (the imagery checks still ran). The only failure listed: 'phone: a click on the cell's centre did not open the hail sheet'. Every desktop check passed. Scratch diagnosis (read-only copy of the check, not in the repo): at 390 px the tap point (150.7, 538.4) lands on the Leaflet attribution block (box y 513 to 632); a red 'ProxyError' note in the bottom panel (SPAN.note-warn) lifts that block over the tap point. With only that note hidden, the attribution moves to y 581, the same tap hits the map, and the sheet opens with 110,063 characters. The cause is the offline state of this build, not a confirmed site defect, but a live build was not run, so a pass is not confirmed. Logs: site-check/smoke.log, diag-phone-tap.log, diag-phone-tap2.log.</smoke>\n<parameter name=\"gate\">PASS. Second build with the same flags minus --hail-addresses, into site-check/gate (deleted after): exit 0 in 224 s. Raw data/map.json = 116,336 bytes, under the 163,840-byte gate (margin 47,504). data/base.json = 33,192 bytes raw in both builds (identical). Note: the DESIGN 13.3 figures (128,522 and 30,861 bytes) are not reproduced here (see fix:E2-DESIGN-13.3). Sizes: site-check/gate-sizes.txt; the gate folder is removed.</gate>\n<parameter name=\"about\">FAIL on one item (held parts), PASS on the rest. Checked against /home/user/hail-b5/out/b6/site/about.html (98,322 bytes). (1) Every Source line in the B6 sections names a source the store read: 3DEP, NLCD, Census TIGER roads/reservations, Census 2020 counts, USDA forests, PAD-US, GNIS, NCES public and private, USGS hospitals, USGS fire/EMS, FAA, NOAA MRMS (twice), nClimGrid, NWS warnings via IEM, IEM ugcs, Montana State Library addresses. None names the church kind, the FEMA worship copy, the TIGER park points, hifld, snow or the large NHD outlines. The NHD lakes-and-rivers credit prints because the small NHD layers were read; the large layers are covered by the water sentence (a judgement). PASS. (2) Every part not read prints a module 'Data unavailable' sentence: PASS for water band D (sheet words), labels (partial), schools, fire, places, FAA, PAD-US, zone outlines, pictures and recent cells. FAIL as written for the three held parts (church kind, FEMA worship copy, TIGER park points): they print their held sentences ('Places of worship are held and not shown: ...'; 'The Census park points and their names are held for counsel and not shown.') with no 'Data unavailable' words, by the D136(a) design. The B5 snow analysis paragraph ('left out ... This is not an all-clear.') prints no module 'Data unavailable' sentence either; it is B5 scope. (3) Bubble legend: printed once (visible text and raw HTML) and equal to history_layers.WORDS['label_legend'] (PASS). (4) No held source carries a count or a licence sentence on the page; base.json held counts are null and the held reasons are the held sentences alone (PASS). (5) The B6 template has no literal 'Data unavailable' or all-clear sentence of its own (PASS). The 'lag' wording is a separate words failure.</about>\n<parameter name=\"scans\">FAIL. Em dash (U+2014): 0 in built data/base.json, data/map.json and about.html. The branch adds 0 em dashes to changed files (git diff added lines). Whole-file em dashes remain in AGENTS.md (11), README.md (29) and .github/workflows/website.yml (5); the branch did not add them. AI model, vendor or product names: 0 in the built data and the About page. In changed files the branch adds only git ref and branch names (claude/map-b6; claude/** workflow filters), the generic word 'AI' in rule text (website/landmarks.py line 71; tests/test_history_layers.py docstring), and a name guard built by concatenation (tests/test_terrain.py line 1292). Pre-existing agent names remain in AGENTS.md, README.md, docs/DECISIONS.md, docs/ROADMAP.md and docs/DESIGN.md. Credit-line form: FAIL. data/base.json has 'Land cover: National Land Cover Database 2021 ... (public domain).' at base.credit[1] and terrain.credits.land_cover, which are neither the Source form nor the data-courtesy-of form; the About page prints the Source form. Numbers beside held kinds or sources: none in the built about.html or base.json (no held string there contains a digit). In the docs, NOHRSC regression numbers sit beside the word held in docs/ROADMAP.md lines 42 and 102 and docs/DECISIONS.md line 937: FAIL (open). Licence conclusion for a held source in a repository file: FAIL, website/landmarks.py lines 251-253 (see fix:C2). Built pages: none. Git: 59 changed files from git diff against origin/claude/map-b6, no untracked files. Log: site-check/scan-names-changed.txt and site-scan.log.</scans>\n<parameter name=\"words\">FAIL on 'lag'; forbidden-word gate PASS. Forbidden-words check (tests/words_rules.forbidden_words, with the em-dash test used by test_site.b6_words_hits) over every string value of data/base.json and the B6 keys base, history_layers, recent and labels of data/map.json: 0 hits, 0 em dashes; no 'no hail' outside the allowed clause. Printed words: 'lag' appears three times on the About page, all in B5 source-row text (website/sources.py around lines 371, 390 and 819: 'so the lag is stated on each page'; 'so the lags are good to about 0.2 day'; 'the archive lags 45 to 60 days'). FAIL. 'read through': not found in the built About page, base.json or map.json. Browser strings (website/static/map/map.js, unchanged by this branch) are outside this check; see notes.</words>\n<parameter name=\"notes\">OPEN ITEMS (for the parent or owner; nothing in the worktree was edited; no git write command ran).\n1. Smoke failed (exit 1) on one check: the phone tap at a cell centre. Scratch diagnosis: at 390 px the attribution block covers the tap point, because the offline ProxyError note lifts it. With that note hidden the same tap opens the sheet. Not confirmed on a live build. Run the smoke on the branch's live preview before merge.\n2. About: the three held parts (church kind, FEMA worship copy, TIGER park points) print held sentences with no 'Data unavailable' words (D136(a)). The rule as written asks for a 'Data unavailable' sentence for every part not read. Owner or supervisor to accept the held design or add a lead.\n3. Scans: website/landmarks.py lines 251-253 keep 'Not copyrighted; free to use in a product or publication' as an internal note for the held TIGER park source. D132(b) keeps it; tests/test_landmarks.py 1380-1400 pin it. The scan rule bars licence conclusions in any repository file. Owner ruling needed.\n4. Scans: data/base.json 'Land cover: ...' credit strings (base.credit[1] and terrain.credits.land_cover) are not in the Source or courtesy form. Reword in the terrain module's credit text.\n5. Words: 'lag' printed three times on the About page in B5 source rows (sources.py about lines 371, 390, 819). Reword or accept.\n6. Scans and docs: NOHRSC snow regression numbers (ROADMAP 42 and 102, DECISIONS 937) sit under a 'held' label, which conflicts with D132(g). Supervisor ruling outstanding (E2 general rule).\n7. DESIGN 13.3 figures (128,522 / 30,861 / 397,716 bytes) are not reproduced by this offline build (gate build 116,336 and 33,192; addresses build 385,530). The live feeds were down here, so re-measure on a live build or amend the table.\n8. Pre-existing, not added by this branch: em dashes in AGENTS.md (11), README.md (29) and .github/workflows/website.yml (5); agent and vendor names in AGENTS.md, README.md, docs/DECISIONS.md, docs/ROADMAP.md and docs/DESIGN.md. The strict rule fails on them; owner decision.\n9. Live feeds did not run (no route out from the sandbox). NWS alerts, forecasts, station readings, SPC reports, radar and HRRR all show ProxyError (status ok=false), so this About page and map are a store-only view. The 'about 9 days old' banner appears because --now is 2026-10-17 and today is 2026-10-26.\n10. Outline shards over the 250,000-byte per-shard limit: the largest is r0092_c0214120.json at 258,207 bytes (the store check found four; expected per D137(a)). The buildings verify was not re-run here.\n11. website/static/map/map.js (not in this branch's diff) hard-codes browser sentences with 'Data unavailable' and 'This is not an all-clear.' (for example lines 249, 1316, 1320, 2122-2131, 3362-3363). The rule says browser strings come from map.json or base.json. Pre-existing; outside the B6 change.\n12. About: the 'Terms of the new sources' list pairs the NWS public-domain quotation with the NOHRSC snow analysis row, which the store did not read. Judge whether that is a licence sentence for an unread source.\n13. About: the NHD lakes-and-rivers credit prints because the small NHD layers were read; the large NHD outlines (zoom 13 and up) are partial. The store check asked that the About page not credit those outlines. Judgement call; the water sentence covers the gap.\n14. Leftovers from earlier fixers (judgements as reported): the 'tap or click' sentence in the hail-history section (about line 37, outside F4's list); hail.WORDS['stale'] unprefixed; hail1_legend and recent_legend without a lead; the value-bubble wording in U2.\n15. Test counts: the full discover run was not verbose, so its 12 skips have no printed reasons. The parity run's 2 remaining skips are by-design fixture subtests.\n16. Network: every Python step, the build, the smoke and Chromium ran in a loopback-only network namespace with a socket guard loaded. No blocked attempts were logged (0). The live fetch errors were refusals by the sandbox proxy at 127.0.0.1, which is not reachable inside the namespace, so no packet left the machine.\n17. Worktree: git status is identical before and after (7 modified files, no commits). PYTHONDONTWRITEBYTECODE=1 was set for every run. Scratch scripts and images are deleted; logs and the sizes files are kept in /home/user/hail-b5/out/b6/build/site-check/.\n18. Sentence case and plain-word style were not machine-checked.</notes>\n"
+ },
+ {
+  "verdicts": [
+   {
+    "id": "fix:B1",
+    "pass": true,
+    "evidence": "website/basemap2.py WORDS 311-338: unavailable, part_unavailable, partial_named, peaks_unknown, population_unknown, coverage_box and band_d_water_partial begin 'Data unavailable.' and end 'This is not an all-clear.' (population_unknown closing present). water_line_unavailable was later changed by tidy T1 (lines 337-338), which supersedes the B1 lead for that one key. tests/test_basemap2.py UnavailableWordingTests present; full suite OK."
+   },
+   {
+    "id": "fix:B1-notes",
+    "pass": true,
+    "evidence": "peak_note, place_note, route_note, water_note and park_note (basemap2.py 322-328) are unchanged, as the 'not applied' state says."
+   },
+   {
+    "id": "fix:B2",
+    "pass": true,
+    "evidence": "basemap2.py CREDIT[0] line 2146 = 'Source: U.S. Census Bureau, TIGER/Line 2026 (reservations, roads and place names).'; module docstring quote at line 92 matches; DocumentWordingTests and CreditTests exist in tests/test_basemap2.py."
+   },
+   {
+    "id": "fix:A1",
+    "pass": true,
+    "evidence": "website/terrain.py build(..., refresh_descriptions) at line 875; described = dict(options, refresh=refresh or refresh_descriptions) at line 913 (tiles keep refresh only); CLI --refresh-descriptions at line 1441; named tests exist in tests/test_terrain.py; full suite OK."
+   },
+   {
+    "id": "fix:A2",
+    "pass": true,
+    "evidence": ".github/workflows/hail-store.yml 1256-1267: monthly terrain step timeout-minutes 25; CAP=min(LEFT,1500); DEADLINE=now+CAP-120; build runs with --timeout 60 --refresh-descriptions --deadline-at; no bare --refresh in that step. terrain.py docstring 119-126 states the flag, 25-minute cap, 1500 s and 120 s deadline. Pins exist in tests/test_hail_workflow.py and tests/test_terrain.py; full suite OK."
+   },
+   {
+    "id": "fix:A3",
+    "pass": true,
+    "evidence": "Workflow 1279-1292: check timeout-minutes 16; CAP=min(LEFT,900) under timeout --kill-after=30; verify sample default VERIFY_SAMPLE = 10 (terrain.py line 173), so the sample stayed at 10. Docstring 119-126 states 900 s, ten re-fetches at 60 s (600 s) and the 16-minute step. Named test exists; full suite OK."
+   },
+   {
+    "id": "fix:A4",
+    "pass": true,
+    "evidence": "Nine steps after the 80-minute clock read JOB_START + 6300 (landmark check and mark, terrain check and mark, base map check and mark, manifest check, pack, publish; lines 1184-1457). Guards: checks and marks need more than 60 s left; manifest > 600, pack > 300, publish > 600 (lines 1411, 1448, 1460). CAPs of 180, 300 and 300 where stated. All 66 referenced step ids exist (71 defined); all 112 run blocks pass bash -n. Named tests exist; full suite OK."
+   },
+   {
+    "id": "fix:D1",
+    "pass": true,
+    "evidence": "history_layers.py line 201 WORDS['label_legend'] = the D110(c) sentence; build.py BUBBLE_LEGEND line 1402 equals it (built about.html shows it once, equal); labels.rule_words() reads H.WORDS['label_legend'] (labels.py 398). test_site.py 5941-5942 and 5964 assert equality; the old out-of-list assertNotEqual is gone; full suite OK."
+   },
+   {
+    "id": "fix:D2",
+    "pass": true,
+    "evidence": "history_layers.py: WORDS 'unavailable' line 205, 'outline_unavailable' line 209, 'missing_one' and 'missing_many' lines 178-181 lead and close as stated; labels problems come from H.WORDS['unavailable'] (labels.py 455-525). hail1_legend and recent_legend keep no lead (the reported judgement). 'stale' still hail.WORDS['stale'] (line 213), recorded as open. Tests exist; full suite OK."
+   },
+   {
+    "id": "fix:D3",
+    "pass": true,
+    "evidence": "history_layers.py heat90_legend lines 184-186: 'Grid estimate of days at or above 90 F ... (roughly 4.6 by 3 km in Montana). Data unavailable. A blank cell has no grid value. This is not an all-clear.' The old 'cells about 4.6 km across' wording is gone."
+   },
+   {
+    "id": "fix:C1",
+    "pass": true,
+    "evidence": "landmarks.py _mirror 1300-1307; _hail_index_with_mirror 1318-1332 (only the base mirror key changes; other keys kept); _write_block 1334-1374 builds the hail index before any file changes; mark_unavailable goes through _write_block (1563-1577). verify check 'hail/index.json base mirror matches the block' at line 1703. HailIndexMirrorTests exist; full suite OK."
+   },
+   {
+    "id": "fix:C2",
+    "pass": false,
+    "evidence": "Index and verify parts verified: _sources_block 1221-1240 writes HELD_SOURCE_REASONS as the terms of held sources; verify check at line 1805; HeldTermsTests exist; tidy T7 removed the CONTRACTS licence sentence (sources.py 679-680). But landmarks.py lines 251-253 keep SOURCES['tiger_park']['terms'] as an internal note quoting 'Not copyrighted; free to use in a product or publication.' for the held TIGER park source. That is a licence conclusion for a held source in a repository file, which the scan rule bars. D132(b) keeps it by ruling, and tests/test_landmarks.py 1380-1400 pin it. Owner ruling needed."
+   },
+   {
+    "id": "fix:C3",
+    "pass": true,
+    "evidence": "tests/fixtures/landmarks/tiger_arealm_mt_sample.zip is 1,011 bytes with .shp, .shx and .dbf. The dbf has 6 records with fields STATEFP, MTFCC, FULLNAME, INTPTLAT, INTPTLON and synthetic names (SYNTHETIC GARDEN PARK, Synthetic Cedar Park, one blank name, K2184 state park, Synthetic Aspen Park, one state 31 record). FixtureTests.test_the_tiger_fixture_is_synthetic exists; the test_landmarks docstring says the fixture is synthetic. The 13 m distance to the PAD-US label point was not re-measured."
+   },
+   {
+    "id": "fix:C4",
+    "pass": true,
+    "evidence": "landmarks.py CHURCH_HELD line 153 = 'Places of worship are held and not shown: ' + HELD_REASON + '. No church is drawn or named.' (HELD_REASON is the geocoder counsel sentence at line 147); WORDS['held'] line 283; HELD_KIND_REASONS['church'] line 167; HELD_SOURCE_REASONS['fema_worship'] line 271. build.py 1888 passes lm.CHURCH_HELD; about.html line 79 prints it whole (U1 later removed the composition); base.json kinds.church problem equals it. HeldKindSentenceTests exist."
+   },
+   {
+    "id": "fix:F1",
+    "pass": true,
+    "evidence": "build.py _landmark_words 1512-1541: hospital source from kinds.hospital.sources; credit only for the used source. Built base.json base.landmarks.hospital = {state loaded, source usgs_hospitals, sentence 'Hospitals come from the USGS list of hospitals and medical centers.', credit 'Source: USGS The National Map, hospitals and medical centers, October 2026 refresh.'}; about.html lines 73-74 print sentence, rule sentence and credit."
+   },
+   {
+    "id": "fix:F2",
+    "pass": true,
+    "evidence": "build.py landmark_line 1498-1509 uses NO_DATE ('Data unavailable') when the index has no as_of; FAA and PAD-US lines print only for read sources (shown-lines dict); about.html line 77 uses faa_credit and line 60 uses padus_credit. landmarks.py _credit 1208-1218 writes 'Data unavailable'. No 'date not recorded' string in website/."
+   },
+   {
+    "id": "fix:F3",
+    "pass": true,
+    "evidence": "build.py SHEET_WORDS 1390-1399: water_line_unavailable = b2.WORDS['water_line_unavailable'] (imported) and landmarks_sub_line = the DESIGN 13.6 item 5 sentence. Built base.json sheet carries both keys with these values."
+   },
+   {
+    "id": "fix:F4",
+    "pass": true,
+    "evidence": "Built about.html has none of 'dark mode', 'overlap', 'tapped', 'clicked', 'fades', 'zooms 11', 'Highlight'. The Highlight sentence now reads 'The recent radar hail list holds the cells ...' (template around line 97). One 'tap or click' sentence remains in the hail-history section (about line 37), outside the F4 list and noted as open."
+   },
+   {
+    "id": "fix:F5",
+    "pass": true,
+    "evidence": "Built about.html: 'The counts use the counted rows from the store's zone and polygon files.' (line 90) and 'The zone outlines are the Iowa State archive's ugcs snapshot of 2026-10-25, which gives the 83 public zone outlines only.' (lines 94-95). The iem_ugcs row in sources.py carries the same snapshot sentence (T4)."
+   },
+   {
+    "id": "fix:F6",
+    "pass": true,
+    "evidence": "about.html line 80 prints {{ b6.held_park }} = landmarks WORDS['held_parks'] (landmarks.py 284): 'The Census park points and their names are held for counsel and not shown. The file's use constraints are for counsel to read.' The colon form was replaced later by tidy T3 (superseded; consistent). 'Some park names' and 'second public' are absent from website/ and from the page."
+   },
+   {
+    "id": "fix:F7",
+    "pass": true,
+    "evidence": "about.html line 85: the 'counted over' sentence appears only when b6.heat_window is set, else heat90_unavailable is printed; 'the five seasons in the store' is absent from the page. Superseded by tidy3 V4 (build.py 1881) and S1; consistent."
+   },
+   {
+    "id": "fix:F8",
+    "pass": true,
+    "evidence": "Built about.html: 'Source: NOAA nClimGrid-Daily grid estimates (file attribute license = no restrictions; attribution requested).' follows 'a blank cell has no grid value.' on the same line. No 'NOAA declares' inside the B6 block. The phrase does appear once in the Terms text quoted from build.py about_terms, outside the B6 block, as F8's open item 6 says."
+   },
+   {
+    "id": "fix:F9",
+    "pass": true,
+    "evidence": "about.html lines 79-80 name the held church and park sentences with no 'Source:' line. The built page has no Source line for the FEMA places-of-worship list or the Census park points (checked against the full list of Source lines). Named tests exist."
+   },
+   {
+    "id": "fix:F10",
+    "pass": true,
+    "evidence": "Built about.html prints one PAD-US credit line in the park paragraph: 'Source: USGS Gap Analysis Project, Protected Areas Database of the United States (PAD-US) 4.1, local parks, layer last edited 2026-04-22.' The second mention is a data-sources table row name, which the report allows. The vector PAD-US credit is not printed on the page (base.json base.credit still lists it, as the report says)."
+   },
+   {
+    "id": "fix:F11",
+    "pass": true,
+    "evidence": "test_site.py test_every_string_of_data_base_json_and_the_b6_keys_of_map_json_pass_the_words_gate (line 5983) and b6_words_hits (line 6034) read string values; tests/words_rules.py EXEMPT contains 'that is not zero and not an all-clear'. Run on the built data (base.json string values; map.json keys base, history_layers, recent, labels): 0 forbidden-word hits and 0 em dashes."
+   },
+   {
+    "id": "fix:F12",
+    "pass": true,
+    "evidence": "build.py _source_dates 1584-1601 takes only the row's as_of (NO_DATE otherwise) with no fetched fallback. Code and the named tests in tests/test_site.py verified."
+   },
+   {
+    "id": "fix:E1",
+    "pass": true,
+    "evidence": "docs/ROADMAP.md line 140, counsel item 21(a): adds the TIGER 2026 point landmark file (tl_2026_30_pointlm.zip, park code K2190) as a future park chip source under D129(a). Text matches the report."
+   },
+   {
+    "id": "fix:E2-bullets",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md lines 1048-1053 carry the D128 to D133 italic bullets after the D127 bullet (line 1047); D134 to D139 follow at lines 1054-1059 from later fixers."
+   },
+   {
+    "id": "fix:E2-D118",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 1038 (D118(b)) reads '(the held rows)'. No '485 places' appears in docs/."
+   },
+   {
+    "id": "fix:E2-ROADMAP-counts",
+    "pass": true,
+    "evidence": "Already so: ROADMAP lines 43, 128, 134 and 140 name held kinds with no number. The held-with-number scan of the three docs found no count beside a held church or park row."
+   },
+   {
+    "id": "fix:E2-DESIGN-13.3",
+    "pass": false,
+    "evidence": "DESIGN lines 962-963 state map.json 128,522 bytes raw (gate 35,318) and base.json 30,861 bytes; DESIGN line 967 states the every-flag build is 397,716 bytes raw. This offline check measured map.json 116,336 bytes (gate build, no addresses), base.json 33,192 bytes (both builds), and map.json 385,530 bytes (with --hail-addresses). The figures are not reproduced here. Offline live-feed failures change the content, so they are unverified rather than disproved; re-measure on a live build or amend the table."
+   },
+   {
+    "id": "fix:E2-D38-header",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 902 reads 'The bullets' D31 to D139 are the B5 brief's rulings...' (later updated by the supervisor; consistent with the D137 to D139 entries at lines 1057-1059)."
+   },
+   {
+    "id": "fix:E2-general-rule",
+    "pass": false,
+    "evidence": "ROADMAP lines 42 and 102 and DECISIONS line 937 still carry NOHRSC snow regression numbers (slope 0.664 over 682 station-seasons, intercept 12.03, correlation 0.81, RMS 17.7 inches, two Billings cells). ROADMAP line 102 labels the analysis 'held'. D132(g) says DECISIONS, DESIGN and ROADMAP carry no number derived from a held source. The fixer left this for a supervisor ruling, which is still open."
+   },
+   {
+    "id": "tidy:T1",
+    "pass": true,
+    "evidence": "basemap2.py 337-338: water_line_unavailable = 'Detailed water and local parks: Data unavailable for this area in this update. This is not an all-clear.' (D134(a)). Module docstring 132-146 carries the same sentence and names the exemption; WORDS_INSIDE exemption at tests/test_basemap2.py line 1008. The built sheet and About page carry the same text."
+   },
+   {
+    "id": "tidy:T2",
+    "pass": true,
+    "evidence": "landmarks.py _credit 1208-1218 writes 'Data unavailable' in the missing-date branches, and _sources_block writes every credit through _credit. No 'cycle date not recorded' or 'date not recorded' string in website/. Named tests in tests/test_landmarks.py exist and the full suite passes."
+   },
+   {
+    "id": "tidy:T3",
+    "pass": true,
+    "evidence": "landmarks.py 284: held_parks = 'The Census park points and their names are held for counsel and not shown. ' + TIGER_HELD_SENTENCE. The text 'second public' is absent from website/. Built base.json templates.held_parks equals that sentence pair."
+   },
+   {
+    "id": "tidy:T4",
+    "pass": true,
+    "evidence": "sources.py iem_ugcs row: the request and timing text say the ugcs snapshot of 2026-10-25 (valid=2026-10-25T00:00Z) gives the 83 public zone outlines only, and that the B6 zone counts use the counted rows from the store's zone and polygon files. '(83 zones, 139 features)' is removed from the row."
+   },
+   {
+    "id": "tidy:T7-tiger",
+    "pass": true,
+    "evidence": "sources.py 679-680: tiger_park 'missing' ends 'A missing shapefile reader stops this held source only; the PAD-US parks still ship.' with no licence sentence. The built About page prints the held TIGER park row with held wording only. The only 'not copyrighted' text on the page is the B5 county row, which is not held. The landmarks.py internal note is a separate issue (see fix:C2 and scans)."
+   },
+   {
+    "id": "tidy:T7-fema",
+    "pass": true,
+    "evidence": "Already so: sources.py fema_worship 'missing' (689-690) carries only the held wording; no licence sentence in any field of the row."
+   },
+   {
+    "id": "tidy:T11",
+    "pass": true,
+    "evidence": "sources.py 479-482 and 495-497: 'The monthly job passes --refresh-descriptions, not --refresh ... capped at 25 minutes and the check at 900 seconds'. No CONTRACTS row says every tile is asked again each month (grep finds only the NCES row 'asks again for every file', which is not a tile row)."
+   },
+   {
+    "id": "tidy:T5",
+    "pass": true,
+    "evidence": "build.py read_vector_lines 1473-1478, terrain_line 1481-1495, the landmark 'lines' map (1512-1541), and about_b6_context 1762-1900, which prints each line from its key only when read. Class B6CreditsFollowTheStore exists and passes. Built base.json credit lists hold only read sources (seven vector lines plus terrain and landmark lines); the 'Land cover:' string form is a separate finding under scans."
+   },
+   {
+    "id": "tidy:T10",
+    "pass": true,
+    "evidence": "build.py about_b6_context 'tiger' = about_vector(TIGER_LINE) (line 1848); TIGER_LINE = b2.CREDIT[0]. about.html line 62 prints the sheet water sentence from SHEET_WORDS. test_the_water_fallback exists in tests/test_site.py."
+   },
+   {
+    "id": "tidy:T9",
+    "pass": true,
+    "evidence": "B6_D110_LEGEND is absent from tests/test_site.py (grep count 0). test_site.py lines 5941-5942, 5964 and 6215 assert the printed legend equals hl.WORDS['label_legend']."
+   },
+   {
+    "id": "tidy:T6-DESIGN",
+    "pass": true,
+    "evidence": "docs/DESIGN.md line 925: the terrain step passes --refresh-descriptions (D128(f)); line 965: 25-minute cap (1,500 s) with --refresh-descriptions; line 1039: the held church chip quotes the CHURCH_HELD sentence exactly."
+   },
+   {
+    "id": "tidy:T6-ROADMAP",
+    "pass": true,
+    "evidence": "docs/ROADMAP.md lines 43, 118 and 229 cite D106 to D134; line 116 header reads 'Open items for B6 (D107 to D134)'; line 152 (follow-up 7) records the 105-minute monthly end and the JOB_START+6300 wait, matching hail-store.yml."
+   },
+   {
+    "id": "tidy:T6-DECISIONS",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 902 header covers D31 to D139; line 1036 (D116(d)) says the monthly job passes --refresh-descriptions (D128(f)); the D134 bullet is present at line 1054."
+   },
+   {
+    "id": "about:U1",
+    "pass": true,
+    "evidence": "about.html lines 79-80 print the held church and held park sentences as their own paragraphs; build.py 1888 passes lm.CHURCH_HELD and lm.WORDS['held_parks']; the built page shows each sentence whole."
+   },
+   {
+    "id": "about:U1-pin",
+    "pass": true,
+    "evidence": "tests/test_site.py lines 6175-6180 assert that each held sentence is its own paragraph; the full suite passes."
+   },
+   {
+    "id": "about:U2",
+    "pass": true,
+    "evidence": "about.html has no literal 'Data unavailable in this update. This is not an all-clear.' (grep count 0). Unavailable sentences come from module words through build.py (terrain and basemap2 part_unavailable, landmarks kind words, history_layers words). The exceptions (held parts; the B5 snow paragraph) are recorded in the about verdict."
+   },
+   {
+    "id": "about:U2-extra",
+    "pass": true,
+    "evidence": "Built about.html: '...and a blank cell has no grid value. Source: NOAA nClimGrid-Daily grid estimates ...' on one line, with the space in place."
+   },
+   {
+    "id": "about:U3",
+    "pass": true,
+    "evidence": "about.html line 94 prints the ugcs credit from b6.ugcs or b6.ugcs_unavailable; build.py 1870-1871 takes hl.WORDS['about_outlines']; no literal template sentence. Built page: 'Source: Iowa State University, Iowa Environmental Mesonet, ugcs service. The outlines are simplified.'"
+   },
+   {
+    "id": "about:U4",
+    "pass": true,
+    "evidence": "No 'date not recorded' text in the built about.html or base.json. The PAD-US fixture credit reads 'Data unavailable' through landmarks._credit. test_site.py 6489-6500 pins it."
+   },
+   {
+    "id": "tidy3:V1",
+    "pass": true,
+    "evidence": "tests/test_landmarks.py 1467-1475: renamed test present (test_the_about_template_prints_the_church_sentence_as_its_own_paragraph_that_build_passes); about.html line 79 prints the held church sentence whole; build.py 1888 'held_church': lm.CHURCH_HELD. test_landmarks passes in the full suite."
+   },
+   {
+    "id": "tidy3:V2",
+    "pass": true,
+    "evidence": "about.html lines 99-101 print the bubble_unavailable key then the bubble_legend key; build.py 1891-1893 define bubble_legend and bubble_unavailable. Built page shows the legend once, equal to history_layers.WORDS['label_legend']. Tests at test_site.py 6219-6243 exist and pass."
+   },
+   {
+    "id": "tidy3:V3",
+    "pass": true,
+    "evidence": "history_layers.py line 208 WORDS['missing']; build.py fallbacks use hl.WORDS['missing'] (1615-1675 and 1821-1829). The four retired literals are absent from website/ (grep count 0). BUILD_REASON_LITERALS (test_site.py 6244-6273) and test_history_layers.py 907-922 exist and pass."
+   },
+   {
+    "id": "tidy3:V4",
+    "pass": true,
+    "evidence": "build.py 1881: heat_window = window_words(heat) if heat_read and heat, else None. test_a_90_f_count_is_not_counted_over_when_its_picture_did_not_load (test_site.py 6275) exists and passes."
+   },
+   {
+    "id": "tidy3:S1",
+    "pass": true,
+    "evidence": "history_layers.py line 208 reads 'Data unavailable. {what} could not be read from the store in this update. This is not an all-clear.' Singular and plural part names read correctly. The pins in tests/test_history_layers.py pass."
+   },
+   {
+    "id": "tidy3:S2",
+    "pass": true,
+    "evidence": "build.py base_document 1706-1721: the history, recent and labels exception fallbacks print hl.WORDS['missing'] with their part name. The exception text stays in the data 'reason' key, and the About template prints no reason key."
+   },
+   {
+    "id": "tidy3:S3",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md carries the D137, D138 and D139 bullets (lines 1057-1059). The D38 header (line 902) reads D31 to D139, covering the supervisor's later addition."
+   }
+  ],
+  "suite": "PASS on both commands. (1) Timed run: python -m unittest tests.test_site tests.test_hail_workflow tests.test_website_workflow -v: Ran 463 tests in 394.6 s, OK (skipped=6). 463 = 347 (test_site) + 42 (test_hail_workflow) + 74 (test_website_workflow); the 6 skips are the store-dependent tests that need HAIL_PARITY_STORE. (2) Whole suite: python -m unittest discover -s tests (no -v, timed 537.8 s, wall 559 s): Ran 2522 tests, OK (skipped=12), 0 failures, 0 errors. The non-verbose run does not print the 12 skip reasons. Logs: site-check/suite3.log and fullsuite.log.",
+  "parity": "PASS. HAIL_PARITY_STORE=/home/user/hail-b5/out/combined/store python -m unittest tests.test_site -v (variable name confirmed in tests/test_site.py): Ran 347 tests in 651.7 s, OK (skipped=2), 0 failures, 0 errors. Of the six store-dependent skips seen without the variable, four now run and pass: test_with_the_real_store_every_town_page_leads_with_station_reading_and_map_json_is_under_160_kb; test_the_five_cells_agree_on_the_adopted_store; test_with_the_real_store_every_row_note_reaches_the_sheet_at_four_cells; test_the_real_store_names_are_the_display_names_the_store_gives. The two remaining skips are per-cell subtests of test_the_five_cells_agree_on_the_fixture (cells 753,2230 and 920,1899) that skip by design when the committed sample lacks their tile; the adopted-store test covers all five cells. Log: site-check/parity.log.</parameter>\n<parameter name=\"selftest\">PASS. python desktop/launcher.py --selftest payload: exit code 0 in 1 s; output 'PASS  payload 1.0.0'.",
+  "build": "PASS (exit 0) with caveats. python -m website.build --out /home/user/hail-b5/out/b6/site --hail-history --hail-addresses --hail-store /home/user/hail-b5/out/b6/store-copy --now 2026-10-17T12:00:00Z. --help read first: no offline switch. The command has no --sample, so it calls the live fetcher; the sandbox has no route out, so every live source failed (status ok=false, detail ProxyError: NWS alerts, forecasts, station readings, SPC reports, radar, HRRR), and the store-based B6 parts were built. Time: 356 s (exit 0). Total site bytes: 575,913,347 in 48,353 files. data/map.json 385,530 bytes raw; data/base.json 33,192 bytes raw; about.html 98,322 bytes. The largest outline shard is r0092_c0214120.json at 258,207 bytes, over the 250,000-byte SHARD_BYTES limit (the store check found four such shards; expected per D137(a)). Log: site-check/build.log; sizes in site-check/site-sizes.txt.",
+  "smoke": "FAIL (exit 1, 309 s). Command: python tools/smoke_map.py /home/user/hail-b5/out/b6/site --addresses --history (--help read: root, --shots, --addresses, --store default = the site's own hail/ folder, --history). It printed these notes: phone view at zoom 15 over Billings with 3 layers on: 680264 bytes gzip against the budget of 700000 (B3 files 273924 in 18 files; shell and data 406340 in 11 files; the precipitation frames 0 bytes in 0 files); pan across Billings at zoom 15: 2 requests; search results listed; attribution lines present in the Leaflet control; zone rules printed; imagery notes 'no answer from basemap.nationalmap.gov in 20 seconds, so the internet may be off' (the imagery checks still ran). The only failure listed: 'phone: a click on the cell's centre did not open the hail sheet'. Every desktop check passed. Scratch diagnosis (read-only copy of the check, not in the repo): at 390 px the tap point (150.7, 538.4) lands on the Leaflet attribution block (box y 513 to 632); a red 'ProxyError' note in the bottom panel (SPAN.note-warn) lifts that block over the tap point. With only that note hidden, the attribution moves to y 581, the same tap hits the map, and the sheet opens with 110,063 characters. The cause is the offline state of this build, not a confirmed site defect, but a live build was not run, so a pass is not confirmed. Logs: site-check/smoke.log, diag-phone-tap.log, diag-phone-tap2.log.</parameter>\n<parameter name=\"gate\">PASS. Second build with the same flags minus --hail-addresses, into site-check/gate (deleted after): exit 0 in 224 s. Raw data/map.json = 116,336 bytes, under the 163,840-byte gate (margin 47,504). data/base.json = 33,192 bytes raw in both builds (identical). Note: the DESIGN 13.3 figures (128,522 and 30,861 bytes) are not reproduced here (see fix:E2-DESIGN-13.3). Sizes: site-check/gate-sizes.txt; the gate folder is removed.</parameter>\n<parameter name=\"about\">FAIL on one item (held parts), PASS on the rest. Checked against /home/user/hail-b5/out/b6/site/about.html (98,322 bytes). (1) Every Source line in the B6 sections names a source the store read: 3DEP, NLCD, Census TIGER roads/reservations, Census 2020 counts, USDA forests, PAD-US, GNIS, NCES public and private, USGS hospitals, USGS fire/EMS, FAA, NOAA MRMS (twice), nClimGrid, NWS warnings via IEM, IEM ugcs, Montana State Library addresses. None names the church kind, the FEMA worship copy, the TIGER park points, hifld, snow or the large NHD outlines. The NHD lakes-and-rivers credit prints because the small NHD layers were read; the large layers are covered by the water sentence (a judgement). PASS. (2) Every part not read prints a module 'Data unavailable' sentence: PASS for water band D (sheet words), labels (partial), schools, fire, places, FAA, PAD-US, zone outlines, pictures and recent cells. FAIL as written for the three held parts (church kind, FEMA worship copy, TIGER park points): they print their held sentences (Places of worship are held and not shown; The Census park points and their names are held for counsel and not shown) with no 'Data unavailable' words, by the D136(a) design. The B5 snow analysis paragraph ('left out ... This is not an all-clear.') prints no module 'Data unavailable' sentence either; it is B5 scope. (3) Bubble legend: printed once (visible text and raw HTML) and equal to history_layers.WORDS['label_legend'] (PASS). (4) No held source carries a count or a licence sentence on the page; base.json held counts are null and the held reasons are the held sentences alone (PASS). (5) The B6 template has no literal 'Data unavailable' or all-clear sentence of its own (PASS). The 'lag' wording is a separate words failure.</parameter>\n<parameter name=\"scans\">FAIL. Em dash (U+2014): 0 in built data/base.json, data/map.json and about.html. The branch adds 0 em dashes to changed files (git diff added lines). Whole-file em dashes remain in AGENTS.md (11), README.md (29) and .github/workflows/website.yml (5); the branch did not add them. AI model, vendor or product names: 0 in the built data and the About page. In changed files the branch adds only git ref and branch names (claude/map-b6; claude/** workflow filters), the generic word 'AI' in rule text (website/landmarks.py line 71; tests/test_history_layers.py docstring), and a name guard built by concatenation (tests/test_terrain.py line 1292). Pre-existing agent names remain in AGENTS.md, README.md, docs/DECISIONS.md, docs/ROADMAP.md and docs/DESIGN.md. Credit-line form: FAIL. data/base.json has 'Land cover: National Land Cover Database 2021 ... (public domain).' at base.credit[1] and terrain.credits.land_cover, which are neither the Source form nor the data-courtesy-of form; the About page prints the Source form. Numbers beside held kinds or sources: none in the built about.html or base.json (no held string there contains a digit). In the docs, NOHRSC regression numbers sit beside the word held in docs/ROADMAP.md lines 42 and 102 and docs/DECISIONS.md line 937: FAIL (open). Licence conclusion for a held source in a repository file: FAIL, website/landmarks.py lines 251-253 (see fix:C2). Built pages: none. Git: 59 changed files from git diff against origin/claude/map-b6, no untracked files. Log: site-check/scan-names-changed.txt and site-scan.log.</parameter>\n<parameter name=\"words\">FAIL on 'lag'; forbidden-word gate PASS. Forbidden-words check (tests/words_rules.forbidden_words, with the em-dash test used by test_site.b6_words_hits) over every string value of data/base.json and the B6 keys base, history_layers, recent and labels of data/map.json: 0 hits, 0 em dashes; no 'no hail' outside the allowed clause. Printed words: 'lag' appears three times on the About page, all in B5 source-row text (website/sources.py around lines 371, 390 and 819: 'so the lag is stated on each page'; 'so the lags are good to about 0.2 day'; 'the archive lags 45 to 60 days'). FAIL. 'read through': not found in the built About page, base.json or map.json. Browser strings (website/static/map/map.js, unchanged by this branch) are outside this check; see notes.</parameter>\n<parameter name=\"notes\">OPEN ITEMS (for the parent or owner; nothing in the worktree was edited; no git write command ran).\n1. Smoke failed (exit 1) on one check: the phone tap at a cell centre. Scratch diagnosis: at 390 px the attribution block covers the tap point, because the offline ProxyError note lifts it. With that note hidden the same tap opens the sheet. Not confirmed on a live build. Run the smoke on the branch's live preview before merge.\n2. About: the three held parts (church kind, FEMA worship copy, TIGER park points) print held sentences with no 'Data unavailable' words (D136(a)). The rule as written asks for a 'Data unavailable' sentence for every part not read. Owner or supervisor to accept the held design or add a lead.\n3. Scans: website/landmarks.py lines 251-253 keep 'Not copyrighted; free to use in a product or publication' as an internal note for the held TIGER park source. D132(b) keeps it; tests/test_landmarks.py 1380-1400 pin it. The scan rule bars licence conclusions in any repository file. Owner ruling needed.\n4. Scans: data/base.json 'Land cover: ...' credit strings (base.credit[1] and terrain.credits.land_cover) are not in the Source or courtesy form. Reword in the terrain module's credit text.\n5. Words: 'lag' printed three times on the About page in B5 source rows (sources.py about lines 371, 390, 819). Reword or accept.\n6. Scans and docs: NOHRSC snow regression numbers (ROADMAP 42 and 102, DECISIONS 937) sit under a 'held' label, which conflicts with D132(g). Supervisor ruling outstanding (E2 general rule).\n7. DESIGN 13.3 figures (128,522 / 30,861 / 397,716 bytes) are not reproduced by this offline build (gate build 116,336 and 33,192; addresses build 385,530). The live feeds were down here, so re-measure on a live build or amend the table.\n8. Pre-existing, not added by this branch: em dashes in AGENTS.md (11), README.md (29) and .github/workflows/website.yml (5); agent and vendor names in AGENTS.md, README.md, docs/DECISIONS.md, docs/ROADMAP.md and docs/DESIGN.md. The strict rule fails on them; owner decision.\n9. Live feeds did not run (no route out from the sandbox). NWS alerts, forecasts, station readings, SPC reports, radar and HRRR all show ProxyError (status ok=false), so this About page and map are a store-only view. The 'about 9 days old' banner appears because --now is 2026-10-17 and today is 2026-10-26.\n10. Outline shards over the 250,000-byte per-shard limit: the largest is r0092_c0214120.json at 258,207 bytes (the store check found four; expected per D137(a)). The buildings verify was not re-run here.\n11. website/static/map/map.js (not in this branch's diff) hard-codes browser sentences with 'Data unavailable' and 'This is not an all-clear.' (for example lines 249, 1316, 1320, 2122-2131, 3362-3363). The rule says browser strings come from map.json or base.json. Pre-existing; outside the B6 change.\n12. About: the 'Terms of the new sources' list pairs the NWS public-domain quotation with the NOHRSC snow analysis row, which the store did not read. Judge whether that is a licence sentence for an unread source.\n13. About: the NHD lakes-and-rivers credit prints because the small NHD layers were read; the large NHD outlines (zoom 13 and up) are partial. The store check asked that the About page not credit those outlines. Judgement call; the water sentence covers the gap.\n14. Leftovers from earlier fixers (judgements as reported): the 'tap or click' sentence in the hail-history section (about line 37, outside F4's list); hail.WORDS['stale'] unprefixed; hail1_legend and recent_legend without a lead; the value-bubble wording in U2.\n15. Test counts: the full discover run was not verbose, so its 12 skips have no printed reasons. The parity run's 2 remaining skips are by-design fixture subtests.\n16. Network: every Python step, the build, the smoke and Chromium ran in a loopback-only network namespace with a socket guard loaded. No blocked attempts were logged (0). The live fetch errors were refusals by the sandbox proxy at 127.0.0.1, which is not reachable inside the namespace, so no packet left the machine.\n17. Worktree: git status is identical before and after (7 modified files, no commits). PYTHONDONTWRITEBYTECODE=1 was set for every run. Scratch scripts and images are deleted; logs and the sizes files are kept in /home/user/hail-b5/out/b6/build/site-check/.\n18. Sentence case and plain-word style were not machine-checked.</notes>\n"
+ },
+ {
+  "__unparsedToolInput": {
+   "raw": "{\"verdicts\": [{\"id\": \"fix:B1\", \"pass\": true, \"evidence\": \"basemap2.py WORDS 311-338: seven status sentences lead 'Data unavailable.' and close 'This is not an all-clear.'; water line superseded by tidy T1 (lines 337-338). UnavailableWordingTests present; full suite OK.\"}, {\"id\": \"fix:B1-notes\", \"pass\": true, \"evidence\": \"peak, place, route, water and park notes at basemap2.py 322-328 are unchanged, as the not-applied state says.\"}, {\"id\": \"fix:B2\", \"pass\": true, \"evidence\": \"basemap2.py CREDIT[0] line 2146 matches the agreed wording; docstring line 92 matches; tests present.\"}, {\"id\": \"fix:A1\", \"pass\": true, \"evidence\": \"terrain.py build refresh_descriptions at line 875; described = refresh or refresh_descriptions at line 913; CLI flag at line 1441; tests present.\"}, {\"id\": \"fix:A2\", \"pass\": true, \"evidence\": \"hail-store.yml 1256-1267: timeout 25 minutes, CAP 1500, DEADLINE CAP minus 120, --refresh-descriptions, no bare --refresh in that step; terrain.py docstring 119-126 states it; tests present.\"}, {\"id\": \"fix:A3\", \"pass\": true, \"evidence\": \"hail-store.yml 1279-1292: timeout 16 minutes, CAP 900 under timeout; VERIFY_SAMPLE = 10 (terrain.py line 173); docstring 119-126 states it.\"}, {\"id\": \"fix:A4\", \"pass\": true, \"evidence\": \"Nine steps after the 80-minute clock read JOB_START + 6300 (lines 1184-1457) with guards of 60, 600, 300 and 600 seconds; all 66 referenced step ids exist; all 112 run blocks pass bash -n.\"}, {\"id\": \"fix:D1\", \"pass\": true, \"evidence\": \"history_layers.py line 201 label_legend equals build.py BUBBLE_LEGEND (line 1402); labels.py line 398 reads it; the built About page shows it once, equal.\"}, {\"id\": \"fix:D2\", \"pass\": true, \"evidence\": \"history_layers.py lines 178-181, 205 and 209 lead and close as stated; labels problems use H.WORDS unavailable; hail1 and recent legends left unprefixed (reported judgement); stale still hail.WORDS (open).\"}, {\"id\": \"fix:D3\", \"pass\": true, \"evidence\": \"history_layers.py lines 184-186 heat90_legend matches the ruling text exactly.\"}, {\"id\": \"fix:C1\", \"pass\": tru",
+   "len": 17876
+  }
+ },
+ {
+  "verdicts": [
+   {
+    "id": "fix:B1",
+    "pass": true,
+    "evidence": "basemap2.py WORDS 311-338: seven status sentences lead Data unavailable and close This is not an all-clear; water line superseded by tidy T1 (lines 337-338). UnavailableWordingTests present; full suite OK."
+   },
+   {
+    "id": "fix:B1-notes",
+    "pass": true,
+    "evidence": "peak, place, route, water and park notes at basemap2.py 322-328 are unchanged, as the not-applied state says."
+   },
+   {
+    "id": "fix:B2",
+    "pass": true,
+    "evidence": "basemap2.py CREDIT[0] line 2146 matches the agreed wording; docstring line 92 matches; tests present."
+   },
+   {
+    "id": "fix:A1",
+    "pass": true,
+    "evidence": "terrain.py build refresh_descriptions at line 875; described = refresh or refresh_descriptions at line 913; CLI flag at line 1441; tests present."
+   },
+   {
+    "id": "fix:A2",
+    "pass": true,
+    "evidence": "hail-store.yml 1256-1267: timeout 25 minutes, CAP 1500, DEADLINE CAP minus 120, --refresh-descriptions, no bare --refresh in that step; terrain.py docstring 119-126 states it; tests present."
+   },
+   {
+    "id": "fix:A3",
+    "pass": true,
+    "evidence": "hail-store.yml 1279-1292: timeout 16 minutes, CAP 900 under timeout; VERIFY_SAMPLE = 10 (terrain.py line 173); docstring 119-126 states it."
+   },
+   {
+    "id": "fix:A4",
+    "pass": true,
+    "evidence": "Nine steps after the 80-minute clock read JOB_START + 6300 (lines 1184-1457) with guards of 60, 600, 300 and 600 seconds; all 66 referenced step ids exist; all 112 run blocks pass bash -n."
+   },
+   {
+    "id": "fix:D1",
+    "pass": true,
+    "evidence": "history_layers.py line 201 label_legend equals build.py BUBBLE_LEGEND (line 1402); labels.py line 398 reads it; the built About page shows it once, equal."
+   },
+   {
+    "id": "fix:D2",
+    "pass": true,
+    "evidence": "history_layers.py lines 178-181, 205 and 209 lead and close as stated; labels problems use H.WORDS unavailable; hail1 and recent legends left unprefixed (reported judgement); stale still hail.WORDS (open)."
+   },
+   {
+    "id": "fix:D3",
+    "pass": true,
+    "evidence": "history_layers.py lines 184-186 heat90_legend matches the ruling text exactly."
+   },
+   {
+    "id": "fix:C1",
+    "pass": true,
+    "evidence": "landmarks.py _mirror line 1300, _hail_index_with_mirror line 1318, _write_block line 1334, mark_unavailable line 1563; verify check line 1703; HailIndexMirrorTests present."
+   },
+   {
+    "id": "fix:C2",
+    "pass": false,
+    "evidence": "Index and verify parts verified (lines 1221-1240 and 1805); tidy T7 removed the CONTRACTS licence sentence. But landmarks.py lines 251-253 keep the sentence Not copyrighted; free to use in a product or publication for the held TIGER park source. The scan rule bars that in a repository file; D132(b) keeps it by ruling; tests/test_landmarks.py 1380-1400 pin it."
+   },
+   {
+    "id": "fix:C3",
+    "pass": true,
+    "evidence": "Fixture zip is 1,011 bytes; .shp, .shx, .dbf; six synthetic records; fields as stated; FixtureTests.test_the_tiger_fixture_is_synthetic present."
+   },
+   {
+    "id": "fix:C4",
+    "pass": true,
+    "evidence": "landmarks.py line 153 CHURCH_HELD; line 283 WORDS held; lines 167 and 271 references; build.py line 1888 passes it; about line 79 prints it whole; base.json kinds.church problem equal."
+   },
+   {
+    "id": "fix:F1",
+    "pass": true,
+    "evidence": "build.py _landmark_words lines 1512-1541; built base.json landmarks.hospital matches (usgs_hospitals, sentence, credit); about lines 73-74."
+   },
+   {
+    "id": "fix:F2",
+    "pass": true,
+    "evidence": "build.py landmark_line lines 1498-1509 uses NO_DATE; FAA and PAD-US lines print only when read (about lines 77 and 60); no date-not-recorded text in website/."
+   },
+   {
+    "id": "fix:F3",
+    "pass": true,
+    "evidence": "build.py SHEET_WORDS lines 1390-1399; built base.json sheet carries both keys with the stated values."
+   },
+   {
+    "id": "fix:F4",
+    "pass": true,
+    "evidence": "Built about.html has none of dark mode, overlap, tapped, clicked, fades, zooms 11, Highlight; a tap or click sentence remains in the hail-history section (line 37), noted as open."
+   },
+   {
+    "id": "fix:F5",
+    "pass": true,
+    "evidence": "Built about.html lines 90 and 94-95 carry the stated sentences; sources.py iem_ugcs row matches (tidy T4)."
+   },
+   {
+    "id": "fix:F6",
+    "pass": true,
+    "evidence": "about line 80 prints held_parks (landmarks.py line 284); later tidy T3 form is in place; Some park names and second public are absent."
+   },
+   {
+    "id": "fix:F7",
+    "pass": true,
+    "evidence": "about line 85 gates the counted-over sentence on heat_window; the five-seasons sentence is absent; superseded by tidy3 V4 and S1."
+   },
+   {
+    "id": "fix:F8",
+    "pass": true,
+    "evidence": "Built about.html: the nClimGrid source line follows no grid value on the same line, with the stated text; NOAA declares appears only in the quoted Terms text outside the B6 block."
+   },
+   {
+    "id": "fix:F9",
+    "pass": true,
+    "evidence": "about lines 79-80 have no Source line for held sources; the built page has none for the FEMA list or the Census park points."
+   },
+   {
+    "id": "fix:F10",
+    "pass": true,
+    "evidence": "Built about.html has one PAD-US credit line (local parks, landmark layer); the second mention is a data-sources table row name, which the report allows."
+   },
+   {
+    "id": "fix:F11",
+    "pass": true,
+    "evidence": "test_site words gate (lines 5983 and 6034) reads string values; EXEMPT line present in words_rules.py; built data gives 0 hits."
+   },
+   {
+    "id": "fix:F12",
+    "pass": true,
+    "evidence": "build.py _source_dates lines 1584-1601 read only the row as_of, with NO_DATE otherwise; tests present."
+   },
+   {
+    "id": "fix:E1",
+    "pass": true,
+    "evidence": "docs/ROADMAP.md line 140, counsel item 21(a), matches the report text."
+   },
+   {
+    "id": "fix:E2-bullets",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md lines 1048-1053 carry D128 to D133 after D127; D134 to D139 follow at lines 1054-1059."
+   },
+   {
+    "id": "fix:E2-D118",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 1038 reads (the held rows); no 485 places in docs/."
+   },
+   {
+    "id": "fix:E2-ROADMAP-counts",
+    "pass": true,
+    "evidence": "Already so: ROADMAP lines 43, 128, 134 and 140 name held kinds with no number."
+   },
+   {
+    "id": "fix:E2-DESIGN-13.3",
+    "pass": false,
+    "evidence": "DESIGN lines 962-967 state 128,522 bytes (map.json, history build), 30,861 (base.json) and 397,716 (every-flag). This offline build measured 116,336, 33,192 and 385,530. Not reproduced; offline live-feed failures change content, so unverified rather than disproved."
+   },
+   {
+    "id": "fix:E2-D38-header",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 902 header reads D31 to D139, consistent with the D137 to D139 entries at lines 1057-1059."
+   },
+   {
+    "id": "fix:E2-general-rule",
+    "pass": false,
+    "evidence": "ROADMAP lines 42 and 102 and DECISIONS line 937 still carry NOHRSC snow regression numbers; ROADMAP line 102 calls the analysis held; this conflicts with D132(g). Left for supervisor ruling; still open."
+   },
+   {
+    "id": "tidy:T1",
+    "pass": true,
+    "evidence": "basemap2.py lines 337-338 carry the D134(a) water sentence; docstring 132-146 matches; WORDS_INSIDE exemption present (test line 1008)."
+   },
+   {
+    "id": "tidy:T2",
+    "pass": true,
+    "evidence": "landmarks.py _credit lines 1208-1218 write Data unavailable for missing dates; no date-not-recorded text in website/; tests present."
+   },
+   {
+    "id": "tidy:T3",
+    "pass": true,
+    "evidence": "landmarks.py line 284 held_parks as stated; second public absent from website/; built base.json templates equal the sentence pair."
+   },
+   {
+    "id": "tidy:T4",
+    "pass": true,
+    "evidence": "sources.py iem_ugcs row carries the stated sentences; the 83 zones and 139 features phrase is removed; valid date kept."
+   },
+   {
+    "id": "tidy:T7-tiger",
+    "pass": true,
+    "evidence": "sources.py lines 679-680 carry held wording only, with no licence sentence; the built page shows held wording only."
+   },
+   {
+    "id": "tidy:T7-fema",
+    "pass": true,
+    "evidence": "Already so: sources.py fema_worship missing text (lines 689-690) is held wording only."
+   },
+   {
+    "id": "tidy:T11",
+    "pass": true,
+    "evidence": "sources.py lines 479-482 and 495-497 state --refresh-descriptions, 25 minutes and 900 seconds; no row says every tile is asked again."
+   },
+   {
+    "id": "tidy:T5",
+    "pass": true,
+    "evidence": "build.py read_vector_lines 1473, terrain_line 1481, landmark lines 1512-1541, about_b6_context 1762-1900; built base.json credit lists hold read sources only (the Land cover string form is under scans)."
+   },
+   {
+    "id": "tidy:T10",
+    "pass": true,
+    "evidence": "build.py line 1848 tiger = about_vector(TIGER_LINE); TIGER_LINE = b2.CREDIT[0]; about line 62 water sentence; test_the_water_fallback present."
+   },
+   {
+    "id": "tidy:T9",
+    "pass": true,
+    "evidence": "B6_D110_LEGEND absent from tests/test_site.py; lines 5941-5942, 5964 and 6215 assert equality with the module wording."
+   },
+   {
+    "id": "tidy:T6-DESIGN",
+    "pass": true,
+    "evidence": "docs/DESIGN.md lines 925, 965 and 1039 carry the stated text."
+   },
+   {
+    "id": "tidy:T6-ROADMAP",
+    "pass": true,
+    "evidence": "docs/ROADMAP.md lines 43, 116, 118, 152 and 229 carry D106 to D134 and the 105-minute monthly end."
+   },
+   {
+    "id": "tidy:T6-DECISIONS",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md line 902 header D31 to D139; line 1036 D116(d) text; line 1054 D134 bullet present."
+   },
+   {
+    "id": "about:U1",
+    "pass": true,
+    "evidence": "about lines 79-80 print the held sentences whole; build.py line 1888 passes them."
+   },
+   {
+    "id": "about:U1-pin",
+    "pass": true,
+    "evidence": "test_site lines 6175-6180 pin each held sentence as its own paragraph; the suite passes."
+   },
+   {
+    "id": "about:U2",
+    "pass": true,
+    "evidence": "No literal unavailable sentence in the About template; unavailable sentences come from module words through build.py. Exceptions are in the about verdict."
+   },
+   {
+    "id": "about:U2-extra",
+    "pass": true,
+    "evidence": "Built about.html has the nClimGrid source text on the same line as the 90 F sentence."
+   },
+   {
+    "id": "about:U3",
+    "pass": true,
+    "evidence": "about line 94 prints b6.ugcs; build.py lines 1870-1871 take hl.WORDS about_outlines; built text reads Source: Iowa State University, Iowa Environmental Mesonet, ugcs service. The outlines are simplified."
+   },
+   {
+    "id": "about:U4",
+    "pass": true,
+    "evidence": "No not-recorded credit text in built about.html or base.json; the PAD-US fixture credit reads Data unavailable through landmarks._credit."
+   },
+   {
+    "id": "tidy3:V1",
+    "pass": true,
+    "evidence": "tests/test_landmarks.py lines 1467-1475 renamed test present; about line 79; build.py line 1888."
+   },
+   {
+    "id": "tidy3:V2",
+    "pass": true,
+    "evidence": "about lines 99-101 print the two bubble keys; build.py lines 1891-1893; built legend appears once and equals history_layers WORDS label_legend."
+   },
+   {
+    "id": "tidy3:V3",
+    "pass": true,
+    "evidence": "history_layers.py line 208 WORDS missing; build.py fallbacks use it (lines 1615-1675 and 1821-1829); the four retired literals are absent from website/."
+   },
+   {
+    "id": "tidy3:V4",
+    "pass": true,
+    "evidence": "build.py line 1881 gates heat_window on heat_read; test at test_site line 6275 present."
+   },
+   {
+    "id": "tidy3:S1",
+    "pass": true,
+    "evidence": "history_layers.py line 208 reads the stated sentence; pins in tests/test_history_layers.py pass."
+   },
+   {
+    "id": "tidy3:S2",
+    "pass": true,
+    "evidence": "build.py base_document lines 1706-1721: the exception fallbacks print WORDS missing with the part name; the reason stays in the data reason key."
+   },
+   {
+    "id": "tidy3:S3",
+    "pass": true,
+    "evidence": "docs/DECISIONS.md lines 1057-1059 carry D137 to D139; the D38 header reads D31 to D139."
+   }
+  ],
+  "suite": "PASS. Timed 3-module run: Ran 463 tests in 394.6 s, OK (skipped=6); 463 = 347 test_site + 42 test_hail_workflow + 74 test_website_workflow. Whole suite (discover, not verbose, 537.8 s; wall 559 s): Ran 2522 tests, OK (skipped=12), 0 failures, 0 errors. Logs: site-check/suite3.log and fullsuite.log.",
+  "parity": "PASS. HAIL_PARITY_STORE (name confirmed in tests/test_site.py): Ran 347 tests in 651.7 s, OK (skipped=2), 0 failures. Four of the six store-dependent skips now run and pass: real-store town pages, five cells on the adopted store, four-cell row notes, real-store names. The two remaining skips are by-design per-cell fixture subtests (cells 753,2230 and 920,1899) that skip when the committed sample lacks the tile. Log: site-check/parity.log.</parameter>\n<parameter name=\"selftest\">PASS. desktop/launcher.py --selftest payload: exit 0 in 1 s; output PASS payload 1.0.0.",
+  "build": "PASS (exit 0, 356 s) with caveats. Run as specified; the build has no offline switch and no --sample, so live feeds were attempted and every live source failed with ProxyError (no route out). Store-based B6 parts were built. Total site bytes 575,913,347 in 48,353 files; data/map.json 385,530; data/base.json 33,192; about.html 98,322. Largest outline shard r0092_c0214120.json is 258,207 bytes, over the 250,000 limit; expected per D137(a). Log: site-check/build.log.</parameter>\n<parameter name=\"smoke\">FAIL (exit 1, 309 s). Notes printed: phone view at zoom 15 over Billings 680264 bytes gzip against budget 700000 (B3 files 273924 in 18 files; shell and data 406340 in 11 files); imagery tile notes (sandbox has no internet; the other imagery checks still ran); pan across Billings 2 requests. The only failure listed: phone click on the cell centre did not open the hail sheet. Scratch diagnosis: the tap point (150.7, 538.4) lands on the attribution block, which the offline ProxyError note lifts; with that note hidden, the same tap opens the sheet (110,063 characters). Not confirmed on a live build. Logs: site-check/smoke.log, diag-phone-tap.log, diag-phone-tap2.log.</smoke>\n<gate>PASS. Second build without --hail-addresses (exit 0, 224 s): data/map.json 116,336 bytes raw, under 163,840 (margin 47,504). data/base.json 33,192 bytes in both builds. The DESIGN 13.3 figures are not reproduced here (see fix:E2-DESIGN-13.3). The gate folder is removed.</gate>\n<about>FAIL on one item. Source lines: all name read sources; none names the church kind, FEMA worship, TIGER park points, hifld, snow or the large NHD outlines (the NHD lakes and rivers credit prints because the small layers were read). PASS. Non-held parts that were not read print Data unavailable sentences (water band D via sheet words, labels partial, schools, fire, places, FAA, PAD-US, outlines, pictures, recent). FAIL as written for the three held parts, which print held sentences with no Data unavailable words (D136(a) design). The B5 snow paragraph prints left out and This is not an all-clear, with no module Data unavailable sentence (B5 scope). Bubble legend: printed once, equal to history_layers WORDS label_legend: PASS. No held source carries a count or licence sentence on the page or in the base.json held block: PASS. No literal unavailable sentence of its own in the B6 template: PASS.</about>\n<scans>FAIL. Em dashes: 0 in built data and the About page; the branch adds 0 in changed files; whole-file dashes remain in AGENTS.md (11), README.md (29) and .github/workflows/website.yml (5), pre-existing. AI names: 0 in built data and the About page; the branch adds only git refs, generic AI in rule text and a concatenated guard; agent names remain in AGENTS.md, README.md, DECISIONS, ROADMAP and DESIGN, pre-existing. Credit form: FAIL, two Land cover strings in base.json. Numbers beside held: none in the About page or base.json; FAIL in the docs (NOHRSC numbers, ROADMAP 42 and 102, DECISIONS 937). Licence conclusion for a held source in a repository file: FAIL (landmarks.py lines 251-253). Built pages: none.</scans>\n<words>FAIL on lag. Forbidden-word gate over base.json string values and the map.json B6 keys: 0 hits; 0 em dashes; no stray no-hail. The word lag is printed three times on the About page, all in B5 source-row text (sources.py about lines 371, 390 and 819). Read through: none in the built text.</words>\n<notes>OPEN ITEMS (nothing in the worktree was edited; no git write command ran).\n1. Smoke failed (exit 1) on one check, the phone tap at a cell centre. Scratch diagnosis: at 390 px the attribution block covers the tap point, because the offline ProxyError note lifts it; with that note hidden, the same tap opens the sheet. Not confirmed on a live build. Run the smoke on the branch's live preview before merge.\n2. About: the three held parts (church kind, FEMA worship copy, TIGER park points) print held sentences with no Data unavailable words (D136(a)). The rule as written asks for a Data unavailable sentence for every part not read. Owner or supervisor to accept the held design or add a lead.\n3. Scans: website/landmarks.py lines 251-253 keep the sentence Not copyrighted; free to use in a product or publication as an internal note for the held TIGER park source. D132(b) keeps it; tests/test_landmarks.py 1380-1400 pin it. The scan rule bars licence conclusions in any repository file. Owner ruling needed.\n4. Scans: base.json Land cover credit strings (base.credit[1] and terrain.credits.land_cover) are not in the Source or courtesy form. Reword in the terrain module's credit text.\n5. Words: lag is printed three times on the About page in B5 source rows (sources.py about lines 371, 390, 819). Reword or accept.\n6. Docs: NOHRSC snow regression numbers (ROADMAP 42 and 102, DECISIONS 937) sit under a held label, which conflicts with D132(g). Supervisor ruling outstanding.\n7. DESIGN 13.3 figures (128,522, 30,861, 397,716 bytes) are not reproduced by this offline build (gate build 116,336 and 33,192; addresses build 385,530). Re-measure on a live build or amend the table.\n8. Pre-existing, not added by this branch: em dashes in AGENTS.md (11), README.md (29) and website.yml (5); agent and vendor names in AGENTS.md, README.md, DECISIONS, ROADMAP and DESIGN. The strict rule fails on them; owner decision.\n9. Live feeds did not run (no route out from the sandbox): NWS alerts, forecasts, station readings, SPC reports, radar and HRRR show ProxyError, so the About page and map are store-only. The about 9 days old banner appears because --now is 2026-10-17 and today is 2026-10-26.\n10. Outline shards over the 250,000-byte limit: the largest is r0092_c0214120.json at 258,207 bytes (the store check found four; expected per D137(a)). The buildings verify was not re-run here.\n11. website/static/map/map.js (not in this branch's diff) hard-codes browser sentences with Data unavailable and This is not an all-clear (for example lines 249, 1316, 1320, 2122-2131, 3362-3363). The rule says browser strings come from map.json or base.json. Pre-existing.\n12. About: the Terms of the new sources list pairs the NWS public-domain quotation with the NOHRSC snow row, which the store did not read. Judge whether that is a licence sentence for an unread source.\n13. About: the NHD lakes and rivers credit prints because the small NHD layers were read; the large NHD outlines (zoom 13 and up) are partial, and the water sentence covers the gap. The store check asked not to credit those outlines; judgement.\n14. Leftovers from earlier fixers (judgements as reported): the tap or click sentence in the hail-history section (about line 37); hail.WORDS stale unprefixed; hail1 and recent legends without a lead; U2 value-bubble wording.\n15. Test counts: the full discover run was not verbose, so its 12 skips have no printed reasons. The parity run's 2 remaining skips are by-design fixture subtests.\n16. Network: every Python step, the build, the smoke and Chromium ran in a loopback-only network namespace with a socket guard loaded. No blocked attempts were logged (0). The sandbox proxy at 127.0.0.1 is unreachable inside the namespace, so no packet left the machine.\n17. Worktree: git status is identical before and after (7 modified files, no commits). PYTHONDONTWRITEBYTECODE=1 for every run. Scratch scripts and images are deleted; logs and the sizes files are kept in /home/user/hail-b5/out/b6/build/site-check/.\n18. Sentence case and plain-word style were not machine-checked.</notes>\n"
+ }
+]
